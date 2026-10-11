@@ -5,7 +5,9 @@
 // skelId · side · segOrd) into ACROSS (∥ ring normal) and ALONG (∥ ring tangent). Also the same decomposition of the
 // terrain FIELD's own gradient at the centroid (bilinear on the 5 m grid), so mesh-coarseness vs terrain can be split.
 // Cross-slope scales linearly with the exaggeration (the y part does not); figures are per unit exag.
-// Usage: node scratch/ground-height/walk-slope.mjs <scene> [--json=out.json]
+// Usage: node scratch/ground-height/walk-slope.mjs <scene> [--json=out.json] [--dir=<slab dir>] [--gate]
+// --gate: exit 1 if any ped-band triangle (sidewalk · curb · treelawn) has an edge longer than the bake's own coarse cap
+//   (GROUND_REFINE_MAX_EDGE_M, READ out of cartograph/bake-ground.js, never restated here) — a band left unrefined.
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../../cartograph/terrainLoad.js'
@@ -13,7 +15,10 @@ import { loadSceneTerrain } from '../../cartograph/terrainLoad.js'
 const scene = process.argv[2]
 const jsonOut = process.argv.find(a => a.startsWith('--json='))?.slice(7)
 const root = new URL('../../', import.meta.url).pathname
-const slab = join(root, 'public/baked', scene)
+const dirArg = process.argv.find(a => a.startsWith('--dir='))?.slice(6)
+const slab = dirArg || join(root, 'public/baked', scene)
+const capM = +readFileSync(join(root, 'cartograph/bake-ground.js'), 'utf8').match(/const GROUND_REFINE_MAX_EDGE_M\s*=\s*([\d.]+)/)?.[1]
+if (!(capM > 0)) throw new Error('walk-slope: could not read GROUND_REFINE_MAX_EDGE_M out of cartograph/bake-ground.js')
 const gj = JSON.parse(readFileSync(join(slab, 'ground.json')))
 const gb = readFileSync(join(slab, 'ground.bin'))
 const AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
@@ -192,4 +197,8 @@ console.log(`  stretch p90-cross distribution: p50 ${pct(sq[0.5])}  p90 ${pct(sq
 const wqq = wq(stretches, s => s.warp5to95, () => 1, [0.5, 0.9])
 console.log(`  stretch warp (5–95% range of signed cross): p50 ${pct(wqq[0.5])}  p90 ${pct(wqq[0.9])}  max ${pct(wqq.max)}`)
 out.stretchP90 = sq; out.stretchWarp = wqq
+const over = recs.filter(r => r.kind !== 'curbCut' && r.maxEdge > capM + 1e-6)
+console.log(`  ped-band triangles with an edge over the bake's coarse cap (${capM} m): ${over.length} (${over.reduce((a, r) => a + r.area, 0).toFixed(0)} m²); triangles ${recs.length}; slab ${slab}`)
+out.overCap = { capM, tris: over.length }
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify(out, null, 1))
+if (process.argv.includes('--gate') && over.length) { console.error(`  ⛔ ${scene}: ${over.length} ped-band triangle(s) longer than ${capM} m — a band the refiner never touched`); process.exit(1) }

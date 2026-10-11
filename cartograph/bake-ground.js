@@ -1178,17 +1178,21 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // paint-stack flatten above supersedes it and does the whole stack, not one
     // pair. Two places deciding the same thing is how they drift.
 
-    // Tiering: large soft land-use FILLS (faces) take the adaptive policy --
-    // that is where the budget lives and where coarse triangles are least
-    // visible. Landscape overlays keep the legacy fine uniform spacing
-    // (crisp-edged, tiny budget). Ribbon bands bypass refinement entirely.
-    // The bed is a fill too: it must follow the terrain under the water, or it chords over it.
-    const isSoftFill = kind === 'face' || key === 'bed' || key === 'shore'
+    // Tiering: EVERY piece of the partition is draped per vertex, so every piece follows the terrain by the same
+    // adaptive policy — the lots, the bed, the shore AND the street's bands (asphalt, curb, treelawn, sidewalk).
+    // Landscape overlays and the park path keep their finer uniform spacing. Only what does not cut (water, which
+    // tints) is left as triangulated.
+    // ⛔⛔ THE BANDS USED TO BYPASS REFINEMENT, on the belief that "their authored density already matches". It did not
+    // (2026-10-10, BRIEF-the-ground-knows-its-height §4.3): a straight street's band has vertices only at its corners,
+    // so on HPDM half the sidewalk area sat in triangles with a longest edge over 59 m (max 557 m), and on a hill a
+    // 360 m edge chorded 4–6 m under the terrain while the walk's other edge, beside a refined lot, followed it — the
+    // stretched, tilted walk. ▶ node scratch/ground-height/walk-slope.mjs <scene> --gate
     const isHardOverlay = LANDSCAPE_OVERLAY_KEYS.has(key)
     const isContourRibbon = CONTOUR_REFINE_KEYS.has(key)   // park_path: rides the park hill
+    const isDraped = !DOES_NOT_CUT.has(kind + ':' + key) && !isHardOverlay && !isContourRibbon
     let refinePolicy = null
     if (!hasTerrain) { /* F3: nothing to drape — every group ships as triangulated */ }
-    else if (isSoftFill) {
+    else if (isDraped) {
       // Terrain present → adaptive (follows the DEM). A sampler-less 'uniform' run (the legacy opt-in)
       // keeps the coarse cap. ⛔ With NO terrain at all this branch is never reached (F3, above): the
       // coarse cap it used to emit here bred Provincetown's 10.3M slivers (Altadena, 2026-07-14, was the

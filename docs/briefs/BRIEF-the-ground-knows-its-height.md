@@ -45,14 +45,8 @@ to hunt more holes. Argon's measurements so far (2026-10-07/08, facts only):
   (`bake-shore-median.mjs` → `bake-ground`'s `shore` group). It zigzags p50 0.16 · p90 0.73 · p99 2.24 m off its own
   ±3 m chord. Meanwhile the coast is ALSO a chain in ① (`ROADMAP H-4`: "stroke the coast as a two-sided chain"). So the
   waterline has two shape sources at two resolutions.
-- The ground is pressed flat into the 2D partition at bake and lifted per VERTEX at render from the 5 m terrain texture
-  (`terrainShader.js#patchTerrain`, perVertex). The extrusion happens LAST and samples the terrain only where the 2D
-  edges happen to put vertices. The bed raster is the same 5 m grid.
-- The cracks: Huron's biggest "hole" (9,212 px at −2386, −2008) is the INSTRUMENT. The gap walk's near-from-water camera
-  sits 20 m out along the normal, which on a ~12 m channel puts it under the far bank. One real crack cluster (~785
-  px/station near 1417–1430, −320…−326): two thin lines along the shoreline where rays pass under a `face:beach` drawn at
-  ~0.31 m, with open edges on `mat:shore` nearby. Down-facing triangles and T-junctions are ruled out; the mechanism is not
-  established.
+- The drape (per vertex, last) and the cracks: measured in §4.3 and §4.6. The 9,212 px "hole" at (−2386, −2008) was the
+  gap walk's 20 m camera under a ~12 m channel's far bank; the standoff is now derived.
 
 **The reopening:** *"Yes this reopens design but we have to solve it, so too bad."* Not built tonight; this brief is so
 an agent with directed context can do it soon.
@@ -126,40 +120,53 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 | the shelved corner rework (the same seam) | `scratch/perp-corner/radial-landings-SHELVED-2026-10-07.diff` |
 | the kerb-cut harness | `scratch/kerb-cut/dump.mjs`, `scratch/kerb-cut/harness.mjs` |
 
-## 4. Step 1: measure, then STOP and report (read-only)
+## 4. Measured (Talus, 2026-10-10). Each line names its probe; ⛔ re-run it, never quote it
 
-1. **Confirm the order and the dependencies.** List each bake step's inputs from `runIfDirty` / `bake-reads.json`.
-   Confirm terrain reads nothing the ribbons make, and that the ribbons and paint today read no terrain. If either is
-   false, stop: §5's reorder premise changes.
-2. **Size the stretched walk, per town** (HPDM, Huron, Provincetown and LS; Altadena if it bakes). For every walk band
-   (and curb and lawn), measure along its length across its width: the cross-slope (the height difference across the
-   band ÷ its plan width), and how it changes along the band (the warp). Report the distribution (p50 / p90 / max)
-   and the count above a cross-slope a person would read as tilted. ⭐ The threshold is NOT yours to pick: report the
-   distribution and propose the source (an accessibility norm already in the kit, e.g. the curb-cut norm's slopes in
-   `norms.json`, or Jacob's call). Give HPDM's ten worst stretches by place (the tile whose ring contains them, the arc
-   and its `skelId · side · segOrd`; ⛔ never "nearest street").
-   *Before reporting a defect:* is it the authoring's intended output? A walk the operator widened onto a slope is
-   still his walk.
-3. **Where does the walk's height come from today?** For one of HPDM's worst stretches, trace a vertex from the paint
-   to its rendered y: what the conformed mesh holds, and what the runtime adds. Say whether the tilt is the terrain
-   itself, the mesh's coarseness (`triangulateAndRefine`'s max edge), or both. Cause measured, or "cause not
-   established".
-4. **The kerb, re-read in this light.** Confirm §9's 266 and where they sit. Then answer the first question Jacob's
-   ruling raised: **is each ramp, flare and taper outline already a piece of the painted partition (derived through
-   ① → ② → the bands), or only a record that `kerbLift.mjs` turns into a cut afterwards?**
-   Name the producer of each outline (`kerbLift.mjs` today) and whether it could be emitted as partition pieces instead.
-5. **Who else reads a ground height** (trees, buildings, lamps, the revetment, the shore band, labels): list each and
-   what it samples (the field, or the drawn mesh). The deformer changes the drawn ground, and every one of
-   these must still sit on it.
+*The dispatched step list is in the Diary: `cartograph/_archive/BRIEF-the-ground-knows-its-height-section4-steps-2026-10-10.md`.
+Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each town's design.json), at exag 1.*
 
-6. **The shore: test the thesis, don't hunt holes** (§0(c)). Measure whether the waterline has one shape source or
-   two (the coast chain in ① vs the shore median's lidar trace: the distance between them along every shore, per town),
-   and whether the jags sit where the 2D edges place vertices on the 5 m terrain (per-vertex render sampling). Fix the gap
-   walk's camera first, so it never lands under the far bank (derive its standoff from the local water width, never the
-   20 m constant). Re-run it for a true baseline, then say whether the ~1417–1430 crack cluster survives on the fixed
-   instrument.
-
-Report counts per town, plus screenshots of HPDM's worst stretch from the street camera, then **STOP**.
+1. **Order: confirmed.** pipeline → promote-ribbons → terrain → ground (`serve.js` `runIfDirty`, `bake-reads.json`). Terrain
+   reads the raw elevation, bathymetry, water datums, boundary, geography and `osm.json` (the coast), and nothing the
+   ribbons make; the paint (`buildTileGround`) reads no terrain. LS's pour reads `raw/elevation.json` only for contour
+   lines and building elevations.
+2. **The walk tilts, and most of the tilt is the mesh.** Sidewalk, area-weighted, rendered vs the field's own
+   cross-slope: HPDM p90 45% vs 11% · LS 31% vs 9% · Huron 82% vs 8% · Provincetown 89% vs 19%. Even the field alone
+   exceeds the ruled 1:48 on 59–71% of the walk. ▶ `walk-slope.mjs <scene>` (worst stretches by tile.runs arc)
+3. **Cause measured: the bands were never refined.** `bake-ground`'s tiering gave asphalt, curb, treelawn and sidewalk
+   no refine policy, on the WRONG BELIEF that "their authored density already matches" (ARCHITECTURE; excised to the
+   Diary). HPDM sidewalk: longest-edge p50 59 m, max 557 m. At tile 116 (fauquier-drive · right · 2) the walk's lawn
+   edge, the chord of a 360 m triangle, sat 4–6 m under the terrain while its back edge followed it.
+   ▶ `trace-stretch.mjs hipointedemun 116 fauquier-drive right 2 40 7` · shots `hpdm-t116-*.png`, `hpdm-t152-*.png`
+4. **The kerb.** 265 T-junctions after `cutAlong`, 0 before; 258 on a crease. Mechanism not established
+   (`BRIEF-corner-ramps-and-kerb §9`, corrected). The ramp, flare and taper outlines are `kerbLift.mjs`'s own geometry
+   (`kerbRegions`, `taperRegions`), NOT partition pieces; the painter gives only the warning strips (`mat:curbCut`)
+   and each cut's `{face, inward}`. Slicing the paint with them was tried and failed (§9). ▶ `kerb-tj-where.mjs`
+5. **Who reads a ground height.** The drawn mesh: lamps, tree anchors. The field: buildings (plus only the mesh's
+   kerb y), ShoreMedian, the revetment drape, Movers, UserDot, PilgrimMonument, LafayetteParkBody. Labels: none.
+6. **The shore has two shape sources.** The lidar waterline lies p50 4.2 m (Huron) / 23 m (Provincetown) off the ①
+   coast stroke, with a median beside 42% / 80% of the line. At the 1 m trace's y = 0 the 5 m field reads p50 0.28 /
+   0.82 m. At the line the mesh's chord error is small (p50 2–5 cm), and the drawn land crosses the level FEWER times
+   per km than the field. ▶ `shore-sources.mjs`, `shore-jag.mjs`
+   **The gusset** (land above the water at the line): Huron p50 0.19 / p90 0.48 m on 74% of the line; Provincetown at
+   LOW p50 0.69 / p90 1.58 m on 94%, at HIGH on 3%. Where both sides carry ground, the drawn ground is continuous across
+   the line (p50 5–7 cm over 0.6 m). Its shape is recorded per segment for a treatment to read.
+   ▶ `gusset.mjs <scene>` → `gusset-<scene>.json`
+   The median's two lines are the S-curve's two ends in plan: the ① stroke, where the flat sheet meets the ground,
+   and the lidar waterline, where the real ground reaches the level.
+   Huron's shore carries near-coincident vertices 4.5 mm apart (shore vs residential at (2694.87, 586.40)), under the
+   5 mm on-edge tolerance: a lead for Argon's thin lines, not established.
+   Gap walk: standoff now derived (`gaps.jsx`). Its Huron baseline (2026-10-10) came back BLIND: 7,018 of
+   7,086 views reached the sky, the unchanged `far` view included, and the mutation found the same, so the check
+   voided itself. Cause not established; a one-station look comes before any re-run.
+7. **Mounds behind the walk (HPDM, 1 m lidar range-read).** Rise within 20 m of the walk's back edge ≥ 1 m at 25% of
+   stations; for those, run (10→90%) p50 12 m, p10 5.5 m, offset behind the walk p50 2 m. The steepest are 4–7 m over
+   1.5–2.5 m; the 5 m field carries them at ~1.3 m over 6.5–17 m. The rise CAN be located at the lidar's resolution.
+   ▶ `mounds.mjs hipointedemun <the town's lidar URLs>`
+8. **Terrain source.** HPDM's terrain was LS's 1/3″ tile (USGS n39w091, 38–39°N 90–91°W: a shared regional tile
+   reached by a symlink into LS's folder; the data covered HPDM, the input was LS's). Both towns now carry their own 1 m
+   list. `fetch-dem` had chosen surveys by tile box: for LS that picked a survey with 0% data over the town, and
+   `bake-terrain` would have baked it flat. Both now refuse. ▶ `checks/claims-a-dem-is-chosen-by-its-data.mjs` ·
+   `checks/claims-a-town-owns-its-raw-inputs.mjs`
 
 ## 5. The design: heights along ①, then ONE deformer that acts like curb geometry (Jacob, 2026-10-08)
 

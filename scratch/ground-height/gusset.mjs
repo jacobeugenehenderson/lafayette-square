@@ -8,7 +8,7 @@
 // THE GUSSET = the height of land above the water at the line (land − level), where it is positive: a wall from the
 // sheet's edge up to the land's lip. It OPENS TO THE SKY where the water side carries no ground to close it.
 // Usage: node --max-old-space-size=12000 scratch/ground-height/gusset.mjs <scene>
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../../cartograph/terrainLoad.js'
 import { waterRuns } from '../../cartograph/shoreRuns.mjs'
@@ -93,6 +93,8 @@ function drawnAt(x, z) {
   return water ? { g: 'water-only' } : null
 }
 const rows = []
+const _cum = new Map()
+function rowS(r, i) { if (!_cum.has(r)) { const c = [0]; for (let k = 1; k < r.length; k++) c.push(c[k - 1] + Math.hypot(r[k][0] - r[k - 1][0], r[k][1] - r[k - 1][1])); _cum.set(r, c) } return _cum.get(r)[i] }
 for (const r of runs) for (let i = 0; i + 1 < r.length; i++) {
   const [a, b] = [r[i], r[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 1e-6) continue
   const tx = (b[0] - a[0]) / L, tz = (b[1] - a[1]) / L
@@ -105,7 +107,7 @@ for (const r of runs) for (let i = 0; i + 1 < r.length; i++) {
     if (wa === wb) continue                                   // both or neither: not a land/water edge here
     const [land, wet] = wa ? [B, A] : [A, B]
     if (!land || land.g === 'water-only') continue
-    rows.push({ x, z, land: land.h, landG: land.g, wet: wet?.g === 'water-only' ? null : wet?.h ?? null, wetG: wet?.g ?? 'nothing', hi: W.highAt(x, z), lo: W.lowAt(x, z) })
+    rows.push({ run: runs.indexOf(r), s: +(rowS(r, i) + s).toFixed(1), x, z, land: land.h, landG: land.g, wet: wet?.g === 'water-only' ? null : wet?.h ?? null, wetG: wet?.g ?? 'nothing', hi: W.highAt(x, z), lo: W.lowAt(x, z) })
   }
 }
 const q = (a, ps) => { const s = a.filter(Number.isFinite).sort((x, y) => x - y); return ps.map(p => s.length ? s[Math.floor(p * (s.length - 1))] : NaN) }
@@ -129,3 +131,23 @@ const site = new Map(); for (const r of rows.filter(r => r.wet == null && r.land
 console.log(`  where a step > 0.25 m above HIGH has nothing beneath the water side (50 m cells): ${[...site].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `(${k}) ${v}`).join(' · ') || 'none'}`)
 const near1417 = rows.filter(r => Math.hypot(r.x - 1423, r.z + 323) < 15)
 if (near1417.length) console.log(`  near (1417–1430, −320…−326): ${near1417.length} stations · land ${f2(q(near1417.map(r => r.land), [0.5])[0])} m · water side ${[...new Set(near1417.map(r => r.wetG))].join('/')} · HIGH ${f2(near1417[0].hi)}`)
+
+// ⭐ THE GUSSET'S SHAPE AS DATA (Jacob, 2026-10-10: "it would determine particulate/fill size"): each contiguous stretch
+// of the line (stations ≤ 1.5 m apart on one run) where the land stands above the water, at HIGH and at LOW — its
+// length along the shore and its height profile. Written for a treatment to read; nothing reads it yet.
+const segs2 = {}
+for (const [nm, lvl] of [['high', r => r.hi], ['low', r => r.lo]]) {
+  const out = []; let cur = null
+  for (const r of rows) {
+    const h = r.land - lvl(r), up = h > 0
+    if (cur && (!up || r.run !== cur.run || r.s - cur.lastS > 1.5)) { out.push(cur); cur = null }
+    if (!up) continue
+    if (!cur) cur = { run: r.run, from: [+r.x.toFixed(1), +r.z.toFixed(1)], s0: r.s, lastS: r.s, h: [], open: 0 }
+    cur.lastS = r.s; cur.to = [+r.x.toFixed(1), +r.z.toFixed(1)]; cur.h.push(+h.toFixed(2)); if (r.wet == null) cur.open++
+  }
+  if (cur) out.push(cur)
+  segs2[nm] = out.map(c => { const hs = [...c.h].sort((a, b) => a - b); return { run: c.run, from: c.from, to: c.to, lengthM: +(c.lastS - c.s0 + 1).toFixed(1), heightP50: hs[Math.floor(hs.length / 2)], heightMax: hs[hs.length - 1], openStations: c.open, profileM: c.h } })
+  const L = segs2[nm].map(c => c.lengthM), [l50, l90] = q(L, [0.5, 0.9])
+  console.log(`  gusset segments at ${nm.toUpperCase()}: ${L.length} · length along the shore p50 ${f2(l50)} p90 ${f2(l90)} max ${f2(Math.max(0, ...L))} m · total ${L.reduce((a, b) => a + b, 0).toFixed(0)} m`)
+}
+writeFileSync(join(root, 'scratch/ground-height', `gusset-${scene}.json`), JSON.stringify({ scene, levels: { low: W.lowName, high: W.highName }, segments: segs2 }))

@@ -232,9 +232,11 @@ scene recorded.
 - ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
   longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the
-  cut takes ~2 s). What is left is **snap rounding**: where several creases meet within a millimetre (a cut's ramp +
-  flare corners — worst at (-414.857, 684.746)), on a mesh that already carries mm slivers, crossings 1 mm apart fall in
-  different weld buckets and the zero-area closers get re-cut into degenerate fans. ⛔ **Snap rounding is RULED OUT as the fix (Jacob, 2026-10-08: "I don't
+  cut takes ~2 s). Where they sit, re-measured 2026-10-10 (Talus, `scratch/ground-height/kerb-tj-where.mjs` on the
+  `scratch/kerb-cut` dump): 265 after the cut, 0 before it · 258 ON a crease (≤ 5 mm) · 131 within 2 mm of a ramp, flare or
+  taper corner · curb-on-asphalt 100, asphalt-on-asphalt 93 · worst site still (-414.857, 684.746). ⛔ Only 1 of 265
+  sits where two crease endpoints meet within 1 mm, so "several creases meeting within a millimetre" is NOT borne out;
+  the mechanism is not established. ⛔ **Snap rounding is RULED OUT as the fix (Jacob, 2026-10-08: "I don't
   understand how this fits with the protopolygon; it exists for exactly this reason").** Cutting creases into a conformed
   mesh is the after-the-fact path the protopolygon replaces: the ramp, flare and taper outlines are pieces built from the
   shape chain (① → ② → the bands; ① stays width-free), and the ground is meshed from them, with nothing cut afterwards. This item now lives in
