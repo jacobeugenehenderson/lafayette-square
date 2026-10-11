@@ -24,15 +24,17 @@ const ulp32 = (v) => 2 ** (Math.floor(Math.log2(Math.max(Math.abs(v), 1))) - 23)
 const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's tilt and the mesh's chord error share the town's own walk norm
 const LATTICE = 0.001   // the partition's own 1 mm grid: crossings closer than this are one crossing point
 
-/** @param tiles shape.json tiles (runs carry `h`) · @param bands { curb, lawn, walk }: arrays of {outer, holes}|ring
- *  @param raw (x, z) → terrain raw · @param limits { walkMax, lawnMax (null = none), exag, blend } */
-export function buildDeformer({ tiles, bands, raw, limits }) {
+/** @param tiles shape.json tiles (runs carry `h`) · @param bands { curb, lawn, walk }: arrays of {outer, holes}|ring, AS
+ *  PAINTED (before the flatten punches overlays through them) · @param stencil the town's disc ring (beyond it nothing is
+ *  drawn: the rim is an edge of the drawing, never a lot) · @param raw (x, z) → terrain raw
+ *  @param limits { walkMax, lawnMax (null = none), exag, blend } */
+export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   const { walkMax, lawnMax, exag, blend, sigma } = limits
   if (!(sigma > 0)) throw new Error(`groundDeformer: the smoothing window must be metres > 0, got ${sigma}`)
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, hFilled: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0 }
+  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, hFilled: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -46,6 +48,8 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
     for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) { const k = x * 1000003 + z; (segGrid.get(k) || segGrid.set(k, []).get(k)).push(s) }
   }
   for (const [cls, rings] of Object.entries(classRings)) for (const r of rings) for (let i = 0; i < r.length; i++) addSeg(cls, r[i], r[(i + 1) % r.length])
+  const disc = stencil?.length >= 3 ? stencil : null
+  if (disc) for (let i = 0; i < disc.length; i++) addSeg('beyond', disc[i], disc[(i + 1) % disc.length])
   const pipRings = (x, z, rings) => { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
     if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
   // per-class point-in-polygon through a coarse ring index (rings by bbox cell)
@@ -107,7 +111,7 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
       if (known < n) stats.hFilled += n - known
       if (known < n) for (let pass = 0; pass < n && H.some(h => h == null); pass++) for (let i = 0; i < n; i++) if (H[i] == null) {
         const a = H[(i + n - 1) % n], b = H[(i + 1) % n]; if (a != null || b != null) H[i] = a != null && b != null ? (a + b) / 2 : (a ?? b) }
-      rings.push({ ring, H })
+      rings.push({ ring, H, stamp, arc, t: T.length, k: ri })
     })
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
@@ -142,6 +146,22 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
     }
     return best && { ...best, d: Math.sqrt(bd) }
   }
+  // every OWNER within maxD: one candidate per ② span — a corner arc, or a stretch of one run (`iaStamp`) — at the span's
+  // nearest point to (x, z), nearest first. The owner a point belongs to is chosen from these by its BAND, never by distance.
+  const owners = (t, x, z, maxD) => {
+    const by = new Map()
+    const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL), R = Math.ceil(maxD / CELL)
+    for (let ix = cx - R; ix <= cx + R; ix++) for (let iz = cz - R; iz <= cz + R; iz++) for (const s of t.segs.get(ix * 1000003 + iz) || []) {
+      const dx = s.q[0] - s.p[0], dz = s.q[1] - s.p[1], L2 = dx * dx + dz * dz
+      const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - s.p[0]) * dx + (z - s.p[1]) * dz) / L2)) : 0
+      const px = s.p[0] + u * dx, pz = s.p[1] + u * dz, d = Math.hypot(x - px, z - pz)
+      if (d > maxD) continue
+      const a = s.R.arc[s.i], key = a != null ? `a${a}` : `r${s.R.stamp[s.i]}`, k = s.R
+      let m = by.get(k); if (!m) by.set(k, m = new Map())
+      const cur = m.get(key); if (!cur || d < cur.d) m.set(key, { px, pz, H: s.hp + u * (s.hq - s.hp), R: s.R, i: s.i, u, d, key, run: a != null ? null : s.R.stamp[s.i] })
+    }
+    return [...by.values()].flatMap(m => [...m.values()]).sort((a, b) => a.d - b.d)
+  }
   // the bands along a ray from (px, pz) in direction (ux, uz), out to `len`: [{ from, to, cls }]. Cells are walked in
   // order along the ray; each class's state starts from one point-in-polygon just inside ② and toggles at every crossing
   // of its own boundary, so no interval needs a polygon test; the walk stops once a lot follows the band.
@@ -149,8 +169,9 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
     stats.rays++
     // ⛔ the first state is probed PAST the lattice: the bands are on Clipper's 1 mm grid and ② is not, so a probe nearer
     // than the grid can sit outside a curb whose edge is ② itself — and the whole band read as lot (measured, HPDM)
-    const eps = 2 * LATTICE, inside = { walk: inClass('walk', px + ux * eps, pz + uz * eps), lawn: inClass('lawn', px + ux * eps, pz + uz * eps), curb: inClass('curb', px + ux * eps, pz + uz * eps) }
-    const cls = () => inside.walk ? 'walk' : inside.lawn ? 'lawn' : inside.curb ? 'curb' : 'lot'
+    const eps = 2 * LATTICE, inside = { walk: inClass('walk', px + ux * eps, pz + uz * eps), lawn: inClass('lawn', px + ux * eps, pz + uz * eps), curb: inClass('curb', px + ux * eps, pz + uz * eps),
+      beyond: !!disc && !pipRings(px + ux * eps, pz + uz * eps, [disc]) }
+    const cls = () => inside.beyond ? 'beyond' : inside.walk ? 'walk' : inside.lawn ? 'lawn' : inside.curb ? 'curb' : 'lot'
     const out = [{ from: 0, to: len, cls: cls() }]
     const seen = new Set()
     let cx = Math.floor(px / CELL), cz = Math.floor(pz / CELL)
@@ -176,7 +197,7 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
         while (pending.length && pending[0].t - t0 <= LATTICE) { const h = pending.shift(); inside[h.cls] = !inside[h.cls] }
         const c = cls(), last = out[out.length - 1]
         if (c !== last.cls) { last.to = t0; out.push({ from: t0, to: len, cls: c }) }
-        if (c !== 'lot') sawBand = true
+        if (c !== 'lot' && c !== 'beyond') sawBand = true
         else if (sawBand) return out
       }
       if (tMaxX < tMaxZ) { tCell = tMaxX; tMaxX += tDX; cx += stepX } else { tCell = tMaxZ; tMaxZ += tDZ; cz += stepZ }
@@ -184,6 +205,11 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
     return out
   }
 
+  // the ped band a ray finds: the run of curb/lawn/walk from ② inward, up to the first lot. Beyond the disc is the
+  // drawing's edge, not a lot: a band whose station lies outside the disc starts where the disc does (the rim cut it)
+  const pedOf = (B) => { const ped = []; let back = 0
+    for (const b of B) { if (b.cls === 'beyond') { if (ped.length) break; continue } if (b.cls === 'lot') break; ped.push(b); back = b.to }
+    return { ped, back } }
   // the deepest a ped band reaches past ② (for the early-out): measured off the drawn bands, never a constant
   const REACH = (() => { let m = 0; for (const rings of [classRings.walk, classRings.lawn, classRings.curb]) for (const r of rings) {
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, z] of r) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
@@ -221,8 +247,8 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
       ux *= sideSign; uz *= sideSign
       const H = R.H[S.i] + S.u * (R.H[(S.i + 1) % n] - R.H[S.i])
       const B = bandsAlong(px - uz * SIDESTEP, pz + ux * SIDESTEP, ux, uz, CAP)
-      let back = 0, lawnW = 0, walkW = 0
-      for (const b of B) { if (b.cls === 'lot') break; back = b.to; if (b.cls === 'lawn') lawnW += b.to - b.from; else if (b.cls === 'walk') walkW += b.to - b.from }
+      const { ped, back } = pedOf(B); let lawnW = 0, walkW = 0
+      for (const b of ped) { if (b.cls === 'lawn') lawnW += b.to - b.from; else if (b.cls === 'walk') walkW += b.to - b.from }
       const head = 4 * ulp32(H)
       S.Araw = raw(px + ux * back, pz + uz * back) - H
       S.cap = (lawnW > 0 ? (lawnMax == null ? Infinity : Math.max(0, lawnMax * lawnW / exag - head)) : 0) + Math.max(0, WALK_SHARE * walkMax * walkW / exag - head)
@@ -259,26 +285,52 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
 
   /** D(x, z): the deformed raw height, or null where the deformer does not reach (the caller draws the terrain). */
   const memo = new Map()
-  function heightAt(x, z) {
+  const heightAt = (x, z) => resolve(x, z).v
+  /** who owns (x, z): `${tile}|${ring}|${span}` of the ② span whose band holds it (or, in the lot, the nearest span), or null */
+  const ownerAt = (x, z) => resolve(x, z).owner
+  const NONE = { v: null, owner: null }, UNOWNED = { v: null, owner: null, unowned: true }
+  /** true where (x, z) lies in a drawn ped band that no ② span's band reaches — its own failure class, never the nearer line */
+  const isUnowned = (x, z) => resolve(x, z) === UNOWNED
+  const own = (c) => `${c.R.t}|${c.R.k}|${c.key ?? nearKey(c)}`
+  function resolve(x, z) {
     const mk = `${Math.round(x * 1000)},${Math.round(z * 1000)}`
     if (memo.has(mk)) return memo.get(mk)
-    const v = heightAtUncached(x, z); memo.set(mk, v); return v
+    const v = resolveUncached(x, z); memo.set(mk, v); return v
   }
-  function heightAtUncached(x, z) {
+  function resolveUncached(x, z) {
     const t = tileAt(x, z)
-    if (!t) { stats.outside++; return null }
+    if (!t) { stats.outside++; return NONE }
     const n = nearest(t, x, z, CAP)
-    if (!n || n.d > CAP) { stats.deep++; return null }
+    if (!n || n.d > CAP) { stats.deep++; return NONE }
     stats.evaluated++
-    const inside = pipRings(x, z, t.iA)                     // in the block, past the kerb face
-    if (!inside || n.d < 1e-9) return n.H                    // road side, or on ② itself
+    if (!pipRings(x, z, t.iA) || n.d < 1e-9) return { v: n.H, owner: own(n) }     // road side, or on ② itself
+    // ⭐⭐ THE BAND DECIDES, NEVER THE NEARER LINE (Jacob, 2026-10-11, via Boz). A point in a ped band takes its height
+    // from the ② span whose own band holds it: the spans within reach, nearest first, each tracing its band inward from
+    // its own station; the first whose band reaches the point owns it. Where two streets run close, the nearer ② can be
+    // the other street's, whose band (or bare edge) never reaches this walk — measured on HPDM, central-avenue-0: a walk
+    // read off the highway's ② sat 5 m below its own street.
+    // A point no band holds is the lot: the nearest span's ease, as before (`nearest`).
+    // ⛔ A point INSIDE a drawn ped band that no span's band reaches has no owner: COUNTED by name (`unowned`), and its
+    // height is null — never the nearer line's.
+    for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) {
+      if (c.d < 1e-9) return { v: c.H, owner: own(c) }
+      const p = profile(c, x, z)
+      if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c) } }
+    }
+    if (inBand(x, z)) { stats.unowned++; return UNOWNED }
+    return { v: profile(n, x, z).v, owner: own(n) }
+  }
+  const nearKey = (n) => n.R.arc[n.i] != null ? `a${n.R.arc[n.i]}` : `r${n.R.stamp[n.i]}`
+  const inBand = (x, z) => inClass('walk', x, z) || inClass('lawn', x, z) || inClass('curb', x, z)
+  // THE PROFILE from one ② span `n` (its station, H, ring position) at (x, z): { v, held } — held = the point lies in
+  // that span's own ped band (to the lattice)
+  function profile(n, x, z) {
     const ux = (x - n.px) / n.d, uz = (z - n.pz) / n.d
     // ⛔ the ray is aimed AT this point, which is often a band polygon's own vertex: run it 10 µm to the side, so it never
     // passes exactly through a boundary vertex (where the half-open crossing rule can count a boundary 0 or 2 times)
     const B = bandsAlong(n.px - uz * SIDESTEP, n.pz + ux * SIDESTEP, ux, uz, CAP)
-    // the ped band = the run of curb/lawn/walk from ② inward, up to the first lot
-    let back = 0; const ped = []
-    for (const b of B) { if (b.cls === 'lot') break; ped.push(b); back = b.to }
+    const { ped, back } = pedOf(B)
+    const held = ped.length > 0 && n.d <= back + LATTICE
     const R = absorbAt(n.R, n.i, n.u)                        // the absorption along ②, continuous along the street
     let walkW = 0, lawnW = 0; for (const b of ped) { if (b.cls === 'walk') walkW += b.to - b.from; else if (b.cls === 'lawn') lawnW += b.to - b.from }
     // THE GIRDLE, in Jacob's order: the LAWN takes the rise first (up to its limit), the walk only what the lawn cannot,
@@ -296,17 +348,21 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
         if (s <= b.to) return h + sgn * share * (s - b.from) / w
         h += sgn * share }
       return h }
-    if (n.d <= back) return at(n.d)
+    if (n.d <= back) return { v: at(n.d), held }
     const hBack = at(back)
-    if (n.d >= back + blend) return raw(x, z)
+    if (n.d >= back + blend) return { v: raw(x, z), held }
     stats.eased++
     const f = (n.d - back) / blend
-    return hBack + (raw(x, z) - hBack) * f
+    return { v: hBack + (raw(x, z) - hBack) * f, held }
   }
   // for probes: the station, the depth and the band intervals a point's ray finds (never used by the bake)
   const explain = (x, z) => { const t = tileAt(x, z); if (!t) return { outside: true }; const n = nearest(t, x, z, CAP); if (!n) return { deep: true }
     const ux = (x - n.px) / n.d, uz = (z - n.pz) / n.d
     return { station: [n.px, n.pz], H: n.H, d: n.d, inBlock: pipRings(x, z, t.iA), bands: n.d > 0 ? bandsAlong(n.px - uz * SIDESTEP, n.pz + ux * SIDESTEP, ux, uz, CAP) : [] } }
+  // for probes: every owner candidate at (x, z) with the bands its ray finds (never used by the bake)
+  const _owners = (x, z) => { const t = tileAt(x, z); if (!t) return []
+    return owners(t, x, z, CAP).map(c => { const ux = (x - c.px) / c.d, uz = (z - c.pz) / c.d
+      return { key: c.key, run: c.run, d: c.d, H: c.H, bands: c.d > 0 ? bandsAlong(c.px - uz * SIDESTEP, c.pz + ux * SIDESTEP, ux, uz, CAP) : [] } }) }
   // the drawing's half of the walk limit, as a vertical chord tolerance over the town's narrower walks (p10 of the walk
   // widths the stations measured): what the bake refines the ped bands to. Null where the town names no walk limit.
   walkWidths.sort((a, b) => a - b)
@@ -314,5 +370,5 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
   // over HALF the walk: the gate judges each half of the cross-section (front→middle, middle→back), so the drawing's
   // chord error is spent over a half-width, never the whole one
   const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * (walkP10 / 2) / exag : null
-  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M }
+  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, isUnowned, ownerAt, _owners, _inClass: inClass }
 }

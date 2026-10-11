@@ -1108,12 +1108,15 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // exact at every exaggeration. A town with no terrain writes neither.
   let rawByteOffset = 0, gradByteOffset = 0
   const rawChunks = [], gradChunks = []
-  const deformTally = { verts: 0, terrainOnly: 0 }
+  const deformTally = { verts: 0, terrainOnly: 0, unowned: 0, unownedAt: [] }
   // per-vertex D, and the area-weighted mean of the incident triangles' gradients of D and of the mesh's own y
   const terrainPart = (P, I) => {
     const nv = P.length / 3, D = new Float32Array(nv), G = new Float32Array(nv * 4), W = new Float32Array(nv)
     for (let v = 0; v < nv; v++) { const h = deform.heightAt(P[v * 3], P[v * 3 + 2])
-      if (h == null) { deformTally.terrainOnly++; D[v] = deformTerrain.getElevationRaw(P[v * 3], P[v * 3 + 2]) } else D[v] = h }
+      if (h == null) { D[v] = deformTerrain.getElevationRaw(P[v * 3], P[v * 3 + 2])
+        // ⛔ a ped vertex no painted band owns is its own class, named in the manifest (`deform.unowned`) for the check
+        if (deform.isUnowned(P[v * 3], P[v * 3 + 2])) { deformTally.unowned++; if (deformTally.unownedAt.length < 50) deformTally.unownedAt.push([+P[v * 3].toFixed(2), +P[v * 3 + 2].toFixed(2)]) }
+        else deformTally.terrainOnly++ } else D[v] = h }
     deformTally.verts += nv
     for (let t = 0; t < I.length; t += 3) {
       const a = I[t], b = I[t + 1], c = I[t + 2]
@@ -1231,10 +1234,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     deformTerrain = loadSceneTerrain(scene)
     const walkN = resolveWalkNorm(scene, null), lawnN = resolveLawnNorm(scene, null)
     const blendM = Number.isFinite(design.groundBlendM) && design.groundBlendM > 0 ? design.groundBlendM : deformTerrain.stepM
-    const keysOf = (pre) => [...flattened.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => flattened.get(k) || [])
     const _td = Date.now()
+    // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
+    // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
+    const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
     deform = buildDeformer({ tiles: shapeArtifact,
-      bands: { curb: [...(flattened.get('mat:curb') || []), ...(flattened.get('mat:curbCut') || [])], lawn: keysOf('mat:treelawn'), walk: flattened.get('mat:sidewalk') || [] },
+      bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
+      stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,
       // a town naming no walk limit keeps its walk exactly level (the limit only PERMITS a fall); no lawn limit = the lawn takes it all
       // σ: the line's own window (lineHeight.mjs), so the absorption is smoothed along ② exactly as H is along the line
@@ -1599,7 +1605,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const gradSectionStart = rawSectionStart + rawByteOffset
   for (const g of groups) if (g.gradByteOffset != null) g.gradByteOffset += gradSectionStart
   for (const c of gradChunks) { buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off); off += c.byteLength }
-  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile, or deeper than the bands + ease) draw the terrain itself · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
+  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile, or deeper than the bands + ease) draw the terrain itself · ${deform.stats.byBand} owned by their band rather than the nearer line${deformTally.unowned ? ` · ⛔ ${deformTally.unowned} in a ped band NO painted band owns, first at (${deformTally.unownedAt[0]}) — drawn at the terrain, named in ground.json deform.unowned` : ''} · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
 
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
   // BakedGround's UV2 stay concentric with face/street fades. The half-extent must
@@ -1715,6 +1721,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // F3 / F2 disclosure: did this scene have terrain, how was each partition group refined, and how many
     // slivers it came out with — read by the two ground-shape checks.
     ...(groundShape ? { groundShape } : {}),
+    // the deformer's ownership disclosure: ped vertices no painted band owns (the band decides, never the nearer line)
+    ...(deform ? { deform: { unowned: deformTally.unowned, unownedAt: deformTally.unownedAt, byBand: deform.stats.byBand } } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
     ...(sameGround ? priorMaps : {}),
   }
