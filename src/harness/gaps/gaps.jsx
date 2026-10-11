@@ -75,12 +75,29 @@ async function stations(stencil) {
       carry = (carry - L) % step; if (carry < 0) carry += step
     }
   }
-  return { list: out, gridM }
+  return { list: out, gridM, inWater }
+}
+
+// ⭐ THE NEAR VIEWS' STANDOFF IS THE PLACE'S, NOT A CONSTANT (2026-10-10, BRIEF-the-ground-knows-its-height §4.6). It was
+// `out: ±20`, and on a ~12 m channel 20 m out along the normal is under the far bank (Huron's 9,212 px "hole" was the
+// camera, not the shore). Now: the nearer of where the view's own centre ray meets y = 0 (up / tan|pitch|) and HALF the
+// local width on the camera's side (water for near-from-water, land for near-from-land), walked along the normal on the
+// drawing at a quarter grid step. `far` is unchanged.
+function sideWidth(inWater, s, sign, wet, gridM, reachM) {
+  const d = gridM / 4
+  for (let t = d; t <= reachM; t += d) if (inWater(s.x + s.nx * sign * t, s.z + s.nz * sign * t) !== wet) return t
+  return reachM
+}
+function standoff(v, s, inWater, gridM) {
+  if (!v.near) return v.out
+  const aim = v.up / Math.tan(Math.abs(v.pitch) * Math.PI / 180)
+  const sign = Math.sign(v.out), wet = sign > 0
+  return sign * Math.min(aim, sideWidth(inWater, s, sign, wet, gridM, 2 * aim) / 2)
 }
 
 const VIEWS = [
-  { id: 'near-from-water', out: 20, up: 1.7, pitch: -12, look: -1, ground: false },
-  { id: 'near-from-land', out: -20, up: 1.7, pitch: -12, look: 1, ground: true },
+  { id: 'near-from-water', near: true, out: 1, up: 1.7, pitch: -12, look: -1, ground: false },   // out: the SIDE (+ water)
+  { id: 'near-from-land', near: true, out: -1, up: 1.7, pitch: -12, look: 1, ground: true },     // — the distance is `standoff`
   { id: 'far', out: 150, up: 40, pitch: -14, look: -1, ground: false },
 ]
 const rafs = (n) => new Promise((r) => { const f = () => (n-- <= 0 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f) })
@@ -116,11 +133,14 @@ function Walker({ stencil, groups }) {
       const bed = terrainBed()
       if (!(bed?.visibleToM > 0)) throw new Error('terrain.json carries no bed.visibleToM — cannot tell shallow water from deep')
       let deep = 0
+      const standoffs = {}
       const gaps = [], perView = Object.fromEntries(VIEWS.map(v => [v.id, { views: 0, withGap: 0, pixels: 0 }]))
       for (let k = 0; k < list.length && !dead; k++) {
         const s = list[k]
         for (const v of VIEWS) {
-          const ex = s.x + s.nx * v.out, ez = s.z + s.nz * v.out
+          const out = standoff(v, s, all.inWater, gridM)
+          const ex = s.x + s.nx * out, ez = s.z + s.nz * out
+          if (v.near) (standoffs[v.id] ||= []).push(Math.abs(out))
           const base = v.ground ? Math.max(0, getElevationRaw(ex, ez)) * exag : 0
           camera.position.set(ex, base + v.up, ez)
           const p = v.pitch * Math.PI / 180, dx = s.nx * v.look, dz = s.nz * v.look
@@ -149,7 +169,8 @@ function Walker({ stencil, groups }) {
         }
         if (k % 50 === 0) window.__gapsProgress = `${k}/${list.length}`
       }
-      window.__gaps = { done: true, look: LOOK, every: EVERY, gridM: +gridM.toFixed(3), stations: list.length, size: [W, H], fov: FOV,
+      const sq = (a) => { const t = [...a].sort((x, y) => x - y); return a.length ? { min: +t[0].toFixed(2), p10: +t[Math.floor(0.1 * (t.length - 1))].toFixed(2), p50: +t[Math.floor(0.5 * (t.length - 1))].toFixed(2), max: +t[t.length - 1].toFixed(2) } : null }
+      window.__gaps = { done: true, look: LOOK, standoffM: Object.fromEntries(Object.entries(standoffs).map(([k, a]) => [k, sq(a)])), every: EVERY, gridM: +gridM.toFixed(3), stations: list.length, size: [W, H], fov: FOV,
         hide: HIDE, hiddenMeshes: hidden, perView, gaps, deepPixels: deep, visibleToM: bed.visibleToM }
       document.title = 'DONE'
     })().catch(e => { window.__gaps = { done: true, error: String(e?.stack || e) }; document.title = 'DONE' })

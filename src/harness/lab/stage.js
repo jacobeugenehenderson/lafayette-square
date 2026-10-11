@@ -45,6 +45,15 @@ export async function listStages(lookId, bust) {
 
 /** Resolve a stage name to a world XZ point (and a facing, for the eye camera). */
 export async function resolveStage(lookId, stageId, bust) {
+  // ⭐ `xz:<x>,<z>[,<nx>,<nz>]` — a point named by its coordinates, so a measured defect can be looked at where it was
+  // measured (BRIEF-the-ground-knows-its-height §4). The optional facing is the direction the camera stands back along.
+  if (stageId.startsWith('xz:')) {
+    const v = stageId.slice(3).split(',').map(Number)
+    if (!(v.length === 2 || v.length === 4) || !v.every(Number.isFinite)) throw new Error(`⛔ stage "${stageId}": expected xz:<x>,<z> or xz:<x>,<z>,<nx>,<nz>`)
+    const L = v.length === 4 ? Math.hypot(v[2], v[3]) : 0
+    if (v.length === 4 && !(L > 0)) throw new Error(`⛔ stage "${stageId}": the facing (${v[2]}, ${v[3]}) has no length`)
+    return { x: v[0], z: v[1], normal: L ? [v[2] / L, v[3] / L] : [1, 0], why: `the point named by the URL (${v[0]}, ${v[1]})` }
+  }
   if (stageId === 'revetment') {
     const doc = await getJSON(lookId, 'revetment.json', bust)
     let best = null, bestArc = null, bi = -1
