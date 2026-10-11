@@ -66,6 +66,13 @@ heads and the push-button triangle**. The pedestrian heads are blank orange pane
      (23k → 21k instead of → 10k). The attribute survives decimation (every piece is still there at r0.25) and is the
      runtime's lit mask in one draw.
    - The UI: an icon gallery, and a preview stage where you set the forward direction, tag the lit pieces and watch the sequence.
+   - ✅ **A library of packs, chosen per model** *(Jacob, 2026-10-11: "that's the point of a library, to make choices")*. Each asset
+     is keyed `<pack>/<id>`. `street-collection-3` stays, likely for few-instance hardware (signals). A low-poly pack is to come,
+     likely for lamps. The workstage shows each model's **cost**: triangles × each town's census for its role.
+   - ⚠️ **The ingest is fitted to pack #1, on purpose, until pack #2 arrives.** It reads OBJ+MTL only, takes the unit from
+     3ds Max's `uses <unit> as units` header, and names pieces by the material's `SGn` suffix. A pack without these
+     **throws**; it doesn't guess. Generalize all three when the next pack arrives: a GLB reader, the unit from the file's
+     metadata or the pack's declaration, and piece names that don't assume `SGn`.
 2. **Lamps join the catalog.** `lampModels.js` becomes the catalog's lamp family and **is deleted in the same commit**. Its contract
    carries over (`headY`, lit mask driving the Bulb knob, absent ⇒ standard, said; unknown id throws). The pack's posts become entries.
    **LS moves to the pack's Victorian.** `public/models/lamp-posts/victorian-lamp.glb` and the unused vendor files beside it are deleted

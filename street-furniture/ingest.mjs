@@ -1,9 +1,12 @@
 // Street furniture ingest — BRIEF-street-furniture §The work step 1.
 //
-//   node street-furniture/ingest.mjs <pack-dir> [--only=<id,...>]
+//   node street-furniture/ingest.mjs <pack-dir> --pack=<pack-id> [--only=<id,...>]
+//
+// The library holds more than one pack (Jacob, 2026-10-11: "that's the point of a library, to make choices");
+// each is ingested under its own id, named by the operator (⛔ never inferred from a filename).
 //
 // Reads the pack's obj.zip (OBJ + MTL, flat Kd colours, no textures) and Icons.zip, and writes into
-// street-furniture/out/ (gitignored there: the pack's derivatives are not committed until served, per
+// street-furniture/out/<pack-id>/ (out/ is gitignored: the pack's derivatives are not committed until served, per
 // the licence ruling):
 //   <id>.lod0.glb, <id>.r0.5.glb, <id>.r0.25.glb · icons/<id>.png · catalog.json (what was MEASURED)
 // What is AUTHORED lives in street-furniture/tags.json, and src/street-furniture/contract.js decides
@@ -23,9 +26,10 @@ import { weld, dedup, prune, simplify } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const OUT = join(HERE, 'out')
 const [packDir, ...flags] = process.argv.slice(2)
-if (!packDir) throw new Error('usage: ingest.mjs <pack-dir> [--only=a,b]')
+const PACK = flags.find(f => f.startsWith('--pack='))?.slice(7)
+if (!packDir || !/^[a-z0-9-]+$/.test(PACK ?? '')) throw new Error('usage: ingest.mjs <pack-dir> --pack=<pack-id, lowercase-dashed> [--only=a,b]')
+const OUT = join(HERE, 'out', PACK)
 const only = flags.find(f => f.startsWith('--only='))?.slice(7).split(',')
 
 const UNIT_TO_M = { centimeters: 0.01, millimeters: 0.001, meters: 1, inches: 0.0254, feet: 0.3048 }
@@ -33,7 +37,7 @@ const UNIT_TO_M = { centimeters: 0.01, millimeters: 0.001, meters: 1, inches: 0.
 const LOD_RATIOS = [0.5, 0.25]
 
 mkdirSync(join(OUT, 'icons'), { recursive: true })
-writeFileSync(join(OUT, '.gitignore'), '*\n')
+writeFileSync(join(HERE, 'out', '.gitignore'), '*\n')
 const SRC = join(OUT, '_src')
 for (const z of ['obj.zip', 'Icons.zip']) {
   const zip = join(packDir, z)
@@ -171,10 +175,10 @@ for (const f of readdirSync(objDir).filter(f => f.endsWith('.obj')).sort()) {
   const icon = readdirSync(join(SRC, 'Icons')).find(n => normId(basename(n, '.png')) === id)
   if (!icon) throw new Error(`${id}: no icon in Icons.zip`)
   copyFileSync(join(SRC, 'Icons', icon), join(OUT, 'icons', `${id}.png`))
-  catalog.set(id, { id, family: id.replace(/_\d+$/, ''), source: `obj.zip:obj/${f}`, unit: o.unit, bbox: bbox(o), lods, pieces })
+  catalog.set(id, { pack: PACK, id, family: id.replace(/_\d+$/, ''), source: `obj.zip:obj/${f}`, unit: o.unit, bbox: bbox(o), lods, pieces })
   console.log(`${id.padEnd(20)} ${lods.map(l => `${l.key} ${l.tris}`).join(' · ')} · ${pieces.length} pieces`)
 }
 const assets = [...catalog.values()].sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }))
-writeFileSync(join(OUT, 'catalog.json'), JSON.stringify({ generatedBy: 'street-furniture/ingest.mjs', assets }, null, 1))
+writeFileSync(join(OUT, 'catalog.json'), JSON.stringify({ generatedBy: 'street-furniture/ingest.mjs', pack: PACK, packDir, assets }, null, 1))
 rmSync(SRC, { recursive: true, force: true })
 console.log(`\n${assets.length} assets in ${join(OUT, 'catalog.json')}`)

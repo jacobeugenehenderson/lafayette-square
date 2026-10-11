@@ -2,7 +2,8 @@
 // workstage (src/street-furniture/) and the server (street-furniture/serve.js), so the page and the
 // server can't disagree about when an asset is ready.
 //
-// An asset's AUTHORED record (street-furniture/tags.json[id]):
+// The library holds more than one pack, so an asset's key is `<pack>/<id>` (assetKey).
+// An asset's AUTHORED record (street-furniture/tags.json[key]):
 //   { mount, forward, lod, pieces: { '<SGn>#<k>': role }, excluded?: '<why>' }
 // ⛔ No field has a default. An asset with any field missing, or missing a role its family requires,
 //    is REFUSED and says why.
@@ -30,9 +31,36 @@ export const REQUIRED_ROLES = {
 
 export function familyOf(id) { return id.replace(/_\d+$/, '') }
 
+// How many of a family a town would place: the census its role is counted by (street-furniture/serve.js
+// reads each from the town's own files). A family with no census says why. ⛔ It never shows 0 for "unknown".
+export const CENSUS_OF = {
+  street_light:   'lamps',
+  street_lamp:    'lamps',
+  traffic_light:  'signals',
+  street_pointer: 'junctions',
+  bench:          'benches',
+  bin:            'bins',
+  bus_stop:       'bus-stops',
+}
+export const CENSUS = {
+  lamps:       { label: 'lamps (the lamp census)',              from: 'public/baked/<look>/lamps.json' },
+  signals:     { label: 'signal nodes (≈ one per approach)',   from: 'raw/osm.json pois · highway=traffic_signals' },
+  junctions:   { label: 'junctions of 3+ streets (one sign each)', from: 'clean/skeleton.json junctions' },
+  benches:     { label: 'benches',                              from: 'raw/osm.json pois · amenity=bench' },
+  bins:        { label: 'litter bins',                          from: 'raw/osm.json pois · amenity=waste_basket' },
+  'bus-stops': { label: 'bus stops',                            from: 'raw/osm.json pois · highway=bus_stop' },
+}
+export const NO_CENSUS_WHY = {
+  hydrant: 'no census: fetch.js never asks OSM for emergency=fire_hydrant',
+}
+export const censusOf = id => CENSUS_OF[familyOf(id)] ?? null
+export const noCensusWhy = id => NO_CENSUS_WHY[familyOf(id)] ?? 'no census: no placement rule for this family yet'
+
 // → { ready: boolean, reasons: string[] }
+export const assetKey = asset => `${asset.pack}/${asset.id}`
+
 export function assetStatus(asset, tags) {
-  const t = tags?.[asset.id]
+  const t = tags?.[assetKey(asset)]
   if (t?.excluded) return { ready: false, excluded: true, reasons: [`excluded: ${t.excluded}`] }
   const reasons = []
   if (!t) return { ready: false, reasons: ['untagged'] }

@@ -6,7 +6,7 @@ import { mkdtempSync, existsSync, readFileSync, writeFileSync, rmSync } from 'fs
 import { tmpdir } from 'os'
 import { join } from 'path'
 const arg = (k, d) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=')[1] ?? d
-const ASSET = arg('asset', 'traffic_light_3'), OUT = arg('out', join(tmpdir(), `sf-${ASSET}.png`))
+const ASSET = arg('asset', 'street-collection-3/traffic_light_3'), OUT = arg('out', join(tmpdir(), `sf-${ASSET.replace('/', '_')}.png`))
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 const profile = mkdtempSync(join(tmpdir(), 'sf-render-'))
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0',
@@ -28,7 +28,7 @@ try {
   const js = async expr => (await cdp('Runtime.evaluate', { expression: expr, returnByValue: true }, S)).result?.value
   await cdp('Page.navigate', { url: `http://localhost:5173/street-furniture?asset=${ASSET}` }, S)
   let ok = false
-  for (let i = 0; i < 60 && !ok; i++) { await sleep(500); ok = await js(`!!document.querySelector('canvas') && document.body.innerText.includes('${ASSET}')`) }
+  for (let i = 0; i < 60 && !ok; i++) { await sleep(500); ok = await js(`!!document.querySelector('canvas') && document.body.innerText.includes('${ASSET.split('/')[1]}')`) }
   await sleep(2500)
   const rect = await js(`(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return [r.x, r.y, r.width, r.height] })()`)
   // Click a column of points down the middle of the canvas until one lands on a piece.
