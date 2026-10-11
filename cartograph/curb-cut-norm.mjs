@@ -136,3 +136,17 @@ export function resolveWalkNorm(scene, state) {
   if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveWalkNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
   return resolveKind('walk', validateWalk, scene, state, {})
 }
+
+// ⭐ THE LAWN — the steepest a mowed lawn may slope (`slopeMax`, "rise:run"): the girdle (Jacob, 2026-10-11) keeps the walk
+// level and lets the lawn take the cross-fall up to this, the remainder easing into the lot. Kit = no limit. The VALUE is
+// Jacob's to rule, from a permitted source (`references/registry.json` q-mowable-lawn-slope). Read at bake time, not frozen.
+function validateLawn(n, where) {
+  if (!n || typeof n !== 'object') throw new Error(`${where}: a lawn norm must be an object { slopeMax }`)
+  return n.slopeMax != null ? ratio(n.slopeMax, 'slopeMax', `${where}: lawn`) : {}
+}
+
+/** The town's lawn norm and its rung (`source`). `slopeMax` absent ⇒ the town names no limit. */
+export function resolveLawnNorm(scene, state) {
+  if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveLawnNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
+  return resolveKind('lawn', validateLawn, scene, state, {})
+}

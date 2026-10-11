@@ -1107,6 +1107,25 @@
         "approvedBy": "PENDING — used since 0315f2c2 under Jacob's standing acceptance of federal works (2026-09-23); confirm"
       },
       "status": "PERMITTED (pending Jacob's confirmation)"
+    },
+    {
+      "id": "penndot-ltap-ts176",
+      "title": "PennDOT LTAP Technical Information Sheet #176 — Roadside Mowing Safety Tips (Summer 2016)",
+      "publisher": "Pennsylvania DOT, Local Technical Assistance Program",
+      "jurisdiction": "PA",
+      "url": "https://gis.penndot.pa.gov/BPR_PDF_FILES/Documents/LTAP/TechSheets/TS_176.pdf",
+      "covers": [
+        "mowing safety",
+        "the steepest slope a mower should work"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-11",
+        "checkedBy": "Swale",
+        "note": "No copyright or terms-of-use text in the sheet. pa.gov's site-wide policy page 404'd; PennDOT's image disclaimer lets Commonwealth images be reproduced unaltered with credit and a no-endorsement line, which says nothing on text or AI. ⚠️ Rule 1 was broken: Swale read the sheet (pdftotext) BEFORE checking terms, while looking for a mowable-slope source for BRIEF-the-ground-knows-its-height. Disclosed to Boz; no finding is recorded until Jacob approves."
+      },
+      "status": "CANDIDATE — terms owed to Jacob",
+      "localCopy": null
     }
   ],
   "questions": [
@@ -2081,6 +2100,17 @@
         "f-em1614-design-water-levels"
       ],
       "notes": "Placement is the bank's, not this finding's. The kit has no wave model, so the crest floor is HIGH + one course (its judgement), not HIGH + runup."
+    },
+    {
+      "id": "q-mowable-lawn-slope",
+      "ask": "The steepest a mowed lawn (tree lawn, the lot's ease behind the walk) may slope — a town norm lawn.slopeMax",
+      "neededBy": "BRIEF-the-ground-knows-its-height §5 step 2 — the girdle (Jacob 2026-10-11): the walk stays level, the lawn takes the cross-fall up to a mowable limit, the remainder eases into the lot",
+      "status": "answered",
+      "tried": "AASHTO Roadside Design Guide — OUT (aashto-gdhs-7 terms; Boz 2026-10-11). Web search (results pages only): MoDOT EPG 822.1 Vegetation Management for Major Roads states a 3 to 1 limit for mowed slopes; PennDOT LTAP TS 176 states 'Never attempt to mow on a slope steeper than 3:1'; Nebraska DOT and an Ohio DOT contract addendum use 3:1 as the mowing boundary. No public state or federal source found for 4:1. No fhwa.dot.gov page found.",
+      "notes": "RULED AS A DESIGN CHOICE, NO SOURCE CITED (Jacob, 2026-10-11, via Boz): 1V:3.5H, aesthetic — written as each US town's authored lawn.slopeMax \"1:3.5\" in norms.json. The candidates found (modot-epg §822.1 and penndot-ltap-ts176, both 3:1) stay CANDIDATE and unused.",
+      "findings": [
+        "r-lawn-slope-design-choice"
+      ]
     }
   ],
   "findings": [
@@ -5043,6 +5073,18 @@
       "quote": "-",
       "foundOn": "2026-09-27",
       "foundBy": "Loam"
+    },
+    {
+      "id": "r-lawn-slope-design-choice",
+      "question": "q-mowable-lawn-slope",
+      "kind": "ruling",
+      "value": {
+        "lawnSlopeMax": "1:3.5"
+      },
+      "by": "Jacob",
+      "date": "2026-10-11",
+      "quote": "3.5:1 (1V:3.5H), as an AESTHETIC choice attached to no source (relayed by Boz)",
+      "canon": "docs/briefs/BRIEF-the-ground-knows-its-height.md §5 (the girdle)"
     }
   ]
 }
