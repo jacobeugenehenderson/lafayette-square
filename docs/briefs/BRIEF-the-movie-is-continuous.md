@@ -43,10 +43,7 @@ playback. ⛔ So "averaging as it goes" is not in the code. What can still step,
    but reads as a hitch. That is frame cost. Its cause per town and per stretch of the shot is not established.
 4. **Shadow edges stepping.** `src/components/CelestialBodies.jsx`: the shadow box is camera-fitted and its focus
    quantised to whole texels (by design, against shimmer). As the camera moves, shadow edges may step.
-5. **Tree cards switching view mid-shot.** The hero cards are baked at fixed azimuths
-   (`src/components/HeroImpostorTrees.jsx`). As the camera orbits, a card may jump to its next view.
-   `docs/briefs/BRIEF-tree-shot-crossfade.md` (undispatched) already rules *"trees cross-fade between shots; never swap
-   during one"*: read it, and say whether its work is part of this one.
+5. ~~Tree cards switching view mid-shot.~~ **Not in the code (Glide, 2026-10-11):** `HeroImpostorTrees.jsx` gives each tree one fixed angle, picked by hash, and the card turns smoothly to face the camera. The distance swap (`GeoTierDriver`) was retired 2026-06-25. `BRIEF-tree-shot-crossfade` is about changes between shots, not within one.
 
 Anything else the recording shows (LOD pops, label pops, a texture page arriving mid-shot) is in scope too. Name it.
 
