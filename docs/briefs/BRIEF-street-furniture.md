@@ -54,14 +54,17 @@ heads and the push-button triangle**. The pedestrian heads are blank orange pane
 
 ## The work
 
-1. **Ingest + catalog** (`/street-furniture`, `src/street-furniture/`, its own server on 3336):
+1. **Ingest + catalog** (`/street-furniture`, `src/street-furniture/`, `street-furniture/{ingest.mjs,serve.js}` on port 5555; ▶ `cartograph/OPERATIONS.md §Street furniture`):
    - Convert to GLB, centimetres → metres, prune to the materials each model actually uses.
    - LODs through `@gltf-transform` + `meshoptimizer` (already deps); an impostor per model. Output is served like the lamp GLB is
      today (`kitUrl`; `public/models/` is gitignored).
    - Each asset carries a record: family · mount (ground / wall / overhead) · forward · **lit pieces** (lamp glass; red / amber / green;
      walk / hand) · **sign faces** (panel + text frame) · tri budget.
    - ⛔ **An asset missing any field is refused, never defaulted.** ⛔ **Lit pieces are tagged by MESH PIECE, not material**, because of
-     `SG3`. A model whose lens shares a slot with anything else is refused until it's split.
+     `SG3`. ✅ **Built: ingest splits each material into pieces and stamps every vertex with its piece's index (`_PIECE`),
+     one primitive per material.** A node per piece was tried and dropped: each piece simplified with its borders locked
+     (23k → 21k instead of → 10k). The attribute survives decimation (every piece is still there at r0.25) and is the
+     runtime's lit mask in one draw.
    - The UI: an icon gallery, and a preview stage where you set the forward direction, tag the lit pieces and watch the sequence.
 2. **Lamps join the catalog.** `lampModels.js` becomes the catalog's lamp family and **is deleted in the same commit**. Its contract
    carries over (`headY`, lit mask driving the Bulb knob, absent ⇒ standard, said; unknown id throws). The pack's posts become entries.

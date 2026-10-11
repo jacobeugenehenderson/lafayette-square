@@ -573,6 +573,13 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
 
 ---
 
+## Street furniture — the catalog workstage *(`BRIEF-street-furniture`)*
+
+The kit's street hardware (lamps, signals, name signs, benches, …) is cataloged here before any town places it.
+- **Convert the pack:** `node street-furniture/ingest.mjs <pack-dir>`. It reads the pack's `obj.zip` + `Icons.zip` and writes GLBs (full and two decimations), icons and `catalog.json` into `street-furniture/out/` (gitignored: the bought pack's files are never committed until a town serves them).
+- **Start the server only while you work:** `npm run dev:street-furniture` → port **5555**, then open **`/street-furniture`** on the dev server. It is not part of `npm run dev`; stop it when done.
+- **What you author per asset:** mount (ground / wall / overhead) · forward (the front faces the blue arrow, the street) · triangle budget (one of the three decimations) · which piece is which lit or sign role (click a piece in the preview). **Night** and **sequence** show the glass and the toy signal cycle. Saves go to `street-furniture/tags.json` (committed). An asset is **Ready** only when every field is set and its family's required roles are tagged (`src/street-furniture/contract.js`); anything else is listed with its reasons. **Exclude** takes a reason.
+
 ## CLI / bake operations
 
 - The two-step build: `node skeleton.js` → `node pipeline.js` → `node promote-ribbons.js` → `node bake-ground.js` (the pipeline does **not** re-run the extractor — `[[feedback_skeleton_pipeline_two_step]]`).

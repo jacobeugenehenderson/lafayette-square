@@ -33,6 +33,7 @@ function serveHelperApps() {
     { url: '/arborist',   file: 'arborist.html' },
     { url: '/meteorologist', file: 'meteorologist.html' },
     { url: '/preview',    file: 'preview.html' },
+    { url: '/street-furniture', file: 'street-furniture.html' },
   ]
   return {
     name: 'serve-helper-apps',
@@ -278,6 +279,12 @@ export default defineConfig(({ command }) => ({
         rewrite: (path) => path.replace(/^\/api\/meteorologist/, ''),
         agent: false,
       },
+      // Started only while the catalog is being worked: `npm run dev:street-furniture` (cartograph/OPERATIONS.md).
+      '/api/street-furniture': {
+        target: 'http://localhost:5555',
+        rewrite: (path) => path.replace(/^\/api\/street-furniture/, ''),
+        agent: false,
+      },
     },
   },
   assetsInclude: ['**/*.bin'],
@@ -290,6 +297,7 @@ export default defineConfig(({ command }) => ({
         arborist: 'arborist.html',
         meteorologist: 'meteorologist.html',
         preview: 'preview.html',
+        'street-furniture': 'street-furniture.html',
       },
       output: {
         manualChunks: {
