@@ -18,7 +18,7 @@ import * as THREE from 'three'
 import { placeMovers } from '../lib/movers.js'
 import { townPlace } from '../lib/townPlace.js'
 import { useSceneStencil } from '../lib/cameraRegimes.js'
-import { getElevationRaw } from '../utils/elevation'
+import { drawnGroundY } from '../utils/elevation'
 import { terrainExag } from '../utils/terrainShader'
 
 const CLEARANCE = 2            // metres above the drawn ground, so a disc never z-fights the terrain it rides
@@ -50,7 +50,7 @@ function Mover({ m }) {
   useEffect(() => () => ringMat.dispose(), [ringMat])
   const order = (k) => (look.onTop ? ON_TOP : AFTER_GROUND) + k
   useFrame(({ clock }) => {
-    if (group.current) group.current.position.y = getElevationRaw(m.x, m.z) * terrainExag.value + CLEARANCE
+    if (group.current) group.current.position.y = drawnGroundY(m.x, m.z, terrainExag.value) + CLEARANCE
     if (!ring.current) return
     const t = (Math.sin(clock.elapsedTime * Math.PI * 2 * look.hz) + 1) / 2
     const s = 1 + t * look.grow
@@ -58,7 +58,7 @@ function Mover({ m }) {
     ringMat.opacity = look.ringOpacity * (1 - t * look.fade)
   })
   return (
-    <group ref={group} position={[m.x, getElevationRaw(m.x, m.z) * terrainExag.value + CLEARANCE, m.z]} rotation={[-Math.PI / 2, 0, 0]}>
+    <group ref={group} position={[m.x, drawnGroundY(m.x, m.z, terrainExag.value) + CLEARANCE, m.z]} rotation={[-Math.PI / 2, 0, 0]}>
       <mesh renderOrder={order(2)}>
         <circleGeometry args={[look.dot, 24]} />
         <meshBasicMaterial color={color} transparent depthWrite={false} depthTest={!look.onTop} />

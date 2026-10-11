@@ -22,6 +22,18 @@ export const getElevation    = (x, z) => sampler.getElevation(x, z)
 export const getElevationRaw = (x, z) => sampler.getElevationRaw(x, z)
 export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 
+// ── The DRAWN ground (BRIEF-the-ground-knows-its-height) ─────────────────────
+// BakedGround publishes `src/lib/drawnGround.js` over the bin it holds — the ONE function the bake's anchors read too —
+// so whatever stands on the ground at runtime (the street eye, the movers, the user's dot) stands on the ground AS
+// DRAWN: the deformer's terrain part × the exaggeration + the kerb part. Off the mesh (past the disc), or before the
+// ground has loaded, there is no drawn ground: the field is what is there.
+let drawn = null
+export function setDrawnGround(d) { drawn = d }
+export function drawnGroundY(x, z, exag) {
+  const h = drawn ? drawn.heightAt(x, z, exag) : null
+  return h ?? sampler.getElevationRaw(x, z) * exag
+}
+
 // ── Where the Street eye stands — THE one method, every app ─────────────────
 // Jacob, 2026-09-26: "the street camera is supposed to be about 5' 8" off the
 // finished ground elevation." The street view draws the ground at exag 1
@@ -31,7 +43,7 @@ export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 // sample or eye height throws, naming the point.
 // ▶ node checks/claims-the-street-eye-stands-on-the-ground.mjs
 export function streetEyeY(x, z, eyeHeight) {
-  const g = sampler.getElevationRaw(x, z)
+  const g = drawnGroundY(x, z, 1)   // the street view draws the ground at exag 1: the eye stands on the ground as drawn
   if (!Number.isFinite(g)) throw new Error(`[street] ⛔ no ground under the eye at (${x}, ${z})`)
   if (!Number.isFinite(eyeHeight)) throw new Error(`[street] ⛔ no eye height (got ${eyeHeight})`)
   return g + eyeHeight

@@ -8,7 +8,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useUserLocation from '../hooks/useUserLocation'
 import useCamera from '../hooks/useCamera'
-import { getElevationRaw } from '../utils/elevation'
+import { drawnGroundY } from '../utils/elevation'
 import { terrainExag } from '../utils/terrainShader'
 
 const DOT_RADIUS = 3
@@ -46,7 +46,7 @@ export default function UserDot() {
     // instead of a fixed Y that buries it. x/z stay device-driven; only the
     // height is derived. (2026-06-28 — "user dot trapped underground".)
     if (groupRef.current && x != null && z != null) {
-      groupRef.current.position.y = getElevationRaw(x, z) * terrainExag.value + DOT_CLEARANCE
+      groupRef.current.position.y = drawnGroundY(x, z, terrainExag.value) + DOT_CLEARANCE
     }
     if (!ringRef.current) return
     // Gentle pulse: scale 1.0 → 1.6 over 2 seconds
@@ -59,7 +59,7 @@ export default function UserDot() {
   if (viewMode === 'hero' || x == null || z == null || !inBounds) return null
 
   return (
-    <group ref={groupRef} position={[x, getElevationRaw(x, z) * terrainExag.value + DOT_CLEARANCE, z]} rotation={[-Math.PI / 2, 0, 0]}>
+    <group ref={groupRef} position={[x, drawnGroundY(x, z, terrainExag.value) + DOT_CLEARANCE, z]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* Solid blue dot — drawn last so it sits atop the border + ring */}
       <mesh ref={dotRef} renderOrder={RENDER_ORDER + 2}>
         <circleGeometry args={[DOT_RADIUS, 24]} />

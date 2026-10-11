@@ -33,6 +33,8 @@ import { setGroundRules, setGroundRuleMap } from '../lib/groundRules.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag, terrainWater } from '../utils/terrainShader'
+import { getElevationRaw, setDrawnGround } from '../utils/elevation'
+import { makeDrawnGround } from '../lib/drawnGround.js'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
@@ -397,6 +399,9 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     const W = bbox.max[0] - bbox.min[0]
     const H = bbox.max[2] - bbox.min[2]
     const outerByGroup = assignOuterWater(manifest, bin, outer, look)
+    // ⭐ THE DRAWN GROUND, published for whatever stands on it at runtime (the street eye, the movers, the user's dot):
+    // the same function the bake's anchors read (`src/lib/drawnGround.js`), as views on this bin — never a second copy
+    setDrawnGround(makeDrawnGround(manifest, bin, { groups: g => !isWaterGroupId(g.id) && g.partition !== false, rawAt: getElevationRaw }))
     // ⭐ WHICH HEIGHT PATH THIS TOWN IS ON, said once (Boz, 2026-10-11): the bake's own terrain part (the deformer), or
     // the 5 m texture under a slab baked before it. The texture path is a MIGRATION path while towns are un-rebaked, and
     // is deleted once every slab carries the sections — never a silent second way to draw the ground.
@@ -473,6 +478,8 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
   // ⭐ THE REVEAL (a `prepared:ground` startup mark): the ground surfaces are physical; they are PREPARED once their
   // geometry exists. Their maps are a look layer and arrive after (useArrivingTexture).
   useEffect(() => { markPrepared('ground') }, [meshes])
+  // the published drawn ground goes when this ground does: a stale one would seat the movers on another town
+  useEffect(() => () => setDrawnGround(null), [])
 
   // ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (bake-terrain `water.flood`): the ground below the high level connected to
   // the drawn water, drawn as more of the same sheet beside the body that reaches the rim. Its polygons exclude the drawn

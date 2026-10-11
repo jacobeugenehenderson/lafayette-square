@@ -46,7 +46,9 @@ const HOME = 'src/utils/elevation.js'
 const defs = files.filter(f => /function streetEyeY\s*\(/.test(read(f)))
 if (defs.length !== 1 || defs[0] !== HOME) fails.push(`(a) streetEyeY must be defined once, in ${HOME} (found: ${defs.join(', ') || 'none'})`)
 const body = (read(HOME).match(/function streetEyeY[\s\S]*?\n}\n/) || [''])[0]
-if (!/getElevationRaw\(/.test(body)) fails.push('(a) streetEyeY does not read the RAW elevation')
+// ⭐ the eye stands on the ground AS DRAWN at exag 1 (BRIEF-the-ground-knows-its-height: drawnGroundY reads the deformer's
+// terrain part + the kerb part, `src/lib/drawnGround.js`); ⛔ never the exaggerated height, never the raw field alone
+if (!/drawnGroundY\([^,]+,[^,]+,\s*1\s*\)/.test(body)) fails.push('(a) streetEyeY does not stand on the DRAWN ground at exag 1')
 const guards = body.split('\n').filter(l => /isFinite\(/.test(l))
 if (guards.length < 2 || guards.some(l => !/\bthrow\b/.test(l))) fails.push('(a) streetEyeY must THROW on a missing sample and a missing eye height — a guard that returns is a fallback')
 

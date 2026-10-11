@@ -14,7 +14,7 @@
  *     it THROWS on an unknown kind, on `heading`/`accuracy` (not designed — nothing would draw them), on a courier
  *     without a boolean `active`, on a missing id or a non-finite lat/lon, and on a duplicate id;
  *   · <Town> takes `movers` + `onMovers` and mounts src/components/Movers.jsx; the layer reads the place through
- *     townPlace and never INSTANCE; each dot rides the drawn ground (elevation × exaggeration), no fixed height;
+ *     townPlace and never INSTANCE; each dot rides the drawn ground (drawnGroundY: terrain part × exaggeration + kerb), no fixed height;
  *   · the kinds are exactly 'you' (UserDot's look) and 'courier' (CourierDots' look), and the old player's two
  *     components say they are frozen until the cutover.
  *
@@ -71,7 +71,8 @@ else {
   const c = code(layer)
   if (/\bINSTANCE\b/.test(c)) fails.push('Movers.jsx reads INSTANCE — the town drawn is townPlace(), never the boot town')
   if (!/townPlace/.test(c)) fails.push('Movers.jsx does not project through townPlace')
-  if (!/getElevationRaw\([^)]*\)\s*\*\s*terrainExag/.test(c)) fails.push('Movers.jsx does not seat its dots on the drawn ground (elevation × exaggeration)')
+  // the drawn ground: the deformer's terrain part × the exaggeration + the kerb part (`drawnGroundY`, src/lib/drawnGround.js)
+  if (!/drawnGroundY\([^)]*terrainExag\.value\)/.test(c)) fails.push('Movers.jsx does not seat its dots on the drawn ground (drawnGroundY at the shot\'s exaggeration)')
   // The old courier line was `position={[x, 35, z]}`: a world x, then a literal height (a local [0, 0, -0.01] is fine).
   if (/position=\{\[\s*[A-Za-z_][\w.]*\s*,\s*\d+(\.\d+)?\s*,/.test(c)) fails.push('Movers.jsx stands a dot at a fixed height')
 }

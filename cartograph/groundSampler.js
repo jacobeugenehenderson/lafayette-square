@@ -18,91 +18,24 @@
 // carries that height in the mesh's y, UNEXAGGERATED, and the runtime adds terrain × uExag on top. So an object seats at
 // `raw × uExag + y`. `groundAt(x, z)` returns both; `y` is 0 on a flat town and h on a raised block.
 
-const CELL_M = 8   // spatial-grid cell size for the triangle lookup
+// ⭐ ONE HOME (2026-10-11): the function itself lives in `src/lib/drawnGround.js`, which the runtime imports too, so the
+// bake's anchors and the runtime's movers cannot read two different grounds. This file is the bake's thin wrapper: the
+// same API it always had, plus the migration path said aloud (a slab baked before the deformer is read off the field).
+
+import { makeDrawnGround } from '../src/lib/drawnGround.js'
 
 // groundJson  — parsed ground.json manifest (groups + bbox)
-// groundAB    — ground.bin as an ArrayBuffer (float32 XYZ positions, uint32 indices)
-// elevationSampler — from terrainCommon.makeElevationSampler (getElevationRaw)
+// groundAB    — ground.bin as an ArrayBuffer
+// elevationSampler — from terrainCommon.makeElevationSampler (getElevationRaw): the field, for a group with no aRaw
 export function makeGroundSampler(groundJson, groundAB, elevationSampler) {
-  const { groups, bbox } = groundJson
   const getRaw = elevationSampler.getElevationRaw
-
-  // Flatten every ground triangle, tagged with its group's renderOrder, with
-  // the raw field precomputed at each vertex (the per-vertex lift the GPU draws).
-  const tris = []  // flat: [ax,az,ra, bx,bz,rb, cx,cz,rc, renderOrder, ya,yb,yc] × N
-  for (const g of groups) {
-    const positions = new Float32Array(groundAB, g.vertexByteOffset, g.vertexCount * 3)
-    const indices   = new Uint32Array(groundAB, g.indexByteOffset, g.indexCount)
-    // ⭐ a group that carries the ground bake's own terrain part (`rawByteOffset`, the deformer: BRIEF-the-ground-knows-its-
-    // height) is drawn from it, so the anchor reads it too — the field at the vertex only where the bake wrote none,
-    // which is exactly what the runtime draws there (patchTerrain without `baked`)
-    let vraw
-    if (g.rawByteOffset != null) vraw = new Float32Array(groundAB, g.rawByteOffset, g.vertexCount)
-    else { vraw = new Float32Array(g.vertexCount); for (let v = 0; v < g.vertexCount; v++) vraw[v] = getRaw(positions[v * 3], positions[v * 3 + 2]) }
-    for (let i = 0; i < indices.length; i += 3) {
-      const i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2]
-      tris.push(
-        positions[i0 * 3], positions[i0 * 3 + 2], vraw[i0],
-        positions[i1 * 3], positions[i1 * 3 + 2], vraw[i1],
-        positions[i2 * 3], positions[i2 * 3 + 2], vraw[i2],
-        g.renderOrder,
-        positions[i0 * 3 + 1], positions[i1 * 3 + 1], positions[i2 * 3 + 1],
-      )
-    }
-  }
-  const STRIDE = 13
-  const triCount = tris.length / STRIDE
-
-  // Uniform grid: bucket each triangle into every cell its XZ-bbox overlaps.
-  const minX = bbox.min[0], minZ = bbox.min[2], maxX = bbox.max[0], maxZ = bbox.max[2]
-  const nx = Math.max(1, Math.ceil((maxX - minX) / CELL_M))
-  const nz = Math.max(1, Math.ceil((maxZ - minZ) / CELL_M))
-  const grid = Array.from({ length: nx * nz }, () => [])
-  const cx = (x) => Math.max(0, Math.min(nx - 1, Math.floor((x - minX) / CELL_M)))
-  const cz = (z) => Math.max(0, Math.min(nz - 1, Math.floor((z - minZ) / CELL_M)))
-  for (let t = 0; t < triCount; t++) {
-    const o = t * STRIDE
-    const tminx = Math.min(tris[o], tris[o + 3], tris[o + 6]), tmaxx = Math.max(tris[o], tris[o + 3], tris[o + 6])
-    const tminz = Math.min(tris[o + 1], tris[o + 4], tris[o + 7]), tmaxz = Math.max(tris[o + 1], tris[o + 4], tris[o + 7])
-    for (let gz = cz(tminz); gz <= cz(tmaxz); gz++)
-      for (let gx = cx(tminx); gx <= cx(tmaxx); gx++)
-        grid[gz * nx + gx].push(t)
-  }
-
-  // Barycentric raw-field at (px,pz) inside triangle t, or null if outside.
-  function sampleTri(px, pz, t) {
-    const o = t * STRIDE
-    const ax = tris[o], az = tris[o + 1], ra = tris[o + 2]
-    const bx = tris[o + 3], bz = tris[o + 4], rb = tris[o + 5]
-    const cxx = tris[o + 6], czz = tris[o + 7], rc = tris[o + 8]
-    const v0x = cxx - ax, v0z = czz - az
-    const v1x = bx - ax, v1z = bz - az
-    const v2x = px - ax, v2z = pz - az
-    const d00 = v0x * v0x + v0z * v0z, d01 = v0x * v1x + v0z * v1z, d11 = v1x * v1x + v1z * v1z
-    const d20 = v2x * v0x + v2z * v0z, d21 = v2x * v1x + v2z * v1z
-    const denom = d00 * d11 - d01 * d01
-    if (Math.abs(denom) < 1e-12) return null
-    const wc = (d11 * d20 - d01 * d21) / denom
-    const wb = (d00 * d21 - d01 * d20) / denom
-    const wa = 1 - wc - wb
-    const EPS = 1e-4
-    if (wa < -EPS || wb < -EPS || wc < -EPS) return null
-    return { raw: ra * wa + rb * wb + rc * wc, y: tris[o + 10] * wa + tris[o + 11] * wb + tris[o + 12] * wc }
-  }
-
+  const D = makeDrawnGround(groundJson, groundAB, { rawAt: getRaw })
+  if (D.path !== 'baked') console.warn(`[groundSampler] ⛔ ${D.groupsField} ground group(s) carry no baked terrain part — anchored on the FIELD at their vertices (the slab predates the ground deformer; the migration path)`)
   // The drawn ground at (x,z): the top-most group's triangle wins → { raw, y }. If the point is off the mesh, the smooth
   // field with y 0 so a caller never NaNs — and `offMesh` says so (a disc-rim object, not a seated one).
   function groundAt(x, z) {
-    const cell = grid[cz(z) * nx + cx(x)]
-    let best = null, bestRO = -Infinity
-    for (const t of cell) {
-      const ro = tris[t * STRIDE + 9]
-      if (ro < bestRO) continue
-      const r = sampleTri(x, z, t)
-      if (r !== null) { best = r; bestRO = ro }
-    }
-    return best !== null ? best : { raw: getRaw(x, z), y: 0, offMesh: true }
+    const p = D.partsAt(x, z)
+    return p ? { raw: p.raw, y: p.y } : { raw: getRaw(x, z), y: 0, offMesh: true }
   }
-
-  return { groundAt, triCount }
+  return { groundAt, triCount: D.triCount }
 }
