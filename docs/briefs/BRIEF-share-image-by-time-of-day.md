@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: Vesper, 2026-10-11 (FRESH)
 written: 2026-10-11
 evict-when: RULING: Jacob texts a staging link for two towns at two different times of day and each preview shows that town, at that time of day, from his Stage camera. The share-card check in §5 is green on every town after being seen red; public/photos/og-preview.jpg and every instance's ogImage are gone.
 -->
