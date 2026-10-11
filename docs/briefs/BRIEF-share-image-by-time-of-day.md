@@ -14,6 +14,9 @@ already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/
 **Instruction: confirm-then-build.** Every premise below is a claim. Check each against the code, say what you found,
 and if the code contradicts this brief, stop and flag Boz before building.
 
+
+**State (Boz, 2026-10-11):** part 1 is BUILT (Vesper, b9b7e282 … b0a2d510, 5e8bec5b). Huron and HPDM have captured sets. ⏸ **HELD by Jacob:** the Huron publish waits until `BRIEF-the-ground-knows-its-height` lands, so one bake + publish carries both. Order when released: publish the town(s) FIRST, then deploy both Workers (a Worker that is live before its town has share images serves a card with no picture, logged by town).
+
 ---
 
 ## 1. What Jacob wants (2026-10-11)
