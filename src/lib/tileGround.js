@@ -8255,6 +8255,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let protoShapeTiles = null
   let protoJunctionCensus = null      // per corner arc: junction · bend · unknown-by-reason (`classifyCornerLegs`)
   let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
+  let protoInk = null   // ① itself — its frozen rings + per-edge labels, painted FIRST in the producer below
   let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoBandsByBlock = null, protoBlockLabelsOut = null, protoStackCollapse = null, protoAuthoring = null, protoDepthByBlock = null
   // ⭐ ②'s ACHIEVED corner arcs — the handle's ONE truth. Hoisted beside the other proto outputs
   // because the producer swap at the end of the build reads it (`SURVEY §4`: one corner truth).
@@ -8353,6 +8354,7 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     protoOwners = MP.owners
     const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused, crossings: MP.crossings }
+    protoInk = { rings: MP.rings, labels: MP.labels }
     protoBoundaryRing = MP.boundaryRing || null
     console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
     // ⛔⛔ DISCLOSE THE AUTHORING STATE — the SILENCE is the defect, never the draw.
@@ -9923,6 +9925,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let sidewalk = unionRings(Wacc)
   // ⭐ the curb cuts' warning strips + their positions — painted by Section on junction corners (`curbCutsOnJunctionCorners`)
   let curbCut = [], cornerArcs = [], curbCutRecs = [], curbCutTally = null, curbCutContradicted = [], curbCutCorners = [], curbCutRamps = []
+  let inkShore = []   // ①'s coast piece, the land's shore surface (painted first, below)
   let crosswalk = [], crosswalkPairs = [], crosswalkTally = null   // square across the street, kerb to kerb (`crosswalksSquareAcross`)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
@@ -10092,6 +10095,40 @@ export function buildTileGround(ribbons, opts = {}) {
     } else console.warn(`[tileGround][①⇢LIVE] ⛔ ② produced NO corner arcs — the corner handles would ride the LEGACY fillets, which are not on screen. Not swapping; the dial is untrustworthy in this pour.`)
     const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides)
     asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
+    // ⭐⭐ ① IS PAINTED FIRST (Jacob, 2026-10-11, BRIEF-the-ground-knows-its-height §5: "we should paint it in the first
+    // step, not last"). ① is the union of the ε strokes, so it HAS area — a 2ε band over every chain — and every band
+    // offsets outward from its edge, so until now nothing painted it and it showed through as a ~10 mm slit down every
+    // centreline (`claims-the-ground-tiles-without-a-gap`). Each piece takes its OWNER's surface, read off ①'s own
+    // per-edge labels (never by nearness to a chain): a street's ① is its road, the coast's ① is the land's shore
+    // (option (a)), and a grade-separated highway's ① is left to the highway stroke that already covers it (asphalt
+    // paints above highway, so painting it as road would draw a strip down the motorway). A piece of ink takes the
+    // class of the edges it lies within one stroke width (2ε) of — the construction of the stroke itself, run back —
+    // and where a slipway T's into the coast the 2ε square at the joint goes to the coast: water, then highway, then road.
+    if (!protoInk?.rings?.length) throw new Error('[tileGround][①⇢LIVE] ① is the producer but carries no ink rings — refusing to paint the bands without the piece they close against.')
+    {
+      const W2 = 2 * PROTO_HW, quads = { water: [], highway: [] }
+      let unlabelled = 0
+      protoInk.rings.forEach((ring, ri) => { const L = protoInk.labels?.[ri] || []
+        for (let k = 0; k < ring.length; k++) {
+          const o = protoOwners?.[L[k]]
+          if (!o) { unlabelled++; continue }
+          const cls = o.water ? 'water' : hwySkel.has(o.skelId) ? 'highway' : null
+          if (!cls) continue
+          const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
+          if (!(len > 0)) continue
+          const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
+          quads[cls].push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
+        } })
+      const ink = unionRings(protoInk.rings)
+      const shoreInk = quads.water.length ? intersectRings(ink, unionRings(quads.water)) : []
+      const hwyInk = quads.highway.length ? differenceRings(intersectRings(ink, unionRings(quads.highway)), shoreInk) : []
+      const roadInk = differenceRings(ink, [...shoreInk, ...hwyInk])
+      const inStencil = (r) => (stencil && stencil.length >= 3) ? intersectRings(r, [stencil]) : r
+      asphalt = unionRings([...asphalt, ...inStencil(roadInk)])
+      inkShore = inStencil(shoreInk)
+      const m2 = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))   // net: Clipper winds holes against their outer
+      console.log(`[tileGround][①⇢LIVE] ① painted first: road ${m2(roadInk).toFixed(1)} m² · shore ${m2(shoreInk).toFixed(1)} m² · left to the highway ${m2(hwyInk).toFixed(1)} m²${unlabelled ? ` · ⛔ ${unlabelled} ink edge(s) with no owner — painted as road` : ''}`)
+    }
     curbCut = S.curbCut || []; cornerArcs = S.cornerArcs || []; curbCutRecs = S.curbCutRecs || []; curbCutTally = S.curbCutTally || null; curbCutContradicted = S.curbCutContradicted || []; curbCutCorners = S.curbCutCorners || []; curbCutRamps = S.curbCutRamps || []
     crosswalk = S.crosswalk || []; crosswalkPairs = S.crosswalkPairs || []; crosswalkTally = S.crosswalkTally || null
     if (crosswalkTally && crosswalkTally.style && crosswalkTally.style !== 'none') {
@@ -10157,7 +10194,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

@@ -510,6 +510,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   if (hd?.legacy.length) console.warn(`  [H] ⛔ ${hd.legacy.length} highway(s) frozen at their PRE-H-3 measure — re-pour ${scene} to build them from their section: ${hd.legacy.join(', ')}`)
   pushClipperRings('asphalt',  pr.asphalt)
   pushClipperRings('highway',  pr.highway)   // grade-separated highway-class roads → own layer/material
+  pushClipperRings('shore',    pr.inkShore)  // ①'s coast piece: the land's shore surface (① painted first, tileGround)
   pushClipperRings('curb',     pr.curb)
   pushClipperRings('sidewalk', pr.sidewalk)
   pushClipperRings('curbCut',  pr.curbCut)
@@ -923,6 +924,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
   const { byMaterial, byFaceUse, shapeArtifact, highwayRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
+
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
