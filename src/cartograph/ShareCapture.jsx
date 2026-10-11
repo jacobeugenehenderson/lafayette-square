@@ -14,7 +14,7 @@
  *    operator has chosen, and waits for it to land. The wind is left as it is ("the effect is negligible"). The clock
  *    is paused for the capture; afterwards the operator's own weather and time come back as they were.
  * ⭐ THE SET, IN THE CARD (Jacob: "surprisingly useful to be able to see them all side by side"): the eight files
- *    Capture wrote, read from the slab on disk, at the panel's width with the slot names. No overlay. The button
+ *    Capture wrote, read from the slab on disk, four to a row (a toggle: two) with the slot names. No overlay. The button
  *    reads Recapture once the town has a full set.
  */
 import { useState } from 'react'
@@ -139,13 +139,13 @@ async function captureSet() {
   return images
 }
 
-/** The town's share images as Capture wrote them, read from the slab on disk, two to a row at the panel's width, slot
- *  name under each. `rev` re-reads the files after a capture (same names on disk). Reports which slots have a file. */
-function ShareImages({ lookId, rev, onState }) {
+/** The town's share images as Capture wrote them, read from the slab on disk, `cols` to a row at the panel's width,
+ *  slot name under each. `rev` re-reads the files after a capture (same names on disk). Reports which slots have a file. */
+function ShareImages({ lookId, rev, cols, onState }) {
   const [state, setState] = useState({})   // { <slot>: 'ok' | 'missing' }
   const mark = (id, v) => setState((m) => { const n = { ...m, [id]: v }; onState(n); return n })
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: cols > 2 ? 4 : 6 }}>
       {TOD_SLOT_IDS.map((id) => (
         <figure key={id} style={{ margin: 0 }}>
           {state[id] === 'missing'
@@ -161,6 +161,11 @@ function ShareImages({ lookId, rev, onState }) {
   )
 }
 
+// Four to a row (compact) by default; the toggle switches to two (closer to real size). Remembered per viewer only.
+const COLS_KEY = 'cartograph.shareImages.cols'
+function readCols() { try { return localStorage.getItem(COLS_KEY) === '2' ? 2 : 4 } catch { return 4 } }
+function writeCols(n) { try { localStorage.setItem(COLS_KEY, String(n)) } catch { /* the choice just isn't remembered */ } }
+
 /** The Share image card's body (Stage wraps it in its collapsible card): the button, the line, the set. */
 export default function ShareCapture({ playing }) {
   const lookId = useCartographStore((s) => s.activeLookId)
@@ -168,6 +173,7 @@ export default function ShareCapture({ playing }) {
   const [rev, setRev] = useState(() => Date.now())
   const [have, setHave] = useState({})
   const [msg, setMsg] = useState(null)   // { kind, text }
+  const [cols, setCols] = useState(readCols)
   const hasSet = TOD_SLOT_IDS.every((id) => have[id] === 'ok')
 
   async function capture() {
@@ -193,7 +199,18 @@ export default function ShareCapture({ playing }) {
         {busy ? 'Capturing…' : hasSet ? '📷 Recapture' : '📷 Capture share images'}
       </button>
       {msg && <div className="text-caption mt-2" style={{ color: msg.kind === 'err' ? 'var(--error)' : 'var(--on-surface-variant)' }}>{msg.text}</div>}
-      {lookId && <div className="mt-2"><ShareImages key={`${lookId}:${rev}`} lookId={lookId} rev={rev} onState={setHave} /></div>}
+      {lookId && (
+        <div className="mt-2">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+            <button type="button" className="text-caption cursor-pointer" style={{ color: 'var(--on-surface-subtle)' }}
+              onClick={() => { const n = cols === 4 ? 2 : 4; setCols(n); writeCols(n) }}
+              title={cols === 4 ? 'Show two to a row, closer to real size' : 'Show four to a row'}>
+              {cols === 4 ? '⤢ larger' : '⤡ compact'}
+            </button>
+          </div>
+          <ShareImages key={`${lookId}:${rev}`} lookId={lookId} rev={rev} cols={cols} onState={setHave} />
+        </div>
+      )}
     </div>
   )
 }
