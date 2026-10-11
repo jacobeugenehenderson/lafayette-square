@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "streets": {
+    "primary-91": {
+      "name": "primary 91",
+      "measure": {
+        "left": {
+          "pavementHW": 6.962481153249896,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "pedRealm": false
+        },
+        "right": {
+          "pavementHW": 6.962481153249896,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "pedRealm": false
+        },
+        "symmetric": true
+      }
+    },
+    "primary-103": {
+      "name": "primary 103",
+      "measure": {
+        "left": {
+          "pavementHW": 6.9773253218866635,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "pedRealm": false
+        },
+        "right": {
+          "pavementHW": 6.9773253218866635,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "pedRealm": false
+        },
+        "symmetric": true
+      }
+    }
+  }
+}
