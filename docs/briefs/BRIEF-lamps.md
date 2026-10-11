@@ -62,8 +62,8 @@ per process; `gpuWindow` is suspect — read ratios, not ms.
   choice** (declared in LS's Look or instance, never by a town-name check: `CLAUDE.md` Layer 0).
 - **The new post is built procedurally for now** (option a): a clean, low-poly pole, arm and head from basic geometry, with no licensing
   question. It can be upgraded later through the same library slot (a sourced or artist-made model).
-- **The eventual home is a "street furniture salon"**, where both kinds (and more) are authored, as the Arborist's Salon does for trees.
-  ⛔ Record it; don't build it.
+- **The eventual home is a "street furniture salon"**: now `BRIEF-street-furniture.md` (2026-10-11), which takes over the lamp library
+  and moves LS to the pack's Victorian.
 
 ## The work
 
@@ -84,7 +84,7 @@ per process; `gpuWindow` is suspect — read ratios, not ms.
 
 ## Out of scope
 
-The street furniture salon (recorded only); derived-lamp density and spacing (already authorable: `lamps.derive`, the spacing prior;
+The lamp library and LS's model (→ `BRIEF-street-furniture.md`); derived-lamp density and spacing (already authorable: `lamps.derive`, the spacing prior;
 creative/data, not this package's).
 
 ## The chain
