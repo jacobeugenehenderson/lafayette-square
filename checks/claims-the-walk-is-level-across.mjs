@@ -34,9 +34,9 @@
 //   twice the limit over a half-width, its edges untouched → RED. (The served, undeformed slab is RED: 71.7% of HPDM's
 //   street-walk stations, 2026-10-11.)
 //
-//   node checks/claims-the-walk-is-level-across.mjs [--town=a,b] [--dir=<slab dir>] [--selftest] [--show=n]
+//   node checks/claims-the-walk-is-level-across.mjs [--town=a,b] [--dir=<slab dir>] [--selftest] [--show=n] [--json=<over stations>]
 // Read-only. Exits 1 on any street-walk station over the limit, or on a town whose limit cannot be read.
-import { readFileSync, existsSync, readdirSync } from 'fs'
+import { readFileSync, existsSync, readdirSync, writeFileSync } from 'fs'
 import { join, basename } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
 import { resolveWalkNorm } from '../cartograph/curb-cut-norm.mjs'
@@ -173,7 +173,7 @@ function stations(dir, { mutate = null } = {}) {
           for (const [p0, p1] of [[0, 1], [1, 2]]) { const w = ds[p1] - ds[p0]; fall = Math.max(fall, (Math.abs(hs[p1].y - hs[p0].y) + E * Math.abs(hs[p1].raw - hs[p0].raw)) / w) }
           if (cls === 'path') { out.path.n++; if (norm.crossSlopeMax != null && fall > norm.crossSlopeMax) out.path.over++; continue }
           out.street.n++; out.falls.push(fall)
-          if (norm.crossSlopeMax != null && fall > norm.crossSlopeMax) out.street.over.push({ fall, ti, key: `${run.skelId} · ${run.side} · ${run.segOrd}`, at: [x0, z0] }) } } } }
+          if (norm.crossSlopeMax != null && fall > norm.crossSlopeMax) out.street.over.push({ fall, ti, key: `${run.skelId} · ${run.side} · ${run.segOrd}`, at: [x0, z0], n: [nx, nz], walk: [f, b] }) } } } }
   return out
 }
 
@@ -230,6 +230,7 @@ if (SELFTEST) {
 }
 
 let bad = 0
-for (const d of dirs) { bad += reportStations(stations(d)); report(measure(d)) }
+for (const d of dirs) { const st = stations(d); bad += reportStations(st); report(measure(d))
+  if (arg('json')) writeFileSync(arg('json'), JSON.stringify(st.street.over)) }   // --json=<file>: the over stations, for a probe
 console.log(bad ? `⛔ ${bad} town(s) whose walk is not level across, or whose limit is not named` : '✅ every street walk is level across, front to middle to back, at every exaggeration its town draws')
 process.exit(bad ? 1 : 0)

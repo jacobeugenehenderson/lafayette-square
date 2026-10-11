@@ -311,6 +311,8 @@ export function buildDeformer({ tiles, bands, raw, limits }) {
   // widths the stations measured): what the bake refines the ped bands to. Null where the town names no walk limit.
   walkWidths.sort((a, b) => a - b)
   const walkP10 = walkWidths.length ? walkWidths[Math.floor(0.1 * (walkWidths.length - 1))] : null
-  const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * walkP10 / exag : null
+  // over HALF the walk: the gate judges each half of the cross-section (front→middle, middle→back), so the drawing's
+  // chord error is spent over a half-width, never the whole one
+  const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * (walkP10 / 2) / exag : null
   return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M }
 }
