@@ -71,7 +71,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   // ── the tiles: their ① ring (which tile holds a point), ② with H per vertex ──
   const T = []
   const TCELL = 64, tileGrid = new Map()
-  for (const t of tiles || []) {
+  for (const [ti, t] of (tiles || []).entries()) {
     if (!(t?.ring?.length >= 3) || !t.iA?.length) continue
     // ⭐ THE CARRIER IS `iaFull`, ② UNCUT: `iaStamp` and `iaArc` are parallel to IT, never to `iA` (the cut ring the block is
     // drawn with — measured on HPDM: iA and iaFull differ on 237 of 266 rings). A tile without it cannot name its runs.
@@ -111,12 +111,12 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
       if (known < n) stats.hFilled += n - known
       if (known < n) for (let pass = 0; pass < n && H.some(h => h == null); pass++) for (let i = 0; i < n; i++) if (H[i] == null) {
         const a = H[(i + n - 1) % n], b = H[(i + 1) % n]; if (a != null || b != null) H[i] = a != null && b != null ? (a + b) / 2 : (a ?? b) }
-      rings.push({ ring, H, stamp, arc, t: T.length, k: ri })
+      rings.push({ ring, H, stamp, arc, t: ti, k: ri })
     })
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
     for (const [x, z] of t.ring) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
-    const rec = { ring: t.ring, iA: t.iA.filter(r => r?.length >= 3), rings, bb: [a, b, c, d], segs: new Map() }
+    const rec = { ti, ring: t.ring, iA: t.iA.filter(r => r?.length >= 3), rings, bb: [a, b, c, d], segs: new Map() }
     for (const R of rings) for (let i = 0; i < R.ring.length; i++) {
       const p = R.ring[i], q = R.ring[(i + 1) % R.ring.length], s = { p, q, hp: R.H[i], hq: R.H[(i + 1) % R.ring.length], R, i }
       const x0 = Math.floor(Math.min(p[0], q[0]) / CELL), x1 = Math.floor(Math.max(p[0], q[0]) / CELL), z0 = Math.floor(Math.min(p[1], q[1]) / CELL), z1 = Math.floor(Math.max(p[1], q[1]) / CELL)
@@ -288,9 +288,10 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   const heightAt = (x, z) => resolve(x, z).v
   /** who owns (x, z): `${tile}|${ring}|${span}` of the ② span whose band holds it (or, in the lot, the nearest span), or null */
   const ownerAt = (x, z) => resolve(x, z).owner
-  const NONE = { v: null, owner: null }, UNOWNED = { v: null, owner: null, unowned: true }
-  /** true where (x, z) lies in a drawn ped band that no ② span's band reaches — its own failure class, never the nearer line */
-  const isUnowned = (x, z) => resolve(x, z) === UNOWNED
+  const NONE = { v: null, owner: null }
+  /** the shape tile (index into `tiles`) where (x, z) lies in a drawn ped band that no ② span's band reaches — its own
+   *  failure class, never the nearer line — else null */
+  const unownedIn = (x, z) => resolve(x, z).unowned ?? null
   const own = (c) => `${c.R.t}|${c.R.k}|${c.key ?? nearKey(c)}`
   function resolve(x, z) {
     const mk = `${Math.round(x * 1000)},${Math.round(z * 1000)}`
@@ -317,7 +318,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
       const p = profile(c, x, z)
       if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c) } }
     }
-    if (inBand(x, z)) { stats.unowned++; return UNOWNED }
+    if (inBand(x, z)) { stats.unowned++; return { v: null, owner: null, unowned: t.ti } }
     return { v: profile(n, x, z).v, owner: own(n) }
   }
   const nearKey = (n) => n.R.arc[n.i] != null ? `a${n.R.arc[n.i]}` : `r${n.R.stamp[n.i]}`
@@ -370,5 +371,5 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   // over HALF the walk: the gate judges each half of the cross-section (front→middle, middle→back), so the drawing's
   // chord error is spent over a half-width, never the whole one
   const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * (walkP10 / 2) / exag : null
-  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, isUnowned, ownerAt, _owners, _inClass: inClass }
+  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, _owners, _inClass: inClass }
 }

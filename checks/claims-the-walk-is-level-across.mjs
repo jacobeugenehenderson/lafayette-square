@@ -157,7 +157,8 @@ function stations(dir, { mutate = null, owned = null } = {}) {
   const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
   const out = { town, E, norm, source: g.rawByteOffset != null ? 'baked terrain height' : 'terrain field at each vertex (no baked height)', street: { n: 0, over: [] }, path: { n: 0, over: 0 }, falls: [],
     // ⭐ WHO OWNS THE WALK: the band decides, never the nearer line (Jacob, 2026-10-11). The bake names every ped vertex no
-    // painted band owns (`ground.json` deform.unowned) — its own class, RED. A deformed slab that does not say is RED too.
+    // painted band owns (`ground.json` deform.unowned; the bake throws on any, so a written slab says 0) — RED if not 0.
+    // A deformed slab that does not say is RED too.
     owner: owned ?? (g.rawByteOffset == null ? { na: true } : gj.deform ? { n: gj.deform.unowned, at: gj.deform.unownedAt || [] } : { undisclosed: true }) }
   for (const [ti, t] of shape.tiles.entries()) { if (!t.ring) continue
     for (const run of t.runs || []) { if (!run.skelId || run.skelId.startsWith('__')) continue
