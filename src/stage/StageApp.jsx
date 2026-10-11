@@ -1168,7 +1168,13 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
       </div>
 
       {/* Share — the link-preview images, one per time of day, from this camera (src/cartograph/ShareCapture.jsx). */}
-      {shareSlot && <div className="glass-panel rounded-xl p-3 pointer-events-auto">{shareSlot}</div>}
+      {shareSlot && (
+        <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+          <Collapsible label="Share Image">
+            {shareSlot}
+          </Collapsible>
+        </div>
+      )}
 
       {/* Image — camera/grade-side TOD channels (Tone & Color · Glow · Lens & Film).
           Visible in all shots. Renamed from "Post" (a render-mechanism word) to

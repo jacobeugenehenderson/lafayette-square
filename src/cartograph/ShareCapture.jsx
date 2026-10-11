@@ -13,11 +13,11 @@
  * ⭐ ALWAYS CLEAR WEATHER (Jacob, 2026-10-11): Capture stands the scene in Stage's Clear for the whole run, whatever the
  *    operator has chosen, and waits for it to land. The wind is left as it is ("the effect is negligible"). The clock
  *    is paused for the capture; afterwards the operator's own weather and time come back as they were.
- * ⭐ THE ENLARGER (Jacob: "surprisingly useful to be able to see them all side by side"): a drawer showing the eight
- *    files Capture wrote, read from the slab on disk, large, with the slot names. It opens after a capture.
+ * ⭐ THE SET, IN THE CARD (Jacob: "surprisingly useful to be able to see them all side by side"): the eight files
+ *    Capture wrote, read from the slab on disk, at the panel's width with the slot names. No overlay. The button
+ *    reads Recapture once the town has a full set.
  */
 import { useState } from 'react'
-import { createPortal } from 'react-dom'
 import { addAfterEffect, useThree } from '@react-three/fiber'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -139,40 +139,36 @@ async function captureSet() {
   return images
 }
 
-/** The enlarger: the town's eight share images as Capture wrote them, side by side. Portalled: the card's glass would
- *  otherwise contain a fixed overlay. `rev` re-reads the files after a capture (same names on disk). */
-function Enlarger({ lookId, rev, onClose }) {
-  const [missing, setMissing] = useState({})
-  return createPortal(
-    <div className="glass-panel rounded-xl p-3" style={{ position: 'fixed', top: 16, left: 16, right: 432, bottom: 16, zIndex: 50,
-      display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div className="section-heading" style={{ flex: 1 }}>Share images · {lookId}</div>
-        <button type="button" className="hero-btn px-3 py-1 rounded-lg text-body-sm cursor-pointer" onClick={onClose}>Close</button>
-      </div>
-      <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-        {TOD_SLOT_IDS.map((id) => (
-          <figure key={id} style={{ margin: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            {missing[id]
-              ? <div className="text-caption" style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--error)' }}>not captured</div>
-              : <img src={slabUrl(lookId, shareImageRel(id), rev)} alt={getTodSlotLabel(id)}
-                  onError={() => setMissing((m) => ({ ...m, [id]: true }))}
-                  style={{ flex: 1, minHeight: 0, width: '100%', objectFit: 'contain', borderRadius: 8 }} />}
-            <figcaption className="text-caption" style={{ textAlign: 'center', marginTop: 4 }}>{getTodSlotLabel(id)}</figcaption>
-          </figure>
-        ))}
-      </div>
-    </div>,
-    document.body)
+/** The town's share images as Capture wrote them, read from the slab on disk, two to a row at the panel's width, slot
+ *  name under each. `rev` re-reads the files after a capture (same names on disk). Reports which slots have a file. */
+function ShareImages({ lookId, rev, onState }) {
+  const [state, setState] = useState({})   // { <slot>: 'ok' | 'missing' }
+  const mark = (id, v) => setState((m) => { const n = { ...m, [id]: v }; onState(n); return n })
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
+      {TOD_SLOT_IDS.map((id) => (
+        <figure key={id} style={{ margin: 0 }}>
+          {state[id] === 'missing'
+            ? <div className="text-caption" style={{ aspectRatio: '1', display: 'grid', placeItems: 'center', borderRadius: 6,
+                background: 'var(--surface-container-high)', color: 'var(--error)' }}>not captured</div>
+            : <img src={slabUrl(lookId, shareImageRel(id), rev)} alt={getTodSlotLabel(id)}
+                onLoad={() => mark(id, 'ok')} onError={() => mark(id, 'missing')}
+                style={{ display: 'block', width: '100%', aspectRatio: '1', borderRadius: 6 }} />}
+          <figcaption className="text-caption" style={{ textAlign: 'center', marginTop: 2 }}>{getTodSlotLabel(id)}</figcaption>
+        </figure>
+      ))}
+    </div>
+  )
 }
 
-/** The panel: the button, and the enlarger showing the set. */
+/** The Share image card's body (Stage wraps it in its collapsible card): the button, the line, the set. */
 export default function ShareCapture({ playing }) {
   const lookId = useCartographStore((s) => s.activeLookId)
   const [busy, setBusy] = useState(false)
-  const [open, setOpen] = useState(false)
   const [rev, setRev] = useState(() => Date.now())
+  const [have, setHave] = useState({})
   const [msg, setMsg] = useState(null)   // { kind, text }
+  const hasSet = TOD_SLOT_IDS.every((id) => have[id] === 'ok')
 
   async function capture() {
     setBusy(true); setMsg(null)
@@ -183,7 +179,7 @@ export default function ShareCapture({ playing }) {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images }) })
       const data = await r.json()
       if (!r.ok || data.error) throw new Error(data.error || 'save failed')
-      setRev(Date.now()); setOpen(true)
+      setRev(Date.now())
       setMsg({ kind: 'ok', text: `${data.files.length} images · ${Math.round(data.files.reduce((n, f) => n + f.bytes, 0) / 1024)} KB · ship on the next Publish` })
     } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
     setBusy(false)
@@ -191,19 +187,13 @@ export default function ShareCapture({ playing }) {
 
   return (
     <div>
-      <div className="section-heading mb-2">Share image</div>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-          disabled={busy || !lookId} onClick={capture}
-          title="Render this camera at every time of day and save one image per slot into the town's slab. A shared link sends the one for the time of day it is in the town.">
-          {busy ? 'Capturing…' : '📷 Capture share images'}
-        </button>
-        <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all" disabled={!lookId}
-          aria-pressed={open} onClick={() => { if (!open) setRev(Date.now()); setOpen(!open) }}
-          title="See the town's eight share images side by side, large">⤢</button>
-      </div>
+      <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
+        disabled={busy || !lookId} onClick={capture}
+        title="Render this camera at every time of day and save one image per slot into the town's slab. A shared link sends the one for the time of day it is in the town.">
+        {busy ? 'Capturing…' : hasSet ? '📷 Recapture' : '📷 Capture share images'}
+      </button>
       {msg && <div className="text-caption mt-2" style={{ color: msg.kind === 'err' ? 'var(--error)' : 'var(--on-surface-variant)' }}>{msg.text}</div>}
-      {open && lookId && <Enlarger key={`${lookId}:${rev}`} lookId={lookId} rev={rev} onClose={() => setOpen(false)} />}
+      {lookId && <div className="mt-2"><ShareImages key={`${lookId}:${rev}`} lookId={lookId} rev={rev} onState={setHave} /></div>}
     </div>
   )
 }
