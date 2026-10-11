@@ -191,7 +191,8 @@ function _poseSeg(shot, seg, lam, outPos, outTgt) {
   const { fov, fm } = shot, a = seg, b = seg + 1
   // fov:begin
   const u = lam, u2 = u * u, u3 = u2 * u
-  return (2 * u3 - 3 * u2 + 1) * fov[a] + (u3 - 2 * u2 + u) * fm[a] + (-2 * u3 + 3 * u2) * fov[b] + (u3 - u2) * fm[b]
+  // Written from fov[a] so a held fov comes back exactly, not rounded off the last bit (the lens would rewrite it).
+  return fov[a] + (-2 * u3 + 3 * u2) * (fov[b] - fov[a]) + (u3 - 2 * u2 + u) * fm[a] + (u3 - u2) * fm[b]
   // fov:end
 }
 

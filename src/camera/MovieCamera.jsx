@@ -38,6 +38,10 @@ function publishFocus(keyframes, seg, lam) {
   movieFocus.on = true; movieFocus.from = ids[seg % n]; movieFocus.to = ids[(seg + 1) % n]; movieFocus.lam = n > 1 ? lam : 0
 }
 
+// The shot playing now, for the readers that size themselves to the WHOLE shot rather than the frame (the sun's shadow
+// box — CelestialBodies#shotShadowHalf). `on` while the movie is entered (a tween into it included: it lands on the path).
+export const movieShot = { on: false, keyframes: null, motion: null }
+
 // The lens, written on every frame the path's fov changes — never behind a threshold: a 0.1° write gate stood here
 // and stepped every slow zoom (~418 notches a cycle on Huron). ▶ node checks/claims-the-movie-is-continuous.mjs
 export function writeLens(camera, fov) {
@@ -95,10 +99,12 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
   }, [camera])
 
   // Leaving by unmount, or the town out of the movie shot: no movie focus.
-  useEffect(() => () => { movieFocus.on = false }, [])
+  useEffect(() => () => { movieFocus.on = false; movieShot.on = false }, [])
 
   useFrame((_, delta) => {
     sync()
+    movieShot.on = entered.current
+    if (entered.current) { movieShot.keyframes = live.current.keyframes; movieShot.motion = live.current.motion }
     if (!entered.current) {
       // Held paused on the path (Stage's playhead): the focus is the path's at that time.
       const p = path(), s = live.current.start

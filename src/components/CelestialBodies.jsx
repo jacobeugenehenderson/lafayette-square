@@ -47,6 +47,8 @@ import { bodyLights, celestialToPosition, LIGHT_RADIUS, SUN_VISUAL_RADIUS, MOON_
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { lookOf } from '../lib/lookOf.js'
+import { heroPathPose } from '../preview/heroAnim.js'
+import { movieShot } from '../camera/MovieCamera.jsx'
 import { kitUrl } from '../lib/kitUrl.js'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
@@ -116,6 +118,145 @@ if (typeof window !== 'undefined') {
   Object.defineProperty(window, '__maxMPerTexel', {
     get: () => _maxMPerTexel.value,
     set: (v) => { _maxMPerTexel.value = Number(v) },
+    configurable: true,
+  })
+}
+
+// ── THE SHADOW BOX'S SIZE — pure, so the movie can ask it of every pose of its path ──────
+  // Ground point the camera is looking at (ray → y=0).
+  //
+  // ⛔⛔ AT OR ABOVE THE HORIZON THERE IS NO GROUND HIT, AND THE ANSWER IS "EVERYTHING",
+  // NOT "NOTHING". This used to fall back to the point straight BELOW the camera, i.e.
+  // the SMALLEST possible extent, at exactly the angle where the camera can see the
+  // FURTHEST. The two branches met at the horizon with a cliff between them.
+  //
+  // ⭐ THE FLASH, MEASURED 2026-09-21. At camY 60 / fov 45 / townHalf 3539, the shadow
+  // box went 3539 m → 64 m across 0.1° of pitch — a 55× change in `texel`, which
+  // re-snaps EVERY shadow edge in the scene at once. A near-level camera sits on that
+  // cliff and the smallest jitter flips it every frame: a whole-frame, two-state,
+  // angle-dependent flicker. The recording measured exactly that — two discrete luma
+  // values (67.2 / 73.5) alternating at 30 Hz, with bright regions moving twice as far
+  // as dark ones, which is shadow coverage changing rather than exposure.
+  // ⚠️ It only appeared now because the frustum became CAMERA-FITTED today (3dcb5dd3);
+  // a fixed ±900 box could not flap. And it is worse the bigger the town, because the
+  // two sides of the cliff are further apart.
+  // ⛔ The hysteresis below is NOT the bug and must not be "tuned" to hide this — it
+  // governs a continuous input, and no band can damp a 55× step.
+  // How much ground is in shot. Perspective: grows with distance. Ortho: the
+  // camera's own half-height IS the answer, and it is exact.
+// `cam`: { position, fov, isOrthographicCamera, top, bottom, zoom } · `fwd`: its unit forward. Writes the ground focus
+// into `outFocus` and returns the half-extent the pose needs (metres), before bucketing.
+export function shadowFit(cam, fwd, townHalf, capHalf, outFocus) {
+  const p = cam.position
+  const lookingDown = fwd.y < -1e-4
+  if (lookingDown) {
+    const t = -p.y / fwd.y
+    outFocus.set(p.x + fwd.x * t, p.y + fwd.y * t, p.z + fwd.z * t)
+  } else {
+    // Level or tilted up: the shot runs to the horizon, so the visible ground is the
+    // whole town. Keep the focus under the camera — the SIZE is what matters here, and
+    // `seen` below is forced to the town's own extent so the two sides meet smoothly.
+    outFocus.set(p.x, 0, p.z)
+  }
+  const dist = Math.hypot(p.x - outFocus.x, p.y - outFocus.y, p.z - outFocus.z)
+  const seen = cam.isOrthographicCamera
+    ? (cam.top - cam.bottom) * 0.5 / (cam.zoom || 1)
+    // ⛔ No ground hit ⇒ the horizon is in shot ⇒ the whole town is visible. `Infinity`
+    // is deliberate and safe: the min below clamps it to `townHalf`, and it makes the
+    // grazing case continuous with the looking-down case instead of a cliff.
+    : lookingDown
+      ? dist * Math.tan(THREE.MathUtils.degToRad(cam.fov * 0.5))
+      : Infinity
+  // 1.6× so shadows CAST FROM OFFSCREEN still land in frame.
+  return Math.min(townHalf, capHalf, Math.max(60, seen * 1.6))
+}
+
+  // ⭐⭐ CAP THE BOX BY THE RESOLUTION IT DELIVERS, NOT BY A DISTANCE.
+  // The staircase on every cast-shadow edge is the texel grid: `texel = 2·half/4096`, so
+  // a box fitted to the whole town is 1.806 m/texel on huron (3697.9 m half) and a
+  // building's shadow edge can only land on that grid. At a grazing camera the fit
+  // SATURATES to town-wide — correct for a single map, and it is what pins the hero shot
+  // to the coarsest row.
+  // ⛔ The brief's alternative was "one authored max shadow distance, 512 m". Distance is
+  // the WRONG UNIT for a kit: 512 m is a third of Lafayette Square and a seventh of
+  // huron, so the same number buys a different picture in every town — Layer 0 q1.
+  // ⭐ The thing the operator actually cares about is how coarse a shadow edge may get,
+  // and that IS town-independent. Author METRES PER TEXEL and derive the cap from it:
+  //     half ≤ maxMPerTexel · SHADOW_MAP_SIZE / 2
+  // 0.25 m/texel ⇒ half ≤ 512 m on every town, by arithmetic rather than by coincidence.
+  // ⚠️ THE COST IS A SHADOW HORIZON. Beyond the box nothing is shadowed, so there is a
+  // distance where shadows stop. That is a LOOK decision — how far shadows reach versus
+  // how crisp they are — which is why it is authored and not derived. ⛔ It must never be
+  // a silent default that differs per town.
+  // ⭐ Live for the eye-gate: `window.__maxMPerTexel = 0.25`. Set to 0 or Infinity to
+  // restore the uncapped town-wide fit. Wants to become a `scene.json#shadow` field.
+export function shadowCapHalf() {
+  return (_maxMPerTexel.value > 0 && Number.isFinite(_maxMPerTexel.value))
+    ? (_maxMPerTexel.value * SHADOW_MAP_SIZE) / 2
+    : Infinity
+}
+
+  // ⛔⛔ QUANTISE THE SIZE, NOT JUST THE POSITION — OR EVERY SHADOW EDGE FLASHES.
+  // Texel-snapping the focus stops shadows CRAWLING as the box slides. It does
+  // nothing if the box also RESIZES, because texel = 2*half/SHADOW_MAP_SIZE: the
+  // moment `half` changes, the snapping grid changes pitch and EVERY shadow edge
+  // in the scene jumps to a new grid at once. The first cut of this took `half`
+  // straight from camera distance and re-fitted on any 5% drift, so flying the
+  // hero path resized it continuously. Jacob, 2026-09-21: "the flash/flicker is
+  // unpleasant." ⭐ Distinct from the frame rate — the parity probe measured the
+  // camera as smooth and monotone (±5% per-frame step) at 8.5 FPS, so the flash
+  // is not judder; it is the shadow grid changing pitch under a moving camera.
+  // ⇒ Round UP to a power of two: the texel size then only changes when the shot
+  // doubles, which is rare, and is a cut rather than a shimmer when it happens.
+  // ⚠️ WITH HYSTERESIS, or a camera hovering on a boundary flaps between two
+  // buckets every frame and the flash comes back worse. Grow as soon as the shot
+  // needs it; shrink only when it has dropped well inside the smaller bucket.
+//
+// ⭐⭐ AND IN THE MOVIE, ONE SIZE FOR THE WHOLE SHOT (BRIEF-the-movie-is-continuous; Jacob, 2026-10-11, option C).
+// The buckets made the size rare, not absent: a recorded pass resized the box 4× on Hi-Pointe–DeMun, 3× on huron, 2× on
+// Provincetown, each one every shadow edge jumping at once mid-shot. The path is authored, so the size the whole shot
+// needs is known before it plays: `shotShadowHalf` asks this same fit of every pose and holds the largest bucket.
+// The close stretches pay — their texels are the shot's widest bucket's, never coarser than the authored cap.
+// `shotHalf` null = no movie playing: the buckets and their hysteresis, as before.
+// ▶ node checks/claims-a-shot-never-resizes-its-shadow-box.mjs
+const pow2 = (v) => Math.pow(2, Math.ceil(Math.log2(Math.max(1, v))))
+export function shadowBucket(prevHalf, rawHalf, townHalf, shotHalf) {
+  const fit = Math.min(townHalf, pow2(rawHalf))
+  // shot:begin
+  if (shotHalf != null) return Math.max(shotHalf, fit)
+  // shot:end
+  // ⚠️ WITH HYSTERESIS, or a camera hovering on a boundary flaps between two
+  // buckets every frame and the flash comes back worse. Grow as soon as the shot
+  // needs it; shrink only when it has dropped well inside the smaller bucket.
+  if (prevHalf == null || rawHalf > prevHalf || rawHalf < prevHalf * 0.45) return fit
+  return prevHalf
+}
+
+// The bucket a whole authored shot needs: the fit asked of every pose of its path (heroPathPose — the set of poses the
+// camera occupies), aimed at its target, through its own fov.
+const _sCam = { position: { x: 0, y: 0, z: 0 }, fov: 45, isOrthographicCamera: false }
+const _sFwd = { x: 0, y: 0, z: 0 }, _sFocus = new THREE.Vector3(), _sP = [0, 0, 0], _sT = [0, 0, 0]
+export function shotShadowHalf(keyframes, motion, townHalf, capHalf, samplesPerSegment = 256) {
+  const segs = keyframes.length < 2 ? 1 : (motion.mode === 'loop' ? keyframes.length : keyframes.length - 1)
+  const N = segs * samplesPerSegment
+  let need = 0
+  for (let i = 0; i <= N; i++) {
+    const { fov } = heroPathPose(keyframes, motion, i / N, _sP, _sT)
+    const dx = _sT[0] - _sP[0], dy = _sT[1] - _sP[1], dz = _sT[2] - _sP[2], d = Math.hypot(dx, dy, dz) || 1
+    _sCam.position.x = _sP[0]; _sCam.position.y = _sP[1]; _sCam.position.z = _sP[2]; _sCam.fov = fov
+    _sFwd.x = dx / d; _sFwd.y = dy / d; _sFwd.z = dz / d
+    need = Math.max(need, shadowFit(_sCam, _sFwd, townHalf, capHalf, _sFocus))
+  }
+  return Math.min(townHalf, pow2(need))
+}
+
+// The switch, live for the eye-gate (Jacob compares HPDM's close stretch): `window.__shadowShotFit = false` restores the
+// per-frame buckets in the movie. Default ON.
+const _shotFit = { on: true }
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__shadowShotFit', {
+    get: () => _shotFit.on,
+    set: (v) => { _shotFit.on = !!v },
     configurable: true,
   })
 }
@@ -231,97 +372,28 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const camera = useThree(s => s.camera)
   const townHalfRef = useRef(null)
   const fitHalfRef = useRef(null)
+  const shotHalfRef = useRef(null)   // the movie's shot size, cached on its keys / motion / town / cap
   const fitLightRef = useRef(null)   // the LAST FITTED light transform, re-asserted per frame
   useFrame(() => {
     const light = lightRef.current
     const townHalf = townHalfRef.current
     if (!light || !light.castShadow || townHalf == null) return
 
-    // Ground point the camera is looking at (ray → y=0).
-    //
-    // ⛔⛔ AT OR ABOVE THE HORIZON THERE IS NO GROUND HIT, AND THE ANSWER IS "EVERYTHING",
-    // NOT "NOTHING". This used to fall back to the point straight BELOW the camera, i.e.
-    // the SMALLEST possible extent, at exactly the angle where the camera can see the
-    // FURTHEST. The two branches met at the horizon with a cliff between them.
-    //
-    // ⭐ THE FLASH, MEASURED 2026-09-21. At camY 60 / fov 45 / townHalf 3539, the shadow
-    // box went 3539 m → 64 m across 0.1° of pitch — a 55× change in `texel`, which
-    // re-snaps EVERY shadow edge in the scene at once. A near-level camera sits on that
-    // cliff and the smallest jitter flips it every frame: a whole-frame, two-state,
-    // angle-dependent flicker. The recording measured exactly that — two discrete luma
-    // values (67.2 / 73.5) alternating at 30 Hz, with bright regions moving twice as far
-    // as dark ones, which is shadow coverage changing rather than exposure.
-    // ⚠️ It only appeared now because the frustum became CAMERA-FITTED today (3dcb5dd3);
-    // a fixed ±900 box could not flap. And it is worse the bigger the town, because the
-    // two sides of the cliff are further apart.
-    // ⛔ The hysteresis below is NOT the bug and must not be "tuned" to hide this — it
-    // governs a continuous input, and no band can damp a 55× step.
     camera.getWorldDirection(_shadowFwd)
-    const lookingDown = _shadowFwd.y < -1e-4
-    if (lookingDown) {
-      _focus.copy(camera.position).addScaledVector(_shadowFwd, -camera.position.y / _shadowFwd.y)
-    } else {
-      // Level or tilted up: the shot runs to the horizon, so the visible ground is the
-      // whole town. Keep the focus under the camera — the SIZE is what matters here, and
-      // `seen` below is forced to the town's own extent so the two sides meet smoothly.
-      _focus.set(camera.position.x, 0, camera.position.z)
+    const capHalf = shadowCapHalf()
+    const rawHalf = shadowFit(camera, _shadowFwd, townHalf, capHalf, _focus)
+    // The movie's one size for the whole shot, while a shot plays (MovieCamera#movieShot); else none.
+    let shotHalf = null
+    if (_shotFit.on && movieShot.on && movieShot.keyframes?.length) {
+      const sh = shotHalfRef.current
+      const ms = movieShot.motion
+      if (!sh || sh.k !== movieShot.keyframes || sh.len !== ms?.length || sh.mode !== ms?.mode || sh.town !== townHalf || sh.cap !== capHalf) {
+        shotHalfRef.current = { k: movieShot.keyframes, len: ms?.length, mode: ms?.mode, town: townHalf, cap: capHalf,
+          half: shotShadowHalf(movieShot.keyframes, ms, townHalf, capHalf) }
+      }
+      shotHalf = shotHalfRef.current.half
     }
-
-    // How much ground is in shot. Perspective: grows with distance. Ortho: the
-    // camera's own half-height IS the answer, and it is exact.
-    const dist = camera.position.distanceTo(_focus)
-    const seen = camera.isOrthographicCamera
-      ? (camera.top - camera.bottom) * 0.5 / (camera.zoom || 1)
-      // ⛔ No ground hit ⇒ the horizon is in shot ⇒ the whole town is visible. `Infinity`
-      // is deliberate and safe: `rawHalf` clamps it to `townHalf` two lines down, and it
-      // makes the grazing case continuous with the looking-down case instead of a cliff.
-      : lookingDown
-        ? dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))
-        : Infinity
-    // ⭐⭐ CAP THE BOX BY THE RESOLUTION IT DELIVERS, NOT BY A DISTANCE.
-    // The staircase on every cast-shadow edge is the texel grid: `texel = 2·half/4096`, so
-    // a box fitted to the whole town is 1.806 m/texel on huron (3697.9 m half) and a
-    // building's shadow edge can only land on that grid. At a grazing camera the fit
-    // SATURATES to town-wide — correct for a single map, and it is what pins the hero shot
-    // to the coarsest row.
-    // ⛔ The brief's alternative was "one authored max shadow distance, 512 m". Distance is
-    // the WRONG UNIT for a kit: 512 m is a third of Lafayette Square and a seventh of
-    // huron, so the same number buys a different picture in every town — Layer 0 q1.
-    // ⭐ The thing the operator actually cares about is how coarse a shadow edge may get,
-    // and that IS town-independent. Author METRES PER TEXEL and derive the cap from it:
-    //     half ≤ maxMPerTexel · SHADOW_MAP_SIZE / 2
-    // 0.25 m/texel ⇒ half ≤ 512 m on every town, by arithmetic rather than by coincidence.
-    // ⚠️ THE COST IS A SHADOW HORIZON. Beyond the box nothing is shadowed, so there is a
-    // distance where shadows stop. That is a LOOK decision — how far shadows reach versus
-    // how crisp they are — which is why it is authored and not derived. ⛔ It must never be
-    // a silent default that differs per town.
-    // ⭐ Live for the eye-gate: `window.__maxMPerTexel = 0.25`. Set to 0 or Infinity to
-    // restore the uncapped town-wide fit. Wants to become a `scene.json#shadow` field.
-    const capHalf = (_maxMPerTexel.value > 0 && Number.isFinite(_maxMPerTexel.value))
-      ? (_maxMPerTexel.value * SHADOW_MAP_SIZE) / 2
-      : Infinity
-    // 1.6× so shadows CAST FROM OFFSCREEN still land in frame.
-    const rawHalf = Math.min(townHalf, capHalf, Math.max(60, seen * 1.6))
-
-    // ⛔⛔ QUANTISE THE SIZE, NOT JUST THE POSITION — OR EVERY SHADOW EDGE FLASHES.
-    // Texel-snapping the focus stops shadows CRAWLING as the box slides. It does
-    // nothing if the box also RESIZES, because texel = 2*half/SHADOW_MAP_SIZE: the
-    // moment `half` changes, the snapping grid changes pitch and EVERY shadow edge
-    // in the scene jumps to a new grid at once. The first cut of this took `half`
-    // straight from camera distance and re-fitted on any 5% drift, so flying the
-    // hero path resized it continuously. Jacob, 2026-09-21: "the flash/flicker is
-    // unpleasant." ⭐ Distinct from the frame rate — the parity probe measured the
-    // camera as smooth and monotone (±5% per-frame step) at 8.5 FPS, so the flash
-    // is not judder; it is the shadow grid changing pitch under a moving camera.
-    // ⇒ Round UP to a power of two: the texel size then only changes when the shot
-    // doubles, which is rare, and is a cut rather than a shimmer when it happens.
-    // ⚠️ WITH HYSTERESIS, or a camera hovering on a boundary flaps between two
-    // buckets every frame and the flash comes back worse. Grow as soon as the shot
-    // needs it; shrink only when it has dropped well inside the smaller bucket.
-    const pow2 = (v) => Math.pow(2, Math.ceil(Math.log2(Math.max(1, v))))
-    let half = fitHalfRef.current
-    if (half == null || rawHalf > half) half = Math.min(townHalf, pow2(rawHalf))
-    else if (rawHalf < half * 0.45) half = Math.min(townHalf, pow2(rawHalf))
+    const half = shadowBucket(fitHalfRef.current, rawHalf, townHalf, shotHalf)
 
     // Light basis, for texel snapping.
     // ⛔ Take the direction from the CELESTIAL position prop, never from

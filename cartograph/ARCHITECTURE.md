@@ -359,7 +359,7 @@ Every ground-anchored consumer multiplies by the same `uExag` uniform (driven fr
 
 ### Cast shadows — the frustum is the town's, and BOTH its position and its SIZE must be quantised (2026-09-20/21)
 
-Five decisions, each of which was a defect first.
+Six decisions, each of which was a defect first.
 
 1. **A vertex-displaced caster needs a `customDepthMaterial`.** three's own depth material has
    never heard of `aCentroidY` or `uExag`, so a building went into the map **on the baseline**, up
@@ -388,8 +388,12 @@ Five decisions, each of which was a defect first.
    only when the shot roughly doubles: a single cut instead of a continuous shimmer. ⚠️ **With
    hysteresis** — grow as soon as the shot needs it, shrink only once the shot is well inside the
    smaller bucket (0.45×) — or a camera parked on a boundary flaps between two sizes every frame and
-   the flash comes back worse.
-   ⛔ **The frame rate itself is UNEXPLAINED and is not this** — see `ROADMAP` H-9.
+   the flash comes back worse. ⭐ **In the movie, one size for the whole shot** (2026-10-11): the buckets made a resize
+   rare, not absent (recorded mid-shot: Hi-Pointe–DeMun 4×, huron 3×, Provincetown 2× a pass). The path is authored, so
+   `CelestialBodies#shotShadowHalf` asks the same fit of every pose of it (the no-ground-hit rule included) and the box
+   holds that bucket while the shot plays (`MovieCamera#movieShot`); the centre still snaps per frame inside the
+   now-constant slack. Close stretches pay with the shot's widest bucket, never coarser than the cap. Browse and Street
+   keep the buckets. Live switch `window.__shadowShotFit = false`. ▶ `node checks/claims-a-shot-never-resizes-its-shadow-box.mjs`
 
 5. **Buildings cast from BOTH faces (`shadowSide: DoubleSide`, slab + Stage).** With three's default
    (a `FrontSide` mesh casts from its back faces only) a lit strip ran along every building's shaded
