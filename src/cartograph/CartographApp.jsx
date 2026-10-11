@@ -1103,7 +1103,7 @@ export default function CartographApp() {
             surfacesSlot={<CartographSurfaces />}
             skyLightSlot={<CartographSkyLight />}
             postSlot={<CartographPost />}
-            shareSlot={<ShareCapture />}
+            shareSlot={<ShareCapture playing={previewPlaying} />}
             lookForkSlot={<ShotLookFork shot={shot} />} />
         )}
       </div>
