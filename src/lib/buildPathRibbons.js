@@ -28,8 +28,8 @@
 import clipperLib from 'clipper-lib'
 import { differenceRings, intersectRings } from './buildBlockGeometryV2.js'
 import { smoothChain } from './smoothCenterline.js'
+import { CLIP_SCALE as SCALE } from './lattice.js'
 
-const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 

@@ -175,9 +175,8 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    the median meets ①'s two-sided coast stroke. Re-baked offline with the median on the 1 mm lattice, it is unchanged
    (0.40 m step). Not the median's rounding. ▶ `crack-site.mjs <slab dir> huron 1416.8 -320.5`
    ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` · `slit-producer.mjs <town>`
-   ⏳ **Debt: the partition's 1 mm lattice has three definitions** (`bake-ground` `CLIP_SCALE`, `bake-shore-median`
-   `SCALE`, `groundConformity` `WELD_QUANTUM_M`), and the median rounds to the cm. One-source version shelved:
-   `scratch/ground-height/lattice-wip/` (+5.6% tris on Huron, no measured gain, 2026-10-10).
+   ✅ The 1 mm lattice has one home, `src/lib/lattice.js` ▶ `checks/claims-the-lattice-has-one-home.mjs`. ⏳ Still: the
+   median rounds its output to the cm (`bake-shore-median` `toRing`), and other grids keep their own values (lattice.js).
 
 ## 5. The design: heights along ①, then ONE deformer that acts like curb geometry (Jacob, 2026-10-08)
 

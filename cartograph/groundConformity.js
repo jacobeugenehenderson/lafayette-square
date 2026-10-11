@@ -31,13 +31,13 @@
  * T-junction, the bake THROWS. A split without conformity is worse than none.
  */
 import * as THREE from 'three'
+import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
 
 // ⭐ The weld quantum is the clipper lattice, not a tolerance picked to make a
 // number go away: flattenPaintStack rounds every ring to CLIP_SCALE = 1000 units
 // per metre, so two rings that share a vertex share it to the millimetre. It is
 // ~4× coarser than float32's resolution at ±4 km (~0.25 mm), so a round-trip
 // through the .bin cannot move a vertex across a bucket boundary in practice.
-export const WELD_QUANTUM_M = 0.001
 // A vertex within this distance of an edge's interior is ON that edge. 5 mm: well
 // above the weld quantum + float32 noise, well below any crack worth seeing.
 export const ON_EDGE_M = 0.005
@@ -45,12 +45,12 @@ export const ON_EDGE_M = 0.005
 // A shape ratio, unitless — it describes a triangle, not a town.
 export const SLIVER_RATIO = 0.01
 
-const Q = 1 / WELD_QUANTUM_M
+const Q = CLIP_SCALE
 const KEY_BIAS = 2 ** 23, KEY_MUL = 2 ** 24          // ±8.3 km at 1 mm, exact in a double
 function weldKey(x, z) {
   const qx = Math.round(x * Q), qz = Math.round(z * Q)
   if (Math.abs(qx) >= KEY_BIAS || Math.abs(qz) >= KEY_BIAS) {
-    throw new Error(`[groundConformity] vertex (${x}, ${z}) is outside the ±${KEY_BIAS * WELD_QUANTUM_M / 1000} km weld range`)
+    throw new Error(`[groundConformity] vertex (${x}, ${z}) is outside the ±${KEY_BIAS * LATTICE_M / 1000} km weld range`)
   }
   return (qx + KEY_BIAS) * KEY_MUL + (qz + KEY_BIAS)
 }

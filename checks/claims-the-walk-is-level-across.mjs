@@ -27,7 +27,7 @@
 //   · a PATH's walk (the run's chain is a footway / cycleway / path / pedestrian / steps / bridleway, by the chain's own
 //     `highway` in ribbons.json) — named and counted, not gated: whether a trail carries a walk at all is A19's question;
 //   · SUB-LATTICE: a triangle whose excess fall × its own extent across the run is under the partition's lattice
-//     (`WELD_QUANTUM_M`, read) cannot show a tilt — a sliver along an edge, whose "fall across" is the street's grade
+//     (`LATTICE_M`, src/lib/lattice.js, read) cannot show a tilt — a sliver along an edge, whose "fall across" is the street's grade
 //     along divided by its altitude. Counted, not gated.
 // ⭐ MUTATION TEST: `--selftest` on one town, in memory, on the STATION gate: (1) every terrain part one value (a flat
 //   world) → GREEN; (2) the terrain part tilted across x at twice the limit → RED; (3) the walk's MIDDLE bowed up by
@@ -42,7 +42,7 @@ import { join, basename } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
 import { resolveWalkNorm } from '../cartograph/curb-cut-norm.mjs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
-import { WELD_QUANTUM_M } from '../cartograph/groundConformity.js'
+import { LATTICE_M } from '../src/lib/lattice.js'
 
 const ROOT = new URL('../public/baked/', import.meta.url).pathname
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=')[1]
@@ -125,7 +125,7 @@ function measure(dir, { mutate = null } = {}) {
       if (fall > out.worst) { out.worst = fall; out.worstRaw = cr; out.worstY = cy }
       if (norm.crossSlopeMax != null && fall > norm.crossSlopeMax) {
         const pr = [ax * ac.n[0] + az * ac.n[1], bx * ac.n[0] + bz * ac.n[1], cx * ac.n[0] + cz * ac.n[1]]
-        if ((fall - norm.crossSlopeMax) * (Math.max(...pr) - Math.min(...pr)) < WELD_QUANTUM_M) { out.subLattice.n++; out.subLattice.area += area; continue }
+        if ((fall - norm.crossSlopeMax) * (Math.max(...pr) - Math.min(...pr)) < LATTICE_M) { out.subLattice.n++; out.subLattice.area += area; continue }
         if (classOf.get(ac.run.skelId) === 'path') { out.path.n++; out.path.area += area; continue }
         const r = fall / norm.crossSlopeMax; out.band[r <= 1.01 ? 0 : r <= 2 ? 1 : r <= 10 ? 2 : 3] += area
         out.over.push({ g: g.id, area, fall, cr, ti: t.ti, key: `${ac.run.skelId} · ${ac.run.side} · ${ac.run.segOrd}`, at: [mx, mz] }); out.overArea += area }

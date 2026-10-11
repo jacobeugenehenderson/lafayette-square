@@ -11,7 +11,7 @@
 // 14.49 m of snail-road frontage stamped `trunk-link-28 right/0`, painted bare at the highway depth.
 // ASSERTS, for every in-disc ① block edge (outer + holes) whose owner is a chain in the ribbons: its two ends and its
 // midpoint lie within ε + 2 Clipper grid steps of the owner's centreline — ε read off the artifact (`eps`), the
-// grid off tileGround.js (`SCALE`), never restated. Red with coordinates, the label, and the chain it lies on.
+// grid off src/lib/lattice.js (`CLIP_SCALE`), never restated. Red with coordinates, the label, and the chain it lies on.
 // The rim (`__boundary__`) and the water edge own no chain and are not judged.
 // ⭐ AND THE REST OF THE OWNER — its SIDE and its SPAN (2026-09-25). Each on-chain edge is projected onto the chain's
 // MINT polyline (the skeleton tessellated by derive's own `tessellateAdaptive`, segmented by the mint's own
@@ -37,8 +37,7 @@ const { tessellateAdaptive } = await quietly(() => import('../cartograph/derive.
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
-const SCALE = +readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8').match(/^const SCALE = (\d+)/m)?.[1]
-if (!SCALE) { console.error('⛔ NOT CHECKED — SCALE not found in tileGround.js'); process.exit(2) }
+import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'   // the partition's grid, from its one home
 const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
 const ribbonsOf = (s) => ribbonsPathOf(s)
 const XY = (q) => Array.isArray(q) ? q : [q.x, q.z]

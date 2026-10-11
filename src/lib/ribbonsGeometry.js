@@ -15,8 +15,8 @@
  */
 
 import clipperLib from 'clipper-lib'
+import { CLIP_SCALE } from './lattice.js'
 
-const CLIP_SCALE = 1000
 
 // Land-use face fills. Authoring lives in CartographSurfaces; this is
 // the fallback for uses the active Look hasn't customized.

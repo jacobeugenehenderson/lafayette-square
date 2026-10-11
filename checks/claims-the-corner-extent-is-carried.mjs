@@ -11,13 +11,14 @@
 // reach. ⭐ Both columns come out of one run: a claim about which is better is measured here.
 // ▶ node checks/claims-the-corner-extent-is-carried.mjs [town ...]   (no town ⇒ every town that has the input)
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 let bad = 0
 for (const scene of feedScenes()) {   // no town named ⇒ every town with ribbons (checks/_scenes.mjs)
   const f = feed(scene); if (!f) { bad++; continue }
   const r = buildProto(f, { quiet: true, protoProducer: true })
   const T = r.protoShapeTiles || []
   if (!T.length) { console.log(`⛔ ${scene}: no proto tiles — NOT a pass`); bad++; continue }
-  const QK = (x, y) => `${Math.round(x * 1000)},${Math.round(y * 1000)}`
+  const QK = (x, y) => `${Math.round(x * CLIP_SCALE)},${Math.round(y * CLIP_SCALE)}`
   let marks = 0, carried = 0, matched = 0, carriedEdges = 0, matchedEdges = 0, noArcField = 0
   for (const st of T) {
     const iA = st.iaFull || [], fil = st.fillets || []
@@ -34,7 +35,7 @@ for (const scene of feedScenes()) {   // no town named ⇒ every town with ribbo
       // ── MATCHED: the tangent-coordinate lookup this replaces, run on the same rings.
       const ix = new Map()
       for (let q = 0; q < n; q++) { const k = QK(ring[q][0], ring[q][1]); const a = ix.get(k); if (a) a.push(q); else ix.set(k, [q]) }
-      const find = (P) => { const cx = Math.round(P[0] * 1000), cy = Math.round(P[1] * 1000)
+      const find = (P) => { const cx = Math.round(P[0] * CLIP_SCALE), cy = Math.round(P[1] * CLIP_SCALE)
         let b = null, bd = Infinity
         for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const a = ix.get(`${cx + dx},${cy + dy}`); if (!a) continue
           for (const q of a) { const d = Math.hypot(ring[q][0] - P[0], ring[q][1] - P[1]); if (d < bd) { bd = d; b = q } } }

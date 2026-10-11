@@ -7,7 +7,7 @@
 // opens (Huron's shore, 2026-10-10: a beach edge chording 0.25–0.40 m over sand-median vertices 5.5 mm off it).
 // ⭐ Why this and not a tolerance: `findTJunctions` asks "is a vertex within ON_EDGE_M of an edge", so anything a few
 // mm past that tolerance is invisible to it. This check asks the topology instead, which has no distance to tune.
-// Vertices are matched on the partition's own lattice (`WELD_QUANTUM_M`, groundConformity.js — read, not restated).
+// Vertices are matched on the partition's own lattice (`CLIP_SCALE`, src/lib/lattice.js — read, not restated).
 //
 // ⭐ MUTATION TEST: `--selftest` drops one interior triangle from a town's partition in memory → must go RED.
 //
@@ -15,7 +15,7 @@
 // Read-only. Exits 1 on any interior seam.
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
-import { WELD_QUANTUM_M } from '../cartograph/groundConformity.js'
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 const ROOT = new URL('../public/baked/', import.meta.url).pathname
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=')[1]
 const SHOW = +(arg('show') || 5)
@@ -28,7 +28,7 @@ function seams(dir, { dropOne = false } = {}) {
   if (!groups.length) return { unstamped: true }
   const st = gj.stencil
   if (!st?.center || !(st.radius > 0)) throw new Error(`${dir}: ground.json has no stencil — the disc whose rim is the only allowed boundary is unknown`)
-  const Q = 1 / WELD_QUANTUM_M, key = (x, z) => `${Math.round(x * Q)},${Math.round(z * Q)}`
+  const Q = CLIP_SCALE, key = (x, z) => `${Math.round(x * Q)},${Math.round(z * Q)}`
   const edges = new Map()
   let dropped = false
   for (const g of groups) {

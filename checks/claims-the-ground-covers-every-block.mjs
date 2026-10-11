@@ -11,7 +11,7 @@
 // union of everything the painter paints for that tile — run with the look's authoring (design.json
 // blockCustoms + curbWidth), never a copy of its rules — is EMPTY.
 // TOLERANCE, DECLARED FROM THE CONSTRUCTION, never tuned: the painter's geometry lives on the Clipper integer
-// grid (`SCALE` units per metre, read from tileGround.js). A leftover piece counts when its MEAN WIDTH
+// grid (`SCALE` units per metre, read from src/lib/lattice.js). A leftover piece counts when its MEAN WIDTH
 // (2·area / perimeter) exceeds TWO GRID STEPS — thinner is the grid's own rounding along a shared edge.
 // ⛔ Not an erosion: ClipperOffset's result depends on ring orientation and join type, and a miter/round
 // erosion both reported phantom holes on a clean synthetic block (the instrument, caught by the self-test).
@@ -33,8 +33,7 @@ import { sectionPassProtoTile, buildTileGround, tilePieceLus } from '../src/lib/
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
-const SCALE = +src.match(/^const SCALE = (\d+)/m)?.[1]
-if (!SCALE) { console.error('⛔ NOT CHECKED — SCALE not found in tileGround.js'); process.exit(2) }
+import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'   // the partition's grid, from its one home
 const MIN_WIDTH_GRID = 2                          // the tolerance: a piece must be wider than 2 grid steps (1/SCALE m each)
 const toC = (r) => r.map(p => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) }))
 const areaC = (r) => { let s = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; s += p.X * q.Y - q.X * p.Y } return Math.abs(s / 2) / SCALE / SCALE }

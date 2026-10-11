@@ -65,6 +65,7 @@ import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
+import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -620,7 +621,6 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
 const { Clipper: _Clipper, Paths: _Paths, Path: _Path, IntPoint: _IntPoint,
         ClipType: _ClipType, PolyType: _PolyType, PolyFillType: _PolyFillType,
         PolyTree: _PolyTree } = clipperLib
-const CLIP_SCALE = 1000            // integer clipper units per metre → 1 mm precision
 
 function _ringToPath(ring) {
   const p = new _Path()

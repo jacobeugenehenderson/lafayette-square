@@ -49,10 +49,10 @@ import { requireExplicitMap } from './scene.js'
 import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastVerdict, resample, shoreFingerprint } from './shoreRuns.mjs'
 import { elevationSpecs, openRasters, readWindow, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
+import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, ClipType, PolyType, PolyFillType, PolyTree, JoinType, EndType } = clipperLib
-const SCALE = 1000                                                  // clipper units per metre: 1 mm
 const toPath = (ring) => { const p = new Path(); for (const [x, z] of ring) p.push(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))); return p }
 const toRing = (path) => path.map(q => [Math.round(q.X / SCALE * 100) / 100, Math.round(q.Y / SCALE * 100) / 100])
 const run = (op, subj, clip, fill = PolyFillType.pftNonZero) => {

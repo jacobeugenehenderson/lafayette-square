@@ -45,8 +45,8 @@ import { readCapCustom } from './feCustomKey.js'
 // flag off nothing in this module reaches it. Goes when the hybrid goes.
 import { walkSubstrate, tilesFromWalk } from './substrateWalk.js'
 import { createVocabularyGate } from '../../cartograph/osm-vocabulary.mjs'
+import { CLIP_SCALE as SCALE } from './lattice.js'
 
-const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
@@ -2753,7 +2753,7 @@ function arcSectorPoly(C, r, tA, tB, depth, margin = 0) {
 }
 // Pure ring/key helpers shared by the shape pass AND the chain-free sectionPass
 // (module scope so sectionPass can use them without closing over the chain).
-const tipKey = (p) => Math.round(p[0] * 1000) + ',' + Math.round(p[1] * 1000)
+const tipKey = (p) => Math.round(p[0] * SCALE) + ',' + Math.round(p[1] * SCALE)
 const pushLu = (map, lu, rings) => { if (rings.length) (map[lu] || (map[lu] = [])).push(...rings) }
 const nearestVertexIndex = (pt, ring) => {
   let bi = 0, bd = Infinity
@@ -7974,7 +7974,7 @@ export function buildTileGround(ribbons, opts = {}) {
         if (!deadEndSkels.has(spurSkel)) continue   // a LOOP body (Benton/Waverly/SV), not a dead-end → leave it
         const hasThrough = [...m.keys()].some(sk => sk !== spurSkel)
         if (!hasThrough) continue
-        const M = k.split(',').map(v => +v / 1000)
+        const M = k.split(',').map(v => +v / SCALE)
         // the two mouth fillet apexes nearest the mouth node (the two corners)
         const near = fSink.map(f => ({ f, d: Math.hypot(f.apex[0] - M[0], f.apex[1] - M[1]) }))
           .filter(o => o.d < 30).sort((a, b) => a.d - b.d).slice(0, 2)

@@ -16,13 +16,14 @@
 // ⛔ Outside every tile (the rim's perimeter road, a highway stroke, water) D is null: the caller draws the terrain there
 //   and COUNTS it.
 
+import { CLIP_SCALE, LATTICE_M as LATTICE } from '../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
+
 const sq = (x) => x * x
 const SIDESTEP = 1e-5   // metres: far below the 1 mm lattice, far above float64 noise
 const ulp32 = (v) => 2 ** (Math.floor(Math.log2(Math.max(Math.abs(v), 1))) - 23)   // a float32's spacing at v
 // ⭐ THE WALK'S LIMIT IS SHARED, HALF AND HALF: the profile may tilt a walk by at most half of it; the other half is the
 // DRAWING's — the chord error of the triangles that carry the profile, which the bake refines against (`refineTol`).
 const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's tilt and the mesh's chord error share the town's own walk norm
-const LATTICE = 0.001   // the partition's own 1 mm grid: crossings closer than this are one crossing point
 
 /** @param tiles shape.json tiles (runs carry `h`) · @param bands { curb, lawn, walk }: arrays of {outer, holes}|ring, AS
  *  PAINTED (before the flatten punches overlays through them) · @param stencil the town's disc ring (beyond it nothing is
@@ -294,7 +295,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   const unownedIn = (x, z) => resolve(x, z).unowned ?? null
   const own = (c) => `${c.R.t}|${c.R.k}|${c.key ?? nearKey(c)}`
   function resolve(x, z) {
-    const mk = `${Math.round(x * 1000)},${Math.round(z * 1000)}`
+    const mk = `${Math.round(x * CLIP_SCALE)},${Math.round(z * CLIP_SCALE)}`
     if (memo.has(mk)) return memo.get(mk)
     const v = resolveUncached(x, z); memo.set(mk, v); return v
   }

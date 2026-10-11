@@ -19,7 +19,7 @@
 //     never recomputed here (a `[start, end]` ramp is read as a ramp);
 //   · where the nearest point of an edge is its END, the permitted depth is the smaller of the two edges
 //     meeting there — the construction offsets a width step's vertex at their average;
-//   · TOLERANCE, DECLARED FROM THE CONSTRUCTION: two Clipper grid steps (`SCALE`, read from tileGround.js).
+//   · TOLERANCE, DECLARED FROM THE CONSTRUCTION: two Clipper grid steps (`SCALE`, read from src/lib/lattice.js).
 // ⭐ Authored WIDTHS are loaded (the feed). The corner RADIUS is set to 0: the ease is a separate, authored
 // rounding checked by its own gates, it runs after the union, and it cannot remove an overrun — so zero R
 // leaves exactly the offset-and-union this claim is about, with no arc to tell apart from a lobe.
@@ -36,8 +36,7 @@ import { buildTileGround } from '../src/lib/tileGround.js'
 import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
 
 const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
-const SCALE = +src.match(/^const SCALE = (\d+)/m)?.[1]
-if (!SCALE) { console.error('⛔ NOT CHECKED — SCALE not found in tileGround.js'); process.exit(2) }
+import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'   // the partition's grid, from its one home
 const TOL = 2 / SCALE
 const quiet = (f) => { const o = console.log, w = console.warn; console.log = console.warn = () => {}; try { return f() } finally { console.log = o; console.warn = w } }
 const dAt = (d, end) => Array.isArray(d) ? (d[end] ?? 0) : (d ?? 0)

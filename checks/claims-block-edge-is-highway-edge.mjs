@@ -10,7 +10,7 @@
 //   · every contour vertex stamped with a highway run (`run.hwy`) lies within TOL of H's boundary;
 //   · the source sweeps the highway on the points ① consumes — no `WIDE_SPACING` and no `smoothChain`
 //     resample of grade-separated chains survives in `tileGround.js` (`r-ssot-skeleton-geometry`).
-// TOL is the Clipper grid the shape is built on (SCALE, read from tileGround.js) — two grid steps.
+// TOL is the Clipper grid the shape is built on (SCALE, read from src/lib/lattice.js) — two grid steps.
 // Baseline, before H-3 step 3 (brief, `scratch/h3-one-edge-gap.mjs`): huron 294/1306, LS 634/1836 > 0.5 m.
 //
 //   node checks/claims-block-edge-is-highway-edge.mjs [scene…] [--shape=path]
@@ -24,8 +24,7 @@ import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 
 const shapeOverride = process.argv.find(a => a.startsWith('--shape='))?.slice('--shape='.length)
 const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
-const SCALE = +src.match(/^const SCALE = (\d+)/m)?.[1]
-if (!SCALE) { console.error('⛔ NOT CHECKED — SCALE not found in tileGround.js'); process.exit(2) }
+import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'   // the partition's grid, from its one home
 const TOL = 2 / SCALE
 let red = false
 

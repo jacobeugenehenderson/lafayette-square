@@ -19,8 +19,8 @@ import { resolveChainSegmentation } from './chainSegmentation.js'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { readFeCustom } from './feCustomKey.js'
 import { smoothChain } from './smoothCenterline.js'
+import { CLIP_SCALE as SCALE } from './lattice.js'
 
-const SCALE = 1000
 const RAD = Math.PI / 180
 
 // Stable per-block key from a ring's bounding-box center, snapped to 0.5m.
