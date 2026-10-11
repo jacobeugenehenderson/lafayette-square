@@ -10,11 +10,14 @@
  *    pick another date. A set is all slots or nothing.
  * ⛔ ONE CAMERA, EIGHT TIMES — never eight camera spots. Capture refuses while the Hero shot plays, and every image is
  *    read only if the camera's pose is the one the press started on; any move (a tween, damping, a hand) aborts the set.
- * ⭐ ALWAYS CLEAR WEATHER, IN STILL AIR (Jacob, 2026-10-11): Capture stands the scene in Stage's Clear and holds the
- *    trees' wind at zero for the whole run, whatever the operator has chosen, and waits for the weather to land. The
- *    clock is paused for the capture; afterwards the operator's own weather, wind and time come back as they were.
+ * ⭐ ALWAYS CLEAR WEATHER (Jacob, 2026-10-11): Capture stands the scene in Stage's Clear for the whole run, whatever the
+ *    operator has chosen, and waits for it to land. The wind is left as it is ("the effect is negligible"). The clock
+ *    is paused for the capture; afterwards the operator's own weather and time come back as they were.
+ * ⭐ THE ENLARGER (Jacob: "surprisingly useful to be able to see them all side by side"): a drawer showing the eight
+ *    files Capture wrote, read from the slab on disk, large, with the slot names. It opens after a capture.
  */
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { addAfterEffect, useThree } from '@react-three/fiber'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -23,13 +26,12 @@ import useCartographStore from './stores/useCartographStore.js'
 import { getTodSlotMinutes, getTodSlotLabel } from './animatedParam.js'
 import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { townDateAtMinute, townClockOf, townMinuteOf } from '../lib/townClock.js'
-import { getWindOverride, setWindOverride, requestWindSheetRest, windSheetRestEpoch } from '../lib/windSheet.js'
+import { slabUrl } from '../lib/slabUrl.js'
+import { shareImageRel } from '../lib/shareCard.js'
 
 const SIZE = 1200   // px, square — the share image
 // The weather every share image is taken in: Stage's Weather switch's Clear (Jacob's ruling, 2026-10-11).
 const SHARE_WEATHER = 'clear'
-// ...in still air: no wind, no gusts (Jacob's ruling, 2026-10-11). Not Stage's "still" pill, which is 1 m/s gusting to 2.
-const STILL_AIR = { speedMps: 0, fromDeg: null, gustsMps: 0, gustShape: 0 }
 // ⛔ A signal that never comes is a failure, never a picture: past this the capture stops and says which slot and which state.
 const SETTLE_TIMEOUT_MS = 15000
 
@@ -106,7 +108,6 @@ async function captureSet() {
   if (absent.length) throw new Error(`${absent.map(getTodSlotLabel).join(', ')} does not happen on ${townClockOf(was.time).date} here — pick another date`)
   const cart = useCartographStore.getState()
   const wasWeather = cart.weatherMode
-  const wasWind = getWindOverride()
   tod.setPaused(true)
   const images = {}
   try {
@@ -119,12 +120,6 @@ async function captureSet() {
         return useSkyState.getState().feedPaused && a.rawDirective !== raw0 && !a.snapPending && a.tweenedDirective === a.rawDirective
       }, 'Clear weather', pose)
     }
-    // ⭐ STILL AIR (Jacob, 2026-10-11): at share-image scale wind is weather, so the trees stand in none. Laid on the one
-    // cable as the operator's override would be (lib/windSheet.js), so it reaches the trees on the next frame.
-    setWindOverride(STILL_AIR)
-    // ...and the trees stand in it now: the canopy's spring would carry the last wind for seconds (WIND_SPRING).
-    const rest0 = windSheetRestEpoch()
-    if (requestWindSheetRest()) await until(() => windSheetRestEpoch() !== rest0, 'Still air: the trees', pose)
     for (const id of TOD_SLOT_IDS) {
       const when = townDateAtMinute(was.time, mins[id])
       // Already on this minute, the clock would not move and nothing would re-land: step off it first.
@@ -135,7 +130,6 @@ async function captureSet() {
       images[id] = await frameAfter(2, pose)
     }
   } finally {
-    setWindOverride(wasWind)
     if (wasWeather !== SHARE_WEATHER) useCartographStore.getState().setWeatherMode(wasWeather)
     const t = useTimeOfDay.getState()
     useAtmosphere.getState().requestSnap()   // the operator's own sky lands at once, as it was
@@ -145,11 +139,39 @@ async function captureSet() {
   return images
 }
 
-/** The panel: the button, and the set it made. */
+/** The enlarger: the town's eight share images as Capture wrote them, side by side. Portalled: the card's glass would
+ *  otherwise contain a fixed overlay. `rev` re-reads the files after a capture (same names on disk). */
+function Enlarger({ lookId, rev, onClose }) {
+  const [missing, setMissing] = useState({})
+  return createPortal(
+    <div className="glass-panel rounded-xl p-3" style={{ position: 'fixed', top: 16, left: 16, right: 432, bottom: 16, zIndex: 50,
+      display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="section-heading" style={{ flex: 1 }}>Share images · {lookId}</div>
+        <button type="button" className="hero-btn px-3 py-1 rounded-lg text-body-sm cursor-pointer" onClick={onClose}>Close</button>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+        {TOD_SLOT_IDS.map((id) => (
+          <figure key={id} style={{ margin: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            {missing[id]
+              ? <div className="text-caption" style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--error)' }}>not captured</div>
+              : <img src={slabUrl(lookId, shareImageRel(id), rev)} alt={getTodSlotLabel(id)}
+                  onError={() => setMissing((m) => ({ ...m, [id]: true }))}
+                  style={{ flex: 1, minHeight: 0, width: '100%', objectFit: 'contain', borderRadius: 8 }} />}
+            <figcaption className="text-caption" style={{ textAlign: 'center', marginTop: 4 }}>{getTodSlotLabel(id)}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>,
+    document.body)
+}
+
+/** The panel: the button, and the enlarger showing the set. */
 export default function ShareCapture({ playing }) {
   const lookId = useCartographStore((s) => s.activeLookId)
   const [busy, setBusy] = useState(false)
-  const [set, setSet] = useState(null)   // { <slot>: dataUrl }
+  const [open, setOpen] = useState(false)
+  const [rev, setRev] = useState(() => Date.now())
   const [msg, setMsg] = useState(null)   // { kind, text }
 
   async function capture() {
@@ -161,7 +183,7 @@ export default function ShareCapture({ playing }) {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images }) })
       const data = await r.json()
       if (!r.ok || data.error) throw new Error(data.error || 'save failed')
-      setSet(images)
+      setRev(Date.now()); setOpen(true)
       setMsg({ kind: 'ok', text: `${data.files.length} images · ${Math.round(data.files.reduce((n, f) => n + f.bytes, 0) / 1024)} KB · ship on the next Publish` })
     } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
     setBusy(false)
@@ -170,22 +192,18 @@ export default function ShareCapture({ playing }) {
   return (
     <div>
       <div className="section-heading mb-2">Share image</div>
-      <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-        disabled={busy || !lookId} onClick={capture}
-        title="Render this camera at every time of day and save one image per slot into the town's slab. A shared link sends the one for the time of day it is in the town.">
-        {busy ? 'Capturing…' : '📷 Capture share images'}
-      </button>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
+          disabled={busy || !lookId} onClick={capture}
+          title="Render this camera at every time of day and save one image per slot into the town's slab. A shared link sends the one for the time of day it is in the town.">
+          {busy ? 'Capturing…' : '📷 Capture share images'}
+        </button>
+        <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all" disabled={!lookId}
+          aria-pressed={open} onClick={() => { if (!open) setRev(Date.now()); setOpen(!open) }}
+          title="See the town's eight share images side by side, large">⤢</button>
+      </div>
       {msg && <div className="text-caption mt-2" style={{ color: msg.kind === 'err' ? 'var(--error)' : 'var(--on-surface-variant)' }}>{msg.text}</div>}
-      {set && (
-        <div className="grid grid-cols-4 gap-1 mt-2">
-          {TOD_SLOT_IDS.map((id) => (
-            <figure key={id} className="m-0">
-              <img src={set[id]} alt={getTodSlotLabel(id)} className="w-full rounded" />
-              <figcaption className="text-caption text-center">{getTodSlotLabel(id)}</figcaption>
-            </figure>
-          ))}
-        </div>
-      )}
+      {open && lookId && <Enlarger key={`${lookId}:${rev}`} lookId={lookId} rev={rev} onClose={() => setOpen(false)} />}
     </div>
   )
 }

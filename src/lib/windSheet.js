@@ -234,17 +234,6 @@ export function onWindSheetReadout(cb) { _readoutSubs.add(cb); return () => _rea
 let _override = { speedMps: null, fromDeg: null, gustsMps: null, gustShape: null }
 export function getWindOverride() { return _override }
 export function clearWindOverride() { _override = { speedMps: null, fromDeg: null, gustsMps: null, gustShape: null }; _notify() }
-// ── AT REST, NOW — the canopy's spring carries the last wind for seconds (WIND_SPRING), so a reader that must see the trees
-// standing in the air as it is NOW (Stage's share capture, after it stills the air) asks for one frame that starts at rest
-// in the air, with no memory, and waits for the epoch to move. false = no sheet is mounted, so there is no memory to wait on.
-let _restAsked = false, _restEpoch = 0
-export function requestWindSheetRest() { if (!_mounted) return false; _restAsked = true; return true }
-export function windSheetRestEpoch() { return _restEpoch }
-/** @internal — <WindSheet> takes the request on its next frame and marks it done once that frame is drawn. */
-export function _takeWindSheetRest() { const a = _restAsked; _restAsked = false; return a }
-export function _markWindSheetRested() { _restEpoch++ }
-/** Lay an override as a whole — `getWindOverride()`'s shape (Stage's share capture holds still air, then puts the operator's back). */
-export function setWindOverride(o) { _override = { speedMps: o.speedMps ?? null, fromDeg: o.fromDeg ?? null, gustsMps: o.gustsMps ?? null, gustShape: o.gustShape ?? null }; _notify() }
 
 // ── The wind PILLS (Jacob, 2026-10-05: "build the wind pills") — the intuitive face of the override above. Four winds to
 // judge the Tree Wind against, plus `weather` (no override). Speed and the gust PEAK in m/s, shape 0 (round patches) →

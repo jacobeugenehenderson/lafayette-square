@@ -24,7 +24,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WIND_FIELD, WIND_FIELD_GLSL, windAtAdvect, gustLengths } from '../lib/wind-field.js'
 import { WeatherRangeError } from '../lib/weatherAt.js'
-import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay, setWindSheetOverlay, applyWindOverride, _publishLiveWind, _takeWindSheetRest, _markWindSheetRested } from '../lib/windSheet.js'
+import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay, setWindSheetOverlay, applyWindOverride, _publishLiveWind } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
 import { UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { useQuality } from '../lib/qualityProfile.js'
@@ -200,10 +200,7 @@ export default function WindSheet({ extent, wind }) {
     gl.getDrawingBufferSize(windSheetUniforms.uWindViewport.value)
 
     if (++publishTick.current % 15 === 1) _publishWindSheetReadout({ status: { ...status.current, sim: pass.material.uniforms.uSpring.value ? 'spring' : 'stateless' }, air: a, layout: layoutRef.current, gust: c.L })
-    // A rest asked for (requestWindSheetRest) starts this frame at rest in the air. A sheet not drawing holds no memory: done.
-    const rest = _takeWindSheetRest()
-    if (!targets.current || !enabled.current) { if (rest) _markWindSheetRested(); return }
-    if (rest) reset.current = true
+    if (!targets.current || !enabled.current) return
     const u = pass.material.uniforms
     u.uAdvect.value = c.adv
     u.uDt.value = dt
@@ -226,7 +223,6 @@ export default function WindSheet({ extent, wind }) {
     targets.current = [write, read]
     windSheetUniforms.uWindSheet.value = write.texture
     reset.current = false
-    if (rest) _markWindSheetRested()
     mainMs.current = performance.now() - now
   })
 
