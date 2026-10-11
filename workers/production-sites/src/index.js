@@ -27,6 +27,7 @@
  * Sibling: `workers/staging-sites` — the same shape, keyed by path instead of host.
  */
 import { route, hostKey, wwwRedirect } from './route.js'
+import { cardFor } from '../../../src/lib/shareCard.js'
 
 const TYPES = {
   html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8',
@@ -119,17 +120,20 @@ export default {
  * The page, told which town it is and where its slab is, plus its share card.
  * ⭐ The two tags are the whole difference between this site and staging: the player bytes are
  * the ones that were checked there (`src/instance.js#readLookParam`, `src/lib/bakedUrl.js`).
- * ⛔ The share card comes from the town's own pinned `towns.json`; a town missing from it gets
- * NEUTRAL tags (its id, no image), never Lafayette Square's.
+ * ⛔ The share card (`src/lib/shareCard.js#cardFor`, shared with staging) comes from the town's own pinned
+ * `towns.json` and its picture from the town's own slab, for the time of day it is there now; a town missing
+ * from it gets NEUTRAL tags (its id, no image), never Lafayette Square's.
  */
 async function townPage(response, rec, url, env, kitBase) {
   // The share card's towns.json — Promote pins it at `player/<map>/` for either player, as staging
   // reads the one beside the kit's player for both.
   const tObj = await env.ASSETS.get(`player/${rec.map}/towns.json`)
-  const t = (tObj ? await tObj.json() : {})[rec.map] || null
-  const title = t?.title || rec.map
-  const image = t?.ogImage || null
-  const icon = t?.faviconUrl || (t?.mark ? emojiIcon(t.mark) : null)
+  const manObj = await env.ASSETS.get(`baked/${rec.look}/manifest.json`)
+  const card = cardFor({ town: (tObj ? await tObj.json() : {})[rec.map] || null, map: rec.map, path: url.pathname,
+    manifest: manObj ? await manObj.json() : null, slabBase: `${url.origin}/baked/${rec.look}/`,
+    pageUrl: `${url.origin}/`, when: new Date() })
+  if (card.imageError) console.error(card.imageError)
+  const { title, image, icon } = card
   const setOr = (value) => ({ element(el) { value ? el.setAttribute('content', value) : el.remove() } })
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
   return new HTMLRewriter()
@@ -141,20 +145,16 @@ async function townPage(response, rec, url, env, kitBase) {
         // the host record). The same value the staging Worker asks Operations for live; read from
         // the record here so a production page never depends on Operations being up.
         + (rec.domain ? `<meta name="ward-domain" content="${esc(rec.domain)}" />` : ''), { html: true })
-      if (t?.description) el.append(`<meta property="og:description" content="${esc(t.description)}" />`, { html: true })
+      if (card.description) el.append(`<meta property="og:description" content="${esc(card.description)}" />`, { html: true })
     } })
     .on('title', { element(el) { el.setInnerContent(title) } })
     .on('meta[property="og:title"]', setOr(title))
     .on('meta[name="twitter:title"]', setOr(title))
     .on('meta[property="og:image"]', setOr(image))
     .on('meta[name="twitter:image"]', setOr(image))
-    .on('meta[property="og:url"]', setOr(`${url.origin}/`))
+    .on('meta[property="og:url"]', setOr(card.url))
     .on('link[rel="icon"]', { element(el) { icon ? el.setAttribute('href', icon) : el.remove() } })
     .transform(await response)
-}
-function emojiIcon(glyph) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${glyph}</text></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 /**

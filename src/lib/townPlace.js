@@ -10,9 +10,8 @@
  * ▶ node checks/claims-the-town-reads-no-player-store.mjs
  *
  * ⛔ It starts EMPTY and a read before anything is placed THROWS. There is no default town.
+ * Pure (no React): the site Workers reach it through townClock.js. The hook is `src/hooks/useTownPlace.js`.
  */
-import { useSyncExternalStore } from 'react'
-
 function placeOf(geography, lookId) {
   const { lat, lon, timezone, lonToMeters, latToMeters } = geography || {}
   if (![lat, lon, lonToMeters, latToMeters].every(Number.isFinite) || !timezone) {
@@ -38,8 +37,6 @@ export function setTownPlace(geography, lookId) {
 }
 
 function subscribe(fn) { _subs.add(fn); return () => _subs.delete(fn) }
-/** The place, re-rendering when it moves. Throws until placed, like townPlace(). */
-export function useTownPlace() { return useSyncExternalStore(subscribe, townPlace) }
 /** The Look the place belongs to, or null — for a gate that waits for it. */
 export function placedLook() { return _place?.lookId ?? null }
 export function onPlaceMoved(fn) { return subscribe(fn) }

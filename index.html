@@ -9,14 +9,15 @@
     <meta http-equiv="Expires" content="0" />
     <title>Lafayette Square</title>
 
-    <!-- Open Graph — SMS / social link previews -->
+    <!-- Open Graph — SMS / social link previews. The site Workers fill these per town (src/lib/shareCard.js);
+         the picture is the town's own, for the time of day it is there. ⛔ No town's image is named here. -->
     <meta property="og:title" content="Lafayette Square" />
-    <meta property="og:image" content="https://lafayette-square.com/photos/og-preview.jpg" />
+    <meta property="og:image" content="" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://lafayette-square.com/" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Lafayette Square" />
-    <meta name="twitter:image" content="https://lafayette-square.com/photos/og-preview.jpg" />
+    <meta name="twitter:image" content="" />
     <script>
       // Apply accessible class before first paint to avoid CSS repaint spike
       try { if (localStorage.getItem('lsq-accessible') === '1') document.documentElement.classList.add('accessible') } catch(e) {}

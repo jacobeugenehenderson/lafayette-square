@@ -31,60 +31,29 @@
  * the last key across midnight to the first (wrapTodFraction).
  */
 
-// Canonical TOD slot vocabulary — eight SunCalc moments (DawnTimeline.jsx draws the same list).
-// ⭐ DEEP NIGHT is the sun's NADIR (solar midnight), the slot between Night and Dawn (Jacob, 2026-09-27).
-// Night is astronomical DUSK (−18°, evening); without a key after it the resolver tweened straight up to
-// Dawn, so the night was darkest at 20:00 and half-way back to Dawn by midnight. Nadir exists at every
-// latitude and date (Night does not, above ~48.6°N near the June solstice) and needs no timezone.
-// Per-Look serialization stores slot ids; minutes are computed live from
-// SunCalc each frame so the envelope shifts seasonally with the real sun.
-import SunCalc from 'suncalc'
-import { townMinuteOf } from '../lib/townClock.js'
+// The TOD slots — eight sun moments, their order and their minutes — are src/lib/todSlots.js's (one home, shared
+// with the site Workers' share card). Per-Look serialization stores slot ids; minutes are computed live each frame
+// so the envelope shifts seasonally with the real sun.
+import { TOD_SLOT_IDS, todSlotMinutesAt, todSlotNearest } from '../lib/todSlots.js'
 import { townPlace } from '../lib/townPlace.js'
 import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
 
 
-// Order matches the day's progression so filtering by attachment
-// preserves chronological order in the strip. Colors come from --tod-*
-// tokens (src/tokens/design.css); this is the single source of truth
-// for slot identity + hue across the app.
-export const NAMED_TOD_SLOTS = [
-  { id: 'dawn',    label: 'Dawn',    color: 'var(--tod-dawn)'    },
-  { id: 'sunrise', label: 'Sunrise', color: 'var(--tod-sunrise)' },
-  { id: 'noon',    label: 'Noon',    color: 'var(--tod-noon)'    },
-  { id: 'golden',  label: 'Golden',  color: 'var(--tod-golden)'  },
-  { id: 'sunset',  label: 'Sunset',  color: 'var(--tod-sunset)'  },
-  { id: 'dusk',    label: 'Dusk',    color: 'var(--tod-dusk)'    },
-  { id: 'night',   label: 'Night',   color: 'var(--tod-night)'   },
-  { id: 'deep',    label: 'Deep night', color: 'var(--tod-deep)'  },
-]
+// The editor's face for each slot. Colors come from --tod-* tokens (src/tokens/design.css).
+const SLOT_LABEL = { dawn: 'Dawn', sunrise: 'Sunrise', noon: 'Noon', golden: 'Golden', sunset: 'Sunset', dusk: 'Dusk',
+  night: 'Night', deep: 'Deep night' }
+export const NAMED_TOD_SLOTS = TOD_SLOT_IDS.map(id => ({ id, label: SLOT_LABEL[id], color: `var(--tod-${id})` }))
 export const NAMED_TOD_SLOTS_BY_ID = Object.fromEntries(
   NAMED_TOD_SLOTS.map(s => [s.id, s])
 )
 export function getTodSlotLabel(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.label ?? id }
 export function getTodSlotColor(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.color }
 
-// Compute each named slot's minute-of-day for the given Date. SunCalc
-// `times` keys: dawn / sunrise / solarNoon / goldenHour / sunset / dusk /
-// night / nadir. A moment the sun does not reach that day (high latitude) is null and its keys drop out. We convert each to minute-of-day in the local frame the rest of
-// useTimeOfDay uses.
+// Each named slot's minute-of-day on the placed town's clock for the given Date (src/lib/todSlots.js).
+// A moment the sun does not reach that day (high latitude) is null and its keys drop out.
 export function getTodSlotMinutes(date) {
-  const { lat, lon } = townPlace()
-  const times = SunCalc.getTimes(date || new Date(), lat, lon)
-  const toMin = (d) => {
-    if (!d || isNaN(d.getTime?.())) return null
-    return townMinuteOf(d)   // the TOWN's clock (src/lib/townClock.js), as the channels are keyed
-  }
-  return {
-    dawn:    toMin(times.dawn),
-    sunrise: toMin(times.sunrise),
-    noon:    toMin(times.solarNoon),
-    golden:  toMin(times.goldenHour),
-    sunset:  toMin(times.sunset),
-    dusk:    toMin(times.dusk),
-    night:   toMin(times.night),
-    deep:    toMin(times.nadir),
-  }
+  const { lat, lon, timezone } = townPlace()
+  return todSlotMinutesAt(date || new Date(), { lat, lon, tz: timezone })
 }
 
 // "Playhead in slot" tolerance — minutes either side of a slot's
@@ -97,19 +66,7 @@ export const TOD_SLOT_TOLERANCE_MIN = 30
 // Find the named TOD slot whose computed minute is within tolerance of
 // `minute`. Returns slot id, or null.
 export function todSlotAtMinute(minute, date) {
-  const mins = getTodSlotMinutes(date)
-  let best = null
-  let bestGap = Infinity
-  for (const slot of NAMED_TOD_SLOTS) {
-    const m = mins[slot.id]
-    if (m == null) continue
-    const d = Math.abs(m - minute), gap = Math.min(d, 1440 - d)
-    if (gap <= TOD_SLOT_TOLERANCE_MIN && gap < bestGap) {
-      best = slot.id
-      bestGap = gap
-    }
-  }
-  return best
+  return todSlotNearest(minute, getTodSlotMinutes(date), TOD_SLOT_TOLERANCE_MIN)
 }
 
 // TOD is CYCLIC. The gap between the LAST authored slot (evening) and the FIRST

@@ -32,6 +32,8 @@ import { unionFootprints } from './building-union.mjs'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord, assertDiscInBox } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
+import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
+import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -287,7 +289,6 @@ function slabPathspecs(id) {
     `public/looks/${id}/design.json`,
     `public/looks/index.json`,
     ...(ribbons ? [ribbons] : []),
-    `public/photos/og-preview.jpg`,   // the link-preview image (captured from Preview)
   ]
 }
 
@@ -3343,26 +3344,37 @@ createServer(async (req, res) => {
     return
   }
 
-  // POST /og-image — save a captured SLAB frame (the hero render, not the UI) as
-  // the static link-preview image at public/photos/og-preview.jpg, referenced by
-  // index.html + worker.js. Body: { dataUrl: "data:image/jpeg;base64,..." }.
-  // Dev-only (serve.js). Ships on the next Publish (it's in the slab pathspecs).
-  if (req.method === 'POST' && path === '/og-image') {
+  // POST /looks/<id>/share — the town's SHARE IMAGES, one per time-of-day slot, captured in Stage from one camera
+  // (BRIEF-share-image-by-time-of-day). Written into the town's own slab as `share/<slot>.jpg`, so Publish uploads them
+  // and the manifest names them like any other slab file; the site Workers pick the slot it is now in the town
+  // (src/lib/shareCard.js). Body: { images: { <slot>: "data:image/jpeg;base64,…" } }.
+  // ⛔ All slots or none: a partial set would publish a town whose link has no picture for part of the day.
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/share$/))) {
+    const id = m[1]
     let body = ''
     req.on('data', c => { body += c })
     req.on('end', () => {
       try {
-        const { dataUrl } = JSON.parse(body || '{}')
-        const mimg = /^data:image\/\w+;base64,(.+)$/.exec(dataUrl || '')
-        if (!mimg) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'bad dataUrl' })); return }
-        const buf = Buffer.from(mimg[1], 'base64')
-        const out = join(import.meta.dirname, '..', 'public', 'photos', 'og-preview.jpg')
-        mkdirSync(dirname(out), { recursive: true })
-        writeFileSync(out, buf)
+        if (!readLooksIndex().looks.some(l => l.id === id)) throw new Error(`unknown look "${id}"`)
+        const { images } = JSON.parse(body || '{}')
+        const got = Object.keys(images || {})
+        const missing = TOD_SLOT_IDS.filter(s => !got.includes(s)), extra = got.filter(s => !TOD_SLOT_IDS.includes(s))
+        if (missing.length || extra.length) throw new Error(`a share set is one image per slot: missing ${missing.join(', ') || 'none'}, unknown ${extra.join(', ') || 'none'} — nothing was written`)
+        const bufs = TOD_SLOT_IDS.map(s => {
+          const mimg = /^data:image\/jpeg;base64,(.+)$/.exec(images[s] || '')
+          if (!mimg) throw new Error(`"${s}" is not a JPEG data URL — nothing was written`)
+          return [s, Buffer.from(mimg[1], 'base64')]
+        })
+        const dir = join(import.meta.dirname, '..', 'public', 'baked', id)
+        for (const [s, buf] of bufs) {
+          const out = join(dir, shareImageRel(s))
+          mkdirSync(dirname(out), { recursive: true })
+          writeFileSync(out, buf)
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ ok: true, bytes: buf.length, path: 'public/photos/og-preview.jpg' }))
+        res.end(JSON.stringify({ ok: true, files: bufs.map(([s, buf]) => ({ slot: s, path: `public/baked/${id}/${shareImageRel(s)}`, bytes: buf.length })) }))
       } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.writeHead(400, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: err.message }))
       }
     })
@@ -3448,18 +3460,21 @@ createServer(async (req, res) => {
     try {
       await runCapture(`git fetch origin --quiet`, { cwd: REPO_ROOT, timeout: 30000 })
       const branch = (await runCapture(`git rev-parse --abbrev-ref HEAD`, { cwd: REPO_ROOT })).stdout.trim()
+      // ⛔ A TOWN WITHOUT ITS SHARE IMAGES DOES NOT PUBLISH: its link would send no picture, silently. Refused by
+      // name before anything is committed or uploaded (BRIEF-share-image-by-time-of-day §4.4).
+      const noShare = SHARE_IMAGE_RELS.filter(rel => !existsSync(join(REPO_ROOT, 'public', 'baked', id, rel)))
+      if (noShare.length) throw new Error(`"${id}" has no share image for ${noShare.length === SHARE_IMAGE_RELS.length ? 'any time of day' : noShare.join(', ')} — press Capture share images in Stage first. Nothing was committed or uploaded.`)
       // Only pass pathspecs that actually exist — `git commit -- <path>` errors
-      // ("pathspec did not match any file(s)") on a spec that matches nothing,
-      // e.g. the optional og-preview.jpg before a capture has been made.
+      // ("pathspec did not match any file(s)") on a spec that matches nothing.
       const specs = slabPathspecs(id).filter(p => existsSync(join(REPO_ROOT, p)))
       if (!specs.length) throw new Error('no slab files found to publish')
       const changed = (await runCapture(`git status --porcelain -- ${specs.join(' ')}`, { cwd: REPO_ROOT })).stdout
         .split('\n').filter(Boolean).map(l => l.slice(3))   // no whole-output trim: see /publish/status above
       let committed = false
       if (changed.length) {
-        // Stage first: `git commit -- <paths>` only knows TRACKED files, so a
-        // newly-captured (untracked) og-preview.jpg fails "pathspec did not match
-        // any file(s) known to git". `git add` stages new + modified; the scoped
+        // Stage first: `git commit -- <paths>` only knows TRACKED files, so a new
+        // (untracked) file fails "pathspec did not match any file(s) known to git".
+        // `git add` stages new + modified; the scoped
         // pathspecs still mean we never sweep unrelated dirty files. Then commit
         // restricted to the same paths (ignores anything else already staged).
         const add = await runCapture(`git add -- ${specs.join(' ')}`, { cwd: REPO_ROOT })

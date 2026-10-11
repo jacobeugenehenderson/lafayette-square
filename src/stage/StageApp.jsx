@@ -1094,7 +1094,7 @@ function ShoreMedianSwitch() {
   )
 }
 
-export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot, lookForkSlot }) {
+export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot, lookForkSlot, shareSlot }) {
   const cam = useCameraState()
 
   return (
@@ -1166,6 +1166,9 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           {shot === 'street' && <StreetCamera cam={cam} />}
         </Collapsible>
       </div>
+
+      {/* Share — the link-preview images, one per time of day, from this camera (src/cartograph/ShareCapture.jsx). */}
+      {shareSlot && <div className="glass-panel rounded-xl p-3 pointer-events-auto">{shareSlot}</div>}
 
       {/* Image — camera/grade-side TOD channels (Tone & Color · Glow · Lens & Film).
           Visible in all shots. Renamed from "Post" (a render-mechanism word) to

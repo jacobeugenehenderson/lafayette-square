@@ -94,7 +94,7 @@ if (sc.minute !== 23 * 60 + 30) fails.push(`townMinuteOf read ${sc.minute} at 23
 if (sc.scrubbedMinute !== 1110 || !sc.scrubbed.startsWith('2026-09-28T22:30')) fails.push(`setMinuteOfDay(18:30) landed at ${sc.scrubbed} (town minute ${sc.scrubbedMinute}) — want 18:30 Eastern on the town's date, 2026-09-28T22:30Z`)
 if (!(sc.noon > 12 * 60 && sc.noon < 13 * 60)) fails.push(`the day's solar-noon slot reads ${sc.noon} min on the town's clock — Provincetown's solar noon is ~12:40 Eastern`)
 const VIEWER_CLOCK = /\.get(Hours|Day|Minutes|Seconds|Date|Month|FullYear)\(\)|\.set(Hours|Minutes|Date|Month|FullYear)\(/
-for (const f of ['src/hooks/useTimeOfDay.js', 'src/hooks/useCalendar.js', 'src/cartograph/animatedParam.js', 'src/cartograph/skyGrid.js',
+for (const f of ['src/hooks/useTimeOfDay.js', 'src/hooks/useCalendar.js', 'src/cartograph/animatedParam.js', 'src/lib/todSlots.js', 'src/cartograph/skyGrid.js',
   'src/components/Atmosphere.jsx', 'src/components/GatewayArch.jsx', 'src/App.jsx', 'src/cartograph/TodChannel.jsx',
   'src/cartograph/SkyGradientGrid.jsx', 'src/lib/weather-payload.js', 'src/lib/weather-signals.js']) {
   const m = code(f).match(VIEWER_CLOCK)

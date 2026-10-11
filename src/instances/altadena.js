@@ -27,7 +27,6 @@ export default {
     faviconUrl: null,
     // ⛔ NO MARK YET — the operator authors one (an emoji), in the Look. Until then the town shows its own initial.
     mark: null,
-    ogImage: null,
     assetSlug: "altadena",
   },
 

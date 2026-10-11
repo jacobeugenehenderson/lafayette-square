@@ -123,3 +123,11 @@ The per-platform **inclusion manifest** — *which channels ship to desktop vs. 
 - **`FEATURES.md §3 "Preview"`** — the user/investor re-voicing of this doc (the role table + the three-environments walkthrough).
 - **`OPERATIONS.md "Preview — the slab inspector"`** — the operator manual entry (defers here for the model).
 - **`_archive/RENDER-PATH-CENSUS.md`** *(archived)* — the render-path audit; Preview as the shipping-render measurement surface.
+
+---
+
+## 2026-10-11 — evicted from `ls/BACKLOG.md`: the time-of-day link preview, built
+
+Built by BRIEF-share-image-by-time-of-day (capture in Stage, one image per slot in the town's slab, the Workers pick by the town's clock). The row as it stood:
+
+| **Time-of-day OG link-preview** | The shared-link preview image (`og:image`) is currently a **single static slab snapshot**, captured from Preview (📷 "Capture hero → preview" → `public/photos/og-preview.jpg`, ships in the slab pathspecs; fixed the prior 404→bare-URL card). **Backlog (Jacob, 2026-06-30 — explicitly not today):** make it **time-of-day-aware** so the shared link shows a **night shot at night, a day shot by day**. Approach: capture N TOD variants from Preview (a **day/night pair** is ~90% of the charm; full set = the 7 slots dawn→night); extend `worker.js` with an **`/og` route** that computes the live TOD server-side (`suncalc` + the neighborhood lat/lng — the same model the app renders) and **serves the matching variant's bytes** (serve, don't 302 — some crawlers won't follow redirects for images); point `og:image` at `/og`. Cost: needs a Cloudflare **`/og` route** added in the dashboard (where `worker.js` is pasted), plus re-capturing variants when the look changes materially. |

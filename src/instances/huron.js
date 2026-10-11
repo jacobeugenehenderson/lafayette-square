@@ -53,7 +53,6 @@ export default {
     // Huron Harbor; ⚓ is the stand-in. ▶ paste any glyph that renders for you — that is the
     // whole authoring surface, and nothing needs rebuilding but the player.
     mark: '⚓',   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
-    ogImage: null,
     assetSlug: 'huron',
   },
 

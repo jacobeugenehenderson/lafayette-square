@@ -11,9 +11,9 @@
  * never fires. The button returns `{ ok: true }` having committed nothing.
  *
  * ⭐ AND IT HAPPENED ANYWAY, one directory over, 2026-09-22. A blanket `public/photos/`
- * ignore — added to keep ~1 GB of photo libraries out of git — swept up
- * `public/photos/og-preview.jpg`, the 164 KB link-preview image that IS a deployed
- * artifact and IS staged on every publish. Jacob hit "git add failed: the following paths
+ * ignore — added to keep ~1 GB of photo libraries out of git — swept up the
+ * link-preview image that then sat in that directory, a deployed artifact staged on every
+ * publish (since moved into each town's slab, 2026-10-11). Jacob hit "git add failed: the following paths
  * are ignored" on Publish to Staging. ⚠️ It failed LOUDLY only by luck: `git add` exits
  * non-zero on an explicitly named ignored path, and shrugs at a glob. One spelling of the
  * same mistake is a dead button; the other is a silent no-op.

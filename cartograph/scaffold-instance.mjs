@@ -66,7 +66,6 @@ export default {
     faviconUrl: null,
     // ${mark ? "OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source)." : '⛔ NO MARK YET — the operator authors one (an emoji), in the Look. Until then the town shows its own initial.'}
     mark: ${q(mark)},
-    ogImage: null,
     assetSlug: ${q(scene)},
   },
 

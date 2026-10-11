@@ -209,7 +209,8 @@ async function alreadyThere(files) {
 
   // ⭐ THE SHARE CARD, per town, for crawlers that never run JavaScript (SMS/iMessage/social).
   // The worker serves ONE index.html whose static tags are Lafayette Square's; it rewrites
-  // them per <map> from this file. ⛔ Generated from the instance REGISTRY — never a list
+  // them per <map> from this file; the picture is the town's own slab's (src/lib/shareCard.js), not this file's.
+  // ⛔ Generated from the instance REGISTRY — never a list
   // here — so a town with a module gets its own card and a town without one gets neutral
   // tags from the worker, never LS's.
   const { registeredMaps, instanceForMap } = await import(join(REPO_ROOT, 'src', 'instances', 'registry.js'))
@@ -218,7 +219,7 @@ async function alreadyThere(files) {
   for (const m of registeredMaps()) {
     const t = instanceForMap(m), b = t.branding || {}
     towns[m] = { title: titleOf(t), description: t.profile?.tagline || null,
-      ogImage: b.ogImage || null, faviconUrl: b.faviconUrl || null, mark: b.mark || null, markSvg: b.markSvg || null }
+      faviconUrl: b.faviconUrl || null, mark: b.mark || null, markSvg: b.markSvg || null }
   }
   const townsTmp = join(DIST, 'towns.json')
   writeFileSync(townsTmp, JSON.stringify(towns, null, 2))

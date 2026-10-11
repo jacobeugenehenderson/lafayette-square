@@ -64,7 +64,6 @@ export default {
     // The Ward's mark is the fleur-de-lis (Jacob, 2026-09-28: "in keeping with the kit"; "only in the Ward"), authored
     // in the Look (public/looks/lafayette-square/design.json identity.mark). This line is its copy:
     mark: '⚜️',   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
-    ogImage: 'https://lafayette-square.com/photos/og-preview.jpg', // index.html (Phase 4)
     assetSlug: 'lafayette-square',                               // per-look asset filenames; == lookId for #1
   },
 

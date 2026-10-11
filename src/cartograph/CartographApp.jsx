@@ -54,6 +54,7 @@ import StagePanelReal from './StagePanel.jsx'
 import { useDiagnostics } from '../stage/diagnostics.js'
 import CartographSkyLight from './CartographSkyLight.jsx'
 import CartographPost from './CartographPost.jsx'
+import ShareCapture, { ShareCaptureGL } from './ShareCapture.jsx'
 import { authoredBrowseFrame, browseSquare, browseSquareAltitude } from '../camera/browseFrame.js'
 import { setTodStill, todSlotAtMinute } from './animatedParam.js'
 import { SHOTS_FLAT_DEFAULTS } from './skyLightChannels.js'
@@ -934,6 +935,7 @@ export default function CartographApp() {
                 component Preview mounts, same per-Look slab Publish
                 ships. ↻ / Stage→ refresh via cache-bust on bakeLastMs. ── */}
           <SceneHandle />
+          {!inDesigner && <ShareCaptureGL />}
           {inDesigner && <ambientLight intensity={1} />}
 
 
@@ -1101,6 +1103,7 @@ export default function CartographApp() {
             surfacesSlot={<CartographSurfaces />}
             skyLightSlot={<CartographSkyLight />}
             postSlot={<CartographPost />}
+            shareSlot={<ShareCapture />}
             lookForkSlot={<ShotLookFork shot={shot} />} />
         )}
       </div>

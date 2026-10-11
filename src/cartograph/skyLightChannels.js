@@ -12,6 +12,7 @@
  * Slider ranges should reflect the operator's actual working zone
  * (mirrors LampGlow's tuning rationale in CartographSurfaces).
  */
+import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 
 // Brackets attenuated to the realistic working zone + finer intervals (2026-06-21,
 // slider-range principle — scratch/AUDIT-slider-ranges.md). Before, the useful
@@ -590,8 +591,7 @@ export const MILKYWAY_FIELD_KEYS = ['value']
 // Values are design choices argued on the page above; none is copied from a town's Look.
 // ▶ node checks/claims-look-default-has-no-town.mjs — every day channel keyed at every slot, no town values.
 // ═════════════════════════════════════════════════════════════════════════════════════════════════
-export const KIT_DAY_SLOTS = ['dawn', 'sunrise', 'noon', 'golden', 'sunset', 'dusk', 'night', 'deep']
-// Per channel: field → eight values in KIT_DAY_SLOTS order; `null` = a blank tile (the light is off there).
+// Per channel: field → eight values in TOD_SLOT_IDS order (src/lib/todSlots.js); `null` = a blank tile (the light is off there).
 // `edges` = the ▲ fade-up / ▼ fade-down marks (animatedParam.js#todEdge).
 const LAMP_EDGES = { sunset: { fade: 'up', minutes: 30 }, sunrise: { fade: 'down', minutes: 30 } }
 const DAY = {
@@ -668,7 +668,7 @@ DAY.archLight = UPLIGHT
 function buildDayChannel(spec) {
   const { edges, ...fields } = spec
   const values = {}
-  KIT_DAY_SLOTS.forEach((slot, i) => {
+  TOD_SLOT_IDS.forEach((slot, i) => {
     const tuple = {}
     for (const [k, arr] of Object.entries(fields)) if (arr[i] != null) tuple[k] = arr[i]
     if (Object.keys(tuple).length) values[slot] = tuple

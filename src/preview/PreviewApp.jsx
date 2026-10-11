@@ -638,22 +638,6 @@ function usePhoneScale(active) {
   return scale
 }
 
-// The Preview canvas's WebGL renderer, captured at onCreated — so the Publish
-// panel can grab the current SLAB frame (the 3D render only; the UI panels are
-// separate DOM overlays, never on the canvas) for the link-preview image.
-let _ogCaptureGL = null
-// Center-crop the live slab frame to a square JPEG data URL (for og:image).
-function captureOGImage(size = 1200) {
-  const gl = _ogCaptureGL
-  if (!gl?.domElement) throw new Error('scene not ready')
-  const src = gl.domElement
-  const s = Math.min(src.width, src.height)
-  const off = document.createElement('canvas')
-  off.width = size; off.height = size
-  off.getContext('2d').drawImage(src, (src.width - s) / 2, (src.height - s) / 2, s, s, 0, 0, size, size)
-  return off.toDataURL('image/jpeg', 0.9)
-}
-
 // ── Publish panel — the gate (PREVIEW.md §0.2). Preview is the publish gate;
 // this is the button that ships the verified slab the canon way: bake → commit
 // the look's slab → push STAGING (its own URL, the dry-run) → verify there →
@@ -666,7 +650,6 @@ function PublishPanel({ lookId }) {
   const [busy, setBusy] = useState(null)        // 'staging' | 'prod' | null
   const [msg, setMsg] = useState(null)          // { kind:'ok'|'err', text }
   const [deploys, setDeploys] = useState({ staging: null, prod: null }) // {status:'building'|'ready', bakedAt, url}
-  const [capturing, setCapturing] = useState(false)
   // A bake that would RE-POUR the town (the server's 428: the pour's code changed) is a question, never "bake failed"
   // (Jacob, 2026-09-29: Provincetown's Publish printed the raw JSON). { files } while the operator decides.
   const [repour, setRepour] = useState(null)
@@ -799,20 +782,6 @@ function PublishPanel({ lookId }) {
     setBusy(null)
   }
 
-  // Snapshot the current slab frame → center-square JPEG → public/photos/og-preview.jpg.
-  // It is committed with the next Publish (it is in the slab pathspecs); nothing ships it on its own.
-  async function smsCapture() {
-    setCapturing(true); setMsg(null)
-    try {
-      const dataUrl = captureOGImage()  // current slab frame (no UI) → center-square JPEG
-      const r = await fetch('/api/cartograph/og-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl }) })
-      const data = await r.json()
-      if (!r.ok || data.error) throw new Error(data.error || 'save failed')
-      setMsg({ kind: 'ok', text: `Captured · ${Math.round(data.bytes / 1024)} KB` })
-    } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
-    setCapturing(false)
-  }
-
   if (!status) return null   // probing or no backend → render nothing
   // ⭐ ONE CONDITION DRIVES BOTH THE TENSE AND THE DISABLE (Jacob, 2026-08-31).
   // They used to be two: `disabled` keyed on `ahead === 0`, the LABEL on the live
@@ -933,11 +902,6 @@ function PublishPanel({ lookId }) {
       {(status.unbaked || owed?.length > 0) && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Publish bakes first{owed?.length ? `: ${owed.join(', ')}` : ' (unbaked edits)'}.</div>}
       {owed === null && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ The bake check could not be read (a bake may be running): Publish asks it again.</div>}
 
-      <button disabled={!!busy || capturing} onClick={smsCapture}
-        style={btn({ background: 'rgba(168,85,247,0.18)', color: '#e9d5ff', opacity: (busy || capturing) ? 0.6 : 1 })}
-        title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image. It is committed with the next Publish.">
-        {capturing ? 'Capturing…' : '📷 Capture SMS Hero'}
-      </button>
       {targetRow('staging', <button disabled={!!busy || stagingDone || !!repour} onClick={() => publishStaging()}
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
         {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : shipping('Publish', stagingSlab, stagingPlayer)}
@@ -1178,10 +1142,7 @@ function PreviewTown({ town }) {
       {...townCanvas}
       frameloop={PREVIEW_FRAMELOOP}
       camera={townCanvas.camera}
-      // The Canvas is the quality profile's (townCanvasProps — the same profile <Town> is given); Preview adds only
-      // preserveDrawingBuffer, so "Capture hero → preview" can read the slab frame off the canvas between renders.
-      gl={{ ...townCanvas.gl, preserveDrawingBuffer: true }}
-      onCreated={({ gl }) => { _ogCaptureGL = gl }}
+      // The Canvas is the quality profile's (townCanvasProps — the same profile <Town> is given).
     >
       <CanvasContents key={reloadKey} town={town} layers={layers} shot={shot} quality={quality} />
     </Canvas>

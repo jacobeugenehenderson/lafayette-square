@@ -221,10 +221,12 @@ async function wardBuild(env) {
  * so the player's runtime branding (`src/lib/townMark.js`) never reaches them and every town's
  * link showed index.html's static Lafayette Square tags. Rewrite them here, per <map>, from
  * `towns.json` — generated from the instance registry by publish-player-to-staging.mjs, so
- * this file still holds no list of towns.
+ * this file still holds no list of towns — and its picture from the town's own slab, for the time
+ * of day it is in the town now. The card itself is `src/lib/shareCard.js#cardFor`, shared with production.
  * ⛔ A map with no entry gets NEUTRAL tags (its id, no image), never Lafayette Square's.
  */
 import { decideProductionDomain } from '../../../src/lib/productionDomain.js'
+import { cardFor } from '../../../src/lib/shareCard.js'
 
 /**
  * ⭐⭐ THE TOWN'S PRODUCTION DOMAIN, ON ITS STAGING PAGE (Jacob, 2026-09-26). Every public URL the
@@ -263,10 +265,6 @@ async function townsIndex(env) {
   _townsAt = Date.now()
   return _towns
 }
-function emojiIcon(glyph) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${glyph}</text></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-}
 // Former map names → current ones (`staging/renamed.json`). Read at most once a minute per isolate;
 // ⛔ a record that is not a { string: string } object throws — a broken table is never "no renames".
 let _renamed = null
@@ -282,11 +280,13 @@ async function renamedTable(env) {
 }
 
 async function shareCard(response, map, url, env, kitBase) {
-  const t = (await townsIndex(env))[map] || null
+  const manObj = await env.ASSETS.get(`staging/baked/${map}/manifest.json`)
+  const card = cardFor({ town: (await townsIndex(env))[map] || null, map, path: url.pathname,
+    manifest: manObj ? await manObj.json() : null, slabBase: `${env.SLAB_BASE}baked/${map}/`,
+    pageUrl: `${url.origin}/${map}/`, when: new Date() })
+  if (card.imageError) console.error(card.imageError)
   const { domain } = await townDomain(env, map)
-  const title = t?.title || map
-  const image = t?.ogImage || null
-  const icon = t?.faviconUrl || (t?.mark ? emojiIcon(t.mark) : null)
+  const { title, image, icon } = card
   const setOr = (value) => ({ element(el) { value ? el.setAttribute('content', value) : el.remove() } })
   return new HTMLRewriter()
     // ⭐ WHERE THE SLAB IS — the published player is built with `VITE_ASSET_BASE=runtime` and
@@ -304,9 +304,9 @@ async function shareCard(response, map, url, env, kitBase) {
     .on('meta[name="twitter:title"]', setOr(title))
     .on('meta[property="og:image"]', setOr(image))
     .on('meta[name="twitter:image"]', setOr(image))
-    .on('meta[property="og:url"]', setOr(`${url.origin}/${map}/`))
+    .on('meta[property="og:url"]', setOr(card.url))
     .on('link[rel="icon"]', { element(el) { icon ? el.setAttribute('href', icon) : el.remove() } })
-    .on('head', { element(el) { if (t?.description) el.append(`<meta property="og:description" content="${t.description.replace(/"/g, '&quot;')}" />`, { html: true }) } })
+    .on('head', { element(el) { if (card.description) el.append(`<meta property="og:description" content="${card.description.replace(/"/g, '&quot;')}" />`, { html: true }) } })
     .transform(await response)
 }
 

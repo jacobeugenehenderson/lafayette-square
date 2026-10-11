@@ -50,6 +50,7 @@ public/baked/
 │   ├── context.coastDist.bin        ← metres to the nearest shoreline, uint16 (§3.3)
 │   ├── outer-coast.json             ← the water PAST the rim, along the real coast (§3.4)
 │   ├── sources.json                 ← this town's data credits + licences, and what is still owed one
+│   ├── share/<slot>.jpg             ← the town's share images, one per time-of-day slot (§3.5)
 │   ├── buildings.json               ← geometry manifest (foundation + wall + roof groups)
 │   ├── buildings.bin                ← binary positions + colors + UVs + centroidY + indices
 │   ├── trees-atlas.json             ← per-look tree material atlas manifest
@@ -217,6 +218,14 @@ appends each polygon to the water body it continues at the rim. ▶ `node checks
 
 ---
 
+## 3.5. `share/<slot>.jpg` — the town's share images (2026-10-11)
+
+One 1200×1200 JPEG per time-of-day slot (`src/lib/todSlots.js#TOD_SLOT_IDS`), captured in Stage from one camera
+(`src/cartograph/ShareCapture.jsx` → `POST /looks/<id>/share`). ⭐ Authored, not baked: no bake writes or removes them.
+Publish refuses a town without all of them. The site Workers point `og:image` at the one for the slot it is now in the
+town, under its content name (`src/lib/shareCard.js`). ▶ `node checks/claims-a-town-shares-its-own-picture.mjs`
+
+---
 ## 4. `scene.json` — look-side styling carried into runtime
 
 Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `buildings.json`) to set live material colors, layer visibility, and the lamp glow palette.
