@@ -71,6 +71,19 @@ Anything else the recording shows (LOD pops, label pops, a texture page arriving
    before building: it is anti-shimmer by design, and `H-16`'s cliffs came from that code.
 5. Delete what each fix replaces in the same commit, and say what was removed.
 
+## 4b. The perf pass (Jacob's go, 2026-10-11) — after §4 lands, Glide WARM
+
+Measured by Glide in Jacob's own Chrome (desktop, DPR 2): HPDM 15.7 · Huron 14.3 · Provincetown 11.4 fps. That is frame
+COST, which no camera fix touches. Build the three items Jacob approved on 2026-10-07 and nobody built (`ROADMAP`
+"Perf (approved by Jacob 2026-10-07, not built)"), in this order, re-measuring with the frame-timeline recorder before and
+after each, and with Jacob's eye on each before the next:
+1. **Composer AA 2×**: multisampling named per surface (phones stay 0); eye-gate thin features. ▶ `node scratch/msaa/probe.mjs --tiers`
+2. **Grass footprint LOD**: drop octaves past `fwidth`; retire "the GRASS chunk is the CONTROL" (`BRIEF-surface-lab §2`) in the same change. ▶ `node scratch/browse-perf/probe.mjs --surfaces`
+3. **Bloom folded into the shared blur (pyramid) pass**: measure first; it has never been measured.
+Writes for this pass: the post stack (`src/components/PostProcessing.jsx` and its passes), the grass/ground shader, `src/lib/qualityProfile.js`,
+`checks/`. ⛔ No bake. ⛔ `frameCost.js#gpuWindow` is not GPU time on this M1: rank by the recorder's presented-frame
+intervals, never by it. Strike each item from `ROADMAP` as it lands.
+
 ## 5. Checks (see each FAIL first; mutation-test)
 
 - **The pose is continuous:** for every town's shots, sampled at a fine fixed step, position, aim and FOV have no jump
