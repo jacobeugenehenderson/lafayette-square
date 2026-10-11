@@ -30,6 +30,10 @@ export default {
       "vacant": "VacantLot",
       "historic_district": "NatHistDist"
     },
+    // ⭐ What the column HOLDS, read off the service (2026-10-11, Cairn): NatHistDist is esriFieldTypeSmallInteger with no
+    // domain — a district CODE (39, 58, 902, …), 0 = none. Not a name, so the parcel carries membership and no name; the
+    // town's own `historicDistricts` declaration names it.
+    "historicDistrictField": { "holds": "code", "designation": "national" },
     "constants": {
       "municipality": "St. Louis"
     },

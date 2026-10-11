@@ -52,6 +52,16 @@ const str = (v) => (v === null || v === undefined ? null : String(v).replace(/\s
  * that lies in either direction is caught at fetch time, on the town it lies about,
  * instead of surfacing as a column of zeros in a roster six steps downstream.
  */
+function historicDistrict(hd, field) {
+  const inDistrict = hd !== null && hd !== undefined && hd !== '' && hd !== 0
+  return {
+    national: inDistrict && field.designation === 'national',
+    local: inDistrict && field.designation === 'local',
+    certified_local: false,
+    name: inDistrict && field.holds === 'name' ? str(hd) : null,
+  }
+}
+
 function extract(attrs, geometry, src) {
   if (!geometry || !Array.isArray(geometry.rings) || !geometry.rings.length) return null
   const f = src.fields || {}
@@ -79,8 +89,10 @@ function extract(attrs, geometry, src) {
     // ⛔ `vacant: false` and `vacant: null` are different claims. A well that does not
     // carry the flag must not assert "not vacant" about every parcel in the town.
     vacant: absent.has('vacant') ? null : !!raw('vacant'),
-    historic_district: absent.has('historic_district') ? null
-      : { national: !!hd, local: false, certified_local: false },
+    // ⭐ The well's own NAME is kept when its column holds one; a code carries membership only, and the designation is
+    // the one the well declares (sources.js `historicDistrictField`). `{ national: !!hd }` threw NYC's name away and
+    // called a Landmarks Preservation Commission district national.
+    historic_district: absent.has('historic_district') ? null : historicDistrict(hd, src.historicDistrictField),
     municipality: str(raw('municipality')),
     jurisdiction: src.jurisdiction,
     source_id: src.id,

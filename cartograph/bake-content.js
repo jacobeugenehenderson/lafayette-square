@@ -292,6 +292,19 @@ function loadNrInventory(scene) {
   return JSON.parse(readFileSync(p, 'utf8'))
 }
 
+// The town's declared historic district (sources.json `historicDistricts`, validated in sources.js), or null.
+// ⛔ An NR inventory IS a district's inventory: one with no declared district would mark members of a district
+// nobody named, so it is refused rather than written nameless.
+function loadDeclaredDistrict(scene, nrIndex) {
+  const src = readSources(scene)
+  const district = (src.declared && src.historicDistricts[0]) || null
+  if (nrIndex.size && !district) {
+    throw new Error(`[district] scene "${scene}" has content/nr-inventory.json but sources.json declares no \`historicDistricts\`.\n` +
+      `  Declare the district it inventories: "historicDistricts": [{ "name": …, "nps_ref": … }]`)
+  }
+  return district
+}
+
 // Named OSM POIs from raw/osm.json. THREE producers, one consumer:
 //   .ground.<class>[]  ways + relation rings  { osmId, tags, isClosed, coords:[…] }
 //   .pois[]            TAGGED NODES          { osmId, osmType:'node', category, tags, coords:[one] }
@@ -543,15 +556,31 @@ function buildNrIndex(nr) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Historic-district membership (LS `architecture.district` convention).
-// Proximity to designated signals: assessor national flag + NR joins + the
-// DeMun nomination streets; Richmond Heights (county south of Clayton) excluded.
+// Historic-district membership (LS `architecture.district` convention), read from the TOWN'S OWN sources —
+// ⛔ never a district name, street list or municipality in this file (HPDM's lived here and was written into
+// every town, BRIEF-a-district-is-the-towns-own):
+//   · the parcel well's own NAME, when its column holds one → that district;
+//   · else the town's declared district (sources.json `historicDistricts`): the well's code/flag, an NR
+//     inventory match, or a declared nomination street, outside its excluded municipalities → its name;
+//   · else a well flag alone → a member, name unknown.
+// ⛔ `false` only where a source could have said yes for THIS building; one no source speaks for is null.
 // ──────────────────────────────────────────────────────────────────────────
 
-const DISTRICT_STREETS = ['ALAMO', 'SAN BONITA', 'SOUTHWOOD', 'NORTHWOOD', 'ROSEBURY', 'DE MUN', 'DEMUN']
-function inDistrictStreet(street) {
-  const s = (street || '').toUpperCase()
-  return DISTRICT_STREETS.some(d => s.includes(d))
+function districtOf(par, nr, hs, nrCould, district) {
+  const hd = par ? par.historic_district : null   // null where the parcel's well does not carry the column
+  if (hd && hd.name) return { in: true, name: hd.name }
+  const wellIn = !!(hd && (hd.national || hd.local || hd.certified_local))
+  const streets = (district && district.streets) || []
+  const street = (hs.street || '').toUpperCase()
+  const streetIn = !!street && streets.some(d => street.includes(d.toUpperCase()))
+  const spoke = !!hd || (nrCould && !!hs.house) || (streets.length > 0 && !!street)
+  if (district) {
+    const excluded = (district.excludeMunicipalities || []).includes(par && par.municipality)
+    if (!excluded && (wellIn || !!nr || streetIn)) return { in: true, name: district.name }
+    return { in: spoke || excluded ? false : null, name: null }
+  }
+  if (wellIn || nr) return { in: true, name: null }
+  return { in: spoke ? false : null, name: null }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -977,7 +1006,7 @@ function stripMeta(o) {
 // Layer 1 — roster (one record per baked building)
 // ──────────────────────────────────────────────────────────────────────────
 
-function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides, osmProminence) {
+function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, district, listings, rosterOverrides, osmProminence) {
   // group listings by building
   const listingsByBuilding = new Map()
   for (const l of listings) {
@@ -1002,11 +1031,10 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
 
     const jurisdiction = par ? par.jurisdiction : null
     const municipality = par ? par.municipality : null
-    const assessorHistoric = !!(par && par.historic_district && (par.historic_district.national || par.historic_district.certified_local))
-    // District membership: designated signal + not Richmond Heights (county south).
-    const districtEligible = municipality !== 'RICHMOND HEIGHTS'
-    const inDistrict = districtEligible && (assessorHistoric || !!nr || (hs && inDistrictStreet(hs.street)))
-    if (assessorHistoric || nr) stat.historic_flagged++
+    const hd = par && par.historic_district
+    if ((hd && (hd.national || hd.local || hd.certified_local)) || nr) stat.historic_flagged++
+    const dist = districtOf(par, nr, hs, nrIndex.size > 0, district)
+    const inDistrict = dist.in
     if (inDistrict) stat.in_district++
 
     const hostListings = listingsByBuilding.get(id) || []
@@ -1034,15 +1062,15 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
     // roster echoes the geometry instead of trying to invert it.
     const stories = meta.stories ?? null
 
-    const contributing = nr ? (nr.contrib === 'contributing') : (inDistrict ? null : null)
+    const contributing = nr ? (nr.contrib === 'contributing') : null
     const style = nr ? (nr.style || null) : null
     const year_built = (par && par.year_built) || (nr && nr.year) || null
     const period = year_built ? `${Math.floor(year_built / 10) * 10}s` : null
 
     const architecture = {}
-    if (inDistrict) architecture.district = 'Hi-Pointe–DeMun Historic District'
+    if (dist.name) architecture.district = dist.name
     if (contributing != null) architecture.contributing = contributing
-    if (nr) { architecture.nps_listed = true; architecture.nps_ref = '05000370' }
+    if (nr) { architecture.nps_listed = true; if (district.nps_ref) architecture.nps_ref = district.nps_ref }
     if (style) architecture.style = style
     if (year_built) architecture.year_built = year_built
 
@@ -1057,7 +1085,7 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
       jurisdiction,
       all_names: hostListings.length ? [...new Set(hostListings.map(l => l.name))] : (primary ? [primary.name] : []),
       listing_ids: hostListings.map(l => l.id),
-      historic_district: inDistrict ? 'Hi-Pointe–DeMun Historic District' : null,
+      historic_district: dist.name,
       contributing,
       style,
       architect: null,
@@ -1137,6 +1165,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const { parcels, absentByField, declared: parcelsDeclared } = loadParcels(scene)
   const luMap = loadLandUseCodes(scene)
   const nrIndex = buildNrIndex(loadNrInventory(scene))
+  const district = loadDeclaredDistrict(scene, nrIndex)
   const { pois, nodeTagsPresent } = loadOsmPois(scene)
   console.log(`  loaded: baked=${bakedIds.size} geom=${buildingGeom.size} parcels=${parcels.length} lu=${luMap.size} nr=${nrIndex.size} pois=${pois.length}`)
 
@@ -1259,7 +1288,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
 
   // Layer 1 — roster
   const osmProm = gatherOsmProminence(pois, buildingGrid, buildingGeom)
-  const { roster, stat, prominenceCtx } = buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides, osmProm.byBuilding)
+  const { roster, stat, prominenceCtx } = buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, district, listings, rosterOverrides, osmProm.byBuilding)
   console.log(`  roster: ${roster.length} buildings · parcel-matched ${stat.parcel_matched} · nr ${stat.nr_attributed} · in-district ${stat.in_district} · with-listings ${stat.with_listings}`)
 
   // ── ⭐ THE RANK REACHES THE LISTING. ————————————————————————————

@@ -16,6 +16,25 @@
     "file": "county-land-use-codes.csv"
   },
   "_landUseCodes_why": "The county well's LUCODE is numeric and opaque; the CSV is the assessor's own decode table, published alongside the parcel layer and re-acquired per jurisdiction.",
+  "historicDistricts": [
+    {
+      "name": "Hi-Pointe–DeMun Historic District",
+      "nps_ref": "05000370",
+      "streets": [
+        "ALAMO",
+        "SAN BONITA",
+        "SOUTHWOOD",
+        "NORTHWOOD",
+        "ROSEBURY",
+        "DE MUN",
+        "DEMUN"
+      ],
+      "excludeMunicipalities": [
+        "RICHMOND HEIGHTS"
+      ]
+    }
+  ],
+  "_historicDistricts_why": "The town names its own district; the kit names none (BRIEF-a-district-is-the-towns-own). Members: a St. Louis City parcel the assessor codes NatHistDist (a district code, not a name), a match in content/nr-inventory.json (this district's National Register inventory, NRHP ref 05000370), or an address on the nomination's streets — except in Richmond Heights, the county side south of Clayton. Moved verbatim from bake-content.js, 2026-10-11.",
   "_state_wells": "The wells are taken from the state record (cartograph/states/mo.mjs) and resolved by cartograph/sources.js; this file declares only what the town takes and how it selects.",
   "cropland": [
     {

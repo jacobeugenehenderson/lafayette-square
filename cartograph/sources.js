@@ -74,6 +74,10 @@ export const PARCEL_FIELDS = [
   'vacant', 'historic_district', 'municipality',
 ]
 
+/** What a well's `historic_district` column can hold, and whose designation it is. */
+export const HD_HOLDS = ['name', 'code']
+export const HD_DESIGNATIONS = ['national', 'local']
+
 export function sourcesPath(scene) {
   return join(mapDir(scene), SOURCES_FILE)
 }
@@ -135,6 +139,16 @@ export function readSources(scene) {
     const unaccounted = PARCEL_FIELDS.filter(f => !provides.includes(f) && !absent.includes(f))
     if (unaccounted.length) throw new Error(`${p}: ${who} accounts for neither provides nor absent: ${unaccounted.join(', ')}\n` +
       `  Every parcel field must be in exactly one list — a field in neither is a zero nobody can interpret.`)
+    // ⛔ A district column is a NAME on one well and a CODE on another (NY HistDist vs MO NatHistDist), and national on
+    // one and local on another. Read wrongly it writes a code as a district's name, or "national" for a city
+    // designation — so a well that provides it must say which, from its own data dictionary.
+    if (provides.includes('historic_district')) {
+      const h = src.historicDistrictField
+      if (!h || !HD_HOLDS.includes(h.holds) || !HD_DESIGNATIONS.includes(h.designation)) {
+        throw new Error(`${p}: ${who} provides historic_district but declares no valid \`historicDistrictField\`.\n` +
+          `  Read the well's data dictionary and declare { holds: ${HD_HOLDS.join('|')}, designation: ${HD_DESIGNATIONS.join('|')} }.`)
+      }
+    }
   }
 
   if (!j.parcels.length && !j.parcels_absent_reason) {
@@ -142,10 +156,25 @@ export function readSources(scene) {
       `  "No wells" is a FINDING — say what was searched and why nothing was adopted.`)
   }
 
+  // ⭐ A town's OWN historic districts — the name, and how membership is read, are the town's data, never kit code.
+  const historicDistricts = j.historicDistricts ?? []
+  if (!Array.isArray(historicDistricts)) throw new Error(`${p}: \`historicDistricts\` must be an array`)
+  for (const d of historicDistricts) {
+    if (!d.name) throw new Error(`${p}: a historicDistricts entry has no \`name\``)
+    for (const k of ['streets', 'excludeMunicipalities']) {
+      if (d[k] != null && !Array.isArray(d[k])) throw new Error(`${p}: historicDistricts[${d.name}].${k} must be an array`)
+    }
+  }
+  // ⛔ A well's code or flag carries membership without a name. With one declared district the town has said whose
+  // it is; with several, attributing it would be a guess — refuse until the declaration maps the well's codes.
+  if (historicDistricts.length > 1) throw new Error(`${p}: ${historicDistricts.length} historicDistricts declared — ` +
+    `more than one is not yet supported (a well's district code cannot yet be mapped to a declared name)`)
+
   return {
     declared: true,
     path: p,
     parcels: j.parcels,
+    historicDistricts,
     state: j.state || null,
     // ⭐ `undefined` (key absent) and `null` (declared self-describing) are different
     // states and are kept different. Absent means the town never said.

@@ -665,6 +665,11 @@ The kit's street hardware (lamps, signals, name signs, benches, …) is cataloge
     fetches them), then re-bake the buildings. A point joins by the id
     both carry (NYC's BIN; containment then checks it, printed), else by standing in the footprint or its parcel.
     ▶ `node checks/claims-every-building-has-an-address.mjs`
+  - ⭐ **Historic district** (the Ward's card): the well's own name when it carries one (NYC's PLUTO does); otherwise
+    the town declares its district in `sources.json` — `"historicDistricts": [{ "name": …, "nps_ref": …, "streets": [ … ],
+    "excludeMunicipalities": [ … ] }]` (HPDM's is the worked example). A town with neither writes no district and
+    `null` membership. A well that provides the column must declare `historicDistrictField` (`holds` · `designation`)
+    from its data dictionary, or the pour refuses. ▶ `node checks/claims-a-district-is-the-towns-own.mjs`
   - ⛔ **"No parcels" has THREE meanings and the kit keeps them apart.** *Undeclared* (no
     `sources.json`) means **nobody has looked into it** and shouts; *declared-none* is an honest zero
     with a written reason; *declared* is a real well.

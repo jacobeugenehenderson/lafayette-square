@@ -24,7 +24,9 @@ import { fileURLToPath } from 'url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CARTO = join(ROOT, 'cartograph')
 const DATA = join(CARTO, 'data')
-const scenes = readdirSync(DATA, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name).sort()
+// A retired scene declares it in its own directory (RETIRED.md — the kit's convention, as claims-a-towns-sources-are-its-own)
+// and is not a town: its sources are not held to the live declaration rules.
+const scenes = readdirSync(DATA, { withFileTypes: true }).filter(d => d.isDirectory() && !existsSync(join(DATA, d.name, 'RETIRED.md'))).map(d => d.name).sort()
 
 // one child, cwd = cartograph/, importing the resolver the way derive.js does (state from sources.js#readSources)
 const probe = `
