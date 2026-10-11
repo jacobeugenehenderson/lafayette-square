@@ -66,7 +66,6 @@ const useSkyState = create((set, get) => ({
   hourlyForecast: [],  // Array<{ time: Date, …a whole reading }> — lib/weatherAt.js's shape (hooks/useWeather.js#readingOf)
   currentReading: null,  // the live feed's last reading, in the same shape — what weatherAt returns while the clock is live
   feedPaused: false,   // true while Stage's Weather switch stands a preset: the live fetch writes nothing
-  presetWindPending: false,   // true while a standing preset waits on the town's wind tendency (WeatherPoller); it then re-targets the weather
 
   // ── Creative / derived ──
   astronomyAlpha: 1,      // star visibility factor (sun + clouds)
@@ -126,7 +125,6 @@ const useSkyState = create((set, get) => ({
 
   setHourlyForecast: (f) => set({ hourlyForecast: f }),
   setFeedPaused: (on) => set({ feedPaused: !!on }),
-  setPresetWindPending: (on) => set({ presetWindPending: !!on }),
 
   setBeautyBias: (v) => set({ beautyBias: Math.max(0, Math.min(1, v)) }),
   setLiveMode: () => set({ beautyBias: 0.6 }),

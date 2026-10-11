@@ -10,9 +10,9 @@
  *    pick another date. A set is all slots or nothing.
  * ⛔ ONE CAMERA, EIGHT TIMES — never eight camera spots. Capture refuses while the Hero shot plays, and every image is
  *    read only if the camera's pose is the one the press started on; any move (a tween, damping, a hand) aborts the set.
- * ⭐ ALWAYS CLEAR WEATHER (Jacob, 2026-10-11): Capture stands the scene in Stage's Clear for the whole run, whatever
- *    the operator has chosen, and waits for it to land. The clock is paused for the capture; afterwards the operator's
- *    own weather and time come back, live or scrubbed, as they were.
+ * ⭐ ALWAYS CLEAR WEATHER, IN STILL AIR (Jacob, 2026-10-11): Capture stands the scene in Stage's Clear and holds the
+ *    trees' wind at zero for the whole run, whatever the operator has chosen, and waits for the weather to land. The
+ *    clock is paused for the capture; afterwards the operator's own weather, wind and time come back as they were.
  */
 import { useState } from 'react'
 import { addAfterEffect, useThree } from '@react-three/fiber'
@@ -23,10 +23,13 @@ import useCartographStore from './stores/useCartographStore.js'
 import { getTodSlotMinutes, getTodSlotLabel } from './animatedParam.js'
 import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { townDateAtMinute, townClockOf, townMinuteOf } from '../lib/townClock.js'
+import { getWindOverride, setWindOverride, requestWindSheetRest, windSheetRestEpoch } from '../lib/windSheet.js'
 
 const SIZE = 1200   // px, square — the share image
 // The weather every share image is taken in: Stage's Weather switch's Clear (Jacob's ruling, 2026-10-11).
 const SHARE_WEATHER = 'clear'
+// ...in still air: no wind, no gusts (Jacob's ruling, 2026-10-11). Not Stage's "still" pill, which is 1 m/s gusting to 2.
+const STILL_AIR = { speedMps: 0, fromDeg: null, gustsMps: 0, gustShape: 0 }
 // ⛔ A signal that never comes is a failure, never a picture: past this the capture stops and says which slot and which state.
 const SETTLE_TIMEOUT_MS = 15000
 
@@ -103,6 +106,7 @@ async function captureSet() {
   if (absent.length) throw new Error(`${absent.map(getTodSlotLabel).join(', ')} does not happen on ${townClockOf(was.time).date} here — pick another date`)
   const cart = useCartographStore.getState()
   const wasWeather = cart.weatherMode
+  const wasWind = getWindOverride()
   tod.setPaused(true)
   const images = {}
   try {
@@ -115,10 +119,12 @@ async function captureSet() {
         return useSkyState.getState().feedPaused && a.rawDirective !== raw0 && !a.snapPending && a.tweenedDirective === a.rawDirective
       }, 'Clear weather', pose)
     }
-    // Clear stands in still air from the town's wind tendency; on a page with no forecast read yet that is fetched,
-    // and re-targets the weather when it lands. Wait for it (or its failure, which the poller says), so nothing
-    // re-targets the weather mid-run. The per-slot settle then lands each slot's weather.
-    await until(() => !useSkyState.getState().presetWindPending, "Clear weather: the town's wind tendency", pose)
+    // ⭐ STILL AIR (Jacob, 2026-10-11): at share-image scale wind is weather, so the trees stand in none. Laid on the one
+    // cable as the operator's override would be (lib/windSheet.js), so it reaches the trees on the next frame.
+    setWindOverride(STILL_AIR)
+    // ...and the trees stand in it now: the canopy's spring would carry the last wind for seconds (WIND_SPRING).
+    const rest0 = windSheetRestEpoch()
+    if (requestWindSheetRest()) await until(() => windSheetRestEpoch() !== rest0, 'Still air: the trees', pose)
     for (const id of TOD_SLOT_IDS) {
       const when = townDateAtMinute(was.time, mins[id])
       // Already on this minute, the clock would not move and nothing would re-land: step off it first.
@@ -129,6 +135,7 @@ async function captureSet() {
       images[id] = await frameAfter(2, pose)
     }
   } finally {
+    setWindOverride(wasWind)
     if (wasWeather !== SHARE_WEATHER) useCartographStore.getState().setWeatherMode(wasWeather)
     const t = useTimeOfDay.getState()
     useAtmosphere.getState().requestSnap()   // the operator's own sky lands at once, as it was
