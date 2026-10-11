@@ -28,6 +28,7 @@ import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { townDateAtMinute, townClockOf, townMinuteOf } from '../lib/townClock.js'
 import { slabUrl } from '../lib/slabUrl.js'
 import { shareImageRel } from '../lib/shareCard.js'
+import { cardBtn } from '../stage/StageApp.jsx'
 
 const SIZE = 1200   // px, square — the share image
 // The weather every share image is taken in: Stage's Weather switch's Clear (Jacob's ruling, 2026-10-11).
@@ -145,16 +146,15 @@ function ShareImages({ lookId, rev, cols, onState }) {
   const [state, setState] = useState({})   // { <slot>: 'ok' | 'missing' }
   const mark = (id, v) => setState((m) => { const n = { ...m, [id]: v }; onState(n); return n })
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: cols > 2 ? 4 : 6 }}>
+    <div className={`grid ${cols === 2 ? 'grid-cols-2 gap-1.5' : 'grid-cols-4 gap-1'}`}>
       {TOD_SLOT_IDS.map((id) => (
-        <figure key={id} style={{ margin: 0 }}>
+        <figure key={id} className="m-0">
           {state[id] === 'missing'
-            ? <div className="text-caption" style={{ aspectRatio: '1', display: 'grid', placeItems: 'center', borderRadius: 6,
-                background: 'var(--surface-container-high)', color: 'var(--error)' }}>not captured</div>
+            ? <div className="aspect-square rounded-md grid place-items-center bg-surface-container-high text-caption" style={{ color: 'var(--error)' }}>not captured</div>
             : <img src={slabUrl(lookId, shareImageRel(id), rev)} alt={getTodSlotLabel(id)}
                 onLoad={() => mark(id, 'ok')} onError={() => mark(id, 'missing')}
-                style={{ display: 'block', width: '100%', aspectRatio: '1', borderRadius: 6 }} />}
-          <figcaption className="text-caption" style={{ textAlign: 'center', marginTop: 2 }}>{getTodSlotLabel(id)}</figcaption>
+                className="block w-full aspect-square rounded-md" />}
+          <figcaption className="text-caption text-on-surface-variant text-center mt-0.5">{getTodSlotLabel(id)}</figcaption>
         </figure>
       ))}
     </div>
@@ -192,25 +192,22 @@ export default function ShareCapture({ playing }) {
   }
 
   return (
-    <div>
+    <div className="space-y-2">
       <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-        disabled={busy || !lookId} onClick={capture}
+        style={cardBtn()} disabled={busy || !lookId} onClick={capture}
         title="Render this camera at every time of day and save one image per slot into the town's slab. A shared link sends the one for the time of day it is in the town.">
         {busy ? 'Capturing…' : hasSet ? '📷 Recapture' : '📷 Capture share images'}
       </button>
-      {msg && <div className="text-caption mt-2" style={{ color: msg.kind === 'err' ? 'var(--error)' : 'var(--on-surface-variant)' }}>{msg.text}</div>}
-      {lookId && (
-        <div className="mt-2">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
-            <button type="button" className="text-caption cursor-pointer" style={{ color: 'var(--on-surface-subtle)' }}
-              onClick={() => { const n = cols === 4 ? 2 : 4; setCols(n); writeCols(n) }}
-              title={cols === 4 ? 'Show two to a row, closer to real size' : 'Show four to a row'}>
-              {cols === 4 ? '⤢ larger' : '⤡ compact'}
-            </button>
-          </div>
-          <ShareImages key={`${lookId}:${rev}`} lookId={lookId} rev={rev} cols={cols} onState={setHave} />
+      {msg && <div className="text-caption px-1" style={{ color: msg.kind === 'err' ? 'var(--error)' : 'var(--on-surface-variant)' }}>{msg.text}</div>}
+      {lookId && <>
+        <div className="mode-pill" role="group" aria-label="Share image size">
+          {[[4, 'compact'], [2, 'larger']].map(([n, label]) => (
+            <button key={n} type="button" aria-pressed={cols === n} onClick={() => { setCols(n); writeCols(n) }}
+              title={n === 2 ? 'Two to a row, closer to real size' : 'Four to a row'}>{label}</button>
+          ))}
         </div>
-      )}
+        <ShareImages key={`${lookId}:${rev}`} lookId={lookId} rev={rev} cols={cols} onState={setHave} />
+      </>}
     </div>
   )
 }

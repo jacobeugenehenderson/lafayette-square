@@ -485,7 +485,8 @@ const fmtSec = (s) => `${Math.round(s)} s`
 //     out by whatever puts the last key on the end (the exact inverse).
 // ⛔ No "+ After" and no separate "Update": adding at a key's time IS updating it.
 // A Camera-card button's style (Hero's Key here, Browse's Set as Browse frame).
-const cardBtn = (extra = {}) => ({
+// The panel's button colours (with .hero-btn); exported so a card passed in as a slot wears the same.
+export const cardBtn = (extra = {}) => ({
   background: 'var(--surface-container-high)', color: 'var(--on-surface)',
   border: '1px solid var(--outline-variant)', ...extra,
 })
