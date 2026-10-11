@@ -314,7 +314,9 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
     // ⛔ A point INSIDE a drawn ped band that no span's band reaches has no owner: COUNTED by name (`unowned`), and its
     // height is null — never the nearer line's.
     for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) {
-      if (c.d < 1e-9) return { v: c.H, owner: own(c) }
+      // within the lattice of ② the point IS on ②: the bands are on the 1 mm grid and ② is not, so a ray aimed from a
+      // station a fraction of a millimetre away points nowhere in particular (measured: 536 of 664 orphan clusters on HPDM)
+      if (c.d < LATTICE) return { v: c.H, owner: own(c) }
       const p = profile(c, x, z)
       if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c) } }
     }
