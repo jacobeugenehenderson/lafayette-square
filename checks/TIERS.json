@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 408,
+  "total": 409,
   "counts": {
-    "safe": 301,
+    "safe": 302,
     "local-effect": 19,
     "live": 88
   },
@@ -1097,6 +1097,13 @@
       ]
     },
     {
+      "file": "checks/claims-every-group-meshes-its-own-area.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-every-junction-corner-has-a-curb-cut-source.mjs",
       "tier": "local-effect",
       "why": [
@@ -1662,7 +1669,8 @@
       "file": "checks/claims-node-pair-key-parity.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "reads repo files only",
+        "declares @args --source=pour|bundle"
       ]
     },
     {
@@ -2111,7 +2119,8 @@
       "file": "checks/claims-side-baseline-audit.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "reads repo files only",
+        "declares @args --source=pour|bundle"
       ]
     },
     {
@@ -2207,7 +2216,8 @@
       "file": "checks/claims-stat-scope.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "reads repo files only",
+        "declares @args --scene=<town>"
       ]
     },
     {

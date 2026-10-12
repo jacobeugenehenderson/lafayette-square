@@ -142,7 +142,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 301. This is `npm test`.
+## safe — 302. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -242,6 +242,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-corner-is-configured.mjs` | pad is a band-slice, NOT predicated on the arc — so it works square OR round." |
 | `checks/claims-every-corner-is-one-of-three.mjs` | ⭐⭐⭐ EVERY CORNER RENDERS AS ONE OF THE THREE SANCTIONED SPECS — OR IT IS A DEFECT. |
 | `checks/claims-every-corner-knows-its-junction.mjs` | ⭐⭐ EVERY CORNER KNOWS WHETHER A STREET MEETS IT — `BRIEF-corner-ramps-and-kerb §0a`. THE LEGS DECIDE (Jacob, |
+| `checks/claims-every-group-meshes-its-own-area.mjs` | area.mjs — A GROUND GROUP'S MESH COVERS EXACTLY ITS OWN POLYGONS. |
 | `checks/claims-every-lu-tag-has-a-home.mjs` | home.mjs — CAN A TOWN BRING A WORD WE DO NOT KNOW? |
 | `checks/claims-every-mapped-stone-structure-is-stone.mjs` | stone.mjs — DOES EVERY MAPPED BREAKWATER AND GROYNE CARRY STONE? |
 | `checks/claims-every-measurable-town-is-declared.mjs` | A TOWN THE KIT CAN MEASURE IS A TOWN THE KIT DECLARES. |
