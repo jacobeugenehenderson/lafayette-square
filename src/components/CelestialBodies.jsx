@@ -1687,10 +1687,12 @@ function CelestialBodies({
   }, [lighting])
 
   // Weather-coupled lighting multipliers
-  // Note: using getState() instead of selectors to avoid render cascade in cartograph context
-  const skySnap = useSkyState.getState()
-  const cc = Math.round((skySnap.cloudCover || 0) * 20) / 20
-  const st = Math.round((skySnap.storminess || 0) * 20) / 20
+  // ⭐ SUBSCRIBED, to the value rounded to 0.05, so the light dims with the weather it is in the moment the weather
+  // lands — not the one before. A render-time getState() read kept the previous weather's cloud cover until something
+  // else re-rendered: the driver publishes after this renders (a snap, a tween). The rounding bounds the re-renders
+  // at 20 across a whole 0→1 tween, and `lighting` is memoized on the clock, so one recomputes only the weathered
+  // intensities below. ▶ node checks/claims-the-sun-dims-with-the-weather-now.mjs --town=<town>
+  const cc = useSkyState((s) => Math.round((s.cloudCover || 0) * 20) / 20)
   const primaryWeathered = useMemo(() => ({
     ...lighting.primary,
     intensity: lighting.primary.intensity * (1 - cc * 0.6),
