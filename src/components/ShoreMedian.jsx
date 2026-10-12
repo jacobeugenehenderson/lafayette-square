@@ -14,14 +14,14 @@
  *
  * Off by default: a diagnostic, not part of the shipped render (`<Town layers={{ shoreMedian: true }}>`).
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { slabFetch } from '../lib/slabUrl.js'
 import { revetmentResponseKind } from '../lib/revetmentFromSlab.js'
-import { terrainExag } from '../utils/terrainShader'
-import { getElevationRaw } from '../utils/elevation'
-import { shoreMedianBuffers, SHORE_MEDIAN_COLORS as C } from '../lib/shoreMedianGeometry.js'
+import { terrainExag, onTerrainReload } from '../utils/terrainShader'
+import { drawnGroundParts, onDrawnGround } from '../utils/elevation'
+import { shoreMedianBuffers, setExag, SHORE_MEDIAN_COLORS as C } from '../lib/shoreMedianGeometry.js'
 
 const geom = (p, c) => {
   const g = new THREE.BufferGeometry()
@@ -55,24 +55,39 @@ export function useShoreMedianDoc(lookId, bakeLastMs, { warnAbsent = false } = {
 export default function ShoreMedian({ lookId, bakeLastMs }) {
   const doc = useShoreMedianDoc(lookId, bakeLastMs, { warnAbsent: true })
 
+  // ⭐ ON THE DRAWN GROUND (`drawnGroundParts`), the ground the slab draws and every mover stands on — re-seated when the
+  // terrain or the drawn ground is re-pointed (a look switch, the ground loading).
+  const [gen, setGen] = useState(0)
+  useEffect(() => onTerrainReload(() => setGen(g => g + 1)), [])
+  useEffect(() => onDrawnGround(() => setGen(g => g + 1)), [])
   const built = useMemo(() => {
     if (!doc) return null
-    const b = shoreMedianBuffers(doc, getElevationRaw)
+    const b = shoreMedianBuffers(doc, drawnGroundParts)
     return {
+      parts: b,
       region: geom(b.region.p, b.region.c), edge: geom(b.edge.p),
       regionMat: new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, depthTest: false, transparent: true, opacity: 0.85 }),
       edgeMat: new THREE.LineBasicMaterial({ color: C.edge, depthTest: false }),
     }
-  }, [doc])
+  }, [doc, gen])
   useEffect(() => () => { if (built) for (const v of Object.values(built)) v.dispose?.() }, [built])
 
-  // Heights are RAW metres above the datum; the town's exaggeration pivots about y = 0, as the terrain shader does.
-  const [group, setGroup] = useState(null)
-  useFrame(() => { if (group) group.scale.y = terrainExag.value })
+  // Each vertex at the drawn ground's own law, raw × the live exaggeration + its unexaggerated part — rewritten only when
+  // the exaggeration moves (it tweens per shot: flat in Browse, 1 in Street, the town's value in Hero).
+  const last = useRef(null)
+  useFrame(() => {
+    if (!built) return
+    const e = terrainExag.value
+    if (last.current === e && last.current !== null) return
+    last.current = e
+    for (const [g, k] of [[built.region, 'region'], [built.edge, 'edge']]) {
+      const pos = g.getAttribute('position'); setExag(pos.array, built.parts[k].raw, built.parts[k].y, e); pos.needsUpdate = true; g.computeBoundingSphere() }
+  })
+  useEffect(() => { last.current = null }, [built])
 
   if (!built) return null
   return (
-    <group ref={setGroup} name="shoreMedian">
+    <group name="shoreMedian">
       <mesh geometry={built.region} material={built.regionMat} renderOrder={40} />
       <lineSegments geometry={built.edge} material={built.edgeMat} renderOrder={41} />
     </group>

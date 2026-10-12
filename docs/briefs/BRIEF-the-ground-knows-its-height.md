@@ -136,9 +136,9 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    (`kerbRegions`, `taperRegions`), NOT partition pieces; the painter gives only the warning strips (`mat:curbCut`)
    and each cut's `{face, inward}`. Slicing the paint with them was tried and failed (§9). ▶ `kerb-tj-where.mjs`
 5. **Who reads a ground height.** The drawn mesh (`src/lib/drawnGround.js`): lamps, tree anchors, buildings, Movers,
-   UserDot, the street eye, PilgrimMonument, LafayetteParkBody's ponds, stairs and title. The field: ShoreMedian, the
-   revetment drape, and LafayetteParkBody's fence posts (lifted in the shader by `patchTerrain`, which has only the field
-   on the GPU). Labels: none.
+   UserDot, the street eye, PilgrimMonument, LafayetteParkBody's ponds, stairs and title, ShoreMedian, and the revetment
+   (drape and stones). The field: LafayetteParkBody's fence posts only (lifted in the shader by `patchTerrain`, which has
+   only the field on the GPU). Labels: none.
 6. **The shore: two shape sources, and the gusset.** Re-measured 2026-10-12; the table and the commands are in §5, "The
    shore". The crack's mechanism: §4 item 9. Gap walk: still VOID (its 2026-10-10 Huron baseline: the mutation found the
    same 7,018 sky views as the town); a one-station look comes before any re-run.

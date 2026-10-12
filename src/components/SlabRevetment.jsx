@@ -39,8 +39,8 @@ import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentFromSlab.js'
-import { getElevationRaw } from '../utils/elevation'
-import { terrainBed, terrainWater, patchTerrain, patchTerrainInstancedBaked } from '../utils/terrainShader'
+import { drawnGroundParts, onDrawnGround } from '../utils/elevation'
+import { terrainBed, terrainWater, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { phaseNow } from './WaterSurface.jsx'
 import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
@@ -81,16 +81,21 @@ const FAR_BUILD_MS_PER_FRAME = 4
  *  re-selects chunks on a 26 km shore for a camera that has not moved. */
 const RESELECT_M = 6
 
-/** ⭐ THE DRAPE, GROUND-RELATIVE (Argon, 2026-10-07). Each vertex's raw ground moves out of the geometry and into the
- *  shader's lift (patchTerrain perVertex — the ground's own, whose texture sample is reconciled to this sampler), so the
- *  stone rides the live exaggeration like the ground beneath it. The bounds are taken first, from the drawn exag-1
- *  positions. `revetmentDrape` itself stays absolute: the checks that build drapes read real heights. */
+/** The DRAWN ground at exaggeration 1 (`drawnGroundParts`: its terrain part + its own part) — what the revetment is built
+ *  against, so the stone meets the ground the slab draws, never the field under it (BRIEF-the-ground-knows-its-height §4.5). */
+const drawnAt1 = (x, z) => { const g = drawnGroundParts(x, z); return g.raw + g.y }
+
+/** ⭐ THE DRAPE, GROUND-RELATIVE (Argon, 2026-10-07). Each vertex's drawn TERRAIN part moves out of the geometry into an
+ *  `aRaw` attribute and the shader's baked lift (aRaw × uExag — the ground's own law), so the stone rides the live
+ *  exaggeration like the drawn ground beneath it; the ground's own unexaggerated part stays in the geometry. The bounds
+ *  are taken first, from the drawn exag-1 positions. `revetmentDrape` itself stays absolute: the checks read real heights. */
 function groundRelative(built) {
   const g = built?.geometry
   if (!g) return built
   g.computeBoundingSphere(); g.computeBoundingBox()
-  const p = g.attributes.position
-  for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) - getElevationRaw(p.getX(i), p.getZ(i)))
+  const p = g.attributes.position, raw = new Float32Array(p.count)
+  for (let i = 0; i < p.count; i++) { raw[i] = drawnGroundParts(p.getX(i), p.getZ(i)).raw; p.setY(i, p.getY(i) - raw[i]) }
+  g.setAttribute('aRaw', new THREE.BufferAttribute(raw, 1))
   p.needsUpdate = true
   return built
 }
@@ -146,16 +151,16 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // CLEANUP path, so the first frame looked fine and the failure only appeared once
   // something remounted: a stone wall that is missing for no visible reason.
   // ⭐⭐ THE STONE RIDES THE KIT'S TERRAIN LIFT, like the ground, the lamps and the trees (Argon, 2026-10-07). It was
-  // draped ONCE at raw height (getElevationRaw = exag 1), so in Plan (exag 0), through the reveal's swell, and on any town
-  // authored at another exaggeration it floated or sank against the drawn shore. Its geometry is now GROUND-RELATIVE and
-  // the shader adds ground × the live uExag: the drape through the ground's own per-vertex lift, the boulders through the
-  // lamps' and trees' instanced one (aGround). TWO materials, because one cannot carry both: the per-vertex lift ignores
-  // instanceMatrix. ⛔ The shadow pass repeats each lift (checks/claims-displaced-casters-have-a-depth-material.mjs).
+  // draped ONCE at raw height (exag 1), so in Plan (exag 0), through the reveal's swell, and on any town authored at
+  // another exaggeration it floated or sank against the drawn shore. Its geometry is now GROUND-RELATIVE to the DRAWN
+  // ground and the shader adds its terrain part × the live uExag: the drape through the baked lift (aRaw, the ground's
+  // own), the boulders through the lamps' and trees' instanced one (aGround = [raw, y]). TWO materials, because one cannot
+  // carry both: the per-vertex lift ignores instanceMatrix. ⛔ The shadow pass repeats each lift (checks/claims-displaced-casters-have-a-depth-material.mjs).
   const drape = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
   const stone = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
-  const drapeMaterial = useMemo(() => { patchTerrain(drape.material, { perVertex: true }); return drape.material }, [drape])
+  const drapeMaterial = useMemo(() => { patchTerrain(drape.material, { baked: true }); return drape.material }, [drape])
   const stoneMaterial = useMemo(() => { patchTerrainInstancedBaked(stone.material); return stone.material }, [stone])
-  const drapeDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrain(d, { perVertex: true }); return d }, [])
+  const drapeDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrain(d, { baked: true }); return d }, [])
   const stoneDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrainInstancedBaked(d); return d }, [])
   // ⭐ The wetted band stands at the LIVE level where the camera is (cartograph/waterLevel.mjs), so it moves with the tide.
   // ⛔ Not swallowed (BRIEF-tide finding): a town whose water record cannot be read SAYS so, once, and its wetted band
@@ -171,6 +176,10 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // ⚠️ Built once per document. `drapeGlobals` is ARC-GLOBAL on purpose: every chunk
   // of a face derives its vertices from the same lattice, which is what makes the
   // seam exact rather than approximately exact.
+  // Re-built when the terrain or the drawn ground is re-pointed (a look switch, the ground loading)
+  const [groundGen, setGroundGen] = useState(0)
+  useEffect(() => onTerrainReload(() => setGroundGen(g => g + 1)), [])
+  useEffect(() => onDrawnGround(() => setGroundGen(g => g + 1)), [])
   const faces = useMemo(() => {
     if (!doc) return []
     // ⭐ The heap runs on below the water to rest on the bed, down to where the bottom stops showing.
@@ -181,9 +190,9 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       // The toe runs down to the bed, at least one course below the LOW level (so it stays under water at low tide),
       // and no shallower than the depth the bottom can be seen to.
       const toeFloor = Math.max(floorM, f.lowM != null ? waterY - f.lowM + MIN_ARMOUR_D50_M : 0)
-      const toeAt = toeFor(f, getElevationRaw, toeFloor, waterY)
+      const toeAt = toeFor(f, drawnAt1, toeFloor, waterY)
       if (!f.toeBerm && !_saidNoBerm) { _saidNoBerm = true; console.warn('[SlabRevetment] ⛔ this revetment.json carries no material.toeBerm — the heaps have no toe berm. ▶ re-bake the revetment') }
-      f = { ...f, toeAt, berm: f.toeBerm, groundAt: getElevationRaw, waterY }
+      f = { ...f, toeAt, berm: f.toeBerm, groundAt: drawnAt1, waterY }
       const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt, berm: f.berm, octaves: 3 })
       const per = Math.max(4, Math.round(CHUNK_M / G.step))
       const ranges = []
@@ -197,7 +206,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, oversample: 10, paletteSize: palette.length, seed: doc.seed })
       return { ...f, G, ranges, at, ctx, cache: new Map() }
     })
-  }, [doc, palette])
+  }, [doc, palette, groundGen])
 
   const [built, setBuilt] = useState({ drape: [], stones: [], nearKeys: new Set() })
   const lastAt = useRef(null)
@@ -262,8 +271,8 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const t = (ci + 0.5) / n
         const p = f.poly[Math.min(f.poly.length - 1, Math.round(t * (f.poly.length - 1)))]
         if (Math.hypot(p.x - c.x, p.z - c.z) > NEAR_RADIUS_M) continue
-        // ground-relative, like the drape: the raw ground rides along as `ground` (the lift's aGround)
-        for (const st of chunkStones(f.ctx, ci, 2)) { const g = getElevationRaw(st.p[0], st.p[2]); stones.push({ ...st, p: [st.p[0], st.p[1] - g, st.p[2]], ground: g }) }
+        // ground-relative, like the drape: the drawn ground's two parts ride along as `ground` + `groundY` (the lift's aGround)
+        for (const st of chunkStones(f.ctx, ci, 2)) { const g = drawnGroundParts(st.p[0], st.p[2]); stones.push({ ...st, p: [st.p[0], st.p[1] - g.raw - g.y, st.p[2]], ground: g.raw, groundY: g.y }) }
       }
     }
     setBuilt({ drape, stones, nearKeys })
