@@ -749,8 +749,8 @@
 > DEPTH BAND (edge → its offset at `[dS, dE]`), each corner joined by the SHARP MITER where the two curb lines meet inside
 > it, else the chord between the band ends (the two coincide at the boundary, so nothing switches). Where a block is
 > narrower than its curbs the bands overlap and ② is gone *there*. It replaced the per-vertex offset, whose `pftNonZero`
-> self-union kept the backwards lobe and whose miter threw a sliver's ② outside its block. ⛔ ③'s strikes still use
-> `offsetRingVariable` and still keep the lobe. ▶ `node checks/claims-the-curb-never-enters-the-road.mjs`. **A clamp is a
+> self-union kept the backwards lobe and whose miter threw a sliver's ② outside its block. ③'s strikes and its capacity
+> guard are on it too since 2026-10-12 (Jacob's go). ▶ `node checks/claims-the-curb-never-enters-the-road.mjs`. **A clamp is a
 > cleanup patch living inside the construction** — the miter-limit bevel at §3.3's U-seam is the worked
 > example, and it is *the* artifact there.
 >

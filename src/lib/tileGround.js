@@ -1377,8 +1377,8 @@ function unionRingLabelled(ring, labels) {
 // direction stated, not inferred. ⛔ One flag on the one expression the whole construction
 // derives from; every existing caller passes nothing and is byte-identical.
 // `easeAt` (optional, opt-in at the call site per `ROADMAP A18`) — realize each node's handle
-// ⛔ ② NO LONGER CALLS THIS — it is `offsetRingByRects` (2026-09-25); ③'s inward strikes still do, and still keep
-// the backwards lobe (pftNonZero). What follows is this function's own history.
+// ⛔ ② AND ③ NO LONGER CALL THIS — both are `offsetRingByRects` (② 2026-09-25; ③'s strikes and its capacity guard
+// 2026-10-12, Jacob's go). Only the chain path's curb (`buildCurbRings`) still does. What follows is its own history.
 // configuration. ⭐⭐⭐ THE ORDER IS **OFFSET → UNION → EASE** (Jacob, 2026-09-06), and the union
 // must be the LABELLED one. It was offset → ease → union until then; the swap removes a defect
 // class instead of guarding it.
@@ -5125,7 +5125,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const ins = (pick) => {
     const o = [], h = []
     for (const p of parts) {
-      const rs = offsetRingVariable(p.ring, pick(p), () => true, () => null, false, null, false, p.hole)
+      const rs = offsetRingByRects(p.ring, pick(p), p.hole)
       ;(p.hole ? h : o).push(...rs)
     }
     return (o.length && h.length) ? differenceRings(o, h) : o
@@ -5151,7 +5151,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // ⛔⛔ A BLOCK TOO NARROW FOR EVEN THE CURB IS THE OPEN-FIELD LIMIT — all LU to centre. Not a
   // clamp (forcing WB = cw re-inverts the offset) and not an absence (`ARCHITECTURE §"The compound
   // shape"`: the drawing has no holes). A MATERIAL state, never a missing one.
-  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: rekeyByPiece(st, { [key]: inBlock(insAt(0)) }), curb: [], capped, openField: true, feArcs, feRepeat }
+  // ⭐ the open field is the REGION ITSELF (`curbOuter`), never an offset of it by 0: the offset's lattice merge drops a sliver
+  // ring, and the drop is a hole in the ground (measured on HPDM's verge tile 36: 0.30 m², the sky through it)
+  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: rekeyByPiece(st, { [key]: inBlock(curbOuter) }), curb: [], capped, openField: true, feArcs, feRepeat }
 
   // ── THE ARRANGEMENT, PER POINT. Two strips always — they SWAP, they never collapse (`§3.1`) —
   // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the
@@ -5422,7 +5424,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const insD = (pick) => {
     const o = [], h = []
     for (const p of parts) {
-      const rs = offsetRingVariable(p.dring, pick(p), () => true, () => null, false, null, false, p.hole)
+      const rs = offsetRingByRects(p.dring, pick(p), p.hole)
       ;(p.hole ? h : o).push(...rs)
     }
     return (o.length && h.length) ? differenceRings(o, h) : o
@@ -9172,12 +9174,12 @@ export function buildTileGround(ribbons, opts = {}) {
         const hwOfLabs = (L) => (i) => { const m = protoMeasureOf(L[i]); return m?.pavementHW > 0 ? Math.max(0, m.pavementHW - PROTO_HW) : 0 }
         // the block region at an extra inward depth `d` past the authored pavement half-width
         const blockAt = (d) => {
-          const outs = offsetRingVariable(ring, (i) => hwAt(i) + d, () => true, () => null)
+          const outs = offsetRingByRects(ring, (i) => hwAt(i) + d, false)
           if (!bHoles.length || !outs.length) return outs
           const hls = []
           for (let hi = 0; hi < bHoles.length; hi++) {
             const hw = hwOfLabs(bHoleLabs[hi])
-            hls.push(...offsetRingVariable(bHoles[hi], (i) => hw(i) + d, () => true, () => null, false, null, false, true))
+            hls.push(...offsetRingByRects(bHoles[hi], (i) => hw(i) + d, true))
           }
           return hls.length ? differenceRings(outs, hls) : outs
         }
@@ -9273,7 +9275,7 @@ export function buildTileGround(ribbons, opts = {}) {
         const ins = (pick) => {
           const o = [], h = []
           for (const p of parts) {
-            const rs = offsetRingVariable(p.ring, pick(p), () => true, () => null, false, null, false, p.hole)
+            const rs = offsetRingByRects(p.ring, pick(p), p.hole)
             ;(p.hole ? h : o).push(...rs)
           }
           return (o.length && h.length) ? differenceRings(o, h) : o
@@ -9296,7 +9298,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, INERT when unset.
         // Two diseases look identical from a thickness histogram and have different cures:
         //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver falls
-        //     below `offsetRingVariable`'s area floor; the deeper set has FEWER pieces, that lobe is
+        //     below the offset's area floor; the deeper set has FEWER pieces, that lobe is
         //     never subtracted, and `differenceRings` returns it WHOLE.
         //   FOLD — the offset crosses itself instead of splitting (`POLYGON-FIRST D6a`). Piece count
         //     HOLDS; the ring carries repeated vertices.
