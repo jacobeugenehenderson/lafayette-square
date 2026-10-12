@@ -22,6 +22,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 const ROOT = new URL('..', import.meta.url).pathname
 import { conformAndRefine, findTJunctions } from '../cartograph/groundConformity.js'
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 
 const fails = []
 
@@ -46,7 +47,7 @@ const { out, tj } = conformAndDetect([
 console.log(`   synthetic: ${out.reduce((s, o) => s + o.indices.length / 3, 0)} triangles after conformity · detector: ${tj.total} T-junction(s) (${tj.cross} across groups)`)
 if (tj.total) {
   // The mechanism at each finding: how many distinct positions share its 1 mm weld key.
-  const wk = (x, z) => `${Math.round(x * 1000)},${Math.round(z * 1000)}`
+  const wk = (x, z) => `${Math.round(x * CLIP_SCALE)},${Math.round(z * CLIP_SCALE)}`
   for (const f of tj.found) {
     const twins = new Set()
     for (const o of out) for (let i = 0; i < o.positions.length; i += 3) {
