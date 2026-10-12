@@ -932,23 +932,31 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph, recorded per vertex of every ① run (`tile.runs[].h`, raw
   // metres like terrain.bin, mm-rounded) — the one record everything after it reads. The window is the town's
-  // (`design.json#groundLineSigmaM`), else one terrain grid step. A run with no line (the coast until it is the lidar's
-  // high-water contour, a bridge, a highway stroke's edge, the rim, a label naming no at-grade chain) carries `h: null` and is
+  // (`design.json#groundLineSigmaM`), else one terrain grid step. A coast run's line is the HIGH WATER (below). A run with
+  // no line (a bridge, a highway stroke's edge, the rim, a label naming no at-grade chain) carries `h: null` and is
   // COUNTED, by reason.
   const lineTerrain = loadSceneTerrain(scene)
   if (lineTerrain && shapeArtifact?.length) {
     const authored = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : null
     if (!authored && !(lineTerrain.stepM > 0)) throw new Error(`[bake-ground] ⛔ the terrain carries no grid step and the town authors no groundLineSigmaM — the line's smoothing window is unknown`)
     const LH = lineHeights({ streets: ribbons.streets, raw: lineTerrain.getElevationRaw, sigma: authored ?? lineTerrain.stepM })
-    const why = { water: 0, bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((ribbons.streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
-    let stamped = 0
+    const why = { bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((ribbons.streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
+    let stamped = 0, coast = 0
+    // ⭐ THE COAST'S LINE IS THE HIGH WATER (Jacob 2026-10-11, brief §5 "The shore"): a coast run's height IS the town's
+    // high level there (the tide datum where tidal, the authored lake level on a lake; `waterLevel.mjs`), so the land
+    // meets the water at the line and the gusset runs from it down to low water. ⛔ A drawn coast with no water record throws.
+    let W = null
     for (const t of shapeArtifact) for (const run of t?.runs || []) {
+      if (run.skelId === '__water__') {
+        if (!W) { if (!lineTerrain.water) throw new Error(`[bake-ground] ⛔ ${scene} draws a coast but its terrain carries no water record — the coast line's height (the high water) is unknown. ▶ re-bake the terrain`); W = waterLevels(lineTerrain.water) }
+        run.h = (run.poly || []).map(([x, z]) => Math.round(W.highAt(x, z) * 1000) / 1000); coast++; continue
+      }
       const h = (run.poly || []).map(p => LH.heightAt(run.skelId, p))
       if (h.length && h.every(v => v != null)) { run.h = h.map(v => Math.round(v * 1000) / 1000); stamped++; continue }
       run.h = null
-      why[run.skelId === '__water__' ? 'water' : run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown']++
+      why[run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown']++
     }
-    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · no line: ${why.water} coast · ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
+    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
   }
 
