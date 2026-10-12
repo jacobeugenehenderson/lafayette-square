@@ -16,11 +16,12 @@
  * 2. The feed never reaches the drawn sky directly: `setWeatherTargets` leaves the drawn
  *    `cloudCover`/`storminess` untouched.
  * 3. Every app that draws rain mounts the driver and the light rig, the driver publishes
- *    through `deriveSkyScalars`, and both exposure writers apply the weather's scale.
+ *    through `deriveSkyScalars`, and exposure takes the weather's scale once (`usePostFxDriver#townExposure`),
+ *    which every exposure writer in src/ calls. Mutation-tested inline: scale removed → red; own writer → red.
  * 4. Each falling weather reaches an Almanac rule of its own kind, and every rule is reachable.
  * 5. A chosen weather is the same every time: every weather integrator resets on `snapEpoch`.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -94,12 +95,53 @@ else if (/setState\(\{\s*tweenedDirective/.test(driver.replace(/function publish
   bad('AtmosphereDirectiveDriver writes tweenedDirective outside publishTweened — the rain can move without the light')
 } else ok('the driver publishes the rain and the sky scalars from the same tweened directive')
 
-for (const f of ['src/components/usePostFxDriver.js', 'src/components/PostProcessing.jsx']) {
-  const src = read(f)
-  const writes = [...src.matchAll(/resolveGroupAtMinute\(\s*(exposureChannel|channel),[^\n]*\n\s*\*\s*weatherExposureScale\(/g)]
-  if (!writes.length) bad(`${f}: authored exposure is not multiplied by weatherExposureScale`)
+// ⭐ ONE exposure, and it carries the weather (e25096cf, 2026-10-07: both writers became usePostFxDriver#townExposure).
+//   (a) townExposure's return is multiplied by weatherExposureScale(storminess);
+//   (b) every exposure WRITE in src/ (`_exposureRef.current =`, `toneMappingExposure =`) takes townExposure(…) — directly,
+//       through a const bound to it in the same function, or by relaying `_exposureRef.current` (written only by (b)).
+// Both run on planted sources first; each must go red, or the section is blind.
+const stripC = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+function townExposureFault(driverSrc) {
+  const code = stripC(driverSrc)
+  const i = code.indexOf('export function townExposure(')
+  if (i < 0) return 'usePostFxDriver.js has no townExposure — the one exposure moved; this cannot check it'
+  const body = code.slice(i, code.indexOf('\n}', i))
+  const ret = body.slice(body.lastIndexOf('return '))
+  return /\*\s*weatherExposureScale\(\s*useSkyState\.getState\(\)\.storminess\s*\)/.test(ret) ? null
+    : 'townExposure does not multiply its return by weatherExposureScale(storminess)'
 }
-if (!failed) ok('both exposure writers apply the weather\'s neutral density')
+function exposureWriteFaults(files) {
+  const faults = []
+  for (const [f, raw] of files) {
+    const code = stripC(raw)
+    for (const m of code.matchAll(/(?:_exposureRef\.current|\.toneMappingExposure)\s*=(?!=)\s*([^\n;]+)/g)) {
+      const rhs = m[1].trim()
+      if (/^townExposure\(/.test(rhs) || /^_exposureRef\.current\b/.test(rhs)) continue
+      const id = rhs.match(/^([A-Za-z_$][\w$]*)$/)?.[1]
+      const fnStart = code.lastIndexOf('function', m.index), scope = code.slice(Math.max(0, Math.min(fnStart, code.lastIndexOf('=>', m.index))), m.index)
+      if (id && new RegExp(`\\bconst\\s+${id}\\s*=\\s*townExposure\\(`).test(scope)) continue
+      faults.push(`${f}: an exposure write that does not take townExposure — \`${m[0].trim().slice(0, 80)}\``)
+    }
+  }
+  return faults
+}
+const fxDriver = read('src/components/usePostFxDriver.js')
+const srcFiles = (dir) => readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((e) =>
+  e.isDirectory() ? srcFiles(`${dir}/${e.name}`) : /\.(jsx?|mjs)$/.test(e.name) ? [`${dir}/${e.name}`] : [])
+const exposureWriters = srcFiles('src').map((f) => [f, read(f)]).filter(([, t]) => /_exposureRef\.current\s*=(?!=)|toneMappingExposure\s*=(?!=)/.test(stripC(t)))
+const tf = townExposureFault(fxDriver), wf = exposureWriteFaults(exposureWriters)
+if (tf) bad(tf)
+for (const w of wf) bad(w)
+if (!tf && !wf.length) ok(`exposure takes the weather's neutral density once (townExposure), and all ${exposureWriters.length} writers (${exposureWriters.map(([f]) => path.basename(f)).join(', ')}) take it`)
+{ // mutations
+  const noScale = fxDriver.replace(/\n[ \t]*\*[ \t]*weatherExposureScale\(.*/, '')   // the line, as a hand would delete it
+  if (noScale === fxDriver) bad('mutation could not be planted: townExposure\'s weatherExposureScale line not found')
+  else if (townExposureFault(noScale)) ok('mutation (the weather scale removed from townExposure) is caught')
+  else bad('mutation (the weather scale removed from townExposure) passed — this section is blind')
+  const own = exposureWriteFaults([['mutant.jsx', 'function T() {\n  const v = resolveGroupAtMinute(channel, m, s, [\'value\'], D).value\n  gl.toneMappingExposure = v\n}']])
+  if (own.length) ok('mutation (a writer computing its own exposure) is caught')
+  else bad('mutation (a writer computing its own exposure) passed — this section is blind')
+}
 
 for (const f of ['src/components/Scene.jsx', 'src/preview/PreviewApp.jsx', 'src/cartograph/CartographApp.jsx']) {
   const src = read(f)
