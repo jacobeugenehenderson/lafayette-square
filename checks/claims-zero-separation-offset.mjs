@@ -4,8 +4,8 @@
  *
  *  A. THE QUANTIZATION FLOOR. Clipper is integer-space and both converters round
  *     (`Math.round(x*SCALE)`). At what separation do two "distinct" nodes become
- *     the SAME IntPoint? Floors differ by stage: derive.js SCALE=100, tileGround/
- *     buildPathRibbons SCALE=1000.
+ *     the SAME IntPoint? Floors differ by stage (each read live below: derive.js's own SCALE,
+ *     tileGround/buildPathRibbons through src/lib/lattice.js).
  *
  *  B. DOES THE STROKE HANDLE ZERO SEPARATION?  `RIBBONS §1` carries this as the one
  *     open engineering question against the primitive-lanes model. Two coincident
@@ -28,17 +28,31 @@ const { ClipperOffset, Clipper, JoinType, EndType, ClipType, PolyType, PolyFillT
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 // ---- read the scales out of the SOURCE, never restate them -------------------
-function readScale(rel, re) {
-  const src = fs.readFileSync(path.join(ROOT, rel), 'utf8')
-  const m = src.match(re)
-  if (!m) throw new Error(`SCALE not found in ${rel} — probe is stale, fix it`)
-  return { file: rel, scale: Number(m[1]) }
+// A stage either declares its own `const SCALE = N` or imports the partition's lattice
+// (`import { CLIP_SCALE as SCALE } from './lattice.js'`, one home since e45ab42f). The import is
+// FOLLOWED — the module is loaded and its value read — so a moved grid moves this probe with it.
+async function scaleOf(rel, text) {
+  const own = text.match(/^const SCALE = (\d+)/m)
+  if (own) return { file: rel, scale: Number(own[1]) }
+  const imp = text.match(/import \{[^}]*\bCLIP_SCALE as SCALE\b[^}]*\} from '([^']+)'/)
+  if (imp) {
+    const mod = path.resolve(ROOT, path.dirname(rel), imp[1])
+    const v = (await import(mod)).CLIP_SCALE
+    if (!Number.isFinite(v)) throw new Error(`${rel} imports CLIP_SCALE from ${imp[1]}, which exports no number — probe is stale, fix it`)
+    return { file: `${rel} (via ${path.relative(ROOT, mod)})`, scale: v }
+  }
+  throw new Error(`SCALE not found in ${rel} (neither \`const SCALE = N\` nor CLIP_SCALE imported as SCALE) — probe is stale, fix it`)
 }
-const SCALES = [
-  readScale('cartograph/derive.js', /^const SCALE = (\d+)/m),
-  readScale('src/lib/tileGround.js', /^const SCALE = (\d+)/m),
-  readScale('src/lib/buildPathRibbons.js', /^const SCALE = (\d+)/m),
-]
+const STAGES = ['cartograph/derive.js', 'src/lib/tileGround.js', 'src/lib/buildPathRibbons.js']
+const SCALES = []
+for (const rel of STAGES) SCALES.push(await scaleOf(rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')))
+// ⭐ MUTATION, every run: a stage whose scale has no readable source must throw, never default.
+{
+  let caught = false
+  try { await scaleOf('src/lib/tileGround.js', fs.readFileSync(path.join(ROOT, 'src/lib/tileGround.js'), 'utf8').replace(/CLIP_SCALE as SCALE/g, 'CLIP_SCALE as GRID')) } catch { caught = true }
+  if (!caught) { console.error('⛔ MUTATION NOT CAUGHT: a stage with no readable SCALE was read anyway'); process.exit(1) }
+  console.log('   mutation (a stage with no readable SCALE) caught ✓')
+}
 
 const area = ring => {
   let a = 0
