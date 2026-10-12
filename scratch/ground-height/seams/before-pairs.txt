@@ -1,0 +1,31 @@
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+hipointedemun: 736 ped vertex(es) no painted band owns, in 124 cluster(s) on 72 tile(s) · by drawn group: {"residential":43,"commercial":15,"institutional":11,"recreation":74,"park":16,"underived":52,"forest":5,"railway":5,"verge":2,"parking_lot":2,"garden":10,"treelawn:residential":83,"treelawn:commercial":29,"treelawn:vacant":1,"treelawn:parking":12,"treelawn:institutional":41,"treelawn:recreation":75,"treelawn:park":5,"treelawn:underived":25,"treelawn:railway":20,"treelawn:verge":2,"sidewalk":191,"curb":1,"wall":16}
+clusters by the painted polygon holding them: {"walk ≥100 m²":48,"walk 1–10 m²":7,"lawn 10–100 m²":23,"lawn 1–10 m²":9,"lawn ≥100 m²":12,"lawn <1 m²":10,"walk <1 m²":3,"walk 10–100 m²":10,"curb ≥100 m²":2}
+clusters whose point lies DEEPER than every ② span's reachable band: 35 of 124
+orphan VERTICES by the widest lot gap on the best path: {"seam ≤5 mm":345,"5 mm–5 cm":113,"5–50 cm":243,">50 cm":27,"no candidate path reaches a band":8}
+  seam ≤5 mm: 65 cluster(s), e.g. tile 76 (-1105.17,744.43) sidewalk gap 2.5 mm · tile 175 (1183.35,-724.38) treelawn:railway gap 0.0 mm · tile 170 (-121.52,-492.62) treelawn:recreation gap 0.5 mm
+  5 mm–5 cm: 22 cluster(s), e.g. tile 187 (808.84,-581.14) treelawn:recreation gap 7.5 mm · tile 204 (11.45,-854.97) treelawn:parking gap 9.0 mm · tile 144 (-692.45,-72.20) sidewalk gap 24.5 mm
+  5–50 cm: 30 cluster(s), e.g. tile 52 (-909.54,966.06) sidewalk gap 163.0 mm · tile 178 (-931.21,-494.90) treelawn:recreation gap 66.5 mm · tile 178 (-900.01,-483.10) recreation gap 369.5 mm
+  >50 cm: 5 cluster(s), e.g. tile 48 (549.86,927.60) treelawn:commercial gap 517.5 mm · tile 164 (15.74,-207.94) residential gap 1003.0 mm · tile 202 (476.50,-817.29) treelawn:underived gap 514.5 mm
+  no candidate path reaches a band: 2 cluster(s), e.g. tile 154 (-1284.70,-527.96) sidewalk gap — · tile 222 (-867.04,-1085.02) treelawn:verge gap —
+≤5 mm gaps by the pieces either side (vertices):
+   treelawn:vacant | treelawn:residential: 172 · e.g. tile 76 gap at (-1105.3871,745.5851) 2.5 mm · tile 76 gap at (-1115.2947,743.7481) 2.0 mm · tile 76 gap at (-1099.1349,746.7439) 2.5 mm
+   beyond the disc | curb: 30 · e.g. tile 175 gap at (1183.6297,-726.6775) 1.0 mm · tile 183 gap at (-1230.2460,-644.6392) 1.0 mm · tile 165 gap at (-1336.1430,-379.2138) 3.0 mm
+   curb | treelawn:park: 19 · e.g. tile 79 gap at (-744.7073,711.9982) 0.5 mm · tile 79 gap at (-745.2863,714.9346) 0.5 mm · tile 79 gap at (-745.2501,714.7506) 0.5 mm
+   treelawn:institutional | treelawn:underived: 18 · e.g. tile 170 gap at (-121.4841,-492.6122) 0.5 mm
+   walk | treelawn:institutional: 11 · e.g. tile 182 gap at (-104.0733,-656.5341) 4.5 mm
+   treelawn:park | treelawn:residential: 8 · e.g. tile 79 gap at (-745.3144,716.2668) 1.0 mm
+   beyond the disc | treelawn:commercial: 7 · e.g. tile 134 gap at (1382.6023,-132.7592) 1.5 mm
+   walk | walk: 7 · e.g. tile 140 gap at (1226.1578,-62.6478) 3.0 mm · tile 96 gap at (-179.5553,508.5120) 1.0 mm · tile 151 gap at (-595.4813,-92.2894) 1.5 mm
+   treelawn:industrial | walk: 6 · e.g. tile 114 gap at (-504.9432,151.8781) 1.0 mm
+   beyond the disc | walk: 2 · e.g. tile 8 gap at (-215.2625,1372.1258) 2.5 mm · tile 224 gap at (599.0186,-1253.1275) 1.5 mm
+   curb | treelawn:underived: 1 · e.g. tile 124 gap at (670.7380,-162.7217) 0.5 mm
+   treelawn:recreation | treelawn:recreation: 1 · e.g. tile 91 gap at (1253.9039,88.7809) 4.5 mm
+   treelawn:institutional | treelawn:recreation: 1 · e.g. tile 208 gap at (-436.9698,-1011.8070) 1.0 mm
+   curb | walk: 1 · e.g. tile 177 gap at (289.5657,-474.7033) 2.0 mm
+   treelawn:residential | walk: 1 · e.g. tile 34 gap at (-840.3054,1024.6795) 2.0 mm
+   walk | treelawn:underived: 1 · e.g. tile 68 gap at (-1116.7524,763.3506) 4.0 mm
+   walk | treelawn:commercial: 1 · e.g. tile 31 gap at (754.0956,1138.5381) 5.0 mm
+   treelawn:institutional | walk: 1 · e.g. tile 96 gap at (-274.3365,426.6660) 0.5 mm
+   treelawn:underived | treelawn:institutional: 1 · e.g. tile 186 gap at (-584.8443,-577.2513) 1.0 mm
+   gap width p50 2.5 mm · max 5.0 mm (sampled at 0.5 mm)

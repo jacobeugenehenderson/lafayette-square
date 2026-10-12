@@ -10,7 +10,7 @@ import sys
 s=open('cartograph/bake-ground.js').read()
 a="    deform = buildDeformer({ tiles: shapeArtifact,\n"
 assert s.count(a)==1
-s=s.replace(a,"""    writeFileSync(process.env.DEFORM_DUMP, JSON.stringify({ bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') }, stencil: stencil.clipPolygon, tiles: shapeArtifact }))
+s=s.replace(a,"""    writeFileSync(process.env.DEFORM_DUMP, JSON.stringify({ bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') }, stencil: stencil.clipPolygon, tiles: shapeArtifact, lawnKeys: [...byMaterial.keys()].filter(k => k.startsWith('treelawn')).map(k => [k, (byMaterial.get(k) || []).length]) }))
     throw new Error('DUMPED deformer inputs to ' + process.env.DEFORM_DUMP)
 """+a)
 open(sys.argv[1],'w').write(s)

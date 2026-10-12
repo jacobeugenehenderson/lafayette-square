@@ -40,15 +40,20 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
   const segGrid = new Map()
-  const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it?.[0]) && typeof it[0][0] === 'number' ? [it] : [it.outer, ...(it.holes || [])]).filter(r => r?.length >= 3)
+  // ⭐ A POINT IS IN A CLASS WHEN SOME PAINTED PIECE OF IT HOLDS THE POINT. Parity runs within one piece (its outer and its
+  //   holes), never across a class: two pieces of one class that overlap (two lawns' land uses, a curb and a curb cut) would
+  //   otherwise read as OUT where they overlap, which is a lot that isn't there (measured, HPDM 2026-10-12).
+  let nItems = 0
+  const ringsOf = (items) => (items || []).flatMap(it => { const item = nItems++
+    return (Array.isArray(it?.[0]) && typeof it[0][0] === 'number' ? [it] : [it.outer, ...(it.holes || [])]).filter(r => r?.length >= 3).map(r => ({ r, item })) })
   const classRings = { curb: ringsOf(bands.curb), lawn: ringsOf(bands.lawn), walk: ringsOf(bands.walk) }
-  const addSeg = (cls, a, b) => {
+  const addSeg = (cls, a, b, item = -1) => {
     const x0 = Math.floor(Math.min(a[0], b[0]) / CELL), x1 = Math.floor(Math.max(a[0], b[0]) / CELL)
     const z0 = Math.floor(Math.min(a[1], b[1]) / CELL), z1 = Math.floor(Math.max(a[1], b[1]) / CELL)
-    const s = { cls, a, b }
+    const s = { cls, a, b, item }
     for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) { const k = x * 1000003 + z; (segGrid.get(k) || segGrid.set(k, []).get(k)).push(s) }
   }
-  for (const [cls, rings] of Object.entries(classRings)) for (const r of rings) for (let i = 0; i < r.length; i++) addSeg(cls, r[i], r[(i + 1) % r.length])
+  for (const [cls, rings] of Object.entries(classRings)) for (const { r, item } of rings) for (let i = 0; i < r.length; i++) addSeg(cls, r[i], r[(i + 1) % r.length], item)
   const disc = stencil?.length >= 3 ? stencil : null
   if (disc) for (let i = 0; i < disc.length; i++) addSeg('beyond', disc[i], disc[(i + 1) % disc.length])
   const pipRings = (x, z, rings) => { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
@@ -57,17 +62,21 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   const ringIdx = {}
   for (const [cls, rings] of Object.entries(classRings)) {
     const g = new Map(); ringIdx[cls] = g
-    rings.forEach((r) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
+    rings.forEach(({ r, item }) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
       for (const [x, z] of r) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
       const bb = [a, b, c, d]
-      for (let x = Math.floor(a / 64); x <= Math.floor(c / 64); x++) for (let z = Math.floor(b / 64); z <= Math.floor(d / 64); z++) { const k = x * 1000003 + z; (g.get(k) || g.set(k, []).get(k)).push({ r, bb }) } })
+      for (let x = Math.floor(a / 64); x <= Math.floor(c / 64); x++) for (let z = Math.floor(b / 64); z <= Math.floor(d / 64); z++) { const k = x * 1000003 + z; (g.get(k) || g.set(k, []).get(k)).push({ r, bb, item }) } })
   }
-  const inClass = (cls, x, z) => { let c = false
-    for (const { r, bb } of ringIdx[cls].get(Math.floor(x / 64) * 1000003 + Math.floor(z / 64)) || []) {
+  // the pieces of a class holding (x, z): each piece's own even-odd over its outer and holes
+  const itemsAt = (cls, x, z) => { const odd = new Set()
+    for (const { r, bb, item } of ringIdx[cls].get(Math.floor(x / 64) * 1000003 + Math.floor(z / 64)) || []) {
       if (x < bb[0] || x > bb[2] || z < bb[1] || z > bb[3]) continue
+      let c = false
       for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
-        if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } }
-    return c }
+        if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c }
+      if (c) { if (odd.has(item)) odd.delete(item); else odd.add(item) } }
+    return odd }
+  const inClass = (cls, x, z) => itemsAt(cls, x, z).size > 0
 
   // ── the tiles: their ① ring (which tile holds a point), ② with H per vertex ──
   const T = []
@@ -170,9 +179,9 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
     stats.rays++
     // ⛔ the first state is probed PAST the lattice: the bands are on Clipper's 1 mm grid and ② is not, so a probe nearer
     // than the grid can sit outside a curb whose edge is ② itself — and the whole band read as lot (measured, HPDM)
-    const eps = 2 * LATTICE, inside = { walk: inClass('walk', px + ux * eps, pz + uz * eps), lawn: inClass('lawn', px + ux * eps, pz + uz * eps), curb: inClass('curb', px + ux * eps, pz + uz * eps),
-      beyond: !!disc && !pipRings(px + ux * eps, pz + uz * eps, [disc]) }
-    const cls = () => inside.beyond ? 'beyond' : inside.walk ? 'walk' : inside.lawn ? 'lawn' : inside.curb ? 'curb' : 'lot'
+    const eps = 2 * LATTICE, held = { walk: itemsAt('walk', px + ux * eps, pz + uz * eps), lawn: itemsAt('lawn', px + ux * eps, pz + uz * eps), curb: itemsAt('curb', px + ux * eps, pz + uz * eps) }
+    let beyond = !!disc && !pipRings(px + ux * eps, pz + uz * eps, [disc])
+    const cls = () => beyond ? 'beyond' : held.walk.size ? 'walk' : held.lawn.size ? 'lawn' : held.curb.size ? 'curb' : 'lot'
     const out = [{ from: 0, to: len, cls: cls() }]
     const seen = new Set()
     let cx = Math.floor(px / CELL), cz = Math.floor(pz / CELL)
@@ -187,7 +196,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
         const sx = sg.b[0] - sg.a[0], sz = sg.b[1] - sg.a[1], den = ux * sz - uz * sx
         if (Math.abs(den) < 1e-12) continue
         const wx = sg.a[0] - px, wz = sg.a[1] - pz, t = (wx * sz - wz * sx) / den, v = (wx * uz - wz * ux) / den
-        if (t > eps && t <= len && v >= 0 && v < 1) pending.push({ t, cls: sg.cls })   // crossings inside the probe distance are the lattice's, not the band's
+        if (t > eps && t <= len && v >= 0 && v < 1) pending.push({ t, cls: sg.cls, item: sg.item })   // crossings inside the probe distance are the lattice's, not the band's
       }
       const tExit = Math.min(tMaxX, tMaxZ)
       pending.sort((a, b) => a.t - b.t)
@@ -195,7 +204,8 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
       // edge, reading between the two toggles saw a 'lot' that is not there and ended the band at the curb
       while (pending.length && pending[0].t <= tExit) {
         const t0 = pending[0].t
-        while (pending.length && pending[0].t - t0 <= LATTICE) { const h = pending.shift(); inside[h.cls] = !inside[h.cls] }
+        while (pending.length && pending[0].t - t0 <= LATTICE) { const h = pending.shift()
+          if (h.cls === 'beyond') beyond = !beyond; else { const H = held[h.cls]; if (H.has(h.item)) H.delete(h.item); else H.add(h.item) } }
         const c = cls(), last = out[out.length - 1]
         if (c !== last.cls) { last.to = t0; out.push({ from: t0, to: len, cls: c }) }
         if (c !== 'lot' && c !== 'beyond') sawBand = true
@@ -212,7 +222,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
     for (const b of B) { if (b.cls === 'beyond') { if (ped.length) break; continue } if (b.cls === 'lot') break; ped.push(b); back = b.to }
     return { ped, back } }
   // the deepest a ped band reaches past ② (for the early-out): measured off the drawn bands, never a constant
-  const REACH = (() => { let m = 0; for (const rings of [classRings.walk, classRings.lawn, classRings.curb]) for (const r of rings) {
+  const REACH = (() => { let m = 0; for (const rings of [classRings.walk, classRings.lawn, classRings.curb]) for (const { r } of rings) {
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, z] of r) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
     m = Math.max(m, Math.min(c - a, d - b)) } return m })()
   const CAP = Math.min(REACH, 60) + blend
@@ -374,5 +384,5 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   // over HALF the walk: the gate judges each half of the cross-section (front→middle, middle→back), so the drawing's
   // chord error is spent over a half-width, never the whole one
   const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * (walkP10 / 2) / exag : null
-  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, _owners, _inClass: inClass }
+  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, _owners, _inClass: inClass, _bandsAlong: bandsAlong }
 }
