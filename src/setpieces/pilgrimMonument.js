@@ -72,7 +72,7 @@ export function placeholderStages(d = DOSSIER, inf = INFERRED) {
   return [
     // Foundation shoulder: 28′ square from the original ground (−5′) to Z = 0. This is the
     // documented above-original-ground part of the foundation, so it is also what covers
-    // the terrain's spread under the footprint (see `seatOnTerrain`).
+    // the terrain's spread under the footprint (see `seatOnGround`).
     { name: 'plinth',     sq: d.foundationTopSq, z0: d.originalGroundZ, z1: 0,            status: 'D' },
     { name: 'base',       sq: d.baseSq,          z0: 0,                 z1: d.wash1.z,    status: 'D' },
     { name: 'wash1',      sq: d.wash1.sq,        z0: d.wash1.z,         z1: d.wash2.z,    status: 'D/C' },
@@ -127,17 +127,21 @@ export function plinthSamplePoints(site, d = DOSSIER) {
 }
 
 /**
- * Seat Z = 0 on the terrain. Returns `{ groundRaw, spread }` in RAW metres, before the
- * exaggeration, which the renderer applies live because it tweens per shot. Z = 0 goes on
- * the LOWEST sampled point, so no corner floats. The uphill side sinks, and the plinth's
- * documented depth (5′, down to the original ground) is what it may sink by.
- * ⛔ If `spread` exceeds that depth, the site needs grading the kit cannot fake. The check
- * fails loudly on it; nothing here clamps.
+ * Seat Z = 0 on the DRAWN ground (BRIEF-the-ground-knows-its-height): the ground mesh's terrain part, raw, × the
+ * exaggeration, plus its own unexaggerated part `y` (a raised kerb's block). `partsAt(x, z)` → `{ raw, y }` is that
+ * ground (`drawnGroundParts` at runtime, the slab's `groundSampler` in the check). The renderer lifts by `yAt(exag)`
+ * live, because the exaggeration tweens per shot: the LOWEST sampled point at that exaggeration, so no corner floats.
+ * The uphill side sinks, and the plinth's documented depth (5′, down to the original ground) is what it may sink by.
+ * Returns `{ groundRaw, spread, samples, offMesh, yAt }`: `groundRaw` and `spread` are the raw part's lowest and its
+ * range under the plinth; `offMesh` counts plinth points with no drawn ground under them.
+ * ⛔ If `spread` exceeds that depth, the site needs grading the kit cannot fake. The check fails loudly on it; nothing
+ * here clamps.
  */
-export function seatOnTerrain(getElevationRaw, site, d = DOSSIER) {
-  const hs = plinthSamplePoints(site, d).map(([x, z]) => getElevationRaw(x, z))
-  const lo = Math.min(...hs), hi = Math.max(...hs)
-  return { groundRaw: lo, spread: hi - lo, samples: hs }
+export function seatOnGround(partsAt, site, d = DOSSIER) {
+  const samples = plinthSamplePoints(site, d).map(([x, z]) => partsAt(x, z))
+  const raws = samples.map(p => p.raw), lo = Math.min(...raws), hi = Math.max(...raws)
+  return { groundRaw: lo, spread: hi - lo, samples, offMesh: samples.filter(p => p.offMesh).length,
+    yAt: (exag) => Math.min(...samples.map(p => p.raw * exag + p.y)) }
 }
 
 /** Which multiple of 90° turns model +Z onto the footprint face nearest true south (+Z local). */

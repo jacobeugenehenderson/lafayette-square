@@ -141,8 +141,10 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    (`BRIEF-corner-ramps-and-kerb §9`, corrected). The ramp, flare and taper outlines are `kerbLift.mjs`'s own geometry
    (`kerbRegions`, `taperRegions`), NOT partition pieces; the painter gives only the warning strips (`mat:curbCut`)
    and each cut's `{face, inward}`. Slicing the paint with them was tried and failed (§9). ▶ `kerb-tj-where.mjs`
-5. **Who reads a ground height.** The drawn mesh: lamps, tree anchors. The field: buildings (plus only the mesh's
-   kerb y), ShoreMedian, the revetment drape, Movers, UserDot, PilgrimMonument, LafayetteParkBody. Labels: none.
+5. **Who reads a ground height.** The drawn mesh (`src/lib/drawnGround.js`): lamps, tree anchors, buildings, Movers,
+   UserDot, the street eye, PilgrimMonument, LafayetteParkBody's ponds, stairs and title. The field: ShoreMedian, the
+   revetment drape, and LafayetteParkBody's fence posts (lifted in the shader by `patchTerrain`, which has only the field
+   on the GPU). Labels: none.
 6. **The shore has two shape sources.** The lidar waterline lies p50 4.2 m (Huron) / 23 m (Provincetown) off the ①
    coast stroke, with a median beside 42% / 80% of the line. At the 1 m trace's y = 0 the 5 m field reads p50 0.28 /
    0.82 m. At the line the mesh's chord error is small (p50 2–5 cm), and the drawn land crosses the level FEWER times

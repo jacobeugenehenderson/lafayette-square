@@ -28,10 +28,19 @@ export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 // DRAWN: the deformer's terrain part × the exaggeration + the kerb part. Off the mesh (past the disc), or before the
 // ground has loaded, there is no drawn ground: the field is what is there.
 let drawn = null
-export function setDrawnGround(d) { drawn = d }
+const drawnListeners = new Set()
+export function setDrawnGround(d) { drawn = d; for (const cb of drawnListeners) cb() }
+/** Re-seat when the drawn ground arrives or is replaced (a look switch). Returns the unsubscribe. */
+export function onDrawnGround(cb) { drawnListeners.add(cb); return () => drawnListeners.delete(cb) }
 export function drawnGroundY(x, z, exag) {
   const h = drawn ? drawn.heightAt(x, z, exag) : null
   return h ?? sampler.getElevationRaw(x, z) * exag
+}
+/** The drawn ground's two parts at (x, z), for a body seated ONCE and lifted per frame: `raw × exag + y`. Off the mesh,
+ *  or before the ground has loaded, the field with y 0 (`offMesh: true`), the same ground `drawnGroundY` falls to. */
+export function drawnGroundParts(x, z) {
+  const p = drawn ? drawn.partsAt(x, z) : null
+  return p ? { raw: p.raw, y: p.y } : { raw: sampler.getElevationRaw(x, z), y: 0, offMesh: true }
 }
 
 // ── Where the Street eye stands — THE one method, every app ─────────────────

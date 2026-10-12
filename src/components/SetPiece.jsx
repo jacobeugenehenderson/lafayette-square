@@ -69,7 +69,7 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
       onClick={(e) => { e.stopPropagation(); if (e.delta > 6) return; select(id) }}>
       {/* `focusName`: the renderer names its ROOT with it, the root sitting at the set-piece's base centre, and carries
           its `extent` there — so depth of field can focus on it by its building's id (src/lib/focusObject.js). */}
-      <R town={town} lookId={lookId} footprint={b.footprint} groundY={b.groundY} focusName={`focus:${id}`} {...props}>
+      <R town={town} lookId={lookId} footprint={b.footprint} focusName={`focus:${id}`} {...props}>
         <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} />
       </R>
     </group>

@@ -14,8 +14,9 @@
  *      slab record as <SetPiece> reads it, and that square agrees with the dossier's 28′ plinth
  *      to within its 6″ shoulder per face (1′ overall). A bigger miss means the id names
  *      something other than the tower.
- *   D. The seat sits on the lidar: Z = 0 is the lowest terrain under the plinth, and the
- *      terrain's spread there fits the plinth's documented 5′ depth. ⛔ Fails loudly if it
+ *   D. The seat sits on the DRAWN ground (the served slab's ground mesh, read by `groundSampler` exactly as the runtime's
+ *      `drawnGroundParts` reads it): Z = 0 is its lowest point under the plinth, every plinth point is on the mesh, and
+ *      the terrain part's spread there fits the plinth's documented 5′ depth. ⛔ Fails loudly if it
  *      doesn't: the site would need grading the kit cannot fake.
  *   (C also checks the printed label: `setPiece.name` must be the building's mapped `name`, read
  *      from its clean/map.json record.)
@@ -35,9 +36,10 @@
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
+import { makeGroundSampler } from '../cartograph/groundSampler.js'
 import {
   DOSSIER, INFERRED, FT, ft, placeholderStages, siteFromFootprint, plinthSamplePoints,
-  seatOnTerrain, courseBeds,
+  seatOnGround, courseBeds,
 } from '../src/setpieces/pilgrimMonument.js'
 import { buildingIdOf } from '../cartograph/membership.mjs'
 import { SURFACES, resolveSurfaceParams } from '../cartograph/surfaces.mjs'
@@ -159,7 +161,9 @@ function checkSite(inst, { mapped, terrain, slab }) {
   // D. the seat
   if (!terrain) f.push(`${inst.lookId} has no terrain — cannot seat the set-piece`)
   else {
-    const seat = seatOnTerrain(terrain.getElevationRaw, site)
+    if (!terrain.partsAt) { f.push(`${inst.lookId}'s slab has no ground (public/baked/${inst.lookId}/ground.json) — no drawn ground to seat on`); return { f, info } }
+    const seat = seatOnGround(terrain.partsAt, site)
+    if (seat.offMesh) f.push(`${seat.offMesh} plinth point(s) have no drawn ground under them — the set-piece would seat on the field there`)
     const depthM = -DOSSIER.originalGroundZ * FT
     info.push(`seat Z=0 at ${seat.groundRaw.toFixed(2)} m raw · spread under plinth ${seat.spread.toFixed(2)} m (plinth depth ${depthM.toFixed(2)} m) · grid step ${terrain.stepM.toFixed(2)} m`)
     if (!(seat.spread <= depthM)) f.push(`terrain spread ${seat.spread.toFixed(2)} m under the plinth exceeds its ${depthM.toFixed(2)} m depth: a corner would float`)
@@ -192,7 +196,10 @@ function contextFor(inst) {
   const mapped = map.buildings.find(b => buildingIdOf(b) === inst.setPiece.buildingId) ?? null
   const t = loadSceneTerrain(inst.lookId)
   const meta = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', inst.lookId, 'clean/terrain.json'), 'utf8'))
-  const terrain = t && { getElevationRaw: t.getElevationRaw, stepM: (meta.bounds.maxX - meta.bounds.minX) / (meta.width - 1) }
+  const gj = join(ROOT, 'public/baked', inst.lookId, 'ground.json'), gb = join(ROOT, 'public/baked', inst.lookId, 'ground.bin')
+  let partsAt = null
+  if (t && existsSync(gj) && existsSync(gb)) { const b = readFileSync(gb); partsAt = makeGroundSampler(JSON.parse(readFileSync(gj, 'utf8')), b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), t).groundAt }
+  const terrain = t && { partsAt, stepM: (meta.bounds.maxX - meta.bounds.minX) / (meta.width - 1) }
   return { mapped, terrain, slab: slabFootprints(inst.lookId) }
 }
 
@@ -212,7 +219,9 @@ if (process.argv.includes('--self-test')) {
     ['the id names another building', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, buildingId: ctx.slab.find(b => b.built).id } }, ctx).f.length],
     ['the id names no building', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, buildingId: 'osm-0' } }, ctx).f.length],
     ['the set-piece\'s building extruded', () => checkSite(inst, { ...ctx, slab: ctx.slab.map(b => b.id === inst.setPiece.buildingId ? { ...b, built: true } : b) }).f.length],
-    ['terrain cliff', () => checkSite(inst, { ...ctx, terrain: { ...ctx.terrain, getElevationRaw: (x) => x > site.x ? 10 : 0 } }).f.length],
+    ['terrain cliff', () => checkSite(inst, { ...ctx, terrain: { ...ctx.terrain, partsAt: (x) => ({ raw: x > site.x ? 10 : 0, y: 0 }) } }).f.length],
+    ['plinth off the drawn ground', () => checkSite(inst, { ...ctx, terrain: { ...ctx.terrain, partsAt: (x, z) => ({ ...ctx.terrain.partsAt(x, z), offMesh: x > site.x }) } }).f.length],
+    ['slab has no ground', () => checkSite(inst, { ...ctx, terrain: { ...ctx.terrain, partsAt: null } }).f.length],
     ['label renamed', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, name: 'Pilgrim Tower' } }, ctx).f.length],
     ['a course over range', () => { const b = CB(); b.splice(12, 1); return checkCoursing(b).length }],
     ['bed off a wash', () => { const b = CB().map(z => (z > 16 && z < 16.5 ? z + 0.1 : z)); return checkCoursing(b).length }],

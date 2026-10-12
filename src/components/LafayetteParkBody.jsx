@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo, useRef, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -15,11 +15,32 @@ import useSkyState from '../hooks/useSkyState'
 import parkWaterData from '../data/lafayette-square/park_water.json'
 import ribbonsData from '../data/ribbons.json'
 import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
-import { getElevationRaw } from '../utils/elevation'
+import { getElevationRaw, drawnGroundParts, onDrawnGround } from '../utils/elevation'
 import { sceneExag } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { makeWaterMaterial, ringExtentDiag } from './waterMaterial.js'
-import { terrainExag, patchTerrain } from '../utils/terrainShader'
+import { terrainExag, patchTerrain, onTerrainReload } from '../utils/terrainShader'
+
+// ⭐ THE PARK'S BODIES SIT ON THE DRAWN GROUND (BRIEF-the-ground-knows-its-height): each is seated once on the ground
+// mesh's two parts (`drawnGroundParts`: the terrain part, raw, and the mesh's own unexaggerated part, a raised kerb's
+// block) and lifted per frame by `raw × exag + y`, the ground the movers and the user's dot stand on. Re-seated when
+// the terrain or the drawn ground is re-pointed (a look switch, the ground loading after the mount).
+// ⚠️ NOT YET: the fence's posts lift in the shader (`patchTerrain`), which samples the FIELD; the drawn mesh is not on
+// the GPU as a field, so they stay on the field (and miss a raised block's y) until that is designed.
+function useGroundGen() {
+  const [gen, setGen] = useState(0)
+  useEffect(() => onTerrainReload(() => setGen(g => g + 1)), [])
+  useEffect(() => onDrawnGround(() => setGen(g => g + 1)), [])
+  return gen
+}
+const meanParts = (pts) => { let raw = 0, y = 0; for (const [x, z] of pts) { const p = drawnGroundParts(x, z); raw += p.raw; y += p.y } return { raw: raw / pts.length, y: y / pts.length } }
+// A body seated at `parts`, lifted per frame. ⛔ Lift only, NO group scale: a scale.y = terrainExag collapses a flight
+// to zero height in flat/top-down camera modes where exag → 0.
+function GroundLift({ parts, children }) {
+  const ref = useRef()
+  useFrame(() => { if (ref.current) ref.current.position.y = parts.raw * terrainExag.value + parts.y })
+  return <group ref={ref}>{children}</group>
+}
 import { useTownContext } from './townContext.js'
 import { ringsToFlatGeo } from '../lib/ringsToFlatGeo.js'
 import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
@@ -182,7 +203,7 @@ function ParkStairs({ lookId, bakeLastMs }) {
         const dwA = nearestWaterDist(a, parkWaterData), dwB = nearestWaterDist(b, parkWaterData)
         descendToB = Math.min(dwA, dwB) < STAIR_DESCEND_WATER_THRESH
           ? dwB < dwA
-          : getElevationRaw(b[0], b[1]) <= getElevationRaw(a[0], a[1])
+          : getElevationRaw(b[0], b[1]) <= getElevationRaw(a[0], a[1])   // a direction, chosen once at mount: the field, so it cannot depend on whether the drawn ground has loaded
         drop = null
       }
       const g = buildStairGeometry(s.points, { width: s.pavedWidth || 1.5, descendToB, drop })
@@ -191,17 +212,19 @@ function ParkStairs({ lookId, bakeLastMs }) {
       geo.setAttribute('position', new THREE.Float32BufferAttribute(g.positions, 3))
       geo.setIndex(g.indices)
       geo.computeVertexNormals()
-      out.push({ geo, centroidRaw: getElevationRaw(g.centroid[0], g.centroid[1]) })
+      out.push({ geo, centroid: g.centroid })
     }
     return out
   }, [])
+  const gen = useGroundGen()
+  const seats = useMemo(() => stairs.map(s => drawnGroundParts(s.centroid[0], s.centroid[1])), [stairs, gen])
   if (hidden || !stairs.length) return null
   return (
     <>
       {stairs.map((s, i) => (
-        <StairLift key={i} centroidRaw={s.centroidRaw}>
+        <GroundLift key={i} parts={seats[i]}>
           <mesh geometry={s.geo} material={mat} castShadow receiveShadow frustumCulled={false} />
-        </StairLift>
+        </GroundLift>
       ))}
     </>
   )
@@ -320,21 +343,11 @@ function ParkWater({ lookId, bakeLastMs }) {
              lakeY: 0, grottoY: 0, islandY: 0 }
   }, [])
 
-  // Pond rigid-lift anchors: mean raw heightmap value across each pond's
-  // outline. Computed once at mount — both shared materials (bank/water)
-  // can stay shared because the per-pond lift happens at the GROUP level.
-  const lakeCentroidRaw = useMemo(() => {
-    const pts = parkWaterData.lake.outer
-    let s = 0
-    for (const [x, z] of pts) s += getElevationRaw(x, z)
-    return s / pts.length
-  }, [])
-  const grottoCentroidRaw = useMemo(() => {
-    const pts = parkWaterData.grotto
-    let s = 0
-    for (const [x, z] of pts) s += getElevationRaw(x, z)
-    return s / pts.length
-  }, [])
+  // Pond rigid-lift anchors: the drawn ground's parts averaged over each pond's outline (`GroundLift`). Both shared
+  // materials (bank/water) can stay shared because the per-pond lift happens at the GROUP level.
+  const gen = useGroundGen()
+  const lakeSeat = useMemo(() => meanParts(parkWaterData.lake.outer), [gen])
+  const grottoSeat = useMemo(() => meanParts(parkWaterData.grotto), [gen])
 
   // Animated water material — LIFTED to `waterMaterial.js` (the kit module) on
   // 2026-09-20 so a town whose water is a Great Lake can reach the same shader.
@@ -373,7 +386,7 @@ function ParkWater({ lookId, bakeLastMs }) {
     waterUniforms.uSunAltitude.value = sunAltitude
   })
 
-  // Simple island grass material. No patchTerrain — PondGroup wraps the
+  // Simple island grass material. No patchTerrain — GroundLift wraps the
   // island mesh and lifts the whole group rigidly by the lake's centroid
   // raw. Per-vertex displacement here would produce a triangulated tilt
   // that mismatches the bank/water surfaces and z-fights at the rim.
@@ -397,45 +410,18 @@ function ParkWater({ lookId, bakeLastMs }) {
   // covered the water. Rigid per-pond lift dodges that entirely.
   return (
     <group>
-      <PondGroup centroidRaw={lakeCentroidRaw}>
+      <GroundLift parts={lakeSeat}>
         <mesh geometry={lakeBankGeo}  position={[0, lakeY   + 0.2,  0]} receiveShadow material={bankMat} />
         <mesh geometry={lakeWaterGeo} position={[0, lakeY   + 0.35, 0]} receiveShadow material={waterMat} />
         <mesh geometry={islandGeo}    position={[0, islandY + 0.4,  0]} receiveShadow material={islandMat} />
-      </PondGroup>
-      <PondGroup centroidRaw={grottoCentroidRaw}>
+      </GroundLift>
+      <GroundLift parts={grottoSeat}>
         <mesh geometry={grottoBankGeo}  position={[0, grottoY + 0.2,  0]} receiveShadow material={bankMat} />
         <mesh geometry={grottoWaterGeo} position={[0, grottoY + 0.35, 0]} receiveShadow material={waterMat} />
-      </PondGroup>
+      </GroundLift>
     </group>
   )
 }
-
-// Rigid per-frame lift for all meshes inside the group. centroidRaw is
-// the raw heightmap value (meters above local-min) averaged over the
-// pond's polygon vertices; terrainExag.value × centroidRaw gives the
-// world-Y the whole pond rides at, scaled with the global exag dial.
-function PondGroup({ centroidRaw, children }) {
-  const ref = useRef()
-  useFrame(() => {
-    if (ref.current) ref.current.position.y = centroidRaw * terrainExag.value
-  })
-  return <group ref={ref}>{children}</group>
-}
-
-// Rides the stair flight onto the (exaggerated) terrain like the pond — lift
-// only, NO group scale (a scale.y = terrainExag collapses the flight to zero
-// height in flat/top-down camera modes where exag→0). The flight's own rise is
-// pre-exaggerated in the geometry (buildStairGeometry drop × the authored exag), so it
-// reads at scale without tracking the live exag. Bottom tread (y=0) lands on
-// the ground here.
-function StairLift({ centroidRaw, children }) {
-  const ref = useRef()
-  useFrame(() => {
-    if (ref.current) ref.current.position.y = centroidRaw * terrainExag.value
-  })
-  return <group ref={ref}>{children}</group>
-}
-
 
 // ── Perimeter Fence ────────────────────────────────────────────────────
 function PerimeterFence() {
@@ -527,12 +513,9 @@ function PerimeterFence() {
 // grass, where the camera angle sheared its far side ("AFAYETTE PARK"). Sitting
 // it on the grass, flat, reads as painted on and can't be clipped.
 function ElevatedGroup({ at, children }) {
-  const ref = useRef()
-  const baseY = useMemo(() => getElevationRaw(at[0], at[1]), [at])
-  useFrame(() => {
-    if (ref.current) ref.current.position.y = baseY * terrainExag.value
-  })
-  return <group ref={ref}>{children}</group>
+  const gen = useGroundGen()
+  const parts = useMemo(() => drawnGroundParts(at[0], at[1]), [at, gen])
+  return <GroundLift parts={parts}>{children}</GroundLift>
 }
 
 // Park title — the "LAFAYETTE PARK" landmark label + subtitle. Rendered by

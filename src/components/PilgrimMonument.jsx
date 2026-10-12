@@ -8,12 +8,11 @@
  * one. That file holds the drop-in contract. A declared model that fails to load THROWS
  * (the error boundary logs it). It never quietly shows the placeholder instead.
  *
- * SEATING: Z = 0 sits on the lowest terrain point under the plinth, in RAW metres. The lift
- * is `groundRaw × terrainExag.value`, re-read every frame, because the exaggeration is a
- * live, tweened, per-shot uniform (flat in Browse, 1 in Street, the town's value in Hero;
- * see `treeGroundRaw` in `src/utils/elevation.js`). The tower's HEIGHT is never exaggerated.
- * That matches how SlabBuildings lifts (src/lib/buildingLift.js), plus its building's `groundY` — the drawn ground's
- * own height, a raised kerb's block, unexaggerated.
+ * SEATING: Z = 0 sits on the lowest point of the DRAWN ground under the plinth (`seatOnGround`): the ground mesh's
+ * terrain part × terrainExag.value + its own unexaggerated part (a raised kerb's block), the ground every mover and
+ * the user's dot stand on (`drawnGroundParts`, src/utils/elevation.js). Re-read every frame, because the exaggeration
+ * is a live, tweened, per-shot uniform (flat in Browse, 1 in Street, the town's value in Hero). The tower's HEIGHT is
+ * never exaggerated. Re-seated when the terrain or the drawn ground is re-pointed (a look switch, the ground loading).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -26,10 +25,10 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { makeGraniteMasonryMaterial } from './graniteMasonryMaterial.js'
 import { resolveSurfaceParams } from '../../cartograph/surfaces.mjs'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
-import { getElevationRaw } from '../utils/elevation.js'
+import { drawnGroundParts, onDrawnGround } from '../utils/elevation.js'
 import { onTerrainReload, terrainExag } from '../utils/terrainShader.js'
 import {
-  DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnTerrain, southFacingYaw,
+  DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnGround, southFacingYaw,
 } from '../setpieces/pilgrimMonument.js'
 
 // The monument's own stone, a mid granite grey. Colour is not a dossier value; it is the set-piece's own.
@@ -126,9 +125,8 @@ function Model({ path }) {
   return scene ? <primitive object={scene} /> : null
 }
 
-export default function PilgrimMonument({ town, lookId, footprint, groundY, graniteOverride, focusName, children } = {}) {
+export default function PilgrimMonument({ town, lookId, footprint, graniteOverride, focusName, children } = {}) {
   if (!town || !footprint) throw new Error('[PilgrimMonument] ⛔ no town or footprint — mount <SetPiece>, which passes both')
-  if (!Number.isFinite(groundY)) throw new Error('[PilgrimMonument] ⛔ no groundY — <SetPiece> passes its building\'s (the drawn ground\'s own height; 0 on a flat town)')
   const sp = town.setPiece
   // The operator's layer (`scene.surfaces.params['pilgrim-granite']`); the lab may override it for a preview.
   const scene = useSceneJson(lookId)
@@ -139,12 +137,11 @@ export default function PilgrimMonument({ town, lookId, footprint, groundY, gran
     return siteFromFootprint(footprint)
   }, [active, footprint])
 
-  // Terrain re-points on a look switch; re-seat when it does.
+  // Terrain re-points on a look switch, and the drawn ground arrives after the mount; re-seat on either.
   const [terrainGen, setTerrainGen] = useState(0)
   useEffect(() => onTerrainReload(() => setTerrainGen(g => g + 1)), [])
-  const groundRaw = useMemo(
-    () => (site ? seatOnTerrain(getElevationRaw, site).groundRaw : 0),
-    [site, terrainGen])
+  useEffect(() => onDrawnGround(() => setTerrainGen(g => g + 1)), [])
+  const seat = useMemo(() => (site ? seatOnGround(drawnGroundParts, site) : null), [site, terrainGen])
 
   // The label: the set-piece's name printed on the ground just off its south face, read
   // from the south. Sized by the street labels' own law with the plinth as the width, and
@@ -157,19 +154,21 @@ export default function PilgrimMonument({ town, lookId, footprint, groundY, gran
     const dz = plinthM / 2 + fontSize                     // local +Z = the south-facing face
     const r = southFacingYaw(site)
     const wx = site.x + dz * Math.sin(r), wz = site.z + dz * Math.cos(r)
-    return { fontSize, dz, dRaw: getElevationRaw(wx, wz) - groundRaw }
-  }, [site, sp, labelStyle, groundRaw])
+    return { fontSize, dz, at: drawnGroundParts(wx, wz) }
+  }, [site, sp, labelStyle, terrainGen])
 
   const ref = useRef(), labelRef = useRef()
   useFrame(() => {
     const e = terrainExag.value
-    if (ref.current) ref.current.position.y = groundRaw * e + groundY
-    if (labelRef.current && label) labelRef.current.position.y = label.dRaw * e
+    if (!seat) return
+    const y0 = seat.yAt(e)
+    if (ref.current) ref.current.position.y = y0
+    if (labelRef.current && label) labelRef.current.position.y = label.at.raw * e + label.at.y - y0
   })
 
   if (!site) return null
   return (
-    <group ref={ref} name={focusName} userData={{ extent: PilgrimMonument.extent }} position={[site.x, groundRaw * terrainExag.value + groundY, site.z]}
+    <group ref={ref} name={focusName} userData={{ extent: PilgrimMonument.extent }} position={[site.x, seat.yAt(terrainExag.value), site.z]}
            rotation={[0, southFacingYaw(site), 0]}>
       {sp.model ? <Model path={sp.model} /> : <Placeholder authored={authored} lookId={lookId} />}
       {children /* the slot's lighting, in the tower's base frame (SetPiece.jsx) */}
