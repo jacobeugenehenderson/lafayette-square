@@ -149,14 +149,17 @@ export function makeHeightField(regions, h) {
   return { y }
 }
 
-/** Lift one group's buffer: each triangle `liftAt` its centroid takes the field's height at its vertices (added to the y
- *  it already has); a vertex used by a lifted AND an unlifted triangle is split. Returns new buffers + per-triangle side. */
-export function liftBuffer({ positions, indices }, field, liftAt) {
-  const nt = indices.length / 3, side = new Uint8Array(nt)
-  for (let t = 0; t < nt; t++) {
-    const a = indices[3 * t] * 3, b = indices[3 * t + 1] * 3, c = indices[3 * t + 2] * 3
-    side[t] = liftAt([(positions[a] + positions[b] + positions[c]) / 3, (positions[a + 2] + positions[b + 2] + positions[c + 2]) / 3]) ? 1 : 0
-  }
+/** Lift one group's buffer: each triangle whose CARRIED side is the block (`side`, one per triangle — the side of the
+ *  polygon it was triangulated from, `withSide` → `groundConformity.js#emit`) takes the field's height at its vertices
+ *  (added to the y it already has); a vertex used by a lifted AND an unlifted triangle is split. Returns new buffers +
+ *  the per-triangle side.
+ *  ⛔ NEVER A CENTROID TEST. Reading each triangle's side off its centroid recovered identity from geometry (A15) and
+ *  misread every zero-area sliver ALONG the block edge — LS raised 395 road slivers that way, and their long edges were
+ *  the bare `asphalt|asphalt` steps. A buffer that carries no side throws. */
+export function liftBuffer({ positions, indices, side: carried }, field) {
+  const nt = indices.length / 3
+  if (!carried || carried.length !== nt) throw new Error(`[kerbLift] liftBuffer: the buffer carries no side per triangle (${carried ? carried.length : 'none'} for ${nt}) — stamp its polygons with withSide() before conformAndRefine`)
+  const side = Uint8Array.from(carried)
   const nv = positions.length / 3, usedIn = new Uint8Array(nv), usedOut = new Uint8Array(nv)
   for (let t = 0; t < nt; t++) for (let k = 0; k < 3; k++) (side[t] ? usedIn : usedOut)[indices[3 * t + k]] = 1
   const extra = []                       // vertices both sides use: the inside triangles get a copy
@@ -278,14 +281,27 @@ export function kerbCells(regions, blockRings) {
     return out.filter(p => p.length >= 3) })
 }
 
+/** Each polygon's SIDE of the kerb, stamped onto it: 1 when the lift raises it, else 0 — read at a point just inside it
+ *  by the plan's `inBlock`. ⚠️ A REMAINING RECOVERY, at the polygon: the painter's items carry no owner (`pr.asphalt` is
+ *  the union of every tile's road, and the paint stack's flatten re-clips it), so the side is read here once per polygon
+ *  and then CARRIED to every triangle (`groundConformity.js#emit`) — never re-read per triangle. Board: the painter would
+ *  stamp its block on each band it emits (`tileGround.js#sectionOpen`) and the flatten keep it. */
+export function withSide(items, inBlock) {
+  return items.map(it => { const o = Array.isArray(it) ? { outer: it, holes: [] } : it, at = pointInside(o)
+    if (!at) throw new Error(`[kerbLift] withSide: a ground polygon of ${o.outer?.length} vertices has no interior point to read its side at`)
+    return { ...o, side: inBlock(at) ? 1 : 0 } })
+}
+
 // a point just inside an { outer, holes } polygon: 1 mm off the middle of its first edge long enough to carry it
 function pointInside(it) {
   const pip = (P, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[j], b = r[i]
     if ((a[1] > P[1]) !== (b[1] > P[1]) && P[0] < (b[0] - a[0]) * (P[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c } return c }
-  const r = it.outer
-  for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (!(L > 2e-3)) continue
-    const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], n = [-(b[1] - a[1]) / L * 1e-3, (b[0] - a[0]) / L * 1e-3]
-    for (const P of [[m[0] + n[0], m[1] + n[1]], [m[0] - n[0], m[1] - n[1]]]) if (pip(P, r) && !(it.holes || []).some(h => pip(P, h))) return P }
+  const r = it.outer, inside = (P) => pip(P, r) && !(it.holes || []).some(h => pip(P, h))
+  // off an edge's middle, at 1 mm and then finer (a split piece can be thinner than a millimetre), then any ear's centroid
+  for (const off of [1e-3, 1e-4, 1e-5]) for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (!(L > 2 * off)) continue
+    const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], n = [-(b[1] - a[1]) / L * off, (b[0] - a[0]) / L * off]
+    for (const P of [[m[0] + n[0], m[1] + n[1]], [m[0] - n[0], m[1] - n[1]]]) if (inside(P)) return P }
+  for (let i = 0; i < r.length; i++) { const a = r[(i + r.length - 1) % r.length], b = r[i], c = r[(i + 1) % r.length], P = [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3]; if (inside(P)) return P }
   return null
 }
 

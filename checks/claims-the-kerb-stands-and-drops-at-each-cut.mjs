@@ -20,9 +20,10 @@
 // ⭐ The whole scene is ROTATED and set at a non-integer offset, which an axis-aligned integer scene can never show: the
 // partition sits on Clipper's 1 mm grid.
 // ⭐ MUTATION TEST: `--selftest` — the bake's path is GREEN; with the groups not split at the creases (2c5560ca's bake) it
-//   is RED; split as the bake does but with the cut's ramp and flares dropped from the field it is RED. Same rows.
+//   is RED; split as the bake does but with the cut's ramp and flares dropped from the field it is RED; a road sliver along
+//   the block edge whose side is read off its centroid (the old rule) is lifted — RED. Same rows.
 //   node checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs [--selftest]
-import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases } from '../cartograph/kerbLift.mjs'
+import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, withSide } from '../cartograph/kerbLift.mjs'
 import { conformAndRefine, findTJunctions } from '../cartograph/groundConformity.js'
 
 const h = 0.15, taperRun = 1.0, kerb = { height: h, rampSlope: 1 / 12, flareSlope: 1 / 10, taperRun }
@@ -58,9 +59,9 @@ const DRAWN = h / 2                       // a cut is on screen when the drawn s
 function judge({ regionsOf = (r) => r, split = true } = {}) {
   const regions = regionsOf(P0.regions), curbless = P0.curbless
   const field = makeHeightField(regions, h)
-  const bufs = conformAndRefine(groupsIn.map(([, polys]) => ({ polys: split ? splitAtCreases(polys, cells, P0.inBlock) : polys, refine: null, yLift: 0 })))
+  const bufs = conformAndRefine(groupsIn.map(([, polys]) => ({ polys: withSide(split ? splitAtCreases(polys, cells, P0.inBlock) : polys, P0.inBlock), refine: null, yLift: 0 })))
   const tj = findTJunctions(bufs.map((b, i) => ({ id: groupsIn[i][0], ...b })))
-  const lifted = bufs.map((b, i) => ({ key: groupsIn[i][0].slice(groupsIn[i][0].indexOf(':') + 1), ...liftBuffer(b, field, P0.inBlock) }))
+  const lifted = bufs.map((b, i) => ({ key: groupsIn[i][0].slice(groupsIn[i][0].indexOf(':') + 1), ...liftBuffer(b, field) }))
   const riser = riserFromEdges(lifted, new Set(['curb', 'curbCut']), P0.flushTol)
   // THE DRAWN SURFACE at a local point: the lifted triangle that holds it (all groups), interpolated
   const tris = []
@@ -102,9 +103,20 @@ function judge({ regionsOf = (r) => r, split = true } = {}) {
     ['the riser stands along every kerb but the flush span', riser.kerbM > 40 - 1.5 && riserH.length > 0 && riserH.every(v => v <= h + e)],
     ['no step anywhere is left without a face',         Object.keys(riser.bareM).length === 0],
     ['the conformed ground has no crack',               tj.total === 0],
+    ['a road sliver along the block edge stays on the road (its side is carried)', sliver(carried)],
   ]
   return { rows, note: `riser ${riser.kerbM.toFixed(3)} m · ${riserH.length} quads · curbless ${cLen.toFixed(2)} m · T-junctions ${tj.total} · ramp run ${R.toFixed(2)} m · flare ${F.toFixed(2)} m · ${tris.length} tris${Object.keys(riser.bareM).length ? ' · BARE ' + JSON.stringify(riser.bareM) + ' at (local) ' + JSON.stringify(Object.fromEntries(Object.entries(riser.bareAt).map(([k, v]) => [k, v.map(p => Lc(p).map(x => +x.toFixed(3)))]))) : ''}` }
 }
+// ⭐ THE SLIVER: a zero-area road triangle ALONG block A's south kerb, its centroid 0.3 mm INSIDE the block (what conformity
+// leaves where a crease ends on the block edge on a vertex rounded off it). Its polygon is road, so its carried side is road.
+// `sideOf` is how the triangle's side is decided — the carried one, or (mutant) the old centroid read.
+const sliver = (sideOf) => {
+  const tri = [W([2, 0]), W([8, 0]), W([5, 0.0009])], P = new Float32Array(tri.flatMap(([x, z]) => [x, 0, z]))
+  const L = liftBuffer({ positions: P, indices: new Uint32Array([0, 1, 2]), side: Uint8Array.of(sideOf(tri)) }, makeHeightField(P0.regions, h))
+  return !L.side[0] && [1, 4, 7].every(i => L.positions[i] === 0)
+}
+const carried = () => 0                                                                  // its polygon's side: the road
+const byCentroid = (tri) => (P0.inBlock([(tri[0][0] + tri[1][0] + tri[2][0]) / 3, (tri[0][1] + tri[1][1] + tri[2][1]) / 3]) ? 1 : 0)
 const show = (rows) => { for (const [name, ok, w] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${name}${w != null ? ` (worst ${w} m)` : ''}`) }
 
 if (process.argv.includes('--selftest')) {
@@ -116,6 +128,7 @@ if (process.argv.includes('--selftest')) {
     ["the bake's path is GREEN", real.rows.every(([, ok]) => ok)],
     ['with the groups not split at the creases (2c5560ca), it is RED', unsplit.rows.some(([, ok]) => !ok)],
     ["split as the bake does but the cut's ramp and flares dropped from the field, it is RED", mut.rows.some(([, ok]) => !ok)],
+    ['the same sliver with its side read off its centroid (the old rule) is lifted — RED', !sliver(byCentroid)],
   ]
   console.log('  unsplit:'); show(unsplit.rows); console.log('  mutant (cut dropped):'); show(mut.rows)
   for (const [m, ok] of tests) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)

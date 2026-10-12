@@ -45,7 +45,7 @@ import { LANDSCAPE_OVERLAY_KEYS, horizonRecord } from './groundCover.mjs'   // o
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
-import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, polyTreeToItems } from './kerbLift.mjs'
+import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, withSide, polyTreeToItems } from './kerbLift.mjs'
 import { lineHeights } from './lineHeight.mjs'
 import { buildDeformer } from './groundDeformer.mjs'
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
@@ -1390,7 +1390,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // tarmac's hole and the stripe share every edge. Only water, which tints rather
     // than replaces, lies over the ground instead of in it.
     const inPartition = !DOES_NOT_CUT.has(kind + ':' + key)
-    return { polys: toPolys(items), refinePolicy, onGroundPlane, inPartition }
+    // ⭐ each polygon carries its SIDE of the kerb into the mesh, so every triangle is lifted by its polygon's side, never by
+    // where its centroid falls (`kerbLift.mjs#withSide`, `#liftBuffer`) — stamped on the polygons the mesh is built from
+    const polys = toPolys(items)
+    return { polys: kerbH ? withSide(polys, kerbInside) : polys, refinePolicy, onGroundPlane, inPartition }
   }
 
   // ⭐⭐ THE GROUND STRETCHES, IT DOES NOT BREAK (H-21). Every group on the plane is
@@ -1433,7 +1436,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         + `a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge. Refusing to write a ground that cracks.`)
     }
     if (kerbH) {
-      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), kerbField, kerbInside) }))
+      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), kerbField) }))
       lifted.forEach((L, i) => planeBuffers.set(planeKeys[i], { positions: L.positions, indices: L.indices }))
       kerbRiser = riserFromEdges(lifted, new Set(['curb', 'curbCut']), kerbFlushTol)
       const bare = Object.entries(kerbRiser.bareM).sort((a, b) => b[1] - a[1])
@@ -1478,11 +1481,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // A partition layer was conformed with the rest (at Y 0; its slot lift goes on
     // here). Water lies OVER the ground, sharing no edge with it, so it is conformed
     // on its own — which still joins its polygons to each other.
-    let { positions, indices } = inPartition
+    const conformed = inPartition
       ? planeBuffers.get(kind + ':' + key)
       : conformAndRefine([{ polys: plan.polys, refine: plan.refinePolicy, yLift }])[0]
+    let { positions, indices } = conformed
     // water (and anything else off the partition) rides the raised block too, or a pond inside it sinks under the lawn
-    if (!inPartition && kerbField) ({ positions, indices } = liftBuffer({ positions, indices }, kerbField, kerbInside))
+    if (!inPartition && kerbField) ({ positions, indices } = liftBuffer(conformed, kerbField))
     if (inPartition && yLift) for (let i = 1; i < positions.length; i += 3) positions[i] += yLift   // ADDED: a raised block keeps its kerb height under the slot
     if (indices.length === 0) continue
     let perField = null

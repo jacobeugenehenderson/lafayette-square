@@ -175,7 +175,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
       for (const t of tris) {
         const a = flat[t[0]], b = flat[t[2]], c = flat[t[1]]
         if (a === b || b === c || c === a) continue          // collapsed by the weld: zero area
-        T.push(a, b, c); TG.push(gi)
+        T.push(a, b, c); TG.push(gi * 2 + (p.side ? 1 : 0))   // ⭐ the polygon's SIDE rides in the tag (see `emit`)
       }
     }
   })
@@ -190,16 +190,16 @@ export function conformAndRefine(groupSpecs, stats = {}) {
       // reach, which grows with a group's perimeter, not its area
       const use = groupSpecs.map(() => new ShardedMap()), onB = groupSpecs.map(() => new ShardedSet())
       for (let t = 0; t < TG.length; t++) for (let k = 0; k < 3; k++) {
-        const ek = edgeKey(T[t * 3 + k], T[t * 3 + (k + 1) % 3]), m = use[TG[t]]
+        const ek = edgeKey(T[t * 3 + k], T[t * 3 + (k + 1) % 3]), m = use[TG[t] >> 1]
         m.set(ek, (m.get(ek) || 0) + 1)
       }
       for (let t = 0; t < TG.length; t++) for (let k = 0; k < 3; k++) {
-        const p = T[t * 3 + k], q = T[t * 3 + (k + 1) % 3], g = TG[t]
+        const p = T[t * 3 + k], q = T[t * 3 + (k + 1) % 3], g = TG[t] >> 1
         if (use[g].get(edgeKey(p, q)) === 1) for (const v of [p, q]) if (!onB[g].has(v)) { onB[g].add(v); out[g].boundaryVerts++ }
       }
     }
     for (let t = 0; t < TG.length; t++) {
-      const a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2], r = out[TG[t]]
+      const a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2], r = out[TG[t] >> 1]
       const ar = Math.abs((PX[b] - PX[a]) * (PZ[c] - PZ[a]) - (PX[c] - PX[a]) * (PZ[b] - PZ[a])) / 2
       const L2 = Math.max((PX[a] - PX[b]) ** 2 + (PZ[a] - PZ[b]) ** 2, (PX[b] - PX[c]) ** 2 + (PZ[b] - PZ[c]) ** 2, (PX[c] - PX[a]) ** 2 + (PZ[c] - PZ[a]) ** 2)
       r.tris++; r.areaM2 += ar; if (L2 > 0 && ar / L2 < SLIVER_RATIO) r.slivers++
@@ -279,7 +279,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     const red = new Uint8Array(n)
     let anyRed = false
     for (let i = 0; i < n; i++) {
-      const pol = policies[TG[i]]
+      const pol = policies[TG[i] >> 1]
       if (pol.mode === 'none' || pass >= pol.passes * LEB_PASSES_PER_LEVEL) continue
       const v0 = T[i * 3], v1 = T[i * 3 + 1], v2 = T[i * 3 + 2]
       const e01 = edgeSq(v0, v1), e12 = edgeSq(v1, v2), e20 = edgeSq(v2, v0)
@@ -406,10 +406,15 @@ function closeBoundaryTJunctions(PX, PZ, T, TG) {
 }
 
 // A shared vertex is duplicated into each group that draws it, with identical XZ.
+// ⭐ THE SIDE IS CARRIED, NEVER RECOVERED: each triangle's tag is `group × 2 + side`, set from its polygon's own `side`
+// when it is triangulated and inherited unchanged by every closure and refinement child (they pass the tag through). A
+// group whose polygons carry a side gets `side` back, one per triangle — so a zero-area sliver along a line is on the side
+// its polygon is, whatever its centroid does (`kerbLift.mjs#liftBuffer`; A15).
 function emit(groupSpecs, PX, PZ, T, TG) {
-  const out = groupSpecs.map(() => ({ local: new ShardedMap(), pos: [], idx: [] }))
+  const out = groupSpecs.map(() => ({ local: new ShardedMap(), pos: [], idx: [], side: [] }))
   for (let t = 0; t < TG.length; t++) {
-    const gi = TG[t], r = out[gi], y = groupSpecs[gi].yLift || 0
+    const gi = TG[t] >> 1, r = out[gi], y = groupSpecs[gi].yLift || 0
+    r.side.push(TG[t] & 1)
     for (let k = 0; k < 3; k++) {
       const v = T[t * 3 + k]
       let li = r.local.get(v)
@@ -417,7 +422,8 @@ function emit(groupSpecs, PX, PZ, T, TG) {
       r.idx.push(li)
     }
   }
-  return out.map(r => ({ positions: new Float32Array(r.pos), indices: new Uint32Array(r.idx) }))
+  return out.map((r, gi) => ({ positions: new Float32Array(r.pos), indices: new Uint32Array(r.idx),
+    ...(groupSpecs[gi].polys.some(p => p.side != null) ? { side: Uint8Array.from(r.side) } : {}) }))
 }
 
 /**
