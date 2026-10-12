@@ -25,8 +25,27 @@
 // question about the data, and answering it with a plausible number is the failure this file
 // exists to end.
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+
+// ⭐ THE PREFIX A SCENE NAME SEEDS AT ITS FIRST SEAL: its first four letters and digits. A legal scene name is
+// `[a-z0-9][a-z0-9-]*` (serve.js routes), and the raw `scene.slice(0, 4)` seeded `st-l` for `st-louis`, which the
+// seal refuses, so a legal town could never get listings. A one-character name seeds one letter and the seal
+// refuses it, loudly, by design.
+export function seedPrefix(scene) {
+  return String(scene).replace(/[^a-z0-9]/g, '').slice(0, 4)
+}
+
+// Every prefix another town has sealed: Map prefix → town. Read from the registries on disk, so it cannot go stale.
+export function sealedPrefixes(dataRoot, exceptScene) {
+  const out = new Map()
+  for (const town of readdirSync(dataRoot)) {
+    if (town === exceptScene) continue
+    const reg = loadRegistry(registryPath(join(dataRoot, town, 'content')))
+    if (reg?.meta?.prefix) out.set(reg.meta.prefix, town)
+  }
+  return out
+}
 
 export function registryPath(contentDir) {
   return join(contentDir, 'listing-identity.json')
@@ -51,9 +70,11 @@ const format = (prefix, n) => `${prefix}-lst-${String(n).padStart(4, '0')}`
  *   null registry     — a scene's FIRST sealed bake: number exactly as the old positional scheme did
  *                       (sorted by key, skipping pinned ids), so today's ids carry over unchanged,
  *                       and freeze that numbering — and `sealPrefix` — for every bake after.
+ *                       ⛔ A prefix another town already sealed (`sealedBy`, from `sealedPrefixes`) THROWS,
+ *                       naming both towns: two businesses would share one id. Never auto-suffixed.
  * Mutates each listing's `id`; returns the (new) registry and what happened.
  */
-export function assignListingIds(listings, registry, { sealPrefix } = {}) {
+export function assignListingIds(listings, registry, { sealPrefix, scene, sealedBy } = {}) {
   const pinned = new Set(listings.filter(l => l.id).map(l => l.id))
   const unpinned = listings.filter(l => !l.id)
 
@@ -69,6 +90,12 @@ export function assignListingIds(listings, registry, { sealPrefix } = {}) {
     // The seal: the old positional numbering, frozen.
     if (!/^[a-z0-9]{2,8}$/.test(sealPrefix || '')) throw new Error(`listing-identity: sealing a registry needs a prefix of 2–8 lowercase letters or digits, got ${JSON.stringify(sealPrefix)}.`)
     const prefix = sealPrefix
+    const owner = sealedBy && sealedBy.get(prefix)
+    if (owner) {
+      throw new Error(`listing-identity: town "${scene}" would seal the listing prefix "${prefix}", which town "${owner}" already sealed — ` +
+        `two businesses would share one id. Choose this town's prefix: write its content/listing-identity.json as ` +
+        `{ "meta": { "prefix": "<2–8 lowercase letters or digits>", "highWater": 0 }, "ids": {} } and bake again.`)
+    }
     let n = 1, high = 0
     const ids = {}
     for (const l of byKey) {

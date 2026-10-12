@@ -19,7 +19,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
-const { assignListingIds, idsThatWouldMove, guardSeal } = await import(path.join(ROOT, 'cartograph/listing-identity.js'))
+const { assignListingIds, idsThatWouldMove, guardSeal, seedPrefix, sealedPrefixes } = await import(path.join(ROOT, 'cartograph/listing-identity.js'))
 
 let failed = 0
 const bad = (m) => { failed++; console.log(`  ⛔ ${m}`) }
@@ -81,6 +81,39 @@ else bad('a registry was sealed with no prefix')
 if (/assignListingIds\(merged,[^\n]*\{\s*sealPrefix:/.test(readFileSync(path.join(ROOT, 'cartograph/bake-content.js'), 'utf8'))) ok('bake-content hands the name over only as the SEAL prefix')
 else bad('bake-content does not call assignListingIds(…, { sealPrefix }) — the prefix may be derived from the name again')
 
+// ── every LEGAL scene name seeds a sealable prefix (serve.js: `[a-z0-9][a-z0-9-]*`) ──
+// The raw `scene.slice(0, 4)` seeded `st-l` for `st-louis`; the seal refused it, so the town could never bake listings.
+const seals = (seed) => !throws(() => assignListingIds(base(['ovt-a']), null, { sealPrefix: seed }))
+const legalNames = ['st-louis', 'el-paso', 'la-jolla', 'a-b-c-d-e', 'huron', 'hipointedemun']
+const unsealable = legalNames.filter(n => !seals(seedPrefix(n)))
+if (!unsealable.length) ok(`every legal scene name seeds a sealable prefix (st-louis → ${seedPrefix('st-louis')})`)
+else bad(`legal scene name(s) seed an unsealable prefix: ${unsealable.map(n => `${n} → "${seedPrefix(n)}"`).join(', ')}`)
+// mutation: the raw slice must fail the same test
+if (legalNames.some(n => !seals(n.slice(0, 4)))) ok('mutation: the raw name slice is caught (st-louis → "st-l")')
+else bad('MUTATION NOT CAUGHT: the raw name slice seeds sealable prefixes for every legal name — the test above proves nothing')
+// ⭐ STATED CASE: a one-character town name seeds a one-letter prefix and the seal refuses it, loudly. By design.
+if (seedPrefix('x') === 'x' && !seals(seedPrefix('x'))) ok('a one-character town name seeds "x" and the seal refuses it, loudly (stated case)')
+else bad('a one-character town name sealed, or seeded something other than its one letter')
+if (/sealPrefix:\s*seedPrefix\(scene\)/.test(readFileSync(path.join(ROOT, 'cartograph/bake-content.js'), 'utf8'))) ok('bake-content seeds through seedPrefix(scene)')
+else bad('bake-content does not seed through seedPrefix(scene)')
+
+// ── a prefix another town sealed is REFUSED, naming both towns — never auto-suffixed ──
+const taken = new Map([['stlo', 'st-louis']])
+let msg = ''
+try { assignListingIds(base(['ovt-a']), null, { sealPrefix: seedPrefix('st-louis-park'), scene: 'st-louis-park', sealedBy: taken }) } catch (e) { msg = e.message }
+if (/st-louis-park/.test(msg) && /"st-louis"/.test(msg)) ok('a prefix another town sealed throws, naming both towns (st-louis-park vs st-louis)')
+else bad(`two towns could seal one prefix: ${msg || 'no throw'} — two businesses would share one id`)
+// mutation: without the sealed set the same seal goes through, so the refusal above is the guard's doing
+if (seals(seedPrefix('st-louis-park'))) ok('mutation: with no sealed set the colliding seal succeeds — the refusal is load-bearing')
+else bad('MUTATION NOT CAUGHT: the colliding seal fails even with no sealed set — the collision test proves nothing')
+// the way out the error names: a hand-written empty registry numbers under its chosen prefix
+const chosen = base(['ovt-a'])
+assignListingIds(chosen, { meta: { prefix: 'stlp', highWater: 0 }, ids: {} })
+if (idOf(chosen, 'ovt-a') === 'stlp-lst-0001') ok('the remedy the error names works: a hand-written empty registry numbers under its own prefix')
+else bad(`the remedy the collision error names does not work: ${idOf(chosen, 'ovt-a')}`)
+if (/sealedBy:\s*sealedPrefixes\(/.test(readFileSync(path.join(ROOT, 'cartograph/bake-content.js'), 'utf8'))) ok('bake-content hands the seal every other town\'s prefix')
+else bad('bake-content does not pass sealedBy: sealedPrefixes(…) — a collision would seal silently')
+
 // ── the safety net compares same-named twins as a set ──
 const twins = [{ id: 'x-1', name: 'School', building_id: 'b' }, { id: 'x-2', name: 'School', building_id: 'b' }]
 if (idsThatWouldMove([...twins].reverse(), twins).length === 0) ok('two listings of one name in one building are not reported as a move')
@@ -120,6 +153,17 @@ for (const scene of readdirSync(dataDir)) {
   else ok(`${scene}: all ${numbered.length} registry-numbered listings match their sealed ids`)
 }
 if (!scenes) { console.log('  (no scene has sealed its listing ids yet — the scene half could not measure)') }
+// ── no two towns on disk hold one prefix ──
+const holders = new Map()
+for (const scene of readdirSync(dataDir)) {
+  const reg = path.join(dataDir, scene, 'content/listing-identity.json')
+  if (!existsSync(reg)) continue
+  const pre = JSON.parse(readFileSync(reg, 'utf8')).meta?.prefix
+  if (pre) holders.set(pre, [...(holders.get(pre) || []), scene])
+}
+const shared = [...holders].filter(([, t]) => t.length > 1)
+if (shared.length) bad(`towns share a listing prefix: ${shared.map(([p, t]) => `"${p}" ← ${t.join(' + ')}`).join('; ')}`)
+else ok(`no two towns share a listing prefix (${[...holders].map(([p, t]) => `${p}=${t[0]}`).join(' · ')})`)
 
 console.log(failed ? `\n${failed} FAILED` : '\nall held')
 process.exit(failed ? 1 : 0)

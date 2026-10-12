@@ -54,7 +54,7 @@ import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
 import { buildingIdOf } from './membership.mjs'
 import { addressKey, addressParts, streetKey } from '../src/lib/addressKey.js'
-import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove, guardSeal } from './listing-identity.js'
+import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove, guardSeal, seedPrefix, sealedPrefixes } from './listing-identity.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -1272,7 +1272,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   // The prefix is sealed WITH the registry and read back from it; the scene's name seeds it only on
   // the first seal, so renaming a town never renames its listings.
   const idPath = listingIdPath(contentDir(scene))
-  const { registry: listingIds, report: idReport } = assignListingIds(merged, loadListingIds(idPath), { sealPrefix: scene.slice(0, 4) })
+  const { registry: listingIds, report: idReport } = assignListingIds(merged, loadListingIds(idPath), { sealPrefix: seedPrefix(scene), scene, sealedBy: sealedPrefixes(dirname(mapDir(scene)), scene) })
   if (idReport.sealed) {
     // The first sealed bake numbers positionally; that carries today's ids over only if the input
     // is unchanged since the last bake. Prove it against the file on disk before sealing.
