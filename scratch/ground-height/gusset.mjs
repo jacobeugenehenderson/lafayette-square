@@ -8,6 +8,8 @@
 // THE GUSSET = the height of land above the water at the line (land − level), where it is positive: a wall from the
 // sheet's edge up to the land's lip. It OPENS TO THE SKY where the water side carries no ground to close it.
 // Usage: node --max-old-space-size=12000 scratch/ground-height/gusset.mjs <scene>
+//   env: SLAB_DIR (a scratch slab, default the served one) · SIDE_OFF (metres off the line, default 0.3; below 1 cm it reads
+//   ①'s ε band, not the gusset) · GUSSET_OUT (where the record goes, default scratch/ground-height/gusset-<scene>.json)
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../../cartograph/terrainLoad.js'
@@ -15,7 +17,7 @@ import { waterRuns } from '../../cartograph/shoreRuns.mjs'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 const scene = process.argv[2]
 const root = new URL('../../', import.meta.url).pathname
-const slab = join(root, 'public/baked', scene)
+const slab = process.env.SLAB_DIR || join(root, 'public/baked', scene)   // SLAB_DIR: a scratch slab
 const gj = JSON.parse(readFileSync(join(slab, 'ground.json')))
 const gb = readFileSync(join(slab, 'ground.bin')); const AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
 const shape = JSON.parse(readFileSync(join(slab, 'shape.json')))
@@ -34,8 +36,12 @@ const kq = (x, z) => `${Math.round(x * 1000)},${Math.round(z * 1000)}`
 for (const g of gj.groups) {
   if (g.partition === false && g.id !== 'water') continue
   const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount)
+  // ⭐ the TERRAIN PART each vertex is drawn with: the slab's baked one (the deformer's, `rawByteOffset`) where the group
+  // carries it, else the field at the vertex — what the runtime draws (terrainShader baked vs texture). Fixed 2026-10-12:
+  // this read the field only, so on a deformed slab it measured the ground BEFORE the deformer (Swale).
+  const Rb = g.rawByteOffset != null ? new Float32Array(AB, g.rawByteOffset, g.vertexCount) : null
   for (let i = 0; i < I.length; i += 3) {
-    const v = [I[i], I[i + 1], I[i + 2]].map(k => [P[k * 3], P[k * 3 + 1], P[k * 3 + 2]])
+    const v = [I[i], I[i + 1], I[i + 2]].map(k => [P[k * 3], P[k * 3 + 1], P[k * 3 + 2], Rb ? Rb[k] : raw(P[k * 3], P[k * 3 + 2])])
     const x0 = Math.floor(Math.min(v[0][0], v[1][0], v[2][0]) / CELL), x1 = Math.floor(Math.max(v[0][0], v[1][0], v[2][0]) / CELL)
     const z0 = Math.floor(Math.min(v[0][2], v[1][2], v[2][2]) / CELL), z1 = Math.floor(Math.max(v[0][2], v[1][2], v[2][2]) / CELL)
     let any = false
@@ -88,7 +94,7 @@ function drawnAt(x, z) {
     const l1 = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / d, l2 = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / d, l3 = 1 - l1 - l2
     if (l1 < -1e-7 || l2 < -1e-7 || l3 < -1e-7) continue
     if (t.g === 'water') { water = true; continue }
-    return { g: t.g, h: l1 * (raw(a[0], a[2]) + a[1]) + l2 * (raw(b[0], b[2]) + b[1]) + l3 * (raw(c[0], c[2]) + c[1]) }
+    return { g: t.g, h: l1 * (a[3] + a[1]) + l2 * (b[3] + b[1]) + l3 * (c[3] + c[1]) }
   }
   return water ? { g: 'water-only' } : null
 }
@@ -101,7 +107,7 @@ for (const r of runs) for (let i = 0; i + 1 < r.length; i++) {
   for (let s = 0; s < L; s += 1) {
     const x = a[0] + tx * s, z = a[1] + tz * s
     if (!inDisc(x, z)) continue
-    const A = drawnAt(x - tz * 0.3, z + tx * 0.3), B = drawnAt(x + tz * 0.3, z - tx * 0.3)
+    const OFF = +(process.env.SIDE_OFF || 0.3), A = drawnAt(x - tz * OFF, z + tx * OFF), B = drawnAt(x + tz * OFF, z - tx * OFF)   // SIDE_OFF: metres off the line
     // the water side is the side whose point has the water sheet over it (or nothing but water)
     const wa = A?.g === 'water-only' || (A && /bed|water/.test(A.g)), wb = B?.g === 'water-only' || (B && /bed|water/.test(B.g))
     if (wa === wb) continue                                   // both or neither: not a land/water edge here
@@ -150,4 +156,4 @@ for (const [nm, lvl] of [['high', r => r.hi], ['low', r => r.lo]]) {
   const L = segs2[nm].map(c => c.lengthM), [l50, l90] = q(L, [0.5, 0.9])
   console.log(`  gusset segments at ${nm.toUpperCase()}: ${L.length} · length along the shore p50 ${f2(l50)} p90 ${f2(l90)} max ${f2(Math.max(0, ...L))} m · total ${L.reduce((a, b) => a + b, 0).toFixed(0)} m`)
 }
-writeFileSync(join(root, 'scratch/ground-height', `gusset-${scene}.json`), JSON.stringify({ scene, levels: { low: W.lowName, high: W.highName }, segments: segs2 }))
+writeFileSync(process.env.GUSSET_OUT || join(root, 'scratch/ground-height', `gusset-${scene}.json`), JSON.stringify({ scene, levels: { low: W.lowName, high: W.highName }, segments: segs2 }))
