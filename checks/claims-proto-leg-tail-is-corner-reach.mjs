@@ -23,6 +23,10 @@
 // was frozen before the current curve fit ("verify the baseline before comparing to it").
 // ⛔ Grade-separated rings are EXCLUDED: the shipped curb builds no highway curb at all, so
 // they have no baseline and averaging them in makes the number meaningless.
+// ⛔ ② VERTICES OUTSIDE EVERY TILE ARE THEIR OWN CLASS (2026-10-12, Boz's ruling). ② curbs territory the shape
+// artifact has no tiles for (ROADMAP: HPDM to 3,320 m vs ±1,394), so those vertices have no baseline by construction.
+// Folded into UNMEASURABLE they took four towns' verdicts (HPDM 59.1%, PTown 37.2%). They are counted loudly per
+// town, "② curb outside every tile: N", and excluded from the verdict. UNMEASURABLE stays for a miss INSIDE a tile.
 // ▶ node checks/claims-proto-leg-tail-is-corner-reach.mjs [scene ...]
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
@@ -60,6 +64,31 @@ for (const scene of scenes) {
         const k = key(cx, cz); let e = grid.get(k); if (!e) grid.set(k, e = []); e.push([a, b])
       }
   }
+  // Tile containment (even-odd), bucketed by a coarse grid over each tile ring's bbox.
+  const TCELL = 200
+  const tGrid = new Map()
+  const tiles = (r._shapeArtifact || []).map(t => t.ring).filter(rg => rg?.length >= 3)
+  for (const rg of tiles) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+    for (const p of rg) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1] }
+    for (let cx = Math.floor(x0/TCELL); cx <= Math.floor(x1/TCELL); cx++)
+      for (let cz = Math.floor(z0/TCELL); cz <= Math.floor(z1/TCELL); cz++) {
+        const k = key(cx, cz); let e = tGrid.get(k); if (!e) tGrid.set(k, e = []); e.push(rg)
+      }
+  }
+  const inRing = (p, rg) => { let c = false
+    for (let i = 0, j = rg.length - 1; i < rg.length; j = i++)
+      if ((rg[i][1] > p[1]) !== (rg[j][1] > p[1]) && p[0] < (rg[j][0]-rg[i][0]) * (p[1]-rg[i][1]) / (rg[j][1]-rg[i][1]) + rg[i][0]) c = !c
+    return c }
+  const inAnyTile = (p) => (tGrid.get(key(Math.floor(p[0]/TCELL), Math.floor(p[1]/TCELL))) || []).some(rg => inRing(p, rg))
+  // ⭐ SELF-TEST, every run: the baseline (iA, inset inside its tile) must read as inside the tiles, and a point
+  // 10,000 km out must not. A share, not one vertex — an iA vertex can sit ON its tile's edge (offset 0), where
+  // even-odd is ambiguous. If it fails, the class above is miscounting, and nothing below can be read.
+  let iAin = 0, iAn = 0
+  for (const rg of iA) for (const p of rg) { iAn++; if (inAnyTile(p)) iAin++ }
+  const iAshare = iAn ? iAin / iAn : 0
+  if (iAshare < 0.9 || inAnyTile([1e7, 1e7])) { console.log(`⛔ ${scene}: tile containment failed its self-test (${(100 * iAshare).toFixed(1)}% of iA vertices inside a tile) — NOT measured`); failed = true; continue }
+
   // ⛔ THE SEARCH IS BOUNDED, AND AN UNMATCHED VERTEX IS ITS OWN FAILING CLASS — never folded
   // into a magnitude. `litmus-curb-parallel.mjs:86` silently `continue`s past a tile it cannot
   // measure, so "this block has no curb" prints as "bows 3.9 m" (`ROADMAP A05`). An Infinity
@@ -95,10 +124,11 @@ for (const scene of scenes) {
 
   const bins = EDGES.slice(0, -1).map(() => [])
   const unmatched = EDGES.slice(0, -1).map(() => 0)
-  let gsRings = 0, gsVerts = 0
+  let gsRings = 0, gsVerts = 0, outsideTiles = 0
   for (let k2 = 0; k2 < r.protoCurb.length; k2++) {
     if (r.protoCurbGs?.[k2]) { gsRings++; gsVerts += r.protoCurb[k2].length; continue }
     for (const p of r.protoCurb[k2]) {
+      if (!inAnyTile(p)) { outsideTiles++; continue }
       const dn = dToNode(p)
       let bi = EDGES.findIndex((e, i) => dn >= e && dn < EDGES[i+1]); if (bi < 0) bi = bins.length - 1
       const d = dToBaseline(p)
@@ -109,6 +139,8 @@ for (const scene of scenes) {
   console.log(`\n${'='.repeat(76)}\n${scene}  — ② vertex deviation from this run's own iA, by distance to nearest node`)
   console.log(`   authoring: ${r.protoAuthoring}`)
   console.log(`   ⛔ excluded: ${gsRings} grade-separated ring(s) / ${gsVerts} vertices (no shipped highway curb to compare to)`)
+  console.log(`   tile containment self-test: ${(100 * iAshare).toFixed(1)}% of iA vertices read inside a tile`)
+  console.log(`   ⛔ ② curb outside every tile: ${outsideTiles} vertices — no baseline exists there; excluded from every statistic and the verdict (ROADMAP: ② builds beyond the tile set)`)
   console.log(`\n   ${'distance to node'.padEnd(18)} ${'n'.padStart(7)} ${'median'.padStart(9)} ${'p90'.padStart(9)} ${'within 0.10 m'.padStart(14)} ${'UNMATCHED'.padStart(10)}`)
   const within = []
   bins.forEach((a, i) => {
