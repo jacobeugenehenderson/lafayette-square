@@ -85,6 +85,15 @@ const SIGNALS = {
     [/from\s*['"]node:(https?|net|dgram|dns|tls)['"]/, 'imports a network module'],
     [/require\s*\(\s*['"](node:)?(https?|net|dgram|dns|tls)['"]/, 'imports a network module'],
     [/\bcreateClient\s*\(/, 'constructs a Supabase/DB client'],
+    // ⭐ The other ways to start code that is not this file (Boz, 2026-10-12): a worker or a forked cluster member runs a
+    //    module named at run time, and native code reaches anything. None is read — naming the module is enough.
+    [/['"](?:node:)?(?:worker_threads|cluster)['"]/, 'imports worker_threads/cluster — starts code it cannot read'],
+    [/\bprocess\.(?:dlopen|binding)\s*\(/, 'loads native code (process.dlopen/binding)'],
+    // ⭐ A PACKAGE MEASURED TO REACH OUT. Bare packages are not read from source (the no-network guard is their proof);
+    //    one the guard has CAUGHT is declared here so it never enters the safe run again. vite: its server resolves
+    //    localhost over DNS on start (getLocalhostAddressIfDiffersFromDNS) — the guard fired on
+    //    claims-every-ground-surface-takes-the-lamp and claims-the-slab-addresses-files-by-where-it-was-fetched, 2026-10-12.
+    [/(?:from|import\s*\(|require\s*\()\s*['"]vite['"]/, 'imports vite — its server resolves localhost over DNS (caught by the no-network guard)'],
   ],
   // Writes to disk.
   write: [
@@ -110,7 +119,13 @@ const SIGNALS = {
 const SELF_RERUN = /\b(?:spawnSync|execFileSync)\s*\(\s*process\.execPath\s*,\s*\[\s*(?:\.\.\.process\.execArgv\s*,\s*)?(?:process\.argv\[1\]|fileURLToPath\(\s*import\.meta\.url\s*\))\s*[,\]]/g
 
 /** Pull out every string literal handed to a child_process call, so the command can be read. */
+// ⛔ child_process is reachable only through an import of it (static, dynamic or require). A file that never names the
+//    module cannot spawn, so `/re/.exec(s)` (RegExp.prototype.exec) there is a regex, not a command. A file that DOES
+//    name it has every exec/spawn-shaped call read as before, `.exec(` included (`cp.exec(cmd)`).
+const IMPORTS_CHILD_PROCESS = /['"](?:node:)?child_process['"]/
+
 function execCommands(code) {
+  if (!IMPORTS_CHILD_PROCESS.test(code)) return { cmds: [], selfRuns: 0, opaque: false }
   const cmds = []
   for (const m of code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(\s*(['"`])([\s\S]*?)\2/g)) cmds.push(m[3])
   const selfRuns = [...code.matchAll(SELF_RERUN)].length
@@ -129,8 +144,31 @@ export function execSelfTest() {
     ['spawnSync(process.execPath, [process.argv[2]])', true],
     ['spawn(process.execPath, [process.argv[1]])', true],
   ]
+  for (const c of cases) c[0] = `import { spawn, spawnSync, execFileSync } from 'node:child_process'\n${c[0]}`
+  cases.push(
+    ['const m = /^--scene=(.+)$/.exec(a)', false],                                              // a regex, no child_process
+    ["import * as cp from 'node:child_process'\ncp.exec(cmd)", true],                          // the namespace form is read
+    ["const { exec } = require('child_process')\nexec(cmd)", true],
+  )
   for (const [src, wantOpaque] of cases) {
     if (execCommands(src).opaque !== wantOpaque) throw new Error(`[tier] ⛔ self-test: \`${src}\` read as ${wantOpaque ? 'readable' : 'unreadable'} — the self-re-invocation rule is broken`)
+  }
+  // ⭐ ACROSS THE IMPORT GRAPH: each file is gated on its OWN imports, so a check that never names child_process is
+  //    still read through a helper that does.
+  const check = "import { run } from './_helper.mjs'\nrun()"
+  const graph = [
+    ["import { spawnSync } from 'node:child_process'\nexport const run = () => spawnSync(cmd, [])", 'live'],
+    ["export const run = () => /^--scene=(.+)$/.exec(process.argv[2])", 'safe'],
+    ["import { Worker } from 'node:worker_threads'\nexport const run = () => new Worker(file)", 'live'],
+    ["import cluster from 'cluster'\nexport const run = () => cluster.fork()", 'live'],
+    ["export const run = () => process.dlopen(module, path)", 'live'],
+    ["export const run = () => process.binding('spawn_sync')", 'live'],
+    ["import { createServer } from 'vite'\nexport const run = () => createServer({})", 'live'],
+    ["export const run = async () => (await import('vite')).build({})", 'live'],
+  ]
+  for (const [helper, want] of graph) {
+    const got = classifyVirtual({ 'checks/claims-planted.mjs': check, 'checks/_helper.mjs': helper }, 'checks/claims-planted.mjs').tier
+    if (got !== want) throw new Error(`[tier] ⛔ self-test: a check importing a helper \`${helper.split('\n').pop()}\` read as ${got}, want ${want} — the gate does not hold across the import graph`)
   }
 }
 
@@ -147,7 +185,7 @@ function relativeImports(code, fromFile) {
     const spec = m[1]
     for (const cand of [spec, spec + '.js', spec + '.mjs']) {
       const p = resolve(ROOT, dirname(fromFile), cand)
-      if (existsSync(p) && !p.endsWith('/')) { out.push(relative(ROOT, p)); break }
+      if (!p.endsWith('/') && onDisk(relative(ROOT, p))) { out.push(relative(ROOT, p)); break }
     }
   }
   return out
@@ -170,8 +208,18 @@ function relativeImports(code, fromFile) {
  * whole corpus exists to prevent (`CLAUDE.md` Layer 0 q2).
  */
 function readCheckSource(file) {
+  if (_virtual) return _virtual.get(file) ?? null
   try { return readFileSync(join(ROOT, file), 'utf8') }
   catch (err) { if (err.code === 'ENOENT') return null; throw err }
+}
+
+// The self-test's planted sources: classify reads these instead of the disk while it runs (classifyVirtual).
+let _virtual = null
+const onDisk = (rel) => (_virtual ? _virtual.has(rel) : existsSync(join(ROOT, rel)))
+/** Classify `entry` against planted sources { relPath: source } — the same classify, reading nothing from disk. */
+export function classifyVirtual(files, entry) {
+  _virtual = new Map(Object.entries(files))
+  try { return classify(entry) } finally { _virtual = null }
 }
 
 export function classify(file, seen = new Set(), depth = 0) {
@@ -220,7 +268,7 @@ export function classify(file, seen = new Set(), depth = 0) {
       if (b) expr = b[1]
     }
     const lits = [...expr.matchAll(/['"]([^'"]+)['"]/g)].map(x => x[1]).filter(x => /\.(m?js|ts)$/.test(x))
-    const hit = lits.map(l => l.replace(/^\.?\//, '')).find(l => existsSync(join(ROOT, l)))
+    const hit = lits.map(l => l.replace(/^\.?\//, '')).find(l => onDisk(l))
     if (hit) {
       const sub = classify(hit, seen, depth + 1)
       if (sub.tier !== 'safe') { bump(sub.tier); why.push(`imports ${hit}, which can: ${sub.why.join(', ')}`) }
@@ -243,7 +291,7 @@ export function classify(file, seen = new Set(), depth = 0) {
 
   // Follow what it pulls in — an imported module's top level runs too.
   for (const dep of relativeImports(code, file)) {
-    if (!existsSync(join(ROOT, dep))) continue
+    if (!onDisk(dep)) continue
     const sub = classify(dep, seen, depth + 1)
     if (sub.tier !== 'safe') { bump(sub.tier); why.push(`imports ${dep}, which can: ${sub.why.join(', ')}`) }
   }
