@@ -9,16 +9,14 @@
  * DATA had none, and nothing said so. (Jacob: "the bigger issue is there's no way to
  * preview it before it goes live.")
  *
- * ⭐ EVERY FACT BELOW IS READ OUT OF THE WORKFLOWS AND THE UPLOADER, never restated here,
+ * ⭐ EVERY FACT BELOW IS READ OUT OF THE TWO WORKERS, deploy.yml AND THE UPLOADER, never restated here,
  * so this cannot go green off a rule that has since moved. It is the same shape as
  * claims-the-publish-gate-pushes-where-staging-deploys — and that guard exists because the
  * publish branch drifted for four weeks with nobody noticing.
  *
- * ⛔ WHAT IT CANNOT SEE: the VALUES of the GitHub repo variables live in GitHub, not here.
- * This proves the two environments read DIFFERENT variables and write DIFFERENT prefixes.
- * It cannot prove VITE_ASSET_BASE_STAGING is set, or that it points at the staging prefix.
- * That is stated, not silently assumed — an instrument that implies coverage it lacks is
- * worse than no instrument.
+ * ⛔ WHAT IT CANNOT SEE: what is DEPLOYED. It reads each Worker's wrangler.jsonc and src, not the Workers
+ * running on Cloudflare, and vars.VITE_ASSET_BASE's value lives in GitHub. That is stated, not silently
+ * assumed — an instrument that implies coverage it lacks is worse than no instrument.
  *
  *   node checks/claims-the-slab-envs-do-not-collide.mjs
  *   exit 0 = the environments are separated · exit 2 = they collide
@@ -34,24 +32,54 @@ const ok = (m) => console.log(`  ✅ ${m}`)
 
 console.log('Staging and production must not serve the same slab\n')
 
-// ① the two workflows must read DIFFERENT variables
-const varOf = (yml) => (read(yml).match(/VITE_ASSET_BASE:\s*\$\{\{\s*vars\.([A-Z_]+)/) || [])[1] || null
-const stagingVar = varOf('.github/workflows/staging.yml')
-const prodVar = varOf('.github/workflows/deploy.yml')
-if (!stagingVar || !prodVar) fail(`could not read VITE_ASSET_BASE out of both workflows (staging=${stagingVar}, prod=${prodVar})`)
-else if (stagingVar === prodVar) fail(`both workflows read vars.${stagingVar} — staging serves PRODUCTION's slab, which is the whole defect`)
-else ok(`staging reads vars.${stagingVar}, prod reads vars.${prodVar} — different variables`)
+// ①② WHERE EACH ENVIRONMENT IS TOLD ITS SLAB LIVES. Until 2026-09-21 that was two workflows' VITE_ASSET_BASE;
+// `staging.yml` was retired (883dbfbc) when staging became a button. The published player is now built with
+// `VITE_ASSET_BASE=runtime` and reads `<meta name="ward-asset-base">` from the site serving it (src/lib/bakedUrl.js):
+// the staging-sites Worker stamps `SLAB_BASE`, a town's production-sites Worker stamps its own origin and reads
+// `baked/<look>` from R2. lafayette-square.com is still deploy.yml's build. Each side is read from its source, and
+// the prefixes from the uploader's ENV_PREFIX, so a moved prefix moves the expectation with it.
+const ENV = Object.fromEntries([...((read('scripts/upload-baked-to-r2.mjs').match(/const ENV_PREFIX = \{([^}]*)\}/) || [])[1] || '')
+  .matchAll(/(\w+):\s*'([^']*)'/g)].map(m => [m[1], m[2]]))
+const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+const esc = (t) => t.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
 
-// ② staging must not FALL BACK to the production variable
-const stagingLine = (read('.github/workflows/staging.yml').match(/^\s*VITE_ASSET_BASE:.*/m) || [''])[0]
-// ⛔ WORD BOUNDARY, NOT SUBSTRING. `VITE_ASSET_BASE_STAGING` CONTAINS `VITE_ASSET_BASE`, so a
-// naive .includes() reports the correct wiring as a collision — this check's own first run
-// failed exactly that way. A guard that cries wolf on the fixed state gets switched off.
-const usesProdVar = prodVar && new RegExp(`vars\\.${prodVar}(?![A-Z0-9_])`).test(stagingLine)
-if (usesProdVar) {
-  fail(`staging's VITE_ASSET_BASE falls back to vars.${prodVar} — an unset staging variable would `
-    + `silently restore the bug while looking healthy. Let it break visibly instead.`)
-} else ok('staging does not fall back to the production base')
+/** Staging: the Worker's SLAB_BASE ends in the staging prefix, and the Worker refuses one that does not. */
+function stagingSide(wrangler, worker, stagingPrefix) {
+  const out = []
+  const base = (wrangler.match(/"SLAB_BASE":\s*"([^"]*)"/) || [])[1]
+  if (!base) out.push('workers/staging-sites/wrangler.jsonc declares no SLAB_BASE — a staged player has no slab address')
+  else if (!stagingPrefix || !base.endsWith(`/${stagingPrefix}`)) out.push(`staging's SLAB_BASE "${base}" does not end in the uploader's staging prefix "${stagingPrefix}" — a staged town reads another environment's slab`)
+  if (!stagingPrefix || !new RegExp(esc(`/${stagingPrefix}$`)).test(code(worker).match(/if \(!(\/[^\n]*?\/)\.test\(env\.SLAB_BASE/)?.[1].replace(/\\\//g, '/').slice(1, -1) || ''))
+    out.push('workers/staging-sites/src/index.js no longer refuses a SLAB_BASE outside the staging prefix')
+  return out
+}
+/** Production: a town's Worker names its own origin and reads the slab at the prod prefix; the LS build reads no staging variable. */
+function prodSide(worker, deployYml, prodPrefix) {
+  const out = []
+  const c = code(worker)
+  if (!/<meta name="ward-asset-base" content="\$\{esc\(url\.origin\)\}\/"/.test(c)) out.push('production-sites no longer stamps its own origin as ward-asset-base')
+  const slab = (c.match(/const slab = `([^`$]*)baked\//) || [])
+  if (!slab.length) out.push('production-sites: cannot find the slab key (`const slab = `…baked/``) — re-anchor this check')
+  else if (slab[1] !== prodPrefix) out.push(`production-sites reads its slab under "${slab[1]}baked/", not the prod prefix "${prodPrefix}baked/"`)
+  if (ENV.staging && (c.includes(`'${ENV.staging}`) || c.includes(`\`${ENV.staging}`))) out.push(`production-sites names the staging prefix "${ENV.staging}" in code`)
+  const v = (deployYml.match(/VITE_ASSET_BASE:\s*\$\{\{\s*vars\.([A-Z_]+)/) || [])[1]
+  if (!v) out.push('deploy.yml no longer reads VITE_ASSET_BASE from a repo variable — re-anchor this check')
+  else if (/STAGING/.test(v)) out.push(`deploy.yml (lafayette-square.com) reads vars.${v} — production serving the staging slab`)
+  return out
+}
+
+const W = { sw: read('workers/staging-sites/wrangler.jsonc'), si: read('workers/staging-sites/src/index.js'),
+  pi: read('workers/production-sites/src/index.js'), dy: read('.github/workflows/deploy.yml') }
+const sOut = stagingSide(W.sw, W.si, ENV.staging), pOut = prodSide(W.pi, W.dy, ENV.prod ?? null)
+for (const m of [...sOut, ...pOut]) fail(m)
+if (!sOut.length) ok(`staging's Worker tells the page its slab is under "${ENV.staging}", and refuses any other`)
+if (!pOut.length) ok(`production's Worker serves its own origin's "${ENV.prod}baked/", and deploy.yml reads no staging variable`)
+// ⭐ MUTATIONS, every run: each must fail.
+for (const [what, out] of [
+  ['staging SLAB_BASE pointed at the prod prefix', stagingSide(W.sw.replace(/("SLAB_BASE":\s*"[^"]*?)staging\/"/, '$1"'), W.si, ENV.staging)],
+  ['the staging Worker\'s refusal removed', stagingSide(W.sw, W.si.replace(/if \(!\/[^\n]*?\/\.test\(env\.SLAB_BASE/, 'if (!/x/.test(""'), ENV.staging)],
+  ['production reading the staging slab', prodSide(W.pi.replace(/const slab = `baked\//, `const slab = \`${ENV.staging}baked/`), W.dy, ENV.prod ?? null)],
+]) { if (out.length) console.log(`  mutation (${what}) caught ✓`); else fail(`MUTATION NOT CAUGHT: ${what}`) }
 
 // ③ the uploader must require an explicit env and give the two DIFFERENT prefixes
 const up = read('scripts/upload-baked-to-r2.mjs')
@@ -105,13 +133,12 @@ else {
   if (bakeAt < 0 || promoteAt < 0) fail('could not locate the bake/promote handlers — re-anchor this check before trusting it')
 }
 
+const NOT_CHECKED = '⚠️ NOT CHECKED: the DEPLOYED Workers\' vars (this reads wrangler.jsonc) and vars.VITE_ASSET_BASE\'s value (GitHub).'
 console.log()
 if (failed) {
   console.log(`⛔ ${failed} collision(s). A pour can reach production without a decision.`)
-  console.log('⚠️ NOT CHECKED (it lives in GitHub, not here): whether VITE_ASSET_BASE_STAGING is SET,')
-  console.log('   and whether it points at the staging/ prefix. Verify that in repo settings.')
+  console.log(NOT_CHECKED)
   process.exit(2)
 }
 console.log('✅ staging and production are separated in the wiring.')
-console.log('⚠️ NOT CHECKED (it lives in GitHub, not here): whether VITE_ASSET_BASE_STAGING is SET,')
-console.log('   and whether it points at the staging/ prefix. Verify that in repo settings.')
+console.log(NOT_CHECKED)
