@@ -1096,7 +1096,8 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
       units: par ? par.units : null,
       zoning: par ? par.zoning : null,
       appraised_value: par ? par.appraised_value : null,
-      vacant: par ? par.vacant : false,
+      // ⛔ No parcel, no well spoke: `false` asserted "not vacant" about every unmatched building. null, as loadParcels keeps it.
+      vacant: par ? par.vacant : null,
       stories,
       wall_material: meta.wall_material,
       roof_material: meta.roof_material,

@@ -1136,7 +1136,7 @@ function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
       result.push({
         ring: p.rings[0].map(pt => ({ x: pt[0], z: pt[1] })),
         use: classify(p),
-        vacant: p.vacant || false,
+        vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
       continue
     }
@@ -1160,7 +1160,7 @@ function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
       result.push({
         ring: pathFromClipper(clipped[best]),
         use: classify(p),
-        vacant: p.vacant || false,
+        vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
     }
   }
