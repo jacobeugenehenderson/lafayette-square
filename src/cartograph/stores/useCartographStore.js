@@ -2122,7 +2122,7 @@ const useCartographStore = create((set, get) => ({
       scene, activeLookId, lookMissingForScene: s._looksHydrated && !activeLookId ? scene : null,
       sceneRibbons: null, mapGeography: null, sceneBoundary: null,
       centerlineData: { streets: [] }, protopolygon: null, svOriginals: null, corridorByIdx: new Map(),
-      measurements: [], markerStrokes: [],
+      measurements: [], markerStrokes: [], status: '',
       selectedStreet: null, selectedNode: null, selectedMeasurePoint: null, selectedSegmentOrdinal: null, selectedMeasurement: null,
       ...hydrateDesign({}), _designHydrated: false,
     })
