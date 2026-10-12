@@ -4,7 +4,8 @@
 // Readiness is contract.js#assetStatus, the same function the server reports.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
-import { OrbitControls, Grid } from '@react-three/drei'
+import { Grid } from '@react-three/drei'
+import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { ROLES, MOUNTS, REQUIRED_ROLES, CENSUS, familyOf, assetStatus, assetKey, censusOf, noCensusWhy } from './contract.js'
@@ -102,7 +103,7 @@ function Stage({ asset, lod, draft, selected, onPick, night, playing }) {
       <arrowHelper args={[new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0.02, 0), Math.max(1, h * 0.4), 0x44aaff]} />
       {draft.mount === 'wall' && <mesh position={[0, h / 2, -0.01]}><planeGeometry args={[h * 1.5, h * 1.2]} /><meshStandardMaterial color="#554" side={THREE.DoubleSide} /></mesh>}
       <Model {...{ asset, lod, draft, selected, onPick, night, playing }} />
-      <OrbitControls target={centre.toArray()} makeDefault />
+      <RegimeControls regime="orbit" target={centre.toArray()} />
     </Canvas>
   )
 }
