@@ -7,16 +7,55 @@ written: 2026-10-08
 evict-when: RULING: Jacob passes, by eye at street level, (1) HPDM's sidewalks on its hills: level across, following the street's grade along, with no stretched or tilted walk, (2) LS baked WITH its raised kerb (0.15 m) and no ground refusal, and (3) Huron's and Provincetown's shorelines smooth where land meets water, with no jags and no cracks (the shore gap walk at zero after its instrument fix). Both towns re-baked from one pour each. node checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs is green on every town.
 -->
 
-**You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
-already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/rename`). **Agent: FRESH.**
-**Report to Boz** (the coordinator session Jacob names when he dispatches you).
+## State (2026-10-12, Swale). Rewrite in place; never append a log
 
-**Instruction: confirm-then-build.** This brief REOPENS DESIGN, by Jacob's explicit ruling (§0). That makes the
-confirm step heavier than usual: every premise below is a claim to check against the code, and the design in §5 is a
-PROPOSAL, not a ruling. Read the canon and code in §2–§3, run the measurements in §4, and **stop and report** before
-you write any production code. Where the code contradicts this brief, stop and flag it. That is the work, not an
-interruption.
+**Taking it fresh?** Name yourself (one word no live session or commit uses), report to Boz, confirm each claim here
+against the code before building, and stop and flag where they disagree. ⛔ No bake without Boz's clear, one heavy job
+at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour stays HELD.
 
+**Landed** (measured on scratch slabs; no town is served with the deformer yet):
+- The height along ①: `lineHeight.mjs`, `h[]` on every shape run (f0082e6a). ① painted first (d504d7eb).
+- The deformer: `groundDeformer.mjs`; `cutAlong` deleted; the runtime draws `aRaw × uExag + y` (5255b311). Ped bands
+  refine to 7.8 mm (686dff56). The painted band decides, and an unowned walk vertex throws (6be9cbaf, 49665eec).
+- Readers on the drawn ground (`src/lib/drawnGround.js`): d05e3cc1, c7c433e5, and b0e65999 (the shore median and the
+  revetment).
+- The kerb: creases are partition lines (eb1d3876); the lift reads each polygon's carried side (de1c2f83).
+- The shore: ruled (794b7911). A coast run's `h` is high water, `waterLevels(terrain.water).highAt` (c227acaf).
+- ③'s strikes on `offsetRingByRects`, Jacob's swap (db9c7d87). `gusset.mjs` reads `aRaw` (00c76119).
+
+**Open gates** (re-run, never quote):
+- **Gusset, Huron: open stations 123 → 0.** On a scratch slab with the coast at high water: 129 open; step p50
+  0.19 → 0.02 m; land vs water-side ground p90 0.15 → 0.25 m (worse: the water side is not lowered yet).
+  ▶ `SLAB_DIR=<slab> GUSSET_OUT=<file> node scratch/ground-height/gusset.mjs huron` (never over `gusset-huron.json`).
+  Residual cause not established. Unmeasured candidates: the 6,419 ② vertices that still take a neighbour's H; the
+  water side's S-curve.
+- **Huron seams (≤ 5 mm orphans) 3,001 → 3,498 across the swap**, measured on a vertex set meshed from the PRE-swap
+  paint; cause not established. Re-measure on a post-swap mesh. ▶ `scratch/ground-height/orphans.mjs`.
+- **Huron's bake refuses on HEAD** (2 T-junctions, `mat:shore` on `face:underived`), and conformity runs ~4,000 s:
+  Cairn, who holds `groundConformity.js` (91c7fb7f, 3c6bf870). No Huron bake until it clears.
+- **Level across:** HPDM street walks over 1:48, 3.28% offline (served 85.92%). ▶ `checks/claims-the-walk-is-level-across.mjs`.
+- **LS bare kerb steps, 46 m:** BACKLOG ("LS's ground bake is REFUSED on bare kerb steps").
+- Jacob's eye is owed on `scratch/ground-height/ribbons/thin-blocks.html` (the swap) and on (d) below.
+
+**Next, in order** (each needs Boz's clear):
+1. **The water-side half:** lower the water side to the LOW-water plane, roll it into the S-curve, and write the
+   gusset record (height gap and run per station) that the treatment reads (§5 "The shore's gusset").
+2. **(a) The coast from lidar**: Jacob's go ("OK", 2026-10-12). Boz names who takes it. What the code says today:
+   - The line is where the lidar meets HIGH water. The only lidar trace, `bake-shore-median`'s marching squares,
+     traces y = 0 (the datum), not high water, and it is DOWNSTREAM of ①: it reads the slab.
+   - ⚠️ **Order:** the pour reads no terrain (§4.1), and `bake-terrain`'s `waterDatum` finds the water from the OSM
+     coast (`coastline.mjs#coastRings`). Moving ①'s coast onto the lidar puts the lidar and the water levels UPSTREAM
+     of ①, and the datum must not depend on the line it moves. Where the intersection is computed is the first
+     question for Boz. It is not designed here.
+   - It replaces the OSM coast as ①'s coast source and the median's marching squares as a shape source (§5 "What it
+     replaces"). It means a re-pour of Huron and Provincetown. Gates: `shore-sources.mjs` (lidar off the chain → 0),
+     `gusset.mjs`, §5's table.
+3. **(d)'s render:** a browser eye-check of `ShoreMedian` and `SlabRevetment` on the drawn ground (b0e65999).
+
+**Known, not yet in canon:** below 1 cm `gusset.mjs` reads ①'s ε band, not the gusset, and at 0.3 m with B = 5 m it
+reads a slope by construction. Two lines are boarded: `band(a, [])` makes the capacity guard load-bearing, and
+`withSide` is A15's last recovery (BACKLOG). The registers (`ARCHITECTURE` "Ground conformance" / "Terrain doctrine",
+`SECTION`/`RIBBONS`, `FEATURES`, `BAKE.md`) are rewritten when level-across is green and a town ships.
 ---
 
 ## 0. What this is (Jacob, 2026-10-07/08)
@@ -103,8 +142,8 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 | the pour: skeleton, stamps, feature edges, ribbons | `cartograph/pipeline.js`, `cartograph/derive.js` → `clean/map.json` |
 | the terrain | `cartograph/bake-terrain.js` → `terrain.json` + `terrain.bin` |
 | the painter: the partition, the bands | `src/lib/tileGround.js` (`buildTileGround`, `sectionPassProtoTile`, `PAINT_ORDER`) |
-| flat paint → mesh → conformed to terrain | `cartograph/bake-ground.js` (`buildTileBakeShape`, `triangulateAndRefine`) · `cartograph/groundConformity.js` (`conformAndRefine`, `closeBoundaryTJunctions`, `findTJunctions`, `cutAlong`) |
-| the raised kerb, as cut-then-lift | `cartograph/kerbLift.mjs` (`ringsInside`, `liftBuffer`, `riserFromEdges`, `curblessEdges`), its guard at `bake-ground.js` (`kerbH`) |
+| flat paint → deformer → mesh → conformed | `cartograph/bake-ground.js` (`planGroup`, the line-height stamp) · `cartograph/lineHeight.mjs` · `cartograph/groundDeformer.mjs` (`buildDeformer`) · `cartograph/groundConformity.js` (`conformAndRefine`, `closeBoundaryTJunctions`, `findTJunctions`) |
+| the raised kerb: creases as partition lines, lift by carried side | `cartograph/kerbLift.mjs` (`kerbPlan`, `kerbCells`, `splitAtCreases`, `withSide`, `liftBuffer`, `riserFromEdges`) |
 | the runtime drape | `src/utils/terrainShader.js` (`patchTerrain`, perVertex) · `src/lib/terrainCommon.js` (`makeElevationSampler`, `DEFAULT_V_EXAG`) |
 | objects that sit on the drawn ground | `cartograph/bake-tree-anchors.js`, `bake-buildings.js` (centroid y), `bake-lamps.js` |
 | the coast chain and its water side | `cartograph/coastline.mjs` (`weldCoastlines`), the pour's coast stroke (`RIBBONS §1`) |
@@ -112,7 +151,6 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 | the water level and the bed | `bake-terrain.js` (`terrain.json#water`, `#bed`), the 5 m raster |
 | the shore gap instrument | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs`, gaps.html (`at=` / `keep=` / hole-ray params, Argon 2026-10-08) |
 | the shelved corner rework (the same seam) | `scratch/perp-corner/radial-landings-SHELVED-2026-10-07.diff` |
-| the kerb-cut harness | `scratch/kerb-cut/dump.mjs`, `scratch/kerb-cut/harness.mjs` |
 
 ## 4. Measured (Talus, 2026-10-10). Each line names its probe; ⛔ re-run it, never quote it
 
@@ -131,10 +169,8 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    Diary). HPDM sidewalk: longest-edge p50 59 m, max 557 m. At tile 116 (fauquier-drive · right · 2) the walk's lawn
    edge, the chord of a 360 m triangle, sat 4–6 m under the terrain while its back edge followed it.
    ▶ `trace-stretch.mjs hipointedemun 116 fauquier-drive right 2 40 7` · shots `hpdm-t116-*.png`, `hpdm-t152-*.png`
-4. **The kerb.** 265 T-junctions after `cutAlong`, 0 before; 258 on a crease. Mechanism not established
-   (`BRIEF-corner-ramps-and-kerb §9`, corrected). The ramp, flare and taper outlines are `kerbLift.mjs`'s own geometry
-   (`kerbRegions`, `taperRegions`), NOT partition pieces; the painter gives only the warning strips (`mat:curbCut`)
-   and each cut's `{face, inward}`. Slicing the paint with them was tried and failed (§9). ▶ `kerb-tj-where.mjs`
+4. **The kerb.** The 265 T-junctions were `cutAlong`'s, which is deleted (5255b311). The creases are now partition
+   lines (eb1d3876) and the lift reads each polygon's carried side (de1c2f83). Open: the State block above.
 5. **Who reads a ground height.** The drawn mesh (`src/lib/drawnGround.js`): lamps, tree anchors, buildings, Movers,
    UserDot, the street eye, PilgrimMonument, LafayetteParkBody's ponds, stairs and title, ShoreMedian, and the revetment
    (drape and stones). The field: LafayetteParkBody's fence posts only (lifted in the shader by `patchTerrain`, which has
@@ -155,7 +191,8 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    17,183 (133 km). ~55% of sampled seams have nothing 1 mm to one side. Mostly ~10 mm strips down the street
    centrelines: ①'s two back-to-back offsets at ε = `PROTO_HW` (0.005 m, `tileGround.js`), with nothing painted
    between them. On the lattice; a topology gap, not drift. Whether it shows at street level is NOT measured.
-   **Ruled 2026-10-11: ① is painted first** (§5).
+   ① is painted first (d504d7eb): true gaps on Huron 239/406 → 15/410 sampled seams, offline. The tiles check stays RED
+   on the covered-both-sides class (~9.5k edges), not ①.
    ⭐ **Huron's shore crack (§4.6) is the same class**: its sand vertices sit 5.5–5.7 mm (ε) off the beach edge where
    the median meets ①'s two-sided coast stroke. Re-baked offline with the median on the 1 mm lattice, it is unchanged
    (0.40 m step). Not the median's rounding. ▶ `crack-site.mjs <slab dir> huron 1416.8 -320.5`
@@ -215,90 +252,37 @@ side, swept along every edge, the way Section already sweeps the width profile (
   | stations where the step opens to the sky (no ground on the water side) | 123 | 768 at LOW |
 
   ▶ `scratch/ground-height/shore-sources.mjs` · `shore-jag.mjs` · `gusset.mjs <scene>`. Moving the coast chain onto the
-  intersection is a skeleton source change and a re-pour of both towns: Jacob's go, pending.
+  intersection is a skeleton source change and a re-pour of both towns: Jacob's go given ("OK", 2026-10-12); State, (a).
   *(The superseded wording — "the lidar trace refines or validates it … never as a second outline" — is in the Diary:
   `cartograph/_archive/BRIEF-the-ground-knows-its-height-shore-source-2026-10-12.md`.)*
 - **Medians:** the carriageway profile on both sides (no sidewalk or tree lawn in a median; `RIBBONS §3.5`).
 
-**Step 3: the ground mesh is deformed by that field near ①, and by the plain terrain elsewhere.** The kerb face is
-where the profile steps, so the mesher keeps that line as an edge; nothing is cut afterwards. Name the mechanism (a
-constrained triangulation that takes the profile's step lines as edges, or vertices placed along them) and its cost
-before adopting it.
+**Step 3: the ground mesh is deformed by that field near ①, and by the plain terrain elsewhere.** The step lines are
+lines of the partition, split before triangulation (the kerb's creases, the ease's end), so nothing is cut afterwards.
 
 **Exaggeration: two parts, applied separately.** The terrain part of the deformer (the line's height, the ease into the
 land) scales with the town's exaggeration like all terrain. The kerb step h does NOT: a 15 cm kerb stays 15 cm at any
 exaggeration (`kerbLift.mjs`'s own rule: *"a 15 cm kerb that grew with the town's exaggeration would be a Class D
-constant in disguise"*). Show how the runtime applies the two parts separately, and prove that a walk stays level across
-at ANY exaggeration (Browse may regain depth).
-
-**Where two lines come close (overlap), in plain words:** a spot can be near two DIFFERENT lines at once, e.g. a thin
-strip of land between two parallel streets, or a median between two carriageways. (One street never overlaps itself:
-its two sides are back to back.) Both profiles then reach that spot. **RULED (Jacob, 2026-10-11): the painted band
-decides.** Ownership comes from ① (the partition), never from the nearer line, and never from a blend across the strip.
-Where two owners' bands meet at a height gap, the gap is a vertical retaining-wall face on that partition edge. A
-station with no painted owner fails loudly, as its own class. **Tolerance RULED the same day: 7.8 mm** (×3.8 ground
-triangles accepted).
-
-**THE CASE THAT STARTED THIS, a block on a mound** (Jacob, 2026-10-10; common, and frequent in HPDM): *"a lot is never
-a smooth inflated bubble meeting at an apex; in HPDM there's lots of ~1.5 m rises over .75 m so the sidewalk is very
-distorted there."* Today the 5 m terrain grid can't represent that rise, so it is smeared across the walk and the block
-drapes as a bubble. In the real street the walk follows the street, and the rise happens right BEHIND it, steeply (a
-berm or low wall), with the lot a terrace on top. In this design that is the lawn-and-land step: the walk stays on the
-line's height and the rise lives behind it. So the blend is often SHORT and STEEP (~0.75 m on HPDM), and ideally comes
-from where the real rise is in the lidar, finer than the 5 m grid. ⚠️ `BRIEF-terrain-resolution.md` ("the good elevation
-exists and the pipeline cannot read it") is directly relevant: read it, and say whether the rise can be located at the
-lidar's own resolution. Measure HPDM's mounds: the rise height, its run, and how far it sits behind the walk.
-
-**THE SHORE'S GUSSET** (Jacob, 2026-10-10, the shore's mechanism in his words): *"The protopolygon has two sides; the
-shore side and the water side. In plan view, they look like the same line, they are the same shape. However, when looked
-at from the side the elevation splits the ground and you can see thru to the sky layer behind. This also makes a
-'gusset' shaped opening: a flat bottom (water) and the contoured lip at shoreside. It is both contoured on the ground
-plane *and* the terrain elevation plane. I think what has to happen is an averaging step where we look at the elevation
-and average the gusset-plugged and turn it from a block shape to an s-curve."* So the shore profile is: the land side
-at the line's terrain height, the water side at the water level, and the deformer's averaging step fills the gap
-between them, turning the step into an S-curve that rolls the land down to the water (measured: §5 "The shore"). The
-shore median's two lines (Jacob's 2026-10-04 ruling, `bake-shore-median.mjs`) are the S-curve's two ends in plan. ⛔ Don't
-retire that ruling without asking him. ⭐ **The gusset's SHAPE is data, not just a hole to fill** (Jacob, 2026-10-10: *"The gusset shape itself is
-important because it would determine particulate/fill size."*): its height gap and run at each point decide the grain of
-what fills it (boulder → rock → gravel → sand; `BRIEF-the-shore-is-closed`'s treatment rules). So the averaging step must
-RECORD the gusset's dimensions along the shore (one record, read by the treatment), not only smooth them away.
-
-**Cross-slope limit: RULED** (Jacob, 2026-10-10): ADA's 1:48, as a town norm beside `kerb` in `norms.json`.
+constant in disguise"*). The runtime draws `aRaw × uExag + y` (5255b311), and the
+level-across check judges at the town's exaggeration ceiling.
 
 **Blend distance:** how far the lawn takes to ease back into the terrain. ⏳ **Deferred by Jacob** ("will have to wait
 to determine"). Build it as the town's value with a neutral default; measure what each candidate does on HPDM, but
 don't settle it.
 
-**What it replaces (deleted in the same change):** the flat-paint-then-drape path near ①, `cutAlong` as the kerb's
-mechanism, `kerbLift.mjs`'s cut-then-lift, and the shore median's unsmoothed marching-squares outline as a shape
-source. Whether `conformAndRefine` survives away from ① is yours to measure.
+**What it replaces:** the drape near ① and `cutAlong` are deleted (5255b311). Still to go: the median's marching
+squares as a shape source, with (a). **The open questions are answered in the code:** the window is σ,
+`groundLineSigmaM` (`lineHeight.mjs`); the record is each run's `h[]` plus the slab's terrain-part section; the cost on
+HPDM was 119 → 387 s, with Huron's open (State); a cut is the profile's h → 0, and whether `BRIEF-corner-ramps-and-kerb
+§9`'s item retires is Boz's call.
 
-**Open questions to answer with numbers before Boz and Jacob rule:**
-1. The line's height: terrain sampled along ① and smoothed. What window, and what does each candidate do to HPDM's grades
-   and Huron's shore? (A town value with a neutral default, never a constant.)
-2. Where the deformer's height is stored, so it stays one record that every consumer reads (the ground, trees,
-   buildings, lamps, the shore band). Prefer riding an existing artifact (`shape.json` carries ①'s runs) over a new file.
-3. Bake cost against today's long poles (Provincetown's ground + ground-shore took ~160 min on 2026-10-07).
-4. The shelved perpendicular landings (`BRIEF-corner-ramps-and-kerb §9`): do they become simply the profile's h → 0 at a
-   cut? If so, that brief's open item retires into this one.
+## 6. Checks (each seen RED first; mutation-tested)
 
-## 6. Checks (each must be seen to FAIL before it passes; mutation-test every one)
-
-- **Level across:** every walk and curb band's cross-slope is within the town's tolerance, on every town, with the
-  count of exceptions (each named by tile and arc). Mutation: today's drape → red on HPDM.
-- **The kerb has a face:** wherever the town's kerb is drawn, the height step between road and curb pieces is a mesh
-  face, with no T-junction (`claims-the-ground-has-no-cross-polygon-t-junctions` green on every town, LS included).
-  Mutation: drop the face → red.
-- **The shore meets:** the water plane and the shore piece share the smoothed waterline as an edge. The fixed gap walk
-  finds zero views reaching the sky along every shore, from water and land, near and far. Mutation: today's unsmoothed
-  marching-squares edge → red (jags), and a removed shore piece → red (holes).
-- **The ground tiles:** `claims-the-ground-tiles-without-a-gap` goes green on every town once ① is painted (the
-  centreline slits and the ε shore crack close). Mutation: leave ① unpainted → red with today's counts.
-- **Objects still sit on the drawn ground:** the existing anchor checks (trees, buildings, lamps) stay green.
-- **Flat towns don't move:** on a town with flat terrain and a flat kerb, the new ground is byte-identical to today's,
-  or every difference is explained.
-- **One pour → its ground:** a ground bake reads the map, terrain and ribbons of ONE pour (`bake-reads.json`).
-  2026-10-07 found LS's shipped ground baked from an uncommitted pour; make that impossible to ship unnoticed.
+`claims-the-walk-is-level-across` (RED) · `claims-the-kerb-stands-and-drops-at-each-cut` ·
+`claims-every-group-meshes-its-own-area` · `claims-the-ground-has-no-cross-polygon-t-junctions` (every town, LS
+included) · `claims-the-ground-tiles-without-a-gap` (RED) · `claims-no-view-reaches-the-sky-at-the-shore` (VOID until its
+one-station look) · the anchor checks. Still owed as checks: flat towns byte-identical, or every difference explained;
+and one pour → its ground (`bake-reads.json`: LS's shipped ground came from an uncommitted pour, 2026-10-07).
 
 ## 7. Bounds
 
