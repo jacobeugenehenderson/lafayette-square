@@ -99,13 +99,39 @@ const SIGNALS = {
   ],
 }
 
+/**
+ * ⭐ A SELF-RE-INVOCATION IS READ, NOT GUESSED (Boz's ruling, 2026-10-12). `spawnSync` / `execFileSync` whose command
+ * is `process.execPath` and whose first script argument is the running file itself — `process.argv[1]`, or
+ * `fileURLToPath(import.meta.url)` — runs the SAME source again, so it has the same tier as the file, and the file is
+ * still classified on its own content. Recognised by this shape, never by a helper's name (`_scenes.mjs#eachTown`
+ * re-runs the check that imported it this way). ⛔ Narrowly: any other script argument (another file, `-e`, argv[2])
+ * is a non-literal command and stays unreadable/live. ▶ `execSelfTest` below, run before every classification.
+ */
+const SELF_RERUN = /\b(?:spawnSync|execFileSync)\s*\(\s*process\.execPath\s*,\s*\[\s*(?:\.\.\.process\.execArgv\s*,\s*)?(?:process\.argv\[1\]|fileURLToPath\(\s*import\.meta\.url\s*\))\s*[,\]]/g
+
 /** Pull out every string literal handed to a child_process call, so the command can be read. */
 function execCommands(code) {
   const cmds = []
   for (const m of code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(\s*(['"`])([\s\S]*?)\2/g)) cmds.push(m[3])
-  // a child_process call whose command is not a literal cannot be read at all
+  const selfRuns = [...code.matchAll(SELF_RERUN)].length
+  // a child_process call whose command is not a literal cannot be read at all — unless it re-runs this same file
   const calls = [...code.matchAll(/\b(execSync|execFileSync|exec|execFile|spawnSync|spawn)\s*\(/g)].length
-  return { cmds, opaque: calls > cmds.length }
+  return { cmds, selfRuns, opaque: calls - selfRuns > cmds.length }
+}
+
+/** The ruling, run on planted sources: the two self shapes are read; another file stays unreadable (the mutation). */
+export function execSelfTest() {
+  const cases = [
+    ['spawnSync(process.execPath, [...process.execArgv, process.argv[1], t, ...flags], { stdio: "inherit" })', false],
+    ['execFileSync(process.execPath, [fileURLToPath(import.meta.url), "--quiet"])', false],
+    ['spawnSync(process.execPath, [join(ROOT, "cartograph/skeleton.js"), "--scene=x"])', true],
+    ['execFileSync(process.execPath, ["--input-type=module", "-e", probe])', true],
+    ['spawnSync(process.execPath, [process.argv[2]])', true],
+    ['spawn(process.execPath, [process.argv[1]])', true],
+  ]
+  for (const [src, wantOpaque] of cases) {
+    if (execCommands(src).opaque !== wantOpaque) throw new Error(`[tier] ⛔ self-test: \`${src}\` read as ${wantOpaque ? 'readable' : 'unreadable'} — the self-re-invocation rule is broken`)
+  }
 }
 
 /**
@@ -202,12 +228,13 @@ export function classify(file, seen = new Set(), depth = 0) {
     } else { bump('live'); why.push('computed import() with no readable target — runs arbitrary modules') }
   }
 
-  const { cmds, opaque } = execCommands(code)
+  const { cmds, selfRuns, opaque } = execCommands(code)
   for (const c of cmds) {
     if (NET_CMD.test(c)) { bump('live'); why.push(`runs \`${c.slice(0, 40)}\` — reaches out`) }
     else if (!LOCAL_CMD.test(c)) { bump('live'); why.push(`runs \`${c.slice(0, 40)}\` — not a known-local command`) }
     else why.push(`runs \`${c.slice(0, 30)}\` — local, read-only`)
   }
+  if (selfRuns) why.push('re-runs its own file (process.execPath + its own path) — the same tier as itself')
   if (opaque) { bump('live'); why.push('child_process with a non-literal command — cannot be read') }
 
   // ⛔ Reading a hosted-service credential is only meaningful alongside a call. On its own it is a
@@ -261,6 +288,7 @@ export function blockedReason(file) {
 }
 
 export function classifyAll() {
+  execSelfTest()
   const files = []
   for (const d of DIRS) {
     if (!existsSync(join(ROOT, d))) continue

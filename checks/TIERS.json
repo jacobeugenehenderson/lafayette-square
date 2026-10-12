@@ -1,12 +1,28 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 343,
+  "total": 407,
   "counts": {
-    "safe": 188,
-    "local-effect": 6,
-    "live": 149
+    "safe": 164,
+    "local-effect": 7,
+    "live": 236
   },
   "checks": [
+    {
+      "file": "checks/claims-a-bake-never-uploads.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-bake-reads-design-through-one-reader.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/pour-code.mjs, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "computed import of cartograph/lookDesign.mjs — read, safe"
+      ]
+    },
     {
       "file": "checks/claims-a-bake-step-declares-what-it-reads.mjs",
       "tier": "live",
@@ -31,10 +47,32 @@
       ]
     },
     {
+      "file": "checks/claims-a-city-building-keeps-its-permanent-id.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/fetch-buildings.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out, imports cartograph/msbf-identity.js, which can: writeFileSync"
+      ]
+    },
+    {
       "file": "checks/claims-a-cli-scene-has-one-resolver.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-click-hits-what-is-drawn.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -46,9 +84,28 @@
     },
     {
       "file": "checks/claims-a-closed-stripe-keeps-its-hole.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-coast-outside-the-drawing-is-no-shore.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-cold-preview-opens-on-the-saved-shot.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
     {
@@ -56,14 +113,41 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-a-curb-arc-belongs-to-one-tile.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-dead-tile-is-named.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports a network module",
+        "imports cartograph/elevationSources.mjs, which can: calls fetch()",
+        "imports package(s) geotiff — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-dem-is-chosen-by-its-data.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch()"
+      ]
+    },
+    {
+      "file": "checks/claims-a-district-is-the-towns-own.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/sources.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -71,7 +155,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -95,9 +179,10 @@
     },
     {
       "file": "checks/claims-a-flat-town-is-not-refined.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -105,7 +190,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -118,14 +203,16 @@
         "writeFileSync",
         "deletes files",
         "runs `npx` — reaches out",
-        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-a-highway-block-keeps-its-corners.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -140,14 +227,15 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-a-level-body-has-one-surface.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -185,7 +273,8 @@
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
-        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -217,7 +306,8 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -229,9 +319,11 @@
     },
     {
       "file": "checks/claims-a-pour-keeps-building-ids.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "writeFileSync"
+        "writeFileSync",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -247,6 +339,7 @@
       "reasonClass": "outbound",
       "why": [
         "imports a network module",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
       ]
     },
@@ -268,6 +361,14 @@
       ]
     },
     {
+      "file": "checks/claims-a-roundabout-is-one-ring.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-a-salon-save-keeps-provenance.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -280,9 +381,13 @@
     },
     {
       "file": "checks/claims-a-scene-is-named-not-numbered.mjs",
-      "tier": "safe",
+      "tier": "local-effect",
       "why": [
-        "computed import of src/lib/sceneSlug.js — read, safe"
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "computed import of src/lib/sceneSlug.js — read, safe",
+        "imports cartograph/scene-address.mjs, which can: deletes files, copies/renames files"
       ]
     },
     {
@@ -302,7 +407,8 @@
         "opens a WebSocket",
         "deletes files",
         "computed import() with no readable target — runs arbitrary modules",
-        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -321,7 +427,18 @@
         "opens a WebSocket",
         "writeFileSync",
         "deletes files",
-        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-shot-never-resizes-its-shadow-box.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "imports package(s) vite — not read from source"
       ]
     },
     {
@@ -337,6 +454,28 @@
       ]
     },
     {
+      "file": "checks/claims-a-slider-step-compiles-nothing.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-stage-entry-knows-its-slab-age.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "writeFileSync"
+      ]
+    },
+    {
       "file": "checks/claims-a-staging-town-names-its-player.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -346,10 +485,17 @@
     },
     {
       "file": "checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-state-gives-its-towns-their-wells.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/sources.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -368,28 +514,56 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-tide-station-is-in-the-water-or-named.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/fetch-water-datums.mjs, which can: calls fetch(), mkdirSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {
       "file": "checks/claims-a-tile-is-one-tree.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },
     {
-      "file": "checks/claims-a-town-draws-the-trees-its-atlas-was-built-for.mjs",
+      "file": "checks/claims-a-town-chooses-its-lamp.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
       ]
     },
     {
-      "file": "checks/claims-a-town-event-is-not-clock-dependent.mjs",
-      "tier": "safe",
+      "file": "checks/claims-a-town-draws-the-trees-its-atlas-was-built-for.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of src/hooks/useEvents.js — read, safe"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-event-is-not-clock-dependent.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/hooks/useEvents.js, which can: imports src/instance.js, which can: imports src/lib/authoringAddress.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-has-one-sealed-id.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import of src/instances/registry.js — read, safe",
+        "runs `git` — not a known-local command"
       ]
     },
     {
@@ -412,7 +586,8 @@
         "computed import of src/hooks/useTimeOfDay.js — read, safe",
         "computed import of src/hooks/useCalendar.js — read, safe",
         "computed import of src/lib/townPlace.js — read, safe",
-        "child_process with a non-literal command — cannot be read"
+        "child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -423,6 +598,15 @@
       ]
     },
     {
+      "file": "checks/claims-a-town-owns-its-raw-inputs.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files"
+      ]
+    },
+    {
       "file": "checks/claims-a-town-page-fetches-no-authoring.mjs",
       "tier": "live",
       "reasonClass": "outbound",
@@ -430,7 +614,15 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-shares-its-own-picture.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
@@ -453,7 +645,8 @@
       "reasonClass": "unreadable",
       "why": [
         "computed import of src/tokens/categories.js — read, safe",
-        "child_process with a non-literal command — cannot be read"
+        "child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -476,7 +669,16 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-tree-well-plants-only-standing-trees.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/fetch-trees.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out"
       ]
     },
     {
@@ -506,7 +708,16 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-an-early-frame-key-is-held.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files, child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -528,6 +739,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
       ]
     },
@@ -560,19 +772,28 @@
       ]
     },
     {
+      "file": "checks/claims-authored-framing-reaches-the-player.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-authored-skelids-keep-their-ways.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
         "deletes files",
-        "child_process with a non-literal command — cannot be read"
+        "child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-autosave-keeps-what-bakes-read.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -584,9 +805,11 @@
     },
     {
       "file": "checks/claims-bake-progress-shows-the-route.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of a data: module — hermetic"
+        "computed import of a data: module — hermetic",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -611,21 +834,25 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-bark-uvs-name-their-tile.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },
     {
       "file": "checks/claims-block-edge-is-highway-edge.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -706,9 +933,10 @@
     },
     {
       "file": "checks/claims-coplanar-ground-has-a-painters-order.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -723,7 +951,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -731,21 +960,24 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-coupler-totality.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-crop-rows-derived-per-field.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -771,16 +1003,18 @@
     },
     {
       "file": "checks/claims-dblock-arc-diagnosis.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-deadend-notch-standoff.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -799,6 +1033,15 @@
       ]
     },
     {
+      "file": "checks/claims-deployment-has-one-authority.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "imports package(s) vite — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-deployment-id-single-source.mjs",
       "tier": "safe",
       "why": [
@@ -814,9 +1057,10 @@
     },
     {
       "file": "checks/claims-divided-seam-step.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -851,9 +1095,10 @@
     },
     {
       "file": "checks/claims-every-building-has-a-roof-to-seat-on.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -861,7 +1106,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/address-points.mjs, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -876,7 +1121,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -884,14 +1129,34 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-every-corner-knows-its-junction.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-every-ground-surface-takes-the-lamp.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-every-junction-corner-has-a-curb-cut-source.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -899,14 +1164,16 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-lamps.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/lamp-spacing.mjs, which can: writeFileSync, imports cartograph/derive-lamps.mjs, which can: writeFileSync, mkdirSync"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports cartograph/bake-lamps.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/lamp-spacing.mjs, which can: writeFileSync, imports cartograph/derive-lamps.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
       "file": "checks/claims-every-lu-tag-has-a-home.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -929,7 +1196,17 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync"
+      ]
+    },
+    {
+      "file": "checks/claims-every-piece-takes-its-own-land-use.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -937,7 +1214,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -967,7 +1245,8 @@
       "reasonClass": "unreadable",
       "why": [
         "deletes files",
-        "imports arborist/bake-trees.js, which can: writeFile, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports arborist/bake-trees.js, which can: writeFile, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
     {
@@ -975,7 +1254,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -990,8 +1269,16 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read",
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-extent-fetches-every-declared-well.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
@@ -1007,6 +1294,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
@@ -1034,6 +1322,13 @@
       ]
     },
     {
+      "file": "checks/claims-farmland-reads-as-agricultural.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-fetch-contains-the-forever-zone.mjs",
       "tier": "safe",
       "why": [
@@ -1041,11 +1336,24 @@
       ]
     },
     {
+      "file": "checks/claims-frame-timeline-catches-a-stall.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-frontage-covers-the-block.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1060,7 +1368,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1072,9 +1380,10 @@
     },
     {
       "file": "checks/claims-ground-refinement-does-not-breed-slivers.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1082,7 +1391,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1090,13 +1400,23 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-hero-cards-write-their-depth.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/components/heroDepthPage.js — read, safe"
       ]
     },
     {
       "file": "checks/claims-hero-degrade-static.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) three — not read from source"
       ]
     },
@@ -1110,9 +1430,11 @@
     },
     {
       "file": "checks/claims-highway-handedness.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of a data: module — hermetic"
+        "computed import of a data: module — hermetic",
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1120,21 +1442,24 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-highway-sweep-is-finite.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of a data: module — hermetic"
+        "computed import of a data: module — hermetic",
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-highway-width-from-lanes.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1148,23 +1473,26 @@
     },
     {
       "file": "checks/claims-inboard-side-convention.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-inner-edge-deletion-gates.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-inner-edge-side-selector.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1195,7 +1523,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1203,6 +1531,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
@@ -1238,14 +1567,14 @@
       "file": "checks/claims-look-default-has-no-town.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of cartograph/lookDesign.mjs — read, safe"
       ]
     },
     {
       "file": "checks/claims-look-seed-scene-clean.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of cartograph/lookDesign.mjs — read, safe"
       ]
     },
     {
@@ -1253,7 +1582,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1272,16 +1601,49 @@
     },
     {
       "file": "checks/claims-menu-item-ids.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-named-way-becomes-street.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-neon-per-place.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of src/lib/neonPlaces.js — read, safe",
+        "computed import of src/lib/openNow.js — read, safe",
+        "computed import of src/tokens/categories.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-neon-picks-its-building.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-neon-two-drawings.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/cartograph/skyLightChannels.js — read, safe",
+        "computed import of src/preview/neonState.js — read, safe"
       ]
     },
     {
@@ -1312,7 +1674,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1324,9 +1686,10 @@
     },
     {
       "file": "checks/claims-no-label-is-a-made-up-name.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1345,9 +1708,10 @@
     },
     {
       "file": "checks/claims-no-shadowed-chains.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1355,6 +1719,20 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-town-carries-the-mould.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of cartograph/lookDesign.mjs — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-no-town-name-gates-the-kit.mjs",
+      "tier": "safe",
+      "why": [
+        "runs `git ls-files \"cartograph/*.js\"` — local, read-only"
       ]
     },
     {
@@ -1381,10 +1759,19 @@
       ]
     },
     {
-      "file": "checks/claims-node-pair-key-parity.mjs",
-      "tier": "safe",
+      "file": "checks/claims-no-view-reaches-the-sky-at-the-shore.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
       "why": [
-        "reads repo files only"
+        "imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files, child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-node-pair-key-parity.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1395,11 +1782,27 @@
       ]
     },
     {
+      "file": "checks/claims-one-building-id-minter.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/footprint-well.mjs, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-one-corner-write-moves-one-corner.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-one-face-one-arrangement.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1407,7 +1810,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1422,6 +1825,22 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-one-way-into-stage.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "imports src/lib/authoringAddress.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-one-weather-per-instant.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) vite — not read from source"
       ]
     },
     {
@@ -1469,11 +1888,19 @@
       ]
     },
     {
+      "file": "checks/claims-parcels-vote-by-area.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-ped-does-not-follow-the-rim.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1501,6 +1928,26 @@
       ]
     },
     {
+      "file": "checks/claims-preview-frame-cost-splits.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-preview-phone-runs-production-passes.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) vite — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-price-of-record.mjs",
       "tier": "safe",
       "why": [
@@ -1512,7 +1959,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1528,6 +1976,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
@@ -1536,7 +1985,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1544,7 +1994,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1552,7 +2002,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1560,7 +2010,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1568,6 +2018,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
@@ -1576,7 +2027,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1584,7 +2035,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1592,7 +2044,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1600,7 +2052,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1608,7 +2060,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1616,7 +2068,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1624,7 +2076,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1632,6 +2084,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
@@ -1640,7 +2093,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1648,7 +2101,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1656,7 +2109,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1664,7 +2118,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1672,7 +2126,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1701,14 +2156,16 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-recentre-removes-asymmetry.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1727,9 +2184,12 @@
     },
     {
       "file": "checks/claims-repour-changes-nothing.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "runs `git show HEAD:${P}` — local, read-only"
+        "runs `git ls-files \"cartograph/data/` — local, read-only",
+        "runs `git show HEAD:${P}` — local, read-only",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1751,14 +2211,15 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-rim-census.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1798,24 +2259,25 @@
     },
     {
       "file": "checks/claims-shore-outside-the-drawing-is-not-refused.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+        "reads repo files only"
       ]
     },
     {
       "file": "checks/claims-side-baseline-audit.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/claims-node-pair-key-parity.mjs, which can: imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-side-chain-falsifiers.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1823,14 +2285,15 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-simplify-preserves-authoring.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1844,6 +2307,14 @@
       ]
     },
     {
+      "file": "checks/claims-socrata-reads-the-whole-envelope.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out"
+      ]
+    },
+    {
       "file": "checks/claims-species-map-routes-are-composed.mjs",
       "tier": "safe",
       "why": [
@@ -1852,9 +2323,10 @@
     },
     {
       "file": "checks/claims-spur-leg-offset.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1880,7 +2352,20 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-startup-marks-fire-in-order.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1895,7 +2380,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1903,7 +2388,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1942,11 +2427,18 @@
       ]
     },
     {
+      "file": "checks/claims-the-bed-is-seen-to-depth-at-low-water.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-block-underlay-never-shows.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1960,7 +2452,8 @@
       "file": "checks/claims-the-canvas-is-the-towns.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of src/lib/qualityProfile.js — read, safe",
+        "computed import of src/lib/deployment.js — read, safe"
       ]
     },
     {
@@ -1971,11 +2464,21 @@
       ]
     },
     {
+      "file": "checks/claims-the-coast-runs-on-past-the-rim.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of cartograph/coastline.mjs — read, safe",
+        "computed import of cartograph/outer-coast.mjs — read, safe",
+        "computed import of src/components/waterMaterial.js — read, safe",
+        "computed import of src/lib/horizonReach.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-the-corner-extent-is-carried.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1983,7 +2486,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1998,6 +2501,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) clipper-lib — not read from source"
       ]
@@ -2027,18 +2531,26 @@
       ]
     },
     {
+      "file": "checks/claims-the-disc-stays-inside-the-bb.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-ease-is-the-corner.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-the-fade-tracks-the-active-disc.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2046,12 +2558,20 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
       "file": "checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ground-tiles-without-a-gap.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -2073,9 +2593,18 @@
     },
     {
       "file": "checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+        "reads repo files only"
       ]
     },
     {
@@ -2090,6 +2619,22 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-lattice-has-one-home.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()"
       ]
     },
     {
@@ -2117,11 +2662,38 @@
       ]
     },
     {
+      "file": "checks/claims-the-movie-is-continuous.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-overhead-band-is-two-triangles.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/components/impostorGeometry.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-the-overhead-core-is-baked.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/components/overheadCore.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-the-pad-is-the-size-of-the-corner.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2140,6 +2712,14 @@
     },
     {
       "file": "checks/claims-the-plan-shot-ends-at-the-rim.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-pour-reads-the-towns-norm.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
@@ -2180,7 +2760,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2220,16 +2800,27 @@
     },
     {
       "file": "checks/claims-the-shore-knows-which-side-is-wet.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-the-shore-says-what-it-is-made-of.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read",
+        "imports package(s) vite — not read from source"
       ]
     },
     {
@@ -2244,7 +2835,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2256,11 +2847,24 @@
       ]
     },
     {
+      "file": "checks/claims-the-sun-dims-with-the-weather-now.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-the-survey-reaches-the-measure.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2272,9 +2876,10 @@
     },
     {
       "file": "checks/claims-the-town-moon-is-the-sky-moon.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2292,6 +2897,32 @@
       ]
     },
     {
+      "file": "checks/claims-the-tree-wind-is-the-looks.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/cartograph/skyLightChannels.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-the-walk-is-level-across.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "imports cartograph/curb-cut-norm.mjs, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ward-reads-what-the-manifest-bakes.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import of src/instances/registry.js — read, safe",
+        "imports cartograph/pour-code.mjs, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs",
       "tier": "safe",
       "why": [
@@ -2299,10 +2930,30 @@
       ]
     },
     {
-      "file": "checks/claims-through-node-width-step.mjs",
+      "file": "checks/claims-the-wind-field-extent-is-the-towns.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-wind-has-one-authority.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-through-node-width-step.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2332,6 +2983,7 @@
       "reasonClass": "unreadable",
       "why": [
         "child_process with a non-literal command — cannot be read",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command",
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source"
       ]
@@ -2352,9 +3004,18 @@
     },
     {
       "file": "checks/claims-uturn-outer-edge-walk.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-vacant-is-said-only-by-a-well.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/sources.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2362,6 +3023,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
@@ -2651,9 +3313,11 @@
     },
     {
       "file": "scratch/claims-protopolygon.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "writeFileSync",
+        "imports checks/_scenes.mjs, which can: re-runs its own file (process.execPath + its own path) — the same tier as itself, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) clipper-lib — not read from source"
       ]
     },
