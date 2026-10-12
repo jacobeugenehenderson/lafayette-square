@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 409,
+  "total": 410,
   "counts": {
-    "safe": 302,
+    "safe": 303,
     "local-effect": 19,
     "live": 88
   },
@@ -881,6 +881,13 @@
     },
     {
       "file": "checks/claims-commerce-write-gate.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-conformity-closes-what-the-detector-sees.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
