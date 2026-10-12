@@ -1,0 +1,38 @@
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+hipointedemun: 534 ped vertex(es) no painted band owns, in 90 cluster(s) on 67 tile(s) · by drawn group: {"residential":28,"commercial":15,"institutional":11,"recreation":73,"park":16,"underived":52,"forest":5,"railway":5,"verge":2,"parking_lot":2,"garden":10,"treelawn:residential":8,"treelawn:commercial":29,"treelawn:parking":12,"treelawn:institutional":41,"treelawn:recreation":75,"treelawn:park":5,"treelawn:underived":25,"treelawn:railway":20,"treelawn:verge":2,"sidewalk":97,"curb":1}
+clusters by the painted polygon holding them: {"walk 1–10 m²":7,"walk ≥100 m²":23,"lawn 10–100 m²":18,"lawn 1–10 m²":9,"lawn ≥100 m²":11,"lawn <1 m²":7,"walk <1 m²":3,"walk 10–100 m²":10,"curb ≥100 m²":2}
+clusters whose point lies DEEPER than every ② span's reachable band: 35 of 90
+orphan VERTICES by the widest lot gap on the best path: {"5 mm–5 cm":112,"5–50 cm":243,"seam ≤5 mm":144,">50 cm":27,"no candidate path reaches a band":8}
+wider classes by the pieces either side of the widest gap (vertices · clusters · e.g.):
+   5–50 cm: treelawn:recreation | treelawn:recreation: 68 · 5 · tile 138 (154.583,-31.431) · tile 31 (754.055,1140.936)
+   5–50 cm: walk | walk: 57 · 7 · tile 52 (-909.518,966.232) · tile 103 (1099.512,366.592)
+   5–50 cm: treelawn:underived | treelawn:underived: 42 · 7 · tile 21 (452.024,1087.370) · tile 52 (-929.409,980.095)
+   5 mm–5 cm: walk | walk: 29 · 3 · tile 107 (-1041.321,290.094) · tile 61 (509.344,894.456)
+   5–50 cm: walk | treelawn:recreation: 26 · 2 · tile 114 (-640.707,207.861) · tile 77 (76.869,735.866)
+   5 mm–5 cm: treelawn:recreation | treelawn:recreation: 23 · 1 · tile 187 (808.864,-580.033)
+   >50 cm: walk | walk: 16 · 3 · tile 48 (550.361,926.508) · tile 163 (-1270.833,-166.094)
+   5 mm–5 cm: walk | treelawn:parking: 16 · 1 · tile 204 (11.446,-854.920)
+   5 mm–5 cm: curb | treelawn:residential: 14 · 1 · tile 144 (-691.737,-70.575)
+   5–50 cm: walk | treelawn:railway: 14 · 1 · tile 207 (219.788,-877.560)
+   5–50 cm: treelawn:recreation | (lot to the point): 13 · 1 · tile 166 (-1152.171,-235.238)
+   5 mm–5 cm: treelawn:underived | treelawn:underived: 10 · 1 · tile 86 (104.001,626.071)
+   5 mm–5 cm: walk | (lot to the point): 8 · 6 · tile 109 (-1155.851,279.184) · tile 74 (-774.604,198.275)
+   5–50 cm: curb | treelawn:park: 7 · 1 · tile 59 (363.665,891.057)
+   5–50 cm: walk | (lot to the point): 7 · 2 · tile 184 (-522.534,-550.798) · tile 185 (-519.210,-571.889)
+   >50 cm: walk | treelawn:residential: 6 · 1 · tile 164 (16.035,-206.978)
+   >50 cm: curb | treelawn:underived: 5 · 1 · tile 202 (476.661,-818.277)
+   5–50 cm: treelawn:park | treelawn:park: 4 · 1 · tile 73 (379.098,785.465)
+   5–50 cm: treelawn:residential | treelawn:residential: 3 · 1 · tile 105 (-679.950,193.193)
+   5 mm–5 cm: treelawn:institutional | (lot to the point): 3 · 2 · tile 152 (-247.356,-176.762) · tile 182 (162.746,-818.888)
+   5 mm–5 cm: treelawn:park | (lot to the point): 3 · 2 · tile 74 (-724.309,463.850) · tile 74 (-757.418,467.369)
+   5 mm–5 cm: treelawn:commercial | treelawn:commercial: 2 · 1 · tile 55 (1301.362,350.302)
+   5 mm–5 cm: curb | treelawn:underived: 2 · 1 · tile 220 (-515.097,-1033.159)
+   5–50 cm: walk | treelawn:institutional: 1 · 1 · tile 194 (508.673,-723.516)
+   5–50 cm: walk | treelawn:underived: 1 · 1 · tile 81 (91.725,663.551)
+   5 mm–5 cm: treelawn:underived | (lot to the point): 1 · 1 · tile 184 (-521.865,-554.293)
+   5 mm–5 cm: treelawn:recreation | (lot to the point): 1 · 1 · tile 104 (-581.328,338.417)
+  5 mm–5 cm: 21 cluster(s), e.g. tile 187 (808.84,-581.14) treelawn:recreation gap 7.5 mm · tile 204 (11.45,-854.97) treelawn:parking gap 9.0 mm · tile 144 (-692.45,-72.20) sidewalk gap 24.5 mm
+  5–50 cm: 30 cluster(s), e.g. tile 52 (-909.54,966.06) sidewalk gap 163.0 mm · tile 178 (-931.21,-494.90) treelawn:recreation gap 66.5 mm · tile 178 (-900.01,-483.10) recreation gap 369.5 mm
+  seam ≤5 mm: 32 cluster(s), e.g. tile 175 (1183.35,-724.38) treelawn:railway gap 0.0 mm · tile 170 (-121.52,-492.62) treelawn:recreation gap 0.5 mm · tile 55 (1353.44,310.93) sidewalk gap 0.0 mm
+  >50 cm: 5 cluster(s), e.g. tile 48 (549.86,927.60) treelawn:commercial gap 517.5 mm · tile 164 (15.74,-207.94) residential gap 1003.0 mm · tile 202 (476.50,-817.29) treelawn:underived gap 514.5 mm
+  no candidate path reaches a band: 2 cluster(s), e.g. tile 154 (-1284.70,-527.96) sidewalk gap — · tile 222 (-867.04,-1085.02) treelawn:verge gap —

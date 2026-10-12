@@ -47,16 +47,33 @@ if (process.env.CURB) { const C = rows.filter(r => r.hold?.cls === 'curb')
 if (process.env.GAPS) {
   const disc = dump.stencil, inDisc = (x, z) => !disc || pip(x, z, disc)
   const cls = (x, z) => !inDisc(x, z) ? 'beyond' : ['walk', 'lawn', 'curb'].find(c => D._inClass(c, x, z)) || 'lot'
-  const widest = (c, x, z) => { const ux = (x - c.px) / c.d, uz = (z - c.pz) / c.d; let run = 0, w = 0, band = false
+  // the widest lot run on the path, and (SIDES=1) the two samples either side of it — `after` null if the lot runs to the point
+  let sideOf = null
+  const widest = (c, x, z) => { const ux = (x - c.px) / c.d, uz = (z - c.pz) / c.d; let run = 0, w = 0, band = false, prevT = null, from = null, best = null
     for (let t = 0.0025; t <= c.d; t += 0.0005) { const k = cls(c.px + ux * t, c.pz + uz * t)
-      if (k === 'lot') { if (band) { run += 0.0005; w = Math.max(w, run) } } else { if (k !== 'beyond') band = true; run = 0 } }
+      if (k === 'lot') { if (band) { if (run === 0) from = prevT; run += 0.0005; if (run > w) { w = run; best = { before: from, after: null } } } }
+      else { if (k !== 'beyond') band = true; if (run > 0 && best && best.before === from && best.after == null && run === w) best.after = t; run = 0; prevT = t } }
+    sideOf = best && { c, ux, uz, ...best }
     return band ? w : Infinity }
   const hist = {}, ex = {}
   for (const c of clusters) { const p = c[Math.floor(c.length / 2)]
-    const g = Math.min(...D._owners(p.x, p.z).slice(0, 4).map(o => widest(o, p.x, p.z)))
+    let g = Infinity, side = null
+    for (const o of D._owners(p.x, p.z).slice(0, 4)) { const w = widest(o, p.x, p.z); if (w < g) { g = w; side = sideOf } }
+    c.side = side
     const k = !Number.isFinite(g) ? 'no candidate path reaches a band' : g <= 0.005 ? 'seam ≤5 mm' : g <= 0.05 ? '5 mm–5 cm' : g <= 0.5 ? '5–50 cm' : '>50 cm'
     hist[k] = (hist[k] || 0) + c.length; c.gapClass = k; (ex[k] ||= []).push({ ti: p.ti, at: [p.x, p.z], g, g2: p.g, n: c.length }) }
   console.log('orphan VERTICES by the widest lot gap on the best path:', JSON.stringify(hist))
+  if (process.env.SIDES) { const keyOf = []; if (dump.lawnKeys) for (const [k, n] of dump.lawnKeys) for (let i = 0; i < n; i++) keyOf.push(k)
+    const lawnKey = (x, z) => { const i = dump.bands.lawn.findIndex(it => { const o = it.outer || it; return o.length >= 3 && pip(x, z, o) && !(it.holes || []).some(h => pip(x, z, h)) }); return i >= 0 && keyOf.length ? keyOf[i] : 'lawn' }
+    const name = (x, z) => { const k = cls(x, z); return k === 'lawn' ? lawnKey(x, z) : k }
+    const T = {}
+    for (const c of clusters) { if (c.gapClass === 'seam ≤5 mm' || !c.side) continue; const s = c.side, at = (t) => [s.c.px + s.ux * t, s.c.pz + s.uz * t]
+      const k = `${c.gapClass}: ${s.before == null ? '(start)' : name(...at(s.before))} | ${s.after == null ? '(lot to the point)' : name(...at(s.after))}`
+      ;(T[k] ||= { v: 0, cl: 0, ex: [] }); T[k].v += c.length; T[k].cl++; T[k].ex.push(`tile ${c[0].ti} (${at(s.before ?? 0).map(v => v.toFixed(3))})`)
+      const mid = s.before == null ? null : at(s.after == null ? s.before + 0.001 : (s.before + s.after) / 2); if (mid) (globalThis.MIDS ||= []).push({ k, ti: c[0].ti, n: c.length, at: mid }) }
+    if (process.env.MIDS) { (await import('fs')).writeFileSync(process.env.MIDS, JSON.stringify(globalThis.MIDS || [])); console.log(`gap midpoints → ${process.env.MIDS}`) }
+    console.log('wider classes by the pieces either side of the widest gap (vertices · clusters · e.g.):')
+    for (const [k, r] of Object.entries(T).sort((a, b) => b[1].v - a[1].v)) console.log(`   ${k}: ${r.v} · ${r.cl} · ${r.ex.slice(0, 2).join(' · ')}`) }
   for (const [k, a] of Object.entries(ex)) console.log(`  ${k}: ${a.length} cluster(s), e.g. ${a.sort((p, q) => q.n - p.n).slice(0, 3).map(e => `tile ${e.ti} (${e.at.map(v => v.toFixed(2))}) ${e.g2} gap ${Number.isFinite(e.g) ? (e.g * 1000).toFixed(1) + ' mm' : '—'}`).join(' · ')}`)
 }
 // ⭐ WHICH PIECES A ≤5 mm GAP LIES BETWEEN: on the best path, the painted item just before and just after each lot run

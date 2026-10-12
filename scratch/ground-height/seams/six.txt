@@ -1,0 +1,18 @@
+tile 138 5–50 cm: treelawn:recreation | treelawn:recreation at (154.564,-31.537) held by face:recreation
+   holder face:recreation: 4.07 m², 43 verts, 0 holes, mean width 2A/P 44.6 cm · nearest curb piece 0.0 mm
+   pieces within 1.5 m: {"asphalt":1,"curb":1,"sidewalk":6,"treelawn:recreation":4,"face:recreation":1}
+tile 21 5–50 cm: treelawn:underived | treelawn:underived at (452.086,1087.596) held by face:underived
+   holder face:underived: 3.95 m², 23 verts, 0 holes, mean width 2A/P 43.4 cm · nearest curb piece 0.0 mm
+   pieces within 1.5 m: {"curb":1,"sidewalk":3,"treelawn:underived":3,"face:underived":1}
+tile 52 5–50 cm: walk | walk at (-909.528,966.151) held by face:residential
+   holder face:residential: 15038.61 m², 83 verts, 0 holes, mean width 2A/P 5756.7 cm · nearest curb piece none within 1.5 m
+   pieces within 1.5 m: {"sidewalk":1,"treelawn:residential":3,"treelawn:underived":1,"face:residential":1,"face:underived":1}
+tile 114 5–50 cm: walk | treelawn:recreation at (-640.719,207.834) held by face:recreation
+   holder face:recreation: 1338.65 m², 39 verts, 0 holes, mean width 2A/P 1747.9 cm · nearest curb piece none within 1.5 m
+   pieces within 1.5 m: {"sidewalk":1,"treelawn:recreation":4,"face:recreation":1}
+tile 61 5 mm–5 cm: walk | walk at (509.340,894.459) held by face:commercial
+   holder face:commercial: 7.37 m², 18 verts, 0 holes, mean width 2A/P 70.0 cm · nearest curb piece 242.8 mm
+   pieces within 1.5 m: {"asphalt":1,"curb":1,"sidewalk":2,"treelawn:commercial":1,"wall":1,"face:commercial":1}
+tile 48 >50 cm: walk | walk at (550.253,926.743) held by face:commercial
+   holder face:commercial: 156.34 m², 61 verts, 0 holes, mean width 2A/P 207.2 cm · nearest curb piece 0.0 mm
+   pieces within 1.5 m: {"asphalt":1,"curb":1,"sidewalk":1,"treelawn:commercial":2,"face:commercial":1}
