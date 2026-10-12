@@ -76,7 +76,7 @@ export const PARCEL_FIELDS = [
 
 /** What a well's `historic_district` column can hold, and whose designation it is. */
 export const HD_HOLDS = ['name', 'code']
-export const HD_DESIGNATIONS = ['national', 'local']
+export const HD_DESIGNATIONS = ['national', 'local', 'certified_local']
 
 export function sourcesPath(scene) {
   return join(mapDir(scene), SOURCES_FILE)
@@ -143,10 +143,17 @@ export function readSources(scene) {
     // one and local on another. Read wrongly it writes a code as a district's name, or "national" for a city
     // designation — so a well that provides it must say which, from its own data dictionary.
     if (provides.includes('historic_district')) {
+      // Two forms: ONE column (`fields.historic_district`) with its `designation`, or ONE COLUMN PER DESIGNATION
+      // (`columns`, e.g. St. Louis City's NatHistDist / LocalHistDist / CertLocalHistDist) — never both.
       const h = src.historicDistrictField
-      if (!h || !HD_HOLDS.includes(h.holds) || !HD_DESIGNATIONS.includes(h.designation)) {
+      const cols = h && h.columns
+      const oneCol = h && !cols && HD_DESIGNATIONS.includes(h.designation) && (src.fields || {}).historic_district
+      const perDesignation = h && cols && !h.designation && !(src.fields || {}).historic_district &&
+        Object.keys(cols).length > 0 && Object.keys(cols).every(k => HD_DESIGNATIONS.includes(k) && cols[k])
+      if (!h || !HD_HOLDS.includes(h.holds) || !(oneCol || perDesignation)) {
         throw new Error(`${p}: ${who} provides historic_district but declares no valid \`historicDistrictField\`.\n` +
-          `  Read the well's data dictionary and declare { holds: ${HD_HOLDS.join('|')}, designation: ${HD_DESIGNATIONS.join('|')} }.`)
+          `  Read the well's data dictionary and declare { holds: ${HD_HOLDS.join('|')}, designation: ${HD_DESIGNATIONS.join('|')} }\n` +
+          `  with \`fields.historic_district\`, or { holds, columns: { <${HD_DESIGNATIONS.join('|')}>: <column> } } without it.`)
       }
     }
   }

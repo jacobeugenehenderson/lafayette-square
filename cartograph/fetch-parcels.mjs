@@ -52,12 +52,22 @@ const str = (v) => (v === null || v === undefined ? null : String(v).replace(/\s
  * that lies in either direction is caught at fetch time, on the town it lies about,
  * instead of surfacing as a column of zeros in a roster six steps downstream.
  */
-function historicDistrict(hd, field) {
-  const inDistrict = hd !== null && hd !== undefined && hd !== '' && hd !== 0
+const isSet = (v) => v !== null && v !== undefined && v !== '' && v !== 0
+// One column with its declared designation, or one column per designation (sources.js `historicDistrictField`).
+// ⛔ A designation the well has no column for is false only because the well's own record says the column set is
+// complete; the declaration is that statement.
+function historicDistrict(attrs, f, field) {
+  const read = (col) => attrs[col]
+  if (field.columns) {
+    const on = (d) => !!field.columns[d] && isSet(read(field.columns[d]))
+    return { national: on('national'), local: on('local'), certified_local: on('certified_local'), name: null }
+  }
+  const hd = read(f.historic_district)
+  const inDistrict = isSet(hd)
   return {
     national: inDistrict && field.designation === 'national',
     local: inDistrict && field.designation === 'local',
-    certified_local: false,
+    certified_local: inDistrict && field.designation === 'certified_local',
     name: inDistrict && field.holds === 'name' ? str(hd) : null,
   }
 }
@@ -73,7 +83,6 @@ function extract(attrs, geometry, src) {
   const [cx, cz] = wgs84ToLocal(clon, clat)
   const toLocal = (r) => r.map(([lon, lat]) => { const [x, z] = wgs84ToLocal(lon, lat); return [Math.round(x * 100) / 100, Math.round(z * 100) / 100] })
 
-  const hd = raw('historic_district')
   return {
     handle: str(raw('handle')),
     address: str(raw('address')),
@@ -92,7 +101,7 @@ function extract(attrs, geometry, src) {
     // ⭐ The well's own NAME is kept when its column holds one; a code carries membership only, and the designation is
     // the one the well declares (sources.js `historicDistrictField`). `{ national: !!hd }` threw NYC's name away and
     // called a Landmarks Preservation Commission district national.
-    historic_district: absent.has('historic_district') ? null : historicDistrict(hd, src.historicDistrictField),
+    historic_district: absent.has('historic_district') ? null : historicDistrict(attrs, f, src.historicDistrictField),
     municipality: str(raw('municipality')),
     jurisdiction: src.jurisdiction,
     source_id: src.id,
@@ -115,11 +124,11 @@ function fetchSource(src) {
   // declares in full keeps the original full-declaration schema, which is ArcGIS. Another protocol is refused by name.
   if ((src.fromState ? src.protocol : (src.protocol ?? 'arcgis')) !== 'arcgis') throw new Error(`[${src.id}] is a ${src.protocol} well — fetch-parcels.mjs reads ArcGIS only`)
   const provided = src.provides || []
-  const unmapped = provided.filter(k => !(src.fields || {})[k])
+  const unmapped = provided.filter(k => !(src.fields || {})[k] && !(k === 'historic_district' && src.historicDistrictField?.columns))
   if (unmapped.length) {
     throw new Error(`[${src.id}] declares ${unmapped.join(', ')} as PROVIDED but maps no column for them in \`fields\`.`)
   }
-  const outFields = [...new Set(Object.values(src.fields || {}))].join(',') || '*'
+  const outFields = [...new Set([...Object.values(src.fields || {}), ...Object.values(src.historicDistrictField?.columns || {})])].join(',') || '*'
   // ⛔ BBOX is geography.json's bbox verbatim (`config.js:63`) — the FRAME envelope, the
   // same one `fetch.js` pulls OSM over, so parcels and OSM cover identical ground. Named
   // keys, not a `??` chain: if the frame record ever changes shape this must fail here

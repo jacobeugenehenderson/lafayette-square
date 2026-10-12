@@ -39,18 +39,28 @@ function townSources(s) {
   const names = new Set(), refs = new Set()
   for (const d of src.historicDistricts) { names.add(d.name); if (d.nps_ref) refs.add(d.nps_ref) }
   let wellProvides = false
+  const unwritable = []
   for (const w of src.parcels) {
     if (!(w.provides || []).includes('historic_district')) continue
     wellProvides = true
     const p = join(dataDir(s), 'raw', w.file)
     if (!existsSync(p)) continue
+    const marks = new Set()
     for (const par of JSON.parse(readFileSync(p, 'utf8')).parcels || []) {
-      const n = par.historic_district && par.historic_district.name
-      if (n) names.add(n)
+      const hd = par.historic_district
+      if (hd && hd.name) names.add(hd.name)
+      if (hd) for (const d of ['national', 'local', 'certified_local']) if (hd[d] === true) marks.add(d)
     }
+    for (const d of unwritableDesignations(w.historicDistrictField, marks)) unwritable.push(`${w.id}: raw/${w.file} marks ${d}`)
   }
   const nr = existsSync(join(dataDir(s), 'content/nr-inventory.json'))
-  return { declared: true, names, refs, hasSource: wellProvides || nr || src.historicDistricts.length > 0 }
+  return { declared: true, names, refs, unwritable, hasSource: wellProvides || nr || src.historicDistricts.length > 0 }
+}
+
+/** Designations the raw file marks true that the well's declaration could not write on a re-fetch (it would lose them). */
+function unwritableDesignations(field, marks) {
+  const writable = new Set(field ? (field.columns ? Object.keys(field.columns) : [field.designation]) : [])
+  return [...marks].filter(d => !writable.has(d))
 }
 
 /** The roster's claims against the town's sources. */
@@ -87,6 +97,8 @@ const rows = Array.isArray(roster) ? roster : (roster.buildings || roster.roster
 if (!rows.length) { console.error(`⛔ NOT MEASURED — ${scene}'s roster has no buildings.`); process.exit(2) }
 console.log(`   ${scene}: ${rows.length} buildings · district source: ${own.hasSource ? 'yes' : 'NONE'} · own names: ${[...own.names].map(n => `"${n}"`).join(', ') || '(none)'}`)
 fails.push(...auditRoster(rows, own))
+// ⭐ A re-fetch must not lose a designation the data on disk carries (HPDM's 2,628 certified_local parcels, 2026-10-12).
+for (const u of own.unwritable) fails.push(`${u}, which its historicDistrictField cannot write — a re-fetch through fetch-parcels.mjs would drop it`)
 
 // Every declared town's districts are needles for the kit scan — read from their data, not typed here.
 const needles = new Set()
@@ -106,6 +118,7 @@ mut.push(['a district name the town\'s sources do not carry', auditRoster([{ his
 mut.push(['in_historic_district: false in a town with no district source', auditRoster([{ in_historic_district: false }], { ...own, hasSource: false })])
 const bake = texts.find(([f]) => f.endsWith('bake-content.js'))
 mut.push(['a district name pasted back into bake-content.js', auditKit([[bake[0], bake[1] + `\n'${[...needles][0] || foreignName}'`]], needles.size ? needles : new Set([foreignName]))])
+mut.push(['a declaration that cannot write a designation the raw file carries', unwritableDesignations({ holds: 'code', designation: 'national' }, new Set(['national', 'certified_local']))])
 for (const [what, out] of mut) {
   console.log(`   mutation (${what}) ${out.length ? 'caught ✓' : 'NOT caught'}`)
   if (!out.length) fails.push(`MUTATION NOT CAUGHT: ${what}`)

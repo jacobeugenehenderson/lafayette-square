@@ -119,26 +119,31 @@ def extract(feature):
 
     # Appraised value: prefer improvement (matches City AprResImprove semantics),
     # fall back to total appraised.
-    appraised = a.get("APPIMPVAL") or a.get("TOTAPVAL") or 0
+    appraised = a.get("APPIMPVAL") or a.get("TOTAPVAL") or None
 
-    acres = a.get("ACRES") or 0
+    acres = a.get("ACRES")
 
     return {
         "handle": a.get("LOCATOR", "") or "",
         "address": address,
         "owner": a.get("OWNER_NAME", "") or "",
-        "year_built": a.get("YEARBLT") or 0,
-        "last_year_built": a.get("YEARBLT") or 0,
-        "building_sqft": a.get("RESQFT") or 0,
-        "land_area": round(acres * 43560.0, 1),  # acres -> sqft (City uses sqft)
+        # ⛔ A missing value is None, never 0: "built in year zero", "0 sq ft" and "0 units" are claims the
+        # County never made (bake-content keeps a well's null; `ma.mjs` refuses YEAR_BUILT 0 for the same reason).
+        "year_built": a.get("YEARBLT") or None,
+        "last_year_built": a.get("YEARBLT") or None,
+        "building_sqft": a.get("RESQFT") or None,
+        "land_area": round(acres * 43560.0, 1) if acres else None,  # acres -> sqft (City uses sqft)
         "appraised_value": appraised,
-        "land_use_code": a.get("LUC") or a.get("LUCODE") or 0,
+        "land_use_code": a.get("LUC") or a.get("LUCODE") or None,
         "zoning": a.get("ZONING") or a.get("MUNI_ZONING") or "",
-        "neighborhood_code": a.get("NBHD") or 0,
-        "units": a.get("LIVUNIT") or 0,
-        "num_buildings": 0,  # not published by the County layer
-        "vacant": False,     # County layer has no clean vacant flag
-        "historic_district": {"national": False, "local": False, "certified_local": False},
+        "neighborhood_code": a.get("NBHD") or None,
+        "units": a.get("LIVUNIT") or None,
+        # ⛔ ABSENT, not false/zero: the County layer publishes no building count, vacant flag or historic-district
+        # columns. These were constants (0, False, all-false) — Layer 0's fallback inside the fetcher, read downstream
+        # as "not vacant" / "in no district" for every County parcel. A well that lacks a column writes null.
+        "num_buildings": None,
+        "vacant": None,
+        "historic_district": None,
         "municipality": a.get("MUNICIPALITY", "") or "",
         "jurisdiction": "county",
         "centroid": [round(cx, 2), round(cz, 2)],
