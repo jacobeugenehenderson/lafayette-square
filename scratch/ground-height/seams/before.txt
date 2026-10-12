@@ -1,0 +1,53 @@
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+hipointedemun: 736 ped vertex(es) no painted band owns, in 124 cluster(s) on 72 tile(s) · by drawn group: {"residential":43,"commercial":15,"institutional":11,"recreation":74,"park":16,"underived":52,"forest":5,"railway":5,"verge":2,"parking_lot":2,"garden":10,"treelawn:residential":83,"treelawn:commercial":29,"treelawn:vacant":1,"treelawn:parking":12,"treelawn:institutional":41,"treelawn:recreation":75,"treelawn:park":5,"treelawn:underived":25,"treelawn:railway":20,"treelawn:verge":2,"sidewalk":191,"curb":1,"wall":16}
+clusters by the painted polygon holding them: {"walk ≥100 m²":48,"walk 1–10 m²":7,"lawn 10–100 m²":23,"lawn 1–10 m²":9,"lawn ≥100 m²":12,"lawn <1 m²":10,"walk <1 m²":3,"walk 10–100 m²":10,"curb ≥100 m²":2}
+clusters whose point lies DEEPER than every ② span's reachable band: 35 of 124
+orphan VERTICES by the widest lot gap on the best path: {"seam ≤5 mm":345,"5 mm–5 cm":113,"5–50 cm":243,">50 cm":27,"no candidate path reaches a band":8}
+  seam ≤5 mm: 65 cluster(s), e.g. tile 76 (-1105.17,744.43) sidewalk gap 2.5 mm · tile 175 (1183.35,-724.38) treelawn:railway gap 0.0 mm · tile 170 (-121.52,-492.62) treelawn:recreation gap 0.5 mm
+  5 mm–5 cm: 22 cluster(s), e.g. tile 187 (808.84,-581.14) treelawn:recreation gap 7.5 mm · tile 204 (11.45,-854.97) treelawn:parking gap 9.0 mm · tile 144 (-692.45,-72.20) sidewalk gap 24.5 mm
+  5–50 cm: 30 cluster(s), e.g. tile 52 (-909.54,966.06) sidewalk gap 163.0 mm · tile 178 (-931.21,-494.90) treelawn:recreation gap 66.5 mm · tile 178 (-900.01,-483.10) recreation gap 369.5 mm
+  >50 cm: 5 cluster(s), e.g. tile 48 (549.86,927.60) treelawn:commercial gap 517.5 mm · tile 164 (15.74,-207.94) residential gap 1003.0 mm · tile 202 (476.50,-817.29) treelawn:underived gap 514.5 mm
+  no candidate path reaches a band: 2 cluster(s), e.g. tile 154 (-1284.70,-527.96) sidewalk gap — · tile 222 (-867.04,-1085.02) treelawn:verge gap —
+≤5 mm gaps by the pieces either side (vertices):
+   treelawn:vacant | treelawn:residential: 172
+   curb | walk: 50
+   beyond the disc | curb: 30
+   curb | treelawn:recreation: 24
+   treelawn:residential | walk: 23
+   curb | treelawn:park: 23
+   treelawn:underived | treelawn:recreation: 23
+   treelawn:institutional | treelawn:underived: 18
+   curb | treelawn:residential: 15
+   walk | treelawn:institutional: 11
+   treelawn:park | treelawn:residential: 8
+   beyond the disc | treelawn:commercial: 7
+   walk | walk: 7
+   treelawn:commercial | walk: 6
+   treelawn:industrial | walk: 6
+   beyond the disc | walk: 2
+   curb | treelawn:underived: 1
+   treelawn:recreation | treelawn:recreation: 1
+   treelawn:institutional | treelawn:recreation: 1
+   walk | treelawn:underived: 1
+   walk | treelawn:commercial: 1
+   treelawn:institutional | walk: 1
+   treelawn:underived | treelawn:institutional: 1
+   gap width p50 2.0 mm · max 5.0 mm (sampled at 0.5 mm)
+      383.89 real       378.27 user         2.27 sys
+           636108800  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               42961  page reclaims
+                  59  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  23  voluntary context switches
+              319522  involuntary context switches
+       6005311319600  instructions retired
+       1181686355848  cycles elapsed
+           635986240  peak memory footprint

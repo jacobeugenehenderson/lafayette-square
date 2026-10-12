@@ -1,0 +1,30 @@
+lawn pieces 3174 · overlapping pairs of DIFFERENT keys 33, 0.300 m² · of the SAME key 0, 0.000 m²
+by key pair (pairs · m² · largest at):
+   treelawn:residential | treelawn:vacant: 2 · 0.201 m² · largest 0.196 m² at (-1052.394,755.408)
+   treelawn:forest | treelawn:underived: 2 · 0.025 m² · largest 0.014 m² at (-575.560,-1030.030)
+   treelawn:institutional | treelawn:underived: 3 · 0.023 m² · largest 0.019 m² at (-251.391,684.324)
+   treelawn:institutional | treelawn:recreation: 10 · 0.020 m² · largest 0.007 m² at (-353.611,-1003.039)
+   treelawn:commercial | treelawn:underived: 1 · 0.011 m² · largest 0.011 m² at (382.882,1019.943)
+   treelawn:park | treelawn:residential: 1 · 0.007 m² · largest 0.007 m² at (-745.539,717.730)
+   treelawn:commercial | treelawn:residential: 4 · 0.006 m² · largest 0.003 m² at (-829.320,841.760)
+   treelawn:residential | treelawn:underived: 2 · 0.002 m² · largest 0.002 m² at (-613.100,-580.590)
+   treelawn:recreation | treelawn:vacant: 1 · 0.002 m² · largest 0.002 m² at (803.830,-594.080)
+   treelawn:recreation | treelawn:residential: 1 · 0.001 m² · largest 0.001 m² at (-619.278,-95.058)
+   treelawn:recreation | treelawn:underived: 5 · 0.001 m² · largest 0.001 m² at (-265.571,-990.214)
+   treelawn:underived | treelawn:vacant: 1 · 0.000 m² · largest 0.000 m² at (802.380,-594.329)
+by tile (24 tiles; top 15 by m²):
+   tile 76: 1 · 0.196 m²
+   tile 192: 2 · 0.025 m²
+   tile 62: 1 · 0.019 m²
+   tile 208: 5 · 0.013 m²
+   tile 47: 1 · 0.011 m²
+   tile 79: 1 · 0.007 m²
+   tile 215: 1 · 0.005 m²
+   tile 182: 1 · 0.004 m²
+   tile 204: 3 · 0.003 m²
+   tile 50: 1 · 0.003 m²
+   tile 34: 1 · 0.003 m²
+   tile 146: 2 · 0.002 m²
+   tile 175: 2 · 0.002 m²
+   tile 186: 1 · 0.002 m²
+   tile 144: 1 · 0.001 m²

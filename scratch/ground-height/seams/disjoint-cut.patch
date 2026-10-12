@@ -1,0 +1,28 @@
+diff --git a/src/lib/tileGround.js b/src/lib/tileGround.js
+index ab8233b6..e4f41e03 100644
+--- a/src/lib/tileGround.js
++++ b/src/lib/tileGround.js
+@@ -2456,10 +2456,21 @@ export function rekeyByPiece(st, byLu) {
+   }
+   const classes = [...new Set(parts.filter(x => x.region.length).map(x => x.lu))]
+   if (classes.length === 1 && !ev) { (byLu[classes[0]] ||= []).push(...own); return byLu }
++  // ⭐ DISJOINT BY CONSTRUCTION — one owner per point (A10; Boz's ruling 2026-10-12). Derive's evidence regions are cut on
++  //   its own 1 cm grid and can overlap by millimetres (HPDM tile 76: OSM residential over a vacant parcel, 0.20 m²), and
++  //   two classes cut independently both painted that ground. Each class now takes own ∩ its regions MINUS what the classes
++  //   before it already took, in the order the evidence carries them (`prepareEvidence`, derive's own order); `underived`
++  //   is the REST of `own` inside the pieces, so ground no class takes is underived by definition, never unpainted.
++  //   ▶ node checks/claims-no-ground-is-painted-twice.mjs
++  let taken = []
+   for (const lu of classes) {
+-    const part = intersectRings(own, parts.filter(x => x.lu === lu).flatMap(x => x.region))
+-    if (part.length) (byLu[lu] ||= []).push(...part)
++    if (lu === UNDERIVED_LU) continue
++    const mine = intersectRings(own, parts.filter(x => x.lu === lu).flatMap(x => x.region))
++    const part = taken.length ? differenceRings(mine, taken) : mine
++    if (part.length) { (byLu[lu] ||= []).push(...part); taken = unionRings([...taken, ...part]) }
+   }
++  const rest = differenceRings(intersectRings(own, pieces.flatMap(p => [p.outer, ...p.holes])), taken)
++  if (rest.length) (byLu[UNDERIVED_LU] ||= []).push(...rest)
+   // ⛔ COUNTED, NEVER DROPPED UNSEEN: land-use paint lying in NO piece has no class to take. The
+   // painters confine it to `iA`, so this should be 0 m²; if it is not, it is said, not reassigned.
+   // ⭐ Tolerance = Clipper's 1 mm lattice × the paint's own perimeter — a property of the geometry, not a number picked.

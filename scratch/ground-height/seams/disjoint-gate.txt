@@ -1,0 +1,14 @@
+walk byte-identical true · curb true · disc true · tiles true
+lawn pieces 3174 → 4039 · summed area 180379.074 → 180383.285 m² (Δ 4.210) · overlap 0.300 → 0.500 m²
+lawn UNION 180378.775 → 180382.784 m² (Δ 4.009) · lattice tolerance (perimeter × 1 mm) 397.8 m² · within: true
+(tile, key) areas that moved: worst 0.2541 m² · moved more than their tile's overlap: 162
+   12|treelawn:commercial moved 0.0010 m² > tile overlap 0.0000
+   50|treelawn:residential moved 0.0034 m² > tile overlap 0.0026
+   8|treelawn:underived moved 0.0091 m² > tile overlap 0.0000
+   2|treelawn:underived moved 0.0162 m² > tile overlap 0.0000
+   14|treelawn:underived moved 0.0935 m² > tile overlap 0.0000
+   1|treelawn:underived moved 0.0212 m² > tile overlap 0.0000
+   16|treelawn:underived moved 0.0157 m² > tile overlap 0.0000
+   21|treelawn:underived moved 0.0255 m² > tile overlap 0.0000
+   9|treelawn:underived moved 0.0087 m² > tile overlap 0.0000
+   11|treelawn:underived moved 0.0010 m² > tile overlap 0.0000

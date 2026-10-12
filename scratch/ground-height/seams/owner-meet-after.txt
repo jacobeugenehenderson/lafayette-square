@@ -1,0 +1,49 @@
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+  one ring: arc ⟷ run: 52117 edge(s) · over the limit 30337 in 977 owner pair(s) · gap p50 4.4 p90 40.1 max 449.9 cm · >5 cm 14036 · >25 cm 4537 · >1 m 887
+      1|0|a6 ⟷ 1|0|r15: 108 edge(s), gap up to 449.9 cm at (178.5,1276.4)
+      9|0|a4 ⟷ 9|0|r7: 100 edge(s), gap up to 420.2 cm at (461.5,1276.8)
+      116|0|a3 ⟷ 116|0|r5: 27 edge(s), gap up to 347.6 cm at (291.8,50.8)
+      44|0|a5 ⟷ 44|0|r7: 278 edge(s), gap up to 321.0 cm at (-575.9,931.3)
+  one ring: run ⟷ run: 24151 edge(s) · over the limit 17827 in 520 owner pair(s) · gap p50 8.0 p90 68.4 max 384.3 cm · >5 cm 11876 · >25 cm 3606 · >1 m 1161
+      60|0|r0 ⟷ 60|0|r1: 42 edge(s), gap up to 384.3 cm at (549.9,635.4)
+      116|0|r0 ⟷ 116|0|r1: 141 edge(s), gap up to 313.6 cm at (530.6,80.9)
+      116|0|r0 ⟷ 116|0|r5: 254 edge(s), gap up to 297.1 cm at (283.1,49.3)
+      97|0|r5 ⟷ 97|0|r6: 30 edge(s), gap up to 273.7 cm at (-1194.2,388.0)
+  one ring: arc ⟷ arc: 15744 edge(s) · over the limit 9753 in 443 owner pair(s) · gap p50 2.8 p90 12.7 max 272.8 cm · >5 cm 2321 · >25 cm 545 · >1 m 89
+      222|0|a3 ⟷ 222|0|a8: 6 edge(s), gap up to 272.8 cm at (-543.0,-1048.2)
+      181|0|a1 ⟷ 181|0|a2: 3 edge(s), gap up to 199.2 cm at (67.0,-515.4)
+      100|0|a2 ⟷ 100|0|a5: 4 edge(s), gap up to 196.1 cm at (171.8,332.3)
+      50|0|a0 ⟷ 50|0|a3: 31 edge(s), gap up to 157.5 cm at (-841.3,837.2)
+  same tile, different ring: 0 edge(s) · over the limit 0 in 0 owner pair(s) · gap p50 — p90 — max — cm · >5 cm 0 · >25 cm 0 · >1 m 0
+  different tile: 0 edge(s) · over the limit 0 in 0 owner pair(s) · gap p50 — p90 — max — cm · >5 cm 0 · >25 cm 0 · >1 m 0
+747824 ped vertices resolved in 57s · 92012 edges where the owner changes · 57917 of them fall more than the walk limit across the change
+  their height gap: p50 4.8 cm · p90 39.9 cm · max 449.9 cm · over 5 cm 28233 · over 25 cm 8688
+  1940 owner pairs; the largest gaps:
+    1|0|a6 ⟷ 1|0|r15: 108 edge(s), gap up to 449.9 cm at (178.5,1276.4)
+    9|0|a4 ⟷ 9|0|r7: 100 edge(s), gap up to 420.2 cm at (461.5,1276.8)
+    60|0|r0 ⟷ 60|0|r1: 42 edge(s), gap up to 384.3 cm at (549.9,635.4)
+    116|0|a3 ⟷ 116|0|r5: 27 edge(s), gap up to 347.6 cm at (291.8,50.8)
+    44|0|a5 ⟷ 44|0|r7: 278 edge(s), gap up to 321.0 cm at (-575.9,931.3)
+    1|0|a14 ⟷ 1|0|r0: 185 edge(s), gap up to 317.0 cm at (285.4,1162.6)
+    116|0|r0 ⟷ 116|0|r1: 141 edge(s), gap up to 313.6 cm at (530.6,80.9)
+    116|0|r0 ⟷ 116|0|r5: 254 edge(s), gap up to 297.1 cm at (283.1,49.3)
+    67|0|a27 ⟷ 67|0|r29: 3 edge(s), gap up to 285.8 cm at (-701.9,456.6)
+    67|0|a27 ⟷ 67|0|r30: 7 edge(s), gap up to 285.7 cm at (-701.5,456.5)
+    179|0|a6 ⟷ 179|0|r8: 29 edge(s), gap up to 277.2 cm at (-893.5,-492.0)
+    97|0|r5 ⟷ 97|0|r6: 30 edge(s), gap up to 273.7 cm at (-1194.2,388.0)
+stats {"noFull":0,"stations":380440,"absorbClamped":261294,"tiles":235,"noH":10,"hFilled":1611,"arcBlended":11764,"outside":592,"deep":0,"evaluated":747232,"rays":1109353,"eased":40081,"lawnFull":148509,"byBand":4303,"unowned":536}
+one-ring gaps over 25 cm: 8688 edge(s) · touching a span with no line 782 · both owners lined 7906
+   a span with no line: 9|0|a4 ⟷ 9|0|r7 gap 252 cm at (468.0,1272.8) — undefined(no line) · forest-avenue-1 · __highway__(no line)
+   a span with no line: 183|0|r2 ⟷ 183|0|rnull gap 227 cm at (-1279.4,-540.7) — northmoor-drive-2 · undefined(no line)
+   a span with no line: 89|0|r4 ⟷ 89|0|rnull gap 155 cm at (-1250.4,604.1) — claverach-drive · undefined(no line)
+   a span with no line: 155|0|r7 ⟷ 155|0|rnull gap 150 cm at (-1374.5,-199.8) — brentmoor-park-7 · undefined(no line)
+   a span with no line: 200|0|a2 ⟷ 200|0|r4 gap 127 cm at (234.9,-852.0) — centennial-greenway-8(no line) · forest-park-parkway-7
+   both lined: 116|0|r0 ⟷ 116|0|r5 gap 297 cm at (283.1,49.3) — fauquier-drive · fauquier-drive
+   both lined: 67|0|a27 ⟷ 67|0|r29 gap 286 cm at (-701.9,456.6) — tuscany-park · south-big-bend-boulevard
+   both lined: 44|0|a5 ⟷ 44|0|r7 gap 281 cm at (-575.7,929.8) — undefined(no line) · oakland-avenue-0
+   both lined: 222|0|a3 ⟷ 222|0|a8 gap 273 cm at (-543.0,-1048.2) — wellesley-avenue · undefined(no line) · north-big-bend-boulevard · forest-park-parkway-2
+   both lined: 222|0|r4 ⟷ 222|0|r9 gap 255 cm at (-565.2,-1049.4) — wellesley-avenue · forest-park-parkway-2
+ped vertices owned by a span on a raised street: 83247 of 746696 · by street: south-big-bend-boulevard (layer 1 bridge) 25274 · heels-path-0 (layer 1 bridge) 16573 · wise-avenue-4 (layer 1 bridge) 12293 · bellevue-avenue (layer 1 bridge) 11030 · centennial-greenway-0 (layer 1 bridge) 7925 · clayton-avenue-0 (layer 1 bridge) 4122 · government-drive-0 (layer 1 bridge) 2696 · lagoon-drive-0 (layer 1 bridge) 2409 · centennial-greenway-8 (layer 1 bridge) 1859 · centennial-greenway-4 (layer 0 bridge) 1244 · oakland-avenue-2 (layer 1 bridge) 1027 · boland-place (layer 1 bridge) 120
+owner-change edges over the limit touching a raised span: 9111 · gap p50 5.3 p90 46.5 max 384.3 cm · >25 cm 1536
+  the rest: 48806 · gap p50 4.7 p90 38.5 max 449.9 cm · >25 cm 7152 · >1 m 1782
+node --max-old-space-size=14000 scratch/ground-height/owner-meet.mjs     68.95s user 1.78s system 104% cpu 1:07.85 total
