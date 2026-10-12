@@ -322,11 +322,36 @@ export function classify(file, seen = new Set(), depth = 0) {
  *    OUTPUT OF A CHECK THAT ACTUALLY FAILED, and to nothing else.
  */
 const BLOCKED = [
-  [/\bNO DEFAULT\b/,            'declares NO DEFAULT — requires an explicit --scene'],
   [/\bVOID probe\b/,            'declares itself a VOID probe and refuses to produce numbers'],
   [/Refusing to produce/,        'refuses to produce numbers'],
-  [/^\s*usage:/m,                'prints a usage line — takes a required argument'],
 ]
+// ⭐ A REQUIRED ARGUMENT IS DECLARED, NOT INFERRED (Boz's ruling, 2026-10-12). A check that needs one says so in its
+// header — `// @args --source=pour|bundle` (each value), `// @args --scene=<town>` (each town on the roster, so the
+// check runs on every town, never on the one somebody typed), or `// @args --ribbons=<path>` (unbounded: no value
+// to enumerate, so BLOCKED by declaration and not spawned). The runner runs a declared check once per value, each
+// its own named row — every value, so no default is chosen. ⛔ A check that refuses for an argument it did NOT
+// declare is RED: an undeclared requirement is a finding, never quietly blocked.
+const ARGS_LINE = /^\s*(?:\/\/|\*)\s*@args\s+(--[\w-]+)=(\S+)/m
+export function declaredArgs(src) {
+  const m = src == null ? null : src.match(ARGS_LINE)
+  if (!m) return null
+  const [, flag, spec] = m
+  if (spec === '<town>') return { flag, enumerate: 'town' }
+  if (/^<.*>$/.test(spec)) return { flag, unbounded: spec }
+  const values = spec.split('|').filter(Boolean)
+  if (!values.length) throw new Error(`[tier] @args ${flag}=${spec}: no values`)
+  return { flag, values }
+}
+/** The runs a check makes: one plain run, or one per declared value (`towns` is the roster, for `<town>`), or none
+ *  (unbounded — BLOCKED by declaration). Each run carries `argv` and a `label` naming its value. */
+export function runsFor(r, towns) {
+  const a = r.args
+  if (!a) return [{ ...r, argv: [], label: r.file }]
+  if (a.unbounded) return []
+  const values = a.enumerate === 'town' ? towns : a.values
+  if (!values?.length) throw new Error(`[tier] ${r.file}: @args ${a.flag} has nothing to enumerate${a.enumerate ? ' (the town roster is empty)' : ''}`)
+  return values.map(v => ({ ...r, argv: [`${a.flag}=${v}`], label: `${r.file} ${a.flag}=${v}` }))
+}
 
 export function blockedReason(file) {
   const src = readCheckSource(file)
@@ -342,13 +367,16 @@ export function blockedReason(file) {
  *   measure) · red (the claim is false — the board).
  */
 export const SAID_NOT_MEASURED = /NOT MEASURED|NOT CHECKED|not measured|nothing measured|nothing to check|could not run|Nothing was measured|Refusing to print/
-const REFUSAL = /NO DEFAULT|VOID probe|Refusing to produce|usage:/
+const SELF_VOIDED = /VOID probe|Refusing to produce/
+const ARG_REFUSAL = /NO DEFAULT|^\s*usage:/m
 export function bucketOf({ code, timedOut, out }, sourceBlocked) {
   if (code === 0 && !timedOut) return 'green'
   if (timedOut) return 'timedOut'
-  // ⛔ The refusal is judged BEFORE "not checked": an incidental census note printed ahead of a refusal must never
-  //    launder wiring debt into "the data is absent" (the 2026-10-12 misfile, case 1 below).
-  if (sourceBlocked && REFUSAL.test(out)) return 'blocked'
+  // ⛔ Refusals are judged BEFORE "not checked": an incidental census note printed ahead of a refusal must never
+  //    launder it into "the data is absent" (the 2026-10-12 misfile). A self-voided probe is wiring debt (blocked);
+  //    an argument refusal reaching here was NOT declared (a declared one is run per value), so it is a finding.
+  if (sourceBlocked && SELF_VOIDED.test(out)) return 'blocked'
+  if (ARG_REFUSAL.test(out)) return 'red'
   if (code === 2 && SAID_NOT_MEASURED.test(out)) return 'notChecked'
   return 'red'
 }
@@ -358,7 +386,8 @@ export function bucketSelfTest() {
   const cases = [
     // ⛔ The misfile of 2026-10-12: the town census's incidental note printed BEFORE the check refused its missing
     //    argument, so "data absent" won and a wiring refusal hid in NOT CHECKED.
-    [{ code: 2, out: '   ⚠️ NOT CHECKED (no ribbons): kit-default\n⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.' }, true, 'blocked'],
+    [{ code: 2, out: '   ⚠️ NOT CHECKED (no ribbons): kit-default\n⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.' }, false, 'red'],
+    [{ code: 2, out: '⛔ NOT CHECKED — x\n   usage: node checks/x.mjs --scene=<town>' }, false, 'red'],
     [{ code: 2, out: '⛔ NOT MEASURED — this pour carries no land evidence' }, false, 'notChecked'],
     [{ code: 2, out: '⛔ 3 failures' }, false, 'red'],                       // exit 2 that never SAID it did not measure
     [{ code: 1, out: '⛔ FAIL — NO DEFAULT in the prose of a finding' }, false, 'red'],   // a refusal word, but the source declares nothing
@@ -370,6 +399,22 @@ export function bucketSelfTest() {
     const got = bucketOf(r, sb)
     if (got !== want) throw new Error(`[tier] bucketSelfTest: ${JSON.stringify(r.out.slice(0, 60))} (exit ${r.code}${sb ? ', source declares a refusal' : ''}) → ${got}, wants ${want}`)
   }
+  // The declaration and its runs.
+  const towns = ['t1', 't2', 't3']
+  const runs = (src) => runsFor({ file: 'checks/x.mjs', args: declaredArgs(src) }, towns).map(x => x.label)
+  const expect = [
+    ['// @args --source=pour|bundle', ['checks/x.mjs --source=pour', 'checks/x.mjs --source=bundle']],
+    [' * @args --scene=<town>', towns.map(t => `checks/x.mjs --scene=${t}`)],   // every town on the roster, never one
+    ['// @args --ribbons=<path>', []],                                          // unbounded: blocked by declaration
+    ['// usage: --source=pour|bundle (prose, no @args)', ['checks/x.mjs']],
+  ]
+  for (const [src, w] of expect) {
+    const got = runs(src)
+    if (JSON.stringify(got) !== JSON.stringify(w)) throw new Error(`[tier] bucketSelfTest: ${JSON.stringify(src)} → ${JSON.stringify(got)}, wants ${JSON.stringify(w)}`)
+  }
+  let threw = false
+  try { runsFor({ file: 'checks/x.mjs', args: declaredArgs('// @args --scene=<town>') }, []) } catch { threw = true }
+  if (!threw) throw new Error('[tier] bucketSelfTest: an empty town roster expanded to no runs, silently — it must throw')
 }
 
 export function classifyAll() {
@@ -380,7 +425,11 @@ export function classifyAll() {
     if (!existsSync(join(ROOT, d))) continue
     for (const f of readdirSync(join(ROOT, d)).sort()) if (/^claims-.*\.(mjs|js|sh)$/.test(f)) files.push(`${d}/${f}`)
   }
-  const classified = files.map(f => classify(f))
+  const classified = files.map(f => {
+    const r = classify(f), args = declaredArgs(readCheckSource(f))
+    if (!args) return r
+    return { ...r, args, why: [...r.why, `declares @args ${args.flag}=${args.values ? args.values.join('|') : args.enumerate ? '<town>' : args.unbounded}`] }
+  })
   // ⛔ LOUD, NEVER SILENT. A check that vanishes is excluded from the run because it
   // cannot be run — but a suite that quietly got smaller is worse than one that died,
   // and this is the only place that knows it happened.

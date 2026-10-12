@@ -14,7 +14,8 @@
  * side comes from the topology method in claims-physical-side-reconcile.mjs
  * (deg-2 ends only, ENDPOINT_SNAP) — no street names, no per-town table.
  *
- * usage: node checks/claims-side-baseline-audit.mjs [scene ...]
+ * usage: node checks/claims-side-baseline-audit.mjs --source=pour|bundle [scene ...]
+ * @args --source=pour|bundle   (npm test runs it once per source — tier.mjs#declaredArgs)
  */
 import { deriveNodePairs, classifySides, nodeKey, dist, quantiles } from './claims-node-pair-key-parity.mjs'
 import { ribbonScenes } from './_scenes.mjs'

@@ -26,7 +26,8 @@
  *        own polyline lies on. `side` is then READ BACK from the order — which is
  *        §4.1's load-bearing ⭐⭐ claim, and measurement ④ is the test of it.
  *
- * usage: node checks/claims-node-pair-key-parity.mjs [scene ...]
+ * usage: node checks/claims-node-pair-key-parity.mjs --source=pour|bundle [scene ...]
+ * @args --source=pour|bundle   (npm test runs it once per source — tier.mjs#declaredArgs)
  *        default scenes: lafayette-square hipointedemun
  *        (altadena is declared and measurable — size on it. It was listed here as CHILLERED
  *        alongside two towns that have since been excised; it never shared their status.)

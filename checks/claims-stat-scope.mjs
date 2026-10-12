@@ -21,7 +21,8 @@
  *    check only asserts that an area-scoped stat DECLARES its boundary. Until §5.2
  *    lands, a declared-but-wrong scope still passes.
  *
- * USAGE   node checks/claims-stat-scope.mjs --scene <scene>
+ * USAGE   node checks/claims-stat-scope.mjs --scene=<scene>
+ * @args --scene=<town>   (npm test runs it once per town on the roster — tier.mjs#declaredArgs)
  * EXIT    0 clean · 1 finding · 2 usage/inputs
  */
 
@@ -31,18 +32,18 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const argv = process.argv.slice(2)
-const i = argv.indexOf('--scene')
-const SCENE = i >= 0 ? argv[i + 1] : null
+const SCENE = (argv.find(a => a.startsWith('--scene=')) || '').slice('--scene='.length) || null
 
 if (!SCENE) {
   console.error('⛔ LOUD FAIL — no --scene given, and there is deliberately NO DEFAULT.')
-  console.error('   usage: node checks/claims-stat-scope.mjs --scene <scene>')
+  console.error('   usage: node checks/claims-stat-scope.mjs --scene=<scene>')
   console.error('   scenes:', readdirSync(join(ROOT, 'src', 'instances')).filter(f => f.endsWith('.js') && f !== 'index.js').map(f => f.replace(/\.js$/, '')).join(' '))
   process.exit(2)
 }
 
 const instP = join(ROOT, 'src', 'instances', `${SCENE}.js`)
-if (!existsSync(instP)) { console.error(`⛔ no instance file: ${instP}`); process.exit(2) }
+// A town on the roster with no instance module displays no masthead, so there is no stat to scope: not a pass.
+if (!existsSync(instP)) { console.error(`⛔ NOT CHECKED — ${SCENE} has no instance module (${instP}), so it displays no stats to scope`); process.exit(2) }
 const src = readFileSync(instP, 'utf8')
 
 const findings = []

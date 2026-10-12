@@ -27,7 +27,7 @@
 import { spawn } from 'node:child_process'
 import { cpus } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { classifyAll, claimOf, blockedReason, bucketOf, ROOT } from './tier.mjs'
+import { classifyAll, claimOf, blockedReason, bucketOf, runsFor, ROOT } from './tier.mjs'
 
 /**
  * ⭐ ACCEPTANCE IS ENFORCED, NOT ASSERTED. Every check in a default run is spawned with the network
@@ -59,7 +59,15 @@ console.log(`${run.length} check(s) in tier(s): ${tiers.join(' + ')}   ` +
   `local-effect ${all.filter(r => r.tier === 'local-effect').length} · ` +
   `live ${all.filter(r => r.tier === 'live').length} — excluded from this run]`)
 
-if (LIST) { for (const r of run) console.log(`  ${r.file}  — ${claimOf(r.file) || '(no header claim)'}`); process.exit(0) }
+// ⭐ A check that declares a required argument (`@args`, tier.mjs) runs once per value, each its own row — every
+//    town on the roster for `<town>`, the one roster (_scenes.mjs#declaredScenes). An unbounded one is not spawned:
+//    BLOCKED by its own declaration, counted below.
+const towns = run.some(r => r.args?.enumerate === 'town') ? (await import('./_scenes.mjs')).declaredScenes() : []
+const runs = run.flatMap(r => runsFor(r, towns))
+const declaredBlocked = run.filter(r => r.args?.unbounded)
+if (runs.length !== run.length) console.log(`   ${runs.length} run(s): ${run.filter(r => r.args && !r.args.unbounded).length} check(s) declare @args and run once per value · ${declaredBlocked.length} declare an unbounded one (blocked)`)
+
+if (LIST) { for (const r of runs) console.log(`  ${r.label}  — ${claimOf(r.file) || '(no header claim)'}`); for (const r of declaredBlocked) console.log(`  ${r.file}  — BLOCKED: declares @args ${r.args.flag}=${r.args.unbounded}`); process.exit(0) }
 
 const TIMEOUT_MS = Number(process.env.CHECKS_TIMEOUT_MS || 600_000)
 const t0 = Date.now()
@@ -78,8 +86,8 @@ const runOne = (r) => new Promise((resolve) => {
   const sh = r.file.endsWith('.sh')
   const guard = want === 'live' ? [] : ['--import', GUARD]
   const child = sh
-    ? spawn('bash', [r.file], { cwd: ROOT })
-    : spawn(process.execPath, [...guard, r.file], { cwd: ROOT })
+    ? spawn('bash', [r.file, ...r.argv], { cwd: ROOT })
+    : spawn(process.execPath, [...guard, r.file, ...r.argv], { cwd: ROOT })
   let out = ''
   child.stdout.on('data', d => { out += d })
   child.stderr.on('data', d => { out += d })
@@ -96,7 +104,7 @@ const runOne = (r) => new Promise((resolve) => {
 
 console.log(`   (${JOBS} in parallel)`)
 const results = []
-const queue = [...run]
+const queue = [...runs]
 await Promise.all(Array.from({ length: Math.min(JOBS, queue.length) }, async () => {
   while (queue.length) results.push(await runOne(queue.shift()))
 }))
@@ -131,36 +139,37 @@ const timedOutR = failed.filter(r => r.bucket === 'timedOut')
 const blocked   = failed.filter(r => r.bucket === 'blocked')
 const red       = failed.filter(r => r.bucket === 'red')
 for (const r of red) {
-  console.log(`\n⛔ ${r.file}  → exit ${r.code}`)
+  console.log(`\n⛔ ${r.label}  → exit ${r.code}`)
   console.log(`   claim: ${claimOf(r.file) || '(no header claim)'}`)
   console.log(r.out.trim().split('\n').slice(-14).map(l => `   │ ${l}`).join('\n'))
 }
 console.log(`\n${'─'.repeat(72)}`)
 console.log(`${results.length - failed.length}/${results.length} green · ${red.length} red · ${notChecked.length} not checked · ` +
-  `${blocked.length} blocked · ${timedOutR.length} timed out · ${((Date.now() - t0) / 1000).toFixed(0)}s`)
+  `${blocked.length + declaredBlocked.length} blocked · ${timedOutR.length} timed out · ${((Date.now() - t0) / 1000).toFixed(0)}s`)
 if (notChecked.length) {
   // ⛔ PRINTED EVERY RUN, NEVER FOLDED INTO THE GREEN COUNT. The number that matters in CI is not
   //    "did it pass" but "how much did it actually check", and this is that number.
   console.log(`\n⚠️ ${notChecked.length} NOT CHECKED — the data they measure is absent, and they said so.`)
   console.log(`   Not a pass and not a finding. In CI this is usually \`public/baked/\` (gitignored).`)
-  for (const r of notChecked) console.log(`   ${r.file}`)
+  for (const r of notChecked) console.log(`   ${r.label}`)
 }
 if (timedOutR.length) {
   console.log(`\n⚠️ ${timedOutR.length} NOT CHECKED — killed at ${TIMEOUT_MS / 1000}s. These measured NOTHING;`)
   console.log(`   they are neither a pass nor a finding. Raise CHECKS_TIMEOUT_MS, or make them cheaper:`)
-  for (const r of timedOutR) console.log(`   ${r.file}`)
+  for (const r of timedOutR) console.log(`   ${r.label}`)
 }
-if (blocked.length) {
-  console.log(`\n⛔ ${blocked.length} BLOCKED — these cannot run in a no-argument tier and say so themselves.`)
+if (blocked.length || declaredBlocked.length) {
+  console.log(`\n⛔ ${blocked.length + declaredBlocked.length} BLOCKED — these cannot run in this tier and say so themselves.`)
   console.log(`   They report NOTHING about the product. This is wiring debt, not a green light:`)
-  for (const r of blocked) console.log(`   ${r.file} — ${blockedReason(r.file)}`)
+  for (const r of blocked) console.log(`   ${r.label} — ${blockedReason(r.file)}`)
+  for (const r of declaredBlocked) console.log(`   ${r.file} — declares @args ${r.args.flag}=${r.args.unbounded}: no value to enumerate`)
 }
 if (red.length) {
   console.log(`\n⛔ ${red.length} RED. Each is a FINDING for the board, not a runner fault:`)
-  for (const r of red) console.log(`   ${r.file} (exit ${r.code})`)
+  for (const r of red) console.log(`   ${r.label} (exit ${r.code})`)
 }
 // ⛔ A timeout fails the run too — "we could not check" must never exit 0.
 // ⛔ `notChecked` does NOT fail the run — that is the whole point — but it is never silent:
 //    the summary line states it and the list is printed above, so a run that checked almost
 //    nothing cannot read as a run that checked everything.
-process.exit(red.length || blocked.length || timedOutR.length ? 1 : 0)
+process.exit(red.length || blocked.length || declaredBlocked.length || timedOutR.length ? 1 : 0)
