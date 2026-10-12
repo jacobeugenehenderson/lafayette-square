@@ -109,7 +109,7 @@ export function slabUrl(look, rel, reread) {
 export function slabStamped(look, json, file) {
   requireLook(look)
   if (json?.look !== look) {
-    throw new Error(`[slab] ⛔ baked/${look}/${file} says it belongs to "${json?.look}" — this slab was baked for another `
+    throw new Error(`[slab] ⛔ ${slabPath(look, file)} says it belongs to "${json?.look}" — this slab was baked for another `
       + `town (a moved or copied folder?). It is not drawn under "${look}". ▶ re-bake "${look}".`)
   }
   return json

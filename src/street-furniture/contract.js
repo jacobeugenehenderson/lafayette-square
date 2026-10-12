@@ -7,6 +7,7 @@
 //   { mount, forward, lod, pieces: { '<SGn>#<k>': role }, excluded?: '<why>' }
 // ⛔ No field has a default. An asset with any field missing, or missing a role its family requires,
 //    is REFUSED and says why.
+import { slabPath } from '../lib/slabNames.js'
 
 // Each lit role and the colour it emits when ON. These are the meanings of the roles, not tunings.
 export const ROLES = {
@@ -43,7 +44,7 @@ export const CENSUS_OF = {
   bus_stop:       'bus-stops',
 }
 export const CENSUS = {
-  lamps:       { label: 'lamps (the lamp census)',              from: 'public/baked/<look>/lamps.json' },
+  lamps:       { label: 'lamps (the lamp census)',              from: `public/${slabPath('<look>', 'lamps.json')}` },
   signals:     { label: 'signal nodes (≈ one per approach)',   from: 'raw/osm.json pois · highway=traffic_signals' },
   junctions:   { label: 'junctions of 3+ streets (one sign each)', from: 'clean/skeleton.json junctions' },
   benches:     { label: 'benches',                              from: 'raw/osm.json pois · amenity=bench' },
