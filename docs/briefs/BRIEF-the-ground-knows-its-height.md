@@ -40,13 +40,7 @@ is related to WHEN we do the terrain extrusion."* And: **① is the single sourc
 chain and has two sides**. There is a resolution mismatch with the lidar, probably on both sides of the first offset
 chains. ⚠️ He did NOT rule out measuring: he questioned one step, more hole-hunting, when he had a clearer idea of the
 underlying thesis. So measure to TEST THE THESIS (one shape source or two, heights before or after the flatten), not
-to hunt more holes. Argon's measurements so far (2026-10-07/08, facts only):
-- The shore-median sand edge is the lidar waterline traced by marching squares at 1 m, UNSMOOTHED
-  (`bake-shore-median.mjs` → `bake-ground`'s `shore` group). It zigzags p50 0.16 · p90 0.73 · p99 2.24 m off its own
-  ±3 m chord. Meanwhile the coast is ALSO a chain in ① (`ROADMAP H-4`: "stroke the coast as a two-sided chain"). So the
-  waterline has two shape sources at two resolutions.
-- The drape (per vertex, last) and the cracks: measured in §4.3 and §4.6. The 9,212 px "hole" at (−2386, −2008) was the
-  gap walk's 20 m camera under a ~12 m channel's far bank; the standoff is now derived.
+to hunt more holes. (Argon's 2026-10-07/08 measurements are in the Diary; the live ones are §4 and §5 "The shore".)
 
 **The reopening:** *"Yes this reopens design but we have to solve it, so too bad."* Not built tonight; this brief is so
 an agent with directed context can do it soon.
@@ -145,20 +139,9 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    UserDot, the street eye, PilgrimMonument, LafayetteParkBody's ponds, stairs and title. The field: ShoreMedian, the
    revetment drape, and LafayetteParkBody's fence posts (lifted in the shader by `patchTerrain`, which has only the field
    on the GPU). Labels: none.
-6. **The shore has two shape sources.** The lidar waterline lies p50 4.2 m (Huron) / 23 m (Provincetown) off the ①
-   coast stroke, with a median beside 42% / 80% of the line. At the 1 m trace's y = 0 the 5 m field reads p50 0.28 /
-   0.82 m. At the line the mesh's chord error is small (p50 2–5 cm), and the drawn land crosses the level FEWER times
-   per km than the field. ▶ `shore-sources.mjs`, `shore-jag.mjs`
-   **The gusset** (land above the water at the line): Huron p50 0.19 / p90 0.48 m on 74% of the line; Provincetown at
-   LOW p50 0.69 / p90 1.58 m on 94%, at HIGH on 3%. Where both sides carry ground, the drawn ground is continuous across
-   the line (p50 5–7 cm over 0.6 m). Its shape is recorded per segment for a treatment to read.
-   ▶ `gusset.mjs <scene>` → `gusset-<scene>.json`
-   The median's two lines are the S-curve's two ends in plan: the ① stroke, where the flat sheet meets the ground,
-   and the lidar waterline, where the real ground reaches the level.
-   The crack's mechanism: §4 item 9.
-   Gap walk: standoff now derived (`gaps.jsx`). Its Huron baseline (2026-10-10) came back BLIND: 7,018 of
-   7,086 views reached the sky, the unchanged `far` view included, and the mutation found the same, so the check
-   voided itself. Cause not established; a one-station look comes before any re-run.
+6. **The shore: two shape sources, and the gusset.** Re-measured 2026-10-12; the table and the commands are in §5, "The
+   shore". The crack's mechanism: §4 item 9. Gap walk: still VOID (its 2026-10-10 Huron baseline: the mutation found the
+   same 7,018 sky views as the town); a one-station look comes before any re-run.
 7. **Mounds behind the walk (HPDM, 1 m lidar range-read).** Rise within 20 m of the walk's back edge ≥ 1 m at 25% of
    stations; for those, run (10→90%) p50 12 m, p10 5.5 m, offset behind the walk p50 2 m. The steepest are 4–7 m over
    1.5–2.5 m; the 5 m field carries them at ~1.3 m over 6.5–17 m. The rise CAN be located at the lidar's resolution.
@@ -215,9 +198,26 @@ side, swept along every edge, the way Section already sweeps the width profile (
 - **Curb cuts:** the same profile with h → 0 over the ramp, flare and taper, so the cuts come from the deformer, not from
   cutting a mesh.
 - **Lawn and land behind:** ease from the walk's height back into the raw terrain over a blend distance.
-- **The shore:** the line's height IS the water level; the land eases down to meet it along the smoothed waterline. The
-  waterline's SHAPE is the one smoothed coast chain in ① (`ROADMAP H-4`). The lidar trace refines or validates it, with
-  measured agreement, never as a second outline beside it.
+- **The shore: RULED 2026-10-11 (Jacob; landed 2026-10-12).** *"I think it meets high-tide and from high tide to low
+  tide is the gusset shape? Opine?"* · *"Can we compute the whole sheet for the lidar and find the actual moment of
+  intersection with the shoreline/low-tide line and then discard the sheet?"* · *"The lake town still has a gusset."*
+  ⇒ **The coast line is where the lidar surface meets the HIGH-WATER level** — the town's datum where tidal (MHW by
+  default, `BRIEF-bathymetry`), the authored lake level on a lake — and its height IS that level. **The gusset is the bank
+  from there down to the LOW-WATER plane** (on a lake, high = low, so it is the bank's own step), and its record decides
+  the fill grain (below). The sheet that finds the intersection is discarded once it has: one outline, from the lidar.
+  ⚠️ **Today's coast is not that line** (the ① coast chain is OSM's; measured 2026-10-12 on the served slabs, read-only):
+
+  | | Huron (lake, mean −0.09) | Provincetown (tidal) |
+  |---|---|---|
+  | lidar waterline off the ① coast chain | p50 4.2 · p90 42 m | p50 23 · p90 70 m |
+  | drawn land BELOW the water at the drawn coast | 8.5% | **66.7% under MHW** · 1.2% under MLLW |
+  | the step land → water at the line | p50 0.19 · p90 0.48 m | at LOW p50 0.69 · p90 1.58 m |
+  | stations where the step opens to the sky (no ground on the water side) | 123 | 768 at LOW |
+
+  ▶ `scratch/ground-height/shore-sources.mjs` · `shore-jag.mjs` · `gusset.mjs <scene>`. Moving the coast chain onto the
+  intersection is a skeleton source change and a re-pour of both towns: Jacob's go, pending.
+  *(The superseded wording — "the lidar trace refines or validates it … never as a second outline" — is in the Diary:
+  `cartograph/_archive/BRIEF-the-ground-knows-its-height-shore-source-2026-10-12.md`.)*
 - **Medians:** the carriageway profile on both sides (no sidewalk or tree lawn in a median; `RIBBONS §3.5`).
 
 **Step 3: the ground mesh is deformed by that field near ①, and by the plain terrain elsewhere.** The kerb face is
@@ -256,9 +256,9 @@ at from the side the elevation splits the ground and you can see thru to the sky
 plane *and* the terrain elevation plane. I think what has to happen is an averaging step where we look at the elevation
 and average the gusset-plugged and turn it from a block shape to an s-curve."* So the shore profile is: the land side
 at the line's terrain height, the water side at the water level, and the deformer's averaging step fills the gap
-between them, turning the step into an S-curve that rolls the land down to the water. Measure the gusset (the height
-gap across the shore edge, per town, and where it opens to the sky), and say how the shore median's two lines (Jacob's
-2026-10-04 ruling, `bake-shore-median.mjs`) relate to the S-curve. ⛔ Don't retire that ruling without asking him. ⭐ **The gusset's SHAPE is data, not just a hole to fill** (Jacob, 2026-10-10: *"The gusset shape itself is
+between them, turning the step into an S-curve that rolls the land down to the water (measured: §5 "The shore"). The
+shore median's two lines (Jacob's 2026-10-04 ruling, `bake-shore-median.mjs`) are the S-curve's two ends in plan. ⛔ Don't
+retire that ruling without asking him. ⭐ **The gusset's SHAPE is data, not just a hole to fill** (Jacob, 2026-10-10: *"The gusset shape itself is
 important because it would determine particulate/fill size."*): its height gap and run at each point decide the grain of
 what fills it (boulder → rock → gravel → sand; `BRIEF-the-shore-is-closed`'s treatment rules). So the averaging step must
 RECORD the gusset's dimensions along the shore (one record, read by the treatment), not only smooth them away.
