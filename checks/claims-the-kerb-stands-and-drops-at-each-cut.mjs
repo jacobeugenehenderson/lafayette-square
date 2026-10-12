@@ -3,8 +3,8 @@
 //
 // `BRIEF-corner-ramps-and-kerb §3` step 5. Two 10 m blocks in a field of asphalt, run through the REAL pieces the ground
 // bake uses, in the bake's order (`bake-ground.js`, the ground partition): `kerbLift.mjs#kerbPlan` (classes, curbless
-// edges, regions) → `groundConformity.js#conformAndRefine` (NOTHING cut into it since `5255b311`: a cut's ramp, flares and
-// a curbless taper are the field's own continuous h → 0) → the T-junction refusal → `makeHeightField` + `liftBuffer` →
+// edges, regions) → `#splitAtCreases` (every group split along the regions' outlines) → `groundConformity.js
+// #conformAndRefine` (nothing cut into the mesh) → the T-junction refusal → `makeHeightField` + `liftBuffer` →
 // `riserFromEdges`. Measured against what the ruling says must come out:
 //   · block A (curb + walk, one cut on its south kerb): every asphalt vertex stays at 0 · the block stands at h away from
 //     the cut · the cut's kerb face is flush and its ramp reaches h at its run, linearly · a flare rises along the kerb
@@ -15,15 +15,14 @@
 //   screen. Each row samples the lifted mesh (barycentric, inside its triangles) against the field. A cut is DRAWN when
 //   the surface is within HALF THE KERB of the field there: it either dropped on screen or it stands, and that is the
 //   claim; how finely it follows is the walk's level-across question (`claims-the-walk-is-level-across`).
-// ⭐ The mesh is refined as the bake refines a ped band: `adaptive` by the TERRAIN PART (this scene is flat, and a town
-//   with no terrain ships its bands as triangulated) — never by a policy this check invents.
+// ⭐ The groups are SPLIT AT THE KERB'S CREASES as the bake splits them (`kerbLift.mjs#splitAtCreases`, imported, never
+//   restated) and refined by the bake's policy, which on this scene (no terrain) is none.
 // ⭐ The whole scene is ROTATED and set at a non-integer offset, which an axis-aligned integer scene can never show: the
 // partition sits on Clipper's 1 mm grid.
-// ⭐ MUTATION TEST: `--selftest` — (1) CONTROL: the scene refined adaptively by the KERB FIELD itself must go GREEN on
-//   every drawn row (the instrument can see a drawn cut); (2) MUTANT: that same refinement with the cut's ramp and flares
-//   dropped from the field must go RED. Both run the same rows as the real one.
+// ⭐ MUTATION TEST: `--selftest` — the bake's path is GREEN; with the groups not split at the creases (2c5560ca's bake) it
+//   is RED; split as the bake does but with the cut's ramp and flares dropped from the field it is RED. Same rows.
 //   node checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs [--selftest]
-import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges } from '../cartograph/kerbLift.mjs'
+import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases } from '../cartograph/kerbLift.mjs'
 import { conformAndRefine, findTJunctions } from '../cartograph/groundConformity.js'
 
 const h = 0.15, taperRun = 1.0, kerb = { height: h, rampSlope: 1 / 12, flareSlope: 1 / 10, taperRun }
@@ -46,21 +45,23 @@ const groupsIn = [
 // what lifts is the painter's block (`pr.block`); the curbless edges are read off the drawn curb
 const blockRings = [block, sq(20, 0, 30, 10)]
 const P0 = kerbPlan({ blockRings, curbRings: [block, rev(inner), bareCurb], ramps: [cut], kerb })
+const cells = kerbCells(P0.regions, blockRings)
 const R = h / kerb.rampSlope, F = h / kerb.flareSlope
 // heights are good to the mesh's own resolution: the partition sits on Clipper's 1 mm grid, so a vertex is up to ~1 mm off
 // the line it lies on, which is h × 1 mm ÷ the shortest run in height
 const e = h * 1e-3 / Math.min(R, F, taperRun)
 const DRAWN = h / 2                       // a cut is on screen when the drawn surface is within half the kerb of the field
 
-/** run the bake's pieces on the scene; `regionsOf` may drop regions (mutant), `refine` is the ped bands' policy */
-function judge({ regionsOf = (r) => r, refine = null } = {}) {
+/** run the bake's pieces on the scene. `split` — the bake splits every group along the kerb regions' outlines
+ *  (`splitAtCreases`, planGroup) before it triangulates; `regionsOf` may drop regions from the FIELD (mutant). This scene
+ *  has no terrain, so nothing refines (the bake's policy). */
+function judge({ regionsOf = (r) => r, split = true } = {}) {
   const regions = regionsOf(P0.regions), curbless = P0.curbless
   const field = makeHeightField(regions, h)
-  const ref = typeof refine === 'function' ? refine(field) : refine
-  const bufs = conformAndRefine(groupsIn.map(([k, polys]) => ({ polys, refine: k === 'mat:asphalt' ? null : ref, yLift: 0 })))
+  const bufs = conformAndRefine(groupsIn.map(([, polys]) => ({ polys: split ? splitAtCreases(polys, cells, P0.inBlock) : polys, refine: null, yLift: 0 })))
   const tj = findTJunctions(bufs.map((b, i) => ({ id: groupsIn[i][0], ...b })))
   const lifted = bufs.map((b, i) => ({ key: groupsIn[i][0].slice(groupsIn[i][0].indexOf(':') + 1), ...liftBuffer(b, field, P0.inBlock) }))
-  const riser = riserFromEdges(lifted, new Set(['curb', 'curbCut']))
+  const riser = riserFromEdges(lifted, new Set(['curb', 'curbCut']), P0.flushTol)
   // THE DRAWN SURFACE at a local point: the lifted triangle that holds it (all groups), interpolated
   const tris = []
   lifted.forEach((g, gi) => { for (let t = 0; t < g.indices.length / 3; t++) tris.push([gi, t]) })
@@ -102,21 +103,21 @@ function judge({ regionsOf = (r) => r, refine = null } = {}) {
     ['no step anywhere is left without a face',         Object.keys(riser.bareM).length === 0],
     ['the conformed ground has no crack',               tj.total === 0],
   ]
-  return { rows, note: `riser ${riser.kerbM.toFixed(3)} m · ${riserH.length} quads · curbless ${cLen.toFixed(2)} m · T-junctions ${tj.total} · ramp run ${R.toFixed(2)} m · flare ${F.toFixed(2)} m · ${tris.length} tris${Object.keys(riser.bareM).length ? ' · BARE ' + JSON.stringify(riser.bareM) : ''}` }
+  return { rows, note: `riser ${riser.kerbM.toFixed(3)} m · ${riserH.length} quads · curbless ${cLen.toFixed(2)} m · T-junctions ${tj.total} · ramp run ${R.toFixed(2)} m · flare ${F.toFixed(2)} m · ${tris.length} tris${Object.keys(riser.bareM).length ? ' · BARE ' + JSON.stringify(riser.bareM) + ' at (local) ' + JSON.stringify(Object.fromEntries(Object.entries(riser.bareAt).map(([k, v]) => [k, v.map(p => Lc(p).map(x => +x.toFixed(3)))]))) : ''}` }
 }
 const show = (rows) => { for (const [name, ok, w] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${name}${w != null ? ` (worst ${w} m)` : ''}`) }
 
 if (process.argv.includes('--selftest')) {
   const isCut = (g) => (g.kind === 'ramp' && !g.taper) || g.kind === 'flareA' || g.kind === 'flareB'
-  const byField = (field) => ({ mode: 'adaptive', sampler: (x, z) => field.y([x, z]), tol: h / 20, minEdge: 0.01, maxEdge: Infinity })
-  const ctl = judge({ refine: byField })                                                   // a mesh that CAN draw the cut
-  const mut = judge({ refine: byField, regionsOf: (r) => r.filter(g => !isCut(g)) })       // …with the cut gone from the field
-  const drawnRows = (rs) => rs.filter(([n]) => /\(drawn\)/.test(n))
+  const real = judge()
+  const unsplit = judge({ split: false })                                                 // 2c5560ca's bake: no vertex on a crease
+  const mut = judge({ regionsOf: (r) => r.filter(g => !isCut(g)) })                       // split as the bake does, the cut gone from the field
   const tests = [
-    ['on that mesh, the field with the cut dropped is RED', mut.rows.some(([, ok]) => !ok)],
-    ['refined by the kerb field itself, every drawn row is GREEN', drawnRows(ctl.rows).every(([, ok]) => ok)],
+    ["the bake's path is GREEN", real.rows.every(([, ok]) => ok)],
+    ['with the groups not split at the creases (2c5560ca), it is RED', unsplit.rows.some(([, ok]) => !ok)],
+    ["split as the bake does but the cut's ramp and flares dropped from the field, it is RED", mut.rows.some(([, ok]) => !ok)],
   ]
-  console.log('  mutant (cut dropped):'); show(mut.rows); console.log('  control (refined by the field):'); show(ctl.rows)
+  console.log('  unsplit:'); show(unsplit.rows); console.log('  mutant (cut dropped):'); show(mut.rows)
   for (const [m, ok] of tests) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
   process.exit(tests.every(t => t[1]) ? 0 : 1)
 }

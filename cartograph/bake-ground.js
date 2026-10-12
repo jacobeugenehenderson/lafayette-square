@@ -45,7 +45,7 @@ import { LANDSCAPE_OVERLAY_KEYS, horizonRecord } from './groundCover.mjs'   // o
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
-import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges } from './kerbLift.mjs'
+import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, polyTreeToItems } from './kerbLift.mjs'
 import { lineHeights } from './lineHeight.mjs'
 import { buildDeformer } from './groundDeformer.mjs'
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
@@ -633,16 +633,6 @@ function _pathToRing(path) {
   return out
 }
 
-// a Clipper PolyTree → [{ outer, holes }] in metres (islands inside holes become items of their own)
-function polyTreeToItems(tree) {
-  const items = []
-  const walk = (node) => { for (const ch of node.Childs()) {
-    const outer = _pathToRing(ch.m_polygon)
-    if (outer.length >= 3) items.push({ outer, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
-    for (const h of ch.Childs()) walk(h) } }
-  walk(tree)
-  return items
-}
 
 /**
  * The shore median (bake-shore-median.mjs `shore-median.json`, v2) as sand polygons for the `shore` layer: its two
@@ -1222,9 +1212,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): the curbless stretches of every block
   // edge, read off the POST-PAINT curb (an alley painted over the curb makes its mouth curbless), each carry a taper.
   const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])
-  const { inBlock: kerbInside, curblessM, regions: kerbRegs } = kerbH
+  const { inBlock: kerbInside, curblessM, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
     ? kerbPlan({ blockRings, curbRings: [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))], ramps: curbCutRamps, kerb })
     : { inBlock: null, curblessM: 0, regions: [] }
+  // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
+  const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
+  const kerbCellPaths = kerbH ? kerbCells(kerbRegs, blockRings) : []
   // ⭐⭐ THE DEFORMER (`groundDeformer.mjs`, BRIEF-the-ground-knows-its-height §5): the ground's TERRAIN height near the
   // streets is decided HERE, before the mesh — read off the line (`tile.runs[].h`), swept across the DRAWN bands as one
   // profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
@@ -1283,6 +1276,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // time so the lawn ribbon underneath a clipped face fill stays visible.
     let items = flattened.get(kind + ':' + key) ?? (kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key))
     if (!items || items.length === 0) return null
+    // ⭐ THE KERB'S CREASES ARE LINES OF THE PARTITION (`kerbLift.mjs#splitAtCreases`): every group is split along every
+    // cut's ramp + flares and every curbless taper before it is triangulated, so the lift finds vertices on each crease
+    // and the drawn kerb is its field — nothing cut into the mesh after, nothing refined to a floor. No region, no change.
+    if (kerbCellPaths.length) items = splitAtCreases(items, kerbCellPaths, kerbInside)
 
     // ⛔ The pairwise "cut overlays out of faces" that lived here is GONE — the
     // paint-stack flatten above supersedes it and does the whole stack, not one
@@ -1403,7 +1400,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // thousands of T-junctions per town, each a crack once the DEM lifts the mesh.
   // ⛔ Fails loudly: the result is re-checked and any T-junction throws.
   const planeBuffers = new Map()
-  let groundShape = null, kerbRiser = null, kerbField = null
+  let groundShape = null, kerbRiser = null
   {
     const planeKeys = [], planeSpecs = []
     for (const [kind, key] of PAINT_ORDER) {
@@ -1436,11 +1433,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         + `a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge. Refusing to write a ground that cracks.`)
     }
     if (kerbH) {
-      const field = makeHeightField(kerbRegs, kerbH)
-      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), field, kerbInside) }))
+      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), kerbField, kerbInside) }))
       lifted.forEach((L, i) => planeBuffers.set(planeKeys[i], { positions: L.positions, indices: L.indices }))
-      kerbRiser = riserFromEdges(lifted, new Set(['curb', 'curbCut']))
-      kerbField = field
+      kerbRiser = riserFromEdges(lifted, new Set(['curb', 'curbCut']), kerbFlushTol)
       const bare = Object.entries(kerbRiser.bareM).sort((a, b) => b[1] - a[1])
       console.log(`  [kerb] the block stands ${kerbH} m (${kerb.source}) · ${curbCutRamps.length} cut(s) ramp it to 0 at ${kerb.rampSlopeText ?? '—'}, flares ${kerb.flareSlopeText ?? '—'} · ${curblessM.toFixed(0)} m of curbless edge tapers flush over ${kerb.taperRun ?? '—'} m · riser ${kerbRiser.kerbM.toFixed(0)} m · ${lifted.reduce((n, L) => n + L.split, 0)} vertices split at the kerb`)
       // ⛔ After the tapers, a lifted edge meeting the road with neither a kerb nor a taper is a DEFECT of this construction
