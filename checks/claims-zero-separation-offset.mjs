@@ -24,6 +24,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import clipperLib from 'clipper-lib'
 import { eachRibbonsTown, ribbonsPath } from './_scenes.mjs'
+// ⛔ A STATIC import, never a computed one: `checks/tier.mjs` cannot read a computed import(), tiers the check `live`,
+// and `npm test` stops running it (92da7175 did exactly that).
+import { CLIP_SCALE } from '../src/lib/lattice.js'
+const LATTICE = 'src/lib/lattice.js'
 
 const { ClipperOffset, Clipper, JoinType, EndType, ClipType, PolyType, PolyFillType } = clipperLib
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -34,26 +38,27 @@ const scene = eachRibbonsTown()
 // ---- read the scales out of the SOURCE, never restate them -------------------
 // A stage either declares its own `const SCALE = N` or imports the partition's lattice
 // (`import { CLIP_SCALE as SCALE } from './lattice.js'`, one home since e45ab42f). The import is
-// FOLLOWED — the module is loaded and its value read — so a moved grid moves this probe with it.
-async function scaleOf(rel, text) {
+// FOLLOWED: its specifier must resolve to src/lib/lattice.js, whose CLIP_SCALE this probe imports, so a
+// moved grid moves the probe with it, and an import from anywhere else throws, naming the module.
+function scaleOf(rel, text) {
   const own = text.match(/^const SCALE = (\d+)/m)
   if (own) return { file: rel, scale: Number(own[1]) }
   const imp = text.match(/import \{[^}]*\bCLIP_SCALE as SCALE\b[^}]*\} from '([^']+)'/)
   if (imp) {
-    const mod = path.resolve(ROOT, path.dirname(rel), imp[1])
-    const v = (await import(mod)).CLIP_SCALE
-    if (!Number.isFinite(v)) throw new Error(`${rel} imports CLIP_SCALE from ${imp[1]}, which exports no number — probe is stale, fix it`)
-    return { file: `${rel} (via ${path.relative(ROOT, mod)})`, scale: v }
+    const mod = path.relative(ROOT, path.resolve(ROOT, path.dirname(rel), imp[1]))
+    if (mod !== LATTICE) throw new Error(`${rel} imports CLIP_SCALE from ${mod}, not ${LATTICE} — probe is stale, fix it`)
+    if (!Number.isFinite(CLIP_SCALE)) throw new Error(`${LATTICE} exports no numeric CLIP_SCALE — probe is stale, fix it`)
+    return { file: `${rel} (via ${mod})`, scale: CLIP_SCALE }
   }
   throw new Error(`SCALE not found in ${rel} (neither \`const SCALE = N\` nor CLIP_SCALE imported as SCALE) — probe is stale, fix it`)
 }
 const STAGES = ['cartograph/derive.js', 'src/lib/tileGround.js', 'src/lib/buildPathRibbons.js']
 const SCALES = []
-for (const rel of STAGES) SCALES.push(await scaleOf(rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')))
+for (const rel of STAGES) SCALES.push(scaleOf(rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')))
 // ⭐ MUTATION, every run: a stage whose scale has no readable source must throw, never default.
 {
   let caught = false
-  try { await scaleOf('src/lib/tileGround.js', fs.readFileSync(path.join(ROOT, 'src/lib/tileGround.js'), 'utf8').replace(/CLIP_SCALE as SCALE/g, 'CLIP_SCALE as GRID')) } catch { caught = true }
+  try { scaleOf('src/lib/tileGround.js', fs.readFileSync(path.join(ROOT, 'src/lib/tileGround.js'), 'utf8').replace(/CLIP_SCALE as SCALE/g, 'CLIP_SCALE as GRID')) } catch { caught = true }
   if (!caught) { console.error('⛔ MUTATION NOT CAUGHT: a stage with no readable SCALE was read anyway'); process.exit(1) }
   console.log('   mutation (a stage with no readable SCALE) caught ✓')
 }
