@@ -37,7 +37,7 @@
 // Read-only. Exits 1 on a key light that points at nothing.
 import fs from 'fs'
 import SunCalc from 'suncalc'
-import { bodyLights, celestialToPosition, LIGHT_RADIUS, SUN_LIGHT_MIN_Y } from '../src/components/celestialLights.js'
+import { bodyLights, celestialToPosition, moonSky, LIGHT_RADIUS, SUN_LIGHT_MIN_Y, SUN_VISUAL_RADIUS, MOON_RADIUS } from '../src/components/celestialLights.js'
 import * as THREE from 'three'
 
 const fail = []
@@ -167,37 +167,68 @@ const cbCode = fs.readFileSync(CB, 'utf8')
   .split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n')
   .replace(/\/\*[\s\S]*?\*\//g, '')
 
-// Every `celestialToPosition(az, alt, RADIUS, _target …)` call site, as written.
-const sites = [...cbCode.matchAll(/celestialToPosition\([^,]+,[^,]+,\s*([A-Z_]+)\s*,\s*(\w+)/g)]
-  .map(m => ({ radius: m[1], target: m[2] }))
-if (sites.length < 3) {
-  fail.push(`⛔ parsed only ${sites.length} celestialToPosition call site(s) in ${CB} — the guard is blind; fix the parse before trusting a PASS.`)
-} else {
-  // The DRAWN bodies: the sun's visual vector and the moon's own position.
-  const drawn = { _sunVP: 'SUN_VISUAL_RADIUS', _moonP: 'MOON_RADIUS' }
-  for (const [target, wantRadius] of Object.entries(drawn)) {
-    const site = sites.find(x => x.target === target)
-    if (!site) {
-      fail.push(`⛔ ${CB}: no construction site found for the drawn body vector \`${target}\` — the guard is blind.`)
-    } else if (site.radius !== wantRadius) {
-      fail.push(`⛔ ${CB}: the drawn body \`${target}\` is built at ${site.radius}, not ${wantRadius}. ` +
-                `At LIGHT_RADIUS a drawn body parallaxes against the scene as the camera moves.`)
+// ⭐ WHERE THE DRAWN BODIES ARE BUILT (re-pointed 2026-10-12): `celestialLights.js#moonSky` builds both — the sun's
+// visual vector and the moon's position — and CelestialBodies draws from what it hands back. So this MEASURES moonSky
+// at every sampled minute (a drawn body's distance is a number, not a token in the source), and READS CelestialBodies
+// only for the wiring: it takes its two drawn vectors from moonSky and builds neither itself. ⛔ Never ✅ while blind:
+// no samples, or the wiring not found, is a failure; and two mutations run every time and must be caught.
+// The `out` argument (the 4th) of every celestialToPosition(…) call in `code`, split at top-level commas.
+function celestialTargets(code) {
+  const outs = []
+  for (let i = code.indexOf('celestialToPosition('); i >= 0; i = code.indexOf('celestialToPosition(', i + 1)) {
+    let depth = 0, arg = '', args = []
+    for (let j = i + 'celestialToPosition'.length; j < code.length; j++) {
+      const c = code[j]
+      if (c === '(') { if (depth++ === 0) continue }
+      else if (c === ')') { if (--depth === 0) { args.push(arg.trim()); break } }
+      else if (c === ',' && depth === 1) { args.push(arg.trim()); arg = ''; continue }
+      arg += c
     }
+    if (args.length >= 4) outs.push(args[3])
   }
-  if (!fail.some(f => f.includes('drawn body'))) {
-    ok.push(`the drawn bodies are built at their visual radii (${Object.entries(drawn).map(([t, r]) => `${t}→${r}`).join(', ')})`)
-  }
+  return outs
 }
+function drawnFaults(skyFn, code) {
+  const out = []
+  let n = 0, worstSun = Infinity, worstMoon = Infinity
+  for (const { geo } of looks) for (const [, day0] of DAYS) for (let m = 0; m < 24 * 60; m += 30) {
+    const t = new Date(day0.getTime() + m * 60000)
+    const r = skyFn(t, { lat: geo.lat, lon: geo.lon })
+    n++
+    // The sun is drawn only above the horizon; below it its vector is floored, and nobody sees it.
+    if (r.sunPos.altitude > 0) worstSun = Math.min(worstSun, r.sunVisual.length())
+    worstMoon = Math.min(worstMoon, r.moonPosition.length())
+  }
+  if (!n) out.push('⛔ moonSky was never sampled — the guard is blind.')
+  for (const [name, d] of [['sun', worstSun], ['moon', worstMoon]]) {
+    if (!Number.isFinite(d)) out.push(`⛔ the drawn ${name} was never above the horizon in ${n} samples — the guard is blind.`)
+    else if (d < 10 * LIGHT_RADIUS) out.push(`⛔ moonSky draws the ${name} as close as ${d.toFixed(0)} m — under 10× LIGHT_RADIUS (${LIGHT_RADIUS}); a drawn body that near parallaxes against the scene as the camera moves.`)
+  }
+  // The wiring: CelestialBodies draws from moonSky's two vectors, and constructs neither itself.
+  const call = code.match(/moonSky\([^)]*\{\s*sunVisual:\s*(\w+)\s*,\s*moonPosition:\s*(\w+)\s*\}\s*\)/)
+  if (!call) out.push(`⛔ ${CB} does not take its drawn sun and moon from moonSky(…, { sunVisual, moonPosition }) — the guard is blind; find where they are built.`)
+  else for (const v of call.slice(1)) {
+    const own = celestialTargets(code).filter(x => x === v)
+    if (own.length) out.push(`⛔ ${CB} builds the drawn body \`${v}\` itself (celestialToPosition) instead of taking moonSky's.`)
+  }
+  return { faults: out, n, worstSun, worstMoon }
+}
+const drawn = drawnFaults(moonSky, cbCode)
+if (drawn.faults.length) fail.push(...drawn.faults)
+else ok.push(`the drawn bodies stand far out: across ${drawn.n} samples the sun is never nearer than ${drawn.worstSun.toFixed(0)} m and the moon ${drawn.worstMoon.toFixed(0)} m (LIGHT_RADIUS ${LIGHT_RADIUS}), and ${CB} draws from moonSky's vectors`)
+// The mutations, every run: moonSky building the moon at LIGHT_RADIUS · CelestialBodies building its own sun vector.
+const nearSky = (t, place) => { const r = moonSky(t, place); r.moonPosition.setLength(LIGHT_RADIUS); return r }
+if (!drawnFaults(nearSky, cbCode).faults.some(f => /draws the moon/.test(f))) fail.push('⛔ BLIND: a moon drawn at LIGHT_RADIUS was not caught.')
+else ok.push('mutation (the moon drawn at LIGHT_RADIUS) is caught')
+const cv = (cbCode.match(/moonSky\([^)]*\{\s*sunVisual:\s*(\w+)/) || [])[1]
+if (!cv || !drawnFaults(moonSky, cbCode + `\ncelestialToPosition(a, b, LIGHT_RADIUS, ${cv}, 100)`).faults.some(f => /builds the drawn body/.test(f))) fail.push('⛔ BLIND: CelestialBodies building its own sun vector was not caught.')
+else ok.push('mutation (CelestialBodies builds its own sun vector) is caught')
 
-// And the margin that makes "visual radius" mean something.
-const radiusOf = (name) => { const m = cbCode.match(new RegExp(`${name}\\s*=\\s*(\\d+)`)); return m ? Number(m[1]) : null }
-const sunVis = radiusOf('SUN_VISUAL_RADIUS')
-if (sunVis == null) fail.push(`⛔ could not read SUN_VISUAL_RADIUS from ${CB} — the guard is blind.`)
-else if (sunVis / LIGHT_RADIUS < 10) {
-  fail.push(`⛔ SUN_VISUAL_RADIUS (${sunVis}) is only ${(sunVis / LIGHT_RADIUS).toFixed(1)}× LIGHT_RADIUS (${LIGHT_RADIUS}) — ` +
-            `not far enough to eliminate parallax, which is the entire reason the two radii differ.`)
-} else {
-  ok.push(`SUN_VISUAL_RADIUS is ${(sunVis / LIGHT_RADIUS).toFixed(0)}× the light radius — far enough to kill parallax`)
+// And the margin that makes "visual radius" mean something — the constants, imported, not parsed.
+for (const [name, v] of [['SUN_VISUAL_RADIUS', SUN_VISUAL_RADIUS], ['MOON_RADIUS', MOON_RADIUS]]) {
+  if (!Number.isFinite(v)) fail.push(`⛔ celestialLights.js exports no ${name} — the guard is blind.`)
+  else if (v / LIGHT_RADIUS < 10) fail.push(`⛔ ${name} (${v}) is only ${(v / LIGHT_RADIUS).toFixed(1)}× LIGHT_RADIUS (${LIGHT_RADIUS}) — not far enough to eliminate parallax, which is the entire reason the two radii differ.`)
+  else ok.push(`${name} is ${(v / LIGHT_RADIUS).toFixed(0)}× the light radius — far enough to kill parallax`)
 }
 
 // ── ONLY THE SUN AND THE MOON MAY HAVE A SPECULAR LOBE ──────────────────────
