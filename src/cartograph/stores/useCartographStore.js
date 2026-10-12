@@ -106,7 +106,7 @@ export const SHOT_LOOK_CHANNELS = new Set([
   'layerColors', 'luColors', 'lampGlow', 'bloom', 'warmth', 'fill', 'exposure',
   'ao', 'mist', 'halo', 'skyGain', 'stars', 'grade', 'grain', 'dof', 'shadow',
   'constellations', 'milkyWay', 'neon', 'sky', 'ambient', 'hemi', 'dirSun',
-  'dirMoon', 'archLight', 'setPieceLight', 'lantern', 'clouds', 'canopy',
+  'dirMoon', 'archLight', 'setPieceLight', 'lantern', 'clouds', 'canopy', 'edgeRuffle',
 ])
 const FORK_SHOT_KEYS = ['browse', 'street'] // hero + designer → base
 

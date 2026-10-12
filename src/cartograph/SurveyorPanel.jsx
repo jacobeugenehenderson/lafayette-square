@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { loadInstanceData } from '../data/loadInstanceData.js'
-import { slabFetch } from '../lib/slabUrl.js'
+import { useLandscapeManifest } from '../components/MountainBackdrop.jsx'
 
 // Roadway classes only. The dropdown writes st.type on a STREET
 // (ribbons.streets); paths/alleys render from ribbons.paths/ribbons.alleys keyed
@@ -29,7 +29,8 @@ function HeroSubjectPicker() {
   // Offer the landscape (backdrop) hero ONLY when the active look has a baked
   // landscape asset (piece-2 manifest). A backdrop is the §10 third subject kind;
   // selecting it swaps the Hero Controls to its placement/snowline/atmosphere knobs.
-  const [landscape, setLandscape] = useState(null)   // { label } | null
+  const manifest = useLandscapeManifest(activeLookId)
+  const landscape = manifest ? { label: manifest.label || 'Mountain Backdrop' } : null
   // ⛔⛔ THIS LIST USED TO BE A STATIC `import … from '../data/landmarks.json'`,
   // i.e. Lafayette Square's 87 businesses offered as the hero subject of EVERY
   // town — Square One Brewery in the picker in Huron (EXTENT-DESIGN §2.1: that
@@ -48,16 +49,6 @@ function HeroSubjectPicker() {
     if (!activeLookId) return
     Promise.resolve(loadInstanceData(activeLookId, 'landmarks').ready)
       .then(v => { if (ok) setLandmarks(Array.isArray(v?.landmarks) ? v.landmarks : []) })
-      .catch(() => {})
-    return () => { ok = false }
-  }, [activeLookId])
-  useEffect(() => {
-    let ok = true
-    setLandscape(null)
-    if (!activeLookId) return
-    slabFetch(activeLookId, 'landscape/landscape.json', { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : null)
-      .then(m => { if (ok && m) setLandscape({ label: m.label || 'Mountain Backdrop' }) })
       .catch(() => {})
     return () => { ok = false }
   }, [activeLookId])

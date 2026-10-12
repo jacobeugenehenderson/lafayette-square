@@ -19,6 +19,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 import GatewayArch from '../components/GatewayArch'
+import { useLandscapeManifest } from '../components/MountainBackdrop.jsx'
 
 import { heroPoseAtTime } from '../preview/heroAnim'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
@@ -169,6 +170,13 @@ function HorizonControls() {
   // landscape backdrop's placement/snowline/atmosphere when the hero is the
   // landscape, else the Arch's prop sliders. (§10 third subject kind.)
   const isLandscape = heroSubject?.kind === 'landscape'
+  // The Snowline's reach is the backdrop's own elevation (its manifest's `elevM`), never a fixed span (Class D).
+  // ⛔ No fallback: an unknown range collapses the slider to 0 and says so (townRange.js's rule).
+  const lookId = useCartographStore(s => s.activeLookId)
+  const bakeLastMs = useCartographStore(s => s.bakeLastMs)
+  const backdrop = useLandscapeManifest(isLandscape ? lookId : null, bakeLastMs)
+  const elev = backdrop?.elevM
+  const elevKnown = Number.isFinite(elev?.min) && Number.isFinite(elev?.max) && elev.max > elev.min
   return (
     <Collapsible label="Horizon">
       <div className="space-y-1">
@@ -187,8 +195,11 @@ function HorizonControls() {
           <SliderRow label="Y Offset" value={ls.yOffset} min={-500} max={500} step={5}
             onChange={(v) => setLandscape('yOffset', v)} />
           <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
-          <SliderRow label="Snowline (m)" value={ls.snowline} min={0} max={3000} step={10}
+          <SliderRow label="Snowline (m)" value={ls.snowline} min={elevKnown ? elev.min : 0} max={elevKnown ? elev.max : 0} step={10}
             onChange={(v) => setLandscape('snowline', v)} />
+          {!elevKnown && <div className="text-caption px-1" style={{ color: 'var(--error)' }}>
+            {backdrop === undefined ? 'Reading the backdrop…' : 'The backdrop carries no elevation range (elevM): Snowline is collapsed. Re-bake the landscape.'}
+          </div>}
           <SliderRow label="Snow Softness" value={ls.snowSoftness} min={0} max={800} step={10}
             onChange={(v) => setLandscape('snowSoftness', v)} />
           <ColorRow label="Snow" value={ls.snowColor} onChange={(v) => setLandscape('snowColor', v)} />

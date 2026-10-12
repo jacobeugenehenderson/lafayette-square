@@ -49,6 +49,26 @@ const PLACEMENT_KEYS = ['bearingX', 'bearingZ', 'distance', 'scale', 'rotation',
 // bakeLastMs is the re-read key, which the resolver carries on disk only.
 const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
 
+/**
+ * The look's landscape manifest (asset, geo-anchor `placement`, `bounds`, `elevM`) — the ONE read, shared by this
+ * renderer, Stage's Horizon card (the Snowline slider's range is the backdrop's own `elevM`) and the Survey's hero list.
+ * `undefined` while reading · `null` when the look has no landscape · the manifest otherwise.
+ */
+export function useLandscapeManifest(lookId, reread) {
+  const [manifest, setManifest] = useState(undefined)
+  useEffect(() => {
+    let cancelled = false
+    setManifest(undefined)
+    if (!lookId) { setManifest(null); return }
+    slabFetch(lookId, 'landscape/landscape.json', _fetchOpts, reread ?? null)
+      .then(r => (r.ok ? r.json() : null))
+      .then(m => { if (!cancelled) setManifest(m) })
+      .catch(() => { if (!cancelled) setManifest(null) })
+    return () => { cancelled = true }
+  }, [lookId, reread])
+  return manifest
+}
+
 export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride }) {
   const resolvedLookId = lookOf(lookId, 'MountainBackdrop')
   const meshRef = useRef()
@@ -59,17 +79,9 @@ export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride
   // exact precedence GatewayArch uses for arch/horizon.
   const channel = (landscapeOverride ?? scene?.landscape ?? LANDSCAPE_DEFAULT_CHANNEL).values
 
-  // 1. Manifest fetch — asset + geo-anchor placement. Absent → the look has no
+  // 1. The manifest — asset + geo-anchor placement. Absent → the look has no
   //    landscape → we render nothing.
-  const [manifest, setManifest] = useState(null)
-  useEffect(() => {
-    let cancelled = false
-    slabFetch(resolvedLookId, 'landscape/landscape.json', _fetchOpts, bakeLastMs ?? null)
-      .then(r => (r.ok ? r.json() : null))
-      .then(m => { if (!cancelled) setManifest(m) })
-      .catch(() => { if (!cancelled) setManifest(null) })
-    return () => { cancelled = true }
-  }, [resolvedLookId, bakeLastMs])
+  const manifest = useLandscapeManifest(resolvedLookId, bakeLastMs)
 
   // 2. The patched stock PBR material (built once). Native MeshStandardMaterial
   //    → auto TOD lighting; onBeforeCompile injects the snowline band + haze.
