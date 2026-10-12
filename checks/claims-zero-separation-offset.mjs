@@ -17,15 +17,19 @@
  *     what buildPathRibbons.js:114 already ships. If the two agree, the degenerate
  *     ring is a working primitive and no epsilon is needed.
  *
- * Usage: node checks/claims-zero-separation-offset.mjs
+ * Usage: node checks/claims-zero-separation-offset.mjs [scene]   (every town with ribbons when none is named)
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import clipperLib from 'clipper-lib'
+import { eachRibbonsTown, ribbonsPath } from './_scenes.mjs'
 
 const { ClipperOffset, Clipper, JoinType, EndType, ClipType, PolyType, PolyFillType } = clipperLib
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+// ⭐ D measures EVERY town's own ribbons, one per run (`eachRibbonsTown`), never one town's; a declared town with no
+// ribbons is printed NOT CHECKED by name. A–C are synthetic and town-independent, so each run repeats them.
+const scene = eachRibbonsTown()
 
 // ---- read the scales out of the SOURCE, never restate them -------------------
 // A stage either declares its own `const SCALE = N` or imports the partition's lattice
@@ -169,9 +173,9 @@ for (const S of [100, 1000]) {
 }
 console.log('')
 
-// ============================================================ D. REAL LS SPURS
-console.log('D. REAL DATA — LS dead-end spur chains from src/data/ribbons.json.')
-const rib = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/ribbons.json'), 'utf8'))
+// ============================================================ D. REAL SPURS, this town
+console.log(`D. REAL DATA — ${scene}'s dead-end spur chains from ${ribbonsPath(scene)}.`)
+const rib = JSON.parse(fs.readFileSync(path.join(ROOT, ribbonsPath(scene)), 'utf8'))
 // degree-1 endpoints from junctionMap
 const deg = new Map()
 const key = p => `${Math.round(p[0]*1e3)},${Math.round(p[1]*1e3)}`
