@@ -73,15 +73,32 @@ function perpDist(p, a, b) {
 }
 
 // --- Step 1: group named highways by name ---------------------------------
+// ⛔ Grouped by the SLUG, the identity the id is minted from — never the raw name. Grouped by raw
+// name, "Head of the Meadow Road" and "Head Of The Meadow Road" (Provincetown) were two groups that
+// each minted the bare id `head-of-the-meadow-road`, and derive's id-keyed maps gave one chain the
+// other's points. One slug is one group: its weld decides by geometry whether the spellings join into
+// one chain or stay two (`-0`/`-1`). The group's label is the spelling that carries the most length;
+// every merged spelling is printed.
 
 function groupByName(highways) {
-  const groups = new Map()
+  const bySlug = new Map()   // slug → { spellings: Map<name, length>, fragments }
   const unnamed = []
   for (const f of highways) {
     const name = f.tags?.name
     if (!name) { unnamed.push(f); continue }
-    if (!groups.has(name)) groups.set(name, [])
-    groups.get(name).push(f)
+    const slug = slugify(name)
+    if (!bySlug.has(slug)) bySlug.set(slug, { spellings: new Map(), fragments: [] })
+    const g = bySlug.get(slug)
+    g.spellings.set(name, (g.spellings.get(name) || 0) + polylineLengthXZ(f.coords))
+    g.fragments.push(f)
+  }
+  const groups = new Map()
+  for (const [slug, g] of bySlug) {
+    // Longest wins; a tie keeps the first seen (Map order is input order).
+    let label = null, best = -1
+    for (const [name, len] of g.spellings) if (len > best) { label = name; best = len }
+    if (g.spellings.size > 1) console.log(`  ⚠️ one id, ${g.spellings.size} spellings → "${slug}" labelled "${label}": ${[...g.spellings].map(([n, l]) => `"${n}" ${l.toFixed(0)} m`).join(' · ')}`)
+    groups.set(label, g.fragments)
   }
   return { groups, unnamed }
 }
@@ -2695,6 +2712,16 @@ function main() {
   // `--out=<path>` writes elsewhere and leaves the scene untouched — how
   // `checks/claims-authored-skelids-keep-their-ways.mjs` runs the current code
   // against the skeleton the operator authored against.
+  // ⛔ AN ID IS ONE CHAIN. Every consumer keys by it (derive's maps, the operator's overlay and
+  // blockCustoms), so a duplicate silently hands one chain's geometry or authoring to the other.
+  // ▶ node checks/claims-a-chain-id-is-one-chain.mjs
+  const idOwner = new Map()
+  for (const s of [...streets, ...paths]) {
+    const prev = idOwner.get(s.id)
+    if (prev) throw new Error(`[skeleton] ⛔ duplicate chain id "${s.id}": "${prev.name}" (${prev.points?.length ?? 0} pts) and "${s.name}" (${s.points?.length ?? 0} pts). Refusing to write skeleton.json.`)
+    idOwner.set(s.id, s)
+  }
+
   const outArg = process.argv.find(a => a.startsWith('--out='))
   const outPath = outArg ? outArg.slice('--out='.length) : join(CLEAN_DIR, 'skeleton.json')
   // `junctions` is additive frame metadata (typed nodes). Downstream consumers

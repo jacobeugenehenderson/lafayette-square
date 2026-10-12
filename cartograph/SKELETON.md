@@ -81,7 +81,7 @@ Top level: `{ streets[], paths[], junctions[], nameTransitions[] }`.
 ### `streets[]` — the canonical chains (the centerline graph)
 | field | meaning |
 |---|---|
-| `id` | slug, unique. A name group with >1 surviving chain suffixes each by **index**: `<slug>-0`, `<slug>-1`, …`-N` — per *surviving chain* (divided carriageways **and** any unwelded same-name fragments; **not** capped at 2). A single-chain name stays bare `<slug>`. (So `lafayette-6`, `park-avenue-3` are real ids.) |
+| `id` | slug, unique — `skeleton.js` refuses to write a duplicate and `derive.js` to read one (▶ `node checks/claims-a-chain-id-is-one-chain.mjs`). A name group with >1 surviving chain suffixes each by **index**: `<slug>-0`, `<slug>-1`, …`-N` — per *surviving chain* (divided carriageways **and** any unwelded same-name fragments; **not** capped at 2). A single-chain name stays bare `<slug>`. (So `lafayette-6`, `park-avenue-3` are real ids.) |
 | `name` | street name (the welder groups OSM fragments by it). |
 | `highway` | OSM class (`residential` / `secondary` / `primary` / `service` / `motorway` / `…_link`). |
 | `oneway` | bool, from the tag (`onewayOf`): `oneway=yes`, or untagged `junction=roundabout\|circular` (OSM implies it). Oneway chains keep OSM direction; bidi chains are canonical-oriented (dominant axis positive). |
@@ -118,7 +118,7 @@ Unnamed ways whose **class** is not a street (`PATH_CLASSES` — footways, servi
 
 `main()` runs these top-to-bottom. **All cleanup is *along* chains; there is no *across-intersection* pass yet (see §5).**
 
-1. **`groupByName(highways)`** — bucket raw OSM highway features by name (+ an unnamed bucket).
+1. **`groupByName(highways)`** — bucket raw OSM highway features by the name's **slug** — the id's own identity, so spellings that differ only in case or punctuation are one group, labelled by the spelling with the most length (+ an unnamed bucket).
 2. **`analyzePhases(name, fragments)`** *(Path B, phases 1+2)* — classify each named fragment as `divided-A` / `divided-B` / `single-oneway` / `single-bidi`. Produces `signatureByOsmId`, `pairKeyByOsmId`, and `gapByPairKey` (the antiparallel-pair gap **= median width**). This is the divided-road detector. Pure analysis — welding is untouched here.
 3. **`weldChains(fragments, signature, pairKey)`** + `splitAtFolds` — fuse fragments **laterally** within a name group, gated on `(signature, pairKey)` equality so a bidi splice can't fuse opposing carriageways. Owns the lateral distinction (keeps A and B apart).
 4. **`weldLongitudinal(chains)`** *(D1, `5348fbc`)* — fuse each carriageway's own colinear **oneway** continuation that `weldChains` left fragmented (tail-to-head, heading-continuous, degree-2 node). Truman 8→2. Excludes degree-3+ nodes (a Y/junction is not a weld point).

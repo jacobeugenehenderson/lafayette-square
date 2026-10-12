@@ -2908,6 +2908,18 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   }
   const skeleton = JSON.parse(readFileSync(skelPath, 'utf-8'))
   const skelStreets = skeleton.streets || []
+  // ⛔ AN ID IS ONE CHAIN. Every map below is keyed by it (`simplifiedPoints`, `faceSimplified`,
+  // `simplified`, `byskelId`, the overlay), and a Map keeps the LAST — Provincetown's two
+  // `head-of-the-meadow-road` chains came out of this pour sharing one chain's points. Never first-wins.
+  // ▶ node checks/claims-a-chain-id-is-one-chain.mjs
+  {
+    const idOwner = new Map()
+    for (const s of [...skelStreets, ...(skeleton.paths || [])]) {
+      const prev = idOwner.get(s.id)
+      if (prev) throw new Error(`[derive] ⛔ skeleton.json has duplicate chain id "${s.id}": "${prev.name}" (${prev.points?.length ?? 0} pts) and "${s.name}" (${s.points?.length ?? 0} pts). Re-run skeleton.js, which now refuses to write one.`)
+      idOwner.set(s.id, s)
+    }
+  }
 
   // [name-aware corner doctrine — SKELETON §5a / the curve-primitive brief's
   // name-awareness note] Canonical THROUGH-ROAD id: union chains linked by
