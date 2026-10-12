@@ -29,4 +29,6 @@ untracked, which is the defect the generic rule exists to close.
 
 Its inputs were never tracked in git, so history does not hold them. On 2026-10-12 Jacob had them deleted from disk
 (they made 43 checks refuse the census). A local archive, outside git, was kept:
-`.claude/retired/lafayette-square-staging-2026-10-12.tgz` (this machine only).
+`.claude/retired/lafayette-square-staging-2026-10-12.tgz` (this machine only). Its baked copy (`public/baked/`, untracked) went the same
+way, into `.claude/retired/lafayette-square-staging-public-2026-10-12.tgz`; its Look (`public/looks/…/design.json`) was
+tracked, so git history holds it.
