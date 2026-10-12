@@ -25,8 +25,8 @@ So retirement is two files, and the same two files for every town:
 that is neither fails loudly — that case is a freshly poured town going silently
 untracked, which is the defect the generic rule exists to close.
 
-## Nothing was deleted
+## The data is gone from the tree (2026-10-12, Jacob)
 
-Retiring removed the tracked files at HEAD only (`git rm --cached`). Git keeps
-every version, so this town is recoverable from history in full, at any time.
-⛔ Do not `filter-repo`, and do not touch history.
+Its inputs were never tracked in git, so history does not hold them. On 2026-10-12 Jacob had them deleted from disk
+(they made 43 checks refuse the census). A local archive, outside git, was kept:
+`.claude/retired/lafayette-square-staging-2026-10-12.tgz` (this machine only).
