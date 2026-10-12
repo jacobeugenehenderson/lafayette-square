@@ -150,6 +150,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-bake-reads-design-through-one-reader.mjs` | "DOES EVERY BAKE READ ITS DESIGN THROUGH THE ONE READER — AND DOES THAT READER REFUSE?" |
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-capture-run-finishes-what-it-started.mjs` | started.mjs — CAN A GROVE CAPTURE RUN BE RESTARTED MID-LIST, OR UPLOAD AFTER IT WAS TORN DOWN? |
+| `checks/claims-a-chain-id-is-one-chain.mjs` | chain.mjs — DOES EVERY CHAIN ID NAME EXACTLY ONE CHAIN? |
 | `checks/claims-a-cli-scene-has-one-resolver.mjs` | resolver.mjs — DOES ANY SCRIPT ASK "WHICH TOWN?" TWICE? |
 | `checks/claims-a-closed-shore-still-yields-ink.mjs` | ink.mjs — DOES A SHORE THAT CLOSES STILL GET AN EDGE? |
 | `checks/claims-a-closed-stripe-keeps-its-hole.mjs` | hole |
@@ -357,7 +358,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-research-is-keyed-to-the-place-it-describes.mjs` | every research record's |
 | `checks/claims-revert-field-coverage.mjs` | coverage.mjs — CAN THE OPERATOR GET BACK? |
 | `checks/claims-ribbons-are-not-older-than-the-skeleton.mjs` | `skeleton.json` is the frame; `ribbons.json` is what Survey draws. Between them sit |
-| `checks/claims-rim-census.mjs` | THE RIM CENSUS — what `pipeline.js`'s boundary clip costs, per scene. READ-ONLY. |
 | `checks/claims-ring-partition.mjs` | "DOES THE FROZEN RING ALREADY CARRY A PARTITION WITH AN OWNER ON EVERY ARC?" |
 | `checks/claims-scene-at-default.mjs` | "IS THIS SCENE AT THE STUDS?" — enumerate every surviving authoring gesture, |
 | `checks/claims-scene-flag-is-the-equals-form.mjs` | form |

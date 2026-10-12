@@ -172,7 +172,8 @@ async function main() {
   // zone). With nothing principled to clip to it reached for the fade band — A RENDER
   // KNOB deciding what exists. Jacob: "the edge gets faded but AFTER it's drawn."
   // Measured live on all three kit scenes, `fadeOuter` dominating `radius`: it alone
-  // decided the fate of 43 / 80 / 28 chains. ▶ `node checks/claims-rim-census.mjs`
+  // decided the fate of 43 / 80 / 28 chains (the rim census, archived:
+  // `cartograph/_archive/claims-rim-census-RETIRED-2026-10-12.mjs`). ▶ The clip stays gone: `node checks/claims-boundary-record-split.mjs` §D
   //
   // ⛔ WHAT THIS DOES NOT DO: it does not bound the DRAWING — nothing here ever did.
   // The disc still hides and the fade still fades. Per Jacob the whole bb is built

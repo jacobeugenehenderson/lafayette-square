@@ -55,6 +55,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-chain-id-is-one-chain.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-city-building-keeps-its-permanent-id.mjs",
       "tier": "live",
       "reasonClass": "outbound",
@@ -2056,13 +2063,6 @@
       "tier": "safe",
       "why": [
         "computed import of cartograph/scene.js — read, safe"
-      ]
-    },
-    {
-      "file": "checks/claims-rim-census.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
       ]
     },
     {

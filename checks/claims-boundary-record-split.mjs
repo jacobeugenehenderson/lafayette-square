@@ -89,23 +89,34 @@ else {
   ok(out.boundary.length === nb.boundary.length && maxDev <= 0.005,
     `the derived ring is geometrically unchanged (${nb.boundary.length} pts, max deviation ${maxDev} m — the 3dp→2dp rounding only)`)
 
-  // ── D. derived: keepR cannot move ──────────────────────────────────────────
-  // ⚠️⚠️ THIS SECTION IS DEAD AND IS DELIBERATELY LEFT FAILING. Two separate causes,
-  // neither of them the fade arc's to settle:
-  //   1. It asserts `pipeline.js` still binds `const keepR =`. That binding died with
-  //      the clip excision (ec7dd3f4, 2026-09-05), so the assertion has been failing
-  //      since then — it was already red at HEAD before the fade work began.
-  //   2. Its second arm read `rescoped.fade.streetFade.outer`, a field deleted
-  //      2026-09-20. That read would now CRASH the whole check, taking sections E–G
-  //      down with it, so it is disarmed here — not fixed.
-  // ⛔ Excising D is a separate job and was explicitly ruled NOT to be folded into
-  // the fade commit (BRIEF-fade-ssot §8). It is surfaced, not silently removed: a
-  // dead guard that quietly disappears is how a real one goes with it.
+}
+
+// ── D. THE CLIP STAYS GONE — pipeline.js binds no keepR and keeps no single run ─
+// The boundary clip trimmed every chain to `keepR` and kept only its longest inside run (`clipRun`'s
+// `pieces.reduce`). Jacob had it EXCISED as a contract breach (ec7dd3f4, 2026-09-05: the disc hides, the bb holds;
+// the clip was the one step that DELETED). Until 2026-10-12 this section asserted the OPPOSITE — that `keepR` still
+// existed — and sat failing; its census, `claims-rim-census.mjs`, was archived the same day
+// (`cartograph/_archive/claims-rim-census-RETIRED-2026-10-12.mjs`). Comments are stripped: the excision's own
+// history names keepR in prose, and prose is not a binding.
+console.log('\n── D. the boundary clip stays excised ───────────────────────────')
+/** What of the clip `pipeline.js` source (comments stripped) still carries. */
+function clipBack(src) {
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+  const out = []
+  if (/\b(?:const|let|var)\s+keepR\b/.test(code)) out.push('binds `keepR` (the clip radius)')
+  if (/\bclipRun\b/.test(code)) out.push('names `clipRun` (the clip)')
+  if (/pieces\.reduce\(/.test(code)) out.push('keeps a single run (`pieces.reduce(`)')
+  return out
+}
+{
   const pipe = readFileSync(join(ROOT, 'cartograph', 'pipeline.js'), 'utf8')
-  const keepLine = pipe.split('\n').find(l => /const\s+keepR\s*=/.test(l))
-  ok(!!keepLine,
-    'pipeline.js still binds `const keepR =` — ⚠️ PRE-EXISTING FAILURE since ec7dd3f4 ' +
-    '(clip excision). Re-point or excise section D; it is not the fade arc\'s to fix.')
+  const back = clipBack(pipe)
+  ok(!back.length, back.length ? `pipeline.js ${back.join(' · ')} — the boundary clip is back` : 'pipeline.js binds no keepR and keeps no single run')
+  // ⭐ MUTATIONS, every run: each must be caught.
+  for (const [what, src] of [
+    ['`const keepR` put back', pipe + '\nconst keepR = radius + 30\n'],
+    ['the longest-run keep put back', pipe + '\nfunction clipRun(pieces) { return pieces.reduce((a, b) => (b.length > a.length ? b : a)) }\n'],
+  ]) ok(clipBack(src).length > 0, `mutation (${what}) caught`)
 }
 
 // ── E. the controls — every generated scene is byte-identical through a rescope ─

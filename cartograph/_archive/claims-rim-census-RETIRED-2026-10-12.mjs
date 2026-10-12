@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 /**
+ * ⛔ RETIRED 2026-10-12 (Cairn; Boz's ruling). Its subject, pipeline.js's boundary clip (keepR · clipRun's
+ *    longest-run keep), was excised by Jacob in ec7dd3f4 (2026-09-05). Its source guards then refused, correctly,
+ *    on every run. The clip's absence is now guarded by checks/claims-boundary-record-split.mjs §D. Kept as the
+ *    record of what the clip cost; it no longer runs against anything.
+ *
  * THE RIM CENSUS — what `pipeline.js`'s boundary clip costs, per scene. READ-ONLY.
  *
  *   node checks/claims-rim-census.mjs [scene ...]
