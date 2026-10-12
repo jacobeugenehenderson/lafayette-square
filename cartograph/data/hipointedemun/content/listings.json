@@ -242,7 +242,7 @@
    "source": "osm",
    "osm_type": "university",
    "source_key": "osm-197251693",
-   "prominence_rank": 1070
+   "prominence_rank": 1069
   },
   {
    "id": "hpdm-lst-0157",
@@ -594,7 +594,7 @@
    "source": "osm",
    "osm_type": "fuel",
    "source_key": "osm-637688853",
-   "prominence_rank": 189
+   "prominence_rank": 188
   },
   {
    "id": "hpdm-lst-0145",
@@ -978,7 +978,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-44077048",
-   "prominence_rank": 1192
+   "prominence_rank": 1191
   },
   {
    "id": "hpdm-lst-0001",
@@ -1203,7 +1203,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-112889064",
-   "prominence_rank": 307
+   "prominence_rank": 308
   },
   {
    "id": "hpdm-lst-0013",
@@ -2153,7 +2153,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-185357809",
-   "prominence_rank": 377
+   "prominence_rank": 378
   },
   {
    "id": "hpdm-lst-0074",
@@ -2503,7 +2503,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-381112555",
-   "prominence_rank": 1192
+   "prominence_rank": 1191
   },
   {
    "id": "hpdm-lst-0090",
@@ -2632,7 +2632,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-505143103",
-   "prominence_rank": 1037
+   "prominence_rank": 1035
   },
   {
    "id": "hpdm-lst-0104",
@@ -2657,7 +2657,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-505571723",
-   "prominence_rank": 812
+   "prominence_rank": 813
   },
   {
    "id": "hpdm-lst-0106",
@@ -2982,7 +2982,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-615422640",
-   "prominence_rank": 889
+   "prominence_rank": 888
   },
   {
    "id": "hpdm-lst-0122",
@@ -3561,7 +3561,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-846607752",
-   "prominence_rank": 325
+   "prominence_rank": 326
   },
   {
    "id": "hpdm-lst-0158",
@@ -3711,7 +3711,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-916169745",
-   "prominence_rank": 434
+   "prominence_rank": 436
   },
   {
    "id": "hpdm-lst-0167",
@@ -4774,7 +4774,7 @@
    "price_range": "$$",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 308
+   "prominence_rank": 309
   },
   {
    "id": "hpdm-lst-0144",
@@ -4874,7 +4874,7 @@
    "price_range": null,
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1037
+   "prominence_rank": 1035
   },
   {
    "id": "hpdm-lst-0180",
@@ -4905,7 +4905,7 @@
    "price_range": "$$",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 694
+   "prominence_rank": 696
   },
   {
    "id": "hpdm-lst-0183",
@@ -4937,7 +4937,7 @@
    "price_range": null,
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 989
+   "prominence_rank": 985
   },
   {
    "id": "hpdm-lst-0186",
@@ -5154,7 +5154,7 @@
    "price_range": "$$",
    "order_url": "https://order.kaldiscoffee.com/order/kaldis-coffee-demun",
    "source_key": null,
-   "prominence_rank": 389
+   "prominence_rank": 390
   },
   {
    "id": "hpdm-lst-0214",
@@ -5684,7 +5684,7 @@
    "photo_credit": "Hi-Pointe Drive-In (hipointedrivein.com)",
    "price_range": "$$",
    "source_key": null,
-   "prominence_rank": 979
+   "prominence_rank": 975
   },
   {
    "id": "hpdm-lst-0222",
@@ -5712,7 +5712,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1033
+   "prominence_rank": 1031
   },
   {
    "id": "hpdm-lst-0224",
@@ -5741,7 +5741,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1033
+   "prominence_rank": 1031
   },
   {
    "id": "hpdm-lst-0225",
