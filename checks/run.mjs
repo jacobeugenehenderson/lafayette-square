@@ -27,7 +27,7 @@
 import { spawn } from 'node:child_process'
 import { cpus } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { classifyAll, claimOf, blockedReason, ROOT } from './tier.mjs'
+import { classifyAll, claimOf, blockedReason, bucketOf, ROOT } from './tier.mjs'
 
 /**
  * ⭐ ACCEPTANCE IS ENFORCED, NOT ASSERTED. Every check in a default run is spawned with the network
@@ -124,11 +124,12 @@ const failed   = results.filter(r => r.code !== 0)
 //    "not checked" — the exact substitution this suite exists to refuse. So it is code AND
 //    evidence, the same shape as `blocked`: the check must SAY it did not measure. One that exits
 //    2 without saying so stays RED, which is the safe direction.
-const SAID_NOT_MEASURED = /NOT MEASURED|NOT CHECKED|not measured|nothing measured|nothing to check|could not run|Nothing was measured|Refusing to print/
-const notChecked = failed.filter(r => !r.timedOut && r.code === 2 && SAID_NOT_MEASURED.test(r.out))
-const timedOutR = failed.filter(r => r.timedOut)
-const blocked   = failed.filter(r => !r.timedOut && !notChecked.includes(r) && blockedReason(r.file) && /NO DEFAULT|VOID probe|Refusing to produce|usage:/.test(r.out))
-const red       = failed.filter(r => !r.timedOut && !notChecked.includes(r) && !blocked.includes(r))
+//    The decision is ONE function, self-tested on every run: tier.mjs#bucketOf (a refusal is judged before "not checked").
+for (const r of failed) r.bucket = bucketOf(r, !!blockedReason(r.file))
+const notChecked = failed.filter(r => r.bucket === 'notChecked')
+const timedOutR = failed.filter(r => r.bucket === 'timedOut')
+const blocked   = failed.filter(r => r.bucket === 'blocked')
+const red       = failed.filter(r => r.bucket === 'red')
 for (const r of red) {
   console.log(`\n⛔ ${r.file}  → exit ${r.code}`)
   console.log(`   claim: ${claimOf(r.file) || '(no header claim)'}`)

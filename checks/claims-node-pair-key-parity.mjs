@@ -525,7 +525,9 @@ function measure(scene, source) {
 const isMain = process.argv[1] && process.argv[1].endsWith('claims-node-pair-key-parity.mjs')
 const argv = process.argv.slice(2)
 export const SOURCE = (argv.find(a => a.startsWith('--source=')) || '').split('=')[1] || null
-const scenes = ribbonScenes()
+// ⛔ Refuse BEFORE anything is measured or censused: a missing argument is wiring, and the town census printing first
+// (its "NOT CHECKED (no ribbons)" notes) made run.mjs file this refusal as "data absent". Imported (by
+// claims-side-baseline-audit), this file runs nothing.
 if (isMain && !SOURCE) {
   console.error(`⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.\n` +
     `   usage: node checks/claims-node-pair-key-parity.mjs --source=pour|bundle [scene ...]\n` +
@@ -534,8 +536,8 @@ if (isMain && !SOURCE) {
     `   Reading the bundle and calling the result a design finding is the error this guard stops.`)
   process.exit(2)
 }
-const results = isMain ? scenes.map(sc => measure(sc, SOURCE)) : []
-console.log(`\n${'='.repeat(78)}\nSUMMARY (reproduce, never quote)\n${'='.repeat(78)}`)
+const results = isMain ? ribbonScenes().map(sc => measure(sc, SOURCE)) : []
+if (isMain) console.log(`\n${'='.repeat(78)}\nSUMMARY (reproduce, never quote)\n${'='.repeat(78)}`)
 for (const r of results) {
   console.log(`[${SOURCE}] ${r.scene}: ① ${r.derived}/${r.keyable} pairs, ${r.failTotality} fail · ② ${r.collisions} collisions · ③ see above · ④ ${r.conventionClean ? 'convention clean' : 'NO CLEAN CONVENTION'}, ${r.sideBreaks} breaks · ⑤ min NN ${r.minNN.toFixed(2)} m · ⑥ ${r.capSlots} cap slots · junctionMap ${r.jmNodes} vs ${r.consulted} consulted: ${r.jmMissing} absent = H1 ${r.H1} / H2 ${r.H2} / H3 ${r.H3} (H3 terminal ${r.H3terminal})`)
 }

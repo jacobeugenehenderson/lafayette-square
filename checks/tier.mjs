@@ -335,8 +335,46 @@ export function blockedReason(file) {
   return null
 }
 
+/**
+ * WHICH BUCKET A FINISHED CHECK GOES IN — the one decision, used by `run.mjs` and self-tested here.
+ * `out` is the check's whole output; `sourceBlocked` is `!!blockedReason(file)` (the source and the failure must both say so).
+ *   green · timedOut (killed: measured nothing) · blocked (wiring debt) · notChecked (exit 2 AND said it did not
+ *   measure) · red (the claim is false — the board).
+ */
+export const SAID_NOT_MEASURED = /NOT MEASURED|NOT CHECKED|not measured|nothing measured|nothing to check|could not run|Nothing was measured|Refusing to print/
+const REFUSAL = /NO DEFAULT|VOID probe|Refusing to produce|usage:/
+export function bucketOf({ code, timedOut, out }, sourceBlocked) {
+  if (code === 0 && !timedOut) return 'green'
+  if (timedOut) return 'timedOut'
+  // ⛔ The refusal is judged BEFORE "not checked": an incidental census note printed ahead of a refusal must never
+  //    launder wiring debt into "the data is absent" (the 2026-10-12 misfile, case 1 below).
+  if (sourceBlocked && REFUSAL.test(out)) return 'blocked'
+  if (code === 2 && SAID_NOT_MEASURED.test(out)) return 'notChecked'
+  return 'red'
+}
+
+/** The buckets, on the outputs that have been misfiled. Throws on a wrong bucket; run first in every classifyAll(). */
+export function bucketSelfTest() {
+  const cases = [
+    // ⛔ The misfile of 2026-10-12: the town census's incidental note printed BEFORE the check refused its missing
+    //    argument, so "data absent" won and a wiring refusal hid in NOT CHECKED.
+    [{ code: 2, out: '   ⚠️ NOT CHECKED (no ribbons): kit-default\n⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.' }, true, 'blocked'],
+    [{ code: 2, out: '⛔ NOT MEASURED — this pour carries no land evidence' }, false, 'notChecked'],
+    [{ code: 2, out: '⛔ 3 failures' }, false, 'red'],                       // exit 2 that never SAID it did not measure
+    [{ code: 1, out: '⛔ FAIL — NO DEFAULT in the prose of a finding' }, false, 'red'],   // a refusal word, but the source declares nothing
+    [{ code: 1, out: '⛔ VOID probe — see the header. Refusing to produce numbers.' }, true, 'blocked'],
+    [{ code: 0, out: '' }, false, 'green'],
+    [{ code: 124, timedOut: true, out: 'NOT CHECKED' }, true, 'timedOut'],
+  ]
+  for (const [r, sb, want] of cases) {
+    const got = bucketOf(r, sb)
+    if (got !== want) throw new Error(`[tier] bucketSelfTest: ${JSON.stringify(r.out.slice(0, 60))} (exit ${r.code}${sb ? ', source declares a refusal' : ''}) → ${got}, wants ${want}`)
+  }
+}
+
 export function classifyAll() {
   execSelfTest()
+  bucketSelfTest()
   const files = []
   for (const d of DIRS) {
     if (!existsSync(join(ROOT, d))) continue
