@@ -127,7 +127,7 @@ function normalizePolicy(refine) {
     minEdge = refine.minEdge || 0; sampler = refine.sampler || null
   } else { mode = 'uniform'; maxEdge = refine }
   if (mode === 'adaptive' && (!sampler || !(tol > 0))) mode = 'uniform'
-  const hasCap = maxEdge && maxEdge > 0 && Number.isFinite(maxEdge)
+  const hasCap = !globalThis.__noMaxEdge && maxEdge && maxEdge > 0 && Number.isFinite(maxEdge)   // __noMaxEdge: the budget test's V1/V2
   if (mode === 'uniform' && !hasCap) mode = 'none'
   // ⭐ `band`: the TIDE BAND (bake-ground) — where the waterline can fall at any tide, the ground must BE the terrain,
   // since the flat water meets the ground as drawn: { levels(x, z) → [lo, hi] (lifted like the sampler), tol, minEdge }.
@@ -259,7 +259,19 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     return i
   }
   const edgeSq = (a, b) => { const dx = PX[a] - PX[b], dz = PZ[a] - PZ[b]; return dx * dx + dz * dz }
+  // __devStep (the budget test's V2): sample every edge at that step (the terrain's grid, or the deformer's B), plus the
+  // centroid, so a long triangle cannot hide a feature between the 4 classic samples
+  function terrainDevDense(s, a, b, c, step) {
+    const P = [[PX[a], PZ[a]], [PX[b], PZ[b]], [PX[c], PZ[c]]], Y = P.map(([x, z]) => s(x, z))
+    let d = 0
+    for (let k = 0; k < 3; k++) { const [px, pz] = P[k], [qx, qz] = P[(k + 1) % 3], yp = Y[k], yq = Y[(k + 1) % 3]
+      const n = Math.max(2, Math.ceil(Math.hypot(qx - px, qz - pz) / step))
+      for (let j = 1; j < n; j++) { const f = j / n, e = Math.abs(s(px + f * (qx - px), pz + f * (qz - pz)) - (yp + f * (yq - yp))); if (e > d) d = e } }
+    const e = Math.abs(s((P[0][0] + P[1][0] + P[2][0]) / 3, (P[0][1] + P[1][1] + P[2][1]) / 3) - (Y[0] + Y[1] + Y[2]) / 3); if (e > d) d = e
+    return d
+  }
   function terrainDev(s, a, b, c) {
+    if (globalThis.__devStep) return terrainDevDense(s, a, b, c, globalThis.__devStep)
     const ax = PX[a], az = PZ[a], bx = PX[b], bz = PZ[b], cx = PX[c], cz = PZ[c]
     const ya = s(ax, az), yb = s(bx, bz), yc = s(cx, cz)
     let d = 0, e

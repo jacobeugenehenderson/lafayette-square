@@ -78,9 +78,11 @@ const specs = []
 for await (const line of createInterface({ input: createReadStream(dir + '/specs.ndjson'), crlfDelay: Infinity })) {
   if (!line) continue
   const s = JSON.parse(line), r = s.refine
-  const refine = r && typeof r === 'object'
+  let refine = r && typeof r === 'object'
     ? { ...r, sampler: r.sampler ? sampler : null, band: r.band && levels ? { ...r.band, levels } : null }
     : r
+  // HARDSCAPE_ADAPTIVE=1 (the budget test's V2): a uniform-capped group refines by error instead, at the LOTS' own policy
+  if (process.env.HARDSCAPE_ADAPTIVE && refine?.mode === 'uniform' && which === 'deform') refine = { mode: 'adaptive', tol: meta.refineTol, minEdge: meta.refineMinEdge, maxEdge: refine.maxEdge, sampler, band: null }
   if (isPed(s.key) && refine?.mode === 'adaptive') {
     if (LOTS) { refine.tol = meta.refineTol; refine.minEdge = meta.refineMinEdge }
     else {
@@ -93,6 +95,13 @@ for await (const line of createInterface({ input: createReadStream(dir + '/specs
 }
 console.log(`[input] ${specs.length} groups · ${specs.reduce((n, s) => n + s.polys.length, 0)} polygons · ${mem()}`)
 const st = {}
+// NO_MAXEDGE=1: no maxEdge cap on any group (needs groundConformity.reasons.js) · DEV_STEP=auto: terrainDev samples every
+// edge at min(the terrain's grid step, the deformer's B) — read from the data, never a constant
+if (process.env.NO_MAXEDGE) globalThis.__noMaxEdge = true
+if (process.env.DEV_STEP) { const A0 = JSON.parse(readFileSync(dir + '/deform.json', 'utf8')).limits
+  globalThis.__devStep = process.env.DEV_STEP === 'auto' ? Math.min(T.stepM, A0?.blend ?? Infinity) : Number(process.env.DEV_STEP)
+  if (!(globalThis.__devStep > 0)) throw new Error(`DEV_STEP: no step (terrain stepM ${T.stepM}, B ${A0?.blend})`) }
+console.log(`[variant] maxEdge cap ${globalThis.__noMaxEdge ? 'OFF' : 'on'} · terrainDev ${globalThis.__devStep ? `every ${globalThis.__devStep.toFixed(3)} m along each edge` : '4 classic samples'} · hardscape ${process.env.HARDSCAPE_ADAPTIVE ? 'adaptive at the lots\' policy' : 'as dumped'}`)
 // REASONS=1 (with the instrumented conformity copy): the reach hook — is a point inside the deformer's reach (heightAt not null)
 if (process.env.REASONS && D) globalThis.__reach = (x, z) => D.heightAt(x, z) != null
 t = Date.now()
@@ -165,5 +174,28 @@ if (process.env.ACCURACY) {
   console.log(`[accuracy] ${where.length} point(s) > 0.5 m by group: ${Object.entries(byG).map(([k, v]) => k + ' ' + v).join(' · ')} · the point owned by a band: ${where.filter(w => w.owned).length} · all 3 vertices owned: ${where.filter(w => w.vOwned === 'truetruetrue').length}`)
   for (const w of where.slice(0, 8)) console.log(`[accuracy]   ${(w.e).toFixed(3)} m at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}) ${w.g} · point ${w.owned ? 'owned' : 'past reach'} · vertices owned ${w.vOwned} · longest edge ${w.edge.toFixed(2)} m · tri ${JSON.stringify(w.tri)}`)
   console.log(`[accuracy] ped drawn vs heightAt, area-weighted over ${S.n} finite points (${(S.area / 1e6).toFixed(3)} km²): p50 ${(q(0.5) * 1000).toFixed(2)} mm · p99 ${(q(0.99) * 1000).toFixed(2)} mm · max ${(S.max * 1000).toFixed(2)} mm · ${((Date.now() - t) / 1000).toFixed(1)} s`)
+  // LOTS_ACCURACY=1: every NON-ped group too, each triangle read on a barycentric grid at the terrain's own step (so a
+  // big triangle cannot hide its error from the measure), area-weighted, per group, against the same rule (heightAt ?? raw)
+  if (process.env.LOTS_ACCURACY) {
+    const step = Math.min(T.stepM, A.limits?.blend ?? Infinity), rows = [], allE = [], allW = []
+    out.forEach((b, gi) => {
+      if (isPed(specs[gi].key)) return
+      const P = b.positions, I = b.indices, nv = P.length / 3, Hv = new Float64Array(nv), E = [], Wt = []
+      for (let v = 0; v < nv; v++) Hv[v] = H(P[v * 3], P[v * 3 + 2])
+      for (let k = 0; k < I.length; k += 3) {
+        const a = I[k], c1 = I[k + 1], c2 = I[k + 2], ax = P[a * 3], az = P[a * 3 + 2], e1x = P[c1 * 3] - ax, e1z = P[c1 * 3 + 2] - az, e2x = P[c2 * 3] - ax, e2z = P[c2 * 3 + 2] - az
+        const ar = Math.abs(e1x * e2z - e2x * e1z) / 2; if (!(ar > 0)) continue
+        const L = Math.max(Math.hypot(e1x, e1z), Math.hypot(e2x, e2z), Math.hypot(e2x - e1x, e2z - e1z)), m = Math.max(3, Math.ceil(L / step))
+        const pts = []; for (let u = 0; u <= m; u++) for (let v = 0; u + v <= m; v++) if (!((u === 0 && v === 0) || (u === m && v === 0) || (u === 0 && v === m))) pts.push([u / m, v / m])
+        for (const [bb, cc] of pts) { const px = ax + bb * e1x + cc * e2x, pz = az + bb * e1z + cc * e2z
+          E.push(Math.abs(Hv[a] + bb * (Hv[c1] - Hv[a]) + cc * (Hv[c2] - Hv[a]) - H(px, pz))); Wt.push(ar / pts.length) }
+      }
+      const G = summarize(E, Wt); rows.push({ key: specs[gi].key, tris: I.length / 3, G })
+      for (let k = 0; k < E.length; k++) { allE.push(E[k]); allW.push(Wt[k]) }
+    })
+    const L = summarize(allE, allW), mm = (v) => (v * 1000).toFixed(1)
+    console.log(`[lots] every non-ped group, grid step ${step.toFixed(3)} m: ${L.n} points over ${(L.area / 1e6).toFixed(3)} km²${L.nonFinite ? ` · ⛔ ${L.nonFinite} NON-FINITE excluded` : ''} · p50 ${mm(L.q(0.5))} · p99 ${mm(L.q(0.99))} · max ${mm(L.max)} mm · area over 0.1 m ${(100 * L.over(0.1)).toFixed(3)}% · over 0.5 m ${(100 * L.over(0.5)).toFixed(3)}%`)
+    for (const r of rows.sort((p, q) => q.tris - p.tris)) console.log(`[lots]   ${r.key.padEnd(26)} ${String(r.tris).padStart(8)} tris · ${(r.G.area / 1e6).toFixed(3)} km² · p50 ${mm(r.G.q(0.5))} · p99 ${mm(r.G.q(0.99))} · max ${mm(r.G.max)} mm · >0.1 m ${(100 * r.G.over(0.1)).toFixed(3)}% · >0.5 m ${(100 * r.G.over(0.5)).toFixed(3)}%${r.G.nonFinite ? ` · ⛔ ${r.G.nonFinite} non-finite` : ''}`)
+  }
 }
 console.log(`[end] ${mem()} (peak RSS: run under /usr/bin/time -l)`)
