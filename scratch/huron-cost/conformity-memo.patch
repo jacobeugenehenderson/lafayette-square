@@ -1,0 +1,62 @@
+# conformity-memo.patch — DROPPED 2026-10-12 (Boz's ruling (b)); kept so it is not rebuilt blind.
+# A per-sampler memo in conformAndRefine (terrainDev, inBand): by vertex id and by edge midpoint, skipping only
+# EXACT repeats, so the output is byte-identical (gate: sha256 of every group's positions, indices, side).
+# Measured on Huron's dump (scratch/huron-cost, shoreless dump, 91c7fb7f + preswap tileGround), HEAD → memo:
+#   deform sampler: calls 836,657,031 → 127,296,715 · in the sampler 3,418 → 3,293 s · conformity 3,709 → 3,674 s (−1%)
+#                   hash 18626f7b…c940 both · peak RSS 5.43 → 5.26 GB
+#   raw sampler:    calls 2,016,564,277 → 310,500,513 · conformity 802 → 696 s (−13%) · hash c6130358…d064 both
+#                   peak RSS 4.77 → 5.56 GB
+# Why dropped: a −1% gain where it matters is a layer, not a fix. The sampler time sits in the ~127M calls that are
+# NOT exact repeats (~26 µs averaged over them). How many of those miss the deformer's own 1 mm memo and reach
+# resolveUncached, and what each costs: NOT measured (its Map never hit V8's 2^24 cap, so most were memo hits).
+# The lever is in the deformer (Swale's exact-key work).
+# Gate mutation: keying the edge memo by min(a, b) changed the hash and the tri count (1,770 → 27,994 on a 4-group subset).
+# Apply: git apply scratch/huron-cost/conformity-memo.patch
+diff --git a/cartograph/groundConformity.js b/cartograph/groundConformity.js
+index 153a8b16..401ded06 100644
+--- a/cartograph/groundConformity.js
++++ b/cartograph/groundConformity.js
+@@ -254,22 +254,34 @@ export function conformAndRefine(groupSpecs, stats = {}) {
+     return i
+   }
+   const edgeSq = (a, b) => { const dx = PX[a] - PX[b], dz = PZ[a] - PZ[b]; return dx * dx + dz * dz }
++  // ⭐ THE SAMPLER IS ASKED ONCE PER POINT. Every pass re-tests every unsplit triangle, and a vertex or an edge's
++  // midpoint is shared by the triangles around it, so the same point was sampled again and again (Huron 2026-10-12:
++  // 837M calls for 3.6M triangles, 3,445 s of conformity's 3,759). Memoized per sampler by vertex ID and by EDGE —
++  // ⛔ never by a lattice key: a skipped call is always an exact repeat of one already made (an edge's midpoint is
++  // symmetric in its ends), so every height and the order of first calls are unchanged, and so is the mesh.
++  // The centroid is not memoized: its sum depends on vertex order. ▶ node scratch/huron-cost/conform-alone.mjs (the hash)
++  const memos = new Map()
++  const memoOf = (s) => { let m = memos.get(s); if (!m) memos.set(s, m = { v: [], e: new ShardedMap() }); return m }
++  const atVertex = (s, m, a) => { let y = m.v[a]; if (y === undefined) m.v[a] = y = s(PX[a], PZ[a]); return y }
++  const atMid = (s, m, a, b) => { const k = edgeKey(a, b); let y = m.e.get(k)
++    if (y === undefined) { y = s((PX[a] + PX[b]) / 2, (PZ[a] + PZ[b]) / 2); m.e.set(k, y) } return y }
+   function terrainDev(s, a, b, c) {
+-    const ax = PX[a], az = PZ[a], bx = PX[b], bz = PZ[b], cx = PX[c], cz = PZ[c]
+-    const ya = s(ax, az), yb = s(bx, bz), yc = s(cx, cz)
++    const m = memoOf(s)
++    const ya = atVertex(s, m, a), yb = atVertex(s, m, b), yc = atVertex(s, m, c)
+     let d = 0, e
+-    e = Math.abs(s((ax + bx) / 2, (az + bz) / 2) - (ya + yb) / 2); if (e > d) d = e
+-    e = Math.abs(s((bx + cx) / 2, (bz + cz) / 2) - (yb + yc) / 2); if (e > d) d = e
+-    e = Math.abs(s((cx + ax) / 2, (cz + az) / 2) - (yc + ya) / 2); if (e > d) d = e
+-    e = Math.abs(s((ax + bx + cx) / 3, (az + bz + cz) / 3) - (ya + yb + yc) / 3); if (e > d) d = e
++    e = Math.abs(atMid(s, m, a, b) - (ya + yb) / 2); if (e > d) d = e
++    e = Math.abs(atMid(s, m, b, c) - (yb + yc) / 2); if (e > d) d = e
++    e = Math.abs(atMid(s, m, c, a) - (yc + ya) / 2); if (e > d) d = e
++    e = Math.abs(s((PX[a] + PX[b] + PX[c]) / 3, (PZ[a] + PZ[b] + PZ[c]) / 3) - (ya + yb + yc) / 3); if (e > d) d = e
+     return d
+   }
+   // Does the terrain under this triangle reach into the band [lo − tol, hi + tol] anywhere it is sampled?
+   function inBand(pol, a, b, c) {
+-    const s = pol.sampler, ax = PX[a], az = PZ[a], bx = PX[b], bz = PZ[b], cx = PX[c], cz = PZ[c]
+-    const pts = [[ax, az], [bx, bz], [cx, cz], [(ax + bx) / 2, (az + bz) / 2], [(bx + cx) / 2, (bz + cz) / 2], [(cx + ax) / 2, (cz + az) / 2], [(ax + bx + cx) / 3, (az + bz + cz) / 3]]
++    const s = pol.sampler, m = memoOf(s), ax = PX[a], az = PZ[a], bx = PX[b], bz = PZ[b], cx = PX[c], cz = PZ[c]
++    const ys = [atVertex(s, m, a), atVertex(s, m, b), atVertex(s, m, c), atMid(s, m, a, b), atMid(s, m, b, c), atMid(s, m, c, a),
++                s((ax + bx + cx) / 3, (az + bz + cz) / 3)]
+     let lo = Infinity, hi = -Infinity
+-    for (const [x, z] of pts) { const y = s(x, z); if (y < lo) lo = y; if (y > hi) hi = y }
++    for (const y of ys) { if (y < lo) lo = y; if (y > hi) hi = y }
+     const [bl, bh] = pol.band.levels((ax + bx + cx) / 3, (az + bz + cz) / 3)
+     return lo <= bh + pol.band.tol && hi >= bl - pol.band.tol
+   }
