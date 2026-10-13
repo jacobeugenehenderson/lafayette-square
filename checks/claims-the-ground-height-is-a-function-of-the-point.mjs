@@ -10,8 +10,9 @@
 // ⭐ AND EVICTION CANNOT CHANGE AN ANSWER (Boz's ruling 2026-10-13): the memo is bounded by V8's Map cap, in two
 //   generations. A deformer whose generation holds 2 answers is asked a sequence that turns it and hits the old generation,
 //   and must answer exactly as the default-bound one does.
-// ⭐ MUTATION TEST: `--selftest` runs the same rows against two mutants written to the OS temp dir and expects each RED:
-//   the 1 mm lattice key planted back, and an old-generation hit that returns another point's answer.
+// ⭐ MUTATION TEST: `--selftest` runs the same rows against one copy written to the OS temp dir carrying two mutations,
+//   each caught by its own rows: the 1 mm lattice key planted back, and an old-generation hit that returns another
+//   point's answer.
 //   node checks/claims-the-ground-height-is-a-function-of-the-point.mjs [--selftest]
 import { ROOT } from './_scenes.mjs'
 import { join } from 'node:path'
@@ -43,22 +44,26 @@ const rows = async (url) => {
 }
 const self = process.argv.includes('--selftest')
 const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
-const mutant = (key, to, what) => { const src = readFileSync(HOME, 'utf8')
-  if (src.split(key).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer has \`${key}\` — re-aim the ${what} mutation`)
+// ⭐ ONE mutated copy carrying BOTH mutations (checks/tier.mjs reads one temp-dir `mutant`). Their effects are separable
+// by construction: the lattice key moves only the two points 0.3 mm apart (rows 4–5), the old-generation answer only the
+// small memo's sequence, whose points are 2 m apart (row 2), so each verdict below names its own mutation.
+const mutant = () => { const src = readFileSync(HOME, 'utf8'), key = 'const mk = `${x},${z}`', old = 'memoOld.has(mk) ? memoOld.get(mk) :'
+  if (src.split(key).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer keys its memo with \`${key}\` — re-aim the mutation`)
+  if (src.split(old).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer reads its old generation with \`${old}\` — re-aim the mutation`)
   const f = join(mkdtempSync(join(tmpdir(), 'height-of-point-')), 'groundDeformer.mjs')
-  writeFileSync(f, src.replace(key, to)
+  writeFileSync(f, src.replace(key, `const mk = \`\${Math.round(x * ${CLIP_SCALE})},\${Math.round(z * ${CLIP_SCALE})}\``)
+    .replace(old, 'memoOld.has(mk) ? memoOld.values().next().value :')
     .replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
   return pathToFileURL(f).href }
+const R = await rows(self ? mutant() : pathToFileURL(HOME).href)
 if (self) {
-  const lattice = await rows(mutant('const mk = `${x},${z}`', `const mk = \`\${Math.round(x * ${CLIP_SCALE})},\${Math.round(z * ${CLIP_SCALE})}\``, 'lattice'))
-  const evict = await rows(mutant('memoOld.has(mk) ? memoOld.get(mk) :', 'memoOld.has(mk) ? memoOld.values().next().value :', 'eviction'))
+  const lattice = R, evict = R
   const show = (name, R) => { console.log(`  ${name}:`); for (const [m, ok] of R) console.log(`    ${ok ? '✅' : '⛔'} ${m}`) }
-  show('the 1 mm lattice key', lattice); show('an old-generation hit answering for another point', evict)
+  show('the mutant: the 1 mm lattice key + an old-generation hit answering for another point', R)
   const c1 = lattice[3][1] && (!lattice[4][1] || !lattice[5][1]), c2 = evict[1][1] && !evict[2][1]
   console.log(c1 ? '✅ selftest: the 1 mm lattice key answers by sampling order (RED)' : '⛔ selftest: the check does not catch a lattice-keyed memo')
   console.log(c2 ? '✅ selftest: a wrong answer from the old generation is caught (RED)' : '⛔ selftest: the check does not catch a memo whose eviction changes an answer')
   process.exit(c1 && c2 ? 0 : 1) }
-const R = await rows(pathToFileURL(HOME).href)
 for (const [m, ok] of R) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
 const ok = R.every(r => r[1])
 console.log(ok ? '✅ the ground height is a function of the point' : '⛔ the deformer answers by sampling order'); process.exit(ok ? 0 : 1)
