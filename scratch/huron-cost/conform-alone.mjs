@@ -26,6 +26,7 @@ const CONF = modPath ? resolve(modPath) : new URL('./groundConformity.timed.js',
 // whose file changed while it was being imported refuses (Boz, 2026-10-13, after a deformer edit sat in the tree mid-sweep)
 const sha = (f) => createHash('sha256').update(readFileSync(f)).digest('hex')
 // DEFORMER=<path> runs another deformer (e.g. a worktree's, read-only) against the same dump; its sha is logged with the rest
+const MEMO = process.env.MEMO_GEN ? { memoGeneration: Number(process.env.MEMO_GEN) } : {}   // MEMO_GEN=<n>: the deformer's memo generation (a deformer that takes it)
 const DEF = process.env.DEFORMER ? resolve(process.env.DEFORMER) : R + 'cartograph/groundDeformer.mjs'
 const CODE = [DEF, CONF, R + 'cartograph/terrainLoad.js', R + 'cartograph/waterLevel.mjs']
 const before = CODE.map(sha)
@@ -42,10 +43,10 @@ console.log(`[start] ${which} · ${mem()}`)
 const meta = JSON.parse(readFileSync(dir + '/meta.json', 'utf8'))
 const T = loadSceneTerrain(meta.scene)
 let t = Date.now()
-let base
+let base, D = null
 if (which === 'deform') {
   const A = JSON.parse(readFileSync(dir + '/deform.json', 'utf8'))
-  const D = buildDeformer({ ...A, raw: T.getElevationRaw })
+  D = buildDeformer({ ...A, raw: T.getElevationRaw, ...MEMO })
   base = (x, z) => (D.heightAt(x, z) ?? T.getElevationRaw(x, z)) * T.exag
 } else base = T.getElevation
 console.log(`[sampler] ${which} built in ${((Date.now() - t) / 1000).toFixed(1)} s`)
@@ -89,6 +90,7 @@ console.log(`[split] ped ${pedTris} tris (${specs.filter(s => isPed(s.key)).leng
 const h = createHash('sha256')
 for (const b of out) for (const a of [b.positions, b.indices, b.side]) { h.update(String(a?.length ?? -1)); if (a) h.update(Buffer.from(a.buffer, a.byteOffset, a.byteLength)) }
 console.log(`[hash] ${h.digest('hex')}`)
+if (D) console.log(`[memo] generation ${MEMO.memoGeneration ?? 'the deformer\'s default'} · turns during conformity: ${D.stats.memoTurns ?? 'not reported by this deformer'}`)
 if (st.phaseMs) console.log(`[phases] ${Object.entries(st.phaseMs).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`).join(' · ')}`)
 console.log(`[sampler] ${calls} calls · ${(Number(ns) / 1e9).toFixed(1)} s inside the sampler · ${(Number(ns) / 1e3 / Math.max(1, calls)).toFixed(2)} µs/call`)
 t = Date.now()
@@ -98,7 +100,7 @@ console.log(`[detector] ${tj.total} T-junction(s) · ${tj.within} within a group
 if (process.env.ACCURACY) {
   t = Date.now()
   const A = JSON.parse(readFileSync(dir + '/deform.json', 'utf8'))
-  const Dref = buildDeformer({ ...A, raw: T.getElevationRaw })
+  const Dref = buildDeformer({ ...A, raw: T.getElevationRaw, ...MEMO })
   const H = (x, z) => Dref.heightAt(x, z) ?? T.getElevationRaw(x, z)
   const W = (u, v) => [u / 3, v / 3]   // barycentric (b, c) of the third-grid's non-vertex points
   const PTS = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 2], [2, 1], [1, 1]].map(([u, v]) => W(u, v))
