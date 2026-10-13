@@ -934,6 +934,18 @@
 - **A chain is flagged bridge if ANY of its source ways is a bridge** *(Swale, 2026-10-11; read in source, `skeleton.js#gradeFacts`)*. South Big Bend Boulevard (3,116 m) is flagged by one 53 m bridge way (28494259); about 80 HPDM chains are the same. A reader that takes the flag as "this frontage is raised" is wrong along the rest of the chain. Readers not yet audited; nothing fixed. ⇒ grade per segment (the way's own extent), and a check that a flagged frontage lies over a bridge way. → `cartograph/skeleton.js`.
 - ~~**The sun and moon are dimmed by the PREVIOUS weather after a time change**~~ ✅ **CLOSED 2026-10-12 (Vesper).** Measured in Stage (Huron, clock paused): every weather wore the previous one's dimming. `CelestialBodies` now subscribes to cloud cover rounded to 0.05; the unread `storminess` copy is gone. ▶ `node checks/claims-the-sun-dims-with-the-weather-now.mjs --town=<town>`
 - **LS `profile.parkAcres = 30` has no provenance: source it or make it derived** *(Vesper, 2026-10-12)*. A supplied literal in `src/instances/lafayette-square.js`, area-scoped, shown beside slab-derived stats with no source or boundary named. Surfaced when the check stopped being BLOCKED (11c7d2ad). LS is HELD: not touched. ▶ `node checks/claims-stat-scope.mjs --scene=lafayette-square`
+- **Checks held out of `npm test` only by a live dependency: split each module's pure core from its fetcher, done by whoever next touches that module** *(Vesper, 2026-10-13; Boz's ruling)*. Each check below is tiered live ONLY because a module it imports can reach out. Whether each one calls only pure functions is not measured.
+  - `cartograph/fetch-buildings` · `fetch-dem` · `fetch-water-datums` · `fetch-trees` · `socrata-fetch`: a-city-building-keeps-its-permanent-id · a-dem-is-chosen-by-its-data · a-tide-station-is-in-the-water-or-named · a-tree-well-plants-only-standing-trees · socrata-reads-the-whole-envelope
+  - `arborist/generate-salon`: a-salon-save-keeps-provenance · *scratch/* a-rename-cannot-repaint
+  - `arborist/salon-options`: tree-drawn-height-by-window · *scratch/* every-placed-asset-has-a-size-band · the-leaf-face-axis-reaches-the-shader
+  - `arborist/roster-coverage`: *scratch/* mesh-equals-the-bar · the-roster-light-tells-the-truth
+  - `arborist/bake-trees`: every-tree-candidate-is-accounted-for
+  - `scripts/upload-baked-to-r2` (+ `sweep-retired-slab-keys`): a-slab-name-is-its-content · an-impostor-town-fetches-no-atlas. Moving `plan()` touches the ship path: **HELD** for Boz.
+  - `src/cartograph/sourcesCatalogue`: a-towns-sources-are-its-own
+  - `checks/_miniflare`: a-staging-town-names-its-player
+  - *scratch/* `claims-band-reaches-lu` (a check imported as a module): *scratch/* keyhole-carry-to-ia · keyhole-splice-survival
+  - `scripts/lib/headless`: an-early-frame-key-is-held · no-view-reaches-the-sky-at-the-shore. These drive a browser, so they are **likely genuinely live**; no split is expected.
+  ▶ `node checks/tier.mjs` (each check's reason is in its `imports …, which can:` line)
 - *…tiny aesthetic bugs land here as they surface.*
 
 ---
