@@ -8,6 +8,7 @@
 //   PED_TOL_X=<k> multiplies the ped bands' tol (the dumped 7.8 mm) by k; the tide band's own tol is untouched.
 //   INPUT_ONLY=1 turns every group's refinement off: the input side only (polygons, input T-junctions), in seconds.
 //   Prints the detector's count on the output (as the bake runs it) and a sha256 over every group's positions, indices, side.
+//   DECLARE_NOLINE=<lineHeight.mjs>: declare each line-less run's kind with that module's runKind (heights untouched).
 //   DEFORMER=<path>: import that groundDeformer instead of the repo's (sha logged).
 //   ACCURACY=1 (Brace, 2026-10-13): after conformity, the ped bands' vertical error of the DRAWN ground against the deformer's
 //   own heightAt (null → the raw terrain, as bake-ground's terrainPartAt), whatever sampler refined the mesh. The drawn ground
@@ -41,11 +42,21 @@ const swap = () => execSync('sysctl -n vm.swapusage').toString().trim()
 const mem = () => `rss ${Math.round(process.memoryUsage().rss / 1e6)} MB · heap ${Math.round(process.memoryUsage().heapUsed / 1e6)} MB · swap ${swap()} · load ${execSync('sysctl -n vm.loadavg').toString().trim()}`
 console.log(`[start] ${which} · ${mem()}`)
 const meta = JSON.parse(readFileSync(dir + '/meta.json', 'utf8'))
+// DECLARE_NOLINE=<lineHeight.mjs>: a deformer that requires every line-less run to DECLARE its kind (run.noLine) gets it from
+// THAT module's runKind, on the dump's own runs with h null; the dump's heights are untouched (Brace, 2026-10-13)
+let declareNoLine = null
+if (process.env.DECLARE_NOLINE) {
+  const LHP = resolve(process.env.DECLARE_NOLINE); CODE.push(LHP); console.log(`[code] ${LHP.replace(R, '')} sha256 ${sha(LHP)}`)
+  const { runKind } = await import(LHP), { ribbonsPathOf } = await import(R + 'cartograph/scene.js')
+  const bridgeIds = new Set((JSON.parse(readFileSync(ribbonsPathOf(meta.scene), 'utf8')).streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
+  declareNoLine = (tiles) => { const why = {}; for (const t of tiles || []) for (const run of t?.runs || []) if (!Array.isArray(run.h)) { run.noLine = runKind(run, bridgeIds); why[run.noLine] = (why[run.noLine] || 0) + 1 }
+    console.log(`[noLine] declared on the dump's line-less runs: ${JSON.stringify(why)}`) }
+}
 const T = loadSceneTerrain(meta.scene)
 let t = Date.now()
 let base, D = null
 if (which === 'deform') {
-  const A = JSON.parse(readFileSync(dir + '/deform.json', 'utf8'))
+  const A = JSON.parse(readFileSync(dir + '/deform.json', 'utf8')); declareNoLine?.(A.tiles)
   D = buildDeformer({ ...A, raw: T.getElevationRaw, ...MEMO })
   base = (x, z) => (D.heightAt(x, z) ?? T.getElevationRaw(x, z)) * T.exag
 } else base = T.getElevation
@@ -99,7 +110,7 @@ const w = tj.found?.[0]
 console.log(`[detector] ${tj.total} T-junction(s) · ${tj.within} within a group · ${tj.cross} across${w ? ` · first at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}), a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge` : ''} · ${((Date.now() - t) / 1000).toFixed(1)} s`)
 if (process.env.ACCURACY) {
   t = Date.now()
-  const A = JSON.parse(readFileSync(dir + '/deform.json', 'utf8'))
+  const A = JSON.parse(readFileSync(dir + '/deform.json', 'utf8')); declareNoLine?.(A.tiles)
   const Dref = buildDeformer({ ...A, raw: T.getElevationRaw, ...MEMO })
   const H = (x, z) => Dref.heightAt(x, z) ?? T.getElevationRaw(x, z)
   const W = (u, v) => [u / 3, v / 3]   // barycentric (b, c) of the third-grid's non-vertex points
