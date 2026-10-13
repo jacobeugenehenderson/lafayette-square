@@ -1,0 +1,14 @@
+For the first commit message of tern/coast-from-lidar (Boz's rulings, 2026-10-13). Delete this file when the commits are drafted.
+MERGE GATE: the branch merges only with Provincetown's and Huron's re-bakes — an old slab loses its water.flood sheet under
+  the new BakedGround (PTown 208.3 ha, Huron 0.2 ha; HPDM/LS/Altadena carry no water). Not before the water-side half.
+OPEN:
+- 75 coast × coast ε-residue faces on PTown's scratch pour (0.0018 m² in all; base 2 → 73 new). Cause not established.
+- tileGround's drop-site comment ("where ε-wide coast ink crosses ε-wide street ink") is contradicted for PTown, unchecked
+  for Huron. Not edited until Huron's residues are dumped the same way.
+- 10 blocks-stage vertices with no single containing edge, all coast-owned. Cause not established.
+- CANDIDATE, not built: coast owners carry no arc id (ci = −1). A15 — the polygon is named; a shore arc without its own name
+  is the hole the kit closed for streets.
+- Huron REFUSES on the rim guard (water flown 0.09 m above its authored 'mean'): Jacob's ruling.
+- jacksonheights: check B red (water record, no coast.json) — owed when JH resumes.
+- The shore median retires WITH the water-side half.
+REGISTERS: to be named per commit (FEATURES / OPERATIONS / BAKE.md), or "reaches no register".
