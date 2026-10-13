@@ -2,7 +2,7 @@
 # The ground-budget points on another deformer, guarded (Brace, 2026-10-13): sweep-tern.sh <worktree> <tag>:<env,comma-separated> ...
 # Each point logs the worktree's HEAD and the deformer's sha256 at its start; every 30 s it re-reads both, and a point whose
 # worktree moved or whose deformer changed is STOPPED and said (Boz). Gates as sweep.sh: load < 8 and free >= 40% to start,
-# killed below 20% free. Logs: scratch/ground-budget/acc-<tag>.log.
+# killed below 20% free; load and free logged every 60 s (Boz). Logs: scratch/ground-budget/acc-<tag>.log.
 cd /Users/jacobhenderson/Desktop/lafayette-square.nosync
 WT=$1; shift; TD=$WT/cartograph/groundDeformer.mjs
 D=$PWD/scratch/ground-budget; DUMP=$PWD/scratch/huron-cost/dump-shore; CONF=$PWD/cartograph/groundConformity.js
@@ -17,6 +17,7 @@ for R in "$@"; do
   P=$!; n=0
   while kill -0 $P 2>/dev/null; do
     (( $(free_pct) < 20 )) && { echo "  ⛔ free $(free_pct)% < 20%: killing $T"; pkill -P $P; kill $P; }
+    (( n % 4 == 0 )) && echo "  [load] $T $(date +%H:%M:%S) $(sysctl -n vm.loadavg) · free $(free_pct)%"
     (( n++ % 2 == 0 )) && { S=$(state); [[ $S != $S0 ]] && { echo "  ⛔ $T: the worktree moved or the deformer changed ($S0 → $S): STOPPED"; pkill -P $P; kill $P; } }
     sleep 15
   done
