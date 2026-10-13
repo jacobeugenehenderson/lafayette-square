@@ -838,7 +838,27 @@ function toPolys(items) {
   return polys
 }
 
-export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null } = {}) {
+/**
+ * Whether this bake paints the shore median (`shore-median.json`) as sand, and what it owes when it cannot. ONE rule,
+ * read by bakeGround and by `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs`:
+ * - CURRENT (v2, walked on the shoreline this bake writes, `here`) → paint it;
+ * - not current on a town that draws a coast (`coastal()`, inland towns excluded) → THROW naming the town and the file,
+ *   unless `shorePending` (the Bake's first ground pass): then nothing is painted and the slab is stamped pending;
+ * - not current and no coast → nothing owed.
+ * @returns {{ paint: object|null, state: 'pending'|null, why: string|null }}
+ */
+export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePending = false }) {
+  const why = !doc ? 'is absent'
+    : doc.version !== 2 ? `is version ${doc.version}; this bake reads v2 (the traced waterline)`
+    : doc.shoreFingerprint !== here ? `was walked on another shoreline (${doc.shoreFingerprint ?? 'unstamped'}; this bake writes ${here})`
+    : null
+  if (!why) return { paint: doc, state: null, why: null }
+  if (!coastal()) return { paint: null, state: null, why }
+  if (!shorePending) throw new Error(`[bake-ground] ⛔ ${scene}: this town draws a shoreline but ${medPath} ${why}. Refusing to write a ground with no shore. ▶ the Bake runs 'ground' (--shore=pending), 'shore-median', then 'ground-shore'; by hand: bake-ground --shore=pending, bake-shore-median, then bake-ground.`)
+  return { paint: null, state: 'pending', why }
+}
+
+export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1006,33 +1026,24 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     pushMat(item.subtype ? `water:${item.subtype}` : 'water', ringFromOSM(item.ring))
     pushMat('bed', ringFromOSM(item.ring))   // the ground under it (PAINT_ORDER 'bed')
   }
-  // ⭐ THE SHORE MEDIAN, AS SAND (PAINT_ORDER 'shore'). The median is walked on the shoreline THIS bake writes
-  // (shape.json), so it is read only when its stamp matches that shoreline; otherwise nothing is painted and it says
-  // so — the bake's 'shore-median' step then re-walks it and 'ground-shore' re-runs this bake (serve.js).
+  // ⭐ THE SHORE MEDIAN, AS SAND (PAINT_ORDER 'shore'): painted only when CURRENT; a drawn coast without one throws, except
+  // on the Bake's first ground pass (--shore=pending), which stamps the slab pending. The rule: `shoreMedianFor`.
+  let shoreState = null
   {
     const shapeNow = { tiles: shapeArtifact || [] }
     const medPath = join(outDir, 'shore-median.json')
-    if (existsSync(medPath)) {
-      const doc = JSON.parse(readFileSync(medPath, 'utf-8'))
-      const here = shoreFingerprint(shapeNow)
-      // ⛔ A median from an older bake-shore-median (another version) is STALE in the same way: this pass runs before the
-      // 'shore-median' step rewrites it, so it paints nothing and says so rather than throwing (it threw once, 2026-10-05,
-      // and stopped huron's bake at its first ground pass). 'ground-shore' repaints from the fresh one.
-      if (doc.version !== 2) {
-        console.warn(`  ⛔ SHORE: shore-median.json is version ${doc.version}, this bake reads v2 (the traced waterline) — NO shore sand painted. ▶ the 'shore-median' step rewrites it; 'ground-shore' repaints.`)
-      } else if (doc.shoreFingerprint !== here) {
-        console.warn(`  ⛔ SHORE: shore-median.json was walked on another shoreline (${doc.shoreFingerprint ?? 'unstamped'}, this bake writes ${here}) — NO shore sand painted. ▶ the 'shore-median' step re-walks it; 'ground-shore' repaints.`)
-      } else {
-        const s = shoreMedianItems(doc)
-        if (!byMaterial.has('shore')) byMaterial.set('shore', [])
-        byMaterial.get('shore').push(...s.items)
-        console.log(`  ⭐ SHORE: the median painted as sand — ${(s.areaM2 / 1e4).toFixed(2)} ha in ${s.items.length} polygon(s), between the drawn shoreline and the traced lidar waterline`)
-      }
-    } else if (waterRuns(shapeNow).length && !(() => {   // ⭐ an INLAND town (coastVerdict) owes no median — no warning
+    const coastal = () => waterRuns(shapeNow).length > 0 && !(() => {   // ⭐ an INLAND town (coastVerdict) owes no median
       const tp = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json')
-      return existsSync(tp) && coastVerdict(JSON.parse(readFileSync(tp, 'utf-8')), shapeNow).agree === 'inland' })()) {
-      console.warn(`  ⛔ SHORE: this town has a drawn shoreline but no shore-median.json — NO shore sand painted. ▶ the 'shore-median' step, then 'ground-shore'.`)
-    }
+      return existsSync(tp) && coastVerdict(JSON.parse(readFileSync(tp, 'utf-8')), shapeNow).agree === 'inland' })()
+    const S = shoreMedianFor({ scene, medPath, doc: existsSync(medPath) ? JSON.parse(readFileSync(medPath, 'utf-8')) : null,
+      here: shoreFingerprint(shapeNow), coastal, shorePending })
+    shoreState = S.state
+    if (S.paint) {
+      const s = shoreMedianItems(S.paint)
+      if (!byMaterial.has('shore')) byMaterial.set('shore', [])
+      byMaterial.get('shore').push(...s.items)
+      console.log(`  ⭐ SHORE: the median painted as sand — ${(s.areaM2 / 1e4).toFixed(2)} ha in ${s.items.length} polygon(s), between the drawn shoreline and the traced lidar waterline`)
+    } else if (S.state === 'pending') console.log(`  ⏳ SHORE: first ground pass (--shore=pending): shore-median.json ${S.why}; no sand painted, the slab is stamped shore: "pending" until 'shore-median' walks it and 'ground-shore' re-runs this bake`)
   }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
@@ -1736,6 +1747,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // the deformer's ownership disclosure, read by claims-the-walk-is-level-across: a written slab carries 0 (the bake throws
     // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
     ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand } } : {}),
+    // the first of the Bake's two ground passes: no shore yet (above); 'ground-shore' writes a slab without it
+    ...(shoreState ? { shore: shoreState } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
     ...(sameGround ? priorMaps : {}),
   }
@@ -1768,7 +1781,7 @@ async function main() {
   // env-named bake rebuilt LS. See scene.js's header.
   const scene = requireExplicitMap('bake-ground')
   let look = null, proto = true   // ⭐ ① is the producer by default; --legacy opts out
-  let outDir = null
+  let outDir = null, shorePending = false
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
@@ -1787,8 +1800,10 @@ async function main() {
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-max-edge=(.+)$/)))refine.maxEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--out-dir=(.+)$/)))  outDir = m[1]   // a scratch A/B, not the live slab
+    else if (arg === '--shore=pending')           shorePending = true   // the Bake's first ground pass only (serve.js 'ground')
+    else if (arg.startsWith('--shore='))          throw new Error(`[bake-ground] ${arg}: the only value is --shore=pending`)
   }
-  await bakeGround({ look, scene, refine, proto, outDir })
+  await bakeGround({ look, scene, refine, proto, outDir, shorePending })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

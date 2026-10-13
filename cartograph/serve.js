@@ -2917,7 +2917,9 @@ createServer(async (req, res) => {
          join(bakePaths.clean, 'park-polygon.json'), join(REPO_ROOT, 'src', 'data', bakeScene, 'park_water.json'),
          join(here, 'bake-ground.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
-        `node bake-ground.js --look=${id} ${sceneFlag}`,
+        // --shore=pending: this pass writes the shoreline the median is walked on, so it cannot have the median yet;
+        // 'ground-shore' below re-runs it without the flag, and a coast with no current median then refuses
+        `node bake-ground.js --look=${id} ${sceneFlag} --shore=pending`,
         { cwd: here, timeout: 300000 })
       // Shore revetment — reads the shoreline (`__water__` runs) out of the
       // shape.json the ground bake just wrote, so a pour that moves the shore
