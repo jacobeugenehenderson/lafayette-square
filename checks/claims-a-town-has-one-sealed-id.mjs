@@ -13,7 +13,8 @@
  *   3. no id has changed since its file was first committed (followed across a rename — a rename moves the file);
  *   4. every town id the Apps Script names is a sealed one (a typo would be a town with no rows);
  *   5. the Apps Script opens only tabs its schema knows, and its schema names no tab nothing opens;
- *   6. the kit's backend clients send `tenant` from `townTenant()` and never a look.
+ *   6. the kit's backend clients send `tenant` from `townTenant()` and never a look;
+ *   7. every registered town is in the Apps Script's TOWN_ZONES, the set it serves (SECURITY F-29).
  *
  *   node checks/claims-a-town-has-one-sealed-id.mjs
  */
@@ -90,6 +91,16 @@ for (const rel of ['src/lib/api.js', 'src/lib/commerceApi.js']) {
   else if (!/townTenant\(\)/.test(src)) bad(`${rel} does not name the town by townTenant()`)
   else ok(`${rel} names the town by its sealed tenant`)
 }
+
+// 7 — the backend serves every registered town (SECURITY F-29: TOWN_ZONES is the registered set, and a tenant id outside
+// it is refused, so a town registered here and missing there would load with every backend call refused)
+const zonesAt = gas.indexOf('const TOWN_ZONES = {')
+const zonesSrc = zonesAt === -1 ? '' : gas.slice(zonesAt, gas.indexOf('\n}', zonesAt))
+const zoned = new Set([...zonesSrc.matchAll(/^\s*'(tw-[a-z0-9]{8})'\s*:/gm)].map(m => m[1]))
+const unserved = registeredMaps().filter(m => !zoned.has(instanceForMap(m).townId))
+if (!zoned.size) bad('could not read TOWN_ZONES out of apps-script/Code.js')
+else if (unserved.length) bad(`registered but not in the Apps Script's TOWN_ZONES, so the backend refuses them: ${unserved.map(m => `${m} (${instanceForMap(m).townId})`).join(', ')}`)
+else ok(`every registered town (${registeredMaps().length}) is in the Apps Script's TOWN_ZONES`)
 
 console.log(failed ? `\n${failed} FAILED` : '\nall held')
 process.exit(failed ? 1 : 0)
