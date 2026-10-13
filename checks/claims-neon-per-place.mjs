@@ -19,14 +19,24 @@
  * Prints the census at --at (default: Friday 21:00 in the town's time zone).
  *
  *   node checks/claims-neon-per-place.mjs [--town=huron] [--at=2026-10-10T01:00:00Z]
+ *   node checks/claims-neon-per-place.mjs --selftest   # the same check on a half-ring copy of neonPlaces.js: must read RED
  */
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { tmpdir } from 'node:os'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1] ?? d
-const { placeNeon, UNPLACED } = await import(process.env.NEON_PLACES || join(ROOT, 'src/lib/neonPlaces.js'))   // NEON_PLACES: a mutated copy, for the mutation test
+const self = process.argv.includes('--selftest')
+const HOME = join(ROOT, 'src/lib/neonPlaces.js')
+// The mutant: every lit place gets only half its arc, so a lit building's neon is no longer its whole roofline.
+const mutant = () => { const src = readFileSync(HOME, 'utf8'), arc = 'const pts = lit.length === 1 ? ring : slice(ring, s0, s1)'
+  if (src.split(arc).length !== 2) throw new Error(`[neon-per-place] ⛔ selftest: neonPlaces.js no longer cuts its arcs with \`${arc}\` — re-aim the mutation`)
+  const f = join(mkdtempSync(join(tmpdir(), 'neon-half-ring-')), 'neonPlaces.js')
+  writeFileSync(f, src.replace(arc, 'const pts = slice(ring, s0 / 2, s1 / 2)'))
+  return pathToFileURL(f).href }
+const { placeNeon, UNPLACED } = await import(self ? mutant() : pathToFileURL(HOME).href)
 const { isOpenAt } = await import(join(ROOT, 'src/lib/openNow.js'))
 const { CATEGORY_LABELS } = await import(join(ROOT, 'src/tokens/categories.js'))
 
@@ -95,5 +105,6 @@ for (const id of REGRESSION[town] || []) {
 }
 check(Object.keys(UNPLACED).length > 0, 'the dark causes are named (neonPlaces.js#UNPLACED)')
 
+if (self) { console.log(roofline ? '\n✅ selftest: a half-ring neonPlaces.js fails the roofline check (RED)' : '\n⛔ selftest: the check does not catch a half ring'); process.exit(roofline ? 0 : 1) }
 console.log(failed ? `\n❌ ${failed} failed` : '\n✅ all passed')
 process.exit(failed ? 1 : 0)

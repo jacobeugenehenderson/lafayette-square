@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 87. Never in a default run.
+## ⛔ live — 86. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -64,7 +64,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-every-ground-surface-takes-the-lamp.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-tree-candidate-is-accounted-for.mjs` | unreadable | deletes files — only under its own temp dir · imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
 | `checks/claims-frame-timeline-catches-a-stall.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
-| `checks/claims-neon-per-place.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary · computed import of src/lib/openNow.js — read, safe · computed import of src/tokens/categories.js — read, safe |
 | `checks/claims-neon-picks-its-building.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
 | `checks/claims-one-way-into-stage.mjs` | outbound | calls fetch() · computed import() of a path an argument or the environment can supply — arbitrary |
@@ -141,7 +140,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 306. This is `npm test`.
+## safe — 307. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -296,6 +295,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-memory-index-health.mjs` | "WILL THE READ-IN STILL LOAD?" — the standing guard on the coordinator memory index. |
 | `checks/claims-menu-item-ids.mjs` | Does every orderable menu item have a STABLE identity? |
 | `checks/claims-named-way-becomes-street.mjs` | ⭐⭐ DOES A NON-VEHICULAR WAY BOUND A CITY BLOCK? — the check behind `ROADMAP A19`. |
+| `checks/claims-neon-per-place.mjs` | "DOES EVERY OPEN PLACE GET ITS OWN NEON — OR SAY WHY NOT?" — BRIEF-neon-reads-at-every-distance §3.3. |
 | `checks/claims-neon-two-drawings.mjs` | "DOES EVERY NEON FIELD REACH A DRAWING, AND IS THE TUBE NEVER INFLATED?" — BRIEF-neon-reads-at-every-distance §2. |
 | `checks/claims-no-coarse-value-decides.mjs` | The defect this exists for, measured 2026-08-26: SelecTree's `leaf_form` has three |
 | `checks/claims-no-dossier-rests-on-a-wrong-species.mjs` | species.mjs — DOES ANY DOSSIER CITE A SOURCE THAT ANSWERED FOR ANOTHER SPECIES? |

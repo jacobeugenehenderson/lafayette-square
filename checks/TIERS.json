@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 412,
   "counts": {
-    "safe": 306,
+    "safe": 307,
     "local-effect": 19,
-    "live": 87
+    "live": 86
   },
   "checks": [
     {
@@ -1535,10 +1535,11 @@
     },
     {
       "file": "checks/claims-neon-per-place.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "computed import() of a path an argument or the environment can supply — arbitrary",
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of src/lib/neonPlaces.js from its own temp dir — read as src/lib/neonPlaces.js, safe",
+        "computed import of src/lib/neonPlaces.js — read, safe",
         "computed import of src/lib/openNow.js — read, safe",
         "computed import of src/tokens/categories.js — read, safe"
       ]
