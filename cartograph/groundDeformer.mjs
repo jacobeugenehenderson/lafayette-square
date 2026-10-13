@@ -16,7 +16,7 @@
 // ⛔ Outside every tile (the rim's perimeter road, a highway stroke, water) D is null: the caller draws the terrain there
 //   and COUNTS it.
 
-import { CLIP_SCALE, LATTICE_M as LATTICE } from '../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
+import { LATTICE_M as LATTICE } from '../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
 
 const sq = (x) => x * x
 const SIDESTEP = 1e-5   // metres: far below the 1 mm lattice, far above float64 noise
@@ -304,8 +304,11 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
    *  failure class, never the nearer line — else null */
   const unownedIn = (x, z) => resolve(x, z).unowned ?? null
   const own = (c) => `${c.R.t}|${c.R.k}|${c.key ?? nearKey(c)}`
+  // ⛔ THE MEMO KEYS THE EXACT POSITION, so D is a function of (x, z). A 1 mm lattice key let the first point into a cell
+  // answer for every later one, and the bake's heights, owners and unowned verdicts followed the order it sampled in
+  // (measured on Huron 2026-10-12: forward vs reversed, 13,789 heights by up to 0.62 m raw). ▶ checks/claims-the-ground-height-is-a-function-of-the-point.mjs
   function resolve(x, z) {
-    const mk = `${Math.round(x * CLIP_SCALE)},${Math.round(z * CLIP_SCALE)}`
+    const mk = `${x},${z}`
     if (memo.has(mk)) return memo.get(mk)
     const v = resolveUncached(x, z); memo.set(mk, v); return v
   }

@@ -123,4 +123,10 @@ source. Whether `conformAndRefine` survives away from ① is yours to measure.
 - **One pour → its ground:** a ground bake reads the map, terrain and ribbons of ONE pour (`bake-reads.json`).
   2026-10-07 found LS's shipped ground baked from an uncommitted pour; make that impossible to ship unnoticed.
 
+## From ROADMAP, closed 2026-10-13 (Swale): the memo's sampling order
 
+The board line as it stood:
+
+- **The deformer's heights may depend on the order they are asked for** *(Cairn, read 2026-10-12; confirmed in code by Boz)*. `cartograph/groundDeformer.mjs` `resolve` memoizes `resolveUncached(x, z)` in one Map keyed by the 1 mm lattice cell, so the first point to reach a cell sets the height, owner and unowned verdict for every later point in it. Whether any drawn height differs between two sampling orders is not measured. ⇒ the deterministic form evaluates the cell's own point, or keys exact positions only. Swale to measure on Cairn's Huron dump, then propose a fix. → `groundDeformer.mjs#resolve`.
+
+Closed by keying the memo on the exact position (`groundDeformer.mjs#resolve`). Measured on Huron's dump-shore (`scratch/ground-height/memo-order.mjs`, 1,977,072 points): the 1 mm key, forward vs reversed: 13,789 heights differ (max |Δ| 0.6186 m raw), 486 null↔value, 760 owner flips, 40 unowned flips; the exact key: 0 of each. ▶ `checks/claims-the-ground-height-is-a-function-of-the-point.mjs`.
