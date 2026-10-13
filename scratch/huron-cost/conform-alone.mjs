@@ -115,7 +115,7 @@ if (process.env.ACCURACY) {
   const H = (x, z) => Dref.heightAt(x, z) ?? T.getElevationRaw(x, z)
   const W = (u, v) => [u / 3, v / 3]   // barycentric (b, c) of the third-grid's non-vertex points
   const PTS = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 2], [2, 1], [1, 1]].map(([u, v]) => W(u, v))
-  const errs = [], wts = [], where = []
+  const errs = [], wts = [], where = [], bad = []; let nBad = 0
   let area = 0, n = 0
   out.forEach((b, gi) => {
     if (!isPed(specs[gi].key)) return
@@ -129,13 +129,18 @@ if (process.env.ACCURACY) {
       for (const [bb, cc] of PTS) {
         const drawn = Hv[a] + bb * (Hv[c1] - Hv[a]) + cc * (Hv[c2] - Hv[a])
         const px = ax + bb * e1x + cc * e2x, pz = az + bb * e1z + cc * e2z, ref = Dref.heightAt(px, pz)
-        errs.push(Math.abs(drawn - (ref ?? T.getElevationRaw(px, pz)))); wts.push(ar / PTS.length); n++
+        const err = Math.abs(drawn - (ref ?? T.getElevationRaw(px, pz)))
+        // ⛔ a non-finite error is its own class, counted and located: in the sort it would scramble every percentile
+        if (!Number.isFinite(err)) { if (bad.length < 5) bad.push(`(${px.toFixed(2)}, ${pz.toFixed(2)}) ${specs[gi].key} · drawn ${drawn} · heightAt ${ref} · vertex H ${[a, c1, c2].map(v => Hv[v])}`); nBad++; continue }
+        errs.push(err); wts.push(ar / PTS.length); n++
         if (errs[errs.length - 1] > 0.5) where.push({ e: errs[errs.length - 1], x: px, z: pz, g: specs[gi].key, owned: ref != null,
           vOwned: [a, c1, c2].map(v => Dref.heightAt(P[v * 3], P[v * 3 + 2]) != null).join(''), edge: Math.sqrt(Math.max(e1x * e1x + e1z * e1z, e2x * e2x + e2z * e2z)),
           tri: [a, c1, c2].map(v => [+P[v * 3].toFixed(3), +P[v * 3 + 2].toFixed(3)]) })
       }
     }
   })
+  if (nBad) console.log(`[accuracy] ⛔ ${nBad} NON-FINITE error(s), excluded from every number below; first: ${bad.join(' | ')}`)
+  else console.log('[accuracy] every error finite')
   const ord = Uint32Array.from(errs.keys()).sort((i, j) => errs[i] - errs[j])
   const q = (f) => { let acc = 0; for (const i of ord) { acc += wts[i]; if (acc >= f * area) return errs[i] } return errs[ord[ord.length - 1]] }
   const over = (m) => { let a = 0; errs.forEach((e, i) => { if (e > m) a += wts[i] }); return `>${m * 1000} mm ${(100 * a / area).toFixed(3)}%` }
