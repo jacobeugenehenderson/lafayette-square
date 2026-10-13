@@ -368,7 +368,12 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
 
   // ── THE ARCS: the shoreline ① strokes, cut from the rings simplified below half the source's pixel (finer than it) ──
   const r3 = (r) => r.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)])
-  const simple = bodies.map(bd => ({ outer: r3(simplifyRing(bd.outer, R, fine / 2)), holes: bd.holes.map(h => r3(simplifyRing(h, R, fine / 2))) }))
+  const simple = bodies.map(bd => ({ outer: simplifyRing(bd.outer, R, fine / 2), holes: bd.holes.map(h => simplifyRing(h, R, fine / 2)) }))
+  // ⭐ ON THE SOURCE, NOT ON THE TRACE: each kept vertex is bisected along its normal on the real sampler (bilinear on the
+  // raster's own pixels), within one trace step. The trace interpolates linearly between samples laid in TOWN metres,
+  // which is not the raster's grid: measured on Provincetown, |lidar − high| at the kept vertices p90 5.8 mm → 0.0 mm.
+  const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, levels)
+  for (const bd of simple) { bd.outer = r3(bd.outer); bd.holes = bd.holes.map(r3) }
   const arcs = [], islands = []
   for (const bd of simple) for (const ring of [bd.outer, ...bd.holes]) for (const a of arcsOf(ring, R)) {
     if (a.closed) { islands.push({ pts: a.pts.length, m2: Math.round(ringArea(a.pts)), at: a.pts[0].map(Math.round) }); continue }
@@ -383,6 +388,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     arcs, islands,
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
+    settled: { moved: settled.moved, unbracketed: settled.unbracketed, noValue: settled.noValue, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
   })
@@ -396,8 +402,45 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (noValue) console.log(`  ${noValue.toLocaleString()} fine sample(s) along the line had no lidar value — no return traced as water, no coverage as dry`)
   if (hollows.length) console.log(`  ${hollows.length} hollow(s) below high water that the water does not reach (${T.hollowHa} ha) — dry, by the coast rule`)
   if (islands.length) console.warn(`  ⛔ ${islands.length} island(s) — a closed shore ① cannot stroke: ${islands.slice(0, 5).map(s => `${s.m2} m² at (${s.at})`).join(' · ')}`)
+  console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
   return out
+}
+
+/**
+ * Bisect every ring vertex off the square's edge along its normal (from its two neighbours) on the real sampler, within
+ * ± one trace step, to where lidar − high = 0. In place. A vertex with no sign change in that reach keeps its traced place.
+ */
+async function settleOnSource(rings, R, step, opened, toLL, levels) {
+  const T = TILE_M, groups = new Map()
+  for (const ring of rings) for (let k = 0; k < ring.length; k++) {
+    if (onSquare(ring[k], R)) continue
+    const a = ring[(k - 1 + ring.length) % ring.length], b = ring[(k + 1) % ring.length]   // every normal off the TRACED ring
+    let nx = -(b[1] - a[1]), nz = b[0] - a[0]; const n = Math.hypot(nx, nz) || 1
+    const key = `${Math.floor(ring[k][0] / T)},${Math.floor(ring[k][1] / T)}`
+    ;(groups.get(key) || groups.set(key, []).get(key)).push([ring, k, nx / n, nz / n])
+  }
+  const moved = []
+  let unbracketed = 0, noValue = 0
+  for (const [key, items] of groups) {
+    const [i, j] = key.split(',').map(Number), m = 2 * step
+    const win = await readWindow(opened, { cornersLL: [toLL(i * T - m, j * T - m), toLL(i * T + T + m, j * T - m), toLL(i * T - m, j * T + T + m), toLL(i * T + T + m, j * T + T + m)], stepM: null, quiet: true })
+    const f = (x, z) => sampleSources(win, ...toLL(x, z)) - levels.highAt(x, z)
+    const next = items.map(([ring, k, nx, nz]) => {
+      const p = ring[k]
+      let lo = -step, hi = step, flo = f(p[0] + nx * lo, p[1] + nz * lo), fhi = f(p[0] + nx * hi, p[1] + nz * hi)
+      if (!Number.isFinite(flo) || !Number.isFinite(fhi)) { noValue++; return null }
+      if (!(flo * fhi < 0)) { unbracketed++; return null }
+      for (let it = 0; it < 30; it++) { const mid = (lo + hi) / 2, fm = f(p[0] + nx * mid, p[1] + nz * mid); if ((fm < 0) === (flo < 0)) { lo = mid; flo = fm } else hi = mid }
+      const t = (lo + hi) / 2
+      moved.push(Math.abs(t))
+      return [p[0] + nx * t, p[1] + nz * t]
+    })
+    items.forEach(([ring, k], q) => { if (next[q]) ring[k] = next[q] })
+    win.length = 0
+  }
+  moved.sort((x, y) => x - y)
+  return { moved: moved.length, unbracketed, noValue, p50: moved.length ? moved[moved.length >> 1] : 0, max: moved.length ? moved[moved.length - 1] : 0 }
 }
 
 /** The refusal's measurement: the flattened water's level under OSM's water (its 1 cm mode) against high water there. */

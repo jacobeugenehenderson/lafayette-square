@@ -18,6 +18,7 @@
 //   5. derive.js imports coastVerify.mjs                                  → C
 //   7. floodFromEdge enters every no-value cell (ignore `nr`)         → A2: the no-coverage hole floods
 //   8. rimGuard counts only rim cells BELOW high                       → A2: the Huron rim passes
+//   9. bake-coast skips settleOnSource (vertices left where the trace put them) → B: p90 5.8 mm on Provincetown
 //   6. bake-coast cuts arcs from the UNSIMPLIFIED ring and simplifies them alone → A (in the town: B's ring/arc drift)
 //
 //   node checks/claims-the-coast-is-the-lidar-at-high-water.mjs [--scene=<id>] [--no-lidar]
