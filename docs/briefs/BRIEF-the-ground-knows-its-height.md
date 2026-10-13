@@ -29,8 +29,9 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 - **Gusset, Huron: open stations 123 → 0.** On a scratch slab with the coast at high water: 129 open; step p50
   0.19 → 0.02 m; land vs water-side ground p90 0.15 → 0.25 m (worse).
   ▶ `SLAB_DIR=<slab> GUSSET_OUT=<file> node scratch/ground-height/gusset.mjs huron` (never over `gusset-huron.json`).
-  Residual cause not established. Unmeasured candidates: the 6,419 ② vertices that still take a neighbour's H; the
-  water side's S-curve.
+  Residual cause not established. Unmeasured candidate: the water side's S-curve.
+- **Every ② height is given** (the neighbour fill is deleted, Boz 2026-10-13) ▶ `checks/claims-every-kerb-height-was-given.mjs`.
+  ⛔ HPDM tile 49 refuses: a grade-separated footway's dead-end caps carry no `iaStamp` (upstream of the deformer; open).
 - **Huron seams (≤ 5 mm orphans) 3,001 → 3,498 across the swap**, measured on a vertex set meshed from the PRE-swap
   paint; cause not established. Re-measure on a post-swap mesh. ▶ `scratch/ground-height/orphans.mjs`.
 - **Huron's bake refuses on HEAD** (2 T-junctions, `mat:shore` on `face:underived`), and conformity runs ~4,000 s:

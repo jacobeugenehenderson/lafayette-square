@@ -114,7 +114,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 20. `npm run test:all`, never CI.
+## local-effect — 21. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -127,6 +127,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-town-owns-its-raw-inputs.mjs` | inputs.mjs — DOES ANY TOWN READ ANOTHER TOWN'S RAW INPUT? |
 | `checks/claims-coast-distance-is-the-coast.mjs` | coast.mjs — IS THE COAST-DISTANCE CHANNEL THE DISTANCE TO THIS TOWN'S COAST? |
 | `checks/claims-every-junction-corner-has-a-curb-cut-source.mjs` | ⭐⭐ EVERY JUNCTION CORNER'S CURB CUTS COME FROM SOMEWHERE NAMED — AND EVERY CROSSWALK ENDS AT A CURB CUT ON BOTH SIDES — `BRIEF-corner-ramps-and-kerb § |
+| `checks/claims-every-kerb-height-was-given.mjs` | given.mjs — DID EVERY ② VERTEX GET ITS HEIGHT FROM THE LINE, OR WAS IT MADE UP? |
 | `checks/claims-every-lit-town-has-lamps.mjs` | CLAIM — EVERY TOWN WHOSE STREETS TAKE LAMPS SHIPS LAMPS, EACH ONE SAYING WHERE IT CAME FROM, |
 | `checks/claims-every-metre-of-drawn-shore-is-named.mjs` | named.mjs — IS ANY DRAWN SHORE BARE FOR NO REASON? |
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |

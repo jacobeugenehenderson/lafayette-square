@@ -7,7 +7,8 @@
 // fillets, so a point's nearest station on it does not jump at a corner. Its height H is the line's (`tile.runs[].h`,
 // `lineHeight.mjs`), and on a CORNER ARC (`iaArc`) H is blended along the arc between its two tangent points — the
 // owner changes along a fillet, and blending is what keeps H one continuous value through the change (A10: a corner is a
-// slice of one continuous band, not a join).
+// slice of one continuous band, not a join). ⛔ Every H is GIVEN — stamped, blended between given heights, or eased into
+// the terrain beside a run that declares no line; none is taken from a neighbour (`carrierHeights`, `carrierHeightAt`).
 // ⭐ THE PROFILE, read off the DRAWN bands (authoring included) along the ray from the station into the block:
 //   road (the street side of ②) · curb → H · then THE GIRDLE (Jacob, 2026-10-11): the ped band takes up the rise R from
 //   H to the terrain at its back edge, the walk at most its limit (`walk.crossSlopeMax`) and the lawn at most its own
@@ -45,7 +46,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, hFilled: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0, memoTurns: 0 }
+  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, arcBlended: 0, tangent: 0, declaredV: {}, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0, memoTurns: 0, declared: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -111,42 +112,18 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
     // ⭐ THE CARRIER IS `iaFull`, ② UNCUT: `iaStamp` and `iaArc` are parallel to IT, never to `iA` (the cut ring the block is
     // drawn with — measured on HPDM: iA and iaFull differ on 237 of 266 rings). A tile without it cannot name its runs.
     if (!t.iaFull?.length || !t.iaStamp?.length) { stats.noFull++; continue }
-    // the line's h at a ② vertex, read through the vertex's own stamp (`iaStamp` → its run): exact where the vertex is one
-    // of the run's own poly points, else projected onto THAT run's poly and interpolated — the run is named, never searched
-    const runs = t.runs || []
-    const hOfRun = (ri, p) => { const run = runs[ri]; if (!run || !Array.isArray(run.h)) return null
-      let best = Infinity, out = null
-      for (let i = 0; i + 1 < run.poly.length; i++) { const a = run.poly[i], b = run.poly[i + 1], ha = run.h[i], hb = run.h[i + 1]; if (ha == null || hb == null) continue
-        const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0
-        const d2 = sq(p[0] - a[0] - u * dx) + sq(p[1] - a[1] - u * dz); if (d2 < best) { best = d2; out = ha + u * (hb - ha) } }
-      if (out == null && run.poly.length === 1 && run.h[0] != null) out = run.h[0]
-      return out }
+    const hOfRun = hOfRunIn(t.runs || [])
     const rings = []
     t.iaFull.forEach((ring, ri) => {
       if (!(ring?.length >= 3)) return
-      const n = ring.length, H = new Array(n).fill(null), arc = t.iaArc?.[ri] || []
-      const stamp = t.iaStamp?.[ri] || []
-      for (let i = 0; i < n; i++) if (arc[i] == null && stamp[i] != null) { const h = hOfRun(stamp[i], ring[i]); if (h != null) H[i] = h }
-      // a corner arc: blend H by arclength between the straight vertex before it and the one after it
-      for (let i = 0; i < n; i++) {
-        if (arc[i] == null || arc[(i + n - 1) % n] === arc[i]) continue          // i starts an arc
-        let j = i; const id = arc[i], span = []
-        while (arc[j % n] === id && span.length < n) { span.push(j % n); j++ }
-        const before = (i + n - 1) % n, after = j % n
-        const hb = H[before] ?? (stamp[before] != null ? hOfRun(stamp[before], ring[before]) : null), ha = H[after] ?? (stamp[after] != null ? hOfRun(stamp[after], ring[after]) : null)
-        if (hb == null || ha == null) continue
-        const pts = [before, ...span, after]; let L = 0; const cum = [0]
-        for (let k = 1; k < pts.length; k++) { L += Math.hypot(ring[pts[k]][0] - ring[pts[k - 1]][0], ring[pts[k]][1] - ring[pts[k - 1]][1]); cum.push(L) }
-        span.forEach((v, k) => { H[v] = L > 0 ? hb + (ha - hb) * cum[k + 1] / L : hb }); stats.arcBlended += span.length
-      }
-      // a vertex still without H (its run has no line: a highway edge, the rim) takes its neighbours' along the ring —
-      // COUNTED (`hFilled`); a ring with no line at all is not deformed (`noH`)
-      const known = H.filter(h => h != null).length
-      if (!known) { stats.noH++; return }
-      if (known < n) stats.hFilled += n - known
-      if (known < n) for (let pass = 0; pass < n && H.some(h => h == null); pass++) for (let i = 0; i < n; i++) if (H[i] == null) {
-        const a = H[(i + n - 1) % n], b = H[(i + 1) % n]; if (a != null || b != null) H[i] = a != null && b != null ? (a + b) / 2 : (a ?? b) }
-      rings.push({ ring, H, stamp, arc, t: ti, k: ri })
+      const arc = t.iaArc?.[ri] || [], stamp = t.iaStamp?.[ri] || []
+      let H, origin, side
+      try { ({ H, origin, side } = carrierHeights({ ring, arc, stamp, hOfRun, noLineOf: (r) => t.runs?.[r]?.noLine ?? null })) }
+      catch (e) { throw new Error(`groundDeformer: tile ${ti} ring ${ri} — ${e.message}`) }
+      if (!H) { stats.noH++; return }
+      for (const o of origin) if (o === 'blended') stats.arcBlended++; else if (o === 'tangent') stats.tangent++
+        else if (o?.startsWith('declared')) stats.declaredV[o] = (stats.declaredV[o] || 0) + 1
+      rings.push({ ring, H, side, stamp, arc, t: ti, k: ri })
     })
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
@@ -163,6 +140,9 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
   const tileAt = (x, z) => { for (const t of tileGrid.get(Math.floor(x / TCELL) * 1000003 + Math.floor(z / TCELL)) || []) {
     if (x < t.bb[0] || x > t.bb[2] || z < t.bb[1] || z > t.bb[3]) continue
     if (pipRings(x, z, [t.ring])) return t } return null }
+  // H along a ② segment: null where either end has none (a run that DECLARES no line — `carrierHeights`)
+  const hAlong = (s, u) => carrierHeightAt(endOf(s.R, s.i), endOf(s.R, (s.i + 1) % s.R.ring.length), s.p, s.q, u, raw, blend)
+  const endOf = (R, i) => R.H[i] != null ? { h: R.H[i] } : { h: null, side: R.side[i] }
   // nearest point on the tile's ②, searching rings of cells outward
   const nearest = (t, x, z, maxD) => {
     let best = null, bd = Infinity
@@ -174,7 +154,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
           const dx = s.q[0] - s.p[0], dz = s.q[1] - s.p[1], L2 = dx * dx + dz * dz
           const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - s.p[0]) * dx + (z - s.p[1]) * dz) / L2)) : 0
           const px = s.p[0] + u * dx, pz = s.p[1] + u * dz, d2 = sq(x - px) + sq(z - pz)
-          if (d2 < bd) { bd = d2; best = { px, pz, H: s.hp + u * (s.hq - s.hp), R: s.R, i: s.i, u } }
+          if (d2 < bd) { bd = d2; best = { px, pz, H: hAlong(s, u), R: s.R, i: s.i, u } }
         }
       }
       if (best && Math.sqrt(bd) <= r * CELL) break
@@ -193,7 +173,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
       if (d > maxD) continue
       const a = s.R.arc[s.i], key = a != null ? `a${a}` : `r${s.R.stamp[s.i]}`, k = s.R
       let m = by.get(k); if (!m) by.set(k, m = new Map())
-      const cur = m.get(key); if (!cur || d < cur.d) m.set(key, { px, pz, H: s.hp + u * (s.hq - s.hp), R: s.R, i: s.i, u, d, key, run: a != null ? null : s.R.stamp[s.i] })
+      const cur = m.get(key); if (!cur || d < cur.d) m.set(key, { px, pz, H: hAlong(s, u), R: s.R, i: s.i, u, d, key, run: a != null ? null : s.R.stamp[s.i] })
     }
     return [...by.values()].flatMap(m => [...m.values()]).sort((a, b) => a.d - b.d)
   }
@@ -281,12 +261,12 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
       let [ux, uz] = nrm(S.i)
       if (S.u === 0) { const [ax, az] = nrm((S.i + n - 1) % n), L = Math.hypot(ux + ax, uz + az); if (L > 1e-9) { ux = (ux + ax) / L; uz = (uz + az) / L } }
       ux *= sideSign; uz *= sideSign
-      const H = R.H[S.i] + S.u * (R.H[(S.i + 1) % n] - R.H[S.i])
+      const H = carrierHeightAt(endOf(R, S.i), endOf(R, (S.i + 1) % n), ring[S.i], ring[(S.i + 1) % n], S.u, raw, blend)
       const B = bandsAlong(px - uz * SIDESTEP, pz + ux * SIDESTEP, ux, uz, CAP)
       const { ped, back } = pedOf(B); let lawnW = 0, walkW = 0
       for (const b of ped) { if (b.cls === 'lawn') lawnW += b.to - b.from; else if (b.cls === 'walk') walkW += b.to - b.from }
-      const head = 4 * ulp32(H)
-      S.Araw = raw(px + ux * back, pz + uz * back) - H
+      const head = H == null ? 0 : 4 * ulp32(H)
+      S.Araw = H == null ? NaN : raw(px + ux * back, pz + uz * back) - H      // no height here: out of the smoothing
       S.cap = (lawnW > 0 ? (lawnMax == null ? Infinity : Math.max(0, lawnMax * lawnW / exag - head)) : 0) + Math.max(0, WALK_SHARE * walkMax * walkW / exag - head)
       if (walkW > 0) walkWidths.push(walkW)
     }
@@ -296,10 +276,10 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
     // smooth A_raw along the ring (Gaussian, σ), walking out both ways to 3σ
     const A = new Float64Array(m)
     for (let a = 0; a < m; a++) {
-      let w = 1, v = st[a].Araw
-      for (let b = a, d = 0, g = 0; g < m - 1; g++) { d += gap[b]; b = (b + 1) % m; if (d > 3 * sigma) break; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
-      for (let b = a, d = 0, g = 0; g < m - 1; g++) { b = (b + m - 1) % m; d += gap[b]; if (d > 3 * sigma) break; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
-      A[a] = v / w
+      const own = Number.isFinite(st[a].Araw); let w = own ? 1 : 0, v = own ? st[a].Araw : 0
+      for (let b = a, d = 0, g = 0; g < m - 1; g++) { d += gap[b]; b = (b + 1) % m; if (d > 3 * sigma) break; if (!Number.isFinite(st[b].Araw)) continue; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
+      for (let b = a, d = 0, g = 0; g < m - 1; g++) { b = (b + m - 1) % m; d += gap[b]; if (d > 3 * sigma) break; if (!Number.isFinite(st[b].Araw)) continue; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
+      A[a] = own ? v / w : NaN
     }
     // the capacity's lower envelope with slope kk along the ring (two passes each way, so it closes round the ring).
     // ⭐ kk IS THE WALK'S OWN LIMIT, not a new constant (Boz, 2026-10-11): "the walk follows the street's grade along"
@@ -346,6 +326,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
     if (!t) { stats.outside++; return NONE }
     const n = nearest(t, x, z, CAP)
     if (!n || n.d > CAP) { stats.deep++; return NONE }
+    if (n.H == null) { stats.declared++; return NONE }                    // nearest ② declares no line: the terrain shows
     stats.evaluated++
     if (!pipRings(x, z, t.iA) || n.d < 1e-9) return { v: n.H, owner: own(n) }     // road side, or on ② itself
     // ⭐⭐ THE BAND DECIDES, NEVER THE NEARER LINE (Jacob, 2026-10-11, via Boz). A point in a ped band takes its height
@@ -359,6 +340,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
     for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) {
       // within the lattice of ② the point IS on ②: the bands are on the 1 mm grid and ② is not, so a ray aimed from a
       // station a fraction of a millimetre away points nowhere in particular (measured: 536 of 664 orphan clusters on HPDM)
+      if (c.H == null) continue                                          // a span with no line gives no height
       if (c.d < LATTICE) return { v: c.H, owner: own(c) }
       const p = profile(c, x, z)
       if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c) } }
@@ -417,4 +399,118 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
   // chord error is spent over a half-width, never the whole one
   const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * (walkP10 / 2) / exag : null
   return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, _owners, _inClass: inClass, _bandsAlong: bandsAlong }
+}
+
+/** The line's h at a ② vertex, read through the vertex's own stamp (`iaStamp` → its run): exact where the vertex is one of
+ *  the run's own poly points, else projected onto THAT run's poly and interpolated — the run is named, never searched.
+ *  null where the run carries no line (`h: null`). */
+export function hOfRunIn(runs) {
+  return (ri, p) => { const run = runs[ri]; if (!run || !Array.isArray(run.h)) return null
+    let best = Infinity, out = null
+    for (let i = 0; i + 1 < run.poly.length; i++) { const a = run.poly[i], b = run.poly[i + 1], ha = run.h[i], hb = run.h[i + 1]; if (ha == null || hb == null) continue
+      const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0
+      const d2 = sq(p[0] - a[0] - u * dx) + sq(p[1] - a[1] - u * dz); if (d2 < best) { best = d2; out = ha + u * (hb - ha) } }
+    if (out == null && run.poly.length === 1 && run.h[0] != null) out = run.h[0]
+    return out }
+}
+
+/**
+ * H ALONG ONE ② RING, with each vertex's ORIGIN — the deformer's carrier heights, exported so a check reads them from the
+ * source (`checks/claims-every-kerb-height-was-given.mjs`). ⛔ Every height is GIVEN; none is made up:
+ *   'stamped'  — a straight vertex, its own run's line
+ *   'tangent'  — a corner arc's own tangent point (its first or last vertex), stamped, used only where the straight vertex
+ *                beside it has no height (two arcs abutting; a roundabout of arcs)
+ *   'blended'  — by arclength between two given heights: a corner arc between its tangents, or a JOINED SPAN (abutting arcs,
+ *                unstamped vertices) between the nearest given heights on each side — "H one continuous value through
+ *                the change" (Boz's ruling, 2026-10-13)
+ *   'declared:<kind>' — a straight vertex on a run that DECLARES no line (highway edge, bridge, rim): H null, the deformer
+ *                draws nothing within its reach and the terrain shows (Boz's ruling (c), 2026-10-13)
+ *   'declared-corner:<kind>' — a corner with a given height on neither side and a declared run beside it: the declared
+ *                run's own corner (Boz, 2026-10-13), H null
+ * ⛔ A ring with no given height anywhere is a DECLARED absence when every vertex sits on a declared run (H null); a
+ * vertex with no stamp, or a run with no line and no declared kind, THROWS by name.
+ * (The neighbour fill this replaces ran in place, left to right, so one side's H crossed the whole gap and the change
+ * landed on one segment: Huron 3 m over 0.85 m, HPDM 12 m over 0.01 m — Brace's census, 3276dceb.)
+ * @param noLineOf (runIndex) → the run's declared kind ('highway' · 'bridge' · 'rim' · 'unknown') or null
+ * @returns { H, origin } — H null for a declared ring
+ */
+const DECLARED = new Set(['highway', 'bridge', 'rim'])
+export function carrierHeights({ ring, arc, stamp, hOfRun, noLineOf = () => null }) {
+  const n = ring.length, H = new Array(n).fill(null), origin = new Array(n).fill(null)
+  const at = (i) => (i % n + n) % n
+  for (let i = 0; i < n; i++) if (arc[i] == null && stamp[i] != null) {
+    const h = hOfRun(stamp[i], ring[i])
+    if (h != null) { H[i] = h; origin[i] = 'stamped' }
+    else if (DECLARED.has(noLineOf(stamp[i]))) origin[i] = `declared:${noLineOf(stamp[i])}`
+  }
+  const stamped = (v) => stamp[v] != null ? hOfRun(stamp[v], ring[v]) : null
+  // a corner arc: blend H by arclength between the straight vertex before it and the one after it — or, where that vertex
+  // has no height, from the arc's own stamped tangent point
+  const blend = (pts, h0, h1) => { let L = 0; const cum = [0]
+    for (let k = 1; k < pts.length; k++) { L += Math.hypot(ring[pts[k]][0] - ring[pts[k - 1]][0], ring[pts[k]][1] - ring[pts[k - 1]][1]); cum.push(L) }
+    for (let k = 1; k + 1 < pts.length; k++) { H[pts[k]] = L > 0 ? h0 + (h1 - h0) * cum[k] / L : h0; origin[pts[k]] = 'blended' } }
+  for (let i = 0; i < n; i++) {
+    if (arc[i] == null || arc[at(i - 1)] === arc[i]) continue                  // i starts an arc
+    let j = i; const id = arc[i], span = []
+    while (arc[at(j)] === id && span.length < n) { span.push(at(j)); j++ }
+    let first = at(i - 1), last = at(j)
+    let hb = H[first] ?? stamped(first), ha = H[last] ?? stamped(last)
+    if (hb == null && span.length > 1) { const h = stamped(span[0]); if (h != null) { first = span.shift(); H[first] = hb = h; origin[first] = 'tangent' } }
+    if (ha == null && span.length > 1) { const h = stamped(span[span.length - 1]); if (h != null) { last = span.pop(); H[last] = ha = h; origin[last] = 'tangent' } }
+    if (hb == null || ha == null) continue
+    blend([first, ...span, last], hb, ha)
+  }
+  // a JOINED SPAN: every maximal run of vertices still without a height, between the nearest given heights on each side
+  const given = []; for (let i = 0; i < n; i++) if (H[i] != null) given.push(i)
+  if (!given.length) {
+    const why = []
+    for (let i = 0; i < n; i++) if (!origin[i]) {
+      const k = stamp[i] != null ? noLineOf(stamp[i]) : null
+      if (DECLARED.has(k)) origin[i] = `declared:${k}`
+      else why.push(`v ${i} (${ring[i].map(c => c.toFixed(1)).join(', ')}) ${stamp[i] == null ? 'has no stamp' : `is on a run with no line (${k ?? 'not declared'})`}`)
+    }
+    if (why.length) throw new Error(`carrierHeights: ⛔ a ② ring with no height anywhere, and not because its runs declare none: ${why.slice(0, 4).join(' · ')}${why.length > 4 ? ` · … ${why.length - 4} more` : ''}`)
+    return { H: null, origin }
+  }
+  for (let g = 0; g < given.length; g++) {
+    const a = given[g], b = given[(g + 1) % given.length], gap = at(b - a - 1)
+    if (gap === 0 && given.length > 1) continue
+    // the run between a and b, split where a declared vertex interrupts it: a piece touching a declared vertex has no
+    // given height on that side
+    const pieces = [[]]
+    for (let k = 1; k <= (given.length > 1 ? gap : n - 1); k++) { const v = at(a + k); if (origin[v]?.startsWith('declared:')) { pieces.push({ declared: origin[v].slice(9) }, []); continue } pieces[pieces.length - 1].push(v) }
+    if (pieces.length === 1) { blend([a, ...pieces[0], given.length > 1 ? b : a], H[a], H[given.length > 1 ? b : a]); continue }
+    for (let p = 0; p < pieces.length; p += 2) { const kind = (pieces[p - 1] ?? pieces[p + 1])?.declared
+      for (const v of pieces[p]) origin[v] = `declared-corner:${kind}` }
+  }
+  // ⭐ THE EASE INTO THE TERRAIN (Boz's ruling (b), 2026-10-13): a vertex with no height carries, for each side, the nearest
+  // given height along ② and the arclength to it — `carrierHeightAt` eases from it into the terrain over the deformer's own
+  // ease distance, and past that draws nothing
+  const side = new Array(n).fill(null), seg = (i) => Math.hypot(ring[at(i + 1)][0] - ring[i][0], ring[at(i + 1)][1] - ring[i][1])
+  for (let i = 0; i < n; i++) if (H[i] == null) {
+    let b = i, sb = 0; do { b = at(b - 1); sb += seg(b) } while (H[b] == null && b !== i)
+    let f = i, sf = 0; do { sf += seg(f); f = at(f + 1) } while (H[f] == null && f !== i)
+    side[i] = { back: { h: H[b], s: sb, v: b }, fwd: { h: H[f], s: sf, v: f } }
+  }
+  return { H, origin, side }
+}
+
+/**
+ * H at parameter u along the ② segment p → q: linear between two given heights; where an end has none, the given height
+ * on each side EASES into the terrain over `B` (the deformer's ease, `groundBlendM` else one terrain step — the same ease
+ * the lawn takes back into the terrain): weight 1 − s/B at arclength s from it, so H meets the terrain exactly at B and is
+ * continuous throughout. Past B on both sides, null: nothing is drawn and the terrain shows.
+ * @param ep, eq  the ends: { h } given, or { side } (carrierHeights `side`) · @param raw (x, z) → terrain
+ */
+export function carrierHeightAt(ep, eq, p, q, u, raw, B) {
+  if (ep.h != null && eq.h != null) return ep.h + u * (eq.h - ep.h)
+  const L = Math.hypot(q[0] - p[0], q[1] - p[1]), x = p[0] + u * (q[0] - p[0]), z = p[1] + u * (q[1] - p[1])
+  // arclength from each side's given vertex: through the end that has none (its `side`), or 0 at the end that is given
+  const sBack = ep.h != null ? u * L : ep.side.back.h != null ? ep.side.back.s + u * L : Infinity
+  const sFwd = eq.h != null ? (1 - u) * L : eq.side.fwd.h != null ? eq.side.fwd.s + (1 - u) * L : Infinity
+  const hBack = ep.h ?? ep.side.back.h, hFwd = eq.h ?? eq.side.fwd.h
+  const wb = Math.max(0, 1 - sBack / B), wf = Math.max(0, 1 - sFwd / B), w = wb + wf
+  if (!(w > 0)) return null
+  const r = raw(x, z)
+  return r + (wb * (hBack - r) + wf * (hFwd - r)) / Math.max(1, w)
 }

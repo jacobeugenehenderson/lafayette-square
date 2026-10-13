@@ -68,3 +68,37 @@ export function lineHeights({ streets, raw, sigma }) {
   }
   return { heightAt, sigma, step, stations: X.length, chains: byId.size, bridges }
 }
+
+/**
+ * STAMP EVERY ① RUN WITH ITS LINE'S HEIGHT (`run.h`, raw metres, mm-rounded) — the one stamper, read by bake-ground and by
+ * the checks that replay the deformer's input. A coast run (`__water__`) stands on the town's line (`waterLevel.mjs`
+ * lineAt: high water, or the water as flown). A run with no line — a bridge (`gradeSeparated`), a highway stroke's edge,
+ * the rim, a label naming no at-grade chain — carries `h: null` and is COUNTED by its kind.
+ * @param tiles   shape tiles (mutated: each run gains `h`)
+ * @param LH      lineHeights(...) over the town's ribbons
+ * @param water   waterLevels(terrain.water), or null — ⛔ a coast run with no water record throws
+ * @param streets the ribbons' streets (to know the bridges)
+ * @returns { stamped, coast, why: { bridge, highway, rim, unknown } }
+ */
+export function stampRunHeights({ tiles, LH, water, streets, scene = '?' }) {
+  const why = { bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
+  let stamped = 0, coast = 0
+  for (const t of tiles || []) for (const run of t?.runs || []) {
+    if (run.skelId === '__water__') {
+      if (!water) throw new Error(`stampRunHeights: ⛔ ${scene} draws a coast but its terrain carries no water record — the coast line's height is unknown. ▶ re-bake the terrain`)
+      run.h = (run.poly || []).map(([x, z]) => Math.round(water.lineAt(x, z) * 1000) / 1000); coast++; continue
+    }
+    const h = (run.poly || []).map(p => LH.heightAt(run.skelId, p))
+    delete run.noLine
+    if (h.length && h.every(v => v != null)) { run.h = h.map(v => Math.round(v * 1000) / 1000); stamped++; continue }
+    run.h = null
+    run.noLine = runKind(run, bridgeIds)                 // the deformer reads it: a DECLARED line-less run draws no height
+    why[run.noLine]++
+  }
+  return { stamped, coast, why }
+}
+
+/** Why a run carries no line: 'highway' · 'rim' · 'bridge' · 'unknown' (a label naming no at-grade chain). */
+export function runKind(run, bridgeIds) {
+  return run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown'
+}

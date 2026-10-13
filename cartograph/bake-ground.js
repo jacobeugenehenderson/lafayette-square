@@ -46,7 +46,7 @@ import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
 import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, withSide, polyTreeToItems } from './kerbLift.mjs'
-import { lineHeights } from './lineHeight.mjs'
+import { lineHeights, stampRunHeights } from './lineHeight.mjs'
 import { buildDeformer } from './groundDeformer.mjs'
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
 import { requireExplicitMap, ribbonsPathOf } from './scene.js'
@@ -914,23 +914,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     const authored = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : null
     if (!authored && !(lineTerrain.stepM > 0)) throw new Error(`[bake-ground] ⛔ the terrain carries no grid step and the town authors no groundLineSigmaM — the line's smoothing window is unknown`)
     const LH = lineHeights({ streets: ribbons.streets, raw: lineTerrain.getElevationRaw, sigma: authored ?? lineTerrain.stepM })
-    const why = { bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((ribbons.streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
-    let stamped = 0, coast = 0
     // ⭐ THE COAST'S LINE IS THE HIGH WATER (Jacob 2026-10-11, brief §5 "The shore"): a coast run's height IS the town's
-    // line there — its high level (the tide datum where tidal, the authored lake level on a lake), or the water as flown
-    // where that stood above high at one level (Jacob 2026-10-13; `waterLevel.mjs` lineAt) — so the land meets the water
-    // at the line and the gusset runs from it down to low water. ⛔ A drawn coast with no water record throws.
-    let W = null
-    for (const t of shapeArtifact) for (const run of t?.runs || []) {
-      if (run.skelId === '__water__') {
-        if (!W) { if (!lineTerrain.water) throw new Error(`[bake-ground] ⛔ ${scene} draws a coast but its terrain carries no water record — the coast line's height (the high water) is unknown. ▶ re-bake the terrain`); W = waterLevels(lineTerrain.water) }
-        run.h = (run.poly || []).map(([x, z]) => Math.round(W.lineAt(x, z) * 1000) / 1000); coast++; continue
-      }
-      const h = (run.poly || []).map(p => LH.heightAt(run.skelId, p))
-      if (h.length && h.every(v => v != null)) { run.h = h.map(v => Math.round(v * 1000) / 1000); stamped++; continue }
-      run.h = null
-      why[run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown']++
-    }
+    // line there — its high level, or the water as flown where that stood above high at one level (Jacob 2026-10-13;
+    // `waterLevel.mjs` lineAt) — so the land meets the water at the line and the gusset runs from it down to low water.
+    const W = lineTerrain.water ? waterLevels(lineTerrain.water) : null
+    const { stamped, coast, why } = stampRunHeights({ tiles: shapeArtifact, LH, water: W, streets: ribbons.streets, scene })
     console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at ${W ? W.lineName : '—'} · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
     // ⭐ THE GUSSET, RECORDED (`shoreGusset.mjs`; Jacob 2026-10-10/11, Boz 2026-10-13): per vertex of every coast run, the
@@ -1235,7 +1223,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       const inside = run(clipperLib.ClipType.ctIntersection), outside = run(clipperLib.ClipType.ctDifference)
       if (inside.length) { flattened.set(k, [...outside, ...inside]); split++ }
     }
-    console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.noH} ② ring(s) with no line, ${deform.stats.hFilled} ② vertex(es) whose run has none (taking their neighbours') · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
+    console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} ② vertices blended between given heights (${deform.stats.tangent} from an arc's own tangent) · ${deform.stats.noH} ② ring(s) declaring no line · ② vertices on runs declaring none, drawn as the terrain: ${JSON.stringify(deform.stats.declaredV)}${deform.stats.besideDeclared ? ` · ⛔ ${deform.stats.besideDeclared} beside them with no height on either side` : ''} · ${deform.stats.declared} point(s) whose nearest ② declares no line · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
   }
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
   // the drawn terrain part at (x, z): the deformer where it reaches, else the terrain itself
