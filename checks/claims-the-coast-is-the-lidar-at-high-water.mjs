@@ -16,6 +16,9 @@
 //   3b. arcsOf returns only its first run (`return out.slice(0, 1)`)          → A: the strait yields one shore
 //   4. bake-coast traces `v - lowAt` instead of `v - highAt`             → B: the lidar along the line stands off high
 //   5. derive.js imports coastVerify.mjs                                  → C
+//   7. floodFromEdge enters every no-value cell (ignore `nr`)         → A2: the no-coverage hole floods
+//   8. rimGuard counts only rim cells BELOW high                       → A2: the Huron rim passes
+//   6. bake-coast cuts arcs from the UNSIMPLIFIED ring and simplifies them alone → A (in the town: B's ring/arc drift)
 //
 //   node checks/claims-the-coast-is-the-lidar-at-high-water.mjs [--scene=<id>] [--no-lidar]
 // --no-lidar skips part B's network read (A and C still run). Exits 1 on any failure.
@@ -23,7 +26,7 @@ import fs from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import clipperLib from 'clipper-lib'
-import { floodFromEdge, sheetField, heldCells, edgeCells, arcsOf, bodiesAtEdge } from '../cartograph/bake-coast.mjs'
+import { floodFromEdge, sheetField, heldCells, edgeCells, arcsOf, bodiesAtEdge, simplifyRing, rimGuard } from '../cartograph/bake-coast.mjs'
 import { COAST_FILE } from '../cartograph/coastFile.mjs'
 import { wetLoops } from '../cartograph/marchingSquares.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'
@@ -87,6 +90,12 @@ console.log('A. the construction (synthetic)')
   for (const a of arcs) for (const p of a.pts.slice(1, -1)) { if (Math.abs(p[0] - 160) <= G) continue; n2++; worst = Math.max(worst, Math.abs(ground(p[0], p[1]) - HIGH)) }
   say(n2 > 0 && worst < 1e-3, `every traced vertex off the dike stands at high water: worst |ground − high| ${worst.toFixed(5)} m over ${n2} vertices`)
   say(edgeCells(wet, w, W, H).length > 0, 'the sheet has a wet/dry edge to refine along')
+  // ① STROKES THE EDGE IT EXCLUDES: the arcs are cut from the simplified ring, so every arc vertex IS a ring vertex
+  // (an arc simplified apart from its ring leaves a sliver between the ink and the water).
+  const ring = bodies[0].outer, simple = simplifyRing(ring, R, 0.5), key = (p) => `${p[0].toFixed(3)},${p[1].toFixed(3)}`
+  const onRing = new Set(simple.map(key))
+  const sArcs = arcsOf(simple, R)
+  say(simple.length <= ring.length && sArcs.length && sArcs.every(a => a.pts.every(p => onRing.has(key(p)))), `every arc vertex is a vertex of its simplified water ring (${simple.length} of ${ring.length} kept)`)
   // EVERY RUN, NOT THE LONGEST (from the retired claims-a-closed-shore-still-yields-ink: Provincetown's coast yields
   // five runs, and "take the longest" threw 55 km away): a body that meets the square on two sides is TWO shores.
   const strait = [[0, 100], [0, 300], [150, 280], [400, 300], [400, 100], [250, 120]]
@@ -94,6 +103,35 @@ console.log('A. the construction (synthetic)')
   say(two.length === 2 && two.every(a => !a.closed), `a body that meets the square on two sides yields two shores (${two.length})`)
   const isle = arcsOf([[100, 100], [200, 100], [200, 200], [100, 200]], R)
   say(isle.length === 1 && isle[0].closed, 'a ring that never meets the square is a CLOSED shore, flagged (an island), never stroked as an arc')
+}
+
+// ── A2. where the lidar has no value (Boz's ruling, 2026-10-13): a cell INSIDE a survey tile with no value is NO RETURN
+// (lidar does not return off open water) and the water may enter it; a cell OUTSIDE every tile is NO COVERAGE and it may
+// not. Decided from the tile rasters only. And the guard: the finite cells bordering the water the flood entered ARE the
+// water as flown — if most stand above high water, the water was flown above its level and the coast REFUSES.
+console.log('A2. no return · no coverage · the rim guard (synthetic)')
+{
+  const W = 60, H = 40, HIGH = 1, k = (i, j) => j * W + i
+  const ground = new Float32Array(W * H), nr = new Uint8Array(W * H)
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    ground[k(i, j)] = i < 20 ? NaN : 0.5 + 0.05 * (i - 20)            // open water with NO RETURN, then a beach rising through high at i = 30
+    if (i < 20) nr[k(i, j)] = 1
+  }
+  for (let j = 30; j < H; j++) for (let i = 0; i < 20; i++) nr[k(i, j)] = 0       // the same edge, but OUTSIDE every tile: no coverage
+  for (let j = 10; j < 14; j++) for (let i = 45; i < 49; i++) { ground[k(i, j)] = NaN; nr[k(i, j)] = 1 }   // a dark roof: no return, on land
+  const w = new Float32Array(W * H)
+  for (let q = 0; q < W * H; q++) w[q] = HIGH - ground[q]
+  const wet = floodFromEdge(w, W, H, null, nr)
+  say(wet[k(5, 5)] === 1, 'open water with no lidar return, inside a tile and reaching the edge, is water')
+  say(wet[k(5, 35)] === 0, 'a no-value hole OUTSIDE every tile is never entered (no coverage is not water)')
+  say(wet[k(46, 11)] === 0, 'a no-return dropout on land, not connected to the water, stays land')
+  say(wet[k(25, 5)] === 1 && wet[k(35, 5)] === 0, 'the beach is water below high water and land above it')
+  const ok = rimGuard(wet, nr, w, W, H)
+  say(ok.n > 0 && ok.share <= 0.5, `water flown BELOW its high level passes the guard: ${(100 * ok.share).toFixed(0)}% of ${ok.n} rim cells above high`)
+  const w2 = new Float32Array(w)                                         // the Huron shape: a flattened rim 9 cm ABOVE high
+  for (let j = 0; j < 30; j++) for (let i = 20; i < 23; i++) w2[k(i, j)] = -0.09
+  const wet2 = floodFromEdge(w2, W, H, null, nr), bad = rimGuard(wet2, nr, w2, W, H)
+  say(bad.share > 0.5 && Math.abs(bad.gapM - 0.09) < 1e-6, `water flown ABOVE its high level fails the guard: ${(100 * bad.share).toFixed(0)}% of ${bad.n} rim cells, by ${bad.gapM?.toFixed(3)} m`)
 }
 
 // ── B. the towns ─────────────────────────────────────────────────────────────────────────────────────────────────────
