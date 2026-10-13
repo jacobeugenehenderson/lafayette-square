@@ -55,20 +55,44 @@ const DIRS = ['checks', 'scratch']
  */
 export function stripComments(src, shell = false) {
   if (shell) return src.replace(/^\s*#.*$/gm, '')
-  let out = '', i = 0, q = null
-  while (i < src.length) {
+  return lex(src).stripped
+}
+
+/**
+ * ⭐ ONE READER of where strings, regex literals and comments are (Boz's ruling, 2026-10-13). Returns the source with
+ * comments removed (`stripped`), and the same `stripped` text, same length, with every string and regex literal's body
+ * blanked (`blank`). A `/` opens a regex where an operand is due (after an operator, an opening bracket, a keyword, or at
+ * the start); a regex that does not close on its line was a division. ⛔ Why a regex must be READ, not skipped: its
+ * quotes (`/from '([^']+)'/`) opened a "string" that swallowed what followed, so a later comment's `from 'x'` was read as
+ * an import; and an escaped `\/\//` inside one read as `//`, a comment, which DROPS the rest of the line — code included.
+ */
+function lex(src) {
+  let stripped = '', blank = '', q = null, prev = ''
+  const put = (keep, shown = keep) => { stripped += keep; blank += shown }
+  for (let i = 0; i < src.length; i++) {
     const c = src[i], n = src[i + 1]
     if (q) {
-      if (c === '\\') { out += c + (n ?? ''); i += 2; continue }
-      if (c === q) q = null
-      out += c; i++; continue
+      if (c === '\\') { put(c + (n ?? ''), n === undefined ? ' ' : '  '); i++; continue }
+      if (c === q) { q = null; put(c); prev = c; continue }
+      put(c, c === '\n' ? '\n' : ' '); continue
     }
-    if (c === '"' || c === "'" || c === '`') { q = c; out += c; i++; continue }
-    if (c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') i++; continue }
-    if (c === '/' && n === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue }
-    out += c; i++
+    if (c === '"' || c === "'" || c === '`') { q = c; put(c); prev = c; continue }
+    if (c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') i++; i--; continue }
+    if (c === '/' && n === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i++; continue }
+    if (c === '/' && (prev === '' || /[(,=:[!&|?{};+\-*%<>~^]/.test(prev) || /\b(?:return|typeof|case|in|of|else|do|void|delete|throw|yield|await|new)\s*$/.test(src.slice(Math.max(0, i - 10), i)))) {
+      let j = i + 1, cls = false
+      for (; j < src.length && src[j] !== '\n'; j++) {
+        if (src[j] === '\\') { j++; continue }
+        if (src[j] === '[') cls = true
+        else if (src[j] === ']') cls = false
+        else if (src[j] === '/' && !cls) break
+      }
+      if (j < src.length && src[j] === '/') { put(src.slice(i, j + 1), '/' + ' '.repeat(j - i - 1) + '/'); i = j; prev = '/'; continue }
+    }
+    put(c)
+    if (!/\s/.test(c)) prev = c
   }
-  return out
+  return { stripped, blank }
 }
 
 /** Commands that reach the network, or that can run anything (so: undecidable ⇒ live). */
@@ -186,35 +210,11 @@ function balancedArg(code, open) {
 }
 
 /**
- * The same text, same length, with every string and regex literal's body blanked — so `import()` written in a message
- * is not read as a call. A regex literal is blanked too, because its quotes (`/from '([^']+)'/`) would otherwise open a
- * "string" that swallows the real calls after it — measured: three checks went safe that way.
- * ⛔ So it is never trusted alone: `inStringHere` must agree before a call is exempted (see the loop in `classify`).
+ * Comment-free code, same length, string and regex bodies blanked (`lex`) — so `import()` written in a message is not
+ * read as a call. ⛔ Never trusted alone: `inStringHere` must agree before a call is exempted (see the loop in `classify`).
  */
 function blankStrings(code) {
-  let out = '', q = null, prev = ''
-  for (let i = 0; i < code.length; i++) {
-    const c = code[i]
-    if (q) {
-      if (c === '\\') { out += '  '; i++; continue }
-      if (c === q) { q = null; out += c; prev = c; continue }
-      out += c === '\n' ? '\n' : ' '; continue
-    }
-    if (c === '"' || c === "'" || c === '`') { q = c; out += c; prev = c; continue }
-    if (c === '/' && (prev === '' || /[(,=:[!&|?{};+\-*%<>~^]/.test(prev) || /\b(?:return|typeof|case|in|of)\s*$/.test(code.slice(Math.max(0, i - 8), i)))) {
-      let j = i + 1, cls = false
-      for (; j < code.length && code[j] !== '\n'; j++) {
-        if (code[j] === '\\') { j++; continue }
-        if (code[j] === '[') cls = true
-        else if (code[j] === ']') cls = false
-        else if (code[j] === '/' && !cls) break
-      }
-      if (j < code.length && code[j] === '/') { out += '/' + ' '.repeat(j - i - 1) + '/'; i = j; prev = '/'; continue }
-    }
-    out += c
-    if (!/\s/.test(c)) prev = c
-  }
-  return out
+  return lex(code).blank
 }
 
 /** A second, independent opinion: an odd count of one quote kind before `at` on its own line. */
@@ -465,6 +465,17 @@ function copiedFrom(p, code, file) {
 /** The ruling, run on planted sources: a path of literals and repo-rooted bindings is read; an argument, the
  *  environment, a loop variable or a `let` keeps the file LIVE (the mutations). */
 export function importSelfTest() {
+  // ⭐ ONE READER (`lex`): a regex literal is read as one, so its quotes open no string and its `\/\/` is no comment.
+  const lexCases = [
+    ["const k = /from '([^']+)'/g\n// a note: import a from 'x'\nexport const n = 1", (r) => !r.why.some(w => /package\(s\) x\b/.test(w)), "a comment's `from 'x'` after a quoted regex is not an import"],
+    ["const k = /'/\n// fetch(u) — prose\nexport const n = 1", (r) => r.tier === 'safe', "a comment's fetch( after a quoted regex is not a call"],
+    ["const re = /https?:\\/\\//; fetch(u)", (r) => r.tier === 'live', 'an escaped // inside a regex does not comment out the fetch( after it'],
+    ["const h = a / b // it's half\n// fetch(u) — prose\nexport const n = 1", (r) => r.tier === 'safe', 'a division is not a regex (its comment is still a comment)'],
+  ]
+  for (const [src, ok, what] of lexCases) {
+    const r = classifyVirtual({ 'checks/claims-planted.mjs': src }, 'checks/claims-planted.mjs')
+    if (!ok(r)) throw new Error(`[tier] ⛔ self-test: ${what} — read as ${r.tier} (${r.why.join(' · ')}); the source reader is broken`)
+  }
   const root = "import { join, dirname } from 'node:path'\nimport { fileURLToPath, pathToFileURL } from 'node:url'\nconst ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')\n"
   const argFn = "const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)\n"
   const cases = [
