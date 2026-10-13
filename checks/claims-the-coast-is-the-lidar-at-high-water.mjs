@@ -17,7 +17,11 @@
 //   4. bake-coast traces `v - lowAt` instead of `v - highAt`             → B: the lidar along the line stands off high
 //   5. derive.js imports coastVerify.mjs                                  → C
 //   7. floodFromEdge enters every no-value cell (ignore `nr`)         → A2: the no-coverage hole floods
-//   8. rimGuard counts only rim cells BELOW high                       → A2: the Huron rim passes
+//   8. waterAsFlown counts only rim cells BELOW high                    → A2: the Huron rim stays at high
+//   11. waterAsFlown skips the level test (a stepped rim is "one level")  → A2: the stepped rim draws
+//   12. bake-coast's line stays at high where the rim is flown above it    → A2: the flattened band stays dry (and B on Huron)
+//   13. lineSentence drops the tidal disclosure                           → A2: the surge flight is silent
+//   14. gussetReach measures from high, not from the line                 → claims-the-gusset-is-recorded: the lake's reach
 //   9. bake-coast skips settleOnSource (vertices left where the trace put them) → B: p90 5.8 mm on Provincetown
 //   10. the mint is given the island's hole wound the SAME way as its body  → A3: the island drowns
 //   6. bake-coast cuts arcs from the UNSIMPLIFIED ring and simplifies them alone → A (in the town: B's ring/arc drift)
@@ -28,7 +32,7 @@ import fs from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import clipperLib from 'clipper-lib'
-import { floodFromEdge, sheetField, heldCells, edgeCells, arcsOf, bodiesAtEdge, simplifyRing, rimGuard } from '../cartograph/bake-coast.mjs'
+import { floodFromEdge, sheetField, heldCells, edgeCells, arcsOf, bodiesAtEdge, simplifyRing, waterAsFlown, lineOfWater, lineSentence } from '../cartograph/bake-coast.mjs'
 import { COAST_FILE } from '../cartograph/coastFile.mjs'
 import { wetLoops } from '../cartograph/marchingSquares.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'
@@ -109,9 +113,11 @@ console.log('A. the construction (synthetic)')
 
 // ── A2. where the lidar has no value (Boz's ruling, 2026-10-13): a cell INSIDE a survey tile with no value is NO RETURN
 // (lidar does not return off open water) and the water may enter it; a cell OUTSIDE every tile is NO COVERAGE and it may
-// not. Decided from the tile rasters only. And the guard: the finite cells bordering the water the flood entered ARE the
-// water as flown — if most stand above high water, the water was flown above its level and the coast REFUSES.
-console.log('A2. no return · no coverage · the rim guard (synthetic)')
+// not. Decided from the tile rasters only. And the water AS FLOWN (Jacob, 2026-10-13, Huron: "yes"): the finite cells
+// bordering the water the flood entered ARE the water as flown. If most stand above high, the line is that water's
+// EDGE — the water's level is the higher of high and the flown water — and the gap is the gusset. It REFUSES only when
+// the flown water is not one level. A tidal town flown above its high says so in words (Boz, 2026-10-13).
+console.log('A2. no return · no coverage · the water as flown (synthetic)')
 {
   const W = 60, H = 40, HIGH = 1, k = (i, j) => j * W + i
   const ground = new Float32Array(W * H), nr = new Uint8Array(W * H)
@@ -128,12 +134,32 @@ console.log('A2. no return · no coverage · the rim guard (synthetic)')
   say(wet[k(5, 35)] === 0, 'a no-value hole OUTSIDE every tile is never entered (no coverage is not water)')
   say(wet[k(46, 11)] === 0, 'a no-return dropout on land, not connected to the water, stays land')
   say(wet[k(25, 5)] === 1 && wet[k(35, 5)] === 0, 'the beach is water below high water and land above it')
-  const ok = rimGuard(wet, nr, w, W, H)
-  say(ok.n > 0 && ok.share <= 0.5, `water flown BELOW its high level passes the guard: ${(100 * ok.share).toFixed(0)}% of ${ok.n} rim cells above high`)
-  const w2 = new Float32Array(w)                                         // the Huron shape: a flattened rim 9 cm ABOVE high
+  const g = Float32Array.from(w, v => HIGH - v)
+  const ok = waterAsFlown(wet, nr, w, g, W, H)
+  say(ok.n > 0 && ok.share <= 0.5 && ok.line === 'high', `water flown BELOW its high level: the line is high (${(100 * ok.share).toFixed(0)}% of ${ok.n} rim cells above it)`)
+  // THE HURON SHAPE: a hydro-flattened band 9 cm ABOVE high, three cells wide, between the no-return water and the beach
+  const w2 = new Float32Array(w)
   for (let j = 0; j < 30; j++) for (let i = 20; i < 23; i++) w2[k(i, j)] = -0.09
-  const wet2 = floodFromEdge(w2, W, H, null, nr), bad = rimGuard(wet2, nr, w2, W, H)
-  say(bad.share > 0.5 && Math.abs(bad.gapM - 0.09) < 1e-6, `water flown ABOVE its high level fails the guard: ${(100 * bad.share).toFixed(0)}% of ${bad.n} rim cells, by ${bad.gapM?.toFixed(3)} m`)
+  for (let j = 0; j < 30; j++) for (let i = 23; i < 30; i++) w2[k(i, j)] = Math.min(w2[k(i, j)], -0.09 - 0.01 * (i - 22))   // the beach climbs from the band
+  const g2 = Float32Array.from(w2, v => HIGH - v)
+  const wet2 = floodFromEdge(w2, W, H, null, nr), fl = waterAsFlown(wet2, nr, w2, g2, W, H)
+  say(fl.line === 'flown' && fl.level && Math.abs(fl.gapM - 0.09) < 1e-6 && Math.abs(fl.navd88Line - (HIGH + 0.09 + ABOVE_WATER_M)) < 1e-6,
+    `water flown 9 cm ABOVE its high level is drawn at its own edge: line ${fl.line}, ${fl.navd88Line?.toFixed(3)} m (high ${HIGH} + the gap ${fl.gapM?.toFixed(3)} + ABOVE_WATER_M), ${(100 * fl.levelShare).toFixed(0)}% of the rim at one level`)
+  const L2 = lineOfWater(fl, () => HIGH), w3 = new Float32Array(W * H)
+  for (let q = 0; q < W * H; q++) w3[q] = Number.isFinite(w2[q]) ? L2(0, 0) - g2[q] : NaN
+  const wet3 = floodFromEdge(w3, W, H, null, nr)
+  say(wet3[k(21, 5)] === 1 && wet3[k(22, 5)] === 1 && wet3[k(23, 5)] === 0, 'the flattened band is water and the first cell above it is land: the line is the flown water\'s edge')
+  say(wet3[k(5, 35)] === 0, '…and raising the level does not open the no-coverage hole')
+  const w4 = new Float32Array(w2)                                         // a STEPPED rim: three flattened levels, none a majority
+  for (let j = 0; j < 20; j++) for (let i = 20; i < 23; i++) w4[k(i, j)] = j < 10 ? -0.30 : -0.20
+  const g4 = Float32Array.from(w4, v => HIGH - v), st = waterAsFlown(floodFromEdge(w4, W, H, null, nr), nr, w4, g4, W, H)
+  say(st.line === 'flown' && !st.level, `water flown above high at THREE levels is not one plane to draw at: refused (${(100 * st.levelShare).toFixed(0)}% of the rim within ${ABOVE_WATER_M} m of its median)`)
+  const tidal = lineSentence({ tidal: true, highName: 'MHW', range: { high: [1, 1] } }, { line: 'flown', gapM: 0.4, navd88Line: 1.405 }, 1, 5)
+  say(/as flown \(tidal\), 0\.40 m above MHW/.test(tidal) && /not MHW/.test(tidal), `a TIDAL town flown above its high says so: "${tidal}"`)
+  const lake = lineSentence({ tidal: false, highName: 'mean', range: { high: [1, 1] } }, { line: 'flown', gapM: 0.09, navd88Line: 1.095 }, 1, 5)
+  say(/as flown \(lake\), 0\.09 m above mean/.test(lake) && /gusset/.test(lake), `a lake flown above its level says so: "${lake}"`)
+  const atHigh = lineSentence({ tidal: true, highName: 'MHW', range: { high: [1, 1.2] } }, { line: 'high' }, 1, 5)
+  say(!/flown/.test(atHigh), `a town flown below high says nothing of it: "${atHigh}"`)
 }
 
 // ── A3. AN ISLAND IS DRAWN (Boz's ruling, 2026-10-13): its shore is a CLOSED arc stroked by ① as a roundabout is
@@ -166,9 +192,10 @@ console.log('B. the towns')
     const K = JSON.parse(fs.readFileSync(p, 'utf8'))
     if (!K.coast) { say(false, `${scene}: has a water record and coast.json says no coast (${K.why})`); continue }
     say(K.arcs?.length > 0, `${scene}: ${K.arcs.length} arc(s), ${K.water.length} water bod(ies), drawn ${K.from}`)
+    if (!K.level?.line) { say(false, `${scene}: coast.json names no line (level.line) — baked before the water as flown was read. ▶ node cartograph/bake-coast.mjs --scene=${scene}`); continue }
     if (noLidar) continue
     const r = await lidarAlong(scene, K)
-    say(r.known > 0 && r.p90 <= r.tolM, `${scene}: the lidar read back at ${r.known} station(s) along the line stands at ${K.level.high}: |lidar − high| p50 ${r.p50.toFixed(3)} · p90 ${r.p90.toFixed(3)} m (≤ ${r.tolM} m)${r.unknown ? ` · ${r.unknown} station(s) with no lidar value` : ''}`)
+    say(r.known > 0 && r.p90 <= r.tolM, `${scene}: the lidar read back at ${r.known} station(s) along the line stands at ${K.level.line === 'flown' ? `the flown water's edge (${K.level.navd88Line} m)` : K.level.high}: |lidar − line| p50 ${r.p50.toFixed(3)} · p90 ${r.p90.toFixed(3)} m (≤ ${r.tolM} m)${r.unknown ? ` · ${r.unknown} station(s) with no lidar value` : ''}`)
   }
 }
 
@@ -182,6 +209,7 @@ async function lidarAlong(scene, K) {
   const toLL = (x, z) => [geo.lon + x / geo.lonToMeters, geo.lat - z / geo.latToMeters]
   const toLocal = (lon, lat) => [(lon - geo.lon) * geo.lonToMeters, (geo.lat - lat) * geo.latToMeters]
   const L = waterLevels(waterRecord({ mapDir, scene, auth: authoredWater(scene), wgs84ToLocal: toLocal, zero: 0 }))
+  const lineAt = K.level.line === 'flown' ? () => K.level.navd88Line : L.highAt      // the line coast.json says it drew
   const opened = await openRasters(elevationSpecs(mapDir), { cacheMB: 128 })
   const T = 256, groups = new Map()
   for (const a of K.arcs) for (const p of a.slice(1, -1)) {
@@ -194,7 +222,7 @@ async function lidarAlong(scene, K) {
   for (const [key, pts] of groups) {
     const [i, j] = key.split(',').map(Number), m = 4
     const win = await readWindow(opened, { cornersLL: [toLL(i * T - m, j * T - m), toLL(i * T + T + m, j * T - m), toLL(i * T - m, j * T + T + m), toLL(i * T + T + m, j * T + T + m)], stepM: null, quiet: true })
-    for (const p of pts) { const v = sampleSources(win, ...toLL(p[0], p[1])); if (Number.isFinite(v)) d.push(Math.abs(v - L.highAt(p[0], p[1]))); else unknown++ }
+    for (const p of pts) { const v = sampleSources(win, ...toLL(p[0], p[1])); if (Number.isFinite(v)) d.push(Math.abs(v - lineAt(p[0], p[1]))); else unknown++ }
     win.length = 0
   }
   d.sort((a, b) => a - b)

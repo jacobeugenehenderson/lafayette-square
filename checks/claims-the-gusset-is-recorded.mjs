@@ -65,9 +65,13 @@ import { waterLevels } from '../cartograph/waterLevel.mjs'
     const g = gussetAlong(p, { ground: () => 1, lowAt: () => 0, landAt: landOfTile(c.iaFull), stepM: 1, reachM: 1 })
     if (g.ground[i] == null) fails.push(`fixture @ ${c.at} (${c.kind}): the tile's edge does not decide the water side`)
   }
-  const lv = (hi, lo) => ({ range: { high: [hi - 0.2, hi], low: [lo, lo + 0.3] }, highName: 'H', lowName: 'L' })
+  const lv = (hi, lo) => ({ range: { high: [hi - 0.2, hi], low: [lo, lo + 0.3], line: [hi - 0.2, hi] }, highName: 'H', lowName: 'L' })
   want('reach: the bed\'s run over the widest range', +gussetReach({ bed: { A: 0.125 }, levels: lv(2.258, -0.702), stepM: 5 }).reachM.toFixed(2), +Math.pow(2.96 / 0.125, 1.5).toFixed(2))
   want('reach: a lake is one terrain step', gussetReach({ bed: { A: 0.125 }, levels: lv(0, 0), stepM: 5 }).reachM, 5)
+  // the LINE, not high (Jacob 2026-10-13, Huron): a lake flown 9 cm above its level — the 9 cm is the bank, so the reach
+  // is the bed's run over it, not one step at "no range"
+  const flownLake = { range: { high: [0, 0], low: [0, 0], line: [0.09, 0.09] }, highName: 'mean', lowName: 'mean', lineName: 'the water as flown' }
+  want('reach: from the line — a lake flown 9 cm above its level', +gussetReach({ bed: { A: 0.125 }, levels: flownLake, stepM: 0.5 }).reachM.toFixed(4), +Math.pow(0.09 / 0.125, 1.5).toFixed(4))
   let threw = false; try { gussetReach({ bed: null, levels: lv(1, 0), stepM: 5 }) } catch { threw = true }
   if (!threw) fails.push('reach: a terrain with no bed was accepted')
   if (fails.length) { console.error(`⛔ SELF-TEST FAILED — the gusset module is wrong, so its record in any slab means nothing:\n   ${fails.join('\n   ')}`); process.exit(2) }

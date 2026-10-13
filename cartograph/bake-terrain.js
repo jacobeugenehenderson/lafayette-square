@@ -188,7 +188,7 @@ function waterDatum({ raw, width, height, bounds }) {
   const kept = new Uint8Array(mask.length)
   let surveyed = 0
   for (let k = 0; k < mask.length; k++) if (mask[k] && raw[k] - elev > ABOVE_WATER_M) { mask[k] = 0; kept[k] = 1; surveyed++ }
-  return { elev, share, wet, rings: rings.length, mask, kept, surveyed }
+  return { elev, share, wet, rings: rings.length, mask, kept, surveyed, line: K.level?.line === 'flown' ? K.level : null }
 }
 
 // ⭐⭐ THE BED — the ground under the water, written INTO the heightfield (Jacob, 2026-09-26/27: "water is
@@ -551,6 +551,12 @@ async function main() {
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
   const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
   const water = wd ? waterLevels(baseElev, waterAuthoring()) : null
+  // ⭐ THE LINE: coast.json drew the coast at the water as flown (above high, at one level) — carried here, in metres
+  // above y = 0, so bake-ground stands a coast run on it (waterLevel.mjs `lineAt`). Absent, the line is high.
+  if (water && wd.line) {
+    if (!Number.isFinite(wd.line.navd88Line)) throw new Error(`⛔ ${SCENE}: coast.json says its line is the water as flown and carries no navd88Line — ▶ node cartograph/bake-coast.mjs --scene=${SCENE}`)
+    water.line = { at: 'flown', y: Math.round((wd.line.navd88Line - baseElev) * 1000) / 1000, flownAboveHighM: wd.line.flownAboveHighM, from: 'coast.json (bake-coast: the water as flown stands above high at one level)' }
+  }
   const bed = wd ? writeBed(normalized, wd.mask, wd.kept, width, height, bounds, floor, water) : null
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,

@@ -33,7 +33,10 @@ export function tidePhase(date, water, tide) {
 
 /**
  * @param water terrain.json `water`
- * @returns { tidal, lowName, highName, lowAt, highAt, levelAt, range: { low: [min, max], high: [min, max] }, uncertaintyM }
+ * @returns { tidal, lowName, highName, lineName, lowAt, highAt, lineAt, levelAt, range: { low, high, line: [min, max] }, uncertaintyM }
+ * ⭐ THE LINE (`water.line`, from coast.json through bake-terrain): where the coast is drawn. HIGH, unless the water was
+ *   flown above high at one level, when it is that water's plane (bake-coast `waterAsFlown`; Jacob, 2026-10-13). The
+ *   water still stands at levelAt: the gap from the line down is the gusset, never a moved water.
  * ⛔ Throws on a record it cannot read — a missing level is never read as 0 (the flight's level, which no one chose).
  */
 export function waterLevels(water) {
@@ -56,9 +59,11 @@ export function waterLevels(water) {
   }
   const lowAt = field(low), highAt = field(high)
   const mm = (f) => [Math.min(...f), Math.max(...f)]
+  const line = water.line ?? null
+  if (line && !(line.at === 'flown' && Number.isFinite(line.y))) throw new Error(`waterLevels: \`water.line\` is malformed (${JSON.stringify(line)}) — the coast's line is unknown. ▶ re-bake the coast and the terrain`)
   return {
-    tidal: !!water.tidal, lowName: water.low, highName: water.high,
-    lowAt, highAt, levelAt: (x, z, phase) => lowAt(x, z) + (highAt(x, z) - lowAt(x, z)) * phase,
-    range: { low: mm(low), high: mm(high) }, uncertaintyM: d.uncertaintyM ?? null,
+    tidal: !!water.tidal, lowName: water.low, highName: water.high, lineName: line ? 'the water as flown' : water.high,
+    lowAt, highAt, lineAt: line ? () => line.y : highAt, levelAt: (x, z, phase) => lowAt(x, z) + (highAt(x, z) - lowAt(x, z)) * phase,
+    range: { low: mm(low), high: mm(high), line: line ? [line.y, line.y] : mm(high) }, uncertaintyM: d.uncertaintyM ?? null,
   }
 }

@@ -6,7 +6,7 @@
  * RECORDED, never smoothed away. ⛔ Nothing here moves the ground: the water side is the terrain the slab draws (the
  * surveyed lidar flats, the bed below the flown water), measured as it stands (Boz's ruling, 2026-10-13).
  *
- * Per vertex of a coast run (the line's height is the run's own `h`, the HIGH there):
+ * Per vertex of a coast run (the line's height is the run's own `h`, the line there):
  *   · `ground`: the terrain AT the line, the water side's height where it meets the land
  *   · `toLow`:  metres from the line, walked across the water side, to the first ground at or below LOW (the crossing
  *               interpolated between samples one terrain step apart), or null: NOT REACHED within `reachM`
@@ -19,9 +19,10 @@
  *   not decide, because the ① coast edge sits off the drawn water's edge by p50 0.041 · p99 1.221 m.)
  * ⛔ null is never replaced by a value: "not reached within reachM" is the answer, and `reachM` travels with the record.
  *
- * `reachM` is the town's, derived: the equilibrium profile's own run from HIGH to LOW over the town's widest tidal range,
- * ((high − low) / A)^(3/2) with A the bed's Dean coefficient (bake-terrain, from the town's sand), and never less than
- * one terrain step. On a lake HIGH = LOW, so it is one step.
+ * `reachM` is the town's, derived: the equilibrium profile's own run from the LINE to LOW over the town's widest range,
+ * ((line − low) / A)^(3/2) with A the bed's Dean coefficient (bake-terrain, from the town's sand), and never less than
+ * one terrain step. The line is HIGH, or the water as flown where that stood above high (waterLevel.mjs lineAt): on a
+ * lake flown at its level the range is 0 and the reach one step; on Huron, flown 9 cm above, the 9 cm is the bank.
  * ▶ node checks/claims-the-gusset-is-recorded.mjs
  */
 import { CLIP_SCALE } from '../src/lib/lattice.js'
@@ -32,9 +33,10 @@ const LATTICE_M = 1 / CLIP_SCALE   // the precision ① is minted at: one lattic
 export function gussetReach({ bed, levels, stepM }) {
   if (!(bed?.A > 0)) throw new Error('gussetReach: the terrain carries no bed profile (bed.A) — the bank\'s reach is unknown. ▶ re-bake the terrain')
   if (!(stepM > 0)) throw new Error('gussetReach: the terrain carries no grid step')
-  const range = Math.max(0, levels.range.high[1] - levels.range.low[0])
+  if (!levels.range?.line) throw new Error('gussetReach: the levels carry no line range (waterLevel.mjs) — where the bank starts is unknown')
+  const range = Math.max(0, levels.range.line[1] - levels.range.low[0])
   const dean = Math.pow(range / bed.A, 1.5)
-  return { reachM: Math.max(stepM, dean), from: dean >= stepM ? `the bed's run from ${levels.highName} to ${levels.lowName} over the widest range (${range.toFixed(2)} m, A ${bed.A})` : 'one terrain step (no tidal range)' }
+  return { reachM: Math.max(stepM, dean), from: dean >= stepM ? `the bed's run from ${levels.lineName ?? levels.highName} to ${levels.lowName} over the widest range (${range.toFixed(2)} m, A ${bed.A})` : `one terrain step (the bed's run over ${range.toFixed(2)} m is shorter)` }
 }
 
 /** The carrying tile's land, as a point test: even-odd over its `iaFull` rings (① pieces with their holes). */

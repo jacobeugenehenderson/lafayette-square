@@ -22,7 +22,9 @@ for the lidar and find the actual moment of intersection with the shoreline/low-
 
 ⇒ **The coast line is where the lidar surface meets the HIGH-WATER level:** the town's datum where tidal (MHW by
 default), the authored lake level on a lake. Its height IS that level. The gusset is the bank from there down to
-low water. The sheet that finds the intersection is discarded once it has: one outline, from the lidar. The full
+low water. *2026-10-13, Huron, flown 9 cm above its authored level: "yes"* ⇒ where the water as flown stands above high
+at one level, the line is that water's edge and the gap is the gusset. One rule on a tidal town too, said in words
+(Boz). ▶ `checks/claims-the-coast-is-the-lidar-at-high-water.mjs` A2. The sheet that finds the intersection is discarded once it has: one outline, from the lidar. The full
 ruling and its measured table are in `BRIEF-the-ground-knows-its-height` §5 ("The shore: RULED"). Read it there; it is
 not restated here.
 
@@ -37,7 +39,7 @@ not restated here.
   lidar puts the lidar and the water levels UPSTREAM of ①, and **the datum must not depend on the line it moves.**
   **Where the intersection is computed is your first design question, and it is not designed for you.**
 - **Already landed, so build on it:**
-  - a coast run's `h` is high water (`waterLevels().highAt`; a drawn coast with no water record throws) (c227acaf);
+  - a coast run's `h` is the line (`waterLevels().lineAt`; a drawn coast with no water record throws) (c227acaf);
   - a coastal bake with no current shore median refuses, except the Bake's first pass, which is stamped
     `shore: "pending"` and cannot ship (76fb11db, 5ffe8dd7);
   - `gusset.mjs` reads the baked terrain part (00c76119).
@@ -73,11 +75,8 @@ not restated here.
   go, through Boz. Scratch pours are fine. LS is HELD: don't touch its data.
 - ⛔ **The machine is shared, and one heavy job runs at a time.** Before any run over a few minutes: `uptime` load < 8
   and `memory_pressure` free ≥ 40%. Ask Boz for the slot.
-- ⛔ **Don't edit these in the working tree until Boz says Cairn's triangle-size sweep is done:**
-  `cartograph/groundDeformer.mjs`, `cartograph/groundConformity.js`, terrainLoad, `cartograph/waterLevel.mjs`. The sweep
-  imports them live and refuses if they change. Swale's speed-up also lands in `groundDeformer.mjs` after the sweep.
-  - If you need a change there sooner, stage a copy in `scratch/` and load it with the in-memory swap
-    (`scratch/kerb-cut/swap.mjs` + `SWAP_MAP`; see `scratch/ground-height/shore-today/run.sh`).
+- ⛔ **`cartograph/groundDeformer.mjs` is Swale's** (the rest of the freeze lifted, Boz 2026-10-13). A change there
+  is staged in `scratch/` and loaded with the in-memory swap (`scratch/kerb-cut/swap.mjs` + `SWAP_MAP`).
   - A coastal scratch bake needs `shore-median.json` in its out-dir, or it now refuses (by design).
 - Commit by pathspec only (`git commit -- <paths>`), and check each commit's name-status. Other sessions have
   uncommitted files in the tree; never `git add -A`.

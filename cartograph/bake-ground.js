@@ -965,20 +965,21 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     const why = { bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((ribbons.streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
     let stamped = 0, coast = 0
     // ⭐ THE COAST'S LINE IS THE HIGH WATER (Jacob 2026-10-11, brief §5 "The shore"): a coast run's height IS the town's
-    // high level there (the tide datum where tidal, the authored lake level on a lake; `waterLevel.mjs`), so the land
-    // meets the water at the line and the gusset runs from it down to low water. ⛔ A drawn coast with no water record throws.
+    // line there — its high level (the tide datum where tidal, the authored lake level on a lake), or the water as flown
+    // where that stood above high at one level (Jacob 2026-10-13; `waterLevel.mjs` lineAt) — so the land meets the water
+    // at the line and the gusset runs from it down to low water. ⛔ A drawn coast with no water record throws.
     let W = null
     for (const t of shapeArtifact) for (const run of t?.runs || []) {
       if (run.skelId === '__water__') {
         if (!W) { if (!lineTerrain.water) throw new Error(`[bake-ground] ⛔ ${scene} draws a coast but its terrain carries no water record — the coast line's height (the high water) is unknown. ▶ re-bake the terrain`); W = waterLevels(lineTerrain.water) }
-        run.h = (run.poly || []).map(([x, z]) => Math.round(W.highAt(x, z) * 1000) / 1000); coast++; continue
+        run.h = (run.poly || []).map(([x, z]) => Math.round(W.lineAt(x, z) * 1000) / 1000); coast++; continue
       }
       const h = (run.poly || []).map(p => LH.heightAt(run.skelId, p))
       if (h.length && h.every(v => v != null)) { run.h = h.map(v => Math.round(v * 1000) / 1000); stamped++; continue }
       run.h = null
       why[run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown']++
     }
-    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
+    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at ${W ? W.lineName : '—'} · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
     // ⭐ THE GUSSET, RECORDED (`shoreGusset.mjs`; Jacob 2026-10-10/11, Boz 2026-10-13): per vertex of every coast run, the
     // water side (the side of the run's edge that is not its tile's ① land, `iaFull`), its ground at the line and the
@@ -993,7 +994,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         run.gusset = { ground: g.ground, toLow: g.toLow }
         tally.stations += g.ground.length; tally.reached += g.reached; tally.notReached += g.notReached; tally.noSide += g.noSide
       }
-      gussetRecord = { stepM: lineTerrain.stepM, reachM, reachFrom: from, low: W.lowName, high: W.highName, ...tally }
+      gussetRecord = { stepM: lineTerrain.stepM, reachM, reachFrom: from, low: W.lowName, high: W.lineName, ...tally }
       console.log(`  [gusset] ${tally.stations} coast station(s): ${tally.reached} reach ${W.lowName} within ${reachM.toFixed(1)} m (${from}) · ${tally.notReached} not reached · ${tally.noSide} whose edge does not say which side is the tile's land · walked every ${lineTerrain.stepM.toFixed(2)} m`)
     }
   }

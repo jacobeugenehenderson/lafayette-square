@@ -8,7 +8,7 @@ OPEN:
 - 10 blocks-stage vertices with no single containing edge, all coast-owned. Cause not established.
 - CANDIDATE, not built: coast owners carry no arc id (ci = −1). A15 — the polygon is named; a shore arc without its own name
   is the hole the kit closed for streets.
-- Huron REFUSES on the rim guard (water flown 0.09 m above its authored 'mean'): Jacob's ruling.
+- Huron draws at the water as flown (0.087 m above its authored 'mean'; Jacob "yes" 2026-10-13). Its scratch re-bake is owed.
 - jacksonheights: check B red (water record, no coast.json) — owed when JH resumes.
 - The shore median retires WITH the water-side half.
 REGISTERS: to be named per commit (FEATURES / OPERATIONS / BAKE.md), or "reaches no register".

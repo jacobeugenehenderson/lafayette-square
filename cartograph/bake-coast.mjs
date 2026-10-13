@@ -33,8 +33,8 @@
  *
  * ── WHAT REFUSES, BY NAME ──────────────────────────────────────────────────────
  *   a water record and no OSM water to verify against · OSM water and no water record (waterDatums) · no lidar · a
- *   lidar that is not NAVD88 · water flown above its high level (the rim guard: most lidar cells bordering the open
- *   water stand above high) · the lidar and the OSM water disagreeing at a MAJORITY (less than half the OSM water is
+ *   lidar that is not NAVD88 · water flown above its high level at MORE THAN ONE level (waterAsFlown: water flown above
+ *   high at one level is drawn at its own edge, the gap is the gusset) · the lidar and the OSM water disagreeing at a MAJORITY (less than half the OSM water is
  *   lidar-wet: the flattened water stands above high, printed as the gap) · no water reaching the square's edge.
  * ⛔ OSM is a VERIFIER here, never geometry (Boz's ruling, 2026-10-13): two independent sources that must agree.
  *
@@ -48,7 +48,7 @@ import clipperLib from 'clipper-lib'
 import { CARTOGRAPH_DIR } from './config.js'
 import { requireExplicitMap } from './scene.js'
 import { writeIfChanged } from './io.js'
-import { elevationSpecs, openRasters, readWindow, sampleSources, demVerticalDatum, TERRAIN_STEP_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, readWindow, sampleSources, demVerticalDatum, TERRAIN_STEP_M, ABOVE_WATER_M } from './elevationSources.mjs'
 import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels } from './waterLevel.mjs'
 import { wetLoops } from './marchingSquares.mjs'
@@ -115,24 +115,46 @@ export function sheetField(wet, w) {
 }
 
 /**
- * ⛔ THE RIM GUARD (Boz's ruling (ii), 2026-10-13). The finite cells bordering the no-return water the flood entered ARE
- * the water as flown (a hydro-flattened rim). If more than half stand ABOVE high water, the water was flown above its
- * own high level: the flood would stop on the water's surface and draw the coast offshore, and the verifier would pass
- * it. @returns { n, above, share, gapM } — gapM is the median height of the above-high rim over high water.
+ * ⭐ THE WATER AS FLOWN (Jacob, 2026-10-13, on Huron: "yes"; Boz's ruling (ii) narrowed). The finite cells bordering the
+ * no-return water the flood entered ARE the water as flown (a hydro-flattened rim). If most stand ABOVE high water, the
+ * water was flown above its chosen level, and the flood at high would stop on the water's own surface and draw the coast
+ * offshore. So the line is the flown water's EDGE: the water's level is the higher of high and the flown water, and the
+ * gap between them is the gusset (shoreGusset.mjs records it). The flown water is "the flattened water" by the kit's one
+ * definition (ABOVE_WATER_M, the datum's bucket): the line stands at the rim's median + ABOVE_WATER_M.
+ * ⛔ It REFUSES (`level: false`) only when the flown water is not ONE level — under half the rim within ABOVE_WATER_M of
+ * its median — because then there is no single plane whose edge to draw.
+ * @param ground the lidar per cell (the same frame as `w`, high − ground)
+ * @returns { n, above, share, gapM, line: 'high' | 'flown', level, levelShare, navd88Line } — gapM is the median height
+ *   of the above-high rim over high water; navd88Line (flown only) the line's level, in the lidar's own datum
  */
-export function rimGuard(wet, nr, w, W, H) {
-  let n = 0
-  const above = []
+export function waterAsFlown(wet, nr, w, ground, W, H) {
+  const rim = [], above = []
   for (let k = 0; k < W * H; k++) {
     if (!Number.isFinite(w[k])) continue
     const i = k % W, j = (k - i) / W
     const nb = [i > 0 && k - 1, i + 1 < W && k + 1, j > 0 && k - W, j + 1 < H && k + W]
     if (!nb.some(q => q !== false && wet[q] && nr[q])) continue
-    n++
+    rim.push(k)
     if (w[k] < 0) above.push(-w[k])
   }
-  above.sort((a, b) => a - b)
-  return { n, above: above.length, share: n ? above.length / n : 0, gapM: above.length ? above[Math.floor(above.length / 2)] : null }
+  const med = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[s.length >> 1] : null }
+  const n = rim.length, share = n ? above.length / n : 0, out = { n, above: above.length, share, gapM: med(above), line: 'high' }
+  if (!(share > 0.5)) return out
+  const flown = med(rim.map(k => ground[k]))
+  const levelShare = rim.filter(k => Math.abs(ground[k] - flown) <= ABOVE_WATER_M).length / n
+  return { ...out, line: 'flown', level: levelShare >= 0.5, levelShare, navd88Line: flown + ABOVE_WATER_M }
+}
+
+/** The line's level at (x, z): the flown water's plane where the water was flown above high, else high. */
+export const lineOfWater = (flown, highAt) => flown.line === 'flown' ? () => flown.navd88Line : highAt
+
+/** What the line is, in words — and ⭐ when it is the flown water on a TIDAL town, it says so (Boz, 2026-10-13): a surge
+ *  flight's edge is the only measured line under no-return water, and it is disclosed, never silent. */
+export function lineSentence(levels, flown, fine, G) {
+  const at = flown.line === 'flown'
+    ? `the edge of the water as flown (${levels.tidal ? 'tidal' : 'lake'}), ${flown.gapM.toFixed(2)} m above ${levels.highName} (NAVD88 ${flown.navd88Line.toFixed(3)} m): ${levels.tidal ? `the coast is the flown water's edge, not ${levels.highName}` : `the ${flown.gapM.toFixed(2)} m down to the authored level is the gusset`}`
+    : `the lidar meets ${levels.highName} (${levels.tidal ? 'tidal' : 'lake'}; NAVD88 ${levels.range.high.map(v => v.toFixed(3)).join('…')} m)`
+  return `${at}, traced at ${+fine.toFixed(3)} m along a ${G} m sheet over the fetched square`
 }
 
 /** Is (lon, lat) inside a tile's raster (a value or none)? — the one test that tells NO RETURN from NO COVERAGE. */
@@ -310,11 +332,17 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   coarse.length = 0
   if (noLidar === W * H) throw new Error(`⛔ bake-coast: ${scene}'s lidar holds NO value anywhere over the fetched square — no coast can be drawn from it`)
   const { held, n: heldN } = heldCells(osm.ground, { W, H, x0: R.x0, z0: R.z0, step: G })
-  const wet = floodFromEdge(w, W, H, held, nr)
+  let wet = floodFromEdge(w, W, H, held, nr)
+  // ⭐ THE WATER AS FLOWN: where it stands above high, its edge is the line (waterAsFlown); the sheet is flooded again at it.
+  const guard = waterAsFlown(wet, nr, w, ground, W, H)
+  if (guard.line === 'flown' && !guard.level) throw new Error(`⛔ bake-coast: ${scene} — the water was flown ABOVE its high level (${levels.highName}) and is NOT ONE LEVEL: ${(100 * guard.share).toFixed(1)}% of the ${guard.n.toLocaleString()} lidar cells bordering the open water stand above high water (median ${guard.gapM.toFixed(2)} m), and only ${(100 * guard.levelShare).toFixed(1)}% of them lie within ${ABOVE_WATER_M} m of one level, so there is no single flown water whose edge to draw. ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
+  const lineAt = lineOfWater(guard, levels.highAt)
+  if (guard.line === 'flown') {
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i; w[k] = lineAt(X(i), Z(j)) - ground[k] }
+    wet = floodFromEdge(w, W, H, held, nr)
+  }
   let nrIn = 0, nrOut = 0
   for (let k = 0; k < W * H; k++) if (nr[k]) { if (wet[k]) nrIn++; else nrOut++ }
-  const guard = rimGuard(wet, nr, w, W, H)
-  if (guard.share > 0.5) throw new Error(`⛔ bake-coast: ${scene} — the water was flown ABOVE its high level (${levels.highName}): ${(100 * guard.share).toFixed(1)}% of the ${guard.n.toLocaleString()} lidar cells bordering the open water stand above high water, by a median ${guard.gapM.toFixed(2)} m. The flood would stop on the water's own surface and draw the coast offshore. ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
 
   // ── THE FINE LINE, along the sheet's edge, at the source's own pixel ────────────────────────────────────────────
   const [cx, cz] = bnd.center
@@ -348,7 +376,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
       const x = x0 + i * fine, z = z0 + j * fine, v = sampleSources(win, ...toLL(x, z))
       samples++
       if (!Number.isFinite(v)) { noValue++; f[j * n + i] = inRaster(win, ...toLL(x, z)) ? -Number.EPSILON : 1 }   // no return: water; no coverage: dry (the sheet's rule)
-      else f[j * n + i] = v - levels.highAt(x, z)                          // ≤ 0 = below high water
+      else f[j * n + i] = v - lineAt(x, z)                                 // ≤ 0 = below the line's level
     }
     win.length = 0
     const loops = wetLoops(f, n, n, x0, z0, fine)
@@ -358,7 +386,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const water = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, [...clip(ClipType.ctDifference, sheet, band), ...fineParts], null), square)
   const minM2 = (2 * fine) ** 2
   const { bodies, hollows } = bodiesAtEdge(water, R, minM2)
-  if (!bodies.length) throw new Error(`⛔ bake-coast: ${scene} — no ground below high water (${levels.highName}) reaches the fetched square's edge, so the lidar draws no coast, and OSM draws ${osmWater.rings.length} water ring(s). ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
+  if (!bodies.length) throw new Error(`⛔ bake-coast: ${scene} — no ground below ${guard.line === 'flown' ? 'the water as flown' : `high water (${levels.highName})`} reaches the fetched square's edge, so the lidar draws no coast, and OSM draws ${osmWater.rings.length} water ring(s). ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
 
   // ── THE VERIFIER: OSM's water and the lidar's must agree, at a majority ─────────────────────────────────────────
   const wetPaths = bodies.flatMap(bd => [toPath(bd.outer), ...bd.holes.map(toPath)])
@@ -367,7 +395,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const agreeM2 = areaM2(clip(ClipType.ctIntersection, osmPaths, wetPaths, PolyFillType.pftEvenOdd))
   const lidarOnlyM2 = areaM2(clip(ClipType.ctDifference, wetPaths, osmPaths, PolyFillType.pftEvenOdd))
   const share = osmM2 > 0 ? agreeM2 / osmM2 : 0
-  if (!(share >= 0.5)) throw new Error(`⛔ bake-coast: ${scene} — the lidar and OSM disagree about the water at a MAJORITY: only ${(100 * share).toFixed(1)}% of OSM's ${(osmM2 / 1e4).toFixed(1)} ha of water is below high water (${levels.highName}) and connected to the square's edge. ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
+  if (!(share >= 0.5)) throw new Error(`⛔ bake-coast: ${scene} — the lidar and OSM disagree about the water at a MAJORITY: only ${(100 * share).toFixed(1)}% of OSM's ${(osmM2 / 1e4).toFixed(1)} ha of water is below ${guard.line === 'flown' ? 'the water as flown' : `high water (${levels.highName})`} and connected to the square's edge. ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
 
   // ── THE ARCS: the shoreline ① strokes, cut from the rings simplified below half the source's pixel (finer than it) ──
   const r3 = (r) => r.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)])
@@ -375,7 +403,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // ⭐ ON THE SOURCE, NOT ON THE TRACE: each kept vertex is bisected along its normal on the real sampler (bilinear on the
   // raster's own pixels), within one trace step. The trace interpolates linearly between samples laid in TOWN metres,
   // which is not the raster's grid: measured on Provincetown, |lidar − high| at the kept vertices p90 5.8 mm → 0.0 mm.
-  const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, levels)
+  const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, lineAt)
   for (const bd of simple) { bd.outer = r3(bd.outer); bd.holes = bd.holes.map(r3) }
   const arcs = [], islands = []
   for (const bd of simple) for (const ring of [bd.outer, ...bd.holes]) for (const a of arcsOf(ring, R)) {
@@ -384,13 +412,14 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   }
   Object.assign(out, {
     coast: true,
-    from: `the lidar meets ${levels.highName} (${levels.tidal ? 'tidal' : 'lake'}; NAVD88 ${levels.range.high.map(v => v.toFixed(3)).join('…')} m), traced at ${+fine.toFixed(3)} m along a ${G} m sheet over the fetched square`,
-    level: { high: levels.highName, low: levels.lowName, tidal: levels.tidal, navd88High: levels.range.high, navd88Low: levels.range.low },
+    from: lineSentence(levels, guard, fine, G),
+    level: { high: levels.highName, low: levels.lowName, tidal: levels.tidal, navd88High: levels.range.high, navd88Low: levels.range.low,
+             line: guard.line === 'flown' ? 'flown' : levels.highName, ...(guard.line === 'flown' ? { navd88Line: +guard.navd88Line.toFixed(4), flownAboveHighM: +guard.gapM.toFixed(4) } : {}) },
     dem: vd, gridM: G, fineM: +fine.toFixed(3),
     water: simple,
     arcs, islands,
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
-    guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
+    guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM, line: guard.line, ...(guard.line === 'flown' ? { levelShare: +guard.levelShare.toFixed(4) } : {}) },
     settled: { moved: settled.moved, unbracketed: settled.unbracketed, noValue: settled.noValue, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
@@ -401,9 +430,9 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   console.log(`  ${bodies.length} water bod(ies) · ${arcs.length} shoreline arc(s), ${arcs.reduce((t, a) => t + a.length, 0).toLocaleString()} vertices · ${tiles} fine tile(s), ${samples.toLocaleString()} samples`)
   console.log(`  VERIFY: ${(100 * V.lidarWetShareOfOsm).toFixed(1)}% of OSM's ${V.osmWaterHa} ha of water is lidar-wet · ${V.lidarWetWithoutOsmHa} ha lidar-wet with no OSM water (reported, not refused)`)
   console.log(`  NO RETURN (inside a tile, no value): ${T.noReturnEnteredHa} ha entered by the water · ${T.noReturnNotReachedHa} ha not reached (land dropouts) · NO COVERAGE (outside every tile): ${T.noCoverageHa} ha, never entered`)
-  console.log(`  RIM GUARD: ${(100 * out.guard.share).toFixed(1)}% of ${out.guard.rimCells.toLocaleString()} cells bordering the open water stand above high water${out.guard.gapM != null ? ` (median ${out.guard.gapM.toFixed(2)} m above)` : ''} — refuses over 50%`)
+  console.log(`  THE WATER AS FLOWN: ${(100 * out.guard.share).toFixed(1)}% of ${out.guard.rimCells.toLocaleString()} cells bordering the open water stand above high water${out.guard.gapM != null ? ` (median ${out.guard.gapM.toFixed(2)} m above)` : ''}${guard.line === 'flown' ? ` — over half, so the LINE IS THE FLOWN WATER'S EDGE at NAVD88 ${guard.navd88Line.toFixed(3)} m (${(100 * guard.levelShare).toFixed(1)}% of the rim at one level)${levels.tidal ? ` ⚠️ a TIDAL town: the coast is the flown water's edge, not ${levels.highName}` : ''}` : ' — the line is high water'}`)
   if (noValue) console.log(`  ${noValue.toLocaleString()} fine sample(s) along the line had no lidar value — no return traced as water, no coverage as dry`)
-  if (hollows.length) console.log(`  ${hollows.length} hollow(s) below high water that the water does not reach (${T.hollowHa} ha) — dry, by the coast rule`)
+  if (hollows.length) console.log(`  ${hollows.length} hollow(s) below the line that the water does not reach (${T.hollowHa} ha) — dry, by the coast rule`)
   if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
@@ -412,9 +441,9 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
 
 /**
  * Bisect every ring vertex off the square's edge along its normal (from its two neighbours) on the real sampler, within
- * ± one trace step, to where lidar − high = 0. In place. A vertex with no sign change in that reach keeps its traced place.
+ * ± one trace step, to where lidar − the line's level = 0. In place. A vertex with no sign change in that reach keeps its traced place.
  */
-async function settleOnSource(rings, R, step, opened, toLL, levels) {
+async function settleOnSource(rings, R, step, opened, toLL, lineAt) {
   const T = TILE_M, groups = new Map()
   for (const ring of rings) for (let k = 0; k < ring.length; k++) {
     if (onSquare(ring[k], R)) continue
@@ -428,7 +457,7 @@ async function settleOnSource(rings, R, step, opened, toLL, levels) {
   for (const [key, items] of groups) {
     const [i, j] = key.split(',').map(Number), m = 2 * step
     const win = await readWindow(opened, { cornersLL: [toLL(i * T - m, j * T - m), toLL(i * T + T + m, j * T - m), toLL(i * T - m, j * T + T + m), toLL(i * T + T + m, j * T + T + m)], stepM: null, quiet: true })
-    const f = (x, z) => sampleSources(win, ...toLL(x, z)) - levels.highAt(x, z)
+    const f = (x, z) => sampleSources(win, ...toLL(x, z)) - lineAt(x, z)
     const next = items.map(([ring, k, nx, nz]) => {
       const p = ring[k]
       let lo = -step, hi = step, flo = f(p[0] + nx * lo, p[1] + nz * lo), fhi = f(p[0] + nx * hi, p[1] + nz * hi)
