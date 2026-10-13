@@ -571,6 +571,12 @@ act as that person. Found by the Ward's third security review (shared-terminal p
 `backend/apps-script-2026-10-07.patch` (v4, in progress). ⛔ Not deployed. After deploy, any key already read is
 still valid: rotating exposed keys is owed.
 
+### F-28 · UNRATED · Does the Apps Script authorize a town on its tenant id alone?  *(new, 2026-10-13; a question)*
+Every town's sealed id (`cartograph/data/<map>/town-id.json`) ships to every town's visitors in the player bundle
+(`src/instances/registry.js`), and each town's own client sends its id on every call, so no id is secret. ⛔ Owed: a read
+of `apps-script/Code.js`. Does a tenant id alone open a town's tabs, or does every write also check a caller? Not
+established. If the id alone is enough, any town's data is reachable by anyone who loads any town.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
