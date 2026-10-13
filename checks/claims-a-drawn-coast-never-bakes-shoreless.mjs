@@ -13,12 +13,20 @@
 //     town and the file; with --shore=pending it paints nothing and is stamped pending; a current median is painted;
 //     a town with no coast (or an inland one) owes none;
 //   - bakeGround decides through shoreMedianFor (one rule), and parses --shore=pending;
-//   - serve.js passes --shore=pending on the 'ground' step and on NO other bake-ground run ('ground-shore' included).
+//   - serve.js passes --shore=pending on the 'ground' step and on NO other bake-ground run ('ground-shore' included);
+//   - a slab stamped pending does not SHIP: the uploader's plan (`scripts/upload-baked-to-r2.mjs#plan`, imported; it is
+//     what Publish, Promote and the CLI all run) refuses it on a scratch tree, naming the look; an unstamped one plans.
+//     ⛔ No env, no network: plan() only reads the tree it is given.
 // ⭐ MUTATION TEST: `--selftest` — the rule as shipped is GREEN; the warn-and-continue it replaced (no throw, no stamp)
-//   is RED; a pending pass that paints a stale median is RED; a serve.js that flags 'ground-shore' too is RED.
+//   is RED; a pending pass that paints a stale median is RED; a serve.js that flags 'ground-shore' too is RED; the
+//   uploader with its ground.json read dropped is RED.
 //   node checks/claims-a-drawn-coast-never-bakes-shoreless.mjs [--selftest]
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
+import { pathToFileURL } from 'url'
 import { shoreMedianFor } from '../cartograph/bake-ground.js'
+import { plan } from '../scripts/upload-baked-to-r2.mjs'
 
 const R = new URL('../', import.meta.url).pathname
 const groundSrc = readFileSync(R + 'cartograph/bake-ground.js', 'utf8')
@@ -67,6 +75,18 @@ function judgeWiring(gsrc, ssrc) {
     ['no warn-and-continue shore branch is left', !/NO shore sand painted/.test(gsrc), 'bake-ground.js'],
   ]
 }
+// a scratch baked tree: one look stamped pending, one not
+const scratch = mkdtempSync(join(tmpdir(), 'shore-pending-'))
+for (const [l, g] of [['wet', { shore: 'pending' }], ['dry', {}]]) { mkdirSync(join(scratch, l)); writeFileSync(join(scratch, l, 'ground.json'), JSON.stringify(g)) }
+process.on('exit', () => rmSync(scratch, { recursive: true, force: true }))
+function judgeShip(planFn) {
+  const p = outcome(planFn, { look: 'wet', prefix: 'scratch/', root: scratch })
+  const d = outcome(planFn, { look: 'dry', prefix: 'scratch/', root: scratch })
+  return [
+    ['the uploader refuses a slab stamped shore: "pending", naming the look', !!p.threw && p.threw.includes('"wet"') && p.threw.includes('pending'), p.threw ?? `planned ${p.ok?.files?.length} file(s)`],
+    ['the uploader plans an unstamped slab', !!d.ok && d.ok.files.length === 1, d.threw ?? `planned ${d.ok.files.length} file(s)`],
+  ]
+}
 const show = (rows) => { for (const [n, ok, w] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${n} (${w})`) }
 
 if (process.argv.includes('--selftest')) {
@@ -75,7 +95,18 @@ if (process.argv.includes('--selftest')) {
   // a pending pass that paints whatever median it finds
   const pendingPaintsStale = (a) => a.shorePending && a.doc ? { paint: a.doc, state: 'pending' } : shoreMedianFor(a)
   const groundShoreFlagged = serveSrc.replace(/(runIfDirty\('ground-shore'[^]*?`node bake-ground\.js[^`]*)`/, '$1 --shore=pending`')
+  // the uploader with its ground.json read dropped, imported from a scratch copy (its relative imports made absolute)
+  const upSrc = readFileSync(R + 'scripts/upload-baked-to-r2.mjs', 'utf8'), READ = "if (ground?.shore === 'pending')"
+  if (upSrc.split(READ).length !== 2) throw new Error('the uploader\'s pending read is not found exactly once — the self-test is stale')
+  const mutPath = join(scratch, 'upload-noread.mjs')
+  writeFileSync(mutPath, upSrc.replace(READ, 'if (false)')
+    .replace(/from '\.\.\/([^']+)'/g, (_, p) => `from '${pathToFileURL(R + p).href}'`)
+    .replace(/from '\.\/([^']+)'/g, (_, p) => `from '${pathToFileURL(R + 'scripts/' + p).href}'`)
+    .replace("new URL('..', import.meta.url)", `new URL('${pathToFileURL(R).href}')`))
+  const noRead = (await import(pathToFileURL(mutPath).href)).plan
   const tests = [
+    ['the uploader as shipped refuses a pending slab', judgeShip(plan).every(r => r[1])],
+    ['the uploader with the read dropped is RED', judgeShip(noRead).some(r => !r[1])],
     ['the rule as shipped is GREEN', judgeRule(shoreMedianFor).every(r => r[1])],
     ['warn-and-continue (the replaced branch) is RED', judgeRule(warnAndContinue).some(r => !r[1])],
     ['a pending pass painting a stale median is RED', judgeRule(pendingPaintsStale).some(r => !r[1])],
@@ -86,8 +117,8 @@ if (process.argv.includes('--selftest')) {
   process.exit(tests.every(t => t[1]) ? 0 : 1)
 }
 
-const rows = [...judgeRule(shoreMedianFor), ...judgeWiring(groundSrc, serveSrc)]
+const rows = [...judgeRule(shoreMedianFor), ...judgeWiring(groundSrc, serveSrc), ...judgeShip(plan)]
 show(rows)
 const bad = rows.filter(r => !r[1]).length
-console.log(bad ? `⛔ ${bad} row(s): a drawn coast can bake with no shore` : '✅ a drawn coast never bakes shoreless: no current median refuses, except the Bake\'s first pass, which is stamped pending')
+console.log(bad ? `⛔ ${bad} row(s): a drawn coast can bake with no shore` : '✅ a drawn coast never bakes shoreless: no current median refuses, except the Bake\'s first pass, which is stamped pending and does not ship')
 process.exit(bad ? 1 : 0)
