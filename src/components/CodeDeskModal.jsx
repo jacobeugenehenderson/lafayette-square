@@ -114,13 +114,26 @@ function CodeDeskModalInner() {
     }
   }, [isGuardianMode, allPlaces, qrType, storeListingId, storeClaimSecret])
 
-  // Save button flash
+  // The Save button says what the backend did (SECURITY F-26: a save can be refused): it flashes Saved only on
+  // CodeDesk's 'lsq-saved', and shows the reason on 'lsq-save-refused' until the next try.
+  const [refused, setRefused] = useState(null)
+  useEffect(() => {
+    const onMessage = (e) => {
+      if (e.source !== iframeRef.current?.contentWindow) return
+      if (e.data?.type === 'lsq-saved') {
+        setRefused(null)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 1500)
+      } else if (e.data?.type === 'lsq-save-refused') {
+        setRefused(String(e.data.error || 'The design was not saved'))
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
   const handleSave = useCallback(() => {
-    const iframe = iframeRef.current
-    if (!iframe) return
-    iframe.contentWindow?.postMessage({ type: 'lsq-save' }, '*')
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
+    setRefused(null)
+    iframeRef.current?.contentWindow?.postMessage({ type: 'lsq-save' }, '*')
   }, [])
 
   return (
@@ -177,6 +190,7 @@ function CodeDeskModalInner() {
 
       {/* Footer — Save button */}
       <div className="px-4 py-2.5 border-t border-outline-variant flex-shrink-0">
+          {refused && <p role="alert" className="text-rose-300 text-body-sm mb-2">{refused}</p>}
           <button
             onClick={handleSave}
             className={`w-full py-2.5 px-4 rounded-lg text-body font-medium transition-all duration-200 font-mono ${

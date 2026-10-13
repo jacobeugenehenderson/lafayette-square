@@ -2128,11 +2128,9 @@ const ALL_PERMS = ['menu', 'events', 'replies', 'photos', 'hours']
 function StaffSection({ listingId }) {
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
-  const [myHash, setMyHash] = useState(null)
 
   const fetchStaff = useCallback(async () => {
     const dh = await getDeviceHash()
-    setMyHash(dh)
     try {
       const res = await getListingStaff(dh, listingId)
       setStaff(res?.data?.staff || [])
@@ -2189,7 +2187,7 @@ function StaffSection({ listingId }) {
   return (
     <div className="space-y-3">
       {staff.map(s => {
-        const isMe = s.device_hash === myHash
+        const isMe = s.is_me === true   // the backend marks the requester's row; staff ids are opaque (SECURITY F-25)
         const isGuardianRole = s.role === 'guardian'
         return (
           <div key={s.device_hash} className="rounded-lg border border-outline-variant p-3 space-y-2">

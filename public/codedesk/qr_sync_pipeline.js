@@ -61,19 +61,35 @@ function _lsqLookParam() {
   return look ? '&look=' + encodeURIComponent(look) : ''
 }
 
+// SECURITY F-26 (2026-10-13): the backend saves a design only for the operator or the place's full Guardian, so a
+// save carries who is asking: the device's key when the app opened CodeDesk for a Guardian (?guardian), else the
+// operator's admin token, both read where the app already keeps them. The parent hears 'lsq-saved' only once the
+// backend has the design, and 'lsq-save-refused' with the reason otherwise.
 function _lsqSaveRemote(bizId, state, type) {
-  if (!bizId || !type || !window.LSQ_API_URL) return;
-  var look = new URLSearchParams(window.location.search).get('look');
+  if (!bizId || !type || !window.LSQ_API_URL) return _lsqSaveRefused('The design was not saved: no place, type or backend');
+  var q = new URLSearchParams(window.location.search);
+  var look = q.get('look');
   var payload = { action: 'saveDesign', bizId: bizId + '-' + type, design: state };
   if (look) payload.look = look;
   try {
-    fetch(window.LSQ_API_URL, {
-      method: 'POST',
-      credentials: 'omit',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    }).catch(function() {});
+    if (q.has('guardian')) payload.device_hash = localStorage.getItem('lsq_device_hash') || '';
+    else payload.admin_token = localStorage.getItem('lsq_admin_token') || '';
   } catch (e) {}
+  fetch(window.LSQ_API_URL, {
+    method: 'POST',
+    credentials: 'omit',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).then(function(r) { return r.json(); }).then(function(res) {
+    if (res && res.status === 'ok' && res.data && res.data.success) {
+      window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type }, '*');
+    } else {
+      _lsqSaveRefused('The design was not saved: ' + ((res && res.data && res.data.error) || 'the backend refused it'));
+    }
+  }).catch(function() { _lsqSaveRefused('The design was not saved: the backend could not be reached'); });
+}
+function _lsqSaveRefused(reason) {
+  window.parent.postMessage({ type: 'lsq-save-refused', error: reason }, '*');
 }
 
 async function _lsqLoadRemote(bizId, type) {
@@ -161,7 +177,7 @@ window._lsqIsDirty = function() {
 window._lsqSaveNow = function _lsqSaveNow() {
   var bizId = _lsqGetCurrentBizId();
   var type = _lsqGetCurrentType();
-  if (!bizId) return;
+  if (!bizId) return _lsqSaveRefused('The design was not saved: pick a place first');
 
   var state = null;
   if (typeof window.codedeskExportState === 'function') {
@@ -175,9 +191,9 @@ window._lsqSaveNow = function _lsqSaveNow() {
   // Snapshot clean state after save
   _lsqSnapshotClean();
 
-  // Save design to API (no image — QR is rendered client-side from design_json)
+  // Save design to API (no image — QR is rendered client-side from design_json); it tells the parent how that went
   if (state) _lsqSaveRemote(bizId, state, type);
-  window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type }, '*');
+  else _lsqSaveRefused('The design was not saved: CodeDesk has no design to export');
 };
 
 // (No render hook — dirty check is on-demand via _lsqIsDirty)
