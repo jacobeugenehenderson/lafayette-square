@@ -29,7 +29,7 @@ import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
 import { edt1d } from './distanceField.mjs'
-import { COAST_FILE } from './bake-coast.mjs'
+import { COAST_FILE } from './coastFile.mjs'
 import { outerCoast } from './outer-coast.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')

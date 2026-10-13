@@ -35,7 +35,7 @@ import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
-import { COAST_FILE } from './bake-coast.mjs'
+import { COAST_FILE } from './coastFile.mjs'
 
 // ⭐⭐ THE COAST IS THE LIDAR'S, AT HIGH WATER (BRIEF-the-coast-from-the-lidar; bake-coast.mjs, which runs before the
 // pour). ① strokes its ARCS and excludes its WATER from the frame; OSM's coast is only bake-coast's verifier.

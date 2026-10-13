@@ -9,7 +9,7 @@
  * the rim the water/land boundary follows the real coast to the fetched square's edge, then the coast's own heading.
  *
  * ⭐ READS THE SLAB AND THE TOWN'S OWN COAST: public/baked/<town>/{ground.json, ground.bin, outer-coast.json}, and the
- * coast rings recomputed from raw/osm.json by coastline.mjs#coastRings exactly as the bake does. Asserts per town:
+ * coast's water bodies from clean/coast.json (bake-coast.mjs, the lidar at high water), as the bake reads them. Asserts per town:
  *   1. THE SEAM — in 512 directions round the rim, the baked water just inside it (the body mesh) and the outer water
  *      just outside it agree: no gap, no overlap. Directions within one sector of a coast crossing the rim are exempt.
  *   2. THE REAL COAST — inside the fetched square, past the rim, wherever the outer water and the real coast disagree,
@@ -28,7 +28,6 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1] ?? d
-const { coastRings } = await import(join(ROOT, 'cartograph/coastline.mjs'))
 const { outerCoast, headingSpread } = await import(join(ROOT, 'cartograph/outer-coast.mjs'))
 const { isWaterGroupId } = await import(join(ROOT, 'src/components/waterMaterial.js'))
 const { horizonFor } = await import(join(ROOT, 'src/lib/horizonReach.js'))
@@ -95,8 +94,8 @@ for (const town of arg('town', 'huron,provincetown').split(',')) {
   const inTri = (x, z, [a, b, c]) => { const d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]); if (!d) return false
     const w0 = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (z - c[1])) / d, w1 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (z - c[1])) / d; return w0 >= 0 && w1 >= 0 && w0 + w1 <= 1 }
   const wetAt = (a) => tris.some((t) => inTri(cx + Math.cos(a) * R * 0.995, cz + Math.sin(a) * R * 0.995, t))
-  const osm = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', town, 'raw/osm.json'), 'utf8'))
-  const rings = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: [cx, cz], discR: R, bb: rec.bb }).rings || []
+  const K = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', town, 'clean/coast.json'), 'utf8'))
+  const rings = K.coast ? K.water.map((w) => w.outer) : []
   const ctx = { wetAt, rings, bb: rec.bb, cx, cz, R }
   judge(town, rec.polygons, ctx)
   check((rec.refused || []).length === 0, `${town}: no coast heading was refused`, (rec.refused || []).map((r) => r.why).join('; '))

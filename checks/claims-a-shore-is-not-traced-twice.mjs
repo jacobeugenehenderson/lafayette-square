@@ -19,7 +19,7 @@
 // nothing" — and it is correct on huron, whose ring bounds 40,114,034 m². Invisible on the
 // town it was built against, fatal on the next one.
 //
-// ⛔ The duplication is UPSTREAM of coastline.mjs and dropping it at the weld does not fix
+// ⛔ The duplication is UPSTREAM of coastVerify.mjs (was coastline.mjs) and dropping it at the weld does not fix
 // it. This check asserts the weld is defensive; it does NOT claim the intake is clean.
 //
 // ⭐ MUTATION TEST — each must turn this RED:
@@ -30,7 +30,7 @@
 //
 //   node checks/claims-a-shore-is-not-traced-twice.mjs
 // Read-only. Exits 1 on either invariant.
-import { weldCoastlines, ringMeanWidth, coastRings } from '../cartograph/coastline.mjs'
+import { weldCoastlines, ringMeanWidth, osmWaterToVerify } from '../cartograph/coastVerify.mjs'
 
 let failed = false
 const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' : '⛔'} ${msg}`) }
@@ -87,7 +87,7 @@ const asFeat = (pts) => ({ coords: pts.map(([x, z]) => ({ x, z })), tags: { natu
 
 // ── ③ AND THE GATE MUST FIRE INSIDE THE PRODUCER, NOT JUST IN THE HELPER ───────
 // ⛔ An earlier cut of this check tested `ringMeanWidth` alone and PASSED with the gate in
-// `coastRings` disabled — a blind check, the exact failure this repo keeps paying for. So
+// `coastRings` (now coastVerify.mjs's verifier) disabled — a blind check, the exact failure this repo keeps paying for. So
 // this drives the real producer with a synthetic scene whose coastline is a closed trace
 // that doubles back, and asserts the producer REFUSES it as a face.
 {
@@ -99,10 +99,10 @@ const asFeat = (pts) => ({ coords: pts.map(([x, z]) => ({ x, z })), tags: { natu
   const doubled = [...line, ...[...line].reverse().slice(1)]
   const feat = { tags: { natural: 'coastline' }, isClosed: false,
                  coords: doubled.map(([x, z]) => ({ x, z })) }
-  const out = coastRings({ ground: { natural: [feat] }, buildings: [], center: [0, -2000], discR: R * 0.9, bb })
+  const out = osmWaterToVerify({ osm: { ground: { natural: [feat] }, buildings: [] }, center: [0, -2000], discR: R * 0.9, bb })
   const enclosesNothing = (out.rings || []).every(r => ringMeanWidth(r) >= 0.05)
   say(enclosesNothing,
-      `coastRings emits NO zero-area face from a doubled-back coast — ${(out.rings || []).length} ring(s), mean widths ${(out.rings || []).map(r => ringMeanWidth(r).toFixed(2)).join(', ') || '(none)'}`)
+      `the OSM verifier emits NO zero-area face from a doubled-back coast — ${(out.rings || []).length} ring(s), mean widths ${(out.rings || []).map(r => ringMeanWidth(r).toFixed(2)).join(', ') || '(none)'}`)
   say((out.report || []).some(l => /ENCLOSES NOTHING|duplicate/i.test(l)),
       `and it SAYS so rather than passing quietly`)
 }
@@ -125,7 +125,7 @@ const asFeat = (pts) => ({ coords: pts.map(([x, z]) => ({ x, z })), tags: { natu
   // 200 buildings on the LAND side (z < 1500), where the town centre is
   const buildings = []
   for (let i = 0; i < 200; i++) buildings.push({ coords: [{ x: -3000 + i * 30, z: -500 }] })
-  const out = coastRings({ ground: { natural: [feat] }, buildings, center: [0, -1000], discR: R * 0.9, bb })
+  const out = osmWaterToVerify({ osm: { ground: { natural: [feat] }, buildings }, center: [0, -1000], discR: R * 0.9, bb })
 
   say((out.rings || []).length === 1, `a straight shore with the town to its south yields 1 water face — got ${(out.rings || []).length}`)
   say((out.report || []).some(l => /⭐ side:/.test(l)), `and the pour SAYS which side it chose and why`)

@@ -13,7 +13,7 @@
 //   derive.js     the path filters     — which highway value becomes a drawn path
 //   derive.js     OSM_TO_LU            — which polygon votes on land use
 //   classify.js   the type block       — which polygon becomes a typed FACE
-//   coastline.mjs isWaterFeature       — which polygon can be a coast
+//   coastVerify.mjs isWaterFeature      — which polygon can be water (the coast's verifier)
 // A feature named by none of them is fetched, stored, and drawn nowhere — and
 // nothing anywhere prints that fact.
 //
@@ -94,7 +94,7 @@ const quoted = (s) => [...s.matchAll(/['"]([^'"]+)['"]/g)].map(m => m[1])
 const fetchSrc = R('cartograph/fetch.js')
 const skelSrc = R('cartograph/skeleton.js')
 const deriveSrc = R('cartograph/derive.js')
-const coastSrc = R('cartograph/coastline.mjs')
+const coastSrc = R('cartograph/coastVerify.mjs')
 
 // fetch.js — the bucket vocabulary. A tag NOT here lands in `other`.
 const tagPriority = must(
@@ -139,13 +139,13 @@ const alleyService = must(
 // derive.js — sidewalks are consumed separately from paths.
 const sidewalkConsumed = /const sidewalks\s*=\s*highways\.filter/.test(deriveSrc)
 
-// coastline.mjs — which polygon can be water.
+// coastVerify.mjs — which polygon can be water.
 const waterBlock = must(
   (coastSrc.match(/export const isWaterFeature[\s\S]*?\n\}/) || [])[0],
-  'isWaterFeature', 'cartograph/coastline.mjs')
+  'isWaterFeature', 'cartograph/coastVerify.mjs')
 const waterPairs = [...waterBlock.matchAll(/t\.(\w+)\s*===\s*['"]([^'"]+)['"]/g)].map(m => [m[1], m[2]])
 const waterBare = [...waterBlock.matchAll(/!!t\.(\w+)/g)].map(m => m[1])
-must(waterPairs.length + waterBare.length, 'the water vocabulary', 'cartograph/coastline.mjs')
+must(waterPairs.length + waterBare.length, 'the water vocabulary', 'cartograph/coastVerify.mjs')
 
 // derive.js — barriers are consumed as lines.
 const barrierConsumed = /barrierLines\.push/.test(deriveSrc)
@@ -185,7 +185,7 @@ const MODELLED = [
   'ALLEY   — highway=service with service=alley (derive.js)',
   'SIDEWALK— footway=sidewalk (derive.js)',
   'LANDUSE — category:value in OSM_TO_LU (derive.js)',
-  'WATER   — matches isWaterFeature (coastline.mjs)',
+  'WATER   — matches isWaterFeature (coastVerify.mjs)',
   'BARRIER — bucketed `barrier` (derive.js barrierLines)',
   'FACE    — typed by the classify.js face classifier (park/parking/water/block)',
   'CONTENT — categorised by bake-content.js',

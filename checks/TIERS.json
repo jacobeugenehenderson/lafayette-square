@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 412,
   "counts": {
-    "safe": 307,
+    "safe": 306,
     "local-effect": 19,
-    "live": 86
+    "live": 87
   },
   "checks": [
     {
@@ -86,13 +86,6 @@
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
-      ]
-    },
-    {
-      "file": "checks/claims-a-closed-shore-still-yields-ink.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
       ]
     },
     {
@@ -2317,10 +2310,18 @@
       ]
     },
     {
+      "file": "checks/claims-the-coast-is-the-lidar-at-high-water.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch()",
+        "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-the-coast-runs-on-past-the-rim.mjs",
       "tier": "safe",
       "why": [
-        "computed import of cartograph/coastline.mjs — read, safe",
         "computed import of cartograph/outer-coast.mjs — read, safe",
         "computed import of src/components/waterMaterial.js — read, safe",
         "computed import of src/lib/horizonReach.js — read, safe"

@@ -48,10 +48,10 @@ import { waterLevels } from './waterLevel.mjs'
 import { wetLoops } from './marchingSquares.mjs'
 import { osmWaterToVerify } from './coastVerify.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
+import { COAST_FILE } from './coastFile.mjs'
 
 const { Clipper, Paths, Path, IntPoint, ClipType, PolyType, PolyFillType, PolyTree } = clipperLib
 
-export const COAST_FILE = 'coast.json'
 export const COAST_VERSION = 1
 
 /** The square tile, in metres, the fine line is traced in. ⛔ Not a geometric value: tiles overlap by one sample and

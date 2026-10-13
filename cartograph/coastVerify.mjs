@@ -5,7 +5,7 @@
  * OSM's water (coastline ways welded, water bodies that run on past the fetch) and closes it against the fetched
  * square ONLY so `bake-coast` can check the lidar's water against an independent source: two sources that must agree
  * (Boz's ruling, 2026-10-13). Its one export to the bakes, `osmWaterToVerify`, returns rings and a report, and no
- * arcs, so nothing can stroke it. ▶ node checks/claims-osm-water-is-only-a-verifier.mjs
+ * arcs, so nothing can stroke it. ▶ node checks/claims-the-coast-is-the-lidar-at-high-water.mjs (part C)
  * (Was `coastline.mjs`, ①'s coast source until 2026-10-13; its header is in the Diary,
  * `cartograph/_archive/coastline-header-2026-10-13.md`.)
  */
@@ -506,7 +506,7 @@ function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   if (wet) {
     report.push(`    ⚠️ ${wet}/${bPtsAll.length} footprint(s) (${(100 * wet / bPtsAll.length).toFixed(2)}%) sit inside the water — piers, wharves and over-tide building, not an inversion. Reported, not refused.`)
   }
-  report.push(`    ✅ ${rings.length} water ring(s) + ${arcs.length} shoreline arc(s) to expand as ink; ${buildings.length} footprint(s) checked, ${wet} in the water`)
+  report.push(`    ✅ ${rings.length} OSM water ring(s) to verify the lidar's coast against; ${buildings.length} footprint(s) checked, ${wet} in the water`)
   return { rings, arcs, meta, report }
 }
 

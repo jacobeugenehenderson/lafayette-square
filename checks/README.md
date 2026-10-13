@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 86. Never in a default run.
+## ⛔ live — 87. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -77,6 +77,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/scene.js — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
+| `checks/claims-the-coast-is-the-lidar-at-high-water.mjs` | outbound | imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) clipper-lib — not read from source |
 | `checks/claims-the-device-link-page-is-served-on-both-sites.mjs` | outbound | calls fetch() · imports workers/staging-sites/src/index.js, which can: calls fetch() · imports workers/production-sites/src/index.js, which can: calls fetch() |
 | `checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` | outbound | calls fetch() |
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of src/preview/heroAnim.js — read, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports package(s) vite — not read from source |
@@ -140,7 +141,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 307. This is `npm test`.
+## safe — 306. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -151,7 +152,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-capture-run-finishes-what-it-started.mjs` | started.mjs — CAN A GROVE CAPTURE RUN BE RESTARTED MID-LIST, OR UPLOAD AFTER IT WAS TORN DOWN? |
 | `checks/claims-a-chain-id-is-one-chain.mjs` | chain.mjs — DOES EVERY CHAIN ID NAME EXACTLY ONE CHAIN? |
 | `checks/claims-a-cli-scene-has-one-resolver.mjs` | resolver.mjs — DOES ANY SCRIPT ASK "WHICH TOWN?" TWICE? |
-| `checks/claims-a-closed-shore-still-yields-ink.mjs` | ink.mjs — DOES A SHORE THAT CLOSES STILL GET AN EDGE? |
 | `checks/claims-a-closed-stripe-keeps-its-hole.mjs` | hole |
 | `checks/claims-a-coast-outside-the-drawing-is-no-shore.mjs` | shore.mjs — a coast ring that never reaches the town's DRAWING (its terrain |
 | `checks/claims-a-corner-is-where-one-turns.mjs` | ⭐⭐⭐ A CORNER IS A VERTEX WHERE ① TURNS *AND* THE OWNER CHANGES — the shape answers WHETHER, |

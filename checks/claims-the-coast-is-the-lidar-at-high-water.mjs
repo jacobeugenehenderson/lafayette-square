@@ -13,6 +13,7 @@
 //   1. floodFromEdge seeds every cell below high, not only the edge's   → A: the hollow floods
 //   2. heldCells skips every line (`continue` always)                     → A: the marsh floods through the dike
 //   3. arcsOf keeps a run along the square's edge (drop the alongSquare test) → A: an arc lies on the square
+//   3b. arcsOf returns only its first run (`return out.slice(0, 1)`)          → A: the strait yields one shore
 //   4. bake-coast traces `v - lowAt` instead of `v - highAt`             → B: the lidar along the line stands off high
 //   5. derive.js imports coastVerify.mjs                                  → C
 //
@@ -22,7 +23,8 @@ import fs from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import clipperLib from 'clipper-lib'
-import { floodFromEdge, sheetField, heldCells, edgeCells, arcsOf, bodiesAtEdge, COAST_FILE } from '../cartograph/bake-coast.mjs'
+import { floodFromEdge, sheetField, heldCells, edgeCells, arcsOf, bodiesAtEdge } from '../cartograph/bake-coast.mjs'
+import { COAST_FILE } from '../cartograph/coastFile.mjs'
 import { wetLoops } from '../cartograph/marchingSquares.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'
 import { elevationSpecs, openRasters, readWindow, sampleSources, ABOVE_WATER_M } from '../cartograph/elevationSources.mjs'
@@ -85,6 +87,13 @@ console.log('A. the construction (synthetic)')
   for (const a of arcs) for (const p of a.pts.slice(1, -1)) { if (Math.abs(p[0] - 160) <= G) continue; n2++; worst = Math.max(worst, Math.abs(ground(p[0], p[1]) - HIGH)) }
   say(n2 > 0 && worst < 1e-3, `every traced vertex off the dike stands at high water: worst |ground − high| ${worst.toFixed(5)} m over ${n2} vertices`)
   say(edgeCells(wet, w, W, H).length > 0, 'the sheet has a wet/dry edge to refine along')
+  // EVERY RUN, NOT THE LONGEST (from the retired claims-a-closed-shore-still-yields-ink: Provincetown's coast yields
+  // five runs, and "take the longest" threw 55 km away): a body that meets the square on two sides is TWO shores.
+  const strait = [[0, 100], [0, 300], [150, 280], [400, 300], [400, 100], [250, 120]]
+  const two = arcsOf(strait, R)
+  say(two.length === 2 && two.every(a => !a.closed), `a body that meets the square on two sides yields two shores (${two.length})`)
+  const isle = arcsOf([[100, 100], [200, 100], [200, 200], [100, 200]], R)
+  say(isle.length === 1 && isle[0].closed, 'a ring that never meets the square is a CLOSED shore, flagged (an island), never stroked as an arc')
 }
 
 // ── B. the towns ─────────────────────────────────────────────────────────────────────────────────────────────────────
