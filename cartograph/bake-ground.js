@@ -1656,7 +1656,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // success. The bake refuses, and names every point — town, coordinate, tile — so the orphans are the work.
   if (deformTally.unowned.size) throw new Error(`[bake-ground] ⛔ ${scene}: ${deformTally.unowned.size} ped vertex(es) lie in a drawn band that NO painted band owns `
     + `(the band decides, never the nearer line — groundDeformer.mjs): ${[...deformTally.unowned].map(([p, ti]) => `(${p}) tile ${ti}`).join(' · ')}`)
-  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile, or deeper than the bands + ease) draw the terrain itself · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
+  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile, or deeper than the bands + ease) draw the terrain itself · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit · the memo turned ${deform.stats.memoTurns} generation(s)`)
 
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
   // BakedGround's UV2 stay concentric with face/street fades. The half-extent must

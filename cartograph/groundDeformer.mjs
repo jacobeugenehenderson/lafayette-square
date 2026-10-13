@@ -25,17 +25,27 @@ const ulp32 = (v) => 2 ** (Math.floor(Math.log2(Math.max(Math.abs(v), 1))) - 23)
 // DRAWING's — the chord error of the triangles that carry the profile, which the bake refines against (`refineTol`).
 const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's tilt and the mesh's chord error share the town's own walk norm
 
+// ⭐ THE MEMO IS BOUNDED BY THE RUNTIME, NOT BY A TOWN. A V8 Map holds at most 2^24 entries and throws `RangeError: Map
+// maximum size exceeded` past it (Provincetown's conformity reached it, 2026-10-13). The memo is a pure cache (the answer
+// is a function of the exact point, 1f937056), so it keeps TWO generations: when the live one fills, it becomes the old
+// one and a fresh one starts; a hit in the old one is carried forward. The two together never hold more than one Map can,
+// so the memory ceiling is that of the largest Map the runtime allows. `memoGeneration` exists for the eviction test.
+// ▶ checks/claims-the-ground-height-is-a-function-of-the-point.mjs
+export const V8_MAP_MAX_ENTRIES = 2 ** 24
+export const MEMO_GENERATION = V8_MAP_MAX_ENTRIES / 2
+
 /** @param tiles shape.json tiles (runs carry `h`) · @param bands { curb, lawn, walk }: arrays of {outer, holes}|ring, AS
  *  PAINTED (before the flatten punches overlays through them) · @param stencil the town's disc ring (beyond it nothing is
  *  drawn: the rim is an edge of the drawing, never a lot) · @param raw (x, z) → terrain raw
  *  @param limits { walkMax, lawnMax (null = none), exag, blend } */
-export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
+export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoGeneration = MEMO_GENERATION }) {
   const { walkMax, lawnMax, exag, blend, sigma } = limits
+  if (!Number.isInteger(memoGeneration) || memoGeneration < 1 || memoGeneration > V8_MAP_MAX_ENTRIES) throw new Error(`groundDeformer: a memo generation must hold 1…${V8_MAP_MAX_ENTRIES} answers (V8's Map cap), got ${memoGeneration}`)
   if (!(sigma > 0)) throw new Error(`groundDeformer: the smoothing window must be metres > 0, got ${sigma}`)
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, hFilled: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0 }
+  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, hFilled: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0, memoTurns: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -311,7 +321,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
     return st[a].A + f * (next.A - st[a].A) }
 
   /** D(x, z): the deformed raw height, or null where the deformer does not reach (the caller draws the terrain). */
-  const memo = new Map()
+  let memo = new Map(), memoOld = new Map()
   const heightAt = (x, z) => resolve(x, z).v
   /** who owns (x, z): `${tile}|${ring}|${span}` of the ② span whose band holds it (or, in the lot, the nearest span), or null */
   const ownerAt = (x, z) => resolve(x, z).owner
@@ -326,7 +336,10 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   function resolve(x, z) {
     const mk = `${x},${z}`
     if (memo.has(mk)) return memo.get(mk)
-    const v = resolveUncached(x, z); memo.set(mk, v); return v
+    const v = memoOld.has(mk) ? memoOld.get(mk) : resolveUncached(x, z)
+    if (memo.size >= memoGeneration) { memoOld = memo; memo = new Map(); stats.memoTurns++ }
+    try { memo.set(mk, v) } catch (e) { throw new Error(`groundDeformer: the memo could not hold one more answer at ${memo.size} (generation ${memoGeneration}, V8's Map cap ${V8_MAP_MAX_ENTRIES}): ${e.message}`) }
+    return v
   }
   function resolveUncached(x, z) {
     const t = tileAt(x, z)
