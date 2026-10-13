@@ -8,9 +8,11 @@ const mutants = [
   ['size compare dropped', 'if (c.bytes > ceil.bytes)', 'if (false)'],
   ['time compare dropped', 'if (c.ms > ceil.ms)', 'if (false)'],
   ['verdict always ok', 'ok: refusals.length === 0', 'ok: true'],
-  ['reads ground-shore, not ground', "[`${town}:ground`]", "[`${town}:ground-shore`]"],
-  ['missing candidate time falls back to 0', "if (t.why) return { town: m.look, why:", "if (t.why) return { town: m.look, bytes, ms: 0, tris: 0 }; if (0) return { town: m.look, why:"],
-  ['missing served time falls back to Infinity', "if (t.why) return { town, why: `no served ground-bake time", "if (t.why) return { town, bytes: statSync(bin).size, ms: Infinity }; if (0) return { town, why: `no served ground-bake time"],
+  ['counts only the ground pass', "export const GROUND_PASSES = ['ground', 'ground-shore']", "export const GROUND_PASSES = ['ground']"],
+  ['does not require the ground pass', "if (!paid.includes('ground')) return", "if (!paid.length) return"],
+  ['serve.js pass reader ignores bake-ground', "/`node bake-ground\\.js[ `]/", "/`node bake-NOPE\\.js[ `]/"],
+  ['missing candidate time falls back to 0', "if (t.why) return { town: m.look, why:", "if (t.why) return { town: m.look, bytes, ms: 0, passes: [], tris: 0 }; if (0) return { town: m.look, why:"],
+  ['missing served time falls back to Infinity', "if (t.why) return { town, why: `no served ground-bake time", "if (t.why) return { town, bytes: statSync(bin).size, ms: Infinity, passes: [] }; if (0) return { town, why: `no served ground-bake time"],
   ['missing served slab skipped', "if (!existsSync(bin)) return { town, why:", "if (0) return { town, why:"],
 ]
 let survived = 0
