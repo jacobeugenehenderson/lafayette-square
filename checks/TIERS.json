@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 412,
   "counts": {
-    "safe": 303,
+    "safe": 304,
     "local-effect": 19,
-    "live": 90
+    "live": 89
   },
   "checks": [
     {
@@ -84,7 +84,6 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -182,12 +181,11 @@
     },
     {
       "file": "checks/claims-a-failed-apply-leaves-one-state.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "local-effect",
       "why": [
         "writeFileSync",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules"
+        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files"
       ]
     },
     {
@@ -264,7 +262,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import() of a path an argument or the environment can supply — arbitrary"
       ]
     },
     {
@@ -282,9 +280,6 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules",
-        "computed import() with no readable target — runs arbitrary modules",
-        "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
@@ -413,7 +408,6 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
@@ -578,14 +572,13 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import of src/lib/openNow.js — read, safe",
-        "computed import of src/lib/townClock.js — read, safe",
-        "computed import of src/lib/townPlace.js — read, safe",
-        "computed import of src/lib/townClock.js — read, safe",
-        "computed import of src/cartograph/animatedParam.js — read, safe",
-        "computed import of src/hooks/useTimeOfDay.js — read, safe",
-        "computed import of src/hooks/useCalendar.js — read, safe",
-        "computed import of src/lib/townPlace.js — read, safe",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
         "child_process with a non-literal command — cannot be read"
       ]
     },
@@ -1542,9 +1535,10 @@
     },
     {
       "file": "checks/claims-neon-per-place.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of src/lib/neonPlaces.js — read, safe",
+        "computed import() of a path an argument or the environment can supply — arbitrary",
         "computed import of src/lib/openNow.js — read, safe",
         "computed import of src/tokens/categories.js — read, safe"
       ]
@@ -1557,7 +1551,6 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -1656,11 +1649,9 @@
     },
     {
       "file": "checks/claims-no-town-rides-in-the-bundle.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "computed import() with no readable target — runs arbitrary modules",
-        "computed import() with no readable target — runs arbitrary modules"
+        "reads repo files only"
       ]
     },
     {
@@ -1748,7 +1739,7 @@
       "reasonClass": "outbound",
       "why": [
         "calls fetch()",
-        "computed import of src/lib/authoringAddress.js — read, safe"
+        "computed import() of a path an argument or the environment can supply — arbitrary"
       ]
     },
     {
@@ -2166,10 +2157,9 @@
     },
     {
       "file": "checks/claims-sky-follows-its-town.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "computed import() with no readable target — runs arbitrary modules",
+        "computed import of cartograph/_archive/skyGrid-anchor-cards-LS-static-2026-09-20.mjs — read, safe",
         "imports package(s) suncalc — not read from source"
       ]
     },
@@ -2275,7 +2265,7 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() of a path an argument or the environment can supply — arbitrary",
         "computed import of cartograph/scene.js — read, safe",
         "computed import of cartograph/geography.mjs — read, safe",
         "computed import of src/cartograph/streetProfiles.js — read, safe"
@@ -2286,7 +2276,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import() of a path an argument or the environment can supply — arbitrary"
       ]
     },
     {
@@ -2527,7 +2517,7 @@
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
         "writeFileSync",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules",
+        "computed import of src/preview/heroAnim.js — read, safe",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "imports package(s) vite — not read from source"
@@ -2926,7 +2916,7 @@
         "writeFileSync",
         "mkdirSync",
         "computed import() with no readable target — runs arbitrary modules",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of src/lib/tileGround.js — read, safe"
       ]
     },
     {
@@ -2961,7 +2951,7 @@
         "writeFileSync",
         "deletes files",
         "child_process with a non-literal command — cannot be read",
-        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import of src/lib/tileGround.js — read, safe"
       ]
     },
     {
@@ -2971,7 +2961,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of scratch/.leg-probe/tileGround.leg.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {
@@ -2999,8 +2989,8 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target — runs arbitrary modules",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of scratch/.d2-mutants/tileGround.declineFate.mjs, a module it writes itself — made at run time, cannot be read",
+        "computed import of scratch/.d2-mutants/tileGround.clean.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {
@@ -3056,11 +3046,12 @@
     },
     {
       "file": "scratch/claims-ia-source-stamp.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import of scratch/.stamp-probe/tileGround.stamp.mjs — read, safe"
+        "computed import of scratch/.stamp-probe/tileGround.stamp.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {
@@ -3077,7 +3068,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import of src/lib/tileGround.js — read, safe"
       ]
     },
     {
@@ -3085,7 +3076,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import of src/lib/tileGround.js — read, safe"
       ]
     },
     {
@@ -3095,7 +3086,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of scratch/.lab-probe/tileGround.lab.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {
@@ -3113,7 +3104,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of scratch/.notch-probe/tileGround.notch.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {
@@ -3123,7 +3114,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of scratch/.rev-probe/tileGround.rev.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {
@@ -3142,7 +3133,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of scratch/.prov-probe/tileGround.prov.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {
@@ -3183,7 +3174,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read"
       ]
     },
     {

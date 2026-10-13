@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 90. Never in a default run.
+## ⛔ live — 89. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -30,20 +30,19 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-bake-step-declares-what-it-reads.mjs` | unreadable | computed import of cartograph/pour-code.mjs — read, safe · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-band-is-the-pieces-that-hold-it.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-city-building-keeps-its-permanent-id.mjs` | outbound | imports cartograph/fetch-buildings.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out, imports cartograph/msbf-identity.js, which can: writeFileSync |
-| `checks/claims-a-click-hits-what-is-drawn.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
+| `checks/claims-a-click-hits-what-is-drawn.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-a-cold-preview-opens-on-the-saved-shot.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import() with no readable target — runs arbitrary modules · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
-| `checks/claims-a-failed-apply-leaves-one-state.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
-| `checks/claims-a-look-holds-only-its-towns-grove.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules |
-| `checks/claims-a-look-link-opens-that-town.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
+| `checks/claims-a-look-holds-only-its-towns-grove.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
+| `checks/claims-a-look-link-opens-that-town.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-paused-town-draws-nothing.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-production-town-plays-the-player-promote-pinned.mjs` | outbound | imports a network module · imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
 | `checks/claims-a-reimport-keeps-curation.mjs` | unreadable | deletes files · copies/renames files · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-salon-save-keeps-provenance.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
-| `checks/claims-a-scrub-never-writes-the-keys.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
+| `checks/claims-a-scrub-never-writes-the-keys.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-shot-change-flies.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-shot-never-resizes-its-shadow-box.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync · mkdirSync · deletes files · imports package(s) vite — not read from source |
 | `checks/claims-a-slab-name-is-its-content.mjs` | outbound | writeFileSync · mkdirSync · deletes files · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync · imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync |
@@ -52,7 +51,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-staging-town-names-its-player.mjs` | unreadable | imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
 | `checks/claims-a-tide-station-is-in-the-water-or-named.mjs` | outbound | imports cartograph/fetch-water-datums.mjs, which can: calls fetch(), mkdirSync, imports cartograph/io.js, which can: writeFileSync |
 | `checks/claims-a-town-has-one-sealed-id.mjs` | unreadable | computed import of src/instances/registry.js — read, safe · runs `git` — not a known-local command |
-| `checks/claims-a-town-keeps-its-own-clock.mjs` | unreadable | computed import of src/lib/openNow.js — read, safe · computed import of src/lib/townClock.js — read, safe · computed import of src/lib/townPlace.js — read, safe · computed import of src/lib/townClock.js — read, safe · computed import of src/cartograph/animatedParam.js — read, safe · computed import of src/hooks/useTimeOfDay.js — read, safe · computed import of src/hooks/useCalendar.js — read, safe · computed import of src/lib/townPlace.js — read, safe · child_process with a non-literal command — cannot be read |
+| `checks/claims-a-town-keeps-its-own-clock.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-towns-sources-are-its-own.mjs` | outbound | imports src/cartograph/sourcesCatalogue.js, which can: calls fetch() |
 | `checks/claims-a-tree-well-plants-only-standing-trees.mjs` | outbound | imports cartograph/fetch-trees.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
@@ -66,25 +65,24 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-every-ground-surface-takes-the-lamp.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-tree-candidate-is-accounted-for.mjs` | unreadable | deletes files · imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
 | `checks/claims-frame-timeline-catches-a-stall.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
-| `checks/claims-neon-picks-its-building.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
-| `checks/claims-no-town-rides-in-the-bundle.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-neon-per-place.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary · computed import of src/lib/openNow.js — read, safe · computed import of src/tokens/categories.js — read, safe |
+| `checks/claims-neon-picks-its-building.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files, child_process with a non-literal command — cannot be read |
-| `checks/claims-one-way-into-stage.mjs` | outbound | calls fetch() · computed import of src/lib/authoringAddress.js — read, safe |
+| `checks/claims-one-way-into-stage.mjs` | outbound | calls fetch() · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-one-weather-per-instant.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-overture-licence-table-is-current.mjs` | outbound | calls fetch() |
 | `checks/claims-pilgrim-monument-site.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-preview-frame-cost-splits.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-preview-phone-runs-production-passes.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
-| `checks/claims-sky-follows-its-town.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · imports package(s) suncalc — not read from source |
 | `checks/claims-socrata-reads-the-whole-envelope.mjs` | outbound | imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
-| `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import of cartograph/scene.js — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe |
-| `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/scene.js — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe |
+| `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-the-device-link-page-is-served-on-both-sites.mjs` | outbound | calls fetch() · imports workers/staging-sites/src/index.js, which can: calls fetch() · imports workers/production-sites/src/index.js, which can: calls fetch() |
 | `checks/claims-the-ground-height-is-a-function-of-the-point.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` | outbound | calls fetch() |
-| `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · imports package(s) vite — not read from source |
+| `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync · deletes files · computed import of src/preview/heroAnim.js — read, safe · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · imports package(s) vite — not read from source |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known-local command |
 | `checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
@@ -94,29 +92,30 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-tree-drawn-height-by-window.mjs` | unreadable | imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command · imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source |
 | `checks/claims-writers-name-the-scene.mjs` | unreadable | runs `git` — not a known-local command |
 | `scratch/claims-a-rename-cannot-repaint.mjs` | unreadable | imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
-| `scratch/claims-band-reaches-lu.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
+| `scratch/claims-band-reaches-lu.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules · computed import of src/lib/tileGround.js — read, safe |
 | `scratch/claims-cary-anon-exposure.mjs` | outbound | calls fetch() · references a hosted-service credential |
-| `scratch/claims-corner-delta.mjs` | unreadable | writeFileSync · deletes files · child_process with a non-literal command — cannot be read · imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules |
-| `scratch/claims-corner-leg-suppression.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
+| `scratch/claims-corner-delta.mjs` | unreadable | writeFileSync · deletes files · child_process with a non-literal command — cannot be read · imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import of src/lib/tileGround.js — read, safe |
+| `scratch/claims-corner-leg-suppression.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.leg-probe/tileGround.leg.mjs, a module it writes itself — made at run time, cannot be read |
 | `scratch/claims-curb-ramp-neutral.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
-| `scratch/claims-decline-fate.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
+| `scratch/claims-decline-fate.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.d2-mutants/tileGround.declineFate.mjs, a module it writes itself — made at run time, cannot be read · computed import of scratch/.d2-mutants/tileGround.clean.mjs, a module it writes itself — made at run time, cannot be read |
 | `scratch/claims-doc-code-citations.mjs` | unreadable | runs `git ls-files` — local, read-only · child_process with a non-literal command — cannot be read |
 | `scratch/claims-doc-pointers-resolve.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · runs `git ls-files "*.md"` — local, read-only |
 | `scratch/claims-dossier-writers-agree.mjs` | unreadable | deletes files · copies/renames files · runs `node` — not a known-local command |
 | `scratch/claims-every-declared-page-ships.mjs` | unreadable | runs `git` — not a known-local command |
 | `scratch/claims-every-placed-asset-has-a-size-band.mjs` | unreadable | imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
+| `scratch/claims-ia-source-stamp.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.stamp-probe/tileGround.stamp.mjs, a module it writes itself — made at run time, cannot be read |
 | `scratch/claims-junctionmap-blast-radius.mjs` | unreadable | runs `grep -rl junctionMap src carto` — local, read-only · child_process with a non-literal command — cannot be read |
-| `scratch/claims-keyhole-carry-to-ia.mjs` | unreadable | imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules |
-| `scratch/claims-keyhole-splice-survival.mjs` | unreadable | imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules |
-| `scratch/claims-label-loss-bisect.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
+| `scratch/claims-keyhole-carry-to-ia.mjs` | unreadable | imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import of src/lib/tileGround.js — read, safe |
+| `scratch/claims-keyhole-splice-survival.mjs` | unreadable | imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import of src/lib/tileGround.js — read, safe |
+| `scratch/claims-label-loss-bisect.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.lab-probe/tileGround.lab.mjs, a module it writes itself — made at run time, cannot be read |
 | `scratch/claims-mesh-equals-the-bar.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
-| `scratch/claims-notch-origin-bisect.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
-| `scratch/claims-offset-reversal.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
+| `scratch/claims-notch-origin-bisect.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.notch-probe/tileGround.notch.mjs, a module it writes itself — made at run time, cannot be read |
+| `scratch/claims-offset-reversal.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.rev-probe/tileGround.rev.mjs, a module it writes itself — made at run time, cannot be read |
 | `scratch/claims-onboarding-guard.sh` | outbound | shell: runs curl · shell: redirects to a file |
-| `scratch/claims-postwall-provenance.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
+| `scratch/claims-postwall-provenance.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.prov-probe/tileGround.prov.mjs, a module it writes itself — made at run time, cannot be read |
 | `scratch/claims-the-leaf-face-axis-reaches-the-shader.mjs` | unreadable | imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
-| `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
+| `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
 ## local-effect — 19. `npm run test:all`, never CI.
 
@@ -124,6 +123,7 @@ Writes into the repo or a scratch dir.
 
 | check | the claim it falsifies |
 |---|---|
+| `checks/claims-a-failed-apply-leaves-one-state.mjs` | state.mjs |
 | `checks/claims-a-false-map-is-not-a-fallback.mjs` | fallback.mjs — IS ANY INPUT'S ABSENCE PRETENDING TO BE FINE? |
 | `checks/claims-a-pour-keeps-building-ids.mjs` | Building ids are minted ONCE, at fetch (`fetch-msbf.js` → `identity-registry.json`, the seal). |
 | `checks/claims-a-scene-is-named-not-numbered.mjs` | numbered.mjs — a neighborhood's scene id is the slug |
@@ -140,11 +140,10 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-attribution-is-per-town.mjs` | town.mjs — IS EACH TOWN CREDITING ITS OWN SOURCES? |
 | `scratch/claims-building-identity-survives-repour.mjs` | ⭐ WHY IT IS NOT A COUNT. `A01`'s ticket exists because `promote-ribbons.js`'s clobber |
 | `scratch/claims-deadend-look.mjs` | look.mjs — RENDER THE NINE. Read-only. |
-| `scratch/claims-ia-source-stamp.mjs` | "DOES EVERY iA VERTEX KNOW WHICH RING EDGE MADE IT — AND DOES THE STAMP |
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 303. This is `npm test`.
+## safe — 304. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -298,7 +297,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-memory-index-health.mjs` | "WILL THE READ-IN STILL LOAD?" — the standing guard on the coordinator memory index. |
 | `checks/claims-menu-item-ids.mjs` | Does every orderable menu item have a STABLE identity? |
 | `checks/claims-named-way-becomes-street.mjs` | ⭐⭐ DOES A NON-VEHICULAR WAY BOUND A CITY BLOCK? — the check behind `ROADMAP A19`. |
-| `checks/claims-neon-per-place.mjs` | "DOES EVERY OPEN PLACE GET ITS OWN NEON — OR SAY WHY NOT?" — BRIEF-neon-reads-at-every-distance §3.3. |
 | `checks/claims-neon-two-drawings.mjs` | "DOES EVERY NEON FIELD REACH A DRAWING, AND IS THE TUBE NEVER INFLATED?" — BRIEF-neon-reads-at-every-distance §2. |
 | `checks/claims-no-coarse-value-decides.mjs` | The defect this exists for, measured 2026-08-26: SelecTree's `leaf_form` has three |
 | `checks/claims-no-dossier-rests-on-a-wrong-species.mjs` | species.mjs — DOES ANY DOSSIER CITE A SOURCE THAT ANSWERED FOR ANOTHER SPECIES? |
@@ -311,6 +309,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-slab-outlives-its-schema.mjs` | CLAIM: no baked slab is read under a fade model it was not baked for. |
 | `checks/claims-no-town-carries-the-mould.mjs` | "DOES ANY TOWN CARRY ANOTHER TOWN'S PLACES?" — continuity map §7 #2 (Phase 2 C, 2026-10-04). |
 | `checks/claims-no-town-name-gates-the-kit.mjs` | "DOES ANY KIT CODE STILL DECIDE BY A TOWN'S NAME?" — BRIEF-ls-bleed-excision (Jacob, 2026-10-07: "fix the LS |
+| `checks/claims-no-town-rides-in-the-bundle.mjs` | "DOES ONE TOWN'S DATA SHIP TO EVERY TOWN?" — the stowaway, made impossible. |
 | `checks/claims-no-town-wears-another-towns-mark.mjs` | no LS asset is hardcoded into a shared surface. |
 | `checks/claims-no-tree-stands-on-drawn-hardscape.mjs` | NO TREE MAY STAND ON A SURFACE THE MAP DRAWS AS HARDSCAPE. |
 | `checks/claims-node-pair-key-parity.mjs` | SLICE 1 of "fix the key". PROVE, DON'T SWITCH. |
@@ -372,6 +371,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-side-chain-falsifiers.mjs` | READ-ONLY. THE TWO FALSIFIABLE PREDICTIONS of the directed-side-chain / grout model, |
 | `checks/claims-sidewalk-is-one-band.mjs` | ⭐⭐⭐ THE ACCEPTANCE, IN THE OPERATOR'S WORDS. |
 | `checks/claims-simplify-preserves-authoring.mjs` | WHY THIS MUST RUN BEFORE THAT CHANGE. The drawn centreline and the line ① is built from are two |
+| `checks/claims-sky-follows-its-town.mjs` | town.mjs — IS THE SKY PAINTED ON THIS TOWN'S SCHEDULE? |
 | `checks/claims-species-map-routes-are-composed.mjs` | Every COMMON a scene routes must resolve to a COMPOSED species. |
 | `checks/claims-spur-leg-offset.mjs` | READ-ONLY. ⭐ SCOPE, and it is the whole point of this file: |
 | `checks/claims-stage-controls-are-live.mjs` | CLAIM — EVERY STAGE CONTROL MOVES SOMETHING ON A TOWN NOBODY HAS LOOKED AT. |

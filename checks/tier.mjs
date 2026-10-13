@@ -172,6 +172,212 @@ export function execSelfTest() {
   }
 }
 
+/** The text between the parenthesis at `open` and its partner, strings respected. null if it never closes. */
+function balancedArg(code, open) {
+  let depth = 0, q = null
+  for (let i = open; i < code.length; i++) {
+    const c = code[i]
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
+    if (c === '"' || c === "'" || c === '`') { q = c; continue }
+    if (c === '(') depth++
+    else if (c === ')' && --depth === 0) return code.slice(open + 1, i)
+  }
+  return null
+}
+
+/**
+ * The same text, same length, with every string and regex literal's body blanked — so `import()` written in a message
+ * is not read as a call. A regex literal is blanked too, because its quotes (`/from '([^']+)'/`) would otherwise open a
+ * "string" that swallows the real calls after it — measured: three checks went safe that way.
+ * ⛔ So it is never trusted alone: `inStringHere` must agree before a call is exempted (see the loop in `classify`).
+ */
+function blankStrings(code) {
+  let out = '', q = null, prev = ''
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i]
+    if (q) {
+      if (c === '\\') { out += '  '; i++; continue }
+      if (c === q) { q = null; out += c; prev = c; continue }
+      out += c === '\n' ? '\n' : ' '; continue
+    }
+    if (c === '"' || c === "'" || c === '`') { q = c; out += c; prev = c; continue }
+    if (c === '/' && (prev === '' || /[(,=:[!&|?{};+\-*%<>~^]/.test(prev) || /\b(?:return|typeof|case|in|of)\s*$/.test(code.slice(Math.max(0, i - 8), i)))) {
+      let j = i + 1, cls = false
+      for (; j < code.length && code[j] !== '\n'; j++) {
+        if (code[j] === '\\') { j++; continue }
+        if (code[j] === '[') cls = true
+        else if (code[j] === ']') cls = false
+        else if (code[j] === '/' && !cls) break
+      }
+      if (j < code.length && code[j] === '/') { out += '/' + ' '.repeat(j - i - 1) + '/'; i = j; prev = '/'; continue }
+    }
+    out += c
+    if (!/\s/.test(c)) prev = c
+  }
+  return out
+}
+
+/** A second, independent opinion: an odd count of one quote kind before `at` on its own line. */
+function inStringHere(code, at) {
+  const line = code.slice(code.lastIndexOf('\n', at - 1) + 1, at).replace(/\\./g, '')
+  return ['"', "'", '`'].some(q => line.split(q).length % 2 === 0)
+}
+
+/** `s` split at each top-level `sep` (outside brackets and strings). */
+function splitTop(s, sep) {
+  const parts = []; let depth = 0, q = null, start = 0
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
+    if (c === '"' || c === "'" || c === '`') { q = c; continue }
+    if ('([{'.includes(c)) depth++
+    else if (')]}'.includes(c)) depth--
+    else if (depth === 0 && s.startsWith(sep, i)) { parts.push(s.slice(start, i)); start = i + sep.length; i += sep.length - 1 }
+  }
+  parts.push(s.slice(start))
+  return parts.map(p => p.trim())
+}
+
+/** `name(args)` covering the whole expression → { name, args }, else null. */
+function callOf(expr) {
+  const m = expr.match(/^([A-Za-z_$][\w$.]*)\s*\(/)
+  if (!m) return null
+  const args = balancedArg(expr, m[0].length - 1)
+  if (args === null || m[0].length + args.length + 1 !== expr.length) return null
+  return { name: m[1], args }
+}
+
+/**
+ * ⭐ READ A COMPUTED IMPORT'S PATH, DON'T GUESS IT (Boz's ruling, 2026-10-13). Resolves an expression made ONLY of
+ * string literals, `join`/`resolve`/`dirname`, `pathToFileURL(…)(.href)`, `fileURLToPath(import.meta.url)`,
+ * `new URL(lit, import.meta.url)`, and `const` bindings of those — a `ROOT` imported from another module is read in
+ * THAT module. Returns { paths: [absolute] } · { arg: true } when an argument or the environment can supply any part
+ * (`a || b` included: ⛔ an arg-supplied path is arbitrary however literal its fallback) · { opaque: true } otherwise
+ * — a loop variable, a `let`, a call it does not know. Only `paths` is readable; the other two keep the file live.
+ * ▶ `importSelfTest`, run before every classification.
+ */
+const ARG_SOURCE = /\bprocess\s*\.\s*(?:env|argv)\b/
+function readImportPath(expr, file, code, depth = 0) {
+  expr = expr.trim()
+  if (depth > 8) return { opaque: true }
+  if (ARG_SOURCE.test(expr)) return { arg: true }
+  const here = () => resolve(ROOT, file)
+  const lit = expr.match(/^(['"])([^'"\\]*)\1$/) || expr.match(/^`([^`$\\]*)`$/)
+  if (lit) {
+    const v = lit[2] ?? lit[1]
+    return v.startsWith('.') ? { paths: [resolve(dirname(here()), v)] } : { segment: v }
+  }
+  const alts = splitTop(expr, '||').length > 1 ? splitTop(expr, '||') : splitTop(expr, '??')
+  if (alts.length > 1) {
+    const rs = alts.map(a => readImportPath(a, file, code, depth + 1))
+    if (rs.some(r => r.arg)) return { arg: true }
+    if (rs.some(r => !r.paths)) return { opaque: true }
+    return { paths: rs.flatMap(r => r.paths) }
+  }
+  if (expr.endsWith('.href')) return readImportPath(expr.slice(0, -5), file, code, depth + 1)
+  if (/^import\.meta\.dirname$/.test(expr)) return { paths: [dirname(here())] }
+  const nu = expr.match(/^new\s+URL\s*\(/)
+  if (nu) {
+    const a = balancedArg(expr, nu[0].length - 1), parts = a === null ? [] : splitTop(a, ',')
+    if (parts.length !== 2 || parts[1] !== 'import.meta.url') return { opaque: true }
+    const r = readImportPath(parts[0], file, code, depth + 1)
+    return r.segment !== undefined ? { paths: [resolve(dirname(here()), r.segment)] } : r.paths ? r : r.arg ? r : { opaque: true }
+  }
+  const call = callOf(expr)
+  if (call) {
+    const fn = call.name.replace(/^(?:path|url)\./, '')
+    const args = splitTop(call.args, ',')
+    if (fn === 'fileURLToPath' && args[0] === 'import.meta.url') return { paths: [here()] }
+    if ((fn === 'pathToFileURL' || fn === 'fileURLToPath' || fn === 'dirname') && args.length === 1) {
+      const r = readImportPath(args[0], file, code, depth + 1)
+      if (!r.paths || r.paths.length !== 1) return r.arg ? r : { opaque: true }
+      return fn === 'dirname' ? { paths: [dirname(r.paths[0])] } : r
+    }
+    if (fn === 'join' || fn === 'resolve') {
+      const segs = []
+      for (const a of args) {
+        const l = a.match(/^(['"])([^'"\\]*)\1$/)
+        if (l) { segs.push(l[2]); continue }                                   // inside a join a literal is a segment, never file-relative
+        const r = readImportPath(a, file, code, depth + 1)
+        if (r.arg) return r
+        if (r.segment !== undefined) segs.push(r.segment)
+        else if (r.paths?.length === 1) segs.push(r.paths[0])
+        else return { opaque: true }
+      }
+      if (!segs.length || !segs[0].startsWith('/')) return { opaque: true }
+      return { paths: [(fn === 'join' ? join : resolve)(...segs)] }
+    }
+    // An unknown helper: arbitrary if its own definition reads an argument or the environment, unreadable otherwise.
+    const def = code.match(new RegExp(`\\b(?:const|let|var|function)\\s+${call.name.replace(/[.$]/g, '\\$&')}\\b[^\\n]*`))
+    return def && ARG_SOURCE.test(def[0]) ? { arg: true } : { opaque: true }
+  }
+  if (/^[A-Za-z_$][\w$]*$/.test(expr)) {
+    // A `const` bound once in this file — followed. ⛔ A `let`/`var`, or more than one binding, can be reassigned: unreadable.
+    const decls = [...code.matchAll(new RegExp(`\\b(const|let|var)\\s+${expr.replace(/\$/g, '\\$')}\\s*=`, 'g'))]
+    if (decls.length === 1 && decls[0][1] === 'const') {
+      const start = decls[0].index + decls[0][0].length
+      const rest = code.slice(start).split('\n')[0]
+      return readImportPath(splitTop(rest, ',')[0].replace(/;\s*$/, ''), file, code, depth + 1)
+    }
+    if (decls.length) return { opaque: true }
+    // Imported by name from a relative module: read the binding THERE, in that module's own frame.
+    const imp = code.match(new RegExp(`import\\s*\\{[^}]*\\b${expr.replace(/\$/g, '\\$')}\\b[^}]*\\}\\s*from\\s*['"](\\.[^'"]+)['"]`))
+    if (imp) {
+      const dep = relative(ROOT, resolve(dirname(here()), imp[1]))
+      const src = onDisk(dep) ? readCheckSource(dep) : null
+      if (src === null) return { opaque: true }
+      const depCode = stripComments(src)
+      const ex = depCode.match(new RegExp(`export\\s+const\\s+${expr.replace(/\$/g, '\\$')}\\s*=([^\\n]*)`))
+      return ex ? readImportPath(ex[1].replace(/;\s*$/, ''), dep, depCode, depth + 1) : { opaque: true }
+    }
+  }
+  return { opaque: true }
+}
+
+/** Every path this file's write calls can be read to target (the destination: 2nd argument of a copy or rename). */
+function writtenPaths(code, file) {
+  const out = new Set()
+  for (const m of code.matchAll(/\b(writeFileSync|writeFile|appendFileSync|copyFileSync|cpSync|renameSync)\s*\(/g)) {
+    const args = splitTop(balancedArg(code, m.index + m[0].length - 1) ?? '', ',')
+    const r = readImportPath(args[/^(copyFileSync|cpSync|renameSync)$/.test(m[1]) ? 1 : 0] ?? '', file, code)
+    for (const p of r.paths ?? []) out.add(p)
+  }
+  return out
+}
+
+/** The ruling, run on planted sources: a path of literals and repo-rooted bindings is read; an argument, the
+ *  environment, a loop variable or a `let` keeps the file LIVE (the mutations). */
+export function importSelfTest() {
+  const root = "import { join, dirname } from 'node:path'\nimport { fileURLToPath, pathToFileURL } from 'node:url'\nconst ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')\n"
+  const argFn = "const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)\n"
+  const cases = [
+    [root + "await import(join(ROOT, 'cartograph', 'x.mjs'))", 'safe'],
+    [root + "await import(pathToFileURL(join(ROOT, 'cartograph/x.mjs')).href)", 'safe'],
+    ["import { ROOT } from './_scenes.mjs'\nimport { join } from 'node:path'\nawait import(join(ROOT, 'cartograph/x.mjs'))", 'safe'],
+    ["const MOD = '../cartograph/x.mjs'\nawait import(MOD)", 'safe'],
+    ["console.log(`load it with import() behind a guard; import(s) of one town`)", 'safe'],
+    [root + "await import(join(ROOT, 'cartograph/net.mjs'))", 'live'],                        // read, and what it reads reaches out
+    ["const MOD = process.env.SRC || '../cartograph/x.mjs'\nawait import(MOD)", 'live'],       // the environment
+    [root + argFn + "await import(pathToFileURL(arg('x') || join(ROOT, 'cartograph/x.mjs')).href)", 'live'], // an argument
+    [root + "for (const n of names) await import(join(ROOT, 'src/instances', n))", 'live'],  // a loop variable
+    ["let MOD = '../cartograph/x.mjs'\nawait import(MOD)", 'live'],                            // reassignable
+    [root + "await import(join(ROOT, 'cartograph/x.mjs') + '?v=1')", 'live'],                 // not a path expression
+    [root + "await import(join(ROOT, 'cartograph/missing.mjs'))", 'live'],                     // not on disk
+    [root + "const k = /from '([^']+)'/g\nconst f = process.argv[2]\nawait import(f)", 'live'],  // a quote in a regex hides no call
+    [root + "if (a) g(); else /'/.test(s)\nconst f = process.argv[2]\nawait import(f)", 'live'], // nor one the blanker mis-reads
+    [root + "const f = join(ROOT, 'cartograph/x.mjs')\nwriteFileSync(f, src)\nawait import(f)", 'live'], // a module it writes itself
+  ]
+  const disk = {
+    'checks/_scenes.mjs': "import { join, dirname } from 'node:path'\nimport { fileURLToPath } from 'node:url'\nexport const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')",
+    'cartograph/x.mjs': 'export const x = 1',
+    'cartograph/net.mjs': "export const x = await fetch('https://example.com')",
+  }
+  for (const [src, want] of cases) {
+    const got = classifyVirtual({ ...disk, 'checks/claims-planted.mjs': src }, 'checks/claims-planted.mjs').tier
+    if (got !== want) throw new Error(`[tier] ⛔ self-test: \`${src.split('\n').pop()}\` read as ${got}, want ${want} — the computed-import reader is broken`)
+  }
+}
+
 /**
  * Every relative specifier a file imports, static or dynamic.
  * ⛔ A check that imports nothing itself is not thereby safe: importing a repo module RUNS that
@@ -253,27 +459,29 @@ export function classify(file, seen = new Set(), depth = 0) {
   //    RUNS every check the docs cite, live tier included. It scans as "reads repo files only".
   //    Three cases, and only the third is undecidable:
   //      data:   — a self-contained module, resolves to nothing on disk or the network (hermetic)
-  //      a repo path literal inside the expression — READ IT, exactly as a static import is read
-  //      neither — cannot be read ⇒ live
-  for (const m of code.matchAll(/\bimport\s*\(([^)]*)\)/g)) {
-    const arg = m[1].trim()
-    if (/^['"`]/.test(arg) && !/[+`$]/.test(arg.slice(1))) continue          // a plain literal: handled elsewhere
-    if (/^['"`]data:/.test(arg)) { why.push('computed import of a data: module — hermetic'); continue }
-    // The path literal is often bound to a const above (`const TG = join(ROOT, 'src/lib/tileGround.js')`).
-    // Follow the binding — that is still reading the source, not guessing at it.
-    let expr = arg
-    const ident = arg.match(/^[A-Za-z_$][\w$]*$/)
-    if (ident) {
-      const b = code.match(new RegExp(`\\b(?:const|let|var)\\s+${arg}\\s*=([^\n]*)`))
-      if (b) expr = b[1]
-    }
-    const lits = [...expr.matchAll(/['"]([^'"]+)['"]/g)].map(x => x[1]).filter(x => /\.(m?js|ts)$/.test(x))
-    const hit = lits.map(l => l.replace(/^\.?\//, '')).find(l => onDisk(l))
-    if (hit) {
+  //      a path built only of literals and repo-rooted bindings — READ IT (`readImportPath`), as a static import is read
+  //      anything else — an argument, the environment, a loop variable — cannot be read ⇒ live
+  //    `import()` written in a message is prose — but only when BOTH readers say it sits in a string: a mis-read
+  //    literal would otherwise hide a real call, which mis-tiers toward safe (the forbidden direction).
+  const blank = blankStrings(code)
+  for (const m of code.matchAll(/\bimport\s*\(/g)) {
+    if (blank.slice(m.index, m.index + 6) !== 'import' && inStringHere(code, m.index)) continue
+    const arg = balancedArg(code, m.index + m[0].length - 1)?.trim()
+    if (arg === '') continue                                                 // `import()` with nothing in it does not parse: not a call
+    if (arg && /^['"`]/.test(arg) && !/[+`$]/.test(arg.slice(1))) continue  // a plain literal: handled elsewhere
+    if (arg && /^['"`]data:/.test(arg)) { why.push('computed import of a data: module — hermetic'); continue }
+    const r = arg ? readImportPath(arg, file, code) : { opaque: true }
+    if (r.arg) { bump('live'); why.push('computed import() of a path an argument or the environment can supply — arbitrary'); continue }
+    if (!r.paths) { bump('live'); why.push('computed import() with no readable target — runs arbitrary modules'); continue }
+    for (const p of r.paths) {
+      const hit = relative(ROOT, p)
+      // ⛔ A module this file WRITES is made at run time: what is on disk now is a previous run's copy, not what runs.
+      if (writtenPaths(code, file).has(p)) { bump('live'); why.push(`computed import of ${hit}, a module it writes itself — made at run time, cannot be read`); continue }
+      if (hit.startsWith('..') || !onDisk(hit)) { bump('live'); why.push(`computed import of ${hit} — not a repo file, cannot be read`); continue }
       const sub = classify(hit, seen, depth + 1)
       if (sub.tier !== 'safe') { bump(sub.tier); why.push(`imports ${hit}, which can: ${sub.why.join(', ')}`) }
       else why.push(`computed import of ${hit} — read, safe`)
-    } else { bump('live'); why.push('computed import() with no readable target — runs arbitrary modules') }
+    }
   }
 
   const { cmds, selfRuns, opaque } = execCommands(code)
@@ -419,6 +627,7 @@ export function bucketSelfTest() {
 
 export function classifyAll() {
   execSelfTest()
+  importSelfTest()
   bucketSelfTest()
   const files = []
   for (const d of DIRS) {
