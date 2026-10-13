@@ -8,6 +8,7 @@
 //   PED_TOL_X=<k> multiplies the ped bands' tol (the dumped 7.8 mm) by k; the tide band's own tol is untouched.
 //   INPUT_ONLY=1 turns every group's refinement off: the input side only (polygons, input T-junctions), in seconds.
 //   Prints the detector's count on the output (as the bake runs it) and a sha256 over every group's positions, indices, side.
+//   DEFORMER=<path>: import that groundDeformer instead of the repo's (sha logged).
 //   ACCURACY=1 (Brace, 2026-10-13): after conformity, the ped bands' vertical error of the DRAWN ground against the deformer's
 //   own heightAt (null → the raw terrain, as bake-ground's terrainPartAt), whatever sampler refined the mesh. The drawn ground
 //   is what the runtime interpolates: heightAt at each vertex, linear across the triangle. Each triangle is read at its 7
@@ -24,10 +25,12 @@ const CONF = modPath ? resolve(modPath) : new URL('./groundConformity.timed.js',
 // the code under every number, recorded rather than inferred: each file hashed before and after its import, and a run
 // whose file changed while it was being imported refuses (Boz, 2026-10-13, after a deformer edit sat in the tree mid-sweep)
 const sha = (f) => createHash('sha256').update(readFileSync(f)).digest('hex')
-const CODE = [R + 'cartograph/groundDeformer.mjs', CONF, R + 'cartograph/terrainLoad.js', R + 'cartograph/waterLevel.mjs']
+// DEFORMER=<path> runs another deformer (e.g. a worktree's, read-only) against the same dump; its sha is logged with the rest
+const DEF = process.env.DEFORMER ? resolve(process.env.DEFORMER) : R + 'cartograph/groundDeformer.mjs'
+const CODE = [DEF, CONF, R + 'cartograph/terrainLoad.js', R + 'cartograph/waterLevel.mjs']
 const before = CODE.map(sha)
 const { loadSceneTerrain } = await import(R + 'cartograph/terrainLoad.js')
-const { buildDeformer } = await import(R + 'cartograph/groundDeformer.mjs')
+const { buildDeformer } = await import(DEF)
 const { waterLevels } = await import(R + 'cartograph/waterLevel.mjs')
 const { conformAndRefine, findTJunctions } = await import(CONF)
 const after = CODE.map(sha)
