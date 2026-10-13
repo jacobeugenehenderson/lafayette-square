@@ -558,9 +558,20 @@ review (shared-terminal patch), which makes it worse: a signed-in shop screen wo
 **Fix:** `listing-staff` returns an opaque staff id; the staff actions take that id, never a device key. In theward
 `backend/apps-script-2026-10-07.patch` (v3, in progress). ⛔ Not deployed.
 
-### F-26 · UNRATED · `savedesign` has no authorisation  *(new, 2026-10-07; EXISTING on live)*
-The Ward's second security review noted that the Apps Script `savedesign` action checks no caller. Not yet read or
-rated here: cause, reach and fix not established. ⛔ Owed: a read of what it writes and who calls it.
+### F-26 · MEDIUM (integrity) · `savedesign` has no authorisation  *(new, 2026-10-07; EXISTING on live; read 2026-10-13)*
+`apps-script/Code.js#saveDesign` overwrites a business's row in the town's `Designs` tab (`design_json`, any JSON
+object) for whatever business id the request names, or appends a new row for an unknown one. It checks no caller.
+**What a Design is:** per its commit (81a19b66, 2026-02-25), a business's saved styled-QR design. The designer loads it
+back (`getdesign`), and the PlaceCard shows the PNG that designer exported to localStorage. No caller of either
+action is in this repo; the client that reads it today, and so what a visitor would see after an overwrite, is not
+established. Established: anyone can replace any business's saved design, and can add rows without limit.
+**Reach:** every town. A tenant id selects the town and is public (F-28).
+**Fix:** the caller must be that business's owner or staff, through the same per-action gate the other staff writes
+use (`staffHasPermission` / `isFullGuardianOf` on its listing id). Its business id passes through F-24's `safeCell`.
+It lands in theward `backend/apps-script-2026-10-07.patch` (v4, beside F-27's). ⛔ Not deployed; Jacob decides the deploy.
+The four other writes that looked ungated (`set-handle`, `update-avatar`, `bulletin`, `remove-lobby-post`) were read
+to the end. Each is self-scoped by the caller's own `device_hash` (`bulletin` also requires a townie), so none is open
+beyond the bearer-key model F-24 and F-27 already cover.
 
 ### F-27 · CRITICAL · Device keys are served publicly in events and reviews  *(new, 2026-10-07; EXISTING on live)*
 `apps-script/Code.js` `fetchEventsData` (GET `events`, and `init`) and `getReviews` (GET `reviews`) return whole sheet
@@ -571,11 +582,26 @@ act as that person. Found by the Ward's third security review (shared-terminal p
 `backend/apps-script-2026-10-07.patch` (v4, in progress). ⛔ Not deployed. After deploy, any key already read is
 still valid: rotating exposed keys is owed.
 
-### F-28 · UNRATED · Does the Apps Script authorize a town on its tenant id alone?  *(new, 2026-10-13; a question)*
-Every town's sealed id (`cartograph/data/<map>/town-id.json`) ships to every town's visitors in the player bundle
-(`src/instances/registry.js`), and each town's own client sends its id on every call, so no id is secret. ⛔ Owed: a read
-of `apps-script/Code.js`. Does a tenant id alone open a town's tabs, or does every write also check a caller? Not
-established. If the id alone is enough, any town's data is reachable by anyone who loads any town.
+### F-28 · ANSWERED · Does the Apps Script authorize a town on its tenant id alone?  *(2026-10-13; a question, not a finding)*
+**No: the tenant id is a routing key, not authorization; authorization is per action.** Every town's sealed id ships in
+the player bundle (`src/instances/registry.js`), and each town's client sends its own, so no id is secret. In
+`apps-script/Code.js` the id only selects which tabs a request touches (`resolveTenant` → `tabNameFor`). What a caller may
+do is decided per action:
+- the caller's `device_hash` (a bearer key, F-24/F-27);
+- the staff rows in that town's own `Guardians` tab, so being staff in one town grants nothing in another;
+- the admin token, which is backend-wide.
+Knowing an id adds nothing a visit to that town doesn't. Two actions do not hold: `savedesign` checks no caller (F-26),
+and an unknown id is served and creates tabs (F-29).
+
+### F-29 · HIGH (availability) · Any well-formed unknown tenant id is served, and creates tabs  *(new, 2026-10-13; in source)*
+`resolveTenant` accepts any id of the sealed-id shape, registered or not, and `getSheet` creates a missing tab on its first
+use (`insertSheet`), reads included. So a request naming an id no town has makes the backend create that id's tabs. With
+invented ids, it creates tabs without limit. Every town shares ONE spreadsheet, whose total size is capped by Google, so
+the end state is a backend that can no longer grow for ANY town. Not exercised; the cap's size is not measured here.
+Whether live already runs the tenant version of `Code.js` (2026-10-04, a DRAFT that Jacob deploys) is not established.
+**Fix:** refuse a tenant id that is not a registered town (the backend already keeps one table keyed by every town's
+id, `TOWN_ZONES`; one registered set, and a request outside it is refused like a missing one), and never create a tab
+on a read. It lands in theward `backend/apps-script-2026-10-07.patch`. ⛔ Not deployed; Jacob decides the deploy.
 
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
