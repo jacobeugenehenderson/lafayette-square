@@ -17,11 +17,15 @@
  *   3. the fov is continuous along the path; its rate is continuous through every key and it never overshoots a key
  *      (a monotone cubic on the path's parameter — Jacob, 2026-10-11); and the DRIVER writes the path's fov on every
  *      60 Hz frame (src/camera/MovieCamera.jsx#writeLens), never a threshold behind it.
+ *   4. the CLOCK steps by the presented frame (MovieCamera#presentedClock — each frame's rAF timestamp), not by r3f's
+ *      `delta` (performance.now() at render: measured 22–37% p95 frame-to-frame unevenness on screen in Jacob's Chrome):
+ *      the true interval each frame, 0 after a reset (entering, a tab returning from hidden), 0 on a second render
+ *      inside one frame, never capped; and the driver's frame loop advances the movie clock by it and by nothing else.
  * A town whose Look has no moving shot is printed as a still shot — a real state, not a pass.
  *
  * ⛔ MUTATIONS (--self-test, and every run): the pace solve removed from heroAnim.js (`// solve:begin … // solve:end`
  *    — the cell's linear read is what remains) must go RED on rule 2; the 0.1° gate put back in writeLens must go RED
- *    on rule 3; the fov put back as a straight line between keys (`// fov:begin … // fov:end`) must go RED on 3b. A check that cannot see the defect it was written for proves nothing.
+ *    on rule 3; r3f's `delta` written back as the clock's advance must go RED on rule 4; the fov put back as a straight line between keys (`// fov:begin … // fov:end`) must go RED on 3b. A check that cannot see the defect it was written for proves nothing.
  * ⛔ READ-ONLY. Usage: node checks/claims-the-movie-is-continuous.mjs [town …]
  */
 import { readFileSync, readdirSync, existsSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
@@ -100,6 +104,23 @@ try {
   if (typeof writeLens !== 'function') throw new Error(`${DRIVER} exports no writeLens — the driver's lens write moved; re-aim this check`)
   const driverSrc = readFileSync(join(ROOT, DRIVER), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
   const fails = []
+  // 4. the presented clock, and the driver advancing the movie clock by it alone
+  const { presentedClock } = await vite.ssrLoadModule('/' + DRIVER)
+  if (typeof presentedClock !== 'function') throw new Error(`${DRIVER} exports no presentedClock — the movie's clock moved; re-aim this check`)
+  {
+    const pc = presentedClock(), got = []
+    for (const ts of [1000, 1016.7, 1050, 1050, 1066.7]) { pc.stamp(ts); got.push(+pc.step().toFixed(4)) }
+    pc.reset(); pc.stamp(9000); got.push(pc.step()); pc.stamp(9500); got.push(pc.step())
+    const want = [0, 0.0167, 0.0333, 0, 0.0167, 0, 0.5]
+    if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`presentedClock steps ${JSON.stringify(got)}, not ${JSON.stringify(want)} (true interval; 0 after a reset and on a repeat frame; a long frame is NOT capped)`)
+  }
+  const advances = (txt) => [...txt.matchAll(/clock\.current\s*\+=\s*([^\n]*)/g)].map((m) => m[1])
+  const clockRule = (txt) => { const a = advances(txt); return a.length === 1 && /presented\.current\.step\(\)/.test(a[0]) && !/\bdelta\b/.test(a[0]) }
+  if (!clockRule(driverSrc)) fails.push(`${DRIVER}'s frame loop advances the movie clock by something other than the presented clock: ${JSON.stringify(advances(driverSrc))}`)
+  else {
+    const deltaMutant = driverSrc.replace(/clock\.current\s*\+=\s*presented\.current\.step\(\)/, 'clock.current += delta')
+    if (clockRule(deltaMutant)) fails.push('⛔ MUTATION SURVIVED: with r3f\'s delta written back as the clock\'s advance, rule 4 passed — it is blind')
+  }
   if (/camera\.fov\s*=/.test(driverSrc.replace(/export function writeLens[\s\S]*?\n}\n/, ''))) fails.push(`${DRIVER} writes camera.fov outside writeLens`)
 
   // ⛔ the mutants
@@ -132,7 +153,7 @@ try {
   if (!tableRed) fails.push('⛔ MUTATION SURVIVED: with the pace solve removed (the linear table back), no town went red — rule 2 is blind')
   if (!linearRed) fails.push('⛔ MUTATION SURVIVED: with the fov a straight line between keys, no town went red — rule 3b is blind (or no Look zooms through a key: then it is untested, say so)')
   if (!gateRed) fails.push('⛔ MUTATION SURVIVED: with the 0.1° gate back, no zooming town went red — rule 3 is blind (or no Look zooms: then it is untested, say so)')
-  console.log(fails.length ? `⛔ ${fails.join('\n⛔ ')}` : `✅ every moving shot hits its keys at their times, its pace has no kink, its lens is written every frame — and all three mutants went red`)
+  console.log(fails.length ? `⛔ ${fails.join('\n⛔ ')}` : `✅ every moving shot hits its keys at their times, its pace has no kink, its lens is written every frame, its clock is the presented frame's — and all four mutants went red`)
   code = fails.length ? 1 : 0
 } catch (e) { console.error(`⛔ ${e.message}`); code = 2 }
 finally { await vite.close(); rmSync(tmp, { recursive: true, force: true }) }

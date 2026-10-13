@@ -24,7 +24,7 @@
  *                      (Stage's playhead, `start` as a function). Outside the movie shot the depth of field takes the aim.
  */
 import { useEffect, useRef } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame, useThree, addEffect } from '@react-three/fiber'
 import * as THREE from 'three'
 import { heroKeyframeAnim, heroCycleSec, heroClockAt, heroPoseAtTime } from '../preview/heroAnim.js'
 import { movieFocus, keyframeFocusIds } from '../lib/focusObject.js'
@@ -42,6 +42,27 @@ function publishFocus(keyframes, seg, lam) {
 // box — CelestialBodies#shotShadowHalf). `on` while the movie is entered (a tween into it included: it lands on the path).
 export const movieShot = { on: false, keyframes: null, motion: null }
 
+// ⭐ THE MOVIE'S CLOCK IS THE PRESENTED FRAME'S (BRIEF-the-movie-is-continuous). r3f's `delta` reads performance.now()
+// at render time, which wanders from the frame the screen shows by ~4 ms (p95 13 ms): measured in Jacob's Chrome, the
+// camera's step per presented frame varied 22–37% (p95) while frames arrived on a steady cadence. The clock now steps by
+// the interval between rAF timestamps — r3f hands each frame's to its global 'before' effects. No cap: a long frame moves
+// the camera by the real time it took. The one false leap, a tab returning from hidden, resets the baseline, as does
+// entering the movie. ▶ node checks/claims-the-movie-is-continuous.mjs
+export function presentedClock() {
+  let last = null, now = null
+  return {
+    stamp(ts) { now = ts },
+    // Seconds since the last stepped frame; 0 on the first after a reset, and on a second render within one frame.
+    step() {
+      if (now == null) return 0
+      const dt = last == null ? 0 : (now - last) / 1000
+      last = now
+      return dt
+    },
+    reset() { last = null },
+  }
+}
+
 // The lens, written on every frame the path's fov changes — never behind a threshold: a 0.1° write gate stood here
 // and stepped every slow zoom (~418 notches a cycle on Huron). ▶ node checks/claims-the-movie-is-continuous.mjs
 export function writeLens(camera, fov) {
@@ -57,6 +78,8 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
   const live = useRef({})
   live.current = { keyframes, motion, active, start, hold, onTime, framing }
   const clock = useRef(0)
+  const presented = useRef(null)
+  if (!presented.current) presented.current = presentedClock()
   const entered = useRef(false)
   const priorNear = useRef(null)
   // The motion the clock plays: speed is applied to the clock, not inside the path.
@@ -76,6 +99,7 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
       const { m } = path()
       const s = live.current.start
       clock.current = !m ? 0 : s === 'random' ? Math.random() * heroCycleSec(m) : heroClockAt(m, typeof s === 'function' ? s() : s)
+      presented.current.reset()
       priorNear.current = camera.near
       if (camera.near !== quality.movieNear) { camera.near = quality.movieNear; camera.updateProjectionMatrix() }
     } else if (priorNear.current != null) {
@@ -98,10 +122,19 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
     if (priorNear.current != null) { camera.near = priorNear.current; camera.updateProjectionMatrix() }
   }, [camera])
 
+  // The presented frame's timestamp, every frame; a tab returning from hidden starts the interval afresh.
+  useEffect(() => {
+    const pc = presented.current
+    const off = addEffect((ts) => pc.stamp(ts))
+    const vis = () => pc.reset()
+    document.addEventListener('visibilitychange', vis)
+    return () => { off(); document.removeEventListener('visibilitychange', vis) }
+  }, [])
+
   // Leaving by unmount, or the town out of the movie shot: no movie focus.
   useEffect(() => () => { movieFocus.on = false; movieShot.on = false }, [])
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     sync()
     movieShot.on = entered.current
     if (entered.current) { movieShot.keyframes = live.current.keyframes; movieShot.motion = live.current.motion }
@@ -114,7 +147,7 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
       } else movieFocus.on = false
       return
     }
-    clock.current += delta * (live.current.motion?.speed || 1)
+    clock.current += presented.current.step() * (live.current.motion?.speed || 1)
     const r = sample(_pos, _tgt)
     if (!r) { movieFocus.on = false; return }
     if (live.current.framing) publishFocus(path().k, r.seg, r.lam)
