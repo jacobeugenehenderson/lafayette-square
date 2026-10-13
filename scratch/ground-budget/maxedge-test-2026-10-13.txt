@@ -1,0 +1,214 @@
+# maxEdge test, Huron dump-shore, d63b43ea deformer (extract), tol x4, coast runs at HEAD's high water (Brace, 2026-10-13). V0 caps as dumped · V1 no cap · V2 no cap + terrainDev every min(grid step, B) along each edge + hardscape adaptive at the lots' 0.5/6. Load per minute in sweep-run4.log (gitignored); timings +-25%.
+== v0
+[variant] maxEdge cap on · terrainDev 4 classic samples · hardscape as dumped
+[conform] deform: 717.9 s · 1883941 tris · inTJ 43282 · closures 84144 · refTJ 590 · passes 5
+[split] ped 960588 tris (18 groups) · the rest 923353
+[hash] 413c946f8a5a785e8cc00d587bb643b64ed97066660e0fbec8f097a827da7337
+[reasons] PED: input 271258 · +tol 499046 · +band 0 · +maxEdge 138248 · +closure 51819 · after refinement 960371 · final 960588 (T-junction closing +217)
+[reasons]   tol splits by deviation/tol: ≤2× 215873 · 2–4× 92528 · 4–16× 50699 · >16× 11058 · tol splits whose centroid is past the deformer's reach 15782 · floor-bound triangles (≤ minEdge, still over tol) 15295 (past reach 3489)
+[reasons] REST: input 224633 · +tol 190350 · +band 7770 · +maxEdge 421685 · +closure 78518 · after refinement 922956 · final 923353 (T-junction closing +397)
+[reasons]   tol splits by deviation/tol: ≤2× 89170 · 2–4× 40000 · 4–16× 15804 · >16× 195 · tol splits whose centroid is past the deformer's reach 106423 · floor-bound triangles (≤ minEdge, still over tol) 40612 (past reach 31400)
+[reasons]   mat:sidewalk                       input 105641 · +tol 380791 · +band 0 · +maxEdge 80193 · +closure 27721 · after refinement 594346 · final 594454 (T-junction closing +108) · dev bins 160865,70561,39801,9991 · tolPast 9302 · floor 10278
+[reasons]   mat:bed                            input 13166 · +tol 30783 · +band 12 · +maxEdge 103535 · +closure 4575 · after refinement 152071 · final 152071 (T-junction closing +0) · dev bins 13480,6525,2065,83 · tolPast 22153 · floor 5186
+[reasons]   mat:treelawn:underived             input 46049 · +tol 63342 · +band 0 · +maxEdge 16509 · +closure 11067 · after refinement 136967 · final 137027 (T-junction closing +60) · dev bins 29457,11643,6260,262 · tolPast 2400 · floor 2603
+[reasons]   face:underived                     input 38948 · +tol 20497 · +band 334 · +maxEdge 51431 · +closure 16440 · after refinement 127650 · final 127719 (T-junction closing +69) · dev bins 11480,4048,936,0 · tolPast 10981 · floor 502
+[reasons]   mat:curb                           input 74607 · +tol 13164 · +band 0 · +maxEdge 33397 · +closure 5427 · after refinement 126595 · final 126618 (T-junction closing +23) · dev bins 5960,2563,1379,176 · tolPast 3669 · floor 340
+[reasons]   mat:asphalt                        input 36459 · +tol 21038 · +band 911 · +maxEdge 59849 · +closure 7291 · after refinement 125548 · final 125556 (T-junction closing +8) · dev bins 9670,4389,1861,2 · tolPast 8994 · floor 4586
+[reasons]   face:residential                   input 50789 · +tol 16373 · +band 788 · +maxEdge 29847 · +closure 14418 · after refinement 112215 · final 112239 (T-junction closing +24) · dev bins 9961,2493,264,0 · tolPast 2001 · floor 737
+[reasons]   mat:shore                          input 25971 · +tol 53342 · +band 3171 · +maxEdge 1675 · +closure 9459 · after refinement 93618 · final 93854 (T-junction closing +236) · dev bins 15403,14630,9309,108 · tolPast 37349 · floor 27308
+[reasons]   mat:wood                           input 1150 · +tol 0 · +band 0 · +maxEdge 65558 · +closure 64 · after refinement 66772 · final 66772 (T-junction closing +0) · dev bins 0,0,0,0 · tolPast 0 · floor 0
+[reasons]   face:agricultural                  input 5445 · +tol 5111 · +band 0 · +maxEdge 48634 · +closure 2768 · after refinement 61958 · final 61963 (T-junction closing +5) · dev bins 3577,532,59,0 · tolPast 3901 · floor 18
+[reasons]   mat:treelawn:residential           input 19693 · +tol 25762 · +band 0 · +maxEdge 3583 · +closure 4636 · after refinement 53674 · final 53691 (T-junction closing +17) · dev bins 12081,5048,1982,42 · tolPast 17 · floor 827
+[reasons]   face:recreation                    input 7927 · +tol 10727 · +band 2 · +maxEdge 13711 · +closure 2566 · after refinement 34933 · final 34933 (T-junction closing +0) · dev bins 6963,1471,229,0 · tolPast 6955 · floor 2
+[reasons]   face:vacant                        input 10954 · +tol 7968 · +band 1172 · +maxEdge 6262 · +closure 5080 · after refinement 31436 · final 31447 (T-junction closing +11) · dev bins 4608,1458,175,0 · tolPast 2577 · floor 909
+[reasons]   face:commercial                    input 9337 · +tol 7664 · +band 216 · +maxEdge 9177 · +closure 4586 · after refinement 30980 · final 30981 (T-junction closing +1) · dev bins 4513,1437,145,0 · tolPast 3717 · floor 221
+[reasons]   face:industrial                    input 3119 · +tol 5880 · +band 599 · +maxEdge 5648 · +closure 4251 · after refinement 19497 · final 19505 (T-junction closing +8) · dev bins 3343,1155,211,1 · tolPast 2671 · floor 595
+[reasons]   face:institutional                 input 5739 · +tol 2850 · +band 150 · +maxEdge 3770 · +closure 2098 · after refinement 14607 · final 14617 (T-junction closing +10) · dev bins 1743,543,28,0 · tolPast 880 · floor 155
+[reasons]   mat:parking_lot                    input 4206 · +tol 0 · +band 0 · +maxEdge 9641 · +closure 148 · after refinement 13995 · final 13996 (T-junction closing +1) · dev bins 0,0,0,0 · tolPast 0 · floor 0
+[reasons]   mat:curbCut                        input 10519 · +tol 27 · +band 0 · +maxEdge 0 · +closure 24 · after refinement 10570 · final 10570 (T-junction closing +0) · dev bins 20,0,0,0 · tolPast 0 · floor 24
+[reasons]   mat:treelawn:commercial            input 3227 · +tol 3950 · +band 0 · +maxEdge 420 · +closure 840 · after refinement 8437 · final 8437 (T-junction closing +0) · dev bins 1935,734,282,0 · tolPast 0 · floor 332
+[reasons]   mat:treelawn:vacant                input 3593 · +tol 3177 · +band 0 · +maxEdge 465 · +closure 855 · after refinement 8090 · final 8095 (T-junction closing +5) · dev bins 1301,435,279,451 · tolPast 0 · floor 433
+[reasons]   face:verge                         input 1079 · +tol 2598 · +band 0 · +maxEdge 3034 · +closure 474 · after refinement 7185 · final 7185 (T-junction closing +0) · dev bins 1314,481,198,0 · tolPast 1627 · floor 8
+[reasons]   mat:treelawn:industrial            input 574 · +tol 2846 · +band 0 · +maxEdge 2418 · +closure 258 · after refinement 6096 · final 6096 (T-junction closing +0) · dev bins 1467,530,195,0 · tolPast 18 · floor 17
+[reasons]   face:beach                         input 2215 · +tol 717 · +band 345 · +maxEdge 638 · +closure 1349 · after refinement 5264 · final 5281 (T-junction closing +17) · dev bins 452,28,0,0 · tolPast 11 · floor 289
+[reasons]   mat:treelawn:institutional         input 1918 · +tol 1727 · +band 0 · +maxEdge 584 · +closure 283 · after refinement 4512 · final 4514 (T-junction closing +2) · dev bins 876,310,97,0 · tolPast 4 · floor 63
+[reasons]   mat:highway                        input 1016 · +tol 1276 · +band 0 · +maxEdge 2188 · +closure 30 · after refinement 4510 · final 4510 (T-junction closing +0) · dev bins 424,295,195,0 · tolPast 914 · floor 0
+[sampler] 528514238 calls · 540.9 s inside the sampler · 1.02 µs/call
+[accuracy] ⛔ 2911 NON-FINITE error(s), excluded from every number below; first: (1471.17, 2766.77) mat:treelawn:industrial · drawn 6.992777404518963 · heightAt NaN · vertex H 7.107825249364307,6.972590975138855,6.93525348209629 | (1471.17, 2766.77) mat:treelaw
+[accuracy] ped drawn vs heightAt, area-weighted over 6706036 finite points (0.638 km²): p50 1.21 mm · p99 29.48 mm · max 1756.84 mm · 278.7 s
+[lots] every non-ped group, grid step 4.999 m: 25990809 points over 38.588 km² · ⛔ 104 NON-FINITE excluded · p50 11.4 · p99 387.2 · max 6415.6 mm · area over 0.1 m 18.108% · over 0.5 m 0.173%
+[lots]   mat:bed                      152071 tris · 13.914 km² · p50 0.0 · p99 47.0 · max 774.9 mm · >0.1 m 0.055% · >0.5 m 0.000%
+[lots]   face:underived               127719 tris · 3.280 km² · p50 42.3 · p99 427.7 · max 2209.8 mm · >0.1 m 29.696% · >0.5 m 0.303% · ⛔ 100 non-finite
+[lots]   mat:asphalt                  125556 tris · 1.212 km² · p50 7.0 · p99 354.4 · max 6415.6 mm · >0.1 m 9.237% · >0.5 m 0.356%
+[lots]   face:residential             112239 tris · 4.034 km² · p50 69.4 · p99 434.4 · max 1904.0 mm · >0.1 m 37.891% · >0.5 m 0.280%
+[lots]   mat:shore                     93854 tris · 0.088 km² · p50 12.0 · p99 265.6 · max 3138.5 mm · >0.1 m 7.436% · >0.5 m 0.067%
+[lots]   mat:wood                      66772 tris · 0.914 km² · p50 24.1 · p99 518.8 · max 1499.3 mm · >0.1 m 15.923% · >0.5 m 1.112%
+[lots]   face:agricultural             61963 tris · 7.134 km² · p50 39.5 · p99 375.9 · max 1442.3 mm · >0.1 m 23.307% · >0.5 m 0.094%
+[lots]   face:recreation               34933 tris · 1.753 km² · p50 84.7 · p99 448.4 · max 1959.0 mm · >0.1 m 44.610% · >0.5 m 0.307%
+[lots]   face:vacant                   31447 tris · 1.289 km² · p50 45.6 · p99 436.0 · max 2033.6 mm · >0.1 m 30.857% · >0.5 m 0.290%
+[lots]   face:commercial               30981 tris · 1.696 km² · p50 53.3 · p99 445.5 · max 3058.0 mm · >0.1 m 33.084% · >0.5 m 0.400%
+[lots]   face:industrial               19505 tris · 0.952 km² · p50 54.8 · p99 439.4 · max 1509.7 mm · >0.1 m 31.914% · >0.5 m 0.400% · ⛔ 4 non-finite
+[lots]   face:institutional            14617 tris · 0.590 km² · p50 37.6 · p99 419.4 · max 1461.0 mm · >0.1 m 26.504% · >0.5 m 0.212%
+[lots]   mat:parking_lot               13996 tris · 0.131 km² · p50 6.7 · p99 92.5 · max 455.5 mm · >0.1 m 0.848% · >0.5 m 0.000%
+[lots]   face:verge                     7185 tris · 0.241 km² · p50 50.5 · p99 423.9 · max 956.7 mm · >0.1 m 31.761% · >0.5 m 0.283%
+[lots]   face:beach                     5281 tris · 0.061 km² · p50 69.4 · p99 456.9 · max 1460.6 mm · >0.1 m 38.991% · >0.5 m 0.466%
+[lots]   mat:highway                    4510 tris · 0.000 km² · p50 7.0 · p99 355.1 · max 816.1 mm · >0.1 m 4.855% · >0.5 m 0.258%
+[lots]   face:park                      4073 tris · 0.136 km² · p50 36.8 · p99 409.2 · max 1386.0 mm · >0.1 m 25.207% · >0.5 m 0.145%
+[lots]   face:wetland                   4020 tris · 0.472 km² · p50 33.7 · p99 392.2 · max 804.4 mm · >0.1 m 22.627% · >0.5 m 0.184%
+[lots]   mat:footway                    3669 tris · 0.009 km² · p50 11.9 · p99 221.7 · max 572.9 mm · >0.1 m 6.844% · >0.5 m 0.016%
+[lots]   face:greenhouse                3111 tris · 0.473 km² · p50 20.7 · p99 406.0 · max 795.8 mm · >0.1 m 17.600% · >0.5 m 0.231%
+[lots]   mat:pitch                      2688 tris · 0.078 km² · p50 3.7 · p99 61.8 · max 370.0 mm · >0.1 m 0.281% · >0.5 m 0.000%
+[lots]   face:bare                      1046 tris · 0.034 km² · p50 27.9 · p99 250.1 · max 1603.1 mm · >0.1 m 10.303% · >0.5 m 0.096%
+[lots]   mat:scrub                       737 tris · 0.017 km² · p50 12.4 · p99 119.4 · max 196.4 mm · >0.1 m 1.478% · >0.5 m 0.000%
+[lots]   face:parking                    415 tris · 0.020 km² · p50 22.0 · p99 203.0 · max 252.9 mm · >0.1 m 6.288% · >0.5 m 0.000%
+[lots]   mat:garden                      359 tris · 0.002 km² · p50 13.2 · p99 330.8 · max 396.7 mm · >0.1 m 11.048% · >0.5 m 0.000%
+[lots]   face:brownfield                 265 tris · 0.040 km² · p50 55.9 · p99 400.0 · max 714.7 mm · >0.1 m 29.409% · >0.5 m 0.163%
+[lots]   mat:playground                  100 tris · 0.003 km² · p50 11.6 · p99 63.6 · max 72.7 mm · >0.1 m 0.000% · >0.5 m 0.000%
+[lots]   mat:swimming_pool                84 tris · 0.001 km² · p50 11.8 · p99 109.4 · max 109.4 mm · >0.1 m 1.463% · >0.5 m 0.000%
+[lots]   face:cemetery                    70 tris · 0.012 km² · p50 92.2 · p99 376.9 · max 410.4 mm · >0.1 m 46.368% · >0.5 m 0.000%
+[lots]   mat:alley                        44 tris · 0.001 km² · p50 44.9 · p99 238.7 · max 288.9 mm · >0.1 m 22.769% · >0.5 m 0.000%
+[lots]   face:forest                      43 tris · 0.000 km² · p50 11.3 · p99 200.1 · max 200.1 mm · >0.1 m 12.224% · >0.5 m 0.000%
+     2035.39 real      1973.92 user       154.97 sys
+          6603161600  maximum resident set size
+== v1
+[variant] maxEdge cap OFF · terrainDev 4 classic samples · hardscape as dumped
+[conform] deform: 584.1 s · 1493103 tris · inTJ 43282 · closures 97335 · refTJ 589 · passes 5
+[split] ped 899024 tris (18 groups) · the rest 594079
+[hash] 42eb03aabe754f24c2d9e03aace9ef31d4a7e424a2492556b1b054283c1e5aa1
+[reasons] PED: input 271258 · +tol 567395 · +band 0 · +maxEdge 0 · +closure 60140 · after refinement 898793 · final 899024 (T-junction closing +231)
+[reasons]   tol splits by deviation/tol: ≤2× 222851 · 2–4× 103619 · 4–16× 72595 · >16× 14428 · tol splits whose centroid is past the deformer's reach 16340 · floor-bound triangles (≤ minEdge, still over tol) 15241 (past reach 3475)
+[reasons] REST: input 224633 · +tol 267882 · +band 7765 · +maxEdge 0 · +closure 93417 · after refinement 593697 · final 594079 (T-junction closing +382)
+[reasons]   tol splits by deviation/tol: ≤2× 110443 · 2–4× 56504 · 4–16× 29287 · >16× 714 · tol splits whose centroid is past the deformer's reach 145194 · floor-bound triangles (≤ minEdge, still over tol) 40506 (past reach 31396)
+[reasons]   mat:sidewalk                       input 105641 · +tol 431030 · +band 0 · +maxEdge 0 · +closure 29216 · after refinement 565887 · final 565996 (T-junction closing +109) · dev bins 164927,78338,56701,12577 · tolPast 9501 · floor 10233
+[reasons]   mat:treelawn:underived             input 46049 · +tol 73146 · +band 0 · +maxEdge 0 · +closure 12650 · after refinement 131845 · final 131905 (T-junction closing +60) · dev bins 30941,13403,9049,671 · tolPast 2525 · floor 2594
+[reasons]   mat:curb                           input 74607 · +tol 16503 · +band 0 · +maxEdge 0 · +closure 9765 · after refinement 100875 · final 100910 (T-junction closing +35) · dev bins 6521,3145,2253,464 · tolPast 3903 · floor 340
+[reasons]   face:residential                   input 50789 · +tol 24833 · +band 788 · +maxEdge 0 · +closure 18751 · after refinement 95161 · final 95180 (T-junction closing +19) · dev bins 12850,4385,1001,0 · tolPast 2913 · floor 737
+[reasons]   face:underived                     input 38948 · +tol 33726 · +band 334 · +maxEdge 0 · +closure 20704 · after refinement 93712 · final 93778 (T-junction closing +66) · dev bins 15720,7015,2876,21 · tolPast 17519 · floor 502
+[reasons]   mat:shore                          input 25971 · +tol 54542 · +band 3171 · +maxEdge 0 · +closure 9583 · after refinement 93267 · final 93496 (T-junction closing +229) · dev bins 15530,14875,9565,122 · tolPast 37890 · floor 27306
+[reasons]   mat:asphalt                        input 36459 · +tol 27889 · +band 909 · +maxEdge 0 · +closure 9040 · after refinement 74297 · final 74306 (T-junction closing +9) · dev bins 11006,5189,4185,94 · tolPast 11816 · floor 4485
+[reasons]   mat:bed                            input 13166 · +tol 45881 · +band 11 · +maxEdge 0 · +closure 5883 · after refinement 64941 · final 64941 (T-junction closing +0) · dev bins 15829,9383,6162,451 · tolPast 31825 · floor 5186
+[reasons]   mat:treelawn:residential           input 19693 · +tol 28260 · +band 0 · +maxEdge 0 · +closure 5031 · after refinement 52984 · final 53002 (T-junction closing +18) · dev bins 12373,5562,2753,77 · tolPast 17 · floor 827
+[reasons]   face:recreation                    input 7927 · +tol 18922 · +band 2 · +maxEdge 0 · +closure 3133 · after refinement 29984 · final 29984 (T-junction closing +0) · dev bins 9149,3752,1303,2 · tolPast 11895 · floor 2
+[reasons]   face:agricultural                  input 5445 · +tol 18920 · +band 0 · +maxEdge 0 · +closure 3936 · after refinement 28301 · final 28306 (T-junction closing +5) · dev bins 9177,3641,1190,1 · tolPast 13195 · floor 18
+[reasons]   face:vacant                        input 10954 · +tol 10441 · +band 1172 · +maxEdge 0 · +closure 5274 · after refinement 27841 · final 27852 (T-junction closing +11) · dev bins 5147,2049,638,0 · tolPast 3453 · floor 909
+[reasons]   face:commercial                    input 9337 · +tol 10949 · +band 216 · +maxEdge 0 · +closure 4666 · after refinement 25168 · final 25169 (T-junction closing +1) · dev bins 5266,2139,829,2 · tolPast 5091 · floor 221
+[reasons]   face:industrial                    input 3119 · +tol 7219 · +band 597 · +maxEdge 0 · +closure 4140 · after refinement 15075 · final 15083 (T-junction closing +8) · dev bins 3638,1484,403,6 · tolPast 3095 · floor 592
+[reasons]   face:institutional                 input 5739 · +tol 3886 · +band 150 · +maxEdge 0 · +closure 1845 · after refinement 11620 · final 11628 (T-junction closing +8) · dev bins 2013,858,131,0 · tolPast 1085 · floor 155
+[reasons]   mat:curbCut                        input 10519 · +tol 27 · +band 0 · +maxEdge 0 · +closure 24 · after refinement 10570 · final 10570 (T-junction closing +0) · dev bins 20,0,0,0 · tolPast 0 · floor 24
+[reasons]   mat:treelawn:commercial            input 3227 · +tol 4199 · +band 0 · +maxEdge 0 · +closure 893 · after refinement 8319 · final 8319 (T-junction closing +0) · dev bins 1979,779,347,0 · tolPast 0 · floor 332
+[reasons]   mat:treelawn:vacant                input 3593 · +tol 3424 · +band 0 · +maxEdge 0 · +closure 875 · after refinement 7892 · final 7897 (T-junction closing +5) · dev bins 1320,502,335,465 · tolPast 0 · floor 433
+[reasons]   mat:treelawn:industrial            input 574 · +tol 4190 · +band 0 · +maxEdge 0 · +closure 591 · after refinement 5355 · final 5355 (T-junction closing +0) · dev bins 1857,739,472,34 · tolPast 18 · floor 17
+[reasons]   face:verge                         input 1079 · +tol 3470 · +band 0 · +maxEdge 0 · +closure 749 · after refinement 5298 · final 5298 (T-junction closing +0) · dev bins 1502,622,405,6 · tolPast 2162 · floor 8
+[reasons]   face:beach                         input 2215 · +tol 894 · +band 345 · +maxEdge 0 · +closure 1458 · after refinement 4912 · final 4929 (T-junction closing +17) · dev bins 539,50,0,0 · tolPast 11 · floor 289
+[reasons]   mat:parking_lot                    input 4206 · +tol 0 · +band 0 · +maxEdge 0 · +closure 276 · after refinement 4482 · final 4484 (T-junction closing +2) · dev bins 0,0,0,0 · tolPast 0 · floor 0
+[reasons]   mat:treelawn:institutional         input 1918 · +tol 2053 · +band 0 · +maxEdge 0 · +closure 351 · after refinement 4322 · final 4324 (T-junction closing +2) · dev bins 945,383,179,0 · tolPast 4 · floor 63
+[reasons]   mat:footway                        input 3482 · +tol 78 · +band 0 · +maxEdge 0 · +closure 15 · after refinement 3575 · final 3575 (T-junction closing +0) · dev bins 46,9,0,0 · tolPast 15 · floor 0
+[reasons]   mat:treelawn:recreation            input 2220 · +tol 1083 · +band 0 · +maxEdge 0 · +closure 137 · after refinement 3440 · final 3440 (T-junction closing +0) · dev bins 514,209,80,0 · tolPast 151 · floor 24
+[sampler] 425968158 calls · 447.7 s inside the sampler · 1.05 µs/call
+[accuracy] ⛔ 2902 NON-FINITE error(s), excluded from every number below; first: (1471.17, 2766.77) mat:treelawn:industrial · drawn 6.992777404518963 · heightAt NaN · vertex H 7.107825249364307,6.972590975138855,6.93525348209629 | (1471.17, 2766.77) mat:treelaw
+[accuracy] ped drawn vs heightAt, area-weighted over 6275706 finite points (0.638 km²): p50 1.55 mm · p99 30.22 mm · max 1756.84 mm · 267.3 s
+[lots] every non-ped group, grid step 4.999 m: 37842906 points over 38.588 km² · ⛔ 105 NON-FINITE excluded · p50 25.0 · p99 566.3 · max 6116.3 mm · area over 0.1 m 28.261% · over 0.5 m 1.335%
+[lots]   face:residential              95180 tris · 4.034 km² · p50 92.5 · p99 487.3 · max 1904.0 mm · >0.1 m 47.400% · >0.5 m 0.816%
+[lots]   face:underived                93778 tris · 3.280 km² · p50 68.9 · p99 481.3 · max 2209.8 mm · >0.1 m 39.762% · >0.5 m 0.794% · ⛔ 102 non-finite
+[lots]   mat:shore                     93496 tris · 0.088 km² · p50 12.3 · p99 265.6 · max 3138.5 mm · >0.1 m 7.490% · >0.5 m 0.067%
+[lots]   mat:asphalt                   74306 tris · 1.212 km² · p50 29.8 · p99 441.1 · max 6116.3 mm · >0.1 m 22.710% · >0.5 m 0.589%
+[lots]   mat:bed                       64941 tris · 13.914 km² · p50 0.0 · p99 56.7 · max 774.9 mm · >0.1 m 0.090% · >0.5 m 0.000%
+[lots]   face:recreation               29984 tris · 1.753 km² · p50 98.7 · p99 475.0 · max 1959.0 mm · >0.1 m 49.572% · >0.5 m 0.631%
+[lots]   face:agricultural             28306 tris · 7.134 km² · p50 93.1 · p99 472.7 · max 1442.3 mm · >0.1 m 47.494% · >0.5 m 0.624%
+[lots]   face:vacant                   27852 tris · 1.289 km² · p50 58.6 · p99 455.0 · max 2033.6 mm · >0.1 m 36.309% · >0.5 m 0.406%
+[lots]   face:commercial               25169 tris · 1.696 km² · p50 83.3 · p99 570.1 · max 3058.0 mm · >0.1 m 44.670% · >0.5 m 1.668%
+[lots]   face:industrial               15083 tris · 0.952 km² · p50 87.5 · p99 553.2 · max 3008.3 mm · >0.1 m 45.551% · >0.5 m 1.700% · ⛔ 3 non-finite
+[lots]   face:institutional            11628 tris · 0.590 km² · p50 55.5 · p99 453.1 · max 1461.0 mm · >0.1 m 34.761% · >0.5 m 0.446%
+[lots]   face:verge                     5298 tris · 0.241 km² · p50 76.8 · p99 437.2 · max 956.7 mm · >0.1 m 42.259% · >0.5 m 0.359%
+[lots]   face:beach                     4929 tris · 0.061 km² · p50 87.6 · p99 536.6 · max 1460.6 mm · >0.1 m 45.760% · >0.5 m 1.596%
+[lots]   mat:parking_lot                4484 tris · 0.131 km² · p50 67.0 · p99 487.4 · max 805.8 mm · >0.1 m 36.914% · >0.5 m 0.865%
+[lots]   mat:footway                    3575 tris · 0.009 km² · p50 12.8 · p99 255.3 · max 572.9 mm · >0.1 m 8.563% · >0.5 m 0.016%
+[lots]   face:wetland                   3418 tris · 0.472 km² · p50 66.0 · p99 476.5 · max 804.6 mm · >0.1 m 37.947% · >0.5 m 0.744%
+[lots]   face:park                      2953 tris · 0.136 km² · p50 60.1 · p99 442.8 · max 1386.0 mm · >0.1 m 34.606% · >0.5 m 0.343%
+[lots]   mat:highway                    2695 tris · 0.000 km² · p50 21.9 · p99 462.7 · max 816.1 mm · >0.1 m 19.215% · >0.5 m 0.671%
+[lots]   mat:wood                       2630 tris · 0.914 km² · p50 283.1 · p99 3834.9 · max 5682.4 mm · >0.1 m 73.915% · >0.5 m 35.751%
+[lots]   face:greenhouse                2319 tris · 0.473 km² · p50 40.5 · p99 460.3 · max 964.2 mm · >0.1 m 24.004% · >0.5 m 0.693%
+[lots]   face:bare                       747 tris · 0.034 km² · p50 141.8 · p99 405.9 · max 1603.1 mm · >0.1 m 62.181% · >0.5 m 0.091%
+[lots]   face:parking                    354 tris · 0.020 km² · p50 36.9 · p99 225.8 · max 276.9 mm · >0.1 m 16.191% · >0.5 m 0.000%
+[lots]   mat:garden                      309 tris · 0.002 km² · p50 20.0 · p99 355.6 · max 396.7 mm · >0.1 m 15.716% · >0.5 m 0.000%
+[lots]   face:brownfield                 231 tris · 0.040 km² · p50 67.9 · p99 404.9 · max 714.7 mm · >0.1 m 36.387% · >0.5 m 0.167%
+[lots]   mat:pitch                       188 tris · 0.078 km² · p50 56.0 · p99 263.5 · max 640.8 mm · >0.1 m 28.415% · >0.5 m 0.194%
+[lots]   mat:swimming_pool                80 tris · 0.001 km² · p50 13.9 · p99 224.0 · max 238.3 mm · >0.1 m 18.025% · >0.5 m 0.000%
+[lots]   face:cemetery                    62 tris · 0.012 km² · p50 96.5 · p99 376.9 · max 410.4 mm · >0.1 m 48.214% · >0.5 m 0.000%
+[lots]   mat:alley                        32 tris · 0.001 km² · p50 56.6 · p99 269.5 · max 309.8 mm · >0.1 m 26.477% · >0.5 m 0.000%
+[lots]   mat:scrub                        21 tris · 0.017 km² · p50 158.2 · p99 1043.8 · max 1087.3 mm · >0.1 m 63.133% · >0.5 m 21.956%
+[lots]   mat:playground                   20 tris · 0.003 km² · p50 26.9 · p99 136.8 · max 141.3 mm · >0.1 m 12.128% · >0.5 m 0.000%
+[lots]   face:forest                      11 tris · 0.000 km² · p50 56.6 · p99 200.1 · max 231.7 mm · >0.1 m 25.997% · >0.5 m 0.000%
+     2158.52 real      2060.47 user       189.16 sys
+          6310838272  maximum resident set size
+== v2
+[variant] maxEdge cap OFF · terrainDev every 4.999 m along each edge · hardscape adaptive at the lots' policy
+[conform] deform: 1202.4 s · 1562619 tris · inTJ 43282 · closures 84371 · refTJ 585 · passes 5
+[split] ped 922324 tris (18 groups) · the rest 640295
+[hash] 7fcbc990a1ddbb98b31d87a5fbc64e3ed6fb26fc538d106d7e5de8b6d252c7dc
+[reasons] PED: input 271258 · +tol 602158 · +band 0 · +maxEdge 0 · +closure 48677 · after refinement 922093 · final 922324 (T-junction closing +231)
+[reasons]   tol splits by deviation/tol: ≤2× 225551 · 2–4× 110429 · 4–16× 85645 · >16× 16717 · tol splits whose centroid is past the deformer's reach 16907 · floor-bound triangles (≤ minEdge, still over tol) 15275 (past reach 3502)
+[reasons] REST: input 224633 · +tol 322321 · +band 7750 · +maxEdge 0 · +closure 85213 · after refinement 639917 · final 640295 (T-junction closing +378)
+[reasons]   tol splits by deviation/tol: ≤2× 129869 · 2–4× 67188 · 4–16× 36886 · >16× 2221 · tol splits whose centroid is past the deformer's reach 171332 · floor-bound triangles (≤ minEdge, still over tol) 40860 (past reach 31695)
+[reasons]   mat:sidewalk                       input 105641 · +tol 455457 · +band 0 · +maxEdge 0 · +closure 20867 · after refinement 581965 · final 582072 (T-junction closing +107) · dev bins 165661,83333,66398,14428 · tolPast 9653 · floor 10261
+[reasons]   mat:treelawn:underived             input 46049 · +tol 78648 · +band 0 · +maxEdge 0 · +closure 11087 · after refinement 135784 · final 135844 (T-junction closing +60) · dev bins 32199,14259,10690,948 · tolPast 2712 · floor 2600
+[reasons]   mat:curb                           input 74607 · +tol 18177 · +band 0 · +maxEdge 0 · +closure 9598 · after refinement 102382 · final 102418 (T-junction closing +36) · dev bins 6886,3535,2632,561 · tolPast 4130 · floor 340
+[reasons]   face:residential                   input 50789 · +tol 30587 · +band 792 · +maxEdge 0 · +closure 17847 · after refinement 100015 · final 100035 (T-junction closing +20) · dev bins 15348,5392,1577,2 · tolPast 3454 · floor 737
+[reasons]   face:underived                     input 38948 · +tol 39747 · +band 333 · +maxEdge 0 · +closure 20053 · after refinement 99081 · final 99145 (T-junction closing +64) · dev bins 18061,7902,3941,52 · tolPast 20135 · floor 504
+[reasons]   mat:shore                          input 25971 · +tol 58244 · +band 3171 · +maxEdge 0 · +closure 7464 · after refinement 94850 · final 95076 (T-junction closing +226) · dev bins 15532,15822,10997,236 · tolPast 40046 · floor 27502
+[reasons]   mat:asphalt                        input 36459 · +tol 31346 · +band 853 · +maxEdge 0 · +closure 8865 · after refinement 77523 · final 77532 (T-junction closing +9) · dev bins 12068,5836,4835,260 · tolPast 12731 · floor 4463
+[reasons]   mat:bed                            input 13166 · +tol 52994 · +band 15 · +maxEdge 0 · +closure 3814 · after refinement 69989 · final 69989 (T-junction closing +0) · dev bins 17781,10500,6865,1601 · tolPast 36747 · floor 5285
+[reasons]   mat:treelawn:residential           input 19693 · +tol 29955 · +band 0 · +maxEdge 0 · +closure 4246 · after refinement 53894 · final 53912 (T-junction closing +18) · dev bins 12482,5847,3568,104 · tolPast 17 · floor 827
+[reasons]   face:agricultural                  input 5445 · +tol 23867 · +band 0 · +maxEdge 0 · +closure 3022 · after refinement 32334 · final 32339 (T-junction closing +5) · dev bins 11166,4531,1839,2 · tolPast 16497 · floor 18
+[reasons]   face:recreation                    input 7927 · +tol 22120 · +band 2 · +maxEdge 0 · +closure 2116 · after refinement 32165 · final 32165 (T-junction closing +0) · dev bins 10124,4496,1825,14 · tolPast 13625 · floor 2
+[reasons]   face:vacant                        input 10954 · +tol 12047 · +band 1172 · +maxEdge 0 · +closure 5089 · after refinement 29262 · final 29273 (T-junction closing +11) · dev bins 5372,2767,837,0 · tolPast 4025 · floor 909
+[reasons]   face:commercial                    input 9337 · +tol 13553 · +band 216 · +maxEdge 0 · +closure 4199 · after refinement 27305 · final 27307 (T-junction closing +2) · dev bins 6395,2638,1062,2 · tolPast 6140 · floor 221
+[reasons]   face:industrial                    input 3119 · +tol 9310 · +band 631 · +maxEdge 0 · +closure 4130 · after refinement 17190 · final 17194 (T-junction closing +4) · dev bins 4522,1992,576,10 · tolPast 4131 · floor 620
+[reasons]   mat:wood                           input 1150 · +tol 11681 · +band 0 · +maxEdge 0 · +closure 2315 · after refinement 15146 · final 15146 (T-junction closing +0) · dev bins 5686,2235,1025,0 · tolPast 6489 · floor 51
+[reasons]   face:institutional                 input 5739 · +tol 4363 · +band 150 · +maxEdge 0 · +closure 1739 · after refinement 11991 · final 12002 (T-junction closing +11) · dev bins 2101,1003,227,0 · tolPast 1192 · floor 155
+[reasons]   mat:curbCut                        input 10519 · +tol 27 · +band 0 · +maxEdge 0 · +closure 24 · after refinement 10570 · final 10570 (T-junction closing +0) · dev bins 20,0,0,0 · tolPast 0 · floor 24
+[reasons]   mat:treelawn:commercial            input 3227 · +tol 4421 · +band 0 · +maxEdge 0 · +closure 729 · after refinement 8377 · final 8377 (T-junction closing +0) · dev bins 1992,770,482,4 · tolPast 0 · floor 332
+[reasons]   mat:treelawn:vacant                input 3593 · +tol 3593 · +band 0 · +maxEdge 0 · +closure 839 · after refinement 8025 · final 8031 (T-junction closing +6) · dev bins 1324,548,408,473 · tolPast 0 · floor 433
+[reasons]   mat:treelawn:industrial            input 574 · +tol 4705 · +band 0 · +maxEdge 0 · +closure 367 · after refinement 5646 · final 5646 (T-junction closing +0) · dev bins 1986,844,617,56 · tolPast 18 · floor 17
+[reasons]   face:verge                         input 1079 · +tol 3760 · +band 0 · +maxEdge 0 · +closure 643 · after refinement 5482 · final 5482 (T-junction closing +0) · dev bins 1502,735,488,9 · tolPast 2354 · floor 8
+[reasons]   face:beach                         input 2215 · +tol 1251 · +band 345 · +maxEdge 0 · +closure 1330 · after refinement 5141 · final 5158 (T-junction closing +17) · dev bins 678,115,7,0 · tolPast 15 · floor 289
+[reasons]   mat:treelawn:institutional         input 1918 · +tol 2394 · +band 0 · +maxEdge 0 · +closure 272 · after refinement 4584 · final 4586 (T-junction closing +2) · dev bins 1057,462,230,0 · tolPast 4 · floor 63
+[reasons]   mat:parking_lot                    input 4206 · +tol 31 · +band 0 · +maxEdge 0 · +closure 290 · after refinement 4527 · final 4529 (T-junction closing +2) · dev bins 22,2,0,0 · tolPast 12 · floor 0
+[reasons]   face:wetland                       input 633 · +tol 2204 · +band 0 · +maxEdge 0 · +closure 794 · after refinement 3631 · final 3631 (T-junction closing +0) · dev bins 1093,450,101,0 · tolPast 902 · floor 0
+[sampler] 619509697 calls · 975.5 s inside the sampler · 1.57 µs/call
+[accuracy] ⛔ 2898 NON-FINITE error(s), excluded from every number below; first: (1471.17, 2766.77) mat:treelawn:industrial · drawn 6.992777404518963 · heightAt NaN · vertex H 7.107825249364307,6.972590975138855,6.93525348209629 | (1471.17, 2766.77) mat:treelaw
+[accuracy] ped drawn vs heightAt, area-weighted over 6438558 finite points (0.638 km²): p50 1.37 mm · p99 27.55 mm · max 1756.84 mm · 320.3 s
+[lots] every non-ped group, grid step 4.999 m: 37055256 points over 38.588 km² · ⛔ 103 NON-FINITE excluded · p50 21.4 · p99 394.2 · max 6306.5 mm · area over 0.1 m 25.445% · over 0.5 m 0.051%
+[lots]   face:residential             100035 tris · 4.034 km² · p50 85.6 · p99 430.6 · max 1904.0 mm · >0.1 m 44.641% · >0.5 m 0.152%
+[lots]   face:underived                99145 tris · 3.280 km² · p50 59.1 · p99 411.3 · max 2209.8 mm · >0.1 m 35.913% · >0.5 m 0.060% · ⛔ 100 non-finite
+[lots]   mat:shore                     95076 tris · 0.088 km² · p50 11.4 · p99 265.6 · max 3138.5 mm · >0.1 m 7.062% · >0.5 m 0.067%
+[lots]   mat:asphalt                   77532 tris · 1.212 km² · p50 27.0 · p99 380.6 · max 6306.5 mm · >0.1 m 20.658% · >0.5 m 0.271%
+[lots]   mat:bed                       69989 tris · 13.914 km² · p50 0.0 · p99 49.7 · max 774.9 mm · >0.1 m 0.023% · >0.5 m 0.000%
+[lots]   face:agricultural             32339 tris · 7.134 km² · p50 84.2 · p99 412.8 · max 831.7 mm · >0.1 m 43.906% · >0.5 m 0.017%
+[lots]   face:recreation               32165 tris · 1.753 km² · p50 91.3 · p99 429.8 · max 1959.0 mm · >0.1 m 46.999% · >0.5 m 0.065%
+[lots]   face:vacant                   29273 tris · 1.289 km² · p50 55.2 · p99 427.7 · max 2033.6 mm · >0.1 m 34.716% · >0.5 m 0.103%
+[lots]   face:commercial               27307 tris · 1.696 km² · p50 68.6 · p99 415.0 · max 3058.0 mm · >0.1 m 39.261% · >0.5 m 0.054%
+[lots]   face:industrial               17194 tris · 0.952 km² · p50 70.4 · p99 423.1 · max 1509.7 mm · >0.1 m 38.466% · >0.5 m 0.128% · ⛔ 3 non-finite
+[lots]   mat:wood                      15146 tris · 0.914 km² · p50 83.7 · p99 426.8 · max 829.2 mm · >0.1 m 43.894% · >0.5 m 0.077%
+[lots]   face:institutional            12002 tris · 0.590 km² · p50 52.7 · p99 420.1 · max 1461.0 mm · >0.1 m 33.291% · >0.5 m 0.081%
+[lots]   face:verge                     5482 tris · 0.241 km² · p50 74.8 · p99 417.3 · max 956.7 mm · >0.1 m 41.389% · >0.5 m 0.082%
+[lots]   face:beach                     5158 tris · 0.061 km² · p50 74.5 · p99 423.6 · max 1460.6 mm · >0.1 m 40.618% · >0.5 m 0.178%
+[lots]   mat:parking_lot                4529 tris · 0.131 km² · p50 61.1 · p99 395.8 · max 582.7 mm · >0.1 m 33.098% · >0.5 m 0.007%
+[lots]   face:wetland                   3631 tris · 0.472 km² · p50 60.4 · p99 397.0 · max 659.8 mm · >0.1 m 35.402% · >0.5 m 0.049%
+[lots]   mat:footway                    3579 tris · 0.009 km² · p50 12.7 · p99 254.4 · max 520.0 mm · >0.1 m 8.531% · >0.5 m 0.001%
+[lots]   face:park                      3049 tris · 0.136 km² · p50 58.7 · p99 421.6 · max 1386.0 mm · >0.1 m 33.844% · >0.5 m 0.144%
+[lots]   mat:highway                    2921 tris · 0.000 km² · p50 19.4 · p99 374.9 · max 608.3 mm · >0.1 m 16.732% · >0.5 m 0.006%
+[lots]   face:greenhouse                2569 tris · 0.473 km² · p50 34.4 · p99 376.8 · max 966.5 mm · >0.1 m 20.689% · >0.5 m 0.111%
+[lots]   face:bare                       788 tris · 0.034 km² · p50 80.2 · p99 365.1 · max 1603.1 mm · >0.1 m 42.527% · >0.5 m 0.069%
+[lots]   face:parking                    354 tris · 0.020 km² · p50 36.9 · p99 225.8 · max 276.9 mm · >0.1 m 16.191% · >0.5 m 0.000%
+[lots]   mat:garden                      309 tris · 0.002 km² · p50 20.0 · p99 355.6 · max 396.7 mm · >0.1 m 15.716% · >0.5 m 0.000%
+[lots]   face:brownfield                 249 tris · 0.040 km² · p50 67.6 · p99 355.5 · max 505.8 mm · >0.1 m 35.427% · >0.5 m 0.029%
+[lots]   mat:pitch                       194 tris · 0.078 km² · p50 54.8 · p99 257.1 · max 479.8 mm · >0.1 m 27.656% · >0.5 m 0.000%
+[lots]   mat:swimming_pool                80 tris · 0.001 km² · p50 13.9 · p99 224.0 · max 238.3 mm · >0.1 m 18.025% · >0.5 m 0.000%
+[lots]   face:cemetery                    70 tris · 0.012 km² · p50 95.4 · p99 376.9 · max 410.4 mm · >0.1 m 47.749% · >0.5 m 0.000%
+[lots]   mat:scrub                        57 tris · 0.017 km² · p50 74.6 · p99 356.5 · max 474.3 mm · >0.1 m 38.380% · >0.5 m 0.000%
+[lots]   mat:alley                        32 tris · 0.001 km² · p50 56.6 · p99 269.5 · max 309.8 mm · >0.1 m 26.477% · >0.5 m 0.000%
+[lots]   face:forest                      21 tris · 0.000 km² · p50 13.7 · p99 200.1 · max 200.1 mm · >0.1 m 18.275% · >0.5 m 0.000%
+[lots]   mat:playground                   20 tris · 0.003 km² · p50 26.9 · p99 136.8 · max 141.3 mm · >0.1 m 12.128% · >0.5 m 0.000%
+     2935.60 real      2757.07 user       338.89 sys
+          6630014976  maximum resident set size
