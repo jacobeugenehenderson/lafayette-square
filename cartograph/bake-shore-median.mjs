@@ -46,7 +46,7 @@ import { fileURLToPath } from 'node:url'
 import clipperLib from 'clipper-lib'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
-import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
+import { wetSideOf, drawnWaterTest, drawnWaterItems } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastVerdict, resample, shoreFingerprint } from './shoreRuns.mjs'
 import { elevationSpecs, openRasters, readWindow, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
@@ -123,8 +123,7 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const bnd = JSON.parse(readFileSync(bndPath, 'utf8'))
   const discC = bnd.center, discR = bnd.radius
   if (!Array.isArray(discC) || !(discR > 0)) throw new Error(`bake-shore-median: ${scene}'s neighborhood_boundary.json has no usable center/radius`)
-  const waterRings = (JSON.parse(readFileSync(mapPath, 'utf8')).layers?.water || [])
-    .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]))
+  const waterRings = drawnWaterItems(JSON.parse(readFileSync(mapPath, 'utf8')).layers?.water)
   if (!waterRings.length) throw new Error(`bake-shore-median: ${scene} — ${runs.length} shoreline run(s) but clean/map.json draws no water. Re-pour.`)
   const inWater = drawnWaterTest(waterRings)
 
@@ -211,7 +210,7 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
     }
   }
   const band = run(ClipType.ctUnion, bandParts, null)
-  const drawn = run(ClipType.ctUnion, waterRings.map(toPath), null)
+  const drawn = run(ClipType.ctUnion, waterRings.flatMap(w => [w.outer, ...w.holes]).map(toPath), null, PolyFillType.pftEvenOdd)
 
   // ── THE LIDAR'S WATER, traced on a 1 m grid in tiles over the band ─────────────────────────────────────────────
   let bx0 = Infinity, bx1 = -Infinity, bz0 = Infinity, bz1 = -Infinity

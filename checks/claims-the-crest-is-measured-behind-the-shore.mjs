@@ -27,7 +27,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { drawnWaterTest, d50For } from '../cartograph/shore-armour.mjs'
+import { drawnWaterTest, drawnWaterItems, d50For } from '../cartograph/shore-armour.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -67,8 +67,7 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
   const expect = (bank, armour, x, z) => (doc.levels && armour ? Math.max(bank - high(x, z), d50For(bank)) : bank)
   const mP = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   if (!existsSync(mP)) { console.log(`  ⚠️ ${look.padEnd(16)} no clean/map.json — CANNOT VERIFY`); failed = true; continue }
-  const inWater = drawnWaterTest((JSON.parse(readFileSync(mP, 'utf8')).layers?.water || [])
-    .filter(w => w?.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]])))
+  const inWater = drawnWaterTest(drawnWaterItems(JSON.parse(readFileSync(mP, 'utf8')).layers?.water))
   towns++
   let matchLand = 0, matchStation = 0, n = 0
   for (const arc of doc.arcs) {

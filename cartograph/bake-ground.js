@@ -1021,10 +1021,16 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // the disc and 15 more are held whole, and none of them reach `layers.water`
   // at all. That is a PRODUCER question and it is not fixed here; the pour
   // prints those two counts every run.
+  // ⭐ An item carries its ISLANDS as holes (derive.js, from coast.json): the water and the bed stop at the island's shore,
+  // and the island's own land face fills it. ⛔ Without them the bed, which CUTS what is beneath it, would paint the island.
   for (const item of (mapLayers.water || [])) {
     if (!item.ring) continue
-    pushMat(item.subtype ? `water:${item.subtype}` : 'water', ringFromOSM(item.ring))
-    pushMat('bed', ringFromOSM(item.ring))   // the ground under it (PAINT_ORDER 'bed')
+    const poly = { outer: ringFromOSM(item.ring), holes: (item.holes || []).map(ringFromOSM).filter(h => h.length >= 3) }
+    if (poly.outer.length < 3) continue
+    for (const key of [item.subtype ? `water:${item.subtype}` : 'water', 'bed']) {   // the bed: the ground under it (PAINT_ORDER 'bed')
+      if (!byMaterial.has(key)) byMaterial.set(key, [])
+      byMaterial.get(key).push(poly)
+    }
   }
   // ⭐ THE SHORE MEDIAN, AS SAND (PAINT_ORDER 'shore'): painted only when CURRENT; a drawn coast without one throws, except
   // on the Bake's first ground pass (--shore=pending), which stamps the slab pending. The rule: `shoreMedianFor`.

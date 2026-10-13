@@ -43,7 +43,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
-import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M, d50For } from './shore-armour.mjs'
+import { shoreArmourFor, wetSideOf, drawnWaterTest, drawnWaterItems, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M, d50For } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL, resample, clipTraceToDisc, coastVerdict } from './shoreRuns.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels } from './waterLevel.mjs'
@@ -204,9 +204,7 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   // IS the mapped shoreline, and the revetment sits on it"). The same rings `bake-ground` paints
   // as the water face — `clean/map.json#layers.water`. ⛔ A town with shoreline ink and NO drawn
   // water is a pour whose ink and drawing disagree; refused loudly, never read as "no shore".
-  const waterRings = (JSON.parse(readFileSync(mapPath, 'utf8')).layers?.water || [])
-    .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3)
-    .map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]))
+  const waterRings = drawnWaterItems(JSON.parse(readFileSync(mapPath, 'utf8')).layers?.water)
   if (!waterRings.length) throw new Error(`bake-revetment: ${scene} — the slab carries ${raw.length} ${WATER_EDGE_SKEL} run(s) but clean/map.json draws NO water (layers.water is empty). The shoreline ink and the drawing disagree; re-pour the town. (${mapPath})`)
   const inWater = drawnWaterTest(waterRings)
 

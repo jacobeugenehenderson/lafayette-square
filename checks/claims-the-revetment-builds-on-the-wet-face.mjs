@@ -33,7 +33,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { revetmentFaces, BUILD_SIDE } from '../src/lib/revetmentFromSlab.js'
-import { drawnWaterTest } from '../cartograph/shore-armour.mjs'
+import { drawnWaterTest, drawnWaterItems } from '../cartograph/shore-armour.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv[2] || null
@@ -61,8 +61,7 @@ for (const look of looks) {
   }
   const tm = JSON.parse(readFileSync(tMeta, 'utf8'))
   const probeM = Math.min((tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1), (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1))
-  const inWater = drawnWaterTest((JSON.parse(readFileSync(mPath, 'utf8')).layers?.water || [])
-    .filter(w => w?.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]])))
+  const inWater = drawnWaterTest(drawnWaterItems(JSON.parse(readFileSync(mPath, 'utf8')).layers?.water))
 
   townsChecked++
   const faces = revetmentFaces(doc)

@@ -32,7 +32,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
-import { wetSideOf, drawnWaterTest } from '../cartograph/shore-armour.mjs'
+import { wetSideOf, drawnWaterTest, drawnWaterItems } from '../cartograph/shore-armour.mjs'
 
 const read = (rel) => readFileSync(join(ROOT, rel), 'utf8')
 const WATER_EDGE_SKEL = '__water__'
@@ -83,7 +83,7 @@ for (const scene of list) {
   if (!existsSync(join(ROOT, tPath)) || !existsSync(join(ROOT, mPath))) { fail.push(`   ${scene}: shoreline but no ${!existsSync(join(ROOT, tPath)) ? 'terrain' : 'map.json'} — cannot rule.`); continue }
   const tm = JSON.parse(read(tPath))
   const gridM = Math.min((tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1), (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1))
-  const rings = (JSON.parse(read(mPath)).layers?.water || []).filter(w => w?.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]))
+  const rings = drawnWaterItems(JSON.parse(read(mPath)).layers?.water)
   if (!rings.length) { fail.push(`   ${scene}: shoreline ink in the slab but NO drawn water in map.json — the ink and the drawing disagree.`); continue }
   const inWater = drawnWaterTest(rings)
 

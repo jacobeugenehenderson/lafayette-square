@@ -24,9 +24,12 @@
  *   3. THE WATER — the union, clipped to the square; only bodies that reach the square's edge are kept (the rest are
  *      hollows below high water, not the sea). Rings and holes below what the source resolves (two pixels square) go.
  *   4. THE ARCS — each water ring split where it runs along the square's edge: the open shoreline ① strokes as ink.
- *      ⛔ ① strokes the ARC, never the closed ring (square → filled, circle → annulus, Erie → 3 pieces, measured): the
- *      RING is the water face, excluded from the frame with the ink in one move; the ARC is the two-sided shore a
- *      slipway T's into. And the coast is not the disc: it is ground truth and closes faces; the circle stamps last.
+ *      The RING is the water face, excluded from the frame with the ink in one move; the ARC is the two-sided shore a
+ *      slipway T's into. An ISLAND is a hole in the water and its shore one CLOSED arc (first point = last), stroked by
+ *      ① as a roundabout is (SKELETON 7c) — measured on the mint 2026-10-13: a 50 m island closes as a 2,499 m² block
+ *      with its seam on a corner or mid-edge. (The old "never stroke a closed ring" is retired: it did not reproduce.)
+ *      The smallest island, like every ring, is two of the source's own pixels square: below that the lidar does not
+ *      resolve a shore. And the coast is not the disc: it is ground truth and closes faces; the circle stamps last.
  *
  * ── WHAT REFUSES, BY NAME ──────────────────────────────────────────────────────
  *   a water record and no OSM water to verify against · OSM water and no water record (waterDatums) · no lidar · a
@@ -180,7 +183,7 @@ const onSquare = (p, R) => Math.abs(p[0] - R.x0) < 1e-3 || Math.abs(p[0] - R.x1)
 /**
  * THE ARCS: a water ring split where it runs along the square's edge. Each maximal run of vertices off the edge, with
  * the edge vertex at each end, is one open shoreline. A ring with no vertex on the edge (an island) returns one CLOSED
- * loop, flagged, because ① must never stroke a closed ring (it fragments; the header, step 4).
+ * loop, flagged `closed`: an island, emitted as a closed arc (the header, step 4).
  * @returns [{ pts, closed }]
  */
 export function arcsOf(ring, R) {
@@ -376,7 +379,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   for (const bd of simple) { bd.outer = r3(bd.outer); bd.holes = bd.holes.map(r3) }
   const arcs = [], islands = []
   for (const bd of simple) for (const ring of [bd.outer, ...bd.holes]) for (const a of arcsOf(ring, R)) {
-    if (a.closed) { islands.push({ pts: a.pts.length, m2: Math.round(ringArea(a.pts)), at: a.pts[0].map(Math.round) }); continue }
+    if (a.closed) { islands.push({ pts: a.pts.length, m2: Math.round(ringArea(a.pts)), at: a.pts[0].map(Math.round) }); arcs.push([...a.pts, a.pts[0]]); continue }
     arcs.push(a.pts)
   }
   Object.assign(out, {
@@ -401,7 +404,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   console.log(`  RIM GUARD: ${(100 * out.guard.share).toFixed(1)}% of ${out.guard.rimCells.toLocaleString()} cells bordering the open water stand above high water${out.guard.gapM != null ? ` (median ${out.guard.gapM.toFixed(2)} m above)` : ''} — refuses over 50%`)
   if (noValue) console.log(`  ${noValue.toLocaleString()} fine sample(s) along the line had no lidar value — no return traced as water, no coverage as dry`)
   if (hollows.length) console.log(`  ${hollows.length} hollow(s) below high water that the water does not reach (${T.hollowHa} ha) — dry, by the coast rule`)
-  if (islands.length) console.warn(`  ⛔ ${islands.length} island(s) — a closed shore ① cannot stroke: ${islands.slice(0, 5).map(s => `${s.m2} m² at (${s.at})`).join(' · ')}`)
+  if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
   return out

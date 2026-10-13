@@ -19,6 +19,7 @@
 //   7. floodFromEdge enters every no-value cell (ignore `nr`)         → A2: the no-coverage hole floods
 //   8. rimGuard counts only rim cells BELOW high                       → A2: the Huron rim passes
 //   9. bake-coast skips settleOnSource (vertices left where the trace put them) → B: p90 5.8 mm on Provincetown
+//   10. the mint is given the island's hole wound the SAME way as its body  → A3: the island drowns
 //   6. bake-coast cuts arcs from the UNSIMPLIFIED ring and simplifies them alone → A (in the town: B's ring/arc drift)
 //
 //   node checks/claims-the-coast-is-the-lidar-at-high-water.mjs [--scene=<id>] [--no-lidar]
@@ -133,6 +134,24 @@ console.log('A2. no return · no coverage · the rim guard (synthetic)')
   for (let j = 0; j < 30; j++) for (let i = 20; i < 23; i++) w2[k(i, j)] = -0.09
   const wet2 = floodFromEdge(w2, W, H, null, nr), bad = rimGuard(wet2, nr, w2, W, H)
   say(bad.share > 0.5 && Math.abs(bad.gapM - 0.09) < 1e-6, `water flown ABOVE its high level fails the guard: ${(100 * bad.share).toFixed(0)}% of ${bad.n} rim cells, by ${bad.gapM?.toFixed(3)} m`)
+}
+
+// ── A3. AN ISLAND IS DRAWN (Boz's ruling, 2026-10-13): its shore is a CLOSED arc stroked by ① as a roundabout is
+// (SKELETON 7c), and the water carries it as a HOLE wound opposite its body. Driven through the real mint.
+console.log('A3. an island closes as land (the real mint, synthetic)')
+{
+  const { mintProtopolygon } = await import('../src/lib/tileGround.js')
+  const ringArea = r => Math.abs(r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2)
+  const bb = { x0: -500, x1: 500, z0: -500, z1: 500 }
+  const disc = Array.from({ length: 256 }, (_, i) => [480 * Math.cos(i / 128 * Math.PI), 480 * Math.sin(i / 128 * Math.PI)])
+  const water = [[-500, -500], [0, -500], [0, 500], [-500, 500]], isle = [[-275, -25], [-225, -25], [-225, 25], [-275, 25]]
+  const quiet = (f) => { const l = console.log, w = console.warn; console.log = console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
+  const mint = (coast) => quiet(() => mintProtopolygon({ streets: [], boundary: disc, coast, coastArcs: [[[0, -500], [0, 500]], [...isle, isle[0]]], bb }))
+  const blocks = (MP) => (MP.blocks || []).map(ringArea).sort((a, b) => a - b)
+  const withHole = blocks(mint([water, [...isle].reverse()]))
+  say(withHole.length === 2 && Math.abs(withHole[0] - 2500) < 5, `a 50 m island, a hole in the water with a closed shore arc, closes as a land block (${withHole.map(Math.round).join(' · ')} m²)`)
+  const noHole = blocks(mint([water]))
+  say(noHole.length === 1, `…and the same island with NO hole in the water is covered by it — the hole is what draws it (${noHole.length} block)`)
 }
 
 // ── B. the towns ─────────────────────────────────────────────────────────────────────────────────────────────────────

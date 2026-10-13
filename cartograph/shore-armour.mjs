@@ -202,29 +202,39 @@ export function shoreArmourFor(ground) {
 }
 
 /**
- * ⭐ THE DRAWN WATER, as a point test — the SAME rings the ground bake paints as the water
- * face (`clean/map.json#layers.water`, which `bake-ground.js` pushes as `water` / `water:*`
- * and whose complement ① carves as land). Inside ANY ring is water, because that is what the
- * slab draws: each ring is its own filled face.
- * @param rings  [[[x,z], …], …]
+ * The drawn water's items off `clean/map.json#layers.water`: [{ outer, holes }] in [x, z] — the ONE reader, so every
+ * consumer sees the islands the slab draws (derive.js carries them as holes, from coast.json).
+ */
+export function drawnWaterItems(layerWater) {
+  const xz = (r) => r.map(p => [p.x ?? p[0], p.z ?? p[1]])
+  return (layerWater || []).filter(w => Array.isArray(w?.ring) && w.ring.length >= 3)
+    .map(w => ({ outer: xz(w.ring), holes: (w.holes || []).filter(h => h?.length >= 3).map(xz) }))
+}
+
+/**
+ * ⭐ THE DRAWN WATER, as a point test — the SAME faces the ground bake paints as the water
+ * (`clean/map.json#layers.water`, which `bake-ground.js` pushes as `water` / `water:*`
+ * and whose complement ① carves as land). Inside ANY face is water, because that is what the
+ * slab draws: each is its own filled face — and an ISLAND (a hole of its face) is land.
+ * @param items  [{ outer, holes }] (drawnWaterItems), or bare rings [[x,z], …] (a face with no hole)
  * @returns (x, z) => boolean
  */
-export function drawnWaterTest(rings) {
-  const R = (rings || []).filter(r => Array.isArray(r) && r.length >= 3).map(r => {
-    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+export function drawnWaterTest(items) {
+  const box = (r) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
     for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1] }
-    return { r, x0, x1, z0, z1 }
-  })
+    return { r, x0, x1, z0, z1 } }
+  const F = (items || []).map(it => Array.isArray(it) ? { outer: it, holes: [] } : it)
+    .filter(it => Array.isArray(it?.outer) && it.outer.length >= 3)
+    .map(it => ({ o: box(it.outer), h: (it.holes || []).filter(h => h.length >= 3).map(box) }))
+  const inside = ({ r, x0, x1, z0, z1 }, x, z) => {
+    if (x < x0 || x > x1 || z < z0 || z > z1) return false
+    let c = false
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++)
+      if ((r[i][1] > z) !== (r[j][1] > z) && x < (r[j][0] - r[i][0]) * (z - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c
+    return c
+  }
   return function inWater(x, z) {
-    for (const { r, x0, x1, z0, z1 } of R) {
-      if (x < x0 || x > x1 || z < z0 || z > z1) continue
-      let inside = false
-      for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
-        if ((r[i][1] > z) !== (r[j][1] > z) &&
-            x < (r[j][0] - r[i][0]) * (z - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) inside = !inside
-      }
-      if (inside) return true
-    }
+    for (const f of F) if (inside(f.o, x, z) && !f.h.some(h => inside(h, x, z))) return true
     return false
   }
 }

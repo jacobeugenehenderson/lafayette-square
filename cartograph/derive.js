@@ -40,19 +40,22 @@ import { COAST_FILE } from './coastFile.mjs'
 // ⭐⭐ THE COAST IS THE LIDAR'S, AT HIGH WATER (BRIEF-the-coast-from-the-lidar; bake-coast.mjs, which runs before the
 // pour). ① strokes its ARCS and excludes its WATER from the frame; OSM's coast is only bake-coast's verifier.
 // ⛔ A coast baked against another square is STALE, and a missing coast.json is a pour that skipped its step: both refuse.
-function readCoast(bb, center, radius) {
+function readCoast(bb) {
   const p = join(CLEAN_DIR, COAST_FILE)
   if (!existsSync(p)) throw new Error(`[LAND/WATER] ⛔ ${SCENE}: no clean/${COAST_FILE} — the coast step has not run, and the pour does not draw a coast from anywhere else. ▶ node cartograph/bake-coast.mjs --scene=${SCENE}`)
   const K = JSON.parse(readFileSync(p, 'utf-8'))
   if (!bb || ['x0', 'x1', 'z0', 'z1'].some(k => Math.abs(K.square?.[k] - bb[k]) > 0.01))
     throw new Error(`[LAND/WATER] ⛔ ${SCENE}: clean/${COAST_FILE} was drawn over the square ${JSON.stringify(K.square)} and this pour's fetched square is ${JSON.stringify(bb)} — a STALE coast. ▶ node cartograph/bake-coast.mjs --scene=${SCENE}`)
-  if (!K.coast) { console.log(`    (no coast — ${K.why}; ① is the street network alone)`); return { rings: [], arcs: [], meta: [] } }
-  // ⛔ AN ISLAND IN THE DRAWING IS NOT BUILT: a hole in the water is a closed shore, which ① must never stroke. Outside
-  // the disc it changes nothing drawn; inside it, refuse by name rather than draw the island as water.
-  const inDisc = (K.islands || []).filter(i => !center || !(radius > 0) || Math.hypot(i.at[0] - center[0], i.at[1] - center[1]) <= radius)
-  if (inDisc.length) throw new Error(`[LAND/WATER] ⛔ ${SCENE}: ${inDisc.length} island(s) inside the drawing (${inDisc.slice(0, 5).map(i => `${i.m2} m² at (${i.at})`).join(' · ')}) — a closed shore ① cannot stroke; islands are not built yet.`)
+  if (!K.coast) { console.log(`    (no coast — ${K.why}; ① is the street network alone)`); return { rings: [], arcs: [], bodies: [] } }
   console.log(`    coast: ${K.water.length} water bod(ies), ${K.arcs.length} shoreline arc(s) — ${K.from}`)
-  return { rings: K.water.map(b => b.outer), arcs: K.arcs, meta: K.water.map(() => ({ subtype: K.level.tidal ? null : 'lake', name: null })) }
+  // ⭐ AN ISLAND IS A HOLE IN THE WATER and its shore a CLOSED arc, stroked by ① as a roundabout is (SKELETON 7c): the
+  // water excludes the island and the ink closes it as a land block. ⛔ The hole must wind OPPOSITE its body or the
+  // non-zero fill reads it as more water (measured on the mint: no hole → no island block).
+  const signed = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
+  const rings = []
+  for (const b of K.water) { rings.push(b.outer); for (const h of b.holes) rings.push(Math.sign(signed(h)) === Math.sign(signed(b.outer)) ? [...h].reverse() : h) }
+  const subtype = K.level.tidal ? null : 'lake'
+  return { rings, arcs: K.arcs, bodies: K.water.map(b => ({ ...b, subtype, name: null })) }
 }
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
@@ -1781,9 +1784,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // it as closing edges so the perimeter block faces CLOSE (Brief F edge-of-map).
   let boundaryPolyXZ = null
   let boundaryCenter = null, boundaryRadius = 0
-  let protoWaterRings = null
-  // Parallel to protoWaterRings: `{subtype, name}` per water ring, off the feature's own tags.
-  let protoWaterMeta = null
+  let protoWaterBodies = null   // coast.json's water bodies, { outer, holes, subtype, name } (readCoast)
   try {
     const boundaryData = JSON.parse(readFileSync(
       join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
@@ -5661,7 +5662,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       return { x0: Math.min(a[0], b2[0]), x1: Math.max(a[0], b2[0]),
                z0: Math.min(a[1], b2[1]), z1: Math.max(a[1], b2[1]) }
     })()
-    const _coast = readCoast(_bb, boundaryCenter, boundaryRadius)
+    const _coast = readCoast(_bb)
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings, coastArcs: _coast.arcs, bb: _bb })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
@@ -5721,8 +5722,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       for (const u of F.unreceived) console.warn(`      ⛔ ${u.hwy}.${u.end} ${u.corner} corner at (${u.node.map(v => v.toFixed(0)).join(', ')}): NO town leg can receive it — no flare is possible, check 5 stays red`)
       return F.flares
     })()
-    protoWaterRings = MP.waterRings || null
-    protoWaterMeta = _coast.meta || null
+    protoWaterBodies = _coast.bodies
     // ⭐ THE TOWN'S CURB-CUT NORM, resolved scene → state → kit ('none') and frozen with its rung, so Section paints a
     // junction corner's curb cuts live off the shape without reaching for a state record (`cartograph/curb-cut-norm.mjs`).
     {
@@ -5939,26 +5939,15 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // ⛔ They are LAYERS, not blocks: nothing offsets a curb from either, and neither carries an
   // authoring slot. Measured on Huron: 0 of 204 block faces touch a `__water__` edge, so no
   // editable surface abuts the coast and the Wall is not crossed to draw them.
-  // ⭐ The water face carries its HOLES (islands), so it is drawn as a compound face.
-  // ⭐⭐ THE `water=*` SUBTYPE TRAVELS WITH THE RING. OSM refines `natural=water` into lake ·
-  // pond · basin · reservoir · river, and nothing downstream consumes that yet — but a subtype
-  // dropped at pour time cannot be recovered without re-pouring every town, and a pond wants a
-  // different surface from a Great Lake. It is carried for the town that asks.
-  // ⛔ ALIGNMENT IS ASSERTED, NOT ASSUMED. `MP.waterRings` is `coast.map(copy)` — 1:1 with the
-  // rings `readCoast` returned, in order — so the meta indexes match by construction. If that
-  // ever stops being true the subtypes would silently attach to the WRONG bodies, which is the
-  // plausible-looking success this kit must never ship. So: fail loudly instead.
-  if (protoWaterMeta && protoWaterRings && protoWaterMeta.length !== protoWaterRings.length) {
-    throw new Error(`[LAND/WATER] ⛔ water ring/meta misalignment: ${protoWaterRings.length} ring(s) ` +
-      `but ${protoWaterMeta.length} meta entr(ies). The \`water=*\` subtype would attach to the wrong ` +
-      `body. ▶ readCoast() maps ring and meta from the same coast.json bodies — something between it and ` +
-      `mintProtopolygon's waterRings is now reordering or filtering.`)
-  }
-  const waterFeats = (protoWaterRings || []).map((r, i) => ({
-    ring: r.map(([x, z]) => ({ x, z })),
+  // ⭐ The water face carries its HOLES (islands), so it is drawn as a compound face: one feature per coast.json body.
+  // ⭐⭐ THE `water=*` SUBTYPE TRAVELS WITH THE BODY (readCoast: 'lake' off the town's water record, else none). Nothing
+  // downstream consumes it yet, but a subtype dropped at pour time cannot be recovered without re-pouring every town.
+  const waterFeats = (protoWaterBodies || []).map(b => ({
+    ring: b.outer.map(([x, z]) => ({ x, z })),
+    holes: b.holes.map(h => h.map(([x, z]) => ({ x, z }))),
     use: 'water',
-    subtype: protoWaterMeta?.[i]?.subtype || null,
-    name: protoWaterMeta?.[i]?.name || null,
+    subtype: b.subtype,
+    name: b.name,
   }))
   if (waterFeats.length) {
     const tally = waterFeats.map(f => f.subtype || 'water').join(', ')
