@@ -57,8 +57,7 @@ import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoot
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
-import { gussetReach, gussetAlong } from './shoreGusset.mjs'
-import { drawnWaterTest, drawnWaterItems } from './shore-armour.mjs'
+import { gussetReach, gussetAlong, landOfTile } from './shoreGusset.mjs'
 import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain, mapTerrainPaths } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign } from './lookDesign.mjs'
@@ -982,23 +981,20 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
     // ⭐ THE GUSSET, RECORDED (`shoreGusset.mjs`; Jacob 2026-10-10/11, Boz 2026-10-13): per vertex of every coast run, the
-    // water side's ground at the line and the run to LOW across the terrain the slab draws — the bank's shape, which the
-    // fill's grain reads. Nothing is moved. `shape.json#gusset` carries the step and the reach it was measured with.
+    // water side (the side of the run's edge that is not its tile's ① land, `iaFull`), its ground at the line and the
+    // run to LOW across the terrain the slab draws — the bank's shape, which the fill's grain reads. Nothing is moved. `shape.json#gusset` carries the step and the reach it was measured with.
     if (coast) {
       const bed = JSON.parse(readFileSync(mapTerrainPaths(scene).json, 'utf-8')).bed
-      const drawn = drawnWaterItems(mapData.layers?.water)
-      if (!drawn.length) throw new Error(`[bake-ground] ⛔ ${scene} draws ${coast} coast run(s) but map.json carries no drawn water — the gusset has no water side`)
-      const wetAt = drawnWaterTest(drawn)
       const { reachM, from } = gussetReach({ bed, levels: W, stepM: lineTerrain.stepM })
       const tally = { stations: 0, reached: 0, notReached: 0, noSide: 0 }
       for (const t of shapeArtifact) for (const run of t?.runs || []) {
         if (run.skelId !== '__water__') continue
-        const g = gussetAlong(run.poly || [], { ground: lineTerrain.getElevationRaw, lowAt: W.lowAt, wetAt, stepM: lineTerrain.stepM, reachM })
+        const g = gussetAlong(run.poly || [], { ground: lineTerrain.getElevationRaw, lowAt: W.lowAt, landAt: landOfTile(t.iaFull), stepM: lineTerrain.stepM, reachM })
         run.gusset = { ground: g.ground, toLow: g.toLow }
         tally.stations += g.ground.length; tally.reached += g.reached; tally.notReached += g.notReached; tally.noSide += g.noSide
       }
       gussetRecord = { stepM: lineTerrain.stepM, reachM, reachFrom: from, low: W.lowName, high: W.highName, ...tally }
-      console.log(`  [gusset] ${tally.stations} coast station(s): ${tally.reached} reach ${W.lowName} within ${reachM.toFixed(1)} m (${from}) · ${tally.notReached} not reached · ${tally.noSide} with drawn water on both sides or neither · walked every ${lineTerrain.stepM.toFixed(2)} m`)
+      console.log(`  [gusset] ${tally.stations} coast station(s): ${tally.reached} reach ${W.lowName} within ${reachM.toFixed(1)} m (${from}) · ${tally.notReached} not reached · ${tally.noSide} whose edge does not say which side is the tile's land · walked every ${lineTerrain.stepM.toFixed(2)} m`)
     }
   }
 

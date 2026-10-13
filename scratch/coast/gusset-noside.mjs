@@ -12,7 +12,7 @@ const root = new URL('../../', import.meta.url).pathname
 const shape = JSON.parse(readFileSync(join(slab, 'shape.json')))
 const G = shape.gusset
 const wetAt = drawnWaterTest(drawnWaterItems(JSON.parse(readFileSync(join(root, 'cartograph/data', scene, 'clean/map.json'))).layers?.water))
-const PROBES = [G.stepM / 2, 1, 0.25, 0.05]
+const PROBES = process.env.PROBES ? [G.stepM / 2, ...process.env.PROBES.split(",").map(Number)] : [G.stepM / 2, 1, 0.25, 0.05]   // PROBES=a,b,…: the finer probes to try, in order
 const seen = new Set(), runs = []
 for (const t of shape.tiles) for (const r of t.runs || []) {
   if (r.skelId !== '__water__' || !r.gusset) continue
