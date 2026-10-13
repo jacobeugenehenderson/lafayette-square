@@ -6,7 +6,7 @@
  * no bare space between the water and the land, no matter what it's made of, no matter
  * what distance or angle"). The water is a LEVEL sheet; the land is DRAPED over the terrain.
  * Where the land's edge stands above the water and nothing lies under the water to meet it,
- * the gap between them is open and you see the sky through it. `docs/briefs/BRIEF-the-shore-is-closed.md`.
+ * the gap between them is open and you see the sky through it. `cartograph/_archive/BRIEF-the-shore-is-closed-2026-10-13.md`.
  *
  * ⭐ THE WALK. Every boundary edge of every water group, at the terrain grid's own step. At
  * each station, look just across the edge on BOTH sides and ask what drawn ground is there:

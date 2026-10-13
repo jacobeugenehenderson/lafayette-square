@@ -1,6 +1,5 @@
 /**
- * marchingSquares.mjs — the one tracer of a sampled field's zero line, shared by the bakes that trace one
- * (bake-coast: the lidar at high water · bake-shore-median: the lidar at the survey's water).
+ * marchingSquares.mjs — the one tracer of a sampled field's zero line (bake-coast: the lidar at the line).
  */
 /**
  * MARCHING SQUARES over one tile's grid: the closed loops of f ≤ 0 (wet). The grid is padded with a DRY ring so every

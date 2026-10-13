@@ -662,7 +662,7 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 //
 // ⛔ THE DEM CARRIES NO DEPTH under the water (it hydro-flattens it), so nothing here
 // shades by depth. The waterline is the mapped shore and the `bed` sits under it
-// (BRIEF-the-shore-is-closed); real depth is BRIEF-bathymetry.
+// (▶ checks/claims-the-shore-is-closed.mjs); real depth is BRIEF-bathymetry.
 //
 // ⭐ The wave frequencies come from THIS BODY'S OWN EXTENT, read off the baked
 // geometry's bounding box. Not a constant, not a scene lookup — the surface's

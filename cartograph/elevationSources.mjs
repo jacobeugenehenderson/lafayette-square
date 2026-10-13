@@ -1,8 +1,8 @@
 /**
  * elevationSources.mjs — ONE READER FOR A TOWN'S ELEVATION RASTERS.
  *
- * Moved out of `bake-terrain.js` (2026-10-04, BRIEF-the-shore-is-closed step 1) so a second bake can read the same
- * lidar the same way: `bake-terrain` reads the whole town once at its grid step, `bake-shore-median` reads many small
+ * Moved out of `bake-terrain.js` (2026-10-04) so a second bake can read the same
+ * lidar the same way: `bake-terrain` reads the whole town once at its grid step, `bake-coast` reads many small
  * windows along the shore at the source's FINEST level. One copy of the CRS handling, the overview choice and the
  * no-data rule — a second copy is how two bakes come to disagree about where the ground is.
  *

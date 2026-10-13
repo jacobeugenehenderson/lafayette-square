@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 413,
+  "total": 412,
   "counts": {
     "safe": 306,
     "local-effect": 20,
-    "live": 87
+    "live": 86
   },
   "checks": [
     {
@@ -150,19 +150,6 @@
       "tier": "safe",
       "why": [
         "computed import of cartograph/sources.js — read, safe"
-      ]
-    },
-    {
-      "file": "checks/claims-a-drawn-coast-never-bakes-shoreless.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
-      "why": [
-        "writeFileSync",
-        "mkdirSync",
-        "deletes files",
-        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
-        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync",
-        "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
       ]
     },
     {

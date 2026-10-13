@@ -418,7 +418,7 @@ function deriveStencilBbox(boundary) {
 
 // ⭐ One reader for every raster the terrain reads — the DEM tiles and the bathymetry tiles — so both are placed
 // by the same projector, the same overview choice and the same window: `elevationSources.mjs` (shared with
-// bake-shore-median). This is the window for THIS grid: the scene's corners, read at the grid step.
+// bake-coast). This is the window for THIS grid: the scene's corners, read at the grid step.
 function gridWindow({ bounds, width, height, cornersLL }) {
   const stepM = Math.min(Math.abs((bounds.maxX - bounds.minX) / (width - 1)), Math.abs((bounds.maxZ - bounds.minZ) / (height - 1)))
   return { cornersLL, stepM, atLL: localToWgs84(bounds.minX, bounds.minZ), toLL: localToWgs84(bounds.minX + stepM, bounds.minZ) }

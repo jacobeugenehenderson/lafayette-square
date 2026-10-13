@@ -53,7 +53,7 @@ the town's own (the fetched square, `horizonFor`'s multiples of the radius), nev
 | the land past the rim | `src/components/HorizonDisc.jsx` |
 | the coast, welded, with its water side | `cartograph/coastline.mjs` |
 | where the stencil and the `horizon` record are written | `cartograph/bake-ground.js` (`manifestStencil.horizon`, `groundCover.mjs#horizonRecord`) |
-| the fast shore steps (candidates to emit the outer coast, rather than the hour-long ground step) | `cartograph/bake-coast-distance.js`, `cartograph/bake-shore-median.mjs` |
+| the fast shore steps (candidates to emit the outer coast, rather than the hour-long ground step) | `cartograph/bake-coast-distance.js` |
 
 ## 3. The work
 

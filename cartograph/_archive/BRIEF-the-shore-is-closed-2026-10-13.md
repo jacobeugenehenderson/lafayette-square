@@ -1,3 +1,11 @@
+<!-- DIARY, 2026-10-13 (Tern, on Boz's ruling). RETIRED: Jacob, 2026-10-13, on the shore median: "drop it" (replacing his
+2026-10-04 ruling), and: "We want the sand color under the water, though." The coast is now the lidar at high water
+(BRIEF-the-coast-from-the-lidar), so the flats lie under the drawn water, on the bed, which is painted sand
+(bake-ground `colorOf`: the town's luColors.beach, else the kit default). Where this brief's strands went:
+- the median (rulings 1–2, step 1): removed with its bake, paint, Bake steps, diagnostic and check.
+- the void instrument (step 2): live as checks/claims-no-view-reaches-the-sky-at-the-shore.mjs + src/harness/gaps/.
+- the grain continuum (rulings 3–5, steps 3–4): UNBUILT, surfaced in BRIEF-the-ground-knows-its-height's State.
+-->
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no

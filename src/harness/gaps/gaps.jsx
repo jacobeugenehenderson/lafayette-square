@@ -1,5 +1,5 @@
 /**
- * THE SHORE GAP-FINDER — gaps.html (BRIEF-the-shore-is-closed step 2). ⛔ HARNESS ONLY.
+ * THE SHORE GAP-FINDER — gaps.html, driven by checks/claims-no-view-reaches-the-sky-at-the-shore.mjs. ⛔ HARNESS ONLY.
  *
  * ⭐ WHAT A GAP IS, AND WHY IT IS MEASURED ON THE RENDER: a view ray that points DOWN and meets the town's water plane
  * inside the drawing must land on something drawn — ground, bed, sand, stone, a building. Where it lands on nothing the

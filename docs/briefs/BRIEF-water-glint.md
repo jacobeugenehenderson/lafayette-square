@@ -40,7 +40,7 @@ a before/after capture at fixed cameras is.
 changes (`CLAUDE.md`: *the override is the product*). Build the bias as a Water row beside `clarity`, with a neutral default,
 and **remove** the comment's ruling in the same commit.
 
-⛔ **Bounds:** the water material and its Water rows only. **Shingle** holds the shore median (ground, revetment, bed);
+⛔ **Bounds:** the water material and its Water rows only. **Shingle** holds the shore (ground, revetment, bed);
 the water's edge is shared ground, so agree with Shingle before touching anything at the shoreline. No bake needed for a
 shader change; no pour. Commit only your paths; three-part fix; registers `cartograph/OPERATIONS.md` (Water knobs),
 `cartograph/FEATURES.md`. LS's pond is the control: it must come out unchanged unless Jacob says otherwise.

@@ -32,16 +32,12 @@ not restated here.
 
 - **① traces OSM's coast, not the lidar's.** On the served slabs, Huron has 8.5% of the drawn coast under its lake
   level, and Provincetown has 66.7% under MHW. ▶ `scratch/ground-height/shore-sources.mjs`.
-- **The only lidar trace is downstream of ①, and at the wrong height.** `bake-shore-median`'s marching squares trace
-  y = 0 (the datum), not high water, and read the slab.
 - **The datum is found FROM the line you are moving.** `bake-terrain`'s `waterDatum` finds the water from the OSM
   coast (`coastline.mjs#coastRings`), and the pour reads no terrain (ground brief §4.1). ⇒ Moving ①'s coast onto the
   lidar puts the lidar and the water levels UPSTREAM of ①, and **the datum must not depend on the line it moves.**
   **Where the intersection is computed is your first design question, and it is not designed for you.**
 - **Already landed, so build on it:**
   - a coast run's `h` is the line (`waterLevels().lineAt`; a drawn coast with no water record throws) (c227acaf);
-  - a coastal bake with no current shore median refuses, except the Bake's first pass, which is stamped
-    `shore: "pending"` and cannot ship (76fb11db, 5ffe8dd7);
   - `gusset.mjs` reads the baked terrain part (00c76119).
 - **Also yours, after (a): the water-side half** (ground brief State, "Next" 1): the gusset record the fill reads.
   Then **(d)'s render** (State, "Next" 3).
@@ -51,10 +47,10 @@ not restated here.
 ## 3. The work
 
 1. **Route and confirm.** Read `CLAUDE.md` (Layer 0), `ORIENTATION.md`, `README §START HERE`, the ground brief's State
-   block and §4–§5, then the code sites: `coastline.mjs`, `bake-terrain`'s `waterDatum`, `bake-shore-median`,
+   block and §4–§5, then the code sites: `coastline.mjs`, `bake-terrain`'s `waterDatum`,
    `waterLevel.mjs`, and the skeleton's coast source.
 2. **The design, to Boz before building:** where the intersection is computed, what it replaces (the OSM coast as ①'s
-   coast source, and the median's marching squares as a shape source), how the datum stays independent of the line, and
+   coast source), how the datum stays independent of the line, and
    what it does on a town with no lidar or no water record. ⛔ It throws, by name. Never fall back to OSM.
 3. **Build it, in three parts** (`CLAUDE.md`):
    - the old path is deleted in the same commit;
@@ -77,7 +73,6 @@ not restated here.
   and `memory_pressure` free ≥ 40%. Ask Boz for the slot.
 - ⛔ **`cartograph/groundDeformer.mjs` is Swale's** (the rest of the freeze lifted, Boz 2026-10-13). A change there
   is staged in `scratch/` and loaded with the in-memory swap (`scratch/kerb-cut/swap.mjs` + `SWAP_MAP`).
-  - A coastal scratch bake needs `shore-median.json` in its out-dir, or it now refuses (by design).
 - Commit by pathspec only (`git commit -- <paths>`), and check each commit's name-status. Other sessions have
   uncommitted files in the tree; never `git add -A`.
 - Write "cause not established" for anything you did not measure.

@@ -7,15 +7,15 @@
  *
  * Jacob, 2026-10-06: Jackson Heights is landlocked — Flushing Bay is in its FETCH envelope only, and `coastRings` closes
  * the coast against that envelope. bake-terrain threw "N water ring(s) and ZERO grid samples", reading a distant bay as
- * a frame error. The later shore steps (revetment, shore-median, ground-shore, coast-distance) read the DRAWN shoreline
+ * a frame error. The later shore steps (revetment, coast-distance) read the DRAWN shoreline
  * (`__water__` runs) and the terrain datum, so terrain is the one place the rule lives (cartograph/coast-in-drawing.mjs).
  *  1. EXACT TOUCH — a ring vertex in the grid, a grid corner in the ring, or an edge crossing; never the bbox alone (an
  *     L-shaped ring can wrap the grid's bbox without touching the grid).
  *  2. THE THROW STAYS — bake-terrain still refuses a ring that reaches the grid and catches zero samples.
  *  3. THE SECOND HOME — the shore steps read the slab's `__water__` RUNS (shape.json), which may lie past the drawing
  *     (Jackson Heights' baked shape carried two, 2,009–2,418 m out). ONE verdict, shoreRuns.mjs#coastVerdict, counts
- *     only runs that reach the terrain grid (terrain.json#bounds); revetment, shore-median, coast-distance and ground
- *     all take it. ⭐ A run that reaches the drawing with a non-water datum is STILL 'stale-terrain' (the refusal
+ *     only runs that reach the terrain grid (terrain.json#bounds); revetment and coast-distance
+ *     both take it. ⭐ A run that reaches the drawing with a non-water datum is STILL 'stale-terrain' (the refusal
  *     claims-a-stale-terrain-is-not-a-town-without-a-coast defends).
  * ⭐ MUTANTS (each RED): touch by bbox · drop every ring · keep every ring · remove the zero-sample throw · count every
  *    run (raw) in the verdict · a run touches only by a vertex (no crossing) · coast-distance ignores the verdict.
@@ -45,7 +45,7 @@ check('an L-shaped ring whose BBOX covers the grid but which never touches it do
 // 2. the throw stays
 const bt = readFileSync(join(ROOT, 'cartograph/bake-terrain.js'), 'utf8')
 check('bake-terrain still THROWS on rings in the drawing that catch zero samples', /if \(!wet\) \{(?:(?!return\b)[\s\S]){0,600}throw new Error\('⛔ water datum: '/.test(bt))
-check('bake-terrain partitions through ringsInDrawing and names what it sets aside', /ringsInDrawing\(c\.rings \|\| \[\], bounds\)/.test(bt) && /WHOLLY OUTSIDE this town's drawing/.test(bt))
+check('bake-terrain partitions through ringsInDrawing and names what it sets aside', /ringsInDrawing\(K\.water\.map\(b => b\.outer\), bounds\)/.test(bt) && /WHOLLY OUTSIDE this town's drawing/.test(bt))
 
 // 3. the second home — runs and the one verdict
 check('a run with a vertex in the grid touches it', polylineTouchesRect([[50, 50], [300, 300]], R))
@@ -61,9 +61,8 @@ const far = [[0, -400], [80, -420]], near = [[10, 10], [90, 20]]
   check('a water datum builds whatever lies outside (unchanged for a coastal town)', v.agree === 'build') }
 check('a terrain.json with no bounds THROWS — the verdict cannot be asked without the drawing', (() => { try { coastVerdict({ datum: 'water' }, { tiles: [] }); return false } catch (e) { return /no `bounds`/.test(e.message) } })())
 const src = (f) => readFileSync(join(ROOT, 'cartograph', f), 'utf8')
-for (const f of ['bake-revetment.js', 'bake-shore-median.mjs']) check(`${f} takes the agreement from coastVerdict`, /const cv = coastVerdict\(tm, shape\)[\s\S]{0,200}const agree = cv\.agree/.test(src(f)))
+for (const f of ['bake-revetment.js']) check(`${f} takes the agreement from coastVerdict`, /const cv = coastVerdict\(tm, shape\)[\s\S]{0,200}const agree = cv\.agree/.test(src(f)))
 check('bake-coast-distance: an inland town whose runs lie outside its drawing gets a NAMED absence', /cv\.agree === 'inland' && cv\.outside\.length\)[\s\S]{0,120}absent: true/.test(src('bake-coast-distance.js')))
-check('bake-ground: no "drawn shoreline but no median" alarm for an inland town', /coastVerdict\([^)]*\)[^.]*\.agree === 'inland'/.test(src('bake-ground.js')))
 
 for (const o of ok) console.log(`✓ ${o}`)
 for (const f of fails) console.log(`✗ ${f}`)

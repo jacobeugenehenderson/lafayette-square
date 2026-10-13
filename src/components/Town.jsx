@@ -74,8 +74,7 @@
  *   interactive      buildings take the pointer (default true)
  *   bakeLastMs       the slab's re-read key (default: its bakedAt) — src/lib/slabUrl.js
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
- *                    labels sky clouds fog shadows post · and one DIAGNOSTIC, default OFF (true to show):
- *                    shoreMedian — the shore median as a solid region with its treatment (the revetment) hidden
+ *                    labels sky clouds fog shadows post
  *   postFx           Preview's per-pass inspection matrix ({ toggles })
  *   overrides        Stage's live authoring channels (see OVERRIDE_KEYS) — an operator drag shows
  *                    without a bake
@@ -141,7 +140,6 @@ import CloudDome from './CloudDome'
 import Terrain from './Terrain'
 import BakedGround from './BakedGround.jsx'
 import SlabRevetment from './SlabRevetment.jsx'
-import ShoreMedian from './ShoreMedian.jsx'
 import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
 import CityModel from './CityModel'
@@ -189,9 +187,7 @@ export { kitUrl } from '../lib/kitUrl.js'
 // The town's moon as a picture, drawn on THIS canvas's context (no second one) — src/components/TownMoon.jsx.
 export { useTownMoonImage } from './TownMoon.jsx'
 
-const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post', 'shoreMedian']
-// A diagnostic is not part of the shipped render: it shows only when an app asks for it by name.
-const DIAGNOSTIC_LAYERS = new Set(['shoreMedian'])
+const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
 // override would otherwise do nothing, silently, while the operator drags a slider.
 export const OVERRIDE_KEYS = [
@@ -556,7 +552,7 @@ export default function Town({
   if (liveIds) throw new Error('[Town] ⛔ liveIds: the live-announcement mark is not built yet (a design question with Jacob) — nothing would draw it')
   for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Error(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
   for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Error(`[Town] ⛔ unknown override "${k}"`)
-  const on = (k) => DIAGNOSTIC_LAYERS.has(k) ? layers?.[k] === true : layers?.[k] !== false
+  const on = (k) => layers?.[k] !== false
   // The overhead plan's water reflects the sky as seen across it, not the zenith (waterMaterial WATER_PLAN).
   useEffect(() => { WATER_PLAN.value = shot === 'plan' ? 1 : 0 }, [shot])
   const o = overrides
@@ -671,8 +667,7 @@ export default function Town({
         <group name="town:ground" visible={on('ground') && revealed} userData={{ gatedOn: on('ground') }}>
           <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} swellMs={revealTiming.swell * 1000} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
           {/* The shore median diagnostic shows the region with every treatment OFF, so the revetment hides while it is on. */}
-          <group visible={!on('shoreMedian')}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary></group>
-          {on('shoreMedian') && <R3FErrorBoundary name="ShoreMedian"><ShoreMedian lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
+          <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
           {/* "minimum ground" is marked by the ground SURFACES (BakedGround's GroundMeshes), not by any mesh here: the
               revetment drew first and marked WARD USABLE ~2 s early on huron. */}
         </group>

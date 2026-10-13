@@ -58,7 +58,6 @@ import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
 import { gussetReach, gussetAlong, landOfTile } from './shoreGusset.mjs'
-import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain, mapTerrainPaths } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign } from './lookDesign.mjs'
 import { lookFade } from './boundaryRecords.mjs'
@@ -215,10 +214,9 @@ const PAINT_ORDER = [
   ['mat', 'wood'],
   ['mat', 'scrub'],
   ['mat', 'tree_row'],
-  // ⭐ THE SHORE MEDIAN, AS SAND (BRIEF-the-shore-is-closed; Jacob's go 2026-10-04): the ground between the drawn
-  // shoreline and the lidar's waterline (bake-shore-median.mjs) is the town's sand. Above the land-use faces and the
-  // natural overlays, so it replaces them there; below every road and ribbon, so a street that runs to the water keeps
-  // its street. One partition: it CUTS what is beneath it (the one-plane rule), never a sheet floated over it.
+  // ①'s COAST INK (tileGround `inkShore`): the land's shore surface, in sand. Above the land-use faces and the natural
+  // overlays; below every road and ribbon, so a street that runs to the water keeps its street. One partition: it CUTS
+  // what is beneath it (the one-plane rule). (The shore median painted here too until Jacob dropped it, 2026-10-13.)
   ['mat', 'shore'],
   // Grade-separated roads sit ABOVE the land-use faces (so the freeway shows in its
   // corridor, not buried under the LU perimeter fill) but BELOW the local ribbon
@@ -260,7 +258,7 @@ const PAINT_ORDER = [
   // ⭐⭐ THE BED — the ground UNDER every water body (Jacob, 2026-09-26: "there must be no
   // bare space between the water and the land"). The water is a level sheet and the land is
   // draped, so where the land's edge stands above the water nothing joined them and the
-  // sky showed through (`docs/briefs/BRIEF-the-shore-is-closed.md`). The bed is draped
+  // sky showed through (`cartograph/_archive/BRIEF-the-shore-is-closed-2026-10-13.md`). The bed is draped
   // over the same terrain and conformed with the land, so the two share every shore vertex
   // and meet with no step. Its SHAPE is in the terrain: bake-terrain writes the bed under the water
   // (THE BED), so the visible shore is wherever the level meets the ground.
@@ -635,32 +633,6 @@ function _pathToRing(path) {
 }
 
 
-/**
- * The shore median (bake-shore-median.mjs `shore-median.json`, v2) as sand polygons for the `shore` layer: its two
- * regions — drawn water the lidar shows dry, drawn land the lidar shows wet — are already polygons bounded by the
- * drawn shoreline and the TRACED lidar waterline (one continuous line, not per-station landing points), so they are
- * only UNIONED here (non-zero), because the paint stack's even-odd subject fill would cut a hole where two overlap.
- * @returns { items: [{ outer, holes }], areaM2 }
- */
-export function shoreMedianItems(doc) {
-  if (!doc || doc.version !== 2) throw new Error(`bake-ground: shore-median.json version ${doc && doc.version} — this bake reads v2 (the traced waterline). ▶ re-run bake-shore-median`)
-  const c = new _Clipper()
-  for (const k of ['seaward', 'landward']) for (const p of doc.regions?.[k] || []) {
-    c.AddPath(_ringToPath(p.outer), _PolyType.ptSubject, true)
-    for (const h of p.holes || []) c.AddPath(_ringToPath(h), _PolyType.ptSubject, true)
-  }
-  const tree = new _PolyTree()
-  if (!c.Execute(_ClipType.ctUnion, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftEvenOdd)) throw new Error('bake-ground: the shore median union FAILED')
-  const items = []
-  let areaM2 = 0
-  const walk = (node) => { for (const ch of node.Childs()) {
-    const outer = _pathToRing(ch.m_polygon)
-    if (outer.length >= 3) { items.push({ outer, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) }); areaM2 += _Clipper.Area(ch.m_polygon) / (CLIP_SCALE * CLIP_SCALE) }
-    for (const h of ch.Childs()) { areaM2 -= Math.abs(_Clipper.Area(h.m_polygon)) / (CLIP_SCALE * CLIP_SCALE); walk(h) } } }
-  walk(tree)
-  return { items, areaM2: Math.abs(areaM2) }
-}
-
 // ── PRESS THE PAINT STACK DOWN ──────────────────────────────────────────────
 // ⭐⭐ THE ARCHITECTURE, in Jacob's words (2026-09-21): "In Stage it's a flattened
 // 2D representation which is baked into the 3D ready one. This is where we should
@@ -839,27 +811,7 @@ function toPolys(items) {
   return polys
 }
 
-/**
- * Whether this bake paints the shore median (`shore-median.json`) as sand, and what it owes when it cannot. ONE rule,
- * read by bakeGround and by `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs`:
- * - CURRENT (v2, walked on the shoreline this bake writes, `here`) → paint it;
- * - not current on a town that draws a coast (`coastal()`, inland towns excluded) → THROW naming the town and the file,
- *   unless `shorePending` (the Bake's first ground pass): then nothing is painted and the slab is stamped pending;
- * - not current and no coast → nothing owed.
- * @returns {{ paint: object|null, state: 'pending'|null, why: string|null }}
- */
-export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePending = false }) {
-  const why = !doc ? 'is absent'
-    : doc.version !== 2 ? `is version ${doc.version}; this bake reads v2 (the traced waterline)`
-    : doc.shoreFingerprint !== here ? `was walked on another shoreline (${doc.shoreFingerprint ?? 'unstamped'}; this bake writes ${here})`
-    : null
-  if (!why) return { paint: doc, state: null, why: null }
-  if (!coastal()) return { paint: null, state: null, why }
-  if (!shorePending) throw new Error(`[bake-ground] ⛔ ${scene}: this town draws a shoreline but ${medPath} ${why}. Refusing to write a ground with no shore. ▶ the Bake runs 'ground' (--shore=pending), 'shore-median', then 'ground-shore'; by hand: bake-ground --shore=pending, bake-shore-median, then bake-ground.`)
-  return { paint: null, state: 'pending', why }
-}
-
-export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1050,25 +1002,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       if (!byMaterial.has(key)) byMaterial.set(key, [])
       byMaterial.get(key).push(poly)
     }
-  }
-  // ⭐ THE SHORE MEDIAN, AS SAND (PAINT_ORDER 'shore'): painted only when CURRENT; a drawn coast without one throws, except
-  // on the Bake's first ground pass (--shore=pending), which stamps the slab pending. The rule: `shoreMedianFor`.
-  let shoreState = null
-  {
-    const shapeNow = { tiles: shapeArtifact || [] }
-    const medPath = join(outDir, 'shore-median.json')
-    const coastal = () => waterRuns(shapeNow).length > 0 && !(() => {   // ⭐ an INLAND town (coastVerdict) owes no median
-      const tp = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json')
-      return existsSync(tp) && coastVerdict(JSON.parse(readFileSync(tp, 'utf-8')), shapeNow).agree === 'inland' })()
-    const S = shoreMedianFor({ scene, medPath, doc: existsSync(medPath) ? JSON.parse(readFileSync(medPath, 'utf-8')) : null,
-      here: shoreFingerprint(shapeNow), coastal, shorePending })
-    shoreState = S.state
-    if (S.paint) {
-      const s = shoreMedianItems(S.paint)
-      if (!byMaterial.has('shore')) byMaterial.set('shore', [])
-      byMaterial.get('shore').push(...s.items)
-      console.log(`  ⭐ SHORE: the median painted as sand — ${(s.areaM2 / 1e4).toFixed(2)} ha in ${s.items.length} polygon(s), between the drawn shoreline and the traced lidar waterline`)
-    } else if (S.state === 'pending') console.log(`  ⏳ SHORE: first ground pass (--shore=pending): shore-median.json ${S.why}; no sand painted, the slab is stamped shore: "pending" until 'shore-median' walks it and 'ground-shore' re-runs this bake`)
   }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
@@ -1500,8 +1433,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     if (kind === 'face') {
       color = designLuColors[key] || DEFAULT_LU_COLORS[key] || LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown
     } else if (key === 'bed' || key === 'shore') {
-      // The bed is sand (Jacob, 2026-09-26), so it takes sand's colour — and so does the shore median, which is the
-      // same sand above the water (Jacob, 2026-10-04: "supposed to meet with sand, not 'yellow'").
+      // The bed is sand (Jacob, 2026-09-26; 2026-10-13: "we want the sand color under the water"), so it takes the
+      // town's sand, and so does ①'s coast ink above it.
       color = designLuColors.beach || DEFAULT_LU_COLORS.beach
     } else if (key.startsWith('treelawn:')) {
       // Per-LU treelawn variants inherit the adjacent parcel's LU color.
@@ -1772,8 +1705,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // the deformer's ownership disclosure, read by claims-the-walk-is-level-across: a written slab carries 0 (the bake throws
     // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
     ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand } } : {}),
-    // the first of the Bake's two ground passes: no shore yet (above); 'ground-shore' writes a slab without it
-    ...(shoreState ? { shore: shoreState } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
     ...(sameGround ? priorMaps : {}),
   }
@@ -1806,7 +1737,7 @@ async function main() {
   // env-named bake rebuilt LS. See scene.js's header.
   const scene = requireExplicitMap('bake-ground')
   let look = null, proto = true   // ⭐ ① is the producer by default; --legacy opts out
-  let outDir = null, shorePending = false
+  let outDir = null
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
@@ -1825,10 +1756,8 @@ async function main() {
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-max-edge=(.+)$/)))refine.maxEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--out-dir=(.+)$/)))  outDir = m[1]   // a scratch A/B, not the live slab
-    else if (arg === '--shore=pending')           shorePending = true   // the Bake's first ground pass only (serve.js 'ground')
-    else if (arg.startsWith('--shore='))          throw new Error(`[bake-ground] ${arg}: the only value is --shore=pending`)
   }
-  await bakeGround({ look, scene, refine, proto, outDir, shorePending })
+  await bakeGround({ look, scene, refine, proto, outDir })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

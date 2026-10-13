@@ -23,8 +23,8 @@ export function waterRuns(shape) {
   return out
 }
 
-// ── Shared by every bake that walks the shore (bake-revetment, bake-shore-median); moved here from bake-revetment.js
-// 2026-10-04 so a second walker reads the shore the same way without inheriting the revetment's own inputs. ──
+// ── Shared by every step that walks the shore (bake-revetment, the checks); moved here from bake-revetment.js
+// 2026-10-04 so another walker reads the shore the same way without inheriting the revetment's own inputs. ──
 
 /** Walk a polyline at a fixed step. ⛔ NOT optional after `simplify`. */
 export function resample(pts, step) {
@@ -128,7 +128,7 @@ export function clipTraceToDisc(trace, center, R) {
 }
 
 /**
- * ⭐ THE COAST VERDICT, decided ONCE for every shore step (revetment, shore-median, coast-distance, ground).
+ * ⭐ THE COAST VERDICT, decided ONCE for every shore step (revetment, coast-distance).
  * Only shoreline runs that reach the town's DRAWING — the terrain grid, `terrain.json#bounds`, the same region
  * bake-terrain#waterDatum asks (coast-in-drawing.mjs) — count toward the agreement. A run wholly outside it is in the
  * fetch envelope only: NO SHORE for this town, set aside and NAMED (Jacob, 2026-10-06; Jackson Heights' Flushing Bay).
@@ -146,16 +146,4 @@ export function coastVerdict(tm, shape) {
 export function coastAgreement(datum, waterRunCount) {
   if (datum === 'water') return 'build'
   return waterRunCount > 0 ? 'stale-terrain' : 'inland'
-}
-
-/**
- * A fingerprint of the slab's shoreline: FNV-1a over the deduped `__water__` runs, in a fixed order. The shore median
- * stamps the shoreline it walked; the ground bake, which WRITES that shoreline (shape.json), paints the median's sand
- * only when the two match — a median walked on another shoreline is refused by name, never painted.
- */
-export function shoreFingerprint(shape) {
-  const runs = waterRuns(shape).map(r => { const f = JSON.stringify(r), b = JSON.stringify([...r].reverse()); return f < b ? f : b }).sort()
-  let h = 0x811c9dc5
-  for (const s of runs) for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0 }
-  return `${runs.length}:${h.toString(16)}`
 }

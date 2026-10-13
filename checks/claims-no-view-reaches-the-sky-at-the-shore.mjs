@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * CLAIM: along every drawn shore, no view across the shore reaches the sky — every downward ray that meets the water's
- * datum inside the drawing lands on something drawn (BRIEF-the-shore-is-closed step 2, "the void instrument").
+ * datum inside the drawing lands on something drawn ("the void instrument"; its brief is in the Diary, cartograph/_archive/BRIEF-the-shore-is-closed-2026-10-13.md, step 2).
  *
  * ⭐ READS THE RENDER, NOT THE BAKE: drives src/harness/gaps/gaps.html (the production <Town>) headless against the dev
  * server, walking a camera along every shoreline in the disc — near from the water, near from the land, far — and

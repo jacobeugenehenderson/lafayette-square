@@ -3,7 +3,7 @@
 // record are stamped (before the map overlays, the flatten and the deformer): shape.json written exactly as the full bake
 // writes it at its end ({ tiles, highway, gusset }), then process.exit(0). Run it in memory through the swap:
 //   node scratch/coast/shape-only.mjs <copy.js>   # writes the copy, prints the SWAP_MAP
-//   SWAP_MAP=… node --max-old-space-size=12000 --import ./scratch/kerb-cut/swap.mjs cartograph/bake-ground.js --look=<t> --scene=<t> --shore=pending --out-dir=<scratch>
+//   SWAP_MAP=… node --max-old-space-size=12000 --import ./scratch/kerb-cut/swap.mjs cartograph/bake-ground.js --look=<t> --scene=<t> --out-dir=<scratch>
 // ⚠️ What the full bake adds to shape.json after this point is not in this file; the coast runs' poly, h and gusset are.
 import { readFileSync, writeFileSync } from 'fs'
 const out = process.argv[2]; if (!out) throw new Error('usage: shape-only.mjs <copy.js>')

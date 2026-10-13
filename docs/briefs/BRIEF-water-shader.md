@@ -214,7 +214,7 @@ local-min = 0 — ⭐ **and on a lakeshore town the local minimum IS THE LAKE.**
 ## 6e. ⛔ THE SHORE AND THE DEPTH — ruled 2026-09-26, and neither comes free from the DEM
 The DEM hydro-flattens water, so under the drawn water it carries no depth (0.09 m, the sheet's slot lift, at
 p5–p95) — ⛔ **any depth ramp without bathymetry is fabricated.** The waterline is the MAPPED shoreline, the bed
-is held under it (`BRIEF-the-shore-is-closed.md`); depth comes from a real floor (`BRIEF-bathymetry.md`).
+is held under it (`cartograph/_archive/BRIEF-the-shore-is-closed-2026-10-13.md`); depth comes from a real floor (`BRIEF-bathymetry.md`).
 *(The 2026-09-20 measurements, the distance-to-arc path and the level-set argument: `cartograph/_archive/BRIEF-water-shader-6e-level-set-RETIRED-2026-09-26.md`.)*
 
 ## 6e. ⛔⛔ WATER IS SIXTEEN TAGS AND FOUR KINDS OF THING — **ANTICIPATE THEM, DO NOT BUILD THEM**

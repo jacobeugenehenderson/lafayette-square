@@ -17,10 +17,12 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 - The height along ①: `lineHeight.mjs`, `h[]` on every shape run (f0082e6a). ① painted first (d504d7eb).
 - The deformer: `groundDeformer.mjs`; `cutAlong` deleted; the runtime draws `aRaw × uExag + y` (5255b311). Ped bands
   refine to 7.8 mm (686dff56). The painted band decides, and an unowned walk vertex throws (6be9cbaf, 49665eec).
-- Readers on the drawn ground (`src/lib/drawnGround.js`): d05e3cc1, c7c433e5, and b0e65999 (the shore median and the
-  revetment).
+- Readers on the drawn ground (`src/lib/drawnGround.js`): d05e3cc1, c7c433e5, and b0e65999 (the revetment).
 - The kerb: creases are partition lines (eb1d3876); the lift reads each polygon's carried side (de1c2f83).
-- The shore: ruled (794b7911). A coast run's `h` is high water, `waterLevels(terrain.water).highAt` (c227acaf).
+- The shore: ruled (794b7911). A coast run's `h` is the line, `waterLevels(terrain.water).lineAt` (c227acaf, 73eee209).
+- ⚠️ **UNBUILT, Jacob's to re-raise: the grain continuum** (boulder → rock → gravel → sand; the retired shore brief's
+  rulings 3–5 and steps 3–4, in the Diary: `cartograph/_archive/BRIEF-the-shore-is-closed-2026-10-13.md`). Its input
+  was the shore median's width, which is retired (Jacob, 2026-10-13: "drop it"); the gusset record is the candidate input.
 - ③'s strikes on `offsetRingByRects`, Jacob's swap (db9c7d87). `gusset.mjs` reads `aRaw` (00c76119).
 
 **Open gates** (re-run, never quote):
@@ -123,8 +125,7 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 - `docs/briefs/BRIEF-ground-cross-polygon-conformity.md`: "the ground must stretch, not break". That is the conformity
   this must not regress.
 - **The shore:** `ROADMAP H-4` (the coast as a two-sided chain, the lake face as its own ring, the bb as the frame),
-  `RIBBONS §1` (how a coast arrives), and `docs/briefs/BRIEF-the-shore-is-closed.md` (the shore median; its step 3 treatment
-  rules are MATERIAL, grain and handoffs, and stay there; the SHAPE and HEIGHT of the waterline are this brief's).
+  and `RIBBONS §1` (how a coast arrives).
   "Smoothing is skeleton, rounding is Survey" (`RIBBONS`, on ①): a waterline's smoothing belongs at the chain, before ①.
 - Memory: `project_terrain_doctrine_2026_05_14` (uExag is the single dial; the mesh carries terrain × uExag at runtime).
 
@@ -140,7 +141,6 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 | the runtime drape | `src/utils/terrainShader.js` (`patchTerrain`, perVertex) · `src/lib/terrainCommon.js` (`makeElevationSampler`, `DEFAULT_V_EXAG`) |
 | objects that sit on the drawn ground | `cartograph/bake-tree-anchors.js`, `bake-buildings.js` (centroid y), `bake-lamps.js` |
 | the coast chain and its water side | `cartograph/coastline.mjs` (`weldCoastlines`), the pour's coast stroke (`RIBBONS §1`) |
-| the shore median's sand edge (lidar marching squares, 1 m) | `cartograph/bake-shore-median.mjs` → `bake-ground.js`'s `shore` group |
 | the water level and the bed | `bake-terrain.js` (`terrain.json#water`, `#bed`), the 5 m raster |
 | the shore gap instrument | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs`, gaps.html (`at=` / `keep=` / hole-ray params, Argon 2026-10-08) |
 | the shelved corner rework (the same seam) | `scratch/perp-corner/radial-landings-SHELVED-2026-10-07.diff` |
@@ -165,7 +165,7 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
 4. **The kerb.** The 265 T-junctions were `cutAlong`'s, which is deleted (5255b311). The creases are now partition
    lines (eb1d3876) and the lift reads each polygon's carried side (de1c2f83). Open: the State block above.
 5. **Who reads a ground height.** The drawn mesh (`src/lib/drawnGround.js`): lamps, tree anchors, buildings, Movers,
-   UserDot, the street eye, PilgrimMonument, LafayetteParkBody's ponds, stairs and title, ShoreMedian, and the revetment
+   UserDot, the street eye, PilgrimMonument, LafayetteParkBody's ponds, stairs and title, and the revetment
    (drape and stones). The field: LafayetteParkBody's fence posts only (lifted in the shader by `patchTerrain`, which has
    only the field on the GPU). Labels: none.
 6. **The shore: two shape sources, and the gusset.** Re-measured 2026-10-12; the table and the commands are in §5, "The
@@ -186,12 +186,9 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    between them. On the lattice; a topology gap, not drift. Whether it shows at street level is NOT measured.
    ① is painted first (d504d7eb): true gaps on Huron 239/406 → 15/410 sampled seams, offline. The tiles check stays RED
    on the covered-both-sides class (~9.5k edges), not ①.
-   ⭐ **Huron's shore crack (§4.6) is the same class**: its sand vertices sit 5.5–5.7 mm (ε) off the beach edge where
-   the median meets ①'s two-sided coast stroke. Re-baked offline with the median on the 1 mm lattice, it is unchanged
-   (0.40 m step). Not the median's rounding. ▶ `crack-site.mjs <slab dir> huron 1416.8 -320.5`
    ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` · `slit-producer.mjs <town>`
-   ✅ The 1 mm lattice has one home, `src/lib/lattice.js` ▶ `checks/claims-the-lattice-has-one-home.mjs`. ⏳ Still: the
-   median rounds its output to the cm (`bake-shore-median` `toRing`), and other grids keep their own values (lattice.js).
+   ✅ The 1 mm lattice has one home, `src/lib/lattice.js` ▶ `checks/claims-the-lattice-has-one-home.mjs`. ⏳ Still:
+   other grids keep their own values (lattice.js).
 
 ## 5. The design: heights along ①, then ONE deformer that acts like curb geometry (Jacob, 2026-10-08)
 
@@ -263,8 +260,7 @@ level-across check judges at the town's exaggeration ceiling.
 to determine"). Build it as the town's value with a neutral default; measure what each candidate does on HPDM, but
 don't settle it.
 
-**What it replaces:** the drape near ① and `cutAlong` are deleted (5255b311). Still to go: the median's marching
-squares as a shape source, with (a). **The open questions are answered in the code:** the window is σ,
+**What it replaces:** the drape near ① and `cutAlong` are deleted (5255b311).  **The open questions are answered in the code:** the window is σ,
 `groundLineSigmaM` (`lineHeight.mjs`); the record is each run's `h[]` plus the slab's terrain-part section; the cost on
 HPDM was 119 → 387 s, with Huron's open (State); a cut is the profile's h → 0, and whether `BRIEF-corner-ramps-and-kerb
 §9`'s item retires is Boz's call.
