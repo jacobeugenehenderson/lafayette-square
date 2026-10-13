@@ -261,10 +261,24 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   const edgeSq = (a, b) => { const dx = PX[a] - PX[b], dz = PZ[a] - PZ[b]; return dx * dx + dz * dz }
   // __devStep (the budget test's V2): sample every edge at that step (the terrain's grid, or the deformer's B), plus the
   // centroid, so a long triangle cannot hide a feature between the 4 classic samples
+  // the max deviation along ONE edge p→q, sampled from p (the V2 rule, unchanged)
+  const edgeDev = (s, p, q, step) => { const px = PX[p], pz = PZ[p], qx = PX[q], qz = PZ[q], yp = s(px, pz), yq = s(qx, qz)
+    const n = Math.max(2, Math.ceil(Math.hypot(qx - px, qz - pz) / step)); let d = 0
+    for (let j = 1; j < n; j++) { const f = j / n, e = Math.abs(s(px + f * (qx - px), pz + f * (qz - pz)) - (yp + f * (yq - yp))); if (e > d) d = e }
+    return d }
+  // __devEdgeCache (the time route): 'directed' — one entry per directed edge (byte-identical to V2: same samples, same
+  // orientation), reused across passes · 'shared' — one per undirected edge, sampled from its lower vertex id, so the two
+  // triangles on an edge share it (sample positions may differ from V2's by a float ulp where V2 sampled the other way)
+  const edgeCaches = new Map()
+  const cachedEdgeDev = (s, p, q, step, mode) => {
+    let C = edgeCaches.get(s); if (!C) edgeCaches.set(s, C = new ShardedMap())
+    const [u, v] = mode === 'shared' && q < p ? [q, p] : [p, q], k = u * EDGE_MUL + v
+    let d = C.get(k); if (d === undefined) { d = edgeDev(s, u, v, step); C.set(k, d) } return d }
   function terrainDevDense(s, a, b, c, step) {
-    const P = [[PX[a], PZ[a]], [PX[b], PZ[b]], [PX[c], PZ[c]]], Y = P.map(([x, z]) => s(x, z))
+    const P = [[PX[a], PZ[a]], [PX[b], PZ[b]], [PX[c], PZ[c]]], Y = P.map(([x, z]) => s(x, z)), V = [a, b, c], mode = globalThis.__devEdgeCache
     let d = 0
-    for (let k = 0; k < 3; k++) { const [px, pz] = P[k], [qx, qz] = P[(k + 1) % 3], yp = Y[k], yq = Y[(k + 1) % 3]
+    if (mode) for (let k = 0; k < 3; k++) { const e = cachedEdgeDev(s, V[k], V[(k + 1) % 3], step, mode); if (e > d) d = e }
+    else for (let k = 0; k < 3; k++) { const [px, pz] = P[k], [qx, qz] = P[(k + 1) % 3], yp = Y[k], yq = Y[(k + 1) % 3]
       const n = Math.max(2, Math.ceil(Math.hypot(qx - px, qz - pz) / step))
       for (let j = 1; j < n; j++) { const f = j / n, e = Math.abs(s(px + f * (qx - px), pz + f * (qz - pz)) - (yp + f * (yq - yp))); if (e > d) d = e } }
     const e = Math.abs(s((P[0][0] + P[1][0] + P[2][0]) / 3, (P[0][1] + P[1][1] + P[2][1]) / 3) - (Y[0] + Y[1] + Y[2]) / 3); if (e > d) d = e

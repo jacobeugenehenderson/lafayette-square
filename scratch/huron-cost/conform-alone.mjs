@@ -98,10 +98,11 @@ const st = {}
 // NO_MAXEDGE=1: no maxEdge cap on any group (needs groundConformity.reasons.js) · DEV_STEP=auto: terrainDev samples every
 // edge at min(the terrain's grid step, the deformer's B) — read from the data, never a constant
 if (process.env.NO_MAXEDGE) globalThis.__noMaxEdge = true
+if (process.env.DEV_EDGE_CACHE) { if (!['directed', 'shared'].includes(process.env.DEV_EDGE_CACHE)) throw new Error(`DEV_EDGE_CACHE must be directed|shared, got ${process.env.DEV_EDGE_CACHE}`); globalThis.__devEdgeCache = process.env.DEV_EDGE_CACHE }
 if (process.env.DEV_STEP) { const A0 = JSON.parse(readFileSync(dir + '/deform.json', 'utf8')).limits
   globalThis.__devStep = process.env.DEV_STEP === 'auto' ? Math.min(T.stepM, A0?.blend ?? Infinity) : Number(process.env.DEV_STEP)
   if (!(globalThis.__devStep > 0)) throw new Error(`DEV_STEP: no step (terrain stepM ${T.stepM}, B ${A0?.blend})`) }
-console.log(`[variant] maxEdge cap ${globalThis.__noMaxEdge ? 'OFF' : 'on'} · terrainDev ${globalThis.__devStep ? `every ${globalThis.__devStep.toFixed(3)} m along each edge` : '4 classic samples'} · hardscape ${process.env.HARDSCAPE_ADAPTIVE ? 'adaptive at the lots\' policy' : 'as dumped'}`)
+console.log(`[variant] maxEdge cap ${globalThis.__noMaxEdge ? 'OFF' : 'on'} · terrainDev ${globalThis.__devStep ? `every ${globalThis.__devStep.toFixed(3)} m along each edge` : '4 classic samples'} · edge cache ${globalThis.__devEdgeCache ?? 'none'} · hardscape ${process.env.HARDSCAPE_ADAPTIVE ? 'adaptive at the lots\' policy' : 'as dumped'}`)
 // REASONS=1 (with the instrumented conformity copy): the reach hook — is a point inside the deformer's reach (heightAt not null)
 if (process.env.REASONS && D) globalThis.__reach = (x, z) => D.heightAt(x, z) != null
 t = Date.now()
