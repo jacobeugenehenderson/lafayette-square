@@ -5,6 +5,7 @@
 //   module defaults to the timed scratch copy (per-phase time); pass a path (e.g. cartograph/groundConformity.js) to run that.
 //   PED_FLOOR=<m> sets the ped bands' minEdge (the floor; tol stays the dump's); PED_POLICY=lots gives the ped bands the lots'
 //   policy (tol, minEdge from meta.json: the 10-11 policy point). The ped bands are read from bake-ground.js's PED_KEYS.
+//   PED_TOL_X=<k> multiplies the ped bands' tol (the dumped 7.8 mm) by k; the tide band's own tol is untouched.
 //   INPUT_ONLY=1 turns every group's refinement off: the input side only (polygons, input T-junctions), in seconds.
 //   Prints the detector's count on the output (as the bake runs it) and a sha256 over every group's positions, indices, side.
 //   deform = the bake's sampler (`terrainPartAt` × exag) · raw = the terrain's own (`getElevation`, 10-11's sampler)
@@ -14,12 +15,20 @@ import { execSync } from 'child_process'
 import { createHash } from 'crypto'
 import { resolve } from 'path'
 const R = new URL('../../', import.meta.url).pathname
+const [dir, which = 'deform', modPath] = process.argv.slice(2)
+const CONF = modPath ? resolve(modPath) : new URL('./groundConformity.timed.js', import.meta.url).pathname
+// the code under every number, recorded rather than inferred: each file hashed before and after its import, and a run
+// whose file changed while it was being imported refuses (Boz, 2026-10-13, after a deformer edit sat in the tree mid-sweep)
+const sha = (f) => createHash('sha256').update(readFileSync(f)).digest('hex')
+const CODE = [R + 'cartograph/groundDeformer.mjs', CONF, R + 'cartograph/terrainLoad.js', R + 'cartograph/waterLevel.mjs']
+const before = CODE.map(sha)
 const { loadSceneTerrain } = await import(R + 'cartograph/terrainLoad.js')
 const { buildDeformer } = await import(R + 'cartograph/groundDeformer.mjs')
 const { waterLevels } = await import(R + 'cartograph/waterLevel.mjs')
-const [dir, which = 'deform', modPath] = process.argv.slice(2)
-const { conformAndRefine, findTJunctions } = await import(modPath ? resolve(modPath) : './groundConformity.timed.js')
-console.log(`[module] ${modPath ? resolve(modPath) : 'groundConformity.timed.js'}`)
+const { conformAndRefine, findTJunctions } = await import(CONF)
+const after = CODE.map(sha)
+CODE.forEach((f, i) => console.log(`[code] ${f.replace(R, '')} sha256 ${after[i]}${before[i] === after[i] ? '' : ` ⛔ CHANGED DURING IMPORT (was ${before[i]})`}`))
+if (before.some((h, i) => h !== after[i])) { console.log('[code] ⛔ a file changed while it was imported — this run measures unknown code; refusing'); process.exit(2) }
 const swap = () => execSync('sysctl -n vm.swapusage').toString().trim()
 const mem = () => `rss ${Math.round(process.memoryUsage().rss / 1e6)} MB · heap ${Math.round(process.memoryUsage().heapUsed / 1e6)} MB · swap ${swap()} · load ${execSync('sysctl -n vm.loadavg').toString().trim()}`
 console.log(`[start] ${which} · ${mem()}`)
@@ -43,7 +52,8 @@ if (!pedSrc) throw new Error('PED_KEYS not found in cartograph/bake-ground.js')
 const pedEq = [...pedSrc.matchAll(/key === '([^']+)'/g)].map(m => m[1]), pedPre = [...pedSrc.matchAll(/key\.startsWith\('([^']+)'\)/g)].map(m => m[1])
 const isPed = (k) => { const key = k.slice(k.indexOf(':') + 1); return pedEq.includes(key) || pedPre.some(p => key.startsWith(p)) }
 const FLOOR = process.env.PED_FLOOR ? Number(process.env.PED_FLOOR) : null, LOTS = process.env.PED_POLICY === 'lots'
-console.log(`[policy] ped = ${pedEq.join(', ')}, ${pedPre.map(p => p + '*').join(', ')} · ${LOTS ? `lots' policy (tol ${meta.refineTol}, minEdge ${meta.refineMinEdge})` : FLOOR != null ? `floor ${FLOOR} m` : 'as dumped'}`)
+const TOLX = process.env.PED_TOL_X ? Number(process.env.PED_TOL_X) : null
+console.log(`[policy] ped = ${pedEq.join(', ')}, ${pedPre.map(p => p + '*').join(', ')} · ${LOTS ? `lots' policy (tol ${meta.refineTol}, minEdge ${meta.refineMinEdge})` : [FLOOR != null && `floor ${FLOOR} m`, TOLX != null && `tol ×${TOLX}`].filter(Boolean).join(' · ') || 'as dumped'}`)
 const specs = []
 for await (const line of createInterface({ input: createReadStream(dir + '/specs.ndjson'), crlfDelay: Infinity })) {
   if (!line) continue
@@ -53,8 +63,12 @@ for await (const line of createInterface({ input: createReadStream(dir + '/specs
     : r
   if (isPed(s.key) && refine?.mode === 'adaptive') {
     if (LOTS) { refine.tol = meta.refineTol; refine.minEdge = meta.refineMinEdge }
-    else if (FLOOR != null) refine.minEdge = FLOOR
+    else {
+      if (FLOOR != null) refine.minEdge = FLOOR
+      if (TOLX != null) refine.tol *= TOLX
+    }
   }
+  if (isPed(s.key) && refine?.mode === 'adaptive' && specs.filter(x => isPed(x.key)).length === 0) console.log(`[policy] first ped group ${s.key}: tol ${refine.tol} · minEdge ${refine.minEdge}`)
   specs.push({ key: s.key, polys: s.polys, refine: process.env.INPUT_ONLY ? null : refine, yLift: s.yLift })
 }
 console.log(`[input] ${specs.length} groups · ${specs.reduce((n, s) => n + s.polys.length, 0)} polygons · ${mem()}`)
