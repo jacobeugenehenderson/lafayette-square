@@ -130,3 +130,8 @@ The board line as it stood:
 - **The deformer's heights may depend on the order they are asked for** *(Cairn, read 2026-10-12; confirmed in code by Boz)*. `cartograph/groundDeformer.mjs` `resolve` memoizes `resolveUncached(x, z)` in one Map keyed by the 1 mm lattice cell, so the first point to reach a cell sets the height, owner and unowned verdict for every later point in it. Whether any drawn height differs between two sampling orders is not measured. ⇒ the deterministic form evaluates the cell's own point, or keys exact positions only. Swale to measure on Cairn's Huron dump, then propose a fix. → `groundDeformer.mjs#resolve`.
 
 Closed by keying the memo on the exact position (`groundDeformer.mjs#resolve`). Measured on Huron's dump-shore (`scratch/ground-height/memo-order.mjs`, 1,977,072 points): the 1 mm key, forward vs reversed: 13,789 heights differ (max |Δ| 0.6186 m raw), 486 null↔value, 760 owner flips, 40 unowned flips; the exact key: 0 of each. ▶ `checks/claims-the-ground-height-is-a-function-of-the-point.mjs`.
+
+## From ROADMAP, superseded 2026-10-13 (Swale): the sampler's share of Huron's conformity
+
+In the board line "Huron's ground bake refuses on HEAD", the sentence as it stood: "Its share of the 4,147 s, and memory pressure's: not established." Replaced by the measured share and the row-indexed point-in-polygon's time (gate: hash cced4657…bff1f, byte-identical).
+
