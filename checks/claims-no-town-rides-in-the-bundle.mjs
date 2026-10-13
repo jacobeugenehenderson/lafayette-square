@@ -18,8 +18,15 @@
  *   - it sits directly in src/data/ — the legacy namespace that has only ever held one town's data.
  * Kit-wide catalogues live in a subfolder named for no town (src/data/planetarium/).
  *
- * ⚠️ public/looks/index.json (the list of every town) is reported, not failed: it names every town
- * rather than carrying one, and the town manifest (BRIEF-slab-loading ⑧) retires it.
+ * ⚠️ AN ALL-TOWNS TABLE IS REPORTED, NOT FAILED: it names every town rather than carrying one, and the
+ * town manifest (BRIEF-slab-loading ⑧) retires it. Two shapes:
+ *   - public/looks/index.json, the list of every town;
+ *   - one importer statically importing the SAME-NAMED file once per roster town, for EVERY roster town:
+ *     the registry's sealed ids, cartograph/data/<map>/town-id.json (Jacob, 2026-10-04, 15818b51), a few
+ *     bytes each. The roster is the maps src/instances/registry.js registers (its INSTANCES keys, read
+ *     from the source), each of which must also be a town id read below.
+ *   ⛔ A table missing one roster town FAILS: a partial table is one town's data in disguise. So does one
+ *   town's file imported alone. Both are planted and judged on every run (`selfTest`).
  *
  * ⛔ READ-ONLY. Exit 2 on any hit, naming the importer, the line, and the file.
  *
@@ -28,6 +35,7 @@
  *   echo "import './components/__mut.js'" >> src/main.jsx
  *   node checks/claims-no-town-rides-in-the-bundle.mjs   # ⇒ must FAIL naming menus.json
  *   git checkout src/main.jsx && rm src/components/__mut.js
+ * The table rule's mutations run themselves, every run, before the bundle is judged.
  *
  * Usage: node checks/claims-no-town-rides-in-the-bundle.mjs
  */
@@ -49,6 +57,14 @@ for (const l of JSON.parse(readFileSync(resolve(ROOT, 'public/looks/index.json')
 }
 for (const notATown of ['clean', 'raw', 'kit-default']) towns.delete(notATown)
 if (!towns.size) { console.error('⛔ read no town ids — cannot judge'); process.exit(2) }
+
+// The roster: the maps the registry registers — its INSTANCES keys, read from the source.
+const REGISTRY = resolve(ROOT, 'src/instances/registry.js')
+const block = readFileSync(REGISTRY, 'utf8').match(/\bconst\s+INSTANCES\s*=\s*\{([^}]*)\}/)
+const roster = new Set(block ? [...block[1].matchAll(/^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_$][\w$-]*))\s*:/gm)].map(m => m[1] || m[2] || m[3]) : [])
+if (!roster.size) { console.error('⛔ read no roster from src/instances/registry.js#INSTANCES — cannot judge a table'); process.exit(2) }
+const strangers = [...roster].filter(t => !towns.has(t))
+if (strangers.length) { console.error(`⛔ the registry registers ${strangers.join(', ')}, which is no town id under cartograph/data/ or in the looks index — cannot judge`); process.exit(2) }
 
 // Static imports only: `import … from 'x'`, `export … from 'x'`, bare `import 'x'`. Never `import('x')`.
 const STATIC_RE = /^\s*(?:import|export)\b[^;'"()]*?\bfrom\s*['"]([^'"]+)['"]|^\s*import\s*['"]([^'"]+)['"]/gm
@@ -91,13 +107,56 @@ function owner(jsonPath) {
   return null
 }
 
-const hits = [], notes = []
-for (const e of jsonEdges) {
-  const rel = relative(ROOT, e.json)
-  if (rel === `public${sep}looks${sep}index.json`) { notes.push(`${relative(ROOT, e.from)}:${e.line} → ${rel} (every town's list; retired by the town manifest)`); continue }
-  const why = owner(e.json)
-  if (why) hits.push(`${relative(ROOT, e.from)}:${e.line} → ${rel} — ${why}. Load it with import() behind the town's own guard, or move it under that town's slab.`)
+/** The town a path names, or null. */
+const townOf = (rel) => rel.split(sep).find(p => towns.has(p) || towns.has(p.replace(/\.json$/, ''))) ?? null
+
+/**
+ * Judge the static JSON edges. An all-towns table — one importer, one file name, each roster town exactly once,
+ * no roster town missing — is a note; every other edge that belongs to a town is a hit.
+ */
+function judge(edges, roster) {
+  const hits = [], notes = []
+  const groups = new Map()
+  for (const e of edges) {
+    const rel = relative(ROOT, e.json), key = `${e.from}\u0000${rel.split(sep).pop()}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push({ ...e, rel, town: townOf(rel) })
+  }
+  for (const g of groups.values()) {
+    const named = g.map(e => e.town)
+    const isTable = g.length === roster.size && named.every(t => t && roster.has(t)) && new Set(named).size === roster.size
+    if (isTable) { notes.push(`${relative(ROOT, g[0].from)} → ${g.map(e => e.rel).join(', ')} (one ${g[0].rel.split(sep).pop()} per roster town, all ${roster.size}: every town's table; retired by the town manifest, BRIEF-slab-loading ⑧)`); continue }
+    const missing = named.some(t => t && roster.has(t)) && g.length > 1 ? [...roster].filter(t => !named.includes(t)) : []
+    for (const e of g) {
+      if (e.rel === `public${sep}looks${sep}index.json`) { notes.push(`${relative(ROOT, e.from)}:${e.line} → ${e.rel} (every town's list; retired by the town manifest, BRIEF-slab-loading ⑧)`); continue }
+      const why = owner(e.json)
+      if (why) hits.push(`${relative(ROOT, e.from)}:${e.line} → ${e.rel} — ${why}${missing.length ? ` (a table missing ${missing.join(', ')}: one town's data in disguise)` : ''}. Load it with import() behind the town's own guard, or move it under that town's slab.`)
+    }
+  }
+  return { hits, notes }
 }
+
+// ⭐ The table rule, judged on planted edges before the bundle is: a full table passes; each way short of one fails.
+function selfTest() {
+  const R = [...roster], from = resolve(ROOT, 'src/instances/__planted.js')
+  const edge = (t, name = 'town-id.json') => ({ json: resolve(ROOT, 'cartograph/data', t, name), from, line: 1 })
+  const cases = [
+    ['a full table (every roster town once)', R.map(t => edge(t)), 0],
+    ['one town\'s file imported alone', [edge(R[0])], 1],
+    ['a table missing one roster town', R.slice(1).map(t => edge(t)), R.length - 1],
+    ['a table with one town twice in place of another', [...R.slice(1), R[1]].map(t => edge(t)), R.length],
+  ]
+  // A town the kit knows but the registry does not register, in place of a roster town: still not every town's table.
+  const outsider = [...towns].find(t => !roster.has(t))
+  if (outsider) cases.push(['a table with an unregistered town in place of a roster town', [...R.slice(1), outsider].map(t => edge(t)), R.length])
+  for (const [what, edges, wantHits] of cases) {
+    const got = judge(edges, roster).hits.length
+    if (got !== wantHits) { console.error(`⛔ self-test: ${what} gave ${got} hit(s), want ${wantHits} — the all-towns table rule is broken`); process.exit(2) }
+  }
+}
+if (roster.size < 2) { console.error('⛔ the roster has fewer than two towns — a table cannot be told from one town\'s file'); process.exit(2) }
+selfTest()
+const { hits, notes } = judge(jsonEdges, roster)
 
 console.log(`NO TOWN RIDES IN THE BUNDLE — ${seen.size} files reached statically from src/main.jsx, ${jsonEdges.length} static JSON imports, ${towns.size} town ids read.`)
 for (const n of notes) console.log(`  ⚠️  ${n}`)

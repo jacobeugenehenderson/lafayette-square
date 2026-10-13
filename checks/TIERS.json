@@ -1652,7 +1652,7 @@
       "file": "checks/claims-no-town-rides-in-the-bundle.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "imports package(s) x — not read from source"
       ]
     },
     {
