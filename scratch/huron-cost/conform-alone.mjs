@@ -99,7 +99,7 @@ if (process.env.ACCURACY) {
   const H = (x, z) => Dref.heightAt(x, z) ?? T.getElevationRaw(x, z)
   const W = (u, v) => [u / 3, v / 3]   // barycentric (b, c) of the third-grid's non-vertex points
   const PTS = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 2], [2, 1], [1, 1]].map(([u, v]) => W(u, v))
-  const errs = [], wts = []
+  const errs = [], wts = [], where = []
   let area = 0, n = 0
   out.forEach((b, gi) => {
     if (!isPed(specs[gi].key)) return
@@ -112,12 +112,21 @@ if (process.env.ACCURACY) {
       area += ar
       for (const [bb, cc] of PTS) {
         const drawn = Hv[a] + bb * (Hv[c1] - Hv[a]) + cc * (Hv[c2] - Hv[a])
-        errs.push(Math.abs(drawn - H(ax + bb * e1x + cc * e2x, az + bb * e1z + cc * e2z))); wts.push(ar / PTS.length); n++
+        const px = ax + bb * e1x + cc * e2x, pz = az + bb * e1z + cc * e2z, ref = Dref.heightAt(px, pz)
+        errs.push(Math.abs(drawn - (ref ?? T.getElevationRaw(px, pz)))); wts.push(ar / PTS.length); n++
+        if (errs[errs.length - 1] > 0.5) where.push({ e: errs[errs.length - 1], x: px, z: pz, g: specs[gi].key, owned: ref != null,
+          vOwned: [a, c1, c2].map(v => Dref.heightAt(P[v * 3], P[v * 3 + 2]) != null).join(''), edge: Math.sqrt(Math.max(e1x * e1x + e1z * e1z, e2x * e2x + e2z * e2z)) })
       }
     }
   })
   const ord = Uint32Array.from(errs.keys()).sort((i, j) => errs[i] - errs[j])
   const q = (f) => { let acc = 0; for (const i of ord) { acc += wts[i]; if (acc >= f * area) return errs[i] } return errs[ord[ord.length - 1]] }
+  const over = (m) => { let a = 0; errs.forEach((e, i) => { if (e > m) a += wts[i] }); return `>${m * 1000} mm ${(100 * a / area).toFixed(3)}%` }
+  console.log(`[accuracy] area over: ${[0.0078, 0.05, 0.1, 0.5].map(over).join(' · ')}`)
+  where.sort((p, q) => q.e - p.e)
+  const byG = {}; for (const w of where) byG[w.g] = (byG[w.g] || 0) + 1
+  console.log(`[accuracy] ${where.length} point(s) > 0.5 m by group: ${Object.entries(byG).map(([k, v]) => k + ' ' + v).join(' · ')} · the point owned by a band: ${where.filter(w => w.owned).length} · all 3 vertices owned: ${where.filter(w => w.vOwned === 'truetruetrue').length}`)
+  for (const w of where.slice(0, 8)) console.log(`[accuracy]   ${(w.e).toFixed(3)} m at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}) ${w.g} · point ${w.owned ? 'owned' : 'past reach'} · vertices owned ${w.vOwned} · longest edge ${w.edge.toFixed(2)} m`)
   console.log(`[accuracy] ped drawn vs heightAt, area-weighted over ${n} points (${(area / 1e6).toFixed(3)} km²): p50 ${(q(0.5) * 1000).toFixed(2)} mm · p99 ${(q(0.99) * 1000).toFixed(2)} mm · max ${(errs[ord[ord.length - 1]] * 1000).toFixed(2)} mm · ${((Date.now() - t) / 1000).toFixed(1)} s`)
 }
 console.log(`[end] ${mem()} (peak RSS: run under /usr/bin/time -l)`)
