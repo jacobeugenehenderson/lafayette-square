@@ -8,6 +8,10 @@
 //   PED_TOL_X=<k> multiplies the ped bands' tol (the dumped 7.8 mm) by k; the tide band's own tol is untouched.
 //   INPUT_ONLY=1 turns every group's refinement off: the input side only (polygons, input T-junctions), in seconds.
 //   Prints the detector's count on the output (as the bake runs it) and a sha256 over every group's positions, indices, side.
+//   ACCURACY=1 (Brace, 2026-10-13): after conformity, the ped bands' vertical error of the DRAWN ground against the deformer's
+//   own heightAt (null → the raw terrain, as bake-ground's terrainPartAt), whatever sampler refined the mesh. The drawn ground
+//   is what the runtime interpolates: heightAt at each vertex, linear across the triangle. Each triangle is read at its 7
+//   non-vertex points of a third-grid (edge thirds + centroid), each weighted by area/7; p50/p99/max in metres, unexaggerated.
 //   deform = the bake's sampler (`terrainPartAt` × exag) · raw = the terrain's own (`getElevation`, 10-11's sampler)
 import { readFileSync, createReadStream } from 'fs'
 import { createInterface } from 'readline'
@@ -88,4 +92,32 @@ t = Date.now()
 const tj = findTJunctions(out.map((b, i) => ({ id: specs[i].key, ...b })))
 const w = tj.found?.[0]
 console.log(`[detector] ${tj.total} T-junction(s) · ${tj.within} within a group · ${tj.cross} across${w ? ` · first at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}), a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge` : ''} · ${((Date.now() - t) / 1000).toFixed(1)} s`)
+if (process.env.ACCURACY) {
+  t = Date.now()
+  const A = JSON.parse(readFileSync(dir + '/deform.json', 'utf8'))
+  const Dref = buildDeformer({ ...A, raw: T.getElevationRaw })
+  const H = (x, z) => Dref.heightAt(x, z) ?? T.getElevationRaw(x, z)
+  const W = (u, v) => [u / 3, v / 3]   // barycentric (b, c) of the third-grid's non-vertex points
+  const PTS = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 2], [2, 1], [1, 1]].map(([u, v]) => W(u, v))
+  const errs = [], wts = []
+  let area = 0, n = 0
+  out.forEach((b, gi) => {
+    if (!isPed(specs[gi].key)) return
+    const P = b.positions, I = b.indices, nv = P.length / 3, Hv = new Float64Array(nv)
+    for (let v = 0; v < nv; v++) Hv[v] = H(P[v * 3], P[v * 3 + 2])
+    for (let k = 0; k < I.length; k += 3) {
+      const a = I[k], c1 = I[k + 1], c2 = I[k + 2]
+      const ax = P[a * 3], az = P[a * 3 + 2], e1x = P[c1 * 3] - ax, e1z = P[c1 * 3 + 2] - az, e2x = P[c2 * 3] - ax, e2z = P[c2 * 3 + 2] - az
+      const ar = Math.abs(e1x * e2z - e2x * e1z) / 2; if (!(ar > 0)) continue
+      area += ar
+      for (const [bb, cc] of PTS) {
+        const drawn = Hv[a] + bb * (Hv[c1] - Hv[a]) + cc * (Hv[c2] - Hv[a])
+        errs.push(Math.abs(drawn - H(ax + bb * e1x + cc * e2x, az + bb * e1z + cc * e2z))); wts.push(ar / PTS.length); n++
+      }
+    }
+  })
+  const ord = Uint32Array.from(errs.keys()).sort((i, j) => errs[i] - errs[j])
+  const q = (f) => { let acc = 0; for (const i of ord) { acc += wts[i]; if (acc >= f * area) return errs[i] } return errs[ord[ord.length - 1]] }
+  console.log(`[accuracy] ped drawn vs heightAt, area-weighted over ${n} points (${(area / 1e6).toFixed(3)} km²): p50 ${(q(0.5) * 1000).toFixed(2)} mm · p99 ${(q(0.99) * 1000).toFixed(2)} mm · max ${(errs[ord[ord.length - 1]] * 1000).toFixed(2)} mm · ${((Date.now() - t) / 1000).toFixed(1)} s`)
+}
 console.log(`[end] ${mem()} (peak RSS: run under /usr/bin/time -l)`)
