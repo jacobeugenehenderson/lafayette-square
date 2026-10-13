@@ -115,7 +115,7 @@ if (process.env.ACCURACY) {
   const H = (x, z) => Dref.heightAt(x, z) ?? T.getElevationRaw(x, z)
   const W = (u, v) => [u / 3, v / 3]   // barycentric (b, c) of the third-grid's non-vertex points
   const PTS = [[1, 0], [2, 0], [0, 1], [0, 2], [1, 2], [2, 1], [1, 1]].map(([u, v]) => W(u, v))
-  const errs = [], wts = [], where = [], bad = []; let nBad = 0
+  const errs = [], wts = [], where = [], bad = new Map(), PLANT = process.env.ACC_PLANT_NAN != null ? Number(process.env.ACC_PLANT_NAN) : -1
   let area = 0, n = 0
   out.forEach((b, gi) => {
     if (!isPed(specs[gi].key)) return
@@ -129,9 +129,9 @@ if (process.env.ACCURACY) {
       for (const [bb, cc] of PTS) {
         const drawn = Hv[a] + bb * (Hv[c1] - Hv[a]) + cc * (Hv[c2] - Hv[a])
         const px = ax + bb * e1x + cc * e2x, pz = az + bb * e1z + cc * e2z, ref = Dref.heightAt(px, pz)
-        const err = Math.abs(drawn - (ref ?? T.getElevationRaw(px, pz)))
-        // ⛔ a non-finite error is its own class, counted and located: in the sort it would scramble every percentile
-        if (!Number.isFinite(err)) { if (bad.length < 5) bad.push(`(${px.toFixed(2)}, ${pz.toFixed(2)}) ${specs[gi].key} · drawn ${drawn} · heightAt ${ref} · vertex H ${[a, c1, c2].map(v => Hv[v])}`); nBad++; continue }
+        const err = errs.length === PLANT ? NaN : Math.abs(drawn - (ref ?? T.getElevationRaw(px, pz)))   // ACC_PLANT_NAN=<i>: a test hook
+        // ⛔ a non-finite error is kept, labelled, and split out by summarize() — never fed to the percentiles
+        if (!Number.isFinite(err)) bad.set(errs.length, `(${px.toFixed(2)}, ${pz.toFixed(2)}) ${specs[gi].key} · drawn ${drawn} · heightAt ${ref} · vertex H ${[a, c1, c2].map(v => Hv[v])}`)
         errs.push(err); wts.push(ar / PTS.length); n++
         if (errs[errs.length - 1] > 0.5) where.push({ e: errs[errs.length - 1], x: px, z: pz, g: specs[gi].key, owned: ref != null,
           vOwned: [a, c1, c2].map(v => Dref.heightAt(P[v * 3], P[v * 3 + 2]) != null).join(''), edge: Math.sqrt(Math.max(e1x * e1x + e1z * e1z, e2x * e2x + e2z * e2z)),
@@ -139,16 +139,15 @@ if (process.env.ACCURACY) {
       }
     }
   })
-  if (nBad) console.log(`[accuracy] ⛔ ${nBad} NON-FINITE error(s), excluded from every number below; first: ${bad.join(' | ')}`)
-  else console.log('[accuracy] every error finite')
-  const ord = Uint32Array.from(errs.keys()).sort((i, j) => errs[i] - errs[j])
-  const q = (f) => { let acc = 0; for (const i of ord) { acc += wts[i]; if (acc >= f * area) return errs[i] } return errs[ord[ord.length - 1]] }
-  const over = (m) => { let a = 0; errs.forEach((e, i) => { if (e > m) a += wts[i] }); return `>${m * 1000} mm ${(100 * a / area).toFixed(3)}%` }
+  const { summarize } = await import(R + 'scratch/ground-budget/accuracy-summary.mjs')
+  const S = summarize(errs, wts, (i) => bad.get(i) ?? `#${i}`), q = S.q
+  console.log(S.nonFinite ? `[accuracy] ⛔ ${S.nonFinite} NON-FINITE error(s), excluded from every number below; first: ${S.firstBad.join(' | ')}` : '[accuracy] every error finite')
+  const over = (m) => `>${m * 1000} mm ${(100 * S.over(m)).toFixed(3)}%`
   console.log(`[accuracy] area over: ${[0.0078, 0.05, 0.1, 0.5].map(over).join(' · ')}`)
   where.sort((p, q) => q.e - p.e)
   const byG = {}; for (const w of where) byG[w.g] = (byG[w.g] || 0) + 1
   console.log(`[accuracy] ${where.length} point(s) > 0.5 m by group: ${Object.entries(byG).map(([k, v]) => k + ' ' + v).join(' · ')} · the point owned by a band: ${where.filter(w => w.owned).length} · all 3 vertices owned: ${where.filter(w => w.vOwned === 'truetruetrue').length}`)
   for (const w of where.slice(0, 8)) console.log(`[accuracy]   ${(w.e).toFixed(3)} m at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}) ${w.g} · point ${w.owned ? 'owned' : 'past reach'} · vertices owned ${w.vOwned} · longest edge ${w.edge.toFixed(2)} m · tri ${JSON.stringify(w.tri)}`)
-  console.log(`[accuracy] ped drawn vs heightAt, area-weighted over ${n} points (${(area / 1e6).toFixed(3)} km²): p50 ${(q(0.5) * 1000).toFixed(2)} mm · p99 ${(q(0.99) * 1000).toFixed(2)} mm · max ${(errs[ord[ord.length - 1]] * 1000).toFixed(2)} mm · ${((Date.now() - t) / 1000).toFixed(1)} s`)
+  console.log(`[accuracy] ped drawn vs heightAt, area-weighted over ${S.n} finite points (${(S.area / 1e6).toFixed(3)} km²): p50 ${(q(0.5) * 1000).toFixed(2)} mm · p99 ${(q(0.99) * 1000).toFixed(2)} mm · max ${(S.max * 1000).toFixed(2)} mm · ${((Date.now() - t) / 1000).toFixed(1)} s`)
 }
 console.log(`[end] ${mem()} (peak RSS: run under /usr/bin/time -l)`)
