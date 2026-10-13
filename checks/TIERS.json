@@ -1,9 +1,9 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 412,
+  "total": 413,
   "counts": {
     "safe": 306,
-    "local-effect": 19,
+    "local-effect": 20,
     "live": 87
   },
   "checks": [
@@ -2435,6 +2435,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-gusset-is-recorded.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {

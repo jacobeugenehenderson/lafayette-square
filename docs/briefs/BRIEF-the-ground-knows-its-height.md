@@ -25,7 +25,7 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 
 **Open gates** (re-run, never quote):
 - **Gusset, Huron: open stations 123 → 0.** On a scratch slab with the coast at high water: 129 open; step p50
-  0.19 → 0.02 m; land vs water-side ground p90 0.15 → 0.25 m (worse: the water side is not lowered yet).
+  0.19 → 0.02 m; land vs water-side ground p90 0.15 → 0.25 m (worse).
   ▶ `SLAB_DIR=<slab> GUSSET_OUT=<file> node scratch/ground-height/gusset.mjs huron` (never over `gusset-huron.json`).
   Residual cause not established. Unmeasured candidates: the 6,419 ② vertices that still take a neighbour's H; the
   water side's S-curve.
@@ -38,8 +38,9 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 - Jacob's eye is owed on `scratch/ground-height/ribbons/thin-blocks.html` (the swap) and on (d) below.
 
 **Next, in order** (each needs Boz's clear):
-1. **The water-side half:** lower the water side to the LOW-water plane, roll it into the S-curve, and write the
-   gusset record (height gap and run per station) that the treatment reads (§5 "The shore's gusset").
+1. **The water-side half: the gusset is RECORDED, nothing lowered** (Boz 2026-10-13). `shoreGusset.mjs` → `shape.json#gusset`
+   ▶ `checks/claims-the-gusset-is-recorded.mjs`. The S-curve waits for the drawn step. The old plan, in the Diary:
+   `cartograph/_archive/BRIEF-the-ground-knows-its-height-water-side-2026-10-13.md`.
 2. **(a) The coast from lidar**, Jacob's go ("OK", 2026-10-12), and with it the shore (the water-side half above and
    (d) below): **moved to `BRIEF-the-coast-from-the-lidar.md`** for a fresh agent (Boz, 2026-10-13).
 3. **(d)'s render:** a browser eye-check of `ShoreMedian` and `SlabRevetment` on the drawn ground (b0e65999).

@@ -41,8 +41,8 @@ not restated here.
   - a coastal bake with no current shore median refuses, except the Bake's first pass, which is stamped
     `shore: "pending"` and cannot ship (76fb11db, 5ffe8dd7);
   - `gusset.mjs` reads the baked terrain part (00c76119).
-- **Also yours, after (a): the water-side half** (ground brief State, "Next" 1): lower the water side to the low-water
-  plane, roll it into the S-curve, and write the gusset record the fill reads. Then **(d)'s render** (State, "Next" 3).
+- **Also yours, after (a): the water-side half** (ground brief State, "Next" 1): the gusset record the fill reads.
+  Then **(d)'s render** (State, "Next" 3).
   Boz's suggested order is (a) first, because the water side is built on the line (a) moves. Confirm or contest that in
   your first report.
 

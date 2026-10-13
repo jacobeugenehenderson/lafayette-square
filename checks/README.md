@@ -115,7 +115,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 19. `npm run test:all`, never CI.
+## local-effect — 20. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -133,6 +133,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | label.mjs — DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
+| `checks/claims-the-gusset-is-recorded.mjs` | recorded.mjs — DOES THE SLAB SAY WHAT THE BANK IS, FROM HIGH WATER DOWN TO LOW? |
 | `checks/claims-the-street-eye-stands-on-the-ground.mjs` | ground.mjs — IS EVERY STREET CAMERA 5′8″ ABOVE THE DRAWN GROUND? |
 | `checks/claims-the-walk-is-level-across.mjs` | across.mjs — DOES EVERY WALK AND CURB STAY LEVEL ACROSS ITS RUN, AT EVERY EXAGGERATION? |
 | `scratch/claims-attribution-is-per-town.mjs` | town.mjs — IS EACH TOWN CREDITING ITS OWN SOURCES? |
