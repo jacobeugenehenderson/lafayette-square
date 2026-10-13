@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 88. Never in a default run.
+## ⛔ live — 90. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -34,6 +34,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-cold-preview-opens-on-the-saved-shot.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
+| `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import() with no readable target — runs arbitrary modules · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-a-failed-apply-leaves-one-state.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-look-holds-only-its-towns-grove.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules |
@@ -81,6 +82,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import of cartograph/scene.js — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-device-link-page-is-served-on-both-sites.mjs` | outbound | calls fetch() · imports workers/staging-sites/src/index.js, which can: calls fetch() · imports workers/production-sites/src/index.js, which can: calls fetch() |
+| `checks/claims-the-ground-height-is-a-function-of-the-point.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` | outbound | calls fetch() |
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · imports package(s) vite — not read from source |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
