@@ -541,11 +541,10 @@ together. The fix above is not built until that lands, and no building card prin
 ### F-24 · CRITICAL · Request values are written to the sheet as formulas  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
 `apps-script/Code.js` writes request values straight into rows (`appendRow`) and cells (`setValue`), with no check
 that a device key is one and no guard on text. Sheets evaluates a string beginning `=`, `+`, `-` or `@` as a FORMULA.
-A `device_hash` of `='Guardians__<tenant>'!B2` writes a row whose key IS another person's key, so the caller becomes
-that Guardian (or resident, or handle). An avatar, bulletin, review or comment beginning `=` runs too
-(IMPORTRANGE/HYPERLINK exfiltration). Proven in Node against an in-memory sheet, not against live: the unpatched script
-accepts `device_hash: "='Guardians'!B2"` and stores `=HYPERLINK(` as an avatar (▶ theward
-`backend/apps-script-harness.mjs`). Found by the Ward's security review of the shared-terminal patch.
+A device key sent as a formula that points at another tab writes a row whose key IS another person's key, so the
+caller becomes that Guardian (or resident, or handle). An avatar, bulletin, review or comment written as a formula runs
+too (exfiltration). Proven in Node against an in-memory sheet, not against live: the unpatched script accepts a formula
+as a device key and stores one as an avatar (▶ theward `backend/hotfix-harness.mjs`). Found by the Ward's security review of the shared-terminal patch.
 **Fix:** every request's device keys (`dh`, `*_hash`) must match `^[0-9a-f]{16}$` before any action runs, and every
 appended row and updated cell passes through one helper, `safeCell`, which writes a formula-shaped string as text.
 ⚙️ **In the hotfix draft, awaiting its second review; ⛔ not deployed** (Jacob's deploy steps are in its header): theward `wip/backend-hotfix` (b5ebaf0), `backend/apps-script-hotfix-2026-10-07.DRAFT.patch`. ▶ theward `node backend/hotfix-harness.mjs <Code.js>` (+ `hotfix-mutations.mjs`). Its predeploy audit lists every live key the door would refuse.
@@ -571,6 +570,11 @@ Guardian's key or the operator's token and shows a refused save (kit bf909fba, w
 The four other writes that looked ungated (`set-handle`, `update-avatar`, `bulletin`, `remove-lobby-post`) were read
 to the end. Each is self-scoped by the caller's own `device_hash` (`bulletin` also requires a townie), so none is open
 beyond the bearer-key model F-24 and F-27 already cover.
+**Open, UNRATED (each fails closed, so not a hole; found 2026-10-13 while fixing F-26, not fixed):** (a) CodeDesk names
+its town by look (`qr_sync_pipeline.js#_lsqLookParam`), and only Lafayette Square still has a legacy look, so off LS
+every CodeDesk call, F-26's save included, is refused as townless; it should send `townTenant()` like the other clients
+(`claims-a-town-has-one-sealed-id.mjs` #6 doesn't list it). (b) CodeDesk's claim-secret reads the admin token from
+`sessionStorage`, and the app keeps it in `localStorage`, so the operator's fetch carries no token.
 
 ### F-27 · CRITICAL · Device keys are served publicly in events and reviews  *(new, 2026-10-07; EXISTING on live)*  — ⚙️ FIXED IN DRAFT 2026-10-13, unreviewed, not deployed
 `apps-script/Code.js` `fetchEventsData` (GET `events`, and `init`) and `getReviews` (GET `reviews`) return whole sheet
