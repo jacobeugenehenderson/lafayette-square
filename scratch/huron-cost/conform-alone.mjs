@@ -115,7 +115,8 @@ if (process.env.ACCURACY) {
         const px = ax + bb * e1x + cc * e2x, pz = az + bb * e1z + cc * e2z, ref = Dref.heightAt(px, pz)
         errs.push(Math.abs(drawn - (ref ?? T.getElevationRaw(px, pz)))); wts.push(ar / PTS.length); n++
         if (errs[errs.length - 1] > 0.5) where.push({ e: errs[errs.length - 1], x: px, z: pz, g: specs[gi].key, owned: ref != null,
-          vOwned: [a, c1, c2].map(v => Dref.heightAt(P[v * 3], P[v * 3 + 2]) != null).join(''), edge: Math.sqrt(Math.max(e1x * e1x + e1z * e1z, e2x * e2x + e2z * e2z)) })
+          vOwned: [a, c1, c2].map(v => Dref.heightAt(P[v * 3], P[v * 3 + 2]) != null).join(''), edge: Math.sqrt(Math.max(e1x * e1x + e1z * e1z, e2x * e2x + e2z * e2z)),
+          tri: [a, c1, c2].map(v => [+P[v * 3].toFixed(3), +P[v * 3 + 2].toFixed(3)]) })
       }
     }
   })
@@ -126,7 +127,7 @@ if (process.env.ACCURACY) {
   where.sort((p, q) => q.e - p.e)
   const byG = {}; for (const w of where) byG[w.g] = (byG[w.g] || 0) + 1
   console.log(`[accuracy] ${where.length} point(s) > 0.5 m by group: ${Object.entries(byG).map(([k, v]) => k + ' ' + v).join(' · ')} · the point owned by a band: ${where.filter(w => w.owned).length} · all 3 vertices owned: ${where.filter(w => w.vOwned === 'truetruetrue').length}`)
-  for (const w of where.slice(0, 8)) console.log(`[accuracy]   ${(w.e).toFixed(3)} m at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}) ${w.g} · point ${w.owned ? 'owned' : 'past reach'} · vertices owned ${w.vOwned} · longest edge ${w.edge.toFixed(2)} m`)
+  for (const w of where.slice(0, 8)) console.log(`[accuracy]   ${(w.e).toFixed(3)} m at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}) ${w.g} · point ${w.owned ? 'owned' : 'past reach'} · vertices owned ${w.vOwned} · longest edge ${w.edge.toFixed(2)} m · tri ${JSON.stringify(w.tri)}`)
   console.log(`[accuracy] ped drawn vs heightAt, area-weighted over ${n} points (${(area / 1e6).toFixed(3)} km²): p50 ${(q(0.5) * 1000).toFixed(2)} mm · p99 ${(q(0.99) * 1000).toFixed(2)} mm · max ${(errs[ord[ord.length - 1]] * 1000).toFixed(2)} mm · ${((Date.now() - t) / 1000).toFixed(1)} s`)
 }
 console.log(`[end] ${mem()} (peak RSS: run under /usr/bin/time -l)`)
