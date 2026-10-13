@@ -43,9 +43,12 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   // ⭐ A POINT IS IN A CLASS WHEN SOME PAINTED PIECE OF IT HOLDS THE POINT. Parity runs within one piece (its outer and its
   //   holes), never across a class: two pieces of one class that overlap (two lawns' land uses, a curb and a curb cut) would
   //   otherwise read as OUT where they overlap, which is a lot that isn't there (measured, HPDM 2026-10-12).
+  // ⛔ THE RINGS A POINT IS TESTED AGAINST ARE THE DEFORMER'S OWN: copied at build and frozen, so the row index each one
+  // keeps (`rowIndex`) can never go stale under a caller that edits its geometry afterwards; the deformer's own writes throw.
+  const frozenCopy = (r) => Object.freeze(r.map(p => Object.freeze([p[0], p[1]])))
   let nItems = 0
   const ringsOf = (items) => (items || []).flatMap(it => { const item = nItems++
-    return (Array.isArray(it?.[0]) && typeof it[0][0] === 'number' ? [it] : [it.outer, ...(it.holes || [])]).filter(r => r?.length >= 3).map(r => ({ r, item })) })
+    return (Array.isArray(it?.[0]) && typeof it[0][0] === 'number' ? [it] : [it.outer, ...(it.holes || [])]).filter(r => r?.length >= 3).map(r => ({ r: frozenCopy(r), item })) })
   const classRings = { curb: ringsOf(bands.curb), lawn: ringsOf(bands.lawn), walk: ringsOf(bands.walk) }
   const addSeg = (cls, a, b, item = -1) => {
     const x0 = Math.floor(Math.min(a[0], b[0]) / CELL), x1 = Math.floor(Math.max(a[0], b[0]) / CELL)
@@ -54,10 +57,25 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
     for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) { const k = x * 1000003 + z; (segGrid.get(k) || segGrid.set(k, []).get(k)).push(s) }
   }
   for (const [cls, rings] of Object.entries(classRings)) for (const { r, item } of rings) for (let i = 0; i < r.length; i++) addSeg(cls, r[i], r[(i + 1) % r.length], item)
-  const disc = stencil?.length >= 3 ? stencil : null
+  const disc = stencil?.length >= 3 ? frozenCopy(stencil) : null
   if (disc) for (let i = 0; i < disc.length; i++) addSeg('beyond', disc[i], disc[(i + 1) % disc.length])
-  const pipRings = (x, z, rings) => { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
-    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  // ⭐ EVEN-ODD THROUGH A ROW INDEX, per ring: an edge can cross the ray at z only if z lies in its own z-span, so each ring
+  // keeps its edges by row (as many rows as edges, over its z-extent) and a point tests only its row's edges. The same
+  // test on the same edges, in the same arithmetic, as walking the whole ring: the answer is identical, only cheaper (a
+  // curb piece runs to thousands of vertices). Built on first use, held by the ring.
+  const rowsOf = new WeakMap()
+  const rowIndex = (r) => { let ix = rowsOf.get(r); if (ix) return ix
+    const n = r.length; let z0 = Infinity, z1 = -Infinity; for (const p of r) { if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1] }
+    const h = (z1 - z0) / n, row = (z) => Math.min(n - 1, Math.max(0, Math.floor((z - z0) / h))), rows = Array.from({ length: n }, () => [])
+    if (h > 0) for (let i = 0, j = n - 1; i < n; j = i++) { const zi = r[i][1], zj = r[j][1]; if (zi === zj) continue
+      for (let k = row(Math.min(zi, zj)), k1 = row(Math.max(zi, zj)); k <= k1; k++) rows[k].push(i) }
+    rowsOf.set(r, ix = { z0, z1, h, row, rows }); return ix }
+  const ringOdd = (x, z, r) => { const ix = rowIndex(r); if (!(ix.h > 0 && z >= ix.z0 && z <= ix.z1)) return false
+    let c = false
+    for (const i of ix.rows[ix.row(z)]) { const j = i === 0 ? r.length - 1 : i - 1, [xi, zi] = r[i], [xj, zj] = r[j]
+      if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c }
+    return c }
+  const pipRings = (x, z, rings) => { let c = false; for (const r of rings) if (ringOdd(x, z, r)) c = !c; return c }
   // per-class point-in-polygon through a coarse ring index (rings by bbox cell)
   const ringIdx = {}
   for (const [cls, rings] of Object.entries(classRings)) {
@@ -71,10 +89,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   const itemsAt = (cls, x, z) => { const odd = new Set()
     for (const { r, bb, item } of ringIdx[cls].get(Math.floor(x / 64) * 1000003 + Math.floor(z / 64)) || []) {
       if (x < bb[0] || x > bb[2] || z < bb[1] || z > bb[3]) continue
-      let c = false
-      for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
-        if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c }
-      if (c) { if (odd.has(item)) odd.delete(item); else odd.add(item) } }
+      if (ringOdd(x, z, r)) { if (odd.has(item)) odd.delete(item); else odd.add(item) } }
     return odd }
   const inClass = (cls, x, z) => itemsAt(cls, x, z).size > 0
 
@@ -126,7 +141,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
     for (const [x, z] of t.ring) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
-    const rec = { ti, ring: t.ring, iA: t.iA.filter(r => r?.length >= 3), rings, bb: [a, b, c, d], segs: new Map() }
+    const rec = { ti, ring: frozenCopy(t.ring), iA: t.iA.filter(r => r?.length >= 3).map(frozenCopy), rings, bb: [a, b, c, d], segs: new Map() }
     for (const R of rings) for (let i = 0; i < R.ring.length; i++) {
       const p = R.ring[i], q = R.ring[(i + 1) % R.ring.length], s = { p, q, hp: R.H[i], hq: R.H[(i + 1) % R.ring.length], R, i }
       const x0 = Math.floor(Math.min(p[0], q[0]) / CELL), x1 = Math.floor(Math.max(p[0], q[0]) / CELL), z0 = Math.floor(Math.min(p[1], q[1]) / CELL), z1 = Math.floor(Math.max(p[1], q[1]) / CELL)
@@ -289,7 +304,8 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
   }
   // the absorption at (ring R, segment i, parameter u): linear between the two stations that bracket it
   const absorbAt = (R, i, u) => { const st = R.st, a0 = R.segStart[i], a1 = i + 1 < R.segStart.length ? R.segStart[i + 1] : st.length
-    let a = a0; while (a + 1 < a1 && st[a + 1].u <= u) a++
+    // the last station of segment i at or before u (stations are in increasing u within a segment): by bisection
+    let a = a0, hi = a1 - 1; while (a < hi) { const m = (a + hi + 1) >> 1; if (st[m].u <= u) a = m; else hi = m - 1 }
     const next = a + 1 < st.length ? st[a + 1] : st[0], uN = a + 1 < a1 ? next.u : 1
     const f = uN > st[a].u ? (u - st[a].u) / (uN - st[a].u) : 0
     return st[a].A + f * (next.A - st[a].A) }
