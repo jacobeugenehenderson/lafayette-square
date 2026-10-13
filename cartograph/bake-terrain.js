@@ -41,13 +41,12 @@ import fs from 'fs'
 import { join } from 'path'
 import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
-import { coastRings } from './coastline.mjs'
+import { COAST_FILE } from './bake-coast.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
-import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './terrainReads.mjs'
-import { stoneStructures } from './structures.mjs'
+import { terrainValueReads } from './terrainReads.mjs'
+import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels as levelsOf } from './waterLevel.mjs'
-import clipperLib from 'clipper-lib'
-import { elevationSpecs, openSources, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
+import { elevationSpecs, openSources, sampleSources, ABOVE_WATER_M, demVerticalDatum, NAVD88, TERRAIN_STEP_M } from './elevationSources.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -62,7 +61,6 @@ const MAP_DIR     = join(CARTOGRAPH_DIR, 'data', SCENE)
 const GEO_PATH      = join(MAP_DIR, 'geography.json')
 const BOUNDARY_PATH = join(MAP_DIR, 'neighborhood_boundary.json')
 const TIF_PATH      = join(MAP_DIR, 'raw', 'elevation.tif')
-const OSM_PATH      = join(MAP_DIR, 'raw', 'osm.json')
 const CLEAN_DIR     = join(MAP_DIR, 'clean')
 // --out-dir=<dir>: write the heightfield there instead of the scene's clean/ (a scratch A/B, not the live terrain).
 const _outArg = process.argv.slice(2).map(a => a.match(/^--out-dir=(.+)$/)).find(Boolean)?.[1]
@@ -81,7 +79,6 @@ function localToWgs84(x, z) {
 }
 
 const STENCIL_BUFFER_M = 50  // kit-shared with LS_STENCIL
-const M_PER_SAMPLE     = 5   // see prior commit comment in this file
 
 function wgs84ToLocal(lon, lat) {
   return [(lon - _geo.lon) * _geo.lonToMeters, (_geo.lat - lat) * _geo.latToMeters]
@@ -106,30 +103,19 @@ function wgs84ToLocal(lon, lat) {
 // ⭐ A hydro-flattened body is the one thing in a DEM that is genuinely level, so
 // its surface is the MODE of the samples beneath it — not the mean (the shore
 // drags it) and not the minimum (that is the bug being fixed).
-// ⛔ The water polygons come from `coastline.mjs` — the SAME `coastRings` and
-// `isWaterFeature` that `derive.js` uses. A second definition of "this is water"
+// ⭐ The water is the lidar's, at high water (`bake-coast.mjs` → clean/coast.json, which runs BEFORE the pour): the
+// same bodies ① excludes from the frame. Its line is found in NAVD88 with no datum, so this datum, taken under it,
+// cannot move the line it is measured under (BRIEF-the-coast-from-the-lidar). A second definition of "this is water"
 // is how the first vocabulary drifted.
-function waterDatum({ raw, width, height, bounds, boundary }) {
-  if (!fs.existsSync(OSM_PATH)) {
-    console.log('  water datum: no raw/osm.json — cannot ask where the water is')
-    return null
-  }
-  const osm = JSON.parse(fs.readFileSync(OSM_PATH, 'utf8'))
-  const ground = osm.ground || {}
-
-  // The coast, closed against the bb, exactly as derive.js closes it.
-  const bx = osm.bbox
-  const bb = bx ? (() => {
-    const a = wgs84ToLocal(bx.minLon, bx.maxLat), b = wgs84ToLocal(bx.maxLon, bx.minLat)
-    return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]),
-             z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
-  })() : null
+function waterDatum({ raw, width, height, bounds }) {
+  const coastPath = join(CLEAN_DIR, COAST_FILE)
+  if (!fs.existsSync(coastPath)) throw new Error(`⛔ water datum: ${SCENE} has no clean/${COAST_FILE} — the coast step has not run, so where the water is cannot be asked. ▶ node cartograph/bake-coast.mjs --scene=${SCENE}`)
+  const K = JSON.parse(fs.readFileSync(coastPath, 'utf8'))
   const rings = []
-  if (bb) {
-    const c = coastRings({ ground, buildings: osm.buildings || [],
-                           center: boundary.center, discR: boundary.radius, bb })
-    const { inDrawing, outside } = ringsInDrawing(c.rings || [], bounds)
-    for (const r of inDrawing) rings.push(r)
+  if (K.coast) {
+    const { inDrawing, outside } = ringsInDrawing(K.water.map(b => b.outer), bounds)
+    const kept = new Set(inDrawing)
+    for (const b of K.water) if (kept.has(b.outer)) rings.push(b.outer, ...b.holes)   // holes too: the fill is even-odd
     if (outside.length) {
       const ext = (r) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return `x ${Math.round(x0)}…${Math.round(x1)}, z ${Math.round(z0)}…${Math.round(z1)}` }
       console.log(`  water datum: ${outside.length} coast ring(s) lie WHOLLY OUTSIDE this town's drawing (grid x ${bounds.minX}…${bounds.maxX}, z ${bounds.minZ}…${bounds.maxZ}) — in the fetch envelope only, NO SHORE for this town: ${outside.map(ext).join(' · ')}`)
@@ -142,10 +128,9 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
   // so it moved the entire town's datum by 25.22 m, for a town that has no
   // `water:*` group in its slab at all. A perched pond is an OBJECT ON the land;
   // a coast is the plane the land sits beside, and only the second can be a datum.
-  // ⭐ `coastline.mjs` already draws exactly this distinction and we should use its
-  // judgment rather than invent a size threshold: `coastRings` returns rings for a
-  // body that CROSSES THE BB, and nothing for an enclosed one. `bake-ground.js`
-  // says the same in as many words — coastline "does NOT reach an inland pond".
+  // ⭐ `bake-coast.mjs` already draws exactly this distinction and we use its judgment
+  // rather than invent a size threshold: its water is only what reaches the fetched
+  // square's EDGE, so an enclosed pond is never in coast.json.
   // ⚠️ So an inland pond is still drawn at y ≈ 0 and is still wrong for it. That is
   // a REAL and separate defect — every body wants its own mesh Y — and it is not
   // fixed by moving the whole world to meet one pond.
@@ -197,7 +182,13 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
   for (const [k, c] of hist) if (c > best) { best = c; mode = k }
   const elev = mode / 100
   const share = best / wet
-  return { elev, share, wet, rings: rings.length, mask }
+  // ⭐ THE BED IS WRITTEN ONLY WHERE THE LIDAR READS THE WATER. The coast is at HIGH water, so its water holds the
+  // ground between the flown waterline and high water (Provincetown's flats): real, surveyed ground that the bed must
+  // not overwrite with a profile. A cell above the flattened surface's own bucket (ABOVE_WATER_M) keeps its lidar.
+  const kept = new Uint8Array(mask.length)
+  let surveyed = 0
+  for (let k = 0; k < mask.length; k++) if (mask[k] && raw[k] - elev > ABOVE_WATER_M) { mask[k] = 0; kept[k] = 1; surveyed++ }
+  return { elev, share, wet, rings: rings.length, mask, kept, surveyed }
 }
 
 // ⭐⭐ THE BED — the ground under the water, written INTO the heightfield (Jacob, 2026-09-26/27: "water is
@@ -214,18 +205,8 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
 // serve.js declares as this step's value input.
 const READS = terrainValueReads(SCENE)
 const finding = (id) => READS.findings[id]
-// The town's authored water values. ⛔ Two looks on one scene disagreeing is refused — the terrain is one per scene.
-function waterAuthoring() {
-  const out = {}
-  for (const key of TERRAIN_WATER_KEYS) {
-    const set = READS.water.filter(([, w]) => w[key] != null)
-    if (new Set(set.map(([, w]) => w[key])).size > 1)
-      throw new Error(`⛔ looks on scene '${SCENE}' author different water.${key}: ${set.map(([id, w]) => `${id}=${w[key]}`).join(', ')} — the terrain is one per scene`)
-    if (set.length) out[key] = { value: TERRAIN_WATER_NAMES.includes(key) ? String(set[0][1][key]) : +set[0][1][key],
-                                 from: `authored (design.json water.${key}, ${set.map(([id]) => id).join(', ')})` }
-  }
-  return out
-}
+// The town's authored water values: waterDatums.mjs, the one reader bake-coast shares.
+const waterAuthoring = () => authoredWater(SCENE, READS)
 function deanA(d50) {
   const table = finding('f-cem-dean-a-table').value.A_m13_by_D_mm
   const pts = Object.entries(table).map(([d, a]) => [+d, a]).sort((p, q) => p[0] - q[0])
@@ -267,88 +248,9 @@ function shoreDistance(mask, width, height, stepX, stepZ) {
   }
   return out
 }
-// ⭐ THE ROCK STAYS. A mapped breakwater or groyne is another surface the level meets (Jacob, 2026-09-26: "the edge
-// of water is always where the flat plane meets any other plane"), and the lidar SEES its rock. So under its
-// footprint — a closed outline's cells, or the cells within half a cell of a mapped line — the bed does not
-// overwrite a cell where the lidar stands above the water. The revetment takes the crest from here; the ground
-// drapes over the rock. Measured before this: the West End Breakwater read −2.44 m (the bed's floor), not its rock.
-function rockCells(normalized, mask, width, height, bounds) {
-  const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
-  const { areas, lines } = stoneStructures(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')).ground)
-  const keep = new Set(), cand = new Set()
-  for (const a of areas) {
-    const zs = a.ring.map(p => p[1])
-    for (let j = Math.max(0, Math.ceil((Math.min(...zs) - bounds.minZ) / stepZ)); j <= Math.min(height - 1, Math.floor((Math.max(...zs) - bounds.minZ) / stepZ)); j++) {
-      const z = bounds.minZ + stepZ * j, xs = []
-      for (let k = 0, n = a.ring.length; k < n; k++) { const p = a.ring[k], q = a.ring[(k + 1) % n]
-        if ((p[1] > z) !== (q[1] > z)) xs.push(p[0] + (z - p[1]) * (q[0] - p[0]) / (q[1] - p[1])) }
-      xs.sort((m, n) => m - n)
-      for (let k = 0; k + 1 < xs.length; k += 2)
-        for (let i = Math.max(0, Math.ceil((xs[k] - bounds.minX) / stepX)); i <= Math.min(width - 1, Math.floor((xs[k + 1] - bounds.minX) / stepX)); i++) cand.add(j * width + i)
-    }
-  }
-  const half = Math.min(stepX, stepZ) / 2
-  for (const l of lines) for (let s = 1; s < l.line.length; s++) {
-    const [ax, az] = l.line[s - 1], [bx, bz] = l.line[s], L = Math.hypot(bx - ax, bz - az)
-    for (let u = 0; u <= L; u += half) { const x = ax + (bx - ax) * u / Math.max(L, 1e-9), z = az + (bz - az) * u / Math.max(L, 1e-9)
-      const i = Math.round((x - bounds.minX) / stepX), j = Math.round((z - bounds.minZ) / stepZ)
-      if (i >= 0 && j >= 0 && i < width && j < height) cand.add(j * width + i) }
-  }
-  // Above the water = above the datum's own 1 cm bucket (waterDatum) — ABOVE_WATER_M, one copy, shared with the shore median.
-  for (const k of cand) if (mask[k] && normalized[k] > ABOVE_WATER_M) keep.add(k)
-  if (areas.length + lines.length) console.log(`  ROCK: ${areas.length + lines.length} mapped breakwater/groyne(s) — ${keep.size.toLocaleString()} cells under the water keep the lidar's rock (of ${[...cand].filter(k => mask[k]).length.toLocaleString()} in their footprints)`)
-  return keep
-}
-// ⭐⭐ WHERE THE WATER STANDS (BRIEF-bathymetry, "The water's LEVEL is a tide"; Jacob, 2026-09-27). y = 0 stays the
-// lidar's water — the tide on the day the survey flew, which no one chose — and the floor stays as baked. What this
-// adds is the town's NAMED levels, as heights above y = 0: a LOW and a HIGH tide (MLLW and MHW by default, a town may
-// name others it has), or a lake's one level. They come from raw/water-datums.json (fetch-water-datums.mjs; the bake
-// calls no service). A tidal town's datums vary across it, so they are a GRID, row-major by z then x, rows north →
-// south; a point the datum service does not cover (land) takes its nearest covered neighbour, COUNTED.
-// ⭐ A level is a value read at a place and a time (the runtime's levelAt): the clock that moves between low and high
-// is next, and this record is what it reads. ⛔ A coastal town with no datums, or a lake with no ruled level, REFUSES.
-const DATUMS_PATH = join(MAP_DIR, 'raw', 'water-datums.json')
-function waterLevels(baseElev, auth) {
-  if (!fs.existsSync(DATUMS_PATH))
-    throw new Error(`⛔ the water level: '${SCENE}' has a coast and no raw/water-datums.json — its water would stand at the tide the lidar flew at, which no one chose. ▶ node cartograph/fetch-water-datums.mjs --scene=${SCENE}`)
-  const D = JSON.parse(fs.readFileSync(DATUMS_PATH, 'utf8'))
-  const up = navd => +(navd - baseElev).toFixed(3)         // NAVD88 → metres above y = 0 (baseElev is the lidar's NAVD88 water)
-  if (D.kind === 'tidal') {
-    const { lons, lats } = D.grid, w = lons.length, h = lats.length
-    const [x0, z0] = wgs84ToLocal(lons[0], lats[0]), [x1, z1] = wgs84ToLocal(lons[w - 1], lats[h - 1])
-    const have = { [D.high.datum]: D.high.navd88M, [D.low.datum]: D.low.navd88M }
-    let filled = 0
-    const field = arr => arr.map((v, k) => {
-      if (v != null) return up(v)
-      let best = null, bd = Infinity                          // nearest covered sample on the grid
-      arr.forEach((u, q) => { if (u == null) return; const d = Math.hypot((q % w) - (k % w), Math.floor(q / w) - Math.floor(k / w)); if (d < bd) { bd = d; best = u } })
-      filled++
-      return up(best)
-    })
-    const datums = { grid: { min: [+x0.toFixed(2), +z0.toFixed(2)], step: [+((x1 - x0) / (w - 1)).toFixed(3), +((z1 - z0) / (h - 1)).toFixed(3)], w, h },
-                     uncertaintyM: D.uncertaintyM }
-    for (const [name, arr] of Object.entries(have)) datums[name] = field(arr)
-    const pick = (key, dflt) => {
-      const name = auth[key]?.value ?? dflt
-      if (!datums[name]) throw new Error(`⛔ the water level: design.json water.${key} = '${name}', and '${SCENE}' has only ${Object.keys(have).join(', ')} (raw/water-datums.json) — fetch it, or name one of those`)
-      return { name, from: auth[key] ? auth[key].from : 'kit default' }
-    }
-    const high = pick('high', 'MHW'), low = pick('low', 'MLLW')
-    return { tidal: true, navd88OfZero: baseElev, datums, low: low.name, lowFrom: low.from, high: high.name, highFrom: high.from,
-             station: D.station, source: `${D.source}, fetched ${D.fetchedOn}`, filledFromNeighbour: filled / Object.keys(have).length }
-  }
-  if (D.kind === 'lake') {
-    const name = auth.lakeLevel?.value
-    const opts = Object.entries(D.levels).map(([k, v]) => `${k} = ${v.igld85M} m IGLD85 (${v.what})`).join(' · ')
-    if (!name) throw new Error(`⛔ the water level: '${SCENE}' is a lake (${D.station.name}, ${D.station.id}) and no level is ruled. Author design.json water.lakeLevel as one of: ${opts}. The lidar flew at ${baseElev} m NAVD88.`)
-    const L = D.levels[name]
-    if (!L || !Number.isFinite(L.igld85M)) throw new Error(`⛔ the water level: water.lakeLevel = '${name}' — '${SCENE}' has ${opts}`)
-    const v = up(L.igld85M + D.igld85InNavd88M)
-    return { tidal: false, navd88OfZero: baseElev, datums: { grid: { min: [0, 0], step: [0, 0], w: 1, h: 1 }, [name]: [v], uncertaintyM: null },
-             low: name, lowFrom: auth.lakeLevel.from, high: name, highFrom: auth.lakeLevel.from, station: D.station, source: `${D.source}, fetched ${D.fetchedOn}` }
-  }
-  throw new Error(`⛔ the water level: raw/water-datums.json for '${SCENE}' names no datum (${D.why || D.kind}) — its water level cannot be named`)
-}
+// ⭐⭐ WHERE THE WATER STANDS: the town's named levels as heights above y = 0 (the lidar's water, baseElev in NAVD88).
+// The record is read by waterDatums.mjs, which bake-coast reads in NAVD88 itself: one reader, two zeros.
+const waterLevels = (baseElev, auth) => waterRecord({ mapDir: MAP_DIR, scene: SCENE, auth, wgs84ToLocal, zero: baseElev })
 
 // ⭐⭐ THE REAL FLOOR (BRIEF-bathymetry; Jacob, 2026-09-26/27: "where there is depth data, we only use it out to
 // stair's edge. Where we don't have it, we gently slope it"). `fetch-bathymetry.mjs` lists the town's bathymetry
@@ -358,16 +260,6 @@ function waterLevels(baseElev, auth) {
 // ⛔ Two vertical datums are never subtracted: the floor's is read off its tile, the DEM's off its tile or its
 // product's specification, and a pair this file cannot reconcile is REFUSED (no conversion is built yet).
 const BATHY_LIST = join(MAP_DIR, 'raw', 'bathymetry-sources.txt')
-const NAVD88 = 5103   // EPSG vertical datum code
-// The DEM's vertical datum. USGS 3DEP 1 m tiles carry no vertical GeoKey; the 3DEP product is NAVD88 over the
-// conterminous US (USGS Lidar Base Specification), so that is taken for a 3DEP tile inside CONUS and SAID.
-function demVerticalDatum(sources, cornersLL) {
-  if (sources.every(S => S.geoKeys?.VerticalDatumGeoKey === NAVD88)) return { datum: 'NAVD88', from: 'the DEM tiles\' own VerticalDatumGeoKey' }
-  const conus = cornersLL.every(([lon, lat]) => lon > -125 && lon < -66 && lat > 24 && lat < 50)
-  if (conus && sources.every(S => /\/StagedProducts\/Elevation\//.test(S.ref)))
-    return { datum: 'NAVD88', from: 'USGS 3DEP product specification (CONUS elevations are NAVD88) — the tiles carry no vertical key' }
-  return null
-}
 async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev, demSources }) {
   if (!fs.existsSync(BATHY_LIST)) return { none: `no raw/bathymetry-sources.txt — ▶ node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` }
   const urls = fs.readFileSync(BATHY_LIST, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
@@ -412,110 +304,7 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
            seam: { samples: diffs.length, medianM: q(diffs, 0.5), p90AbsM: q(absd, 0.9) } }
 }
 
-// ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (Jacob, 2026-09-27). The drawn water's edge sits near the survey day's
-// waterline, not at the high level: measured on provincetown, the land just outside it lay BELOW high water along
-// 45 of 51 km, so a sheet ending at the drawing would hang in the air over the beach. The water at HIGH is the drawn
-// water plus the ground below the high level CONNECTED to it — a 4-way flood fill from the water, so a hollow or a diked
-// marsh stays dry — its outline TRACED where the level meets the terrain (below). Returned as rings (local metres) MINUS the drawn water (map.json layers.water), so the two
-// sheets meet and never overlap. Lower tides need nothing: the ground hides the sheet wherever it stands above the level.
-function floodExtent(normalized, mask, width, height, bounds, water) {
-  const L = levelsOf(water)
-  const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1)
-  const X = i => bounds.minX + i * sx, Z = j => bounds.minZ + j * sz
-  const state = new Uint8Array(width * height)          // 1 = drawn water, 2 = flooded, 4 = a held line
-  // ⛔ A MAPPED DIKE HOLDS THE WATER. The heightfield is 5 m: a dike narrower than ~2 cells reads as a gap and a
-  // 4-way fill walks through it into the marsh it keeps dry (Loam, 2026-09-27). Every mapped line that holds water —
-  // man_made=dyke, embankment=yes, waterway=dam — is drawn into the grid (half-cell steps: an 8-connected line, which a
-  // 4-way fill cannot cross) as cells the flood may not enter.
-  let held = 0
-  for (const bucket of Object.values(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')).ground || {})) {
-    if (!Array.isArray(bucket)) continue
-    for (const f of bucket) {
-      const t = f?.tags || {}
-      if (!(t.man_made === 'dyke' || t.embankment === 'yes' || t.waterway === 'dam')) continue
-      const c = (f.coords || []).filter(q => Number.isFinite(q.x) && Number.isFinite(q.z))
-      for (let n = 1; n < c.length; n++) {
-        const L = Math.hypot(c[n].x - c[n - 1].x, c[n].z - c[n - 1].z), steps = Math.max(1, Math.ceil(L / (Math.min(sx, sz) / 2)))
-        for (let u = 0; u <= steps; u++) {
-          const i = Math.round((c[n - 1].x + (c[n].x - c[n - 1].x) * u / steps - bounds.minX) / sx), j = Math.round((c[n - 1].z + (c[n].z - c[n - 1].z) * u / steps - bounds.minZ) / sz)
-          if (i >= 0 && j >= 0 && i < width && j < height && !mask[j * width + i] && state[j * width + i] !== 4) { state[j * width + i] = 4; held++ }
-        }
-      }
-    }
-  }
-  const queue = new Int32Array(width * height); let qh = 0, qt = 0
-  for (let k = 0; k < width * height; k++) if (mask[k]) { state[k] = 1; queue[qt++] = k }
-  let flooded = 0
-  while (qh < qt) {
-    const k = queue[qh++], i = k % width, j = (k - i) / width
-    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const ii = i + di, jj = j + dj
-      if (ii < 0 || jj < 0 || ii >= width || jj >= height) continue
-      const n = jj * width + ii
-      if (state[n] || !(normalized[n] < L.highAt(X(ii), Z(jj)))) continue
-      state[n] = 2; flooded++; queue[qt++] = n
-    }
-  }
-  // ⭐ THE EDGE IS THE WATERLINE, TRACED — not the cells. The first cut drew the flood as 5 m cell squares plus a dry ring,
-  // and along 41% of the Commercial St beach its square edge stood above ground lying below the level (up to 2.5 m):
-  // the stair-stepped shore Jacob saw ("that shoreline is terrible"). Now: marching squares on w = high − ground over the
-  // grid of samples, each square between four samples clipped to w > 0 with the crossing interpolated along its sides,
-  // so the outline is where the level meets the terrain. A sample NOT connected to the water (a hollow, a held dike)
-  // counts as dry, so it stays out; a saddle (wet diagonal, dry diagonal) is split unless the square's centre is wet,
-  // so the flood never leaks across a ridge. The squares are unioned, then the drawn water cut out.
-  const S = 100, C = clipperLib, P = (x, z) => ({ X: Math.round(x * S), Y: Math.round(z * S) })
-  const DRY = -1e-3
-  const w = (i, j) => { const k = j * width + i; const v = L.highAt(X(i), Z(j)) - normalized[k]
-    return state[k] === 1 ? Math.max(v, -DRY) : state[k] === 2 ? v : Math.min(v, DRY) }
-  const cells = []
-  for (let j = 0; j + 1 < height; j++) {
-    let run0 = -1                                                     // runs of wholly wet squares, merged per row
-    const flush = (i1) => { if (run0 >= 0) { cells.push([P(X(run0), Z(j)), P(X(i1), Z(j)), P(X(i1), Z(j + 1)), P(X(run0), Z(j + 1))]); run0 = -1 } }
-    for (let i = 0; i + 1 < width; i++) {
-      const s0 = state[j * width + i], s1 = state[j * width + i + 1], s2 = state[(j + 1) * width + i + 1], s3 = state[(j + 1) * width + i]
-      if (!(s0 === 1 || s0 === 2 || s1 === 1 || s1 === 2 || s2 === 1 || s2 === 2 || s3 === 1 || s3 === 2)) { flush(i); continue }   // no wet corner
-      const c = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], v = c.map(([a, b]) => w(a, b))
-      const wet = v.map(x => x > 0), n = wet.filter(Boolean).length
-      if (n === 4) { if (run0 < 0) run0 = i; continue }
-      flush(i)
-      if (!n) continue
-      const cross = (p, q) => { const t = v[p] / (v[p] - v[q]); return P(X(c[p][0]) + (X(c[q][0]) - X(c[p][0])) * t, Z(c[p][1]) + (Z(c[q][1]) - Z(c[p][1])) * t) }
-      const clip = (idx) => {                                         // the wet part of a polygon of corner indices
-        const out = []
-        for (let m = 0; m < idx.length; m++) {
-          const p = idx[m], q = idx[(m + 1) % idx.length]
-          if (wet[p]) out.push(P(X(c[p][0]), Z(c[p][1])))
-          if (wet[p] !== wet[q]) out.push(cross(p, q))
-        }
-        return out
-      }
-      const saddle = n === 2 && wet[0] === wet[2]
-      if (saddle && (v[0] + v[1] + v[2] + v[3]) / 4 <= 0) { cells.push(clip([0, 1, 3]).length >= 3 ? clip([0, 1, 3]) : []); cells.push(clip([1, 2, 3]).length >= 3 ? clip([1, 2, 3]) : []) }
-      else cells.push(clip([0, 1, 2, 3]))
-    }
-    flush(width - 1)
-  }
-  for (let k = cells.length - 1; k >= 0; k--) if (cells[k].length < 3) cells.splice(k, 1)
-  const mapPath = join(CLEAN_DIR, 'map.json')
-  if (!fs.existsSync(mapPath)) throw new Error(`⛔ the high-water flood: ${mapPath} is missing — the drawn water it meets cannot be read. Pour the town first.`)
-  const drawn = (JSON.parse(fs.readFileSync(mapPath, 'utf8')).layers?.water || [])
-    .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3).map(w => w.ring.map(p => P(p.x ?? p[0], p.z ?? p[1])))
-  const cp = new C.Clipper()
-  cp.AddPaths(cells, C.PolyType.ptSubject, true)
-  const union = new C.Paths(); cp.Execute(C.ClipType.ctUnion, union, C.PolyFillType.pftNonZero, C.PolyFillType.pftNonZero)
-  const cd = new C.Clipper()
-  cd.AddPaths(union, C.PolyType.ptSubject, true); cd.AddPaths(drawn, C.PolyType.ptClip, true)
-  const tree = new C.PolyTree(); cd.Execute(C.ClipType.ctDifference, tree, C.PolyFillType.pftNonZero, C.PolyFillType.pftNonZero)
-  const out = [], xy = path => path.map(p => [+(p.X / S).toFixed(2), +(p.Y / S).toFixed(2)])
-  const walk = (node) => { for (const ch of node.Childs()) { out.push({ outer: xy(ch.Contour()), holes: ch.Childs().map(h => xy(h.Contour())) }); for (const h of ch.Childs()) walk(h) } }
-  walk(tree)
-  const ha = sx * sz / 1e4
-  const area = r => { let t = 0; for (let m = 0, n = r.length - 1; m < r.length; n = m++) t += (r[n][0] + r[m][0]) * (r[n][1] - r[m][1]); return Math.abs(t / 2) }
-  const beyondHa = out.reduce((t, p) => t + area(p.outer) - p.holes.reduce((u, h) => u + area(h), 0), 0) / 1e4
-  return { at: water.high, floodedHa: +(flooded * ha).toFixed(1), beyondDrawnHa: +beyondHa.toFixed(1), heldCells: held, polygons: out }
-}
-
-function writeBed(normalized, mask, width, height, bounds, floor = null, water = null) {
+function writeBed(normalized, mask, kept, width, height, bounds, floor = null, water = null) {
   const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
   // The town's levels at a cell, from the ONE reader (waterLevel.mjs) the checks and the player use — not a copy of it.
   if (!water) throw new Error('⛔ writeBed: the bed is measured from the town\'s water levels (its LOW for the depth cap, its HIGH for a floor above y = 0), and none was given')
@@ -534,7 +323,6 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   // sand floor showed through the whole harbour. ▶ node checks/claims-the-bed-is-seen-to-depth-at-low-water.mjs
   const deepestAt = (k) => vis.value - levels.lowAt(...cellXZ(k))
   const dist = shoreDistance(mask, width, height, stepX, stepZ)
-  const rock = rockCells(normalized, mask, width, height, bounds)
   // ⭐ Where the floor is known it REPLACES the profile, down to the deepest the bottom is seen (deepestAt); it is
   // feathered into the profile over one of its own cells where its coverage ends inside the water. A floor that
   // stands ABOVE y = 0 (the survey's water — the flats) stands where it was MEASURED, capped at the town's HIGH tide
@@ -551,7 +339,7 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   const fromFloor = new Uint8Array(known ? mask.length : 0)
   let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0, atHigh = 0
   for (let k = 0; k < mask.length; k++) {
-    if (!mask[k] || rock.has(k)) continue
+    if (!mask[k]) continue
     const deep = deepestAt(k)
     let h = Math.min(A * Math.pow(dist[k], 2 / 3), deep)
     if (known && Number.isFinite(known.depth[k])) {
@@ -596,8 +384,9 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
              ? { source: 'NOAA OCS BlueTopo (raw/bathymetry-sources.txt)', tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
                  cellM: known.cellM, cells: nFloor, aboveZeroCells: above, cappedAtHighCells: atHigh, seam: known.seam, runs }
              : { none: floor?.none || 'not asked' },
-           // ⭐ The kept rock (rockCells): stands above the level by ruling, so the check names it rather than calling it proud.
-           rock: { cells: rock.size, from: 'structures.mjs stoneStructures (mapped breakwaters/groynes) × the lidar above the water', runs: rock.size ? rowRuns(k => rock.has(k)) : [] } }
+           // ⭐ The kept ground (waterDatum): under the coast's water, the lidar above the flown water stands as surveyed — a
+           // breakwater's rock, the flats below high water. The check names it rather than calling it proud.
+           surveyed: { cells: kept.reduce((t, v) => t + v, 0), from: 'the lidar above the flown water, under the coast\'s water (bake-coast)', runs: rowRuns(k => kept[k]) } }
 }
 
 // ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
@@ -641,8 +430,8 @@ async function main() {
   const bounds = deriveStencilBbox(boundary)
   const spanX = bounds.maxX - bounds.minX
   const spanZ = bounds.maxZ - bounds.minZ
-  const width  = Math.ceil(spanX / M_PER_SAMPLE) + 1
-  const height = Math.ceil(spanZ / M_PER_SAMPLE) + 1
+  const width  = Math.ceil(spanX / TERRAIN_STEP_M) + 1
+  const height = Math.ceil(spanZ / TERRAIN_STEP_M) + 1
   const total = width * height
 
   console.log(`Bake terrain  scene=${SCENE}  bbox=${JSON.stringify(bounds)}  span=${spanX}×${spanZ}m`)
@@ -754,7 +543,7 @@ async function main() {
   // ⭐⭐ THE DATUM. Water when there is water, the local minimum when there is not —
   // and which one was used is PRINTED, because a datum chosen silently is exactly
   // how the previous one survived. ▶ checks/claims-a-level-body-has-one-surface.mjs
-  const wd = waterDatum({ raw, width, height, bounds, boundary })
+  const wd = waterDatum({ raw, width, height, bounds })
   const baseElev = wd ? wd.elev : mn
   const datumKind = wd ? 'water' : 'local minimum'
 
@@ -762,9 +551,8 @@ async function main() {
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
   const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
   const water = wd ? waterLevels(baseElev, waterAuthoring()) : null
-  const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor, water) : null
+  const bed = wd ? writeBed(normalized, wd.mask, wd.kept, width, height, bounds, floor, water) : null
 
-  if (water) water.flood = floodExtent(normalized, wd.mask, width, height, bounds, water)
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
                  datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(water ? { water } : {}) }
   fs.mkdirSync(_outArg || CLEAN_DIR, { recursive: true })
@@ -779,6 +567,7 @@ async function main() {
   console.log(`  elevation range ${mn.toFixed(2)}..${mx.toFixed(2)}m  (normalized to ${(mn-baseElev).toFixed(2)}..${(mx-baseElev).toFixed(2)})`)
   if (wd) {
     console.log(`  DATUM = the water: ${baseElev.toFixed(2)} m, from ${wd.wet.toLocaleString()} samples under ${wd.rings} ring(s)`)
+    console.log(`    ${wd.surveyed.toLocaleString()} cell(s) under the coast's water stand above the flown water — surveyed ground between it and high water, kept, not bedded`)
     console.log(`    the datum bucket holds ${(wd.share * 100).toFixed(1)}% of them — a hydro-flattened body should be most of its own area`)
     if (wd.share < 0.5) {
       // ⛔ NOT a fallback and not a silent pass: the datum is still the mode, but
@@ -790,7 +579,6 @@ async function main() {
     console.log(`    ⛔ y = 0 is now the WATER, not the lowest ground: ground below it is NEGATIVE, by design.`)
     const rng = n => { const a = water.datums[n]; return `${Math.min(...a).toFixed(2)}…${Math.max(...a).toFixed(2)}` }
     console.log(`  LEVELS (m above y = 0): ${water.tidal ? 'tidal' : 'lake'} · low ${water.low} ${rng(water.low)} (${water.lowFrom}) · high ${water.high} ${rng(water.high)} (${water.highFrom})`)
-    console.log(`    FLOOD at ${water.flood.at}: ${water.flood.floodedHa} ha of ground below it joins the drawn water (traced to the waterline: ${water.flood.beyondDrawnHa} ha of sheet beyond the drawing's water, ${water.flood.polygons.length} polygon(s)) · ${water.flood.heldCells} cell(s) held by mapped dikes`)
     console.log(`    ${water.source}${water.filledFromNeighbour ? ` · ${water.filledFromNeighbour} grid point(s) off the datum model took their nearest neighbour` : ''}`)
   } else {
     console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (no coast — see waterDatum for why a pond does not qualify)`)

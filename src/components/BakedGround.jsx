@@ -481,41 +481,12 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
   // the published drawn ground goes when this ground does: a stale one would seat the movers on another town
   useEffect(() => () => setDrawnGround(null), [])
 
-  // ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (bake-terrain `water.flood`): the ground below the high level connected to
-  // the drawn water, drawn as more of the same sheet beside the body that reaches the rim. Its polygons exclude the drawn
-  // water, so the two never overlap; below HIGH the ground simply hides it.
-  const flood = useMemo(() => {
-    const body = meshes.find(m => m.bodyExtent && isWaterGroupId(m.group.id))
-    const polys = terrainWater()?.flood?.polygons
-    if (!body || !polys?.length) return null
-    const Y = body.geometry.attributes.position.array[1], L = waterLevelsOrSay()
-    const pos = [], idx = []
-    for (const p of polys) {
-      const v0 = pos.length / 3, all = [p.outer, ...p.holes]
-      const tris = THREE.ShapeUtils.triangulateShape(p.outer.map(q => new THREE.Vector2(q[0], q[1])), p.holes.map(h => h.map(q => new THREE.Vector2(q[0], q[1]))))
-      for (const r of all) for (const q of r) pos.push(q[0], Y, q[1])
-      for (const t of tris) idx.push(v0 + t[0], v0 + t[1], v0 + t[2])
-    }
-    const g = new THREE.BufferGeometry(), n = pos.length / 3, lo = new Float32Array(n), hi = new Float32Array(n)
-    if (L) for (let i = 0; i < n; i++) { lo[i] = L.lowAt(pos[i * 3], pos[i * 3 + 2]); hi[i] = L.highAt(pos[i * 3], pos[i * 3 + 2]) }
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3))
-    g.setAttribute('aLevelLow', new THREE.BufferAttribute(lo, 1))
-    g.setAttribute('aLevelHigh', new THREE.BufferAttribute(hi, 1))
-    g.setIndex(idx)
-    g.computeVertexNormals()
-    return { geometry: g, body }
-  }, [meshes])
-  useEffect(() => () => flood?.geometry.dispose(), [flood])
 
   return (
     <group>
       {/* "minimum ground" = the first draw of a ground SURFACE. It sat on town:ground, which also holds the revetment,
           so it marked the stone and declared WARD USABLE ~2 s before any ground drew on huron (Strobe, 2026-10-06). */}
       <DrawnAnchor id="ground" />
-      {flood && isGroupVisible(flood.body.group, layerVis) && (
-        <WaterSurface key="water:flood" geometry={flood.geometry} renderOrder={flood.body.group.renderOrder} extentDiag={flood.body.bodyExtent}
-          horizon={manifest.stencil ? waterHorizon(manifest.stencil) : null} look={scene?.surfaces?.params?.water} />
-      )}
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry, bodyExtent }) => {
         const fade = fadeForGroup(group, stencil)
         const key = group.kind + ':' + group.id

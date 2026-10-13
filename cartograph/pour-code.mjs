@@ -105,6 +105,7 @@ export function pourDataReads(scene) {
     sourcesPath(scene), ...declaredParcelPaths(scene),        // derive.js → sources.js#readSources, and its parcel wells
     join(raw, 'osm_kerbs.json'),                              // derive.js → curb-cut-evidence.mjs — the recorded curb cuts
     join(mapDir(scene), 'norms.json'),                        // derive.js → curb-cut-norm.mjs — the town's curb-cut norm
+    join(clean, 'coast.json'),                                // derive.js → readCoast — the coast, the lidar at high water (bake-coast.mjs)
   ]
 }
 

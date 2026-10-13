@@ -21,6 +21,10 @@ export const NODATA_THRESHOLD = -1000
  *  sample reads ±0.005 m. Metres. ⭐ Not a tolerance chosen here — half the bucket the datum was found in. */
 export const ABOVE_WATER_M = 0.005
 
+/** The terrain's grid step, metres: bake-terrain samples the town on it, and bake-coast finds the coast's band on it
+ *  before tracing the line at the source's own pixel. One copy, so the two cannot disagree about the coarse ground. */
+export const TERRAIN_STEP_M = 5
+
 /**
  * Where a town's elevation lives — the three forms `bake-terrain` accepts, in this order:
  *   raw/elevation-sources.txt — one URL per line, read by HTTP RANGE REQUEST
@@ -251,4 +255,15 @@ export function sampleSources(sources, lon, lat, { nanIsNodata = false } = {}) {
          + v01 * (1 - tx) * ty       + v11 * tx * ty
   }
   return NaN
+}
+
+export const NAVD88 = 5103   // EPSG vertical datum code
+// The DEM's vertical datum. USGS 3DEP 1 m tiles carry no vertical GeoKey; the 3DEP product is NAVD88 over the
+// conterminous US (USGS Lidar Base Specification), so that is taken for a 3DEP tile inside CONUS and SAID.
+export function demVerticalDatum(sources, cornersLL) {
+  if (sources.every(S => S.geoKeys?.VerticalDatumGeoKey === NAVD88)) return { datum: 'NAVD88', from: 'the DEM tiles\' own VerticalDatumGeoKey' }
+  const conus = cornersLL.every(([lon, lat]) => lon > -125 && lon < -66 && lat > 24 && lat < 50)
+  if (conus && sources.every(S => /\/StagedProducts\/Elevation\//.test(S.ref)))
+    return { datum: 'NAVD88', from: 'USGS 3DEP product specification (CONUS elevations are NAVD88) — the tiles carry no vertical key' }
+  return null
 }

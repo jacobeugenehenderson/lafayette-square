@@ -1,37 +1,13 @@
 /**
- * coastline.mjs — THE COAST, AS A CLOSED RING, FOR ① TO EXCLUDE FROM THE bb.
+ * coastVerify.mjs — OSM'S WATER, AS AN INSTRUMENT. ⛔ NEVER GEOMETRY.
  *
- * ⭐⭐⭐ (Jacob, 2026-09-20) "it is both; we see the difference between land and water, and
- * the geometry creates the water field and on the other side (land-ward side) closes the
- * rest of the LU polygons, especially the dead-ends."
- *
- * ⇒ The coast is COMBINED with the street ink and EXCLUDED from the bb in one move, so the
- * land faces come out bounded by the coast and the water comes out as a discrete positive
- * object to be shaded.
- *
- * ⭐⭐⭐ AND THE SHORELINE IS ALSO STROKED AS A TWO-SIDED CHAIN (Jacob, 2026-09-20): "the lake is
- * a discrete polygon made of shoreline and bb. The OTHER SIDE of the shoreline isn't necessarily
- * a continuous ring; it is separate, via the protopoly, from the lake."
- * ⇒ TWO objects, not one. The closed RING is the lake face (shoreline + bb). The open ARC is ink
- * — expanded at ε like any chain, so the landward boundary is the protopoly's own edge, ε off the
- * water, carrying a per-vertex `left`/`right` stamp. That articulation is what a slipway T's into,
- * exactly as a street T's into a street; without it the coast is one anonymous clip edge and
- * nothing can meet it.
- * ⛔ THE EARLIER "NOT STROKED" RULING WAS MEASURED ON THE CLOSED RING and stands for it (square →
- * filled, circle → annulus, Lake Erie → 3 pieces). Its own wording names the safe case — "the
- * stroke is only safe for OPEN polylines" — and `clipToRect` already yields exactly that: the
- * single longest run inside the bb, both ends ON the bb edge. ⇒ We stroke the ARC, never the ring.
- *
- * ⛔ THIS IS NOT THE DISC AND MUST NEVER BECOME IT. `RIBBONS §1` forbids the *circle* from
- * deciding block geometry because the circle is a render knob. A shoreline is ground truth
- * (`H-4`), so it closes faces — and the circle still stamps LAST, over the result, and the
- * radius remains the SSoT. An earlier attempt carved the disc up front and wrote the result
- * beside the radius; that inverted which one was the source of truth and is why this module
- * produces geometry and writes nothing.
- *
- * ⭐ WHAT THIS FILE IS NOT, because each was tried and measured: not a far-field closure (the
- * bb closes the arc, so no invented constant survives into the result), not a chain stroke
- * (fragments on a closed ring), and not a replacement boundary (that inverted the SSoT).
+ * The coast is drawn from the lidar at high water (`bake-coast.mjs`, BRIEF-the-coast-from-the-lidar). This file reads
+ * OSM's water (coastline ways welded, water bodies that run on past the fetch) and closes it against the fetched
+ * square ONLY so `bake-coast` can check the lidar's water against an independent source: two sources that must agree
+ * (Boz's ruling, 2026-10-13). Its one export to the bakes, `osmWaterToVerify`, returns rings and a report, and no
+ * arcs, so nothing can stroke it. ▶ node checks/claims-osm-water-is-only-a-verifier.mjs
+ * (Was `coastline.mjs`, ①'s coast source until 2026-10-13; its header is in the Diary,
+ * `cartograph/_archive/coastline-header-2026-10-13.md`.)
  */
 
 /** ⭐ One definition of "this feature is water", so no two callers disagree. */
@@ -309,7 +285,7 @@ export function faceFromArc(arc, R, center) {
   }
 }
 
-export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
+function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   const report = []
   const rings = []
   const arcs = []
@@ -532,4 +508,11 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   }
   report.push(`    ✅ ${rings.length} water ring(s) + ${arcs.length} shoreline arc(s) to expand as ink; ${buildings.length} footprint(s) checked, ${wet} in the water`)
   return { rings, arcs, meta, report }
+}
+
+/** ⭐ THE VERIFIER'S READ: OSM's water rings closed against the fetched square, and what was said. No arcs: an instrument
+ *  cannot be stroked. @param osm raw/osm.json · center/discR the town's disc · bb the fetched square in local metres */
+export function osmWaterToVerify({ osm, center, discR, bb }) {
+  const c = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center, discR, bb })
+  return { rings: c.rings, report: c.report }
 }

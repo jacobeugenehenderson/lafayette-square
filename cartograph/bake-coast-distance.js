@@ -4,6 +4,7 @@
  *
  *   reads   public/baked/<look>/shape.json              (the `__water__` runs, via shoreRuns)
  *           cartograph/data/<scene>/clean/terrain.json  (the grid: bounds + sample count)
+ *           cartograph/data/<scene>/clean/coast.json    (the water past the rim: bake-coast's bodies and square)
  *   writes  public/baked/<look>/context.json            { version, look, channels: { coastDist } }
  *           public/baked/<look>/context.coastDist.bin   Uint16, row-major, metres = v × mPerUnit
  *           public/baked/<look>/outer-coast.json        the water PAST the rim, along the real coast (outer-coast.mjs)
@@ -28,7 +29,7 @@ import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
 import { edt1d } from './distanceField.mjs'
-import { coastRings } from './coastline.mjs'
+import { COAST_FILE } from './bake-coast.mjs'
 import { outerCoast } from './outer-coast.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -175,23 +176,19 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
  */
 export function bakeOuterCoast({ scene, lookId, dataRoot = ROOT, outDir }) {
   const groundPath = join(dataRoot, 'public', 'baked', lookId, 'ground.json')
-  const osmPath = join(dataRoot, 'cartograph', 'data', scene, 'raw', 'osm.json')
-  const geoPath = join(dataRoot, 'cartograph', 'data', scene, 'geography.json')
-  for (const [p, what] of [[groundPath, 'ground.json (the stencil: centre + radius)'], [osmPath, 'raw/osm.json'], [geoPath, 'geography.json']])
+  const coastPath = join(dataRoot, 'cartograph', 'data', scene, 'clean', COAST_FILE)
+  for (const [p, what] of [[groundPath, 'ground.json (the stencil: centre + radius)'], [coastPath, `clean/${COAST_FILE} (the coast: bake-coast.mjs)`]])
     if (!existsSync(p)) throw new Error(`bake-coast-distance (outer coast): ${scene} has no ${what} (${p}).`)
   const stencil = JSON.parse(readFileSync(groundPath, 'utf8')).stencil
   if (!(stencil?.radius > 0)) throw new Error(`bake-coast-distance (outer coast): ${lookId}'s ground.json has no stencil radius`)
-  const osm = JSON.parse(readFileSync(osmPath, 'utf8')), geo = JSON.parse(readFileSync(geoPath, 'utf8'))
-  const local = (lon, lat) => [(lon - geo.lon) * geo.lonToMeters, (geo.lat - lat) * geo.latToMeters]   // bake-terrain.js#wgs84ToLocal
-  const bx = osm.bbox
-  if (!bx) throw new Error(`bake-coast-distance (outer coast): ${scene}'s raw/osm.json has no bbox — the fetched square is unknown`)
-  const a = local(bx.minLon, bx.maxLat), b = local(bx.maxLon, bx.minLat)
-  const bb = { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
+  // ⭐ The coast the pour drew (the lidar at high water), over the square it was drawn on — the fetched square.
+  const K = JSON.parse(readFileSync(coastPath, 'utf8'))
+  const bb = K.square
   const t0 = Date.now()
-  const rings = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: stencil.center, discR: stencil.radius, bb }).rings || []
+  const rings = K.coast ? K.water.map(w => w.outer) : []
   const outPath = join(outDir, 'outer-coast.json')
   let rec
-  if (!rings.length) rec = { version: 1, look: lookId, absent: true, why: 'no coast rings inside the fetched square — the rim is land all round' }
+  if (!rings.length) rec = { version: 1, look: lookId, absent: true, why: K.coast ? 'no coast rings inside the fetched square — the rim is land all round' : K.why }
   else {
     const oc = outerCoast({ rings, bb, center: stencil.center, R: stencil.radius })
     rec = { version: 1, look: lookId, center: stencil.center, radius: stencil.radius, bb, ...oc }

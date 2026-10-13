@@ -9,8 +9,8 @@
  * square — and from there carries on along the coast's own heading to the horizon's fade.
  *
  * THE CONSTRUCTION, one for a lake, a sea and a river mouth:
- *   1. the coast rings inside the fetched square (coastline.mjs#coastRings — the bake's own coast, closed against the
- *      square's edge, water side chosen there);
+ *   1. the coast's water bodies inside the fetched square (clean/coast.json, bake-coast.mjs — the lidar at high water,
+ *      only bodies that reach the square's edge);
  *   2. for each run of a ring along the square's edge (water reaching the square's edge), the region past the square:
  *      bounded by the coast's heading at each end of the run, carried out beyond the horizon, and closed on the far
  *      side — so the water on past the square is bounded by the two coast headings, never by a radial line;
@@ -76,7 +76,7 @@ function backAlong(ring, i, dir, len, isEdge) {
 }
 
 /**
- * rings  — [[[x, z], …], …] water rings inside the fetched square (coastRings().rings)
+ * rings  — [[[x, z], …], …] water rings inside the fetched square (coast.json water[].outer)
  * bb     — { x0, x1, z0, z1 } the fetched square, town metres
  * center — [x, z]; R — the town's radius
  * Returns { polygons: [{ outer, holes, ring }], feathers: [{ ring, strip }], exits, rings, refused, fadeOuter }.

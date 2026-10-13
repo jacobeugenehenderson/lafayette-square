@@ -35,7 +35,25 @@ import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
-import { coastRings } from './coastline.mjs'
+import { COAST_FILE } from './bake-coast.mjs'
+
+// ⭐⭐ THE COAST IS THE LIDAR'S, AT HIGH WATER (BRIEF-the-coast-from-the-lidar; bake-coast.mjs, which runs before the
+// pour). ① strokes its ARCS and excludes its WATER from the frame; OSM's coast is only bake-coast's verifier.
+// ⛔ A coast baked against another square is STALE, and a missing coast.json is a pour that skipped its step: both refuse.
+function readCoast(bb, center, radius) {
+  const p = join(CLEAN_DIR, COAST_FILE)
+  if (!existsSync(p)) throw new Error(`[LAND/WATER] ⛔ ${SCENE}: no clean/${COAST_FILE} — the coast step has not run, and the pour does not draw a coast from anywhere else. ▶ node cartograph/bake-coast.mjs --scene=${SCENE}`)
+  const K = JSON.parse(readFileSync(p, 'utf-8'))
+  if (!bb || ['x0', 'x1', 'z0', 'z1'].some(k => Math.abs(K.square?.[k] - bb[k]) > 0.01))
+    throw new Error(`[LAND/WATER] ⛔ ${SCENE}: clean/${COAST_FILE} was drawn over the square ${JSON.stringify(K.square)} and this pour's fetched square is ${JSON.stringify(bb)} — a STALE coast. ▶ node cartograph/bake-coast.mjs --scene=${SCENE}`)
+  if (!K.coast) { console.log(`    (no coast — ${K.why}; ① is the street network alone)`); return { rings: [], arcs: [], meta: [] } }
+  // ⛔ AN ISLAND IN THE DRAWING IS NOT BUILT: a hole in the water is a closed shore, which ① must never stroke. Outside
+  // the disc it changes nothing drawn; inside it, refuse by name rather than draw the island as water.
+  const inDisc = (K.islands || []).filter(i => !center || !(radius > 0) || Math.hypot(i.at[0] - center[0], i.at[1] - center[1]) <= radius)
+  if (inDisc.length) throw new Error(`[LAND/WATER] ⛔ ${SCENE}: ${inDisc.length} island(s) inside the drawing (${inDisc.slice(0, 5).map(i => `${i.m2} m² at (${i.at})`).join(' · ')}) — a closed shore ① cannot stroke; islands are not built yet.`)
+  console.log(`    coast: ${K.water.length} water bod(ies), ${K.arcs.length} shoreline arc(s) — ${K.from}`)
+  return { rings: K.water.map(b => b.outer), arcs: K.arcs, meta: K.water.map(() => ({ subtype: K.level.tidal ? null : 'lake', name: null })) }
+}
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -3573,7 +3591,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     'place:islet':              'none: land inside water; the water producer carries its holes',
     'natural:water':            'none: water has its OWN producer (`layers.water`, the coast/relation path) and both renderers skip it here on purpose. ⚠️ Whether a small INLAND pond reaches that producer is NOT established — see cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md §6.',
     'natural:reef':             'none: submerged; belongs to the water producer, not to land use',
-    'natural:coastline':        'none: a LINE — the shore is coastline.mjs\'s, and the coast is an edge of the drawing, not a face',
+    'natural:coastline':        'none: a LINE — OSM\'s shore only VERIFIES the lidar\'s (bake-coast.mjs), and the coast is an edge of the drawing, not a face',
     'natural:bay':              'none: water; belongs to the water producer',
     'natural:peninsula':        'none: a named landform spanning many uses, not a land use',
     'man_made:quay':            'map-layer (STRUCTURE): a waterfront edge, like man_made:pier',
@@ -5643,9 +5661,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       return { x0: Math.min(a[0], b2[0]), x1: Math.max(a[0], b2[0]),
                z0: Math.min(a[1], b2[1]), z1: Math.max(a[1], b2[1]) }
     })()
-    const _coast = coastRings({ ground: osmData.ground || {}, buildings: osmData.buildings || [],
-                               center: boundaryCenter, discR: boundaryRadius, bb: _bb })
-    for (const line of _coast.report) console.log(line)
+    const _coast = readCoast(_bb, boundaryCenter, boundaryRadius)
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings, coastArcs: _coast.arcs, bb: _bb })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
@@ -5929,13 +5945,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // dropped at pour time cannot be recovered without re-pouring every town, and a pond wants a
   // different surface from a Great Lake. It is carried for the town that asks.
   // ⛔ ALIGNMENT IS ASSERTED, NOT ASSUMED. `MP.waterRings` is `coast.map(copy)` — 1:1 with the
-  // rings `coastRings` returned, in order — so the meta indexes match by construction. If that
+  // rings `readCoast` returned, in order — so the meta indexes match by construction. If that
   // ever stops being true the subtypes would silently attach to the WRONG bodies, which is the
   // plausible-looking success this kit must never ship. So: fail loudly instead.
   if (protoWaterMeta && protoWaterRings && protoWaterMeta.length !== protoWaterRings.length) {
     throw new Error(`[LAND/WATER] ⛔ water ring/meta misalignment: ${protoWaterRings.length} ring(s) ` +
       `but ${protoWaterMeta.length} meta entr(ies). The \`water=*\` subtype would attach to the wrong ` +
-      `body. ▶ coastRings() pushes ring and meta in the same statement — something between it and ` +
+      `body. ▶ readCoast() maps ring and meta from the same coast.json bodies — something between it and ` +
       `mintProtopolygon's waterRings is now reordering or filtering.`)
   }
   const waterFeats = (protoWaterRings || []).map((r, i) => ({
