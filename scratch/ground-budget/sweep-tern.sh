@@ -5,7 +5,7 @@
 # killed below 20% free; load and free logged every 60 s (Boz). Logs: scratch/ground-budget/acc-<tag>.log.
 cd /Users/jacobhenderson/Desktop/lafayette-square.nosync
 WT=$1; shift; TD=$WT/cartograph/groundDeformer.mjs
-D=$PWD/scratch/ground-budget; DUMP=$PWD/scratch/huron-cost/dump-shore; CONF=$PWD/cartograph/groundConformity.js
+D=$PWD/scratch/ground-budget; DUMP=$PWD/scratch/huron-cost/dump-shore; CONF=${CONF_MODULE:-$PWD/cartograph/groundConformity.js}
 free_pct() { memory_pressure | awk -F': ' '/free percentage/ {print int($2)}' }
 gate() { while (( $(sysctl -n vm.loadavg | awk '{print int($2)}') >= 8 || $(free_pct) < 40 )); do sleep 30; done }
 state() { echo "$(cat $WT/SOURCE 2>/dev/null || git -C $WT rev-parse --short HEAD) $(shasum -a 256 $TD | cut -c1-16)" }

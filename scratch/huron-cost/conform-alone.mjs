@@ -8,6 +8,7 @@
 //   PED_TOL_X=<k> multiplies the ped bands' tol (the dumped 7.8 mm) by k; the tide band's own tol is untouched.
 //   INPUT_ONLY=1 turns every group's refinement off: the input side only (polygons, input T-junctions), in seconds.
 //   Prints the detector's count on the output (as the bake runs it) and a sha256 over every group's positions, indices, side.
+//   REASONS=1 with scratch/ground-budget/groundConformity.reasons.js as the module: where every added triangle came from.
 //   DECLARE_NOLINE=<lineHeight.mjs>: declare each line-less run's kind with that module's runKind (heights untouched).
 //   DEFORMER=<path>: import that groundDeformer instead of the repo's (sha logged).
 //   ACCURACY=1 (Brace, 2026-10-13): after conformity, the ped bands' vertical error of the DRAWN ground against the deformer's
@@ -92,6 +93,8 @@ for await (const line of createInterface({ input: createReadStream(dir + '/specs
 }
 console.log(`[input] ${specs.length} groups · ${specs.reduce((n, s) => n + s.polys.length, 0)} polygons · ${mem()}`)
 const st = {}
+// REASONS=1 (with the instrumented conformity copy): the reach hook — is a point inside the deformer's reach (heightAt not null)
+if (process.env.REASONS && D) globalThis.__reach = (x, z) => D.heightAt(x, z) != null
 t = Date.now()
 const out = conformAndRefine(specs, st)
 const sec = (Date.now() - t) / 1000, tris = out.reduce((n, b) => n + b.indices.length / 3, 0)
@@ -101,6 +104,19 @@ console.log(`[split] ped ${pedTris} tris (${specs.filter(s => isPed(s.key)).leng
 const h = createHash('sha256')
 for (const b of out) for (const a of [b.positions, b.indices, b.side]) { h.update(String(a?.length ?? -1)); if (a) h.update(Buffer.from(a.buffer, a.byteOffset, a.byteLength)) }
 console.log(`[hash] ${h.digest('hex')}`)
+if (st.reasons) {
+  const rows = [], tot = { ped: {}, rest: {} }
+  const add = (o, k, v) => { o[k] = (o[k] || 0) + v }
+  specs.forEach((sp, gi) => { const R = st.reasons.get(gi); if (!R) return
+    const fin = out[gi].indices.length / 3, side = isPed(sp.key) ? 'ped' : 'rest'
+    const r = { key: sp.key, input: R.input || 0, ...R.added, refined: R.refined || 0, final: fin, dev: R.devBins, tolPast: R.tolPastReach, floor: R.floorBound, floorPast: R.floorBoundPastReach }
+    rows.push(r); for (const k of ['input', 'closure', 'maxEdge', 'tol', 'band', 'refined', 'final', 'tolPast', 'floor', 'floorPast']) add(tot[side], k, r[k]); for (let b = 0; b < 4; b++) add(tot[side], 'dev' + b, R.devBins[b]) })
+  const fmt = (r) => `input ${r.input} · +tol ${r.tol} · +band ${r.band} · +maxEdge ${r.maxEdge} · +closure ${r.closure} · after refinement ${r.refined} · final ${r.final} (T-junction closing ${r.final - r.refined >= 0 ? '+' : ''}${r.final - r.refined})`
+  for (const side of ['ped', 'rest']) { const t = tot[side]
+    console.log(`[reasons] ${side.toUpperCase()}: ${fmt(t)}`)
+    console.log(`[reasons]   tol splits by deviation/tol: ≤2× ${t.dev0} · 2–4× ${t.dev1} · 4–16× ${t.dev2} · >16× ${t.dev3} · tol splits whose centroid is past the deformer's reach ${t.tolPast} · floor-bound triangles (≤ minEdge, still over tol) ${t.floor} (past reach ${t.floorPast})`) }
+  for (const r of rows.sort((p, q) => q.final - p.final).slice(0, 25)) console.log(`[reasons]   ${r.key.padEnd(34)} ${fmt(r)} · dev bins ${r.dev} · tolPast ${r.tolPast} · floor ${r.floor}`)
+}
 if (D) console.log(`[memo] generation ${MEMO.memoGeneration ?? 'the deformer\'s default'} · turns during conformity: ${D.stats.memoTurns ?? 'not reported by this deformer'}`)
 if (st.phaseMs) console.log(`[phases] ${Object.entries(st.phaseMs).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`).join(' · ')}`)
 console.log(`[sampler] ${calls} calls · ${(Number(ns) / 1e9).toFixed(1)} s inside the sampler · ${(Number(ns) / 1e3 / Math.max(1, calls)).toFixed(2)} µs/call`)
