@@ -257,9 +257,50 @@ function callOf(expr) {
  * ▶ `importSelfTest`, run before every classification.
  */
 const ARG_SOURCE = /\bprocess\s*\.\s*(?:env|argv)\b/
+/** The OS temp dir, as the reader names it: no repo path starts with a NUL, so nothing on disk can be mistaken for it. */
+const TMP = '/\u0000tmpdir'
+const IMPORTS_TMPDIR = /\{[^}]*\btmpdir\b[^}]*\}\s*from\s*['"](?:node:)?os['"]/
+/** Readable paths of every alternative, or the first reason one is not readable (an argument outranks unreadable). */
+function union(rs) {
+  if (rs.some(r => r.arg)) return { arg: true }
+  if (rs.some(r => !r.paths)) return { opaque: true }
+  return { paths: rs.flatMap(r => r.paths) }
+}
+/** A top-level `c ? a : b` → [c, a, b], else null (`?.` and `??` are not it). */
+function ternaryOf(expr) {
+  let depth = 0, q = null, qi = -1, nest = 0
+  for (let i = 0; i < expr.length; i++) {
+    const c = expr[i]
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
+    if (c === '"' || c === "'" || c === '`') { q = c; continue }
+    if ('([{'.includes(c)) depth++
+    else if (')]}'.includes(c)) depth--
+    else if (depth === 0 && c === '?' && expr[i + 1] !== '.' && expr[i + 1] !== '?' && expr[i - 1] !== '?') { if (qi < 0) qi = i; else nest++ }
+    else if (depth === 0 && c === ':' && qi >= 0) { if (nest) nest--; else return [expr.slice(0, qi).trim(), expr.slice(qi + 1, i).trim(), expr.slice(i + 1).trim()] }
+  }
+  return null
+}
+/** The body of `const name = (…) => body` or `function name(…) { body }` in this file — once, or null. */
+function functionBody(name, code) {
+  const defs = [...code.matchAll(new RegExp(`\\b(?:const\\s+${name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*|function\\s+${name}\\s*\\([^)]*\\)\\s*)`, 'g'))]
+  if (defs.length !== 1) return null
+  const at = defs[0].index + defs[0][0].length
+  return code[at] === '{' ? '{' + braceBody(code, at) + '}' : code.slice(at).split('\n')[0].trim()
+}
+function braceBody(code, open) {
+  let depth = 0, q = null
+  for (let i = open; i < code.length; i++) {
+    const c = code[i]
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
+    if (c === '"' || c === "'" || c === '`') { q = c; continue }
+    if (c === '{') depth++
+    else if (c === '}' && --depth === 0) return code.slice(open + 1, i)
+  }
+  return ''
+}
 function readImportPath(expr, file, code, depth = 0) {
   expr = expr.trim()
-  if (depth > 8) return { opaque: true }
+  if (depth > 16) return { opaque: true }                     // a bound: a cycle of bindings is unreadable, not a hang
   if (ARG_SOURCE.test(expr)) return { arg: true }
   const here = () => resolve(ROOT, file)
   const lit = expr.match(/^(['"])([^'"\\]*)\1$/) || expr.match(/^`([^`$\\]*)`$/)
@@ -274,6 +315,8 @@ function readImportPath(expr, file, code, depth = 0) {
     if (rs.some(r => !r.paths)) return { opaque: true }
     return { paths: rs.flatMap(r => r.paths) }
   }
+  const tern = ternaryOf(expr)
+  if (tern) return union([tern[1], tern[2]].map(a => readImportPath(a, file, code, depth + 1)))   // either branch can be taken
   if (expr.endsWith('.href')) return readImportPath(expr.slice(0, -5), file, code, depth + 1)
   if (/^import\.meta\.dirname$/.test(expr)) return { paths: [dirname(here())] }
   const nu = expr.match(/^new\s+URL\s*\(/)
@@ -307,6 +350,20 @@ function readImportPath(expr, file, code, depth = 0) {
       if (!segs.length || !segs[0].startsWith('/')) return { opaque: true }
       return { paths: [(fn === 'join' ? join : resolve)(...segs)] }
     }
+    // ⭐ The OS temp dir, and a fresh dir made under it: a path the check owns for this run alone (`TMP`).
+    if (fn === 'tmpdir' && !args[0] && IMPORTS_TMPDIR.test(code)) return { paths: [TMP] }
+    if (fn === 'mkdtempSync' && args.length === 1) {
+      const r = readImportPath(args[0], file, code, depth + 1)
+      return r.paths?.length === 1 && r.paths[0].startsWith(TMP) ? { paths: [`${r.paths[0]}\u0000`] } : r.arg ? r : { opaque: true }
+    }
+    // A function of this file called with no arguments: whatever it can return.
+    if (!args[0]) {
+      const body = functionBody(call.name, code)
+      if (body !== null) {
+        const rets = /^\s*\{/.test(body) ? [...body.matchAll(/\breturn\s+([^\n;}]+)/g)].map(m => m[1]) : [body]
+        if (rets.length) return union(rets.map(x => readImportPath(x, file, code, depth + 1)))
+      }
+    }
     // An unknown helper: arbitrary if its own definition reads an argument or the environment, unreadable otherwise.
     const def = code.match(new RegExp(`\\b(?:const|let|var|function)\\s+${call.name.replace(/[.$]/g, '\\$&')}\\b[^\\n]*`))
     return def && ARG_SOURCE.test(def[0]) ? { arg: true } : { opaque: true }
@@ -320,6 +377,17 @@ function readImportPath(expr, file, code, depth = 0) {
       return readImportPath(splitTop(rest, ',')[0].replace(/;\s*$/, ''), file, code, depth + 1)
     }
     if (decls.length) return { opaque: true }
+    // The one parameter of one function of this file: every value its call sites pass.
+    const owners = [...code.matchAll(new RegExp(`\\b(?:const\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:async\\s*)?\\(\\s*${expr}\\s*\\)\\s*=>|function\\s+([A-Za-z_$][\\w$]*)\\s*\\(\\s*${expr}\\s*\\))`, 'g'))]
+    if (owners.length === 1) {
+      const name = owners[0][1] || owners[0][2], blankCode = blankStrings(code), vals = []
+      for (const m of blankCode.matchAll(new RegExp(`\\b${name}\\s*\\(`, 'g'))) {
+        if (m.index >= owners[0].index && m.index < owners[0].index + owners[0][0].length) continue   // the definition itself
+        vals.push(balancedArg(code, m.index + m[0].length - 1) ?? '')
+      }
+      if (vals.length && vals.every(v => splitTop(v, ',').length === 1)) return union(vals.map(v => readImportPath(v, file, code, depth + 1)))
+      return { opaque: true }
+    }
     // Imported by name from a relative module: read the binding THERE, in that module's own frame.
     const imp = code.match(new RegExp(`import\\s*\\{[^}]*\\b${expr.replace(/\$/g, '\\$')}\\b[^}]*\\}\\s*from\\s*['"](\\.[^'"]+)['"]`))
     if (imp) {
@@ -341,6 +409,55 @@ function writtenPaths(code, file) {
     const args = splitTop(balancedArg(code, m.index + m[0].length - 1) ?? '', ',')
     const r = readImportPath(args[/^(copyFileSync|cpSync|renameSync)$/.test(m[1]) ? 1 : 0] ?? '', file, code)
     for (const p of r.paths ?? []) out.add(p)
+  }
+  return out
+}
+
+/** Every write call in the file and what each touches: a copy or rename's destination, a rename's source, else its first argument. */
+const WRITE_CALL = /\b(writeFileSync|writeFile|appendFileSync|mkdirSync|createWriteStream|rmSync|unlinkSync|rmdirSync|cpSync|copyFileSync|renameSync)\s*\(/g
+function writeSites(code, file) {
+  return [...code.matchAll(WRITE_CALL)].map(m => {
+    const args = splitTop(balancedArg(code, m.index + m[0].length - 1) ?? '', ',')
+    const idx = m[1] === 'renameSync' ? [0, 1] : /^(copyFileSync|cpSync)$/.test(m[1]) ? [1] : [0]
+    return { fn: m[1], args, targets: idx.map(i => readImportPath(args[i] ?? '', file, code)) }
+  })
+}
+
+/**
+ * ⭐ THE SELF-MUTATION COPY (Boz's ruling, 2026-10-13). A check proves itself by writing a mutated copy of the module it
+ * tests into its OWN temp dir and importing that. True only when EVERY write the file makes lands under a path built
+ * from `tmpdir()` (directly or through `mkdtempSync`). ⛔ One write it cannot read, or one outside, and the file is
+ * local-effect as before — and its temp imports are unreadable.
+ */
+function writesOnlyUnderTmp(code, file) {
+  if (/\bfs\s*\.\s*promises\b|\bpromises\s*\.\s*(?:writeFile|mkdir|rm|appendFile)\b/.test(code)) return false
+  const sites = writeSites(code, file)
+  return sites.length > 0 && sites.every(s => s.targets.every(t => t.paths?.length && t.paths.every(p => p.startsWith(TMP))))
+}
+
+/** The repo module(s) a temp-dir module `p` was copied from: each write of `p` must take its content from
+ *  `readFileSync(<a readable path>)` (or `copyFileSync(<readable>, p)`). null if any writer of `p` cannot be read. */
+function copiedFrom(p, code, file) {
+  const out = []
+  const writers = writeSites(code, file).filter(s => s.targets.some(t => t.paths?.includes(p)))
+  if (!writers.length) return null
+  for (const s of writers) {
+    let src = s.fn === 'copyFileSync' || s.fn === 'cpSync' ? s.args[0] : s.args[1]
+    if (!src || s.fn === 'renameSync' || s.fn === 'mkdirSync') return null
+    const lead = src.match(/^([A-Za-z_$][\w$]*)\s*(?:\.|$)/)
+    if (s.fn !== 'copyFileSync' && s.fn !== 'cpSync') {
+      if (lead && lead[1] !== 'readFileSync') {
+        const d = [...code.matchAll(new RegExp(`\\b(const|let|var)\\s+${lead[1]}\\s*=\\s*`, 'g'))]
+        if (d.length !== 1 || d[0][1] !== 'const') return null
+        src = code.slice(d[0].index + d[0][0].length).split('\n')[0]
+      }
+      const rf = src.match(/^readFileSync\s*\(/)
+      if (!rf) return null
+      src = splitTop(balancedArg(src, rf[0].length - 1) ?? '', ',')[0]
+    }
+    const r = readImportPath(src, file, code)
+    if (!r.paths?.length || r.paths.some(x => x.startsWith(TMP))) return null
+    out.push(...r.paths)
   }
   return out
 }
@@ -375,6 +492,28 @@ export function importSelfTest() {
   for (const [src, want] of cases) {
     const got = classifyVirtual({ ...disk, 'checks/claims-planted.mjs': src }, 'checks/claims-planted.mjs').tier
     if (got !== want) throw new Error(`[tier] ⛔ self-test: \`${src.split('\n').pop()}\` read as ${got}, want ${want} — the computed-import reader is broken`)
+  }
+  // ⭐ THE SELF-MUTATION COPY: the shape every new check is told to use is SAFE; each way out of its temp dir is LIVE.
+  const fsImp = "import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'\nimport { tmpdir } from 'node:os'\n"
+  const copy = (o = {}) => root + fsImp + (o.pre ?? '') +
+    `const HOME = join(ROOT, '${o.home ?? 'cartograph/x.mjs'}')\n` +
+    "const rows = async (url) => (await import(url)).x\n" +
+    `const mutant = () => { const src = readFileSync(HOME, 'utf8')\n  const f = join(${o.dir ?? "mkdtempSync(join(tmpdir(), 'p-'))"}, 'x.mjs')\n  writeFileSync(f, src.replace('1', '2'))\n  return pathToFileURL(f).href }\n` +
+    "const self = process.argv.includes('--selftest')\n" + (o.call ?? 'await rows(self ? mutant() : pathToFileURL(HOME).href)') + (o.post ?? '')
+  const mutation = [
+    [copy(), 'safe'],
+    [copy({ post: "\nwriteFileSync(join(ROOT, 'out.json'), '{}')" }), 'live'],                 // it also writes into the repo
+    [copy({ dir: "join(ROOT, 'scratch/.probe')" }), 'live'],                                     // the copy is written into the repo
+    [copy({ dir: "mkdtempSync(join(ROOT, 'p-'))" }), 'live'],                                    // a "temp" dir made inside the repo
+    [copy({ post: '\nawait rows(process.env.MOD)' }), 'live'],                                   // another call site hands it the environment
+    [copy({ post: "\nawait import(join(tmpdir(), 'other.mjs'))" }), 'live'],                    // a temp module it never wrote
+    [copy({ home: 'cartograph/net.mjs', call: 'await rows(mutant())' }), 'live'],                // the copied module reaches out
+    [copy({ post: "\nfor (const n of names) writeFileSync(n, '')" }), 'live'],                  // a write it cannot read
+    [copy({ pre: "const tmpdir = () => ROOT\n" }).replace("import { tmpdir } from 'node:os'\n", ''), 'live'], // a `tmpdir` that is not the OS's
+  ]
+  for (const [src, want] of mutation) {
+    const got = classifyVirtual({ ...disk, 'checks/claims-planted.mjs': src }, 'checks/claims-planted.mjs').tier
+    if (got !== want) throw new Error(`[tier] ⛔ self-test: a self-mutation copy (${src.split('\n').slice(-1)[0].slice(0, 60)}…) read as ${got}, want ${want} — the temp-copy rule is broken`)
   }
 }
 
@@ -452,7 +591,11 @@ export function classify(file, seen = new Set(), depth = 0) {
   }
 
   for (const [re, label] of SIGNALS.live) if (re.test(code)) { bump('live'); why.push(label) }
-  for (const [re, label] of SIGNALS.write) if (re.test(code)) { bump('local-effect'); why.push(label) }
+  const tmpOnly = writesOnlyUnderTmp(code, file)
+  for (const [re, label] of SIGNALS.write) if (re.test(code)) {
+    if (tmpOnly) why.push(`${label} — only under its own temp dir`)
+    else { bump('local-effect'); why.push(label) }
+  }
 
   // ⛔ A COMPUTED `import()` IS ARBITRARY MODULE EXECUTION — the same hazard as an unreadable
   //    exec, and the one that nearly shipped: `claims-doc-pointers-resolve.mjs --run` imports and
@@ -474,6 +617,19 @@ export function classify(file, seen = new Set(), depth = 0) {
     if (r.arg) { bump('live'); why.push('computed import() of a path an argument or the environment can supply — arbitrary'); continue }
     if (!r.paths) { bump('live'); why.push('computed import() with no readable target — runs arbitrary modules'); continue }
     for (const p of r.paths) {
+      if (p.startsWith(TMP)) {
+        // A module in its own temp dir is a mutated copy: read what it was copied FROM. ⛔ Only when nothing is written elsewhere.
+        const from = tmpOnly ? copiedFrom(p, code, file) : null
+        if (!from) { bump('live'); why.push(tmpOnly ? 'computed import of a temp-dir module whose source cannot be read' : 'computed import of a temp-dir module, and not every write is shown to stay in its temp dir'); continue }
+        for (const s of from) {
+          const hit = relative(ROOT, s)
+          if (hit.startsWith('..') || !onDisk(hit)) { bump('live'); why.push(`computed import of a temp copy of ${hit} — not a repo file, cannot be read`); continue }
+          const sub = classify(hit, seen, depth + 1)
+          if (sub.tier !== 'safe') { bump(sub.tier); why.push(`imports a temp copy of ${hit}, which can: ${sub.why.join(', ')}`) }
+          else why.push(`imports a mutated copy of ${hit} from its own temp dir — read as ${hit}, safe`)
+        }
+        continue
+      }
       const hit = relative(ROOT, p)
       // ⛔ A module this file WRITES is made at run time: what is on disk now is a previous run's copy, not what runs.
       if (writtenPaths(code, file).has(p)) { bump('live'); why.push(`computed import of ${hit}, a module it writes itself — made at run time, cannot be read`); continue }

@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 412,
   "counts": {
-    "safe": 304,
+    "safe": 306,
     "local-effect": 19,
-    "live": 89
+    "live": 87
   },
   "checks": [
     {
@@ -33,11 +33,11 @@
     },
     {
       "file": "checks/claims-a-band-is-the-pieces-that-hold-it.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "writeFileSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
+        "computed import of cartograph/groundDeformer.mjs — read, safe"
       ]
     },
     {
@@ -83,7 +83,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -116,7 +116,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
@@ -167,7 +167,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "computed import() with no readable target — runs arbitrary modules",
+        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
         "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
       ]
@@ -279,7 +279,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
@@ -313,7 +313,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
@@ -407,7 +407,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
@@ -451,7 +451,7 @@
         "mkdirSync",
         "deletes files",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync",
-        "imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync"
+        "imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync — only under its own temp dir"
       ]
     },
     {
@@ -461,7 +461,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -605,7 +605,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
@@ -701,7 +701,7 @@
       "tier": "live",
       "reasonClass": "outbound",
       "why": [
-        "imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files, child_process with a non-literal command — cannot be read"
+        "imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -766,7 +766,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "child_process with a non-literal command — cannot be read"
       ]
     },
@@ -1198,7 +1198,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
@@ -1288,7 +1288,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -1550,7 +1550,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -1673,7 +1673,7 @@
       "tier": "live",
       "reasonClass": "outbound",
       "why": [
-        "imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files, child_process with a non-literal command — cannot be read"
+        "imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1838,7 +1838,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -2217,7 +2217,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
       ]
@@ -2414,11 +2414,11 @@
     },
     {
       "file": "checks/claims-the-ground-height-is-a-function-of-the-point.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "writeFileSync",
-        "computed import() with no readable target — runs arbitrary modules"
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
+        "computed import of cartograph/groundDeformer.mjs — read, safe"
       ]
     },
     {
@@ -2515,11 +2515,11 @@
       "reasonClass": "unreadable",
       "why": [
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
-        "writeFileSync",
-        "deletes files",
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
         "computed import of src/preview/heroAnim.js — read, safe",
-        "computed import() with no readable target — runs arbitrary modules",
-        "computed import() with no readable target — runs arbitrary modules",
+        "imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe",
+        "imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe",
         "imports package(s) vite — not read from source"
       ]
     },
@@ -2695,7 +2695,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
@@ -2781,7 +2781,7 @@
       "why": [
         "calls fetch()",
         "opens a WebSocket",
-        "deletes files",
+        "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
