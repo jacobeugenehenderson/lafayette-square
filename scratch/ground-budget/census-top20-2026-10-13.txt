@@ -1,0 +1,90 @@
+# corner-dh-census.mjs output, 2026-10-13 (Brace). Provincetown REFUSED in lineHeights (the head-of-the-meadow-road duplicate: the PTown re-skeleton on Jacob's list). Jackson Heights REFUSED: draws a coast, its terrain carries no water record.
+
+== huron · scratch/huron-cost/dump-shore/deform.json (h as baked) · exag 1 · walk limit 1:48
+   ② rings 200 · vertices 51768: stamped 28239 · filled 6419 · corner arcs 1815: blended 1459 · NOT blended 356 {"ok+rim":3,"no-stamp+ok":153,"ok+on-another-arc":198,"highway+ok":2}
+   STEPS (a ② segment rising more than it runs, > 100%): 301 · by origin SS 188 (ΣΔH 3.0 m) · FS 91 (ΣΔH 24.7 m) · FF 22 (ΣΔH 21.2 m) · BS 0 (ΣΔH 0.0 m) · BB 0 (ΣΔH 0.0 m) · BF 0 (ΣΔH 0.0 m) · ΔH p50 0.012 m · max 2.886 m
+   ΔH 2.886 m over 0.71 m (405%) · FF · (874.1,4939.9) tile 0 ring 0 v 153 · river-road/right/5 [line] ↔ huron-river-path/left/0 [line]
+   ΔH 1.713 m over 0.00 m (85650%) · FS · (-4003.3,-2082.2) tile 24 ring 4 v 2653 · martha-drive/left/0 [line] ↔ martha-drive/left/0 [line]
+   ΔH 1.713 m over 0.00 m (85650%) · FS · (-4003.3,-2082.2) tile 25 ring 4 v 2653 · martha-drive/left/0 [line] ↔ martha-drive/left/0 [line]
+   ΔH 1.498 m over 0.22 m (677%) · FS · (512.0,1297.2) tile 10 ring 0 v 1220 · laguna-drive/left/0 [line] ↔ laguna-drive/right/0 [line]
+   ΔH 1.497 m over 0.63 m (237%) · FF · (512.0,1296.5) tile 10 ring 0 v 1219 · laguna-drive/left/0 [line] ↔ laguna-drive/right/0 [line]
+   ΔH 1.389 m over 0.01 m (12575%) · FF · (-2407.8,-917.4) tile 139 ring 0 v 21 · rye-beach-road-0/left/2 [line] ↔ rye-beach-road-0/left/2 [line]
+   ΔH 1.327 m over 0.66 m (200%) · FF · (4351.8,1334.1) tile 24 ring 0 v 799 · colony-lane/left/0 [line] ↔ west-old-lake-road/left/0 [line]
+   ΔH 1.327 m over 0.66 m (200%) · FF · (4351.8,1334.1) tile 25 ring 0 v 799 · colony-lane/left/0 [line] ↔ west-old-lake-road/left/0 [line]
+   ΔH 1.324 m over 0.69 m (193%) · FF · (-455.4,4084.1) tile 0 ring 0 v 753 · new-scheid-road/right/0 [line] ↔ new-scheid-road/left/0 [line]
+   ΔH 1.290 m over 0.62 m (207%) · FF · (544.2,4941.7) tile 0 ring 0 v 649 · river-view-drive/right/3 [line] ↔ mudbrook-road/left/7 [line]
+   ΔH 1.219 m over 0.64 m (192%) · FF · (-2029.1,-1732.0) tile 24 ring 4 v 809 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.219 m over 0.64 m (192%) · FF · (-2029.1,-1732.0) tile 25 ring 4 v 809 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.219 m over 0.14 m (888%) · FS · (-2029.2,-1731.4) tile 24 ring 4 v 810 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.219 m over 0.14 m (888%) · FS · (-2029.2,-1731.4) tile 25 ring 4 v 810 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.046 m over 0.64 m (164%) · FF · (-1844.2,-1810.9) tile 24 ring 2 v 2857 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 1.046 m over 0.64 m (164%) · FF · (-1844.2,-1810.9) tile 25 ring 2 v 2857 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 1.046 m over 0.11 m (941%) · FS · (-1844.3,-1810.2) tile 24 ring 2 v 2858 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 1.046 m over 0.11 m (941%) · FS · (-1844.3,-1810.2) tile 25 ring 2 v 2858 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 0.919 m over 0.64 m (143%) · FF · (-1258.9,-1610.1) tile 24 ring 2 v 2279 · bucyrus-avenue/left/0 [line] ↔ bucyrus-avenue/right/0 [line]
+   ΔH 0.919 m over 0.01 m (9171%) · FS · (-1258.9,-1609.5) tile 24 ring 2 v 2280 · bucyrus-avenue/left/0 [line] ↔ bucyrus-avenue/right/0 [line]
+
+== huron · served shape.json, h stamped at HEAD (σ 5.00 m) · exag 1 · walk limit 1:48
+   ② rings 200 · vertices 51768: stamped 28239 · filled 6419 · corner arcs 1815: blended 1459 · NOT blended 356 {"ok+rim":3,"no-stamp+ok":153,"ok+on-another-arc":198,"highway+ok":2}
+   STEPS (a ② segment rising more than it runs, > 100%): 302 · by origin SS 189 (ΣΔH 3.0 m) · FS 91 (ΣΔH 24.7 m) · FF 22 (ΣΔH 21.2 m) · BS 0 (ΣΔH 0.0 m) · BB 0 (ΣΔH 0.0 m) · BF 0 (ΣΔH 0.0 m) · ΔH p50 0.012 m · max 2.886 m
+   ΔH 2.886 m over 0.71 m (405%) · FF · (874.1,4939.9) tile 0 ring 0 v 153 · river-road/right/5 [line] ↔ huron-river-path/left/0 [line]
+   ΔH 1.713 m over 0.00 m (85662%) · FS · (-4003.3,-2082.2) tile 24 ring 4 v 2653 · martha-drive/left/0 [line] ↔ martha-drive/left/0 [line]
+   ΔH 1.713 m over 0.00 m (85662%) · FS · (-4003.3,-2082.2) tile 25 ring 4 v 2653 · martha-drive/left/0 [line] ↔ martha-drive/left/0 [line]
+   ΔH 1.498 m over 0.63 m (237%) · FF · (512.0,1296.5) tile 10 ring 0 v 1219 · laguna-drive/left/0 [line] ↔ laguna-drive/right/0 [line]
+   ΔH 1.498 m over 0.22 m (677%) · FS · (512.0,1297.2) tile 10 ring 0 v 1220 · laguna-drive/left/0 [line] ↔ laguna-drive/right/0 [line]
+   ΔH 1.389 m over 0.01 m (12577%) · FF · (-2407.8,-917.4) tile 139 ring 0 v 21 · rye-beach-road-0/left/2 [line] ↔ rye-beach-road-0/left/2 [line]
+   ΔH 1.327 m over 0.66 m (200%) · FF · (4351.8,1334.1) tile 24 ring 0 v 799 · colony-lane/left/0 [line] ↔ west-old-lake-road/left/0 [line]
+   ΔH 1.327 m over 0.66 m (200%) · FF · (4351.8,1334.1) tile 25 ring 0 v 799 · colony-lane/left/0 [line] ↔ west-old-lake-road/left/0 [line]
+   ΔH 1.323 m over 0.69 m (193%) · FF · (-455.4,4084.1) tile 0 ring 0 v 753 · new-scheid-road/right/0 [line] ↔ new-scheid-road/left/0 [line]
+   ΔH 1.290 m over 0.62 m (207%) · FF · (544.2,4941.7) tile 0 ring 0 v 649 · river-view-drive/right/3 [line] ↔ mudbrook-road/left/7 [line]
+   ΔH 1.219 m over 0.64 m (192%) · FF · (-2029.1,-1732.0) tile 24 ring 4 v 809 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.219 m over 0.64 m (192%) · FF · (-2029.1,-1732.0) tile 25 ring 4 v 809 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.219 m over 0.14 m (887%) · FS · (-2029.2,-1731.4) tile 24 ring 4 v 810 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.219 m over 0.14 m (887%) · FS · (-2029.2,-1731.4) tile 25 ring 4 v 810 · woodside-avenue/right/0 [line] ↔ rose-avenue/right/0 [line]
+   ΔH 1.046 m over 0.64 m (164%) · FF · (-1844.2,-1810.9) tile 24 ring 2 v 2857 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 1.046 m over 0.11 m (941%) · FS · (-1844.3,-1810.2) tile 24 ring 2 v 2858 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 1.046 m over 0.64 m (164%) · FF · (-1844.2,-1810.9) tile 25 ring 2 v 2857 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 1.046 m over 0.11 m (941%) · FS · (-1844.3,-1810.2) tile 25 ring 2 v 2858 · cleveland-road-west-1/left/20 [line] ↔ dayton-avenue/right/0 [line]
+   ΔH 0.919 m over 0.01 m (9172%) · FS · (-1258.9,-1609.5) tile 24 ring 2 v 2280 · bucyrus-avenue/left/0 [line] ↔ bucyrus-avenue/right/0 [line]
+   ΔH 0.919 m over 0.01 m (9172%) · FS · (-1258.9,-1609.5) tile 25 ring 2 v 2280 · bucyrus-avenue/left/0 [line] ↔ bucyrus-avenue/right/0 [line]
+file:///Users/jacobhenderson/Desktop/lafayette-square.nosync/cartograph/lineHeight.mjs:34
+    if (byId.has(id)) throw new Error(`lineHeights: two at-grade chains share the id ${id} — a run's label could not name its line`)
+                            ^
+
+Error: lineHeights: two at-grade chains share the id head-of-the-meadow-road — a run's label could not name its line
+    at lineHeights (file:///Users/jacobhenderson/Desktop/lafayette-square.nosync/cartograph/lineHeight.mjs:34:29)
+    at file:///Users/jacobhenderson/Desktop/lafayette-square.nosync/scratch/ground-budget/corner-dh-census.mjs:33:16
+
+Node.js v22.20.0
+
+== hipointedemun · served shape.json, h stamped at HEAD (σ 5.00 m) · exag 1 · walk limit 1:48
+   ② rings 252 · vertices 28587: stamped 15244 · filled 1609 · corner arcs 1082: blended 1001 · NOT blended 81 {"no-stamp+ok":55,"ok+on-another-arc":20,"highway+ok":2,"bridge+ok":4}
+   STEPS (a ② segment rising more than it runs, > 100%): 311 · by origin SS 213 (ΣΔH 10.1 m) · FS 84 (ΣΔH 30.3 m) · FF 14 (ΣΔH 26.9 m) · BS 0 (ΣΔH 0.0 m) · BB 0 (ΣΔH 0.0 m) · BF 0 (ΣΔH 0.0 m) · ΔH p50 0.020 m · max 12.035 m
+   ΔH 12.035 m over 0.01 m (197856%) · FF · (520.1,980.8) tile 39 ring 0 v 389 · tamm-avenue-0/right/1 [line] ↔ wheels-path-3/left/0 [line]
+   ΔH 3.210 m over 0.63 m (512%) · FF · (-575.1,933.3) tile 44 ring 0 v 128 · ethel-avenue-1/left/3 [line] ↔ oakland-avenue-0/left/0 [line]
+   ΔH 3.210 m over 0.42 m (773%) · FS · (-575.7,933.2) tile 44 ring 0 v 129 · ethel-avenue-1/left/3 [line] ↔ oakland-avenue-0/left/0 [line]
+   ΔH 2.336 m over 0.86 m (272%) · FS · (318.4,1257.3) tile 21 ring 0 v 116 · clayton-avenue-0/right/0 [line] ↔ mccausland-avenue-0/left/1 [line]
+   ΔH 2.314 m over 0.59 m (394%) · FF · (232.1,-853.1) tile 200 ring 0 v 101 · throop-drive-0/right/0 [line] ↔ forest-park-parkway-7/right/0 [line]
+   ΔH 2.253 m over 1.01 m (224%) · SS · (196.9,-802.2) tile 182 ring 0 v 116 · centennial-greenway-5/right/0 [line] ↔ centennial-greenway-5/right/0 [line]
+   ΔH 1.995 m over 0.00 m (49875%) · FS · (-1411.4,-84.5) tile 155 ring 0 v 56 · wydown-boulevard-0/right/15 [line] ↔ wydown-boulevard-0/right/16 [line]
+   ΔH 1.919 m over 0.00 m (95935%) · FS · (278.1,502.6) tile 93 ring 0 v 2 · north-rosebury-avenue-0/left/1 [line] ↔ north-rosebury-avenue-0/left/1 [line]
+   ΔH 1.499 m over 0.63 m (238%) · FF · (-335.4,968.0) tile 41 ring 0 v 56 · bellevue-avenue/right/0 [line] ↔ oakland-avenue-3/right/0 [line]
+   ΔH 1.499 m over 0.35 m (429%) · FS · (-334.8,968.1) tile 41 ring 0 v 57 · bellevue-avenue/right/0 [line] ↔ oakland-avenue-3/right/0 [line]
+   ΔH 1.427 m over 0.61 m (233%) · FF · (-216.7,-519.4) tile 170 ring 0 v 31 · forsyth-boulevard/right/25 [line] ↔ forsyth-boulevard/right/25 [line]
+   ΔH 1.392 m over 0.00 m (62259%) · FS · (-1030.3,-385.4) tile 159 ring 0 v 545 · asbury-avenue-0/left/2 [line] ↔ asbury-avenue-0/left/2 [line]
+   ΔH 1.371 m over 0.43 m (315%) · FS · (-545.6,-1061.5) tile 222 ring 0 v 73 · wellesley-avenue/right/3 [line] ↔ wellesley-avenue/left/3 [line]
+   ΔH 1.371 m over 0.63 m (219%) · FF · (-545.0,-1061.4) tile 222 ring 0 v 72 · wellesley-avenue/right/3 [line] ↔ wellesley-avenue/left/3 [line]
+   ΔH 1.085 m over 0.00 m (48538%) · FS · (-572.6,-468.6) tile 159 ring 0 v 87 · northmoor-drive-1/left/1 [line] ↔ northmoor-drive-5/right/0 [line]
+   ΔH 1.076 m over 0.67 m (160%) · FF · (486.6,765.5) tile 53 ring 0 v 178 · san-bonita-avenue-7/right/0 [line] ↔ san-bonita-avenue-8/left/0 [line]
+   ΔH 0.977 m over 0.00 m (43678%) · FF · (887.7,-948.1) tile 213 ring 0 v 24 · waterman-boulevard-1/left/0 [line] ↔ waterman-boulevard-1/left/0 [line]
+   ΔH 0.977 m over 0.00 m (48834%) · FS · (887.7,-948.1) tile 213 ring 0 v 25 · waterman-boulevard-1/left/0 [line] ↔ waterman-boulevard-1/left/0 [line]
+   ΔH 0.872 m over 0.51 m (172%) · SS · (216.3,-813.8) tile 173 ring 0 v 656 · centennial-greenway-0/left/6 [line] ↔ throop-drive-0/left/0 [line]
+   ΔH 0.857 m over 0.54 m (158%) · SS · (1613.6,596.8) tile 55 ring 0 v 523 · fine-arts-drive-4/right/3 [line] ↔ government-drive-0/left/0 [line]
+file:///Users/jacobhenderson/Desktop/lafayette-square.nosync/scratch/ground-budget/corner-dh-census.mjs:35
+      if (run.skelId === '__water__') { if (!W) throw new Error(`${town} draws a coast with no water record`); run.h = run.poly.map(([x, z]) => W.highAt(x, z)); continue }
+                                                      ^
+
+Error: jacksonheights draws a coast with no water record
+    at file:///Users/jacobhenderson/Desktop/lafayette-square.nosync/scratch/ground-budget/corner-dh-census.mjs:35:55
+
+Node.js v22.20.0
