@@ -7,6 +7,22 @@ written: 2026-10-11
 evict-when: RULING: Jacob calls every town's authored shots smooth from start to end (no notch, step, pop or hitch), with the town and shot recorded; the continuity check in §5 is green on every town after being seen red.
 -->
 
+## STATE — 2026-10-13 (Glide). Stopped at a checkpoint on Jacob's word; nothing in flight.
+- **Landed:** the pace solved exactly + the fov a monotone cubic through each key + the lens written every frame
+  (`efdcc0bd`, ▶ `node checks/claims-the-movie-is-continuous.mjs`) · one shadow-box size per shot, option C, switch
+  `window.__shadowShotFit` (`630339b3`, ▶ `node checks/claims-a-shot-never-resizes-its-shadow-box.mjs`).
+- **WIP, committed (`64d59ffd`):** (d) the clock steps by the presented frame (`MovieCamera#presentedClock`), unit-checked
+  and mutation-tested. ⛔ **Owed before it is done:** the measured re-run in Jacob's visible Chrome on all four towns, LS
+  included (`step_vs_presented` should fall to about the `vs now()` figures in `64d59ffd`'s message); then ARCHITECTURE.
+- **Next, in order:** ① that re-run · ② `claims-the-shadow-box-has-no-cliff` imports the real fit (`shadowFit`,
+  `shadowBucket`, and the centre clamp, still inline in `PrimaryOrb`'s `useFrame`) with source mutations for both
+  cliffs — Boz's ruling · ③ the eye gates: Jacob on HPDM 148–256 s with the switch on and off; every shot at Hero, in
+  Preview and the Ward · ④ §4b, the perf pass, and Boz's two queued items (the hero focus under the time-of-day slider;
+  `PostProcessing`'s unused `weatherExposureScale` import), none started.
+- **Instruments:** `scratch/movie-continuous/` (`pose-probe.mjs`, `pass-probe.mjs`; per-pass JSON). ⚠️ The frame-timeline
+  recorder stops a scripted run at 1200 frames (`phoneBus.js#MAX_FRAMES`); headless runs at 7–18 fps and is not the
+  operator's eye; LS's Preview reloads once ~8 s into a fresh headless profile.
+
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
 already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/rename`). **Agent: FRESH.** Strobe
 (who ran the arrival-perf arc) is gone, and everything Strobe built is committed with a check. **Report to Boz.**
