@@ -335,6 +335,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     return lo <= bh + pol.band.tol && hi >= bl - pol.band.tol
   }
   let closures = 0
+  if (policies.length > 256) throw new Error(`groundConformity (budget copy): the triangle cache packs the group index in 8 bits, and there are ${policies.length} groups`)
   const REASON = ['closure', 'maxEdge', 'tol', 'band'], reasons = new Map()
   const reasonsOf = (gi) => { let R = reasons.get(gi); if (!R) reasons.set(gi, R = { added: { closure: 0, maxEdge: 0, tol: 0, band: 0 }, devBins: [0, 0, 0, 0], tolPastReach: 0, floorBound: 0, floorBoundPastReach: 0 }); return R }
   if (stats) stats.reasons = reasons

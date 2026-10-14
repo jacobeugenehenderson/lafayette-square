@@ -1,5 +1,5 @@
 // ⚠️ SCRATCH COPY of cartograph/groundConformity.js (d09644cc = HEAD's) for the ground budget's whole-bake timing (Brace,
-// 2026-10-13): when globalThis.__devStep is set, terrainDev samples every edge at that step (plus the centroid), each
+// 2026-10-13): the triangle cache (c) always; and when globalThis.__devStep is set, terrainDev samples every edge at that step (plus the centroid), each
 // edge's deviation computed ONCE per undirected edge (from its lower vertex id) and shared by both its triangles — the
 // time route's (a-shared), byte-identical to sampling per triangle on Huron. No instrumentation. Never the served bake.
 /**
@@ -291,6 +291,8 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     return lo <= bh + pol.band.tol && hi >= bl - pol.band.tol
   }
   let closures = 0
+  if (policies.length > 256) throw new Error(`groundConformity (budget copy): the triangle cache packs the group index in 8 bits, and there are ${policies.length} groups`)
+  const triNotRed = new ShardedMap()   // the time route's (c)
   for (let pass = 0; pass < PASSES; pass++) {
     const n = TG.length
     const red = new Uint8Array(n)
@@ -301,11 +303,16 @@ export function conformAndRefine(groupSpecs, stats = {}) {
       const v0 = T[i * 3], v1 = T[i * 3 + 1], v2 = T[i * 3 + 2]
       const e01 = edgeSq(v0, v1), e12 = edgeSq(v1, v2), e20 = edgeSq(v2, v0)
       const longest = Math.max(e01, e12, e20)
+      // the time route's (c): a triangle found NOT red is remembered by its group and ordered vertex triple; an unsplit
+      // triangle is re-pushed with the same vertices in the same rotation, so re-evaluating it is the same computation
+      const tk1 = v0 * EDGE_MUL + v1, tk2 = v2 * 256 + (TG[i] >> 1), seen = triNotRed.get(tk1)
+      if (seen && seen.has(tk2)) continue
       const split = pol.mode === 'adaptive'
         ? longest > pol.maxEdgeSq || (longest > pol.minEdgeSq && terrainDev(pol.sampler, v0, v1, v2) > pol.tol)
           || (pol.band && longest > pol.band.minEdgeSq && inBand(pol, v0, v1, v2) && terrainDev(pol.sampler, v0, v1, v2) > pol.band.tol)
         : longest > pol.maxEdgeSq
       if (split) { red[i] = 1; anyRed = true }
+      else { let S = seen; if (!S) triNotRed.set(tk1, S = new Set()); S.add(tk2) }
     }
     if (!anyRed) break
 
