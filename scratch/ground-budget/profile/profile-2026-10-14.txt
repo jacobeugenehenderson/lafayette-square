@@ -27,7 +27,7 @@ exit 0 01:48:27 · 2 profile(s)
   mat:treelawn:agricultural  mine    200 p     1394 v · acc   1914 p   128838 v · diff     685.4 ms · union   631.7 ms · out   203 · accAfter 2025
   mat:treelawn:underived     mine   2438 p    59134 v · acc   2025 p   129338 v · diff  201595.9 ms · union  1062.1 ms · out  2668 · accAfter 1894
 
-== top self time per window (node scratch/ground-budget/profile/analyze.mjs scratch/ground-budget/profile/profile.log <the .0 cpuprofile>)
+== top self time per window (node scratch/ground-budget/profile/analyze.mjs scratch/ground-budget/profile/run1/profile.log scratch/ground-budget/profile/run1/cpu/<the .0 cpuprofile>)
 == pre-stack: 53.4 s sampled · Clipper.Execute intersection 21367 · union 8167 · difference 8361 · xor 0 · ClipperOffset.Execute 3621 · offsetRingByRects 4258
       9.31 s   17.4%  (garbage collector) :0
       8.75 s   16.4%  ClipperLib.ClipperBase.AddPath clipper-lib/clipper.js:2877
@@ -67,3 +67,5 @@ exit 0 01:48:27 · 2 profile(s)
       0.12 s    0.1%  ClipperLib.Clipper.TopX clipper-lib/clipper.js:5314
       0.11 s    0.1%  ClipperLib.ClipperBase.Reset clipper-lib/clipper.js:3162
       0.08 s    0.0%  ClipperLib.Clipper.ProcessIntersections clipper-lib/clipper.js:5148
+
+== run2 (2026-10-14 02:27, Swale's treelawn:underived dump): 348.5 s wall; guard 0 · 0; treelawn:underived diff 198,968.4 ms · union 1,108.5 ms · dump 23.4 ms; same mine/acc counts as run1 (2,438 p / 59,134 v · 2,025 / 129,338). Dump: scratch/ground-budget/profile/dump-treelawn-underived.json (3.4 MB, clipScale 1000). Logs in run2/.
