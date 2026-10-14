@@ -4,6 +4,7 @@
 # to HEAD's so only the code differs; removed after. Every console line is stamped with seconds since start. --shore=pending
 # is passed where that commit's bake-ground knows it (serve.js's 'ground' pass). Guards: load < 8 and free >= 40% to start;
 # load + free every 60 s; killed below 20%; data/huron + public/ snapshotted (path, size, mtime) before and after.
+# Each flatten step also logs [flatstat]: its items, its own paths/vertices (mine) and the accumulator's above it (acc).
 #   bisect-one.sh <commit> <stop key> → scratch/ground-budget/paint/bisect/<commit>-<stop>.log, one summary line on stdout
 cd /Users/jacobhenderson/Desktop/lafayette-square.nosync
 C=$1; STOP=$2; R=$PWD; P=$R/scratch/ground-budget/paint; B=$P/bisect; OUT=$P/out; mkdir -p $B $OUT
@@ -28,6 +29,9 @@ console.log = (...a) => { const m = /\\[progress\\] flatten (\\S+)/.exec(a.map(S
 anchor = "in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)\n"
 if s.count(anchor) != 1: sys.exit('no unique paint-stack anchor')
 s = hdr + s.replace(anchor, anchor + "  console.log('[paint-only] stopping after the paint stack'); process.exit(0)\n")
+a = "    let visible = e.items\n    if (acc.length && !keepsSlot) {\n"
+if s.count(a) != 1: sys.exit('no unique flatten-stats anchor')
+s = s.replace(a, "    console.log('[flatstat]', JSON.stringify({ key: e.groupKey, items: e.items.length, minePaths: mine.length, mineVerts: mine.reduce((n, q) => n + q.length, 0), accPaths: acc.length, accVerts: acc.reduce((n, q) => n + q.length, 0) }))\n" + a)
 open(p, 'w').write(s)
 EOF
 (( $? )) && { echo "$C ⛔ could not patch bake-ground (named above)"; git worktree remove --force $W; exit 1 }
