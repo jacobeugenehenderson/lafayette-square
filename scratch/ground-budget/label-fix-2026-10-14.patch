@@ -1,0 +1,103 @@
+diff --git a/checks/claims-every-kerb-height-was-given.mjs b/checks/claims-every-kerb-height-was-given.mjs
+index 72d88731..397bc3ae 100644
+--- a/checks/claims-every-kerb-height-was-given.mjs
++++ b/checks/claims-every-kerb-height-was-given.mjs
+@@ -26,6 +26,7 @@ import { readFileSync, existsSync } from 'node:fs'
+ import { join } from 'node:path'
+ import { ROOT, scenes } from './_scenes.mjs'
+ import { carrierHeights, carrierHeightAt, hOfRunIn, buildDeformer } from '../cartograph/groundDeformer.mjs'
++import { shortEdgeLabels } from '../src/lib/tileGround.js'
+ import { lineHeights, stampRunHeights } from '../cartograph/lineHeight.mjs'
+ import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
+ import { waterLevels } from '../cartograph/waterLevel.mjs'
+@@ -125,6 +126,16 @@ const GIVEN = (o) => o === 'stamped' || o === 'tangent' || o === 'blended' || o
+       if (!msg?.includes(says)) fails.push(`a shape with no ${k} was ${msg ? `refused, but not by name ("${msg.slice(0, 90)}")` : 'accepted'}`) }
+     let msg = null; try { build({ ...full, iaCap: [[null, null]] }) } catch (e) { msg = e.message }
+     if (!msg?.includes('iaCap is 2 long')) fails.push(`a ring whose iaCap is not its length was ${msg ? `refused, but not by name ("${msg.slice(0, 90)}")` : 'accepted'}`) }
++  // AN EDGE TOO SHORT TO OWN ANYTHING (tileGround `shortEdgeLabels`, inside offsetRingByRects): it takes the edge it leads
++  // INTO, forward by ring adjacency, as mergeGrid does — between two DIFFERENT owners, the forward one; never the nearer
++  { const L = (lab) => ({ lab, on: false }), S = { lab: null, on: true }, OFF = { lab: null, on: false }
++    const rows = [['a short edge between two different owners', [L(1), S, L(2)], [1, 2, 2]],
++      ['two short edges in a row', [L(1), S, S, L(2)], [1, 2, 2, 2]],
++      ['a short edge across the ring\'s seam', [S, L(1), L(2)], [1, 1, 2]],
++      ['an edge on NO contributor (a minted vertex) stays null', [L(1), OFF, L(2)], [1, null, 2]],
++      ['a short edge leading into a minted one stays null', [L(1), S, OFF, L(2)], [1, null, null, 2]],
++      ['a ring of short edges stays null', [S, S, S], [null, null, null]]]
++    for (const [what, E, want] of rows) { const got = shortEdgeLabels(E); if (got.join() !== want.join()) fails.push(`shortEdgeLabels, ${what}: ${got.join(' ')} (want ${want.join(' ')})`) } }
+   if (fails.length) { console.error(`⛔ SELF-TEST FAILED — carrierHeights makes heights up where none was given:\n   ${fails.join('\n   ')}`); process.exit(2) }
+   console.log('self-test: every synthetic ring takes only given heights')
+ }
+diff --git a/scratch/ground-budget/unlabelled-cause.mjs b/scratch/ground-budget/unlabelled-cause.mjs
+index 5df27451..830f87eb 100644
+--- a/scratch/ground-budget/unlabelled-cause.mjs
++++ b/scratch/ground-budget/unlabelled-cause.mjs
+@@ -5,7 +5,7 @@
+ //   · each ② vertex's label after each label stage: offsetRingByRects (its ① edge label, its ① source vertex) → the hole
+ //     subtraction → the highway difference;
+ //   · at the stamp walk's `!key`: null label, or a label naming no owner;
+-//   · for every ② edge `labelOf` left null inside offsetRingByRects, WHY: no contributor in its cells · off every contributor by
++//   · for every ② edge left null inside offsetRingByRects (after `shortEdgeLabels`), WHY: no contributor in its cells · off every contributor by
+ //     more than TOLC · on one but overlapping it by no more than TOLC · on one whose label is not a ① edge.
+ // Then it keeps only the vertices the SLAB calls unlabelled (by mm coordinate; the stamp walk sees rings shape.json does not
+ // freeze) and tabulates them.
+@@ -44,7 +44,7 @@ rep(a, `              if (!key) { const U = ${G}, p = EC.ring[i], kk = Math.roun
+                   stages: Object.fromEntries(Object.entries(m).map(([sn, M]) => [sn, M.get(kk) ?? 'absent'])) })
+                 cur = null; continue }\n`)
+ // labelOf's verdict on every edge it leaves null (or labels with something that is not a ① edge), keyed by the edge's start
+-a = '  B.labels = B.rings.map(rg => rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length])))\n'
++a = '  B.labels = B.rings.map(rg => shortEdgeLabels(rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length]))))\n'
+ rep(a, a + `  { const U = ${G}
+     B.rings.forEach((rg, rk) => rg.forEach((p, j) => { const lab = B.labels[rk][j]; if (Number.isInteger(lab) && lab >= 0 && lab < n) return
+       const q = rg[(j + 1) % rg.length], eL = Math.hypot(q[0] - p[0], q[1] - p[1])
+diff --git a/src/lib/tileGround.js b/src/lib/tileGround.js
+index e409f0cc..35c3b28d 100644
+--- a/src/lib/tileGround.js
++++ b/src/lib/tileGround.js
+@@ -1640,6 +1640,16 @@ export function flareWorkingCopy(WC, flares, ownerOfOrig, hwOf, disclosure) {
+ 
+ const subInkLen = (eps) => (eps > 0 ? 2 * eps - 2 / SCALE : 0)
+ const maxDepthOf = (seg) => seg.reduce((m, x) => Math.max(m, x.dS, x.dE), 0)
++/** A ring's edge labels ({ lab, on } per edge, edge j = vertex j → j+1) → one label per edge: an edge with none that lies ON a
++ *  contributor (`on`) takes the label of the edge LEAVING its far end, forward by ring adjacency through such edges only;
++ *  an edge on no contributor keeps null. ▶ checks/claims-every-kerb-height-was-given.mjs */
++export function shortEdgeLabels(E) {
++  const m = E.length
++  return E.map((e, j) => { if (e.lab != null || !e.on) return e.lab
++    for (let s = 1; s < m; s++) { const f = E[(j + s) % m]; if (f.lab != null) return f.lab; if (!f.on) return null }
++    return null })
++}
++
+ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null) {
+   const nIn = ringIn.length
+   if (nIn < 3) return []
+@@ -1730,19 +1740,25 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
+     const y0 = Math.floor(Math.min(c.a[1], c.b[1]) / CELL), y1 = Math.floor(Math.max(c.a[1], c.b[1]) / CELL)
+     if ((x1 - x0 + 1) * (y1 - y0 + 1) > 4096) { (grid.get('*') || grid.set('*', []).get('*')).push(id); return }
+     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const k = x + ',' + y; (grid.get(k) || grid.set(k, []).get(k)).push(id) } })
++  // → { lab, on }: `on` = the edge lies ON a contributor (both ends within TOLC) but overlaps none by more than TOLC
+   const labelOf = (p, q) => {
+     const ids = new Set([...(grid.get(gk((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)) || []), ...(grid.get(gk(p[0], p[1])) || []), ...(grid.get('*') || [])])
+-    const ex = q[0] - p[0], ey = q[1] - p[1], eL = Math.hypot(ex, ey); if (!(eL > 0)) return null
+-    let best = null
++    const ex = q[0] - p[0], ey = q[1] - p[1], eL = Math.hypot(ex, ey); if (!(eL > 0)) return { lab: null, on: false }
++    let best = null, on = false
+     for (const id of ids) { const c = contrib[id], dx = c.b[0] - c.a[0], dy = c.b[1] - c.a[1], L = Math.hypot(dx, dy)
+       const off = (r) => Math.abs((r[0] - c.a[0]) * dy - (r[1] - c.a[1]) * dx) / L
+       if (off(p) > TOLC || off(q) > TOLC) continue
+       const tp = ((p[0] - c.a[0]) * dx + (p[1] - c.a[1]) * dy) / L, tq = ((q[0] - c.a[0]) * dx + (q[1] - c.a[1]) * dy) / L
+       const ov = Math.min(L, Math.max(tp, tq)) - Math.max(0, Math.min(tp, tq))
+-      if (!(ov > TOLC)) continue
++      if (!(ov > TOLC)) { on = true; continue }
+       if (!best || c.kind < best.kind || (c.kind === best.kind && ov > best.ov)) best = { kind: c.kind, ov, lab: c.lab } }
+-    return best ? best.lab : null }
+-  B.labels = B.rings.map(rg => rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length])))
++    return { lab: best ? best.lab : null, on } }
++  // ⭐ AN EDGE TOO SHORT TO OWN ANYTHING TAKES THE EDGE IT LEADS INTO — mergeGrid's own rule ("keeping the edge that LEAVES the
++  // pair (a sub-grid edge owns nothing)"), at the one tolerance labelOf sees by (TOLC). The merge keeps any edge over one grid
++  // step; one lying ON a contributor but overlapping it by no more than TOLC was left with no label, so its vertex had no
++  // owner (measured: Huron 52, HPDM 76 ② vertices, 2–4 mm edges on straights). The walk is FORWARD BY RING ADJACENCY, never by
++  // distance, through short edges only: an edge on no contributor is a minted vertex and keeps null. Labels only; no point moves.
++  B.labels = B.rings.map(rg => shortEdgeLabels(rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length]))))
+   if (stamp) { stamp.foldDropped = 0; stamp.wedges = wedges; stamp.bevels = bevels; if (B.refused) stamp.refused = B.refused }
+   let maxD = 0; for (const x of seg) { if (x.dS > maxD) maxD = x.dS; if (x.dE > maxD) maxD = x.dE }
+   const AREA_MIN = Math.max(0.5, maxD * maxD * 0.6)
