@@ -70,12 +70,14 @@ export function nearMisses(entries) {
       if (ax === bx && ay === by) continue
       AX[m] = ax; AY[m] = ay; BX[m] = bx; BY[m] = by; G[m] = gi; I[m] = ii; R[m] = ri; m++ }
     for (let k = first; k < m; k++) { NXT[k] = k + 1 < m ? k + 1 : first; PRV[k] = k > first ? k - 1 : m - 1 } })))
-  // a grid sized to the edges themselves (their median length); each edge listed in every cell its box, widened a step,
-  // meets — a compressed index (counts, then offsets), keyed by an integer per cell
+  // a grid sized to the edges themselves; each edge listed in every cell its box, widened a step, meets — a compressed
+  // index (counts, then offsets), keyed by an integer per cell. The cell is the median edge, but never smaller than the
+  // extent shared out over the edges (√(area / edges)): a town of long edges and a tiny median otherwise asks for more
+  // cells than a Map holds (2²⁴) — measured on HPDM's unclipped tile rings, 2026-10-14, a RangeError, not a finding.
   const lens = new Float64Array(m); for (let k = 0; k < m; k++) lens[k] = Math.hypot(BX[k] - AX[k], BY[k] - AY[k])
-  const C = Math.max(STEP, Float64Array.from(lens).sort()[m >> 1] || STEP)
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
   for (let k = 0; k < m; k++) { x0 = Math.min(x0, AX[k], BX[k]); x1 = Math.max(x1, AX[k], BX[k]); y0 = Math.min(y0, AY[k], BY[k]); y1 = Math.max(y1, AY[k], BY[k]) }
+  const C = Math.max(STEP, Float64Array.from(lens).sort()[m >> 1] || STEP, Math.sqrt((x1 - x0 + 2 * STEP) * (y1 - y0 + 2 * STEP) / Math.max(1, m)))
   const NX = Math.floor((x1 - x0 + 2 * STEP) / C) + 1
   const cellsOf = (k, f) => { for (let gx = Math.floor((Math.min(AX[k], BX[k]) - STEP - x0 + STEP) / C), gx1 = Math.floor((Math.max(AX[k], BX[k]) + STEP - x0 + STEP) / C); gx <= gx1; gx++)
     for (let gy = Math.floor((Math.min(AY[k], BY[k]) - STEP - y0 + STEP) / C), gy1 = Math.floor((Math.max(AY[k], BY[k]) + STEP - y0 + STEP) / C); gy <= gy1; gy++) f(gy * NX + gx) }
@@ -157,6 +159,11 @@ function selftest() {
     // the measured 108 m shape: B's line ENDS on A's interior and its ring turns away — two lines, not an inserted vertex
     ['two lines whose ends differ', sq(0, 0, 10, 10), [[10 + h, 0], [20, 0], [20, 10], [12, 10], [10 + h, 6]], 'two-lines'],
   ]
+  // the RangeError's shape: one-step squares spread over 5 km (a tiny median edge) inside a 5 km frame (long edges)
+  { const tiny = [], W = 5000; for (let i = 0; i < 100; i++) for (let j = 0; j < 100; j++) tiny.push(sq(25 + i * 50, 25 + j * 50, LATTICE_M, LATTICE_M))
+    let got, err; try { got = nearMisses([{ groupKey: 'mut:frame', items: [sq(0, 0, W, W)] }, { groupKey: 'mut:dust', items: tiny }]) } catch (e) { err = e }
+    const ok = !err && got.length === 0; if (!ok) bad++
+    console.log(`  ${ok ? '✅' : '⛔'} long edges over a tiny median: ${err ? `threw ${err.name}: ${err.message}` : `${got.length} reported`} (must run and report none)`) }
   for (const [name, a, b, want] of shapes) { const got = nearMisses([{ groupKey: 'mut:a', items: [a] }, { groupKey: 'mut:b', items: [b] }])
     const ok = got.length > 0 && got.every(p => p.shape === want); if (!ok) bad++
     console.log(`  ${ok ? '✅' : '⛔'} ${name}: ${[...new Set(got.map(p => p.shape))].join(', ') || 'not reported'} (must be ${want})`) }

@@ -431,13 +431,13 @@
    "m": 757.712,
    "maxGapSteps": 0.863,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 106,
-     "m": 610.039
-    },
     "one-side-vertex": {
      "edgePairs": 24,
      "m": 147.673
+    },
+    "two-lines": {
+     "edgePairs": 106,
+     "m": 610.039
     }
    }
   },
@@ -618,13 +618,13 @@
    "m": 488.438,
    "maxGapSteps": 0.993,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 175,
-     "m": 401.434
-    },
     "one-side-vertex": {
      "edgePairs": 52,
      "m": 87.003
+    },
+    "two-lines": {
+     "edgePairs": 175,
+     "m": 401.434
     }
    }
   },
@@ -1253,13 +1253,13 @@
    "m": 124.551,
    "maxGapSteps": 0.914,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 86,
-     "m": 110.491
-    },
     "one-side-vertex": {
      "edgePairs": 18,
      "m": 14.059
+    },
+    "two-lines": {
+     "edgePairs": 86,
+     "m": 110.491
     }
    }
   },
@@ -1334,13 +1334,13 @@
    "m": 110.314,
    "maxGapSteps": 0.838,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 37,
-     "m": 58.319
-    },
     "two-lines": {
      "edgePairs": 47,
      "m": 51.995
+    },
+    "one-side-vertex": {
+     "edgePairs": 37,
+     "m": 58.319
     }
    }
   },
@@ -1526,13 +1526,13 @@
    "m": 81.705,
    "maxGapSteps": 0.676,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 16,
-     "m": 81.703
-    },
     "two-lines": {
      "edgePairs": 4,
      "m": 0.001
+    },
+    "one-side-vertex": {
+     "edgePairs": 16,
+     "m": 81.703
     }
    }
   },
@@ -1886,13 +1886,13 @@
    "m": 35.571,
    "maxGapSteps": 0.984,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 50,
-     "m": 35.565
-    },
     "one-side-vertex": {
      "edgePairs": 14,
      "m": 0.006
+    },
+    "two-lines": {
+     "edgePairs": 50,
+     "m": 35.565
     }
    }
   },
@@ -1972,13 +1972,13 @@
    "m": 29.134,
    "maxGapSteps": 0.739,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 3,
-     "m": 0.367
-    },
     "two-lines": {
      "edgePairs": 24,
      "m": 28.767
+    },
+    "one-side-vertex": {
+     "edgePairs": 3,
+     "m": 0.367
     }
    }
   },
@@ -2062,13 +2062,13 @@
    "m": 24.809,
    "maxGapSteps": 0.928,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 34,
-     "m": 21.099
-    },
     "one-side-vertex": {
      "edgePairs": 7,
      "m": 3.71
+    },
+    "two-lines": {
+     "edgePairs": 34,
+     "m": 21.099
     }
    }
   },
@@ -2367,13 +2367,13 @@
    "m": 12.228,
    "maxGapSteps": 0.993,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 68,
-     "m": 6.302
-    },
     "one-side-vertex": {
      "edgePairs": 54,
      "m": 5.926
+    },
+    "two-lines": {
+     "edgePairs": 68,
+     "m": 6.302
     }
    }
   },
@@ -2384,13 +2384,13 @@
    "m": 12.103,
    "maxGapSteps": 0.685,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 9,
-     "m": 10.477
-    },
     "one-side-vertex": {
      "edgePairs": 3,
      "m": 1.626
+    },
+    "two-lines": {
+     "edgePairs": 9,
+     "m": 10.477
     }
    }
   },
@@ -2637,13 +2637,13 @@
    "m": 7.501,
    "maxGapSteps": 0.868,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 3,
-     "m": 0.001
-    },
     "two-lines": {
      "edgePairs": 11,
      "m": 7.501
+    },
+    "one-side-vertex": {
+     "edgePairs": 3,
+     "m": 0.001
     }
    }
   },
@@ -2848,13 +2848,13 @@
    "m": 5.247,
    "maxGapSteps": 0.724,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 2,
-     "m": 5.247
-    },
     "two-lines": {
      "edgePairs": 2,
      "m": 0
+    },
+    "one-side-vertex": {
+     "edgePairs": 2,
+     "m": 5.247
     }
    }
   },
@@ -3033,13 +3033,13 @@
    "m": 3.021,
    "maxGapSteps": 0.791,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 17,
-     "m": 0.003
-    },
     "one-side-vertex": {
      "edgePairs": 4,
      "m": 3.018
+    },
+    "two-lines": {
+     "edgePairs": 17,
+     "m": 0.003
     }
    }
   },
@@ -3128,13 +3128,13 @@
    "m": 2.287,
    "maxGapSteps": 0.476,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 5,
-     "m": 0.001
-    },
     "two-lines": {
      "edgePairs": 7,
      "m": 2.286
+    },
+    "one-side-vertex": {
+     "edgePairs": 5,
+     "m": 0.001
     }
    }
   },
@@ -3253,13 +3253,13 @@
    "m": 1.84,
    "maxGapSteps": 0.871,
    "byShape": {
-    "two-lines": {
-     "edgePairs": 1,
-     "m": 1.839
-    },
     "one-side-vertex": {
      "edgePairs": 1,
      "m": 0.001
+    },
+    "two-lines": {
+     "edgePairs": 1,
+     "m": 1.839
     }
    }
   },
@@ -3399,13 +3399,13 @@
    "m": 1.526,
    "maxGapSteps": 0.745,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 1,
-     "m": 0.001
-    },
     "two-lines": {
      "edgePairs": 7,
      "m": 1.526
+    },
+    "one-side-vertex": {
+     "edgePairs": 1,
+     "m": 0.001
     }
    }
   },
@@ -3468,13 +3468,13 @@
    "m": 1.198,
    "maxGapSteps": 0.955,
    "byShape": {
-    "one-side-vertex": {
-     "edgePairs": 1,
-     "m": 0.333
-    },
     "two-lines": {
      "edgePairs": 3,
      "m": 0.865
+    },
+    "one-side-vertex": {
+     "edgePairs": 1,
+     "m": 0.333
     }
    }
   },
@@ -5059,6 +5059,32 @@
    }
   },
   {
+   "pair": "face:forest / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0,
+   "maxGapSteps": 0,
+   "byShape": {
+    "two-lines": {
+     "edgePairs": 2,
+     "m": 0
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:forest / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0,
+   "maxGapSteps": 0,
+   "byShape": {
+    "two-lines": {
+     "edgePairs": 1,
+     "m": 0
+    }
+   }
+  },
+  {
    "pair": "face:commercial / mat:treelawn:institutional",
    "sameGroup": false,
    "edgePairs": 2,
@@ -5087,32 +5113,6 @@
   {
    "pair": "face:recreation / face:recreation",
    "sameGroup": true,
-   "edgePairs": 1,
-   "m": 0,
-   "maxGapSteps": 0,
-   "byShape": {
-    "two-lines": {
-     "edgePairs": 1,
-     "m": 0
-    }
-   }
-  },
-  {
-   "pair": "face:forest / mat:treelawn:recreation",
-   "sameGroup": false,
-   "edgePairs": 2,
-   "m": 0,
-   "maxGapSteps": 0,
-   "byShape": {
-    "two-lines": {
-     "edgePairs": 2,
-     "m": 0
-    }
-   }
-  },
-  {
-   "pair": "mat:treelawn:forest / mat:treelawn:recreation",
-   "sameGroup": false,
    "edgePairs": 1,
    "m": 0,
    "maxGapSteps": 0,
@@ -5306,19 +5306,6 @@
    }
   },
   {
-   "pair": "face:forest / mat:treelawn:institutional",
-   "sameGroup": false,
-   "edgePairs": 2,
-   "m": 0,
-   "maxGapSteps": 0,
-   "byShape": {
-    "two-lines": {
-     "edgePairs": 2,
-     "m": 0
-    }
-   }
-  },
-  {
    "pair": "mat:treelawn:bare / mat:treelawn:recreation",
    "sameGroup": false,
    "edgePairs": 3,
@@ -5327,6 +5314,19 @@
    "byShape": {
     "two-lines": {
      "edgePairs": 3,
+     "m": 0
+    }
+   }
+  },
+  {
+   "pair": "face:forest / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0,
+   "maxGapSteps": 0,
+   "byShape": {
+    "two-lines": {
+     "edgePairs": 2,
      "m": 0
     }
    }
@@ -5384,6 +5384,19 @@
    }
   },
   {
+   "pair": "face:industrial / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0,
+   "maxGapSteps": 0,
+   "byShape": {
+    "two-lines": {
+     "edgePairs": 1,
+     "m": 0
+    }
+   }
+  },
+  {
    "pair": "face:parking / mat:sports_centre",
    "sameGroup": false,
    "edgePairs": 1,
@@ -5398,19 +5411,6 @@
   },
   {
    "pair": "mat:parking_lot / mat:sports_centre",
-   "sameGroup": false,
-   "edgePairs": 1,
-   "m": 0,
-   "maxGapSteps": 0,
-   "byShape": {
-    "two-lines": {
-     "edgePairs": 1,
-     "m": 0
-    }
-   }
-  },
-  {
-   "pair": "face:industrial / mat:garden",
    "sameGroup": false,
    "edgePairs": 1,
    "m": 0,
