@@ -338,6 +338,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   const REASON = ['closure', 'maxEdge', 'tol', 'band'], reasons = new Map()
   const reasonsOf = (gi) => { let R = reasons.get(gi); if (!R) reasons.set(gi, R = { added: { closure: 0, maxEdge: 0, tol: 0, band: 0 }, devBins: [0, 0, 0, 0], tolPastReach: 0, floorBound: 0, floorBoundPastReach: 0 }); return R }
   if (stats) stats.reasons = reasons
+  const triNotRed = new ShardedMap(); let triHits = 0
   for (let i = 0; i < TG.length; i++) { const R = reasonsOf(TG[i] >> 1); R.input = (R.input || 0) + 1 }
   for (let pass = 0; pass < PASSES; pass++) {
     const n = TG.length
@@ -350,11 +351,16 @@ export function conformAndRefine(groupSpecs, stats = {}) {
       const e01 = edgeSq(v0, v1), e12 = edgeSq(v1, v2), e20 = edgeSq(v2, v0)
       const longest = Math.max(e01, e12, e20)
       let why = 0, dev = 0
+      // __triCache (the time route's (c)): a triangle found NOT red is remembered by its group and ordered vertex triple; an
+      // unsplit triangle is re-pushed with the same vertices in the same rotation, so the answer is the same computation
+      const tk1 = globalThis.__triCache ? v0 * EDGE_MUL + v1 : 0, tk2 = (v2 * 256) + (TG[i] >> 1)
+      if (globalThis.__triCache) { const S = triNotRed.get(tk1); if (S && S.has(tk2)) { triHits++; continue } }
       if (pol.mode === 'adaptive') {
         if (longest > pol.maxEdgeSq) why = 1
         else if (longest > pol.minEdgeSq && (dev = terrainDev(pol.sampler, v0, v1, v2)) > pol.tol) why = 2
         else if (pol.band && longest > pol.band.minEdgeSq && inBand(pol, v0, v1, v2) && terrainDev(pol.sampler, v0, v1, v2) > pol.band.tol) why = 3
       } else if (longest > pol.maxEdgeSq) why = 1
+      if (!why && globalThis.__triCache) { let S = triNotRed.get(tk1); if (!S) triNotRed.set(tk1, S = new Set()); S.add(tk2) }
       if (why) { red[i] = why; anyRed = true
         if (why === 2) { const R = reasonsOf(TG[i] >> 1), r = dev / pol.tol; R.devBins[r <= 2 ? 0 : r <= 4 ? 1 : r <= 16 ? 2 : 3]++
           const cx = (PX[v0] + PX[v1] + PX[v2]) / 3, cz = (PZ[v0] + PZ[v1] + PZ[v2]) / 3
@@ -411,8 +417,9 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     }
     T = nT; TG = nG
   }
+  if (stats) stats.triCacheHits = triHits
   globalThis.__site = 'instrument:floor'
-  // the FLOOR: final triangles of an adaptive group at or under minEdge whose deviation is still over tol
+  if (globalThis.__reasons)   // the FLOOR: final triangles of an adaptive group at or under minEdge whose deviation is still over tol
   for (let i = 0; i < TG.length; i++) { const pol = policies[TG[i] >> 1]; if (pol.mode !== 'adaptive') continue
     const v0 = T[i * 3], v1 = T[i * 3 + 1], v2 = T[i * 3 + 2], longest = Math.max(edgeSq(v0, v1), edgeSq(v1, v2), edgeSq(v2, v0))
     if (longest <= pol.minEdgeSq && longest <= pol.maxEdgeSq && terrainDev(pol.sampler, v0, v1, v2) > pol.tol) { const R = reasonsOf(TG[i] >> 1); R.floorBound++

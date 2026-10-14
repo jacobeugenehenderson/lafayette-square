@@ -99,11 +99,13 @@ const st = {}
 // NO_MAXEDGE=1: no maxEdge cap on any group (needs groundConformity.reasons.js) · DEV_STEP=auto: terrainDev samples every
 // edge at min(the terrain's grid step, the deformer's B) — read from the data, never a constant
 if (process.env.NO_MAXEDGE) globalThis.__noMaxEdge = true
+if (process.env.TRI_CACHE) globalThis.__triCache = true   // the time route's (c): a not-red triangle is not re-evaluated
+if (process.env.REASONS) globalThis.__reasons = true
 if (process.env.DEV_EDGE_CACHE) { if (!['directed', 'shared', 'pow2'].includes(process.env.DEV_EDGE_CACHE)) throw new Error(`DEV_EDGE_CACHE must be directed|shared|pow2, got ${process.env.DEV_EDGE_CACHE}`); globalThis.__devEdgeCache = process.env.DEV_EDGE_CACHE }
 if (process.env.DEV_STEP) { const A0 = JSON.parse(readFileSync(dir + '/deform.json', 'utf8')).limits
   globalThis.__devStep = process.env.DEV_STEP === 'auto' ? Math.min(T.stepM, A0?.blend ?? Infinity) : Number(process.env.DEV_STEP)
   if (!(globalThis.__devStep > 0)) throw new Error(`DEV_STEP: no step (terrain stepM ${T.stepM}, B ${A0?.blend})`) }
-console.log(`[variant] maxEdge cap ${globalThis.__noMaxEdge ? 'OFF' : 'on'} · terrainDev ${globalThis.__devStep ? `every ${globalThis.__devStep.toFixed(3)} m along each edge` : '4 classic samples'} · edge cache ${globalThis.__devEdgeCache ?? 'none'} · hardscape ${process.env.HARDSCAPE_ADAPTIVE ? 'adaptive at the lots\' policy' : 'as dumped'}`)
+console.log(`[variant] maxEdge cap ${globalThis.__noMaxEdge ? 'OFF' : 'on'} · terrainDev ${globalThis.__devStep ? `every ${globalThis.__devStep.toFixed(3)} m along each edge` : '4 classic samples'} · edge cache ${globalThis.__devEdgeCache ?? 'none'} · triangle cache ${globalThis.__triCache ? 'on' : 'off'} · hardscape ${process.env.HARDSCAPE_ADAPTIVE ? 'adaptive at the lots\' policy' : 'as dumped'}`)
 // REASONS=1 (with the instrumented conformity copy): the reach hook — is a point inside the deformer's reach (heightAt not null)
 if (process.env.REASONS && D) globalThis.__reach = (x, z) => D.heightAt(x, z) != null
 t = Date.now()
@@ -132,6 +134,7 @@ if (globalThis.__devEdgeCache === 'pow2' && globalThis.__pow2Tally) { const p = 
 if (D) console.log(`[memo] generation ${MEMO.memoGeneration ?? 'the deformer\'s default'} · turns during conformity: ${D.stats.memoTurns ?? 'not reported by this deformer'}`)
 if (st.phaseMs) console.log(`[phases] ${Object.entries(st.phaseMs).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`).join(' · ')}`)
 console.log(`[sampler] ${calls} calls · ${(Number(ns) / 1e9).toFixed(1)} s inside the sampler · ${(Number(ns) / 1e3 / Math.max(1, calls)).toFixed(2)} µs/call`)
+if (st.triCacheHits != null && globalThis.__triCache) console.log(`[tricache] ${st.triCacheHits} triangle evaluations skipped`)
 if (Object.keys(sites).length > 1 || !sites.other) console.log(`[sites] ${Object.entries(sites).sort((p, q) => q[1] - p[1]).map(([k, v]) => `${k} ${v}`).join(' · ')}`)
 t = Date.now()
 const tj = findTJunctions(out.map((b, i) => ({ id: specs[i].key, ...b })))
