@@ -111,3 +111,12 @@ branch  65,492 edge pairs ·  85,490.1 m                     · 58 s · 3.28 GB
         unchanged: face:parking/parking_lot 2,395 · asphalt/curb 2,092 → 2,262 (not the ribbon's)
 proofs  stackOnly's stack = the full bake's (44 groups, items and sub-lattice outers: proof-stack.mjs) · the gate-only bake with
         stackOnly reproduces c1b08e7e's ground.bin + ground.json byte for byte · the typed-array rewrite reproduces 80,303 exactly
+
+== where one line becomes two (trace.mjs via make-trace.mjs; HPDM branch, cross-layer near-miss metres by stage, land uses merged)
+   S1 band booleans 10,773.7 · S2 ∩ iA 6,191.3 · S3 rekeyByPiece 60,000.8 · S4 union+stencil 59,153.7 · stack 59,153.5
+   ⇒ 53.8 km of 59.2 km (91%) is MADE at rekeyByPiece. 25 longest examples: first two at S3 in 24, S1 in 1; S0 one line in all 25.
+   One example in full (trace-at-368.json): S2 sidewalk and treelawn share (175128,394781)↔(530823,440065) exactly; a residential
+   evidence boundary crosses the band, and the intersection puts its crossing (205585,398658) — 0.5167 units off that line — into
+   the treelawn only. Its piece's edge (530823,440065)→(205585,398658), 327.863 m, is the reported near-miss.
+   ⚠️ The check's shape column files this as two-lines (the piece's ring turns away at the vertex): locally it cannot be told
+   from two depth lines ending at different joins. The stage trace, not the column, is what separates them.
