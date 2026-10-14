@@ -1,0 +1,83 @@
+FLATTEN-R1 GATE + GROUND TRUTH, 2026-10-14 (Swale; Boz). HEAD's code (main tree e8f043d5..efd51ed6 era) on today's data; the SERVED slabs NOT measured.
+NOTE: provincetown refused on HEAD and R1 alike before the paint stack ("lineHeights: two at-grade chains share the id head-of-the-meadow-road", the known re-skeleton item), so its compare below has no dump (the ENOENT). full-gate.sh was written and NEVER RUN: the paint-only gate failed first.
+
+== paint-gate.sh (HEAD vs R1, paint-only)
+huron HEAD start 02:45:01 · load { 2.28 2.27 2.36 } · free 60%
+  exit 0 · pre-stack [+50.5s] · paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 563.9s · real 614.65 s · peak RSS 1770340352
+  [guard] changed 0 · newer 0
+huron r1 start 02:55:17 · load { 1.87 2.03 2.20 } · free 58%
+  exit 0 · pre-stack [+41.4s] · paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 83.9s · real 125.54 s · peak RSS 1683177472
+  [guard] changed 0 · newer 0
+  mat:asphalt: items 106 → 105 · XOR 1389 grid units² (0.001389 m²) · rings with another role 1 (0.000239 m²) · HEAD had 0 outside their outer
+  mat:sidewalk: items 1041 → 1039 · XOR 1436784.5 grid units² (1.436784 m²) · rings with another role 2 (1.425570 m²) · HEAD had 0 outside their outer
+  mat:treelawn:underived: items 2668 → 2671 · XOR 43096.5 grid units² (0.043096 m²) · rings with another role 3 (0.000007 m²) · HEAD had 3 outside their outer
+  mat:treelawn:residential: items 1693 → 1694 · XOR 23754.5 grid units² (0.023755 m²) · rings with another role 3 (0.003488 m²) · HEAD had 2 outside their outer
+  mat:wood: items 28 → 29 · XOR 24380657417.5 grid units² (24380.657417 m²) · rings with another role 1 (24380.656949 m²) · HEAD had 0 outside their outer
+  face:agricultural: items 220 → 220 · XOR 18576 grid units² (0.018576 m²) · rings with another role 0 (0.000000 m²) · HEAD had 0 outside their outer
+  face:underived: items 1346 → 1345 · XOR 12500887434.5 grid units² (12500.887435 m²) · rings with another role 1 (12500.818208 m²) · HEAD had 0 outside their outer
+[compare] 51 groups · 7 not byte-identical · XOR total 36883068452.5 grid units² (36883.068453 m²) · 11 ring(s) with another role (36882.904462 m²) · 5 of them HEAD had outside their outer
+⛔ painted area per group DIFFERS on the lattice
+hipointedemun HEAD start 02:57:37 · load { 2.28 2.19 2.24 } · free 58%
+  exit 0 · pre-stack [+45.4s] · paint stack pressed down: 44 layers (1 keeping their own slot, 0 not cutting) in 96.2s · real 141.83 s · peak RSS 2262024192
+  [guard] changed 0 · newer 0
+hipointedemun r1 start 03:00:07 · load { 1.90 2.18 2.23 } · free 57%
+  exit 0 · pre-stack [+32.5s] · paint stack pressed down: 44 layers (1 keeping their own slot, 0 not cutting) in 32.8s · real 65.55 s · peak RSS 2271264768
+  [guard] changed 0 · newer 0
+  mat:treelawn:institutional: items 435 → 436 · XOR 1741 grid units² (0.001741 m²) · rings with another role 1 (0.000121 m²) · HEAD had 1 outside their outer
+  mat:treelawn:residential: items 846 → 847 · XOR 112764202.5 grid units² (112.764202 m²) · rings with another role 1 (112.759766 m²) · HEAD had 1 outside their outer
+[compare] 44 groups · 2 not byte-identical · XOR total 112765943.5 grid units² (112.765943 m²) · 2 ring(s) with another role (112.759888 m²) · 2 of them HEAD had outside their outer
+⛔ painted area per group DIFFERS on the lattice
+provincetown HEAD start 03:01:23 · load { 2.65 2.35 2.29 } · free 56%
+  exit 1 · pre-stack  ·  · real 50.57 s · peak RSS 1764392960
+  [guard] changed 0 · newer 0
+provincetown r1 start 03:02:24 · load { 2.46 2.34 2.29 } · free 56%
+  exit 1 · pre-stack  ·  · real 42.04 s · peak RSS 1360756736
+  [guard] changed 0 · newer 0
+node:fs:441
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+
+Error: ENOENT: no such file or directory, open '/Users/jacobhenderson/Desktop/lafayette-square.nosync/.claude/worktrees/rings-only/scratch/ground-budget/flatten-r1/dumps/provincetown-HEAD.json'
+    at readFileSync (node:fs:441:20)
+    at file:///Users/jacobhenderson/Desktop/lafayette-square.nosync/.claude/worktrees/rings-only/scratch/ground-budget/flatten-r1/compare.mjs:14:58
+    at Array.map (<anonymous>)
+    at file:///Users/jacobhenderson/Desktop/lafayette-square.nosync/.claude/worktrees/rings-only/scratch/ground-budget/flatten-r1/compare.mjs:14:38
+    at ModuleJob.run (node:internal/modules/esm/module_job:345:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/jacobhenderson/Desktop/lafayette-square.nosync/.claude/worktrees/rings-only/scratch/ground-budget/flatten-r1/dumps/provincetown-HEAD.json'
+}
+
+Node.js v22.20.0
+ALLDONE Wed Oct 14 03:03:09 CDT 2026
+
+== inputs-run.sh + truth.mjs (non-thin verdicts and summaries; the full per-piece list is in truth.log, not committed)
+huron inputs start 03:05:19 · load { 2.11 2.19 2.23 } · keys mat:asphalt,mat:sidewalk,mat:treelawn:underived,mat:treelawn:residential,mat:wood,face:agricultural,face:underived
+  exit 0 · real 605.05 s · [guard] changed 0 · newer 0
+  the flatten reproduces paint-gate's HEAD dump byte for byte
+mat:asphalt: 22 XOR piece(s)
+mat:sidewalk: 252 XOR piece(s)
+  R1 right   0.720766 m² · 57 v at (-1020.43, 2023.23) · 4 point(s) tested · tree paints it: true · R1 paints it: false
+  R1 right   0.704773 m² · 59 v at (196.12, 626.59) · 4 point(s) tested · tree paints it: true · R1 paints it: false
+mat:treelawn:underived: 302 XOR piece(s)
+mat:treelawn:residential: 196 XOR piece(s)
+mat:wood: 5 XOR piece(s)
+  TREE right 24380.656949 m² · 3654 v at (1097.32, 2217.79) · 4 point(s) tested · tree paints it: false · R1 paints it: true
+face:agricultural: 5 XOR piece(s)
+face:underived: 67 XOR piece(s)
+  R1 right   12500.818208 m² · 60 v at (-473.85, 1269.12) · 3 point(s) tested · tree paints it: true · R1 paints it: false
+hipointedemun inputs start 03:17:20 · load { 1.96 2.10 2.16 } · keys mat:treelawn:institutional,mat:treelawn:residential
+  exit 0 · real 142.05 s · [guard] changed 0 · newer 0
+  the flatten reproduces paint-gate's HEAD dump byte for byte
+mat:treelawn:institutional: 49 XOR piece(s)
+mat:treelawn:residential: 155 XOR piece(s)
+  R1 right   112.759766 m² · 94 v at (178.66, 1253.12) · 6 point(s) tested · tree paints it: false · R1 paints it: true
+
+== why.mjs, one interior point per region
+mat:sidewalk at (-1021.284, 2022.914): in 1 mine path(s) (EvenOdd IN) · acc winding 1 (IN) · the slab's flatten paints it in: mat:curbCut, mat:sidewalk
+mat:sidewalk at (197.397, 626.013): in 1 mine path(s) (EvenOdd IN) · acc winding 1 (IN) · the slab's flatten paints it in: mat:curbCut, mat:sidewalk
+mat:wood at (1415.494, 2504.339): in 2 mine path(s) (EvenOdd OUT) · acc winding 0 (OUT) · the slab's flatten paints it in: NOTHING
+face:underived at (-884.931, 1193.376): in 2 mine path(s) (EvenOdd OUT) · acc winding 1 (IN) · the slab's flatten paints it in: face:agricultural, face:underived
+mat:treelawn:residential at (178.661, 1253.121): in 1 mine path(s) (EvenOdd IN) · acc winding 0 (OUT) · the slab's flatten paints it in: NOTHING

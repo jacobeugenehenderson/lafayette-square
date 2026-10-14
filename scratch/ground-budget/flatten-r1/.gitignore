@@ -1,0 +1,5 @@
+bake-ground.*.js
+dumps/
+*.log
+*.out
+snap-*
