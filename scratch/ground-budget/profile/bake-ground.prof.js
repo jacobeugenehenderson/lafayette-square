@@ -799,6 +799,11 @@ function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new 
     u.AddPaths(acc, _PolyType.ptSubject, true)
     u.AddPaths(mine, _PolyType.ptClip, true)
     const merged = new _Paths()
+    // Swale's hook (via Boz): the PAINT_DUMP_KEY step's own paths (mine) and the accumulator ABOVE it (acc, before this
+    // step's union), in clipper integer units (CLIP_SCALE per metre), dumped once to scratch; its cost is logged apart
+    if (e.groupKey === process.env.PAINT_DUMP_KEY) { const __t = performance.now()
+      writeFileSync(process.env.PAINT_DUMP_PATH, JSON.stringify({ key: e.groupKey, clipScale: CLIP_SCALE, mine: mine.map(q => q.map(pt => [pt.X, pt.Y])), acc: acc.map(q => q.map(pt => [pt.X, pt.Y])) }))
+      __fs.dumpMs = +(performance.now() - __t).toFixed(1) }
     const __tu = performance.now(), __oku = u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero); __fs.unionMs = +(performance.now() - __tu).toFixed(1); __fs.accPathsAfter = merged.length; globalThis.__flatStat(__fs)
     if (__oku) {
       acc.length = 0

@@ -11,7 +11,7 @@ while (( $(sysctl -n vm.loadavg | awk '{print int($2)}') >= 8 || $(free_pct) < 4
 snap > $D/snap-before.txt; touch $D/snap-marker; rm -f $D/cpu/*.cpuprofile
 echo "start $(date +%H:%M:%S) · load $(sysctl -n vm.loadavg) · free $(free_pct)% · stop after $STOP"
 export SWAP_MAP="{\"cartograph/bake-ground.js\":\"$D/bake-ground.prof.js\",\"src/lib/tileGround.js\":\"$D/tileGround.prof.js\"}"
-( cd cartograph; PAINT_STOP_AFTER=$STOP exec /usr/bin/time -l node --max-old-space-size=14000 --cpu-prof --cpu-prof-dir=$D/cpu --import $R/scratch/ground-budget/swap.mjs bake-ground.js --look=huron --scene=huron --out-dir=$OUT --shore=pending ) > $D/profile.log 2>&1 &
+( cd cartograph; PAINT_DUMP_KEY=mat:asphalt PAINT_DUMP_PATH=$D/dump-asphalt.json PAINT_STOP_AFTER=$STOP exec /usr/bin/time -l node --max-old-space-size=14000 --cpu-prof --cpu-prof-dir=$D/cpu --import $R/scratch/ground-budget/swap.mjs bake-ground.js --look=huron --scene=huron --out-dir=$OUT --shore=pending ) > $D/profile.log 2>&1 &
 PID=$!; n=0
 while kill -0 $PID 2>/dev/null; do (( n % 4 == 0 )) && echo "  [load] $(date +%H:%M:%S) $(sysctl -n vm.loadavg) · free $(free_pct)%"
   (( $(free_pct) < 20 )) && { echo "  ⛔ free < 20%: killing"; kill $PID; }; (( n++ )); sleep 15; done
