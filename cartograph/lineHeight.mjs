@@ -66,7 +66,16 @@ export function lineHeights({ streets, raw, sigma }) {
     }
     return out
   }
-  return { heightAt, sigma, step, stations: X.length, chains: byId.size, bridges }
+  /** A dead end's CAP: ONE coupler, ONE height — its chain's line at the END the cap names (`start` | `end`, by identity
+   *  from ①: tileGround `capCouplers[].end`), never a station found by projecting onto the chain (Jacob 2026-07-22; Boz
+   *  2026-10-13). @returns the height, or null when the chain has no line */
+  function capLine(skelId, end) {
+    const c = byId.get(skelId)
+    if (!c) return null
+    if (end !== 'start' && end !== 'end') throw new Error(`lineHeights: ⛔ the cap of ${skelId} names no end (${end})`)
+    return h[end === 'start' ? c.ids[0] : c.ids[c.ids.length - 1]]
+  }
+  return { heightAt, capLine, sigma, step, stations: X.length, chains: byId.size, bridges }
 }
 
 /**
@@ -95,7 +104,23 @@ export function stampRunHeights({ tiles, LH, water, streets, scene = '?' }) {
     run.noLine = runKind(run, bridgeIds)                 // the deformer reads it: a DECLARED line-less run draws no height
     why[run.noLine]++
   }
-  return { stamped, coast, why }
+  // ⭐ THE CAPS (tileGround `capCouplers` + `iaCap`): one height per coupler, its chain's end station — or, on a grade-separated
+  // chain, none, DECLARED by kind like its runs
+  let caps = 0
+  for (const t of tiles || []) {
+    if (!t?.capCouplers?.length) continue
+    t.capCouplers.forEach((cap) => {
+      delete cap.h; delete cap.noLine
+      if (cap.skelId === '__water__') {                    // a coast cap: the water line at its point, as the coast's runs
+        if (!water) throw new Error(`stampRunHeights: ⛔ ${scene} draws a coast cap but its terrain carries no water record — the coast line's height is unknown. ▶ re-bake the terrain`)
+        cap.h = Math.round(water.lineAt(...cap.at) * 1000) / 1000; why.coastCap = (why.coastCap || 0) + 1; return }
+      if (bridgeIds.has(cap.skelId)) { cap.h = null; cap.noLine = 'bridge'; why.bridgeCap = (why.bridgeCap || 0) + 1; return }
+      const h = LH.capLine(cap.skelId, cap.end)
+      if (h == null) { cap.h = null; cap.noLine = 'unknown'; why.unknownCap = (why.unknownCap || 0) + 1; return }
+      cap.h = Math.round(h * 1000) / 1000; caps++
+    })
+  }
+  return { stamped, coast, caps, why }
 }
 
 /** Why a run carries no line: 'highway' · 'rim' · 'bridge' · 'unknown' (a label naming no at-grade chain). */

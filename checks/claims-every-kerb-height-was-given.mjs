@@ -4,6 +4,8 @@
 // replicated) has a GIVEN origin:
 //   · 'stamped'  — a straight vertex, its own run's line (`lineHeight.mjs`)
 //   · 'tangent'  — a corner arc's own tangent point, stamped, where the straight vertex beside it has no height
+//   · 'cap'      — a dead end's cap: ONE coupler, its chain's own (`iaCap` → `capCouplers`, by identity from ①), ONE height, the
+//                  chain's end station (Jacob 2026-07-22; Boz 2026-10-13). 'declared-cap:<kind>' on a grade-separated chain
 //   · 'blended'  — on a corner arc or a joined span, by arclength between two given heights ("H one continuous value
 //                  through the change", the deformer's header)
 //   · 'declared:<kind>' — a run that DECLARES no line (a highway stroke's edge, a bridge, the rim), and
@@ -30,7 +32,7 @@ import { waterLevels } from '../cartograph/waterLevel.mjs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 import { readBakeDesign } from '../cartograph/lookDesign.mjs'
 
-const GIVEN = (o) => o === 'stamped' || o === 'tangent' || o === 'blended' || /^declared(-corner)?:(highway|bridge|rim)$/.test(o ?? '')
+const GIVEN = (o) => o === 'stamped' || o === 'tangent' || o === 'blended' || o === 'cap' || /^declared(-corner|-cap)?:(highway|bridge|rim)$/.test(o ?? '')
 
 // ⛔⛔ SELF-TEST FIRST, on rings whose answer is known by construction. Runs: 0 at h 0, 1 at h 3, 2 a highway (no line),
 // 3 a run whose label names no at-grade chain ('unknown': no line, and NOT a declared kind).
@@ -39,10 +41,11 @@ const GIVEN = (o) => o === 'stamped' || o === 'tangent' || o === 'blended' || /^
   const runs = [{ h: [0, 0], poly: [[0, 0], [100, 0]] }, { h: [3, 3], poly: [[0, 0], [100, 0]] }, { h: null, noLine: 'highway', poly: [[0, 0], [100, 0]] }, { h: null, noLine: 'unknown', poly: [[0, 0], [100, 0]] }]
   const hOfRun = (ri) => runs[ri]?.h ? runs[ri].h[0] : null
   const noLineOf = (ri) => runs[ri]?.noLine ?? null
+  const caps = [{ h: 7 }, { h: null, noLine: 'bridge' }]                    // cap 0: an at-grade dead end at 7 m · cap 1: a footway bridge's
   const line = (n) => Array.from({ length: n }, (_, i) => [i * 10, (i * 7) % 3])    // a ring's vertices, 10 m apart
-  const run = (name, { arc, stamp }, want) => {
+  const run = (name, { arc, stamp, cap = null }, want) => {
     let r, threw = null
-    try { r = carrierHeights({ ring: line(arc.length), arc, stamp, hOfRun, noLineOf }) } catch (e) { threw = e.message }
+    try { r = carrierHeights({ ring: line(arc.length), arc, stamp, hOfRun, noLineOf, capOf: (i) => (cap?.[i] != null ? caps[cap[i]] : null) }) } catch (e) { threw = e.message }
     const verdict = want({ r, threw })
     if (verdict !== true) fails.push(`${name}: ${verdict}`)
   }
@@ -70,6 +73,15 @@ const GIVEN = (o) => o === 'stamped' || o === 'tangent' || o === 'blended' || /^
   // a straight on a run with no line that is NOT a declared kind: it is no exemption — blended through, as a joined span
   run('a run with no line, not declared', { arc: [null, null, null, null], stamp: [0, 3, 3, 1] }, ({ r, threw }) => { const v = noFill({ r, threw }); if (v !== true) return v
     return (r.origin[1] === 'blended' && r.origin[2] === 'blended') || `origins ${JSON.stringify(r.origin)}` })
+  // a DEAD END: two legs at 0 and 3 and a cap between them — the cap takes its chain's ONE height, not a blend of the legs
+  run('a dead end\'s cap', { arc: [null, null, null, null, null, null], stamp: [0, 0, null, null, 1, 1], cap: [null, null, 0, 0, null, null] }, ({ r, threw }) => { const v = noFill({ r, threw }); if (v !== true) return v
+    return (r.origin[2] === 'cap' && r.origin[3] === 'cap' && r.H[2] === 7 && r.H[3] === 7) || `the cap: ${r.origin.slice(2, 4)} H ${r.H.slice(2, 4)}` })
+  // a rounded cap is eased: its vertices lie on an ARC, and the cap still gives them its one height
+  run('a rounded cap (on an arc)', { arc: [null, null, 1, 1, 1, null], stamp: [0, 0, null, null, null, 1], cap: [null, null, 0, 0, 0, null] }, ({ r, threw }) => { const v = noFill({ r, threw }); if (v !== true) return v
+    return r.H.slice(2, 5).every(h => h === 7) || `the cap: H ${r.H.slice(2, 5)}` })
+  // a footway bridge inside a block (HPDM tile 49): both sides and both caps grade-separated — a DECLARED absence, no throw
+  run('a footway bridge with its caps', { arc: [null, null, null, null, null, null], stamp: [2, 2, null, 2, 2, null], cap: [null, null, 1, null, null, 1] }, ({ r, threw }) => threw ? `threw: ${threw}`
+    : (r.H == null && r.origin[2] === 'declared-cap:bridge' && r.origin.every(GIVEN)) || `H ${JSON.stringify(r.H)} origins ${JSON.stringify(r.origin)}`)
   // a short unstamped straight between two lines: one span, blended
   run('an unstamped straight', { arc: [null, null, null, null], stamp: [0, null, null, 1] }, noFill)
   // a ring with no line anywhere, every run declaring none: a declared absence, not a throw
@@ -87,6 +99,20 @@ const GIVEN = (o) => o === 'stamped' || o === 'tangent' || o === 'blended' || /^
     if (h.join() !== [10, 7.5, 5, 2.5, 0].join()) fails.push(`two given ends: ${h.join(' ')}`)
     const k = [0, 0.5, 1].map(u => carrierHeightAt({ h: null, side: { back: { h: 10, s: 2 }, fwd: { h: 0, s: 2 } } }, { h: null, side: { back: { h: 10, s: 4 }, fwd: { h: 0, s: 0 } } }, p, [2, 0], u, () => 3, B))
     if (!k.every(v => v != null && v <= 10 && v >= 0)) fails.push(`a short declared stretch between 10 and 0: ${k.join(' ')}`) }
+  // THE CAP'S HEIGHT (lineHeight.mjs capLine): a chain running 0 → 200 m up a 1:10 ramp — its START cap reads the line at
+  // its start, its END cap at its end (by the end the cap names, never by the station nearest a vertex)
+  { const LH = lineHeights({ streets: [{ skelId: 'ramp', points: [[0, 0], [100, 0], [200, 0]] }], raw: (x) => x / 10, sigma: 5 })
+    const a = LH.capLine('ramp', 'start'), b = LH.capLine('ramp', 'end'), mid = LH.heightAt('ramp', [100, 0])
+    if (!(a < mid && mid < b && b - a > 15)) fails.push(`capLine: start ${a?.toFixed(2)} · middle ${mid?.toFixed(2)} · end ${b?.toFixed(2)} — the cap does not read its own end`)
+    let threw = false; try { LH.capLine('ramp', 'middle') } catch { threw = true }
+    if (!threw) fails.push('capLine: a cap naming no end was accepted') }
+  // A COAST CAP (no chain end): the stamper gives it the water line at its own point, and refuses it with no water record
+  { const LH = lineHeights({ streets: [], raw: () => 0, sigma: 5 }), water = { lineAt: (x) => 1 + x / 100 }
+    const tiles = [{ runs: [], capCouplers: [{ skelId: '__water__', at: [50, 0] }] }]
+    stampRunHeights({ tiles, LH, water, streets: [], scene: 'self-test' })
+    if (tiles[0].capCouplers[0].h !== 1.5) fails.push(`a coast cap at x 50 took ${tiles[0].capCouplers[0].h}, not the water line there (1.5)`)
+    let threw = false; try { stampRunHeights({ tiles, LH, water: null, streets: [], scene: 'self-test' }) } catch { threw = true }
+    if (!threw) fails.push('a coast cap with no water record was stamped') }
   if (fails.length) { console.error(`⛔ SELF-TEST FAILED — carrierHeights makes heights up where none was given:\n   ${fails.join('\n   ')}`); process.exit(2) }
   console.log('self-test: every synthetic ring takes only given heights')
 }
@@ -111,14 +137,15 @@ for (const scene of list) {
   let rings = 0, verts = 0, absent = 0
   tiles.forEach((t, ti) => {
     if (!(t?.ring?.length >= 3) || !t.iA?.length || !t.iaFull?.length || !t.iaStamp?.length) return
-    const runs = t.runs || [], hOfRun = hOfRunIn(runs), noLineOf = (ri) => runs[ri]?.noLine ?? null
+    const runs = t.runs || [], hOfRun = hOfRunIn(runs), noLineOf = (ri) => runs[ri]?.noLine ?? null, tcaps = t.capCouplers || []
     const name = (ri) => { const r = runs[ri]; return r ? `${r.skelId}/${r.side}/${r.segOrd}` : 'no stamp' }
     t.iaFull.forEach((ring, ri) => {
       if (!(ring?.length >= 3)) return
       rings++; verts += ring.length
       const arc = t.iaArc?.[ri] || [], stamp = t.iaStamp?.[ri] || []
       let r
-      try { r = carrierHeights({ ring, arc, stamp, hOfRun, noLineOf }) } catch (e) { refused.push(`tile ${ti} ring ${ri}: ${e.message}`); return }
+      const ic = t.iaCap?.[ri] || []
+      try { r = carrierHeights({ ring, arc, stamp, hOfRun, noLineOf, capOf: (i) => (ic[i] != null ? tcaps[ic[i]] : null) }) } catch (e) { refused.push(`tile ${ti} ring ${ri}: ${e.message}`); return }
       if (!r.H) absent++
       r.origin.forEach((o, v) => { tally[o ?? 'none'] = (tally[o ?? 'none'] || 0) + 1
         if (!GIVEN(o)) bad.push(`tile ${ti} ring ${ri} v ${v} (${ring[v].map(c => c.toFixed(1)).join(', ')}) ${o ?? 'no origin'} · ${arc[v] != null ? `arc ${arc[v]}` : name(stamp[v])}`) })

@@ -9497,6 +9497,11 @@ export function buildTileGround(ribbons, opts = {}) {
             }
           }
           const runs = [], iaStamp = mine.map(EC => new Array(EC.ring.length).fill(null))
+          // ⭐ THE CAP, BY IDENTITY: a dead end's cap is ONE end COUPLER, its chain's own — not two halves and not a corner
+          // (Jacob, 2026-07-22; `RIBBONS §1`: a coupler with tangent handles). It is NOT frontage, so it stays out of `runs`;
+          // `iaCap[r][k]` names its record in `capCouplers` ({ skelId, end }, from ①'s own owner record — never by proximity, A15; a coast cap, { skelId, at }), so a
+          // consumer that needs the cap's height asks its chain (`lineHeight.mjs#stampRunHeights`). One record per coupler.
+          const capCouplers = [], iaCap = mine.map(EC => new Array(EC.ring.length).fill(null))
           // ⭐ CARRIED, NOT RE-DERIVED. Every ② vertex already holds the ① EDGE it was struck from,
           // so "is this a corner?" is "did the OWNER change between this vertex and the last?" — a
           // question about ①'s identity, asked on ②'s contour without ever measuring ②'s geometry.
@@ -9534,7 +9539,17 @@ export function buildTileGround(ribbons, opts = {}) {
               // ⛔ A CAP EDGE IS NOT FRONTAGE: it runs ACROSS the ribbon, so as a run it would answer "which side is
               // the water on" with a segment perpendicular to the shore. It ENDS the run (the leg stops where it
               // stops in the world). The record keeps its identity for the tip ease; only the RUN declines it.
-              if (o.cap) { cur = null; continue }
+              if (o.cap) { cur = null
+                const prev = i > 0 ? iaCap[ri][i - 1] : null
+                // a COAST cap has no chain end (the coast's ends are not dead ends): its height is the water line at the point,
+                // as every coast vertex's is, so the coupler carries the point (its first vertex) instead of an end
+                if (o.water) { iaCap[ri][i] = prev != null && capCouplers[prev].skelId === o.skelId ? prev : capCouplers.push({ skelId: o.skelId, at: EC.ring[i] }) - 1; continue }
+                // its END by identity: the record was minted at the chain's first or last vertex (`tipEnd`), never found by
+                // projecting onto the chain — a chain that hooks back passes nearer its own cap than its end does
+                if (o.tipEnd !== 'start' && o.tipEnd !== 'end') throw new Error(`tileGround: ⛔ a cap edge of ${o.skelId} names no tip end (tipEnd ${o.tipEnd}) — its chain's end is unknown`)
+                if (prev != null && capCouplers[prev].skelId === o.skelId && capCouplers[prev].end !== o.tipEnd) throw new Error(`tileGround: ⛔ one cap of ${o.skelId} at (${EC.ring[i].map(v => v.toFixed(2)).join(', ')}) spans BOTH its chain's ends — one coupler, one end`)
+                iaCap[ri][i] = prev != null && capCouplers[prev].skelId === o.skelId ? prev : capCouplers.push({ skelId: o.skelId, end: o.tipEnd }) - 1
+                continue }
               // ⭐ `baseMeasure` — the MEASURED cross-section for this street side. `SECTION §3.1`:
               // treelawn Y/N is "gleaned from data", and `resolvePedDepths(baseMeasure, side, custom)`
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
@@ -9561,6 +9576,11 @@ export function buildTileGround(ribbons, opts = {}) {
               cur.poly.push(EC.ring[i])
               cur.iEnd = i                                   // the last EDGE this run owns
             }
+            // a cap that straddles the ring's seam is still ONE coupler: its tail (the last record made) joins its head
+            { const C = iaCap[ri], f = C[0], l = C[C.length - 1]
+              if (f != null && l != null && f !== l && capCouplers[f].skelId === capCouplers[l].skelId && capCouplers[f].end === capCouplers[l].end && l === capCouplers.length - 1) {
+                for (let q = 0; q < C.length; q++) if (C[q] === l) C[q] = f
+                capCouplers.pop() } }
             // ⭐⭐⭐ A RUN OWNS EDGES, SO ITS POLYLINE ENDS AT ITS LAST EDGE'S FAR VERTEX.
             // The loop above pushes the vertex each owned edge LEAVES, so a run's polyline stopped
             // one vertex short of its own arc — and a run owning exactly ONE edge came out as a
@@ -9646,6 +9666,7 @@ export function buildTileGround(ribbons, opts = {}) {
             // corner LOCATES the treatment (`iaCorner`); this is only its EXTENT, and it is read
             // off the ease that made it rather than matched back onto the contour afterwards.
             runs: runs2, iaStamp, iaCorner, iaFull: mine.map(EC => EC.ring),
+            capCouplers, iaCap,
             iaArc: mine.map(EC => EC.arc || EC.ring.map(() => null)),
             // ⭐ the town's curb-cut norm, frozen with its rung (`cartograph/curb-cut-norm.mjs`); null = poured before it.
             curbCutNorm: ribbons?.curbCutNorm ?? null,

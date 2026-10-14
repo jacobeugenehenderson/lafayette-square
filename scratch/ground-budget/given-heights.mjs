@@ -52,17 +52,20 @@ const body = src.slice(src.indexOf('const DECLARED = '), src.indexOf('\n}\n', sr
 const cut = body.split('\n').filter(l => !/if \(h[ba] == null && span\.length > 1\)/.test(l))
 if (cut.length !== body.split('\n').length - 2) throw new Error('given-heights: the tangent fallback is not two lines any more — re-aim JOINED')
 const joined = new Function(cut.join('\n').replace('export function carrierHeights', 'function carrierHeights') + '\nreturn carrierHeights')()
-const rules = { TODAY: today, JOINED: joined, SHIPPED: carrierHeights }
+const NOCAP = (a) => carrierHeights({ ...a, capOf: () => null })                // d63b43ea: a cap blended between its legs
+const rules = { TODAY: today, JOINED: joined, NOCAP, SHIPPED: carrierHeights }
 const out = {}
-for (const k of Object.keys(rules)) out[k] = { filled: 0, changed: 0, refused: 0, steps: 0, sumDH: 0, maxStep: null, origins: {} }
-const boundary = []
+for (const k of Object.keys(rules)) out[k] = { changedBy: {}, filled: 0, changed: 0, refused: 0, steps: 0, sumDH: 0, maxStep: null, origins: {} }
+const boundary = [], capDiff = []
 const q = (a, f) => a.length ? a[Math.min(a.length - 1, Math.floor(f * a.length))] : NaN
 tiles.forEach((t, ti) => {
   if (!(t?.ring?.length >= 3) || !t.iA?.length || !t.iaFull?.length || !t.iaStamp?.length) return
-  const runs = t.runs || [], hOfRun = hOfRunIn(runs), noLineOf = (ri) => runs[ri]?.noLine ?? null
+  const runs = t.runs || [], hOfRun = hOfRunIn(runs), noLineOf = (ri) => runs[ri]?.noLine ?? null, tcaps = t.capCouplers || []
   t.iaFull.forEach((ring, ri) => {
     if (!(ring?.length >= 3)) return
-    const a = { ring, arc: t.iaArc?.[ri] || [], stamp: t.iaStamp?.[ri] || [], hOfRun, noLineOf }
+    const ic = t.iaCap?.[ri] || []
+    const a = { ring, arc: t.iaArc?.[ri] || [], stamp: t.iaStamp?.[ri] || [], hOfRun, noLineOf, capOf: (i) => (ic[i] != null ? tcaps[ic[i]] : null) }
+    let nocap = null; try { nocap = NOCAP(a) } catch {}
     const base = today(a)
     for (const [k, fn] of Object.entries(rules)) {
       let r; try { r = fn(a) } catch { out[k].refused++; continue }
@@ -71,12 +74,14 @@ tiles.forEach((t, ti) => {
       O.filled += r.origin.filter(o => o === 'filled').length
       if (!r.H) continue
       for (let i = 0; i < n; i++) {
-        if (k !== 'TODAY' && base.H && (base.origin[i] === 'stamped' || base.origin[i] === 'blended') && Math.abs((r.H[i] ?? NaN) - base.H[i]) > 1e-9) O.changed++
+        if (k !== 'TODAY' && base.H && (base.origin[i] === 'stamped' || base.origin[i] === 'blended') && Math.abs((r.H[i] ?? NaN) - base.H[i]) > 1e-9) { O.changed++; const w = `${base.origin[i]}→${r.origin[i]}${a.arc[i] != null ? ' (on an arc)' : ''}`; O.changedBy[w] = (O.changedBy[w] || 0) + 1 }
         const j = (i + 1) % n, ds = Math.hypot(ring[j][0] - ring[i][0], ring[j][1] - ring[i][1])
         if (r.H[i] == null || r.H[j] == null) continue
         const dH = Math.abs(r.H[j] - r.H[i])
         if (dH > ds) { O.steps++; O.sumDH += dH; if (!O.maxStep || dH > O.maxStep.dH) O.maxStep = { dH, ds, at: ring[i].map(c => +c.toFixed(1)), tile: ti } }
       }
+      if (k === 'SHIPPED' && nocap?.H) for (let i = 0; i < n; i++) if (r.origin[i] === 'cap' && nocap.H[i] != null) {
+        const c = tcaps[ic[i]]; capDiff.push({ d: Math.abs(r.H[i] - nocap.H[i]), at: ring[i].map(v => +v.toFixed(1)), tile: ti, name: `${c.skelId} (${c.end})` }) }
       if (k === 'SHIPPED') {
         const end = (i) => r.H[i] != null ? { h: r.H[i] } : { h: null, side: r.side[i] }
         const segAt = (i) => [ring[i], ring[(i + 1) % n]]
@@ -100,8 +105,12 @@ tiles.forEach((t, ti) => {
 console.log(`${town}: ② carrier heights, three rules (served shape.json, stamped at this tree)`)
 for (const [k, O] of Object.entries(out)) {
   console.log(`  ${k.padEnd(8)} filled ${O.filled} · changed where today was given ${k === 'TODAY' ? '—' : O.changed} · rings refused ${O.refused} · steps ${O.steps}, ΣΔH ${O.sumDH.toFixed(1)} m${O.maxStep ? `, max ${O.maxStep.dH.toFixed(3)} m over ${O.maxStep.ds.toFixed(2)} m at (${O.maxStep.at}) tile ${O.maxStep.tile}` : ''}`)
+  if (O.changed) console.log(`           changed where today was given, by origin: ${JSON.stringify(O.changedBy)}`)
   console.log(`           ${Object.entries(O.origins).sort((x, y) => y[1] - x[1]).map(([o, c]) => `${o} ${c}`).join(' · ')}`)
 }
+capDiff.sort((x, y) => y.d - x.d); const CD = capDiff.map(c => c.d).sort((x, y) => x - y)
+console.log(`  THE CAPS: ${capDiff.length} cap vertices · their chain's end height vs the blend between the legs (d63b43ea) |ΔH| p50 ${q(CD, .5).toFixed(3)} · p90 ${q(CD, .9).toFixed(3)} · max ${q(CD, 1).toFixed(3)} m`)
+for (const c of capDiff.filter((c, i, A) => A.findIndex(x => x.name === c.name) === i).slice(0, 5)) console.log(`     ${c.d.toFixed(3)} m at (${c.at}) tile ${c.tile} · ${c.name}`)
 const G = boundary.map(b => b.grade).sort((x, y) => x - y), D = boundary.map(b => b.gap).sort((x, y) => x - y)
 console.log(`  THE EASE, SHIPPED (B ${B.toFixed(2)} m, ${design.groundBlendM > 0 ? 'design.json groundBlendM' : 'one terrain step'}): ${boundary.length} boundaries · the steepest grade along each ease p50 ${(100 * q(G, .5)).toFixed(1)}% · p90 ${(100 * q(G, .9)).toFixed(1)}% · max ${(100 * q(G, 1)).toFixed(1)}% · (what it takes up: |H − terrain| at the given vertex p50 ${q(D, .5).toFixed(3)} · p90 ${q(D, .9).toFixed(3)} · max ${q(D, 1).toFixed(3)} m)`)
 for (const b of boundary.sort((x, y) => y.grade - x.grade).slice(0, 5)) console.log(`     ${(100 * b.grade).toFixed(1)}% (|H − terrain| ${b.gap.toFixed(3)} m) at (${b.at}) tile ${b.tile} · ${b.name} → ${b.kind}`)

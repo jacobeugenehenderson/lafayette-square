@@ -308,6 +308,11 @@ The distance: the Arch or the backdrop where the town has one, the air between, 
   heightfield *bends*, and how much it bends is a function of the exaggeration — so an unbaked
   change leaves the mesh tessellated for the old value (over-dense, or faceted on the hills).
 - ⚠️ **No slider yet** — it is authored by editing `design.json`. A Stage control is unbuilt.
+- ⭐ **`groundBlendM` — how far the ground eases back into the terrain, per town, metres, authored** in `design.json`
+  (no Stage control; autosave keeps it). Two eases read it: past the walk and lawn, the ground eases into the terrain over
+  it; and along the kerb line beside a road with no line height (a highway edge, a bridge, the rim), the height eases into
+  the terrain over it, then the terrain shows. ⛔ **Default: one terrain grid step** (5 m on today's towns), never a kit
+  constant. Re-bake the ground after changing it; the bake prints the value and where it came from (`[deform] … ease`).
 
 ### Bake — committing the look to the slab
 

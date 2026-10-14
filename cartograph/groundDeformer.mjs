@@ -46,7 +46,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, arcBlended: 0, tangent: 0, declaredV: {}, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0, memoTurns: 0, declared: 0 }
+  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, arcBlended: 0, tangent: 0, cap: 0, declaredV: {}, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0, memoTurns: 0, declared: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -118,10 +118,11 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
       if (!(ring?.length >= 3)) return
       const arc = t.iaArc?.[ri] || [], stamp = t.iaStamp?.[ri] || []
       let H, origin, side
-      try { ({ H, origin, side } = carrierHeights({ ring, arc, stamp, hOfRun, noLineOf: (r) => t.runs?.[r]?.noLine ?? null })) }
+      const ic = t.iaCap?.[ri] || []
+      try { ({ H, origin, side } = carrierHeights({ ring, arc, stamp, hOfRun, noLineOf: (r) => t.runs?.[r]?.noLine ?? null, capOf: (i) => (ic[i] != null ? t.capCouplers[ic[i]] : null) })) }
       catch (e) { throw new Error(`groundDeformer: tile ${ti} ring ${ri} — ${e.message}`) }
       if (!H) { stats.noH++; return }
-      for (const o of origin) if (o === 'blended') stats.arcBlended++; else if (o === 'tangent') stats.tangent++
+      for (const o of origin) if (o === 'blended') stats.arcBlended++; else if (o === 'tangent') stats.tangent++; else if (o === 'cap') stats.cap++
         else if (o?.startsWith('declared')) stats.declaredV[o] = (stats.declaredV[o] || 0) + 1
       rings.push({ ring, H, side, stamp, arc, t: ti, k: ri })
     })
@@ -289,16 +290,22 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
       for (let a = 0; a < m; a++) { const b = (a + 1) % m; env[b] = Math.min(env[b], env[a] + kk * gap[a]) }
       for (let a = m - 1; a >= 0; a--) { const b = (a + m - 1) % m; env[b] = Math.min(env[b], env[a] + kk * gap[b]) }
     }
-    st.forEach((S, a) => { const c = Math.max(-env[a], Math.min(env[a], A[a])); if (c !== A[a]) stats.absorbClamped++; S.A = c })
+    st.forEach((S, a) => { if (!Number.isFinite(A[a])) { S.A = NaN; return }      // no height here: no absorption
+      const c = Math.max(-env[a], Math.min(env[a], A[a])); if (c !== A[a]) stats.absorbClamped++; S.A = c })
     R.st = st; R.segStart = segStart
   }
   // the absorption at (ring R, segment i, parameter u): linear between the two stations that bracket it
+  // ⛔ A station past the ease beside a run that declares no line has NO absorption (no height there: the terrain shows).
+  // A point between it and a station that has one takes that one's — over less than one station step (σ/10) — never an
+  // interpolation into nothing: d63b43ea did, and 0 · NaN is NaN (Huron 3,418 of 11.46M samples; Brace's nan-probe).
   const absorbAt = (R, i, u) => { const st = R.st, a0 = R.segStart[i], a1 = i + 1 < R.segStart.length ? R.segStart[i + 1] : st.length
     // the last station of segment i at or before u (stations are in increasing u within a segment): by bisection
     let a = a0, hi = a1 - 1; while (a < hi) { const m = (a + hi + 1) >> 1; if (st[m].u <= u) a = m; else hi = m - 1 }
     const next = a + 1 < st.length ? st[a + 1] : st[0], uN = a + 1 < a1 ? next.u : 1
     const f = uN > st[a].u ? (u - st[a].u) / (uN - st[a].u) : 0
-    return st[a].A + f * (next.A - st[a].A) }
+    const A0 = st[a].A, A1 = next.A
+    if (!Number.isFinite(A0) || !Number.isFinite(A1)) return Number.isFinite(A0) ? A0 : A1
+    return A0 + f * (A1 - A0) }
 
   /** D(x, z): the deformed raw height, or null where the deformer does not reach (the caller draws the terrain). */
   let memo = new Map(), memoOld = new Map()
@@ -317,6 +324,9 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
     const mk = `${x},${z}`
     if (memo.has(mk)) return memo.get(mk)
     const v = memoOld.has(mk) ? memoOld.get(mk) : resolveUncached(x, z)
+    // ⛔ NEVER A NON-FINITE HEIGHT: null means "the deformer does not reach here" and the caller draws the terrain; NaN or
+    // ±Infinity would draw a broken vertex, so it THROWS at the source, by name
+    if (v.v != null && !Number.isFinite(v.v)) throw new Error(`groundDeformer: ⛔ a NON-FINITE height ${v.v} at (${x}, ${z}) — owner ${v.owner ?? 'none'} (tile|ring|span). ▶ node scratch/ground-budget/nan-cause.mjs`)
     if (memo.size >= memoGeneration) { memoOld = memo; memo = new Map(); stats.memoTurns++ }
     try { memo.set(mk, v) } catch (e) { throw new Error(`groundDeformer: the memo could not hold one more answer at ${memo.size} (generation ${memoGeneration}, V8's Map cap ${V8_MAP_MAX_ENTRIES}): ${e.message}`) }
     return v
@@ -418,6 +428,8 @@ export function hOfRunIn(runs) {
  * H ALONG ONE ② RING, with each vertex's ORIGIN — the deformer's carrier heights, exported so a check reads them from the
  * source (`checks/claims-every-kerb-height-was-given.mjs`). ⛔ Every height is GIVEN; none is made up:
  *   'stamped'  — a straight vertex, its own run's line
+ *   'cap'      — a dead end's cap: ONE coupler, its chain's own (tileGround `iaCap` → `capCouplers`, by identity from ①), ONE height,
+ *                the chain's end station (Jacob 2026-07-22; Boz 2026-10-13) · 'declared-cap:<kind>' on a grade-separated chain
  *   'tangent'  — a corner arc's own tangent point (its first or last vertex), stamped, used only where the straight vertex
  *                beside it has no height (two arcs abutting; a roundabout of arcs)
  *   'blended'  — by arclength between two given heights: a corner arc between its tangents, or a JOINED SPAN (abutting arcs,
@@ -432,10 +444,11 @@ export function hOfRunIn(runs) {
  * (The neighbour fill this replaces ran in place, left to right, so one side's H crossed the whole gap and the change
  * landed on one segment: Huron 3 m over 0.85 m, HPDM 12 m over 0.01 m — Brace's census, 3276dceb.)
  * @param noLineOf (runIndex) → the run's declared kind ('highway' · 'bridge' · 'rim' · 'unknown') or null
+ * @param capOf    (vertex) → its cap { h, noLine } (`capCouplers[iaCap[v]]`), or null
  * @returns { H, origin } — H null for a declared ring
  */
 const DECLARED = new Set(['highway', 'bridge', 'rim'])
-export function carrierHeights({ ring, arc, stamp, hOfRun, noLineOf = () => null }) {
+export function carrierHeights({ ring, arc, stamp, hOfRun, noLineOf = () => null, capOf = () => null }) {
   const n = ring.length, H = new Array(n).fill(null), origin = new Array(n).fill(null)
   const at = (i) => (i % n + n) % n
   for (let i = 0; i < n; i++) if (arc[i] == null && stamp[i] != null) {
@@ -443,6 +456,9 @@ export function carrierHeights({ ring, arc, stamp, hOfRun, noLineOf = () => null
     if (h != null) { H[i] = h; origin[i] = 'stamped' }
     else if (DECLARED.has(noLineOf(stamp[i]))) origin[i] = `declared:${noLineOf(stamp[i])}`
   }
+  // a DEAD END's cap: ONE coupler, its chain's own, ONE height — on an arc or not (a rounded cap is eased)
+  for (let i = 0; i < n; i++) { const c = stamp[i] == null ? capOf(i) : null; if (!c) continue
+    if (c.h != null) { H[i] = c.h; origin[i] = 'cap' } else if (DECLARED.has(c.noLine)) origin[i] = `declared-cap:${c.noLine}` }
   const stamped = (v) => stamp[v] != null ? hOfRun(stamp[v], ring[v]) : null
   // a corner arc: blend H by arclength between the straight vertex before it and the one after it — or, where that vertex
   // has no height, from the arc's own stamped tangent point
@@ -453,6 +469,7 @@ export function carrierHeights({ ring, arc, stamp, hOfRun, noLineOf = () => null
     if (arc[i] == null || arc[at(i - 1)] === arc[i]) continue                  // i starts an arc
     let j = i; const id = arc[i], span = []
     while (arc[at(j)] === id && span.length < n) { span.push(at(j)); j++ }
+    if (span.some(v => origin[v] != null)) continue                     // it holds a cap: the joined span blends what is left
     let first = at(i - 1), last = at(j)
     let hb = H[first] ?? stamped(first), ha = H[last] ?? stamped(last)
     if (hb == null && span.length > 1) { const h = stamped(span[0]); if (h != null) { first = span.shift(); H[first] = hb = h; origin[first] = 'tangent' } }
@@ -478,7 +495,7 @@ export function carrierHeights({ ring, arc, stamp, hOfRun, noLineOf = () => null
     // the run between a and b, split where a declared vertex interrupts it: a piece touching a declared vertex has no
     // given height on that side
     const pieces = [[]]
-    for (let k = 1; k <= (given.length > 1 ? gap : n - 1); k++) { const v = at(a + k); if (origin[v]?.startsWith('declared:')) { pieces.push({ declared: origin[v].slice(9) }, []); continue } pieces[pieces.length - 1].push(v) }
+    for (let k = 1; k <= (given.length > 1 ? gap : n - 1); k++) { const v = at(a + k), dk = /^declared(?:-cap)?:(.*)$/.exec(origin[v] ?? '')?.[1]; if (dk) { pieces.push({ declared: dk }, []); continue } pieces[pieces.length - 1].push(v) }
     if (pieces.length === 1) { blend([a, ...pieces[0], given.length > 1 ? b : a], H[a], H[given.length > 1 ? b : a]); continue }
     for (let p = 0; p < pieces.length; p += 2) { const kind = (pieces[p - 1] ?? pieces[p + 1])?.declared
       for (const v of pieces[p]) origin[v] = `declared-corner:${kind}` }
