@@ -16,6 +16,12 @@
 //     does), and
 //   · e and f are NOT on one integer line (exact cross products) — an edge shared exactly is the goal, never counted.
 // No angle constant: both ends within a step already bound the angle by 2·step / overlap.
+// ⭐ SHAPE, per pair (the two classes need different fixes, so the instrument tells them apart):
+//   one-side-vertex — an end vertex V of one edge lies within a step of the OTHER edge's interior, and the ring carries
+//                     straight on through V along that other edge: a vertex one polygon has and its neighbour lacks
+//                     (an intersection inserted on one side only, rounded up to ½ step off the shared line)
+//   two-lines       — otherwise: two constructions of one line, whose vertices differ (different joins, or a parallel
+//                     offset), so the line itself is drawn twice
 // Pairs of DIFFERENT groups are the producer pairs; pairs within ONE group (two items the stack will union) are reported
 // separately — their union makes slivers as well (Boz, 2026-10-14). Layers that do not cut (water) are not partition.
 //
@@ -55,12 +61,15 @@ export function nearMisses(entries) {
   const ringsOf = (it) => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]
   for (const e of entries) for (const it of e.items) for (const r of ringsOf(it)) if (r && r.length >= 2) n += r.length
   const AX = new Int32Array(n), AY = new Int32Array(n), BX = new Int32Array(n), BY = new Int32Array(n), G = new Int32Array(n), I = new Int32Array(n), R = new Int32Array(n)
+  const NXT = new Int32Array(n), PRV = new Int32Array(n)            // the ring's next / previous edge (skipping degenerate ones)
   let m = 0
   entries.forEach((e, gi) => e.items.forEach((it, ii) => ringsOf(it).forEach((r, ri) => { if (!r || r.length < 2) return
+    const first = m
     for (let k = 0; k < r.length; k++) { const a = r[k], b = r[(k + 1) % r.length]
       const ax = Math.round(a[0] * CLIP_SCALE), ay = Math.round(a[1] * CLIP_SCALE), bx = Math.round(b[0] * CLIP_SCALE), by = Math.round(b[1] * CLIP_SCALE)
       if (ax === bx && ay === by) continue
-      AX[m] = ax; AY[m] = ay; BX[m] = bx; BY[m] = by; G[m] = gi; I[m] = ii; R[m] = ri; m++ } })))
+      AX[m] = ax; AY[m] = ay; BX[m] = bx; BY[m] = by; G[m] = gi; I[m] = ii; R[m] = ri; m++ }
+    for (let k = first; k < m; k++) { NXT[k] = k + 1 < m ? k + 1 : first; PRV[k] = k > first ? k - 1 : m - 1 } })))
   // a grid sized to the edges themselves (their median length); each edge listed in every cell its box, widened a step,
   // meets — a compressed index (counts, then offsets), keyed by an integer per cell
   const lens = new Float64Array(m); for (let k = 0; k < m; k++) lens[k] = Math.hypot(BX[k] - AX[k], BY[k] - AY[k])
@@ -92,7 +101,15 @@ export function nearMisses(entries) {
     const d1 = segD(xb, yb, AX[q], AY[q], BX[q], BY[q]); if (d1 > STEP) continue
     const key = p < q ? p * m + q : q * m + p; if (seen.has(key)) continue; seen.add(key)
     const A = entries[G[p]].groupKey, B = entries[G[q]].groupKey
-    out.push({ a: `${A}#${I[p]}.${R[p]}`, b: `${B}#${I[q]}.${R[q]}`, ga: A, gb: B, same: A === B, m: (hi - lo) / CLIP_SCALE,
+    // the shape: does an end vertex of one edge sit on the other's interior with its ring running on along that edge?
+    const onInterior = (vx, vy, k) => { const dx = BX[k] - AX[k], dy = BY[k] - AY[k], L2 = dx * dx + dy * dy, t = ((vx - AX[k]) * dx + (vy - AY[k]) * dy) / L2
+      return t * Math.sqrt(L2) > STEP && (1 - t) * Math.sqrt(L2) > STEP && segD(vx, vy, AX[k], AY[k], BX[k], BY[k]) <= STEP }
+    const runsOn = (x, k) => { // edge x's two ring neighbours: does the one through a vertex on k's interior continue along k?
+      if (onInterior(BX[x], BY[x], k)) { const nx = NXT[x]; if (segD(BX[nx], BY[nx], AX[k], AY[k], BX[k], BY[k]) <= STEP) return true }
+      if (onInterior(AX[x], AY[x], k)) { const px = PRV[x]; if (segD(AX[px], AY[px], AX[k], AY[k], BX[k], BY[k]) <= STEP) return true }
+      return false }
+    const shape = runsOn(p, q) || runsOn(q, p) ? 'one-side-vertex' : 'two-lines'
+    out.push({ a: `${A}#${I[p]}.${R[p]}`, b: `${B}#${I[q]}.${R[q]}`, ga: A, gb: B, same: A === B, shape, m: (hi - lo) / CLIP_SCALE,
       gap: Math.max(d0, d1), at: [(xa + xb) / 2 / CLIP_SCALE, (ya + yb) / 2 / CLIP_SCALE], seg: [[xa / CLIP_SCALE, ya / CLIP_SCALE], [xb / CLIP_SCALE, yb / CLIP_SCALE]] })
   }
   return out
@@ -100,13 +117,17 @@ export function nearMisses(entries) {
 
 function report(town, pairs, expect) {
   const by = new Map()
-  for (const p of pairs) { const k = [p.ga, p.gb].sort().join(' / '); let r = by.get(k); if (!r) by.set(k, r = { k, same: p.same, n: 0, m: 0, gap: 0, xs: [] }); r.n++; r.m += p.m; r.gap = Math.max(r.gap, p.gap); r.xs.push(p) }
+  for (const p of pairs) { const k = [p.ga, p.gb].sort().join(' / '); let r = by.get(k); if (!r) by.set(k, r = { k, same: p.same, n: 0, m: 0, gap: 0, shapes: {}, xs: [] }); r.n++; r.m += p.m; r.gap = Math.max(r.gap, p.gap)
+    const sh = (r.shapes[p.shape] ||= { n: 0, m: 0 }); sh.n++; sh.m += p.m; r.xs.push(p) }
   const rows = [...by.values()].sort((a, b) => b.m - a.m)
   const file = join(arg('out') || tmpdir(), `claims-no-edge-is-drawn-twice-${town}.json`)
   writeFileSync(file, JSON.stringify({ town, pairs: pairs.length, m: +pairs.reduce((t, p) => t + p.m, 0).toFixed(3),
-    rows: rows.map(r => ({ pair: r.k, sameGroup: r.same, edgePairs: r.n, m: +r.m.toFixed(3), maxGapSteps: +r.gap.toFixed(3) })) }, null, 1))
-  const line = (r) => `${String(r.n).padStart(7)} edge pair(s) · ${r.m.toFixed(2).padStart(9)} m alongside · max gap ${r.gap.toFixed(3)} step(s) · ${r.k}`
+    rows: rows.map(r => ({ pair: r.k, sameGroup: r.same, edgePairs: r.n, m: +r.m.toFixed(3), maxGapSteps: +r.gap.toFixed(3),
+      byShape: Object.fromEntries(Object.entries(r.shapes).map(([k, v]) => [k, { edgePairs: v.n, m: +v.m.toFixed(3) }])) })) }, null, 1))
+  const line = (r) => `${String(r.n).padStart(7)} edge pair(s) · ${r.m.toFixed(2).padStart(9)} m alongside · max gap ${r.gap.toFixed(3)} step(s) · ${r.k} · ${Object.entries(r.shapes).map(([k, v]) => `${k} ${v.m.toFixed(0)} m`).join(', ')}`
   console.log(`\n${town}: ${pairs.length} near-miss edge pair(s), ${pairs.reduce((t, p) => t + p.m, 0).toFixed(1)} m of line drawn twice · full table (${rows.length} pair(s)): ${file}`)
+  const shapeM = (s) => pairs.filter(p => p.shape === s).reduce((t, p) => t + p.m, 0).toFixed(1)
+  console.log(`  by shape: two-lines ${shapeM('two-lines')} m · one-side-vertex ${shapeM('one-side-vertex')} m`)
   console.log(`  BETWEEN PRODUCERS (two groups):`); for (const r of rows.filter(r => !r.same).slice(0, SHOW)) console.log('   ' + line(r))
   console.log(`  WITHIN ONE GROUP (two items the stack unions):`); for (const r of rows.filter(r => r.same).slice(0, SHOW)) console.log('   ' + line(r))
   console.log(`  longest:`); for (const p of [...pairs].sort((a, b) => b.m - a.m).slice(0, SHOW)) console.log(`     ${p.m.toFixed(3)} m at (${p.at.map(v => v.toFixed(3)).join(', ')}) · ${p.a}  vs  ${p.b} · gap ${p.gap.toFixed(3)}`)
@@ -127,6 +148,18 @@ function selftest() {
   let bad = 0
   for (const [name, shift, want] of cases) { const got = run(shift).length > 0; if (got !== want) bad++
     console.log(`  ${got === want ? '✅' : '⛔'} ${name}: ${got ? 'reported' : 'not reported'} (must ${want ? '' : 'NOT '}report)`) }
+  // the two shapes: a vertex on one side only (A's right edge carries an extra vertex half a step off x = 10, B's does not)
+  // and two lines (B's left edge moved half a step, no vertex in the other's interior)
+  const h = LATTICE_M / 2
+  const shapes = [
+    ['a vertex on one side only', [[0, 0], [10, 0], [10 + h, 5], [10, 10], [0, 10]], sq(10, 0, 10, 10), 'one-side-vertex'],
+    ['two lines', sq(0, 0, 10, 10), sq(10 + h, 0, 10, 10), 'two-lines'],
+    // the measured 108 m shape: B's line ENDS on A's interior and its ring turns away — two lines, not an inserted vertex
+    ['two lines whose ends differ', sq(0, 0, 10, 10), [[10 + h, 0], [20, 0], [20, 10], [12, 10], [10 + h, 6]], 'two-lines'],
+  ]
+  for (const [name, a, b, want] of shapes) { const got = nearMisses([{ groupKey: 'mut:a', items: [a] }, { groupKey: 'mut:b', items: [b] }])
+    const ok = got.length > 0 && got.every(p => p.shape === want); if (!ok) bad++
+    console.log(`  ${ok ? '✅' : '⛔'} ${name}: ${[...new Set(got.map(p => p.shape))].join(', ') || 'not reported'} (must be ${want})`) }
   return bad
 }
 
