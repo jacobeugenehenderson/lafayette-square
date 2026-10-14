@@ -4827,7 +4827,7 @@ export function styleFromEvidence(landings) {
 }
 
 const CURB_CUT_STYLE_SET = new Set(['none', 'diagonal', 'perpendicular'])
-function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, insAt, band, perpGeom) {
+function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, perpGeom) {
   const tally = { junction: 0, bend: 0, unknown: 0, curbCuts: 0, perpWedgeLawn: 0, perpWedgeConcrete: 0, perpOneSidedLawn: 0, perpNoLanding: 0, perpPastApex: 0, unreadable: 0, contradicted: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, short: 0, bySource: {} }
   const recs = [], masks = [], contradicted = [], corners = [], perp = []
   const norm = st.curbCutNorm || null
@@ -5424,9 +5424,15 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     }
     p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE; p.dcS = cS; p.dcE = cE; p.dfS = fS; p.dfE = fE
   }
-  // ⛔ The VARIABLE-depth offsets run on the densified ring; the CONSTANT-depth ones (`insAt`) do
-  // not need it and are left alone — a constant depth over collinear extra vertices is the same
-  // curve, so the two cannot disagree at a boolean.
+  // ⭐⭐ ONE OFFSET FAMILY (`RIBBONS §1`, `SECTION §3`: the ribbon is monowidth, its strips are SLICES of it). Every
+  // depth line the band is cut along — the ped band's outer edge (`pedOuter`), the walk's two edges, the LU's inner
+  // edge (`luIn`), the curb-cut slab — is THIS offset of the densified ring, so a line two strips share is drawn once.
+  // ⛔ `pedOuter` and `luIn` used to be offsets of the UNdensified ring, on the claim that a constant depth over
+  // collinear extra vertices is the same curve and "cannot disagree at a boolean". Measured false at the lattice
+  // (HPDM, 2026-10-14): two offset runs of one line land up to 1 mm apart, and `env − walk` kept the gap as 1,009
+  // treelawn rings thinner than the lattice — which the paint stack then had to resolve.
+  // ▶ scratch/ground-budget/flatten-r1/slv.mjs counts them (0 is the gate).
+  // A pick here is per DENSIFIED vertex; a per-edge property of the source ring reads `p.dsrc[j]`, its source edge.
   const insD = (pick) => {
     const o = [], h = []
     for (const p of parts) {
@@ -5584,7 +5590,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         len: Math.hypot(b[0] - a[0], b[1] - a[1]) })
     }
   }
-  const pedOuter = ins((p) => (i) => (bareAt(p, i) ? 0 : cw))
+  const pedOuter = insD((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : cw))
   // ⛔⛔ THE SLIDE IS UNIONED IN — NEVER CUT AND ADDED BACK ALONG THE SAME EDGE. Clipper is
   // integer-space (1 mm); a difference followed by a union on the same boundary leaves the two
   // halves as separate polygon records that merely touch, so the band reads as broken while its
@@ -5604,7 +5610,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // (`SECTION` rule 3), so they are painted as "the band the walk is not": the ped envelope (curb-inner → WB) minus the
   // walk, with the walk clipped to that envelope. curb ∪ walk ∪ lawn ∪ LU = the block by construction; it also ends the
   // lawn's overlap with the walk. ▶ node checks/claims-the-ground-covers-every-block.mjs
-  const luIn = ins((p) => (i) => (bareAt(p, i) ? 0 : WB))
+  const luIn = insD((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : WB))
   const env = band(pedOuter, luIn)
   const Wp0 = env.length && W.length ? intersectRings(W, env) : []
   // ⭐⭐ THE PERPENDICULAR CORNER (Jacob, 2026-10-07): "each leg's sidewalk runs STRAIGHT on to the curb, ending in its own
@@ -5693,7 +5699,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     return { sector: pos(sector), strips: [pos(rect(A, dA, nA, cw + lA.walkFrom, cw + lA.walkTo)), pos(rect(B, dB, nB, cw + lB.walkFrom, cw + lB.walkTo))],
              lawn: !!(mA.hasTL && mB.hasTL), oneSided: !!mA.hasTL !== !!mB.hasTL, cuts: [cutOf(cA, [-dB[0], -dB[1]]), cutOf(cB, [-dA[0], -dA[1]])], wedgeAt, pastApex }
   }
-  const R = curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, insAt, band, perpGeom)
+  const R = curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, perpGeom)
   // the walk, with each perpendicular corner's sector re-filled: where BOTH legs carry a tree lawn, its two landings and
   // nothing else — the rest of the sector is "the band the walk is not", the lawn wedge at the apex, by the partition
   // below (`env − walk`); otherwise the whole sector is walk (a leg with no lawn has none to make a wedge from).
@@ -5706,7 +5712,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     Wp = add.length ? unionRings([...kept, ...add]) : kept
   }
   // ⚠️ ONE depth for the tile's strips: the norm is the town's, so every curb cut on it shares `warningDepth`.
-  const slab = R.masks.length ? band(insAt(cw), insAt(cw + R.maxD)) : []
+  const slab = R.masks.length ? band(insD(() => () => cw), insD(() => () => cw + R.maxD)) : []
   const strips = slab.length ? intersectRings(intersectRings(slab, unionRings(R.masks)), Wp) : []
   return {
     curbCut: inBlock(strips), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
