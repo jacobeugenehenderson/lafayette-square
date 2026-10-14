@@ -1675,8 +1675,13 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   const clips = []
   // ⭐ THE CONTRIBUTORS — every segment a ② edge can lie on, with the ① edge it belongs to and what it is:
   // 1 = a curb line (a band's inner edge, or a corner's miter line), 2 = the ① edge itself, 3 = a band's end cap.
+  // ⭐ RINGS ONLY when no caller can read a label: the labels leave only through `stamp`, and only `easeAt` turns them
+  // into geometry (the ease reads each corner's ① vertex). Without both, the rings are B's rings through the area floor
+  // and `mergeGrid`, which merges by grid point alone, so skipping the labelling leaves them byte-identical (③'s strikes
+  // and its capacity guard, which keep only the rings or only their count).
+  const labelled = !!(stamp || easeAt)
   const contrib = []
-  const addSeg = (a, b, lab, kind) => { if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
+  const addSeg = (a, b, lab, kind) => { if (labelled && Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
   // one orientation for every band, or two overlapping bands of opposite winding would CANCEL (NonZero)
   const addClip = (poly) => {
     if (poly.length < 3 || !(Math.abs(signedArea(poly)) > 1e-12)) return
@@ -1742,7 +1747,7 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
       if (!(ov > TOLC)) continue
       if (!best || c.kind < best.kind || (c.kind === best.kind && ov > best.ov)) best = { kind: c.kind, ov, lab: c.lab } }
     return best ? best.lab : null }
-  B.labels = B.rings.map(rg => rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length])))
+  if (labelled) B.labels = B.rings.map(rg => rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length])))
   if (stamp) { stamp.foldDropped = 0; stamp.wedges = wedges; stamp.bevels = bevels; if (B.refused) stamp.refused = B.refused }
   let maxD = 0; for (const x of seg) { if (x.dS > maxD) maxD = x.dS; if (x.dE > maxD) maxD = x.dE }
   const AREA_MIN = Math.max(0.5, maxD * maxD * 0.6)
@@ -1766,6 +1771,7 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     if (!(B.rings[k].length >= 3 && Math.abs(signedArea(B.rings[k])) > AREA_MIN)) continue
     const g0 = mergeGrid(B.rings[k], (B.labels?.[k] || []).map(x => (Number.isInteger(x) && x >= 0 && x < n) ? x : null), B.rings[k].map(() => null), B.rings[k].map(() => null))
     if (g0.R.length < 3) continue
+    if (!labelled) { const g1 = mergeGrid(g0.R, g0.E, g0.V, g0.A); if (g1.R.length >= 3) outR.push(g1.R); continue }
     const rg = g0.R, el = g0.E
     const m = rg.length
     // the ① vertex this ② vertex is the corner OF — only where its two edges are two consecutive ① edges
