@@ -932,6 +932,21 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         return inside
       }
       const holdsCorner = (rg) => corners.some(c => holdsPoint(rg, c))
+      // ⭐⭐ THE FLIP CARRIES EVERY VERTEX ON ONE CONVENTION. A surviving vertex's label is its input record, which here (the
+      // output walks the ink and the water backwards) names the edge ARRIVING at it, so reversing the ring makes it the edge
+      // LEAVING: the plain reverse is right for it, and it is left exactly as it was. A MINTED vertex (where ink or water
+      // crosses the frame, or ink crosses water) is labelled by the edge LEAVING it, which the reverse turns into the edge
+      // arriving — one edge off. It takes, instead, the owner of the edge that arrived at it in the boolean's own order
+      // (`mintedArrivedBy`, read by `inputEdgeOwner` inside the boolean — identity carried through it, never recovered
+      // afterwards), which the reverse makes the edge leaving. Where no single input edge contains that edge the label stays
+      // as it was and is COUNTED. ▶ checks/claims-every-proto-edge-lies-on-its-owner.mjs (the frame and the water own their edges)
+      let flipMinted = 0, flipUnresolved = 0
+      const flipLabels = (lb, arrived) => {
+        const n = lb.length, out = [...lb].reverse()
+        if (!arrived) return out
+        for (let k = 0; k < n; k++) { const a = arrived[n - 1 - k]; if (a == null) continue
+          if (a >= 0) { out[k] = a; flipMinted++ } else flipUnresolved++ }
+        return out }
       let degenerate = 0
       let keptOnEdge = 0
       let outerZones = 0
@@ -1008,10 +1023,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
           // and dropping it would offset the face AS IF SOLID — a plausible-looking wrong curb,
           // which is the one outcome a kit may not have. Counted and reported by name.
           if (!(hr?.length >= 3) || !hl) { unlabelledHoles++; continue }
-          if (signedArea(hr) < 0) { hs.push([...hr].reverse()); hls.push([...hl].reverse()) }
+          if (signedArea(hr) < 0) { hs.push([...hr].reverse()); hls.push(flipLabels(hl, D.mintedArrivedBy?.[hi])) }
           else { hs.push(hr); hls.push(hl) }
         }
-        if (signedArea(rg) > 0) { blocks.push([...rg].reverse()); blockLabels.push([...lb].reverse()) }
+        if (signedArea(rg) > 0) { blocks.push([...rg].reverse()); blockLabels.push(flipLabels(lb, D.mintedArrivedBy?.[f.outer])) }
         else { blocks.push(rg); blockLabels.push(lb) }
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
@@ -1021,6 +1036,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       if (degenerate) console.warn(`    ⛔ [①] ${degenerate} face(s) came back degenerate (<3 vertices or no identity) and are NOT blocks — reported, not hidden.`)
       if (slivers) console.warn(`    ⛔ [①] ${slivers} face(s) are THINNER THAN ε (${eps} m) and are NOT blocks — a region the ink cannot have made, dropped as a boolean residue. Counted, never silent.`)
       console.log(`    [①] ${blocks.length} block face(s); ${withHoles} carry hole(s) (a compound face — outer + its holes, carried together)`)
+      console.log(`    [①] the flip: ${flipMinted} minted vertex label(s) carried to the edge they lie on${flipUnresolved ? ` · ⛔ ${flipUnresolved} with no single containing input edge — left as they were` : ''}`)
       if (unlabelledHoles) console.warn(`    ⛔ [①] ${unlabelledHoles} hole(s) came back with NO identity — those faces would be offset as if SOLID. NOT trustworthy.`)
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
@@ -1219,6 +1235,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     for (const sg of segsNear(v)) { if (!sg.a.Z || !sg.b.Z) continue; if (onSeg(v, sg.a, sg.b) && onSeg(q, sg.a, sg.b)) own.add(labOfZ(sg.a.Z)) }
     return own.size === 1 ? [...own][0] : -1 }
   let containReassigned = 0, containRefused = 0
+  const arrivedBy = []
   for (const p of out) {
     const raw = p.map(q => (q.Z ? labOfZ(q.Z) : -1))      // -1 = a crossing
     // ⛔ `raw` itself is NOT rewritten: it is what the vertex CONTRIBUTED, and the crossings before it inherit from
@@ -1336,8 +1353,15 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       if (!ok) return { rings, labels: null, refused: 'all-vertices-minted', faces, ...(recs ? { payloads } : {}) }
     }
     labs.push(res)
+    // ⭐ A MINTED VERTEX'S OTHER EDGE, carried out of the boolean (`segs` callers only): the owner of the input edge the output
+    // edge ARRIVING at it lies on (`inputEdgeOwner`, −1 where no single input edge contains it). A minted vertex is labelled
+    // by the edge LEAVING it in output order; a surviving vertex by its input record, and where the output walks its input
+    // ring backwards (a difference's clip) that record names the edge ARRIVING. A caller that reverses the ring (the mint's
+    // face flip) needs both, or its minted vertices land one edge off (2026-10-14: every street crossing ①'s frame swapped
+    // labels with it — Huron 22, Provincetown 26–27, HPDM 178). Read, never acted on, here: every caller's labels are as before.
+    if (segs) arrivedBy.push(raw.map((r, i) => (r >= 0 ? null : inputEdgeOwner(p[(i - 1 + n) % n], p[i]))))
   }
-  return { rings, labels: labs, refused: null, crossings, faces, ...(segs ? { containment: { reassigned: containReassigned, unresolved: containRefused } } : {}), ...(recs ? { payloads } : {}) }
+  return { rings, labels: labs, refused: null, crossings, faces, ...(segs ? { containment: { reassigned: containReassigned, unresolved: containRefused }, mintedArrivedBy: arrivedBy } : {}), ...(recs ? { payloads } : {}) }
 }
 // The original single-ring union, preserved EXACTLY as a wrapper — the offset path's
 // byte-identity proof (`a03-curb-identity`) covers it and must keep covering it.
