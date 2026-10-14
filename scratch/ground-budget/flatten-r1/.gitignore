@@ -3,3 +3,5 @@ dumps/
 *.log
 *.out
 snap-*
+tileGround.*.js
+slabs/

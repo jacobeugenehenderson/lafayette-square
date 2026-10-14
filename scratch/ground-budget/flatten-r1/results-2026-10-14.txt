@@ -81,3 +81,19 @@ mat:sidewalk at (197.397, 626.013): in 1 mine path(s) (EvenOdd IN) · acc windin
 mat:wood at (1415.494, 2504.339): in 2 mine path(s) (EvenOdd OUT) · acc winding 0 (OUT) · the slab's flatten paints it in: NOTHING
 face:underived at (-884.931, 1193.376): in 2 mine path(s) (EvenOdd OUT) · acc winding 1 (IN) · the slab's flatten paints it in: face:agricultural, face:underived
 mat:treelawn:residential at (178.661, 1253.121): in 1 mine path(s) (EvenOdd IN) · acc winding 0 (OUT) · the slab's flatten paints it in: NOTHING
+
+== 2026-10-14 evening — the flatten fix + the one-family ribbon fix, HPDM, gate-only (Boz option (b): the deformer's unowned
+   throw printed as a count, identically on both sides; prep-gate.mjs). ▶ TAGS="HEAD branch" zsh full-gate.sh hipointedemun
+HEAD (55cf53ab)   exit 0 · real 748.33 s · peak RSS 4.62 GB · paint stack 102.7 s · unowned suppressed 200 · ground.bin 68,180,076 B
+branch            exit 0 · real 670.52 s · peak RSS 5.30 GB · paint stack  31.5 s · unowned suppressed 335 · ground.bin 66,464,592 B
+painted-once      HEAD 23,425.0 m² by no group (156) · 70.4 m² twice (604)   →   branch 14,321.1 m² (137) · 67.3 m² (578)   — RED both
+                  branch below the lattice: 692 ring(s), 2.82 m², role by Clipper's winding; 0 orphan holes; selftest HOLE+DOUBLE caught
+T-junctions       0 · 0          tiles RED both
+truth point       (178.661, 1253.121): HEAD paints NOTHING → branch treelawn:residential (truth)      ▶ node regions.mjs slabs/<t> hipointedemun
+paint per step    treelawn:underived 23.1→1.3 s · treelawn:residential 22.5→1.1 · face:recreation 21.5→2.4 · face:parking 3.3→0.4 · sidewalk 2.0→2.4
+selftest          ▶ node membership-selftest.mjs — 7 cases; code mutants A–G each fail theirs
+input slivers     ▶ node make-slv.mjs, then the slv run (its header): HPDM tile stage, treelawn rings narrower than LATTICE_M
+                  1009 → 49 after the one-family edit (slv-tiles-hipointedemun{,-1fam}.json); stack entry treelawn:* 1141 → 63
+                  the 49 by class: step-at-run-end 22 (measured) · equal-step-farther 17 · off-every-offset 11 · one-construction 1
+                  rekeyByPiece (band ∩ evidence): 100 sub-lattice outputs — 45 carried · 44 made by the cut · 11 mixed (slv-rekey.json)
+served            public/baked/hipointedemun/ground.bin 11,183,004 B (2026-10-11): both gate slabs ~6× it — not explained here
