@@ -262,7 +262,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   // __devStep (the budget test's V2): sample every edge at that step (the terrain's grid, or the deformer's B), plus the
   // centroid, so a long triangle cannot hide a feature between the 4 classic samples
   // the max deviation along ONE edge p→q, sampled from p (the V2 rule, unchanged)
-  const edgeDev = (s, p, q, step) => { const px = PX[p], pz = PZ[p], qx = PX[q], qz = PZ[q], yp = s(px, pz), yq = s(qx, qz)
+  const edgeDev = (s, p, q, step) => { globalThis.__site = 'dev:edge'; const px = PX[p], pz = PZ[p], qx = PX[q], qz = PZ[q], yp = s(px, pz), yq = s(qx, qz)
     const n = Math.max(2, Math.ceil(Math.hypot(qx - px, qz - pz) / step)); let d = 0
     for (let j = 1; j < n; j++) { const f = j / n, e = Math.abs(s(px + f * (qx - px), pz + f * (qz - pz)) - (yp + f * (yq - yp))); if (e > d) d = e }
     return d }
@@ -293,13 +293,14 @@ export function conformAndRefine(groupSpecs, stats = {}) {
         ys = par[0] === u ? P.subarray(0, h + 1) : P.slice(h).reverse()       // lo→mid forward · hi→mid = the second half reversed
         const r = (halvesRead.get(pk) || 0) + 1; if (r >= 2) { shardDel(YS, pk); shardDel(halvesRead, pk) } else halvesRead.set(pk, r)
         pow2Tally.reused++ } }
-    if (!ys) { ys = new Float64Array(n + 1); const px = PX[u], pz = PZ[u], qx = PX[v], qz = PZ[v]
+    if (!ys) { globalThis.__site = 'dev:edge'; ys = new Float64Array(n + 1); const px = PX[u], pz = PZ[u], qx = PX[v], qz = PZ[v]
       ys[0] = s(px, pz); ys[n] = s(qx, qz); for (let j = 1; j < n; j++) { const f = j / n; ys[j] = s(px + f * (qx - px), pz + f * (qz - pz)) }
       pow2Tally.fresh++; pow2Tally.freshSamples += n + 1 }
     d = 0; for (let j = 1; j < n; j++) { const e = Math.abs(ys[j] - (ys[0] + (j / n) * (ys[n] - ys[0]))); if (e > d) d = e }
     C.set(k, d); if (n > 2) YS.set(k, Float64Array.from(ys))   // a copy, so a dropped parent's buffer is freed
     return d }
   function terrainDevDense(s, a, b, c, step) {
+    globalThis.__site = 'dev:vertex+centroid'
     const P = [[PX[a], PZ[a]], [PX[b], PZ[b]], [PX[c], PZ[c]]], Y = P.map(([x, z]) => s(x, z)), V = [a, b, c], mode = globalThis.__devEdgeCache
     let d = 0
     if (mode === 'pow2') for (let k = 0; k < 3; k++) { const e = pow2Dev(s, V[k], V[(k + 1) % 3], step); if (e > d) d = e }
@@ -307,11 +308,13 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     else for (let k = 0; k < 3; k++) { const [px, pz] = P[k], [qx, qz] = P[(k + 1) % 3], yp = Y[k], yq = Y[(k + 1) % 3]
       const n = Math.max(2, Math.ceil(Math.hypot(qx - px, qz - pz) / step))
       for (let j = 1; j < n; j++) { const f = j / n, e = Math.abs(s(px + f * (qx - px), pz + f * (qz - pz)) - (yp + f * (yq - yp))); if (e > d) d = e } }
+    globalThis.__site = 'dev:vertex+centroid'
     const e = Math.abs(s((P[0][0] + P[1][0] + P[2][0]) / 3, (P[0][1] + P[1][1] + P[2][1]) / 3) - (Y[0] + Y[1] + Y[2]) / 3); if (e > d) d = e
     return d
   }
   function terrainDev(s, a, b, c) {
     if (globalThis.__devStep) return terrainDevDense(s, a, b, c, globalThis.__devStep)
+    globalThis.__site = 'dev:classic'
     const ax = PX[a], az = PZ[a], bx = PX[b], bz = PZ[b], cx = PX[c], cz = PZ[c]
     const ya = s(ax, az), yb = s(bx, bz), yc = s(cx, cz)
     let d = 0, e
@@ -323,6 +326,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   }
   // Does the terrain under this triangle reach into the band [lo − tol, hi + tol] anywhere it is sampled?
   function inBand(pol, a, b, c) {
+    globalThis.__site = 'band'
     const s = pol.sampler, ax = PX[a], az = PZ[a], bx = PX[b], bz = PZ[b], cx = PX[c], cz = PZ[c]
     const pts = [[ax, az], [bx, bz], [cx, cz], [(ax + bx) / 2, (az + bz) / 2], [(bx + cx) / 2, (bz + cz) / 2], [(cx + ax) / 2, (cz + az) / 2], [(ax + bx + cx) / 3, (az + bz + cz) / 3]]
     let lo = Infinity, hi = -Infinity
@@ -407,6 +411,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     }
     T = nT; TG = nG
   }
+  globalThis.__site = 'instrument:floor'
   // the FLOOR: final triangles of an adaptive group at or under minEdge whose deviation is still over tol
   for (let i = 0; i < TG.length; i++) { const pol = policies[TG[i] >> 1]; if (pol.mode !== 'adaptive') continue
     const v0 = T[i * 3], v1 = T[i * 3 + 1], v2 = T[i * 3 + 2], longest = Math.max(edgeSq(v0, v1), edgeSq(v1, v2), edgeSq(v2, v0))

@@ -12,7 +12,7 @@ state() { echo "$(cat $WT/SOURCE 2>/dev/null || git -C $WT rev-parse --short HEA
 for R in "$@"; do
   T=${R%%:*}; E=${R#*:}
   gate; S0=$(state); echo "$T (${E}) start $(date) · worktree HEAD + deformer sha256: $S0 · free $(free_pct)% · load $(sysctl -n vm.loadavg)"
-  ( for kv in ${(s:,:)E}; do export $kv; done; export ACCURACY=1 DEFORMER=$TD
+  ( export ACCURACY=1; for kv in ${(s:,:)E}; do export $kv; done; export DEFORMER=$TD
     exec /usr/bin/time -l node --max-old-space-size=14000 $PWD/scratch/huron-cost/conform-alone.mjs $DUMP deform $CONF ) > $D/acc-$T.log 2>&1 &
   P=$!; n=0
   while kill -0 $P 2>/dev/null; do

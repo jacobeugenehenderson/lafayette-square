@@ -63,7 +63,8 @@ if (which === 'deform') {
 } else base = T.getElevation
 console.log(`[sampler] ${which} built in ${((Date.now() - t) / 1000).toFixed(1)} s`)
 let calls = 0, ns = 0n
-const sampler = (x, z) => { calls++; const a = process.hrtime.bigint(); const y = base(x, z); ns += process.hrtime.bigint() - a; return y }
+const sites = {}   // calls by the conformity site that made them (globalThis.__site, set by the instrumented copy)
+const sampler = (x, z) => { calls++; const _s = globalThis.__site ?? 'other'; sites[_s] = (sites[_s] || 0) + 1; const a = process.hrtime.bigint(); const y = base(x, z); ns += process.hrtime.bigint() - a; return y }
 const L = T.water ? waterLevels(T.water) : null
 const levels = L ? (x, z) => [L.lowAt(x, z) * T.exag, L.highAt(x, z) * T.exag] : null
 // the ped bands: PED_KEYS read from the bake's source, never restated
@@ -131,6 +132,7 @@ if (globalThis.__devEdgeCache === 'pow2' && globalThis.__pow2Tally) { const p = 
 if (D) console.log(`[memo] generation ${MEMO.memoGeneration ?? 'the deformer\'s default'} · turns during conformity: ${D.stats.memoTurns ?? 'not reported by this deformer'}`)
 if (st.phaseMs) console.log(`[phases] ${Object.entries(st.phaseMs).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`).join(' · ')}`)
 console.log(`[sampler] ${calls} calls · ${(Number(ns) / 1e9).toFixed(1)} s inside the sampler · ${(Number(ns) / 1e3 / Math.max(1, calls)).toFixed(2)} µs/call`)
+if (Object.keys(sites).length > 1 || !sites.other) console.log(`[sites] ${Object.entries(sites).sort((p, q) => q[1] - p[1]).map(([k, v]) => `${k} ${v}`).join(' · ')}`)
 t = Date.now()
 const tj = findTJunctions(out.map((b, i) => ({ id: specs[i].key, ...b })))
 const w = tj.found?.[0]
