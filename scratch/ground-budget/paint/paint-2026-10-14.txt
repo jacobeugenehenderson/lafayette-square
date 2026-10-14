@@ -146,3 +146,72 @@ Per step, HEAD vs d09644cc (s; ±25%; HEAD load 1-min 2.1-3.8, d09644cc 2.7-4.8 
   mat:water:lake                 HEAD     0.1 · d09644cc     0.0
   mat:footway                    HEAD     0.0 · d09644cc     0.0
   mat:alley                      HEAD     0.0 · d09644cc     0.1
+
+== served1011: 5913f2ef (Huron's served ground, 2026-10-11; = 94347ebc's code) in a scratch worktree, HEAD's huron data linked (2026-10-14 00:59)
+served1011 start Wed Oct 14 00:59:31 CDT 2026 · load { 2.29 2.68 2.84 } · free 52%
+  [load] served1011 00:59:31 { 2.29 2.68 2.84 } · free 52%
+  [load] served1011 01:00:31 { 2.09 2.54 2.78 } · free 55%
+  [load] served1011 01:01:31 { 2.72 2.64 2.80 } · free 55%
+  [load] served1011 01:02:31 { 3.06 2.75 2.82 } · free 53%
+  [load] served1011 01:03:31 { 3.21 2.85 2.86 } · free 47%
+  [load] served1011 01:04:31 { 3.46 2.97 2.90 } · free 46%
+  [load] served1011 01:05:31 { 2.84 2.88 2.87 } · free 48%
+  [load] served1011 01:06:31 { 2.46 2.78 2.83 } · free 51%
+  [guard] files changed under data/huron or public/: 0 · newer than the start: 0
+served1011 exit 0 Wed Oct 14 01:07:02 CDT 2026 · paint stack pressed down: 50 layers (1 keeping their own slot, 1 not cutting) in 427.7s
+ALLDONE
+[+445.4s]   [bake-ground] paint stack pressed down: 50 layers (1 keeping their own slot, 1 not cutting) in 427.7s
+      445.53 real       455.32 user         2.48 sys
+          1297956864  maximum resident set size
+
+Per step, HEAD minus 10-11 (s; ±25%; HEAD load 1-min 2.1-3.8, 10-11 2.1-3.5). 10-11 has 50 layers: no mat:shore.
+    +73.5  mat:treelawn:underived         HEAD   204.5 · 10-11   131.0
+    +47.2  mat:asphalt                    HEAD    49.1 · 10-11     1.9
+    +16.3  mat:highway                    HEAD   163.4 · 10-11   147.1
+    +12.7  face:forest                    HEAD    41.4 · 10-11    28.7
+    +11.7  mat:treelawn:residential       HEAD    60.5 · 10-11    48.8
+     +3.7  mat:sidewalk                   HEAD    25.0 · 10-11    21.3
+     +1.1  mat:treelawn:commercial        HEAD     2.9 · 10-11     1.8
+     +0.8  face:underived                 HEAD    12.4 · 10-11    11.6
+     +0.7  mat:curb                       HEAD     2.9 · 10-11     2.2
+     +0.2  face:recreation                HEAD     1.2 · 10-11     1.0
+     +0.1  mat:water:lake                 HEAD     0.1 · 10-11     0.0
+     +0.0  mat:wood                       HEAD     0.9 · 10-11     0.9
+     +0.0  mat:treelawn:vacant            HEAD     1.1 · 10-11     1.1
+     +0.0  mat:treelawn:institutional     HEAD     1.0 · 10-11     1.0
+     +0.0  mat:treelawn:industrial        HEAD     0.8 · 10-11     0.8
+     +0.0  mat:treelawn:agricultural      HEAD     1.5 · 10-11     1.5
+     +0.0  mat:shore                      HEAD     0.4 · 10-11      NA
+     +0.0  mat:pitch                      HEAD     0.4 · 10-11     0.4
+     +0.0  mat:curbCut                    HEAD     0.4 · 10-11     0.4
+     +0.0  mat:alley                      HEAD     0.0 · 10-11     0.0
+     +0.0  face:verge                     HEAD     0.5 · 10-11     0.5
+     +0.0  face:vacant                    HEAD     0.5 · 10-11     0.5
+     +0.0  face:parking                   HEAD     1.3 · 10-11     1.3
+     +0.0  face:beach                     HEAD     0.5 · 10-11     0.5
+     -0.1  mat:treelawn:parking           HEAD     0.7 · 10-11     0.8
+     -0.1  mat:treelawn:forest            HEAD     1.4 · 10-11     1.5
+     -0.1  mat:swimming_pool              HEAD     0.4 · 10-11     0.5
+     -0.1  mat:scrub                      HEAD     0.4 · 10-11     0.5
+     -0.1  mat:parking_lot                HEAD     0.5 · 10-11     0.6
+     -0.1  mat:garden                     HEAD     0.4 · 10-11     0.5
+     -0.1  mat:footway                    HEAD     0.0 · 10-11     0.1
+     -0.1  face:wetland                   HEAD     0.4 · 10-11     0.5
+     -0.1  face:park                      HEAD     0.4 · 10-11     0.5
+     -0.1  face:institutional             HEAD     0.5 · 10-11     0.6
+     -0.1  face:bare                      HEAD     0.4 · 10-11     0.5
+     -0.1  face:agricultural              HEAD     2.4 · 10-11     2.5
+     -0.2  mat:treelawn:wetland           HEAD     1.3 · 10-11     1.5
+     -0.2  mat:treelawn:verge             HEAD     1.3 · 10-11     1.5
+     -0.2  mat:treelawn:park              HEAD     0.7 · 10-11     0.9
+     -0.2  mat:treelawn:greenhouse        HEAD     1.3 · 10-11     1.5
+     -0.2  mat:treelawn:cemetery          HEAD     1.2 · 10-11     1.4
+     -0.2  mat:treelawn:beach             HEAD     1.3 · 10-11     1.5
+     -0.2  mat:playground                 HEAD     0.3 · 10-11     0.5
+     -0.2  face:industrial                HEAD     0.4 · 10-11     0.6
+     -0.2  face:greenhouse                HEAD     0.4 · 10-11     0.6
+     -0.2  face:commercial                HEAD     0.4 · 10-11     0.6
+     -0.2  face:cemetery                  HEAD     0.4 · 10-11     0.6
+     -0.2  face:brownfield                HEAD     0.5 · 10-11     0.7
+     -0.3  mat:treelawn:recreation        HEAD     0.8 · 10-11     1.1
+     -0.6  face:residential               HEAD     0.5 · 10-11     1.1
