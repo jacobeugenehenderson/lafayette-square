@@ -96,4 +96,18 @@ input slivers     ▶ node make-slv.mjs, then the slv run (its header): HPDM til
                   1009 → 49 after the one-family edit (slv-tiles-hipointedemun{,-1fam}.json); stack entry treelawn:* 1141 → 63
                   the 49 by class: step-at-run-end 22 (measured) · equal-step-farther 17 · off-every-offset 11 · one-construction 1
                   rekeyByPiece (band ∩ evidence): 100 sub-lattice outputs — 45 carried · 44 made by the cut · 11 mixed (slv-rekey.json)
-served            public/baked/hipointedemun/ground.bin 11,183,004 B (2026-10-11): both gate slabs ~6× it — not explained here
+budget            this branch's gate is NO GROWTH AGAINST HEAD AT THE SAME CODE: met, 68,180,076 → 66,464,592 B (−2.5%).
+                  ⛔ The ceiling stays SERVED (Jacob, 2026-10-13): public/baked/hipointedemun/ground.bin is 11,183,004 B (2026-10-11),
+                  and both gate slabs are ~6× it. That is the deformer (5255b311, after the served bake): +20 B/vertex of terrain
+                  part (D Float32 + G Float32×4) and the ped bands refined to the walk limit (7.8 mm; 89% of the triangle growth
+                  is curb/curbCut/sidewalk/treelawn). A ceiling breach owned by BRIEF-the-ground-stays-in-budget, not cleared here.
+
+== the near-miss check (checks/claims-no-edge-is-drawn-twice.mjs), HPDM, the stack as the flatten receives it
+   ▶ zsh nm-tables.sh   (HEAD's tileGround vs the one-family branch; full tables in nm-table-{HEAD,branch}/)
+HEAD    80,303 edge pairs · 200,972.9 m of line drawn twice · 75 s · 2.86 GB        --expect asphalt#13/highway#1 ✅, recreation line ✅
+branch  65,492 edge pairs ·  85,490.1 m                     · 58 s · 3.28 GB
+        sidewalk/treelawn 59,804 → 21,966 m · pairs with a face 98,086 → 36,875 m · curb pairs 35,969 → 19,390 m
+        sidewalk/treelawn:residential 23,240 → 5,863 · face:residential/treelawn:residential 18,150 → 240 · curb/sidewalk 7,994 → 818
+        unchanged: face:parking/parking_lot 2,395 · asphalt/curb 2,092 → 2,262 (not the ribbon's)
+proofs  stackOnly's stack = the full bake's (44 groups, items and sub-lattice outers: proof-stack.mjs) · the gate-only bake with
+        stackOnly reproduces c1b08e7e's ground.bin + ground.json byte for byte · the typed-array rewrite reproduces 80,303 exactly

@@ -1017,7 +1017,7 @@ export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePendin
   return { paint: null, state: 'pending', why }
 }
 
-export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1068,7 +1068,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   // outDir: write the slab elsewhere (a scratch A/B) instead of over the live one.
   const outDir      = outDirOpt || join(ROOT, 'public', 'baked', look)
-  if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
+  if (!stackOnly && !existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   const stencil = loadSceneStencil(scene)
   // ⭐ THE FADE IS THE BAKED LOOK'S (Stage › Horizon › Edge, 2026-10-06), derived from the disc radius and the Look's
@@ -1368,6 +1368,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   }
   // The flatten runs top-down over this list, so a FLOOR layer goes first: last to be cut into.
   stackEntries.sort((a, b) => FLOOR_KEYS.has(b.groupKey) - FLOOR_KEYS.has(a.groupKey))
+  // `stackOnly`: the stack exactly as the flatten receives it, nothing written (checks/claims-no-edge-is-drawn-twice.mjs)
+  if (stackOnly) return { stackEntries, keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }
   const _t0 = Date.now()
   const flattened = flattenPaintStack(stackEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
