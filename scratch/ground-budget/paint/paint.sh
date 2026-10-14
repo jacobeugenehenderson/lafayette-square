@@ -15,10 +15,16 @@ for TAG in $TAGS; do
   else export SWAP_MAP="{\"cartograph/bake-ground.js\":\"$P/bake-ground.paint-d09644cc.js\",\"cartograph/groundDeformer.mjs\":\"$X/cartograph/groundDeformer.mjs\",\"cartograph/lineHeight.mjs\":\"$X/cartograph/lineHeight.mjs\",\"cartograph/shoreGusset.mjs\":\"$X/cartograph/shoreGusset.mjs\",\"cartograph/surfaces.mjs\":\"$X/cartograph/surfaces.mjs\",\"cartograph/waterLevel.mjs\":\"$X/cartograph/waterLevel.mjs\",\"src/lib/tileGround.js\":\"$X/src/lib/tileGround.js\"}"; fi
   CWD=cartograph; IMP=(--import $R/scratch/ground-budget/swap.mjs)
   if [[ $TAG == served1011 ]]; then unset SWAP_MAP; CWD=$R/.claude/worktrees/served-huron-1011/cartograph; IMP=(); fi
+  if [[ $TAG == served1011 ]]; then   # Boz's guard: the linked data dir and public/ must come out untouched
+    snap() { find -L $R/cartograph/data/huron $R/public -type f -exec stat -f '%m %z %N' {} + | sort -k3 }
+    snap > $P/snap-before.txt; touch $P/snap-marker; fi
   echo "$TAG start $(date) · load $(sysctl -n vm.loadavg) · free $(free_pct)%"
   ( cd $CWD; exec /usr/bin/time -l node --max-old-space-size=14000 $IMP bake-ground.js --look=$TOWN --scene=$TOWN --out-dir=$OUT $SHORE ) > $P/paint-$TAG.log 2>&1 &
   PID=$!; n=0
   while kill -0 $PID 2>/dev/null; do (( n % 4 == 0 )) && echo "  [load] $TAG $(date +%H:%M:%S) $(sysctl -n vm.loadavg) · free $(free_pct)%"
     (( $(free_pct) < 20 )) && { echo "  ⛔ free < 20%: killing $TAG"; pkill -P $PID; kill $PID; }; (( n++ )); sleep 15; done
-  wait $PID; echo "$TAG exit $? $(date) · $(grep -o 'paint stack pressed down.*' $P/paint-$TAG.log | tail -1)"
+  wait $PID; RC=$?
+  if [[ $TAG == served1011 ]]; then snap > $P/snap-after.txt
+    echo "  [guard] files changed under data/huron or public/: $(diff $P/snap-before.txt $P/snap-after.txt | grep -c '^[<>]') · newer than the start: $(find -L $R/cartograph/data/huron $R/public -newer $P/snap-marker -type f | wc -l | tr -d ' ')"; fi
+  echo "$TAG exit $RC $(date) · $(grep -o 'paint stack pressed down.*' $P/paint-$TAG.log | tail -1)"
 done; echo ALLDONE
