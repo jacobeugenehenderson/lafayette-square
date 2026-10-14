@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 414,
+  "total": 415,
   "counts": {
-    "safe": 307,
+    "safe": 308,
     "local-effect": 21,
     "live": 86
   },
@@ -1581,6 +1581,13 @@
     },
     {
       "file": "checks/claims-no-host-carries-a-codedesk-copy.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-kerb-ring-turns-back-on-itself.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

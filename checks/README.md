@@ -142,7 +142,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 307. This is `npm test`.
+## safe — 308. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -302,6 +302,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-dossier-rests-on-a-wrong-species.mjs` | species.mjs — DOES ANY DOSSIER CITE A SOURCE THAT ANSWERED FOR ANOTHER SPECIES? |
 | `checks/claims-no-hairline-ring-reaches-the-operator.mjs` | CLAIM: every ring the operator is shown — ① and the ②/③ ped bands — has a real |
 | `checks/claims-no-host-carries-a-codedesk-copy.mjs` | copy.mjs — CodeDesk has one source, and hosts pin its releases (BRIEF-codedesk). |
+| `checks/claims-no-kerb-ring-turns-back-on-itself.mjs` | itself.mjs — DOES ANY ② RING DOUBLE BACK ALONG ITSELF? |
 | `checks/claims-no-label-is-a-made-up-name.mjs` | ⭐ IS ANY BAKED STREET LABEL A NAME THE SKELETON MADE UP? — `ROADMAP A19`. |
 | `checks/claims-no-listing-links-to-a-hijacked-domain.mjs` | a URL a researcher condemned may not ship. |
 | `checks/claims-no-photo-loads-from-someone-elses-server.mjs` | every listing photograph is ours, and |
