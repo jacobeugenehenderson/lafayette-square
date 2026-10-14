@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 413,
+  "total": 414,
   "counts": {
-    "safe": 306,
+    "safe": 307,
     "local-effect": 21,
     "live": 86
   },
@@ -2610,6 +2610,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
+        "computed import of cartograph/groundDeformer.mjs — read, safe"
       ]
     },
     {
