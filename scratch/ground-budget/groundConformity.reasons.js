@@ -251,11 +251,11 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   // refinement depth takes TWICE the passes — the budget is the policy's, doubled by the construction.
   const LEB_PASSES_PER_LEVEL = 2
   const PASSES = Math.max(0, ...policies.map(p => p.passes * LEB_PASSES_PER_LEVEL))
-  const midCache = new ShardedMap()
+  const midCache = new ShardedMap(), midParent = new ShardedMap()   // midParent: the budget test's (b) — a midpoint's parent edge
   const midpointIndex = (a, b) => {
     const k = edgeKey(a, b)
     let i = midCache.get(k)
-    if (i === undefined) { i = PX.length; PX.push((PX[a] + PX[b]) * 0.5); PZ.push((PZ[a] + PZ[b]) * 0.5); midCache.set(k, i) }
+    if (i === undefined) { i = PX.length; PX.push((PX[a] + PX[b]) * 0.5); PZ.push((PZ[a] + PZ[b]) * 0.5); midCache.set(k, i); midParent.set(i, a < b ? [a, b] : [b, a]) }
     return i
   }
   const edgeSq = (a, b) => { const dx = PX[a] - PX[b], dz = PZ[a] - PZ[b]; return dx * dx + dz * dz }
@@ -274,10 +274,36 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     let C = edgeCaches.get(s); if (!C) edgeCaches.set(s, C = new ShardedMap())
     const [u, v] = mode === 'shared' && q < p ? [q, p] : [p, q], k = u * EDGE_MUL + v
     let d = C.get(k); if (d === undefined) { d = edgeDev(s, u, v, step); C.set(k, d) } return d }
+  // __devEdgeCache 'pow2' (the time route's (b)): every edge sampled at a POWER-OF-TWO subdivision n ≥ L/step, from its
+  // lower vertex id, its sample heights kept; a half of a split edge (lo→mid, or hi→mid) takes its parent's own samples —
+  // the SAME points, never a nearby one — and only a child whose subdivision is not exactly half its parent's samples
+  // afresh. Parent samples are dropped once both halves have read them. Not byte-identical to V2 (the sample points move).
+  const shardDel = (M, k) => M.m[M.of(k)].delete(k)   // ShardedMap carries no delete; the budget test adds one here
+  const YS = new ShardedMap(), halvesRead = new ShardedMap(), pow2Tally = { fresh: 0, reused: 0, freshSamples: 0 }
+  globalThis.__pow2Tally = pow2Tally
+  const pow2Dev = (s, p, q, step) => {
+    const u = Math.min(p, q), v = Math.max(p, q), k = u * EDGE_MUL + v
+    const C = edgeCaches.get(s) || (edgeCaches.set(s, new ShardedMap()), edgeCaches.get(s))
+    let d = C.get(k); if (d !== undefined) return d
+    const L = Math.hypot(PX[v] - PX[u], PZ[v] - PZ[u]); let n = 2; while (n < L / step) n *= 2
+    let ys = null
+    const par = midParent.get(v)                                   // v is the newer vertex: a child edge ends at the midpoint
+    if (par && (par[0] === u || par[1] === u)) { const pk = par[0] * EDGE_MUL + par[1], P = YS.get(pk)
+      if (P && P.length - 1 === 2 * n) { const h = n
+        ys = par[0] === u ? P.subarray(0, h + 1) : P.slice(h).reverse()       // lo→mid forward · hi→mid = the second half reversed
+        const r = (halvesRead.get(pk) || 0) + 1; if (r >= 2) { shardDel(YS, pk); shardDel(halvesRead, pk) } else halvesRead.set(pk, r)
+        pow2Tally.reused++ } }
+    if (!ys) { ys = new Float64Array(n + 1); const px = PX[u], pz = PZ[u], qx = PX[v], qz = PZ[v]
+      ys[0] = s(px, pz); ys[n] = s(qx, qz); for (let j = 1; j < n; j++) { const f = j / n; ys[j] = s(px + f * (qx - px), pz + f * (qz - pz)) }
+      pow2Tally.fresh++; pow2Tally.freshSamples += n + 1 }
+    d = 0; for (let j = 1; j < n; j++) { const e = Math.abs(ys[j] - (ys[0] + (j / n) * (ys[n] - ys[0]))); if (e > d) d = e }
+    C.set(k, d); if (n > 2) YS.set(k, Float64Array.from(ys))   // a copy, so a dropped parent's buffer is freed
+    return d }
   function terrainDevDense(s, a, b, c, step) {
     const P = [[PX[a], PZ[a]], [PX[b], PZ[b]], [PX[c], PZ[c]]], Y = P.map(([x, z]) => s(x, z)), V = [a, b, c], mode = globalThis.__devEdgeCache
     let d = 0
-    if (mode) for (let k = 0; k < 3; k++) { const e = cachedEdgeDev(s, V[k], V[(k + 1) % 3], step, mode); if (e > d) d = e }
+    if (mode === 'pow2') for (let k = 0; k < 3; k++) { const e = pow2Dev(s, V[k], V[(k + 1) % 3], step); if (e > d) d = e }
+    else if (mode) for (let k = 0; k < 3; k++) { const e = cachedEdgeDev(s, V[k], V[(k + 1) % 3], step, mode); if (e > d) d = e }
     else for (let k = 0; k < 3; k++) { const [px, pz] = P[k], [qx, qz] = P[(k + 1) % 3], yp = Y[k], yq = Y[(k + 1) % 3]
       const n = Math.max(2, Math.ceil(Math.hypot(qx - px, qz - pz) / step))
       for (let j = 1; j < n; j++) { const f = j / n, e = Math.abs(s(px + f * (qx - px), pz + f * (qz - pz)) - (yp + f * (yq - yp))); if (e > d) d = e } }
