@@ -1,0 +1,77 @@
+PAINT-ONLY timing, Huron, 2026-10-14 (Brace). Machine: this one; heap 14000.
+HEAD start Wed Oct 14 00:07:32 CDT 2026 · load { 2.49 3.20 3.55 } · free 48%
+  [load] HEAD 00:07:32 { 2.49 3.20 3.55 } · free 48%
+HEAD exit 1 Wed Oct 14 00:08:32 CDT 2026 · 
+d09644cc start Wed Oct 14 00:08:32 CDT 2026 · load { 4.84 3.73 3.72 } · free 48%
+  [load] d09644cc 00:08:32 { 4.84 3.73 3.72 } · free 48%
+  [load] d09644cc 00:09:32 { 4.43 3.80 3.75 } · free 48%
+  [load] d09644cc 00:10:32 { 3.98 3.78 3.74 } · free 45%
+  [load] d09644cc 00:11:32 { 3.83 3.78 3.74 } · free 44%
+  [load] d09644cc 00:12:32 { 3.55 3.69 3.71 } · free 44%
+  [load] d09644cc 00:13:32 { 3.22 3.59 3.67 } · free 44%
+  [load] d09644cc 00:14:32 { 2.72 3.39 3.59 } · free 44%
+  [load] d09644cc 00:15:32 { 2.94 3.33 3.55 } · free 45%
+  [load] d09644cc 00:16:32 { 3.94 3.55 3.62 } · free 45%
+  [load] d09644cc 00:17:32 { 10.15 5.27 4.25 } · free 50%
+  [load] d09644cc 00:18:32 { 6.46 5.11 4.25 } · free 57%
+  [load] d09644cc 00:19:32 { 4.51 4.79 4.19 } · free 56%
+d09644cc exit 0 Wed Oct 14 00:20:32 CDT 2026 · paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 657.0s
+ALLDONE
+
+HEAD: REFUSED at +54 s, before the paint stack: paint.sh did not pass --shore=pending (serve.js 'ground' does), so HEAD's shoreMedianFor threw (no shore-median.json in the scratch out dir). The instrument's fault; fixed in paint.sh. HEAD not yet timed.
+
+d09644cc per-step (s to the next progress line), from paint-d09644cc.log:
+  mat:water:lake                       0.0
+  mat:footway                          0.0
+  mat:alley                            0.1
+  mat:asphalt                         55.6
+  mat:curb                             3.1
+  mat:curbCut                          0.5
+  mat:sidewalk                        28.4
+  mat:treelawn:verge                   1.3
+  mat:treelawn:cemetery                1.4
+  mat:treelawn:beach                   1.3
+  mat:treelawn:wetland                 1.3
+  mat:treelawn:forest                  1.3
+  mat:treelawn:greenhouse              1.4
+  mat:treelawn:agricultural            1.6
+  mat:treelawn:underived             219.5
+  mat:treelawn:park                    0.8
+  mat:treelawn:industrial              0.7
+  mat:treelawn:recreation              0.9
+  mat:treelawn:institutional           1.0
+  mat:treelawn:parking                 0.7
+  mat:treelawn:vacant                  1.2
+  mat:treelawn:commercial              3.0
+  mat:treelawn:residential            64.3
+  mat:highway                        194.9
+  mat:shore                            0.5
+  mat:scrub                            0.4
+  mat:wood                             0.9
+  mat:pitch                            0.4
+  mat:swimming_pool                    0.4
+  mat:playground                       0.5
+  mat:garden                           0.4
+  mat:parking_lot                      0.5
+  face:verge                           0.5
+  face:cemetery                        0.4
+  face:bare                            0.5
+  face:beach                           0.4
+  face:wetland                         0.5
+  face:forest                         44.9
+  face:greenhouse                      0.4
+  face:agricultural                    2.4
+  face:brownfield                      0.5
+  face:underived                      13.0
+  face:park                            0.5
+  face:industrial                      0.4
+  face:recreation                      1.1
+  face:institutional                   0.5
+  face:parking                         1.3
+  face:vacant                          0.5
+  face:commercial                      0.4
+  face:residential                     0.5
+  mat:bed → stack end +713.2
+[+713.2s]   [bake-ground] paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 657.0s
+      713.37 real       729.98 user         5.61 sys
+          1604108288  maximum resident set size
