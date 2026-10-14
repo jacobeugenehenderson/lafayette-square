@@ -25,7 +25,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
-import { carrierHeights, carrierHeightAt, hOfRunIn } from '../cartograph/groundDeformer.mjs'
+import { carrierHeights, carrierHeightAt, hOfRunIn, buildDeformer } from '../cartograph/groundDeformer.mjs'
 import { lineHeights, stampRunHeights } from '../cartograph/lineHeight.mjs'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
@@ -113,6 +113,18 @@ const GIVEN = (o) => o === 'stamped' || o === 'tangent' || o === 'blended' || o 
     if (tiles[0].capCouplers[0].h !== 1.5) fails.push(`a coast cap at x 50 took ${tiles[0].capCouplers[0].h}, not the water line there (1.5)`)
     let threw = false; try { stampRunHeights({ tiles, LH, water: null, streets: [], scene: 'self-test' }) } catch { threw = true }
     if (!threw) fails.push('a coast cap with no water record was stamped') }
+  // A SHAPE POURED BEFORE A PARALLEL ARRAY: the deformer REFUSES it by name — never reads a missing iaCap as "no caps" (every
+  // cap blended between its legs) or a missing iaArc as "no arcs" (every corner straightened)
+  { const sq = [[-5, -5], [5, -5], [5, 5], [-5, 5]], full = { ring: [[-10, -10], [10, -10], [10, 10], [-10, 10]], iA: [sq], iaFull: [sq], iaStamp: [[0, 0, 0, 0]],
+      iaArc: [[null, null, null, null]], iaCap: [[null, null, null, null]], capCouplers: [], runs: [{ poly: [...sq, sq[0]], h: [0, 1, 2, 3, 0] }] }
+    const build = (t) => buildDeformer({ tiles: [t], raw: () => 0, limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], walk: [], lawn: [] } })
+    try { build(full) } catch (e) { fails.push(`a whole shape was refused: ${e.message}`) }
+    for (const [k, says] of [['iaCap', 'predates the cap couplers'], ['iaArc', 'no iaArc'], ['iaStamp', 'no iaStamp']]) {
+      const { [k]: _, ...t } = full; let msg = null
+      try { build(t) } catch (e) { msg = e.message }
+      if (!msg?.includes(says)) fails.push(`a shape with no ${k} was ${msg ? `refused, but not by name ("${msg.slice(0, 90)}")` : 'accepted'}`) }
+    let msg = null; try { build({ ...full, iaCap: [[null, null]] }) } catch (e) { msg = e.message }
+    if (!msg?.includes('iaCap is 2 long')) fails.push(`a ring whose iaCap is not its length was ${msg ? `refused, but not by name ("${msg.slice(0, 90)}")` : 'accepted'}`) }
   if (fails.length) { console.error(`⛔ SELF-TEST FAILED — carrierHeights makes heights up where none was given:\n   ${fails.join('\n   ')}`); process.exit(2) }
   console.log('self-test: every synthetic ring takes only given heights')
 }

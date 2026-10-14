@@ -46,7 +46,7 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, arcBlended: 0, tangent: 0, cap: 0, declaredV: {}, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0, memoTurns: 0, declared: 0 }
+  const stats = { stations: 0, absorbClamped: 0, tiles: 0, noH: 0, arcBlended: 0, tangent: 0, cap: 0, declaredV: {}, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0, memoTurns: 0, declared: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -111,14 +111,17 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits, memoG
     if (!(t?.ring?.length >= 3) || !t.iA?.length) continue
     // ⭐ THE CARRIER IS `iaFull`, ② UNCUT: `iaStamp` and `iaArc` are parallel to IT, never to `iA` (the cut ring the block is
     // drawn with — measured on HPDM: iA and iaFull differ on 237 of 266 rings). A tile without it cannot name its runs.
-    if (!t.iaFull?.length || !t.iaStamp?.length) { stats.noFull++; continue }
+    // ⛔ Each parallel array is REQUIRED, never defaulted to empty: a missing `iaArc` straightens every corner, a missing
+    // `iaCap` blends every cap between its legs — the inferred value back, silently, from a shape poured before them.
+    const missing = ['iaFull', 'iaStamp', 'iaArc', 'iaCap'].filter(k => !Array.isArray(t[k]) || (k === 'iaFull' && !t[k].length))
+    if (missing.length) throw new Error(`groundDeformer: ⛔ tile ${ti}'s shape carries no ${missing.join(' · ')} — ${missing.includes('iaCap') && missing.length === 1 ? 'it predates the cap couplers, so its cap vertices have no height' : 'its kerb heights cannot be named from it'}. ▶ re-pour the shape (bake-ground)`)
     const hOfRun = hOfRunIn(t.runs || [])
     const rings = []
     t.iaFull.forEach((ring, ri) => {
       if (!(ring?.length >= 3)) return
-      const arc = t.iaArc?.[ri] || [], stamp = t.iaStamp?.[ri] || []
+      const arc = t.iaArc[ri], stamp = t.iaStamp[ri], ic = t.iaCap[ri]
+      for (const [k, a] of [['iaArc', arc], ['iaStamp', stamp], ['iaCap', ic]]) if (!Array.isArray(a) || a.length !== ring.length) throw new Error(`groundDeformer: ⛔ tile ${ti} ring ${ri}: ${k} is ${Array.isArray(a) ? `${a.length} long, not the ring's ${ring.length}` : 'missing'}. ▶ re-pour the shape (bake-ground)`)
       let H, origin, side
-      const ic = t.iaCap?.[ri] || []
       try { ({ H, origin, side } = carrierHeights({ ring, arc, stamp, hOfRun, noLineOf: (r) => t.runs?.[r]?.noLine ?? null, capOf: (i) => (ic[i] != null ? t.capCouplers[ic[i]] : null) })) }
       catch (e) { throw new Error(`groundDeformer: tile ${ti} ring ${ri} — ${e.message}`) }
       if (!H) { stats.noH++; return }

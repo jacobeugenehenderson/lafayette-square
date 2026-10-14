@@ -27,7 +27,7 @@ import { makeElevationSampler } from '../src/lib/terrainCommon.js'
 const rows = async (url) => {
   const { buildDeformer } = await import(url)
   const sq = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], inner = sq(-5, -5, 5, 5)
-  const make = (memoGeneration) => buildDeformer({ memoGeneration, tiles: [{ ring: sq(-10, -10, 10, 10), iA: [inner], iaFull: [inner], iaStamp: [[0, 0, 0, 0]],
+  const make = (memoGeneration) => buildDeformer({ memoGeneration, tiles: [{ ring: sq(-10, -10, 10, 10), iA: [inner], iaFull: [inner], iaStamp: [[0, 0, 0, 0]], iaArc: [[null, null, null, null]], iaCap: [[null, null, null, null]], capCouplers: [],
     runs: [{ poly: [...inner, inner[0]], h: [0, 1, 2, 3, 0] }] }], raw: () => 0,
     limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], walk: [], lawn: [] } })
   const P = [[0, -5.5], [0.0003, -5.5]]

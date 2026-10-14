@@ -5,7 +5,9 @@
 // The points it was cut for travel with it.
 // CROP=<m> keeps only the bands and the terrain within that many metres of the points (the tiles stay whole: the deformer
 // needs its rings); outside the patch the sampler reads 0, which is finite.
-//   [CROP=150] node scratch/ground-budget/nan-fixture.mjs <dump dir> <out.json> <tile,tile,...> x,z [x,z ...]
+// SHAPE=<shape.json> takes each tile's cap couplers (`iaCap`, `capCouplers`, stamped) from that shape, from the tile whose
+// iaFull · iaStamp · iaArc are IDENTICAL (throws if none is): a dump made before the couplers has none, and the deformer refuses it.
+//   [CROP=150] [SHAPE=<shape.json>] node scratch/ground-budget/nan-fixture.mjs <dump dir> <out.json> <tile,tile,...> x,z [x,z ...]
 import { readFileSync, writeFileSync } from 'fs'
 const R = new URL('../../', import.meta.url).pathname
 const [dump, out, tileList, ...pts] = process.argv.slice(2)
@@ -16,6 +18,12 @@ const bridgeIds = new Set((JSON.parse(readFileSync(ribbonsPathOf(meta.scene), 'u
 const A = JSON.parse(readFileSync(dump + '/deform.json', 'utf8'))
 const keep = tileList.split(',').map(Number), tiles = keep.map(i => A.tiles[i])
 for (const t of tiles) for (const run of t.runs || []) if (!Array.isArray(run.h)) run.noLine = runKind(run, bridgeIds)
+if (process.env.SHAPE) { const S = JSON.parse(readFileSync(process.env.SHAPE, 'utf8')).tiles, sig = (t) => JSON.stringify([t.iaFull, t.iaStamp, t.iaArc])
+  tiles.forEach((t, k) => { const m = S.filter(s => sig(s) === sig(t))
+    if (m.length !== 1) throw new Error(`nan-fixture: tile ${keep[k]} matches ${m.length} tile(s) of ${process.env.SHAPE}, not one`)
+    if (!Array.isArray(m[0].iaCap)) throw new Error(`nan-fixture: ${process.env.SHAPE} predates the cap couplers`)
+    for (const c of m[0].capCouplers) if (c.h == null && !c.noLine) throw new Error(`nan-fixture: a coupler of ${c.skelId} is not stamped`)
+    t.iaCap = m[0].iaCap; t.capCouplers = m[0].capCouplers }) }
 // the reach: the deformer looks out to min(REACH, 60) + blend from ②; take 80 m + blend, generously
 const M = 80 + A.limits.blend, crop = Number(process.env.CROP) || 0
 let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity
@@ -29,7 +37,7 @@ const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4), {
 const gx = (x) => ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * (width - 1), gz = (z) => ((z - bounds.minZ) / (bounds.maxZ - bounds.minZ)) * (height - 1)
 const i0 = Math.max(0, Math.floor(gx(x0)) - 1), i1 = Math.min(width - 1, Math.ceil(gx(x1)) + 1), j0 = Math.max(0, Math.floor(gz(z0)) - 1), j1 = Math.min(height - 1, Math.ceil(gz(z1)) + 1)
 const patch = []; for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) patch.push(+data[j * width + i])
-const fx = { from: `${dump} (${meta.scene}, tol ${meta.refineTol}) · tiles ${keep.join(', ')}${crop ? ` · bands and terrain within ${crop} m of the points` : ''} · cut by scratch/ground-budget/nan-fixture.mjs`, scene: meta.scene,
+const fx = { from: `${dump} (${meta.scene}, tol ${meta.refineTol}) · tiles ${keep.join(', ')}${process.env.SHAPE ? ` · cap couplers from ${process.env.SHAPE}` : ''}${crop ? ` · bands and terrain within ${crop} m of the points` : ''} · cut by scratch/ground-budget/nan-fixture.mjs`, scene: meta.scene,
   points: pts.map(p => p.split(',').map(Number)), deform: { tiles, bands, stencil: A.stencil, limits: A.limits },
   terrain: { width, height, bounds, patch: { i0, j0, w: i1 - i0 + 1, h: j1 - j0 + 1, data: patch } } }
 writeFileSync(out, JSON.stringify(fx))
