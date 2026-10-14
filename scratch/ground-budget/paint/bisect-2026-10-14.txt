@@ -1,0 +1,26 @@
+PAINT BISECT, Huron, 94347ebc (served 10-11 code) → HEAD 4f291308 (Brace, 2026-10-14; Boz). bisect-one.sh: a fresh worktree per
+commit, huron data LINKED to HEAD's (only the code differs), exits when the step after the bisected one begins; guards
+per run (data/huron + public/ snapshot: every run 0 changed · 0 newer; worktrees removed). Candidates: the 33 commits that
+touch bake-ground's import closure (bisect-commits.txt); within each bracket below the named commit is the ONLY one that
+touches any file of the closure (union of 5913f2ef's and HEAD's, 61 files). Times ±25%; load 1-min 2.3-2.9 every run.
+
+commit     pre-stack  mat:asphalt  mat:treelawn:underived
+4f291308   51.7 s     49.1 s       —            (HEAD; reproduces the paint-only run's 49.1 s)
+e45ab42f   18.8       52.0         103.2
+d504d7eb   18.6       60.5         —
+ef5d086f   17.6        1.9         —
+97688056   18.5        —           103.2
+c227acaf   18.6        —           102.2
+db9c7d87   51.4        —           197.7
+76fb11db   51.2        —           211.0
+(5913f2ef = 94347ebc's code: pre-stack 17.8 · asphalt 1.9 · treelawn:underived 131.0; HEAD: 51.6 · 49.1 · 204.5 — paint-2026-10-14.txt)
+
+FIRST BAD
+- mat:asphalt 1.9 → 49-60 s: d504d7eb (2026-10-11 11:51, Swale) "① is painted first" — bake-ground.js +2, src/lib/tileGround.js
+  +39/−1: ①'s ink is split by owner (shore / highway / road, unions + intersections + differences over 2ε quads per ring
+  edge) and the road ink is unioned INTO the asphalt layer; the coast piece is pushed as a new 'shore' layer.
+- mat:treelawn:underived ~102 → 198-211 s AND pre-stack 18.6 → 51.4 s: db9c7d87 (2026-10-12 17:20, Swale) "③'s strikes are
+  on offsetRingByRects" — src/lib/tileGround.js +11/−9: five offsetRingVariable calls → offsetRingByRects (③'s strikes,
+  the capacity guard, hole offsets) and the open field becomes the region itself (curbOuter), not an offset of it by 0.
+- Also seen: treelawn:underived fell 131.0 → ~103 s somewhere in 94347ebc..e45ab42f (not bisected).
+Cause not established beyond the diffs.
