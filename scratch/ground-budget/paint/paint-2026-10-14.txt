@@ -75,3 +75,74 @@ d09644cc per-step (s to the next progress line), from paint-d09644cc.log:
 [+713.2s]   [bake-ground] paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 657.0s
       713.37 real       729.98 user         5.61 sys
           1604108288  maximum resident set size
+
+== HEAD, re-run with --shore=pending (2026-10-14 00:34)
+HEAD start Wed Oct 14 00:34:40 CDT 2026 · load { 3.76 3.15 3.38 } · free 60%
+  [load] HEAD 00:34:40 { 3.76 3.15 3.38 } · free 59%
+  [load] HEAD 00:35:40 { 3.08 3.02 3.32 } · free 61%
+  [load] HEAD 00:36:40 { 2.51 2.87 3.24 } · free 62%
+  [load] HEAD 00:37:40 { 2.34 2.74 3.16 } · free 63%
+  [load] HEAD 00:38:40 { 2.10 2.59 3.07 } · free 61%
+  [load] HEAD 00:39:40 { 2.62 2.67 3.07 } · free 56%
+  [load] HEAD 00:40:40 { 2.54 2.64 3.03 } · free 58%
+  [load] HEAD 00:41:40 { 2.34 2.56 2.97 } · free 58%
+  [load] HEAD 00:42:40 { 2.17 2.50 2.92 } · free 59%
+  [load] HEAD 00:43:40 { 2.64 2.55 2.91 } · free 59%
+  [load] HEAD 00:44:40 { 2.99 2.62 2.91 } · free 58%
+HEAD exit 0 Wed Oct 14 00:45:25 CDT 2026 · paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 591.4s
+ALLDONE
+[+642.8s]   [bake-ground] paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 591.4s
+      642.99 real       659.61 user         3.38 sys
+          1789050880  maximum resident set size
+
+Per step, HEAD vs d09644cc (s; ±25%; HEAD load 1-min 2.1-3.8, d09644cc 2.7-4.8 + one 10.15):
+  mat:treelawn:underived         HEAD   204.5 · d09644cc   219.5
+  mat:highway                    HEAD   163.4 · d09644cc   194.9
+  mat:treelawn:residential       HEAD    60.5 · d09644cc    64.3
+  mat:asphalt                    HEAD    49.1 · d09644cc    55.6
+  face:forest                    HEAD    41.4 · d09644cc    44.9
+  mat:sidewalk                   HEAD    25.0 · d09644cc    28.4
+  face:underived                 HEAD    12.4 · d09644cc    13.0
+  mat:treelawn:commercial        HEAD     2.9 · d09644cc     3.0
+  mat:curb                       HEAD     2.9 · d09644cc     3.1
+  face:agricultural              HEAD     2.4 · d09644cc     2.4
+  mat:treelawn:agricultural      HEAD     1.5 · d09644cc     1.6
+  mat:treelawn:forest            HEAD     1.4 · d09644cc     1.3
+  mat:treelawn:wetland           HEAD     1.3 · d09644cc     1.3
+  mat:treelawn:verge             HEAD     1.3 · d09644cc     1.3
+  mat:treelawn:greenhouse        HEAD     1.3 · d09644cc     1.4
+  mat:treelawn:beach             HEAD     1.3 · d09644cc     1.3
+  face:parking                   HEAD     1.3 · d09644cc     1.3
+  mat:treelawn:cemetery          HEAD     1.2 · d09644cc     1.4
+  face:recreation                HEAD     1.2 · d09644cc     1.1
+  mat:treelawn:vacant            HEAD     1.1 · d09644cc     1.2
+  mat:treelawn:institutional     HEAD     1.0 · d09644cc     1.0
+  mat:wood                       HEAD     0.9 · d09644cc     0.9
+  mat:treelawn:recreation        HEAD     0.8 · d09644cc     0.9
+  mat:treelawn:industrial        HEAD     0.8 · d09644cc     0.7
+  mat:treelawn:parking           HEAD     0.7 · d09644cc     0.7
+  mat:treelawn:park              HEAD     0.7 · d09644cc     0.8
+  mat:parking_lot                HEAD     0.5 · d09644cc     0.5
+  face:verge                     HEAD     0.5 · d09644cc     0.5
+  face:vacant                    HEAD     0.5 · d09644cc     0.5
+  face:residential               HEAD     0.5 · d09644cc     0.5
+  face:institutional             HEAD     0.5 · d09644cc     0.5
+  face:brownfield                HEAD     0.5 · d09644cc     0.5
+  face:beach                     HEAD     0.5 · d09644cc     0.4
+  mat:swimming_pool              HEAD     0.4 · d09644cc     0.4
+  mat:shore                      HEAD     0.4 · d09644cc     0.5
+  mat:scrub                      HEAD     0.4 · d09644cc     0.4
+  mat:pitch                      HEAD     0.4 · d09644cc     0.4
+  mat:garden                     HEAD     0.4 · d09644cc     0.4
+  mat:curbCut                    HEAD     0.4 · d09644cc     0.5
+  face:wetland                   HEAD     0.4 · d09644cc     0.5
+  face:park                      HEAD     0.4 · d09644cc     0.5
+  face:industrial                HEAD     0.4 · d09644cc     0.4
+  face:greenhouse                HEAD     0.4 · d09644cc     0.4
+  face:commercial                HEAD     0.4 · d09644cc     0.4
+  face:cemetery                  HEAD     0.4 · d09644cc     0.4
+  face:bare                      HEAD     0.4 · d09644cc     0.5
+  mat:playground                 HEAD     0.3 · d09644cc     0.5
+  mat:water:lake                 HEAD     0.1 · d09644cc     0.0
+  mat:footway                    HEAD     0.0 · d09644cc     0.0
+  mat:alley                      HEAD     0.0 · d09644cc     0.1
