@@ -24,3 +24,8 @@ FIRST BAD
   the capacity guard, hole offsets) and the open field becomes the region itself (curbOuter), not an offset of it by 0.
 - Also seen: treelawn:underived fell 131.0 → ~103 s somewhere in 94347ebc..e45ab42f (not bisected).
 Cause not established beyond the diffs.
+
+PARENTS, said exactly (Boz, 2026-10-14): d504d7eb's direct parent IS ef5d086f. db9c7d87's direct parent is 91c7fb7f, NOT
+c227acaf: the bisect ran only commits touching the closure, and 91c7fb7f touches none of its files (git diff c227acaf
+db9c7d87^ over the 61-file closure union is empty), so c227acaf's code equals 91c7fb7f's for this bake. My report to Boz
+called c227acaf db9c7d87's "parent"; that word was wrong. The queued pair runs 91c7fb7f vs db9c7d87.
