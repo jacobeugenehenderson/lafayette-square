@@ -13,9 +13,12 @@ const inMark = (id) => { for (let x = id; x != null; x = parent.get(x)) if (byId
 const label = (n) => `${n.callFrame.functionName || '(anonymous)'} ${n.callFrame.url.split('/').slice(-2).join('/')}:${n.callFrame.lineNumber + 1}`
 const t = new Float64Array(P.samples.length); let acc = P.startTime
 for (let i = 0; i < P.samples.length; i++) { acc += P.timeDeltas[i]; t[i] = acc }
-// marker clusters: runs of samples inside __win_mark, a new cluster after a gap of > 50 ms
-const ends = []
-for (let i = 0; i < t.length; i++) if (inMark(P.samples[i])) { if (!ends.length || t[i] - ends.at(-1).last > 5e4) ends.push({ first: t[i], last: t[i] }); else ends.at(-1).last = t[i] }
+// marker clusters: runs of consecutive samples inside __win_mark; any sample elsewhere between two marker samples starts
+// a new cluster (a 50 ms gap rule merged the first steps' marks, which are milliseconds apart)
+const ends = []; let prevIn = false
+for (let i = 0; i < t.length; i++) { const m = inMark(P.samples[i])
+  if (m) { if (!prevIn) ends.push({ first: t[i], last: t[i] }); else ends.at(-1).last = t[i] }
+  prevIn = m }
 if (ends.length !== marks.length) throw new Error(`${ends.length} __win_mark cluster(s) in the profile but ${marks.length} [window] line(s) in the log`)
 for (const name of want.split(',')) {
   const k = marks.findIndex(m => m.name === name)
