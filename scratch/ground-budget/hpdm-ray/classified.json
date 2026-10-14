@@ -1,0 +1,5479 @@
+[
+ {
+  "x": 992.4590000000001,
+  "z": 971.001,
+  "tile": 48,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "heels-path-0|right|0",
+  "d": 3.380898482475922,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 3.381,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1113.317,
+  "z": 830.502,
+  "tile": 49,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "wells-drive-13|left|1",
+  "d": 3.380137343757802,
+  "cands": [
+   {
+    "key": "r14",
+    "d": 3.38,
+    "reach": 3.23,
+    "seq": "beyond0.000-3.230 lot3.230-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.901,
+  "z": -736.731,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.9955085446762537,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.996,
+    "reach": 1.273,
+    "seq": "beyond0.000-1.273 lot1.273-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.098,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": -850.39,
+  "z": -1063.12,
+  "tile": 192,
+  "verdict": "HEAD owns it here (not reproduced)"
+ },
+ {
+  "x": 576.6469999999999,
+  "z": 1157.028,
+  "tile": 28,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 1.1459184929589346,
+  "cands": [
+   {
+    "key": "r0",
+    "d": 1.146,
+    "reach": 2.134,
+    "seq": "lot0.000-1.146 walk1.146-2.133 lawn2.133-2.134 lot2.134-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 3.004,
+    "reach": 3.381,
+    "seq": "lot0.000-0.595 walk0.595-3.381 lot3.381-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 63.031,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.65,
+  "z": -38.464,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 3.379245891035025,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 3.379,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.054,
+    "reach": 24.061,
+    "seq": "lot0.000-0.003 curb0.003-2.714 walk2.714-13.389 lawn13.389-24.061 lot24.061-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 28.951,
+    "reach": 3.584,
+    "seq": "curb0.000-0.404 lawn0.404-1.666 walk1.666-2.993 lawn2.993-3.584 lot3.584-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 47.494,
+    "reach": 11.618,
+    "seq": "curb0.000-0.635 walk0.635-4.646 lawn4.646-11.618 lot11.618-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 48.644,
+    "reach": 7.819,
+    "seq": "curb0.000-0.883 lawn0.883-4.350 walk4.350-7.819 lot7.819-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 51.752,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -850.56,
+  "z": -1061.5629999999999,
+  "tile": 192,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 2.2078873717640195,
+  "cands": [
+   {
+    "key": "r19",
+    "d": 2.208,
+    "reach": 3.381,
+    "seq": "lot0.000-2.195 lawn2.195-3.381 lot3.381-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 2.208,
+    "reach": 0.815,
+    "seq": "curb0.000-0.205 lawn0.205-0.815 lot0.815-64.997"
+   }
+  ]
+ },
+ {
+  "x": -850.53,
+  "z": -1061.846,
+  "tile": 192,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 1.923368496544411,
+  "cands": [
+   {
+    "key": "r19",
+    "d": 1.923,
+    "reach": 3.381,
+    "seq": "lot0.000-1.922 lawn1.922-3.381 lot3.381-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 1.924,
+    "reach": 0.153,
+    "seq": "curb0.000-0.039 lawn0.039-0.153 lot0.153-64.997"
+   }
+  ]
+ },
+ {
+  "x": -850.591,
+  "z": -1061.272,
+  "tile": 192,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 2.500461923634684,
+  "cands": [
+   {
+    "key": "r19",
+    "d": 2.5,
+    "reach": 3.381,
+    "seq": "lot0.000-2.482 lawn2.482-3.381 lot3.381-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 2.501,
+    "reach": 0.957,
+    "seq": "curb0.000-0.241 lawn0.241-0.957 lot0.957-64.997"
+   }
+  ]
+ },
+ {
+  "x": -850.622,
+  "z": -1060.982,
+  "tile": 192,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 2.7920399970011807,
+  "cands": [
+   {
+    "key": "r19",
+    "d": 2.792,
+    "reach": 3.381,
+    "seq": "lot0.000-2.773 lawn2.773-3.381 lot3.381-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 2.793,
+    "reach": 0.721,
+    "seq": "curb0.000-0.182 lawn0.182-0.721 lot0.721-64.997"
+   }
+  ]
+ },
+ {
+  "x": -850.653,
+  "z": -1060.691,
+  "tile": 192,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 3.0846145488718455,
+  "cands": [
+   {
+    "key": "r19",
+    "d": 3.085,
+    "reach": 3.38,
+    "seq": "lot0.000-3.061 lawn3.061-3.380 lot3.380-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 3.085,
+    "reach": 0.862,
+    "seq": "curb0.000-0.217 lawn0.217-0.862 lot0.862-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1184.93,
+  "z": -723.47,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.377072243024234,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.377,
+    "reach": 2.455,
+    "seq": "beyond0.000-2.455 lot2.455-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1185.3,
+  "z": -723.4209999999999,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.380334580366393,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.38,
+    "reach": 2.921,
+    "seq": "beyond0.000-2.921 lot2.921-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.46,
+  "z": -723.65,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.3786760007409935,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.379,
+    "reach": 0.606,
+    "seq": "beyond0.000-0.606 lot0.606-64.997"
+   }
+  ]
+ },
+ {
+  "x": 679.269,
+  "z": 1095.68,
+  "tile": 38,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 0.9463150945267187,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 0.946,
+    "reach": 3.638,
+    "seq": "lot0.000-0.946 walk0.946-3.638 lot3.638-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 1.133,
+    "reach": 0.08,
+    "seq": "curb0.000-0.080 lot0.080-64.997"
+   }
+  ]
+ },
+ {
+  "x": 679.359,
+  "z": 1094.941,
+  "tile": 38,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 1.5679361949063486,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.568,
+    "reach": 3.368,
+    "seq": "lot0.000-1.568 walk1.568-3.368 lot3.368-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 1.878,
+    "reach": 0.137,
+    "seq": "curb0.000-0.137 lot0.137-64.997"
+   }
+  ]
+ },
+ {
+  "x": 679.404,
+  "z": 1094.572,
+  "tile": 38,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 1.8782990482811202,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.878,
+    "reach": 3.233,
+    "seq": "lot0.000-1.878 walk1.878-3.233 lot3.233-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 2.25,
+    "reach": 3.381,
+    "seq": "lot0.000-1.023 walk1.023-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": 679.496,
+  "z": 1093.818,
+  "tile": 38,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "__highway__|right|0",
+  "d": 2.5124605021723836,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 2.512,
+    "reach": 2.958,
+    "seq": "lot0.000-2.512 walk2.512-2.958 lot2.958-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 3.009,
+    "reach": 3.381,
+    "seq": "lot0.000-2.666 walk2.666-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -867.036,
+  "z": -1085.023,
+  "tile": 222,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "wellesley-avenue|right|2",
+  "d": 3.380726208385962,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 3.381,
+    "reach": 3.38,
+    "seq": "beyond0.000-3.380 lot3.380-64.997"
+   },
+   {
+    "key": "r11",
+    "d": 4.111,
+    "reach": 64.997,
+    "seq": "lot0.000-4.111 beyond4.111-64.997"
+   },
+   {
+    "key": "r10",
+    "d": 20.161,
+    "reach": 64.997,
+    "seq": "lot0.000-20.160 beyond20.160-64.997"
+   }
+  ]
+ },
+ {
+  "x": -531.187,
+  "z": 332.457,
+  "tile": 88,
+  "pointTest": "walk",
+  "verdict": "window",
+  "owner": "founders-way|right|2",
+  "d": 0.8931983393747864,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 0.893,
+    "reach": 0.891,
+    "seq": "curb0.000-0.381 lawn0.381-0.891 lot0.891-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 1.358,
+    "reach": 1.354,
+    "seq": "curb0.000-0.579 lawn0.579-1.354 lot1.354-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 1.36,
+    "reach": 1.356,
+    "seq": "curb0.000-0.580 lawn0.580-1.356 lot1.356-64.997"
+   },
+   {
+    "key": "r7",
+    "d": 22.294,
+    "reach": 5.315,
+    "seq": "curb0.000-0.528 lawn0.528-2.640 walk2.640-5.315 lot5.315-64.997"
+   },
+   {
+    "key": "r6",
+    "d": 39.236,
+    "reach": 5.922,
+    "seq": "curb0.000-0.668 lawn0.668-3.296 walk3.296-5.922 lot5.922-64.997"
+   }
+  ]
+ },
+ {
+  "x": -504.59,
+  "z": 152.009,
+  "tile": 114,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (unclassified-221|left|1)",
+  "d": 0.5181434819950976,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 0.518,
+    "reach": 0.513,
+    "seq": "curb0.000-0.381 lawn0.381-0.513 lot0.513-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 0.519,
+    "reach": 0.512,
+    "seq": "curb0.000-0.382 lawn0.382-0.512 lot0.512-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 50.303,
+    "reach": 26.573,
+    "seq": "lot0.000-16.314 curb16.314-18.021 lawn18.021-22.505 walk22.505-26.573 lot26.573-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 55.32,
+    "reach": 39.608,
+    "seq": "lot0.000-32.892 curb32.892-33.582 lawn33.582-36.301 walk36.301-39.608 lot39.608-64.997"
+   }
+  ]
+ },
+ {
+  "x": -148.398,
+  "z": 220.441,
+  "tile": 115,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "arc 1 (university-lane|right|5 / arundel-place|left|0)",
+  "d": 1.2269345333732522,
+  "cands": [
+   {
+    "key": "a1",
+    "d": 1.227,
+    "reach": 1.224,
+    "seq": "curb0.000-0.381 walk0.381-1.224 lot1.224-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 1.23,
+    "reach": 0.432,
+    "seq": "curb0.000-0.381 lawn0.381-0.432 lot0.432-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1336.14,
+  "z": -379.21,
+  "tile": 165,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "brentmoor-park-4|right|3",
+  "d": 0.3836276845260013,
+  "cands": [
+   {
+    "key": "r6",
+    "d": 0.384,
+    "reach": 0.369,
+    "seq": "beyond0.000-0.369 lot0.369-64.997"
+   }
+  ]
+ },
+ {
+  "x": -653.701,
+  "z": -200.84,
+  "tile": 159,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "brentmoor-park-1|right|3",
+  "d": 0.3762232177409951,
+  "cands": [
+   {
+    "key": "r21",
+    "d": 0.376,
+    "reach": 0.326,
+    "seq": "curb0.000-0.326 lot0.326-64.997"
+   },
+   {
+    "key": "r22",
+    "d": 11.358,
+    "reach": 11.344,
+    "seq": "lot0.000-10.982 curb10.982-11.344 lot11.344-64.997"
+   },
+   {
+    "key": "r15",
+    "d": 39.327,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   },
+   {
+    "key": "a11",
+    "d": 39.939,
+    "reach": 46.993,
+    "seq": "lot0.000-38.946 curb38.946-39.952 lawn39.952-43.470 walk43.470-46.993 lot46.993-64.997"
+   },
+   {
+    "key": "a6",
+    "d": 47.255,
+    "reach": 4.157,
+    "seq": "curb0.000-0.455 lawn0.455-2.306 walk2.306-4.157 lot4.157-64.997"
+   },
+   {
+    "key": "a10",
+    "d": 49.412,
+    "reach": 0.003,
+    "seq": "curb0.000-0.003 lot0.003-64.997"
+   },
+   {
+    "key": "a12",
+    "d": 50.744,
+    "reach": 58.289,
+    "seq": "lot0.000-49.634 curb49.634-50.757 lawn50.757-54.539 walk54.539-58.289 lot58.289-64.997"
+   },
+   {
+    "key": "r20",
+    "d": 53.157,
+    "reach": 64.997,
+    "seq": "lot0.000-50.286 curb50.286-53.191 lawn53.191-60.908 walk60.908-64.997"
+   },
+   {
+    "key": "r23",
+    "d": 54.622,
+    "reach": 8.969,
+    "seq": "curb0.000-0.913 lawn0.913-1.314 walk1.314-1.486 lawn1.486-1.946 walk1.946-2.002"
+   },
+   {
+    "key": "r11",
+    "d": 56.276,
+    "reach": 4.01,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.443 curb3.443-4.010 lot4.010-64.997"
+   }
+  ]
+ },
+ {
+  "x": 992.37,
+  "z": 971.4,
+  "tile": 48,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "heels-path-0|right|0",
+  "d": 3.0062188460658246,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 3.006,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ },
+ {
+  "x": 991.84,
+  "z": 971.94,
+  "tile": 48,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "heels-path-0|right|0",
+  "d": 2.257531620727822,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 2.258,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ },
+ {
+  "x": 991.8,
+  "z": 971.91,
+  "tile": 48,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "heels-path-0|right|0",
+  "d": 2.258158530692603,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 2.258,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ },
+ {
+  "x": 991.73,
+  "z": 972.1,
+  "tile": 48,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "heels-path-0|right|0",
+  "d": 2.0634465647576574,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 2.063,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1129.778,
+  "z": 715.3119999999999,
+  "tile": 49,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "wells-drive-1|right|0",
+  "d": 0.3849472455389968,
+  "cands": [
+   {
+    "key": "r16",
+    "d": 0.385,
+    "reach": 0.273,
+    "seq": "curb0.000-0.273 lot0.273-64.997"
+   },
+   {
+    "key": "r17",
+    "d": 8.301,
+    "reach": 19.049,
+    "seq": "lot0.000-4.708 curb4.708-8.268 lawn8.268-14.674 walk14.674-19.049 lot19.049-64.997"
+   },
+   {
+    "key": "r15",
+    "d": 49.261,
+    "reach": 0.62,
+    "seq": "curb0.000-0.620 lot0.620-64.997"
+   },
+   {
+    "key": "r18",
+    "d": 55.392,
+    "reach": 60.214,
+    "seq": "lot0.000-54.733 curb54.733-55.384 lawn55.384-57.800 walk57.800-60.214 lot60.214-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1354.35,
+  "z": 308.1,
+  "tile": 55,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 0.38786019621600026,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 0.388,
+    "reach": 0.377,
+    "seq": "beyond0.000-0.377 lot0.377-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1353.66,
+  "z": 308.97,
+  "tile": 55,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 1.498122117218037,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.498,
+    "reach": 0.338,
+    "seq": "beyond0.000-0.338 lot0.338-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1353.96,
+  "z": 308.73,
+  "tile": 55,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 1.1250933800337335,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.125,
+    "reach": 0.543,
+    "seq": "beyond0.000-0.543 lot0.543-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1354.01,
+  "z": 308.53,
+  "tile": 55,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 0.9359806279982328,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 0.936,
+    "reach": 0.36,
+    "seq": "beyond0.000-0.360 lot0.360-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1353.48,
+  "z": 309.3,
+  "tile": 55,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 1.8695086159403282,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.87,
+    "reach": 0.467,
+    "seq": "beyond0.000-0.467 lot0.467-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.61,
+  "z": 1203.82,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7564517153550182,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.756,
+    "reach": 0.732,
+    "seq": "curb0.000-0.381 lawn0.381-0.732 lot0.732-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.44,
+    "reach": 11.239,
+    "seq": "curb0.000-6.263 lawn6.263-11.239 lot11.239-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.663,
+    "reach": 10.934,
+    "seq": "curb0.000-1.230 lawn1.230-6.083 walk6.083-10.934 lot10.934-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.26,
+  "z": 1204.01,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.750262031803177,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.75,
+    "reach": 0.729,
+    "seq": "curb0.000-0.381 lawn0.381-0.729 lot0.729-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.838,
+    "reach": 11.755,
+    "seq": "curb0.000-6.339 lawn6.339-11.755 lot11.755-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.94,
+    "reach": 10.723,
+    "seq": "curb0.000-1.207 lawn1.207-5.966 walk5.966-10.723 lot10.723-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.51,
+  "z": 1203.88,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7596622751609792,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.76,
+    "reach": 0.731,
+    "seq": "curb0.000-0.381 lawn0.381-0.731 lot0.731-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.557,
+    "reach": 11.157,
+    "seq": "curb0.000-6.250 lawn6.250-11.157 lot11.157-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.74,
+    "reach": 10.869,
+    "seq": "curb0.000-1.223 lawn1.223-6.047 walk6.047-10.869 lot10.869-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.44,
+  "z": 1203.92,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7601670027376892,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.76,
+    "reach": 0.731,
+    "seq": "curb0.000-0.381 lawn0.381-0.731 lot0.731-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.637,
+    "reach": 11.178,
+    "seq": "curb0.000-6.254 lawn6.254-11.178 lot11.178-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.795,
+    "reach": 10.825,
+    "seq": "curb0.000-1.218 lawn1.218-6.023 walk6.023-10.825 lot10.825-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.45,
+  "z": 1203.92,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.765073939618633,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.765,
+    "reach": 0.731,
+    "seq": "curb0.000-0.381 lawn0.381-0.731 lot0.731-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.629,
+    "reach": 10.956,
+    "seq": "curb0.000-6.219 lawn6.219-10.956 lot10.956-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.785,
+    "reach": 10.827,
+    "seq": "curb0.000-1.218 lawn1.218-6.024 walk6.024-10.827 lot10.827-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.38,
+  "z": 1203.95,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7568653457594998,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.757,
+    "reach": 0.73,
+    "seq": "curb0.000-0.381 lawn0.381-0.730 lot0.730-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.704,
+    "reach": 11.366,
+    "seq": "curb0.000-6.282 lawn6.282-11.366 lot11.366-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.843,
+    "reach": 10.791,
+    "seq": "curb0.000-1.214 lawn1.214-6.004 walk6.004-10.791 lot10.791-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.46,
+  "z": 1203.91,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7612675550637337,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.761,
+    "reach": 0.731,
+    "seq": "curb0.000-0.381 lawn0.381-0.731 lot0.731-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.615,
+    "reach": 11.117,
+    "seq": "curb0.000-6.244 lawn6.244-11.117 lot11.117-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.779,
+    "reach": 10.836,
+    "seq": "curb0.000-1.219 lawn1.219-6.029 walk6.029-10.836 lot10.836-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.47,
+  "z": 1203.91,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7661744919446776,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.766,
+    "reach": 0.731,
+    "seq": "curb0.000-0.381 lawn0.381-0.731 lot0.731-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.606,
+    "reach": 10.897,
+    "seq": "curb0.000-6.210 lawn6.210-10.897 lot10.897-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.769,
+    "reach": 10.839,
+    "seq": "curb0.000-1.219 lawn1.219-6.030 walk6.030-10.839 lot10.839-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.54,
+  "z": 1203.87,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7656697643677137,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.766,
+    "reach": 0.731,
+    "seq": "curb0.000-0.381 lawn0.381-0.731 lot0.731-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.526,
+    "reach": 10.875,
+    "seq": "curb0.000-6.206 lawn6.206-10.875 lot10.875-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.714,
+    "reach": 10.883,
+    "seq": "curb0.000-1.224 lawn1.224-6.055 walk6.055-10.883 lot10.883-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.32,
+  "z": 1204,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.770990331653393,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.771,
+    "reach": 0.73,
+    "seq": "curb0.000-0.381 lawn0.381-0.730 lot0.730-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.781,
+    "reach": 10.787,
+    "seq": "curb0.000-6.192 lawn6.192-10.787 lot10.787-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.885,
+    "reach": 10.743,
+    "seq": "curb0.000-1.209 lawn1.209-5.977 walk5.977-10.743 lot10.743-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.3,
+  "z": 1204,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7611764578913073,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.761,
+    "reach": 0.729,
+    "seq": "curb0.000-0.381 lawn0.381-0.729 lot0.729-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.798,
+    "reach": 11.221,
+    "seq": "curb0.000-6.260 lawn6.260-11.221 lot11.221-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.904,
+    "reach": 10.739,
+    "seq": "curb0.000-1.208 lawn1.208-5.975 walk5.975-10.739 lot10.739-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.35,
+  "z": 1203.97,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7595711779885527,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.76,
+    "reach": 0.73,
+    "seq": "curb0.000-0.381 lawn0.381-0.730 lot0.730-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.74,
+    "reach": 11.262,
+    "seq": "curb0.000-6.266 lawn6.266-11.262 lot11.262-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.866,
+    "reach": 10.77,
+    "seq": "curb0.000-1.212 lawn1.212-5.992 walk5.992-10.770 lot10.770-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.21,
+  "z": 1204.05,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7605806331419727,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.761,
+    "reach": 0.729,
+    "seq": "curb0.000-0.381 lawn0.381-0.729 lot0.729-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.901,
+    "reach": 11.303,
+    "seq": "curb0.000-6.273 lawn6.273-11.303 lot11.303-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.975,
+    "reach": 10.686,
+    "seq": "curb0.000-1.202 lawn1.202-5.945 walk5.945-10.686 lot10.686-64.997"
+   }
+  ]
+ },
+ {
+  "x": 597.24,
+  "z": 1204.03,
+  "tile": 11,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "central-avenue-0|right|5",
+  "d": 0.7578748009131179,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.758,
+    "reach": 0.729,
+    "seq": "curb0.000-0.381 lawn0.381-0.729 lot0.729-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 12.865,
+    "reach": 11.407,
+    "seq": "curb0.000-6.288 lawn6.288-11.407 lot11.407-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 44.953,
+    "reach": 10.706,
+    "seq": "curb0.000-1.205 lawn1.205-5.956 walk5.956-10.706 lot10.706-64.997"
+   }
+  ]
+ },
+ {
+  "x": -105.22,
+  "z": -657.88,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 3.3643972714291417,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 3.364,
+    "reach": 1.13,
+    "seq": "curb0.000-0.381 walk0.381-1.130 lot1.130-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 3.364,
+    "reach": 1.13,
+    "seq": "curb0.000-0.381 walk0.381-1.130 lot1.130-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 12.473,
+    "reach": 12.494,
+    "seq": "lot0.000-7.738 curb7.738-8.422 lawn8.422-12.494 lot12.494-64.997"
+   }
+  ]
+ },
+ {
+  "x": -104.07,
+  "z": -656.54,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 1.5987085412919526,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 1.599,
+    "reach": 1.416,
+    "seq": "curb0.000-0.381 walk0.381-1.416 lot1.416-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 1.599,
+    "reach": 1.416,
+    "seq": "curb0.000-0.381 walk0.381-1.416 lot1.416-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 11.035,
+    "reach": 13.201,
+    "seq": "lot0.000-8.772 curb8.772-9.350 lawn9.350-11.046 walk11.046-11.387 lawn11.387-13.201"
+   }
+  ]
+ },
+ {
+  "x": -105.23,
+  "z": -657.82,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 3.3260951579893425,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 3.326,
+    "reach": 1.649,
+    "seq": "curb0.000-0.381 walk0.381-1.649 lot1.649-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 3.326,
+    "reach": 1.649,
+    "seq": "curb0.000-0.381 walk0.381-1.649 lot1.649-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 12.466,
+    "reach": 12.531,
+    "seq": "lot0.000-7.795 curb7.795-8.472 lawn8.472-12.531 lot12.531-64.997"
+   }
+  ]
+ },
+ {
+  "x": -105.23,
+  "z": -657.84,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 3.3410041903595484,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 3.341,
+    "reach": 1.459,
+    "seq": "curb0.000-0.381 walk0.381-1.459 lot1.459-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 3.341,
+    "reach": 1.459,
+    "seq": "curb0.000-0.381 walk0.381-1.459 lot1.459-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 12.472,
+    "reach": 12.519,
+    "seq": "lot0.000-7.777 curb7.777-8.456 lawn8.456-12.519 lot12.519-64.997"
+   }
+  ]
+ },
+ {
+  "x": -104.54,
+  "z": -657.18,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 2.3904495393125846,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 2.39,
+    "reach": 0.761,
+    "seq": "curb0.000-0.381 walk0.381-0.761 lot0.761-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 2.39,
+    "reach": 0.761,
+    "seq": "curb0.000-0.381 walk0.381-0.761 lot0.761-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 11.634,
+    "reach": 12.83,
+    "seq": "lot0.000-8.243 curb8.243-8.866 lawn8.866-12.830 lot12.830-64.997"
+   }
+  ]
+ },
+ {
+  "x": -104.81,
+  "z": -657.44,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 2.7633727580621725,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 2.763,
+    "reach": 0.976,
+    "seq": "curb0.000-0.381 walk0.381-0.976 lot0.976-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 2.763,
+    "reach": 0.976,
+    "seq": "curb0.000-0.381 walk0.381-0.976 lot0.976-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 11.96,
+    "reach": 12.698,
+    "seq": "lot0.000-8.049 curb8.049-8.691 lawn8.691-12.698 lot12.698-64.997"
+   }
+  ]
+ },
+ {
+  "x": -104.68,
+  "z": -657.31,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 2.5800792623482938,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 2.58,
+    "reach": 0.885,
+    "seq": "curb0.000-0.381 walk0.381-0.885 lot0.885-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 2.58,
+    "reach": 0.885,
+    "seq": "curb0.000-0.381 walk0.381-0.885 lot0.885-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 11.802,
+    "reach": 12.763,
+    "seq": "lot0.000-8.150 curb8.150-8.777 lawn8.777-12.763 lot12.763-64.997"
+   }
+  ]
+ },
+ {
+  "x": -105.09,
+  "z": -657.69,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 3.1358808969729957,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 3.136,
+    "reach": 1.398,
+    "seq": "curb0.000-0.381 walk0.381-1.398 lot1.398-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 3.136,
+    "reach": 1.398,
+    "seq": "curb0.000-0.381 walk0.381-1.398 lot1.398-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 12.296,
+    "reach": 12.586,
+    "seq": "lot0.000-7.878 curb7.878-8.544 lawn8.544-12.586 lot12.586-64.997"
+   }
+  ]
+ },
+ {
+  "x": -104.95,
+  "z": -657.56,
+  "tile": 182,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "unstamped",
+  "d": 2.9457747707521134,
+  "cands": [
+   {
+    "key": "r13",
+    "d": 2.946,
+    "reach": 1.193,
+    "seq": "curb0.000-0.381 walk0.381-1.193 lot1.193-64.997"
+   },
+   {
+    "key": "rnull",
+    "d": 2.946,
+    "reach": 1.193,
+    "seq": "curb0.000-0.381 walk0.381-1.193 lot1.193-64.997"
+   },
+   {
+    "key": "r12",
+    "d": 12.126,
+    "reach": 12.644,
+    "seq": "lot0.000-7.966 curb7.966-8.620 lawn8.620-12.644 lot12.644-64.997"
+   }
+  ]
+ },
+ {
+  "x": 435.77,
+  "z": -261.60900000000004,
+  "tile": 162,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "arc 0 (ellenwood-avenue|right|4 / wydown-boulevard-1|left|21)",
+  "d": 1.2933483438927598,
+  "cands": [
+   {
+    "key": "a0",
+    "d": 1.293,
+    "reach": 1.291,
+    "seq": "curb0.000-0.381 walk0.381-1.291 lot1.291-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 1.296,
+    "reach": 0.458,
+    "seq": "curb0.000-0.382 walk0.382-0.458 lot0.458-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 11.296,
+    "reach": 4.178,
+    "seq": "curb0.000-0.400 walk0.400-4.178 lot4.178-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 19.014,
+    "reach": 15.43,
+    "seq": "curb0.000-1.740 lawn1.740-8.587 walk8.587-15.430 lot15.430-64.997"
+   },
+   {
+    "key": "r2",
+    "d": 42.508,
+    "reach": 10.643,
+    "seq": "curb0.000-1.200 lawn1.200-5.920 walk5.920-10.643 lot10.643-64.997"
+   }
+  ]
+ },
+ {
+  "x": 435.478,
+  "z": -261.551,
+  "tile": 162,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "arc 0 (ellenwood-avenue|right|4 / wydown-boulevard-1|left|21)",
+  "d": 1.590354166893566,
+  "cands": [
+   {
+    "key": "a0",
+    "d": 1.59,
+    "reach": 1.588,
+    "seq": "curb0.000-0.381 walk0.381-1.588 lot1.588-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 1.594,
+    "reach": 0.558,
+    "seq": "curb0.000-0.382 walk0.382-0.558 lot0.558-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 11.207,
+    "reach": 3.877,
+    "seq": "curb0.000-0.397 walk0.397-3.877 lot3.877-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 18.732,
+    "reach": 15.09,
+    "seq": "curb0.000-1.701 lawn1.701-8.397 walk8.397-15.090 lot15.090-64.997"
+   },
+   {
+    "key": "r2",
+    "d": 42.213,
+    "reach": 10.617,
+    "seq": "curb0.000-1.197 lawn1.197-5.905 walk5.905-10.617 lot10.617-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.52,
+  "z": -492.58,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4801723150736033,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.48,
+    "reach": 2.447,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.447 lot2.447-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.558,
+    "reach": 3.527,
+    "seq": "curb0.000-0.388 walk0.388-1.920 lawn1.920-3.527 lot3.527-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 14.997,
+    "reach": 3.515,
+    "seq": "curb0.000-0.396 lawn0.396-1.630 walk1.630-2.932 lawn2.932-3.515 lot3.515-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.683,
+    "reach": 17.331,
+    "seq": "curb0.000-2.714 walk2.714-13.413 lawn13.413-17.331 lot17.331-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.53,
+  "z": -492.51,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.480575446650369,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.481,
+    "reach": 2.444,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.444 lot2.444-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.627,
+    "reach": 3.526,
+    "seq": "curb0.000-0.388 walk0.388-1.920 lawn1.920-3.526 lot3.526-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.065,
+    "reach": 3.513,
+    "seq": "curb0.000-0.396 lawn0.396-1.631 walk1.631-2.934 lawn2.934-3.513 lot3.513-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.613,
+    "reach": 17.221,
+    "seq": "curb0.000-2.702 walk2.702-13.358 lawn13.358-17.221 lot17.221-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.59,
+  "z": -491.73,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4341151584106298,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.434,
+    "reach": 2.405,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.405 lot2.405-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.407,
+    "reach": 3.516,
+    "seq": "curb0.000-0.388 walk0.388-1.918 lawn1.918-3.516 lot3.516-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.829,
+    "reach": 3.503,
+    "seq": "curb0.000-0.395 lawn0.395-1.638 walk1.638-2.945 lawn2.945-3.503 lot3.503-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.834,
+    "reach": 16.541,
+    "seq": "curb0.000-2.632 walk2.632-13.010 lawn13.010-16.541 lot16.541-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.59,
+  "z": -491.75,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4368306627273078,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.437,
+    "reach": 2.406,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.406 lot2.406-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.387,
+    "reach": 3.516,
+    "seq": "curb0.000-0.388 walk0.388-1.918 lawn1.918-3.516 lot3.516-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.809,
+    "reach": 3.503,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.945 lawn2.945-3.503 lot3.503-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.854,
+    "reach": 16.543,
+    "seq": "curb0.000-2.632 walk2.632-13.011 lawn13.011-16.543 lot16.543-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.58,
+  "z": -491.78,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.430996522517194,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.431,
+    "reach": 2.408,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.408 lot2.408-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.357,
+    "reach": 3.517,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.781,
+    "reach": 3.504,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.944 lawn2.944-3.504 lot3.504-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.884,
+    "reach": 16.648,
+    "seq": "curb0.000-2.643 walk2.643-13.066 lawn13.066-16.648 lot16.648-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.6,
+  "z": -491.63,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4304450335123504,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.43,
+    "reach": 2.4,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.400 lot2.400-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.507,
+    "reach": 3.514,
+    "seq": "curb0.000-0.388 walk0.388-1.918 lawn1.918-3.514 lot3.514-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.927,
+    "reach": 3.501,
+    "seq": "curb0.000-0.395 lawn0.395-1.638 walk1.638-2.947 lawn2.947-3.501 lot3.501-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.734,
+    "reach": 16.43,
+    "seq": "curb0.000-2.621 walk2.621-12.953 lawn12.953-16.430 lot16.430-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.6,
+  "z": -491.66,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4345182899873814,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.435,
+    "reach": 2.402,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.402 lot2.402-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.477,
+    "reach": 3.514,
+    "seq": "curb0.000-0.388 walk0.388-1.918 lawn1.918-3.514 lot3.514-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.897,
+    "reach": 3.502,
+    "seq": "curb0.000-0.395 lawn0.395-1.638 walk1.638-2.946 lawn2.946-3.502 lot3.502-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.764,
+    "reach": 16.433,
+    "seq": "curb0.000-2.621 walk2.621-12.954 lawn12.954-16.433 lot16.433-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.54,
+  "z": -492.38,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4728320652770805,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.473,
+    "reach": 2.437,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.437 lot2.437-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.757,
+    "reach": 3.524,
+    "seq": "curb0.000-0.388 walk0.388-1.920 lawn1.920-3.524 lot3.524-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.192,
+    "reach": 3.512,
+    "seq": "curb0.000-0.396 lawn0.396-1.632 walk1.632-2.936 lawn2.936-3.512 lot3.512-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.483,
+    "reach": 17.108,
+    "seq": "curb0.000-2.691 walk2.691-13.301 lawn13.301-17.108 lot17.108-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.6,
+  "z": -491.56,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4209407684039723,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.421,
+    "reach": 2.397,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.397 lot2.397-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.577,
+    "reach": 3.514,
+    "seq": "curb0.000-0.388 walk0.388-1.918 lawn1.918-3.514 lot3.514-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.996,
+    "reach": 3.501,
+    "seq": "curb0.000-0.395 lawn0.395-1.639 walk1.639-2.947 lawn2.947-3.501 lot3.501-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.664,
+    "reach": 16.423,
+    "seq": "curb0.000-2.620 walk2.620-12.949 lawn12.949-16.423 lot16.423-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.57,
+  "z": -491.97,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.446886416840515,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.447,
+    "reach": 2.417,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.417 lot2.417-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.167,
+    "reach": 3.519,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.519 lot3.519-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.594,
+    "reach": 3.506,
+    "seq": "curb0.000-0.395 lawn0.395-1.636 walk1.636-2.941 lawn2.941-3.506 lot3.506-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.073,
+    "reach": 16.767,
+    "seq": "curb0.000-2.656 walk2.656-13.127 lawn13.127-16.767 lot16.767-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.52,
+  "z": -492.64,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4883188280236577,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.488,
+    "reach": 2.45,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.450 lot2.450-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.498,
+    "reach": 3.527,
+    "seq": "curb0.000-0.388 walk0.388-1.920 lawn1.920-3.527 lot3.527-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 14.938,
+    "reach": 3.515,
+    "seq": "curb0.000-0.396 lawn0.396-1.630 walk1.630-2.932 lawn2.932-3.515 lot3.515-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.743,
+    "reach": 17.334,
+    "seq": "curb0.000-2.714 walk2.714-13.414 lawn13.414-17.334 lot17.334-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.52,
+  "z": -492.62,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.485603323706966,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.486,
+    "reach": 2.449,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.449 lot2.449-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.518,
+    "reach": 3.527,
+    "seq": "curb0.000-0.388 walk0.388-1.920 lawn1.920-3.527 lot3.527-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 14.958,
+    "reach": 3.515,
+    "seq": "curb0.000-0.396 lawn0.396-1.630 walk1.630-2.932 lawn2.932-3.515 lot3.515-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.723,
+    "reach": 17.333,
+    "seq": "curb0.000-2.714 walk2.714-13.414 lawn13.414-17.333 lot17.333-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.58,
+  "z": -491.83,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4377852833088953,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.438,
+    "reach": 2.41,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.410 lot2.410-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.307,
+    "reach": 3.517,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.731,
+    "reach": 3.504,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.943 lawn2.943-3.504 lot3.504-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.934,
+    "reach": 16.652,
+    "seq": "curb0.000-2.644 walk2.644-13.068 lawn13.068-16.652 lot16.652-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.58,
+  "z": -491.84,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.439143035467234,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.439,
+    "reach": 2.411,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.411 lot2.411-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.297,
+    "reach": 3.517,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.721,
+    "reach": 3.504,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.943 lawn2.943-3.504 lot3.504-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.944,
+    "reach": 16.653,
+    "seq": "curb0.000-2.644 walk2.644-13.068 lawn13.068-16.653 lot16.653-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.58,
+  "z": -491.85,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4405007876255795,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.441,
+    "reach": 2.411,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.411 lot2.411-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.287,
+    "reach": 3.517,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.711,
+    "reach": 3.504,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.943 lawn2.943-3.504 lot3.504-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.954,
+    "reach": 16.654,
+    "seq": "curb0.000-2.644 walk2.644-13.069 lawn13.069-16.654 lot16.654-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.58,
+  "z": -491.8,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.433712026833872,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.434,
+    "reach": 2.409,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.409 lot2.409-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.337,
+    "reach": 3.517,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.761,
+    "reach": 3.504,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.944 lawn2.944-3.504 lot3.504-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.904,
+    "reach": 16.65,
+    "seq": "curb0.000-2.644 walk2.644-13.066 lawn13.066-16.650 lot16.650-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.58,
+  "z": -491.81,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4350697789922173,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.435,
+    "reach": 2.409,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.409 lot2.409-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.327,
+    "reach": 3.517,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.751,
+    "reach": 3.504,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.944 lawn2.944-3.504 lot3.504-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.914,
+    "reach": 16.65,
+    "seq": "curb0.000-2.644 walk2.644-13.067 lawn13.067-16.650 lot16.650-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.49,
+  "z": -492.61,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4545233814932375,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.455,
+    "reach": 2.449,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.449 lot2.449-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.528,
+    "reach": 3.532,
+    "seq": "curb0.000-0.388 walk0.388-1.921 lawn1.921-3.532 lot3.532-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 14.972,
+    "reach": 3.517,
+    "seq": "curb0.000-0.397 lawn0.397-1.629 walk1.629-2.930 lawn2.930-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.713,
+    "reach": 17.658,
+    "seq": "curb0.000-2.747 walk2.747-13.576 lawn13.576-17.658 lot17.658-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.5,
+  "z": -492.47,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4454222479616234,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.445,
+    "reach": 2.442,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.442 lot2.442-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.668,
+    "reach": 3.53,
+    "seq": "curb0.000-0.388 walk0.388-1.921 lawn1.921-3.530 lot3.530-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.109,
+    "reach": 3.515,
+    "seq": "curb0.000-0.396 lawn0.396-1.630 walk1.630-2.932 lawn2.932-3.515 lot3.515-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.573,
+    "reach": 17.543,
+    "seq": "curb0.000-2.735 walk2.735-13.519 lawn13.519-17.543 lot17.543-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.55,
+  "z": -492.18,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4555844187954055,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.456,
+    "reach": 2.427,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.427 lot2.427-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.957,
+    "reach": 3.522,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.522 lot3.522-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.389,
+    "reach": 3.509,
+    "seq": "curb0.000-0.396 lawn0.396-1.634 walk1.634-2.938 lawn2.938-3.509 lot3.509-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.283,
+    "reach": 16.99,
+    "seq": "curb0.000-2.679 walk2.679-13.241 lawn13.241-16.990 lot16.990-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.58,
+  "z": -491.73,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.4242077617255,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.424,
+    "reach": 2.405,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.405 lot2.405-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.407,
+    "reach": 3.517,
+    "seq": "curb0.000-0.388 walk0.388-1.919 lawn1.919-3.517 lot3.517-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.83,
+    "reach": 3.503,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.944 lawn2.944-3.503 lot3.503-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.834,
+    "reach": 16.644,
+    "seq": "curb0.000-2.643 walk2.643-13.063 lawn13.063-16.644 lot16.644-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.63,
+  "z": -492.7,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.605446704510113,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.605,
+    "reach": 2.452,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.452 lot2.452-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.437,
+    "reach": 3.509,
+    "seq": "curb0.000-0.388 walk0.388-1.917 lawn1.917-3.509 lot3.509-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 14.863,
+    "reach": 3.509,
+    "seq": "curb0.000-0.396 lawn0.396-1.634 walk1.634-2.939 lawn2.939-3.509 lot3.509-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.804,
+    "reach": 16.244,
+    "seq": "curb0.000-2.601 walk2.601-12.855 lawn12.855-16.244 lot16.244-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.7,
+  "z": -492.64,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.66665196835599,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.667,
+    "reach": 2.449,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.449 lot2.449-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 14.498,
+    "reach": 3.499,
+    "seq": "curb0.000-0.387 walk0.387-1.915 lawn1.915-3.499 lot3.499-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 14.912,
+    "reach": 3.504,
+    "seq": "curb0.000-0.395 lawn0.395-1.637 walk1.637-2.944 lawn2.944-3.504 lot3.504-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 17.745,
+    "reach": 15.61,
+    "seq": "curb0.000-2.533 walk2.533-12.519 lawn12.519-15.610 lot15.610-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.809,
+  "z": -491.8,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.6605914109233533,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.661,
+    "reach": 2.407,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.407 lot2.407-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.339,
+    "reach": 3.488,
+    "seq": "curb0.000-0.387 walk0.387-1.913 lawn1.913-3.488 lot3.488-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.731,
+    "reach": 3.491,
+    "seq": "curb0.000-0.394 lawn0.394-1.645 walk1.645-2.959 lawn2.959-3.491 lot3.491-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.907,
+    "reach": 14.588,
+    "seq": "curb0.000-2.419 walk2.419-11.955 lawn11.955-14.588 lot14.588-64.997"
+   }
+  ]
+ },
+ {
+  "x": -121.73,
+  "z": -491.86,
+  "tile": 170,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 2 (forsyth-boulevard|right|25 / wallace-drive|right|2)",
+  "d": 2.5904694900608756,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.59,
+    "reach": 2.411,
+    "seq": "curb0.000-0.381 walk0.381-1.881 lawn1.881-2.411 lot2.411-64.997"
+   },
+   {
+    "key": "r3",
+    "d": 15.278,
+    "reach": 3.496,
+    "seq": "curb0.000-0.387 walk0.387-1.915 lawn1.915-3.496 lot3.496-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 15.682,
+    "reach": 3.496,
+    "seq": "curb0.000-0.394 lawn0.394-1.642 walk1.642-2.953 lawn2.953-3.496 lot3.496-64.997"
+   },
+   {
+    "key": "r4",
+    "d": 16.965,
+    "reach": 15.246,
+    "seq": "curb0.000-2.493 walk2.493-12.321 lawn12.321-15.246 lot15.246-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.06,
+  "z": -737.24,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.5947677194692853,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.595,
+    "reach": 0.156,
+    "seq": "beyond0.000-0.156 lot0.156-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.5,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.36,
+  "z": -737.61,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.1904101644074554,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.19,
+    "reach": 0.469,
+    "seq": "beyond0.000-0.469 lot0.469-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.904,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.34,
+  "z": -737.21,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.5898014989443634,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.59,
+    "reach": 0.506,
+    "seq": "beyond0.000-0.506 lot0.506-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.505,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.19,
+  "z": -737.02,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.7969416552168818,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.797,
+    "reach": 0.35,
+    "seq": "beyond0.000-0.350 lot0.350-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.298,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.37,
+  "z": -738.02,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 0.7823365899936539,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.782,
+    "reach": 0.418,
+    "seq": "beyond0.000-0.418 lot0.418-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 3.312,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.22,
+  "z": -737.83,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 0.9894767462660594,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.989,
+    "reach": 0.262,
+    "seq": "beyond0.000-0.262 lot0.262-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 3.106,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.92,
+  "z": -737.14,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.587310780165184,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.587,
+    "reach": 1.233,
+    "seq": "beyond0.000-1.233 lot1.233-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.507,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.63,
+  "z": -737.17,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.5935175182963346,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.594,
+    "reach": 0.871,
+    "seq": "beyond0.000-0.871 lot0.871-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.501,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.77,
+  "z": -736.95,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.7944509364375896,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.794,
+    "reach": 1.078,
+    "seq": "beyond0.000-1.078 lot1.078-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.3,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1177.2,
+  "z": -737.1,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.5922673171232429,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.592,
+    "reach": 1.585,
+    "seq": "beyond0.000-1.585 lot1.585-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.501,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1177.339,
+  "z": -736.88,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.7933247870252702,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.793,
+    "reach": 1.791,
+    "seq": "beyond0.000-1.791 lot1.791-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.3,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1177.069,
+  "z": -737.3190000000001,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.3912097088845787,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.391,
+    "reach": 1.39,
+    "seq": "beyond0.000-1.390 lot1.390-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.702,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.65,
+  "z": -737.58,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 1.1842034262761918,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.184,
+    "reach": 0.832,
+    "seq": "beyond0.000-0.832 lot0.832-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 2.91,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1176.798,
+  "z": -737.758,
+  "tile": 193,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-5|left|3",
+  "d": 0.9892186825047726,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 0.989,
+    "reach": 0.987,
+    "seq": "beyond0.000-0.987 lot0.987-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 3.105,
+    "reach": 1.995,
+    "seq": "curb0.000-0.381 lawn0.381-1.995 lot1.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.66,
+  "z": -39.96,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.8833092972762093,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.883,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.906,
+    "reach": 33.076,
+    "seq": "lot0.000-0.006 curb0.006-4.839 walk4.839-23.882 lawn23.882-28.655 walk28.655-32.280"
+   },
+   {
+    "key": "r0",
+    "d": 29.141,
+    "reach": 3.655,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.655 lot3.655-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.349,
+    "reach": 13.708,
+    "seq": "curb0.000-0.658 walk0.658-5.105 lawn5.105-13.708 lot13.708-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.595,
+    "reach": 8.225,
+    "seq": "curb0.000-0.929 lawn0.929-4.576 walk4.576-8.225 lot8.225-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.226,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.76,
+  "z": -39.89,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.953777838206512,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.954,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.011,
+    "reach": 33.233,
+    "seq": "lot0.000-0.006 curb0.006-4.685 walk4.685-23.122 lawn23.122-28.870 walk28.870-32.438"
+   },
+   {
+    "key": "r0",
+    "d": 29.23,
+    "reach": 3.65,
+    "seq": "curb0.000-0.412 lawn0.412-1.654 walk1.654-2.972 lawn2.972-3.650 lot3.650-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.227,
+    "reach": 13.712,
+    "seq": "curb0.000-0.658 walk0.658-5.105 lawn5.105-13.712 lot13.712-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.627,
+    "reach": 8.182,
+    "seq": "curb0.000-0.924 lawn0.924-4.552 walk4.552-8.182 lot8.182-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.175,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.78,
+  "z": -39.9,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.9438718106983313,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.944,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.031,
+    "reach": 33.204,
+    "seq": "lot0.000-0.006 curb0.006-4.713 walk4.713-23.258 lawn23.258-28.837 walk28.837-32.409"
+   },
+   {
+    "key": "r0",
+    "d": 29.251,
+    "reach": 3.651,
+    "seq": "curb0.000-0.412 lawn0.412-1.654 walk1.654-2.972 lawn2.972-3.651 lot3.651-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.217,
+    "reach": 13.754,
+    "seq": "curb0.000-0.658 walk0.658-5.114 lawn5.114-13.754 lot13.754-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.649,
+    "reach": 8.18,
+    "seq": "curb0.000-0.924 lawn0.924-4.551 walk4.551-8.180 lot8.180-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.188,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.69,
+  "z": -39.91,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.9334495401858462,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.933,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.94,
+    "reach": 33.196,
+    "seq": "lot0.000-0.006 curb0.006-4.720 walk4.720-23.296 lawn23.296-28.828 walk28.828-32.402"
+   },
+   {
+    "key": "r0",
+    "d": 29.164,
+    "reach": 3.652,
+    "seq": "curb0.000-0.412 lawn0.412-1.654 walk1.654-2.971 lawn2.971-3.652 lot3.652-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.296,
+    "reach": 13.66,
+    "seq": "curb0.000-0.657 walk0.657-5.095 lawn5.095-13.660 lot13.660-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.586,
+    "reach": 8.203,
+    "seq": "curb0.000-0.926 lawn0.926-4.564 walk4.564-8.203 lot8.203-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.182,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.71,
+  "z": -39.92,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.9235435126776583,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.924,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.959,
+    "reach": 33.167,
+    "seq": "lot0.000-0.006 curb0.006-4.748 walk4.748-23.434 lawn23.434-28.795 walk28.795-32.373"
+   },
+   {
+    "key": "r0",
+    "d": 29.185,
+    "reach": 3.652,
+    "seq": "curb0.000-0.412 lawn0.412-1.654 walk1.654-2.971 lawn2.971-3.652 lot3.652-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.285,
+    "reach": 13.702,
+    "seq": "curb0.000-0.658 walk0.658-5.103 lawn5.103-13.702 lot13.702-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.608,
+    "reach": 8.202,
+    "seq": "curb0.000-0.926 lawn0.926-4.563 walk4.563-8.202 lot8.202-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.195,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.81,
+  "z": -39.91,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.9340127143723613,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.934,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.06,
+    "reach": 33.173,
+    "seq": "lot0.000-0.006 curb0.006-4.743 walk4.743-23.405 lawn23.405-28.802 walk28.802-32.379"
+   },
+   {
+    "key": "r0",
+    "d": 29.282,
+    "reach": 3.651,
+    "seq": "curb0.000-0.412 lawn0.412-1.654 walk1.654-2.972 lawn2.972-3.651 lot3.651-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.199,
+    "reach": 13.809,
+    "seq": "curb0.000-0.659 walk0.659-5.124 lawn5.124-13.809 lot13.809-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.678,
+    "reach": 8.176,
+    "seq": "curb0.000-0.923 lawn0.923-4.548 walk4.548-8.176 lot8.176-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.203,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.63,
+  "z": -39.94,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.9031682834747816,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.903,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.878,
+    "reach": 33.132,
+    "seq": "lot0.000-0.006 curb0.006-4.783 walk4.783-23.605 lawn23.605-28.743 walk28.743-32.339"
+   },
+   {
+    "key": "r0",
+    "d": 29.109,
+    "reach": 3.654,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.654 lot3.654-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.362,
+    "reach": 13.637,
+    "seq": "curb0.000-0.657 walk0.657-5.091 lawn5.091-13.637 lot13.637-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.559,
+    "reach": 8.226,
+    "seq": "curb0.000-0.929 lawn0.929-4.577 walk4.577-8.226 lot8.226-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.201,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.77,
+  "z": -39.96,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.8838255402805137,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.884,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.016,
+    "reach": 33.055,
+    "seq": "lot0.000-0.006 curb0.006-4.860 walk4.860-23.986 lawn23.986-28.623 walk28.623-32.258"
+   },
+   {
+    "key": "r0",
+    "d": 29.25,
+    "reach": 3.654,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.654 lot3.654-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.26,
+    "reach": 13.846,
+    "seq": "curb0.000-0.659 walk0.659-5.131 lawn5.131-13.846 lot13.846-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.68,
+    "reach": 8.199,
+    "seq": "curb0.000-0.926 lawn0.926-4.561 walk4.561-8.199 lot8.199-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.245,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.67,
+  "z": -39.96,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.8833562284584202,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.883,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.916,
+    "reach": 33.074,
+    "seq": "lot0.000-0.006 curb0.006-4.841 walk4.841-23.892 lawn23.892-28.652 walk28.652-32.278"
+   },
+   {
+    "key": "r0",
+    "d": 29.151,
+    "reach": 3.655,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.655 lot3.655-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.341,
+    "reach": 13.72,
+    "seq": "curb0.000-0.658 walk0.658-5.107 lawn5.107-13.720 lot13.720-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.603,
+    "reach": 8.222,
+    "seq": "curb0.000-0.929 lawn0.929-4.574 walk4.574-8.222 lot8.222-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.228,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.61,
+  "z": -39.84,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 2.003073319836362,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.003,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.866,
+    "reach": 33.391,
+    "seq": "lot0.000-0.005 curb0.005-4.542 walk4.542-22.416 lawn22.416-29.050 walk29.050-32.592"
+   },
+   {
+    "key": "r0",
+    "d": 29.075,
+    "reach": 3.649,
+    "seq": "curb0.000-0.411 lawn0.411-1.654 walk1.654-2.972 lawn2.972-3.649 lot3.649-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.319,
+    "reach": 13.447,
+    "seq": "curb0.000-0.655 walk0.655-5.053 lawn5.053-13.447 lot13.447-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.48,
+    "reach": 8.202,
+    "seq": "curb0.000-0.926 lawn0.926-4.563 walk4.563-8.202 lot8.202-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.099,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.63,
+  "z": -39.85,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.9931672923281811,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.993,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.885,
+    "reach": 33.361,
+    "seq": "lot0.000-0.005 curb0.005-4.569 walk4.569-22.545 lawn22.545-29.016 walk29.016-32.562"
+   },
+   {
+    "key": "r0",
+    "d": 29.096,
+    "reach": 3.649,
+    "seq": "curb0.000-0.411 lawn0.411-1.654 walk1.654-2.972 lawn2.972-3.649 lot3.649-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.309,
+    "reach": 13.487,
+    "seq": "curb0.000-0.656 walk0.656-5.061 lawn5.061-13.487 lot13.487-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.502,
+    "reach": 8.201,
+    "seq": "curb0.000-0.926 lawn0.926-4.562 walk4.562-8.201 lot8.201-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.112,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.67,
+  "z": -39.86,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.9833551271844219,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.983,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.924,
+    "reach": 33.327,
+    "seq": "lot0.000-0.005 curb0.005-4.599 walk4.599-22.694 lawn22.694-28.977 walk28.977-32.530"
+   },
+   {
+    "key": "r0",
+    "d": 29.137,
+    "reach": 3.65,
+    "seq": "curb0.000-0.412 lawn0.412-1.654 walk1.654-2.972 lawn2.972-3.650 lot3.650-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.283,
+    "reach": 13.552,
+    "seq": "curb0.000-0.656 walk0.656-5.074 lawn5.074-13.552 lot13.552-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.539,
+    "reach": 8.194,
+    "seq": "curb0.000-0.925 lawn0.925-4.559 walk4.559-8.194 lot8.194-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.129,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.72,
+  "z": -38.64,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 3.2035763475527226,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 3.204,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.1,
+    "reach": 25.428,
+    "seq": "lot0.000-0.003 curb0.003-2.869 walk2.869-14.150 lawn14.150-25.428 lot25.428-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 29.038,
+    "reach": 3.592,
+    "seq": "curb0.000-0.405 lawn0.405-1.664 walk1.664-2.990 lawn2.990-3.592 lot3.592-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 47.537,
+    "reach": 11.872,
+    "seq": "curb0.000-0.638 walk0.638-4.710 lawn4.710-11.872 lot11.872-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 48.808,
+    "reach": 7.851,
+    "seq": "curb0.000-0.887 lawn0.887-4.368 walk4.368-7.851 lot7.851-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 51.937,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.77,
+  "z": -39.67,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 2.173822346585931,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.174,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.039,
+    "reach": 33.798,
+    "seq": "lot0.000-0.005 curb0.005-4.216 walk4.216-20.804 lawn20.804-29.515 walk29.515-32.989"
+   },
+   {
+    "key": "r0",
+    "d": 29.209,
+    "reach": 3.639,
+    "seq": "curb0.000-0.410 lawn0.410-1.656 walk1.656-2.975 lawn2.975-3.639 lot3.639-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.09,
+    "reach": 13.358,
+    "seq": "curb0.000-0.655 walk0.655-5.036 lawn5.036-13.358 lot13.358-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.495,
+    "reach": 8.118,
+    "seq": "curb0.000-0.917 lawn0.917-4.517 walk4.517-8.118 lot8.118-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 52.96,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.83,
+  "z": -39.33,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 2.514100189347603,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.514,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.13,
+    "reach": 34.674,
+    "seq": "lot0.000-0.004 curb0.004-3.660 walk3.660-18.056 lawn18.056-30.481 walk30.481-33.869"
+   },
+   {
+    "key": "r0",
+    "d": 29.225,
+    "reach": 3.623,
+    "seq": "curb0.000-0.408 lawn0.408-1.658 walk1.658-2.980 lawn2.980-3.623 lot3.623-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 47.843,
+    "reach": 12.89,
+    "seq": "curb0.000-0.650 walk0.650-4.941 lawn4.941-12.890 lot12.890-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.326,
+    "reach": 8.012,
+    "seq": "curb0.000-0.905 lawn0.905-4.457 walk4.457-8.012 lot8.012-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 52.636,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.61,
+  "z": -39.8,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 2.0430728793267714,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.043,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.869,
+    "reach": 33.494,
+    "seq": "lot0.000-0.005 curb0.005-4.454 walk4.454-21.979 lawn21.979-29.167 walk29.167-32.692"
+   },
+   {
+    "key": "r0",
+    "d": 29.069,
+    "reach": 3.647,
+    "seq": "curb0.000-0.411 lawn0.411-1.654 walk1.654-2.973 lawn2.973-3.647 lot3.647-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.296,
+    "reach": 13.382,
+    "seq": "curb0.000-0.655 walk0.655-5.040 lawn5.040-13.382 lot13.382-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.454,
+    "reach": 8.191,
+    "seq": "curb0.000-0.925 lawn0.925-4.557 walk4.557-8.191 lot8.191-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.06,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.68,
+  "z": -39.74,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 2.103400736837832,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.103,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.944,
+    "reach": 33.635,
+    "seq": "lot0.000-0.005 curb0.005-4.340 walk4.340-21.416 lawn21.416-29.328 walk29.328-32.830"
+   },
+   {
+    "key": "r0",
+    "d": 29.13,
+    "reach": 3.643,
+    "seq": "curb0.000-0.411 lawn0.411-1.655 walk1.655-2.974 lawn2.974-3.643 lot3.643-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.204,
+    "reach": 13.366,
+    "seq": "curb0.000-0.655 walk0.655-5.037 lawn5.037-13.366 lot13.366-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.47,
+    "reach": 8.158,
+    "seq": "curb0.000-0.921 lawn0.921-4.539 walk4.539-8.158 lot8.158-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.013,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.63,
+  "z": -39.78,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 2.0631665214363832,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.063,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.891,
+    "reach": 33.541,
+    "seq": "lot0.000-0.005 curb0.005-4.415 walk4.415-21.785 lawn21.785-29.222 walk29.222-32.739"
+   },
+   {
+    "key": "r0",
+    "d": 29.086,
+    "reach": 3.646,
+    "seq": "curb0.000-0.411 lawn0.411-1.655 walk1.655-2.973 lawn2.973-3.646 lot3.646-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.268,
+    "reach": 13.373,
+    "seq": "curb0.000-0.655 walk0.655-5.039 lawn5.039-13.373 lot13.373-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.457,
+    "reach": 8.181,
+    "seq": "curb0.000-0.924 lawn0.924-4.551 walk4.551-8.181 lot8.181-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.043,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -652.67,
+  "z": -133.52,
+  "tile": 160,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "arc 2 (brentmoor-park-2|left|2 / brentmoor-park-11|left|0)",
+  "d": 1.209985367109164,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.21,
+    "reach": 1.134,
+    "seq": "curb0.000-0.381 lawn0.381-1.134 lot1.134-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 1.919,
+    "reach": 0.831,
+    "seq": "curb0.000-0.604 lawn0.604-0.831 lot0.831-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 6.06,
+    "reach": 3.307,
+    "seq": "curb0.000-0.451 walk0.451-2.223 lawn2.223-3.307 lot3.307-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 7.608,
+    "reach": 2.801,
+    "seq": "curb0.000-0.382 lawn0.382-2.801 lot2.801-64.997"
+   }
+  ]
+ },
+ {
+  "x": -652.95,
+  "z": -133.58,
+  "tile": 160,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (brentmoor-park-2|left|2 / brentmoor-park-11|left|0)",
+  "d": 1.3541824817701358,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.354,
+    "reach": 1.313,
+    "seq": "curb0.000-0.381 lawn0.381-1.313 lot1.313-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 2.202,
+    "reach": 1.283,
+    "seq": "curb0.000-0.619 lawn0.619-1.283 lot1.283-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 5.942,
+    "reach": 3.222,
+    "seq": "curb0.000-0.439 walk0.439-2.166 lawn2.166-3.222 lot3.222-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 7.322,
+    "reach": 2.801,
+    "seq": "curb0.000-0.382 lawn0.382-2.801 lot2.801-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.44,
+  "z": -643.43,
+  "tile": 183,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 1.5087151856054148,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.509,
+    "reach": 0.399,
+    "seq": "beyond0.000-0.399 lot0.399-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.37,
+  "z": -643.99,
+  "tile": 183,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 0.9443571515038933,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 0.944,
+    "reach": 0.399,
+    "seq": "beyond0.000-0.399 lot0.399-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.29,
+  "z": -644.55,
+  "tile": 183,
+  "pointTest": "curb",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 0.37875707038203776,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 0.379,
+    "reach": 0.372,
+    "seq": "beyond0.000-0.372 lot0.372-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.6470000000002,
+  "z": -726.648,
+  "tile": 175,
+  "pointTest": "curb",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 0.3803691501823296,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 0.38,
+    "reach": 0.379,
+    "seq": "beyond0.000-0.379 lot0.379-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.42,
+  "z": -725.18,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.8651257308474831,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.865,
+    "reach": 0.322,
+    "seq": "beyond0.000-0.322 lot0.322-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.48,
+  "z": -725.54,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.5004852630246603,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.5,
+    "reach": 0.341,
+    "seq": "beyond0.000-0.341 lot0.341-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.54,
+  "z": -725.91,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.1259202533085635,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.126,
+    "reach": 0.359,
+    "seq": "beyond0.000-0.359 lot0.359-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.59,
+  "z": -726.28,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 0.7525814035366819,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 0.753,
+    "reach": 0.364,
+    "seq": "beyond0.000-0.364 lot0.364-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1184.04,
+  "z": -725.1,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.8685001494539426,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.869,
+    "reach": 1.102,
+    "seq": "beyond0.000-1.102 lot1.102-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.79,
+  "z": -725.51,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.4922479304346161,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.492,
+    "reach": 0.73,
+    "seq": "beyond0.000-0.730 lot0.730-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1184.65,
+  "z": -725.02,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.8731007280047023,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.873,
+    "reach": 1.87,
+    "seq": "beyond0.000-1.870 lot1.870-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.8990000000001,
+  "z": -726.239,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 0.7553836830234633,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 0.755,
+    "reach": 0.753,
+    "seq": "beyond0.000-0.753 lot0.753-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.43,
+  "z": -725.16,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.883748654689816,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.884,
+    "reach": 0.337,
+    "seq": "beyond0.000-0.337 lot0.337-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.45,
+  "z": -725.14,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.9011454185879608,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.901,
+    "reach": 0.365,
+    "seq": "beyond0.000-0.365 lot0.365-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.48,
+  "z": -725.09,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 1.9470896482216848,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 1.947,
+    "reach": 0.41,
+    "seq": "beyond0.000-0.410 lot0.410-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.54,
+  "z": -724.98,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.048902649382547,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.049,
+    "reach": 0.501,
+    "seq": "beyond0.000-0.501 lot0.501-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.67,
+  "z": -724.78,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.231453407973536,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.231,
+    "reach": 0.693,
+    "seq": "beyond0.000-0.693 lot0.693-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.42,
+  "z": -724.72,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.3216546579378945,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.322,
+    "reach": 0.392,
+    "seq": "beyond0.000-0.392 lot0.392-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.92,
+  "z": -724.37,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.6077056269929475,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.608,
+    "reach": 1.065,
+    "seq": "beyond0.000-1.065 lot1.065-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.55,
+  "z": -724.51,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.5141299584221297,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.514,
+    "reach": 0.586,
+    "seq": "beyond0.000-0.586 lot0.586-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.43,
+  "z": -724.24,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.796806508870638,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.797,
+    "reach": 0.478,
+    "seq": "beyond0.000-0.478 lot0.478-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.2,
+  "z": -723.71,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.3510089079301664,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.351,
+    "reach": 0.274,
+    "seq": "beyond0.000-0.274 lot0.274-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.56,
+  "z": -724.04,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.979357267461627,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.979,
+    "reach": 0.67,
+    "seq": "beyond0.000-0.670 lot0.670-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.32,
+  "z": -723.98,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.0683323574816854,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.068,
+    "reach": 0.382,
+    "seq": "beyond0.000-0.382 lot0.382-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.19,
+  "z": -724.18,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.8857815988908095,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.886,
+    "reach": 0.19,
+    "seq": "beyond0.000-0.190 lot0.190-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1184.43,
+  "z": -723.54,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.3689084469807717,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.369,
+    "reach": 1.824,
+    "seq": "beyond0.000-1.824 lot1.824-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1183.81,
+  "z": -723.62,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.3655340283741997,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.366,
+    "reach": 1.044,
+    "seq": "beyond0.000-1.044 lot1.044-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1185.1570000000002,
+  "z": -724.1990000000001,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 2.6257393082716645,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 2.626,
+    "reach": 2.624,
+    "seq": "beyond0.000-2.624 lot2.624-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1185.05,
+  "z": -723.46,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.372282865587259,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.372,
+    "reach": 2.605,
+    "seq": "beyond0.000-2.605 lot2.605-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1185.409,
+  "z": -723.79,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.0007538411130517,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.001,
+    "reach": 2.999,
+    "seq": "beyond0.000-2.999 lot2.999-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1185.36,
+  "z": -723.42,
+  "tile": 175,
+  "pointTest": "lawn",
+  "verdict": "not the window",
+  "owner": "forest-park-parkway-4|right|2",
+  "d": 3.3739700748906016,
+  "cands": [
+   {
+    "key": "r8",
+    "d": 3.374,
+    "reach": 2.995,
+    "seq": "beyond0.000-2.995 lot2.995-64.997"
+   }
+  ]
+ },
+ {
+  "x": -975.26,
+  "z": 804.43,
+  "tile": 52,
+  "pointTest": "walk",
+  "verdict": "window",
+  "owner": "claytonia-terrace|left|0",
+  "d": 1.8846983382827593,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.885,
+    "reach": 1.879,
+    "seq": "curb0.000-0.381 lawn0.381-1.879 lot1.879-64.997"
+   },
+   {
+    "key": "a3",
+    "d": 10.486,
+    "reach": 10.46,
+    "seq": "lot0.000-0.003 curb0.003-2.246 lawn2.246-10.460 lot10.460-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 19.751,
+    "reach": 4.452,
+    "seq": "curb0.000-0.501 walk0.501-2.476 lawn2.476-4.452 lot4.452-64.997"
+   }
+  ]
+ },
+ {
+  "x": 991.4,
+  "z": 972.55,
+  "tile": 48,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "heels-path-0|right|0",
+  "d": 1.505415197883149,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.505,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ },
+ {
+  "x": 991.35,
+  "z": 972.52,
+  "tile": 48,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "heels-path-0|right|0",
+  "d": 1.5001428850799756,
+  "cands": [
+   {
+    "key": "r3",
+    "d": 1.5,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1353.43,
+  "z": 309.3,
+  "tile": 55,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 1.8999447481782288,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.9,
+    "reach": 0.379,
+    "seq": "beyond0.000-0.379 lot0.379-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1353.47,
+  "z": 309.36,
+  "tile": 55,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 1.9231988283271741,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.923,
+    "reach": 0.531,
+    "seq": "beyond0.000-0.531 lot0.531-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1353.5,
+  "z": 309.39,
+  "tile": 55,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 1.928738641954072,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 1.929,
+    "reach": 0.625,
+    "seq": "beyond0.000-0.625 lot0.625-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1353.21,
+  "z": 309.58,
+  "tile": 55,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "fine-arts-drive-4|right|1",
+  "d": 2.256010997741365,
+  "cands": [
+   {
+    "key": "r4",
+    "d": 2.256,
+    "reach": 0.369,
+    "seq": "beyond0.000-0.369 lot0.369-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1065.27,
+  "z": 395.121,
+  "tile": 55,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "valley-drive|left|0",
+  "d": 0.3838032909021409,
+  "cands": [
+   {
+    "key": "r6",
+    "d": 0.384,
+    "reach": 0.357,
+    "seq": "curb0.000-0.273 walk0.273-0.357 lot0.357-64.997"
+   },
+   {
+    "key": "r7",
+    "d": 59.024,
+    "reach": 21.428,
+    "seq": "lot0.000-16.432 curb16.432-16.983 walk16.983-19.198 lawn19.198-21.428 lot21.428-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.74,
+  "z": -39.96,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.8836847467338886,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.884,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.986,
+    "reach": 33.061,
+    "seq": "lot0.000-0.006 curb0.006-4.854 walk4.854-23.957 lawn23.957-28.632 walk28.632-32.264"
+   },
+   {
+    "key": "r0",
+    "d": 29.22,
+    "reach": 3.654,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.654 lot3.654-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.285,
+    "reach": 13.808,
+    "seq": "curb0.000-0.659 walk0.659-5.124 lawn5.124-13.808 lot13.808-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.656,
+    "reach": 8.206,
+    "seq": "curb0.000-0.927 lawn0.927-4.565 walk4.565-8.206 lot8.206-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.24,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.76,
+  "z": -39.96,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.883778609098303,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.884,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.006,
+    "reach": 33.057,
+    "seq": "lot0.000-0.006 curb0.006-4.858 walk4.858-23.976 lawn23.976-28.626 walk28.626-32.260"
+   },
+   {
+    "key": "r0",
+    "d": 29.24,
+    "reach": 3.654,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.654 lot3.654-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.268,
+    "reach": 13.833,
+    "seq": "curb0.000-0.659 walk0.659-5.129 lawn5.129-13.833 lot13.833-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.672,
+    "reach": 8.201,
+    "seq": "curb0.000-0.926 lawn0.926-4.563 walk4.563-8.201 lot8.201-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.244,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.73,
+  "z": -39.96,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.8836378155516778,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.884,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.976,
+    "reach": 33.063,
+    "seq": "lot0.000-0.006 curb0.006-4.852 walk4.852-23.948 lawn23.948-28.635 walk28.635-32.266"
+   },
+   {
+    "key": "r0",
+    "d": 29.211,
+    "reach": 3.654,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.654 lot3.654-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.293,
+    "reach": 13.795,
+    "seq": "curb0.000-0.659 walk0.659-5.121 lawn5.121-13.795 lot13.795-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.649,
+    "reach": 8.208,
+    "seq": "curb0.000-0.927 lawn0.927-4.567 walk4.567-8.208 lot8.208-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.238,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.81,
+  "z": -39.96,
+  "tile": 132,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.8840132650093568,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.884,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.056,
+    "reach": 33.048,
+    "seq": "lot0.000-0.006 curb0.006-4.868 walk4.868-24.023 lawn24.023-28.612 walk28.612-32.250"
+   },
+   {
+    "key": "r0",
+    "d": 29.29,
+    "reach": 3.654,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.654 lot3.654-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.228,
+    "reach": 13.896,
+    "seq": "curb0.000-0.660 walk0.660-5.141 lawn5.141-13.896 lot13.896-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.71,
+    "reach": 8.19,
+    "seq": "curb0.000-0.925 lawn0.925-4.556 walk4.556-8.190 lot8.190-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.252,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.77,
+  "z": -39.99,
+  "tile": 132,
+  "pointTest": "walk",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.853825870662714,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.854,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.014,
+    "reach": 32.98,
+    "seq": "lot0.000-0.006 curb0.006-4.938 walk4.938-24.372 lawn24.372-28.506 walk28.506-32.178"
+   },
+   {
+    "key": "r0",
+    "d": 29.254,
+    "reach": 3.655,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.655 lot3.655-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.278,
+    "reach": 13.898,
+    "seq": "curb0.000-0.660 walk0.660-5.141 lawn5.141-13.898 lot13.898-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.699,
+    "reach": 8.207,
+    "seq": "curb0.000-0.927 lawn0.927-4.566 walk4.566-8.207 lot8.207-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.275,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.84,
+  "z": -39.97,
+  "tile": 132,
+  "pointTest": "walk",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.874154168683387,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.874,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 24.085,
+    "reach": 33.017,
+    "seq": "lot0.000-0.006 curb0.006-4.899 walk4.899-24.179 lawn24.179-28.564 walk28.564-32.218"
+   },
+   {
+    "key": "r0",
+    "d": 29.321,
+    "reach": 3.654,
+    "seq": "curb0.000-0.412 lawn0.412-1.653 walk1.653-2.971 lawn2.971-3.654 lot3.654-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.21,
+    "reach": 13.952,
+    "seq": "curb0.000-0.660 walk0.660-5.152 lawn5.152-13.952 lot13.952-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.74,
+    "reach": 8.185,
+    "seq": "curb0.000-0.924 lawn0.924-4.554 walk4.554-8.185 lot8.185-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.268,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": -67.64,
+  "z": -40.04,
+  "tile": 132,
+  "pointTest": "walk",
+  "verdict": "window",
+  "owner": "arc 3 (university-lane|left|3 / wydown-boulevard-1|right|17)",
+  "d": 1.8032163159309835,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 1.803,
+    "reach": 0.38,
+    "seq": "curb0.000-0.380 lot0.380-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 23.881,
+    "reach": 32.879,
+    "seq": "lot0.000-0.006 curb0.006-5.048 walk5.048-24.916 lawn24.916-28.350 walk28.350-32.068"
+   },
+   {
+    "key": "r0",
+    "d": 29.133,
+    "reach": 3.659,
+    "seq": "curb0.000-0.413 lawn0.413-1.653 walk1.653-2.970 lawn2.970-3.659 lot3.659-64.997"
+   },
+   {
+    "key": "a2",
+    "d": 48.412,
+    "reach": 13.82,
+    "seq": "curb0.000-0.659 walk0.659-5.126 lawn5.126-13.820 lot13.820-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 49.631,
+    "reach": 8.252,
+    "seq": "curb0.000-0.932 lawn0.932-4.591 walk4.591-8.252 lot8.252-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 53.301,
+    "reach": 3.381,
+    "seq": "curb0.000-0.381 lawn0.381-1.881 walk1.881-3.381 lot3.381-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1382.01,
+  "z": -135.49,
+  "tile": 134,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "lagoon-drive-0|left|4",
+  "d": 3.193000572578635,
+  "cands": [
+   {
+    "key": "r7",
+    "d": 3.193,
+    "reach": 1.161,
+    "seq": "beyond0.000-1.161 lot1.161-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1382.27,
+  "z": -134.49,
+  "tile": 134,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "lagoon-drive-0|left|4",
+  "d": 2.1597827673686036,
+  "cands": [
+   {
+    "key": "r7",
+    "d": 2.16,
+    "reach": 1.117,
+    "seq": "beyond0.000-1.117 lot1.117-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1382.07,
+  "z": -134.73,
+  "tile": 134,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "lagoon-drive-0|left|4",
+  "d": 2.4433852390019317,
+  "cands": [
+   {
+    "key": "r7",
+    "d": 2.443,
+    "reach": 0.38,
+    "seq": "beyond0.000-0.380 lot0.380-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1382.4080000000001,
+  "z": -135.009,
+  "tile": 134,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "lagoon-drive-0|left|4",
+  "d": 2.625347616799919,
+  "cands": [
+   {
+    "key": "r7",
+    "d": 2.625,
+    "reach": 2.623,
+    "seq": "beyond0.000-2.623 lot2.623-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1382.04,
+  "z": -135.11,
+  "tile": 134,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "lagoon-drive-0|left|4",
+  "d": 2.818192905790326,
+  "cands": [
+   {
+    "key": "r7",
+    "d": 2.818,
+    "reach": 0.77,
+    "seq": "beyond0.000-0.770 lot0.770-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1382.21,
+  "z": -135.25,
+  "tile": 134,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "lagoon-drive-0|left|4",
+  "d": 2.909398100945279,
+  "cands": [
+   {
+    "key": "r7",
+    "d": 2.909,
+    "reach": 1.898,
+    "seq": "beyond0.000-1.898 lot1.898-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1382.11,
+  "z": -134.35,
+  "tile": 134,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "lagoon-drive-0|left|4",
+  "d": 2.0659881682613315,
+  "cands": [
+   {
+    "key": "r7",
+    "d": 2.066,
+    "reach": 0.043,
+    "seq": "beyond0.000-0.043 lot0.043-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1285.049,
+  "z": -527.1,
+  "tile": 154,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "northmoor-drive-2|right|3",
+  "d": 3.3423714664054787,
+  "cands": [
+   {
+    "key": "r6",
+    "d": 3.342,
+    "reach": 3.334,
+    "seq": "beyond0.000-3.334 lot3.334-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1284.778,
+  "z": -527.778,
+  "tile": 154,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "northmoor-drive-2|right|3",
+  "d": 2.6130142015186197,
+  "cands": [
+   {
+    "key": "r6",
+    "d": 2.613,
+    "reach": 2.607,
+    "seq": "beyond0.000-2.607 lot2.607-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1284.64,
+  "z": -528.12,
+  "tile": 154,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "northmoor-drive-2|right|3",
+  "d": 2.244682441153542,
+  "cands": [
+   {
+    "key": "r6",
+    "d": 2.245,
+    "reach": 2.214,
+    "seq": "beyond0.000-2.214 lot2.214-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1284.91,
+  "z": -527.44,
+  "tile": 154,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "northmoor-drive-2|right|3",
+  "d": 2.9756021119980067,
+  "cands": [
+   {
+    "key": "r6",
+    "d": 2.976,
+    "reach": 2.907,
+    "seq": "beyond0.000-2.907 lot2.907-64.997"
+   }
+  ]
+ },
+ {
+  "x": -652.91,
+  "z": -133.54,
+  "tile": 160,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (brentmoor-park-2|left|2 / brentmoor-park-11|left|0)",
+  "d": 1.3568172003786036,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.357,
+    "reach": 1.272,
+    "seq": "curb0.000-0.381 lawn0.381-1.272 lot1.272-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 2.16,
+    "reach": 0.876,
+    "seq": "curb0.000-0.606 lawn0.606-0.876 lot0.876-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 5.933,
+    "reach": 3.24,
+    "seq": "curb0.000-0.442 walk0.442-2.178 lawn2.178-3.240 lot3.240-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 7.369,
+    "reach": 2.802,
+    "seq": "curb0.000-0.382 lawn0.382-2.802 lot2.802-64.997"
+   }
+  ]
+ },
+ {
+  "x": -652.92,
+  "z": -133.54,
+  "tile": 160,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (brentmoor-park-2|left|2 / brentmoor-park-11|left|0)",
+  "d": 1.3635512545864492,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.364,
+    "reach": 1.277,
+    "seq": "curb0.000-0.381 lawn0.381-1.277 lot1.277-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 2.17,
+    "reach": 0.872,
+    "seq": "curb0.000-0.606 lawn0.606-0.872 lot0.872-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 5.927,
+    "reach": 3.237,
+    "seq": "curb0.000-0.441 walk0.441-2.176 lawn2.176-3.237 lot3.237-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 7.359,
+    "reach": 2.802,
+    "seq": "curb0.000-0.382 lawn0.382-2.802 lot2.802-64.997"
+   }
+  ]
+ },
+ {
+  "x": -653.18,
+  "z": -133.57,
+  "tile": 160,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (brentmoor-park-2|left|2 / brentmoor-park-11|left|0)",
+  "d": 1.5164584624116413,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.516,
+    "reach": 1.431,
+    "seq": "curb0.000-0.381 lawn0.381-1.431 lot1.431-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 2.431,
+    "reach": 0.981,
+    "seq": "curb0.000-0.610 lawn0.610-0.981 lot0.981-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 5.804,
+    "reach": 3.167,
+    "seq": "curb0.000-0.432 walk0.432-2.129 lawn2.129-3.167 lot3.167-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 7.098,
+    "reach": 2.802,
+    "seq": "curb0.000-0.382 lawn0.382-2.802 lot2.802-64.997"
+   }
+  ]
+ },
+ {
+  "x": -652.79,
+  "z": -133.48,
+  "tile": 160,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (brentmoor-park-2|left|2 / brentmoor-park-11|left|0)",
+  "d": 1.3203649530440307,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.32,
+    "reach": 1.178,
+    "seq": "curb0.000-0.381 lawn0.381-1.178 lot1.178-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 2.037,
+    "reach": 0.592,
+    "seq": "curb0.000-0.588 lawn0.588-0.592 lot0.592-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 5.956,
+    "reach": 3.283,
+    "seq": "curb0.000-0.448 walk0.448-2.207 lawn2.207-3.283 lot3.283-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 7.498,
+    "reach": 2.802,
+    "seq": "curb0.000-0.382 lawn0.382-2.802 lot2.802-64.997"
+   }
+  ]
+ },
+ {
+  "x": -653.31,
+  "z": -133.5,
+  "tile": 160,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (brentmoor-park-2|left|2 / brentmoor-park-11|left|0)",
+  "d": 1.6557503041344395,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.656,
+    "reach": 1.466,
+    "seq": "curb0.000-0.381 lawn0.381-1.466 lot1.466-64.997"
+   },
+   {
+    "key": "a0",
+    "d": 2.557,
+    "reach": 0.599,
+    "seq": "curb0.000-0.588 lawn0.588-0.599 lot0.599-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 5.675,
+    "reach": 3.147,
+    "seq": "curb0.000-0.429 walk0.429-2.115 lawn2.115-3.147 lot3.147-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 6.985,
+    "reach": 2.802,
+    "seq": "curb0.000-0.382 lawn0.382-2.802 lot2.802-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1231.6360000000002,
+  "z": -641.9590000000001,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 3.1168734913749727,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 3.117,
+    "reach": 3.115,
+    "seq": "beyond0.000-3.115 lot3.115-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.72,
+  "z": -642.04,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.9227291984130823,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.923,
+    "reach": 0.683,
+    "seq": "beyond0.000-0.683 lot0.683-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.7,
+  "z": -642.07,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.890477405892326,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.89,
+    "reach": 0.64,
+    "seq": "beyond0.000-0.640 lot0.640-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.69,
+  "z": -642.09,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.869390226551999,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.869,
+    "reach": 0.62,
+    "seq": "beyond0.000-0.620 lot0.620-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.68,
+  "z": -642.1,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.8582256133717108,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.858,
+    "reach": 0.596,
+    "seq": "beyond0.000-0.596 lot0.596-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.62,
+  "z": -642.23,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.7217799711696813,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.722,
+    "reach": 0.479,
+    "seq": "beyond0.000-0.479 lot0.479-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.58,
+  "z": -642.29,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.6572763861284225,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.657,
+    "reach": 0.391,
+    "seq": "beyond0.000-0.391 lot0.391-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.57,
+  "z": -642.32,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.6262666406280286,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.626,
+    "reach": 0.375,
+    "seq": "beyond0.000-0.375 lot0.375-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.56,
+  "z": -642.34,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.6051794612876735,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.605,
+    "reach": 0.355,
+    "seq": "beyond0.000-0.355 lot0.355-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.56,
+  "z": -642.35,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.5952568951277475,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.595,
+    "reach": 0.358,
+    "seq": "beyond0.000-0.358 lot0.358-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.55,
+  "z": -642.35,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.594014848107272,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.594,
+    "reach": 0.331,
+    "seq": "beyond0.000-0.331 lot0.331-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1230.49,
+  "z": -642.48,
+  "tile": 183,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 3 (manhattan-avenue|left|1 / forsyth-boulevard|right|19)",
+  "d": 2.4575692059053837,
+  "cands": [
+   {
+    "key": "a3",
+    "d": 2.458,
+    "reach": 0.214,
+    "seq": "beyond0.000-0.214 lot0.214-64.997"
+   }
+  ]
+ },
+ {
+  "x": 1041.653,
+  "z": -916.18,
+  "tile": 203,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "waterman-boulevard-1|right|0",
+  "d": 2.2277683752903745,
+  "cands": [
+   {
+    "key": "r5",
+    "d": 2.228,
+    "reach": 3.382,
+    "seq": "lot0.000-0.002 curb0.002-0.381 lawn0.381-1.881 walk1.881-3.382 lot3.382-64.997"
+   }
+  ]
+ },
+ {
+  "x": -504.81,
+  "z": 151.92,
+  "tile": 114,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (unclassified-221|left|1)",
+  "d": 0.7527807351049518,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 0.753,
+    "reach": 0.711,
+    "seq": "curb0.000-0.381 lawn0.381-0.711 lot0.711-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 0.755,
+    "reach": 0.68,
+    "seq": "curb0.000-0.383 lawn0.383-0.680 lot0.680-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 50.216,
+    "reach": 26.292,
+    "seq": "lot0.000-16.008 curb16.008-17.683 lawn17.683-22.242 walk22.242-26.292 lot26.292-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 55.276,
+    "reach": 39.139,
+    "seq": "lot0.000-32.540 curb32.540-33.230 lawn33.230-35.948 walk35.948-39.139 lot39.139-64.997"
+   }
+  ]
+ },
+ {
+  "x": -504.88,
+  "z": 151.9,
+  "tile": 114,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (unclassified-221|left|1)",
+  "d": 0.8231975552929065,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 0.823,
+    "reach": 0.814,
+    "seq": "curb0.000-0.381 lawn0.381-0.814 lot0.814-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 0.827,
+    "reach": 0.807,
+    "seq": "curb0.000-0.383 lawn0.383-0.807 lot0.807-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 50.196,
+    "reach": 26.204,
+    "seq": "lot0.000-15.913 curb15.913-17.578 lawn17.578-22.160 walk22.160-26.204 lot26.204-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 55.27,
+    "reach": 38.993,
+    "seq": "lot0.000-32.430 curb32.430-33.120 lawn33.120-35.839 walk35.839-38.993 lot38.993-64.997"
+   }
+  ]
+ },
+ {
+  "x": -505.63,
+  "z": 151.46,
+  "tile": 114,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (unclassified-221|left|1)",
+  "d": 1.6927293326074817,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 1.693,
+    "reach": 0.835,
+    "seq": "curb0.000-0.381 lawn0.381-0.835 lot0.835-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 1.695,
+    "reach": 0.518,
+    "seq": "curb0.000-0.382 lawn0.382-0.518 lot0.518-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 49.769,
+    "reach": 25.286,
+    "seq": "lot0.000-14.952 curb14.952-16.516 lawn16.516-21.308 walk21.308-25.286 lot25.286-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 54.987,
+    "reach": 37.34,
+    "seq": "lot0.000-31.187 curb31.187-31.877 lawn31.877-34.596 walk34.596-37.340 lot37.340-64.997"
+   }
+  ]
+ },
+ {
+  "x": -506.44,
+  "z": 151,
+  "tile": 114,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (unclassified-221|left|1)",
+  "d": 2.6240749140742783,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.624,
+    "reach": 0.93,
+    "seq": "curb0.000-0.381 lawn0.381-0.930 lot0.930-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 2.626,
+    "reach": 0.48,
+    "seq": "curb0.000-0.382 lawn0.382-0.480 lot0.480-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 49.336,
+    "reach": 24.356,
+    "seq": "lot0.000-14.025 curb14.025-15.492 lawn15.492-20.450 walk20.450-24.356 lot24.356-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 54.697,
+    "reach": 35.977,
+    "seq": "lot0.000-29.849 curb29.849-30.540 lawn30.540-33.258 walk33.258-35.977 lot35.977-64.997"
+   }
+  ]
+ },
+ {
+  "x": -505.94,
+  "z": 151.26,
+  "tile": 114,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "arc 2 (unclassified-221|left|1)",
+  "d": 2.0613799090946183,
+  "cands": [
+   {
+    "key": "a2",
+    "d": 2.061,
+    "reach": 0.757,
+    "seq": "curb0.000-0.381 lawn0.381-0.757 lot0.757-64.997"
+   },
+   {
+    "key": "r1",
+    "d": 2.063,
+    "reach": 0.464,
+    "seq": "curb0.000-0.382 lawn0.382-0.464 lot0.464-64.997"
+   },
+   {
+    "key": "a1",
+    "d": 49.578,
+    "reach": 24.922,
+    "seq": "lot0.000-14.584 curb14.584-16.109 lawn16.109-20.971 walk20.971-24.922 lot24.922-64.997"
+   },
+   {
+    "key": "r0",
+    "d": 54.853,
+    "reach": 36.795,
+    "seq": "lot0.000-30.668 curb30.668-31.358 lawn31.358-34.077 walk34.077-36.795 lot36.795-64.997"
+   }
+  ]
+ },
+ {
+  "x": -331.454,
+  "z": -693.5419999999999,
+  "tile": 182,
+  "pointTest": "walk",
+  "verdict": "not the window",
+  "owner": "olympian-way|right|0",
+  "d": 0.3772755932373832,
+  "cands": [
+   {
+    "key": "r20",
+    "d": 0.377,
+    "reach": 0.359,
+    "seq": "curb0.000-0.359 lot0.359-64.997"
+   },
+   {
+    "key": "r19",
+    "d": 11.363,
+    "reach": 14.369,
+    "seq": "lot0.000-10.986 curb10.986-11.354 walk11.354-11.363 curb11.363-11.367 walk11.367-12.867"
+   },
+   {
+    "key": "rnull",
+    "d": 33.83,
+    "reach": 37.046,
+    "seq": "lot0.000-33.426 curb33.426-33.833 walk33.833-35.439 lawn35.439-37.046 lot37.046-64.997"
+   }
+  ]
+ },
+ {
+  "x": -1283.95,
+  "z": -529.849,
+  "tile": 154,
+  "pointTest": "lawn",
+  "verdict": "window",
+  "owner": "northmoor-drive-2|right|3",
+  "d": 0.38507067514059123,
+  "cands": [
+   {
+    "key": "r6",
+    "d": 0.385,
+    "reach": 64.997,
+    "seq": "beyond0.000-64.997"
+   }
+  ]
+ }
+]
