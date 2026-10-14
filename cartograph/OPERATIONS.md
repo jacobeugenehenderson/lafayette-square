@@ -344,17 +344,15 @@ The distance: the Arch or the backdrop where the town has one, the air between, 
     not cut** — it *tints* rather than replaces. Beneath it is the **`bed`**, the sand ground under
     every water body; its shape is in the terrain (`BAKE.md` "the bed"), so the waterline is wherever the
     level meets the ground. ▶ `node checks/claims-the-shore-is-closed.mjs`
-    `stripe` **cuts but keeps its slot**: cutting halved its overlap with asphalt (386 →
-    194 m², 10 cm cells in a 500 m window) and did **not** finish it. ⛔ **Cause of that 194 m²
-    residual is NOT ESTABLISHED** — the slot is a guard against an unexplained residual, not a
-    design choice, and it goes away the day the residual measures zero, not on the grounds that it
-    should be zero.
+    `stripe` **cuts but keeps its slot** — a guard against an overlap residual whose cause is not
+    established (`ARCHITECTURE.md §8`); it goes the day that residual measures zero.
+  - ⭐ **A layer paints the UNION of its polygons** (overlaps never cancel); each emitted piece is an
+    outer or a hole by **the ground inside it**, and a step that cannot decide **refuses the bake by
+    name**. ▶ `node checks/claims-the-ground-is-painted-once.mjs --dir=<slab>`
   - ▶ `node checks/claims-coplanar-groups-do-not-overlap.mjs` — asserts both directions: groups
     sharing a Y must not overlap, **and** a group alone on its slot must overlap something (without
-    the second half, the broken state — every group on its own slot — passes trivially). ⚠️ Three
-    towns (altadena, hipointedemun, lafayette-square-staging) **cannot re-bake** and still warn:
-    they carry no frozen protopolygon because they have not been poured since ① landed. That is a
-    **re-pour**, and it is the operator's call.
+    the second half, the broken state — every group on its own slot — passes trivially). A town still
+    warning has not been **re-poured** since ① landed (no frozen protopolygon) — the operator's call.
 - **Ground-contact effects** (baked; tune via the bake constants in **CLI / bake operations** below): the **lamp light pools**, the **dark contact rings** under trees + lamps (visible in daylight), and the **tree trunk-base ground blend** (the lowest of each trunk takes on the ground colour beneath it). All three bake into ground textures + sample in the ground/tree shaders — **re-bake to see them**, hard-refresh to pick up the slab.
 
 ## Preview — the publish-confidence gate

@@ -253,7 +253,10 @@ See **§8 "Data flow & the bake chain"** below for the canonical pipeline diagra
 > may not move upstream into `derive` — that would bake a painting decision into
 > authored data and take the override away from the operator. **The bake is the last
 > moment flatness exists.** `flattenPaintStack` walks `PAINT_ORDER` top-down, clips each
-> layer against the union of everything above it, and emits only what is visible.
+> layer against the union of everything above it, and emits only what is visible. A layer
+> is the **union of its items** (`layerRegion`); each emitted ring is an outer or a hole by
+> the ground inside it (`itemsByMembership`), never by PolyTree nesting, which double-painted
+> and left ground unpainted (2026-10-14). ▶ `node checks/claims-the-ground-is-painted-once.mjs`
 > ⇒ **33 of 35 layers on one plane at y=0; `GROUND_Y_EPS` has no work left to do for
 > them.** Paint order stops being a render concern and becomes a bake-time flattening
 > order — the only place it was ever meaningful — and the Designer and the slab agree
@@ -265,12 +268,11 @@ See **§8 "Data flow & the bake chain"** below for the canonical pipeline diagra
 > that merely wants its own slot **must still cut**. `water` takes both (it tints rather
 > than replaces). `stripe` cuts and keeps its slot — cutting halved its overlap with
 > asphalt (386 → 194 m²) and did not finish it, and ⛔ **the cause of that residual is
-> NOT ESTABLISHED** (candidates: mixed winding in the accumulator, 29 of 392 rings CW;
-> holes touching the asphalt boundary rather than sitting inside it — **neither
-> measured**). The slot is a guard against an unexplained residual, not a design choice.
-> ⚠️ The pairwise "cut overlays out of faces" (`d793e4d4`) is **deleted, not kept** —
-> the flatten supersedes it and does the whole stack. Two places deciding one thing is
-> how they drift.
+> NOT ESTABLISHED**. (One candidate, mixed winding inside a layer, is now normalised by
+> `layerRegion`; the residual has not been re-measured since.) The slot is a guard
+> against an unexplained residual, not a design choice.
+> ⚠️ The pairwise "cut overlays out of faces" (`d793e4d4`) is **deleted** — two places
+> deciding one thing is how they drift.
 > ⭐ The instrument that found the exclusion bug logged **signed AREA** and the
 > accumulator's area, not path counts: a count says a layer EXISTS; only the area says
 > the union KEPT it.

@@ -65,7 +65,7 @@ import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
-import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
+import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -598,8 +598,8 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
 // face (~50 m corner-to-corner) chords across a heightfield that curves — dense
 // overlays and foundations then disagree with the face's interpolated Y.
 
-// ── Subtract overlays out of the face beneath them ──────────────────────────
-// ⛔⛔ WHY THIS EXISTS. A `wood` or `pitch` overlay is finely tessellated (~8.5 m
+// ── Nothing overlaps on the ground: why (the paint-stack flatten below is what does it) ──
+// ⛔⛔ WHY. A `wood` or `pitch` overlay is finely tessellated (~8.5 m
 // edges) and hugs the DEM; the land-use face UNDER it is coarse (22–33 m) and cuts
 // a chord. They were separated by 30 mm — but the face's own terrain-chord error at
 // that span is 17–29 mm median and 473–730 mm at p95, so the coarse face BULGES UP
@@ -701,9 +701,232 @@ export function shoreMedianItems(doc) {
 // — and asphalt then kept ~386 m² of tarmac underneath the paint. The instrument
 // that caught it was logging signed AREA and the accumulator's area, not path
 // counts: a count says the layer EXISTS, only the area says the union KEPT it.
+// ⭐⭐ WHAT A STEP PAINTS, AND WHO SAYS SO (2026-10-14, Jacob's go via Boz; the ground truth in
+// scratch/ground-budget/flatten-r1/results-2026-10-14.txt). A step paints exactly the points in its OWN layer and in no
+// layer above it, and two things here are made to mean that literally:
+// · THE LAYER IS THE UNION OF ITS ITEMS. Each item is its outer less its holes, and overlapping items of one layer
+//   UNION (`layerRegion`), as the Designer draws them. ⛔ The subject used to be read even-odd over every ring of every
+//   item, so two overlapping polygons of one layer CANCELLED where they overlapped — while the accumulator, reading the
+//   same rings non-zero, counted that ground as covered, so nothing below painted it either: Huron's 2.44 ha of wood
+//   painted by no one.
+// · A RING'S ROLE IS ASKED OF THE INPUTS (`itemsByMembership`). The difference goes to flat Paths and each ring is an
+//   outer or a hole by whether the ground just inside it is painted — tested against this step's own region and the
+//   accumulator, never inferred from nesting. A hole hangs on the smallest outer that holds it. ⛔ The roles used to come
+//   from clipper-lib's PolyTree, whose parent is partly the sweep's (FirstLeft): it put a hole outside its outer, double-
+//   painted Huron's sidewalk under curbCut and 1.25 ha of face:underived under agricultural, and left 112.76 m² of HPDM
+//   treelawn painted by no one. It was also the paint stack's cost: with StrictlySimple on, the PolyTree runs its
+//   FirstLeft fix-ups (`FixupFirstLefts1/2`, PolyTree mode only), measured at 92% of asphalt's step on Huron.
+// ⛔ Either test failing is THROWN, never kept whole: an unclipped layer is an overlap that looks like a working flatten.
+// ▶ node checks/claims-the-ground-is-painted-once.mjs
+function layerRegion(e) {
+  const all = new _Clipper()
+  for (const it of e.items) {
+    const outer = Array.isArray(it) ? it : it?.outer
+    const holes = Array.isArray(it) ? [] : (it?.holes || [])
+    if (!outer || outer.length < 3) continue
+    const c = new _Clipper()
+    c.AddPath(_ringToPath(outer), _PolyType.ptSubject, true)
+    for (const h of holes) if (h && h.length >= 3) c.AddPath(_ringToPath(h), _PolyType.ptClip, true)
+    const piece = new _Paths()
+    if (!c.Execute(_ClipType.ctDifference, piece, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: an item's outer less its holes was REFUSED`)
+    all.AddPaths(piece, _PolyType.ptSubject, true)
+  }
+  const region = new _Paths()
+  if (!all.Execute(_ClipType.ctUnion, region, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: the union of its items was REFUSED`)
+  return region
+}
+
+// The winding number of a point against a set of paths, through a row index of their edges (every path's edges in one
+// list, bucketed by the rows of Y they span), so a probe reads only the edges level with it.
+function edgeIndex(paths) {
+  let n = 0; for (const q of paths) n += q.length
+  const ax = new Float64Array(n), ay = new Float64Array(n), bx = new Float64Array(n), by = new Float64Array(n)
+  let k = 0, y0 = Infinity, y1 = -Infinity
+  for (const q of paths) for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
+    ax[k] = q[j].X; ay[k] = q[j].Y; bx[k] = q[i].X; by[k] = q[i].Y; k++
+    if (q[i].Y < y0) y0 = q[i].Y; if (q[i].Y > y1) y1 = q[i].Y }
+  const nb = Math.max(1, Math.min(4096, n >> 3)), h = (y1 - y0) / nb || 1
+  const row = (y) => Math.min(nb - 1, Math.max(0, Math.floor((y - y0) / h)))
+  const start = new Int32Array(nb + 1)
+  for (let e = 0; e < n; e++) for (let r = row(Math.min(ay[e], by[e])), r1 = row(Math.max(ay[e], by[e])); r <= r1; r++) start[r + 1]++
+  for (let r = 0; r < nb; r++) start[r + 1] += start[r]
+  const fill = start.slice(0, nb), list = new Int32Array(start[nb])
+  for (let e = 0; e < n; e++) for (let r = row(Math.min(ay[e], by[e])), r1 = row(Math.max(ay[e], by[e])); r <= r1; r++) list[fill[r]++] = e
+  return (x, y) => {
+    if (!n || y < y0 || y > y1) return 0
+    let w = 0
+    for (let r = row(y), i = start[r]; i < start[r + 1]; i++) { const e = list[i]
+      const c = (bx[e] - ax[e]) * (y - ay[e]) - (x - ax[e]) * (by[e] - ay[e])
+      if (ay[e] <= y) { if (by[e] > y && c > 0) w++ } else if (by[e] <= y && c < 0) w-- }
+    return w
+  }
+}
+// Two questions of a set of paths' edges, through the same row index as `edgeIndex` (each edge listed in every row its
+// Y span, widened by r, touches): `near(x, y)` — does any edge lie within r of the point; `crosses(mx, my, px, py)` — does
+// any edge cross the segment m→p anywhere past m (an edge through m itself, the probe's own, is not a crossing);
+// `through(x, y)` — how many edges pass EXACTLY through the point (integer vertices, so the test is exact).
+function edgeNear(paths, r) {
+  let n = 0; for (const q of paths) n += q.length
+  const ax = new Float64Array(n), ay = new Float64Array(n), bx = new Float64Array(n), by = new Float64Array(n)
+  let k = 0, y0 = Infinity, y1 = -Infinity
+  for (const q of paths) for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
+    ax[k] = q[j].X; ay[k] = q[j].Y; bx[k] = q[i].X; by[k] = q[i].Y; k++
+    if (q[i].Y < y0) y0 = q[i].Y; if (q[i].Y > y1) y1 = q[i].Y }
+  y0 -= r; y1 += r
+  const nb = Math.max(1, Math.min(4096, n >> 3)), h = (y1 - y0) / nb || 1
+  const row = (y) => Math.min(nb - 1, Math.max(0, Math.floor((y - y0) / h)))
+  const start = new Int32Array(nb + 1)
+  for (let e = 0; e < n; e++) for (let w = row(Math.min(ay[e], by[e]) - r), w1 = row(Math.max(ay[e], by[e]) + r); w <= w1; w++) start[w + 1]++
+  for (let w = 0; w < nb; w++) start[w + 1] += start[w]
+  const fill = start.slice(0, nb), list = new Int32Array(start[nb])
+  for (let e = 0; e < n; e++) for (let w = row(Math.min(ay[e], by[e]) - r), w1 = row(Math.max(ay[e], by[e]) + r); w <= w1; w++) list[fill[w]++] = e
+  const seen = new Int32Array(n); let stamp = 0
+  return {
+    near: (x, y) => {
+      if (!n || y < y0 || y > y1) return false
+      for (let w = row(y), i = start[w]; i < start[w + 1]; i++) { const e = list[i]
+        const dx = bx[e] - ax[e], dy = by[e] - ay[e], L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((x - ax[e]) * dx + (y - ay[e]) * dy) / L2)) : 0
+        if (Math.hypot(x - ax[e] - t * dx, y - ay[e] - t * dy) < r) return true }
+      return false
+    },
+    through: (x, y) => {
+      if (!n || y < y0 || y > y1) return 0
+      let c = 0
+      for (let w = row(y), i = start[w]; i < start[w + 1]; i++) { const e = list[i]
+        if ((bx[e] - ax[e]) * (y - ay[e]) - (by[e] - ay[e]) * (x - ax[e]) !== 0) continue
+        if (x < Math.min(ax[e], bx[e]) || x > Math.max(ax[e], bx[e]) || y < Math.min(ay[e], by[e]) || y > Math.max(ay[e], by[e])) continue
+        c++ }
+      return c
+    },
+    crosses: (mx, my, px, py) => {
+      if (!n) return false
+      stamp++
+      const sx = px - mx, sy = py - my
+      for (let w = row(Math.min(my, py)), w1 = row(Math.max(my, py)); w <= w1; w++) for (let i = start[w]; i < start[w + 1]; i++) { const e = list[i]
+        if (seen[e] === stamp) continue; seen[e] = stamp
+        const ex = bx[e] - ax[e], ey = by[e] - ay[e], den = sx * ey - sy * ex
+        if (!den) continue
+        const t = ((ax[e] - mx) * ey - (ay[e] - my) * ex) / den, u = ((ax[e] - mx) * sy - (ay[e] - my) * sx) / den
+        if (t > 1e-9 && t <= 1 && u >= 0 && u <= 1) return true }
+      return false
+    },
+  }
+}
+const windingOf = (q, x, y) => {
+  let w = 0
+  for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const a = q[j], b = q[i]
+    const c = (b.X - a.X) * (y - a.Y) - (x - a.X) * (b.Y - a.Y)
+    if (a.Y <= y) { if (b.Y > y && c > 0) w++ } else if (b.Y <= y && c < 0) w-- }
+  return w
+}
+
+// Each ring of the difference, outer or hole by the ground just inside it: painted iff in the layer and not under the
+// accumulator. ⚠️ The probe must stand CLEAR: Clipper rounds every output vertex to the lattice, so an output edge lies up
+// to √2/2 of a unit off the input boundary it traces, and a probe a hair inside it can sample the wrong side (HPDM's
+// mat:fence, 2026-10-14: three probes 1 µm in read true, false, true). So each probe stands PROBE_IN units inside an
+// edge's midpoint and must be PROBE_CLEAR units from every edge of EVERY ring of the step's output (its own holes
+// included — see `clearOf`); up to three such probes, longest edges first, and they must agree.
+// ⛔ A ring with NO clear probe is narrower than the lattice's own rounding, or crowded within it by another edge of the
+// step: there the inputs do not decide membership,
+// Clipper's rounding does, so its role is Clipper's winding — COUNTED and printed, never silent (the thin-piece residue,
+// ▶ node checks/claims-the-ground-is-painted-once.mjs, which prints it exactly). A ring with no area paints nothing.
+// ⛔ A hole that no outer holds THROWS — with one exception, the same rule's: a hole below the lattice that no outer of
+// the group contains or touches (tested on the rings, not by distance) removes no paint, so it is dropped, COUNTED, and
+// stamped with its area and a point (ground.json#flatten.subLattice[group].orphanHoles). HPDM's treelawn:underived,
+// 2026-10-14: a 5×10⁻⁷ m² sliver Clipper's StrictlySimple difference emitted alone, 1.5 m from any outer (why it is
+// emitted: cause not established). A parentless hole with a clear probe is a contradiction of the inputs and throws.
+const LATTICE_STEP = CLIP_SCALE * LATTICE_M      // one lattice step in Clipper's integer units (lattice.js)
+const PROBE_CLEAR = 2 * LATTICE_STEP, PROBE_IN = 3 * LATTICE_STEP   // clear of the √2/2-step rounding, with room
+// Whether two integer rings share any point: an edge of one crossing or touching an edge of the other (exact on the
+// lattice), or one holding a vertex of the other.
+const ringsMeet = (p, q) => {
+  const o = (a, b, c) => Math.sign((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X))
+  const on = (a, b, c) => Math.min(a.X, b.X) <= c.X && c.X <= Math.max(a.X, b.X) && Math.min(a.Y, b.Y) <= c.Y && c.Y <= Math.max(a.Y, b.Y)
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) for (let k = 0, l = q.length - 1; k < q.length; l = k++) {
+    const a = p[j], b = p[i], c = q[l], d = q[k], o1 = o(a, b, c), o2 = o(a, b, d), o3 = o(c, d, a), o4 = o(c, d, b)
+    if (o1 !== o2 && o3 !== o4) return true
+    if ((!o1 && on(a, b, c)) || (!o2 && on(a, b, d)) || (!o3 && on(c, d, a)) || (!o4 && on(c, d, b))) return true }
+  return windingOf(p, q[0].X, q[0].Y) !== 0 || windingOf(q, p[0].X, p[0].Y) !== 0
+}
+function itemsByMembership(paths, painted, groupKey, subLattice) {
+  const outers = [], holes = []
+  let disagree = 0, sub = 0, subM2 = 0
+  // ⛔ CLEAR OF EVERY EDGE THE STEP DREW, not only the ring's own: a hole of this ring (or any ring beside it) can run
+  // within PROBE_IN of the ring's edge, and a probe set inside the ring then stands in the hole (HPDM's mat:highway,
+  // 2026-10-14: an asphalt piece above whose edge ran 0.014–0.371 units off the highway's left a 55 m² ring round a
+  // 54.7 m² hole, and six of eight probes read the hole).
+  // ⛔ AND THE WAY IN MUST CROSS NOTHING, FROM AN EDGE THAT IS THE RING'S ALONE: there the highway's ring and its hole
+  // SHARED 19 vertices and the edges between them, and a hole edge ran 0.077 units off another — so a probe stood CLEAR
+  // yet in the hole. The walk from the edge's midpoint to the probe must cross no edge the step drew, and the edge must
+  // not be drawn by another ring too (`through` > 1): an edge two rings share borders both, and speaks for neither.
+  const step = edgeNear(paths, PROBE_CLEAR)
+  const clearOf = (mx, my, x, y) => step.through(mx, my) === 1 && !step.near(x, y) && !step.crosses(mx, my, x, y)
+  for (const q of paths) {
+    if (q.length < 3) continue
+    const A = _Clipper.Area(q)
+    if (A === 0) continue
+    const s = A > 0 ? 1 : -1
+    const edges = q.map((b, i) => { const a = q[(i + q.length - 1) % q.length]; return { a, b, L: Math.hypot(b.X - a.X, b.Y - a.Y) } })
+      .filter(e => e.L > 2 * PROBE_CLEAR).sort((p, r) => r.L - p.L)
+    const verdicts = []
+    let probe = null
+    for (const { a, b, L } of edges) {
+      const x = (a.X + b.X) / 2 - (b.Y - a.Y) / L * s * PROBE_IN, y = (a.Y + b.Y) / 2 + (b.X - a.X) / L * s * PROBE_IN
+      if (windingOf(q, x, y) === 0 || !clearOf((a.X + b.X) / 2, (a.Y + b.Y) / 2, x, y)) continue
+      verdicts.push(painted(x, y)); probe = probe || [x, y]
+      if (verdicts.length === 3) break
+    }
+    if (verdicts.some(v => v !== verdicts[0])) throw new Error(`[flatten] ${groupKey}: the probes inside one ring disagree (${verdicts}) — ${q.length} vertices at (${q[0].X / CLIP_SCALE}, ${q[0].Y / CLIP_SCALE})`)
+    let role = verdicts[0]
+    if (!verdicts.length) {                    // narrower than the lattice's rounding: Clipper's winding, counted
+      role = A > 0; sub++; subM2 += Math.abs(A) / (CLIP_SCALE * CLIP_SCALE)
+      // the search for a point inside it, for the hole's parent search: from each edge's midpoint (longest first), along
+      // the inward normal, halfway to where that normal first meets the ring again — a distance the ring itself sets, no
+      // constant. Every edge, because a ring this thin can twist below the lattice at one end (HPDM's treelawn:recreation,
+      // 2026-10-14: beside its closing edge the winding is 0 on both sides).
+      const byLen = q.map((b, i) => [q[(i + q.length - 1) % q.length], b]).sort(([a, b], [c, d]) => Math.hypot(d.X - c.X, d.Y - c.Y) - Math.hypot(b.X - a.X, b.Y - a.Y))
+      for (const [a, b] of byLen) { const L = Math.hypot(b.X - a.X, b.Y - a.Y); if (!L) continue
+        const mx = (a.X + b.X) / 2, my = (a.Y + b.Y) / 2, nx = -(b.Y - a.Y) / L * s, ny = (b.X - a.X) / L * s
+        let t = Infinity
+        for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const c = q[j], d = q[i]
+          if (c === a && d === b) continue
+          const ex = d.X - c.X, ey = d.Y - c.Y, den = nx * ey - ny * ex
+          if (!den) continue
+          const tt = ((c.X - mx) * ey - (c.Y - my) * ex) / den, u = ((c.X - mx) * ny - (c.Y - my) * nx) / den
+          if (tt > 0 && u >= 0 && u <= 1 && tt < t) t = tt }
+        if (t === Infinity) continue
+        const x = mx + nx * t / 2, y = my + ny * t / 2
+        if (windingOf(q, x, y) !== 0) { probe = [x, y]; break } }
+      if (!probe) throw new Error(`[flatten] ${groupKey}: no point lands inside a ring of ${q.length} vertices at (${q[0].X / CLIP_SCALE}, ${q[0].Y / CLIP_SCALE})`)
+    } else if (role !== (A > 0)) disagree++
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    for (const p of q) { if (p.X < x0) x0 = p.X; if (p.X > x1) x1 = p.X; if (p.Y < y0) y0 = p.Y; if (p.Y > y1) y1 = p.Y }
+    ;(role ? outers : holes).push({ q, a: Math.abs(A), box: [x0, y0, x1, y1], probe, sub: !verdicts.length, holes: [] })
+  }
+  if (sub) { subLattice[groupKey] = { rings: sub, m2: +subM2.toFixed(9) }
+    console.log(`  [flatten] ${groupKey}: ${sub} ring(s), ${subM2.toFixed(9)} m², narrower than the lattice's rounding — role by Clipper's winding`) }
+  if (disagree) console.log(`  [flatten] ${groupKey}: ${disagree} ring(s) whose role by membership is not Clipper's winding`)
+  const bySize = [...outers].sort((p, r) => p.a - r.a), orphans = []
+  for (const h of holes) {
+    const [x, y] = h.probe
+    const o = bySize.find(o => o.a > h.a && x >= o.box[0] && x <= o.box[2] && y >= o.box[1] && y <= o.box[3] && windingOf(o.q, x, y) !== 0)
+    if (o) { o.holes.push(h.q); continue }
+    const at = `(${x / CLIP_SCALE}, ${y / CLIP_SCALE})`
+    if (!h.sub) throw new Error(`[flatten] ${groupKey}: a hole (${h.q.length} vertices, unpainted inside by a clear probe) that no painted ring holds, at ${at}`)
+    const meets = outers.find(o => o.box[0] <= h.box[2] && h.box[0] <= o.box[2] && o.box[1] <= h.box[3] && h.box[1] <= o.box[3] && ringsMeet(o.q, h.q))
+    if (meets) throw new Error(`[flatten] ${groupKey}: a hole below the lattice (${h.q.length} vertices) that no painted ring holds by its probe, yet a ring of ${meets.q.length} vertices meets it, at ${at}`)
+    orphans.push({ m2: +(h.a / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [x / CLIP_SCALE, y / CLIP_SCALE] })
+  }
+  if (orphans.length) { subLattice[groupKey].orphanHoles = orphans
+    console.log(`  [flatten] ${groupKey}: ${orphans.length} orphan hole(s) below the lattice, ${orphans.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², no outer meets them — dropped (they remove no paint)`) }
+  return outers.map(o => ({ outer: _pathToRing(o.q), holes: o.holes.map(_pathToRing) }))
+}
+
 function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new Set() } = {}) {
   const acc = new _Paths()                      // union of everything ABOVE
+  let inAcc = edgeIndex(acc)
   const out = new Map()                          // key → flattened items
+  out.subLattice = {}                            // key → { rings, m2 } decided below the lattice's rounding (ground.json#flatten)
   // TOP DOWN: the topmost layer keeps all of itself; each lower one loses whatever
   // is already covered.
   for (let i = entries.length - 1; i >= 0; i--) {
@@ -713,112 +936,48 @@ function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new 
     const keepsSlot = keepOwnSlot.has(e.groupKey)
     const cuts = !doesNotCut.has(e.groupKey)
 
-    const mine = new _Paths()
-    for (const it of e.items) {
-      const outer = Array.isArray(it) ? it : it?.outer
-      const holes = Array.isArray(it) ? [] : (it?.holes || [])
-      if (!outer || outer.length < 3) continue
-      mine.push(_ringToPath(outer))
-      for (const h of holes) if (h && h.length >= 3) mine.push(_ringToPath(h))
-    }
-    if (!mine.length) { out.set(e.groupKey, []); continue }
-
-    let visible = e.items
-    if (acc.length && !keepsSlot) {
-      const c = new _Clipper()
-      // ⛔ STRICTLY SIMPLE, because earcut is downstream. Clipper's default output may carry holes that TOUCH
-      // their outer and rings that pinch at a repeated vertex — legal to Clipper, but the triangulator bridges
-      // across them and fills ground where the polygon has none. Measured on provincetown 2026-09-26: the
-      // 18.76 km² beach face came out with 2 holes poking past its outer ring and 19 pinches, and earcut laid
-      // beach over 2.72 ha of the drawn water, outside every block (34 of 138 beach polygons invalid).
-      c.StrictlySimple = true
-      c.AddPaths(mine, _PolyType.ptSubject, true)
-      c.AddPaths(acc, _PolyType.ptClip, true)
-      const tree = new _PolyTree()
-      if (c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)) {
-        visible = []
-        const walk = (node) => {
-          for (const child of node.Childs()) {
-            const ring = _pathToRing(child.m_polygon)
-            if (ring.length >= 3) visible.push({ outer: ring, holes: child.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
-            for (const h of child.Childs()) walk(h)
-          }
-        }
-        walk(tree)
+    // ⛔ A layer keeping its own slot is not pressed into the plane, so it is neither clipped nor resolved: its items
+    // go through as drawn.
+    if (keepsSlot) { out.set(e.groupKey, e.items) }
+    const mine = layerRegion(e)
+    if (!keepsSlot) {
+      let visible = []
+      if (mine.length) {
+        const c = new _Clipper()
+        // ⛔ STRICTLY SIMPLE, because earcut is downstream. Clipper's default output may carry holes that TOUCH
+        // their outer and rings that pinch at a repeated vertex — legal to Clipper, but the triangulator bridges
+        // across them and fills ground where the polygon has none. Measured on provincetown 2026-09-26: the
+        // 18.76 km² beach face came out with 2 holes poking past its outer ring and 19 pinches, and earcut laid
+        // beach over 2.72 ha of the drawn water, outside every block (34 of 138 beach polygons invalid).
+        c.StrictlySimple = true
+        c.AddPaths(mine, _PolyType.ptSubject, true)
+        c.AddPaths(acc, _PolyType.ptClip, true)
+        const paths = new _Paths()
+        if (!c.Execute(_ClipType.ctDifference, paths, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: the difference against the ${acc.length} path(s) above was REFUSED`)
+        const inMine = edgeIndex(mine)
+        visible = itemsByMembership(paths, (x, y) => inMine(x, y) !== 0 && inAcc(x, y) === 0, e.groupKey, out.subLattice)
       }
-      else {
-        // ⛔ LOUD. A silent refusal here means the layer is NOT clipped and the
-        // overlap survives — which looks exactly like the flatten "not working".
-        console.warn(`  ⚠️ [flatten] ${e.groupKey}: difference REFUSED (acc ${acc.length} paths) — layer kept whole`)
+      if (process.env.FLATTEN_DEBUG) {
+        // ⭐ AREA, not just path count. A path count says a layer EXISTS; only the
+        // signed area says whether the union actually kept it.
+        const areaOf = (paths) => { let a = 0; for (const q of paths) a += _Clipper.Area(q); return a / (CLIP_SCALE * CLIP_SCALE) }
+        console.log(`    [flatten] ${String(i).padStart(2)} ${e.groupKey.padEnd(26)} in ${String(e.items.length).padStart(5)} → out ${String(visible.length).padStart(5)}`
+          + `  ownArea ${areaOf(mine).toFixed(0).padStart(9)} m²  accBefore ${areaOf(acc).toFixed(0).padStart(10)} m²`)
       }
+      out.set(e.groupKey, visible)
     }
-    if (process.env.FLATTEN_DEBUG) {
-      // ⭐ AREA, not just path count. A path count says a layer EXISTS; only the
-      // signed area says whether the union actually kept it. Opposite winding
-      // under pftNonZero cancels — the paths survive and the REGION does not.
-      const areaOf = (paths) => { let a = 0; for (const q of paths) a += _Clipper.Area(q); return a / (CLIP_SCALE * CLIP_SCALE) }
-      const mineA = areaOf(mine), accA = areaOf(acc)
-      const cw = mine.filter(q => !_Clipper.Orientation(q)).length
-      console.log(`    [flatten] ${String(i).padStart(2)} ${e.groupKey.padEnd(26)} in ${String(e.items.length).padStart(5)} → out ${String(visible.length).padStart(5)}`
-        + `  ownArea ${mineA.toFixed(0).padStart(9)} m²  (${cw}/${mine.length} CW)  accBefore ${accA.toFixed(0).padStart(10)} m²`)
-    }
-    out.set(e.groupKey, visible)
 
     // union this layer into the accumulator for the layers below — unless it is
     // transparent, in which case what is beneath it must survive to be seen.
-    if (!cuts) continue
+    if (!cuts || !mine.length) continue
     const u = new _Clipper()
     u.AddPaths(acc, _PolyType.ptSubject, true)
     u.AddPaths(mine, _PolyType.ptClip, true)
     const merged = new _Paths()
-    if (u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) {
-      acc.length = 0
-      for (const q of merged) acc.push(q)
-    } else {
-      // ⛔ LOUD. If the union refuses, every layer BELOW this one goes unclipped —
-      // the flatten silently degrades to doing nothing at all.
-      console.warn(`  ⚠️ [flatten] ${e.groupKey}: UNION refused — layers below will not be clipped against it`)
-    }
-  }
-  return out
-}
-
-/** faceItems: rings or {outer,holes}. overlayRings: bare rings to cut out. */
-function subtractOverlaysFromFace(faceItems, overlayRings) {
-  if (!overlayRings.length || !faceItems?.length) return faceItems
-  const clip = new _Paths()
-  for (const r of overlayRings) if (r && r.length >= 3) clip.push(_ringToPath(r))
-  if (!clip.length) return faceItems
-
-  const out = []
-  for (const it of faceItems) {
-    const outer = Array.isArray(it) ? it : it?.outer
-    const holes = Array.isArray(it) ? [] : (it?.holes || [])
-    if (!outer || outer.length < 3) continue
-    const subj = new _Paths()
-    subj.push(_ringToPath(outer))
-    for (const h of holes) if (h && h.length >= 3) subj.push(_ringToPath(h))
-    const c = new _Clipper()
-    c.AddPaths(subj, _PolyType.ptSubject, true)
-    c.AddPaths(clip, _PolyType.ptClip, true)
-    const tree = new _PolyTree()
-    // ⛔ EvenOdd on the subject so the face's EXISTING holes stay holes.
-    if (!c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)) {
-      out.push(it)   // clipper refused — keep the original rather than drop ground
-      continue
-    }
-    // PolyTree: children of the tree are OUTERS, their children are HOLES, and a
-    // hole's children are outers again (an island inside a cut-out).
-    const walk = (node) => {
-      for (const child of node.Childs()) {
-        const ring = _pathToRing(child.m_polygon)
-        if (ring.length >= 3) {
-          out.push({ outer: ring, holes: child.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
-        }
-        for (const h of child.Childs()) walk(h)
-      }
-    }
-    walk(tree)
+    if (!u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: the union into the accumulator was REFUSED`)
+    acc.length = 0
+    for (const q of merged) acc.push(q)
+    inAcc = edgeIndex(acc)
   }
   return out
 }
@@ -1747,6 +1906,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // the deformer's ownership disclosure, read by claims-the-walk-is-level-across: a written slab carries 0 (the bake throws
     // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
     ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand } } : {}),
+    // the paint stack's rings narrower than the lattice's rounding, per group, whose role is Clipper's winding (flattenPaintStack);
+    // read and printed by claims-the-ground-is-painted-once beside the residue it cannot sample
+    flatten: { subLattice: flattened.subLattice },
     // the first of the Bake's two ground passes: no shore yet (above); 'ground-shore' writes a slab without it
     ...(shoreState ? { shore: shoreState } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
