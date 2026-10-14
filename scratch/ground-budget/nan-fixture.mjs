@@ -5,6 +5,10 @@
 // The points it was cut for travel with it.
 // CROP=<m> keeps only the bands and the terrain within that many metres of the points (the tiles stay whole: the deformer
 // needs its rings); outside the patch the sampler reads 0, which is finite.
+// ⭐ EVERY BAND PIECE IS CLIPPED TO THE BOX (Clipper intersection, piece by piece, so each keeps its own parity; the bands are
+// on the 1 mm lattice already, so nothing inside the box moves). It kept a piece only if one of its VERTICES lay in the box,
+// which dropped every piece larger than the box: a town's curb and walk come out of the paint as a few large pieces, so a
+// 40 m cut round Huron's fox-road kept its lawn and lost its curb and walk (curb 0 · walk 0).
 // SHAPE=<shape.json> takes each tile's cap couplers (`iaCap`, `capCouplers`, stamped) from that shape, from the tile whose
 // iaFull · iaStamp · iaArc are IDENTICAL (throws if none is): a dump made before the couplers has none, and the deformer refuses it.
 //   [CROP=150] [SHAPE=<shape.json>] node scratch/ground-budget/nan-fixture.mjs <dump dir> <out.json> <tile,tile,...> x,z [x,z ...]
@@ -14,6 +18,7 @@ const [dump, out, tileList, ...pts] = process.argv.slice(2)
 const meta = JSON.parse(readFileSync(dump + '/meta.json', 'utf8'))
 const { mapTerrainPaths } = await import(R + 'cartograph/terrainLoad.js')
 const { runKind } = await import(R + 'cartograph/lineHeight.mjs'), { ribbonsPathOf } = await import(R + 'cartograph/scene.js')
+const { default: C } = await import('clipper-lib'), { CLIP_SCALE } = await import(R + 'src/lib/lattice.js'), { polyTreeToItems } = await import(R + 'cartograph/kerbLift.mjs')
 const bridgeIds = new Set((JSON.parse(readFileSync(ribbonsPathOf(meta.scene), 'utf8')).streets || []).filter(s => s?.gradeSeparated).map(s => s.skelId ?? s.name))
 const A = JSON.parse(readFileSync(dump + '/deform.json', 'utf8'))
 const keep = tileList.split(',').map(Number), tiles = keep.map(i => A.tiles[i])
@@ -30,8 +35,13 @@ let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity
 const box = crop ? pts.map(p => p.split(',').map(Number)) : tiles.flatMap(t => t.ring)
 for (const [x, z] of box) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z) }
 const pad = crop || M; x0 -= pad; z0 -= pad; x1 += pad; z1 += pad
-const touches = (p) => (p.outer || []).some(([x, z]) => x >= x0 && x <= x1 && z >= z0 && z <= z1)
-const bands = Object.fromEntries(Object.entries(A.bands).map(([k, list]) => [k, list.filter(touches)]))
+const path = (ring) => ring.map(([x, z]) => new C.IntPoint(Math.round(x * CLIP_SCALE), Math.round(z * CLIP_SCALE)))
+const boxPath = path([[x0, z0], [x1, z0], [x1, z1], [x0, z1]])
+const clipPiece = (it) => { const c = new C.Clipper(); c.StrictlySimple = true
+  for (const r of (it.outer ? [it.outer, ...(it.holes || [])] : [it])) if (r.length >= 3) c.AddPath(path(r), C.PolyType.ptSubject, true)
+  c.AddPath(boxPath, C.PolyType.ptClip, true)
+  const t = new C.PolyTree(); c.Execute(C.ClipType.ctIntersection, t, C.PolyFillType.pftEvenOdd, C.PolyFillType.pftNonZero); return polyTreeToItems(t) }
+const bands = Object.fromEntries(Object.entries(A.bands).map(([k, list]) => [k, list.flatMap(clipPiece)]))
 const P = mapTerrainPaths(meta.scene), TJ = JSON.parse(readFileSync(P.json, 'utf8')), buf = readFileSync(P.bin)
 const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4), { width, height, bounds } = TJ
 const gx = (x) => ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * (width - 1), gz = (z) => ((z - bounds.minZ) / (bounds.maxZ - bounds.minZ)) * (height - 1)
