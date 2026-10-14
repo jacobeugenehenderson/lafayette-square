@@ -1,0 +1,80 @@
+# Whole-bake timing, Huron, d09644cc + V2 scratch copies (no maxEdge cap, uniform groups adaptive at the lots' policy, edge step min(grid, B), shared edge cache, triangle cache), ped tol x4 (a sweep knob), HEAD's data, scratch out-dir, --max-old-space-size=14000 (Brace, 2026-10-13). REFUSED by bake-ground's no-fallback orphan throw before writing a slab.
+start Tue Oct 13 20:21:45 CDT 2026 · huron → /Users/jacobhenderson/Desktop/lafayette-square.nosync/scratch/ground-budget/bake-d09644cc-v2 · ped tol ×4 · load { 3.86 4.96 4.77 } · free 60%
+  [code] scratch/ground-budget/v2/bake-ground.v2.js a0363470f454e2cf
+  [code] scratch/ground-budget/v2/groundConformity.v2.js 7acf0fb288c6cea2
+  [code] scratch/ground-budget/tern-d09644cc/cartograph/groundDeformer.mjs d5175091438bb181
+  [code] scratch/ground-budget/tern-d09644cc/cartograph/lineHeight.mjs 261ba816bc285284
+  [code] scratch/ground-budget/tern-d09644cc/cartograph/shoreGusset.mjs 3271b22c71d92c12
+  [code] scratch/ground-budget/tern-d09644cc/cartograph/surfaces.mjs 0602df4d30bb5f4c
+  [code] scratch/ground-budget/tern-d09644cc/cartograph/waterLevel.mjs 437397a83e2b1892
+  [code] scratch/ground-budget/tern-d09644cc/src/lib/tileGround.js 88a743dc1441cfb7
+  [load] 20:21:45 { 3.86 4.96 4.77 } · free 60%
+  [load] 20:22:45 { 6.71 5.68 5.06 } · free 66%
+  [load] 20:23:45 { 4.42 5.18 4.91 } · free 65%
+  [load] 20:24:45 { 3.13 4.65 4.73 } · free 58%
+  [load] 20:25:45 { 3.15 4.40 4.63 } · free 64%
+  [load] 20:26:45 { 2.90 4.09 4.49 } · free 62%
+  [load] 20:27:45 { 3.71 4.11 4.48 } · free 52%
+  [load] 20:28:45 { 5.31 4.48 4.59 } · free 58%
+  [load] 20:29:45 { 4.87 4.52 4.59 } · free 56%
+  [load] 20:30:45 { 4.53 4.51 4.58 } · free 54%
+  [load] 20:31:45 { 4.56 4.52 4.58 } · free 53%
+  [load] 20:32:46 { 5.62 4.80 4.67 } · free 44%
+  [load] 20:33:46 { 5.40 4.88 4.71 } · free 52%
+  [load] 20:34:46 { 4.57 4.76 4.67 } · free 54%
+  [load] 20:35:46 { 6.26 5.29 4.88 } · free 52%
+  [load] 20:36:46 { 5.07 5.14 4.85 } · free 53%
+  [load] 20:37:46 { 4.85 5.06 4.84 } · free 51%
+  [load] 20:38:46 { 4.84 4.98 4.82 } · free 53%
+  [load] 20:39:46 { 5.71 5.19 4.91 } · free 48%
+  [load] 20:40:46 { 8.46 6.12 5.27 } · free 46%
+  [load] 20:41:46 { 6.03 5.87 5.24 } · free 40%
+  [load] 20:42:46 { 4.98 5.58 5.17 } · free 47%
+  [load] 20:43:46 { 4.13 5.23 5.06 } · free 51%
+  [load] 20:44:46 { 3.43 4.86 4.94 } · free 53%
+  [load] 20:45:46 { 4.43 4.93 4.96 } · free 50%
+  [load] 20:46:46 { 4.03 4.75 4.89 } · free 45%
+  [load] 20:47:47 { 3.32 4.44 4.76 } · free 41%
+  [load] 20:48:47 { 3.47 4.39 4.73 } · free 37%
+  [load] 20:49:47 { 5.10 4.69 4.82 } · free 38%
+  [load] 20:50:47 { 6.75 5.23 5.01 } · free 36%
+  [load] 20:51:47 { 6.34 5.34 5.06 } · free 40%
+  [load] 20:52:47 { 5.87 5.40 5.10 } · free 43%
+  [load] 20:53:47 { 4.65 5.12 5.01 } · free 41%
+  [load] 20:54:47 { 4.47 5.05 4.99 } · free 40%
+exit 1 Tue Oct 13 20:55:32 CDT 2026 · wall 2027406 ms · free 59%
+-- bake.log key lines
+  [bake-ground] paint stack pressed down: 51 layers (1 keeping their own slot, 1 not cutting) in 802.2s
+  [v2] maxEdge off · uniform groups adaptive at the lots' policy · terrainDev every 4.999 m along each edge (shared edge cache) · ped tol ×4
+  [deform] the line swept across the bands: 184 tile(s) · 19756 ② vertices blended between given heights (17 from an arc's own tangent) · 2702 on a dead end's cap, at its chain's end · 3 ② ring(s) declaring no line · ② vertices on runs declaring none, drawn as the terrain: {"declared:highway":985,"declared:rim":9,"declared-corner:rim":47,"declared:bridge":13} · 0 point(s) whose nearest ② declares 
+  [bake-ground] ground partition conformed as one mesh: 49 groups, 36616 input T-junctions closed, 93465 refinement closures, 304 hairline T-junctions closed after refining (≤3 passes), 0 left in 817.5s
+     2022.23 real      2013.25 user       128.90 sys
+          5147623424  maximum resident set size
+Error: [bake-ground] ⛔ huron: 8753 ped vertex(es) lie in a drawn band that NO painted band owns (the band decides, never the nearer line — groundDeformer.mjs): (2573.68,1417.26) tile 6 · (2546.90,1413.66) tile 6 · (2676.17,1431.00) tile 6 · (2643.83,1426.66) tile 6 · (2643.02,1426.56) tile 6 · (2678.38,1424.49) tile 6 · (2644.19,1419.90) tile 6 · (2638.49,1419.14) tile 6 · (2633.50,1418.47) tile 6 · (2633.86,1418.52) tile 6 · (2636.35,1418.85) tile 6 · (2636.71,1418.90) tile 6 · (2569.94,1409.95) tile 6 · (2558.01,1408.35) tile 6 · (2552.05,1407.55) tile 6 · (2549.06,1407.15) tile 6 · (2581.87
+-- orphans by tile
+5991 tile 6
+2316 tile 20
+ 176 tile 10
+ 118 tile 24
+  42 tile 66
+  23 tile 4
+  17 tile 5
+  11 tile 108
+   8 tile 88
+   8 tile 37
+   6 tile 3
+   5 tile 154
+   5 tile 123
+   4 tile 9
+   4 tile 147
+   4 tile 136
+   3 tile 161
+   3 tile 156
+   2 tile 23
+   1 tile 92
+   1 tile 73
+   1 tile 63
+   1 tile 21
+   1 tile 170
+   1 tile 133
+   1 tile 0
