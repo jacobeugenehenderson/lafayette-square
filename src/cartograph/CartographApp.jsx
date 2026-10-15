@@ -539,7 +539,7 @@ function Controls({ controlsRef, heroPlaying = false }) {
         enablePan={panEnabled} limits={{ minZoom: 0.03, maxZoom: 40 }} />
     )
   }
-  if (shot === 'browse') return <RegimeControls key="browse" regime="plan" controlsRef={controlsRef} />
+  if (shot === 'browse') return <RegimeControls key="browse" regime="overhead" controlsRef={controlsRef} />
   if (shot === 'street') return <RegimeControls key="street" regime="street" controlsRef={controlsRef} />
   // ⛔⛔ LOCKED WHILE PLAYBACK IS DRIVING, FREE OTHERWISE — and the gate is
   // PLAYING vs NOT, never SHOT vs SHOT.

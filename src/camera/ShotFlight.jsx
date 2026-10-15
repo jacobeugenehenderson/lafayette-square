@@ -79,6 +79,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, size, onFramed, planHeading, movers, frameMover, frameKey }
   const prev = useRef(null)            // the last shot this component saw
   const pending = useRef(null)         // { shot, landed }: a cut whose destination is not known yet — landed when placed
+  const unheld = useRef(null)          // { s, d }: a landing made before the app's controls existed — re-landed when they do
   const flying = useRef(null)          // { from, to, toUp, fromOff, toOff }
   const off = useRef({ x: 0, y: 0 })   // the view offset now, CSS px
   const lastInset = useRef(null)
@@ -176,7 +177,11 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
       ctl.target.copy(tgt)
       ctl.enabled = s !== PLAYBACK
       if (ctl.enabled) ctl.update()
-    }
+    } else unheld.current = { s, d }
+    // ⛔ A page opened straight into the plan lands BEFORE <RegimeControls> exists; OrbitControls then builds with its
+    // target at the world origin and its constructor aims the camera there — the "straight-down" plan sat 28.5° off,
+    // looking at (0,0,0) (measured, huron, Preview :5173 and the Ward, 2026-10-14). The first frame the controls exist,
+    // the landing is made again (useFrame below). ▶ node checks/claims-a-lean-never-turns-the-map.mjs (starts straight down)
   }
   // Land at once. A destination not known yet (the disc not published, the movie's path not loaded) waits, and its
   // `landed` is reported when it is placed — never before, and never for a shot the town has already left.
@@ -330,6 +335,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   }, [gl])
 
   useFrame(() => {
+    if (unheld.current && controls() && !flying.current) { const { s, d } = unheld.current; unheld.current = null; land(s, d) }
     if (pending.current && !flying.current) cut(pending.current.shot, pending.current.landed)
     // a frameKey that arrived before the plan was live flies now, once (the frameKey effect above)
     if (heldKey.current && frameIfLive(false)) { lastKey.current = live.current.frameKey; heldKey.current = false }

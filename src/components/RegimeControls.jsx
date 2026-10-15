@@ -4,7 +4,7 @@
  * `src/lib/cameraRegimes.js#REGIMES`; this file only mounts it.
  *
  * Props
- *   regime       'plan' | 'orbit' | 'street' | 'playback'
+ *   regime       'plan' | 'overhead' | 'orbit' | 'street' | 'playback'
  *   controlsRef  optional ref that receives the OrbitControls instance
  *   enabled      false while something else owns the camera (a tween, playback)
  *   enablePan    a transient GATE (e.g. the Designer's pan is off while a tool
@@ -22,7 +22,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { REGIMES, REGIME_LIMIT_KEYS } from '../lib/cameraRegimes.js'
+import { REGIMES, REGIME_LIMIT_KEYS, PLAN_MAX_LEAN_DEG } from '../lib/cameraRegimes.js'
 import { getElevation } from '../utils/elevation'
 import { prefersReducedMotion } from '../lib/reducedMotion.js'
 
@@ -240,6 +240,67 @@ function DeclaredControls({
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('pointercancel', onUp)
       window.removeEventListener('blur', onBlur)
+    }
+  }, [regime, r, invalidate])
+
+  // ⭐ THE LEAN (the `overhead` regime): a right-drag, or two fingers moving together up or down, tips the camera BACK
+  // along the plan's heading (the camera's horizontal `up`, the rose's) around the point it looks at, from straight down
+  // to PLAN_MAX_LEAN_DEG. The lean is read off the camera at every step, never kept: the town's own frames land straight
+  // down, and the next drag starts from there. It moves the camera only within the vertical plane of the heading, so it
+  // can never turn the map. Its speed is the regime's rotateSpeed, in OrbitControls' convention (a full turn per
+  // element height). ▶ node checks/claims-a-lean-never-turns-the-map.mjs
+  useEffect(() => {
+    if (regime !== 'overhead') return
+    const maxLean = PLAN_MAX_LEAN_DEG * Math.PI / 180
+    let mode = null, lastY = 0, startY = 0, startGap = 0
+    const touches = new Map()
+    const lean = (dy) => {
+      const c = localRef.current
+      if (!c || !enabledRef.current) return
+      const cam = c.object, el = c.domElement
+      const h = new THREE.Vector3(cam.up.x, 0, cam.up.z)
+      if (h.lengthSq() < 1e-9) return   // no heading to lean along
+      h.normalize()
+      const off = cam.position.clone().sub(c.target), dist = off.length()
+      const now = Math.acos(THREE.MathUtils.clamp(off.y / dist, -1, 1))
+      const next = THREE.MathUtils.clamp(now - (2 * Math.PI * dy / el.clientHeight) * r.rotateSpeed, 0, maxLean)
+      cam.position.copy(c.target).addScaledVector(h, -Math.sin(next) * dist).add(new THREE.Vector3(0, Math.cos(next) * dist, 0))
+      cam.lookAt(c.target)
+      c.update()
+      invalidate()
+    }
+    const onDown = (e) => {
+      const c = localRef.current
+      if (!c || !c.domElement.contains(e.target)) return
+      if (e.pointerType === 'touch') {
+        touches.set(e.pointerId, e.clientY)
+        if (touches.size === 2) { mode = 'touch'; const ys = [...touches.values()]; lastY = startY = (ys[0] + ys[1]) / 2; startGap = Math.abs(ys[0] - ys[1]) }
+      } else if (e.button === 2) { mode = 'mouse'; lastY = e.clientY }
+    }
+    const onMove = (e) => {
+      if (mode === 'mouse' && e.pointerType !== 'touch') { lean(e.clientY - lastY); lastY = e.clientY; return }
+      if (mode !== 'touch' || !touches.has(e.pointerId)) return
+      touches.set(e.pointerId, e.clientY)
+      const ys = [...touches.values()], y = (ys[0] + ys[1]) / 2, gap = Math.abs(ys[0] - ys[1])
+      // Two fingers moving together lean; a pinch (their gap changing more than their middle has moved) only zooms. Judged
+      // over the whole gesture, never per event: a touch reports one finger at a time, so each event alone looks like a pinch.
+      if (Math.abs(y - startY) > Math.abs(gap - startGap)) lean(y - lastY)
+      lastY = y
+    }
+    const onUp = (e) => {
+      touches.delete(e.pointerId)
+      if (mode === 'mouse' && e.pointerType !== 'touch') mode = null
+      if (mode === 'touch' && touches.size < 2) mode = null
+    }
+    window.addEventListener('pointerdown', onDown, true)
+    window.addEventListener('pointermove', onMove, true)
+    window.addEventListener('pointerup', onUp, true)
+    window.addEventListener('pointercancel', onUp, true)
+    return () => {
+      window.removeEventListener('pointerdown', onDown, true)
+      window.removeEventListener('pointermove', onMove, true)
+      window.removeEventListener('pointerup', onUp, true)
+      window.removeEventListener('pointercancel', onUp, true)
     }
   }, [regime, r, invalidate])
 
