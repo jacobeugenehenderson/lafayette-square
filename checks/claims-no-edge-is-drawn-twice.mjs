@@ -16,12 +16,14 @@
 //     does), and
 //   · e and f are NOT on one integer line (exact cross products) — an edge shared exactly is the goal, never counted.
 // No angle constant: both ends within a step already bound the angle by 2·step / overlap.
-// ⭐ SHAPE, per pair (the two classes need different fixes, so the instrument tells them apart):
-//   one-side-vertex — an end vertex V of one edge lies within a step of the OTHER edge's interior, and the ring carries
-//                     straight on through V along that other edge: a vertex one polygon has and its neighbour lacks
-//                     (an intersection inserted on one side only, rounded up to ½ step off the shared line)
-//   two-lines       — otherwise: two constructions of one line, whose vertices differ (different joins, or a parallel
-//                     offset), so the line itself is drawn twice
+// ⭐ SHAPE, per pair — GEOMETRY ONLY, no mechanism in the name (a mechanism is not visible locally):
+//   straight-through-vertex — an end vertex V of one edge lies within a step of the OTHER edge's interior, and its ring
+//                             carries straight on through V along that other edge
+//   ends-or-parallel        — otherwise: one line ends on the other's interior and its ring turns away, or the two run
+//                             parallel with no vertex on the other's interior
+// ⚠️ ends-or-parallel holds BOTH a crossing put on one side only by a cut ACROSS the band (the piece turns away along the
+// cut — HPDM's 327.863 m example, results-2026-10-14.txt) AND two depth lines ending at different joins. Only the stage
+// trace (scratch/ground-budget/flatten-r1/trace.mjs) tells those apart.
 // Pairs of DIFFERENT groups are the producer pairs; pairs within ONE group (two items the stack will union) are reported
 // separately — their union makes slivers as well (Boz, 2026-10-14). Layers that do not cut (water) are not partition.
 //
@@ -110,7 +112,7 @@ export function nearMisses(entries) {
       if (onInterior(BX[x], BY[x], k)) { const nx = NXT[x]; if (segD(BX[nx], BY[nx], AX[k], AY[k], BX[k], BY[k]) <= STEP) return true }
       if (onInterior(AX[x], AY[x], k)) { const px = PRV[x]; if (segD(AX[px], AY[px], AX[k], AY[k], BX[k], BY[k]) <= STEP) return true }
       return false }
-    const shape = runsOn(p, q) || runsOn(q, p) ? 'one-side-vertex' : 'two-lines'
+    const shape = runsOn(p, q) || runsOn(q, p) ? 'straight-through-vertex' : 'ends-or-parallel'
     out.push({ a: `${A}#${I[p]}.${R[p]}`, b: `${B}#${I[q]}.${R[q]}`, ga: A, gb: B, same: A === B, shape, m: (hi - lo) / CLIP_SCALE,
       gap: Math.max(d0, d1), at: [(xa + xb) / 2 / CLIP_SCALE, (ya + yb) / 2 / CLIP_SCALE], seg: [[xa / CLIP_SCALE, ya / CLIP_SCALE], [xb / CLIP_SCALE, yb / CLIP_SCALE]] })
   }
@@ -129,7 +131,7 @@ function report(town, pairs, expect) {
   const line = (r) => `${String(r.n).padStart(7)} edge pair(s) · ${r.m.toFixed(2).padStart(9)} m alongside · max gap ${r.gap.toFixed(3)} step(s) · ${r.k} · ${Object.entries(r.shapes).map(([k, v]) => `${k} ${v.m.toFixed(0)} m`).join(', ')}`
   console.log(`\n${town}: ${pairs.length} near-miss edge pair(s), ${pairs.reduce((t, p) => t + p.m, 0).toFixed(1)} m of line drawn twice · full table (${rows.length} pair(s)): ${file}`)
   const shapeM = (s) => pairs.filter(p => p.shape === s).reduce((t, p) => t + p.m, 0).toFixed(1)
-  console.log(`  by shape: two-lines ${shapeM('two-lines')} m · one-side-vertex ${shapeM('one-side-vertex')} m`)
+  console.log(`  by shape: ends-or-parallel ${shapeM('ends-or-parallel')} m · straight-through-vertex ${shapeM('straight-through-vertex')} m`)
   console.log(`  BETWEEN PRODUCERS (two groups):`); for (const r of rows.filter(r => !r.same).slice(0, SHOW)) console.log('   ' + line(r))
   console.log(`  WITHIN ONE GROUP (two items the stack unions):`); for (const r of rows.filter(r => r.same).slice(0, SHOW)) console.log('   ' + line(r))
   console.log(`  longest:`); for (const p of [...pairs].sort((a, b) => b.m - a.m).slice(0, SHOW)) console.log(`     ${p.m.toFixed(3)} m at (${p.at.map(v => v.toFixed(3)).join(', ')}) · ${p.a}  vs  ${p.b} · gap ${p.gap.toFixed(3)}`)
@@ -150,14 +152,14 @@ function selftest() {
   let bad = 0
   for (const [name, shift, want] of cases) { const got = run(shift).length > 0; if (got !== want) bad++
     console.log(`  ${got === want ? '✅' : '⛔'} ${name}: ${got ? 'reported' : 'not reported'} (must ${want ? '' : 'NOT '}report)`) }
-  // the two shapes: a vertex on one side only (A's right edge carries an extra vertex half a step off x = 10, B's does not)
-  // and two lines (B's left edge moved half a step, no vertex in the other's interior)
+  // the two shapes: a straight-through vertex (A's right edge carries an extra vertex half a step off x = 10, B's does not)
+  // and parallel (B's left edge moved half a step, no vertex in the other's interior)
   const h = LATTICE_M / 2
   const shapes = [
-    ['a vertex on one side only', [[0, 0], [10, 0], [10 + h, 5], [10, 10], [0, 10]], sq(10, 0, 10, 10), 'one-side-vertex'],
-    ['two lines', sq(0, 0, 10, 10), sq(10 + h, 0, 10, 10), 'two-lines'],
-    // the measured 108 m shape: B's line ENDS on A's interior and its ring turns away — two lines, not an inserted vertex
-    ['two lines whose ends differ', sq(0, 0, 10, 10), [[10 + h, 0], [20, 0], [20, 10], [12, 10], [10 + h, 6]], 'two-lines'],
+    ['a straight-through vertex', [[0, 0], [10, 0], [10 + h, 5], [10, 10], [0, 10]], sq(10, 0, 10, 10), 'straight-through-vertex'],
+    ['parallel', sq(0, 0, 10, 10), sq(10 + h, 0, 10, 10), 'ends-or-parallel'],
+    // B's line ENDS on A's interior and its ring turns away (HPDM's 108 m and 327.863 m examples both look like this)
+    ['a line that ends on the other and turns', sq(0, 0, 10, 10), [[10 + h, 0], [20, 0], [20, 10], [12, 10], [10 + h, 6]], 'ends-or-parallel'],
   ]
   // the RangeError's shape: one-step squares spread over 5 km (a tiny median edge) inside a 5 km frame (long edges)
   { const tiny = [], W = 5000; for (let i = 0; i < 100; i++) for (let j = 0; j < 100; j++) tiny.push(sq(25 + i * 50, 25 + j * 50, LATTICE_M, LATTICE_M))
