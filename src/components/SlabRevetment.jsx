@@ -40,7 +40,7 @@ import InstancedBoulders from './InstancedBoulders.jsx'
 import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentResponseKind } from '../lib/revetmentFromSlab.js'
-import { farIndex } from '../lib/revetmentBuild.js'
+import { farIndex, withinReach } from '../lib/revetmentBuild.js'
 import { onDrawnGround, drawnGroundSource } from '../utils/elevation'
 import { terrainBed, terrainWater, currentTerrain, currentTerrainIdentity, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
@@ -50,16 +50,6 @@ import { isRevealed, subscribeStartup } from '../lib/startupMarks.js'
 
 let _saidNoLevels = false
 import { slabFetch, slabUrl } from '../lib/slabUrl.js'
-
-/** How far from the camera the DETAILED drape and the stones are built, metres.
- *  ⛔ A BUDGET, not a look: it sets how much work one camera move can trigger.
- *  ⛔⛔ AND IT IS NO LONGER WHERE THE WALL ENDS. It used to gate both loops with
- *  nothing beyond it, so the revetment did not degrade at distance — it VANISHED,
- *  which is the one thing Jacob's close-inspection ruling forbids ("never an LOD
- *  that degrades to nothing"). Nobody decided that; the radius was inherited from
- *  the harness, which only ever looked at one arc from close up, and it was simply
- *  the only mechanism present. The far layer below is the other half. */
-const NEAR_RADIUS_M = 90
 
 /** Rebuild only after the camera has moved this far. ⛔ Without it every frame
  *  re-selects chunks on a 26 km shore for a camera that has not moved. */
@@ -244,14 +234,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   }, [doc, palette, groundGen, lookId, bakeLastMs])
 
   // what lies within reach of (x, z), nearest first: drape chunks and stone chunks
-  const within = (x, z) => {
-    const out = []
-    for (const [fi, f] of (W.current?.faces || []).entries()) {
-      f.at.forEach((p, k) => { const d = Math.hypot(p.x - x, p.z - z); if (d <= NEAR_RADIUS_M) out.push({ d, req: { type: 'near', face: fi, k } }) })
-      f.stoneAt.forEach((p, ci) => { const d = Math.hypot(p.x - x, p.z - z); if (d <= NEAR_RADIUS_M) out.push({ d, req: { type: 'stones', face: fi, ci } }) })
-    }
-    return out.sort((a, b) => a.d - b.d).map(o => o.req)
-  }
+  const within = (x, z) => withinReach(W.current?.faces || [], x, z)
 
   // ⭐ PREPARED IN THE AIR: a flight's destination is known at its first frame, so what the camera will land beside is
   // queued ahead of what it passes over.

@@ -16,20 +16,32 @@
  *     which ground the stone stands on. And handed ANOTHER town's ground bin, the worker's load must REFUSE.
  *  2. NO HOLE — at every set of near chunks drawn, every chunk of a face is drawn by EXACTLY ONE layer (`farIndex`).
  *     MUTATION: the old rule (the far face hidden whole whenever any near chunk of it is drawn) must be caught.
- *  3. NO LONG FRAME (`--base=<Ward url>`): Meridian's probe (scratch/browse-hang/flight.mjs), Provincetown, phone and
- *     desktop: no long frame in the flight (`report.longFrames` empty, the probe's own threshold) and no program linked
- *     during it (`report.programs.new` empty). The probe writes into this run's own temp dir (`--out`), never Meridian's. RED at 926ac3a4 (3,150 ms · the stones' program linked mid-flight).
+ *  3. NO LONG FRAME (`--base=<a Ward dev server on this kit>`), by this check's own probe (checks/lib/shoreFlightProbe.mjs —
+ *     Meridian's flight.mjs plumbing, checked in), on Provincetown and Huron, phone and desktop, on each town's OWN HERO PATH
+ *     (Jacob, 2026-10-15): the span where the path comes within the near lane's reach of the shore, found above from the slab,
+ *     never a hand-picked camera. Two legs (Boz, 2026-10-15), each against the page's own frame at rest:
+ *     · 'movie' — back into the movie with its clock set just before the span, and through it;
+ *     · 'plan'  — back into the movie before the span's nearest pose, and at it the tap into the plan (the flight in which
+ *       Provincetown's phone had its 3,150 ms frame at 926ac3a4).
+ *     The clock is placed by a PROBE-ONLY hook on MovieCamera's random start (the Ward exposes no start-phase input; the probe's
+ *     header says why) — a hook the product never runs.
+ *     In each: no long frame (longer than two frames at rest — the Ward's Society check's rule) and no program linked.
+ *     Over the run: NO SECOND DOWNLOAD — every slab file the worker requests that the page also requested comes from the HTTP
+ *     cache or a 304, never a body over the wire; the renderer's peak resident memory and the far layer's arrival, REPORTED.
+ *     NO VERDICT (a failure to check, never a pass): a page that rests at over two of its display's frames, a leg whose camera
+ *     never came within reach of the shore (measured from the camera itself), or one that built no near stone.
+ *     ⛔ Not yet seen RED in the browser (2026-10-15): the run against 926ac3a4's in-frame build is owed before this half is trusted.
  *     Without `--base` this half is NOT RUN and the check says so and fails, unless `--node-only` is passed.
  *
- *   node checks/claims-the-shore-builds-off-the-frame.mjs [--node-only] [--base=http://localhost:5180] [--chunks=24]
+ *   node checks/claims-the-shore-builds-off-the-frame.mjs [--node-only | --browser-only] [--base=http://localhost:5180] [--chunks=24]
  * Read-only. Exit 1 on a failure, 2 if a mutation is not caught.
  */
-import { readFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { shoreFlight, reachIndex } from './lib/shoreFlightProbe.mjs'
 import { ROOT } from './_scenes.mjs'
-import { makeRevetmentBuilder, loadRevetmentInit, farIndex } from '../src/lib/revetmentBuild.js'
+import { makeRevetmentBuilder, loadRevetmentInit, farIndex, withinReach, NEAR_RADIUS_M } from '../src/lib/revetmentBuild.js'
+import { heroKeyframeAnim, heroCycleSec, assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import { makeDrawnGround, isDrawnGroundGroup, partsOrField } from '../src/lib/drawnGround.js'
 import { makeElevationSampler, terrainIdentity } from '../src/lib/terrainCommon.js'
 import { revetmentDrape, drapeGlobals } from '../src/lib/revetmentDrape.js'
@@ -39,9 +51,13 @@ import { MIN_ARMOUR_D50_M } from '../cartograph/shore-armour.mjs'
 import { boulderPalette } from '../src/lib/boulderGeometry.js'
 
 const arg = (n) => process.argv.find(a => a.startsWith(`--${n}=`))?.slice(n.length + 3)
-const NODE_ONLY = process.argv.includes('--node-only'), BASE = arg('base'), N = +(arg('chunks') || 24)
+const NODE_ONLY = process.argv.includes('--node-only'), BROWSER_ONLY = process.argv.includes('--browser-only'), BASE = arg('base'), N = +(arg('chunks') || 24)
 const TOWNS = ['provincetown', 'huron']
-const fails = [], mutants = []
+// --town= / --device= narrow the BROWSER half to one run, so each can be launched under its own memory gate; the node half always runs both towns
+const ONLY_TOWN = arg('town'), ONLY_DEVICE = arg('device')
+if (ONLY_TOWN && !TOWNS.includes(ONLY_TOWN)) throw new Error(`--town=${ONLY_TOWN}: not one of ${TOWNS.join(', ')}`)
+if (ONLY_DEVICE && !['phone', 'desktop'].includes(ONLY_DEVICE)) throw new Error(`--device=${ONLY_DEVICE}: not phone or desktop`)
+const fails = [], mutants = [], shore = {}
 
 // ── the slab, as the browser reads it ───────────────────────────────────────────────────────────────────────────────────
 function slab(town) {
@@ -99,10 +115,34 @@ function sameChunk(ref, plain) {
   return null
 }
 
+// ── where the town's OWN camera path crosses its shore ────────────────────────────────────────────────────────────────────
+// ⭐ Jacob's ruling (2026-10-15, via Boz): the verdict is the hero movie each town already has, never a hand-picked camera.
+// The authored path (scene.json heroKeyframes + heroMotion) played on MovieCamera's clock, one cycle at STEP_S, and at each pose
+// the near lane's own rule (`withinReach`): a SPAN is a run of clock seconds in which anything is within reach. Clock seconds
+// are MovieCamera's (its `motion.speed || 1` times the wall clock), so the probe can set the clock on them.
+const STEP_S = 0.25
+function shoreSpans(town, faces, reachM = NEAR_RADIUS_M, reach = (x, z) => withinReach(faces, x, z).length > 0) {
+  const scene = JSON.parse(readFileSync(join(ROOT, 'public', 'baked', town, 'scene.json'), 'utf8'))
+  const K = assertKeyframesAimed(scene.heroKeyframes, town), M = assertHeroMotion(K, scene.heroMotion, town)
+  if (K.length < 2) throw new Error(`${town}: the hero shot is static (${K.length} key) — there is no path to cross the shore`)
+  const cycle = heroCycleSec(M), speed = M.speed || 1, near = reachIndex(faces.flatMap(f => [...f.at, ...f.stoneAt].map(p => [p.x, p.z])), reachM)
+  const pos = { set(x, y, z) { this.x = x; this.z = z } }, spans = []
+  let cur = null, disagree = 0
+  for (let c = 0; c < cycle; c += STEP_S) {
+    heroKeyframeAnim(c, K, M, pos, null)
+    const d = near(pos.x, pos.z), inside = reach(pos.x, pos.z)
+    if (inside !== Number.isFinite(d)) disagree++
+    if (inside) { if (!cur) cur = { from: c, to: c, nearestM: d, at: c }; cur.to = c; if (d < cur.nearestM) { cur.nearestM = d; cur.at = c } }
+    else if (cur) { spans.push(cur); cur = null }
+  }
+  if (cur) spans.push(cur)
+  return { spans, cycle, speed, disagree }
+}
+
 // ── 1. PARITY, and its mutation ─────────────────────────────────────────────────────────────────────────────────────────
 for (const town of TOWNS) {
   const S = slab(town), paletteSize = boulderPalette({ seed: S.doc.seed }).length
-  const R = reference(S, paletteSize)
+  const R = BROWSER_ONLY ? null : reference(S, paletteSize)
   // the component's half of the protocol: URLs, and what the bytes must turn out to be (from the drawn ground it holds)
   const source = makeDrawnGround(S.manifest, S.bin, { groups: isDrawnGroundGroup, rawAt: makeElevationSampler(S.terrain, 1).getElevationRaw }).source
   const dir = join(ROOT, 'public', 'baked', town), fileFetch = async (u) => { const p = u.startsWith('/') ? u : join(dir, u); const b = readFileSync(p)
@@ -113,12 +153,27 @@ for (const town of TOWNS) {
   const drawnGround = { manifest: 'ground.json', bin: 'ground.bin', expect: { binBytes: source.bin.byteLength, groups: source.manifest.groups.map(g => g.id), cell: source.cell } }
   const W = makeRevetmentBuilder(), Wf = makeRevetmentBuilder()
   const meta = W(structuredClone(await loadRevetmentInit(load(drawnGround), fileFetch))).reply.faces
+  if (BROWSER_ONLY) {   // the faces and the spans only: parity and coverage hold two towns' references at once, the memory a browser run needs
+    const sp = shoreSpans(town, meta); shore[town] = { ...sp, stations: meta.flatMap(f => [...f.at, ...f.stoneAt].map(p => [p.x, p.z])) }
+    console.log(`  ⓘ ${town}: the hero cycle (${sp.cycle} s on the clock) crosses the shore's reach (${NEAR_RADIUS_M} m) in ${sp.spans.length} span(s)`)
+    if (!sp.spans.length) fails.push(`${town}: the hero path never comes within reach of the shore — there is nothing to measure the frames on (NOT a pass)`)
+    continue
+  }
   Wf(structuredClone(await loadRevetmentInit(load(null), fileFetch)))
   // MUTATION: another town's ground bin under this town's name must be refused by the load
   const other = TOWNS.find(t => t !== town), refused = await loadRevetmentInit(load({ ...drawnGround, bin: join(ROOT, 'public', 'baked', other, 'ground.bin') }), fileFetch).then(() => null, e => e.message)
   console.log(`  ${refused ? '✅' : '⛔'} ${town}: MUTATION (${other}'s ground bin) ${refused ? 'refused by the load' : 'was LOADED'}`)
   if (!refused) mutants.push(`${town}: the worker's load stood the stone on another town's ground`)
   if (meta.length !== R.faces.length) { fails.push(`${town}: the worker built ${meta.length} face(s), the reference ${R.faces.length}`); continue }
+  // the camera path's spans across the shore, and the probe's reach index against the near lane's own rule at every pose
+  { const sp = shoreSpans(town, meta), half = shoreSpans(town, meta, NEAR_RADIUS_M / 2)
+    shore[town] = { ...sp, stations: meta.flatMap(f => [...f.at, ...f.stoneAt].map(p => [p.x, p.z])) }
+    console.log(`  ${sp.disagree ? '⛔' : '✅'} ${town}: the probe's reach index agrees with the near lane's rule (withinReach) at every pose of the hero cycle (${Math.round(sp.cycle / STEP_S)} poses; ${sp.disagree} disagree)`)
+    if (sp.disagree) fails.push(`${town}: the probe's reach index disagrees with withinReach at ${sp.disagree} pose(s)`)
+    console.log(`  ${half.disagree ? '✅' : '⛔'} ${town}: MUTATION (the index at half the reach) disagrees at ${half.disagree} pose(s)`)
+    if (!half.disagree) mutants.push(`${town}: the reach agreement cannot see a wrong radius`)
+    console.log(`  ⓘ ${town}: the hero cycle (${sp.cycle} s on the clock) crosses the shore's reach (${NEAR_RADIUS_M} m) in ${sp.spans.length} span(s): ${sp.spans.map(x => `${x.from.toFixed(1)}–${x.to.toFixed(1)} s (nearest ${x.nearestM.toFixed(1)} m at ${x.at.toFixed(1)} s)`).join(' · ') || 'none'}`)
+    if (!sp.spans.length) fails.push(`${town}: the hero path never comes within reach of the shore — there is nothing to measure the frames on (NOT a pass)`) }
   // N chunks spread over the whole shore, and the stone chunks beside them
   const all = meta.flatMap((f, fi) => f.at.map((_, k) => [fi, k])), pick = all.filter((_, i) => i % Math.max(1, Math.floor(all.length / N)) === 0)
   let ok = 0, parted = 0, stonesOk = 0
@@ -158,23 +213,51 @@ for (const town of TOWNS) {
 }
 
 // ── 3. NO LONG FRAME (the browser) ──────────────────────────────────────────────────────────────────────────────────────
+// Each town's LONGEST span. 'movie' sets the clock MOVIE_LEAD_S before it and plays to its end; 'plan' sets the clock PLAN_LEAD_S
+// before the span's nearest pose — time for the flight back into the movie to land and two seconds of rest — and taps into the
+// plan at it.
+const MOVIE_LEAD_S = 8, PLAN_LEAD_S = 10
 if (BASE) {
-  for (const device of ['phone', 'desktop']) {
-    const runs = mkdtempSync(join(tmpdir(), 'shore-off-frame-'))
-    const r = spawnSync(process.execPath, [join(ROOT, 'scratch/browse-hang/flight.mjs'), `--base=${BASE}`, '--town=provincetown', `--device=${device}`, `--out=${runs}`], { encoding: 'utf8', timeout: 300000 })
-    const out = join(runs, `provincetown-${device}.json`)
-    if (r.status !== 0 || !existsSync(out)) { fails.push(`flight (${device}): the probe failed — ${(r.stderr || r.stdout || '').slice(-300)}`); continue }
-    const rep = JSON.parse(readFileSync(out, 'utf8')).report
-    const long = rep.longFrames || [], linked = rep.programs?.new || []
-    console.log(`  ${long.length ? '⛔' : '✅'} provincetown ${device}: ${long.length} long frame(s) in the flight${long.length ? ` (worst ${rep.worst} ms)` : ''}`)
-    console.log(`  ${linked.length ? '⛔' : '✅'} provincetown ${device}: ${linked.length} program(s) linked during the flight${linked.length ? `: ${linked.map(s => s.split(',').at(-1)).join(' · ')}` : ''}`)
-    if (long.length) fails.push(`provincetown ${device}: ${long.length} long frame(s), worst ${rep.worst} ms`)
-    if (linked.length) fails.push(`provincetown ${device}: ${linked.length} program(s) linked in the flight`)
-    rmSync(runs, { recursive: true, force: true })
+  for (const town of TOWNS.filter(t => !ONLY_TOWN || t === ONLY_TOWN)) for (const device of ['phone', 'desktop'].filter(d => !ONLY_DEVICE || d === ONLY_DEVICE)) {
+    const sh = shore[town]
+    if (!sh?.spans.length) { fails.push(`${town} ${device}: no span of the hero path to fly — the browser half is NOT RUN for it`); continue }
+    const span = sh.spans.reduce((a, b) => (b.to - b.from > a.to - a.from ? b : a)), clock = { cycleSec: sh.cycle, speed: sh.speed }
+    let rep
+    try { rep = await shoreFlight({ base: BASE, town, device, stations: sh.stations, reachM: NEAR_RADIUS_M,
+      movie: { ...clock, seedSec: span.from - MOVIE_LEAD_S, endSec: span.to + 1 }, plan: { ...clock, seedSec: span.at - PLAN_LEAD_S, tapSec: span.at } }) }
+    catch (e) { fails.push(`${town} ${device}: the probe failed — ${e.message}`); continue }
+    const at = `${town} ${device}`
+    console.log(`  ⓘ ${at}: the span ${span.from.toFixed(1)}–${span.to.toFixed(1)} s on the clock, nearest ${span.nearestM.toFixed(1)} m at ${span.at.toFixed(1)} s`)
+    for (const L of rep.legs) {
+      if (L.error) { console.log(`  ⛔ ${at} leg '${L.name}': NOT MEASURED — ${L.error}`); fails.push(`${at} leg '${L.name}': not measured (${L.error})`); continue }
+      const long = L.longFrames, linked = L.programs.new, worst = long.length ? Math.max(...long.map(f => f.ms)) : null
+      const what = L.name === 'movie' ? `leg 'movie' (Esc back into the movie, then through the span; ${L.ms} ms, camera nearest the shore ${L.reach.nearestM == null ? '—' : Number.isFinite(L.reach.nearestM) ? L.reach.nearestM.toFixed(1) + ' m' : 'beyond reach'})`
+        : `leg 'plan' (the tap into the plan at ${L.reach.atTapM == null ? '—' : Number.isFinite(L.reach.atTapM) ? L.reach.atTapM.toFixed(1) + ' m' : 'beyond reach'} from the shore)`
+      if (!L.verdict) console.log(`  ⚠️ ${at} ${what}: NO VERDICT on frames — ${L.noVerdict}; ${long.length} frame(s) over ${L.budget} ms${worst ? `, worst ${worst} ms` : ''}, recorded only`)
+      else console.log(`  ${long.length ? '⛔' : '✅'} ${at} ${what}: ${L.frames} frame(s), ${long.length} long (> ${L.budget} ms, two frames at ${L.interval} ms at rest; display ${L.display} ms)${worst ? ` — worst ${worst} ms` : ''}`)
+      console.log(`  ${linked.length ? '⛔' : '✅'} ${at} leg '${L.name}': ${linked.length} program(s) linked during it`)
+      for (const p of linked) console.log(`      ${p.name} #${p.id} [${p.custom}] — against the same name before the leg: ${p.vsBefore.join(' · ')}`)
+      console.log(`  ⓘ ${at} leg '${L.name}': ${L.adopted.drapes} near drape(s) adopted, up to ${L.adopted.stonesMax} stone(s) mounted (${L.adopted.groups} shore group(s), one left the scene ${L.adopted.regrouped} time(s); at most ${L.adopted.castMax} shadow-casting and ${L.adopted.plainMax} other mesh(es) under them)${long.length ? ` · self time in the long frames: ${L.selfLong.slice(0, 8).join(' · ')}` : ''}`)
+      if (!L.verdict) fails.push(`${at} leg '${L.name}': NO VERDICT on frames (${L.noVerdict})`)
+      else if (long.length) fails.push(`${at} leg '${L.name}': ${long.length} long frame(s), worst ${worst} ms`)
+      if (linked.length) fails.push(`${at} leg '${L.name}': ${linked.length} program(s) linked`)
+    }
+    // a worker request for a file the page also requested: from the cache, or a 304 — never a body over the wire
+    const pageUrls = new Set(rep.net.filter(r => r.from === 'page').map(r => r.url))
+    const reread = rep.net.filter(r => r.from === 'worker' && pageUrls.has(r.url))
+    const downloaded = reread.filter(r => !(r.fromDiskCache || r.fromMemoryCache || r.wireStatus === 304 || r.status === 304))
+    const own = rep.workers.filter(u => /revetment\.worker/.test(u)), slabFiles = rep.net.filter(r => r.from === 'worker' && /revetment\.worker/.test(r.worker || '') && /\.(json|bin)(\?|$)/.test(r.url)).map(r => r.url.split('/').pop().split('?')[0])
+    console.log(`  ${!own.length || !reread.length ? '⛔' : downloaded.length ? '⛔' : '✅'} ${at}: ${rep.workers.length} worker(s), ${own.length} the revetment's; it read the slab files ${slabFiles.join(', ') || 'none'}; ${reread.length} request(s) for files the page had read, ${downloaded.length} downloaded again${downloaded.length ? `: ${downloaded.map(r => `${r.url.split('/').pop()} ${r.bytes} B (wire ${r.wireStatus})`).join(' · ')}` : ''}`)
+    console.log(`  ⓘ ${at}: at the end the shore draws ${rep.revetment.far} far mesh(es), ${rep.revetment.near} near drape(s), ${rep.revetment.stones} stone(s); primer ${rep.revetment.primer ? 'mounted' : 'NOT mounted'} · the far layer (${rep.far?.faces ?? 0} face(s)) first drew at reveal ${rep.far?.first == null ? '—' : (rep.far.first >= 0 ? '+' : '') + rep.far.first} ms, complete at reveal ${rep.far?.complete == null ? '—' : (rep.far.complete >= 0 ? '+' : '') + rep.far.complete} ms · other workers: ${rep.workers.filter(u => !/revetment\.worker/.test(u)).map(u => u.split('/').pop().split('?')[0].slice(0, 40)).join(', ') || 'none'}`)
+    console.log(`  ⓘ ${at}: the renderer's peak resident memory ${rep.rssPeakMB} MB${rep.errors.length ? ` · page errors: ${rep.errors.slice(0, 3).join(' · ')}` : ''}`)
+    if (!own.length || !reread.length) fails.push(`${at}: no worker read the slab — the second-download question is NOT answered`)
+    if (downloaded.length) fails.push(`${at}: the worker downloaded ${downloaded.length} file(s) the page already held`)
   }
 } else if (!NODE_ONLY) fails.push('the browser half was NOT RUN (pass --base=<the Ward serving this kit>, or --node-only to run the node half alone)')
 else console.log('  ⚠️ the browser half was NOT RUN (--node-only): no claim is made about frames')
 
+if (BASE && (ONLY_TOWN || ONLY_DEVICE)) console.log(`  ⚠️ the browser half ran ${ONLY_TOWN || 'both towns'} on ${ONLY_DEVICE || 'both devices'} only`)
+if (BROWSER_ONLY) console.log('  ⚠️ the node half was NOT RUN (--browser-only): no claim is made about parity or coverage')
 if (mutants.length) { console.error(`⛔ A MUTATION WAS NOT CAUGHT:\n   ${mutants.join('\n   ')}`); process.exit(2) }
-console.log(fails.length ? `⛔ ${fails.length} failure(s):\n   ${fails.slice(0, 20).join('\n   ')}` : '✅ the shore is built off the frame, and it is the same stone')
+console.log(fails.length ? `⛔ ${fails.length} failure(s):\n   ${fails.slice(0, 20).join('\n   ')}` : BROWSER_ONLY ? '✅ the shore is built off the frame (the browser half; parity and coverage not run)' : '✅ the shore is built off the frame, and it is the same stone')
 process.exit(fails.length ? 1 : 0)

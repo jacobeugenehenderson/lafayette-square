@@ -84,6 +84,29 @@ export function revetmentFacesFor(doc, { partsAt, floorM, paletteSize }) {
   })
 }
 
+/** How far from the camera the DETAILED drape and the stones are built, metres.
+ *  ⛔ A BUDGET, not a look: it sets how much work one camera move can trigger.
+ *  ⛔⛔ AND IT IS NO LONGER WHERE THE WALL ENDS. It used to gate both loops with
+ *  nothing beyond it, so the revetment did not degrade at distance — it VANISHED,
+ *  which is the one thing Jacob's close-inspection ruling forbids ("never an LOD
+ *  that degrades to nothing"). Nobody decided that; the radius was inherited from
+ *  the harness, which only ever looked at one arc from close up, and it was simply
+ *  the only mechanism present. The far layer (`FAR_OCTAVES`) is the other half. */
+export const NEAR_RADIUS_M = 90
+
+/** ⭐ WHAT LIES WITHIN REACH OF (x, z), nearest first — the near lane's ONE rule, read by `SlabRevetment` on every reselect
+ *  and by checks/claims-the-shore-builds-off-the-frame.mjs to find where a town's own camera path crosses the shore.
+ *  Distance is in plan (x, z), to each face's drape-chunk stations (`at`) and stone-chunk stations (`stoneAt`).
+ *  @param faces faceMeta[] · @returns [{ type: 'near', face, k } | { type: 'stones', face, ci }] */
+export function withinReach(faces, x, z) {
+  const out = []
+  for (const [fi, f] of faces.entries()) {
+    f.at.forEach((p, k) => { const d = Math.hypot(p.x - x, p.z - z); if (d <= NEAR_RADIUS_M) out.push({ d, req: { type: 'near', face: fi, k } }) })
+    f.stoneAt.forEach((p, ci) => { const d = Math.hypot(p.x - x, p.z - z); if (d <= NEAR_RADIUS_M) out.push({ d, req: { type: 'stones', face: fi, ci } }) })
+  }
+  return out.sort((a, b) => a.d - b.d).map(o => o.req)
+}
+
 /** What the selecting thread needs of a face: where its drape and stone chunks sit. Plain data. */
 export const faceMeta = (f) => ({ key: f.key, at: f.at.map(p => ({ x: p.x, z: p.z })), stoneAt: f.stoneAt.map(p => ({ x: p.x, z: p.z })) })
 
