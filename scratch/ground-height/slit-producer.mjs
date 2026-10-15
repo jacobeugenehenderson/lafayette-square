@@ -3,9 +3,9 @@
 //   node scratch/ground-height/slit-producer.mjs <town> [n=400]
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { WELD_QUANTUM_M } from '../../cartograph/groundConformity.js'
+import { LATTICE_M as WELD_QUANTUM_M } from '../../src/lib/lattice.js'
 const [town, nS = '400'] = process.argv.slice(2)
-const root = new URL('../../', import.meta.url).pathname, dir = join(root, 'public/baked', town)
+const root = new URL('../../', import.meta.url).pathname, dir = process.env.SLAB_DIR || join(root, 'public/baked', town)
 const gj = JSON.parse(readFileSync(join(dir, 'ground.json'))), gb = readFileSync(join(dir, 'ground.bin')), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
 const ribP = town === 'lafayette-square' ? join(root, 'src/data/ribbons.json') : join(root, 'cartograph/data', town, 'clean/ribbons.json')
 const rib = JSON.parse(readFileSync(ribP))
