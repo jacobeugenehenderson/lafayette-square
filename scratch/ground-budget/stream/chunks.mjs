@@ -5,7 +5,8 @@
 // (the "far detail" ped). Every byte count: per chunk, each group's UNIQUE vertices × (12 + the slab's terrain bytes per
 // vertex) + its triangles × 12 — a vertex on a chunk border is counted in each chunk it serves.
 // Granularities, from the town: the tile partition (shape.json tiles; a triangle whose centroid lies in no ring goes to
-// the tile with the nearest ring centroid — the share is printed) and square grids of side = the disc's diameter / N.
+// the tile with the nearest ring centroid — the share is printed; ⛔ a PROXIMITY assignment, fit for a byte count only, never for
+// naming which tile or street owns anything) and square grids of side = the disc's diameter / N.
 // Visibility is the camera FRUSTUM against each chunk's box (x/z from its triangles, y from the terrain under its
 // vertices × the scene's terrainExag): no occlusion, so it over-counts.
 import { readFileSync } from 'node:fs'
