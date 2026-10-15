@@ -11,7 +11,8 @@
 //
 // DEFINITION (a NEAR-MISS). Vertices rounded to the bake's integer lattice (`CLIP_SCALE`, src/lib/lattice.js), as the
 // flatten sees them. Edges e (item A) and f (item B), A ≠ B, are a near-miss where
-//   · f projected onto e overlaps e by more than zero, and
+//   · f projected onto e overlaps e by MORE THAN ONE LATTICE STEP (shorter is two edges meeting near a shared vertex at an
+//     angle — a touch, not a line drawn twice; it scored ~0.0002 m "near-misses" at every such corner until 2026-10-14), and
 //   · both ends of that overlap lie within ONE lattice step of f (distance to a segment is convex, so the whole overlap
 //     does), and
 //   · e and f are NOT on one integer line (exact cross products) — an edge shared exactly is the goal, never counted.
@@ -99,7 +100,7 @@ export function nearMisses(entries) {
     if (c1 === 0 && c2 === 0) continue                                             // one integer line: shared, the goal
     const L = lens[p], t = (x, y) => ((x - AX[p]) * ex + (y - AY[p]) * ey) / L
     const lo = Math.max(0, Math.min(t(AX[q], AY[q]), t(BX[q], BY[q]))), hi = Math.min(L, Math.max(t(AX[q], AY[q]), t(BX[q], BY[q])))
-    if (!(hi > lo)) continue
+    if (!(hi - lo > STEP)) continue                                                  // a line drawn twice overlaps longer than a step
     const xa = AX[p] + ex / L * lo, ya = AY[p] + ey / L * lo, xb = AX[p] + ex / L * hi, yb = AY[p] + ey / L * hi
     const d0 = segD(xa, ya, AX[q], AY[q], BX[q], BY[q]); if (d0 > STEP) continue
     const d1 = segD(xb, yb, AX[q], AY[q], BX[q], BY[q]); if (d1 > STEP) continue
@@ -150,6 +151,13 @@ function selftest() {
   const run = (shift) => nearMisses([{ groupKey: 'mut:a', items: [sq(0, 0, 10, 10)] }, { groupKey: 'mut:b', items: [sq(10 + shift, 0, 10, 10)] }])
   const cases = [['an edge shared exactly', 0, false], ['moved half a step', LATTICE_M / 2, true], ['moved two steps', 2 * LATTICE_M, false]]
   let bad = 0
+  // two edges meeting at a shared vertex at an angle (a touch) must NOT report; a near-miss overlapping just over one
+  // step MUST — the length rule's two sides
+  { const tri = (pts) => [{ groupKey: 'mut:a', items: [pts[0]] }, { groupKey: 'mut:b', items: [pts[1]] }]
+    const touch = nearMisses(tri([[[0, 0], [10, 0], [10, 10]], [[10, 10], [10.0004, 0.0005], [20, 0]]])).length
+    const short = nearMisses(tri([[[0, 0], [10, 0], [10, 10]], [[10 + LATTICE_M / 2, 5], [10 + LATTICE_M / 2, 5 + 2.5 * LATTICE_M], [20, 5]]])).length
+    for (const [name, got, want] of [['two edges touching at a vertex, at an angle', touch > 0, false], ['a near-miss overlapping 2.5 steps', short > 0, true]]) {
+      if (got !== want) bad++; console.log(`  ${got === want ? '✅' : '⛔'} ${name}: ${got ? 'reported' : 'not reported'} (must ${want ? '' : 'NOT '}report)`) } }
   for (const [name, shift, want] of cases) { const got = run(shift).length > 0; if (got !== want) bad++
     console.log(`  ${got === want ? '✅' : '⛔'} ${name}: ${got ? 'reported' : 'not reported'} (must ${want ? '' : 'NOT '}report)`) }
   // the two shapes: a straight-through vertex (A's right edge carries an extra vertex half a step off x = 10, B's does not)
