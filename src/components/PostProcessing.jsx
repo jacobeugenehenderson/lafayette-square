@@ -161,7 +161,6 @@ export function PostProcessing({
     <RenderPipeline
       inspect={inspect}
       refs={{ ao: aoRef, bloom: bloomRef }}
-      viewMode={viewMode}
       dofOn={dofOn}
     />
   )

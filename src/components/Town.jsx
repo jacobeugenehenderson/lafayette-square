@@ -200,7 +200,7 @@ export const OVERRIDE_KEYS = [
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
   'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'heroSubject', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
-// PostProcessing's view vocabulary (half-res AO off the movie shot, the street-level bloom bump).
+// PostProcessing's view vocabulary (halo and grain off in the plan, the street-level bloom bump: usePostFxDriver).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 
 // Under a demand frameloop nothing renders unless invalidated. The movie shot on a profile that
