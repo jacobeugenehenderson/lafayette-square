@@ -1,10 +1,10 @@
-# BRIEF — the Ward: Browse comes back as its own view, a noon toggle under the rose, and the hang into Browse
+# BRIEF — the Ward: Browse comes back as its own view, the Tower Light under the rose, and the hang into Browse
 
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: (Jacob, FRESH)
 written: 2026-10-14
-evict-when: RULING: on staging at phone size, Jacob drags from the movie into Browse without a hang, returns by Home, sees idle go to the movie, and toggles noon and back with neon at its real state; the hang's cause is measured and its fix gated by that measurement.
+evict-when: RULING: on staging at phone size, Jacob drags down from the movie into Browse without a hang, tilts it, returns by Home, sees idle go to the movie, opens Society to its categories without a hang, and toggles the Tower Light on and off with time, sky, weather and neon real; each hang's cause is measured and its fix gated by that measurement.
 -->
 
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
@@ -48,7 +48,7 @@ Confirm against the atlas manifest (`overheadBySpecies`) and the Grove's overhea
 
 **The Ward's own rules this touches** (`theward/README.md`; quote them back):
 - §2 "Five [screens], and no others": Leisure (the movie, the Home room), Society (list on top, map below), Bulletin,
-  Place, Street. There is no Browse screen: Browse is Society's map.
+  Place, Street. (Before this brief there was no Browse screen; Browse was Society's map. Ruled below.)
 - §3 "The scene can be touched, but it never takes you anywhere. Only controls take you places." and "a tap on the awake
   movie … never steers the movie, and the touch that wakes a resting screen does nothing else."
 - §2 Leisure rests after `REST_AFTER_SECONDS`; the kit's own idle → hero is in `Scene.jsx` (`goHero` under "Idle → hero").
@@ -57,6 +57,15 @@ Confirm against the atlas manifest (`overheadBySpecies`) and the Grove's overhea
 - ⇒ **Jacob's drag-into-Browse and a Browse apart from Society change §2 and §3.** That is his call and he has made it;
   your job is to name every sentence that changes and bring the new wording to Boz before building, so the README stays
   the law and no rule is silently broken.
+
+## 2a. Rulings, 2026-10-14 (Jacob, through Boz)
+
+- **The hang, measured** (Meridian, `scratch/browse-hang/`): desktop = N8AO rebuilt at the shot switch → AO half-res in
+  every shot (kit `f7079a4b`); phone = Society mounting the whole register as DOM, + the sort (Ward `892cf85`). The
+  trees load nothing at the switch. The far 1-layer tier is not ruled.
+- **Browse** is Leisure's second shot (`/map`), entered by a **downward** drag on the awake movie; Home and idle return
+  to the movie. Five screens kept. **Tilt** in the plan view, polar only, its max lean set by Jacob's eye.
+- **Society** opens on its categories; no list until a choice; an **All** chip, whose lag is expected and disclosed.
 
 ## 3. The work, in order
 
@@ -73,21 +82,20 @@ Confirm against the atlas manifest (`overheadBySpecies`) and the Grove's overhea
    (§2's table), what gesture enters it from the movie (Jacob: drag the map down), how Home returns to the movie, and how
    idle returns to the movie from Browse. Name each README sentence that changes and its new wording. Society keeps its
    list-over-map; what changes is that the plan is no longer only reachable through it.
-3. **The noon toggle.** A round control the rose's size, directly under it, in the Ward's own style (`README §5`).
-   - A **toggle**: tap → noon; tap again → back to the real time. The sky, sun and light go to noon.
-   - **Neon stays at its contemporary state**, the real now (what's open lights, per §3), so toggling shows the town
-     lit by day vs as it is now.
-   - Say what else rides on time of day (lamps, the Almanac, the ticker, share images) and propose which follow noon.
-     ⛔ The Almanac and the ticker report the real time; they don't lie because the light changed.
-   - Where the light comes from in the kit (the time-of-day path the Look's curves read; `App.jsx` and the cartograph
-     time stores are where to start) and whether a noon override already exists. Reuse it; don't add a second clock.
+3. **The Tower Light** (was "noon"; Jacob re-ruled 2026-10-14). A round toggle the rose's size, directly under it,
+   with a lamp or bulb icon. A real spot light over the ground point under the screen centre, mounted always, casting
+   its own crisp (not PCSS) shadows, its footprint from the view. Time, sky, sun, moon, weather, neon, the Almanac and
+   the ticker all stay real; phones get the light without shadows. Jacob: *"the user needs to be able to see the map
+   and if it's at night the map is inherently dark. C may be the biggest cost but it's likely 50% or more of use
+   cases."* It overrides the code-only doctrine "one shadow map, never two". Its cost is measured before it is built.
 4. **Build** once Boz and Jacob have seen 1–3's proposals. Each fix in three parts (`CLAUDE.md`):
    - the old path gone;
    - the register named (the Ward's README/FEATURES/OPERATIONS; the kit's arborist docs for a tree tier);
    - superseded text to the Diary.
 
-   A check per behaviour, seen RED first and mutation-tested: the noon toggle round-trips to the real time; idle returns
-   to the movie from Browse; the hang's measured long frame is gone.
+   A check per behaviour, seen RED first and mutation-tested: the Tower Light toggles without linking a program and leaves
+   the clock, sky and weather stores untouched; a downward drag enters Browse and no other drag does; idle returns to the
+   movie from Browse; Society arrives without a list; each measured long frame is gone.
 
 ## 4. Bounds
 
@@ -102,5 +110,5 @@ Confirm against the atlas manifest (`overheadBySpecies`) and the Grove's overhea
 ## 5. Done when
 
 Jacob, on staging at phone size: drags into Browse with no hang, gets home by Home, sees idle return to the movie,
-toggles noon and back with neon at its real state. The hang's cause is measured and named in the commit, and every new
+toggles the Tower Light with time, sky, weather and neon real. Each hang's cause is measured and named in the commit, and every new
 check is green after being seen red.
