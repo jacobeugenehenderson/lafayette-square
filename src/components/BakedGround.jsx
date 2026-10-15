@@ -34,7 +34,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag, terrainWater } from '../utils/terrainShader'
 import { getElevationRaw, setDrawnGround } from '../utils/elevation'
-import { makeDrawnGround } from '../lib/drawnGround.js'
+import { makeDrawnGround, isDrawnGroundGroup } from '../lib/drawnGround.js'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
@@ -401,7 +401,7 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     const outerByGroup = assignOuterWater(manifest, bin, outer, look)
     // ⭐ THE DRAWN GROUND, published for whatever stands on it at runtime (the street eye, the movers, the user's dot):
     // the same function the bake's anchors read (`src/lib/drawnGround.js`), as views on this bin — never a second copy
-    setDrawnGround(makeDrawnGround(manifest, bin, { groups: g => !isWaterGroupId(g.id) && g.partition !== false, rawAt: getElevationRaw }))
+    setDrawnGround(makeDrawnGround(manifest, bin, { groups: isDrawnGroundGroup, rawAt: getElevationRaw }))
     // ⭐ WHICH HEIGHT PATH THIS TOWN IS ON, said once (Boz, 2026-10-11): the bake's own terrain part (the deformer), or
     // the 5 m texture under a slab baked before it. The texture path is a MIGRATION path while towns are un-rebaked, and
     // is deleted once every slab carries the sections — never a silent second way to draw the ground.

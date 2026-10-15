@@ -5,6 +5,7 @@
 // that already-decoded Float32Array so the binary isn't parsed twice.
 import { currentTerrain, onTerrainReload, sceneExag } from './terrainShader.js'
 import { makeElevationSampler } from '../lib/terrainCommon.js'
+import { partsOrField } from '../lib/drawnGround.js'
 
 // Terrain is now loaded per-lookId and can be re-pointed live (authoring Stage
 // switching installations), so the CPU sampler must rebuild on reload. Held in
@@ -38,10 +39,10 @@ export function drawnGroundY(x, z, exag) {
 }
 /** The drawn ground's two parts at (x, z), for a body seated ONCE and lifted per frame: `raw × exag + y`. Off the mesh,
  *  or before the ground has loaded, the field with y 0 (`offMesh: true`), the same ground `drawnGroundY` falls to. */
-export function drawnGroundParts(x, z) {
-  const p = drawn ? drawn.partsAt(x, z) : null
-  return p ? { raw: p.raw, y: p.y } : { raw: sampler.getElevationRaw(x, z), y: 0, offMesh: true }
-}
+export function drawnGroundParts(x, z) { return partsOrField(drawn, sampler.getElevationRaw, x, z) }
+/** What the drawn ground was built from (`makeDrawnGround`'s `source`), or null before it has loaded — for a worker that
+ *  must read the same ground (SlabRevetment). */
+export const drawnGroundSource = () => drawn?.source ?? null
 
 // ── Where the Street eye stands — THE one method, every app ─────────────────
 // Jacob, 2026-09-26: "the street camera is supposed to be about 5' 8" off the

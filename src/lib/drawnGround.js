@@ -12,10 +12,27 @@
 //   vertex (`rawAt`), which is exactly what the runtime draws for it (the texture). Said once per call, by the caller,
 //   from `path` — and deleted once every slab carries the sections.
 
+import { isWaterGroupId } from '../components/waterMaterial.js'
+
+/** The groups the RUNTIME's drawn ground samples: the land the slab draws, never its water, never a group kept out of the
+ *  partition. ONE predicate, read by BakedGround and by the revetment's worker, so the two cannot sample different grounds. */
+export const isDrawnGroundGroup = (g) => !isWaterGroupId(g.id) && g.partition !== false
+
+/** The drawn ground's two parts at (x, z), or the FIELD with y 0 off the mesh (`offMesh: true`) — what stands on the
+ *  ground falls to where nothing is drawn. ONE home for that fall, read by `utils/elevation` and by the revetment's worker.
+ *  @param drawn a makeDrawnGround result, or null before the ground has loaded · @param rawAt (x, z) → the field */
+export function partsOrField(drawn, rawAt, x, z) {
+  const p = drawn ? drawn.partsAt(x, z) : null
+  return p ? { raw: p.raw, y: p.y } : { raw: rawAt(x, z), y: 0, offMesh: true }
+}
+
 /** @param manifest ground.json ({ groups, bbox }) · @param bin ground.bin as an ArrayBuffer
  *  @param opts.groups (g) → whether this group is sampled (default: every group) · opts.rawAt (x, z) → the field, for a
  *  group with no aRaw (required if any sampled group lacks one) · opts.cell grid cell in metres (default 8)
- *  @returns { partsAt(x, z) → { raw, y, group } | null, heightAt(x, z, exag) → number | null, triCount, path } */
+ *  @returns { partsAt(x, z) → { raw, y, group } | null, heightAt(x, z, exag) → number | null, triCount, path, source }
+ *  ⭐ `source` is what this was built from — the manifest narrowed to the sampled groups, and the same bin — so another
+ *  thread can build the IDENTICAL ground with `makeDrawnGround(source.manifest, source.bin, { rawAt, cell: source.cell })`
+ *  (the revetment's worker). The narrowing keeps the groups' order, which is the tie-break order. */
 export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawAt = null, cell = 8 } = {}) {
   const G = []
   let baked = 0, field = 0
@@ -74,5 +91,6 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
   }
   const heightAt = (x, z, exag) => { const p = partsAt(x, z); return p ? p.raw * exag + p.y : null }
   const path = field === 0 ? 'baked' : baked === 0 ? 'field' : 'mixed'
-  return { partsAt, heightAt, triCount, path, groupsBaked: baked, groupsField: field }
+  const source = { manifest: { groups: G.map(({ g }) => g), bbox: manifest.bbox }, bin, cell }
+  return { partsAt, heightAt, triCount, path, groupsBaked: baked, groupsField: field, source }
 }

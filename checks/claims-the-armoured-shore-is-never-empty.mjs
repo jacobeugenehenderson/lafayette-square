@@ -13,7 +13,8 @@
 // only mechanism present. This check is what stops it coming back.
 //
 // ⛔ IT TESTS THROUGH THE PLAYER'S OWN MODULES — revetmentFromSlab for the faces and
-// revetmentDrape at the component's FAR_OCTAVES — so it cannot drift from what
+// revetmentDrape at the builder's FAR_OCTAVES (src/lib/revetmentBuild.js, which the
+// worker runs for SlabRevetment) — so it cannot drift from what
 // renders. A check that re-implemented the far layer would agree with itself forever.
 //
 // ⚠️ HONEST LIMIT, SAID RATHER THAN PAPERED OVER: this proves the geometry EXISTS for
@@ -33,13 +34,10 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { revetmentFaces } from '../src/lib/revetmentFromSlab.js'
 import { drapeGlobals, revetmentDrape } from '../src/lib/revetmentDrape.js'
-
-// ⛔ Read the resolution OUT of the component rather than restating it — the whole
-// point is that this check moves when the player moves.
-const SRC = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'components', 'SlabRevetment.jsx'), 'utf8')
-const m = SRC.match(/const FAR_OCTAVES\s*=\s*(\d+)/)
-if (!m) { console.log('⛔ cannot find FAR_OCTAVES in SlabRevetment.jsx — the far layer may have been removed'); process.exit(1) }
-const FAR_OCTAVES = Number(m[1])
+// ⛔ The resolution is IMPORTED from the builder the player runs, never restated — the whole point is that this check
+// moves when the player moves.
+import { FAR_OCTAVES } from '../src/lib/revetmentBuild.js'
+if (!Number.isInteger(FAR_OCTAVES)) { console.log(`⛔ revetmentBuild.js exports no FAR_OCTAVES (${FAR_OCTAVES}) — the far layer may have been removed`); process.exit(1) }
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv[2] || null

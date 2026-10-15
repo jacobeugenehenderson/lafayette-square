@@ -47,6 +47,7 @@ import { browseSquare, browseSquareAltitude } from './browseFrame.js'
 import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { prefersReducedMotion } from '../lib/reducedMotion.js'
+import { publishFlightDestination } from './flightDestination.js'
 
 // transitions.js is keyed by the production vocabulary (the shot ENTERED).
 const ENTRY = { movie: 'hero', plan: 'browse', street: 'street' }
@@ -211,6 +212,8 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
       : camera.getWorldDirection(_fwd).multiplyScalar(100).add(camera.position).toArray()
     const fromOff = { ...off.current }, toOff = offsetFor(to)
     flying.current = { from, to, d, fromOff, toOff }
+    // where it lands, before it moves: what must be ready on arrival is prepared in the air (flightDestination.js)
+    publishFlightDestination({ pos: d.pos, target: d.target, to, duration })
     framed(d)
     report({ from, to, t: 0, eased: 0, duration, landed: false, interrupted: false })
     tween.current.start({

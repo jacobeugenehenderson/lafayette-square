@@ -219,7 +219,9 @@ const PHYSICAL = ['ground', 'buildings', 'trees']
 // `town:planRim`, its rim (PlanRim), and `town:labels`, the street labels (LafayetteScene) — those as far as their font
 // has arrived: the reveal never waits on a label. Prepared after the reveal instead, the discs' first draw was a
 // 145–160 ms frame in the dawn; on the first Browse flight, 173–215 ms (huron).
-const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:overhead', 'town:park', 'town:lamps', 'town:planRim', 'town:labels'])
+// `town:revetmentPrimer` (SlabRevetment): the shore's stones and shadow-casting near drape are drawn only beside the camera,
+// so their programs were linked mid-flight (Provincetown's flight into the plan, 2026-10-14); a primer of each is linked here.
+const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:overhead', 'town:park', 'town:lamps', 'town:planRim', 'town:labels', 'town:revetmentPrimer'])
 function RevealGate({ need, lingerMs, skyAt }) {
   const { gl, scene, camera } = useThree()
   const phase = useRef({ name: 'wait' })

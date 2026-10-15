@@ -86,10 +86,10 @@ breakwater/groyne should join the `barrier` layer or get their own.** They behav
 
 ## 5. ⭐ ONLY THE THIRD PART IS NEW — AND THE PRECEDENTS EXIST
 
-▶ **Extend, do not invent.** Two precedents, and read both before designing:
-- **Placement along a way:** `cartograph/bake-lamps.js` derives lamp positions along streets at bake
-  time and writes `baked/<look>/lamps.json`. ⭐ **A revetment is the same problem** — walk a polyline,
-  emit transforms. **Same bake-time shape, same artifact pattern.**
+▶ **Extend, do not invent.**
+- **Built at runtime, off the frame:** the slab ships an instruction (`revetment.json`), and a worker builds the drape
+  and the stones near the camera from it (`src/lib/revetmentBuild.js`); a flight's destination is built in the air.
+  ▶ `node checks/claims-the-shore-builds-off-the-frame.mjs`
 - **Instanced rendering:** `src/components/StreetLights.jsx` and `InstancedTrees.jsx` are the
   `InstancedMesh` precedents in the player. ⛔ **Do not write a third instancing path.**
 
