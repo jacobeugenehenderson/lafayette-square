@@ -1,0 +1,47 @@
+load { 2.47 2.59 3.17 } · free 68%
+== huron · public/baked/huron · 25659008 B · terrain on 0/50 groups (ped 0 B/V) · served ground.bin 25659008 B
+hero: 3 keys · bounce 680 s · fov 22,32,43 · start 'random' (Town.jsx) · cycle 1368 s
+
+-- tiles (187): 187 non-empty chunks · whole 25.42 MB (vs bin 25.66: border duplication -0.9%) · 18.4% of triangles placed by nearest tile centroid (centroid in no ring)
+   chunk MB p50 0.03 · p90 0.30 · max 4.27 · triangles max 201249
+   far detail (this slab's non-ped + served 10-11 ped): 25.42 MB · this slab's ped alone 9.06 MB
+   hero 16:9: first frame (random phase, over every 0.5 s) p50 14.69 · max 17.86 MB (67–96 chunks) · ever seen in the cycle 25.42 MB (187/187) · peak resident, seen now + next 2 s: 17.88 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 14.69 · max 17.86 MB · peak resident 17.88 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 14.69 · max 17.86 MB · peak resident 17.88 MB
+   hero 9:16: first frame (random phase, over every 0.5 s) p50 12.31 · max 15.92 MB (39–79 chunks) · ever seen in the cycle 25.34 MB (185/187) · peak resident, seen now + next 2 s: 15.92 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 12.31 · max 15.92 MB · peak resident 15.92 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 12.31 · max 15.92 MB · peak resident 15.92 MB
+   browse (authored square, half 693 m): 32 chunks · full 8.96 MB · far detail 8.96 MB
+
+-- grid 16×16 (442 m): 224 non-empty chunks · whole 25.84 MB (vs bin 25.66: border duplication 0.7%)
+   chunk MB p50 0.07 · p90 0.31 · max 0.71 · triangles max 31970
+   far detail (this slab's non-ped + served 10-11 ped): 25.84 MB · this slab's ped alone 9.20 MB
+   hero 16:9: first frame (random phase, over every 0.5 s) p50 9.24 · max 12.79 MB (68–76 chunks) · ever seen in the cycle 25.05 MB (203/224) · peak resident, seen now + next 2 s: 12.79 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 9.24 · max 12.79 MB · peak resident 12.79 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 9.24 · max 12.79 MB · peak resident 12.79 MB
+   hero 9:16: first frame (random phase, over every 0.5 s) p50 5.54 · max 9.11 MB (31–46 chunks) · ever seen in the cycle 24.38 MB (182/224) · peak resident, seen now + next 2 s: 9.12 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 5.54 · max 9.11 MB · peak resident 9.12 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 5.54 · max 9.11 MB · peak resident 9.12 MB
+   browse (authored square, half 693 m): 21 chunks · full 4.45 MB · far detail 4.45 MB
+
+-- grid 8×8 (885 m): 60 non-empty chunks · whole 25.57 MB (vs bin 25.66: border duplication -0.3%)
+   chunk MB p50 0.33 · p90 1.05 · max 1.41 · triangles max 63698
+   far detail (this slab's non-ped + served 10-11 ped): 25.57 MB · this slab's ped alone 9.13 MB
+   hero 16:9: first frame (random phase, over every 0.5 s) p50 11.36 · max 14.95 MB (21–26 chunks) · ever seen in the cycle 24.88 MB (55/60) · peak resident, seen now + next 2 s: 14.95 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 11.36 · max 14.95 MB · peak resident 14.95 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 11.36 · max 14.95 MB · peak resident 14.95 MB
+   hero 9:16: first frame (random phase, over every 0.5 s) p50 8.92 · max 11.98 MB (13–18 chunks) · ever seen in the cycle 24.71 MB (52/60) · peak resident, seen now + next 2 s: 11.98 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 8.92 · max 11.98 MB · peak resident 11.98 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 8.92 · max 11.98 MB · peak resident 11.98 MB
+   browse (authored square, half 693 m): 7 chunks · full 5.55 MB · far detail 5.55 MB
+
+-- grid 4×4 (1770 m): 16 non-empty chunks · whole 25.45 MB (vs bin 25.66: border duplication -0.8%)
+   chunk MB p50 1.44 · p90 3.29 · max 3.87 · triangles max 180556
+   far detail (this slab's non-ped + served 10-11 ped): 25.45 MB · this slab's ped alone 9.09 MB
+   hero 16:9: first frame (random phase, over every 0.5 s) p50 17.10 · max 18.73 MB (8–10 chunks) · ever seen in the cycle 25.32 MB (15/16) · peak resident, seen now + next 2 s: 18.73 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 17.10 · max 18.73 MB · peak resident 18.73 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 17.10 · max 18.73 MB · peak resident 18.73 MB
+   hero 9:16: first frame (random phase, over every 0.5 s) p50 14.50 · max 17.16 MB (6–9 chunks) · ever seen in the cycle 25.32 MB (15/16) · peak resident, seen now + next 2 s: 17.16 MB
+     ped near-only, e 7.8 mm (D 22/15/11 m at the keys' fov): first frame p50 14.50 · max 17.16 MB · peak resident 17.16 MB
+     ped near-only, e 276 mm (D 767/520/378 m at the keys' fov): first frame p50 14.50 · max 17.16 MB · peak resident 17.16 MB
+   browse (authored square, half 693 m): 3 chunks · full 9.02 MB · far detail 9.02 MB
