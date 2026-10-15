@@ -6,12 +6,22 @@
  * ⭐ A runtime CHOOSES a regime; it never defines controls itself. The React
  * mount is `src/components/RegimeControls.jsx`; production, which drives one
  * controls instance imperatively across its modes, calls `applyRegime`.
- * `checks/claims-one-controls-definition.mjs` fails on any other controls mount.
+ * `checks/claims-the-camera-has-one-definition.mjs` fails on any other controls mount.
  *
  *   plan     — 2D. Straight overhead (the Designer's ortho, the Extent tool,
- *              and Browse's overhead perspective): pan + zoom, NO rotate.
- *              Browse is this regime exactly as it was (Jacob, 2026-09-26:
- *              "Browse is already correct").
+ *              the Grove's overhead view): pan + zoom, NO rotate.
+ *   overhead — the town's plan shot (Browse and Society in every app, Stage's
+ *              Browse): the plan, plus a LEAN of up to PLAN_MAX_LEAN_DEG off
+ *              straight down, the map tilted like a surface (Jacob, 2026-10-14;
+ *              it was `plan`, "Browse is already correct", 2026-09-26). The lean
+ *              is RegimeControls' own gesture, never OrbitControls' rotate: it
+ *              tips the camera back along the heading (its horizontal `up`, the
+ *              rose's), so it can never turn the map. ⛔ OrbitControls measures
+ *              its polar angle about the `up` it saw when it was BUILT — opened
+ *              straight into the plan, that is the heading, and its clamp threw
+ *              a straight-down camera to 60° (measured, 2026-10-14). Phone: two
+ *              fingers up or down (a pinch still zooms); mouse: right-drag. One
+ *              finger and left-drag still pan. ▶ node checks/claims-a-lean-never-turns-the-map.mjs
  *   orbit    — 3D. Stage and everything beyond it: drag orbits, ⌥-drag grabs
  *              the ground, ⌘/⌃-drag pans, middle-drag dollies, wheel zooms —
  *              the same buttons, keys and limits in every app.
@@ -110,6 +120,12 @@ export function resolveHeroKeyframes(authored, motion, stencil, fov, where) {
 // FIXED per regime; only content-scale LIMITS (see REGIME_LIMIT_KEYS) may be
 // passed per mount — a tree viewer is not a town.
 const M = THREE.MOUSE, T = THREE.TOUCH
+/**
+ * How far the town's plan may lean off straight down, in degrees. ⚠️ THE NUMBER IS NOT ESTABLISHED: it is a property of
+ * the kit's tree drawing (the overhead discs are flat bands, so leaned far they read as stacked plates) and the same in
+ * every town, never a town's. 30 is a neutral placeholder until Jacob sets it by eye in Preview at the close camera.
+ */
+export const PLAN_MAX_LEAN_DEG = 30
 export const REGIMES = {
   plan: {
     enableRotate: false, enablePan: true, enableZoom: true,
@@ -145,6 +161,14 @@ export const REGIMES = {
     mouseButtons: { LEFT: M.ROTATE, MIDDLE: M.PAN, RIGHT: M.PAN },
     touches: { ONE: T.ROTATE, TWO: T.DOLLY_PAN },
   },
+}
+// The plan, leaning: rotate on, polar from straight down to the lean; the azimuth is pinned per frame (RegimeControls).
+// OrbitControls keeps the plan's pan and zoom; the lean is RegimeControls' (right-drag, two fingers vertically), so
+// the right button does nothing in OrbitControls and two fingers only dolly there (DOLLY_ROTATE with rotate off).
+REGIMES.overhead = {
+  ...REGIMES.plan,
+  mouseButtons: { LEFT: M.PAN, MIDDLE: M.DOLLY, RIGHT: null },
+  touches: { ONE: T.PAN, TWO: T.DOLLY_ROTATE },
 }
 REGIMES.playback = { ...REGIMES.orbit }
 
