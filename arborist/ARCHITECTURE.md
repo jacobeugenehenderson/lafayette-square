@@ -161,7 +161,7 @@ truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 | landed | 2026-07-10 (`a4458f4a`) | 2026-07-22 (`3e809a56`) |
 | carrier | 3-slice horizontal snapshot (canopy / mid / branch), stacked for vertical parallax | azimuthal canopy bands — N azimuths × shells, camera-facing billboard |
 | manifest key | `overheadBySpecies` | `heroImpostorBySpecies` |
-| selected by | camera height (`useOverheadMode` → `viewMode === 'browse'`) | the height split at load (all non-anchor trees) |
+| selected by | the SHOT, never the camera's height or lean (`useOverheadMode` → `useTownShot() === 'browse'`; the Ward README §11) | the height split at load (all non-anchor trees) |
 | runtime | `OverheadTrees.jsx` | `HeroImpostorTrees.jsx` |
 | baker | `OverheadBaker.jsx` | `HeroImpostorBaker.jsx` |
 | deep core | the lower bands carry one solid canopy colour under the top band's silhouette, painted at capture (`overheadCore.js`, 2026-10-04) | — |
