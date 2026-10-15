@@ -1216,6 +1216,9 @@ function CanvasContents({ town, layers, shot, quality }) {
   const setPlanHeading = (h) => setPlanHeadingRaw(h === 'follow' ? { follow: followRef } : h)
   const [litIds, setLitIds] = useState(null)
   const [probePaused, setProbePaused] = useState(false)
+  // The Ward's Tower Light, driven by a probe (no Preview button: it is the reader's control): window.__townProbe.setTowerLight;
+  // what it reports lands on window.__towerLight ({ state, at }).
+  const [towerLight, setTowerLight] = useState(false)
   // The movie re-enters (and so re-seeds its phase, ?movieAt) when it stops and plays again: window.__townProbe.restartMovie.
   const [moviePlaying, setMoviePlaying] = useState(true)
   const movie = useMemo(() => ({ start: MOVIE_START, playing: moviePlaying }), [moviePlaying])
@@ -1228,6 +1231,7 @@ function CanvasContents({ town, layers, shot, quality }) {
     window.__townProbe = { bearingRef, followRef, framed: framedLog.current, setFrameKey, setPlanHeading, setPaused: setProbePaused,
       restartMovie: () => { setMoviePlaying(false); requestAnimationFrame(() => requestAnimationFrame(() => setMoviePlaying(true))) },
       setLitIds: (ids) => setLitIds(ids ? new Set(ids) : null),
+      setTowerLight,
       get listingIds() { return listingsRef.current.map((l) => l.building_id).filter(Boolean) } }
     return () => { if (window.__flight === flightRef) { delete window.__flight; delete window.__townProbe } }
   }, [])
@@ -1253,6 +1257,7 @@ function CanvasContents({ town, layers, shot, quality }) {
       <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
         flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={streetAt} viewInset={PREVIEW_INSET} controls
         frameKey={frameKey} planHeading={planHeading} bearingRef={bearingRef} litIds={litIds ?? undefined} paused={probePaused}
+        towerLight={towerLight} onTowerLight={(state) => { window.__towerLight = { state, at: performance.now() } }}
         onFramed={(f) => { framedLog.current.push(f); if (framedLog.current.length > 20) framedLog.current.shift() }}
         movie={movie} movers={PREVIEW_MOVERS} overrides={PREVIEW_OVERRIDES} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}
         layers={{

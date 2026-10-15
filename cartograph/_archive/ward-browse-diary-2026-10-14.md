@@ -16,3 +16,13 @@ Retired because Browse tilt landed (2026-10-14) as a kit regime, not as per-town
 
 Retired as ROT: the code keys the overhead drawing off the SHOT (`useOverheadMode` reads `useTownShot()`), as the Ward README §11
 rules ("the drawing is chosen by the shot, not by camera height"). Live home: the same cell, corrected.
+
+## "One shadow map, never two" — the three code sites, before the Tower Light
+
+> src/components/celestialLights.js#bodyLights: "`key` is the BRIGHTER of the two and is the one that casts — one shadow map, never two."
+> src/components/CelestialBodies.jsx (the key/counter choice): "(it casts; one shadow map, never two) and the other as the counter."
+> src/components/CelestialBodies.jsx (CounterBodyLight): "⛔ IT DOES NOT CAST. One shadow map, never two — …"
+
+Narrowed, not reversed, by Jacob's ruling (2026-10-14, option C for the Tower Light: "C may be the biggest cost but it's likely
+50% or more of use cases"): of the sun and the moon only one body casts, still; the reader's Tower Light is the one other caster,
+loaded on its first tap, its frustum fitted to the view. Live homes: the same three comments, and src/components/TowerLight.jsx.
