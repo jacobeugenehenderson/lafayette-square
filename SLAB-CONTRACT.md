@@ -101,6 +101,7 @@ The single-mesh ground slab. One JSON manifest + one binary buffer.
 | `indexFormat` | `"uint32"` | ✅ | |
 | `componentsPerVertex` | `3` | ✅ | XYZ |
 | `groups` | array | ✅ | One entry per drawable subset of the buffer; see §2.2 |
+| `groundShape.terrain` | boolean | ✅ | Whether the town has terrain. The player reads it only when `terrain.json` is absent: `false` draws the town flat, by intake (logged once as a state). `true`, or the field absent, is a refusal and the town stays on its splash. ▶ `node checks/claims-a-missing-height-fails-loudly.mjs` |
 
 ### 2.1. Stencil shape (when non-null)
 
