@@ -44,7 +44,7 @@ import { DEFAULT_V_EXAG, terrainIdentity, assertHeightfield } from '../lib/terra
 // privileged: production LS fetches its own slab terrain (byte-identical to the
 // old bundled bake); Preview / any ?look= fetches that look's; the authoring
 // Stage re-points live via reloadTerrain() on a scene switch. A look with no
-// terrain (un-baked) falls back to FLAT — renders flat, never crashes.
+// terrain is flat only when its slab says so (fetchTerrain); a missing one refuses.
 // (feedback_installations_are_independent; multi-instance routing 2026-07-02.)
 
 // A 2×2 zero heightfield → getElevation()==0 everywhere, exag lifts nothing.
@@ -80,19 +80,35 @@ async function fetchSceneExag(lookId) {
   }
 }
 
+// ⭐ A TOWN WITH NO TERRAIN IS A STATE THE SLAB NAMES, NEVER A MISS (Boz's ruling 2026-10-16). bake-ground records
+// whether it draped a heightfield (`ground.json#groundShape.terrain`, F3), so a missing terrain.json is asked of THAT:
+//   · terrain: false → flat by design (a town poured with no elevation input) — said once, as a state;
+//   · terrain: true  → the terrain is MISSING from a slab baked on one — refused;
+//   · no record      → an unknown state is not a flat one — refused.
+// Any other failure (a network error, terrain.bin missing beside its terrain.json, a field that does not read) refuses.
+// A refusal leaves the town on its splash: <Town> draws nothing until terrainLook() is its own Look.
+// ▶ node checks/claims-a-missing-height-fails-loudly.mjs
 async function fetchTerrain(lookId) {
-  try {
-    const meta = await slabFetch(lookId, 'terrain.json').then(r => { if (!r.ok) throw new Error(`terrain.json ${r.status}`); return r.json() })
-    const buf  = await slabFetch(lookId, 'terrain.bin').then(r => { if (!r.ok) throw new Error(`terrain.bin ${r.status}`); return r.arrayBuffer() })
-    // The town's tide clock rides its manifest (bake-manifest `tide`, tidal towns only) — absent, never zero.
-    const tide = meta.water?.tidal
-      ? await slabManifest(lookId).then(m => m?.tide ?? null).catch(() => null)
-      : null
-    return { ...meta, data: new Float32Array(buf), tide }
-  } catch (e) {
-    console.warn(`[terrain] no baked terrain for look "${lookId}" — rendering flat`, e?.message || e)
-    return FLAT_TERRAIN
+  const r = await slabFetch(lookId, 'terrain.json')
+  if (!r.ok) {
+    const g = await slabFetch(lookId, 'ground.json')
+    const said = g.ok ? (await g.json())?.groundShape?.terrain : undefined
+    if (said === false) {
+      console.log(`[terrain] look "${lookId}" has no terrain by intake (ground.json groundShape.terrain = false) — drawn flat`)
+      return FLAT_TERRAIN
+    }
+    throw new Error(`[terrain] ⛔ look "${lookId}": terrain.json ${r.status}, and ${said === true ? 'its ground was baked ON a terrain (groundShape.terrain = true) — the terrain is missing from the slab'
+      : g.ok ? 'its ground.json names no groundShape.terrain — an unknown state is not a flat one' : `its ground.json ${g.status} — no record of whether it has a terrain`}`)
   }
+  const meta = await r.json()
+  const b = await slabFetch(lookId, 'terrain.bin')
+  if (!b.ok) throw new Error(`[terrain] ⛔ look "${lookId}": terrain.json is there but terrain.bin ${b.status}`)
+  const data = new Float32Array(await b.arrayBuffer())
+  // The town's tide clock rides its manifest (bake-manifest `tide`, tidal towns only) — absent, never zero.
+  const tide = meta.water?.tidal
+    ? await slabManifest(lookId).then(m => m?.tide ?? null).catch(() => null)
+    : null
+  return { ...meta, data, tide }
 }
 
 // Live terrain state — reassigned by reloadTerrain(). Exported as `let` so late
@@ -329,8 +345,8 @@ const TERRAIN_DISPLACE_RIGID = `
  * have been smoothed over, a coarser one sampled inside a single cell.
  * ▶ node checks/claims-ground-normals-come-from-the-terrain.mjs
  *
- * ⛔ No terrain ⇒ `fetchTerrain` warns "rendering flat" and hands a flat field, so the
- * normal is UP because nothing is there — flat by absence, never by a default.
+ * ⛔ A town with no terrain BY INTAKE (ground.json groundShape.terrain = false) gets a flat field from
+ * `fetchTerrain`, so the normal is UP because nothing is there — a named state, never a default.
  * `uExag ≤ 0.01` (the flat Browse map) keeps the geometry normal, which is also up.
  */
 export const TERRAIN_NORMAL = `

@@ -12,15 +12,16 @@
 //     rebuild runs inside a reload callback whose errors are caught and warned, so an invalid field refused only
 //     there would leave the previous town's heights in place under the new town's name. (Read from the source:
 //     the module cannot be imported in node, it reads import.meta.env.)
-// ⚠️ NOT ASSERTED: terrainShader#fetchTerrain still renders a town FLAT when its terrain.json / terrain.bin is
-//   missing. A town with no elevation input has no terrain by intake (serve.js hasElevationInput; F3,
-//   checks/claims-a-flat-town-is-not-refined.mjs), and the 404 is the only way the player hears it. Making the miss
-//   loud needs that state named in the slab first; that is a ruling, not this check's.
+//   ⑥ terrainShader#fetchTerrain decides a missing terrain.json by the slab's own record (ground.json
+//     groundShape.terrain, written by bake-ground, F3): false → the flat field, a named state; true → refused; no
+//     record, ground.json missing, terrain.bin missing, a network error → refused. A whole slab → its field. (Its
+//     source text is run against stubbed slab responses; SHADER_SRC=<file> runs another copy, e.g. HEAD's.)
 //
 // ▶ MUTATION-TEST IT (seen RED before the fix; each put back):
 //     · in terrainCommon makeElevationSampler, drop the `assertHeightfield(terrain)` call         → ① RED
 //     · in elevationSources fillMisses, drop the `throw` for a grid with nothing to fill from       → ③ RED
 //     · in terrainShader reloadTerrain, drop the `assertHeightfield(t, …)` call                     → ⑤ RED
+//     · in terrainShader fetchTerrain, return FLAT_TERRAIN for every `!r.ok` (the old fallback)     → ⑥ RED
 //
 //   node checks/claims-a-missing-height-fails-loudly.mjs
 // Read-only. Exits 1 when a missing height can be read as a value.
@@ -87,6 +88,37 @@ console.log('⑤ reloadTerrain validates before it swaps')
       : bad(v < 0 ? 'reloadTerrain swaps in the fetched field without assertHeightfield' : 'assertHeightfield runs after the swap')
   }
 }
-console.log('\n⚠️ NOT ASSERTED: fetchTerrain renders a town with no terrain.json FLAT (see the header — awaits a named "no terrain" state).')
-console.log(red ? `\n⛔ ${red} way(s) a missing height reads as a value.` : '\n✅ A missing height refuses; a whole field reads as before.')
+console.log('⑥ fetchTerrain: a missing terrain is flat only when the slab says so')
+{
+  const path = process.env.SHADER_SRC || join(ROOT, 'src/utils/terrainShader.js')
+  const src = readFileSync(path, 'utf8')
+  const m = src.match(/async function fetchTerrain\(lookId\) \{[\s\S]*?\n\}\n/)
+  if (!m) bad(`fetchTerrain not found in ${path}`)
+  else {
+    const FLAT = { width: 2, height: 2, bounds: { minX: -1, maxX: 1, minZ: -1, maxZ: 1 }, data: new Float32Array(4) }
+    const res = (status, body) => ({ ok: status === 200, status, json: async () => body, arrayBuffer: async () => body })
+    const bin = new Float32Array([1, 2, 3, 4]).buffer, meta = { width: 2, height: 2, bounds: FLAT.bounds }
+    const run = async (files) => {
+      const slabFetch = async (look, rel) => { const f = files[rel]; if (f === 'throw') throw new TypeError('fetch failed'); return f ? res(200, f) : res(404) }
+      const fetchTerrain = new Function('slabFetch', 'slabManifest', 'FLAT_TERRAIN', `${m[0]}; return fetchTerrain`)(slabFetch, async () => null, FLAT)
+      const log = console.log, warn = console.warn; console.log = console.warn = () => {}
+      try { return { t: await fetchTerrain('probe') } } catch (e) { return { e } } finally { console.log = log; console.warn = warn }
+    }
+    const cases = [
+      ['a whole slab', { 'terrain.json': meta, 'terrain.bin': bin }, (r) => r.t?.data?.[3] === 4],
+      ['no terrain.json, groundShape.terrain = false (flat by intake)', { 'ground.json': { groundShape: { terrain: false } } }, (r) => r.t === FLAT],
+      ['no terrain.json, groundShape.terrain = true', { 'ground.json': { groundShape: { terrain: true } } }, (r) => !!r.e],
+      ['no terrain.json, ground.json with no groundShape', { 'ground.json': { groups: [] } }, (r) => !!r.e],
+      ['no terrain.json, no ground.json', {}, (r) => !!r.e],
+      ['terrain.json without terrain.bin', { 'terrain.json': meta, 'ground.json': { groundShape: { terrain: false } } }, (r) => !!r.e],
+      ['a network error', { 'terrain.json': 'throw', 'ground.json': { groundShape: { terrain: false } } }, (r) => !!r.e],
+    ]
+    for (const [name, files, want] of cases) {
+      const r = await run(files)
+      want(r) ? ok(`${name}: ${r.e ? 'refused — ' + r.e.message.slice(0, 90) : r.t === FLAT ? 'the flat field, as named' : 'its field'}`)
+        : bad(`${name}: ${r.e ? 'refused — ' + r.e.message : r.t === FLAT ? 'rendered FLAT' : 'returned a field'}`)
+    }
+  }
+}
+console.log(red ? `\n⛔ ${red} way(s) a missing height reads as a value.` : '\n✅ A missing height refuses; a whole field reads as before; a town is flat only when its slab says so.')
 process.exit(red ? 1 : 0)
