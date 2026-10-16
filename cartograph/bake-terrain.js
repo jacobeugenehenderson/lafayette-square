@@ -47,7 +47,7 @@ import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './te
 import { stoneStructures } from './structures.mjs'
 import { waterLevels as levelsOf } from './waterLevel.mjs'
 import clipperLib from 'clipper-lib'
-import { elevationSpecs, openRasters, rasterToGrid, pixelMetres, ABOVE_WATER_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, ABOVE_WATER_M } from './elevationSources.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -710,7 +710,7 @@ async function main() {
 
   const misses = counts.none
 
-  // ⛔⛔ A SOURCE WITH NO VALUE ANYWHERE OVER THE TOWN REFUSES (2026-10-10). Every sample missed, so the fill below found
+  // ⛔⛔ A SOURCE WITH NO VALUE ANYWHERE OVER THE TOWN REFUSES (2026-10-10). Every sample missed, so the fill below (then) found
   // no neighbour and wrote 0 everywhere: a FLAT town, normalised to its own "local minimum", with one warning line —
   // the plausible-looking success Layer 0 forbids. It is reachable: fetch-dem once chose a survey whose tile boxes
   // reached the town but held no data over it (Lafayette Square: IL_HicksDome_FluorsparDistrict_2019, 0%).
@@ -718,30 +718,8 @@ async function main() {
   if (misses === total) {
     throw new Error(`[bake-terrain] ⛔ ${SCENE}: the elevation source holds NO value anywhere over the town (${total.toLocaleString()} of ${total.toLocaleString()} samples missed: ${sources.map(s => s.label).join(', ') || 'no source opened'}). Refusing to bake a flat town. ▶ node cartograph/fetch-dem.mjs --scene=${SCENE}`)
   }
-  let zeroArm = 0
-  if (misses) {
-    // Nearest grid-neighbor fill (rare; should never happen for LS).
-    // ⚠️ A miss with no neighbour at all takes 0 m (the `: 0` arm): the silent-fallback shape, COUNTED and printed
-    // below, not yet refused (its own item, beside terrainCommon's getElevationRaw `|| 0`).
-    for (let idx = 0; idx < total; idx++) {
-      if (!Number.isNaN(raw[idx])) continue
-      let nearest = NaN
-      const j0 = Math.floor(idx / width), i0 = idx % width
-      for (let r = 1; r < Math.max(width, height) && !Number.isFinite(nearest); r++) {
-        for (let dj = -r; dj <= r && !Number.isFinite(nearest); dj++) {
-          for (let di = -r; di <= r; di++) {
-            if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue
-            const ii = i0 + di, jj = j0 + dj
-            if (ii < 0 || ii >= width || jj < 0 || jj >= height) continue
-            const v = raw[jj * width + ii]
-            if (!Number.isNaN(v)) { nearest = v; break }
-          }
-        }
-      }
-      if (!Number.isFinite(nearest)) zeroArm++
-      raw[idx] = Number.isFinite(nearest) ? nearest : 0
-    }
-  }
+  // Nearest grid-neighbour fill of the misses (elevationSources.mjs#fillMisses; refuses a grid with nothing to fill from).
+  if (misses) fillMisses(raw, width, height)
 
   let mn = Infinity, mx = -Infinity
   for (const v of raw) { if (v < mn) mn = v; if (v > mx) mx = v }
@@ -791,7 +769,7 @@ async function main() {
     console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (no coast — see waterDatum for why a pond does not qualify)`)
   }
   const missShare = misses / total
-  console.log(`  misses filled: ${misses.toLocaleString()} (${(100 * missShare).toFixed(1)}% of the grid) · ${zeroArm.toLocaleString()} with no neighbour, set to 0 m`)
+  console.log(`  misses filled: ${misses.toLocaleString()} (${(100 * missShare).toFixed(1)}% of the grid)`)
   if (missShare > 0.05) {
     // ⛔ SAY IT RATHER THAN BURY IT IN A COUNT. Lidar does not return off open
     // water, so a lakeshore town reads a fifth of its grid as nodata and gets it

@@ -281,6 +281,33 @@ export async function rasterToGrid(opened, { width, height, bounds, toLL, elevat
   return { grid, sources: info, counts }
 }
 
+/** A grid's misses (NaN), each set to its nearest valid node by Chebyshev ring, in place. Returns the count filled.
+ *  ⛔ A grid with no valid node REFUSES: the ring search reaches every node, so a miss with no neighbour means there is
+ *  nothing anywhere. It used to take 0 m (a flat town at the datum). ▶ node checks/claims-a-missing-height-fails-loudly.mjs */
+export function fillMisses(raw, width, height) {
+  let filled = 0
+  if (!raw.some(v => !Number.isNaN(v))) throw new Error(`⛔ fillMisses: all ${raw.length.toLocaleString()} nodes of the ${width} × ${height} grid are misses — nothing to fill from`)
+  for (let idx = 0; idx < raw.length; idx++) {
+    if (!Number.isNaN(raw[idx])) continue
+    let nearest = NaN
+    const j0 = Math.floor(idx / width), i0 = idx % width
+    for (let r = 1; r < Math.max(width, height) && !Number.isFinite(nearest); r++) {
+      for (let dj = -r; dj <= r && !Number.isFinite(nearest); dj++) {
+        for (let di = -r; di <= r; di++) {
+          if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue
+          const ii = i0 + di, jj = j0 + dj
+          if (ii < 0 || ii >= width || jj < 0 || jj >= height) continue
+          const v = raw[jj * width + ii]
+          if (!Number.isNaN(v)) { nearest = v; break }
+        }
+      }
+    }
+    raw[idx] = nearest
+    filled++
+  }
+  return filled
+}
+
 /** Bilinear sample of the first source that holds all four neighbours of (lon, lat); NaN if none does. */
 export function sampleSources(sources, lon, lat, { nanIsNodata = false } = {}) {
   for (const S of sources) {

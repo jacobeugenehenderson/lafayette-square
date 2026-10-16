@@ -33,7 +33,7 @@ import * as THREE from 'three'
 import { slabFetch, slabManifest } from '../lib/slabUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
-import { DEFAULT_V_EXAG, terrainIdentity } from '../lib/terrainCommon.js'
+import { DEFAULT_V_EXAG, terrainIdentity, assertHeightfield } from '../lib/terrainCommon.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -203,6 +203,9 @@ export function currentTerrainIdentity() {
 export async function reloadTerrain(lookId, { force = false } = {}) {
   if (!lookId || (lookId === _lookId && !force)) return
   const t = await fetchTerrain(lookId)
+  // ⛔ Refused HERE, before anything is swapped: the sampler rebuild below runs in a reload callback whose errors are
+  // caught and warned, so a field refused only there would leave the last town's heights under this town's name.
+  assertHeightfield(t, `look "${lookId}" terrain.json/terrain.bin`)
   // ⛔ BEFORE the callbacks: elevation.js rebuilds its CPU sampler in one of them and bakes the
   // exag into the closure, so a stale ceiling here would be captured for the whole session.
   _sceneExag = await fetchSceneExag(lookId)
