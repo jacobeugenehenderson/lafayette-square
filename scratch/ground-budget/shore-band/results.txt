@@ -1,0 +1,33 @@
+BRIEF-the-shore-keeps-its-lidar, Phase A (Loess, 2026-10-15). Read-only beyond scratch. HPDM has no coast: not re-run.
+Curves: ../heightmap/<town>.band.txt (reference zone 30–150 m) and <town>.band-ref60.txt (60–150 m), from
+  ../heightmap/run.sh <town> TERRAIN_DIR=<scratch true-mean terrain> TAG=.mean  then  node ../heightmap/band.mjs <town>
+Width rule (band.mjs header): the band ends where every 0.5 m bin out to the reference zone has p90 no higher than the
+reference p90 (same side at the reference zone, and on land also the land-use edges there). Land read on |lidar − served|;
+water read on |r1| (the served water is the bed by design).
+
+A1  WIDTHS                          ref 30–150     ref 60–150
+  huron land  (|lidar − served|)    30.0 m         57.5 m       — tracks the reference zone: no edge. p90 ~430–464 mm to 6 m, 271 at 7.5–10, 100 at 20–30 (ref 74)
+  huron water (|r1|)                13.0 m         13.0 m       — a real edge (p90 4.3 mm by 10–12.5 m, 0 past 12.5)
+  ptown land  (|lidar − served|)     3.5 m          3.5 m       — |r1| alone: 0.0 m / 45.5 m: no concentration AT the coast (p90 108–126 mm within 15 m, 185–200 mm at 30–150 m: the detail rises inland)
+  ptown water (|r1|)                30.0 m         60.0 m       — tracks the reference zone: no edge (the flats)
+  PTown land's 3.5 m is r2, not detail: with all four served nodes on land (shape.json tile rings) p90 at 1.5–2 m falls
+  584 → 171 mm. r2 on PTown's coast is the same before and after the true mean (it was never the overview's resampling).
+
+A3  PROTOTYPE BAND BAKE (bake-band.mjs; run.sh <town> <landW> <waterW>): 32 m tiles, int16 mm over the served grid
+  town   land/water   tiles   band cells   band.bin (gzip)          time    peak RSS   no lidar in band
+  huron  7.5 / 13     1,491     604,004    3,053,568 (1,629,926)    19.3 s  315 MB     204
+  huron  15 / 13      1,563     689,652    3,201,024 (1,728,302)    19.7 s  312 MB     225
+  huron  30 / 13      1,711     847,668    3,504,128 (1,918,814)    24.4 s  308 MB     275
+  ptown  3.5 / 30     4,324   2,257,338    8,855,552 (5,821,100)    95.0 s  490 MB     389  · 1,743 cells CLIPPED (> 32.767 m vs the bed)
+  served terrain.bin: huron 8,259,876 B · ptown 18,284,176 B
+  ⚠️ "no lidar in band" is mostly rasterToGrid's mean regime at 1:1: a 1 m box holds no pixel centre of a 0.998 m lattice
+     rotated against it (huron 875 boxes, ptown 1,267 in all tiles). The lidar covers them. Not a real absence.
+
+  CELLS OVER EACH TOLERANCE in the band (one vertex each; an upper bound on the vertices the ground needs)
+  side (width)          0.5 m     0.1 m     50 mm     20 mm     7.8 mm
+  huron land (30 m)     5,793    42,210    60,608    81,150    96,124
+  huron water (13 m)    1,550    27,937    41,659    54,651    65,427
+  ptown land (3.5 m)   21,428    79,168   104,154   128,482   145,030
+  ptown water (30 m)    1,267   115,425   255,345   490,245   717,572
+  served ground: huron 872,117 V / 25,659,008 B (29.42 B/V) · ptown 1,741,691 V / 56,161,484 B (32.25 B/V)
+  The ground refines non-ped ground to GROUND_REFINE_TOL_M = 0.50 m (bake-ground.js); the ped bands to refineTol (7.8 mm Huron).

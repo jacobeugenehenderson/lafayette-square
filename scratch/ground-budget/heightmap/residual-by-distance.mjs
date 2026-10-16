@@ -18,6 +18,7 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../../../cartograph/terrainLoad.js'
+import { makeElevationSampler } from '../../../src/lib/terrainCommon.js'
 import { openRasters, readWindow, sampleSources } from '../../../cartograph/elevationSources.mjs'
 
 const scene = process.argv[2]
@@ -27,8 +28,13 @@ const out = new URL('./', import.meta.url).pathname
 const data = join(root, 'cartograph/data', scene), slab = join(root, 'public/baked', scene)
 const geo = JSON.parse(readFileSync(join(data, 'geography.json')))
 const toLL = (x, z) => [geo.lon + x / geo.lonToMeters, geo.lat - z / geo.latToMeters]
-const T = loadSceneTerrain(scene); if (!T) throw new Error(`no terrain for ${scene}`)
-const tj = JSON.parse(readFileSync(join(data, 'clean/terrain.json')))
+// TERRAIN_DIR=<dir> reads that terrain.{json,bin} (a scratch bake) instead of the town's clean/ one; TAG suffixes the outputs.
+const TDIR = process.env.TERRAIN_DIR || null, TAG = process.env.TAG || ''
+const tj = JSON.parse(readFileSync(join(TDIR || join(data, 'clean'), 'terrain.json')))
+const T = TDIR ? (() => { const b = readFileSync(join(TDIR, 'terrain.bin')); const t = { ...tj, data: new Float32Array(b.buffer, b.byteOffset, b.byteLength / 4) }
+  const stepM = Math.min((tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1))
+  return { ...makeElevationSampler(t, 1), stepM } })() : loadSceneTerrain(scene)
+if (!T) throw new Error(`no terrain for ${scene}`)
 const base = tj.baseElev, B = tj.bounds, s = T.stepM
 const NW = tj.width, NH = tj.height, sx = (B.maxX - B.minX) / (NW - 1), sz = (B.maxZ - B.minZ) / (NH - 1)
 const bnd = JSON.parse(readFileSync(join(data, 'neighborhood_boundary.json')))
@@ -82,7 +88,9 @@ const blockBox = ringBox(blockRings), landBox = ringBox(landRings)
 console.log(`${scene}: R ${R} m · grid step ${s.toFixed(4)} m · ${urls.length} lidar URL(s) · ① ${segs.one.length} segs · coast ${segs.coast.length} · LU ${luKept} kept (${luDropped} on a run or the rim, dropped)`)
 
 // ── per-cell accumulators ───────────────────────────────────────────────────
-const N = new Float64Array(KINDS.length * NB), H1 = new Float64Array(KINDS.length * NB * HB), H2 = new Float64Array(KINDS.length * NB * HB)
+const N = new Float64Array(KINDS.length * NB), H1 = new Float64Array(KINDS.length * NB * HB), H2 = new Float64Array(KINDS.length * NB * HB), H3 = new Float64Array(KINDS.length * NB * HB)   // H3: |lidar − served| = |r1 + r2|
+// H4/N4: H3 over only the cells whose four served nodes all stand on land (a 1 m cell at the node inside a tile ring): the cells whose served value no bed node enters
+const H4 = new Float64Array(KINDS.length * NB * HB), N4 = new Float64Array(KINDS.length * NB)
 const S1 = new Float64Array(KINDS.length * NB)                       // Σ|r1| (m), for the share of the detail by distance
 const nodeMin = [new Float32Array(NW * NH).fill(Infinity), new Float32Array(NW * NH).fill(Infinity), new Float32Array(NW * NH).fill(Infinity)] // ① · LU · coast
 const SELF = +(process.env.SELF || 0), LIMIT = +(process.env.LIMIT_CHUNKS || 0); let selfN = 0, selfMax = 0, selfBadNear = 0
@@ -181,13 +189,17 @@ for (const [cx, cz] of chunks) {
     else if (d.coast <= d.lu) { kind = land[q] ? 3 : 4; dd = d.coast }
     else { kind = 2; dd = d.lu }
     const b = Math.min(NB - 1, Math.floor(dd / BIN)), kb = kind * NB + b
-    N[kb]++; S1[kb] += Math.abs(r1); H1[kb * HB + hbin(Math.abs(r1))]++; H2[kb * HB + hbin(Math.abs(r2))]++
+    N[kb]++; S1[kb] += Math.abs(r1); H1[kb * HB + hbin(Math.abs(r1))]++; H2[kb * HB + hbin(Math.abs(r2))]++; H3[kb * HB + hbin(Math.abs(r1 + r2))]++
+    { const gx = Math.floor((x - B.minX) / sx), gz = Math.floor((z - B.minZ) / sz); let allLand = true
+      for (const [da, db] of [[0, 0], [1, 0], [0, 1], [1, 1]]) { const nx = B.minX + (gx + da) * sx, nz = B.minZ + (gz + db) * sz
+        const qi = Math.floor(nx - X0), qj = Math.floor(nz - Z0); if (qi < 0 || qj < 0 || qi >= W || qj >= H || !land[qj * W + qi]) { allLand = false; break } }
+      if (allLand) { N4[kb]++; H4[kb * HB + hbin(Math.abs(r1 + r2))]++ } }
   }
   if (ci % 10 === 0 || ci === chunks.length) console.log(`  chunk ${ci}/${chunks.length} · ${((Date.now() - t0) / 1000).toFixed(0)} s · rss ${(process.memoryUsage().rss / 1048576).toFixed(0)} MB`)
 }
-writeFileSync(join(out, `${scene}.json`), JSON.stringify({ scene, R, step: s, DMAX, BIN, NB, HB, KINDS, cellsDisc, noLidar, noLidarLand, landCells, nodeLandCount: nodeLand.reduce((a, b) => a + b, 0), noMean, luKept, luDropped,
-  N: [...N], S1: [...S1], H1: [...H1], H2: [...H2], secs: (Date.now() - t0) / 1000 }))
+writeFileSync(join(out, `${scene}${TAG}.json`), JSON.stringify({ scene, R, step: s, DMAX, BIN, NB, HB, KINDS, cellsDisc, noLidar, noLidarLand, landCells, nodeLandCount: nodeLand.reduce((a, b) => a + b, 0), noMean, luKept, luDropped,
+  N: [...N], S1: [...S1], H1: [...H1], H2: [...H2], H3: [...H3], H4: [...H4], N4: [...N4], terrainDir: TDIR, secs: (Date.now() - t0) / 1000 }))
 // per-node min distance (① · LU · coast), Float32 NW×NH each, for the map's byte count at the widths (a) produces
-writeFileSync(join(out, `${scene}.nodemin.bin`), Buffer.concat([...nodeMin.map(a => Buffer.from(a.buffer)), Buffer.from(nodeLand.buffer)]))
+writeFileSync(join(out, `${scene}${TAG}.nodemin.bin`), Buffer.concat([...nodeMin.map(a => Buffer.from(a.buffer)), Buffer.from(nodeLand.buffer)]))
 if (SELF) console.log(`  self-check: ${selfN} brute distances · max |EDT − brute| ${selfMax.toFixed(3)} m (EDT on 1 m cell centres) · ${selfBadNear} wrong inside the exact zone (must be 0)`)
 console.log(`done ${scene}: ${cellsDisc.toLocaleString()} cells in the disc · no lidar ${noLidar.toLocaleString()} · no whole mean ${noMean.toLocaleString()} · ${((Date.now() - t0) / 1000).toFixed(0)} s`)
