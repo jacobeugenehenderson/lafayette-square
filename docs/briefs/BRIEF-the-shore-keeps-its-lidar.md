@@ -32,11 +32,10 @@ without Jacob's ruling.**
 - **The coarse grid.** `cartograph/bake-terrain.js` → `public/baked/<look>/terrain.{json,bin}`, one uniform grid
   (step = `bounds` ÷ (`width` − 1); re-derive). The player reads it as one texture (`src/utils/terrainShader.js`,
   `makeTerrainTexture`, `TERRAIN_DISPLACE*`), and on the CPU through `src/lib/drawnGround.js#makeDrawnGround`.
-- **Where the band is** (Loess, read-only, measured against the OVERVIEW grid; ⛔ re-measure, §3 A1):
-  - Huron: the 1 m detail is large within ~2 m of the coast and falls to the land-use level by ~30 m inland and ~10 m
-    over the water.
-  - Provincetown: the concentration was resampling error (the overview grid), up to 1 m at the edge, gone by ~5 m.
-    It may vanish once the grid is a true mean.
+- **Where the band is: Phase A measured it on the true-mean grid** (21700d75; ▶ `scratch/ground-budget/shore-band/`,
+  the rule in `band.mjs`). Huron's water side has a real edge. Huron's land side has detail but no edge. Provincetown's
+  land-side concentration is the grid blending bed nodes into the land, not lidar detail, and the true mean did not
+  remove it. Mechanism not established.
 - **The gusset** (`cartograph/shoreGusset.mjs`, ⚠️ only on `tern/coast-from-lidar`, not on HEAD) records the bank from
   high water down to low water. Its `reachM` (Huron 5.00 m, Provincetown 115.23 m) does not match either town's
   curve. Cause not established.
