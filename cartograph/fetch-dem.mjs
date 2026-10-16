@@ -25,8 +25,8 @@
  * forbids: the operator sees a poured town, not a missing input.
  *
  * ⭐ NOTHING IS DOWNLOADED. The list this writes is read by HTTP RANGE REQUEST in
- * `bake-terrain.js`, which pulls only the window it needs at the overview level matching
- * the grid. huron's four 1 m tiles are ~940 MB of source and cost a few MB to bake.
+ * `bake-terrain.js`, which pulls only the windows it needs, at level 0, and puts their box mean onto the grid
+ * (`elevationSources.mjs#rasterToGrid`). huron's four 1 m tiles are ~940 MB of source; none of it is kept.
  *
  * ⛔ AND IT MUST FAIL LOUDLY WHEN THERE IS NO COVERAGE. 1 m lidar does not cover the whole
  * country, so "no DEM" is a real outcome, not an error case to paper over. It exits
@@ -143,7 +143,7 @@ export async function byData(scored, bbox, { gridN = 12, quiet = false } = {}) {
     for (let i = 0; i < gridN; i++) for (let j = 0; j < gridN; j++) {
       const lon = bbox.minLon + ((i + 0.5) / gridN) * (bbox.maxLon - bbox.minLon)
       const lat = bbox.minLat + ((j + 0.5) / gridN) * (bbox.maxLat - bbox.minLat)
-      const W = await readWindow(opened, { cornersLL: [[lon - dLon, lat - dLat], [lon + dLon, lat - dLat], [lon + dLon, lat + dLat], [lon - dLon, lat + dLat]], stepM: null, quiet: true })
+      const W = await readWindow(opened, { cornersLL: [[lon - dLon, lat - dLat], [lon + dLon, lat - dLat], [lon + dLon, lat + dLat], [lon - dLon, lat + dLat]], quiet: true })
       if (Number.isFinite(sampleSources(W, lon, lat, { nanIsNodata: true }))) hit++
     }
     p.bboxCoverage = p.coverage

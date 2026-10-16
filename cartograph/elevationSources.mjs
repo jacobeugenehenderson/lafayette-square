@@ -2,12 +2,11 @@
  * elevationSources.mjs — ONE READER FOR A TOWN'S ELEVATION RASTERS.
  *
  * Moved out of `bake-terrain.js` (2026-10-04, BRIEF-the-shore-is-closed step 1) so a second bake can read the same
- * lidar the same way: `bake-terrain` reads the whole town once at its grid step, `bake-shore-median` reads many small
- * windows along the shore at the source's FINEST level. One copy of the CRS handling, the overview choice and the
- * no-data rule — a second copy is how two bakes come to disagree about where the ground is.
+ * lidar the same way. One copy of the CRS handling, the no-data rule and the way a raster becomes a grid
+ * (`rasterToGrid`) — a second copy is how two bakes come to disagree about where the ground is.
  *
- * Two halves: `openRasters` reads only the headers (once per bake); `readWindow` reads one window from them.
- * `openSources` is the two together, for a bake that reads one window.
+ * `openRasters` reads only the headers (once per bake); `readWindow` reads one window from them, always at level 0;
+ * `rasterToGrid` puts a town's rasters onto its terrain grid.
  */
 import fs from 'fs'
 import { join } from 'path'
@@ -131,7 +130,7 @@ export async function deadTile(url, label, cause, refetch) {
   throw new Error(`⛔ ${label} could not be opened (${status}): ${url}\n   The town's list names a tile that is gone or has moved (sources re-version their tiles). Re-derive the list${refetch ? `: ▶ ${refetch}` : ' with the acquirer that wrote it'}.\n   (underlying: ${cause?.message || cause})`)
 }
 
-/** Open every source's headers (no pixels). @returns [{ label, ref, tiff, base, proj, levels }]
+/** Open every source's headers (no pixels). @returns [{ label, ref, tiff, base, proj, geoKeys }]
  *  @param cacheMB  a URL source keeps this many MB of fetched blocks, so a bake reading many overlapping windows
  *                  fetches each block once. Transport only — the same bytes either way. Off (0) for one-window reads. */
 export async function openRasters(specs, { cacheMB = 0, refetch = null } = {}) {
@@ -146,57 +145,27 @@ export async function openRasters(specs, { cacheMB = 0, refetch = null } = {}) {
     // median's time). Per image instance, so it covers level 0 — the one image object kept here as `base`.
     if (cacheMB > 0) tiff.cache = true
     const base = await tiff.getImage(0)
-    out.push({ label, ref: spec.ref, tiff, base, proj: projectorFor(base, label), levels: await tiff.getImageCount() })
+    out.push({ label, ref: spec.ref, tiff, base, proj: projectorFor(base, label), geoKeys: base.getGeoKeys?.() || {} })
   }
   return out
 }
 
 /**
- * Read one window from each opened raster that overlaps it.
+ * Read one window from each opened raster that overlaps it, at LEVEL 0 — the source's finest. ⛔ There is no overview
+ * read: a grid that wants a coarser value takes the MEAN of these pixels (`rasterToGrid`), never a coarser copy.
  * @param opened      openRasters' result
  * @param cornersLL   the window's corners as [lon, lat] — ⛔ all four, not a lon/lat bbox: a projected frame is not
  *                    axis-aligned to a geographic one
- * @param stepM       the output step in METRES, measured at `atLL` and `toLL` (two points `stepM` apart) — the finest
- *                    overview still at least that fine is read. `null` reads level 0, the source's finest.
  * @param quiet       true silences the per-source lines (a bake reading hundreds of windows says its totals instead)
  * @returns [{ label, band, winW, winH, rx, ry, proj, geoKeys, ref, x0, y0 }]
  */
-export async function readWindow(opened, { cornersLL, stepM = null, atLL = null, toLL = null, elevationBandOnly = false, quiet = false }) {
+export async function readWindow(opened, { cornersLL, elevationBandOnly = false, quiet = false }) {
   const PAD = 2
   const sources = []
-  for (const { label, ref, tiff, base, proj, levels } of opened) {
-    const [bx0, by0] = base.getOrigin()
-    const [brx, bry] = base.getResolution()
-
-    // ⭐⭐ READ THE OVERVIEW THAT MATCHES THE OUTPUT GRID, NOT THE FINEST ONE.
-    // A COG carries a pyramid, and USGS 1 m tiles carry six levels. Sampling a
-    // 1 m level onto a 5 m grid transfers and decodes 25× the bytes to throw 96%
-    // of them away — and over a 7 km town that is the difference between a second
-    // and a minute. ⛔ Never COARSER than the output step: that would smear the
-    // very edge we went to 1 m for. ⇒ the finest level whose pixel is still at
-    // least as fine as the grid, which for a 5 m grid off a 1 m tile is the 4 m
-    // level. ⚠️ Only level 0 carries a geotransform, so a level's scale is its
-    // size ratio to level 0 — geotiff throws on getResolution() for the rest.
-    // ⛔ THE GRID STEP IS IN METRES AND A PIXEL MAY BE IN DEGREES. The first cut of
-    // this compared the two directly and silently chose the coarsest overview for
-    // every geographic tile — LS lost 2.9 m of relief and nothing errored. That is
-    // CLAUDE.md's Class D tell exactly: a comparison whose unit is only stable
-    // because something else happens to be fixed. ⇒ Measure the grid step IN THE
-    // SOURCE'S OWN UNITS by projecting two points one step apart.
-    let pick = 0, image = base, w = base.getWidth(), h = base.getHeight(), rx = brx, ry = bry
-    if (stepM != null) {
-      const _a = proj.to(...atLL), _b = proj.to(...toLL)
-      const want = Math.hypot(_b[0] - _a[0], _b[1] - _a[1])
-      for (let L = 1; L < levels; L++) {
-        const im = await tiff.getImage(L)
-        const scale = base.getWidth() / im.getWidth()
-        if (Math.abs(brx) * scale > want) break          // this level is coarser than the grid
-        pick = L; image = im; w = im.getWidth(); h = im.getHeight()
-        rx = brx * scale; ry = bry * scale
-      }
-      if (pick && !quiet) console.log(`  ${label}: grid step is ${stepM.toFixed(2)} m = ${want.toExponential(3)} ${proj.unit} — reading overview level ${pick}/${levels - 1} (${Math.abs(rx).toExponential(3)} ${proj.unit}/px) instead of level 0`)
-    }
-    const ox = bx0, oy = by0
+  for (const { label, ref, base, proj } of opened) {
+    const [ox, oy] = base.getOrigin()
+    const [rx, ry] = base.getResolution()
+    const image = base, w = base.getWidth(), h = base.getHeight()
 
     // The window's own corners, in THIS tile's coordinates.
     let sx0 = Infinity, sx1 = -Infinity, sy0 = Infinity, sy1 = -Infinity
@@ -228,9 +197,88 @@ export async function readWindow(opened, { cornersLL, stepM = null, atLL = null,
   return sources
 }
 
-/** Open and read one window — what a bake reading a single window wants. Same options as `readWindow`. */
-export async function openSources(specs, opts) {
-  return readWindow(await openRasters(specs, { refetch: opts?.refetch ?? null }), opts)
+/** A source's level-0 pixel in METRES, measured at local (x, z) by projecting two points 1 m apart — a pixel may be in
+ *  degrees, and comparing it to a grid step in metres directly is the Class D tell (a unit only stable because something
+ *  else is fixed: LS once lost 2.9 m of relief to it). */
+export function pixelMetres(o, toLL, x, z) {
+  const a = o.proj.to(...toLL(x, z)), b = o.proj.to(...toLL(x + 1, z))
+  return Math.abs(o.base.getResolution()[0]) / Math.hypot(b[0] - a[0], b[1] - a[1])
+}
+
+/**
+ * ⭐⭐ THE ONE WAY A RASTER IS PUT ONTO A TERRAIN GRID (2026-10-15). A grid node stands for its own box — one grid step
+ * square, centred on it — so its value is the MEAN of the source pixels whose centres fall in that box. It was a bilinear
+ * read of the overview nearest the grid step (the 4 m level of a 1 m tile): measured against the true mean, p90 1.00 m
+ * off on Provincetown's coast and tens of mm across the land of every town (▶ node
+ * checks/claims-the-terrain-is-the-mean-of-its-lidar.mjs). Two regimes, chosen by the SOURCE'S OWN PIXEL, one function:
+ *   pixel finer than the grid step → the box mean of level 0
+ *   pixel not finer (a coarse bathymetry tile) → bilinear at the node, as before — a box holding one pixel or none has
+ *                                                no mean to take
+ * PRIORITY ACROSS SOURCES is the list order (the caller sorts it): a pixel counts only where no earlier fine source holds a
+ * valid pixel at its centre, so overlapping tiles are never counted twice and a box across a seam is the mean of both. A
+ * node with no fine pixel takes the first coarse source holding all four neighbours. A node with neither is NaN — the
+ * caller's miss, never filled here.
+ * @param opened   openRasters' result, in priority order
+ * @param toLL     the town's local (x, z) → [lon, lat]
+ * @returns { grid: Float32Array (NaN = no data), sources: [{ label, pixelM, regime, overlapped }], counts }
+ */
+export async function rasterToGrid(opened, { width, height, bounds, toLL, elevationBandOnly = false, block = 128, quiet = false }) {
+  const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1)
+  const step = Math.min(sx, sz)
+  const cx = (bounds.minX + bounds.maxX) / 2, cz = (bounds.minZ + bounds.maxZ) / 2
+  const info = opened.map(o => { const pixelM = pixelMetres(o, toLL, cx, cz); return { label: o.label, pixelM, regime: pixelM < step ? 'mean' : 'bilinear', overlapped: false } })
+  const fineOf = new Map(opened.map((o, s) => [o.ref, info[s].regime === 'mean']))
+  const infoOf = new Map(opened.map((o, s) => [o.ref, info[s]]))
+  if (!quiet) for (const I of info) console.log(`  source ${I.label}: ${I.pixelM.toFixed(2)} m pixel vs ${step.toFixed(3)} m grid — ${I.regime === 'mean' ? 'the box mean of level 0' : 'bilinear (not finer than the grid)'}`)
+  const grid = new Float32Array(width * height).fill(NaN)
+  const counts = { whole: 0, partial: 0, joined: 0, bilinear: 0, none: 0 }
+  const ok = (v) => Number.isFinite(v) && v >= NODATA_THRESHOLD
+  for (let j0 = 0; j0 < height; j0 += block) for (let i0 = 0; i0 < width; i0 += block) {
+    const ni = Math.min(block, width - i0), nj = Math.min(block, height - j0)
+    const X = (i) => bounds.minX + i * sx, Z = (j) => bounds.minZ + j * sz
+    // one step of margin each side: the boxes reach half a step out, a bilinear read one pixel past the node
+    const win = await readWindow(opened, { cornersLL: [toLL(X(i0 - 1), Z(j0 - 1)), toLL(X(i0 + ni), Z(j0 - 1)), toLL(X(i0 + ni), Z(j0 + nj)), toLL(X(i0 - 1), Z(j0 + nj))], elevationBandOnly, quiet: true })
+    for (const S of win) infoOf.get(S.ref).overlapped = true
+    const fine = win.filter(S => fineOf.get(S.ref)), coarse = win.filter(S => !fineOf.get(S.ref))
+    // the box corners of this block, in each fine source's PIXEL INDEX space (pixel (a, b)'s centre is (a, b))
+    const CW = ni + 1, CH = nj + 1
+    const corner = fine.map(S => { const A = new Float64Array(CW * CH), Bq = new Float64Array(CW * CH)
+      for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CW; ci++) {
+        const [px, py] = S.proj.to(...toLL(X(i0 + ci) - sx / 2, Z(j0 + cj) - sz / 2))
+        A[cj * CW + ci] = (px - S.x0) / S.rx; Bq[cj * CW + ci] = (py - S.y0) / S.ry }
+      return { A, B: Bq } })
+    for (let dj = 0; dj < nj; dj++) for (let di = 0; di < ni; di++) {
+      const c00 = dj * CW + di, c10 = c00 + 1, c01 = c00 + CW, c11 = c01 + 1
+      let sum = 0, cnt = 0, from = 0, holes = 0
+      for (let s = 0; s < fine.length; s++) {
+        const S = fine[s], { A, B: Bq } = corner[s]
+        // the box as an affine image of the unit square (a 5 m box: the projection's curvature is far below a pixel)
+        const qa = A[c00], qb = Bq[c00], e1a = A[c10] - qa, e1b = Bq[c10] - qb, e2a = A[c01] - qa, e2b = Bq[c01] - qb
+        const det = e1a * e2b - e1b * e2a
+        const a0 = Math.ceil(Math.min(qa, A[c10], A[c01], A[c11])), a1 = Math.floor(Math.max(qa, A[c10], A[c01], A[c11]))
+        const b0 = Math.ceil(Math.min(qb, Bq[c10], Bq[c01], Bq[c11])), b1 = Math.floor(Math.max(qb, Bq[c10], Bq[c01], Bq[c11]))
+        let got = 0
+        for (let b = b0; b <= b1; b++) for (let a = a0; a <= a1; a++) {
+          const u = ((a - qa) * e2b - (b - qb) * e2a) / det, v = (e1a * (b - qb) - e1b * (a - qa)) / det
+          if (!(u >= 0 && u < 1 && v >= 0 && v < 1)) continue
+          let held = false                                 // does an earlier fine source hold a valid pixel here?
+          for (let t = 0; t < s && !held; t++) { const T = corner[t], U = fine[t]
+            const ta = Math.round(T.A[c00] + u * (T.A[c10] - T.A[c00]) + v * (T.A[c01] - T.A[c00]))
+            const tb = Math.round(T.B[c00] + u * (T.B[c10] - T.B[c00]) + v * (T.B[c01] - T.B[c00]))
+            held = ta >= 0 && tb >= 0 && ta < U.winW && tb < U.winH && ok(U.band[tb * U.winW + ta]) }
+          if (held) continue
+          const v0 = (a >= 0 && b >= 0 && a < S.winW && b < S.winH) ? S.band[b * S.winW + a] : NaN
+          if (ok(v0)) { sum += v0; cnt++; got++ } else if (s === fine.length - 1) holes++
+        }
+        if (got) from++
+      }
+      const k = (j0 + dj) * width + (i0 + di)
+      if (cnt) { grid[k] = sum / cnt; from > 1 ? counts.joined++ : holes ? counts.partial++ : counts.whole++; continue }
+      const v = coarse.length ? sampleSources(coarse, ...toLL(X(i0 + di), Z(j0 + dj)), { nanIsNodata: true }) : NaN
+      if (Number.isFinite(v)) { grid[k] = v; counts.bilinear++ } else counts.none++
+    }
+  }
+  return { grid, sources: info, counts }
 }
 
 /** Bilinear sample of the first source that holds all four neighbours of (lon, lat); NaN if none does. */

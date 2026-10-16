@@ -41,9 +41,9 @@ evict-when: node checks/claims-a-brief-declares-how-it-dies.mjs --list will call
 >
 > ### ✅ THE INGEST LANDED 2026-09-21. **`node checks/claims-a-level-body-has-one-surface.mjs` IS GREEN.**
 > `bake-terrain` now reads **several** tiles, in **lat/lon or UTM** (the CRS off the tile's own
-> GeoKeys, refusing any EPSG it cannot name), at the **overview level matching the output grid**, and
-> from **URLs by HTTP range request** — ⭐ huron bakes from 1 m lidar in ~6 s with **nothing
-> downloaded**. The datum derives to the same 174.44 m from the 1 m source as from the 10 m one, now
+> GeoKeys, refusing any EPSG it cannot name), as the **box mean of level 0** on the output grid
+> (`elevationSources.mjs#rasterToGrid`, 2026-10-15; ▶ `node checks/claims-the-terrain-is-the-mean-of-its-lidar.mjs`), and
+> from **URLs by HTTP range request** — ⭐ huron bakes from 1 m lidar with **nothing downloaded**. The datum derives to the same 174.44 m from the 1 m source as from the 10 m one, now
 > with **98.7%** of the body agreeing instead of 32.7%.
 > | | 10 m source | 1 m source |
 > |---|---|---|
