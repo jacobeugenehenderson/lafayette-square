@@ -1,0 +1,27 @@
+# groundDeformer.count.patch — probe copy: apply to `git show fb953109:cartograph/groundDeformer.mjs` (rev fb953109). Reproduce: git show fb953109:cartograph/groundDeformer.mjs > /tmp/x && patch -o scratch/ground-budget/stamp-audit/groundDeformer.count.mjs /tmp/x scratch/ground-budget/stamp-audit/groundDeformer.count.patch
+--- cartograph/groundDeformer.mjs@fb953109
++++ groundDeformer.count.mjs
+@@ -1,3 +1,5 @@
++// ⚠️ COUNTING COPY (scratch/stamp-audit): the worktree's groundDeformer.mjs with the heightless-vertex THROW turned into a
++// record (stats.missing, one per ring), so every refusal on a town is counted at once. Never shipped.
+ // groundDeformer.mjs — THE GROUND'S TERRAIN HEIGHT NEAR THE STREETS (BRIEF-the-ground-knows-its-height §5 step 2).
+ //
+ // ⭐ ONE CONTINUOUS FUNCTION OF POSITION, D(x, z), raw metres like terrain.bin (the runtime multiplies it by uExag). The
+@@ -16,7 +18,7 @@
+ // ⛔ Outside every tile (the rim's perimeter road, a highway stroke, water) D is null: the caller draws the terrain there
+ //   and COUNTS it.
+ 
+-import { LATTICE_M as LATTICE } from '../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
++import { LATTICE_M as LATTICE } from '../../../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
+ 
+ const sq = (x) => x * x
+ const SIDESTEP = 1e-5   // metres: far below the 1 mm lattice, far above float64 noise
+@@ -155,7 +157,7 @@
+       const miss = H.findIndex(h => h == null)
+       if (miss >= 0) { const at = arc[miss] != null && arcEnd.has(arc[miss]) ? arcEnd.get(arc[miss]) : miss, p = ring[at], run = stamp[at] != null ? runs[stamp[at]] : cap[at] != null ? t.caps?.[cap[at]] ?? null : null
+         const c = t.ring.reduce((s, q) => [s[0] + q[0] / t.ring.length, s[1] + q[1] / t.ring.length], [0, 0])
+-        throw new Error(`groundDeformer: ⛔ ${town}: the ② vertex at (${p[0].toFixed(3)}, ${p[1].toFixed(3)}) has no height — ${run ? `its ${stamp[at] != null ? 'run' : 'dead-end cap'} ${run.skelId} (${run.side ?? '?'} · segOrd ${run.segOrd ?? '?'}) carries no line${run.noLine ? ` (${run.noLine})` : ''} and no rule for that class` : `it carries no run and no cap (iaStamp and iaCap empty there)`}${at !== miss ? ` — the end of corner arc ${arc[miss]}, so the arc cannot be blended` : arc[at] != null ? `, on corner arc ${arc[at]}` : ''} · in the tile whose ① ring centres on (${c[0].toFixed(1)}, ${c[1].toFixed(1)}), ② ring ${ri} · ${H.filter(h => h == null).length} of its ${n} vertices`) }
++        ;(stats.missing ||= []).push({ p, c, ri, n, nMiss: H.filter(h => h == null).length, run: run ? { skelId: run.skelId, noLine: run.noLine } : null, kind: stamp[at] != null ? 'run' : cap[at] != null ? 'cap' : 'unstamped', arcEnd: at !== miss }); if (false) throw new Error(`groundDeformer: ⛔ ${town}: the ② vertex at (${p[0].toFixed(3)}, ${p[1].toFixed(3)}) has no height — ${run ? `its ${stamp[at] != null ? 'run' : 'dead-end cap'} ${run.skelId} (${run.side ?? '?'} · segOrd ${run.segOrd ?? '?'}) carries no line${run.noLine ? ` (${run.noLine})` : ''} and no rule for that class` : `it carries no run and no cap (iaStamp and iaCap empty there)`}${at !== miss ? ` — the end of corner arc ${arc[miss]}, so the arc cannot be blended` : arc[at] != null ? `, on corner arc ${arc[at]}` : ''} · in the tile whose ① ring centres on (${c[0].toFixed(1)}, ${c[1].toFixed(1)}), ② ring ${ri} · ${H.filter(h => h == null).length} of its ${n} vertices`) }
+       rings.push({ ring, H, stamp, arc, t: ti, k: ri })
+     })
+     if (!rings.length) continue

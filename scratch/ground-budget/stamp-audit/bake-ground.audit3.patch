@@ -1,0 +1,16 @@
+# bake-ground.audit3.patch — stamp-audit probe copy: apply to `git show fb953109:cartograph/bake-ground.js` (rev fb953109). Reproduce: git show fb953109:cartograph/bake-ground.js > /tmp/x && patch -o scratch/ground-budget/stamp-audit/bake-ground.audit3.js /tmp/x scratch/ground-budget/stamp-audit/bake-ground.audit3.patch
+--- cartograph/bake-ground.js@fb953109
++++ bake-ground.audit3.js
+@@ -1,3 +1,4 @@
++// ⚠️ STAMP-AUDIT COPY #2: the worktree's bake-ground.js, exits after the line heights, dumping the tiles (stamps, caps, runs) and the offset-null probe
+ /**
+  * bake-ground.js — Three.js ground bake for Preview / runtime.
+  *
+@@ -988,6 +989,7 @@
+     console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown · ${capV} dead-end cap vertices read their chain's line`)
+     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
+   }
++  { writeFileSync(process.env.STAMP_AUDIT, JSON.stringify({ inkAudit: globalThis.__inkAudit || null, offNull: [], tiles: (shapeArtifact || []).map(t => ({ ring: t.ring, iA: t.iA, iaFull: t.iaFull, iaStamp: t.iaStamp, iaArc: t.iaArc, iaCap: t.iaCap, iaCapH: t.iaCapH, caps: t.caps, runs: (t.runs || []).map(r => ({ skelId: r.skelId, side: r.side, segOrd: r.segOrd, poly: r.poly, h: r.h, noLine: r.noLine })) })) })); console.log('[stamp-audit] dumped ' + process.env.STAMP_AUDIT); process.exit(0) }
+ 
+   // ── Inject map.json overlays into byMaterial ──────────────────────
+   // Each Designer-toggleable id needs to come out as its own bake group
