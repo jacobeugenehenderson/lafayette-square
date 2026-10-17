@@ -81,8 +81,15 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    sloping h → 0. Buildings, trees and lamps ride the lifted ground. ⛔ Not a lip strip, not a
    riser-only look ("it's only seen from far" is not an available argument). **Measure this option's
    cost first** (flatten, coplanar check, AO, anchors, phone-lo frame time) and stop with the numbers.
-5. **Default ramp style = NONE, loudly.** No ramp markers without evidence or an authored town/state
-   norm, and every pour prints *"N corners have no ramp source"*. The pad is unchanged regardless.
+5. **Default curb-cut style = PERPENDICULAR** (Jacob, 2026-10-17, superseding 2026-10-05's "none, loudly": *"given
+   they are 'code' now it would make more sense to default to them"*). It is the kit rung of the ladder (evidence →
+   town norm → state → kit). Its width and warning depth are cited (PROWAG via `references/`, never a bare constant).
+   LS keeps its authored diagonal norm (item 7). Recorded evidence decides where it is clear, and per-corner override
+   stays on top. Jacob also asks for a **town-wide switch in Survey or Section** that repaints the default (perpendicular ↔
+   diagonal) live; say where it lives (norms are read at derive, so a live switch belongs in the Look) before building.
+   ⚠️ The shelved perpendicular-fill slivers (§9 Open) now reach every town, so they are first in the queue.
+   Evidence coverage, measured 2026-10-17 (Loess, `6cd83c32`, `scratch/ground-budget/corner-style/`): kerbs decide 0–9%
+   of corners per town, and crosswalks don't separate the styles.
 6. **Rot found, to fix in the same landing as the code it describes:** `SECTION §6.1`'s "TL↔TL is GRASS
    AT THE KERB through the whole arc" (contradicts §4) and the painter comment near "THE CORNER — READ,
    NOT MEASURED" ("AND the owner changes" / "a mid-block BEND is NOT a corner") — both against the code.
