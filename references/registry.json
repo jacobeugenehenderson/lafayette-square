@@ -1126,6 +1126,344 @@
       },
       "status": "CANDIDATE — terms owed to Jacob",
       "localCopy": null
+    },
+    {
+      "id": "stl-city-standard-details",
+      "title": "Standard Details for Public Works Construction (March 2024)",
+      "publisher": "City of St. Louis — Board of Public Service",
+      "jurisdiction": "St. Louis city, MO (LS; part of HPDM)",
+      "url": "https://www.stlouis-mo.gov/government/departments/public-service/permits/documents/upload/Standard-Details-for-Public-Works-Construction-March-2024.pdf",
+      "covers": [
+        "standard detail drawings (curb, island, median — by title)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "© 2011 - 2026 City of St. Louis (the only copyright text; the website-policies page states no reuse terms)",
+        "source": "https://www.stlouis-mo.gov/government/departments/information-technology/web-development/website-policies.cfm",
+        "note": "robots.txt: \"User-agent: *\" … \"Disallow: /*.pdf$\" — automated retrieval of every city standard (all PDFs) is disallowed. Companion: 2026 Standard Specifications for Public Works Construction (same office, same terms). Best local candidate for the nose.",
+        "route": "Written request to the President of the Board of Public Service, City of St. Louis."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "stl-city-traffic-calming-guidelines",
+      "title": "Traffic Calming Guidelines",
+      "publisher": "City of St. Louis — Board of Public Service, Design Division",
+      "jurisdiction": "St. Louis city, MO",
+      "url": "https://www.stlouis-mo.gov/government/departments/public-service/projects/documents/traffic-calming-guidelines.cfm",
+      "covers": [
+        "medians, islands, chicanes (by title)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "© 2011 - 2026 City of St. Louis",
+        "source": "https://www.stlouis-mo.gov/government/departments/information-technology/web-development/website-policies.cfm",
+        "route": "As stl-city-standard-details."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "stl-city-revised-code",
+      "title": "Revised Code of the City of St. Louis, Annotated (2020 ed.)",
+      "publisher": "City of St. Louis; codified and hosted by Municode",
+      "jurisdiction": "St. Louis city, MO",
+      "url": "https://www.stlouis-mo.gov/government/city-laws/code/index.cfm",
+      "covers": [
+        "streets, sidewalks, subdivision (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "hostTerms": {
+          "host": "Municode (CivicPlus)",
+          "url": "https://www.civicplus.help/legal-center/docs/civicplus-terms-of-use",
+          "revised": "2026-03-20",
+          "quote": "you may not \"use any CivicPlus Materials or Authority Data ... for AI Training Purposes without CivicPlus's express prior written consent\" — \"AI Training Purposes\" is defined to include \"grounding, retrieval augmentation\"; use is \"solely for your non-commercial, personal purposes\".",
+          "read": "restricted: an agent extracting rules is grounding; the product is commercial. Route: CivicPlus signed writing (§8(d)), or the city's own copy."
+        }
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "stlco-dot-design-criteria",
+      "title": "Design Criteria for the Preparation of Improvement Plans; Standard Drawings – Current",
+      "publisher": "St. Louis County Department of Transportation and Public Works",
+      "jurisdiction": "St. Louis County, MO (unincorporated + county arterials; part of HPDM)",
+      "url": "https://stlouiscountymo.gov/st-louis-county-departments/transportation-and-public-works/roadway-publications-and-manuals/",
+      "covers": [
+        "street criteria by class",
+        "standard drawings (curb, island, median — by title)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "note": "Every county page, robots.txt included, returns 403 (Cloudflare managed challenge); terms unread. A Florissant-hosted 2019 copy exists — not opened, its terms unchecked.",
+        "route": "Jacob reads the county site terms in a browser, or asks the county in writing."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "clayton-mo-standards",
+      "title": "City of Clayton — Streetscape Standard Details (July 2012); Code Ch. 415 Subdivision (§415.630 Street Design Standards)",
+      "publisher": "City of Clayton, MO; code hosted by eCode360",
+      "jurisdiction": "Clayton, MO (the largest share of HPDM)",
+      "url": "https://ecode360.com/CL3270",
+      "covers": [
+        "streetscape details",
+        "subdivision street design standards (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "note": "claytonmo.gov returns 403 (Akamai) to every fetch; no city terms seen. The code is on eCode360.",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        },
+        "route": "Written request to Clayton Public Works; Jacob reads claytonmo.gov terms in a browser."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "ucity-mo-code",
+      "title": "University City Municipal Code",
+      "publisher": "City of University City, MO; hosted by eCode360",
+      "jurisdiction": "University City, MO (part of HPDM)",
+      "url": "https://www.ecode360.com/UN3457",
+      "covers": [
+        "municipal code (subdivision/street chapters not seen)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"All content © 2006-2026 University City and its representatives. All rights reserved.\" (the whole body of the Copyright Notices page)",
+        "source": "https://www.ucitymo.org/site/copyright",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        }
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "richmond-heights-mo-code",
+      "title": "Richmond Heights Municipal Code (Ch. 410 subdivision); Guidelines for Acceptance of Private Streets",
+      "publisher": "City of Richmond Heights, MO; code hosted by eCode360",
+      "jurisdiction": "Richmond Heights, MO (part of HPDM)",
+      "url": "https://ecode360.com/RI3417",
+      "covers": [
+        "subdivision",
+        "street acceptance criteria (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"© 2025 Richmond Heights, MO\" — the whole footer; no terms, disclaimer or privacy page exists.",
+        "source": "https://www.richmondheights.org/",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        }
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "huron-oh-codified-ordinances",
+      "title": "Codified Ordinances of the City of Huron — Part Eleven, Title One: Subdivision Regulations (design standards, site improvements, construction specifications)",
+      "publisher": "City of Huron, OH (online copy hosted by American Legal Publishing)",
+      "jurisdiction": "Huron city, OH",
+      "url": "https://files.cityofhuron.org/government/city_council/charter_codified_ordinances.php",
+      "covers": [
+        "subdivision street design standards (by title)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"© City of Huron. All rights reserved\" — the city site footer; no terms, disclaimer or privacy page.",
+        "source": "https://www.cityofhuron.org/",
+        "note": "The city's own PDF (H-PLANZON.pdf, \"January 2019 Replacement\") carries no copyright notice. The AmLegal copy is under the ICC terms (restricted). No city standard drawings found online. ⚠ The terms agent grepped the downloaded PDF for copyright/AASHTO/DOT strings — beyond cover-only; it reported a partial deferral to ODOT's Construction and Materials Specifications. The copy was deleted.",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        },
+        "route": "Written request to the City of Huron (city manager / engineering), or Jacob rules on the city's own copy."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "erie-county-oh-subdivision-regs-2024",
+      "title": "Erie County Subdivision Regulations (2024)",
+      "publisher": "Erie Regional Planning Commission / Erie County, OH",
+      "jurisdiction": "Erie County, OH (unincorporated Huron Township — about a third of Huron's disc)",
+      "url": "https://www.eriecounty.oh.gov/SubdivisionRegulations.aspx",
+      "covers": [
+        "roads and lot arrangement (by purpose line)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"© 2026. Erie County Ohio. All Rights Reserved.\" — the whole footer; no terms or disclaimer page.",
+        "source": "https://www.eriecounty.oh.gov/",
+        "note": "No Erie County Engineer road standards or standard drawings found online. ⚠ As huron-oh-codified-ordinances: a string grep was run on the PDF (it cites ODOT standards repeatedly); copy deleted.",
+        "route": "Written request to the Erie Regional Planning Commission."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "provincetown-subdivision-rules",
+      "title": "Rules and Regulations Governing the Subdivision of Land, Provincetown, Massachusetts",
+      "publisher": "Provincetown Planning Board (MGL c.41 §81K–81GG)",
+      "jurisdiction": "Provincetown, MA",
+      "url": "https://www.provincetown-ma.gov/DocumentCenter/View/211",
+      "covers": [
+        "subdivision street design (by title)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"All content © 2006-2026 Provincetown and its representatives. All rights reserved.\"",
+        "source": "https://www.provincetown-ma.gov/copyright",
+        "note": "No edition date (PDF created 2002). No DPW street standard found. Truro (5% of the disc): 2024 Subdivision Rules and Regulations, https://www.truro-ma.gov/DocumentCenter/View/1053 — \"All content © 2006-2026 Truro, MA and its representatives. All rights reserved.\" (truro-ma.gov/copyright).",
+        "route": "Written request to the Provincetown Planning Board (and Truro's)."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "ccc-complete-streets-manual-2012",
+      "title": "Complete Streets/Living Streets: A Design Manual for Cape Cod (2012)",
+      "publisher": "Cape Cod Commission (Barnstable County)",
+      "jurisdiction": "Barnstable County, MA",
+      "url": "https://capecodcommission.org/CompleteStreetsDesignManual.pdf",
+      "covers": [
+        "complete-streets design (by title)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"Copyright 2026 Cape Cod Commission.\" Site policies hold only a DMCA clause; no reuse, scraping or AI terms.",
+        "source": "https://capecodcommission.org/web-accessibility-and-privacy-policy/",
+        "note": "Guidance, not an edict. PDFs 403 to plain fetch.",
+        "route": "Written request to the Cape Cod Commission."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "nyc-dot-street-design-manual",
+      "title": "NYC DOT Street Design Manual, 4th edition (April 2025)",
+      "publisher": "New York City Department of Transportation",
+      "jurisdiction": "New York City (Jackson Heights)",
+      "url": "https://www.nycstreetdesign.info/",
+      "covers": [
+        "street geometry, materials, lighting, furniture"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "nyc.gov Terms of Use §IV.1: \"All other design, information, text, graphics, images, pages, interfaces, links, software, and other items and materials contained in or displayed on NYC.gov, and the selection and arrangements thereof, are the property of the City of New York. All rights are reserved.\" §IV.6 gives a process to request permission.",
+        "source": "https://www.nyc.gov/home/terms-of-use.page",
+        "note": "Footer: \"Copyright 2026 The City of New York\". It does NOT defer to NYSDOT; search snippets show it names the AASHTO Green Book (2018) as a source — rule 5 applies to anything it states on AASHTO's authority. Companion: NYC DOT Standard Details of Construction (2022-06-06, hosted by DDC; same terms). The quote came through WebFetch's extractor — re-check it on the page.",
+        "route": "Permission request to the City of New York per nyc.gov Terms of Use §IV.6."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "caltrans-standard-plans",
+      "title": "Caltrans 2025 Standard Plans (and Revised Standard Plans, 2026-04-20)",
+      "publisher": "California Department of Transportation",
+      "jurisdiction": "CA (Altadena, by the state route)",
+      "url": "https://dot.ca.gov/programs/design/2025-ccs-standard-plans-and-standard-specifications",
+      "covers": [
+        "standard island, curb and median details (the HDM §405.4 points here: \"See the Standard Plans for typical island passageway details\")"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"In general, information presented on this website, unless otherwise indicated, is considered in the public domain. It may be distributed or copied as permitted by law.\" It also warns Caltrans \"does make use of copyrighted data (e.g., photographs)\" \"which may require additional permissions prior to your use.\"",
+        "source": "https://dot.ca.gov/conditions-of-use",
+        "read": "looks permitted — the same Conditions of Use Jacob approved for caltrans-hdm. Still his to approve."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "la-county-pw-standard-plans",
+      "title": "LA County Public Works Standard Plan Manual (2000 ed., with later plans)",
+      "publisher": "Los Angeles County Public Works",
+      "jurisdiction": "Los Angeles County, CA (unincorporated Altadena)",
+      "url": "https://pw.lacounty.gov/des/design_manuals/StandardPlan.pdf",
+      "covers": [
+        "standard plans"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "§4: \"We, on behalf of ourselves and our licensors, expressly reserve all rights\" … \"Access to this Site does not confer, and shall not be considered as conferring, upon you\" \"any license or other rights to the Site, the Contents or the compilation of Contents.\"",
+        "source": "https://pw.lacounty.gov/explore-public-works/privacy-and-terms-of-use/",
+        "note": "No county highway/road design manual is listed online. The SPPWC \"Greenbook\" Standard Plans (BNi, purchase only; \"not to be reproduced\") is third-party copyright and is not registered as a candidate.",
+        "route": "Written request to LA County Public Works."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "pasadena-standard-plans",
+      "title": "City of Pasadena Public Works Standard Plan Drawings; Street Design Guide (2017)",
+      "publisher": "City of Pasadena",
+      "jurisdiction": "Pasadena, CA (about a third of Altadena's disc)",
+      "url": "https://www.cityofpasadena.net/public-works/engineering-and-construction/public-works-permitting/standard-plan-drawings/",
+      "covers": [
+        "curb and gutter, cul-de-sac, turn-bay transitions (by sheet title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"Using or modifying this site's materials and information for commercial or profit making purposes is prohibited\" — otherwise \"freely available for non-commercial, non-profit making use\". Hosted APWA/SPPWC sheets (APWA-132-1, -134-1): \"Use of these third party materials for any purpose is prohibited.\"",
+        "source": "https://www.cityofpasadena.net/disclaimers",
+        "route": "Written permission from Pasadena's Department of Information Technology for commercial use."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
     }
   ],
   "questions": [
@@ -2111,6 +2449,35 @@
       "findings": [
         "r-lawn-slope-design-choice"
       ]
+    },
+    {
+      "id": "q-island-nose",
+      "status": "open",
+      "ask": "Where does a curbed island / median nose end (how narrow before the curb stops), and how does its tip round (nose radius)?",
+      "neededBy": "the curbed nose rounded once inside easeContour (Lath, swale/flatten-paths-r1; JH-1143) — BRIEF-a-curbed-nose-has-a-source",
+      "codeSites": [
+        "src/lib/tileGround.js easeContour (the nose rounding, Lath's build)"
+      ],
+      "findings": [
+        "f-caltrans-island-approach-nose-parabolic",
+        "f-caltrans-island-approach-nose",
+        "f-caltrans-island-min-size",
+        "f-massdot-island-min-size"
+      ],
+      "tried": [
+        "caltrans-hdm → f-caltrans-island-approach-nose-parabolic (shape: parabolic flare), f-caltrans-island-approach-nose (offsets), f-caltrans-island-min-size (4 ft × 20 ft divisional) — no tip radius",
+        "massdot-design-guide → f-massdot-island-min-size (linear ≥ 2 ft wide) — no tip radius; nose details image-only",
+        "fhwa-sa-13-027 §8 median end type — semicircle / bullet nose, AASHTO-attributed (aashtoPassages), excluded",
+        "mutcd-11r1 §3J.05–3J.06 — marks approach ends; no geometry",
+        "prowag-2023 — does not cover island geometry",
+        "local + regional candidates, terms checked 2026-10-17 (Plat): none permitted yet — see sources stl-city-*, stlco-dot-design-criteria, clayton-mo-standards, ucity-mo-code, richmond-heights-mo-code, huron-oh-codified-ordinances, erie-county-oh-subdivision-regs-2024, provincetown-subdivision-rules, ccc-complete-streets-manual-2012, nyc-dot-street-design-manual, caltrans-standard-plans, la-county-pw-standard-plans, pasadena-standard-plans"
+      ],
+      "nextSources": [
+        "caltrans-standard-plans (terms look permitted; Jacob to approve) — the HDM points here for island details",
+        "stl-city-standard-details (LS + HPDM) — written request",
+        "nyc-dot-street-design-manual (JH) — permission per nyc.gov ToU §IV.6"
+      ],
+      "notes": "Per town, 2026-10-17. MINIMUM CURBED WIDTH: CA 4 ft (divisional), MA 2 ft (linear) — own jurisdiction for Altadena / Provincetown; MO, OH, NY may borrow either, labelled \"borrowed for <state>\" (Jacob's ruling 2026-10-17, BRIEF §1). NOSE SHAPE: CA parabolic flare (own); others borrow. NOSE RADIUS: no permitted source states one in its own voice — [U] in every town. Jurisdictions measured with us-census-geocoder over each disc: LS = St. Louis city; HPDM = Clayton > St. Louis city > University City > Richmond Heights > unincorporated St. Louis County; Huron = Huron city + unincorporated Huron Township (Erie County); PTown = Provincetown (+ Truro); Altadena = unincorporated LA County + Pasadena; JH = NYC (no jurisdiction.json in the pour)."
     }
   ],
   "findings": [
@@ -5085,6 +5452,23 @@
       "date": "2026-10-11",
       "quote": "3.5:1 (1V:3.5H), as an AESTHETIC choice attached to no source (relayed by Boz)",
       "canon": "docs/briefs/BRIEF-the-ground-knows-its-height.md §5 (the girdle)"
+    },
+    {
+      "id": "f-caltrans-island-approach-nose-parabolic",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-island-nose",
+      "kind": "rule",
+      "value": {
+        "approachNoseShape": "parabolic flare",
+        "flares": "Table 405.4 (1:5, 1:10, 1:15 parabolic curb flares, offsets by distance)",
+        "noseRadiusStated": false
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 303.5(8); Table 405.4",
+      "quote": "The approach nose of islands should also be designed utilizing a parabolic flare, as discussed in Index 405.4.",
+      "scope": "CA curbed islands — the SHAPE the curb takes into the approach nose; no radius at the tip",
+      "foundOn": "2026-10-17",
+      "foundBy": "Plat"
     }
   ]
 }
