@@ -1640,7 +1640,7 @@ export function flareWorkingCopy(WC, flares, ownerOfOrig, hwOf, disclosure) {
 
 const subInkLen = (eps) => (eps > 0 ? 2 * eps - 2 / SCALE : 0)
 const maxDepthOf = (seg) => seg.reduce((m, x) => Math.max(m, x.dS, x.dE), 0)
-function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null, ownerKeyOf = null) {
+function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null, ownerKeyOf = null, nose = null) {
   const nIn = ringIn.length
   if (nIn < 3) return []
   // ⭐ ① IS INK EXPANDED BY ε — 2ε WIDE — so no leg of ① is shorter than the ink is wide. A shorter edge is the
@@ -1831,10 +1831,10 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     let R2 = rg, E2 = el, V2 = vs, A2 = rg.map(() => null)
     if (easeAt) {
       const arcs = []
-      const e = easeContour(rg, (j) => easeAt(vs[j]) || 0, el, arcs, vs)
+      const e = easeContour(rg, (j) => easeAt(vs[j]) || 0, el, arcs, vs, nose)
       // ⭐ an arc's id is its index in `easeArcs` — unique across every ring, so a boolean that merges rings cannot make
       // two corners share an id, and a consumer reads the arc's own entry rather than the ring it was found on
-      const gid = new Map(); for (const a of arcs) { gid.set(a.i, easeArcs.length); easeArcs.push({ ...a, src: vs[a.i] }) }
+      const gid = new Map(); for (const a of arcs) { gid.set(a.i, easeArcs.length); easeArcs.push({ ...a, src: a.src }) }
       R2 = e.ring; E2 = e.labs; V2 = e.vtx; A2 = e.arc.map(x => x == null ? null : gid.get(x))
     }
     const g1 = mergeGrid(R2, E2, V2, A2)
@@ -2755,12 +2755,15 @@ function oneSideClaim(poly, W, leftInside) {
 // vertex whose authored radius resolves to ZERO is not a corner AT ALL — it fails the first test and
 // is indistinguishable, from outside, from a vertex that simply does not turn. Those are opposite
 // facts and they must never share a silence.
-const easeSkips = { noR: 0, straight: 0, straightWithR: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0, pairClamped: 0 }
+const easeSkips = { noR: 0, straight: 0, straightWithR: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0, pairClamped: 0, noseCapped: 0, noseSpike: 0, noseNarrow: 0 }
 // ⭐ `pairClamped` / `easePairSites` — two NAMED corners (each eased at its own ① vertex) on one shared leg too short for
 // both: each is bounded by half that leg, so both come out below their R. Ruled behaviour (a corner takes the R its leg
 // allows), disclosed because the pair reads as one squeezed corner (JH, 2026-10-17: r 0.260 + 0.045 where one 4.5 m arc was).
 const easePairSites = []
-export function easeSkipsTake() { const o = { ...easeSkips, pairSites: easePairSites.splice(0) }; for (const k in easeSkips) easeSkips[k] = 0; return o }
+// `noseCapped` / `noseSpike` / `noseNarrow` + `easeNoseSites` — the nose (see easeContour): a pair cut back to the minimum
+// curbed width and capped · a pair folded back past 180° (a spike, not cut) · a pair narrower than that width to the next corner.
+const easeNoseSites = []
+export function easeSkipsTake() { const o = { ...easeSkips, pairSites: easePairSites.splice(0), noseSites: easeNoseSites.splice(0) }; for (const k in easeSkips) easeSkips[k] = 0; return o }
 const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may miss by (= `derive.js`'s ARC_TOL)
 // `out` (optional) collects the ACHIEVED arc per eased corner — {i, V, R, C, r, tA, tB}. This is
 // the corner TRUTH the authoring handle rides: `SURVEY §4` — "the ONE corner truth the magenta
@@ -2772,12 +2775,14 @@ const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may 
 // boolean — `A15`'s forbidden proximity recovery, wearing a 1 mm grid hash — and it reached only
 // part of the corners (▶ `node checks/claims-the-corner-extent-is-carried.mjs`, which reports the
 // share on any town). ⭐ Identity CARRIED through, never recovered afterward (`RIBBONS §1`).
-function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
-  const n = ring.length
+function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null, nose = null) {
+  let n = ring.length
   if (n < 3) return { ring, labs, arc: ring.map(() => null), vtx }
   const seg = (a, b) => { const dx = b[0]-a[0], dz = b[1]-a[1]; const L = Math.hypot(dx, dz); return { L, d: L > 1e-12 ? [dx/L, dz/L] : [0, 0] } }
-  const R_ = new Array(n); for (let i = 0; i < n; i++) R_[i] = Math.max(0, rAt(i) || 0)
-  const eLen = new Array(n)
+  let R_ = new Array(n); for (let i = 0; i < n; i++) R_[i] = Math.max(0, rAt(i) || 0)
+  let eLen, turnAt_, isCorner_, legBack, legFwd
+  const measure = () => {
+  eLen = new Array(n)
   for (let i = 0; i < n; i++) { const a = ring[i], b = ring[(i + 1) % n]; eLen[i] = Math.hypot(b[0]-a[0], b[1]-a[1]) }
 
   // ⭐⭐⭐ A LEG RUNS CORNER TO CORNER — it is NOT the adjacent edge. Jacob, 2026-09-06: "a square
@@ -2800,14 +2805,14 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
   // operator's 27 marked corners, 19 were achieving under 60% of their stamped radius.
   // ⛔ NOT a new threshold — `FILLET_TURN_TOL` is the existing constant, and this is the same
   // ruling applied at the second corner constructor. A leg must run to the next REAL corner.
-  const turnAt_ = new Array(n)
+  turnAt_ = new Array(n)
   for (let i = 0; i < n; i++) {
     const A = seg(ring[(i - 1 + n) % n], ring[i]), B = seg(ring[i], ring[(i + 1) % n])
     turnAt_[i] = Math.atan2(Math.abs(A.d[0] * B.d[1] - A.d[1] * B.d[0]), A.d[0] * B.d[0] + A.d[1] * B.d[1])
   }
-  const isCorner_ = new Array(n)
+  isCorner_ = new Array(n)
   for (let i = 0; i < n; i++) isCorner_[i] = R_[i] > 1e-9 && turnAt_[i] >= FILLET_TURN_TOL
-  const legBack = new Array(n).fill(0), legFwd = new Array(n).fill(0)
+  legBack = new Array(n).fill(0); legFwd = new Array(n).fill(0)
   for (let i = 0; i < n; i++) {
     let L = 0
     for (let k = 1; k <= n; k++) { const j = (i - k + n) % n; L += eLen[j]; if (isCorner_[j]) break }
@@ -2816,17 +2821,77 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
     for (let k = 0; k < n; k++) { const j = (i + k) % n; L += eLen[j]; if (isCorner_[(j + 1) % n]) break }
     legFwd[i] = L
   }
-  // walk `dist` along the ring from vertex `from` (dir −1 back, +1 forward) → the point there
-  const walk = (from, dir, dist) => {
+  }
+  measure()
+  // walk `dist` along the ring from vertex `from` (dir −1 back, +1 forward) → the point there, and the edge it lies on
+  const walkAt = (from, dir, dist) => {
     let left = dist, j = from
     for (let k = 0; k < n; k++) {
       const eIdx = dir < 0 ? (j - 1 + n) % n : j
       const L = eLen[eIdx]
       const a = ring[j], b = ring[dir < 0 ? eIdx : (j + 1) % n]
-      if (L >= left) { const t = L > 1e-12 ? left / L : 0; return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t] }
+      if (L >= left) { const t = L > 1e-12 ? left / L : 0; return { p: [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t], e: eIdx } }
       left -= L; j = dir < 0 ? (j - 1 + n) % n : (j + 1) % n
     }
-    return ring[j]
+    return { p: ring[j], e: j }
+  }
+  const walk = (from, dir, dist) => walkAt(from, dir, dist).p
+
+  // ── THE NOSE — a curbed feature ENDS where the block narrows to the minimum curbed width (Jacob, 2026-10-17: "end and
+  // round like everything else"). `nose.w` is that width, read by finding id at pour (`curbedMinWidth`). Two named corners on
+  // one leg shorter than w, both turning toward the solid, are the two sides of a point the curb cannot be built to: the ring
+  // is cut back to where the block is w wide — the cut from a point on the leg behind the first corner to the nearest point
+  // of the leg after the second — and that cut is the end. Below it the curb is gone (`RIBBONS §1`: a feature that cannot
+  // exist goes to zero there). The end that remains is a dead-end CAP by the existing rule: TWO ordinary corners, both
+  // eased once by the loop below, at r = w/2 (⛔ [U] q-curbed-nose-radius — derived, no source states it).
+  // ⛔ NOT a merged corner and NOT a second rounding: the cut moves where the two corners are, and the one ease rounds them.
+  // Only a POINT is cut: the two turns (and the samples between) sum past 90°, so the end's interior angle is acute.
+  // A pair whose turns sum past 180° folds back on itself (the end WIDENS outward): a spike, reported and not cut. A pair
+  // whose block stays narrower than w all the way back to the next corner has no place to end: reported and not cut.
+  // Assumes the ring's solid is on its left (Clipper's output orientation, outer and hole alike).
+  const capped = new Set()          // the ring points a nose cut made: their pair is the cap, not a squeezed pair
+  if (nose) {
+    const w = nose.w, judged = new Set()
+    const turnS = (k) => { const P = ring[(k - 1 + n) % n], V = ring[k], N = ring[(k + 1) % n]
+      return Math.atan2((V[0]-P[0]) * (N[1]-V[1]) - (V[1]-P[1]) * (N[0]-V[0]), (V[0]-P[0]) * (N[0]-V[0]) + (V[1]-P[1]) * (N[1]-V[1])) }
+    for (let guard = 0; guard <= n; guard++) {
+      let hit = null
+      for (let i = 0; i < n && !hit; i++) {
+        if (!isCorner_[i] || capped.has(ring[i]) || judged.has(ring[i]) || !(legFwd[i] < w)) continue
+        let j = (i + 1) % n; while (j !== i && !isCorner_[j]) j = (j + 1) % n
+        if (j === i || capped.has(ring[j]) || !(turnS(i) > 0 && turnS(j) > 0)) continue
+        let S = 0; for (let k = i; ; k = (k + 1) % n) { S += turnS(k); if (k === j) break }
+        hit = { i, j, S }
+      }
+      if (!hit) break
+      const { i, j, S } = hit, site = { a: ring[i], b: ring[j], leg: legFwd[i], turnDeg: S * 180 / Math.PI }
+      judged.add(ring[i])
+      // ⭐ a POINT is an end whose interior angle is acute (the needle check's own definition): turns summing to 90° or less
+      // are one ordinary corner drawn across a short leg, not a point — left to the ease, as every corner is
+      if (!(S > Math.PI / 2)) continue
+      if (S > Math.PI) { easeSkips.noseSpike++; easeNoseSites.push({ kind: 'spike', ...site }); continue }
+      // the leg after j, to the next corner: the nearest point on it to Q
+      const after = []; for (let k = j, L = 0; L < legFwd[j] - 1e-12; k = (k + 1) % n) { after.push(k); L += eLen[k] }
+      const cut = (p) => { const Q = walkAt(i, -1, p); let best = null
+        for (const k of after) { const a = ring[k], b = ring[(k + 1) % n], dx = b[0]-a[0], dz = b[1]-a[1], L2 = dx*dx + dz*dz
+          const t = L2 ? Math.max(0, Math.min(1, ((Q.p[0]-a[0]) * dx + (Q.p[1]-a[1]) * dz) / L2)) : 0, q = [a[0] + t*dx, a[1] + t*dz], d = Math.hypot(q[0]-Q.p[0], q[1]-Q.p[1])
+          if (!best || d < best.d) best = { p: q, e: k, t, d } }
+        return { Q, best } }
+      const pMax = legBack[i] - 1e-6, far = cut(pMax)
+      if (!(far.best?.d >= w) || (far.best.e === after.at(-1) && far.best.t >= 1)) { easeSkips.noseNarrow++; easeNoseSites.push({ kind: 'narrow', ...site }); continue }
+      let lo = 0, hi = pMax
+      for (let it = 0; it < 60; it++) { const mid = (lo + hi) / 2; if (cut(mid).best.d >= w) hi = mid; else lo = mid }
+      const { Q, best } = cut(hi), e1 = Q.e, e2 = best.e
+      // keep ring[e2+1 … e1]; between ring[e1] and ring[e2+1] the tip is replaced by the cut Q1 → Q2
+      const drop = new Set(); for (let k = (e1 + 1) % n; ; k = (k + 1) % n) { drop.add(k); if (k === e2) break }
+      const Q1 = Q.p, Q2 = best.p, R2 = [], L2 = [], V2 = [], r2 = []
+      for (let k = 0; k < n; k++) { if (drop.has(k)) continue
+        R2.push(ring[k]); L2.push(labs ? labs[k] : null); V2.push(vtx ? vtx[k] : null); r2.push(R_[k])
+        if (k === e1) { R2.push(Q1, Q2); L2.push(labs ? labs[i] : null, labs ? labs[e2] : null); V2.push(vtx ? vtx[i] : null, vtx ? vtx[j] : null); r2.push(w / 2, w / 2) } }
+      ring = R2; labs = labs ? L2 : null; vtx = vtx ? V2 : null; R_ = r2; n = ring.length
+      capped.add(Q1); capped.add(Q2); easeSkips.noseCapped++; easeNoseSites.push({ kind: 'capped', ...site, cut: [Q1, Q2] })
+      measure()
+    }
   }
 
   // ── PASS 1 — plan every corner, and which samples its arc swallows ──────────────────────────
@@ -2896,13 +2961,13 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
     if (arcsOut) {
       const sgn = cross >= 0 ? 1 : -1
       const nA = [-dIn[1] * sgn, dIn[0] * sgn]
-      arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2 })
+      arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2, src: vtx ? vtx[i] : undefined })
     }
   }
 
   // a pair: corner i bounded by its forward leg, and the next corner along that leg bounded by the same leg from behind
   for (const [i, V] of clampFwd) { let j = (i + 1) % n; while (j !== i && !isCorner_[j]) j = (j + 1) % n
-    if (j !== i && clampBack.has(j)) { easeSkips.pairClamped++; easePairSites.push({ a: V, b: ring[j], leg: legFwd[i], R: [R_[i], R_[j]] }) } }
+    if (j !== i && clampBack.has(j) && !(capped.has(V) && capped.has(ring[j]))) { easeSkips.pairClamped++; easePairSites.push({ a: V, b: ring[j], leg: legFwd[i], R: [R_[i], R_[j]] }) } }
 
   // ── PASS 2 — emit ──────────────────────────────────────────────────────────────────────────
   const out = [], outL = [], outA = [], outV = []
@@ -8496,6 +8561,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
+  let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
   let protoUnlabelled = null          // per ② edge the walk reached with no ① owner (`offsetRingByRects` labelOf, or a boolean)
   let protoJunctionCensus = null      // per corner arc: junction · bend · unknown-by-reason (`classifyCornerLegs`)
@@ -8535,6 +8601,10 @@ export function buildTileGround(ribbons, opts = {}) {
   const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
   let proto = null
   if (opts.grout === 'proto') {
+    // ⛔ THE NOSE NEEDS THE MINIMUM CURBED WIDTH, READ AT POUR BY FINDING ID (`curbedMinWidth`, streetProfiles.js): a
+    // curbed feature ends where the block narrows to it (easeContour). No width ⇒ no end, so the producer refuses.
+    const cmw = opts.curbedMinWidth
+    if (!(Number.isFinite(cmw?.m) && cmw.m > 0)) throw new Error('[tileGround][PROTO②] ⛔ no `curbedMinWidth` — the nose (where a curbed feature ends) is read from references/registry.json by finding id at pour (`curbedMinWidth(registry, townState(osm))`, streetProfiles.js) and passed in. Refusing to round a point the curb cannot be built to.')
     // ⛔⛔ NOT `ClipperOffset` ANY MORE, and the reason is step ②, not taste. An offset MINTS
     // every output vertex, so the only label it can carry is one scalar for the whole chain —
     // an edge then knows WHICH chain but not WHICH SIDE of it, and `feWidthAt(idx, side,
@@ -9123,7 +9193,7 @@ export function buildTileGround(ribbons, opts = {}) {
         const rings2 = offsetRingByRects(WC.ring, (j) => (depthRec.depth[j] = WC.depth[j]), false, st,
                                           (srcIdx) => { if (srcIdx == null) { protoRZero.noSrc++; return 0 }
                                                         const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, PROTO_HW, WC,
-                                          (e) => { const o = protoOwners[labs[e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null })
+                                          (e) => { const o = protoOwners[labs[e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null }, { w: opts.curbedMinWidth.m })
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
         if (st.foldDropped) protoRZero.foldLost += st.foldDropped
@@ -9314,6 +9384,9 @@ export function buildTileGround(ribbons, opts = {}) {
         const lost = sk.noR + sk.reversal + sk.degenerateLeg + sk.zeroSetback
         if (lost) console.warn(`[tileGround][PROTO②] ⛔ ${lost} corner(s) the ease DECLINED — noR ${sk.noR} (turns past the tolerance but its radius resolved to 0 ⇒ not a corner at all) · reversal ${sk.reversal} · degenerate leg ${sk.degenerateLeg} · zero setback ${sk.zeroSetback}. ⛔ Each is a corner the operator does not get.`)
         protoEasePairs = { count: sk.pairClamped, at: sk.pairSites }
+        const cmw = opts.curbedMinWidth, ns = sk.noseSites
+        protoNoses = { w: cmw.m, sources: cmw.sources, capped: sk.noseCapped, spike: sk.noseSpike, narrow: sk.noseNarrow, at: ns }
+        console.warn(`[tileGround][PROTO②] the nose: a curbed feature ends where the block narrows to ${cmw.m.toFixed(3)} m (${cmw.label}) and is capped at r = ${(cmw.m / 2).toFixed(3)} m ([U] q-curbed-nose-radius) — ${sk.noseCapped} capped · ${sk.noseSpike} folded back past 180° (a SPIKE, not cut) · ${sk.noseNarrow} narrower than that to the next corner (no place to end, not cut)${ns.find(x => x.kind !== 'capped') ? `. First not cut at (${ns.find(x => x.kind !== 'capped').a.map(c => c.toFixed(2)).join(', ')})` : ''}.`)
         if (sk.pairClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.pairClamped} PAIR(S) of named corners share one leg too short for both — each eased below its R, so the pair reads as one squeezed corner. First at (${sk.pairSites[0].a.map(c => c.toFixed(2)).join(', ')}) ↔ (${sk.pairSites[0].b.map(c => c.toFixed(2)).join(', ')}), leg ${sk.pairSites[0].leg.toFixed(2)} m.`)
         if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their authored radius — bounded by their own leg, not by a budget. Not absent, but not the authored dimension either.`)
         if (sk.straightWithR) console.warn(`[tileGround][PROTO②] ⛔⛔ ${sk.straightWithR} vertex/vertices CARRY AN AUTHORED RADIUS and were skipped as STRAIGHT — ① ruled them corners, the OFFSET ring says they do not turn, and the ease walks the offset ring. ① is the authority (\`RIBBONS §1\`). These are corners lost to a disagreement between two rings.`)
@@ -10480,7 +10553,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

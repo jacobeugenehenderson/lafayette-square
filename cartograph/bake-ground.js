@@ -49,7 +49,7 @@ import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, split
 import { lineHeights } from './lineHeight.mjs'
 import { buildDeformer } from './groundDeformer.mjs'
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
-import { requireExplicitMap, ribbonsPathOf } from './scene.js'
+import { requireExplicitMap, ribbonsPathOf, mapRawDir } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
@@ -61,7 +61,7 @@ import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign } from './lookDesign.mjs'
 import { lookFade } from './boundaryRecords.mjs'
-import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { BAND_COLORS, CURB_WIDTH, curbedMinWidth, townState } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
@@ -444,6 +444,13 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
+// The minimum curbed width (where a curbed feature ends — the nose), read from the registry by finding id for the town's
+// state (`curbedMinWidth`, streetProfiles.js). ⛔ No scene or no raw OSM ⇒ the state is unknown, and the label says so.
+function curbedMinWidthOf(scene) {
+  const osmP = scene && join(mapRawDir(scene), 'osm.json')
+  const state = osmP && existsSync(osmP) ? townState(JSON.parse(readFileSync(osmP, 'utf8'))) : { code: null }
+  return curbedMinWidth(JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'registry.json'), 'utf8')), state)
+}
 function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null, opts = {}) {
   // ⭐⭐⭐ `--proto` MAKES ① THE PRODUCER. The frozen artifact is then built from ②③ — the curb
   // offset from the protopolygon and the bands struck from that curb — instead of from the chains.
@@ -479,6 +486,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     reportGlean: true,
     surveyStreets,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
+    ...(PROTO ? { curbedMinWidth: curbedMinWidthOf(scene) } : {}),
     smooth: STREET_SMOOTH,   // the ONE knob — WYSIWYG with the live Survey curve-fit (SKELETON.md §3.5; was 0, 2026-06-04→revived 2026-06-14)
     blockLandUse: design.blockLandUse || null,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
