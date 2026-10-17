@@ -1640,7 +1640,7 @@ export function flareWorkingCopy(WC, flares, ownerOfOrig, hwOf, disclosure) {
 
 const subInkLen = (eps) => (eps > 0 ? 2 * eps - 2 / SCALE : 0)
 const maxDepthOf = (seg) => seg.reduce((m, x) => Math.max(m, x.dS, x.dE), 0)
-function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null) {
+function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null, ownerKeyOf = null) {
   const nIn = ringIn.length
   if (nIn < 3) return []
   // ⭐ ① IS INK EXPANDED BY ε — 2ε WIDE — so no leg of ① is shorter than the ink is wide. A shorter edge is the
@@ -1680,6 +1680,8 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   // and `mergeGrid`, which merges by grid point alone, so skipping the labelling leaves them byte-identical (③'s strikes
   // and its capacity guard, which keep only the rings or only their count).
   const labelled = !!(stamp || easeAt)
+  // ⛔ a labelled offset pools its contributors BY OWNER (`labelOf`), so it must be told whose each ① edge is
+  if (labelled && typeof ownerKeyOf !== 'function') throw new Error('[tileGround][offsetRingByRects] ⛔ a labelled offset needs `ownerKeyOf` (① edge → skelId|side|segOrd): its edges take an OWNER, never a guess. Refusing.')
   const contrib = []
   const addSeg = (a, b, lab, kind) => { if (labelled && Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
   // one orientation for every band, or two overlapping bands of opposite winding would CANCEL (NonZero)
@@ -1724,12 +1726,21 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   // ⛔ UNITE THE BANDS FIRST, then subtract. One pass (the difference's own NonZero clip fill) leaves a zero-width
   // slit where two bands share an edge exactly — measured: a 23 m out-and-back spike at an LS highway join.
   const B = { rings: outward ? unionRings([ring, ...clips]) : (clips.length ? differenceRings([ring], unionRings(clips)) : [ring]) }
-  // ⭐ EACH ② EDGE TAKES THE CONTRIBUTOR IT LIES ON — containment on the Clipper grid, among this block's OWN
-  // bands only (the known contributors; never a lookup against other geometry). A curb line outranks the ①
-  // edge, which outranks an end cap; where one output edge spans several collinear contributors the one it
-  // overlaps MOST wins — the tie-break `SECTION §3.3` step 1 already uses. ⛔ Not the vertex Z: two bands
-  // share their corner points, so a surviving vertex names whichever band Clipper kept, not the edge leaving it.
-  const TOLC = 2 / SCALE, CELL = Math.max(1, 2 * maxDepthOf(seg))
+  // ⭐ EACH ② EDGE TAKES THE OWNER IT LIES ON — among this block's OWN bands only (the known contributors; never a lookup
+  // against other geometry). A contributor is a candidate where both the edge's ends lie within TOL (two grid steps) of its line;
+  // what it covers of the edge is POOLED PER OWNER (skelId · side · segOrd, `ownerKeyOf`), because one owner's curb line
+  // reaches a corner in pieces (the band line and its miter stub, or two ① edges of one frontage), and an edge that
+  // straddles the join covers less than TOL of each piece. An owner TAKES the edge when its pooled cover exceeds TOL or
+  // leaves less than half a grid step of the edge uncovered. A curb line outranks the ① edge, which outranks an end cap; among
+  // owners of one kind the larger cover wins — the tie-break `SECTION §3.3` step 1 already uses.
+  // ⭐ A BOUNDARY STUB TAKES THE EDGE THAT LEAVES IT. Where two owners meet, a stub a grid step or two long lies on both
+  // lines and is covered by neither: with both its ends within TOL of each owner's end, it takes the owner of the ① edge
+  // that LEAVES the boundary — the rule the sub-ε edges already follow above (the run keeps the edge that leaves it).
+  // ⭐ An edge exactly TOL long that lies along its owner (float noise puts its overlap either side of TOL) is covered whole,
+  // so it is the owner's by its cover. ⛔ Every distance here is from a lattice point to a FLOAT line (a band is ① offset by
+  // a depth), so none is rounded onto the grid: rounding a 2.22 mm overlap to two steps moved a real corner (HPDM, 2026-10-17).
+  // ⛔ Not the vertex Z: two bands share their corner points, so a surviving vertex names whichever band Clipper kept.
+  const TOL = 2 / SCALE, HALF = 0.5 / SCALE, CELL = Math.max(1, 2 * maxDepthOf(seg))
   const grid = new Map(), gk = (x, y) => Math.floor(x / CELL) + ',' + Math.floor(y / CELL)
   contrib.forEach((c, id) => { const x0 = Math.floor(Math.min(c.a[0], c.b[0]) / CELL), x1 = Math.floor(Math.max(c.a[0], c.b[0]) / CELL)
     const y0 = Math.floor(Math.min(c.a[1], c.b[1]) / CELL), y1 = Math.floor(Math.max(c.a[1], c.b[1]) / CELL)
@@ -1738,15 +1749,38 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   const labelOf = (p, q) => {
     const ids = new Set([...(grid.get(gk((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)) || []), ...(grid.get(gk(p[0], p[1])) || []), ...(grid.get('*') || [])])
     const ex = q[0] - p[0], ey = q[1] - p[1], eL = Math.hypot(ex, ey); if (!(eL > 0)) return null
+    // first, a contributor the edge runs along by more than TOL on its own: the lowest kind, then the larger overlap
     let best = null
     for (const id of ids) { const c = contrib[id], dx = c.b[0] - c.a[0], dy = c.b[1] - c.a[1], L = Math.hypot(dx, dy)
       const off = (r) => Math.abs((r[0] - c.a[0]) * dy - (r[1] - c.a[1]) * dx) / L
-      if (off(p) > TOLC || off(q) > TOLC) continue
+      if (off(p) > TOL || off(q) > TOL) continue
       const tp = ((p[0] - c.a[0]) * dx + (p[1] - c.a[1]) * dy) / L, tq = ((q[0] - c.a[0]) * dx + (q[1] - c.a[1]) * dy) / L
       const ov = Math.min(L, Math.max(tp, tq)) - Math.max(0, Math.min(tp, tq))
-      if (!(ov > TOLC)) continue
+      if (!(ov > TOL)) continue
       if (!best || c.kind < best.kind || (c.kind === best.kind && ov > best.ov)) best = { kind: c.kind, ov, lab: c.lab } }
-    return best ? best.lab : null }
+    if (best) return best.lab
+    const ux = ex / eL, uy = ey / eL, pool = new Map()
+    for (const id of ids) { const c = contrib[id], dx = c.b[0] - c.a[0], dy = c.b[1] - c.a[1], L = Math.hypot(dx, dy)
+      const off = (r) => Math.abs((r[0] - c.a[0]) * dy - (r[1] - c.a[1]) * dx) / L
+      if (off(p) > TOL || off(q) > TOL) continue
+      const sa = (c.a[0] - p[0]) * ux + (c.a[1] - p[1]) * uy, sb = (c.b[0] - p[0]) * ux + (c.b[1] - p[1]) * uy
+      const s0 = Math.max(0, Math.min(sa, sb)), s1 = Math.min(eL, Math.max(sa, sb)); if (s1 < s0) continue
+      const owner = ownerKeyOf(origE[c.lab]) ?? `① edge ${origE[c.lab]}`, k = c.kind + '|' + owner
+      const e = pool.get(k) || pool.set(k, { kind: c.kind, iv: [], byLab: new Map(), ends: [] }).get(k)
+      e.iv.push([s0, s1]); e.byLab.set(c.lab, (e.byLab.get(c.lab) || 0) + (s1 - s0)); e.ends.push(c.a, c.b) }
+    if (!pool.size) return null
+    const cands = [...pool.values()]
+    for (const e of cands) { e.iv.sort((a, b) => a[0] - b[0]); let cov = 0, hi = -Infinity
+      for (const [a, b] of e.iv) { if (a > hi) { cov += b - a; hi = b } else if (b > hi) { cov += b - hi; hi = b } }
+      e.cov = cov; e.lab = [...e.byLab].sort((a, b) => b[1] - a[1])[0][0] }
+    const take = cands.filter(e => e.cov > TOL || eL - e.cov < HALF).sort((a, b) => a.kind - b.kind || b.cov - a.cov)
+    if (take.length) return take[0].lab
+    const kind = Math.min(...cands.map(e => e.kind)), mine = cands.filter(e => e.kind === kind)
+    if (mine.length !== 2) return null
+    const atEnd = (e) => { let d = Infinity; for (const v of e.ends) d = Math.min(d, Math.max(Math.hypot(p[0] - v[0], p[1] - v[1]), Math.hypot(q[0] - v[0], q[1] - v[1]))); return d <= TOL }
+    if (!mine.every(atEnd)) return null
+    const [a, b] = [mine[0].lab, mine[1].lab]
+    return (b - a + n) % n <= (a - b + n) % n ? b : a }
   if (labelled) B.labels = B.rings.map(rg => rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length])))
   if (stamp) { stamp.foldDropped = 0; stamp.wedges = wedges; stamp.bevels = bevels; if (B.refused) stamp.refused = B.refused }
   let maxD = 0; for (const x of seg) { if (x.dS > maxD) maxD = x.dS; if (x.dE > maxD) maxD = x.dE }
@@ -2719,8 +2753,12 @@ function oneSideClaim(poly, W, leftInside) {
 // vertex whose authored radius resolves to ZERO is not a corner AT ALL — it fails the first test and
 // is indistinguishable, from outside, from a vertex that simply does not turn. Those are opposite
 // facts and they must never share a silence.
-const easeSkips = { noR: 0, straight: 0, straightWithR: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0 }
-export function easeSkipsTake() { const o = { ...easeSkips }; for (const k in easeSkips) easeSkips[k] = 0; return o }
+const easeSkips = { noR: 0, straight: 0, straightWithR: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0, pairClamped: 0 }
+// ⭐ `pairClamped` / `easePairSites` — two NAMED corners (each eased at its own ① vertex) on one shared leg too short for
+// both: each is bounded by half that leg, so both come out below their R. Ruled behaviour (a corner takes the R its leg
+// allows), disclosed because the pair reads as one squeezed corner (JH, 2026-10-17: r 0.260 + 0.045 where one 4.5 m arc was).
+const easePairSites = []
+export function easeSkipsTake() { const o = { ...easeSkips, pairSites: easePairSites.splice(0) }; for (const k in easeSkips) easeSkips[k] = 0; return o }
 const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may miss by (= `derive.js`'s ARC_TOL)
 // `out` (optional) collects the ACHIEVED arc per eased corner — {i, V, R, C, r, tA, tB}. This is
 // the corner TRUTH the authoring handle rides: `SURVEY §4` — "the ONE corner truth the magenta
@@ -2795,6 +2833,7 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
   // what makes the span honest instead of one-sided.
   const plan = new Map()          // corner index → { arc points, labels }
   const covered = new Set()
+  const clampFwd = new Map(), clampBack = new Set()   // eased corners bounded by half their forward / backward leg
   for (let i = 0; i < n; i++) {
     // ⛔ Plan a corner only where there IS one — a curve sample is passed through, exactly as
     // `filletRing` passes it through. Rounding an 18° vertex is invisible and it costs its
@@ -2827,7 +2866,9 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
     // ⭐ NOT a skip — the corner IS eased, at less than the authored R because its own leg bounds it
     // (the topological bound, `RIBBONS §1`). Counted so a shrunken corner is never mistaken for an
     // absent one, and never for an achieved authored radius either.
-    if (s < want - 1e-9) easeSkips.legClamped++
+    if (s < want - 1e-9) { easeSkips.legClamped++
+      if (vtx?.[i] != null && s >= legFwd[i] / 2 - 1e-9) clampFwd.set(i, V)
+      if (vtx?.[i] != null && s >= legBack[i] / 2 - 1e-9) clampBack.add(i) }
     easeSkips.eased++
     const Reff = s / Math.tan(theta / 2)
     // ⭐ The tangent points are placed ALONG THE RING, not along the adjacent edge's infinite line —
@@ -2856,6 +2897,10 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
       arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2 })
     }
   }
+
+  // a pair: corner i bounded by its forward leg, and the next corner along that leg bounded by the same leg from behind
+  for (const [i, V] of clampFwd) { let j = (i + 1) % n; while (j !== i && !isCorner_[j]) j = (j + 1) % n
+    if (j !== i && clampBack.has(j)) { easeSkips.pairClamped++; easePairSites.push({ a: V, b: ring[j], leg: legFwd[i], R: [R_[i], R_[j]] }) } }
 
   // ── PASS 2 — emit ──────────────────────────────────────────────────────────────────────────
   const out = [], outL = [], outA = [], outV = []
@@ -8449,6 +8494,8 @@ export function buildTileGround(ribbons, opts = {}) {
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
+  let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
+  let protoUnlabelled = null          // per ② edge the walk reached with no ① owner (`offsetRingByRects` labelOf, or a boolean)
   let protoJunctionCensus = null      // per corner arc: junction · bend · unknown-by-reason (`classifyCornerLegs`)
   let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
   let protoInk = null   // ① itself — its frozen rings + per-edge labels, painted FIRST in the producer below
@@ -9073,7 +9120,8 @@ export function buildTileGround(ribbons, opts = {}) {
         // NOT a ① corner (a width step, or where two non-adjacent bands met) and is left sharp, as ruled.
         const rings2 = offsetRingByRects(WC.ring, (j) => (depthRec.depth[j] = WC.depth[j]), false, st,
                                           (srcIdx) => { if (srcIdx == null) { protoRZero.noSrc++; return 0 }
-                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, PROTO_HW, WC)
+                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, PROTO_HW, WC,
+                                          (e) => { const o = protoOwners[labs[e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null })
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
         if (st.foldDropped) protoRZero.foldLost += st.foldDropped
@@ -9106,7 +9154,8 @@ export function buildTileGround(ribbons, opts = {}) {
             const HW = MP.flares?.length ? flareWorkingCopy(HW0, MP.flares, (e) => protoOwners[holeLabs[hi][e]], (j, E) => protoMeasureOf(holeLabs[hi][E[j]])?.pavementHW ?? 0, flareDisclosure) : HW0
             const hRec = { ring: HW.ring, depth: new Array(HW.ring.length).fill(null) }
             depthRec.holes.push(hRec)
-            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, PROTO_HW, HW)
+            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, PROTO_HW, HW,
+              (e) => { const o = protoOwners[holeLabs[hi][e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null })
             for (let ri = 0; ri < hOff.length; ri++) {
               hRings.push(hOff[ri])
               hLabs.push((hSt.edgeLabels?.[ri] || hOff[ri].map(() => null)).map(e => (e == null ? null : holeLabs[hi][e])))
@@ -9262,6 +9311,8 @@ export function buildTileGround(ribbons, opts = {}) {
         const sk = easeSkipsTake()
         const lost = sk.noR + sk.reversal + sk.degenerateLeg + sk.zeroSetback
         if (lost) console.warn(`[tileGround][PROTO②] ⛔ ${lost} corner(s) the ease DECLINED — noR ${sk.noR} (turns past the tolerance but its radius resolved to 0 ⇒ not a corner at all) · reversal ${sk.reversal} · degenerate leg ${sk.degenerateLeg} · zero setback ${sk.zeroSetback}. ⛔ Each is a corner the operator does not get.`)
+        protoEasePairs = { count: sk.pairClamped, at: sk.pairSites }
+        if (sk.pairClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.pairClamped} PAIR(S) of named corners share one leg too short for both — each eased below its R, so the pair reads as one squeezed corner. First at (${sk.pairSites[0].a.map(c => c.toFixed(2)).join(', ')}) ↔ (${sk.pairSites[0].b.map(c => c.toFixed(2)).join(', ')}), leg ${sk.pairSites[0].leg.toFixed(2)} m.`)
         if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their authored radius — bounded by their own leg, not by a budget. Not absent, but not the authored dimension either.`)
         if (sk.straightWithR) console.warn(`[tileGround][PROTO②] ⛔⛔ ${sk.straightWithR} vertex/vertices CARRY AN AUTHORED RADIUS and were skipped as STRAIGHT — ① ruled them corners, the OFFSET ring says they do not turn, and the ease walks the offset ring. ① is the authority (\`RIBBONS §1\`). These are corners lost to a disagreement between two rings.`)
         console.warn(`[tileGround][PROTO②] ease: ${sk.eased} corner(s) built · ${sk.straight} vertex/vertices passed through as curve samples.`)
@@ -9541,6 +9592,9 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⛔ OPT-IN (`opts.protoProducer`), so the shipped artifact is byte-identical unless asked.
       if (opts.protoProducer || opts.protoArtifact) {
         protoShapeTiles = []
+        // ⛔ A ② EDGE WITH NO ① OWNER carries no run and no cap, so nothing downstream can say whose curb it is (the ground
+        // reads no height there). Counted where the walk reads it, with its site, never filled in. ▶ checks/claims-every-curb-edge-has-its-owner.mjs
+        protoUnlabelled = { edges: 0, noOwner: 0, at: [] }
         for (const [k, ring] of (protoBlockRings || R.rings).entries()) {
           if (!(ring?.length >= 3)) continue
           if (!protoUseBlocks && signedArea(ring) > 0) continue
@@ -9726,7 +9780,8 @@ export function buildTileGround(ribbons, opts = {}) {
             for (let i = 0; i < EC.ring.length; i++) {
               const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
               const key = o ? `${o.skelId}|${o.side}|${o.segOrd}` : null
-              if (!key) { cur = null; continue }
+              if (!key) { if (EC.labs[i] == null) { protoUnlabelled.edges++; protoUnlabelled.at.push({ block: k, ring: ri, p: EC.ring[i], q: EC.ring[(i + 1) % EC.ring.length] }) } else protoUnlabelled.noOwner++
+                cur = null; continue }
               // ⛔ A CAP EDGE IS NOT FRONTAGE: it runs ACROSS the ribbon, so as a run it would answer "which side is
               // the water on" with a segment perpendicular to the shore. It ENDS the run (the leg stops where it
               // stops in the world). The record keeps its identity for the tip ease; only the RUN declines it.
@@ -10043,6 +10098,7 @@ export function buildTileGround(ribbons, opts = {}) {
         if (landEv) console.log(`[tileGround][stamp] the land-use stamp written into ${stamped} tile(s): ${added} crossing vertex(es) added to iaFull, shared with the evidence parts · the evidence's disjointness: ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs`)
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         protoJunctionCensus = protoJxCensus
+        if (protoUnlabelled.edges || protoUnlabelled.noOwner) console.warn(`[tileGround][PROTO②] ⛔ ${protoUnlabelled.edges} ② edge(s) took NO ① owner${protoUnlabelled.noOwner ? ` · ${protoUnlabelled.noOwner} name an owner ① does not have` : ''} — no run and no cap, so no height. First at (${protoUnlabelled.at[0]?.p.map(c => c.toFixed(3)).join(', ')}).`)
         {
           const J = protoJxCensus, why = Object.entries(J.why).map(([w, k]) => `${k} ${w}`).join(' · ')
           console.log(`[tileGround][PROTO②] corner legs: ${J.arcs} arc(s) · ${J.junction} JUNCTION (two roads meet: curb cuts + crosswalks) · ${J.bend} BEND (one road: no pad unless authored) · ${J.nostreet || 0} NO STREET (a shore or rim flank: no pad, no cut)`)
@@ -10407,7 +10463,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

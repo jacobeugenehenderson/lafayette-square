@@ -1,0 +1,10 @@
+// meetings.mjs <before cap> <after cap> — at each of the 10 meeting sites (owners.mjs), in each capture: is there an ease arc
+// (iaArc) on a kept tile within 3 m, and its iaJunction; and is the tile's geometry changed within 3 m.
+import { readFileSync } from 'fs'
+const [A, B] = process.argv.slice(2).map(f => JSON.parse(readFileSync(f, 'utf8')))
+const sites = [[103.426, 1361.765, 'wise-avenue-4|L|14 × blendon-place-3|R|0', 9.55], [-928.544, 983.476, 'ethel-avenue-1|L|0 × commodore-drive-1|L|0', 48.78], [165.268, 725.449, 'san-bonita-avenue-3|R|0 × san-bonita-avenue-0|L|0', 19.35], [-748.916, 19.49, 'forest-ridge-place-4|L|0 × forest-ridge-place-0|L|6', 34.55], [-1067.852, 62.028, 'harcourt-drive-0|L|3 × harcourt-drive-2|L|0', 20.29], [-1327.915, -195.505, 'brentmoor-park-3|R|0 × brentmoor-park-7|R|1', 25.91], [-572.572, -468.631, 'northmoor-drive-5|R|0 × northmoor-drive-1|L|1', 31.02], [851.945, -578.83, 'lindell-boulevard-1|R|0 × lindell-boulevard-3|L|0', 9.64], [-1002.314, -629.926, 'asbury-avenue-0|L|0 × forsyth-boulevard|L|20', 91.05], [332.196, -1049.345, 'westgate-avenue-1|L|3 × pershing-avenue-5|L|0', 47.41]]
+const near = (D, s, r) => { const out = { arcs: new Set(), jx: new Set(), verts: new Set() }
+  for (const t of D.tiles) (t.iaFull || []).forEach((ring, ri) => ring.forEach((v, i) => { if (Math.hypot(v[0] - s[0], v[1] - s[1]) > r) return
+    out.verts.add(v.join(',')); const a = t.iaArc?.[ri]?.[i]; if (a != null) { out.arcs.add(t.ring0.join(',') + '#' + a); const j = t.iaJunction?.[ri]?.[i]; out.jx.add(j == null ? 'null' : typeof j === 'number' ? 'junction' : j) } })); return out }
+for (const s of sites) { const a = near(A, s, 3), b = near(B, s, 3), moved = [...a.verts].some(v => !b.verts.has(v)) || [...b.verts].some(v => !a.verts.has(v))
+  console.log(`${s[2].padEnd(52)} turn ${String(s[3]).padStart(5)}° · arcs within 3 m: before ${a.arcs.size} → after ${b.arcs.size} · iaJunction after ${[...b.jx].join('/') || '—'} · geometry ${moved ? 'MOVED' : 'same'}`) }
