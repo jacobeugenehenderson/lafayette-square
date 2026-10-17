@@ -2668,12 +2668,14 @@ export function stampTile(st, groups) {
     if (kind === 'corner') return false
     if (kind === 'arc') return arr[q] === arr[q1] ? arr[q] : null
     return (arc && arc[q] != null && arc[q] === arc[q1] && arr[q] === arr[q1]) ? arr[q] : null })   // junction
-  const st2 = { ...st, iaStamp: [], iaArc: [], iaCorner: [], iaJunction: [] }
+  const st2 = { ...st, iaStamp: [], iaArc: [], iaCorner: [], iaJunction: [], ...(st.iaCap ? { iaCap: [] } : {}) }
   items.forEach((x, n) => { const o = out[n]
     if (x.kind === 'cut') iA[x.ri] = pts(o)
     else if (x.kind === 'ev') evRings[x.gi].push(pts(o))
     else { iaFull[x.ri] = pts(o); const r = x.r
       st2.iaStamp[x.ri] = st.iaStamp?.[x.ri] ? expand(st.iaStamp[x.ri], r, o, 'stamp') : st.iaStamp?.[x.ri]
+      // ⭐ a crossing on a cap edge takes that edge's cap, exactly as one on a run takes the run (the cap is the edge's owner)
+      if (st.iaCap) st2.iaCap[x.ri] = st.iaCap[x.ri] ? expand(st.iaCap[x.ri], r, o, 'stamp') : st.iaCap[x.ri]
       st2.iaArc[x.ri] = st.iaArc?.[x.ri] ? expand(st.iaArc[x.ri], r, o, 'arc') : st.iaArc?.[x.ri]
       st2.iaCorner[x.ri] = st.iaCorner?.[x.ri] ? expand(st.iaCorner[x.ri], r, o, 'corner') : st.iaCorner?.[x.ri]
       st2.iaJunction[x.ri] = st.iaJunction?.[x.ri] ? expand(st.iaJunction[x.ri], r, o, 'junction', st.iaArc?.[x.ri]) : st.iaJunction?.[x.ri] } })
@@ -10100,6 +10102,16 @@ export function buildTileGround(ribbons, opts = {}) {
           const t2 = protoShapeTiles[n] = { ...t, ...landOf(t.iA, { fixed, override, groups: t._evGroups || landEv }), ...(landEv ? { evidenceStamped: true } : {}) }
           delete t2._luSeed; delete t2._evGroups
         }
+        // ⛔ EVERY PER-VERTEX ARRAY KEEPS iaFull's SHAPE, RING BY RING. A pass that edits iaFull (the land-use stamp inserts
+        // crossings) must carry every array indexed parallel to it, or each vertex after an insertion reads its neighbour's
+        // entry: the merge of the cap's owner (iaCap) with the stamp left 335 HPDM vertices heightless and 3 reading another
+        // chain's cap (2026-10-17). The arrays are READ OFF THE TILE — its own `ia*` keys holding one array per ring — never
+        // listed here, so a parallel array added later is held to the same shape. Refused at the producer, where it is made.
+        for (const [n, t] of protoShapeTiles.entries()) { const F = t.iaFull || []
+          for (const [key, v] of Object.entries(t)) {
+            if (key === 'iaFull' || !/^ia[A-Z]/.test(key) || !Array.isArray(v) || !v.every(r => r == null || Array.isArray(r))) continue
+            const bad = v.length !== F.length ? -1 : v.findIndex((r, ri) => r != null && r.length !== F[ri].length)
+            if (bad !== -1 || v.length !== F.length) throw new Error(`[tileGround][PROTO⇢artifact] ⛔ tile ${n} (ring at ${t.ring?.[0]?.map(c => c.toFixed(1)).join(', ')}): \`${key}\` ${v.length !== F.length ? `has ${v.length} ring(s), iaFull ${F.length}` : `ring ${bad} has ${v[bad].length} entries, iaFull ${F[bad].length}`} — a pass edited iaFull without carrying it. Refusing.`) } }
         if (landEv) console.log(`[tileGround][stamp] the land-use stamp written into ${stamped} tile(s): ${added} crossing vertex(es) added to iaFull, shared with the evidence parts · the evidence's disjointness: ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs`)
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         protoJunctionCensus = protoJxCensus
