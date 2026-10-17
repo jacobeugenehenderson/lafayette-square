@@ -14,6 +14,7 @@ import { readBakeDesign } from '../../../cartograph/lookDesign.mjs'
 import { loadSceneTerrain } from '../../../cartograph/terrainLoad.js'
 import { resolveWalkNorm, resolveLawnNorm } from '../../../cartograph/curb-cut-norm.mjs'
 import { LATTICE_M } from '../../../src/lib/lattice.js'
+import { lineHeights } from '../../../.claude/worktrees/hpdm-gate/cartograph/lineHeight.mjs'
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=').slice(1).join('=')
 const { buildDeformer } = await import(resolve(arg('why')))
 const dir = arg('slab'), only = arg('groups')?.split(',')
@@ -23,7 +24,9 @@ const design = readBakeDesign(town, town, 'wall-class'), T = loadSceneTerrain(to
 const walkN = resolveWalkNorm(town, null), lawnN = resolveLawnNorm(town, null), lawn = lawnN.slopeMax
 const blend = Number.isFinite(design.groundBlendM) && design.groundBlendM > 0 ? design.groundBlendM : T.stepM
 const sigma = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : T.stepM
-const D = buildDeformer({ town, tiles: dump.tiles, bands: dump.bands, stencil: dump.stencil, raw: T.getElevationRaw,
+// `line` for a deformer that asks the line at the point (ignored by one that reads run.h)
+const LHs = lineHeights({ streets: JSON.parse(readFileSync(`cartograph/data/${town}/clean/ribbons.json`, 'utf8')).streets, raw: T.getElevationRaw, sigma })
+const D = buildDeformer({ town, tiles: dump.tiles, bands: dump.bands, stencil: dump.stencil, raw: T.getElevationRaw, line: { step: LHs.step, heightAt: LHs.heightAt },
   limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: E, blend, sigma } })
 const cache = new Map(), why = (x, z) => { const k = `${x},${z}`; let r = cache.get(k); if (!r) { r = D._why(x, z); if (r.v == null && !r.why) r.why = { branch: D.explain(x, z).outside ? 'outside every tile' : 'beyond reach' }; cache.set(k, r) } return r }
 const cls = new Map(); let mism = 0, n = 0
@@ -43,7 +46,12 @@ for (const g of gj.groups) { if (g.rawByteOffset == null) continue; const gid = 
     if (br.some(b => b === 'outside every tile' || b === 'beyond reach')) c = `reach edge (${[...new Set(br.filter(b => b === 'outside every tile' || b === 'beyond reach'))].join('+')}) beside ${[...new Set(br.filter(b => b !== 'outside every tile' && b !== 'beyond reach'))].join('+') || '—'}`
     else if (W.some(r => r.unowned != null)) c = 'unowned beside owned'
     else if (new Set(W.map(r => r.owner)).size > 1) { const H = W.map(r => r.why.H), dH = Math.max(...H) - Math.min(...H)
-      c = `owner seam · ${[...new Set(br)].sort().join('+')} · station H differ ${dH > 1 ? '> 1 m' : dH > 0.1 ? '0.1–1 m' : '< 0.1 m'}` }
+      const own = [...new Set(W.map(r => r.owner))].map(o => o.split('|')), tl = new Set(own.map(o => o[0])).size > 1 ? ' · across tiles' : ''
+      const nm = (o) => { if (o[2][0] === 'a') return 'arc'; const run = dump.tiles[+o[0]]?.runs?.[+o[2].slice(1)]; return run ? run.skelId : '?' }
+      const names = own.map(nm), kinds = [...new Set(names.map(x => x === 'arc' ? 'arc' : 'run'))].sort().join('↔')
+      const pair = kinds === 'run' ? (new Set(names).size > 1 ? 'run↔run, two chains' : 'run↔run, one chain') : kinds === 'arc↔run' ? 'arc↔run' : 'arc↔arc'
+      if (arg('pairs')) c = `owner seam · ${pair}${tl} · station H differ ${dH > 1 ? '> 1 m' : dH > 0.1 ? '0.1–1 m' : '< 0.1 m'}`
+      else c = `owner seam · ${[...new Set(br)].sort().join('+')} · station H differ ${dH > 1 ? '> 1 m' : dH > 0.1 ? '0.1–1 m' : '< 0.1 m'}` }
     else { const b = [...new Set(br)].sort().join('+')
       if (br.includes('ease')) { const e = W.find(r => r.why.branch === 'ease').why, sl = Math.abs(T.getElevationRaw(P[v[0] * 3], P[v[0] * 3 + 2]) - e.hBack) / e.blend
         c = `one owner · ${b} · ease slope ${sl > lawn ? '> the lawn limit' : '≤ the lawn limit'}` }

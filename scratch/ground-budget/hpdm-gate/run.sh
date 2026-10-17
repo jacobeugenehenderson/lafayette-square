@@ -8,7 +8,7 @@
 setopt pipefail; G=${0:A:h}; R=/Users/jacobhenderson/Desktop/lafayette-square.nosync; WT=$R/.claude/worktrees/hpdm-gate; MODE=$1; T=${2:-hipointedemun}
 free_pct() { memory_pressure | awk -F': ' '/free percentage/ {print int($2)}' }
 [[ -n "$(cd $R && git status --porcelain -- cartograph src | grep -v '^??')" ]] && { echo "⛔ the main tree's cartograph/ or src/ is dirty"; exit 2; }
-(( $(sysctl -n vm.loadavg | awk '{print int($2)}') >= 8 || $(free_pct) < 40 )) && { echo "⛔ not launched: load $(sysctl -n vm.loadavg) · free $(free_pct)%"; exit 2; }
+(( $(sysctl -n vm.loadavg | awk '{print int($2)}') >= 8 || $(free_pct) < 70 )) && { echo "⛔ not launched: load $(sysctl -n vm.loadavg) · free $(free_pct)%"; exit 2; }
 BG=$WT/cartograph/bake-ground.js; [[ $MODE == producer ]] && { node $G/make-producer.mjs $BG $DUMP || exit 1; BG=$G/bake-ground.producer.js; }
 [[ $MODE == full ]] && { node $G/make-gate.mjs $BG || exit 1; BG=$G/bake-ground.gate.js; }
 M="{\"cartograph/bake-ground.js\":\"$BG\",\"src/lib/tileGround.js\":\"$WT/src/lib/tileGround.js\",\"cartograph/groundDeformer.mjs\":\"${DEFORMER:-$WT/cartograph/groundDeformer.mjs}\",\"cartograph/bake-shore-median.mjs\":\"$WT/cartograph/bake-shore-median.mjs\"}"
