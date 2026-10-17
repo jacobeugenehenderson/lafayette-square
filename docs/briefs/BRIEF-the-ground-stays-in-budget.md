@@ -51,34 +51,24 @@ found. If the code contradicts this brief, stop and flag Boz before building.
    - ⛔ Design choices go to Boz, then Jacob, before building.
    - ⛔ A tolerance or floor that merely happens to fit Huron is a Class D constant (`CLAUDE.md` Layer 0). The fix
      derives from the town.
-5. **The height map: one terrain record, fine where things meet, coarse in the open. READ-ONLY; measure, build
-   nothing.**
-   - **Today:** `cartograph/bake-terrain.js` range-reads each town's 1 m lidar and writes one uniform grid. The grid
-     step is read off `terrain.json` (`bounds` ÷ (`width` − 1)); ▶ re-derive it per town. Fine detail near the lines
-     is meant to come from the deformer (`cartograph/lineHeight.mjs#lineHeights` → `cartograph/groundDeformer.mjs#buildDeformer`),
-     and it lands in the mesh as triangles. That is the budget breach (§2). The one precedent for keeping lidar
-     where it matters is `bake-terrain.js#rockCells` (the lidar's rock kept under mapped breakwaters). Readers of
-     ground height in the player: `src/lib/drawnGround.js#makeDrawnGround` (the shore band and the revetment read it).
-   - **The idea:** one height record that is fine (the lidar's 1 m) in bands where things meet (each side of ①
-     along streets, lot and land-use edges behind the walk, and the shore's gusset) and the coarse grid everywhere
-     else. The ground, the walks, the shore, the revetment, boulders and trees all read their height from it.
-   - **Three measurements, on HPDM, Huron and Provincetown:**
-     a. **Where the detail is.** The difference between the 1 m lidar and the served coarse grid: what share of it
-        (by area, and by the cells over a threshold you derive and state) falls inside those bands, versus in the
-        open interiors. ⛔ Band widths are derived from the scene (the deformer's own blend distance, the gusset's
-        extent), never typed in. The mounds behind HPDM's walks (`BRIEF-the-ground-knows-its-height` §4 item 7,
-        `scratch/ground-height/mounds.mjs`) are the known case to reproduce.
-     b. **What the map costs.** Bytes for the mixed map per town, beside the served `terrain.bin` and beside the
-        deformer's triangle cost from the record.
-     c. **What the mesh still needs.** The ground only shows height where it has vertices. Count the extra vertices
-        the bands need for the kerb step and the shore's bank to show at the close camera (judge there, not from
-        far; memory `feedback_build_for_close_inspection_not_for_distance`).
-   - **What this trusts:** ① and the partition (`shape.json` runs; `SKELETON`, `RIBBONS §1`), and the shore ruling
-     (`BRIEF-the-ground-knows-its-height` §5, "The shore: RULED"). **What trusts this:** the deformer, the walks'
-     levels, the shore's gusset, and next the revetment. The revetment's bed would come from this map (Jacob,
-     2026-10-15: the revetment becomes a stamped land use, a riprap surface in `cartograph/surfaces.mjs` and placed
-     boulders, with no bed built in the browser; its brief waits on this step and on the pour fix).
-   - **Bring Boz the three numbers per town and stop.** Whether this becomes the SSoT is Jacob's ruling.
+5. ✅ **The height map, measured** (Loess, abfd78ac, `scratch/ground-budget/heightmap/`). Jacob ruled its three
+   takeaways on 2026-10-15: a 1 m band at the shore only (`BRIEF-the-shore-keeps-its-lidar`); the coarse grid is the true
+   mean of the 1 m lidar (eb5aa261); streets and lots keep the deformer's profile.
+6. **Simplify the fine ground after it is built** (Jacob, 2026-10-16; queued behind the pour fix,
+   `BRIEF-the-stamp-lands-on-the-lattice`, since no town's ground bakes on trunk until it lands).
+   - **The premise to confirm:** the growth is the ped bands, refined to 7.8 mm (89% of HPDM's added triangles,
+     17405943), not the open terrain. The precision of the band is the lever (c1726d21's sweep).
+   - **The method:** bake fine, then merge triangles wherever the surface moves less than a bound, so flat walk
+     collapses and the kerb steps and bends keep their vertices.
+     - The shared edges between groups survive: the conformity pass still reports 0 T-junctions.
+     - The bound is derived from the town and judged at the close camera (memory
+       `feedback_build_for_close_inspection_not_for_distance`), never a constant that fits HPDM.
+   - **Measure on HPDM, then Huron,** beside the served ground and the unsimplified one: triangles, `ground.bin` bytes,
+     bake time (it adds to the bake, so report it), and the walk's vertical error against the fine bake (p50/p99/max).
+   - **Streaming** (ROADMAP H5; Brace's chunk study ee72057a, `scratch/ground-budget/stream/`) stays parked. It is the
+     next step only if the simplified sizes still hurt on a phone. Browse sees the whole disc, so streaming alone does
+     not shrink it.
+   - Bring Boz the numbers and stop.
 
 ## 4. Bounds
 
