@@ -77,7 +77,7 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    ⛔ This lifts §7's "no change to ①/② construction" bound **for this stamp only** — the shape itself
    does not move; `a03-curb-identity` / `claims-repour-changes-nothing` must show geometry unchanged.
 4. **The raised kerb lifts the WHOLE BLOCK inboard of the kerb face** (curb, walk, lawn, land use) by an
-   authored height with a neutral default; asphalt stays at 0; a riser along `iA`; each ramp is the walk
+   authored height, kit default the house **6 in** (`r-house-kerb-height`, Jacob 2026-10-17); asphalt stays at 0; a riser along `iA`; each ramp is the walk
    sloping h → 0. Buildings, trees and lamps ride the lifted ground. ⛔ Not a lip strip, not a
    riser-only look ("it's only seen from far" is not an available argument). **Measure this option's
    cost first** (flatten, coplanar check, AO, anchors, phone-lo frame time) and stop with the numbers.
@@ -164,7 +164,9 @@ Jackson Heights bakes tonight.
    - The whole block inboard of the kerb lifts; each curb cut slopes h → 0; asphalt stays at 0.
    - Buildings, trees and lamps RIDE the lifted ground. Today the anchor sampler ignores the mesh's y, so they would
      bury by h; fix the sampler, don't offset the objects.
-   - Height is a jurisdiction value on the same norm ladder (`norms.json` → state → kit **0**); LS = **0.15 m (~6 in)**.
+   - Height is a jurisdiction value on the same norm ladder (`norms.json` → state → kit **6 in**, the house standard,
+     `references/` `r-house-kerb-height`); LS = **0.15 m (~6 in)**. ⚠️ **Not built:** `curb-cut-norm.mjs` still gives
+     kit = 0, and a kit kerb > 0 makes every town's cuts need ramp/flare slopes, which no kit rung carries.
      ⛔ Height and width are SEPARATE knobs, never coupled: the width is the Look's `curbWidth` slider, authored wider
      on LS for looks (0.381 m) and left alone (Jacob, 2026-10-06: *"I made the curbs wider for cosmetic reasons"*). A
      source for a town's height (a state standard, a city's data) is welcome as a rung; record which rung it came from.

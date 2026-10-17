@@ -1588,7 +1588,7 @@
       "id": "q-island-min-size",
       "ask": "How small can a channelising leftover be before it is paint (a flush marked area) rather than a raised island?",
       "neededBy": "H-3 Q8 (the third surface)",
-      "status": "open",
+      "status": "answered",
       "tried": [
         "mutcd-11r1 → f-mutcd-island-criteria-deferred",
         "fhwa-sa-13-027 → f-sa13027-island-raised-or-flush (no threshold; its numeric island rules are AASHTO-attributed, excluded)",
@@ -1599,13 +1599,14 @@
       "nextSources": [
         "none of the permitted sources states a raised-vs-flush size (Caltrans, MassDOT, MUTCD, SA-13-027 all read) — a ruling or a measured value, or a further state manual"
       ],
-      "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open. ⸻ MassDOT (MA): floors of 50 sq ft urban / 100 sq ft rural with a side ≥ 15 ft, linear islands ≥ 2 ft wide — but again NO size at which raised becomes flush; raised is \"ideal\", flush \"less preferably\" and never a refuge. Open as asked, in both CA and MA.",
+      "notes": "ANSWERED by the kit house standard (Jacob, 2026-10-17): a leftover smaller than 50 sq ft is not a raised island (r-house-island-min-area), informed by CA and MA floors. No permitted source states a raised-vs-flush size. No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open. ⸻ MassDOT (MA): floors of 50 sq ft urban / 100 sq ft rural with a side ≥ 15 ft, linear islands ≥ 2 ft wide — but again NO size at which raised becomes flush; raised is \"ideal\", flush \"less preferably\" and never a refuge. Open as asked, in both CA and MA.",
       "findings": [
         "f-caltrans-island-min-size",
         "f-caltrans-island-raised-or-painted",
         "f-massdot-island-min-size",
         "f-massdot-island-raised-or-flush",
-        "f-mutcd-small-raised-islands"
+        "f-mutcd-small-raised-islands",
+        "r-house-island-min-area"
       ]
     },
     {
@@ -2489,7 +2490,7 @@
     },
     {
       "id": "q-island-nose",
-      "status": "open",
+      "status": "answered",
       "ask": "Where does a curbed island / median nose end (how narrow before the curb stops), and how does its tip round (nose radius)?",
       "neededBy": "the curbed nose rounded once inside easeContour (Lath, swale/flatten-paths-r1; JH-1143) — BRIEF-a-curbed-nose-has-a-source",
       "codeSites": [
@@ -2499,7 +2500,9 @@
         "f-caltrans-island-approach-nose-parabolic",
         "f-caltrans-island-approach-nose",
         "f-caltrans-island-min-size",
-        "f-massdot-island-min-size"
+        "f-massdot-island-min-size",
+        "r-house-curbed-min-width",
+        "r-house-nose-radius"
       ],
       "tried": [
         "caltrans-hdm → f-caltrans-island-approach-nose-parabolic (shape: parabolic flare), f-caltrans-island-approach-nose (offsets), f-caltrans-island-min-size (4 ft × 20 ft divisional) — no tip radius",
@@ -2514,7 +2517,7 @@
         "stl-city-standard-details (LS + HPDM) — written request",
         "nyc-dot-street-design-manual (JH) — permission per nyc.gov ToU §IV.6"
       ],
-      "notes": "Per town, 2026-10-17. MINIMUM CURBED WIDTH: CA 4 ft (divisional), MA 2 ft (linear) — own jurisdiction for Altadena / Provincetown; MO, OH, NY may borrow either, labelled \"borrowed for <state>\" (Jacob's ruling 2026-10-17, BRIEF §1). NOSE SHAPE: CA parabolic flare (own); others borrow. NOSE RADIUS: no permitted source states one in its own voice — [U] in every town. Jurisdictions measured with us-census-geocoder over each disc: LS = St. Louis city; HPDM = Clayton > St. Louis city > University City > Richmond Heights > unincorporated St. Louis County; Huron = Huron city + unincorporated Huron Township (Erie County); PTown = Provincetown (+ Truro); Altadena = unincorporated LA County + Pasadena; JH = NYC (no jurisdiction.json in the pour)."
+      "notes": "ANSWERED by the kit house standard (Jacob, 2026-10-17): the curbed nose ends where the island narrows to 4 ft (r-house-curbed-min-width), and its tip rounds as a 2 ft-radius semicircle (r-house-nose-radius). Both are rulings informed by the recorded range, never cited from a manual. A town's own jurisdiction can still supply a rung once a local source is permitted (candidates and their terms: see tried). Superseded per-town reading, 2026-10-17: MINIMUM CURBED WIDTH: CA 4 ft (divisional), MA 2 ft (linear) — own jurisdiction for Altadena / Provincetown; MO, OH, NY may borrow either, labelled \"borrowed for <state>\" (Jacob's ruling 2026-10-17, BRIEF §1). NOSE SHAPE: CA parabolic flare (own); others borrow. NOSE RADIUS: no permitted source states one in its own voice — [U] in every town. Jurisdictions measured with us-census-geocoder over each disc: LS = St. Louis city; HPDM = Clayton > St. Louis city > University City > Richmond Heights > unincorporated St. Louis County; Huron = Huron city + unincorporated Huron Township (Erie County); PTown = Provincetown (+ Truro); Altadena = unincorporated LA County + Pasadena; JH = NYC (no jurisdiction.json in the pour)."
     },
     {
       "id": "q-curb-ramp-style-preference",
@@ -2535,6 +2538,22 @@
         "txdot-roadway-design-manual — terms: no reuse terms found; not read"
       ],
       "notes": "PROWAG settles it as a REQUIREMENT, not a preference: one curb ramp (or blended transition) per crosswalk; a single apex ramp only in alterations where one-per-crosswalk is technically infeasible. ⚠ What PROWAG does NOT say: that the per-crosswalk ramp must be PERPENDICULAR — parallel ramps (R304.3), or one blended transition spanning every crosswalk, comply too. \"Perpendicular\" over parallel is Jacob's choice: r-curb-ramp-default-perpendicular. Default ramp: run width 48 in min (R304.5.1.1), running slope 1:12 max, 48 × 48 in clear area below, inside the crosswalk (R304.2.4, R304.5.3); warning surface 24 in deep min, the full run width (R305.1.4), at the back of curb when the grade break is in front of it (R305.2.1 A)."
+    },
+    {
+      "id": "q-kerb-height",
+      "status": "answered",
+      "ask": "How high the kerb stands (the riser at the curb line) when a town authors none",
+      "neededBy": "the raised kerb (BRIEF-corner-ramps-and-kerb §0a item 4; kerbLift.mjs)",
+      "findings": [
+        "f-caltrans-curb-heights",
+        "f-massdot-curb-heights",
+        "f-massdot-island-raised-or-flush",
+        "r-house-kerb-height"
+      ],
+      "codeSites": [
+        "cartograph/curb-cut-norm.mjs validateKerb / resolveCurbCutNorm — kit kerb rung (still 0: the house 6 in is not built)"
+      ],
+      "notes": "Answered by the kit house standard, r-house-kerb-height (6 in). A town's own norm (e.g. LS 0.15 m) stays on top."
     }
   ],
   "findings": [
@@ -5579,6 +5598,86 @@
       "quote": "The default can become perpendicular and perhaps we put a knob in the survey or section tool to switch the painting? Given they are 'code' now it would make more sense to default to them",
       "canon": "docs/briefs/BRIEF-corner-ramps-and-kerb.md §0a item 5 (59e3945f)",
       "notes": "PROWAG REQUIRES one ramp per crosswalk (R203.6.1.1; apex only in alterations, f-prowag-apex-ramp-alterations-only). PERPENDICULAR over parallel or a blended transition is this ruling's choice, not PROWAG's. It is the kit rung of the ladder (evidence → town norm → state → kit); LS keeps its authored diagonal norm. Relayed by Boz."
+    },
+    {
+      "id": "r-house-kerb-height",
+      "question": "q-kerb-height",
+      "kind": "ruling",
+      "value": {
+        "kerbHeight_in": 6,
+        "kerbHeight_m": 0.1524
+      },
+      "range": "vertical curb 4–8 in · Type A 6 in (CA) · typical roadway 6, barrier 6–8 (MA) · raised island 3–6 (MA) · LS norm 0.15 m",
+      "informedBy": [
+        "f-caltrans-curb-heights",
+        "f-massdot-curb-heights",
+        "f-massdot-island-raised-or-flush"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard) · docs/briefs/BRIEF-corner-ramps-and-kerb.md §0a item 4 + §3 step 5",
+      "notes": "The kit rung of the kerb norm ladder (town norms.json → state → kit). The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation. NOT BUILT: curb-cut-norm.mjs still gives kit = 0."
+    },
+    {
+      "id": "r-house-curbed-min-width",
+      "question": "q-island-nose",
+      "kind": "ruling",
+      "value": {
+        "curbedMinWidth_ft": 4,
+        "curbedMinWidth_m": 1.22
+      },
+      "range": "CA curbed divisional island ≥ 4 ft · MA raised median: raised part ≥ 4 ft · MA linear island (raised or flush) ≥ 2 ft",
+      "informedBy": [
+        "f-caltrans-island-min-size",
+        "f-massdot-raised-median",
+        "f-massdot-island-min-size"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard)",
+      "notes": "Narrower than this, the island is not curbed: the curbed nose ends where the island narrows to 4 ft. Replaces f-massdot-island-min-size (2 ft) as the kit's nose cut. The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation."
+    },
+    {
+      "id": "r-house-nose-radius",
+      "question": "q-island-nose",
+      "kind": "ruling",
+      "value": {
+        "noseRadius_ft": 2,
+        "noseRadius_m": 0.61,
+        "rule": "half of r-house-curbed-min-width"
+      },
+      "range": "NONE: no recorded finding states a nose radius. CA gives only the approach shape (parabolic flare).",
+      "informedBy": [
+        "f-caltrans-island-approach-nose-parabolic",
+        "f-caltrans-island-approach-nose",
+        "r-house-curbed-min-width"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard)",
+      "notes": "A GEOMETRIC CONSEQUENCE of the minimum width, not an average: the tip is a semicircle as wide as the narrowest curbed island. The semicircle / bullet-nose median ends exist only in SA-13-027's AASHTO-attributed passage, which rule 5 bars even as an input; they informed nothing here."
+    },
+    {
+      "id": "r-house-island-min-area",
+      "question": "q-island-min-size",
+      "kind": "ruling",
+      "value": {
+        "raisedIslandMinArea_sqft": 50,
+        "raisedIslandMinArea_m2": 4.65
+      },
+      "range": "CA ≥ 50 sq ft (75 preferred) · MA ≥ 50 urban / 100 rural, one side ≥ 15 ft",
+      "informedBy": [
+        "f-caltrans-island-min-size",
+        "f-massdot-island-min-size"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard)",
+      "notes": "Smaller than this, a channelising leftover is not a raised island. The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation."
     }
   ]
 }
