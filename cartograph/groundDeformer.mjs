@@ -10,7 +10,7 @@
 // owner changes along a fillet, and blending is what keeps H one continuous value through the change (A10: a corner is a
 // slice of one continuous band, not a join).
 // ⭐ THE PROFILE, read off the DRAWN bands (authoring included) along the ray from the station into the block:
-//   road (the street side of ②) · curb → H · then THE GIRDLE (Jacob, 2026-10-11): the ped band takes up the rise R from
+//   road (the street side of ②) → its owner edge's line AT THE POINT · curb → H · then THE GIRDLE (Jacob, 2026-10-11): the ped band takes up the rise R from
 //   H to the terrain at its back edge, the walk at most its limit (`walk.crossSlopeMax`) and the lawn at most its own
 //   (`lawn.slopeMax`), both divided by the town's exaggeration ceiling so they hold as DRAWN · whatever is left is eased
 //   LINEARLY into the terrain over B (`design.json#groundBlendM`, else one terrain grid step) · past that, the terrain.
@@ -149,7 +149,7 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
         if (onTerrain(o)) { E[i] = { terrain: true }; stats.onTerrain++; continue }
         const m = Math.max(1, Math.ceil(len(i) / line.step)), h = new Float64Array(m + 1)
         for (let j = 0; j <= m; j++) { const v = line.heightAt(o.skelId, at(i, j / m)); if (v == null) { refused ??= { k: i, o }; break } h[j] = v }
-        E[i] = { h, m }
+        E[i] = { h, m, id: o.skelId }
       }
       // ⛔ A ② EDGE WITH NO HEIGHT THROWS: unstamped (② lost its run's label), or on a run with no line and no rule (the rim,
       // a label naming no chain). Never a neighbour's height: filled so, a highway edge carried one street's end 906 m along ②
@@ -161,7 +161,12 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
         if (e.arc) return e.L > 0 ? e.hA + (e.hB - e.hA) * (e.s0 + u * e.len) / e.L : e.hA
         if (e.terrain) { const p = at(i, u); return raw(p[0], p[1]) }
         const f = u * e.m, j = Math.min(e.m - 1, Math.floor(f)); return e.h[j] + (f - j) * (e.h[j + 1] - e.h[j]) }
-      rings.push({ ring, Hat, stamp, arc, t: ti, k: ri })
+      // ⭐ THE ROAD SIDE reads its owner edge AT THE POINT (Boz, 2026-10-17): the owner's line at (x, z), the terrain under a
+      // highway or bridge edge, or the arc's blend at the nearest point. ⛔ Never the station's H carried flat across the
+      // carriageway out to the reach: carried so, a highway edge's terrain stood 25 m across asphalt and met the terrain
+      // beyond the tile in an 8 m wall (HPDM (690.4, 1102.8)).
+      const roadAt = (i, u, x, z) => { const e = E[i]; return e.arc ? Hat(i, u) : e.terrain ? raw(x, z) : line.heightAt(e.id, [x, z]) }
+      rings.push({ ring, Hat, roadAt, stamp, arc, t: ti, k: ri })
     })
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
@@ -359,7 +364,8 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
     const n = nearest(t, x, z, CAP)
     if (!n || n.d > CAP) { stats.deep++; return NONE }
     stats.evaluated++
-    if (!pipRings(x, z, t.iA) || n.d < 1e-9) return { v: n.H, owner: own(n) }     // road side, or on ② itself
+    if (n.d < 1e-9) return { v: n.H, owner: own(n) }                                // on ② itself
+    if (!pipRings(x, z, t.iA)) return { v: n.R.roadAt(n.i, n.u, x, z), owner: own(n) }   // the road side: its owner edge at the point
     // ⭐⭐ THE BAND DECIDES, NEVER THE NEARER LINE (Jacob, 2026-10-11, via Boz). A point in a ped band takes its height
     // from the ② span whose own band holds it: the spans within reach, nearest first, each tracing its band inward from
     // its own station; the first whose band reaches the point owns it. Where two streets run close, the nearer ② can be
