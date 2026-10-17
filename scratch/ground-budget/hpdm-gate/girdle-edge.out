@@ -1,0 +1,22 @@
+groundDeformer.why-blend.mjs: 22958 wall(s) · worst 6.33 m · reach edge 1735 · unowned 1323 · owner seam 6456 · one owner 13444
+      4058  PINNED (an owner took less than it needed and less than its band can take) · worst 4.61 m
+      1311  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 2.80 m
+       926  on ② / road side (no profile) · worst 6.33 m
+       161  within limits, neither pinned (cause not established) · worst 0.52 m
+        2110  (a) one tile's ring meeting itself: a block's inner corner · e.g. (-708.7, 206.7) arc ↔ southmoor-drive 90° 0.49 m · (-1043.5, 67.6) harcourt-drive-0 ↔ harcourt-drive-0 0° 0.01 m · (142.1, -72.7) arc ↔ wydown-boulevard-1 126° 0.15 m
+        1404  (b) facing rays: near-parallel streets sharing one strip · e.g. (179.3, 1260.1) berthold-avenue-3 ↔ berthold-avenue-4 153° 0.57 m · (-1353.8, 157.4) crestwood-drive-3 ↔ crestwood-drive-1 146° 0.33 m · (190.4, 970.9) clayton-road-0 ↔ arc 136° 0.24 m
+         368  (c) a street against __highway__ · e.g. (608.0, 1182.8) __highway__ ↔ clayton-avenue-0 113° 0.41 m · (565.9, 1164.7) __highway__ ↔ clayton-avenue-0 112° 0.21 m · (762.9, 1105.2) __highway__ ↔ oakland-avenue-2 154° 0.93 m
+    walls INSIDE the band blend (a vertex held by ≥ 2 owners): 18501 · held set: CHURN (the held set differs across the triangle) 12408 · one held set 6093 · walk/curb · 0.1–1 m 8231 · lawn · 0.1–1 m 4895 · walk/curb · < 0.1 m 1524 · other group · 0.1–1 m 1513 · lawn · < 0.1 m 771 · other group · < 0.1 m 705 · other group · > 1 m 308 · walk/curb · > 1 m 290 · lawn · > 1 m 264
+    seam triangles in walk/curb over the WALK limit across them (not only walls): 17183
+    seams with a profile on both owners: BACK-TO-BACK (no land use between) 3882 · land use between them 1648
+groundDeformer.why-edge.mjs: 52544 wall(s) · worst 7.64 m · reach edge 1888 · unowned 1323 · owner seam 10205 · one owner 39128
+      6462  PINNED (an owner took less than it needed and less than its band can take) · worst 4.95 m
+      1865  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 2.80 m
+       973  on ② / road side (no profile) · worst 6.33 m
+       905  within limits, neither pinned (cause not established) · worst 2.76 m
+        4205  (a) one tile's ring meeting itself: a block's inner corner · e.g. (-708.7, 206.7) arc ↔ southmoor-drive 90° 0.49 m · (142.1, -72.7) arc ↔ wydown-boulevard-1 126° 0.15 m · (-605.7, -190.5) south-big-bend-boulevard ↔ brentmoor-park-1 95° 0.27 m
+        2530  (b) facing rays: near-parallel streets sharing one strip · e.g. (179.3, 1260.1) berthold-avenue-3 ↔ berthold-avenue-4 153° 0.57 m · (-678.8, 177.7) south-big-bend-boulevard ↔ arc 138° 0.22 m · (-1353.8, 157.4) crestwood-drive-3 ↔ crestwood-drive-1 146° 0.33 m
+         505  (c) a street against __highway__ · e.g. (608.0, 1182.8) __highway__ ↔ clayton-avenue-0 113° 0.77 m · (565.9, 1164.7) __highway__ ↔ clayton-avenue-0 112° 0.47 m · (762.9, 1105.2) __highway__ ↔ oakland-avenue-2 154° 1.04 m
+    walls INSIDE the band blend (a vertex held by ≥ 2 owners): 48087 · held set: CHURN (the held set differs across the triangle) 23660 · one held set 24427 · walk/curb · 0.1–1 m 24629 · lawn · 0.1–1 m 13497 · other group · 0.1–1 m 2509 · walk/curb · > 1 m 2201 · walk/curb · < 0.1 m 1854 · lawn · > 1 m 1207 · lawn · < 0.1 m 823 · other group · > 1 m 686 · other group · < 0.1 m 681
+    seam triangles in walk/curb over the WALK limit across them (not only walls): 22911
+    seams with a profile on both owners: BACK-TO-BACK (no land use between) 7240 · land use between them 1992

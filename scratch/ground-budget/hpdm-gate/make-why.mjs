@@ -1,4 +1,4 @@
-// make-why.mjs <groundDeformer.mjs> [out.mjs] [--no-envelope] [--no-smooth] [--no-station-clamp] [--point-need] [--cap-window] [--cap-fan] [--band-blend] — a PROBE copy (groundDeformer.why.mjs, or out.mjs, beside this file; never shipped) whose resolve
+// make-why.mjs <groundDeformer.mjs> [out.mjs] [--no-envelope] [--no-smooth] [--no-station-clamp] [--point-need] [--cap-window] [--cap-fan] [--band-blend [--edge-weight]] — a PROBE copy (groundDeformer.why.mjs, or out.mjs, beside this file; never shipped) whose resolve
 // also returns WHY: the branch (road side · on ② · band-held · lot ease · unowned), the owner span's station, H, depth, ring
 // and stamp, and the profile's inputs (R the absorption, the lawn/walk widths and their shares, back, B, hBack, f).
 // Exposed as `_why(x, z)` (uncached). Every edit is anchored once, or it throws. The lattice import is re-rooted.
@@ -38,7 +38,12 @@ if (process.argv.includes('--no-envelope')) one('for (let pass = 0; pass < 2; pa
 // both hold the point (back-to-back bands); one owner holding it reads that owner exactly
 if (process.argv.includes('--band-blend')) {
   one("      if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c), why: { ...p.why, held: true, byBand: c.R !== n.R || c.key !== nearKey(n) } } }\n    }",
-      "      if (p.held) heldBy.push([c, p])\n    }\n    if (heldBy.length) { let w = 0, v = 0; for (const [c, p] of heldBy) { w += 1 / c.d; v += p.v / c.d } const [c0, p0] = heldBy[0]; return { v: v / w, owner: own(c0), why: { ...p0.why, held: true, blended: heldBy.length } } }")
+      "      if (p.held) heldBy.push([c, p])\n    }\n    if (heldBy.length) { let w = 0, v = 0; for (const [c, p] of heldBy) { const k = WEIGHT(c, p); w += k; v += p.v * k } const [c0, p0] = heldBy[0]; return { v: w > 0 ? v / w : p0.v, owner: own(c0), why: { ...p0.why, held: true, blended: heldBy.length, heldKeys: heldBy.map(([c]) => own(c)).sort().join(',') } } }")
+  // the weight: 1 / depth (the first counterfactual), or --edge-weight: (what is left to the owner's band back edge) / depth,
+  // so it reaches 0 exactly where the owner stops holding the point and is infinite at the owner's own curb
+  s = s.replace('export function buildDeformer(', process.argv.includes('--edge-weight')
+    ? 'const WEIGHT = (c, p) => Math.max(0, p.why.back + LATTICE - c.d) / c.d\nexport function buildDeformer('
+    : 'const WEIGHT = (c) => 1 / c.d\nexport function buildDeformer(')
   one("    for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) {", "    const heldBy = []\n    for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) {")
 }
 s = s.replace("'../src/lib/lattice.js'", "'../../../src/lib/lattice.js'")

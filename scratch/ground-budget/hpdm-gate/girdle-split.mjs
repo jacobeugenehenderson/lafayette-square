@@ -23,7 +23,7 @@ const blend = design.groundBlendM > 0 ? design.groundBlendM : T.stepM, sigma = d
 const rib = JSON.parse(readFileSync(`cartograph/data/${town}/clean/ribbons.json`, 'utf8')).streets, LH = lineHeights({ streets: rib, raw, sigma })
 const dump = JSON.parse(readFileSync(arg('dump'), 'utf8')), { buildDeformer } = await import(resolve(arg('why')))
 const D = buildDeformer({ town, tiles: dump.tiles, bands: dump.bands, stencil: dump.stencil, raw, line: { step: LH.step, heightAt: LH.heightAt }, limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: E, blend, sigma } })
-const b2b = new Map(), geo = new Map(), bz = new Map(); let walkOver = 0, bzN = 0
+const b2b = new Map(), geo = new Map(), bz = new Map(), churn = new Map(); let walkOver = 0, bzN = 0
 const cls = { 'reach edge': 0, unowned: 0, 'owner seam': 0, 'one owner': 0 }, split = new Map(), ex0 = new Map(); let walls = 0, worst = 0
 const add = (k, ex) => { split.set(k, (split.get(k) || 0) + 1); ex0.set(k, Math.max(ex0.get(k) || 0, ex)) }
 for (const g of gj.groups) { if (g.rawByteOffset == null) continue
@@ -39,7 +39,7 @@ for (const g of gj.groups) { if (g.rawByteOffset == null) continue
     if (ex <= lawn * span) continue
     walls++; worst = Math.max(worst, ex)
     // --blendzone: is this wall inside the band blend (a vertex two or more owners hold), and at which limit does it fail
-    if (arg('blendzone') && [a, b, c].some(v => (D._why(P[v * 3], P[v * 3 + 2]).why?.blended ?? 0) > 1)) { const k = `${/^mat:(sidewalk|curb)/.test(`${g.kind}:${g.id}`) ? 'walk/curb' : /^mat:treelawn/.test(`${g.kind}:${g.id}`) ? 'lawn' : 'other group'} · ${ex > 1 ? '> 1 m' : ex > 0.1 ? '0.1–1 m' : '< 0.1 m'}`; bz.set(k, (bz.get(k) || 0) + 1); bzN++ }
+    if (arg('blendzone') && [a, b, c].some(v => (D._why(P[v * 3], P[v * 3 + 2]).why?.blended ?? 0) > 1)) { const hk = new Set([a, b, c].map(v => D._why(P[v * 3], P[v * 3 + 2]).why?.heldKeys ?? '—')); churn.set(hk.size > 1 ? 'CHURN (the held set differs across the triangle)' : 'one held set', (churn.get(hk.size > 1 ? 'CHURN (the held set differs across the triangle)' : 'one held set') || 0) + 1); const k = `${/^mat:(sidewalk|curb)/.test(`${g.kind}:${g.id}`) ? 'walk/curb' : /^mat:treelawn/.test(`${g.kind}:${g.id}`) ? 'lawn' : 'other group'} · ${ex > 1 ? '> 1 m' : ex > 0.1 ? '0.1–1 m' : '< 0.1 m'}`; bz.set(k, (bz.get(k) || 0) + 1); bzN++ }
     const c0 = st[a] === 1 || st[b] === 1 || st[c] === 1 ? 'reach edge' : st[a] === 2 || st[b] === 2 || st[c] === 2 ? 'unowned' : (own[a] !== own[b] || own[b] !== own[c]) ? 'owner seam' : 'one owner'
     cls[c0]++; if (c0 !== 'owner seam') continue
     const vs = [a, b, c].sort((p, q) => h[p] - h[q]), lo = vs[0], hi = vs[2], wl = D._why(P[lo * 3], P[lo * 3 + 2]).why, wh = D._why(P[hi * 3], P[hi * 3 + 2]).why
@@ -66,6 +66,6 @@ for (const g of gj.groups) { if (g.rawByteOffset == null) continue
 console.log(`${arg('why').split('/').at(-1)}: ${walls} wall(s) · worst ${worst.toFixed(2)} m · ${Object.entries(cls).map(([k, n]) => `${k} ${n}`).join(' · ')}`)
 for (const [k, n] of [...split].sort((x, y) => y[1] - x[1])) console.log(`    ${String(n).padStart(6)}  ${k} · worst ${ex0.get(k).toFixed(2)} m`)
 for (const [k, e] of [...geo].sort((x, y) => y[1].n - x[1].n)) console.log(`      ${String(e.n).padStart(6)}  ${k} · e.g. ${e.ex.map(q => `(${q.x.toFixed(1)}, ${q.z.toFixed(1)}) ${q.a} ↔ ${q.b} ${q.ang.toFixed(0)}° ${q.ex.toFixed(2)} m`).join(' · ')}`)
-if (arg('blendzone')) console.log(`    walls INSIDE the band blend (a vertex held by ≥ 2 owners): ${bzN} · ${[...bz].sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k} ${n}`).join(' · ')}`)
+if (arg('blendzone')) console.log(`    walls INSIDE the band blend (a vertex held by ≥ 2 owners): ${bzN} · held set: ${[...churn].map(([k, n]) => `${k} ${n}`).join(' · ')} · ${[...bz].sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k} ${n}`).join(' · ')}`)
 console.log(`    seam triangles in walk/curb over the WALK limit across them (not only walls): ${walkOver}`)
 console.log(`    seams with a profile on both owners: ${[...b2b].map(([k, n]) => `${k} ${n}`).join(' · ')}`)
