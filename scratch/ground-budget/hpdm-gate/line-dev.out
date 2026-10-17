@@ -1,0 +1,47 @@
+hipointedemun: σ 5.00 m · stations every 0.50 m along ② · dev = H − terrain at the station (m)
+  ALL                               385967 · |dev| p50 0.13 · p90 0.81 · p99 3.55 · max 6.57 · > 1 m 30919
+  corner arc                        119212 · |dev| p50 0.17 · p90 1.43 · p99 4.14 · max 6.19 · > 1 m 17635
+  street: residential               118211 · |dev| p50 0.14 · p90 0.59 · p99 2.73 · max 5.06 · > 1 m 6521
+  street: unclassified               35035 · |dev| p50 0.11 · p90 0.50 · p99 1.33 · max 2.62 · > 1 m 775
+  street: primary                    24106 · |dev| p50 0.10 · p90 0.39 · p99 1.50 · max 2.35 · > 1 m 577
+  highway edge (no line)             18082 · |dev| p50 0.05 · p90 0.96 · p99 4.71 · max 6.57 · > 1 m 1711
+  street: tertiary                   18004 · |dev| p50 0.07 · p90 0.81 · p99 2.53 · max 3.61 · > 1 m 1480
+  street: service                    15393 · |dev| p50 0.11 · p90 0.53 · p99 1.32 · max 2.83 · > 1 m 559
+  street: secondary                  13180 · |dev| p50 0.13 · p90 0.61 · p99 1.22 · max 1.36 · > 1 m 387
+  street: footway                    10961 · |dev| p50 0.28 · p90 0.90 · p99 1.58 · max 2.13 · > 1 m 898
+  street: cycleway                   10779 · |dev| p50 0.16 · p90 0.58 · p99 1.08 · max 1.72 · > 1 m 212
+  no line: bridge                     1025 · |dev| p50 0.00 · p90 0.05 · p99 0.40 · max 0.70 · > 1 m 0
+  street: secondary_link               644 · |dev| p50 0.04 · p90 0.17 · p99 0.21 · max 0.22 · > 1 m 0
+  street: pedestrian                   579 · |dev| p50 0.27 · p90 1.41 · p99 1.79 · max 1.83 · > 1 m 129
+  street: primary_link                 431 · |dev| p50 0.06 · p90 0.54 · p99 0.69 · max 0.69 · > 1 m 0
+  dead-end cap                         325 · |dev| p50 0.10 · p90 2.70 · p99 2.81 · max 4.65 · > 1 m 35
+
+the 10 worst runs (by max |dev|):
+  __highway__·right·0 (tile 10) · highway edge (no line) · max -6.57 at (299.9,1372.7) · mean |dev| 1.69 over 772 stations
+  tile 9 arc 5 · corner arc · max 6.19 at (364.8,1439.3) · mean |dev| 3.71 over 317 stations
+  tile 108 arc 3 · corner arc · max -5.41 at (393.8,180.7) · mean |dev| 2.72 over 749 stations
+  tile 116 arc 1 · corner arc · max -5.39 at (389.4,169.2) · mean |dev| 2.65 over 750 stations
+  tile 53 arc 10 · corner arc · max -5.15 at (355.1,657.0) · mean |dev| 2.40 over 810 stations
+  southwood-avenue·right·0 (tile 85) · street: residential · max -5.06 at (348.2,648.1) · mean |dev| 2.58 over 728 stations
+  tile 152 arc 3 · corner arc · max -4.92 at (-264.8,-259.7) · mean |dev| 1.47 over 75 stations
+  __highway__·right·0 (tile 15) · highway edge (no line) · max -4.88 at (309.7,1323.4) · mean |dev| 1.43 over 950 stations
+  tile 152 ring 0 v127 · dead-end cap · max -4.65 at (-263.1,-260.4) · mean |dev| 4.65 over 1 stations
+  tile 62 arc 3 · corner arc · max 4.64 at (-360.7,672.7) · mean |dev| 2.32 over 291 stations
+
+what carries |dev| > 1 m, on the 29023 station(s) of runs with a line (terms sum to dev exactly):
+  largest term: sampling 19408 · along 6454 · offset 3107 · smoothing 54
+  |along| p50 0.00 · p90 1.64 · max 4.83
+  |sampling| p50 1.15 · p90 3.37 · max 5.80
+  |smoothing| p50 0.01 · p90 0.03 · max 0.90
+  |offset| p50 0.10 · p90 0.80 · max 4.10
+  |coupling| p50 0.00 · p90 0.00 · max 0.07
+  |half| p50 0.00 · p90 0.01 · max 0.50
+  projection: 100 of them sit > 2 m farther from their chain than the run's median (another stretch), e.g. (-221.9, 1103.3) tile 23 arc 0 d 6.7 vs median 4.6 · (-221.8, 1103.4) tile 23 arc 0 d 6.8 vs median 4.6 · (-221.6, 1103.7) tile 23 arc 0 d 7.0 vs median 4.6
+
+at (-1089.64, -862.57) maryland-avenue-1·right·1 (tile 191): dev 2.60 = along ② 2.41 + sampling 0.39 + smoothing 0.00 + offset -0.21 · coupling 0.00 · σ/2 smoothing 0.00 · to the chain 5.49 m at s 260.4
+
+at (-1089.15, -862.51) maryland-avenue-1·right·1 (tile 191): dev 2.60 = along ② 2.42 + sampling 0.39 + smoothing 0.00 + offset -0.21 · coupling 0.00 · σ/2 smoothing 0.00 · to the chain 5.49 m at s 260.9
+
+at (-1088.65, -862.45) maryland-avenue-1·right·1 (tile 191): dev 2.60 = along ② 2.42 + sampling 0.39 + smoothing 0.00 + offset -0.21 · coupling 0.00 · σ/2 smoothing 0.00 · to the chain 5.49 m at s 261.4
+
+at (-1089.64, -862.57) maryland-avenue-1·right·1 (tile 192): dev 2.60 = along ② 2.41 + sampling 0.39 + smoothing 0.00 + offset -0.21 · coupling 0.00 · σ/2 smoothing 0.00 · to the chain 5.49 m at s 260.4

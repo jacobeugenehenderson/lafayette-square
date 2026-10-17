@@ -14,6 +14,6 @@ one("if (c.d < LATTICE) return { v: c.H, owner: own(c) }", "if (c.d < LATTICE) r
 one("if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c) } }", "if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c), why: { ...p.why, held: true, byBand: c.R !== n.R || c.key !== nearKey(n) } } }")
 one("if (inBand(x, z)) { stats.unowned++; return { v: null, owner: null, unowned: t.ti } }", "if (inBand(x, z)) { stats.unowned++; return { v: null, owner: null, unowned: t.ti, why: { branch: 'UNOWNED (in a band no span reaches)', t: t.ti } } }")
 one("return { v: profile(n, x, z).v, owner: own(n) }", "{ const p = profile(n, x, z); return { v: p.v, owner: own(n), why: { ...p.why, lot: true } } }")
-one("return { heightAt, stats,", "return { _why: (x, z) => resolveUncached(x, z), heightAt, stats,")
+one("return { heightAt, stats,", "return { _why: (x, z) => resolveUncached(x, z), _T: T, heightAt, stats,")
 s = s.replace("'../src/lib/lattice.js'", "'../../../src/lib/lattice.js'")
 writeFileSync(new URL('groundDeformer.why.mjs', import.meta.url), s)
