@@ -9977,13 +9977,23 @@ export function buildTileGround(ribbons, opts = {}) {
             // another on a 218 m two-point chain crossed by nothing. ⛔ I reported that to two
             // other agents as "two ① faces claim the same side of the same street." IT IS NOT:
             // it is ONE face emitted N times, and the 411 m is 218 m counted twice.
-            // ⭐ The piece's own curb is `iA ∩ piece`, and iA is already its face's (trimmed before the stamp), so on a rim
-            // tile this cut is the circle's alone. A tile wholly inside the disc is not cut: its stamped curb passes through
-            // as stamped. ⛔ `iaFull`/`iaStamp` still pass through UNCUT, by the design stated above: they answer "what
-            // depth HERE", which the cut must not disturb.
+            // ⭐ THE CIRCLE CUTS THE CURB BY THE CIRCLE ALONE. iA is already its face's (trimmed before the stamp), so a
+            // tile wholly inside the disc is not cut at all, and a rim tile's curb is `iA ∩ disc`; each ring of that goes
+            // to the piece it lies in (by area, never by nearness). ⛔ Cut by the PIECE, the curb took the piece's face edge
+            // wherever the two coincide, and dropped the crossings stamped there (Huron tile 24, PTown tile 1).
+            // ⛔ `iaFull`/`iaStamp` still pass through UNCUT, by the design stated above: they answer "what depth HERE",
+            // which the cut must not disturb.
             const inside = !differenceRings([t.ring], [stamp]).length
-            for (const r of ring) kept.push({ ...t, ring: r, iA: inside ? t.iA : intersectRings(t.iA || [], [r]),
-              fillets: (t.fillets || []).filter(f => inDisc(f.apex)) })
+            const curb = inside ? (t.iA || []) : cut(t.iA)
+            const mine = ring.map(() => [])
+            if (ring.length === 1) mine[0] = curb
+            else for (const c of curb) {
+              const a = ring.map(r => intersectRings([c], [r]).reduce((u, q) => u + Math.abs(signedArea(q)), 0))
+              const best = a.indexOf(Math.max(...a))
+              if (!(a[best] > 0)) throw new Error(`[tileGround][PROTO⊙] ⛔ a curb ring of a rim tile lies in none of its ${ring.length} disc pieces (at ${c[0]}). Refusing.`)
+              mine[best].push(c) }
+            ring.forEach((r, i) => kept.push({ ...t, ring: r, iA: mine[i],
+              fillets: (t.fillets || []).filter(f => inDisc(f.apex)) }))
           }
           protoShapeTiles = kept
           console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)
