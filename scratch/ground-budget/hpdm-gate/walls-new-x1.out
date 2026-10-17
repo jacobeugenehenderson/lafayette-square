@@ -1,0 +1,18 @@
+before 37527 wall(s) · after 28695 · after with no wall before within 1 m: 14, worst 4.05 m · mat:asphalt 6 · mat:treelawn:underived 3 · face:underived 2 · face:commercial 1 · mat:treelawn:recreation 1 · mat:sidewalk 1
+  mat:asphalt at (-833.3, -466.6): 4.05 m
+  mat:asphalt at (-840.4, -466.4): 3.54 m
+  mat:asphalt at (-846.3, -473.3): 3.29 m
+  mat:asphalt at (-854.5, -474.3): 2.73 m
+  mat:asphalt at (-857.4, -468.2): 2.46 m
+  face:commercial at (557.1, 577.2): 2.31 m
+  mat:asphalt at (-871.3, -468.1): 1.98 m
+  mat:treelawn:recreation at (680.8, -798.8): 0.2 m
+  their excess: p50 1.980 · p90 3.540 · ≤ 7.8 mm 0
+before 37527 wall(s) · after 28695 · after with no wall before within 5 m: 6, worst 0.20 m · mat:treelawn:underived 2 · face:underived 2 · mat:treelawn:recreation 1 · mat:sidewalk 1
+  mat:treelawn:recreation at (680.8, -798.8): 0.2 m
+  mat:sidewalk at (280.8, 1308): 0.07 m
+  mat:treelawn:underived at (130, 550.2): 0.06 m
+before 37527 wall(s) · after 28695 · after with no wall before within 10 m: 6, worst 0.20 m · mat:treelawn:underived 2 · face:underived 2 · mat:treelawn:recreation 1 · mat:sidewalk 1
+  mat:treelawn:recreation at (680.8, -798.8): 0.2 m
+  mat:sidewalk at (280.8, 1308): 0.07 m
+  mat:treelawn:underived at (130, 550.2): 0.06 m
