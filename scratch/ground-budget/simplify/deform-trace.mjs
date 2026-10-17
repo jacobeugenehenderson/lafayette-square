@@ -23,7 +23,7 @@ const design = readBakeDesign(town, town, 'deform-trace')   // as bake-ground re
 const T = loadSceneTerrain(town), walkN = resolveWalkNorm(town, null), lawnN = resolveLawnNorm(town, null)
 const blend = Number.isFinite(design.groundBlendM) && design.groundBlendM > 0 ? design.groundBlendM : T.stepM
 const sigma = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : T.stepM
-const D = buildDeformer({ tiles, bands: inp.bands, stencil: inp.stencil, raw: T.getElevationRaw,
+const D = buildDeformer({ town, tiles, bands: inp.bands, stencil: inp.stencil, raw: T.getElevationRaw,
   limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: T.exag, blend, sigma } })
 const f2 = (v) => v == null ? '—' : (+v).toFixed(2)
 // the run that owns the ② vertex nearest the station, and its h projected there (groundDeformer's hOfRun)

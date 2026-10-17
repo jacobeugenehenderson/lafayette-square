@@ -1,0 +1,16 @@
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+  ⛔   hipointedemun: 2002686 triangle(s) with a baked terrain part · exag 1 · bound: the lawn's limit 28.6% × the triangle's span (scene)
+        38754 WALL triangle(s), worst 6.97 m · by group: mat:sidewalk 13869 · mat:treelawn:underived 6972 · mat:curb 3752 · mat:asphalt 2768 · mat:stripe 2332 · mat:treelawn:commercial 2181 · mat:treelawn:residential 1292 · mat:treelawn:institutional 1259 · face:residential 828 · mat:treelawn:recreation 823 · face:underived 435 · mat:highway 372 · face:institutional 367 · face:recreation 340 · face:commercial 306 · mat:treelawn:park 142 · face:verge 123 · mat:footway 111 · mat:treelawn:railway 84 · mat:wall 75 · face:park 54 · mat:fence 47 · mat:treelawn:parking 37 · mat:treelawn:industrial 31 · face:railway 28 · mat:parking_lot 27 · mat:alley 23 · face:bare 17 · face:industrial 16 · mat:treelawn:forest 13 · mat:cycleway 12 · face:parking 5 · face:forest 4 · mat:garden 4 · mat:treelawn:bare 4 · mat:treelawn:vacant 1
+          mat:highway at (690.4, 1102.8): rises 6.97 m more than its terrain across 0.03 m (the lawn's limit allows 0.01)
+          mat:highway at (690.4, 1102.8): rises 6.97 m more than its terrain across 0.03 m (the lawn's limit allows 0.01)
+          mat:highway at (673.0, 1111.5): rises 6.80 m more than its terrain across 3.02 m (the lawn's limit allows 0.86)
+          mat:highway at (675.3, 1110.3): rises 6.75 m more than its terrain across 4.61 m (the lawn's limit allows 1.32)
+          mat:asphalt at (313.0, 1333.5): rises 6.25 m more than its terrain across 4.78 m (the lawn's limit allows 1.37)
+          mat:asphalt at (312.9, 1333.6): rises 6.25 m more than its terrain across 4.78 m (the lawn's limit allows 1.37)
+          mat:highway at (313.1, 1333.7): rises 6.25 m more than its terrain across 4.59 m (the lawn's limit allows 1.31)
+          mat:asphalt at (314.5, 1332.6): rises 6.24 m more than its terrain across 5.34 m (the lawn's limit allows 1.53)
+          mat:highway at (309.6, 1336.2): rises 6.22 m more than its terrain across 4.59 m (the lawn's limit allows 1.31)
+          mat:highway at (310.9, 1335.0): rises 6.22 m more than its terrain across 3.86 m (the lawn's limit allows 1.10)
+          mat:asphalt at (317.4, 1330.8): rises 6.15 m more than its terrain across 5.90 m (the lawn's limit allows 1.68)
+          mat:asphalt at (320.4, 1329.0): rises 6.13 m more than its terrain across 3.86 m (the lawn's limit allows 1.10)
+⛔ 1 slab(s) whose ground leaves its terrain in a wall, or that cannot be judged

@@ -1,0 +1,103 @@
+hipointedemun: 38754 wall triangle(s) · stored ≠ D at 0 vertex(es) · lawn ≤ 0.2857 · B 5.00 m
+   14301  owner seam · in band · station H differ 0.1–1 m · worst 0.97 m · p50 0.25 · mat:sidewalk 5306 · mat:treelawn:underived 5206 · mat:curb 2406 · mat:treelawn:institutional 365 · mat:treelawn:commercial 292
+    6706  one owner · in band · worst 2.22 m · p50 0.17 · mat:sidewalk 3710 · mat:treelawn:underived 841 · mat:curb 489 · mat:treelawn:commercial 483 · mat:treelawn:institutional 365
+    3221  reach edge (outside every tile) beside road side / on ② · worst 6.97 m · p50 1.85 · mat:stripe 1579 · mat:asphalt 1250 · mat:highway 369 · mat:sidewalk 9 · mat:treelawn:underived 6
+    2904  owner seam · in band · station H differ > 1 m · worst 3.75 m · p50 1.69 · mat:sidewalk 1364 · mat:treelawn:commercial 1058 · mat:treelawn:underived 330 · mat:curb 80 · mat:fence 45
+    1799  owner seam · road side / on ② · station H differ > 1 m · worst 5.89 m · p50 1.83 · mat:asphalt 1194 · mat:stripe 604 · mat:highway 1
+    1627  unowned beside owned · worst 2.88 m · p50 0.23 · mat:sidewalk 638 · mat:treelawn:institutional 334 · mat:treelawn:residential 182 · mat:treelawn:recreation 103 · face:residential 44
+    1510  reach edge (outside every tile) beside in band · worst 3.39 m · p50 0.51 · mat:sidewalk 683 · mat:curb 268 · mat:treelawn:residential 252 · mat:treelawn:underived 169 · mat:treelawn:commercial 102
+    1480  one owner · ease+in band · ease slope ≤ the lawn limit · worst 2.19 m · p50 0.05 · mat:sidewalk 739 · face:residential 157 · face:underived 102 · face:recreation 100 · mat:treelawn:underived 87
+    1128  owner seam · in band · station H differ < 0.1 m · worst 0.30 m · p50 0.13 · mat:sidewalk 665 · mat:treelawn:underived 207 · mat:treelawn:commercial 65 · mat:curb 60 · mat:treelawn:residential 55
+     972  owner seam · ease+in band · station H differ 0.1–1 m · worst 3.46 m · p50 0.32 · mat:sidewalk 329 · face:residential 176 · mat:treelawn:residential 110 · face:underived 54 · face:institutional 51
+     394  owner seam · ease+in band · station H differ < 0.1 m · worst 3.39 m · p50 0.11 · mat:sidewalk 157 · mat:treelawn:institutional 56 · face:residential 48 · mat:treelawn:residential 35 · face:underived 20
+     374  owner seam · ease+in band · station H differ > 1 m · worst 4.53 m · p50 1.45 · mat:treelawn:commercial 86 · face:commercial 58 · mat:sidewalk 58 · face:underived 52 · mat:treelawn:underived 40
+     265  one owner · ease · ease slope ≤ the lawn limit · worst 1.94 m · p50 0.06 · mat:sidewalk 78 · face:residential 53 · face:recreation 35 · face:verge 34 · face:underived 23
+     209  owner seam · ease · station H differ > 1 m · worst 4.23 m · p50 1.55 · face:commercial 96 · face:underived 42 · face:institutional 32 · face:recreation 18 · mat:footway 9
+     190  owner seam · ease · station H differ 0.1–1 m · worst 1.63 m · p50 0.56 · face:residential 101 · face:recreation 26 · face:institutional 17 · face:underived 13 · face:verge 10
+     172  one owner · ease+in band · ease slope > the lawn limit · worst 5.26 m · p50 1.17 · mat:sidewalk 51 · mat:wall 34 · face:institutional 26 · face:recreation 18 · mat:footway 15
+     136  one owner · road side / on ②+within the lattice of ② · worst 1.90 m · p50 0.01 · mat:asphalt 119 · mat:curb 17
+     135  owner seam · road side / on ② · station H differ 0.1–1 m · worst 0.94 m · p50 0.31 · mat:stripe 127 · mat:asphalt 8
+     131  one owner · ease · ease slope > the lawn limit · worst 5.54 m · p50 1.39 · face:verge 39 · face:residential 30 · mat:footway 26 · face:institutional 18 · face:recreation 6
+     124  owner seam · in band+within the lattice of ② · station H differ 0.1–1 m · worst 0.82 m · p50 0.20 · mat:curb 117 · face:underived 6 · mat:sidewalk 1
+      94  one owner · ease+past the ease · ease slope > the lawn limit · worst 5.25 m · p50 2.12 · face:institutional 36 · mat:wall 20 · face:residential 11 · face:recreation 10 · mat:footway 9
+      84  reach edge (outside every tile) beside ease · worst 4.06 m · p50 0.64 · face:residential 48 · face:commercial 9 · face:underived 9 · face:verge 5 · face:railway 4
+      71  owner seam · ease · station H differ < 0.1 m · worst 2.59 m · p50 0.16 · face:institutional 17 · mat:sidewalk 12 · face:recreation 11 · face:residential 9 · face:underived 8
+      64  owner seam · in band+road side / on ② · station H differ 0.1–1 m · worst 0.79 m · p50 0.25 · mat:curb 63 · face:residential 1
+      53  one owner · road side / on ② · worst 1.90 m · p50 1.12 · mat:asphalt 50 · mat:curb 2 · mat:footway 1
+      48  reach edge (outside every tile) beside ease+in band · worst 3.36 m · p50 0.48 · mat:sidewalk 14 · face:residential 12 · mat:treelawn:residential 6 · mat:treelawn:underived 4 · face:commercial 3
+      41  one owner · in band+within the lattice of ② · worst 0.96 m · p50 0.21 · mat:curb 41
+      40  owner seam · road side / on ②+within the lattice of ② · station H differ > 1 m · worst 3.56 m · p50 2.26 · mat:asphalt 40
+      38  one owner · ease+in band+past the ease · ease slope > the lawn limit · worst 4.94 m · p50 3.11 · face:institutional 28 · mat:wall 7 · mat:alley 3
+      35  one owner · past the ease+road side / on ② · worst 4.22 m · p50 1.45 · face:residential 17 · mat:asphalt 10 · face:recreation 6 · face:verge 2
+      28  owner seam · road side / on ② · station H differ < 0.1 m · worst 0.10 m · p50 0.07 · mat:stripe 22 · mat:asphalt 6
+      27  one owner · in band+road side / on ② · worst 0.90 m · p50 0.31 · mat:curb 27
+      23  reach edge (outside every tile) beside road side / on ②+within the lattice of ② · worst 2.09 m · p50 0.87 · mat:asphalt 20 · mat:curb 3
+      21  reach edge (outside every tile) beside road side / on ②+in band · worst 3.36 m · p50 0.78 · mat:sidewalk 8 · mat:curb 8 · mat:treelawn:residential 3 · mat:treelawn:underived 2
+      20  owner seam · road side / on ②+within the lattice of ② · station H differ 0.1–1 m · worst 0.50 m · p50 0.35 · mat:asphalt 11 · mat:curb 9
+      19  reach edge (outside every tile) beside within the lattice of ②+in band · worst 1.74 m · p50 0.65 · mat:curb 18 · mat:asphalt 1
+      19  one owner · within the lattice of ② · worst 0.13 m · p50 0.01 · mat:asphalt 18 · mat:curb 1
+      18  one owner · in band+past the ease · worst 4.32 m · p50 3.18 · face:institutional 17 · mat:alley 1
+      17  reach edge (outside every tile) beside in band+ease · worst 2.16 m · p50 0.65 · mat:sidewalk 9 · face:residential 2 · mat:treelawn:residential 2 · mat:curb 2 · mat:treelawn:commercial 1
+      16  owner seam · in band+road side / on ②+within the lattice of ② · station H differ 0.1–1 m · worst 0.67 m · p50 0.25 · mat:curb 16
+      14  reach edge (outside every tile) beside in band+UNOWNED (in a band no span reaches) · worst 1.54 m · p50 0.49 · mat:sidewalk 8 · mat:treelawn:underived 3 · mat:treelawn:residential 2 · mat:treelawn:commercial 1
+      12  owner seam · in band+within the lattice of ② · station H differ > 1 m · worst 2.13 m · p50 1.79 · mat:sidewalk 6 · face:underived 2 · mat:curb 2 · mat:treelawn:underived 1 · mat:asphalt 1
+      12  reach edge (outside every tile) beside within the lattice of ② · worst 4.81 m · p50 1.67 · mat:curb 7 · mat:asphalt 3 · mat:highway 2
+      12  reach edge (outside every tile) beside in band+road side / on ② · worst 1.18 m · p50 0.19 · mat:curb 5 · mat:sidewalk 4 · mat:asphalt 2 · mat:treelawn:underived 1
+      12  one owner · in band+road side / on ②+within the lattice of ② · worst 1.86 m · p50 0.42 · mat:curb 12
+      12  reach edge (outside every tile) beside within the lattice of ②+road side / on ② · worst 4.84 m · p50 1.82 · mat:asphalt 11 · mat:curb 1
+      11  reach edge (outside every tile) beside UNOWNED (in a band no span reaches)+in band · worst 1.47 m · p50 0.82 · mat:sidewalk 4 · mat:treelawn:residential 2 · mat:treelawn:commercial 2 · mat:treelawn:underived 2 · mat:curb 1
+      10  owner seam · road side / on ②+within the lattice of ② · station H differ < 0.1 m · worst 0.08 m · p50 0.02 · mat:asphalt 8 · mat:curb 2
+       8  owner seam · ease+past the ease · station H differ < 0.1 m · worst 4.18 m · p50 4.05 · mat:footway 4 · face:institutional 2 · face:recreation 2
+       7  reach edge (outside every tile) beside in band+within the lattice of ② · worst 1.78 m · p50 0.49 · mat:curb 5 · mat:asphalt 2
+       6  owner seam · ease+in band+past the ease · station H differ > 1 m · worst 2.25 m · p50 1.98 · face:commercial 3 · face:recreation 2 · mat:footway 1
+       6  reach edge (outside every tile) beside UNOWNED (in a band no span reaches)+road side / on ② · worst 0.20 m · p50 0.20 · mat:treelawn:residential 4 · mat:treelawn:underived 2
+       5  one owner · ease+past the ease · ease slope ≤ the lawn limit · worst 1.05 m · p50 0.64 · face:residential 3 · face:commercial 2
+       5  owner seam · ease+in band+road side / on ② · station H differ > 1 m · worst 4.30 m · p50 4.21 · face:commercial 3 · face:underived 1 · mat:treelawn:institutional 1
+       5  owner seam · in band+within the lattice of ② · station H differ < 0.1 m · worst 0.09 m · p50 0.09 · mat:curb 5
+       4  owner seam · ease+road side / on ② · station H differ 0.1–1 m · worst 1.34 m · p50 0.31 · face:residential 2 · face:commercial 1 · face:recreation 1
+       4  owner seam · ease+within the lattice of ② · station H differ 0.1–1 m · worst 1.33 m · p50 0.82 · mat:sidewalk 2 · face:commercial 1 · face:underived 1
+       4  owner seam · ease+road side / on ② · station H differ > 1 m · worst 4.23 m · p50 4.11 · face:commercial 3 · face:institutional 1
+       4  reach edge (outside every tile) beside ease+road side / on ② · worst 0.59 m · p50 0.55 · face:underived 2 · mat:sidewalk 1 · mat:curb 1
+       4  owner seam · ease+in band+within the lattice of ② · station H differ > 1 m · worst 4.36 m · p50 2.60 · face:underived 3 · mat:sidewalk 1
+       4  owner seam · within the lattice of ② · station H differ 0.1–1 m · worst 0.33 m · p50 0.19 · mat:asphalt 3 · mat:curb 1
+       3  reach edge (outside every tile) beside past the ease+road side / on ② · worst 1.43 m · p50 1.40 · mat:asphalt 2 · face:residential 1
+       3  owner seam · ease+road side / on ②+within the lattice of ② · station H differ 0.1–1 m · worst 1.35 m · p50 0.72 · face:commercial 1 · face:underived 1 · mat:sidewalk 1
+       3  owner seam · in band+past the ease · station H differ > 1 m · worst 1.87 m · p50 1.86 · mat:footway 2 · face:commercial 1
+       3  owner seam · in band+road side / on ② · station H differ > 1 m · worst 3.27 m · p50 1.66 · mat:sidewalk 2 · mat:curb 1
+       2  reach edge (outside every tile) beside road side / on ②+past the ease · worst 1.75 m · p50 1.75 · face:residential 2
+       2  owner seam · ease+past the ease · station H differ > 1 m · worst 1.78 m · p50 1.78 · face:recreation 2
+       2  owner seam · in band+road side / on ②+within the lattice of ② · station H differ > 1 m · worst 4.53 m · p50 4.53 · face:underived 1 · mat:curb 1
+       2  owner seam · ease+within the lattice of ② · station H differ > 1 m · worst 2.64 m · p50 2.64 · face:underived 2
+       2  owner seam · ease+in band+within the lattice of ② · station H differ 0.1–1 m · worst 0.71 m · p50 0.71 · face:underived 1 · mat:sidewalk 1
+       2  reach edge (outside every tile) beside ease+within the lattice of ② · worst 4.78 m · p50 4.78 · face:verge 1 · mat:curb 1
+       2  owner seam · ease+in band+road side / on ② · station H differ 0.1–1 m · worst 0.71 m · p50 0.71 · mat:treelawn:underived 1 · mat:sidewalk 1
+       2  owner seam · in band+road side / on ② · station H differ < 0.1 m · worst 0.09 m · p50 0.09 · mat:curb 2
+       1  one owner · ease+past the ease+road side / on ② · ease slope > the lawn limit · worst 1.44 m · p50 1.44 · face:residential 1
+       1  owner seam · ease+road side / on ②+within the lattice of ② · station H differ > 1 m · worst 2.64 m · p50 2.64 · face:commercial 1
+       1  reach edge (outside every tile) beside ease+UNOWNED (in a band no span reaches) · worst 0.31 m · p50 0.31 · face:commercial 1
+       1  owner seam · ease+past the ease · station H differ 0.1–1 m · worst 1.82 m · p50 1.82 · face:institutional 1
+       1  reach edge (outside every tile) beside road side / on ②+ease · worst 0.54 m · p50 0.54 · face:underived 1
+       1  one owner · ease+road side / on ② · ease slope ≤ the lawn limit · worst 0.28 m · p50 0.28 · face:underived 1
+       1  reach edge (outside every tile) beside road side / on ②+UNOWNED (in a band no span reaches) · worst 0.20 m · p50 0.20 · mat:treelawn:underived 1
+       1  owner seam · in band+road side / on ②+within the lattice of ② · station H differ < 0.1 m · worst 0.08 m · p50 0.08 · mat:curb 1
+       1  owner seam · ease+in band+road side / on ② · station H differ < 0.1 m · worst 0.21 m · p50 0.21 · mat:curb 1
+       1  one owner · ease+in band+road side / on ② · ease slope > the lawn limit · worst 0.21 m · p50 0.21 · mat:curb 1
+       1  owner seam · within the lattice of ② · station H differ < 0.1 m · worst 0.01 m · p50 0.01 · mat:asphalt 1
+        4.31 real         5.13 user         0.09 sys
+           528334848  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               33878  page reclaims
+                   6  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   2  voluntary context switches
+                6683  involuntary context switches
+         69085369110  instructions retired
+         16296015933  cycles elapsed
+           520487552  peak memory footprint

@@ -1,0 +1,86 @@
+hipointedemun · exag 1 · B 4.996527777777778 m · σ 4.996527777777778 m · walk ≤ 0.020833333333333332 · lawn ≤ 0.2857142857142857
+
+== site (610.6, 1182.8): mat:sidewalk · excess 3.27 m across 0.46 m (bound 0.13, a WALL)
+  (610.521, 1182.705) stored 27.29 · terrain 27.87 · D 27.29 · in band (held by its band)
+      owner tile 18 ring 0 v171 · run 8 __highway__·right·0 (h there —, no line: highway) · station (609.73, 1181.42) d 1.51 · H 27.29 · terrain at station 26.98
+      profile: R 0.00 · bands [walk:1.51 lawn:3.67 curb:0.93] · back 6.11 · lawn 3.67 m cap 1.05 took 0.00 · walk 1.51 m took 0.00 · B 4.996527777777778
+  (610.901, 1182.964) stored 30.82 · terrain 28.14 · D 30.82 · in band (held by its band)
+      owner tile 18 ring 0 v169 · run 7 clayton-avenue-0·left·0 (h there 30.82) · station (609.84, 1184.52) d 1.88 · H 30.82 · terrain at station 28.56
+      profile: R 0.00 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (610.629, 1182.766) stored 27.27 · terrain 27.94 · D 27.27 · in band (held by its band)
+      owner tile 18 ring 0 v171 · run 8 __highway__·right·0 (h there —, no line: highway) · station (609.78, 1181.39) d 1.62 · H 27.27 · terrain at station 26.98
+      profile: R 0.00 · bands [walk:1.64 lawn:3.67 curb:0.93] · back 6.25 · lawn 3.67 m cap 1.05 took 0.00 · walk 1.64 m took 0.00 · B 4.996527777777778
+
+== site (-1089.4, -861.3): mat:treelawn:underived · excess 2.50 m across 0.31 m (bound 0.09, a WALL)
+  (-1089.212, -861.388) stored 26.82 · terrain 24.30 · D 26.82 · in band (held by its band)
+      owner tile 191 ring 0 v58 · run 2 maryland-avenue-1·right·1 (h there 24.40) · station (-1089.07, -862.50) d 1.13 · H 26.82 · terrain at station 24.22
+      profile: R 0.00 · bands [lawn:1.25 walk:1.50] · back 3.38 · lawn 1.25 m cap 0.36 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (-1089.519, -861.420) stored 24.30 · terrain 24.30 · D — · —
+  (-1089.349, -861.216) stored 26.81 · terrain 24.32 · D 26.81 · in band (held by its band)
+      owner tile 191 ring 0 v58 · run 2 maryland-avenue-1·right·1 (h there 24.40) · station (-1089.19, -862.52) d 1.31 · H 26.81 · terrain at station 24.22
+      profile: R 0.00 · bands [lawn:1.06 walk:1.50] · back 3.38 · lawn 1.06 m cap 0.30 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+
+== site (563, 1164.5): mat:treelawn:underived · excess 2.45 m across 0.31 m (bound 0.09, a WALL)
+  (563.119, 1164.583) stored 29.46 · terrain 30.57 · D 29.46 · in band (held by its band)
+      owner tile 21 ring 0 v88 · run 5 __highway__·right·0 (h there —, no line: highway) · station (564.11, 1166.18) d 1.88 · H 29.46 · terrain at station 29.43
+      profile: R 0.02 · bands [walk:1.88 lawn:3.83 curb:0.97] · back 6.68 · lawn 3.83 m cap 1.09 took 0.02 · walk 1.88 m took 0.00 · B 4.996527777777778
+  (562.864, 1164.404) stored 32.10 · terrain 30.75 · D 32.10 · in band (held by its band)
+      owner tile 21 ring 0 v86 · run 4 clayton-avenue-0·right·0 (h there 32.00) · station (563.94, 1162.86) d 1.88 · H 32.00 · terrain at station 31.27
+      profile: R 0.10 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.10 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (563.119, 1164.583) stored 29.46 · terrain 30.57 · D 29.46 · in band (held by its band)
+      owner tile 21 ring 0 v88 · run 5 __highway__·right·0 (h there —, no line: highway) · station (564.11, 1166.18) d 1.88 · H 29.46 · terrain at station 29.43
+      profile: R 0.02 · bands [walk:1.88 lawn:3.83 curb:0.97] · back 6.68 · lawn 3.83 m cap 1.09 took 0.02 · walk 1.88 m took 0.00 · B 4.996527777777778
+
+== site (763.2, 1105.2): mat:treelawn:underived · excess 2.14 m across 0.45 m (bound 0.13, a WALL)
+  (763.384, 1105.264) stored 25.06 · terrain 24.25 · D 25.06 · in band (held by its band)
+      owner tile 25 ring 0 v30 · run 5 oakland-avenue-2·left·1 (h there 25.47) · station (763.17, 1107.04) d 1.79 · H 25.06 · terrain at station 24.71
+      profile: R 0.00 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (762.944, 1105.156) stored 22.92 · terrain 24.26 · D 22.92 · in band (held by its band)
+      owner tile 25 ring 0 v31 · run 6 __highway__·right·0 (h there —, no line: highway) · station (762.39, 1103.54) d 1.71 · H 22.92 · terrain at station 23.39
+      profile: R 0.00 · bands [walk:1.67 lawn:1.67 curb:0.42] · back 3.75 · lawn 1.67 m cap 0.48 took 0.00 · walk 1.67 m took 0.00 · B 4.996527777777778
+  (763.137, 1105.219) stored 25.07 · terrain 24.26 · D 25.07 · in band (held by its band)
+      owner tile 25 ring 0 v30 · run 5 oakland-avenue-2·left·1 (h there 25.48) · station (762.92, 1107.01) d 1.80 · H 25.07 · terrain at station 24.72
+      profile: R 0.00 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+
+== site (396.2, -824.8): mat:treelawn:underived · excess 1.74 m across 0.48 m (bound 0.14, a WALL)
+  (396.301, -825.068) stored 10.35 · terrain 10.17 · D 10.35 · in band (held by its band)
+      owner tile 200 ring 0 v4 · run 0 forest-park-parkway-4·right·0 (h there 10.20) · station (396.99, -827.90) d 2.92 · H 10.20 · terrain at station 10.14
+      profile: R 0.27 · bands [curb:0.38 lawn:2.96 walk:1.58 lawn:1.58 curb:0.40] · back 6.90 · lawn 4.54 m cap 1.30 took 0.27 · walk 1.58 m took 0.00 · B 4.996527777777778
+  (396.069, -824.646) stored 12.10 · terrain 10.17 · D 12.10 · in band (held by its band)
+      owner tile 200 ring 0 v76 · run 2 throop-drive-0·right·0 (h there 12.24) · station (396.33, -821.28) d 3.38 · H 12.24 · terrain at station 10.84
+      profile: R -0.45 · bands [curb:0.38 lawn:1.50 walk:1.50 lawn:3.16 curb:0.40] · back 6.94 · lawn 4.66 m cap 1.33 took 0.45 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (396.367, -824.669) stored 10.38 · terrain 10.17 · D 10.38 · in band (held by its band)
+      owner tile 200 ring 0 v4 · run 0 forest-park-parkway-4·right·0 (h there 10.20) · station (397.14, -827.87) d 3.29 · H 10.20 · terrain at station 10.14
+      profile: R 0.28 · bands [curb:0.38 lawn:2.91 walk:1.58 lawn:1.58 curb:0.40] · back 6.85 · lawn 4.49 m cap 1.28 took 0.28 · walk 1.58 m took 0.00 · B 4.996527777777778
+
+== site (690.4, 1102.8): mat:highway · excess 6.97 m across 0.03 m (bound 0.01, a WALL)
+  (690.354, 1102.782) stored 28.25 · terrain 21.28 · D 28.25 · road side / on ②
+      owner tile 28 ring 0 v0 · corner arc 1 · station (664.65, 1104.25) d 25.75 · H 28.25 · terrain at station 28.25
+  (690.388, 1102.775) stored 21.28 · terrain 21.28 · D — · —
+  (690.372, 1102.773) stored 24.31 · terrain 21.28 · D 24.31 · road side / on ②
+      owner tile 38 ring 0 v15 · run 4 __highway__·right·0 (h there —, no line: highway) · station (685.76, 1093.51) d 10.35 · H 24.31 · terrain at station 25.50
+
+== site (673, 1111.5): mat:highway · excess 6.80 m across 3.02 m (bound 0.86, a WALL)
+  (673.878, 1110.986) stored 28.25 · terrain 22.23 · D 28.25 · road side / on ②
+      owner tile 28 ring 0 v0 · corner arc 1 · station (664.65, 1104.25) d 11.42 · H 28.25 · terrain at station 28.25
+  (671.233, 1112.447) stored 22.24 · terrain 22.24 · D — · —
+  (673.882, 1110.994) stored 21.43 · terrain 22.23 · D 21.43 · road side / on ②
+      owner tile 27 ring 0 v7 · run 0 __highway__·right·0 (h there —, no line: highway) · station (677.85, 1118.55) d 8.53 · H 21.43 · terrain at station 21.43
+
+== site (313.1, 1333.7): mat:highway · excess 6.25 m across 4.59 m (bound 1.31, a WALL)
+  (311.794, 1334.858) stored 32.85 · terrain 32.85 · D — · —
+  (315.422, 1332.040) stored 32.85 · terrain 32.85 · D — · —
+  (312.133, 1334.067) stored 26.59 · terrain 32.83 · D 26.59 · road side / on ②
+      owner tile 15 ring 0 v0 · run 4 __highway__·right·0 (h there —, no line: highway) · station (306.70, 1325.25) d 10.36 · H 26.59 · terrain at station 30.52
+
+== site (307.5, 1337.3): mat:highway · excess 6.09 m across 3.86 m (bound 1.10, a WALL)
+  (308.844, 1336.095) stored 26.52 · terrain 32.74 · D 26.52 · road side / on ②
+      owner tile 15 ring 0 v0 · run 4 __highway__·right·0 (h there —, no line: highway) · station (303.41, 1327.28) d 10.36 · H 26.52 · terrain at station 29.26
+  (305.555, 1338.122) stored 32.62 · terrain 32.62 · D — · —
+  (308.165, 1337.677) stored 32.76 · terrain 32.76 · D — · —
+
+== site (313.4, 1352): mat:highway · excess 6.09 m across 5.97 m (bound 1.70, a WALL)
+  (315.837, 1350.392) stored 33.41 · terrain 33.41 · D — · —
+  (310.870, 1353.696) stored 27.31 · terrain 33.39 · D 27.31 · road side / on ②
+      owner tile 10 ring 0 v12 · run 1 __highway__·right·0 (h there —, no line: highway) · station (316.32, 1362.51) d 10.36 · H 27.31 · terrain at station 33.38
+  (313.558, 1351.995) stored 33.41 · terrain 33.41 · D — · —

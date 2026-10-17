@@ -1,0 +1,52 @@
+hipointedemun · exag 1 · B 4.996527777777778 m · σ 4.996527777777778 m · walk ≤ 0.020833333333333332 · lawn ≤ 0.2857142857142857
+
+== site (611.7, 1183.1): mat:sidewalk · excess 3.75 m across 0.35 m (bound 0.10, a WALL)
+  (611.913, 1183.175) stored 31.08 · terrain 28.65 · D 31.08 · in band (held by its band)
+      owner tile 18 ring 0 v169 · run 7 clayton-avenue-0·left·0 (h there 31.08) · station (610.63, 1185.06) d 2.28 · H 31.08 · terrain at station 29.24
+      profile: R 0.00 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (611.644, 1182.948) stored 27.09 · terrain 28.41 · D 27.09 · in band (held by its band)
+      owner tile 18 ring 0 v171 · run 8 __highway__·right·0 (h there —, no line: highway) · station (610.43, 1180.98) d 2.31 · H 27.09 · terrain at station 26.94
+      profile: R 0.00 · bands [walk:3.36 lawn:3.67 curb:0.95] · back 7.98 · lawn 3.67 m cap 1.05 took 0.00 · walk 3.36 m took 0.00 · B 4.996527777777778
+  (611.691, 1183.081) stored 31.01 · terrain 28.51 · D 31.01 · in band (held by its band)
+      owner tile 18 ring 0 v169 · run 7 clayton-avenue-0·left·0 (h there 31.01) · station (610.44, 1184.92) d 2.23 · H 31.01 · terrain at station 29.08
+      profile: R 0.00 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+
+== site (-1158, -766.6): mat:sidewalk · excess 3.39 m across 0.51 m (bound 0.14, a WALL)
+  (-1157.776, -766.418) stored 26.94 · terrain 30.34 · D 26.94 · in band (held by its band)
+      owner tile 191 ring 0 v85 · corner arc 4 · station (-1158.14, -763.43) d 3.01 · H 26.94 · terrain at station 30.10
+      profile: R 0.00 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (-1158.073, -766.827) stored 30.37 · terrain 30.37 · D — · —
+  (-1158.038, -766.448) stored 26.94 · terrain 30.33 · D 26.94 · in band (held by its band)
+      owner tile 191 ring 0 v85 · corner arc 4 · station (-1158.41, -763.46) d 3.01 · H 26.94 · terrain at station 30.09
+      profile: R 0.00 · bands [curb:0.38 lawn:1.50 walk:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.00 · walk 1.50 m took 0.00 · B 4.996527777777778
+
+== site (548.1, 643.8): mat:treelawn:commercial · excess 3.37 m across 0.29 m (bound 0.08, a WALL)
+  (548.103, 643.791) stored 28.88 · terrain 30.13 · D 28.88 · in band (held by its band)
+      owner tile 60 ring 0 v49 · run 0 wheels-path-2·right·1 (h there 28.87) · station (546.22, 643.62) d 1.89 · H 28.87 · terrain at station 29.66
+      profile: R 0.04 · bands [curb:0.38 walk:1.50 lawn:0.09 walk:1.58 curb:0.40] · back 3.95 · lawn 0.09 m cap 0.03 took 0.03 · walk 3.08 m took 0.01 · B 4.996527777777778
+  (548.209, 643.526) stored 32.26 · terrain 30.15 · D 32.26 · in band (held by its band)
+      owner tile 60 ring 0 v33 · run 1 heels-path-0·left·1 (h there 32.28) · station (550.02, 644.30) d 1.96 · H 32.28 · terrain at station 30.66
+      profile: R -0.05 · bands [curb:0.38 walk:1.50 lawn:0.18 walk:1.58 curb:0.40] · back 4.04 · lawn 0.18 m cap 0.05 took 0.05 · walk 3.08 m took 0.00 · B 4.996527777777778
+  (548.139, 643.511) stored 28.87 · terrain 30.13 · D 28.87 · in band (held by its band)
+      owner tile 60 ring 0 v49 · run 0 wheels-path-2·right·1 (h there 28.86) · station (546.24, 643.34) d 1.90 · H 28.86 · terrain at station 29.66
+      profile: R 0.05 · bands [curb:0.38 walk:1.50 lawn:0.18 walk:1.58 curb:0.40] · back 4.04 · lawn 0.18 m cap 0.05 took 0.05 · walk 3.08 m took 0.00 · B 4.996527777777778
+
+== site (547.1, 648.8): mat:sidewalk · excess 3.06 m across 0.27 m (bound 0.08, a WALL)
+  (547.164, 648.626) stored 28.99 · terrain 30.13 · D 28.99 · in band (held by its band)
+      owner tile 60 ring 0 v49 · run 0 wheels-path-2·right·1 (h there 28.98) · station (545.78, 648.50) d 1.39 · H 28.98 · terrain at station 29.74
+      profile: R 0.02 · bands [curb:0.38 walk:2.06 curb:0.39] · back 2.83 · lawn 0.00 m cap 0.00 took 0.00 · walk 2.06 m took 0.02 · B 4.996527777777778
+  (547.163, 648.900) stored 32.08 · terrain 30.15 · D 32.08 · in band (held by its band)
+      owner tile 60 ring 0 v36 · run 1 heels-path-0·left·1 (h there 32.09) · station (548.47, 649.25) d 1.36 · H 32.09 · terrain at station 30.53
+      profile: R -0.02 · bands [curb:0.38 walk:2.02 curb:0.39] · back 2.79 · lawn 0.00 m cap 0.00 took 0.00 · walk 2.02 m took 0.02 · B 4.996527777777778
+  (547.310, 648.691) stored 32.09 · terrain 30.18 · D 32.09 · in band (held by its band)
+      owner tile 60 ring 0 v36 · run 1 heels-path-0·left·1 (h there 32.10) · station (548.54, 649.02) d 1.27 · H 32.10 · terrain at station 30.54
+      profile: R -0.02 · bands [curb:0.38 walk:2.06 curb:0.39] · back 2.83 · lawn 0.00 m cap 0.00 took 0.00 · walk 2.06 m took 0.02 · B 4.996527777777778
+
+== site (-104.9, -655.9): mat:sidewalk · excess 2.85 m across 0.44 m (bound 0.13, a WALL)
+  (-104.927, -656.131) stored 25.56 · terrain 25.56 · D — · UNOWNED (in a band no span reaches)
+      owner tile 182 ring undefined vundefined · no run · station — d — · H — · terrain at station —
+  (-104.962, -655.693) stored 22.71 · terrain 25.56 · D 22.71 · in band (held by its band)
+      owner tile 182 ring 0 v418 · run 13 wallace-drive·right·0 (h there 22.71) · station (-103.76, -654.62) d 1.62 · H 22.71 · terrain at station 25.53
+      profile: R 0.01 · bands [curb:0.38 walk:1.50 lawn:1.50] · back 3.38 · lawn 1.50 m cap 0.43 took 0.01 · walk 1.50 m took 0.00 · B 4.996527777777778
+  (-104.729, -655.954) stored 25.56 · terrain 25.56 · D — · UNOWNED (in a band no span reaches)
+      owner tile 182 ring undefined vundefined · no run · station — d — · H — · terrain at station —
