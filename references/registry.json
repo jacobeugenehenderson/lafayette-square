@@ -2509,7 +2509,8 @@
         "f-prowag-curb-ramp-per-crosswalk",
         "f-prowag-apex-ramp-alterations-only",
         "f-prowag-curb-ramp-geometry",
-        "f-prowag-perpendicular-ramp-dws"
+        "f-prowag-perpendicular-ramp-dws",
+        "r-curb-ramp-default-perpendicular"
       ],
       "tried": [
         "prowag-2023 → R203.6.1.1 + Exception, R304.2, R304.5.1.1, R305.1.4, R305.2.1",
@@ -2517,7 +2518,7 @@
         "mutcd-11r1 — markings only",
         "txdot-roadway-design-manual — terms: no reuse terms found; not read"
       ],
-      "notes": "PROWAG settles it as a REQUIREMENT, not a preference: one curb ramp (or blended transition) per crosswalk; a single apex ramp only in alterations where one-per-crosswalk is technically infeasible. ⚠ What PROWAG does NOT say: that the per-crosswalk ramp must be PERPENDICULAR — parallel ramps (R304.3), or one blended transition spanning every crosswalk, comply too. \"Perpendicular\" over parallel is Jacob's choice; record it as a ruling (by · date · his verbatim quote · canon) when Boz has them. Default ramp: run width 48 in min (R304.5.1.1), running slope 1:12 max, 48 × 48 in clear area below, inside the crosswalk (R304.2.4, R304.5.3); warning surface 24 in deep min, the full run width (R305.1.4), at the back of curb when the grade break is in front of it (R305.2.1 A)."
+      "notes": "PROWAG settles it as a REQUIREMENT, not a preference: one curb ramp (or blended transition) per crosswalk; a single apex ramp only in alterations where one-per-crosswalk is technically infeasible. ⚠ What PROWAG does NOT say: that the per-crosswalk ramp must be PERPENDICULAR — parallel ramps (R304.3), or one blended transition spanning every crosswalk, comply too. \"Perpendicular\" over parallel is Jacob's choice: r-curb-ramp-default-perpendicular. Default ramp: run width 48 in min (R304.5.1.1), running slope 1:12 max, 48 × 48 in clear area below, inside the crosswalk (R304.2.4, R304.5.3); warning surface 24 in deep min, the full run width (R305.1.4), at the back of curb when the grade break is in front of it (R305.2.1 A)."
     }
   ],
   "findings": [
@@ -5548,6 +5549,20 @@
       "scope": "federal — all states, once adopted (36 CFR 1190.1). Location, R305.2.1 A: \"Where the ends of the bottom grade break are in front of the back of curb or at the edge of pavement where there is no curb, the detectable warning surface shall be placed at the back of curb or no greater than 6 inches (150 mm) from the edge of pavement where there is no curb.\" (B and C cover a grade break set back behind the curb.)",
       "foundOn": "2026-10-17",
       "foundBy": "Plat"
+    },
+    {
+      "id": "r-curb-ramp-default-perpendicular",
+      "question": "q-curb-ramp-style-preference",
+      "kind": "ruling",
+      "value": {
+        "kitDefaultCurbCutStyle": "perpendicular",
+        "townWideSwitch": "asked for (Survey or Section), not built"
+      },
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "The default can become perpendicular and perhaps we put a knob in the survey or section tool to switch the painting? Given they are 'code' now it would make more sense to default to them",
+      "canon": "docs/briefs/BRIEF-corner-ramps-and-kerb.md §0a item 5 (59e3945f)",
+      "notes": "PROWAG REQUIRES one ramp per crosswalk (R203.6.1.1; apex only in alterations, f-prowag-apex-ramp-alterations-only). PERPENDICULAR over parallel or a blended transition is this ruling's choice, not PROWAG's. It is the kit rung of the ladder (evidence → town norm → state → kit); LS keeps its authored diagonal norm. Relayed by Boz."
     }
   ]
 }
