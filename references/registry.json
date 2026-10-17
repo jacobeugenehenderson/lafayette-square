@@ -1464,6 +1464,27 @@
       },
       "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
       "localCopy": null
+    },
+    {
+      "id": "txdot-roadway-design-manual",
+      "title": "TxDOT Roadway Design Manual (curb ramp guidance)",
+      "publisher": "Texas Department of Transportation",
+      "jurisdiction": "TX (no kit town)",
+      "url": "https://www.txdot.gov/manuals/des/rdw.html",
+      "covers": [
+        "curb ramp style (the wording Jacob cited for perpendicular ramps)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only)",
+        "quote": "\"Copyright 2026, Texas Department of Transportation\" — the disclaimer page has no reproduction, reuse, automated-access or AI terms.",
+        "source": "https://www.txdot.gov/about/disclaimer.html",
+        "note": "TxDOT can hold copyright and grant licences (Transportation Code §201.205, cited in a TxDOT licence agreement). The manual URL is unconfirmed and was not opened. Jacob's quoted wording (\"strongly preferred… heavily discouraged\") is unverified and may be a summary.",
+        "route": "Not needed: PROWAG answers the default (q-curb-ramp-style-preference). Ask TxDOT in writing only if Jacob wants its preference wording itself."
+      },
+      "status": "CANDIDATE — bring to Jacob",
+      "localCopy": null
     }
   ],
   "questions": [
@@ -2478,6 +2499,25 @@
         "nyc-dot-street-design-manual (JH) — permission per nyc.gov ToU §IV.6"
       ],
       "notes": "Per town, 2026-10-17. MINIMUM CURBED WIDTH: CA 4 ft (divisional), MA 2 ft (linear) — own jurisdiction for Altadena / Provincetown; MO, OH, NY may borrow either, labelled \"borrowed for <state>\" (Jacob's ruling 2026-10-17, BRIEF §1). NOSE SHAPE: CA parabolic flare (own); others borrow. NOSE RADIUS: no permitted source states one in its own voice — [U] in every town. Jurisdictions measured with us-census-geocoder over each disc: LS = St. Louis city; HPDM = Clayton > St. Louis city > University City > Richmond Heights > unincorporated St. Louis County; Huron = Huron city + unincorporated Huron Township (Erie County); PTown = Provincetown (+ Truro); Altadena = unincorporated LA County + Pasadena; JH = NYC (no jurisdiction.json in the pour)."
+    },
+    {
+      "id": "q-curb-ramp-style-preference",
+      "status": "answered",
+      "ask": "The default curb-cut style at a corner: one ramp per crossing (perpendicular), or one at the apex (diagonal)? And the width and detectable-warning depth of the default ramp.",
+      "neededBy": "the kit's default curb cut — Jacob's ruling (2026-10-17, via Boz): PERPENDICULAR, one ramp per crossing",
+      "findings": [
+        "f-prowag-curb-ramp-per-crosswalk",
+        "f-prowag-apex-ramp-alterations-only",
+        "f-prowag-curb-ramp-geometry",
+        "f-prowag-perpendicular-ramp-dws"
+      ],
+      "tried": [
+        "prowag-2023 → R203.6.1.1 + Exception, R304.2, R304.5.1.1, R305.1.4, R305.2.1",
+        "fhwa-sa-13-027 §4.6.1 — restates the requirement that curb ramps be provided; states no style preference in its own voice",
+        "mutcd-11r1 — markings only",
+        "txdot-roadway-design-manual — terms: no reuse terms found; not read"
+      ],
+      "notes": "PROWAG settles it as a REQUIREMENT, not a preference: one curb ramp (or blended transition) per crosswalk; a single apex ramp only in alterations where one-per-crosswalk is technically infeasible. ⚠ What PROWAG does NOT say: that the per-crosswalk ramp must be PERPENDICULAR — parallel ramps (R304.3), or one blended transition spanning every crosswalk, comply too. \"Perpendicular\" over parallel is Jacob's choice; record it as a ruling (by · date · his verbatim quote · canon) when Boz has them. Default ramp: run width 48 in min (R304.5.1.1), running slope 1:12 max, 48 × 48 in clear area below, inside the crosswalk (R304.2.4, R304.5.3); warning surface 24 in deep min, the full run width (R305.1.4), at the back of curb when the grade break is in front of it (R305.2.1 A)."
     }
   ],
   "findings": [
@@ -4256,7 +4296,7 @@
     {
       "id": "f-prowag-curb-ramp-per-crosswalk",
       "topic": "pedestrian realm",
-      "question": null,
+      "question": "q-curb-ramp-style-preference",
       "kind": "rule",
       "value": {
         "perCrosswalk": 1,
@@ -5467,6 +5507,45 @@
       "where": "Index 303.5(8); Table 405.4",
       "quote": "The approach nose of islands should also be designed utilizing a parabolic flare, as discussed in Index 405.4.",
       "scope": "CA curbed islands — the SHAPE the curb takes into the approach nose; no radius at the tip",
+      "foundOn": "2026-10-17",
+      "foundBy": "Plat"
+    },
+    {
+      "id": "f-prowag-apex-ramp-alterations-only",
+      "topic": "pedestrian realm",
+      "question": "q-curb-ramp-style-preference",
+      "kind": "rule",
+      "value": {
+        "singleApexRampPermitted": "only in alterations, where existing physical constraints make one-per-crosswalk technically infeasible",
+        "newConstruction": false
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R203.6.1.1 Exception",
+      "quote": "Exception: In alterations, where existing physical constraints make compliance with R203.6.1.1 technically infeasible, a single curb ramp complying with R304 shall be permitted at the apex of the intersection corner.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
+      "foundOn": "2026-10-17",
+      "foundBy": "Plat"
+    },
+    {
+      "id": "f-prowag-perpendicular-ramp-dws",
+      "topic": "pedestrian realm",
+      "question": "q-curb-ramp-style-preference",
+      "kind": "value",
+      "value": {
+        "dwsDepth_in": {
+          "min": 24
+        },
+        "dwsWidth": "full width of the curb ramp run, excluding flared sides",
+        "location": {
+          "bottomGradeBreakInFrontOfBackOfCurb": "at the back of curb",
+          "bottomGradeBreakBehindCurbBothEndsWithin_in_60": "on the ramp run at the bottom grade break",
+          "eitherEndMoreThan_in_60": "on the clear area, both front corners at the back of curb"
+        }
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R305.1.4, R305.2.1",
+      "quote": "Detectable warning surfaces shall extend 24 inches (610 mm) minimum in the direction of pedestrian travel. … At curb ramps and blended transitions, detectable warning surfaces shall extend the full width of the curb ramp run (excluding any flared sides), blended transition, or landing.",
+      "scope": "federal — all states, once adopted (36 CFR 1190.1). Location, R305.2.1 A: \"Where the ends of the bottom grade break are in front of the back of curb or at the edge of pavement where there is no curb, the detectable warning surface shall be placed at the back of curb or no greater than 6 inches (150 mm) from the edge of pavement where there is no curb.\" (B and C cover a grade break set back behind the curb.)",
       "foundOn": "2026-10-17",
       "foundBy": "Plat"
     }
