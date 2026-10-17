@@ -28,7 +28,7 @@ const sigma = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigma
 const LHs = lineHeights({ streets: JSON.parse(readFileSync(`cartograph/data/${town}/clean/ribbons.json`, 'utf8')).streets, raw: T.getElevationRaw, sigma })
 const D = buildDeformer({ town, tiles: dump.tiles, bands: dump.bands, stencil: dump.stencil, raw: T.getElevationRaw, line: { step: LHs.step, heightAt: LHs.heightAt },
   limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: E, blend, sigma } })
-const cache = new Map(), why = (x, z) => { const k = `${x},${z}`; let r = cache.get(k); if (!r) { r = D._why(x, z); if (r.v == null && !r.why) r.why = { branch: D.explain(x, z).outside ? 'outside every tile' : 'beyond reach' }; cache.set(k, r) } return r }
+const cache = new Map(), why = (x, z) => { const k = `${x},${z}`; let r = cache.get(k); if (!r) { r = D._why(x, z); if (r.v == null && !r.why) r.why = { branch: D.explain(x, z).outside ? 'outside every tile' : 'beyond reach' }; if (!r.why) r.why = { branch: 'road side / on ②' }; cache.set(k, r) } return r }
 const cls = new Map(); let mism = 0, n = 0
 const add = (c, g, ex) => { let s = cls.get(c); if (!s) cls.set(c, s = { n: 0, ex: [], g: new Map() }); s.n++; s.ex.push(ex); s.g.set(g, (s.g.get(g) || 0) + 1) }
 for (const g of gj.groups) { if (g.rawByteOffset == null) continue; const gid = `${g.kind}:${g.id}`; if (only && !only.includes(gid)) continue

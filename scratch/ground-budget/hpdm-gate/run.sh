@@ -16,7 +16,7 @@ O=$G/slab-$T-$MODE${TAG:+-$TAG}; L=$G/$MODE-$T${TAG:+-$TAG}.log; rm -rf $O; mkdi
 snap() { find -L $R/cartograph/data/$T $R/public -type f -exec stat -f '%m %z %N' {} + | sort -k3 }
 snap > $G/snap-before.txt; touch $G/snap-marker
 echo "$T $MODE start $(date +%H:%M:%S) · main $(cd $R && git rev-parse --short HEAD) · gate $(cd $WT && git rev-parse --short HEAD)$( [[ -n "$(cd $WT && git status --porcelain -- cartograph src)" ]] && echo '+dirty') · load $(sysctl -n vm.loadavg) · free $(free_pct)%"
-( cd $R/cartograph; SWAP_MAP="$M" /usr/bin/time -l node --max-old-space-size=14000 --import $R/scratch/ground-budget/swap.mjs bake-ground.js --look=$T --scene=$T --out-dir=$O --shore=pending 2>&1 | perl -MTime::HiRes=time -ne '$|=1; printf "%.2f %s", time, $_' ) > $L 2>&1 &
+( cd $R/cartograph; SWAP_MAP="$M" /usr/bin/time -l node --max-old-space-size=10000 --import $R/scratch/ground-budget/swap.mjs bake-ground.js --look=$T --scene=$T --out-dir=$O --shore=pending 2>&1 | perl -MTime::HiRes=time -ne '$|=1; printf "%.2f %s", time, $_' ) > $L 2>&1 &
 PID=$!; MINF=100; while kill -0 $PID 2>/dev/null; do F=$(free_pct); (( F < MINF )) && MINF=$F; (( F < 30 )) && { echo "⛔ free $F% < 30%: killing"; pkill -f "out-dir=$O"; }; sleep 10; done
 wait $PID; RC=$?; snap > $G/snap-after.txt
 echo "exit $RC · real $(awk '$3 == "real" {print $2}' $L) s · peak RSS $(awk '/maximum resident set size/ {print $2}' $L) B · min free $MINF%"
