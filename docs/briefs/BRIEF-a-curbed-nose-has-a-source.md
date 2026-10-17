@@ -42,9 +42,15 @@ presented as that town's own. A borrowed value isn't silent, so it isn't a fallb
 
 ## 3. The work
 
-1. **New candidates, terms first.** Find the governing street standard for each town where local streets are the
-   city's, not the state's, and record each as a `source` with its terms checked (date, quote, URL). ⛔ Read nothing
-   until Jacob approves its terms.
+1. **New candidates, LOCAL FIRST, terms first.** Jacob, 2026-10-17: *"look more locally."* A town's own streets are
+   usually governed by its city, then its county, and only then the state, so search in that order for every town.
+   Record each as a `source` with its terms checked (date, quote, URL).
+   - Look for: the municipal street or public-works design standard, the subdivision regulations, standard detail
+     drawings (the curb, island and median details), and the city's complete-streets guide.
+   - Municipal codes are often hosted by a third party (Municode, American Legal, eCode360). Check the HOST's terms as
+     well as the city's.
+   - ⛔ Read nothing until Jacob approves its terms.
+   - Provincetown too: the Town of Provincetown and Barnstable County, before MassDOT.
    - Jackson Heights: the **NYC DOT Street Design Manual** (and NYSDOT only if NYC defers to it).
    - LS and HPDM: the **City of St. Louis** street standards. Also check whether HPDM's streets fall under University
      City or St. Louis County.
