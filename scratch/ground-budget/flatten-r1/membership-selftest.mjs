@@ -5,7 +5,8 @@
 //   (diag-underived.json) beside its far outer must be dropped · ⑤ the toy stack still paints 300 / 610 / 8790 m² ·
 //   ⑥ HPDM's twisted sliver (diag-recreation.json) must find a point inside, on some edge if not the last ·
 //   ⑦ HPDM's highway ring (hw-dump.json) must hold its hole, whose edge runs within PROBE_IN of its own (a probe clear of
-//   the ring's own edges but not of its hole's stood in the hole).
+//   the ring's own edges but not of its hole's stood in the hole) · ⑧–⑪ the bow-tie below the lattice (meet.json): dropped
+//   and counted; one half above the lattice, a twist wider than a step → refuse; the other half in another group → orphan.
 //   node scratch/ground-budget/flatten-r1/membership-selftest.mjs [--src=<a mutated bake-ground.js>]   (exit 1 on any miss)
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
@@ -67,4 +68,23 @@ expect('③ a sub-lattice hole an outer touches throws', () => itemsByMembership
   const painted = (x, y) => wind(mine, x, y) !== 0 && acc.every(a => wind(a, x, y) === 0)
   expect('⑦ HPDM\'s highway ring (#9) holds its 54.7 m² hole (#10), whose edge crowds its own within PROBE_IN', () => itemsByMembership([ring(9), ring(10)], painted, 'mat:highway', sl),
     (r, e) => !e && r.length === 1 && r[0].holes.length === 1) }
-console.log(miss ? `⛔ ${miss} miss(es)` : 'all seven held'); process.exit(miss ? 1 : 0)
+// ⑧–⑪ THE BOW-TIE BELOW THE LATTICE (Boz's ruling (B), 2026-10-14): HPDM's real twisted sliver (meet.json) is dropped and
+// counted; a bow-tie with one half above the lattice still REFUSES; a sliver whose other half is in ANOTHER group is never a
+// bow-tie (each group's flatten sees only its own rings — it is an ordinary orphan there); a twist wider than one step REFUSES.
+{ const d = JSON.parse(readFileSync(here('./meet.json'), 'utf8')), M = (r) => P(r.map(([x, z]) => [Math.round(x * 1000), Math.round(z * 1000)])), sl = {}
+  expect('⑧ HPDM\'s twisted sliver (treelawn:underived) is ONE bow-tie, dropped and counted', () => itemsByMembership([M(d.meets), M(d.hole)], () => false, 'mat:treelawn:underived', sl),
+    (r, e) => !e && r.length === 0 && sl['mat:treelawn:underived']?.bowTies?.length === 1) }
+{ const hole = P([[0, 0], [1000, 2], [1000, 0]]), wideOuter = P([[0, 0], [-60, 40], [-60, -40]])   // hole wound −; the outer half has a clear probe
+  expect('⑨ a bow-tie with one half ABOVE the lattice refuses', () => itemsByMembership([wideOuter, hole], (x, y) => wind(wideOuter, x, y) !== 0, 'mut:half', {}),
+    (r, e) => /meets it/.test(e?.message)) }
+{ const sl = {}, hole = P([[0, 0], [1000, 2], [1000, 0]])
+  expect('⑩ the other half in ANOTHER group: never a bow-tie here (an orphan in its own group)', () => itemsByMembership([P([[0, 5000], [100, 5000], [100, 5100], [0, 5100]]), hole], (x, y) => x > -1 && x < 101 && y > 4999 && y < 5101, 'mut:other', sl),
+    (r, e) => !e && !sl['mut:other']?.bowTies && sl['mut:other']?.orphanHoles?.length === 1) }
+{ const hole = P([[0, 0], [1000, 4], [1000, 0]]), outer = P([[0, 0], [-1000, 4], [-1000, 0]])            // ~2 steps mean width, no clear probe
+  expect('⑪ a twist WIDER than one step refuses', () => itemsByMembership([outer, hole], () => false, 'mut:wide', {}),
+    (r, e) => /meets it/.test(e?.message)) }
+{ // ⑫ two thin slivers that touch at TWO places — not one twisted sliver; still refuses (only the one-vertex rule says so)
+  const hole = P([[0, 0], [500, 1], [1000, 0], [500, 0]]), outer = P([[0, 0], [500, -1], [1000, 0], [500, 0]])
+  expect('⑫ thin slivers touching at TWO vertices refuse', () => itemsByMembership([outer, hole], () => false, 'mut:twice', {}),
+    (r, e) => /meets it/.test(e?.message)) }
+console.log(miss ? `⛔ ${miss} miss(es)` : 'all twelve held'); process.exit(miss ? 1 : 0)

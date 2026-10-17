@@ -30,7 +30,8 @@ const lyr = (g) => g === 'mat:sidewalk' ? ['sidewalk', null] : g === 'mat:curb' 
 function ringsAt(stage, g, box, entries) {
   const [l, lu] = lyr(g); if (!l) return null
   if (stage === 'S1' || stage === 'S2') return tileRings(stage, l, box)
-  if (stage === 'S3') return lu ? T.rekey.filter(x => x.layer === l && x.lu === lu).flatMap(x => near(x.rings, box)) : tileRings('S2', l, box)
+  if (stage === 'S3') return lu ? T.rekey.filter(x => x.layer === l && x.lu === lu).flatMap(x => near(x.rings, box))
+    : T.rekey.some(x => x.layer === l) ? T.rekey.filter(x => x.layer === l).flatMap(x => near(x.rings, box)) : tileRings('S2', l, box)   // the walk/curb cut by the stamp, when it is
   const k = l === 'treelawn' ? 'tl:' + lu : l === 'lu' ? 'lu:' + lu : l
   if (stage === 'S4pre' || stage === 'S4union' || stage === 'S4clip') return near(T.s4[k]?.[{ S4pre: 'pre', S4union: 'union', S4clip: 'clip' }[stage]], box)
   if (stage === 'STACK') return near(entries.find(e => e.groupKey === g)?.items.flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]), box)
@@ -40,7 +41,7 @@ export function analyse(entries, pairsWanted, out) {
   const all = nearMisses(entries.filter(e => pairsWanted.some(p => p.includes(e.groupKey))))
   const res = { examples: [], firstStage: {}, s0: {} }
   for (const pw of pairsWanted) {
-    const xs = all.filter(p => p.shape === 'two-lines' && [p.ga, p.gb].sort().join(' / ') === [...pw].sort().join(' / ')).sort((a, b) => b.m - a.m)
+    const xs = all.filter(p => p.shape === 'ends-or-parallel' && [p.ga, p.gb].sort().join(' / ') === [...pw].sort().join(' / ')).sort((a, b) => b.m - a.m)
     const picked = []; for (const p of xs) { if (picked.every(q => Math.hypot(q.at[0] - p.at[0], q.at[1] - p.at[1]) > 20)) picked.push(p); if (picked.length === 5) break }
     for (const p of picked) {
       const pad = 2, box = [Math.min(p.seg[0][0], p.seg[1][0]) - pad, Math.min(p.seg[0][1], p.seg[1][1]) - pad, Math.max(p.seg[0][0], p.seg[1][0]) + pad, Math.max(p.seg[0][1], p.seg[1][1]) + pad]
@@ -75,7 +76,7 @@ export function wholeTown(entries) {
   const layers = ['curb', 'sidewalk', 'treelawn', 'lu'], out = {}
   const cross = (pairs) => pairs.filter(p => p.ga !== p.gb).reduce((t, p) => t + p.m, 0)
   for (const s of ['S1', 'S2']) out[s] = cross(nearMisses(layers.map(l => ({ groupKey: l, items: T.tiles.flatMap(t => t[s]?.[l] || []) }))))
-  out.S3 = cross(nearMisses(layers.map(l => ({ groupKey: l, items: (l === 'treelawn' || l === 'lu') ? T.rekey.filter(x => x.layer === l).flatMap(x => x.rings) : T.tiles.flatMap(t => t.S2?.[l] || []) }))))
+  out.S3 = cross(nearMisses(layers.map(l => ({ groupKey: l, items: T.rekey.some(x => x.layer === l) ? T.rekey.filter(x => x.layer === l).flatMap(x => x.rings) : T.tiles.flatMap(t => t.S2?.[l] || []) }))))
   const s4 = (l) => Object.entries(T.s4).filter(([k]) => l === 'treelawn' ? k.startsWith('tl:') : l === 'lu' ? k.startsWith('lu:') : k === l).flatMap(([, v]) => v.clip || [])
   out.S4clip = cross(nearMisses(layers.map(l => ({ groupKey: l, items: s4(l) }))))
   const toL = (g) => lyr(g)[0]

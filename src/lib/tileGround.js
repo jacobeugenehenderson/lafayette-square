@@ -2439,19 +2439,33 @@ export function labelFromEvidence(iA, parts, fixedOrOverride) {
   }
   return out
 }
+// ⛔ a shape frozen before the stamp moved into the cut: its pieces were cut from the raw evidence, so each class boundary
+// meets the block a hair off its line (one-side crossings). Painted as it is, and SAID once.
+let _unstampedWarned = false
+const unstampedWarn = () => { if (_unstampedWarned) return; _unstampedWarned = true
+  console.warn('[tileGround][stamp] ⛔ this shape was frozen BEFORE the land-use stamp (`evidenceStamped` absent): each class boundary meets the block off its line, and the strips cut there fold or slit. RE-FREEZE (re-bake).') }
 let _noEvidenceWarned = false
 const noEvidenceWarn = () => { if (_noEvidenceWarned) return; _noEvidenceWarned = true
   console.warn('[tileGround][LU] ⛔ this artifact carries NO land evidence (`ribbons.landEvidence` / `evidenceByPiece`): each piece is painted WHOLE in its one class — a block that is half houses and half field paints one half wrong. RE-POUR, then re-bake.') }
 
 // Move the geometry a painter struck under `OWN_LU` to each piece's own class. Every other key
 // (a divided road's `median`) is left exactly where the painter put it.
-export function rekeyByPiece(st, byLu) {
-  const own = byLu[OWN_LU]; delete byLu[OWN_LU]
-  if (!own?.length) return byLu
+// ⭐⭐ THE LAND-USE STAMP IS ONE CUT OVER THE WHOLE PARTITION (RIBBONS's SUPPLY row for `lu`: "stamp the LU into the
+// initial ground map" — a fact laid over the ground once; Jacob, 2026-10-14: "treated like any thing else, flattened into
+// the ground layer"). Its boundary is a line of the ground map, so EVERY strip it crosses carries the crossing — the
+// lawn and the land use take its class there (`rekeyByPiece`), the walk, the curb and the curb cut keep their own key but
+// are cut at the same lines (`cutByStamp`). ⛔ Cutting only the keyed strips put each crossing on ONE side of a shared
+// line: Clipper rounds it to the lattice, up to ½ step off the neighbour's straight edge, and the lawn's copy of the line
+// became a second line (HPDM, 2026-10-14: 91% of the cross-layer line drawn twice was made here). Each strip is cut by
+// the same class groups through the same `intersectRings`, and Clipper rounds the crossing of the same two segments to
+// the same point whichever way either runs (▶ scratch/ground-budget/flatten-r1/crossing-premise.mjs), so a shared line
+// keeps one vertex set. ▶ node checks/claims-no-edge-is-drawn-twice.mjs
+// (class, region) per piece: each evidence region in its class, and `underived` where none reaches. Computed per call,
+// never memoised on the tile: an authored land use changes `tilePieceLus(st)` while the tile object stays the same.
+function stampParts(st) {
   const lus = tilePieceLus(st), pieces = piecesOfIA(st.iA)
   const ev = Array.isArray(st.evidenceByPiece) ? st.evidenceByPiece : null
   if (st.evidenceByPiece === undefined) noEvidenceWarn()   // absent = an artifact from before the evidence; null = by design
-  // (class, region) per piece: each evidence region in its class, and `underived` where none reaches.
   const parts = []
   for (const p of pieces) {
     const region = [p.outer, ...p.holes], mine = ev?.[p.i]
@@ -2461,18 +2475,163 @@ export function rekeyByPiece(st, byLu) {
     parts.push({ lu: UNDERIVED_LU, region: held.length ? differenceRings(region, held) : region })
   }
   const classes = [...new Set(parts.filter(x => x.region.length).map(x => x.lu))]
-  if (classes.length === 1 && !ev) { (byLu[classes[0]] ||= []).push(...own); return byLu }
-  for (const lu of classes) {
-    const part = intersectRings(own, parts.filter(x => x.lu === lu).flatMap(x => x.region))
+  return { pieces, parts, classes, whole: classes.length === 1 && !ev, regionsOf: (lu) => parts.filter(x => x.lu === lu).flatMap(x => x.region) }
+}
+// ⛔ REFUSED, NEVER DROPPED: paint lying in NO piece has no class to take. The painters confine it to `iA`, so this should
+// be 0 m²; if it is not, the bake stops by name rather than leave that ground painted by nobody.
+// ⭐ Tolerance = one lattice step (1 / SCALE, lattice.js) × the paint's own perimeter — a property of the geometry.
+// ⛔ It REFUSES where the paint ships. A pass whose paint is discarded (the chain path inside a ① build, which keeps only
+// its labels) passes `discarded`, and there the same fact is COUNTED (`outsideDiscarded`) and printed once by `sectionPass`.
+export const outsideDiscarded = { n: 0, m2: 0 }
+function warnOutside(sp, own, what, discarded = false) {
+  const outside = ringsArea(differenceRings(own, sp.pieces.flatMap(p => [p.outer, ...p.holes])))
+  const tol = own.reduce((t, r) => { let q = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) q += Math.hypot(r[i][0] - r[j][0], r[i][1] - r[j][1]); return t + q }, 0) / SCALE
+  if (outside > tol && discarded) { outsideDiscarded.n++; outsideDiscarded.m2 += outside; return }
+  if (outside > tol) throw new Error(`[tileGround][LU] ⛔ ${outside.toFixed(4)} m² of a split tile's ${what} lies in none of its pieces (lattice tolerance ${tol.toFixed(4)} m²) — REFUSED: it has no piece to take its class from, and dropping it would leave ground painted by nobody.`)
+}
+export function rekeyByPiece(st, byLu, sp = null, discarded = false) {
+  const own = byLu[OWN_LU]; delete byLu[OWN_LU]
+  if (!own?.length) return byLu
+  sp ||= stampParts(st)
+  if (sp.whole) { (byLu[sp.classes[0]] ||= []).push(...own); return byLu }
+  for (const lu of sp.classes) {
+    const part = intersectRings(own, sp.regionsOf(lu))
     if (part.length) (byLu[lu] ||= []).push(...part)
   }
-  // ⛔ COUNTED, NEVER DROPPED UNSEEN: land-use paint lying in NO piece has no class to take. The
-  // painters confine it to `iA`, so this should be 0 m²; if it is not, it is said, not reassigned.
-  // ⭐ Tolerance = Clipper's 1 mm lattice × the paint's own perimeter — a property of the geometry, not a number picked.
-  const outside = ringsArea(differenceRings(own, pieces.flatMap(p => [p.outer, ...p.holes])))
-  const tol = own.reduce((t, r) => { let q = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) q += Math.hypot(r[i][0] - r[j][0], r[i][1] - r[j][1]); return t + q }, 0) * 0.001
-  if (outside > tol) console.warn(`[tileGround][LU] ⛔ ${outside.toFixed(2)} m² of a split tile's land-use paint lies in none of its pieces — not painted (no piece to take its class from).`)
+  warnOutside(sp, own, 'land-use paint', discarded)
   return byLu
+}
+// ⭐ THE PAINTED RING LISTS of a tile's bundle — the ONE table the painted layers are built from (accumulated over the
+// tiles, unioned, clipped: `sectionOpen`'s finish) and the stamp's insert targets. So a list the flatten paints is a
+// target by construction, and the block silhouette (kerbPlan's and the deformer's, not paint) is not; a painted layer
+// added later joins this table to be painted at all, and is a target from then on.
+const PAINTED = { A: 'asphalt', C: 'curb', W: 'sidewalk', R: 'curbCut' }
+const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
+
+// ⭐⭐ STAMP THE TILE ONCE, WHERE ITS LAND USE IS CUT (ROADMAP A10: "cut iA at every … ownership change …; a gap is not
+// constructible", none of clamp · wrap · re-key · snap). The stamp's lines are the RAW land evidence's boundaries
+// (`ribbons.landEvidence`, prepared as the painter groups it); where one crosses the block contour (`iaFull`, the struck
+// one, and `iA`, the cut one), the crossing is computed ONCE from the two segments that make it, rounded to the lattice
+// ONCE, and written into BOTH rings — and only THEN is each piece cut into its evidence (`evidenceByPiece`). So the strips,
+// asphalt (tile − iA), the block silhouette (kerbPlan, the deformer) and the evidence parts all meet at vertices they
+// SHARE, by construction — no search, no tolerance.
+// ⛔ Cutting the pieces from the RAW evidence first put each crossing on ONE side: `intersectRings` rounded it into the
+// evidence part and never into iA, so a class boundary met the block 0.3–0.6 mm off its line (HPDM, 2026-10-14: 1,588
+// such vertices; three of them folded the curb or slit the asphalt). Stamping the parts AFTER that cut cannot recover
+// it — the crossing is already a vertex beside the line. ▶ checks/claims-the-stamp-keeps-its-owners.mjs.
+// FROZEN with the shape (`evidenceStamped`): the iaFull-aligned arrays are expanded (an inserted vertex lies inside an
+// edge: it starts a half that carries that edge's stamp — the same owner — is no corner, and keeps the edge's arc /
+// junction only when both ends share it).
+// ⛔ The evidence is DISJOINT only to ½ cm until the pour is fixed (derive.js runs `layerLandEvidence` on its own SCALE =
+// 100 lattice, not lattice.js's CLIP_SCALE) — evidence × evidence is not stamped (its overlaps do not settle); they are
+// measured in the pour's regions, never resolved here. ▶ checks/claims-the-land-is-painted-by-its-evidence.mjs.
+// ⭐ ① ON THE LATTICE, ONCE: the curb contour is rounded to lattice.js's grid where it is born, so the stamp nodes lattice
+// rings and the circle cut only cuts. ⛔ It used to stay float until the circle's `intersectRings` rounded `iA` (and never
+// `iaFull`): the stamp's crossings were computed on rounded keys beside a float contour, and the cut dropped some of them
+// from contours 600–3,400 m inside the circle (02da626e). ⛔ A ring whose rounding makes two neighbours one point has an
+// edge shorter than the lattice; it is REFUSED by name, never merged (the stamp arrays are aligned to its vertices).
+function onLattice(ring, what) {
+  const out = ring.map(p => [Math.round(p[0] * SCALE) / SCALE, Math.round(p[1] * SCALE) / SCALE])
+  for (let i = 0; i < out.length; i++) { const a = out[i], b = out[(i + 1) % out.length]
+    if (a[0] === b[0] && a[1] === b[1]) throw new Error(`[tileGround][PROTO②] ⛔ ${what}: vertices ${i} and ${(i + 1) % out.length} round to one lattice point (${a}) — an edge shorter than the lattice (1 / ${SCALE} m). Refused, never merged.`) }
+  return out
+}
+// The lattice key of a point the stamp is given. ⛔ Off the lattice is REFUSED, never rounded here: the contour is rounded
+// once where it is born (`onLattice`) and the evidence is poured on a coarser grid, so an off-lattice input is a ring that
+// skipped its rounding.
+const _lk = (p) => { const k = [Math.round(p[0] * SCALE), Math.round(p[1] * SCALE)]
+  if (Math.abs(p[0] * SCALE - k[0]) > 1e-6 || Math.abs(p[1] * SCALE - k[1]) > 1e-6) throw new Error(`[tileGround][stamp] ⛔ (${p}) is off the lattice (1 / ${SCALE} m) — every ring the stamp nodes must already be on it. Refusing.`)
+  return k }
+function stampCrossings(rings, skip, maxRounds = 8) {
+  // each vertex keeps its own coordinates (src = its index in the input ring) or is a crossing (src = null) on input edge `edge`
+  let R = rings.map(r => r.map((p, i) => ({ p, k: _lk(p), src: i, edge: i })))
+  for (let round = 0; round < maxRounds; round++) {
+    const add = R.map(r => r.map(() => []))
+    let n = 0
+    const inside = (v, d) => d > 0 ? (v > 0 && v < d) : (v < 0 && v > d)
+    const onEdge = (P, s0, s1) => (s1[0] - s0[0]) * (P[1] - s0[1]) - (s1[1] - s0[1]) * (P[0] - s0[0]) === 0
+      && Math.min(s0[0], s1[0]) <= P[0] && P[0] <= Math.max(s0[0], s1[0]) && Math.min(s0[1], s1[1]) <= P[1] && P[1] <= Math.max(s0[1], s1[1])
+      && !(P[0] === s0[0] && P[1] === s0[1]) && !(P[0] === s1[0] && P[1] === s1[1])
+    // candidate pairs through one grid of every edge (cell = the median edge, never smaller than the extent shared over the
+    // edges): each pair of edges from two different rings is tested once, in the first cell they share
+    const E = []; R.forEach((r, i) => r.forEach((v, p) => { const w = r[(p + 1) % r.length].k; E.push([i, p, Math.min(v.k[0], w[0]), Math.min(v.k[1], w[1]), Math.max(v.k[0], w[0]), Math.max(v.k[1], w[1])]) }))
+    if (!E.length) return R
+    const lens = E.map(e => Math.max(e[4] - e[2], e[5] - e[3])).sort((x, y) => x - y)
+    let gx0 = Infinity, gy0 = Infinity, gx1 = -Infinity, gy1 = -Infinity; for (const e of E) { gx0 = Math.min(gx0, e[2]); gy0 = Math.min(gy0, e[3]); gx1 = Math.max(gx1, e[4]); gy1 = Math.max(gy1, e[5]) }
+    const C = Math.max(1, lens[lens.length >> 1], Math.sqrt((gx1 - gx0 + 1) * (gy1 - gy0 + 1) / E.length))
+    const NX = Math.floor((gx1 - gx0) / C) + 1, cells = new Map()
+    E.forEach((e, n2) => { for (let cx = Math.floor((e[2] - gx0) / C); cx <= Math.floor((e[4] - gx0) / C); cx++) for (let cy = Math.floor((e[3] - gy0) / C); cy <= Math.floor((e[5] - gy0) / C); cy++) {
+      const c = cy * NX + cx; let l = cells.get(c); if (!l) cells.set(c, l = []); l.push(n2) } })
+    const cellOf = (x, y) => Math.floor((y - gy0) / C) * NX + Math.floor((x - gx0) / C)
+    for (const [c, l] of cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
+      const eA = E[l[u]], eB = E[l[w]], i = eA[0], j = eB[0]
+      if (i === j || skip(Math.min(i, j), Math.max(i, j))) continue
+      if (eA[2] > eB[4] || eB[2] > eA[4] || eA[3] > eB[5] || eB[3] > eA[5]) continue
+      // test the pair only in the first cell both boxes share (the lower-left of their overlap), so it counts once
+      if (cellOf(Math.max(eA[2], eB[2]), Math.max(eA[3], eB[3])) !== c) continue
+      const p = eA[1], q = eB[1], A = R[i], B = R[j]
+      const a0 = A[p].k, a1 = A[(p + 1) % A.length].k, b0 = B[q].k, b1 = B[(q + 1) % B.length].k
+      const rx = a1[0] - a0[0], ry = a1[1] - a0[1], sx = b1[0] - b0[0], sy = b1[1] - b0[1], den = rx * sy - ry * sx
+      if (den !== 0) { const ex = b0[0] - a0[0], ey = b0[1] - a0[1], tn = ex * sy - ey * sx, un = ex * ry - ey * rx
+        if (inside(tn, den) && inside(un, den)) { const X = Math.round(a0[0] + rx * tn / den), Y = Math.round(a0[1] + ry * tn / den)
+          add[i][p].push([X, Y]); add[j][q].push([X, Y]); n++ } }
+      if (onEdge(b0, a0, a1)) { add[i][p].push(b0); n++ }
+      if (onEdge(a0, b0, b1)) { add[j][q].push(a0); n++ }
+    }
+    if (!n) return R
+    R = R.map((r, i) => { const out = []
+      for (let p = 0; p < r.length; p++) { const v0 = r[p], a0 = v0.k, a1 = r[(p + 1) % r.length].k; out.push(v0)
+        const dx = a1[0] - a0[0], dy = a1[1] - a0[1], L2 = dx * dx + dy * dy, seen = new Set([a0.join(','), a1.join(',')])
+        const pts = add[i][p].filter(v => { const s = v.join(','); if (seen.has(s)) return false; seen.add(s); return true })
+          .map(v => ({ v, t: ((v[0] - a0[0]) * dx + (v[1] - a0[1]) * dy) / L2 })).sort((x, y) => x.t - y.t)
+        for (const { v } of pts) out.push({ p: [v[0] / SCALE, v[1] / SCALE], k: v, src: null, edge: v0.src != null ? v0.src : v0.edge }) }
+      return out })
+  }
+  throw new Error(`[tileGround][stamp] ⛔ the crossing pass did not settle in ${maxRounds} rounds — a crossing keeps making another (${rings.length} rings)`)
+}
+// `groups`: `prepareEvidence`'s output. Returns { tile: st⁺ (iaFull, iA and the aligned arrays stamped), groups: the
+// evidence near this tile, stamped, in the same shape } — or { tile: st, groups } where there is nothing to stamp.
+export function stampTile(st, groups) {
+  if (!groups?.length || !st?.iaFull?.length) return { tile: st, groups }
+  const bb = [Infinity, -Infinity, Infinity, -Infinity]
+  for (const r of st.iaFull) for (const p of r) { bb[0] = Math.min(bb[0], p[0]); bb[1] = Math.max(bb[1], p[0]); bb[2] = Math.min(bb[2], p[1]); bb[3] = Math.max(bb[3], p[1]) }
+  const near = groups.map(g => ({ g, rings: g.rings.filter(x => !(x.bb[0] > bb[1] || x.bb[1] < bb[0] || x.bb[2] > bb[3] || x.bb[3] < bb[2])).map(x => x.r) })).filter(x => x.rings.length)
+  const items = []
+  st.iaFull.forEach((r, ri) => items.push({ kind: 'full', ri, r }))
+  ;(st.iA || []).forEach((r, ri) => items.push({ kind: 'cut', ri, r }))
+  near.forEach((x, gi) => x.rings.forEach(r => items.push({ kind: 'ev', gi, r })))
+  // the two block contours against each other are the disc cut's business, and evidence × evidence the pour's
+  const out = stampCrossings(items.map(x => x.r), (a, b) => (items[a].kind === 'ev') === (items[b].kind === 'ev'))
+  const pts = (o) => o.map(v => v.p)
+  const iaFull = [], iA = [], evRings = near.map(() => [])
+  const expand = (arr, ring, o, kind, arc) => o.map(v => { if (v.src != null) return arr[v.src]
+    const q = v.edge, q1 = (q + 1) % ring.length
+    if (kind === 'stamp') return arr[q]
+    if (kind === 'corner') return false
+    if (kind === 'arc') return arr[q] === arr[q1] ? arr[q] : null
+    return (arc && arc[q] != null && arc[q] === arc[q1] && arr[q] === arr[q1]) ? arr[q] : null })   // junction
+  const st2 = { ...st, iaStamp: [], iaArc: [], iaCorner: [], iaJunction: [] }
+  items.forEach((x, n) => { const o = out[n]
+    if (x.kind === 'cut') iA[x.ri] = pts(o)
+    else if (x.kind === 'ev') evRings[x.gi].push(pts(o))
+    else { iaFull[x.ri] = pts(o); const r = x.r
+      st2.iaStamp[x.ri] = st.iaStamp?.[x.ri] ? expand(st.iaStamp[x.ri], r, o, 'stamp') : st.iaStamp?.[x.ri]
+      st2.iaArc[x.ri] = st.iaArc?.[x.ri] ? expand(st.iaArc[x.ri], r, o, 'arc') : st.iaArc?.[x.ri]
+      st2.iaCorner[x.ri] = st.iaCorner?.[x.ri] ? expand(st.iaCorner[x.ri], r, o, 'corner') : st.iaCorner?.[x.ri]
+      st2.iaJunction[x.ri] = st.iaJunction?.[x.ri] ? expand(st.iaJunction[x.ri], r, o, 'junction', st.iaArc?.[x.ri]) : st.iaJunction?.[x.ri] } })
+  st2.iaFull = iaFull; st2.iA = iA
+  return { tile: st2, groups: near.map((x, gi) => ({ ...x.g, rings: evRings[gi].map(r => ({ r, bb: ringBB(r) })) })) }
+}
+
+// A strip that keeps its own key, cut at the stamp's lines all the same: the same class groups, the same call.
+export function cutByStamp(st, own, sp = null) {
+  if (!own?.length) return own
+  sp ||= stampParts(st)
+  if (sp.whole) return own
+  const out = []
+  for (const lu of sp.classes) out.push(...intersectRings(own, sp.regionsOf(lu)))
+  warnOutside(sp, own, 'walk/curb paint')
+  return out
 }
 
 // Segments the cap↔leg crossing is eased over (the shoulder dip-in). Enough to
@@ -3576,7 +3735,7 @@ export const cornerDump = { on: (typeof process !== 'undefined' && process.env?.
 // (`c9a0d783`). Same pattern and same discipline as `cornerDump` above.
 export const sectionDump = { on: (typeof process !== 'undefined' && process.env?.SECTION_DUMP === '1'), rows: [], ramp: [] }
 
-export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
+export function sectionPassTile(st, cw, stripMat, blockCustoms = null, discarded = false) {
   // PROTOTYPE C (env-gated, off in the browser): slope the SW↔(TL|SW) corner
   // treelawn band. Keys on the RESOLVED outer material (e.mat.outer) so a flipped
   // strip moves the taper too; the FILL re-strokes on blockCustoms change.
@@ -4527,7 +4686,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     }
     pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
   }
-  return { Wacc, tlByLu: rekeyByPiece(st, tlByLu), luByLu: rekeyByPiece(st, luByLu) }
+  return { Wacc, tlByLu: rekeyByPiece(st, tlByLu, null, discarded), luByLu: rekeyByPiece(st, luByLu, null, discarded) }
 }
 
 // Whole-map FILL — accumulate every tile's sectionPassTile contribution, in tile
@@ -5714,25 +5873,29 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // ⚠️ ONE depth for the tile's strips: the norm is the town's, so every curb cut on it shares `warningDepth`.
   const slab = R.masks.length ? band(insD(() => () => cw), insD(() => () => cw + R.maxD)) : []
   const strips = slab.length ? intersectRings(intersectRings(slab, unionRings(R.masks)), Wp) : []
+  const sp = stampParts(st)   // the land-use stamp, laid once over every strip below
   return {
-    curbCut: inBlock(strips), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
-    Wacc:   inBlock(Wp),
-    tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }),
-    luByLu: rekeyByPiece(st, { [key]: inBlock(luIn) }),
-    curb:   inBlock(band(curbOuter, pedOuter)),
+    curbCut: cutByStamp(st, inBlock(strips), sp), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
+    Wacc:   cutByStamp(st, inBlock(Wp), sp),
+    tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }, sp),
+    luByLu: rekeyByPiece(st, { [key]: inBlock(luIn) }, sp),
+    curb:   cutByStamp(st, inBlock(band(curbOuter, pedOuter)), sp),
     capped,
     feArcs, feRepeat,
   }
 }
 
-export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
+// `discarded`: the caller keeps only the labels (the chain path inside a ① build) — see `warnOutside`.
+export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null, { discarded = false } = {}) {
   const Wacc = [], tlByLu = {}, luByLu = {}
+  Object.assign(outsideDiscarded, { n: 0, m2: 0 })
   for (const st of shapeTiles) {
-    const t = sectionPassTile(st, cw, stripMat, blockCustoms)
+    const t = sectionPassTile(st, cw, stripMat, blockCustoms, discarded)
     Wacc.push(...t.Wacc)
     for (const k in t.tlByLu) (tlByLu[k] || (tlByLu[k] = [])).push(...t.tlByLu[k])
     for (const k in t.luByLu) (luByLu[k] || (luByLu[k] = [])).push(...t.luByLu[k])
   }
+  if (outsideDiscarded.n) console.warn(`[tileGround][LU] ⛔ ${outsideDiscarded.n} split tile(s) of the DISCARDED chain pass carry ${outsideDiscarded.m2.toFixed(4)} m² of paint in none of their pieces — counted, not refused: this paint is not shipped (① paints), only its labels are kept.`)
   return { Wacc, tlByLu, luByLu }
 }
 
@@ -5965,6 +6128,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     // cover it (88.5% on LS, and 29 tiles OVER-cover), and curb with no run got no band at all.
     // ⛔ Chosen by the tile's own shape, never a flag — a mixed artifact cannot silently take the
     // wrong path for half its tiles.
+    if (Array.isArray(st.evidenceByPiece) && !st.evidenceStamped) unstampedWarn()
     const r = hasStampInquiry(st) ? sectionPassProtoTile(st, cw, stripMat, blockCustoms, cornerOverrides)
                                   : sectionPassTile(st, cw, stripMat, blockCustoms)
     const iA = st.iA || []
@@ -5991,15 +6155,15 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // indices in the corridor; null/empty → everything is REST (prior behavior,
   // bit-identical). The per-tile bundles are shared (cache), so this only forks
   // the cheap final unions.
-  const mkAcc = () => ({ A: [], C: [], W: [], R: [], block: [], tl: {}, lu: {} })
+  const mkAcc = () => ({ ...Object.fromEntries(Object.keys(PAINTED).map(f => [f, []])), ...Object.fromEntries(Object.keys(PAINTED_BY_LU).map(f => [f, {}])), block: [] })
   const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutCorners = [], cornerArcs = []
   const rest = mkAcc()
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
   for (let i = 0; i < shapeTiles.length; i++) {
     const b = tileGeo(shapeTiles[i], i)
     const acc = (sel && selectedTileSet.has(i)) ? sel : rest
-    acc.A.push(...b.A); acc.C.push(...b.C); acc.W.push(...b.W); acc.block.push(...b.block)
-    if (b.R) acc.R.push(...b.R)
+    for (const f of Object.keys(PAINTED)) acc[f].push(...(b[f] || []))
+    acc.block.push(...b.block)
     for (const rr of (b.curbCutRecs || [])) curbCutRecs.push({ tile: i, ...rr })
     for (const c of (b.curbCutContradicted || [])) curbCutContradicted.push({ tile: i, ...c })
     for (const c of (b.curbCutCorners || [])) curbCutCorners.push({ tile: i, ...c })
@@ -6008,22 +6172,15 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       if (k === 'bySource') { const o = (curbCutTally.bySource ||= {}); for (const [s2, m] of Object.entries(v)) o[s2] = (o[s2] || 0) + m }
       else curbCutTally[k] = (curbCutTally[k] || 0) + v
     }
-    for (const k in b.tlByLu) (acc.tl[k] || (acc.tl[k] = [])).push(...b.tlByLu[k])
-    for (const k in b.luByLu) (acc.lu[k] || (acc.lu[k] = [])).push(...b.luByLu[k])
+    for (const f of Object.keys(PAINTED_BY_LU)) for (const k in b[f]) (acc[f][k] || (acc[f][k] = [])).push(...b[f][k])
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
   const finish = (acc) => {
-    const treelawnByLu = {}, luByClass = {}
-    for (const k of Object.keys(acc.tl)) treelawnByLu[k] = clip(unionRings(acc.tl[k]))
-    for (const k of Object.keys(acc.lu)) luByClass[k]   = clip(unionRings(acc.lu[k]))
-    return {
-      asphalt:  clip(unionRings(acc.A)),
-      curb:     clip(unionRings(acc.C)),
-      sidewalk: clip(unionRings(acc.W)),
-      curbCut:     clip(unionRings(acc.R)),
-      treelawnByLu, luByClass,
-      block:    clip(acc.block),
-    }
+    const out = {}
+    for (const [f, name] of Object.entries(PAINTED)) out[name] = clip(unionRings(acc[f]))
+    for (const [f, name] of Object.entries(PAINTED_BY_LU)) { out[name] = {}; for (const k of Object.keys(acc[f])) out[name][k] = clip(unionRings(acc[f][k])) }
+    out.block = clip(acc.block)
+    return out
   }
   const out = finish(rest)
   out.selected = sel ? finish(sel) : null
@@ -7315,11 +7472,12 @@ export function buildTileGround(ribbons, opts = {}) {
   const landEv = prepareEvidence(ribbons?.landEvidence)
   // label + evidence for one tile's pieces, after its final cut. `labelOnly`: a producer whose tiles are not
   // painted (the chain path inside a ① build) gets the face-vote label and no evidence — the work is discarded.
-  const landOf = (iA, { fixed = null, override = null, labelOnly = false }) => {
+  // `groups`: the evidence to cut from — the producer passes the tile's own, STAMPED with its contours (`stampTile`).
+  const landOf = (iA, { fixed = null, override = null, labelOnly = false, groups = landEv }) => {
     if (!landEv) return { luByPiece: landUseByPiece(iA, { faces: faceList, fixed, override }) }
     if (labelOnly) return { luByPiece: landUseByPiece(iA, { faces: faceList, fixed, override }), evidenceByPiece: null }   // ⭐ null = not painted from evidence, by design
     const whole = fixed || override
-    const evidenceByPiece_ = evidenceByPiece(iA, landEv, whole ? iA.map(() => true) : null)
+    const evidenceByPiece_ = evidenceByPiece(iA, groups, whole ? iA.map(() => true) : null)
     return { luByPiece: labelFromEvidence(iA, evidenceByPiece_, whole), evidenceByPiece: evidenceByPiece_ }
   }
 
@@ -8124,7 +8282,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // so it physically cannot reach back — Section's shape input changes only when
   // this shape pass re-runs. (The perimeter G9 below stays here on the shape
   // side, where reading the chain is legitimate — Jacob's Option 1.)
-  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat, blockCustoms)
+  const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat, blockCustoms, { discarded: !!opts.protoProducer })
 
   // Grade-separated roads are excluded from the face graph above. HIGHWAY-class ones are the
   // positive object H (H-3 step 2): each is swept by its own typical section (`sweepHighway`) and
@@ -8997,8 +9155,10 @@ export function buildTileGround(ribbons, opts = {}) {
           // shorter than the setback — the crossed spikes at intersections. Built and reverted.
           // ⭐ The ring is ALREADY EASED — `offsetRingVariable` did it before its union. Nothing
           // rounds twice (INVARIANT 2); what is left here is recording the achieved arcs.
+          // ⭐ ON THE LATTICE HERE, ONCE (`onLattice`): every consumer of this ring — the frozen `iA` and `iaFull`, the runs,
+          // the land-use stamp, the circle — reads the same lattice contour, so no later cut is the one that rounds it.
           const eL = outLabs[ri], eN = outRings[ri].length
-          const eased = { ring: outRings[ri], labs: eL }
+          const eased = { ring: onLattice(outRings[ri], `block ${k} ring ${ri}`), labs: eL }
           // ⭐⭐ THE CORNER TRUTH, FROM ②. `SURVEY §4`: one corner truth, read by the handle, never
           // re-derived. ⛔ Under ① the legacy `cornerFillets`/`cornerSet` describe arcs that are NOT
           // on screen — they come from the chain shape pass — so the handle would drag a corner the
@@ -9763,6 +9923,21 @@ export function buildTileGround(ribbons, opts = {}) {
         // "edge of a block" from "edge of the drawing".
         // ⛔ NO FALLBACK: no frozen boundary ⇒ NOTHING is stamped and it says so. A silently
         // un-stamped pour draws the whole bb and looks deliberate.
+        // ⭐ THE LAND-USE STAMP, BEFORE THE CIRCLE (`stampTile`): the raw evidence is noded with the UNCUT contours, so
+        // every crossing on a block edge is a vertex the contour and the evidence share; the circle then cuts the stamped
+        // contour and makes the rim edges alone. ⛔ Stamped after the cut, a crossing landed on a RIM edge of iA that the
+        // tile ring did not carry (HPDM 2026-10-14: a 0.4 mm kink, an asphalt spike, the flatten refused). The evidence it
+        // was noded with rides the tile to the land-use cut below (`_evGroups`).
+        // ⭐ THE CURB IS TRIMMED TO ITS FACE FIRST, so the stamp nodes the curb the tile keeps. ⛔ The face trim used to ride
+        // the circle's `iA ∩ piece`: on a tile whose ring runs inside its curb by under 1 mm, the cut iA took the RING's edge
+        // there and every crossing stamped into the curb on it was dropped (Huron 53 of 60, PTown 96 of 104 one-sided).
+        let stamped = 0, added = 0
+        protoShapeTiles = protoShapeTiles.map(t => t.iA?.length ? { ...t, iA: intersectRings(t.iA, [t.ring]) } : t)
+        if (landEv) protoShapeTiles = protoShapeTiles.map(t => { const { fixed, override } = t._luSeed
+          if (fixed || override) return t
+          const { tile, groups } = stampTile(t, landEv)
+          stamped++; added += tile.iaFull.reduce((u, r, i) => u + r.length - t.iaFull[i].length, 0)
+          return { ...tile, _evGroups: groups } })
         const stamp = MP.boundaryRing
         if (stamp?.length > 2) {
           const before = protoShapeTiles.length
@@ -9802,10 +9977,12 @@ export function buildTileGround(ribbons, opts = {}) {
             // another on a 218 m two-point chain crossed by nothing. ⛔ I reported that to two
             // other agents as "two ① faces claim the same side of the same street." IT IS NOT:
             // it is ONE face emitted N times, and the 411 m is 218 m counted twice.
-            // ⭐ The piece's own curb is `iA ∩ piece` — the piece is already disc-cut, so one
-            // intersection does both jobs. ⛔ `iaFull`/`iaStamp` still pass through UNCUT, by the
-            // design stated above: they answer "what depth HERE", which the cut must not disturb.
-            for (const r of ring) kept.push({ ...t, ring: r, iA: intersectRings(t.iA || [], [r]),
+            // ⭐ The piece's own curb is `iA ∩ piece`, and iA is already its face's (trimmed before the stamp), so on a rim
+            // tile this cut is the circle's alone. A tile wholly inside the disc is not cut: its stamped curb passes through
+            // as stamped. ⛔ `iaFull`/`iaStamp` still pass through UNCUT, by the design stated above: they answer "what
+            // depth HERE", which the cut must not disturb.
+            const inside = !differenceRings([t.ring], [stamp]).length
+            for (const r of ring) kept.push({ ...t, ring: r, iA: inside ? t.iA : intersectRings(t.iA || [], [r]),
               fillets: (t.fillets || []).filter(f => inDisc(f.apex)) })
           }
           protoShapeTiles = kept
@@ -9821,11 +9998,15 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐⭐ LAND USE PER PIECE, ON THE FINAL CUT. Before the cut a rim block is one tile; after it,
         // several — and each piece of each takes its OWN class (`landUseByPiece`). ⛔ Voting before
         // the cut is what handed every disc piece, and every piece of a split block, one answer.
-        for (const t of protoShapeTiles) {
-          const { fixed, override } = t._luSeed
-          Object.assign(t, landOf(t.iA, { fixed, override }))
-          delete t._luSeed
+        // ⭐ The pieces are cut into the evidence the tile was STAMPED with (above, before the circle), so the frozen
+        // iA, iaFull and the evidence parts share every crossing.
+        for (let n = 0; n < protoShapeTiles.length; n++) {
+          const t = protoShapeTiles[n], { fixed, override } = t._luSeed
+          if (landEv && !(fixed || override) && !t._evGroups) throw new Error('[tileGround][stamp] ⛔ a tile reached the land-use cut UNSTAMPED — its class boundaries would meet the block off its line. Refusing.')
+          const t2 = protoShapeTiles[n] = { ...t, ...landOf(t.iA, { fixed, override, groups: t._evGroups || landEv }), ...(landEv ? { evidenceStamped: true } : {}) }
+          delete t2._luSeed; delete t2._evGroups
         }
+        if (landEv) console.log(`[tileGround][stamp] the land-use stamp written into ${stamped} tile(s): ${added} crossing vertex(es) added to iaFull, shared with the evidence parts · the evidence's disjointness: ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs`)
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         protoJunctionCensus = protoJxCensus
         {

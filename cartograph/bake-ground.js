@@ -839,6 +839,21 @@ const LATTICE_STEP = CLIP_SCALE * LATTICE_M      // one lattice step in Clipper'
 const PROBE_CLEAR = 2 * LATTICE_STEP, PROBE_IN = 3 * LATTICE_STEP   // clear of the √2/2-step rounding, with room
 // Whether two integer rings share any point: an edge of one crossing or touching an edge of the other (exact on the
 // lattice), or one holding a vertex of the other.
+// Whether two integer rings touch at exactly ONE shared vertex and nowhere else: one vertex in common, and no pair of their
+// edges meets anywhere but there (exact orientation tests on the lattice).
+const touchOnce = (p, q) => {
+  const key = (v) => v.X + ',' + v.Y, ps = new Set(p.map(key)), shared = q.filter(v => ps.has(key(v)))
+  if (shared.length !== 1) return false
+  const S = shared[0], at = (v) => v.X === S.X && v.Y === S.Y
+  const o = (a, b, c) => Math.sign((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X))
+  const on = (a, b, c) => Math.min(a.X, b.X) <= c.X && c.X <= Math.max(a.X, b.X) && Math.min(a.Y, b.Y) <= c.Y && c.Y <= Math.max(a.Y, b.Y)
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) for (let k = 0, l = q.length - 1; k < q.length; l = k++) {
+    const a = p[j], b = p[i], c = q[l], d = q[k], o1 = o(a, b, c), o2 = o(a, b, d), o3 = o(c, d, a), o4 = o(c, d, b)
+    const proper = o1 !== o2 && o3 !== o4 && o1 && o2 && o3 && o4
+    const touch = [[!o1, a, b, c], [!o2, a, b, d], [!o3, c, d, a], [!o4, c, d, b]].some(([z, s0, s1, P]) => z && on(s0, s1, P) && !at(P))
+    if (proper || touch) return false }
+  return true
+}
 const ringsMeet = (p, q) => {
   const o = (a, b, c) => Math.sign((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X))
   const on = (a, b, c) => Math.min(a.X, b.X) <= c.X && c.X <= Math.max(a.X, b.X) && Math.min(a.Y, b.Y) <= c.Y && c.Y <= Math.max(a.Y, b.Y)
@@ -906,20 +921,35 @@ function itemsByMembership(paths, painted, groupKey, subLattice) {
   if (sub) { subLattice[groupKey] = { rings: sub, m2: +subM2.toFixed(9) }
     console.log(`  [flatten] ${groupKey}: ${sub} ring(s), ${subM2.toFixed(9)} m², narrower than the lattice's rounding — role by Clipper's winding`) }
   if (disagree) console.log(`  [flatten] ${groupKey}: ${disagree} ring(s) whose role by membership is not Clipper's winding`)
-  const bySize = [...outers].sort((p, r) => p.a - r.a), orphans = []
+  const bySize = [...outers].sort((p, r) => p.a - r.a), orphans = [], bowTies = []
   for (const h of holes) {
     const [x, y] = h.probe
-    const o = bySize.find(o => o.a > h.a && x >= o.box[0] && x <= o.box[2] && y >= o.box[1] && y <= o.box[3] && windingOf(o.q, x, y) !== 0)
+    const o = bySize.find(o => !o.dropped && o.a > h.a && x >= o.box[0] && x <= o.box[2] && y >= o.box[1] && y <= o.box[3] && windingOf(o.q, x, y) !== 0)
     if (o) { o.holes.push(h.q); continue }
     const at = `(${x / CLIP_SCALE}, ${y / CLIP_SCALE})`
     if (!h.sub) throw new Error(`[flatten] ${groupKey}: a hole (${h.q.length} vertices, unpainted inside by a clear probe) that no painted ring holds, at ${at}`)
-    const meets = outers.find(o => o.box[0] <= h.box[2] && h.box[0] <= o.box[2] && o.box[1] <= h.box[3] && h.box[1] <= o.box[3] && ringsMeet(o.q, h.q))
+    const meets = outers.find(o => !o.dropped && o.box[0] <= h.box[2] && h.box[0] <= o.box[2] && o.box[1] <= h.box[3] && h.box[1] <= o.box[3] && ringsMeet(o.q, h.q))
+    // ⭐ A BOW-TIE BELOW THE LATTICE, under the same sub-lattice ruling (Boz, 2026-10-14): a sub-lattice hole and a sub-lattice
+    // outer of this group that touch at exactly ONE shared vertex and nowhere else, together thinner than one lattice step
+    // (mean width 2·area / perimeter, LATTICE_STEP) — one twisted sliver whose two halves wind opposite ways. Neither half has
+    // a probe the inputs decide, so it is dropped, COUNTED and stamped (`bowTies`). Anything wider, or a half above the
+    // lattice, or a second contact, still refuses below. ⛔ A DOWNSTREAM TOLERANCE FOR AN UPSTREAM CLASS: an evidence edge
+    // near-coincident with a band line (HPDM's treelawn:underived, 2026-10-14) — the count is the evidence the pour fix
+    // (one lattice, the evidence as one partition) should drive to zero.
+    if (meets && meets.sub && !meets.holes.length && touchOnce(meets.q, h.q)) {
+      const perim = (q) => q.reduce((t, a, i) => t + Math.hypot(q[(i + 1) % q.length].X - a.X, q[(i + 1) % q.length].Y - a.Y), 0)
+      const width = 2 * (h.a + meets.a) / (perim(h.q) + perim(meets.q))
+      if (width < LATTICE_STEP) { meets.dropped = true
+        bowTies.push({ m2: +((h.a + meets.a) / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [x / CLIP_SCALE, y / CLIP_SCALE], widthMm: +(width / CLIP_SCALE * 1000).toFixed(4) }); continue }
+    }
     if (meets) throw new Error(`[flatten] ${groupKey}: a hole below the lattice (${h.q.length} vertices) that no painted ring holds by its probe, yet a ring of ${meets.q.length} vertices meets it, at ${at}`)
     orphans.push({ m2: +(h.a / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [x / CLIP_SCALE, y / CLIP_SCALE] })
   }
+  if (bowTies.length) { subLattice[groupKey].bowTies = bowTies
+    console.log(`  [flatten] ${groupKey}: ${bowTies.length} bow-tie(s) below the lattice, ${bowTies.reduce((t, r) => t + r.m2, 0).toFixed(9)} m² — one twisted sliver each, dropped (a downstream tolerance for an evidence edge near-coincident with a band line)`) }
   if (orphans.length) { subLattice[groupKey].orphanHoles = orphans
     console.log(`  [flatten] ${groupKey}: ${orphans.length} orphan hole(s) below the lattice, ${orphans.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², no outer meets them — dropped (they remove no paint)`) }
-  return outers.map(o => ({ outer: _pathToRing(o.q), holes: o.holes.map(_pathToRing) }))
+  return outers.filter(o => !o.dropped).map(o => ({ outer: _pathToRing(o.q), holes: o.holes.map(_pathToRing) }))
 }
 
 function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new Set() } = {}) {
@@ -979,6 +1009,8 @@ function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new 
     for (const q of merged) acc.push(q)
     inAcc = edgeIndex(acc)
   }
+  const ties = Object.values(out.subLattice).flatMap(v => v.bowTies || [])
+  if (ties.length) console.log(`  [flatten] bow-ties below the lattice, all groups: ${ties.length}, ${ties.reduce((t, r) => t + r.m2, 0).toFixed(9)} m² (▶ ground.json#flatten.subLattice[group].bowTies)`)
   return out
 }
 
