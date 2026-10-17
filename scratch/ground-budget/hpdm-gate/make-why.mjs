@@ -1,4 +1,4 @@
-// make-why.mjs <groundDeformer.mjs> [out.mjs] [--no-envelope] [--no-smooth] [--no-station-clamp] [--point-need] [--cap-window] [--cap-fan] — a PROBE copy (groundDeformer.why.mjs, or out.mjs, beside this file; never shipped) whose resolve
+// make-why.mjs <groundDeformer.mjs> [out.mjs] [--no-envelope] [--no-smooth] [--no-station-clamp] [--point-need] [--cap-window] [--cap-fan] [--band-blend] — a PROBE copy (groundDeformer.why.mjs, or out.mjs, beside this file; never shipped) whose resolve
 // also returns WHY: the branch (road side · on ② · band-held · lot ease · unowned), the owner span's station, H, depth, ring
 // and stamp, and the profile's inputs (R the absorption, the lawn/walk widths and their shares, back, B, hBack, f).
 // Exposed as `_why(x, z)` (uncached). Every edit is anchored once, or it throws. The lattice import is re-rooted.
@@ -33,5 +33,13 @@ if (process.argv.includes('--cap-window')) one('const kk = walkMax / exag, env =
 if (process.argv.includes('--cap-fan')) one('      S.cap = (lawnW > 0 ? (lawnMax == null ? Infinity : Math.max(0, lawnMax * lawnW / exag - head)) : 0) + Math.max(0, WALK_SHARE * walkMax * walkW / exag - head)',
   "      const capOn = (vx, vz) => { const { ped: p2 } = pedOf(bandsAlong(px - vz * SIDESTEP, pz + vx * SIDESTEP, vx, vz, CAP)); let lw = 0, ww = 0; for (const b of p2) { if (b.cls === 'lawn') lw += b.to - b.from; else if (b.cls === 'walk') ww += b.to - b.from }\n        return (lw > 0 ? (lawnMax == null ? Infinity : Math.max(0, lawnMax * lw / exag - head)) : 0) + Math.max(0, WALK_SHARE * walkMax * ww / exag - head) }\n      S.cap = Math.max(...[0, Math.PI / 6, -Math.PI / 6, Math.PI / 3, -Math.PI / 3].map(t => capOn(ux * Math.cos(t) - uz * Math.sin(t), ux * Math.sin(t) + uz * Math.cos(t))))")
 if (process.argv.includes('--no-envelope')) one('for (let pass = 0; pass < 2; pass++) {', 'for (let pass = 0; pass < 0; pass++) {')
+// --band-blend (the band bent, applied to height): every owner whose band HOLDS the point contributes its own profile there,
+// weighted by 1 / its depth from its own ② station — exactly that owner's own at its own curb, continuous where two owners
+// both hold the point (back-to-back bands); one owner holding it reads that owner exactly
+if (process.argv.includes('--band-blend')) {
+  one("      if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c), why: { ...p.why, held: true, byBand: c.R !== n.R || c.key !== nearKey(n) } } }\n    }",
+      "      if (p.held) heldBy.push([c, p])\n    }\n    if (heldBy.length) { let w = 0, v = 0; for (const [c, p] of heldBy) { w += 1 / c.d; v += p.v / c.d } const [c0, p0] = heldBy[0]; return { v: v / w, owner: own(c0), why: { ...p0.why, held: true, blended: heldBy.length } } }")
+  one("    for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) {", "    const heldBy = []\n    for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) {")
+}
 s = s.replace("'../src/lib/lattice.js'", "'../../../src/lib/lattice.js'")
 writeFileSync(new URL(process.argv[3] && !process.argv[3].startsWith('--') ? process.argv[3] : 'groundDeformer.why.mjs', import.meta.url), s)
