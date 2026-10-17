@@ -20,7 +20,7 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 - Readers on the drawn ground (`src/lib/drawnGround.js`): d05e3cc1, c7c433e5, and b0e65999 (the shore median and the
   revetment).
 - The kerb: creases are partition lines (eb1d3876); the lift reads each polygon's carried side (de1c2f83).
-- The shore: ruled (794b7911). A coast run's `h` is high water, `waterLevels(terrain.water).highAt` (c227acaf).
+- The shore: ruled (794b7911). A coast run's line is high water, `waterLevels(terrain.water).highAt` (c227acaf).
 - ③'s strikes on `offsetRingByRects`, Jacob's swap (db9c7d87). `gusset.mjs` reads `aRaw` (00c76119).
 
 **Open gates** (re-run, never quote):

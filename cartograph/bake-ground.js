@@ -1141,18 +1141,20 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const { byMaterial, byFaceUse, shapeArtifact, highwayRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
-  // the at-grade network and smoothed over it as ONE graph, recorded per vertex of every ① run (`tile.runs[].h`, raw
-  // metres like terrain.bin, mm-rounded) — the one record everything after it reads. The window is the town's
-  // (`design.json#groundLineSigmaM`), else one terrain grid step. A coast run's line is the HIGH WATER (below). A run with
-  // no line (a bridge, a highway stroke's edge, the rim, a label naming no at-grade chain) carries `h: null` and is
-  // COUNTED, by reason.
+  // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
+  // at each point of ② through the edge's own owner (`groundLine.heightAt(skelId, p)`); nothing is sampled onto the runs.
+  // The window is the town's (`design.json#groundLineSigmaM`), else one terrain grid step. A coast run's line is the HIGH
+  // WATER (below). A run or cap with no line (a bridge, a highway stroke's edge, the rim, a label naming no at-grade chain)
+  // carries `noLine` and is COUNTED, by reason.
   const lineTerrain = loadSceneTerrain(scene)
+  let groundLine = null
   if (lineTerrain && shapeArtifact?.length) {
     const authored = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : null
     if (!authored && !(lineTerrain.stepM > 0)) throw new Error(`[bake-ground] ⛔ the terrain carries no grid step and the town authors no groundLineSigmaM — the line's smoothing window is unknown`)
     const LH = lineHeights({ streets: ribbons.streets, raw: lineTerrain.getElevationRaw, sigma: authored ?? lineTerrain.stepM })
     const why = { bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((ribbons.streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
-    let stamped = 0, coast = 0
+    const noLine = (id) => id === '__highway__' ? 'highway' : id === '__boundary__' ? 'rim' : bridgeIds.has(id) ? 'bridge' : 'unknown'
+    let onLine = 0, coast = 0, capsOn = 0
     // ⭐ THE COAST'S LINE IS THE HIGH WATER (Jacob 2026-10-11, brief §5 "The shore"): a coast run's height IS the town's
     // high level there (the tide datum where tidal, the authored lake level on a lake; `waterLevel.mjs`), so the land
     // meets the water at the line and the gusset runs from it down to low water. ⛔ A drawn coast with no water record throws.
@@ -1160,23 +1162,18 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     for (const t of shapeArtifact) for (const run of t?.runs || []) {
       if (run.skelId === '__water__') {
         if (!W) { if (!lineTerrain.water) throw new Error(`[bake-ground] ⛔ ${scene} draws a coast but its terrain carries no water record — the coast line's height (the high water) is unknown. ▶ re-bake the terrain`); W = waterLevels(lineTerrain.water) }
-        run.h = (run.poly || []).map(([x, z]) => Math.round(W.highAt(x, z) * 1000) / 1000); coast++; continue
+        coast++; continue
       }
-      const h = (run.poly || []).map(p => LH.heightAt(run.skelId, p))
-      if (h.length && h.every(v => v != null)) { run.h = h.map(v => Math.round(v * 1000) / 1000); stamped++; continue }
+      if (run.poly?.length && LH.heightAt(run.skelId, run.poly[0]) != null) { onLine++; continue }
       // the reason travels with the run: the deformer gives a highway or bridge run the terrain under it (its rule for that
       // class), and refuses the rest
-      run.h = null; run.noLine = run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown'
-      why[run.noLine]++
+      run.noLine = noLine(run.skelId); why[run.noLine]++
     }
-    // ⭐ A DEAD-END CAP'S LINE IS ITS OWN CHAIN'S (the cap is an end coupler): each cap vertex (`iaCap`) gets the chain's line
-    // height there, `iaCapH`, parallel to `iaFull`; a cap whose chain has no line carries the reason, as a run does
-    let capV = 0
-    for (const t of shapeArtifact) { if (!t?.caps?.length) continue
-      for (const c of t.caps) if (LH.heightAt(c.skelId, t.ring[0]) == null) c.noLine = c.skelId === '__highway__' ? 'highway' : bridgeIds.has(c.skelId) ? 'bridge' : 'unknown'
-      t.iaCapH = (t.iaFull || []).map((ring, ri) => ring.map((p, i) => { const c = t.iaCap?.[ri]?.[i]; if (c == null) return null
-        const h = LH.heightAt(t.caps[c].skelId, p); capV++; return h == null ? null : Math.round(h * 1000) / 1000 })) }
-    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown · ${capV} dead-end cap vertices read their chain's line`)
+    // ⭐ A DEAD-END CAP'S LINE IS ITS OWN CHAIN'S (the cap is an end coupler): a cap whose chain has no line carries the
+    // reason, as a run does
+    for (const t of shapeArtifact) for (const c of t?.caps || []) { if (LH.heightAt(c.skelId, t.ring[0]) == null) c.noLine = noLine(c.skelId); else capsOn++ }
+    groundLine = { step: LH.step, heightAt: (id, p) => id === '__water__' ? W.highAt(p[0], p[1]) : LH.heightAt(id, p) }
+    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${onLine} run(s) on a line · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown · ${capsOn} dead-end cap(s) on their chain's line`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
   }
 
@@ -1440,8 +1437,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
   const kerbCellPaths = kerbH ? kerbCells(kerbRegs, blockRings) : []
   // ⭐⭐ THE DEFORMER (`groundDeformer.mjs`, BRIEF-the-ground-knows-its-height §5): the ground's TERRAIN height near the
-  // streets is decided HERE, before the mesh — read off the line (`tile.runs[].h`), swept across the DRAWN bands as one
-  // profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
+  // streets is decided HERE, before the mesh — read off the line (`groundLine`, asked at each point of ②), swept across
+  // the DRAWN bands as one profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
   // eased into the lot over B) — and the mesh is refined against it and carries it per vertex. Nothing is cut after.
   // B is the town's (`design.json#groundBlendM`), else one terrain grid step (Boz, 2026-10-11).
   let deform = null, deformTerrain = null
@@ -1453,7 +1450,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
     // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
     const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ town: scene, tiles: shapeArtifact,
+    deform = buildDeformer({ town: scene, tiles: shapeArtifact, line: groundLine,
       bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
       stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,
