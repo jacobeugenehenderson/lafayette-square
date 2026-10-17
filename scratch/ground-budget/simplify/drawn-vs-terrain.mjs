@@ -3,6 +3,8 @@
 // Per group: vertices over, triangles whose drawn vertical extent exceeds --lim (a wall), the bin's own sanity (offsets
 // inside the bin, NaN), and the lighting normal's tilt from aGrad against the drawn face slope. Read-only.
 //   node --max-old-space-size=8192 scratch/ground-budget/simplify/drawn-vs-terrain.mjs --slab=<dir> [--lim=0.5] [--show=8] [--mutate]
+// --flat: the slab was baked against a FLAT terrain (scratch/ground-height/ab terrainLoad.flat.js: every sample 0), so its
+//   terrain is 0. --at=x,z;x,z: for each point, the triangles whose centroid is within 3 m (xz) and the most any of them rises over its terrain.
 // --mutate: lifts one vertex's aRaw by 2 × lim in memory and must then report it (the check seen to fail).
 import { readFileSync } from 'fs'
 import { join } from 'path'
@@ -11,7 +13,9 @@ const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=').s
 const dir = arg('slab'), LIM = +(arg('lim') || 0.5), SHOW = +(arg('show') || 8), MUT = process.argv.includes('--mutate')
 const gj = JSON.parse(readFileSync(join(dir, 'ground.json'), 'utf8')), buf = readFileSync(join(dir, gj.bin))
 const AB = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
-const T = loadSceneTerrain(gj.look), E = T.exag
+const FLAT = process.argv.includes('--flat'), T0 = loadSceneTerrain(gj.look), E = T0.exag
+const T = FLAT ? { getElevationRaw: () => 0 } : T0
+const AT = (arg('at') || '').split(';').filter(Boolean).map(p => p.split(',').map(Number)), atHit = AT.map(() => ({ n: 0, ex: -Infinity, g: '' })), AT_R = 3
 if (!(E > 0)) throw new Error('drawn-vs-terrain: the town names no exaggeration')
 let tot = { v: 0, vo: 0, t: 0, to: 0, nan: 0 }, worst = [], rows = []
 let mutated = false, texN = 0
@@ -38,6 +42,9 @@ for (const g of gj.groups) {
   for (let k = 0; k < I.length; k += 3) {
     const a = I[k], b = I[k + 1], c = I[k + 2]
     if (a >= g.vertexCount || b >= g.vertexCount || c >= g.vertexCount) { idxBad++; continue }
+    for (let q = 0; q < AT.length; q++) { const [qx, qz] = AT[q], cx = (P[a * 3] + P[b * 3] + P[c * 3]) / 3, cz = (P[a * 3 + 2] + P[b * 3 + 2] + P[c * 3 + 2]) / 3
+      if (Math.hypot(cx - qx, cz - qz) <= AT_R) { const hh = [a, b, c].map(v => P[v * 3 + 1] + R[v] * E), tt = [a, b, c].map(v => T.getElevationRaw(P[v * 3], P[v * 3 + 2]) * E), ex = (Math.max(...hh) - Math.min(...hh)) - (Math.max(...tt) - Math.min(...tt))
+        atHit[q].n++; if (ex > atHit[q].ex) { atHit[q].ex = ex; atHit[q].g = g.id } } }
     const ha = P[a * 3 + 1] + R[a] * E, hb = P[b * 3 + 1] + R[b] * E, hc = P[c * 3 + 1] + R[c] * E
     if (Math.max(ha, hb, hc) - Math.min(ha, hb, hc) > LIM) {
       const span = Math.max(Math.hypot(P[a * 3] - P[b * 3], P[a * 3 + 2] - P[b * 3 + 2]), Math.hypot(P[b * 3] - P[c * 3], P[b * 3 + 2] - P[c * 3 + 2]), Math.hypot(P[c * 3] - P[a * 3], P[c * 3 + 2] - P[a * 3 + 2]))
@@ -52,7 +59,8 @@ for (const g of gj.groups) {
   tot.v += g.vertexCount; tot.vo += vo; tot.t += I.length / 3; tot.to += to; tot.nan += nan
   if (vo || to || nan || idxBad || gradOff) rows.push(`${(g.kind + ':' + g.id).padEnd(30)} V ${g.vertexCount} over ${vo} · T ${I.length / 3} walls ${to} · NaN ${nan} · bad idx ${idxBad} · shader slope>1 ${gradOff}`)
 }
-console.log(`${dir} · look ${gj.look} · E ${E} · lim ${LIM} m${texN ? ` · ${texN} group(s) on the TEXTURE path (lift = terrain field at the vertex; shader slope not read)` : ''}${mutated ? ` · MUTATED ${mutated}` : ''}`)
+console.log(`${dir} · look ${gj.look} · E ${E} · lim ${LIM} m${FLAT ? ' · FLAT terrain (0)' : ''}${texN ? ` · ${texN} group(s) on the TEXTURE path (lift = terrain field at the vertex; shader slope not read)` : ''}${mutated ? ` · MUTATED ${mutated}` : ''}`)
 console.log(`vertices drawn > ${LIM} m off the terrain: ${tot.vo} of ${tot.v} · triangles rising > ${LIM} m more than their terrain: ${tot.to} of ${tot.t} · non-finite ${tot.nan}`)
 for (const r of rows) console.log('  ' + r)
+AT.forEach(([x, z], q) => console.log(`  at (${x}, ${z}) ≤ ${AT_R} m: ${atHit[q].n} triangle(s) · ${atHit[q].n ? `most rise over terrain ${atHit[q].ex.toFixed(2)} m (${atHit[q].g}) → ${atHit[q].ex > LIM ? 'WALL' : 'no wall'}` : 'no ground here'}`))
 worst.sort((a, b) => b[0] - a[0]); for (const [, s] of worst.slice(0, SHOW)) console.log('   worst: ' + s)
