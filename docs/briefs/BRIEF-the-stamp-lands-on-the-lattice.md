@@ -26,6 +26,12 @@ crossing is rounded into the evidence part and never into iA. **Your first measu
 Waiting on this: the true-mean terrain bake (eb5aa261), the shore band (`BRIEF-the-shore-keeps-its-lidar`), the
 revetment as stamped ground, and the ground budget (`BRIEF-the-ground-stays-in-budget`).
 
+## 1a. Ruled 2026-10-17 (Jacob): ONE GRID
+
+The kit cuts on `src/lib/lattice.js`'s 1 mm grid everywhere, the coast and the land use included. Lath found Huron's
+refusal is a mat:shore edge on the 1 cm grid beside its own 1 mm twin, about 4 mm apart (23adbb41's report). The coast
+moves in this brief; `derive.js`'s land-use grid is the pour-side job that follows, under the same ruling.
+
 ## 2. Where Swale left it (read the record; ⛔ copy no number from it into this file)
 
 - **The write-up is 02da626e's message.** Read it whole: where the crossings are born, the three constructions
