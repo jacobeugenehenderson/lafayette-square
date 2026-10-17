@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: (Jacob, FRESH)
 written: 2026-10-16
-evict-when: RULING: Huron's and HPDM's ground bake on this construction without refusing, Cairn's land-evidence check is green on all four towns after being seen red, and the change is committed on swale/flatten-paths-r1 with the code it replaces removed.
+evict-when: RULING: Huron's and HPDM's ground bake on this construction without refusing, and the change is committed on swale/flatten-paths-r1 with the code it replaces removed.
 -->
 
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
@@ -36,8 +36,9 @@ revetment as stamped ground, and the ground budget (`BRIEF-the-ground-stays-in-b
   `onesided*.mjs`, `raw-ev.mjs`, `rim-facts.mjs`). Open board items that are NOT this brief: `BOARD-next-commit.txt`.
 - ⚠️ **The branch is behind trunk.** Since 02da626e, trunk gained eb5aa261 (the true-mean terrain read), a083af86 (a
   missing height refuses), and 7c47e8e7 (fetchTerrain). Bring them in before you bake, and say how you did it.
-- **The disjointness measure is Cairn's** `checks/claims-the-land-is-painted-by-its-evidence.mjs` (5a368a04). It is
-  the one measure; `stampTally` is deleted.
+- **Not this brief (Jacob, 2026-10-16):** Cairn's `checks/claims-the-land-is-painted-by-its-evidence.mjs` (5a368a04)
+  measures the pour (`derive.js#layerLandEvidence`), upstream of this fix, so nothing here can turn it green. The
+  pour-side half (02da626e MORNING item 4) is its own job after this one, poured into scratch.
 
 ## 3. The work
 
@@ -52,7 +53,7 @@ revetment as stamped ground, and the ground budget (`BRIEF-the-ground-stays-in-b
 3. **Build it.** Delete what it replaces in the same commit: the circle cut's double job, and any rounding or snap that
    only existed to cover it. Say in the message what was removed.
 4. **Measure** on HPDM, Huron, JH and Provincetown: the one-side vertex counts (`onesided.mjs`) beside 02da626e's
-   table, and Cairn's check. LS is not measured; its pour is HELD.
+   table. LS is not measured; its pour is HELD.
 5. **Then the gate bakes** (§4 bounds): HPDM first, then Huron. Report refusals, time against
    `bake-timings.json`, and peak memory.
 6. **Stop and bring Boz:** what the code said, the counts, the bakes. Items 2 and 3 of 02da626e's "FOR THE MORNING"
@@ -73,5 +74,4 @@ revetment as stamped ground, and the ground budget (`BRIEF-the-ground-stays-in-b
 
 ## 5. Done when
 
-Huron's and HPDM's ground bake on this construction without refusing. Cairn's check is green on all four towns after
-being seen red. The commit removes what it replaced.
+Huron's and HPDM's ground bake on this construction without refusing. The commit removes what it replaced.
