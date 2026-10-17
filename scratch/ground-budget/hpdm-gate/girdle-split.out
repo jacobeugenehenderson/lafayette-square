@@ -18,3 +18,12 @@ groundDeformer.why-nosmooth.mjs: 34974 wall(s) · worst 6.33 m · reach edge 173
       4641  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 3.26 m
       3407  within limits, neither pinned (cause not established) · worst 0.61 m
        942  on ② / road side (no profile) · worst 6.33 m
+groundDeformer.why-p1.mjs: 53168 wall(s) · worst 6.33 m · reach edge 1458 · unowned 944 · owner seam 31014 · one owner 19752
+     14283  PINNED (an owner took less than it needed and less than its band can take) · worst 3.59 m
+      9562  within limits, neither pinned (cause not established) · worst 4.00 m
+      6229  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 4.25 m
+       940  on ② / road side (no profile) · worst 6.33 m
+groundDeformer.why-p2.mjs: 49450 wall(s) · worst 6.33 m · reach edge 1287 · unowned 796 · owner seam 28864 · one owner 18503
+     20599  within limits, neither pinned (cause not established) · worst 4.00 m
+      7326  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 4.25 m
+       939  on ② / road side (no profile) · worst 6.33 m
