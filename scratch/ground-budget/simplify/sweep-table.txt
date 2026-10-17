@@ -1,0 +1,10 @@
+Step 6 sweep: HPDM 10-14 HEAD gate slab, before the pour fix. Bound |Δraw|·E + |Δy|, E = 1, ×n of refineTol 7.8 mm.
+Reproduce: sweep.sh (→ sweep-2026-10-17.log); walk gate: node checks/claims-the-walk-is-level-across.mjs --dir=slabs/hpdm-x<n> (→ walk-*.log)
+pt    | T         | MB    | time  | walk p99/max mm | all p99/max mm | TJ | walk gate over
+HEAD  | 2,164,593 | 68.18 | -     | -               | -              | 0  | 2,082 (1.73%)
+x0.25 | 1,486,373 | 49.19 | 548 s | 1.03 / 1.69     | 0.51 / 1.54    | 0  | 2,080 (1.72%)
+x0.5  | 1,325,259 | 44.68 | 621 s | 2.10 / 3.12     | 1.45 / 2.91    | 0  | 2,086 (1.73%)
+x1    | 1,072,503 | 37.60 | 721 s | 4.99 / 7.05     | 3.68 / 7.30    | 0  | 2,148 (1.78%)
+x2    |   920,243 | 33.34 | 777 s | 8.39 / 12.22    | 7.43 / 12.88   | 0  | 2,550 (2.11%)
+x4    |   856,283 | 31.55 | 810 s | 13.45 / 25.73   | 16.41 / 25.89  | 0  | 3,529 (2.92%)
+Served: 504,599 T · 11.18 MB. Stripe folds 4,582 → +1..+9 across the sweep: cause not established.
