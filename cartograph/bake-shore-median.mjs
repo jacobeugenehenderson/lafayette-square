@@ -54,7 +54,9 @@ import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, ClipType, PolyType, PolyFillType, PolyTree, JoinType, EndType } = clipperLib
 const toPath = (ring) => { const p = new Path(); for (const [x, z] of ring) p.push(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))); return p }
-const toRing = (path) => path.map(q => [Math.round(q.X / SCALE * 100) / 100, Math.round(q.Y / SCALE * 100) / 100])
+// ⭐ written ON the lattice it was cut on (one grid, Jacob 2026-10-17): the median's edge along the drawn shoreline is
+// that shoreline's own lattice edge, so bake-ground's shore paints one line there, never a line and its 1 cm copy
+const toRing = (path) => path.map(q => [q.X / SCALE, q.Y / SCALE])
 const run = (op, subj, clip, fill = PolyFillType.pftNonZero) => {
   const c = new Clipper(), out = new Paths()
   c.AddPaths(subj, PolyType.ptSubject, true)
