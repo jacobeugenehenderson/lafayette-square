@@ -9497,6 +9497,10 @@ export function buildTileGround(ribbons, opts = {}) {
             }
           }
           const runs = [], iaStamp = mine.map(EC => new Array(EC.ring.length).fill(null))
+          // ⭐ `iaCap` — per ② vertex, the dead-end CAP that owns its edge: an index into the tile's `caps` (skelId · side ·
+          // segOrd), else null. The cap is an END COUPLER of its own chain, not frontage, so it is never a run; its owner is
+          // carried here so a reader that needs the chain at the tip (the ground's height) reads it, never recovers it.
+          const caps = [], capIx = new Map(), iaCap = mine.map(EC => new Array(EC.ring.length).fill(null))
           // ⭐ CARRIED, NOT RE-DERIVED. Every ② vertex already holds the ① EDGE it was struck from,
           // so "is this a corner?" is "did the OWNER change between this vertex and the last?" — a
           // question about ①'s identity, asked on ②'s contour without ever measuring ②'s geometry.
@@ -9534,7 +9538,8 @@ export function buildTileGround(ribbons, opts = {}) {
               // ⛔ A CAP EDGE IS NOT FRONTAGE: it runs ACROSS the ribbon, so as a run it would answer "which side is
               // the water on" with a segment perpendicular to the shore. It ENDS the run (the leg stops where it
               // stops in the world). The record keeps its identity for the tip ease; only the RUN declines it.
-              if (o.cap) { cur = null; continue }
+              if (o.cap) { if (!capIx.has(key)) capIx.set(key, caps.push({ skelId: o.skelId, side: o.side, segOrd: o.segOrd }) - 1)
+                iaCap[ri][i] = capIx.get(key); cur = null; continue }
               // ⭐ `baseMeasure` — the MEASURED cross-section for this street side. `SECTION §3.1`:
               // treelawn Y/N is "gleaned from data", and `resolvePedDepths(baseMeasure, side, custom)`
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
@@ -9645,7 +9650,7 @@ export function buildTileGround(ribbons, opts = {}) {
             // ⭐ `iaArc` — per contour vertex, WHICH CORNER'S ARC it lies in (null on a leg). ①'s
             // corner LOCATES the treatment (`iaCorner`); this is only its EXTENT, and it is read
             // off the ease that made it rather than matched back onto the contour afterwards.
-            runs: runs2, iaStamp, iaCorner, iaFull: mine.map(EC => EC.ring),
+            runs: runs2, iaStamp, iaCap, caps, iaCorner, iaFull: mine.map(EC => EC.ring),
             iaArc: mine.map(EC => EC.arc || EC.ring.map(() => null)),
             // ⭐ the town's curb-cut norm, frozen with its rung (`cartograph/curb-cut-norm.mjs`); null = poured before it.
             curbCutNorm: ribbons?.curbCutNorm ?? null,

@@ -121,8 +121,15 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, limits 
       // THE TERRAIN UNDER IT, raw(x, z) at its own vertex (Jacob, 2026-10-17). That is the rule for the class, not a stand-in:
       // the highway and the bridge are not on the ground, and the block edge beside them is the ground there.
       const onTerrain = (run) => run && !Array.isArray(run.h) && (run.noLine === 'highway' || run.noLine === 'bridge')
+      // ⭐ A DEAD-END CAP (`iaCap`, never a run: the cap is an end coupler of its own chain) takes its chain's line h at the
+      // vertex (`iaCapH`, bake-ground), or the terrain where that chain is a highway or a bridge
+      const cap = t.iaCap?.[ri] || [], capH = t.iaCapH?.[ri] || []
+      const capLineH = (k) => { const c = t.caps?.[cap[k]]; if (!c) return null
+        if (capH[k] != null) return capH[k]
+        if (onTerrain(c)) { stats.onTerrain++; return raw(ring[k][0], ring[k][1]) }
+        return null }
       // the height a ② vertex takes from its own run — the line's h, or the terrain under a run with no line — else null
-      const lineH = (k) => { if (stamp[k] == null) return null; const run = runs[stamp[k]]
+      const lineH = (k) => { if (stamp[k] == null) return cap[k] != null ? capLineH(k) : null; const run = runs[stamp[k]]
         if (onTerrain(run)) { stats.onTerrain++; return raw(ring[k][0], ring[k][1]) }
         return hOfRun(stamp[k], ring[k]) }
       for (let i = 0; i < n; i++) if (arc[i] == null) H[i] = lineH(i)
@@ -146,9 +153,9 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, limits 
       // a label naming no chain). Never a neighbour's height: filled so, a highway edge carried one street's end 906 m along ②
       // and stood the asphalt 23.8 m under its terrain (HPDM, 2026-10-17)
       const miss = H.findIndex(h => h == null)
-      if (miss >= 0) { const at = arc[miss] != null && arcEnd.has(arc[miss]) ? arcEnd.get(arc[miss]) : miss, p = ring[at], run = stamp[at] != null ? runs[stamp[at]] : null
+      if (miss >= 0) { const at = arc[miss] != null && arcEnd.has(arc[miss]) ? arcEnd.get(arc[miss]) : miss, p = ring[at], run = stamp[at] != null ? runs[stamp[at]] : cap[at] != null ? t.caps?.[cap[at]] ?? null : null
         const c = t.ring.reduce((s, q) => [s[0] + q[0] / t.ring.length, s[1] + q[1] / t.ring.length], [0, 0])
-        throw new Error(`groundDeformer: ⛔ ${town}: the ② vertex at (${p[0].toFixed(3)}, ${p[1].toFixed(3)}) has no height — ${run ? `its run ${run.skelId} (${run.side ?? '?'} · segOrd ${run.segOrd ?? '?'}) carries no line${run.noLine ? ` (${run.noLine})` : ''} and no rule for that class` : `it carries no run (iaStamp empty there)`}${at !== miss ? ` — the end of corner arc ${arc[miss]}, so the arc cannot be blended` : arc[at] != null ? `, on corner arc ${arc[at]}` : ''} · in the tile whose ① ring centres on (${c[0].toFixed(1)}, ${c[1].toFixed(1)}), ② ring ${ri} · ${H.filter(h => h == null).length} of its ${n} vertices`) }
+        throw new Error(`groundDeformer: ⛔ ${town}: the ② vertex at (${p[0].toFixed(3)}, ${p[1].toFixed(3)}) has no height — ${run ? `its ${stamp[at] != null ? 'run' : 'dead-end cap'} ${run.skelId} (${run.side ?? '?'} · segOrd ${run.segOrd ?? '?'}) carries no line${run.noLine ? ` (${run.noLine})` : ''} and no rule for that class` : `it carries no run and no cap (iaStamp and iaCap empty there)`}${at !== miss ? ` — the end of corner arc ${arc[miss]}, so the arc cannot be blended` : arc[at] != null ? `, on corner arc ${arc[at]}` : ''} · in the tile whose ① ring centres on (${c[0].toFixed(1)}, ${c[1].toFixed(1)}), ② ring ${ri} · ${H.filter(h => h == null).length} of its ${n} vertices`) }
       rings.push({ ring, H, stamp, arc, t: ti, k: ri })
     })
     if (!rings.length) continue

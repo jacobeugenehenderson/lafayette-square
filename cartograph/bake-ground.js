@@ -978,7 +978,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       run.h = null; run.noLine = run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown'
       why[run.noLine]++
     }
-    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
+    // ⭐ A DEAD-END CAP'S LINE IS ITS OWN CHAIN'S (the cap is an end coupler): each cap vertex (`iaCap`) gets the chain's line
+    // height there, `iaCapH`, parallel to `iaFull`; a cap whose chain has no line carries the reason, as a run does
+    let capV = 0
+    for (const t of shapeArtifact) { if (!t?.caps?.length) continue
+      for (const c of t.caps) if (LH.heightAt(c.skelId, t.ring[0]) == null) c.noLine = c.skelId === '__highway__' ? 'highway' : bridgeIds.has(c.skelId) ? 'bridge' : 'unknown'
+      t.iaCapH = (t.iaFull || []).map((ring, ri) => ring.map((p, i) => { const c = t.iaCap?.[ri]?.[i]; if (c == null) return null
+        const h = LH.heightAt(t.caps[c].skelId, p); capV++; return h == null ? null : Math.round(h * 1000) / 1000 })) }
+    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown · ${capV} dead-end cap vertices read their chain's line`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
   }
 
