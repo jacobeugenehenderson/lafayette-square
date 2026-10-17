@@ -2,8 +2,17 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: (Jacob, FRESH)
+dispatched: Meridian (window closed)
 written: 2026-10-14
+state 2026-10-16 (Boz): BUILT, NOT SHIPPED; held behind the upstream ground work by Jacob, not an emergency.
+  - kit branch meridian/browse-light: f7079a4b AO half-res, 3f8f93c3 tilt, dd8ae900 Tower Light. Not on trunk.
+  - Ward main: 892cf85, bce2fbb (drag down into Browse), 57f1302 (Society on its categories). Unpushed, unpublished.
+  - Ward branch meridian/tower-light: 74d987d, the button. Not on Ward main.
+  - Staging serves Ward 486b83d on kit 926ac3a4 (staging/ward/current.json); all four towns are set to the Ward.
+  - To ship: merge both meridian branches; move the Ward's pin (theward OPERATIONS "The kit the Ward is built
+    against", the worktree .claude/worktrees/ward-kit) to a kit commit holding them; build the Ward against it and
+    run its checks; Jacob runs publish-kit-bundle.mjs, then npm run publish:staging in theward.
+  - ⛔ ward-kit is the Ward's build input; never remove it.
 evict-when: RULING: on staging at phone size, Jacob drags down from the movie into Browse without a hang, tilts it, returns by Home, sees idle go to the movie, opens Society to its categories without a hang, and toggles the Tower Light on and off with time, sky, weather and neon real; each hang's cause is measured and its fix gated by that measurement.
 -->
 
