@@ -1,0 +1,18 @@
+groundDeformer.why-road.mjs: 36281 wall(s) · worst 6.33 m · reach edge 1735 · unowned 1323 · owner seam 23912 · one owner 9311
+     16109  PINNED (an owner took less than it needed and less than its band can take) · worst 4.69 m
+      4573  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 3.26 m
+      2288  within limits, neither pinned (cause not established) · worst 0.61 m
+       942  on ② / road side (no profile) · worst 6.33 m
+    seams with a profile on both owners: BACK-TO-BACK (no land use between) 21372 · land use between them 1598
+groundDeformer.why-c1.mjs: 49143 wall(s) · worst 6.33 m · reach edge 1690 · unowned 1139 · owner seam 29360 · one owner 16954
+     17792  PINNED (an owner took less than it needed and less than its band can take) · worst 4.69 m
+      5404  within limits, neither pinned (cause not established) · worst 4.00 m
+      5223  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 3.29 m
+       941  on ② / road side (no profile) · worst 6.33 m
+    seams with a profile on both owners: BACK-TO-BACK (no land use between) 26235 · land use between them 2184
+groundDeformer.why-c2.mjs: 51776 wall(s) · worst 6.33 m · reach edge 1688 · unowned 1149 · owner seam 30490 · one owner 18449
+     17070  PINNED (an owner took less than it needed and less than its band can take) · worst 4.69 m
+      6850  within limits, neither pinned (cause not established) · worst 4.00 m
+      5630  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 3.29 m
+       940  on ② / road side (no profile) · worst 6.33 m
+    seams with a profile on both owners: BACK-TO-BACK (no land use between) 27412 · land use between them 2138

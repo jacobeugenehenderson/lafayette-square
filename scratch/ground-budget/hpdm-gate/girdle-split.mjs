@@ -23,6 +23,7 @@ const blend = design.groundBlendM > 0 ? design.groundBlendM : T.stepM, sigma = d
 const rib = JSON.parse(readFileSync(`cartograph/data/${town}/clean/ribbons.json`, 'utf8')).streets, LH = lineHeights({ streets: rib, raw, sigma })
 const dump = JSON.parse(readFileSync(arg('dump'), 'utf8')), { buildDeformer } = await import(resolve(arg('why')))
 const D = buildDeformer({ town, tiles: dump.tiles, bands: dump.bands, stencil: dump.stencil, raw, line: { step: LH.step, heightAt: LH.heightAt }, limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: E, blend, sigma } })
+const b2b = new Map()
 const cls = { 'reach edge': 0, unowned: 0, 'owner seam': 0, 'one owner': 0 }, split = new Map(), ex0 = new Map(); let walls = 0, worst = 0
 const add = (k, ex) => { split.set(k, (split.get(k) || 0) + 1); ex0.set(k, Math.max(ex0.get(k) || 0, ex)) }
 for (const g of gj.groups) { if (g.rawByteOffset == null) continue
@@ -40,9 +41,15 @@ for (const g of gj.groups) { if (g.rawByteOffset == null) continue
     cls[c0]++; if (c0 !== 'owner seam') continue
     const vs = [a, b, c].sort((p, q) => h[p] - h[q]), lo = vs[0], hi = vs[2], wl = D._why(P[lo * 3], P[lo * 3 + 2]).why, wh = D._why(P[hi * 3], P[hi * 3 + 2]).why
     if (wl?.R == null || wh?.R == null) { add('on ② / road side (no profile)', ex); continue }
+    // BACK-TO-BACK: the two owners' bands meet with NO land use between them — a band ray from one owner's station toward
+    // the other's finds only curb / lawn / walk (never a lot) over the distance between them
+    { const dx = wh.st[0] - wl.st[0], dz = wh.st[1] - wl.st[1], L = Math.hypot(dx, dz)
+      const B = L > 0 ? D._bandsAlong(wl.st[0], wl.st[1], dx / L, dz / L, L) : [], lot = B.some(b => b.cls === 'lot' && b.to - b.from > LATTICE_M && b.from < L)
+      b2b.set(lot ? 'land use between them' : 'BACK-TO-BACK (no land use between)', (b2b.get(lot ? 'land use between them' : 'BACK-TO-BACK (no land use between)') || 0) + 1) }
     const capOf = (w) => w.lawnCap * (w.lawnW > 0 ? 1 : 0) + w.walkCap, took = (w) => w.byLawn + w.byWalk
     const pinned = (w) => took(w) < Math.min(Math.abs(w.Araw), capOf(w)) - TOL
     if (pinned(wl) || pinned(wh)) { add('PINNED (an owner took less than it needed and less than its band can take)', ex); continue }
     add(Math.abs(wh.H - wl.H) > capOf(wl) + capOf(wh) + TOL ? 'BEYOND LIMITS (the two lines differ by more than both bands can take)' : 'within limits, neither pinned (cause not established)', ex) } }
 console.log(`${arg('why').split('/').at(-1)}: ${walls} wall(s) · worst ${worst.toFixed(2)} m · ${Object.entries(cls).map(([k, n]) => `${k} ${n}`).join(' · ')}`)
 for (const [k, n] of [...split].sort((x, y) => y[1] - x[1])) console.log(`    ${String(n).padStart(6)}  ${k} · worst ${ex0.get(k).toFixed(2)} m`)
+console.log(`    seams with a profile on both owners: ${[...b2b].map(([k, n]) => `${k} ${n}`).join(' · ')}`)
