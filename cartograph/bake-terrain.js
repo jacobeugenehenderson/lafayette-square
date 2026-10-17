@@ -47,7 +47,7 @@ import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './te
 import { stoneStructures } from './structures.mjs'
 import { waterLevels as levelsOf } from './waterLevel.mjs'
 import clipperLib from 'clipper-lib'
-import { elevationSpecs, openSources, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, ABOVE_WATER_M } from './elevationSources.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -372,21 +372,26 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
   if (!fs.existsSync(BATHY_LIST)) return { none: `no raw/bathymetry-sources.txt — ▶ node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` }
   const urls = fs.readFileSync(BATHY_LIST, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
   if (!urls.length) return { none: 'fetch-bathymetry found no tiles on its built rungs (raw/bathymetry-sources.txt says which rungs ran) — NOT verified-absent' }
-  const src = await openSources(urls.map(ref => ({ kind: 'url', ref })), { ...gridWindow({ bounds, width, height, cornersLL }), elevationBandOnly: true, refetch: `node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` })
+  const opened = await openRasters(urls.map(ref => ({ kind: 'url', ref })), { cacheMB: 64, refetch: `node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` })
+  const [ccx, ccz] = [(bounds.minX + bounds.maxX) / 2, (bounds.minZ + bounds.maxZ) / 2]
+  const pix = new Map(opened.map(o => [o.ref, pixelMetres(o, localToWgs84, ccx, ccz)]))
+  opened.sort((a, b) => pix.get(a.ref) - pix.get(b.ref))                   // finest first: the finer survey wins where both stand
+  // ⭐ The floor is put onto the grid the one way the terrain is (rasterToGrid): the box mean where a tile is finer than
+  // the grid, bilinear where it is not — chosen by each tile's own pixel, printed per tile.
+  const { grid: floorAt, sources: regimes } = await rasterToGrid(opened, { width, height, bounds, toLL: localToWgs84, elevationBandOnly: true })
+  const src = opened.filter((o, s) => regimes[s].overlapped)
   if (!src.length) throw new Error(`⛔ the floor: none of the ${urls.length} tile(s) in ${BATHY_LIST} overlap scene '${SCENE}' — the list is for another place`)
-  src.sort((a, b) => Math.abs(a.rx) - Math.abs(b.rx))                      // finest first
   const bad = src.filter(S => S.geoKeys?.VerticalDatumGeoKey !== NAVD88 && !/navd\s*88/i.test(S.geoKeys?.VerticalCitationGeoKey || ''))
   if (bad.length) throw new Error(`⛔ the floor: ${bad.map(S => S.label).join(', ')} name no NAVD88 vertical datum — refusing to subtract it from the DEM's`)
   const dem = demVerticalDatum(demSources, cornersLL)
   if (dem?.datum !== 'NAVD88') throw new Error(`⛔ the floor is NAVD88 and the DEM's vertical datum cannot be established — refusing to mix them (no datum conversion is built: BRIEF-bathymetry step 2)`)
   const total = width * height, stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
-  const at = (i, j) => localToWgs84(bounds.minX + stepX * i, bounds.minZ + stepZ * j)
   const depth = new Float32Array(total).fill(NaN)
   let n = 0
   for (let j = 0; j < height; j++) for (let i = 0; i < width; i++) {
     const k = j * width + i
     if (!mask[k]) continue
-    const v = sampleSources(src, ...at(i, j), { nanIsNodata: true })
+    const v = floorAt[k]
     if (Number.isFinite(v)) { depth[k] = baseElev - v; n++ }
   }
   // The SEAM: on dry ground within two cells of the water, where both rasters stand, how far the floor's
@@ -401,13 +406,14 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
       if (ii >= 0 && jj >= 0 && ii < width && jj < height && mask[jj * width + ii]) { near = true; break }
     }
     if (!near) continue
-    const v = sampleSources(src, ...at(i, j), { nanIsNodata: true })
+    const v = floorAt[k]
     if (Number.isFinite(v)) diffs.push(v - raw[k])
   }
   diffs.sort((a, b) => a - b)
   const absd = diffs.map(Math.abs).sort((a, b) => a - b)
   const q = (arr, p) => arr.length ? +arr[Math.min(arr.length - 1, Math.floor(p * arr.length))].toFixed(3) : null
-  const cellM = Math.max(...src.map(S => Math.abs(S.rx)))
+  // The floor's own cell in the grid: a tile's pixel, or the grid step where the tile is finer (its box mean).
+  const cellM = Math.max(...regimes.filter(r => r.overlapped).map(r => Math.max(r.pixelM, Math.min(stepX, stepZ))))
   return { depth, cells: n, cellM, tiles: src.length, datum: 'NAVD88', demDatumFrom: dem.from,
            seam: { samples: diffs.length, medianM: q(diffs, 0.5), p90AbsM: q(absd, 0.9) } }
 }
@@ -627,13 +633,6 @@ function deriveStencilBbox(boundary) {
   }
 }
 
-// ⭐ One reader for every raster the terrain reads — the DEM tiles and the bathymetry tiles — so both are placed
-// by the same projector, the same overview choice and the same window: `elevationSources.mjs` (shared with
-// bake-shore-median). This is the window for THIS grid: the scene's corners, read at the grid step.
-function gridWindow({ bounds, width, height, cornersLL }) {
-  const stepM = Math.min(Math.abs((bounds.maxX - bounds.minX) / (width - 1)), Math.abs((bounds.maxZ - bounds.minZ) / (height - 1)))
-  return { cornersLL, stepM, atLL: localToWgs84(bounds.minX, bounds.minZ), toLL: localToWgs84(bounds.minX + stepM, bounds.minZ) }
-}
 
 
 async function main() {
@@ -692,7 +691,12 @@ async function main() {
   }
 
   const t0 = Date.now()
-  const sources = await openSources(specs, { ...gridWindow({ bounds, width, height, cornersLL: _cornersLL }), refetch: `node cartograph/fetch-dem.mjs --scene=${SCENE}` })
+  // ⭐ One reader for every raster the terrain reads — the DEM tiles and the bathymetry tiles — and one way onto the grid:
+  // `elevationSources.mjs#rasterToGrid`, the box mean of level 0 (shared with bake-shore-median).
+  const opened = await openRasters(specs, { cacheMB: 64, refetch: `node cartograph/fetch-dem.mjs --scene=${SCENE}` })
+  const { grid: raw, sources: regimes, counts } = await rasterToGrid(opened, { width, height, bounds, toLL: localToWgs84 })
+  const sources = opened.filter((o, s) => regimes[s].overlapped)
+  console.log(`  grid: ${counts.whole.toLocaleString()} nodes the mean of a whole box · ${counts.partial.toLocaleString()} of a box with no-data pixels · ${counts.joined.toLocaleString()} across a tile seam · ${counts.bilinear.toLocaleString()} bilinear (a coarser source) · ${counts.none.toLocaleString()} with nothing (misses)`)
 
   // ⛔⛔ DOES THE UNION ACTUALLY COVER THE SCENE? REFUSE IF NOT.
   // The window clamps are Math.max(0,…)/Math.min(w,…), so a tile from the wrong
@@ -704,22 +708,9 @@ async function main() {
     process.exit(1)
   }
 
-  const sample = (lon, lat) => sampleSources(sources, lon, lat)
+  const misses = counts.none
 
-  const raw = new Float32Array(total)
-  let misses = 0
-  for (let j = 0; j < height; j++) {
-    const z = bounds.minZ + (spanZ * j) / (height - 1)
-    for (let i = 0; i < width; i++) {
-      const x = bounds.minX + (spanX * i) / (width - 1)
-      const [lon, lat] = localToWgs84(x, z)
-      const v = sample(lon, lat)
-      if (Number.isNaN(v)) { misses++; raw[j * width + i] = NaN }
-      else raw[j * width + i] = v
-    }
-  }
-
-  // ⛔⛔ A SOURCE WITH NO VALUE ANYWHERE OVER THE TOWN REFUSES (2026-10-10). Every sample missed, so the fill below found
+  // ⛔⛔ A SOURCE WITH NO VALUE ANYWHERE OVER THE TOWN REFUSES (2026-10-10). Every sample missed, so the fill below (then) found
   // no neighbour and wrote 0 everywhere: a FLAT town, normalised to its own "local minimum", with one warning line —
   // the plausible-looking success Layer 0 forbids. It is reachable: fetch-dem once chose a survey whose tile boxes
   // reached the town but held no data over it (Lafayette Square: IL_HicksDome_FluorsparDistrict_2019, 0%).
@@ -727,26 +718,8 @@ async function main() {
   if (misses === total) {
     throw new Error(`[bake-terrain] ⛔ ${SCENE}: the elevation source holds NO value anywhere over the town (${total.toLocaleString()} of ${total.toLocaleString()} samples missed: ${sources.map(s => s.label).join(', ') || 'no source opened'}). Refusing to bake a flat town. ▶ node cartograph/fetch-dem.mjs --scene=${SCENE}`)
   }
-  if (misses) {
-    // Nearest grid-neighbor fill (rare; should never happen for LS).
-    for (let idx = 0; idx < total; idx++) {
-      if (!Number.isNaN(raw[idx])) continue
-      let nearest = NaN
-      const j0 = Math.floor(idx / width), i0 = idx % width
-      for (let r = 1; r < Math.max(width, height) && !Number.isFinite(nearest); r++) {
-        for (let dj = -r; dj <= r && !Number.isFinite(nearest); dj++) {
-          for (let di = -r; di <= r; di++) {
-            if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue
-            const ii = i0 + di, jj = j0 + dj
-            if (ii < 0 || ii >= width || jj < 0 || jj >= height) continue
-            const v = raw[jj * width + ii]
-            if (!Number.isNaN(v)) { nearest = v; break }
-          }
-        }
-      }
-      raw[idx] = Number.isFinite(nearest) ? nearest : 0
-    }
-  }
+  // Nearest grid-neighbour fill of the misses (elevationSources.mjs#fillMisses; refuses a grid with nothing to fill from).
+  if (misses) fillMisses(raw, width, height)
 
   let mn = Infinity, mx = -Infinity
   for (const v of raw) { if (v < mn) mn = v; if (v > mx) mx = v }

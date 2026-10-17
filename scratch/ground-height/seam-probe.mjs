@@ -3,9 +3,9 @@
 // welding missed but no ray can pass. READ-ONLY.   node scratch/ground-height/seam-probe.mjs <town> [n=300] [offMm=1]
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { WELD_QUANTUM_M } from '../../cartograph/groundConformity.js'
+import { LATTICE_M as WELD_QUANTUM_M } from '../../src/lib/lattice.js'
 const [town, nS = '300', offS = '1'] = process.argv.slice(2), OFF = +offS / 1000
-const dir = join(new URL('../../public/baked/', import.meta.url).pathname, town)
+const dir = process.env.SLAB_DIR || join(new URL('../../public/baked/', import.meta.url).pathname, town)
 const gj = JSON.parse(readFileSync(join(dir, 'ground.json'))), gb = readFileSync(join(dir, 'ground.bin')), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
 const groups = gj.groups.filter(g => g.partition === true), st = gj.stencil
 const Q = 1 / WELD_QUANTUM_M, key = (x, z) => `${Math.round(x * Q)},${Math.round(z * Q)}`

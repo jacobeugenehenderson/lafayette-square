@@ -4,6 +4,7 @@
 # to HEAD's so only the code differs; removed after. Every console line is stamped with seconds since start. --shore=pending
 # is passed where that commit's bake-ground knows it (serve.js's 'ground' pass). Guards: load < 8 and free >= 40% to start;
 # load + free every 60 s; killed below 20%; data/huron + public/ snapshotted (path, size, mtime) before and after.
+# Each flatten step also logs [flatstat]: items, mine/acc paths + vertices, difference ms, union ms, out pieces, acc after.
 #   bisect-one.sh <commit> <stop key> → scratch/ground-budget/paint/bisect/<commit>-<stop>.log, one summary line on stdout
 cd /Users/jacobhenderson/Desktop/lafayette-square.nosync
 C=$1; STOP=$2; R=$PWD; P=$R/scratch/ground-budget/paint; B=$P/bisect; OUT=$P/out; mkdir -p $B $OUT
@@ -28,6 +29,19 @@ console.log = (...a) => { const m = /\\[progress\\] flatten (\\S+)/.exec(a.map(S
 anchor = "in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)\n"
 if s.count(anchor) != 1: sys.exit('no unique paint-stack anchor')
 s = hdr + s.replace(anchor, anchor + "  console.log('[paint-only] stopping after the paint stack'); process.exit(0)\n")
+def rep(s, a, b):
+    if s.count(a) != 1: sys.exit('no unique flatten-stats anchor: ' + a.strip()[:60])
+    return s.replace(a, b)
+a = "    let visible = e.items\n    if (acc.length && !keepsSlot) {\n"
+s = rep(s, a, "    const __fs = { key: e.groupKey, items: e.items.length, minePaths: mine.length, mineVerts: mine.reduce((n, q) => n + q.length, 0), accPaths: acc.length, accVerts: acc.reduce((n, q) => n + q.length, 0) }\n" + a)
+a = "      if (c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)) {\n"
+s = rep(s, a, "      const __td = performance.now(), __okd = c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero); __fs.diffMs = +(performance.now() - __td).toFixed(1)\n      if (__okd) {\n")
+a = "    out.set(e.groupKey, visible)\n"
+s = rep(s, a, a + "    __fs.outPieces = visible.length\n")
+a = "    if (!cuts) continue\n    const u = new _Clipper()"
+s = rep(s, a, "    if (!cuts) { console.log('[flatstat]', JSON.stringify(__fs)); continue }\n    const u = new _Clipper()")
+a = "    if (u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) {\n"
+s = rep(s, a, "    const __tu = performance.now(), __oku = u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero); __fs.unionMs = +(performance.now() - __tu).toFixed(1); __fs.accPathsAfter = merged.length; console.log('[flatstat]', JSON.stringify(__fs))\n    if (__oku) {\n")
 open(p, 'w').write(s)
 EOF
 (( $? )) && { echo "$C ⛔ could not patch bake-ground (named above)"; git worktree remove --force $W; exit 1 }

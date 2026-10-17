@@ -1,0 +1,31 @@
+
+=== hipointedemun · served terrain.bin 1.3 MB · served ground.bin 11.2 MB (427,318 V) · coarse nodes 332,929 (24.97 m² each)
+  (b) ALL LAND at 1 m: 6,039,393 cells → 24.2 MB Float32 · 12.1 MB int16 residual · as node patches 243,097 × 25 cells → 12.1 MB int16 + the coarse grid 1.3 MB
+  (c) 1 m cells with |r1| ≥ refineTol 7.8 mm (a lower bound: whole histogram bins only): 5,011,986 = 11.7× the served slab's vertices
+      ①-block         1,700,232 of 2,013,072 (84.5%)
+      ①-road            649,345 of 786,135 (82.6%)
+      LU              2,646,152 of 3,239,436 (81.7%)
+      ①-water            15,072 of 21,309 (70.7%)
+      far                 1,185 of 1,280 (92.6%)
+
+=== huron · served terrain.bin 8.3 MB · served ground.bin 25.7 MB (872,117 V) · coarse nodes 2,064,969 (24.99 m² each)
+  (b) ALL LAND at 1 m: 25,380,150 cells → 101.5 MB Float32 · 50.8 MB int16 residual · as node patches 1,017,871 × 25 cells → 50.9 MB int16 + the coarse grid 8.3 MB
+  (b) COAST BAND (land 30 m, water 10 m, read off the curve): 20,508 node patches → 2.1 MB Float32 · 1.0 MB int16 · beside the coarse grid 8.3 MB
+  (c) 1 m cells with |r1| ≥ refineTol 7.8 mm (a lower bound: whole histogram bins only): 17,066,201 = 19.6× the served slab's vertices
+      ①-block         1,814,231 of 2,287,927 (79.3%)
+      ①-road            980,557 of 1,202,582 (81.5%)
+      LU             13,734,832 of 21,198,611 (64.8%)
+      coast-land        122,422 of 153,686 (79.7%)
+      coast-water        76,483 of 1,481,248 (5.2%)
+      ①-water             4,970 of 7,911 (62.8%)
+      far               332,706 of 6,037,987 (5.5%)
+      inside the coast band (nearest line = coast): 154,394
+
+=== provincetown · served terrain.bin 18.3 MB · served ground.bin 56.2 MB (1,741,691 V) · coarse nodes 4,571,044 (24.98 m² each)
+  (b) ALL LAND at 1 m: 29,884,451 cells → 119.5 MB Float32 · 59.8 MB int16 residual · as node patches 1,201,691 × 25 cells → 60.0 MB int16 + the coarse grid 18.3 MB
+  (b) COAST BAND (land 5 m, water 5 m, read off the curve): 30,297 node patches → 3.0 MB Float32 · 1.5 MB int16 · beside the coarse grid 18.3 MB
+HPDM mounds (lidar rise ≥ 1 m behind a walk): 6176 stations of 24519 · walk re-found on the served slab at 6176 (0 not)
+  walk back edge   from ①: p10 1.75 · p50 3.25 · p90 3.25 m
+  mound 10% point  from ①: p10 3.75 · p50 5.25 · p90 9.25 m
+  mound 90% point  from ①: p10 11.25 · p50 18.25 · p90 21.75 m
+  10% point inside walk back + B (4.9965 m, one grid step): 5453 of 6176 · 90% point inside it: 83

@@ -48,7 +48,7 @@ import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastVerdict, resample, shoreFingerprint } from './shoreRuns.mjs'
-import { elevationSpecs, openRasters, readWindow, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, readWindow, rasterToGrid, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -208,11 +208,11 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   // ── PASS A: the whole town at the terrain grid, once — it bounds every finest-level walk ─────────────────────────
   const { width: W, height: H, bounds: B } = tm
   const sx = (B.maxX - B.minX) / (W - 1), sz = (B.maxZ - B.minZ) / (H - 1), gridM = Math.min(sx, sz)
-  const corners = [toLL(B.minX, B.minZ), toLL(B.maxX, B.minZ), toLL(B.minX, B.maxZ), toLL(B.maxX, B.maxZ)]
-  const coarse = await readWindow(opened, { cornersLL: corners, stepM: gridM, atLL: toLL(B.minX, B.minZ), toLL: toLL(B.minX + gridM, B.minZ), quiet: true })
-  const grid = new Float32Array(W * H)
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) grid[j * W + i] = sampleSources(coarse, ...toLL(B.minX + sx * i, B.minZ + sz * j)) - baseElev
-  coarse.length = 0
+  // ⭐ The terrain's own grid, put onto it the one way (elevationSources.mjs#rasterToGrid: the box mean of the lidar), NaN
+  // where the lidar holds nothing. ⛔ Not terrain.bin: that carries the bed under the water and fills the lidar's misses,
+  // and the walks below stop at both.
+  const { grid } = await rasterToGrid(opened, { width: W, height: H, bounds: B, toLL, quiet: true })
+  for (let k = 0; k < grid.length; k++) grid[k] -= baseElev
   const gridAt = (x, z) => {
     const i = Math.round((x - B.minX) / sx), j = Math.round((z - B.minZ) / sz)
     return (i < 0 || j < 0 || i >= W || j >= H) ? undefined : grid[j * W + i]   // undefined = off the grid; NaN = no lidar
@@ -286,7 +286,7 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
     tiles++
     if (tiles % 50 === 0) console.log(`  [progress] waterline tiles ${tiles}`)
     const m = 2 * step
-    const win = await readWindow(opened, { cornersLL: [toLL(tx - m, tz - m), toLL(tx + TILE_M + m, tz - m), toLL(tx - m, tz + TILE_M + m), toLL(tx + TILE_M + m, tz + TILE_M + m)], stepM: null, quiet: true })
+    const win = await readWindow(opened, { cornersLL: [toLL(tx - m, tz - m), toLL(tx + TILE_M + m, tz - m), toLL(tx - m, tz + TILE_M + m), toLL(tx + TILE_M + m, tz + TILE_M + m)], quiet: true })
     const n = Math.round(TILE_M / step) + 2                           // one sample of overlap into the next tile
     const f = new Float32Array(n * n), u = new Float32Array(n * n).fill(1)
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {

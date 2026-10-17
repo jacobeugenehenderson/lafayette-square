@@ -1,0 +1,35 @@
+PAIR 91c7fb7f (db9c7d87's direct parent) vs db9c7d87, Huron, paint-only to the end of mat:treelawn:underived, HEAD's data linked (Brace, 2026-10-14; Boz, Swale). bisect-one.sh 6b2bc3a6; guard 0 · 0 both; worktrees removed.
+91c7fb7f rc 0 · pre-stack 19 s · mat:treelawn:underived 109.3 s · guard changed 0 newer 0 · [load] 01:52:10 { 3.39 3.07 2.86 } · free 54%
+db9c7d87 rc 0 · pre-stack 52.9 s · mat:treelawn:underived 211 s · guard changed 0 newer 0 · [load] 01:58:59 { 3.35 3.40 3.11 } · free 53%
+== 91c7fb7f [flatstat] (p paths / v vertices; ms of the one difference / one union)
+  mat:water:lake             items     1 · mine     1 p     657 v · acc     0 p       0 v · diff         - ms · union       - ms · out     1 · accAfter -
+  mat:footway                items    47 · mine    56 p    3193 v · acc     0 p       0 v · diff         - ms · union     1.8 ms · out    47 · accAfter 56
+  mat:alley                  items     2 · mine     2 p      11 v · acc    56 p    3193 v · diff       4.8 ms · union     3.2 ms · out     2 · accAfter 58
+  mat:asphalt                items    91 · mine   269 p   34782 v · acc    58 p    3204 v · diff   62016.5 ms · union    82.3 ms · out   106 · accAfter 324
+  mat:curb                   items   196 · mine   350 p   63601 v · acc   324 p   37987 v · diff    1562.4 ms · union   354.3 ms · out   197 · accAfter 329
+  mat:curbCut                items  1352 · mine  1352 p   11908 v · acc   329 p   37856 v · diff      99.4 ms · union   137.2 ms · out  1353 · accAfter 396
+  mat:sidewalk               items   948 · mine  1001 p   70705 v · acc   396 p   44809 v · diff     18068 ms · union   766.3 ms · out  1989 · accAfter 2335
+  mat:treelawn:verge         items     4 · mine     4 p      81 v · acc  2335 p   93731 v · diff     408.9 ms · union   435.7 ms · out    15 · accAfter 2332
+  mat:treelawn:cemetery      items     2 · mine     2 p      10 v · acc  2332 p   93413 v · diff       405 ms · union   433.3 ms · out     2 · accAfter 2333
+  mat:treelawn:beach         items     5 · mine     5 p     297 v · acc  2333 p   93405 v · diff     428.9 ms · union   440.8 ms · out     5 · accAfter 2335
+  mat:treelawn:wetland       items     2 · mine     2 p       7 v · acc  2335 p   93154 v · diff     413.4 ms · union   444.1 ms · out     0 · accAfter 2335
+  mat:treelawn:forest        items    13 · mine    13 p     279 v · acc  2335 p   93156 v · diff     419.5 ms · union   455.6 ms · out    11 · accAfter 2338
+  mat:treelawn:greenhouse    items     1 · mine     1 p       8 v · acc  2338 p   93006 v · diff     418.2 ms · union     453 ms · out     1 · accAfter 2337
+  mat:treelawn:agricultural  items   197 · mine   197 p    1222 v · acc  2337 p   93002 v · diff     451.2 ms · union   467.8 ms · out   200 · accAfter 2447
+  mat:treelawn:underived     items  2682 · mine  2813 p   48926 v · acc  2447 p   93633 v · diff  107721.4 ms · union   850.2 ms · out  3281 · accAfter 2099
+== db9c7d87 [flatstat] (p paths / v vertices; ms of the one difference / one union)
+  mat:water:lake             items     1 · mine     1 p     657 v · acc     0 p       0 v · diff         - ms · union       - ms · out     1 · accAfter -
+  mat:footway                items    47 · mine    56 p    3216 v · acc     0 p       0 v · diff         - ms · union     1.9 ms · out    47 · accAfter 56
+  mat:alley                  items     2 · mine     2 p      11 v · acc    56 p    3216 v · diff       4.9 ms · union     3.2 ms · out     2 · accAfter 58
+  mat:asphalt                items    91 · mine   269 p   34782 v · acc    58 p    3227 v · diff   59476.4 ms · union    90.9 ms · out   106 · accAfter 324
+  mat:curb                   items   190 · mine   348 p   81591 v · acc   324 p   38010 v · diff    2576.6 ms · union   474.1 ms · out   191 · accAfter 331
+  mat:curbCut                items  1332 · mine  1332 p   13305 v · acc   331 p   55871 v · diff     144.5 ms · union   240.5 ms · out  1333 · accAfter 379
+  mat:sidewalk               items   588 · mine   658 p  103136 v · acc   379 p   62444 v · diff   23709.7 ms · union  2167.8 ms · out  1041 · accAfter 1911
+  mat:treelawn:verge         items    14 · mine    14 p      57 v · acc  1911 p  129746 v · diff       527 ms · union     566 ms · out    12 · accAfter 1902
+  mat:treelawn:cemetery      items     2 · mine     2 p      10 v · acc  1902 p  129527 v · diff     517.4 ms · union   565.8 ms · out     2 · accAfter 1906
+  mat:treelawn:beach         items     5 · mine     5 p     464 v · acc  1906 p  129532 v · diff     529.6 ms · union   572.9 ms · out     5 · accAfter 1907
+  mat:treelawn:wetland       items     1 · mine     1 p       6 v · acc  1907 p  129117 v · diff     541.9 ms · union   596.9 ms · out     0 · accAfter 1908
+  mat:treelawn:forest        items    20 · mine    20 p     418 v · acc  1908 p  129115 v · diff     564.7 ms · union   598.3 ms · out    11 · accAfter 1914
+  mat:treelawn:greenhouse    items     1 · mine     1 p       8 v · acc  1914 p  128839 v · diff     560.7 ms · union     609 ms · out     1 · accAfter 1914
+  mat:treelawn:agricultural  items   200 · mine   200 p    1394 v · acc  1914 p  128838 v · diff     686.8 ms · union   645.2 ms · out   203 · accAfter 2025
+  mat:treelawn:underived     items  2390 · mine  2438 p   59134 v · acc  2025 p  129338 v · diff  209459.2 ms · union  1113.1 ms · out  2668 · accAfter 1894

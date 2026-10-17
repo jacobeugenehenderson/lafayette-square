@@ -1,0 +1,16 @@
+mean grid 46 s · rss 825 MB
+
+provincetown: nodes within 15 m of the served coast, by side (shape.json) × the bake's water mask; edit = served − true mean
+  shape-land · not in mask       29,542 nodes · edited (|e| > 1 mm)       0 · e p10/p50/p90 -0 mm / 0 mm / 0 mm
+  shape-water · in mask          28,967 nodes · edited (|e| > 1 mm)  28,891 · e p10/p50/p90 -1.83 m / -56 mm / 764 mm
+  shape-water · not in mask         345 nodes · edited (|e| > 1 mm)       0 · e p10/p50/p90 -0 mm / 0 mm / 0 mm
+
+provincetown: 1 m LAND cells (inside a tile ring) by distance to the served coast — how many of their 4 bilinear nodes carry the bed
+  0–1.5 m: 75,624 cells · with a bed node 71,415 (94.4%) · by count of bed nodes 0/1/2/3/4: 4,209/26,198/35,436/9,780/1 · |mean − served| p50/p90 with a bed node 168 mm/840 mm · without 0 mm/0 mm
+  1.5–3.5 m: 99,688 cells · with a bed node 65,281 (65.5%) · by count of bed nodes 0/1/2/3/4: 34,407/40,887/23,049/1,345/0 · |mean − served| p50/p90 with a bed node 77 mm/429 mm · without 0 mm/0 mm
+  3.5–6 m: 121,239 cells · with a bed node 23,808 (19.6%) · by count of bed nodes 0/1/2/3/4: 97,431/21,676/2,105/27/0 · |mean − served| p50/p90 with a bed node 18 mm/137 mm · without 0 mm/0 mm
+  6–10 m: 177,911 cells · with a bed node 597 (0.3%) · by count of bed nodes 0/1/2/3/4: 177,314/554/26/11/6 · |mean − served| p50/p90 with a bed node 2 mm/136 mm · without 0 mm/0 mm
+
+  shape-land nodes the bed overwrote: 0 · their distance inside the served coast p50/p90/p99/max NaN / NaN / NaN / NaN m
+  coastRings vertices inside the disc: 2,299 · distance to the served __water__ line p50/p90/p99 0.01 / 0.01 / 4.70 m · farther than 20 m (∞) 5
+       80.85 real        63.33 user         3.14 sys

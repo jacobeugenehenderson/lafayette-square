@@ -1,0 +1,52 @@
+
+=== provincetown (reference zone 30–150 m): terrain /Users/jacobhenderson/Desktop/lafayette-square.nosync/scratch/ground-budget/terrain-mean/after/provincetown · 87,914,676 1 m cells in the disc · no lidar 26,133,002 (on land 0) · no whole 5 m mean 139,760
+
+  coast-land — 1,977,949 cells · band read on |lidar − served| · reference p90 200 mm (coast-land / LU at 30–150 m)
+    d from coast   cells      |lidar−served| p50/p90/p99   same, 4 nodes on land (cells)          |r1| p50/p90/p99          |r2| p50/p90/p99        |r2| BEFORE (overview grid)
+    0–0.5 m          24,701    233 mm  1.00 m  2.15 m    171 mm  1.26 m  2.51 m (    595)     25 mm  126 mm  316 mm    215 mm  1.00 m  2.15 m    215 mm  1.00 m  2.15 m
+    0.5–1 m          23,959    185 mm  858 mm  1.85 m     23 mm  681 mm  1.85 m (  1,273)     25 mm  126 mm  316 mm    158 mm  858 mm  1.85 m    171 mm  858 mm  1.85 m
+    1–1.5 m          23,593    136 mm  681 mm  1.58 m     25 mm  316 mm  1.36 m (  2,725)     25 mm  117 mm  316 mm    117 mm  681 mm  1.47 m    126 mm  681 mm  1.47 m
+    1.5–2 m          22,815    100 mm  584 mm  1.36 m     22 mm  171 mm  926 mm (  4,364)     25 mm  117 mm  341 mm     79 mm  541 mm  1.26 m     86 mm  541 mm  1.26 m
+    2–2.5 m          22,753     74 mm  430 mm  1.00 m     25 mm  185 mm  736 mm (  6,625)     25 mm  117 mm  341 mm     54 mm  398 mm  1.00 m     58 mm  398 mm  1.00 m
+    2.5–3 m          22,150     50 mm  316 mm  794 mm     23 mm  147 mm  541 mm (  8,525)     25 mm  117 mm  341 mm     37 mm  271 mm  794 mm     40 mm  271 mm  794 mm
+    3–4 m            42,908     37 mm  200 mm  541 mm     25 mm  136 mm  398 mm ( 23,723)     25 mm  117 mm  316 mm     22 mm  147 mm  464 mm     27 mm  158 mm  464 mm
+    4–5 m            41,433     27 mm  126 mm  341 mm     25 mm  117 mm  316 mm ( 31,688)     25 mm  108 mm  293 mm     14 mm   74 mm  200 mm     20 mm   79 mm  200 mm
+    5–6 m            38,352     25 mm  108 mm  316 mm     25 mm  108 mm  293 mm ( 35,145)     27 mm  108 mm  293 mm     12 mm   58 mm  126 mm     18 mm   63 mm  136 mm
+    6–7.5 m          71,137     25 mm  108 mm  293 mm     25 mm  108 mm  293 mm ( 70,564)     27 mm  108 mm  293 mm     11 mm   58 mm  126 mm     17 mm   63 mm  147 mm
+    7.5–10 m         90,314     25 mm  108 mm  316 mm     25 mm  108 mm  316 mm ( 90,287)     32 mm  117 mm  316 mm     11 mm   63 mm  147 mm     17 mm   63 mm  158 mm
+    10–12.5 m        82,898     25 mm  108 mm  369 mm     25 mm  108 mm  369 mm ( 82,890)     32 mm  117 mm  398 mm     11 mm   63 mm  158 mm     17 mm   63 mm  158 mm
+    12.5–15 m        77,985     27 mm  126 mm  430 mm     27 mm  126 mm  430 mm ( 77,985)     34 mm  126 mm  464 mm     12 mm   68 mm  158 mm     20 mm   68 mm  158 mm
+    15–20 m         140,441     29 mm  126 mm  398 mm     29 mm  126 mm  398 mm (140,441)     34 mm  136 mm  430 mm     13 mm   74 mm  171 mm     20 mm   74 mm  171 mm
+    20–25 m         124,612     29 mm  126 mm  398 mm     29 mm  126 mm  398 mm (124,612)     34 mm  136 mm  430 mm     14 mm   74 mm  185 mm     22 mm   79 mm  215 mm
+    25–30 m         112,438     34 mm  147 mm  464 mm     34 mm  147 mm  464 mm (112,438)     37 mm  158 mm  464 mm     15 mm   79 mm  233 mm     23 mm   79 mm  271 mm
+    30–45 m         268,819     40 mm  185 mm  501 mm     40 mm  185 mm  501 mm (268,819)     43 mm  200 mm  541 mm     15 mm   86 mm  271 mm     23 mm   93 mm  251 mm
+    45–60 m         211,255     43 mm  185 mm  541 mm     43 mm  185 mm  541 mm (211,255)     46 mm  200 mm  541 mm     15 mm   93 mm  271 mm     25 mm  117 mm  271 mm
+    60–90 m         299,680     43 mm  171 mm  541 mm     43 mm  171 mm  541 mm (299,680)     46 mm  185 mm  541 mm     13 mm   86 mm  251 mm     23 mm   93 mm  271 mm
+    90–150 m        235,706     46 mm  185 mm  501 mm     46 mm  185 mm  501 mm (235,706)     50 mm  200 mm  501 mm     16 mm   93 mm  215 mm     25 mm  100 mm  251 mm
+    ⇒ BAND WIDTH 3.5 m on |lidar − served| (161,661 cells) · on |r1| alone 0.0 m · |r1| on the step-5 run 0.0 m
+      cells over each tolerance (one vertex each, an upper bound): 500 mm 21,428 · 100 mm 79,168 · 50 mm 104,154 · 20 mm 128,482 · 7.8 mm 145,030
+
+  coast-water — 5,642,514 cells · band read on |r1| (lidar − the true 5 m mean) · reference p90 8.6 mm (coast-water at 30–150 m)
+    d from coast   cells      |lidar−served| p50/p90/p99   same, 4 nodes on land (cells)          |r1| p50/p90/p99          |r2| p50/p90/p99        |r2| BEFORE (overview grid)
+    0–0.5 m          24,962    293 mm  1.17 m  2.33 m     17 mm   93 mm  126 mm (     14)     25 mm  117 mm  316 mm    271 mm  1.17 m  2.33 m    271 mm  1.17 m  2.33 m
+    0.5–1 m          25,332    341 mm  1.36 m  2.71 m         —       —       — (      0)     25 mm  117 mm  316 mm    316 mm  1.36 m  2.71 m    341 mm  1.36 m  2.71 m
+    1–1.5 m          25,061    398 mm  1.58 m  2.93 m         —       —       — (      0)     23 mm  108 mm  316 mm    398 mm  1.47 m  2.93 m    398 mm  1.47 m  2.93 m
+    1.5–2 m          25,039    430 mm  1.71 m  3.16 m         —       —       — (      0)     23 mm  108 mm  316 mm    430 mm  1.71 m  2.93 m    430 mm  1.71 m  2.93 m
+    2–2.5 m          25,160    464 mm  1.71 m  3.16 m         —       —       — (      0)     22 mm  108 mm  316 mm    464 mm  1.71 m  3.16 m    464 mm  1.71 m  3.16 m
+    2.5–3 m          25,299    501 mm  1.85 m  3.41 m         —       —       — (      0)     22 mm  108 mm  316 mm    501 mm  1.85 m  3.16 m    501 mm  1.85 m  3.16 m
+    3–4 m            50,070    541 mm  2.00 m  3.41 m         —       —       — (      0)     20 mm  100 mm  316 mm    541 mm  2.00 m  3.41 m    541 mm  2.00 m  3.41 m
+    4–5 m            49,839    541 mm  2.00 m  3.69 m         —       —       — (      0)     18 mm  100 mm  293 mm    541 mm  2.00 m  3.41 m    541 mm  2.00 m  3.41 m
+    5–6 m            46,287    584 mm  2.00 m  3.69 m         —       —       — (      0)     18 mm  100 mm  293 mm    584 mm  2.00 m  3.41 m    584 mm  2.00 m  3.41 m
+    6–7.5 m          87,834    584 mm  2.00 m  3.41 m         —       —       — (      0)     17 mm   93 mm  271 mm    541 mm  2.00 m  3.41 m    541 mm  2.00 m  3.41 m
+    7.5–10 m        116,812    584 mm  2.00 m  3.41 m         —       —       — (      0)     15 mm   93 mm  293 mm    541 mm  2.00 m  3.41 m    584 mm  2.00 m  3.41 m
+    10–12.5 m       114,161    584 mm  1.85 m  3.41 m         —       —       — (      0)     14 mm  100 mm  293 mm    541 mm  1.85 m  3.41 m    541 mm  1.85 m  3.41 m
+    12.5–15 m       111,349    541 mm  1.85 m  3.41 m         —       —       — (      0)     11 mm  100 mm  293 mm    541 mm  1.85 m  3.41 m    541 mm  1.85 m  3.41 m
+    15–20 m         215,140    501 mm  1.85 m  3.41 m         —       —       — (      0)    7.9 mm   86 mm  293 mm    501 mm  1.85 m  3.41 m    501 mm  1.85 m  3.41 m
+    20–25 m         202,948    501 mm  1.85 m  3.41 m         —       —       — (      0)    3.4 mm   74 mm  293 mm    501 mm  1.85 m  3.41 m    501 mm  1.85 m  3.41 m
+    25–30 m         204,273    541 mm  2.00 m  3.41 m         —       —       — (      0)    0.4 mm   74 mm  293 mm    501 mm  2.00 m  3.41 m    541 mm  2.00 m  3.41 m
+    30–45 m         592,102    541 mm  2.15 m  3.41 m         —       —       — (      0)    0.0 mm   54 mm  271 mm    541 mm  2.15 m  3.41 m    541 mm  2.15 m  3.41 m
+    45–60 m         565,332    631 mm  2.33 m  3.16 m         —       —       — (      0)    0.0 mm   29 mm  233 mm    631 mm  2.33 m  3.16 m    631 mm  2.33 m  3.16 m
+    60–90 m       1,085,176    926 mm  2.71 m  4.30 m         —       —       — (      0)    0.0 mm  5.8 mm  126 mm    926 mm  2.71 m  4.30 m    926 mm  2.71 m  4.30 m
+    90–150 m      2,050,338    2.00 m  3.98 m  4.64 m         —       —       — (      0)    0.0 mm  0.0 mm   37 mm    2.00 m  3.98 m  4.64 m    2.00 m  3.98 m  4.64 m
+    ⇒ BAND WIDTH 30.0 m on |r1| (1,349,566 cells) · |r1| on the step-5 run 30.0 m
+      cells over each tolerance (one vertex each, an upper bound): 500 mm 1,267 · 100 mm 115,425 · 50 mm 255,345 · 20 mm 490,245 · 7.8 mm 717,572

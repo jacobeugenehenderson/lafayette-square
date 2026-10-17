@@ -1,0 +1,71 @@
+CPU PROFILE of HEAD's paint stack, Huron, 2026-10-14 01:42 (Brace; Boz). profile.sh, stopped after mat:treelawn:underived; 353.1 s wall, peak RSS 1.72 GB; load 1-min 2.3-3.3; guard changed 0 · newer 0. HEAD e8f043d5. Main-thread profile CPU.20261014.014226.3446.0.001 (the .1 is the module-hook thread: 0 markers). Windows by __win_mark, 16 = 16.
+
+start 01:42:26 · load { 3.32 2.86 2.72 } · free 52% · stop after mat:treelawn:underived
+  [load] 01:42:26 { 3.32 2.86 2.72 } · free 52%
+  [load] 01:43:26 { 3.12 2.89 2.74 } · free 54%
+  [load] 01:44:26 { 2.71 2.83 2.73 } · free 53%
+  [load] 01:45:26 { 2.73 2.83 2.73 } · free 54%
+  [load] 01:46:26 { 3.06 2.85 2.75 } · free 54%
+  [load] 01:47:26 { 2.30 2.68 2.69 } · free 53%
+  [guard] changed 0 · newer 0
+exit 0 01:48:27 · 2 profile(s)
+
+== per flatten step ([flatstat]: paths p / vertices v; ms of the step's one difference and one union)
+  mat:water:lake             mine      1 p      657 v · acc      0 p        0 v · diff         - ms · union       - ms · out     1 · accAfter -
+  mat:footway                mine     56 p     3216 v · acc      0 p        0 v · diff         - ms · union     1.9 ms · out    47 · accAfter 56
+  mat:alley                  mine      2 p       11 v · acc     56 p     3216 v · diff       4.9 ms · union     3.8 ms · out     2 · accAfter 58
+  mat:asphalt                mine    269 p    34782 v · acc     58 p     3227 v · diff   56059.9 ms · union   103.9 ms · out   106 · accAfter 324 · dump 3.8 ms
+  mat:curb                   mine    348 p    81591 v · acc    324 p    38010 v · diff    2413.5 ms · union     434 ms · out   191 · accAfter 331
+  mat:curbCut                mine   1332 p    13305 v · acc    331 p    55871 v · diff     136.4 ms · union     219 ms · out  1333 · accAfter 379
+  mat:sidewalk               mine    658 p   103136 v · acc    379 p    62444 v · diff   24644.4 ms · union  2185.4 ms · out  1041 · accAfter 1911
+  mat:treelawn:verge         mine     14 p       57 v · acc   1911 p   129746 v · diff     536.2 ms · union   570.8 ms · out    12 · accAfter 1902
+  mat:treelawn:cemetery      mine      2 p       10 v · acc   1902 p   129527 v · diff     526.3 ms · union   569.8 ms · out     2 · accAfter 1906
+  mat:treelawn:beach         mine      5 p      464 v · acc   1906 p   129532 v · diff     528.5 ms · union   573.6 ms · out     5 · accAfter 1907
+  mat:treelawn:wetland       mine      1 p        6 v · acc   1907 p   129117 v · diff     540.6 ms · union   582.8 ms · out     0 · accAfter 1908
+  mat:treelawn:forest        mine     20 p      418 v · acc   1908 p   129115 v · diff     545.7 ms · union   617.7 ms · out    11 · accAfter 1914
+  mat:treelawn:greenhouse    mine      1 p        8 v · acc   1914 p   128839 v · diff     550.4 ms · union   596.5 ms · out     1 · accAfter 1914
+  mat:treelawn:agricultural  mine    200 p     1394 v · acc   1914 p   128838 v · diff     685.4 ms · union   631.7 ms · out   203 · accAfter 2025
+  mat:treelawn:underived     mine   2438 p    59134 v · acc   2025 p   129338 v · diff  201595.9 ms · union  1062.1 ms · out  2668 · accAfter 1894
+
+== top self time per window (node scratch/ground-budget/profile/analyze.mjs scratch/ground-budget/profile/run1/profile.log scratch/ground-budget/profile/run1/cpu/<the .0 cpuprofile>)
+== pre-stack: 53.4 s sampled · Clipper.Execute intersection 21367 · union 8167 · difference 8361 · xor 0 · ClipperOffset.Execute 3621 · offsetRingByRects 4258
+      9.31 s   17.4%  (garbage collector) :0
+      8.75 s   16.4%  ClipperLib.ClipperBase.AddPath clipper-lib/clipper.js:2877
+      6.75 s   12.6%  ClipperLib.Clipper.ProcessEdgesAtTopOfScanbeam clipper-lib/clipper.js:5400
+      5.85 s   11.0%  ClipperLib.Clipper.BuildIntersectList clipper-lib/clipper.js:5172
+      3.88 s    7.3%  labelOf lib/tileGround.js:1735
+      2.85 s    5.3%  (anonymous) lib/tileGround.js:1731
+      2.28 s    4.3%  ClipperLib.ClipperBase.Reset clipper-lib/clipper.js:3162
+      1.92 s    3.6%  ClipperLib.Clipper.ExecuteInternal clipper-lib/clipper.js:3597
+      1.42 s    2.7%  ClipperLib.Clipper.TopX clipper-lib/clipper.js:5314
+      0.96 s    1.8%  ClipperLib.Clipper.ProcessIntersections clipper-lib/clipper.js:5148
+      0.80 s    1.5%  offsetRingByRects lib/tileGround.js:1644
+      0.57 s    1.1%  ClipperLib.Clipper.Poly2ContainsPoly1 clipper-lib/clipper.js:6197
+== mat:asphalt: 56.2 s sampled · Clipper.Execute intersection 0 · union 1 · difference 1 · xor 0 · ClipperOffset.Execute 0 · offsetRingByRects 0
+     51.85 s   92.2%  ClipperLib.Clipper.FixupFirstLefts2 clipper-lib/clipper.js:6226
+      2.78 s    4.9%  ClipperLib.Clipper.FixupFirstLefts1 clipper-lib/clipper.js:6211
+      0.51 s    0.9%  (garbage collector) :0
+      0.35 s    0.6%  ClipperLib.Clipper.DoSimplePolygons clipper-lib/clipper.js:6372
+      0.30 s    0.5%  ClipperLib.Clipper.ExecuteInternal clipper-lib/clipper.js:3597
+      0.13 s    0.2%  ClipperLib.Clipper.JoinCommonEdges clipper-lib/clipper.js:6272
+      0.08 s    0.1%  ClipperLib.Clipper.Poly2ContainsPoly1 clipper-lib/clipper.js:6197
+      0.07 s    0.1%  ClipperLib.Clipper.ProcessEdgesAtTopOfScanbeam clipper-lib/clipper.js:5400
+      0.06 s    0.1%  ClipperLib.Clipper.BuildIntersectList clipper-lib/clipper.js:5172
+      0.02 s    0.0%  ClipperLib.Clipper.UpdateOutPtIdxs clipper-lib/clipper.js:6362
+      0.01 s    0.0%  ClipperLib.Clipper.FixupOutPolygon clipper-lib/clipper.js:5667
+      0.01 s    0.0%  ClipperLib.Clipper.ProcessIntersections clipper-lib/clipper.js:5148
+== mat:treelawn:underived: 203.2 s sampled · Clipper.Execute intersection 0 · union 1 · difference 1 · xor 0 · ClipperOffset.Execute 0 · offsetRingByRects 0
+    100.44 s   49.4%  ClipperLib.Clipper.FixupFirstLefts1 clipper-lib/clipper.js:6211
+     64.63 s   31.8%  ClipperLib.Clipper.FixupFirstLefts2 clipper-lib/clipper.js:6226
+     32.88 s   16.2%  ClipperLib.Clipper.JoinCommonEdges clipper-lib/clipper.js:6272
+      2.24 s    1.1%  ClipperLib.Clipper.Poly2ContainsPoly1 clipper-lib/clipper.js:6197
+      0.68 s    0.3%  (garbage collector) :0
+      0.66 s    0.3%  ClipperLib.Clipper.ProcessEdgesAtTopOfScanbeam clipper-lib/clipper.js:5400
+      0.52 s    0.3%  ClipperLib.Clipper.BuildIntersectList clipper-lib/clipper.js:5172
+      0.33 s    0.2%  ClipperLib.ClipperBase.AddPath clipper-lib/clipper.js:2877
+      0.16 s    0.1%  ClipperLib.Clipper.ExecuteInternal clipper-lib/clipper.js:3597
+      0.12 s    0.1%  ClipperLib.Clipper.TopX clipper-lib/clipper.js:5314
+      0.11 s    0.1%  ClipperLib.ClipperBase.Reset clipper-lib/clipper.js:3162
+      0.08 s    0.0%  ClipperLib.Clipper.ProcessIntersections clipper-lib/clipper.js:5148
+
+== run2 (2026-10-14 02:27, Swale's treelawn:underived dump): 348.5 s wall; guard 0 · 0; treelawn:underived diff 198,968.4 ms · union 1,108.5 ms · dump 23.4 ms; same mine/acc counts as run1 (2,438 p / 59,134 v · 2,025 / 129,338). Dump: scratch/ground-budget/profile/dump-treelawn-underived.json (3.4 MB, clipScale 1000). Logs in run2/.

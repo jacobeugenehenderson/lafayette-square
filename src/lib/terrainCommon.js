@@ -62,7 +62,20 @@ export function terrainIdentity(t) {
   return h.toString(16).padStart(8, '0')
 }
 
+/**
+ * Refuse a heightfield that cannot be read: a size that is not a whole grid, fewer values than width × height, or a
+ * node that is not a number. ⛔ The sampler read each of these as 0 m through `|| 0`, which is ground at the datum —
+ * a plausible map, wrong. ▶ node checks/claims-a-missing-height-fails-loudly.mjs
+ */
+export function assertHeightfield(t, from = 'heightfield') {
+  const { width, height, data } = t || {}
+  if (!(Number.isInteger(width) && Number.isInteger(height) && width >= 2 && height >= 2)) throw new Error(`[terrain] ⛔ ${from}: ${width} × ${height} is not a grid`)
+  if (!data || data.length !== width * height) throw new Error(`[terrain] ⛔ ${from}: ${data?.length ?? 'no'} values for a ${width} × ${height} grid`)
+  for (let k = 0; k < data.length; k++) if (!Number.isFinite(data[k])) throw new Error(`[terrain] ⛔ ${from}: node ${k % width}, ${Math.floor(k / width)} holds ${data[k]}, not a height`)
+}
+
 export function makeElevationSampler(terrain, exag = DEFAULT_V_EXAG) {
+  assertHeightfield(terrain)
   const { width, height, bounds, data } = terrain
   const spanX = bounds.maxX - bounds.minX
   const spanZ = bounds.maxZ - bounds.minZ
@@ -76,10 +89,10 @@ export function makeElevationSampler(terrain, exag = DEFAULT_V_EXAG) {
     // cell value rather than extrapolating off the grid.
     const fx = Math.max(0, Math.min(1, gx - gx0))
     const fz = Math.max(0, Math.min(1, gz - gz0))
-    const e00 = data[gz0 * width + gx0] || 0
-    const e10 = data[gz0 * width + (gx0 + 1)] || 0
-    const e01 = data[(gz0 + 1) * width + gx0] || 0
-    const e11 = data[(gz0 + 1) * width + (gx0 + 1)] || 0
+    const e00 = data[gz0 * width + gx0]
+    const e10 = data[gz0 * width + (gx0 + 1)]
+    const e01 = data[(gz0 + 1) * width + gx0]
+    const e11 = data[(gz0 + 1) * width + (gx0 + 1)]
     const e0 = e00 * (1 - fx) + e10 * fx
     const e1 = e01 * (1 - fx) + e11 * fx
     return e0 * (1 - fz) + e1 * fz

@@ -1,0 +1,125 @@
+
+=== huron: 39,346,933 1 m cells in the disc · no lidar 6,921,354 (17.59%) (on land 0) · land cells 25,380,150 · no whole 5 m mean 55,627 · measured 32,369,952 · grid step 4.9993 m · refineTol 7.8 mm
+
+  ①-block — 2,287,927 cells (7.1%), 12.4% of Σ|r1|
+    d from line   cells       |r1| p50 / p90 / p99         |r2| p50 / p90 / p99        |r1| > tol
+    0–0.5 m         114,202      32 mm   117 mm   369 mm      14 mm    50 mm   158 mm    84.1%
+    0.5–1 m         105,144      34 mm   126 mm   398 mm      14 mm    54 mm   171 mm    84.2%
+    1–1.5 m          97,018      34 mm   136 mm   398 mm      14 mm    58 mm   171 mm    84.9%
+    1.5–2 m          86,252      37 mm   147 mm   398 mm      15 mm    58 mm   185 mm    85.4%
+    2–3 m           144,501      40 mm   158 mm   464 mm      15 mm    68 mm   200 mm    85.8%
+    3–4 m           116,978      40 mm   171 mm   464 mm      16 mm    74 mm   215 mm    85.1%
+    4–5 m           104,695      37 mm   158 mm   464 mm      16 mm    79 mm   215 mm    84.8%
+    5–6 m            79,438      40 mm   171 mm   398 mm      18 mm    79 mm   200 mm    85.3%
+    6–7.5 m         180,765      37 mm   171 mm   398 mm      18 mm    86 mm   200 mm    83.9%
+    7.5–10 m        181,163      40 mm   185 mm   369 mm      18 mm    86 mm   185 mm    84.2%
+    10–15 m         265,043      32 mm   147 mm   341 mm      14 mm    74 mm   185 mm    81.2%
+    15–20 m         185,287      23 mm   117 mm   341 mm      10 mm    58 mm   158 mm    76.8%
+    20–30 m         249,962      22 mm   100 mm   316 mm     8.6 mm    46 mm   147 mm    74.3%
+    30–45 m         179,987      18 mm   100 mm   293 mm     7.9 mm    43 mm   108 mm    70.9%
+    45–60 m          76,740      16 mm    93 mm   293 mm     7.4 mm    40 mm   108 mm    66.4%
+    60–90 m          68,493      12 mm    86 mm   316 mm     5.4 mm    37 mm   136 mm    57.6%
+    90–150 m         52,259      11 mm    93 mm   316 mm     5.0 mm    43 mm   136 mm    54.0%
+    ⇒ p90 |r1| within 2 m of the line 126 mm · at 30–150 m 93 mm (ratio 1.36)
+
+  ①-road — 1,202,582 cells (3.7%), 4.6% of Σ|r1|
+    d from line   cells       |r1| p50 / p90 / p99         |r2| p50 / p90 / p99        |r1| > tol
+    0–0.5 m         116,273      32 mm   108 mm   341 mm      14 mm    50 mm   147 mm    83.8%
+    0.5–1 m         116,863      29 mm   100 mm   316 mm      14 mm    46 mm   147 mm    83.4%
+    1–1.5 m         117,134      29 mm    93 mm   271 mm      15 mm    46 mm   136 mm    83.2%
+    1.5–2 m         117,266      29 mm    93 mm   251 mm      15 mm    43 mm   126 mm    83.4%
+    2–3 m           235,699      29 mm    86 mm   215 mm      15 mm    43 mm   117 mm    83.1%
+    3–4 m           199,063      25 mm    79 mm   185 mm      15 mm    40 mm   108 mm    82.0%
+    4–5 m           178,408      22 mm    68 mm   171 mm      15 mm    37 mm    93 mm    78.3%
+    5–6 m            99,291      18 mm    58 mm   171 mm      15 mm    37 mm    93 mm    75.8%
+    6–7.5 m          21,131      16 mm    37 mm   215 mm      12 mm    27 mm   158 mm    73.1%
+    7.5–10 m          1,433      13 mm    34 mm   147 mm     8.6 mm    25 mm   316 mm    66.9%
+    10–15 m              21     9.3 mm    23 mm    29 mm     7.4 mm    18 mm    22 mm    76.2%
+
+  LU — 21,198,611 cells (65.5%), 79.0% of Σ|r1|
+    d from line   cells       |r1| p50 / p90 / p99         |r2| p50 / p90 / p99        |r1| > tol
+    0–0.5 m         478,245      23 mm   136 mm   464 mm     9.3 mm    58 mm   200 mm    74.7%
+    0.5–1 m         458,343      22 mm   136 mm   464 mm     9.3 mm    58 mm   200 mm    74.4%
+    1–1.5 m         442,125      22 mm   136 mm   501 mm     9.3 mm    58 mm   200 mm    74.0%
+    1.5–2 m         423,661      22 mm   136 mm   464 mm     9.3 mm    58 mm   200 mm    73.4%
+    2–3 m           799,533      20 mm   136 mm   464 mm     9.3 mm    58 mm   200 mm    72.5%
+    3–4 m           742,930      18 mm   126 mm   464 mm     8.6 mm    54 mm   200 mm    71.1%
+    4–5 m           706,071      18 mm   117 mm   464 mm     8.6 mm    54 mm   185 mm    69.9%
+    5–6 m           586,894      17 mm   117 mm   430 mm     7.9 mm    54 mm   185 mm    68.8%
+    6–7.5 m       1,187,263      17 mm   108 mm   398 mm     7.9 mm    50 mm   171 mm    68.2%
+    7.5–10 m      1,375,809      16 mm   108 mm   398 mm     7.4 mm    46 mm   171 mm    66.8%
+    10–15 m       2,606,878      15 mm    93 mm   369 mm     6.8 mm    43 mm   158 mm    65.3%
+    15–20 m       1,942,586      15 mm    86 mm   341 mm     6.8 mm    40 mm   147 mm    64.7%
+    20–30 m       2,969,738      13 mm    79 mm   316 mm     5.8 mm    37 mm   136 mm    62.4%
+    30–45 m       2,506,963      13 mm    79 mm   316 mm     5.8 mm    37 mm   136 mm    61.5%
+    45–60 m       1,390,499      13 mm    79 mm   293 mm     5.4 mm    40 mm   126 mm    60.6%
+    60–90 m       1,457,377      11 mm    74 mm   271 mm     4.6 mm    40 mm   136 mm    57.8%
+    90–150 m      1,123,696      10 mm    63 mm   251 mm     4.6 mm    37 mm   117 mm    55.7%
+    ⇒ p90 |r1| within 2 m of the line 136 mm · at 30–150 m 74 mm (ratio 1.85)
+
+  coast-land — 153,686 cells (0.5%), 1.4% of Σ|r1|
+    d from line   cells       |r1| p50 / p90 / p99         |r2| p50 / p90 / p99        |r1| > tol
+    0–0.5 m           5,718     117 mm   398 mm   736 mm     147 mm   584 mm   1.47 m    82.4%
+    0.5–1 m           5,370     108 mm   398 mm   794 mm     126 mm   501 mm   1.36 m    82.8%
+    1–1.5 m           5,060     108 mm   430 mm   794 mm     108 mm   398 mm   1.08 m    82.8%
+    1.5–2 m           4,728     100 mm   430 mm   794 mm      93 mm   341 mm   926 mm    83.0%
+    2–3 m             8,475      93 mm   430 mm   794 mm      68 mm   251 mm   631 mm    83.2%
+    3–4 m             7,663      86 mm   430 mm   858 mm      50 mm   185 mm   398 mm    83.5%
+    4–5 m             6,950      86 mm   430 mm   794 mm      50 mm   171 mm   293 mm    82.5%
+    5–6 m             6,300      93 mm   430 mm   736 mm      50 mm   185 mm   316 mm    83.2%
+    6–7.5 m           9,639      74 mm   369 mm   631 mm      43 mm   158 mm   293 mm    82.3%
+    7.5–10 m         10,390      46 mm   293 mm   584 mm      25 mm   108 mm   215 mm    78.7%
+    10–15 m          15,412      40 mm   200 mm   501 mm      27 mm   100 mm   185 mm    83.9%
+    15–20 m          11,476      29 mm   171 mm   430 mm      15 mm    74 mm   200 mm    83.1%
+    20–30 m          14,784      23 mm   100 mm   271 mm     8.6 mm    43 mm   108 mm    77.6%
+    30–45 m          12,531      16 mm    58 mm   185 mm     4.6 mm    23 mm    79 mm    69.8%
+    45–60 m           6,929      18 mm    58 mm   271 mm     4.3 mm    16 mm    74 mm    73.4%
+    60–90 m          10,537      18 mm    63 mm   681 mm     4.0 mm    16 mm   233 mm    75.7%
+    90–150 m         11,724      18 mm    46 mm   100 mm     4.0 mm    11 mm    40 mm    75.6%
+    ⇒ p90 |r1| within 2 m of the line 430 mm · at 30–150 m 54 mm (ratio 7.94)
+
+  coast-water — 1,481,248 cells (4.6%), 1.0% of Σ|r1|
+    d from line   cells       |r1| p50 / p90 / p99         |r2| p50 / p90 / p99        |r1| > tol
+    0–0.5 m           5,832     117 mm   398 mm   736 mm     171 mm   681 mm   1.71 m    82.5%
+    0.5–1 m           5,826     108 mm   369 mm   736 mm     200 mm   736 mm   1.85 m    82.2%
+    1–1.5 m           5,816     108 mm   369 mm   736 mm     233 mm   794 mm   2.00 m    82.0%
+    1.5–2 m           5,828      93 mm   369 mm   681 mm     251 mm   858 mm   2.00 m    81.2%
+    2–3 m            11,710      68 mm   316 mm   584 mm     293 mm   858 mm   2.15 m    78.2%
+    3–4 m            11,704      43 mm   251 mm   464 mm     316 mm   794 mm   2.33 m    71.6%
+    4–5 m            11,660      22 mm   185 mm   430 mm     369 mm   736 mm   2.33 m    61.7%
+    5–6 m            11,331     8.6 mm   126 mm   398 mm     398 mm   681 mm   2.33 m    50.8%
+    6–7.5 m          21,222     0.9 mm    93 mm   316 mm     464 mm   631 mm   2.15 m    36.2%
+    7.5–10 m         29,133     0.0 mm    40 mm   369 mm     541 mm   631 mm   2.15 m    18.4%
+    10–15 m          56,802     0.0 mm   1.3 mm   271 mm     681 mm   794 mm   2.15 m     7.3%
+    15–20 m          54,220     0.0 mm   0.0 mm   200 mm     858 mm   926 mm   1.58 m     3.9%
+    20–30 m         104,113     0.0 mm   0.0 mm    93 mm     1.08 m   1.17 m   1.26 m     1.8%
+    30–45 m         152,374     0.0 mm   0.0 mm    17 mm     1.47 m   1.58 m   1.58 m     1.1%
+    45–60 m         144,981     0.0 mm   0.0 mm   8.6 mm     1.85 m   2.00 m   2.00 m     1.0%
+    60–90 m         285,910     0.0 mm   0.0 mm   0.0 mm     2.33 m   2.51 m   2.51 m     0.4%
+    90–150 m        562,786     0.0 mm   0.0 mm   0.0 mm     2.71 m   2.71 m   2.71 m     0.3%
+    ⇒ p90 |r1| within 2 m of the line 369 mm · at 30–150 m 0.0 mm (ratio Infinity)
+
+  ①-water — 7,911 cells (0.0%), 0.0% of Σ|r1|
+    d from line   cells       |r1| p50 / p90 / p99         |r2| p50 / p90 / p99        |r1| > tol
+    0–0.5 m              16      27 mm   147 mm   215 mm      12 mm   200 mm   271 mm    93.8%
+    0.5–1 m               6      22 mm    63 mm    63 mm      14 mm   293 mm   293 mm    83.3%
+    1–1.5 m              12      37 mm   158 mm   215 mm      17 mm   794 mm   926 mm    91.7%
+    1.5–2 m               4     3.4 mm    11 mm    11 mm      12 mm   341 mm   341 mm    25.0%
+    2–3 m                29      40 mm   251 mm   316 mm      34 mm   681 mm   926 mm    89.7%
+    3–4 m               390      27 mm    79 mm   341 mm      18 mm    50 mm   794 mm    79.0%
+    4–5 m               969      37 mm   100 mm   147 mm      15 mm    34 mm   316 mm    88.8%
+    5–6 m             1,372      23 mm    79 mm   171 mm      14 mm    32 mm   200 mm    78.2%
+    6–7.5 m           2,024      37 mm   100 mm   185 mm      12 mm    27 mm   501 mm    85.9%
+    7.5–10 m            621      46 mm   171 mm   316 mm      14 mm   541 mm   1.17 m    90.3%
+    10–15 m             377      93 mm   233 mm   316 mm     501 mm   681 mm   926 mm    72.9%
+    15–20 m             264     0.0 mm    22 mm    63 mm     631 mm   858 mm   926 mm    18.9%
+    20–30 m             476     0.0 mm   1.0 mm    50 mm     926 mm   1.08 m   1.17 m     8.8%
+    30–45 m             594     0.0 mm   0.0 mm   0.0 mm     1.26 m   1.47 m   1.58 m     0.0%
+    45–60 m             399     0.0 mm   0.0 mm    10 mm     1.71 m   1.85 m   2.00 m     1.0%
+    60–90 m             357     0.0 mm   0.0 mm   0.0 mm     2.15 m   2.33 m   2.51 m     0.3%
+    90–150 m              1     0.0 mm   0.0 mm   0.0 mm     2.51 m   2.51 m   2.51 m     0.0%
+    ⇒ p90 |r1| within 2 m of the line 147 mm · at 30–150 m 0.0 mm (ratio Infinity)
+
+  far — 6,037,987 cells (18.7%), 1.5% of Σ|r1|
+    d from line   cells       |r1| p50 / p90 / p99         |r2| p50 / p90 / p99        |r1| > tol
+    150–∞ m       6,037,987     0.0 mm   0.0 mm    63 mm     2.71 m   2.71 m   2.71 m     5.5%
