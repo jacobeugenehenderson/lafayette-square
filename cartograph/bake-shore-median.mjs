@@ -4,8 +4,8 @@
  *
  * ⭐⭐ RULED 2026-10-04 (Jacob, BRIEF-the-shore-is-closed): the shore median is the road median's construction —
  * TWO separate lines and the ground between them, whose width varies by itself because the lines drift apart:
- *   · the DRAWN SHORELINE — the drawn water's edge (`clean/map.json#layers.water`, whose edge is the slab's
- *     `__water__` ink, `shoreRuns.mjs`);
+ *   · the DRAWN SHORELINE — ①'s coast INK (RIBBONS §1: the coast is stroked into ① at ε; the water FACE,
+ *     `clean/map.json#layers.water`, runs down the ink's middle, and the slab's `__water__` runs are the ink's land edge);
  *   · the LIDAR'S WATERLINE — where the surveyed ground meets the water the survey was flown at (y = 0, the
  *     terrain's datum). ⛔ Not a tide level and not the town's LOW/HIGH: the water moves INSIDE the median.
  * Where the two lines touch the treatment is SAND, never nothing. This step builds the REGION only.
@@ -25,8 +25,10 @@
  *      finest level, and the water's edge (ABOVE_WATER_M: the datum's own 1 cm bucket) is traced by MARCHING SQUARES
  *      into closed polygons — a line with sub-pixel corners, not a staircase of pixels.
  *   3. THE MEDIAN — where the drawing and the lidar DISAGREE, inside the band, touching the drawn shoreline:
- *        'seaward'  = drawn water the lidar shows dry (the lidar ground runs on into the drawn water)
- *        'landward' = drawn land the lidar shows wet (the lidar water reaches in behind the drawn shore)
+ *        'seaward'  = drawn water the lidar shows dry (the lidar ground runs on into the drawn water), closed on the
+ *                     coast ink's water edge
+ *        'landward' = drawn land the lidar shows wet (the lidar water reaches in behind the drawn shore), closed on
+ *                     its land edge — so the ink and the median tile, and no line of the face lies inside the shore
  *      Disagreement that does not touch the shoreline (an inland puddle, a dry islet far out) is not this median.
  *   ⭐ The grid step is the source's own pixel in metres (measured at the town's centre), never a number chosen here.
  *
@@ -50,12 +52,12 @@ import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastVerdict, resample, shoreFingerprint } from './shoreRuns.mjs'
 import { elevationSpecs, openRasters, readWindow, rasterToGrid, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
+import { inkByOwner } from '../src/lib/tileGround.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, ClipType, PolyType, PolyFillType, PolyTree, JoinType, EndType } = clipperLib
 const toPath = (ring) => { const p = new Path(); for (const [x, z] of ring) p.push(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))); return p }
-// ⭐ written ON the lattice it was cut on (one grid, Jacob 2026-10-17): the median's edge along the drawn shoreline is
-// that shoreline's own lattice edge, so bake-ground's shore paints one line there, never a line and its 1 cm copy
+// written on the lattice it was cut on (one grid, Jacob 2026-10-17); never re-rounded to a coarser one
 const toRing = (path) => path.map(q => [q.X / SCALE, q.Y / SCALE])
 const run = (op, subj, clip, fill = PolyFillType.pftNonZero) => {
   const c = new Clipper(), out = new Paths()
@@ -186,7 +188,8 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const bnd = JSON.parse(readFileSync(bndPath, 'utf8'))
   const discC = bnd.center, discR = bnd.radius
   if (!Array.isArray(discC) || !(discR > 0)) throw new Error(`bake-shore-median: ${scene}'s neighborhood_boundary.json has no usable center/radius`)
-  const waterRings = (JSON.parse(readFileSync(mapPath, 'utf8')).layers?.water || [])
+  const mapDoc = JSON.parse(readFileSync(mapPath, 'utf8'))
+  const waterRings = (mapDoc.layers?.water || [])
     .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]))
   if (!waterRings.length) throw new Error(`bake-shore-median: ${scene} — ${runs.length} shoreline run(s) but clean/map.json draws no water. Re-pour.`)
   const inWater = drawnWaterTest(waterRings)
@@ -275,6 +278,17 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   }
   const band = run(ClipType.ctUnion, bandParts, null)
   const drawn = run(ClipType.ctUnion, waterRings.map(toPath), null)
+  // ⭐ THE MEDIAN CLOSES AGAINST ①'s COAST INK, never against the water face (RIBBONS §1: the coast is stroked into ① at ε
+  // and yields two objects, the water FACE and the INK; the land closes against ①'s own edge). The water face runs down
+  // the ink's middle, so a median cut from it overlapped the ink's water half and left the face's line ε inside the
+  // shore (Huron's two cross-group T-junctions, 2026-10-16). The ink is ①'s own (`protopolygon`: rings, labels, owners,
+  // eps), split by owner exactly as the producer paints it (`inkByOwner`): seaward then closes on its water edge,
+  // landward on its land edge.
+  const P = mapDoc.layers?.ribbons?.protopolygon
+  if (!P?.rings?.length || !P?.owners?.length || !(P.eps > 0)) throw new Error(`bake-shore-median: ${scene}'s clean/map.json carries no ① (protopolygon rings, owners, eps) — the median closes against ①'s coast ink. Re-pour.`)
+  const shoreInk = inkByOwner(P, P.owners, P.eps).shoreInk
+  if (!shoreInk.length) throw new Error(`bake-shore-median: ${scene} — ${runs.length} shoreline run(s) but ① has no coast ink (no edge owned by the water). The median has nothing to close against.`)
+  const ink = run(ClipType.ctUnion, shoreInk.map(toPath), null)
 
   // ── THE LIDAR'S WATER, traced on a 1 m grid in tiles over the band ─────────────────────────────────────────────
   let bx0 = Infinity, bx1 = -Infinity, bz0 = Infinity, bz1 = -Infinity
@@ -326,8 +340,8 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
     }
     return keep
   }
-  const seaward = touching(inBand(run(ClipType.ctDifference, drawn, wet)))
-  const landward = touching(inBand(run(ClipType.ctDifference, wet, drawn)))
+  const seaward = touching(inBand(run(ClipType.ctDifference, run(ClipType.ctDifference, drawn, wet), ink)))
+  const landward = touching(inBand(run(ClipType.ctDifference, run(ClipType.ctDifference, wet, drawn), ink)))
   const seaM2 = areaOf(run(ClipType.ctUnion, seaward, null, PolyFillType.pftEvenOdd)), landM2 = areaOf(run(ClipType.ctUnion, landward, null, PolyFillType.pftEvenOdd))
 
   // ── The artifact ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -337,7 +351,7 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const regions = { seaward: toItems(seaward, minM2), landward: toItems(landward, minM2) }
   const out = {
     version: 2, scene, look: lookId,
-    shoreFrom: 'drawn-water (clean/map.json#layers.water; its edge is the slab\'s __water__ ink)',
+    shoreFrom: 'drawn-water (clean/map.json#layers.water), closed against ①\'s coast ink (protopolygon, inkByOwner): seaward on its water edge, landward on its land edge',
     waterlineFrom: `the lidar at y = 0 (the terrain datum, ${tm.datum}; baseElev ${baseElev} m), traced by marching squares at ${+step.toFixed(3)} m: above = more than ABOVE_WATER_M (${ABOVE_WATER_M} m)`,
     shoreFingerprint: shoreFingerprint(shape),
     stationM: +stationM.toFixed(3), gridM: +gridM.toFixed(3), aboveWaterM: ABOVE_WATER_M,

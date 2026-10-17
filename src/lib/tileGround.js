@@ -2530,6 +2530,30 @@ const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
 // `iaFull`): the stamp's crossings were computed on rounded keys beside a float contour, and the cut dropped some of them
 // from contours 600–3,400 m inside the circle (02da626e). ⛔ A ring whose rounding makes two neighbours one point has an
 // edge shorter than the lattice; it is REFUSED by name, never merged (the stamp arrays are aligned to its vertices).
+// ① SPLIT BY ITS OWNERS: each piece of the ink takes the class of the edges it lies within one stroke width (2ε) of —
+// the coast's is the land's shore, a grade-separated highway's is left to the highway, the rest is road. ONE function,
+// read by the producer (which paints it) and by bake-shore-median (whose median closes against the coast's piece, never
+// against the water face down its middle). `ink` = ①'s { rings, labels }, `owners` its owner table, `hw` = ε.
+export function inkByOwner(ink, owners, hw, hwySkel = new Set()) {
+  const W2 = 2 * hw, quads = { water: [], highway: [] }
+  let unlabelled = 0
+  ink.rings.forEach((ring, ri) => { const L = ink.labels?.[ri] || []
+    for (let k = 0; k < ring.length; k++) {
+      const o = owners?.[L[k]]
+      if (!o) { unlabelled++; continue }
+      const cls = o.water ? 'water' : hwySkel.has(o.skelId) ? 'highway' : null
+      if (!cls) continue
+      const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
+      if (!(len > 0)) continue
+      const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
+      quads[cls].push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
+    } })
+  const all = unionRings(ink.rings)
+  const shoreInk = quads.water.length ? intersectRings(all, unionRings(quads.water)) : []
+  const hwyInk = quads.highway.length ? differenceRings(intersectRings(all, unionRings(quads.highway)), shoreInk) : []
+  const roadInk = differenceRings(all, [...shoreInk, ...hwyInk])
+  return { shoreInk, hwyInk, roadInk, unlabelled }
+}
 function onLattice(ring, what) {
   const out = ring.map(p => [Math.round(p[0] * SCALE) / SCALE, Math.round(p[1] * SCALE) / SCALE])
   for (let i = 0; i < out.length; i++) { const a = out[i], b = out[(i + 1) % out.length]
@@ -10311,23 +10335,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // and where a slipway T's into the coast the 2ε square at the joint goes to the coast: water, then highway, then road.
     if (!protoInk?.rings?.length) throw new Error('[tileGround][①⇢LIVE] ① is the producer but carries no ink rings — refusing to paint the bands without the piece they close against.')
     {
-      const W2 = 2 * PROTO_HW, quads = { water: [], highway: [] }
-      let unlabelled = 0
-      protoInk.rings.forEach((ring, ri) => { const L = protoInk.labels?.[ri] || []
-        for (let k = 0; k < ring.length; k++) {
-          const o = protoOwners?.[L[k]]
-          if (!o) { unlabelled++; continue }
-          const cls = o.water ? 'water' : hwySkel.has(o.skelId) ? 'highway' : null
-          if (!cls) continue
-          const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
-          if (!(len > 0)) continue
-          const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
-          quads[cls].push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
-        } })
-      const ink = unionRings(protoInk.rings)
-      const shoreInk = quads.water.length ? intersectRings(ink, unionRings(quads.water)) : []
-      const hwyInk = quads.highway.length ? differenceRings(intersectRings(ink, unionRings(quads.highway)), shoreInk) : []
-      const roadInk = differenceRings(ink, [...shoreInk, ...hwyInk])
+      const { shoreInk, hwyInk, roadInk, unlabelled } = inkByOwner(protoInk, protoOwners, PROTO_HW, hwySkel)
       const inStencil = (r) => (stencil && stencil.length >= 3) ? intersectRings(r, [stencil]) : r
       asphalt = unionRings([...asphalt, ...inStencil(roadInk)])
       inkShore = inStencil(shoreInk)

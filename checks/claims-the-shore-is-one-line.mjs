@@ -1,83 +1,104 @@
-// claims-the-shore-is-one-line.mjs — THE LAND'S EDGE ALONG THE WATER IS THE WATER'S EDGE: ONE LINE, NOT A LINE AND ITS COPY.
+// claims-the-shore-is-one-line.mjs — THE SHORE MEDIAN CLOSES AGAINST ①'s COAST INK: the two tile, and no line lies inside.
 //
-// ⭐ ONE GRID (Jacob, 2026-10-17): the kit cuts on lattice.js's grid everywhere. A shoreline drawn twice — the water ring
-// and, a few millimetres off it, the land's block edge — is two lines the ground then has to weld, and it does not: Huron's
-// ground refuses at a shore vertex on a face edge 4.5 mm away (2 T-junctions, mat:shore → face:underived). The copy is
-// born in the POUR (`clean/map.json#layers.ribbons.protopolygon`: `waterRings` against `blocks`) and the shore median
-// copies it (`shore-median.json`, which bake-ground paints as sand), so this reads both, where they are written.
+// ⭐ RIBBONS §1 (ruled 2026-09-20): the coast is stroked into ① at ε, a chain like any street, and yields TWO objects — the
+// water FACE and the INK; the land closes against ①'s own edge. bake-ground paints the coast's ink AND the shore median
+// into one `shore` group. So the median must close against the ink: seaward on its water edge, landward on its land
+// edge. ⛔ Cut from the water face instead, it overlapped the ink's water half and left the face's line ε inside the
+// shore — Huron's ground refused at a shore vertex on that line (2 cross-group T-junctions, 2026-10-16).
 //
-// A TWIN is a vertex of a water ring (or a vertex of the median ON a water ring: its copy of the shoreline, never its own
-// traced waterline) that lies OFF every block edge, by more than one lattice step,
-// but closer than the town's lidar can tell two lines apart (the median's own `stationM`, the source's pixel). ON a block
-// edge (≤ one step) is one line; farther than a pixel is a different line. Each twin is printed with its site and distance.
-// Reads: lattice.js (LATTICE_M), each town's clean/map.json and its shore-median.json — never a copy of either.
+// Two claims, per town with a coast ink and a median:
+//   ① no median AREA lies in the ink (beyond one lattice step × the overlap's perimeter, lattice.js);
+//   ② no median VERTEX lies inside the ink farther than one lattice step from its edges — a line inside the shore.
+// Each failure is printed with its site. Reads: lattice.js, each town's clean/map.json (① — rings, labels, owners, eps,
+// split by `inkByOwner`, the producer's own function) and its shore-median.json — never a copy of either.
 //
-//   node checks/claims-the-shore-is-one-line.mjs [--scene=<id> …] [--median-dir=<dir>] [--root=<checkout>]   (<dir>/<scene>/shore-median.json)
-// It first judges three drawn cases (the shore ON the land's edge, 2 mm beside it, a pixel and more away) and stops RED if
-// it misjudges any: no town can be GREEN until the pour draws the shore once, so the cases are its only proof it can be.
+//   node checks/claims-the-shore-is-one-line.mjs [--scene=<id> …] [--median-dir=<dir>] [--root=<checkout>]
+//   (<dir>/<scene>/shore-median.json; --root: the checkout holding the towns' data, which is not in git)
+// It first judges three drawn cases (a median ON the ink's edge, one reaching 2 mm into it, one 1.5 m clear) and stops
+// RED if it misjudges any.
 //
-// ⭐ MUTATION TEST — each must turn this RED: `d > LATTICE_M` → `d > 1` (the 2 mm case passes) · `d < med.stationM` → `d < 0`
-// (likewise) · `d > LATTICE_M` → `d >= 0` (the shore ON its edge fails).
+// ⭐ MUTATION TEST, run 2026-10-17 — each turns this RED: the vertex test's `d > LATTICE_M` → `d > 1` with
+// MUTATE_AREA_TOL=1e6 · the vertex test removed (the area test alone passes the 2 mm case: the vertices carry the claim)
+// · a boundary point counted inside with no lattice step (the case ON the edge fails) · every town read as inland
+// (nothing checked) · a median cut from the water face (RED on Huron and PTown).
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { LATTICE_M } from '../src/lib/lattice.js'
+import clipperLib from 'clipper-lib'
+import { LATTICE_M, CLIP_SCALE } from '../src/lib/lattice.js'
+import { inkByOwner } from '../src/lib/tileGround.js'
+import { coastVerdict } from '../cartograph/shoreRuns.mjs'
 
 const args = process.argv.slice(2)
-// --root=<checkout>: the towns' data lives in the checkout that poured them (it is not in git), e.g. from a worktree
 const ROOT = (args.find(a => a.startsWith('--root=')) || '').slice(7) || join(dirname(fileURLToPath(import.meta.url)), '..')
 const medDir = (args.find(a => a.startsWith('--median-dir=')) || '').slice(13) || null
 let scenes = args.filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
 if (!scenes.length) scenes = readdirSync(join(ROOT, 'cartograph', 'data')).filter(s => existsSync(join(ROOT, 'cartograph', 'data', s, 'clean', 'map.json')))
+const AREA_TOL = Number(process.env.MUTATE_AREA_TOL || 1)   // mutation test only
 
+const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
+const P = (r) => r.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) }))
+const R = (p) => p.map(q => [q.X / CLIP_SCALE, q.Y / CLIP_SCALE])
+const clip = (op, a, b) => { const c = new Clipper(), out = []; c.AddPaths(a.map(P), PolyType.ptSubject, true); c.AddPaths(b.map(P), PolyType.ptClip, true)
+  c.Execute(op, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return out.map(R) }
+const area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+const perim = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
 const segD = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz
   const t = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L)) : 0
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
-function edgeIndex(rings, C) {
-  const g = new Map(), key = (i, j) => i * 1000003 + j
-  for (const r of rings) for (let k = 0; k < r.length; k++) { const a = r[k], b = r[(k + 1) % r.length]
-    for (let i = Math.floor(Math.min(a[0], b[0]) / C); i <= Math.floor(Math.max(a[0], b[0]) / C); i++)
-      for (let j = Math.floor(Math.min(a[1], b[1]) / C); j <= Math.floor(Math.max(a[1], b[1]) / C); j++) { const q = key(i, j); (g.get(q) || g.set(q, []).get(q)).push([a, b]) } }
-  return (p) => { let d = Infinity; const i0 = Math.floor(p[0] / C), j0 = Math.floor(p[1] / C)
-    for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (const [a, b] of g.get(key(i, j)) || []) d = Math.min(d, segD(p, a, b))
-    return d }
+const bbOf = (r) => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const [x, z] of r) a = [Math.min(a[0], x), Math.min(a[1], z), Math.max(a[2], x), Math.max(a[3], z)]; return a }
+
+// judge(median rings, ink rings) → { overM2, tolM2, inside: [{ v, d }] }
+function judge(med, ink) {
+  const over = clip(ClipType.ctIntersection, med, ink).filter(r => r.length >= 3)
+  const overM2 = Math.abs(over.reduce((t, r) => t + area(r), 0)), tolM2 = AREA_TOL * LATTICE_M * over.reduce((t, r) => t + perim(r), 0)
+  // inside the ink: non-zero winding over its rings (Clipper's own point test; -1 = on a boundary, never inside)
+  const inkP = ink.map(P), bb = ink.map(bbOf)
+  const inside = (v) => { let w = 0; const q = { X: Math.round(v[0] * CLIP_SCALE), Y: Math.round(v[1] * CLIP_SCALE) }
+    for (let k = 0; k < inkP.length; k++) { const b = bb[k]; if (v[0] < b[0] || v[0] > b[2] || v[1] < b[1] || v[1] > b[3]) continue
+      const s = Clipper.PointInPolygon(q, inkP[k]); if (s === -1) return false; if (s) w += Clipper.Orientation(inkP[k]) ? 1 : -1 } return w !== 0 }
+  const out = []
+  for (const r of med) for (const v of r) {
+    if (!inside(v)) continue
+    let d = Infinity; ink.forEach((ir, k) => { const b = bb[k]; if (v[0] < b[0] - 1 || v[0] > b[2] + 1 || v[1] < b[1] - 1 || v[1] > b[3] + 1) return
+      for (let i = 0; i < ir.length; i++) d = Math.min(d, segD(v, ir[i], ir[(i + 1) % ir.length])) })
+    if (d > LATTICE_M) out.push({ v, d })
+  }
+  return { overM2, tolM2, inside: out }
 }
 
-const twinsOf = (rings, dist, med, onShore = () => true) => { const out = []
-  for (const r of rings) for (const v of r) { if (!onShore(v)) continue; const d = dist(v); if (d > LATTICE_M && d < med.stationM) out.push({ v, d }) }
-  return out }
 let failed = 0, towns = 0
-{ // the three drawn cases: a block [0,10]², the water's edge along x = 10 at three offsets, a 1 m pixel
-  const block = [[0, 0], [10, 0], [10, 10], [0, 10]], dist = edgeIndex([block], 1), med = { stationM: 1 }
-  const at = (o) => [[10 + o, 0], [20, 0], [20, 10], [10 + o, 10], [10 + o, 5]]
-  for (const [o, want, what] of [[0, 0, 'the shore ON the land\'s edge'], [0.002, 3, 'the shore 2 mm beside it (its three vertices on x = 10.002)'], [1.5, 0, 'a line 1.5 m away']]) {
-    const n = twinsOf([at(o)], dist, med).length
-    if (n !== want) { console.log(`⛔ the check misjudges ${what}: ${n} twin vertices, expected ${want}`); failed++ } }
+{ // the three drawn cases: an ink band x ∈ [10, 10.01], a median on its water side starting at three places
+  const ink = [[[10, 0], [10.01, 0], [10.01, 10], [10, 10]]], med = (x) => [[[x, 0], [20, 0], [20, 10], [x, 10], [x, 5]]]
+  for (const [x, bad, what] of [[10.01, false, 'a median ON the ink\'s water edge'], [10.008, true, 'a median reaching 2 mm into the ink'], [11.51, false, 'a median 1.5 m clear of it']]) {
+    const j = judge(med(x), ink), red = j.overM2 > j.tolM2 || j.inside.length > 0
+    if (red !== bad) { console.log(`⛔ the check misjudges ${what}: ${red ? 'RED' : 'GREEN'} (overlap ${j.overM2.toFixed(6)} m², tolerance ${j.tolM2.toFixed(6)}, ${j.inside.length} vertices inside)`); failed++ } }
   if (failed) { console.log('\n⛔ RED — the check itself is wrong'); process.exit(1) }
 }
 for (const scene of scenes) {
   const map = JSON.parse(readFileSync(join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json'), 'utf8'))
-  const P = map.layers?.ribbons?.protopolygon
-  const water = (P?.waterRings || []).map(r => r.map(p => [p[0], p[1]]))
-  if (!water.length) continue
+  const Pp = map.layers?.ribbons?.protopolygon
+  if (!Pp?.rings?.length || !Pp?.owners?.length || !(Pp.eps > 0)) continue
+  const ink = inkByOwner(Pp, Pp.owners, Pp.eps).shoreInk
+  if (!ink.length) continue                                     // no coast in ① — no shore to judge
+  // whether a median is OWED is the kit's own verdict (shoreRuns.mjs#coastVerdict, as bake-shore-median reads it): an
+  // inland town (its terrain's datum is not the water and no __water__ run reaches its drawing) has none, by design
+  const tmP = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json'), shP = join(ROOT, 'public', 'baked', scene, 'shape.json')
+  if (!existsSync(tmP) || !existsSync(shP)) { console.log(`⛔ ${scene}: ① has a coast ink but ${existsSync(tmP) ? shP : tmP} is missing — whether a median is owed cannot be judged`); failed++; continue }
+  const cv = coastVerdict(JSON.parse(readFileSync(tmP, 'utf8')), JSON.parse(readFileSync(shP, 'utf8')))
+  if (cv.agree === 'inland') { console.log(`·  ${scene}: inland (coastVerdict) — no median is owed, nothing to judge`); continue }
+  if (cv.agree !== 'build') { console.log(`⛔ ${scene}: coastVerdict says ${cv.agree} — the median cannot be built, so the shore cannot be judged`); failed++; continue }
   const medPath = medDir ? join(medDir, scene, 'shore-median.json') : join(ROOT, 'public', 'baked', scene, 'shore-median.json')
-  const med = existsSync(medPath) ? JSON.parse(readFileSync(medPath, 'utf8')) : null
-  if (!med) { console.log(`⛔ ${scene}: draws water but has no shore median at ${medPath}: the source's pixel, which bounds a twin, is not on disk, so its water is NOT JUDGED`); failed++; continue }
-  if (!(med.stationM > 0)) { console.log(`⛔ ${scene}: ${medPath} names no stationM (the source's pixel)`); failed++; continue }
+  if (!existsSync(medPath)) { console.log(`⛔ ${scene}: ① has a coast ink but there is no shore median at ${medPath}`); failed++; continue }
+  const med = JSON.parse(readFileSync(medPath, 'utf8'))
+  const rings = ['seaward', 'landward'].flatMap(k => (med.regions?.[k] || []).flatMap(it => [it.outer, ...(it.holes || [])]))
   towns++
-  const blocks = (P.blocks || []).filter(r => Array.isArray(r) && r.length >= 3)
-  const dist = edgeIndex(blocks, Math.max(med.stationM, 1))
-  const toWater = edgeIndex(water, Math.max(med.stationM, 1)), onWater = (v) => toWater(v) <= LATTICE_M
-  const medRings = ['seaward', 'landward'].flatMap(k => (med.regions?.[k] || []).flatMap(it => [it.outer, ...(it.holes || [])]))
-  for (const [name, rings, on] of [['map.json protopolygon.waterRings', water, undefined], [`${medPath.replace(ROOT + '/', '')} (its vertices on a water ring)`, medRings, onWater]]) {
-    const t = twinsOf(rings, dist, med, on), n = on ? rings.reduce((u, r) => u + r.filter(on).length, 0) : rings.reduce((u, r) => u + r.length, 0)
-    if (t.length) { failed++
-      const h = {}; for (const { d } of t) { const b = d < 0.01 ? '≤1 cm' : d < 0.1 ? '≤10 cm' : `< ${med.stationM} m`; h[b] = (h[b] || 0) + 1 }
-      console.log(`⛔ ${scene} · ${name}: ${t.length} of ${n} vertices lie a few mm–${med.stationM} m OFF the land's edge — a second line beside it (${JSON.stringify(h)})`)
-      for (const { v, d } of t.sort((a, b) => a.d - b.d).slice(0, 4)) console.log(`     (${v[0]}, ${v[1]}) ${(d * 1000).toFixed(3)} mm off the nearest block edge`)
-    } else console.log(`✅ ${scene} · ${name}: ${n} vertices, none beside the land's edge (on it ≤ ${LATTICE_M} m, or farther than ${med.stationM} m)`)
-  }
+  const j = judge(rings, ink), name = medPath.replace(ROOT + '/', '')
+  if (j.overM2 > j.tolM2 || j.inside.length) { failed++
+    console.log(`⛔ ${scene} · ${name}: ${j.overM2.toFixed(3)} m² of median lies in ①'s coast ink (tolerance ${j.tolM2.toFixed(3)} m²) · ${j.inside.length} median vertices inside the ink, off its edges — a line inside the shore`)
+    for (const { v, d } of j.inside.sort((a, b) => b.d - a.d).slice(0, 4)) console.log(`     (${v[0]}, ${v[1]}) ${(d * 1000).toFixed(3)} mm inside the ink`)
+  } else console.log(`✅ ${scene} · ${name}: the median and the coast ink tile — ${j.overM2.toFixed(4)} m² overlap (tolerance ${j.tolM2.toFixed(4)}), no median vertex inside the ink`)
 }
-if (!towns) { console.log('⛔ no town with drawn water was read — nothing was checked'); failed++ }
-console.log(`\n${failed ? '⛔ RED — a shoreline is drawn twice' : '✅ GREEN — every shoreline is one line'}`)
+if (!towns) { console.log('⛔ no town with a coast ink and a median was read — nothing was checked'); failed++ }
+console.log(`\n${failed ? '⛔ RED — the shore median does not close against the coast ink' : '✅ GREEN — every shore median closes against its coast ink'}`)
 process.exit(failed ? 1 : 0)
