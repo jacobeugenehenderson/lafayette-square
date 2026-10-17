@@ -111,7 +111,7 @@ Each leg's strips stroke at *its own* depth, the divider varying inside the mono
 
 **What freezes (the SHAPE):** `ring` · `iA` · `vertR` · `fillets` · `runs[]` identity · and — since
 the 2026-09-07 flip — the **STAMP**: `iaStamp` (per contour point, the run that owns it), `iaFull`
-(the uncut contour it indexes), `iaCorner` (**①'s** corners, carried onto ②'s contour).
+(the uncut contour it indexes), `iaCorner` (**①'s** corners, carried onto ②'s contour), `iaCap` (its dead-end cap).
 **What stays live:** every ped depth, the divider, the materials, the bent corner. ✅ **`bands` is
 gone from the tile; the FILL is frozen nowhere.** Survey and Section agree to 0 m² because they run
 the **same painter**, which is what "the same thing" was always supposed to mean.

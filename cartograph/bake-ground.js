@@ -1164,10 +1164,19 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       }
       const h = (run.poly || []).map(p => LH.heightAt(run.skelId, p))
       if (h.length && h.every(v => v != null)) { run.h = h.map(v => Math.round(v * 1000) / 1000); stamped++; continue }
-      run.h = null
-      why[run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown']++
+      // the reason travels with the run: the deformer gives a highway or bridge run the terrain under it (its rule for that
+      // class), and refuses the rest
+      run.h = null; run.noLine = run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown'
+      why[run.noLine]++
     }
-    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
+    // ⭐ A DEAD-END CAP'S LINE IS ITS OWN CHAIN'S (the cap is an end coupler): each cap vertex (`iaCap`) gets the chain's line
+    // height there, `iaCapH`, parallel to `iaFull`; a cap whose chain has no line carries the reason, as a run does
+    let capV = 0
+    for (const t of shapeArtifact) { if (!t?.caps?.length) continue
+      for (const c of t.caps) if (LH.heightAt(c.skelId, t.ring[0]) == null) c.noLine = c.skelId === '__highway__' ? 'highway' : bridgeIds.has(c.skelId) ? 'bridge' : 'unknown'
+      t.iaCapH = (t.iaFull || []).map((ring, ri) => ring.map((p, i) => { const c = t.iaCap?.[ri]?.[i]; if (c == null) return null
+        const h = LH.heightAt(t.caps[c].skelId, p); capV++; return h == null ? null : Math.round(h * 1000) / 1000 })) }
+    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown · ${capV} dead-end cap vertices read their chain's line`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
   }
 
@@ -1444,7 +1453,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
     // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
     const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ tiles: shapeArtifact,
+    deform = buildDeformer({ town: scene, tiles: shapeArtifact,
       bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
       stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,
@@ -1470,7 +1479,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       const inside = run(clipperLib.ClipType.ctIntersection), outside = run(clipperLib.ClipType.ctDifference)
       if (inside.length) { flattened.set(k, [...outside, ...inside]); split++ }
     }
-    console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.noH} ② ring(s) with no line, ${deform.stats.hFilled} ② vertex(es) whose run has none (taking their neighbours') · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
+    console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
   }
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
   // the drawn terrain part at (x, z): the deformer where it reaches, else the terrain itself

@@ -143,6 +143,7 @@ Each group describes a contiguous slice of `ground.bin`:
 | `polygonOffsetUnits` | Three.js `polygonOffsetUnits`. **Retained for back-compat / the mobile linear-depth path, but INERT under the log-depth canvases** (gl_FragDepth bypasses `GL_POLYGON_OFFSET_FILL`) — the consumer (`BakedGround.jsx`) no longer applies it. The per-group baked Y (see `renderOrder`) is the resolver. |
 | `vertexCount`, `vertexByteOffset` | Position buffer slice |
 | `indexCount`, `indexByteOffset` | Index buffer slice |
+| `rawByteOffset`, `gradByteOffset` | Deformed slabs (`groundDeformer.mjs`): per vertex, float32 terrain part (raw m; drawn `× uExag` + y) and float32×4 `(∂aRaw/∂x, ∂aRaw/∂z, ∂y/∂x, ∂y/∂z)`. Absent ⇒ the 5 m texture. ▶ `checks/claims-the-ground-meets-its-terrain.mjs` |
 | `fieldByteOffset`, `fieldEdgeByteOffset`, `fields` | **Only on a group whose surface is `perField`** (the crop, `cartograph/surfaces.mjs`): a float32 field index per vertex (third section, §2.3), a float32 distance (m) from each vertex to its field's own boundary (fourth section — the headland), and one `{ bearing, cx, cz, halfLen, halfWid, areaM2 }` per field — the rows' bearing (rad, world XZ, along the field's long axis) and its minimum-area rectangle. A field is one face interior of that class. ▶ `node checks/claims-crop-rows-derived-per-field.mjs` |
 
 ### 2.3. Binary layout (`ground.bin`)
@@ -158,17 +159,14 @@ A single buffer. The manifest's `vertexByteOffset` + `indexByteOffset` per group
 | … all indices for all groups …
 | float32 field ids for each perField group (fieldByteOffset) |
 | float32 field-edge distances for each perField group (fieldEdgeByteOffset) |
+| float32 aRaw, then float32×4 aGrad, per deformed group (rawByteOffset, gradByteOffset) |
 ```
 
 Vertices are XYZ triples in world-meters. Indices are absolute into the same buffer's position array (not group-relative). Every `*ByteOffset` is absolute into the file. A perField group's vertices are duplicated where two fields meet, so each vertex belongs to exactly one field.
 
 ### 2.4. Group kinds in production
 
-LS slab today (44 groups): 10 `face` (land-use) + 34 `mat` (layered overlays).
-
-`face` IDs observed: `residential`, `commercial`, `vacant`, `vacant-commercial`, `parking`, `institutional`, `recreation`, `industrial`, `park`, `water`.
-
-`mat` IDs observed: `street`, `highway`, `stripe`, `edgeline`, `bikelane`, `lot`, `curb`, `sidewalk`, `treelawn`, `building`, `parking_lot`, `garden`, `playground`, `swimming_pool`, `pitch`, `sports_centre`, `wood`, `scrub`, `tree_row`, `alley`, `footway`, `cycleway`, `steps`, `path`, `tree`, `lamp`, `fence`, `wall`, `retaining_wall`, `hedge`, `labels`. (Set depends on what the look enables in `layerVis`.)
+Read them off the slab: `node -e "console.log(require('./public/baked/<look>/ground.json').groups.map(g=>g.kind+':'+g.id).join(' '))"` (the old LS list: `_archive/SLAB-CONTRACT-group-kinds-2026-10-17.md`).
 
 ---
 

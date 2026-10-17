@@ -28,14 +28,15 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
 /** @param tiles shape.json tiles (runs carry `h`) · @param bands { curb, lawn, walk }: arrays of {outer, holes}|ring, AS
  *  PAINTED (before the flatten punches overlays through them) · @param stencil the town's disc ring (beyond it nothing is
  *  drawn: the rim is an edge of the drawing, never a lot) · @param raw (x, z) → terrain raw
- *  @param limits { walkMax, lawnMax (null = none), exag, blend } */
-export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
+ *  @param limits { walkMax, lawnMax (null = none), exag, blend } · @param town the scene, named in every refusal */
+export function buildDeformer({ town, tiles, bands, stencil = null, raw, limits }) {
+  if (!town) throw new Error('groundDeformer: the caller names no town — a refusal could not say where')
   const { walkMax, lawnMax, exag, blend, sigma } = limits
   if (!(sigma > 0)) throw new Error(`groundDeformer: the smoothing window must be metres > 0, got ${sigma}`)
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, noH: 0, hFilled: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0 }
+  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -116,26 +117,45 @@ export function buildDeformer({ tiles, bands, stencil = null, raw, limits }) {
       if (!(ring?.length >= 3)) return
       const n = ring.length, H = new Array(n).fill(null), arc = t.iaArc?.[ri] || []
       const stamp = t.iaStamp?.[ri] || []
-      for (let i = 0; i < n; i++) if (arc[i] == null && stamp[i] != null) { const h = hOfRun(stamp[i], ring[i]); if (h != null) H[i] = h }
-      // a corner arc: blend H by arclength between the straight vertex before it and the one after it
+      // ⭐ A RUN WITH NO AT-GRADE LINE (a `__highway__` edge, or a grade-separated chain's run: bake-ground's `run.noLine`) TAKES
+      // THE TERRAIN UNDER IT, raw(x, z) at its own vertex (Jacob, 2026-10-17). That is the rule for the class, not a stand-in:
+      // the highway and the bridge are not on the ground, and the block edge beside them is the ground there.
+      const onTerrain = (run) => run && !Array.isArray(run.h) && (run.noLine === 'highway' || run.noLine === 'bridge')
+      // ⭐ A DEAD-END CAP (`iaCap`, never a run: the cap is an end coupler of its own chain) takes its chain's line h at the
+      // vertex (`iaCapH`, bake-ground), or the terrain where that chain is a highway or a bridge
+      const cap = t.iaCap?.[ri] || [], capH = t.iaCapH?.[ri] || []
+      const capLineH = (k) => { const c = t.caps?.[cap[k]]; if (!c) return null
+        if (capH[k] != null) return capH[k]
+        if (onTerrain(c)) { stats.onTerrain++; return raw(ring[k][0], ring[k][1]) }
+        return null }
+      // the height a ② vertex takes from its own run — the line's h, or the terrain under a run with no line — else null
+      const lineH = (k) => { if (stamp[k] == null) return cap[k] != null ? capLineH(k) : null; const run = runs[stamp[k]]
+        if (onTerrain(run)) { stats.onTerrain++; return raw(ring[k][0], ring[k][1]) }
+        return hOfRun(stamp[k], ring[k]) }
+      for (let i = 0; i < n; i++) if (arc[i] == null) H[i] = lineH(i)
+      const arcEnd = new Map()   // an arc whose end has no height: the end vertex, so the refusal names the vertex that lacks it
+      // a corner arc: blend H by arclength between the LINE's h at its two ends — the straight vertex before it and the one
+      // after it, or, where that neighbour is another arc's (two fillets with no straight vertex between them), this arc's
+      // own end vertex. ⛔ Never another arc's blended H: read so, an arc's end sat on the next corner's, hundreds of metres
+      // along, and the error chained corner to corner (HPDM tile at (-677, -816): 9 m under its street's line, 2026-10-17)
       for (let i = 0; i < n; i++) {
         if (arc[i] == null || arc[(i + n - 1) % n] === arc[i]) continue          // i starts an arc
         let j = i; const id = arc[i], span = []
         while (arc[j % n] === id && span.length < n) { span.push(j % n); j++ }
-        const before = (i + n - 1) % n, after = j % n
-        const hb = H[before] ?? (stamp[before] != null ? hOfRun(stamp[before], ring[before]) : null), ha = H[after] ?? (stamp[after] != null ? hOfRun(stamp[after], ring[after]) : null)
-        if (hb == null || ha == null) continue
-        const pts = [before, ...span, after]; let L = 0; const cum = [0]
+        const before = arc[(i + n - 1) % n] == null ? (i + n - 1) % n : span[0], after = arc[j % n] == null ? j % n : span[span.length - 1]
+        const hb = lineH(before), ha = lineH(after)
+        if (hb == null || ha == null) { arcEnd.set(id, hb == null ? before : after); continue }   // its H stays null, and throws below
+        const pts = [before, ...span.filter(v => v !== before && v !== after), after]; let L = 0; const cum = [0]
         for (let k = 1; k < pts.length; k++) { L += Math.hypot(ring[pts[k]][0] - ring[pts[k - 1]][0], ring[pts[k]][1] - ring[pts[k - 1]][1]); cum.push(L) }
-        span.forEach((v, k) => { H[v] = L > 0 ? hb + (ha - hb) * cum[k + 1] / L : hb }); stats.arcBlended += span.length
+        pts.forEach((v, k) => { if (arc[v] === id) H[v] = L > 0 ? hb + (ha - hb) * cum[k] / L : hb }); stats.arcBlended += span.length
       }
-      // a vertex still without H (its run has no line: a highway edge, the rim) takes its neighbours' along the ring —
-      // COUNTED (`hFilled`); a ring with no line at all is not deformed (`noH`)
-      const known = H.filter(h => h != null).length
-      if (!known) { stats.noH++; return }
-      if (known < n) stats.hFilled += n - known
-      if (known < n) for (let pass = 0; pass < n && H.some(h => h == null); pass++) for (let i = 0; i < n; i++) if (H[i] == null) {
-        const a = H[(i + n - 1) % n], b = H[(i + 1) % n]; if (a != null || b != null) H[i] = a != null && b != null ? (a + b) / 2 : (a ?? b) }
+      // ⛔ A ② VERTEX WITH NO HEIGHT THROWS: unstamped (② lost its run's label), or on a run with no line and no rule (the rim,
+      // a label naming no chain). Never a neighbour's height: filled so, a highway edge carried one street's end 906 m along ②
+      // and stood the asphalt 23.8 m under its terrain (HPDM, 2026-10-17)
+      const miss = H.findIndex(h => h == null)
+      if (miss >= 0) { const at = arc[miss] != null && arcEnd.has(arc[miss]) ? arcEnd.get(arc[miss]) : miss, p = ring[at], run = stamp[at] != null ? runs[stamp[at]] : cap[at] != null ? t.caps?.[cap[at]] ?? null : null
+        const c = t.ring.reduce((s, q) => [s[0] + q[0] / t.ring.length, s[1] + q[1] / t.ring.length], [0, 0])
+        throw new Error(`groundDeformer: ⛔ ${town}: the ② vertex at (${p[0].toFixed(3)}, ${p[1].toFixed(3)}) has no height — ${run ? `its ${stamp[at] != null ? 'run' : 'dead-end cap'} ${run.skelId} (${run.side ?? '?'} · segOrd ${run.segOrd ?? '?'}) carries no line${run.noLine ? ` (${run.noLine})` : ''} and no rule for that class` : `it carries no run and no cap (iaStamp and iaCap empty there)`}${at !== miss ? ` — the end of corner arc ${arc[miss]}, so the arc cannot be blended` : arc[at] != null ? `, on corner arc ${arc[at]}` : ''} · in the tile whose ① ring centres on (${c[0].toFixed(1)}, ${c[1].toFixed(1)}), ② ring ${ri} · ${H.filter(h => h == null).length} of its ${n} vertices`) }
       rings.push({ ring, H, stamp, arc, t: ti, k: ri })
     })
     if (!rings.length) continue
