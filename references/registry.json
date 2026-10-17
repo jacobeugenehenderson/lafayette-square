@@ -84,7 +84,8 @@
         "quote": "In general, information presented on this website, unless otherwise indicated, is considered in the public domain. It may be distributed or copied as permitted by law.",
         "exception": "Caltrans uses some third-party copyrighted material (e.g. photographs) needing the owner's permission — skip anything credited to a third party.",
         "source": "https://dot.ca.gov/conditions-of-use",
-        "approvedBy": "Jacob, 2026-09-23"
+        "approvedBy": "Jacob, 2026-09-23",
+        "coverNotice": "The HDM's own front matter reads \"© 2019 California Department of Transportation. All Rights Reserved.\" — not recorded when it was approved (2026-09-23). Noted 2026-10-17 by Plat; the status is unchanged pending Jacob (see caltrans-standard-plans)."
       },
       "status": "PERMITTED — skip anything credited to a third party",
       "localCopy": "references/files/caltrans-hdm-2025-08-08.pdf",
@@ -1419,10 +1420,25 @@
         "checkedBy": "Plat (web; terms pages only, no source content read)",
         "quote": "\"In general, information presented on this website, unless otherwise indicated, is considered in the public domain. It may be distributed or copied as permitted by law.\" It also warns Caltrans \"does make use of copyrighted data (e.g., photographs)\" \"which may require additional permissions prior to your use.\"",
         "source": "https://dot.ca.gov/conditions-of-use",
-        "read": "looks permitted — the same Conditions of Use Jacob approved for caltrans-hdm. Still his to approve."
+        "read": "HELD: approved on the same conditions as caltrans-hdm, but the book's cover reserves all rights. Back to Jacob before any sheet is read.",
+        "approvedBy": "Jacob, 2026-10-17 (relayed by Boz: \"approve Caltrans plans, hold the letters for now\") — on the conditions page, before the cover notice was known",
+        "coverNotice": "The cover of the book itself reads \"© Copyright 2025 California Department of Transportation. All rights reserved.\" (2025 Standard Plans, title page; each errata sheet also carries \"All Rights Reserved\"). The HDM carries the same kind of notice: \"© 2019 California Department of Transportation. All Rights Reserved.\" (front matter). The conditions page says public domain \"unless otherwise indicated\" — whether the cover notice is that indication is Jacob's call. Found 2026-10-17 by Plat, after the approval; nothing past the front matter and table of contents has been read."
       },
-      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
-      "localCopy": null
+      "status": "APPROVED, HELD — the cover notice goes back to Jacob before extraction",
+      "localCopy": "references/files/caltrans-standard-plans/",
+      "edition": "2025 Edition (complete book, 638 pp.) + Revised Standard Plans errata no. 1 (updated 2026-04-20)",
+      "localCopyFiles": [
+        {
+          "file": "references/files/caltrans-standard-plans/2025-standard-plans.pdf",
+          "url": "https://dot.ca.gov/-/media/dot-media/programs/design/documents/2025-standard-plans-locked.pdf",
+          "sha256": "788fada6fce52540726b15d7d8234a49b41ddbdcf9e18d1ed8a971272f7b39db"
+        },
+        {
+          "file": "references/files/caltrans-standard-plans/2025-standard-plans-errata-no1.pdf",
+          "url": "https://dot.ca.gov/-/media/dot-media/programs/design/documents/2025-standard-plans-errata-no1-locked-a11y.pdf",
+          "sha256": "2972fc288d1a2091e5e281d80dc6030706834b2203b18963c26e4cad46274ccd"
+        }
+      ]
     },
     {
       "id": "la-county-pw-standard-plans",
