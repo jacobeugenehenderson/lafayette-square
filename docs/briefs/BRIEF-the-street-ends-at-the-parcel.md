@@ -85,11 +85,22 @@ c. **What OSM `width` means** on each town's streets (carriageway or whole ROW),
 d. **Where in the chain each input enters.** ① stays width-free (`PIPELINE` step 3). The road width is ②'s offset
    (`pavementHW`), the band depth is ③'s. Say which frozen record carries the parcel line to ③. Per the second
    wall (`PIPELINE §6a`), it travels as data on the edge, not as a lookup by distance.
+   *(Read, Lath 2026-10-18: ③'s depths come only through `tileGround.js` `protoMeasureOf(label)`, which resolves a ① edge's
+   owner key {skelId · side · segOrd} to the frozen street measure (`ribbons.json` `streets[].measure`) and the authored
+   `blockCustoms` at that same key. **No frozen record carries a parcel line today.** The natural carrier is the frozen
+   street record, keyed exactly as authoring is (per skelId · side · segOrd), measured ONCE at the pour and read by that
+   one resolver as the rung below authoring — the distance is measured into the data, never looked up at paint.)*
 e. **Authored widths are ground truth.** Jacob: *"street widths are only ever edited against the aerial photo to
    represent reality."* So every authored edge (LS, HPDM) is a measured answer, and it never gets overwritten. It is
    also the **test set for the data rung**. On those edges, how close do the parcel line and the width tag come to
    the authored width? Report the error distribution per source. That is how we learn whether the data can be
    trusted on a town nobody has authored. Where they disagree, the data is wrong, never the authoring.
+   *(Measured, Lath 2026-10-18, ▶ `node scratch/footprint-census/authored-vs-data.mjs <town> <look> [HEAD for LS's
+   skeleton]`: the parcel line − the authored back of street (pavementHW + curb + treelawn + walk), per authored side —
+   LS 39 sides p10 −2.76 · p50 +0.93 · p90 +6.84 m, 4 within 0.5 m; HPDM 8 sides p50 +2.01 m, none within 0.5 m. The
+   parcel line is NOT the back of an authored street: usually 1–2 m beyond it, often much more, sometimes up to ~3 m
+   inside the authored walk. The **width tag has no test set**: 0 authored chains carry one, on LS or HPDM. Caveats:
+   segOrds pooled per side; treelawn/walk from the frozen measure where unauthored.)*
 
 ## 4 · The check (the deliverable)
 
