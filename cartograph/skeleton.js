@@ -1404,10 +1404,16 @@ function chainHighway(sources, sourceTags) {
 // point-order-forward — production's right-perp convention). Reversal-proof
 // by construction.
 
+// ⛔ A town with no survey is a NAMED fact, printed per pour; a survey that cannot be read is an ERROR, never "no survey"
+// (the `catch { return {} }` this replaces turned a corrupt file into a town with no data, silently — Boz, 2026-10-18).
 function loadSurveyStreets() {
   const p = join(RAW_DIR, 'survey.json')
-  if (!existsSync(p)) return {}
-  try { return JSON.parse(readFileSync(p, 'utf8')).streets || {} } catch { return {} }
+  if (!existsSync(p)) { console.log(`  [survey] no survey for this town (${p} absent) — no street side is seeded from one`); return {} }
+  let d
+  try { d = JSON.parse(readFileSync(p, 'utf8')) } catch (e) { throw new Error(`[skeleton] ⛔ ${p} cannot be read as JSON (${e.message}) — a corrupt survey is not a town without one. Refusing.`) }
+  if (!d || typeof d.streets !== 'object' || d.streets === null) throw new Error(`[skeleton] ⛔ ${p} has no \`streets\` object — not a survey this pour can read. Refusing.`)
+  console.log(`  [survey] ${Object.keys(d.streets).length} street(s) from ${p}`)
+  return d.streets
 }
 
 // Min perpendicular distance from a chain to roughly-parallel OSM sidewalks,
