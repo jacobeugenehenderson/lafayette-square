@@ -88,8 +88,8 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    stays on top. Jacob also asks for a **town-wide switch in Survey or Section** that repaints the default (perpendicular ↔
    diagonal) live; say where it lives (norms are read at derive, so a live switch belongs in the Look) before building.
    ⚠️ The shelved perpendicular-fill slivers (§9 Open) now reach every town, so they are first in the queue.
-   Evidence coverage, measured 2026-10-17 (Loess, `6cd83c32`, `scratch/ground-budget/corner-style/`): kerbs decide 0–9%
-   of corners per town, and crosswalks don't separate the styles.
+   Evidence coverage: re-run `scratch/ground-budget/corner-style/run.sh` (Loess, `37c3201b`). Few corners are decided by
+   recorded kerbs, and crosswalks add no independent read, because a kerb node binds through its crossing.
 6. **Rot found, to fix in the same landing as the code it describes:** `SECTION §6.1`'s "TL↔TL is GRASS
    AT THE KERB through the whole arc" (contradicts §4) and the painter comment near "THE CORNER — READ,
    NOT MEASURED" ("AND the owner changes" / "a mid-block BEND is NOT a corner") — both against the code.
