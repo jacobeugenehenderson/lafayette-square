@@ -420,7 +420,7 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
   straight extension thru"*): each leg's walk runs STRAIGHT ON past the tangent to the kerb, which is its landing and
   its cut, its sides the walk's own lines (in line with its leg; at an oblique corner, not square to the crossed street). The two walks meet in a plain L at the block corner. Only the CURB rounds, and
   everything else between the L, the two landings and the curb arc keeps the leg's outer strip (lawn), with no pad.
-  When a leg has no lawn, its walk is already at the kerb and the corner is walk. A walk that never meets the kerb
+  When a leg has no lawn, its walk is already at the kerb; the other leg still extends and keeps its lawn up to the L. A walk that never meets the kerb
   gets no landing and is counted. ⛔ Neither the 10-07 sector (`perpGeom`) nor radial landings are this. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
   (`crosswalksSquareAcross`; a pair is matched on the junction node + the chain's two sides). ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
