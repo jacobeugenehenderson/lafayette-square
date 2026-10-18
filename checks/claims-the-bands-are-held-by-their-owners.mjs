@@ -94,6 +94,13 @@ for (const scene of feedScenes()) {
   const J = judge(T, R, scene, console.log); if (!J.ok) bad++
   { let ref = 0, refM = 0; const at = []; for (const t of T) { ref += t.census.refused || 0; refM += t.census.refusedM2 || 0; at.push(...(t.census.refusedAt || []).map(x => `tile ${t.tile} ${x}`)) }
     console.log(`   the producer's own refusals (ground in no span's rect and no single join): ${ref} region(s), ${refM.toFixed(3)} m²${at.length ? (ALL ? `\n      ${at.join('\n      ')}` : ` — ${at.slice(0, 6).join(' · ')}`) : ''}`) }
+  // the producer's census, summed over tiles (bandPiecesOfTile's own counters; numbers add, {k: n} maps add per key) — so a
+  // run before and after a producer change compares on the same line (Loess, 2026-10-18)
+  { const sum = {}; for (const t of T) for (const [k, v] of Object.entries(t.census || {})) {
+      if (typeof v === 'number') sum[k] = (sum[k] || 0) + v
+      else if (v && typeof v === 'object' && !Array.isArray(v)) { const o = sum[k] || (sum[k] = {}); for (const [kk, vv] of Object.entries(v)) if (typeof vv === 'number') o[kk] = (o[kk] || 0) + vv } }
+    const fmt = (v) => typeof v === 'number' ? +v.toFixed(3) : `{${Object.entries(v).map(([k, n]) => `${k}: ${+n.toFixed(3)}`).join(', ')}}`
+    console.log(`   producer census: ${Object.entries(sum).map(([k, v]) => `${k} ${fmt(v)}`).join(' · ')}`) }
   // ⭐ MUTANTS (--mutants): each breaks ONE claim on this same output, and that claim must go RED — a check never seen to fail
   // proves nothing
   if (process.argv.includes('--mutants') || process.env.MUTANTS) {
