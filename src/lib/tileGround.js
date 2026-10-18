@@ -5487,7 +5487,7 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
     // is printed and NEVER feeds a decision; nothing reads `refusedNear` but the trace
     if (ar(left) > 0 && census.refusedNear.length < 12) { const lb = bb(left), g = 2, box = [lb[0] - g, lb[1] - g, lb[2] + g, lb[3] + g]
       census.refusedNear.push({ cls, m2: ar(left), at: [(lb[0] + lb[2]) / 2, (lb[1] + lb[3]) / 2],
-        clips: (I?.per || []).flatMap(x => x.clips || []).filter(c => c.poly.length >= 3 && meets(bb([c.poly]), box)).map(c => ({ spans: c.spans, join: c.join, d: c.d ?? null, inside: intersectRings(left, [c.poly]).length > 0 })) }) }
+        clips: (I?.per || []).flatMap(x => x.clips || []).filter(c => c.poly.length >= 3 && meets(bb([c.poly]), box)).map(c => ({ spans: c.spans, join: c.join, d: c.d ?? null })) }) }
     const lm = ar(left); if (lm > 0) { census.refused++; census.refusedM2 += lm; if (census.refusedAt.length < 8) { const [x0, z0, x1, z1] = bb(left); census.refusedAt.push(`${cls} ${lm.toFixed(3)} m² at (${((x0 + x1) / 2).toFixed(2)}, ${((z0 + z1) / 2).toFixed(2)})`) } } }
   const xorRegion = (outer, inner) => { const A = Math.abs(signedArea(outer)), Bi = inner.reduce((t, r) => t + Math.abs(signedArea(r)), 0)
     return A >= Bi ? differenceRings([outer], inner) : differenceRings(inner, [outer]) }
