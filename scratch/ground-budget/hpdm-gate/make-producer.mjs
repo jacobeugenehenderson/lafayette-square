@@ -5,5 +5,5 @@
 import { readFileSync, writeFileSync } from 'fs'
 const src = readFileSync(process.argv[2], 'utf8'), a = '    // ⭐ THE EASE\'S END IS A LINE OF THE PARTITION'
 if (src.split(a).length !== 2) throw new Error('make-producer: anchor not found exactly once')
-const dump = process.argv[3] ? `    ;(await import('fs')).writeFileSync(${JSON.stringify(process.argv[3])}, JSON.stringify({ bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') }, stencil: stencil.clipPolygon, tiles: shapeArtifact, ink: inkPieces }))\n` : ''
+const dump = process.argv[3] ? `    ;(await import('fs')).writeFileSync(${JSON.stringify(process.argv[3])}, JSON.stringify({ bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') }, stencil: stencil.clipPolygon, tiles: shapeArtifact, ink: inkPieces, easeSites: globalThis.__easeSites ?? null }))\n` : ''
 writeFileSync(new URL('bake-ground.producer.js', import.meta.url), src.replace(a, dump + '    console.log(`[producer-only] deformer built · stats ${JSON.stringify(deform.stats)}`); process.exit(0)\n' + a))

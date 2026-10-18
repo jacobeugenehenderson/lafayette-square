@@ -9,9 +9,9 @@ setopt pipefail; G=${0:A:h}; R=/Users/jacobhenderson/Desktop/lafayette-square.no
 free_pct() { memory_pressure | awk -F': ' '/free percentage/ {print int($2)}' }
 [[ -n "$(cd $R && git status --porcelain -- cartograph src | grep -v '^??')" ]] && { echo "⛔ the main tree's cartograph/ or src/ is dirty"; exit 2; }
 (( $(sysctl -n vm.loadavg | awk '{print int($2)}') >= 8 || $(free_pct) < 70 )) && { echo "⛔ not launched: load $(sysctl -n vm.loadavg) · free $(free_pct)%"; exit 2; }
-BG=$WT/cartograph/bake-ground.js; [[ $MODE == producer ]] && { node $G/make-producer.mjs $BG $DUMP || exit 1; BG=$G/bake-ground.producer.js; }
+BG=${BGSRC:-$WT/cartograph/bake-ground.js}; [[ $MODE == producer ]] && { node $G/make-producer.mjs $BG $DUMP || exit 1; BG=$G/bake-ground.producer.js; }
 [[ $MODE == full ]] && { node $G/make-gate.mjs $BG || exit 1; BG=$G/bake-ground.gate.js; }
-M="{\"cartograph/bake-ground.js\":\"$BG\",\"src/lib/tileGround.js\":\"$WT/src/lib/tileGround.js\",\"src/cartograph/streetProfiles.js\":\"$WT/src/cartograph/streetProfiles.js\",\"cartograph/groundDeformer.mjs\":\"${DEFORMER:-$WT/cartograph/groundDeformer.mjs}\",\"cartograph/bake-shore-median.mjs\":\"$WT/cartograph/bake-shore-median.mjs\"}"
+M="{\"cartograph/bake-ground.js\":\"$BG\",\"src/lib/tileGround.js\":\"${TG:-$WT/src/lib/tileGround.js}\",\"src/cartograph/streetProfiles.js\":\"$WT/src/cartograph/streetProfiles.js\",\"cartograph/groundDeformer.mjs\":\"${DEFORMER:-$WT/cartograph/groundDeformer.mjs}\",\"cartograph/bake-shore-median.mjs\":\"$WT/cartograph/bake-shore-median.mjs\"}"
 O=$G/slab-$T-$MODE${TAG:+-$TAG}; L=$G/$MODE-$T${TAG:+-$TAG}.log; rm -rf $O; mkdir -p $O
 snap() { find -L $R/cartograph/data/$T $R/public -type f -exec stat -f '%m %z %N' {} + | sort -k3 }
 snap > $G/snap-before.txt; touch $G/snap-marker

@@ -34,7 +34,7 @@ const owner2 = (t, x, z, id) => { let best = null, bd = Infinity
   const a = t.iaArc?.[best.ri]?.[best.i], st = t.iaStamp?.[best.ri]?.[best.i], cp = t.iaCap?.[best.ri]?.[best.i], n = t.iaFull[best.ri].length
   const o2 = a != null && t.iaArc[best.ri][(best.i + 1) % n] === a ? 'arc' : st != null ? t.runs[st]?.skelId : cp != null ? 'cap:' + t.caps[cp]?.skelId : '?'
   return o2 === 'arc' ? 'arc' : o2 === id ? 'same chain' : o2 === '__highway__' || bridges.has(o2) ? 'highway/bridge edge' : o2.startsWith('cap:') ? 'cap' : 'another street' }
-const PAIR = new Map(), PS = new Map(), MS = new Map(), DEV = [], MECH2 = new Map(), MECH = new Map(), R = new Map(), SITE = new Map(), seen = new Set(); let n = 0
+const OUT = [], PAIR = new Map(), PS = new Map(), MS = new Map(), DEV = [], MECH2 = new Map(), MECH = new Map(), R = new Map(), SITE = new Map(), seen = new Set(); let n = 0
 for (const g of gj.groups) { if (g.rawByteOffset == null || !/^(asphalt|highway|stripe)$/.test(g.id)) continue
   const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), Rw = new Float32Array(AB, g.rawByteOffset, g.vertexCount)
   for (let k = 0; k < I.length; k += 3) { const v = [I[k], I[k + 1], I[k + 2]], h = v.map(w => Rw[w]), tr = v.map(w => raw(P[w * 3], P[w * 3 + 2]))
@@ -74,6 +74,7 @@ for (const g of gj.groups) { if (g.rawByteOffset == null || !/^(asphalt|highway|
       if (devSame != null) DEV.push(devSame)
       if (!jump && kinds.size > 1) { const ks = [...kinds], hw = ks.some(k => k === 'run:__highway__' || bridges.has(k.slice(4))), arcs = ks.some(k => k.startsWith('arc')), runs = new Set(ks.filter(k => k.startsWith('run:') && k !== 'run:__highway__' && !bridges.has(k.slice(4))))
         const pk = hw ? 'a highway/bridge run ↔ ' + (runs.size ? 'a street run' : arcs ? 'an arc' : 'itself') : arcs ? 'an arc ↔ a run' : runs.size > 1 ? 'two street runs, no arc between' : ks.some(k => k.startsWith('cap')) ? 'a cap ↔ a run' : 'other'
+        if (pk === 'two street runs, no arc between') OUT.push({ x, z, ex, qs: ev.map(e => e.station), ti: dump.tiles.indexOf(t) })
         PAIR.set(pk, (PAIR.get(pk) || 0) + 1); if (!PS.has(pk)) PS.set(pk, []); if (PS.get(pk).length < 3) PS.get(pk).push(`(${x.toFixed(1)}, ${z.toFixed(1)}) ${ks.join(' | ')} · H② spread ${hspread.toFixed(3)}`) }
       const mk2 = !jump && kinds.size > 1 ? `the q's lie on ${anyArc ? 'an arc and its neighbour' : 'two different ② owners'} (H② changes owner under the triangle)` : !jump && anyArc ? 'the q\'s lie on one corner arc (its blend)' : !jump && devSame != null ? (devSame >= 0.5 * ex ? 'one run: H② (sampled, interpolated) off the line at q' : 'one run: H② equals the line at q (the line itself moves that fast along ②)') : !cid2 ? 'no chain (an arc or no run)' : sj > 0.1 ? 'the projection JUMPS (station Δ > 0.1 m within 1 mm)' : ratio > 3 ? `the chain station runs > 3× faster than ② (the inside of a bend)` : dev >= 0.5 * ex ? 'H② (the line sampled every step and interpolated) is off the line at q itself' : `no station jump, station ≤ 3× ② (cause not established)`
       MECH2.set((jump ? 'line' : 'H②') + ' · ' + mk2, (MECH2.get((jump ? 'line' : 'H②') + ' · ' + mk2) || 0) + 1)
@@ -92,3 +93,4 @@ console.log('jump mechanism (② owner\'s chain for H②):', [...MECH2].sort((a,
 DEV.sort((a, b) => a - b); console.log(`|H②(q) − line(q)| at the H② jump walls: p50 ${(DEV[DEV.length >> 1] ?? 0).toFixed(3)} · p90 ${(DEV[Math.floor(DEV.length * 0.9)] ?? 0).toFixed(3)} · max ${(DEV[DEV.length - 1] ?? 0).toFixed(3)} m`)
 for (const [k, L] of [...MS].sort((a, b) => (MECH2.get(b[0]) || 0) - (MECH2.get(a[0]) || 0))) { console.log(`${MECH2.get(k)}  ${k}`); for (const r of L) console.log(`     ${r.txt}`) }
 console.log('H② owner change, by pair:'); for (const [k, v] of [...PAIR].sort((a, b) => b[1] - a[1])) { console.log(`  ${v}  ${k}`); for (const t of PS.get(k)) console.log(`       ${t}`) }
+if (process.argv[5]) (await import('fs')).writeFileSync(process.argv[5], JSON.stringify(OUT))
