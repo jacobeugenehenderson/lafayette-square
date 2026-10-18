@@ -589,8 +589,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // ⭐ the raised kerb's inputs (`kerbLift.mjs`): the block silhouettes (the frozen curb rings), every cut's kerb face,
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
+  if (PROTO && !pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
   return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [],
-           blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
+           inkPieces: PROTO ? pr.protoInkPieces : null, blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -1146,7 +1147,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1974,7 +1975,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // sibling group ({ tiles, highway }) so the frozen Section/Design views restore
   // highways (the bare-array form dropped them — regression 4924d9a). The slab's
   // own `highway` mat group is unaffected; this is the Section-side freeze.
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [] }))
+  // `ink`: ① (the strip between tiles) as owned pieces [{ rings, owners }] — only ① as the producer makes it; a --legacy
+  // freeze carries none, and a reader that needs it must refuse that shape, not guess.
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ...(inkPieces ? { ink: inkPieces } : {}) }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

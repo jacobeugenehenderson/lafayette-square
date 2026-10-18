@@ -2588,6 +2588,51 @@ export function inkByOwner(ink, owners, hw, hwySkel = new Set()) {
   const roadInk = differenceRings(all, [...shoreInk, ...hwyInk])
   return { shoreInk, hwyInk, roadInk, unlabelled }
 }
+
+// ⭐ ① HELD BY ITS OWNERS — the ink (the 2ε strip between tiles, which no tile holds) as addressable PIECES, each naming who
+// it belongs to, so the ground can give it its line (BRIEF-the-ground-knows-its-height §5: "a street's ① takes that street's
+// road surface"). The same construction as `inkByOwner`, run per owner: each labelled ink edge's stroke quad (2ε each side,
+// 2ε past each end, so it spans the strip), grouped by OWNER — a street's or highway's `skelId`, or `{ kind: 'water' }` for
+// the coast — and cut to the ink. Where two owners' pieces overlap (a crossing) the overlap is its OWN piece, naming every
+// owner whose piece covers it; each owner's piece is what is left. ⛔ Nothing is searched: an owner is the edge's own label.
+// → [{ rings, owners }] — `rings` one region per piece (nonzero; a hole wound against its outer, as Clipper writes it).
+export function inkPiecesByOwner(ink, owners, hw, clip = null) {
+  const W2 = 2 * hw, quads = new Map(), ownerOfKey = new Map()
+  let unlabelled = 0
+  ink.rings.forEach((ring, ri) => { const L = ink.labels?.[ri] || []
+    for (let k = 0; k < ring.length; k++) {
+      const o = owners?.[L[k]]
+      if (!o) { unlabelled++; continue }
+      const key = o.water ? 'water' : o.skelId
+      if (!ownerOfKey.has(key)) ownerOfKey.set(key, o.water ? { kind: 'water' } : o.skelId)
+      const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
+      if (!(len > 0)) continue
+      const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
+      ;(quads.get(key) || quads.set(key, []).get(key)).push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
+    } })
+  let all = unionRings(ink.rings); if (clip?.length >= 3) all = intersectRings(all, [clip])
+  const area = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))
+  const bbox = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
+  const tiny = (hw * hw) / 100          // m² — below a hundredth of an ε square, an overlap is the grid's, not a crossing
+  // ⭐ an owner's strokes are cut against only the ink RINGS whose bounds meet them — the ink's outer rings and the holes
+  // (its blocks) near the strokes, wound as Clipper wrote them, so the nonzero region of that subset is the ink there
+  const ringBB = all.map(r => bbox([r])), hit = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]
+  const P = []; for (const [key, q] of quads) { const U = unionRings(q), b = bbox(U), near = all.filter((_, i) => hit(ringBB[i], b)); if (!near.length) continue
+    const r = intersectRings(U, near); if (r.length && area(r) > tiny) P.push({ key, r, bb: bbox(r) }) }
+  const meets = (a, b) => a.bb[0] <= b.bb[2] && b.bb[0] <= a.bb[2] && a.bb[1] <= b.bb[3] && b.bb[1] <= a.bb[3]
+  // the crossings: where two owners' pieces overlap, united, and split into its connected parts
+  const over = []; P.sort((a, b) => a.bb[0] - b.bb[0])
+  for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length && P[j].bb[0] <= P[i].bb[2]; j++) if (meets(P[i], P[j])) { const o = intersectRings(P[i].r, P[j].r); if (o.length && area(o) > tiny) over.push(...o) }
+  const C = over.length ? booleanLabelled(clipperLib.ClipType.ctUnion, over, over.map(r => r.map(() => 0)), [], null, false, true) : { rings: [], faces: [] }
+  const pieces = []
+  for (const f of C.faces || []) { const rs = [C.rings[f.outer], ...f.holes.map(h => C.rings[h])], bb = bbox(rs)
+    const own = P.filter(p => meets(p, { bb }) && area(intersectRings(p.r, rs)) > tiny).map(p => ownerOfKey.get(p.key))
+    pieces.push({ rings: rs, owners: own }) }
+  const Cf = (C.faces || []).map(f => { const rs = [C.rings[f.outer], ...f.holes.map(h => C.rings[h])]; return { rs, bb: bbox(rs) } })
+  for (const p of P) { const near = Cf.filter(c => meets(p, c)).flatMap(c => c.rs), r = near.length ? differenceRings(p.r, near) : p.r
+    if (r.length && area(r) > tiny) pieces.push({ rings: r, owners: [ownerOfKey.get(p.key)] }) }
+  return { pieces, unlabelled, crossings: (C.faces || []).length }
+}
 function onLattice(ring, what) {
   const out = ring.map(p => [Math.round(p[0] * SCALE) / SCALE, Math.round(p[1] * SCALE) / SCALE])
   for (let i = 0; i < out.length; i++) { const a = out[i], b = out[(i + 1) % out.length]
@@ -8561,6 +8606,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
+  let protoInkPieces = null           // ① ink as owned pieces (`inkPiecesByOwner`) — the strip between tiles, with its owners
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
   let protoUnlabelled = null          // per ② edge the walk reached with no ① owner (`offsetRingByRects` labelOf, or a boolean)
@@ -9667,6 +9713,8 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⛔ OPT-IN (`opts.protoProducer`), so the shipped artifact is byte-identical unless asked.
       if (opts.protoProducer || opts.protoArtifact) {
         protoShapeTiles = []
+        const ringOwnerOf = (o) => !o ? null : o.water ? { kind: 'water' } : o.skelId === '__boundary__' ? { kind: 'rim' }
+          : { skelId: o.skelId, side: o.side, segOrd: o.segOrd, ...(o.gradeSeparated ? { gradeSeparated: true } : {}) }
         // ⛔ A ② EDGE WITH NO ① OWNER carries no run and no cap, so nothing downstream can say whose curb it is (the ground
         // reads no height there). Counted where the walk reads it, with its site, never filled in. ▶ checks/claims-every-curb-edge-has-its-owner.mjs
         protoUnlabelled = { edges: 0, noOwner: 0, at: [] }
@@ -9949,6 +9997,10 @@ export function buildTileGround(ribbons, opts = {}) {
           for (const r of runs2) { delete r.key; delete r.iEnd }
           protoShapeTiles.push({
             ring, iA: mine.map(EC => EC.ring),
+            // ⭐ `ringOwner` — per ① ring edge (vertex i → i+1), its OWNER, off the same block labels ② is labelled from
+            // (`protoOwners`): { skelId, side, segOrd, gradeSeparated? } · { kind: 'water' } · { kind: 'rim' }. The road side
+            // reads its line from it. Carried through the disc cut below by the labelled boolean, never matched back.
+            ringOwner: ring.map((_, i) => ringOwnerOf(protoOwners[(protoBlockLabels || R.labels)?.[k]?.[i]])),
             // ⭐⭐⭐ THE FILL IS NO LONGER FROZEN — `SECTION §4`'s keystone, finally kept: freeze the
             // SILHOUETTE, author the FILL live. `bands` used to sit here and `sectionOpen`
             // short-circuited on it, so an authored treelawn moved this artifact 0 m². The tile now
@@ -10102,8 +10154,36 @@ export function buildTileGround(ribbons, opts = {}) {
           const before = protoShapeTiles.length
           const cut = (rings) => { const o = intersectRings(rings || [], [stamp]); return o?.length ? o : [] }
           const kept = []
+          // ⭐ the RING is cut by the disc, and each output edge takes the owner of the OPERAND edge it lies on: one of the
+          // tile's own ① edges (its `ringOwner`), or the disc's (`rim`). Containment on the integer grid the boolean ran on
+          // (2 units, `booleanLabelled`'s own containment rule) — the operands of this cut, never other geometry (A15).
+          // ⛔ Not the boolean's per-vertex label: a vertex names the edge leaving it in the INPUT's order, Clipper writes
+          // its own orientation, and a vertex the cut makes inherits from the next one — measured one edge out on HPDM
+          // 1,263 + 35 edges, JH 71. An edge on no operand edge, or on two with different owners, stays null and the guard
+          // below refuses it.
+          const cutOwned = (t) => {
+            const rings = intersectRings([t.ring], [stamp]), C = (v) => toClipper(v)
+            const onSeg = (q, a, b) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) return q.X === a.X && q.Y === a.Y
+              const L = Math.sqrt(L2), u = (q.X - a.X) * dx + (q.Y - a.Y) * dy; return u >= -2 * L && u <= L2 + 2 * L && Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / L <= 2 }
+            const S = t.ring.map(C), D = stamp.map(C), K = (q) => q.X + ',' + q.Y, exact = new Map()
+            // an output edge that IS one of the ring's own edges (both ends, on the grid, either way round) is that edge —
+            // asked first, because at a tip a 5 mm edge lies within the grid tolerance of its neighbour too
+            S.forEach((q, j) => { const r = S[(j + 1) % S.length]; for (const k of [K(q) + '>' + K(r), K(r) + '>' + K(q)]) exact.set(k, exact.has(k) && exact.get(k) !== j ? -1 : j) })
+            const at = new Map(); S.forEach((q, j) => at.set(K(q), at.has(K(q)) ? -1 : j))
+            const owners = rings.map(rg => rg.map((v, i) => { const a = C(v), b = C(rg[(i + 1) % rg.length]), got = new Set(), ow = []
+              const x = exact.get(K(a) + '>' + K(b)); if (x != null && x >= 0) return t.ringOwner[x]
+              // both ends are ring vertices but the cut dropped the ones between (Clipper removes a sub-mm loop: PTown's
+              // coast, three 5 mm edges): the edge is that run of ring edges, the shorter way, if they share ONE owner
+              const ia = at.get(K(a)), ib = at.get(K(b))
+              if (ia != null && ib != null && ia >= 0 && ib >= 0) { const m = S.length, f = (ib - ia + m) % m, r = (ia - ib + m) % m
+                const run = f <= r ? Array.from({ length: f }, (_, k) => (ia + k) % m) : Array.from({ length: r }, (_, k) => (ib + k) % m)
+                const os = new Set(run.map(j => JSON.stringify(t.ringOwner[j]))); if (run.length && os.size === 1) return t.ringOwner[run[0]] }
+              for (let j = 0; j < S.length; j++) if (onSeg(a, S[j], S[(j + 1) % S.length]) && onSeg(b, S[j], S[(j + 1) % S.length])) { const o = t.ringOwner[j]; const k = JSON.stringify(o); if (!got.has(k)) { got.add(k); ow.push(o) } }
+              if (!ow.length) for (let j = 0; j < D.length; j++) if (onSeg(a, D[j], D[(j + 1) % D.length]) && onSeg(b, D[j], D[(j + 1) % D.length])) { ow.push({ kind: 'rim' }); break }
+              return ow.length === 1 ? ow[0] : null }))
+            return { rings, owners } }
           for (const t of protoShapeTiles) {
-            const ring = cut([t.ring])
+            const { rings: ring, owners: ringOwners } = cutOwned(t)
             if (!ring.length) continue                     // wholly outside the disc — correctly gone
             // ⛔ The SHAPE is what is cut — the ring and the curb. The FILL is stroked live off
             // them past the wall, so there is nothing else here to clip. ⭐ That sentence was
@@ -10151,7 +10231,7 @@ export function buildTileGround(ribbons, opts = {}) {
               const best = a.indexOf(Math.max(...a))
               if (!(a[best] > 0)) throw new Error(`[tileGround][PROTO⊙] ⛔ a curb ring of a rim tile lies in none of its ${ring.length} disc pieces (at ${c[0]}). Refusing.`)
               mine[best].push(c) }
-            ring.forEach((r, i) => kept.push({ ...t, ring: r, iA: mine[i],
+            ring.forEach((r, i) => kept.push({ ...t, ring: r, ringOwner: ringOwners[i], iA: mine[i],
               fillets: (t.fillets || []).filter(f => inDisc(f.apex)) }))
           }
           protoShapeTiles = kept
@@ -10185,6 +10265,11 @@ export function buildTileGround(ribbons, opts = {}) {
             if (key === 'iaFull' || !/^ia[A-Z]/.test(key) || !Array.isArray(v) || !v.every(r => r == null || Array.isArray(r))) continue
             const bad = v.length !== F.length ? -1 : v.findIndex((r, ri) => r != null && r.length !== F[ri].length)
             if (bad !== -1 || v.length !== F.length) throw new Error(`[tileGround][PROTO⇢artifact] ⛔ tile ${n} (ring at ${t.ring?.[0]?.map(c => c.toFixed(1)).join(', ')}): \`${key}\` ${v.length !== F.length ? `has ${v.length} ring(s), iaFull ${F.length}` : `ring ${bad} has ${v[bad].length} entries, iaFull ${F[bad].length}`} — a pass edited iaFull without carrying it. Refusing.`) } }
+        // ⛔ AND `ringOwner` KEEPS THE RING's: one owner per ① ring edge, never null — the road side reads its line from it.
+        for (const [n, t] of protoShapeTiles.entries()) { const O = t.ringOwner, at = `tile ${n} (ring at ${t.ring?.[0]?.map(c => c.toFixed(1)).join(', ')})`
+          if (!Array.isArray(O) || O.length !== t.ring.length) throw new Error(`[tileGround][PROTO⇢artifact] ⛔ ${at}: \`ringOwner\` has ${O?.length ?? 'no'} entries, ring ${t.ring.length} — a pass edited the ring without carrying its owners. Refusing.`)
+          const e = O.findIndex(o => o == null)
+          if (e >= 0) throw new Error(`[tileGround][PROTO⇢artifact] ⛔ ${at}: ① edge ${e} (${t.ring[e].map(c => c.toFixed(3)).join(', ')} → ${t.ring[(e + 1) % t.ring.length].map(c => c.toFixed(3)).join(', ')}) has NO OWNER — the road there has no line. Refusing.`) }
         if (landEv) console.log(`[tileGround][stamp] the land-use stamp written into ${stamped} tile(s): ${added} crossing vertex(es) added to iaFull, shared with the evidence parts · the evidence's disjointness: ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs`)
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         protoJunctionCensus = protoJxCensus
@@ -10485,6 +10570,13 @@ export function buildTileGround(ribbons, opts = {}) {
       const inStencil = (r) => (stencil && stencil.length >= 3) ? intersectRings(r, [stencil]) : r
       asphalt = unionRings([...asphalt, ...inStencil(roadInk)])
       inkShore = inStencil(shoreInk)
+      // ⭐ the ink as owned pieces, for the ground (the deformer gives each its owner's line; shape.json `ink`)
+      const IP = inkPiecesByOwner(protoInk, protoOwners, PROTO_HW, stencil && stencil.length >= 3 ? stencil : null)
+      protoInkPieces = IP.pieces
+      if (IP.unlabelled) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${IP.unlabelled} ① ink edge(s) carry no owner — the ink there has no line. Refusing.`)
+      const unowned = IP.pieces.filter(p => !p.owners.length).length
+      if (unowned) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${unowned} ink piece(s) with no owner — refusing.`)
+      console.log(`[tileGround][①⇢LIVE] ① held by its owners: ${IP.pieces.length} ink piece(s) · ${IP.crossings} crossing(s) where ≥ 2 owners' strokes overlap · largest crossing ${Math.max(0, ...IP.pieces.filter(p => p.owners.length > 1).map(p => p.owners.length))} owners`)
       const m2 = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))   // net: Clipper winds holes against their outer
       console.log(`[tileGround][①⇢LIVE] ① painted first: road ${m2(roadInk).toFixed(1)} m² · shore ${m2(shoreInk).toFixed(1)} m² · left to the highway ${m2(hwyInk).toFixed(1)} m²${unlabelled ? ` · ⛔ ${unlabelled} ink edge(s) with no owner — painted as road` : ''}`)
     }
@@ -10553,7 +10645,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
