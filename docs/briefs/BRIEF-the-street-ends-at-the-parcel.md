@@ -45,9 +45,14 @@ report at `scratch/footprint-census/REPORT.md`. ⛔ Quote these numbers only wit
 The street's cross-section, from the road edge to the property line, is decided per edge, in this order:
 1. **Authored** (`blockCustoms`, Survey/Section) always wins.
 2. **The data:**
-   - **the parcel line is the back of the street.** No ped band reaches past the property line the assessor
-     records, and the band's total depth is at most the distance from the curb to it.
-   - **The road's width tag** (OSM `width`, and `lanes`) sizes the carriageway where present.
+   - **the parcel line is the back of the street — only where the street lies in the GAP between parcels** (its ROW). No
+     ped band reaches past that property line, and the band's total depth is at most the distance from the curb to it.
+     ⛔ A way inside a lot (JH's alleys run 72% inside one/two-family lots: a private drive) has no parcel line for a
+     back; the lot line there is the drive's neighbour's, not the street's (Boz, 2026-10-18). ROW-ness is read off the
+     DATA (MassGIS `POLY_TYPE`; each other source's own land-use code book), never off shape.
+   - **The road's width tag** (OSM `width`, and `lanes`) sizes the carriageway where present — behind a per-town sanity
+     rung: a tag WIDER than its parcel-to-parcel gap is disbelieved, by name, per pour (Boz, 2026-10-18). What the tag
+     means differs by town (§1); "feet entered as metres" stays not established until a source shows it.
    - **The street's type:** a `living_street` / `pedestrian` way gets no curb and no treelawn by default (the
      curbless flush slope that already exists, `OPERATIONS` "Curb cuts"). OSM sidewalk evidence enters per FACE by
      containment (a `footway=sidewalk` way inside the tile's ring and within one owner's band rects — Boz, 2026-10-18),
@@ -64,7 +69,16 @@ silently becomes the kit default. ⛔ Never a per-street exception list. ⭐ Mon
 a. **Right-of-way parcels.** Alleys lie about 99% inside parcels on PTown and JH, which hints that some parcel layers
    include the street itself as a parcel. Find out how to tell a ROW parcel from a lot by the data (its own class
    code or tag, never by shape), per town, before any parcel is read as the back of the street.
+   *(Measured, Lath 2026-10-18, ▶ `row-parcels.mjs`: street ROW is in no parcel layer — 90–98% of street samples lie in no
+   parcel; by centreline JH's alleys are 87.5% inside parcels, mostly lots. CANDIDATE ROW codes, each to be CONFIRMED
+   against its source's own code book, never by geometry: St. Louis `5000` · Huron `400: Com-Vacant Land` · PTown `9000` ·
+   JH `07`. MassGIS L3 serves `POLY_TYPE` (FEE 6,578 · TAX 3 in PTown's bbox, no ROW) and `USE_DESC`; the fetch reads
+   neither yet.)*
 b. **Which towns have parcels at all**, from which source, and what the pour prints for a town without them.
+   *(Answered, Lath 2026-10-18: all five, from LS/HPDM St. Louis City + County · PTown MassGIS L3 · Huron Ohio statewide ·
+   JH MapPLUTO. `derive.js` "Loading parcels": a declared well with no file throws; DECLARED-NONE prints its reason; a town
+   with NO declaration warns and pours on. ⛔ **Part of this build (Boz, ruled):** an undeclared town REFUSES the pour by
+   name — declare a well, or DECLARED-NONE with its reason. derive.js access is cleared when the build is dispatched.)*
 c. **What OSM `width` means** on each town's streets (carriageway or whole ROW), measured against the parcels, and why
    Commercial Street paints 8.0 m against a width-6 tag. Read where the carriageway width is decided and name the
    code site.
