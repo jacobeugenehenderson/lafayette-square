@@ -8,7 +8,8 @@
 //   2. PARTITION — the pieces do not overlap, and every piece names at least one owner;
 //   3. OWNERS — the piece under each ink edge's own stroke (a point ε inside the strip off the edge's midpoint) names that edge's
 //      owner, and each owner a crossing piece names has an edge whose stroke reaches it.
-//   4. CURBLESS BLOCKS — each `kind: 'block'` piece lies inside a frozen ① block, outside H and on no tile.
+//   4. CURBLESS BLOCKS — each `kind: 'block'` piece lies inside a frozen ① block, outside H and on no tile, and each owner
+//      it names has a ① edge on its boundary.
 //   node checks/claims-the-ink-is-held-by-its-owners.mjs [--scene=<town> …]
 import clipperLib from 'clipper-lib'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
@@ -55,8 +56,22 @@ for (const scene of feedScenes()) {
   const noOwner = P.filter(p => !p.owners?.length).length
   // 4 — THE CURBLESS BLOCKS' GROUND (`kind: 'block'`): each lies inside a frozen ① block, outside H, and on no tile
   const fp = f.ribbons.protopolygon, BP = P.filter(p => p.kind === 'block'), H = (R.highway || []).filter(r => r?.length >= 3), T = R.protoShapeTiles.map(t => t.ring), tbb = T.map(r => bbOf([r]))
+  // and every owner it names has a ① edge (block edges, labelled) lying on the piece's own boundary — or the ground there
+  // names a street whose line it does not touch (HPDM: a rim block named washington-avenue-1, whose ink is all outside the disc)
+  const GR = 2 / CLIP_SCALE, sdp = (q, a, c) => { const dx = c[0] - a[0], dz = c[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dz) }
+  const lab = []; fp.blocks.forEach((r, k) => r.forEach((a, i) => { const o = R.protoOwners[fp.blockLabels[k][i]]; if (o) lab.push({ a, b: r[(i + 1) % r.length], key: o.water ? 'water' : o.skelId }) }))
+  ;(fp.blockHoles || []).forEach((hs, k) => (hs || []).forEach((h, hi) => h.forEach((a, i) => { const o = R.protoOwners[fp.blockHoleLabels?.[k]?.[hi]?.[i]]; if (o) lab.push({ a, b: h[(i + 1) % h.length], key: o.water ? 'water' : o.skelId }) })))
+  let bStray = 0, bViaH = 0; const strayAt = []
   let bOut = 0, bH = 0, bTile = 0, bM2 = 0
   for (const p of BP) { const b = bbOf(p.rings); bM2 += area(p.rings)
+    for (const o of p.owners.map(name)) { const touches = lab.some(e => e.key === o && meet(bbOf([[e.a, e.b]]), [b[0] - 1, b[1] - 1, b[2] + 1, b[3] + 1]) && [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95].some(t => { const m = [e.a[0] + (e.b[0] - e.a[0]) * t, e.a[1] + (e.b[1] - e.a[1]) * t]; return p.rings.some(r => r.some((q, i) => sdp(m, q, r[(i + 1) % r.length]) <= GR)) }))
+      // a sliver touching only H is owned by its block's highway-labelled ① edges (Boz, 2026-10-18): such an owner is on its
+      // own block's ring and LIES UNDER H (H is that edge stroked), and the piece meets H — then it is carried, not stray
+      const viaH = !touches && H.length && p.rings.some(rr => rr.some(q => H.some(h => h.some((u, i) => sdp(q, u, h[(i + 1) % h.length]) <= GR))))
+        && fp.blocks.some((r, k) => meet(bbOf([r]), b) && r.some((a, i) => { const ow = R.protoOwners[fp.blockLabels[k][i]], c = r[(i + 1) % r.length]
+          return ow && !ow.water && ow.skelId === o && inRings([(a[0] + c[0]) / 2, (a[1] + c[1]) / 2], H) }))
+      if (viaH) { bViaH++; continue }
+      if (!touches) { bStray++; if (strayAt.length < 3) strayAt.push(`${o} on the ${area(p.rings).toFixed(1)} m² piece at (${b.slice(0, 2).map(v => v.toFixed(1))})`) } }
     bOut += solid(op(ClipType.ctDifference, p.rings, fp.blocks.filter(r => meet(bbOf([r]), b))))
     if (H.length) bH += solid(op(ClipType.ctIntersection, p.rings, H))
     const nt = T.filter((_, i) => meet(tbb[i], b)); if (nt.length) bTile += solid(op(ClipType.ctIntersection, p.rings, nt)) }
@@ -76,12 +91,12 @@ for (const scene of feedScenes()) {
       if (!hit.length) { missed++; if (missedAt.length < 3) missedAt.push(`(${q.map(c => c.toFixed(3))}) on ${key}`); continue }
       for (const i of hit) { reached[i].add(key); if (!P[i].owners.map(name).includes(key)) { wrong++; if (wrongAt.length < 3) wrongAt.push(`${key} at (${q.map(c => c.toFixed(2))}), piece names ${P[i].owners.map(name).join(' + ')}`) } } } }))
   const crossings = P.filter(p => p.owners.length > 1), unreached = crossings.filter(p => { const i = P.indexOf(p); return p.owners.some(o => !reached[i].has(name(o))) }).length
-  const ok = over === 0 && overlap === 0 && !noOwner && !missed && !wrong && !bOut && !bH && !bTile
+  const ok = over === 0 && overlap === 0 && !noOwner && !missed && !wrong && !bOut && !bH && !bTile && !bStray
   if (!ok) bad++
   console.log(`${ok ? '✅' : '⛔'} ${scene}: ${P.length} ink piece(s), ${crossings.length} crossing(s) (≥ 2 owners, up to ${Math.max(0, ...crossings.map(p => p.owners.length))}) · ink ${aInk.toFixed(2)} m²`)
   console.log(`   1 cover: ${samples} points ε inside the strip, every ${STEP} m along every ink edge · in no piece ${missed} (within the 2-unit grid of a piece's edge, not counted: ${onGrid})${missedAt.length ? ` (${missedAt.join(' · ')})` : ''} · piece outside the ink ${over.toFixed(6)} m² wider than the grid (${overRaw.toFixed(3)} m² of slivers in all)`)
   console.log(`   2 partition: overlap ${overlap.toFixed(6)} m² wider than the grid (${overlapRaw.toFixed(3)} m² of slivers in all) · pieces with no owner ${noOwner}`)
-  console.log(`   4 curbless blocks: ${BP.length} piece(s), ${bM2.toFixed(1)} m² · outside every ① block ${bOut.toFixed(6)} m² · under H ${bH.toFixed(6)} m² · on a tile ${bTile.toFixed(6)} m² (each wider than the grid)`)
+  console.log(`   4 curbless blocks: ${BP.length} piece(s), ${bM2.toFixed(1)} m² · outside every ① block ${bOut.toFixed(6)} m² · under H ${bH.toFixed(6)} m² · on a tile ${bTile.toFixed(6)} m² (each wider than the grid) · owners carried from the block's highway edges (the piece meets H) ${bViaH} · owners with no ① edge on the piece ${bStray}${strayAt.length ? ` (${strayAt.join(' · ')})` : ''}`)
   console.log(`   3 owners: in a piece not naming the edge's owner ${wrong}${wrongAt.length ? ` (${wrongAt.join(' · ')})` : ''} · crossing pieces naming an owner no sample reached ${unreached} (reported, not failed)`)
 }
 if (!towns) { console.log('⛔ no town produced ① ink — nothing was checked'); bad++ }

@@ -9757,10 +9757,12 @@ export function buildTileGround(ribbons, opts = {}) {
           // not the ground. It is ROAD — its bounding streets' asphalt meeting — and it is carried with its own ① ring-edge
           // owners, read off the frozen labels here, never recovered later. Emitted beside the ink (`kind: 'block'`).
           if (!mine.length) { protoNoCurb++; protoNoCurbArea += Math.abs(signedArea(ring))
-            const L = [(protoBlockLabels || R.labels)?.[k] || [], ...(protoBlockHoleLabels?.[k] || [])], own = new Map()
-            for (const ls of L) for (const l of ls) { const o = protoOwners[l]; if (!o || o.skelId === '__boundary__') continue
-              own.set(o.water ? 'water' : o.skelId, o.water ? { kind: 'water' } : o.skelId) }
-            protoNoCurbBlocks.push({ k, ring, holes: protoBlockHoles?.[k] || [], owners: [...own.values()] })
+            // per labelled ① edge (outer + holes): its ends and its owner — the piece keeps only the owners whose edge
+            // survives onto ITS boundary (the stencil and H cut edges away; an owner with none left has no line here)
+            const edges = [], add = (rg, ls) => rg.forEach((a, i) => { const o = protoOwners[ls?.[i]]; if (!o || o.skelId === '__boundary__') return
+              edges.push({ a, b: rg[(i + 1) % rg.length], key: o.water ? 'water' : o.skelId, own: o.water ? { kind: 'water' } : o.skelId, hwy: hwySkel.has(o.skelId) }) })
+            add(ring, (protoBlockLabels || R.labels)?.[k]); (protoBlockHoles?.[k] || []).forEach((h, hi) => add(h, protoBlockHoleLabels?.[k]?.[hi]))
+            protoNoCurbBlocks.push({ k, ring, holes: protoBlockHoles?.[k] || [], edges })
             continue }
           // ⛔⛔ THE FILL IS NOT FROZEN — `SECTION §4`, the keystone, verbatim: "the FILL was NEVER
           // meant to be frozen; the DataWall freezes the SILHOUETTE and the FILL is the live
@@ -10611,7 +10613,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // the highway corridor is the HIGHWAY's ground, painted by it — Boz, 2026-10-17), in the stencil. Painted as asphalt.
       // ⛔ AND MINUS THE TILES: a tile's ring carries no holes, so a curbless block nested in another block's hole is already
       // inside that tile's ring, and its road band paints it (HPDM: a 4.0 m² block in tile 182's band). Outside every tile.
-      let nb = 0, nbM2 = 0, underH = 0
+      let nb = 0, nbM2 = 0, underH = 0, nbViaH = 0
       const bbOf = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
       const tBB = protoShapeTiles.map(t => bbOf([t.ring])), meets = (u, v) => u[0] <= v[2] && v[0] <= u[2] && u[1] <= v[3] && v[1] <= u[3]
       for (const b of protoNoCurbBlocks) {
@@ -10619,10 +10621,24 @@ export function buildTileGround(ribbons, opts = {}) {
         const cut = [...Hpoly, ...protoShapeTiles.filter((_, i) => meets(tBB[i], bb)).map(t => t.ring)]
         const rings = inStencil(cut.length ? differenceRings(reg, cut) : reg), a = Math.abs(rings.reduce((t, r) => t + signedArea(r), 0))
         if (!rings.length || !(a > 0)) { underH++; continue }
+        // an owner is the piece's only if one of its ① edges lies ON the piece's boundary (a point along it within 2 grid units)
+        const TOL = 2 / SCALE, sd = (p, a, c) => { const dx = c[0] - a[0], dz = c[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
+        const own = new Map()
+        for (const e of b.edges) { if (own.has(e.key)) continue
+          for (let t = 0.05; t < 1; t += 0.1) { const m = [e.a[0] + (e.b[0] - e.a[0]) * t, e.a[1] + (e.b[1] - e.a[1]) * t]
+            if (rings.some(r => r.some((q, i) => sd(m, q, r[(i + 1) % r.length]) <= TOL))) { own.set(e.key, e.own); break } } }
+        // ⭐ A SLIVER THAT TOUCHES ONLY H (Boz, 2026-10-18): no ① edge of its own survives onto it, so it is owned by the
+        // block's own HIGHWAY-labelled ① edges — H is those edges stroked to width, so the owner is CARRIED (its height
+        // follows the highway rule). Only when the piece meets H; no area threshold. (JH block 859: 0.1 m².)
+        let viaH = false
+        if (!own.size && Hpoly.length && rings.some(r => r.some(q => Hpoly.some(h => h.some((u, i) => sd(q, u, h[(i + 1) % h.length]) <= TOL)))))
+          for (const e of b.edges) if (e.hwy && !own.has(e.key)) { own.set(e.key, e.own); viaH = true }
+        if (viaH) nbViaH++
+        b.owners = [...own.values()]
         if (!b.owners.length) throw new Error(`[tileGround][①⇢LIVE] ⛔ curbless block ${b.k} has ground outside the highway (${a.toFixed(1)} m²) but none of its ① edges names an owner — that road has no line. Refusing.`)
         protoInkPieces.push({ rings, owners: b.owners, kind: 'block' }); asphalt = unionRings([...asphalt, ...rings]); nb++; nbM2 += a
       }
-      if (protoNoCurbBlocks.length) console.log(`[tileGround][①⇢LIVE] the curbless blocks' ground: ${nb} road piece(s), ${nbM2.toFixed(1)} m², owned by their ① edges · ${underH} wholly under the highway (its ground) or inside a tile`)
+      if (protoNoCurbBlocks.length) console.log(`[tileGround][①⇢LIVE] the curbless blocks' ground: ${nb} road piece(s), ${nbM2.toFixed(1)} m², owned by their ① edges (${nbViaH} touching only H, owned by the block's highway edges) · ${underH} wholly under the highway (its ground) or inside a tile`)
       console.log(`[tileGround][①⇢LIVE] ① held by its owners: ${IP.pieces.length} ink piece(s) · ${IP.crossings} crossing(s) where ≥ 2 owners' strokes overlap · largest crossing ${Math.max(0, ...IP.pieces.filter(p => p.owners.length > 1).map(p => p.owners.length))} owners`)
       const m2 = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))   // net: Clipper winds holes against their outer
       console.log(`[tileGround][①⇢LIVE] ① painted first: road ${m2(roadInk).toFixed(1)} m² · shore ${m2(shoreInk).toFixed(1)} m² · left to the highway ${m2(hwyInk).toFixed(1)} m²${unlabelled ? ` · ⛔ ${unlabelled} ink edge(s) with no owner — painted as road` : ''}`)
