@@ -84,8 +84,7 @@ in this repo is diagnosing at the stage where the symptom is *visible* rather th
 
 ### ⭐⭐ Law 2 — Freezing wrong data is worse than not freezing at all.
 
-*(Jacob, 2026-06-05. Carried verbatim from the retired `WALL.md §1`, because it is a live rule and not
-a piece of history.)*
+*(Jacob, 2026-06-05; from the retired `WALL.md §1`.)*
 
 Each stage in this progression ends by **freezing** its output, and everything downstream then trusts
 that output **unconditionally** — no re-derivation, no second-guessing, no reaching back. That trust is
@@ -277,13 +276,6 @@ closed compound path — **the holes in that shape are the blocks.**
 > circle deciding block geometry;** that was tried at both radii and is the same order error one step
 > out. ⭐ **Why it removes a class rather than guarding one: a square cut has no endpoint**, so there is
 > nothing for a cap, bulb or fillet to be built on.
-> *(Filed here 2026-09-06 as an **aspiration** — "the code unions the roads only, takes no boundary" —
-> and it landed the same day. ⭐ Note which way it resolved: the aspiration was right and the code moved
-> to it. That is the case for not "correcting" a ruling to match the code.)*
-> ⚠️ **Two superseded comments still sit above the corrected ones in `mintProtopolygon`** — *"the
-> boundary is the CLIP, never a subject"* directly above *"① is NOT cut here… it was, briefly, and that
-> was the same order error."* **A correction next to the sentence it corrects is the anti-pattern**;
-> the false half is reached first because it is higher up. Not yet excised.
 
 The compound shape is `①`, the *protopolygon*. It is never seen, never authored, never rounded. Every one of its
 edges carries which street and which side made it, and every crossing carries which two streets met
@@ -494,15 +486,9 @@ a failure of the same architecture.
   lookup table is **keyed by street id**, so **if street ids renumber, authored overrides orphan
   silently.** Prove key parity before renumbering.
 
-> ### ⛔⛔ WHO WRITES THE FROZEN FILE: **THE BROWSER DOES.** Not the bake.
-> `serve.js`'s `POST /<scene>/shape` — **the client autosaves `shape.json` on Survey-exit** with the
-> live `_shapeArtifact` it just rendered, into the path Section fetches. ⇒ **the file on disk is a
-> photograph of the last Survey exit**, and a CLI bake writing it is overwritten by the next one.
-> ⛔ **It has cost twice, both times from reading the file instead of the clock:** an afternoon believing
-> `--proto` bakes had landed (`dfd95f3b`), and a fillet count taken off an artifact timestamped two
-> hours before the producer being measured — which reported the opposite of the live build.
-> ⭐ **`shape.json` answers "what did Survey last draw," never "what does the construction do now."**
-> For the second question, run the construction; check the mtime before trusting the file.
+> ⛔ **`shape.json` has TWO writers — the browser's Survey-exit autosave (`serve.js` `POST /<scene>/shape`) and the
+> bake (`bake-ground.js`) — and the last one wins.** It answers "what did someone last draw," never "what does the
+> construction do now": for that, run the construction, and check the mtime before trusting the file.
 
 **How you would tell it was wrong.** The freeze degrades **loudly, by design**: if the frozen shape is
 absent or fails to load, the view still draws — refusing to render would make onboarding a new town
@@ -550,9 +536,7 @@ project's corner defects has been a construction reaching for a special case.
 > ⭐ Which producer built each block is **stamped into the frozen shape** (`producer` +
 > `producerReason`), precisely because a reader who believes the headline will debug a carved block with
 > reasoning that cannot apply to it. **Read the stamp before reasoning about a curb.**
->
-> *(This bullet exists because the previous edition of this doc printed the headline as one of two
-> "load-bearing facts" and never mentioned the carve. Filed as rot in the 2026-09-06 survey.)*
+
 
 ⭐ **And it is always populated best-effort, then overridden.** Every edge gets a sane default with no
 operator action; authoring is purely correction on top. **The operator never starts from blank.**
@@ -563,6 +547,22 @@ per-street**, and you have found a real defect rather than a cosmetic one. That 
 single-glance test in the whole progression — use it.
 
 → `SECTION.md` (the FILL single source of truth) · `RIBBONS.md §3.4`
+
+---
+
+### 6a · The second wall — after the pieces, nothing reads ①'s lines
+
+*Jacob, 2026-10-18: "We have a datawall because the system kept falling back to the chains … can we eliminate the protopoly once the street exists?"*
+- ⭐ **① stays the source of IDENTITY; its GEOMETRY stops at the pieces.** Every ground piece carries ①'s labels
+  (whose street, which side, which edge, which owners). Once the pieces are minted, no stage reads ①'s rings or
+  its ε strokes. ⛔ **The ε ink is a cutting tool, never ground**: the road is one surface, everything in the
+  disc that is not a block, and a seam down a centreline is ① showing through.
+- ⛔ **Nothing after the mint finds a neighbour by distance.** Pieces meet because they were cut from the same
+  edges and share those vertices exactly. A distance repair (conformity's 5 mm closer, `ON_EDGE_M`; the 1 mm
+  input weld) is this wall's fallback-to-the-chains, and retires when the pieces share by identity.
+- **The gate is then topological, with no number:** an edge used once inside the disc is a hole, and the rim's
+  edges carry no other piece's vertex. ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` (exact identity).
+- 🔴 **ASPIRATION, not built (2026-10-18):** the closer still repairs by distance; the check is RED on every served slab.
 
 ---
 
