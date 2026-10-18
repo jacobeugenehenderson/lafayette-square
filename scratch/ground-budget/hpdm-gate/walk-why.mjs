@@ -1,7 +1,7 @@
 // walk-why.mjs — read-only: for each walk station over the limit only under a variant (its --json against the base's), the fall
 // of D ITSELF across the walk (front · middle · back, asked of the variant deformer) against the drawn fall the gate measured on
 // the FIXED mesh: D within the limit and the mesh over it ⇒ the mesh was refined for another D (chord error); D over ⇒ D's own.
-//   node walk-why.mjs <base walk json> <variant walk json> <dump.json> <variant groundDeformer.mjs>
+//   node walk-why.mjs <base walk json> <variant walk json> <dump.json> <variant groundDeformer.mjs>   (PIECES=1: pass the dump's band pieces, for a band-blend deformer)
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { loadSceneTerrain } from '../../../cartograph/terrainLoad.js'
@@ -13,7 +13,7 @@ const town = 'hipointedemun', T = loadSceneTerrain(town), raw = T.getElevationRa
 const sigma = design.groundLineSigmaM > 0 ? design.groundLineSigmaM : T.stepM, blend = design.groundBlendM > 0 ? design.groundBlendM : T.stepM
 const LH = lineHeights({ streets: JSON.parse(readFileSync(`cartograph/data/${town}/clean/ribbons.json`, 'utf8')).streets, raw, sigma })
 const { buildDeformer } = await import(resolve(defF))
-const D = buildDeformer({ town, tiles: dump.tiles, ink: dump.ink, bands: dump.bands, stencil: dump.stencil, raw, line: { step: LH.step, heightAt: (id, p) => LH.heightAt(id, p) }, limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawn, exag: E, blend, sigma } })
+const D = buildDeformer({ town, tiles: dump.tiles, ink: dump.ink, bands: dump.bands, stencil: dump.stencil, raw, line: { step: LH.step, heightAt: (id, p) => LH.heightAt(id, p) }, ...(process.env.PIECES ? { pieces: dump.bandPieces } : {}), limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawn, exag: E, blend, sigma } })
 const near = (L, p) => L.some(s => Math.hypot(s.at[0] - p[0], s.at[1] - p[1]) < 0.5), lim = walkN.crossSlopeMax
 const by = new Map(); let n = 0
 for (const s of B.filter(s => !near(A, s.at))) { n++

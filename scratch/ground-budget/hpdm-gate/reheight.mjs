@@ -20,7 +20,8 @@ const { buildDeformer } = await import(resolve(arg('deformer')))
 const { lineHeights } = await import(resolve(arg('line') || '.claude/worktrees/hpdm-gate/cartograph/lineHeight.mjs'))
 const LH = lineHeights({ streets: rib, raw, sigma }), line = { step: LH.step, heightAt: (id, p) => { if (id === '__water__') throw new Error('reheight: a coast — the high water is not wired here'); return LH.heightAt(id, p) } }
 const t0 = Date.now()
-const D = buildDeformer({ town, tiles: dump.tiles, ink: dump.ink, bands: dump.bands, stencil: dump.stencil, raw, line, limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: T.exag, blend, sigma } })
+// --pieces: pass the dump's band pieces (a band-blend deformer); BAND_WEIGHTS=equal for the counterfactual
+const D = buildDeformer({ town, tiles: dump.tiles, ink: dump.ink, bands: dump.bands, stencil: dump.stencil, raw, line, ...(process.argv.includes('--pieces') ? { pieces: dump.bandPieces } : {}), limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: T.exag, blend, sigma, ...(process.env.BAND_WEIGHTS ? { bandWeights: process.env.BAND_WEIGHTS } : {}) } })
 let n = 0, moved = 0, worst = 0
 for (const g of gj.groups) { if (g.rawByteOffset == null) continue
   const P = new Float32Array(buf.buffer, buf.byteOffset + g.vertexByteOffset, g.vertexCount * 3), R = new Float32Array(buf.buffer, buf.byteOffset + g.rawByteOffset, g.vertexCount)
@@ -28,4 +29,7 @@ for (const g of gj.groups) { if (g.rawByteOffset == null) continue
     const dv = Math.abs(h - R[v]); if (dv > 1e-4) moved++; if (dv > worst) worst = dv; R[v] = h; n++ } }
 mkdirSync(out, { recursive: true })
 writeFileSync(join(out, gj.bin), buf); copyFileSync(join(dir, 'ground.json'), join(out, 'ground.json')); copyFileSync(join(dir, 'shape.json'), join(out, 'shape.json'))
+if (D.unownedSites) { const by = new Map(); for (const u of D.unownedSites) { const k = `${u.why}`; by.set(k, (by.get(k) || 0) + 1) }
+  console.log(`reheight: unowned (null → the terrain drawn): ${D.unownedSites.length} · ${[...by].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, v]) => `${v} × ${k}`).join(' · ')}`)
+  writeFileSync(join(out, 'unowned.json'), JSON.stringify(D.unownedSites)) }
 console.log(`reheight: ${n} vertices · ${moved} moved > 0.1 mm · worst ${worst.toFixed(3)} m raw · stats ${JSON.stringify(D.stats)} · ${((Date.now() - t0) / 1000).toFixed(0)} s`)
