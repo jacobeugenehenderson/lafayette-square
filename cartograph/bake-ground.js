@@ -1459,7 +1459,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
     // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
     const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ town: scene, tiles: shapeArtifact, line: groundLine,
+    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine,
       bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
       stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,
@@ -1488,6 +1488,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
   }
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
+  // ⭐ THE ROAD FOLLOWS ITS SWEEP (the deformer's road side, ① to ②): the carriageway refines against D exactly as the ped bands
+  // do, or a 6–9 m road triangle and a 29–60 m stripe edge chord the line (measured HPDM, db0bebb6's slab)
+  const ROAD_KEYS = (key) => key === 'asphalt' || key === 'highway' || key === 'stripe'
   // the drawn terrain part at (x, z): the deformer where it reaches, else the terrain itself
   const terrainPartAt = deform ? (x, z) => deform.heightAt(x, z) ?? deformTerrain.getElevationRaw(x, z) : null
   const _planMemo = new Map()
@@ -1535,7 +1538,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         ? { mode: 'adaptive', sampler: terrainPartAt ? (x, z) => terrainPartAt(x, z) * deformTerrain.exag : refineSampler,
             // ⭐ the ped bands carry a walk that must stay level ACROSS: they refine to the drawing's half of the walk limit
             // (`groundDeformer.mjs` WALK_SHARE), down to the deformer's own station spacing — never the lots' 0.5 m / 6 m
-            ...(PED_KEYS(key) && deform?.refineTol ? { tol: deform.refineTol * deformTerrain.exag, minEdge: deform.stationM }
+            ...((PED_KEYS(key) || ROAD_KEYS(key)) && deform?.refineTol ? { tol: deform.refineTol * deformTerrain.exag, minEdge: deform.stationM }
                 : { tol: key === 'bed' || key === 'shore' ? bedTol : refineTol, minEdge: refineMinEdge }),
             maxEdge: refineMaxEdge, band: tideBand }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
@@ -1836,7 +1839,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // success. The bake refuses, and names every point — town, coordinate, tile — so the orphans are the work.
   if (deformTally.unowned.size) throw new Error(`[bake-ground] ⛔ ${scene}: ${deformTally.unowned.size} ped vertex(es) lie in a drawn band that NO painted band owns `
     + `(the band decides, never the nearer line — groundDeformer.mjs): ${[...deformTally.unowned].map(([p, ti]) => `(${p}) tile ${ti}`).join(' · ')}`)
-  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile, or deeper than the bands + ease) draw the terrain itself · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
+  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile and the ink, or deeper than the bands + ease) draw the terrain itself · the road swept from ① to ② at ${deform.stats.road} point(s), the owners' blend at ${deform.stats.roadBlended} · the ink at ${deform.stats.ink} (${deform.stats.inkCrossing} at a crossing, ${deform.stats.inkOnGrid} on the grid between a tile and the ink) · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
 
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
   // BakedGround's UV2 stay concentric with face/street fades. The half-extent must

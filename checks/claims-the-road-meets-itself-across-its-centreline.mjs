@@ -2,8 +2,8 @@
 // DIFFERENT OWNERS?
 //
 // ⭐ THE INVARIANT (BRIEF-the-ground-knows-its-height §5, the road side): the carriageway's terrain part is ONE surface. Each
-// half takes its height from the owner edge of its own tile's ② (groundDeformer.mjs: the nearest ② span, read at the
-// point), and the two halves meet on ①, the road's own ink, which IS the centreline (a tile's ring, `shape.json`
+// half is swept from its own street's line on ① to its tile's ② (groundDeformer.mjs#road), and the two halves meet on ①,
+// the road's own ink, which IS the centreline (a tile's ring, `shape.json`
 // tile.ring). Where the two owners' heights disagree there, the drawn road steps or creases along the centreline.
 // ⭐ READ, NOT SEARCHED: the centreline is each tile's own ① ring, and each half's owner is the ② edge of the tile that holds
 //   the point (by its ① ring, never by tile index), its label read off `iaStamp` → `runs[]` / `iaArc` / `iaCap`. No chain is
@@ -12,7 +12,7 @@
 //   partition groups) interpolated at the point. Only the TERRAIN part is compared (`aRaw × E`, E the town's exaggeration
 //   ceiling): the groups' own y is their stacking slot (renderOrder × GROUND_Y_EPS) and differs on purpose.
 // ⭐ EACH STEP IS NAMED by what its triangles reach: a vertex in the ① INK (the 2ε between two tiles' rings, held by no tile,
-//   so the deformer draws the terrain there) — or two halves inside their tiles whose owners disagree.
+//   the deformer reads the ink's owners there, `#onInk`) — or two halves inside their tiles whose owners disagree.
 // ⭐ THE GATE (C0): across the centreline, ±δ (δ = 10 × LATTICE_M, src/lib/lattice.js, read) — the drawn step may exceed
 //   the terrain's own change across 2δ by at most LATTICE_M. More is a STEP. The CREASE (the change in cross-slope, from
 //   δ to δ + one terrain grid step on each side) is measured and printed: no norm bounds a road's crease, so it is reported,
@@ -109,7 +109,7 @@ const say = (r) => {
   if (!r.steps.length) { console.log(`  ✓   ${head} · no step\n        ${crease}`); return 0 }
   const ink = r.steps.filter(s => s.ink), own = r.steps.filter(s => !s.ink)
   console.log(`  ⛔   ${head}\n        ${r.steps.length} STEP(S) beyond the terrain's own change + LATTICE_M, worst ${r.steps[0].ex.toFixed(3)} m · by owner pair: ${by(r.steps)}`)
-  console.log(`        on a triangle reaching into the ① ink (held by no tile — the terrain drawn on the centreline): ${ink.length}${ink.length ? `, worst ${Math.max(...ink.map(s => s.ex)).toFixed(3)} m` : ''} · both halves inside tiles (their owners disagree): ${own.length}${own.length ? `, worst ${Math.max(...own.map(s => s.ex)).toFixed(3)} m (${by(own)})` : ''}\n        by the groups the two halves sit in: ${(() => { const m = new Map(); for (const s of r.steps) m.set(s.groups, (m.get(s.groups) || 0) + 1); return [...m].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') })()}\n        ${crease}`)
+  console.log(`        on a triangle reaching into the ① ink (held by no tile — read off the ink's owners): ${ink.length}${ink.length ? `, worst ${Math.max(...ink.map(s => s.ex)).toFixed(3)} m` : ''} · both halves inside tiles (their owners disagree): ${own.length}${own.length ? `, worst ${Math.max(...own.map(s => s.ex)).toFixed(3)} m (${by(own)})` : ''}\n        by the groups the two halves sit in: ${(() => { const m = new Map(); for (const s of r.steps) m.set(s.groups, (m.get(s.groups) || 0) + 1); return [...m].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') })()}\n        ${crease}`)
   for (const s of r.steps.slice(0, SHOW)) console.log(`          (${s.at.map(v => v.toFixed(1)).join(', ')}): ${s.ex.toFixed(3)} m · ${s.a} ↔ ${s.b} (${s.pair})${s.ink ? ' · ① ink' : ''}`)
   return 1
 }

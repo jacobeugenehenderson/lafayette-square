@@ -65,8 +65,8 @@ function judge(dir, mutate = false) {
           w = [0, 0, 0]; w[E3.i] = 1 - E3.u; w[E3.j] = E3.u }
         best = { raw: w[0] * t.r[0] + w[1] * t.r[1] + w[2] * t.r[2], y: w[0] * t.y[0] + w[1] * t.y[1] + w[2] * t.y[2], ro: t.ro, d: dist, g: t.g } } }
     return best }
-  // ⭐ WHICH: a sample in the ① INK (the 2ε between two tiles' rings, held by no tile — the deformer draws the terrain there,
-  // not the road's line), when the slab carries its shape.json
+  // ⭐ WHICH: a sample in the ① INK (the 2ε between two tiles' rings, held by no tile: the deformer reads the ink's owners
+  // there, `groundDeformer.mjs#onInk`, not a tile's sweep), when the slab carries its shape.json
   const tiles = existsSync(join(dir, 'shape.json')) ? JSON.parse(readFileSync(join(dir, 'shape.json'), 'utf8')).tiles || [] : null
   const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a[1] > z) !== (b[1] > z) && x < (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]) + a[0]) c = !c } return c }
   const tb = tiles?.map(t => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, z] of t.ring || []) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) } return [a, b, c, d] })
@@ -97,7 +97,7 @@ const say = (r) => {
   const head = `${r.town}: ${r.n} stripe sample(s) (every vertex and edge midpoint) against the road beside them · the stripe's lift over it ${(r.lift * 1000).toFixed(0)} mm (its baked y, the bake's KEEP_OWN_SLOT; median) · exag ${r.E} · |terrain-part departure| p50 ${(q(r.all, 0.5) * 1000).toFixed(1)} mm · p99 ${(q(r.all, 0.99) * 1000).toFixed(1)} mm · max ${(r.all.at(-1) * 1000).toFixed(1)} mm${r.noRoad ? ` · ⚠️ ${r.noRoad} sample(s) with no road within 2 m, not judged` : ''}`
   if (!r.out.length) { console.log(`  ✓   ${head} · every sample within its slot`); return 0 }
   const v = r.out.filter(s => s.what === 'vertex').length
-  console.log(`  ⛔   ${head}\n        ${r.out.length} sample(s) off the road by more than the stripe's own lift (${v} vertices · ${r.out.length - v} edge midpoints; ${r.out.filter(s => s.sunk).length} SUNK under it, ${r.out.filter(s => !s.sunk).length} standing off it), worst ${r.out[0].dev.toFixed(3)} m${r.out[0].ink != null ? ` · in the ① ink (no tile: the terrain drawn) ${r.out.filter(s => s.ink).length}, inside a tile ${r.out.filter(s => !s.ink).length}` : ''} · > 20 cm ${r.out.filter(s => s.dev > 0.2).length} · > 50 cm ${r.out.filter(s => s.dev > 0.5).length}`)
+  console.log(`  ⛔   ${head}\n        ${r.out.length} sample(s) off the road by more than the stripe's own lift (${v} vertices · ${r.out.length - v} edge midpoints; ${r.out.filter(s => s.sunk).length} SUNK under it, ${r.out.filter(s => !s.sunk).length} standing off it), worst ${r.out[0].dev.toFixed(3)} m${r.out[0].ink != null ? ` · in the ① ink (no tile: its owners' lines) ${r.out.filter(s => s.ink).length}, inside a tile ${r.out.filter(s => !s.ink).length}` : ''} · > 20 cm ${r.out.filter(s => s.dev > 0.2).length} · > 50 cm ${r.out.filter(s => s.dev > 0.5).length}`)
   for (const s of r.out.slice(0, SHOW)) console.log(`          ${s.what}${s.L ? ` of a ${s.L.toFixed(2)} m edge` : ''} at (${s.x.toFixed(2)}, ${s.z.toFixed(2)}): ${s.dev.toFixed(3)} m ${s.sunk ? 'UNDER' : 'over'} ${s.under} (${s.d.toFixed(2)} m away), lift ${(s.intended * 1000).toFixed(0)} mm${s.ink ? ' · ① ink' : ''}`)
   return 1
 }

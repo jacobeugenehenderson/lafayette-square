@@ -10,12 +10,17 @@
 // owner changes along a fillet, and blending is what keeps H one continuous value through the change (A10: a corner is a
 // slice of one continuous band, not a join).
 // ⭐ THE PROFILE, read off the DRAWN bands (authoring included) along the ray from the station into the block:
-//   road (the street side of ②) → its owner edge's line AT THE POINT · curb → H · then THE GIRDLE (Jacob, 2026-10-11): the ped band takes up the rise R from
+//   road (the street side of ②) → THE SWEEP, below · curb → H · then THE GIRDLE (Jacob, 2026-10-11): the ped band takes up the rise R from
 //   H to the terrain at its back edge, the walk at most its limit (`walk.crossSlopeMax`) and the lawn at most its own
 //   (`lawn.slopeMax`), both divided by the town's exaggeration ceiling so they hold as DRAWN · whatever is left is eased
 //   LINEARLY into the terrain over B (`design.json#groundBlendM`, else one terrain grid step) · past that, the terrain.
-// ⛔ Outside every tile (the rim's perimeter road, a highway stroke, water) D is null: the caller draws the terrain there
-//   and COUNTS it.
+// ⭐ THE ROAD IS SWEPT FROM ① TO ② (Boz, 2026-10-17): a road point P takes D = (1 − s)·L(P) + s·H②(q), s = d① / (d① + d②),
+//   q its nearest point on ②. L is ①'s own height at P: the line of the street whose ① edge it lies beside (`tile.ringOwner`,
+//   the edge's own label), so the road is exactly the line on ① and exactly ② at the curb, and a corner arc reaches the road
+//   only through H②. Near a ① vertex where the owner changes, L blends the owners' lines (THE OWNERS' BLEND, below). The ink
+//   (① between tiles, `shape.json#ink`) takes its owners' lines the same way, so the road meets itself on the centreline.
+// ⛔ Outside every tile and every ink piece (the sea, the rim's perimeter beyond the disc) D is null: the caller draws the
+//   terrain there and COUNTS it.
 
 import { LATTICE_M as LATTICE } from '../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
 
@@ -26,20 +31,23 @@ const ulp32 = (v) => 2 ** (Math.floor(Math.log2(Math.max(Math.abs(v), 1))) - 23)
 // DRAWING's — the chord error of the triangles that carry the profile, which the bake refines against (`refineTol`).
 const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's tilt and the mesh's chord error share the town's own walk norm
 
-/** @param tiles shape.json tiles (runs and caps carry their chain's name, `skelId`, and `noLine` where it has none) · @param bands { curb, lawn, walk }: arrays of {outer, holes}|ring, AS
+/** @param tiles shape.json tiles (runs and caps carry their chain's name, `skelId`, and `noLine` where it has none; `ringOwner`
+ *  per ① edge) · @param ink shape.json `ink`: [{ rings, owners }], ① between the tiles as owned pieces · @param bands { curb, lawn, walk }: arrays of {outer, holes}|ring, AS
  *  PAINTED (before the flatten punches overlays through them) · @param stencil the town's disc ring (beyond it nothing is
  *  drawn: the rim is an edge of the drawing, never a lot) · @param raw (x, z) → terrain raw
  *  @param line { heightAt(skelId, [x, z]) → the line's raw height, step } (lineHeight.mjs, the coast's high water folded in by the caller)
  *  @param limits { walkMax, lawnMax (null = none), exag, blend } · @param town the scene, named in every refusal */
-export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, limits }) {
+export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits }) {
   if (!town) throw new Error('groundDeformer: the caller names no town — a refusal could not say where')
   if (typeof line?.heightAt !== 'function' || !(line.step > 0)) throw new Error(`groundDeformer: ⛔ ${town}: the caller passes no line (lineHeight.mjs: heightAt and its station step) — ② cannot take its height`)
+  if (!Array.isArray(ink)) throw new Error(`groundDeformer: ⛔ ${town}: the caller passes no ink (shape.json \`ink\`, ① between the tiles as owned pieces; a --legacy freeze carries none) — the road on the centreline has no owner`)
   const { walkMax, lawnMax, exag, blend, sigma } = limits
   if (!(sigma > 0)) throw new Error(`groundDeformer: the smoothing window must be metres > 0, got ${sigma}`)
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0 }
+  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
+    road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -97,6 +105,61 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
     return odd }
   const inClass = (cls, x, z) => itemsAt(cls, x, z).size > 0
 
+  // ── ①'s OWNERS: who a road point's line belongs to ──
+  // An owner is a ① edge's own label (`tile.ringOwner`) or an ink piece's (`ink[].owners`): a street's chain, the rim, the
+  // coast. Its line at a point: the chain's (`line.heightAt`), the high water on the coast; the TERRAIN for an owner with no
+  // at-grade line — the highway, a grade-separated chain (Jacob, 2026-10-17), the rim (the edge of the drawing). ⛔ A chain
+  // the line does not know throws: never a neighbour's height.
+  const bridges = new Set()
+  for (const t of tiles || []) { for (const o of t?.ringOwner || []) if (o?.gradeSeparated) bridges.add(o.skelId)
+    for (const r of t?.runs || []) if (r?.noLine === 'bridge') bridges.add(r.skelId) }
+  const ownedBy = new Map()
+  const owned = (o, where) => {
+    const id = typeof o === 'string' ? o : o?.kind === 'rim' ? '__rim__' : o?.kind === 'water' ? '__water__' : o?.skelId
+    if (!id) throw new Error(`groundDeformer: ⛔ ${town}: ${where} names no owner — its road has no line`)
+    let w = ownedBy.get(id); if (w) return w
+    const terrain = id === '__rim__' || id === '__highway__' || id === '__boundary__' || bridges.has(id) || o?.gradeSeparated === true
+    ownedBy.set(id, w = { id, at: terrain ? (x, z) => raw(x, z) : (x, z) => { const v = line.heightAt(id, [x, z])
+      if (v == null) throw new Error(`groundDeformer: ⛔ ${town}: ① owner ${id} (${where}) has no line and no rule for its class — the road at (${x.toFixed(2)}, ${z.toFixed(2)}) has no height`)
+      return v } })
+    return w }
+  // the owned ① segments, in a grid of CELL cells: every tile's ① edges, and every single-owner ink piece's boundary
+  const addOwned = (grid, p, q, o) => { const s = { p, q, o }
+    const x0 = Math.floor(Math.min(p[0], q[0]) / CELL), x1 = Math.floor(Math.max(p[0], q[0]) / CELL), z0 = Math.floor(Math.min(p[1], q[1]) / CELL), z1 = Math.floor(Math.max(p[1], q[1]) / CELL)
+    for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) { const k = x * 1000003 + z; (grid.get(k) || grid.set(k, []).get(k)).push(s) } }
+  const oneGrid = new Map()
+  const segD = (s, x, z) => { const dx = s.q[0] - s.p[0], dz = s.q[1] - s.p[1], L2 = dx * dx + dz * dz
+    const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - s.p[0]) * dx + (z - s.p[1]) * dz) / L2)) : 0
+    return Math.hypot(x - s.p[0] - u * dx, z - s.p[1] - u * dz) }
+  // the owners whose ① segments in `grid` lie within maxD of (x, z): Map owner → its nearest distance
+  const ownersNear = (grid, x, z, maxD) => { const by = new Map(), R = Math.ceil(maxD / CELL), cx = Math.floor(x / CELL), cz = Math.floor(z / CELL)
+    for (let ix = cx - R; ix <= cx + R; ix++) for (let iz = cz - R; iz <= cz + R; iz++) for (const s of grid.get(ix * 1000003 + iz) || []) {
+      const d = segD(s, x, z); if (d <= maxD && !(by.get(s.o) <= d)) by.set(s.o, d) }
+    return by }
+  // the nearest ① segment in `grid` to (x, z), searching rings of cells outward to maxD: { o, d } or null
+  const nearestOwned = (grid, x, z, maxD, only = null) => { let best = null, bd = Infinity
+    const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL), R = Math.ceil(maxD / CELL) + 1
+    for (let r = 0; r <= R; r++) {
+      for (let ix = cx - r; ix <= cx + r; ix++) for (let iz = cz - r; iz <= cz + r; iz++) {
+        if (Math.max(Math.abs(ix - cx), Math.abs(iz - cz)) !== r) continue
+        for (const s of grid.get(ix * 1000003 + iz) || []) { if (only && s.o !== only) continue; const d = segD(s, x, z); if (d < bd) { bd = d; best = s.o } } }
+      if (best && bd <= r * CELL) break }
+    return best && bd <= maxD ? { o: best, d: bd } : null }
+  // ⭐ THE OWNERS' BLEND: L(P) = Σ w_k·line_k(P) / Σ w_k over the owners near P, w_k = (W − d_k)⁺ / d_k, d_k P's distance to
+  // owner k's own ① edges. On an owner's own edge (d_k = 0) L is exactly its line; across the bisector of two owners it is
+  // one continuous value (no Voronoi step); and an owner farther than W adds nothing, so away from a ① vertex L is the one
+  // owner's line. W is the reach the caller measures at P (the road's own width there: d① + d②); with no reach (the ink's
+  // crossings, a few ε across, every owner named) w_k = 1 / d_k. ⛔ Pure 1/d on the road never reduces to one owner: a
+  // point h from its ① edge and r along it from the corner keeps h/(h + r) of the other owner, so the road would stand off
+  // its own line by → h × its grade, however far along. One rule, no junction branch.
+  const lineBlend = (by, x, z, W = Infinity) => { let on = null, sw = 0, sv = 0
+    for (const [o, d] of by) { if (d < 1e-9) { (on ??= []).push(o); continue }
+      const w = (W === Infinity ? 1 : Math.max(0, W - d)) / d; if (w > 0) { sw += w; sv += w * o.at(x, z) } }
+    if (on) return on.reduce((a, o) => a + o.at(x, z), 0) / on.length
+    if (sw > 0) return sv / sw
+    let nk = null, nd = Infinity; for (const [o, d] of by) if (d < nd) { nd = d; nk = o }
+    return nk.at(x, z) }
+
   // ── the tiles: their ① ring (which tile holds a point), ② with H per edge ──
   const T = []
   const TCELL = 64, tileGrid = new Map()
@@ -105,6 +168,8 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
     // ⭐ THE CARRIER IS `iaFull`, ② UNCUT: `iaStamp` and `iaArc` are parallel to IT, never to `iA` (the cut ring the block is
     // drawn with — measured on HPDM: iA and iaFull differ on 237 of 266 rings). A tile without it cannot name its runs.
     if (!t.iaFull?.length || !t.iaStamp?.length) { stats.noFull++; continue }
+    // ⛔ ① WITH NO OWNERS cannot sweep its road: the road side's line is its ① edge's own (`ringOwner`, one per edge)
+    if (t.ringOwner?.length !== t.ring.length) throw new Error(`groundDeformer: ⛔ ${town}: the tile whose ① ring starts at (${t.ring[0][0].toFixed(1)}, ${t.ring[0][1].toFixed(1)}) carries ${t.ringOwner?.length ?? 'no'} ① owner(s) for ${t.ring.length} edge(s) — its road has no line (tileGround's \`ringOwner\`)`)
     // ⭐ THE LINE IS ASKED AT THE POINT (Boz, 2026-10-17): a point of ② takes its height from the line of the edge's OWN
     // owner, AT THAT POINT — `line.heightAt(skelId, p)`, a projection onto the NAMED chain (the edge's label carries the name:
     // A15-legal). ⛔ Never a height interpolated between ② vertices: ② runs straight for hundreds of metres, and its two ends
@@ -149,7 +214,7 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
         if (onTerrain(o)) { E[i] = { terrain: true }; stats.onTerrain++; continue }
         const m = Math.max(1, Math.ceil(len(i) / line.step)), h = new Float64Array(m + 1)
         for (let j = 0; j <= m; j++) { const v = line.heightAt(o.skelId, at(i, j / m)); if (v == null) { refused ??= { k: i, o }; break } h[j] = v }
-        E[i] = { h, m, id: o.skelId }
+        E[i] = { h, m }
       }
       // ⛔ A ② EDGE WITH NO HEIGHT THROWS: unstamped (② lost its run's label), or on a run with no line and no rule (the rim,
       // a label naming no chain). Never a neighbour's height: filled so, a highway edge carried one street's end 906 m along ②
@@ -161,17 +226,14 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
         if (e.arc) return e.L > 0 ? e.hA + (e.hB - e.hA) * (e.s0 + u * e.len) / e.L : e.hA
         if (e.terrain) { const p = at(i, u); return raw(p[0], p[1]) }
         const f = u * e.m, j = Math.min(e.m - 1, Math.floor(f)); return e.h[j] + (f - j) * (e.h[j + 1] - e.h[j]) }
-      // ⭐ THE ROAD SIDE reads its owner edge AT THE POINT (Boz, 2026-10-17): the owner's line at (x, z), the terrain under a
-      // highway or bridge edge, or the arc's blend at the nearest point. ⛔ Never the station's H carried flat across the
-      // carriageway out to the reach: carried so, a highway edge's terrain stood 25 m across asphalt and met the terrain
-      // beyond the tile in an 8 m wall (HPDM (690.4, 1102.8)).
-      const roadAt = (i, u, x, z) => { const e = E[i]; return e.arc ? Hat(i, u) : e.terrain ? raw(x, z) : line.heightAt(e.id, [x, z]) }
-      rings.push({ ring, Hat, roadAt, stamp, arc, t: ti, k: ri })
+      rings.push({ ring, Hat, stamp, arc, t: ti, k: ri })
     })
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
     for (const [x, z] of t.ring) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
-    const rec = { ti, ring: frozenCopy(t.ring), iA: t.iA.filter(r => r?.length >= 3).map(frozenCopy), rings, bb: [a, b, c, d], segs: new Map() }
+    const rec = { ti, ring: frozenCopy(t.ring), iA: t.iA.filter(r => r?.length >= 3).map(frozenCopy), rings, bb: [a, b, c, d], segs: new Map(), one: new Map(), diag: Math.hypot(c - a, d - b) }
+    for (let i = 0; i < t.ring.length; i++) { const o = owned(t.ringOwner[i], `① edge ${i} of the tile whose ring starts at (${t.ring[0][0].toFixed(1)}, ${t.ring[0][1].toFixed(1)})`)
+      addOwned(rec.one, rec.ring[i], rec.ring[(i + 1) % t.ring.length], o); addOwned(oneGrid, rec.ring[i], rec.ring[(i + 1) % t.ring.length], o) }
     for (const R of rings) for (let i = 0; i < R.ring.length; i++) {
       const p = R.ring[i], q = R.ring[(i + 1) % R.ring.length], s = { p, q, R, i }
       const x0 = Math.floor(Math.min(p[0], q[0]) / CELL), x1 = Math.floor(Math.max(p[0], q[0]) / CELL), z0 = Math.floor(Math.min(p[1], q[1]) / CELL), z1 = Math.floor(Math.max(p[1], q[1]) / CELL)
@@ -180,6 +242,34 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
     T.push(rec); stats.tiles++
     for (let x = Math.floor(a / TCELL); x <= Math.floor(c / TCELL); x++) for (let z = Math.floor(b / TCELL); z <= Math.floor(d / TCELL); z++) { const k = x * 1000003 + z; (tileGrid.get(k) || tileGrid.set(k, []).get(k)).push(rec) }
   }
+  // ── THE INK: ① between the tiles, as owned pieces (`shape.json#ink`) ──
+  // ⭐ A piece is one NONZERO region (a hole wound against its outer), so a point is in it where the winding of its rings is
+  // not 0. A single owner's piece is that owner's ① too: its boundary joins the owned segments, so a crossing reads every
+  // owner's distance to the owner's own ① (a tile edge, or its own ink).
+  const windingAt = (x, z, r) => { const ix = rowIndex(r); if (!(ix.h > 0 && z >= ix.z0 && z <= ix.z1)) return 0
+    let w = 0
+    for (const i of ix.rows[ix.row(z)]) { const j = i === 0 ? r.length - 1 : i - 1, [xi, zi] = r[i], [xj, zj] = r[j]
+      if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) w += zi > zj ? 1 : -1 }
+    return w }
+  const inkGrid = new Map()
+  for (const [pi, piece] of ink.entries()) {
+    const rings = (piece?.rings || []).filter(r => r?.length >= 3).map(frozenCopy)
+    if (!rings.length) continue
+    if (!(piece.owners?.length >= 1)) throw new Error(`groundDeformer: ⛔ ${town}: ink piece ${pi} (at (${rings[0][0][0].toFixed(2)}, ${rings[0][0][1].toFixed(2)})) names no owner — the road on the centreline there has no line`)
+    const owners = piece.owners.map(o => owned(o, `ink piece ${pi}`))
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
+    for (const r of rings) for (const [x, z] of r) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
+    const rec = { pi, rings, owners, bb: [a, b, c, d] }
+    if (owners.length === 1) for (const r of rings) for (let i = 0; i < r.length; i++) addOwned(oneGrid, r[i], r[(i + 1) % r.length], owners[0])
+    for (let x = Math.floor(a / TCELL); x <= Math.floor(c / TCELL); x++) for (let z = Math.floor(b / TCELL); z <= Math.floor(d / TCELL); z++) { const k = x * 1000003 + z; (inkGrid.get(k) || inkGrid.set(k, []).get(k)).push(rec) }
+  }
+  const inkAt = (x, z) => { for (const p of inkGrid.get(Math.floor(x / TCELL) * 1000003 + Math.floor(z / TCELL)) || []) {
+    if (x < p.bb[0] || x > p.bb[2] || z < p.bb[1] || z > p.bb[3]) continue
+    let w = 0; for (const r of p.rings) w += windingAt(x, z, r); if (w !== 0) return p } return null }
+  // how far a crossing's owner may be searched for: the whole drawing (an owner with no ① of its own anywhere throws)
+  let gx0 = Infinity, gz0 = Infinity, gx1 = -Infinity, gz1 = -Infinity
+  for (const k of oneGrid.keys()) { const x = Math.round(k / 1000003), z = k - x * 1000003; gx0 = Math.min(gx0, x); gx1 = Math.max(gx1, x); gz0 = Math.min(gz0, z); gz1 = Math.max(gz1, z) }
+  const SPAN = Number.isFinite(gx0) ? Math.hypot(gx1 - gx0 + 1, gz1 - gz0 + 1) * CELL : 0
   const tileAt = (x, z) => { for (const t of tileGrid.get(Math.floor(x / TCELL) * 1000003 + Math.floor(z / TCELL)) || []) {
     if (x < t.bb[0] || x > t.bb[2] || z < t.bb[1] || z > t.bb[3]) continue
     if (pipRings(x, z, [t.ring])) return t } return null }
@@ -360,12 +450,12 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
   }
   function resolveUncached(x, z) {
     const t = tileAt(x, z)
-    if (!t) { stats.outside++; return NONE }
+    if (!t) return onInk(x, z)
+    if (!pipRings(x, z, t.iA)) return road(t, x, z)
     const n = nearest(t, x, z, CAP)
     if (!n || n.d > CAP) { stats.deep++; return NONE }
     stats.evaluated++
     if (n.d < 1e-9) return { v: n.H, owner: own(n) }                                // on ② itself
-    if (!pipRings(x, z, t.iA)) return { v: n.R.roadAt(n.i, n.u, x, z), owner: own(n) }   // the road side: its owner edge at the point
     // ⭐⭐ THE BAND DECIDES, NEVER THE NEARER LINE (Jacob, 2026-10-11, via Boz). A point in a ped band takes its height
     // from the ② span whose own band holds it: the spans within reach, nearest first, each tracing its band inward from
     // its own station; the first whose band reaches the point owns it. Where two streets run close, the nearer ② can be
@@ -383,6 +473,37 @@ export function buildDeformer({ town, tiles, bands, stencil = null, raw, line, l
     }
     if (inBand(x, z)) { stats.unowned++; return { v: null, owner: null, unowned: t.ti } }
     return { v: profile(n, x, z).v, owner: own(n) }
+  }
+  // ⭐ THE SWEEP (the road side of tile t): D = (1 − s)·L + s·H②, s = d① / (d① + d②). L is the owners' blend of t's own ①
+  // edges within the road's width at P; H② is ②'s height at P's nearest point on it. ⛔ No reach bounds it: the road is
+  // bounded by ① and ②, so ② is searched as far as the tile is wide.
+  function road(t, x, z) {
+    const n = nearest(t, x, z, t.diag), o1 = nearestOwned(t.one, x, z, t.diag)
+    if (!n || !o1) throw new Error(`groundDeformer: ⛔ ${town}: the road point (${x.toFixed(3)}, ${z.toFixed(3)}) in the tile whose ① ring starts at (${t.ring[0][0].toFixed(1)}, ${t.ring[0][1].toFixed(1)}) finds no ${n ? '①' : '②'} in its tile`)
+    stats.road++
+    const W = o1.d + n.d, by = ownersNear(t.one, x, z, W)
+    if (by.size > 1) stats.roadBlended++
+    if (!(W > 0)) return { v: n.H, owner: `①|${t.ti}|${o1.o.id}` }
+    const s = o1.d / W
+    return { v: s >= 1 ? n.H : (1 - s) * lineBlend(by, x, z, W) + s * n.H, owner: `①|${t.ti}|${o1.o.id}` }
+  }
+  // ⭐ THE INK: a point in no tile takes its piece's owners' lines — one owner's exactly; a crossing's blended by each
+  // owner's distance to its own ① (exactly each owner's on its own edge). ⛔ A point in no piece is beyond ① (the sea, the
+  // rim): NONE, counted — save within the boolean's own grid (2 lattice units) of an owned edge, where tile and ink were
+  // rounded apart and the point is on that edge.
+  function onInk(x, z) {
+    const p = inkAt(x, z)
+    if (!p) { const e = nearestOwned(oneGrid, x, z, 2 * LATTICE)
+      if (!e) { stats.outside++; return NONE }
+      stats.inkOnGrid++; return { v: e.o.at(x, z), owner: `ink|${e.o.id}` } }
+    stats.ink++
+    if (p.owners.length === 1) return { v: p.owners[0].at(x, z), owner: `ink|${p.owners[0].id}` }
+    stats.inkCrossing++
+    const by = new Map()
+    for (const o of p.owners) { const e = nearestOwned(oneGrid, x, z, SPAN, o)
+      if (!e) throw new Error(`groundDeformer: ⛔ ${town}: ink crossing ${p.pi} names ${o.id}, which has no ① edge and no ink of its own anywhere — its line's reach cannot be measured`)
+      by.set(o, e.d) }
+    return { v: lineBlend(by, x, z), owner: `ink|${p.owners.map(o => o.id).join('+')}` }
   }
   const nearKey = (n) => n.R.arc[n.i] != null ? `a${n.R.arc[n.i]}` : `r${n.R.stamp[n.i]}`
   const inBand = (x, z) => inClass('walk', x, z) || inClass('lawn', x, z) || inClass('curb', x, z)
