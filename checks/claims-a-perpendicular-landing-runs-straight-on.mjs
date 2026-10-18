@@ -7,21 +7,27 @@
 // the landing's walk runs back into the block, the painter's own record) and the drawn walk (`sidewalk` ∪ `curbCut`).
 // ASSERTS, at every corner where BOTH legs landed (one landing leaves the other leg nothing to be parallel to — counted, not
 // judged): inside a 4 m window round each landing, every SIDE — an edge ≥ 15 cm of the walk's boundary with exactly one end
-// on the curb (the kerb line the walk meets) — lies within 2° of one of its corner's legs (the `along` of the corner's
+// on the kerb it meets (the curb's edge, or the pavement's where the cut runs through the curb) — lies within 2° of one of its corner's legs (the `along` of the corner's
 // landings). In the straight-on corner a side is its leg's own line; a side on the arc's normal is not. Window edges are
 // not the walk's and are skipped.
 // ⭐ AND THE CUT IS THE WALK'S END (`SECTION §6.1`: the walk run on to the kerb "is its landing and its cut"; Jacob, 2026-10-18:
 // "they should line up with the sidewalks themselves"). For EVERY perpendicular cut (one landing or two): the painted cut
-// piece(s) near its record, and their ENDS — a vertex on the curb whose one neighbour edge leaves the curb. Each end lies within
+// piece(s) near its record, and their ENDS — a vertex on the pavement's edge whose one neighbour edge leaves it. Each end lies within
 // 2 cm (`ENDTOL`) of a SIDE LINE of the walk — the infinite line through a painted `sidewalk` edge (≥ 15 cm, within 4 m) running
 // within 2° of the `along` of a perpendicular cut within 6 m — and each cut's kerb edge reaches both side lines of its own walk (the two
 // either side of its record), so it spans the walk. A corner's two cuts may paint as one piece (joined where the walks cross at the kerb), so ends are judged per corner. Read from paint only; the cut's own edges are never a side line.
+// ⭐ AND IT GOES THROUGH THE CURB TO THE PAVEMENT (Jacob, 2026-10-18: "cut through and contour the curbs all the way to the
+// pavement"). For every cut, across its walk (five lines on its `along`, inside its two side lines): the cut's outermost
+// edge on each line lies on the ASPHALT's edge (within 1 cm), not on curb; and no painted curb overlaps a painted cut by
+// more than 25 cm² at a corner (`OVTOL`: the two are cut from one band, so their shared edge rounds by a millimetre; a curb
+// left standing in front of a cut is ~2000 cm²). The cut's ENDS are read on the asphalt's edge, where it meets the road.
 // PRINTS: per town, landings and sides judged, cuts and ends judged, and the perpendicular corners whose legs meet more than
 // 10° off square — the case where "parallel to the leg" and "square across the street" part (the crosswalk's ruling meets it).
 //   [LIST=1] node checks/claims-a-perpendicular-landing-runs-straight-on.mjs [scene…] [--painter=<tileGround copy>]   (LIST: every red end)
 // SEEN RED on plan (2) (c825e04e: radial landings, sides on the arc's normals). MUTATION: give `legExt` a direction rotated
 // off the edge's own — red. The ends row: SEEN RED on a89e3c36 (a norm-width piece centred on a re-solved contact);
-// MUTATION: shift each cut 0.3 m along its kerb — red.
+// MUTATION: shift each cut 0.3 m along its kerb — red. The through-curb rows: SEEN RED on 38d03e41 (the cut stopped at the
+// curb's inner edge); MUTATIONS: stop the cut at the curb's inner edge — red; leave the curb painted under it — red.
 import { pathToFileURL } from 'node:url'
 import { resolve } from 'node:path'
 import { feed } from '../scratch/_proto-feed.mjs'
@@ -30,7 +36,7 @@ import { intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 const painter = process.argv.find(a => a.startsWith('--painter='))?.slice(10)
 const { buildTileGround } = await import(painter ? pathToFileURL(resolve(painter)).href : '../src/lib/tileGround.js')
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
-const TOL = 2, MINLEN = 0.15, H = 2.0, ENDTOL = 0.02, SEP = 0.1
+const TOL = 2, MINLEN = 0.15, H = 2.0, ENDTOL = 0.02, SEP = 0.1, OVTOL = 25e-4
 const ang = (u, v) => { const c = Math.abs(u[0] * v[0] + u[1] * v[1]) / ((Math.hypot(...u) * Math.hypot(...v)) || 1); return Math.acos(Math.min(1, c)) * 180 / Math.PI }
 let red = false
 for (const scene of named.length ? named : ribbonScenes()) {
@@ -67,7 +73,8 @@ for (const scene of named.length ? named : ribbonScenes()) {
       const W = near.length ? intersectRings(near, [win]) : []          // the subjects are united under the nonzero rule
       if (!W.length) continue
       judged++
-      const segs = []; for (const g of curb.filter(close)) for (let i = 0; i < g.length; i++) segs.push([g[i], g[(i + 1) % g.length]])
+      // the kerb the walk meets: the curb's edge, or the pavement's where the cut carries the walk through the curb
+      const segs = []; for (const g of [...curb, ...(R.asphalt || [])].filter(close)) for (let i = 0; i < g.length; i++) segs.push([g[i], g[(i + 1) % g.length]])
       const onWin = (p, q) => [0, 1].some(k => Math.abs(p[k] - q[k]) < 1e-3 && Math.abs(Math.abs(p[k] - (k ? cz : cx)) - H) < 1e-3)
       // an edge drawn in BOTH directions is a seam between two pieces of the walk (the cut strip beside the sidewalk), not its edge
       // (its other side may be split into collinear pieces, so: any antiparallel edge within 2 mm of this one's midpoint)
@@ -95,6 +102,7 @@ for (const scene of named.length ? named : ribbonScenes()) {
   const segD = (P, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
     const t = L2 ? Math.max(0, Math.min(1, ((P[0] - a[0]) * dx + (P[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(P[0] - a[0] - t * dx, P[1] - a[1] - t * dz) }
   const ringD = (P, g) => { let m = Infinity; for (let i = 0; i < g.length; i++) m = Math.min(m, segD(P, g[i], g[(i + 1) % g.length])); return m }
+  const area = (rs) => rs.reduce((t, r) => { let a = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; a += p[0] * q[1] - q[0] * p[1] } return t + Math.abs(a) / 2 }, 0)
   const unit = (v) => { const l = Math.hypot(...v); return [v[0] / l, v[1] / l] }
   // each cut's own side lines, as offsets across its `along`
   const lineCache = new Map(), linesOf = (r) => { if (lineCache.has(r)) return lineCache.get(r)
@@ -103,7 +111,7 @@ for (const scene of named.length ? named : ribbonScenes()) {
       if (Math.hypot(...e) < MINLEN || ang(e, u) > TOL || segD(r.at, p0, q0) > 4) continue
       offs.push(p0[0] * nr[0] + p0[1] * nr[1]) }
     const L = { r, nr, offs }; lineCache.set(r, L); return L }
-  let cutsJudged = 0, endsJudged = 0
+  let cutsJudged = 0, endsJudged = 0, ovMax = 0
   const badEnds = []
   for (const c of corners) {
     const near = (g) => g.some(([x, z]) => c.recs.some(r => Math.abs(x - r.at[0]) < 6 && Math.abs(z - r.at[1]) < 6))
@@ -111,7 +119,8 @@ for (const scene of named.length ? named : ribbonScenes()) {
     const box = (() => { const xs = c.recs.map(r => r.at[0]), zs = c.recs.map(r => r.at[1]), m = 8
       return [[Math.min(...xs) - m, Math.min(...zs) - m], [Math.max(...xs) + m, Math.min(...zs) - m], [Math.max(...xs) + m, Math.max(...zs) + m], [Math.min(...xs) - m, Math.max(...zs) + m]] })()
     const mine = cuts.filter(near), U = mine.length ? intersectRings(mine, [box]) : [], nCut = U.filter(g => c.recs.some(r => ringD(r.at, g) <= 0.5))
-    const segs = []; for (const g of (R.curb || []).filter(near)) for (let i = 0; i < g.length; i++) segs.push([g[i], g[(i + 1) % g.length]])
+    // the cut's ENDS are where it leaves the pavement: it runs through the curb, so its edge on the road is the asphalt's
+    const segs = []; for (const g of (R.asphalt || []).filter(near)) for (let i = 0; i < g.length; i++) segs.push([g[i], g[(i + 1) % g.length]])
     const ends = []
     const mid = (U, V) => [(U[0] + V[0]) / 2, (U[1] + V[1]) / 2]
     // a land-use seam's foot is not an end: its leaving edge is drawn back the other way by the neighbouring piece
@@ -138,6 +147,28 @@ for (const scene of named.length ? named : ribbonScenes()) {
     // cut's kerb edge — touched at an end, or crossed where it joins the other walk's cut
     const kerbEdges = []; for (const g of nCut) for (let i = 0; i < g.length; i++) { const a = g[i], b = g[(i + 1) % g.length]
       if (onCurb(mid(a, b), segs)) kerbEdges.push([a, b]) }
+    // THROUGH THE CURB: on five lines across the walk, the cut's outermost crossing (toward the road) lies on the asphalt
+    const asph = (R.asphalt || []).filter(near), curbs = (R.curb || []).filter(near)
+    const ov = curbs.length && nCut.length ? area(intersectRings(curbs, nCut)) : 0
+    ovMax = Math.max(ovMax, ov)
+    if (ov > OVTOL) badEnds.push(`${tag}: ${(ov * 1e4).toFixed(0)} cm² of curb painted inside its cut`)
+    for (const L of lines) { const oAt = L.r.at[0] * L.nr[0] + L.r.at[1] * L.nr[1]
+      const lo = Math.max(...L.offs.filter(v => v < oAt)), hi = Math.min(...L.offs.filter(v => v > oAt))
+      if (!Number.isFinite(lo) || !Number.isFinite(hi)) continue
+      const u = [L.nr[1], -L.nr[0]], ua = unit(L.r.along), sg = Math.sign(u[0] * ua[0] + u[1] * ua[1]) || 1, au = [u[0] * sg, u[1] * sg]
+      let short = 0
+      for (let k = 1; k <= 5; k++) { const o = lo + (hi - lo) * k / 6, base = L.r.at, q0 = base[0] * L.nr[0] + base[1] * L.nr[1]
+        const O = [base[0] + L.nr[0] * (o - q0), base[1] + L.nr[1] * (o - q0)]             // a point on the line, by the record
+        let tMin = Infinity                                                                  // most road-ward crossing (t along `along`)
+        for (const g of nCut) for (let i = 0; i < g.length; i++) { const a = g[i], b = g[(i + 1) % g.length]
+          const oa = a[0] * L.nr[0] + a[1] * L.nr[1] - o, ob = b[0] * L.nr[0] + b[1] * L.nr[1] - o
+          if ((oa > 0) === (ob > 0) || oa === ob) continue
+          const t0 = oa / (oa - ob), X = [a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0], t = (X[0] - O[0]) * au[0] + (X[1] - O[1]) * au[1]
+          if (Math.abs(t) < 3 && t < tMin) tMin = t }
+        if (tMin === Infinity) { short++; continue }
+        const X = [O[0] + au[0] * tMin, O[1] + au[1] * tMin]
+        if (!asph.some(g => ringD(X, g) < 0.01)) short++ }
+      if (short) badEnds.push(`${tag}: a cut whose edge misses the pavement on ${short} of 5 lines across its walk — the curb stands in front of it`) }
     for (const L of lines) { const oAt = L.r.at[0] * L.nr[0] + L.r.at[1] * L.nr[1]
       const lo = Math.max(...L.offs.filter(v => v < oAt)), hi = Math.min(...L.offs.filter(v => v > oAt))
       const reach = (o) => Number.isFinite(o) && kerbEdges.some(([a, b]) => { const oa = a[0] * L.nr[0] + a[1] * L.nr[1], ob = b[0] * L.nr[0] + b[1] * L.nr[1]
@@ -150,8 +181,8 @@ for (const scene of named.length ? named : ribbonScenes()) {
   console.log(`── ${scene}   ${bad.length ? `⛔ RED — ${bad.length} landing side(s) not parallel to their leg` : '✅ every landing side runs on its leg'}`)
   console.log(`   ${corners.length} perpendicular corner(s), ${corners.filter(both).length} with both legs landed (the rest NOT JUDGED) · ${judged} landing(s) with walk in their window · ${sides} side(s) judged (≤ ${TOL}° to a leg)`)
   console.log(`   corners with both landings more than 10° off square: ${oblique.length} of ${pairs.length}${oblique.length ? ` (up to ${Math.max(...oblique).toFixed(0)}° off)` : ''}`)
-  for (const b of bad.slice(0, 6)) console.log(`   ✗ ${b}`)
-  console.log(`   ${badEnds.length ? `⛔ RED — ${badEnds.length} cut end(s) off their walk's side lines` : '✅ every cut is its walk\'s end'} · ${cutsJudged} cut(s), ${endsJudged} end(s) judged (≤ ${ENDTOL} m to a side line, two lines)`)
+  for (const b of process.env.LIST ? bad : bad.slice(0, 6)) console.log(`   ✗ ${b}`)
+  console.log(`   ${badEnds.length ? `⛔ RED — ${badEnds.length} cut end(s) off their walk's side lines` : '✅ every cut is its walk\'s end'} · ${cutsJudged} cut(s), ${endsJudged} end(s) judged (≤ ${ENDTOL} m to a side line, two lines) · curb inside a cut at most ${(ovMax * 1e4).toFixed(0)} cm² (≤ ${(OVTOL * 1e4).toFixed(0)})`)
   const cls = {}; for (const b of badEnds) { const k = b.replace(/^\([^)]*\): /, '').replace(/[\d.]+ m off/, '… m off'); (cls[k] ||= []).push(b.match(/^\([^)]*\)/)?.[0]) }
   for (const [k, v] of Object.entries(cls)) console.log(`     ${v.length} × ${k} (${new Set(v).size} corner(s)), e.g. ${[...new Set(v)].slice(0, 3).join(' ')}`)
   if (process.env.LIST) for (const b of badEnds.filter(b => !b.includes("no painted cut"))) console.log(`   · ${b}`)

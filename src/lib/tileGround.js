@@ -5996,9 +5996,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // edge the drawn walk is clipped at), within the corner's own reach (`Lx`). The leg's own extension up to there (`legExt`, no overlap back), within the slab's
   // depth of the kerb, as painted (`Wp`), is the cut: its sides are the walk's own two side lines and it spans the walk's
   // whole contact with the kerb. A walk narrower than the norm width is counted short, never widened. ⛔ A side line that
-  // never leaves ② has no cut there, counted. The ramp's kerb FACE (`kerbLift`) is where the same two lines go on to meet
-  // the road edge (② `p.ring`, the curb's outer face).
-  const perpStrips = []
+  // never leaves ② has no cut there, counted. ⭐ THE CUT GOES THROUGH THE CURB TO THE PAVEMENT (Jacob, 2026-10-18: "cut
+  // through and contour the curbs all the way to the pavement"): between the same two lines the curb band (`curbOuter` −
+  // `pedOuter`) is the cut's too — and the walk's, which the cut lies in, as everywhere — and the curb is not painted there;
+  // its outer edge is the road edge's own curve. The
+  // ramp's kerb FACE (`kerbLift`) is where the two lines meet that road edge (② `p.ring`, the curb's outer face).
+  const perpStrips = [], perpCurb = [], curbBand = ends.length ? band(curbOuter, pedOuter) : []
   const firstCross = (rings, Fr, d, s0, sMax) => { let best = Infinity
     const P0 = [Fr.T[0] + Fr.nr[0] * d, Fr.T[1] + Fr.nr[1] * d]
     for (const ring of rings) for (let k = 0, n = ring.length; k < n; k++) { const U = ring[k], V = ring[(k + 1) % n], ex = V[0] - U[0], ez = V[1] - U[1]
@@ -6018,7 +6021,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     const piece = r && slab.length && Wp.length ? intersectRings(intersectRings(slab, [r]), Wp) : []
     if (!piece.length) { R.tally.perpNoLanding++; x.c.corner.noLanding = (x.c.corner.noLanding || 0) + 1; continue }
     if (x.d1 - x.d0 < x.c.w - 1e-6) R.tally.short++
-    perpStrips.push(...piece)
+    const rC = legExt(x.p, x.i, x.atEnd, x.d0, x.d1, Math.max(k0, k1) + 1e-2, 0)
+    const through = rC && curbBand.length ? intersectRings(curbBand, [rC]) : []
+    perpStrips.push(...piece, ...through); perpCurb.push(...through)
     const A = along_(Fr, k0, s0), B = along_(Fr, k1, s1), along = [-Fr.f[0], -Fr.f[1]]
     const lAB = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nn = [-(B[1] - A[1]) / lAB, (B[0] - A[0]) / lAB]
     const inward = nn[0] * along[0] + nn[1] * along[1] > 0 ? nn : [-nn[0], -nn[1]]   // the block lies back along the walk
@@ -6030,10 +6035,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const sp = stampParts(st)   // the land-use stamp, laid once over every strip below
   return {
     curbCut: cutByStamp(st, inBlock(strips), sp), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
-    Wacc:   cutByStamp(st, inBlock(Wp), sp),
+    Wacc:   cutByStamp(st, inBlock(perpCurb.length ? unionRings([...Wp, ...perpCurb]) : Wp), sp),
     tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }, sp),
     luByLu: rekeyByPiece(st, { [key]: inBlock(luIn) }, sp),
-    curb:   cutByStamp(st, inBlock(band(curbOuter, pedOuter)), sp),
+    curb:   cutByStamp(st, inBlock(perpCurb.length ? differenceRings(curbBand, unionRings(perpCurb)) : band(curbOuter, pedOuter)), sp),
     capped,
     feArcs, feRepeat,
   }
