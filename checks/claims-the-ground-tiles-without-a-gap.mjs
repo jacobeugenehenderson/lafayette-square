@@ -85,6 +85,23 @@ if (process.argv.includes('--selftest')) {
   console.log(`selftest, twins 0.7 mm apart: used-once edges closed ${exact[0]} → hole ${exact[1]} ${twins ? '✅ the hole is seen' : '⛔ the hole is invisible'} (on the 1 mm lattice: ${lat[0]} → ${lat[1]})`)
   process.exit(ok && twins ? 0 : 1)
 }
+// ⭐ WHO IS ACROSS EACH SEAM, for assigning it (Boz, 2026-10-18): a seam edge's other side is the nearest OTHER seam edge
+// to its midpoint (never its own group's chain neighbour, which shares an end), within PAIR_REACH. Disclosure only; a seam with nothing that near is "· nothing".
+const PAIR_REACH = 0.05
+function pairs(out) {
+  const C = 1, grid = new Map(), ck = (x, z) => `${Math.floor(x / C)},${Math.floor(z / C)}`
+  out.forEach((e, i) => { const x0 = Math.floor(Math.min(e.a[0], e.b[0]) / C), x1 = Math.floor(Math.max(e.a[0], e.b[0]) / C), z0 = Math.floor(Math.min(e.a[1], e.b[1]) / C), z1 = Math.floor(Math.max(e.a[1], e.b[1]) / C)
+    for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) { const k = x + ',' + z; (grid.get(k) || grid.set(k, []).get(k)).push(i) } })
+  const segD = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
+  const same = (p, q) => p[0] === q[0] && p[1] === q[1], res = new Map()
+  out.forEach((e, i) => { const m = [(e.a[0] + e.b[0]) / 2, (e.a[1] + e.b[1]) / 2], cand = new Set()
+    for (const dx of [-1, 0, 1]) for (const dz of [-1, 0, 1]) for (const j of grid.get(`${Math.floor(m[0] / C) + dx},${Math.floor(m[1] / C) + dz}`) || []) cand.add(j)
+    let best = null, bd = PAIR_REACH
+    for (const j of cand) { if (j === i) continue; const f = out[j]; if (f.g === e.g && (same(f.a, e.a) || same(f.a, e.b) || same(f.b, e.a) || same(f.b, e.b))) continue
+      const dd = segD(m, f.a, f.b); if (dd <= bd) { bd = dd; best = f } }
+    res.set(e, best ? [e.g, best.g].sort().join(' ↔ ') : `${e.g} · nothing`) })
+  return res
+}
 let bad = 0
 for (const d of dirs) {
   const r = seams(d)
@@ -94,7 +111,9 @@ for (const d of dirs) {
   bad++
   const by = {}; for (const e of r.out) by[e.g] = (by[e.g] || 0) + e.L
   console.error(`  ⛔  ${d.split('/').pop()}: ${r.out.length} interior seam edge(s), ${m.toFixed(0)} m · by group (m): ${Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k} ${v.toFixed(0)}`).join(' · ')}`)
-  for (const e of [...r.out].sort((a, b) => b.L - a.L).slice(0, SHOW)) console.error(`        ${e.g}: (${e.a.map(v => v.toFixed(3))}) → (${e.b.map(v => v.toFixed(3))}) ${e.L.toFixed(2)} m`)
+  const pair = pairs(r.out), bp = {}; for (const e of r.out) { const k = pair.get(e); bp[k] = (bp[k] || 0) + e.L }
+  console.error(`        by group PAIR (m; the other side is the nearest seam edge to this one's midpoint within ${PAIR_REACH * 100} cm — a REPORTING reach, not a rule): ${Object.entries(bp).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([k, v]) => `${k} ${v.toFixed(0)}`).join(' · ')}`)
+  for (const e of [...r.out].sort((a, b) => b.L - a.L).slice(0, SHOW)) console.error(`        ${pair.get(e)}: (${e.a.map(v => v.toFixed(3))}) → (${e.b.map(v => v.toFixed(3))}) ${e.L.toFixed(2)} m`)
 }
 if (bad) { console.error(`⛔ ${bad} slab(s) whose ground leaves a seam open`); process.exit(1) }
 console.log('✅ every slab\'s ground tiles its disc')
