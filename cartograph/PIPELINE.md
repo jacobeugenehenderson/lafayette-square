@@ -361,18 +361,12 @@ here.** The pour warns by name for each; re-read it from a run, never from this 
 - ✅ **CLOSED — ③ NO LONGER SHIPS THE FILL FROZEN.** The tile freezes the SILHOUETTE and the
   **STAMP** (`iaStamp` per contour point, `iaFull` the uncut contour it indexes) and Section strikes
   ③'s own ladder live off them — ⭐ Survey and Section now agree because they run the **same
-  painter**, not because both read one frozen strike. ▶ `node checks/claims-proto-fill-is-live.mjs`
-  reports the frozen-vs-live band/asphalt delta and the authoring-reaches-the-fill check per scene.
-  ⭐⭐ **AND THE OPERATOR'S "JOIN LINE" WAS THREE FABRICATED JOINS, ALL FOUND BY EYE:** the ped
-  resolved per **chain** instead of per road · the ring's own **array seam at index 0** read as a
-  corner · and ② **minting a corner at every chain cut** — *"① has no nodes"*. → `SECTION §4` and
-  `RIBBONS §1`'s 2026-09-07 amendment.
+  painter**, not because both read one frozen strike. *"① has no nodes"* → `SECTION §4`, `RIBBONS §1`.
   ⛔ Open: **cap folds** (`§6.3`, the bulb has no halves — unbuilt) and a small divider residual,
   cause not established. ⚠️ A `shape.json` poured before the flip still carries `bands`; that path
   draws and **warns**, and the cure is a re-pour.
-  ▶ `node checks/claims-proto-fill-is-live.mjs` · `node checks/claims-a-corner-is-where-one-turns.mjs`
-  *(⛔ this cited `claims-proto-has-no-nodes.mjs`, which does not exist in the tree — a pointer that
-  does not resolve reads as evidence already gathered. `MEMORY §C` quotes a result from it too.)*
+  ▶ `node checks/claims-proto-fill-is-live.mjs` (frozen-vs-live delta, authoring reaches the fill) ·
+  `node checks/claims-a-corner-is-where-one-turns.mjs`
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
   name rather than letting the class vanish silently. **A known gap, not a fallback.**
 - ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment.
@@ -558,11 +552,14 @@ single-glance test in the whole progression — use it.
   its ε strokes. ⛔ **The ε ink is a cutting tool, never ground**: the road is one surface, everything in the
   disc that is not a block, and a seam down a centreline is ① showing through.
 - ⛔ **Nothing after the mint finds a neighbour by distance.** Pieces meet because they were cut from the same
-  edges and share those vertices exactly. A distance repair (conformity's 5 mm closer, `ON_EDGE_M`; the 1 mm
-  input weld) is this wall's fallback-to-the-chains, and retires when the pieces share by identity.
+  edges and share those vertices exactly; a distance repair is this wall's fallback-to-the-chains.
 - **The gate is then topological, with no number:** an edge used once inside the disc is a hole, and the rim's
   edges carry no other piece's vertex. ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` (exact identity).
-- 🔴 **ASPIRATION, not built (2026-10-18):** the closer still repairs by distance; the check is RED on every served slab.
+- 🔴 **ASPIRATION, not built (2026-10-18):** conformity still repairs by distance (the 5 mm closer, `ON_EDGE_M`;
+  the 1 mm input weld), so the check is RED on every served slab; and a lot point takes the nearest ② span's
+  ease, whatever its owner (`groundDeformer` `resolveUncached` → `nearest`). ⭐ End state (Lath · Screed,
+  `tileGround`): the lot's ease struck at the mint as owned pieces, its depth with them — reached by each
+  triangle carrying its source piece through the bake, so D is asked per piece, never by point-in-polygon.
 
 ---
 

@@ -33,3 +33,17 @@ The "two superseded comments in `mintProtopolygon`" note was an expired receipt:
 > boundary is the CLIP, never a subject"* directly above *"① is NOT cut here… it was, briefly, and that
 > was the same order error."* **A correction next to the sentence it corrects is the anti-pattern**;
 > the false half is reached first because it is higher up. Not yet excised.
+
+## §5 "What is open" — the fill bullet's history and its correction banner (excised with §6a's lot-ease line)
+
+Live home: the bullet keeps the ruling, the open items and both commands; the history lives in `SECTION §4` and
+`RIBBONS §1`'s 2026-09-07 amendment. The banner corrected a pointer the bullet no longer carries
+(`checks/claims-proto-has-no-nodes.mjs`, still absent from the tree on 2026-10-18).
+
+> ⭐⭐ **AND THE OPERATOR'S "JOIN LINE" WAS THREE FABRICATED JOINS, ALL FOUND BY EYE:** the ped
+> resolved per **chain** instead of per road · the ring's own **array seam at index 0** read as a
+> corner · and ② **minting a corner at every chain cut** — *"① has no nodes"*. → `SECTION §4` and
+> `RIBBONS §1`'s 2026-09-07 amendment.
+>
+> *(⛔ this cited `claims-proto-has-no-nodes.mjs`, which does not exist in the tree — a pointer that
+> does not resolve reads as evidence already gathered. `MEMORY §C` quotes a result from it too.)*
