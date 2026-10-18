@@ -31,8 +31,8 @@ const key = (o) => o ? `${o.skelId}|${o.side}|${o.segOrd}` : null
 const NEED = { curb: ['cw'], walk: ['walkFrom', 'walkTo'], lawn: ['cw', 'WB'] }   // the levels each class lies between
 
 const judge = (T, R, scene, say) => {
-  let n = 0, multi = 0, multiM2 = 0, noDepth = 0, uncovered = 0, beyond = 0, overlap = 0, wrongOwner = 0, notOnRing = 0, noOwner = 0, seamN = 0, seamWrong = 0, seamUnread = 0
-  const unAt = [], ovAt = [], woAt = [], swAt = [], ndAt = []
+  let n = 0, multi = 0, multiM2 = 0, noDepth = 0, noEdgeDepth = 0, uncovered = 0, beyond = 0, overlap = 0, wrongOwner = 0, notOnRing = 0, noOwner = 0, seamN = 0, seamWrong = 0, seamUnread = 0
+  const unAt = [], ovAt = [], woAt = [], swAt = [], ndAt = [], neAt = []
   for (const t of T) {
     const st = R.protoShapeTiles[t.tile], ringKeys = new Set((st.ringOwner || []).map(o => o?.skelId ? key(o) : null).filter(Boolean))
     n += t.pieces.length
@@ -50,6 +50,9 @@ const judge = (T, R, scene, say) => {
       if (q.owners.length > 1) { multi++; multiM2 += area(q.rings) }
       for (const ow of q.owners) { const need = NEED[q.cls] || [], miss = need.filter(k => !(Array.isArray(ow.depths?.[k]) && ow.depths[k].every(Number.isFinite)))
         if (miss.length) { noDepth++; if (ndAt.length < 4) ndAt.push(`tile ${t.tile} ${q.cls} ${ow.span}: no ${miss.join('/')}`) }
+        // 5b: the same depths from the TILE's record, through the owner's own edges (what the deformer reads)
+        const viaTile = (ow.edges || []).some(e => need.every(k => t.edgeDepths?.[e.si]?.[e.e]?.[k]?.length))
+        if (!viaTile) { noEdgeDepth++; if (neAt.length < 4) neAt.push(`tile ${t.tile} ${q.cls} ${ow.span}: ${ow.edges?.length || 0} edge(s), none with ${need.join('/')}`) }
         const [h, r] = String(ow.span).split('/'), run = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+r) ? st.runs?.[+r] : null
         if (!run) { noOwner++; continue }
         if (key(run) !== key(ow)) { wrongOwner++; if (woAt.length < 4) woAt.push(`tile ${t.tile} ${q.cls} span ${ow.span}: names ${key(ow)}, its stamp run is ${key(run)}`) }
@@ -62,14 +65,15 @@ const judge = (T, R, scene, say) => {
       const got = new Set([...s1, ...s2]), want = new Set([sm.a, sm.b])
       if ([...want].some(k => !got.has(k))) { seamWrong++; if (swAt.length < 4) swAt.push(`tile ${t.tile} ${sm.cls} at (${m.map(v => v.toFixed(2))}): seam names ${sm.a} | ${sm.b}, the pieces either side are ${[...got].join(' | ')}`) } }
   }
-  const ok = !uncovered && !beyond && !overlap && !wrongOwner && !noOwner && !seamWrong && !noDepth
+  const ok = !uncovered && !beyond && !overlap && !wrongOwner && !noOwner && !seamWrong && !noDepth && !noEdgeDepth
   say(`${ok ? '✅' : '⛔'} ${scene}: ${T.length} tile(s) · ${n} band piece(s)`)
   say(`   1 cover (exact): painted in no piece ${uncovered.toFixed(6)} m² · piece not painted ${beyond.toFixed(6)} m²${unAt.length ? ` (${unAt.join(' · ')})` : ''}`)
   say(`   2 disjoint: overlap ${overlap.toFixed(6)} m²${ovAt.length ? ` (${ovAt.join(' · ')})` : ''}`)
   say(`   3 owners: not the span's stamp run (or cap) ${wrongOwner}${woAt.length ? ` (${woAt.join(' · ')})` : ''} · span with no stamp run or cap ${noOwner} · owner key not on the tile's ① ring ${notOnRing} (reported, not failed) · pieces held by more than one owner ${multi}, ${multiM2.toFixed(1)} m² (ground in two spans' rects or a join, Boz 2026-10-18)`)
   say(`   4 seams: ${seamN} read · naming an owner the pieces either side are not ${seamWrong}${swAt.length ? ` (${swAt.join(' · ')})` : ''} · a side in no piece of the class ${seamUnread} (reported, not failed)`)
   say(`   5 depths: owners missing a depth their class needs (curb: cw · walk: walkFrom, walkTo · lawn: cw, WB) ${noDepth}${ndAt.length ? ` (${ndAt.join(' · ')})` : ''}`)
-  return { ok, uncovered, beyond, overlap, wrongOwner, noOwner, seamWrong, noDepth }
+  say(`   5b depths via the tile's edgeDepths (owner.edges → tile.edgeDepths[si][e]): owners with no edge carrying them ${noEdgeDepth}${neAt.length ? ` (${neAt.join(' · ')})` : ''}`)
+  return { ok, uncovered, beyond, overlap, wrongOwner, noOwner, seamWrong, noDepth, noEdgeDepth }
 }
 let bad = 0, towns = 0
 for (const scene of feedScenes()) {
@@ -92,6 +96,7 @@ for (const scene of feedScenes()) {
       'drop a piece (→ 1 cover)': (X) => { for (const t of X) if (t.pieces.length > 1) { let k = 0; t.pieces.forEach((q, i) => { if (area(q.rings) > area(t.pieces[k].rings)) k = i }); t.pieces.splice(k, 1) } return 'uncovered' },
       'duplicate a piece (→ 2 disjoint)': (X) => { for (const t of X) if (t.pieces.length) t.pieces.push({ ...t.pieces[0] }); return 'overlap' },
       'owner shifted to the next stamp run (→ 3 owners)': (X) => { for (const t of X) { const st = R.protoShapeTiles[t.tile]; for (const q of t.pieces) for (const o of q.owners) { const r = +String(o.span).split('/')[1], n = st.runs?.[r + 1]; if (Number.isFinite(r) && n) Object.assign(o, { skelId: n.skelId, side: n.side, segOrd: n.segOrd }) } } return 'wrongOwner' },
+      'the tile loses its edgeDepths (→ 5b)': (X) => { for (const t of X) t.edgeDepths = null; return 'noEdgeDepth' },
       'an owner loses its depths (→ 5 depths)': (X) => { for (const t of X) for (const q of t.pieces) for (const o of q.owners) o.depths = null; return 'noDepth' },
       'seam names another owner (→ 4 seams)': (X) => { for (const t of X) for (const sm of t.seams) if (sm.a && sm.b && sm.a !== sm.b) sm.a = sm.b + '#'; return 'seamWrong' },
     }

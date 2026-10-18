@@ -5327,7 +5327,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 //   · the perpendicular corner's fill (`perpGeom`) is not an offset: each landing is owned by its OWN leg, the rest of the
 //     sector (and where the two landings cross) by the corner's arc.
 // A piece = band ∩ cell, then the disc cut (`inBlock`) and the land-use split (the stamp parts), so it is keyed as painted.
-// Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB } } — the identity quartet of the span's stamp run (a dead-end
+// Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB }, edges: [{ si, e }] (depths on the tile's edgeDepths) } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk0, walk, env, perp }) {
   const census = { cells: 0, triangles: 0, triangleByPair: {}, innerFans: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [] }
@@ -5502,13 +5502,34 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
     for (const x of LV?.per || []) for (const e of x.edges || []) { const g = (reach.get(x.p.ri + ':' + e.e) || 0) + 2 / SCALE, b0 = bb([[e.a, e.b]])
       ;(m.get(e.span) || m.set(e.span, []).get(e.span)).push({ b: [b0[0] - g, b0[1] - g, b0[2] + g, b0[3] + g], d: e.d }) }
     edgesOf[k] = m }
+  // ⭐ AND THE EDGES THEMSELVES (Screed: the blend needs the depth AT the point, not a range across a taper): owner.edges = the
+  // owner's own source edges whose band reaches the piece, each { si, e (the `iaFull` ring and edge it lies on), a, b (this
+  // densified piece of it), depths: { level: [at a, at b] } }, as struck.
+  const byEdge = new Map()   // part.ri:e → { si, e, a, b, span, depths }
+  for (const [k, LV] of Object.entries(LEVELS)) for (const x of LV?.per || []) for (const e of x.edges || []) { const key = x.p.ri + ':' + e.e
+    const r = byEdge.get(key) || byEdge.set(key, { si: x.p.si, e: x.p.dsrc[e.e], a: e.a, b: e.b, span: e.span, depths: {}, g: reach.get(key) || 0 }).get(key)
+    r.depths[k] = [e.d[0], e.d[1]] }
+  const edgesBySpan = new Map(); for (const r of byEdge.values()) { const b0 = bb([[r.a, r.b]]), g = r.g + 2 / SCALE; r.box = [b0[0] - g, b0[1] - g, b0[2] + g, b0[3] + g]; (edgesBySpan.get(r.span) || edgesBySpan.set(r.span, []).get(r.span)).push(r) }
   for (const q of pieces) { const qb = bb(q.rings)
     for (const o of q.owners) { const dep = {}
       for (const k of Object.keys(LEVELS)) { let lo = Infinity, hi = -Infinity
         for (const r of edgesOf[k].get(o.span) || []) if (meets(r.b, qb)) { lo = Math.min(lo, ...r.d); hi = Math.max(hi, ...r.d) }
         dep[k] = lo <= hi ? [lo, hi] : null }
-      o.depths = dep } }
-  return { pieces, seams, census }
+      o.depths = dep
+      const seen = new Set(); o.edges = []
+      for (const r of (edgesBySpan.get(o.span) || []).filter(r => meets(r.box, qb))) { const k = r.si + ':' + r.e; if (!seen.has(k)) { seen.add(k); o.edges.push({ si: r.si, e: r.e }) } } } }
+  // ⭐ THE TILE'S OWN RECORD (Screed, 2026-10-18: one record, read twice — the band blend and the absorption along ②):
+  // edgeDepths[si][e] for EVERY `iaFull` edge = { level: [[t, depth], …] }, breakpoints along the edge (t 0 → 1) exactly as
+  // struck, so a taper's break inside one ② edge is kept; null where the edge strikes nothing at that level.
+  const edgeDepths = (st.iaFull || []).map(r => r.map(() => null))
+  for (const r of byEdge.values()) { const ring = st.iaFull?.[r.si]; if (!ring || r.e == null) continue
+    const A = ring[r.e], B = ring[(r.e + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], L2 = dx * dx + dz * dz || 1
+    const tOf = (p) => Math.max(0, Math.min(1, ((p[0] - A[0]) * dx + (p[1] - A[1]) * dz) / L2))
+    const rec = edgeDepths[r.si][r.e] || (edgeDepths[r.si][r.e] = { cw: [], walkFrom: [], walkTo: [], WB: [] })
+    for (const k of Object.keys(LEVELS)) if (r.depths[k]) rec[k].push([tOf(r.a), r.depths[k][0]], [tOf(r.b), r.depths[k][1]]) }
+  for (const ring of edgeDepths) for (const rec of ring) if (rec) for (const k of Object.keys(LEVELS)) {
+    const pts = rec[k].sort((u, v) => u[0] - v[0] || u[1] - v[1]); rec[k] = pts.length ? pts.filter((q, i) => !i || q[0] !== pts[i - 1][0] || q[1] !== pts[i - 1][1]) : null }
+  return { pieces, seams, census, edgeDepths }
 }
 // an open segment clipped to a region (Clipper, the lattice's grid) → the polylines inside it
 function clipLine(seg, region) {
@@ -6306,7 +6327,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     L0: { per: parts.map(p => ({ p, rings: [p.dring], labs: [p.dspan] })) }, LV_cw, LV_wf, LV_wt, LV_WB,
     curb: band(curbOuter, pedOuter), walk0: Wp0, walk: Wp, env, perp: R.perp }) : null
   return {
-    ...(BP ? { bandPieces: BP.pieces, bandSeams: BP.seams, bandCensus: BP.census } : {}),
+    ...(BP ? { bandPieces: BP.pieces, bandSeams: BP.seams, bandCensus: BP.census, bandEdgeDepths: BP.edgeDepths } : {}),
     curbCut: cutByStamp(st, inBlock(strips), sp), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
     Wacc:   cutByStamp(st, inBlock(Wp), sp),
     tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }, sp),
@@ -6577,7 +6598,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       // is not the same shape — using it on a stamped tile put 1,820 m² of curb where ③ had none.
       C: r.curb || differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)),
       block: iA,                                                               // block silhouette = the frozen curb ring
-      ...(r.bandPieces ? { bandPieces: r.bandPieces, bandSeams: r.bandSeams, bandCensus: r.bandCensus } : {}),
+      ...(r.bandPieces ? { bandPieces: r.bandPieces, bandSeams: r.bandSeams, bandCensus: r.bandCensus, bandEdgeDepths: r.bandEdgeDepths } : {}),
     }
     if (cache) cache.set(i, bundle)
     return bundle
@@ -6606,7 +6627,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       else curbCutTally[k] = (curbCutTally[k] || 0) + v
     }
     for (const f of Object.keys(PAINTED_BY_LU)) for (const k in b[f]) (acc[f][k] || (acc[f][k] = [])).push(...b[f][k])
-    if (b.bandPieces) bandByTile.push({ tile: i, pieces: b.bandPieces, seams: b.bandSeams, census: b.bandCensus, painted: { curb: b.C || [], walk: b.W || [], lawn: Object.values(b.tlByLu || {}).flat() } })
+    if (b.bandPieces) bandByTile.push({ tile: i, pieces: b.bandPieces, seams: b.bandSeams, census: b.bandCensus, edgeDepths: b.bandEdgeDepths, painted: { curb: b.C || [], walk: b.W || [], lawn: Object.values(b.tlByLu || {}).flat() } })
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
   const finish = (acc) => {
