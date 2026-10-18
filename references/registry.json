@@ -40,7 +40,12 @@
         "checkedOn": "2026-09-23",
         "checkedBy": "Boz",
         "note": "No copyright or terms-of-use text found on the EPG About or General_disclaimer pages; its Privacy_policy page 404'd; modot.org has public-records pages but no content-reuse terms. Absence of terms is NOT permission.",
-        "route": "Ask MoDOT in writing (Ask MoDOT 888-275-6636, listed on its public-records pages)."
+        "route": "Ask MoDOT in writing (Ask MoDOT 888-275-6636, listed on its public-records pages).",
+        "request": {
+          "status": "drafted, not sent",
+          "letter": "Drafted 2026-10-18 by Plat with Jacob, as a Gmail draft in Jacob's account; NOT SENT — Jacob sends. Local copy (gitignored): references/files/letters/request-modot.md. Asks for permission covering the current maps and the ones that follow in the state, says the maps are part of a commercial product (neighborhoods and organizations pay to host them; the public uses them free), and that the studio builds maps all over the country.",
+          "to": "NOT FOUND (2026-10-18): modot.org lists no general email — only the Ask MoDOT line 1-888-275-6636, a contact web form at modot.org/contact-us, and department/district inboxes. Ask MoDOT where permission requests go, or paste the letter into the form."
+        }
       },
       "status": "CANDIDATE",
       "localCopy": null
@@ -60,9 +65,15 @@
         "aiUse": "not-permitted-pending-waiver",
         "checkedOn": "2026-09-23",
         "checkedBy": "Boz (web search; the policy page 404'd to fetch — Jacob to verify on the page)",
-        "quote": "Many, but not all, of the products and material [ODOT] produces are public records and are open for non-commercial reuse or duplication… Reuse of any and all material for commercial purposes is generally prohibited. Waivers… will be considered on a case-by-case basis… accreditation to ODOT… is requested.",
-        "source": "https://www.transportation.ohio.gov/help-center/privacy-notice-and-policies",
-        "route": "Request a written waiver from ODOT Division of Communications & External Affairs, describing the use."
+        "quote": "Many, but not all, of the products and material the Ohio Department of Transportation produces are public records and are open for non-commercial reuse or duplication. Some items, such as the Official Transportation Map, are fully copyrighted, and reuse is expressly restricted. Reuse of any and all material for commercial purposes is generally prohibited. Waivers to reuse material for educational purposes, and/or by non-profit or other governmental entities will be considered on a case-by-case basis depending on the source material and intended reuse. Accreditation to ODOT for appropriated material is requested. Feel free to contact the ODOT Division of Communications for further clarification or for specifics requests.",
+        "source": "https://www.transportation.ohio.gov/privacy",
+        "route": "Request a written waiver from ODOT Division of Communications & External Affairs, describing the use.",
+        "quoteNote": "Re-read in full 2026-10-18 by Plat (the policy moved from /help-center/privacy-notice-and-policies, now 404, to /privacy). The earlier quote elided the waiver sentence's scope: waivers are named only for educational, non-profit or governmental reuse, so a commercial waiver is outside the stated classes and may be refused.",
+        "request": {
+          "status": "drafted, not sent",
+          "letter": "Drafted 2026-10-18 by Plat with Jacob, as a Gmail draft in Jacob's account; NOT SENT — Jacob sends. Local copy (gitignored): references/files/letters/request-odot.md. Asks for permission covering the current maps and the ones that follow in the state, says the maps are part of a commercial product (neighborhoods and organizations pay to host them; the public uses them free), and that the studio builds maps all over the country. It acknowledges the request may fall outside the stated waiver classes.",
+          "to": "brand@dot.ohio.gov, 614-466-7410 — the contact box on transportation.ohio.gov/about/divisions/communications (\"Division of Communications\"). The policy page's own link to the division 404s, and the address looks branding-oriented: confirm by phone that it takes waiver requests."
+        }
       },
       "status": "CANDIDATE",
       "localCopy": null
