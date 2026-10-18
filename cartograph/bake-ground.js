@@ -52,7 +52,7 @@ import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
 import { requireExplicitMap, ribbonsPathOf, mapRawDir } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { buildTileGround, roadOffTheLattice } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
@@ -609,7 +609,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
   if (PROTO && !pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
   return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [],
-           inkPieces: PROTO ? pr.protoInkPieces : null, blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
+           inkPieces: PROTO ? pr.protoInkPieces : null, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -1165,7 +1165,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1279,6 +1279,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // Centre stripes — ①'s own line per eligible street (`centreStripeRings`), never map.json's.
   const stripeRings = centreStripeRings(ribbons.streets).map(x => x.ring)
   for (const ring of stripeRings) pushMat('stripe', ring)
+  // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile, no ink piece (the curbless blocks'
+  // ground included) and not under H has no owner to take its line from. Refused by group and point, never dropped or nudged.
+  if (protoFlag) {
+    const off = roadOffTheLattice({ asphalt: asphaltRings, highway: highwayRings, stripe: stripeRings }, shapeArtifact, inkPieces, ribbons.protopolygon.boundaryRing, highwayRings)
+    const bad = Object.entries(off).filter(([, o]) => o.off.length)
+    if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no ink piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
+    console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, an ink piece or H`)
+  }
   // Parking-lane edge lines + bike lanes — both sides offset from a centerline.
   for (const item of (mapLayers.parkingLine || [])) {
     if (!item.coords || !item.offset) continue
@@ -1994,8 +2002,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // sibling group ({ tiles, highway }) so the frozen Section/Design views restore
   // highways (the bare-array form dropped them — regression 4924d9a). The slab's
   // own `highway` mat group is unaffected; this is the Section-side freeze.
-  // `ink`: ① (the strip between tiles) as owned pieces [{ rings, owners }] — only ① as the producer makes it; a --legacy
-  // freeze carries none, and a reader that needs it must refuse that shape, not guess.
+  // `ink`: the OWNED ROAD GROUND OUTSIDE EVERY TILE, as pieces [{ rings, owners, kind? }]: ①'s ink strokes (the 2ε strip
+  // between tiles; a crossing names every owner) and, `kind: 'block'`, the curbless blocks' ground (a block whose curbs
+  // meet has no tile, and its ground is road, owned by its own ① edges). Only ① as the producer makes it; a --legacy freeze
+  // carries none, and a reader that needs it must refuse that shape, not guess.
   if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ...(inkPieces ? { ink: inkPieces } : {}) }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)

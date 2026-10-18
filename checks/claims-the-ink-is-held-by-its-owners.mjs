@@ -8,6 +8,7 @@
 //   2. PARTITION — the pieces do not overlap, and every piece names at least one owner;
 //   3. OWNERS — the piece under each ink edge's own stroke (a point ε inside the strip off the edge's midpoint) names that edge's
 //      owner, and each owner a crossing piece names has an edge whose stroke reaches it.
+//   4. CURBLESS BLOCKS — each `kind: 'block'` piece lies inside a frozen ① block, outside H and on no tile.
 //   node checks/claims-the-ink-is-held-by-its-owners.mjs [--scene=<town> …]
 import clipperLib from 'clipper-lib'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
@@ -46,12 +47,19 @@ for (const scene of feedScenes()) {
   const GRID = 2, near2 = (q, i) => P[i].rings.some(r => r.some((a, k) => { const b = r[(k + 1) % r.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dz) <= GRID / CLIP_SCALE }))
   const solid = (rs) => { if (!rs.length) return 0; const co = new clipperLib.ClipperOffset(), out = []; co.AddPaths(rs.map(C), clipperLib.JoinType.jtRound, clipperLib.EndType.etClosedPolygon); co.Execute(out, -GRID); return out.reduce((t, q) => t + Math.abs(q.reduce((u, a, i) => u + a.X * q[(i + 1) % q.length].Y - q[(i + 1) % q.length].X * a.Y, 0) / 2), 0) / (CLIP_SCALE * CLIP_SCALE) }
   // 1b — no piece outside the ink: each piece against the ink rings near it (nonzero, wound as Clipper wrote them)
-  let over = 0, overRaw = 0; P.forEach((p, i) => { const near = inkU.filter((_, k) => meet(inkBB[k], bb[i])); const d = op(ClipType.ctDifference, p.rings, near); overRaw += area(d); over += solid(d) })
+  let over = 0, overRaw = 0; P.forEach((p, i) => { if (p.kind === 'block') return; const near = inkU.filter((_, k) => meet(inkBB[k], bb[i])); const d = op(ClipType.ctDifference, p.rings, near); overRaw += area(d); over += solid(d) })
   // 2 — no overlap: every pair of pieces whose bounds meet
   let overlap = 0, overlapRaw = 0; const ord = P.map((_, i) => i).sort((a, b) => bb[a][0] - bb[b][0])
   for (let a = 0; a < ord.length; a++) for (let b = a + 1; b < ord.length && bb[ord[b]][0] <= bb[ord[a]][2]; b++) { const i = ord[a], j = ord[b]; if (!meet(bb[i], bb[j])) continue
     const x = op(ClipType.ctIntersection, P[i].rings, P[j].rings); if (x.length) { overlapRaw += area(x); overlap += solid(x) } }
   const noOwner = P.filter(p => !p.owners?.length).length
+  // 4 — THE CURBLESS BLOCKS' GROUND (`kind: 'block'`): each lies inside a frozen ① block, outside H, and on no tile
+  const fp = f.ribbons.protopolygon, BP = P.filter(p => p.kind === 'block'), H = (R.highway || []).filter(r => r?.length >= 3), T = R.protoShapeTiles.map(t => t.ring), tbb = T.map(r => bbOf([r]))
+  let bOut = 0, bH = 0, bTile = 0, bM2 = 0
+  for (const p of BP) { const b = bbOf(p.rings); bM2 += area(p.rings)
+    bOut += solid(op(ClipType.ctDifference, p.rings, fp.blocks.filter(r => meet(bbOf([r]), b))))
+    if (H.length) bH += solid(op(ClipType.ctIntersection, p.rings, H))
+    const nt = T.filter((_, i) => meet(tbb[i], b)); if (nt.length) bTile += solid(op(ClipType.ctIntersection, p.rings, nt)) }
   // 1a + 3 — every 0.5 m along every ink edge, a point ε inside the strip (the ink lies left of its own edges, as Clipper writes
   // it) must lie in a piece, and that piece must name the edge's owner
   const eps = 0.005 / 2, STEP = 0.5
@@ -68,11 +76,12 @@ for (const scene of feedScenes()) {
       if (!hit.length) { missed++; if (missedAt.length < 3) missedAt.push(`(${q.map(c => c.toFixed(3))}) on ${key}`); continue }
       for (const i of hit) { reached[i].add(key); if (!P[i].owners.map(name).includes(key)) { wrong++; if (wrongAt.length < 3) wrongAt.push(`${key} at (${q.map(c => c.toFixed(2))}), piece names ${P[i].owners.map(name).join(' + ')}`) } } } }))
   const crossings = P.filter(p => p.owners.length > 1), unreached = crossings.filter(p => { const i = P.indexOf(p); return p.owners.some(o => !reached[i].has(name(o))) }).length
-  const ok = over === 0 && overlap === 0 && !noOwner && !missed && !wrong
+  const ok = over === 0 && overlap === 0 && !noOwner && !missed && !wrong && !bOut && !bH && !bTile
   if (!ok) bad++
   console.log(`${ok ? '✅' : '⛔'} ${scene}: ${P.length} ink piece(s), ${crossings.length} crossing(s) (≥ 2 owners, up to ${Math.max(0, ...crossings.map(p => p.owners.length))}) · ink ${aInk.toFixed(2)} m²`)
   console.log(`   1 cover: ${samples} points ε inside the strip, every ${STEP} m along every ink edge · in no piece ${missed} (within the 2-unit grid of a piece's edge, not counted: ${onGrid})${missedAt.length ? ` (${missedAt.join(' · ')})` : ''} · piece outside the ink ${over.toFixed(6)} m² wider than the grid (${overRaw.toFixed(3)} m² of slivers in all)`)
   console.log(`   2 partition: overlap ${overlap.toFixed(6)} m² wider than the grid (${overlapRaw.toFixed(3)} m² of slivers in all) · pieces with no owner ${noOwner}`)
+  console.log(`   4 curbless blocks: ${BP.length} piece(s), ${bM2.toFixed(1)} m² · outside every ① block ${bOut.toFixed(6)} m² · under H ${bH.toFixed(6)} m² · on a tile ${bTile.toFixed(6)} m² (each wider than the grid)`)
   console.log(`   3 owners: in a piece not naming the edge's owner ${wrong}${wrongAt.length ? ` (${wrongAt.join(' · ')})` : ''} · crossing pieces naming an owner no sample reached ${unreached} (reported, not failed)`)
 }
 if (!towns) { console.log('⛔ no town produced ① ink — nothing was checked'); bad++ }

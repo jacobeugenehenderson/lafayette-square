@@ -2637,16 +2637,16 @@ export function inkPiecesByOwner(ink, owners, hw, clip = null) {
 // ⭐ THE ROAD IS HELD BY ① (Boz's ruling, 2026-10-17): every vertex of a ROAD group (asphalt · stripe · highway) inside the
 // disc lies in a tile ring or an ink piece — the two things that carry an owner, so a road vertex in neither has no line
 // to take its height from. Bounded by the road's GROUPS, not by space: water and land use are not road, so the sea never
-// enters the test. On a tile or piece edge (within 2 grid units, the boolean's own tolerance) counts as held.
-// Returns per group { n, off: [[x, z]…] }. ▶ checks/claims-the-road-lies-on-the-lattice.mjs; the bake does not refuse on it yet
-// (held, Boz 2026-10-17, until a no-curb block is emitted as ground — today it has no tile, so a road vertex there has no owner).
-export function roadOffTheLattice(groups, tiles, inkPieces, disc) {
+// enters the test. The lattice is tile rings ∪ ink pieces (with the curbless blocks' `kind: 'block'`) ∪ H: a block
+// wholly under the highway corridor is the highway's own ground (Boz, 2026-10-17), so a road vertex inside H is on the road. On a tile or piece edge (within 2 grid units, the boolean's own tolerance) counts as held.
+// Returns per group { n, off: [[x, z]…] }; the bake refuses. ▶ checks/claims-the-road-lies-on-the-lattice.mjs
+export function roadOffTheLattice(groups, tiles, inkPieces, disc, highway = []) {
   const TOL = 2 / SCALE, G = 50
   const wind = (p, rings) => { let w = 0; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
     if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
   const onEdge = (p, rings) => rings.some(r => r.some((a, i) => { const b = r[(i + 1) % r.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
     const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= TOL }))
-  const cov = [...tiles.map(t => [t.ring]), ...inkPieces.map(q => q.rings)]
+  const cov = [...tiles.map(t => [t.ring]), ...inkPieces.map(q => q.rings), ...(highway.length ? [highway.filter(r => r?.length >= 3)] : [])]
   const bb = cov.map(rs => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a - TOL, b - TOL, c + TOL, d + TOL] })
   const grid = new Map(); bb.forEach((q, i) => { for (let x = Math.floor(q[0] / G); x <= Math.floor(q[2] / G); x++) for (let z = Math.floor(q[1] / G); z <= Math.floor(q[3] / G); z++) (grid.get(x + ',' + z) || grid.set(x + ',' + z, []).get(x + ',' + z)).push(i) })
   const held = (p) => (grid.get(Math.floor(p[0] / G) + ',' + Math.floor(p[1] / G)) || []).some(i => p[0] >= bb[i][0] && p[0] <= bb[i][2] && p[1] >= bb[i][1] && p[1] <= bb[i][3] && (wind(p, cov[i]) !== 0 || onEdge(p, cov[i])))
@@ -8628,6 +8628,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
+  let protoNoCurbBlocks = []          // ② blocks whose curb came back empty: their ground, owned (`kind: 'block'` pieces below)
   let protoInkPieces = null           // ① ink as owned pieces (`inkPiecesByOwner`) — the strip between tiles, with its owners
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
@@ -9752,7 +9753,15 @@ export function buildTileGround(ribbons, opts = {}) {
           // `POLYGON-FIRST §5` RULE 2 names as a fallback INSIDE an instrument — "a block has no
           // curb" reported as nothing at all. On a town nobody has inspected, a block quietly
           // absent from the artifact is exactly the plausible-looking wrong map Layer 0 forbids.
-          if (!mine.length) { protoNoCurb++; protoNoCurbArea += Math.abs(signedArea(ring)); continue }
+          // ⭐ THE BLOCK GOES, THE GROUND STAYS (Boz, 2026-10-17): "if the curbs touch, there's no block" drops the BLOCK,
+          // not the ground. It is ROAD — its bounding streets' asphalt meeting — and it is carried with its own ① ring-edge
+          // owners, read off the frozen labels here, never recovered later. Emitted beside the ink (`kind: 'block'`).
+          if (!mine.length) { protoNoCurb++; protoNoCurbArea += Math.abs(signedArea(ring))
+            const L = [(protoBlockLabels || R.labels)?.[k] || [], ...(protoBlockHoleLabels?.[k] || [])], own = new Map()
+            for (const ls of L) for (const l of ls) { const o = protoOwners[l]; if (!o || o.skelId === '__boundary__') continue
+              own.set(o.water ? 'water' : o.skelId, o.water ? { kind: 'water' } : o.skelId) }
+            protoNoCurbBlocks.push({ k, ring, holes: protoBlockHoles?.[k] || [], owners: [...own.values()] })
+            continue }
           // ⛔⛔ THE FILL IS NOT FROZEN — `SECTION §4`, the keystone, verbatim: "the FILL was NEVER
           // meant to be frozen; the DataWall freezes the SILHOUETTE and the FILL is the live
           // consumer-side stroke off it", and "Phase-D's earlier 'freeze the FILL too' over-reach is
@@ -10302,7 +10311,7 @@ export function buildTileGround(ribbons, opts = {}) {
           if (J.junctionNoNode) console.warn(`[tileGround][PROTO②] ${J.junctionNoNode} junction corner(s) whose two chains have no frozen shared node — curb cuts stand, their crosswalks go UNPAIRED.`)
           if (J.unknown) console.warn(`[tileGround][PROTO②] ⛔ ${J.unknown} corner(s) have a leg with NO run on the stamp (flanks: ${why}) — pad kept, no curb cut, and NOT a bend. \`capEdge\` = the dead-end mouth class (ROADMAP A0/A10).`)
         }
-        if (protoNoCurb) console.warn(`[tileGround][PROTO②] ⛔ ${protoNoCurb} block(s) yielded NO curb ring and are ABSENT from the artifact (${protoNoCurbArea.toFixed(0)} m² of ① block area). Their curbs meet, so there is no block between them — RULED CORRECT (\`RIBBONS §1\`), but it is a REAL ABSENCE and it is counted here rather than left to be discovered on a map.`)
+        if (protoNoCurb) console.warn(`[tileGround][PROTO②] ⛔ ${protoNoCurb} block(s) yielded NO curb ring and have no tile (${protoNoCurbArea.toFixed(0)} m² of ① block area). Their curbs meet, so there is no block between them — RULED CORRECT (\`RIBBONS §1\`) — but the GROUND stays: as ① the producer, it is emitted as owned road pieces beside the ink (\`kind: 'block'\`), or left to the highway where H covers it.`)
       }
       // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
       // nominal depth is a real fact about that block, not an error — but it must be countable,
@@ -10598,6 +10607,22 @@ export function buildTileGround(ribbons, opts = {}) {
       if (IP.unlabelled) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${IP.unlabelled} ① ink edge(s) carry no owner — the ink there has no line. Refusing.`)
       const unowned = IP.pieces.filter(p => !p.owners.length).length
       if (unowned) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${unowned} ink piece(s) with no owner — refusing.`)
+      // ⭐ AND THE CURBLESS BLOCKS' GROUND, as road pieces beside the ink: the block minus its holes, minus H (a block under
+      // the highway corridor is the HIGHWAY's ground, painted by it — Boz, 2026-10-17), in the stencil. Painted as asphalt.
+      // ⛔ AND MINUS THE TILES: a tile's ring carries no holes, so a curbless block nested in another block's hole is already
+      // inside that tile's ring, and its road band paints it (HPDM: a 4.0 m² block in tile 182's band). Outside every tile.
+      let nb = 0, nbM2 = 0, underH = 0
+      const bbOf = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
+      const tBB = protoShapeTiles.map(t => bbOf([t.ring])), meets = (u, v) => u[0] <= v[2] && v[0] <= u[2] && u[1] <= v[3] && v[1] <= u[3]
+      for (const b of protoNoCurbBlocks) {
+        const reg = b.holes.length ? differenceRings([b.ring], b.holes) : [b.ring], bb = bbOf([b.ring])
+        const cut = [...Hpoly, ...protoShapeTiles.filter((_, i) => meets(tBB[i], bb)).map(t => t.ring)]
+        const rings = inStencil(cut.length ? differenceRings(reg, cut) : reg), a = Math.abs(rings.reduce((t, r) => t + signedArea(r), 0))
+        if (!rings.length || !(a > 0)) { underH++; continue }
+        if (!b.owners.length) throw new Error(`[tileGround][①⇢LIVE] ⛔ curbless block ${b.k} has ground outside the highway (${a.toFixed(1)} m²) but none of its ① edges names an owner — that road has no line. Refusing.`)
+        protoInkPieces.push({ rings, owners: b.owners, kind: 'block' }); asphalt = unionRings([...asphalt, ...rings]); nb++; nbM2 += a
+      }
+      if (protoNoCurbBlocks.length) console.log(`[tileGround][①⇢LIVE] the curbless blocks' ground: ${nb} road piece(s), ${nbM2.toFixed(1)} m², owned by their ① edges · ${underH} wholly under the highway (its ground) or inside a tile`)
       console.log(`[tileGround][①⇢LIVE] ① held by its owners: ${IP.pieces.length} ink piece(s) · ${IP.crossings} crossing(s) where ≥ 2 owners' strokes overlap · largest crossing ${Math.max(0, ...IP.pieces.filter(p => p.owners.length > 1).map(p => p.owners.length))} owners`)
       const m2 = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))   // net: Clipper winds holes against their outer
       console.log(`[tileGround][①⇢LIVE] ① painted first: road ${m2(roadInk).toFixed(1)} m² · shore ${m2(shoreInk).toFixed(1)} m² · left to the highway ${m2(hwyInk).toFixed(1)} m²${unlabelled ? ` · ⛔ ${unlabelled} ink edge(s) with no owner — painted as road` : ''}`)
