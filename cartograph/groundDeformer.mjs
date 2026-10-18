@@ -119,7 +119,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     if (!id) throw new Error(`groundDeformer: ⛔ ${town}: ${where} names no owner — its road has no line`)
     let w = ownedBy.get(id); if (w) return w
     const terrain = id === '__rim__' || id === '__highway__' || id === '__boundary__' || bridges.has(id) || o?.gradeSeparated === true
-    ownedBy.set(id, w = { id, at: terrain ? (x, z) => raw(x, z) : (x, z) => { const v = line.heightAt(id, [x, z])
+    ownedBy.set(id, w = { id, ground: !terrain || id === '__rim__', at: terrain ? (x, z) => raw(x, z) : (x, z) => { const v = line.heightAt(id, [x, z])
       if (v == null) throw new Error(`groundDeformer: ⛔ ${town}: ① owner ${id} (${where}) has no line and no rule for its class — the road at (${x.toFixed(2)}, ${z.toFixed(2)}) has no height`)
       return v } })
     return w }
@@ -256,7 +256,10 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     const rings = (piece?.rings || []).filter(r => r?.length >= 3).map(frozenCopy)
     if (!rings.length) continue
     if (!(piece.owners?.length >= 1)) throw new Error(`groundDeformer: ⛔ ${town}: ink piece ${pi} (at (${rings[0][0][0].toFixed(2)}, ${rings[0][0][1].toFixed(2)})) names no owner — the road on the centreline there has no line`)
-    const owners = piece.owners.map(o => owned(o, `ink piece ${pi}`))
+    // ⭐ A BRIDGE IS NOT ON THE GROUND (lineHeight.mjs; Boz, 2026-10-17): where a piece's owners include an at-grade one, the
+    // ground is the at-grade owners' alone — the grade-separated chain or highway passing over contributes nothing to D (it is
+    // its own object above). A piece of only grade-separated owners keeps their rule, the terrain.
+    const all = piece.owners.map(o => owned(o, `ink piece ${pi}`)), owners = all.some(o => o.ground) ? all.filter(o => o.ground) : all
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
     for (const r of rings) for (const [x, z] of r) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
     const rec = { pi, rings, owners, bb: [a, b, c, d] }

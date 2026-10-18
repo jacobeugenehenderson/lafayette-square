@@ -7,9 +7,9 @@
 // blend of ①'s own edges (`ringOwner`); `#onInk` gives the ink its owners' lines. Any town: the rows are the deformer's
 // contract, in memory, on a synthetic tile whose two ① owners meet at a corner on different grades and whose ② stands
 // 0.3 m off its line (so the sweep's two ends differ).
-// ⭐ MUTATION TEST: `--selftest` plants four defects (written to the OS temp dir) and expects each RED: the nearest owner
+// ⭐ MUTATION TEST: `--selftest` plants five defects (written to the OS temp dir) and expects each RED: the nearest owner
 //   alone (a Voronoi step on the bisector) · pure 1/d weights (a far owner's weight drops to 0 in a step where its reach ends) · the road read as ① straight
-//   across (a step at the curb) · the ink drawn as terrain.
+//   across (a step at the curb) · the ink drawn as terrain · a bridge blended into the street's ground under it.
 //   node checks/claims-the-road-is-swept-from-its-line-to-its-curb.mjs [--selftest]
 import { ROOT } from './_scenes.mjs'
 import { join } from 'node:path'
@@ -24,8 +24,10 @@ const rows = async (url) => {
   const sq = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], inner = sq(-5, -5, 5, 5)
   const D = buildDeformer({ town: 'selftest',
     tiles: [{ ring: sq(-10, -10, 10, 10), ringOwner: ['A', 'B', 'C', 'D'].map(skelId => ({ skelId })), iA: [inner], iaFull: [inner], iaStamp: [[0, 1, 2, 3]],
-      runs: ['Acurb', 'Bcurb', 'C', 'D'].map(skelId => ({ skelId })) }],
-    ink: [{ rings: [sq(-10, -10.01, 9.99, -10)], owners: ['A'] }, { rings: [sq(10, -9.99, 10.01, 10)], owners: ['B'] },
+      runs: [...['Acurb', 'Bcurb', 'C', 'D'].map(skelId => ({ skelId })), { skelId: 'Br', noLine: 'bridge' }] }],
+    ink: [{ rings: [sq(-10, -10.01, -0.01, -10)], owners: ['A'] }, { rings: [sq(0.01, -10.01, 9.99, -10)], owners: ['A'] },
+          // a street passing under a bridge: one piece, an at-grade and a grade-separated owner
+          { rings: [sq(-0.01, -10.01, 0.01, -10)], owners: ['A', 'Br'] }, { rings: [sq(-0.01, -10.03, 0.01, -10.01)], owners: ['Br'] }, { rings: [sq(10, -9.99, 10.01, 10)], owners: ['B'] },
           { rings: [sq(9.99, -10.01, 10.01, -9.99)], owners: ['A', 'B'] }],
     raw: () => 3, line: { step: 1, heightAt: (id, p) => LINES[id]?.(p) ?? null },
     limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], walk: [], lawn: [] } })
@@ -42,6 +44,7 @@ const rows = async (url) => {
     // (5, −7.5): owner B is exactly the road's width away (d_B = W = 5), where its reach ends
     ['where a far owner\'s reach ends, the road is continuous', step(h(5 - 1e-5, -7.5), h(5 + 1e-5, -7.5)) < 1e-4],
     ['the ink between tiles takes its owner\'s line', step(h(0, -10.005), LINES.A([0, -10.005])) < 1e-12 && step(h(10.005, 0), LINES.B([10.005, 0])) < 1e-12],
+    ['under a bridge the ground is the at-grade street\'s line', step(h(0.005, -10.005), LINES.A([0.005, -10.005])) < 1e-12],
     ['a crossing meets each owner\'s own ink with no step', step(h(9.99 - e, -10.005), h(9.99 + e, -10.005)) < 1e-4 && step(h(10.005, -9.99 + e), h(10.005, -9.99 - e)) < 1e-4],
   ]
 }
@@ -51,6 +54,7 @@ const MUTANTS = [
   ['the nearest owner alone', 'return { v: s >= 1 ? n.H : (1 - s) * lineBlend(by, x, z, W) + s * n.H', 'return { v: s >= 1 ? n.H : (1 - s) * o1.o.at(x, z) + s * n.H', 'across the bisector'],
   ['pure 1/d weights', '(W === Infinity ? 1 : Math.max(0, W - d))', '1', 'reach ends'],
   ['the road read as ① straight across', 'const s = o1.d / W', 'const s = 0', 'at ②'],
+  ['the bridge blended into the ground', 'owners = all.some(o => o.ground) ? all.filter(o => o.ground) : all', 'owners = all', 'under a bridge'],
   ['the ink drawn as terrain', 'if (!t) return onInk(x, z)', 'if (!t) { stats.outside++; return NONE }', 'the ink between tiles'],
 ]
 const mutant = (from, to) => { const src = readFileSync(HOME, 'utf8')
