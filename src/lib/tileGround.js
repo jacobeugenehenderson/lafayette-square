@@ -2633,6 +2633,28 @@ export function inkPiecesByOwner(ink, owners, hw, clip = null) {
     if (r.length && area(r) > tiny) pieces.push({ rings: r, owners: [ownerOfKey.get(p.key)] }) }
   return { pieces, unlabelled, crossings: (C.faces || []).length }
 }
+
+// ⭐ THE ROAD IS HELD BY ① (Boz's ruling, 2026-10-17): every vertex of a ROAD group (asphalt · stripe · highway) inside the
+// disc lies in a tile ring or an ink piece — the two things that carry an owner, so a road vertex in neither has no line
+// to take its height from. Bounded by the road's GROUPS, not by space: water and land use are not road, so the sea never
+// enters the test. On a tile or piece edge (within 2 grid units, the boolean's own tolerance) counts as held.
+// Returns per group { n, off: [[x, z]…] }. ▶ checks/claims-the-road-lies-on-the-lattice.mjs; the bake does not refuse on it yet
+// (held, Boz 2026-10-17, until a no-curb block is emitted as ground — today it has no tile, so a road vertex there has no owner).
+export function roadOffTheLattice(groups, tiles, inkPieces, disc) {
+  const TOL = 2 / SCALE, G = 50
+  const wind = (p, rings) => { let w = 0; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+  const onEdge = (p, rings) => rings.some(r => r.some((a, i) => { const b = r[(i + 1) % r.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+    const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= TOL }))
+  const cov = [...tiles.map(t => [t.ring]), ...inkPieces.map(q => q.rings)]
+  const bb = cov.map(rs => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a - TOL, b - TOL, c + TOL, d + TOL] })
+  const grid = new Map(); bb.forEach((q, i) => { for (let x = Math.floor(q[0] / G); x <= Math.floor(q[2] / G); x++) for (let z = Math.floor(q[1] / G); z <= Math.floor(q[3] / G); z++) (grid.get(x + ',' + z) || grid.set(x + ',' + z, []).get(x + ',' + z)).push(i) })
+  const held = (p) => (grid.get(Math.floor(p[0] / G) + ',' + Math.floor(p[1] / G)) || []).some(i => p[0] >= bb[i][0] && p[0] <= bb[i][2] && p[1] >= bb[i][1] && p[1] <= bb[i][3] && (wind(p, cov[i]) !== 0 || onEdge(p, cov[i])))
+  const out = {}
+  for (const [g, rings] of Object.entries(groups)) { const o = out[g] = { n: 0, off: [] }
+    for (const r of rings || []) for (const p of r) { if (wind(p, [disc]) === 0 && !onEdge(p, [disc])) continue; o.n++; if (!held(p)) o.off.push(p) } }
+  return out
+}
 function onLattice(ring, what) {
   const out = ring.map(p => [Math.round(p[0] * SCALE) / SCALE, Math.round(p[1] * SCALE) / SCALE])
   for (let i = 0; i < out.length; i++) { const a = out[i], b = out[(i + 1) % out.length]

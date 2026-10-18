@@ -298,7 +298,7 @@ const FLOOR_KEYS = new Set(['mat:bed'])
 
 // Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
 // MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
-const POLYLINE_HALF_WIDTHS = {
+export const POLYLINE_HALF_WIDTHS = {
   stripe:         0.10,
   edgeline:       0.08,
   bikelane:       0.25,
@@ -313,7 +313,7 @@ const POLYLINE_HALF_WIDTHS = {
 // straight segments produce parallel edges and gentle bends miter cleanly.
 // Sharp corners can self-intersect; barrier/stripe data is dense enough
 // that this hasn't bitten in practice.
-function polylineToRing(coords, halfWidth) {
+export function polylineToRing(coords, halfWidth) {
   if (!coords || coords.length < 2) return null
   const n = coords.length
   const left = new Array(n), right = new Array(n)
@@ -336,11 +336,29 @@ function polylineToRing(coords, halfWidth) {
   return ring
 }
 
+// ⭐ THE CENTRE STRIPE IS ①'s LINE (Boz's ruling, 2026-10-17, on Jacob's "everything uses ① as the SSoT"): each eligible
+// street's own `points` from the ribbons — the line ① was struck from, so the stripe lies inside ①'s ink by construction.
+// It replaces map.json's `centerStripe`, which derive.js pushes from the raw OSM way and which departed from ① by up to
+// 7.85 m (HPDM; ▶ checks/claims-the-road-lies-on-the-lattice.mjs). Eligibility is derive.js's own rule, read off the
+// street RECORD, never by matching names: an OSM class among the eight below · not oneway (a divided road's `pairId`
+// carriageways are each oneway, so the rule already leaves them out) · not grade-separated (a bridge's paint is not the
+// ground's). `dashed` is carried as derive.js carried it; nothing here reads it.
+const STRIPE_CLASSES = new Set(['residential', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified'])
+export function centreStripeRings(streets) {
+  const out = []
+  for (const s of streets || []) {
+    if (!STRIPE_CLASSES.has(s.highway) || s.oneway === true || s.gradeSeparated) continue
+    const ring = polylineToRing(s.points, POLYLINE_HALF_WIDTHS.stripe)
+    if (ring) out.push({ skelId: s.skelId, dashed: s.highway === 'residential', ring })
+  }
+  return out
+}
+
 // Lateral-offset a polyline by `offset` to one side, then return the
 // offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by parking_line
 // (edgeline) + bike_lane which carry a single centerline + lateral offset
 // — the actual paint sits on the offset, not the centerline.
-function lateralOffset(coords, offset, side) {
+export function lateralOffset(coords, offset, side) {
   const out = []
   for (let i = 0; i < coords.length; i++) {
     const prev = coords[Math.max(0, i - 1)]
@@ -1190,7 +1208,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // Each Designer-toggleable id needs to come out as its own bake group
   // so layerVis can hide it in Stage/Preview. Polygon overlays (parking_lot,
   // leisure subtypes, natural subtypes) drop in as raw rings; line features
-  // (centerStripe / parkingLine / bikeLane / barriers) buffer to thin
+  // (parkingLine / bikeLane / barriers; the centre stripe is ①'s, below) buffer to thin
   // polygons via polylineToRing.
   const mapLayers = mapData.layers || {}
   const pushMat = (key, ring) => {
@@ -1258,11 +1276,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     const ring = polylineToRing(item.coords, hw)
     if (ring) pushMat(item.kind, ring)
   }
-  // Center stripes — polylines with no offset, paint sits on the centerline.
-  for (const item of (mapLayers.centerStripe || [])) {
-    const ring = polylineToRing(item.coords, POLYLINE_HALF_WIDTHS.stripe)
-    if (ring) pushMat('stripe', ring)
-  }
+  // Centre stripes — ①'s own line per eligible street (`centreStripeRings`), never map.json's.
+  const stripeRings = centreStripeRings(ribbons.streets).map(x => x.ring)
+  for (const ring of stripeRings) pushMat('stripe', ring)
   // Parking-lane edge lines + bike lanes — both sides offset from a centerline.
   for (const item of (mapLayers.parkingLine || [])) {
     if (!item.coords || !item.offset) continue
