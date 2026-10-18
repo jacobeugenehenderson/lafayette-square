@@ -227,17 +227,16 @@ scene recorded.
 **Open:** → §3 (the sequence), and:
 - ⏸ **PARKED by Jacob's call, 2026-10-07 ("not right now"): a click-to-open corner popover in Survey** (radius slider ·
   Corner / Not a corner · Revert), replacing ⌥-click. Nothing built; today's controls are the handle's drag + ⌥-click.
-- **The perpendicular fill's slivers: plan (2) built 2026-10-17 (Loess, branch `loess/perp-depths`, unmerged).** The corner
-  is read, not constructed: each landing is a DEPTH on the one inset (`dland`, the ring split at the landing's t-bounds); a
-  both-lawn corner takes no pad and its legs' bands bend through. The sector, strips and re-fill are removed; their seams
-  left thin walk AND thin lawn (narrow tips, oblique corners, every sector edge). Diagonal is byte-identical (PTown; Huron
-  with its authored corner set aside). ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs huron --selftest --thin`
-  (red on the sector, green on (2)) · `node scratch/perp-depths/thin-both.mjs huron` (walk and lawn, before vs after) ·
-  `node scratch/perp-depths/diag-same.mjs huron provincetown --uncut`. **Open:** the full selftest's "walk behind a cut" and
-  "concrete wedge is walk" rows are red. Two radial-landing shapes are seen, both with cause not established: a narrow
-  landing at an acute corner, and two landings squeezing the apex lawn where they nearly meet. One-lawn corners now show
-  §4's ruled SW↔TL pad (identical to diagonal), which the sector used to hide. Radial vs parallel landings is Jacob's look
-  call: ▶ `node scratch/perp-depths/render.mjs huron "<x,z;…>"` (labelled proxies, before / after / diagonal).
+- **The perpendicular corner: straight extension thru, built 2026-10-18 (Loess, branch `loess/perp-depths`, unmerged).**
+  Jacob's model (`SECTION §6.1`): each leg's walk runs straight on past its tangent to the kerb, the walks meet in an L,
+  only the curb rounds. Built from each leg's own band (the rect `offsetRingByRects` strikes for its last ② edge, run on
+  along that edge and clipped by ②); the arc carries no band. Removed: the 10-07 sector and plan (2)'s radial landings
+  (`dland`). ▶ `node checks/claims-a-perpendicular-landing-runs-straight-on.mjs huron` (sides parallel to their leg; red
+  on plan (2); prints the corners more than 10° off square) · `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs huron --live --selftest`
+  · `node scratch/perp-depths/thin-both.mjs huron` · `node scratch/perp-depths/diag-same.mjs huron provincetown --uncut` ·
+  proxies: `REV=c825e04e node scratch/perp-depths/render.mjs huron "<x,z;…>"`. **Open:** the landing check and three
+  selftest rows are red at a few sites — neighbouring corners, kinks and narrow tips, cause not established; the narrow
+  tips are `RIBBONS §3.5`'s queue.
 - ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
   longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the

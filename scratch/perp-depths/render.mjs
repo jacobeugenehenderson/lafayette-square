@@ -1,5 +1,5 @@
 // render.mjs <scene> <x,z;x,z…> [--out=dir] — PROXY renders of Section's FILL at the given sites, BEFORE (the painter at
-// 20d3529f: the perpendicular corner re-filled by a sector) beside AFTER (this tree's painter: landings as depths on the one
+// $REV, default 20d3529f: the perpendicular corner re-filled by a sector) beside AFTER (this tree's painter: landings as depths on the one
 // inset), and the same corners drawn diagonal for reference. Read-only on the town; through the shared feed, authoring loaded.
 // ⛔ A PROXY for the probe's numbers and for Jacob's look call (radial vs parallel landings) — never the operator's eye-gate:
 //   every PNG says PROXY on it.
@@ -14,7 +14,7 @@ const args = process.argv.slice(2), [scene = 'huron', sites = ''] = args.filter(
 const OUT = resolve(ROOT, (args.find(a => a.startsWith('--out=')) || '--out=scratch/perp-depths-out').slice(6))
 const HALF = +(process.env.HALF || 10), PPM = +(process.env.PPM || 40)
 // BEFORE: the base painter, its relative imports pointed back at this tree's src/lib (nothing else differs from the base)
-const lib = resolve(ROOT, 'src/lib'), base = execSync('git show 20d3529f:src/lib/tileGround.js', { cwd: ROOT, maxBuffer: 1 << 26 }).toString()
+const REV = process.env.REV || '20d3529f', lib = resolve(ROOT, 'src/lib'), base = execSync(`git show ${REV}:src/lib/tileGround.js`, { cwd: ROOT, maxBuffer: 1 << 26 }).toString()
   .replace(/from '(\.\.?\/[^']+)'/g, (_, p) => `from '${pathToFileURL(resolve(lib, p)).href}'`)
 writeFileSync(`${OUT}/tileGround.base.mjs`, base)
 const painters = { before: (await import(pathToFileURL(`${OUT}/tileGround.base.mjs`).href)).buildTileGround, after: (await import('../../src/lib/tileGround.js')).buildTileGround }
@@ -32,7 +32,7 @@ for (const [tag, fn, nm] of [['before', painters.before, norm], ['after', painte
     const P = ([x, z]) => `${((x - cx + HALF) * PPM).toFixed(1)},${((z - cz + HALF) * PPM).toFixed(1)}`
     const vis = (rr) => rr.some(([x, z]) => Math.abs(x - cx) < HALF * 3 && Math.abs(z - cz) < HALF * 3)
     const path = (rs) => (rs || []).filter(vis).map(rr => 'M' + rr.map(P).join('L') + 'Z').join(' ')
-    const W = 2 * HALF * PPM, label = `PROXY — ${scene} (${cx}, ${cz}) — ${tag === 'before' ? 'BEFORE: sector re-fill (20d3529f)' : tag === 'after' ? 'AFTER: landings as depths' : 'DIAGONAL, for reference'} — not the operator's eye-gate`
+    const W = 2 * HALF * PPM, label = `PROXY — ${scene} (${cx}, ${cz}) — ${tag === 'before' ? `BEFORE: ${process.env.BEFORE_LABEL || 'sector re-fill'} (${REV})` : tag === 'after' ? `AFTER: ${process.env.AFTER_LABEL || 'this tree'}` : 'DIAGONAL, for reference'} — not the operator's eye-gate`
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${W}"><rect width="100%" height="100%" fill="#222"/>` +
       layers.map(([, rs, c]) => `<path d="${path(rs)}" fill="${c}" fill-rule="nonzero" stroke="none"/>`).join('') +
       `<rect x="0" y="0" width="${W}" height="22" fill="#000" opacity="0.7"/><text x="6" y="15" font-family="Helvetica" font-size="12" fill="#fff">${label}</text>` +

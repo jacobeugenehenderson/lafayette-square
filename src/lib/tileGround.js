@@ -5124,7 +5124,7 @@ export function styleFromEvidence(landings) {
 const CURB_CUT_STYLE_SET = new Set(['none', 'diagonal', 'perpendicular'])
 function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, perpGeom) {
   const tally = { junction: 0, bend: 0, unknown: 0, curbCuts: 0, perpWedgeLawn: 0, perpWedgeConcrete: 0, perpOneSidedLawn: 0, perpNoLanding: 0, perpPastApex: 0, unreadable: 0, contradicted: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, short: 0, bySource: {} }
-  const recs = [], masks = [], contradicted = [], corners = [], perpLawnArcs = new Set(), landings = []
+  const recs = [], masks = [], contradicted = [], corners = [], perpArcs = new Set(), perpCorners = []
   const norm = st.curbCutNorm || null
   let maxD = 0
   for (const p of parts) {
@@ -5208,8 +5208,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
         if (!g) { tally.perpNoLanding += 2; rec.noLanding = 2 }
         else {
           rec.wedge = g.lawn ? 'lawn' : 'concrete'; rec.wedgeAt = g.wedgeAt; if (g.lawn) tally.perpWedgeLawn++; else tally.perpWedgeConcrete++; if (g.oneSided) tally.perpOneSidedLawn++
-          if (g.lawn) perpLawnArcs.add(`${p.ri}|${arcId}`)
-          for (const L2 of g.landings) landings.push({ ri: p.ri, ...L2 })
+          perpArcs.add(`${p.ri}|${arcId}`); perpCorners.push({ ri: p.ri, q, e, before, after })
           tally.perpPastApex += g.pastApex
           for (const [side, c] of g.cuts.entries()) {
             if (!c) { tally.perpNoLanding++; rec.noLanding = (rec.noLanding || 0) + 1; continue }
@@ -5240,9 +5239,9 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
     }
   }
   // the strips are cut against the finished walk (sectionPassProtoTile), so the painter hands back its masks and the slab
-  // depth, not finished strips — and, for the perpendicular corners, the FACTS the band reads: which arcs bend their legs
-  // through (`perpLawnArcs`) and where each landing meets the kerb (`landings`, as ring edge + t)
-  return { masks, maxD, recs, tally, contradicted, corners, perpLawnArcs, landings }
+  // depth, not finished strips — and, for the perpendicular corners, the FACTS the band reads: which arcs carry no band of
+  // their own (`perpArcs`) and each corner's two leg edges either side of its arc (`perpCorners`)
+  return { masks, maxD, recs, tally, contradicted, corners, perpArcs, perpCorners }
 }
 
 export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, cornerOverrides = null) {
@@ -5546,19 +5545,19 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     }
   }
 
-  // ══ THE PERPENDICULAR CORNER — READ, NOT CONSTRUCTED (Jacob, 2026-10-07; rebuilt as depths 2026-10-17) ════════════
-  // *"each leg's sidewalk runs STRAIGHT on to the curb, ending in its own landing and cut facing its crosswalk; the apex
-  // between the two walks takes the legs' tree lawn where they have one, else concrete."*
-  // ⭐ `RIBBONS §1` invariant 1 and `SECTION §4` ("the corner constructs nothing"): this corner draws NO shape of its own.
-  // `perpGeom` only READS the corner — where each leg's walk, carried on straight past its tangent, meets the kerb (the
-  // LANDING, a kerb span), where its cut sits, and a probe point for the apex (`wedgeAt`, for the checks). The band does
-  // the rest: on a landing's kerb span the walk starts at the kerb (`dland`, a DEPTH on the one inset); where BOTH legs
-  // carry a tree lawn the corner takes no pad and its legs' bands bend through, so the lawn at the apex IS the wedge;
-  // where a leg has no lawn the corner keeps the pad, and the cuts are paint on it.
-  // ⛔ REMOVED 2026-10-17 (it was the regression, `SECTION §4`): the corner SECTOR, each leg's strip RECT, and the
-  // re-fill `(walk − sectors) ∪ (strips ∩ sector ∩ envelope)`. Built beside the contour, its seams left thin walk across
-  // the lawn — at a narrow tip, where two apexes' sectors leave the stub between them, and where an oblique corner's
-  // sector crossed itself. ▶ node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene> --selftest --thin
+  // ══ THE PERPENDICULAR CORNER — NO BEND, ONLY STRAIGHT EXTENSION THRU (Jacob, 2026-10-18; `SECTION §6.1`) ══════════════
+  // Each leg's walk runs STRAIGHT ON past its tangent to the kerb, which is its landing and its cut; the two walks meet in a
+  // plain L at the block corner; only the CURB rounds; the rest keeps the leg's outer strip, with no pad. A leg with no lawn
+  // has its walk at the kerb already. ⭐ No constructed primitive (`RIBBONS §1` invariant 1): the extension is the leg's OWN
+  // band — the rect `offsetRingByRects` strikes for its last ② edge, at that edge's own depths — continued along that edge's
+  // own direction and clipped by ② (`legExt`, below). The arc carries no band at all (`perpArcs`): its walk and envelope are
+  // empty there, so the leg's band and the extension are the only ground between the curb and the land use.
+  // `perpGeom` READS where each extended walk meets the kerb (the cut sits there) and a probe point for the apex
+  // (`wedgeAt`, for the checks).
+  // ⛔ REMOVED 2026-10-18: plan (2)'s RADIAL landings — the landing split in the densify (`dland`) that started the walk
+  // at the kerb on the landing span, normal to the ARC, so its sides pointed at the arc's centre — and its bent legs
+  // (where both legs carried a lawn, their bands bent through the arc). ⛔ REMOVED 2026-10-17: the 10-07 corner SECTOR,
+  // its strip RECTs and the re-fill. ▶ node checks/claims-a-perpendicular-landing-runs-straight-on.mjs <scene>
   const deep = cw + lim
   const perpGeom = (p, q, e, before, after, w) => {
     const ring = p.ring, n = ring.length
@@ -5616,11 +5615,6 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       const c = (cc[0] + cc[1]) / 2, half = Math.min(w, cc[1] - cc[0]) / 2, s0 = c - half, s1 = c + half
       const sub = [at(s0)]; for (let k = 1; k < cum.length - 1; k++) if (cum[k] > s0 && cum[k] < s1) sub.push(K[k]); sub.push(at(s1))
       return { sub, along, short: cc[1] - cc[0] < w - 1e-6 } }
-    // ⭐ A LANDING, ON THE CONTOUR ITSELF: the kerb span a leg's walk meets, as (ring edge, t) at each end — where the walk
-    // reaches the kerb (`dland`). A position on the ring, not a shape.
-    const posOf = (s2) => { let k = 1; while (k < cum.length - 1 && cum[k] < s2) k++
-      return { e: Kix[k - 1], t: Math.max(0, Math.min(1, (s2 - cum[k - 1]) / ((cum[k] - cum[k - 1]) || 1))) } }
-    const landingOf = (cc) => cc ? { from: posOf(cc[0]), to: posOf(cc[1]) } : null
     // `wedgeAt` (a PROBE for the checks, not paint): the wedge's inner corner, just short of where both walks start — kept
     // when it lies in the block within the band's depth of this corner's kerb (it has room for a wedge), null when the two
     // walks cross at the apex and leave none
@@ -5632,14 +5626,14 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         const t = L2 ? Math.max(0, Math.min(1, ((P[0] - U[0]) * dx + (P[1] - U[1]) * dz) / L2)) : 0; dK = Math.min(dK, Math.hypot(P[0] - U[0] - t * dx, P[1] - U[1] - t * dz)) }
       return inBlk(P) && dK <= deep ? P : null })()
     return { lawn: !!(mA.hasTL && mB.hasTL), oneSided: !!mA.hasTL !== !!mB.hasTL, cuts: [cutOf(cA, [-dB[0], -dB[1]]), cutOf(cB, [-dA[0], -dA[1]])],
-             landings: [landingOf(cA), landingOf(cB)].filter(Boolean), wedgeAt, pastApex }
+             wedgeAt, pastApex }
   }
   const R = curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, perpGeom)
-  // ⭐ THE PAD'S EDGES: every licensed arc but a perpendicular corner whose legs both carry a tree lawn — there the legs'
-  // own bands bend through (no pad, no leg ramp into it) and the lawn at the apex is the wedge
-  const perpLawnAt = (ri, i) => { const pp = parts[ri], id = pp ? st.iaArc?.[pp.si]?.[i] : null
-    return id != null && inC.has(`${ri}|${i}`) && R.perpLawnArcs.has(`${ri}|${id}`) }
-  const padC = new Map([...inC].filter(([k]) => { const [ri, i] = k.split('|').map(Number); return !perpLawnAt(ri, i) }))
+  // ⭐ THE PAD'S EDGES: every licensed arc but a perpendicular corner's — there is no pad and no band on its arc (no leg
+  // ramp into it either); the legs' own bands, extended, are the corner
+  const perpAt = (ri, i) => { const pp = parts[ri], A = pp ? st.iaArc?.[pp.si] : null, id = A?.[i]
+    return id != null && id === A[(i + 1) % A.length] && R.perpArcs.has(`${ri}|${id}`) }     // an ARC EDGE: both ends in it
+  const padC = new Map([...inC].filter(([k]) => { const [ri, i] = k.split('|').map(Number); return !perpAt(ri, i) }))
 
   // ══ ONE ARC, ONE DEPTH — `§6.1` step 4's `cMin`, restored as a STAMP ═════════════════════════
   // ⛔⛔ THE DEFECT, IN THE OPERATOR'S WORDS: *"There's not supposed to be a hard edge angle in the
@@ -5730,7 +5724,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     // the quad has no job: ONE construction, three outcomes, no case split.
     const end = (v) => {
       const back = (v - 1 + n) % n
-      if (perpLawnAt(p.ri, back) || perpLawnAt(p.ri, v)) return false  // a perpendicular lawn corner: its legs bend through
+      if (perpAt(p.ri, back) || perpAt(p.ri, v)) return false        // a perpendicular corner: the leg runs straight on
       if (isC(back) !== isC(v)) return true                          // the arc's tangent
       if (isC(v)) return false                                       // inside it, nothing ends
       return !!(st.iaCorner?.[p.si]?.[v]) || M(p.ri, back) !== M(p.ri, v)
@@ -5816,38 +5810,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         push(a, i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
       }
     }
-    // ⭐ THE LANDINGS: each ring edge's covered t-ranges; every densified edge is split at a landing's ends and flagged
-    // (`dland`), so the walk reaches the kerb exactly on the span the leg's walk meets — collinear points, a change of
-    // SAMPLING, never of shape
-    const cover = new Map()                   // ring edge → [[t0, t1], …]
-    for (const Lg of R.landings) { if (Lg.ri !== p.ri) continue
-      let i = Lg.from.e
-      for (let k = 0; k <= n; k++) { const t0 = i === Lg.from.e ? Lg.from.t : 0, t1 = i === Lg.to.e ? Lg.to.t : 1
-        if (t1 > t0) (cover.get(i) || cover.set(i, []).get(i)).push([t0, t1])
-        if (i === Lg.to.e) break; i = (i + 1) % n } }
-    let land = out.map(() => false)
-    if (cover.size) {
-      const tOn = (P, i) => { const a = ring[i], b = ring[(i + 1) % n], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
-        return L2 ? Math.max(0, Math.min(1, ((P[0] - a[0]) * dx + (P[1] - a[1]) * dz) / L2)) : 0 }
-      const o2 = [], s2 = [], k0 = [], k1 = [], c0 = [], c1 = [], f0 = [], f1 = [], l2 = []
-      for (let j = 0; j < out.length; j++) {
-        const i = src[j], cv = cover.get(i)
-        const ta = tOn(out[j], i), tbRaw = src[(j + 1) % out.length] === i ? tOn(out[(j + 1) % out.length], i) : 1, tb = Math.max(ta, tbRaw)
-        const cuts = [ta]; for (const [u0, u1] of (cv || [])) for (const u of [u0, u1]) if (u > ta + 1e-9 && u < tb - 1e-9) cuts.push(u)
-        cuts.sort((x, y) => x - y)
-        for (let c = 0; c < cuts.length; c++) {
-          const u = cuts[c], uN = c + 1 < cuts.length ? cuts[c + 1] : tb, f = tb > ta ? (u - ta) / (tb - ta) : 0, fN = tb > ta ? (uN - ta) / (tb - ta) : 1
-          const a = ring[i], b = ring[(i + 1) % n]
-          o2.push(c === 0 ? out[j] : [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]); s2.push(i)
-          k0.push(kS[j] + (kE[j] - kS[j]) * f); k1.push(kS[j] + (kE[j] - kS[j]) * fN)
-          c0.push(cS[j]); c1.push(cE[j]); f0.push(fS[j]); f1.push(fE[j])
-          const um = (u + uN) / 2; l2.push(!!cv && cv.some(([u0, u1]) => um >= u0 - 1e-9 && um <= u1 + 1e-9))
-        }
-      }
-      out.length = 0; out.push(...o2); src.length = 0; src.push(...s2); kS.length = 0; kS.push(...k0); kE.length = 0; kE.push(...k1)
-      cS.length = 0; cS.push(...c0); cE.length = 0; cE.push(...c1); fS.length = 0; fS.push(...f0); fE.length = 0; fE.push(...f1); land = l2
-    }
-    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE; p.dcS = cS; p.dcE = cE; p.dfS = fS; p.dfE = fE; p.dland = land
+    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE; p.dcS = cS; p.dcE = cE; p.dfS = fS; p.dfE = fE
   }
   // ⭐⭐ ONE OFFSET FAMILY (`RIBBONS §1`, `SECTION §3`: the ribbon is monowidth, its strips are SLICES of it). Every
   // depth line the band is cut along — the ped band's outer edge (`pedOuter`), the walk's two edges, the LU's inner
@@ -5960,34 +5923,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       // ⛔ Made FROM THE TANGENTS ⇒ its extent is exactly the arc, "coexistent with the arc".
       // Never longer: the leg's taper is what used to carry it `rampLen` up both legs and eat the
       // treelawn well past the corner, which is what read as one blanket.
-      // ⭐ a LANDING: on the kerb span a perpendicular corner's walk meets, the walk starts at the kerb (`dland`)
-      walkFromD: (j) => (p.dland?.[j] ? cw : cAt(j) == null ? span(j, wFrom) : cw),
-      walkToD:   (j) => { const c = cAt(j); return c == null ? span(j, wTo) : cw + c },
-      // ⛔ NOT AN EMPTY SPAN. `luByLu` only floods inboard of the WHOLE envelope, so a zero-width
-      // lawn at an arc leaves `cMin → lim` painted by NOBODY — a hole at every corner, which is
-      // what an empty span cost on the first attempt. `§6.1` step 4 says where it goes: deeper
-      // than `cMin` is PARCEL, routed through `tlByLu[lu]`, i.e. the tile's own land use — not a
-      // treelawn bent round the kerb, and not an absence.
-      // ⭐ THE LAWN IS THE STRIP THE WALK IS NOT. Inside the arc the pad has taken the whole outer
-      // band, so the lawn's span there is the parcel beyond `cMin` — "treelawn ends at the
-      // tangents", now literally at them rather than a taper's length before them.
-      // a landing takes the outer lawn: where the walk starts at the kerb the lawn there is a zero span
-      lawnFromD: (j) => { if (p.dland?.[j] && !L(src[j]).outWalk) return cw
-        const c = cAt(j); return c == null ? span(j, (l) => l.outWalk ? l.dOut : 0) : cw + c },
-      lawnToD:   (j) => { if (p.dland?.[j] && !L(src[j]).outWalk) return cw
-        const c = cAt(j); return c == null ? span(j, (l, k, cc, a) => l.inWalk ? wFrom(l, k, cc, a) : lim) : cw + lim },
-      // ⛔ THE DEEP TAIL — `§6.1` step 5's `luWedge`, the OTHER half of the slide. As the walk
-      // slides out, the ground it vacates on the INBOARD side is the walk's deep tail, and step 4
-      // rules where it goes: deeper than the walk is PARCEL, `tlByLu[lu]`, the tile's own land use
-      // — never an absence. It is a triangle by construction (width `dOut·(1−k)`), zero on an open
-      // leg and zero inside an arc, where `lawnFrom`/`lawnTo` already own that ground.
-      // ⛔ NOT AN ADDITIVE QUAD: it is a whole-contour offset of the SAME curve, like every other
-      // boundary here, so there is no piece to join and no join to open.
-      // ⛔ THE DEEP TAIL — parcel inboard of the walk (`§6.1` step 4). Inside an arc this is the
-      // ground beyond `cMin`, which the lawn span used to carry; it moves here so the lawn can
-      // carry the legs' grass instead. Zero on an open leg and zero at TL↔TL, by construction.
-      tailFromD: (j) => { const c = cAt(j); return c == null ? span(j, wTo) : cw + lim },
-      tailToD:   () => cw + lim,
+      // ⭐ a PERPENDICULAR corner's arc carries NO band: the walk there is empty (`perpAt`), and the legs' own bands,
+      // extended straight on (`legExt`), are the corner
+      walkFromD: (j) => (perpAt(p.ri, src[j]) || cAt(j) != null ? cw : span(j, wFrom)),
+      walkToD:   (j) => { if (perpAt(p.ri, src[j])) return cw; const c = cAt(j); return c == null ? span(j, wTo) : cw + c },
     }
   }
   if (sectionDump.on) for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
@@ -6014,7 +5953,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       // walk's INNER boundary — it reported 0 discontinuities while the band pinched at every
       // mixed corner. A band has two edges and a gate that watches one of them is a fallback.
       sectionDump.ramp.push({ ri: p.ri, j, src: p.dsrc[j], kS: p.dkS[j], kE: p.dkE[j],
-        inArc: padC.has(`${p.ri}|${p.dsrc[j]}`) || null, land: p.dland?.[j] || null,
+        inArc: padC.has(`${p.ri}|${p.dsrc[j]}`) || null, perp: perpAt(p.ri, p.dsrc[j]) || null,
         walkFrom: [S(w) - cw, E(w) - cw], walkTo: [S(wt) - cw, E(wt) - cw],
         len: Math.hypot(b[0] - a[0], b[1] - a[1]) })
     }
@@ -6039,12 +5978,51 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // (`SECTION` rule 3), so they are painted as "the band the walk is not": the ped envelope (curb-inner → WB) minus the
   // walk, with the walk clipped to that envelope. curb ∪ walk ∪ lawn ∪ LU = the block by construction; it also ends the
   // lawn's overlap with the walk. ▶ node checks/claims-the-ground-covers-every-block.mjs
-  const luIn = insD((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : WB))
-  const env = band(pedOuter, luIn)
-  const Wp0 = env.length && W.length ? intersectRings(W, env) : []
-  // ⭐ THE WALK IS THE BAND. A perpendicular corner re-fills nothing: its landings are depths on this same inset
-  // (`dland`, above), and its lawn wedge is its legs' own lawn bent round the arc. `env − walk` is the lawn, as everywhere.
-  const Wp = Wp0
+  // a perpendicular corner's arc carries no envelope either: the land use's edge there is the legs' own, extended (below)
+  const luIn0 = insD((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : perpAt(p.ri, p.dsrc[j]) ? cw : WB))
+  // ⭐⭐ THE PERPENDICULAR CORNER'S GROUND IS ITS LEGS' OWN BANDS, RUN STRAIGHT ON (`SECTION §6.1`). For each leg, the rect
+  // `offsetRingByRects` strikes for its last ② edge — that edge's line, its normal, the leg's own depths — continued along
+  // the edge's own direction past the tangent (overlapping the leg's band by up to half a metre, so the two are one area,
+  // never two abutting pieces) and clipped by ② (`pedOuter`). Two of them per leg: its WALK, and its whole envelope
+  // (curb-inner → WB). The two walks cross in the L; the envelopes' union is the corner's ped ground, square at the land
+  // use; `env − walk` is the lawn, as everywhere. ⛔ No new depth, angle or shape: the same rect, longer.
+  const endOf = (v) => (Array.isArray(v) ? v[1] : v), startOf = (v) => (Array.isArray(v) ? v[0] : v)
+  const legExt = (p, i, atEnd, d0, d1, Lx, back0 = 0.5) => {
+    const ring = p.ring, n = ring.length, a = ring[i], b = ring[(i + 1) % n], len = Math.hypot(b[0] - a[0], b[1] - a[1])
+    if (!(len > 1e-9) || !(d1 > d0 + 1e-9)) return null
+    const u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len], ccw = (signedArea(p.dring) > 0) !== !!p.hole
+    const nr = ccw ? [-u[1], u[0]] : [u[1], -u[0]]                 // `offsetRingByRects`' own normal for this edge
+    const T = atEnd ? b : a, f = atEnd ? u : [-u[0], -u[1]], back = Math.min(back0, len)
+    const X = (s2, d) => [T[0] + f[0] * s2 + nr[0] * d, T[1] + f[1] * s2 + nr[1] * d]
+    const r = [X(-back, d0), X(Lx, d0), X(Lx, d1), X(-back, d1)]
+    return signedArea(r) > 0 ? r : r.reverse()          // one winding for all, so the nonzero union never cancels an overlap
+  }
+  // ⛔ THE LEGS' BANDS ARE CUT AT THEIR TANGENTS, past which the extensions carry them. Where a band's depth drops to the
+  // arc's none, `offsetRingByRects` joins the two by a slanted wedge — a thin triangle of walk past the tangent, its side
+  // ~5–25° off the leg (seen: hairlines across the lawn). `walkCut` is the ground past BOTH tangents: the two legs' own
+  // rects from their tangents on, intersected — so neither leg's band behind its own tangent is ever touched.
+  const walkX = [], envX0 = [], walkCut = []
+  for (const c of R.perpCorners) {
+    const p = parts[c.ri]; if (!p?.dring) continue
+    const g = F.get(p), n = p.ring.length, tA = p.ring[c.q], tB = p.ring[(c.e + 1) % n]
+    const Lx = Math.hypot(tB[0] - tA[0], tB[1] - tA[1]) + cw + WB + 1
+    const js = (i) => p.dsrc.map((s2, j) => (s2 === i ? j : -1)).filter(j => j >= 0)
+    for (const [i, atEnd] of [[c.before, true], [c.after, false]]) {
+      if (bareAt(p, i)) continue
+      const jj = js(i); if (!jj.length) continue
+      const j = atEnd ? jj[jj.length - 1] : jj[0], pick = atEnd ? endOf : startOf
+      const w = legExt(p, i, atEnd, pick(g.walkFromD(j)), pick(g.walkToD(j)), Lx), e2 = legExt(p, i, atEnd, cw, WB, Lx)
+      if (w) walkX.push(w); if (e2) envX0.push(e2)
+    }
+    const D = WB + Lx, kA = legExt(p, c.before, true, -D, D, D, 0), kB = legExt(p, c.after, false, -D, D, D, 0)
+    if (kA && kB) walkCut.push(...intersectRings([kA], [kB]))
+  }
+  const envX = envX0.length && pedOuter.length ? intersectRings(unionRings(envX0), pedOuter) : []
+  const luIn = envX.length ? differenceRings(luIn0, envX) : luIn0
+  const env = envX.length ? unionRings([...band(pedOuter, luIn0), ...envX]) : band(pedOuter, luIn0)
+  const W2 = walkX.length ? unionRings([...(walkCut.length ? differenceRings(W, unionRings(walkCut)) : W), ...walkX]) : W
+  // ⭐ THE WALK IS THE BAND — the legs' and, at a perpendicular corner, their straight continuations; nothing is re-filled
+  const Wp = env.length && W2.length ? intersectRings(W2, env) : []
   // ⚠️ ONE depth for the tile's strips: the norm is the town's, so every curb cut on it shares `warningDepth`.
   const slab = R.masks.length ? band(insD(() => () => cw), insD(() => () => cw + R.maxD)) : []
   const strips = slab.length ? intersectRings(intersectRings(slab, unionRings(R.masks)), Wp) : []

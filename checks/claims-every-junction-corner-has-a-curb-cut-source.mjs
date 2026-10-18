@@ -160,9 +160,11 @@ if (args.includes('--selftest')) {
   const streetIds = new Set((f.ribbons.streets || []).map(st2 => st2.skelId))
   const streetLegs = (R, c) => (R.protoShapeTiles?.[c.tile]?.junctions?.[c.junction]?.legs || []).every(l => l && streetIds.has(l.skelId))
   // ⭐ THE PERPENDICULAR FILL, read off what was painted: just behind each cut, up its landing past the curb and the cut's
-  // own depth, is WALK — the landing reaches the kerb — never lawn; and at each corner's wedge (`wedgeAt`, where the
-  // corner has room for one) is lawn where the wedge is lawn and walk where it is concrete. A point painted neither is
-  // off the drawing (the disc, or the curb) and skipped.
+  // own depth, is WALK — the landing reaches the kerb — never lawn; and where both legs carry a lawn, the corner's wedge
+  // (`wedgeAt`, where the corner has room for one) is lawn. A point painted neither is off the drawing (the disc, or the
+  // curb) and skipped. ⛔ RETIRED 2026-10-18 — "a concrete wedge is walk", the 10-07 rule: a corner with one lawn keeps
+  // the lawn leg's lawn up to the L (`SECTION §6.1`; Jacob, Boz's Q2), and its probe point lay at the no-lawn leg's curb
+  // depth. Those corners are counted, not judged.
   const cwOf = JSON.parse(readFileSync(`public/looks/${f.look}/design.json`, 'utf8')).curbWidth
   const paintAt = (R) => { const idx = (rs) => (rs || []).map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
       for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return { r, x0, x1, z0, z1 } })
@@ -174,14 +176,14 @@ if (args.includes('--selftest')) {
   for (const r of Pp.curbCutRecs || []) { if (r.style !== 'perpendicular') continue
     const k = cwOf + dims.warningDepth + 0.15, v = r.along; if (!v) { behind.push('no landing direction'); continue }
     const m = ppAt([r.at[0] + v[0] * k, r.at[1] + v[1] * k]); if (m) behind.push(m); if (m && m !== 'walk') behindBad.push(r.at) }
-  const apex = { lawn: [], concrete: [] }
+  const apex = { lawn: [], concrete: [] }, apexBad = []
   for (const c of Pp.curbCutCorners || []) { if (!c.wedge || !c.wedgeAt) continue
-    const m = ppAt(c.wedgeAt); if (m) apex[c.wedge].push(m) }
+    const m = ppAt(c.wedgeAt); if (m) apex[c.wedge].push(m); if (m && c.wedge === 'lawn' && m !== 'lawn') apexBad.push(c.wedgeAt) }
   const thin = thinRow(Pp, Dg)
   const rows = [
     ['the perpendicular fill leaves no thin walk the diagonal does not', thin.ok],
     ['every perpendicular cut has walk behind it',  behind.length > 0 && behind.every(m => m === 'walk')],
-    ['a lawn wedge is lawn at the apex, a concrete one walk', apex.lawn.length > 0 && apex.lawn.every(m => m === 'lawn') && apex.concrete.every(m => m === 'walk')],
+    ['a lawn wedge is lawn at the apex', apex.lawn.length > 0 && apex.lawn.every(m => m === 'lawn')],
     // a corner is authorable when its legs are STREETS (skeleton chains); a shore or rim leg is no street and has no key
     ['every junction corner has a record, and one between streets its corner key', corners.length === J && corners.every(c => c.key || !streetLegs(Dg, c))],
     ['a corner\'s style, written by its key, draws there and only there', !!Same && authoredAt(Same).length > 0 && authoredAt(Same).every(r => keyOfRec(Same, r) === c0.key)],
@@ -222,7 +224,7 @@ if (args.includes('--selftest')) {
   console.log(`  (crossings: ${CX.census.records} bound · ${XL.landed} landed on both kerbs (ends ${XL.ends.arc} arc / ${XL.ends.nearTangent} near-tangent / ${XL.ends.leg} leg) · ${XL.noHit} no hit · ${XL.notOwned} not owned · ${XL.sameSide} same side → ${CT.byEvidence} crosswalk(s) placed by a recorded crossing · ${recordedApexOutside} refused for leaving the apex outside)`)
   console.log(`  (crosswalks, diagonal + byCorner: ${CT.crosswalks} drawn · ${CT.pairs} between two cuts · ${CT.farKerbCut} to a far-kerb cut · ${CT.farCornerNoCut} far corner without a cut · ${CT.noFarKerb} no far kerb · ${CT.endsNotOwned} ends not owned · ${CT.ambiguous} ambiguous · ${CT.styleDisagrees} style disagrees · ${CT.apexesApart} cuts too far apart)`)
   console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable (${Lo.contradicted || 0} contradict the norm) · raised → ${Up.curbCuts} cut(s) of ${J})`)
-  console.log(`  (perpendicular fill: behind ${behind.length} drawn cut(s): ${behind.filter(m => m === 'walk').length} walk${behindBad.length ? ` (not: ${behindBad.slice(0, 8).map(a => `(${a[0].toFixed(0)}, ${a[1].toFixed(0)})`).join(' ')})` : ''} · apex ${apex.lawn.length} lawn wedge(s): ${apex.lawn.filter(m => m === 'lawn').length} lawn · ${apex.concrete.length} concrete: ${apex.concrete.filter(m => m === 'walk').length} walk · ${Pp.curbCutTally?.perpNoLanding} leg(s) with no landing)`)
+  console.log(`  (perpendicular fill: behind ${behind.length} drawn cut(s): ${behind.filter(m => m === 'walk').length} walk${behindBad.length ? ` (not: ${behindBad.slice(0, 8).map(a => `(${a[0].toFixed(0)}, ${a[1].toFixed(0)})`).join(' ')})` : ''} · apex ${apex.lawn.length} lawn wedge(s): ${apex.lawn.filter(m => m === 'lawn').length} lawn${apexBad.length ? ` (not: ${apexBad.slice(0, 6).map(a => `(${a[0].toFixed(0)}, ${a[1].toFixed(0)})`).join(' ')})` : ''} · ${apex.concrete.length} one-lawn corner(s), not judged · ${Pp.curbCutTally?.perpNoLanding} leg(s) with no landing)`)
   console.log(thinLine(thin))
   console.log(`  (${scene}: ${J} junction corners · diagonal ${Dg.curbCutTally?.curbCuts} · perpendicular ${Pp.curbCutTally?.curbCuts} · authored ${authored?.curbCuts ?? '—'} · perpendicular crosswalks ${Pp.crosswalkTally?.pairs} paired, ${Pp.crosswalkTally?.farKerbNone} far-kerb none, ${Pp.crosswalkTally?.ambiguous} ambiguous)`)
   console.log(bad ? `⛔ selftest: ${bad} wrong` : '✅ selftest: the painter places curb cuts by evidence, norm and authoring, on junctions only')
