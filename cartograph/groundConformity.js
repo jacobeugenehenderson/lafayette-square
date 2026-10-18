@@ -429,23 +429,34 @@ function emit(groupSpecs, PX, PZ, T, TG) {
 /**
  * The detector. A crack is a BOUNDARY vertex (one with an unshared edge) lying in the
  * interior of a BOUNDARY edge of the UNION — an edge used by exactly one triangle
- * across ALL the groups given, welded on the lattice. ⭐ Union, not per group: an edge two groups share is closed; and a
+ * across ALL the groups given. ⭐ Union, not per group: an edge two groups share is closed; and a
  * zero-area triangle (a,c,b) sharing a–b with its neighbour is closed too (lifted, it
  * is a vertical sliver filling the gap), so it is not counted as a crack; nor is a
  * sliver's own apex on its unshared edge.
+ * ⭐ A VERTEX IS ITS EXACT float32 POSITION, never a lattice cell: nothing between conformity and the screen welds or
+ * rounds (emit copies a shared vertex bit-identically into each group; liftBuffer, terrainPart's per-vertex aRaw, the
+ * slab writer and BakedGround all keep each vertex's own position), so two vertices 0.7 mm apart are two vertices on the
+ * screen. Welded on the 1 mm lattice, such a pair of refinement midpoints read as one, a shared edge read as used once,
+ * and the bake refused on a crack the slab never had (HPDM 2026-10-18, a 0.698 mm twin; Huron's 2026-10-12 refusal was
+ * the same twin class, Cairn's forensic). ⛔ The weld is removed, not kept as an option: a gap under 1 mm between two
+ * unshared chains is a crack too, and the weld closed it. ▶ checks/claims-conformity-closes-what-the-detector-sees.mjs
  * Reads baked buffers, so it runs on any slab on disk.
  * @param groups [{ id, positions: Float32Array, indices: Uint32Array }]
  * @param lift optional (x,z) → world-Y lift; with it each finding carries its crack height
  */
 export function findTJunctions(groups, lift = null) {
   const PX = [], PZ = [], PG = []
+  // a vertex's id is its exact position (sharded: a town has more positions than one Map may hold)
+  const idOf = new ShardedMap((s) => (s.charCodeAt(s.length - 1) * 31 + s.charCodeAt(s.length - 2)) % SHARDS)
+  let nIds = 0
+  const vkey = (x, z) => { const s = x + ',' + z; let k = idOf.get(s); if (k === undefined) { k = nIds++; idOf.set(s, k) } return k }
   const cnt = new ShardedMap((ek) => Number(ek.slice(0, ek.indexOf(':'))) % SHARDS)   // union edge → { n, endpoints, group, opposite corner }
   groups.forEach((g, gi) => {
     const { positions: pos, indices: idx } = g
     const used = new Uint8Array(pos.length / 3)
     for (const v of idx) used[v] = 1
     for (let i = 0; i < used.length; i++) if (used[i]) { PX.push(pos[i * 3]); PZ.push(pos[i * 3 + 2]); PG.push(gi) }
-    const wk = (i) => weldKey(pos[i * 3], pos[i * 3 + 2])
+    const wk = (i) => vkey(pos[i * 3], pos[i * 3 + 2])
     for (let t = 0; t < idx.length; t += 3) for (let k = 0; k < 3; k++) {
       const a = idx[t + k], b = idx[t + (k + 1) % 3]
       const ka = wk(a), kb = wk(b)
@@ -468,7 +479,7 @@ export function findTJunctions(groups, lift = null) {
   // is shared is interior to the surface even when it sits millimetres from the rim —
   // the midpoints of a rim sliver do.
   const ids = []
-  for (let i = 0; i < PX.length; i++) if (onBoundary.has(weldKey(PX[i], PZ[i]))) ids.push(i)
+  for (let i = 0; i < PX.length; i++) if (onBoundary.has(vkey(PX[i], PZ[i]))) ids.push(i)
   const { onSegment } = makeGrid(PX, PZ, ids, 4)
   let within = 0, cross = 0
   const pairs = new Map()
@@ -476,7 +487,7 @@ export function findTJunctions(groups, lift = null) {
   for (const { ax, az, bx, bz, g: eg, o } of edges) {
     const seen = new Set()
     for (const { i, t } of onSegment(ax, az, bx, bz)) {
-      const k = weldKey(PX[i], PZ[i]); if (seen.has(k)) continue; seen.add(k)
+      const k = vkey(PX[i], PZ[i]); if (seen.has(k)) continue; seen.add(k)
       // The edge's own opposite corner is not a crack: that is a sliver on the rim of
       // the drawing, and lifted it is a surface, not a gap.
       if (k === o) continue
