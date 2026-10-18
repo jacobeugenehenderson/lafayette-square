@@ -5758,6 +5758,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // material's name. Identical ladder to the producer's, so the two can be gated against each other.
   const lim = Math.max(0, WB - cw)
   const arrOf = (m) => stripLadder(m, lim)
+  // two ladders draw the same strips when their depths agree (an owner change that changes nothing on the ground)
+  const sameLadder = (a, b) => { if (a === b) return true; if (!a || !b) return false
+    const x = arrOf(a), y = arrOf(b); return x.walkFrom === y.walkFrom && x.walkTo === y.walkTo && x.lawnFrom === y.lawnFrom && x.lawnTo === y.lawnTo }
 
   // ══ THE CORNER — `SECTION §6.1`'s FIVE STEPS, drawn by this painter's own ladder ══════════════
   // ⛔⛔ NOT A SECOND CONSTRUCTION. The rule and every constant are §6.1's, the ones that landed
@@ -5934,7 +5937,11 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       const back = (v - 1 + n) % n
       if (isC(back) !== isC(v)) return true                          // the arc's tangent
       if (isC(v)) return false                                       // inside it, nothing ends
-      return M(p.ri, back) !== M(p.ri, v)                            // a change of frontage (①'s square corner among them)
+      // ⭐ ON AN UNPADDED ARC only a change of DEPTHS ends a leg (Boz, 2026-10-18, Jacob: "sidewalk meets sidewalk continues
+      // smoothly"): an owner change mid-bend whose ladder draws the same strips at the same depths is no seam, so the band
+      // bends straight through it. Off an arc a change of frontage ends a leg as before (①'s square corner among them).
+      if (st.iaArc?.[p.si]?.[v] != null) return !sameLadder(M(p.ri, back), M(p.ri, v))
+      return M(p.ri, back) !== M(p.ri, v)
     }
     // ⭐⭐⭐ WHICH ARC IS THIS LEG RAMPING INTO — and it is the piece the port dropped.
     // `§6.1` step 5's slid quad ends at `pt(0, cMin)`: the inner edge's TARGET is the arc's own
