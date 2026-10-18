@@ -230,13 +230,16 @@ scene recorded.
 - **The perpendicular corner: straight extension thru, built 2026-10-18 (Loess, branch `loess/perp-depths`, unmerged).**
   Jacob's model (`SECTION §6.1`): each leg's walk runs straight on past its tangent to the kerb, the walks meet in an L,
   only the curb rounds. Built from each leg's own band (the rect `offsetRingByRects` strikes for its last ② edge, run on
-  along that edge and clipped by ②); the arc carries no band. Removed: the 10-07 sector and plan (2)'s radial landings
-  (`dland`). ▶ `node checks/claims-a-perpendicular-landing-runs-straight-on.mjs huron` (sides parallel to their leg; red
-  on plan (2); prints the corners more than 10° off square) · `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs huron --live --selftest`
+  along that edge and clipped by ②); the arc carries no band. The cut is that walk's end, read off the drawn extension:
+  its sides are the walk's two side lines and it spans the walk's whole contact with the kerb (Boz's ruling, 2026-10-18;
+  a walk narrower than the norm width is counted short, not widened). Removed: the 10-07 sector, plan (2)'s radial
+  landings (`dland`), and `perpGeom`'s own contact solve with its norm-width piece centred on it. ▶ `node
+  checks/claims-a-perpendicular-landing-runs-straight-on.mjs huron` (sides parallel to their leg, red on plan (2); each
+  cut's ends on its walk's side lines, red on a89e3c36; prints the corners more than 10° off square) · `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs huron --live --selftest`
   · `node scratch/perp-depths/thin-both.mjs huron` · `node scratch/perp-depths/diag-same.mjs huron provincetown --uncut` ·
-  proxies: `REV=c825e04e node scratch/perp-depths/render.mjs huron "<x,z;…>"`. **Open:** the landing check and three
-  selftest rows are red at a few sites — neighbouring corners, kinks and narrow tips, cause not established; the narrow
-  tips are `RIBBONS §3.5`'s queue.
+  proxies: `REV=a89e3c36 node scratch/perp-depths/render.mjs huron "<x,z;…>"`. **Open, cause not established:** the
+  landing check and three selftest rows are red at a few sites (neighbouring corners, grazing kinks, narrow tips; the
+  narrow tips are `RIBBONS §3.5`'s queue), and records whose cut is painted nowhere (at the town's rim).
 - ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
   longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the
