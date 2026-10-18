@@ -8,6 +8,8 @@
 //   node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene> --live     off a live mint (before a re-pour)
 //   node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene> --live --selftest
 //        the painter under trial norms + an authored leg, on that scene's real corners
+//   node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene> --selftest --thin
+//        only the thin-walk row (two builds, not twelve): the perpendicular fill against the diagonal on the same corners
 //
 // ⛔ FAILS when: a curb cut sits on a corner that is not a junction · a crosswalk's two ends are not two curb cuts at one
 // junction, beside one chain, on its two sides · junction corners on tiles poured before the norm was
@@ -18,6 +20,8 @@ import { eachRibbonsTown } from './_scenes.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence, ROAD } from '../cartograph/curb-cut-evidence.mjs'
 import { styleFromEvidence, landCurbCutEvidence, landCrosswalkEvidence } from '../src/lib/tileGround.js'
 import { mkdtempSync, writeFileSync, readFileSync } from 'fs'
+import clipperLib from 'clipper-lib'
+import { intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
@@ -45,6 +49,46 @@ const run = (norm, corners = f.cornerCornerRadiusOverrides, evidence, crossings)
 const withCut = (map, key, cut) => { const m = { ...(map || {}) }, cur = m[key], e = cur == null ? {} : typeof cur === 'object' ? { ...cur } : { r: cur }
   if (cut == null) delete e.cut; else e.cut = cut
   if (Object.keys(e).length) m[key] = Object.keys(e).length === 1 && 'r' in e ? e.r : e; else delete m[key]; return m }
+
+// ⭐ THIN WALK — what a MITRED OPENING (erode, then dilate, by 25 mm) removes from the drawn sidewalk round each junction
+// corner: every part narrower than 50 mm, attached to the walk or loose. A piece under 2 cm², or of mean width
+// (2·area/length) under 3 mm, is the 1 mm lattice's hairline along an edge and is not counted. Read off what was painted
+// (`R.sidewalk`), in a 24 m window per corner, kept within 8 m of it; one piece is one place (± 0.1 m).
+const thinWalk = (R) => {
+  const { ClipperOffset, Clipper, JoinType, EndType, ClipType, PolyType, PolyFillType } = clipperLib, S = 1000, D = 0.025
+  const toC = (rs) => rs.filter(r => r.length >= 3).map(r => r.map(([x, z]) => ({ X: Math.round(x * S), Y: Math.round(z * S) })))
+  const offs = (ps, d) => { const co = new ClipperOffset(10, 0.25); co.AddPaths(ps, JoinType.jtMiter, EndType.etClosedPolygon); const o = []; co.Execute(o, d * S); return o }
+  const sa = (r) => { let a = 0; for (let i = 0; i < r.length; i++) { const p2 = r[i], q2 = r[(i + 1) % r.length]; a += p2[0] * q2[1] - q2[0] * p2[1] } return a / 2 }
+  const open = (rings) => { const P = toC(rings); if (!P.length) return []
+    const c = new Clipper(); c.AddPaths(P, PolyType.ptSubject, true); c.AddPaths(offs(offs(P, -D), D), PolyType.ptClip, true); const o = []
+    c.Execute(ClipType.ctDifference, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+    return o.map(p => p.map(q => [q.X / S, q.Y / S])).filter(r => sa(r) > 0).map(r => { let L = 0; for (const a of r) for (const b of r) L = Math.max(L, Math.hypot(a[0] - b[0], a[1] - b[1]))
+      const A = sa(r); return { area: A, len: L, w: L ? 2 * A / L : 0, at: r.reduce((s2, p2) => [s2[0] + p2[0] / r.length, s2[1] + p2[1] / r.length], [0, 0]) } })
+      .filter(x => x.area > 2e-4 && x.w >= 0.003) }
+  const seen = new Set(), out = []
+  for (const c of R.curbCutCorners || []) { const [x0, z0] = c.at, win = [[x0 - 12, z0 - 12], [x0 + 12, z0 - 12], [x0 + 12, z0 + 12], [x0 - 12, z0 + 12]]
+    for (const x of open(intersectRings((R.sidewalk || []).filter(r => r.some(([x, z]) => Math.abs(x - x0) < 40 && Math.abs(z - z0) < 40)), [win]))) {
+      if (Math.hypot(x.at[0] - x0, x.at[1] - z0) > 8) continue
+      const k = x.at.map(v => v.toFixed(1)).join(); if (seen.has(k)) continue; seen.add(k); out.push({ ...x, corner: c.at }) } }
+  return { out, open }
+}
+const thinRow = (Pp, Dg) => {
+  const tP = thinWalk(Pp), tD = thinWalk(Dg).out
+  const only = tP.out.filter(x => !tD.some(y => Math.hypot(y.at[0] - x.at[0], y.at[1] - x.at[1]) < 0.5))
+  // the instrument is seen to see: a 3 m × 2 m walk is clean; the same walk with a 12 mm × 1.5 m wedge on it has one piece
+  const block = [[0, 0], [3, 0], [3, 2], [0, 2]], sees = tP.open([block]).length === 0 && tP.open([[[0, 0], [3, 0], [3, 0.5], [4.5, 0.5], [3, 0.512], [3, 2], [0, 2]]]).length === 1
+  return { ok: sees && only.length === 0, sees, P: tP.out.length, D: tD.length, only }
+}
+const thinLine = (T) => `  (thin walk within 8 m of a junction corner: perpendicular ${T.P} · diagonal ${T.D} · perpendicular only ${T.only.length}${T.only.length ? `: ${T.only.slice(0, 10).map(x => `(${x.at[0].toFixed(1)}, ${x.at[1].toFixed(1)}) ${x.len.toFixed(2)} m × ${(x.w * 1000).toFixed(0)} mm`).join(' · ')}${T.only.length > 10 ? ` … +${T.only.length - 10}` : ''}` : ''}${T.sees ? '' : ' · ⛔ the opening did NOT see its planted wedge'})`
+
+if (args.includes('--selftest') && args.includes('--thin')) {
+  const dims = { width: 1.5, warningDepth: 0.6 }, noKerbs = { fetched: true, records: [] }
+  const T = thinRow(run({ style: 'perpendicular', ...dims, source: 'trial', crosswalks: { style: 'none', source: 'kit' } }, undefined, noKerbs),
+                    run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: { style: 'none', source: 'kit' } }, undefined, noKerbs))
+  console.log(`  ${T.ok ? '✅' : '⛔'} the perpendicular fill leaves no thin walk the diagonal does not`)
+  console.log(thinLine(T))
+  process.exit(T.ok ? 0 : 1)
+}
 
 if (args.includes('--selftest')) {
   const dims = { width: 1.5, warningDepth: 0.6 }
@@ -133,7 +177,9 @@ if (args.includes('--selftest')) {
   const apex = { lawn: [], concrete: [] }
   for (const c of Pp.curbCutCorners || []) { if (!c.wedge || !c.wedgeAt) continue
     const m = ppAt(c.wedgeAt); if (m) apex[c.wedge].push(m) }
+  const thin = thinRow(Pp, Dg)
   const rows = [
+    ['the perpendicular fill leaves no thin walk the diagonal does not', thin.ok],
     ['every perpendicular cut has walk behind it',  behind.length > 0 && behind.every(m => m === 'walk')],
     ['a lawn wedge is lawn at the apex, a concrete one walk', apex.lawn.length > 0 && apex.lawn.every(m => m === 'lawn') && apex.concrete.every(m => m === 'walk')],
     // a corner is authorable when its legs are STREETS (skeleton chains); a shore or rim leg is no street and has no key
@@ -177,6 +223,7 @@ if (args.includes('--selftest')) {
   console.log(`  (crosswalks, diagonal + byCorner: ${CT.crosswalks} drawn · ${CT.pairs} between two cuts · ${CT.farKerbCut} to a far-kerb cut · ${CT.farCornerNoCut} far corner without a cut · ${CT.noFarKerb} no far kerb · ${CT.endsNotOwned} ends not owned · ${CT.ambiguous} ambiguous · ${CT.styleDisagrees} style disagrees · ${CT.apexesApart} cuts too far apart)`)
   console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable (${Lo.contradicted || 0} contradict the norm) · raised → ${Up.curbCuts} cut(s) of ${J})`)
   console.log(`  (perpendicular fill: behind ${behind.length} drawn cut(s): ${behind.filter(m => m === 'walk').length} walk${behindBad.length ? ` (not: ${behindBad.slice(0, 8).map(a => `(${a[0].toFixed(0)}, ${a[1].toFixed(0)})`).join(' ')})` : ''} · apex ${apex.lawn.length} lawn wedge(s): ${apex.lawn.filter(m => m === 'lawn').length} lawn · ${apex.concrete.length} concrete: ${apex.concrete.filter(m => m === 'walk').length} walk · ${Pp.curbCutTally?.perpNoLanding} leg(s) with no landing)`)
+  console.log(thinLine(thin))
   console.log(`  (${scene}: ${J} junction corners · diagonal ${Dg.curbCutTally?.curbCuts} · perpendicular ${Pp.curbCutTally?.curbCuts} · authored ${authored?.curbCuts ?? '—'} · perpendicular crosswalks ${Pp.crosswalkTally?.pairs} paired, ${Pp.crosswalkTally?.farKerbNone} far-kerb none, ${Pp.crosswalkTally?.ambiguous} ambiguous)`)
   console.log(bad ? `⛔ selftest: ${bad} wrong` : '✅ selftest: the painter places curb cuts by evidence, norm and authoring, on junctions only')
   process.exit(bad ? 1 : 0)

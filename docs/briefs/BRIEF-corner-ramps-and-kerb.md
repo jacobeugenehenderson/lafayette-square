@@ -77,12 +77,19 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    ⛔ This lifts §7's "no change to ①/② construction" bound **for this stamp only** — the shape itself
    does not move; `a03-curb-identity` / `claims-repour-changes-nothing` must show geometry unchanged.
 4. **The raised kerb lifts the WHOLE BLOCK inboard of the kerb face** (curb, walk, lawn, land use) by an
-   authored height with a neutral default; asphalt stays at 0; a riser along `iA`; each ramp is the walk
+   authored height, kit default the house **6 in** (`r-house-kerb-height`, Jacob 2026-10-17); asphalt stays at 0; a riser along `iA`; each ramp is the walk
    sloping h → 0. Buildings, trees and lamps ride the lifted ground. ⛔ Not a lip strip, not a
    riser-only look ("it's only seen from far" is not an available argument). **Measure this option's
    cost first** (flatten, coplanar check, AO, anchors, phone-lo frame time) and stop with the numbers.
-5. **Default ramp style = NONE, loudly.** No ramp markers without evidence or an authored town/state
-   norm, and every pour prints *"N corners have no ramp source"*. The pad is unchanged regardless.
+5. **Default curb-cut style = PERPENDICULAR** (Jacob, 2026-10-17, superseding 2026-10-05's "none, loudly": *"given
+   they are 'code' now it would make more sense to default to them"*). It is the kit rung of the ladder (evidence →
+   town norm → state → kit). Its width and warning depth are cited (PROWAG via `references/`, never a bare constant).
+   LS keeps its authored diagonal norm (item 7). Recorded evidence decides where it is clear, and per-corner override
+   stays on top. Jacob also asks for a **town-wide switch in Survey or Section** that repaints the default (perpendicular ↔
+   diagonal) live; say where it lives (norms are read at derive, so a live switch belongs in the Look) before building.
+   ⚠️ The shelved perpendicular-fill slivers (§9 Open) now reach every town, so they are first in the queue.
+   Evidence coverage: re-run `scratch/ground-budget/corner-style/run.sh` (Loess, `37c3201b`). Few corners are decided by
+   recorded kerbs, and crosswalks add no independent read, because a kerb node binds through its crossing.
 6. **Rot found, to fix in the same landing as the code it describes:** `SECTION §6.1`'s "TL↔TL is GRASS
    AT THE KERB through the whole arc" (contradicts §4) and the painter comment near "THE CORNER — READ,
    NOT MEASURED" ("AND the owner changes" / "a mid-block BEND is NOT a corner") — both against the code.
@@ -157,7 +164,9 @@ Jackson Heights bakes tonight.
    - The whole block inboard of the kerb lifts; each curb cut slopes h → 0; asphalt stays at 0.
    - Buildings, trees and lamps RIDE the lifted ground. Today the anchor sampler ignores the mesh's y, so they would
      bury by h; fix the sampler, don't offset the objects.
-   - Height is a jurisdiction value on the same norm ladder (`norms.json` → state → kit **0**); LS = **0.15 m (~6 in)**.
+   - Height is a jurisdiction value on the same norm ladder (`norms.json` → state → kit **6 in**, the house standard,
+     `references/` `r-house-kerb-height`); LS = **0.15 m (~6 in)**. ⚠️ **Not built:** `curb-cut-norm.mjs` still gives
+     kit = 0, and a kit kerb > 0 makes every town's cuts need ramp/flare slopes, which no kit rung carries.
      ⛔ Height and width are SEPARATE knobs, never coupled: the width is the Look's `curbWidth` slider, authored wider
      on LS for looks (0.381 m) and left alone (Jacob, 2026-10-06: *"I made the curbs wider for cosmetic reasons"*). A
      source for a town's height (a state standard, a city's data) is welcome as a rung; record which rung it came from.
@@ -218,17 +227,17 @@ scene recorded.
 **Open:** → §3 (the sequence), and:
 - ⏸ **PARKED by Jacob's call, 2026-10-07 ("not right now"): a click-to-open corner popover in Survey** (radius slider ·
   Corner / Not a corner · Revert), replacing ⌥-click. Nothing built; today's controls are the handle's drag + ⌥-click.
-- ⏸ **SHELVED 2026-10-07 for the bakes (Sill, via Boz): the perpendicular fill's slivers.** Diagnosis: committed
-  `a9b5e80d` re-fills each perpendicular corner with a SECTOR built beside the contour, and its seams leave 12 mm × ~1.5 m
-  wedges of walk across the lawn. Thin walks on Huron: 342 perpendicular vs 5 diagonal. Plan (2), built and unshipped,
-  diff at `scratch/perp-corner/radial-landings-SHELVED-2026-10-07.diff`: no re-fill and no pad on a both-lawn corner. Each
-  leg's landing is a DEPTH on the one inset (`dland`, the ring split at the landing's t-bounds). Diagonal stays
-  byte-identical (Provincetown; Huron with its authored corner set aside). Open reds on Huron, built with (2): thin walk
-  10 vs 5 · walk behind a cut 1216/1299 · lawn apex 479/481 · concrete wedge walk 1/2. These rows were not measured at
-  HEAD. One cause measured: on a one-lawn corner (tile 114, Brunswick × Cleveland Rd W) the pad's inner edge is
-  `arcMin` = min(conD) = the shallow leg's 1.5 m, so a lawn ring is painted behind it and the lawn leg's walk
-  (1.5–3 m) breaks at the arc. HEAD's sector hid this. The other reds: cause not established. Radial vs parallel
-  landings is Jacob's look call.
+- **The perpendicular fill's slivers: plan (2) built 2026-10-17 (Loess, branch `loess/perp-depths`, unmerged).** The corner
+  is read, not constructed: each landing is a DEPTH on the one inset (`dland`, the ring split at the landing's t-bounds); a
+  both-lawn corner takes no pad and its legs' bands bend through. The sector, strips and re-fill are removed; their seams
+  left thin walk AND thin lawn (narrow tips, oblique corners, every sector edge). Diagonal is byte-identical (PTown; Huron
+  with its authored corner set aside). ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs huron --selftest --thin`
+  (red on the sector, green on (2)) · `node scratch/perp-depths/thin-both.mjs huron` (walk and lawn, before vs after) ·
+  `node scratch/perp-depths/diag-same.mjs huron provincetown --uncut`. **Open:** the full selftest's "walk behind a cut" and
+  "concrete wedge is walk" rows are red. Two radial-landing shapes are seen, both with cause not established: a narrow
+  landing at an acute corner, and two landings squeezing the apex lawn where they nearly meet. One-lawn corners now show
+  §4's ruled SW↔TL pad (identical to diagonal), which the sector used to hide. Radial vs parallel landings is Jacob's look
+  call: ▶ `node scratch/perp-depths/render.mjs huron "<x,z;…>"` (labelled proxies, before / after / diagonal).
 - ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
   longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the

@@ -416,9 +416,11 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
   (`__water__`/`__boundary__` — no street) is no corner at all: no pad, no cut. A BEND carries no pad and no cut —
   the walk and lawn bend through — unless Survey makes it a corner, and a junction Survey calls "not a corner" loses both
   (the corner's `corner` flag, read by the pad licence; Jacob, 2026-10-07). A diagonal
-  corner keeps the pad; a **perpendicular** one runs each leg's walk straight on to the kerb in its own landing, a cut
-  where each lands, and a lawn wedge between at the apex — the whole corner walk when a leg has no lawn (`perpGeom`); a
-  walk that never meets the kerb gets no landing, counted. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
+  corner keeps the pad. At a **perpendicular** one each leg's walk, carried on straight, meets the kerb in its own
+  LANDING, a DEPTH on the one inset: on that kerb span the walk starts at the kerb (`dland`), and a cut sits where each
+  lands. Where both legs carry a lawn the corner takes no pad and their bands bend through, so the apex is their lawn;
+  where a leg has none the corner keeps the pad. Nothing is constructed (`§4`); `perpGeom` only reads where each walk
+  lands. A walk that never meets the kerb gets no landing, counted. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
   (`crosswalksSquareAcross`; a pair is matched on the junction node + the chain's two sides). ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.
