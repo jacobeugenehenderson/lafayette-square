@@ -58,7 +58,7 @@ export default {
       // "built in year zero" ma.mjs refuses; the footprint well carries construction_year) · AssessTot is ASSESSED,
       // not appraised · ZoneDist1 is a vocabulary nobody has declared · LotArea is square feet and the kit's
       // `land_area` has no declared unit (St. Louis City and County already disagree), so it waits for one.
-      absent: ['owner', 'year_built', 'appraised_value', 'zoning', 'land_area', 'vacant'],
+      absent: ['owner', 'year_built', 'appraised_value', 'zoning', 'land_area', 'vacant', 'row_type', 'land_use_desc'],   // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18) — absent until someone does
       // ⭐ HistDist is the district's NAME, and the designation is LOCAL. PLUTO Data Dictionary (May 2023, 23v1.1),
       // HISTORIC DISTRICT NAME (HistDist): "The name of the Historic District that the tax lot is within. Historic
       // Districts are designated by the New York City Landmarks Preservation Commission." Source: LPC Historic Districts.

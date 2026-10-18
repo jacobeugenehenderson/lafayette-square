@@ -52,7 +52,8 @@ export default {
       "vacant",
       "historic_district"
     ],
-    "absent": [],
+    // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18), absent until someone does
+    "absent": ["row_type", "land_use_desc"],
     "zoning_code_format": "stl-letter"
   },
     // St. Louis County — numeric LUCODE, decoded by the assessor's own table (the town's `landUseCodes`).
@@ -90,7 +91,10 @@ export default {
       "units",
       "municipality"
     ],
+    // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18), absent until someone does
     "absent": [
+      "row_type",
+      "land_use_desc",
       "num_buildings",
       "vacant",
       "historic_district"
