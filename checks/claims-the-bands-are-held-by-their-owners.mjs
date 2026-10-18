@@ -106,7 +106,7 @@ for (const scene of feedScenes()) {
     console.log(`   painted m² per class: ${Object.entries(pm).map(([k, v]) => `${k} ${v.toFixed(3)}`).join(' · ')}`) }
   // …and the PIECES' own area by emitter, with this check's own area function (so it is comparable with `painted` above,
   // whatever the producer's census counts): piece.why, else its cell's kind
-  { const em = {}, tot = {}; for (const t of T) for (const q of t.pieces) { const k = `${q.cls}:${q.why ?? 'cell ' + (q.cell?.kind ?? '?')}`, a = area(q.rings); em[k] = (em[k] || 0) + a; tot[q.cls] = (tot[q.cls] || 0) + a }
+  { const em = {}, tot = {}; for (const t of T) for (const q of t.pieces) { const k = `${q.cls}:${q.why ?? 'cell ' + (q.from?.kind ?? '?')}`, a = area(q.rings); em[k] = (em[k] || 0) + a; tot[q.cls] = (tot[q.cls] || 0) + a }
     console.log(`   pieces m² per class: ${Object.entries(tot).map(([k, v]) => `${k} ${v.toFixed(3)}`).join(' · ')} · by emitter: ${Object.entries(em).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toFixed(3)}`).join(' · ')}`) }
   // ⭐ MUTANTS (--mutants): each breaks ONE claim on this same output, and that claim must go RED — a check never seen to fail
   // proves nothing

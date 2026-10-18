@@ -23,6 +23,6 @@ for (const scene of feedScenes()) {
         const lab = (cap != null ? 'c' + cap : arc != null ? 'a' + arc : run != null ? 'r' + run : '-') + '/' + (run ?? '-')
         if (d < any.d) any = { d, lab, si, j }
         if (lab === o.span) own = Math.min(own, d) }))
-      console.log(`ED ${scene} tile ${t.tile} ${q.cls} span ${o.span} (${o.skelId}|${o.side}|${o.segOrd}) at (${cx.toFixed(2)}, ${cz.toFixed(2)}): no ${miss.join('/')} · emitter ${q.why ?? `cell ${q.cell?.kind ?? '?'} ${JSON.stringify(q.cell?.at ?? null)}`} · ${o.edges?.length ?? 0} bound edge(s) · nearest edge of its own span ${own.toFixed(2)} m · nearest edge of any span ${any.d.toFixed(2)} m (${any.lab}, ring ${any.si} edge ${any.j})`) } }
+      console.log(`ED ${scene} tile ${t.tile} ${q.cls} span ${o.span} (${o.skelId}|${o.side}|${o.segOrd}) at (${cx.toFixed(2)}, ${cz.toFixed(2)}): no ${miss.join('/')} · emitter ${`${q.why ?? 'cell'} ${JSON.stringify(q.from ?? null)}`} · ${o.edges?.length ?? 0} bound edge(s) · nearest edge of its own span ${own.toFixed(2)} m · nearest edge of any span ${any.d.toFixed(2)} m (${any.lab}, ring ${any.si} edge ${any.j})`) } }
   console.log(`ED ${scene}: ${n} depthless owner(s)`)
 }
