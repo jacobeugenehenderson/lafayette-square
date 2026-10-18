@@ -36,7 +36,7 @@ for (const V of only) {
   if (V === 'half') note = `σ/2 = ${(sigma / 2).toFixed(2)} m: run.h changed at ${reline(dump.tiles, lineHeights({ streets: rib, raw, sigma: sigma / 2 }))} point(s)`
   const { buildDeformer } = await import(resolve(V === 'raw' ? arg('raw') : V === 'new' ? arg('new') : V === 'road' ? arg('road') : arg('deformer')))
   const LHs = lineHeights({ streets: rib, raw, sigma }), line = { step: LHs.step, heightAt: (id, p) => { if (id === '__water__') throw new Error('cf-seams: a coast run — the high water is not wired here'); return LHs.heightAt(id, p) } }
-  const D = buildDeformer({ town, tiles: dump.tiles, bands: dump.bands, stencil: dump.stencil, raw, line, limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: E, blend, sigma } })
+  const D = buildDeformer({ town, tiles: dump.tiles, ink: dump.ink, bands: dump.bands, stencil: dump.stencil, raw, line, limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: E, blend, sigma } })
   const cls = { 'reach edge': 0, unowned: 0, 'owner seam': 0, 'one owner': 0 }, seamBy = new Map(), pairs = new Map(), worstBy = {}; let roadSeams = 0; const reach = new Map(); let walls = 0, worst = 0, mism = 0, over2 = 0
   for (const g of gj.groups) { if (g.rawByteOffset == null) continue; const gid = `${g.kind}:${g.id}`
     const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), Rw = new Float32Array(AB, g.rawByteOffset, g.vertexCount)
@@ -60,8 +60,8 @@ for (const V of only) {
         reach.set(k, (reach.get(k) || 0) + 1) }
       if (c0 === 'owner seam') { seamBy.set(gid, (seamBy.get(gid) || 0) + 1)
         // the pair that meets: arc ↔ run, two runs of one chain or of two, and whether the owners are in different tiles
-        const os = [...new Set([own[a], own[b], own[c]])].map(o => o.split('|')), nm = (o) => o[2][0] === 'a' ? 'arc' : dump.tiles[+o[0]]?.runs?.[+o[2].slice(1)]?.skelId ?? '?'
-        const names = os.map(nm), k = [...new Set(names.map(x => x === 'arc' ? 'arc' : 'run'))].sort().join('↔')
+        const os = [...new Set([own[a], own[b], own[c]])].map(o => o.split('|')), nm = (o) => o[0] === '①' || o[0] === 'ink' ? 'road' : o[2][0] === 'a' ? 'arc' : dump.tiles[+o[0]]?.runs?.[+o[2].slice(1)]?.skelId ?? '?'
+        const names = os.map(nm), k = [...new Set(names.map(x => x === 'arc' || x === 'road' ? x : 'run'))].sort().join('↔')
         const pk = (k === 'run' ? (new Set(names).size > 1 ? 'run↔run, two chains' : 'run↔run, one chain') : k) + (new Set(os.map(o => o[0])).size > 1 ? ' · across tiles' : '') + (names.includes('__highway__') ? ' · a highway edge' : '')
         pairs.set(pk, (pairs.get(pk) || 0) + 1) } } }
   console.log(`${V}: ${walls} wall(s) · worst ${worst.toFixed(2)} m · over 2 m ${over2} · ${Object.entries(cls).map(([k, n]) => `${k} ${n}`).join(' · ')} · seams by group: ${[...seamBy].sort((x, y) => y[1] - x[1]).slice(0, 5).map(([k, n]) => `${k} ${n}`).join(' · ')}${V === 'base' ? ` · stored ≠ D at ${mism} vertex(es)` : ''}${note ? ` · ${note}` : ''} · ${((Date.now() - t0) / 1000).toFixed(0)} s\n      worst by class: ${Object.entries(worstBy).map(([k, w]) => `${k} ${w.ex.toFixed(2)} m ${w.g} at (${w.at.map(v => v.toFixed(1))})`).join(' · ')} · owner seams on the road side (asphalt · stripe · highway) ${roadSeams}\n      reach edge: ${[...reach].sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k} ${n}`).join(' · ')}\n      seams by pair: ${[...pairs].sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k} ${n}`).join(' · ')}`)
