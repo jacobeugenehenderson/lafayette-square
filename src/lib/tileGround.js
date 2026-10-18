@@ -5508,8 +5508,8 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
   const lawn = env.length ? (walk.length ? differenceRings(env, walk) : env) : []
   cut('lawn', lawn, cellsBetween(LV_cw, LV_WB, 'the lawn'), LV_WB)
   // ⭐ EACH OWNER'S DEPTHS AND EDGES, BY ITS LABEL (Boz, for Screed's band blend, 2026-10-18; §6a — identity, never a
-  // by-distance find): an owner IS a span of one contour part, so its edges are every source edge of that part carrying its
-  // span — `o.edges` = [{ si, e }], the `iaFull` ring and edge, on which the tile's `edgeDepths` give the depth AT a point —
+  // by-distance find): an owner IS a span — a TILE-wide label (runs, arcs and caps index the tile's own lists; `ri` is only a
+  // locator) — so its edges are every source edge, in any contour part, carrying its span — `o.edges` = [{ si, e }], the `iaFull` ring and edge, on which the tile's `edgeDepths` give the depth AT a point —
   // and `o.depths` = per level the [least, greatest] depth those edges were struck at (`offsetRingByRects`' `stamp.edgeDepths`,
   // a zero depth included, never recomputed). null = the span strikes nothing at that level. A multi-owner piece carries one
   // set per owner. (This replaced a box reach — each edge's box grown by its deepest depth, met against the piece — which
@@ -5519,8 +5519,8 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
   for (const [k, LV] of Object.entries(LEVELS)) for (const x of LV?.per || []) for (const e of x.edges || []) { const key = x.p.ri + ':' + e.e
     const r = byEdge.get(key) || byEdge.set(key, { ri: x.p.ri, si: x.p.si, e: x.p.dsrc[e.e], a: e.a, b: e.b, span: e.span, depths: {} }).get(key)
     r.depths[k] = [e.d[0], e.d[1]] }
-  const ownEdges = new Map(); for (const r of byEdge.values()) { const k = r.ri + '|' + r.span; (ownEdges.get(k) || ownEdges.set(k, []).get(k)).push(r) }
-  for (const q of pieces) for (const o of q.owners) { const E = ownEdges.get(o.ri + '|' + o.span) || [], dep = {}
+  const ownEdges = new Map(); for (const r of byEdge.values()) (ownEdges.get(r.span) || ownEdges.set(r.span, []).get(r.span)).push(r)
+  for (const q of pieces) for (const o of q.owners) { const E = ownEdges.get(o.span) || [], dep = {}
     for (const k of Object.keys(LEVELS)) { let lo = Infinity, hi = -Infinity
       for (const r of E) if (r.depths[k]) { lo = Math.min(lo, ...r.depths[k]); hi = Math.max(hi, ...r.depths[k]) }
       dep[k] = lo <= hi ? [lo, hi] : null }
