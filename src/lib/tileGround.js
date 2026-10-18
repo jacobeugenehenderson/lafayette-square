@@ -5330,7 +5330,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 // Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB }, edges: [{ si, e }] (depths on the tile's edgeDepths) } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk0, walk, env, perp }) {
-  const census = { cells: 0, triangles: 0, triangleByPair: {}, innerFans: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [] }
+  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [] }
   // a run's or an arc's owner is its stamp run; a dead-end cap's is the cap's own (`iaCap` → `caps`, the cap is an end coupler)
   const ownerOf = (span) => { if (span == null) return null; const [h, t] = span.split('/'), R = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+t) ? runs[+t] : null
     return R ? { skelId: R.skelId, side: R.side, segOrd: R.segOrd } : null }
@@ -5345,10 +5345,12 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
   // subsequence of their span labels, anchored at a span each carries once), never looked up by label: an offset's edge is
   // struck from whichever rect it lies on, so where two depths step a level can read X · Y · X for a few mm (measured HPDM
   // 2026-10-18: ~500–870 such runs per level, median 5 mm), and the same span change then occurs twice on one level and once
-  // on the other. A MATCHED run's cell is its run on both levels between the seams at its ends. Between two matched runs,
-  // the outer level's unmatched runs fan to the inner gap's start and the inner level's to the outer gap's end, so every run
-  // on either level owns the ground its own edge was struck from and the cells tile the band. Each cell names the seam to the
-  // NEXT cell round the ring (`seamEnd`, `next`).
+  // on the other. A MATCHED run's cell is its run on both levels between the seams at its ends. ⛔ AN UNMATCHED RUN MAKES NO
+  // CELL (Boz, 2026-10-18): it used to FAN to the neighbouring match's point on the other level — a point of ANOTHER span's
+  // run, by construction — and on HPDM every one of the 11 owners with no depth was such a fan's ground, 0.38–2.10 m from
+  // the other span's edges and 2.15–49 m from its own (scratch/ground-budget/lattice-r1/emitter-depthless.mjs). A cell's
+  // label is now always a span whose run bounds it on BOTH levels; the gap's ground is left over, to the rects (below).
+  // Each cell names the seam to the NEXT cell round the ring (`seamEnd`, `next`) — none where a gap lies between.
   // weighted by LENGTH (the shorter of the two runs, in metres), so a span's long run pairs with its long run and a few-mm
   // flicker is what is left over, never the other way round
   const lcs = (A, B, wA, wB) => { const n = A.length, m = B.length, D = Array.from({ length: n + 1 }, () => new Float64Array(m + 1))
@@ -5392,16 +5394,15 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
         for (let m = 0; m < M; m++) {
           const { i, j, X } = pr[m], { i: i2, j: j2, X: X2 } = pr[(m + 1) % M], ir = X.ring, irr = X.rr
           ring.push({ span: rr[i].span, poly: [...verts(r, rr[i].i0, rr[i].i1), ...verts(ir, irr[j].i0, irr[j].i1).reverse()], seamEnd: [oE(i), iE(X, j)], kind: 'pair', at: [rr[i].i0, rr[i].i1, irr[j].i0, irr[j].i1] })
-          const c0 = iE(X, j), o1 = oS(i2), same = X === X2  // the gap: outer runs i+1 … i2−1, inner runs j+1 … j2−1 (one inner ring)
+          const o1 = oS(i2), same = X === X2  // the gap: outer runs i+1 … i2−1, inner runs j+1 … j2−1 (one inner ring) — no cells
           const gO = []; for (let a = (i + 1) % rr.length; a !== i2; a = (a + 1) % rr.length) gO.push(a)
           const gI = []; if (same) for (let b = (j + 1) % irr.length; b !== j2; b = (b + 1) % irr.length) gI.push(b)
           if (!same) census.necks++
-          if (gO.length) census.triangles += gO.length
-          for (const a of gO) { ring.push({ span: rr[a].span, poly: [...verts(r, rr[a].i0, rr[a].i1), c0], seamEnd: [oE(a), c0], kind: 'outer fan', at: [rr[a].i0, rr[a].i1] })
-            if (!Ispans.has(rr[a].span)) { const kp = `${keyOf(ownerOf(rr[(a - 1 + rr.length) % rr.length].span)) ?? '-'} | ${keyOf(ownerOf(rr[(a + 1) % rr.length].span)) ?? '-'}`; census.triangleByPair[kp] = (census.triangleByPair[kp] || 0) + 1 } }
-          if (gI.length) { census.innerFans += gI.length; ring[ring.length - 1].seamEnd = [o1, c0] }
-          for (const b of gI) ring.push({ span: irr[b].span, poly: [o1, ...verts(ir, irr[b].i0, irr[b].i1).reverse()], seamEnd: [o1, iE(X, b)], kind: 'inner fan', at: [irr[b].i0, irr[b].i1] })
-          ring[ring.length - 1].seamEnd = same ? [o1, iS(X, j2)] : null   // a neck: the seam is not a segment, and the neck is residue
+          census.gapOuter += gO.length; census.gapInner += gI.length
+          for (const a of gO) if (!Ispans.has(rr[a].span)) { const kp = `${keyOf(ownerOf(rr[(a - 1 + rr.length) % rr.length].span)) ?? '-'} | ${keyOf(ownerOf(rr[(a + 1) % rr.length].span)) ?? '-'}`; census.gapByPair[kp] = (census.gapByPair[kp] || 0) + 1 }
+          // the seam to the next match is a segment only when nothing lies between (a neck's is not a segment either)
+          const gap = gO.length > 0 || gI.length > 0; if (same && gap) census.gapSeams++
+          ring[ring.length - 1].seamEnd = same && !gap ? [o1, iS(X, j2)] : null
         }
         ring.forEach((c, q) => { out.push({ ...c, ri: p.ri, next: ring[(q + 1) % ring.length].span }); census.cells++ }) })
       inner.forEach((x, q) => { if (!usedI.has(q) && x.rr.length) census.innerUnbounded++ })
@@ -10855,19 +10856,19 @@ export function buildTileGround(ribbons, opts = {}) {
     const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: true })
     asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
     protoBandPieces = S.bandPieces || []
-    { const C = { cells: 0, triangles: 0, innerFans: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRectsWide: 0, refused: 0, refusedM2: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
+    { const C = { cells: 0, gapOuter: 0, gapInner: 0, gapSeams: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRectsWide: 0, refused: 0, refusedM2: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
       let n = 0, seams = 0, same = 0
       for (const t of protoBandPieces) { n += t.pieces.length; seams += t.seams.length; same += t.seams.filter(q => q.sameChain).length
         for (const k of Object.keys(C)) C[k] += t.census[k] || 0; gone.push(...t.census.goneBoth.map(g => `tile ${t.tile}: ${g}`))
         for (const [k, v] of Object.entries(t.census.byRects)) { BR[k] = (BR[k] || 0) + v; BRm[k] = (BRm[k] || 0) + t.census.byRectsM2[k] }
         refAt.push(...t.census.refusedAt.map(g => `tile ${t.tile} ${g}`))
-        for (const [k, v] of Object.entries(t.census.triangleByPair)) pairs[k] = (pairs[k] || 0) + v }
+        for (const [k, v] of Object.entries(t.census.gapByPair)) pairs[k] = (pairs[k] || 0) + v }
       console.log(`[tileGround][①⇢LIVE] band ground no cell holds alone (${C.necks} neck transition(s) · ${C.noInner} island(s), ${C.noInnerM2.toFixed(0)} m² of ring · and where cells overlap), given by the inner level's own rects (\`offsetRingByRects\`' clips): ${Object.keys(BR).sort().map(k => `${k} ${BR[k]} piece(s) ${BRm[k].toFixed(1)} m²`).join(' · ') || 'none'}${C.byRectsWide ? ` · ⛔ ${C.byRectsWide} too wide to arrange (more than 12 spans)` : ''}`)
       // ⛔ NAMED, NOT STOPPING — for now (Boz, 2026-10-18): no height reader consumes the band pieces yet (the band blend is not
       // in), so ground with no owner cannot put a wrong height on the slab. When a reader lands, this throws.
       if (C.refused || C.byRectsWide) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.refused} region(s), ${C.refusedM2.toFixed(3)} m², in no span's rect and no single join — NO OWNER (named, not stopping: nothing reads the pieces yet): ${refAt.slice(0, 6).join(' · ')}${refAt.length > 6 ? ` … +${refAt.length - 6}` : ''}`)
       const top = Object.entries(pairs).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `${k} ×${v}`).join(' · ')
-      console.log(`[tileGround][①⇢LIVE] the bands cut by their owners: ${n} piece(s) from ${C.cells} cell(s) · ${seams} seam(s) (${seams - same} where the owner changes · ${same} on one chain) · ${C.triangles} outer run(s) fanned to the inner side (no run of their own there; top pairs of a span with no width there ${top || '—'}) · ${C.innerFans} inner run(s) fanned to the outer side · ${C.landings} landing(s) owned by their own leg, ${C.landingCross} corner(s) where the two landings cross (the corner's arc owns the crossing)`)
+      console.log(`[tileGround][①⇢LIVE] the bands cut by their owners: ${n} piece(s) from ${C.cells} cell(s) · ${seams} seam(s) (${seams - same} where the owner changes · ${same} on one chain) · unmatched runs between two matches, their ground left to the rects: ${C.gapOuter} outer (top pairs of a span with no width on the inner side ${top || '—'}) · ${C.gapInner} inner · ${C.gapSeams} match(es) with no seam to the next, a gap between · ${C.landings} landing(s) owned by their own leg, ${C.landingCross} corner(s) where the two landings cross (the corner's arc owns the crossing)`)
       if (C.goneBothN) console.log(`[tileGround][①⇢LIVE] ${C.goneBothN} span(s) with no width on either side of a band — no piece there; the ground is the neighbours' (Boz, 2026-10-18): ${gone.slice(0, 6).join(' · ')}${gone.length > 6 ? ` … +${gone.length - 6}` : ''}`)
       if (C.noAnchor || C.noInner || C.innerShared || C.innerUnbounded || C.noOwner) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.noAnchor} ring(s) with no span carried once on both levels to align from · ${C.noInner} outer ring(s) with no inner ring to align with (their runs are not closed) · ${C.innerShared} inner ring(s) aligned to two outer rings · ${C.innerUnbounded} inner ring(s) aligned to none · ${C.onlyOnInner} span(s) only on the inner side · ${C.noOwner} piece(s) whose span has no stamp run (no owner) — counted; ▶ checks/claims-the-bands-are-held-by-their-owners.mjs`)
     }
