@@ -1,0 +1,32 @@
+##### base
+  ok    slab-hipointedemun-full-sweep  0 T-junctions across 44 partition groups
+1 crack-free · 0 failing · 0 phantom  (on-edge tolerance 5 mm)
+⛔ altadena: 91527 T-junctions across ALL 34 groups (unstamped — partition unknown) — 2023 within a group, 89504 between groups
+   unstamped: baked before the partition was recorded; the guarantee cannot be proven on it.
+   crack height at exag 1 (m): median 0.000 · p95 0.774 · max 49.715 · 19717 over 0.05 m
+   worst: 49.715 m at (-2354.90, -3633.52) — a residential vertex on a 311.3 m sidewalk edge
+   top pairs (vertex → edge): residential → sidewalk 38434 · unknown → sidewalk 22229 · treelawn:residential → curb 3327 · sidewalk → residential 3185 · residential → curb 3162 · recreation → sidewalk
+   ▶ node cartograph/bake-ground.js --scene=altadena --look=altadena
+  ok    hipointedemun  0 T-junctions across 44 partition groups
+  ok    huron  0 T-junctions across 49 partition groups
+  ok    jacksonheights  0 T-junctions across 49 partition groups
+  ok    lafayette-square  0 T-junctions across 41 partition groups
+  ok    provincetown  0 T-junctions across 51 partition groups
+5 crack-free · 1 failing · 0 phantom  (on-edge tolerance 5 mm)
+⛔ FAIL
+##### b
+  ok    slab-hipointedemun-full-sweep  0 T-junctions across 44 partition groups
+1 crack-free · 0 failing · 0 phantom  (on-edge tolerance 5 mm)
+⛔ altadena: 91676 T-junctions across ALL 34 groups (unstamped — partition unknown) — 2089 within a group, 89587 between groups
+   unstamped: baked before the partition was recorded; the guarantee cannot be proven on it.
+   crack height at exag 1 (m): median 0.000 · p95 0.774 · max 49.715 · 19721 over 0.05 m
+   worst: 49.715 m at (-2354.90, -3633.52) — a residential vertex on a 311.3 m sidewalk edge
+   top pairs (vertex → edge): residential → sidewalk 38438 · unknown → sidewalk 22229 · treelawn:residential → curb 3327 · residential → curb 3203 · sidewalk → residential 3186 · recreation → sidewalk
+   ▶ node cartograph/bake-ground.js --scene=altadena --look=altadena
+  ok    hipointedemun  0 T-junctions across 44 partition groups
+  ok    huron  0 T-junctions across 49 partition groups
+  ok    jacksonheights  0 T-junctions across 49 partition groups
+  ok    lafayette-square  0 T-junctions across 41 partition groups
+  ok    provincetown  0 T-junctions across 51 partition groups
+5 crack-free · 1 failing · 0 phantom  (on-edge tolerance 5 mm)
+⛔ FAIL
