@@ -5330,7 +5330,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 // Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB }, edges: [{ si, e }] (depths on the tile's edgeDepths) } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk0, walk, env, perp }) {
-  const census = { cells: 0, triangles: 0, triangleByPair: {}, innerFans: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [], emitM2: {} }
+  const census = { cells: 0, triangles: 0, triangleByPair: {}, innerFans: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [] }
   // a run's or an arc's owner is its stamp run; a dead-end cap's is the cap's own (`iaCap` → `caps`, the cap is an end coupler)
   const ownerOf = (span) => { if (span == null) return null; const [h, t] = span.split('/'), R = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+t) ? runs[+t] : null
     return R ? { skelId: R.skelId, side: R.side, segOrd: R.segOrd } : null }
@@ -5416,9 +5416,6 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
   // a piece names its OWNERS — one, or (ground in two spans' rects, a join's two edges) exactly the spans that hold it
   const emit = (cls, rings, spans, ri, why = null, cell = null) => { const owners = spans.map(span => { const o = ownerOf(span); if (!o) census.noOwner++
       return { ri, span, ...(o || { skelId: null, side: null, segOrd: null }) } })
-    // area by EMITTER (Boz, 2026-10-18), so a run before and after a producer change accounts to the m²: `cell <kind>` = a cell's own
-    // part (its kind: a level pair, an outer or inner gap fan, no inner, whole); else the emitter's own `why` (byRects' 'one rect' / 'shared' / 'join', ' (within TOL)', a landing, a corner)
-    const em = `${cls}:${why || 'cell ' + (cell?.kind || '?')}`; census.emitM2[em] = (census.emitM2[em] || 0) + Math.abs(rings.reduce((t, r) => t + signedArea(r), 0))
     for (const x of luSplit(rings)) pieces.push({ cls, key: x.key, rings: x.rings, owners, ...(why ? { why } : {}), ...(cell ? { cell } : {}) }) }
   const ar = (rs) => rs.reduce((t, r) => t + Math.abs(signedArea(r)), 0)
   const bb = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
