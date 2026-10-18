@@ -15,18 +15,19 @@
 report at `scratch/footprint-census/REPORT.md`. ⛔ Quote these numbers only with the command beside them.
 
 - **The parcels line up with the map:** 99–100% of footprint area lies inside an assessor parcel, in every town.
-- **Mostly the band, not the building:** most of the building area that sits on painted street ground is still inside
-  its own parcel. The painted ped band (and, in places, the road) runs onto parcel land.
+- **Mostly the band, not the building:** building area on painted street ground is mostly inside its own parcel; the
+  painted ped band (in places the road) runs onto parcel land.
+- **A multipart parcel keeps only its first ring** (▶ `node checks/claims-a-parcel-keeps-all-its-parts.mjs`):
+  derive's emitted `parcel` layer and its land-use face membership read `rings[0]`.
 - **It ranks by town in the same order as the band's overrun:** painted sidewalk inside parcels goes from JH 5% to
   PTown 76%, and buildings on street paint go from JH 0.6% to PTown 34.9%.
 - **Commercial Street, PTown:** 6 of its 7 ways are `highway=living_street`, `lanes=1`, `width` 6 or 9.1, and none
   carries a sidewalk or kerb tag. The kit paints all of it as an 8.0 m carriageway, a 0.15 m curb, 1.5 m of
   treelawn and 1.5 m of sidewalk, putting the property line 7.15 m from the centreline. The parcel line sits at a
   median of 3.4–3.9 m.
-- **Some footprints are wrong too:** where an MSBF footprint intrudes, it usually reaches ≥1 m further than its OSM
-  twin. That fits roof lean, but it is not established. A few deep cases are unexplained, e.g. HPDM `msbf-9265` with
-  509 m² on asphalt. ▶ `cartograph/BACKLOG.md` "Lot-anchored footprint geometry (parallax)" is the standing home for
-  the footprint side. ⛔ That is NOT this brief.
+- **Some footprints are wrong too** (⛔ not this brief: `cartograph/BACKLOG.md` "Lot-anchored footprint geometry"):
+  an intruding MSBF footprint usually reaches ≥1 m past its OSM twin (roof lean fits, not established); unexplained deep
+  cases, e.g. HPDM `msbf-9265`, 509 m² on asphalt.
 
 - **The sidewalk data, per town** (▶ `node scratch/sidewalk-evidence/census.mjs <scene>`, REPORT.md beside it):
   - **How much exists.** OSM sidewalk ways cover JH 74% of frontage, LS 53%, HPDM 49%, and PTown and Huron only 5–7%. Road ways carrying a `sidewalk*` tag: JH 48% of road length, elsewhere 1–16%. No `kerb*` tag on any road way.
@@ -66,11 +67,9 @@ silently becomes the kit default. ⛔ Never a per-street exception list. ⭐ Mon
 
 ## 3 · Answer before building, against the code, and report to Boz
 
-a. **Right-of-way parcels.** Alleys lie about 99% inside parcels on PTown and JH, which hints that some parcel layers
-   include the street itself as a parcel. Find out how to tell a ROW parcel from a lot by the data (its own class
-   code or tag, never by shape), per town, before any parcel is read as the back of the street.
-   *(Measured, Lath 2026-10-18, ▶ `row-parcels.mjs`: street ROW is in no parcel layer — 90–98% of street samples lie in no
-   parcel; by centreline JH's alleys are 87.5% inside parcels, mostly lots. CANDIDATE ROW codes, each to be CONFIRMED
+a. **Right-of-way parcels.** Tell a ROW parcel from a lot by the data (class code or tag, never shape), per
+   town, before any parcel is read as the back of the street.
+   *(Measured, Lath 2026-10-18: ROW is in no parcel layer (§1). CANDIDATE ROW codes, each to be CONFIRMED
    against its source's own code book, never by geometry: St. Louis `5000` · Huron `400: Com-Vacant Land` · PTown `9000` ·
    JH `07`. MassGIS L3 serves `POLY_TYPE` (FEE 6,578 · TAX 3 in PTown's bbox, no ROW) and `USE_DESC`; the fetch reads
    neither yet.)*
