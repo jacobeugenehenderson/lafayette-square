@@ -79,9 +79,9 @@ for (const town of towns) {
   for (const c of same) console.log(`      (${c.p.x.toFixed(1)}, ${c.p.z.toFixed(1)}): ${name(c.a)} × ${name(c.b)}`)
   // ⭐ CLAIM 2 — THE FRAME: the face walk reads skeleton.json's CHAINS, not the ways. A nodeless crossing of two chains whose
   // source ways there (the nearest source way of each) OSM puts on one grade is a crossing the frame MADE — OSM has none.
-  const W = new Map(raw.map(f => [f.osmId, f]))
+  const W = new Map(); for (const f of raw) (W.get(f.osmId) || W.set(f.osmId, []).get(f.osmId)).push(f)   // one id can carry several features (a multipolygon's rings)
   const segD = (p, a, b) => { const dx = b.x - a.x, dz = b.z - a.z, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(p.x - a.x - t * dx, p.z - a.z - t * dz) }
-  const localWay = (ch, p) => { let best = null, bd = Infinity; for (const id of ch.src) { const w = W.get(id); if (!w) continue; for (let k = 0; k + 1 < w.coords.length; k++) { const d = segD(p, w.coords[k], w.coords[k + 1]); if (d < bd) { bd = d; best = w } } } return best ? { w: best, d: bd } : null }
+  const localWay = (ch, p) => { let best = null, bd = Infinity; for (const id of ch.src) for (const w of W.get(id) || []) { for (let k = 0; k + 1 < w.coords.length; k++) { const d = segD(p, w.coords[k], w.coords[k + 1]); if (d < bd) { bd = d; best = w } } } return best ? { w: best, d: bd } : null }
   // ⭐ a chain's LINE is its `segments` where it has them (skeleton.js step 4b: a curving run is ONE cubic bezier between
   // two control points, so `points` alone is the chord, not the road) — sampled here at ≤ 0.5 m; `points` otherwise
   // (skeleton.json: segments[i] runs points[i] → points[i+1]; a bezier carries c1/c2 as {x, z})
