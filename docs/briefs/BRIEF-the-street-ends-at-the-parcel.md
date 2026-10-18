@@ -28,6 +28,12 @@ report at `scratch/footprint-census/REPORT.md`. ⛔ Quote these numbers only wit
   509 m² on asphalt. ▶ `cartograph/BACKLOG.md` "Lot-anchored footprint geometry (parallax)" is the standing home for
   the footprint side. ⛔ That is NOT this brief.
 
+- **The sidewalk data, per town** (▶ `node scratch/sidewalk-evidence/census.mjs <scene>`, REPORT.md beside it):
+  - **How much exists.** OSM sidewalk ways cover JH 74% of frontage, LS 53%, HPDM 49%, and PTown and Huron only 5–7%. Road ways carrying a `sidewalk*` tag: JH 48% of road length, elsewhere 1–16%. No `kerb*` tag on any road way.
+  - **What the pour reads today.** The only data rung is LS's hand survey; nothing reads OSM's `sidewalk=*`.
+  - **An intake gap.** LS's and HPDM's `osm.json` carry no crossing NODES (no `pois` key), so that evidence was never fetched there.
+  - **Corner style.** The data decides it on 0.1–15% of junction corners. Where it does on LS, it says mostly diagonal (78 to 6), which matches LS's authored norm.
+
 ## 2 · The rule (the ladder the kit already uses: authored → data → town norm → kit)
 
 The street's cross-section, from the road edge to the property line, is decided per edge, in this order:
