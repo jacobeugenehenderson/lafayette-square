@@ -39,12 +39,16 @@ const towns = process.argv.slice(2).length ? process.argv.slice(2) : readdirSync
 console.log(`circle test: Kåsa residual/R ≤ CURVE_LOOP_CIRCLE_TOL ${TOL} · loop RDP eps ${EPS_LOOP} m (both read from skeleton.js)`)
 for (const town of towns) {
   const S = JSON.parse(readFileSync(`cartograph/data/${town}/clean/skeleton.json`, 'utf8')).streets
-  const W = new Map((JSON.parse(readFileSync(`cartograph/data/${town}/raw/osm.json`, 'utf8')).ground?.highway || []).map(f => [f.osmId, f]))
+  // one osmId can carry several features (a multipolygon's rings) — keep them all
+  const W = new Map(); for (const f of JSON.parse(readFileSync(`cartograph/data/${town}/raw/osm.json`, 'utf8')).ground?.highway || []) (W.get(f.osmId) || W.set(f.osmId, []).get(f.osmId)).push(f)
   const loops = S.filter(s => s.points.length >= 4 && same(s.points[0], s.points[s.points.length - 1]))
   const rows = [], unjoined = []
-  for (const s of loops) { const ways = (s.sources || []).map(id => W.get(id)).filter(Boolean), raw = ringOf(ways)
+  for (const s of loops) { const ways = (s.sources || []).flatMap(id => W.get(id) || []), L0 = lineOf(s)
+    // the joined ring, or (a multipolygon's parts) the closed part the chain lies nearest
+    const cands = [ringOf(ways), ...(ways.length > 1 ? ways.map(w => ringOf([w])) : [])].filter(r => r && same(r[0], r[r.length - 1]))
+    const raw = cands.length ? cands.reduce((b, r) => { const o = Math.max(...r.map(p => lineD(p, L0))); return !b || o < b.o ? { r, o } : b }, null).r : null
     if (!raw || !same(raw[0], raw[raw.length - 1])) { unjoined.push(s.id); continue }
-    const post = K.simplifyRDP(raw, EPS_LOOP, null), L = lineOf(s), off = Math.max(...raw.map(p => lineD(p, L)))
+    const post = K.simplifyRDP(raw, EPS_LOOP, null), L = L0, off = Math.max(...raw.map(p => lineD(p, L)))
     const kp = kasa(post.slice(0, -1)), kr = kasa(raw.slice(0, -1)), fit = K.fitClosedLoopCircle(post, new Set())
     rows.push({ id: s.id, hw: s.highway, area: ways.some(w => w.tags?.area === 'yes'), raw: raw.length, post: post.length, off, kp, kr,
       branch: fit === BEZ ? 'general bezier' : fit ? 'CIRCLE' : 'none (faceted)', curved: !!s.segments?.length }) }

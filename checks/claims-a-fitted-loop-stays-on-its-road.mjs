@@ -35,19 +35,26 @@ function ringOf(ways) { if (!ways.length) return null; const left = ways.map(w =
     const c = left.splice(i, 1)[0]; out.push(...(same(c[0], e) ? c : c.slice().reverse()).slice(1)) }
   return same(out[0], out[out.length - 1]) ? out : null }
 const branchOf = (c) => c.segments?.some(g => g.type === 'bezier') ? 'fitted' : 'faceted'   // which fit ran is not recorded in the frame
+// ⭐ ONE osmId CAN CARRY SEVERAL FEATURES: a multipolygon's rings arrive as separate raw/osm.json features sharing its id (JH's
+// Diversity Plaza, way 21237405, two rings → diversity-plaza-1/-2/-3; 1–7 such ids per town). So the road a loop stands
+// for is its joined ring, or any one closed feature of its sources — the nearest is judged, and named when it is a part.
 function judge(loop, W, bound) {
-  const raw = ringOf((loop.sources || []).map(id => W.get(id)).filter(Boolean)), L = lineOf(loop)
-  if (!raw) return { why: `its ${loop.sources?.length || 0} source way(s) do not join into a closed ring` }
+  const ways = (loop.sources || []).flatMap(id => W.get(id) || []), L = lineOf(loop)
   if (!L) return { why: `${loop.segments.length} segment(s) for ${loop.points.length} point(s): its line cannot be read` }
   if (!(bound > 0)) return { why: 'no pavementHW: there is no carriageway to bound it' }
-  const out = Math.max(...raw.map(p => lineD(p, L))), back = Math.max(...L.map(p => lineD(p, raw)))
-  return { out, back, off: Math.max(out, back), ok: Math.max(out, back) <= bound }
+  // the road it stands for: the joined ring, or — one multipolygon source — the sub-ring it lies nearest (named in the row)
+  const parts = ways.length > 1 ? ways.map(w => ringOf([w])).filter(Boolean) : [], cands = [ringOf(ways), ...parts].filter(Boolean)
+  if (!cands.length) return { why: `its ${loop.sources?.length || 0} source way(s) do not join into a closed ring` }
+  let best = null
+  for (const [k, raw] of cands.entries()) { const out = Math.max(...raw.map(p => lineD(p, L))), back = Math.max(...L.map(p => lineD(p, raw)))
+    if (!best || Math.max(out, back) < best.off) best = { out, back, off: Math.max(out, back), ring: k > 0 ? `one closed feature of ${ways.length}` : null } }
+  return { ...best, ok: best.off <= bound }
 }
 
 let bad = 0, mutantsRan = false
 for (const town of towns) {
   const S = JSON.parse(readFileSync(`${D}/${town}/clean/skeleton.json`, 'utf8')).streets
-  const W = new Map((JSON.parse(readFileSync(`${D}/${town}/raw/osm.json`, 'utf8')).ground?.highway || []).map(f => [f.osmId, f]))
+  const W = new Map(); for (const f of JSON.parse(readFileSync(`${D}/${town}/raw/osm.json`, 'utf8')).ground?.highway || []) (W.get(f.osmId) || W.set(f.osmId, []).get(f.osmId)).push(f)
   const M = new Map((JSON.parse(readFileSync(ribbonsOf(town), 'utf8')).streets || []).map(s => [s.skelId, s.measure]))
   const boundOf = (c) => { const m = M.get(c.id); return Math.min(m?.left?.pavementHW ?? NaN, m?.right?.pavementHW ?? NaN) }
   const loops = S.filter(s => s.points?.length >= 4 && same(s.points[0], s.points[s.points.length - 1]))
@@ -55,7 +62,7 @@ for (const town of towns) {
   const off = rows.filter(r => r.why || !r.ok); if (off.length) bad++
   const by = {}; for (const r of rows) { const k = branchOf(r.c); by[k] = (by[k] || 0) + 1 }
   console.log(`${off.length ? '⛔' : '✅'} ${town}: ${loops.length} closed-loop chain(s) (${Object.entries(by).map(([k, v]) => `${k} ${v}`).join(' · ') || 'none'}) · off their own carriageway ${rows.filter(r => !r.why && !r.ok).length} · unjudgeable ${rows.filter(r => r.why).length}`)
-  for (const r of off) console.log(`      ${r.c.id} [${r.c.highway} · ${branchOf(r.c)}]: ${r.why ? `⛔ unjudgeable — ${r.why}` : `raw ring → line ${r.out.toFixed(2)} m · line → raw ring ${r.back.toFixed(2)} m, against its pavementHW ${r.bound.toFixed(2)} m`}`)
+  for (const r of off) console.log(`      ${r.c.id} [${r.c.highway} · ${branchOf(r.c)}]: ${r.why ? `⛔ unjudgeable — ${r.why}` : `${r.ring ? `(${r.ring}) ` : ''}raw ring → line ${r.out.toFixed(2)} m · line → raw ring ${r.back.toFixed(2)} m, against its pavementHW ${r.bound.toFixed(2)} m`}`)
   if (process.argv.includes('--mutants')) {
     const pass = rows.filter(r => !r.why && r.ok)
     // (1) move one control point of a passing loop 2 × its bound, sideways to its own line there
