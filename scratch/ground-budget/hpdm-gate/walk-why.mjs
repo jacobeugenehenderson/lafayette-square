@@ -1,6 +1,7 @@
 // walk-why.mjs — read-only: for each walk station over the limit only under a variant (its --json against the base's), the fall
 // of D ITSELF across the walk (front · middle · back, asked of the variant deformer) against the drawn fall the gate measured on
-// the FIXED mesh: D within the limit and the mesh over it ⇒ the mesh was refined for another D (chord error); D over ⇒ D's own.
+// the FIXED mesh. Two classes, named for what they test: D over the limit at the three samples, or D within it there and the drawn fall
+// over (which of the mesh or D between the samples is not tested here: walk-chord.mjs measures it, and on the band blend it was D's).
 //   node walk-why.mjs <base walk json> <variant walk json> <dump.json> <variant groundDeformer.mjs>   (PIECES=1: pass the dump's band pieces, for a band-blend deformer)
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
@@ -21,6 +22,6 @@ for (const s of B.filter(s => !near(A, s.at))) { n++
   const h = [w0, wm, w1].map(d => D.heightAt(...pt(d)))
   if (h.some(v => v == null)) { by.set('D null at a walk point', (by.get('D null at a walk point') || 0) + 1); continue }
   const fall = Math.max(Math.abs(h[1] - h[0]) / (wm - w0), Math.abs(h[2] - h[1]) / (w1 - wm)) * E
-  const k = fall > lim * 1.0001 ? `D ITSELF over the limit (D fall ${(fall * 100).toFixed(1)}% class ${fall > 0.05 ? '> 5%' : '≤ 5%'})` : 'D within the limit — the FIXED mesh chords it (refined for another D)'
+  const k = fall > lim * 1.0001 ? `D ITSELF over the limit (D fall ${(fall * 100).toFixed(1)}% class ${fall > 0.05 ? '> 5%' : '≤ 5%'})` : 'D within the limit at the three samples, the drawn fall over it'
   by.set(k.replace(/ \(D fall [^c]*class/, ' (class'), (by.get(k.replace(/ \(D fall [^c]*class/, ' (class')) || 0) + 1) }
 console.log(`stations over only under the variant: ${n} · ${[...by].map(([k, v]) => `${k} ${v}`).join(' · ')}`)
