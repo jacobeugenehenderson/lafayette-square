@@ -5507,33 +5507,26 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
   }
   const lawn = env.length ? (walk.length ? differenceRings(env, walk) : env) : []
   cut('lawn', lawn, cellsBetween(LV_cw, LV_WB, 'the lawn'), LV_WB)
-  // ⭐ EACH OWNER'S DEPTHS, AS STRUCK (Boz, for Screed's band blend, 2026-10-18): per level, the [least, greatest] depth of
-  // that owner's OWN source edges whose band reaches the piece (the edge's box grown by its DEEPEST depth at any level — one
-  // ① edge, struck at every level), read off the record
-  // `offsetRingByRects` struck (`stamp.edgeDepths`, a zero depth included), never recomputed. A multi-owner piece carries one
-  // set per owner. null = no edge of that owner at that level reaches the piece.
-  const LEVELS = { cw: LV_cw, walkFrom: LV_wf, walkTo: LV_wt, WB: LV_WB }, edgesOf = {}, reach = new Map()
-  for (const LV of Object.values(LEVELS)) for (const x of LV?.per || []) for (const e of x.edges || []) { const k = x.p.ri + ':' + e.e; reach.set(k, Math.max(reach.get(k) || 0, ...e.d)) }
-  for (const [k, LV] of Object.entries(LEVELS)) { const m = new Map()
-    for (const x of LV?.per || []) for (const e of x.edges || []) { const g = (reach.get(x.p.ri + ':' + e.e) || 0) + 2 / SCALE, b0 = bb([[e.a, e.b]])
-      ;(m.get(e.span) || m.set(e.span, []).get(e.span)).push({ b: [b0[0] - g, b0[1] - g, b0[2] + g, b0[3] + g], d: e.d }) }
-    edgesOf[k] = m }
-  // ⭐ AND THE EDGES THEMSELVES (Screed: the blend needs the depth AT the point, not a range across a taper): owner.edges = the
-  // owner's own source edges whose band reaches the piece, each { si, e (the `iaFull` ring and edge it lies on), a, b (this
-  // densified piece of it), depths: { level: [at a, at b] } }, as struck.
-  const byEdge = new Map()   // part.ri:e → { si, e, a, b, span, depths }
+  // ⭐ EACH OWNER'S DEPTHS AND EDGES, BY ITS LABEL (Boz, for Screed's band blend, 2026-10-18; §6a — identity, never a
+  // by-distance find): an owner IS a span of one contour part, so its edges are every source edge of that part carrying its
+  // span — `o.edges` = [{ si, e }], the `iaFull` ring and edge, on which the tile's `edgeDepths` give the depth AT a point —
+  // and `o.depths` = per level the [least, greatest] depth those edges were struck at (`offsetRingByRects`' `stamp.edgeDepths`,
+  // a zero depth included, never recomputed). null = the span strikes nothing at that level. A multi-owner piece carries one
+  // set per owner. (This replaced a box reach — each edge's box grown by its deepest depth, met against the piece — which
+  // bound nothing to a piece whose label is honest but lies past that reach.)
+  const LEVELS = { cw: LV_cw, walkFrom: LV_wf, walkTo: LV_wt, WB: LV_WB }
+  const byEdge = new Map()   // part.ri:e → { ri, si, e, a, b, span, depths }
   for (const [k, LV] of Object.entries(LEVELS)) for (const x of LV?.per || []) for (const e of x.edges || []) { const key = x.p.ri + ':' + e.e
-    const r = byEdge.get(key) || byEdge.set(key, { si: x.p.si, e: x.p.dsrc[e.e], a: e.a, b: e.b, span: e.span, depths: {}, g: reach.get(key) || 0 }).get(key)
+    const r = byEdge.get(key) || byEdge.set(key, { ri: x.p.ri, si: x.p.si, e: x.p.dsrc[e.e], a: e.a, b: e.b, span: e.span, depths: {} }).get(key)
     r.depths[k] = [e.d[0], e.d[1]] }
-  const edgesBySpan = new Map(); for (const r of byEdge.values()) { const b0 = bb([[r.a, r.b]]), g = r.g + 2 / SCALE; r.box = [b0[0] - g, b0[1] - g, b0[2] + g, b0[3] + g]; (edgesBySpan.get(r.span) || edgesBySpan.set(r.span, []).get(r.span)).push(r) }
-  for (const q of pieces) { const qb = bb(q.rings)
-    for (const o of q.owners) { const dep = {}
-      for (const k of Object.keys(LEVELS)) { let lo = Infinity, hi = -Infinity
-        for (const r of edgesOf[k].get(o.span) || []) if (meets(r.b, qb)) { lo = Math.min(lo, ...r.d); hi = Math.max(hi, ...r.d) }
-        dep[k] = lo <= hi ? [lo, hi] : null }
-      o.depths = dep
-      const seen = new Set(); o.edges = []
-      for (const r of (edgesBySpan.get(o.span) || []).filter(r => meets(r.box, qb))) { const k = r.si + ':' + r.e; if (!seen.has(k)) { seen.add(k); o.edges.push({ si: r.si, e: r.e }) } } } }
+  const ownEdges = new Map(); for (const r of byEdge.values()) { const k = r.ri + '|' + r.span; (ownEdges.get(k) || ownEdges.set(k, []).get(k)).push(r) }
+  for (const q of pieces) for (const o of q.owners) { const E = ownEdges.get(o.ri + '|' + o.span) || [], dep = {}
+    for (const k of Object.keys(LEVELS)) { let lo = Infinity, hi = -Infinity
+      for (const r of E) if (r.depths[k]) { lo = Math.min(lo, ...r.depths[k]); hi = Math.max(hi, ...r.depths[k]) }
+      dep[k] = lo <= hi ? [lo, hi] : null }
+    o.depths = dep
+    const seen = new Set(); o.edges = []
+    for (const r of E) { const k = r.si + ':' + r.e; if (!seen.has(k)) { seen.add(k); o.edges.push({ si: r.si, e: r.e }) } } }
   // ⭐ THE TILE'S OWN RECORD (Screed, 2026-10-18: one record, read twice — the band blend and the absorption along ②):
   // edgeDepths[si][e] for EVERY `iaFull` edge = { level: [[t, depth], …] }, breakpoints along the edge (t 0 → 1) exactly as
   // struck, so a taper's break inside one ② edge is kept; null where the edge strikes nothing at that level.
