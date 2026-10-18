@@ -440,6 +440,11 @@ function emit(groupSpecs, PX, PZ, T, TG) {
  * and the bake refused on a crack the slab never had (HPDM 2026-10-18, a 0.698 mm twin; Huron's 2026-10-12 refusal was
  * the same twin class, Cairn's forensic). ⛔ The weld is removed, not kept as an option: a gap under 1 mm between two
  * unshared chains is a crack too, and the weld closed it. ▶ checks/claims-conformity-closes-what-the-detector-sees.mjs
+ * ⛔ ITS LIMIT, stated: this is a T-JUNCTION detector. A vertex within ON_EDGE_M of an edge's END is never judged
+ * (`onSegment`), so two unshared chains that end within ON_EDGE_M of each other without meeting pass it, open or not (on
+ * the served slabs, 2026-10-18: hundreds to thousands per town, ▶ scratch/ground-budget/tj-class/end-rule.mjs). GAPS are
+ * owned by the topology check, which judges every used-once edge inside the disc with no distance:
+ * ▶ checks/claims-the-ground-tiles-without-a-gap.mjs
  * Reads baked buffers, so it runs on any slab on disk.
  * @param groups [{ id, positions: Float32Array, indices: Uint32Array }]
  * @param lift optional (x,z) → world-Y lift; with it each finding carries its crack height
