@@ -5345,12 +5345,12 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
   // subsequence of their span labels, anchored at a span each carries once), never looked up by label: an offset's edge is
   // struck from whichever rect it lies on, so where two depths step a level can read X · Y · X for a few mm (measured HPDM
   // 2026-10-18: ~500–870 such runs per level, median 5 mm), and the same span change then occurs twice on one level and once
-  // on the other. A MATCHED run's cell is its run on both levels between the seams at its ends. ⛔ AN UNMATCHED RUN MAKES NO
-  // CELL (Boz, 2026-10-18): it used to FAN to the neighbouring match's point on the other level — a point of ANOTHER span's
-  // run, by construction — and on HPDM every one of the 11 owners with no depth was such a fan's ground, 0.38–2.10 m from
-  // the other span's edges and 2.15–49 m from its own (scratch/ground-budget/lattice-r1/emitter-depthless.mjs). A cell's
-  // label is now always a span whose run bounds it on BOTH levels; the gap's ground is left over, to the rects (below).
-  // Each cell names the seam to the NEXT cell round the ring (`seamEnd`, `next`) — none where a gap lies between.
+  // on the other. A MATCHED run's cell is its run on both levels between the seams at its ends. An unmatched run between two
+  // matches FANS to the neighbouring match's point on the other level only when that match is its OWN span (a re-entry);
+  // ⛔ otherwise it makes no cell (Boz, 2026-10-18): such a fan's apex is ANOTHER span's point, and on HPDM every one of the
+  // 11 owners with no depth was that ground, 0.38–2.10 m from the other span's edges and 2.15–49 m from its own
+  // (scratch/ground-budget/lattice-r1/emitter-depthless.mjs). Its ground is left over, to the rects (below).
+  // Each cell names the seam to the NEXT cell round the ring (`seamEnd`, `next`) — none across ground left to the rects.
   // weighted by LENGTH (the shorter of the two runs, in metres), so a span's long run pairs with its long run and a few-mm
   // flicker is what is left over, never the other way round
   const lcs = (A, B, wA, wB) => { const n = A.length, m = B.length, D = Array.from({ length: n + 1 }, () => new Float64Array(m + 1))
@@ -5394,15 +5394,25 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
         for (let m = 0; m < M; m++) {
           const { i, j, X } = pr[m], { i: i2, j: j2, X: X2 } = pr[(m + 1) % M], ir = X.ring, irr = X.rr
           ring.push({ span: rr[i].span, poly: [...verts(r, rr[i].i0, rr[i].i1), ...verts(ir, irr[j].i0, irr[j].i1).reverse()], seamEnd: [oE(i), iE(X, j)], kind: 'pair', at: [rr[i].i0, rr[i].i1, irr[j].i0, irr[j].i1] })
-          const o1 = oS(i2), same = X === X2  // the gap: outer runs i+1 … i2−1, inner runs j+1 … j2−1 (one inner ring) — no cells
+          const c0 = iE(X, j), o1 = oS(i2), same = X === X2  // the gap: outer runs i+1 … i2−1, inner runs j+1 … j2−1 (one inner ring)
           const gO = []; for (let a = (i + 1) % rr.length; a !== i2; a = (a + 1) % rr.length) gO.push(a)
           const gI = []; if (same) for (let b = (j + 1) % irr.length; b !== j2; b = (b + 1) % irr.length) gI.push(b)
           if (!same) census.necks++
-          census.gapOuter += gO.length; census.gapInner += gI.length
-          for (const a of gO) if (!Ispans.has(rr[a].span)) { const kp = `${keyOf(ownerOf(rr[(a - 1 + rr.length) % rr.length].span)) ?? '-'} | ${keyOf(ownerOf(rr[(a + 1) % rr.length].span)) ?? '-'}`; census.gapByPair[kp] = (census.gapByPair[kp] || 0) + 1 }
-          // the seam to the next match is a segment only when nothing lies between (a neck's is not a segment either)
-          const gap = gO.length > 0 || gI.length > 0; if (same && gap) census.gapSeams++
-          ring[ring.length - 1].seamEnd = same && !gap ? [o1, iS(X, j2)] : null
+          // ⭐ A FAN IS KEPT ONLY INSIDE ITS OWN SPAN, BY LABEL (Boz's ruling, 2026-10-18): an outer gap run fans to the previous
+          // match's inner end (c0, span rr[i]), an inner gap run to the next match's outer start (o1, span rr[i2]) — so a fan whose
+          // span IS that match's (a re-entry: the X·Y·X flicker) stays in its own band; any other would cross into another
+          // span's, and its ground is left to the rects
+          const keepO = (a) => rr[a].span === rr[i].span, keepI = (b) => irr[b].span === rr[i2].span
+          census.gapOuter += gO.filter(a => !keepO(a)).length; census.gapInner += gI.filter(b => !keepI(b)).length
+          for (const a of gO) if (!keepO(a) && !Ispans.has(rr[a].span)) { const kp = `${keyOf(ownerOf(rr[(a - 1 + rr.length) % rr.length].span)) ?? '-'} | ${keyOf(ownerOf(rr[(a + 1) % rr.length].span)) ?? '-'}`; census.gapByPair[kp] = (census.gapByPair[kp] || 0) + 1 }
+          const whole = gO.every(keepO) && gI.every(keepI)   // every run in the gap has its own fan: the cells still tile it
+          for (const a of gO) if (keepO(a)) ring.push({ span: rr[a].span, poly: [...verts(r, rr[a].i0, rr[a].i1), c0], seamEnd: whole ? [oE(a), c0] : null, kind: 'outer fan', at: [rr[a].i0, rr[a].i1] })
+          if (whole && gI.length) ring[ring.length - 1].seamEnd = [o1, c0]
+          for (const b of gI) if (keepI(b)) ring.push({ span: irr[b].span, poly: [o1, ...verts(ir, irr[b].i0, irr[b].i1).reverse()], seamEnd: whole ? [o1, iE(X, b)] : null, kind: 'inner fan', at: [irr[b].i0, irr[b].i1] })
+          // the seam to the next match is a segment only when the cells tile the gap (a neck's is not a segment either); where a
+          // dropped fan's ground lies between, the pair's and the kept fans' seams are not drawn
+          if (!whole) { census.gapSeams++; for (let q = ring.length - 1; q >= 0 && ring[q].kind !== 'pair'; q--) ring[q].seamEnd = null; const pq = ring.findLastIndex(c => c.kind === 'pair'); if (pq >= 0) ring[pq].seamEnd = null }
+          else ring[ring.length - 1].seamEnd = same ? [o1, iS(X, j2)] : null
         }
         ring.forEach((c, q) => { out.push({ ...c, ri: p.ri, next: ring[(q + 1) % ring.length].span }); census.cells++ }) })
       inner.forEach((x, q) => { if (!usedI.has(q) && x.rr.length) census.innerUnbounded++ })
