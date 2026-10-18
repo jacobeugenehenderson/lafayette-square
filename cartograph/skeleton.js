@@ -2467,6 +2467,16 @@ function main() {
     console.log(`  corridor spine-link: stamped ${linked} carriageway→spine link(s)`)
   }
 
+  // ⛔ LOUD, NOT YET A REFUSAL (Boz, 2026-10-18): `seedSection` seeds any class with no STD_SECTION row as RESIDENTIAL (two
+  // lanes and two parking lanes), so a footway, a path or a living street on ① is sized as a road. Named per pour, by
+  // class and chain count, until every accepted class has a cited row and the fallback refuses. (A highway class takes
+  // its highwaySection downstream, so its seed is unread and it is not named here.)
+  { const fb = {}
+    for (const s of streets) { const base = String(s.seed?.highway ?? s.highway ?? '').replace(/_link$/, '')
+      if (s.seed && s.seed.seededClass !== base && !LIMITED_ACCESS.has(s.highway)) fb[base || '(none)'] = (fb[base || '(none)'] || 0) + 1 }
+    const e = Object.entries(fb).sort((a, b) => b[1] - a[1])
+    if (e.length) console.warn(`  ⛔ [seed] ${e.reduce((t, [, n]) => t + n, 0)} chain(s) of a class with no section row were seeded as RESIDENTIAL (2 lanes + 2 parking lanes): ${e.map(([k, n]) => `${k} ${n}`).join(' · ')}. Not refused yet; each needs a cited row (references/registry.json).`) }
+
   // ── [E1] Custom width base (survey.json → per-side seed) ─────────────
   // After the canonical-direction pass: per-side identity is resolved
   // against FINAL point order (see stampCustomWidths header).
