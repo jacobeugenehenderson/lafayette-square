@@ -1685,16 +1685,16 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   const contrib = []
   const addSeg = (a, b, lab, kind) => { if (labelled && Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
   // one orientation for every band, or two overlapping bands of opposite winding would CANCEL (NonZero)
-  const clipOwn = []   // per clip, the reduced edge(s) it is struck from: [i] for an edge's band, [ia, i] for the join at vertex i
-  const addClip = (poly, own = null) => {
+  const clipOwn = [], clipD = []   // per clip, the reduced edge(s) it is struck from ([i] an edge's band, [ia, i] the join at vertex i), and a band's depths at its two ends
+  const addClip = (poly, own = null, d = null) => {
     if (poly.length < 3 || !(Math.abs(signedArea(poly)) > 1e-12)) return
-    clips.push(clipperLib.Clipper.Orientation(poly.map(toClipper)) === true ? poly : [...poly].reverse()); clipOwn.push(own)
+    clips.push(clipperLib.Clipper.Orientation(poly.map(toClipper)) === true ? poly : [...poly].reverse()); clipOwn.push(own); clipD.push(d)
   }
   let wedges = 0, bevels = 0
   for (let i = 0; i < n; i++) {
     const S = seg[i]
     addSeg(S.a, S.b, i, 2)
-    if (S.dS > 0 || S.dE > 0) { addClip([S.a, S.b, S.Q, S.P], [i]); addSeg(S.P, S.Q, i, 1); addSeg(S.b, S.Q, i, 3); addSeg(S.a, S.P, i, 3) }
+    if (S.dS > 0 || S.dE > 0) { addClip([S.a, S.b, S.Q, S.P], [i], [S.dS, S.dE]); addSeg(S.P, S.Q, i, 1); addSeg(S.b, S.Q, i, 3); addSeg(S.a, S.P, i, 3) }
     const A = seg[(i - 1 + n) % n], v = ring[i], ia = (i - 1 + n) % n
     const turn = A.e[0] * S.e[1] - A.e[1] * S.e[0]
     const side = A.e[0] * A.nrm[1] - A.e[1] * A.nrm[0]            // +1: the offset side is to the left
@@ -1846,7 +1846,9 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   if (stamp) { stamp.labels = outV; stamp.edgeLabels = outE.map(E => E.map(e => (e == null ? null : origE[e]))); stamp.arcMask = outA; if (easeAt) stamp.easeArcs = easeArcs
     // the rects themselves, each with the source edge(s) it is struck from (`bandPiecesOfTile` gives the ground no cell
     // reaches to the spans whose own rects hold it — Boz, 2026-10-18), and the source VERTEX of a join
-    stamp.clips = clips.map((poly, k) => ({ poly, e: clipOwn[k].map(r => origE[r]), v: clipOwn[k].length === 2 ? origV[clipOwn[k][1]] : null })) }
+    stamp.clips = clips.map((poly, k) => ({ poly, e: clipOwn[k].map(r => origE[r]), v: clipOwn[k].length === 2 ? origV[clipOwn[k][1]] : null, ...(clipD[k] ? { d: clipD[k] } : {}) }))
+    // every source edge's depths at its two ends AS STRUCK, a zero depth included (a zero-depth edge strikes no rect, but 0 is its depth)
+    stamp.edgeDepths = seg.map((S, i) => ({ e: origE[i], a: S.a, b: S.b, d: [S.dS, S.dE] })) }
   return outR
 }
 
@@ -5325,7 +5327,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 //   · the perpendicular corner's fill (`perpGeom`) is not an offset: each landing is owned by its OWN leg, the rest of the
 //     sector (and where the two landings cross) by the corner's arc.
 // A piece = band ∩ cell, then the disc cut (`inBlock`) and the land-use split (the stamp parts), so it is keyed as painted.
-// Owner = { ri (a locator only), span, skelId, side, segOrd } — the identity quartet of the span's stamp run (a dead-end
+// Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB } } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk0, walk, env, perp }) {
   const census = { cells: 0, triangles: 0, triangleByPair: {}, innerFans: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [] }
@@ -5489,6 +5491,23 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
   }
   const lawn = env.length ? (walk.length ? differenceRings(env, walk) : env) : []
   cut('lawn', lawn, cellsBetween(LV_cw, LV_WB, 'the lawn'), LV_WB)
+  // ⭐ EACH OWNER'S DEPTHS, AS STRUCK (Boz, for Screed's band blend, 2026-10-18): per level, the [least, greatest] depth of
+  // that owner's OWN source edges whose band reaches the piece (the edge's box grown by its DEEPEST depth at any level — one
+  // ① edge, struck at every level), read off the record
+  // `offsetRingByRects` struck (`stamp.edgeDepths`, a zero depth included), never recomputed. A multi-owner piece carries one
+  // set per owner. null = no edge of that owner at that level reaches the piece.
+  const LEVELS = { cw: LV_cw, walkFrom: LV_wf, walkTo: LV_wt, WB: LV_WB }, edgesOf = {}, reach = new Map()
+  for (const LV of Object.values(LEVELS)) for (const x of LV?.per || []) for (const e of x.edges || []) { const k = x.p.ri + ':' + e.e; reach.set(k, Math.max(reach.get(k) || 0, ...e.d)) }
+  for (const [k, LV] of Object.entries(LEVELS)) { const m = new Map()
+    for (const x of LV?.per || []) for (const e of x.edges || []) { const g = (reach.get(x.p.ri + ':' + e.e) || 0) + 2 / SCALE, b0 = bb([[e.a, e.b]])
+      ;(m.get(e.span) || m.set(e.span, []).get(e.span)).push({ b: [b0[0] - g, b0[1] - g, b0[2] + g, b0[3] + g], d: e.d }) }
+    edgesOf[k] = m }
+  for (const q of pieces) { const qb = bb(q.rings)
+    for (const o of q.owners) { const dep = {}
+      for (const k of Object.keys(LEVELS)) { let lo = Infinity, hi = -Infinity
+        for (const r of edgesOf[k].get(o.span) || []) if (meets(r.b, qb)) { lo = Math.min(lo, ...r.d); hi = Math.max(hi, ...r.d) }
+        dep[k] = lo <= hi ? [lo, hi] : null }
+      o.depths = dep } }
   return { pieces, seams, census }
 }
 // an open segment clipped to a region (Clipper, the lattice's grid) → the polylines inside it
@@ -5999,7 +6018,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       const S = {}, rs = offsetRingByRects(p.dring, pick(p), p.hole, S, null, 0, null, (e) => p.dspan[e])
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
-        clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null })) })
+        clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
+        edges: (S.edgeDepths || []).map(x => ({ e: x.e, span: p.dspan[x.e], a: x.a, b: x.b, d: x.d })) })
     }
     return { rings: (o.length && h.length) ? differenceRings(o, h) : o, per }
   }
