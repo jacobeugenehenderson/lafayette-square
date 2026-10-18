@@ -7,16 +7,20 @@ import { loadSceneTerrain } from '../../../cartograph/terrainLoad.js'
 import { lineHeights } from '../../../.claude/worktrees/hpdm-gate/cartograph/lineHeight.mjs'
 const dump = JSON.parse(readFileSync(process.argv[2], 'utf8')), sites = JSON.parse(readFileSync(process.argv[3], 'utf8'))
 const T = loadSceneTerrain('hipointedemun'), LH = lineHeights({ streets: JSON.parse(readFileSync('cartograph/data/hipointedemun/clean/ribbons.json', 'utf8')).streets, raw: T.getElevationRaw, sigma: 5 })
-const ease = new Map(); for (const [x, z, k, turn, R] of dump.easeSites) ease.set(`${Math.round(x * 1000)},${Math.round(z * 1000)}`, { k, turn, R })
+// the ease's sites in a grid; a ② vertex is the ease's when a site lies within 2 lattice units (② is rounded onto the lattice after the ease)
+const EG = new Map(), EC = 8; for (const [x, z, k, turn, R] of dump.easeSites) { const key = `${Math.floor(x / EC)},${Math.floor(z / EC)}`; (EG.get(key) || EG.set(key, []).get(key)).push({ x, z, k, turn, R }) }
+const easeAt = (p) => { let b = null, bd = Infinity; const cx = Math.floor(p[0] / EC), cz = Math.floor(p[1] / EC)
+  for (let x = cx - 1; x <= cx + 1; x++) for (let z = cz - 1; z <= cz + 1; z++) for (const e of EG.get(`${x},${z}`) || []) { const d = Math.hypot(e.x - p[0], e.z - p[1]); if (d < bd) { bd = d; b = e } }
+  return bd <= 0.002 ? b : { k: null, d: bd } }
 // every no-arc owner change on ② (by run/cap skelId), per tile: { p, a, b, turn, kind }
-const changes = dump.tiles.map(t => { const out = []
+const changes = dump.tiles.map(T_ => { const t = T_, out = []
   ;(t.iaFull || []).forEach((r, ri) => { const n = r.length, arc = t.iaArc?.[ri] || [], st = t.iaStamp?.[ri] || [], cp = t.iaCap?.[ri] || []
     const own = (i) => st[i] != null ? t.runs[st[i]]?.skelId : cp[i] != null ? t.caps[cp[i]]?.skelId : null, isArc = (i) => arc[i] != null && arc[(i + 1) % n] === arc[i]
     for (let i = 0; i < n; i++) { const a = (i + n - 1) % n; if (isArc(a) || isArc(i)) continue; const oa = own(a), ob = own(i); if (!oa || !ob || oa === ob) continue
       const P = r[a], V = r[i], N = r[(i + 1) % n], d1 = [V[0] - P[0], V[1] - P[1]], d2 = [N[0] - V[0], N[1] - V[1]]
       const turn = Math.abs(Math.atan2(d1[0] * d2[1] - d1[1] * d2[0], d1[0] * d2[0] + d1[1] * d2[1])) * 180 / Math.PI
-      const e = ease.get(`${Math.round(V[0] * 1000)},${Math.round(V[1] * 1000)}`)
-      out.push({ p: V, a: oa, b: ob, turn, kind: e ? e.k : 'none (not a vertex the ease saw)', R: e?.R, step: Math.abs((LH.heightAt(oa, V) ?? NaN) - (LH.heightAt(ob, V) ?? NaN)) }) } })
+      const e = easeAt(V)
+      out.push({ p: V, a: oa, b: ob, turn, ti: dump.tiles.indexOf(t), ri, compound: t.iaFull.length > 1, kind: e.k ?? `none (nearest ease site ${e.d < 0.05 ? '2–50 mm' : e.d < 1 ? '5 cm–1 m' : '≥ 1 m'})`, R: e?.R, step: Math.abs((LH.heightAt(oa, V) ?? NaN) - (LH.heightAt(ob, V) ?? NaN)) }) } })
   return out })
 const all = changes.flat(), tally = (L, f) => { const m = new Map(); for (const x of L) { const k = f(x); m.set(k, (m.get(k) || 0) + 1) } return [...m].sort((a, b) => b[1] - a[1]) }
 const cls = (c) => c.kind === 'straight' ? 'straight (R = 0, turn < 18°: a CHAIN CUT or a T-side)' : c.kind === 'noR' ? 'noR (turns ≥ 18°, no radius resolved)' : c.kind === 'straightWithR' ? 'straightWithR (an authored R, turn < 18° on ②)' : c.kind
@@ -27,5 +31,7 @@ const tied = sites.map(s => { let best = null, bd = Infinity; for (const c of ch
 console.log(`the ${sites.length} wall sites: tied within 1 m ${tied.filter(t => t.d < 1).length} · 1–5 m ${tied.filter(t => t.d >= 1 && t.d < 5).length} · farther / none ${tied.filter(t => !(t.d < 5)).length}`)
 for (const [k, v] of tally(tied.filter(t => t.d < 1), t => cls(t.c))) { console.log(`  ${v}  ${k}`)
   const ex = []; const seenV = new Set(); for (const t of tied) if (t.d < 1 && cls(t.c) === k && !seenV.has(t.c.p.join()) && ex.length < 3) { seenV.add(t.c.p.join()); ex.push(`(${t.c.p.map(v => v.toFixed(2)).join(', ')}) ${t.c.a} | ${t.c.b} · turn ${t.c.turn.toFixed(1)}° · R ${t.c.R ?? '—'} · H② step ${t.c.step.toFixed(3)} m`) }
-  for (const e of ex) console.log(`       ${e}`) }
+  for (const e of ex) console.log(`       ${e}`)
+  const tl = new Map(); for (const t of tied) if (t.d < 1 && cls(t.c) === k) { const kk = `tile ${t.c.ti} ring ${t.c.ri}${t.c.compound ? ' (a tile of ' + dump.tiles[t.c.ti].iaFull.length + ' ② rings)' : ''}`; tl.set(kk, (tl.get(kk) || 0) + 1) }
+  console.log(`       by tile: ${[...tl].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k2, v2]) => `${k2} ${v2}`).join(' · ')}`) }
 const vs = new Set(tied.filter(t => t.d < 1).map(t => t.c.p.join())); console.log(`distinct ② vertices behind the tied walls: ${vs.size}`)
