@@ -1685,15 +1685,16 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   const contrib = []
   const addSeg = (a, b, lab, kind) => { if (labelled && Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
   // one orientation for every band, or two overlapping bands of opposite winding would CANCEL (NonZero)
-  const addClip = (poly) => {
+  const clipOwn = []   // per clip, the reduced edge(s) it is struck from: [i] for an edge's band, [ia, i] for the join at vertex i
+  const addClip = (poly, own = null) => {
     if (poly.length < 3 || !(Math.abs(signedArea(poly)) > 1e-12)) return
-    clips.push(clipperLib.Clipper.Orientation(poly.map(toClipper)) === true ? poly : [...poly].reverse())
+    clips.push(clipperLib.Clipper.Orientation(poly.map(toClipper)) === true ? poly : [...poly].reverse()); clipOwn.push(own)
   }
   let wedges = 0, bevels = 0
   for (let i = 0; i < n; i++) {
     const S = seg[i]
     addSeg(S.a, S.b, i, 2)
-    if (S.dS > 0 || S.dE > 0) { addClip([S.a, S.b, S.Q, S.P]); addSeg(S.P, S.Q, i, 1); addSeg(S.b, S.Q, i, 3); addSeg(S.a, S.P, i, 3) }
+    if (S.dS > 0 || S.dE > 0) { addClip([S.a, S.b, S.Q, S.P], [i]); addSeg(S.P, S.Q, i, 1); addSeg(S.b, S.Q, i, 3); addSeg(S.a, S.P, i, 3) }
     const A = seg[(i - 1 + n) % n], v = ring[i], ia = (i - 1 + n) % n
     const turn = A.e[0] * S.e[1] - A.e[1] * S.e[0]
     const side = A.e[0] * A.nrm[1] - A.e[1] * A.nrm[0]            // +1: the offset side is to the left
@@ -1719,8 +1720,8 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
       const hwyJoin = idMap?.hwy && (idMap.hwy[keepV[ia]] || idMap.hwy[keepV[i]])
       if (inCone || (hwyJoin && u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0)) X = Xc
     }
-    if (X) { addClip([v, A.Q, X, S.P]); addSeg(A.Q, X, ia, 1); addSeg(X, S.P, i, 1) }
-    else { addClip([v, A.Q, S.P]); addSeg(A.Q, S.P, ia, 1); bevels++ }
+    if (X) { addClip([v, A.Q, X, S.P], [ia, i]); addSeg(A.Q, X, ia, 1); addSeg(X, S.P, i, 1) }
+    else { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
     addSeg(v, A.Q, ia, 3); addSeg(S.P, v, i, 3); wedges++
   }
   // ⛔ UNITE THE BANDS FIRST, then subtract. One pass (the difference's own NonZero clip fill) leaves a zero-width
@@ -1842,7 +1843,10 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     outR.push(g1.R); outE.push(g1.E); outV.push(g1.V); outA.push(g1.A)
   }
   // edge labels leave in ORIGINAL ① edge indices, so the caller's `labs[e]` is the owner
-  if (stamp) { stamp.labels = outV; stamp.edgeLabels = outE.map(E => E.map(e => (e == null ? null : origE[e]))); stamp.arcMask = outA; if (easeAt) stamp.easeArcs = easeArcs }
+  if (stamp) { stamp.labels = outV; stamp.edgeLabels = outE.map(E => E.map(e => (e == null ? null : origE[e]))); stamp.arcMask = outA; if (easeAt) stamp.easeArcs = easeArcs
+    // the rects themselves, each with the source edge(s) it is struck from (`bandPiecesOfTile` gives the ground no cell
+    // reaches to the spans whose own rects hold it — Boz, 2026-10-18), and the source VERTEX of a join
+    stamp.clips = clips.map((poly, k) => ({ poly, e: clipOwn[k].map(r => origE[r]), v: clipOwn[k].length === 2 ? origV[clipOwn[k][1]] : null })) }
   return outR
 }
 
@@ -5309,7 +5313,193 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
   return { masks, maxD, recs, tally, contradicted, corners, perp }
 }
 
-export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, cornerOverrides = null) {
+// ⭐⭐ THE BANDS, CUT BY THEIR OWNERS — `tile.bandPieces` (Screed, 2026-10-17; option A, Boz). Each band (curb · walk · lawn) is
+// cut into pieces that each have ONE owner span (a run, an arc or a cap of the contour, split again where its stamp run
+// changes), and nothing is decided by nearness:
+//   · a band lies between two LABELLED offsets of the one contour (curb: the contour → cw; walk: walkFrom → walkTo; lawn:
+//     cw → WB). Every edge of both carries the span it was struck from (`offsetRingByRects`' own stamp).
+//   · a span's CELL is its run on the outer offset, the seam to the inner offset at the same span change, its run on the
+//     inner offset back, and the seam home. Neighbouring cells share their seam, so they tile the region between the two.
+//     A span with no run on the inner offset gives a triangle; a span with no run on EITHER contributes no piece there —
+//     its ground is the neighbours' (Boz, 2026-10-18), counted by name, never refused.
+//   · the perpendicular corner's fill (`perpGeom`) is not an offset: each landing is owned by its OWN leg, the rest of the
+//     sector (and where the two landings cross) by the corner's arc.
+// A piece = band ∩ cell, then the disc cut (`inBlock`) and the land-use split (the stamp parts), so it is keyed as painted.
+// Owner = { ri (a locator only), span, skelId, side, segOrd } — the identity quartet of the span's stamp run (a dead-end
+// cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
+function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk0, walk, env, perp }) {
+  const census = { cells: 0, triangles: 0, triangleByPair: {}, innerFans: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [] }
+  // a run's or an arc's owner is its stamp run; a dead-end cap's is the cap's own (`iaCap` → `caps`, the cap is an end coupler)
+  const ownerOf = (span) => { if (span == null) return null; const [h, t] = span.split('/'), R = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+t) ? runs[+t] : null
+    return R ? { skelId: R.skelId, side: R.side, segOrd: R.segOrd } : null }
+  const keyOf = (o) => o ? `${o.skelId}|${o.side}|${o.segOrd}` : null
+  // runs of equal label along a ring (cyclic): [{ span, i0, i1 }] — edges i0..i1, vertices i0..i1+1
+  const runsOf = (labs) => { const n = labs.length; if (!n) return []
+    let s0 = 0; while (s0 < n && labs[(s0 - 1 + n) % n] === labs[s0]) { s0++; if (s0 === n) return [{ span: labs[0], i0: 0, i1: n - 1, whole: true }] }
+    const out = []; for (let k = 0; k < n; k++) { const i = (s0 + k) % n; if (k === 0 || labs[i] !== labs[(i - 1 + n) % n]) out.push({ span: labs[i], i0: i, i1: i }); else out[out.length - 1].i1 = i }
+    return out }
+  const verts = (ring, i0, i1) => { const n = ring.length, v = []; for (let i = i0; ; i = (i + 1) % n) { v.push(ring[i]); if (i === (i1 + 1) % n) break; if (v.length > n + 1) break } return v }
+  // the cells between two labelled levels, per contour part. ⭐ The two levels' runs are ALIGNED IN ORDER (the longest common
+  // subsequence of their span labels, anchored at a span each carries once), never looked up by label: an offset's edge is
+  // struck from whichever rect it lies on, so where two depths step a level can read X · Y · X for a few mm (measured HPDM
+  // 2026-10-18: ~500–870 such runs per level, median 5 mm), and the same span change then occurs twice on one level and once
+  // on the other. A MATCHED run's cell is its run on both levels between the seams at its ends. Between two matched runs,
+  // the outer level's unmatched runs fan to the inner gap's start and the inner level's to the outer gap's end, so every run
+  // on either level owns the ground its own edge was struck from and the cells tile the band. Each cell names the seam to the
+  // NEXT cell round the ring (`seamEnd`, `next`).
+  // weighted by LENGTH (the shorter of the two runs, in metres), so a span's long run pairs with its long run and a few-mm
+  // flicker is what is left over, never the other way round
+  const lcs = (A, B, wA, wB) => { const n = A.length, m = B.length, D = Array.from({ length: n + 1 }, () => new Float64Array(m + 1))
+    const w = (i, j) => A[i] === B[j] ? Math.min(wA[i], wB[j]) + 1e-9 : -1
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) D[i][j] = Math.max(D[i + 1][j], D[i][j + 1], w(i, j) >= 0 ? D[i + 1][j + 1] + w(i, j) : -1)
+    const pr = []; for (let i = 0, j = 0; i < n && j < m;) { const W = w(i, j); if (W >= 0 && D[i][j] === D[i + 1][j + 1] + W) { pr.push([i, j]); i++; j++ } else if (D[i + 1][j] >= D[i][j + 1]) i++; else j++ }
+    return pr }
+  const runLen = (r, x) => { let L = 0; for (let i = x.i0; ; i = (i + 1) % r.length) { const a = r[i], b = r[(i + 1) % r.length]; L += Math.hypot(b[0] - a[0], b[1] - a[1]); if (i === x.i1 || L > 1e9) break } return L }
+  const rot = (a, k) => [...a.slice(k), ...a.slice(0, k)]
+  const align = (orr, irr, or_, ir_) => { // cyclic: rotate both to a span each carries exactly once, then a linear LCS
+    const cnt = (rr) => rr.reduce((m, x) => m.set(x.span, (m.get(x.span) || 0) + 1), new Map()), co = cnt(orr), ci = cnt(irr)
+    const anchor = orr.findIndex(x => co.get(x.span) === 1 && ci.get(x.span) === 1)
+    if (anchor < 0) census.noAnchor++
+    const a0 = Math.max(0, anchor), b0 = anchor < 0 ? 0 : irr.findIndex(x => x.span === orr[a0].span)
+    const O = rot(orr.map((x, i) => i), a0), I = rot(irr.map((x, j) => j), b0)
+    return lcs(O.map(i => orr[i].span), I.map(j => irr[j].span), O.map(i => runLen(or_, orr[i])), I.map(j => runLen(ir_, irr[j]))).map(([p, q]) => [O[p], I[q]]) }
+  const inFrac = (A, B) => { const st = Math.max(1, Math.floor(A.length / 16)); let n = 0, k = 0; for (let i = 0; i < A.length; i += st) { k++; if (pointInRing(A[i][0], A[i][1], B)) n++ } return n / k }
+  const nested = (a, b) => inFrac(b, a) >= 0.5 || inFrac(a, b) >= 0.5
+  const cellsBetween = (O, I, depth) => {
+    const out = []
+    O.per.forEach((po, k) => { const pi = I.per[k], p = po.p, all = new Set(p.dspan), Ospans = new Set(), Ispans = new Set()
+      const inner = (pi?.rings || []).map((r, ri) => ({ ring: r, rr: runsOf(pi.labs[ri]) })), usedI = new Set()
+      for (const x of inner) for (const y of x.rr) Ispans.add(y.span)
+      po.rings.forEach((r, ri) => { const rr = runsOf(po.labs[ri]); for (const x of rr) Ospans.add(x.span)
+        if (rr.length === 1) { // one span the whole way round: its cell is the whole region between the levels here
+          out.push({ span: rr[0].span, ri: p.ri, poly: null, whole: { outer: r, inner: pi?.rings || [] } }); census.cells++; return }
+        // the inner ring this outer ring bounds: the one whose runs align with most of its own (a level that split is counted)
+        // ⭐ only an inner ring this one CONTAINS, or that contains it (a hole part's levels grow outward), bounds a band with it:
+        // a level that split into an island and a main ring would otherwise pair the island with the main ring's far side.
+        // Where the inner level split in TWO (the band's full depth meets itself in a neck), the outer ring aligns with each
+        // inner ring it nests and the matches are merged in its own order; one outer run claimed by two is kept by the ring
+        // with more matches.
+        const cand = []; for (const [q, x] of inner.entries()) { if (!x.rr.length || !nested(r, x.ring)) continue; const pr = align(rr, x.rr, r, x.ring); if (pr.length) cand.push({ q, x, pr }) }
+        if (!cand.length) { census.noInner++; census.noInnerM2 += Math.abs(signedArea(r)); rr.forEach(x => out.push({ span: x.span, ri: p.ri, poly: verts(r, x.i0, x.i1) })); census.cells += rr.length; return }
+        cand.sort((a, b) => b.pr.length - a.pr.length); const claim = new Map()
+        for (const c of cand) { if (usedI.has(c.q)) census.innerShared++; usedI.add(c.q); for (const [i, j] of c.pr) if (!claim.has(i)) claim.set(i, { c, j }) }
+        if (cand.length > 1) census.innerSplit++
+        const pr = [...claim.entries()].sort((a, b) => a[0] - b[0]).map(([i, v]) => ({ i, j: v.j, X: v.c.x })), M = pr.length
+        const oS = (i) => r[rr[i].i0], oE = (i) => r[(rr[i].i1 + 1) % r.length], iS = (X, j) => X.ring[X.rr[j].i0], iE = (X, j) => X.ring[(X.rr[j].i1 + 1) % X.ring.length]
+        const ring = []                                  // the cells in order round the ring, each with its closing seam to the next
+        for (let m = 0; m < M; m++) {
+          const { i, j, X } = pr[m], { i: i2, j: j2, X: X2 } = pr[(m + 1) % M], ir = X.ring, irr = X.rr
+          ring.push({ span: rr[i].span, poly: [...verts(r, rr[i].i0, rr[i].i1), ...verts(ir, irr[j].i0, irr[j].i1).reverse()], seamEnd: [oE(i), iE(X, j)] })
+          const c0 = iE(X, j), o1 = oS(i2), same = X === X2  // the gap: outer runs i+1 … i2−1, inner runs j+1 … j2−1 (one inner ring)
+          const gO = []; for (let a = (i + 1) % rr.length; a !== i2; a = (a + 1) % rr.length) gO.push(a)
+          const gI = []; if (same) for (let b = (j + 1) % irr.length; b !== j2; b = (b + 1) % irr.length) gI.push(b)
+          if (!same) census.necks++
+          if (gO.length) census.triangles += gO.length
+          for (const a of gO) { ring.push({ span: rr[a].span, poly: [...verts(r, rr[a].i0, rr[a].i1), c0], seamEnd: [oE(a), c0] })
+            if (!Ispans.has(rr[a].span)) { const kp = `${keyOf(ownerOf(rr[(a - 1 + rr.length) % rr.length].span)) ?? '-'} | ${keyOf(ownerOf(rr[(a + 1) % rr.length].span)) ?? '-'}`; census.triangleByPair[kp] = (census.triangleByPair[kp] || 0) + 1 } }
+          if (gI.length) { census.innerFans += gI.length; ring[ring.length - 1].seamEnd = [o1, c0] }
+          for (const b of gI) ring.push({ span: irr[b].span, poly: [o1, ...verts(ir, irr[b].i0, irr[b].i1).reverse()], seamEnd: [o1, iE(X, b)] })
+          ring[ring.length - 1].seamEnd = same ? [o1, iS(X, j2)] : null   // a neck: the seam is not a segment, and the neck is residue
+        }
+        ring.forEach((c, q) => { out.push({ ...c, ri: p.ri, next: ring[(q + 1) % ring.length].span }); census.cells++ }) })
+      inner.forEach((x, q) => { if (!usedI.has(q) && x.rr.length) census.innerUnbounded++ })
+      for (const s of Ispans) if (!Ospans.has(s)) census.onlyOnInner++
+      for (const s of all) if (!Ospans.has(s) && !Ispans.has(s)) { census.goneBothN++
+        if (census.goneBoth.length < 12) census.goneBoth.push(`${s} (${keyOf(ownerOf(s)) ?? 'no owner'}) has no width at ${depth}`) } })
+    return out }
+  const luSplit = (rings) => { if (!rings.length) return []; const r = inBlock(rings); if (!r.length) return []
+    if (sp.whole) return [{ key: sp.classes[0], rings: r }]
+    return sp.classes.map(lu => ({ key: lu, rings: intersectRings(r, sp.regionsOf(lu)) })).filter(x => x.rings.length) }
+  const pieces = [], seams = []
+  // a piece names its OWNERS — one, or (ground in two spans' rects, a join's two edges) exactly the spans that hold it
+  const emit = (cls, rings, spans, ri, why = null) => { const owners = spans.map(span => { const o = ownerOf(span); if (!o) census.noOwner++
+      return { ri, span, ...(o || { skelId: null, side: null, segOrd: null }) } })
+    for (const x of luSplit(rings)) pieces.push({ cls, key: x.key, rings: x.rings, owners, ...(why ? { why } : {}) }) }
+  const ar = (rs) => rs.reduce((t, r) => t + Math.abs(signedArea(r)), 0)
+  const bb = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
+  const meets = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]
+  // ⭐⭐ THE GROUND NO CELL HOLDS ALONE (Boz's ruling, 2026-10-18). Where a cell's piece overlaps another's, or no cell reaches
+  // (a NECK, where the band's full depth meets itself because the block is narrower than two depths · an ISLAND, an outer
+  // ring with no inner one), the ground goes to the spans whose OWN rects hold it — the inner level's per-edge bands and
+  // joins, exactly as `offsetRingByRects` struck them (`stamp.clips`), never a second construction and never nearness:
+  //   (a) in one span's band only → that span · (b) in two or more spans' bands → ONE piece owned by exactly those spans,
+  //   as a crossing of the ink is (the class is the band's either way; the height blends over owners) · (c) in no band but
+  //   the join at ONE ① vertex → the two edges that meet there · ⛔ anything else is REFUSED by name.
+  //   ⭐ each region is built from the RECTS ALONE and only then met with the band, so neighbouring faces share one boundary.
+  //   The rects are the offset's FLOAT lines and the band's inner edge is Clipper's rounding of their union, so what the
+  //   exact pass leaves along that edge (sub-mm, measured) is asked again with each rect grown by TOL (two grid steps) — the
+  //   reach `offsetRingByRects` itself gives a line that holds an edge. ⚠️ Snapping the rects to the grid instead was
+  //   measured WORSE on HPDM (608 fragment rings, 2.27 m², against 256 and 0.23 m²): a snapped rect is a second rounding of
+  //   the same line.
+  const byRects = (cls, L, I, grow = 0) => {
+    const clips = (I?.per || []).flatMap(x => x.clips || []).filter(c => c.poly.length >= 3), Lb = bb(L)
+    const near = clips.filter(c => meets(bb([c.poly]), Lb)), bands = new Map(), joins = new Map()
+    for (const c of near) { const poly = grow ? offsetRings([c.poly], grow, 'miter')[0] : c.poly; if (!(poly?.length >= 3)) continue
+      if (c.join == null) for (const s of c.spans) (bands.get(s) || bands.set(s, []).get(s)).push(poly)
+      else (joins.get(c.join) || joins.set(c.join, { spans: c.spans, polys: [] }).get(c.join)).polys.push(poly) }
+    const U = [...bands.entries()].map(([s, ps]) => ({ s, R: unionRings(ps) })).filter(x => x.R.length && intersectRings(L, x.R).length)
+    const faces = [], k = U.length
+    if (k > 12) { census.byRectsWide++; return { faces: [], left: L } }
+    // the arrangement of the spans' bands: every non-empty subset T is the region in exactly T's bands, from the rects alone
+    for (let m = 1; m < (1 << k); m++) { let g = null; const T = []
+      for (let q = 0; q < k && (g === null || g.length); q++) if (m & (1 << q)) { T.push(U[q].s); g = g === null ? U[q].R : intersectRings(g, U[q].R) }
+      if (!g?.length) continue
+      const out = U.filter((_, q) => !(m & (1 << q))).flatMap(x => x.R); if (out.length) g = differenceRings(g, out)
+      const f = g.length ? intersectRings(L, g) : []
+      if (f.length && ar(f) > 0) faces.push({ spans: T, rings: f, why: T.length > 1 ? 'shared' : 'one rect' }) }
+    const allR = U.flatMap(x => x.R), J = [...joins.entries()].map(([v, x]) => ({ v, spans: x.spans, R: unionRings(x.polys) }))
+    for (const j of J) { const others = [...allR, ...J.filter(y => y !== j).flatMap(y => y.R)], g = others.length ? differenceRings(j.R, others) : j.R
+      const f = g.length ? intersectRings(L, g) : []; if (f.length && ar(f) > 0) faces.push({ spans: j.spans, rings: f, why: 'join' }) }
+    const everyR = [...allR, ...J.flatMap(y => y.R)], left = everyR.length ? differenceRings(L, everyR) : L
+    return { faces, left } }
+  const cut = (cls, B, cells, I = null) => { if (!B.length) return
+    const raw = []
+    for (const c of cells) { const reg = c.whole ? (c.whole.inner.length ? xorRegion(c.whole.outer, c.whole.inner) : [c.whole.outer]) : (c.poly.length >= 3 ? [c.poly] : [])
+      const r = reg.length ? intersectRings(B, reg) : []; if (r.length && ar(r) > 0) raw.push({ c, r, b: bb(r) })
+      if (c.seamEnd) { const L = clipLine(c.seamEnd, B); if (L.length) { const a = ownerOf(c.span), b = ownerOf(c.next)
+        seams.push({ cls, a: keyOf(a), b: keyOf(b), aSpan: c.span, bSpan: c.next, sameChain: !!(a && b && a.skelId === b.skelId), line: L }) } } }
+    // a cell holds alone only the part of it no other cell overlaps
+    const own = raw.map((x, i) => { const o = raw.filter((y, j) => j !== i && meets(x.b, y.b)).map(y => y.r).flat(); return o.length ? differenceRings(x.r, unionRings(o)) : x.r })
+    raw.forEach((x, i) => { if (own[i].length) emit(cls, own[i], [x.c.span], x.c.ri) })
+    // only what is painted counts: the disc cut first (a piece is cut by it anyway), then each connected part on its own
+    const held = own.flat(), L0 = held.length ? differenceRings(B, unionRings(held)) : B, L = L0.length ? inBlock(L0) : []
+    if (!L.length || !(ar(L) > 1e-6)) return
+    const ri = cells[0]?.ri ?? null, left = []
+    const outers = L.filter(r => signedArea(r) * Math.sign(signedArea(L.reduce((m, q) => Math.abs(signedArea(q)) > Math.abs(signedArea(m)) ? q : m))) > 0)
+    for (const o of outers) { const comp = intersectRings(L, [o]); if (!comp.length || !(ar(comp) > 0)) continue
+      const R0 = byRects(cls, comp, I), R1 = R0.left.length && ar(R0.left) > 0 ? byRects(cls, R0.left, I, 2 / SCALE) : { faces: [], left: [] }
+      left.push(...R1.left)
+      for (const f of [...R0.faces, ...R1.faces.map(f => ({ ...f, why: f.why + ' (within TOL)' }))]) { emit(cls, f.rings, f.spans, ri, f.why); census.byRects[f.why] = (census.byRects[f.why] || 0) + 1; census.byRectsM2[f.why] = (census.byRectsM2[f.why] || 0) + ar(f.rings) } }
+    const lm = ar(left); if (lm > 0) { census.refused++; census.refusedM2 += lm; if (census.refusedAt.length < 8) { const [x0, z0, x1, z1] = bb(left); census.refusedAt.push(`${cls} ${lm.toFixed(3)} m² at (${((x0 + x1) / 2).toFixed(2)}, ${((z0 + z1) / 2).toFixed(2)})`) } } }
+  const xorRegion = (outer, inner) => { const A = Math.abs(signedArea(outer)), Bi = inner.reduce((t, r) => t + Math.abs(signedArea(r)), 0)
+    return A >= Bi ? differenceRings([outer], inner) : differenceRings(inner, [outer]) }
+  cut('curb', curb, cellsBetween(L0, LV_cw, 'the curb'), LV_cw)
+  const sectors = (perp || []).map(g => g.sector)
+  cut('walk', sectors.length ? differenceRings(walk0, sectors) : walk0, cellsBetween(LV_wf, LV_wt, 'the walk'), LV_wt)
+  for (const g of (perp || [])) {
+    const part = parts.find(p => p.si === g.si), legSpan = g.legs.map(e => spanOfSrc(g.si, e)), arcSpan = spanOfSrc(g.si, g.arcEdge)
+    const inSec = (rs) => rs.length ? intersectRings(intersectRings(rs, [g.sector]), env) : []
+    const both = intersectRings([g.strips[0]], [g.strips[1]]), crossing = inSec(both)
+    for (let k = 0; k < 2; k++) { const own = inSec(differenceRings([g.strips[k]], [g.strips[1 - k]])), r = intersectRings(own, walk)
+      if (r.length) { emit('walk', r, [legSpan[k]], part?.ri ?? null, 'landing'); census.landings++ } }
+    const rest = g.lawn ? crossing : inSec(differenceRings([g.sector], g.strips))
+    const restW = g.lawn ? intersectRings(crossing, walk) : intersectRings([...rest, ...crossing].length ? unionRings([...rest, ...crossing]) : [], walk)
+    if (crossing.length) census.landingCross++
+    if (restW.length) emit('walk', restW, [arcSpan], part?.ri ?? null, g.lawn ? 'landings cross' : 'corner')
+  }
+  const lawn = env.length ? (walk.length ? differenceRings(env, walk) : env) : []
+  cut('lawn', lawn, cellsBetween(LV_cw, LV_WB, 'the lawn'), LV_WB)
+  return { pieces, seams, census }
+}
+// an open segment clipped to a region (Clipper, the lattice's grid) → the polylines inside it
+function clipLine(seg, region) {
+  const c = new clipperLib.Clipper(), tree = new clipperLib.PolyTree(), C = (r) => r.map(([x, z]) => ({ X: Math.round(x * SCALE), Y: Math.round(z * SCALE) }))
+  c.AddPath(C(seg), clipperLib.PolyType.ptSubject, false); c.AddPaths(region.filter(r => r?.length >= 3).map(C), clipperLib.PolyType.ptClip, true)
+  c.Execute(clipperLib.ClipType.ctIntersection, tree, clipperLib.PolyFillType.pftNonZero, clipperLib.PolyFillType.pftNonZero)
+  return clipperLib.Clipper.OpenPathsFromPolyTree(tree).map(p => p.map(q => [q.X / SCALE, q.Y / SCALE]))
+}
+
+export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, cornerOverrides = null, { pieces: wantPieces = false } = {}) {
   // ⭐ TWO CONTOURS, TWO QUESTIONS. `iaFull` + `iaStamp` answer "what depth HERE" — uncut, so the
   // per-point correspondence is intact. The cut `iA` answers "where is the block" after the disc
   // was stamped. Strike off the first, CUT with the second: a rim band is a clean cut through a
@@ -5795,14 +5985,25 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // treelawn rings thinner than the lattice — which the paint stack then had to resolve.
   // ▶ scratch/ground-budget/flatten-r1/slv.mjs counts them (0 is the gate).
   // A pick here is per DENSIFIED vertex; a per-edge property of the source ring reads `p.dsrc[j]`, its source edge.
-  const insD = (pick) => {
-    const o = [], h = []
+  // ⭐ EVERY OFFSET HERE IS LABELLED — each edge it draws names the SPAN (owner run · arc · cap, and the stamp run) of the
+  // contour edge it was struck from, read off the offset's own stamp (`offsetRingByRects`), never matched back by nearness.
+  // The bands are painted from these same rings, so the band pieces (`bandPiecesOfTile`) cut exactly what is painted.
+  // ⚠️ Measured against the unlabelled offset (2026-10-18): identical on HPDM; 6 offsets on PTown (worst 0.0025 m²) and 2 on
+  // JH (0.0001 m²) differ, where the labelled self-union resolves a touch differently. The paint follows the labelled one.
+  const spanOfSrc = (si, e) => { const c = st.iaCap?.[si]?.[e], a = st.iaArc?.[si]?.[e], r = (stamps[si] || [])[e]
+    return (c != null ? 'c' + c : a != null ? 'a' + a : r != null ? 'r' + r : '-') + '/' + (r ?? '-') }
+  for (const p of parts) p.dspan = p.dring.map((_, j) => spanOfSrc(p.si, p.dsrc[j]))
+  const insDL = (pick) => {
+    const o = [], h = [], per = []
     for (const p of parts) {
-      const rs = offsetRingByRects(p.dring, pick(p), p.hole)
+      const S = {}, rs = offsetRingByRects(p.dring, pick(p), p.hole, S, null, 0, null, (e) => p.dspan[e])
       ;(p.hole ? h : o).push(...rs)
+      per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
+        clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null })) })
     }
-    return (o.length && h.length) ? differenceRings(o, h) : o
+    return { rings: (o.length && h.length) ? differenceRings(o, h) : o, per }
   }
+  const insD = (pick) => insDL(pick).rings
 
   const mk = (p) => {
     // ⭐⭐⭐ ONE LADDER, BOTH PAINTERS — `stripLadder`, the same call `buildTileGround`'s ③ emit
@@ -5952,7 +6153,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         len: Math.hypot(b[0] - a[0], b[1] - a[1]) })
     }
   }
-  const pedOuter = insD((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : cw))
+  const LV_cw = insDL((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : cw)), pedOuter = LV_cw.rings
   // ⛔⛔ THE SLIDE IS UNIONED IN — NEVER CUT AND ADDED BACK ALONG THE SAME EDGE. Clipper is
   // integer-space (1 mm); a difference followed by a union on the same boundary leaves the two
   // halves as separate polygon records that merely touch, so the band reads as broken while its
@@ -5960,7 +6161,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // 79 → 54 on geometry that was a strict SUPERSET of the original. The stamp above needs no cut
   // at all — the arc is drawn by the same four offsets as the legs — and this is the one piece
   // that is genuinely additional.
-  const W = band(insD(p => F.get(p).walkFromD), insD(p => F.get(p).walkToD))
+  const LV_wf = insDL(p => F.get(p).walkFromD), LV_wt = insDL(p => F.get(p).walkToD), W = band(LV_wf.rings, LV_wt.rings)
   // ⛔⛔ NOTHING IS UNIONED IN AND NOTHING IS CUT OUT. Every boundary below is a whole-contour
   // offset of the SAME curve, so there are no pieces, nothing to join, and no join to open — which
   // is `RIBBONS §1`'s "a seam is UNCONSTRUCTIBLE rather than merely unlikely", now true of the
@@ -5972,7 +6173,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // (`SECTION` rule 3), so they are painted as "the band the walk is not": the ped envelope (curb-inner → WB) minus the
   // walk, with the walk clipped to that envelope. curb ∪ walk ∪ lawn ∪ LU = the block by construction; it also ends the
   // lawn's overlap with the walk. ▶ node checks/claims-the-ground-covers-every-block.mjs
-  const luIn = insD((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : WB))
+  const LV_WB = insDL((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : WB)), luIn = LV_WB.rings
   const env = band(pedOuter, luIn)
   const Wp0 = env.length && W.length ? intersectRings(W, env) : []
   // ⭐⭐ THE PERPENDICULAR CORNER (Jacob, 2026-10-07): "each leg's sidewalk runs STRAIGHT on to the curb, ending in its own
@@ -6059,7 +6260,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     // ops use, two overlapping rings of opposite winding cancel — the landings' crossing would drop out of the walk
     const pos = (r) => signedArea(r) < 0 ? [...r].reverse() : r
     return { sector: pos(sector), strips: [pos(rect(A, dA, nA, cw + lA.walkFrom, cw + lA.walkTo)), pos(rect(B, dB, nB, cw + lB.walkFrom, cw + lB.walkTo))],
-             lawn: !!(mA.hasTL && mB.hasTL), oneSided: !!mA.hasTL !== !!mB.hasTL, cuts: [cutOf(cA, [-dB[0], -dB[1]]), cutOf(cB, [-dA[0], -dA[1]])], wedgeAt, pastApex }
+             lawn: !!(mA.hasTL && mB.hasTL), oneSided: !!mA.hasTL !== !!mB.hasTL, cuts: [cutOf(cA, [-dB[0], -dB[1]]), cutOf(cB, [-dA[0], -dA[1]])], wedgeAt, pastApex,
+             // which leg each strip is (strips[0] = leg `before`, strips[1] = leg `after`) and the arc's first edge — carried, so a
+             // landing's ground is owned by its OWN leg (Screed, 2026-10-17), never by where it lands
+             si: p.si, legs: [before, after], arcEdge: q }
   }
   const R = curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, perpGeom)
   // the walk, with each perpendicular corner's sector re-filled: where BOTH legs carry a tree lawn, its two landings and
@@ -6077,7 +6281,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const slab = R.masks.length ? band(insD(() => () => cw), insD(() => () => cw + R.maxD)) : []
   const strips = slab.length ? intersectRings(intersectRings(slab, unionRings(R.masks)), Wp) : []
   const sp = stampParts(st)   // the land-use stamp, laid once over every strip below
+  // ⭐ THE BANDS, CUT BY THEIR OWNERS (`bandPiecesOfTile`) — asked for only by ① the producer (the bake), never by Survey
+  const BP = wantPieces ? bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp,
+    L0: { per: parts.map(p => ({ p, rings: [p.dring], labs: [p.dspan] })) }, LV_cw, LV_wf, LV_wt, LV_WB,
+    curb: band(curbOuter, pedOuter), walk0: Wp0, walk: Wp, env, perp: R.perp }) : null
   return {
+    ...(BP ? { bandPieces: BP.pieces, bandSeams: BP.seams, bandCensus: BP.census } : {}),
     curbCut: cutByStamp(st, inBlock(strips), sp), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
     Wacc:   cutByStamp(st, inBlock(Wp), sp),
     tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }, sp),
@@ -6264,7 +6473,7 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
   return { rings, cuts, farCuts, pairs, tally }
 }
 
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, cornerOverrides = null) {
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, cornerOverrides = null, { pieces = false } = {}) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
   // Section drag (which writes a fresh blockCustoms object every frame but
@@ -6332,7 +6541,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     // ⛔ Chosen by the tile's own shape, never a flag — a mixed artifact cannot silently take the
     // wrong path for half its tiles.
     if (Array.isArray(st.evidenceByPiece) && !st.evidenceStamped) unstampedWarn()
-    const r = hasStampInquiry(st) ? sectionPassProtoTile(st, cw, stripMat, blockCustoms, cornerOverrides)
+    const r = hasStampInquiry(st) ? sectionPassProtoTile(st, cw, stripMat, blockCustoms, cornerOverrides, { pieces })
                                   : sectionPassTile(st, cw, stripMat, blockCustoms)
     const iA = st.iA || []
     const bandJoin = st.bandJoin || 'miter'
@@ -6348,6 +6557,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       // is not the same shape — using it on a stamped tile put 1,820 m² of curb where ③ had none.
       C: r.curb || differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)),
       block: iA,                                                               // block silhouette = the frozen curb ring
+      ...(r.bandPieces ? { bandPieces: r.bandPieces, bandSeams: r.bandSeams, bandCensus: r.bandCensus } : {}),
     }
     if (cache) cache.set(i, bundle)
     return bundle
@@ -6360,7 +6570,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // the cheap final unions.
   const mkAcc = () => ({ ...Object.fromEntries(Object.keys(PAINTED).map(f => [f, []])), ...Object.fromEntries(Object.keys(PAINTED_BY_LU).map(f => [f, {}])), block: [] })
   const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutCorners = [], cornerArcs = []
-  const rest = mkAcc()
+  const rest = mkAcc(), bandByTile = []
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
   for (let i = 0; i < shapeTiles.length; i++) {
     const b = tileGeo(shapeTiles[i], i)
@@ -6376,6 +6586,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       else curbCutTally[k] = (curbCutTally[k] || 0) + v
     }
     for (const f of Object.keys(PAINTED_BY_LU)) for (const k in b[f]) (acc[f][k] || (acc[f][k] = [])).push(...b[f][k])
+    if (b.bandPieces) bandByTile.push({ tile: i, pieces: b.bandPieces, seams: b.bandSeams, census: b.bandCensus, painted: { curb: b.C || [], walk: b.W || [], lawn: Object.values(b.tlByLu || {}).flat() } })
   }
   const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
   const finish = (acc) => {
@@ -6386,6 +6597,9 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     return out
   }
   const out = finish(rest)
+  // the band pieces, clipped to the stencil exactly as the painted bands are (`finish`)
+  if (pieces) out.bandPieces = bandByTile.map(t => ({ ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, clip(v)])), pieces: t.pieces.map(q => ({ ...q, rings: clip(q.rings) })).filter(q => q.rings.length),
+    seams: t.seams.map(q => ({ ...q, line: (stencil && stencil.length >= 3) ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) }))
   out.selected = sel ? finish(sel) : null
   out.curbCutRecs = curbCutRecs; out.curbCutTally = curbCutTally; out.curbCutContradicted = curbCutContradicted
   out.curbCutCorners = curbCutCorners   // every junction corner, authorable in Section
@@ -8629,6 +8843,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
   let protoNoCurbBlocks = []          // ② blocks whose curb came back empty: their ground, owned (`kind: 'block'` pieces below)
+  let protoBandPieces = null          // ③'s bands as owned pieces, per tile (`bandPiecesOfTile`) — the FILL, live, never frozen
   let protoInkPieces = null           // ① ink as owned pieces (`inkPiecesByOwner`) — the strip between tiles, with its owners
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
@@ -10586,8 +10801,25 @@ export function buildTileGround(ribbons, opts = {}) {
       for (const c of protoCornerSet) { cornerFillets[c.key] = c.fillet; cornerSet.push(c) }
       console.log(`[tileGround][①⇢LIVE] corner truth swapped to ②'s achieved arcs: ${protoCornerSet.length} corner(s); the handle rides the curb that is drawn.`)
     } else console.warn(`[tileGround][①⇢LIVE] ⛔ ② produced NO corner arcs — the corner handles would ride the LEGACY fillets, which are not on screen. Not swapping; the dial is untrustworthy in this pour.`)
-    const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides)
+    const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: true })
     asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
+    protoBandPieces = S.bandPieces || []
+    { const C = { cells: 0, triangles: 0, innerFans: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRectsWide: 0, refused: 0, refusedM2: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
+      let n = 0, seams = 0, same = 0
+      for (const t of protoBandPieces) { n += t.pieces.length; seams += t.seams.length; same += t.seams.filter(q => q.sameChain).length
+        for (const k of Object.keys(C)) C[k] += t.census[k] || 0; gone.push(...t.census.goneBoth.map(g => `tile ${t.tile}: ${g}`))
+        for (const [k, v] of Object.entries(t.census.byRects)) { BR[k] = (BR[k] || 0) + v; BRm[k] = (BRm[k] || 0) + t.census.byRectsM2[k] }
+        refAt.push(...t.census.refusedAt.map(g => `tile ${t.tile} ${g}`))
+        for (const [k, v] of Object.entries(t.census.triangleByPair)) pairs[k] = (pairs[k] || 0) + v }
+      console.log(`[tileGround][①⇢LIVE] band ground no cell holds alone (${C.necks} neck transition(s) · ${C.noInner} island(s), ${C.noInnerM2.toFixed(0)} m² of ring · and where cells overlap), given by the inner level's own rects (\`offsetRingByRects\`' clips): ${Object.keys(BR).sort().map(k => `${k} ${BR[k]} piece(s) ${BRm[k].toFixed(1)} m²`).join(' · ') || 'none'}${C.byRectsWide ? ` · ⛔ ${C.byRectsWide} too wide to arrange (more than 12 spans)` : ''}`)
+      // ⛔ NAMED, NOT STOPPING — for now (Boz, 2026-10-18): no height reader consumes the band pieces yet (the band blend is not
+      // in), so ground with no owner cannot put a wrong height on the slab. When a reader lands, this throws.
+      if (C.refused || C.byRectsWide) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.refused} region(s), ${C.refusedM2.toFixed(3)} m², in no span's rect and no single join — NO OWNER (named, not stopping: nothing reads the pieces yet): ${refAt.slice(0, 6).join(' · ')}${refAt.length > 6 ? ` … +${refAt.length - 6}` : ''}`)
+      const top = Object.entries(pairs).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `${k} ×${v}`).join(' · ')
+      console.log(`[tileGround][①⇢LIVE] the bands cut by their owners: ${n} piece(s) from ${C.cells} cell(s) · ${seams} seam(s) (${seams - same} where the owner changes · ${same} on one chain) · ${C.triangles} outer run(s) fanned to the inner side (no run of their own there; top pairs of a span with no width there ${top || '—'}) · ${C.innerFans} inner run(s) fanned to the outer side · ${C.landings} landing(s) owned by their own leg, ${C.landingCross} corner(s) where the two landings cross (the corner's arc owns the crossing)`)
+      if (C.goneBothN) console.log(`[tileGround][①⇢LIVE] ${C.goneBothN} span(s) with no width on either side of a band — no piece there; the ground is the neighbours' (Boz, 2026-10-18): ${gone.slice(0, 6).join(' · ')}${gone.length > 6 ? ` … +${gone.length - 6}` : ''}`)
+      if (C.noAnchor || C.noInner || C.innerShared || C.innerUnbounded || C.noOwner) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.noAnchor} ring(s) with no span carried once on both levels to align from · ${C.noInner} outer ring(s) with no inner ring to align with (their runs are not closed) · ${C.innerShared} inner ring(s) aligned to two outer rings · ${C.innerUnbounded} inner ring(s) aligned to none · ${C.onlyOnInner} span(s) only on the inner side · ${C.noOwner} piece(s) whose span has no stamp run (no owner) — counted; ▶ checks/claims-the-bands-are-held-by-their-owners.mjs`)
+    }
     // ⭐⭐ ① IS PAINTED FIRST (Jacob, 2026-10-11, BRIEF-the-ground-knows-its-height §5: "we should paint it in the first
     // step, not last"). ① is the union of the ε strokes, so it HAS area — a 2ε band over every chain — and every band
     // offsets outward from its edge, so until now nothing painted it and it showed through as a ~10 mm slit down every
@@ -10708,7 +10940,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
