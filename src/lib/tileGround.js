@@ -9040,7 +9040,12 @@ export function buildTileGround(ribbons, opts = {}) {
         (protoCornerBend ? ` · ${protoCornerBend} are a street BENDING (broken handles, no chain pair — the class seed is correct there)` : '') +
         (protoCornerNoNode ? ` — ⚠️ ${protoCornerNoNode} had an AMBIGUOUS chain pair (two chains sharing more than one vertex) and took the class seed; a per-IX override cannot reach them` : ''))
       { const legacy = Object.keys(cornerOverrides || {}).filter(k => /\|[^|]+:[fb]\|[^|]+:[fb]$/.test(k))
-        if (legacy.length) console.warn(`[tileGround][PROTO②] ⛔ ${legacy.length} per-corner entr${legacy.length === 1 ? 'y is' : 'ies are'} in the LEGACY key form (leg f/b flags) — nothing reads ${legacy.length === 1 ? 'it' : 'them'}; migrate to the corner key (ix|skel:side|skel:side): ${legacy.slice(0, 6).join(' · ')}`) }
+        if (legacy.length) console.warn(`[tileGround][PROTO②] ⛔ ${legacy.length} per-corner entr${legacy.length === 1 ? 'y is' : 'ies are'} in the LEGACY key form (leg f/b flags) — nothing reads ${legacy.length === 1 ? 'it' : 'them'}; migrate to the corner key (ix|skel:side|skel:side): ${legacy.slice(0, 6).join(' · ')}`)
+        // ⭐ AN AUTHORED CORNER THIS POUR NO LONGER HAS (Boz, 2026-10-18): a current-form key naming no corner of ② — a re-pour
+        // moved its node or renamed a leg — reaches nothing. Printed, every one, by name and value; never refused: re-aiming
+        // it is the operator's. ▶ node checks/claims-every-authored-corner-resolves.mjs
+        const have = new Set(protoCornerSet.map(c => c.key)), orphan = Object.entries(cornerOverrides || {}).filter(([k]) => !legacy.includes(k) && !have.has(k))
+        if (orphan.length) console.warn(`[tileGround][PROTO②] ⛔ ${orphan.length} authored corner entr${orphan.length === 1 ? 'y names' : 'ies name'} NO corner of this pour — ${orphan.length === 1 ? 'it reaches' : 'they reach'} nothing until re-aimed: ${orphan.map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join(' · ')}`) }
       // ⭐⭐⭐ THE EASE NOW SAYS WHY IT DECLINED A CORNER — wired 2026-09-08 (`easeSkips`, declared
       // and unreferenced since it was written). ⛔ `noR` is the line to read: those vertices TURN
       // past `FILLET_TURN_TOL` and were still not corners, because `isCorner_` also requires
