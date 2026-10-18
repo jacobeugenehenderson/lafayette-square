@@ -1802,8 +1802,9 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     while (kR.length > 3 && sameGridPt(kR[0], kR.at(-1))) { kV[0] = kV[0] ?? kV.at(-1); kA[0] = kA[0] ?? kA.at(-1); kR.pop(); kE.pop(); kV.pop(); kA.pop() }
     return { R: kR, E: kE, V: kV, A: kA }
   }
+  const dropped = []   // the rings left out below for their size (a DISCLOSURE for the band-piece trace; nothing reads it to decide)
   for (let k = 0; k < B.rings.length; k++) {
-    if (!(B.rings[k].length >= 3 && Math.abs(signedArea(B.rings[k])) > AREA_MIN)) continue
+    if (!(B.rings[k].length >= 3 && Math.abs(signedArea(B.rings[k])) > AREA_MIN)) { if (B.rings[k].length >= 3) dropped.push(B.rings[k]); continue }
     const g0 = mergeGrid(B.rings[k], (B.labels?.[k] || []).map(x => (Number.isInteger(x) && x >= 0 && x < n) ? x : null), B.rings[k].map(() => null), B.rings[k].map(() => null))
     if (g0.R.length < 3) continue
     if (!labelled) { const g1 = mergeGrid(g0.R, g0.E, g0.V, g0.A); if (g1.R.length >= 3) outR.push(g1.R); continue }
@@ -1843,7 +1844,7 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     outR.push(g1.R); outE.push(g1.E); outV.push(g1.V); outA.push(g1.A)
   }
   // edge labels leave in ORIGINAL ① edge indices, so the caller's `labs[e]` is the owner
-  if (stamp) { stamp.labels = outV; stamp.edgeLabels = outE.map(E => E.map(e => (e == null ? null : origE[e]))); stamp.arcMask = outA; if (easeAt) stamp.easeArcs = easeArcs
+  if (stamp) { stamp.dropped = dropped; stamp.areaMin = AREA_MIN; stamp.labels = outV; stamp.edgeLabels = outE.map(E => E.map(e => (e == null ? null : origE[e]))); stamp.arcMask = outA; if (easeAt) stamp.easeArcs = easeArcs
     // the rects themselves, each with the source edge(s) it is struck from (`bandPiecesOfTile` gives the ground no cell
     // reaches to the spans whose own rects hold it — Boz, 2026-10-18), and the source VERTEX of a join
     stamp.clips = clips.map((poly, k) => ({ poly, e: clipOwn[k].map(r => origE[r]), v: clipOwn[k].length === 2 ? origV[clipOwn[k][1]] : null, ...(clipD[k] ? { d: clipD[k] } : {}) }))
@@ -5330,7 +5331,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 // Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB }, edges: [{ si, e }] (depths on the tile's edgeDepths) } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk0, walk, env, perp }) {
-  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [], refusedNear: [] }
+  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [], refusedNear: [], byRectsLost: 0, byRectsLostM2: 0 }
   // a run's or an arc's owner is its stamp run; a dead-end cap's is the cap's own (`iaCap` → `caps`, the cap is an end coupler)
   const ownerOf = (span) => { if (span == null) return null; const [h, t] = span.split('/'), R = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+t) ? runs[+t] : null
     return R ? { skelId: R.skelId, side: R.side, segOrd: R.segOrd } : null }
@@ -5464,6 +5465,8 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
     for (const j of J) { const others = [...allR, ...J.filter(y => y !== j).flatMap(y => y.R)], g = others.length ? differenceRings(j.R, others) : j.R
       const f = g.length ? intersectRings(L, g) : []; if (f.length && ar(f) > 0) faces.push({ spans: j.spans, rings: f, why: 'join', src: { kind: 'join', join: j.v, d: j.d } }) }
     const everyR = [...allR, ...J.flatMap(y => y.R)], left = everyR.length ? differenceRings(L, everyR) : L
+    // ground in a clip but in no face (two or more joins and no rect): counted, so it is never lost silently
+    const got = faces.flatMap(f => f.rings), lost = differenceRings(L, [...got, ...left]); if (lost.length && ar(lost) > 0) { census.byRectsLost++; census.byRectsLostM2 += ar(lost) }
     return { faces, left } }
   const cut = (cls, B, cells, I = null) => { if (!B.length) return
     const raw = []
@@ -5486,7 +5489,8 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
     // a refused region names the rects and joins within 2 m of it — a REPORTING reach for the trace (Boz, 2026-10-18): it
     // is printed and NEVER feeds a decision; nothing reads `refusedNear` but the trace
     if (ar(left) > 0 && census.refusedNear.length < 12) { const lb = bb(left), g = 2, box = [lb[0] - g, lb[1] - g, lb[2] + g, lb[3] + g]
-      census.refusedNear.push({ cls, m2: ar(left), at: [(lb[0] + lb[2]) / 2, (lb[1] + lb[3]) / 2],
+      const drops = (I?.per || []).flatMap(x => (x.dropped || []).map(r => ({ r, areaMin: x.areaMin }))), inDrop = drops.filter(d => intersectRings(left, [d.r]).length && ar(intersectRings(left, [d.r])) > 0)
+      census.refusedNear.push({ cls, m2: ar(left), at: [(lb[0] + lb[2]) / 2, (lb[1] + lb[3]) / 2], inDropped: inDrop.map(d => ({ m2: Math.abs(signedArea(d.r)), areaMin: d.areaMin, covered: ar(intersectRings(left, [d.r])) })),
         clips: (I?.per || []).flatMap(x => x.clips || []).filter(c => c.poly.length >= 3 && meets(bb([c.poly]), box)).map(c => ({ spans: c.spans, join: c.join, d: c.d ?? null })) }) }
     const lm = ar(left); if (lm > 0) { census.refused++; census.refusedM2 += lm; if (census.refusedAt.length < 8) { const [x0, z0, x1, z1] = bb(left); census.refusedAt.push(`${cls} ${lm.toFixed(3)} m² at (${((x0 + x1) / 2).toFixed(2)}, ${((z0 + z1) / 2).toFixed(2)})`) } } }
   const xorRegion = (outer, inner) => { const A = Math.abs(signedArea(outer)), Bi = inner.reduce((t, r) => t + Math.abs(signedArea(r)), 0)
@@ -6059,7 +6063,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
         clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
-        edges: (S.edgeDepths || []).map(x => ({ e: x.e, span: p.dspan[x.e], a: x.a, b: x.b, d: x.d })) })
+        edges: (S.edgeDepths || []).map(x => ({ e: x.e, span: p.dspan[x.e], a: x.a, b: x.b, d: x.d })), dropped: S.dropped || [], areaMin: S.areaMin })
     }
     return { rings: (o.length && h.length) ? differenceRings(o, h) : o, per }
   }
