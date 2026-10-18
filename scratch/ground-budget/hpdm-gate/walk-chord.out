@@ -1,0 +1,24 @@
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+"D within the limit, the mesh chords it": 2244 station(s) · WALK_SHARE 0.5 (the profile's share of the limit; the rest is the drawing's)
+  the variant D's fall ÷ limit: p10 0.000 · p50 0.136 · p90 0.829 · over WALK_SHARE 549 · within it 1695
+  the drawn fall (the gate's, variant on the fixed mesh) ÷ limit: p10 1.101 · p50 1.907 · p90 11.045
+  drawn − D (the chord, ÷ limit): p10 0.539 · p50 1.671 · p90 10.936 · over (1 − WALK_SHARE) 2055
+  the BASE slab's drawn fall at the same points ÷ limit: p10 0.034 · p50 0.174 · p90 0.525 · no base triangle 0 · over the limit 3
+        4.80 real         6.00 user         0.24 sys
+          1046069248  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               65031  page reclaims
+                   4  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  59  voluntary context switches
+               14653  involuntary context switches
+         92395625321  instructions retired
+         19062637911  cycles elapsed
+          1056165568  peak memory footprint
