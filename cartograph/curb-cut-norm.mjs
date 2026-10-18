@@ -5,11 +5,13 @@
 //   2. evidence — a recorded curb cut, landed on the arc at the freeze (`cartograph/curb-cut-evidence.mjs`)
 //   3. the TOWN's norm:   cartograph/data/<scene>/norms.json   → { "curbCuts": { … } }
 //   4. the STATE's norm:  cartograph/states/<st>.mjs           → norms.curbCuts
-//   5. the kit:           'none'
+//   5. the kit:           PERPENDICULAR, at PROWAG's dimensions — read from `references/registry.json`, never a constant here
 // The same ladder carries the town's CROSSWALKS and its KERB (height + the cut's ramp/flare slopes), each on its own rung.
-// ⛔ The kit default is NONE, never a style: any concrete style is a constant that is right for some town and wrong
-//   for the next (`CLAUDE.md` Layer 0, Class D). It is made LOUD instead — every pour prints how many junction
-//   corners have no curb-cut source.
+// ⭐ THE KIT RUNG IS PERPENDICULAR (Jacob, 2026-10-17, ruling `r-curb-ramp-default-perpendicular`: "given they are 'code'
+//   now it would make more sense to default to them"). Its width and warning depth are PROWAG's (`f-prowag-curb-ramp-geometry`
+//   48 in; `f-prowag-perpendicular-ramp-dws` 24 in minimum), read from the registry by id; a missing entry THROWS. The kit
+//   value names its citations (`cites`), and every rung that fell through says WHY by name (`passed`: "no norms.json",
+//   "norms.json has no curbCuts", "no state declared", …), so the pour never prints the kit's value as the town's.
 // ⛔ A norm that names a style must also give its own dimensions (`width`, `warningDepth`, metres). They are the
 //   jurisdiction's standard, not the kit's, so a missing one THROWS rather than being filled in.
 // ▶ node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>
@@ -22,6 +24,19 @@ import { stateRecord } from './states/index.mjs'
 // derive.js from cartograph/, and a cwd-relative path there found no norms.json and froze 'none (kit)' without a word
 // (`BRIEF-corner-ramps-and-kerb §3` step 0). ▶ node checks/claims-the-pour-reads-the-towns-norm.mjs
 const DATA_ROOT = join(dirname(fileURLToPath(import.meta.url)), 'data')
+const REGISTRY = join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'registry.json')
+const INCH = 0.0254
+
+// the kit's curb cut: the ruled style, PROWAG's width and warning depth, each read from the registry entry it cites
+function kitCurbCuts() {
+  let r; try { r = JSON.parse(readFileSync(REGISTRY, 'utf8')) } catch (e) { throw new Error(`curb-cut-norm: the kit rung reads ${REGISTRY} — ${e.message}`) }
+  const byId = new Map((r.findings || []).map(f => [f.id, f]))
+  const need = (id) => { const f = byId.get(id); if (!f) throw new Error(`curb-cut-norm: the kit rung cites ${id}, which ${REGISTRY} does not hold`); return f }
+  const rule = need('r-curb-ramp-default-perpendicular'), geo = need('f-prowag-curb-ramp-geometry'), dws = need('f-prowag-perpendicular-ramp-dws')
+  const style = rule.value?.kitDefaultCurbCutStyle, w = geo.value?.width_in, d = dws.value?.dwsDepth_in?.min
+  if (!CURB_CUT_STYLES.includes(style) || !(w > 0) || !(d > 0)) throw new Error(`curb-cut-norm: the kit rung's entries do not give a style, width_in and dwsDepth_in.min (${rule.id}, ${geo.id}, ${dws.id})`)
+  return { style, width: w * INCH, warningDepth: d * INCH, cites: [rule.id, geo.id, dws.id] }
+}
 
 export const CURB_CUT_STYLES = ['none', 'diagonal', 'perpendicular']
 // ⭐ CROSSWALKS ride the same ladder, resolved on their own (a town may set one and inherit the other). A crosswalk runs
@@ -99,17 +114,20 @@ function validate(n, where) {
   return (n.style === 'none' && !dims.length) ? { style: 'none' } : { style: n.style, width: n.width, warningDepth: n.warningDepth }
 }
 
-function resolveKind(kind, check, scene, state, kit = { style: 'none' }) {
-  const p = join(DATA_ROOT, scene, 'norms.json')
+// `passed`, on a value from below the scene: each rung above it that gave nothing, and why, by name
+function resolveKind(kind, check, scene, state, kit) {
+  const p = join(DATA_ROOT, scene, 'norms.json'), passed = []
   if (existsSync(p)) {
     let j; try { j = JSON.parse(readFileSync(p, 'utf8')) } catch (e) { throw new Error(`${p} is not valid JSON: ${e.message}`) }
     if (j[kind]) return { ...check(j[kind], `${p} ${kind}`), source: 'scene' }
-  }
+    passed.push(`norms.json has no ${kind}`)
+  } else passed.push('no norms.json')
   if (state) {
     const rec = stateRecord(state, `${scene}: `)
-    if (rec.norms?.[kind]) return { ...check(rec.norms[kind], `cartograph/states/${state.toLowerCase()}.mjs norms.${kind}`), source: `state:${rec.code}@${rec.version}` }
-  }
-  return { ...kit, source: 'kit' }
+    if (rec.norms?.[kind]) return { ...check(rec.norms[kind], `cartograph/states/${state.toLowerCase()}.mjs norms.${kind}`), source: `state:${rec.code}@${rec.version}`, passed }
+    passed.push(`state ${rec.code} has no ${kind}`)
+  } else passed.push('no state declared')
+  return { ...kit(), source: 'kit', passed }
 }
 
 /** The town's curb-cut norm and the rung it came from (`source`: 'scene' · `state:<CODE>@<version>` · 'kit'), with its
@@ -117,9 +135,9 @@ function resolveKind(kind, check, scene, state, kit = { style: 'none' }) {
 export function resolveCurbCutNorm(scene, state) {
   // a scene with no data directory is a wrong name or a wrong root — never a town with no norm
   if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveCurbCutNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
-  return { ...resolveKind('curbCuts', validate, scene, state),
-           crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state),
-           kerb: resolveKind('kerb', validateKerb, scene, state, { height: 0 }) }
+  return { ...resolveKind('curbCuts', validate, scene, state, kitCurbCuts),
+           crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state, () => ({ style: 'none' })),
+           kerb: resolveKind('kerb', validateKerb, scene, state, () => ({ height: 0 })) }
 }
 
 // ⭐ THE WALK — the steepest a walk or curb may fall ACROSS its run (`crossSlopeMax`, "rise:run"; Jacob 2026-10-10: ADA's
@@ -134,7 +152,7 @@ function validateWalk(n, where) {
 /** The town's walk norm and its rung (`source`). `crossSlopeMax` absent ⇒ the town names no limit. */
 export function resolveWalkNorm(scene, state) {
   if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveWalkNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
-  return resolveKind('walk', validateWalk, scene, state, {})
+  return resolveKind('walk', validateWalk, scene, state, () => ({}))
 }
 
 // ⭐ THE LAWN — the steepest a mowed lawn may slope (`slopeMax`, "rise:run"): the girdle (Jacob, 2026-10-11) keeps the walk
@@ -148,5 +166,5 @@ function validateLawn(n, where) {
 /** The town's lawn norm and its rung (`source`). `slopeMax` absent ⇒ the town names no limit. */
 export function resolveLawnNorm(scene, state) {
   if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveLawnNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
-  return resolveKind('lawn', validateLawn, scene, state, {})
+  return resolveKind('lawn', validateLawn, scene, state, () => ({}))
 }

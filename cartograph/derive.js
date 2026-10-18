@@ -5707,14 +5707,17 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     })()
     protoWaterRings = MP.waterRings || null
     protoWaterMeta = _coast.meta || null
-    // ⭐ THE TOWN'S CURB-CUT NORM, resolved scene → state → kit ('none') and frozen with its rung, so Section paints a
+    // ⭐ THE CURB-CUT NORM, resolved scene → state → kit (perpendicular, PROWAG's sizes, cited) and frozen with its rung, so Section paints a
     // junction corner's curb cuts live off the shape without reaching for a state record (`cartograph/curb-cut-norm.mjs`).
     {
       const src = readSources(SCENE)
       ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null)
       const N = ribbonsLayer.curbCutNorm
-      console.log(`    [curb cuts] norm: ${N.style}${N.style !== 'none' ? ` (width ${N.width} m, warning ${N.warningDepth} m)` : ''} — from ${N.source}`)
-      console.log(`    [kerb] height ${N.kerb.height} m${N.kerb.height > 0 ? ` · ramp ${N.kerb.rampSlopeText ?? '⛔ NOT GIVEN'} · flare ${N.kerb.flareSlopeText ?? '⛔ NOT GIVEN'}` : ' (one flat plane)'} — from ${N.kerb.source}`)
+      // ⭐ the RUNG that decided each, and why every rung above it gave nothing — never the kit's value printed as the town's
+      const rung = (n) => `from ${n.source}${n.passed?.length ? ` (${n.passed.join(' · ')})` : ''}${n.cites ? `, cited ${n.cites.join(', ')}` : ''}`
+      console.log(`    [curb cuts] norm: ${N.style}${N.width ? ` (width ${+N.width.toFixed(4)} m, warning ${+N.warningDepth.toFixed(4)} m)` : ''} — ${rung(N)}`)
+      console.log(`    [crosswalks] norm: ${N.crosswalks.style} — ${rung(N.crosswalks)}`)
+      console.log(`    [kerb] height ${N.kerb.height} m${N.kerb.height > 0 ? ` · ramp ${N.kerb.rampSlopeText ?? '⛔ NOT GIVEN'} · flare ${N.kerb.flareSlopeText ?? '⛔ NOT GIVEN'}` : ' (one flat plane)'} — ${rung(N.kerb)}`)
       // ⭐ THE RECORDED CUTS — the rung above the norm (`cartograph/curb-cut-evidence.mjs`), frozen here and landed on
       // the curb at the freeze. ⛔ No kerb file is "not fetched", said out loud — never a town with no kerbs.
       const E = ribbonsLayer.curbCutEvidence = buildCurbCutEvidence({ osmPath: join(RAW_DIR, 'osm.json'),

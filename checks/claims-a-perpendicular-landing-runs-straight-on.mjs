@@ -23,7 +23,8 @@
 // left standing in front of a cut is ~2000 cm²). The cut's ENDS are read on the asphalt's edge, where it meets the road.
 // PRINTS: per town, landings and sides judged, cuts and ends judged, and the perpendicular corners whose legs meet more than
 // 10° off square — the case where "parallel to the leg" and "square across the street" part (the crosswalk's ruling meets it).
-//   [LIST=1] node checks/claims-a-perpendicular-landing-runs-straight-on.mjs [scene…] [--painter=<tileGround copy>]   (LIST: every red end)
+//   [LIST=1] node checks/claims-a-perpendicular-landing-runs-straight-on.mjs [scene…] [--painter=<tileGround copy>] [--live-norm]
+//   (LIST: every red · --live-norm: the norm the pour would freeze now, for a town whose pour predates it)
 // SEEN RED on plan (2) (c825e04e: radial landings, sides on the arc's normals). MUTATION: give `legExt` a direction rotated
 // off the edge's own — red. The ends row: SEEN RED on a89e3c36 (a norm-width piece centred on a re-solved contact);
 // MUTATION: shift each cut 0.3 m along its kerb — red. The through-curb rows: SEEN RED on 38d03e41 (the cut stopped at the
@@ -35,12 +36,16 @@ import { ribbonScenes } from './_scenes.mjs'
 import { intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 const painter = process.argv.find(a => a.startsWith('--painter='))?.slice(10)
 const { buildTileGround } = await import(painter ? pathToFileURL(resolve(painter)).href : '../src/lib/tileGround.js')
-const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
+const named = process.argv.slice(2).filter(a => !a.startsWith('--')), liveNorm = process.argv.includes('--live-norm')
+const { resolveCurbCutNorm } = await import('../cartograph/curb-cut-norm.mjs'), { readSources } = await import('../cartograph/sources.js')
 const TOL = 2, MINLEN = 0.15, H = 2.0, ENDTOL = 0.02, SEP = 0.1, OVTOL = 25e-4
 const ang = (u, v) => { const c = Math.abs(u[0] * v[0] + u[1] * v[1]) / ((Math.hypot(...u) * Math.hypot(...v)) || 1); return Math.acos(Math.min(1, c)) * 180 / Math.PI }
 let red = false
 for (const scene of named.length ? named : ribbonScenes()) {
   const f = feed(scene); if (!f) { red = true; continue }
+  // --live-norm: the norm the pour would freeze NOW (`curb-cut-norm.mjs`, the way derive.js resolves it), for a town whose
+  // frozen pour predates it — never a rule of this check's own
+  if (liveNorm) { const src = readSources(scene); f.ribbons = { ...f.ribbons, curbCutNorm: resolveCurbCutNorm(scene, src.declared ? src.state : null) } }
   const pl = console.log, pw = console.warn; console.log = () => {}; console.warn = () => {}
   let R; try { R = buildTileGround(f.ribbons, { grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
     blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse, cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides,

@@ -6115,7 +6115,7 @@ let _staleBandsWarned = false
 function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
   const tally = { crosswalks: 0, pairs: 0, farKerbCut: 0, farKerbNone: 0, farKerbNoDims: 0, farKerbStyleAmbiguous: 0,
     farCornerNoCut: 0, ambiguous: 0, noNode: 0, noFarKerb: 0, apexesApart: 0, apartAt: [], endsNotOwned: 0, byEvidence: 0, evidenceAmbiguous: 0, evidenceEndsNotOwned: 0, evidenceApexOutside: 0, evidenceApexOutsideAt: [], styleDisagrees: 0, noCurbCut: 0, byPaint: {},
-    style: norm?.style ?? null, source: norm?.source ?? null }
+    style: norm?.style ?? null, source: norm?.source ?? null, passed: norm?.passed ?? null }
   const rings = [], cutMasks = [], farCuts = [], pairs = []
   let cuts = []
   if (!norm || norm.style === 'none') return { rings, cuts, farCuts, pairs, tally }
@@ -10528,16 +10528,16 @@ export function buildTileGround(ribbons, opts = {}) {
       if (C.endsNotOwned) console.warn(`[tileGround][crosswalks] ⛔ ${C.endsNotOwned} pair(s) whose centred line does not meet both kerbs of the street it crosses — not drawn.`)
       if (C.noNode) console.warn(`[tileGround][crosswalks] ${C.noNode} cut crossing(s) at a junction whose two chains have no frozen shared node — no crosswalk drawn.`)
       if (C.ambiguous) console.warn(`[tileGround][crosswalks] ⛔ ${C.ambiguous} cut crossing(s) with MORE THAN ONE candidate across the street — not drawn, never picked by nearness.`)
-    } else if (crosswalkTally) console.log(`[tileGround][crosswalks] none — the town's crosswalk norm is 'none' (from ${crosswalkTally.source ?? 'nothing frozen'})`)
+    } else if (crosswalkTally) console.log(`[tileGround][crosswalks] none — the crosswalk norm is 'none', from ${crosswalkTally.source ?? 'nothing frozen'}${crosswalkTally.passed?.length ? ` (${crosswalkTally.passed.join(' · ')})` : ''}`)
     if (curbCutTally) {
       const T = curbCutTally, src = Object.entries(T.bySource || {}).map(([k, v]) => `${v} ${k}`).join(' · ')
       console.log(`[tileGround][curb cuts] ${T.junction || 0} junction corner(s) · ${T.curbCuts || 0} curb cut(s) painted · style from: ${src || 'nothing'}`)
       if (T.perpWedgeLawn || T.perpWedgeConcrete) console.log(`[tileGround][curb cuts] perpendicular corners: ${T.perpWedgeLawn} with a lawn wedge at the apex (both legs carry a tree lawn) · ${T.perpWedgeConcrete} concrete (a leg has none — the whole corner is walk), ${T.perpOneSidedLawn} of them with lawn on one leg only`)
       if (T.perpNoLanding) { const m = curbCutCorners.filter(c => c.noLanding)
         console.warn(`[tileGround][curb cuts] ⛔ ${T.perpNoLanding} perpendicular leg(s) whose walk, carried on straight, never meets the kerb — no landing, no cut there: ${m.slice(0, 12).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)})${c.noLanding === 2 ? ' both' : ''}`).join(' · ')}${m.length > 12 ? ` … +${m.length - 12}` : ''}`) }
-      if (T.noSource) console.warn(`[tileGround][curb cuts] ⛔ ${T.noSource} corners have no curb-cut source — the town's norm is 'none' and nothing authored or recorded places one. Their pads stand; no curb cut is marked.`)
+      if (T.noSource) console.warn(`[tileGround][curb cuts] ⛔ ${T.noSource} corners have no curb-cut source — the curb-cut norm in force is 'none' (its rung is printed at the pour) and nothing authored or recorded places one. Their pads stand; no curb cut is marked.`)
       if (T.noNorm) console.warn(`[tileGround][curb cuts] ⛔ ${T.noNorm} junction corner(s) on tiles poured BEFORE the curb-cut norm was frozen — re-pour.`)
-      if (T.noDims) console.warn(`[tileGround][curb cuts] ⛔ ${T.noDims} authored curb cut(s) cannot be drawn: the town's norm gives no width/warningDepth (cartograph/data/<scene>/norms.json).`)
+      if (T.noDims) console.warn(`[tileGround][curb cuts] ⛔ ${T.noDims} authored curb cut(s) cannot be drawn: the curb-cut norm in force gives no width/warningDepth (cartograph/data/<scene>/norms.json).`)
       if (T.invalid) console.warn(`[tileGround][curb cuts] ⛔ ${T.invalid} authored curb-cut style(s) are not none/diagonal/perpendicular.`)
       if (T.short) console.warn(`[tileGround][curb cuts] ${T.short} curb cut(s) wider than the arc room they have — drawn at the room there is.`)
       if (T.contradicted) console.warn(`[tileGround][curb cuts] ⛔ ${T.contradicted} corner(s): the NORM IS CONTRADICTED BY PARTIAL EVIDENCE — drawn by the norm; override them in Section if the record is right: ${curbCutContradicted.slice(0, 12).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)}) norm ${c.norm}, drops at ${c.drops.join('/')}`).join(' · ')}${curbCutContradicted.length > 12 ? ` … +${curbCutContradicted.length - 12}` : ''}`)
