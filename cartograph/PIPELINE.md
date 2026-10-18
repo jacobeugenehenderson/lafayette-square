@@ -557,9 +557,9 @@ single-glance test in the whole progression — use it.
   edges carry no other piece's vertex. ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` (exact identity).
 - 🔴 **ASPIRATION, not built (2026-10-18):** conformity still repairs by distance (the 5 mm closer, `ON_EDGE_M`;
   the 1 mm input weld), so the check is RED on every served slab; and a lot point takes the nearest ② span's
-  ease, whatever its owner (`groundDeformer` `resolveUncached` → `nearest`). ⭐ End state (Lath · Screed,
-  `tileGround`): the lot's ease struck at the mint as owned pieces, its depth with them — reached by each
-  triangle carrying its source piece through the bake, so D is asked per piece, never by point-in-polygon.
+  ease, whatever its owner (`resolveUncached` → `nearest`). ⭐ End state (Lath · Screed): the lot's ease
+  struck at the mint as owned pieces. Route, in order: band check GREEN on cover and disjoint → the flatten
+  carries piece ids → the triangle's tag carries the id → D asked per piece, with the ease pieces.
 
 ---
 
