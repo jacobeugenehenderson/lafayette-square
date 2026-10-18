@@ -101,6 +101,9 @@ for (const scene of feedScenes()) {
       else if (v && typeof v === 'object' && !Array.isArray(v)) { const o = sum[k] || (sum[k] = {}); for (const [kk, vv] of Object.entries(v)) if (typeof vv === 'number') o[kk] = (o[kk] || 0) + vv } }
     const fmt = (v) => typeof v === 'number' ? +v.toFixed(3) : `{${Object.entries(v).map(([k, n]) => `${k}: ${+n.toFixed(3)}`).join(', ')}}`
     console.log(`   producer census: ${Object.entries(sum).map(([k, v]) => `${k} ${fmt(v)}`).join(' · ')}`) }
+  // the bands as PAINTED, per class (the cover claim's own reference, `t.painted`), beside the census's area by emitter
+  { const pm = {}; for (const t of T) for (const [cls, B] of Object.entries(t.painted || {})) pm[cls] = (pm[cls] || 0) + area(B || [])
+    console.log(`   painted m² per class: ${Object.entries(pm).map(([k, v]) => `${k} ${v.toFixed(3)}`).join(' · ')}`) }
   // ⭐ MUTANTS (--mutants): each breaks ONE claim on this same output, and that claim must go RED — a check never seen to fail
   // proves nothing
   if (process.argv.includes('--mutants') || process.env.MUTANTS) {
