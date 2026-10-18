@@ -513,7 +513,7 @@
     them. ⭐ The double carry is the tell, and it is measured, not inferred.
   - ▶ **`node checks/claims-named-way-becomes-street.mjs`** — reads the classes off the artifacts and
     derives the double carry by joining `streets[]` to `paths[]`. ⛔ Re-run it; do not quote it here.
-    Today it reports **LS 0 · HPDM 51 · altadena 135**, every one of them NAMED and ~all double-carried.
+    ⭐ **Its consequence at the frame (2026-10-18):** a named `area=yes` footway (HPDM's St. Louis Walk of Fame) is poured as a closed-loop chain, circle-fit off its trace, and crosses Delmar with no node — ▶ `node checks/claims-a-nodeless-crossing-is-grade-separated.mjs` (the frame).
   - ### ⭐⭐ THIS IS LAYER 0'S SIGNATURE SHAPE, ARRIVING UNPROMPTED — **LS IS STRUCTURALLY BLIND TO IT.**
     LS has **hundreds of footways and not one named**, so **zero** reach `streets[]`: the class cannot
     appear on the town the whole project is built against. It is not small elsewhere — HPDM's are Forest

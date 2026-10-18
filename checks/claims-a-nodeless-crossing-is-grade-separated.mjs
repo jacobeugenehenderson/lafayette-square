@@ -15,8 +15,8 @@
 // crossing that OSM separates has the off-grade way's tags cleared → must be named. A check never seen to fail proves nothing.
 //   node checks/claims-a-nodeless-crossing-is-grade-separated.mjs [--town=a,b] [--mutants] [--all]
 // ⭐ CLAIM 2, THE FRAME: the face walk reads skeleton.json's chains, so the claim must hold there too. A nodeless crossing of
-// two CHAINS whose source ways there OSM puts on one grade is a crossing the frame made (a welded or simplified chain cutting
-// a chord OSM does not draw). Mutant: the same node move, on the chains.
+// two CHAINS whose source ways there OSM puts on one grade is a crossing the frame made. A chain's line is its bezier
+// `segments` where it has them (sampled), its `points` otherwise. Mutant: the same node move, on the chains.
 // Read-only. Exits 1 on any same-grade nodeless crossing of two street ways, or of two chains.
 import { readFileSync, existsSync, readdirSync } from 'fs'
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=')[1]
@@ -82,7 +82,20 @@ for (const town of towns) {
   const W = new Map(raw.map(f => [f.osmId, f]))
   const segD = (p, a, b) => { const dx = b.x - a.x, dz = b.z - a.z, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(p.x - a.x - t * dx, p.z - a.z - t * dz) }
   const localWay = (ch, p) => { let best = null, bd = Infinity; for (const id of ch.src) { const w = W.get(id); if (!w) continue; for (let k = 0; k + 1 < w.coords.length; k++) { const d = segD(p, w.coords[k], w.coords[k + 1]); if (d < bd) { bd = d; best = w } } } return best ? { w: best, d: bd } : null }
-  const chains = sk.streets.filter(c => c.points?.length >= 2).map(c => ({ osmId: c.id, tags: { highway: c.highway }, coords: c.points, src: c.sources || [], gs: !!c.gradeSeparated }))
+  // ⭐ a chain's LINE is its `segments` where it has them (skeleton.js step 4b: a curving run is ONE cubic bezier between
+  // two control points, so `points` alone is the chord, not the road) — sampled here at ≤ 0.5 m; `points` otherwise
+  // (skeleton.json: segments[i] runs points[i] → points[i+1]; a bezier carries c1/c2 as {x, z})
+  const lineOf = (c) => { if (!c.segments?.length) return c.points
+    if (c.segments.length !== c.points.length - 1) throw new Error(`${c.id}: ${c.segments.length} segment(s) for ${c.points.length} point(s) — the frame's line cannot be read`)
+    const out = [c.points[0]]
+    c.segments.forEach((g, i) => { const a = c.points[i], b = c.points[i + 1]
+      if (g.type !== 'bezier') { out.push(b); return }
+      const L = Math.hypot(g.c1.x - a.x, g.c1.z - a.z) + Math.hypot(g.c2.x - g.c1.x, g.c2.z - g.c1.z) + Math.hypot(b.x - g.c2.x, b.z - g.c2.z), n = Math.max(2, Math.ceil(L / 0.5))
+      for (let k = 1; k < n; k++) { const t = k / n, u = 1 - t, w = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t]
+        out.push({ x: w[0] * a.x + w[1] * g.c1.x + w[2] * g.c2.x + w[3] * b.x, z: w[0] * a.z + w[1] * g.c1.z + w[2] * g.c2.z + w[3] * b.z }) }
+      out.push(b) })
+    return out }
+  const chains = sk.streets.filter(c => c.points?.length >= 2).map(c => ({ osmId: c.id, tags: { highway: c.highway }, coords: lineOf(c), src: c.sources || [], gs: !!c.gradeSeparated, curved: !!c.segments?.length }))
   const frame = (chs) => crossings(chs).out.map(c => { const la = localWay(c.a, c.p), lb = localWay(c.b, c.p); return { ...c, la, lb, made: !la || !lb || grade(la.w.tags) === grade(lb.w.tags) } }).filter(c => c.made)
   const F = frame(chains)
   if (F.length) bad++

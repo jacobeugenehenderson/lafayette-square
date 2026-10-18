@@ -24,15 +24,27 @@ for (const town of towns) {
   const S = JSON.parse(readFileSync(`cartograph/data/${town}/clean/skeleton.json`, 'utf8')).streets
   const W = new Map((JSON.parse(readFileSync(`cartograph/data/${town}/raw/osm.json`, 'utf8')).ground?.highway || []).map(f => [f.osmId, f]))
   const bb = (c) => c.reduce((b, p) => [Math.min(b[0], p.x), Math.min(b[1], p.z), Math.max(b[2], p.x), Math.max(b[3], p.z)], [Infinity, Infinity, -Infinity, -Infinity])
-  const B = S.map(s => bb(s.points))
+  // a chain's LINE is its bezier `segments` where it has them (segments[i]: points[i] → points[i+1], c1/c2 {x, z}), sampled
+  // at ≤ 0.5 m — `points` alone is the chord (fixed 2026-10-18: reading points only manufactured crossings)
+  const lineOf = (c) => { if (!c.segments?.length) return c.points
+    if (c.segments.length !== c.points.length - 1) throw new Error(`${c.id}: ${c.segments.length} segment(s) for ${c.points.length} point(s)`)
+    const out = [c.points[0]]
+    c.segments.forEach((g, i) => { const a = c.points[i], b = c.points[i + 1]; if (g.type !== 'bezier') { out.push(b); return }
+      const L = Math.hypot(g.c1.x - a.x, g.c1.z - a.z) + Math.hypot(g.c2.x - g.c1.x, g.c2.z - g.c1.z) + Math.hypot(b.x - g.c2.x, b.z - g.c2.z), n = Math.max(2, Math.ceil(L / 0.5))
+      for (let k = 1; k < n; k++) { const t = k / n, u = 1 - t, w = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t]
+        out.push({ x: w[0] * a.x + w[1] * g.c1.x + w[2] * g.c2.x + w[3] * b.x, z: w[0] * a.z + w[1] * g.c1.z + w[2] * g.c2.z + w[3] * b.z }) }
+      out.push(b) })
+    return out }
+  for (const s of S) s.line = lineOf(s)
+  const B = S.map(s => bb(s.line))
   const localWay = (s, p) => { let best = null, bd = Infinity; for (const id of s.sources || []) { const w = W.get(id); if (!w?.coords?.length) continue; const d = lineD(p, w.coords); if (d < bd) { bd = d; best = w } } return best }
   // (1)
   const gs = S.map((s, i) => i).filter(i => S[i].gradeSeparated), at = S.map((s, i) => i).filter(i => !S[i].gradeSeparated)
   let n = 0, sep = 0, bothAt = 0, noWay = 0; const ex = [], byCls = {}
   for (const i of gs) for (const j of at) { const a = B[i], b = B[j]; if (a[0] > b[2] || b[0] > a[2] || a[1] > b[3] || b[1] > a[3]) continue
-    const P = S[i].points, Q = S[j].points
+    const P = S[i].line, Q = S[j].line
     for (let k = 0; k + 1 < P.length; k++) for (let l = 0; l + 1 < Q.length; l++) { const x = X(P[k], P[k + 1], Q[l], Q[l + 1]); if (!x) continue
-      if ([P[k], P[k + 1], Q[l], Q[l + 1]].some(v => Math.hypot(v.x - x.x, v.z - x.z) < NODE_M)) continue
+      if ([...S[i].points, ...S[j].points].some(v => Math.hypot(v.x - x.x, v.z - x.z) < NODE_M)) continue   // a NODE, never a curve sample
       n++; const wa = localWay(S[i], x), wb = localWay(S[j], x), key = `${S[i].highway}×${S[j].highway}`; byCls[key] = (byCls[key] || 0) + 1
       let cls; if (!wa || !wb) { noWay++; cls = 'no source way' } else if (lay(wa.tags) !== lay(wb.tags)) { sep++; cls = 'OSM separates' } else { bothAt++; cls = 'OSM same grade' }
       if (ex.length < 6 || cls === 'OSM same grade' && ex.filter(e => e.includes('same grade')).length < 6 || AT && Math.hypot(x.x - AT[0], x.z - AT[1]) < 3) ex.push(`(${x.x.toFixed(1)}, ${x.z.toFixed(1)}) ${S[i].id} [${S[i].highway}${wa ? ` · way ${wa.osmId} layer ${wa.tags.layer ?? 0}${off(wa.tags) && wa.tags.bridge ? ' bridge' : ''}${wa.tags.tunnel && wa.tags.tunnel !== 'no' ? ' tunnel' : ''}` : ''}] × ${S[j].id} [${S[j].highway}${wb ? ` · way ${wb.osmId} layer ${wb.tags.layer ?? 0}${wb.tags.bridge && wb.tags.bridge !== 'no' ? ' bridge' : ''}${wb.tags.tunnel && wb.tags.tunnel !== 'no' ? ' tunnel' : ''}` : ''}]: ${cls}`) } }
