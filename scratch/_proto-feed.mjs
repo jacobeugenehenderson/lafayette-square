@@ -16,6 +16,7 @@
 import fs from 'fs'
 import { buildTileGround } from '../src/lib/tileGround.js'
 import { curbedMinWidth, townState } from '../src/cartograph/streetProfiles.js'
+import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 
 // ⛔ ONE OWNER — `checks/_scenes.mjs`. Re-exported here so the 27 forensics that import
 //    `ribbonsPath` from this feed keep working; the definition lives in exactly one file.
@@ -45,7 +46,13 @@ export function feed(scene) {
   const dp = look && `public/looks/${look}/design.json`
   if (!dp || !fs.existsSync(dp)) { console.log(`⛔ ${scene}: no design.json for look '${look}' — SKIPPED LOUDLY, this scene was NOT checked`); return null }
   const design = JSON.parse(fs.readFileSync(dp, 'utf8'))
+  // ⛔ THE STENCIL TOO — the bake builds with the extent's clip polygon (`bake-ground` → `stencil.clipPolygon`); without it
+  //    the producer's ink ran to the frame's edge (HPDM ±4 km against a 1,389 m disc), and every count read through this feed
+  //    was of a different object than the bake freezes. No authored extent is reported, not substituted.
+  const stencil = loadSceneStencil(process.cwd(), scene).clipPolygon
+  if (!stencil) { console.log(`⛔ ${scene}: no authored extent (neighborhood_boundary.json) — the bake would refuse it, so this scene was NOT checked`); return null }
   return {
+    stencil,
     scene, look,
     ribbons: JSON.parse(fs.readFileSync(rp, 'utf8')),
     blockCustoms: design.blockCustoms || null,
@@ -81,7 +88,7 @@ export function buildProto(f, { bare = false, quiet = true, ...rest } = {}) {
   if (quiet) console.log = () => {}
   try {
     return buildTileGround(f.ribbons, {
-      grout: 'proto', smooth: 0, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
+      grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
       blockCustoms: bare ? null : f.blockCustoms, blockLandUse: bare ? null : f.blockLandUse,
       cornerCornerRadiusOverrides: bare ? null : f.cornerCornerRadiusOverrides, cornerRadiusOverrides: bare ? null : f.cornerRadiusOverrides,
       cornerRadiusScale: f.cornerRadiusScale ?? 1, ...rest,

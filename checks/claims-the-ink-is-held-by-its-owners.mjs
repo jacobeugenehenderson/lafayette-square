@@ -35,7 +35,10 @@ for (const scene of feedScenes()) {
   towns++
   // ⛔ NO GLOBAL UNION OF THE PIECES: measured on JH, one Clipper union of 7,147 piece rings reported winding 2 inside a
   // 25,241 m² block that NO piece covers (each piece's own winding there 0) — an instrument fault, so each claim is read locally.
-  const inkU = op(ClipType.ctUnion, ink), aInk = area(inkU)
+  // ⛔ THE INK THE PIECES ARE OF: the producer's ① strip clipped to the town's stencil, as `inkPiecesByOwner` is handed it
+  // (the bake's `stencil.clipPolygon`, the feed's `f.stencil`). Read unclipped, the strip outside the disc reads as uncovered.
+  if (!f.stencil?.length) { console.log(`⛔ ${scene}: the feed carries no stencil — the pieces' own extent is unknown, nothing was checked`); bad++; continue }
+  const inkU = op(ClipType.ctIntersection, ink, [f.stencil]), aInk = area(inkU)
   const bbOf = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
   const meet = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]
   const bb = P.map(p => bbOf(p.rings)), inkBB = inkU.map(r => bbOf([r]))
