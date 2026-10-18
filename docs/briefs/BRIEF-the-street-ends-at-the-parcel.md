@@ -34,6 +34,12 @@ report at `scratch/footprint-census/REPORT.md`. ⛔ Quote these numbers only wit
   - **An intake gap.** LS's and HPDM's `osm.json` carry no crossing NODES (no `pois` key), so that evidence was never fetched there.
   - **Corner style.** The data decides it on 0.1–15% of junction corners. Where it does on LS, it says mostly diagonal (78 to 6), which matches LS's authored norm.
 
+- **What the code does with the data today** (Lath, 2026-10-18, read against the code):
+  - **The sidewalk rung is LS only, and per street NAME.** `skeleton.js` `stampCustomWidths` reads `raw/survey.json`; only LS has one. OSM `footway=sidewalk` ways serve only to pick which of a name's two survey values goes to which chain side, by perpendicular distance (`chainSidewalkDistances`, the A15 proximity recovery the containment rung replaces; delete it when that lands). Nothing reads `sidewalk=*` or `kerb*` on a road way.
+  - **The width tag is never read.** Nothing in `skeleton.js` or `derive.js` reads OSM `width`. The carriageway is `seedSection`'s lanes × the class's lane, plus two parking lanes on residential. A class with no `STD_SECTION` row (e.g. `living_street`) becomes `residential` silently, so Commercial Street (`lanes=1`) paints 1 × 10 ft + 2 × 8 ft = 7.92 m.
+  - **`width` means different things by town** (▶ `node scratch/footprint-census/width-vs-parcels.mjs <scene>`, tag ÷ the parcel-to-parcel gap): PTown residential p50 0.77 and tertiary p50 0.87, near the carriageway; HPDM residential (9 segments) p50 1.82 and JH (58) p50 1.60, tags of 29–31 m on 16–18 m gaps (feet entered as metres would fit; not established). LS has no width tags.
+  - **Street ROW is not a parcel anywhere** (▶ `node scratch/footprint-census/row-parcels.mjs <scene>`, 5 m samples of OSM centrelines): 90–98% of street samples lie in no parcel on every town. JH's alleys lie 72% inside `01` one/two-family lots, so they are drives within lots, not ROW parcels. The codes that do hold street centrelines are the ROW candidates, to be read by each source's own vocabulary: STL `5000` (HPDM 5.7% of streets, 86.5% of pedestrian ways), Huron `400: Com-Vacant Land` (5.1%), PTown `9000`, JH `07` (Transportation & Utility). MassGIS L3 publishes a `POLY_TYPE` that marks ROW polygons, but `states/ma.mjs` fetches only `LOC_ID`, `SITE_ADDR` and `USE_CODE` (the field's presence at the endpoint not verified here).
+
 ## 2 · The rule (the ladder the kit already uses: authored → data → town norm → kit)
 
 The street's cross-section, from the road edge to the property line, is decided per edge, in this order:
@@ -43,8 +49,9 @@ The street's cross-section, from the road edge to the property line, is decided 
      records, and the band's total depth is at most the distance from the curb to it.
    - **The road's width tag** (OSM `width`, and `lanes`) sizes the carriageway where present.
    - **The street's type:** a `living_street` / `pedestrian` way gets no curb and no treelawn by default (the
-     curbless flush slope that already exists, `OPERATIONS` "Curb cuts"). OSM sidewalk/kerb tags, already seeded
-     per street side by `stampCustomWidths`, keep their place.
+     curbless flush slope that already exists, `OPERATIONS` "Curb cuts"). OSM sidewalk evidence enters per FACE by
+     containment (a `footway=sidewalk` way inside the tile's ring and within one owner's band rects — Boz, 2026-10-18),
+     with `sidewalk=*`/`kerb*` tags on the road way. *(Today none of it is read: §1.)*
 3. **The town's norm** (`norms.json`), e.g. a commercial core with no treelawn.
 4. **The kit default.**
 
