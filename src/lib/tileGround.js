@@ -8991,9 +8991,9 @@ export function buildTileGround(ribbons, opts = {}) {
           // re-derived. ⛔ Under ① the legacy `cornerFillets`/`cornerSet` describe arcs that are NOT
           // on screen — they come from the chain shape pass — so the handle would drag a corner the
           // operator cannot see. These replace them (below) when ① is the producer.
-          // ⭐ ONE CORNER, ONE KEY (`protoCornerOf`), named at its ① VERTEX (`a.src` — the vertex the ease was asked at, the
-          // identical owners `protoRAt` reads the radius through), recorded per arc id (`protoArcKeyByBlock`, which the
-          // tile's `iaArcKey` reads) so the handle, the radius and Section name one corner alike. Arc ids index `st.easeArcs`.
+          // ⭐ ONE CORNER, ONE KEY (`protoCornerOf`): two chains' corner is named at their shared pair node, a same-chain one (a bend,
+          // a cap shoulder) at the leaving leg's skeleton vertex `points[o2.srcIdx]` — a cap's sits where its last span starts.
+          // Per arc id (`protoArcKeyByBlock` → `iaArcKey`; ids index `st.easeArcs`). ▶ scratch/footprint-census/arc-key-collisions.mjs
           // ⭐ FROZEN PER BLOCK — `SECTION §6.1`: the bent corner is `arcSectorPoly` off the frozen `fillets`.
           if (ri === 0) (st.easeArcs || []).forEach((a, u) => {
             const si = a.src, nB = ring.length
