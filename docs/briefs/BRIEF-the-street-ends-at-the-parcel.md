@@ -58,8 +58,11 @@ c. **What OSM `width` means** on each town's streets (carriageway or whole ROW),
 d. **Where in the chain each input enters.** ① stays width-free (`PIPELINE` step 3). The road width is ②'s offset
    (`pavementHW`), the band depth is ③'s. Say which frozen record carries the parcel line to ③. Per the second
    wall (`PIPELINE §6a`), it travels as data on the edge, not as a lookup by distance.
-e. **The authoring overlap:** on LS and HPDM, list the edges where authored widths already differ from what the data
-   would give, so the operator's decisions are visible and never overwritten.
+e. **Authored widths are ground truth.** Jacob: *"street widths are only ever edited against the aerial photo to
+   represent reality."* So every authored edge (LS, HPDM) is a measured answer, and it never gets overwritten. It is
+   also the **test set for the data rung**. On those edges, how close do the parcel line and the width tag come to
+   the authored width? Report the error distribution per source. That is how we learn whether the data can be
+   trusted on a town nobody has authored. Where they disagree, the data is wrong, never the authoring.
 
 ## 4 · The check (the deliverable)
 
