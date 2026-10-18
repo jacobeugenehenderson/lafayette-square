@@ -5791,9 +5791,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   //                   (`SECTION §4` rule 6). The owner-change conjunction was retired 2026-09-08.
   //   `iaArc[q]`    — which corner's eased arc this vertex lies in, stamped BY the ease that made
   //                   it (`easeContour`). The one place that knows, asked instead of guessed.
-  // ⇒ an arc is a maximal run of one `iaArc` value, and every arc takes the pad — a mid-block BEND
-  // where ① turns included. Whether a STREET meets the corner (ramps, crosswalks) is a separate
-  // frozen fact, `iaJunction` (`classifyCornerLegs`), and never decides the pad.
+  // ⇒ an arc is a maximal run of one `iaArc` value. Whether it takes the pad is its class (a junction does, a BEND does
+  // not — the walk and lawn bend through; the operator's per-corner flag overrules either, Jacob 2026-10-07): see `inC`.
+  // Whether a STREET meets the corner (ramps, crosswalks) is the frozen `iaJunction` (`classifyCornerLegs`).
   //
   // ⛔⛔ WHAT THIS REPLACES, AND IT WAS THE LAST RECOVERY IN THE PAINTER. The extent came from
   // `st.fillets`' tangent COORDINATES matched back onto the contour through a 1 mm grid hash —
@@ -5916,9 +5916,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   for (const p of parts) {
     const ring = p.ring, n = ring.length
     const isC = (i) => inC.has(`${p.ri}|${i}`)
-    // ⭐⭐⭐ A LEG ENDS IN EXACTLY THREE PLACES AND THEY ARE ONE TEST — an eased corner's TANGENT,
-    // ①'s SQUARE corner (R = 0, so the ease made no arc to be a tangent of), and a change of
-    // FRONTAGE. ⛔ NO GATE ON THE TWO DEPTHS: "the two depths decide the FORM, never WHETHER"
+    // ⭐⭐⭐ A LEG ENDS IN EXACTLY THREE PLACES AND THEY ARE ONE TEST — a PADDED arc's TANGENT, ①'s SQUARE corner (R = 0,
+    // so the ease made no arc; its two streets are two frontages), and a change of FRONTAGE. ⛔ An UNPADDED arc (a bend, a
+    // corner the operator unmarked) ends nothing: it is the band bent (`RIBBONS §1` invariant 1). `iaCorner` is not read
+    // here — it marks EVERY vertex of every eased arc, tangents included, so it ended a leg at each one: a lawn sawtooth and
+    // both legs tapering into every bend (Loess, 2026-10-18; ▶ node checks/claims-a-bend-bends-the-band.mjs, on
+    // loess/perp-depths). Inside a padded arc that test was never reached; outside one it was only ever wrong. ⛔ NO GATE ON THE TWO DEPTHS: "the two depths decide the FORM, never WHETHER"
     // (`SECTION §4`, THE RAMP). Where nothing travels the ramp is zero-length and draws nothing —
     // subsumed, as an outcome.
     // ⛔⛔ THIS IS WHAT RETIRES THE ADDITIVE QUAD. A separately-constructed polygon used to be
@@ -5931,7 +5934,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       const back = (v - 1 + n) % n
       if (isC(back) !== isC(v)) return true                          // the arc's tangent
       if (isC(v)) return false                                       // inside it, nothing ends
-      return !!(st.iaCorner?.[p.si]?.[v]) || M(p.ri, back) !== M(p.ri, v)
+      return M(p.ri, back) !== M(p.ri, v)                            // a change of frontage (①'s square corner among them)
     }
     // ⭐⭐⭐ WHICH ARC IS THIS LEG RAMPING INTO — and it is the piece the port dropped.
     // `§6.1` step 5's slid quad ends at `pt(0, cMin)`: the inner edge's TARGET is the arc's own
