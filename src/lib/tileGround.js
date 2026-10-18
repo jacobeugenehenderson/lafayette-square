@@ -5374,7 +5374,7 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
       for (const x of inner) for (const y of x.rr) Ispans.add(y.span)
       po.rings.forEach((r, ri) => { const rr = runsOf(po.labs[ri]); for (const x of rr) Ospans.add(x.span)
         if (rr.length === 1) { // one span the whole way round: its cell is the whole region between the levels here
-          out.push({ span: rr[0].span, ri: p.ri, poly: null, whole: { outer: r, inner: pi?.rings || [] } }); census.cells++; return }
+          out.push({ span: rr[0].span, ri: p.ri, poly: null, whole: { outer: r, inner: pi?.rings || [] }, kind: 'whole' }); census.cells++; return }
         // the inner ring this outer ring bounds: the one whose runs align with most of its own (a level that split is counted)
         // ⭐ only an inner ring this one CONTAINS, or that contains it (a hole part's levels grow outward), bounds a band with it:
         // a level that split into an island and a main ring would otherwise pair the island with the main ring's far side.
@@ -5382,7 +5382,7 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
         // inner ring it nests and the matches are merged in its own order; one outer run claimed by two is kept by the ring
         // with more matches.
         const cand = []; for (const [q, x] of inner.entries()) { if (!x.rr.length || !nested(r, x.ring)) continue; const pr = align(rr, x.rr, r, x.ring); if (pr.length) cand.push({ q, x, pr }) }
-        if (!cand.length) { census.noInner++; census.noInnerM2 += Math.abs(signedArea(r)); rr.forEach(x => out.push({ span: x.span, ri: p.ri, poly: verts(r, x.i0, x.i1) })); census.cells += rr.length; return }
+        if (!cand.length) { census.noInner++; census.noInnerM2 += Math.abs(signedArea(r)); rr.forEach(x => out.push({ span: x.span, ri: p.ri, poly: verts(r, x.i0, x.i1), kind: 'no inner' })); census.cells += rr.length; return }
         cand.sort((a, b) => b.pr.length - a.pr.length); const claim = new Map()
         for (const c of cand) { if (usedI.has(c.q)) census.innerShared++; usedI.add(c.q); for (const [i, j] of c.pr) if (!claim.has(i)) claim.set(i, { c, j }) }
         if (cand.length > 1) census.innerSplit++
@@ -5391,16 +5391,16 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
         const ring = []                                  // the cells in order round the ring, each with its closing seam to the next
         for (let m = 0; m < M; m++) {
           const { i, j, X } = pr[m], { i: i2, j: j2, X: X2 } = pr[(m + 1) % M], ir = X.ring, irr = X.rr
-          ring.push({ span: rr[i].span, poly: [...verts(r, rr[i].i0, rr[i].i1), ...verts(ir, irr[j].i0, irr[j].i1).reverse()], seamEnd: [oE(i), iE(X, j)] })
+          ring.push({ span: rr[i].span, poly: [...verts(r, rr[i].i0, rr[i].i1), ...verts(ir, irr[j].i0, irr[j].i1).reverse()], seamEnd: [oE(i), iE(X, j)], kind: 'pair', at: [rr[i].i0, rr[i].i1, irr[j].i0, irr[j].i1] })
           const c0 = iE(X, j), o1 = oS(i2), same = X === X2  // the gap: outer runs i+1 … i2−1, inner runs j+1 … j2−1 (one inner ring)
           const gO = []; for (let a = (i + 1) % rr.length; a !== i2; a = (a + 1) % rr.length) gO.push(a)
           const gI = []; if (same) for (let b = (j + 1) % irr.length; b !== j2; b = (b + 1) % irr.length) gI.push(b)
           if (!same) census.necks++
           if (gO.length) census.triangles += gO.length
-          for (const a of gO) { ring.push({ span: rr[a].span, poly: [...verts(r, rr[a].i0, rr[a].i1), c0], seamEnd: [oE(a), c0] })
+          for (const a of gO) { ring.push({ span: rr[a].span, poly: [...verts(r, rr[a].i0, rr[a].i1), c0], seamEnd: [oE(a), c0], kind: 'outer fan', at: [rr[a].i0, rr[a].i1] })
             if (!Ispans.has(rr[a].span)) { const kp = `${keyOf(ownerOf(rr[(a - 1 + rr.length) % rr.length].span)) ?? '-'} | ${keyOf(ownerOf(rr[(a + 1) % rr.length].span)) ?? '-'}`; census.triangleByPair[kp] = (census.triangleByPair[kp] || 0) + 1 } }
           if (gI.length) { census.innerFans += gI.length; ring[ring.length - 1].seamEnd = [o1, c0] }
-          for (const b of gI) ring.push({ span: irr[b].span, poly: [o1, ...verts(ir, irr[b].i0, irr[b].i1).reverse()], seamEnd: [o1, iE(X, b)] })
+          for (const b of gI) ring.push({ span: irr[b].span, poly: [o1, ...verts(ir, irr[b].i0, irr[b].i1).reverse()], seamEnd: [o1, iE(X, b)], kind: 'inner fan', at: [irr[b].i0, irr[b].i1] })
           ring[ring.length - 1].seamEnd = same ? [o1, iS(X, j2)] : null   // a neck: the seam is not a segment, and the neck is residue
         }
         ring.forEach((c, q) => { out.push({ ...c, ri: p.ri, next: ring[(q + 1) % ring.length].span }); census.cells++ }) })
@@ -5414,12 +5414,12 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
     return sp.classes.map(lu => ({ key: lu, rings: intersectRings(r, sp.regionsOf(lu)) })).filter(x => x.rings.length) }
   const pieces = [], seams = []
   // a piece names its OWNERS — one, or (ground in two spans' rects, a join's two edges) exactly the spans that hold it
-  const emit = (cls, rings, spans, ri, why = null) => { const owners = spans.map(span => { const o = ownerOf(span); if (!o) census.noOwner++
+  const emit = (cls, rings, spans, ri, why = null, cell = null) => { const owners = spans.map(span => { const o = ownerOf(span); if (!o) census.noOwner++
       return { ri, span, ...(o || { skelId: null, side: null, segOrd: null }) } })
-    // area by EMITTER (Boz, 2026-10-18), so a run before and after a producer change accounts to the m²: `cell` = a cell's own
-    // part; else the emitter's own `why` (byRects' 'one rect' / 'shared' / 'join', ' (within TOL)', a landing, a corner)
-    const em = `${cls}:${why || 'cell'}`; census.emitM2[em] = (census.emitM2[em] || 0) + Math.abs(rings.reduce((t, r) => t + signedArea(r), 0))
-    for (const x of luSplit(rings)) pieces.push({ cls, key: x.key, rings: x.rings, owners, ...(why ? { why } : {}) }) }
+    // area by EMITTER (Boz, 2026-10-18), so a run before and after a producer change accounts to the m²: `cell <kind>` = a cell's own
+    // part (its kind: a level pair, an outer or inner gap fan, no inner, whole); else the emitter's own `why` (byRects' 'one rect' / 'shared' / 'join', ' (within TOL)', a landing, a corner)
+    const em = `${cls}:${why || 'cell ' + (cell?.kind || '?')}`; census.emitM2[em] = (census.emitM2[em] || 0) + Math.abs(rings.reduce((t, r) => t + signedArea(r), 0))
+    for (const x of luSplit(rings)) pieces.push({ cls, key: x.key, rings: x.rings, owners, ...(why ? { why } : {}), ...(cell ? { cell } : {}) }) }
   const ar = (rs) => rs.reduce((t, r) => t + Math.abs(signedArea(r)), 0)
   const bb = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
   const meets = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]
@@ -5465,7 +5465,7 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
         seams.push({ cls, a: keyOf(a), b: keyOf(b), aSpan: c.span, bSpan: c.next, sameChain: !!(a && b && a.skelId === b.skelId), line: L }) } } }
     // a cell holds alone only the part of it no other cell overlaps
     const own = raw.map((x, i) => { const o = raw.filter((y, j) => j !== i && meets(x.b, y.b)).map(y => y.r).flat(); return o.length ? differenceRings(x.r, unionRings(o)) : x.r })
-    raw.forEach((x, i) => { if (own[i].length) emit(cls, own[i], [x.c.span], x.c.ri) })
+    raw.forEach((x, i) => { if (own[i].length) emit(cls, own[i], [x.c.span], x.c.ri, null, { kind: x.c.kind, at: x.c.at ?? null }) })
     // only what is painted counts: the disc cut first (a piece is cut by it anyway), then each connected part on its own
     const held = own.flat(), L0 = held.length ? differenceRings(B, unionRings(held)) : B, L = L0.length ? inBlock(L0) : []
     if (!L.length || !(ar(L) > 1e-6)) return
