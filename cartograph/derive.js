@@ -36,6 +36,7 @@ import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
+import { parcelParts, pointInside } from './parcelParts.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1110,19 +1111,22 @@ function detectDividedStreets(streets) {
 // PARCEL, not a bare code — the code alone is ambiguous across the two assessor
 // taxonomies) and is threaded in rather than imported so the pour-time tally in
 // `luStats` counts every parcel exactly once, from one place.
-function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
+// ⭐ Every PART of a parcel is emitted (`parcelParts`): a multipart parcel's rings[0] is one part of several, in no
+// promised order. Each part is clipped on its own, to the block that holds the parcel's centroid (of a multipart parcel:
+// when the centroid lies in that part), else a point inside the part (`pointInside`). ▶ checks/claims-a-parcel-keeps-all-its-parts.mjs
+export function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
   const result = []
-  for (const p of parcels) {
-    if (!p.rings?.length || p.rings[0].length < 3) continue
+  for (const p of parcels) { const parts = parcelParts(p.rings, p.handle ?? p.address ?? 'a parcel')
+  // classified once per parcel, at its first emitted part, however many parts: the tally counts parcels
+  let classified = false, use = null
+  const useOf = () => { if (!classified) { use = classify(p); classified = true } return use }
+  for (const { outer } of parts) {
+    const parcelPath = outer.map(pt => toClipper(pt[0], pt[1]))
 
-    const parcelPath = p.rings[0].map(pt => toClipper(pt[0], pt[1]))
-
-    // Find which rounded block contains this parcel's centroid
-    const cx = p.centroid ? Math.round(p.centroid[0] * SCALE) :
-      parcelPath.reduce((s, pt) => s + pt.X, 0) / parcelPath.length
-    const cz = p.centroid ? Math.round(p.centroid[1] * SCALE) :
-      parcelPath.reduce((s, pt) => s + pt.Y, 0) / parcelPath.length
-    const testPt = new IntPoint(cx, cz)
+    // Find which rounded block holds this part's test point
+    const own = !!p.centroid && (parts.length === 1 || pointInRing(p.centroid[0], p.centroid[1], outer.map(([x, z]) => ({ x, z }))))
+    const [tx, tz] = own ? p.centroid : pointInside(outer)
+    const testPt = new IntPoint(Math.round(tx * SCALE), Math.round(tz * SCALE))
 
     let blockIdx = -1
     for (let i = 0; i < roundedBlocks.length; i++) {
@@ -1134,8 +1138,8 @@ function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
     if (blockIdx === -1) {
       // Not in any rounded block — keep as-is
       result.push({
-        ring: p.rings[0].map(pt => ({ x: pt[0], z: pt[1] })),
-        use: classify(p),
+        ring: outer.map(pt => ({ x: pt[0], z: pt[1] })),
+        use: useOf(),
         vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
       continue
@@ -1159,11 +1163,11 @@ function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
       }
       result.push({
         ring: pathFromClipper(clipped[best]),
-        use: classify(p),
+        use: useOf(),
         vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
     }
-  }
+  } }
   return result
 }
 
@@ -1979,7 +1983,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // Assign parcels to faces — a parcel contributes to every face it overlaps
   const faceParcelMap = new Map()
   for (const parcel of parcels) {
-    if (!parcel.centroid && !parcel.rings?.[0]) continue
+    const parts = parcelParts(parcel.rings, parcel.handle ?? parcel.address ?? 'a parcel')
+    if (!parcel.centroid && !parts.length) continue
     const assignedFaces = new Set()
     // Check centroid
     if (parcel.centroid) {
@@ -1990,9 +1995,9 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         }
       }
     }
-    // Check all ring vertices — parcel belongs to every face it touches
-    if (parcel.rings?.[0]) {
-      for (const pt of parcel.rings[0]) {
+    // Check every part's ring vertices — parcel belongs to every face it touches
+    for (const { outer } of parts) {
+      for (const pt of outer) {
         for (let fi = 0; fi < blockFaces.length; fi++) {
           if (assignedFaces.has(fi)) continue
           if (pointInRing(pt[0], pt[1], blockFaces[fi].ring)) {
@@ -5681,7 +5686,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         else if (cands.length) {
           const pc = []
           for (const w of wells) { try { const d = JSON.parse(readFileSync(join(RAW_DIR, w.file), 'utf-8'))
-            for (const p of Object.values(d.parcels || {})) { const c = p.centroid || (p.rings?.[0] && [p.rings[0].reduce((a, q) => a + q[0], 0) / p.rings[0].length, p.rings[0].reduce((a, q) => a + q[1], 0) / p.rings[0].length]); if (c) pc.push(c) } }
+            for (const p of Object.values(d.parcels || {})) { if (p.centroid) pc.push(p.centroid); else for (const { outer: r } of parcelParts(p.rings)) pc.push([r.reduce((a, q) => a + q[0], 0) / r.length, r.reduce((a, q) => a + q[1], 0) / r.length]) } }
             catch { console.warn(`      ⛔ declared parcel well ${w.file} could not be read`) } }
           const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
           const dis = []

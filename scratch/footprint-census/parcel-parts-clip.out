@@ -1,0 +1,9 @@
+# node --max-old-space-size=800 scratch/footprint-census/parcel-parts-clip.mjs --towns=<town>   (one town per process; 2026-10-19)
+lafayette-square: parts lost — HEAD 21 · now 0 · single-part parcels emitted identically 2901, differently 0 · emitted rings 2910 → 2932
+huron: parts lost — HEAD 70 · now 0 · single-part parcels emitted identically 6073, differently 0 · emitted rings 6146 → 6279
+provincetown: parts lost — HEAD 36 · now 0 · single-part parcels emitted identically 4915, differently 0 · emitted rings 4953 → 4996
+hipointedemun: parts lost — HEAD 5 · now 0 · single-part parcels emitted identically 23400, differently 0 · emitted rings 23404 → 23411
+jacksonheights: parts lost — HEAD 2 · now 0 · single-part parcels emitted identically 36406, differently 0 · emitted rings 36410 → 36429
+# --mutant=vertex-mean --towns=provincetown (a part's test point put back to its vertex mean)
+MUTANT: vertex mean
+provincetown: parts lost — HEAD 36 · now 1 · single-part parcels emitted identically 4915, differently 0 · emitted rings 4953 → 4995

@@ -34,6 +34,7 @@ import { splitBoundary, composeBoundary, makeDiscRecord, assertDiscInBox } from 
 import tzLookup from 'tz-lookup'
 import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
+import { parcelParts } from './parcelParts.js'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -1307,9 +1308,10 @@ function analyzeMarkers() {
   if (parcelFiles.length) {
     const overlapping = []
     for (const p of parcelFiles.flatMap(f => Object.values(JSON.parse(readFileSync(f, 'utf-8')).parcels || {}))) {
-      const ring = p.rings?.[0]
-      if (!ring || ring.length < 3) continue
-      const xs = ring.map(pt => pt[0]), zs = ring.map(pt => pt[1])
+      // every part of the parcel (`parcelParts`): a multipart parcel's rings[0] is one part of several
+      const pts = parcelParts(p.rings, p.address).flatMap(q => q.outer)
+      if (!pts.length) continue
+      const xs = pts.map(pt => pt[0]), zs = pts.map(pt => pt[1])
       const pMinX = Math.min(...xs), pMaxX = Math.max(...xs)
       const pMinZ = Math.min(...zs), pMaxZ = Math.max(...zs)
       // BBox overlap test
@@ -1318,11 +1320,10 @@ function analyzeMarkers() {
         address: (p.address || '').trim(),
         bounds: { minX: +pMinX.toFixed(1), maxX: +pMaxX.toFixed(1), minZ: +pMinZ.toFixed(1), maxZ: +pMaxZ.toFixed(1) },
         centroid: { x: +(xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1), z: +(zs.reduce((a, b) => a + b, 0) / zs.length).toFixed(1) },
-        vertexCount: ring.length,
-        ring
+        vertexCount: pts.length,
       })
     }
-    result.parcels = overlapping.map(p => ({ ...p, ring: undefined }))
+    result.parcels = overlapping
     result.parcelCount = overlapping.length
   }
 

@@ -17,8 +17,8 @@ report at `scratch/footprint-census/REPORT.md`. ⛔ Quote these numbers only wit
 - **The parcels line up with the map:** 99–100% of footprint area lies inside an assessor parcel, in every town.
 - **Mostly the band, not the building:** building area on painted street ground is mostly inside its own parcel; the
   painted ped band (in places the road) runs onto parcel land.
-- **A multipart parcel keeps only its first ring** (▶ `node checks/claims-a-parcel-keeps-all-its-parts.mjs`):
-  derive's emitted `parcel` layer and its land-use face membership read `rings[0]`.
+- **A multipart parcel keeps every part** in derive (▶ `node checks/claims-a-parcel-keeps-all-its-parts.mjs`); the
+  emitted `parcel` layer follows at the next derive.
 - **It ranks by town in the same order as the band's overrun:** painted sidewalk inside parcels goes from JH 5% to
   PTown 76%, and buildings on street paint go from JH 0.6% to PTown 34.9%.
 - **Commercial Street, PTown:** 6 of its 7 ways are `highway=living_street`, `lanes=1`, `width` 6 or 9.1, and none
