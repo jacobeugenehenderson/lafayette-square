@@ -1,0 +1,6 @@
+jacksonheights: map.json 2026-10-07T03:13:32.996Z · raw wells nyc_parcels.json 2026-10-11T16:16:54.337Z
+raw parcels 36411 · in-memory HEAD rings 36410 · emitted rings 36410
+emitted rings identical to an in-memory HEAD ring: 2645 of 36410
+{"parcel":"26725","handle":"4009477501","address":"78-03 19 DRIVE","part":"1 of 2","blockM2":8839.59,"lostInMemoryHEAD":true,"lostInEmitted":true,"emittedOver":null}
+{"parcel":"26725","handle":"4009477501","address":"78-03 19 DRIVE","part":"2 of 2","blockM2":7290.78,"lostInMemoryHEAD":true,"lostInEmitted":false,"emittedOver":[{"i":2235,"m2":0.06,"use":"residential","fromMemoryParcel":null},{"i":2236,"m2":0.03,"us
+       32.64 real        36.33 user         0.41 sys
