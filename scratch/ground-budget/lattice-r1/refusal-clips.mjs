@@ -8,7 +8,8 @@ const f2 = (v) => Array.isArray(v) ? `[${v.map(x => +(+x).toFixed(3)).join(', ')
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) continue
   const warn = console.warn; console.warn = () => {}; const R = buildProto(f, { quiet: true, protoArtifact: true, protoProducer: true }); console.warn = warn
-  let lost = 0, lostM2 = 0; for (const t of R.protoBandPieces || []) { lost += t.census.byRectsLost || 0; lostM2 += t.census.byRectsLostM2 || 0 }
+  let lost = 0, lostM2 = 0; const by = {}; for (const t of R.protoBandPieces || []) { lost += t.census.byRectsLost || 0; lostM2 += t.census.byRectsLostM2 || 0; for (const [k, v] of Object.entries(t.census.byRectsLostBy || {})) by[k] = (by[k] || 0) + v }
+  console.log(`RC ${scene}: that lost ground by its joins' spans (m²): ${Object.entries(by).map(([k, v]) => `${k} ${v.toFixed(3)}`).join(' · ')}`)
   console.log(`RC ${scene}: ground in a clip but in no face (two or more joins, no rect), lost silently before: ${lost} region(s), ${lostM2.toFixed(3)} m²`)
   for (const t of R.protoBandPieces || []) {
     for (const r of t.census.refusedNear || []) {

@@ -5331,7 +5331,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 // Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB }, edges: [{ si, e }] (depths on the tile's edgeDepths) } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk0, walk, env, perp }) {
-  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [], refusedNear: [], byRectsLost: 0, byRectsLostM2: 0 }
+  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, landings: 0, landingCross: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedAt: [], refusedNear: [], byRectsLost: 0, byRectsLostM2: 0, byRectsLostBy: {} }
   // a run's or an arc's owner is its stamp run; a dead-end cap's is the cap's own (`iaCap` → `caps`, the cap is an end coupler)
   const ownerOf = (span) => { if (span == null) return null; const [h, t] = span.split('/'), R = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+t) ? runs[+t] : null
     return R ? { skelId: R.skelId, side: R.side, segOrd: R.segOrd } : null }
@@ -5466,7 +5466,10 @@ function bandPiecesOfTile({ st, parts, runs, stamps, spanOfSrc, inBlock, sp, L0,
       const f = g.length ? intersectRings(L, g) : []; if (f.length && ar(f) > 0) faces.push({ spans: j.spans, rings: f, why: 'join', src: { kind: 'join', join: j.v, d: j.d } }) }
     const everyR = [...allR, ...J.flatMap(y => y.R)], left = everyR.length ? differenceRings(L, everyR) : L
     // ground in a clip but in no face (two or more joins and no rect): counted, so it is never lost silently
-    const got = faces.flatMap(f => f.rings), lost = differenceRings(L, [...got, ...left]); if (lost.length && ar(lost) > 0) { census.byRectsLost++; census.byRectsLostM2 += ar(lost) }
+    const got = faces.flatMap(f => f.rings), lost = differenceRings(L, [...got, ...left]); if (lost.length && ar(lost) > 0) { census.byRectsLost++; census.byRectsLostM2 += ar(lost)
+      // …and whether the joins over it AGREE on their spans (a disclosure for Boz's ruling; nothing decides by it)
+      const over = J.filter(j => { const x = intersectRings(lost, j.R); return x.length && ar(x) > 0 }), sets = new Set(over.map(j => [...j.spans].sort().join('+')))
+      const k = over.length < 2 ? 'fewer than two joins' : sets.size === 1 ? 'agree' : 'disagree'; census.byRectsLostBy[k] = (census.byRectsLostBy[k] || 0) + ar(lost) }
     return { faces, left } }
   const cut = (cls, B, cells, I = null) => { if (!B.length) return
     const raw = []
