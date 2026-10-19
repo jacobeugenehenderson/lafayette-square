@@ -10,7 +10,7 @@ tg=${1:A}; out=; [[ -n $2 ]] && out=${2:A}
 free_pct() { memory_pressure | awk -F': ' '/free percentage/ {print int($2)}' }
 F=$(free_pct); BIG=$(ps -axo rss,command | awk '$1 > 1000000 && /node/' | wc -l | tr -d ' ')
 (( $(sysctl -n vm.loadavg | awk '{print int($2)}') >= 8 || F < 70 || BIG > 0 )) && { echo "not launched (load $(sysctl -n vm.loadavg) · free $F% · other node > 1 GB: $BIG)"; exit 2 }
-M=$(TG=$tg node $R/scratch/ground-budget/hpdm-gate/swapset.mjs $W $R) || { echo "not launched: the swap set refused (above)"; exit 2 }
+M=$(TG=$tg ENTRY="$C=$W/$C scratch/_proto-feed.mjs=$W/scratch/_proto-feed.mjs" node $R/scratch/ground-budget/hpdm-gate/swapset.mjs $W $R) || { echo "not launched: the swap set refused (above)"; exit 2 }
 M=$(node -e "const m = JSON.parse(process.argv[1]); m['scratch/_proto-feed.mjs'] = process.argv[2] + '/scratch/_proto-feed.mjs'; m[process.argv[3]] = process.argv[2] + '/' + process.argv[3]; console.log(JSON.stringify(m))" "$M" $W $C)
 cd $R; C=$C NEEDLE_OUT=$out SWAP_MAP="$M" \
   node --max-old-space-size=8000 --import $R/scratch/ground-budget/swap.mjs --input-type=module -e "process.argv.splice(1, 0, process.env.C); process.argv.push(...(process.env.TOWNS || '').split(' ').filter(Boolean).map(t => '--scene=' + t)); process.argv.push(...(process.env.ARGS || '').split(' ').filter(Boolean)); await import('./' + process.env.C)" &
