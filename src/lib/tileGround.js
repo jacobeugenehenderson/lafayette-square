@@ -5607,6 +5607,13 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // granularity: ① labels are per-EDGE, ② runs are per-FRONTAGE. Reading one as the other is what
   // produced the retracted "89 owners per block".
   const legArr = new Map()      // `${ri}|${edge}` → the FRONTAGE's ONE resolved measure
+  // a cap's own section, once per cap: its owner (`caps[c]`) with the base measure of a run of its own chain on this tile.
+  // ⛔ An owner whose chain has no run here cannot be measured: counted and returned (`capUnmeasured`), never defaulted.
+  const capM = new Map(); let capUnmeasured = 0
+  const capMeasure = (c) => { if (capM.has(c)) return capM.get(c)
+    const cap = st.caps?.[c], base = cap ? (runs.find(r => r.skelId === cap.skelId)?.baseMeasure ?? null) : null
+    const m = base ? stampMeasure({ ...cap, baseMeasure: base }, blockCustoms, cw) : null; if (!m) capUnmeasured++
+    capM.set(c, m); return m }
   // ⛔ THE RESIDUE THE LONGEST-ARC ABSORPTION USED TO HIDE, COUNTED INSTEAD OF ABSORBED. `feArcs`
   // = contiguous `(road, side)` stretches on this tile; `feRepeat` = stretches belonging to an
   // owner that already had one. Under rule B a repeat is LEGITIMATE (a loop or a dogleg touches
@@ -5697,7 +5704,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         for (let k = 0; k < len; k++) { const q = (s0 + k) % n, r = stp[q]; if (r == null) continue
           const a = ring[q], b = ring[(q + 1) % n]
           byRun.set(r, (byRun.get(r) || 0) + Math.hypot(b[0] - a[0], b[1] - a[1])) }
-        if (!byRun.size) { for (let k = 0; k < len; k++) legArr.set(`${ri}|${(s0 + k) % n}`, null); continue }
+        // ⭐ A DEAD-END CAP'S EDGES CARRY NO RUN — they resolve to THE CAP'S OWN SECTION (`SECTION §6.3`, LANDED 2026-07-22, restored
+        // here 2026-10-18: "the bulb has NO halves … ONE cross-section — the cap's own … the bulb goes whole to the cap owner").
+        // The owner is `caps[iaCap]`, measured like any run (`stampMeasure`) off the `baseMeasure` its own chain's runs carry.
+        // ⛔ Before this a cap edge read THE OPEN FIELD and its walk went to the curb (▶ checks/claims-a-cap-carries-one-section.mjs).
+        if (!byRun.size) { for (let k = 0; k < len; k++) { const q = (s0 + k) % n, c = st.iaCap?.[p.si]?.[q]
+          legArr.set(`${ri}|${q}`, c == null ? null : capMeasure(c)) } continue }
         const authored = (r) => !!blockCustoms?.[runs[r].skelId]?.[runs[r].side]?.[runs[r].segOrd]
         let win = null, best = -1, winAuth = false
         for (const [r, L] of byRun) { const au = authored(r)
@@ -5709,6 +5721,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       }
     }
   }
+  if (capUnmeasured) console.warn(`[tileGround][SECTION] ⛔ ${capUnmeasured} dead-end cap(s) on this tile whose owner's chain has no run here to measure — the cap draws THE OPEN FIELD (no walk): ${(st.caps || []).filter((_, c) => capM.get(c) === null).map(o => `${o?.skelId}|${o?.side}|${o?.segOrd}`).join(' · ')}`)
   // ⭐ EVERY per-point read goes through the LEG's single resolution (`SECTION §3.3` step 1).
   // ⭐ H-3 step 4: a JR's town frontage is concrete on both strips; a verge is bare on every edge.
   const M = (ri, i) => { const m = legArr.get(`${ri}|${i}`) ?? null
@@ -6360,7 +6373,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     luByLu: rekeyByPiece(st, { [key]: inBlock(luIn) }, sp),
     curb:   cutByStamp(st, inBlock(band(curbOuter, pedOuter)), sp),
     capped,
-    feArcs, feRepeat,
+    feArcs, feRepeat, capUnmeasured,
   }
 }
 
