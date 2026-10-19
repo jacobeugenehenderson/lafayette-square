@@ -1,0 +1,63 @@
+P (589.896, 1194.325): owner 9|0|r0 · D 33.053 · terrain 28.318 · lot undefined
+lot vertices 188574 · lot branch 113484 · eased (d < back + blend) 43041
+nearest span class (eased):
+   40771 × at-grade run
+   1246 × onTerrain (highway)
+   798 × corner arc
+   137 × onTerrain (bridge)
+   89 × cap
+class | the band piece behind:
+   37152 × at-grade run | behind: the piece names this span's edge
+   3244 × at-grade run | behind: same owner (skelId·side), another edge
+   1246 × onTerrain (highway) | no band on the ray (ease from ② itself)
+   767 × corner arc | behind: the piece names this span's edge
+   201 × at-grade run | behind: in no piece
+   162 × at-grade run | no band on the ray (ease from ② itself)
+   121 × onTerrain (bridge) | behind: the piece names this span's edge
+   89 × cap | behind: the piece names this span's edge
+   28 × corner arc | behind: ANOTHER owner
+   12 × at-grade run | behind: ANOTHER owner
+   7 × onTerrain (bridge) | behind: same owner (skelId·side), another edge
+   5 × onTerrain (bridge) | behind: ANOTHER owner
+   4 × onTerrain (bridge) | behind: in no piece
+   2 × corner arc | no band on the ray (ease from ② itself)
+   1 × corner arc | behind: in no piece
+ANOTHER owner, |D − terrain| p50 / p90 / max by span class:
+   corner arc: 28 · 0.000 / 0.000 / 0.060 m
+   at-grade run: 12 · 0.171 / 0.445 / 0.454 m
+   onTerrain (bridge): 5 · 0.550 / 0.561 / 0.573 m
+ANOTHER owner, top pairs (span → piece):
+   6 × corner arc: arc 3 → university-lane·left·3
+   6 × at-grade run: unclassified-221·left·1 → secondary-link-201·left·0
+   3 × corner arc: arc 3 → wydown-boulevard-1·right·17
+   3 × onTerrain (bridge): underpass·left·0 → underpass·right·0
+   2 × corner arc: arc 20 → wydown-boulevard-1·right·11
+   2 × corner arc: arc 5 → wydown-boulevard-0·right·13
+   2 × at-grade run: san-bonita-avenue-0·right·1 → buena-vista-avenue-0·right·1
+   2 × at-grade run: brookings-drive-3·right·0 → brookings-drive-0·right·0
+   2 × corner arc: arc 2 → founders-way·left·4
+   2 × corner arc: arc 2 → tolman-way·right·0
+   2 × onTerrain (bridge): underpass·right·0 → underpass·left·0
+   1 × corner arc: arc 10 → berthold-avenue-4·left·0
+   1 × corner arc: arc 5 → buena-vista-avenue-1·left·1
+   1 × corner arc: arc 2 → essen-avenue·left·0
+   1 × corner arc: arc 2 → university-drive-3·left·0
+stats {"noFull":0,"stations":385966,"absorbClamped":198618,"tiles":240,"onTerrain":785,"arcBlended":12065,"outside":0,"deep":15316,"evaluated":159882,"rays":983350,"eased":131922,"lawnFull":51792,"byBand":968,"unowned":116,"road":372,"roadBlended":2,"ink":0,"inkCrossing":0,"inkOnGrid":336}
+       13.01 real        14.01 user         0.30 sys
+           992985088  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               67736  page reclaims
+                   0  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   3  voluntary context switches
+               17126  involuntary context switches
+        191805674183  instructions retired
+         45127668607  cycles elapsed
+          1005960128  peak memory footprint
