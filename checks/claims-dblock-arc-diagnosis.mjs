@@ -55,7 +55,7 @@ requireArtifact(S_PATH.replace(process.cwd() + '/', ''), 'baked shape.json')
 const shape = JSON.parse(fs.readFileSync(S_PATH, 'utf8'))
 
 const STD_TREELAWN = 1.5, ADA_SIDEWALK = 1.5              // tileGround.js:1206-1207
-const CURB_W = design.curbWidth ?? 0.1524
+const CURB_W = Number.isFinite(design.curbWidth) ? design.curbWidth : (() => { console.log(`⛔ ${D_PATH}: design.json carries no curbWidth — author curbWidth in this town's Look; nothing curb-relative can be measured`); process.exit(1) })()
 const WB = CURB_W + STD_TREELAWN + ADA_SIDEWALK
 
 console.log('═══ SCENE + INPUTS ═══')

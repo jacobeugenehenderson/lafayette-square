@@ -141,7 +141,7 @@ const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 let red = false
 for (const scene of (MAIN ? (named.length ? named : feedScenes()) : [])) {
   const f = feed(scene); if (!f) { red = true; continue }
-  const tg = build(f.ribbons, { curbWidth: f.curbWidth ?? 0, blockCustoms: f.blockCustoms })
+  const tg = build(f.ribbons, { curbWidth: f.curbWidth, blockCustoms: f.blockCustoms })
   const blocks = Object.entries(tg.protoDepthByBlock || {})
   if (!blocks.length) { console.log(`── ${scene}   ⛔ NOT CHECKED — the build recorded no ② depths (no ① producer?)`); red = true; continue }
   const O = tg.protoOwners || [], rows = []

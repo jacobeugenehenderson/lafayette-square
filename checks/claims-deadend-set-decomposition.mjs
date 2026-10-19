@@ -31,7 +31,7 @@ async function mouthsByRing(authored) {
   const g = buildTileGround(ribbons, {
     smooth: 0, emitArtifact: true,
     blockCustoms: authored ? (design.blockCustoms || null) : null,
-    curbWidth: design.curbWidth ?? 0.15,
+    curbWidth: design.curbWidth,   // ⛔ authored only — buildTileGround refuses by name without one
   })
   console.log = o
   const m = new Map()

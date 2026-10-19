@@ -35,7 +35,6 @@
 // Returns raw Clipper ring lists per material; bake-ground packs them.
 
 import clipperLib from 'clipper-lib'
-import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
 import { blockKeyFromRing } from './buildBlockGeometryV2.js'
 import { resolveChainSegmentation } from './chainSegmentation.js'
@@ -6789,7 +6788,9 @@ export function buildTileGround(ribbons, opts = {}) {
     'ring: offsetRingVariable returned nothing, collapsed below 5% of the tile, or ' +
     'overflowed past it. POLYGON-FIRST §3 / ROADMAP A07.',
     CURB_PRODUCER_PROSE)
-  const curbWidth = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
+  // ⛔ The curb width is the Look's AUTHORED value (design.json `curbWidth`) — no substitute (Boz ruled 2026-10-19).
+  if (!Number.isFinite(opts.curbWidth)) throw new Error(`[tileGround] ⛔ no curbWidth given (${opts.curbWidth}) — the Look's design.json carries no curbWidth — author curbWidth in this town's Look`)
+  const curbWidth = opts.curbWidth
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
   // Smooth centerlines BEFORE face extraction so the grout (shared tile edges)
   // → tiles → strips all come out smooth — loops/curves round. smoothChain is

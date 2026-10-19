@@ -25,7 +25,6 @@ import clipperLib from 'clipper-lib'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile } from '../src/lib/tileGround.js'
 import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
-import { CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 
 const SHOW = +(process.argv.find(a => a.startsWith('--show='))?.split('=')[1] || 5)
 const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -112,8 +111,9 @@ let bad = 0, towns = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   if (!f.ribbons?.protopolygon?.boundaryRing?.length) { console.log(`⛔ ${scene}: its ① carries no boundaryRing — the rim cannot be told from a point, nothing was checked`); bad++; continue }
-  // τ is the town's AUTHORED curb width; with none, the bake's own substitute (CURB_WIDTH), named as that
-  const tau = Number.isFinite(f.curbWidth) ? f.curbWidth : CURB_WIDTH, tauWhy = Number.isFinite(f.curbWidth) ? 'authored curb width' : `⚠️ NO authored curb width — the bake's substitute CURB_WIDTH`
+  // τ is the town's AUTHORED curb width; with none the producer refuses, and so does this
+  if (!Number.isFinite(f.curbWidth)) { console.log(`⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look; nothing was checked`); bad++; continue }
+  const tau = f.curbWidth, tauWhy = 'authored curb width'
   let sites
   try { sites = measure(f, tau) } catch (e) { console.log(`⛔ ${scene}: the producer refused, so nothing was checked — ${String(e.message).split('\n')[0].slice(0, 160)}`); bad++; continue }
   towns++

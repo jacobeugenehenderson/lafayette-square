@@ -71,7 +71,7 @@ export function feed(scene) {
     // something else would measure a different map and say nothing — Layer 0 q2. A scene with no
     // authored curb width is a real state; it must be reported, not filled in.
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth
-      : (console.log(`⛔ ${scene}: design.json carries NO curbWidth — NOT substituting one; this scene cannot be measured for anything curb-relative`), null),
+      : (console.log(`⛔ ${scene}: design.json carries NO curbWidth — author curbWidth in this town's Look; the producer refuses without one`), null),
     // the minimum curbed width (the nose), read by finding id for the town's state — as the bake reads it
     curbedMinWidth: curbedMinWidth(JSON.parse(fs.readFileSync('references/registry.json', 'utf8')),
       fs.existsSync(`cartograph/data/${scene}/raw/osm.json`) ? townState(JSON.parse(fs.readFileSync(`cartograph/data/${scene}/raw/osm.json`, 'utf8'))) : { code: null }),

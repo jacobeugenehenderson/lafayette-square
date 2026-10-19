@@ -357,7 +357,8 @@ const DESIGN_FIELDS = [
   { key: 'cornerCornerRadiusOverrides', hydrate: (d) => _isObj(d.cornerCornerRadiusOverrides) ? d.cornerCornerRadiusOverrides : {} },
   // (streetSmooth retired 2026-06-04 — smoothing is always-on at fixed quality,
   // no design-persisted dial; see BlockGeometryV2Debug / smoothCenterline.)
-  { key: 'curbWidth',    hydrate: (d) => Number.isFinite(d.curbWidth) ? d.curbWidth : 0.1524 },
+  // ⛔ null = NOT AUTHORED, shown as such (Panel › Curb), and the ground refuses to build: never a kit substitute.
+  { key: 'curbWidth',    hydrate: (d) => Number.isFinite(d.curbWidth) ? d.curbWidth : null },
   // Operator override for the park title's world position ([x,z]); null = the
   // computed default. Persisted + baked like every other design field so the
   // move survives and ships.
@@ -580,9 +581,9 @@ const useCartographStore = create((set, get) => ({
   labels: { ...LABEL_STYLE_DEFAULT },
   // Look-level global curb width (meters). V2 emits the curb as a single
   // unified stroke around the rounded asphalt boundary, so width is
-  // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
-  // operator can dial up/down via the Streets > Curb slider.
-  curbWidth: 0.1524,
+  // global (not per-side, not per-chain). AUTHORED per Look (design.json), no default:
+  // null until the design hydrates, and null after it on a Look that authors none.
+  curbWidth: null,
   edgeFadeBand: null,
   // [x,z] override for the park title center; null = computed default (LafayettePark).
   parkTitlePos: null,

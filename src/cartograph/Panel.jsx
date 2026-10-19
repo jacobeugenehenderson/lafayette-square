@@ -104,10 +104,11 @@ function Section({ name, open, onToggle, children, visState, onToggleVis }) {
 // Global curb-width slider — Look-level value (meters) that V2's
 // rounded-block-clip emits the curb stroke at. Uniform across the whole
 // scene; per-side / per-chain curb overrides aren't supported in V2's
-// unified-stroke model. Default 6 inches (0.1524 m); slider runs from
+// unified-stroke model. AUTHORED per Look, no default: a Look that carries none shows
+// "not authored" and the ground refuses to build until one is set. The slider runs from
 // 0 (no curb) to 0.5 m (oversized), step 0.0254 (1 inch).
 function CurbSubsection() {
-  const stored = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const stored = useCartographStore(s => s.curbWidth)
   const setStored = useCartographStore(s => s.setCurbWidth)
   const [draft, setDraft] = useState(stored)
   const rafRef = useRef(null)
@@ -134,12 +135,13 @@ function CurbSubsection() {
   }
   return (
     <div className="carto-row carto-row--wrap">
-      <label className="carto-label-fixed" title="Width of the curb band that traces every block's asphalt boundary. Default 6&quot; (0.1524 m); 0 hides the curb entirely.">
+      <label className="carto-label-fixed" title="Width of the curb band that traces every block's asphalt boundary — the town's own, authored per Look, with no default (a 6&quot; curb is 0.1524 m); 0 hides the curb entirely.">
         Curb
       </label>
+      {draft == null && <span className="carto-meta">⛔ not authored — drag to set one</span>}
       <input type="range" className="carto-input"
         min="0" max="0.5" step="0.0254"
-        value={draft}
+        value={draft ?? ''}
         onPointerDown={() => { draggingRef.current = true }}
         onPointerUp={finalCommit}
         onChange={e => {
@@ -149,7 +151,7 @@ function CurbSubsection() {
         }}
         onKeyUp={finalCommit} />
       <span className="carto-meta carto-meta--value">
-        {(draft * 39.3701).toFixed(1)}″
+        {draft == null ? '—' : `${(draft * 39.3701).toFixed(1)}″`}
       </span>
     </div>
   )

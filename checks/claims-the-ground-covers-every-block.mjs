@@ -76,7 +76,7 @@ for (const scene of (arg('shape') ? named : scenes('public/baked/<scene>/shape.j
   const stamped = tiles.filter(t => t.iaStamp)
   if (!stamped.length) { console.log(`── ${scene}   SKIPPED — its frozen shape predates ① (no stamped tile): the painter this checks never drew it. Re-pour + re-bake to judge.`); continue }
   const dp = join(ROOT, 'public/looks', scene, 'design.json'), d = existsSync(dp) ? JSON.parse(readFileSync(dp, 'utf8')) : {}
-  const cw = Number.isFinite(d.curbWidth) ? d.curbWidth : 6 * 0.0254
+  const cw = Number.isFinite(d.curbWidth) ? d.curbWidth : (() => { throw new Error(`⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look`) })()
   let holed = 0, total = 0; const rows = []
   for (const [ti, t] of tiles.entries()) {
     if (!t.iaStamp) continue
