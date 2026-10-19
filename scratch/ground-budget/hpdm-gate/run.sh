@@ -13,7 +13,7 @@ free_pct() { memory_pressure | awk -F': ' '/free percentage/ {print int($2)}' }
 BG=${BGSRC:-$WT/cartograph/bake-ground.js}; [[ $MODE == producer ]] && { node $G/make-producer.mjs $BG $DUMP || exit 1; BG=$G/bake-ground.producer.js; }
 [[ $MODE == full ]] && { node $G/make-gate.mjs $BG || exit 1; BG=$G/bake-ground.gate.js; }
 # ⭐ the swap set is DERIVED FROM GIT (swapset.mjs: every code file differing from the main tree, the overrides applied) and refuses on a file it cannot carry
-M=$(BG=$BG TG=$TG DEFORMER=$DEFORMER node $G/swapset.mjs $WT $R) || { echo "⛔ not launched: the swap set refused (above)"; exit 2; }
+M=$(BG=$BG TG=$TG DEFORMER=$DEFORMER ENTRY=cartograph/bake-ground.js node $G/swapset.mjs $WT $R) || { echo "⛔ not launched: the swap set refused (above)"; exit 2; }
 O=$G/slab-$T-$MODE${TAG:+-$TAG}; L=$G/$MODE-$T${TAG:+-$TAG}.log; rm -rf $O; mkdir -p $O
 snap() { find -L $R/cartograph/data/$T $R/public -type f -exec stat -f '%m %z %N' {} + | sort -k3 }
 snap > $G/snap-before.txt; touch $G/snap-marker
