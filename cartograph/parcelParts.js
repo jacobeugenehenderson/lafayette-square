@@ -12,6 +12,13 @@ const pip = (x, z, r) => { let c = false
   return c }
 const area = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] - r[i][0]) * (r[j][1] + r[i][1]); return Math.abs(a) / 2 }
 
+/** a parcel's id, minted at the pour and carried on every emitted part's ring: its well's id and the SOURCE's own parcel id
+ *  (`handle`, the well's declared id column: Handle · LOCATOR · LocalParcelID · BBL · LOC_ID). ⛔ Never the record's place in
+ *  the raw file, which is the fetch's paging order and changes on a refetch. A repeated handle is one parcel's stacked
+ *  records (measured: identical or overlapping rings, never disjoint), so they rightly share an id. null where the record
+ *  carries no source id; the pour says so by name. */
+export const parcelId = (wellId, p) => p?.handle == null || p.handle === '' ? null : `${wellId}:${p.handle}`
+
 /** a point inside ring `r` ([[x, z], …]): the middle of the widest span its mid-height line cuts through it. ⛔ Never the
  *  vertex mean, which a concave ring need not hold (measured: PTown's seashore parcel, 11.7 km², clipped to the wrong block) */
 export function pointInside(r) {

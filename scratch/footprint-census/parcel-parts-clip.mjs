@@ -2,7 +2,7 @@
 // town's raw parcels against its emitted `block` layer, the source as it stands against the one at a git rev (default
 // HEAD, the rings[0] reader, rebuilt from its own text). Per town: the parts lost (a part of a multipart parcel with block
 // ground and no emitted cover, as checks/claims-a-parcel-keeps-all-its-parts.mjs judges them) under each, and whether every
-// single-part parcel's emitted rings are identical under both. --mutant=vertex-mean: the source as it stands, rebuilt from its
+// single-part parcel's emitted rings are identical under both (now compared without its parcelId, which HEAD never carried). --mutant=vertex-mean: the source as it stands, rebuilt from its
 // text with a part's test point put back to its vertex mean (must lose PTown's seashore part). --towns=a,b: only those.
 //   node scratch/footprint-census/parcel-parts-clip.mjs [--rev=HEAD] [--mutant=vertex-mean] [--towns=…]
 import { readFileSync, existsSync } from 'node:fs'
@@ -11,7 +11,7 @@ import { execSync } from 'node:child_process'
 import clipperLib from 'clipper-lib'
 import { readSources } from '../../cartograph/sources.js'
 import { clipParcelsToRoundedBlocks as nowClip } from '../../cartograph/derive.js'
-import { parcelParts, pointInside } from '../../cartograph/parcelParts.js'
+import { parcelParts, pointInside, parcelId } from '../../cartograph/parcelParts.js'
 const ROOT = new URL('../../', import.meta.url).pathname
 const { Clipper, Paths, IntPoint, PolyType, ClipType, PolyFillType } = clipperLib
 const rev = process.argv.find(a => a.startsWith('--rev='))?.slice(6) || 'HEAD'
@@ -36,11 +36,16 @@ const meet = (a, b) => { const c = new Clipper(); c.AddPaths(a, PolyType.ptSubje
 const lostOf = (parcels, emitted, B) => { const E = emitted.map(e => toC(e.ring)); let n = 0
   for (const p of parcels) { const parts = parcelParts(p.rings); if (parts.length < 2) continue
     for (const { outer } of parts) { const inB = meet([toC(outer)], B); if (area(inB) > 0 && !(area(meet(inB, E)) > 0)) n++ } } return n }
+// the source as it stands: cover only by rings carrying the part's own parcelId (as the check judges); HEAD has no ids, so any cover
+const lostOwn = (parcels, emitted, B) => { const own = new Map(); for (const e of emitted) if (e.parcelId != null) (own.get(e.parcelId) || own.set(e.parcelId, []).get(e.parcelId)).push(toC(e.ring)); let n = 0, noId = 0
+  for (const p of parcels) { const parts = parcelParts(p.rings); if (parts.length < 2) continue; if (p.parcelId == null) { noId++; continue }
+    for (const { outer } of parts) { const inB = meet([toC(outer)], B); if (area(inB) > 0 && !(area(meet(inB, own.get(p.parcelId) || [])) > 0)) n++ } } return { n, noId } }
 for (const town of towns) {
   const S = readSources(town), mp = join(ROOT, 'cartograph/data', town, 'clean/map.json'); if (!S.parcels?.length || !existsSync(mp)) { console.log(`${town}: not checked`); continue }
   const L = JSON.parse(readFileSync(mp, 'utf8')), layers = L.layers || L, B = (layers.block || []).map(e => toC(e.ring))
-  const parcels = S.parcels.flatMap(w => Object.values(JSON.parse(readFileSync(join(ROOT, 'cartograph/data', town, 'raw', w.file), 'utf8')).parcels || {}))
+  const parcels = S.parcels.flatMap(w => Object.values(JSON.parse(readFileSync(join(ROOT, 'cartograph/data', town, 'raw', w.file), 'utf8')).parcels || {}).map(p => { const id = parcelId(w.id, p); return id != null ? { ...p, parcelId: id } : p }))
   const one = (clip) => parcels.map(p => clip([p], B, () => null))
   const now = one(clipParcelsToRoundedBlocks), was = one(oldClip)
-  let same = 0, diff = 0; parcels.forEach((p, i) => { if (parcelParts(p.rings).length > 1) return; JSON.stringify(now[i]) === JSON.stringify(was[i]) ? same++ : diff++ })
-  console.log(`${town}: parts lost — ${rev} ${lostOf(parcels, was.flat(), B)} · now ${lostOf(parcels, now.flat(), B)} · single-part parcels emitted identically ${same}, differently ${diff} · emitted rings ${was.flat().length} → ${now.flat().length}`) }
+  let same = 0, diff = 0; parcels.forEach((p, i) => { if (parcelParts(p.rings).length > 1) return; JSON.stringify(now[i].map(({ parcelId, ...e }) => e)) === JSON.stringify(was[i]) ? same++ : diff++ })
+  const lo = lostOwn(parcels, now.flat(), B), carry = now.flat().filter(e => e.parcelId != null).length
+  console.log(`${town}: parts lost — ${rev} (any cover) ${lostOf(parcels, was.flat(), B)} · now (any cover) ${lostOf(parcels, now.flat(), B)} · now (own parcelId) ${lo.n}, multipart with no source id ${lo.noId} · rings carrying a parcelId ${carry} of ${now.flat().length} · single-part parcels emitted identically ${same}, differently ${diff} · emitted rings ${was.flat().length} → ${now.flat().length}`) }

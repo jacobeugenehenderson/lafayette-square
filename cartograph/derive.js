@@ -36,7 +36,7 @@ import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
-import { parcelParts, pointInside } from './parcelParts.js'
+import { parcelParts, pointInside, parcelId } from './parcelParts.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1113,7 +1113,8 @@ function detectDividedStreets(streets) {
 // `luStats` counts every parcel exactly once, from one place.
 // ⭐ Every PART of a parcel is emitted (`parcelParts`): a multipart parcel's rings[0] is one part of several, in no
 // promised order. Each part is clipped on its own, to the block that holds the parcel's centroid (of a multipart parcel:
-// when the centroid lies in that part), else a point inside the part (`pointInside`). ▶ checks/claims-a-parcel-keeps-all-its-parts.mjs
+// when the centroid lies in that part), else a point inside the part (`pointInside`). Every part's ring carries the parcel's
+// `parcelId` (minted at the load, `parcelId`). ▶ checks/claims-a-parcel-keeps-all-its-parts.mjs
 export function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
   const result = []
   for (const p of parcels) { const parts = parcelParts(p.rings, p.handle ?? p.address ?? 'a parcel')
@@ -1139,6 +1140,7 @@ export function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
       // Not in any rounded block — keep as-is
       result.push({
         ring: outer.map(pt => ({ x: pt[0], z: pt[1] })),
+        ...(p.parcelId != null ? { parcelId: p.parcelId } : {}),
         use: useOf(),
         vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
@@ -1163,6 +1165,7 @@ export function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
       }
       result.push({
         ring: pathFromClipper(clipped[best]),
+        ...(p.parcelId != null ? { parcelId: p.parcelId } : {}),
         use: useOf(),
         vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
@@ -1512,9 +1515,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // ⛔ A declared well with no file is an error, not a skip (bake-content.js agrees).
       if (!existsSync(f)) throw new Error(`[parcels] ${SCENE} declares '${decl.id}' → raw/${decl.file}, which is not there. Acquire it: CARTOGRAPH_SCENE=${SCENE} node cartograph/fetch-parcels.mjs`)
       const parcelData = JSON.parse(readFileSync(f, 'utf-8'))
+      let noId = 0
       for (const p of Object.values(parcelData.parcels || {})) {
-        parcels.push({ ...p, jurisdiction: decl.jurisdiction, land_use_code_format: decl.land_use_code_format || null })
+        const id = parcelId(decl.id, p); if (id == null) noId++
+        parcels.push({ ...p, ...(id != null ? { parcelId: id } : {}), jurisdiction: decl.jurisdiction, land_use_code_format: decl.land_use_code_format || null })
       }
+      // ⛔ a record with no source id carries none (never its place in the file): said here, by name, per pour
+      if (noId) console.log(`    ⚠️ ${decl.id}: ${noId} parcel record(s) carry no source id (\`handle\`) — their emitted rings carry no parcelId`)
     }
   }
   const countyCodeTable = loadCountyCodeTable(SCENE)
