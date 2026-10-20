@@ -5308,10 +5308,21 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const spanOfSrc = (si, e) => { const c = st.iaCap?.[si]?.[e], a = st.iaArc?.[si]?.[e], r = (stamps[si] || [])[e]
     return (c != null ? 'c' + c : a != null ? 'a' + a : r != null ? 'r' + r : '-') + '/' + (r ?? '-') }
   for (const p of parts) p.dspan = p.dring.map((_, j) => spanOfSrc(p.si, p.dsrc[j]))
+  // ⭐ A ZERO-DEPTH OFFSET IS THE RING (Boz, 2026-10-20). Where every depth on a part is 0 (a VERGE: bare on every edge),
+  // the line IS the region boundary — the part's own `ring`, exactly the ring `curbOuter` is built from — never an offset
+  // computed off the densified ring. ⛔ That offset fell up to 0.6 mm short of the region at the lattice, and the gap was
+  // painted as CURB on bare verges (Huron 13/61/139/142/145, JH 439; mean width ≤ 0.3 mm). A part with ANY nonzero
+  // depth is offset as before. ▶ node checks/claims-verge-bare.mjs
   const insDL = (pick) => {
     const o = [], h = [], per = []
     for (const p of parts) {
-      const S = {}, rs = offsetRingByRects(p.dring, pick(p), p.hole, S, null, 0, null, (e) => p.dspan[e])
+      const pk = pick(p)
+      if (p.dring.every((_, j) => !(pk(j) > 0))) {
+        ;(p.hole ? h : o).push(p.ring)
+        per.push({ p, rings: [p.ring], labs: [p.ring.map((_, e) => spanOfSrc(p.si, e))], clips: [], edges: [], dropped: [], areaMin: null })
+        continue
+      }
+      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, 0, null, (e) => p.dspan[e])
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
         clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
