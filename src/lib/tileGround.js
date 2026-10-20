@@ -2454,7 +2454,9 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null, nose = 
     if (arcsOut) {
       const sgn = cross >= 0 ? 1 : -1
       const nA = [-dIn[1] * sgn, dIn[0] * sgn]
-      arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2, src: vtx ? vtx[i] : undefined })
+      // `asked` = the radius this corner was given; `leg` = the leg that bounded it when the ease drew less (else null)
+      const leg = s < want - 1e-9 ? (s >= legBack[i] / 2 - 1e-9 ? legBack[i] : legFwd[i]) : null
+      arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2, src: vtx ? vtx[i] : undefined, asked: R, leg })
     }
   }
 
@@ -6866,7 +6868,7 @@ export function buildTileGround(ribbons, opts = {}) {
             if (!o1 || !o2) return
             const fil = { apex: a.V, C: a.C, r: a.r, tA: a.tA, tB: a.tB }
             const cc = protoCornerOf(o1, o2)
-            if (cc) { protoCornerSet.push({ key: cc.key, V: cc.ix, legA: cc.legA, legB: cc.legB, kind: cc.legA.split(':')[0] === cc.legB.split(':')[0] ? 'bend' : 'junction', vertR: a.R, fillet: fil })
+            if (cc) { protoCornerSet.push({ key: cc.key, V: cc.ix, legA: cc.legA, legB: cc.legB, kind: cc.legA.split(':')[0] === cc.legB.split(':')[0] ? 'bend' : 'junction', vertR: a.R, fillet: fil, asked: a.asked, leg: a.leg })
                       ;(protoArcKeyByBlock[k] ||= new Map()).set(u, cc.key) }
             ;(protoArcsByBlock[k] ||= []).push(fil)
           })
@@ -6910,7 +6912,13 @@ export function buildTileGround(ribbons, opts = {}) {
         // moved its node or renamed a leg — reaches nothing. Printed, every one, by name and value; never refused: re-aiming
         // it is the operator's. ▶ node checks/claims-every-authored-corner-resolves.mjs
         const have = new Set(protoCornerSet.map(c => c.key)), orphan = Object.entries(cornerOverrides || {}).filter(([k]) => !legacy.includes(k) && !have.has(k))
-        if (orphan.length) console.warn(`[tileGround][PROTO②] ⛔ ${orphan.length} authored corner entr${orphan.length === 1 ? 'y names' : 'ies name'} NO corner of this pour — ${orphan.length === 1 ? 'it reaches' : 'they reach'} nothing until re-aimed: ${orphan.map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join(' · ')}`) }
+        if (orphan.length) console.warn(`[tileGround][PROTO②] ⛔ ${orphan.length} authored corner entr${orphan.length === 1 ? 'y names' : 'ies name'} NO corner of this pour — ${orphan.length === 1 ? 'it reaches' : 'they reach'} nothing until re-aimed: ${orphan.map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join(' · ')}`)
+        // ⭐ AN AUTHORED RADIUS THE LEG CANNOT HOLD (Boz, 2026-10-20): the corner still bends — the operator asked for more than
+        // the leg allows, and the geometry wins (the product) — but it is said PER CORNER: the key, the radius asked, the radius
+        // drawn, the bounding leg. An unauthored corner clamped the same way stays a count (below).
+        // ▶ node checks/claims-every-authored-corner-resolves.mjs (its synthetic row)
+        const clampedAuthored = protoCornerSet.filter(c => c.leg != null && radiusOf(cornerOverrides?.[c.key]) != null)
+        for (const c of clampedAuthored) console.warn(`[tileGround][PROTO②] ⚠️ authored corner ${c.key}: asked R ${c.asked.toFixed(2)} m, drawn R ${c.vertR.toFixed(2)} m — bounded by its leg (${c.leg.toFixed(2)} m; a corner may not ease past half its leg)`) }
       // ⭐⭐⭐ THE EASE NOW SAYS WHY IT DECLINED A CORNER — wired 2026-09-08 (`easeSkips`, declared
       // and unreferenced since it was written). ⛔ `noR` is the line to read: those vertices TURN
       // past `FILLET_TURN_TOL` and were still not corners, because `isCorner_` also requires
@@ -6941,7 +6949,7 @@ export function buildTileGround(ribbons, opts = {}) {
         protoNoses = { w: cmw.m, sources: cmw.sources, capped: sk.noseCapped, spike: sk.noseSpike, narrow: sk.noseNarrow, at: ns }
         console.warn(`[tileGround][PROTO②] the nose: a curbed feature ends where the block narrows to ${cmw.m.toFixed(3)} m (${cmw.label}) and is capped at r = ${(cmw.m / 2).toFixed(3)} m ([U] q-curbed-nose-radius) — ${sk.noseCapped} capped · ${sk.noseSpike} folded back past 180° (a SPIKE, not cut) · ${sk.noseNarrow} narrower than that to the next corner (no place to end, not cut)${ns.find(x => x.kind !== 'capped') ? `. First not cut at (${ns.find(x => x.kind !== 'capped').a.map(c => c.toFixed(2)).join(', ')})` : ''}.`)
         if (sk.pairClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.pairClamped} PAIR(S) of named corners share one leg too short for both — each eased below its R, so the pair reads as one squeezed corner. First at (${sk.pairSites[0].a.map(c => c.toFixed(2)).join(', ')}) ↔ (${sk.pairSites[0].b.map(c => c.toFixed(2)).join(', ')}), leg ${sk.pairSites[0].leg.toFixed(2)} m.`)
-        if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their authored radius — bounded by their own leg, not by a budget. Not absent, but not the authored dimension either.`)
+        if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their radius — bounded by their own leg, not by a budget. Not absent, but not the asked dimension either (the AUTHORED ones are named, each, above).`)
         if (sk.straightWithR) console.warn(`[tileGround][PROTO②] ⛔⛔ ${sk.straightWithR} vertex/vertices CARRY AN AUTHORED RADIUS and were skipped as STRAIGHT — ① ruled them corners, the OFFSET ring says they do not turn, and the ease walks the offset ring. ① is the authority (\`RIBBONS §1\`). These are corners lost to a disagreement between two rings.`)
         console.warn(`[tileGround][PROTO②] ease: ${sk.eased} corner(s) built · ${sk.straight} vertex/vertices passed through as curve samples.`)
       }

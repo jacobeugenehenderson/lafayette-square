@@ -13,8 +13,13 @@
 // ⛔ An unresolved key FAILS by name. A key in the LEGACY form (leg flags `:f`/`:b`) is named as such; the pour already warns
 // that nothing reads it. A town that has authored corners but whose shape carries no iaArcKey (poured before corners were
 // keyed) is REFUSED by name — it cannot be judged, so it is never passed. A town with nothing authored has nothing to resolve.
+// ⭐ AND EVERY AUTHORED CORNER DRAWS WHAT IT ASKED, OR NAMES WHY NOT (Boz, 2026-10-20) — a synthetic row, built live (no
+// town): a 22 m block leg with an authored R 30 m corner, which `easeContour` must ease at half its leg (11 m). The build must
+// print THAT corner — its key, the radius asked, the radius drawn, the bounding leg — and must NOT name an unauthored corner
+// clamped the same way (that stays a count: the same fixture at cornerRadiusScale 4, nothing authored).
 // ⭐ MUTANTS (--mutants): (1) an authored key's node moved 1 m → must fail; (2) the shape loses the arc key an authored
-// key resolves to → must fail; (3) the shape loses iaArcKey altogether → must be refused.
+// key resolves to → must fail; (3) the shape loses iaArcKey altogether → must be refused; (4) the per-corner print silenced
+// → the synthetic row must fail; (5) the authoring removed → the row, still expecting its named corner, must fail.
 //   node checks/claims-every-authored-corner-resolves.mjs [--look=a,b] [--shape=<file> --look=<one>] [--mutants]
 // Read-only. Exits 1 on any unresolved key or refused town. Never edits authoring.
 import { readFileSync, existsSync } from 'fs'
@@ -61,5 +66,48 @@ for (const l of looks) {
     } else console.log('   mutant · not run — no resolving per-corner key here to mutate')
   }
 }
-console.log(bad ? '\n⛔ RED — an authored corner names no corner on the ground, or a town cannot be judged' : '\n✅ GREEN — every authored corner resolves')
+// ── THE SYNTHETIC ROW: an authored radius the leg cannot hold is drawn smaller AND SAID, per corner ─────────────────────
+{
+  const { buildTileGround } = await import('../src/lib/tileGround.js')
+  const { KIT_CURB_WIDTH } = await import('../src/cartograph/streetProfiles.js')
+  const m = { left: { pavementHW: 4, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }, right: { pavementHW: 4, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' } }
+  const line = (id, a, b) => ({ skelId: id, name: id, highway: 'residential', oneway: false, points: [a, b], measure: m, gradeSeparated: false })
+  // a block 30 m between centrelines, 8 m of pavement off it ⇒ 22 m legs: an eased corner may set back at most 11 m
+  const streets = [line('n', [-200, -100], [200, -100]), line('s', [-200, 100], [200, 100]), line('w', [-100, -200], [-100, 200]), line('e', [-70, -200], [-70, 200])]
+  const build = (co, scale = 1) => { const lines = [], p = console.log, w = console.warn
+    console.log = console.warn = (...a) => lines.push(a.join(' '))
+    try { return { g: buildTileGround({ streets }, { curbWidth: KIT_CURB_WIDTH, curbedMinWidth: { m: 1, label: 'fixture' }, smooth: 0, cornerRadiusScale: scale, cornerCornerRadiusOverrides: co }), lines } }
+    finally { console.log = p; console.warn = w } }
+  const ASK = 30
+  // → what is wrong: an authored clamped corner the print does not name (key, asked, drawn, leg), or an unauthored one it does
+  const judgeClamp = ({ g, lines }, co, expect) => {
+    const named = (c) => lines.some(l => l.includes(`authored corner ${c.key}:`) && l.includes(`asked R ${c.asked.toFixed(2)} m`) && l.includes(`drawn R ${c.vertR.toFixed(2)} m`) && l.includes(`(${c.leg.toFixed(2)} m;`))
+    const clamped = g.cornerSet.filter(c => c.leg != null), authored = clamped.filter(c => co?.[c.key] != null)
+    const why = []
+    for (const c of authored) if (!named(c)) why.push(`authored corner ${c.key} drawn R ${c.vertR.toFixed(2)} of ${c.asked} asked, and the build does not say so`)
+    for (const c of clamped.filter(c => co?.[c.key] == null)) if (lines.some(l => l.includes(`authored corner ${c.key}:`))) why.push(`unauthored corner ${c.key} named as authored`)
+    if (authored.length < expect) why.push(`${expect} authored clamped corner(s) expected, ${authored.length} found — the fixture no longer clamps`)
+    return { why, clamped: clamped.length, authored: authored.length }
+  }
+  const k0 = build(null).g.cornerSet[0]?.key
+  if (!k0) { console.log('⛔ synthetic row: the fixture produced no corner'); bad++ }
+  else {
+    const CO = { [k0]: ASK }, A = build(CO), r = judgeClamp(A, CO, 1)
+    const U = build(null, 4), ru = judgeClamp(U, null, 0)
+    const counted = U.lines.some(l => /corner\(s\) eased BELOW their radius/.test(l))
+    const ok = !r.why.length && !ru.why.length && ru.clamped > 0 && counted
+    if (!ok) bad++
+    const c = A.g.cornerSet.find(x => x.key === k0)
+    console.log(`${ok ? '✅' : '⛔'} synthetic: an authored R ${ASK} m on a ${c?.leg?.toFixed(0)} m leg is drawn R ${c?.vertR?.toFixed(2)} m and named, by key · unauthored clamps (scale 4): ${ru.clamped}, ${counted ? 'counted' : '⛔ not counted'}, none named`)
+    for (const w of [...r.why, ...ru.why]) console.log(`      ⛔ ${w}`)
+    if (process.argv.includes('--mutants')) {
+      const silenced = { g: A.g, lines: A.lines.filter(l => !l.includes('authored corner ')) }
+      const red4 = judgeClamp(silenced, CO, 1).why.length > 0
+      const red5 = judgeClamp(build(null), CO, 1).why.length > 0
+      if (!red4 || !red5) bad++
+      console.log(`   mutant · the per-corner print silenced: ${red4 ? 'RED, as it must be' : '⛔ still GREEN'} · the authoring removed: ${red5 ? 'RED, as it must be' : '⛔ still GREEN'}`)
+    }
+  }
+}
+console.log(bad ? '\n⛔ RED — an authored corner names no corner on the ground, a town cannot be judged, or an authored radius is drawn smaller unsaid' : '\n✅ GREEN — every authored corner resolves, and draws what it asked or says why not')
 process.exit(bad ? 1 : 0)
