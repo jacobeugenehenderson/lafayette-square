@@ -18,6 +18,7 @@ import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { CURB_WIDTH, SV_SIDEWALK } from '../src/cartograph/streetProfiles.js'
+import { classifyWay, CLASSES, CLASS_ORDER } from '../src/cartograph/streetClass.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('skeleton.js (writes data/<scene>/clean/skeleton.json)')
@@ -1242,6 +1243,38 @@ function seedSection(highway, lanes, oneway, { expressway = false } = {}) {
 // (chainHighway's class vote).
 let WAY_TAGS_BY_ID = new Map()
 let WAY_LEN_BY_ID = new Map()
+// osmId → { class, rung, reason } from the ONE vocabulary (`streetClass.js`), decided in `main`
+// before `groupByName`. Every chain and path reads its class from here, never from `highway`.
+let WAY_CLASS_BY_ID = new Map()
+
+// A chain's class: the length-weighted vote over its OWN source ways' classes (the same vote
+// `chainHighway` takes over `highway`), ties to the table's order. ⛔ A chain whose sources hold
+// more than one class is a NAME that grouped across classes (the brief: a name may group only
+// within one class). It is not split here — that moves skelIds, which are authoring keys — so
+// `classReason` lists the composition and the check reports it.
+function classFields(sources) {
+  const len = new Map(), rungOf = new Map(), reasonOf = new Map()
+  for (const id of sources || []) {
+    const c = WAY_CLASS_BY_ID.get(id)
+    if (!c) throw new Error(`[skeleton] ⛔ source way ${id} has no class — it was not classified before chaining.`)
+    const L = WAY_LEN_BY_ID.get(id) || 0
+    len.set(c.class, (len.get(c.class) || 0) + L)
+    if (!rungOf.has(c.class) || c.rung === 'kit') rungOf.set(c.class, c.rung)
+    if (!reasonOf.has(c.class)) reasonOf.set(c.class, new Set())
+    reasonOf.get(c.class).add(c.reason)
+  }
+  if (!len.size) throw new Error('[skeleton] ⛔ a chain with no source ways cannot be classified.')
+  const order = (k) => CLASS_ORDER.indexOf(k)
+  const ranked = [...len].sort((a, b) => b[1] - a[1] || order(a[0]) - order(b[0]))
+  const [cls] = ranked[0]
+  const reason = [...reasonOf.get(cls)].join(' | ')
+  return {
+    class: cls,
+    classRung: rungOf.get(cls),
+    classReason: ranked.length === 1 ? reason
+      : `${reason} · MIXED by name: ${ranked.map(([k, L]) => `${k} ${L.toFixed(0)} m`).join(' + ')}`,
+  }
+}
 
 // Limited-access highway corridors abut frontage roads, never bound
 // neighborhood blocks — so they are excluded from ground faces regardless of
@@ -1373,7 +1406,8 @@ function chainHighway(sources, sourceTags) {
       best = h; bestLen = L
     }
   }
-  return best || sourceTags?.highway || 'residential'
+  if (!best) throw new Error(`[skeleton] ⛔ no source way of this chain carries a highway tag (sources: ${(sources || []).join(', ') || 'none'}).`)
+  return best
 }
 
 // ── [E1] Custom width base — survey.json → per-side seed enrichment ───────
@@ -1737,6 +1771,7 @@ function weldHighwayChains(streets) {
       weldedFrom: run.map(m => m.id),
       seed: seedSection(keep.highway, lanes, keep.oneway, { expressway: isExpressway(sources) }),
       ...gradeFields(keep.highway, sources),
+      ...classFields(sources),
     })
   }
   for (let i = streets.length - 1; i >= 0; i--) if (gone.has(streets[i])) streets.splice(i, 1)
@@ -1841,6 +1876,7 @@ function weldRoundabouts(streets) {
       weldedFrom: run.map(m => m.id),
       seed: seedSection(keep.highway, lanes, keep.oneway, { expressway: isExpressway(sources) }),
       ...gradeFields(keep.highway, sources),
+      ...classFields(sources),
     })
     welded++; pieces += run.length
   }
@@ -1886,9 +1922,29 @@ function main() {
   // nothing here deletes data. ⛔ FILED AS OWED WORK, not as a settled
   // exclusion — do not let a later pass read this filter as "we don't want
   // transit" (`CLAUDE.md`: an ASPIRATION must be surfaced, never erased).
-  const NOT_BUILT = new Set(['proposed', 'construction', 'planned', 'abandoned', 'razed', 'demolished', 'dismantled'])
-  const notBuilt = highwaysRaw.filter(f => NOT_BUILT.has(f.tags?.highway))
-  const highways = highwaysRaw.filter(f => !NOT_BUILT.has(f.tags?.highway))
+  //
+  // ⭐ CLASSIFY FIRST (`BRIEF-the-classifier` Pass A). Every way gets one class from the ONE
+  // vocabulary (`src/cartograph/streetClass.js`) before anything groups or seeds it. ⛔ The
+  // vocabulary is CLOSED: a way it has no entry for REFUSES THE POUR, by id, name and tags —
+  // it never becomes a residential street. The not-built rule above is one row of that table.
+  const wayClass = new Map(), unknown = []
+  for (const f of highwaysRaw) {
+    const c = classifyWay(f.tags || {})
+    if (c) wayClass.set(f.osmId, c)
+    else unknown.push(f)
+  }
+  if (unknown.length) {
+    console.error(`\n⛔ ${unknown.length} way(s) match NO class in the vocabulary (src/cartograph/streetClass.js). Refusing to pour:`)
+    for (const f of unknown) {
+      const t = f.tags || {}
+      const keys = ['highway', 'area', 'service', 'footway'].filter(k => t[k] != null).map(k => `${k}=${t[k]}`).join(' ') || '(no highway tag)'
+      console.error(`   osm ${f.osmId}  ${t.name ? `"${t.name}"` : '(unnamed)'}  ${keys}`)
+    }
+    console.error('   Decide each in the vocabulary table (a class, or a new row) — never a default.')
+    process.exit(1)
+  }
+  const notBuilt = highwaysRaw.filter(f => wayClass.get(f.osmId).class === 'not-built')
+  const highways = highwaysRaw.filter(f => wayClass.get(f.osmId).class !== 'not-built')
   console.log(`Input: ${highways.length} highway features`)
   if (notBuilt.length) {
     console.log(`  ⛔ dropped ${notBuilt.length} way(s) that DO NOT EXIST (highway=${[...new Set(notBuilt.map(f => f.tags.highway))].join('/')}):`)
@@ -1901,6 +1957,7 @@ function main() {
   // (Part 2 grade separation — see gradeFields/gradeFacts above).
   WAY_TAGS_BY_ID = new Map(highways.map(f => [f.osmId, f.tags || {}]))
   WAY_LEN_BY_ID = new Map(highways.map(f => [f.osmId, polylineLengthXZ(f.coords)]))
+  WAY_CLASS_BY_ID = new Map(highways.map(f => [f.osmId, wayClass.get(f.osmId)]))
 
   const { groups, unnamed } = groupByName(highways)
   console.log(`       ${groups.size} unique names, ${unnamed.length} unnamed`)
@@ -2029,17 +2086,11 @@ function main() {
   // Huron was dropped into `paths` for want of a name, and nothing drew it. The
   // test is the OSM `highway` class (a `_link` is its parent's class). `service`
   // is a path here: it has its own alley handling in derive.js. Not-built
-  // classes (proposed/construction) never get this far — NOT_BUILT above.
-  // ⛔ A class in NEITHER set is printed below, every pour — never dropped quietly.
-  const STREET_CLASSES = new Set([
-    'motorway', 'trunk', 'primary', 'secondary', 'tertiary',
-    'unclassified', 'residential', 'living_street', 'road',
-  ])
-  const PATH_CLASSES = new Set([
-    'footway', 'cycleway', 'path', 'steps', 'pedestrian', 'bridleway',
-    'track', 'corridor', 'elevator', 'service',
-  ])
-  const isStreetClass = (hw) => !!hw && STREET_CLASSES.has(hw.replace(/_link$/, ''))
+  // classes (proposed/construction) never get this far — the not-built class above.
+  // ⭐ The test is the vocabulary's `network` column, read per way: a class whose network is
+  // 'street' is promoted; every other class is kept in `paths[]`. An unknown class never gets
+  // here — the pour refused it above.
+  const isStreetWay = (f) => CLASSES[WAY_CLASS_BY_ID.get(f.osmId).class].network === 'street'
   // ⛔⛔ THE SYNTHETIC ID IS POSITIONAL, AND IT IS AN AUTHORING KEY. `<highway> <n>`
   // numbers by position in `unnamedVehicular`, and the operator's widths are
   // stored under the slug (HPDM's `primary-link-192`). So the classes promoted
@@ -2052,15 +2103,7 @@ function main() {
   ])
   const unnamedVehicular = []
   const unnamedNonVehicular = []
-  const unclassed = new Map()   // highway → count, in neither set
-  for (const f of unnamed) {
-    const hw = f.tags?.highway
-    if (isStreetClass(hw)) unnamedVehicular.push(f)
-    else {
-      unnamedNonVehicular.push(f)
-      if (!PATH_CLASSES.has(hw)) unclassed.set(hw, (unclassed.get(hw) || 0) + 1)
-    }
-  }
+  for (const f of unnamed) (isStreetWay(f) ? unnamedVehicular : unnamedNonVehicular).push(f)
   unnamedVehicular.sort((a, b) =>
     (PRE_A19_UNNAMED.has(b.tags.highway) ? 1 : 0) - (PRE_A19_UNNAMED.has(a.tags.highway) ? 1 : 0))
   // The pour's census: what was promoted, and what is neither street nor path.
@@ -2068,10 +2111,6 @@ function main() {
   for (const f of unnamedVehicular) promotedBy.set(f.tags.highway, (promotedBy.get(f.tags.highway) || 0) + 1)
   console.log(`\nUnnamed ways promoted to streets (class decides, not name): ${unnamedVehicular.length}`)
   console.log(`  ${[...promotedBy].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' · ') || '(none)'}`)
-  if (unclassed.size) {
-    console.log(`  ⛔ ${[...unclassed.values()].reduce((a, b) => a + b, 0)} unnamed way(s) in a class that is NEITHER street nor path — kept in paths[], decide them:`)
-    for (const [hw, n] of unclassed) console.log(`       highway=${hw} × ${n}`)
-  }
   if (promotedBy.has('road')) console.log(`  ⚠️ highway=road × ${promotedBy.get('road')} — OSM says "class unknown"; seedSection seeds it as residential.`)
   // Promote unnamed vehicular fragments into streets with synthetic names.
   // Each fragment becomes its own chain here; highway fragments are then
@@ -2097,6 +2136,7 @@ function main() {
       sources: [f.osmId],
       tags: f.tags || {},
       seed: seedSection(hw, lanes, oneway, { expressway: isExpressway([f.osmId]) }),
+      ...classFields([f.osmId]),
       // No real name: the label is made up (serve.js keeps it out of pickers).
       synthetic: true,
       // Grade separation (Part 2), computed like any street: true for the
@@ -2119,10 +2159,11 @@ function main() {
   }
   const paths = unnamedNonVehicular.map((f, i) => ({
     id: `path-${i}`,
-    highway: f.tags?.highway || 'unknown',
+    highway: f.tags.highway,
     tags: f.tags || {},
     coords: f.coords.map(c => ({ x: c.x, z: c.z })),
     osmId: f.osmId,
+    ...classFields([f.osmId]),
   }))
 
   // ── INDEX MODE — stop here ───────────────────────────────────────────
@@ -2778,6 +2819,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
     // is graded honestly (bridge:true, layer:1, but gradeSeparated:false — it
     // still bounds blocks).
     ...gradeFields(highway, chain.sources),
+    ...classFields(chain.sources),
     ...extras,
   }
 }
