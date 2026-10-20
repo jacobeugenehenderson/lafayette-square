@@ -112,8 +112,7 @@ for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   if (!f.ribbons?.protopolygon?.boundaryRing?.length) { console.log(`⛔ ${scene}: its ① carries no boundaryRing — the rim cannot be told from a point, nothing was checked`); bad++; continue }
   // τ is the town's AUTHORED curb width; with none the producer refuses, and so does this
-  if (!Number.isFinite(f.curbWidth)) { console.log(`⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look; nothing was checked`); bad++; continue }
-  const tau = f.curbWidth, tauWhy = 'authored curb width'
+  const tau = f.curbWidth, tauWhy = `curb width (${f.curbRung})`
   let sites
   try { sites = measure(f, tau) } catch (e) { console.log(`⛔ ${scene}: the producer refused, so nothing was checked — ${String(e.message).split('\n')[0].slice(0, 160)}`); bad++; continue }
   towns++

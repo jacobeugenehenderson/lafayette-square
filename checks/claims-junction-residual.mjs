@@ -23,6 +23,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
+import { readTownDesign, resolveCurbWidth } from '../cartograph/lookDesign.mjs'
 import { classifyHighwayBlocks, sectionPassProtoTile, tilePieceLus } from '../src/lib/tileGround.js'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
@@ -59,7 +60,7 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
   const shapeP = arg('shape') || join(ROOT, 'public/baked', scene, 'shape.json')
   let jrTiles = 0
   if (existsSync(shapeP)) {
-    const cw = 6 * 0.0254
+    const cw = resolveCurbWidth(readTownDesign(scene, 'junction-residual')).value   // the bake's curb: authored, else the kit's
     for (const [ti, t] of (readJson(shapeP).tiles || []).entries()) {
       if (t.blockClass !== 'jr') continue
       jrTiles++

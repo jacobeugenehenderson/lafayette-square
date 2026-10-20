@@ -55,6 +55,7 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { requireArtifact } from './_scenes.mjs'
+import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 
 process.env.CORNER_DUMP = '1'          // must precede the import — the flag is read at module init
 const ROOT = new URL('..', import.meta.url).pathname
@@ -150,8 +151,7 @@ for (const scene of scenes) {
   }
   if (!sc.tiles.length) { notChecked.push({ scene, why: `shape.json carries 0 tiles` }); continue }
   if (!sc.design) { notChecked.push({ scene, why: `no public/looks/${scene}/design.json — the AUTHORED state cannot be loaded` }); continue }
-  const cw = sc.design.curbWidth
-  if (!Number.isFinite(cw)) { notChecked.push({ scene, why: `design.json has no numeric curbWidth` }); continue }
+  const cw = resolveCurbWidth(sc.design).value   // the bake's curb: authored, else the kit's
 
   console.log(`── ${scene} ──  ${sc.tiles.length} tiles · cw=${cw} · ${sc.customSlots} authored override slot(s), ${sc.readable} readable by this bake`)
   if (!sc.customSlots) {

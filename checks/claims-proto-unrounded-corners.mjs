@@ -4,7 +4,7 @@
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
 for (const scene of feedScenes()) {
-  const f = feed(scene); if (!f || f.curbWidth == null) continue
+  const f = feed(scene); if (!f) continue
   const tg = buildProto(f)
   const O = tg.protoOwners || []
   const PP = f.ribbons.protopolygon

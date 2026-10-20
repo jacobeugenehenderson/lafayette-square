@@ -1188,7 +1188,7 @@
 >        · 28.5 m (`chouteau-avenue-0|right`) · 24.2 m (`rutger-street-1|right`); *(ii)* why a **full-depth
 >        abutment yields two union rings.** ⭐ **The count is no longer the story.**
 >    - ⛔ **KIT DEFECT IN THE INSTRUMENT, separate and small: `curbWidth` is a LITERAL `0.381`.** A scene
->      whose operator has not authored one gets `CURB_WIDTH = 0.1524` ⇒ **33 severed, 20 tiles changing
+>      whose operator has not authored one gets `KIT_CURB_WIDTH = 0.1524` ⇒ **33 severed, 20 tiles changing
 >      class.** On town #2 it measures a curb the producer never poured — Check A's blindness, recurring.
 >    - ⚠️ **The live render and the bake disagree on `blockCustoms`** — the Designer expands a split fe's
 >      custom across its segOrds (`feCustomKey.js:107-138`), the bake does not. Bounded at **zero effect on

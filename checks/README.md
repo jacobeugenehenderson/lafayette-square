@@ -179,7 +179,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-kink-recovers-but-a-corner-does-not.mjs` | WHY THIS EXISTS. Jacob, 2026-09-08: "streets should continue their predominant direction into an |
 | `checks/claims-a-level-body-has-one-surface.mjs` | surface.mjs — IS THE LAKE FLAT IN OUR OWN HEIGHTFIELD? |
 | `checks/claims-a-listing-keeps-its-id.mjs` | a business keeps its display id across every bake, whatever else |
-| `checks/claims-a-look-authors-its-curb-width.mjs` | width.mjs — IS EVERY CURB THE TOWN'S OWN, AND DOES A TOWN WITHOUT ONE REFUSE? |
+| `checks/claims-a-look-authors-its-curb-width.mjs` | width.mjs — DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |
 | `checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs` | every spawn of a Look-strict tool passes `--look`. |
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
 | `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | town.mjs |

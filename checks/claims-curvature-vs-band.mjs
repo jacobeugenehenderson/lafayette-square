@@ -34,6 +34,7 @@
 //
 import fs from 'fs'
 import crypto from 'crypto'
+import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 
 const ARG = (k, d) => { const a = process.argv.find(x => x.startsWith(`--${k}=`)); return a ? a.split('=')[1] : d }
 const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }
@@ -47,7 +48,7 @@ const shape = fs.existsSync(SHAPE) ? JSON.parse(fs.readFileSync(SHAPE, 'utf8')) 
 
 // tileGround.js:1206-1207 — read here, not restated as literals elsewhere.
 const STD_TREELAWN = 1.5, ADA_SIDEWALK = 1.5
-const CURB_W = Number.isFinite(design.curbWidth) ? design.curbWidth : (() => { console.log(`⛔ ${DESIGN}: design.json carries no curbWidth — author curbWidth in this town's Look; nothing curb-relative can be measured`); process.exit(1) })()
+const CURB_W = resolveCurbWidth(design).value   // the bake's curb: authored, else the kit's
 const WB = CURB_W + STD_TREELAWN + ADA_SIDEWALK
 
 console.log('═══ SCENE + INPUTS ═══')

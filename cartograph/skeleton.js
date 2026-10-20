@@ -17,7 +17,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
-import { CURB_WIDTH, SV_SIDEWALK } from '../src/cartograph/streetProfiles.js'
+import { KIT_CURB_WIDTH, SV_SIDEWALK } from '../src/cartograph/streetProfiles.js'
 import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER } from '../src/cartograph/streetClass.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
@@ -1584,12 +1584,12 @@ const MAX_CUSTOM_TREELAWN = 6
 // datum against the fragment's own seed would reject real data. The name is
 // the survey's key, so the name's best lane evidence is the fair yardstick.
 const plausibleSwDist = (maxPav, swDist) => {
-  const room = swDist - SV_SIDEWALK / 2 - CURB_WIDTH
+  const room = swDist - SV_SIDEWALK / 2 - KIT_CURB_WIDTH
   if (room < MIN_CUSTOM_PAV_HW) return false
   return room - Math.min(maxPav, room) <= MAX_CUSTOM_TREELAWN
 }
 const plausibleRowHalf = (maxPav, rowHalf) => {
-  const room = rowHalf - SV_SIDEWALK - CURB_WIDTH
+  const room = rowHalf - SV_SIDEWALK - KIT_CURB_WIDTH
   if (room < MIN_CUSTOM_PAV_HW) return false
   return room - Math.min(maxPav, room) <= MAX_CUSTOM_TREELAWN
 }
@@ -1600,9 +1600,9 @@ function stampCustomWidths(streets, survey, sidewalks) {
   // lanes/AASHTO seed unless that would cross the sidewalk.
   const fromSurveyDist = (seed, swDist) => {
     const swInner = swDist - SV_SIDEWALK / 2
-    const room = swInner - CURB_WIDTH
+    const room = swInner - KIT_CURB_WIDTH
     const pav = Math.min(seed.pavementHW, Math.max(0.5, room))
-    const treelawn = Math.max(0, swInner - (pav + CURB_WIDTH))
+    const treelawn = Math.max(0, swInner - (pav + KIT_CURB_WIDTH))
     // ⛔⛔ A CLAMPED ZERO IS AN ARTIFACT, NOT A SURVEY FACT — and downstream it flips a MATERIAL
     // decision. When the lanes/AASHTO asphalt seed is wider than the room the surveyed walk leaves,
     // `pav` is pinned flush and the treelawn is crushed to exactly 0. `gleanTreelawn` then reads
@@ -1627,8 +1627,8 @@ function stampCustomWidths(streets, survey, sidewalks) {
   }
   // Assessor tier: ROW/2 IS the block edge; work the ped section back from it.
   const fromRowHalf = (seed, rowHalf) => {
-    const pav = Math.min(seed.pavementHW, Math.max(0.5, rowHalf - CURB_WIDTH - SV_SIDEWALK))
-    const treelawn = Math.max(0, rowHalf - SV_SIDEWALK - (pav + CURB_WIDTH))
+    const pav = Math.min(seed.pavementHW, Math.max(0.5, rowHalf - KIT_CURB_WIDTH - SV_SIDEWALK))
+    const treelawn = Math.max(0, rowHalf - SV_SIDEWALK - (pav + KIT_CURB_WIDTH))
     return {
       pavementHW: +pav.toFixed(2),
       treelawn: +treelawn.toFixed(2),

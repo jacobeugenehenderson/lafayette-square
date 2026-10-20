@@ -60,7 +60,7 @@ import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // par
 import { waterLevels } from './waterLevel.mjs'
 import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
-import { readBakeDesign } from './lookDesign.mjs'
+import { readBakeDesign, bakeCurbWidth } from './lookDesign.mjs'
 import { lookFade } from './boundaryRecords.mjs'
 import { BAND_COLORS } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
@@ -488,8 +488,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
     reportGlean: true,
     surveyStreets,
-    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth
-      : (() => { throw new Error(`[bake-ground] ⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look`) })(),
+    curbWidth: bakeCurbWidth(design, `bake-ground ${scene}`),   // authored, else the kit's — the rung is printed
     curbedMinWidth: curbedMinWidthOf(scene),
     smooth: STREET_SMOOTH,   // the ONE knob — WYSIWYG with the live Survey curve-fit (SKELETON.md §3.5; was 0, 2026-06-04→revived 2026-06-14)
     blockLandUse: design.blockLandUse || null,

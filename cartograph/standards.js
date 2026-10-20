@@ -8,6 +8,7 @@
  */
 
 import { CLASSES, classOf, classSection } from '../src/cartograph/streetClass.js'
+import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 
 const FT = 0.3048 // feet to meters
 
@@ -20,10 +21,7 @@ export const STANDARDS = {
 
   // ── Curb ──────────────────────────────────────────────────────────
   curb: {
-    width:    6 * 0.0254,    // 6" wide on top
-    reveal:   6 * 0.0254,    // 6" face height
-    // For 2D map purposes, curb is rendered as a line at the
-    // pavement edge with a configurable stroke width
+    width:    KIT_CURB_WIDTH,   // the kit's 6" on top — its one home is streetProfiles.js
   },
 
   // ── Sidewalk zone ─────────────────────────────────────────────────

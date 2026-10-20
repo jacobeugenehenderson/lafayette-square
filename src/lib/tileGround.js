@@ -5931,8 +5931,9 @@ export function cornerFlagOf(v) { return v != null && typeof v === 'object' && t
 export function cutOf(v) { return v != null && typeof v === 'object' && typeof v.cut === 'string' ? v.cut : null }
 
 export function buildTileGround(ribbons, opts = {}) {
-  // ⛔ The curb width is the Look's AUTHORED value (design.json `curbWidth`) — no substitute (Boz ruled 2026-10-19).
-  if (!Number.isFinite(opts.curbWidth)) throw new Error(`[tileGround] ⛔ no curbWidth given (${opts.curbWidth}) — the Look's design.json carries no curbWidth — author curbWidth in this town's Look`)
+  // ⛔ The curb width arrives RESOLVED (the Look's authored value, else the kit's) — the default lives at the design-read
+  // layer, never here (Boz ruled 2026-10-20). ▶ checks/claims-a-look-authors-its-curb-width.mjs
+  if (!Number.isFinite(opts.curbWidth)) throw new Error(`[tileGround] ⛔ no curbWidth given (${opts.curbWidth}) — pass the width the design reader resolved (authored, else the kit's: lookDesign.mjs#bakeCurbWidth, the store's curbWidthOf); a builder never picks one`)
   const curbWidth = opts.curbWidth
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
   // Smooth centerlines BEFORE face extraction so the grout (shared tile edges)

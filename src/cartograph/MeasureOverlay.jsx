@@ -1,7 +1,7 @@
 import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline } from './streetProfiles.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
@@ -262,7 +262,7 @@ export default function MeasureOverlay() {
   // ⭐ CURB-CUT CORNERS (`BRIEF-corner-ramps-and-kerb §3` step 4) — the painter's own records, one per junction corner
   // ⭐ the kerb's width is the LOOK's (`curbWidth`, the cosmetic slider) — one value for every handle, the one the map
   // draws with. The per-edge `side.curb` it once read was a control the map never honoured (removed, Jacob 2026-10-06).
-  const curbWidth = useCartographStore(s => s.curbWidth)
+  const curbWidth = useCartographStore(curbWidthOf)
   const curbCutCorners = useCartographStore(s => s.curbCutCorners)
   const selectedCurbCorner = useCartographStore(s => s.selectedCurbCorner)
   const curbCutLayerOn = useCartographStore(s => s.layerVis?.curbCut !== false)
@@ -554,7 +554,7 @@ export default function MeasureOverlay() {
     const existing = readFeCustom(blockCustoms, fe)
     const ped = resolvePedDepths(chainSeed, side, existing)
     const seed = { ...(chainSeed[side] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-    store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r, store.curbWidth) }])
+    store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r, curbWidthOf(store)) }])
   }, [nearestFeForSide])
 
   const onPointerDown = useCallback((e) => {

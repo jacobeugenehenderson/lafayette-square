@@ -1846,7 +1846,7 @@
     {
       "id": "q-curb-width",
       "ask": "Curb (top-of-curb) width drawn between roadway and ped band",
-      "neededBy": "curbWidth / CURB_WIDTH",
+      "neededBy": "curbWidth / KIT_CURB_WIDTH",
       "status": "open",
       "nextSources": [
         "Caltrans Standard Plans A87 (not in registry) for CA",

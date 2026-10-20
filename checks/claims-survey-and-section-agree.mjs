@@ -13,7 +13,7 @@ const cmp = (tag,a,b) => {
   return rel < 0.5
 }
 for (const scene of feedScenes()) {
-  const f = feed(scene); if (!f || f.curbWidth == null) continue
+  const f = feed(scene); if (!f) continue
   const bR = f.ribbons.protopolygon?.boundaryRing || null
   const p=console.log; console.log=()=>{}
   const tg = buildTileGround(f.ribbons, { smooth:0, curbWidth:f.curbWidth, curbedMinWidth:f.curbedMinWidth, blockCustoms:f.blockCustoms,

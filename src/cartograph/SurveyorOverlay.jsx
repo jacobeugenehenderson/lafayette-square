@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob (SSoT; SKELETON.md §3.5) — the SURVEY navy renders the smooth curve
 import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
@@ -295,7 +295,7 @@ export default function SurveyorOverlay() {
       const existing = readFeCustom(store.blockCustoms, fe)
       const ped = resolvePedDepths(chainSeed, s, existing)
       const seed = { ...(chainSeed[s] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-      const measure = applyKindToMeasure(seed, 'pavementHW', r, store.curbWidth)
+      const measure = applyKindToMeasure(seed, 'pavementHW', r, curbWidthOf(store))
       // One entry per owned segOrd — each shim carries a single-segOrd fe so
       // feCustomKey stores it under (skelId, side, THAT segOrd), not just min().
       for (const seg of runSegOrds) entries.push({ fe: { ...fe, segOrds: [seg] }, measure })
