@@ -1299,8 +1299,11 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
   faces:  [ { ring: [[x, z], ...], use: 'residential' | 'park' | ... } ],  // 173 on LS — read for LU coloring
   tiles:  [ { ring, edges: [{skelId, side}], caps } ],    // ⭐ 101 FROZEN BLOCK FACES — the polygon
                                                           //    substrate, frozen at prebake by derive.js.
-                                                          //    No ground reader since 2026-10-20; its
-                                                          //    caps feed the Measure tool's cap handles.
+                                                          //    ⛔ THE ONE LIVE LEGACY RECORD: no ground
+                                                          //    reader since 2026-10-20; kept only because
+                                                          //    the Measure tool's cap handles read its caps.
+                                                          //    Retires when ① carries a cap record
+                                                          //    (classifier Pass B tips) — Boz, 2026-10-20.
   medians: [...],        // 52 — CONSTRUCTED at prebake, load-bearing (tileGround dereferences it)
   corridors: [...],      // 0 on LS
   junctions: [...],      // 277

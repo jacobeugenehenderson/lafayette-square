@@ -4729,6 +4729,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // wall at ~P3). L1 ONLY: corner construction stays live in Survey
   // (L2 = D3, deferred to §HARDENING); the raw-OSM LU faces
   // (ribbons.faces) are untouched (C5 = D4).
+  // ⛔ THE ONE LIVE LEGACY RECORD (Boz, 2026-10-20): no ground reader since the legacy pass was deleted; kept only
+  // because the Measure tool's cap handles read tiles[].caps. Retires when ① carries a cap record (classifier Pass B).
   {
     // [through-edge overlay] The face walk builds off the prevailing-direction
     // CORRECTED chains (strokePoints) so a divided→through-road median face does
