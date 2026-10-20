@@ -469,24 +469,17 @@ function curbedMinWidthOf(scene) {
   const state = osmP && existsSync(osmP) ? townState(JSON.parse(readFileSync(osmP, 'utf8'))) : { code: null }
   return curbedMinWidth(JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'registry.json'), 'utf8')), state)
 }
-function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null, opts = {}) {
-  // ⭐⭐⭐ `--proto` MAKES ① THE PRODUCER. The frozen artifact is then built from ②③ — the curb
-  // offset from the protopolygon and the bands struck from that curb — instead of from the chains.
-  // ⛔ It is a change of CONSUMER, not of construction (`5560cf6a`'s lesson): ②③ already offset the
-  // grout contour, so nothing new is built here; the bake simply freezes what they made.
-  // ⛔ OFF BY DEFAULT. With the flag absent this call is byte-identical, which `a03-curb-identity`
-  // proves on every commit.
-  const PROTO = !!opts.proto   // from buildTileBakeShape's own opts, not the bake's
-  // ⛔⛔ ① AS THE DEFAULT PRODUCER REQUIRES A SCENE THAT CAN ACTUALLY PRODUCE IT. Measured
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null) {
+  // ⭐ ① IS THE PRODUCER: the frozen artifact is ①②③'s tiles (`protoShapeTiles`) — the curb offset from the
+  // protopolygon and the bands struck from that curb. There is no other producer (the chain shape pass is deleted, 2026-10-20).
+  // ⛔⛔ ① REQUIRES A SCENE THAT CAN ACTUALLY PRODUCE IT. Measured
   // 2026-09-06 the moment the default flipped: hipointedemun has no frozen protopolygon and no
   // boundary, so it LIVE-MINTED ①, skipped the circle stamp, and baked 1103 tiles of the WHOLE
   // FRAME where it had 196 — a plausible-looking wrong map, which is the one outcome Layer 0 q2
   // names as worse than a failure. ⛔ And it destroyed the old artifact doing it: baked output is
   // not in git, so there was nothing to restore.
-  // ⇒ REFUSE, LOUDLY, NAMING THE FIX. ⛔ Never fall back to the chain curb here: a silent legacy
-  // bake under the current default is the same substitution in the other direction, and it is
-  // exactly how `serve.js`'s flagless bake hid a day of ① work from the operator.
-  if (PROTO) {
+  // ⇒ REFUSE, LOUDLY, NAMING THE FIX.
+  {
     const fp = ribbons?.protopolygon
     const why = !fp?.rings?.length ? 'it carries NO frozen protopolygon — it has not been poured since ① landed'
       : !fp.blocks?.length ? 'its frozen ① carries no `blocks` (boundary − stroked roads) — it was poured before the rim fix'
@@ -494,18 +487,16 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
       : null
     if (why) throw new Error(
       `[bake-ground] ⛔ scene '${scene}' cannot bake ① as the producer: ${why}.\n` +
-      `   FIX: re-pour it —  node cartograph/skeleton.js --scene=${scene} && node cartograph/pipeline.js --scene=${scene} && node cartograph/promote-ribbons.js --scene=${scene} --yes\n` +
-      `   Or bake the chain curb DELIBERATELY with --legacy. ⛔ Refusing to substitute either one silently.`)
+      `   FIX: re-pour it —  node cartograph/skeleton.js --scene=${scene} && node cartograph/pipeline.js --scene=${scene} && node cartograph/promote-ribbons.js --scene=${scene} --yes`)
   }
   const pr = buildTileGround(ribbons, {
-    ...(PROTO ? { grout: 'proto', protoProducer: true } : {}),
     stencil: stencilPolygon,
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
     reportGlean: true,
     surveyStreets,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth
       : (() => { throw new Error(`[bake-ground] ⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look`) })(),
-    ...(PROTO ? { curbedMinWidth: curbedMinWidthOf(scene) } : {}),
+    curbedMinWidth: curbedMinWidthOf(scene),
     smooth: STREET_SMOOTH,   // the ONE knob — WYSIWYG with the live Survey curve-fit (SKELETON.md §3.5; was 0, 2026-06-04→revived 2026-06-14)
     blockLandUse: design.blockLandUse || null,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
@@ -513,18 +504,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : null,
     // Per-fe (per-block) asphalt-width overrides authored in Survey/Measure.
     blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : null,
-    // THE WALL · Phase D — emit the frozen per-tile shape artifact for bake serialization.
-    emitArtifact: true,
   })
-  // ── [A07] THE PRODUCER DISCLOSURE — once per pour, and the two kinds apart ──
-  // The docs promise one curb producer ("a concentric offset"). There are two.
-  // This is where the operator of a town nobody has inspected finds that out.
-  if (pr._curbProducers) console.log(`  [A07] ${pr._curbProducers.line}`)
-  // ⛔ Reported SEPARATELY and only when non-zero. A degenerate offset is a
-  // FAILURE; the carve counts above are correct answers. Merging them would put
-  // the real signal behind ~40 routine lines a pour, which is a new silence.
-  const curbFail = pr._curbProducerFailures
-  if (curbFail?.count) console.warn(curbFail.report(scene))
   const byMaterial = new Map()
   const byFaceUse = new Map()
   const pushClipperRings = (key, rings) => {
@@ -599,18 +579,15 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     const { land } = buildParkPathRings(ribbons, { polygon: parkClip.polygon, water: parkClip.water })
     pushClipperRings('park_path', mergeRings(land))
   }
-  // ⛔ LOUD IF ASKED FOR AND ABSENT — a silent fall back to the chain artifact would bake the old
-  // producer under a flag that says otherwise, which is the plausible-looking success Layer 0 forbids.
-  if (PROTO && !pr.protoShapeTiles?.length) throw new Error('[bake-ground] ① is the producer but ②③ produced NO tiles. Refusing to silently bake the chain artifact instead — pass --legacy if the chain curb is what you want.')
-  console.log(PROTO
-    ? `  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③ — NOT the chain curb`
-    : `  [①⇢producer] ⛔ --legacy: freezing the CHAIN curb, not ①. This artifact is NOT the current producer.`)
+  // ⛔ LOUD IF ABSENT (tileGround refuses first; this is the bake's own statement of what it freezes).
+  if (!pr.protoShapeTiles?.length) throw new Error('[bake-ground] ①②③ produced NO tiles — nothing to freeze. Refusing.')
+  console.log(`  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③`)
   // ⭐ the raised kerb's inputs (`kerbLift.mjs`): the block silhouettes (the frozen curb rings), every cut's kerb face,
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
-  if (PROTO && !pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
-  return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [],
-           inkPieces: PROTO ? pr.protoInkPieces : null, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
+  if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
+  return { byMaterial, byFaceUse, shapeArtifact: pr.protoShapeTiles, highwayRings: pr.highway || [],
+           inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -1077,7 +1054,7 @@ export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePendin
   return { paint: null, state: 'pending', why }
 }
 
-export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1166,7 +1143,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1282,7 +1259,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   for (const ring of stripeRings) pushMat('stripe', ring)
   // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile, no ink piece (the curbless blocks'
   // ground included) and not under H has no owner to take its line from. Refused by group and point, never dropped or nudged.
-  if (protoFlag) {
+  {
     const off = roadOffTheLattice({ asphalt: asphaltRings, highway: highwayRings, stripe: stripeRings }, shapeArtifact, inkPieces, ribbons.protopolygon.boundaryRing, highwayRings)
     const bad = Object.entries(off).filter(([, o]) => o.off.length)
     if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no ink piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
@@ -2005,9 +1982,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // own `highway` mat group is unaffected; this is the Section-side freeze.
   // `ink`: the OWNED ROAD GROUND OUTSIDE EVERY TILE, as pieces [{ rings, owners, kind? }]: ①'s ink strokes (the 2ε strip
   // between tiles; a crossing names every owner) and, `kind: 'block'`, the curbless blocks' ground (a block whose curbs
-  // meet has no tile, and its ground is road, owned by its own ① edges). Only ① as the producer makes it; a --legacy freeze
-  // carries none, and a reader that needs it must refuse that shape, not guess.
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ...(inkPieces ? { ink: inkPieces } : {}) }))
+  // meet has no tile, and its ground is road, owned by its own ① edges).
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ink: inkPieces }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)
@@ -2023,21 +1999,16 @@ async function main() {
   // 'lafayette-square' seed, so the env channel was silently ignored and an
   // env-named bake rebuilt LS. See scene.js's header.
   const scene = requireExplicitMap('bake-ground')
-  let look = null, proto = true   // ⭐ ① is the producer by default; --legacy opts out
+  let look = null
   let outDir = null, shorePending = false
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))         look  = m[1]
     // Adaptive ground-subdivision overrides (gated on argv/opts, never env):
-    // ⭐⭐⭐ ① IS THE PRODUCER BY DEFAULT (Jacob, 2026-09-06: "make --proto the default and
-    // rebake"). `--proto` is kept as an accepted no-op so existing invocations and docs still
-    // work; `--legacy` is the ONLY way back to the chain curb, and it is explicit because a bake
-    // that silently produced the other producer is what hid a full day of ① work from the
-    // operator — `serve.js`'s bake button omitted `--proto` and clobbered every proto artifact
-    // with a legacy one, so Section could never show ① no matter what was fixed.
-    else if (arg === '--proto')                   proto = true            // accepted; now the default
-    else if (arg === '--legacy' || arg === '--no-proto') proto = false    // the chain curb, explicitly
+    // ⛔ The producer flags are RETIRED (2026-10-20): ① is the only producer. A stale invocation is refused by name rather
+    // than silently baking something its flag no longer means.
+    else if (/^--(proto|legacy|no-proto)$/.test(arg)) throw new Error(`[bake-ground] ${arg}: retired — ① is the only producer (BRIEF-retire-the-legacy-shape-pass)`)
     else if ((m = arg.match(/^--refine=(.+)$/)))  refine.mode    = m[1]            // adaptive | uniform
     else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
@@ -2046,7 +2017,7 @@ async function main() {
     else if (arg === '--shore=pending')           shorePending = true   // the Bake's first ground pass only (serve.js 'ground')
     else if (arg.startsWith('--shore='))          throw new Error(`[bake-ground] ${arg}: the only value is --shore=pending`)
   }
-  await bakeGround({ look, scene, refine, proto, outDir, shorePending })
+  await bakeGround({ look, scene, refine, outDir, shorePending })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -111,16 +111,9 @@ function ringArea(ring) {
  *                           survive. Name the file and the shape of the edit.
  */
 /**
- * ⭐ THIRD CUSTOMER, 2026-08-04 (`ROADMAP A07`) — the SHAPE producer.
- *
- * The curb has two producers and used to pick between them with no signal. That
- * is the identical invariant one layer down — *a silent choice is not a disclosed
- * one* — so it reports through THIS module rather than a third bespoke reporter.
- *
- * What it needed that vocabulary did not: different prose. "N OSM feature(s) in M
- * unreadable class(es) … these did NOT vote" is false when the subject is a curb.
- * So the wording is now a parameter (`prose`), defaulted to the exact vocabulary
- * strings — existing callers pass nothing and their output is byte-identical.
+ * ⭐ `prose` — the wording is a parameter, defaulted to the exact vocabulary strings, for a customer whose subject is
+ * not an OSM feature ("these did NOT vote" is false about anything else). Added 2026-08-04 for A07's curb-producer gate
+ * (retired 2026-10-20 with the legacy shape pass); `overture-places` uses it.
  * ⛔ If you need a fourth, parameterize further; do not fork this file.
  */
 const VOCAB_PROSE = {

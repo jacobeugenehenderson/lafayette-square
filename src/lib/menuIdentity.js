@@ -33,8 +33,7 @@
  *
  * The prefix is provenance, not decoration: it is readable at a glance which
  * items have ever been through the editor and which are still riding their
- * derived bridge id. (The same discipline as the `producer`/`producerReason`
- * stamps on a poured tile — a value that records where it came from.)
+ * derived bridge id — a value that records where it came from.
  *
  * ⚠️ Once an item HAS an id, the id wins, forever. A rename would derive a
  * different id, but `ensureMenuIds` never recomputes an id that is already

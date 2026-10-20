@@ -88,7 +88,7 @@ export function buildProto(f, { bare = false, quiet = true, ...rest } = {}) {
   if (quiet) console.log = () => {}
   try {
     return buildTileGround(f.ribbons, {
-      grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
+      smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
       blockCustoms: bare ? null : f.blockCustoms, blockLandUse: bare ? null : f.blockLandUse,
       cornerCornerRadiusOverrides: bare ? null : f.cornerCornerRadiusOverrides, cornerRadiusOverrides: bare ? null : f.cornerRadiusOverrides,
       cornerRadiusScale: f.cornerRadiusScale ?? 1, ...rest,
