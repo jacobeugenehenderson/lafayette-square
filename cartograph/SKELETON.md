@@ -66,7 +66,7 @@ Intake → Skeleton → Prebake → Survey → ⟦DATA WALL⟧ → Section → B
 | **Skeleton** | **the frame** — `{streets[], paths[], junctions[], nameTransitions[]}` | **`data/<id>/clean/skeleton.json`** | **1.3M** |
 | **Prebake** | the First-Bake geometry | `src/data/ribbons.json` | 1.3M |
 | **Survey** | operator intent — chain measures/caps/anchors in `clean/overlay.json` (**5.3 KB**, `{version, streets}`, 52 LS streets — **no `loops`, no `blockCustoms`, no corner overrides**); the per-fe SHAPE SSoT in `looks/<id>/design.json` (**~30 KB** — `blockCustoms`, `cornerRadiusScale`, `cornerCornerRadiusOverrides`, `alleyCap`, `surveyDefault`) | `clean/overlay.json` · `looks/<id>/design.json` | 5.3K · 30K |
-| **⟦WALL⟧** | the frozen per-tile shape (`_shapeArtifact`) | `public/baked/<id>/shape.json` | **1.03 MB** |
+| **⟦WALL⟧** | the frozen per-tile shape (`protoShapeTiles`) | `public/baked/<id>/shape.json` | **1.03 MB** |
 | **Section** | *(in-memory ped FILL off the frozen shape)* | — | — |
 | **Bake → 3D** | the slab | `public/baked/<id>/{ground,buildings,lamps,scene}.{json,bin}` + lightmap | the slab |
 
@@ -197,7 +197,7 @@ SKELETON  skeleton.js → skeleton.json  streets[].points       (the sparse RDP 
 > **Open follow-ons (banked 2026-06-14):**
 > 1. **Name-transition smoothing seam (low priority — Jacob: "not important on its own unless it messes things up down the road").** The knob smooths **per chain**, so at a `continuesAs` joint the two chains meet at the pinned node but with **different tangents** → a hair-gap in the curb offset on each side (Jacob's eye, the smooth West-18th↔Dolman). Fix = smooth the through-ROAD **across `continuesAs`** (concatenate → smooth once → split back — the §5a RDP through-road pattern applied to the smoothing pass; *"smooth the road, attribute the names after"*). ⚠️ **Watch:** confirm it doesn't fragment the ped **ribbon** downstream (a curb gap can sliver the band) — if it does, it graduates from low-priority.
 > 2. **Part-b corner-aware fillet** — `vertR=0` on within-run curve vertices, so the curb doesn't take a `baseR` fillet at every densified point (only if the curb lumps; on a gently-turning smooth curve the fillets are negligible).
-> 3. **Persist past the Wall — WIRED, awaiting the re-freeze (Jacob's go).** The bake (`bake-ground.js`, both `buildTileGround` calls) now applies `STREET_SMOOTH` ✅, and the Survey-exit freeze (`serve.js` POST `/shape`) carries it via the live `_shapeArtifact`. So Section + the 3D slab will show the smooth curve after a re-freeze/re-bake. ⚠️ Triggering it is **Jacob's go** (re-baking `shape.json` can clobber uncommitted bakes).
+> 3. **Persist past the Wall — WIRED, awaiting the re-freeze (Jacob's go).** The bake (`bake-ground.js`, both `buildTileGround` calls) now applies `STREET_SMOOTH` ✅, and the Survey-exit freeze (`serve.js` POST `/shape`) carries it via the live `protoShapeTilact`. So Section + the 3D slab will show the smooth curve after a re-freeze/re-bake. ⚠️ Triggering it is **Jacob's go** (re-baking `shape.json` can clobber uncommitted bakes).
 
 **WHEN / WHERE the curve-fit lives — two homes:**
 - **(a) Consume-time — ✅ LANDED (the one knob above).** One constant + one pin-set, read by both consumers. Reversible, tunable on the eye, **ix-safe** (operates on a copy; stored frame untouched). The home for *tuning the constant*.

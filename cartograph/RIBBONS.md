@@ -295,7 +295,7 @@
 > then be told not to round again (INVARIANT 2: `jtMiter`, never `jtRound`). With the intention **in the
 > node** there is nothing to second-guess:
 > - **`filletRing` / `filletRings` retire** — ✅ on the ① path: ② rounds at the node and the artifact
->   carries the achieved arcs as `fillets`, so nothing rounds twice. Still live on the legacy path.
+>   carries the achieved arcs as `fillets`, so nothing rounds twice. The legacy path that kept them is deleted (2026-10-20).
 > - **The `jtMiter`-vs-`jtRound` doctrine retires** — no second mechanism left to guard against.
 > - **`bandJoin` retires** — ⚠️ NOT retired in fact: the ① tile carries `bandJoin:'miter'`, because the
 >   consumer reads it. It is now a CONSTANT, not a per-tile case decision, which is the substance of
@@ -308,8 +308,7 @@
 > APPROXIMATELY a cubic, and it degrades where depth approaches the fit radius — the tight turning circles.
 > **Not measured under the grout subject.**
 >
-> #### ▶ STATE OF THE BUILD — ①②③ is the PRODUCER for Survey and Section (`protoProducer` +
-> `protoArtifact`). The 2026-09-04 grout gates that asked whether it could be built at all are
+> #### ▶ STATE OF THE BUILD — ①②③ is the ONLY producer, for Survey, Section and the bake. The 2026-09-04 grout gates that asked whether it could be built at all are
 > retired to `_archive/RIBBONS-s1-retired-detail-2026-09-06.md §B`; two rules from them stay live:
 > ⛔ never copy GATE A's `jtRound`+`etOpenRound` stroke into ① (it ROUNDS; ① is sharp by ruling), and
 > ⭐ offsetting a CONTOUR does not reproduce the fold class — a narrow block VANISHES instead, which
@@ -335,44 +334,15 @@
 >     `EXPANDED <m> m — NOT the ink width` into the SVG itself, not just the console. **Never
 >     expand silently**; a legible picture that does not name its own distortion is how the
 >     distortion gets quoted as a measurement.
->   ### ⭐⭐⭐ ① IS THE PRODUCER, AND IT IS ON — 2026-09-06. `protoProducer` + `protoArtifact`.
->   ⛔ **A change of CONSUMER, not of construction** — the distinction `5560cf6a` turns on. ②③ already
->   offset the grout contour; the artifact freezes what they made. No geometry was written to land it.
->   **The tile carries `bands` AND `runs` AND `SECTION §4`'s freeze list** (`ring · iA · vertR ·
->   fillets · runs`, each run with its `baseMeasure`). ⚠️ Two earlier claims here are STRUCK:
->   *"the tile carries BANDS, not `runs`"* — `§4` freezes run identity by ruling, and `§3.2` calls it
->   design intent, not chain geometry; and *"OFF BY DEFAULT, proven twice"* — both flags are ON in the
->   Designer, so **`a03-curb-identity` no longer guards this path** and the byte-identity proof covers
->   only the legacy build.
->   ⛔ Shipping `bands` freezes the FILL, which `SECTION §4` names as the Phase-D over-reach. Open
->   there, with the measurement and the one-line flip.
->   ### ⭐⭐⭐ AND THE AXIS IS **CHAINS vs ①**, NOT "FROZEN vs LIVE" — corrected 2026-09-06 (Jacob)
->   > *"It may be mechanically impossible to not use the chains, but the EFFECT needs to be we work
->   > from the simplified protopolygon."*
->
->   `sectionFrozen = !surveyActive`, so with the Survey tool selected the Designer does not read
->   `shape.json` — it live-builds. ⛔ **That is NOT a reason Survey must draw the chain curb, and
->   stating it as one is a defect dressed as a constraint.** ① is frozen into `ribbons.json`, which the
->   live build ALREADY LOADS, so **the live build can build from ①** without touching the frozen-shape
->   boundary at all. `opts.protoProducer` does exactly that, and the console proves the source:
->   `[tileGround][①] source: frozen`.
->   ⇒ **The requirement is that the SHAPE comes from ① everywhere** — frozen or live, Survey or
->   Section. Where the code happens to touch a chain to get there is secondary; what may not happen is
->   a curb whose shape is a traced chain.
->   ### ⭐⭐⭐ SURVEY **AND** SECTION ARE ON ① — LANDED 2026-09-06. `protoProducer` + `protoArtifact`.
->   ⛔⛔ **SWAPPING THE `curb` SLOT ALONE WAS NOT A HALF-STEP, IT WAS A WRONG STEP.** It painted one
->   ①-built line on top of a chain-built map and the two did not agree — and the slot holds a **BAND**,
->   not a ring, so handing it ② (the block's inner polygon) filled every block solid: **2,125,205 m²
->   against the legacy curb's 25,202 m².**
->   ⭐⭐ **THE CONSUMER ALREADY EXISTED.** `sectionOpen` consumes a tile that CARRIES ITS BANDS as-is
->   (`if (st.bands)`) and unions them into asphalt / curb / sidewalk / treelawn / LU / block; ③ produces
->   exactly that tile. ⇒ **`protoProducer` now runs `sectionOpen(protoShapeTiles, …)` and takes every
->   layer from it** — a change of CONSUMER, not of construction, with no per-layer reimplementation.
->   ⛔ `highway` is deliberately NOT swapped: a grade-separated road is its own swept object (`H`, `BRIEF-highway-build`)
->   and ② builds no highway curb, so swapping it would invent a production never had.
->   ▶ `node checks/claims-survey-and-section-agree.mjs` — LS: 118 tiles, all `producer:'proto'`,
->   all carrying bands; **asphalt, curb, sidewalk and block agree to 0 m²** and the LU class sets are
->   identical. That gate is the definition of "the same thing".
+>   ### ⭐⭐⭐ ① IS THE PRODUCER — on 2026-09-06, and the only one since 2026-10-20
+>   ⛔ **A change of CONSUMER, not of construction** (`5560cf6a`): ②③ offset the contour, `sectionOpen` consumes a tile
+>   that carries its bands, and every layer either tool draws comes from it. The tile carries `bands`, `runs` and
+>   `SECTION §4`'s freeze list. ⭐ **The axis is CHAINS vs ①, not frozen vs live** (Jacob): the live build reads ① out of
+>   `ribbons.json`, so Survey draws the same construction Section opens. ⛔ `highway` is its own swept object (`H`) and ②
+>   builds no highway curb. ▶ `node checks/claims-survey-and-section-agree.mjs` — asphalt, curb, sidewalk and block agree
+>   to 0 m² and the LU class sets are identical; that gate is the definition of "the same thing".
+>   *(The flag-era narrative — `protoProducer`/`protoArtifact`, the curb-slot wrong step — →
+>   `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
 >
 >   ### ⭐⭐⭐ AND THIS IS WHAT REMOVES THE RIM ARTIFACT — MEASURED, not argued
 >   The bending at the map edge was never ①'s. Vertices within 5 cm of the boundary arc:
@@ -380,12 +350,11 @@
 >   its faces AGAINST the disc, a substantial share on the arc**, and `filletRing` then ROUNDS the corner the
 >   circle made. ⇒ *"why are the sidewalks trying to bend and create corners at the edge of the
 >   stencil?"* is the TILE WORLD, and the cure is to stop consuming it — not a rim patch.
->   ▶ `node checks/claims-ped-does-not-follow-the-rim.mjs` — ped boundary lying ON the arc:
->   **legacy 0 m** (its ribbon wraps the rounded corner and never reaches the edge) · **① 190 m of
->   sidewalk, longest unbroken run 6.6 m** — chords no longer than the band is wide, i.e. a CUT.
+>   ▶ `node checks/claims-ped-does-not-follow-the-rim.mjs` — ped boundary lying ON the arc: chords no longer than the
+>   band is wide, i.e. a CUT. *(It compared against the legacy walk until that was deleted, 2026-10-20.)*
 >
 >   ### ⛔⛔ THE ONE THING ① LOSES, AND IT IS DISCLOSED PER POUR: **THERE IS NO `median` CLASS.**
->   ③ carries no median or loop concept (`LOOP-STREETS §2/§4`); the legacy carve exists largely FOR
+>   ③ carries no median or loop concept (`LOOP-STREETS §2/§4`); the retired chain carve existed largely FOR
 >   those. LS: **20,362 m² of `median` land use → 0.** ⭐ A land-use key nothing consumes *"drops
 >   silently from the slab — that is exactly how the divided median vanished"*; it is not vanishing
 >   silently twice, so the producer swap WARNS by name when no `median` class comes out. **KNOWN GAP
@@ -672,23 +641,10 @@
 >    legs gives **eight transition vertices and nothing beyond 3.96 m**, against a frozen curb that loses
 >    the 2.71 entirely and strays to 10.71 m. ▶ `scratch/benton-grout-joint.mjs` ⛔ **ONE NODE, ONE READ
 >    — this does not close Gate C; it forbids STARTING it from "a construction is owed".**
->    ### ⛔⛔ MEASURED WHOLE-TOWN 2026-09-06 — **GATE C IS REAL. THE HANDLES ARE NECESSARY AND NOT SUFFICIENT.**
->    ▶ `node checks/claims-proto-leg-tail-is-corner-reach.mjs` — bins every non-highway ② vertex by
->    distance to the nearest node, because **12 m was an arbitrary cut and "leg" vs "corner" was one
->    population split at a guess.** The question it settles: does the miss DECAY away from nodes (⇒ it is
->    corner reach, and building the handles closes it) or PLATEAU (⇒ a mid-leg error handles cannot touch)?
->    **On LS it PLATEAUS in the far field (≥20 m from any node).** ⇒ ⛔ **Do not scope the handles as the
->    close of ②.** They remain owed — the corner zone's miss is still expected and still theirs.
->    - ⭐ **AND IT IS NOT A BASELINE ARTIFACT — checked before the claim shipped.** The baseline is this
->      run's own `iA`, and `A06` says 42 of LS's 101 tiles still build `iA` by the legacy carve, so the
->      obvious reading was *"② only disagrees with the half we know is chain-built."* **It does not** —
->      split by A07's producer stamp, ② misses `offset` and `carve` about equally, and carve is if anything
->      the closer of the two. ▶ `node checks/claims-proto-legmiss-by-producer.mjs`
->      *(`feedback_verify_the_baseline_before_comparing_to_it`, applied before the conclusion, not after.)*
->    - ⛔ **CAUSE NOT ESTABLISHED.** Nothing here says what the mid-leg error IS.
->    - ⛔ **HPDM CANNOT ANSWER THIS QUESTION TODAY** — a majority of its ② vertices find no baseline edge
->      at all and are reported `UNMEASURABLE` as their own class, so the scene gets **no verdict** rather
->      than a number. **That is its own open item, and a green LS is not evidence about it.**
+>    ⛔ **NO LIVE INSTRUMENT MEASURES THIS NOW (2026-10-20).** The whole-town leg-tail measurement ("Gate C is real",
+>    2026-09-06) and its baseline cross-check scored ② against the LEGACY chain curb's `iA`, which no tool has drawn since
+>    ① became the producer; both checks retired with that pass → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.
+>    Whether ② has a mid-leg error is **not established**.
 > 3. **Swallowed blocks** — the loud failure mode, uninvestigated.
 >
 > *(Superseded here, moved to [`_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md`](_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md):
@@ -700,28 +656,14 @@
 > `design.json`/`blockCustoms` (`ORIENTATION §3`, `POLYGON-FIRST §3`), so freezing a width-dependent
 > topology there would freeze **bare-default widths** — Layer 0 q3, baked into an artifact. **Therefore:**
 > - **The COUPLER RELATION is width-INDEPENDENT** — which side hands off to which is a graph property.
->   Prebake, frozen once. ⭐ **It already exists: `junctionMap.nodes[].cornersAdjacent`** — complete at
->   every T and cross. ⛔ **Consumer status: `PREBAKE §2.5`, and nowhere else. Do not restate it here.**
+>   Prebake, frozen once. ⭐ **It is ①'s own record — every crossing carries which two streets met there** (`PIPELINE`
+>   step 3). *(`junctionMap.nodes[].cornersAdjacent` carried it first; it has had no reader since the substrate walk and
+>   the legacy pass were deleted, 2026-10-20 — `PREBAKE §2.5`.)*
 > - **The GEOMETRY is width-DEPENDENT** — where the side-chain lands. Resolves AFTER width authoring.
 >
 > ⭐ This is `PREBAKE §5`'s own unexecuted sentence: *"corner identity (topology) = prebake, frozen once;
 > curb position (width/radius) = Survey, authored on top."* ⚠️ **Consequence to accept deliberately: the
 > SHAPE freeze must sit firmly after width authoring** — a width edit re-topologises.
->
-> ### ⚠️ Slice 1 — the degree-1 coupler — CODE LANDED `a2e0f6c4`; ⛔ REACHES NO ARTIFACT UNTIL A RE-POUR, AND THE RELATION IS NOT TOTAL (2026-08-12)
-> The cap **is** a coupler: the CCW sweep's same-arm guard was dropping the one-arm case, so `via:'cap'`
-> now wraps a tip's two side-chains around the spike. ⛔ **It reaches NO artifact until a pipeline
-> re-pour** — `derive.js` is prebake. `src/data/ribbons.json` carries cap couplers; the five per-scene
-> bundles carry none. ⭐⭐ **COUNT STRUCTURALLY, NEVER BY STRING: `grep '"via":"cap"'` returns 0 on a
-> PRETTY-PRINTED file** (`"via": "cap"`) — a claim and its independent re-check were both made with that
-> same brittle match, so they agreed and were both wrong.
-> `node -e "const r=require('./src/data/ribbons.json');let n=0;for(const d of r.junctionMap.nodes)for(const c of (d.cornersAdjacent||[]))if(c.via==='cap')n++;console.log(n)"`
-> ⛔ **Re-run the line above; never quote it.** Harmless today (`PREBAKE §2.5`), but **slice 2's walk
-> consumes it ⇒ the re-pour is on the critical path.**
-> ⛔ **AND THE RELATION IS NOT TOTAL, despite `derive.js:4373` claiming it is** — `dirs.length < 3`
-> silently drops **degree-2** (continuation · same-corridor-join · divided-transition). LS 4 nodes /
-> HPDM 18. No new coupler *kind* is needed: 100% of the hole is an end-to-end weld of two distinct
-> chains, which the existing CCW sweep pairs correctly. ▶ `node checks/claims-coupler-totality.mjs`.
 >
 > ### ⭐⭐⭐ RULED 2026-08-13 (Jacob) — SMOOTHNESS IS ACHIEVED BY CONSTRUCTION, NEVER BY CLEANUP.
 > > *"We should achieve that smoothness through construction and not by cleanup patch."*
@@ -1357,13 +1299,13 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
                                                           //    from the tile graph, not from here.
   faces:  [ { ring: [[x, z], ...], use: 'residential' | 'park' | ... } ],  // 173 on LS — read for LU coloring
   tiles:  [ { ring, edges: [{skelId, side}], caps } ],    // ⭐ 101 FROZEN BLOCK FACES — the polygon
-                                                          //    substrate, frozen at prebake by derive.js
-                                                          //    and consumed by tilesFromFrozen(). The
-                                                          //    live extractFaces walk is the FALLBACK
-                                                          //    for artifacts that carry none (pre-D2).
+                                                          //    substrate, frozen at prebake by derive.js.
+                                                          //    ⛔ NO GROUND READER since 2026-10-20 (the
+                                                          //    legacy pass is deleted); the freeze is a
+                                                          //    named derive.js leftover.
   medians: [...],        // 52 — CONSTRUCTED at prebake, load-bearing (tileGround dereferences it)
   corridors: [...],      // 0 on LS
-  junctionMap: { nodes: [...] },   // 233 nodes on LS
+  junctionMap: { nodes: [...] },   // ⛔ NO READER since 2026-10-20; its producer is a named derive.js leftover
   junctions: [...],      // 277
   nameTransitions: [...],// 21
   alleys, paths,
@@ -1373,25 +1315,19 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
 
 **Field semantics:** `pavementHW` — perp half-width from centerline to asphalt outer edge (the curb is this offset). `terminal` — `'sidewalk'` (ped zone present) or `'none'` (bare median, etc.). `anchor: 'inner-edge'` — ⛔ **NOT an authoring mode** (corrected 2026-08-11, `SKELETON.md:183`): it is the **prebake width-side normalizer**, stamped at prebake and **not** in `overlay.json` — reading the operator's overlay for it reports "unset" on every carriageway, which is how this was first mis-measured. The chain sits at the carriageway's **inner edge**; `innerEdgeAssign` sets both sides to `surveyHW/2` and zeroes the inboard ped. `intersections.ix` are **indices** — the fragile key; `segOrd` (IX-count-before-a-run) and `cornerKeyAt` (IX coord + leg skelIds) are the densify-robust keys (`SKELETON §3.5`).
 
-### The TILE — the block face (`extractFaces`)
+### The BLOCK and its curb — ① and ② (`§1`)
 
-`extractFaces(streets)` (`tileGround.js:508`) builds a planar graph from the **shared vertices** of `streets[].points` (grade-separated streets excluded) and walks its faces. Each enclosed face is a **tile** — a city block, bounded by the centerlines that surround it. The tile is the unit everything is painted onto.
+A block is a **hole of ①**, the protopolygon (`mintProtopolygon`), and every ① edge carries which street and which side made
+it. Its curb is **②** — the block offset once by each edge's authored half-width (`offsetRingByRects`), eased to the authored
+radius. Survey builds them live from the ① frozen in `ribbons.json`; Section and the bake read the same tiles frozen in
+`shape.json`. *(The chain face walk and the per-tile chain offset/carve that this section described →
+`_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
 
-- **The grout is the centerline**, not a drawn line. A tile's edges ARE segments of the bounding streets' centerlines.
-- **Near-coincident endpoints are welded** before the walk (`ENDPOINT_SNAP`) so a loop body that closes within a few cm reads as a closed face, not an open pendant — this is what makes a loop's **median = the emergent enclosed face** (`LOOP-STREETS.md`).
-- **Dead-ends** render woven with their authored cap; the pendant-prune was reverted (asphalt is tile-sourced — pruning deletes the road; `SECTION.md §6`).
-
-### The curb SHAPE — `iA` (the frozen polygon)
-
-The curb is the per-edge **parallel offset** of the centerline: `iA = chain ⊕ pavementHW` per side (`offsetRingVariable`; D6a — the curb is an offset, not an asphalt-union carve) — **for the tiles that qualify.** ⛔ **The offset is GATED:** `tileGround.js` takes it only when `opts.iaOffset !== false && !isMedianTile && ringArea > 1500`; everything else takes `legacyBlock()`, the asphalt-union carve, **as its primary path** — correctly, since a median or a sliver is not an edge-offset. ✅ **The choice is no longer silent — every tile carries `producer` + `producerReason` in `shape.json`** (A07, `0464c136`), and a qualifying offset that comes back degenerate is now a **loud, separately-counted failure** rather than a quiet swap. ⛔ So *"the curb is a concentric offset"* is true of the **majority, not of the map** — the carved share runs from single digits to three quarters depending on the town's block geometry — **and a defect on a median or a small tile will not respond to offset-side reasoning. Read the tile's `producer` before you reason about its curb** (`node scratch/a07-producer-disclosure.mjs`; ⛔ don't quote a share without re-running it). `ROADMAP A07`. Corners are rounded **once** by `filletRing` (`tileGround.js:262`) — the single legitimate rounding (analogous to figure-ground's `applyRoundCornersToRing`). The curb's render differs by tool:
-- **Survey (live, pre-Wall):** re-stroked every frame by `buildTileGround` (`sectionFrozen=false` → `tileGeos`).
-- **Section (frozen, post-Wall):** read from `shape.json` (`sectionOpen` off the frozen `_shapeArtifact`); the live stroke is gated OFF. (`SKELETON §3.5` — the render-path map.)
-
-### `shape.json` — the frozen per-tile SHAPE (`_shapeArtifact`) + sibling groups
+### `shape.json` — the frozen per-tile SHAPE (`protoShapeTiles`) + sibling groups
 
 The Wall freezes the SHAPE here: each tile's `runs[]` = `{skelId, side, segOrd, poly, baseMeasure}` (the curb edge + run identity). This is Section's frozen input (`SECTION.md §2`). **~1.03 MB on LS** (measured 2026-08-04; the `64K` this line carried for months was 16× low, and it is the number a slab-payload question gets answered with here).
 
-**Format (`{ tiles, highway, ink }`).** The artifact is now an OBJECT wrapping the per-tile array plus **sibling groups that aren't tile-shaped**: `{ tiles: _shapeArtifact[], highway: rings[] }`. The `highway` group holds the grade-separated highway-class strokes (motorway/trunk + links/ramps) — frozen alongside the tiles so the non-Survey frozen views (Section/Design) restore them. *Legacy bare-array `shape.json` is still read* (treated as `{ tiles: d, highway: [] }`) so an un-re-baked scene degrades gracefully. Readers: `BlockGeometryV2Debug` fetch + `freezeShape` (`useCartographStore`); writers: the Survey-exit freeze + `bakeGround`. Grade-sep centerlines are smoothed unconditionally at 1.5 m before stroking (independent of `STREET_SMOOTH=0`, which exists only to spare the fragile *concentric curb* offset — highways stroke flat) so the frozen ramps are facet-free (`tileGround.js` gradeSep loop). **`ink` = owned road ground outside every tile** (`[{rings, owners, kind?}]`): ①'s ink strokes, and (`kind:'block'`) curbless blocks' ground outside H. ① producer only. Tiles carry `ringOwner[i]`. ▶ `checks/claims-the-ink-is-held-by-its-owners.mjs`.
+**Format (`{ tiles, highway, ink }`).** The artifact is now an OBJECT wrapping the per-tile array plus **sibling groups that aren't tile-shaped**: `{ tiles: protoShapeTiles[], highway: rings[], ink: pieces[] }`. The `highway` group holds the grade-separated highway-class strokes (motorway/trunk + links/ramps) — frozen alongside the tiles so the non-Survey frozen views (Section/Design) restore them. *Legacy bare-array `shape.json` is still read* (treated as `{ tiles: d, highway: [] }`) so an un-re-baked scene degrades gracefully. Readers: `BlockGeometryV2Debug` fetch + `freezeShape` (`useCartographStore`); writers: the Survey-exit freeze + `bakeGround`. Grade-sep centerlines are smoothed unconditionally at 1.5 m before stroking (independent of `STREET_SMOOTH=0`, which exists only to spare the fragile *concentric curb* offset — highways stroke flat) so the frozen ramps are facet-free (`tileGround.js` gradeSep loop). **`ink` = owned road ground outside every tile** (`[{rings, owners, kind?}]`): ①'s ink strokes, and (`kind:'block'`) curbless blocks' ground outside H. ① producer only. Tiles carry `ringOwner[i]`. ▶ `checks/claims-the-ink-is-held-by-its-owners.mjs`.
 
 ### `blockCustoms[skelId][side][segOrd]` — operator overrides
 
@@ -1431,7 +1367,7 @@ as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it
 
 ## §3. The pipeline, function-by-function (`tileGround.js`)
 
-`buildTileGround(ribbons, opts)` (`tileGround.js:1185`) is the single entry for **both** the live 2D Survey render and the offline bake → WYSIWYG by construction (`bake-ground.js:294`, `BlockGeometryV2Debug.jsx:681`). ~2650 LOC total. Opts: `{ stencil, curbWidth, smooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, emitArtifact }`.
+`buildTileGround(ribbons, opts)` (`tileGround.js:1185`) is the single entry for **both** the live 2D Survey render and the offline bake → WYSIWYG by construction (`bake-ground.js:294`, `BlockGeometryV2Debug.jsx:681`). ~2650 LOC total. Opts: `{ stencil, curbWidth, curbedMinWidth, smooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms }`. It builds ①②③ and opens their tiles through `sectionOpen` (`§1`).
 
 ### 3.1 The frame, divided roads, and the smooth knob
 
@@ -1439,49 +1375,28 @@ as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it
 - **Divided carriageways stay two centerlines; the median is a BLOCK.** ⭐ **`§1`'s 2026-08-14 ruling owns the model and this line does not restate it** — its grass is the ordinary `luRemainder` of that tile; **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring (the E2 stamp ring that briefly contradicted this is deleted — `§3.5`). ⭐⭐ **The chain POINTS sit at the carriageway CENTRELINE, and each carriageway emits to BOTH sides — the outboard emission bounds its block, the inboard one bounds the gusset.** `innerEdgeAssign`'s `surveyHW/2` per side is exactly that, and it is **correct**. ⛔ **`anchor:'inner-edge'` on all 38 LS carriageways is a FLAG, not a position** — it tells the runtime to *render* the centerline at the inner edge *(measured 2026-08-14: read as a position, every LS divided road would carry a 7–20 m median; as a centreline, 1.5–3.5 m)*. What retires under `§1` is the inboard **ped-zeroing** and `anchor`/`innerSign`/`pairId` as **geometric inputs** — ⛔ **not** the per-side widths. ⭐⭐ **`SKELETON.md:183` ALREADY HAD THIS, MEASURED 2026-08-11 — *"the once-documented 'seeds inboard `pavementHW=0`' is present on ZERO of them."*** ⛔ **A whole day's datum confusion was re-derived because the topic felt like ribbons and nobody opened `SKELETON.md`.** Only its `§61` clause ("chains sit at the inner edges") was wrong; **corrected there 2026-08-14, not here.** ⭐ The lesson is the routing one: **this fact lives in the SKELETON doc, and a ribbons question reached it only by accident.** The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
 - **Divided↔undivided transition (the "special sauce", `SKELETON §5d/§5e`).** At a transition the outer curb must run **straight through**; the median opens **inward**. The corner-builder must round the **two corridor outer-edge legs** (treat the divided corridor as ONE road at the corner), never the carriageway *stubs* — rounding a stub against the cross-street fabricates the **false corner**. Detect via `phase.spineAt*` (a frozen frame fact, never re-derived by node-matching at construction). This cured the live false corner (`9c275ce`). The residual transition "d" bulge comes from the **PRODUCER** — the curb is minted by stroking chains and then snapshotted, so the bow is frozen *into* the artifact (**Check C, RED**). ⚠️ *Precision fix 2026-07-31: this is not "the curb is unfrozen for consumers" — every non-Survey view already reads the frozen `shape.json` (`PIPELINE.md` §5 (the Wall) ⚠️ *(was cited as `WALL.md §31` — a section that never existed)*).* Fixed by building the curb once in prebake from the frozen frame (`HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c), not by more construction.
 
-### 3.2 Tiles — `extractFaces` (`:508`)
+### 3.2–3.3 Blocks and the curb — ① and ② (`§1`; the data model above)
 
-Builds the planar graph from shared vertices of `streets[].points` (excludes `gradeSeparated`), welds near-coincident endpoints (`ENDPOINT_SNAP`), walks the enclosed faces. Output: the tiles, each carrying its bounding-street edges (skelId/side per edge). Loop interiors emerge as faces (→ median, `LOOP-STREETS.md`). ⛔ **CORRECTED 2026-08-12 — "the outer/perimeter face is INCLUDED so exterior streets get asphalt (G9)" is FALSE, and `PIPELINE §5 (the Wall)` carries the same false sentence.** `tileGround.js:984` drops **every** non-positive-area face, the outer face included (its only filter is `signedArea > 1e-3`). **What actually happens:** `derive.js:4632-4648` clips the face-streets to the boundary and **injects the boundary ring as closing edges** (`skelId: '__boundary__'`), so the perimeter faces close into real bounded tiles — **31 of the 101 carry a `__boundary__` edge.** ⭐ The mechanism matters: it is exactly what the punch-out reproduces for free against the raw boundary (§1's outer-polygon note).
+*(The legacy function-by-function — `extractFaces` tiles, the `offsetRingVariable` + `filletRing` curb and the 18th/Dolman
+`cornerAt` tooth that lived in it — → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`. Under ① a corner is where an
+edge's owner changes, and bend vs junction is `classifyCornerLegs` → `sameRoad` over derive's `roadId`.)*
 
-### 3.3 The curb SHAPE — `offsetRingVariable` + `filletRing`
+### 3.4 The ped FILL — `sectionOpen` (`sectionPassProtoTile` per tile)
 
-Per tile, per edge: stroke the centerline outward by `pavementHW` (per-side, per-run via `runMeasure`) → `iA`, the curb edge. `offsetRingVariable(ring, depthAt, cornerAt, capAt)` does the variable-depth parallel offset; `cornerAt` uses the run-seam test (real corner vs through-node) so a width step doesn't appear at a through-node — ⛔ **which key it reads is a live defect, see the block below.** `filletRing(ring, Rfn, sink)` rounds the curb corners **once** (radius from the authored corner-R kit: global scale × per-IX × per-corner). `strokeOpen(polyline, delta)` handles open/perimeter runs. **jtMiter throughout** (invariant 2). This is the SHAPE that freezes at the Wall. ⛔ **All three — `filletRing`, the jtMiter doctrine and the miter limit — retire under §1's 2026-09-04 grout ruling** (the node carries the intention; nothing rounds twice). *(Line numbers deleted 2026-08-13 — all three had drifted 2–3× over; grep the function name.)*
-
-> ### ⛔⛔ THE 18th/DOLMAN TOOTH IS A **REGRESSION**. THE CURE EXISTS, EYE-APPROVED, AND IS OUTVOTED BY A LATER KEY. *(Measured 2026-08-13, agent Wend, `1cadbceb`; framing corrected by Jacob 2026-08-14.)*
->
-> **Both of these are true and there is no tension between them:** Dolman, West 18th and South 18th **are different streets** — the name changes because the street changes — **and they join in a SMOOTH U**, which must carry no corner. ⭐ **`roadId` never claimed they were one street. It claimed the ROAD RUNS THROUGH**, which is exactly what a smooth U is. The 2026-06-15 cure did that and was eye-approved *("it's finally fixed")*.
->
-> ⛔ **What broke it:** `cornerAt` keys on `streetKey = throughId || roadId || skelId || name` (`src/lib/tileGround.js`, grep `const streetKey =`) — **not `skelId`**, as four docs claimed — and **`throughId` is a street NAME** (`cartograph/skeleton.js`, grep `idKeyOf` → `corridor || name`). Added later by the terminal-node sweep and placed **ahead** of `roadId`, so at a name change the key differs and a corner fires. **`roadId` is computed, frozen, and never consulted at the one seam it exists for.**
-> ⭐ **THE FIX IS RESTORATION, NOT INVENTION: a through-node if EITHER union agrees** — which keeps `throughId` doing its own job at a spine↔carriageway divided transition, the reason it was added (`derive.js`, grep `Distinct from roadId`).
-> ⭐⭐ **BLAST RADIUS IS SMALL AND MEASURED — this is NOT a change to what a corner means everywhere.** The two keys can only disagree where `roadId` says *same road* and the name says *different*, i.e. at a name transition: **LS 6 stations, 3 sites.** Everywhere else both keys agree and the answer is identical.
-> ⛔ *(Struck 2026-08-14, and it was Boz's, recorded as Jacob's: "identity is right to say different, so the fix is a GEOMETRY condition on `cornerAt`, and treating the union as one road is barred." That retracted a correct proposal by over-reading a remark, and filed a **regression** as a **missing feature** — the most expensive shape of error in a corpus where the cure is already written.)*
->
-> **What actually renders the artifact, measured.** Identity alone is benign: 4 of LS's 6 flagged stations carry Δ`pavementHW` 0.0000 → displacement ≤6 mm. It becomes visible when a **width step rides it**. At West-18th↔Dolman a **1.4369 m unauthored step** across that 3.24° turn puts the two offset lines' intersection **26.15 m** out — past the **18.32 m miter limit — so a CLAMP fires and substitutes a bevel**, emitting two points instead of one: a 1.4786 m chord at 78°/102° to the road. Frozen `iA` runs 5.490 m, swings to 8.826 / 11.075 m across the fillet rounding that bevel, returns to 6.927 m — **excursion 3.34 / 5.59 m off a curb that should be parallel.** That is the tooth-and-chamfer on the U.
-> ⭐⭐ **THE CLAMP IS THE TELL.** It is a guard covering for a construction that degenerates as the legs approach parallel — **a cleanup patch living inside the construction**, which the ruling below forbids. ⛔ **The fix is therefore not a better clamp and not a smoother: a near-tangent seam must not enter a line-intersection construction at all.** That is INVARIANT 1 already — *the corner is the band BENT around the arc.*
->
-> **Two things left open, both unmeasured — do not close them by reasoning:**
-> - **Why the side labels flip at this seam.** The flip and the width step co-occur here; the two non-flipping sites carry Δ 0. **Cause not established.**
-> - **Whether `continuesAs` should join these three streets at all.** It builds `roadId`, and `roadId` is what the width reconcile uses to force ONE `pavementHW` per side across the union — plausibly the source of the 1.4369 m step. **Unmeasured.** (Next §, the width-step line: the reconcile compares by literal side label, and this seam joins a *left* run to a *right* run, so the two values that physically meet are never compared.)
->
-> ⭐ **The class ports — the test names no street:** `roadId agrees ∧ throughId disagrees`. **LS: 6 stations, 3 sites.** ▶ `node checks/claims-uturn-outer-edge-walk.mjs`
-> ⚠️ **`scratch/correctness-detector.mjs` already flagged this** (`West 18th Street: curb(1.45m) bump(97°)`) and it sat unjudged in the "grid false-positives" bucket. **The detector worked; nobody read it.**
-
-### 3.4 The ped FILL — `sectionPass` / `sectionOpen` (`:801` / `:1161`)
-
-`sectionPass(shapeTiles, cw, stripMat, blockCustoms)` strokes the ped cross-section **INWARD** off the frozen curb `iA`: treelawn (outer strip) + sidewalk (inner strip) + the bent corner fill + the ADA pad + the dead-end cap wraps; LU is the flooded remainder. **Mono-width** (one total depth per block → clean concentric outer edge; the divider varies per-edge). The corner is the band **bent** (invariant 1) — a slice of the same continuous offsets, all-SW at the corner (ADA), tangent-trimmed onto the legs. `sectionOpen` is the open-side mate (Wall Phase-D) composing block/curb/asphalt off the frozen `iA` with **no chain handle**.
+`sectionOpen(shapeTiles, cw, stripMat, …)` strokes the ped cross-section **INWARD** off the frozen curb `iA`: treelawn (outer strip) + sidewalk (inner strip) + the bent corner fill + the ADA pad + the dead-end cap wraps; LU is the flooded remainder. **Mono-width** (one total depth per block → clean concentric outer edge; the divider varies per-edge). The corner is the band **bent** (invariant 1) — a slice of the same continuous offsets, all-SW at the corner (ADA), tangent-trimmed onto the legs. `sectionOpen` is the open-side mate (Wall Phase-D) composing block/curb/asphalt off the frozen `iA` with **no chain handle**.
 
 > **`SECTION.md` is the SSoT for the FILL** — the strip swap, the bent-SECTOR corner construction, the ADA "slide-to-curb", the cap-wrap, the "how to change the corners" guide, and the Section authoring panel all live there. This doc owns only the geometry doctrine; §3.4 is the pointer.
 
 ### 3.5 Materials / LU / median
 
 - **Per-LU color:** each PIECE of a tile's inner area is painted by its EVIDENCE, polygon by polygon (M1): OSM land-use polygons, then readable parcels, laid out disjoint at the pour (`derive.js` `layerLandEvidence`), and `underived` grass where none reaches; its treelawn takes the same class (M2). An operator override (`blockLandUse`) or a verge/JR ruling paints the piece whole. ▶ `node checks/claims-every-piece-takes-its-own-land-use.mjs` · that the evidence is disjoint ▶ `node checks/claims-the-land-is-painted-by-its-evidence.mjs` (RED until the pour builds it as one partition)
-- **Median (divided) — a WALKED FACE (the as-built home; `§1`'s 2026-08-14 ruling is the doctrine).** The median is the block face `extractFaces` produces between the two carriageway chains. **Identity: RETIRING** — today `isMedianTile` reads `phase.role`/`phase.pairKey` (a tile bounded by both carriageways of one pair); `§1` replaces it with the polygon rule, and measured the chain flags to find nothing the polygon does not. ⛔ **A left/right side test was TRIED AND REVERTED** — the measure `side` is point-order-relative *per chain*, so a pair's two carriageways disagree on which side faces the median (Lafayette: A matches the inboard oracle, B does not). **Grass:** the tile's `luRemainder` (the open-field flood, `SECTION §3`) — no clip, no ring. ⛔ *(The "ped bands already zeroed" that used to qualify this is retired by `§1`: ped presence comes from `gleanTreelawn`'s ladder like any other block.)* **Curb:** the universal carve `differenceRings([tile.ring], aFill)`. **The nose, crossings, and no-median all fall out** once the carriageway widths are per-side: where the carriageways converge or a cross-street crosses, their asphalt closes the gap → `luRemainder` empty. `derive.js` keeps only `noseRecs` + corridor **merge asphalt**; the median STAMP RING is deleted. *(OPEN: nose rounds with the standard cap/fillet; the merge-asphalt may be removable once the junction lands — `HANDOFF-junction-construction.md`.)*
+- **Median (divided).** Under ① a median is a block like any other, and ③ carries no median class — disclosed per pour (`§1`, "THE ONE THING ① LOSES"); how a divided road's ped sits at each carriageway's outer curb is `§3.5`'s open dispatch. *(The legacy walked-face median → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
 - **Median (loop-body):** the enclosed loop interior (Benton / Park Place, `LOOP-STREETS.md`) is the analogous case, still on a Clipper-inset `kind:'median'` ring (frozen `med`, clipped) — **not yet unified** to the walked-face/`luRemainder` path. Separate from the divided median above.
 - **Curb stroke** is one continuous polygon per tile, wrapping the silhouette incl. corners (G6), painted OVER the bands so the band-to-asphalt seam hides under it.
 
 ### 3.6 The Wall + the bake
 
-Survey-exit freezes the live smoothed `_shapeArtifact` → `shape.json` (`serve.js` POST `/shape`); the full slab bake (`bake-ground.js`) runs the same `buildTileGround` (+ `STREET_SMOOTH`) → the slab. WYSIWYG: live == bake, one module. (`PIPELINE.md` §5 (the Wall), `BAKE.md`.)
+Survey-exit freezes the live `protoShapeTiles` → `shape.json` (`serve.js` POST `/shape`); the full slab bake (`bake-ground.js`) runs the same `buildTileGround` (+ `STREET_SMOOTH`) → the slab. WYSIWYG: live == bake, one module. (`PIPELINE.md` §5 (the Wall), `BAKE.md`.)
 
 ---
 
@@ -1490,7 +1405,7 @@ Survey-exit freezes the live smoothed `_shapeArtifact` → `shape.json` (`serve.
 The corner is the highest-stakes, most-re-derived topic. Hold the chain of homes:
 
 - **Geometry doctrine (the 4 invariants):** §1 above. The corner is the band bent; jtMiter; ADA band-slice; mono-width.
-- **The SHAPE corner (curb arc):** `filletRing` rounds the curb offset once; radius from the 3-tier kit (`SKELETON §4` — Corners subsection). The corner is *two things in two tools*: **SHAPE in Survey, FILL in Section** (`ARCHITECTURE §2.1`).
+- **The SHAPE corner (curb arc):** ② eases the curb once (`easeContour`); radius from the 3-tier kit (`SKELETON §4` — Corners subsection). The corner is *two things in two tools*: **SHAPE in Survey, FILL in Section** (`ARCHITECTURE §2.1`).
 - **The FILL corner (ped bend + ADA):** `SECTION.md §4` — the stamp painter (`sectionPassProtoTile`): the pad is a slice of the band, tangent to tangent; a leg's slope lives on the leg. (`§6.1`'s sector + tangent trim is the legacy WALK painter's, not what draws the map.)
 - **Curb cuts + crosswalks:** whether a street meets a corner is the frozen `iaJunction` (the legs decide, `classifyCornerLegs`); the cut's style is authored → recorded kerbs (`curb-cut-evidence.mjs`) → the town's norm (`curb-cut-norm.mjs`); crosswalks run square across (`crosswalksSquareAcross`). Knobs: `OPERATIONS` "Curb cuts".
 - **The divided false corner:** `SKELETON §5e` — the corner-builder must pair the corridor outer-edge legs, not the carriageway stubs. (Figure-ground skipped these IXs via the now-dead `cornersAtIx`; the tile path must build the *right* corner. The retired skip is documented in the figure-ground archive.)
@@ -1610,10 +1525,10 @@ Where a side street **dead-ends/T's into a through street**, `extractFaces` walk
 
 ## §8. Glossary
 
-- **tile** — a block face of the centerline graph (`extractFaces`); the unit everything is painted onto.
+- **tile** — a block of ① (a hole of the protopolygon) with its ② curb and ③ bands; the unit everything is painted onto.
 - **grout** — the centerlines, which form the tile edges (the tiles are the faces between them).
-- **iA** — the curb edge, the frozen SHAPE: under ① it is ② (`offsetRingByRects`, eased once); on the legacy tile path the per-side offset (`offsetRingVariable`) rounded by `filletRing`.
-- **run / leg** — a maximal span of same-street edges on a tile (`groupRuns`). A run seam is a corner only on the legacy walk path (`cornerAt`); on ① the corner is where ① turns (§1).
+- **iA** — the curb edge, the frozen SHAPE: ② (`offsetRingByRects`, eased once).
+- **run / leg** — a maximal span of same-street edges on a tile (`groupRuns`). The corner is where ① turns (§1).
 - **fe / frontage edge** — a block-edge between two REAL corners; owns `skelId`, `side`, and the `segOrd`s spanning its through-nodes. The authoring unit (`feCustomKey`).
 - **segOrd** — count of IX vertices before a run; the densify-robust run key (vs `intersections.ix`, the fragile index key).
 - **mono-width** — one total ped depth per block (clean concentric corners); the divider + materials vary per-edge. "Ribbon monowidth, strips variable."
