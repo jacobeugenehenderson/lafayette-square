@@ -152,6 +152,11 @@ of either.
    by place. Odd counts get no turn-lane treatment yet. An untagged chain keeps 2 lanes (1 if one-way) as the KIT
    rung, carried over from today, not newly ruled, and disclosed per pour. (An earlier line here gave "1, 2, 4 or
    6 lanes … refuses" as Jacob's; that was Boz's illustration, not a ruling.)*
+   *Jacob, 2026-10-20: "a lane is a lane for now, but if that's information we're getting we need to make sure and
+   not just throw it away." Widened the same day: "We need to make sure we are keeping as much as we take in. This
+   is a persistent annoyance." So every chain carries its source ways' full tags per segment (`chain.ways`,
+   `chain.segmentWays`, documented in `streetClass.js`). Nothing is dropped except by a named rule that prints per
+   pour. Paint reads only the class.*
 2. One island class for every median and sliver: no walk, no lawn, its surface set by the town norm.
 3. Slivers: by topology first (a face bounded by a divided pair), with ①'s centreline-to-centreline width as a back-up selector.
 4. An untagged dead end is BLUNT; turning_circle/turning_loop selects round.
