@@ -49,7 +49,6 @@ const HELD_BUNDLED = {
   'cartograph/pipeline.js':       ["const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')"],     // LS's project buildings
   'cartograph/survey.js':         ["const assessorPath = join(PROJECT_DIR, 'src', 'data', 'blocks_clean.json')"],      // LS's assessor blocks
   'cartograph/seed-centerlines.js': ["const SRC_DATA = join(import.meta.dirname, '..', 'src', 'data')"],               // an LS seeding tool
-  'cartograph/litmus-curb-parallel.mjs': ["path.join(ROOT, 'src/data/ribbons.json')"],                                 // an LS litmus (Check A)
   'cartograph/probe-feature-elevation.js': ["join(ROOT, 'src/data/ribbons.json')", "join(ROOT, 'src/data/park-feature-elev.json')"],  // an LS probe
 }
 for (const [f, ms] of Object.entries(HELD_BUNDLED)) for (const m of ms) (HELD[f] ||= []).push({ match: m, why: 'one town\'s bundled data (src/data/…), found 2026-10-07 — unruled' })

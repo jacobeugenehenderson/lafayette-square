@@ -293,23 +293,15 @@ registry was one answer to it, and not a shipped one. Live task:
 
 "Polygon-First is done for the curb" **means exactly** that all three pass. Nothing else counts as done.
 
-### Check A — Tier-1 parallelism (runnable TODAY · ⛔ RED **and MIS-SPECIFIED — do not act on its number**)
-`cartograph/litmus-curb-parallel.mjs` — runs against the live producer (`buildTileGround`) and asserts every straight-run curb is a parallel offset of its chain (raycast chain→curb, distance must equal the street's half-width).
+### Check A — Tier-1 parallelism (⛔ NO LIVE INSTRUMENT — open work)
+The question stands: **is the curb at the *authored* half-width from its own centreline**, along a straight run, measured
+**with the scene's authoring loaded**, and with a block that has no curb reported as its own failing class. ⛔ Its instrument,
+`litmus-curb-parallel`, was **blind three ways** (authoring off, a silent skip of a block with no curb, and it scored the
+legacy chain curb nobody draws) and refused at build once the legacy pass was deleted. Retired 2026-10-20 →
+`_archive/litmus-curb-parallel-RETIRED-2026-10-20.mjs`, with this section's 2026-07-31 measurement. The work is `ROADMAP A05`.
 
-> ## ⛔⛔ THE CHECK IS BROKEN IN TWO WAYS. MEASURED 2026-07-31. READ BEFORE QUOTING ANY NUMBER.
->
-> **(1) It runs with AUTHORING SWITCHED OFF.** `litmus-curb-parallel.mjs:77` passes **`blockCustoms: null`** — bare defaults. So it compares an **authored** curb against the **un-authored** width and reports **the operator's own decision as a defect.** Mississippi Avenue: authored half-width **8.70 m**, curb sits at **8.70 m**, spread along the run **0.00 m** — dead straight, dead parallel — and the check called it a **3.13 m bow** because it was measuring against the corridor's 11.83 m instead. ⭐ **That is damage-vs-decision, committed by an instrument** (`feedback_dont_undo_a_decision_the_operator_made`). The brief already specified the right behaviour — *"parallel offset means parallel at the **authored** width"* (`HANDOFF-freeze-the-curb…` §5.1); the check never did it.
->
-> ⭐⭐ **AND THIS IS A LAYER-0 DEFECT, NOT A BUG.** The check fails **worst on the most heavily authored town — LS, the mould.** On a fresh pour with no customs it would look clean. **The instrument is blind exactly where the map is most worked-on**, so it is *most wrong where an operator has done the most work* — the same shape as `measureModel`'s width bleed and the wall's silent fallback: **invisible in precisely the scene you'd reach for to prove it works.** ⛔ Any detector in the suite (§5) that runs with authoring off inherits this.
->
-> **(2) It DRESSES A FAILURE AS A MODEST DEFECT.** `:86` — `if (!tile?.iA?.length) continue` — a tile with **no curb ring at all is skipped**, and samples that find no curb nearby are dropped. So *"this block has no curb"* prints as *"bows 3.9 m."* ⛔ **A silent substitution inside the detector**, which is the one place it must never happen (`CLAUDE.md` Layer 0).
->
-> **What the numbers actually are — re-derive, do not quote:** ▶ `node cartograph/litmus-curb-parallel.mjs`
-> (authoring OFF, the check's current — broken — default). Running it with authoring loaded moves which
-> runs fail, not how many: ⭐ **the count barely moves; the COMPOSITION does.** Honoring authored widths
-> does not rescue the number, it changes which runs fail.
->
-> ⛔ **A follow-on "collapsed curb rings" census keyed on `iA` area was filed the same day and WITHDRAWN hours later. Do not resurrect it.** It measured **`iA` AREA** — but **`Block = iA = tile − the authored roadway`** (`SURVEY §3` step 5), and the asphalt-edge handle *"strokes the pavement half-width outward; **the block follows**"* (`SURVEY §4`). **It was measuring the operator's width edits.** Area cannot separate an authored wide street from a genuinely narrow historical block from a graph face that is legitimately all roadway — and not with a better threshold either: median ring-share climbs steeply with block size alone, so the metric mostly encodes size. **The only honest test is DISTANCE — is the curb at the *authored* half-width from its centerline — run with authoring loaded** (`ROADMAP A05`).
+> ⛔ **The "collapsed curb rings" census (keyed on `iA` area) was WITHDRAWN 2026-07-31. Do not resurrect it.** `Block = iA = tile − the
+> authored roadway` (`SURVEY §3` step 5), so area measures the operator's width edits. **The only honest test is DISTANCE, run with authoring loaded.**
 >
 > ⭐ **"Bow" is still MORE THAN ONE THING — never quote the aggregate:** **(a) shifted** — perfectly parallel at the wrong datum, which is largely the authoring artifact above and *not a defect*; **(b) wander** — the distance genuinely varies along the run. *Same street is a perfect offset on six tiles and wild on two, so where real wander exists it is **specific tiles**, not the offset math.*
 >
@@ -395,7 +387,7 @@ So this can't rot the same way:
 
 The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central problem**: each is wasted operator time, and a tax the kit **re-pays on every neighborhood** unless defeated at the system level. *"We must build a system to defeat this problem"* (Jacob). The checks above (A/B/C) are the seed of the defeat — the principle is **automate what the operator's eye did.** Four parts:
 
-1. **The invariant suite (the DETECTOR).** Grow the curb checks into a comprehensive set — **one runnable, RED-until-true invariant per bug-class:** curb ∥ chain (`litmus-curb-parallel`, exists) · `iA` no self-intersection (exists) · `corner-guard` byte-stability (exists) · loops close (`loop-closure`, exists) · cul-de-sac cap tangent (`cap-tangent`, exists) · junction-band silhouette (`junction-band`, exists) · name-transition smoothness (`name-transition`, exists) · **no width-step at a through-node** (`through-width` + `curb-bump`, **built 2026-06-15** — `HANDOFF-curve-primitive-skeleton.md`; a `continuesAs` through-road carries one `pavementHW` per side, and a `>20°` turn between short curve-samples on `iA` flags the seam bump) · **no polygon overlap · divided median sane · no jagged-arc (max-turn) on a smooth curve** (`max-turn`, exists). The suite **flags the bad streets automatically** — the eye, mechanized. Live home: `scratch/correctness-detector.mjs`.
+1. **The invariant suite (the DETECTOR).** Grow the curb checks into a comprehensive set — **one runnable, RED-until-true invariant per bug-class:** curb ∥ chain (Check A: no live instrument, `ROADMAP A05`) · `iA` no self-intersection (exists) · `corner-guard` byte-stability (exists) · loops close (`loop-closure`, exists) · cul-de-sac cap tangent (`cap-tangent`, exists) · junction-band silhouette (`junction-band`, exists) · name-transition smoothness (`name-transition`, exists) · **no width-step at a through-node** (`through-width` + `curb-bump`, **built 2026-06-15** — `HANDOFF-curve-primitive-skeleton.md`; a `continuesAs` through-road carries one `pavementHW` per side, and a `>20°` turn between short curve-samples on `iA` flags the seam bump) · **no polygon overlap · divided median sane · no jagged-arc (max-turn) on a smooth curve** (`max-turn`, exists). The suite **flags the bad streets automatically** — the eye, mechanized. Live home: `scratch/correctness-detector.mjs`.
 
 2. **Validate against the 35 (the LABELED SET).** Run the suite on the **raw OSM geometry** of the 35 curated streets (pre-hand-fix). A correct suite **flags those 35** and **does not false-positive** on the clean grid. That tunes the detector to catch exactly what the operator caught — the **acceptance test for the suite itself**.
 
@@ -476,6 +468,6 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 - `SURVEY.md §5.1` — "Survey is not yet polygon-first" (the honest body the target-voice tables contradicted).
 - `BACKLOG.md` "(2b) Freeze the CURB geometry" — the parked program; D6a–d.
 - `HANDOFF-freeze-the-curb-in-the-first-bake.md` — the implementation brief.
-- `cartograph/litmus-curb-parallel.mjs` — Check A, runnable, red.
+- `cartograph/_archive/litmus-curb-parallel-RETIRED-2026-10-20.mjs` — Check A's retired instrument (blind three ways).
 - `scratch/hadrian-wall-open-proof.mjs` — the closure-proof precedent to extend for Check B/C.
 - Code: `tileGround.js:581,825` (the closure that works), `:1994` (the carve to replace), `:2075` (the whole-map melt); `BlockGeometryV2Debug.jsx:661,669` (Survey live-strokes); `derive.js:3922` (the D2 freeze pattern).

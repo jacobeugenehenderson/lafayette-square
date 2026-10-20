@@ -418,12 +418,8 @@ pedestrian control appearing in this tool is tool-conflation, to be removed.
 
 **How you would tell it was wrong:** the honest test is a **distance** one — *is the curb at the
 **authored** half-width from its own centerline* — and it must run **with authoring loaded.**
-⛔⛔ **Our flagship instrument does not.** `litmus-curb-parallel.mjs` passes `blockCustoms: null` — it
-runs with authoring switched off — and scored one avenue's authored 8.70 m half-width as a "3.13 m
-bow." It also **silently skips a block with no curb ring at all**, printing *"this block has no curb"*
-as a modest bow. **A fallback inside the detector, which is the one place it must never be.** Until
-that is fixed, its aggregate is not evidence of anything. *(Re-verified in the code 2026-09-06: both
-still present.)*
+⛔ **No instrument runs it today**: Check A's (`litmus-curb-parallel`) was blind three ways and is retired
+(`POLYGON-FIRST §2`). Open work: `ROADMAP A05`.
 
 → `SURVEY.md` · `SKELETON.md §4` (the authoring catalogue)
 
