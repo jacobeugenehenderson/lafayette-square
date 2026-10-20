@@ -146,6 +146,9 @@ of either.
 ## 5 · Ruled (Jacob, 2026-10-19, relayed by Boz; recorded verbatim)
 
 1. C1: data SELECTS a style, never measures. lanes/width no longer size the carriageway.
+   *Clarified (Jacob, 2026-10-19, relayed by Boz): "lanes picks the configuration." The lane count selects a house
+   configuration: each class has a house lane width, and the tag picks 1, 2, 4 or 6 lanes. `width` in metres stays
+   unread. A lane count outside the house configurations refuses by name, never rounds silently.*
 2. One island class for every median and sliver: no walk, no lawn, its surface set by the town norm.
 3. Slivers: by topology first (a face bounded by a divided pair), with ①'s centreline-to-centreline width as a back-up selector.
 4. An untagged dead end is BLUNT; turning_circle/turning_loop selects round.
