@@ -116,7 +116,7 @@ const doyOf = (d) => Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDa
 // ── WEATHER: the lab writes the SAME inputs the live poller writes ───────────
 // ⭐ Through `useSkyState.setWeatherTargets`, so the Almanac picks the directive and
 // WeatherEffects drives uWetness / uSnowAccumulation exactly as production does.
-// ⛔ The lab never sets a weather uniform itself. Codes are WMO (open-meteo's).
+// ⛔ The lab never sets a weather uniform itself. Codes are WMO (lib/nws.js#WMO_OF).
 const WEATHER = WEATHER_PRESETS
 
 // ── CAMERAS ─────────────────────────────────────────────────────────────────

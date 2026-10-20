@@ -57,7 +57,7 @@ See [`INVENTORY-API.md`](INVENTORY-API.md) for endpoint-level detail.
 |---|---|---|---|
 | Google Apps Script (GAS) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets | Device hash + admin passphrase token (6h, **`localStorage` `lsq_admin_token`** — **[CORRECTED]**, not sessionStorage) | All consumer modals; `useInit` boot fetch |
 | Supabase | Cary courier (requests, sessions, profiles, edge functions); realtime channels for chat, SMS inbox, contact, courier dots | Phone OTP for Cary; anon key for realtime reads | `useCary`, `ChatModal`, `SmsInbox`, `ContactModal`, `CourierDots`, `useInit` |
-| open-meteo.com | 48-hour weather forecast | None (free tier) | `WeatherPoller` → `useWeather.fetchWeather()` (St. Louis lat/lon hardcoded) |
+| api.weather.gov (NWS) | live weather + 48-hour forecast, US towns | None (public domain) | `WeatherPoller` → `useWeather.fetchWeather()` → `lib/nws.js` (the placed town's lat/lon) |
 | Cloudflare Worker | OG meta tags for `/place/<id>` social previews | None | Server-side only (not a runtime consumer) |
 
 ---

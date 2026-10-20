@@ -55,14 +55,14 @@ const useSkyState = create((set, get) => ({
   windVector: new THREE.Vector2(0, 0),
   windSpeedMs: 0,          // raw scalar speed (m/s), surfaced so Almanac evaluator gets windKph without re-deriving from windVector
   windDirDeg: 0,           // meteorological convention — degrees the wind blows FROM
-  windGustsMs: null,       // the 10 m gust (m/s, Open-Meteo wind_gusts_10m); null = no reading. The wind sheet's gust amplitude.
-  pressureMb: null,        // open-meteo pressure_msl (mb / hPa)
-  humidity: null,          // open-meteo relative_humidity_2m, normalized to 0..1
-  temperatureF: null,  // real temp from Open-Meteo (°F), null until first fetch
+  windGustsMs: null,       // the 10 m gust (m/s, NWS grid windGust); null = no reading. The wind sheet's gust amplitude.
+  pressureMb: null,        // NWS observed barometricPressure, the altimeter setting (mb / hPa); null when no listed station reports it
+  humidity: null,          // NWS grid relativeHumidity, normalized to 0..1
+  temperatureF: null,  // real temp from the NWS grid (°F), null until first fetch
   currentWeatherCode: null,  // WMO code from current conditions
   weatherAt: null,  // ms epoch of the last live reading, null until the first fetch
-  directRadiation:  null,    // open-meteo direct_radiation (W/m²)
-  diffuseRadiation: null,    // open-meteo diffuse_radiation (W/m²)
+  directRadiation:  null,    // W/m² — ⛔ NWS supplies no radiation: always null from the live feed
+  diffuseRadiation: null,    // W/m² — ⛔ as above
   hourlyForecast: [],  // Array<{ time: Date, …a whole reading }> — lib/weatherAt.js's shape (hooks/useWeather.js#readingOf)
   currentReading: null,  // the live feed's last reading, in the same shape — what weatherAt returns while the clock is live
   feedPaused: false,   // true while Stage's Weather switch stands a preset: the live fetch writes nothing

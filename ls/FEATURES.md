@@ -202,7 +202,7 @@ What LS trusts cartograph to publish, and what LS does *not* re-author (confirme
 
 - **Trusts as immutable:** `public/baked/<look>/sources.json` (this town's data credits + what is still owed a licence), `public/baked/<look>/ground.{json,bin}` + `ground.lightmap.png`, `public/baked/<look>/buildings.{json,bin}` (**now the production building source — `SlabBuildings`, not Preview-only**), `public/baked/<look>/lamps.json`, `public/baked/<look>/scene.json`, `public/baked/<scene>/trees.json` (the neighborhood's own tree placements + GLB variants), `public/clouds/{presets,almanac,modulators}.json` (**the volumetric `<Atmosphere/>` consumer is now wired via the meteorologist directive — no longer "published but unconsumed" — though it is gated OFF by default; production ships the cheap `<CloudDome/>` and `<Atmosphere/>` only mounts under `?sky=volumetric`**).
 - **Live data still consumed at runtime (intentional or to-be-baked):** enumerated in `ls/ARCHITECTURE.md` §2 "could/should bake" table.
-- **Live data still consumed at runtime (load-bearing, won't ever bake):** GAS listings/events/reviews/bulletins/threads, Supabase Cary sessions, handles, residence + guardian claims, check-ins, community counts, and live Open-Meteo weather. These are dynamic by definition.
+- **Live data still consumed at runtime (load-bearing, won't ever bake):** GAS listings/events/reviews/bulletins/threads, Supabase Cary sessions, handles, residence + guardian claims, check-ins, community counts, and live National Weather Service weather (US towns). These are dynamic by definition.
 
 ---
 

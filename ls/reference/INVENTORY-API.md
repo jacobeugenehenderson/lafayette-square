@@ -174,7 +174,7 @@ Deploy: Cloudflare dashboard → Workers & Pages → `lafayette-square-proxy` �
 
 | API | URL | Purpose | Auth | Caller |
 |---|---|---|---|---|
-| open-meteo | `https://api.open-meteo.com/v1/forecast?latitude=38.616&longitude=-90.2161&current=...&hourly=...&forecast_hours=48&temperature_unit=fahrenheit&timezone=America/Chicago` | 48-hour weather forecast for St. Louis | None (free tier) | `hooks/useWeather.js:fetchWeather()` (called by `WeatherPoller`) |
+| NWS | `https://api.weather.gov/points/{lat},{lon}` → its `forecastGridData` + `/stations/{id}/observations` | live weather + 48-hour forecast, US towns | None (public domain) | `lib/nws.js#nwsWeather` via `hooks/useWeather.js:fetchWeather()` |
 
 Polling interval: see `WeatherPoller.jsx` (also re-fetches on tab refocus).
 

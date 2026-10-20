@@ -452,7 +452,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-town-sees-its-sky.mjs` | "DOES <Town> DRAW ITS SKY IN ANY APP'S CANVAS — OR ONLY IN ONE WHOSE CAMERA HAPPENS TO REACH IT?" |
 | `checks/claims-the-tree-wind-is-the-looks.mjs` | looks.mjs — IS EVERY TREE'S WIND LOOK THE LOOK'S, AND DOES THE VISIBLE FLOOR ADD NOTHING IN CALM? |
 | `checks/claims-the-ward-reads-what-the-manifest-bakes.mjs` | "DOES THE WARD READ EVERY IDENTITY FIELD THE MANIFEST BAKES?" — continuity map §7 #8 (Phase 2 C, 2026-10-04). |
-| `checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs` | the Open-Meteo request names the |
+| `checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs` | lib/nws.js converts every National Weather Service layer |
 | `checks/claims-through-node-width-step.mjs` | THE CHECK: at a THROUGH-NODE — a ring vertex where two consecutive runs carry |
 | `checks/claims-tide-is-present-exactly-where-tidal.mjs` | tidal.mjs — a tide where the water is tidal, and nowhere else (BRIEF-tide). |
 | `checks/claims-tide-matches-noaa.mjs` | noaa.mjs — the tide's CLOCK is NOAA's, not ours (BRIEF-tide). |
