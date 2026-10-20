@@ -91,7 +91,7 @@
     "-397.050,915.290|highland-terrace-0:left|primary-link-197:right": 29.243444938852935,
     "-397.050,915.290|highland-terrace-0:right|primary-link-192:right": 25.658483029955605
   },
-  "curbWidth": 0.381,
+  "curbWidth": 0.1524,
   "parkTitlePos": null,
   "alleyCap": "round",
   "labels": {
