@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 423,
+  "total": 430,
   "counts": {
-    "safe": 306,
+    "safe": 313,
     "local-effect": 27,
     "live": 90
   },
@@ -211,6 +211,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-fitted-loop-stays-on-its-road.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-flat-town-is-not-refined.mjs",
       "tier": "safe",
       "why": [
@@ -334,6 +341,20 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-nodeless-crossing-is-grade-separated.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-parcel-keeps-all-its-parts.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -1055,6 +1076,13 @@
       ]
     },
     {
+      "file": "checks/claims-every-authored-corner-resolves.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-every-baked-species-has-an-impostor.mjs",
       "tier": "safe",
       "why": [
@@ -1105,6 +1133,13 @@
     },
     {
       "file": "checks/claims-every-curb-edge-has-its-owner.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-feature-is-classified.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1447,6 +1482,13 @@
     },
     {
       "file": "checks/claims-intake-is-consumed.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-intake-is-lossless.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -2209,6 +2251,13 @@
     },
     {
       "file": "checks/claims-survey-and-section-agree.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-survey-passes-what-the-bake-passes.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

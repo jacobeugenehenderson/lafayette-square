@@ -152,7 +152,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 306. This is `npm test`.
+## safe — 313. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -171,6 +171,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-curb-arc-belongs-to-one-tile.mjs` | CLAIM — IN THE FROZEN SHAPE, A CURB CONTOUR BELONGS TO ONE TILE, SO A RUN (skelId · side · poly) IS LISTED ONCE. |
 | `checks/claims-a-district-is-the-towns-own.mjs` | own.mjs — DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S? |
 | `checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` | it.mjs |
+| `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | road.mjs — DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |
 | `checks/claims-a-flat-town-is-not-refined.mjs` | CLAIM — A TOWN WITH NO TERRAIN SHIPS ITS GROUND UNREFINED (F3, Jacob 2026-09-24). |
 | `checks/claims-a-frontage-can-ask-for-no-ped-band.mjs` | CLAIM: a frontage that carries no pedestrian realm can say so. |
 | `checks/claims-a-highway-block-keeps-its-corners.mjs` | CLAIM — A BLOCK BESIDE A HIGHWAY KEEPS ITS TOWN CORNERS (H-3 step 3; Jacob's ruling "B"). |
@@ -183,6 +184,8 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
 | `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | town.mjs |
 | `checks/claims-a-mover-stands-where-it-is.mjs` | "DOES A LIVE DOT — THE VISITOR, A COURIER — STAND WHERE IT IS, IN ANY TOWN, DRAWN BY THE TOWN?" |
+| `checks/claims-a-nodeless-crossing-is-grade-separated.mjs` | separated.mjs — WHERE TWO OSM STREET WAYS CROSS IN 2D WITHOUT A SHARED NODE, DOES OSM |
+| `checks/claims-a-parcel-keeps-all-its-parts.mjs` | parts.mjs — DOES A MULTIPART PARCEL REACH THE MAP WHOLE? |
 | `checks/claims-a-pour-adds-no-gitignore-lines.mjs` | "DOES A POUR ADD LINES TO .gitignore?" — the standing guard on scene tracking. |
 | `checks/claims-a-production-host-serves-only-its-own-town.mjs` | A TOWN'S PRODUCTION DOMAIN SERVES THAT TOWN AND NOTHING ELSE — and only a domain we own, live. |
 | `checks/claims-a-published-edit-reaches-the-map.mjs` | a Host's published correction is what the map shows. |
@@ -245,6 +248,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-divided-seam-step.mjs` | DOES THE DIVIDED↔UNDIVIDED SEAM STEP SURVIVE INTO THE FROZEN ARTIFACT? |
 | `checks/claims-docs-carry-their-commands.mjs` | ⭐⭐⭐ THE DOC WRAP, AS A GATE INSTEAD OF A PROMISE. (Jacob, 2026-09-07: "The docs must be fixed |
 | `checks/claims-every-app-mounts-the-town.mjs` | "DOES EVERY APP THAT DRAWS A TOWN DRAW IT THROUGH THE ONE ASSEMBLY?" |
+| `checks/claims-every-authored-corner-resolves.mjs` | resolves.mjs — DOES EVERY CORNER THE OPERATOR AUTHORED STILL NAME A CORNER ON THE GROUND? |
 | `checks/claims-every-baked-species-has-an-impostor.mjs` | every species in a baked census is in that slab’s atlas. |
 | `checks/claims-every-building-has-a-roof-to-seat-on.mjs` | "DOES EVERY BUILDING A VISITOR CAN TAP HAVE A ROOF TO SEAT ITS SELECTION ON?"  — a per-town census. |
 | `checks/claims-every-building-has-an-address.mjs` | "DOES EVERY BUILDING CARRY THE ADDRESS ITS TOWN'S INPUTS GIVE IT — AND IS A MISSING ONE SAID, NEVER GUESSED?" |
@@ -253,6 +257,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-corner-is-one-of-three.mjs` | ⭐⭐⭐ EVERY CORNER RENDERS AS ONE OF THE THREE SANCTIONED SPECS — OR IT IS A DEFECT. |
 | `checks/claims-every-corner-knows-its-junction.mjs` | ⭐⭐ EVERY CORNER KNOWS WHETHER A STREET MEETS IT — `BRIEF-corner-ramps-and-kerb §0a`. THE LEGS DECIDE (Jacob, |
 | `checks/claims-every-curb-edge-has-its-owner.mjs` | owner.mjs — EVERY ② EDGE CARRIES THE ① OWNER IT WAS STRUCK FROM. |
+| `checks/claims-every-feature-is-classified.mjs` | ⭐⭐ IS EVERY PIECE OF STREET-SCAPE ONE CLASS OUT OF THE ONE VOCABULARY? — `BRIEF-the-classifier §3`. |
 | `checks/claims-every-group-meshes-its-own-area.mjs` | area.mjs — A GROUND GROUP'S MESH COVERS EXACTLY ITS OWN POLYGONS. |
 | `checks/claims-every-lu-tag-has-a-home.mjs` | home.mjs — CAN A TOWN BRING A WORD WE DO NOT KNOW? |
 | `checks/claims-every-mapped-stone-structure-is-stone.mjs` | stone.mjs — DOES EVERY MAPPED BREAKWATER AND GROYNE CARRY STONE? |
@@ -293,6 +298,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-installation-legal-is-declared.mjs` | declared.mjs |
 | `checks/claims-intake-absence-is-loud.mjs` | loud.mjs |
 | `checks/claims-intake-is-consumed.mjs` | consumed.mjs — WHAT DID THIS TOWN FETCH THAT NOTHING USES? |
+| `checks/claims-intake-is-lossless.mjs` | lossless.mjs — what a town takes in, it keeps, or a NAMED rule says why not. |
 | `checks/claims-intersections-are-over-described.mjs` | ⭐⭐⭐ HOW OVER-DESCRIBED IS AN INTERSECTION? *(Jacob, 2026-09-08: "We need to simplify the corners |
 | `checks/claims-junction-residual.mjs` | CLAIM — THE JUNCTION RESIDUAL IS WHAT THE RAW INTAKE SAYS IT IS (H-3 check 7, ruling g). |
 | `checks/claims-lab-imports-never-reimplements.mjs` | reimplements.mjs — IS THE SURFACE LAB STILL THE MAP'S ENVIRONMENT? |
@@ -382,6 +388,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-stamp-follows-the-edge.mjs` | ⭐⭐⭐ DOES A ② CONTOUR EDGE CARRY THE OWNER OF THE ① EDGE IT LIES ALONG? |
 | `checks/claims-stat-scope.mjs` | scope.mjs — A DISPLAYED FIGURE MUST DECLARE, AND MATCH, ITS SCOPE. |
 | `checks/claims-survey-and-section-agree.mjs` | Section opens `protoShapeTiles` (the frozen shape) through `sectionOpen`. Under ① both must come from ①②③ and |
+| `checks/claims-survey-passes-what-the-bake-passes.mjs` | passes.mjs — DOES SURVEY'S LIVE BUILD GIVE buildTileGround EVERYTHING THE BAKE DOES? |
 | `checks/claims-swap-reaches-the-paint.mjs` | ⭐⭐⭐ THE OPERATOR'S GESTURE, AS A GATE. (Jacob, 2026-09-07: "The swap regime doesn't work on |
 | `checks/claims-the-ao-belongs-to-its-ground.mjs` | ground |
 | `checks/claims-the-armoured-shore-is-never-empty.mjs` | empty.mjs — IS THERE A WALL AT EVERY DISTANCE? |
