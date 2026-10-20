@@ -18,7 +18,7 @@ for (const scene of feedScenes()) {
   const fp = f.ribbons?.protopolygon
   if (!fp?.blocks?.length || !fp.blockLabels || !fp.boundaryRing?.length) { console.log(`⛔ ${scene}: its frozen ① carries no blocks / blockLabels / boundaryRing — nothing to check against`); bad++; continue }
   const warn = console.warn; console.warn = () => {}
-  let R; try { R = buildProto(f, { quiet: true, protoArtifact: true }) }
+  let R; try { R = buildProto(f, { quiet: true }) }
   catch (e) { console.warn = warn; console.log(`⛔ ${scene}: the producer refused, so nothing was checked — ${String(e.message).split('\n')[0].slice(0, 200)}`); bad++; continue }
   console.warn = warn
   towns++

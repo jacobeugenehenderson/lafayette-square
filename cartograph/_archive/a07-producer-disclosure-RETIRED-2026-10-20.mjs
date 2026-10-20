@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's ruling): it printed the A07 offset/carve split of the LEGACY chain curb, deleted with
+//    the legacy shape pass. Under ① every block's curb is ② — one producer. Kept as the record. Do not run.
 // ───────────────────────────────────────────────────────────────────────────
 // A07 ACCEPTANCE — the producer must DISCLOSE, and NO CURB MAY MOVE.
 //

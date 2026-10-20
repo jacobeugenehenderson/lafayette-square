@@ -47,7 +47,7 @@ for (const scene of feedScenes()) {
   // a recorded regression; this is the restored form.
   const sameRoad = (a, b) => { const A = road.get(a) || {}, B = road.get(b) || {}
     return (!!A.r && A.r === B.r) || (!!A.t && A.t === B.t) || a === b }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
 
   let bounds = 0, invisible = 0, corner = 0, capFold = 0, chainCut = 0, ordinal = 0
   const inst = new Map()

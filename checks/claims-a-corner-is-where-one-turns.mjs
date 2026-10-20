@@ -29,7 +29,7 @@ const SA = (rg) => { let a = 0; for (let i = 0; i < rg.length; i++) { const j = 
 let failures = 0
 for (const scene of scenes) {
   const f = feed(scene); if (!f) { failures++; continue }
-  const r = buildProto(f, {})
+  const r = buildProto(f)
   const owners = r.protoOwners || []
   let chg = 0, turns = 0, straight = 0
   const bad = []

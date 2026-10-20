@@ -30,7 +30,7 @@ const scenes = argv.filter(a => !a.startsWith('--') && !/^\d+$/.test(a))
 let bad = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   const rows = []
   for (const [ti, t] of T.entries()) {
     if (ONE != null && ti !== ONE) continue

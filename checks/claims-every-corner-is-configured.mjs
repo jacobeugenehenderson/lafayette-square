@@ -32,7 +32,7 @@ const turnAt = (g, q) => { const n = g.length, P = g[(q - 1 + n) % n], V = g[q],
 const scenes = feedScenes()
 for (const scene of scenes) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue
-  const tg = buildProto(f, { protoArtifact: true })
+  const tg = buildProto(f)
   const tiles = tg.protoShapeTiles || []
   if (!tiles.length) { console.log(`⛔ ${scene}: no protoShapeTiles — NOT measured`); continue }
   let legCutCorners = 0, builtCorners = 0, filletsTotal = 0, filletsUnmatched = 0, tilesNoFillets = 0, tilesSeen = 0

@@ -57,7 +57,7 @@ for (const scene of feedScenes()) {
   const P = JSON.parse(fs.readFileSync(ribbonsPath(scene), 'utf8')).protopolygon
   if (!P?.blocks?.length || !P?.blockLabels?.length || !P?.owners?.length) {
     console.log(`⛔ ${scene}: no frozen protopolygon blocks — SKIPPED LOUDLY, this scene was NOT checked`); bad++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
 
   let ok = 0, wrong = 0, spill = 0, none = 0, unattr = 0, noBlock = 0, revRings = 0, fwdRings = 0
   const offs = [], okOffs = []

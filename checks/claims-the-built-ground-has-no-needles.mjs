@@ -69,7 +69,7 @@ function needles(rings, tau, onRim) {
 
 function measure(f, tau, opts = {}) {
   const warn = console.warn; console.warn = () => {}
-  let R; try { R = buildProto({ ...f, ...opts }, { quiet: true, protoArtifact: true }) } finally { console.warn = warn }
+  let R; try { R = buildProto({ ...f, ...opts }, { quiet: true }) } finally { console.warn = warn }
   const ring = f.ribbons?.protopolygon?.boundaryRing
   const onRim = (a, b) => ring.some((_, k) => sd(a, ring[k], ring[(k + 1) % ring.length]) <= 1e-3) && ring.some((_, k) => sd(b, ring[k], ring[(k + 1) % ring.length]) <= 1e-3)
   const sites = []

@@ -28,9 +28,9 @@ for (const scene of named.length ? named : ribbonScenes()) {
   const f = feed(scene); if (!f) { red = true; continue }
   const src = readSources(scene), nm = resolveCurbCutNorm(scene, src.declared ? src.state : null)
   const pl = console.log, pw = console.warn; console.log = () => {}; console.warn = () => {}
-  let R; try { R = buildTileGround({ ...f.ribbons, curbCutNorm: nm }, { grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
+  let R; try { R = buildTileGround({ ...f.ribbons, curbCutNorm: nm }, { smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
     blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse, cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides,
-    cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1, protoProducer: true }) } finally { console.log = pl; console.warn = pw }
+    cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1 }) } finally { console.log = pl; console.warn = pw }
   const layers = [['curb', [...(R.curb || []), ...(R.curbCut || [])]], ['lawn', Object.values(R.treelawnByLu || {}).flat()], ['walk', R.sidewalk || []], ['lu', Object.values(R.luByClass || {}).flat()]]
     .map(([k, rs]) => [k, rs.map(r => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return { r, bb: [a, b, c, d] } })])
   const what = (x, z) => { for (const [k, rs] of layers) if (rs.some(o => x >= o.bb[0] && x <= o.bb[2] && z >= o.bb[1] && z <= o.bb[3] && pip(x, z, o.r.r ?? o.r))) return k; return null }

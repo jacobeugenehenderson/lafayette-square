@@ -11,7 +11,7 @@ let bad = 0
 for (const scene of feedScenes()) {   // no town named ⇒ every town with ribbons (checks/_scenes.mjs)
   const f = feed(scene); if (!f) { bad++; continue }
   const prev = console.log; console.log = () => {}
-  const R = buildProto(f, { quiet: true, protoArtifact: true }); console.log = prev
+  const R = buildProto(f, { quiet: true }); console.log = prev
   const ang = (a, b, c) => { const u = [b[0]-a[0], b[1]-a[1]], v = [c[0]-b[0], c[1]-b[1]]
     return Math.acos(Math.max(-1, Math.min(1, (u[0]*v[0]+u[1]*v[1]) / ((Math.hypot(...u)||1)*(Math.hypot(...v)||1))))) * 180/Math.PI }
   const L = [], Rf = []

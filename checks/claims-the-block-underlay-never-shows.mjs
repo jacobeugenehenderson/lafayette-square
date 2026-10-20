@@ -18,7 +18,7 @@ const area = rs => (rs || []).reduce((s, r) => s + SA(r), 0)
 
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   if (!T?.length) { console.log(`⛔ ${scene}: no protoShapeTiles — NOT measured`); continue }
   let gapTotal = 0, blockTotal = 0
   const byLu = new Map()

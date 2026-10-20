@@ -13,7 +13,7 @@ for (const scene of feedScenes()) {
   const baseR = 4.5 * scale                       // the class seed × the operator's dial
   const nIx = Object.keys(design.cornerRadiusOverrides || {}).length
   const nCorner = Object.keys(design.cornerCornerRadiusOverrides || {}).length
-  const tg = buildProto(f, { protoProducer: true, cornerRadiusScale: scale,
+  const tg = buildProto(f, { cornerRadiusScale: scale,
     cornerRadiusOverrides: design.cornerRadiusOverrides, cornerCornerRadiusOverrides: design.cornerCornerRadiusOverrides })
   const rings = tg.protoCurb || []
   const circum = (a, b, c) => {

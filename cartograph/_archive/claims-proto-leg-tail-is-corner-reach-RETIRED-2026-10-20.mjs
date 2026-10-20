@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): its baseline was the LEGACY chain curb's `iA` (`_shapeArtifact` without protoArtifact), a map nobody draws since 2026-09-06; the legacy pass is deleted. The leg-tail question it asked was ② versus that baseline, so it has no subject left.
+//    Kept as the record. Do not run.
 // ⛔⛔ IS THE ② LEG TAIL JUST THE CORNER REACHING FURTHER THAN 12 m? — the discriminator that
 // decides whether the node handles are the WHOLE job or only half of it.
 //
