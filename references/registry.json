@@ -1923,6 +1923,22 @@
       "notes": "The detector's constants — R 3–12 m, fit residual < 0.3 m, ≥ 8 points — are UNANCHORED; 28 of huron's 31 loops have < 8 points (unverified against streetsOrig)."
     },
     {
+      "id": "q-curbed-nose-radius",
+      "ask": "At what radius is the end of a curbed feature rounded where it is cut back to the minimum curbed width (a block nose)?",
+      "neededBy": "the nose (src/lib/tileGround.js easeContour; Jacob's ruling via Boz, 2026-10-17: a curbed feature ends where the block narrows to the minimum curbed width and is capped by the dead-end rule)",
+      "status": "open",
+      "findings": [],
+      "codeSites": [
+        "src/lib/tileGround.js easeContour (the nose) — r = w/2, w = f-massdot-island-min-size linearMinWidth_ft, read through src/cartograph/streetProfiles.js curbedMinWidth"
+      ],
+      "check": "checks/claims-the-built-ground-has-no-needles.mjs",
+      "tried": [
+        "caltrans-hdm → f-caltrans-island-approach-nose (an island's approach-nose offset and radius at a traffic island; not a block nose)",
+        "massdot-design-guide → f-massdot-island-min-size (a width floor; states no end radius)"
+      ],
+      "notes": "Until answered, r = w/2 is [U]: derived from the width floor (a semicircle across the minimum width), not stated by any source. The width itself is cited (MassDOT, borrowed outside MA)."
+    },
+    {
       "id": "q-cap-default-round-or-blunt",
       "ask": "Is a dead end's cap round or blunt by default?",
       "neededBy": "every town",

@@ -1404,10 +1404,16 @@ function chainHighway(sources, sourceTags) {
 // point-order-forward — production's right-perp convention). Reversal-proof
 // by construction.
 
+// ⛔ A town with no survey is a NAMED fact, printed per pour; a survey that cannot be read is an ERROR, never "no survey"
+// (the `catch { return {} }` this replaces turned a corrupt file into a town with no data, silently — Boz, 2026-10-18).
 function loadSurveyStreets() {
   const p = join(RAW_DIR, 'survey.json')
-  if (!existsSync(p)) return {}
-  try { return JSON.parse(readFileSync(p, 'utf8')).streets || {} } catch { return {} }
+  if (!existsSync(p)) { console.log(`  [survey] no survey for this town (${p} absent) — no street side is seeded from one`); return {} }
+  let d
+  try { d = JSON.parse(readFileSync(p, 'utf8')) } catch (e) { throw new Error(`[skeleton] ⛔ ${p} cannot be read as JSON (${e.message}) — a corrupt survey is not a town without one. Refusing.`) }
+  if (!d || typeof d.streets !== 'object' || d.streets === null) throw new Error(`[skeleton] ⛔ ${p} has no \`streets\` object — not a survey this pour can read. Refusing.`)
+  console.log(`  [survey] ${Object.keys(d.streets).length} street(s) from ${p}`)
+  return d.streets
 }
 
 // Min perpendicular distance from a chain to roughly-parallel OSM sidewalks,
@@ -2460,6 +2466,16 @@ function main() {
     }
     console.log(`  corridor spine-link: stamped ${linked} carriageway→spine link(s)`)
   }
+
+  // ⛔ LOUD, NOT YET A REFUSAL (Boz, 2026-10-18): `seedSection` seeds any class with no STD_SECTION row as RESIDENTIAL (two
+  // lanes and two parking lanes), so a footway, a path or a living street on ① is sized as a road. Named per pour, by
+  // class and chain count, until every accepted class has a cited row and the fallback refuses. (A highway class takes
+  // its highwaySection downstream, so its seed is unread and it is not named here.)
+  { const fb = {}
+    for (const s of streets) { const base = String(s.seed?.highway ?? s.highway ?? '').replace(/_link$/, '')
+      if (s.seed && s.seed.seededClass !== base && !LIMITED_ACCESS.has(s.highway)) fb[base || '(none)'] = (fb[base || '(none)'] || 0) + 1 }
+    const e = Object.entries(fb).sort((a, b) => b[1] - a[1])
+    if (e.length) console.warn(`  ⛔ [seed] ${e.reduce((t, [, n]) => t + n, 0)} chain(s) of a class with no section row were seeded as RESIDENTIAL (2 lanes + 2 parking lanes): ${e.map(([k, n]) => `${k} ${n}`).join(' · ')}. Not refused yet; each needs a cited row (references/registry.json).`) }
 
   // ── [E1] Custom width base (survey.json → per-side seed) ─────────────
   // After the canonical-direction pass: per-side identity is resolved

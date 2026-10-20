@@ -1,0 +1,7 @@
+bake-ground.*.js
+dumps/
+*.log
+*.out
+snap-*
+tileGround.*.js
+slabs/

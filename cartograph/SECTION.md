@@ -111,7 +111,7 @@ Each leg's strips stroke at *its own* depth, the divider varying inside the mono
 
 **What freezes (the SHAPE):** `ring` · `iA` · `vertR` · `fillets` · `runs[]` identity · and — since
 the 2026-09-07 flip — the **STAMP**: `iaStamp` (per contour point, the run that owns it), `iaFull`
-(the uncut contour it indexes), `iaCorner` (**①'s** corners, carried onto ②'s contour).
+(the uncut contour it indexes), `iaCorner` (**①'s** corners, carried onto ②'s contour), `iaCap` (its dead-end cap).
 **What stays live:** every ped depth, the divider, the materials, the bent corner. ✅ **`bands` is
 gone from the tile; the FILL is frozen nowhere.** Survey and Section agree to 0 m² because they run
 the **same painter**, which is what "the same thing" was always supposed to mean.
@@ -278,10 +278,11 @@ pointer that does not resolve reads as evidence already gathered.)*
   ▶ `node checks/claims-the-slope-is-on-the-leg.mjs <scene>` — ⛔ **it now gates BOTH edges and
   CLASSIFIES the steps.** Watching one edge is a fallback inside the detector: it read `walkFrom`
   only and reported 0 while the inner edge stepped 1.50 m at every mixed corner.
-  - **A leg ends in exactly three places and they are ONE test**: an eased corner's **tangent** ·
+  - **A leg ends in exactly three places and they are ONE test**: a PADDED arc's **tangent** ·
     ①'s **square** corner (R = 0, so the ease made no arc) · a change of **frontage**. ⛔ No gate on
     the two depths, so TL↔TL is not skipped and the additive quad that used to cover the
-    no-corner case is gone.
+    no-corner case is gone. On an UNPADDED arc (a bend) nothing ends but a change of the ladder's
+    DEPTHS: the band bends through (50a64997, 6a64c44b). ▶ `node checks/claims-a-bend-bends-the-band.mjs <scene>`
   - **The corner's EXTENT is CARRIED, not recovered** — `iaArc`, stamped by the ease that made the
     arc, beside `iaCorner`, which says only *where*. It replaced matching the frozen `fillets`'
     tangent coordinates back onto the contour, which is `A15`'s forbidden proximity recovery and

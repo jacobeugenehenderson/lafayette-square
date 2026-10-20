@@ -15,6 +15,8 @@
 // never silently borrows another town's.
 import fs from 'fs'
 import { buildTileGround } from '../src/lib/tileGround.js'
+import { curbedMinWidth, townState } from '../src/cartograph/streetProfiles.js'
+import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 
 // ⛔ ONE OWNER — `checks/_scenes.mjs`. Re-exported here so the 27 forensics that import
 //    `ribbonsPath` from this feed keep working; the definition lives in exactly one file.
@@ -44,7 +46,13 @@ export function feed(scene) {
   const dp = look && `public/looks/${look}/design.json`
   if (!dp || !fs.existsSync(dp)) { console.log(`⛔ ${scene}: no design.json for look '${look}' — SKIPPED LOUDLY, this scene was NOT checked`); return null }
   const design = JSON.parse(fs.readFileSync(dp, 'utf8'))
+  // ⛔ THE STENCIL TOO — the bake builds with the extent's clip polygon (`bake-ground` → `stencil.clipPolygon`); without it
+  //    the producer's ink ran to the frame's edge (HPDM ±4 km against a 1,389 m disc), and every count read through this feed
+  //    was of a different object than the bake freezes. No authored extent is reported, not substituted.
+  const stencil = loadSceneStencil(process.cwd(), scene).clipPolygon
+  if (!stencil) { console.log(`⛔ ${scene}: no authored extent (neighborhood_boundary.json) — the bake would refuse it, so this scene was NOT checked`); return null }
   return {
+    stencil,
     scene, look,
     ribbons: JSON.parse(fs.readFileSync(rp, 'utf8')),
     blockCustoms: design.blockCustoms || null,
@@ -63,7 +71,10 @@ export function feed(scene) {
     // something else would measure a different map and say nothing — Layer 0 q2. A scene with no
     // authored curb width is a real state; it must be reported, not filled in.
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth
-      : (console.log(`⛔ ${scene}: design.json carries NO curbWidth — NOT substituting one; this scene cannot be measured for anything curb-relative`), null),
+      : (console.log(`⛔ ${scene}: design.json carries NO curbWidth — author curbWidth in this town's Look; the producer refuses without one`), null),
+    // the minimum curbed width (the nose), read by finding id for the town's state — as the bake reads it
+    curbedMinWidth: curbedMinWidth(JSON.parse(fs.readFileSync('references/registry.json', 'utf8')),
+      fs.existsSync(`cartograph/data/${scene}/raw/osm.json`) ? townState(JSON.parse(fs.readFileSync(`cartograph/data/${scene}/raw/osm.json`, 'utf8'))) : { code: null }),
     slots: Object.values(design.blockCustoms || {}).reduce((n, sides) =>
       n + Object.values(sides || {}).reduce((m, ords) => m + Object.keys(ords || {}).length, 0), 0),
   }
@@ -77,7 +88,7 @@ export function buildProto(f, { bare = false, quiet = true, ...rest } = {}) {
   if (quiet) console.log = () => {}
   try {
     return buildTileGround(f.ribbons, {
-      grout: 'proto', smooth: 0, curbWidth: f.curbWidth,
+      grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
       blockCustoms: bare ? null : f.blockCustoms, blockLandUse: bare ? null : f.blockLandUse,
       cornerCornerRadiusOverrides: bare ? null : f.cornerCornerRadiusOverrides, cornerRadiusOverrides: bare ? null : f.cornerRadiusOverrides,
       cornerRadiusScale: f.cornerRadiusScale ?? 1, ...rest,

@@ -47,7 +47,7 @@ const shape = fs.existsSync(SHAPE) ? JSON.parse(fs.readFileSync(SHAPE, 'utf8')) 
 
 // tileGround.js:1206-1207 — read here, not restated as literals elsewhere.
 const STD_TREELAWN = 1.5, ADA_SIDEWALK = 1.5
-const CURB_W = design.curbWidth ?? 0.1524
+const CURB_W = Number.isFinite(design.curbWidth) ? design.curbWidth : (() => { console.log(`⛔ ${DESIGN}: design.json carries no curbWidth — author curbWidth in this town's Look; nothing curb-relative can be measured`); process.exit(1) })()
 const WB = CURB_W + STD_TREELAWN + ADA_SIDEWALK
 
 console.log('═══ SCENE + INPUTS ═══')

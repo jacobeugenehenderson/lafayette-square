@@ -137,6 +137,18 @@ export function highwayStandard(registry, state = { code: null }, read = null) {
   }
 }
 
+// ⭐ THE MINIMUM CURBED WIDTH — where a curbed feature ENDS (the nose, tileGround.js easeContour; Jacob, 2026-10-17: "end and
+// round like everything else"). Read from MassDOT's linear-island floor by finding id; in a town outside MA it is BORROWED,
+// and says so. ⛔ No permitted MO/OH/NY manual states one (`q-state-manual-MO`/`-OH`); CA's own Caltrans floor (4 ft, for a
+// divisional curbed island) is a different element and is not substituted. The radius it implies (w/2) is [U].
+export function curbedMinWidth(registry, state = { code: null }, read = null) {
+  const id = 'f-massdot-island-min-size', f = registryIndex(registry).get(id), ft = f?.value?.linearMinWidth_ft
+  read?.set(id, f?.value ?? null); read?.set('q-curbed-nose-radius', registryIndex(registry).has('q-curbed-nose-radius'))
+  if (!Number.isFinite(ft) || !(ft > 0)) throw new Error(`⛔ references/registry.json: ${id}.value.linearMinWidth_ft is missing — the nose (where a curbed feature ends) is drawn only from a cited width`)
+  const own = state.code === 'MA'
+  return { m: ft * FT, sources: [id, '[U] q-curbed-nose-radius (r = w/2)'], label: `${id}, ${ft} ft${own ? '' : `, borrowed for ${state.code ?? 'a town whose state is unknown'}`}` }
+}
+
 // The recorded entries (`{ id: value | true }`) that differ in `registry` now → their ids. ⛔ A missing record
 // (a map.json poured before the record existed, or unreadable) is NOT clean: it returns ['(no record)'].
 export function registryReadChanged(record, registry) {

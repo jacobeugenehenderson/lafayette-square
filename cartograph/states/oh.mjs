@@ -28,7 +28,10 @@ export default {
       "land_use_code",
       "land_area"
     ],
+    // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18), absent until someone does
     "absent": [
+      "row_type",
+      "land_use_desc",
       "owner",
       "year_built",
       "building_sqft",

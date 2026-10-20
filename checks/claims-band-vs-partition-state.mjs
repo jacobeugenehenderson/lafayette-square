@@ -106,7 +106,8 @@ for (const scene of scenes) {
   const designP = path.join(ROOT, 'public/looks', scene, 'design.json')
   const design = fs.existsSync(designP) ? JSON.parse(fs.readFileSync(designP, 'utf8')) : {}
   const bc = design.blockCustoms || null
-  const CW = design.curbWidth ?? 0.1524
+  const CW = design.curbWidth
+  if (!Number.isFinite(CW)) { console.log(`⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look; not measured`); worstExit = Math.max(worstExit, 2); continue }
 
   console.log(`\n═══ ${scene} — ${tiles.length} tiles · blockCustoms: ${bc ? `${Object.keys(bc).length} authored` : 'NONE'} · curbWidth ${CW}`)
   if (!tiles.length || !tiles.some(t => t.producer) || !tiles.some(t => Array.isArray(t.iaEdge))) {

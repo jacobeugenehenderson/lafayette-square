@@ -1,0 +1,643 @@
+{
+ "examples": [
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    371.877,
+    304.1015
+   ],
+   "m": 353.547,
+   "a": "face:residential#76.0",
+   "b": "mat:sidewalk#123.0",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    367.99549999999994,
+    420.8475
+   ],
+   "m": 327.902,
+   "a": "face:residential#70.0",
+   "b": "mat:sidewalk#111.1",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    306.8305,
+    639.5435
+   ],
+   "m": 297.865,
+   "a": "face:residential#65.0",
+   "b": "mat:sidewalk#99.1",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    16.494,
+    1206.2615
+   ],
+   "m": 273.168,
+   "a": "face:residential#5.0",
+   "b": "mat:sidewalk#6.1",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    58.0995,
+    142.461
+   ],
+   "m": 246.82,
+   "a": "face:residential#89.0",
+   "b": "mat:sidewalk#146.1",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    368.204,
+    419.3615
+   ],
+   "m": 327.863,
+   "a": "mat:treelawn:residential#141.0",
+   "b": "mat:sidewalk#111.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    306.604,
+    641.0275
+   ],
+   "m": 297.95,
+   "a": "mat:treelawn:residential#116.0",
+   "b": "mat:sidewalk#99.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    17.984,
+    1206.4355
+   ],
+   "m": 273.182,
+   "a": "mat:treelawn:residential#9.0",
+   "b": "mat:sidewalk#6.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    447.5795,
+    417.6905
+   ],
+   "m": 170.964,
+   "a": "mat:treelawn:residential#143.0",
+   "b": "mat:sidewalk#123.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    -694.8985,
+    -592.7605
+   ],
+   "m": 165.355,
+   "a": "mat:treelawn:residential#347.0",
+   "b": "mat:sidewalk#252.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    264.1965,
+    394.344
+   ],
+   "m": 198.762,
+   "a": "mat:treelawn:underived#211.0",
+   "b": "mat:sidewalk#123.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    26.628,
+    -337.854
+   ],
+   "m": 193.651,
+   "a": "mat:treelawn:underived#377.0",
+   "b": "mat:sidewalk#190.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    -131.0835,
+    1331.955
+   ],
+   "m": 177.251,
+   "a": "mat:treelawn:underived#2.0",
+   "b": "mat:sidewalk#6.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    273.1315,
+    955.537
+   ],
+   "m": 152.179,
+   "a": "mat:treelawn:underived#72.0",
+   "b": "mat:sidewalk#57.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    -291.6885,
+    666.2025
+   ],
+   "m": 145.236,
+   "a": "mat:treelawn:underived#176.0",
+   "b": "mat:sidewalk#97.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    -32.9145,
+    -943.329
+   ],
+   "m": 209.233,
+   "a": "mat:treelawn:underived#514.0",
+   "b": "mat:curb#212.1",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "pedOuter",
+    "walkFrom",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    26.398500000000016,
+    -336.3715
+   ],
+   "m": 193.711,
+   "a": "mat:treelawn:underived#377.0",
+   "b": "mat:curb#147.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    -131.302,
+    1333.4395
+   ],
+   "m": 177.173,
+   "a": "mat:treelawn:underived#2.0",
+   "b": "mat:curb#5.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    -291.8615,
+    667.693
+   ],
+   "m": 145.234,
+   "a": "mat:treelawn:underived#176.0",
+   "b": "mat:curb#80.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    932.418,
+    -556.9635
+   ],
+   "m": 102.733,
+   "a": "mat:treelawn:underived#423.0",
+   "b": "mat:curb#175.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    306.377,
+    642.5105
+   ],
+   "m": 298.035,
+   "a": "mat:treelawn:residential#116.0",
+   "b": "mat:curb#82.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    19.4735,
+    1206.61
+   ],
+   "m": 273.195,
+   "a": "mat:treelawn:residential#9.0",
+   "b": "mat:curb#5.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    -273.4335,
+    -1309.3935
+   ],
+   "m": 197.259,
+   "a": "mat:treelawn:residential#456.0",
+   "b": "mat:curb#246.0",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    -307.2375,
+    -1301.549
+   ],
+   "m": 190.102,
+   "a": "mat:treelawn:residential#454.0",
+   "b": "mat:curb#237.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    -708.0395,
+    -592.9845
+   ],
+   "m": 139.242,
+   "a": "mat:treelawn:residential#347.0",
+   "b": "mat:curb#191.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  }
+ ],
+ "firstStage": {
+  "S3": 24,
+  "S1": 1
+ },
+ "s0": {
+  "one line, two boolean chains": 25
+ }
+}

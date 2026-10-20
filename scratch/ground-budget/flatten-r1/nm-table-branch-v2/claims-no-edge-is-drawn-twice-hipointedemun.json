@@ -1,0 +1,4167 @@
+{
+ "town": "hipointedemun",
+ "pairs": 13698,
+ "m": 85488.474,
+ "rows": [
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 333,
+   "m": 7620.351,
+   "maxGapSteps": 1,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 254,
+     "m": 7521.285
+    },
+    "straight-through-vertex": {
+     "edgePairs": 79,
+     "m": 99.066
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 716,
+   "m": 5862.547,
+   "maxGapSteps": 0.99,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 578,
+     "m": 5731.219
+    },
+    "straight-through-vertex": {
+     "edgePairs": 138,
+     "m": 131.327
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 993,
+   "m": 4795.888,
+   "maxGapSteps": 1,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 857,
+     "m": 4663.438
+    },
+    "straight-through-vertex": {
+     "edgePairs": 136,
+     "m": 132.451
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 826,
+   "m": 4599.261,
+   "maxGapSteps": 0.992,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 684,
+     "m": 4519.668
+    },
+    "straight-through-vertex": {
+     "edgePairs": 142,
+     "m": 79.593
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 495,
+   "m": 4121.35,
+   "maxGapSteps": 1,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 410,
+     "m": 4094.924
+    },
+    "straight-through-vertex": {
+     "edgePairs": 85,
+     "m": 26.426
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 422,
+   "m": 3648.411,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 355,
+     "m": 3579.194
+    },
+    "straight-through-vertex": {
+     "edgePairs": 67,
+     "m": 69.217
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 589,
+   "m": 3480.794,
+   "maxGapSteps": 1,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 506,
+     "m": 3407.962
+    },
+    "straight-through-vertex": {
+     "edgePairs": 83,
+     "m": 72.832
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 492,
+   "m": 3463.301,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 457,
+     "m": 3445.979
+    },
+    "straight-through-vertex": {
+     "edgePairs": 35,
+     "m": 17.322
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 222,
+   "m": 2395.173,
+   "maxGapSteps": 0.786,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 215,
+     "m": 2362.941
+    },
+    "straight-through-vertex": {
+     "edgePairs": 7,
+     "m": 32.232
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 186,
+   "m": 2336.031,
+   "maxGapSteps": 0.987,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 169,
+     "m": 2318.407
+    },
+    "straight-through-vertex": {
+     "edgePairs": 17,
+     "m": 17.624
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 187,
+   "m": 2261.59,
+   "maxGapSteps": 0.998,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 81,
+     "m": 1487.782
+    },
+    "ends-or-parallel": {
+     "edgePairs": 106,
+     "m": 773.808
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 283,
+   "m": 2213.374,
+   "maxGapSteps": 0.971,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 251,
+     "m": 2096.421
+    },
+    "straight-through-vertex": {
+     "edgePairs": 32,
+     "m": 116.953
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 233,
+   "m": 2152.267,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 199,
+     "m": 2091.953
+    },
+    "straight-through-vertex": {
+     "edgePairs": 34,
+     "m": 60.314
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 304,
+   "m": 2118.804,
+   "maxGapSteps": 0.991,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 241,
+     "m": 2036.643
+    },
+    "straight-through-vertex": {
+     "edgePairs": 63,
+     "m": 82.161
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 275,
+   "m": 1768.266,
+   "maxGapSteps": 0.998,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 229,
+     "m": 1749.022
+    },
+    "straight-through-vertex": {
+     "edgePairs": 46,
+     "m": 19.244
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 187,
+   "m": 1656.145,
+   "maxGapSteps": 0.902,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 180,
+     "m": 1624.846
+    },
+    "straight-through-vertex": {
+     "edgePairs": 7,
+     "m": 31.299
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 165,
+   "m": 1568.679,
+   "maxGapSteps": 0.972,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 138,
+     "m": 1526.386
+    },
+    "straight-through-vertex": {
+     "edgePairs": 27,
+     "m": 42.292
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / face:underived",
+   "sameGroup": false,
+   "edgePairs": 76,
+   "m": 1443.158,
+   "maxGapSteps": 0.992,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 67,
+     "m": 1342.601
+    },
+    "straight-through-vertex": {
+     "edgePairs": 9,
+     "m": 100.557
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 180,
+   "m": 1336.976,
+   "maxGapSteps": 0.963,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 156,
+     "m": 1280.197
+    },
+    "straight-through-vertex": {
+     "edgePairs": 24,
+     "m": 56.779
+    }
+   }
+  },
+  {
+   "pair": "face:residential / face:underived",
+   "sameGroup": false,
+   "edgePairs": 86,
+   "m": 1272.191,
+   "maxGapSteps": 0.999,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 59,
+     "m": 1005.36
+    },
+    "straight-through-vertex": {
+     "edgePairs": 27,
+     "m": 266.831
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 143,
+   "m": 1253.89,
+   "maxGapSteps": 0.902,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 136,
+     "m": 1247.986
+    },
+    "straight-through-vertex": {
+     "edgePairs": 7,
+     "m": 5.904
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 61,
+   "m": 1158.467,
+   "maxGapSteps": 0.549,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 61,
+     "m": 1158.467
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 71,
+   "m": 1044.156,
+   "maxGapSteps": 0.828,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 55,
+     "m": 966.331
+    },
+    "straight-through-vertex": {
+     "edgePairs": 16,
+     "m": 77.825
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 1166,
+   "m": 818.162,
+   "maxGapSteps": 0.994,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 916,
+     "m": 744.245
+    },
+    "straight-through-vertex": {
+     "edgePairs": 250,
+     "m": 73.917
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 99,
+   "m": 800.647,
+   "maxGapSteps": 0.626,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 99,
+     "m": 800.647
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 93,
+   "m": 757.705,
+   "maxGapSteps": 0.858,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 24,
+     "m": 147.673
+    },
+    "ends-or-parallel": {
+     "edgePairs": 69,
+     "m": 610.032
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / face:underived",
+   "sameGroup": false,
+   "edgePairs": 53,
+   "m": 730.451,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 43,
+     "m": 701.499
+    },
+    "straight-through-vertex": {
+     "edgePairs": 10,
+     "m": 28.952
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 109,
+   "m": 662.74,
+   "maxGapSteps": 0.73,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 108,
+     "m": 662.739
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.001
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 55,
+   "m": 643.038,
+   "maxGapSteps": 0.739,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 29,
+     "m": 445.425
+    },
+    "straight-through-vertex": {
+     "edgePairs": 26,
+     "m": 197.613
+    }
+   }
+  },
+  {
+   "pair": "mat:highway / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 27,
+   "m": 615.371,
+   "maxGapSteps": 0.616,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 498.476
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 116.895
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / face:underived",
+   "sameGroup": false,
+   "edgePairs": 80,
+   "m": 591.596,
+   "maxGapSteps": 0.992,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 70,
+     "m": 539.492
+    },
+    "straight-through-vertex": {
+     "edgePairs": 10,
+     "m": 52.104
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 227,
+   "m": 583.02,
+   "maxGapSteps": 0.898,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 192,
+     "m": 464.972
+    },
+    "straight-through-vertex": {
+     "edgePairs": 35,
+     "m": 118.048
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 192,
+   "m": 514.016,
+   "maxGapSteps": 0.726,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 136,
+     "m": 333.963
+    },
+    "straight-through-vertex": {
+     "edgePairs": 56,
+     "m": 180.053
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 239,
+   "m": 510.697,
+   "maxGapSteps": 0.774,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 239,
+     "m": 510.697
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 24,
+   "m": 500.22,
+   "maxGapSteps": 0.828,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 23,
+     "m": 500.219
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.001
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 207,
+   "m": 498.411,
+   "maxGapSteps": 0.994,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 207,
+     "m": 498.411
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 159,
+   "m": 488.433,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 40,
+     "m": 87
+    },
+    "ends-or-parallel": {
+     "edgePairs": 119,
+     "m": 401.433
+    }
+   }
+  },
+  {
+   "pair": "face:residential / face:vacant",
+   "sameGroup": false,
+   "edgePairs": 9,
+   "m": 415.802,
+   "maxGapSteps": 1,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 8,
+     "m": 415.8
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.001
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:institutional / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 29,
+   "m": 404.531,
+   "maxGapSteps": 0.778,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 21,
+     "m": 389.654
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 14.878
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:railway",
+   "sameGroup": false,
+   "edgePairs": 10,
+   "m": 402.611,
+   "maxGapSteps": 0.575,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 9,
+     "m": 402.079
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.532
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 58,
+   "m": 377.347,
+   "maxGapSteps": 0.991,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 35,
+     "m": 296.226
+    },
+    "straight-through-vertex": {
+     "edgePairs": 23,
+     "m": 81.121
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 22,
+   "m": 364.188,
+   "maxGapSteps": 0.625,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 14,
+     "m": 339.028
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 25.16
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 26,
+   "m": 343.735,
+   "maxGapSteps": 0.83,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 12,
+     "m": 241.235
+    },
+    "ends-or-parallel": {
+     "edgePairs": 14,
+     "m": 102.499
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 30,
+   "m": 341.062,
+   "maxGapSteps": 0.823,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 14,
+     "m": 244.022
+    },
+    "ends-or-parallel": {
+     "edgePairs": 16,
+     "m": 97.04
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / face:residential",
+   "sameGroup": false,
+   "edgePairs": 11,
+   "m": 307.186,
+   "maxGapSteps": 0.992,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 11,
+     "m": 307.186
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 117,
+   "m": 280.77,
+   "maxGapSteps": 0.994,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 117,
+     "m": 280.77
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 12,
+   "m": 269.33,
+   "maxGapSteps": 0.64,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 11,
+     "m": 255.42
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 13.911
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 6,
+   "m": 255.275,
+   "maxGapSteps": 0.759,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 6,
+     "m": 255.275
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 36,
+   "m": 253.044,
+   "maxGapSteps": 0.75,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 114.159
+    },
+    "straight-through-vertex": {
+     "edgePairs": 17,
+     "m": 138.886
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 80,
+   "m": 251.477,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 72,
+     "m": 242.455
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 9.022
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 50,
+   "m": 244.041,
+   "maxGapSteps": 0.846,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 24,
+     "m": 116.326
+    },
+    "ends-or-parallel": {
+     "edgePairs": 26,
+     "m": 127.715
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 150,
+   "m": 239.746,
+   "maxGapSteps": 0.947,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 76,
+     "m": 198.306
+    },
+    "straight-through-vertex": {
+     "edgePairs": 74,
+     "m": 41.44
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 19,
+   "m": 239.484,
+   "maxGapSteps": 0.745,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 239.484
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:industrial",
+   "sameGroup": false,
+   "edgePairs": 17,
+   "m": 229.175,
+   "maxGapSteps": 0.606,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 14,
+     "m": 228.329
+    },
+    "straight-through-vertex": {
+     "edgePairs": 3,
+     "m": 0.846
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 78,
+   "m": 225.646,
+   "maxGapSteps": 0.976,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 77,
+     "m": 225.643
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.003
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 28,
+   "m": 216.595,
+   "maxGapSteps": 0.631,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 28,
+     "m": 216.595
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 75,
+   "m": 204.801,
+   "maxGapSteps": 0.6,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 73,
+     "m": 199.11
+    },
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 5.691
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 6,
+   "m": 197.643,
+   "maxGapSteps": 0.619,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 4,
+     "m": 194.595
+    },
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 3.047
+    }
+   }
+  },
+  {
+   "pair": "face:parking / face:underived",
+   "sameGroup": false,
+   "edgePairs": 36,
+   "m": 196.465,
+   "maxGapSteps": 0.732,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 22,
+     "m": 118.704
+    },
+    "straight-through-vertex": {
+     "edgePairs": 14,
+     "m": 77.761
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 34,
+   "m": 195.783,
+   "maxGapSteps": 0.83,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 14,
+     "m": 81.523
+    },
+    "ends-or-parallel": {
+     "edgePairs": 20,
+     "m": 114.26
+    }
+   }
+  },
+  {
+   "pair": "mat:highway / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 194.595,
+   "maxGapSteps": 0.469,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 4,
+     "m": 194.595
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 120,
+   "m": 191.493,
+   "maxGapSteps": 0.991,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 74,
+     "m": 132.672
+    },
+    "straight-through-vertex": {
+     "edgePairs": 46,
+     "m": 58.822
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:railway",
+   "sameGroup": false,
+   "edgePairs": 13,
+   "m": 185.518,
+   "maxGapSteps": 0.968,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 184.576
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 0.942
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 110,
+   "m": 179.046,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 47,
+     "m": 82.982
+    },
+    "straight-through-vertex": {
+     "edgePairs": 63,
+     "m": 96.064
+    }
+   }
+  },
+  {
+   "pair": "face:railway / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 178.737,
+   "maxGapSteps": 0.519,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 178.737
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / face:parking",
+   "sameGroup": false,
+   "edgePairs": 8,
+   "m": 174.563,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 8,
+     "m": 174.563
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 32,
+   "m": 170.635,
+   "maxGapSteps": 0.853,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 161.216
+    },
+    "straight-through-vertex": {
+     "edgePairs": 13,
+     "m": 9.419
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:pitch",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 169.272,
+   "maxGapSteps": 0.479,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 169.272
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 29,
+   "m": 168.867,
+   "maxGapSteps": 0.499,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 21,
+     "m": 165.237
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 3.63
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 52,
+   "m": 159.677,
+   "maxGapSteps": 0.898,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 52,
+     "m": 159.677
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:industrial",
+   "sameGroup": false,
+   "edgePairs": 30,
+   "m": 157.78,
+   "maxGapSteps": 0.844,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 153.234
+    },
+    "straight-through-vertex": {
+     "edgePairs": 11,
+     "m": 4.546
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 18,
+   "m": 157.27,
+   "maxGapSteps": 0.924,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 18,
+     "m": 157.27
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 16,
+   "m": 153.196,
+   "maxGapSteps": 0.437,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 8,
+     "m": 127.85
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 25.346
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:pitch",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 135.675,
+   "maxGapSteps": 0.479,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 135.675
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:forest / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 8,
+   "m": 128.209,
+   "maxGapSteps": 0.76,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 128.207
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.002
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 65,
+   "m": 124.548,
+   "maxGapSteps": 0.745,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 15,
+     "m": 14.058
+    },
+    "ends-or-parallel": {
+     "edgePairs": 50,
+     "m": 110.49
+    }
+   }
+  },
+  {
+   "pair": "face:forest / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 8,
+   "m": 121.843,
+   "maxGapSteps": 0.391,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 8,
+     "m": 121.843
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 13,
+   "m": 120.397,
+   "maxGapSteps": 0.584,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 11,
+     "m": 105.662
+    },
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 14.735
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 54,
+   "m": 116.624,
+   "maxGapSteps": 0.858,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 14,
+     "m": 26.619
+    },
+    "ends-or-parallel": {
+     "edgePairs": 40,
+     "m": 90.005
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 49,
+   "m": 110.947,
+   "maxGapSteps": 0.524,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 46,
+     "m": 110.228
+    },
+    "straight-through-vertex": {
+     "edgePairs": 3,
+     "m": 0.719
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 49,
+   "m": 110.308,
+   "maxGapSteps": 0.838,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 21,
+     "m": 51.991
+    },
+    "straight-through-vertex": {
+     "edgePairs": 28,
+     "m": 58.317
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:residential / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 21,
+   "m": 105.889,
+   "maxGapSteps": 0.994,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 15,
+     "m": 102.529
+    },
+    "straight-through-vertex": {
+     "edgePairs": 6,
+     "m": 3.36
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 47,
+   "m": 105.745,
+   "maxGapSteps": 0.716,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 47,
+     "m": 105.745
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:recreation / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 23,
+   "m": 103.538,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 21,
+     "m": 103.352
+    },
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 0.187
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 29,
+   "m": 102.518,
+   "maxGapSteps": 0.722,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 12,
+     "m": 81.428
+    },
+    "ends-or-parallel": {
+     "edgePairs": 17,
+     "m": 21.089
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / face:residential",
+   "sameGroup": false,
+   "edgePairs": 7,
+   "m": 99.806,
+   "maxGapSteps": 0.97,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 99.806
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 64,
+   "m": 94.994,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 38,
+     "m": 63.001
+    },
+    "straight-through-vertex": {
+     "edgePairs": 26,
+     "m": 31.994
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:commercial / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 22,
+   "m": 93.711,
+   "maxGapSteps": 0.994,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 14,
+     "m": 75.12
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 18.591
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 36,
+   "m": 92.926,
+   "maxGapSteps": 0.823,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 18,
+     "m": 27.734
+    },
+    "straight-through-vertex": {
+     "edgePairs": 18,
+     "m": 65.192
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 55,
+   "m": 86.221,
+   "maxGapSteps": 0.671,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 55,
+     "m": 86.221
+    }
+   }
+  },
+  {
+   "pair": "face:underived / face:vacant",
+   "sameGroup": false,
+   "edgePairs": 16,
+   "m": 85.323,
+   "maxGapSteps": 0.994,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 13,
+     "m": 85.026
+    },
+    "straight-through-vertex": {
+     "edgePairs": 3,
+     "m": 0.297
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 24,
+   "m": 82.134,
+   "maxGapSteps": 0.53,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 24,
+     "m": 82.134
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 12,
+   "m": 81.704,
+   "maxGapSteps": 0.676,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.001
+    },
+    "straight-through-vertex": {
+     "edgePairs": 11,
+     "m": 81.703
+    }
+   }
+  },
+  {
+   "pair": "face:parking / face:residential",
+   "sameGroup": false,
+   "edgePairs": 9,
+   "m": 81.625,
+   "maxGapSteps": 0.584,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 66.89
+    },
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 14.735
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:park",
+   "sameGroup": false,
+   "edgePairs": 77,
+   "m": 79.233,
+   "maxGapSteps": 0.99,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 54,
+     "m": 69.153
+    },
+    "straight-through-vertex": {
+     "edgePairs": 23,
+     "m": 10.08
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 31,
+   "m": 71.831,
+   "maxGapSteps": 0.519,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 31,
+     "m": 71.831
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / face:recreation",
+   "sameGroup": false,
+   "edgePairs": 19,
+   "m": 71.249,
+   "maxGapSteps": 0.992,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 71.249
+    }
+   }
+  },
+  {
+   "pair": "face:bare / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 68.66,
+   "maxGapSteps": 0.415,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 68.66
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:park",
+   "sameGroup": false,
+   "edgePairs": 62,
+   "m": 67.662,
+   "maxGapSteps": 0.933,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 45,
+     "m": 64.533
+    },
+    "straight-through-vertex": {
+     "edgePairs": 17,
+     "m": 3.13
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 26,
+   "m": 67.47,
+   "maxGapSteps": 0.739,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 26,
+     "m": 67.47
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 14,
+   "m": 63.353,
+   "maxGapSteps": 0.823,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 14,
+     "m": 63.353
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / face:parking",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 61.461,
+   "maxGapSteps": 0.353,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 61.461
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 43,
+   "m": 59.881,
+   "maxGapSteps": 0.48,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 43,
+     "m": 59.881
+    }
+   }
+  },
+  {
+   "pair": "mat:highway / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 13,
+   "m": 54.307,
+   "maxGapSteps": 0.745,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 10,
+     "m": 50.176
+    },
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 4.131
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:forest",
+   "sameGroup": false,
+   "edgePairs": 15,
+   "m": 52.551,
+   "maxGapSteps": 0.495,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 15,
+     "m": 52.551
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / face:residential",
+   "sameGroup": false,
+   "edgePairs": 8,
+   "m": 51.249,
+   "maxGapSteps": 0.924,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.001
+    },
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 51.248
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / face:vacant",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 43.886,
+   "maxGapSteps": 0.992,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 43.886
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:sports_centre",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 42.604,
+   "maxGapSteps": 0.374,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 42.604
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:sports_centre",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 42.604,
+   "maxGapSteps": 0.374,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 42.604
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 26,
+   "m": 42.534,
+   "maxGapSteps": 0.544,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 26,
+     "m": 42.534
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 40.698,
+   "maxGapSteps": 0.414,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 40.698
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 12,
+   "m": 40.469,
+   "maxGapSteps": 0.679,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 12,
+     "m": 40.469
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 17,
+   "m": 40.027,
+   "maxGapSteps": 0.906,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 17,
+     "m": 40.027
+    }
+   }
+  },
+  {
+   "pair": "face:forest / face:underived",
+   "sameGroup": false,
+   "edgePairs": 10,
+   "m": 39.969,
+   "maxGapSteps": 0.76,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 6,
+     "m": 33.311
+    },
+    "straight-through-vertex": {
+     "edgePairs": 4,
+     "m": 6.658
+    }
+   }
+  },
+  {
+   "pair": "face:bare / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 37.942,
+   "maxGapSteps": 0.14,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 37.942
+    }
+   }
+  },
+  {
+   "pair": "face:bare / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 37.942,
+   "maxGapSteps": 0.415,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 37.942
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 25,
+   "m": 35.563,
+   "maxGapSteps": 0.823,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 25,
+     "m": 35.563
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 18,
+   "m": 34.723,
+   "maxGapSteps": 0.466,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 18,
+     "m": 34.723
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:pitch",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 33.597,
+   "maxGapSteps": 0.212,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 33.597
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 33.489,
+   "maxGapSteps": 0.482,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 33.489
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 21,
+   "m": 30.303,
+   "maxGapSteps": 0.484,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 21,
+     "m": 30.303
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 12,
+   "m": 29.817,
+   "maxGapSteps": 0.924,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 6.465
+    },
+    "straight-through-vertex": {
+     "edgePairs": 5,
+     "m": 23.351
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 18,
+   "m": 29.131,
+   "maxGapSteps": 0.739,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 16,
+     "m": 28.765
+    },
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 0.366
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 29.042,
+   "maxGapSteps": 0.371,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 18.614
+    },
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 10.429
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:forest",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 27.097,
+   "maxGapSteps": 0.474,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 27.097
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 26.92,
+   "maxGapSteps": 0.139,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 26.92
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:treelawn:park",
+   "sameGroup": false,
+   "edgePairs": 24,
+   "m": 25.075,
+   "maxGapSteps": 0.784,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 17,
+     "m": 18.421
+    },
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 6.654
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 14,
+   "m": 24.874,
+   "maxGapSteps": 0.936,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 14,
+     "m": 24.874
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 24,
+   "m": 24.807,
+   "maxGapSteps": 0.604,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 5,
+     "m": 3.709
+    },
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 21.098
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 23.559,
+   "maxGapSteps": 0.375,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 23.559
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 13,
+   "m": 22.895,
+   "maxGapSteps": 0.754,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 17.311
+    },
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 5.584
+    }
+   }
+  },
+  {
+   "pair": "face:vacant / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 22.581,
+   "maxGapSteps": 0.076,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 22.581
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:treelawn:vacant",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 22.581,
+   "maxGapSteps": 0.076,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 22.581
+    }
+   }
+  },
+  {
+   "pair": "face:vacant / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 8,
+   "m": 19.845,
+   "maxGapSteps": 0.528,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 8,
+     "m": 19.845
+    }
+   }
+  },
+  {
+   "pair": "face:railway / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 19.187,
+   "maxGapSteps": 0.606,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 19.187
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 18.21,
+   "maxGapSteps": 0.848,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 18.21
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 19,
+   "m": 17.433,
+   "maxGapSteps": 0.854,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 11,
+     "m": 10.971
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 6.462
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:commercial / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 17.321,
+   "maxGapSteps": 0.758,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 17.321
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 16.908,
+   "maxGapSteps": 0.363,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 16.908
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 17,
+   "m": 16.793,
+   "maxGapSteps": 0.527,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 17,
+     "m": 16.793
+    }
+   }
+  },
+  {
+   "pair": "face:parking / face:vacant",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 16.348,
+   "maxGapSteps": 0.262,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 16.348
+    }
+   }
+  },
+  {
+   "pair": "face:vacant / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 16.348,
+   "maxGapSteps": 0.262,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 16.348
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:sidewalk",
+   "sameGroup": true,
+   "edgePairs": 22,
+   "m": 16.208,
+   "maxGapSteps": 1,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 11,
+     "m": 5.873
+    },
+    "ends-or-parallel": {
+     "edgePairs": 11,
+     "m": 10.335
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:vacant",
+   "sameGroup": false,
+   "edgePairs": 6,
+   "m": 15.602,
+   "maxGapSteps": 0.428,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 6,
+     "m": 15.602
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 36,
+   "m": 13.717,
+   "maxGapSteps": 0.989,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 36,
+     "m": 13.717
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 13.478,
+   "maxGapSteps": 0.924,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 13.478
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 24,
+   "m": 13.431,
+   "maxGapSteps": 0.601,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 20,
+     "m": 12.986
+    },
+    "straight-through-vertex": {
+     "edgePairs": 4,
+     "m": 0.444
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 20,
+   "m": 13.246,
+   "maxGapSteps": 0.601,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 19,
+     "m": 13.131
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.115
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / face:institutional",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 12.288,
+   "maxGapSteps": 0.98,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 12.288
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:stripe",
+   "sameGroup": false,
+   "edgePairs": 105,
+   "m": 12.216,
+   "maxGapSteps": 0.904,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 52,
+     "m": 5.924
+    },
+    "ends-or-parallel": {
+     "edgePairs": 53,
+     "m": 6.292
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 10,
+   "m": 12.103,
+   "maxGapSteps": 0.685,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 3,
+     "m": 1.626
+    },
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 10.477
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:institutional / mat:treelawn:institutional",
+   "sameGroup": true,
+   "edgePairs": 12,
+   "m": 12.089,
+   "maxGapSteps": 0.998,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 5.524
+    },
+    "straight-through-vertex": {
+     "edgePairs": 8,
+     "m": 6.565
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:residential / mat:treelawn:residential",
+   "sameGroup": true,
+   "edgePairs": 24,
+   "m": 11.802,
+   "maxGapSteps": 1,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 10,
+     "m": 7.731
+    },
+    "straight-through-vertex": {
+     "edgePairs": 14,
+     "m": 4.072
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 7,
+   "m": 11.747,
+   "maxGapSteps": 0.499,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 11.747
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:vacant",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 11.577,
+   "maxGapSteps": 0.341,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 11.577
+    }
+   }
+  },
+  {
+   "pair": "face:forest / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 10.982,
+   "maxGapSteps": 0.297,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 10.982
+    }
+   }
+  },
+  {
+   "pair": "face:forest / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 10.982,
+   "maxGapSteps": 0.297,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 10.982
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:verge",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 10.65,
+   "maxGapSteps": 0.371,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 10.65
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / face:underived",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 9.46,
+   "maxGapSteps": 0.725,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 9.46
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 9.44,
+   "maxGapSteps": 0.367,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 9.44
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 6,
+   "m": 9.374,
+   "maxGapSteps": 0.738,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 4.552
+    },
+    "straight-through-vertex": {
+     "edgePairs": 3,
+     "m": 4.822
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 15,
+   "m": 8.919,
+   "maxGapSteps": 0.529,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 9,
+     "m": 5.137
+    },
+    "straight-through-vertex": {
+     "edgePairs": 6,
+     "m": 3.782
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:institutional / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 10,
+   "m": 8.825,
+   "maxGapSteps": 0.785,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 10,
+     "m": 8.825
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 11,
+   "m": 8.749,
+   "maxGapSteps": 0.6,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 6,
+     "m": 5.965
+    },
+    "straight-through-vertex": {
+     "edgePairs": 5,
+     "m": 2.783
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 16,
+   "m": 8.68,
+   "maxGapSteps": 0.64,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 16,
+     "m": 8.68
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:swimming_pool",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 8.469,
+   "maxGapSteps": 0.529,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 3,
+     "m": 8.469
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 25,
+   "m": 8.326,
+   "maxGapSteps": 0.664,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 25,
+     "m": 8.326
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:underived / mat:treelawn:underived",
+   "sameGroup": true,
+   "edgePairs": 4,
+   "m": 7.501,
+   "maxGapSteps": 0.991,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 7.501
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:recreation / mat:treelawn:recreation",
+   "sameGroup": true,
+   "edgePairs": 5,
+   "m": 7.499,
+   "maxGapSteps": 0.864,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 7.499
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:industrial",
+   "sameGroup": false,
+   "edgePairs": 7,
+   "m": 7.391,
+   "maxGapSteps": 0.763,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 7.391
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:treelawn:railway",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 6.591,
+   "maxGapSteps": 0.558,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 6.591
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / mat:treelawn:industrial",
+   "sameGroup": false,
+   "edgePairs": 10,
+   "m": 6.586,
+   "maxGapSteps": 0.844,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 1.959
+    },
+    "straight-through-vertex": {
+     "edgePairs": 7,
+     "m": 4.627
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 6.552,
+   "maxGapSteps": 0.364,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 6.552
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 6.552,
+   "maxGapSteps": 0.43,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 6.552
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / face:recreation",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 6.512,
+   "maxGapSteps": 0.821,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 6.512
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 7,
+   "m": 6.421,
+   "maxGapSteps": 0.713,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 6.421
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:underived / mat:treelawn:vacant",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 6.333,
+   "maxGapSteps": 0.221,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 6.333
+    }
+   }
+  },
+  {
+   "pair": "mat:stripe / mat:stripe",
+   "sameGroup": true,
+   "edgePairs": 88,
+   "m": 6.192,
+   "maxGapSteps": 0.996,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 88,
+     "m": 6.192
+    }
+   }
+  },
+  {
+   "pair": "face:vacant / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 5.671,
+   "maxGapSteps": 0.075,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 5.671
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 5.441,
+   "maxGapSteps": 0.902,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 5,
+     "m": 5.441
+    }
+   }
+  },
+  {
+   "pair": "mat:pitch / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 5.377,
+   "maxGapSteps": 0.396,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 5.377
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / face:residential",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 5.311,
+   "maxGapSteps": 0.244,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 5.311
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:playground",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 5.247,
+   "maxGapSteps": 0.724,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 5.247
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:playground",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 5.062,
+   "maxGapSteps": 0.724,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 5.062
+    }
+   }
+  },
+  {
+   "pair": "mat:pitch / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 4.674,
+   "maxGapSteps": 0.393,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 4.674
+    }
+   }
+  },
+  {
+   "pair": "face:railway / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 4.539,
+   "maxGapSteps": 0.435,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 4.539
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 4.297,
+   "maxGapSteps": 0.851,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.001
+    },
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 4.295
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:treelawn:railway",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 3.872,
+   "maxGapSteps": 0.606,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 3.872
+    }
+   }
+  },
+  {
+   "pair": "face:railway / mat:treelawn:railway",
+   "sameGroup": false,
+   "edgePairs": 6,
+   "m": 3.704,
+   "maxGapSteps": 0.519,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 6,
+     "m": 3.704
+    }
+   }
+  },
+  {
+   "pair": "face:bare / face:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 3.612,
+   "maxGapSteps": 0.012,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 3.612
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 3.505,
+   "maxGapSteps": 0.458,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 3.505
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 3.362,
+   "maxGapSteps": 0.42,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 3.362
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:park",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 3.198,
+   "maxGapSteps": 0.612,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 3.198
+    }
+   }
+  },
+  {
+   "pair": "face:park / face:underived",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 3.172,
+   "maxGapSteps": 0.514,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 3.172
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 8,
+   "m": 3.048,
+   "maxGapSteps": 0.891,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 8,
+     "m": 3.048
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 3.018,
+   "maxGapSteps": 0.437,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 4,
+     "m": 3.018
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 3.007,
+   "maxGapSteps": 0.48,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 3.007
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:institutional / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 2.926,
+   "maxGapSteps": 0.595,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 2.926
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 2.788,
+   "maxGapSteps": 0.123,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 2.788
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:playground",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 2.736,
+   "maxGapSteps": 0.362,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 2.736
+    }
+   }
+  },
+  {
+   "pair": "face:vacant / mat:asphalt",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 2.629,
+   "maxGapSteps": 0.107,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 2.629
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / face:recreation",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 2.511,
+   "maxGapSteps": 0.725,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 2.511
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 6,
+   "m": 2.286,
+   "maxGapSteps": 0.476,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 6,
+     "m": 2.286
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 2.285,
+   "maxGapSteps": 0.358,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 2.285
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:playground",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 2.252,
+   "maxGapSteps": 0.358,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 2.252
+    }
+   }
+  },
+  {
+   "pair": "face:vacant / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 2.167,
+   "maxGapSteps": 0.498,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 2.167
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:park / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 2.055,
+   "maxGapSteps": 0.285,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 2.055
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:commercial / mat:treelawn:commercial",
+   "sameGroup": true,
+   "edgePairs": 2,
+   "m": 2.002,
+   "maxGapSteps": 0.738,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 2.002
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:railway / mat:treelawn:railway",
+   "sameGroup": true,
+   "edgePairs": 4,
+   "m": 1.969,
+   "maxGapSteps": 0.968,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 1.852
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.117
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:railway / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.936,
+   "maxGapSteps": 0.087,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.936
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:parking / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.839,
+   "maxGapSteps": 0.736,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.839
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.839,
+   "maxGapSteps": 0.552,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.839
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:commercial / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.839,
+   "maxGapSteps": 0.736,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.839
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:verge",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 1.728,
+   "maxGapSteps": 0.343,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 1.728
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:treelawn:verge",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 1.727,
+   "maxGapSteps": 0.342,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 1.727
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 17,
+   "m": 1.695,
+   "maxGapSteps": 0.977,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 17,
+     "m": 1.695
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:recreation / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.654,
+   "maxGapSteps": 0.836,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.654
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 1.651,
+   "maxGapSteps": 0.255,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.85
+    },
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 0.801
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 16,
+   "m": 1.596,
+   "maxGapSteps": 0.77,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 16,
+     "m": 1.596
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.537,
+   "maxGapSteps": 0.315,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.537
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:cycleway",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.537,
+   "maxGapSteps": 0.315,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.537
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / mat:curb",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 1.525,
+   "maxGapSteps": 0.673,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 1.525
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.514,
+   "maxGapSteps": 0.716,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.514
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.5,
+   "maxGapSteps": 0.345,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.5
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 1.476,
+   "maxGapSteps": 0.067,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 1.476
+    }
+   }
+  },
+  {
+   "pair": "face:bare / mat:sidewalk",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 1.414,
+   "maxGapSteps": 0.136,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 1.414
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:industrial / mat:treelawn:industrial",
+   "sameGroup": true,
+   "edgePairs": 2,
+   "m": 1.198,
+   "maxGapSteps": 0.955,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.865
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.333
+    }
+   }
+  },
+  {
+   "pair": "mat:sports_centre / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 1.043,
+   "maxGapSteps": 0.269,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 1.043
+    }
+   }
+  },
+  {
+   "pair": "mat:sports_centre / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 1.043,
+   "maxGapSteps": 0.269,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 1.043
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 18,
+   "m": 0.956,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 18,
+     "m": 0.956
+    }
+   }
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:bare",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.917,
+   "maxGapSteps": 0.046,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.917
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 17,
+   "m": 0.81,
+   "maxGapSteps": 0.993,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 17,
+     "m": 0.81
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.782,
+   "maxGapSteps": 0.367,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.782
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:alley",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.782,
+   "maxGapSteps": 0.367,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.782
+    }
+   }
+  },
+  {
+   "pair": "mat:pitch / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.703,
+   "maxGapSteps": 0.396,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.703
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 7,
+   "m": 0.698,
+   "maxGapSteps": 0.977,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 0.698
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 7,
+   "m": 0.698,
+   "maxGapSteps": 0.891,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 7,
+     "m": 0.698
+    }
+   }
+  },
+  {
+   "pair": "mat:footway / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.69,
+   "maxGapSteps": 0.156,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.69
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:footway",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.69,
+   "maxGapSteps": 0.156,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.69
+    }
+   }
+  },
+  {
+   "pair": "mat:garden / mat:treelawn:vacant",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.685,
+   "maxGapSteps": 0.498,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.685
+    }
+   }
+  },
+  {
+   "pair": "face:forest / mat:treelawn:forest",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.515,
+   "maxGapSteps": 0.145,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.515
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / face:vacant",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.514,
+   "maxGapSteps": 0.908,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.514
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:residential / mat:treelawn:vacant",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 0.377,
+   "maxGapSteps": 0.412,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 0.377
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 0.299,
+   "maxGapSteps": 0.849,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 0.299
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 0.252,
+   "maxGapSteps": 0.988,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 0.252
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:garden",
+   "sameGroup": false,
+   "edgePairs": 5,
+   "m": 0.252,
+   "maxGapSteps": 0.981,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 5,
+     "m": 0.252
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / face:park",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.24,
+   "maxGapSteps": 0.459,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.24
+    }
+   }
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:bare",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.236,
+   "maxGapSteps": 0.582,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.227
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.009
+    }
+   }
+  },
+  {
+   "pair": "mat:wall / mat:wall",
+   "sameGroup": true,
+   "edgePairs": 2,
+   "m": 0.202,
+   "maxGapSteps": 0.987,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.202
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 0.202,
+   "maxGapSteps": 0.81,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 0.202
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:parking_lot",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 0.202,
+   "maxGapSteps": 0.81,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 0.202
+    }
+   }
+  },
+  {
+   "pair": "face:railway / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.2,
+   "maxGapSteps": 0.456,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.2
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.199,
+   "maxGapSteps": 0.84,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.199
+    }
+   }
+  },
+  {
+   "pair": "face:parking / face:recreation",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.184,
+   "maxGapSteps": 0.724,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.184
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:playground",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.184,
+   "maxGapSteps": 0.724,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.184
+    }
+   }
+  },
+  {
+   "pair": "mat:asphalt / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.138,
+   "maxGapSteps": 0.249,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.138
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:highway",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.138,
+   "maxGapSteps": 0.247,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.138
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.135,
+   "maxGapSteps": 0.475,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.135
+    }
+   }
+  },
+  {
+   "pair": "face:verge / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.134,
+   "maxGapSteps": 0.47,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.134
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.102,
+   "maxGapSteps": 0.841,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.101
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.001
+    }
+   }
+  },
+  {
+   "pair": "face:industrial / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.101,
+   "maxGapSteps": 0.254,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.101
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:playground",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.1,
+   "maxGapSteps": 0.871,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.1
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.1,
+   "maxGapSteps": 0.506,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.1
+    }
+   }
+  },
+  {
+   "pair": "mat:parking_lot / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.1,
+   "maxGapSteps": 0.506,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.1
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.1,
+   "maxGapSteps": 0.338,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.1
+    }
+   }
+  },
+  {
+   "pair": "face:vacant / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.1,
+   "maxGapSteps": 0.612,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.1
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:recreation / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.1,
+   "maxGapSteps": 0.891,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.1
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:underived / mat:wall",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.1,
+   "maxGapSteps": 0.891,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.1
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:park / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 0.054,
+   "maxGapSteps": 0.988,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 0.054
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:treelawn:forest",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.05,
+   "maxGapSteps": 0.531,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.05
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.05,
+   "maxGapSteps": 0.531,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.05
+    }
+   }
+  },
+  {
+   "pair": "face:park / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.05,
+   "maxGapSteps": 0.221,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.05
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:fence",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.05,
+   "maxGapSteps": 0.221,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.05
+    }
+   }
+  },
+  {
+   "pair": "mat:cycleway / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.033,
+   "maxGapSteps": 0.224,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.033
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:treelawn:forest",
+   "sameGroup": false,
+   "edgePairs": 8,
+   "m": 0.016,
+   "maxGapSteps": 0.76,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 8,
+     "m": 0.016
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 3,
+   "m": 0.011,
+   "maxGapSteps": 0.515,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 3,
+     "m": 0.011
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:commercial / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 4,
+   "m": 0.011,
+   "maxGapSteps": 0.49,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 0.011
+    }
+   }
+  },
+  {
+   "pair": "face:underived / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 6,
+   "m": 0.01,
+   "maxGapSteps": 0.739,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 2,
+     "m": 0.005
+    },
+    "ends-or-parallel": {
+     "edgePairs": 4,
+     "m": 0.005
+    }
+   }
+  },
+  {
+   "pair": "mat:alley / mat:treelawn:parking",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.009,
+   "maxGapSteps": 0.096,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.009
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.007,
+   "maxGapSteps": 0.515,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.007
+    }
+   }
+  },
+  {
+   "pair": "face:parking / mat:treelawn:institutional",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.005,
+   "maxGapSteps": 0.595,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.005
+    }
+   }
+  },
+  {
+   "pair": "face:forest / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.004,
+   "maxGapSteps": 0.589,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 2,
+     "m": 0.004
+    }
+   }
+  },
+  {
+   "pair": "mat:treelawn:railway / mat:treelawn:recreation",
+   "sameGroup": false,
+   "edgePairs": 2,
+   "m": 0.004,
+   "maxGapSteps": 0.505,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.002
+    },
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.002
+    }
+   }
+  },
+  {
+   "pair": "face:residential / mat:treelawn:commercial",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.003,
+   "maxGapSteps": 0.49,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.003
+    }
+   }
+  },
+  {
+   "pair": "face:commercial / mat:treelawn:residential",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.003,
+   "maxGapSteps": 0.49,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.003
+    }
+   }
+  },
+  {
+   "pair": "mat:fence / mat:fence",
+   "sameGroup": true,
+   "edgePairs": 1,
+   "m": 0.002,
+   "maxGapSteps": 0.788,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.002
+    }
+   }
+  },
+  {
+   "pair": "face:recreation / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.002,
+   "maxGapSteps": 0.452,
+   "byShape": {
+    "straight-through-vertex": {
+     "edgePairs": 1,
+     "m": 0.002
+    }
+   }
+  },
+  {
+   "pair": "face:institutional / mat:treelawn:underived",
+   "sameGroup": false,
+   "edgePairs": 1,
+   "m": 0.001,
+   "maxGapSteps": 0.739,
+   "byShape": {
+    "ends-or-parallel": {
+     "edgePairs": 1,
+     "m": 0.001
+    }
+   }
+  }
+ ]
+}

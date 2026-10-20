@@ -1,0 +1,657 @@
+{
+ "examples": [
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    -599.1415051998094,
+    -1125.434460404786
+   ],
+   "m": 230.243,
+   "a": "face:residential#171.0",
+   "b": "mat:sidewalk#314.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    -133.28105481095233,
+    -998.345818445651
+   ],
+   "m": 107.74,
+   "a": "face:residential#160.0",
+   "b": "mat:sidewalk#300.1",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "one",
+    "S4pre": "one",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S4union",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    420.1565,
+    -900.1165
+   ],
+   "m": 105.102,
+   "a": "face:residential#142.0",
+   "b": "mat:sidewalk#276.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    -1116.8089912127368,
+    797.4645001544797
+   ],
+   "m": 55.412,
+   "a": "face:residential#40.0",
+   "b": "mat:sidewalk#80.0",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "one",
+    "S4pre": "one",
+    "S4union": "one",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S4clip",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "face:residential / mat:sidewalk",
+   "at": [
+    -558.2433697930942,
+    767.6675172514508
+   ],
+   "m": 33.033,
+   "a": "face:residential#48.0",
+   "b": "mat:sidewalk#78.0",
+   "s0": "several-lines-one-integer-line",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "one",
+    "S4pre": "one",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S4union",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    -133.61851304607274,
+    -996.8809567865829
+   ],
+   "m": 107.939,
+   "a": "mat:treelawn:residential#387.0",
+   "b": "mat:sidewalk#300.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "one",
+    "S4pre": "one",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S4union",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    420.1565,
+    -900.1165
+   ],
+   "m": 105.102,
+   "a": "mat:treelawn:residential#375.0",
+   "b": "mat:sidewalk#276.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    -1138.5880235114075,
+    739.1236228082139
+   ],
+   "m": 67.822,
+   "a": "mat:treelawn:residential#98.0",
+   "b": "mat:sidewalk#88.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    349.888,
+    -1209.4985
+   ],
+   "m": 9.77,
+   "a": "mat:treelawn:residential#371.0",
+   "b": "mat:sidewalk#289.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:residential",
+   "at": [
+    -1176.4345,
+    731.878
+   ],
+   "m": 9.211,
+   "a": "mat:treelawn:residential#98.0",
+   "b": "mat:sidewalk#88.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    867.9965,
+    -1058.7575
+   ],
+   "m": 73.584,
+   "a": "mat:treelawn:underived#553.0",
+   "b": "mat:sidewalk#309.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S3",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    1139.2475,
+    -750.5855
+   ],
+   "m": 64.481,
+   "a": "mat:treelawn:underived#473.0",
+   "b": "mat:sidewalk#271.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "pedOuter",
+    "walkFrom",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    791.621,
+    -571.502
+   ],
+   "m": 41.034,
+   "a": "mat:treelawn:underived#445.0",
+   "b": "mat:sidewalk#230.1",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "luIn",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    866.2165,
+    -566.7765
+   ],
+   "m": 31.237,
+   "a": "mat:treelawn:underived#422.0",
+   "b": "mat:sidewalk#230.0",
+   "s0": "one-depth-line",
+   "along": [
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:sidewalk / mat:treelawn:underived",
+   "at": [
+    454.1960267555109,
+    -813.6451103902169
+   ],
+   "m": 27.689,
+   "a": "mat:treelawn:underived#488.0",
+   "b": "mat:sidewalk#277.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "pedOuter",
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    932.418,
+    -556.9635
+   ],
+   "m": 102.733,
+   "a": "mat:treelawn:underived#422.0",
+   "b": "mat:curb#175.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    1051.31,
+    -761.579
+   ],
+   "m": 87.268,
+   "a": "mat:treelawn:underived#474.0",
+   "b": "mat:curb#199.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "pedOuter",
+    "walkFrom",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    1139.2475,
+    -750.5855
+   ],
+   "m": 64.481,
+   "a": "mat:treelawn:underived#473.0",
+   "b": "mat:curb#199.0",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "pedOuter",
+    "walkFrom",
+    "walkTo"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    -193.417,
+    -69.254
+   ],
+   "m": 53.566,
+   "a": "mat:treelawn:underived#275.0",
+   "b": "mat:curb#143.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:underived",
+   "at": [
+    454.196,
+    -813.645
+   ],
+   "m": 27.689,
+   "a": "mat:treelawn:underived#488.0",
+   "b": "mat:curb#204.1",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "pedOuter",
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    -133.95651304594293,
+    -995.4159567870619
+   ],
+   "m": 108.14,
+   "a": "mat:treelawn:residential#387.0",
+   "b": "mat:curb#221.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "one",
+    "S4pre": "one",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S4union",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    306.914,
+    -898.138
+   ],
+   "m": 28.255,
+   "a": "mat:treelawn:residential#374.0",
+   "b": "mat:curb#203.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    361.9525,
+    -80.3125
+   ],
+   "m": 2.473,
+   "a": "mat:treelawn:residential#219.0",
+   "b": "mat:curb#132.1",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "pedOuter",
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    -620.4654897174452,
+    -94.8859290384157
+   ],
+   "m": 2.398,
+   "a": "mat:treelawn:residential#242.0",
+   "b": "mat:curb#148.1",
+   "s0": "one-depth-line",
+   "along": [
+    "pedOuter"
+   ],
+   "stage": {
+    "S1": "one",
+    "S2": "one",
+    "S3": "one",
+    "S4pre": "one",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S4union",
+   "verdict": "one line, two boolean chains"
+  },
+  {
+   "pair": "mat:curb / mat:treelawn:residential",
+   "at": [
+    400.8175,
+    -1175.5085
+   ],
+   "m": 0.618,
+   "a": "mat:treelawn:residential#384.0",
+   "b": "mat:curb#211.1",
+   "s0": "depth-line-drawn-twice",
+   "along": [
+    "pedOuter",
+    "walkFrom"
+   ],
+   "stage": {
+    "S1": "TWO",
+    "S2": "TWO",
+    "S3": "TWO",
+    "S4pre": "TWO",
+    "S4union": "TWO",
+    "S4clip": "TWO",
+    "STACK": "TWO"
+   },
+   "first": "S1",
+   "verdict": "depth line drawn twice"
+  }
+ ],
+ "firstStage": {
+  "S1": 16,
+  "S4union": 5,
+  "S4clip": 1,
+  "S3": 3
+ },
+ "s0": {
+  "depth line drawn twice": 12,
+  "one line, two boolean chains": 13
+ }
+}

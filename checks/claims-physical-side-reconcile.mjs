@@ -99,7 +99,7 @@ function physicalSideReconcile(streets, { verbose = false } = {}) {
 }
 
 const build = (streets) => buildTileGround({ ...JSON.parse(fs.readFileSync(RIB, 'utf8')), streets }, {
-  stencil: null, curbWidth: design.curbWidth ?? 0.15, smooth: 0,
+  stencil: null, curbWidth: design.curbWidth, smooth: 0,   // ⛔ authored only — the builder refuses without one
   blockLandUse: design.blockLandUse || null,
   cornerRadiusScale: design.cornerRadiusScale ?? 1,
   cornerRadiusOverrides: design.cornerRadiusOverrides || null,

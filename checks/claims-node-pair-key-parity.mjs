@@ -106,7 +106,7 @@ export function loadScene(scene, source) {
     cornerRadiusScale: design.cornerRadiusScale,
     cornerRadiusOverrides: design.cornerRadiusOverrides,
     cornerCornerRadiusOverrides: design.cornerCornerRadiusOverrides,
-    curbWidth: design.curbWidth ?? 0.15,
+    curbWidth: design.curbWidth,   // ⛔ authored only — buildTileGround refuses by name without one
     blockLandUse: design.blockLandUse,
     useRingBandEmitter: true,
   })

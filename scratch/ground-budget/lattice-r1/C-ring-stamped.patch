@@ -1,0 +1,49 @@
+--- unowned/tg-B.snapshot.js	2026-10-16 20:06:07
++++ tileGround.C-ring-stamped.js	2026-10-16 09:01:34
+@@ -2589,18 +2589,23 @@
+   }
+   throw new Error(`[tileGround][stamp] ⛔ the crossing pass did not settle in ${maxRounds} rounds — a crossing keeps making another (${rings.length} rings)`)
+ }
+-// `groups`: `prepareEvidence`'s output. Returns { tile: st⁺ (iaFull, iA and the aligned arrays stamped), groups: the
+-// evidence near this tile, stamped, in the same shape } — or { tile: st, groups } where there is nothing to stamp.
++// `groups`: `prepareEvidence`'s output. Returns { tile: st⁺ (iaFull, iA, the tile ring and the aligned arrays stamped),
++// groups: the evidence near this tile, stamped, in the same shape } — or { tile: st, groups } where there is nothing to stamp.
++// ⭐ THE TILE RING IS STAMPED TOO. The circle cut is `iA ∩ ring`, so wherever the ring runs inside the curb contour (a coast
++// or water edge, where the two share vertices and part by under a millimetre) the cut iA takes the RING's edge — and a
++// crossing written only into the curb was dropped there (Huron, 2026-10-16: 53 of 60 interior one-side vertices, all on
++// tile-ring edges of one coast tile). Stamped into all three, the crossing survives whichever edge the cut keeps.
+ export function stampTile(st, groups) {
+   if (!groups?.length || !st?.iaFull?.length) return { tile: st, groups }
+   const bb = [Infinity, -Infinity, Infinity, -Infinity]
+-  for (const r of st.iaFull) for (const p of r) { bb[0] = Math.min(bb[0], p[0]); bb[1] = Math.max(bb[1], p[0]); bb[2] = Math.min(bb[2], p[1]); bb[3] = Math.max(bb[3], p[1]) }
++  for (const r of [...st.iaFull, ...(st.ring ? [st.ring] : [])]) for (const p of r) { bb[0] = Math.min(bb[0], p[0]); bb[1] = Math.max(bb[1], p[0]); bb[2] = Math.min(bb[2], p[1]); bb[3] = Math.max(bb[3], p[1]) }
+   const near = groups.map(g => ({ g, rings: g.rings.filter(x => !(x.bb[0] > bb[1] || x.bb[1] < bb[0] || x.bb[2] > bb[3] || x.bb[3] < bb[2])).map(x => x.r) })).filter(x => x.rings.length)
+   const items = []
+   st.iaFull.forEach((r, ri) => items.push({ kind: 'full', ri, r }))
+   ;(st.iA || []).forEach((r, ri) => items.push({ kind: 'cut', ri, r }))
++  if (st.ring?.length) items.push({ kind: 'ring', r: st.ring })
+   near.forEach((x, gi) => x.rings.forEach(r => items.push({ kind: 'ev', gi, r })))
+-  // the two block contours against each other are the disc cut's business, and evidence × evidence the pour's
++  // the block contours (and the tile ring) against each other are the disc cut's business, and evidence × evidence the pour's
+   const out = stampCrossings(items.map(x => x.r), (a, b) => (items[a].kind === 'ev') === (items[b].kind === 'ev'))
+   const pts = (o) => o.map(v => v.p)
+   const iaFull = [], iA = [], evRings = near.map(() => [])
+@@ -2613,6 +2618,7 @@
+   const st2 = { ...st, iaStamp: [], iaArc: [], iaCorner: [], iaJunction: [] }
+   items.forEach((x, n) => { const o = out[n]
+     if (x.kind === 'cut') iA[x.ri] = pts(o)
++    else if (x.kind === 'ring') st2.ring = pts(o)
+     else if (x.kind === 'ev') evRings[x.gi].push(pts(o))
+     else { iaFull[x.ri] = pts(o); const r = x.r
+       st2.iaStamp[x.ri] = st.iaStamp?.[x.ri] ? expand(st.iaStamp[x.ri], r, o, 'stamp') : st.iaStamp?.[x.ri]
+@@ -9789,7 +9795,9 @@
+           for (const a of iaStamp) for (let i = 0; i < a.length; i++) a[i] = a[i] == null ? null : (reIx.has(a[i]) ? reIx.get(a[i]) : null)
+           for (const r of runs2) { delete r.key; delete r.iEnd }
+           protoShapeTiles.push({
+-            ring, iA: mine.map(EC => EC.ring),
++            // ⭐ the tile ring on the lattice too (`onLattice`): the circle cuts the curb with it, so where the ring lies inside
++            // the curb (a coast edge) its edges ARE the block's, and the stamp is written into it (`stampTile`)
++            ring: onLattice(ring, `block ${k} tile ring`), iA: mine.map(EC => EC.ring),
+             // ⭐⭐⭐ THE FILL IS NO LONGER FROZEN — `SECTION §4`'s keystone, finally kept: freeze the
+             // SILHOUETTE, author the FILL live. `bands` used to sit here and `sectionOpen`
+             // short-circuited on it, so an authored treelawn moved this artifact 0 m². The tile now

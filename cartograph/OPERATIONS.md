@@ -83,7 +83,7 @@ The hardscape silhouette: centerlines, smoothing, caps, anchor, road metadata, c
 - **Asphalt-edge handle** — `pavementHW` per side (the half-width of pavement).
 - **Auto-smoothing** — a selected chain shows its raw points for editing; returns to the smooth curve on `enter`. Street smoothing rides **one knob** (`STREET_SMOOTH`) so the navy centerline and the curb are one curve by construction — never two copies kept in sync by hand (`SKELETON.md §3.5`).
 - **Caps** — round / blunt / none, per dead-end (a free per-dead-end authoring choice; `SECTION.md §6`/D6a + G8 govern the *fill*).
-- **Curb** — global width, its own material.
+- **Curb** — global width, its own material. ⛔ **`curbWidth` is required: author it at onboarding** with the town's other fields (metres, in the town's home Look; Survey › Streets › Curb, or `design.json`). It has **no default**: a curb is a fact about a town (LS 0.381, PTown 0.1524), so the kit seeds none. A town without one shows *not authored* and **refuses by name** in the pour, the ground bake, the zone tester and Survey: *"author curbWidth in this town's Look"*. ▶ `node checks/claims-a-look-authors-its-curb-width.mjs`
 - **One-way arrows** — a chain flagged `One-way` draws amber travel-direction chevrons on the Designer ground plane (overlay only — nothing baked reads them). Hide them at **Design ▸ Streets ▸ One-Way Arrows**; it writes the Look's `layerVis.oneway`, so it is per-scene authoring like every other visibility toggle.
 - **Marker (FAB)** — a freehand pen overlay for triage, independent of the authoring tools (`FEATURES.md §Designer`). Toggle the FAB to draw; each stroke persists immediately to `data/clean/marker_strokes.json`. Stack: **eraser** (click a stroke to remove it) · **undo** (drop the last stroke) · **clear all**. The server's `/analyze` endpoint reports the parcels + blocks under the current strokes — circle a defect, ask "what's under here?" ⚠️ **OPEN BUG (2026-07-08): the overlay drifts saved strokes hundreds of m on reload** (`marker_strokes.json` centroids move between loads — a viewBox/frame mismatch). Use it for rough "what's-under-here" triage, **not** as a precise-coordinate source — it sent a whole debugging session chasing the wrong building. For frame-honest placement use skeleton geometry + OSM lon/lat through the current `geography.json`. See `[[project_marker_overlay_drift_bug]]`.
 - **The corner-radius kit — three layers that stack at every intersection** (Blocks ▸ Shape):
@@ -344,17 +344,15 @@ The distance: the Arch or the backdrop where the town has one, the air between, 
     not cut** — it *tints* rather than replaces. Beneath it is the **`bed`**, the sand ground under
     every water body; its shape is in the terrain (`BAKE.md` "the bed"), so the waterline is wherever the
     level meets the ground. ▶ `node checks/claims-the-shore-is-closed.mjs`
-    `stripe` **cuts but keeps its slot**: cutting halved its overlap with asphalt (386 →
-    194 m², 10 cm cells in a 500 m window) and did **not** finish it. ⛔ **Cause of that 194 m²
-    residual is NOT ESTABLISHED** — the slot is a guard against an unexplained residual, not a
-    design choice, and it goes away the day the residual measures zero, not on the grounds that it
-    should be zero.
+    `stripe` **cuts but keeps its slot** — a guard against an overlap residual whose cause is not
+    established (`ARCHITECTURE.md §8`); it goes the day that residual measures zero.
+  - ⭐ **A layer paints the UNION of its polygons** (overlaps never cancel); each emitted piece is an
+    outer or a hole by **the ground inside it**, and a step that cannot decide **refuses the bake by
+    name**. ▶ `node checks/claims-the-ground-is-painted-once.mjs --dir=<slab>`
   - ▶ `node checks/claims-coplanar-groups-do-not-overlap.mjs` — asserts both directions: groups
     sharing a Y must not overlap, **and** a group alone on its slot must overlap something (without
-    the second half, the broken state — every group on its own slot — passes trivially). ⚠️ Three
-    towns (altadena, hipointedemun, lafayette-square-staging) **cannot re-bake** and still warn:
-    they carry no frozen protopolygon because they have not been poured since ① landed. That is a
-    **re-pour**, and it is the operator's call.
+    the second half, the broken state — every group on its own slot — passes trivially). A town still
+    warning has not been **re-poured** since ① landed (no frozen protopolygon) — the operator's call.
 - **Ground-contact effects** (baked; tune via the bake constants in **CLI / bake operations** below): the **lamp light pools**, the **dark contact rings** under trees + lamps (visible in daylight), and the **tree trunk-base ground blend** (the lowest of each trunk takes on the ground colour beneath it). All three bake into ground textures + sample in the ground/tree shaders — **re-bake to see them**, hard-refresh to pick up the slab.
 
 ## Preview — the publish-confidence gate

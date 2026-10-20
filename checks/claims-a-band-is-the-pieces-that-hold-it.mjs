@@ -18,7 +18,7 @@ import { pathToFileURL } from 'node:url'
 const rows = async (url) => {
   const { buildDeformer } = await import(url)
   const sq = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]
-  const D = buildDeformer({ tiles: [], raw: () => 0, limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 },
+  const D = buildDeformer({ town: "selftest", tiles: [], ink: [], raw: () => 0, line: { step: 1, heightAt: () => 0 }, limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 },
     bands: { curb: [], walk: [], lawn: [{ outer: sq(0, 0, 1.002, 1), holes: [] }, { outer: sq(1, 0, 2, 1), holes: [] }, { outer: sq(3, 0, 5, 1), holes: [sq(3.5, 0.2, 4.5, 0.8)] }] } })
   const B = D._bandsAlong(0.01, 0.5, 1, 0, 2.5).filter(b => b.to - b.from > 1e-6)
   return [

@@ -271,7 +271,7 @@ export default function BlockGeometryV2Debug({
   const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const cornerEditMode            = useCartographStore(s => s.cornerEditMode)
-  const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const curbWidth                 = useCartographStore(s => s.curbWidth)   // null = not authored: the builds refuse by name
   // [curve-fit — THE ONE KNOB] The curb derives from the single shared smoothing
   // tension `STREET_SMOOTH` (smoothCenterline.js). The smooth>0 path re-walks
   // extractFaces over the smoothed centerline → the curb iA + ped ribbon follow
@@ -427,12 +427,15 @@ export default function BlockGeometryV2Debug({
     // is still not free and still unread outside those two tools.
     // surveyActive/measureActive are in the deps: entering either tool builds it.
     if (!surveyActive && !measureActive) return empty
+    // the Look's curb width (and customs) are unknown until its design hydrates: a build before then has no authored inputs
+    if (!designHydrated) return empty
     // [LOAD-FORENSIC 2026-07-14] throwaway stage timing; strip once Jacob has
     // eye-confirmed the load in the browser.
     console.time('[LOAD] buildBlockGeometryV2')
     try {
       return buildBlockGeometryV2(liveRibbons, {
-        stencil, ...debouncedInputs, useRingBandEmitter,
+        // the curb width is read LIVE: the debounced snapshot refreshes only in Survey, and its first copy predates hydration
+        stencil, ...debouncedInputs, curbWidth, useRingBandEmitter,
       })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
@@ -440,7 +443,7 @@ export default function BlockGeometryV2Debug({
     } finally {
       console.timeEnd('[LOAD] buildBlockGeometryV2')
     }
-  }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter, surveyActive, measureActive])
+  }, [liveRibbons, stencil, debouncedInputs, curbWidth, useRingBandEmitter, surveyActive, measureActive, designHydrated])
 
 
   // D.5: Stash frontageEdges so MeasureOverlay can resolve a clicked
@@ -831,6 +834,7 @@ export default function BlockGeometryV2Debug({
 
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
+    if (!designHydrated) return null   // no authored curb width yet — buildTileGround would (rightly) refuse
     // The frozen path is going to render this — don't duplicate its work. See
     // frozenNotReady: this covers "in flight" AND "waiting on stencil/design".
     if (frozenNotReady) return null
@@ -891,7 +895,7 @@ export default function BlockGeometryV2Debug({
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
       _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
     }
-  }, [liveRibbons, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, blockCustomsX])
+  }, [liveRibbons, designHydrated, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, blockCustomsX])
 
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
   // While in Survey, keep the latest live `_shapeArtifact` (exactly what the

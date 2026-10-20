@@ -472,11 +472,9 @@
 >   ### ⛔⛔ AND READ IT OFF THE EASE'S OWN PER-VERTEX STAMP (`EC.arc`), NEVER OFF `protoTurns`
 >   `protoTurns` holds **LABELS** (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so
 >   `protoTurns.has(labs[i])` marks **every ② vertex on that frontage** once its owner turns
->   anywhere. `end()` reads `iaCorner` to end a leg, so each one inserts a ramp **mid-block**:
->   LS went to **10,606 marked vertices of 14,651 (72.4%, from 3.6%)** — measured when `protoTurns`
->   was read for the mark; that read is RETIRED (`protoTurns` is computed and discarded, `void
->   protoTurns` in `tileGround.js`), so no command reproduces this figure — and the eye caught sawtooth
->   notches down straight streets — *"weird geometry everywhere; looks like contour nodes."*
+>   anywhere. `end()` then read `iaCorner` to end a leg, so each one inserted a ramp **mid-block**, and the eye caught
+>   sawtooth notches down straight streets — *"weird geometry everywhere; looks like contour nodes."* (`end()` reads it no
+>   more, 50a64997: the mark covers every vertex of an arc, so on an unpadded one it did the same round every bend.)
 >   ⭐⭐ **THE LESSON, AND IT GENERALISES PAST CORNERS: the owner-change half was doing TWO jobs —
 >   wrongly answering WHETHER, and necessarily supplying WHERE.** Deleting a term that carries a
 >   second, unnamed job deletes that job too, and the gates stayed green because none of them
@@ -1393,7 +1391,7 @@ The curb is the per-edge **parallel offset** of the centerline: `iA = chain ⊕ 
 
 The Wall freezes the SHAPE here: each tile's `runs[]` = `{skelId, side, segOrd, poly, baseMeasure}` (the curb edge + run identity). This is Section's frozen input (`SECTION.md §2`). **~1.03 MB on LS** (measured 2026-08-04; the `64K` this line carried for months was 16× low, and it is the number a slab-payload question gets answered with here).
 
-**Format (`{ tiles, highway }`, 2026-06-16 G1).** The artifact is now an OBJECT wrapping the per-tile array plus **sibling groups that aren't tile-shaped**: `{ tiles: _shapeArtifact[], highway: rings[] }`. The `highway` group holds the grade-separated highway-class strokes (motorway/trunk + links/ramps) — frozen alongside the tiles so the non-Survey frozen views (Section/Design) restore them. *Legacy bare-array `shape.json` is still read* (treated as `{ tiles: d, highway: [] }`) so an un-re-baked scene degrades gracefully. Readers: `BlockGeometryV2Debug` fetch + `freezeShape` (`useCartographStore`); writers: the Survey-exit freeze + `bake-ground.js:923`. Grade-sep centerlines are smoothed unconditionally at 1.5 m before stroking (independent of `STREET_SMOOTH=0`, which exists only to spare the fragile *concentric curb* offset — highways stroke flat) so the frozen ramps are facet-free (`tileGround.js` gradeSep loop). *(Was: a bare array; 4924d9a routed non-Survey views to the frozen path, which dropped the top-level highway group → highways vanished from Design/Measure. Restored (G1, landed) → `_archive/handoffs/HANDOFF-surface-and-wire-geometry-LANDED-2026-06-22.md`.)*
+**Format (`{ tiles, highway, ink }`).** The artifact is now an OBJECT wrapping the per-tile array plus **sibling groups that aren't tile-shaped**: `{ tiles: _shapeArtifact[], highway: rings[] }`. The `highway` group holds the grade-separated highway-class strokes (motorway/trunk + links/ramps) — frozen alongside the tiles so the non-Survey frozen views (Section/Design) restore them. *Legacy bare-array `shape.json` is still read* (treated as `{ tiles: d, highway: [] }`) so an un-re-baked scene degrades gracefully. Readers: `BlockGeometryV2Debug` fetch + `freezeShape` (`useCartographStore`); writers: the Survey-exit freeze + `bakeGround`. Grade-sep centerlines are smoothed unconditionally at 1.5 m before stroking (independent of `STREET_SMOOTH=0`, which exists only to spare the fragile *concentric curb* offset — highways stroke flat) so the frozen ramps are facet-free (`tileGround.js` gradeSep loop). **`ink` = owned road ground outside every tile** (`[{rings, owners, kind?}]`): ①'s ink strokes, and (`kind:'block'`) curbless blocks' ground outside H. ① producer only. Tiles carry `ringOwner[i]`. ▶ `checks/claims-the-ink-is-held-by-its-owners.mjs`.
 
 ### `blockCustoms[skelId][side][segOrd]` — operator overrides
 

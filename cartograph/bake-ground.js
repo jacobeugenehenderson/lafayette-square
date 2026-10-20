@@ -49,10 +49,10 @@ import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, split
 import { lineHeights } from './lineHeight.mjs'
 import { buildDeformer } from './groundDeformer.mjs'
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
-import { requireExplicitMap, ribbonsPathOf } from './scene.js'
+import { requireExplicitMap, ribbonsPathOf, mapRawDir } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { buildTileGround, roadOffTheLattice } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
@@ -61,11 +61,11 @@ import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign } from './lookDesign.mjs'
 import { lookFade } from './boundaryRecords.mjs'
-import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { BAND_COLORS, curbedMinWidth, townState } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
-import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
+import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -298,7 +298,7 @@ const FLOOR_KEYS = new Set(['mat:bed'])
 
 // Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
 // MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
-const POLYLINE_HALF_WIDTHS = {
+export const POLYLINE_HALF_WIDTHS = {
   stripe:         0.10,
   edgeline:       0.08,
   bikelane:       0.25,
@@ -313,7 +313,7 @@ const POLYLINE_HALF_WIDTHS = {
 // straight segments produce parallel edges and gentle bends miter cleanly.
 // Sharp corners can self-intersect; barrier/stripe data is dense enough
 // that this hasn't bitten in practice.
-function polylineToRing(coords, halfWidth) {
+export function polylineToRing(coords, halfWidth) {
   if (!coords || coords.length < 2) return null
   const n = coords.length
   const left = new Array(n), right = new Array(n)
@@ -336,11 +336,29 @@ function polylineToRing(coords, halfWidth) {
   return ring
 }
 
+// ⭐ THE CENTRE STRIPE IS ①'s LINE (Boz's ruling, 2026-10-17, on Jacob's "everything uses ① as the SSoT"): each eligible
+// street's own `points` from the ribbons — the line ① was struck from, so the stripe lies inside ①'s ink by construction.
+// It replaces map.json's `centerStripe`, which derive.js pushes from the raw OSM way and which departed from ① by up to
+// 7.85 m (HPDM; ▶ checks/claims-the-road-lies-on-the-lattice.mjs). Eligibility is derive.js's own rule, read off the
+// street RECORD, never by matching names: an OSM class among the eight below · not oneway (a divided road's `pairId`
+// carriageways are each oneway, so the rule already leaves them out) · not grade-separated (a bridge's paint is not the
+// ground's). `dashed` is carried as derive.js carried it; nothing here reads it.
+const STRIPE_CLASSES = new Set(['residential', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified'])
+export function centreStripeRings(streets) {
+  const out = []
+  for (const s of streets || []) {
+    if (!STRIPE_CLASSES.has(s.highway) || s.oneway === true || s.gradeSeparated) continue
+    const ring = polylineToRing(s.points, POLYLINE_HALF_WIDTHS.stripe)
+    if (ring) out.push({ skelId: s.skelId, dashed: s.highway === 'residential', ring })
+  }
+  return out
+}
+
 // Lateral-offset a polyline by `offset` to one side, then return the
 // offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by parking_line
 // (edgeline) + bike_lane which carry a single centerline + lateral offset
 // — the actual paint sits on the offset, not the centerline.
-function lateralOffset(coords, offset, side) {
+export function lateralOffset(coords, offset, side) {
   const out = []
   for (let i = 0; i < coords.length; i++) {
     const prev = coords[Math.max(0, i - 1)]
@@ -444,6 +462,13 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
+// The minimum curbed width (where a curbed feature ends — the nose), read from the registry by finding id for the town's
+// state (`curbedMinWidth`, streetProfiles.js). ⛔ No scene or no raw OSM ⇒ the state is unknown, and the label says so.
+function curbedMinWidthOf(scene) {
+  const osmP = scene && join(mapRawDir(scene), 'osm.json')
+  const state = osmP && existsSync(osmP) ? townState(JSON.parse(readFileSync(osmP, 'utf8'))) : { code: null }
+  return curbedMinWidth(JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'registry.json'), 'utf8')), state)
+}
 function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null, opts = {}) {
   // ⭐⭐⭐ `--proto` MAKES ① THE PRODUCER. The frozen artifact is then built from ②③ — the curb
   // offset from the protopolygon and the bands struck from that curb — instead of from the chains.
@@ -478,7 +503,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
     reportGlean: true,
     surveyStreets,
-    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
+    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth
+      : (() => { throw new Error(`[bake-ground] ⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look`) })(),
+    ...(PROTO ? { curbedMinWidth: curbedMinWidthOf(scene) } : {}),
     smooth: STREET_SMOOTH,   // the ONE knob — WYSIWYG with the live Survey curve-fit (SKELETON.md §3.5; was 0, 2026-06-04→revived 2026-06-14)
     blockLandUse: design.blockLandUse || null,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
@@ -581,8 +608,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // ⭐ the raised kerb's inputs (`kerbLift.mjs`): the block silhouettes (the frozen curb rings), every cut's kerb face,
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
+  if (PROTO && !pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
   return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [],
-           blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
+           inkPieces: PROTO ? pr.protoInkPieces : null, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -598,8 +626,8 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
 // face (~50 m corner-to-corner) chords across a heightfield that curves — dense
 // overlays and foundations then disagree with the face's interpolated Y.
 
-// ── Subtract overlays out of the face beneath them ──────────────────────────
-// ⛔⛔ WHY THIS EXISTS. A `wood` or `pitch` overlay is finely tessellated (~8.5 m
+// ── Nothing overlaps on the ground: why (the paint-stack flatten below is what does it) ──
+// ⛔⛔ WHY. A `wood` or `pitch` overlay is finely tessellated (~8.5 m
 // edges) and hugs the DEM; the land-use face UNDER it is coarse (22–33 m) and cuts
 // a chord. They were separated by 30 mm — but the face's own terrain-chord error at
 // that span is 17–29 mm median and 473–730 mm at p95, so the coarse face BULGES UP
@@ -701,9 +729,262 @@ export function shoreMedianItems(doc) {
 // — and asphalt then kept ~386 m² of tarmac underneath the paint. The instrument
 // that caught it was logging signed AREA and the accumulator's area, not path
 // counts: a count says the layer EXISTS, only the area says the union KEPT it.
+// ⭐⭐ WHAT A STEP PAINTS, AND WHO SAYS SO (2026-10-14, Jacob's go via Boz; the ground truth in
+// scratch/ground-budget/flatten-r1/results-2026-10-14.txt). A step paints exactly the points in its OWN layer and in no
+// layer above it, and two things here are made to mean that literally:
+// · THE LAYER IS THE UNION OF ITS ITEMS. Each item is its outer less its holes, and overlapping items of one layer
+//   UNION (`layerRegion`), as the Designer draws them. ⛔ The subject used to be read even-odd over every ring of every
+//   item, so two overlapping polygons of one layer CANCELLED where they overlapped — while the accumulator, reading the
+//   same rings non-zero, counted that ground as covered, so nothing below painted it either: Huron's 2.44 ha of wood
+//   painted by no one.
+// · A RING'S ROLE IS ASKED OF THE INPUTS (`itemsByMembership`). The difference goes to flat Paths and each ring is an
+//   outer or a hole by whether the ground just inside it is painted — tested against this step's own region and the
+//   accumulator, never inferred from nesting. A hole hangs on the smallest outer that holds it. ⛔ The roles used to come
+//   from clipper-lib's PolyTree, whose parent is partly the sweep's (FirstLeft): it put a hole outside its outer, double-
+//   painted Huron's sidewalk under curbCut and 1.25 ha of face:underived under agricultural, and left 112.76 m² of HPDM
+//   treelawn painted by no one. It was also the paint stack's cost: with StrictlySimple on, the PolyTree runs its
+//   FirstLeft fix-ups (`FixupFirstLefts1/2`, PolyTree mode only), measured at 92% of asphalt's step on Huron.
+// ⛔ Either test failing is THROWN, never kept whole: an unclipped layer is an overlap that looks like a working flatten.
+// ▶ node checks/claims-the-ground-is-painted-once.mjs
+function layerRegion(e) {
+  const all = new _Clipper()
+  for (const it of e.items) {
+    const outer = Array.isArray(it) ? it : it?.outer
+    const holes = Array.isArray(it) ? [] : (it?.holes || [])
+    if (!outer || outer.length < 3) continue
+    const c = new _Clipper()
+    c.AddPath(_ringToPath(outer), _PolyType.ptSubject, true)
+    for (const h of holes) if (h && h.length >= 3) c.AddPath(_ringToPath(h), _PolyType.ptClip, true)
+    const piece = new _Paths()
+    if (!c.Execute(_ClipType.ctDifference, piece, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: an item's outer less its holes was REFUSED`)
+    all.AddPaths(piece, _PolyType.ptSubject, true)
+  }
+  const region = new _Paths()
+  if (!all.Execute(_ClipType.ctUnion, region, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: the union of its items was REFUSED`)
+  return region
+}
+
+// The winding number of a point against a set of paths, through a row index of their edges (every path's edges in one
+// list, bucketed by the rows of Y they span), so a probe reads only the edges level with it.
+function edgeIndex(paths) {
+  let n = 0; for (const q of paths) n += q.length
+  const ax = new Float64Array(n), ay = new Float64Array(n), bx = new Float64Array(n), by = new Float64Array(n)
+  let k = 0, y0 = Infinity, y1 = -Infinity
+  for (const q of paths) for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
+    ax[k] = q[j].X; ay[k] = q[j].Y; bx[k] = q[i].X; by[k] = q[i].Y; k++
+    if (q[i].Y < y0) y0 = q[i].Y; if (q[i].Y > y1) y1 = q[i].Y }
+  const nb = Math.max(1, Math.min(4096, n >> 3)), h = (y1 - y0) / nb || 1
+  const row = (y) => Math.min(nb - 1, Math.max(0, Math.floor((y - y0) / h)))
+  const start = new Int32Array(nb + 1)
+  for (let e = 0; e < n; e++) for (let r = row(Math.min(ay[e], by[e])), r1 = row(Math.max(ay[e], by[e])); r <= r1; r++) start[r + 1]++
+  for (let r = 0; r < nb; r++) start[r + 1] += start[r]
+  const fill = start.slice(0, nb), list = new Int32Array(start[nb])
+  for (let e = 0; e < n; e++) for (let r = row(Math.min(ay[e], by[e])), r1 = row(Math.max(ay[e], by[e])); r <= r1; r++) list[fill[r]++] = e
+  return (x, y) => {
+    if (!n || y < y0 || y > y1) return 0
+    let w = 0
+    for (let r = row(y), i = start[r]; i < start[r + 1]; i++) { const e = list[i]
+      const c = (bx[e] - ax[e]) * (y - ay[e]) - (x - ax[e]) * (by[e] - ay[e])
+      if (ay[e] <= y) { if (by[e] > y && c > 0) w++ } else if (by[e] <= y && c < 0) w-- }
+    return w
+  }
+}
+// Two questions of a set of paths' edges, through the same row index as `edgeIndex` (each edge listed in every row its
+// Y span, widened by r, touches): `near(x, y)` — does any edge lie within r of the point; `crosses(mx, my, px, py)` — does
+// any edge cross the segment m→p anywhere past m (an edge through m itself, the probe's own, is not a crossing);
+// `through(x, y)` — how many edges pass EXACTLY through the point (integer vertices, so the test is exact).
+function edgeNear(paths, r) {
+  let n = 0; for (const q of paths) n += q.length
+  const ax = new Float64Array(n), ay = new Float64Array(n), bx = new Float64Array(n), by = new Float64Array(n)
+  let k = 0, y0 = Infinity, y1 = -Infinity
+  for (const q of paths) for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
+    ax[k] = q[j].X; ay[k] = q[j].Y; bx[k] = q[i].X; by[k] = q[i].Y; k++
+    if (q[i].Y < y0) y0 = q[i].Y; if (q[i].Y > y1) y1 = q[i].Y }
+  y0 -= r; y1 += r
+  const nb = Math.max(1, Math.min(4096, n >> 3)), h = (y1 - y0) / nb || 1
+  const row = (y) => Math.min(nb - 1, Math.max(0, Math.floor((y - y0) / h)))
+  const start = new Int32Array(nb + 1)
+  for (let e = 0; e < n; e++) for (let w = row(Math.min(ay[e], by[e]) - r), w1 = row(Math.max(ay[e], by[e]) + r); w <= w1; w++) start[w + 1]++
+  for (let w = 0; w < nb; w++) start[w + 1] += start[w]
+  const fill = start.slice(0, nb), list = new Int32Array(start[nb])
+  for (let e = 0; e < n; e++) for (let w = row(Math.min(ay[e], by[e]) - r), w1 = row(Math.max(ay[e], by[e]) + r); w <= w1; w++) list[fill[w]++] = e
+  const seen = new Int32Array(n); let stamp = 0
+  return {
+    near: (x, y) => {
+      if (!n || y < y0 || y > y1) return false
+      for (let w = row(y), i = start[w]; i < start[w + 1]; i++) { const e = list[i]
+        const dx = bx[e] - ax[e], dy = by[e] - ay[e], L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((x - ax[e]) * dx + (y - ay[e]) * dy) / L2)) : 0
+        if (Math.hypot(x - ax[e] - t * dx, y - ay[e] - t * dy) < r) return true }
+      return false
+    },
+    through: (x, y) => {
+      if (!n || y < y0 || y > y1) return 0
+      let c = 0
+      for (let w = row(y), i = start[w]; i < start[w + 1]; i++) { const e = list[i]
+        if ((bx[e] - ax[e]) * (y - ay[e]) - (by[e] - ay[e]) * (x - ax[e]) !== 0) continue
+        if (x < Math.min(ax[e], bx[e]) || x > Math.max(ax[e], bx[e]) || y < Math.min(ay[e], by[e]) || y > Math.max(ay[e], by[e])) continue
+        c++ }
+      return c
+    },
+    crosses: (mx, my, px, py) => {
+      if (!n) return false
+      stamp++
+      const sx = px - mx, sy = py - my
+      for (let w = row(Math.min(my, py)), w1 = row(Math.max(my, py)); w <= w1; w++) for (let i = start[w]; i < start[w + 1]; i++) { const e = list[i]
+        if (seen[e] === stamp) continue; seen[e] = stamp
+        const ex = bx[e] - ax[e], ey = by[e] - ay[e], den = sx * ey - sy * ex
+        if (!den) continue
+        const t = ((ax[e] - mx) * ey - (ay[e] - my) * ex) / den, u = ((ax[e] - mx) * sy - (ay[e] - my) * sx) / den
+        if (t > 1e-9 && t <= 1 && u >= 0 && u <= 1) return true }
+      return false
+    },
+  }
+}
+const windingOf = (q, x, y) => {
+  let w = 0
+  for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const a = q[j], b = q[i]
+    const c = (b.X - a.X) * (y - a.Y) - (x - a.X) * (b.Y - a.Y)
+    if (a.Y <= y) { if (b.Y > y && c > 0) w++ } else if (b.Y <= y && c < 0) w-- }
+  return w
+}
+
+// Each ring of the difference, outer or hole by the ground just inside it: painted iff in the layer and not under the
+// accumulator. ⚠️ The probe must stand CLEAR: Clipper rounds every output vertex to the lattice, so an output edge lies up
+// to √2/2 of a unit off the input boundary it traces, and a probe a hair inside it can sample the wrong side (HPDM's
+// mat:fence, 2026-10-14: three probes 1 µm in read true, false, true). So each probe stands PROBE_IN units inside an
+// edge's midpoint and must be PROBE_CLEAR units from every edge of EVERY ring of the step's output (its own holes
+// included — see `clearOf`); up to three such probes, longest edges first, and they must agree.
+// ⛔ A ring with NO clear probe is narrower than the lattice's own rounding, or crowded within it by another edge of the
+// step: there the inputs do not decide membership,
+// Clipper's rounding does, so its role is Clipper's winding — COUNTED and printed, never silent (the thin-piece residue,
+// ▶ node checks/claims-the-ground-is-painted-once.mjs, which prints it exactly). A ring with no area paints nothing.
+// ⛔ A hole that no outer holds THROWS — with one exception, the same rule's: a hole below the lattice that no outer of
+// the group contains or touches (tested on the rings, not by distance) removes no paint, so it is dropped, COUNTED, and
+// stamped with its area and a point (ground.json#flatten.subLattice[group].orphanHoles). HPDM's treelawn:underived,
+// 2026-10-14: a 5×10⁻⁷ m² sliver Clipper's StrictlySimple difference emitted alone, 1.5 m from any outer (why it is
+// emitted: cause not established). A parentless hole with a clear probe is a contradiction of the inputs and throws.
+const LATTICE_STEP = CLIP_SCALE * LATTICE_M      // one lattice step in Clipper's integer units (lattice.js)
+const PROBE_CLEAR = 2 * LATTICE_STEP, PROBE_IN = 3 * LATTICE_STEP   // clear of the √2/2-step rounding, with room
+// Whether two integer rings share any point: an edge of one crossing or touching an edge of the other (exact on the
+// lattice), or one holding a vertex of the other.
+// Whether two integer rings touch at exactly ONE shared vertex and nowhere else: one vertex in common, and no pair of their
+// edges meets anywhere but there (exact orientation tests on the lattice).
+const touchOnce = (p, q) => {
+  const key = (v) => v.X + ',' + v.Y, ps = new Set(p.map(key)), shared = q.filter(v => ps.has(key(v)))
+  if (shared.length !== 1) return false
+  const S = shared[0], at = (v) => v.X === S.X && v.Y === S.Y
+  const o = (a, b, c) => Math.sign((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X))
+  const on = (a, b, c) => Math.min(a.X, b.X) <= c.X && c.X <= Math.max(a.X, b.X) && Math.min(a.Y, b.Y) <= c.Y && c.Y <= Math.max(a.Y, b.Y)
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) for (let k = 0, l = q.length - 1; k < q.length; l = k++) {
+    const a = p[j], b = p[i], c = q[l], d = q[k], o1 = o(a, b, c), o2 = o(a, b, d), o3 = o(c, d, a), o4 = o(c, d, b)
+    const proper = o1 !== o2 && o3 !== o4 && o1 && o2 && o3 && o4
+    const touch = [[!o1, a, b, c], [!o2, a, b, d], [!o3, c, d, a], [!o4, c, d, b]].some(([z, s0, s1, P]) => z && on(s0, s1, P) && !at(P))
+    if (proper || touch) return false }
+  return true
+}
+const ringsMeet = (p, q) => {
+  const o = (a, b, c) => Math.sign((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X))
+  const on = (a, b, c) => Math.min(a.X, b.X) <= c.X && c.X <= Math.max(a.X, b.X) && Math.min(a.Y, b.Y) <= c.Y && c.Y <= Math.max(a.Y, b.Y)
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) for (let k = 0, l = q.length - 1; k < q.length; l = k++) {
+    const a = p[j], b = p[i], c = q[l], d = q[k], o1 = o(a, b, c), o2 = o(a, b, d), o3 = o(c, d, a), o4 = o(c, d, b)
+    if (o1 !== o2 && o3 !== o4) return true
+    if ((!o1 && on(a, b, c)) || (!o2 && on(a, b, d)) || (!o3 && on(c, d, a)) || (!o4 && on(c, d, b))) return true }
+  return windingOf(p, q[0].X, q[0].Y) !== 0 || windingOf(q, p[0].X, p[0].Y) !== 0
+}
+function itemsByMembership(paths, painted, groupKey, subLattice) {
+  const outers = [], holes = []
+  let disagree = 0, sub = 0, subM2 = 0
+  // ⛔ CLEAR OF EVERY EDGE THE STEP DREW, not only the ring's own: a hole of this ring (or any ring beside it) can run
+  // within PROBE_IN of the ring's edge, and a probe set inside the ring then stands in the hole (HPDM's mat:highway,
+  // 2026-10-14: an asphalt piece above whose edge ran 0.014–0.371 units off the highway's left a 55 m² ring round a
+  // 54.7 m² hole, and six of eight probes read the hole).
+  // ⛔ AND THE WAY IN MUST CROSS NOTHING, FROM AN EDGE THAT IS THE RING'S ALONE: there the highway's ring and its hole
+  // SHARED 19 vertices and the edges between them, and a hole edge ran 0.077 units off another — so a probe stood CLEAR
+  // yet in the hole. The walk from the edge's midpoint to the probe must cross no edge the step drew, and the edge must
+  // not be drawn by another ring too (`through` > 1): an edge two rings share borders both, and speaks for neither.
+  const step = edgeNear(paths, PROBE_CLEAR)
+  const clearOf = (mx, my, x, y) => step.through(mx, my) === 1 && !step.near(x, y) && !step.crosses(mx, my, x, y)
+  for (const q of paths) {
+    if (q.length < 3) continue
+    const A = _Clipper.Area(q)
+    if (A === 0) continue
+    const s = A > 0 ? 1 : -1
+    const edges = q.map((b, i) => { const a = q[(i + q.length - 1) % q.length]; return { a, b, L: Math.hypot(b.X - a.X, b.Y - a.Y) } })
+      .filter(e => e.L > 2 * PROBE_CLEAR).sort((p, r) => r.L - p.L)
+    const verdicts = []
+    let probe = null
+    for (const { a, b, L } of edges) {
+      const x = (a.X + b.X) / 2 - (b.Y - a.Y) / L * s * PROBE_IN, y = (a.Y + b.Y) / 2 + (b.X - a.X) / L * s * PROBE_IN
+      if (windingOf(q, x, y) === 0 || !clearOf((a.X + b.X) / 2, (a.Y + b.Y) / 2, x, y)) continue
+      verdicts.push(painted(x, y)); probe = probe || [x, y]
+      if (verdicts.length === 3) break
+    }
+    if (verdicts.some(v => v !== verdicts[0])) throw new Error(`[flatten] ${groupKey}: the probes inside one ring disagree (${verdicts}) — ${q.length} vertices at (${q[0].X / CLIP_SCALE}, ${q[0].Y / CLIP_SCALE})`)
+    let role = verdicts[0]
+    if (!verdicts.length) {                    // narrower than the lattice's rounding: Clipper's winding, counted
+      role = A > 0; sub++; subM2 += Math.abs(A) / (CLIP_SCALE * CLIP_SCALE)
+      // the search for a point inside it, for the hole's parent search: from each edge's midpoint (longest first), along
+      // the inward normal, halfway to where that normal first meets the ring again — a distance the ring itself sets, no
+      // constant. Every edge, because a ring this thin can twist below the lattice at one end (HPDM's treelawn:recreation,
+      // 2026-10-14: beside its closing edge the winding is 0 on both sides).
+      const byLen = q.map((b, i) => [q[(i + q.length - 1) % q.length], b]).sort(([a, b], [c, d]) => Math.hypot(d.X - c.X, d.Y - c.Y) - Math.hypot(b.X - a.X, b.Y - a.Y))
+      for (const [a, b] of byLen) { const L = Math.hypot(b.X - a.X, b.Y - a.Y); if (!L) continue
+        const mx = (a.X + b.X) / 2, my = (a.Y + b.Y) / 2, nx = -(b.Y - a.Y) / L * s, ny = (b.X - a.X) / L * s
+        let t = Infinity
+        for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const c = q[j], d = q[i]
+          if (c === a && d === b) continue
+          const ex = d.X - c.X, ey = d.Y - c.Y, den = nx * ey - ny * ex
+          if (!den) continue
+          const tt = ((c.X - mx) * ey - (c.Y - my) * ex) / den, u = ((c.X - mx) * ny - (c.Y - my) * nx) / den
+          if (tt > 0 && u >= 0 && u <= 1 && tt < t) t = tt }
+        if (t === Infinity) continue
+        const x = mx + nx * t / 2, y = my + ny * t / 2
+        if (windingOf(q, x, y) !== 0) { probe = [x, y]; break } }
+      if (!probe) throw new Error(`[flatten] ${groupKey}: no point lands inside a ring of ${q.length} vertices at (${q[0].X / CLIP_SCALE}, ${q[0].Y / CLIP_SCALE})`)
+    } else if (role !== (A > 0)) disagree++
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    for (const p of q) { if (p.X < x0) x0 = p.X; if (p.X > x1) x1 = p.X; if (p.Y < y0) y0 = p.Y; if (p.Y > y1) y1 = p.Y }
+    ;(role ? outers : holes).push({ q, a: Math.abs(A), box: [x0, y0, x1, y1], probe, sub: !verdicts.length, holes: [] })
+  }
+  if (sub) { subLattice[groupKey] = { rings: sub, m2: +subM2.toFixed(9) }
+    console.log(`  [flatten] ${groupKey}: ${sub} ring(s), ${subM2.toFixed(9)} m², narrower than the lattice's rounding — role by Clipper's winding`) }
+  if (disagree) console.log(`  [flatten] ${groupKey}: ${disagree} ring(s) whose role by membership is not Clipper's winding`)
+  const bySize = [...outers].sort((p, r) => p.a - r.a), orphans = [], bowTies = []
+  for (const h of holes) {
+    const [x, y] = h.probe
+    const o = bySize.find(o => !o.dropped && o.a > h.a && x >= o.box[0] && x <= o.box[2] && y >= o.box[1] && y <= o.box[3] && windingOf(o.q, x, y) !== 0)
+    if (o) { o.holes.push(h.q); continue }
+    const at = `(${x / CLIP_SCALE}, ${y / CLIP_SCALE})`
+    if (!h.sub) throw new Error(`[flatten] ${groupKey}: a hole (${h.q.length} vertices, unpainted inside by a clear probe) that no painted ring holds, at ${at}`)
+    const meets = outers.find(o => !o.dropped && o.box[0] <= h.box[2] && h.box[0] <= o.box[2] && o.box[1] <= h.box[3] && h.box[1] <= o.box[3] && ringsMeet(o.q, h.q))
+    // ⭐ A BOW-TIE BELOW THE LATTICE, under the same sub-lattice ruling (Boz, 2026-10-14): a sub-lattice hole and a sub-lattice
+    // outer of this group that touch at exactly ONE shared vertex and nowhere else, together thinner than one lattice step
+    // (mean width 2·area / perimeter, LATTICE_STEP) — one twisted sliver whose two halves wind opposite ways. Neither half has
+    // a probe the inputs decide, so it is dropped, COUNTED and stamped (`bowTies`). Anything wider, or a half above the
+    // lattice, or a second contact, still refuses below. ⛔ A DOWNSTREAM TOLERANCE FOR AN UPSTREAM CLASS: an evidence edge
+    // near-coincident with a band line (HPDM's treelawn:underived, 2026-10-14) — the count is the evidence the pour fix
+    // (one lattice, the evidence as one partition) should drive to zero.
+    if (meets && meets.sub && !meets.holes.length && touchOnce(meets.q, h.q)) {
+      const perim = (q) => q.reduce((t, a, i) => t + Math.hypot(q[(i + 1) % q.length].X - a.X, q[(i + 1) % q.length].Y - a.Y), 0)
+      const width = 2 * (h.a + meets.a) / (perim(h.q) + perim(meets.q))
+      if (width < LATTICE_STEP) { meets.dropped = true
+        bowTies.push({ m2: +((h.a + meets.a) / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [x / CLIP_SCALE, y / CLIP_SCALE], widthMm: +(width / CLIP_SCALE * 1000).toFixed(4) }); continue }
+    }
+    if (meets) throw new Error(`[flatten] ${groupKey}: a hole below the lattice (${h.q.length} vertices) that no painted ring holds by its probe, yet a ring of ${meets.q.length} vertices meets it, at ${at}`)
+    orphans.push({ m2: +(h.a / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [x / CLIP_SCALE, y / CLIP_SCALE] })
+  }
+  if (bowTies.length) { subLattice[groupKey].bowTies = bowTies
+    console.log(`  [flatten] ${groupKey}: ${bowTies.length} bow-tie(s) below the lattice, ${bowTies.reduce((t, r) => t + r.m2, 0).toFixed(9)} m² — one twisted sliver each, dropped (a downstream tolerance for an evidence edge near-coincident with a band line)`) }
+  if (orphans.length) { subLattice[groupKey].orphanHoles = orphans
+    console.log(`  [flatten] ${groupKey}: ${orphans.length} orphan hole(s) below the lattice, ${orphans.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², no outer meets them — dropped (they remove no paint)`) }
+  return outers.filter(o => !o.dropped).map(o => ({ outer: _pathToRing(o.q), holes: o.holes.map(_pathToRing) }))
+}
+
 function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new Set() } = {}) {
   const acc = new _Paths()                      // union of everything ABOVE
+  let inAcc = edgeIndex(acc)
   const out = new Map()                          // key → flattened items
+  out.subLattice = {}                            // key → { rings, m2 } decided below the lattice's rounding (ground.json#flatten)
   // TOP DOWN: the topmost layer keeps all of itself; each lower one loses whatever
   // is already covered.
   for (let i = entries.length - 1; i >= 0; i--) {
@@ -713,113 +994,51 @@ function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new 
     const keepsSlot = keepOwnSlot.has(e.groupKey)
     const cuts = !doesNotCut.has(e.groupKey)
 
-    const mine = new _Paths()
-    for (const it of e.items) {
-      const outer = Array.isArray(it) ? it : it?.outer
-      const holes = Array.isArray(it) ? [] : (it?.holes || [])
-      if (!outer || outer.length < 3) continue
-      mine.push(_ringToPath(outer))
-      for (const h of holes) if (h && h.length >= 3) mine.push(_ringToPath(h))
-    }
-    if (!mine.length) { out.set(e.groupKey, []); continue }
-
-    let visible = e.items
-    if (acc.length && !keepsSlot) {
-      const c = new _Clipper()
-      // ⛔ STRICTLY SIMPLE, because earcut is downstream. Clipper's default output may carry holes that TOUCH
-      // their outer and rings that pinch at a repeated vertex — legal to Clipper, but the triangulator bridges
-      // across them and fills ground where the polygon has none. Measured on provincetown 2026-09-26: the
-      // 18.76 km² beach face came out with 2 holes poking past its outer ring and 19 pinches, and earcut laid
-      // beach over 2.72 ha of the drawn water, outside every block (34 of 138 beach polygons invalid).
-      c.StrictlySimple = true
-      c.AddPaths(mine, _PolyType.ptSubject, true)
-      c.AddPaths(acc, _PolyType.ptClip, true)
-      const tree = new _PolyTree()
-      if (c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)) {
-        visible = []
-        const walk = (node) => {
-          for (const child of node.Childs()) {
-            const ring = _pathToRing(child.m_polygon)
-            if (ring.length >= 3) visible.push({ outer: ring, holes: child.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
-            for (const h of child.Childs()) walk(h)
-          }
-        }
-        walk(tree)
+    // ⛔ A layer keeping its own slot is not pressed into the plane, so it is neither clipped nor resolved: its items
+    // go through as drawn.
+    if (keepsSlot) { out.set(e.groupKey, e.items) }
+    const mine = layerRegion(e)
+    if (!keepsSlot) {
+      let visible = []
+      if (mine.length) {
+        const c = new _Clipper()
+        // ⛔ STRICTLY SIMPLE, because earcut is downstream. Clipper's default output may carry holes that TOUCH
+        // their outer and rings that pinch at a repeated vertex — legal to Clipper, but the triangulator bridges
+        // across them and fills ground where the polygon has none. Measured on provincetown 2026-09-26: the
+        // 18.76 km² beach face came out with 2 holes poking past its outer ring and 19 pinches, and earcut laid
+        // beach over 2.72 ha of the drawn water, outside every block (34 of 138 beach polygons invalid).
+        c.StrictlySimple = true
+        c.AddPaths(mine, _PolyType.ptSubject, true)
+        c.AddPaths(acc, _PolyType.ptClip, true)
+        const paths = new _Paths()
+        if (!c.Execute(_ClipType.ctDifference, paths, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: the difference against the ${acc.length} path(s) above was REFUSED`)
+        const inMine = edgeIndex(mine)
+        visible = itemsByMembership(paths, (x, y) => inMine(x, y) !== 0 && inAcc(x, y) === 0, e.groupKey, out.subLattice)
       }
-      else {
-        // ⛔ LOUD. A silent refusal here means the layer is NOT clipped and the
-        // overlap survives — which looks exactly like the flatten "not working".
-        console.warn(`  ⚠️ [flatten] ${e.groupKey}: difference REFUSED (acc ${acc.length} paths) — layer kept whole`)
+      if (process.env.FLATTEN_DEBUG) {
+        // ⭐ AREA, not just path count. A path count says a layer EXISTS; only the
+        // signed area says whether the union actually kept it.
+        const areaOf = (paths) => { let a = 0; for (const q of paths) a += _Clipper.Area(q); return a / (CLIP_SCALE * CLIP_SCALE) }
+        console.log(`    [flatten] ${String(i).padStart(2)} ${e.groupKey.padEnd(26)} in ${String(e.items.length).padStart(5)} → out ${String(visible.length).padStart(5)}`
+          + `  ownArea ${areaOf(mine).toFixed(0).padStart(9)} m²  accBefore ${areaOf(acc).toFixed(0).padStart(10)} m²`)
       }
+      out.set(e.groupKey, visible)
     }
-    if (process.env.FLATTEN_DEBUG) {
-      // ⭐ AREA, not just path count. A path count says a layer EXISTS; only the
-      // signed area says whether the union actually kept it. Opposite winding
-      // under pftNonZero cancels — the paths survive and the REGION does not.
-      const areaOf = (paths) => { let a = 0; for (const q of paths) a += _Clipper.Area(q); return a / (CLIP_SCALE * CLIP_SCALE) }
-      const mineA = areaOf(mine), accA = areaOf(acc)
-      const cw = mine.filter(q => !_Clipper.Orientation(q)).length
-      console.log(`    [flatten] ${String(i).padStart(2)} ${e.groupKey.padEnd(26)} in ${String(e.items.length).padStart(5)} → out ${String(visible.length).padStart(5)}`
-        + `  ownArea ${mineA.toFixed(0).padStart(9)} m²  (${cw}/${mine.length} CW)  accBefore ${accA.toFixed(0).padStart(10)} m²`)
-    }
-    out.set(e.groupKey, visible)
 
     // union this layer into the accumulator for the layers below — unless it is
     // transparent, in which case what is beneath it must survive to be seen.
-    if (!cuts) continue
+    if (!cuts || !mine.length) continue
     const u = new _Clipper()
     u.AddPaths(acc, _PolyType.ptSubject, true)
     u.AddPaths(mine, _PolyType.ptClip, true)
     const merged = new _Paths()
-    if (u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) {
-      acc.length = 0
-      for (const q of merged) acc.push(q)
-    } else {
-      // ⛔ LOUD. If the union refuses, every layer BELOW this one goes unclipped —
-      // the flatten silently degrades to doing nothing at all.
-      console.warn(`  ⚠️ [flatten] ${e.groupKey}: UNION refused — layers below will not be clipped against it`)
-    }
+    if (!u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error(`[flatten] ${e.groupKey}: the union into the accumulator was REFUSED`)
+    acc.length = 0
+    for (const q of merged) acc.push(q)
+    inAcc = edgeIndex(acc)
   }
-  return out
-}
-
-/** faceItems: rings or {outer,holes}. overlayRings: bare rings to cut out. */
-function subtractOverlaysFromFace(faceItems, overlayRings) {
-  if (!overlayRings.length || !faceItems?.length) return faceItems
-  const clip = new _Paths()
-  for (const r of overlayRings) if (r && r.length >= 3) clip.push(_ringToPath(r))
-  if (!clip.length) return faceItems
-
-  const out = []
-  for (const it of faceItems) {
-    const outer = Array.isArray(it) ? it : it?.outer
-    const holes = Array.isArray(it) ? [] : (it?.holes || [])
-    if (!outer || outer.length < 3) continue
-    const subj = new _Paths()
-    subj.push(_ringToPath(outer))
-    for (const h of holes) if (h && h.length >= 3) subj.push(_ringToPath(h))
-    const c = new _Clipper()
-    c.AddPaths(subj, _PolyType.ptSubject, true)
-    c.AddPaths(clip, _PolyType.ptClip, true)
-    const tree = new _PolyTree()
-    // ⛔ EvenOdd on the subject so the face's EXISTING holes stay holes.
-    if (!c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)) {
-      out.push(it)   // clipper refused — keep the original rather than drop ground
-      continue
-    }
-    // PolyTree: children of the tree are OUTERS, their children are HOLES, and a
-    // hole's children are outers again (an island inside a cut-out).
-    const walk = (node) => {
-      for (const child of node.Childs()) {
-        const ring = _pathToRing(child.m_polygon)
-        if (ring.length >= 3) {
-          out.push({ outer: ring, holes: child.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
-        }
-        for (const h of child.Childs()) walk(h)
-      }
-    }
-    walk(tree)
-  }
+  const ties = Object.values(out.subLattice).flatMap(v => v.bowTies || [])
+  if (ties.length) console.log(`  [flatten] bow-ties below the lattice, all groups: ${ties.length}, ${ties.reduce((t, r) => t + r.m2, 0).toFixed(9)} m² (▶ ground.json#flatten.subLattice[group].bowTies)`)
   return out
 }
 
@@ -858,7 +1077,7 @@ export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePendin
   return { paint: null, state: 'pending', why }
 }
 
-export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -909,7 +1128,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   // outDir: write the slab elsewhere (a scratch A/B) instead of over the live one.
   const outDir      = outDirOpt || join(ROOT, 'public', 'baked', look)
-  if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
+  if (!stackOnly && !existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   const stencil = loadSceneStencil(scene)
   // ⭐ THE FADE IS THE BAKED LOOK'S (Stage › Horizon › Edge, 2026-10-06), derived from the disc radius and the Look's
@@ -947,21 +1166,23 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
-  // the at-grade network and smoothed over it as ONE graph, recorded per vertex of every ① run (`tile.runs[].h`, raw
-  // metres like terrain.bin, mm-rounded) — the one record everything after it reads. The window is the town's
-  // (`design.json#groundLineSigmaM`), else one terrain grid step. A coast run's line is the HIGH WATER (below). A run with
-  // no line (a bridge, a highway stroke's edge, the rim, a label naming no at-grade chain) carries `h: null` and is
-  // COUNTED, by reason.
+  // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
+  // at each point of ② through the edge's own owner (`groundLine.heightAt(skelId, p)`); nothing is sampled onto the runs.
+  // The window is the town's (`design.json#groundLineSigmaM`), else one terrain grid step. A coast run's line is the HIGH
+  // WATER (below). A run or cap with no line (a bridge, a highway stroke's edge, the rim, a label naming no at-grade chain)
+  // carries `noLine` and is COUNTED, by reason.
   const lineTerrain = loadSceneTerrain(scene)
+  let groundLine = null
   if (lineTerrain && shapeArtifact?.length) {
     const authored = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : null
     if (!authored && !(lineTerrain.stepM > 0)) throw new Error(`[bake-ground] ⛔ the terrain carries no grid step and the town authors no groundLineSigmaM — the line's smoothing window is unknown`)
     const LH = lineHeights({ streets: ribbons.streets, raw: lineTerrain.getElevationRaw, sigma: authored ?? lineTerrain.stepM })
     const why = { bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((ribbons.streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
-    let stamped = 0, coast = 0
+    const noLine = (id) => id === '__highway__' ? 'highway' : id === '__boundary__' ? 'rim' : bridgeIds.has(id) ? 'bridge' : 'unknown'
+    let onLine = 0, coast = 0, capsOn = 0
     // ⭐ THE COAST'S LINE IS THE HIGH WATER (Jacob 2026-10-11, brief §5 "The shore"): a coast run's height IS the town's
     // high level there (the tide datum where tidal, the authored lake level on a lake; `waterLevel.mjs`), so the land
     // meets the water at the line and the gusset runs from it down to low water. ⛔ A drawn coast with no water record throws.
@@ -969,14 +1190,18 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     for (const t of shapeArtifact) for (const run of t?.runs || []) {
       if (run.skelId === '__water__') {
         if (!W) { if (!lineTerrain.water) throw new Error(`[bake-ground] ⛔ ${scene} draws a coast but its terrain carries no water record — the coast line's height (the high water) is unknown. ▶ re-bake the terrain`); W = waterLevels(lineTerrain.water) }
-        run.h = (run.poly || []).map(([x, z]) => Math.round(W.highAt(x, z) * 1000) / 1000); coast++; continue
+        coast++; continue
       }
-      const h = (run.poly || []).map(p => LH.heightAt(run.skelId, p))
-      if (h.length && h.every(v => v != null)) { run.h = h.map(v => Math.round(v * 1000) / 1000); stamped++; continue }
-      run.h = null
-      why[run.skelId === '__highway__' ? 'highway' : run.skelId === '__boundary__' ? 'rim' : bridgeIds.has(run.skelId) ? 'bridge' : 'unknown']++
+      if (run.poly?.length && LH.heightAt(run.skelId, run.poly[0]) != null) { onLine++; continue }
+      // the reason travels with the run: the deformer gives a highway or bridge run the terrain under it (its rule for that
+      // class), and refuses the rest
+      run.noLine = noLine(run.skelId); why[run.noLine]++
     }
-    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${stamped} run(s) carry h · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown`)
+    // ⭐ A DEAD-END CAP'S LINE IS ITS OWN CHAIN'S (the cap is an end coupler): a cap whose chain has no line carries the
+    // reason, as a run does
+    for (const t of shapeArtifact) for (const c of t?.caps || []) { if (LH.heightAt(c.skelId, t.ring[0]) == null) c.noLine = noLine(c.skelId); else capsOn++ }
+    groundLine = { step: LH.step, heightAt: (id, p) => id === '__water__' ? W.highAt(p[0], p[1]) : LH.heightAt(id, p) }
+    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${onLine} run(s) on a line · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown · ${capsOn} dead-end cap(s) on their chain's line`)
     if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
   }
 
@@ -984,7 +1209,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // Each Designer-toggleable id needs to come out as its own bake group
   // so layerVis can hide it in Stage/Preview. Polygon overlays (parking_lot,
   // leisure subtypes, natural subtypes) drop in as raw rings; line features
-  // (centerStripe / parkingLine / bikeLane / barriers) buffer to thin
+  // (parkingLine / bikeLane / barriers; the centre stripe is ①'s, below) buffer to thin
   // polygons via polylineToRing.
   const mapLayers = mapData.layers || {}
   const pushMat = (key, ring) => {
@@ -1052,10 +1277,16 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     const ring = polylineToRing(item.coords, hw)
     if (ring) pushMat(item.kind, ring)
   }
-  // Center stripes — polylines with no offset, paint sits on the centerline.
-  for (const item of (mapLayers.centerStripe || [])) {
-    const ring = polylineToRing(item.coords, POLYLINE_HALF_WIDTHS.stripe)
-    if (ring) pushMat('stripe', ring)
+  // Centre stripes — ①'s own line per eligible street (`centreStripeRings`), never map.json's.
+  const stripeRings = centreStripeRings(ribbons.streets).map(x => x.ring)
+  for (const ring of stripeRings) pushMat('stripe', ring)
+  // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile, no ink piece (the curbless blocks'
+  // ground included) and not under H has no owner to take its line from. Refused by group and point, never dropped or nudged.
+  if (protoFlag) {
+    const off = roadOffTheLattice({ asphalt: asphaltRings, highway: highwayRings, stripe: stripeRings }, shapeArtifact, inkPieces, ribbons.protopolygon.boundaryRing, highwayRings)
+    const bad = Object.entries(off).filter(([, o]) => o.off.length)
+    if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no ink piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
+    console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, an ink piece or H`)
   }
   // Parking-lane edge lines + bike lanes — both sides offset from a centerline.
   for (const item of (mapLayers.parkingLine || [])) {
@@ -1209,6 +1440,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   }
   // The flatten runs top-down over this list, so a FLOOR layer goes first: last to be cut into.
   stackEntries.sort((a, b) => FLOOR_KEYS.has(b.groupKey) - FLOOR_KEYS.has(a.groupKey))
+  // `stackOnly`: the stack exactly as the flatten receives it, nothing written (checks/claims-no-edge-is-drawn-twice.mjs)
+  if (stackOnly) return { stackEntries, keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }
   const _t0 = Date.now()
   const flattened = flattenPaintStack(stackEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
@@ -1238,8 +1471,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
   const kerbCellPaths = kerbH ? kerbCells(kerbRegs, blockRings) : []
   // ⭐⭐ THE DEFORMER (`groundDeformer.mjs`, BRIEF-the-ground-knows-its-height §5): the ground's TERRAIN height near the
-  // streets is decided HERE, before the mesh — read off the line (`tile.runs[].h`), swept across the DRAWN bands as one
-  // profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
+  // streets is decided HERE, before the mesh — read off the line (`groundLine`, asked at each point of ②), swept across
+  // the DRAWN bands as one profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
   // eased into the lot over B) — and the mesh is refined against it and carries it per vertex. Nothing is cut after.
   // B is the town's (`design.json#groundBlendM`), else one terrain grid step (Boz, 2026-10-11).
   let deform = null, deformTerrain = null
@@ -1251,7 +1484,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
     // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
     const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ tiles: shapeArtifact,
+    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine,
       bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
       stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,
@@ -1277,9 +1510,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       const inside = run(clipperLib.ClipType.ctIntersection), outside = run(clipperLib.ClipType.ctDifference)
       if (inside.length) { flattened.set(k, [...outside, ...inside]); split++ }
     }
-    console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.noH} ② ring(s) with no line, ${deform.stats.hFilled} ② vertex(es) whose run has none (taking their neighbours') · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
+    console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
   }
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
+  // ⭐ THE ROAD FOLLOWS ITS SWEEP (the deformer's road side, ① to ②): the carriageway refines against D exactly as the ped bands
+  // do, or a 6–9 m road triangle and a 29–60 m stripe edge chord the line (measured HPDM, db0bebb6's slab)
+  const ROAD_KEYS = (key) => key === 'asphalt' || key === 'highway' || key === 'stripe'
   // the drawn terrain part at (x, z): the deformer where it reaches, else the terrain itself
   const terrainPartAt = deform ? (x, z) => deform.heightAt(x, z) ?? deformTerrain.getElevationRaw(x, z) : null
   const _planMemo = new Map()
@@ -1327,7 +1563,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         ? { mode: 'adaptive', sampler: terrainPartAt ? (x, z) => terrainPartAt(x, z) * deformTerrain.exag : refineSampler,
             // ⭐ the ped bands carry a walk that must stay level ACROSS: they refine to the drawing's half of the walk limit
             // (`groundDeformer.mjs` WALK_SHARE), down to the deformer's own station spacing — never the lots' 0.5 m / 6 m
-            ...(PED_KEYS(key) && deform?.refineTol ? { tol: deform.refineTol * deformTerrain.exag, minEdge: deform.stationM }
+            ...((PED_KEYS(key) || ROAD_KEYS(key)) && deform?.refineTol ? { tol: deform.refineTol * deformTerrain.exag, minEdge: deform.stationM }
                 : { tol: key === 'bed' || key === 'shore' ? bedTol : refineTol, minEdge: refineMinEdge }),
             maxEdge: refineMaxEdge, band: tideBand }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
@@ -1628,7 +1864,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // success. The bake refuses, and names every point — town, coordinate, tile — so the orphans are the work.
   if (deformTally.unowned.size) throw new Error(`[bake-ground] ⛔ ${scene}: ${deformTally.unowned.size} ped vertex(es) lie in a drawn band that NO painted band owns `
     + `(the band decides, never the nearer line — groundDeformer.mjs): ${[...deformTally.unowned].map(([p, ti]) => `(${p}) tile ${ti}`).join(' · ')}`)
-  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile, or deeper than the bands + ease) draw the terrain itself · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
+  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile and the ink, or deeper than the bands + ease) draw the terrain itself · the road swept from ① to ② at ${deform.stats.road} point(s), the owners' blend at ${deform.stats.roadBlended} · the ink at ${deform.stats.ink} (${deform.stats.inkCrossing} at a crossing, ${deform.stats.inkOnGrid} on the grid between a tile and the ink) · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
 
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
   // BakedGround's UV2 stay concentric with face/street fades. The half-extent must
@@ -1747,6 +1983,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // the deformer's ownership disclosure, read by claims-the-walk-is-level-across: a written slab carries 0 (the bake throws
     // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
     ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand } } : {}),
+    // the paint stack's rings narrower than the lattice's rounding, per group, whose role is Clipper's winding (flattenPaintStack);
+    // read and printed by claims-the-ground-is-painted-once beside the residue it cannot sample
+    flatten: { subLattice: flattened.subLattice },
     // the first of the Bake's two ground passes: no shore yet (above); 'ground-shore' writes a slab without it
     ...(shoreState ? { shore: shoreState } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
@@ -1764,7 +2003,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // sibling group ({ tiles, highway }) so the frozen Section/Design views restore
   // highways (the bare-array form dropped them — regression 4924d9a). The slab's
   // own `highway` mat group is unaffected; this is the Section-side freeze.
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [] }))
+  // `ink`: the OWNED ROAD GROUND OUTSIDE EVERY TILE, as pieces [{ rings, owners, kind? }]: ①'s ink strokes (the 2ε strip
+  // between tiles; a crossing names every owner) and, `kind: 'block'`, the curbless blocks' ground (a block whose curbs
+  // meet has no tile, and its ground is road, owned by its own ① edges). Only ① as the producer makes it; a --legacy freeze
+  // carries none, and a reader that needs it must refuse that shape, not guess.
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ...(inkPieces ? { ink: inkPieces } : {}) }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

@@ -1,0 +1,18 @@
+Board lines for the next commit message on swale/flatten-paths-r1 (Boz's rulings, 2026-10-14). Open, nothing built:
+· The ped band draws each shared edge twice: `ins` on p.ring (pedOuter, luIn) vs `insD` on p.dring (walkFrom, walkTo),
+  tileGround.js `sectionPassProtoTile`. HPDM: 1009 sub-lattice treelawn rings at the tile stage (775 luIn+walkTo,
+  231 pedOuter+walkFrom), 1141 at the stack entry. REGRESSION against RIBBONS §1 / SECTION §3 (one offset family). The
+  comment above `insD` ("cannot disagree at a boolean") is measured false. One-family fix proposed (insD for all four
+  depths and the curb-cut slab); waits on Jacob's go.
+· kerbLift.mjs `pointInside`: 1e-3/1e-4/1e-5 m offsets — Class D candidate (the flatten's own probe dropped the same kind).
+· The ease split (bake-ground.js, "land-use group(s) split at the ease's end") re-nests the face groups by Clipper PolyTree
+  (`polyTreeToItems`) after the flatten — 14 groups on HPDM, 16 on Huron. Whether it misnests: not measured.
+· cartograph/scene.js warns "[config] scene not named — defaulting to 'lafayette-square'" at IMPORT, so every positional-
+  scene check that imports it (e.g. claims-sidewalk-is-one-band via tileGround) prints a line that is false for its run.
+  Fix: warn where the defaulted SCENE is read. Not this branch (Boz ruling (c)).
+· checks/claims-band-is-one-ring.mjs — ONE rework item, not evidence either way: it measures `sectionPassTile` (the
+  legacy per-run painter), not the live `sectionPassProtoTile`; curb width hard-coded 0.381 (LS, Class D) instead of the
+  town's authored curbWidth; reads the look as public/looks/<scene> instead of lookFor(scene); private `--scene <id>`
+  parse that falls back to lafayette-square (so `--scene=x` measures LS and labels it LS).
+· claims-proto-stack-disjoint samples at 0.2 m / 60 m stations and prints no locations — below the resolution of
+  sub-mm slivers; its HPDM 51 RED (treelawn&sidewalk) cannot be tied to these pairs.

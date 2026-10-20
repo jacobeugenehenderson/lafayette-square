@@ -1,0 +1,7 @@
+bake-ground.gate.js
+tileGround.mutant.js
+*.log
+*.out
+snap-*
+run-*.log
+paint-huron-*.log

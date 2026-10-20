@@ -16,7 +16,6 @@
  */
 import clipperLib from 'clipper-lib'
 import { resolveChainSegmentation } from './chainSegmentation.js'
-import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { readFeCustom } from './feCustomKey.js'
 import { smoothChain } from './smoothCenterline.js'
 import { CLIP_SCALE as SCALE } from './lattice.js'
@@ -1378,10 +1377,12 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     : () => {}
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
-    curbWidth = CURB_WIDTH, blockCustoms = null,
+    curbWidth, blockCustoms = null,
     blockLandUse = null,
     smooth = 0,
     useRingBandEmitter = false } = opts  // C4 flag — every caller passes true since C5
+  // ⛔ The Look's authored curb width, never a substitute (Boz ruled 2026-10-19).
+  if (!Number.isFinite(curbWidth)) throw new Error(`[buildBlockGeometryV2] ⛔ no curbWidth given (${curbWidth}) — the Look's design.json carries no curbWidth — author curbWidth in this town's Look`)
   // ⛔ The inner-edge anchor transform that used to run here is DELETED
   // (2026-08-13, streetProfiles.js). It re-applied `derive.js innerEdgeAssign`'s
   // ped-zeroing through the persisted `innerSign` key — a constant `-1` on every

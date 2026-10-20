@@ -72,6 +72,9 @@ export const PARCEL_FIELDS = [
   'handle', 'address', 'owner', 'year_built', 'building_sqft', 'land_area',
   'appraised_value', 'land_use_code', 'zoning', 'units', 'num_buildings',
   'vacant', 'historic_district', 'municipality',
+  // ⭐ the well's OWN polygon type (MassGIS POLY_TYPE: FEE · TAX · ROW · PRIV_ROW · RAIL_ROW · WATER …) — whether a polygon is
+  // right-of-way, read off the data, never off shape (BRIEF-the-street-ends-at-the-parcel) — and its land-use DESCRIPTION
+  'row_type', 'land_use_desc',
 ]
 
 /** What a well's `historic_district` column can hold, and whose designation it is. */
