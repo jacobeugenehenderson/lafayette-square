@@ -19,23 +19,20 @@ import { existsSync, readFileSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { stateRecord } from './states/index.mjs'
+import { kitCurbCut } from '../src/cartograph/streetProfiles.js'
 
 // ⛔ The scene's data directory is resolved from THIS MODULE, never the caller's working directory: the pour runs
 // derive.js from cartograph/, and a cwd-relative path there found no norms.json and froze 'none (kit)' without a word
 // (`BRIEF-corner-ramps-and-kerb §3` step 0). ▶ node checks/claims-the-pour-reads-the-towns-norm.mjs
 const DATA_ROOT = join(dirname(fileURLToPath(import.meta.url)), 'data')
-const REGISTRY = join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'registry.json')
-const INCH = 0.0254
-
-// the kit's curb cut: the ruled style, PROWAG's width and warning depth, each read from the registry entry it cites
-function kitCurbCuts() {
-  let r; try { r = JSON.parse(readFileSync(REGISTRY, 'utf8')) } catch (e) { throw new Error(`curb-cut-norm: the kit rung reads ${REGISTRY} — ${e.message}`) }
-  const byId = new Map((r.findings || []).map(f => [f.id, f]))
-  const need = (id) => { const f = byId.get(id); if (!f) throw new Error(`curb-cut-norm: the kit rung cites ${id}, which ${REGISTRY} does not hold`); return f }
-  const rule = need('r-curb-ramp-default-perpendicular'), geo = need('f-prowag-curb-ramp-geometry'), dws = need('f-prowag-perpendicular-ramp-dws')
-  const style = rule.value?.kitDefaultCurbCutStyle, w = geo.value?.width_in, d = dws.value?.dwsDepth_in?.min
-  if (!CURB_CUT_STYLES.includes(style) || !(w > 0) || !(d > 0)) throw new Error(`curb-cut-norm: the kit rung's entries do not give a style, width_in and dwsDepth_in.min (${rule.id}, ${geo.id}, ${dws.id})`)
-  return { style, width: w * INCH, warningDepth: d * INCH, cites: [rule.id, geo.id, dws.id] }
+// the registry, by the same path `curbedMinWidthOf.mjs` reads (not imported: that module loads scene.js, whose import names a scene)
+const REGISTRY_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'registry.json')
+// the kit's curb cut, from the kit's own home (`streetProfiles.js#kitCurbCut`), read off the one registry path
+function kitCurbCuts(read) {
+  let r; try { r = JSON.parse(readFileSync(REGISTRY_PATH, 'utf8')) } catch (e) { throw new Error(`curb-cut-norm: the kit rung reads ${REGISTRY_PATH} — ${e.message}`) }
+  const k = kitCurbCut(r, read)
+  if (!CURB_CUT_STYLES.includes(k.style)) throw new Error(`curb-cut-norm: the kit rung's style ${JSON.stringify(k.style)} (${k.cites[0]}) is not one of ${CURB_CUT_STYLES.join(', ')}`)
+  return k
 }
 
 export const CURB_CUT_STYLES = ['none', 'diagonal', 'perpendicular']
@@ -131,11 +128,12 @@ function resolveKind(kind, check, scene, state, kit) {
 }
 
 /** The town's curb-cut norm and the rung it came from (`source`: 'scene' · `state:<CODE>@<version>` · 'kit'), with its
- *  crosswalk norm nested under `crosswalks`, resolved on its own rung. */
-export function resolveCurbCutNorm(scene, state) {
+ *  crosswalk norm nested under `crosswalks`, resolved on its own rung. `read` (a Map, optional) records the registry entries the
+ *  kit rung reads, as `highwayStandard` does, so the pour stamps them into map.json (`registryRead`). */
+export function resolveCurbCutNorm(scene, state, read = null) {
   // a scene with no data directory is a wrong name or a wrong root — never a town with no norm
   if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveCurbCutNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
-  return { ...resolveKind('curbCuts', validate, scene, state, kitCurbCuts),
+  return { ...resolveKind('curbCuts', validate, scene, state, () => kitCurbCuts(read)),
            crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state, () => ({ style: 'none' })),
            kerb: resolveKind('kerb', validateKerb, scene, state, () => ({ height: 0 })) }
 }

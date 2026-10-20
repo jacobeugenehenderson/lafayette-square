@@ -5072,7 +5072,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // junction corner's curb cuts live off the shape without reaching for a state record (`cartograph/curb-cut-norm.mjs`).
     {
       const src = readSources(SCENE)
-      ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null)
+      ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null, _registryRead)
       const N = ribbonsLayer.curbCutNorm
       // ⭐ the RUNG that decided each, and why every rung above it gave nothing — never the kit's value printed as the town's
       const rung = (n) => `from ${n.source}${n.passed?.length ? ` (${n.passed.join(' · ')})` : ''}${n.cites ? `, cited ${n.cites.join(', ')}` : ''}`
