@@ -85,7 +85,7 @@ let bad = 0, towns = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   const warn = console.warn; console.warn = () => {}
-  let R; try { R = buildProto(f, { quiet: true, protoArtifact: true, protoProducer: true }) }
+  let R; try { R = buildProto(f, { quiet: true }) }
   catch (e) { console.warn = warn; console.log(`⛔ ${scene}: the producer refused, so nothing was checked — ${String(e.message).split('\n')[0].slice(0, 200)}`); bad++; continue }
   console.warn = warn
   const T = R.protoBandPieces

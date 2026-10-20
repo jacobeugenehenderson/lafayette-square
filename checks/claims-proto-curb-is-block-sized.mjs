@@ -14,7 +14,7 @@ for (const scene of scenes) {
   if (!P?.blocks) { console.log(`⛔ ${scene}: ① carries no blocks — NOT checked`); continue }
   const bR = P.boundaryRing
   const discA = bR ? Math.abs(sa(bR)) : null
-  const tg = buildProto(f, { protoProducer: true })
+  const tg = buildProto(f)
   const curb = tg.curb || []
   const A = curb.map(r => Math.abs(sa(r))).sort((x, y) => y - x)
   const blocksA = P.blocks.map((r, i) => Math.abs(sa(r)) - (P.blockHoles?.[i] || []).reduce((s, h) => s + Math.abs(sa(h)), 0)).sort((x, y) => y - x)

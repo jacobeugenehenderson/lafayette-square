@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): it required the LEGACY tiles' A07 `producer` stamp and painted them with the per-run `sectionPassTile` (median tl = sw = 0 frozen by the chain shape pass). Under ① the tiles carry their bands and none of those fields; it measured a map nobody draws.
+//    Kept as the record. Do not run.
 /**
  * ⛔ THE QUESTION: where a street's TWO SIDES land in different PARTITION STATES,
  *    does the ped band differ on the two sides at the same station — and is

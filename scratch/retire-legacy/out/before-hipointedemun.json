@@ -1,0 +1,144 @@
+{
+ "scene": "hipointedemun",
+ "look": "hipointedemun",
+ "sha": "1b797bd8",
+ "stack": "4f3fe632eea799cc",
+ "totalMs": 61602,
+ "buildMs": 54987,
+ "rssBeforeMB": 568,
+ "rssPeakAfterBuildMB": 1975,
+ "fields": {
+  "_curbProducerFailures": "e3144c2136975b7d",
+  "_curbProducers": "a20cb04696abc3b1",
+  "_jCornerCuts": "da3811fe297a5366",
+  "_jPolys": "c7ac2f760cfb792e",
+  "_perRunMeta": "4001934ba9891888",
+  "_shapeArtifact": "9ffb43a936964917",
+  "_thruWins": "e5fd2e6ecdd67d5f",
+  "_tiles": "f8e91755a01ffd3d",
+  "asphalt": "897f306ef3ac64d3",
+  "block": "a1a598f87d3b94c3",
+  "cornerArcs": "254f2eb290cd899e",
+  "cornerFillets": "ad758575d41058b6",
+  "cornerSet": "9878a4b45b00bf2a",
+  "crosswalk": "97d170e1550eee4a",
+  "crosswalkPairs": "97d170e1550eee4a",
+  "crosswalkTally": "310ccccc0d41828c",
+  "curb": "61a79111e8a5397f",
+  "curbCut": "97d170e1550eee4a",
+  "curbCutContradicted": "0644e565fbab6fd5",
+  "curbCutCorners": "27094b5b80db86f1",
+  "curbCutRamps": "97d170e1550eee4a",
+  "curbCutRecs": "97d170e1550eee4a",
+  "curbCutTally": "ff54635555bb33ce",
+  "grout": "d1854cae891ec7b2",
+  "highway": "b946e0a8160e5e53",
+  "hwyDisclosure": "6f1c38d7a83544e8",
+  "inkShore": "97d170e1550eee4a",
+  "luByClass": "bf9677a0a8d28434",
+  "proto": "a9642b9c70344556",
+  "protoAuthoring": "df7866c66301d7e6",
+  "protoBandPieces": "90c9a9ac756aa1f8",
+  "protoBands": "81eb04537bc4bff2",
+  "protoBandsByBlock": "0d5963399f23a08d",
+  "protoBlockLabels": "970fe93f842d012b",
+  "protoCurb": "960077d90980a73c",
+  "protoCurbGs": "ec4a131c11b0aff9",
+  "protoDepthByBlock": "bd489d9d44231078",
+  "protoEasePairs": "1b8e43f2ac105ba9",
+  "protoInkPieces": "a12a8de092f5c9ce",
+  "protoJunctionCensus": "714a8ad2d35184b3",
+  "protoLabels": "ce512e1f45a2b7da",
+  "protoNoses": "10f4465a3747227b",
+  "protoOwners": "7a3f144013f6241a",
+  "protoRefused": "e69f20e9f683920d",
+  "protoShapeTiles": "0e802483f14511f3",
+  "protoSource": "62bc5eaf6e3e8e7d",
+  "protoStackCollapse": "36298db7897dc0ef",
+  "protoUnlabelled": "ae424b398de1c8c1",
+  "sidewalk": "21a2aeafbeeb0294",
+  "treelawnByLu": "cdbca8fdd529bc92"
+ },
+ "a07": "curb producers: 139/253 offset · 114 carve (49 median-divided · 63 small · 2 median-loop)",
+ "ribbonsAfter": "21bc775b6dc7b81a",
+ "gsOther": [
+  {
+   "id": "hampton-avenue-1",
+   "highway": "primary",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "south-hanley-road-2",
+   "highway": "primary",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "south-hanley-road-5",
+   "highway": "primary",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "south-hanley-road-9",
+   "highway": "primary",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "south-hanley-road-11",
+   "highway": "primary",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "centennial-greenway-8",
+   "highway": "footway",
+   "samplesInStencil": 68,
+   "covered": 68
+  },
+  {
+   "id": "centennial-greenway-9",
+   "highway": "footway",
+   "samplesInStencil": 77,
+   "covered": 77
+  },
+  {
+   "id": "underpass",
+   "highway": "footway",
+   "samplesInStencil": 20,
+   "covered": 20
+  },
+  {
+   "id": "elinore-avenue",
+   "highway": "residential",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "holekamp-aqua-tunnel",
+   "highway": "footway",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "primate-canopy-trail",
+   "highway": "footway",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "primary-link-112",
+   "highway": "primary_link",
+   "samplesInStencil": 0,
+   "covered": 0
+  },
+  {
+   "id": "tertiary-231",
+   "highway": "tertiary",
+   "samplesInStencil": 0,
+   "covered": 0
+  }
+ ]
+}

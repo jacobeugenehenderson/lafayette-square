@@ -99,7 +99,7 @@ export function outside(rec) {
   const w = big.sort((x, y) => areaC(y) - areaC(x))[0]
   return { area: big.reduce((a, r) => a + areaC(r), 0), at: w ? [w[0].X / SCALE, w[0].Y / SCALE] : null }
 }
-const build = (ribbons, o) => quiet(() => buildTileGround(ribbons, { grout: 'proto', protoProducer: true, smooth: 0, emitArtifact: true, cornerRadiusScale: 0, ...o }))
+const build = (ribbons, o) => quiet(() => buildTileGround(ribbons, { smooth: 0, cornerRadiusScale: 0, ...o }))
 
 const MAIN = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
 if (MAIN && process.argv.includes('--selftest')) {

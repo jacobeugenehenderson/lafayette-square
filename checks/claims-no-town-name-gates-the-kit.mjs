@@ -54,14 +54,12 @@ const HELD_BUNDLED = {
 }
 for (const [f, ms] of Object.entries(HELD_BUNDLED)) for (const m of ms) (HELD[f] ||= []).push({ match: m, why: 'one town\'s bundled data (src/data/…), found 2026-10-07 — unruled' })
 // checks/ lines held by ruling (Boz, 2026-10-07)
-HELD['checks/claims-deadend-populations.mjs'] = [{ match: "if (scene === 'lafayette-square') {", why: "reproduces PREBAKE §2.5a's row, which is LS's own count — the doc's number and its command; goes when that row leaves the doc" }]
 HELD['checks/claims-stage-controls-are-live.mjs'] = [{ match: `t.indexOf("'lafayette-square': {")`, why: "reads src/cartograph/CartographApp.jsx's per-town scene-config block by its key — the bleed is THAT block (runtime, outside this scope); this goes with it" }]
 
 // ⛔ LS PROBES — files that are one town's forensic BY CONSTRUCTION (their subject is Lafayette Square's own data or
 // history). Held whole, by file. A probe file with no town literal left FAILS (stale), so the table only shrinks.
 const LS_PROBES = {
   'checks/claims-dblock-arc-diagnosis.mjs':          'an LS probe — the D-block arc on LS\'s promoted ribbons (says so in its header)',
-  'checks/claims-physical-side-reconcile.mjs':       'an LS probe — predicts derive.js\'s reconcile on LS\'s ribbons, in memory',
   'checks/claims-zero-separation-offset.mjs':        'an LS probe — section D measures LS\'s dead-end spur chains',
   'checks/claims-corner-takeover.mjs':               'an LS probe — asks whether any town carries a decline mode LAFAYETTE SQUARE lacks (LS is the reference by design)',
   'checks/claims-boundary-record-split.mjs':         'an LS probe — section C is LS\'s survival test across a rescope',
@@ -74,9 +72,9 @@ const LS_PROBES = {
 // an entry whose file no longer carries the literal FAILS (stale) until it is removed, and a new single-town check is
 // not admitted here — it fails above. ROADMAP carries the line.
 const TO_WALK = [
-  'band-is-one-ring', 'band-vs-partition-state', 'curvature-vs-band', 'deadend-populations', 'divided-seam-step', 'handle-rides-its-arc',
+  'band-is-one-ring', 'curvature-vs-band', 'divided-seam-step', 'handle-rides-its-arc',
   'live-palette-equals-the-bake', 'neon-per-place',
-  'preclip-walk', 'proto-curb', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-light-follows-the-weather', 'uturn-outer-edge-walk',
+  'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-light-follows-the-weather', 'uturn-outer-edge-walk',
 ].map(n => `checks/claims-${n}.mjs`)
 const fileHeld = new Map([...Object.entries(LS_PROBES), ...TO_WALK.map(f => [f, 'TO WALK the towns (Jacob 2026-10-07, shrink-only)'])])
 

@@ -8,7 +8,7 @@ const roadOf = id => String(id ?? '').replace(/-\d+$/, '')
 let bad = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   let rings = 0, ok = 0, frag = 0, extra = 0, tiny = 0, arcsAll = 0, minted = 0, raw = 0
   for (const t of T) for (const [ri, ring] of (t.iaFull || []).entries()) {
     const n = ring.length, stp = t.iaStamp[ri] || []; if (n < 3) continue

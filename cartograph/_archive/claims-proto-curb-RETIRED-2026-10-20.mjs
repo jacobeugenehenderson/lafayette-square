@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): its baseline was the LEGACY chain curb (`_shapeArtifact` without protoArtifact = the per-tile chain shape pass's `iA`), which no tool has drawn since ① became the producer (2026-09-06). It scored ② against a map nobody draws; the legacy pass is deleted.
+//    Kept as the record. Do not run.
 // ② THE CURB FROM THE PROTOPOLYGON. READ-ONLY. Does offsetting ① per-edge at the authored
 // pavementHW reproduce the curb the map ships today (`shape.json`'s frozen `iA`)?
 // ⛔ Compare by DISTANCE, and split LEG from CORNER: the frozen curb has the operator's R

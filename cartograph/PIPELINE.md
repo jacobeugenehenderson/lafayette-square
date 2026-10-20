@@ -290,10 +290,8 @@ all** if the skeleton is absent or any chain is unjoinable, rather than falling 
 chains. ⇒ **① depends on nothing that prebake adds.**
 
 ### ⭐⭐⭐ AND IT IS THE PRODUCER, FOR SURVEY *AND* SECTION — LANDED 2026-09-06
-**Every layer either tool draws comes from ①②③.** Two flags, and the split between them is the whole
-point: **`protoProducer` swaps what SURVEY DRAWS · `protoArtifact` swaps what SECTION OPENS.** Both are
-ON in the Designer (`BlockGeometryV2Debug.jsx`, grep `protoProducer`), and the bake takes `--proto`
-(argv, deliberately — this codebase gates on argv, not `process.env`).
+**Every layer either tool draws comes from ①②③**, and since 2026-10-20 nothing else is built: the pre-① chain shape
+pass that ran beside it and was overwritten is deleted, with the flags that chose between the two.
 
 ⭐ **It is a change of CONSUMER, not of construction.** ②③ already offset the grout contour; the
 artifact freezes what they made, and `sectionOpen` already consumed a tile carrying its own bands. **No
@@ -302,22 +300,10 @@ geometry was written to land it.**
 **0 m²** between the two tools, LU class sets identical. **That gate is the definition of "the same
 thing," and it is what "Survey and Section are one construction" means operationally.**
 
-⛔ **Both flags REFUSE rather than fall back** — asking for ① and silently getting the chain artifact is
-the plausible-looking success Law 2 forbids.
-
-> ⚠️ **The `--proto` CLI bake is NOT how Section gets its artifact** — §5, *"who writes the frozen file."*
+⛔ **It REFUSES rather than falls back** — no tiles, or ② with no corner arcs, throws by name.
 
 *(Excised 2026-09-06: this paragraph and the artifact-contract block said ① reached nothing on screen,
 written hours before the swap landed the same day →* `_archive/PIPELINE-3a-artifact-contract-2026-09-06.md`*.)*
-
-> ⛔⛔ **`?grout=1` IS NOT ①, AND CONFUSING THE TWO WILL COST YOU A DAY.** The grout overlay strokes each
-> chain at the **authored half-width** and unites them — offset-then-polygonize, the old order. It builds
-> **the curb**, not the protopolygon; `RIBBONS §1` says so in as many words. Two different constructions
-> that happen to share a block of code and a nearly-identical flag name (`grout: true` from the URL vs
-> `grout: 'proto'` from the bake).
-> ⚠️ **And the overlay shows nothing at idle anyway** — it is gated on the live build, which does not run
-> while the frozen path renders. **An overlay gated on a live build is invisible in the state the
-> operator actually sits in.**
 
 > ### ⭐⭐ THE TILE CONTRACT — a UNION WITH OPTIONAL MEMBERS, and the produce/refuse split is RULED
 > **A frozen block and a proto block are not the same object**, and the difference is a decision, not a
@@ -337,10 +323,7 @@ written hours before the swap landed the same day →* `_archive/PIPELINE-3a-art
 >
 > ⛔ **Derive the contract, don't quote it — both sides, and don't sample one block:**
 > ▶ `node -e "const f=require('./public/baked/<scene>/shape.json'); const t=f.tiles||f; const u=new Set(); for(const x of t) Object.keys(x).forEach(n=>u.add(n)); const opt=[...u].filter(k=>!t.every(x=>k in x)); console.log('union',u.size,'| optional',opt.length,'->',opt.sort().join(', '))"`
-> ▶ and ⛔ **name which proto object you mean** — there are two, with different shapes.
-> `tilesFromProto` returns `{ring, edges}` and is called by **nothing** in `src/`; what `--proto`
-> actually freezes is `protoShapeTiles`. Saying "the proto tile" without saying which is how a real
-> gap gets stated as an unreproducible number.
+> The frozen tile is `protoShapeTiles` — one object (`tilesFromProto`, the other shape, was excised 2026-09-06).
 
 ⭐ **Two things this path already gets exactly right, and they are the model — copy them, don't soften
 them.** Both are Law 2 enforced at a boundary, and both exist because Layer 0 says a plausible-looking
@@ -521,15 +504,9 @@ continuous band curves* — a slice of the same offsets. ⛔ **If you find yours
 shape, stop.** You have reverted to the model this whole regime exists to kill. Every one of this
 project's corner defects has been a construction reaching for a special case.
 
-> ### ⛔ AND THE CURB HAS **TWO** PRODUCERS — do not say "the curb is a concentric offset" and stop there
-> Most of the time it is: the centerline stepped outward a fixed distance, parallel everywhere. **But a
-> median, a sliver or a dead-end disc is not an edge-offset**, so it is built by a **boolean carve**
-> instead — and that is the *right* answer for it, not a degradation. ⛔ *"The curb is a concentric
-> offset"* therefore describes **most blocks, not the map**, and the carved share **varies by town** —
-> ▶ `node scratch/a07-producer-disclosure.mjs` — so **no single scene reveals the split.**
-> ⭐ Which producer built each block is **stamped into the frozen shape** (`producer` +
-> `producerReason`), precisely because a reader who believes the headline will debug a carved block with
-> reasoning that cannot apply to it. **Read the stamp before reasoning about a curb.**
+> ### ⭐ THE CURB HAS ONE PRODUCER — ② (2026-10-20)
+> Every block's curb is ② (`offsetRingByRects` on its ① ring, then the ease). *(The "two producers" box described the
+> retired chain shape pass → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
 
 
 ⭐ **And it is always populated best-effort, then overridden.** Every edge gets a sane default with no

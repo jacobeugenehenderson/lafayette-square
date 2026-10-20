@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): its subject, the `?grout=1` overlay (buildTileGround's `opts.grout` branch, offset-then-polygonize at the authored half-width), was deleted with the legacy shape pass; nothing drew it (the Designer passed grout:'proto', so `tg.grout` was null on every live path). It measured a map nobody draws.
+//    Kept as the record. Do not run.
 /**
  * READ-ONLY. The POSITIVE-SIDE check, applied to the grout itself
  * (POLYGON-FIRST §2.1 as recast 2026-09-04, and RIBBONS §1's grout ruling).

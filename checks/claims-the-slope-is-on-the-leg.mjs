@@ -23,7 +23,7 @@ sectionDump.on = true
 let bad = 0
 for (const scene of feedScenes()) {   // no town named ⇒ every town with ribbons (checks/_scenes.mjs)
   const f = feed(scene); if (!f) { bad++; continue }
-  const r = buildProto(f, { quiet: true, protoProducer: true })
+  const r = buildProto(f, { quiet: true })
   const T = r.protoShapeTiles || []
   const S = (v) => Array.isArray(v) ? v[0] : v, E = (v) => Array.isArray(v) ? v[1] : v
   let tiles = 0, edges = 0, steps = 0, ramps = 0, threw = 0

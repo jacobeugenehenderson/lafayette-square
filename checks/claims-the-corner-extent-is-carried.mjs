@@ -15,7 +15,7 @@ import { CLIP_SCALE } from '../src/lib/lattice.js'
 let bad = 0
 for (const scene of feedScenes()) {   // no town named ⇒ every town with ribbons (checks/_scenes.mjs)
   const f = feed(scene); if (!f) { bad++; continue }
-  const r = buildProto(f, { quiet: true, protoProducer: true })
+  const r = buildProto(f, { quiet: true })
   const T = r.protoShapeTiles || []
   if (!T.length) { console.log(`⛔ ${scene}: no proto tiles — NOT a pass`); bad++; continue }
   const QK = (x, y) => `${Math.round(x * CLIP_SCALE)},${Math.round(y * CLIP_SCALE)}`

@@ -39,7 +39,7 @@ const badPairs = (r) => (r.crosswalkPairs || []).filter(([a, b, chain]) => {
 const run = (norm, corners = f.cornerCornerRadiusOverrides, evidence, crossings) => {
   const rb = { ...f.ribbons, ...(norm === undefined ? {} : { curbCutNorm: norm }), ...(evidence === undefined ? {} : { curbCutEvidence: evidence }),
                ...(crossings === undefined ? {} : { crosswalkEvidence: crossings }) }
-  return buildProto({ ...f, ribbons: rb, cornerCornerRadiusOverrides: corners }, { quiet: true, protoProducer: true })
+  return buildProto({ ...f, ribbons: rb, cornerCornerRadiusOverrides: corners }, { quiet: true })
 }
 // the corner map with one corner's `cut` set (null = cleared), every other entry and field kept
 const withCut = (map, key, cut) => { const m = { ...(map || {}) }, cur = m[key], e = cur == null ? {} : typeof cur === 'object' ? { ...cur } : { r: cur }

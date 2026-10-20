@@ -66,16 +66,14 @@ Applied here so `map.json` is the single filtered source the 2D Designer and the
 degenerate input is **UNDECIDABLE and loud**, never a silent keep.
 ▶ `createMembershipFilter` — live home `INTAKE.md §0.5`, design of record `EXTENT-DESIGN.md`.
 
-> ### ⭐ THE COUPLER RELATION IS PRODUCED HERE AND ITS CONSUMER IS SWITCHED OFF
+> ### ⛔ THE COUPLER RELATION IS PRODUCED HERE AND HAS NO CONSUMER (2026-10-20)
 > *(The consumer-status fact `RIBBONS §1` and `POLYGON-FIRST §2.1/§3` point at this section for —
 > keep it here, do not restate it there.)*
-> `junctionMap.nodes[].cornersAdjacent` is stamped at prebake (`derive.js:4353`/`:4358`, serialized
-> `:4410`) and is complete at every T and cross. **Its only consumer is `src/lib/substrateWalk.js`,
-> and the walk is DEFAULT-OFF STRUCTURALLY** — `tileGround.js:4709` gates it on `opts.substrateTiles`
-> (passed by nothing) or `SUBSTRATE_TILES=1` (absent in the browser). ⇒ **production tiles are the
-> frozen `shape.json`.** ⛔ **So a defect reasoned through `cornersAdjacent` explains nothing the
-> operator is looking at**; it is a blocker on the walk becoming the producer, and scoped to that.
-> ▶ `grep -rn "substrateTiles\|cornersAdjacent" src cartograph --include="*.js" --include="*.jsx"`
+> `junctionMap` (with `nodes[].cornersAdjacent`) is still stamped at prebake by `derive.js`, and **nothing reads it**:
+> its consumer, the substrate walk, and the legacy pass's junction construction were deleted 2026-10-20
+> (`BRIEF-retire-the-legacy-shape-pass`). The producer's deletion waits on the classifier's `derive.js` merge — a named
+> leftover, with `ribbons.tiles`. ⛔ **A defect reasoned through `cornersAdjacent` explains nothing on screen.**
+> ▶ `grep -rn "junctionMap\|cornersAdjacent" src cartograph --include="*.js" --include="*.jsx"`
 
 > ### ✅ AND THE CROP THE EXCISION OWED IS **BUILT** — the circle is stamped LAST, on finished geometry.
 > `ec7dd3f4` (2026-09-05) called a bake-time crop *"a SEPARATE, still-unbuilt concern"*. **It landed
@@ -140,8 +138,8 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 > right lane, i.e. coincident at the centerline when undivided), joined at every node by a **coupler**.
 > ⭐ **That answers the punch-out's blocking risk** (a boolean loses "which chain and which side bounds
 > this edge"); walking side-chains carries identity by construction. ⛔ **Authoring is unchanged — the
-> split is DERIVED**, so `blockCustoms` does not migrate. ⭐ **The coupler relation is already frozen and
-> unconsumed — `junctionMap.nodes[].cornersAdjacent`** (`POLYGON-FIRST §2.1`); it is complete at every T
+> split is DERIVED**, so `blockCustoms` does not migrate. ⭐ **The coupler relation was frozen and
+> unconsumed — `junctionMap.nodes[].cornersAdjacent`** (`POLYGON-FIRST §2.1`; no reader at all since 2026-10-20, §2.5); it is complete at every T
 > and cross and **absent at all 29 dead ends**, which is the one genuinely new build.
 > ⚠️ **Topology becomes width-dependent ⇒ the combinatorial half freezes at prebake (`cornersAdjacent`,
 > width-independent) and the geometric half resolves after width authoring** — §5's own split, at last.

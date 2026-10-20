@@ -18,53 +18,10 @@
 
 This mirrors the one enforcement that already works (`sectionPass` closure), moved to the **producer** side: a `buildCurb(frozenFrame) → curbPolygon` with no live chain-stroke union in scope.
 
-> ### ⭐⭐ THE TRUE RULE — two producers, and the choice is RECORDED (A07, 2026-08-04)
-> ⛔ **"The curb is the parallel offset of the skeleton" describes MOST blocks, not the map** — and it is
-> the kit's most-quoted sentence, so it gets reasoned from on tiles it does not describe. **Check
-> `producer` on the tile before you reason from it.**
->
-> **What the code does:**
-> - **`offset`** — the per-edge parallel offset (`chain ⊕ halfWidth`, corners as offset-intersections),
->   taken when `opts.iaOffset !== false && !isMedianTile && ringArea > 1500`. This is the rule for an
->   ordinary block.
-> - **`carve`** — the legacy boolean carve (`tile.ring − aFill`) otherwise. ⭐ **This is CORRECT, not a
->   fallback**: a divided median, a loop-body median and a sub-block sliver genuinely are not
->   edge-offsets, and offsetting them collapses or blows up the ring. ⛔ Do not "fix" it by deleting
->   the carve.
-> - **`degenerate:*`** — an offset that *passed* the gate and came back unusable (empty · collapsed
->   below 5% of the tile · overflowed past it). **THAT is a failure**, it is now counted and LOUD, and
->   *(the 5% is the THRESHOLD ITSELF, not a measurement — it is set at `degenerate:collapsed` in
->   `src/lib/tileGround.js`: `offArea <= 0.05 * ringArea`. ▶ `grep -n "degenerate:collapsed" src/lib/tileGround.js`)*
->   it is reported **separately** so it can never be buried among the routine structural carves.
->
-> **Measured live, per scene, by the offset/carve split it reports per tile:**
-> ▶ `node scratch/a07-producer-disclosure.mjs`
->
-> The carved share ranges from a small minority of tiles (altadena) upward, with lafayette-square,
-> lafayette-square-staging and hipointedemun spread across that range — **LS sits mid-range, not at
-> either extreme.** ⛔ Re-derive with the command; never quote a figure from here.
->
-> ⚠️ **THE TOP OF THE RANGE WENT WITH THE POLISH SCENES (excised 2026-09-19), AND THAT COSTS THIS
-> SECTION EVIDENCE, NOT DOCTRINE.** The widest spread ever measured spanned six scenes, and the
-> majority-carve end of it was `ksi-y-m-yn` — a town that no longer exists. The surviving roster spans
-> a **narrower** range, so a reader running the command today sees a weaker version of the very effect
-> this section exists to teach. ⛔ Do not conclude from that run that the spread is small: it was
-> measured wide, on real data. What survives is the observation that the split is a property of *the
-> town's block geometry*; the dynamic range that made it obvious re-appears at the next non-US pour.
-> ⛔ **No figure is quoted here on purpose** — the old one ("7%→75%") outlived the scenes it was
-> measured on and became exactly the unreproducible number `CLAUDE.md`'s prune rule forbids. The
-> command above is the only answer.
->
-> ⛔⛔ **THAT SPREAD IS THE POINT.** The invariant's truth is a
-> property of *the town's block geometry*, not of the kit, so no single scene can tell you whether it
-> holds. On the first non-US pour, **the clear majority of the map was built by the producer the docs
-> did not mention** *(measured 2026-08-04 on a scene since excised — ⛔ the figure is not requotable;
-> run the command on the current roster)*. An operator there reads "concentric offset," sees a
-> plausible curb, and has no way to learn otherwise — which is exactly the silent-substitution shape `CLAUDE.md` Layer 0 forbids.
->
-> **∴ every tile now carries `producer` + `producerReason` in `shape.json`**, the bake prints the split
-> once per pour, and the tool shows it in the status bar. ⭐ **Degeneracy count: 0 on every scene** —
-> and that is a *measured* 0 for the first time; this table asserted it without ever running the branch.
+> ### ⭐ ONE PRODUCER — ② (2026-10-20)
+> Every block's curb is ② — `offsetRingByRects` on its ① ring, then the ease. There is no carve route and no
+> per-tile producer stamp. *(The A07 "two producers, the choice recorded" rule measured the LEGACY chain curb, which no
+> tool has drawn since 2026-09-06; it retired with that pass → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
 
 ---
 
@@ -118,7 +75,8 @@ the eye:
 > ⭐ **The checkable form of this whole class — `/PIPELINE-CLAIMS.md` (root).** The dead-end → corner →
 > sidewalk chain as `[REQ]`/`[OUR]` claims, each with the method that produced its number and a re-run
 > command. ⛔ **Read its `C4` before quoting an older split against the mouth-corner numbers below** —
-> ▶ `node checks/claims-deadend-set-decomposition.mjs` shows the two sets are the SAME set; an earlier,
+> ▶ `node cartograph/_archive/claims-deadend-set-decomposition-RETIRED-2026-10-20.mjs` *(retired 2026-10-20 — it measured the legacy
+> tile world, which is deleted; the numbers below are that world's record)* showed the two sets are the SAME set; an earlier,
 > smaller count came from a probe that has since been deleted.
 
 ⚠️ **This is a gate to MAKE green, not a regression test that passes today: on the frozen LS face it fails
@@ -165,7 +123,7 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > park-avenue-3[end] · south-13th-street[end] · south-18th-street-3[end] · waverly-place-1[end] ·
 > waverly-place-1[start]`
 >
-> ▶ `node checks/claims-deadend-set-decomposition.mjs` — the three sets, dual-state.
+> ▶ `node cartograph/_archive/claims-deadend-set-decomposition-RETIRED-2026-10-20.mjs` — the three sets, dual-state.
 >
 > | measurement | count | what it is |
 > |---|---|---|
@@ -177,7 +135,7 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > `isCorner` is an **edge-identity** test at the mouth vertex (`inc.skelId !== out.skelId`); `runThrough` is
 > a **leg-span** test (does a leg's endpoint land somewhere other than a mouth pass?). Two unrelated
 > computations over `mouthInfo()` selecting the same nine members. *Method:
-> `node checks/claims-deadend-set-decomposition.mjs`; both sets off the frozen artifact, `C` run in **both**
+> `node cartograph/_archive/claims-deadend-set-decomposition-RETIRED-2026-10-20.mjs`; both sets off the frozen artifact, `C` run in **both**
 > the authored and bare-defaults state (identical — this set is authoring-invariant).*
 >
 > ⭐⭐ **What this CONFIRMS — read it as support for `ROADMAP A0`, not just as a correction.** A0's thesis is
@@ -399,81 +357,21 @@ The curb-geometry freeze was nobody's deliverable (§0.1). These are the named, 
 > producer's scope"* — prebake-freezing was the assumed mechanism, never the requirement. **The thing
 > that has to die is the chain, not the authoring.**
 >
-> ### ✅ AS-BUILT — the producer split LANDED 2026-07-31 (`4dd05303`, branch `a03-freeze-curb-prebake`)
->
-> The producer is now two functions, split at the chain boundary (`src/lib/tileGround.js`):
->
-> | | | |
-> |---|---|---|
-> | **`freezeCurbEdgeFacts()`** | chain-DERIVED | reduces runs/streets/measures to **one fact per RING EDGE** — `{skelId, side, segOrd, baseHW, prof, streetKey}`. The only half that touches a chain. |
-> | **`buildCurbRings()`** | chain-FREE | `ring + facts + authoredHW → iA`. No `streets`, `runs`, `measures` or `ribbons` in lexical scope. |
->
-> ⭐ **`baseHW` is frozen PRE-authoring; the override applies inside the builder.** That is what keeps
-> the facts **look-agnostic** — one scene's facts serve every look bound to it — while the curb still
-> honours the operator (Layer 0 q3). It is also the specific thing the impossible D6b wording got
-> backwards.
->
-> ⭐ **The flagged hard case REDUCED — the divided-transition outer profile IS a per-edge fact.**
-> `outerHWProfile` is already a per-**vertex** frozen stamp, so the two lookups resolve at freeze time
-> and store as a `[a|null, b|null]` pair per edge; the builder never needs the chain that carried it.
-> This was called out as the case most likely to fail. It did not. **Whoever takes the carve (below)
-> should expect the same to be possible there.**
->
-> **Acceptance: `scratch/a03-curb-identity.mjs`** — byte-identical on **both** the authored state
-> **and** bare defaults, across artifact / block / curb / asphalt / sidewalk / fillets, hashed per
-> tile. ⭐ Both states are gated deliberately: a refactor identical on LS but not on a fresh pour would
-> repeat exactly the Check A blindness (§2, Check A) it was written after.
->
-> ### ⚠️ CHECK C IS STILL RED — and this is the honest scope of what landed
->
-> The chain-free producer owns a majority of tiles, not all of them. The rest still route through the
-> legacy carve (`tile.ring − aFill`), **and `aFill` is chain-derived**:
-> ▶ `node scratch/a07-producer-disclosure.mjs` — reproduces the current offset/carve split, broken
-> out by legacy-carve reason (divided median, loop-body median, small tile), and the degeneracy count.
->
-> | path | reason |
-> |---|---|
-> | chain-FREE offset producer | Check C holds here |
-> | legacy carve — **divided median** | structural (offsetting both inner edges collapses the thin gap) |
-> | legacy carve — **loop-body median** | structural (`medArea > 0.5` on a single-run tile) |
-> | legacy carve — **small** tile | structural (`ringArea ≤ 1500` **and not already median**) |
-> | legacy carve — degenerate | every tile that qualifies for the offset path succeeds on it |
->
-> ⚠️ **Corrected 2026-07-31:** this table first conflated the two median classes and mis-split the
-> total. `isMedianTile` is `isDividedMedian || (isLoopInterior && medArea > 0.5)` — two different tile
-> kinds behind one flag. ⚠️ **The "small" row is NOT the count of `ringArea ≤ 1500` tiles alone** — it
-> is *small AND not already median* — and reading it as the raw small-tile count is what produced a
-> "the table is wrong" report. And the artifact's `isMedian` is written from `isDividedMedian` **alone**
-> (`tileGround.js:3627`), so any count taken off it is a **floor**.
-> ⛔ **`D6a`'s comment above this gate also lists DEAD-END tiles as a legacy-carve class. It is stale** —
-> the gate is `!isMedianTile && ringArea > 1500`, with **no dead-end condition**; dead-end tiles take the
-> OFFSET path and their caps are built in via `capArc` twelve lines below.
->
-> ⛔ **The chain was NOT passed into `buildCurbRings` to cover the legacy-carve tiles.** That is the
-> quiet re-opening the signature exists to prevent, and declining it is why the gap is countable
-> instead of hidden. **Do not claim Check C green — re-run the command above before quoting a share.**
->
-> ⭐ **What this bought, stated plainly:** the producer defect went from *"the curb is traced from
-> chains"* — unbounded and unmeasured — to **42 named tiles in two structural classes**. Bounded and
-> countable beats green-by-redefinition.
->
-> **Left open, deliberately unbundled:** freezing `aFill` so the legacy carve is chain-free too
-> (**A06**) — a materially bigger change against a *different* class of tile; bundling it would put two
-> risks behind one byte-identical proof. And moving `freezeCurbEdgeFacts` into `derive.js` is a
-> **freeze-once optimization, not a Check C requirement** — same shape as `sectionPass`, which is
-> chain-free at its signature while something upstream built its input from chains. Do it when there is
-> a reason beyond tidiness; it touches prebake and the artifact, which is the one thing that could cost
-> the byte-identical property.
+> ### ⭐ SUPERSEDED BY ① (2026-10-20)
+> The curb producer this section scoped — the A03 split (`freezeCurbEdgeFacts` / `buildCurbRings`) and the legacy carve
+> (`tile.ring − aFill`) that kept Check C red — was the legacy chain shape pass, deleted 2026-10-20. Every block's curb is
+> ② now (`offsetRingByRects` on its ① ring). *(The as-built record → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
+> ⛔ Check C's status under ① is **not re-measured here** — open.
 
-- **D6a — build `iA` as a parallel offset, not an asphalt-union carve. ✅ CONSTRUCTION LANDED** — ⭐ **on the LEGACY tile path only:** under ① the curb is ② (`offsetRingByRects`, 2026-09-25: ① minus its depth bands, no per-vertex offset, so no averaged-normal branch and no fold; ▶ `node checks/claims-the-curb-never-enters-the-road.mjs`). Legacy: (`offsetRingVariable`, 2026-06-09; now the DEFAULT at `tileGround.js:2728/2810`, replacing the `tile.ring − aFill` carve — which survives only as the degenerate `legacyBlock` fallback). Per-edge offset (`chain ⊕ pavementHW`, corners = offset-intersections; at a divided transition, corner the corridor outer-edge legs via the frozen `phase.spineAt*`). Converges to today's curb everywhere except the bug sites. **Turns Check A green** (incl. the junction zone). ⚠️ **but NOT yet robust — un-parked 2026-06-14.** Live confirmation: the correctness detector's **CURVE-FIT gate is RED** — offsetting the *smoothed* centerline (smooth=1.5) produces **6 new needle/spur degenerates** vs smooth=0 (`scratch/correctness-detector.mjs`), which is exactly why `STREET_SMOOTH` is pinned at 0 and macro FRONT A3 (curves-on) is blocked on the robust offset. The **curve-fit / smooth centerline** (the one knob, `SKELETON §3.5`) is its forcing function: a smooth dense curve makes the curb's inward offset **self-intersect at tight bends** → a **172° needle** (W18 corner: tile.ring smooth at 16°, curb spikes to 172°). **SITE:** the through-node/curve path — the **averaged-normal** branch of `offsetRingVariable` (grep `!cornerAt(i) || Math.abs(det)`). ✅ **The site is CONFIRMED and quantified 2026-08-09** (agent Kerf, `scratch/fold-branch-forensic.mjs`): of 536 crossings on 193 minting tiles, **69.8% of crossing endpoints are averaged-normal vertices** (miter 16.0% · bevel 11.8% · cap 2.3%). The faceted curve hid it; the smooth curve exposes it — *the litmus-RED non-parallelism, made visible*.
+- **D6a — build `iA` as a parallel offset, not an asphalt-union carve. ✅ CONSTRUCTION LANDED; the legacy tile path it lived on is deleted (2026-10-20)** — under ① the curb is ② (`offsetRingByRects`, 2026-09-25: ① minus its depth bands, no per-vertex offset, so no averaged-normal branch and no fold; ▶ `node checks/claims-the-curb-never-enters-the-road.mjs`). Legacy: (`offsetRingVariable`, 2026-06-09; now the DEFAULT at `tileGround.js:2728/2810`, replacing the `tile.ring − aFill` carve — which survives only as the degenerate `legacyBlock` fallback). Per-edge offset (`chain ⊕ pavementHW`, corners = offset-intersections; at a divided transition, corner the corridor outer-edge legs via the frozen `phase.spineAt*`). Converges to today's curb everywhere except the bug sites. **Turns Check A green** (incl. the junction zone). ⚠️ **but NOT yet robust — un-parked 2026-06-14.** Live confirmation: the correctness detector's **CURVE-FIT gate is RED** — offsetting the *smoothed* centerline (smooth=1.5) produces **6 new needle/spur degenerates** vs smooth=0 (`scratch/correctness-detector.mjs`), which is exactly why `STREET_SMOOTH` is pinned at 0 and macro FRONT A3 (curves-on) is blocked on the robust offset. The **curve-fit / smooth centerline** (the one knob, `SKELETON §3.5`) is its forcing function: a smooth dense curve makes the curb's inward offset **self-intersect at tight bends** → a **172° needle** (W18 corner: tile.ring smooth at 16°, curb spikes to 172°). **SITE:** the through-node/curve path — the **averaged-normal** branch of `offsetRingVariable` (grep `!cornerAt(i) || Math.abs(det)`). ✅ **The site is CONFIRMED and quantified 2026-08-09** (agent Kerf, `scratch/fold-branch-forensic.mjs`): of 536 crossings on 193 minting tiles, **69.8% of crossing endpoints are averaged-normal vertices** (miter 16.0% · bevel 11.8% · cap 2.3%). The faceted curve hid it; the smooth curve exposes it — *the litmus-RED non-parallelism, made visible*.
   > ⛔ **A miter clamp in the averaged-normal branch is provably DEAD** — that branch emits at `(A.d+B.d)/2 ≤ max(d) < lim` for every width. Proof and measurement: `_archive/POLYGON-FIRST-D6a-clamp-proof-2026-09-25.md`.
   > - ⭐⭐⭐ **AND THE REAL REASON "ADD A CLAMP" NEVER WORKED — 27.8% of crossing endpoints are MITER/BEVEL vertices, i.e. vertices that went THROUGH the existing clamp and still landed in a self-intersection.** ⇒ **both branches are PER-VERTEX LOCAL tests, and offset self-intersection is a GLOBAL property of the walk. No local test can decide it** — so no constant would have saved it either.
   > - ✅ **THE REVERSAL SIGN TEST IS BUILT (2026-08-11) — `node scratch/claims-offset-reversal.mjs`.** Does the emitted offset segment `W[i]→W[i+1]` run *against* the ring edge that produced it? **Pure sign, no epsilon, no tuned distance** — `RIBBONS §6.9.5`'s *"topological capacity guard, not a doctrine clamp"*. Fires before the union, because the union is what hides a fold by resolving it into a kept ring. ⛔⛔ **AS OF 2026-08-12 IT REFUSES TO RUN — `⛔ INSTRUMENT ANCHOR DRIFTED — matched 0×, expected 1. A false ZERO would read as "the offset is clean". Re-anchor first.`** ⭐ **That is the probe failing LOUDLY and correctly** (Rule 2, working as designed — it would rather refuse than print a clean zero). ⛔ **∴ "RED on 6 of 7 scenes" is an EXPIRED RECEIPT — do not quote it, and do not quote any intersection with it, until the anchor is restored.** *(Found 2026-08-12 by agent Quill, which needed the intersection and declined to fake it.)* Detector only — it changes no geometry, and the repair waits on its population being known.
   >   - ⛔ **A GREEN SIGN TEST IS NOT "NO FOLDS"** — it means no segment *reversed*. Wide loops cross while every segment still runs forward; those need the self-intersection found directly. It must never retire the crossing measurement.
   >   - ⛔⛔ **AND IT DOES NOT COVER THE NOTCH CLASS — measured 0 overlap, both directions** (LS authored, 59 offset tiles: 12 reversal-no-notch · 0 both · 0 notch-no-reversal). LS's 8 notches sit on **`carve / median-divided`** tiles, which never run the offset. **The notch is A06's, not D6a's.** *(Routed here first and disproved by this check before a repair was written on it — the intended use.)*
-- **D6b — split the producer at the chain boundary. ✅ LANDED 2026-07-31** (`4dd05303`) — see the as-built block above. ⛔ **The old text of this bullet said "`derive.js` emits `iA` once and freezes it into `ribbons.tiles[]` … in the authored state." That is impossible** (prebake is authoring-blind; `ribbons.json` is per-scene, `blockCustoms` per-look) and it is the wording that nearly baked a bare-defaults curb — full text moved to `_archive/POLYGON-FIRST-D6b-prebake-wording-2026-07-31.md`. What replaced it: `freezeCurbEdgeFacts` (chain-derived, per ring edge) → `buildCurbRings` (chain-free), authored width applied in the builder. **Byte-identical; Check C green on 59/101 tiles, RED overall.**
+- **D6b — split the producer at the chain boundary. ✅ LANDED 2026-07-31** (`4dd05303`); its two functions were deleted with the legacy pass (2026-10-20) — record in `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`. ⛔ **The old text of this bullet said "`derive.js` emits `iA` once and freezes it into `ribbons.tiles[]` … in the authored state." That is impossible** (prebake is authoring-blind; `ribbons.json` is per-scene, `blockCustoms` per-look) and it is the wording that nearly baked a bare-defaults curb — full text moved to `_archive/POLYGON-FIRST-D6b-prebake-wording-2026-07-31.md`. What replaced it: `freezeCurbEdgeFacts` (chain-derived, per ring edge) → `buildCurbRings` (chain-free), authored width applied in the builder. **Byte-identical; Check C green on 59/101 tiles, RED overall.**
 - **D6c — Survey *consumes* the frozen curb.** Extend the chain-free consumer pattern (`sectionOpen`) to Survey's `tileGeos` (`BlockGeometryV2Debug.jsx:661`): inactive tiles read the frozen `iA`; only the active element re-strokes. ⚠️ **Re-scoped by D6b's landing:** the *producer* is no longer the blocker it was written against — `buildCurbRings` is already chain-free at its signature. What remains here is the consume-once/perf half.
-- **A06 — freeze `aFill` so the legacy carve is chain-free too.** The 42 median/small tiles D6b deliberately left. Separate ticket on purpose: a different tile class, and bundling it would put two risks behind one byte-identical proof.
+- **A06 — freeze `aFill` so the legacy carve is chain-free too. ⛔ MOOT (2026-10-20):** the legacy carve and `aFill` are deleted with the legacy pass.
 - **D6d — the block-local edit / commit / re-freeze loop (= the D5 perf payoff).** Today one edit rebuilds the whole map (one whole-map `useMemo`; the junction builder reads every leg at a node; a final `unionRings` melts all tiles into one blob, `tileGround.js:2075`). Build the edit-key→tile index (`tiles[].edges[].skelId`), per-node junction construction, and a per-tile-addressable output; on commit, re-freeze only the touched junction's incident tiles (~3–4). The authoring loop the freeze was always missing.
 
 **Sequencing:** D6a ships alone and visible. D6b+D6c are the architecture move, gated on D6a proving out on Jacob's eye. D6d is the large perf/authoring restructure. D3 (corner identity) folds into D6b — once the curb is a frozen offset cornered at offset-intersections, the divided-transition corner identity is frozen *as part of the curb*, dissolving the whole transition defect class.
@@ -561,7 +459,7 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 > says so, without updating the headline). ⚠️ **The blockquotes above are a DATED RECORD of two passes,
 > not the scoreboard.** They were read as current and had the scoreboard 6 points low while naming
 > shipped checks as the next work — a doc that undersells shipped capability causes rebuilt work.
-> ⚠️ Also in the same block: `[E3.3] corner identities` prints **6 corners constructed**. ⛔ **That is
+> ⚠️ *(E3.3 was deleted with the legacy pass, 2026-10-20; this is its record.)* Also in the same block: `[E3.3] corner identities` printed **6 corners constructed**. ⛔ **That is
 > NOT "the pre-registry number left behind by the revert"** — corrected 2026-08-12 against the source.
 > `tileGround.js:3265` gates the whole pass on `nd.kinds?.includes('divided-transition')` **and** a
 > non-empty `corners.stub`, a scope its own comment states outright (*"the 24-node sweep class"*), with

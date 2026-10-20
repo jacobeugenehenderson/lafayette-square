@@ -13,7 +13,7 @@ const roadOf = id => String(id ?? '').replace(/-\d+$/, '')
 let bad = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   let faces = 0, multi = 0, splitFaces = 0; const eg = []
   for (const [ti, t] of T.entries()) {
     const byFace = new Map()

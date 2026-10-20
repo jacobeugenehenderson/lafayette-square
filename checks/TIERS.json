@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 421,
+  "total": 423,
   "counts": {
-    "safe": 313,
-    "local-effect": 20,
-    "live": 88
+    "safe": 306,
+    "local-effect": 27,
+    "live": 90
   },
   "checks": [
     {
@@ -41,7 +41,22 @@
       ]
     },
     {
+      "file": "checks/claims-a-bend-bends-the-band.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() of a path an argument or the environment can supply — arbitrary"
+      ]
+    },
+    {
       "file": "checks/claims-a-brief-declares-how-it-dies.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-cap-carries-one-section.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -196,13 +211,6 @@
       ]
     },
     {
-      "file": "checks/claims-a-fitted-loop-stays-on-its-road.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-a-flat-town-is-not-refined.mjs",
       "tier": "safe",
       "why": [
@@ -265,6 +273,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-look-authors-its-curb-width.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-look-holds-only-its-towns-grove.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -319,20 +334,6 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-a-nodeless-crossing-is-grade-separated.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-a-parcel-keeps-all-its-parts.mjs",
-      "tier": "safe",
-      "why": [
-        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -835,13 +836,6 @@
       ]
     },
     {
-      "file": "checks/claims-band-vs-partition-state.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-bark-uvs-name-their-tile.mjs",
       "tier": "safe",
       "why": [
@@ -925,7 +919,8 @@
       "file": "checks/claims-conformity-closes-what-the-detector-sees.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/groundConformity.js from its own temp dir — read as cartograph/groundConformity.js, safe"
       ]
     },
     {
@@ -961,13 +956,6 @@
       "tier": "safe",
       "why": [
         "computed import of src/lib/tileGround.js — read, safe"
-      ]
-    },
-    {
-      "file": "checks/claims-coupler-totality.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
       ]
     },
     {
@@ -1007,20 +995,6 @@
     },
     {
       "file": "checks/claims-deadend-notch-standoff.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-deadend-populations.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-deadend-set-decomposition.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1081,13 +1055,6 @@
       ]
     },
     {
-      "file": "checks/claims-every-authored-corner-resolves.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-every-baked-species-has-an-impostor.mjs",
       "tier": "safe",
       "why": [
@@ -1131,6 +1098,13 @@
     },
     {
       "file": "checks/claims-every-corner-knows-its-junction.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-curb-edge-has-its-owner.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1217,6 +1191,13 @@
     },
     {
       "file": "checks/claims-every-slab-url-is-resolved.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-tile-edge-names-its-owner.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1365,13 +1346,6 @@
       ]
     },
     {
-      "file": "checks/claims-grout-is-a-valid-polygon.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-handle-rides-its-arc.mjs",
       "tier": "safe",
       "why": [
@@ -1473,13 +1447,6 @@
     },
     {
       "file": "checks/claims-intake-is-consumed.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-intake-is-lossless.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1619,6 +1586,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-edge-is-drawn-twice.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -1853,26 +1828,12 @@
       ]
     },
     {
-      "file": "checks/claims-physical-side-reconcile.mjs",
-      "tier": "safe",
-      "why": [
-        "computed import of src/lib/tileGround.js — read, safe"
-      ]
-    },
-    {
       "file": "checks/claims-pilgrim-monument-site.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
         "computed import() with no readable target — runs arbitrary modules",
         "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
-      ]
-    },
-    {
-      "file": "checks/claims-preclip-walk.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
       ]
     },
     {
@@ -1953,13 +1914,6 @@
       ]
     },
     {
-      "file": "checks/claims-proto-curb.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-proto-fill-is-live.mjs",
       "tier": "safe",
       "why": [
@@ -1981,28 +1935,7 @@
       ]
     },
     {
-      "file": "checks/claims-proto-leg-tail-is-corner-reach.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-proto-legmiss-by-producer.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-proto-median-is-a-hole.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-proto-paints-into-medians.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -2316,6 +2249,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-bands-are-held-by-their-owners.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-the-beach-band-is-the-towns-own.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -2335,6 +2275,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-built-ground-has-no-needles.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -2466,6 +2414,20 @@
       ]
     },
     {
+      "file": "checks/claims-the-ground-is-painted-once.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ground-meets-its-terrain.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+      ]
+    },
+    {
       "file": "checks/claims-the-ground-stays-in-budget.mjs",
       "tier": "local-effect",
       "why": [
@@ -2500,6 +2462,13 @@
       "tier": "safe",
       "why": [
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ink-is-held-by-its-owners.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -2560,6 +2529,16 @@
         "computed import of src/lib/almanac-eval.js — read, safe",
         "computed import of a data: module — hermetic",
         "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-line-is-continuous.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/lineHeight.mjs from its own temp dir — read as cartograph/lineHeight.mjs, safe",
+        "computed import of cartograph/lineHeight.mjs — read, safe",
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -2684,6 +2663,29 @@
       ]
     },
     {
+      "file": "checks/claims-the-road-is-swept-from-its-line-to-its-curb.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "checks/claims-the-road-lies-on-the-lattice.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+      ]
+    },
+    {
+      "file": "checks/claims-the-road-meets-itself-across-its-centreline.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+      ]
+    },
+    {
       "file": "checks/claims-the-search-outlives-an-empty-ticker.mjs",
       "tier": "safe",
       "why": [
@@ -2702,6 +2704,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-shore-is-one-line.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -2742,7 +2751,21 @@
       ]
     },
     {
+      "file": "checks/claims-the-stamp-keeps-its-owners.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-street-eye-stands-on-the-ground.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+      ]
+    },
+    {
+      "file": "checks/claims-the-stripe-lies-on-its-road.mjs",
       "tier": "local-effect",
       "why": [
         "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"

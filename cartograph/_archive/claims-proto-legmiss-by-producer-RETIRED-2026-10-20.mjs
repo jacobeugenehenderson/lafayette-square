@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): it split ②'s miss by the LEGACY curb's A07 producer stamp (offset/carve) against the legacy `iA`. Both retired with the legacy shape pass: under ① there is one curb producer, and the legacy curb was a map nobody draws.
+//    Kept as the record. Do not run.
 // ⛔⛔ WHERE DOES ②'s FAR-FIELD MISS LIVE — ON THE OFFSET TILES OR THE CARVED ONES?
 //
 // WHY THIS EXISTS, AND IT IS A BASELINE QUESTION, NOT A GEOMETRY ONE.

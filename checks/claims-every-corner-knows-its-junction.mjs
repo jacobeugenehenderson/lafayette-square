@@ -40,7 +40,7 @@ if (args.includes('--build')) {
   const { feed, buildProto } = await import('../scratch/_proto-feed.mjs')
   const f = feed(scene); if (!f) process.exit(1)
   if (args.includes('--live')) delete f.ribbons.protopolygon
-  const built = buildProto(f, { quiet: true, protoProducer: true }); tiles = built.protoShapeTiles || []; census = built.protoJunctionCensus || null
+  const built = buildProto(f, { quiet: true }); tiles = built.protoShapeTiles || []; census = built.protoJunctionCensus || null
 } else {
   const p = `public/baked/${scene}/shape.json`
   if (!fs.existsSync(p)) { console.log(`⛔ ${scene}: no ${p} — NOT checked`); process.exit(1) }

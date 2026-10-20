@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): it checked derive E3.1's claim that the junctionMap coupler relation is TOTAL — the property a half-edge walk needs. The walk (substrateWalk) and the junctionMap's last ground reader (the legacy pass's E3.2/E3.3) are deleted; the junctionMap producer itself is the named leftover in derive.js, waiting on the classifier merge.
+//    Kept as the record. Do not run.
 // ── Is the COUPLER RELATION TOTAL?
 //
 // derive.js E3.1 (~:4351-4381) claims, in a comment: "Emitted here so the

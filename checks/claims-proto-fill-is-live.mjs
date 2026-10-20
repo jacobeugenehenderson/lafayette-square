@@ -30,7 +30,7 @@ const pct = (a,b) => b > 0 ? `${(100*a/b).toFixed(1)}%` : 'n/a'
 let bad = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
-  const g = buildProto(f, { protoArtifact: true })
+  const g = buildProto(f)
   const T = g.protoShapeTiles, cw = f.curbWidth
   // ⭐ ③'s strike is the REFERENCE, not the product: the tile no longer carries `bands` (the FILL
   // is live now), so the reference comes off the build's measurement channel and is cut by each
