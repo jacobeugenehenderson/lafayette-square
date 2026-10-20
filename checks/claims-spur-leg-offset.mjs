@@ -58,11 +58,30 @@ function hwAt(tile, skelId, q) {
 const LEG = 20, STEP = 0.25, TOL = 0.10
 // The side convention is a CLAIM. Score the whole map under each forced sign and let the
 // map choose — never per cap, which is fitting, not deriving.
+// ⭐ THE TIPS ARE READ OFF THE CHAINS, never off a second tile list. A dead end is a chain end that
+// no other chain's vertex touches (interior vertices count, so a T's stem is not a tip). Each tip is
+// scored in every frozen tile that carries a run of ITS chain at the tip, joined by skelId.
+// ⛔ This used to take the caps from ribbons.tiles and pair them with shape.json's tiles BY INDEX;
+// the two lists are different partitions numbered differently, so the pairing measured nothing.
+const vkey = p => `${Math.round(p[0] * 1e3)},${Math.round(p[1] * 1e3)}`
+const vdeg = new Map()
+for (const st of rb.streets) {
+  if (st.gradeSeparated || !(st.points?.length >= 2)) continue
+  st.points.forEach((p, i) => vdeg.set(vkey(p), (vdeg.get(vkey(p)) || 0) + (i === 0 || i === st.points.length - 1 ? 1 : 2)))
+}
+const tips = []
+for (const st of rb.streets) {
+  if (st.gradeSeparated || !(st.points?.length >= 2)) continue
+  if (vdeg.get(vkey(st.points[0])) === 1) tips.push({ skelId: st.skelId || st.name, capEnd: 'start' })
+  if (vdeg.get(vkey(st.points.at(-1))) === 1) tips.push({ skelId: st.skelId || st.name, capEnd: 'end' })
+}
+o(`dead-end tips on the chains: ${tips.length}`)
 function score(sign) {
   const rows = []
   sh.tiles.forEach((t, ti) => {
     const rings = t.iA || []; if (!rings.length) return
-    for (const c of (rb.tiles[ti]?.caps || [])) {
+    for (const c of tips) {
+      if (!(t.runs || []).some(r => r.skelId === c.skelId)) continue
       const st = stBy.get(c.skelId); if (!st) continue
       const tipAtStart = c.capEnd !== 'end'
       const tip = tipAtStart ? st.points[0] : st.points.at(-1)
