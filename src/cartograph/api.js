@@ -347,6 +347,16 @@ export async function saveLookDesign(lookId, design) {
   return res.json()
 }
 
+// The minimum curbed width (the nose) for Survey's live build: the same value the bake passes, from the same function
+// (serve.js `GET /<scene>/curbed-min-width` → cartograph/curbedMinWidthOf.mjs). ⛔ Throws on any failure; no default.
+export async function fetchCurbedMinWidth(scene) {
+  const res = await fetch(sceneUrl(scene, 'curbed-min-width'))
+  const body = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(`curbed-min-width for ${scene}: HTTP ${res.status}${body?.error ? ` — ${body.error}` : ''}`)
+  if (!(Number.isFinite(body?.m) && body.m > 0)) throw new Error(`curbed-min-width for ${scene}: no width in the reply`)
+  return body
+}
+
 // Autosave the frozen SHAPE artifact — the Section-enabling freeze (the
 // per-tile curb/corner silhouette). Written on Survey-exit (`PIPELINE.md` §5 (the Wall)
 // "freeze at Survey-exit"), decoupled from the heavy slab bake. Section

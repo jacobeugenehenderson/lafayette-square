@@ -38,6 +38,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import { makeBoundary } from './boundary.js'
 import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { slabFetch } from '../lib/slabUrl.js'
+import { fetchCurbedMinWidth } from './api.js'
 
 // Single source of truth for the soft-circle silhouette in Designer's V2 live
 // render. Mirrors BakedGround.fadeForGroup — which is now ONE band for every kind.
@@ -812,8 +813,22 @@ export default function BlockGeometryV2Debug({
     })
   }, [sectionGeos])
 
+  // ⭐ The minimum curbed width (the nose) — the SAME value the bake passes, from the same function (`curbedMinWidthOf`,
+  // via the dev server). ⛔ Until it arrives the live build waits; if it fails, the live build refuses by name.
+  const [curbedMinWidth, setCurbedMinWidth] = useState(null)
+  useEffect(() => {
+    if (!scene) return
+    let dead = false
+    setCurbedMinWidth(null)
+    fetchCurbedMinWidth(scene)
+      .then(v => { if (!dead) setCurbedMinWidth(v) })
+      .catch(e => { if (!dead) setCurbedMinWidth({ error: e?.message || String(e) }) })
+    return () => { dead = true }
+  }, [scene])
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
+    if (!curbedMinWidth) return null   // the nose width is still loading
+    if (curbedMinWidth.error) { console.error(`[BlockGeometryV2Debug] ⛔ live build REFUSED: no curbedMinWidth (${curbedMinWidth.error})`); return null }
     if (!designHydrated) return null   // no authored curb width yet — buildTileGround would (rightly) refuse
     // The frozen path is going to render this — don't duplicate its work. See
     // frozenNotReady: this covers "in flight" AND "waiting on stencil/design".
@@ -825,7 +840,7 @@ export default function BlockGeometryV2Debug({
     let tg
     // ⭐⭐⭐ ①②③ is the only producer: Survey draws its layers, and `protoShapeTiles` IS the frozen shape — autosaved to
     // `POST /<scene>/shape` on Survey-exit, which lands exactly where Section fetches it, so the two are one construction.
-  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX }) }
+  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, curbedMinWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -855,7 +870,7 @@ export default function BlockGeometryV2Debug({
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
       protoShapeTiles: tg.protoShapeTiles,   // the frozen-shape candidate — autosaved on Survey-exit
     }
-  }, [liveRibbons, designHydrated, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, blockCustomsX])
+  }, [liveRibbons, designHydrated, curbedMinWidth, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, blockCustomsX])
 
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
   // While in Survey, keep the latest live `protoShapeTiles` (exactly what the

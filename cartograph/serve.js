@@ -17,6 +17,7 @@ import { instanceForMap } from '../src/instances/registry.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
+import { curbedMinWidthOf, REGISTRY_PATH } from './curbedMinWidthOf.mjs'
 import { labelMajor } from '../src/cartograph/streetClass.js'
 import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
@@ -471,6 +472,20 @@ function computeLabelsFromOsm(osm) {
   }
   return [...byName.values()].map(({ _total, ...l }) => l)
 }
+// The curbed minimum width per scene, re-read when the town's raw OSM (its state vote) or the registry changes. A missing
+// osm.json is not cached: curbedMinWidthOf labels the state unknown, and a later fetch must be seen.
+const _cmwCache = new Map()   // scene → { key, value }
+function curbedMinWidthCached(scene) {
+  const osmP = join(mapRawDir(scene), 'osm.json')
+  if (!existsSync(osmP)) return curbedMinWidthOf(scene)
+  const key = `${statSync(osmP).mtimeMs}|${statSync(REGISTRY_PATH).mtimeMs}`
+  const hit = _cmwCache.get(scene)
+  if (hit?.key === key) return hit.value
+  const value = curbedMinWidthOf(scene)
+  _cmwCache.set(scene, { key, value })
+  return value
+}
+
 function getOsmLabels(scene) {
   const p = join(mapRawDir(scene), 'osm.json')
   if (!existsSync(p)) return []
@@ -1507,6 +1522,21 @@ createServer(async (req, res) => {
         res.end(JSON.stringify({ error: err.message }))
       }
     })
+    return
+  }
+
+  // GET /<scene>/curbed-min-width — the minimum curbed width (the nose) for Survey's live build, from the SAME function the
+  // bake calls (`curbedMinWidthOf`), so Survey and the bake cannot read it from different places. ⛔ An error is a 500 with
+  // the reason; the live build refuses without it (`buildTileGround`), never draws on a default.
+  const cmwMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/curbed-min-width$/)
+  if (req.method === 'GET' && cmwMatch && !RESERVED_PREFIXES.has(cmwMatch[1])) {
+    try {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(curbedMinWidthCached(cmwMatch[1])))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
     return
   }
 
