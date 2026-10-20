@@ -1213,6 +1213,66 @@ let WAY_LEN_BY_ID = new Map()
 // osmId → { class, rung, reason } from the ONE vocabulary (`streetClass.js`), decided in `main`
 // before `groupByName`. Every chain and path reads its class from here, never from `highway`.
 let WAY_CLASS_BY_ID = new Map()
+// osmId → the way's raw coords, for `carryWays` (which segment of a chain came from which way).
+let WAY_COORDS_BY_ID = new Map()
+
+// ⭐ KEEP WHAT WE TAKE IN (Jacob, 2026-10-20: "We need to make sure we are keeping as much as we take in").
+// Every chain carries its source ways' FULL tags, and which segments each way made — the record shape is
+// documented in `src/cartograph/streetClass.js` ("THE CHAIN'S SOURCE RECORD"). Nothing reads it for paint.
+// A segment's way is found by EXACT vertex identity against the raw way coords (both ends on one way, or each
+// end on a different way when it spans a joint). A
+// segment that later stages moved or inserted (curve-fit, seam splits, simplification across a way joint)
+// takes the ways of its one exact end if it has one, else those of the nearest identified segment ALONG THE CHAIN — by order, never by distance — and the
+// pour prints how many did. A chain with ONE source way is that way end to end (certain by construction). A
+// chain of several ways with no identified segment refuses.
+function carryWays(streets) {
+  const key = (p) => `${p.x},${p.z}`
+  let exact = 0, oneEnd = 0, byOrder = 0, single = 0
+  for (const s of streets) {
+    if (s.sources.length === 1) {
+      const n1 = s.points.length - 1
+      s.ways = { [s.sources[0]]: WAY_TAGS_BY_ID.get(s.sources[0]) }
+      s.segmentWays = [{ from: 0, to: n1, ways: [s.sources[0]] }]
+      single += n1
+      continue
+    }
+    const at = new Map()
+    for (const id of s.sources) for (const c of WAY_COORDS_BY_ID.get(id) || []) {
+      const k = key(c); if (!at.has(k)) at.set(k, new Set()); at.get(k).add(id)
+    }
+    const n = s.points.length - 1
+    const seg = new Array(n).fill(null)
+    for (let i = 0; i < n; i++) {
+      const a = at.get(key(s.points[i])), b = at.get(key(s.points[i + 1]))
+      // Both ends exact: the ways they share — or, when the segment was simplified across a way joint and
+      // each end sits on a different way, both ends' ways (it spans them).
+      const both = a && b ? [...a].filter(x => b.has(x)) : []
+      if (a && b) { seg[i] = (both.length ? both : [...new Set([...a, ...b])]).sort((x, y) => x - y); exact++ }
+      else if (a || b) { seg[i] = [...(a || b)].sort((x, y) => x - y); seg[i].oneEnd = true; oneEnd++ }
+    }
+    if (n > 0 && seg.every(x => !x)) throw new Error(`[skeleton] ⛔ ${s.id}: no segment matches a source way's vertices — its ways cannot be carried.`)
+    for (let i = 0; i < n; i++) {
+      if (seg[i]) continue
+      let d = 1
+      while (!seg[i - d] && !seg[i + d]) d++
+      seg[i] = [...(seg[i - d] || seg[i + d])]
+      seg[i].byOrder = true
+      byOrder++
+    }
+    const runs = []
+    for (let i = 0; i < n; i++) {
+      const last = runs[runs.length - 1]
+      const w = seg[i].join(',')
+      const how = seg[i].byOrder ? 'order' : seg[i].oneEnd ? 'one-end' : 'exact'
+      if (last && last._w === w && last._how === how) last.to = i + 1
+      else runs.push({ from: i, to: i + 1, ways: seg[i].slice(), ...(how !== 'exact' && { by: how }), _w: w, _how: how })
+    }
+    for (const r of runs) { delete r._w; delete r._how }
+    s.ways = Object.fromEntries(s.sources.map(id => [id, WAY_TAGS_BY_ID.get(id)]))
+    s.segmentWays = runs
+  }
+  console.log(`\nSource ways carried (full tags, per segment): ${single} segment(s) on single-way chains, ${exact} by exact vertex identity, ${oneEnd} by one exact end, ${byOrder} by order along the chain`)
+}
 
 // A chain's class: the length-weighted vote over its OWN source ways' classes (the same vote
 // `chainHighway` takes over `highway`), ties to the table's order. ⛔ A chain whose sources hold
@@ -1940,9 +2000,17 @@ function main() {
   WAY_TAGS_BY_ID = new Map(highways.map(f => [f.osmId, f.tags || {}]))
   WAY_LEN_BY_ID = new Map(highways.map(f => [f.osmId, polylineLengthXZ(f.coords)]))
   WAY_CLASS_BY_ID = new Map(highways.map(f => [f.osmId, wayClass.get(f.osmId)]))
+  WAY_COORDS_BY_ID = new Map(highways.map(f => [f.osmId, f.coords]))
 
   const { groups, unnamed } = groupByName(highways)
   console.log(`       ${groups.size} unique names, ${unnamed.length} unnamed`)
+  // ⛔ A DROP PRINTS BY ITS RULE, EVERY POUR (Jacob, 2026-10-20: "keeping as much as we take in"). The
+  // EXCLUDE_FROM_STREETS names reach no chain and no path. That list is LS proper nouns; its ways belong
+  // in paths[] by class, which is the held step 2 of BRIEF-the-classifier, so until then the drop is loud.
+  for (const name of EXCLUDE_FROM_STREETS) {
+    const ways = groups.get(name)
+    if (ways) console.log(`  ⛔ dropped ${ways.length} way(s) named "${name}" (EXCLUDE_FROM_STREETS, a name list): in no chain and no path`)
+  }
 
   // Node graph over ALL fragments for the split/rejoin trace (gate (c) of the
   // data-first carriageway gates). Built once, threaded to both pairing sites.
@@ -2744,6 +2812,8 @@ function main() {
     if (prev) throw new Error(`[skeleton] ⛔ duplicate chain id "${s.id}": "${prev.name}" (${prev.points?.length ?? 0} pts) and "${s.name}" (${s.points?.length ?? 0} pts). Refusing to write skeleton.json.`)
     idOwner.set(s.id, s)
   }
+
+  carryWays(streets)
 
   // ⭐ The lanes rung, every pour: an untagged chain takes the KIT configuration (2 lanes, 1 if one-way),
   // carried over from before the ruling, not newly ruled (BRIEF-the-classifier §5 ruling 1).

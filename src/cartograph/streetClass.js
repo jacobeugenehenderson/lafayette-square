@@ -62,8 +62,9 @@ export const CLASSES = {
   'driveway':      { network: 'path',   guide: '§1 §11', section: fixed(7.5) },
   'lot-aisle':     { network: 'path',   guide: '§1', section: fixed(7.5) },
   // A `service` way with no subtag (§5 ruling 8: a named service road is not a lot aisle by default; the tags
-  // decide, never the name). PROPOSED, not ruled: it seeds local's section, which is what it painted before.
-  'service-road':  { network: 'path',   guide: null, section: street(10, 8, 1.5, 1.5, 4.5) },
+  // decide, never the name). PROPOSED, not ruled: local's carriageway and a walk with no lawn, which is exactly
+  // what it painted before (the paint's 1.5 m walk; no treelawn gleaned).
+  'service-road':  { network: 'path',   guide: null, section: street(10, 8, 0, 1.5, 4.5) },
   'sidewalk':      { network: 'path',   guide: '§1 §2', section: fixed(3) },   // evidence, not ink
   'crossing':      { network: 'path',   guide: '§7', section: fixed(3) },
   'path':          { network: 'path',   guide: '§1', section: fixed(3) },
@@ -177,6 +178,21 @@ export function classSection(cls, { lanes = null, oneway = false, expressway = f
 
 /** A `lanes` tag the configuration can read: a positive integer, or absent. ⛔ Anything else refuses the pour. */
 export const lanesTagIsReadable = (v) => v == null || /^[1-9][0-9]*$/.test(String(v).trim())
+
+/**
+ * THE CHAIN'S SOURCE RECORD — what `skeleton.js` `carryWays` writes on every chain in `skeleton.json`, so nothing
+ * the intake took in is lost (Jacob, 2026-10-20). Paint reads none of it; it reads `class` and the columns above.
+ *   chain.sources      [osmId, …]                   the chain's ways (unchanged; every consumer keys on it)
+ *   chain.ways         { [osmId]: tags }             each source way's FULL raw tags, verbatim from osm.json
+ *   chain.segmentWays  [{ from, to, ways, by? }, …]  runs over segment indices [from, to) of `chain.points`;
+ *                      `ways` = the osmIds that segment came from (two when it spans a way joint). `by` is
+ *                      absent when both ends sit exactly on a source way's vertices; 'one-end' when only one
+ *                      does; 'order' when neither does and the run takes its neighbour's ways along the chain
+ *                      (never by distance). A chain of one way is that way end to end.
+ *   path.tags          a path (one way) carries its full tags already.
+ * A way dropped from the record is dropped by a NAMED rule that prints every pour (not-built; the
+ * EXCLUDE_FROM_STREETS name list until step 2). ▶ node scratch/style-guide/classifier-tag-census.mjs <town> <skeleton>
+ */
 
 /** The table's order, for a deterministic tie-break in a chain's vote. */
 export const CLASS_ORDER = Object.keys(CLASSES)
