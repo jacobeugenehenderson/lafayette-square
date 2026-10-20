@@ -21,13 +21,26 @@
 // edge on each line lies on the ASPHALT's edge (within 1 cm), not on curb; and no painted curb overlaps a painted cut by
 // more than 25 cm² at a corner (`OVTOL`: the two are cut from one band, so their shared edge rounds by a millimetre; a curb
 // left standing in front of a cut is ~2000 cm²). The cut's ENDS are read on the asphalt's edge, where it meets the road.
+// ⭐ AND THE CUT IS A SIMPLE SHAPE (Jacob, 2026-10-18: "the ramps need to be extensions of the sidewalks"; "a geometrically
+// simple shape"). A perpendicular cut's BACK is square to its walk, `warningDepth` back from where its side line that reaches
+// the road FIRST meets it (Boz, 2026-10-18: full width at the kerb): on its two side lines the painted cut runs back from the
+// pavement's edge, the shorter run that far (−1 / +3 cm: read 2 cm inside the line; at least that far on a united pad). A diagonal cut is a band of constant depth from the
+// pavement's edge: no point deeper than `warningDepth` (1 cm), its inner edge at that depth. No two of a corner's cut
+// pieces stand apart by a hairline (under 1 cm). TWO RAMPS ON ONE ARC (Boz's ruling, 2026-10-18): drawn as two pieces only
+// where lawn or land use reaches the curb along that arc between them; else they are one pad.
+// ⭐ AND EVERY WALK THAT REACHES THE KERB GETS ITS RAMP (`f-prowag-curb-ramp-per-crosswalk`, R203.6.1.1: "one curb ramp or
+// blended transition shall be provided for each crosswalk"; Jacob, 2026-10-18: "both sidewalks get full ramps"). Along each
+// perpendicular corner that drew fewer ramps than it has walks (the painter's own count, `walks` / `ramps`), no painted walk
+// meets the curb bare along its arc (`arcPts`, tangent to tangent; 5 cm kept clear of each tangent): there, a walk reaches the
+// kerb with no ramp. (Bare walk beside the curb at a corner whose every walk has its ramp is the curb between two ramps.)
 // PRINTS: per town, landings and sides judged, cuts and ends judged, and the perpendicular corners whose legs meet more than
 // 10° off square — the case where "parallel to the leg" and "square across the street" part (the crosswalk's ruling meets it).
 //   [LIST=1] node checks/claims-a-perpendicular-landing-runs-straight-on.mjs [scene…] [--painter=<tileGround copy>] [--live-norm]
 //   (LIST: every red · --live-norm: the norm the pour would freeze now, for a town whose pour predates it)
 // SEEN RED on plan (2) (c825e04e: radial landings, sides on the arc's normals). MUTATION: give `legExt` a direction rotated
 // off the edge's own — red. The ends row: SEEN RED on a89e3c36 (a norm-width piece centred on a re-solved contact);
-// MUTATION: shift each cut 0.3 m along its kerb — red. The through-curb rows: SEEN RED on 38d03e41 (the cut stopped at the
+// MUTATION: shift each cut 0.3 m along its kerb — red. The shape rows: SEEN RED on ee9c19c7 and on the uncommitted
+// along-the-walk and road-edge-band builds; MUTATION: the pad rule off (two ramps never united) — red. The through-curb rows: SEEN RED on 38d03e41 (the cut stopped at the
 // curb's inner edge); MUTATIONS: stop the cut at the curb's inner edge — red; leave the curb painted under it — red.
 import { pathToFileURL } from 'node:url'
 import { resolve } from 'node:path'
@@ -116,7 +129,7 @@ for (const scene of named.length ? named : ribbonScenes()) {
       if (Math.hypot(...e) < MINLEN || ang(e, u) > TOL || segD(r.at, p0, q0) > 4) continue
       offs.push(p0[0] * nr[0] + p0[1] * nr[1]) }
     const L = { r, nr, offs }; lineCache.set(r, L); return L }
-  let cutsJudged = 0, endsJudged = 0, ovMax = 0
+  let cutsJudged = 0, endsJudged = 0, ovMax = 0, backMax = 0
   const badEnds = []
   for (const c of corners) {
     const near = (g) => g.some(([x, z]) => c.recs.some(r => Math.abs(x - r.at[0]) < 6 && Math.abs(z - r.at[1]) < 6))
@@ -152,6 +165,42 @@ for (const scene of named.length ? named : ribbonScenes()) {
     // cut's kerb edge — touched at an end, or crossed where it joins the other walk's cut
     const kerbEdges = []; for (const g of nCut) for (let i = 0; i < g.length; i++) { const a = g[i], b = g[(i + 1) % g.length]
       if (onCurb(mid(a, b), segs)) kerbEdges.push([a, b]) }
+    // A SIMPLE SHAPE. Diagonal: no point deeper than the warning depth from the pavement's edge, its inner edge at it.
+    // Perpendicular: on the walk's centre line, the cut runs back the warning depth from the pavement's edge (checked below,
+    // with the side lines). Every style: no hairline between a corner's pieces.
+    const WD = f.ribbons.curbCutNorm?.warningDepth
+    const aS = []; for (const g of (R.asphalt || []).filter(near)) for (let i = 0; i < g.length; i++) aS.push([g[i], g[(i + 1) % g.length]])
+    if (WD > 0 && nCut.length && c.recs.every(r => r.style === 'diagonal')) {
+      let deep = 0, atDepth = 0
+      for (const g of nCut) for (const P of g) { const dd = Math.min(...aS.map(([u, v]) => segD(P, u, v))); deep = Math.max(deep, dd); if (Math.abs(dd - WD) < 0.01) atDepth++ }
+      if (deep > WD + 0.01) badEnds.push(`${tag}: its diagonal cut reaches ${deep.toFixed(2)} m from the pavement's edge, deeper than the warning depth ${WD} m`)
+      else if (!atDepth) badEnds.push(`${tag}: no part of its diagonal cut reaches the warning depth ${WD} m from the pavement's edge`)
+    }
+    { const raw = mine.filter(g => c.recs.some(r => ringD(r.at, g) <= 1))
+      for (let i = 0; i < raw.length; i++) for (let j = i + 1; j < raw.length; j++) { let m = Infinity
+        for (const P of raw[i]) m = Math.min(m, ringD(P, raw[j])); for (const P of raw[j]) m = Math.min(m, ringD(P, raw[i]))
+        if (m > 1e-3 && m < 0.01) badEnds.push(`${tag}: two pieces of its cut stand ${(m * 1000).toFixed(0)} mm apart — touching ramps are one cut`) } }
+    // TWO RAMPS ON ONE ARC: two pieces only where lawn or land use reaches the curb between them
+    const cc = (R.curbCutCorners || []).find(k => k.si === c.si && k.arc === c.arc && k.arcPts && Math.hypot(k.at[0] - c.at[0], k.at[1] - c.at[1]) < 20)
+    if (c.recs.length === 2 && cc) {
+      const pieceOf = (r) => nCut.findIndex(g => ringD(r.at, g) <= 0.5)
+      if (pieceOf(c.recs[0]) >= 0 && pieceOf(c.recs[1]) >= 0 && pieceOf(c.recs[0]) !== pieceOf(c.recs[1])) {   // (a record with no paint is its own row)
+        // the stretch of the arc BETWEEN the two pieces: each piece's span along the arc (its points within 0.6 m of it)
+        const A = cc.arcPts, cum = [0]; for (let k = 1; k < A.length; k++) cum.push(cum[k - 1] + Math.hypot(A[k][0] - A[k - 1][0], A[k][1] - A[k - 1][1]))
+        const onArc = (m) => { let best = { d: Infinity, s: 0 }; for (let k = 1; k < A.length; k++) { const a = A[k - 1], b = A[k], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+          const t = L2 ? Math.max(0, Math.min(1, ((m[0] - a[0]) * dx + (m[1] - a[1]) * dz) / L2)) : 0, d = Math.hypot(m[0] - a[0] - t * dx, m[1] - a[1] - t * dz)
+          if (d < best.d) best = { d, s: cum[k - 1] + t * Math.sqrt(L2) } } return best }
+        const span = (g) => { const ss = g.map(onArc).filter(o => o.d < 0.6).map(o => o.s); return ss.length ? [Math.min(...ss), Math.max(...ss)] : null }
+        const s1 = span(nCut[pieceOf(c.recs[0])]), s2 = span(nCut[pieceOf(c.recs[1])])
+        const gap = s1 && s2 ? (s1[1] < s2[0] ? [s1[1], s2[0]] : s2[1] < s1[0] ? [s2[1], s1[0]] : null) : null
+        const cS = []; for (const g of (R.curb || []).filter(near)) for (let i = 0; i < g.length; i++) cS.push([g[i], g[(i + 1) % g.length]])
+        const green = [...Object.values(R.treelawnByLu || {}).flat(), ...Object.values(R.luByClass || {}).flat()].filter(near)
+        let touch = gap ? 0 : 1      // pieces overlapping along the arc without uniting are a hairline, judged above
+        if (gap) for (const g of green) for (let i = 0; i < g.length; i++) { const a = g[i], b = g[(i + 1) % g.length], m = mid(a, b), o = onArc(m)
+          if (o.d < 0.6 && o.s > gap[0] && o.s < gap[1] && cS.some(([u, v]) => segD(m, u, v) < 0.005)) touch += Math.hypot(b[0] - a[0], b[1] - a[1]) }
+        if (touch < 0.01) badEnds.push(`${tag}: two ramps on one arc drawn apart with only walk or curb between them — they are one pad`)
+      }
+    }
     // THROUGH THE CURB: on five lines across the walk, the cut's outermost crossing (toward the road) lies on the asphalt
     const asph = (R.asphalt || []).filter(near), curbs = (R.curb || []).filter(near)
     const ov = curbs.length && nCut.length ? area(intersectRings(curbs, nCut)) : 0
@@ -160,6 +209,25 @@ for (const scene of named.length ? named : ribbonScenes()) {
     for (const L of lines) { const oAt = L.r.at[0] * L.nr[0] + L.r.at[1] * L.nr[1]
       const lo = Math.max(...L.offs.filter(v => v < oAt)), hi = Math.min(...L.offs.filter(v => v > oAt))
       if (!Number.isFinite(lo) || !Number.isFinite(hi)) continue
+      // the perpendicular cut's BACK: square to the walk, the warning depth back from where the side line that reaches the
+      // road FIRST meets it — so on each of its two side lines (2 cm inside, from its face ends) the cut runs back from the
+      // pavement's edge, and the SHORTER of the two runs is the warning depth (1 cm; at least that on a united pad)
+      if (WD > 0 && L.r.style !== 'diagonal' && L.r.face) {
+        const ua = unit(L.r.along), [FA, FB] = L.r.face, lf = Math.hypot(FB[0] - FA[0], FB[1] - FA[1]) || 1, fu = [(FB[0] - FA[0]) / lf, (FB[1] - FA[1]) / lf]
+        const runOn = (O) => { const oc = O[0] * L.nr[0] + O[1] * L.nr[1], ts = []
+          for (const g of nCut) for (let i = 0; i < g.length; i++) { const a = g[i], b = g[(i + 1) % g.length]
+            const oa = a[0] * L.nr[0] + a[1] * L.nr[1] - oc, ob = b[0] * L.nr[0] + b[1] * L.nr[1] - oc
+            if ((oa > 0) === (ob > 0) || oa === ob) continue
+            const t0 = oa / (oa - ob), X = [a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0], t = (X[0] - O[0]) * ua[0] + (X[1] - O[1]) * ua[1]
+            if (t > -0.5 && t < 4) ts.push(t) }                          // from its own face on, never a cut across the street
+          ts.sort((p2, q2) => p2 - q2); return ts.length >= 2 ? ts[1] - ts[0] : null }   // the first interval from the pavement end
+        const r1 = runOn([FA[0] + fu[0] * 0.02, FA[1] + fu[1] * 0.02]), r2 = runOn([FB[0] - fu[0] * 0.02, FB[1] - fu[1] * 0.02])
+        const own = (R.curbCutCorners || []).filter(k => k.si === L.r.si && k.arc === L.r.arc && k.arcPts).sort((p2, q2) => Math.hypot(p2.at[0] - L.r.at[0], p2.at[1] - L.r.at[1]) - Math.hypot(q2.at[0] - L.r.at[0], q2.at[1] - L.r.at[1]))[0]
+        if (r1 != null && r2 != null) { const run = Math.min(r1, r2), pad = own?.pad === 'one'
+          backMax = Math.max(backMax, Math.abs(run - WD) * (pad ? 0 : 1))
+          // 3 cm over: the run is read 2 cm inside the side line, which on a slanted landing meets the road a little later
+          if (run < WD - 0.01 || (!pad && run > WD + 0.03)) badEnds.push(`${tag}: its ramp's shorter side runs ${run.toFixed(2)} m back from the pavement, not the warning depth ${WD} m`) }
+      }
       const u = [L.nr[1], -L.nr[0]], ua = unit(L.r.along), sg = Math.sign(u[0] * ua[0] + u[1] * ua[1]) || 1, au = [u[0] * sg, u[1] * sg]
       let short = 0
       for (let k = 1; k <= 5; k++) { const o = lo + (hi - lo) * k / 6, base = L.r.at, q0 = base[0] * L.nr[0] + base[1] * L.nr[1]
@@ -181,13 +249,34 @@ for (const scene of named.length ? named : ribbonScenes()) {
       const n = [lo, hi].filter(reach).length
       if (n < 2) badEnds.push(`${tag}: a cut reaching ${n} of its walk's two side lines at the kerb — it does not span its walk`) }
   }
+  // ── every walk reaching the kerb is ramped: no bare walk on the curb along a perpendicular corner's arc ──────────────
+  const bare = []
+  for (const c of (R.curbCutCorners || []).filter(c => c.wedge && c.arcPts?.length > 1 && (c.walks || 0) > (c.ramps || 0))) {
+    const A = c.arcPts, near = (g) => g.some(([x, z]) => Math.abs(x - c.at[0]) < 8 && Math.abs(z - c.at[1]) < 8)
+    const cum = [0]; for (let i = 1; i < A.length; i++) cum.push(cum[i - 1] + Math.hypot(A[i][0] - A[i - 1][0], A[i][1] - A[i - 1][1]))
+    const onArc = (m) => { let best = { d: Infinity, s: 0 }; for (let i = 1; i < A.length; i++) { const a = A[i - 1], b = A[i], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+      const t = L2 ? Math.max(0, Math.min(1, ((m[0] - a[0]) * dx + (m[1] - a[1]) * dz) / L2)) : 0, d = Math.hypot(m[0] - a[0] - t * dx, m[1] - a[1] - t * dz)
+      if (d < best.d) best = { d, s: cum[i - 1] + t * Math.sqrt(L2) } } return best }
+    const cS = []; for (const g of (R.curb || []).filter(near)) for (let i = 0; i < g.length; i++) cS.push([g[i], g[(i + 1) % g.length]])
+    const kS = []; for (const g of (R.curbCut || []).filter(near)) for (let i = 0; i < g.length; i++) kS.push([g[i], g[(i + 1) % g.length]])
+    let m2 = 0
+    for (const g of (R.sidewalk || []).filter(near)) for (let i = 0; i < g.length; i++) { const a = g[i], b = g[(i + 1) % g.length]
+      if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.02) continue
+      const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], o = onArc(m)
+      if (o.d > 0.6 || o.s < 0.05 || o.s > cum[cum.length - 1] - 0.05) continue
+      if (cS.some(([u, v]) => segD(m, u, v) < 0.005) && !kS.some(([u, v]) => segD(m, u, v) < 0.005)) m2 += Math.hypot(b[0] - a[0], b[1] - a[1]) }
+    if (m2 > 0.05) bare.push(`(${c.at[0].toFixed(1)}, ${c.at[1].toFixed(1)}): ${m2.toFixed(2)} m of walk meets the curb bare along the arc — a walk reaching the kerb with no ramp`)
+  }
+  console.log(`   ${bare.length ? `⛔ RED — ${bare.length} perpendicular corner(s) where a walk reaches the kerb with no ramp` : '✅ every walk reaching the kerb at a perpendicular corner is ramped'}`)
+  for (const b of process.env.LIST ? bare : bare.slice(0, 6)) console.log(`   ✗ ${b}`)
+  if (bare.length) red = true
   const pairs = corners.filter(c => c.recs.length === 2 && legOf(c.recs[0]) !== legOf(c.recs[1]))   // its two legs' landings
   const oblique = pairs.map(c => 90 - ang(c.recs[0].along, c.recs[1].along)).filter(d => d > 10)
   console.log(`── ${scene}   ${bad.length ? `⛔ RED — ${bad.length} landing side(s) not parallel to their leg` : '✅ every landing side runs on its leg'}`)
   console.log(`   ${corners.length} perpendicular corner(s), ${corners.filter(both).length} with both legs landed (the rest NOT JUDGED) · ${judged} landing(s) with walk in their window · ${sides} side(s) judged (≤ ${TOL}° to a leg)`)
   console.log(`   corners with both landings more than 10° off square: ${oblique.length} of ${pairs.length}${oblique.length ? ` (up to ${Math.max(...oblique).toFixed(0)}° off)` : ''}`)
   for (const b of process.env.LIST ? bad : bad.slice(0, 6)) console.log(`   ✗ ${b}`)
-  console.log(`   ${badEnds.length ? `⛔ RED — ${badEnds.length} cut end(s) off their walk's side lines` : '✅ every cut is its walk\'s end'} · ${cutsJudged} cut(s), ${endsJudged} end(s) judged (≤ ${ENDTOL} m to a side line, two lines) · curb inside a cut at most ${(ovMax * 1e4).toFixed(0)} cm² (≤ ${(OVTOL * 1e4).toFixed(0)})`)
+  console.log(`   ${badEnds.length ? `⛔ RED — ${badEnds.length} cut end(s) off their walk's side lines` : '✅ every cut is its walk\'s end'} · ${cutsJudged} cut(s), ${endsJudged} end(s) judged (≤ ${ENDTOL} m to a side line, two lines) · curb inside a cut at most ${(ovMax * 1e4).toFixed(0)} cm² (≤ ${(OVTOL * 1e4).toFixed(0)}) · a single ramp's back at most ${(backMax * 100).toFixed(1)} cm off the warning depth`)
   const cls = {}; for (const b of badEnds) { const k = b.replace(/^\([^)]*\): /, '').replace(/[\d.]+ m off/, '… m off'); (cls[k] ||= []).push(b.match(/^\([^)]*\)/)?.[0]) }
   for (const [k, v] of Object.entries(cls)) console.log(`     ${v.length} × ${k} (${new Set(v).size} corner(s)), e.g. ${[...new Set(v)].slice(0, 3).join(' ')}`)
   if (process.env.LIST) for (const b of badEnds.filter(b => !b.includes("no painted cut"))) console.log(`   · ${b}`)
