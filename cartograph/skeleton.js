@@ -476,6 +476,42 @@ function splitAtFolds(chains) {
   return out
 }
 
+// ⭐ A NAME GROUPS WAYS ONLY WITHIN ONE NETWORK (BRIEF-the-classifier §5 ruling 9). A welded chain whose
+// segments come from ways of different NETWORKS (a footway or a lot aisle welded into a street because they
+// share its name) is cut where the network changes, the way `splitAtFolds` cuts at a fold. ⛔ IDS ARE AUTHORING
+// KEYS, SO NO OTHER CHAIN MOVES: the chain's longest street-network piece (or its longest piece, if it has no
+// street piece) stays at the chain's place and keeps its id; the other pieces are returned as `extras`, which
+// the caller numbers AFTER every existing chain of the group.
+// ▶ node checks/claims-authored-skelids-keep-their-ways.mjs (must stay green)
+function splitAcrossNetworks(chains) {
+  const kept = [], extras = []
+  const netOf = (id) => CLASSES[WAY_CLASS_BY_ID.get(id).class].network
+  const lenOf = (c) => { let L = 0; for (let j = 1; j < c.length; j++) L += Math.hypot(c[j].x - c[j - 1].x, c[j].z - c[j - 1].z); return L }
+  for (const chain of chains) {
+    const seg = chain.segSources
+    const cuts = [0]
+    if (seg) for (let j = 1; j < seg.length; j++) if (netOf(seg[j]) !== netOf(seg[j - 1])) cuts.push(j)
+    if (cuts.length === 1) { kept.push(chain); continue }
+    cuts.push(chain.coords.length - 1)
+    const slices = []
+    for (let i = 0; i < cuts.length - 1; i++) slices.push({
+      coords: chain.coords.slice(cuts[i], cuts[i + 1] + 1),
+      sources: sliceSources(chain, cuts[i], cuts[i + 1]),
+      segSources: seg.slice(cuts[i], cuts[i + 1]),
+      net: netOf(seg[cuts[i]]),
+    })
+    const pool = slices.some(x => x.net === 'street') ? slices.filter(x => x.net === 'street') : slices
+    const keeper = pool.reduce((a, b) => (lenOf(b.coords) > lenOf(a.coords) ? b : a))
+    const isDivided = chain.signature === 'divided-A' || chain.signature === 'divided-B'
+    for (const x of slices) {
+      const { net, ...slice } = x
+      if (x === keeper) kept.push({ ...chain, ...slice })
+      else extras.push({ ...chain, ...slice, ...(isDivided && { signature: 'single-bidi', pairKey: null, oneway: false }) })
+    }
+  }
+  return { kept, extras }
+}
+
 // signatureByOsmId: Map<osmId, 'divided-A'|'divided-B'|'single-oneway'|'single-bidi'>.
 // pairKeyByOsmId: Map<osmId, pairKey> for divided fragments — null otherwise.
 // Welds are gated on (signature, pairKey) equality. Signature alone forbids
@@ -2072,6 +2108,7 @@ function main() {
     'single-oneway': { kind: 'single',  role: 'spine' },
     'single-bidi':   { kind: 'single',  role: 'spine' },
   }
+  const crossNetworkCuts = []
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
     const preMerge = splitAtFolds(weldChains(fragments, signatureByOsmId, pairKeyByOsmId))
@@ -2104,13 +2141,17 @@ function main() {
         c.sources.some(id => preDividedIds.has(id)))
       chains = orphaned ? preMerge : merged
     }
+    // Ruling 9: cut any chain that welded across networks; the cut pieces number after the group (ids stable).
+    const { kept, extras } = splitAcrossNetworks(chains)
+    if (extras.length) crossNetworkCuts.push(`${name} +${extras.length}`)
+    const N = kept.length
     // One street per surviving chain. Divided roads emit two streets
     // (one per carriageway) — medians are emergent downstream.
-    chains.forEach((c, i) => {
+    ;[...kept, ...extras].forEach((c, i) => {
       const sig = c.signature || 'single-bidi'
       const ph = SIG_TO_PHASE[sig] || SIG_TO_PHASE['single-bidi']
       streets.push(makeStreet(
-        chains.length === 1 ? slugify(name) : `${slugify(name)}-${i}`,
+        i === 0 && N === 1 ? slugify(name) : `${slugify(name)}-${i}`,
         name, fragments[0].tags, c,
         // Phase metadata: derived from signature so downstream (Phase 4
         // derive, Phase 5 knit) consumes phase shape directly instead of
@@ -2130,6 +2171,8 @@ function main() {
       ))
     })
   }
+
+  if (crossNetworkCuts.length) console.log(`\nChains welded across networks, cut (ruling 9; ids kept, pieces numbered after their group): ${crossNetworkCuts.length} — ${crossNetworkCuts.join(' · ')}`)
 
   // ⭐ CLASS DECIDES, NOT NAME (ROADMAP A19, Jacob 2026-09-20). A public road
   // is a street whether or not OSM named it — US 6's unnamed expressway through
