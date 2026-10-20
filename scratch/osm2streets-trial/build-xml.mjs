@@ -15,7 +15,15 @@ for (const town of towns) {
   const D = `cartograph/data/${town}`, o = JSON.parse(fs.readFileSync(`${D}/raw/osm.json`, 'utf8')), g = JSON.parse(fs.readFileSync(`${D}/geography.json`, 'utf8'))
   const B = JSON.parse(fs.readFileSync(`${D}/neighborhood_boundary.json`, 'utf8')).boundary
   if (!Array.isArray(B) || B.length < 3) { console.log(`⛔ ${town}: no Extent boundary — not built`); continue }
-  const ways = o.ground?.highway || []
+  // ⛔ NOT EVERY highway RECORD IS A WAY. A multipolygon RELATION (osmType 'relation') arrives as one record per ring, each carrying
+  // the relation's id, so it is left out — named and counted, never merged into a way. A way recorded twice with byte-identical
+  // geometry and tags is one way. A way recorded twice with DIFFERENT geometry or tags refuses the town by id.
+  const all = o.ground?.highway || [], rel = all.filter(w => w.osmType === 'relation'), seen = new Map(), ways = []
+  let twins = 0; const clash = []
+  for (const w of all) { if (w.osmType === 'relation') continue
+    const sig = JSON.stringify([w.coords.map(c => [c.lon, c.lat]), w.tags]), prev = seen.get(w.osmId)
+    if (prev == null) { seen.set(w.osmId, sig); ways.push(w) } else if (prev === sig) twins++; else clash.push(w.osmId) }
+  if (clash.length) { console.log(`⛔ ${town}: way id(s) recorded twice with different geometry or tags: ${[...new Set(clash)].join(', ')} — not built`); continue }
   const poiAt = new Map(); for (const p of o.pois || []) if (p.osmType === 'node' && p.coords?.length === 1) { const k = `${p.coords[0].lon},${p.coords[0].lat}`; if (!poiAt.has(k)) poiAt.set(k, p) }
   const nodes = new Map()             // lon,lat → { id, lon, lat, x, z, tags }
   let real = 0
@@ -32,5 +40,5 @@ for (const town of towns) {
   const ll = B.map(([x, z]) => [x / g.lonToMeters + g.lon, g.lat - z / g.latToMeters]); if (ll[0][0] !== ll.at(-1)[0] || ll[0][1] !== ll.at(-1)[1]) ll.push(ll[0])
   fs.writeFileSync(`${OUT}/${town}.clip.geojson`, JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [ll] } }] }))
   fs.writeFileSync(`${OUT}/${town}.nodes.json`, JSON.stringify([...nodes.values()].map(n => [n.id, n.lon, n.lat, n.x, n.z])))
-  console.log(`── ${town}: ${ways.length} ways · ${nodes.size} nodes (${real} with a POI's real id + tags) · clip ${B.length} pts · ${(fs.statSync(`${OUT}/${town}.osm`).size / 1e6).toFixed(1)} MB`)
+  console.log(`── ${town}: ${ways.length} ways (${twins} identical repeat record(s) folded · ${rel.length} relation record(s) left out${rel.length ? `: ${[...new Set(rel.map(r => `${r.osmId} ${r.tags?.name ?? ''}`.trim()))].join(', ')}` : ''}) · ${nodes.size} nodes (${real} with a POI's real id + tags) · clip ${B.length} pts · ${(fs.statSync(`${OUT}/${town}.osm`).size / 1e6).toFixed(1)} MB`)
 }
