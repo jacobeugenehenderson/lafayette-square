@@ -49,7 +49,8 @@
           "letter": "Drafted 2026-10-18 by Plat with Jacob, as a Gmail draft in Jacob's account; NOT SENT — Jacob sends. Local copy (gitignored): references/files/letters/request-modot.md. Asks for permission covering the current maps and the ones that follow in the state, says the maps are part of a commercial product (neighborhoods and organizations pay to host them; the public uses them free), and that the studio builds maps all over the country.",
           "to": "NOT FOUND (2026-10-18): modot.org lists no general email — only the Ask MoDOT line 1-888-275-6636, a contact web form at modot.org/contact-us, and department/district inboxes. Ask MoDOT where permission requests go, or paste the letter into the form."
         },
-        "previously": "unchecked-no-terms-found (2026-09-23, Boz): No copyright or terms-of-use text found on the EPG About or General_disclaimer pages; its Privacy_policy page 404'd; modot.org has public-records pages but no content-reuse terms. Absence of terms is NOT permission."
+        "previously": "unchecked-no-terms-found (2026-09-23, Boz): No copyright or terms-of-use text found on the EPG About or General_disclaimer pages; its Privacy_policy page 404'd; modot.org has public-records pages but no content-reuse terms. Absence of terms is NOT permission.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE",
       "localCopy": null
@@ -352,7 +353,8 @@
         "federalWork": "The standards page is ADA.gov, headed \"U.S. Department of Justice Civil Rights Division\" and \"An official website of the United States government\" (https://www.ada.gov/law-and-regs/design-standards/2010-stds/). A US Government work, 17 USC 105.",
         "exception": "Third-party material: §105 of the Standards incorporates by reference copyrighted private standards (ANSI/BHMA A156.10 and A156.19, ASME A17.1 and A18.1, among others listed in §105.2), \"part of the requirements to the prescribed extent of each such reference.\" Those standards are NOT public domain and are not reproduced here; never cite a value that lives only in them. Skip any figure or photo credited to a non-federal source.",
         "note": "Status set by the terms agent, not yet approved by Jacob (the federal-works standing acceptance on prowag-2023 likely covers it — Jacob to confirm). ⚠ While checking for the third-party list, the agent's text grep of the standards page printed fragments of §105 and some Title III scoping text; nothing else was read.",
-        "previously": "unchecked (never, —): Federal regulation — likely public domain; URL and terms owed."
+        "previously": "unchecked (never, —): Federal regulation — likely public domain; URL and terms owed.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE",
       "localCopy": null
@@ -416,7 +418,8 @@
         "source": "https://nacto.org/legal/",
         "note": "Read from the Wayback Machine snapshot of NACTO's own page (http://web.archive.org/web/20260719033334/https://nacto.org/legal/, 'Statement of Privacy & Terms of Use'); nacto.org returns 403 to fetch. Personal use only; no download; no commercial use without written permission. The print edition (Island Press, 2013) was not checked separately.",
         "route": "Written request to nacto@nacto.org (the address the terms name).",
-        "previously": "unchecked (2026-09-23, Boz): nacto.org returned 403 to fetch; a search showed only a generic 'all rights reserved unless otherwise indicated'. Private publisher — treat as NOT permitted until someone reads its terms on the site or asks NACTO."
+        "previously": "unchecked (2026-09-23, Boz): nacto.org returned 403 to fetch; a search showed only a generic 'all rights reserved unless otherwise indicated'. Private publisher — treat as NOT permitted until someone reads its terms on the site or asks NACTO.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — terms owed (the kit's ped defaults are attributed to it in OSM-FORENSICS Part 4)",
       "localCopy": null
@@ -437,7 +440,8 @@
         "quote": "Customer may take Online Services basemaps offline through Esri Content Packages and subsequently deliver (transfer) them to any device for use with licensed ArcGIS Runtime applications and ArcGIS Desktop. Customer may not otherwise scrape, download, or store Data. (Master Agreement E204, §3.2(c), August 1, 2025.) Also, from Esri's terms-of-use summary for Esri-owned items: \"YOU MAY NOT Systematically harvest basemap tiles through any method other than using Esri Content Packages · Redistribute basemap tiles · Download, redistribute or self-host any content hosted by Esri.\"",
         "source": "https://assets.esri.com/content/dam/esrisites/en-us/media/legal/ma-full/ma-full.pdf",
         "note": "The item's licenseInfo (ArcGIS REST, item 10df2279f9684e4a9f6a7f08febac2a9) reads \"This work is licensed under the Esri Master License Agreement\" and links to the summary (https://www.esri.com/content/dam/arcgisonline/docs/tou_summary.pdf, updated April 21, 2025) and the Master Agreement. Licensed use is \"with the Products for which Esri has provided the Data\" (§3.2(a)) and needs an Esri licence. MEASURING from it (downloading tiles, an agent judging rendered tiles) is prohibited; display in the app is a separate licensing question, not settled here. Attribution: \"Esri, Vantor, Earthstar Geographics, and the GIS User Community\".",
-        "previously": "unchecked (never, —): Displaying it is one thing; MEASURING or extracting data from it (including an agent judging rendered tiles) is another, and its terms have not been read. Treat as not permitted for measurement."
+        "previously": "unchecked (never, —): Displaying it is one thing; MEASURING or extracting data from it (including an agent judging rendered tiles) is another, and its terms have not been read. Treat as not permitted for measurement.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — terms owed before any measurement rests on it",
       "localCopy": null
@@ -935,7 +939,8 @@
         "source": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
         "ambiguity": "Use is permitted (a US Government work, \"generally are not subject to copyright in the United States\"), but NASA forbids attributing AI-derived information to NASA, and README rule 2 requires a finding to carry its source id. The two cannot both hold, so the source cannot be cited as the kit cites. Not permitted until Jacob rules on the conflict — the 'permission' needed is his ruling, not NASA's. proposedAiUse stays 'permitted' if he rules a finding may carry this id.",
         "proposedAiUse": "permitted",
-        "previously": "unchecked (2026-09-27, Gloaming's terms agent, 2026-09-27: fetched (AI section pulled verbatim via curl)): Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+        "previously": "unchecked (2026-09-27, Gloaming's terms agent, 2026-09-27: fetched (AI section pulled verbatim via curl)): Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — terms checked, awaiting Jacob's approval (attribution conflict)"
     },
@@ -1175,7 +1180,8 @@
         "ambiguity": "Copyright is claimed and no licence is given; robots.txt disallows every PDF (Plat, 2026-10-17). Not permitted.",
         "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read.",
         "route": "Written request to the President of the Board of Public Service, City of St. Louis.",
-        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): robots.txt: \"User-agent: *\" … \"Disallow: /*.pdf$\" — automated retrieval of every city standard (all PDFs) is disallowed. Companion: 2026 Standard Specifications for Public Works Construction (same office, same terms). Best local candidate for the nose."
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): robots.txt: \"User-agent: *\" … \"Disallow: /*.pdf$\" — automated retrieval of every city standard (all PDFs) is disallowed. Companion: 2026 Standard Specifications for Public Works Construction (same office, same terms). Best local candidate for the nose.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
       "localCopy": null
@@ -1243,7 +1249,8 @@
         "ambiguity": "The terms ANTICIPATE third parties reusing County information (with no-endorsement conditions) but grant no explicit licence, name no copyright status, and say nothing about manuals or AI. Ambiguous, so not permitted — but it is the closest of the local sources to permitted; Jacob to rule.",
         "note": "The live site returns 403 (Cloudflare challenge); the terms were read from the Wayback Machine snapshot of the county's own page, http://web.archive.org/web/20261003214824/https://stlouiscountymo.gov/contact-us/terms-of-use/.",
         "route": "Jacob reads the county site terms in a browser, or asks the county in writing.",
-        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): Every county page, robots.txt included, returns 403 (Cloudflare managed challenge); terms unread. A Florissant-hosted 2019 copy exists — not opened, its terms unchecked."
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): Every county page, robots.txt included, returns 403 (Cloudflare managed challenge); terms unread. A Florissant-hosted 2019 copy exists — not opened, its terms unchecked.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
       "localCopy": null
@@ -1353,7 +1360,8 @@
           "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
           "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
         },
-        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): The city's own PDF (H-PLANZON.pdf, \"January 2019 Replacement\") carries no copyright notice. The AmLegal copy is under the ICC terms (restricted). No city standard drawings found online. ⚠ The terms agent grepped the downloaded PDF for copyright/AASHTO/DOT strings — beyond cover-only; it reported a partial deferral to ODOT's Construction and Materials Specifications. The copy was deleted."
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): The city's own PDF (H-PLANZON.pdf, \"January 2019 Replacement\") carries no copyright notice. The AmLegal copy is under the ICC terms (restricted). No city standard drawings found online. ⚠ The terms agent grepped the downloaded PDF for copyright/AASHTO/DOT strings — beyond cover-only; it reported a partial deferral to ODOT's Construction and Materials Specifications. The copy was deleted.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
       "localCopy": null
@@ -1376,7 +1384,8 @@
         "ambiguity": "All rights reserved, no licence. Not permitted.",
         "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read.",
         "route": "Written request to the Erie Regional Planning Commission.",
-        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): No Erie County Engineer road standards or standard drawings found online. ⚠ As huron-oh-codified-ordinances: a string grep was run on the PDF (it cites ODOT standards repeatedly); copy deleted."
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): No Erie County Engineer road standards or standard drawings found online. ⚠ As huron-oh-codified-ordinances: a string grep was run on the PDF (it cites ODOT standards repeatedly); copy deleted.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
       "localCopy": null
@@ -1399,7 +1408,8 @@
         "ambiguity": "All rights reserved, no licence. Not permitted.",
         "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read. Truro's site carries the same notice (see earlier note).",
         "route": "Written request to the Provincetown Planning Board (and Truro's).",
-        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): No edition date (PDF created 2002). No DPW street standard found. Truro (5% of the disc): 2024 Subdivision Rules and Regulations, https://www.truro-ma.gov/DocumentCenter/View/1053 — \"All content © 2006-2026 Truro, MA and its representatives. All rights reserved.\" (truro-ma.gov/copyright)."
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): No edition date (PDF created 2002). No DPW street standard found. Truro (5% of the disc): 2024 Subdivision Rules and Regulations, https://www.truro-ma.gov/DocumentCenter/View/1053 — \"All content © 2006-2026 Truro, MA and its representatives. All rights reserved.\" (truro-ma.gov/copyright).",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
       "localCopy": null
@@ -1422,7 +1432,8 @@
         "ambiguity": "Copyright claimed, no licence. Not permitted.",
         "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read.",
         "route": "Written request to the Cape Cod Commission.",
-        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): Guidance, not an edict. PDFs 403 to plain fetch."
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): Guidance, not an edict. PDFs 403 to plain fetch.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
       "localCopy": null
@@ -1465,7 +1476,7 @@
         "source": "https://dot.ca.gov/conditions-of-use",
         "ambiguity": "AMBIGUOUS, so NOT permitted: the conditions page grants public domain \"unless otherwise indicated\", and the book's own cover (recorded by Plat 2026-10-17) reads \"© Copyright 2025 California Department of Transportation. All rights reserved.\" That cover notice may be the \"otherwise indicated\". Unchanged until Jacob rules, or Caltrans confirms in writing. The same question applies to caltrans-hdm (see its coverNotice), which stays permitted on Jacob's 2026-09-23 approval.",
         "coverNotice": "The cover of the book itself reads \"© Copyright 2025 California Department of Transportation. All rights reserved.\" (2025 Standard Plans, title page; each errata sheet also carries \"All Rights Reserved\"). The HDM carries the same kind of notice: \"© 2019 California Department of Transportation. All Rights Reserved.\" (front matter). The conditions page says public domain \"unless otherwise indicated\" — whether the cover notice is that indication is Jacob's call. Found 2026-10-17 by Plat, after the approval; nothing past the front matter and table of contents has been read.",
-        "approvedBy": "Jacob, 2026-10-17 (relayed by Boz: \"approve Caltrans plans, hold the letters for now\") — on the conditions page, before the cover notice was known",
+        "approvedBy": "Jacob, 2026-10-20",
         "previously": "unchecked (2026-10-17, Plat (web; terms pages only, no source content read))"
       },
       "status": "APPROVED, HELD — the cover notice goes back to Jacob before extraction",
