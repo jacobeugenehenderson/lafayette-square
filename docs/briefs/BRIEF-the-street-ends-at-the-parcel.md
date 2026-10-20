@@ -1,5 +1,16 @@
 # BRIEF — the street ends at the parcel
 
+<!-- BRIEF-STATE
+status: HOLD
+dispatched: no
+written: 2026-10-18
+evict-when: RULING: Jacob rules the frontage style (style guide §13, Q13.a) and this brief is rewritten as data SELECTING a frontage style, or retired to the Diary.
+-->
+
+> ⛔ **HOLD (Jacob, 2026-10-20: "choose only; the style decides, authoring handles fidelity").** Data selects a style and
+> never measures, so §2's parcel-line cap (the parcel sizing the band) is overruled as written. The parcels and
+> footprints may still SELECT a frontage style (style guide §13). Not dispatchable until that is ruled.
+
 *Jacob, 2026-10-18; written by Boz. Queued for Lath after the narrow-block walk item (`RIBBONS §3.5`, be585d5c).*
 
 ## 0 · What Jacob asked, in his words
