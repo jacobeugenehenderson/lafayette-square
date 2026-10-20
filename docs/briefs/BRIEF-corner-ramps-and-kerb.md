@@ -225,6 +225,7 @@ scene recorded.
   `62955496` + `66547bfb` (Boz's task; `ROADMAP` carries the one open line, Altadena's disc past its bbox).
 
 **Open:** → §3 (the sequence), and:
+- **Intake gap: LS's, HPDM's and Altadena's `raw/osm.json` carry no `pois`, so their signal nodes (and crossing nodes) were never fetched — not "no signals". Re-fetch `pois` at each town's next intake; no fetch until then.** ▶ `node scratch/perp-depths/signals/count.mjs <scene> --corners`
 - ⏸ **PARKED by Jacob's call, 2026-10-07 ("not right now"): a click-to-open corner popover in Survey** (radius slider ·
   Corner / Not a corner · Revert), replacing ⌥-click. Nothing built; today's controls are the handle's drag + ⌥-click.
 - **The perpendicular corner: straight extension thru, built 2026-10-18 (Loess, branch `loess/perp-depths`, unmerged).**
