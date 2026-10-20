@@ -4,8 +4,8 @@
 `ListAgents`, then `/rename`). **Agent: FRESH**: the work needs eyes not anchored by the months of chain-world work.
 Boz is your report line (`SendMessage`).
 
-*Jacob, 2026-10-19 ("write the master classifier brief"); written by Boz. ⛔ **Not dispatched**: it waits on Jacob's
-rulings in §5. It depends on `scratch/style-guide/STYLE-GUIDE.draft.md`, which is a draft and replaces nothing yet.*
+*Jacob, 2026-10-19 ("write the master classifier brief"); written by Boz. §5 was ruled by Jacob on 2026-10-19;
+Pass A landed as 6429ac08 and 42bcc360. It depends on `scratch/style-guide/STYLE-GUIDE.draft.md`, which is a draft and replaces nothing yet.*
 
 ## 0 · What this is for
 
@@ -143,20 +143,29 @@ of either.
 3. **For each step:** the code and the deletion in one commit, the check green or each red named, pictures for Jacob
    (before and after, images beside the HTML). One heavy job at a time, by the standing gate.
 
-## 5 · Blocked on Jacob (the guide's questions that decide the vocabulary)
+## 5 · Ruled (Jacob, 2026-10-19, relayed by Boz; recorded verbatim)
 
-- **C1.** Does data **select** a style, or may it **measure** a dimension? It decides whether `lanes` and `width`
-  survive as measures.
-- **The island class:** one class for every median and sliver, no walk, no lawn, its surface set by each town's norm.
-  It resolves the four conflicting median rulings, `RIBBONS §1` / `§3.5`.
-- **Q-B1.** Is a sliver told by **topology alone** (bounded only by a divided pair's edges), or may ① use a
-  centreline-to-centreline width as a selector (the 10-18 "narrower than three walk widths" rule)? That is a dimension
-  from the unwidened ①, never from authoring; still a ruling.
-- **Untagged dead ends:** round or blunt (the guide proposes blunt).
-- **The kit house style values** the classes symbolise to: e.g. per-class walk and lawn widths, the 6 in kerb and the
-  perpendicular cut already ruled.
-- **Junction "offset":** two T's are an offset junction within what spacing? A spacing is a constant. Prefer a
-  topological test, or an authored norm.
+1. C1: data SELECTS a style, never measures. lanes/width no longer size the carriageway.
+   *Clarified (Jacob, 2026-10-19): "lanes picks the configuration." `width` in metres stays unread.*
+   *Boz, interim, pending Jacob on turn lanes: a configuration is any positive-integer lane count the data gives;
+   carriageway = count × the class's house lane width. Only a `lanes` value that is not a positive integer refuses,
+   by place. Odd counts get no turn-lane treatment yet. An untagged chain keeps 2 lanes (1 if one-way) as the KIT
+   rung, carried over from today, not newly ruled, and disclosed per pour. (An earlier line here gave "1, 2, 4 or
+   6 lanes … refuses" as Jacob's; that was Boz's illustration, not a ruling.)*
+   *Jacob, 2026-10-20: "a lane is a lane for now, but if that's information we're getting we need to make sure and
+   not just throw it away." Widened the same day: "We need to make sure we are keeping as much as we take in. This
+   is a persistent annoyance." So every chain carries its source ways' full tags per segment (`chain.ways`,
+   `chain.segmentWays`, documented in `streetClass.js`). Nothing is dropped except by a named rule that prints per
+   pour. Paint reads only the class.*
+2. One island class for every median and sliver: no walk, no lawn, its surface set by the town norm.
+3. Slivers: by topology first (a face bounded by a divided pair), with ①'s centreline-to-centreline width as a back-up selector.
+4. An untagged dead end is BLUNT; turning_circle/turning_loop selects round.
+5. The guide's per-class walk/lawn widths become the kit house style (towns override in norms). Also the 6 in kerb and perpendicular cuts, already ruled.
+6. Offset junctions: no spacing constant. Jacob's addition: "street name should dictate whether it's in the same chain". Boz's reading, not yet confirmed with Jacob: two T's form one offset junction when the two stubs carry the same street name (one street jogging across), otherwise two T's. A name groups; it never makes a class.
+7. Keep `indoor` and `services-area`, and add them to the guide.
+8. A named service road is NOT a lot aisle by default. The name can't decide it, though, so show Jacob a few cases (Holiday/Willow/Lagoon Lane, Holden St, Bluff Terrace) and propose a tag-based rule.
+9. Mixed classes under one name are RED only across networks (e.g. a footway in a street chain). Within a network, each piece carries its own class.
+10. Motorway/trunk: one `highway` class with a lamp sub-key.
 
 ## 5a · This dispatch: Pass A, classification only (until §5 is ruled)
 

@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CARTOGRAPH_DIR, requireExplicitMap } from './scene.js'
 import { STANDARDS } from './standards.js'
+import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
@@ -57,13 +58,11 @@ function main() {
   const sidewalks = highways.filter(f => f.tags?.footway === 'sidewalk')
   console.log(`  Sidewalks: ${sidewalks.length} segments`)
 
-  // ── Collect vehicular streets ──────────────────────────────────
-  const vehTypes = new Set(['residential', 'primary', 'primary_link', 'secondary',
-    'secondary_link', 'tertiary', 'tertiary_link', 'unclassified'])
+  // ── Collect vehicular streets: the vocabulary's `surveyed` column (streetClass.js) ──
   const byName = {}
   for (const f of highways) {
     const name = f.tags?.name
-    if (!name || !vehTypes.has(f.tags?.highway)) continue
+    if (!name || !CLASSES[classOf(f.tags).class].surveyed) continue
     if (!byName[name]) byName[name] = { segs: [], tags: [] }
     byName[name].segs.push(f)
     byName[name].tags.push(f.tags)

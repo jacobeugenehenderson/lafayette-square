@@ -7,39 +7,16 @@
  * To customize for a different city, swap this file.
  */
 
+import { CLASSES, classOf, classSection } from '../src/cartograph/streetClass.js'
+
 const FT = 0.3048 // feet to meters
 
 export const STANDARDS = {
 
-  // ── Street cross-section (from centerline outward) ────────────────
-
-  streets: {
-    // Travel lane half-widths (centerline to edge of travel lane)
-    residential: {
-      laneWidth:    10 * FT,     // 10 ft travel lane
-      parkingWidth:  7 * FT,     // 7 ft parallel parking
-      gutterWidth:   1.5 * FT,   // 18" gutter pan
-      lanes: 2,                   // total travel lanes (1 each direction)
-    },
-    secondary: {
-      laneWidth:    11 * FT,
-      parkingWidth:  7 * FT,
-      gutterWidth:   1.5 * FT,
-      lanes: 2,
-    },
-    primary: {
-      laneWidth:    11 * FT,
-      parkingWidth:  8 * FT,
-      gutterWidth:   1.5 * FT,
-      lanes: 4,
-    },
-    service: {  // alleys
-      laneWidth:     7.5 * FT,   // 15 ft full width / 2
-      parkingWidth:  0,
-      gutterWidth:   0,
-      lanes: 2,
-    },
-  },
+  // ── Street cross-section ─────────────────────────────────────────
+  // ⭐ Not here: a street's carriageway is its CLASS's section (`src/cartograph/streetClass.js`), read by
+  // `getStreetSpec` below. The `streets` table that stood here (residential / secondary / primary / service,
+  // with its own 7 ft parking and 18" gutter) was the third copy of the cross-section (AUDIT §8); it is gone.
 
   // ── Curb ──────────────────────────────────────────────────────────
   curb: {
@@ -109,40 +86,22 @@ export const STANDARDS = {
 }
 
 /**
- * Get the cross-section spec for a given OSM feature, reading its tags
- * for lane count, cycleway presence, etc.
- *
- * Returns a spec object like STANDARDS.streets.residential but customized
- * to the actual tags on this particular street segment.
+ * The cross-section spec of one OSM way, from its CLASS's section (`streetClass.js` `classSection`), configured
+ * by its own `lanes` and `oneway`, then dressed by the tags that SELECT a style: a cycle lane or track adds a
+ * 5 ft lane; perpendicular or diagonal parking takes an 18 ft stall.
+ * ⛔ No residential default: an unclassifiable way refuses (`classOf`), and a swept (highway) class throws — its
+ * section is `streetProfiles#highwaySection` (H-3).
  */
 export function getStreetSpec(tags) {
-  const highwayType = tags?.highway || 'residential'
-
-  // Start from the base spec for this road class
-  let base
-  switch (highwayType) {
-    case 'primary':
-    case 'primary_link':
-      base = STANDARDS.streets.primary; break
-    case 'secondary':
-    case 'secondary_link':
-    case 'tertiary':
-    case 'tertiary_link':
-      base = STANDARDS.streets.secondary; break
-    case 'service':
-      return STANDARDS.streets.service // alleys don't vary
-    default:
-      base = STANDARDS.streets.residential
-  }
-
-  // Clone so we can customize per-segment
-  const spec = { ...base }
-
-  // Override lane count from OSM tags
-  if (tags.lanes) {
-    const n = parseInt(tags.lanes, 10)
-    if (n > 0) spec.lanes = n
-  }
+  const cls = classOf(tags).class
+  if (CLASSES[cls].swept) throw new Error(`⛔ getStreetSpec: a ${cls} has no class constant — its section is highwaySection (H-3)`)
+  const n = parseInt(tags.lanes, 10)
+  const sec = classSection(cls, { lanes: n > 0 ? n : null, oneway: tags.oneway === 'yes' })
+  const row = CLASSES[cls].section
+  // A fixed-width class (no lanes) is one carriageway of `halfWidth` each side: two "lanes" of it.
+  const spec = row.lane
+    ? { lanes: sec.lanesAssumed, laneWidth: row.lane, parkingWidth: row.parking, gutterWidth: 0, class: cls }
+    : { lanes: 2, laneWidth: sec.pavementHW, parkingWidth: 0, gutterWidth: 0, class: cls }
 
   // Cycleway adds width
   const cyc = tags.cycleway || tags['cycleway:left'] || tags['cycleway:right'] || tags['cycleway:both']
