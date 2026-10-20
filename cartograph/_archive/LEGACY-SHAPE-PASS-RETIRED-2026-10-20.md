@@ -340,3 +340,13 @@ The SHAPE pass, in execution order:
 > 2. ⛔ **`freezeCurbEdgeFacts({ring, runs, streetsOrig, measures, …})` is a GEOMETRIC one.** It reads `streetsOrig[].outerHWProfile`, `phase.role`, `throughId`/`roadId` and per-run base half-widths to stamp one fact per ring edge — and those facts are exactly what the curb producer offsets from. The chain-freeness that IS structural sits one step later, at `buildCurbRings({ring, facts, authoredHW, capAtVertex, curved})`, whose signature is the guard (A03).
 >
 > **∴ "the SHAPE pass is nearly chain-free" overstates where the wall sits.** The wall is at the *producer*, not at the pass. *(Corrected 2026-08-04 — this paragraph is cited as evidence for where the Wall effectively is, and the argument is weaker than it read.)*
+
+
+---
+
+## The junctionMap producer leaves derive.js (integration merge, 2026-10-20, Lath for Boz)
+
+`derive.js`'s E3.1 junction map, its `noseRecs` feed and `medians[].absorbedBy` are deleted; `ribbons.junctionMap` is no longer
+written. ROADMAP's open item about its node positions is moot and moved here as it stood:
+
+- **⛔ `junctionMap.nodes[].at` does not sit on `ribbons.streets`' vertices — 1–10 cm off on most nodes** *(Flare, 2026-10-06, measured)*. Exact-coordinate matches: LS 32 of ~650 · huron 59 · HPDM 260 · provincetown 144; most fall at 1–10 cm. JM is on a 1 mm grid (LS 543/550); ribbons points are not. ⇒ the two are built from slightly different geometry in one prebake, against `SKELETON §0.1`'s ruling that every consumer takes the ONE simplified skeleton. Cause not established. (The corner junction stamp sidesteps it by binding on chain identity, not position.) S–M · → `cartograph/derive.js` (junctionMap), `SKELETON §0.1`.

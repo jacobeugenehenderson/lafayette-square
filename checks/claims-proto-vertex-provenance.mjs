@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ⛔ HOW MUCH OF ①'s CONTOUR CARRIES A SOURCE, AND HOW MUCH IS MINTED BY THE BOOLEAN?
 // Sizes the handles build: a SOURCE vertex can resolve its centreline node by carried identity
-// (`owners[label].srcIdx`); a MINTED vertex cannot, and needs the frozen coupler relation
-// (`junctionMap.nodes[].cornersAdjacent`) instead. ⛔ Never by proximity (`A15`).
+// (`owners[label].srcIdx`); a MINTED vertex cannot, and needs a frozen coupler relation instead, which
+// no artifact carries (derive's junctionMap retired 2026-10-20). ⛔ Never by proximity (`A15`).
 // ⭐ A minted vertex is not a defect — it is where two chains CROSS, which is where a corner is.
 // ▶ node checks/claims-proto-vertex-provenance.mjs [scene ...]
 import fs from 'fs'

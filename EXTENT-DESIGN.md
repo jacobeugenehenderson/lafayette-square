@@ -35,7 +35,7 @@ The Extent subsystem and the polygon/stamp subsystem have the **same disease**, 
 And the two are not merely analogous — **they are the same artifact.** The skeleton the Extent tool
 makes mints **two identities in one freeze**: every **building** gets a permanent id, and every
 **junction gets a stamp** (its node kind — dead-end / corner / T / cross / Y — `SKELETON.md §2
-junctions[]`, richer on `ribbons.junctionMap.nodes`). Both are decided once at the seal; both must be
+junctions[]`). Both are decided once at the seal; both must be
 **carried** onto everything downstream, never re-guessed. This document applies the one cure to **both
 identities the skeleton mints — building ids and junction stamps.**
 
@@ -291,8 +291,8 @@ equal — fix in the schema split below).
 
 The same freeze that gives every building its permanent id gives **every point in the labeled cloud
 its stamp** (§1: the skeleton *is* a labeled point cloud). At the seal, `skeleton.js` types each node
-by degree — dead-end / corner / T / cross / Y — and the prebake freezes the richer
-`ribbons.junctionMap.nodes` (kinds[], legs, corners). This is a **frozen frame fact**, exactly like a
+by degree — dead-end / corner / T / cross / Y. *(Prebake froze a richer copy, `ribbons.junctionMap.nodes`, until it
+retired 2026-10-20, `PREBAKE §2.5`.)* This is a **frozen frame fact**, exactly like a
 building id, and it obeys the same rule: **carry it, never re-derive it.**
 
 > ### ⭐⭐⭐ NODES SURVIVE A WELD — MEASURED AND SETTLED 2026-08-12 (agent Ferrule)

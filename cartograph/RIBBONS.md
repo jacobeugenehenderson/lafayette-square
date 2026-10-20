@@ -657,8 +657,7 @@
 > topology there would freeze **bare-default widths** — Layer 0 q3, baked into an artifact. **Therefore:**
 > - **The COUPLER RELATION is width-INDEPENDENT** — which side hands off to which is a graph property.
 >   Prebake, frozen once. ⭐ **It is ①'s own record — every crossing carries which two streets met there** (`PIPELINE`
->   step 3). *(`junctionMap.nodes[].cornersAdjacent` carried it first; it has had no reader since the substrate walk and
->   the legacy pass were deleted, 2026-10-20 — `PREBAKE §2.5`.)*
+>   step 3). *(`junctionMap.nodes[].cornersAdjacent` carried it first; retired with its producer 2026-10-20 — `PREBAKE §2.5`.)*
 > - **The GEOMETRY is width-DEPENDENT** — where the side-chain lands. Resolves AFTER width authoring.
 >
 > ⭐ This is `PREBAKE §5`'s own unexecuted sentence: *"corner identity (topology) = prebake, frozen once;
@@ -1300,12 +1299,10 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
   faces:  [ { ring: [[x, z], ...], use: 'residential' | 'park' | ... } ],  // 173 on LS — read for LU coloring
   tiles:  [ { ring, edges: [{skelId, side}], caps } ],    // ⭐ 101 FROZEN BLOCK FACES — the polygon
                                                           //    substrate, frozen at prebake by derive.js.
-                                                          //    ⛔ NO GROUND READER since 2026-10-20 (the
-                                                          //    legacy pass is deleted); the freeze is a
-                                                          //    named derive.js leftover.
+                                                          //    No ground reader since 2026-10-20; its
+                                                          //    caps feed the Measure tool's cap handles.
   medians: [...],        // 52 — CONSTRUCTED at prebake, load-bearing (tileGround dereferences it)
   corridors: [...],      // 0 on LS
-  junctionMap: { nodes: [...] },   // ⛔ NO READER since 2026-10-20; its producer is a named derive.js leftover
   junctions: [...],      // 277
   nameTransitions: [...],// 21
   alleys, paths,
