@@ -20,8 +20,8 @@
 //   · the info panel's Sources section (InfoModal.jsx) says "No sources recorded
 //     for this map yet";
 //   · a share image (ShareCapture.jsx#creditFor) refuses the capture.
-// The console says so only when the fetch throws: a 404 resolves to the empty
-// list without a line.
+// Each of these is also said in the console by useSources, naming the Look and
+// the URL: a 404, a failed fetch, and a file with no credits list alike.
 //
 // Why the map owes this at all: OpenStreetMap's data is ODbL, and a rendered
 // map is a Produced Work. ODbL §4.3 wants a notice naming the database and the
@@ -50,15 +50,22 @@ export function useSources(lookId) {
     let cancelled = false
     setState({ credits: [], owed: [], loaded: false })
     slabFetch(resolved, 'sources.json')
-      .then(r => (r.ok ? r.json() : null))
+      .then(async r => {
+        // ⛔ A non-ok response is a MISSING credit, not an empty one: a town that owes the OSM credit and shows none
+        // is a silent licence failure (Layer 0 q2). So a 404 warns like a thrown fetch, naming the Look and the URL.
+        if (!r.ok) throw new Error(`${r.status} at ${r.url || 'sources.json'}`)
+        const j = await r.json()
+        if (!Array.isArray(j?.credits)) throw new Error(`no credits list in ${r.url || 'sources.json'}`)
+        return j
+      })
       .then(j => {
         if (cancelled) return
-        setState({ credits: j?.credits || [], owed: j?.owed || [], loaded: true })
+        setState({ credits: j.credits, owed: j.owed || [], loaded: true })
       })
       .catch(e => {
         // Loud in the console, quiet-but-honest on screen. An operator needs to
         // know the artifact is missing; a visitor is not served by a stack trace.
-        console.warn(`[sources] no attribution for look '${resolved}':`, e)
+        console.warn(`[sources] ⛔ no attribution for look '${resolved}' — ${e?.message || e}`)
         if (!cancelled) setState({ credits: [], owed: [], loaded: true })
       })
     return () => { cancelled = true }

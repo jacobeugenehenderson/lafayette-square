@@ -12,7 +12,8 @@ import { useSources, attributedCredits } from '../lib/sources.js'
  *
  * ⛔ PER-LOOK, OFF THE SLAB (lib/sources.js). Never hardcode "© OpenStreetMap" here: this renders for every
  * installation, and a credit right for one town and wrong for the next is a false legal notice that looks correct.
- * A slab that owes no attribution renders nothing; one with no sources.json is said in the console (useSources).
+ * A slab that owes no attribution renders nothing. One with no readable sources.json renders nothing too, and useSources
+ * says so in the console, naming the Look and the URL.
  * The full list — every dataset and its licence — is the Sources section of the info panel.
  */
 export default function MapCredit({ lookId }) {
