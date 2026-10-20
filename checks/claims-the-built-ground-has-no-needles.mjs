@@ -25,7 +25,6 @@ import clipperLib from 'clipper-lib'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile } from '../src/lib/tileGround.js'
 import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
-import { CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 
 const SHOW = +(process.argv.find(a => a.startsWith('--show='))?.split('=')[1] || 5)
 const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -70,7 +69,7 @@ function needles(rings, tau, onRim) {
 
 function measure(f, tau, opts = {}) {
   const warn = console.warn; console.warn = () => {}
-  let R; try { R = buildProto({ ...f, ...opts }, { quiet: true, protoArtifact: true }) } finally { console.warn = warn }
+  let R; try { R = buildProto({ ...f, ...opts }, { quiet: true }) } finally { console.warn = warn }
   const ring = f.ribbons?.protopolygon?.boundaryRing
   const onRim = (a, b) => ring.some((_, k) => sd(a, ring[k], ring[(k + 1) % ring.length]) <= 1e-3) && ring.some((_, k) => sd(b, ring[k], ring[(k + 1) % ring.length]) <= 1e-3)
   const sites = []
@@ -112,8 +111,8 @@ let bad = 0, towns = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   if (!f.ribbons?.protopolygon?.boundaryRing?.length) { console.log(`⛔ ${scene}: its ① carries no boundaryRing — the rim cannot be told from a point, nothing was checked`); bad++; continue }
-  // τ is the town's AUTHORED curb width; with none, the bake's own substitute (CURB_WIDTH), named as that
-  const tau = Number.isFinite(f.curbWidth) ? f.curbWidth : CURB_WIDTH, tauWhy = Number.isFinite(f.curbWidth) ? 'authored curb width' : `⚠️ NO authored curb width — the bake's substitute CURB_WIDTH`
+  // τ is the town's AUTHORED curb width; with none the producer refuses, and so does this
+  const tau = f.curbWidth, tauWhy = `curb width (${f.curbRung})`
   let sites
   try { sites = measure(f, tau) } catch (e) { console.log(`⛔ ${scene}: the producer refused, so nothing was checked — ${String(e.message).split('\n')[0].slice(0, 160)}`); bad++; continue }
   towns++

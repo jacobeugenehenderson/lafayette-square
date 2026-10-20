@@ -181,7 +181,7 @@ console.log('')
 // ============================================================ D. REAL SPURS, this town
 console.log(`D. REAL DATA — ${scene}'s dead-end spur chains from ${ribbonsPath(scene)}.`)
 const rib = JSON.parse(fs.readFileSync(path.join(ROOT, ribbonsPath(scene)), 'utf8'))
-// degree-1 endpoints from junctionMap
+// degree-1 endpoints, counted off the chains' own ends
 const deg = new Map()
 const key = p => `${Math.round(p[0]*1e3)},${Math.round(p[1]*1e3)}`
 for (const st of rib.streets) {

@@ -1,0 +1,6 @@
+== slab-hipointedemun-full-road
+  [dist] p50 0.24 m · p90 1.13 · over 2 m 2247 · over 1 m 4252 · under 5 cm 2226
+        37527 WALL triangle(s), worst 6.33 m · by group: mat:sidewalk 15273 · mat:treelawn:underived 7605 · mat:curb 3750 · mat:treelawn:commercial 2327 · mat:treelawn:residential 1354 · mat:treelawn:institutional 1312 · mat:treelawn:recreation 1253 · face:res
+== slab-hipointedemun-full-road-x1
+  [dist] p50 0.24 m · p90 1.24 · over 2 m 1854 · over 1 m 3464 · under 5 cm 2228
+        28695 WALL triangle(s), worst 6.33 m · by group: mat:sidewalk 11074 · mat:treelawn:underived 5666 · mat:curb 2830 · mat:treelawn:commercial 1831 · mat:treelawn:residential 1020 · mat:treelawn:institutional 1007 · face:residential 943 · mat:treelawn:rec

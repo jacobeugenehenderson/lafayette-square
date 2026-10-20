@@ -1,5 +1,5 @@
 // ⛔ SURVEY AND SECTION MUST BE THE SAME THING. Survey draws `buildTileGround`'s live layers;
-// Section opens `_shapeArtifact` through `sectionOpen`. Under ① both must come from ①②③ and
+// Section opens `protoShapeTiles` (the frozen shape) through `sectionOpen`. Under ① both must come from ①②③ and
 // agree geometrically — if they disagree, two constructions are on screen at once.
 // ▶ node checks/claims-survey-and-section-agree.mjs [scene ...]
 import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
@@ -13,17 +13,14 @@ const cmp = (tag,a,b) => {
   return rel < 0.5
 }
 for (const scene of feedScenes()) {
-  const f = feed(scene); if (!f || f.curbWidth == null) continue
+  const f = feed(scene); if (!f) continue
   const bR = f.ribbons.protopolygon?.boundaryRing || null
   const p=console.log; console.log=()=>{}
-  const tg = buildTileGround(f.ribbons, { smooth:0, curbWidth:f.curbWidth, blockCustoms:f.blockCustoms,
-    stencil: bR, emitArtifact:true, grout:'proto', protoProducer:true, protoArtifact:true })
-  const S = sectionOpen(tg._shapeArtifact, f.curbWidth, { outer:'LU', inner:'SW' }, bR, f.blockCustoms)
+  const tg = buildTileGround(f.ribbons, { smooth:0, curbWidth:f.curbWidth, curbedMinWidth:f.curbedMinWidth, blockCustoms:f.blockCustoms,
+    stencil: bR })
+  const S = sectionOpen(tg.protoShapeTiles, f.curbWidth, { outer:'LU', inner:'SW' }, bR, f.blockCustoms)
   console.log=p
-  console.log(`${scene}: ${tg._shapeArtifact.length} tile(s) in the artifact`)
-  const prod = {}; for (const t of tg._shapeArtifact) prod[t.producer||'unstamped']=(prod[t.producer||'unstamped']||0)+1
-  const withBands = tg._shapeArtifact.filter(t=>t.bands).length
-  console.log(`  producers ${JSON.stringify(prod)} · carrying bands ${withBands}/${tg._shapeArtifact.length}`)
+  console.log(`${scene}: ${tg.protoShapeTiles.length} tile(s) in the artifact · carrying bands ${tg.protoShapeTiles.filter(t=>t.bands).length}`)
   let ok = true
   ok = cmp('asphalt', tg.asphalt, S.asphalt) && ok
   ok = cmp('curb',    tg.curb,    S.curb)    && ok

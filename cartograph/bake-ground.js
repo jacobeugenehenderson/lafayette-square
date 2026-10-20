@@ -49,19 +49,20 @@ import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, split
 import { lineHeights } from './lineHeight.mjs'
 import { buildDeformer } from './groundDeformer.mjs'
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
-import { requireExplicitMap, ribbonsPathOf, mapRawDir } from './scene.js'
+import { requireExplicitMap, ribbonsPathOf } from './scene.js'
+import { curbedMinWidthOf } from './curbedMinWidthOf.mjs'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { buildTileGround, roadOffTheLattice } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
 import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
-import { readBakeDesign } from './lookDesign.mjs'
+import { readBakeDesign, bakeCurbWidth } from './lookDesign.mjs'
 import { lookFade } from './boundaryRecords.mjs'
-import { BAND_COLORS, CURB_WIDTH, curbedMinWidth, townState } from '../src/cartograph/streetProfiles.js'
+import { BAND_COLORS } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
@@ -298,7 +299,7 @@ const FLOOR_KEYS = new Set(['mat:bed'])
 
 // Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
 // MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
-const POLYLINE_HALF_WIDTHS = {
+export const POLYLINE_HALF_WIDTHS = {
   stripe:         0.10,
   edgeline:       0.08,
   bikelane:       0.25,
@@ -313,7 +314,7 @@ const POLYLINE_HALF_WIDTHS = {
 // straight segments produce parallel edges and gentle bends miter cleanly.
 // Sharp corners can self-intersect; barrier/stripe data is dense enough
 // that this hasn't bitten in practice.
-function polylineToRing(coords, halfWidth) {
+export function polylineToRing(coords, halfWidth) {
   if (!coords || coords.length < 2) return null
   const n = coords.length
   const left = new Array(n), right = new Array(n)
@@ -336,11 +337,29 @@ function polylineToRing(coords, halfWidth) {
   return ring
 }
 
+// ⭐ THE CENTRE STRIPE IS ①'s LINE (Boz's ruling, 2026-10-17, on Jacob's "everything uses ① as the SSoT"): each eligible
+// street's own `points` from the ribbons — the line ① was struck from, so the stripe lies inside ①'s ink by construction.
+// It replaces map.json's `centerStripe`, which derive.js pushes from the raw OSM way and which departed from ① by up to
+// 7.85 m (HPDM; ▶ checks/claims-the-road-lies-on-the-lattice.mjs). Eligibility is derive.js's own rule, read off the
+// street RECORD, never by matching names: an OSM class among the eight below · not oneway (a divided road's `pairId`
+// carriageways are each oneway, so the rule already leaves them out) · not grade-separated (a bridge's paint is not the
+// ground's). `dashed` is carried as derive.js carried it; nothing here reads it.
+const STRIPE_CLASSES = new Set(['residential', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified'])
+export function centreStripeRings(streets) {
+  const out = []
+  for (const s of streets || []) {
+    if (!STRIPE_CLASSES.has(s.highway) || s.oneway === true || s.gradeSeparated) continue
+    const ring = polylineToRing(s.points, POLYLINE_HALF_WIDTHS.stripe)
+    if (ring) out.push({ skelId: s.skelId, dashed: s.highway === 'residential', ring })
+  }
+  return out
+}
+
 // Lateral-offset a polyline by `offset` to one side, then return the
 // offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by parking_line
 // (edgeline) + bike_lane which carry a single centerline + lateral offset
 // — the actual paint sits on the offset, not the centerline.
-function lateralOffset(coords, offset, side) {
+export function lateralOffset(coords, offset, side) {
   const out = []
   for (let i = 0; i < coords.length; i++) {
     const prev = coords[Math.max(0, i - 1)]
@@ -444,31 +463,17 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
-// The minimum curbed width (where a curbed feature ends — the nose), read from the registry by finding id for the town's
-// state (`curbedMinWidth`, streetProfiles.js). ⛔ No scene or no raw OSM ⇒ the state is unknown, and the label says so.
-function curbedMinWidthOf(scene) {
-  const osmP = scene && join(mapRawDir(scene), 'osm.json')
-  const state = osmP && existsSync(osmP) ? townState(JSON.parse(readFileSync(osmP, 'utf8'))) : { code: null }
-  return curbedMinWidth(JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'registry.json'), 'utf8')), state)
-}
-function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null, opts = {}) {
-  // ⭐⭐⭐ `--proto` MAKES ① THE PRODUCER. The frozen artifact is then built from ②③ — the curb
-  // offset from the protopolygon and the bands struck from that curb — instead of from the chains.
-  // ⛔ It is a change of CONSUMER, not of construction (`5560cf6a`'s lesson): ②③ already offset the
-  // grout contour, so nothing new is built here; the bake simply freezes what they made.
-  // ⛔ OFF BY DEFAULT. With the flag absent this call is byte-identical, which `a03-curb-identity`
-  // proves on every commit.
-  const PROTO = !!opts.proto   // from buildTileBakeShape's own opts, not the bake's
-  // ⛔⛔ ① AS THE DEFAULT PRODUCER REQUIRES A SCENE THAT CAN ACTUALLY PRODUCE IT. Measured
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null) {
+  // ⭐ ① IS THE PRODUCER: the frozen artifact is ①②③'s tiles (`protoShapeTiles`) — the curb offset from the
+  // protopolygon and the bands struck from that curb. There is no other producer (the chain shape pass is deleted, 2026-10-20).
+  // ⛔⛔ ① REQUIRES A SCENE THAT CAN ACTUALLY PRODUCE IT. Measured
   // 2026-09-06 the moment the default flipped: hipointedemun has no frozen protopolygon and no
   // boundary, so it LIVE-MINTED ①, skipped the circle stamp, and baked 1103 tiles of the WHOLE
   // FRAME where it had 196 — a plausible-looking wrong map, which is the one outcome Layer 0 q2
   // names as worse than a failure. ⛔ And it destroyed the old artifact doing it: baked output is
   // not in git, so there was nothing to restore.
-  // ⇒ REFUSE, LOUDLY, NAMING THE FIX. ⛔ Never fall back to the chain curb here: a silent legacy
-  // bake under the current default is the same substitution in the other direction, and it is
-  // exactly how `serve.js`'s flagless bake hid a day of ① work from the operator.
-  if (PROTO) {
+  // ⇒ REFUSE, LOUDLY, NAMING THE FIX.
+  {
     const fp = ribbons?.protopolygon
     const why = !fp?.rings?.length ? 'it carries NO frozen protopolygon — it has not been poured since ① landed'
       : !fp.blocks?.length ? 'its frozen ① carries no `blocks` (boundary − stroked roads) — it was poured before the rim fix'
@@ -476,17 +481,15 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
       : null
     if (why) throw new Error(
       `[bake-ground] ⛔ scene '${scene}' cannot bake ① as the producer: ${why}.\n` +
-      `   FIX: re-pour it —  node cartograph/skeleton.js --scene=${scene} && node cartograph/pipeline.js --scene=${scene} && node cartograph/promote-ribbons.js --scene=${scene} --yes\n` +
-      `   Or bake the chain curb DELIBERATELY with --legacy. ⛔ Refusing to substitute either one silently.`)
+      `   FIX: re-pour it —  node cartograph/skeleton.js --scene=${scene} && node cartograph/pipeline.js --scene=${scene} && node cartograph/promote-ribbons.js --scene=${scene} --yes`)
   }
   const pr = buildTileGround(ribbons, {
-    ...(PROTO ? { grout: 'proto', protoProducer: true } : {}),
     stencil: stencilPolygon,
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
     reportGlean: true,
     surveyStreets,
-    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
-    ...(PROTO ? { curbedMinWidth: curbedMinWidthOf(scene) } : {}),
+    curbWidth: bakeCurbWidth(design, `bake-ground ${scene}`),   // authored, else the kit's — the rung is printed
+    curbedMinWidth: curbedMinWidthOf(scene),
     smooth: STREET_SMOOTH,   // the ONE knob — WYSIWYG with the live Survey curve-fit (SKELETON.md §3.5; was 0, 2026-06-04→revived 2026-06-14)
     blockLandUse: design.blockLandUse || null,
     cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
@@ -494,18 +497,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : null,
     // Per-fe (per-block) asphalt-width overrides authored in Survey/Measure.
     blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : null,
-    // THE WALL · Phase D — emit the frozen per-tile shape artifact for bake serialization.
-    emitArtifact: true,
   })
-  // ── [A07] THE PRODUCER DISCLOSURE — once per pour, and the two kinds apart ──
-  // The docs promise one curb producer ("a concentric offset"). There are two.
-  // This is where the operator of a town nobody has inspected finds that out.
-  if (pr._curbProducers) console.log(`  [A07] ${pr._curbProducers.line}`)
-  // ⛔ Reported SEPARATELY and only when non-zero. A degenerate offset is a
-  // FAILURE; the carve counts above are correct answers. Merging them would put
-  // the real signal behind ~40 routine lines a pour, which is a new silence.
-  const curbFail = pr._curbProducerFailures
-  if (curbFail?.count) console.warn(curbFail.report(scene))
   const byMaterial = new Map()
   const byFaceUse = new Map()
   const pushClipperRings = (key, rings) => {
@@ -580,17 +572,15 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     const { land } = buildParkPathRings(ribbons, { polygon: parkClip.polygon, water: parkClip.water })
     pushClipperRings('park_path', mergeRings(land))
   }
-  // ⛔ LOUD IF ASKED FOR AND ABSENT — a silent fall back to the chain artifact would bake the old
-  // producer under a flag that says otherwise, which is the plausible-looking success Layer 0 forbids.
-  if (PROTO && !pr.protoShapeTiles?.length) throw new Error('[bake-ground] ① is the producer but ②③ produced NO tiles. Refusing to silently bake the chain artifact instead — pass --legacy if the chain curb is what you want.')
-  console.log(PROTO
-    ? `  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③ — NOT the chain curb`
-    : `  [①⇢producer] ⛔ --legacy: freezing the CHAIN curb, not ①. This artifact is NOT the current producer.`)
+  // ⛔ LOUD IF ABSENT (tileGround refuses first; this is the bake's own statement of what it freezes).
+  if (!pr.protoShapeTiles?.length) throw new Error('[bake-ground] ①②③ produced NO tiles — nothing to freeze. Refusing.')
+  console.log(`  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③`)
   // ⭐ the raised kerb's inputs (`kerbLift.mjs`): the block silhouettes (the frozen curb rings), every cut's kerb face,
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
-  return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [],
-           blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
+  if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
+  return { byMaterial, byFaceUse, shapeArtifact: pr.protoShapeTiles, highwayRings: pr.highway || [],
+           inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -1057,7 +1047,7 @@ export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePendin
   return { paint: null, state: 'pending', why }
 }
 
-export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1146,7 +1136,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1189,7 +1179,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // Each Designer-toggleable id needs to come out as its own bake group
   // so layerVis can hide it in Stage/Preview. Polygon overlays (parking_lot,
   // leisure subtypes, natural subtypes) drop in as raw rings; line features
-  // (centerStripe / parkingLine / bikeLane / barriers) buffer to thin
+  // (parkingLine / bikeLane / barriers; the centre stripe is ①'s, below) buffer to thin
   // polygons via polylineToRing.
   const mapLayers = mapData.layers || {}
   const pushMat = (key, ring) => {
@@ -1257,10 +1247,16 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     const ring = polylineToRing(item.coords, hw)
     if (ring) pushMat(item.kind, ring)
   }
-  // Center stripes — polylines with no offset, paint sits on the centerline.
-  for (const item of (mapLayers.centerStripe || [])) {
-    const ring = polylineToRing(item.coords, POLYLINE_HALF_WIDTHS.stripe)
-    if (ring) pushMat('stripe', ring)
+  // Centre stripes — ①'s own line per eligible street (`centreStripeRings`), never map.json's.
+  const stripeRings = centreStripeRings(ribbons.streets).map(x => x.ring)
+  for (const ring of stripeRings) pushMat('stripe', ring)
+  // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile, no ink piece (the curbless blocks'
+  // ground included) and not under H has no owner to take its line from. Refused by group and point, never dropped or nudged.
+  {
+    const off = roadOffTheLattice({ asphalt: asphaltRings, highway: highwayRings, stripe: stripeRings }, shapeArtifact, inkPieces, ribbons.protopolygon.boundaryRing, highwayRings)
+    const bad = Object.entries(off).filter(([, o]) => o.off.length)
+    if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no ink piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
+    console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, an ink piece or H`)
   }
   // Parking-lane edge lines + bike lanes — both sides offset from a centerline.
   for (const item of (mapLayers.parkingLine || [])) {
@@ -1458,7 +1454,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
     // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
     const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ town: scene, tiles: shapeArtifact, line: groundLine,
+    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine,
       bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
       stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,
@@ -1487,6 +1483,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
   }
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
+  // ⭐ THE ROAD FOLLOWS ITS SWEEP (the deformer's road side, ① to ②): the carriageway refines against D exactly as the ped bands
+  // do, or a 6–9 m road triangle and a 29–60 m stripe edge chord the line (measured HPDM, db0bebb6's slab)
+  const ROAD_KEYS = (key) => key === 'asphalt' || key === 'highway' || key === 'stripe'
   // the drawn terrain part at (x, z): the deformer where it reaches, else the terrain itself
   const terrainPartAt = deform ? (x, z) => deform.heightAt(x, z) ?? deformTerrain.getElevationRaw(x, z) : null
   const _planMemo = new Map()
@@ -1534,7 +1533,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         ? { mode: 'adaptive', sampler: terrainPartAt ? (x, z) => terrainPartAt(x, z) * deformTerrain.exag : refineSampler,
             // ⭐ the ped bands carry a walk that must stay level ACROSS: they refine to the drawing's half of the walk limit
             // (`groundDeformer.mjs` WALK_SHARE), down to the deformer's own station spacing — never the lots' 0.5 m / 6 m
-            ...(PED_KEYS(key) && deform?.refineTol ? { tol: deform.refineTol * deformTerrain.exag, minEdge: deform.stationM }
+            ...((PED_KEYS(key) || ROAD_KEYS(key)) && deform?.refineTol ? { tol: deform.refineTol * deformTerrain.exag, minEdge: deform.stationM }
                 : { tol: key === 'bed' || key === 'shore' ? bedTol : refineTol, minEdge: refineMinEdge }),
             maxEdge: refineMaxEdge, band: tideBand }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
@@ -1835,7 +1834,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // success. The bake refuses, and names every point — town, coordinate, tile — so the orphans are the work.
   if (deformTally.unowned.size) throw new Error(`[bake-ground] ⛔ ${scene}: ${deformTally.unowned.size} ped vertex(es) lie in a drawn band that NO painted band owns `
     + `(the band decides, never the nearer line — groundDeformer.mjs): ${[...deformTally.unowned].map(([p, ti]) => `(${p}) tile ${ti}`).join(' · ')}`)
-  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile, or deeper than the bands + ease) draw the terrain itself · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
+  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile and the ink, or deeper than the bands + ease) draw the terrain itself · the road swept from ① to ② at ${deform.stats.road} point(s), the owners' blend at ${deform.stats.roadBlended} · the ink at ${deform.stats.ink} (${deform.stats.inkCrossing} at a crossing, ${deform.stats.inkOnGrid} on the grid between a tile and the ink) · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
 
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
   // BakedGround's UV2 stay concentric with face/street fades. The half-extent must
@@ -1974,7 +1973,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // sibling group ({ tiles, highway }) so the frozen Section/Design views restore
   // highways (the bare-array form dropped them — regression 4924d9a). The slab's
   // own `highway` mat group is unaffected; this is the Section-side freeze.
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [] }))
+  // `ink`: the OWNED ROAD GROUND OUTSIDE EVERY TILE, as pieces [{ rings, owners, kind? }]: ①'s ink strokes (the 2ε strip
+  // between tiles; a crossing names every owner) and, `kind: 'block'`, the curbless blocks' ground (a block whose curbs
+  // meet has no tile, and its ground is road, owned by its own ① edges).
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ink: inkPieces }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)
@@ -1990,21 +1992,16 @@ async function main() {
   // 'lafayette-square' seed, so the env channel was silently ignored and an
   // env-named bake rebuilt LS. See scene.js's header.
   const scene = requireExplicitMap('bake-ground')
-  let look = null, proto = true   // ⭐ ① is the producer by default; --legacy opts out
+  let look = null
   let outDir = null, shorePending = false
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))         look  = m[1]
     // Adaptive ground-subdivision overrides (gated on argv/opts, never env):
-    // ⭐⭐⭐ ① IS THE PRODUCER BY DEFAULT (Jacob, 2026-09-06: "make --proto the default and
-    // rebake"). `--proto` is kept as an accepted no-op so existing invocations and docs still
-    // work; `--legacy` is the ONLY way back to the chain curb, and it is explicit because a bake
-    // that silently produced the other producer is what hid a full day of ① work from the
-    // operator — `serve.js`'s bake button omitted `--proto` and clobbered every proto artifact
-    // with a legacy one, so Section could never show ① no matter what was fixed.
-    else if (arg === '--proto')                   proto = true            // accepted; now the default
-    else if (arg === '--legacy' || arg === '--no-proto') proto = false    // the chain curb, explicitly
+    // ⛔ The producer flags are RETIRED (2026-10-20): ① is the only producer. A stale invocation is refused by name rather
+    // than silently baking something its flag no longer means.
+    else if (/^--(proto|legacy|no-proto)$/.test(arg)) throw new Error(`[bake-ground] ${arg}: retired — ① is the only producer (cartograph/_archive/BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md)`)
     else if ((m = arg.match(/^--refine=(.+)$/)))  refine.mode    = m[1]            // adaptive | uniform
     else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
@@ -2013,7 +2010,7 @@ async function main() {
     else if (arg === '--shore=pending')           shorePending = true   // the Bake's first ground pass only (serve.js 'ground')
     else if (arg.startsWith('--shore='))          throw new Error(`[bake-ground] ${arg}: the only value is --shore=pending`)
   }
-  await bakeGround({ look, scene, refine, proto, outDir, shorePending })
+  await bakeGround({ look, scene, refine, outDir, shorePending })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

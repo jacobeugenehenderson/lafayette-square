@@ -17,6 +17,8 @@ import { instanceForMap } from '../src/instances/registry.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
+import { curbedMinWidthOf, REGISTRY_PATH } from './curbedMinWidthOf.mjs'
+import { labelMajor } from '../src/cartograph/streetClass.js'
 import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
@@ -34,6 +36,7 @@ import { splitBoundary, composeBoundary, makeDiscRecord, assertDiscInBox } from 
 import tzLookup from 'tz-lookup'
 import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
+import { parcelParts } from './parcelParts.js'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -425,9 +428,8 @@ function needsRebuild(inputs, outputs) {
 // One label per named street, from raw/osm.json's ground.highway (coords carry
 // the scene's local x/z). Mirrors src/lib/streetLabels.js's placement (longest
 // way per name → arclength-midpoint + local angle normalized to read L→R), but
-// scene-agnostic and PRE-skeleton. `major` = the arterial classes a neighborhood
-// is bounded on. Cached by file mtime (the 18 MB parse runs once per fetch).
-const OSM_LABEL_MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
+// scene-agnostic and PRE-skeleton. `major` = the vocabulary's major label tier
+// (streetClass.js `labelMajor`). Cached by file mtime (the 18 MB parse runs once per fetch).
 const _osmLabelCache = new Map()   // scene → { mtime, labels }
 function computeLabelsFromOsm(osm) {
   const feats = (osm.ground && osm.ground.highway) || []
@@ -463,13 +465,27 @@ function computeLabelsFromOsm(osm) {
       lon: a.lon + (b.lon - a.lon) * t,
       lat: a.lat + (b.lat - a.lat) * t,
       angle,
-      major: OSM_LABEL_MAJOR.has(f.tags.highway),
+      major: labelMajor(f.tags),
       cls: f.tags.highway,
       _total: total,
     })
   }
   return [...byName.values()].map(({ _total, ...l }) => l)
 }
+// The curbed minimum width per scene, re-read when the town's raw OSM (its state vote) or the registry changes. A missing
+// osm.json is not cached: curbedMinWidthOf labels the state unknown, and a later fetch must be seen.
+const _cmwCache = new Map()   // scene → { key, value }
+function curbedMinWidthCached(scene) {
+  const osmP = join(mapRawDir(scene), 'osm.json')
+  if (!existsSync(osmP)) return curbedMinWidthOf(scene)
+  const key = `${statSync(osmP).mtimeMs}|${statSync(REGISTRY_PATH).mtimeMs}`
+  const hit = _cmwCache.get(scene)
+  if (hit?.key === key) return hit.value
+  const value = curbedMinWidthOf(scene)
+  _cmwCache.set(scene, { key, value })
+  return value
+}
+
 function getOsmLabels(scene) {
   const p = join(mapRawDir(scene), 'osm.json')
   if (!existsSync(p)) return []
@@ -1307,9 +1323,10 @@ function analyzeMarkers() {
   if (parcelFiles.length) {
     const overlapping = []
     for (const p of parcelFiles.flatMap(f => Object.values(JSON.parse(readFileSync(f, 'utf-8')).parcels || {}))) {
-      const ring = p.rings?.[0]
-      if (!ring || ring.length < 3) continue
-      const xs = ring.map(pt => pt[0]), zs = ring.map(pt => pt[1])
+      // every part of the parcel (`parcelParts`): a multipart parcel's rings[0] is one part of several
+      const pts = parcelParts(p.rings, p.address).flatMap(q => q.outer)
+      if (!pts.length) continue
+      const xs = pts.map(pt => pt[0]), zs = pts.map(pt => pt[1])
       const pMinX = Math.min(...xs), pMaxX = Math.max(...xs)
       const pMinZ = Math.min(...zs), pMaxZ = Math.max(...zs)
       // BBox overlap test
@@ -1318,11 +1335,10 @@ function analyzeMarkers() {
         address: (p.address || '').trim(),
         bounds: { minX: +pMinX.toFixed(1), maxX: +pMaxX.toFixed(1), minZ: +pMinZ.toFixed(1), maxZ: +pMaxZ.toFixed(1) },
         centroid: { x: +(xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1), z: +(zs.reduce((a, b) => a + b, 0) / zs.length).toFixed(1) },
-        vertexCount: ring.length,
-        ring
+        vertexCount: pts.length,
       })
     }
-    result.parcels = overlapping.map(p => ({ ...p, ring: undefined }))
+    result.parcels = overlapping
     result.parcelCount = overlapping.length
   }
 
@@ -1484,7 +1500,7 @@ createServer(async (req, res) => {
   // ── The SHAPE freeze (the Data Wall, autosaved) ──────────────────────────
   // POST /<scene>/shape — write the frozen SHAPE artifact (the per-tile
   // curb/corner silhouette Section opens). The client autosaves this on
-  // Survey-exit (`PIPELINE.md` §5 (the Wall)) with the live `_shapeArtifact` it just rendered,
+  // Survey-exit (`PIPELINE.md` §5 (the Wall)) with the live `protoShapeTiles` it just rendered,
   // so the freeze always tracks the eye-gated Survey shape WITHOUT the heavy
   // slab bake. Lands at public/baked/<scene>/shape.json — exactly where the
   // Section surface fetches it. Scene-keyed; reserved prefixes excluded.
@@ -1506,6 +1522,21 @@ createServer(async (req, res) => {
         res.end(JSON.stringify({ error: err.message }))
       }
     })
+    return
+  }
+
+  // GET /<scene>/curbed-min-width — the minimum curbed width (the nose) for Survey's live build, from the SAME function the
+  // bake calls (`curbedMinWidthOf`), so Survey and the bake cannot read it from different places. ⛔ An error is a 500 with
+  // the reason; the live build refuses without it (`buildTileGround`), never draws on a default.
+  const cmwMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/curbed-min-width$/)
+  if (req.method === 'GET' && cmwMatch && !RESERVED_PREFIXES.has(cmwMatch[1])) {
+    try {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(curbedMinWidthCached(cmwMatch[1])))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
     return
   }
 

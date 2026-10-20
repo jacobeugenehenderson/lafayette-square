@@ -38,7 +38,7 @@ Intake → Skeleton → Prebake → Survey → ⟦DATA WALL⟧ → ⟦ SECTION �
 
 | | The 'thing' | File |
 |---|---|---|
-| **input** (frozen) | the per-tile hardscape SHAPE Survey froze — incl. each tile's `runs[]` (`skelId/side/segOrd/poly/baseMeasure`) | `public/baked/<id>/shape.json` (the `_shapeArtifact`) |
+| **input** (frozen) | the per-tile hardscape SHAPE Survey froze — incl. each tile's `runs[]` (`skelId/side/segOrd/poly/baseMeasure`) | `public/baked/<id>/shape.json` (the `protoShapeTiles`) |
 | **Section authors** | per-edge ped depths + strip materials | `looks/<id>/design.json` (`blockCustoms[skelId][side][segOrd].{treelawn, sidewalk, materials}`) |
 | **Section freezes** | the ped FILL geometry (treelawn/sidewalk/LU/curb strokes) | the ground bake → **wall #2 → Stage** |
 
@@ -278,10 +278,11 @@ pointer that does not resolve reads as evidence already gathered.)*
   ▶ `node checks/claims-the-slope-is-on-the-leg.mjs <scene>` — ⛔ **it now gates BOTH edges and
   CLASSIFIES the steps.** Watching one edge is a fallback inside the detector: it read `walkFrom`
   only and reported 0 while the inner edge stepped 1.50 m at every mixed corner.
-  - **A leg ends in exactly three places and they are ONE test**: an eased corner's **tangent** ·
+  - **A leg ends in exactly three places and they are ONE test**: a PADDED arc's **tangent** ·
     ①'s **square** corner (R = 0, so the ease made no arc) · a change of **frontage**. ⛔ No gate on
     the two depths, so TL↔TL is not skipped and the additive quad that used to cover the
-    no-corner case is gone.
+    no-corner case is gone. On an UNPADDED arc (a bend) nothing ends but a change of the ladder's
+    DEPTHS: the band bends through (50a64997, 6a64c44b). ▶ `node checks/claims-a-bend-bends-the-band.mjs <scene>`
   - **The corner's EXTENT is CARRIED, not recovered** — `iaArc`, stamped by the ease that made the
     arc, beside `iaCorner`, which says only *where*. It replaced matching the frozen `fillets`'
     tangent coordinates back onto the contour, which is `A15`'s forbidden proximity recovery and
@@ -416,9 +417,12 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
   (`__water__`/`__boundary__` — no street) is no corner at all: no pad, no cut. A BEND carries no pad and no cut —
   the walk and lawn bend through — unless Survey makes it a corner, and a junction Survey calls "not a corner" loses both
   (the corner's `corner` flag, read by the pad licence; Jacob, 2026-10-07). A diagonal
-  corner keeps the pad; a **perpendicular** one runs each leg's walk straight on to the kerb in its own landing, a cut
-  where each lands, and a lawn wedge between at the apex — the whole corner walk when a leg has no lawn (`perpGeom`); a
-  walk that never meets the kerb gets no landing, counted. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
+  corner keeps the pad. ⭐ **A PERPENDICULAR corner has NO BEND** (Jacob, 2026-10-18: *"there is no bend at all, only
+  straight extension thru"*): each leg's walk runs STRAIGHT ON past the tangent to the kerb, which is its landing and
+  its cut, its sides the walk's own lines (in line with its leg; at an oblique corner, not square to the crossed street). The two walks meet in a plain L at the block corner. Only the CURB rounds, and
+  everything else between the L, the two landings and the curb arc keeps the leg's outer strip (lawn), with no pad.
+  When a leg has no lawn, its walk is already at the kerb; the other leg still extends and keeps its lawn up to the L. A walk that never meets the kerb
+  gets no landing and is counted. ⛔ Neither the 10-07 sector (`perpGeom`) nor radial landings are this. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
   (`crosswalksSquareAcross`; a pair is matched on the junction node + the chain's two sides). ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.

@@ -1,0 +1,12 @@
+groundDeformer.why-road.mjs: 23912 owner-seam wall(s) · 16216 with a pinned owner · 27035 pinned owner(s), by cause:
+     14386  held below its own (smoothing / envelope) · worst wall 4.17 m
+     10871  station cap smaller (its ray finds less band) · worst wall 4.69 m
+      1342  opposite sign (the station needs the other way) · worst wall 2.56 m
+       302  station need smaller (its ray reaches another back) · worst wall 1.79 m
+       134  other (cause not established) · worst wall 2.43 m
+groundDeformer.why-bare.mjs: 30213 owner-seam wall(s) · 10368 with a pinned owner · 16435 pinned owner(s), by cause:
+     12487  station cap smaller (its ray finds less band) · worst wall 4.69 m
+      2070  held below its own (smoothing / envelope) · worst wall 3.48 m
+      1273  opposite sign (the station needs the other way) · worst wall 2.56 m
+       519  station need smaller (its ray reaches another back) · worst wall 2.13 m
+        86  other (cause not established) · worst wall 0.33 m

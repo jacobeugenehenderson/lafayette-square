@@ -1,0 +1,11 @@
+  ⛔   hipointedemun: 40325 centreline sample(s) where two tiles' road halves meet (every 0.5 m along ①, ±10 mm) · exag 1
+        11331 STEP(S) beyond the terrain's own change + LATTICE_M, worst 4.437 m · by owner pair: run↔run, one chain 6899 · arc↔run 3143 · arc↔arc 558 · run↔run, one chain · a highway edge 532 · run↔run, two chains · a highway edge 108 · run↔run, two chains 91
+        on a triangle reaching into the ① ink (held by no tile — the terrain drawn on the centreline): 2194, worst 4.171 m · both halves inside tiles (their owners disagree): 9137, worst 4.437 m (run↔run, one chain 5575 · arc↔run 2949 · arc↔arc 512 · run↔run, two chains 84 · run↔run, one chain · a highway edge 12 · run↔run, two chains · a highway edge 5)
+        crease (no norm, not gated): p50 0.41° · p90 2.55° · p99 8.75° · max 93.68° · > 3° 2127 (run↔run, one chain 889 · arc↔run 717 · arc↔arc 192 · run↔run, two chains 171 · run↔run, two chains · a highway edge 79 · run↔run, one chain · a highway edge 79)
+          (674.1, 1110.9): 4.437 m · __highway__ ↔ oakland-avenue-2 (run↔run, two chains · a highway edge)
+          (674.6, 1110.7): 4.278 m · __highway__ ↔ oakland-avenue-2 (run↔run, two chains · a highway edge)
+          (673.7, 1111.1): 4.171 m · __highway__ ↔ oakland-avenue-2 (run↔run, two chains · a highway edge) · ① ink
+          (675.0, 1110.4): 4.118 m · __highway__ ↔ oakland-avenue-2 (run↔run, two chains · a highway edge)
+          (675.4, 1110.2): 3.958 m · __highway__ ↔ oakland-avenue-2 (run↔run, two chains · a highway edge)
+          (675.9, 1110.0): 3.481 m · __highway__ ↔ oakland-avenue-2 (run↔run, two chains · a highway edge) · ① ink
+⛔ 1 slab(s) whose road steps where its two halves meet, or that cannot be judged

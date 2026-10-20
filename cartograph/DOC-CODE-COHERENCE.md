@@ -146,20 +146,7 @@ apply to it. ✅ **Fixed** — `PIPELINE.md §6` now carries the two-producer ru
 
 ---
 
-### S5 · ⚠️ **OPEN, correctly documented, and quoted anyway: Check A is blind in both Layer-0 modes**
-
-`litmus-curb-parallel.mjs` passes **`blockCustoms: null`** — it runs with **authoring switched off** — so
-it scores the operator's own authored widths as defects (one avenue's authored 8.70 m read as a "3.13 m
-bow"). And it **silently skips a block with no curb ring at all**, printing *"this block has no curb"*
-as a modest bow. **A fallback inside the detector, which is the one place it must never be.**
-
-**⚠️ Re-verified in the code 2026-09-06: both still present, at the lines `CLAUDE.md` names.** This is
-**not** a doc↔code divergence — the docs describe it accurately. It is on this ledger because **its
-aggregate is still quoted as evidence**, and a number from a blind instrument is worse than no number.
-⛔ Until it runs **with** the scene's authoring and reports an absent ring as its own loud failure class,
-**Check A's aggregate is not evidence of anything.**
-
----
+### S5 · ✅ **Check A retired 2026-10-20** (blind three ways; it refused at build after the legacy pass went) → `_archive/litmus-curb-parallel-RETIRED-2026-10-20.mjs`. The test it meant to be is `ROADMAP A05`.
 
 ### S6 · 🔎 **LANDMINE — a truth that existed only in one agent's measurement, on the day it was taken**
 

@@ -1,0 +1,10 @@
+# node --max-old-space-size=800 scratch/footprint-census/parcel-parts-clip.mjs --towns=<town>   (one town per process; 2026-10-19)
+# HEAD here = 4869fbfa, the parts fix itself: its rings equal today's but for parcelId. The rings[0] before-fix counts are in 4869fbfa's copy of this file.
+lafayette-square: parts lost — HEAD (any cover) 0 · now (any cover) 0 · now (own parcelId) 0, multipart with no source id 0 · rings carrying a parcelId 2932 of 2932 · single-part parcels emitted identically 2901, differently 0 · emitted rings 2932 → 2932
+huron: parts lost — HEAD (any cover) 0 · now (any cover) 0 · now (own parcelId) 0, multipart with no source id 0 · rings carrying a parcelId 6269 of 6279 · single-part parcels emitted identically 6073, differently 0 · emitted rings 6279 → 6279
+provincetown: parts lost — HEAD (any cover) 0 · now (any cover) 0 · now (own parcelId) 0, multipart with no source id 0 · rings carrying a parcelId 4996 of 4996 · single-part parcels emitted identically 4915, differently 0 · emitted rings 4996 → 4996
+jacksonheights: parts lost — HEAD (any cover) 0 · now (any cover) 0 · now (own parcelId) 0, multipart with no source id 0 · rings carrying a parcelId 36429 of 36429 · single-part parcels emitted identically 36406, differently 0 · emitted rings 36429 → 36429
+hipointedemun: parts lost — HEAD (any cover) 0 · now (any cover) 0 · now (own parcelId) 0, multipart with no source id 0 · rings carrying a parcelId 23408 of 23411 · single-part parcels emitted identically 23400, differently 0 · emitted rings 23411 → 23411
+# --mutant=vertex-mean --towns=provincetown
+MUTANT: vertex mean
+provincetown: parts lost — HEAD (any cover) 0 · now (any cover) 1 · now (own parcelId) 1, multipart with no source id 0 · rings carrying a parcelId 4995 of 4995 · single-part parcels emitted identically 4915, differently 0 · emitted rings 4996 → 4995

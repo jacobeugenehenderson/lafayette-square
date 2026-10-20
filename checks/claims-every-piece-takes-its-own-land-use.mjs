@@ -121,7 +121,7 @@ const want = process.argv.slice(2)
 for (const scene of (want.length ? want : feedScenes())) {
   const f = feed(scene); if (!f) continue
   const prev = console.warn; console.warn = () => {}
-  let G; try { G = buildProto(f, { protoArtifact: true, protoProducer: true }) } finally { console.warn = prev }
+  let G; try { G = buildProto(f) } finally { console.warn = prev }
   const T = G.protoShapeTiles
   if (!T?.length) { console.log(`⛔ ${scene}: no protoShapeTiles — NOT measured`); continue }
   measured++

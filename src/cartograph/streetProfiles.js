@@ -12,7 +12,7 @@
 //   }
 //
 // Stripe order from centerline outward (always fixed):
-//   asphalt (pavementHW) → curb (const CURB_WIDTH) → [treelawn] → [sidewalk | lawn]
+//   asphalt (pavementHW) → curb (the Look's curbWidth, else KIT_CURB_WIDTH) → [treelawn] → [sidewalk | lawn]
 //
 // The last stripe's material is named by `terminal`. When terminal='none' the
 // side stops at curb (alleys, footways).
@@ -20,23 +20,23 @@
 // No per-stripe pulldowns: stripe position in the sequence determines material.
 // Parking is authored as a separate overlay layer — not represented here.
 
+import { CLASSES, classSection, LOCAL_SECTION } from './streetClass.js'
+
 const FT = 0.3048
 
-export const CURB_WIDTH = 6 * 0.0254   // fixed constant — not editable
-export const SV_TREELAWN = 4.5 * FT
-export const SV_SIDEWALK = 5 * FT
+// ⭐ THE KIT'S CURB — metres, the one home of the kit's 6 in (Jacob, 2026-10-20: "6 inches everywhere"). A town that
+// authors no `curbWidth` in its home Look inherits it through `resolveCurbWidth`, which names the rung that decided.
+// ⛔ Resolved at the DESIGN-READ layer only (the bake's `cartograph/lookDesign.mjs`, the store, the probe feed); a builder
+// called with no width still refuses. ▶ node checks/claims-a-look-authors-its-curb-width.mjs
+export const KIT_CURB_WIDTH = 0.1524   // m (6 in)
 
-// Default pavement half-widths per street type (no parking rolled in —
-// parking is a separate overlay now).
-const TYPE_PAVEMENT_HW = {
-  residential: 2 * 10 * FT / 2 + 7 * FT,   // 2 lanes + 1 parking lane = half-width from curb
-  secondary:   2 * 11 * FT / 2 + 7 * FT,
-  primary:     4 * 11 * FT / 2 + 8 * FT,
-  service:     7.5 * FT,
-  footway:     3 * FT,
-  cycleway:    5 * FT,
-  pedestrian:  5 * FT,
-  steps:       4 * FT,
+/** A design's curb width and the rung that decided: `authored` (the town's Look) or `kit` (KIT_CURB_WIDTH). An authored
+ *  value that is not a finite number ≥ 0 refuses — it is a broken authoring, not an absence. */
+export function resolveCurbWidth(design) {
+  const a = design?.curbWidth
+  if (a == null) return { value: KIT_CURB_WIDTH, rung: 'kit' }
+  if (!Number.isFinite(a) || a < 0) throw new Error(`[curbWidth] ⛔ design.json's curbWidth is ${JSON.stringify(a)} — author a width in metres (≥ 0), or remove the field to inherit the kit's ${KIT_CURB_WIDTH} m`)
+  return { value: a, rung: 'authored' }
 }
 
 // ── THE HIGHWAY TYPICAL SECTION (H-3 step 1, `r-highway-positive-object`) ──────────
@@ -57,9 +57,12 @@ const TYPE_PAVEMENT_HW = {
 //   (`r-manuals-disagree-take-smaller`, PER COMPONENT, never a total: 1 lane
 //   `d-ramp-section-no-state-manual`, 2+ lanes `d-ramp-two-lane-no-state-manual`). A case a
 //   manual is silent on (MassDOT ≥ 3 lanes) and an untagged ramp are [U]: drawn, printed by id.
-const HIGHWAY_MAINLINE = new Set(['motorway', 'trunk'])
-const HIGHWAY_RAMP = new Set(['motorway_link', 'trunk_link'])
-export const isHighwayClass = (t) => HIGHWAY_MAINLINE.has(t) || HIGHWAY_RAMP.has(t)
+// ⭐ WHICH CHAINS: a class the vocabulary marks `swept` (`streetClass.js`: highway · highway-link). The two
+// copied sets that stood here (`HIGHWAY_MAINLINE` / `HIGHWAY_RAMP`) are gone; a ramp is `highway-link`.
+export const isSweptClass = (cls) => {
+  if (!CLASSES[cls]) throw new Error(`⛔ isSweptClass: "${cls}" is not a class in the vocabulary (streetClass.js)`)
+  return CLASSES[cls].swept === true
+}
 export const isInterstateRef = (ref) => typeof ref === 'string' && /(^|;)\s*I[\s-]?\d/.test(ref)
 
 // The town's state, voted over the `addr:state` tags in its own OSM (any tag bag in `osm`).
@@ -157,10 +160,10 @@ export function registryReadChanged(record, registry) {
   return Object.entries(record).filter(([id, was]) => JSON.stringify(was === true ? byId.has(id) : (byId.get(id)?.value ?? null)) !== JSON.stringify(was)).map(([id]) => id)
 }
 
-// chain: { highway, oneway, lanes?, laneProfile?, length?, ref? } → { left, right, report }
+// chain: { class, oneway, lanes?, laneProfile?, length?, ref? } → { left, right, report }
 export function highwaySection(chain, std) {
-  const isRamp = HIGHWAY_RAMP.has(chain.highway)
-  if (!isRamp && !HIGHWAY_MAINLINE.has(chain.highway)) throw new Error(`⛔ highwaySection: ${chain.highway} is not a highway class`)
+  if (!isSweptClass(chain.class)) throw new Error(`⛔ highwaySection: class ${chain.class} is not swept — it has a class section`)
+  const isRamp = chain.class === 'highway-link'
   const oneway = !!chain.oneway
   const interstate = chain.ref == null ? null : isInterstateRef(chain.ref)
   // One span's section: { lanes, lanesSource, left, right, sources }.
@@ -195,9 +198,9 @@ export function highwaySection(chain, std) {
   return { left, right, report: { ramp: isRamp, lanesSource, interstate, assumed: lanesSource !== 'osm', unknowns: right.section.sources.filter(x => x.startsWith('[U]')) } }
 }
 
-// Types that get a default sidewalk-zone (treelawn + sidewalk, terminal='sidewalk').
-// Highways are intentionally excluded — they emit pavement-only ribbons.
-const SIDEWALK_ELIGIBLE = new Set(['residential', 'secondary', 'primary'])
+// ⭐ A class has a pedestrian realm when its house section has a walk or a lawn (`streetClass.js`). The copied
+// `SIDEWALK_ELIGIBLE` set (residential / secondary / primary, on a type the class used to be re-guessed into) is gone.
+const classHasPed = (cls) => { const s = CLASSES[cls]?.section; return !!s && (s.treelawn > 0 || s.sidewalk > 0) }
 
 // ── Palettes ───────────────────────────────────────────
 // BAND_COLORS = Material-3 defaults used by the rendered map. Design panel
@@ -239,72 +242,51 @@ export const SNAP_TARGETS = {
 }
 export const SNAP_RADIUS = 0.25
 
-// ── Default measure per side, using survey data when available.
-//
-// ⚠ LEGACY FALLBACK — superseded by the skeleton seed path (measureFromSeed
-// below). Kept only for streets that reach derive without a seed.
-//
-// Survey fields (per street):
-//   pavementHalfWidth   — centerline → *sidewalk centerline*, averaged over
-//                         both sides — a BLOCK-EDGE datum, NOT an asphalt
-//                         half-width (survey.js: "Block edge goes here. Street
-//                         pavement is rendered independently from lane/parking
-//                         tags."). This function nevertheless feeds it in as
-//                         asphalt `pavementHW` — the block-edge/asphalt
-//                         conflation (E1) — which floods the asphalt out to
-//                         the sidewalk and zeroes the treelawn. The seed path
-//                         wires the quantities correctly; do not extend this one.
-//   sidewalkLeft/Right  — centerline → *sidewalk centerline* on that side
-//                         (OSM footway distance). Present only where
-//                         cartograph/survey.js found a sidewalk.
-//
-// Per-side derivation:
-//   - Sidewalk-ineligible type (alley/footway/etc.) → terminal='none', no stripes outside curb.
-//   - Survey has sidewalkX for this side → terminal='sidewalk',
-//     treelawn fills gap between curb-outer and (sidewalkDist − SV_SIDEWALK/2),
-//     sidewalk width = SV_SIDEWALK.
-//   - Sidewalk-eligible but no sidewalk data on this side:
-//     - If the other side has sidewalk (asymmetric street — e.g. park-edge) →
-//       terminal='lawn' with a modest grass strip (no measured data).
-//     - If neither side has sidewalk data → terminal='sidewalk' with a sane
-//       default so the default rendering still reads as a residential block.
-export function defaultSideMeasure(type, survey, sideKey = 'left') {
-  if (isHighwayClass(type)) throw new Error(`⛔ defaultSideMeasure: a ${type} has no class-constant width — its section is \`highwaySection\` (H-3)`)
-  const hw = survey?.pavementHalfWidth || TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential
-  if (!SIDEWALK_ELIGIBLE.has(type)) {
-    return { pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none' }
+// ── Default measure per side, for a street that reaches derive WITHOUT a seed (the alley-trim reach reads
+// raw ways). The carriageway and the walk/lawn are the CLASS's section (`classSection`); `survey` is
+// survey.json's per-name record.
+//   pavementHalfWidth — centerline → *sidewalk centerline* (a BLOCK-EDGE datum, NOT an asphalt half-width;
+//     E1). It still wins here as asphalt, as it always has: the conflation is this function's legacy, and the
+//     seed path (measureFromSeed) wires the quantities correctly. ⛔ Do not extend it.
+//   sidewalkLeft/Right — centerline → sidewalk centerline on that side, where survey.js found one.
+// A class with no pedestrian realm → terminal 'none'. One side surveyed and not the other → the other is a
+// park-edge lawn. Neither surveyed → the class's own walk and lawn. ⛔ No class → throw (no residential default).
+export function defaultSideMeasure(cls, survey, sideKey = 'left', { lanes = null, oneway = false } = {}) {
+  if (isSweptClass(cls)) throw new Error(`⛔ defaultSideMeasure: a ${cls} has no class-constant width — its section is \`highwaySection\` (H-3)`)
+  const sec = classSection(cls, { lanes, oneway })
+  const hw = survey?.pavementHalfWidth || sec.pavementHW
+  if (!classHasPed(cls)) {
+    return { pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none', pedRealm: false }
   }
   const swDist = sideKey === 'right'
     ? survey?.sidewalkRight
     : survey?.sidewalkLeft
   if (swDist && Number.isFinite(swDist)) {
-    const curbOuter = hw + CURB_WIDTH
-    const swInner = swDist - SV_SIDEWALK / 2
+    const curbOuter = hw + KIT_CURB_WIDTH
+    const swInner = swDist - LOCAL_SECTION.sidewalk / 2
     const treelawn = Math.max(0, swInner - curbOuter)
     return {
       pavementHW: hw,
       treelawn,
-      sidewalk: SV_SIDEWALK,
+      sidewalk: LOCAL_SECTION.sidewalk,
       terminal: 'sidewalk',
     }
   }
-  // No per-side sidewalk data.
   const otherSw = sideKey === 'right' ? survey?.sidewalkLeft : survey?.sidewalkRight
   if (otherSw && Number.isFinite(otherSw)) {
     // Other side has a sidewalk; this side likely faces open space / park.
     return { pavementHW: hw, treelawn: 0, sidewalk: 3 * FT, terminal: 'lawn' }
   }
-  // Neither side surveyed — fall back to residential treelawn + sidewalk default.
-  return { pavementHW: hw, treelawn: SV_TREELAWN, sidewalk: SV_SIDEWALK, terminal: 'sidewalk' }
+  return { pavementHW: hw, treelawn: sec.treelawn, sidewalk: sec.sidewalk, terminal: 'sidewalk' }
 }
 
 // Per-street default measure: {left, right, symmetric}.
 // `symmetric: true` means dragging one side's handles mirrors to the other.
 // Operator unlocks via the panel "Asymmetrical" toggle. Most streets are
 // symmetric; park-edge streets typically need asymmetrical.
-export function defaultMeasure(type, survey) {
-  const left = defaultSideMeasure(type, survey, 'left')
-  const right = defaultSideMeasure(type, survey, 'right')
+export function defaultMeasure(cls, survey, opts = {}) {
+  const left = defaultSideMeasure(cls, survey, 'left', opts)
+  const right = defaultSideMeasure(cls, survey, 'right', opts)
   // If survey produced different terminals L vs R (park-edge case), start
   // asymmetric so the operator doesn't accidentally overwrite one side.
   const symmetric = left.terminal === right.terminal
@@ -324,18 +306,20 @@ export function defaultMeasure(type, survey) {
 // This builder turns the seed into the render measure shape. The operator's
 // overlay still wins upstream (overlay = tweaks only); this is what a chain
 // renders when untouched.
-export function measureFromSeed(seed, type, highway = null) {
-  // A highway is its typical section (`highwaySection`), never the seed: seedSection has no
-  // motorway/trunk rows and would read residential lane+parking widths. ⛔ No section → throw.
-  if (isHighwayClass(type)) {
-    if (!highway?.left || !highway?.right) throw new Error(`⛔ measureFromSeed: a ${type} needs its highwaySection (H-3) — there is no class constant to fall back to`)
+export function measureFromSeed(seed, cls, highway = null) {
+  // A highway is its typical section (`highwaySection`), never the seed: a swept class's seed carries no
+  // widths. ⛔ No section → throw.
+  if (isSweptClass(cls)) {
+    if (!highway?.left || !highway?.right) throw new Error(`⛔ measureFromSeed: a ${cls} needs its highwaySection (H-3) — there is no class constant to fall back to`)
     return { left: highway.left, right: highway.right, symmetric: Math.abs(highway.left.pavementHW - highway.right.pavementHW) < 0.01 }
   }
   const buildSide = (sd, other) => {
-    const pavementHW = Number.isFinite(sd?.pavementHW) ? sd.pavementHW
-      : (Number.isFinite(seed.pavementHW) ? seed.pavementHW : TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential)
-    if (!SIDEWALK_ELIGIBLE.has(type)) {
-      return { pavementHW, treelawn: 0, sidewalk: 0, terminal: 'none' }
+    const pavementHW = Number.isFinite(sd?.pavementHW) ? sd.pavementHW : seed.pavementHW
+    if (!Number.isFinite(pavementHW)) throw new Error(`⛔ measureFromSeed: a ${cls} seed carries no carriageway (seed.pavementHW) — it was not seeded from its class section`)
+    // A class with no pedestrian realm paints none, surveyed or not — `pedRealm:false` is what
+    // `resolvePedDepths` (the paint) reads; `terminal` alone it does not.
+    if (!classHasPed(cls)) {
+      return { pavementHW, treelawn: 0, sidewalk: 0, terminal: 'none', pedRealm: false }
     }
     // An expressway carries no pedestrian realm (skeleton.js `isExpressway`). The
     // flag travels on the side so `resolvePedDepths` — what the map paints — reads it.
@@ -357,8 +341,8 @@ export function measureFromSeed(seed, type, highway = null) {
     }
     return {
       pavementHW,
-      treelawn: Number.isFinite(sd?.treelawn) ? sd.treelawn : (Number.isFinite(seed.treelawn) ? seed.treelawn : SV_TREELAWN),
-      sidewalk: Number.isFinite(sd?.sidewalk) ? sd.sidewalk : (Number.isFinite(seed.sidewalk) ? seed.sidewalk : SV_SIDEWALK),
+      treelawn: Number.isFinite(sd?.treelawn) ? sd.treelawn : seed.treelawn,
+      sidewalk: Number.isFinite(sd?.sidewalk) ? sd.sidewalk : seed.sidewalk,
       terminal: 'sidewalk',
     }
   }
@@ -387,7 +371,7 @@ export function sideToStripes(side) {
   // curb — always present unless pavement is zero, at the kit's reference width (there is no per-side curb width:
   // the kerb is the Look's cosmetic `curbWidth`, Jacob 2026-10-06)
   if (side.pavementHW > 0 && side.terminal !== undefined) {
-    const cw = CURB_WIDTH
+    const cw = KIT_CURB_WIDTH
     out.push({ material: 'curb', innerR: r, outerR: r + cw })
     r += cw
   }
@@ -583,11 +567,6 @@ export function measureForSegment(street, ordinal) {
 }
 
 // Total half-width (for back-compat callers like surveyor ribbon preview).
-export function getHalfWidth(type) {
-  const side = defaultSideMeasure(type)
-  return side.pavementHW + (side.terminal !== 'none' ? CURB_WIDTH : 0) + side.treelawn + side.sidewalk
-}
-
 // For inner-edge anchored chains, return the polyline offset to the inner
 // edge of the carriageway pavement. `pts` is the original chain centerline,
 // `innerSign` is +1 if the inner side is on the LEFT perpendicular of the

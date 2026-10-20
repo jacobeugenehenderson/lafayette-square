@@ -6,11 +6,11 @@
  * (tempC, cloudCover, humidity, windKph, etc.). Modulators want a few
  * more — phenomena like cold-front passage and wildfire smoke have
  * specific signatures that aren't natural Almanac rule keys but ARE
- * present (or trivially derivable from) the open-meteo response.
+ * present (or trivially derivable from) the live weather (lib/nws.js).
  *
  * Halo 2026-05-20 (Phase 6). Approach B from the brief: pressure
  * trend reads off the hourly back-fill (`useWeather` requests
- * `past_hours=4` + `pressure_msl` in hourly) rather than maintaining a
+ * observed pressure that lib/nws.js sets on the past hours) rather than maintaining a
  * persistent in-memory ring buffer. Cold-start lag: none — the
  * back-fill is in the same fetch response that lights up the live
  * weather, so a fresh page sees correct pressure_trend_3hr immediately.
@@ -54,7 +54,7 @@ export function getSignalKeys() { return ALL_SIGNAL_KEYS.slice() }
  * @param {object} extras — { currentWeatherCode, directRadiation,
  *   diffuseRadiation, hourlyForecast, precipMmHr } pulled off useSkyState.
  *   The payload already has most of these in different names; extras carries
- *   the open-meteo-named fields needed for the discrete drivers.
+ *   the reading-named fields needed for the discrete drivers.
  * @returns {object} signals — flat map keyed by ALL_SIGNAL_KEYS (any
  *   unavailable signal is left undefined; drivers that read undefined
  *   evaluate to strength 0, by design).

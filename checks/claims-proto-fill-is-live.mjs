@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ ③'s FILL, STRUCK LIVE PAST THE WALL — the STAMP INQUIRY, measured.
-// ▶ node checks/claims-proto-fill-is-live.mjs [scene]
+// ▶ node checks/claims-proto-fill-is-live.mjs [scene…] [--mutants]     (no scene = every feed town; ⚠️ heavy: two builds per town)
 //
 // `SECTION §4`'s keystone: freeze the SILHOUETTE, author the FILL live. ③ shipped the FILL frozen
 // (`bands` on the tile), so authoring could not reach it. The flip is not "delete `bands`" — that
@@ -10,7 +10,18 @@
 //
 // WHAT IT ASSERTS
 //   1. the live FILL reproduces ③'s own frozen bands (same construction, both sides of the wall)
-//   2. authoring REACHES it (the whole point of the keystone)
+//   2. authoring REACHES it (the whole point of the keystone), judged PER AUTHORED EDGE, at the product's door:
+//      2a · FILL — every authored FRONTAGE (road · side) carrying a slot whose treelawn / sidewalk / materials differ from
+//           the DEFAULT the painter would take (`resolvePedDepths` unauthored, the §3.1 arrangement) moves the paint of a tile
+//           it is stamped on, when that frontage's authoring is removed. Reports reached / could; a frontage stamped on no
+//           contour point is named, not counted.
+//      2b · DROPPED — the whole build with `blockCustoms: null` (buildTileGround, the bake's door) moves the map.
+//      2c · ② — every authored slot whose pavementHW differs from the street's base moves the depth ② offsets one of its
+//           blocks by (`protoDepthByBlock`, the construction's own number), authored vs dropped.
+//      2d · SYNTHETIC — every authored treelawn doubled moves the fill. Labelled as such: it proves the door is open, never
+//           that the town's own authoring reached it.
+//      ⛔ A town whose authored values all equal the defaults, or that authors nothing, CANNOT SPEAK on 2a–2c and is
+//      named as such — never passed on 2d alone.
 //   3. a SEAM is not constructible — every boundary is a whole-contour offset of one curve
 //
 // ⛔ TWO INSTRUMENT ERRORS THIS ENCODES SO THEY CANNOT RECUR (both cost measurements on 2026-09-06):
@@ -19,7 +30,7 @@
 //   · `run.baseMeasure.treelawn` is the AUTHORED OVERRIDE ONLY — median 0. The painted depth comes
 //     from `resolvePedDepths`. Off the raw field you get a 3.00 m envelope gap that does not exist.
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
-import { sectionOpen, hasStampInquiry } from '../src/lib/tileGround.js'
+import { sectionOpen, hasStampInquiry, sectionPassProtoTile, resolvePedDepths } from '../src/lib/tileGround.js'
 import { differenceRings, intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 
 const sA = r => Math.abs((r||[]).reduce((s,g)=>{let a=0;for(let i=0,n=g.length;i<n;i++){const p=g[i],q=g[(i+1)%n];a+=p[0]*q[1]-q[0]*p[1]}return s+a/2},0))
@@ -27,10 +38,40 @@ const U  = r => sA(differenceRings(r, []))
 const luA = o => Object.values(o||{}).reduce((s,v)=>s+U(v),0)
 const pct = (a,b) => b > 0 ? `${(100*a/b).toFixed(1)}%` : 'n/a'
 
+// ⭐ WHAT AN AUTHORED SLOT SAYS THAT THE DEFAULT WOULD NOT — the same defaults the painter and ② take unauthored.
+// ped: `resolvePedDepths(base, side, null)` · materials: the §3.1 arrangement (treelawn-Y reads LU→SW, N reads SW→LU) ·
+// pavementHW: the street's base measure (`ribbons.streets[].measure`, what ②'s `protoBase` reads).
+function slotSignal(blockCustoms, streets) {
+  const baseOf = new Map((streets || []).map(s => [s.skelId, s.measure]))
+  const out = []
+  for (const [skelId, sides] of Object.entries(blockCustoms || {})) for (const [side, ords] of Object.entries(sides || {})) for (const [ord, c] of Object.entries(ords || {})) {
+    if (!c || typeof c !== 'object') continue
+    const base = baseOf.get(skelId), d0 = resolvePedDepths(base, side, null), d1 = resolvePedDepths(base, side, c)
+    const ped = Math.abs(d0.tl - d1.tl) > 1e-9 || Math.abs(d0.sw - d1.sw) > 1e-9
+    const defMat = d0.hasTL ? { outer: 'LU', inner: 'SW' } : { outer: 'SW', inner: 'LU' }
+    const mat = !!c.materials && ((c.materials.outer != null && c.materials.outer !== defMat.outer) || (c.materials.inner != null && c.materials.inner !== defMat.inner))
+    const bhw = base?.[side]?.pavementHW
+    const pav = Number.isFinite(c.pavementHW) && !(Number.isFinite(bhw) && Math.abs(c.pavementHW - bhw) <= 1e-6)
+    out.push({ skelId, side, segOrd: +ord, fill: ped || mat, pav, why: [ped && 'ped', mat && 'materials', pav && 'pavementHW'].filter(Boolean) })
+  }
+  return out
+}
+// ⭐ THE UNIT IS THE FRONTAGE — one road, one side (the painter's own `roadOf` key: a skelId less its trailing ordinal).
+// The painter resolves a frontage ONCE and authoring wins its vote, so removing one slot of a frontage that carries another
+// authored slot hands the frontage to that sibling and moves nothing (LS, measured: every one of 29 such slots). Removing the
+// frontage's authoring is the question that has an answer.
+const roadOf = (id) => String(id ?? '').replace(/-\d+$/, '')
+const withoutFrontage = (bc, road, side) => { const o = JSON.parse(JSON.stringify(bc))
+  for (const sk of Object.keys(o)) if (roadOf(sk) === road && o[sk]?.[side]) delete o[sk][side]
+  return o }
+const MUT = process.argv.includes('--mutants')
+const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
+const cannotSpeak = []
+
 let bad = 0
-for (const scene of feedScenes()) {
+for (const scene of (named.length ? named : feedScenes())) {
   const f = feed(scene); if (!f) { bad++; continue }
-  const g = buildProto(f, { protoArtifact: true })
+  const g = buildProto(f)
   const T = g.protoShapeTiles, cw = f.curbWidth
   // ⭐ ③'s strike is the REFERENCE, not the product: the tile no longer carries `bands` (the FILL
   // is live now), so the reference comes off the build's measurement channel and is cut by each
@@ -80,18 +121,94 @@ for (const scene of feedScenes()) {
   row('curb',     U(L.curb),          U(F.curb), 0.02)
   row('asphalt',  U(L.asphalt),       U(F.asphalt))
 
-  // ── 2 · AUTHORING REACHES THE FILL. `SECTION §4`'s whole point; it was Δ 0 m² on both paths.
+  // ── 2 · AUTHORING REACHES THE MAP, PER AUTHORED EDGE, AT THE PRODUCT'S DOOR. `SECTION §4`'s whole point.
+  const SIG = slotSignal(f.blockCustoms, f.ribbons.streets), fillSig = SIG.filter(x => x.fill), pavSig = SIG.filter(x => x.pav)
+  const quietly = (fn) => { const p = console.log, w = console.warn; console.log = console.warn = () => {}; try { return fn() } finally { console.log = p; console.warn = w } }
+  const paintA = (t, bc) => quietly(() => { const o = sectionPassProtoTile(t, cw, { outer:'LU', inner:'SW' }, bc, f.cornerCornerRadiusOverrides)
+    return U(o.Wacc) + 1e3 * luA(o.tlByLu) + 1e6 * luA(o.luByLu) })   // one number per tile that moves if any strip moves
+  console.log(`  authored slots ${SIG.length} · differ from their default: fill ${fillSig.length} · pavementHW ${pavSig.length}`)
+  if (!SIG.length) { console.log(`  ⛔ CANNOT SPEAK — ${scene} authors no slot: 2a–2c have nothing to measure (not a pass)`); cannotSpeak.push(`${scene} (authors nothing)`) }
+
+  // 2a · FILL, per authored FRONTAGE: remove that road|side's authoring; a tile one of its differing slots is stamped on must repaint.
+  const fillReach = (bcFor) => {
+    let could = 0, reached = 0; const offDrawing = [], missed = []
+    const fronts = new Map()
+    for (const s of fillSig) { const k = `${roadOf(s.skelId)}|${s.side}`; if (!fronts.has(k)) fronts.set(k, []); fronts.get(k).push(s) }
+    for (const [k, ss] of fronts) {
+      const tiles = T.filter(t => (t.runs || []).some((r, ri) => ss.some(s => r.skelId === s.skelId && r.side === s.side && r.segOrd === s.segOrd)
+        && (t.iaStamp || []).some(a => a.includes(ri))))
+      if (!tiles.length) { offDrawing.push(k); continue }
+      could++
+      const [road, side] = k.split('|'), bc0 = withoutFrontage(f.blockCustoms, road, side)
+      if (tiles.some(t => Math.abs(paintA(t, bcFor(f.blockCustoms)) - paintA(t, bcFor(bc0))) > 1e-2)) reached++; else missed.push(`${k} (${[...new Set(ss.flatMap(s => s.why))].join('+')})`)
+    }
+    return { could, reached, offDrawing, missed }
+  }
+  if (SIG.length && !fillSig.length) { console.log(`  ⛔ 2a CANNOT SPEAK — every authored treelawn/sidewalk/material in ${scene} equals its default; removing one moves nothing BY CONSTRUCTION (not a pass)`); cannotSpeak.push(`${scene} 2a (authored fill = defaults)`) }
+  else if (fillSig.length) {
+    const R2a = fillReach(bc => bc)
+    const ok = R2a.reached === R2a.could; if (!ok) bad++
+    console.log(`  2a fill, per authored frontage: ${R2a.reached}/${R2a.could} reached the paint ${ok ? '✅' : '⛔'}${R2a.offDrawing.length ? ` · ${R2a.offDrawing.length} stamped on no contour point (not counted): ${R2a.offDrawing.slice(0, 4).join(', ')}` : ''}`)
+    for (const m of R2a.missed.slice(0, 8)) console.log(`     ⛔ inert: ${m}`)
+    if (MUT) { const M = fillReach(() => null), red = M.could > 0 && M.reached < M.could; if (!red) bad++
+      console.log(`     mutant · the painter given no authoring: ${M.reached}/${M.could} ${red ? 'RED, as it must be' : '⛔ still GREEN'}`) }
+  }
+
+  // 2b · DROPPED at the product's door: the whole build without blockCustoms.
+  const g0 = SIG.length ? buildProto(f, { blockCustoms: null }) : null
+  const moved = (A, B) => { const lay = { sidewalk: x => x.sidewalk, treelawn: x => Object.values(x.treelawnByLu || {}).flat(), asphalt: x => x.asphalt, curb: x => x.curb }
+    return Object.fromEntries(Object.entries(lay).map(([k, get]) => [k, U(differenceRings(get(A) || [], get(B) || [])) + U(differenceRings(get(B) || [], get(A) || []))])) }
+  if (g0) {
+    const mv = moved(g, g0), tot = Object.values(mv).reduce((a, b) => a + b, 0), any = fillSig.length + pavSig.length
+    if (!any) { console.log(`  ⛔ 2b CANNOT SPEAK — every authored value equals its default (moved ${tot.toFixed(0)} m², expected none)`); cannotSpeak.push(`${scene} 2b (authoring = defaults)`) }
+    else { const ok = tot > 1; if (!ok) bad++
+      console.log(`  2b authoring dropped at buildTileGround: moved ${Object.entries(mv).map(([k, v]) => `${k} ${v.toFixed(0)}`).join(' · ')} m² ${ok ? '✅' : '⛔ INERT'}`)
+      if (MUT) { const m = moved(g, g), red = Object.values(m).reduce((a, b) => a + b, 0) <= 1; if (!red) bad++
+        console.log(`     mutant · the dropped build is the authored one: ${red ? 'RED, as it must be' : '⛔ still GREEN'}`) } }
+  }
+
+  // 2c · pavementHW reaches ②, per authored edge: a block it owns is offset by a different depth authored vs dropped.
+  const P = f.ribbons.protopolygon, owners = P?.owners || []
+  const pavReach = (A, B) => {
+    let could = 0, reached = 0; const missed = []
+    for (const s of pavSig) {
+      const own = (L) => (L || []).some(l => { const o = owners[l]; return o && o.skelId === s.skelId && o.side === s.side && o.segOrd === s.segOrd })
+      const ks = (P?.blockLabels || []).map((L, k) => (own(L) || (P.blockHoleLabels?.[k] || []).some(own)) ? k : -1).filter(k => k >= 0 && A.protoDepthByBlock?.[k] && B.protoDepthByBlock?.[k])
+      if (!ks.length) continue
+      could++
+      if (ks.some(k => JSON.stringify(A.protoDepthByBlock[k].depth) !== JSON.stringify(B.protoDepthByBlock[k].depth))) reached++; else missed.push(`${s.skelId}|${s.side}|${s.segOrd}`)
+    }
+    return { could, reached, missed }
+  }
+  if (g0 && !pavSig.length) { console.log(`  ⛔ 2c CANNOT SPEAK — no authored pavementHW in ${scene} differs from its street's base (not a pass)`); cannotSpeak.push(`${scene} 2c (authored pavementHW = base)`) }
+  else if (g0) {
+    const R2c = pavReach(g, g0), ok = R2c.could > 0 && R2c.reached === R2c.could; if (!ok) bad++
+    console.log(`  2c pavementHW reaches ②, per authored edge: ${R2c.reached}/${R2c.could} moved their block's offset depth ${ok ? '✅' : '⛔'}`)
+    for (const m of R2c.missed.slice(0, 8)) console.log(`     ⛔ inert: ${m}`)
+    if (MUT) { const M = pavReach(g, g), red = M.reached < M.could; if (!red) bad++
+      console.log(`     mutant · the dropped build is the authored one: ${M.reached}/${M.could} ${red ? 'RED, as it must be' : '⛔ still GREEN'}`) }
+  }
+
+  // 2d · SYNTHETIC: every authored treelawn doubled. Proves the door is open; says nothing about the town's own values.
   const bc = JSON.parse(JSON.stringify(f.blockCustoms || {}))
   let n = 0
   for (const s of Object.values(bc)) for (const sd of Object.values(s||{})) for (const o of Object.values(sd||{}))
     if (Number.isFinite(o?.treelawn)) { o.treelawn *= 2; n++ }
-  const base = luA(L.treelawnByLu), moved = luA(open(T, bc).treelawnByLu)
-  const frz  = 0   // the frozen bands were inert BY CONSTRUCTION — that is the over-reach now removed
-  if (!n) console.log(`  authoring: this town authors NO treelawn depth — the gate cannot speak here (not a pass)`)
+  if (!n) console.log(`  2d synthetic: this town authors NO treelawn depth — nothing to double (not a pass)`)
   else {
-    const ok = Math.abs(moved-base) > 1
+    const base = luA(L.treelawnByLu), mv = luA(open(T, bc).treelawnByLu), ok = Math.abs(mv - base) > 1
     if (!ok) bad++
-    console.log(`  authoring: doubling ${n} treelawn slots moves the LIVE fill ${(moved-base>=0?'+':'')}${(moved-base).toFixed(0)} m² ${ok?'✅':'⛔ INERT'} · the FROZEN bands ${frz.toFixed(0)} m² (frozen is inert BY CONSTRUCTION — that is the over-reach)`)
+    console.log(`  2d synthetic (not the town's own values): doubling ${n} treelawn slots moves the LIVE fill ${(mv-base>=0?'+':'')}${(mv-base).toFixed(0)} m² ${ok?'✅':'⛔ INERT'}`)
+    if (MUT) { const m = luA(open(T, f.blockCustoms).treelawnByLu), red = Math.abs(m - base) <= 1; if (!red) bad++
+      console.log(`     mutant · the doubling not applied: ${red ? 'RED, as it must be' : '⛔ still GREEN'}`) }
+  }
+  // (c)'s own mutant: a copy of the town's slots set to their defaults must be read as NO SIGNAL.
+  if (MUT && SIG.length) {
+    const plain = {}
+    for (const s of SIG) { const base = f.ribbons.streets.find(x => x.skelId === s.skelId)?.measure, d0 = resolvePedDepths(base, s.side, null)
+      ;((plain[s.skelId] ||= {})[s.side] ||= {})[s.segOrd] = { treelawn: d0.tl, sidewalk: d0.sw, ...(Number.isFinite(base?.[s.side]?.pavementHW) ? { pavementHW: base[s.side].pavementHW } : {}) } }
+    const S0 = slotSignal(plain, f.ribbons.streets), red = !S0.some(x => x.fill || x.pav); if (!red) bad++
+    console.log(`     mutant · the slots set to their defaults: ${red ? 'read as NO SIGNAL, as it must be' : `⛔ still read as signal (${S0.filter(x => x.fill || x.pav).length})`}`)
   }
 
   // ── 3 · NO SEAM. Every boundary is a whole-contour offset of ONE curve, so treelawn and sidewalk
@@ -106,5 +223,6 @@ for (const scene of feedScenes()) {
   console.log(`  treelawn∩sidewalk: frozen ${oF.toFixed(0)} m² · live ${oL.toFixed(0)} m² ${ok?'✅ no worse':'⛔ WORSE than ③'}`)
   if (!ok) bad++
 }
-console.log(bad ? `\n⛔ ${bad} FAILURE(S)` : `\n✅ PASS — the FILL is struck live off the frozen stamp, and authoring reaches it.`)
+if (cannotSpeak.length) console.log(`\n⛔ COULD NOT SPEAK (named, not passed): ${cannotSpeak.join(' · ')}`)
+console.log(bad ? `\n⛔ ${bad} FAILURE(S)` : `\n✅ PASS where it could speak — the FILL is struck live off the frozen stamp, and authoring reaches it per authored edge.`)
 process.exit(bad ? 1 : 0)

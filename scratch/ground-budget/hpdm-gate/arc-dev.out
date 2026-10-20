@@ -1,0 +1,12 @@
+1085 corner arcs · own length p50 7.0 m · p90 8.5 · max 49.8
+  approach edges the blend also counts: p50 11.4 m · p90 133.9 · max 772.4 · arcs where they exceed the arc itself: 641
+  arcs with a vertex > 1 m off its terrain: 48 · of those, approach > the arc: 37 · the ends' h differ > 1 m: 24 · own length > 50 m: 0
+    tile 152 arc 3 at (-263.1,-260.4): worst -4.92 · own 8.2 m over 14 v · approach 24.4 m · ends differ 0.82 m
+    tile 62 arc 3 at (-362.0,675.3): worst 4.64 · own 7.0 m over 13 v · approach 232.9 m · ends differ 1.99 m
+    tile 152 arc 2 at (-256.6,-256.1): worst -4.57 · own 8.4 m over 15 v · approach 0.9 m · ends differ 0.00 m
+    tile 191 arc 4 at (-1017.1,-750.5): worst -3.69 · own 7.0 m over 13 v · approach 335.4 m · ends differ 3.35 m
+    tile 192 arc 4 at (-1017.1,-750.5): worst -3.69 · own 7.0 m over 13 v · approach 335.4 m · ends differ 3.35 m
+    tile 190 arc 3 at (-993.5,-846.2): worst 3.31 · own 7.1 m over 13 v · approach 279.2 m · ends differ 2.85 m
+    tile 191 arc 3 at (-1008.3,-852.6): worst 3.14 · own 7.1 m over 13 v · approach 356.6 m · ends differ 4.85 m
+    tile 192 arc 3 at (-1008.3,-852.6): worst 3.14 · own 7.1 m over 13 v · approach 356.6 m · ends differ 4.85 m
+line-run stations: the ② segment under them, all p50 38.2 m · p90 187.0 · under |dev| > 1 m p50 162.0 · p90 299.7 (13249 stations) · segments > 20 m carry 92% of the > 1 m stations and 63% of all

@@ -46,6 +46,7 @@ export default {
       jurisdiction: 'city',
       file: 'nyc_parcels.json',
       attribution: 'NYC Department of City Planning — MapPLUTO',
+      terms: {"read": "2026-10-19", "note": "NYC Open Data terms could not be read (the old URL 404s; nyc.gov/main/terms-of-use does not cover datasets); terms not established"},
       endpoint: 'https://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/MAPPLUTO/FeatureServer/0/query',
       land_use_code_format: 'nyc-pluto-landuse',
       // BBL = borough · block · lot, the city's permanent tax-lot id. BldgArea is gross floor area in square feet —
@@ -58,7 +59,7 @@ export default {
       // "built in year zero" ma.mjs refuses; the footprint well carries construction_year) · AssessTot is ASSESSED,
       // not appraised · ZoneDist1 is a vocabulary nobody has declared · LotArea is square feet and the kit's
       // `land_area` has no declared unit (St. Louis City and County already disagree), so it waits for one.
-      absent: ['owner', 'year_built', 'appraised_value', 'zoning', 'land_area', 'vacant'],
+      absent: ['owner', 'year_built', 'appraised_value', 'zoning', 'land_area', 'vacant', 'row_type', 'land_use_desc'],   // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18) — absent until someone does
       // ⭐ HistDist is the district's NAME, and the designation is LOCAL. PLUTO Data Dictionary (May 2023, 23v1.1),
       // HISTORIC DISTRICT NAME (HistDist): "The name of the Historic District that the tax lot is within. Historic
       // Districts are designated by the New York City Landmarks Preservation Commission." Source: LPC Historic Districts.
@@ -73,6 +74,7 @@ export default {
       protocol: 'socrata',
       file: 'nyc_buildings.json',
       attribution: 'NYC Office of Technology and Innovation — Building Footprints (NYC Open Data 5zhs-2jue)',
+      terms: {"read": "2026-10-19", "note": "NYC Open Data terms could not be read (the old URL 404s; nyc.gov/main/terms-of-use does not cover datasets); terms not established"},
       endpoint: 'https://data.cityofnewyork.us/resource/5zhs-2jue.json',
       geomField: 'the_geom',
       columns: 'the_geom,bin,height_roof,ground_elevation,construction_year,feature_code',
@@ -91,6 +93,7 @@ export default {
     'nyc-bes': {
       protocol: 'socrata',
       attribution: 'NYC Department of City Planning — Building Elevation and Subgrade (NYC Open Data bsin-59hv)',
+      terms: {"read": "2026-10-19", "note": "NYC Open Data terms could not be read (the old URL 404s; nyc.gov/main/terms-of-use does not cover datasets); terms not established"},
       endpoint: 'https://data.cityofnewyork.us/resource/bsin-59hv.json',
       geomField: 'the_geom',
       columns: 'bin,z_grade,z_floor,subgrade',
@@ -107,6 +110,7 @@ export default {
       protocol: 'socrata',
       file: 'nyc_forestry_trees.json',
       attribution: 'NYC Parks — Forestry Tree Points (NYC Open Data hn5i-inap)',
+      terms: {"read": "2026-10-19", "note": "NYC Open Data terms could not be read (the old URL 404s; nyc.gov/main/terms-of-use does not cover datasets); terms not established"},
       // ⭐ The LATER survey of the same street trees: its removal records drop a 2015 tree within DEDUP_M (fetch-trees).
       supersedes: ['nyc-street-census-2015'],
       endpoint: 'https://data.cityofnewyork.us/resource/hn5i-inap.json',
@@ -124,6 +128,7 @@ export default {
       protocol: 'socrata',
       file: 'nyc_street_tree_census_2015.json',
       attribution: 'NYC Parks — 2015 Street Tree Census (NYC Open Data uvpi-gqnh)',
+      terms: {"read": "2026-10-19", "note": "NYC Open Data terms could not be read (the old URL 404s; nyc.gov/main/terms-of-use does not cover datasets); terms not established"},
       endpoint: 'https://data.cityofnewyork.us/resource/uvpi-gqnh.json',
       geomField: { lat: 'latitude', lon: 'longitude' },
       columns: 'tree_id,latitude,longitude,spc_latin,spc_common,tree_dbh,status,health',
@@ -143,6 +148,7 @@ export default {
       provider: 'nyc-addresspoint',
       file: 'nyc_address_points.json',
       attribution: 'NYC Office of Technology and Innovation — AddressPoint (NYC Open Data uf93-f8nk)',
+      terms: {"read": "2026-10-19", "note": "NYC Open Data terms could not be read (the old URL 404s; nyc.gov/main/terms-of-use does not cover datasets); terms not established"},
       endpoint: 'https://data.cityofnewyork.us/resource/uf93-f8nk.json',
       geomField: 'the_geom',
       columns: 'the_geom,bin,house_number,house_number_suffix,full_street_name',

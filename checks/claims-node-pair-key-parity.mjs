@@ -44,6 +44,7 @@ import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 import { feCustomKey, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'
 import { ribbonScenes, ribbonsPath } from './_scenes.mjs'
 import { ROOT as MAPS_ROOT } from './_scenes.mjs'
+import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 
 // ⛔ WAS AN ABSOLUTE PATH TO ONE LAPTOP. This check could only ever run on Jacob's machine — not
 //    in CI, not for a second developer. Same shape as the town-portability defect: it works only
@@ -106,7 +107,7 @@ export function loadScene(scene, source) {
     cornerRadiusScale: design.cornerRadiusScale,
     cornerRadiusOverrides: design.cornerRadiusOverrides,
     cornerCornerRadiusOverrides: design.cornerCornerRadiusOverrides,
-    curbWidth: design.curbWidth ?? 0.15,
+    curbWidth: resolveCurbWidth(design).value,   // the bake's curb: authored, else the kit's
     blockLandUse: design.blockLandUse,
     useRingBandEmitter: true,
   })
@@ -252,8 +253,8 @@ export function classifySides(derived) {
 
 function measure(scene, source) {
   console.log(`\n${'='.repeat(78)}\n${scene}   [source: ${source}]\n${'='.repeat(78)}`)
-  const { ribbons, design, stencil, ribPath, streets, fes, keyable, unkeyable, derived, failTotality, nonContiguous } = deriveNodePairs(scene, source)
-  console.log(`reading ${ribPath}  ·  junctionMap.nodes ${ribbons.junctionMap?.nodes?.length ?? 'ABSENT'}`)
+  const { design, stencil, ribPath, streets, fes, keyable, unkeyable, derived, failTotality, nonContiguous } = deriveNodePairs(scene, source)
+  console.log(`reading ${ribPath}`)
   console.log(`fes ${fes.length} · keyable ${keyable.length} · NOT keyable today ${unkeyable.length} (no chain id / no side / no owned segment — out of scope: cannot carry a custom under EITHER key)`)
 
   console.log(`\n① TOTALITY — every keyable fe yields an ordered node pair`)
@@ -354,116 +355,6 @@ function measure(scene, source) {
   console.log(`   ⇒ a positional consult is unambiguous only BELOW ${q.min.toFixed(2)} m on this town.`)
   const under1 = nn.filter(d => d < 1).length, under253 = nn.filter(d => d < 2.53).length
   console.log(`   pairs closer than 1.00 m: ${under1} · closer than 2.53 m: ${under253}`)
-  // Does the FROZEN frame know these nodes? (junctionMap.nodes is the upstream the brief trusts.)
-  const jmNodes = ribbons.junctionMap?.nodes || []
-  const jmSet = new Set(jmNodes.map(n => nodeKey(n.at)))
-  const missing = [...consulted.keys()].filter(k => !jmSet.has(k))
-  let missingBreakdown = { H1: 0, H2: 0, H3: 0, H3terminal: 0 }
-  console.log(`   junctionMap.nodes = ${jmNodes.length}. Of the ${consulted.size} consulted nodes, ${consulted.size - missing.length} are present at EXACT coords; ${missing.length} are ABSENT.`)
-  if (missing.length) {
-    console.log(`   ⛔ the junctionMap read from THIS source is not a superset of the consulted population.`)
-    console.log(`\n   ─ PARTITION of the ${missing.length} ABSENT consulted nodes. Precedence H2 → H1 → H3, each node in EXACTLY ONE. ─`)
-    // Which chains touch each consulted node, and are any of them CURBED?
-    // derive.js:4003 curbed = (s) => !s.gradeSeparated && !s.disabled — nodes touched
-    // ONLY by non-curbed chains were never meant to be stamped. Read the rule, don't invent one.
-    const curbed = st => !st.gradeSeparated && !st.disabled
-    const touchers = new Map()   // nodeKey → Set<street>
-    for (const st of streets) for (const pt of (st.points || [])) {
-      const k = nodeKey(pt)
-      if (!consulted.has(k)) continue
-      if (!touchers.has(k)) touchers.set(k, new Set())
-      touchers.get(k).add(st)
-    }
-    const jmPos = jmNodes.map(n => n.at)
-    const nearestJm = p => { let best = Infinity; for (const q of jmPos) { const d = dist(p, q); if (d < best) best = d } return best }
-    // resolveChainSegmentation uses EPS 0.5 m to decide what an IX IS. That is the
-    // repo's own coordinate-identity scale — compare against it, do not invent one.
-    const IX_EPS = 0.5
-    const H1 = [], H2 = [], H3 = []
-    for (const k of missing) {
-      const pos = consulted.get(k)
-      const ts = [...(touchers.get(k) || [])]
-      if (ts.length && !ts.some(curbed)) { H2.push({ k, ts }); continue }
-      const nd = nearestJm(pos)
-      if (nd <= IX_EPS) H1.push({ k, nd, ts }); else H3.push({ k, nd, ts })
-    }
-    console.log(`   H2 LEGITIMATELY UNSTAMPED — every chain touching the node is gradeSeparated/disabled (derive.js:4003 curbed()): ${H2.length}`)
-    console.log(`      ⛔ NOT a defect — the freeze was never meant to stamp these. What the key must do:`)
-    console.log(`      it consults a node the freeze correctly does not carry, so it must MINT on miss and`)
-    console.log(`      say so — the §4.1 rule is "consult by POSITION, validate by name-set, MINT ON MISS".`)
-    for (const h of H2.slice(0, 8)) console.log(`         ${h.k} — chains: ${h.ts.map(t => `${t.skelId}${t.gradeSeparated ? '(gradeSep)' : ''}${t.disabled ? '(disabled)' : ''}`).join(', ')}`)
-    if (H2.length > 8) console.log(`         … ${H2.length - 8} more`)
-    const q1 = quantiles(H1.map(h => h.nd)), q3 = quantiles(H3.map(h => h.nd))
-    console.log(`   H1 NEAR-MISS — a junctionMap node exists within IX_EPS ${IX_EPS} m but not at exact coords: ${H1.length}`)
-    if (H1.length) console.log(`      distance to nearest junctionMap node: min ${q1.min.toFixed(3)} · p05 ${q1.p05.toFixed(3)} · median ${q1.median.toFixed(3)} m`)
-    console.log(`      ⭐ If H1 dominates, the freeze is ADEQUATE and ⑤'s superset result was an EXACT-MATCH`)
-    console.log(`         ARTEFACT — the consult simply needs its tolerance stated.`)
-    console.log(`   H3 GENUINELY MISSING — a curbed-chain node beyond ${IX_EPS} m from any junctionMap node: ${H3.length}`)
-    if (H3.length) {
-      console.log(`      distance to nearest junctionMap node: min ${q3.min.toFixed(2)} · p05 ${q3.p05.toFixed(2)} · median ${q3.median.toFixed(2)} m`)
-      // NAME THE CLASS: is it a chain TERMINAL (tip / rim end) or an interior IX?
-      const endKeys = new Set(), midKeys = new Set()
-      for (const st of streets) {
-        const pts = st.points || []
-        if (pts.length) { endKeys.add(nodeKey(pts[0])); endKeys.add(nodeKey(pts[pts.length - 1])) }
-        for (let i = 1; i < pts.length - 1; i++) midKeys.add(nodeKey(pts[i]))
-      }
-      let term = 0, interiorOnly = 0
-      for (const h of H3) { if (endKeys.has(h.k)) term++; else if (midKeys.has(h.k)) interiorOnly++ }
-      console.log(`      CLASS: ${term} are a chain TERMINAL (an end vertex) · ${interiorOnly} are INTERIOR-ONLY vertices.`)
-      console.log(`      ⛔ Check against what 9f53ef39 DECLINED to mint before calling this a gap: it minted`)
-      console.log(`         every degree-1 TIP and the degree-2 end-to-end WELD, and deliberately did NOT mint`)
-      console.log(`         mid-chain interior vertices ("would put a node on every vertex of every street").`)
-      console.log(`      ⇒ the ${interiorOnly} interior-only ones are therefore DECLINED BY DESIGN, not a gap.`)
-      const realGap = H3.filter(h => endKeys.has(h.k))
-      // NAME THE CLASS PROPERLY before calling it a gap. Two candidate explanations,
-      // both measurable from the artifact: (a) the node sits OUTSIDE the neighbourhood
-      // stencil, i.e. the chain runs off the edge of the map and the tip is the CLIP's,
-      // not the street's; (b) its incidence is a shape derive's mint declines.
-      const inStencil = p => {
-        let inside = false
-        for (let i = 0, j = stencil.length - 1; i < stencil.length; j = i++) {
-          const a = stencil[i], b = stencil[j]
-          if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside
-        }
-        return inside
-      }
-      const endsAtK = new Map(), thruAtK = new Map()
-      for (const st of streets) {
-        const pts = st.points || []
-        if (!pts.length) continue
-        for (const pt of [pts[0], pts[pts.length - 1]]) { const kk = nodeKey(pt); endsAtK.set(kk, (endsAtK.get(kk) || 0) + 1) }
-        for (let i = 1; i < pts.length - 1; i++) { const kk = nodeKey(pts[i]); thruAtK.set(kk, (thruAtK.get(kk) || 0) + 1) }
-      }
-      const outside = realGap.filter(h => !inStencil(consulted.get(h.k)))
-      console.log(`      ⭐ OF THOSE ${realGap.length}: ${outside.length} sit OUTSIDE the neighbourhood stencil — the chain runs off`)
-      console.log(`         the edge of the map there, so the "tip" is the CLIP's and not the street's.`)
-      const incid = new Map()
-      for (const h of realGap) { const kk = `${endsAtK.get(h.k) || 0}end/${thruAtK.get(h.k) || 0}thru`; incid.set(kk, (incid.get(kk) || 0) + 1) }
-      console.log(`         incidence of the ${realGap.length}: ${[...incid].sort().map(([kk, n]) => `${kk}×${n}`).join(' · ')}`)
-      console.log(`         (derive mints: every 1end/0thru TIP, and ends>=2 or ends+2*thrus>=3. Compare before calling a gap.)`)
-      // The PURE TIP subclass (1 chain-end, no through) is the one 9f53ef39 claims to
-      // mint exhaustively ("A TIP IS A TIP", and its own tip-count line "now prints
-      // nothing because the count is 0"). Report its distance distribution separately:
-      // a few metres would mean a tolerance question, tens of metres a real absence.
-      const pureTips = realGap.filter(h => (endsAtK.get(h.k) || 0) === 1 && (thruAtK.get(h.k) || 0) === 0)
-      if (pureTips.length) {
-        const qp = quantiles(pureTips.map(h => h.nd))
-        console.log(`      ⭐⭐ PURE-TIP SUBCLASS (1end/0thru) — ${pureTips.length} node(s). 9f53ef39 states it mints EVERY`)
-        console.log(`         degree-1 tip and that its own unstamped-tip count is now 0. These are unstamped.`)
-        console.log(`         distance to nearest junctionMap node: min ${qp.min.toFixed(2)} · p05 ${qp.p05.toFixed(2)} · median ${qp.median.toFixed(2)} m`)
-        console.log(`         ⇒ ${qp.median > 5 ? 'NOT a tolerance question at the median — the node is absent, not displaced.' : 'median is small — this may be a tolerance question, not an absence.'}`)
-        console.log(`         ⛔ CAUSE NOT ESTABLISHED. This probe measures the ARTIFACT; it does not establish why`)
-        console.log(`            derive did not stamp these, and does not re-run derive. That is a separate brief.`)
-      }
-      console.log(`      ⇒ the DESIGN FINDING, if any, is the ${realGap.length} TERMINAL node(s) the mint should have reached:`)
-      for (const h of realGap.slice(0, 10)) console.log(`         ${h.k} — nearest jm node ${h.nd.toFixed(2)} m — chains: ${h.ts.map(t => t.skelId).join(', ')}`)
-      if (realGap.length > 10) console.log(`         … ${realGap.length - 10} more`)
-    }
-    missingBreakdown = { H1: H1.length, H2: H2.length, H3: H3.length,
-      H3terminal: H3.filter(h => { for (const st of streets) { const pts = st.points || []; if (pts.length && (nodeKey(pts[0]) === h.k || nodeKey(pts[pts.length - 1]) === h.k)) return true } return false }).length }
-  }
-
   // ─ ⑥ CAPS — the CAP_SEGORD slots, per tip ─
   console.log(`\n⑥ CAPS — CAP_SEGORD slots (start ${CAP_SEGORD.start} / end ${CAP_SEGORD.end}), keyed on a single deg-1 node`)
   const bc = design.blockCustoms || {}
@@ -520,7 +411,7 @@ function measure(scene, source) {
 
   return { scene, fes: fes.length, keyable: keyable.length, derived: derived.length,
     failTotality: failTotality.length, collisions: collisions.length, sideBreaks: sideBreaks.length + degenSign.length,
-    conventionClean, minNN: q.min, jmMissing: missing.length, capSlots: capSlots.length, consulted: consulted.size, jmNodes: jmNodes.length, ...missingBreakdown }
+    conventionClean, minNN: q.min, capSlots: capSlots.length, consulted: consulted.size }
 }
 
 const isMain = process.argv[1] && process.argv[1].endsWith('claims-node-pair-key-parity.mjs')
@@ -540,5 +431,5 @@ if (isMain && !SOURCE) {
 const results = isMain ? ribbonScenes().map(sc => measure(sc, SOURCE)) : []
 if (isMain) console.log(`\n${'='.repeat(78)}\nSUMMARY (reproduce, never quote)\n${'='.repeat(78)}`)
 for (const r of results) {
-  console.log(`[${SOURCE}] ${r.scene}: ① ${r.derived}/${r.keyable} pairs, ${r.failTotality} fail · ② ${r.collisions} collisions · ③ see above · ④ ${r.conventionClean ? 'convention clean' : 'NO CLEAN CONVENTION'}, ${r.sideBreaks} breaks · ⑤ min NN ${r.minNN.toFixed(2)} m · ⑥ ${r.capSlots} cap slots · junctionMap ${r.jmNodes} vs ${r.consulted} consulted: ${r.jmMissing} absent = H1 ${r.H1} / H2 ${r.H2} / H3 ${r.H3} (H3 terminal ${r.H3terminal})`)
+  console.log(`[${SOURCE}] ${r.scene}: ① ${r.derived}/${r.keyable} pairs, ${r.failTotality} fail · ② ${r.collisions} collisions · ③ see above · ④ ${r.conventionClean ? 'convention clean' : 'NO CLEAN CONVENTION'}, ${r.sideBreaks} breaks · ⑤ min NN ${r.minNN.toFixed(2)} m · ⑥ ${r.capSlots} cap slots · ${r.consulted} nodes consulted`)
 }

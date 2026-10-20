@@ -1,0 +1,55 @@
+T2 · lafayette-square (look lafayette-square, authored slots 82) · 350 blocks, 351 contours · STEP 0.25 m · STUB 0.1 m · spike < 30°
+ours = offsetRingByRects (live ②), ease off. Distances in m.
+
+per contour            p50      p90      p99      max     contours with H > 0.01 / > 0.5 / ∞ (one side empty)
+H vertex        3.116   13.932        ∞        ∞    301 / 298 / 20
+H stub-min      0.001    5.485        ∞        ∞    153 / 96 / 19
+H stub-max      0.001    4.991        ∞        ∞    140 / 87 / 18
+H vertex     (C2 rings under AREA_MIN dropped)  p99 ∞  max ∞  > 0.5: 282
+H stub-min   (C2 rings under AREA_MIN dropped)  p99 6.091  max ∞  > 0.5: 70
+H stub-max   (C2 rings under AREA_MIN dropped)  p99 5.566  max 6.000  > 0.5: 61
+XOR m² vertex     total 83528.8  p99 1619.366  max 5254.153
+XOR m² stub-min   total 2351.4  p99 157.949  max 550.927
+XOR m² stub-max   total 2324.4  p99 157.117  max 550.636
+
+vertices   ours 9307 · vertex 5499 · stub-min 13090 · stub-max 13110
+pieces     ours 309 · vertex 332 · stub-min 344 · stub-max 341
+holes      ours 0 · vertex 0 · stub-min 0 · stub-max 0
+spikes     ours 186 · vertex 95 · stub-min 197 · stub-max 87
+under AREA_MIN   ours (before its floor) 122 rings, 130.73 m², largest 28.62 m² · vertex 22 rings, 129.93 m², largest 30.31 m² · stub-min 33 rings, 96.59 m², largest 28.77 m² · stub-max 32 rings, 113.37 m², largest 28.77 m²
+  by area < 0.01 / 0.01–0.5 / ≥ 0.5 m²:  ours 71 / 27 / 24 · vertex 1 / 5 / 16 · stub-min 1 / 9 / 23 · stub-max 2 / 7 / 23
+
+seams (a depth change at a working-ring vertex): local H within 2·depth + 2 m
+  street = both edges town streets at depth > 0 · hwy = a highway-owned edge (its depth is H-3's placeholder inside H) · zero = an edge at depth 0 (rim, verge)
+  street step       0
+  street jog        7   vertex p50 2.259 p90 4.090 max 4.090 · stub-min p50 0.100 p90 0.100 max 0.100 · stub-max p50 0.002 p90 0.002 max 0.002
+  street taper    113   vertex p50 0.015 p90 0.711 max ∞ · stub-min p50 0.010 p90 0.035 max ∞ · stub-max p50 0.010 p90 0.035 max ∞
+  street corner   803   vertex p50 1.406 p90 4.062 max ∞ · stub-min p50 0.001 p90 0.001 max ∞ · stub-max p50 0.001 p90 0.001 max ∞
+  hwy    step      14   vertex p50 0.915 p90 2.739 max 3.955 · stub-min p50 0.915 p90 2.620 max 3.955 · stub-max p50 0.914 p90 2.620 max 3.954
+  hwy    jog       36   vertex p50 2.021 p90 4.259 max 8.143 · stub-min p50 2.359 p90 4.227 max 5.898 · stub-max p50 2.358 p90 4.227 max 5.896
+  hwy    taper      1   vertex p50 ∞ p90 ∞ max ∞ · stub-min p50 ∞ p90 ∞ max ∞ · stub-max p50 ∞ p90 ∞ max ∞
+  hwy    corner   178   vertex p50 0.642 p90 8.110 max ∞ · stub-min p50 0.001 p90 4.463 max ∞ · stub-max p50 0.001 p90 4.405 max ∞
+  zero   step      23   vertex p50 5.238 p90 15.267 max ∞ · stub-min p50 0.100 p90 6.136 max ∞ · stub-max p50 0.100 p90 6.092 max ∞
+  zero   jog       16   vertex p50 4.170 p90 6.952 max 7.239 · stub-min p50 0.100 p90 7.239 max ∞ · stub-max p50 0.263 p90 7.172 max ∞
+  zero   taper      0
+  zero   corner   211   vertex p50 4.918 p90 16.280 max ∞ · stub-min p50 0.100 p90 15.608 max ∞ · stub-max p50 0.100 p90 7.172 max ∞
+
+worst 8 STREET seams by stub-min local H
+  block 109 v0 taper turn 154.8° 1.52→7.52  south-12th-street-0|left|0 → gravois-avenue-1|right|1  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 109 v1 taper turn 7.5° 1.52→1.52  gravois-avenue-1|right|1 → south-12th-street-2|left|1  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 111 v0 corner turn 158.9° 1.52→7.52  south-12th-street-2|right|0 → gravois-avenue-2|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 111 v5 taper turn 17.7° 1.52→1.52  gravois-avenue-1|left|0 → south-12th-street-2|right|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 181 v0 corner turn 145.2° 6.17→1.68  south-tucker-boulevard-1|right|4 → primary-link-37|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 181 v8 corner turn 156.4° 1.68→4.67  primary-link-37|left|0 → lafayette-avenue-3|right|1  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 181 v9 corner turn 93.8° 4.67→6.17  lafayette-avenue-3|right|1 → south-tucker-boulevard-1|right|4  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 189 v11 corner turn 95.4° 5.48→4.58  geyer-avenue-2|left|0 → south-jefferson-avenue-5|left|1  vertex ∞ · stub-min ∞ · stub-max ∞
+
+worst 8 contours by stub-min H
+  block 26 n 4 maxD 3.96  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 3 v · stub-max H 0.000 0 pc 0 v
+  block 76 n 4 maxD 1.82  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 5 v · stub-max H ∞ 1 pc 4 v
+  block 84 n 4 maxD 5.18  ours 0 pc 0 v · vertex H 0.000 0 pc 0 v · stub-min H ∞ 1 pc 6 v · stub-max H ∞ 1 pc 5 v
+  block 107 n 4 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 5 v · stub-min H ∞ 2 pc 7 v · stub-max H ∞ 2 pc 6 v
+  block 109 n 8 maxD 7.52  ours 0 pc 0 v · vertex H ∞ 1 pc 8 v · stub-min H ∞ 1 pc 17 v · stub-max H ∞ 1 pc 17 v
+  block 111 n 9 maxD 7.52  ours 0 pc 0 v · vertex H ∞ 1 pc 4 v · stub-min H ∞ 1 pc 3 v · stub-max H ∞ 1 pc 3 v
+  block 132 n 3 maxD 3.35  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 4 v · stub-max H ∞ 1 pc 3 v
+  block 133 n 6 maxD 3.35  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 4 v · stub-max H ∞ 1 pc 4 v

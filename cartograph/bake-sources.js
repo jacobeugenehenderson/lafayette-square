@@ -140,6 +140,8 @@ export function creditsForMap(scene) {
       licence: l.name,
       licenceUrl: l.url,
       requires: l.requires,
+      // A licence's own notice text (ODbL §4.3 for OpenStreetMap) ships with the credit, as the derived path's does.
+      ...(l.notice ? { notice: l.notice } : {}),
       from: [row.id],
     })
   }

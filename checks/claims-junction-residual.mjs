@@ -23,6 +23,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
+import { readTownDesign, resolveCurbWidth } from '../cartograph/lookDesign.mjs'
 import { classifyHighwayBlocks, sectionPassProtoTile, tilePieceLus } from '../src/lib/tileGround.js'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
@@ -59,14 +60,19 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
   const shapeP = arg('shape') || join(ROOT, 'public/baked', scene, 'shape.json')
   let jrTiles = 0
   if (existsSync(shapeP)) {
-    const cw = 6 * 0.0254
+    const town = readTownDesign(scene, 'junction-residual')
+    const cw = resolveCurbWidth(town).value   // the bake's curb: authored, else the kit's
+    // ⭐ THE PRODUCT'S DOOR: buildTileGround → sectionOpen → sectionPassProtoTile(tile, cw, mat, blockCustoms, cornerOverrides) — the
+    // town's Survey/Section authoring and its corner flags (cornerCornerRadiusOverrides), as the bake passes them (Layer 0 q3)
+    const blockCustoms = town.blockCustoms || null
+    const cornerOverrides = (town.cornerCornerRadiusOverrides && typeof town.cornerCornerRadiusOverrides === 'object') ? town.cornerCornerRadiusOverrides : null
     for (const [ti, t] of (readJson(shapeP).tiles || []).entries()) {
       if (t.blockClass !== 'jr') continue
       jrTiles++
       const lus = tilePieceLus(t).filter(Boolean)   // ⭐ EVERY piece of a JR is verge
       if (lus.some(l => l !== 'verge')) bad.push(`JR tile ${ti}: land use ${[...new Set(lus)].join('+')}, not verge`)
       const paint = (tile) => { const q = console.log, r = console.warn; console.log = console.warn = () => {}
-        try { const out = sectionPassProtoTile(tile, cw, { outer: 'LU', inner: 'SW' }, null)
+        try { const out = sectionPassProtoTile(tile, cw, { outer: 'LU', inner: 'SW' }, blockCustoms, cornerOverrides)
           return { sw: (out.Wacc || []).reduce((s, g) => s + area(g), 0), tl: Object.values(out.tlByLu || {}).flat().reduce((s, g) => s + area(g), 0) } }
         finally { console.log = q; console.warn = r } }
       const asJr = paint(t), { blockClass, ...plain } = t, asBlock = paint(plain)

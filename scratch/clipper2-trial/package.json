@@ -1,0 +1,7 @@
+{
+  "name": "clipper2-trial",
+  "private": true,
+  "type": "module",
+  "description": "scratch: Clipper2 trials T2 (per-vertex DeltaCallback offset) and T3 (ZCallback provenance), scratch/open-source-scout/REPORT.md §3",
+  "dependencies": { "clipper2-ts": "2.0.1-18" }
+}

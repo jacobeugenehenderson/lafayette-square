@@ -68,7 +68,7 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
     if (!bed && !_saidNoBed) { _saidNoBed = true; console.error('[WaterSurface] ⛔ this terrain carries no bed (terrain.json `bed`) — the water is not shaded by depth. ▶ re-bake the terrain') }
     uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     // ⭐⭐ THE LAKE READS THE TOWN'S REAL WEATHER. `windSpeedMs` / `windDirDeg`
-    // are polled from open-meteo for this town's own coordinates
+    // are polled from the NWS for this town's own coordinates
     // (`useWeather.js` → `useSkyState`), and Cox & Munk 1954 turns wind speed
     // into the water's slope variance — which IS the width of the glitter.
     // ⇒ a windy afternoon in Huron is a choppier, broader-sparkling lake, and a

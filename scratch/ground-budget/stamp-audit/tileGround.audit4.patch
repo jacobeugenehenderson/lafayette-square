@@ -1,0 +1,29 @@
+# tileGround.audit4.patch — stamp-audit probe copy: apply to `git show fb953109:src/lib/tileGround.js` (rev fb953109). Reproduce: git show fb953109:src/lib/tileGround.js > /tmp/x && patch -o scratch/ground-budget/stamp-audit/tileGround.audit4.js /tmp/x scratch/ground-budget/stamp-audit/tileGround.audit4.patch
+--- src/lib/tileGround.js@fb953109
++++ tileGround.audit4.js
+@@ -1,3 +1,5 @@
++// ⚠️ STAMP-AUDIT COPY #4 (+ the operands of each short null-label edge) (scratch): the screed-arc worktree's src/lib/tileGround.js (iaCap built) with one probe in
++// offsetRingByRects' labelOf: why a ② edge takes no label. Read-only on the pour; never served.
+ // tileGround — the pure-ribbon TILE construction (T1 of the reconceived
+ // pipeline; spike-validated, HANDOFF-spike-pure-ribbon.md → HANDOFF-tile-T1-
+ // live-path.md). ONE module shared by the LIVE Designer (BlockGeometryV2Debug)
+@@ -1741,6 +1743,19 @@
+       const ov = Math.min(L, Math.max(tp, tq)) - Math.max(0, Math.min(tp, tq))
+       if (!(ov > TOLC)) continue
+       if (!best || c.kind < best.kind || (c.kind === best.kind && ov > best.ov)) best = { kind: c.kind, ov, lab: c.lab } }
++    if (!best) { let nb = null
++      for (const id of ids) { const c = contrib[id], dx = c.b[0] - c.a[0], dy = c.b[1] - c.a[1], L = Math.hypot(dx, dy); if (!(L > 0)) continue
++        const off = (r) => Math.abs((r[0] - c.a[0]) * dy - (r[1] - c.a[1]) * dx) / L, mo = Math.max(off(p), off(q))
++        const tp = ((p[0] - c.a[0]) * dx + (p[1] - c.a[1]) * dy) / L, tq = ((q[0] - c.a[0]) * dx + (q[1] - c.a[1]) * dy) / L
++        const ov = Math.min(L, Math.max(tp, tq)) - Math.max(0, Math.min(tp, tq))
++        if (!nb || mo < nb.mo) nb = { mo, ov, kind: c.kind, offP: off(p), offQ: off(q), L } }
++      // the OPERANDS near this edge: every contributor (curb line 1 · ① edge 2 · end cap 3) passing within 5 mm of p or q,
++      // with its ① ring edge's own vertices (the ① operand), so the short edge can be traced to what made it
++      const ops = []
++      if (eL <= 0.005) for (const c of contrib) { const dx = c.b[0] - c.a[0], dy = c.b[1] - c.a[1], L2 = dx * dx + dy * dy; if (!(L2 > 0)) continue
++        const dpt = (r) => { const u = Math.max(0, Math.min(1, ((r[0] - c.a[0]) * dx + (r[1] - c.a[1]) * dy) / L2)); return Math.hypot(r[0] - c.a[0] - u * dx, r[1] - c.a[1] - u * dy) }
++        if (Math.min(dpt(p), dpt(q)) <= 0.005) ops.push({ kind: c.kind, lab: c.lab, a: c.a, b: c.b, ring: [ring[c.lab], ring[(c.lab + 1) % n]], dS: seg[c.lab]?.dS, dE: seg[c.lab]?.dE }) }
++      ;(globalThis.__offNull ||= []).push({ p, q, eL, cands: ids.size, TOLC, nb, ...(ops.length ? { ops } : {}) }) }
+     return best ? best.lab : null }
+   B.labels = B.rings.map(rg => rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length])))
+   if (stamp) { stamp.foldDropped = 0; stamp.wedges = wedges; stamp.bevels = bevels; if (B.refused) stamp.refused = B.refused }

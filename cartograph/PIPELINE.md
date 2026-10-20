@@ -84,8 +84,7 @@ in this repo is diagnosing at the stage where the symptom is *visible* rather th
 
 ### ⭐⭐ Law 2 — Freezing wrong data is worse than not freezing at all.
 
-*(Jacob, 2026-06-05. Carried verbatim from the retired `WALL.md §1`, because it is a live rule and not
-a piece of history.)*
+*(Jacob, 2026-06-05; from the retired `WALL.md §1`.)*
 
 Each stage in this progression ends by **freezing** its output, and everything downstream then trusts
 that output **unconditionally** — no re-derivation, no second-guessing, no reaching back. That trust is
@@ -277,13 +276,6 @@ closed compound path — **the holes in that shape are the blocks.**
 > circle deciding block geometry;** that was tried at both radii and is the same order error one step
 > out. ⭐ **Why it removes a class rather than guarding one: a square cut has no endpoint**, so there is
 > nothing for a cap, bulb or fillet to be built on.
-> *(Filed here 2026-09-06 as an **aspiration** — "the code unions the roads only, takes no boundary" —
-> and it landed the same day. ⭐ Note which way it resolved: the aspiration was right and the code moved
-> to it. That is the case for not "correcting" a ruling to match the code.)*
-> ⚠️ **Two superseded comments still sit above the corrected ones in `mintProtopolygon`** — *"the
-> boundary is the CLIP, never a subject"* directly above *"① is NOT cut here… it was, briefly, and that
-> was the same order error."* **A correction next to the sentence it corrects is the anti-pattern**;
-> the false half is reached first because it is higher up. Not yet excised.
 
 The compound shape is `①`, the *protopolygon*. It is never seen, never authored, never rounded. Every one of its
 edges carries which street and which side made it, and every crossing carries which two streets met
@@ -298,10 +290,8 @@ all** if the skeleton is absent or any chain is unjoinable, rather than falling 
 chains. ⇒ **① depends on nothing that prebake adds.**
 
 ### ⭐⭐⭐ AND IT IS THE PRODUCER, FOR SURVEY *AND* SECTION — LANDED 2026-09-06
-**Every layer either tool draws comes from ①②③.** Two flags, and the split between them is the whole
-point: **`protoProducer` swaps what SURVEY DRAWS · `protoArtifact` swaps what SECTION OPENS.** Both are
-ON in the Designer (`BlockGeometryV2Debug.jsx`, grep `protoProducer`), and the bake takes `--proto`
-(argv, deliberately — this codebase gates on argv, not `process.env`).
+**Every layer either tool draws comes from ①②③**, and since 2026-10-20 nothing else is built: the pre-① chain shape
+pass that ran beside it and was overwritten is deleted, with the flags that chose between the two.
 
 ⭐ **It is a change of CONSUMER, not of construction.** ②③ already offset the grout contour; the
 artifact freezes what they made, and `sectionOpen` already consumed a tile carrying its own bands. **No
@@ -310,22 +300,10 @@ geometry was written to land it.**
 **0 m²** between the two tools, LU class sets identical. **That gate is the definition of "the same
 thing," and it is what "Survey and Section are one construction" means operationally.**
 
-⛔ **Both flags REFUSE rather than fall back** — asking for ① and silently getting the chain artifact is
-the plausible-looking success Law 2 forbids.
-
-> ⚠️ **The `--proto` CLI bake is NOT how Section gets its artifact** — §5, *"who writes the frozen file."*
+⛔ **It REFUSES rather than falls back** — no tiles, or ② with no corner arcs, throws by name.
 
 *(Excised 2026-09-06: this paragraph and the artifact-contract block said ① reached nothing on screen,
 written hours before the swap landed the same day →* `_archive/PIPELINE-3a-artifact-contract-2026-09-06.md`*.)*
-
-> ⛔⛔ **`?grout=1` IS NOT ①, AND CONFUSING THE TWO WILL COST YOU A DAY.** The grout overlay strokes each
-> chain at the **authored half-width** and unites them — offset-then-polygonize, the old order. It builds
-> **the curb**, not the protopolygon; `RIBBONS §1` says so in as many words. Two different constructions
-> that happen to share a block of code and a nearly-identical flag name (`grout: true` from the URL vs
-> `grout: 'proto'` from the bake).
-> ⚠️ **And the overlay shows nothing at idle anyway** — it is gated on the live build, which does not run
-> while the frozen path renders. **An overlay gated on a live build is invisible in the state the
-> operator actually sits in.**
 
 > ### ⭐⭐ THE TILE CONTRACT — a UNION WITH OPTIONAL MEMBERS, and the produce/refuse split is RULED
 > **A frozen block and a proto block are not the same object**, and the difference is a decision, not a
@@ -345,10 +323,7 @@ written hours before the swap landed the same day →* `_archive/PIPELINE-3a-art
 >
 > ⛔ **Derive the contract, don't quote it — both sides, and don't sample one block:**
 > ▶ `node -e "const f=require('./public/baked/<scene>/shape.json'); const t=f.tiles||f; const u=new Set(); for(const x of t) Object.keys(x).forEach(n=>u.add(n)); const opt=[...u].filter(k=>!t.every(x=>k in x)); console.log('union',u.size,'| optional',opt.length,'->',opt.sort().join(', '))"`
-> ▶ and ⛔ **name which proto object you mean** — there are two, with different shapes.
-> `tilesFromProto` returns `{ring, edges}` and is called by **nothing** in `src/`; what `--proto`
-> actually freezes is `protoShapeTiles`. Saying "the proto tile" without saying which is how a real
-> gap gets stated as an unreproducible number.
+> The frozen tile is `protoShapeTiles` — one object (`tilesFromProto`, the other shape, was excised 2026-09-06).
 
 ⭐ **Two things this path already gets exactly right, and they are the model — copy them, don't soften
 them.** Both are Law 2 enforced at a boundary, and both exist because Layer 0 says a plausible-looking
@@ -369,18 +344,12 @@ here.** The pour warns by name for each; re-read it from a run, never from this 
 - ✅ **CLOSED — ③ NO LONGER SHIPS THE FILL FROZEN.** The tile freezes the SILHOUETTE and the
   **STAMP** (`iaStamp` per contour point, `iaFull` the uncut contour it indexes) and Section strikes
   ③'s own ladder live off them — ⭐ Survey and Section now agree because they run the **same
-  painter**, not because both read one frozen strike. ▶ `node checks/claims-proto-fill-is-live.mjs`
-  reports the frozen-vs-live band/asphalt delta and the authoring-reaches-the-fill check per scene.
-  ⭐⭐ **AND THE OPERATOR'S "JOIN LINE" WAS THREE FABRICATED JOINS, ALL FOUND BY EYE:** the ped
-  resolved per **chain** instead of per road · the ring's own **array seam at index 0** read as a
-  corner · and ② **minting a corner at every chain cut** — *"① has no nodes"*. → `SECTION §4` and
-  `RIBBONS §1`'s 2026-09-07 amendment.
+  painter**, not because both read one frozen strike. *"① has no nodes"* → `SECTION §4`, `RIBBONS §1`.
   ⛔ Open: **cap folds** (`§6.3`, the bulb has no halves — unbuilt) and a small divider residual,
   cause not established. ⚠️ A `shape.json` poured before the flip still carries `bands`; that path
   draws and **warns**, and the cure is a re-pour.
-  ▶ `node checks/claims-proto-fill-is-live.mjs` · `node checks/claims-a-corner-is-where-one-turns.mjs`
-  *(⛔ this cited `claims-proto-has-no-nodes.mjs`, which does not exist in the tree — a pointer that
-  does not resolve reads as evidence already gathered. `MEMORY §C` quotes a result from it too.)*
+  ▶ `node checks/claims-proto-fill-is-live.mjs` (frozen-vs-live delta, authoring reaches the fill) ·
+  `node checks/claims-a-corner-is-where-one-turns.mjs`
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
   name rather than letting the class vanish silently. **A known gap, not a fallback.**
 - ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment.
@@ -449,12 +418,8 @@ pedestrian control appearing in this tool is tool-conflation, to be removed.
 
 **How you would tell it was wrong:** the honest test is a **distance** one — *is the curb at the
 **authored** half-width from its own centerline* — and it must run **with authoring loaded.**
-⛔⛔ **Our flagship instrument does not.** `litmus-curb-parallel.mjs` passes `blockCustoms: null` — it
-runs with authoring switched off — and scored one avenue's authored 8.70 m half-width as a "3.13 m
-bow." It also **silently skips a block with no curb ring at all**, printing *"this block has no curb"*
-as a modest bow. **A fallback inside the detector, which is the one place it must never be.** Until
-that is fixed, its aggregate is not evidence of anything. *(Re-verified in the code 2026-09-06: both
-still present.)*
+⛔ **No instrument runs it today**: Check A's (`litmus-curb-parallel`) was blind three ways and is retired
+(`POLYGON-FIRST §2`). Open work: `ROADMAP A05`.
 
 → `SURVEY.md` · `SKELETON.md §4` (the authoring catalogue)
 
@@ -494,15 +459,9 @@ a failure of the same architecture.
   lookup table is **keyed by street id**, so **if street ids renumber, authored overrides orphan
   silently.** Prove key parity before renumbering.
 
-> ### ⛔⛔ WHO WRITES THE FROZEN FILE: **THE BROWSER DOES.** Not the bake.
-> `serve.js`'s `POST /<scene>/shape` — **the client autosaves `shape.json` on Survey-exit** with the
-> live `_shapeArtifact` it just rendered, into the path Section fetches. ⇒ **the file on disk is a
-> photograph of the last Survey exit**, and a CLI bake writing it is overwritten by the next one.
-> ⛔ **It has cost twice, both times from reading the file instead of the clock:** an afternoon believing
-> `--proto` bakes had landed (`dfd95f3b`), and a fillet count taken off an artifact timestamped two
-> hours before the producer being measured — which reported the opposite of the live build.
-> ⭐ **`shape.json` answers "what did Survey last draw," never "what does the construction do now."**
-> For the second question, run the construction; check the mtime before trusting the file.
+> ⛔ **`shape.json` has TWO writers — the browser's Survey-exit autosave (`serve.js` `POST /<scene>/shape`) and the
+> bake (`bake-ground.js`) — and the last one wins.** It answers "what did someone last draw," never "what does the
+> construction do now": for that, run the construction, and check the mtime before trusting the file.
 
 **How you would tell it was wrong.** The freeze degrades **loudly, by design**: if the frozen shape is
 absent or fails to load, the view still draws — refusing to render would make onboarding a new town
@@ -541,18 +500,10 @@ continuous band curves* — a slice of the same offsets. ⛔ **If you find yours
 shape, stop.** You have reverted to the model this whole regime exists to kill. Every one of this
 project's corner defects has been a construction reaching for a special case.
 
-> ### ⛔ AND THE CURB HAS **TWO** PRODUCERS — do not say "the curb is a concentric offset" and stop there
-> Most of the time it is: the centerline stepped outward a fixed distance, parallel everywhere. **But a
-> median, a sliver or a dead-end disc is not an edge-offset**, so it is built by a **boolean carve**
-> instead — and that is the *right* answer for it, not a degradation. ⛔ *"The curb is a concentric
-> offset"* therefore describes **most blocks, not the map**, and the carved share **varies by town** —
-> ▶ `node scratch/a07-producer-disclosure.mjs` — so **no single scene reveals the split.**
-> ⭐ Which producer built each block is **stamped into the frozen shape** (`producer` +
-> `producerReason`), precisely because a reader who believes the headline will debug a carved block with
-> reasoning that cannot apply to it. **Read the stamp before reasoning about a curb.**
->
-> *(This bullet exists because the previous edition of this doc printed the headline as one of two
-> "load-bearing facts" and never mentioned the carve. Filed as rot in the 2026-09-06 survey.)*
+> ### ⭐ THE CURB HAS ONE PRODUCER — ② (2026-10-20)
+> Every block's curb is ② (`offsetRingByRects` on its ① ring, then the ease). *(The "two producers" box described the
+> retired chain shape pass → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
+
 
 ⭐ **And it is always populated best-effort, then overridden.** Every edge gets a sane default with no
 operator action; authoring is purely correction on top. **The operator never starts from blank.**
@@ -563,6 +514,25 @@ per-street**, and you have found a real defect rather than a cosmetic one. That 
 single-glance test in the whole progression — use it.
 
 → `SECTION.md` (the FILL single source of truth) · `RIBBONS.md §3.4`
+
+---
+
+### 6a · The second wall — after the pieces, nothing reads ①'s lines
+
+*Jacob, 2026-10-18: "We have a datawall because the system kept falling back to the chains … can we eliminate the protopoly once the street exists?"*
+- ⭐ **① stays the source of IDENTITY; its GEOMETRY stops at the pieces.** Every ground piece carries ①'s labels
+  (whose street, which side, which edge, which owners). Once the pieces are minted, no stage reads ①'s rings or
+  its ε strokes. ⛔ **The ε ink is a cutting tool, never ground**: the road is one surface, everything in the
+  disc that is not a block, and a seam down a centreline is ① showing through.
+- ⛔ **Nothing after the mint finds a neighbour by distance.** Pieces meet because they were cut from the same
+  edges and share those vertices exactly; a distance repair is this wall's fallback-to-the-chains.
+- **The gate is then topological, with no number:** an edge used once inside the disc is a hole, and the rim's
+  edges carry no other piece's vertex. ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` (exact identity).
+- 🔴 **ASPIRATION, not built (2026-10-18):** conformity still repairs by distance (the 5 mm closer, `ON_EDGE_M`;
+  the 1 mm input weld), so the check is RED on every served slab; and a lot point takes the nearest ② span's
+  ease, whatever its owner (`resolveUncached` → `nearest`). ⭐ End state (Lath · Screed): the lot's ease
+  struck at the mint as owned pieces. Route, in order: band check GREEN on cover and disjoint → the flatten
+  carries piece ids → the triangle's tag carries the id → D asked per piece, with the ease pieces.
 
 ---
 

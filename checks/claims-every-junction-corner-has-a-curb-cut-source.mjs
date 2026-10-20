@@ -43,7 +43,7 @@ const badPairs = (r) => (r.crosswalkPairs || []).filter(([a, b, chain]) => {
 const run = (norm, corners = f.cornerCornerRadiusOverrides, evidence, crossings) => {
   const rb = { ...f.ribbons, ...(norm === undefined ? {} : { curbCutNorm: norm }), ...(evidence === undefined ? {} : { curbCutEvidence: evidence }),
                ...(crossings === undefined ? {} : { crosswalkEvidence: crossings }) }
-  return buildProto({ ...f, ribbons: rb, cornerCornerRadiusOverrides: corners }, { quiet: true, protoProducer: true })
+  return buildProto({ ...f, ribbons: rb, cornerCornerRadiusOverrides: corners }, { quiet: true })
 }
 // the corner map with one corner's `cut` set (null = cleared), every other entry and field kept
 const withCut = (map, key, cut) => { const m = { ...(map || {}) }, cur = m[key], e = cur == null ? {} : typeof cur === 'object' ? { ...cur } : { r: cur }
@@ -165,7 +165,7 @@ if (args.includes('--selftest')) {
   // curb) and skipped. ⛔ RETIRED 2026-10-18 — "a concrete wedge is walk", the 10-07 rule: a corner with one lawn keeps
   // the lawn leg's lawn up to the L (`SECTION §6.1`; Jacob, Boz's Q2), and its probe point lay at the no-lawn leg's curb
   // depth. Those corners are counted, not judged.
-  const cwOf = JSON.parse(readFileSync(`public/looks/${f.look}/design.json`, 'utf8')).curbWidth
+  const cwOf = f.curbWidth   // the feed's: the bake's curb, authored else the kit's
   const paintAt = (R) => { const idx = (rs) => (rs || []).map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
       for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return { r, x0, x1, z0, z1 } })
     const pin = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }

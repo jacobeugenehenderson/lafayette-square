@@ -86,7 +86,6 @@ const COLOR_BEND_DEFAULT = '#c9c9c9'    // faint grey = a bend — not a corner 
 const SQUARE_SIZE = 1.2
 
 const ixKey = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
-const DEFAULT_R = 4.5
 
 // Angular extent of a curb arc — between the two tangent points tA/tB, the side
 // that bulges toward the apex. Returns ringGeometry { thetaStart, thetaLength }

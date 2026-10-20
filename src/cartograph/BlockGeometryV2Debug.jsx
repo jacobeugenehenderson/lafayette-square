@@ -34,10 +34,11 @@ import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
 import { LAND_USE_COLORS } from '../lib/ribbonsGeometry.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { makeBoundary } from './boundary.js'
 import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { slabFetch } from '../lib/slabUrl.js'
+import { fetchCurbedMinWidth } from './api.js'
 
 // Single source of truth for the soft-circle silhouette in Designer's V2 live
 // render. Mirrors BakedGround.fadeForGroup — which is now ONE band for every kind.
@@ -179,12 +180,6 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
 // The Survey view shows the curb as an OUTLINE rather than a filled band, so
 // it strokes the same `tg.curb` rings the tile fill uses — one geometry source,
 // no separate Survey curb construction. Each ring edge becomes a segment pair.
-// [GROUT] Overlay toggle — `?grout=1`. RIBBONS §1 (ruled 2026-09-04): the grout is a
-// positive object and everything offsets from IT, not from the chains. This DRAWS it over
-// the live curb so the two can be judged in one view; it is not the producer yet.
-// ⛔ Off by default and Survey-only: it costs a second union per rebuild.
-let GROUT_ON = false
-try { GROUT_ON = new URLSearchParams(window.location.search).get('grout') === '1' } catch { GROUT_ON = false }
 function ringsToEdgeGeo(rings, yLift = 0) {
   if (!rings || !rings.length) return null
   const pos = []
@@ -271,7 +266,7 @@ export default function BlockGeometryV2Debug({
   const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const cornerEditMode            = useCartographStore(s => s.cornerEditMode)
-  const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const curbWidth                 = useCartographStore(curbWidthOf)   // the Look's authored width, else the kit's
   // [curve-fit — THE ONE KNOB] The curb derives from the single shared smoothing
   // tension `STREET_SMOOTH` (smoothCenterline.js). The smooth>0 path re-walks
   // extractFaces over the smoothed centerline → the curb iA + ped ribbon follow
@@ -427,12 +422,15 @@ export default function BlockGeometryV2Debug({
     // is still not free and still unread outside those two tools.
     // surveyActive/measureActive are in the deps: entering either tool builds it.
     if (!surveyActive && !measureActive) return empty
+    // the Look's curb width (and customs) are unknown until its design hydrates: a build before then has no authored inputs
+    if (!designHydrated) return empty
     // [LOAD-FORENSIC 2026-07-14] throwaway stage timing; strip once Jacob has
     // eye-confirmed the load in the browser.
     console.time('[LOAD] buildBlockGeometryV2')
     try {
       return buildBlockGeometryV2(liveRibbons, {
-        stencil, ...debouncedInputs, useRingBandEmitter,
+        // the curb width is read LIVE: the debounced snapshot refreshes only in Survey, and its first copy predates hydration
+        stencil, ...debouncedInputs, curbWidth, useRingBandEmitter,
       })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
@@ -440,7 +438,7 @@ export default function BlockGeometryV2Debug({
     } finally {
       console.timeEnd('[LOAD] buildBlockGeometryV2')
     }
-  }, [liveRibbons, stencil, debouncedInputs, useRingBandEmitter, surveyActive, measureActive])
+  }, [liveRibbons, stencil, debouncedInputs, curbWidth, useRingBandEmitter, surveyActive, measureActive, designHydrated])
 
 
   // D.5: Stash frontageEdges so MeasureOverlay can resolve a clicked
@@ -549,11 +547,10 @@ export default function BlockGeometryV2Debug({
   // → asPolygonWithHoles=true; yLift stacks them under the PRI order.
   // ── THE WALL · Phase D — Section OPENS the frozen Survey shape ──────────
   // The Measure/Section tab renders the ground from the bake's frozen
-  // `shape.json` artifact (the `_shapeArtifact` Survey froze), NOT from a live
+  // `shape.json` artifact (the `protoShapeTiles` Survey froze), NOT from a live
   // re-run of the Survey build. Fetched once per scene when the tool first
   // activates; `sectionOpen` (chain-free signature — artifact + design params
-  // only) composes block/curb/asphalt off the frozen iA and the ped FILL via
-  // sectionPass. Note what this is: the freeze→open MECHANISM (`PIPELINE.md` §5 (the Wall)) —
+  // only) composes block/curb/asphalt and the bands off the frozen tiles. Note what this is: the freeze→open MECHANISM (`PIPELINE.md` §5 (the Wall)) —
   // the §5(b) "correct data" half stays gated on the prebake cure; this view
   // shows the shape exactly as frozen, defects included.
   const bakeLastMs = useCartographStore(s => s.bakeLastMs)
@@ -561,7 +558,6 @@ export default function BlockGeometryV2Debug({
   const freezeShape = useCartographStore(s => s.freezeShape)
   // [ROADMAP A02] The wall's honesty flag — see the store's `shapeFreezeMissing`.
   const setShapeFreezeMissing = useCartographStore(s => s.setShapeFreezeMissing)
-  const setCurbProducerCensus = useCartographStore(s => s.setCurbProducerCensus)
   const [frozenShape, setFrozenShape] = useState(null)
   // TRUE while the frozen-shape fetch for the current (scene, freeze) is in
   // flight. ⛔ Load-bearing: without it the live build RACES the fetch. Both
@@ -618,18 +614,6 @@ export default function BlockGeometryV2Debug({
         setShapeFreezeMissing(tiles && tiles.length
           ? null
           : `No frozen shape for '${scene}' — showing a LIVE re-derivation, not the frozen shape. Run a bake (or exit Survey) to freeze it.`)
-        // [A07] The producer split, off the frozen stamp. An artifact baked before
-        // A07 carries no `producer` — say "unstamped" rather than inventing 0.
-        if (tiles && tiles.length) {
-          const stamped = tiles.filter(t => t.producer)
-          if (!stamped.length) setCurbProducerCensus({ unstamped: true, total: tiles.length })
-          else {
-            const carve = stamped.filter(t => t.producer === 'carve')
-            const byReason = {}
-            for (const t of carve) byReason[t.producerReason || 'carve'] = (byReason[t.producerReason || 'carve'] || 0) + 1
-            setCurbProducerCensus({ total: stamped.length, carve: carve.length, offset: stamped.length - carve.length, byReason })
-          }
-        } else setCurbProducerCensus(null)
       })
       .catch(e => {
         done = true
@@ -829,8 +813,23 @@ export default function BlockGeometryV2Debug({
     })
   }, [sectionGeos])
 
+  // ⭐ The minimum curbed width (the nose) — the SAME value the bake passes, from the same function (`curbedMinWidthOf`,
+  // via the dev server). ⛔ Until it arrives the live build waits; if it fails, the live build refuses by name.
+  const [curbedMinWidth, setCurbedMinWidth] = useState(null)
+  useEffect(() => {
+    if (!scene) return
+    let dead = false
+    setCurbedMinWidth(null)
+    fetchCurbedMinWidth(scene)
+      .then(v => { if (!dead) setCurbedMinWidth(v) })
+      .catch(e => { if (!dead) setCurbedMinWidth({ error: e?.message || String(e) }) })
+    return () => { dead = true }
+  }, [scene])
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
+    if (!curbedMinWidth) return null   // the nose width is still loading
+    if (curbedMinWidth.error) { console.error(`[BlockGeometryV2Debug] ⛔ live build REFUSED: no curbedMinWidth (${curbedMinWidth.error})`); return null }
+    if (!designHydrated) return null   // no authored curb width yet — buildTileGround would (rightly) refuse
     // The frozen path is going to render this — don't duplicate its work. See
     // frozenNotReady: this covers "in flight" AND "waiting on stencil/design".
     if (frozenNotReady) return null
@@ -839,28 +838,9 @@ export default function BlockGeometryV2Debug({
     // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
     let tg
-    // ⭐⭐⭐ ① IS THE FROZEN SHAPE — `protoArtifact`, NOT `protoProducer`.
-  // ⛔ SECTION'S ARTIFACT IS PRODUCED HERE, NOT BY `bake-ground`: the client autosaves
-  // `_shapeArtifact` to `POST /<scene>/shape` on Survey-exit (`serve.js:1113`) and that lands
-  // exactly where Section fetches it. So every CLI `--proto` bake was overwritten by this
-  // build's legacy artifact seconds later, and Section could never show ①.
-  // ⭐⭐⭐ `protoProducer` IS ON — Survey draws ②, the offset of the protopolygon.
-  // ⛔ It was off because one 1.77 km² ring — ~70% of the disc — turned the authoring surface
-  // solid (Survey FILLS `tg.curb`, `ringsToFlatGeo(..., true)`). That ring was never a block: it
-  // was the OUTER CONTOUR OF THE INK, handed back as a hole of the exterior when `frame − ink`
-  // was read as a flat ring list. Carrying the faces as COMPOUND PATHS out of the boolean
-  // (`booleanLabelled`'s `asTree`) removes it at the source.
-  // ▶ measured, LS, with authoring loaded: 120 curb rings, largest 0.1397 km² = 5.6% of the disc
-  //   — `node checks/claims-proto-curb-is-block-sized.mjs lafayette-square`
-  // ⭐⭐⭐ AND `protoArtifact` IS ON TOO — SURVEY AND SECTION MUST BE THE SAME THING.
-  // `protoProducer` swaps what SURVEY DRAWS; `protoArtifact` swaps what SECTION OPENS. With only
-  // the first, Survey showed ①②③ and Section showed the chain artifact — two constructions of the
-  // same street, side by side, and the operator is right to call that wrong.
-  // ⛔ SECTION'S ARTIFACT IS WRITTEN BY THIS BUILD, NOT BY `bake-ground`: the client autosaves
-  // `_shapeArtifact` to `POST /<scene>/shape` on Survey-exit (`serve.js:1113`), which lands exactly
-  // where Section fetches it. So the CLI `--proto` bake could never reach Section — the browser
-  // overwrote it seconds later. This is the only place the swap can be made.
-  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: 'proto', protoProducer: true, protoArtifact: true }) }
+    // ⭐⭐⭐ ①②③ is the only producer: Survey draws its layers, and `protoShapeTiles` IS the frozen shape — autosaved to
+    // `POST /<scene>/shape` on Survey-exit, which lands exactly where Section fetches it, so the two are one construction.
+  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, curbedMinWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -873,7 +853,6 @@ export default function BlockGeometryV2Debug({
       crosswalk: ringsToFlatGeo(tg.crosswalk, 0.045, true),
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
-      groutOutline: GROUT_ON ? ringsToEdgeGeo(tg.grout, 0.060) : null,   // [GROUT] over the curb, so both read at once
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
       highway:  ringsToFlatGeo(tg.highway,  0.015, true),   // above LU faces, below the ribbon network — grade-sep shows in its corridor, occluded by local roads
       highwayRings: tg.highway || [],   // G1 — raw grade-sep rings, frozen alongside the tiles so non-Survey views + slab restore highways
@@ -889,12 +868,12 @@ export default function BlockGeometryV2Debug({
       parkRings: (tg.luByClass && tg.luByClass.park) || [],
       cornerFillets: tg.cornerFillets || {},
       cornerSet: tg.cornerSet || [],   // T3 — the injective corner set the handle rides
-      _shapeArtifact: tg._shapeArtifact,   // the frozen-shape candidate — autosaved on Survey-exit
+      protoShapeTiles: tg.protoShapeTiles,   // the frozen-shape candidate — autosaved on Survey-exit
     }
-  }, [liveRibbons, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, blockCustomsX])
+  }, [liveRibbons, designHydrated, curbedMinWidth, sectionGeos, frozenNotReady, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms, blockCustomsX])
 
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
-  // While in Survey, keep the latest live `_shapeArtifact` (exactly what the
+  // While in Survey, keep the latest live `protoShapeTiles` (exactly what the
   // operator sees). When they LEAVE Survey — the deliberate "this shape is done,
   // now I'll do the FILL" moment, their eye just on it (`PIPELINE.md` §5 (the Wall) ⚠️ *(was cited as `WALL.md §5b` — a section that never existed)*) — persist it
   // so Section opens the current, eye-gated curb. No manual bake, no per-edit
@@ -902,7 +881,7 @@ export default function BlockGeometryV2Debug({
   // ("autosave on exit"). Going to Stage re-freezes via the full bake instead.
   const latestShapeArtifactRef = useRef(null)
   useEffect(() => {
-    const art = tileGeos?._shapeArtifact
+    const art = tileGeos?.protoShapeTiles
     // [G1] Freeze the per-tile shape AND the top-level grade-sep highway rings
     // as a sibling group ({ tiles, highway }) — highways aren't tile-shaped, so
     // they can't ride a tile, and the bare-array artifact dropped them from every
@@ -1223,11 +1202,6 @@ export default function BlockGeometryV2Debug({
   const surveyCurbMat = useMemo(() => new THREE.LineBasicMaterial({
     color: SURVEY_BLUE.curb, transparent: true, opacity: 0.95, depthWrite: false,
   }), [])
-  // [GROUT] Deliberately NOT a Survey blue — the point of the overlay is to read the
-  // grout AGAINST today's curb in one view, so it must not camouflage as the curb.
-  const groutMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: 0xff3d7f, transparent: true, opacity: 0.95, depthWrite: false,
-  }), [])
   // The curb band filled a touch darker than the block — it's the 'handle rail',
   // where the corner-rounding controls live, so it reads slightly proud of the
   // block interior.
@@ -1369,10 +1343,6 @@ export default function BlockGeometryV2Debug({
         {curbVisible && tileGeos?.curbOutline && (
           <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
             material={surveyCurbMat} />
-        )}
-        {tileGeos?.groutOutline && (
-          <lineSegments geometry={tileGeos.groutOutline} renderOrder={PRI.curb + 2}
-            material={groutMat} />
         )}
         {surveyIxGeo && (
           <mesh geometry={surveyIxGeo} renderOrder={PRI.curb + 1} material={surveyIxMat} />

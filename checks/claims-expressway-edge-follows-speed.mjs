@@ -20,7 +20,7 @@ import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 import { expresswaySpeeds } from '../cartograph/speedContext.mjs'
-import { townState } from '../src/cartograph/streetProfiles.js'
+import { townState, resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 import { sectionPassProtoTile } from '../src/lib/tileGround.js'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
@@ -47,7 +47,7 @@ for (const scene of (named.length ? named : scenes('cartograph/data/<scene>/raw/
   for (const r of E.rows) { const s = stamped.get(r.id); if (s && (s.edge !== r.edge || JSON.stringify(s.candidates) !== JSON.stringify(r.candidates))) bad.push(`${r.id}: the pour stamped ${s.candidates.join('/')} mph ⇒ ${s.edge}, the data now says ${r.candidates.join('/')} mph ⇒ ${r.edge} — re-pour`) }
   // the drawn edge
   const design = existsSync(join(ROOT, 'public/looks', scene, 'design.json')) ? readJson(join(ROOT, 'public/looks', scene, 'design.json')) : {}
-  const cw = Number.isFinite(design.curbWidth) ? design.curbWidth : 6 * 0.0254
+  const cw = resolveCurbWidth(design).value   // the bake's curb: authored, else the kit's
   const tally = new Map()
   for (const t of readJson(shapeP).tiles || []) {
     const runs = t.runs || []; if (!runs.some(r => want.has(r.skelId))) continue

@@ -1,13 +1,13 @@
 import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline } from './streetProfiles.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
 import { resolveChainSegmentation } from '../lib/chainSegmentation.js'
-import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure } from './measureModel.js'
+import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure, noMeasureFor } from './measureModel.js'
 import { readFeCustom, makeCapFe, feCustomKey } from '../lib/feCustomKey.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
@@ -262,7 +262,7 @@ export default function MeasureOverlay() {
   // ⭐ CURB-CUT CORNERS (`BRIEF-corner-ramps-and-kerb §3` step 4) — the painter's own records, one per junction corner
   // ⭐ the kerb's width is the LOOK's (`curbWidth`, the cosmetic slider) — one value for every handle, the one the map
   // draws with. The per-edge `side.curb` it once read was a control the map never honoured (removed, Jacob 2026-10-06).
-  const curbWidth = useCartographStore(s => s.curbWidth)
+  const curbWidth = useCartographStore(curbWidthOf)
   const curbCutCorners = useCartographStore(s => s.curbCutCorners)
   const selectedCurbCorner = useCartographStore(s => s.selectedCurbCorner)
   const curbCutLayerOn = useCartographStore(s => s.layerVis?.curbCut !== false)
@@ -546,15 +546,17 @@ export default function MeasureOverlay() {
     // constant `innerSign` key and seeded a drag on the OUTBOARD side from a zeroed
     // base — streetProfiles.js.)
     const chainSeed = chainMeasure(st)
-    const FALLBACK = { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
     // ⭐ One depth truth (SECTION.md §5): seed the drag from the SAME resolution
     // the FILL renders, so the drag redistributes within the depths on screen —
     // the write carries the resolved depths as intent, never surveyed-depth
     // baggage. writeBlockEdgeCustoms fans this across the fe's owned segOrds.
     const existing = readFeCustom(blockCustoms, fe)
     const ped = resolvePedDepths(chainSeed, side, existing)
-    const seed = { ...(chainSeed[side] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-    store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r, store.curbWidth) }])
+    // ⛔ NO FALLBACK MEASURE: a chain side the pour gave no measure has no asphalt width to drag from. Inventing one (it was
+    // pavementHW 5 + ped 1.5/1.5) wrote a width nobody surveyed into the town's authoring. Said, and the drag writes nothing.
+    if (!chainSeed?.[side]) { console.error(`[Section] ⛔ ${noMeasureFor(st, side)} — nothing to drag from; nothing written (the panel says so too)`); return }
+    const seed = { ...chainSeed[side], ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
+    store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r, curbWidthOf(store)) }])
   }, [nearestFeForSide])
 
   const onPointerDown = useCallback((e) => {

@@ -36,11 +36,21 @@
         "interchanges"
       ],
       "terms": {
-        "aiUse": "unchecked-no-terms-found",
-        "checkedOn": "2026-09-23",
-        "checkedBy": "Boz",
-        "note": "No copyright or terms-of-use text found on the EPG About or General_disclaimer pages; its Privacy_policy page 404'd; modot.org has public-records pages but no content-reuse terms. Absence of terms is NOT permission.",
-        "route": "Ask MoDOT in writing (Ask MoDOT 888-275-6636, listed on its public-records pages)."
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "© 2026 Missouri Department of Transportation, All Rights Reserved (modot.org footer, every page). The EPG itself (epg.modot.org) has no copyright text: its 'Disclaimers' page (Engineering_Policy_Guide:General_disclaimer) is an engineering-use disclaimer only, its 'Privacy policy' page has no text, and its 'About' page carries no terms.",
+        "source": "https://www.modot.org/privacy",
+        "ambiguity": "The publisher reserves all rights on modot.org; whether that footer reaches the epg.modot.org wiki is not stated. Ambiguous, so not permitted.",
+        "note": "A possible address for the drafted letter: comments@modot.mo.gov (given on modot.org/privacy for questions about that policy) — not established that it handles permission requests.",
+        "route": "Ask MoDOT in writing (Ask MoDOT 888-275-6636, listed on its public-records pages).",
+        "request": {
+          "status": "drafted, not sent",
+          "letter": "Drafted 2026-10-18 by Plat with Jacob, as a Gmail draft in Jacob's account; NOT SENT — Jacob sends. Local copy (gitignored): references/files/letters/request-modot.md. Asks for permission covering the current maps and the ones that follow in the state, says the maps are part of a commercial product (neighborhoods and organizations pay to host them; the public uses them free), and that the studio builds maps all over the country.",
+          "to": "NOT FOUND (2026-10-18): modot.org lists no general email — only the Ask MoDOT line 1-888-275-6636, a contact web form at modot.org/contact-us, and department/district inboxes. Ask MoDOT where permission requests go, or paste the letter into the form."
+        },
+        "previously": "unchecked-no-terms-found (2026-09-23, Boz): No copyright or terms-of-use text found on the EPG About or General_disclaimer pages; its Privacy_policy page 404'd; modot.org has public-records pages but no content-reuse terms. Absence of terms is NOT permission.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE",
       "localCopy": null
@@ -60,9 +70,15 @@
         "aiUse": "not-permitted-pending-waiver",
         "checkedOn": "2026-09-23",
         "checkedBy": "Boz (web search; the policy page 404'd to fetch — Jacob to verify on the page)",
-        "quote": "Many, but not all, of the products and material [ODOT] produces are public records and are open for non-commercial reuse or duplication… Reuse of any and all material for commercial purposes is generally prohibited. Waivers… will be considered on a case-by-case basis… accreditation to ODOT… is requested.",
-        "source": "https://www.transportation.ohio.gov/help-center/privacy-notice-and-policies",
-        "route": "Request a written waiver from ODOT Division of Communications & External Affairs, describing the use."
+        "quote": "Many, but not all, of the products and material the Ohio Department of Transportation produces are public records and are open for non-commercial reuse or duplication. Some items, such as the Official Transportation Map, are fully copyrighted, and reuse is expressly restricted. Reuse of any and all material for commercial purposes is generally prohibited. Waivers to reuse material for educational purposes, and/or by non-profit or other governmental entities will be considered on a case-by-case basis depending on the source material and intended reuse. Accreditation to ODOT for appropriated material is requested. Feel free to contact the ODOT Division of Communications for further clarification or for specifics requests.",
+        "source": "https://www.transportation.ohio.gov/privacy",
+        "route": "Request a written waiver from ODOT Division of Communications & External Affairs, describing the use.",
+        "quoteNote": "Re-read in full 2026-10-18 by Plat (the policy moved from /help-center/privacy-notice-and-policies, now 404, to /privacy). The earlier quote elided the waiver sentence's scope: waivers are named only for educational, non-profit or governmental reuse, so a commercial waiver is outside the stated classes and may be refused.",
+        "request": {
+          "status": "drafted, not sent",
+          "letter": "Drafted 2026-10-18 by Plat with Jacob, as a Gmail draft in Jacob's account; NOT SENT — Jacob sends. Local copy (gitignored): references/files/letters/request-odot.md. Asks for permission covering the current maps and the ones that follow in the state, says the maps are part of a commercial product (neighborhoods and organizations pay to host them; the public uses them free), and that the studio builds maps all over the country. It acknowledges the request may fall outside the stated waiver classes.",
+          "to": "brand@dot.ohio.gov, 614-466-7410 — the contact box on transportation.ohio.gov/about/divisions/communications (\"Division of Communications\"). The policy page's own link to the division 404s, and the address looks branding-oriented: confirm by phone that it takes waiver requests."
+        }
       },
       "status": "CANDIDATE",
       "localCopy": null
@@ -84,7 +100,8 @@
         "quote": "In general, information presented on this website, unless otherwise indicated, is considered in the public domain. It may be distributed or copied as permitted by law.",
         "exception": "Caltrans uses some third-party copyrighted material (e.g. photographs) needing the owner's permission — skip anything credited to a third party.",
         "source": "https://dot.ca.gov/conditions-of-use",
-        "approvedBy": "Jacob, 2026-09-23"
+        "approvedBy": "Jacob, 2026-09-23",
+        "coverNotice": "The HDM's own front matter reads \"© 2019 California Department of Transportation. All Rights Reserved.\" — not recorded when it was approved (2026-09-23). Noted 2026-10-17 by Plat; the status is unchanged pending Jacob (see caltrans-standard-plans)."
       },
       "status": "PERMITTED — skip anything credited to a third party",
       "localCopy": "references/files/caltrans-hdm-2025-08-08.pdf",
@@ -322,15 +339,22 @@
       "title": "2010 ADA Standards for Accessible Design (28 CFR 35 / 36)",
       "publisher": "US Department of Justice",
       "jurisdiction": "federal",
-      "url": null,
+      "url": "https://www.ada.gov/law-and-regs/design-standards/2010-stds/",
       "covers": [
         "pedestrian refuge / island cut-through width (MUTCD §3C.12 defers to it)",
         "curb ramps"
       ],
       "terms": {
-        "aiUse": "unchecked",
-        "checkedOn": null,
-        "note": "Federal regulation — likely public domain; URL and terms owed."
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "Copyright Status and Citation: Unless otherwise indicated, information on Department of Justice websites is in the public domain and may be copied and distributed without permission. ... If a source other than the Department of Justice or other federal government agency is indicated on a photo, graphic, or other material, permission to copy these materials must be obtained from the original source. Please note that some photos, graphics and other materials used on this website are copyrighted.",
+        "source": "https://www.justice.gov/legalpolicies",
+        "federalWork": "The standards page is ADA.gov, headed \"U.S. Department of Justice Civil Rights Division\" and \"An official website of the United States government\" (https://www.ada.gov/law-and-regs/design-standards/2010-stds/). A US Government work, 17 USC 105.",
+        "exception": "Third-party material: §105 of the Standards incorporates by reference copyrighted private standards (ANSI/BHMA A156.10 and A156.19, ASME A17.1 and A18.1, among others listed in §105.2), \"part of the requirements to the prescribed extent of each such reference.\" Those standards are NOT public domain and are not reproduced here; never cite a value that lives only in them. Skip any figure or photo credited to a non-federal source.",
+        "note": "Status set by the terms agent, not yet approved by Jacob (the federal-works standing acceptance on prowag-2023 likely covers it — Jacob to confirm). ⚠ While checking for the third-party list, the agent's text grep of the standards page printed fragments of §105 and some Title III scoping text; nothing else was read.",
+        "previously": "unchecked (never, —): Federal regulation — likely public domain; URL and terms owed.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE",
       "localCopy": null
@@ -387,10 +411,15 @@
         "corner radii"
       ],
       "terms": {
-        "aiUse": "unchecked",
-        "checkedOn": "2026-09-23",
-        "checkedBy": "Boz",
-        "note": "nacto.org returned 403 to fetch; a search showed only a generic 'all rights reserved unless otherwise indicated'. Private publisher — treat as NOT permitted until someone reads its terms on the site or asks NACTO."
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "COPYRIGHT All content on this website is the exclusive property of National Association of City Transportation Officials. ... Our content is protected by United States and international copyright laws and we reserve all rights contained therein. ... LICENSE AND SITE ACCESS National Association of City Transportation Officials grants you (the user) a limited license to access and make personal use of this website. This license does not include the right to download any material (other than routine page caching), modify any material, or any portion thereof, without the express written consent of National Association of City Transportation Officials. ... This website or any portion of this website may not be reproduced, duplicated, copied, sold, visited, or otherwise exploited for any commercial purpose without express written permission of National Association of City Transportation Officials.",
+        "source": "https://nacto.org/legal/",
+        "note": "Read from the Wayback Machine snapshot of NACTO's own page (http://web.archive.org/web/20260719033334/https://nacto.org/legal/, 'Statement of Privacy & Terms of Use'); nacto.org returns 403 to fetch. Personal use only; no download; no commercial use without written permission. The print edition (Island Press, 2013) was not checked separately.",
+        "route": "Written request to nacto@nacto.org (the address the terms name).",
+        "previously": "unchecked (2026-09-23, Boz): nacto.org returned 403 to fetch; a search showed only a generic 'all rights reserved unless otherwise indicated'. Private publisher — treat as NOT permitted until someone reads its terms on the site or asks NACTO.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — terms owed (the kit's ped defaults are attributed to it in OSM-FORENSICS Part 4)",
       "localCopy": null
@@ -402,12 +431,17 @@
       "jurisdiction": "global",
       "url": "https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9",
       "covers": [
-        "the aerial the kit DISPLAYS in Survey/Extent"
+        "nothing: the Designer's aerial left it for USDA NAIP on 2026-10-20 (row naip); it had been the aerial in Survey/Extent"
       ],
       "terms": {
-        "aiUse": "unchecked",
-        "checkedOn": null,
-        "note": "Displaying it is one thing; MEASURING or extracting data from it (including an agent judging rendered tiles) is another, and its terms have not been read. Treat as not permitted for measurement."
+        "aiUse": "prohibited",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "Customer may take Online Services basemaps offline through Esri Content Packages and subsequently deliver (transfer) them to any device for use with licensed ArcGIS Runtime applications and ArcGIS Desktop. Customer may not otherwise scrape, download, or store Data. (Master Agreement E204, §3.2(c), August 1, 2025.) Also, from Esri's terms-of-use summary for Esri-owned items: \"YOU MAY NOT Systematically harvest basemap tiles through any method other than using Esri Content Packages · Redistribute basemap tiles · Download, redistribute or self-host any content hosted by Esri.\"",
+        "source": "https://assets.esri.com/content/dam/esrisites/en-us/media/legal/ma-full/ma-full.pdf",
+        "note": "The item's licenseInfo (ArcGIS REST, item 10df2279f9684e4a9f6a7f08febac2a9) reads \"This work is licensed under the Esri Master License Agreement\" and links to the summary (https://www.esri.com/content/dam/arcgisonline/docs/tou_summary.pdf, updated April 21, 2025) and the Master Agreement. Licensed use is \"with the Products for which Esri has provided the Data\" (§3.2(a)) and needs an Esri licence. MEASURING from it (downloading tiles, an agent judging rendered tiles) is prohibited; display in the app is a separate licensing question, not settled here. Attribution: \"Esri, Vantor, Earthstar Geographics, and the GIS User Community\".",
+        "previously": "unchecked (never, —): Displaying it is one thing; MEASURING or extracting data from it (including an agent judging rendered tiles) is another, and its terms have not been read. Treat as not permitted for measurement.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — terms owed before any measurement rests on it",
       "localCopy": null
@@ -419,7 +453,8 @@
       "jurisdiction": "federal (US-wide)",
       "url": "https://planetarycomputer.microsoft.com/dataset/naip",
       "covers": [
-        "0.3–0.6 m 4-band orthoimagery of every US town (dated flights)"
+        "0.3–0.6 m 4-band orthoimagery of every US town (dated flights)",
+        "the aerial the Designer DISPLAYS in Survey/Extent, served by USGS The National Map (imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer), whose description calls it \"public domain\""
       ],
       "terms": {
         "aiUse": "permitted",
@@ -898,14 +933,15 @@
         "sky colour / Rayleigh scattering explainers"
       ],
       "terms": {
-        "aiUse": "unchecked",
-        "checkedOn": "2026-09-27",
-        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched (AI section pulled verbatim via curl)",
-        "quote": "While a wealth of public information is available for use in artificial intelligence (AI) applications, it's important to understand the following when using our data for AI development: Attribution: NASA cannot verify the accuracy of information once it's incorporated into a large language model. Therefore, attribution of the information directly to NASA is not permitted. ... References like \"according to NASA\" or similar are prohibited in AI products.",
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "Artificial Intelligence (AI) Applications ... While a wealth of public information is available for use in artificial intelligence (AI) applications, it's important to understand the following when using our data for AI development: Attribution: NASA cannot verify the accuracy of information once it's incorporated into a large language model. Therefore, attribution of the information directly to NASA is not permitted. ... AI Model Attribution: All outputs from the AI model should be attributed to the AI product itself, not NASA. References like \"according to NASA\" or similar are prohibited in AI products. ... NASA occasionally uses copyright-protected material of third parties with permission on its website. Those images will be marked identified as copyright protected with the name of the copyright holder.",
         "source": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
-        "exception": "CONFLICT WITH README rule 2 (cite the source used): NASA forbids attributing AI-derived information to NASA. Jacob to rule whether a finding may carry this source id.",
+        "ambiguity": "Use is permitted (a US Government work, \"generally are not subject to copyright in the United States\"), but NASA forbids attributing AI-derived information to NASA, and README rule 2 requires a finding to carry its source id. The two cannot both hold, so the source cannot be cited as the kit cites. Not permitted until Jacob rules on the conflict — the 'permission' needed is his ruling, not NASA's. proposedAiUse stays 'permitted' if he rules a finding may carry this id.",
         "proposedAiUse": "permitted",
-        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+        "previously": "unchecked (2026-09-27, Gloaming's terms agent, 2026-09-27: fetched (AI section pulled verbatim via curl)): Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1.",
+        "approvedBy": "Jacob, 2026-10-20"
       },
       "status": "CANDIDATE — terms checked, awaiting Jacob's approval (attribution conflict)"
     },
@@ -1126,6 +1162,401 @@
       },
       "status": "CANDIDATE — terms owed to Jacob",
       "localCopy": null
+    },
+    {
+      "id": "stl-city-standard-details",
+      "title": "Standard Details for Public Works Construction (March 2024)",
+      "publisher": "City of St. Louis — Board of Public Service",
+      "jurisdiction": "St. Louis city, MO (LS; part of HPDM)",
+      "url": "https://www.stlouis-mo.gov/government/departments/public-service/permits/documents/upload/Standard-Details-for-Public-Works-Construction-March-2024.pdf",
+      "covers": [
+        "standard detail drawings (curb, island, median — by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "© 2011 - 2026 City of St. Louis (the page footer; the website-policies page states no reuse terms)",
+        "source": "https://www.stlouis-mo.gov/government/departments/information-technology/web-development/website-policies.cfm",
+        "ambiguity": "Copyright is claimed and no licence is given; robots.txt disallows every PDF (Plat, 2026-10-17). Not permitted.",
+        "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read.",
+        "route": "Written request to the President of the Board of Public Service, City of St. Louis.",
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): robots.txt: \"User-agent: *\" … \"Disallow: /*.pdf$\" — automated retrieval of every city standard (all PDFs) is disallowed. Companion: 2026 Standard Specifications for Public Works Construction (same office, same terms). Best local candidate for the nose.",
+        "approvedBy": "Jacob, 2026-10-20"
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "stl-city-traffic-calming-guidelines",
+      "title": "Traffic Calming Guidelines",
+      "publisher": "City of St. Louis — Board of Public Service, Design Division",
+      "jurisdiction": "St. Louis city, MO",
+      "url": "https://www.stlouis-mo.gov/government/departments/public-service/projects/documents/traffic-calming-guidelines.cfm",
+      "covers": [
+        "medians, islands, chicanes (by title)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "© 2011 - 2026 City of St. Louis",
+        "source": "https://www.stlouis-mo.gov/government/departments/information-technology/web-development/website-policies.cfm",
+        "route": "As stl-city-standard-details."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "stl-city-revised-code",
+      "title": "Revised Code of the City of St. Louis, Annotated (2020 ed.)",
+      "publisher": "City of St. Louis; codified and hosted by Municode",
+      "jurisdiction": "St. Louis city, MO",
+      "url": "https://www.stlouis-mo.gov/government/city-laws/code/index.cfm",
+      "covers": [
+        "streets, sidewalks, subdivision (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "hostTerms": {
+          "host": "Municode (CivicPlus)",
+          "url": "https://www.civicplus.help/legal-center/docs/civicplus-terms-of-use",
+          "revised": "2026-03-20",
+          "quote": "you may not \"use any CivicPlus Materials or Authority Data ... for AI Training Purposes without CivicPlus's express prior written consent\" — \"AI Training Purposes\" is defined to include \"grounding, retrieval augmentation\"; use is \"solely for your non-commercial, personal purposes\".",
+          "read": "restricted: an agent extracting rules is grounding; the product is commercial. Route: CivicPlus signed writing (§8(d)), or the city's own copy."
+        }
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "stlco-dot-design-criteria",
+      "title": "Design Criteria for the Preparation of Improvement Plans; Standard Drawings – Current",
+      "publisher": "St. Louis County Department of Transportation and Public Works",
+      "jurisdiction": "St. Louis County, MO (unincorporated + county arterials; part of HPDM)",
+      "url": "https://stlouiscountymo.gov/st-louis-county-departments/transportation-and-public-works/roadway-publications-and-manuals/",
+      "covers": [
+        "street criteria by class",
+        "standard drawings (curb, island, median — by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "\"If you are using County information on a third-party site, please keep in mind: You and your application must not express or imply any sponsorship or endorsement by St. Louis County. ... They should not imply ownership, endorsement, or approval by St. Louis County. You may not use the County seal in any way.\" The terms cover \"StLouisCountyMO.gov ... any other official County digital products offered online\" and state \"The County is subject to the Missouri Sunshine Records Law.\"",
+        "source": "https://stlouiscountymo.gov/contact-us/terms-of-use/",
+        "ambiguity": "The terms ANTICIPATE third parties reusing County information (with no-endorsement conditions) but grant no explicit licence, name no copyright status, and say nothing about manuals or AI. Ambiguous, so not permitted — but it is the closest of the local sources to permitted; Jacob to rule.",
+        "note": "The live site returns 403 (Cloudflare challenge); the terms were read from the Wayback Machine snapshot of the county's own page, http://web.archive.org/web/20261003214824/https://stlouiscountymo.gov/contact-us/terms-of-use/.",
+        "route": "Jacob reads the county site terms in a browser, or asks the county in writing.",
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): Every county page, robots.txt included, returns 403 (Cloudflare managed challenge); terms unread. A Florissant-hosted 2019 copy exists — not opened, its terms unchecked.",
+        "approvedBy": "Jacob, 2026-10-20"
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "clayton-mo-standards",
+      "title": "City of Clayton — Streetscape Standard Details (July 2012); Code Ch. 415 Subdivision (§415.630 Street Design Standards)",
+      "publisher": "City of Clayton, MO; code hosted by eCode360",
+      "jurisdiction": "Clayton, MO (the largest share of HPDM)",
+      "url": "https://ecode360.com/CL3270",
+      "covers": [
+        "streetscape details",
+        "subdivision street design standards (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "note": "claytonmo.gov returns 403 (Akamai) to every fetch; no city terms seen. The code is on eCode360.",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        },
+        "route": "Written request to Clayton Public Works; Jacob reads claytonmo.gov terms in a browser."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "ucity-mo-code",
+      "title": "University City Municipal Code",
+      "publisher": "City of University City, MO; hosted by eCode360",
+      "jurisdiction": "University City, MO (part of HPDM)",
+      "url": "https://www.ecode360.com/UN3457",
+      "covers": [
+        "municipal code (subdivision/street chapters not seen)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"All content © 2006-2026 University City and its representatives. All rights reserved.\" (the whole body of the Copyright Notices page)",
+        "source": "https://www.ucitymo.org/site/copyright",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        }
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "richmond-heights-mo-code",
+      "title": "Richmond Heights Municipal Code (Ch. 410 subdivision); Guidelines for Acceptance of Private Streets",
+      "publisher": "City of Richmond Heights, MO; code hosted by eCode360",
+      "jurisdiction": "Richmond Heights, MO (part of HPDM)",
+      "url": "https://ecode360.com/RI3417",
+      "covers": [
+        "subdivision",
+        "street acceptance criteria (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"© 2025 Richmond Heights, MO\" — the whole footer; no terms, disclaimer or privacy page exists.",
+        "source": "https://www.richmondheights.org/",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        }
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "huron-oh-codified-ordinances",
+      "title": "Codified Ordinances of the City of Huron — Part Eleven, Title One: Subdivision Regulations (design standards, site improvements, construction specifications)",
+      "publisher": "City of Huron, OH (online copy hosted by American Legal Publishing)",
+      "jurisdiction": "Huron city, OH",
+      "url": "https://files.cityofhuron.org/government/city_council/charter_codified_ordinances.php",
+      "covers": [
+        "subdivision street design standards (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "© City of Huron. All rights reserved (cityofhuron.org footer; no terms, disclaimer or privacy page)",
+        "source": "https://www.cityofhuron.org/",
+        "ambiguity": "All rights reserved, no licence; the AmLegal copy is under ICC terms that exclude commercial use and data mining (hostTerms). Not permitted.",
+        "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read.",
+        "route": "Written request to the City of Huron (city manager / engineering), or Jacob rules on the city's own copy.",
+        "hostTerms": {
+          "host": "ICC Code Solutions (American Legal Publishing · General Code/eCode360 · Code Publishing)",
+          "url": "https://www.iccsafe.org/about/terms-of-use/",
+          "revised": "2023-05-04",
+          "quote": "the licence does not include \"resale or commercial use of any Service or E-Content; derivative use ...; or use of data mining, robots, or similar data gathering and extraction tools with any Service or E-Content.\"",
+          "read": "restricted. eCode360's own footer not seen (Cloudflare 403; the Chrome extension was refused ecode360.com) — the ICC terms name General Code, LLC. Route: license@iccsafe.org, or the city's own copy."
+        },
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): The city's own PDF (H-PLANZON.pdf, \"January 2019 Replacement\") carries no copyright notice. The AmLegal copy is under the ICC terms (restricted). No city standard drawings found online. ⚠ The terms agent grepped the downloaded PDF for copyright/AASHTO/DOT strings — beyond cover-only; it reported a partial deferral to ODOT's Construction and Materials Specifications. The copy was deleted.",
+        "approvedBy": "Jacob, 2026-10-20"
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "erie-county-oh-subdivision-regs-2024",
+      "title": "Erie County Subdivision Regulations (2024)",
+      "publisher": "Erie Regional Planning Commission / Erie County, OH",
+      "jurisdiction": "Erie County, OH (unincorporated Huron Township — about a third of Huron's disc)",
+      "url": "https://www.eriecounty.oh.gov/SubdivisionRegulations.aspx",
+      "covers": [
+        "roads and lot arrangement (by purpose line)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "© 2026. Erie County Ohio. All Rights Reserved. (eriecounty.oh.gov footer; no terms or disclaimer page)",
+        "source": "https://www.eriecounty.oh.gov/",
+        "ambiguity": "All rights reserved, no licence. Not permitted.",
+        "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read.",
+        "route": "Written request to the Erie Regional Planning Commission.",
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): No Erie County Engineer road standards or standard drawings found online. ⚠ As huron-oh-codified-ordinances: a string grep was run on the PDF (it cites ODOT standards repeatedly); copy deleted.",
+        "approvedBy": "Jacob, 2026-10-20"
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "provincetown-subdivision-rules",
+      "title": "Rules and Regulations Governing the Subdivision of Land, Provincetown, Massachusetts",
+      "publisher": "Provincetown Planning Board (MGL c.41 §81K–81GG)",
+      "jurisdiction": "Provincetown, MA",
+      "url": "https://www.provincetown-ma.gov/DocumentCenter/View/211",
+      "covers": [
+        "subdivision street design (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "All content © 2006-2026 Provincetown and its representatives. All rights reserved.",
+        "source": "https://www.provincetown-ma.gov/copyright",
+        "ambiguity": "All rights reserved, no licence. Not permitted.",
+        "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read. Truro's site carries the same notice (see earlier note).",
+        "route": "Written request to the Provincetown Planning Board (and Truro's).",
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): No edition date (PDF created 2002). No DPW street standard found. Truro (5% of the disc): 2024 Subdivision Rules and Regulations, https://www.truro-ma.gov/DocumentCenter/View/1053 — \"All content © 2006-2026 Truro, MA and its representatives. All rights reserved.\" (truro-ma.gov/copyright).",
+        "approvedBy": "Jacob, 2026-10-20"
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "ccc-complete-streets-manual-2012",
+      "title": "Complete Streets/Living Streets: A Design Manual for Cape Cod (2012)",
+      "publisher": "Cape Cod Commission (Barnstable County)",
+      "jurisdiction": "Barnstable County, MA",
+      "url": "https://capecodcommission.org/CompleteStreetsDesignManual.pdf",
+      "covers": [
+        "complete-streets design (by title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "Copyright 2026 Cape Cod Commission. (footer) The policy page holds only a Digital Millennium Copyright Act policy: \"The Cape Cod Commission adopted this policy in accordance with the Digital Millennium Copyright Act of 1998 ...\" — no reuse, scraping or AI terms.",
+        "source": "https://capecodcommission.org/web-accessibility-and-privacy-policy/",
+        "ambiguity": "Copyright claimed, no licence. Not permitted.",
+        "note": "Re-fetched 2026-10-20; unchanged from Plat's 2026-10-17 read.",
+        "route": "Written request to the Cape Cod Commission.",
+        "previously": "unchecked-no-terms-found (2026-10-17, Plat (web; terms pages only, no source content read)): Guidance, not an edict. PDFs 403 to plain fetch.",
+        "approvedBy": "Jacob, 2026-10-20"
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "nyc-dot-street-design-manual",
+      "title": "NYC DOT Street Design Manual, 4th edition (April 2025)",
+      "publisher": "New York City Department of Transportation",
+      "jurisdiction": "New York City (Jackson Heights)",
+      "url": "https://www.nycstreetdesign.info/",
+      "covers": [
+        "street geometry, materials, lighting, furniture"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "nyc.gov Terms of Use §IV.1: \"All other design, information, text, graphics, images, pages, interfaces, links, software, and other items and materials contained in or displayed on NYC.gov, and the selection and arrangements thereof, are the property of the City of New York. All rights are reserved.\" §IV.6 gives a process to request permission.",
+        "source": "https://www.nyc.gov/home/terms-of-use.page",
+        "note": "Footer: \"Copyright 2026 The City of New York\". It does NOT defer to NYSDOT; search snippets show it names the AASHTO Green Book (2018) as a source — rule 5 applies to anything it states on AASHTO's authority. Companion: NYC DOT Standard Details of Construction (2022-06-06, hosted by DDC; same terms). The quote came through WebFetch's extractor — re-check it on the page.",
+        "route": "Permission request to the City of New York per nyc.gov Terms of Use §IV.6."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "caltrans-standard-plans",
+      "title": "Caltrans 2025 Standard Plans (and Revised Standard Plans, 2026-04-20)",
+      "publisher": "California Department of Transportation",
+      "jurisdiction": "CA (Altadena, by the state route)",
+      "url": "https://dot.ca.gov/programs/design/2025-ccs-standard-plans-and-standard-specifications",
+      "covers": [
+        "standard island, curb and median details (the HDM §405.4 points here: \"See the Standard Plans for typical island passageway details\")"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-20",
+        "checkedBy": "Boz's terms agent",
+        "quote": "OWNERSHIP In general, information presented on this website, unless otherwise indicated, is considered in the public domain. It may be distributed or copied as permitted by law. However, the California Department of Transportation does make use of copyrighted data (e.g., photographs) which may require additional permissions prior to your use.",
+        "source": "https://dot.ca.gov/conditions-of-use",
+        "ambiguity": "AMBIGUOUS, so NOT permitted: the conditions page grants public domain \"unless otherwise indicated\", and the book's own cover (recorded by Plat 2026-10-17) reads \"© Copyright 2025 California Department of Transportation. All rights reserved.\" That cover notice may be the \"otherwise indicated\". Unchanged until Jacob rules, or Caltrans confirms in writing. The same question applies to caltrans-hdm (see its coverNotice), which stays permitted on Jacob's 2026-09-23 approval.",
+        "coverNotice": "The cover of the book itself reads \"© Copyright 2025 California Department of Transportation. All rights reserved.\" (2025 Standard Plans, title page; each errata sheet also carries \"All Rights Reserved\"). The HDM carries the same kind of notice: \"© 2019 California Department of Transportation. All Rights Reserved.\" (front matter). The conditions page says public domain \"unless otherwise indicated\" — whether the cover notice is that indication is Jacob's call. Found 2026-10-17 by Plat, after the approval; nothing past the front matter and table of contents has been read.",
+        "approvedBy": "Jacob, 2026-10-20",
+        "previously": "unchecked (2026-10-17, Plat (web; terms pages only, no source content read))"
+      },
+      "status": "APPROVED, HELD — the cover notice goes back to Jacob before extraction",
+      "localCopy": "references/files/caltrans-standard-plans/",
+      "edition": "2025 Edition (complete book, 638 pp.) + Revised Standard Plans errata no. 1 (updated 2026-04-20)",
+      "localCopyFiles": [
+        {
+          "file": "references/files/caltrans-standard-plans/2025-standard-plans.pdf",
+          "url": "https://dot.ca.gov/-/media/dot-media/programs/design/documents/2025-standard-plans-locked.pdf",
+          "sha256": "788fada6fce52540726b15d7d8234a49b41ddbdcf9e18d1ed8a971272f7b39db"
+        },
+        {
+          "file": "references/files/caltrans-standard-plans/2025-standard-plans-errata-no1.pdf",
+          "url": "https://dot.ca.gov/-/media/dot-media/programs/design/documents/2025-standard-plans-errata-no1-locked-a11y.pdf",
+          "sha256": "2972fc288d1a2091e5e281d80dc6030706834b2203b18963c26e4cad46274ccd"
+        }
+      ]
+    },
+    {
+      "id": "la-county-pw-standard-plans",
+      "title": "LA County Public Works Standard Plan Manual (2000 ed., with later plans)",
+      "publisher": "Los Angeles County Public Works",
+      "jurisdiction": "Los Angeles County, CA (unincorporated Altadena)",
+      "url": "https://pw.lacounty.gov/des/design_manuals/StandardPlan.pdf",
+      "covers": [
+        "standard plans"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "§4: \"We, on behalf of ourselves and our licensors, expressly reserve all rights\" … \"Access to this Site does not confer, and shall not be considered as conferring, upon you\" \"any license or other rights to the Site, the Contents or the compilation of Contents.\"",
+        "source": "https://pw.lacounty.gov/explore-public-works/privacy-and-terms-of-use/",
+        "note": "No county highway/road design manual is listed online. The SPPWC \"Greenbook\" Standard Plans (BNi, purchase only; \"not to be reproduced\") is third-party copyright and is not registered as a candidate.",
+        "route": "Written request to LA County Public Works."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "pasadena-standard-plans",
+      "title": "City of Pasadena Public Works Standard Plan Drawings; Street Design Guide (2017)",
+      "publisher": "City of Pasadena",
+      "jurisdiction": "Pasadena, CA (about a third of Altadena's disc)",
+      "url": "https://www.cityofpasadena.net/public-works/engineering-and-construction/public-works-permitting/standard-plan-drawings/",
+      "covers": [
+        "curb and gutter, cul-de-sac, turn-bay transitions (by sheet title)"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only, no source content read)",
+        "quote": "\"Using or modifying this site's materials and information for commercial or profit making purposes is prohibited\" — otherwise \"freely available for non-commercial, non-profit making use\". Hosted APWA/SPPWC sheets (APWA-132-1, -134-1): \"Use of these third party materials for any purpose is prohibited.\"",
+        "source": "https://www.cityofpasadena.net/disclaimers",
+        "route": "Written permission from Pasadena's Department of Information Technology for commercial use."
+      },
+      "status": "CANDIDATE — Bring to Jacob — he approves or declines (BRIEF-a-curbed-nose-has-a-source §3.2).",
+      "localCopy": null
+    },
+    {
+      "id": "txdot-roadway-design-manual",
+      "title": "TxDOT Roadway Design Manual (curb ramp guidance)",
+      "publisher": "Texas Department of Transportation",
+      "jurisdiction": "TX (no kit town)",
+      "url": "https://www.txdot.gov/manuals/des/rdw.html",
+      "covers": [
+        "curb ramp style (the wording Jacob cited for perpendicular ramps)"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-10-17",
+        "checkedBy": "Plat (web; terms pages only)",
+        "quote": "\"Copyright 2026, Texas Department of Transportation\" — the disclaimer page has no reproduction, reuse, automated-access or AI terms.",
+        "source": "https://www.txdot.gov/about/disclaimer.html",
+        "note": "TxDOT can hold copyright and grant licences (Transportation Code §201.205, cited in a TxDOT licence agreement). The manual URL is unconfirmed and was not opened. Jacob's quoted wording (\"strongly preferred… heavily discouraged\") is unverified and may be a summary.",
+        "route": "Not needed: PROWAG answers the default (q-curb-ramp-style-preference). Ask TxDOT in writing only if Jacob wants its preference wording itself."
+      },
+      "status": "CANDIDATE — bring to Jacob",
+      "localCopy": null
     }
   ],
   "questions": [
@@ -1213,7 +1644,7 @@
       "id": "q-island-min-size",
       "ask": "How small can a channelising leftover be before it is paint (a flush marked area) rather than a raised island?",
       "neededBy": "H-3 Q8 (the third surface)",
-      "status": "open",
+      "status": "answered",
       "tried": [
         "mutcd-11r1 → f-mutcd-island-criteria-deferred",
         "fhwa-sa-13-027 → f-sa13027-island-raised-or-flush (no threshold; its numeric island rules are AASHTO-attributed, excluded)",
@@ -1224,13 +1655,14 @@
       "nextSources": [
         "none of the permitted sources states a raised-vs-flush size (Caltrans, MassDOT, MUTCD, SA-13-027 all read) — a ruling or a measured value, or a further state manual"
       ],
-      "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open. ⸻ MassDOT (MA): floors of 50 sq ft urban / 100 sq ft rural with a side ≥ 15 ft, linear islands ≥ 2 ft wide — but again NO size at which raised becomes flush; raised is \"ideal\", flush \"less preferably\" and never a refuge. Open as asked, in both CA and MA.",
+      "notes": "ANSWERED by the kit house standard (Jacob, 2026-10-17): a leftover smaller than 50 sq ft is not a raised island (r-house-island-min-area), informed by CA and MA floors. No permitted source states a raised-vs-flush size. No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open. ⸻ MassDOT (MA): floors of 50 sq ft urban / 100 sq ft rural with a side ≥ 15 ft, linear islands ≥ 2 ft wide — but again NO size at which raised becomes flush; raised is \"ideal\", flush \"less preferably\" and never a refuge. Open as asked, in both CA and MA.",
       "findings": [
         "f-caltrans-island-min-size",
         "f-caltrans-island-raised-or-painted",
         "f-massdot-island-min-size",
         "f-massdot-island-raised-or-flush",
-        "f-mutcd-small-raised-islands"
+        "f-mutcd-small-raised-islands",
+        "r-house-island-min-area"
       ]
     },
     {
@@ -1459,7 +1891,7 @@
     {
       "id": "q-curb-width",
       "ask": "Curb (top-of-curb) width drawn between roadway and ped band",
-      "neededBy": "curbWidth / CURB_WIDTH",
+      "neededBy": "curbWidth / KIT_CURB_WIDTH",
       "status": "open",
       "nextSources": [
         "Caltrans Standard Plans A87 (not in registry) for CA",
@@ -2129,6 +2561,37 @@
       ]
     },
     {
+      "id": "q-island-nose",
+      "status": "answered",
+      "ask": "Where does a curbed island / median nose end (how narrow before the curb stops), and how does its tip round (nose radius)?",
+      "neededBy": "the curbed nose rounded once inside easeContour (Lath, swale/flatten-paths-r1; JH-1143) — BRIEF-a-curbed-nose-has-a-source",
+      "codeSites": [
+        "src/lib/tileGround.js easeContour (the nose rounding, Lath's build)"
+      ],
+      "findings": [
+        "f-caltrans-island-approach-nose-parabolic",
+        "f-caltrans-island-approach-nose",
+        "f-caltrans-island-min-size",
+        "f-massdot-island-min-size",
+        "r-house-curbed-min-width",
+        "r-house-nose-radius"
+      ],
+      "tried": [
+        "caltrans-hdm → f-caltrans-island-approach-nose-parabolic (shape: parabolic flare), f-caltrans-island-approach-nose (offsets), f-caltrans-island-min-size (4 ft × 20 ft divisional) — no tip radius",
+        "massdot-design-guide → f-massdot-island-min-size (linear ≥ 2 ft wide) — no tip radius; nose details image-only",
+        "fhwa-sa-13-027 §8 median end type — semicircle / bullet nose, AASHTO-attributed (aashtoPassages), excluded",
+        "mutcd-11r1 §3J.05–3J.06 — marks approach ends; no geometry",
+        "prowag-2023 — does not cover island geometry",
+        "local + regional candidates, terms checked 2026-10-17 (Plat): none permitted yet — see sources stl-city-*, stlco-dot-design-criteria, clayton-mo-standards, ucity-mo-code, richmond-heights-mo-code, huron-oh-codified-ordinances, erie-county-oh-subdivision-regs-2024, provincetown-subdivision-rules, ccc-complete-streets-manual-2012, nyc-dot-street-design-manual, caltrans-standard-plans, la-county-pw-standard-plans, pasadena-standard-plans"
+      ],
+      "nextSources": [
+        "caltrans-standard-plans (terms look permitted; Jacob to approve) — the HDM points here for island details",
+        "stl-city-standard-details (LS + HPDM) — written request",
+        "nyc-dot-street-design-manual (JH) — permission per nyc.gov ToU §IV.6"
+      ],
+      "notes": "ANSWERED by the kit house standard (Jacob, 2026-10-17): the curbed nose ends where the island narrows to 4 ft (r-house-curbed-min-width), and its tip rounds as a 2 ft-radius semicircle (r-house-nose-radius). Both are rulings informed by the recorded range, never cited from a manual. A town's own jurisdiction can still supply a rung once a local source is permitted (candidates and their terms: see tried). Superseded per-town reading, 2026-10-17: MINIMUM CURBED WIDTH: CA 4 ft (divisional), MA 2 ft (linear) — own jurisdiction for Altadena / Provincetown; MO, OH, NY may borrow either, labelled \"borrowed for <state>\" (Jacob's ruling 2026-10-17, BRIEF §1). NOSE SHAPE: CA parabolic flare (own); others borrow. NOSE RADIUS: no permitted source states one in its own voice — [U] in every town. Jurisdictions measured with us-census-geocoder over each disc: LS = St. Louis city; HPDM = Clayton > St. Louis city > University City > Richmond Heights > unincorporated St. Louis County; Huron = Huron city + unincorporated Huron Township (Erie County); PTown = Provincetown (+ Truro); Altadena = unincorporated LA County + Pasadena; JH = NYC (no jurisdiction.json in the pour)."
+    },
+    {
       "id": "q-curb-ramp-style-preference",
       "status": "answered",
       "ask": "The default curb-cut style at a corner: one ramp per crossing (perpendicular), or one at the apex (diagonal)? And the width and detectable-warning depth of the default ramp.",
@@ -2147,6 +2610,22 @@
         "txdot-roadway-design-manual — terms: no reuse terms found; not read"
       ],
       "notes": "PROWAG settles it as a REQUIREMENT, not a preference: one curb ramp (or blended transition) per crosswalk; a single apex ramp only in alterations where one-per-crosswalk is technically infeasible. ⚠ What PROWAG does NOT say: that the per-crosswalk ramp must be PERPENDICULAR — parallel ramps (R304.3), or one blended transition spanning every crosswalk, comply too. \"Perpendicular\" over parallel is Jacob's choice: r-curb-ramp-default-perpendicular. Default ramp: run width 48 in min (R304.5.1.1), running slope 1:12 max, 48 × 48 in clear area below, inside the crosswalk (R304.2.4, R304.5.3); warning surface 24 in deep min, the full run width (R305.1.4), at the back of curb when the grade break is in front of it (R305.2.1 A)."
+    },
+    {
+      "id": "q-kerb-height",
+      "status": "answered",
+      "ask": "How high the kerb stands (the riser at the curb line) when a town authors none",
+      "neededBy": "the raised kerb (BRIEF-corner-ramps-and-kerb §0a item 4; kerbLift.mjs)",
+      "findings": [
+        "f-caltrans-curb-heights",
+        "f-massdot-curb-heights",
+        "f-massdot-island-raised-or-flush",
+        "r-house-kerb-height"
+      ],
+      "codeSites": [
+        "cartograph/curb-cut-norm.mjs validateKerb / resolveCurbCutNorm — kit kerb rung (still 0: the house 6 in is not built)"
+      ],
+      "notes": "Answered by the kit house standard, r-house-kerb-height (6 in). A town's own norm (e.g. LS 0.15 m) stays on top."
     }
   ],
   "findings": [
@@ -3925,7 +4404,7 @@
     {
       "id": "f-prowag-curb-ramp-per-crosswalk",
       "topic": "pedestrian realm",
-      "question": null,
+      "question": "q-curb-ramp-style-preference",
       "kind": "rule",
       "value": {
         "perCrosswalk": 1,
@@ -5123,18 +5602,37 @@
       "canon": "docs/briefs/BRIEF-the-ground-knows-its-height.md §5 (the girdle)"
     },
     {
-      "id": "r-curb-ramp-default-perpendicular",
-      "question": "q-curb-ramp-style-preference",
-      "kind": "ruling",
+      "id": "f-caltrans-island-approach-nose-parabolic",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-island-nose",
+      "kind": "rule",
       "value": {
-        "kitDefaultCurbCutStyle": "perpendicular",
-        "townWideSwitch": "asked for (Survey or Section), not built"
+        "approachNoseShape": "parabolic flare",
+        "flares": "Table 405.4 (1:5, 1:10, 1:15 parabolic curb flares, offsets by distance)",
+        "noseRadiusStated": false
       },
-      "by": "Jacob",
-      "date": "2026-10-17",
-      "quote": "The default can become perpendicular and perhaps we put a knob in the survey or section tool to switch the painting? Given they are 'code' now it would make more sense to default to them",
-      "canon": "docs/briefs/BRIEF-corner-ramps-and-kerb.md §0a item 5 (59e3945f)",
-      "notes": "PROWAG REQUIRES one ramp per crosswalk (R203.6.1.1; apex only in alterations, f-prowag-apex-ramp-alterations-only). PERPENDICULAR over parallel or a blended transition is this ruling's choice, not PROWAG's. It is the kit rung of the ladder (evidence → town norm → state → kit); LS keeps its authored diagonal norm. Relayed by Boz."
+      "source": "caltrans-hdm",
+      "where": "Index 303.5(8); Table 405.4",
+      "quote": "The approach nose of islands should also be designed utilizing a parabolic flare, as discussed in Index 405.4.",
+      "scope": "CA curbed islands — the SHAPE the curb takes into the approach nose; no radius at the tip",
+      "foundOn": "2026-10-17",
+      "foundBy": "Plat"
+    },
+    {
+      "id": "f-prowag-apex-ramp-alterations-only",
+      "topic": "pedestrian realm",
+      "question": "q-curb-ramp-style-preference",
+      "kind": "rule",
+      "value": {
+        "singleApexRampPermitted": "only in alterations, where existing physical constraints make one-per-crosswalk technically infeasible",
+        "newConstruction": false
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R203.6.1.1 Exception",
+      "quote": "Exception: In alterations, where existing physical constraints make compliance with R203.6.1.1 technically infeasible, a single curb ramp complying with R304 shall be permitted at the apex of the intersection corner.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
+      "foundOn": "2026-10-17",
+      "foundBy": "Plat"
     },
     {
       "id": "f-prowag-perpendicular-ramp-dws",
@@ -5160,20 +5658,98 @@
       "foundBy": "Plat"
     },
     {
-      "id": "f-prowag-apex-ramp-alterations-only",
-      "topic": "pedestrian realm",
+      "id": "r-curb-ramp-default-perpendicular",
       "question": "q-curb-ramp-style-preference",
-      "kind": "rule",
+      "kind": "ruling",
       "value": {
-        "singleApexRampPermitted": "only in alterations, where existing physical constraints make one-per-crosswalk technically infeasible",
-        "newConstruction": false
+        "kitDefaultCurbCutStyle": "perpendicular",
+        "townWideSwitch": "asked for (Survey or Section), not built"
       },
-      "source": "prowag-2023",
-      "where": "36 CFR 1190 appendix, R203.6.1.1 Exception",
-      "quote": "Exception: In alterations, where existing physical constraints make compliance with R203.6.1.1 technically infeasible, a single curb ramp complying with R304 shall be permitted at the apex of the intersection corner.",
-      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
-      "foundOn": "2026-10-17",
-      "foundBy": "Plat"
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "The default can become perpendicular and perhaps we put a knob in the survey or section tool to switch the painting? Given they are 'code' now it would make more sense to default to them",
+      "canon": "docs/briefs/BRIEF-corner-ramps-and-kerb.md §0a item 5 (59e3945f)",
+      "notes": "PROWAG REQUIRES one ramp per crosswalk (R203.6.1.1; apex only in alterations, f-prowag-apex-ramp-alterations-only). PERPENDICULAR over parallel or a blended transition is this ruling's choice, not PROWAG's. It is the kit rung of the ladder (evidence → town norm → state → kit); LS keeps its authored diagonal norm. Relayed by Boz."
+    },
+    {
+      "id": "r-house-kerb-height",
+      "question": "q-kerb-height",
+      "kind": "ruling",
+      "value": {
+        "kerbHeight_in": 6,
+        "kerbHeight_m": 0.1524
+      },
+      "range": "vertical curb 4–8 in · Type A 6 in (CA) · typical roadway 6, barrier 6–8 (MA) · raised island 3–6 (MA) · LS norm 0.15 m",
+      "informedBy": [
+        "f-caltrans-curb-heights",
+        "f-massdot-curb-heights",
+        "f-massdot-island-raised-or-flush"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard) · docs/briefs/BRIEF-corner-ramps-and-kerb.md §0a item 4 + §3 step 5",
+      "notes": "The kit rung of the kerb norm ladder (town norms.json → state → kit). The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation. NOT BUILT: curb-cut-norm.mjs still gives kit = 0."
+    },
+    {
+      "id": "r-house-curbed-min-width",
+      "question": "q-island-nose",
+      "kind": "ruling",
+      "value": {
+        "curbedMinWidth_ft": 4,
+        "curbedMinWidth_m": 1.22
+      },
+      "range": "CA curbed divisional island ≥ 4 ft · MA raised median: raised part ≥ 4 ft · MA linear island (raised or flush) ≥ 2 ft",
+      "informedBy": [
+        "f-caltrans-island-min-size",
+        "f-massdot-raised-median",
+        "f-massdot-island-min-size"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard)",
+      "notes": "Narrower than this, the island is not curbed: the curbed nose ends where the island narrows to 4 ft. Replaces f-massdot-island-min-size (2 ft) as the kit's nose cut. The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation."
+    },
+    {
+      "id": "r-house-nose-radius",
+      "question": "q-island-nose",
+      "kind": "ruling",
+      "value": {
+        "noseRadius_ft": 2,
+        "noseRadius_m": 0.61,
+        "rule": "half of r-house-curbed-min-width"
+      },
+      "range": "NONE: no recorded finding states a nose radius. CA gives only the approach shape (parabolic flare).",
+      "informedBy": [
+        "f-caltrans-island-approach-nose-parabolic",
+        "f-caltrans-island-approach-nose",
+        "r-house-curbed-min-width"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard)",
+      "notes": "A GEOMETRIC CONSEQUENCE of the minimum width, not an average: the tip is a semicircle as wide as the narrowest curbed island. The semicircle / bullet-nose median ends exist only in SA-13-027's AASHTO-attributed passage, which rule 5 bars even as an input; they informed nothing here."
+    },
+    {
+      "id": "r-house-island-min-area",
+      "question": "q-island-min-size",
+      "kind": "ruling",
+      "value": {
+        "raisedIslandMinArea_sqft": 50,
+        "raisedIslandMinArea_m2": 4.65
+      },
+      "range": "CA ≥ 50 sq ft (75 preferred) · MA ≥ 50 urban / 100 rural, one side ≥ 15 ft",
+      "informedBy": [
+        "f-caltrans-island-min-size",
+        "f-massdot-island-min-size"
+      ],
+      "by": "Jacob",
+      "date": "2026-10-17",
+      "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
+      "canon": "references/README.md \"Codes first\" (the kit house standard)",
+      "notes": "Smaller than this, a channelising leftover is not a raised island. The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation."
     }
   ]
 }

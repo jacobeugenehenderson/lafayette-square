@@ -30,7 +30,7 @@ const pct = (a, p) => a.length ? a.slice().sort((x, y) => x - y)[Math.floor(a.le
 let failures = 0
 for (const scene of scenes) {
   const f = feed(scene); if (!f) { failures++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   const steps = [], lawnKilled = [0, 0]
   sectionDump.ramp.length = 0
   let short = 0, edges = 0

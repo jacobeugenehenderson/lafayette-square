@@ -96,7 +96,7 @@
       "corner": true
     }
   },
-  "curbWidth": 0.381,
+  "curbWidth": 0.1524,
   "parkTitlePos": null,
   "alleyCap": "square",
   "labels": {

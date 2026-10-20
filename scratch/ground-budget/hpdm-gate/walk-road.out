@@ -1,0 +1,8 @@
+  ⛔   hipointedemun: 120668 street-walk station(s) every 1 m · ceiling exag 1 · drawn from baked terrain height · limit 1:48 (scene)
+        ⛔ who owns the walk: 497 ped vertex(es) that NO painted band owns, first at 
+        THE GATE — the walk's cross-section (front · middle · back): fall p50 0.32% p90 1.20% p99 5.38% · over the limit at 2793 station(s), 2.31%
+          tile 207 · forest-park-parkway-2 · right · 1: 135 station(s), worst 32.80% at (-388.8, -1027.5)
+          tile 216 · forest-park-parkway-3 · left · 1: 134 station(s), worst 32.74% at (-390.3, -1017.9)
+          tile 207 · university-drive-3 · right · 0: 133 station(s), worst 32.80% at (-388.2, -1033.7)
+          tile 172 · north-skinker-boulevard-0 · left · 17: 78 station(s), worst 63.98% at (757.2, -520.3)
+        over the limit at the ceiling: 471030 triangle(s), 8.91% of the area · worst 199697988.16% (terrain 199697988.16% per unit exag, kerb 0.00%)

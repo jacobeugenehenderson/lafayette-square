@@ -14,7 +14,7 @@
 //   delta = 0 → authoring does not reach ②③ at all, which is worse and is its own ticket.
 //
 // It also asks the sharper question the aggregate cannot: of the authored slots that exist,
-// how many does ①'s identity stamp actually RESOLVE (`bcOf(skelId, side, segOrd)`)? An
+// how many does ①'s identity stamp actually RESOLVE (`blockCustoms[skelId][side][segOrd]`, read by `resolveProtoMeasure`)? An
 // unresolved slot is an override the operator made that the proto stack cannot see.
 //
 // ⛔ Look→scene comes from `public/looks/index.json`, never from the directory name (`A11`).

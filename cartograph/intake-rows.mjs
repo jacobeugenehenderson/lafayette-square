@@ -244,6 +244,9 @@ const OSM_ODBL = {
   name: 'Open Database License (ODbL)',
   url: 'https://opendatacommons.org/licenses/odbl/1-0/',
   requires: 'attribution',
+  // ODbL §4.3's own notice form. It rides in the served slab's sources.json, which is the slab's metadata: the
+  // OSMF guidelines' "Databases" safe harbour wants the attribution and the licence link "within the data or metadata".
+  notice: 'Contains information from OpenStreetMap, which is made available here under the Open Database License (ODbL).',
 }
 
 const MSBF_CDLA = {

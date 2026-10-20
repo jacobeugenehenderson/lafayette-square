@@ -14,6 +14,7 @@ export default {
     "jurisdiction": "county",
     "file": "oh_parcels.json",
     "attribution": "Ohio Statewide Parcels — OGRIP (Ohio Geographically Referenced Information Program)",
+    "terms": {"read": "2026-10-19", "url": "https://services2.arcgis.com/MlJ0G8iWUyC7jAmu/arcgis/rest/services/OhioStatewidePacels_full_view/FeatureServer/info/iteminfo?f=pjson", "says": "available for public use at the user's own risk and provided for informational purposes only", "note": "no redistribution or attribution clause stated"},
     "endpoint": "https://services2.arcgis.com/MlJ0G8iWUyC7jAmu/arcgis/rest/services/OhioStatewidePacels_full_view/FeatureServer/0/query",
     "land_use_code_format": "self-describing",
     "fields": {
@@ -28,7 +29,10 @@ export default {
       "land_use_code",
       "land_area"
     ],
+    // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18), absent until someone does
     "absent": [
+      "row_type",
+      "land_use_desc",
       "owner",
       "year_built",
       "building_sqft",
@@ -53,6 +57,7 @@ export default {
     "provider": "ohio-lbrs",
     "file": "oh_address_points.json",
     "attribution": "Ohio Statewide LBRS Address Points — OGRIP (Ohio Geographically Referenced Information Program)",
+    "terms": {"read": "2026-10-19", "says": "available for public use at the user's own risk and provided for informational purposes only", "note": "as the OGRIP parcels item; no redistribution or attribution clause stated"},
     endpoint: 'https://services2.arcgis.com/MlJ0G8iWUyC7jAmu/arcgis/rest/services/Statewide_LBRS_Address_Points/FeatureServer/0/query',
     outFields: 'HOUSENUM,UNITNUM,ST_PREFIX,ST_NAME,ST_TYPE,ST_SUFFIX,ST_SUFFIX2',
     // ⭐ The address is composed from the point's own fields — house number + street parts — WITHOUT the unit

@@ -60,9 +60,9 @@ for (const scene of named.length ? named : ribbonScenes()) {
   // frozen pour predates it — never a rule of this check's own
   if (liveNorm) { const src = readSources(scene); f.ribbons = { ...f.ribbons, curbCutNorm: resolveCurbCutNorm(scene, src.declared ? src.state : null) } }
   const pl = console.log, pw = console.warn; console.log = () => {}; console.warn = () => {}
-  let R; try { R = buildTileGround(f.ribbons, { grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
+  let R; try { R = buildTileGround(f.ribbons, { smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
     blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse, cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides,
-    cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1, protoProducer: true }) } finally { console.log = pl; console.warn = pw }
+    cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1 }) } finally { console.log = pl; console.warn = pw }
   const recs = (R.curbCutRecs || []).filter(r => r.style !== 'diagonal' && r.along)
   if (!recs.length) { console.log(`── ${scene}   no perpendicular landing in this pour (norm ${f.ribbons.curbCutNorm?.style ?? 'none'})`); continue }
   const walk = [...(R.sidewalk || []), ...(R.curbCut || [])], curb = R.curb || []

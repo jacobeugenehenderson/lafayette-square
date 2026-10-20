@@ -24,7 +24,7 @@ const SA = r => { let a = 0; for (let i = 0; i < r.length; i++) { const j = (i+1
 let bad = 0
 for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   let one = 0, broken = 0, none = 0, legs = 0, multi = 0
   const worst = []
   for (const [ti, t] of T.entries()) {

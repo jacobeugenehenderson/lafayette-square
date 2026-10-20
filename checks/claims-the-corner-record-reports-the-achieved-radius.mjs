@@ -5,13 +5,9 @@
 // This checks that sentence against the pour, by comparing the record with the ease's
 // OWN disclosure in the same build — so the two numbers cannot come from different maps.
 //
-// ⛔⛔ BUILD FLAGS ARE PART OF THE MEASUREMENT. `cornerSet` is filled by TWO producers:
-// without `protoProducer`/`protoArtifact` it is the LEGACY CHAIN shape pass, which
-// `:8136` says "describe corners that are NOT on screen"; with them, `:8141` swaps in
-// ②'s arcs. The Designer passes them (`BlockGeometryV2Debug.jsx:849`). A probe that
-// omits them measures the undrawn set and gets a different answer — 600 corners with
-// 36 missing fillets instead of 1,378 with none. That mistake is why the check this
-// file replaces was excised, not bannered.
+// `cornerSet` is ②'s achieved arcs — the one producer since the legacy chain shape pass was deleted
+// (2026-10-20). (Before that a probe that omitted the proto flags measured the undrawn legacy set,
+// which is why the check this file replaces was excised, not bannered.)
 //
 // ⛔ The ease's counters cannot be read after the fact — the build DRAINS them
 // (`easeSkipsTake` resets). They are disclosed as `console.warn`, so the honest way to
@@ -29,7 +25,7 @@ for (const scene of feedScenes()) {
   const realWarn = console.warn
   console.warn = (...a) => { warns.push(a.join(' ')) }
   let tg
-  try { tg = buildProto(f, { protoProducer: true, protoArtifact: true, emitArtifact: true }) }
+  try { tg = buildProto(f) }
   finally { console.warn = realWarn }
 
   const CS = (tg.cornerSet || []).filter(c => c.vertR > 0)

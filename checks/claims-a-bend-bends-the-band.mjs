@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 // CLAIM — WHERE THERE IS NO CORNER, THE BAND BENDS (`RIBBONS §1` invariant 1, "the corner is the band BENT", scoped by
 // b2d5a549 to the curb, the diagonal corner and every non-corner; Jacob, 2026-10-18: "when sidewalk meets sidewalk it also just
-// continues smoothly"; "why doesn't grass bend with sidewalk on non-corners?"). An arc gets a ramp only when BOTH a street is
-// crossed there (the corner test: a junction) AND a walk ends in the road (the drawn walk lands) — Boz's ruling, 2026-10-18.
-// Every other eased arc — a bend (one street), or a junction where no walk lands (`notCorner`) — is the ordinary band bent
-// through it: no pad, no ramp, each strip at its own depth and continuous round the turn.
+// continues smoothly"; "why doesn't grass bend with sidewalk on non-corners?"). Every eased arc that is not PADDED — a bend
+// (one street), a corner the operator unmarked, a junction where no walk reaches the road (`notCorner`, Boz's ruling,
+// 2026-10-18) — is the ordinary band bent through it: no pad, no ramp, each strip at its own depth and continuous round the
+// turn; a leg ends on it only where the ladder's DEPTHS change (50a64997, 6a64c44b).
 // READS the paint (authoring loaded, the norm the pour would freeze now): at every unpadded arc (the painter's `cornerArcs`;
 // its points tangent to tangent read off the frozen tile's `iaFull` + `iaArc`), the strips met casting inward from the road edge — at both tangents and at three stations along the
 // arc. ASSERTS: along the arc the strips come in the tangents' own order, each boundary between the two tangents' depths
 // (5 cm); an arc whose two tangents already differ in order (a frontage change on the bend) is NOT JUDGED, counted.
 //   node checks/claims-a-bend-bends-the-band.mjs [scene…] [--painter=<tileGround copy>]
-// SEEN RED: the painter with its not-corner pass off (each such arc padded with walk to the kerb), and with bends padded.
+// SEEN RED: this branch before 50a64997 (the corner mark ended a leg at every arc vertex: Huron 190 of 365) and before
+// 6a64c44b (an owner change with equal depths still ended one). At 6a64c44b, Huron: 9 of 181, at 5 places — the land use
+// starting 0.1–0.4 m off its tangents' depth mid-arc, and one lawn start 8 cm off; cause not established.
+// Also RED: the painter with its not-corner pass off (each such arc padded with walk to the kerb).
 import { pathToFileURL } from 'node:url'
 import { resolve } from 'node:path'
 import { feed } from '../scratch/_proto-feed.mjs'
@@ -26,9 +29,9 @@ for (const scene of named.length ? named : ribbonScenes()) {
   const f = feed(scene); if (!f) { red = true; continue }
   const src = readSources(scene), nm = resolveCurbCutNorm(scene, src.declared ? src.state : null)
   const pl = console.log, pw = console.warn; console.log = () => {}; console.warn = () => {}
-  let R; try { R = buildTileGround({ ...f.ribbons, curbCutNorm: nm }, { grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
+  let R; try { R = buildTileGround({ ...f.ribbons, curbCutNorm: nm }, { smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
     blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse, cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides,
-    cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1, protoProducer: true }) } finally { console.log = pl; console.warn = pw }
+    cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1 }) } finally { console.log = pl; console.warn = pw }
   const layers = [['curb', [...(R.curb || []), ...(R.curbCut || [])]], ['lawn', Object.values(R.treelawnByLu || {}).flat()], ['walk', R.sidewalk || []], ['lu', Object.values(R.luByClass || {}).flat()]]
     .map(([k, rs]) => [k, rs.map(r => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return { r, bb: [a, b, c, d] } })])
   const what = (x, z) => { for (const [k, rs] of layers) if (rs.some(o => x >= o.bb[0] && x <= o.bb[2] && z >= o.bb[1] && z <= o.bb[3] && pip(x, z, o.r.r ?? o.r))) return k; return null }

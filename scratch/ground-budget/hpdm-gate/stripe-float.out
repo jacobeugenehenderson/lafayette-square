@@ -1,0 +1,11 @@
+  ⛔   hipointedemun: 38598 stripe sample(s) (every vertex and edge midpoint) against the road beside them · the stripe's lift over it 86 mm (its baked y, the bake's KEEP_OWN_SLOT; median) · exag 1 · |terrain-part departure| p50 0.0 mm · p99 306.1 mm · max 2300.0 mm · ⚠️ 3 sample(s) with no road within 2 m, not judged
+        2232 sample(s) off the road by more than the stripe's own lift (304 vertices · 1928 edge midpoints; 1045 SUNK under it, 1187 standing off it), worst 2.300 m · in the ① ink (no tile: the terrain drawn) 221, inside a tile 2011 · > 20 cm 824 · > 50 cm 93
+          vertex at (-723.65, -50.20): 2.300 m UNDER asphalt (0.11 m away), lift 86 mm
+          vertex at (-719.92, -51.71): 2.099 m over asphalt (0.08 m away), lift 86 mm
+          vertex at (608.75, 1189.30): 1.915 m over asphalt (0.10 m away), lift 86 mm · ① ink
+          vertex at (-716.13, -53.40): 1.847 m over asphalt (0.05 m away), lift 86 mm
+          edge midpoint of a 3.70 m edge at (607.22, 1188.26): 1.777 m over asphalt (0.09 m away), lift 86 mm · ① ink
+          edge midpoint of a 3.83 m edge at (-714.36, -54.13): 1.721 m over asphalt (0.09 m away), lift 86 mm
+          edge midpoint of a 3.99 m edge at (-714.30, -54.19): 1.716 m over asphalt (0.06 m away), lift 86 mm
+          vertex at (-712.46, -54.97): 1.584 m over asphalt (0.08 m away), lift 86 mm
+⛔ 1 slab(s) whose stripe does not lie on its road, or that cannot be judged

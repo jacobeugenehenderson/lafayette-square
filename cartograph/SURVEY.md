@@ -38,7 +38,7 @@ Intake → Skeleton → Prebake → ⟦ SURVEY ⟧ → ⟦DATA WALL⟧ → Secti
 |---|---|---|
 | **input** | the prebaked frame (the First Bake) | `src/data/ribbons.json` |
 | **Survey authors** | operator intent — widths, caps, anchor, corner-R, land-use | `clean/overlay.json` (geometry) · `looks/<id>/design.json` (corner-R, customs, LU) |
-| **⟦WALL⟧ freezes** | the per-tile hardscape SHAPE (`_shapeArtifact`) | `public/baked/<id>/shape.json` |
+| **⟦WALL⟧ freezes** | the per-tile hardscape SHAPE (`protoShapeTiles`) | `public/baked/<id>/shape.json` |
 
 **Built + consumed by** `src/lib/tileGround.js` — the *same* `buildTileGround()` drives the **live 2D Designer render** and the **bake**, so Survey is **WYSIWYG by construction** (live == bake). *WYSIWYG is a property of the **path**, not a correctness claim — the live view faithfully shows the bake **including its current defects** (§6). The map is broken right now; it is broken identically in both places.*
 
@@ -48,20 +48,19 @@ Intake → Skeleton → Prebake → ⟦ SURVEY ⟧ → ⟦DATA WALL⟧ → Secti
 
 The live construction is the **tile model** (`buildTileGround()` in `tileGround.js`). It runs for every scene — the `isTileScene` flag is **gone**, deleted at T4 (2026-07-15); the only surviving references are comments recording its removal. ⚠️ The figure-ground module (`buildBlockGeometryV2` / `cornersAtIx`) is **dead-in-place** — still *mounted* only to feed legacy authoring overlays, **never the render or bake.** Anything framing the construction or a fix around `cornersAtIx` is pointed at the dead path.
 
-The SHAPE pass, in execution order:
+The construction, in execution order (`RIBBONS §1`, `PIPELINE` step 3):
 
-1. **`extractFaces(streets)` (`:303`) → the Tiles.** A half-edge DCEL planar walk over the **shared-vertex graph** of `ribbons.streets[].points` (nodes keyed to 0.1 mm). Each bounded face = one tile, tagged per-edge with its owning `(street, side)`. **Grade-separated streets are filtered out first** (`:600`) so a 2D crossing with no shared vertex can't bowtie the faces; they're stroked separately as flat asphalt and rendered behind the local network.
-2. **Outward stroke → the asphalt silhouette.** `groupRuns` (`:450`) collects each tile's boundary into maximal runs of one `(street, side)`; `strokeOpen` (`:198`) offsets each run **outward** by the asphalt half-width `edgeDepth(runMeasure(run), side, 'A')`. Dead-end **round** tips get a circle cap; **blunt/none** tips stay flat.
-3. **`filletRing` (`:90`) rounds the convex corners ONCE → the curb line (`iA`).** Per-vertex radius via `resolveVertR` (`:715`), 3-tier: **per-corner** override → **per-IX** override → default (4.5 m AASHTO × `cornerRadiusScale`). The achieved arcs are tagged into **`cornerFillets`** (`:920`) — the *one* corner truth the magenta authoring handle reads (no re-derivation). `jtMiter`, never `jtRound` (jtRound re-rounds and corrupts operator R=0 squares).
-4. **Capacity guard (`:951`).** Engages **only on FULL collapse** — `if (!offsetRings(iA, −(WB/0.9)).length)` then bisects to `cap = 0.9 × inscribed reach`. ⚠️ A tile that pinches to a thin *non-empty* sliver keeps `cap = WB` (no clamp) → the inward offsets still run past the medial axis and `filletRing` thorns them. So this catches *full* degeneracy, **not** the partial-degeneracy thorn class (the persistent ~100 thorns — `HANDOFF-band-fold-fix.md`).
-5. **Asphalt = `tile.ring − iA` (`:958`); Block = `iA`** (the rounded inner region = `tile − aFill`, rounded). The `block` output is the union of per-tile `iA` (`:1101`) — the positive polygon to the curb edge (consistent with §1: *block = tile − asphalt*).
-6. **Freeze → `shapeTiles[]` (`:961`).** Per tile: `{ ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta[], bandJoin, cap }`. The JSON-safe `_shapeArtifact` (`:1108`, built **only** when `emitArtifact` — bake-side) is the frozen hand-off across the wall.
+1. **① the protopolygon** (`mintProtopolygon`, frozen in `ribbons.json`). Every at-grade centreline stroked to ε and united;
+   its holes are the blocks, and every edge carries which street and which side made it.
+2. **② the curb** (`offsetRingByRects`). Each block offset once by its edges' authored half-widths — `blockCustoms`
+   `pavementHW` over the frozen measure — then eased once to the authored corner radius (3-tier: per-corner → per-IX →
+   4.5 m × `cornerRadiusScale`). The achieved arcs are `cornerSet` / `cornerFillets`, the one corner truth the magenta
+   handle rides. ⛔ No corner arcs at all is a refusal by name.
+3. **③ the bands** — curb, treelawn, sidewalk, land use, struck inward from ② and cut into owned pieces.
+4. **`sectionOpen`** turns the tiles into the layers Survey draws. **H** (the grade-separated highways) is swept from its
+   own sections. The tiles are `protoShapeTiles` — exactly what freezes into `shape.json` on Survey-exit.
 
-> ⚠️ **There are TWO chain reach-backs in the SHAPE pass, not one.**
-> 1. `runMeasure`/`runSegOrd` resolve a run's authored `pavementHW` from `blockCustoms[skelId][side][segOrd]` — **authoring identity, not geometry**; it answers "which width did the operator type for this edge."
-> 2. ⛔ **`freezeCurbEdgeFacts({ring, runs, streetsOrig, measures, …})` is a GEOMETRIC one.** It reads `streetsOrig[].outerHWProfile`, `phase.role`, `throughId`/`roadId` and per-run base half-widths to stamp one fact per ring edge — and those facts are exactly what the curb producer offsets from. The chain-freeness that IS structural sits one step later, at `buildCurbRings({ring, facts, authoredHW, capAtVertex, curved})`, whose signature is the guard (A03).
->
-> **∴ "the SHAPE pass is nearly chain-free" overstates where the wall sits.** The wall is at the *producer*, not at the pass. *(Corrected 2026-08-04 — this paragraph is cited as evidence for where the Wall effectively is, and the argument is weaker than it read.)*
+*(The legacy SHAPE pass this section used to walk → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
 
 ---
 
@@ -97,12 +96,12 @@ The operator edits **whole blocks in strips**: click a **centerline** to **activ
 
 By the time the operator leaves Survey we hold an extremely-simplified, polygon-ready frozen dataset, and **chains are dead.** The wall is enforced **at a function signature**, not by convention:
 
-> **`sectionPass(shapeTiles, cw, stripMat, blockCustoms = null)`** takes the frozen per-tile polygons + scalars **+ `blockCustoms`** — **zero handle on streets, chains, measures or ribbons.** Section physically cannot reach back *to chain geometry*; doing so requires changing the signature (a visible, auditable edit). ⭐ **`blockCustoms` is authoring, not a chain** — the Wall forbids geometry derived from chains, never the operator's design intent (ruled 2026-08-04, `PIPELINE.md` §The three laws; the wall proof's FORBIDDEN entry for it was a false positive and was removed). *(This bullet said 3 args and "no `blockCustoms`", contradicting `SECTION §3`, which was right. A reader taking this version would treat a landed feature as a wall breach.)*
+> **`sectionOpen(shapeTiles, cw, stripMat, …)`** (and the per-tile painters it calls) takes the frozen per-tile polygons + scalars **+ `blockCustoms`** — **zero handle on streets, chains, measures or ribbons.** Section physically cannot reach back *to chain geometry*; doing so requires changing the signature (a visible, auditable edit). ⭐ **`blockCustoms` is authoring, not a chain** — the Wall forbids geometry derived from chains, never the operator's design intent (ruled 2026-08-04, `PIPELINE.md` §The three laws; the wall proof's FORBIDDEN entry for it was a false positive and was removed). *(This bullet said 3 args and "no `blockCustoms`", contradicting `SECTION §3`, which was right. A reader taking this version would treat a landed feature as a wall breach.)*
 
-**Frozen across it:** the `shapeTiles` / `_shapeArtifact` — block silhouette (`ring`), curb line (`iA`), per-vertex radius (`vertR`), the run's *frozen* measure, and the dead-end tip typology. Everything Section needs, nothing chain-shaped.
+**Frozen across it:** the `protoShapeTiles` — block silhouette (`ring`), curb line (`iA`), per-vertex radius (`vertR`), the run's *frozen* measure, and the dead-end tip typology. Everything Section needs, nothing chain-shaped.
 ⚠️ **OPEN (2026-09-26) — one `iaFull` can be frozen onto several tiles, so its `runs` are listed once per tile.** Always consecutive tile indices; cause not established, nor whether it is by design. Any consumer walking `runs` sees that frontage twice (`derive-lamps.mjs` lights it once). ▶ `node checks/claims-a-curb-arc-belongs-to-one-tile.mjs`
 
-*(The wall **should** sit even earlier — at the Skeleton/prebake boundary (P2). Today it sits at `sectionPass`; closing that gap is the standing architectural debt. First diagnostic on any head-scratcher: "is this chains again?" — `PIPELINE §5 (the Wall)`.)*
+*(The wall **should** sit even earlier — at the Skeleton/prebake boundary (P2). Today it sits at `sectionOpen`; closing that gap is the standing architectural debt. First diagnostic on any head-scratcher: "is this chains again?" — `PIPELINE §5 (the Wall)`.)*
 
 ### 5.1 ⭐ The deeper truth — Survey is **not yet polygon-first** *(but the tile freeze DID land — see the correction)*
 

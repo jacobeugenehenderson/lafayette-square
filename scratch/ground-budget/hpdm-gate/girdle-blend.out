@@ -1,0 +1,22 @@
+groundDeformer.why-road.mjs: 36281 wall(s) · worst 6.33 m · reach edge 1735 · unowned 1323 · owner seam 23912 · one owner 9311
+     16109  PINNED (an owner took less than it needed and less than its band can take) · worst 4.69 m
+      4573  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 3.26 m
+      2288  within limits, neither pinned (cause not established) · worst 0.61 m
+       942  on ② / road side (no profile) · worst 6.33 m
+       13455  (b) facing rays: near-parallel streets sharing one strip · e.g. (179.3, 1260.1) berthold-avenue-3 ↔ berthold-avenue-4 153° 0.57 m · (-1353.8, 157.4) crestwood-drive-3 ↔ crestwood-drive-1 146° 0.33 m · (190.4, 970.9) clayton-road-0 ↔ arc 136° 0.26 m
+        7123  (a) one tile's ring meeting itself: a block's inner corner · e.g. (-708.7, 206.7) arc ↔ southmoor-drive 90° 0.49 m · (-678.8, 177.7) south-big-bend-boulevard ↔ arc 121° 0.23 m · (142.1, -72.7) wydown-boulevard-1 ↔ arc 126° 0.03 m
+         794  (c) a street against __highway__ · e.g. (610.5, 1182.7) __highway__ ↔ clayton-avenue-0 114° 3.65 m · (565.9, 1164.7) __highway__ ↔ clayton-avenue-0 112° 1.45 m · (762.9, 1105.2) __highway__ ↔ oakland-avenue-2 154° 1.83 m
+    seam triangles in walk/curb over the WALK limit across them (not only walls): 31402
+    seams with a profile on both owners: BACK-TO-BACK (no land use between) 21372 · land use between them 1598
+groundDeformer.why-blend.mjs: 22958 wall(s) · worst 6.33 m · reach edge 1735 · unowned 1323 · owner seam 6456 · one owner 13444
+      4058  PINNED (an owner took less than it needed and less than its band can take) · worst 4.61 m
+      1311  BEYOND LIMITS (the two lines differ by more than both bands can take) · worst 2.80 m
+       926  on ② / road side (no profile) · worst 6.33 m
+       161  within limits, neither pinned (cause not established) · worst 0.52 m
+        2110  (a) one tile's ring meeting itself: a block's inner corner · e.g. (-708.7, 206.7) arc ↔ southmoor-drive 90° 0.49 m · (-1043.5, 67.6) harcourt-drive-0 ↔ harcourt-drive-0 0° 0.01 m · (142.1, -72.7) arc ↔ wydown-boulevard-1 126° 0.15 m
+        1404  (b) facing rays: near-parallel streets sharing one strip · e.g. (179.3, 1260.1) berthold-avenue-3 ↔ berthold-avenue-4 153° 0.57 m · (-1353.8, 157.4) crestwood-drive-3 ↔ crestwood-drive-1 146° 0.33 m · (190.4, 970.9) clayton-road-0 ↔ arc 136° 0.24 m
+         368  (c) a street against __highway__ · e.g. (608.0, 1182.8) __highway__ ↔ clayton-avenue-0 113° 0.41 m · (565.9, 1164.7) __highway__ ↔ clayton-avenue-0 112° 0.21 m · (762.9, 1105.2) __highway__ ↔ oakland-avenue-2 154° 0.93 m
+    seam triangles in walk/curb over the WALK limit across them (not only walls): 17183
+    seams with a profile on both owners: BACK-TO-BACK (no land use between) 3882 · land use between them 1648
+groundDeformer.why-blend.mjs: 22958 wall(s) · worst 6.33 m · reach edge 1735 · unowned 1323 · owner seam 6456 · one owner 13444
+    walls INSIDE the band blend (a vertex held by ≥ 2 owners): 18501 · walk/curb · 0.1–1 m 8231 · lawn · 0.1–1 m 4895 · walk/curb · < 0.1 m 1524 · other group · 0.1–1 m 1513 · lawn · < 0.1 m 771 · other group · < 0.1 m 705 · other group · > 1 m 308 · walk/curb · > 1 m 290 · lawn · > 1 m 264

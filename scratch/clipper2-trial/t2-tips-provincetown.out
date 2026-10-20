@@ -1,0 +1,11 @@
+T2 dead-end tips · provincetown · ε 0.005 m (frozen) · ② folds tip edges < 0.0080 m
+degree-1 ends 205 · chain not rebuilt 0 · tip found in frozen ① 202 · not (swallowed, stencilled, or moved) 3 · tip reaches a block ring 168
+  ⚠ court-street-beach-access end: nearest frozen tip vertex 52.263 m
+  ⚠ west-vine-street-landing end: nearest frozen tip vertex 27.108 m
+  ⚠ coast-guard-beach-town-landing end: nearest frozen tip vertex 24.707 m
+per tip (measured on the 202 found in ①):            closed   ext p50/max (mm)   tip vertices p50/max   Z end / other / none   sides by Z   tip edges ② keeps p50/max
+  (ours: the Z column is per TIP — its cap EDGE labelled cap + tipEnd + this skelId / not; Clipper2: per tip vertex)
+  ours      202      202   0.30 / 0.59          2 / 2                  202 / 0 / 0            yes (stamp)  1 / 1
+  Butt      202      202   0.00 / 0.01          2 / 2                  404 / 0 / 0            no           1 / 1
+  Square    202      202   5.00 / 5.01          2 / 2                  404 / 0 / 0            no           1 / 1
+  Round     202      202   4.99 / 5.00          26 / 26                5252 / 0 / 0           no           0 / 0

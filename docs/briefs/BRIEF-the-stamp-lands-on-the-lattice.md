@@ -31,6 +31,9 @@ revetment as stamped ground, and the ground budget (`BRIEF-the-ground-stays-in-b
 The kit cuts on `src/lib/lattice.js`'s 1 mm grid everywhere, the coast and the land use included. Lath found Huron's
 refusal is a mat:shore edge on the 1 cm grid beside its own 1 mm twin, about 4 mm apart (23adbb41's report). The coast
 moves in this brief; `derive.js`'s land-use grid is the pour-side job that follows, under the same ruling.
+Measured input, NOT matched to this cause: Provincetown's served slab has 4,972 open holes that findTJunctions' end rule
+passes. Their median gap is 4.59 mm, mostly shore↔beach/wetland/park (2026-10-18, on the served slab).
+▶ `node scratch/ground-budget/tj-class/end-rule.mjs provincetown`
 
 ## 2. Where Swale left it (read the record; ⛔ copy no number from it into this file)
 

@@ -43,11 +43,14 @@ export default {
       jurisdiction: 'town',
       file: 'ma_parcels.json',
       attribution: 'MassGIS (Bureau of Geographic Information) — Massachusetts Property Tax Parcels (Level 3)',
+      terms: {"read": "2026-10-19", "says": "not an authoritative source", "note": "licenseInfo is a disclaimer only; the mass.gov parcels page returned 403; terms not established"},
       endpoint: 'https://services1.arcgis.com/hGdibHYSPO59RG1h/ArcGIS/rest/services/Massachusetts_Property_Tax_Parcels/FeatureServer/0/query',
       select: { where: 'TOWN_ID = {town_id}' },
       land_use_code_format: 'ma-dor-numeric',
-      fields: { handle: 'LOC_ID', address: 'SITE_ADDR', land_use_code: 'USE_CODE' },
-      provides: ['handle', 'address', 'land_use_code'],
+      fields: { handle: 'LOC_ID', address: 'SITE_ADDR', land_use_code: 'USE_CODE', row_type: 'POLY_TYPE', land_use_desc: 'USE_DESC' },
+      // POLY_TYPE is MassGIS's own ROW marker (verified served at the endpoint, 2026-10-18; PTown's bbox: FEE 6,578 · TAX 3).
+      // It rides the next PTown fetch; ma_parcels.json on disk predates it.
+      provides: ['handle', 'address', 'land_use_code', 'row_type', 'land_use_desc'],
       // ⛔ Deliberately not taken: owner names are not ours to carry; YEAR_BUILT is 0 on vacant land (the "built in
       // year zero" this list exists to stop); ZONING is a per-town vocabulary nobody has declared.
       absent: ['owner', 'year_built', 'building_sqft', 'land_area', 'appraised_value', 'zoning', 'units',

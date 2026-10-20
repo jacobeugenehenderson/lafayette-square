@@ -1,0 +1,105 @@
+hipointedemun: end-zone sites 1369 · JUNCTION (V's chain leaves e's end) 47 · ALONGSIDE 1322, of them within 1 m of the rim 65
+   the gap's midpoint covered by a triangle: 641 · OPEN (no triangle covers it) 681, gap median 0.25 mm, max 1.44 mm, within 1 m of the rim 34
+   ALONGSIDE: gap (V off e) median 0.25 mm, max 1.44 mm
+   33 · asphalt → stripe
+   31 · institutional+footway → recreation
+   19 · treelawn:underived+sidewalk → curb
+   17 · residential → sidewalk
+   16 · stripe → asphalt
+   15 · residential+treelawn:residential → sidewalk
+   (360.478, 855.842) treelawn:underived+curb → underived edge · 1.44 mm off it · 1.45 mm from its end
+   (286.968, -153.192) sidewalk+curb → underived edge · 1.36 mm off it · 1.39 mm from its end
+   (-129.166, -949.172) footway → treelawn:institutional edge · 1.22 mm off it · 1.40 mm from its end
+   (237.870, 1263.649) treelawn:recreation+sidewalk → treelawn:commercial edge · 1.17 mm off it · 2.22 mm from its end
+   (-1001.931, -605.878) sidewalk+footway → institutional edge · 1.15 mm off it · 1.42 mm from its end
+   (-462.196, -352.268) treelawn:institutional+footway → sidewalk edge · 1.12 mm off it · 1.42 mm from its end
+   (582.905, -723.578) institutional+footway → underived edge · 1.09 mm off it · 1.38 mm from its end
+   (-644.641, 1230.245) residential → sidewalk edge · 1.08 mm off it · 1.38 mm from its end
+   (153.707, -30.735) treelawn:recreation+curb → sidewalk edge · 1.05 mm off it · 2.00 mm from its end
+   (572.392, -635.411) commercial+cycleway → underived edge · 1.03 mm off it · 1.04 mm from its end
+   (466.266, 553.886) treelawn:residential+alley → sidewalk edge · 1.03 mm off it · 1.04 mm from its end
+   (832.733, -1105.407) sidewalk+alley → underived edge · 1.03 mm off it · 1.04 mm from its end
+huron: end-zone sites 2599 · JUNCTION (V's chain leaves e's end) 130 · ALONGSIDE 2469, of them within 1 m of the rim 22
+   the gap's midpoint covered by a triangle: 981 · OPEN (no triangle covers it) 1488, gap median 0.35 mm, max 5.00 mm, within 1 m of the rim 11
+   ALONGSIDE: gap (V off e) median 0.35 mm, max 5.00 mm
+   67 · underived+treelawn:underived → sidewalk
+   59 · treelawn:underived+sidewalk → curb
+   43 · shore → residential
+   42 · treelawn:underived+curb → sidewalk
+   39 · treelawn:underived+sidewalk → curbCut
+   35 · shore → underived
+   (-325.790, -1084.530) shore → underived edge · 5.00 mm off it · 5.02 mm from its end
+   (1059.603, -1184.486) industrial → shore edge · 5.00 mm off it · 5.05 mm from its end
+   (1155.881, -329.194) industrial → shore edge · 5.00 mm off it · 5.04 mm from its end
+   (-564.423, -1300.416) underived → shore edge · 4.99 mm off it · 5.02 mm from its end
+   (-535.740, -1274.510) shore → underived edge · 4.99 mm off it · 5.02 mm from its end
+   (579.690, -439.840) shore → underived edge · 4.99 mm off it · 4.99 mm from its end
+   (590.937, -431.516) vacant → shore edge · 4.99 mm off it · 4.99 mm from its end
+   (-2453.935, -2153.460) bare → shore edge · 4.99 mm off it · 5.13 mm from its end
+   (590.940, -431.520) shore → vacant edge · 4.99 mm off it · 4.99 mm from its end
+   (247.216, -601.447) commercial → shore edge · 4.99 mm off it · 4.99 mm from its end
+   (1258.555, -332.740) industrial → shore edge · 4.99 mm off it · 5.00 mm from its end
+   (995.890, -1133.770) bed → industrial edge · 4.99 mm off it · 5.01 mm from its end
+jacksonheights: end-zone sites 3143 · JUNCTION (V's chain leaves e's end) 175 · ALONGSIDE 2968, of them within 1 m of the rim 164
+   the gap's midpoint covered by a triangle: 1222 · OPEN (no triangle covers it) 1746, gap median 0.30 mm, max 2.13 mm, within 1 m of the rim 93
+   ALONGSIDE: gap (V off e) median 0.30 mm, max 2.13 mm
+   398 · treelawn:underived+sidewalk → curb
+   171 · asphalt+edgeline → curb
+   121 · asphalt → edgeline
+   93 · sidewalk → curb
+   63 · curb → sidewalk
+   59 · curb+edgeline → asphalt
+   (-403.765, 281.860) edgeline → asphalt edge · 2.13 mm off it · 2.25 mm from its end
+   (-1365.095, -432.366) highway+stripe → asphalt edge · 1.99 mm off it · 2.01 mm from its end
+   (530.663, -1574.826) asphalt → highway edge · 1.37 mm off it · 1.51 mm from its end
+   (-1174.734, 1210.658) underived → sidewalk edge · 1.28 mm off it · 1.47 mm from its end
+   (1042.754, 1326.789) asphalt → curb edge · 1.25 mm off it · 4.98 mm from its end
+   (-1353.886, 1006.348) underived → sidewalk edge · 1.24 mm off it · 1.38 mm from its end
+   (-718.870, 1526.394) sidewalk → underived edge · 1.23 mm off it · 1.47 mm from its end
+   (-1580.474, 382.211) curb+bikelane → sidewalk edge · 1.20 mm off it · 3.21 mm from its end
+   (1010.825, 1351.253) curb → asphalt edge · 1.19 mm off it · 2.89 mm from its end
+   (-742.373, 1042.183) industrial+retaining_wall → underived edge · 1.15 mm off it · 5.10 mm from its end
+   (-1667.205, 255.133) curb → asphalt edge · 1.11 mm off it · 1.48 mm from its end
+   (-393.299, -775.059) edgeline → asphalt edge · 1.11 mm off it · 1.42 mm from its end
+lafayette-square: end-zone sites 588 · JUNCTION (V's chain leaves e's end) 37 · ALONGSIDE 551, of them within 1 m of the rim 40
+   the gap's midpoint covered by a triangle: 305 · OPEN (no triangle covers it) 246, gap median 0.29 mm, max 4.98 mm, within 1 m of the rim 18
+   ALONGSIDE: gap (V off e) median 0.29 mm, max 4.98 mm
+   17 · asphalt → stripe
+   13 · highway → asphalt
+   10 · residential+treelawn:residential → sidewalk
+   7 · curb → sidewalk
+   7 · treelawn:underived+sidewalk → curb
+   5 · treelawn:residential+sidewalk → curb
+   (294.025, 703.770) asphalt → stripe edge · 4.98 mm off it · 5.00 mm from its end
+   (-750.510, 210.571) highway → asphalt edge · 4.08 mm off it · 4.12 mm from its end
+   (-450.505, 215.739) asphalt → highway edge · 3.61 mm off it · 5.11 mm from its end
+   (-432.525, 219.251) asphalt → highway edge · 3.46 mm off it · 5.11 mm from its end
+   (865.997, -154.266) treelawn:residential → curb edge · 1.26 mm off it · 1.44 mm from its end
+   (142.646, -290.210) garden+curb → treelawn:underived edge · 1.23 mm off it · 1.39 mm from its end
+   (632.516, -235.479) sidewalk+alley → vacant edge · 1.01 mm off it · 1.01 mm from its end
+   (496.448, 167.513) sidewalk+alley → residential edge · 0.99 mm off it · 1.01 mm from its end
+   (154.560, 238.614) treelawn:institutional+sidewalk → treelawn:parking edge · 0.99 mm off it · 1.01 mm from its end
+   (145.448, 292.618) parking_lot+sidewalk → treelawn:institutional edge · 0.99 mm off it · 1.01 mm from its end
+   (-18.457, 202.186) treelawn:underived+sidewalk → treelawn:residential edge · 0.99 mm off it · 1.00 mm from its end
+   (82.287, 218.639) treelawn:underived+sidewalk → treelawn:residential edge · 0.98 mm off it · 1.00 mm from its end
+provincetown: end-zone sites 7333 · JUNCTION (V's chain leaves e's end) 1185 · ALONGSIDE 6148, of them within 1 m of the rim 1
+   the gap's midpoint covered by a triangle: 1176 · OPEN (no triangle covers it) 4972, gap median 4.59 mm, max 5.00 mm, within 1 m of the rim 0
+   ALONGSIDE: gap (V off e) median 4.59 mm, max 5.00 mm
+   1284 · shore → beach
+   1265 · beach → shore
+   280 · wetland → shore
+   279 · shore → wetland
+   190 · park → shore
+   177 · shore → park
+   (298.606, -3298.087) shore → beach edge · 5.00 mm off it · 5.01 mm from its end
+   (-858.013, 1962.476) park → shore edge · 5.00 mm off it · 5.02 mm from its end
+   (-1041.724, 1591.459) wetland → shore edge · 5.00 mm off it · 5.02 mm from its end
+   (-1041.720, 1591.463) shore → wetland edge · 5.00 mm off it · 5.02 mm from its end
+   (242.048, -105.248) beach → shore edge · 5.00 mm off it · 5.01 mm from its end
+   (242.053, -105.245) shore → beach edge · 5.00 mm off it · 5.01 mm from its end
+   (697.652, 2841.595) beach → shore edge · 5.00 mm off it · 5.49 mm from its end
+   (339.020, -198.541) shore → beach edge · 5.00 mm off it · 5.00 mm from its end
+   (-1214.280, 2206.680) shore → wetland edge · 5.00 mm off it · 5.00 mm from its end
+   (1410.179, -3102.445) beach → shore edge · 5.00 mm off it · 5.00 mm from its end
+   (58.373, 152.327) shore → beach edge · 5.00 mm off it · 5.15 mm from its end
+   (-41.125, 222.398) shore → beach edge · 5.00 mm off it · 5.00 mm from its end

@@ -38,6 +38,8 @@
 import fs from 'fs'
 import crypto from 'crypto'
 import { requireArtifact } from './_scenes.mjs'
+import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
+import { LOCAL_SECTION } from '../src/cartograph/streetClass.js'
 
 // ⛔ This file is LS-only by construction (it reads `src/data/ribbons.json` below, the promoted LS
 //    bundle). It used to carry a CHILLERED set and test `SCENE` against it — with SCENE a literal
@@ -54,8 +56,8 @@ const design = JSON.parse(fs.readFileSync(D_PATH, 'utf8'))
 requireArtifact(S_PATH.replace(process.cwd() + '/', ''), 'baked shape.json')
 const shape = JSON.parse(fs.readFileSync(S_PATH, 'utf8'))
 
-const STD_TREELAWN = 1.5, ADA_SIDEWALK = 1.5              // tileGround.js:1206-1207
-const CURB_W = design.curbWidth ?? 0.1524
+const STD_TREELAWN = LOCAL_SECTION.treelawn, ADA_SIDEWALK = LOCAL_SECTION.sidewalk   // the painter's defaults: the local class row
+const CURB_W = resolveCurbWidth(design).value   // the bake's curb: authored, else the kit's
 const WB = CURB_W + STD_TREELAWN + ADA_SIDEWALK
 
 console.log('═══ SCENE + INPUTS ═══')

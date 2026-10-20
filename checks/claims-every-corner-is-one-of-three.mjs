@@ -52,7 +52,7 @@ const hit = (rings, x, y) => { let n = 0; for (const rg of rings || []) if (inRi
 let failures = 0
 for (const scene of scenes) {
   const f = feed(scene); if (!f) { failures++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   const tally = { 'SW↔SW': 0, 'TL↔TL': 0, 'SW↔TL': 0 }
   const broke = { 'not one piece': 0, 'not at the curb': 0, 'no walk at all': 0, 'grass on the ADA pad': 0 }
   let corners = 0, ok = 0, openField = 0, outsideClip = 0

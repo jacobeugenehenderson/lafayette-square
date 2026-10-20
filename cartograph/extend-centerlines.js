@@ -27,6 +27,7 @@
 import { readFileSync, writeFileSync, existsSync, copyFileSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, SCENE, requireExplicitMap } from './config.js'
+import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 
 requireExplicitMap()
 const APPLY = process.argv.includes('--apply')
@@ -61,7 +62,6 @@ const slug = (n) => String(n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(
 const mapType = (hw) => hw === 'primary' || hw === 'primary_link' ? 'primary'
   : hw === 'secondary' || hw === 'secondary_link' ? 'secondary' : hw === 'service' ? 'service' : 'residential'
 
-const vehicular = new Set(['residential','primary','primary_link','secondary','secondary_link','tertiary','tertiary_link','unclassified'])
 const PATHS = ['footway','path','cycleway','steps','pedestrian']
 
 // ── the coverage index: every existing centerline segment, on a grid ────────────────────────
@@ -113,8 +113,9 @@ const consider = (f, tol, minLen, type) => {
 for (const f of osmHW) {
   const hw = f.tags?.highway
   if (!hw || !(f.coords?.length >= 2)) continue
-  if (vehicular.has(hw)) consider(f, 1.5, 10, mapType(hw))
-  else if (hw === 'service' && f.tags?.service === 'alley') consider(f, 1.5, 5, 'service')
+  const cls = classOf(f.tags).class
+  if (CLASSES[cls].surveyed) consider(f, 1.5, 10, mapType(hw))
+  else if (cls === 'alley') consider(f, 1.5, 5, 'service')
   else if (PATHS.includes(hw)) {
     const fw = f.tags?.footway
     if (hw === 'footway' && ['sidewalk','crossing','traffic_island','access_aisle'].includes(fw)) continue

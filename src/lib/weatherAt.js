@@ -17,7 +17,7 @@
  * hour labelled with this minute's weather. The caller says it cannot show that hour.
  *
  * A reading: { temperatureF, cloudCover (%), precipitation (mm), visibility (m), windSpeedMs, windDirDeg, windGustsMs,
- * humidity (%), pressureMb, weatherCode, directRadiation, diffuseRadiation } — Open-Meteo's quantities, as
+ * humidity (%), pressureMb, weatherCode, directRadiation, diffuseRadiation } — as lib/nws.js reads them from the National Weather Service (radiation always null: NWS has none), as
  * hooks/useWeather.js#fetchWeather parses them for both `current` and every `hourly` entry (`time` on the hours).
  * ▶ node checks/claims-one-weather-per-instant.mjs
  */

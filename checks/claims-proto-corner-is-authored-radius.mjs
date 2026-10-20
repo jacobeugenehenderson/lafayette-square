@@ -7,13 +7,13 @@ import fs from 'fs'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
 for (const scene of feedScenes()) {
-  const f = feed(scene); if (!f || f.curbWidth == null) continue
+  const f = feed(scene); if (!f) continue
   const design = JSON.parse(fs.readFileSync(`public/looks/${f.look}/design.json`, 'utf8'))
   const scale = Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1
   const baseR = 4.5 * scale                       // the class seed × the operator's dial
   const nIx = Object.keys(design.cornerRadiusOverrides || {}).length
   const nCorner = Object.keys(design.cornerCornerRadiusOverrides || {}).length
-  const tg = buildProto(f, { protoProducer: true, cornerRadiusScale: scale,
+  const tg = buildProto(f, { cornerRadiusScale: scale,
     cornerRadiusOverrides: design.cornerRadiusOverrides, cornerCornerRadiusOverrides: design.cornerCornerRadiusOverrides })
   const rings = tg.protoCurb || []
   const circum = (a, b, c) => {

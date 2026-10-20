@@ -24,7 +24,8 @@ import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH, isHighwayClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
+import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
@@ -36,6 +37,7 @@ import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
+import { parcelParts, pointInside, parcelId } from './parcelParts.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1110,19 +1112,23 @@ function detectDividedStreets(streets) {
 // PARCEL, not a bare code — the code alone is ambiguous across the two assessor
 // taxonomies) and is threaded in rather than imported so the pour-time tally in
 // `luStats` counts every parcel exactly once, from one place.
-function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
+// ⭐ Every PART of a parcel is emitted (`parcelParts`): a multipart parcel's rings[0] is one part of several, in no
+// promised order. Each part is clipped on its own, to the block that holds the parcel's centroid (of a multipart parcel:
+// when the centroid lies in that part), else a point inside the part (`pointInside`). Every part's ring carries the parcel's
+// `parcelId` (minted at the load, `parcelId`). ▶ checks/claims-a-parcel-keeps-all-its-parts.mjs
+export function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
   const result = []
-  for (const p of parcels) {
-    if (!p.rings?.length || p.rings[0].length < 3) continue
+  for (const p of parcels) { const parts = parcelParts(p.rings, p.handle ?? p.address ?? 'a parcel')
+  // classified once per parcel, at its first emitted part, however many parts: the tally counts parcels
+  let classified = false, use = null
+  const useOf = () => { if (!classified) { use = classify(p); classified = true } return use }
+  for (const { outer } of parts) {
+    const parcelPath = outer.map(pt => toClipper(pt[0], pt[1]))
 
-    const parcelPath = p.rings[0].map(pt => toClipper(pt[0], pt[1]))
-
-    // Find which rounded block contains this parcel's centroid
-    const cx = p.centroid ? Math.round(p.centroid[0] * SCALE) :
-      parcelPath.reduce((s, pt) => s + pt.X, 0) / parcelPath.length
-    const cz = p.centroid ? Math.round(p.centroid[1] * SCALE) :
-      parcelPath.reduce((s, pt) => s + pt.Y, 0) / parcelPath.length
-    const testPt = new IntPoint(cx, cz)
+    // Find which rounded block holds this part's test point
+    const own = !!p.centroid && (parts.length === 1 || pointInRing(p.centroid[0], p.centroid[1], outer.map(([x, z]) => ({ x, z }))))
+    const [tx, tz] = own ? p.centroid : pointInside(outer)
+    const testPt = new IntPoint(Math.round(tx * SCALE), Math.round(tz * SCALE))
 
     let blockIdx = -1
     for (let i = 0; i < roundedBlocks.length; i++) {
@@ -1134,8 +1140,9 @@ function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
     if (blockIdx === -1) {
       // Not in any rounded block — keep as-is
       result.push({
-        ring: p.rings[0].map(pt => ({ x: pt[0], z: pt[1] })),
-        use: classify(p),
+        ring: outer.map(pt => ({ x: pt[0], z: pt[1] })),
+        ...(p.parcelId != null ? { parcelId: p.parcelId } : {}),
+        use: useOf(),
         vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
       continue
@@ -1159,11 +1166,12 @@ function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
       }
       result.push({
         ring: pathFromClipper(clipped[best]),
-        use: classify(p),
+        ...(p.parcelId != null ? { parcelId: p.parcelId } : {}),
+        use: useOf(),
         vacant: p.vacant ?? null,   // ⛔ a well without the column is null, never "not vacant"
       })
     }
-  }
+  } }
   return result
 }
 
@@ -1376,6 +1384,19 @@ function findStreetForPoint(px, pz, index) {
  * Get the pavementHalfWidth for each edge of a face polygon,
  * by matching edges to original streets and looking up survey data.
  */
+// The carriageway half-width of one RAW way, for the legacy layers that buffer raw ways: its class section
+// (`getStreetSpec`), or the highway typical section for a swept class. ⛔ No residential default — the
+// `defaultHalfWidth = crossSection(STANDARDS.streets.residential)` that these sites fell back to is gone.
+function wayHalfWidth(tags) {
+  const cls = classOf(tags).class
+  if (isSweptClass(cls)) {
+    const n = parseInt(tags.lanes, 10)
+    const hs = highwaySection({ class: cls, oneway: tags.oneway === 'yes', lanes: n > 0 ? n : null, ref: tags.ref ?? null }, hwyStd())
+    return Math.max(hs.left.pavementHW, hs.right.pavementHW)
+  }
+  return crossSection(getStreetSpec(tags)).pavement
+}
+
 function getEdgeWidths(ring, sourceStreets, survey, defaultWidth) {
   const n = ring.length
   const widths = []
@@ -1390,12 +1411,8 @@ function getEdgeWidths(ring, sourceStreets, survey, defaultWidth) {
       const name = street.tags?.name
       if (name && survey[name]?.pavementHalfWidth) {
         widths.push(survey[name].pavementHalfWidth)
-      } else if (street.tags) {
-        const spec = getStreetSpec(street.tags)
-        const section = crossSection(spec)
-        widths.push(section.pavement)
       } else {
-        widths.push(defaultWidth)
+        widths.push(wayHalfWidth(street.tags))
       }
     } else {
       widths.push(defaultWidth)
@@ -1508,9 +1525,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // ⛔ A declared well with no file is an error, not a skip (bake-content.js agrees).
       if (!existsSync(f)) throw new Error(`[parcels] ${SCENE} declares '${decl.id}' → raw/${decl.file}, which is not there. Acquire it: CARTOGRAPH_SCENE=${SCENE} node cartograph/fetch-parcels.mjs`)
       const parcelData = JSON.parse(readFileSync(f, 'utf-8'))
+      let noId = 0
       for (const p of Object.values(parcelData.parcels || {})) {
-        parcels.push({ ...p, jurisdiction: decl.jurisdiction, land_use_code_format: decl.land_use_code_format || null })
+        const id = parcelId(decl.id, p); if (id == null) noId++
+        parcels.push({ ...p, ...(id != null ? { parcelId: id } : {}), jurisdiction: decl.jurisdiction, land_use_code_format: decl.land_use_code_format || null })
       }
+      // ⛔ a record with no source id carries none (never its place in the file): said here, by name, per pour
+      if (noId) console.log(`    ⚠️ ${decl.id}: ${noId} parcel record(s) carry no source id (\`handle\`) — their emitted rings carry no parcelId`)
     }
   }
   const countyCodeTable = loadCountyCodeTable(SCENE)
@@ -1796,7 +1817,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   console.log('  [4/8] Buffering streets by standards...')
 
   const survey = loadSurvey()
-  const defaultHalfWidth = crossSection(STANDARDS.streets.residential).pavement
 
   const correctedSurvey = correctStreetWidths(vehicularStreets, streetlamps, survey)
   const corrections = Object.values(correctedSurvey).filter(s => s.correctedBy).length
@@ -1861,10 +1881,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       let hw
       if (name && correctedSurvey[name]?.pavementHalfWidth) {
         hw = correctedSurvey[name].pavementHalfWidth / 2
-      } else if (f.tags) {
-        hw = crossSection(getStreetSpec(f.tags)).pavement
       } else {
-        hw = defaultHalfWidth
+        hw = wayHalfWidth(f.tags)
       }
       if (name && dividedStreets.has(name)) hw = hw / 2
       const simplified = simplifyPolyline(f.coords, 1.0)
@@ -1883,7 +1901,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     if (correctedSurvey[name]?.pavementHalfWidth) {
       hw = correctedSurvey[name].pavementHalfWidth
     } else {
-      hw = crossSection(getStreetSpec(segs[0].tags)).pavement
+      hw = wayHalfWidth(segs[0].tags)
     }
 
     // Chain segments into continuous polylines
@@ -1947,10 +1965,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     let hw
     if (name && correctedSurvey[name]?.pavementHalfWidth) {
       hw = correctedSurvey[name].pavementHalfWidth
-    } else if (f.tags) {
-      hw = crossSection(getStreetSpec(f.tags)).pavement
     } else {
-      hw = defaultHalfWidth
+      hw = wayHalfWidth(f.tags)
     }
     if (name && dividedStreets.has(name)) hw = hw / 2
     const simplified = simplifyPolyline(f.coords, 1.0)
@@ -1979,7 +1995,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // Assign parcels to faces — a parcel contributes to every face it overlaps
   const faceParcelMap = new Map()
   for (const parcel of parcels) {
-    if (!parcel.centroid && !parcel.rings?.[0]) continue
+    const parts = parcelParts(parcel.rings, parcel.handle ?? parcel.address ?? 'a parcel')
+    if (!parcel.centroid && !parts.length) continue
     const assignedFaces = new Set()
     // Check centroid
     if (parcel.centroid) {
@@ -1990,9 +2007,9 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         }
       }
     }
-    // Check all ring vertices — parcel belongs to every face it touches
-    if (parcel.rings?.[0]) {
-      for (const pt of parcel.rings[0]) {
+    // Check every part's ring vertices — parcel belongs to every face it touches
+    for (const { outer } of parts) {
+      for (const pt of outer) {
         for (let fi = 0; fi < blockFaces.length; fi++) {
           if (assignedFaces.has(fi)) continue
           if (pointInRing(pt[0], pt[1], blockFaces[fi].ring)) {
@@ -2075,7 +2092,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       const dx = ep.x - adj.x, dz = ep.z - adj.z
       const len = Math.sqrt(dx*dx + dz*dz)
       if (len < 0.1) continue
-      const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || defaultHalfWidth
+      const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || wayHalfWidth(f.tags)
       // Use a longer segment (up to 15 points / ~60m) so the pad overlaps
       // well with the existing block, preventing disconnected gaps
       const segLen = Math.min(15, c.length)
@@ -2426,7 +2443,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
           if (!onFace) continue
           const key = `${Math.round(ep.x*10)},${Math.round(ep.z*10)}`
           if (!deadEndNodes.has(key)) continue
-          const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || defaultHalfWidth
+          const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || wayHalfWidth(f.tags)
           // Approximate circle at the dead-end point
           const N = 24
           const circle = []
@@ -2589,29 +2606,25 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // Full spectrum: pavement + curb + treelawn + sidewalk (matches
       // streetProfiles.getHalfWidth — the exact back-of-sidewalk reach
       // that StreetRibbons renders).
-      const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
-      const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
+      const lCurb = L.terminal === 'none' ? 0 : KIT_CURB_WIDTH
+      const rCurb = R.terminal === 'none' ? 0 : KIT_CURB_WIDTH
       // ⭐ ASPHALT EDGE — pavement + curb. ⛔ NOT `+ treelawn + sidewalk`; see the block above.
       rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)
-    } else if (isHighwayClass(f.tags?.highway)) {
+    } else if (isSweptClass(classOf(f.tags).class)) {
       // A highway way's reach is its typical section (H-3), from the way's own tags.
       const n = parseInt(f.tags?.lanes, 10)
-      const hs = highwaySection({ highway: f.tags.highway, oneway: f.tags?.oneway === 'yes', lanes: Number.isFinite(n) ? n : null, ref: f.tags?.ref ?? null }, hwyStd())
+      const hs = highwaySection({ class: classOf(f.tags).class, oneway: f.tags?.oneway === 'yes', lanes: Number.isFinite(n) ? n : null, ref: f.tags?.ref ?? null }, hwyStd())
       rowHW = Math.max(hs.left.pavementHW, hs.right.pavementHW)
     } else {
-      const hw = f.tags?.highway
-      const type = hw === 'motorway' ? 'motorway'
-                 : hw === 'motorway_link' || hw === 'trunk_link' ? 'motorway_link'
-                 : hw === 'trunk' ? 'trunk'
-                 : hw === 'primary' ? 'primary'
-                 : hw === 'secondary' || hw === 'tertiary' ? 'secondary'
-                 : 'residential'
-      // Pass survey so fallback streets (Chouteau, Jefferson, Dolman, …)
-      // still pick up their surveyed pavementHalfWidth + sidewalk offsets.
-      const dm = defaultMeasure(type, correctedSurvey[name])
+      // The way's own class section (`streetClass.js`), configured by its own lanes. Pass survey so
+      // fallback streets (Chouteau, Jefferson, Dolman, …) still pick up their surveyed
+      // pavementHalfWidth + sidewalk offsets. The inline highway→type ternary that stood here (a
+      // copy of `mapHighwayToStreetType`, defaulting to 'residential') is gone.
+      const n = parseInt(f.tags?.lanes, 10)
+      const dm = defaultMeasure(classOf(f.tags).class, correctedSurvey[name], { lanes: Number.isFinite(n) && n > 0 ? n : null, oneway: f.tags?.oneway === 'yes' })
       const L = dm.left, R = dm.right
-      const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
-      const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
+      const lCurb = L.terminal === 'none' ? 0 : KIT_CURB_WIDTH
+      const rCurb = R.terminal === 'none' ? 0 : KIT_CURB_WIDTH
       rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)   // asphalt edge, as above
     }
     // NOTE: no divide-by-2 for divided streets here.  For alley clipping we
@@ -2689,8 +2702,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
 
   for (const f of highways) {
     const t = f.tags?.highway
-    if (!['residential', 'primary', 'primary_link', 'secondary', 'secondary_link',
-          'tertiary', 'tertiary_link', 'unclassified'].includes(t)) continue
+    if (!CLASSES[classOf(f.tags).class].surveyed) continue   // the vocabulary's surveyed street classes
     if (f.coords.length < 2) continue
 
     const coords = f.coords.map(c => ({ x: c.x, z: c.z }))
@@ -2707,7 +2719,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       bikeLanes.push({ coords, name, offset: laneOffset })
     }
 
-    if (f.tags.highway !== 'service') {
+    {
       const spec = getStreetSpec(f.tags)
       if (spec.parkingWidth > 0) {
         const parkOffset = (spec.lanes / 2) * spec.laneWidth
@@ -2831,25 +2843,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     }
   } catch { /* no centerlines */ }
 
-  // Map OSM highway tag → streetProfiles.js type vocabulary
-  function mapHighwayToStreetType(highway) {
-    switch (highway) {
-      case 'motorway':       return 'motorway'
-      case 'motorway_link':  return 'motorway_link'
-      case 'trunk':          return 'trunk'
-      case 'trunk_link':     return 'motorway_link'
-      case 'primary': case 'primary_link': return 'primary'
-      case 'secondary': case 'secondary_link':
-      case 'tertiary': case 'tertiary_link': return 'secondary'
-      case 'service':  return 'service'
-      case 'footway':  return 'footway'
-      case 'cycleway': return 'cycleway'
-      case 'pedestrian': return 'pedestrian'
-      case 'steps':    return 'steps'
-      default:         return 'residential'
-    }
-  }
-
   /**
    * Resolve the cross-section measure for a street. Returns {left, right, source}
    * where each side is {pavementHW, treelawn, sidewalk, terminal}.
@@ -2865,32 +2858,22 @@ export function deriveLayers(highways, { cropland = null } = {}) {
    * broadcast them), so the tier could only re-shadow the seed base with
    * stale machine values — South 18th's pavementHW=2 lived there.
    */
-  function computeStreetMeasure(name, tags, seed, chain = null) {
-    const type = mapHighwayToStreetType(tags?.highway)
-    if (isHighwayClass(tags?.highway)) {
-      if (!chain) throw new Error(`⛔ computeStreetMeasure: highway "${name}" reached without its chain — the section needs lanes/ref/oneway`)
+  function computeStreetMeasure(name, cls, seed, chain) {
+    if (isSweptClass(cls)) {
       const hs = highwaySection(chain, hwyStd())
       hwyReport.push({ id: chain.id, ...hs.report, sources: hs.right.section.sources })
-      const m = measureFromSeed(seed, type, hs)
+      const m = measureFromSeed(seed, cls, hs)
       return { left: m.left, right: m.right, symmetric: m.symmetric, source: 'highway-section' }
     }
-
-    if (seed) {
-      const m = measureFromSeed(seed, type)
-      return {
-        left: m.left,
-        right: m.right,
-        symmetric: m.symmetric,
-        source: seed.widthSource === 'survey' ? 'seed-survey' : 'seed',
-      }
-    }
-
-    const survey = correctedSurvey[name]
-    const d = defaultMeasure(type, survey)
+    // ⛔ Every skeleton chain is seeded from its class (`classSection`); a chain without a seed is a
+    // skeleton that predates it. The seedless survey/type default that stood here is gone.
+    if (!seed) throw new Error(`⛔ computeStreetMeasure: "${name}" (${chain.id}) has no seed — re-pour the skeleton`)
+    const m = measureFromSeed(seed, cls)
     return {
-      left: d.left,
-      right: d.right,
-      source: survey?.rowWidth ? 'survey-default' : 'default',
+      left: m.left,
+      right: m.right,
+      symmetric: m.symmetric,
+      source: seed.widthSource === 'survey' ? 'seed-survey' : 'seed',
     }
   }
 
@@ -2944,15 +2927,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // BEYOND continuesAs: two chains of the SAME corridor whose ends MEET and
     // CONTINUE through the node (outward tangents ~opposite — not an L-corner, not
     // a divided A|B pair, not a cw↔spine transition) are one physical road through
-    // a same-corridor-join (the junctionMap stamps `same-corridor-join` for exactly
-    // these — derive.js ~:3740). Union their roadId so the curb's cornerAt reads a
+    // a same-corridor-join. Union their roadId so the curb's cornerAt reads a
     // THROUGH-node (the inward offset runs straight, no miter step) AND width
     // reconciliation (~:2489, MAX per side per roadId) gives ONE width — else the
     // offset steps at the join (e.g. Mackay 3.96→5.49) → two close corners → the
     // fillet terminates non-tangent → the perpendicular-join curb tab (Brief B).
     // Same family as the continuesAs junction-curb bump; the join is topological
-    // (ends meet) not a name-seam, so it needs its own union. Mirrors the
-    // junctionMap gate, computed early for roadId; skelStreets points are {x,z}.
+    // (ends meet) not a name-seam, so it needs its own union. skelStreets points are {x,z}.
     {
       const corOf = (s) => s.phase?.corridorName || s.name
       const isCwR = (r) => /^carriageway/.test(r || '')
@@ -3018,12 +2999,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // so the serializer whitelist drops it from the artifact.
     // ⛔ A highway takes no authoring (`r-highway-no-authoring`): an overlay measure on one is
     // REFUSED, kept in the file, and printed by name with its source — never applied, never dropped.
-    const ovOnHighway = isHighwayClass(s.highway) && !!(ov?.measure?.left && ov?.measure?.right)
+    if (!s.class) throw new Error(`⛔ derive: skeleton chain ${s.id} carries no class — re-pour the skeleton (streetClass.js)`)
+    const ovOnHighway = isSweptClass(s.class) && !!(ov?.measure?.left && ov?.measure?.right)
     if (ovOnHighway) hwyRefused.push(`${s.id}(source:${ov.measure.source ?? 'none'})`)
     const ovAuthored = !ovOnHighway && !!(ov?.measure?.left && ov?.measure?.right)
     const measure = ovAuthored
       ? ov.measure
-      : computeStreetMeasure(s.name, { highway: s.highway }, s.seed, s)
+      : computeStreetMeasure(s.name, s.class, s.seed, s)
     // [curve-primitive] Convert the skeleton's index-referenced curve segments
     // (HANDOFF-curve-primitive-skeleton.md) to SELF-CONTAINED ribbon segments —
     // each carries its own endpoints + handles ([x,z]) so it survives the points
@@ -3056,12 +3038,10 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       ...(s.throughId ? { throughId: s.throughId } : {}),
       ...(s.through ? { through: s.through } : {}),
       phase: s.phase || null,
-      // OSM highway class carried through from skeleton.js so V2 corner
-      // radii (and any other class-conditional logic) can resolve to
-      // the right AASHTO/NACTO defaults. Falls back to 'residential'
-      // when missing — matches mapHighwayToStreetType's default.
-      highway: s.highway || 'residential',
-      type: mapHighwayToStreetType(s.highway),
+      // The raw OSM highway tag (the chain's length vote), and its CLASS from the one vocabulary
+      // (`streetClass.js`) — what every consumer reads. The re-guessed `type` vocabulary is gone.
+      highway: s.highway,
+      class: s.class,
       _measureAuthored: ovAuthored,
       // [P1 frame-enrichment] Carry the enriched frame fields off the skeleton
       // street so they survive into ribbons.json. These are PRESENT-but-not-yet-
@@ -3970,10 +3950,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // carriageways, painted by sectionPass's open-field flooded remainder (the
   // 'median' class; RIBBONS §1 update 2026-06-15, HANDOFF-divided-corridor-
   // construction.md). This block keeps only what the walked face CANNOT supply:
-  //   1. noseRecs — the per-pinching-end nose stations the E3.1 junction map
-  //      consumes (ONE nose truth, JUNCTION-CURE-PLAN §4.3). Derived from the
-  //      gap profile (mutual-overlap window + NOSE_GAP trim), never re-derived.
-  //   2. merge asphalt (kind:'merge') at the HARD spots — the cross-street
+  // merge asphalt (kind:'merge') at the HARD spots — the cross-street
   //      CROSSING windows + the nose-taper regions (node → nose) — so those read
   //      corridor asphalt ("lanes joining"), never a parcel pill. The median
   //      BODY is left empty; the walked-face flood paints its grass.
@@ -4165,7 +4142,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   if (overlayCount) console.log(`    [through-edge overlay] straightened ${overlayCount} carriageway tip(s) at divided→through-road nodes (strokePoints; centerline untouched)`)
 
   const medians = []
-  const noseRecs = []   // [E3.1] { idx, end: 'start'|'end', nose: m-from-that-end } per pinching transition end
   let medianSkips = 0, mergeCount = 0, crossingCount = 0
   for (const { aIdx, bIdx } of dividedPairs) {
     const A = ribbonStreets[aIdx]
@@ -4190,8 +4166,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const winHi = Math.min(lenA, Math.max(vb0, vb1))
     // (2) nose trim from each pinching end (a transition: the chains taper
     // into the shared spine node; gap → 0)
-    const startPinched = gapAt(0) < NOSE_GAP      // [E3.1] pinch flags hoisted so the
-    const endPinched = gapAt(lenA) < NOSE_GAP     // junction map can reuse the noses
+    const startPinched = gapAt(0) < NOSE_GAP
+    const endPinched = gapAt(lenA) < NOSE_GAP
     let s0 = 0
     if (startPinched) {
       while (s0 < lenA && gapAt(s0) < NOSE_GAP) s0 += NOSE_STEP
@@ -4207,22 +4183,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     s0 = Math.max(s0, winLo)
     s1 = Math.min(s1, winHi)
     if (!(s1 - s0 > 1)) { medianSkips++; continue }   // window collapsed — pair too short
-    // [E3.1] Capture the E2 nose stations per pinching chain-end — ONE nose
-    // truth (JUNCTION-CURE-PLAN §4.3): the junction map's de-taper windows
-    // consume these stations, never re-derive the gap profile. `nose` is the
-    // arclength distance from that chain's own endpoint at that end (its own
-    // point order), so the consumer needs no pair-orientation knowledge.
-    const lenB = cumB[cumB.length - 1]
-    if (startPinched) {
-      noseRecs.push({ idx: aIdx, end: 'start', nose: s0 })
-      const u0 = closestOnPolyline(pointAtS(a, cumA, s0), eb, cumB).s
-      noseRecs.push({ idx: bIdx, end: dot > 0 ? 'start' : 'end', nose: u0 })
-    }
-    if (endPinched) {
-      noseRecs.push({ idx: aIdx, end: 'end', nose: lenA - s1 })
-      const u1 = closestOnPolyline(pointAtS(a, cumA, s1), eb, cumB).s
-      noseRecs.push({ idx: bIdx, end: dot > 0 ? 'end' : 'start', nose: lenB - u1 })
-    }
     // (3) CROSSING cuts — a street that junctions BOTH carriageways (shared
     // vertex on each, not the corridor itself, not grade-separated) crosses
     // the median: the median OPENS there. Cut halfwidth = the crossing
@@ -4333,7 +4293,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const interior = overlayLoops[loopId]?.interior || 'median'
     if (interior !== 'median') continue               // 'block' → interior is a block, not grass
     pts[pts.length - 1] = [pts[0][0], pts[0][1]]       // SNAP closed (kill the quantization gap)
-    const hw = S.measure?.left?.pavementHW || S.measure?.right?.pavementHW || defaultHalfWidth
+    const hw = S.measure?.left?.pavementHW || S.measure?.right?.pavementHW
+    if (!(hw > 0)) throw new Error(`⛔ derive loop body ${loopId}: its measure carries no carriageway (pavementHW)`)
     // LOOP-STREETS §2 body cross-section: the inner (median-facing) side is curb +
     // treelawn only, NO sidewalk — the treelawn flows into the median (all grass
     // from the curb inward). So inset to the CURB's inner edge (hw + curb), not past
@@ -4460,7 +4421,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const uv = new Map(); for (const r of hwyReport) for (const u of r.unknowns) { if (!uv.has(u)) uv.set(u, []); uv.get(u).push(r.id) }
     for (const [u, xs] of uv) console.log(`      ⚠️ ${u} on ${xs.length}: ${xs.join(', ')}`)
     if (hwyRefused.length) console.log(`      ⚠️ ${hwyRefused.length} overlay measure(s) on a highway REFUSED (r-highway-no-authoring), kept in the file: ${hwyRefused.join(', ')}`)
-    const flat = ribbonStreets.filter(s => s.anchor === 'inner-edge' && isHighwayClass(s.highway)).map(s => s.skelId)
+    const flat = ribbonStreets.filter(s => s.anchor === 'inner-edge' && isSweptClass(s.class)).map(s => s.skelId)
     if (flat.length) console.log(`      ⚠️ ${flat.length} divided highway carriageway(s): section flattened + anchored inner-edge by the divided pass — Jacob: B now, (A) the highway guard lands WITH the LS pour: ${flat.join(', ')}`)
   }
 
@@ -4583,603 +4544,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     if (unresolved.length) console.log(`    [Brief C] ⛔ ${unresolved.length} linked end(s) UNRESOLVABLE: ${unresolved.join(' · ')}`)
   }
 
-  // ── [E3.1] THE JUNCTION MAP — frozen per-node identity stamps ─────────
-  // The junction silhouette is never CONSTRUCTED today: it is emergent from
-  // independent constant-width butt-capped chain strokes, so every width
-  // discontinuity at a node manufactures spurious geometry (53 instances —
-  // JUNCTION-CURE-PLAN §1/§2, SKELETON.md §5e). The cure constructs the
-  // junction; THIS is its map: per node, the prebake stamps WHICH curbs are
-  // one physical curb through the node (continuity pairs), WHERE the taper
-  // region ends (de-taper windows — E2's nose stations, one nose truth),
-  // WHICH legs may corner (corner identities — the corridor outer-edge legs,
-  // never the carriageway stubs, the §5e/D3 freeze), and ONE junction-interior
-  // apron spec per node. GEOMETRY-NEUTRAL (the 61930d7 pattern): stamps are
-  // identities; widths resolve at shape time (runMeasure/blockCustoms) and the
-  // construction lands in E3.2/E3.3, which consume these stamps by identity.
-  // Side keys ('left'/'right') are point-order-relative and re-stamped every
-  // bake from current geometry — reversal-proof the same way innerSign is
-  // (the D1 lesson; see innerSideSign convention pin).
-  const junctionMap = (() => {
-    const byskelId = new Map(ribbonStreets.map(s => [s.skelId, s]))
-    const idxOf = new Map(ribbonStreets.map((s, i) => [s, i]))
-    const curbed = (s) => !s.gradeSeparated && !s.disabled
-    const ptOf = (s, end) => end === 'start' ? s.points[0] : s.points[s.points.length - 1]
-    const norm = (vx, vz) => { const L = Math.hypot(vx, vz) || 1; return [vx / L, vz / L] }
-    // Unit vector from the node INTO the chain's body.
-    const outward = (s, end) => {
-      const p = s.points
-      const [n, a] = end === 'start' ? [p[0], p[1]] : [p[p.length - 1], p[p.length - 2]]
-      return norm(a[0] - n[0], a[1] - n[1])
-    }
-    // World direction of the measure-RIGHT side at the chain's end vertex:
-    // (-dz, dx) of the POINT-ORDER tangent (the convention pinned at
-    // innerSideSign — measure-RIGHT = (-dz, dx) perp).
-    const rightDir = (s, end) => {
-      const p = s.points
-      const [a, b] = end === 'start' ? [p[0], p[1]] : [p[p.length - 2], p[p.length - 1]]
-      const [tx, tz] = norm(b[0] - a[0], b[1] - a[1])
-      return [-tz, tx]
-    }
-    const sideDir = (s, end, side) => {
-      const r = rightDir(s, end)
-      return side === 'right' ? r : [-r[0], -r[1]]
-    }
-    // Point + point-order tangent at arclength d from the given end — the
-    // chain's BODY, past the endpoint taper curl. A carriageway's last
-    // segment bends toward the shared node, so side directions evaluated at
-    // the endpoint misresolve; evaluate them on the body instead.
-    const stationAt = (s, end, d) => {
-      const p = s.points
-      const idx = (i) => end === 'start' ? i : p.length - 1 - i
-      let acc = 0
-      for (let i = 0; i < p.length - 1; i++) {
-        const a = p[idx(i)], b = p[idx(i + 1)]
-        const L = Math.hypot(b[0] - a[0], b[1] - a[1])
-        if (acc + L >= d || i === p.length - 2) {
-          const f = L > 0 ? Math.min(1, (d - acc) / L) : 0
-          const pt = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]
-          // tangent in POINT ORDER (a→b is node-outward at 'start', flip at 'end')
-          const t = end === 'start' ? norm(b[0] - a[0], b[1] - a[1]) : norm(a[0] - b[0], a[1] - b[1])
-          return { pt, t }
-        }
-        acc += L
-      }
-      const t = end === 'start' ? norm(p[1][0] - p[0][0], p[1][1] - p[0][1]) : norm(p[p.length - 1][0] - p[p.length - 2][0], p[p.length - 1][1] - p[p.length - 2][1])
-      return { pt: ptOf(s, end), t }
-    }
-    const BODY_D = 25 // m — far enough past every observed taper (max nose ~7 m)
-    // A divided carriageway's OUTER (block-facing) measure key AT this end,
-    // resolved LOCALLY against the pair mate's polyline. The global innerSign
-    // vote is unweighted per segment and misresolves on snaking corridors
-    // (s18-6 verified flipped) — the junction map must not inherit that.
-    const outerSideAt = (s, end) => {
-      const mate = byskelId.get(s.pairId)
-      if (!mate) return s.innerSign === +1 ? 'left' : 'right'
-      const d = Math.min(BODY_D, polylineLen(s.points) * 0.4)
-      const { pt, t } = stationAt(s, end, d)
-      // Foot on the mate's SEGMENTS (closest vertex is degenerate on short
-      // 2-point chains — it returns the shared node, which sits on-axis).
-      const mPts = mate.points.map(q => [q[0], q[1]])
-      const mCum = arcLengths(mPts)
-      const foot = pointAtS(mPts, mCum, closestOnPolyline(pt, mPts, mCum).s)
-      const r = [-t[1], t[0]] // measure-RIGHT of point-order tangent
-      const inner = (r[0] * (foot[0] - pt[0]) + r[1] * (foot[1] - pt[1])) > 0 ? 'right' : 'left'
-      return inner === 'right' ? 'left' : 'right'
-    }
-    const polylineLen = (p) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L }
-    // World direction of a side, evaluated on the body past the taper.
-    const sideDirBody = (s, end, side) => {
-      const { t } = stationAt(s, end, Math.min(BODY_D, polylineLen(s.points) * 0.4))
-      const r = [-t[1], t[0]]
-      return side === 'right' ? r : [-r[0], -r[1]]
-    }
-    const corOf = (s) => s.phase?.corridorName || s.name
-    const isCw = (s) => /^carriageway/.test(s.phase?.role || '')
-
-    const noseByEnd = new Map()
-    for (const r of noseRecs) noseByEnd.set(`${r.idx}|${r.end}`, Math.round(r.nose * 100) / 100)
-
-    // Node registry — keyed by the exact shared-vertex coordinate (the same
-    // identity extractFaces uses).
-    const jnodes = new Map()
-    const unpaired = []
-    const nodeFor = (pt) => {
-      const k = vKey(pt)
-      let n = jnodes.get(k)
-      if (!n) {
-        n = { key: k, at: [pt[0], pt[1]], kinds: new Set(), legs: new Map(), continuity: [], _pairKeys: new Set(), _claims: new Map(), deTaper: [], _windowKeys: new Set(), corners: { outer: [], apex: [], stub: [] }, _cornerKeys: new Set(), apron: null }
-        jnodes.set(k, n)
-      }
-      return n
-    }
-    const addLeg = (n, s, end, role) => {
-      const k = `${s.skelId}|${end}`
-      if (!n.legs.has(k)) n.legs.set(k, { chain: s.skelId, end, role })
-    }
-    const addPair = (n, a, b, source) => {
-      const ka = `${a.chain}|${a.side}`, kb = `${b.chain}|${b.side}`
-      const k = [ka, kb].sort().join('~')
-      if (n._pairKeys.has(k)) return
-      // A curb can be one physical curb with at most ONE partner through a
-      // node. At forks (Tucker 5-way, S-14th off Lafayette) several strands
-      // claim the same curb — first source wins (sources run in confidence
-      // order: spine-link → joins/continuations → branch), the rest are
-      // surfaced as contested rather than silently double-stamped.
-      const cA = n._claims.get(ka), cB = n._claims.get(kb)
-      if ((cA && cA !== kb) || (cB && cB !== ka)) {
-        unpaired.push({ key: n.key, chains: [a.chain, b.chain], reason: `curb already claimed at this node (fork) — ${cA && cA !== kb ? ka : kb} kept its first partner` })
-        return
-      }
-      n._pairKeys.add(k)
-      n._claims.set(ka, kb)
-      n._claims.set(kb, ka)
-      n.continuity.push({ a, b, source })
-    }
-    const addWindow = (n, s, end) => {
-      const nose = noseByEnd.get(`${idxOf.get(s)}|${end}`)
-      if (nose == null) return false
-      const k = `${s.skelId}|${end}`
-      if (n._windowKeys.has(k)) return true
-      n._windowKeys.add(k)
-      n.deTaper.push({ chain: s.skelId, end, nose })
-      return true
-    }
-    const addCorner = (n, list, rec) => {
-      const k = JSON.stringify(rec)
-      if (n._cornerKeys.has(k)) return
-      n._cornerKeys.add(k)
-      list.push(rec)
-    }
-    // Match the physical side of `t` (at its end `tEnd`) that lies on the same
-    // world side as direction w.
-    const matchSide = (t, tEnd, w) => {
-      const r = rightDir(t, tEnd)
-      return (r[0] * w[0] + r[1] * w[1]) > 0 ? 'right' : 'left'
-    }
-
-    // Endpoint + interior-vertex indexes over CURBED chains only (grade-
-    // separated chains never reach the ground silhouette — extractFaces
-    // filters them — so they carry no curb identity).
-    const endsAt = new Map()      // vKey -> [{ s, end }]
-    const interiorAt = new Map()  // vKey -> [s]
-    for (const s of ribbonStreets) {
-      if (!curbed(s)) continue
-      const p = s.points
-      for (const [end, pt] of [['start', p[0]], ['end', p[p.length - 1]]]) {
-        const k = vKey(pt)
-        if (!endsAt.has(k)) endsAt.set(k, [])
-        endsAt.get(k).push({ s, end })
-      }
-      for (let i = 1; i < p.length - 1; i++) {
-        const k = vKey(p[i])
-        if (!interiorAt.has(k)) interiorAt.set(k, [])
-        const arr = interiorAt.get(k)
-        if (!arr.includes(s)) arr.push(s)
-      }
-    }
-
-    // ── Source 1: divided transitions via phase.spineAtStart/End (the frozen
-    // 61930d7 frame link). The carriageway's OUTER curb is one curb with the
-    // spine's same-physical-side curb; the taper end is a stub that must
-    // never corner (§5e).
-    let spineLinkPairs = 0
-    for (const s of ribbonStreets) {
-      if (!curbed(s) || !isCw(s)) continue
-      for (const [field, end] of [['spineAtStart', 'start'], ['spineAtEnd', 'end']]) {
-        const spineId = s.phase?.[field]
-        if (!spineId) continue
-        const spine = byskelId.get(spineId)
-        if (!spine || !curbed(spine)) { unpaired.push({ key: vKey(ptOf(s, end)), chains: [s.skelId, spineId], reason: 'spineAt* target missing or not curbed' }); continue }
-        const pt = ptOf(s, end)
-        const k = vKey(pt)
-        const spineEnd = vKey(spine.points[0]) === k ? 'start' : vKey(spine.points[spine.points.length - 1]) === k ? 'end' : null
-        if (!spineEnd) { unpaired.push({ key: k, chains: [s.skelId, spineId], reason: 'spineAt* node is not a spine endpoint' }); continue }
-        const n = nodeFor(pt)
-        n.kinds.add('divided-transition')
-        addLeg(n, s, end, s.phase.role)
-        addLeg(n, spine, spineEnd, 'spine')
-        const oSide = outerSideAt(s, end)
-        const w = sideDirBody(s, end, oSide)
-        const spSide = matchSide(spine, spineEnd, w)
-        addPair(n, { chain: s.skelId, side: oSide }, { chain: spine.skelId, side: spSide }, 'spine-link')
-        spineLinkPairs++
-        addCorner(n, n.corners.outer, { chain: s.skelId, side: oSide })
-        addCorner(n, n.corners.outer, { chain: spine.skelId, side: spSide })
-        addCorner(n, n.corners.stub, { chain: s.skelId, end })
-        addWindow(n, s, end)
-      }
-    }
-    // ── Sources 2+4: end-to-end chain joins (same corridor or different),
-    // gated on CONTINUATION geometry (outward tangents ~opposite — the same
-    // gate nameTransitions uses). Same-corridor cw↔spine meetings are Source
-    // 1's transitions (already stamped); skip them here.
-    const DOT_CONTINUES = -0.6
-    const seenJoin = new Set()
-    for (const [k, list] of endsAt) {
-      for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
-        const P = list[i], Q = list[j]
-        if (P.s === Q.s) continue
-        const jk = [P.s.skelId, Q.s.skelId].sort().join('~') + '@' + k
-        if (seenJoin.has(jk)) continue
-        seenJoin.add(jk)
-        const sameCorridor = corOf(P.s) === corOf(Q.s)
-        const pCw = isCw(P.s), qCw = isCw(Q.s)
-        if (sameCorridor && P.s.phase?.pairKey && P.s.phase.pairKey === Q.s.phase?.pairKey && P.s.phase.role !== Q.s.phase.role) continue // the divided A|B pair itself
-        if (sameCorridor && pCw !== qCw) continue // cw↔spine same corridor = the Source-1 transition
-        const oP = outward(P.s, P.end), oQ = outward(Q.s, Q.end)
-        const dot = oP[0] * oQ[0] + oP[1] * oQ[1]
-        if (dot > -DOT_CONTINUES) { // both leave the node the same way — parallel strands, not a join
-          if (sameCorridor || Math.abs(oP[0] * oQ[1] - oP[1] * oQ[0]) < 0.5) unpaired.push({ key: k, chains: [P.s.skelId, Q.s.skelId], reason: 'doubles back (parallel strands?) — not pairable' })
-          continue
-        }
-        if (dot > DOT_CONTINUES) {
-          if (sameCorridor) unpaired.push({ key: k, chains: [P.s.skelId, Q.s.skelId], reason: 'same-corridor L-corner — not a continuation' })
-          continue // a genuine corner between different streets — not junction-map material
-        }
-        const linked = P.s.continuesAs === Q.s.skelId || Q.s.continuesAs === P.s.skelId
-        const source = sameCorridor ? 'same-corridor' : linked ? 'continuesAs' : 'collinear'
-        const n = nodeFor(ptOf(P.s, P.end))
-        n.kinds.add(sameCorridor ? 'same-corridor-join' : 'continuation')
-        addLeg(n, P.s, P.end, P.s.phase?.role || 'single')
-        addLeg(n, Q.s, Q.end, Q.s.phase?.role || 'single')
-        if (pCw !== qCw) {
-          // carriageway meets a different-name spine end-to-end: only the
-          // outer curb continues (the inner side dies into the median nose).
-          const cw = pCw ? P : Q, sp = pCw ? Q : P
-          const oSide = outerSideAt(cw.s, cw.end)
-          const w = sideDirBody(cw.s, cw.end, oSide)
-          addPair(n, { chain: cw.s.skelId, side: oSide }, { chain: sp.s.skelId, side: matchSide(sp.s, sp.end, w) }, source)
-          addCorner(n, n.corners.stub, { chain: cw.s.skelId, end: cw.end })
-          addWindow(n, cw.s, cw.end)
-        } else {
-          // spine↔spine or cw↔cw: both physical curbs run through the node.
-          // Sides resolved on the bodies (a carriageway's endpoint segment is
-          // the taper curl).
-          for (const side of ['left', 'right']) {
-            const w = sideDirBody(P.s, P.end, side)
-            const rQ = stationAt(Q.s, Q.end, Math.min(BODY_D, polylineLen(Q.s.points) * 0.4)).t
-            const qRight = [-rQ[1], rQ[0]]
-            addPair(n, { chain: P.s.skelId, side }, { chain: Q.s.skelId, side: (qRight[0] * w[0] + qRight[1] * w[1]) > 0 ? 'right' : 'left' }, source)
-          }
-          if (pCw) { addCorner(n, n.corners.stub, { chain: P.s.skelId, end: P.end }); addWindow(n, P.s, P.end) }
-          if (qCw) { addCorner(n, n.corners.stub, { chain: Q.s.skelId, end: Q.end }); addWindow(n, Q.s, Q.end) }
-        }
-      }
-    }
-
-    // ── Source 5: endpoint-on-interior — a chain END landing on another
-    // curbed chain's THROUGH vertex. Collinear → a BRANCH (Grattan off
-    // Truman): the wedge-facing curbs meet at a constructed apex, the
-    // envelope-side curb hands off. Perpendicular + the ender is a divided
-    // carriageway → a CORRIDOR TERMINUS (the Truman↔Lafayette nodes — no
-    // spineAt* there because the corridor NAME changes; this is the link
-    // gap the E3 spike found via marks #0/#1): the carriageway's outer curb
-    // corners against the receiving street's near-side curb; the tip is a
-    // stub. Ordinary single-street T's are NOT stamped (no width-step
-    // construction needed there — the junction map covers junction
-    // CONSTRUCTION nodes, not every intersection).
-    for (const [k, list] of endsAt) {
-      for (const { s, end } of list) {
-        for (const q of interiorAt.get(k) || []) {
-          if (q === s) continue
-          const p = q.points
-          let vi = -1
-          for (let i = 1; i < p.length - 1; i++) if (vKey(p[i]) === k) { vi = i; break }
-          if (vi < 0) continue
-          const oP = outward(s, end)
-          const [qtx, qtz] = norm(p[vi + 1][0] - p[vi - 1][0], p[vi + 1][1] - p[vi - 1][1])
-          const align = oP[0] * qtx + oP[1] * qtz
-          const undirected = Math.abs(align)
-          if (undirected > Math.cos(25 * Math.PI / 180)) {
-            // BRANCH — q's body diverges collinearly from s's body. When s is
-            // a carriageway landing on its OWN corridor's spine interior this
-            // is a STAGGERED divided transition (the spineAt* stamper matches
-            // spine ENDPOINTS only, so it missed it — Geyer at Missouri).
-            const sameCorridor = corOf(s) === corOf(q)
-            const n = nodeFor(ptOf(s, end))
-            n.kinds.add(sameCorridor && isCw(s) ? 'divided-transition' : 'branch')
-            addLeg(n, s, end, s.phase?.role || 'single')
-            addLeg(n, q, 'through', q.phase?.role || 'single')
-            // q's half-tangent aligned with s's body = the diverging half.
-            const qa = align > 0 ? [qtx, qtz] : [-qtx, -qtz]
-            // Side of s facing q's diverging half = the wedge side. Body
-            // tangent, not the endpoint segment (the taper curl).
-            const tS = stationAt(s, end, Math.min(BODY_D, polylineLen(s.points) * 0.4)).t
-            const rS = [-tS[1], tS[0]]
-            const wedgeS = (rS[0] * qa[0] + rS[1] * qa[1]) > 0 ? 'right' : 'left'
-            // Side of q facing s's body = q's wedge side. q's tangent at an
-            // interior vertex: use the point-order tangent there.
-            const rQ = norm(-(p[vi + 1][1] - p[vi - 1][1]), p[vi + 1][0] - p[vi - 1][0])
-            const wedgeQ = (rQ[0] * oP[0] + rQ[1] * oP[1]) > 0 ? 'right' : 'left'
-            // A carriageway's INNER side carries no curb (it dies into the
-            // median) — only its OUTER side may corner or hand off.
-            const oSide = isCw(s) ? outerSideAt(s, end) : null
-            if (!oSide || wedgeS === oSide) addCorner(n, n.corners.apex, { legA: { chain: s.skelId, side: wedgeS }, legB: { chain: q.skelId, side: wedgeQ } })
-            const envS = wedgeS === 'left' ? 'right' : 'left'
-            if (!oSide || envS === oSide) {
-              const w = sideDirBody(s, end, envS)
-              addPair(n, { chain: s.skelId, side: envS }, { chain: q.skelId, side: (rQ[0] * w[0] + rQ[1] * w[1]) > 0 ? 'right' : 'left' }, 'branch-envelope')
-            }
-            if (isCw(s)) { addCorner(n, n.corners.stub, { chain: s.skelId, end }); addWindow(n, s, end) }
-          } else if (isCw(s)) {
-            // CORRIDOR TERMINUS — a divided carriageway T-ing into a cross
-            // street it does not continue along (the Truman↔Lafayette nodes).
-            const n = nodeFor(ptOf(s, end))
-            n.kinds.add('corridor-terminus')
-            addLeg(n, s, end, s.phase.role)
-            addLeg(n, q, 'through', q.phase?.role || 'single')
-            const oSide = outerSideAt(s, end)
-            // q's side facing the corridor body — probe the body past the
-            // taper curl, not the endpoint segment.
-            const body = stationAt(s, end, Math.min(BODY_D, polylineLen(s.points) * 0.4)).pt
-            const v = norm(body[0] - n.at[0], body[1] - n.at[1])
-            const rQ = norm(-(p[vi + 1][1] - p[vi - 1][1]), p[vi + 1][0] - p[vi - 1][0])
-            const qSide = (rQ[0] * v[0] + rQ[1] * v[1]) > 0 ? 'right' : 'left'
-            addCorner(n, n.corners.outer, { chain: s.skelId, side: oSide })
-            addCorner(n, n.corners.outer, { chain: q.skelId, side: qSide })
-            addCorner(n, n.corners.stub, { chain: s.skelId, end })
-            addWindow(n, s, end)
-          }
-        }
-      }
-    }
-
-    // ── Source 6: pendant tips with L↔R asymmetry — the tip itself is the
-    // continuity point (the butt cap wraps one curb into the other; a width
-    // step there is the SAME-STREET step family).
-    // ⭐⭐ FIXED 2026-08-14 (Tally): A TIP TEST AND A WIDTH-STEP TEST ARE TWO
-    // DIFFERENT QUESTIONS, and this asked the second one to answer the first.
-    // `if (Math.abs(L - R) < 0.5) continue` sat ABOVE nodeFor(), so a SYMMETRIC
-    // dead end — the ordinary case — got no junction node at all, and Source 6
-    // is the only tip source. Cost, measured: 65 of 95 LS degree-1 tips and
-    // 115 of 138 on staging carried no node, so no cap coupler could be emitted
-    // there and slice 2's walk arrives at them with nothing to ask (88 of its 97
-    // no-successor failures). The width-step gate is on RIBBONS §1's retirement
-    // list by name.
-    // ⇒ THE SPLIT: the NODE is minted for every degree-1 tip, because a tip is a
-    // tip. The `tip-wrap` CONTINUITY PAIR — whose stated subject is the
-    // SAME-STREET width-step family — keeps its |L−R| >= 0.5 m condition exactly
-    // as before, so nothing that consumed it changes meaning.
-    // ⛔ This is not a widened threshold. A threshold would still be a width test
-    // standing in for a topological one.
-    let tipCount = 0, tipWraps = 0
-    for (const [k, list] of endsAt) {
-      if (list.length !== 1 || (interiorAt.get(k) || []).length) continue
-      const { s, end } = list[0]
-      const n = nodeFor(ptOf(s, end))
-      n.kinds.add('pendant-tip')
-      addLeg(n, s, end, s.phase?.role || 'single')
-      const L = s.measure?.left?.pavementHW || 0
-      const R = s.measure?.right?.pavementHW || 0
-      if (Math.abs(L - R) >= 0.5) {
-        addPair(n, { chain: s.skelId, side: 'left' }, { chain: s.skelId, side: 'right' }, 'tip-wrap')
-        tipWraps++
-      }
-      tipCount++
-    }
-
-    // ── Cross-street legs at junction-construction nodes (for E3.3's fillet:
-    // corners are built corridor-outer-leg × cross-street, never stub ×
-    // anything). A cross street is any other curbed chain at the node that
-    // carries none of the node's continuity identities.
-    for (const n of jnodes.values()) {
-      if (!n.kinds.has('divided-transition') && !n.kinds.has('corridor-terminus')) continue
-      const inMap = new Set([...n.legs.values()].map(l => l.chain))
-      const here = [
-        ...(endsAt.get(n.key) || []).map(({ s, end }) => ({ s, end })),
-        ...(interiorAt.get(n.key) || []).map(s => ({ s, end: 'through' })),
-      ]
-      for (const { s, end } of here) {
-        if (inMap.has(s.skelId)) continue
-        addLeg(n, s, end, 'cross')
-      }
-    }
-
-    // ── Source 0: EVERY junction node — the standard's invariant (a
-    // first-class Intersection at every node; OSM2STREETS-GROUNDING §4.2
-    // item 2 / HANDOFF-intersection-everywhere). The construction sources
-    // above reach only the divided/joined/branched population; every OTHER
-    // node of degree ≥ 3 now gets a record too: kind 'plain' + its full leg
-    // set. IDENTITY ONLY — no continuity pairs, no de-taper windows, and
-    // (below) no apron spec — so the stamp is geometry-neutral; the
-    // shape-side through-node construction (tileGround) and the future
-    // apron-everywhere / fillet-identity gates consume these records as they
-    // land. Existing nodes' leg sets are NOT extended here: the E3.2 apron
-    // fans over nd.legs, so enriching legs would move built geometry — leg
-    // completeness for constructed nodes travels with the apron-everywhere
-    // phase, deliberately.
-    let plainCount = 0
-    {
-      const allKeys = new Set([...endsAt.keys(), ...interiorAt.keys()])
-      for (const k of allKeys) {
-        if (jnodes.has(k)) continue
-        const ends = endsAt.get(k) || []
-        const thrs = interiorAt.get(k) || []
-        // ⭐⭐ FIXED 2026-08-14 (Tally): `< 3` skipped the END-TO-END WELD — two
-        // chains meeting tip to tip, which is a real junction with two arms and
-        // is exactly where phase 1's degree-2 coupler now wants a node to hang
-        // off. 7 such vertices on LS carried no node.
-        // ⛔ THE CONDITION IS DELIBERATELY `ends.length >= 2`, NOT `sum >= 2`.
-        // A mid-chain INTERIOR vertex of a single chain also scores 2
-        // (thrs 1 x 2) and is NOT a junction — minting there would put a node on
-        // every vertex of every street. The distinction is chain ENDS meeting,
-        // and that is what the measured population is: 100% end-to-end weld of
-        // two distinct chains, 0 interior through-pass (claims-coupler-totality).
-        if (ends.length + thrs.length * 2 < 3 && ends.length < 2) continue   // not a junction
-        const pt = ends.length ? ptOf(ends[0].s, ends[0].end) : thrs[0].points[[...thrs[0].points.keys()].find(i => vKey(thrs[0].points[i]) === k)]
-        const n = nodeFor(pt)
-        n.kinds.add('plain')
-        for (const { s, end } of ends) addLeg(n, s, end, s.phase?.role || 'single')
-        for (const s of thrs) addLeg(n, s, 'through', s.phase?.role || 'single')
-        plainCount++
-      }
-    }
-
-    // ── Corner pairs by CLOCKWISE LEG ADJACENCY — the standard's corner
-    // assembly, stamped as frozen identity at EVERY node (the only legal
-    // corner locations; subsumes corner identities — OSM2STREETS-GROUNDING
-    // §4.2: "filletRing corners identified legs only, everywhere"). Computed
-    // from ALL incident curbed chains (not the node's stamped legs — a
-    // partial leg set would fabricate false adjacencies). Sides are
-    // point-order measure keys resolved per directed leg: the CCW-wedge side
-    // of a leg is measure-RIGHT iff the leg points along point order.
-    // PRESENT-but-not-yet-consumed: the fillet-identity gate flips on these
-    // once the through-node construction is blessed.
-    let adjacentPairs = 0, capCouplers = 0, weldNodes = 0
-    for (const n of jnodes.values()) {
-      const dirs = []
-      for (const { s, end } of endsAt.get(n.key) || []) {
-        if (!curbed(s)) continue
-        const u = outward(s, end)
-        dirs.push({ chain: s.skelId, end, half: null, u, alongPO: end === 'start' })
-      }
-      for (const s of interiorAt.get(n.key) || []) {
-        if (!curbed(s)) continue
-        const p = s.points
-        let vi = -1
-        for (let i = 1; i < p.length - 1; i++) if (vKey(p[i]) === n.key) { vi = i; break }
-        if (vi < 0) continue
-        const fwd = norm(p[vi + 1][0] - p[vi][0], p[vi + 1][1] - p[vi][1])
-        const back = norm(p[vi - 1][0] - p[vi][0], p[vi - 1][1] - p[vi][1])
-        dirs.push({ chain: s.skelId, end: 'through', half: 'fwd', u: fwd, alongPO: true })
-        dirs.push({ chain: s.skelId, end: 'through', half: 'back', u: back, alongPO: false })
-      }
-      // ⭐ THE DEAD-END TIP — THE CAP *IS* A COUPLER (RIBBONS §1 ruling, 2026-08-12).
-      // A degree-1 node has ONE arm, so the CCW sweep below wraps that arm onto
-      // itself and the same-arm guard drops the pair — which is exactly why the
-      // relation was absent at every tip while complete at every T and cross. The
-      // wrap is not degenerate: it IS the cap, and under the very same convention
-      // it couples the arm's two SIDE-CHAINS around the spike (the CCW side hands
-      // off to the CW side of the same chain-end). Emitted here so the coupler
-      // relation is TOTAL — every directed side-chain has a successor at every
-      // node it touches, which is what a half-edge walk requires.
-      // `via:'cap'` is LOUD ON PURPOSE: a consumer that fillets a pair of distinct
-      // legs must not silently fillet this one. a.chain===b.chain && a.end===b.end
-      // says the same thing structurally; the tag says it without inference.
-      if (dirs.length === 1) {
-        const A = dirs[0]
-        n.cornersAdjacent = [{
-          a: { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.alongPO ? 'right' : 'left' },
-          b: { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.alongPO ? 'left' : 'right' },
-          via: 'cap',
-        }]
-        adjacentPairs++
-        capCouplers++
-        continue
-      }
-      // ⭐ DEGREE 2 IS NOT A SPECIAL CASE — it is the same CCW sweep (RIBBONS §1,
-      // slice 2). This read `< 3` and silently dropped every degree-2 node while
-      // the log below claimed the relation was total. A half-edge walk needs a
-      // successor for EVERY directed side-chain at EVERY node it touches, and a
-      // weld is a node the walk arrives at like any other.
-      // ⛔ NO NEW COUPLER KIND. Measured before the change, all six scenes
-      // (`node checks/claims-coupler-totality.mjs`): the degree-2 population is
-      // 100% an end-to-end weld of two DISTINCT chains — 0 interior through-pass
-      // of one chain, 0 chain welded to itself. The sweep below pairs that
-      // correctly on its own: with 2 arms it emits both wedges, (A,B) and (B,A),
-      // giving each of the 4 directed side-chains exactly one successor.
-      // The same-arm guard still governs the two sub-kinds LS does not exhibit
-      // but town #2 may — a lone chain passing through (half 'fwd' vs 'back') and
-      // a chain welded to its own other end (end 'start' vs 'end') both differ
-      // under it, so both emit their two wedges rather than being dropped.
-      if (dirs.length < 2) continue
-      if (dirs.length === 2) weldNodes++
-      dirs.sort((a, b) => Math.atan2(a.u[1], a.u[0]) - Math.atan2(b.u[1], b.u[0]))
-      n.cornersAdjacent = []
-      for (let i = 0; i < dirs.length; i++) {
-        const A = dirs[i], B = dirs[(i + 1) % dirs.length]
-        if (A.chain === B.chain && A.end === B.end && A.half === B.half) continue
-        // wedge runs CCW from A to B: A bounds it on its CCW side, B on its CW
-        n.cornersAdjacent.push({
-          a: { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.alongPO ? 'right' : 'left' },
-          b: { chain: B.chain, end: B.end, ...(B.half ? { half: B.half } : {}), side: B.alongPO ? 'left' : 'right' },
-        })
-        adjacentPairs++
-      }
-    }
-
-    // ── The node APRON spec — ONE junction-interior polygon per NODE (not
-    // per pair; multi-corridor deg-6 nodes get one apron), bounded by the
-    // constructed curbs/corners and spanning all incident merge windows.
-    // Spec only — construction is E3.2. A small kind:'median' fragment
-    // sitting inside a node's merge zone is ABSORBED by that node's apron
-    // (the 69 m² S-18th piece at the (658.3,-726.7) nose —
-    // JUNCTION-CURE-PLAN §4.2); it stays in medians[] untouched this pass
-    // (geometry-neutral) and E3.2 folds it into the apron interior.
-    // 'plain' nodes carry no construction yet → no apron spec (the apron-
-    // everywhere phase lands it deliberately, with the leg completeness).
-    const ABSORB_R = 10, ABSORB_AREA = 100
-    let apronCount = 0, absorbed = 0
-    for (const n of jnodes.values()) {
-      if (n.kinds.has('pendant-tip') && n.kinds.size === 1) continue
-      if (n.kinds.has('plain') && n.kinds.size === 1) continue
-      const chains = [...n.legs.values()].map(l => l.chain)
-      const absorbsMedians = []
-      medians.forEach((m, mi) => {
-        if (m.kind !== 'median') return
-        if (!Array.isArray(m.chains)) return   // [E2-loop] loop-body island — no divided-pair chains; never apron-absorbed
-        if (!chains.includes(m.chains[0]) && !chains.includes(m.chains[1])) return
-        const area = Math.abs(polygonArea(m.ring))
-        if (area > ABSORB_AREA) return
-        let dMin = Infinity
-        for (const p of m.ring) dMin = Math.min(dMin, Math.hypot(p[0] - n.at[0], p[1] - n.at[1]))
-        if (dMin > ABSORB_R) return
-        absorbsMedians.push(mi)
-        m.absorbedBy = n.key
-        absorbed++
-      })
-      n.apron = { chains, ...(absorbsMedians.length ? { absorbsMedians } : {}) }
-      apronCount++
-    }
-
-    const nodes = [...jnodes.values()]
-      .sort((a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
-      .map(n => ({
-        key: n.key,
-        at: n.at,
-        kinds: [...n.kinds].sort(),
-        legs: [...n.legs.values()],
-        continuity: n.continuity,
-        ...(n.deTaper.length ? { deTaper: n.deTaper } : {}),
-        corners: { outer: n.corners.outer, ...(n.corners.apex.length ? { apex: n.corners.apex } : {}), ...(n.corners.stub.length ? { stub: n.corners.stub } : {}) },
-        ...(n.cornersAdjacent?.length ? { cornersAdjacent: n.cornersAdjacent } : {}),
-        ...(n.apron ? { apron: n.apron } : {}),
-      }))
-    const kindCounts = {}
-    for (const n of nodes) for (const kd of n.kinds) kindCounts[kd] = (kindCounts[kd] || 0) + 1
-    const pairCount = nodes.reduce((a, n) => a + n.continuity.length, 0)
-    const windowCount = nodes.reduce((a, n) => a + (n.deTaper?.length || 0), 0)
-    console.log(`    [E3.1] junction map: ${nodes.length} nodes [${Object.entries(kindCounts).map(([k, v]) => `${k} ${v}`).join(', ')}]`)
-    console.log(`    [E3.1]   ${pairCount} continuity pairs (${spineLinkPairs} spine-link), ${windowCount} de-taper windows, ${apronCount} aprons, ${absorbed} median fragment(s) absorbed, ${tipCount} pendant tips (${tipWraps} with a width-step tip-wrap)`)
-    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs (${capCouplers} of them dead-end CAP couplers, ${weldNodes} degree-2 weld nodes)`)
-    // ⛔ LOUD, BY NAME. The coupler relation can only be total over the nodes that
-    // EXIST. A degree-1 vertex only becomes a node if some source above claimed it,
-    // and the only tip source is Source 6, gated on |left − right| pavement half-width
-    // ≥ 0.5 m — a WIDTH-STEP test standing in for a TIP test (POLYGON-FIRST §2.1,
-    // and on RIBBONS §1's retirement list). A symmetric dead end therefore gets no
-    // node and no coupler. Print the gap rather than let it read as coverage.
-    {
-      const vDeg = new Map()   // GEOMETRIC degree — endpoint 1, interior 2 (tileGround `nodeDeg`)
-      for (const s of ribbonStreets) {
-        if (!curbed(s)) continue
-        const p = s.points
-        for (let i = 0; i < p.length; i++) {
-          const k = vKey(p[i])
-          vDeg.set(k, (vDeg.get(k) || 0) + ((i === 0 || i === p.length - 1) ? 1 : 2))
-        }
-      }
-      let tipVerts = 0, tipNoNode = 0
-      for (const [k, v] of vDeg) {
-        if (v !== 1) continue
-        tipVerts++
-        if (!jnodes.has(k)) tipNoNode++
-      }
-      if (tipNoNode) console.log(`    [E3.1]   ⛔ ${tipNoNode} of ${tipVerts} degree-1 tip vertices carry NO junction node — no cap coupler is emitted there (Source 6's |L−R| ≥ 0.5 m width-step gate; a symmetric dead end is invisible to it)`)
-    }
-    if (unpaired.length) console.log(`    [E3.1]   unpaired: ${unpaired.map(u => `${u.chains.join('+')}@${u.key} (${u.reason})`).join('; ')}`)
-    return { nodes, unpaired }
-  })()
-
   // Serialize (remove circular refs)
   // ⭐ ONE read of the skeleton, shared by the emit below — the same file ① and the face walk take.
   // ⛔ Loaded here rather than passed in, so there is exactly one place that answers
@@ -5279,8 +4643,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // `medianWidth` — it measures chain-to-chain, not the median; D1). The
       // `?? medianWidth` read is back-compat for a pre-rename skeleton.json.
       ...(st.phase ? { phase: { role: st.phase.role || null, kind: st.phase.kind || null, pairKey: st.phase.pairKey || null, ...((st.phase.chainGap ?? st.phase.medianWidth) != null ? { chainGap: st.phase.chainGap ?? st.phase.medianWidth } : {}), ...(st.phase.spineAtStart ? { spineAtStart: st.phase.spineAtStart } : {}), ...(st.phase.spineAtEnd ? { spineAtEnd: st.phase.spineAtEnd } : {}) } } : {}),
-      highway: st.highway || 'residential',
-      type: st.type || 'residential',
+      highway: st.highway,
+      class: st.class,
       // Operator-intent fields the V2 emitter consumes. Designer reads
       // these from the live store via `_loadCenterlines`; if we strip
       // them here, the bake's V2 call sees a narrower per-side ped
@@ -5338,13 +4702,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     landEvidence: landEvidence.evidence,
     // [E2] constructed medians (kind:'median') — consumed by identity in
     // tileGround (median-tile detection + the merge-region asphalt fill).
-    medians: medians.map(m => ({ kind: m.kind, name: m.name, streets: m.streets, chains: m.chains, pairKey: m.pairKey, ...(m.loopId ? { loopId: m.loopId } : {}), ...(m.absorbedBy ? { absorbedBy: m.absorbedBy } : {}), ring: m.ring })),
+    medians: medians.map(m => ({ kind: m.kind, name: m.name, streets: m.streets, chains: m.chains, pairKey: m.pairKey, ...(m.loopId ? { loopId: m.loopId } : {}), ring: m.ring })),
     corridors,
-    // [E3.1] The junction map — frozen per-node junction identity (continuity
-    // pairs, de-taper windows, corner identities, apron specs). PRESENT-but-
-    // not-yet-consumed: E3.2 (de-tapered strokes + wedges + aprons) and E3.3
-    // (fillet corner identities) consume these stamps in tileGround.
-    junctionMap,
     // [P1 frame-enrichment] Top-level frame metadata carried straight from the
     // skeleton so the typed-node graph + name-transition stamps survive into
     // ribbons.json. PRESENT-but-not-yet-consumed: the on-frame faces/intersection
@@ -5370,6 +4729,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // wall at ~P3). L1 ONLY: corner construction stays live in Survey
   // (L2 = D3, deferred to §HARDENING); the raw-OSM LU faces
   // (ribbons.faces) are untouched (C5 = D4).
+  // ⛔ THE ONE LIVE LEGACY RECORD (Boz, 2026-10-20): no ground reader since the legacy pass was deleted; kept only
+  // because the Measure tool's cap handles read tiles[].caps. Retires when ① carries a cap record (classifier Pass B).
   {
     // [through-edge overlay] The face walk builds off the prevailing-direction
     // CORRECTED chains (strokePoints) so a divided→through-road median face does
@@ -5681,7 +5042,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         else if (cands.length) {
           const pc = []
           for (const w of wells) { try { const d = JSON.parse(readFileSync(join(RAW_DIR, w.file), 'utf-8'))
-            for (const p of Object.values(d.parcels || {})) { const c = p.centroid || (p.rings?.[0] && [p.rings[0].reduce((a, q) => a + q[0], 0) / p.rings[0].length, p.rings[0].reduce((a, q) => a + q[1], 0) / p.rings[0].length]); if (c) pc.push(c) } }
+            for (const p of Object.values(d.parcels || {})) { if (p.centroid) pc.push(p.centroid); else for (const { outer: r } of parcelParts(p.rings)) pc.push([r.reduce((a, q) => a + q[0], 0) / r.length, r.reduce((a, q) => a + q[1], 0) / r.length]) } }
             catch { console.warn(`      ⛔ declared parcel well ${w.file} could not be read`) } }
           const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
           const dis = []

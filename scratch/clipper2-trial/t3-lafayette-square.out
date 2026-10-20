@@ -1,0 +1,45 @@
+T3 · lafayette-square (authored slots 82) · 351 contours · the carve: ① − ∪(bands, wedges, bevels), NonZero, 1 mm grid
+Clipper2 minted 13807 vertices through zCallback; 80 of them got an empty owner set
+raw carve:
+  vertices 10305: no owner 0 (0.00%) · one 8284 (80.39%) · two or more 2021 (19.61%)
+  edges 10305: no owner 77 (0.75%) · ambiguous 303 (2.94%) · one 9925 (96.31%)
+    of the one-owner edges: ≤ TOL long (not judged) 435 · judged 9490: on no contributor of that owner 67 (0.71%) · differs from the containment rule 59 (0.62%) · rule finds none 60 (0.63%)
+    edges > TOL 9684: Z where it names one owner the edge lies on, else the containment rule → still unlabelled 62 (0.64%)
+    no-owner edges by what the rule says they are: {"rule kind 2 (rim) · ends 2/1 owners":20,"rule kind 2 (rim) · ends 1/2 owners":4,"rule none · ends 1/1 owners":10,"rule kind 1 · ends 2/1 owners":6,"rule kind 2 (rim) · ends 1/1 owners":9,"rule kind 3 · ends 1/1 owners":1,"rule kind 1 · ends 1/2 owners":3,"rule kind 1 · ends 1/1 owners":13,"rule kind 2 · ends 1/1 owners":3,"rule kind 2 · ends 1/2 owners":5,"rule kind 2 · ends 2/1 owners":3}
+    rule disagreements by contributor kind (1 curb line · 2 ① edge · 3 band end cap): {"rule kind 1 vs Z's kind 3":47,"rule kind 1 vs Z's kind none":3,"rule kind 2 vs Z's kind none":4,"rule kind 1 vs Z's kind 1":4,"rule kind 2 vs Z's kind 3":1}
+rings kept (> AREA_MIN):
+  vertices 9996: no owner 0 (0.00%) · one 8189 (81.92%) · two or more 1807 (18.08%)
+  edges 9996: no owner 66 (0.66%) · ambiguous 236 (2.36%) · one 9694 (96.98%)
+    of the one-owner edges: ≤ TOL long (not judged) 433 · judged 9261: on no contributor of that owner 67 (0.72%) · differs from the containment rule 49 (0.53%) · rule finds none 60 (0.65%)
+    edges > TOL 9400: Z where it names one owner the edge lies on, else the containment rule → still unlabelled 60 (0.64%)
+    no-owner edges by what the rule says they are: {"rule kind 2 (rim) · ends 2/1 owners":20,"rule kind 2 (rim) · ends 1/2 owners":3,"rule none · ends 1/1 owners":10,"rule kind 1 · ends 2/1 owners":6,"rule kind 2 (rim) · ends 1/1 owners":7,"rule kind 3 · ends 1/1 owners":1,"rule kind 1 · ends 1/2 owners":3,"rule kind 1 · ends 1/1 owners":13,"rule kind 2 · ends 2/1 owners":2,"rule kind 2 · ends 1/2 owners":1}
+    rule disagreements by contributor kind (1 curb line · 2 ① edge · 3 band end cap): {"rule kind 1 vs Z's kind 3":39,"rule kind 1 vs Z's kind none":3,"rule kind 2 vs Z's kind none":4,"rule kind 1 vs Z's kind 1":3}
+ours (Clipper 1 carve + containment labelOf): edges 10031, unlabelled 499 (4.97%); on kept rings 9607, unlabelled 434 (4.52%); of those > TOL 9250, unlabelled 77 (0.83%)
+examples eOff:
+  block 8 at (-524.48, 1032.16) charless-street-1|right|0  len 0.002 m
+  block 13 at (171.04, 1049.44) shenandoah-avenue-0|right|14  len 0.002 m
+  block 21 at (905.56, 1098.55) south-9th-street|right|6  len 0.002 m
+  block 37 at (-982.63, 966.59) victor-street-1|right|1  len 5.490 m
+  block 37 at (-988.05, 965.73) victor-street-1|right|1  len 127.442 m
+  block 45 at (110.62, 956.49) lemp-avenue|right|0  len 0.002 m
+examples eRule:
+  block 1 at (-983.81, 1072.44) sidney-street|right|2 · rule: __boundary__|right|0  len 3.045 m
+  block 2 at (-887.21, 1107.24) sidney-street|right|3 · rule: __boundary__|right|0  len 3.045 m
+  block 4 at (-772.02, 1018.01) victor-street-0|right|0 · rule: __boundary__|right|0  len 5.484 m
+  block 5 at (-688.08, 1097.49) texas-avenue|right|1 · rule: __boundary__|right|0  len 5.485 m
+  block 6 at (-580.02, 1086.23) victor-street-0|right|2 · rule: __boundary__|right|0  len 5.484 m
+  block 8 at (-480.74, 1090.03) indiana-avenue|right|3 · rule: __boundary__|right|0  len 5.485 m
+examples eAmb:
+  block 3 at (-880.88, 1106.02) __boundary__|right|0 + iowa-avenue-1|right|0 · ends __boundary__|right|0 | iowa-avenue-1|right|0  len 11.722 m
+  block 4 at (-885.19, 1101.48) sidney-street|left|3 + sidney-street|left|4 · ends sidney-street|left|3 | sidney-street|left|4  len 0.011 m
+  block 4 at (-885.2, 1101.48) sidney-street|left|4 + sidney-street|left|3 · ends sidney-street|left|4 | sidney-street|left|3  len 0.012 m
+  block 7 at (-570.79, 1083.75) __boundary__|right|0 + south-jefferson-avenue-4|left|9 · ends __boundary__|right|0 | south-jefferson-avenue-4|left|9  len 68.742 m
+  block 10 at (-177.17, 1079.48) cushing-street-1|left|0 + mcnair-avenue|right|4 · ends cushing-street-1|left|0 | mcnair-avenue|right|4  len 0.001 m
+  block 11 at (-166.9, 1084.68) mcnair-avenue|left|4 + mcnair-avenue|left|5 · ends mcnair-avenue|left|4 | mcnair-avenue|left|5  len 0.017 m
+examples eNone:
+  block 4 at (-770.16, 1012.85) __boundary__|right|0+victor-street-0|right|0 + sidney-street|left|4 · ends __boundary__|right|0+victor-street-0|right|0 | sidney-street|left|4  len 103.403 m
+  block 8 at (-475.33, 1090.96) __boundary__|right|0+indiana-avenue|right|3 + victor-street-0|left|3 · ends __boundary__|right|0+indiana-avenue|right|3 | victor-street-0|left|3  len 24.406 m
+  block 11 at (-43.96, 1105.86) cushing-street-0|right|0 + __boundary__|right|0+mcnair-avenue|left|5 · ends cushing-street-0|right|0 | __boundary__|right|0+mcnair-avenue|left|5  len 9.192 m
+  block 17 at (519.71, 1023.68) __boundary__|right|0+ann-avenue-0|right|1 + shenandoah-avenue-1|left|1 · ends __boundary__|right|0+ann-avenue-0|right|1 | shenandoah-avenue-1|left|1  len 96.871 m
+  block 21 at (909.05, 1105.25) __boundary__|right|0+south-9th-street|right|6 + ann-avenue-0|left|4 · ends __boundary__|right|0+south-9th-street|right|6 | ann-avenue-0|left|4  len 10.342 m
+  block 22 at (1031.63, 1098.2) south-8th-street|right|4 + __boundary__|right|0+south-9th-street|left|6 · ends south-8th-street|right|4 | __boundary__|right|0+south-9th-street|left|6  len 18.002 m

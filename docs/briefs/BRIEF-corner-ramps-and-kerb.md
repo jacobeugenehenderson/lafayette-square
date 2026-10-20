@@ -88,6 +88,9 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    stays on top. Jacob also asks for a **town-wide switch in Survey or Section** that repaints the default (perpendicular ↔
    diagonal) live; say where it lives (norms are read at derive, so a live switch belongs in the Look) before building.
    ⚠️ The shelved perpendicular-fill slivers (§9 Open) now reach every town, so they are first in the queue.
+   **Signalised corners are CONCRETE** (Jacob, 2026-10-18: *"because most intersections have traffic signals they are
+   also concrete at the corner"*): a corner whose junction carries recorded
+   signal evidence (OSM `highway=traffic_signals`) is paved through, with no lawn in the L. Unbuilt; absent evidence keeps the lawn.
    Evidence coverage: re-run `scratch/ground-budget/corner-style/run.sh` (Loess, `37c3201b`). Few corners are decided by
    recorded kerbs, and crosswalks add no independent read, because a kerb node binds through its crossing.
 6. **Rot found, to fix in the same landing as the code it describes:** `SECTION §6.1`'s "TL↔TL is GRASS

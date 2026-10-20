@@ -14,6 +14,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, requireExplicitMap } from './scene.js'
+import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
@@ -83,16 +84,12 @@ function mapType(highway) {
   return 'residential'
 }
 
-// ── Vehicular street filter (same as render.js) ──────────────────
-const vehicularTypes = new Set([
-  'residential', 'primary', 'primary_link', 'secondary', 'secondary_link',
-  'tertiary', 'tertiary_link', 'unclassified',
-])
+// ── Vehicular street filter: the vocabulary's `surveyed` column (streetClass.js) ──
 const osmVehicular = osmHW.filter(f =>
-  vehicularTypes.has(f.tags?.highway) && f.coords?.length >= 2
+  CLASSES[classOf(f.tags).class].surveyed && f.coords?.length >= 2
 )
 const osmAlleys = osmHW.filter(f =>
-  f.tags?.highway === 'service' && f.tags?.service === 'alley' && f.coords?.length >= 2
+  classOf(f.tags).class === 'alley' && f.coords?.length >= 2
 )
 const osmPaths = osmHW.filter(f => {
   const hw = f.tags?.highway

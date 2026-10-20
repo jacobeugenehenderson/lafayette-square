@@ -13,7 +13,7 @@ const scene = eachRibbonsTown()   // no town named ⇒ every town with ribbons, 
 const f = feed(scene); if (!f) process.exit(1)
 const base = f.cornerCornerRadiusOverrides || {}
 const build = (map, norm) => buildProto({ ...f, cornerCornerRadiusOverrides: map, ...(norm ? { ribbons: { ...f.ribbons, curbCutNorm: norm } } : {}) },
-  { quiet: true, protoProducer: true })
+  { quiet: true })
 const put = (key, patch) => { const cur = base[key], e = cur == null ? {} : typeof cur === 'object' ? { ...cur } : { r: cur }; return { ...base, [key]: { ...e, ...patch } } }
 const arcKey = (R, a) => R.protoShapeTiles?.[a.tile]?.iaArcKey?.[a.si]?.[a.arc] ?? null
 // ⭐ WHICH CORNER an arc is, independent of the key under test: its two flank runs off the tile's own stamp

@@ -33,7 +33,7 @@ const scenes = feedScenes().filter(a => !a.startsWith('--'))
 let failures = 0
 for (const scene of scenes) {
   const f = feed(scene); if (!f) { failures++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
+  const T = buildProto(f).protoShapeTiles
   let padLen = 0, totLen = 0, lawnLen = 0, erased = 0, arcLen = 0, nArc = 0
   const worst = []
   for (const [ti, st] of T.entries()) {

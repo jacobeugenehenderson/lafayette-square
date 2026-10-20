@@ -698,6 +698,24 @@ input[type="range"]:active { cursor: grabbing; }
   z-index: 10;
 }
 
+/* The aerial's credit line + NAIP coverage (AerialTiles.jsx#AerialCredit), bottom-centre,
+   clear of the status bar (left) and the FAB (right). The no-coverage face adds
+   `.carto-status--alarm`. */
+.carto-aerial-credit {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 2px 8px;
+  border-radius: 4px;
+  z-index: 10;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
 /* ---------- Glass card (matches .glass-panel from src/index.css) ----------
    Shared by toolbar, status bar, and other floating cartograph UI so Stage
    and cartograph read identically. Edit these values ONCE here. */
@@ -1495,6 +1513,8 @@ input[type="range"]:active { cursor: grabbing; }
 .carto-identity-emoji { flex: none; width: 3.2em; font-size: 20px; text-align: center; }
 .carto-identity-unset { opacity: 0.35; }
 .carto-identity-todo { font-size: var(--type-label-sm); color: var(--warning); }
+/* a value the panel would show and cannot: said where the number would be (Survey / Section: "no measure for <street> <side>") */
+.carto-meta--warn { color: var(--warning); }
 .carto-identity-error { grid-column: 1 / -1; font-size: var(--type-caption); color: var(--error); }
 .carto-identity-advice { grid-column: 1 / -1; font-size: var(--type-caption); color: var(--warning); display: flex; align-items: center; gap: 6px; }
 .carto-identity-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: middle; border: 1px solid var(--outline-variant); }

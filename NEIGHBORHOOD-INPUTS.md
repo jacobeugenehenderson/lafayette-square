@@ -106,7 +106,7 @@ the Salon. An unreviewed plate presented as ground truth is worse than no plate.
 | Modulators | 7 continuous phenomena (cold front, smoke, pre-storm gold…) | authored | **global — shared** | authored |
 | Reference photos | 42 WMO/Wikimedia cloud refs | curated | **global — shared** | curated |
 | **Instance geography** | lat/lon/timezone | `src/instances/<map>.js` | **per-town** | measured (1 line) |
-| Real weather | live temp/cloud/precip/wind | **Open-Meteo API**, polled with instance coords | per-town (automatic) | real-world (zero authoring) |
+| Real weather | live temp/cloud/precip/wind | **US National Weather Service** (`lib/nws.js`), polled with the town's coords — US only, a non-US town is refused by name | per-town (automatic) | real-world (zero authoring) |
 | Sun position | solar altitude/azimuth | SunCalc from instance coords | per-town (automatic) | procedural |
 
 **A new town authors nothing here.** It inherits the whole engine and gets real weather + correct sun path *for free* the moment `src/instances/<map>.js` has the right coordinates. This is the inverse of a per-town baked asset — the library is maximally portable. (`public/clouds/*.json` are live artifacts; `public/clouds/fixtures/` is orphaned — Phase-5b stub.)

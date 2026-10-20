@@ -6,7 +6,10 @@ import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoo
 import useCartographStore from './stores/useCartographStore.js'
 
 // ── Active-installation geography + silhouette ──────────────────────────────
-// The aerial tiles come from a GLOBAL provider (ArcGIS World_Imagery), so the
+// The aerial tiles come from USDA NAIP served by USGS The National Map (federal, public domain;
+// `references/registry.json#naip`). NAIP covers the conterminous US only, and outside it the
+// service answers with BLACK tiles, so `AerialCredit` asks the service's own catalog whether the
+// town is covered and says so by name when it is not. There is no second provider. The
 // only per-installation inputs are WHERE the neighborhood is (center lat/lon +
 // projection + bbox) and its fade circle (center + inner/outer). Both are read
 // from the ACTIVE installation's data in the store (fetched by id) — this
@@ -103,8 +106,19 @@ function tileTouchesRegion(x, z, w, h, region) {
     && tMaxZ >= region.minZ && tMinZ <= region.maxZ
 }
 
-export const TILE_URL = (tx, ty, z) =>
-  `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`
+// ── The imagery source: USDA NAIP via USGS The National Map ─────────────
+// An ArcGIS ImageServer (no tile cache), so each XYZ tile is an `exportImage` of that tile's exact Web Mercator
+// square at 256×256 — the same pixels an XYZ tile would carry. ⛔ The cached `basemap.nationalmap.gov/USGSImageryOnly`
+// was rejected: it stops at z16 (404 at z17+) and mixes non-NAIP partner imagery.
+const NAIP_SERVICE = 'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer'
+// The service's own `copyrightText` (`${NAIP_SERVICE}?f=json`) is "USGS, USDA, The National Map: Orthoimagery."
+export const AERIAL_CREDIT = 'USDA NAIP · USGS The National Map: Orthoimagery'
+const MERC_R = 20037508.342789244
+export const TILE_URL = (tx, ty, z) => {
+  const s = (2 * MERC_R) / 2 ** z
+  const bbox = [-MERC_R + tx * s, MERC_R - (ty + 1) * s, -MERC_R + (tx + 1) * s, MERC_R - ty * s].join(',')
+  return `${NAIP_SERVICE}/exportImage?bbox=${bbox}&bboxSR=3857&imageSR=3857&size=256,256&format=jpg&f=image`
+}
 
 // Build one tile record (world rect + url) for tile (tx,ty,z), or null if it
 // falls entirely outside the neighborhood fade circle.
@@ -162,6 +176,17 @@ function buildFocusTiles(geo, z, patches, cx, cz, maxTiles) {
   return tiles.length > maxTiles ? tiles.slice(0, maxTiles) : tiles
 }
 
+// The service's gateway answers a burst with an occasional 502 (1 of 25 in a burst test, 2026-10-20). A 5xx is
+// retried on the SAME source, twice, then the tile fails loudly in the console — never another provider.
+async function fetchTile(url, signal, tries = 3) {
+  for (let i = 0; ; i++) {
+    const r = await fetch(url, { signal })
+    if (r.ok) return r.blob()
+    if (r.status < 500 || i >= tries - 1) throw new Error(`http ${r.status}`)
+    await new Promise(res => setTimeout(res, 500 * (i + 1)))
+  }
+}
+
 // Cancelable tile texture (AbortController + createImageBitmap; freed on unmount).
 // `crop` (default true) applies the neighborhood fade-circle shader — the shipping
 // Designer/LS path. The Extent editor passes crop={false} to show the full fetched
@@ -172,8 +197,7 @@ export function TileMesh({ tile, geo, y = -0.05, crop = true }) {
   useEffect(() => {
     const ctrl = new AbortController()
     let tex = null, cancelled = false
-    fetch(tile.url, { signal: ctrl.signal })
-      .then(r => { if (!r.ok) throw new Error(`http ${r.status}`); return r.blob() })
+    fetchTile(tile.url, ctrl.signal)
       // imageOrientation:'flipY' bakes the WebGL bottom-up flip into the bitmap;
       // THREE can't apply texture.flipY to an ImageBitmap, so pre-flip here → flipY=false.
       .then(b => createImageBitmap(b, { imageOrientation: 'flipY' }))
@@ -236,7 +260,7 @@ export default function AerialBase() {
 // ── Camera distance → tile zoom ─────────────────────────────────────────
 const EARTH_CIRCUMFERENCE = 40075016.686
 const TILE_PX = 256
-const FOCUS_Z_MAX = 21   // ArcGIS World_Imagery tops out ~z21
+const FOCUS_Z_MAX = 19   // NAIP's finest pixel is 0.3 m (service pixelSizeX); z19 is ≤0.3 m/px in the US, z20+ only upsamples
 
 function cameraZoomToTileZ(geo, camZoom) {
   if (!geo) return BASE_Z + 1
@@ -302,5 +326,58 @@ export function AerialFocus() {
     <group>
       {tiles.map((t) => <TileMesh key={t.url} tile={t} geo={geo} y={-0.04} />)}
     </group>
+  )
+}
+
+// ── Credit + coverage ───────────────────────────────────────────────────
+// Names the imagery on screen, as the provider asks, and the NAIP flights under this town's bbox, read from the
+// service's catalog (primary rasters only). ⛔ No coverage is SAID by name — outside the US the service returns
+// black tiles, and a black aerial with no word is the silent failure this exists to prevent. A failed catalog read is
+// said too, with a retry; it is never taken as coverage.
+export function AerialCredit({ bbox }) {
+  const [state, setState] = useState({ kind: 'checking' })
+  const [attempt, setAttempt] = useState(0)
+  const key = bbox ? [bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat].join(',') : null
+  useEffect(() => {
+    if (!key) return
+    const ctrl = new AbortController()
+    setState({ kind: 'checking' })
+    const [minLon, minLat, maxLon, maxLat] = key.split(',').map(Number)
+    const q = new URLSearchParams({
+      geometry: JSON.stringify({ xmin: minLon, ymin: minLat, xmax: maxLon, ymax: maxLat, spatialReference: { wkid: 4326 } }),
+      geometryType: 'esriGeometryEnvelope', spatialRel: 'esriSpatialRelIntersects',
+      where: 'Category=1', outFields: 'Year,State', returnGeometry: 'false', f: 'json',
+    })
+    fetch(`${NAIP_SERVICE}/query?${q}`, { signal: ctrl.signal })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
+      .then(j => {
+        if (j.error) throw new Error(j.error.message || 'catalog error')
+        if (!Array.isArray(j.features)) throw new Error('catalog reply has no features')
+        const flights = [...new Set(j.features.map(f => `${f.attributes.State} ${f.attributes.Year}`))].sort()
+        setState(flights.length ? { kind: 'covered', flights } : { kind: 'none' })
+      })
+      .catch(err => { if (err.name !== 'AbortError') setState({ kind: 'failed', why: err.message }) })
+    return () => ctrl.abort()
+  }, [key, attempt])
+  if (!key) return null
+  if (state.kind === 'none') {
+    return (
+      <div className="carto-aerial-credit carto-status--alarm">
+        ⚠ No aerial here: USDA NAIP covers the conterminous US only, and has no imagery for this town
+      </div>
+    )
+  }
+  if (state.kind === 'failed') {
+    return (
+      <div className="carto-aerial-credit carto-status--alarm">
+        ⚠ NAIP coverage could not be read ({state.why})
+        <button className="carto-status-action" onClick={() => setAttempt(a => a + 1)}>Retry</button>
+      </div>
+    )
+  }
+  return (
+    <div className="carto-aerial-credit">
+      Imagery: {AERIAL_CREDIT}{state.kind === 'covered' ? ` · flown ${state.flights.join(', ')}` : ''}
+    </div>
   )
 }

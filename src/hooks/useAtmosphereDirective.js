@@ -3,7 +3,7 @@
  *
  * Mounted once (in <AtmosphereDirectiveDriver />, which lives inside the
  * Canvas in Scene.jsx). Subscribes to:
- *   - useSkyState weather targets (open-meteo raw, fed by useWeather)
+ *   - useSkyState weather targets (the live NWS reading, fed by useWeather)
  *   - useTimeOfDay currentTime (scrubbable)
  *   - scene.clouds.values.preset operator override (SC.6 wiring)
  *

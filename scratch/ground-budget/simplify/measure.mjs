@@ -43,15 +43,15 @@ for (const [name, is] of Object.entries(CLASSES)) {
       if (wa < -1e-7 || wb < -1e-7 || wc < -1e-7) continue
       const h = ah * wa + bh * wb + ch * wc; lo = Math.min(lo, h); hi = Math.max(hi, h) }
     return hi - lo }
-  const eE = [], e0 = [], eV = []; let miss = 0, multi = 0, multiMax = 0
+  const eE = [], e0 = [], eV = []; let miss = 0, multi = 0, multiMax = 0, worstV = null
   for (let i = 0; i < pts.length; i++) { const [x, z] = pts[i], pa = sa.partsAt(x, z), pb = sb.partsAt(x, z)
     if (!pa || !pb) { miss++; continue }
     const sp = spreadAt(x, z); if (sp > 1e-4) { multi++; multiMax = Math.max(multiMax, sp); continue }
     const dE = Math.abs((pb.raw - pa.raw) * E + (pb.y - pa.y)), d0 = Math.abs(pb.y - pa.y)
-    if (i < nArea) { eE.push(dE); e0.push(d0) } else eV.push(dE) }
+    if (i < nArea) { eE.push(dE); e0.push(d0) } else { eV.push(dE); if (!(worstV?.d >= dE)) worstV = { d: dE, x, z, a: pa.raw * E + pa.y, b: pb.raw * E + pb.y } } }
   for (const L of [eE, e0, eV]) L.sort((x, y) => x - y)
   const mm = (L) => `p50 ${(q(L, 0.5) * 1000).toFixed(2)} · p99 ${(q(L, 0.99) * 1000).toFixed(2)} · max ${(L[L.length - 1] * 1000).toFixed(2)} mm`
-  console.log(`  ${name.padEnd(5)} T ${sa.triCount} → ${sb.triCount} · area samples ${nArea} @E=${E}: ${mm(eE)} · @E=0: ${mm(e0)} · at A's vertices: ${mm(eV)} · unsampled ${miss} · A multi-valued (excluded) ${multi}, spread ≤ ${(multiMax * 1000).toFixed(0)} mm`)
+  console.log(`  ${name.padEnd(5)} T ${sa.triCount} → ${sb.triCount} · area samples ${nArea} @E=${E}: ${mm(eE)} · @E=0: ${mm(e0)} · at A's vertices: ${mm(eV)} · unsampled ${miss} · A multi-valued (excluded) ${multi}, spread ≤ ${(multiMax * 1000).toFixed(0)} mm${worstV ? ` · worst vertex at (${worstV.x.toFixed(3)}, ${worstV.z.toFixed(3)}): A ${worstV.a.toFixed(3)} · B ${worstV.b.toFixed(3)}` : ''}`)
 }
 if (process.argv.includes('--tj')) for (const [n, s] of [['A', a], ['B', b]]) {
   const gs = s.gj.groups.filter(g => g.partition).map(g => ({ id: g.id, positions: new Float32Array(s.AB, g.vertexByteOffset, g.vertexCount * 3), indices: new Uint32Array(s.AB, g.indexByteOffset, g.indexCount) }))

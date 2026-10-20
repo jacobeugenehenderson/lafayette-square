@@ -13,6 +13,7 @@ export default {
     "jurisdiction": "city",
     "file": "stl_parcels.json",
     "attribution": "City of St. Louis Assessor — Assessor_Public_Parcels",
+    "terms": {"read": "2026-10-19", "url": "https://stlouis-mo.gov/government/departments/planning/mapping-graphics/terms.cfm", "says": "No information may be sold or redistributed in any manner unless written permission is received from the City of St. Louis.", "note": "the layer's copyrightText is empty; whether these Planning GIS terms or the Open Data terms (https://dynamic.stlouis-mo.gov/opendata/terms.cfm, unreachable 2026-10-19) govern this layer is not established"},
     "endpoint": "https://maps8.stlouis-mo.gov/arcgis/rest/services/ASSESSOR/Assessor_Public_Parcels/MapServer/11/query",
     "land_use_code_format": "stl-assessor-numeric",
     "fields": {
@@ -52,7 +53,8 @@ export default {
       "vacant",
       "historic_district"
     ],
-    "absent": [],
+    // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18), absent until someone does
+    "absent": ["row_type", "land_use_desc"],
     "zoning_code_format": "stl-letter"
   },
     // St. Louis County — numeric LUCODE, decoded by the assessor's own table (the town's `landUseCodes`).
@@ -62,6 +64,7 @@ export default {
     "jurisdiction": "county",
     "file": "stlco_parcels.json",
     "attribution": "St. Louis County OpenData — Tax Parcels",
+    "terms": {"read": "2026-10-19", "note": "copyrightText 'St. Louis County GIS Service Center', no licenseInfo; a catalogue lists a 'St. Louis County Custom License' without its text; terms not established"},
     "endpoint": "https://maps.stlouisco.com/hosting/rest/services/OpenData/OpenData/FeatureServer/7/query",
     "land_use_code_format": "stl-assessor-numeric",
     "fields": {
@@ -90,7 +93,10 @@ export default {
       "units",
       "municipality"
     ],
+    // row_type / land_use_desc: not yet read from this well's own data dictionary (2026-10-18), absent until someone does
     "absent": [
+      "row_type",
+      "land_use_desc",
       "num_buildings",
       "vacant",
       "historic_district"

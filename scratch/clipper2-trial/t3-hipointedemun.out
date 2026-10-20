@@ -1,0 +1,45 @@
+T3 · hipointedemun (authored slots 17) · 1477 contours · the carve: ① − ∪(bands, wedges, bevels), NonZero, 1 mm grid
+Clipper2 minted 83675 vertices through zCallback; 458 of them got an empty owner set
+raw carve:
+  vertices 75513: no owner 0 (0.00%) · one 65699 (87.00%) · two or more 9814 (13.00%)
+  edges 75513: no owner 268 (0.35%) · ambiguous 1740 (2.30%) · one 73505 (97.34%)
+    of the one-owner edges: ≤ TOL long (not judged) 2443 · judged 71062: on no contributor of that owner 226 (0.32%) · differs from the containment rule 143 (0.20%) · rule finds none 214 (0.30%)
+    edges > TOL 72166: Z where it names one owner the edge lies on, else the containment rule → still unlabelled 242 (0.34%)
+    no-owner edges by what the rule says they are: {"rule kind 2 (rim) · ends 2/1 owners":40,"rule kind 3 · ends 1/1 owners":21,"rule kind 2 (rim) · ends 1/1 owners":19,"rule none · ends 1/1 owners":27,"rule kind 1 (rim) · ends 1/1 owners":1,"rule kind 1 · ends 1/2 owners":38,"rule kind 1 · ends 1/1 owners":62,"rule kind 2 · ends 1/1 owners":11,"rule kind 2 · ends 1/2 owners":11,"rule kind 2 (rim) · ends 1/2 owners":7,"rule kind 2 · ends 2/1 owners":15,"rule kind 1 · ends 2/1 owners":16}
+    rule disagreements by contributor kind (1 curb line · 2 ① edge · 3 band end cap): {"rule kind 1 vs Z's kind 3":107,"rule kind 2 vs Z's kind none":6,"rule kind 1 vs Z's kind 1":20,"rule kind 2 vs Z's kind 3":4,"rule kind 1 vs Z's kind none":6}
+rings kept (> AREA_MIN):
+  vertices 73910: no owner 0 (0.00%) · one 65059 (88.02%) · two or more 8851 (11.98%)
+  edges 73910: no owner 225 (0.30%) · ambiguous 1400 (1.89%) · one 72285 (97.80%)
+    of the one-owner edges: ≤ TOL long (not judged) 2404 · judged 69881: on no contributor of that owner 221 (0.32%) · differs from the containment rule 122 (0.17%) · rule finds none 213 (0.30%)
+    edges > TOL 70745: Z where it names one owner the edge lies on, else the containment rule → still unlabelled 227 (0.32%)
+    no-owner edges by what the rule says they are: {"rule kind 2 (rim) · ends 2/1 owners":32,"rule kind 3 · ends 1/1 owners":20,"rule kind 2 (rim) · ends 1/1 owners":17,"rule none · ends 1/1 owners":27,"rule kind 1 (rim) · ends 1/1 owners":1,"rule kind 1 · ends 1/2 owners":38,"rule kind 1 · ends 1/1 owners":61,"rule kind 2 (rim) · ends 1/2 owners":6,"rule kind 1 · ends 2/1 owners":16,"rule kind 2 · ends 2/1 owners":7}
+    rule disagreements by contributor kind (1 curb line · 2 ① edge · 3 band end cap): {"rule kind 1 vs Z's kind 3":94,"rule kind 2 vs Z's kind none":3,"rule kind 1 vs Z's kind 1":20,"rule kind 1 vs Z's kind none":5}
+ours (Clipper 1 carve + containment labelOf): edges 73268, unlabelled 2312 (3.16%); on kept rings 71367, unlabelled 1963 (2.75%); of those > TOL 69670, unlabelled 266 (0.38%)
+examples eOff:
+  block 0 at (-3078.61, 2308.13) brentwood-place|right|0  len 238.193 m
+  block 6 at (-1744.46, 2337.94) williams-court|left|0  len 0.002 m
+  block 20 at (463.48, 2476.49) prather-avenue|left|6  len 44.870 m
+  block 22 at (910.74, 2344.6) mitchell-terrace|left|0  len 0.002 m
+  block 23 at (1304.35, 2358.68) manchester-avenue|right|2  len 0.002 m
+  block 28 at (2294.72, 2148.82) manchester-avenue|right|10  len 0.002 m
+examples eRule:
+  block 0 at (-2790.81, 2471.45) helen-avenue|right|0 · rule: __boundary__|right|0  len 5.485 m
+  block 0 at (-2884.76, 2462.13) laverne-place|right|0 · rule: __boundary__|right|0  len 5.485 m
+  block 0 at (-3033.35, 2477.83) maple-trail|right|0 · rule: __boundary__|right|0  len 5.485 m
+  block 0 at (-3059.9, 2403.83) bridgeport-avenue|left|0 · rule: __boundary__|right|0  len 5.486 m
+  block 0 at (-3073.13, 2308.13) brentwood-place|right|0 · rule: __boundary__|right|0  len 5.485 m
+  block 0 at (-3078.61, 2308.13) brentwood-place|right|0 · rule: __boundary__|right|0  len 238.193 m
+examples eAmb:
+  block 0 at (-2876.67, 2031.3) hanley-industrial-court-5|right|2 + strassner-drive-0|right|3 · ends hanley-industrial-court-5|right|2 | strassner-drive-0|right|3  len 0.001 m
+  block 0 at (-2876.67, 2031.3) strassner-drive-0|right|3 + hanley-industrial-court-5|right|2 · ends strassner-drive-0|right|3 | hanley-industrial-court-5|right|2  len 0.001 m
+  block 0 at (-3141.4, 2244.55) garden-court-1|right|1 + garden-court-0|right|0 · ends garden-court-1|right|1 | garden-court-0|right|0  len 0.001 m
+  block 0 at (-3141.4, 2244.55) garden-court-0|right|0 + garden-court-1|right|1 · ends garden-court-0|right|0 | garden-court-1|right|1  len 0.839 m
+  block 0 at (-3135.69, 2235.12) garden-court-1|right|0 + garden-court-0|left|0 · ends garden-court-1|right|0 | garden-court-0|left|0  len 0.776 m
+  block 0 at (-3018.56, 2462.85) swim-club-lane|right|0 + maple-trail|left|0 · ends swim-club-lane|right|0 | maple-trail|left|0  len 0.019 m
+examples eNone:
+  block 0 at (-2785.39, 2470.64) __boundary__|right|0+helen-avenue|right|0 + laverne-place|left|0 · ends __boundary__|right|0+helen-avenue|right|0 | laverne-place|left|0  len 12.727 m
+  block 0 at (-3320.24, 2404.99) __boundary__|right|0+bridgeport-avenue|right|0 + brentwood-place|right|0 · ends __boundary__|right|0+bridgeport-avenue|right|0 | brentwood-place|right|0  len 2.048 m
+  block 0 at (-3316.8, 2306.53) brentwood-place|right|0 + __boundary__|right|0 · ends brentwood-place|right|0 | __boundary__|right|0  len 3.964 m
+  block 0 at (-3320.76, 2306.53) __boundary__|right|0 + garden-court-0|right|0 · ends __boundary__|right|0 | garden-court-0|right|0  len 1.521 m
+  block 0 at (-3147.72, 2235.32) __boundary__|right|0+garden-court-0|left|0 + pine-avenue|right|0 · ends __boundary__|right|0+garden-court-0|left|0 | pine-avenue|right|0  len 169.078 m
+  block 2 at (-2151.76, 2471.96) __boundary__|right|0+south-hanley-road-1|right|0 + hanley-industrial-court-0|left|3 · ends __boundary__|right|0+south-hanley-road-1|right|0 | hanley-industrial-court-0|left|3  len 15.551 m

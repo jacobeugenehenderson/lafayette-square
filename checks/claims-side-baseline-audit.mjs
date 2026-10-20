@@ -11,7 +11,7 @@
  *
  * ONE DERIVATION, NEVER RESTATED: the span/pair derivation and the definition
  * of "a break" are IMPORTED from claims-node-pair-key-parity.mjs. The physical
- * side comes from the topology method in claims-physical-side-reconcile.mjs
+ * side comes from the topology method in cartograph/_archive/claims-physical-side-reconcile-RETIRED-2026-10-20.mjs
  * (deg-2 ends only, ENDPOINT_SNAP) — no street names, no per-town table.
  *
  * usage: node checks/claims-side-baseline-audit.mjs --source=pour|bundle [scene ...]
@@ -30,7 +30,7 @@ if (!SOURCE) {
   process.exit(2)
 }
 
-// ── the PHYSICAL side, by topology alone (4124c486 / claims-physical-side-reconcile) ──
+// ── the PHYSICAL side, by topology alone (4124c486 / _archive/claims-physical-side-reconcile-RETIRED-2026-10-20) ──
 // Union the (chain, side) keys that are physically continuous. Join ONLY at a
 // DEGREE-2 end: "shares an endpoint" is not "is continuous with" — at a Y the
 // hand does not carry across, and unioning there manufactures false cycles.

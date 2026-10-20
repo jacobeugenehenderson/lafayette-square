@@ -66,7 +66,6 @@ if (existsSync(BUNDLED_PATH)) {
     const shape = (r) => ({
       streets: r.streets?.length || 0, tiles: r.tiles?.length || 0,
       faces: r.faces?.length || 0, medians: r.medians?.length || 0,
-      nodes: r.junctionMap?.nodes?.length || 0,
       caps: (r.tiles || []).reduce((a, t) => a + (t.caps?.length || 0), 0),
     })
     const a = shape(prev), b = shape(ribbons)

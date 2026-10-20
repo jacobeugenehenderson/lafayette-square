@@ -1,0 +1,34 @@
+== base start 17:24:21 · free 71%
+reheight: 2037140 vertices · 71216 moved > 0.1 mm · worst 1.959 m raw · stats {"noFull":0,"stations":385966,"absorbClamped":198618,"tiles":240,"onTerrain":785,"arcBlended":12065,"outside":3086,"deep":16576,"evaluated":1185789,"rays":1958109,"eased":155295,"lawnFull":224755,"byBand":3237,"unowned":452,"road":551278,"roadBlended":139090,"ink":16380,"inkCrossing":9254,"inkOnGrid":1589} · 58 s
+       59.36 real        62.28 user         1.82 sys
+          1112096768  maximum resident set size
+          1128493632  peak memory footprint
+   min free 71%
+slab-bb-base: 48435 wall(s) · mat:sidewalk 14747 (< 5 cm 891, of 987791 tris) · mat:asphalt 12292 (< 5 cm 8, of 1038336 tris) · mat:treelawn:underived 7626 (< 5 cm 102, of 212913 tris) · mat:curb 3746
+walk: over the limit at 3806 station(s), 3.15%
+        1783 STEP(S) beyond the terrain's own change + LATTICE_M, worst 0.034 m · by owner pair: run↔run, one 
+        1269 sample(s) off the road by more than the stripe's own lift (325 vertices · 944 edge midpoints; 1 S
+== blend start 17:26:17 · free 72%
+reheight: unowned (null → the terrain drawn): 2567 · 2350 × in a drawn band, in no piece · 102 × owner centennial-greenway-6 left segOrd 1 lists no source edges · 76 × owner centennial-greenway-5 left segOrd 0 lists no source edges · 39 × owner wheels-path-2 right segOrd 0 lists no source edges
+reheight: 2037140 vertices · 426874 moved > 0.1 mm · worst 5.035 m raw · stats {"noFull":0,"stations":385966,"absorbClamped":82314,"tiles":240,"onTerrain":785,"arcBlended":12065,"outside":3086,"deep":16576,"evaluated":1185789,"rays":0,"eased":97650,"lawnFull":0,"byBand":0,"unowned":0,"road":551278,"roadBlended":139090,"ink":16380,"inkCrossing":9254,"inkOnGrid":1589,"piece":1021935,"pieceMulti":1748,"noPiece":2350,"noEdges":217,"noDepth":0,"lotEase":161278} · 31 s
+       32.40 real        33.94 user         0.73 sys
+          2089582592  maximum resident set size
+          2165044480  peak memory footprint
+   min free 71%
+slab-bb-blend: 34499 wall(s) · mat:asphalt 12429 (< 5 cm 16, of 1038336 tris) · mat:sidewalk 9235 (< 5 cm 841, of 987791 tris) · mat:curb 2743 (< 5 cm 259, of 384487 tris) · mat:treelawn:commercial 15
+walk: over the limit at 10199 station(s), 8.45%
+        1783 STEP(S) beyond the terrain's own change + LATTICE_M, worst 0.034 m · by owner pair: run↔run, one 
+        1269 sample(s) off the road by more than the stripe's own lift (325 vertices · 944 edge midpoints; 1 S
+== equal start 17:27:48 · free 73%
+reheight: unowned (null → the terrain drawn): 2567 · 2350 × in a drawn band, in no piece · 102 × owner centennial-greenway-6 left segOrd 1 lists no source edges · 76 × owner centennial-greenway-5 left segOrd 0 lists no source edges · 39 × owner wheels-path-2 right segOrd 0 lists no source edges
+reheight: 2037140 vertices · 426892 moved > 0.1 mm · worst 5.035 m raw · stats {"noFull":0,"stations":385966,"absorbClamped":82314,"tiles":240,"onTerrain":785,"arcBlended":12065,"outside":3086,"deep":16576,"evaluated":1185789,"rays":0,"eased":97650,"lawnFull":0,"byBand":0,"unowned":0,"road":551278,"roadBlended":139090,"ink":16380,"inkCrossing":9254,"inkOnGrid":1589,"piece":1021935,"pieceMulti":1748,"noPiece":2350,"noEdges":217,"noDepth":0,"lotEase":161278} · 31 s
+       32.35 real        34.02 user         0.67 sys
+          2043576320  maximum resident set size
+          2119252032  peak memory footprint
+   min free 73%
+slab-bb-equal: 34513 wall(s) · mat:asphalt 12429 (< 5 cm 16, of 1038336 tris) · mat:sidewalk 9241 (< 5 cm 841, of 987791 tris) · mat:curb 2746 (< 5 cm 260, of 384487 tris) · mat:treelawn:commercial 15
+walk: over the limit at 10200 station(s), 8.45%
+        1783 STEP(S) beyond the terrain's own change + LATTICE_M, worst 0.034 m · by owner pair: run↔run, one 
+        1269 sample(s) off the road by more than the stripe's own lift (325 vertices · 944 edge midpoints; 1 S
+batch end 17:29:19
+

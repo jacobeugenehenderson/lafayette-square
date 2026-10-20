@@ -103,6 +103,8 @@ function extract(attrs, geometry, src) {
     // called a Landmarks Preservation Commission district national.
     historic_district: absent.has('historic_district') ? null : historicDistrict(attrs, f, src.historicDistrictField),
     municipality: str(raw('municipality')),
+    row_type: str(raw('row_type')),
+    land_use_desc: str(raw('land_use_desc')),
     jurisdiction: src.jurisdiction,
     source_id: src.id,
     centroid: [Math.round(cx * 100) / 100, Math.round(cz * 100) / 100],

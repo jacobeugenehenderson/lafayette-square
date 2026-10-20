@@ -8,7 +8,7 @@
 //
 // ⛔⛔ THIS CHECK WAS BLIND IN THE DIRECTION OF ITS OWN DEFECT AND IS REWRITTEN (2026-09-07).
 // It used to write `{outer:'SW', inner:'LU'}` into an unauthored slot and call an unchanged paint a
-// dead gesture. But that IS the default on a treelawn-N edge — `stampMeasure`: `matOuter =
+// dead gesture. But that IS the default on a treelawn-N edge — `resolveProtoMeasure`: `matOuter =
 // c?.materials?.outer ?? (hasTL ? 'LU' : 'SW')` — and treelawn-Y is a MINORITY on LS. So on most
 // edges it wrote the value already in force and scored the no-op as a failure, overstating the
 // class ~3× (1088 slots / 75.6% dead, against 1195 / 27.5% measured honestly).
@@ -26,7 +26,7 @@ const SA=r=>{let a=0;for(let i=0;i<r.length;i++){const j=(i+1)%r.length;a+=r[i][
 const net=rs=>Math.abs((rs||[]).reduce((s,r)=>s+SA(r),0))
 const sym=(A,B)=>net(differenceRings(A,B))+net(differenceRings(B,A))
 const f=feed('lafayette-square')
-const T=buildProto(f,{protoArtifact:true}).protoShapeTiles
+const T=buildProto(f).protoShapeTiles
 const clone=o=>JSON.parse(JSON.stringify(o||{}))
 let tested=0, dead=0, live=0
 const paint=(t,r,mats)=>{

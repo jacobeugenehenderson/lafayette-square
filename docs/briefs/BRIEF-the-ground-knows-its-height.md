@@ -220,8 +220,8 @@ behind the jagged shore and the warped walks.
 
 **Step 2: one deformer, swept across ① like curb geometry.** A height PROFILE, keyed to the distance from ① and the
 side, swept along every edge, the way Section already sweeps the width profile (① → ② → the bands):
-- **Road side:** the line's height across the carriageway (flat, or the town's authored crown if the norms carry one;
-  ⛔ never a constant).
+- **Road side:** swept from its own street's line on ① (the edge's owner) to ② at the curb; the ink takes its owners'
+  lines (flat on a straight, or the town's authored crown; ⛔ never a constant). ▶ `checks/claims-the-road-is-swept-from-its-line-to-its-curb.mjs`
 - **At ② (the curb line):** the kerb step, h = the town's kerb height (0 for a flat-kerb town).
 - **Curb and walk:** the line's height + h, level across (or the town's authored cross-fall).
 - **Curb cuts:** the same profile with h → 0 over the ramp, flare and taper, so the cuts come from the deformer, not from

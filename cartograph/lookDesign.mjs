@@ -16,11 +16,15 @@
  * ⛔ NO `{}`. A missing or unparseable design.json is a refusal naming the file — never "every consumer degrades to
  * its default", which baked a town's slab from kit defaults with nothing said (map §2, silent substitutions).
  * An ABSENT FIELD inside a design that exists is different: that is the town not having authored it, and the
- * consumer's neutral default is the honest answer.
+ * consumer's neutral default is the honest answer — the curb's is `KIT_CURB_WIDTH`, resolved by `bakeCurbWidth`.
  * ▶ node checks/claims-a-bake-reads-design-through-one-reader.mjs
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
+// ⭐ The curb width resolves HERE for the bake (authored, else the kit's 6 in), from the one home every reader shares —
+// the store and the probe feed import the same resolver, so no instrument measures a curb the bake does not draw.
+export { KIT_CURB_WIDTH, resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 
 const ROOT = join(import.meta.dirname, '..')
 
@@ -62,6 +66,13 @@ export const TOWN_SCALED_LOOK_FIELDS = ['edgeFadeBand']
 export const SEED_STRIPPED_FIELDS = [...new Set([...TOWN_DESIGN_FIELDS, ...PLACE_DESIGN_FIELDS, ...TOWN_SCALED_LOOK_FIELDS])]
 
 export const designPath = (look) => join(ROOT, 'public', 'looks', look, 'design.json')
+
+/** The town's curb width for a bake, and the rung that decided — printed, so every bake says which. */
+export function bakeCurbWidth(design, who) {
+  const r = resolveCurbWidth(design)
+  console.log(`  [curb] ${r.value} m — ${r.rung === 'kit' ? "the kit's (KIT_CURB_WIDTH): this town's Look authors no curbWidth" : "authored in this town's Look"} (${who})`)
+  return r.value
+}
 
 /** A design.json's text, parsed — or a refusal. Split out so the check can refuse fixtures, never a live town's file. */
 export function parseDesign(text, look, who) {

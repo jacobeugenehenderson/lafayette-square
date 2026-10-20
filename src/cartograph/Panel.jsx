@@ -13,7 +13,7 @@
  */
 import { LABEL_STYLE_DEFAULT } from '../lib/labelStyle.js'
 import { useEffect, useRef, useState } from 'react'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { curbWidthOf, curbRungOf } from './stores/useCartographStore.js'
 import SurveyorPanel from './SurveyorPanel.jsx'
 import MeasurePanel from './MeasurePanel.jsx'
 
@@ -104,10 +104,12 @@ function Section({ name, open, onToggle, children, visState, onToggleVis }) {
 // Global curb-width slider — Look-level value (meters) that V2's
 // rounded-block-clip emits the curb stroke at. Uniform across the whole
 // scene; per-side / per-chain curb overrides aren't supported in V2's
-// unified-stroke model. Default 6 inches (0.1524 m); slider runs from
+// unified-stroke model. The Look's authored width, else the kit's (KIT_CURB_WIDTH, 6 in) — the
+// row says which ("kit" / "authored"), and ↺ un-authors it. The slider runs from
 // 0 (no curb) to 0.5 m (oversized), step 0.0254 (1 inch).
 function CurbSubsection() {
-  const stored = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const stored = useCartographStore(curbWidthOf)
+  const rung = useCartographStore(curbRungOf)
   const setStored = useCartographStore(s => s.setCurbWidth)
   const [draft, setDraft] = useState(stored)
   const rafRef = useRef(null)
@@ -134,7 +136,7 @@ function CurbSubsection() {
   }
   return (
     <div className="carto-row carto-row--wrap">
-      <label className="carto-label-fixed" title="Width of the curb band that traces every block's asphalt boundary. Default 6&quot; (0.1524 m); 0 hides the curb entirely.">
+      <label className="carto-label-fixed" title="Width of the curb band that traces every block's asphalt boundary — the town's own, authored per Look; a Look that authors none draws the kit's 6&quot;. 0 hides the curb entirely.">
         Curb
       </label>
       <input type="range" className="carto-input"
@@ -149,8 +151,12 @@ function CurbSubsection() {
         }}
         onKeyUp={finalCommit} />
       <span className="carto-meta carto-meta--value">
-        {(draft * 39.3701).toFixed(1)}″
+        {`${(draft * 39.3701).toFixed(1)}″`} · {rung}
       </span>
+      {rung === 'authored' && (
+        <button type="button" className="carto-meta" title="Remove this Look's curb width — the map draws the kit's 6&quot;"
+          onClick={() => setStored(null)}>↺</button>
+      )}
     </div>
   )
 }

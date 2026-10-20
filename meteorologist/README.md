@@ -165,7 +165,7 @@ src/components/
 src/lib/
   skyMode.js                          # the 2026-05-27 stopgap switch: SKY_IS_VOLUMETRIC gates Atmosphere vs CloudDome (default cheap)
   almanac-eval.js                     # SHIPPED 2026-05-13 (SC.6); no production consumer yet
-  weather-payload.js                  # SHIPPED 5a — open-meteo + INSTANCE + SunCalc → schema-aligned payload
+  weather-payload.js                  # SHIPPED 5a — live NWS reading + townPlace + SunCalc → schema-aligned payload
   weather-signals.js                  # SHIPPED — Phase 6 (Modulators); deriveSignals()
 
 src/cartograph/                       # IMPORTED by Meteorologist (no fork):

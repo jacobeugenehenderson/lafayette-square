@@ -1,0 +1,27 @@
+# groundDeformer.preview-unstamped-terrain.patch — probe copy: apply to `git show 2e67679e:cartograph/groundDeformer.mjs` (rev 2e67679e). Reproduce: git show 2e67679e:cartograph/groundDeformer.mjs > /tmp/x && patch -o scratch/ground-budget/deform-fix/groundDeformer.preview-unstamped-terrain.mjs /tmp/x scratch/ground-budget/deform-fix/groundDeformer.preview-unstamped-terrain.patch
+--- cartograph/groundDeformer.mjs@2e67679e
++++ groundDeformer.preview-unstamped-terrain.mjs
+@@ -1,3 +1,5 @@
++// ⚠️ PREVIEW COPY (scratch, deform-fix): the worktree's groundDeformer.mjs with ONE change — an unstamped ② vertex reads the
++// terrain instead of throwing — so the no-line rule's effect can be measured on HPDM. NOT the ruled behaviour; never shipped.
+ // groundDeformer.mjs — THE GROUND'S TERRAIN HEIGHT NEAR THE STREETS (BRIEF-the-ground-knows-its-height §5 step 2).
+ //
+ // ⭐ ONE CONTINUOUS FUNCTION OF POSITION, D(x, z), raw metres like terrain.bin (the runtime multiplies it by uExag). The
+@@ -16,7 +18,7 @@
+ // ⛔ Outside every tile (the rim's perimeter road, a highway stroke, water) D is null: the caller draws the terrain there
+ //   and COUNTS it.
+ 
+-import { LATTICE_M as LATTICE } from '../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
++import { LATTICE_M as LATTICE } from '../../../src/lib/lattice.js'   // the partition's own grid: crossings closer than LATTICE are one crossing point
+ 
+ const sq = (x) => x * x
+ const SIDESTEP = 1e-5   // metres: far below the 1 mm lattice, far above float64 noise
+@@ -122,7 +124,7 @@
+       // the highway and the bridge are not on the ground, and the block edge beside them is the ground there.
+       const onTerrain = (run) => run && !Array.isArray(run.h) && (run.noLine === 'highway' || run.noLine === 'bridge')
+       // the height a ② vertex takes from its own run — the line's h, or the terrain under a run with no line — else null
+-      const lineH = (k) => { if (stamp[k] == null) return null; const run = runs[stamp[k]]
++      const lineH = (k) => { if (stamp[k] == null) { stats.previewUnstamped = (stats.previewUnstamped || 0) + 1; return raw(ring[k][0], ring[k][1]) } const run = runs[stamp[k]]
+         if (onTerrain(run)) { stats.onTerrain++; return raw(ring[k][0], ring[k][1]) }
+         return hOfRun(stamp[k], ring[k]) }
+       for (let i = 0; i < n; i++) if (arc[i] == null) H[i] = lineH(i)

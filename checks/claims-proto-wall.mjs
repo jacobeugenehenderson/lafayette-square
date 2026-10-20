@@ -43,15 +43,22 @@ for (let i = mFrom; i <= mTo; i++) {
 
 // ── B ─────────────────────────────────────────────────────────────────────────
 const CHAIN_READS = [/\bfeWidthAt\s*\(/, /\bmeasures\s*\[/, /\bsegOrdAtVertex\s*\(/, /streetsOrig\s*\[/, /streetsOrig\.forEach/]
-const start = SRC.findIndex(l => l.includes("opts.grout === 'proto'"))
-if (start < 0) refuse("the proto block (`opts.grout === 'proto'`) not found")
-let end = SRC.findIndex((l, i) => i > start && /^  if \(opts\.grout && opts\.grout !== 'proto'\)/.test(l))
-if (end < 0) end = SRC.length
+// The proto block: `let proto = null` and the bare `{ … }` block after it, in `buildTileGround` (retire-legacy 80d28a26 made
+// ①②③ the only producer, so the old `opts.grout === 'proto'` gate is gone; the block is closed by brace depth).
+const pFrom = SRC.findIndex(l => /^  let proto = null$/.test(l))
+if (pFrom < 0 || !/^  \{$/.test(SRC[pFrom + 1])) refuse('the proto block (`let proto = null` then `{`) not found')
+const start = pFrom + 1
+let end = -1
+for (let i = start, depth = 0; i < SRC.length; i++) {
+  depth += (SRC[i].match(/\{/g) || []).length - (SRC[i].match(/\}/g) || []).length
+  if (i > start && depth <= 0) { end = i; break }
+}
+if (end < 0) refuse('could not find the end of the proto block')
 // the licensed upstream site: the base-measure table, built before the resolver
 const baseFrom = SRC.findIndex((l, i) => i > start && i < end && l.includes('const protoBase = new Map()'))
 if (baseFrom < 0) refuse('`const protoBase = new Map()` not found in the proto block')
-const baseTo = SRC.findIndex((l, i) => i > baseFrom && i < end && l.includes('const bcOf ='))
-if (baseTo < 0) refuse('`const bcOf =` (the end of the base table) not found')
+const baseTo = SRC.findIndex((l, i) => i > baseFrom && i < end && l.includes('const protoMeasureCache = []'))
+if (baseTo < 0) refuse('`const protoMeasureCache = []` (the end of the base table) not found')
 const offenders = [], upstream = []
 for (let i = start; i < end; i++) {
   if (isProse(SRC[i])) continue

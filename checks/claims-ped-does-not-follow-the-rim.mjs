@@ -6,7 +6,7 @@ import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
 import { buildTileGround } from '../src/lib/tileGround.js'
 
 for (const scene of feedScenes()) {
-  const f = feed(scene); if (!f || f.curbWidth == null) continue
+  const f = feed(scene); if (!f) continue
   const bR = f.ribbons.protopolygon?.boundaryRing
   if (!bR) { console.log(`⛔ ${scene}: no frozen boundaryRing — NOT checked`); continue }
   const dArc = p => { let m = Infinity
@@ -23,10 +23,10 @@ for (const scene of feedScenes()) {
         else run=0 } }
     return { L, best } }
   const q = o => { const p=console.log; console.log=()=>{}
-    const t=buildTileGround(f.ribbons,{smooth:0,curbWidth:f.curbWidth,blockCustoms:f.blockCustoms,stencil:bR,...o}); console.log=p; return t }
-  const L = q({}), P = q({ grout:'proto', protoProducer:true })
+    const t=buildTileGround(f.ribbons,{smooth:0,curbWidth:f.curbWidth,curbedMinWidth:f.curbedMinWidth,blockCustoms:f.blockCustoms,stencil:bR,...o}); console.log=p; return t }
+  const P = q({})
   console.log(`${scene} — ped boundary lying ON the rim arc:`)
-  for (const [tag,t] of [['LEGACY (tile world)',L],['① PROTO           ',P]]) {
+  for (const [tag,t] of [['①②③',P]]) {
     const sw = onArc(t.sidewalk)
     const tl = onArc(Object.values(t.treelawnByLu||{}).flat())
     console.log(`  ${tag}  sidewalk ${sw.L.toFixed(0).padStart(5)} m (longest unbroken run ${sw.best.toFixed(1)} m) · treelawn ${tl.L.toFixed(0).padStart(5)} m (longest ${tl.best.toFixed(1)} m)`)

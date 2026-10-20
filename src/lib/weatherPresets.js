@@ -2,7 +2,7 @@
 // ⭐ They are written through `useSkyState.setWeatherTargets`, the SAME input the
 // live poller writes, so the Almanac picks the directive and WeatherEffects drives
 // wetness and snow exactly as production does. Nothing sets a weather uniform itself.
-// Codes are WMO (open-meteo's). Used by the surface lab and Stage's Weather switch.
+// Codes are WMO (lib/nws.js#WMO_OF maps the live feed onto them). Used by the surface lab and Stage's Weather switch.
 //
 // ⛔ A preset is a COMPLETE weather, not a patch. setWeatherTargets keeps the previous
 // value of anything it isn't given, so a partial preset laid over a live rainy feed kept

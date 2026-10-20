@@ -2,9 +2,9 @@
 // ⭐⭐⭐ DOES THE CITY'S SURVEY REACH THE MAP? — the join, scored, for any town that has one.
 // `raw/survey.json` is a KIT INPUT: per-street, per-side distances from centreline to the SIDEWALK
 // CENTRELINE. `skeleton.js`'s `fromSurveyDist` turns each into a ped section:
-//     swInner  = swDist − SV_SIDEWALK/2
-//     pav      = min(seed.pavementHW, swInner − CURB_WIDTH)     ← asphalt CLAMPED to the sidewalk
-//     treelawn = max(0, swInner − (pav + CURB_WIDTH))
+//     swInner  = swDist − LOCAL_SECTION.sidewalk/2
+//     pav      = min(seed.pavementHW, swInner − KIT_CURB_WIDTH)     ← asphalt CLAMPED to the sidewalk
+//     treelawn = max(0, swInner − (pav + KIT_CURB_WIDTH))
 // ⛔ SO A TREELAWN THE SURVEY EVIDENCED CAN BE CRUSHED TO EXACTLY 0 BY THE ASPHALT GUESS, silently:
 // when the lanes/AASHTO seed is wider than the room to the surveyed walk, `pav` is clamped flush
 // and the gap the city measured disappears. Nothing errors; the map simply loses its treelawns.
@@ -21,7 +21,8 @@
 // SORTED MULTISETS (near↔near, far↔far), which is side-agnostic and reversal-proof.
 // ▶ node checks/claims-the-survey-reaches-the-measure.mjs [town ...]   (no town ⇒ every town with a raw/survey.json)
 import fs from 'fs'
-import { SV_SIDEWALK, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { LOCAL_SECTION } from '../src/cartograph/streetClass.js'
 import { feed } from '../scratch/_proto-feed.mjs'
 import { scenes } from './_scenes.mjs'
 
@@ -46,8 +47,8 @@ for (const scene of scenes('cartograph/data/<scene>/raw/survey.json')) {
     for (let i = 0; i < ms.length; i++) {
       const sd = ms[i], swDist = dists[Math.min(i, dists.length - 1)]
       sides++
-      const swInner = swDist - SV_SIDEWALK / 2
-      const room = swInner - CURB_WIDTH                 // where the asphalt would have to stop
+      const swInner = swDist - LOCAL_SECTION.sidewalk / 2
+      const room = swInner - KIT_CURB_WIDTH                 // where the asphalt would have to stop
       if (!(sd.treelawn > 0.01)) {
         // clamped ⇔ the asphalt sits flush at the room the survey left it
         if (Math.abs(sd.pavementHW - room) < 0.02 && room > 0) { zeroClamped++; worst.push({ n: st.name, sk: st.skelId, room, pav: sd.pavementHW }) }

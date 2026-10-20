@@ -55,8 +55,9 @@ export function setSceneMeasureSource(ribbons, mapId = null) {
 export function sceneMeasureSource() { return { scene: _sceneMeasureScene, size: _sceneMeasure.size } }
 
 // Chain-level READ default. Order: street.measure → pipeline-derived →
-// type default. This is a fallback for seeding/handle-placement only —
-// never a write target.
+// the street's CLASS section (`streetClass.js`). For seeding/handle-placement only —
+// never a write target. ⛔ A street with no class (ribbons poured before the classifier) throws:
+// there is no residential default.
 export function chainMeasure(st) {
   if (st.measure) return st.measure
   const fromPipeline = _sceneMeasure.get(st.skelId) || _sceneMeasure.get(st.name)
@@ -69,7 +70,15 @@ export function chainMeasure(st) {
         && Math.abs(fromPipeline.left.sidewalk - fromPipeline.right.sidewalk) < 0.01,
     }
   }
-  return defaultMeasure(st.type || 'residential')
+  if (!st.class) throw new Error(`⛔ chainMeasure: street ${st.skelId || st.name} carries no class — re-pour (streetClass.js)`)
+  return defaultMeasure(st.class, null, { lanes: Number.isInteger(st.lanes) ? st.lanes : null, oneway: !!st.oneway })
+}
+
+// ⭐ "NO MEASURE FOR <street> <side>" — the one predicate behind the Survey/Section refusals (the overlays, the store's
+// whole-chain write) and the panel line that says so where the number would be. null = the side has a measure.
+export function noMeasureFor(st, side) {
+  let m; try { m = chainMeasure(st) } catch (e) { return `no measure for ${st?.name || st?.skelId} ${side} (${e.message.replace(/^⛔ chainMeasure: /, '')})` }
+  return m?.[side] ? null : `no measure for ${st?.name || st?.skelId} ${side}`
 }
 
 // Resolve a (street, segOrd, side) tuple to its containing block-edge fe.

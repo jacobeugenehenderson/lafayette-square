@@ -1,0 +1,132 @@
+# SYMLINKS.txt — every symlink in .claude/worktrees/integration (Lath, 2026-10-20, for Boz's ruling 5). <main> = the main tree.
+# Made by linking each path the main tree's `git status --porcelain --ignored` lists as untracked/ignored under
+# cartograph/data, public and src/data, where the worktree had nothing. ⛔ A write through any of these lands in <main>.
+#
+# What a ground bake from here writes (cartograph/bake-ground.js, outDir = public/baked/<scene>):
+#   public/baked/<scene>/ground.json · ground.bin · shape.json  → through ./public/baked → <main>/public/baked (SERVED).
+#   It writes nothing under cartograph/data/<scene>/clean (bake-reads.json / bake-timings.json are serve.js's, from the
+#   Bake button; derived_lamps.json is derive-lamps.mjs's). Neither runs from here.
+# ⛔ LS: ground bake ONLY. cartograph/skeleton.js and cartograph/derive.js / pipeline.js never run with --scene=lafayette-square
+#   from this worktree: the tracked clean files would be rewritten in the worktree, and the 14 linked ones below in <main>.
+# ⭐ PTown's skeleton re-pour + derive (authorized) write cartograph/data/provincetown/clean, which is ONE link
+#   (./cartograph/data/provincetown/clean → <main>/…), so they land in <main>, which is where the authorization points.
+#
+./cartograph/data/.DS_Store -> <main>/cartograph/data/.DS_Store
+./cartograph/data/altadena/clean/map.json -> <main>/cartograph/data/altadena/clean/map.json
+./cartograph/data/altadena/clean/ribbons.json -> <main>/cartograph/data/altadena/clean/ribbons.json
+./cartograph/data/altadena/clean/skeleton.json -> <main>/cartograph/data/altadena/clean/skeleton.json
+./cartograph/data/altadena/clean/terrain.bin -> <main>/cartograph/data/altadena/clean/terrain.bin
+./cartograph/data/altadena/clean/terrain.json -> <main>/cartograph/data/altadena/clean/terrain.json
+./cartograph/data/altadena/raw/_cache -> <main>/cartograph/data/altadena/raw/_cache
+./cartograph/data/altadena/raw/elevation.tif -> <main>/cartograph/data/altadena/raw/elevation.tif
+./cartograph/data/altadena/raw/msbf.json -> <main>/cartograph/data/altadena/raw/msbf.json
+./cartograph/data/hipointedemun/clean/bake-reads.json -> <main>/cartograph/data/hipointedemun/clean/bake-reads.json
+./cartograph/data/hipointedemun/clean/bake-timings.json -> <main>/cartograph/data/hipointedemun/clean/bake-timings.json
+./cartograph/data/hipointedemun/clean/derived_lamps.json -> <main>/cartograph/data/hipointedemun/clean/derived_lamps.json
+./cartograph/data/hipointedemun/clean/derived_trees.json -> <main>/cartograph/data/hipointedemun/clean/derived_trees.json
+./cartograph/data/hipointedemun/clean/map.json -> <main>/cartograph/data/hipointedemun/clean/map.json
+./cartograph/data/hipointedemun/clean/ribbons.json -> <main>/cartograph/data/hipointedemun/clean/ribbons.json
+./cartograph/data/hipointedemun/clean/skeleton.json -> <main>/cartograph/data/hipointedemun/clean/skeleton.json
+./cartograph/data/hipointedemun/clean/terrain.bin -> <main>/cartograph/data/hipointedemun/clean/terrain.bin
+./cartograph/data/hipointedemun/clean/terrain.json -> <main>/cartograph/data/hipointedemun/clean/terrain.json
+./cartograph/data/hipointedemun/raw/_cache -> <main>/cartograph/data/hipointedemun/raw/_cache
+./cartograph/data/hipointedemun/raw/canopy.tif -> <main>/cartograph/data/hipointedemun/raw/canopy.tif
+./cartograph/data/hipointedemun/raw/city_trees_raw.json -> <main>/cartograph/data/hipointedemun/raw/city_trees_raw.json
+./cartograph/data/hipointedemun/raw/forest_park_trees_raw.json -> <main>/cartograph/data/hipointedemun/raw/forest_park_trees_raw.json
+./cartograph/data/hipointedemun/raw/msbf.json -> <main>/cartograph/data/hipointedemun/raw/msbf.json
+./cartograph/data/hipointedemun/raw/osm_kerbs.json -> <main>/cartograph/data/hipointedemun/raw/osm_kerbs.json
+./cartograph/data/hipointedemun/raw/osm_trees_raw.json -> <main>/cartograph/data/hipointedemun/raw/osm_trees_raw.json
+./cartograph/data/hipointedemun/raw/stlco_parcels.json -> <main>/cartograph/data/hipointedemun/raw/stlco_parcels.json
+./cartograph/data/huron/clean/bake-reads.json -> <main>/cartograph/data/huron/clean/bake-reads.json
+./cartograph/data/huron/clean/bake-timings.json -> <main>/cartograph/data/huron/clean/bake-timings.json
+./cartograph/data/huron/clean/derived_lamps.json -> <main>/cartograph/data/huron/clean/derived_lamps.json
+./cartograph/data/huron/clean/derived_trees.json -> <main>/cartograph/data/huron/clean/derived_trees.json
+./cartograph/data/huron/clean/elevation.json -> <main>/cartograph/data/huron/clean/elevation.json
+./cartograph/data/huron/clean/map.json -> <main>/cartograph/data/huron/clean/map.json
+./cartograph/data/huron/clean/ribbons.json -> <main>/cartograph/data/huron/clean/ribbons.json
+./cartograph/data/huron/clean/skeleton.json -> <main>/cartograph/data/huron/clean/skeleton.json
+./cartograph/data/huron/clean/street-index.json -> <main>/cartograph/data/huron/clean/street-index.json
+./cartograph/data/huron/clean/terrain.bin -> <main>/cartograph/data/huron/clean/terrain.bin
+./cartograph/data/huron/clean/terrain.json -> <main>/cartograph/data/huron/clean/terrain.json
+./cartograph/data/huron/geography.json.prebak -> <main>/cartograph/data/huron/geography.json.prebak
+./cartograph/data/huron/neighborhood.json.prebak -> <main>/cartograph/data/huron/neighborhood.json.prebak
+./cartograph/data/huron/photos -> <main>/cartograph/data/huron/photos
+./cartograph/data/huron/raw/_cache -> <main>/cartograph/data/huron/raw/_cache
+./cartograph/data/huron/raw/canopy.tif -> <main>/cartograph/data/huron/raw/canopy.tif
+./cartograph/data/huron/raw/elevation.tif -> <main>/cartograph/data/huron/raw/elevation.tif
+./cartograph/data/huron/raw/msbf.json -> <main>/cartograph/data/huron/raw/msbf.json
+./cartograph/data/huron/raw/oh_address_points.json -> <main>/cartograph/data/huron/raw/oh_address_points.json
+./cartograph/data/huron/raw/osm_kerbs.json -> <main>/cartograph/data/huron/raw/osm_kerbs.json
+./cartograph/data/huron/raw/osm_trees_raw.json -> <main>/cartograph/data/huron/raw/osm_trees_raw.json
+./cartograph/data/huron/raw/overture-places.json -> <main>/cartograph/data/huron/raw/overture-places.json
+./cartograph/data/huron/raw/water-datums.json -> <main>/cartograph/data/huron/raw/water-datums.json
+./cartograph/data/jacksonheights/building-overrides.json -> <main>/cartograph/data/jacksonheights/building-overrides.json
+./cartograph/data/jacksonheights/clean -> <main>/cartograph/data/jacksonheights/clean
+./cartograph/data/jacksonheights/content -> <main>/cartograph/data/jacksonheights/content
+./cartograph/data/jacksonheights/geography.json -> <main>/cartograph/data/jacksonheights/geography.json
+./cartograph/data/jacksonheights/geography.json.prebak -> <main>/cartograph/data/jacksonheights/geography.json.prebak
+./cartograph/data/jacksonheights/neighborhood_boundary.json -> <main>/cartograph/data/jacksonheights/neighborhood_boundary.json
+./cartograph/data/jacksonheights/neighborhood_boundary.json.prebak-absent -> <main>/cartograph/data/jacksonheights/neighborhood_boundary.json.prebak-absent
+./cartograph/data/jacksonheights/neighborhood.json -> <main>/cartograph/data/jacksonheights/neighborhood.json
+./cartograph/data/jacksonheights/neighborhood.json.prebak -> <main>/cartograph/data/jacksonheights/neighborhood.json.prebak
+./cartograph/data/jacksonheights/raw -> <main>/cartograph/data/jacksonheights/raw
+./cartograph/data/lafayette-square/clean/bake-reads.json -> <main>/cartograph/data/lafayette-square/clean/bake-reads.json
+./cartograph/data/lafayette-square/clean/bake-timings.json -> <main>/cartograph/data/lafayette-square/clean/bake-timings.json
+./cartograph/data/lafayette-square/clean/block.json -> <main>/cartograph/data/lafayette-square/clean/block.json
+./cartograph/data/lafayette-square/clean/derived_lamps.json -> <main>/cartograph/data/lafayette-square/clean/derived_lamps.json
+./cartograph/data/lafayette-square/clean/elevation.json -> <main>/cartograph/data/lafayette-square/clean/elevation.json
+./cartograph/data/lafayette-square/clean/fragment.json -> <main>/cartograph/data/lafayette-square/clean/fragment.json
+./cartograph/data/lafayette-square/clean/island.json -> <main>/cartograph/data/lafayette-square/clean/island.json
+./cartograph/data/lafayette-square/clean/map.svg -> <main>/cartograph/data/lafayette-square/clean/map.svg
+./cartograph/data/lafayette-square/clean/park.json -> <main>/cartograph/data/lafayette-square/clean/park.json
+./cartograph/data/lafayette-square/clean/parking.json -> <main>/cartograph/data/lafayette-square/clean/parking.json
+./cartograph/data/lafayette-square/clean/preview.html -> <main>/cartograph/data/lafayette-square/clean/preview.html
+./cartograph/data/lafayette-square/clean/terrain.bin -> <main>/cartograph/data/lafayette-square/clean/terrain.bin
+./cartograph/data/lafayette-square/clean/terrain.json -> <main>/cartograph/data/lafayette-square/clean/terrain.json
+./cartograph/data/lafayette-square/clean/unknown.json -> <main>/cartograph/data/lafayette-square/clean/unknown.json
+./cartograph/data/lafayette-square/raw/_cache -> <main>/cartograph/data/lafayette-square/raw/_cache
+./cartograph/data/lafayette-square/raw/canopy.tif -> <main>/cartograph/data/lafayette-square/raw/canopy.tif
+./cartograph/data/lafayette-square/raw/centerlines.backup-1776660241733.json -> <main>/cartograph/data/lafayette-square/raw/centerlines.backup-1776660241733.json
+./cartograph/data/lafayette-square/raw/centerlines.backup-1776660721565.json -> <main>/cartograph/data/lafayette-square/raw/centerlines.backup-1776660721565.json
+./cartograph/data/lafayette-square/raw/centerlines.backup-1788725669562.json -> <main>/cartograph/data/lafayette-square/raw/centerlines.backup-1788725669562.json
+./cartograph/data/lafayette-square/raw/centerlines.json.bak-2026-04-18 -> <main>/cartograph/data/lafayette-square/raw/centerlines.json.bak-2026-04-18
+./cartograph/data/lafayette-square/raw/city_trees_raw.json -> <main>/cartograph/data/lafayette-square/raw/city_trees_raw.json
+./cartograph/data/lafayette-square/raw/elevation.tif -> <main>/cartograph/data/lafayette-square/raw/elevation.tif
+./cartograph/data/lafayette-square/raw/msbf.json -> <main>/cartograph/data/lafayette-square/raw/msbf.json
+./cartograph/data/lafayette-square/raw/osm_kerbs.json -> <main>/cartograph/data/lafayette-square/raw/osm_kerbs.json
+./cartograph/data/lafayette-square/raw/osm_trees_raw.json -> <main>/cartograph/data/lafayette-square/raw/osm_trees_raw.json
+./cartograph/data/lafayette-square/raw/overture-places.json -> <main>/cartograph/data/lafayette-square/raw/overture-places.json
+./cartograph/data/provincetown/clean -> <main>/cartograph/data/provincetown/clean
+./cartograph/data/provincetown/geography.json.prebak -> <main>/cartograph/data/provincetown/geography.json.prebak
+./cartograph/data/provincetown/neighborhood_boundary.json.prebak -> <main>/cartograph/data/provincetown/neighborhood_boundary.json.prebak
+./cartograph/data/provincetown/neighborhood.json.prebak -> <main>/cartograph/data/provincetown/neighborhood.json.prebak
+./cartograph/data/provincetown/raw/_cache -> <main>/cartograph/data/provincetown/raw/_cache
+./cartograph/data/provincetown/raw/canopy.tif -> <main>/cartograph/data/provincetown/raw/canopy.tif
+./cartograph/data/provincetown/raw/msbf.json -> <main>/cartograph/data/provincetown/raw/msbf.json
+./cartograph/data/provincetown/raw/osm_kerbs.json -> <main>/cartograph/data/provincetown/raw/osm_kerbs.json
+./cartograph/data/provincetown/raw/osm_trees_raw.json -> <main>/cartograph/data/provincetown/raw/osm_trees_raw.json
+./cartograph/data/provincetown/raw/tide.json -> <main>/cartograph/data/provincetown/raw/tide.json
+./cartograph/data/provincetown/raw/water-datums.json -> <main>/cartograph/data/provincetown/raw/water-datums.json
+./public/baked -> <main>/public/baked
+./public/codedesk/.claude -> <main>/public/codedesk/.claude
+./public/codedesk/.version -> <main>/public/codedesk/.version
+./public/models/lamp-posts/uploads_files_6828811_Light_Unity.fbx -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unity.fbx
+./public/models/lamp-posts/uploads_files_6828811_Light_Unity.glb -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unity.glb
+./public/models/lamp-posts/uploads_files_6828811_Light_Unity.mtl -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unity.mtl
+./public/models/lamp-posts/uploads_files_6828811_Light_Unity.obj -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unity.obj
+./public/models/lamp-posts/uploads_files_6828811_Light_Unity.usdc -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unity.usdc
+./public/models/lamp-posts/uploads_files_6828811_Light_Unreal.fbx -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unreal.fbx
+./public/models/lamp-posts/uploads_files_6828811_Light_Unreal.glb -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unreal.glb
+./public/models/lamp-posts/uploads_files_6828811_Light_Unreal.mtl -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unreal.mtl
+./public/models/lamp-posts/uploads_files_6828811_Light_Unreal.obj -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unreal.obj
+./public/models/lamp-posts/uploads_files_6828811_Light_Unreal.usdc -> <main>/public/models/lamp-posts/uploads_files_6828811_Light_Unreal.usdc
+./public/models/lamp-posts/uploads_files_6828811_Light2.1.fbx -> <main>/public/models/lamp-posts/uploads_files_6828811_Light2.1.fbx
+./public/models/lamp-posts/uploads_files_6828811_Light2.1.glb -> <main>/public/models/lamp-posts/uploads_files_6828811_Light2.1.glb
+./public/models/lamp-posts/uploads_files_6828811_Light2.1.mtl -> <main>/public/models/lamp-posts/uploads_files_6828811_Light2.1.mtl
+./public/models/lamp-posts/uploads_files_6828811_Light2.1.obj -> <main>/public/models/lamp-posts/uploads_files_6828811_Light2.1.obj
+./public/models/lamp-posts/uploads_files_6828811_Light2.1.usdc -> <main>/public/models/lamp-posts/uploads_files_6828811_Light2.1.usdc
+./public/models/lamp-posts/uploads_files_6828811_Light2.1.zip -> <main>/public/models/lamp-posts/uploads_files_6828811_Light2.1.zip
+./public/models/lamp-posts/uploads_files_6828811_Textures2.1-2K.zip -> <main>/public/models/lamp-posts/uploads_files_6828811_Textures2.1-2K.zip
+./public/models/lamp-posts/uploads_files_6828811_Textures2.1-4K.zip -> <main>/public/models/lamp-posts/uploads_files_6828811_Textures2.1-4K.zip
+./public/photos -> <main>/public/photos
+./public/trees -> <main>/public/trees
