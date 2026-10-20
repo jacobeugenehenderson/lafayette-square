@@ -12,11 +12,16 @@
 // every other — which is the failure this whole surface exists to prevent, and
 // it would be wrong in the worst direction: a legal notice that looks right.
 //
-// ⛔ AND NO FALLBACK. A look with no sources.json gets an empty list and the
-// surface renders a visible to-do (SidePanel.jsx's "features degrade, they
-// don't detonate"). It never borrows another look's credits: showing a visitor
-// St. Louis's data providers for a Polish map is a false statement about
-// provenance, and a false credit is worse than an absent one.
+// ⛔ AND NO FALLBACK. A look with no sources.json gets an empty list, never
+// another look's credits: showing a visitor St. Louis's data providers for a
+// Polish map is a false statement about provenance, and a false credit is worse
+// than an absent one. What each surface then does:
+//   · the map's corner (MapCredit.jsx) renders nothing;
+//   · the info panel's Sources section (InfoModal.jsx) says "No sources recorded
+//     for this map yet";
+//   · a share image (ShareCapture.jsx#creditFor) refuses the capture.
+// The console says so only when the fetch throws: a 404 resolves to the empty
+// list without a line.
 //
 // Why the map owes this at all: OpenStreetMap's data is ODbL, and a rendered
 // map is a Produced Work. ODbL §4.3 wants a notice naming the database and the
