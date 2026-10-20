@@ -2002,7 +2002,7 @@ async function main() {
     // Adaptive ground-subdivision overrides (gated on argv/opts, never env):
     // ⛔ The producer flags are RETIRED (2026-10-20): ① is the only producer. A stale invocation is refused by name rather
     // than silently baking something its flag no longer means.
-    else if (/^--(proto|legacy|no-proto)$/.test(arg)) throw new Error(`[bake-ground] ${arg}: retired — ① is the only producer (BRIEF-retire-the-legacy-shape-pass)`)
+    else if (/^--(proto|legacy|no-proto)$/.test(arg)) throw new Error(`[bake-ground] ${arg}: retired — ① is the only producer (cartograph/_archive/BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md)`)
     else if ((m = arg.match(/^--refine=(.+)$/)))  refine.mode    = m[1]            // adaptive | uniform
     else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])

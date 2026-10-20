@@ -14,18 +14,22 @@
  * rebuild it: `node scratch/coupler-slit-universal.mjs` (50/50 tips FACE=SLIT, gap 0.000)
  * and `POLYGON-FIRST §2.1` Check 5 (the mouth corner), Check 1-2 (the tip slit).
  *
- * ⭐ Portable to town #2: the expectation is the producer's OWN per-run `measure`, station-
- * local. An asymmetric or narrow or re-widened spur PASSES. No constant, no street knowledge.
+ * ⭐ Portable to town #2: the expectation is the producer's OWN per-run width as the paint resolves it
+ * (`resolveProtoMeasure`: frozen base + the scene's authoring), station-local. An asymmetric or narrow or re-widened spur PASSES. No constant, no street knowledge.
  * ⛔ Stops sampling at an AUTHORED width change rather than averaging across it.
  * ⭐ No cap-style branch: the cap is not measured, so `round` vs `blunt` never arises here.
  *
- *   node checks/claims-spur-leg-offset.mjs [town]   (no town ⇒ every town with a shape + ribbons, each its own run)
+ *   node checks/claims-spur-leg-offset.mjs [town] [--mutants]   (no town ⇒ every town with a shape + ribbons, each its own run)
+ * ⭐ MUTANT (--mutants): blockCustoms dropped → on a town whose authoring sets a scored leg's pavementHW, the scores
+ *   must change (RED if they do not: the check would be blind to authoring). A town that authors no scored leg says so.
  *
  * Sibling (the ray-march form of the same question, per station): claims-deadend-notch-standoff.mjs
  */
 import fs from 'fs'
 import { ribbonsPath, eachTown } from './_scenes.mjs'
 import crypto from 'crypto'
+import { resolveProtoMeasure } from '../src/lib/tileGround.js'
+import { feed } from '../scratch/_proto-feed.mjs'
 
 const scene = eachTown('public/baked/<scene>/shape.json', { has: (s) => fs.existsSync(`public/baked/${s}/shape.json`) && fs.existsSync(ribbonsPath(s)), label: 'shape.json + ribbons' })
 const SHAPE = `public/baked/${scene}/shape.json`
@@ -39,23 +43,43 @@ o(`scene ${scene}   shape.json sha256 ${crypto.createHash('sha256').update(RAW).
 const d = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1])
 const stBy = new Map(rb.streets.map(s => [s.skelId || s.name, s]))
 const distToRings = (p, rings) => { let b = Infinity; for (const r of rings) for (let i = 0; i < r.length; i++) { const a = r[i], c = r[(i + 1) % r.length], ex = c[0] - a[0], ez = c[1] - a[1], L2 = ex * ex + ez * ez || 1; let u = ((p[0] - a[0]) * ex + (p[1] - a[1]) * ez) / L2; u = Math.max(0, Math.min(1, u)); b = Math.min(b, Math.hypot(p[0] - (a[0] + ex * u), p[1] - (a[1] + ez * u))) } return b }
+// ⭐ THE WIDTH THE PAINT READS — `resolveProtoMeasure`, the one rule: the run's frozen `baseMeasure` with the scene's
+// authored `blockCustoms` over it (Boz, 2026-10-20). ⛔ Never `baseMeasure` alone: that scores the un-authored map, blind
+// exactly where a town is most worked on (CLAUDE.md Layer 0 q3). `--mutants` drops the authoring and requires the scores to move.
+const F = feed(scene)
+if (!F) { o(`⛔ ${scene}: the feed refused (above) — NOT MEASURED`); process.exit(1) }
+let BC = F.blockCustoms
+// Per side, the run of THIS chain and side (identity, never proximity to some other chain) whose poly lies nearest
+// the station: a chain owns several runs along a tile (one per segOrd), and the nearest of its OWN is the one beside q.
+// ⛔ It used to accept only a run within 0.5 m of the CENTRELINE station; a frozen ① run lies on the block's edge, about
+// its half-width out, so no tip ever matched and every town read "0 legs scored" (measured 2026-10-20: LS 138 tips,
+// nearest own run 3.7–5.5 m, none within 0.5 m).
 function hwAt(tile, skelId, q) {
-  const out = {}
+  const best = {}
   for (const r of (tile.runs || [])) {
     if (r.skelId !== skelId) continue
-    let best = Infinity
+    let d = Infinity
     for (let i = 0; i < r.poly.length - 1; i++) {
       const a = r.poly[i], b = r.poly[i + 1], ex = b[0] - a[0], ez = b[1] - a[1], L2 = ex * ex + ez * ez || 1
       let u = ((q[0] - a[0]) * ex + (q[1] - a[1]) * ez) / L2; u = Math.max(0, Math.min(1, u))
-      best = Math.min(best, Math.hypot(q[0] - (a[0] + ex * u), q[1] - (a[1] + ez * u)))
+      d = Math.min(d, Math.hypot(q[0] - (a[0] + ex * u), q[1] - (a[1] + ez * u)))
     }
-    const hw = r.measure?.[r.side]?.pavementHW
-    if (best < 0.5 && Number.isFinite(hw)) out[r.side] = +hw
+    if (!(d < (best[r.side]?.d ?? Infinity))) continue
+    best[r.side] = { d, hw: resolveProtoMeasure(r, BC, F.curbWidth)?.pavementHW }
   }
+  const out = {}
+  for (const [side, b] of Object.entries(best)) if (Number.isFinite(b.hw)) out[side] = +b.hw
   return out
 }
 
 const LEG = 20, STEP = 0.25, TOL = 0.10
+// ⭐ WHICH TILE A TIP IS SCORED IN — by the polygon, never by a run's distance: ① carves each road ε wide, so a dead end's
+// own block ring passes within ε of its tip (CLAUDE.md: coordinate → the tile whose RING holds it). ε is ①'s own,
+// read off the frozen protopolygon; 2ε is the carve's full width. A tile that only carries a run of the chain
+// elsewhere is not where the tip is, and used to be scored anyway (worst offsets past 1 km).
+const EPS = rb.protopolygon?.eps
+if (!(EPS > 0)) { o(`⛔ ${RIB}: no protopolygon.eps — cannot place a tip on ①; NOT MEASURED`); process.exit(1) }
+const nearRing = (t, q) => distToRings(q, [t.ring]) <= 2 * EPS
 // The side convention is a CLAIM. Score the whole map under each forced sign and let the
 // map choose — never per cap, which is fitting, not deriving.
 // ⭐ THE TIPS ARE READ OFF THE CHAINS, never off a second tile list. A dead end is a chain end that
@@ -85,6 +109,7 @@ function score(sign) {
       const st = stBy.get(c.skelId); if (!st) continue
       const tipAtStart = c.capEnd !== 'end'
       const tip = tipAtStart ? st.points[0] : st.points.at(-1)
+      if (!nearRing(t, tip)) continue
       const hw0 = hwAt(t, c.skelId, tip)
       if (!Number.isFinite(hw0.left) || !Number.isFinite(hw0.right)) continue
       const pts = tipAtStart ? st.points : [...st.points].reverse()
@@ -109,6 +134,18 @@ function score(sign) {
   return rows
 }
 const A = score(+1), B = score(-1)
+if (process.argv.includes('--mutants')) {
+  // Applicable only where the authoring reaches a scored leg: a run of a scored tip's chain, in a scored tile, whose
+  // resolved pavementHW differs with and without blockCustoms.
+  const key = (rows) => JSON.stringify(rows.map(r => [r.id, r.ti, +r.max.toFixed(4), r.n, r.hwL, r.hwR]))
+  const scored = new Set([...A, ...B].map(r => `${r.ti}|${r.id}`))
+  const reach = sh.tiles.reduce((n, t, ti) => n + (t.runs || []).filter(r => scored.has(`${ti}|${r.skelId}`)
+    && resolveProtoMeasure(r, F.blockCustoms, F.curbWidth)?.pavementHW !== resolveProtoMeasure(r, null, F.curbWidth)?.pavementHW).length, 0)
+  const bc = BC; BC = null; const A0 = score(+1), B0 = score(-1); BC = bc
+  const moved = key(A) !== key(A0) || key(B) !== key(B0)
+  if (!reach) o(`   mutant · blockCustoms dropped: not applicable — ${scene}'s authoring sets no scored leg's pavementHW (scores ${moved ? 'moved anyway' : 'unchanged'})`)
+  else { o(`   mutant · blockCustoms dropped (${reach} authored run(s) on scored legs): ${moved ? 'scores change — RED, as it must be ✅' : '⛔ scores unchanged — the check is blind to authoring'}`); if (!moved) process.exit(1) }
+}
 // ⛔ AN EMPTY SAMPLE IS NOT A NUMBER. This used to index an empty array, hand back
 // `undefined`, and die on `.toFixed` — so a scene with no scorable leg CRASHED the
 // check instead of reporting that it had nothing to measure. A crash tells you
@@ -146,3 +183,5 @@ if (!A.length && !B.length) {
   o(`   (LEG=${LEG} m, STEP=${STEP} m); do not read this as a clean result.`)
   process.exit(1)
 }
+// A leg off its authored width is a finding: RED, never a printed ⛔ under exit 0.
+if (fail.length) process.exit(1)

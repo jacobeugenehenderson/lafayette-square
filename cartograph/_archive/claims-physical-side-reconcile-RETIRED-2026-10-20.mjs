@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): a one-off prediction of derive's physical-side reconcile, diffing the LEGACY chain curb (`_shapeArtifact` without protoArtifact) built both ways; the reconcile landed in derive (4124c486) and the legacy curb it diffed is deleted. Its topology method lives on in claims-side-baseline-audit.
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md §2 step 4): a one-off prediction of derive's physical-side reconcile, diffing the LEGACY chain curb (`_shapeArtifact` without protoArtifact) built both ways; the reconcile landed in derive (4124c486) and the legacy curb it diffed is deleted. Its topology method lives on in claims-side-baseline-audit.
 //    Kept as the record. Do not run.
 // THE CHECK: does reconciling a road's pavementHW by the PHYSICAL side instead
 // of the point-order-relative side LABEL remove the width step at a seam?

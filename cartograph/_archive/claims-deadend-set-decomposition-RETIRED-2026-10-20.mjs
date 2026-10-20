@@ -1,4 +1,4 @@
-// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): set C ran the LEGACY shape pass for its dead-end mouth discs (`_shapeArtifact` without protoArtifact, the chain loop's `mouths`), a construction deleted with the legacy pass; the A/B sets decomposed corpus claims about that same legacy defect. It measured a map nobody draws.
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md §2 step 4): set C ran the LEGACY shape pass for its dead-end mouth discs (`_shapeArtifact` without protoArtifact, the chain loop's `mouths`), a construction deleted with the legacy pass; the A/B sets decomposed corpus claims about that same legacy defect. It measured a map nobody draws.
 //    Kept as the record. Do not run.
 // claims-deadend-set-decomposition.mjs — READ-ONLY. Written for PIPELINE-CLAIMS.md (Quill, 2026-08-05).
 //

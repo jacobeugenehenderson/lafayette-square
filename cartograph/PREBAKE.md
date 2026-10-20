@@ -69,7 +69,7 @@ degenerate input is **UNDECIDABLE and loud**, never a silent keep.
 > ### ⛔ NO ARTIFACT CARRIES A COUPLER RELATION (2026-10-20)
 > *(The consumer-status fact `RIBBONS §1` and `POLYGON-FIRST §2.1/§3` point at this section for — keep it here.)*
 > `junctionMap` (with `nodes[].cornersAdjacent`) lost its last reader when the substrate walk and the legacy pass's junction
-> construction were deleted (`BRIEF-retire-the-legacy-shape-pass`), and its producer left `derive.js` in the integration
+> construction were deleted (`cartograph/_archive/BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md`), and its producer left `derive.js` in the integration
 > merge the same day. A town poured before then still carries the key in its ribbons; nothing reads it.
 
 > ### ✅ AND THE CROP THE EXCISION OWED IS **BUILT** — the circle is stamped LAST, on finished geometry.

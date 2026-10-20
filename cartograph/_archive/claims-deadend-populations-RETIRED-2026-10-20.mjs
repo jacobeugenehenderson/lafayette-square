@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): its populations were the
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md §2 step 4): its populations were the
 //    boundary clip's manufactured tips (the clip was excised, ec7dd3f4, 2026-09-05) and the round caps the legacy shape pass
 //    put on them over its recomputed `nodeDeg`, plus P3 off the junctionMap — the pass and the junctionMap's last reader are
 //    deleted. It measured a map nobody draws. Kept as the record. Do not run.

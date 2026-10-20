@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): already VOID (2026-09-06, parity pooled across bands); it also read the legacy artifact and the A07 carve count. ⛔ Its underlying question is still OPEN and is surfaced as work, not evicted: does ③ zero the inner band on a median-facing edge? (`RIBBONS §3.5`, the divided-road ped dispatch).
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md §2 step 4): already VOID (2026-09-06, parity pooled across bands); it also read the legacy artifact and the A07 carve count. ⛔ Its underlying question is still OPEN and is surfaced as work, not evicted: does ③ zero the inner band on a median-facing edge? (`RIBBONS §3.5`, the divided-road ped dispatch).
 //    Kept as the record. Do not run.
 // ⛔⛔⛔ VOID — DO NOT RUN, DO NOT QUOTE. RETRACTED 2026-09-06 by Jacob's eye.
 // It reported "Benton Place 17%"; Benton's median CORRECTLY carries no sidewalk. Jacob: "No."

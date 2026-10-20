@@ -1,7 +1,7 @@
 # The legacy chain shape pass — retired 2026-10-20
 
 *Diary. Passages excised from the live canon when the pre-① chain shape pass was deleted from `buildTileGround`
-(`BRIEF-retire-the-legacy-shape-pass`, Lintel, Boz's rulings). ①②③ had been the producer since 2026-09-06; the legacy
+(`BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md`, Lintel, Boz's rulings). ①②③ had been the producer since 2026-09-06; the legacy
 pass still ran on every build and every output it fed was overwritten. Kept for the record — what was believed, and why
 it stopped being true. Each section names where it was cut from and the reason.*
 

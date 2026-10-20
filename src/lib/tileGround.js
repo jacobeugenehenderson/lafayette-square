@@ -4164,19 +4164,24 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
 // chains, no measures, no centerlines. `run.baseMeasure` is surveyed DATA frozen across the wall,
 // not chain geometry — the ruled distinction (`SURVEY §5`).
 
-// One stamp's resolved cross-section: the frozen base measure + the operator's override.
+// ⭐⭐ ONE OWNER'S RESOLVED CROSS-SECTION — THE ONE RULE (Boz, 2026-10-20: "one rule, two callers").
+// `run` = { skelId, side, segOrd, baseMeasure, hwy }: the frozen BASE measure by skelId, plus the operator's
+// override, street-keyed (`blockCustoms[skelId][side][segOrd]`). The live build (`buildTileGround`'s
+// `protoMeasureOf`, owners + `protoBase`), the frozen painter (a `shape.json` run) and every instrument that
+// asks what the PAINT reads call this, so none of them can resolve a width the paint does not.
 // ⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD — `measure.treelawn` is the authored override ONLY
 // (median 0 across the map); the depth actually painted comes from `resolvePedDepths`. Reading
 // the raw field is a real, repeated error here: it once left three quarters of the map with no
 // ped band, and it manufactured a phantom 3.00 m envelope gap during this ticket.
-// A run the highway owns (H-3), read off the frozen `hwy` stamp — the SAME set the shape pass differenced
-// against H. ⛔ Not `material: 'highway'`: an at-grade two-way ramp (ruling a) has that material and is a
-// street, with its curb.
-const isHighwayRun = (run) => !!run?.hwy
-function stampMeasure(run, blockCustoms, curbWidth) {
+// ⛔ A highway takes no authoring (`r-highway-no-authoring`): `run.hwy` refuses the override (the shape pass
+// prints each refusal by name).
+// ⭐⭐ THE STRIPS ARE SWAPPABLE, AND THE SWAP IS THE OPERATOR'S (Jacob: "adjustable and swappable
+// monowidth"). The gleaned `hasTL` supplies only the DEFAULT arrangement (`SECTION §3.1`: treelawn-Y
+// reads grass→walk, N reads walk→lawn); `blockCustoms[…].materials` is the ctrl-click override on top
+// (`§3.2`). Both strips to 'LU' is the OPEN FIELD — a material state, never an absence.
+export function resolveProtoMeasure(run, blockCustoms, curbWidth) {
   if (!run) return null
-  // ⛔ A highway takes no authoring (`r-highway-no-authoring`) — the shape pass prints the refusal.
-  const c = isHighwayRun(run) ? null : (blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null)
+  const c = run.hwy ? null : (blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null)
   const mz = run.baseMeasure
   const base = mz?.[run.side]?.pavementHW
   const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
@@ -4185,12 +4190,14 @@ function stampMeasure(run, blockCustoms, curbWidth) {
     pavementHW: Number.isFinite(hw) ? hw : null,
     curb: curbWidth,
     treelawn: d.tl, sidewalk: d.sw, hasTL: !!d.hasTL,
-    // The §3.1 default ARRANGEMENT (treelawn-Y reads grass→walk, N reads walk→lawn), then the
-    // per-edge `.materials` override. Both strips to 'LU' is the OPEN FIELD — a material state.
     matOuter: c?.materials?.outer ?? (d.hasTL ? 'LU' : 'SW'),
     matInner: c?.materials?.inner ?? (d.hasTL ? 'SW' : 'LU'),
   }
 }
+// A run the highway owns (H-3), read off the frozen `hwy` stamp — the SAME set the shape pass differenced
+// against H. ⛔ Not `material: 'highway'`: an at-grade two-way ramp (ruling a) has that material and is a
+// street, with its curb.
+const isHighwayRun = (run) => !!run?.hwy
 
 // ⭐⭐⭐ THE STRIP LADDER — ONE FUNCTION, BOTH PAINTERS. Depths are measured PAST THE CURB; each
 // caller adds `cw` itself, and `lim = WB − cw` is the mono-width envelope past the curb.
@@ -4846,7 +4853,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const capM = new Map(); let capUnmeasured = 0
   const capMeasure = (c) => { if (capM.has(c)) return capM.get(c)
     const cap = st.caps?.[c], base = cap ? (runs.find(r => r.skelId === cap.skelId)?.baseMeasure ?? null) : null
-    const m = base ? stampMeasure({ ...cap, baseMeasure: base }, blockCustoms, cw) : null; if (!m) capUnmeasured++
+    const m = base ? resolveProtoMeasure({ ...cap, baseMeasure: base }, blockCustoms, cw) : null; if (!m) capUnmeasured++
     capM.set(c, m); return m }
   // ⛔ THE RESIDUE THE LONGEST-ARC ABSORPTION USED TO HIDE, COUNTED INSTEAD OF ABSORBED. `feArcs`
   // = contiguous `(road, side)` stretches on this tile; `feRepeat` = stretches belonging to an
@@ -4940,7 +4947,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
           byRun.set(r, (byRun.get(r) || 0) + Math.hypot(b[0] - a[0], b[1] - a[1])) }
         // ⭐ A DEAD-END CAP'S EDGES CARRY NO RUN — they resolve to THE CAP'S OWN SECTION (`SECTION §6.3`, LANDED 2026-07-22, restored
         // here 2026-10-18: "the bulb has NO halves … ONE cross-section — the cap's own … the bulb goes whole to the cap owner").
-        // The owner is `caps[iaCap]`, measured like any run (`stampMeasure`) off the `baseMeasure` its own chain's runs carry.
+        // The owner is `caps[iaCap]`, measured like any run (`resolveProtoMeasure`) off the `baseMeasure` its own chain's runs carry.
         // ⛔ Before this a cap edge read THE OPEN FIELD and its walk went to the curb (▶ checks/claims-a-cap-carries-one-section.mjs).
         if (!byRun.size) { for (let k = 0; k < len; k++) { const q = (s0 + k) % n, c = st.iaCap?.[p.si]?.[q]
           legArr.set(`${ri}|${q}`, c == null ? null : capMeasure(c)) } continue }
@@ -4948,7 +4955,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         let win = null, best = -1, winAuth = false
         for (const [r, L] of byRun) { const au = authored(r)
           if ((au && !winAuth) || (au === winAuth && L > best)) { best = L; win = r; winAuth = au } }
-        const mm = stampMeasure(runs[win], blockCustoms, cw)
+        const mm = resolveProtoMeasure(runs[win], blockCustoms, cw)
         for (let k = 0; k < len; k++) legArr.set(`${ri}|${(s0 + k) % n}`, mm)
         const ok = resKey(stp[s0]); feArcs++
         if (ok != null) { if (seenOwner.has(ok)) feRepeat++; else seenOwner.add(ok) }
@@ -6220,7 +6227,7 @@ export function buildTileGround(ribbons, opts = {}) {
     protoBoundaryRing = MP.boundaryRing || null
     console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
     // ⛔⛔ DISCLOSE THE AUTHORING STATE — the SILENCE is the defect, never the draw.
-    // ②③ below read `blockCustoms` twice (the `pavementHW` override at `bcOf`, and the ped
+    // ②③ below read `blockCustoms` twice (the `pavementHW` override in `resolveProtoMeasure`, and the ped
     // depths + strip materials through `resolvePedDepths(mz, side, c)`). A caller that passes
     // none gets the to-code default and NO indication of it — `ROADMAP A05`'s exact shape
     // (`litmus-curb-parallel.mjs:77` runs `blockCustoms: null` and scores the operator's own
@@ -6290,44 +6297,17 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⇒ The chain keeps its own measure; the CONSUMER resolves once per leg (`sectionPassProtoTile`).
     // ⛔ A highway takes no authoring (`r-highway-no-authoring`): an override on one is REFUSED and
     // printed by name, never applied — the file keeps it. (Differs from the expressway rule on purpose.)
-    const bcOf = (skelId, side, segOrd) => {
-      const c = blockCustoms?.[skelId]?.[side]?.[segOrd] || null
-      if (c && hwySkel.has(skelId)) { hwyRefusedCustoms.add(`${skelId}|${side}|${segOrd}`); return null }
-      return c
-    }
-    // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
-    // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose default
-    // ladder (`gleanTreelawn`) supplies a value where nothing is authored. Reading the raw
-    // field made a second, poorer lookup — 19,094 stamps but only 4,601 with a treelawn, both
-    // with a median of 0.00: three quarters of the map had no ped band and LU flooded to the
-    // curb. Jacob, on the drawing: "what are we even looking at here?"
+    // ⭐ The value is `resolveProtoMeasure`'s, the one rule the frozen painter and the instruments call too;
+    // this is only its cache over the live owners, keyed by label.
     const protoMeasureCache = []
     const protoMeasureOf = (label) => {
       let m = protoMeasureCache[label]
       if (m) return m
       const o = protoOwners[label]
       if (!o) return null
-      const mz = protoBase.get(o.skelId)             // the frozen BASE, by skelId
-      const c = bcOf(o.skelId, o.side, o.segOrd)     // the operator's OVERRIDE, street-keyed
-      const base = mz?.[o.side]?.pavementHW
-      const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
-      const d = resolvePedDepths(mz, o.side, c)
-      m = protoMeasureCache[label] = {
-        pavementHW: Number.isFinite(hw) ? hw : null,
-        curb: curbWidth,
-        treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, hasTL: !!d?.hasTL, terminal: d?.terminal ?? null,
-        // ⭐⭐ THE STRIPS ARE SWAPPABLE, AND THE SWAP IS THE OPERATOR'S (Jacob: "adjustable and
-        // swappable monowidth"). The gleaned `hasTL` supplies only the DEFAULT arrangement
-        // (`SECTION §3.1`: `{outer: Y?'LU':'SW', inner: Y?'SW':'LU'}` — treelawn-Y reads
-        // grass→walk, treelawn-N reads walk→lawn); `blockCustoms[…].materials` is the ctrl-click
-        // override on top (`§3.2`). ⛔ Reading only the glean made the swap gesture INERT here —
-        // the operator flips a strip and nothing moves, which is the authoring surface silently
-        // not working. ⭐ Both strips to 'LU' is the OPEN FIELD — a material state, never an
-        // absence, and it falls out of the arrangement rather than being a case.
-        matOuter: c?.materials?.outer ?? (d?.hasTL ? 'LU' : 'SW'),
-        matInner: c?.materials?.inner ?? (d?.hasTL ? 'SW' : 'LU'),
-      }
-      return m
+      const hwy = hwySkel.has(o.skelId)
+      if (hwy && blockCustoms?.[o.skelId]?.[o.side]?.[o.segOrd]) hwyRefusedCustoms.add(`${o.skelId}|${o.side}|${o.segOrd}`)
+      return (protoMeasureCache[label] = resolveProtoMeasure({ skelId: o.skelId, side: o.side, segOrd: o.segOrd, baseMeasure: protoBase.get(o.skelId), hwy }, blockCustoms, curbWidth))
     }
     { const M = protoOwners.map((_, l) => protoMeasureOf(l) || {})
       const n=protoOwners.length, hw=M.filter(o=>o.pavementHW>0).length,
@@ -7820,7 +7800,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // ⭐⭐⭐ ①②③ IS THE PRODUCER OF EVERY LAYER EITHER TOOL DRAWS (`PIPELINE` step 3) — Survey live, and Section and the bake
   // from the frozen artifact, which is `protoShapeTiles` itself. `sectionOpen` consumes a tile that CARRIES ITS BANDS as-is
   // and unions them into exactly these layers. (The pre-① chain shape pass that ran beside this on every build and was
-  // then overwritten is deleted, 2026-10-20: BRIEF-retire-the-legacy-shape-pass.)
+  // then overwritten is deleted, 2026-10-20: cartograph/_archive/BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md.)
   // ⛔ `highway` is not produced here: grade-separated roads are their own sweeps (H, above), ① carries them as INK, and ②
   // builds no highway curb.
   // ⛔ REFUSES rather than falling back (Layer 0 q2).

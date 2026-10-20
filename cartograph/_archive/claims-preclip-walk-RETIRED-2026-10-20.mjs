@@ -1,4 +1,4 @@
-// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass §2 step 4): it imported `walkSubstrate` (src/lib/substrateWalk.js), the dead SLICE-2 substrate walk that nothing called (`SUBSTRATE_TILES` was never set), deleted with the legacy pass.
+// ⛔ RETIRED 2026-10-20 (Lintel; Boz's rulings, BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md §2 step 4): it imported `walkSubstrate` (src/lib/substrateWalk.js), the dead SLICE-2 substrate walk that nothing called (`SUBSTRATE_TILES` was never set), deleted with the legacy pass.
 //    Kept as the record. Do not run.
 /**
  * claims-preclip-walk — DOES THE PUNCH-OUT EVER SEE A CLIPPED VERTEX?

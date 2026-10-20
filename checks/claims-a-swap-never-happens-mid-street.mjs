@@ -26,15 +26,13 @@
 //   · same chain, same side, segOrd     ⛔ an authoring ordinal is not a place on the map
 import fs from 'fs'
 import { feed, buildProto, ribbonsPath, feedScenes } from '../scratch/_proto-feed.mjs'
-import { resolvePedDepths } from '../src/lib/tileGround.js'
+import { resolveProtoMeasure } from '../src/lib/tileGround.js'
 
 const TOL = 18 * Math.PI / 180          // ⛔ FILLET_TURN_TOL, the ruled constant — not a new one
 const KP = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
-// the resolved cross-section, exactly as `stampMeasure` builds it — depths AND the arrangement
-const xs = (run, bc) => { if (!run) return null
-  const c = bc?.[run.skelId]?.[run.side]?.[run.segOrd] || null
-  const d = resolvePedDepths(run.baseMeasure, run.side, c)
-  return `${(d.tl || 0).toFixed(3)}|${(d.sw || 0).toFixed(3)}|${c?.materials?.outer ?? (d.hasTL ? 'LU' : 'SW')}|${c?.materials?.inner ?? (d.hasTL ? 'SW' : 'LU')}` }
+// the resolved cross-section, by the one rule the paint reads (`resolveProtoMeasure`) — depths AND the arrangement
+const xs = (run, bc) => { const m = resolveProtoMeasure(run, bc, null); if (!m) return null
+  return `${m.treelawn.toFixed(3)}|${m.sidewalk.toFixed(3)}|${m.matOuter}|${m.matInner}` }
 
 let bad = 0
 const scenes = feedScenes().filter(a => !a.startsWith('--'))

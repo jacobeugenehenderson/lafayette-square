@@ -1,4 +1,4 @@
-// proof.mjs — BRIEF-retire-the-legacy-shape-pass §3: the deletion changes nothing on screen (Lintel, 2026-10-19).
+// proof.mjs — cartograph/_archive/BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md §3: the deletion changes nothing on screen (Lintel, 2026-10-19).
 // Runs the BAKE'S OWN path (`bakeGround({ stackOnly: true })`, nothing written) for one town, with bake-ground.js swapped for a
 // copy that only records `pr` (buildTileGround's return) and the wall-clock / peak RSS around that one call (BG, run.sh). Prints
 // a hash per returned field, a hash of the stack the flatten receives, and of `ribbons` after the build (a legacy mutation leak

@@ -11,7 +11,7 @@
 // ⛔⛔ A MID-BLOCK BEND IN THIS TABLE IS NOT A DEFECT, AND AN EARLIER VERSION OF THIS CHECK SAID IT
 // WAS — measured FALSE by LEGS on 2026-09-07 and confirmed here by reading the code. A leg boundary
 // with the SAME owner on both sides resolves to the same cross-section on both sides BY
-// CONSTRUCTION: `stampMeasure(run, blockCustoms, curbWidth)` is a pure function of the run, so two
+// CONSTRUCTION: `resolveProtoMeasure(run, blockCustoms, curbWidth)` is a pure function of the run, so two
 // spans whose winning run is the same run get byte-identical measures. Nothing changes across such a
 // boundary however the cut was found, so it cannot mint the seam rule 2 forbids. It is invisible.
 // ⭐ A CENSUS OF THE CUT SET ANSWERS THE WRONG QUESTION. The question is where the CROSS-SECTION

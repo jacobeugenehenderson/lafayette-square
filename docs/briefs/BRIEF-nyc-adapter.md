@@ -158,7 +158,7 @@ off the open `segOrd` key — `overlay.json` is per chain-side, `blockCustoms` i
 key. Jacob: build it native and choose our process "at the step when the curb ring stamps the street
 fes".)*
 - **The step:** under ① every curb edge takes its width from `protoMeasureOf(label)` in
-  `src/lib/tileGround.js` — today *operator override (`bcOf`) ?? the frozen base (`protoBase`)*, per ①
+  `src/lib/tileGround.js` — today *operator override ?? the frozen base (`protoBase`), resolved in `resolveProtoMeasure`*, per ①
   edge label (`protoOwners[label]` = skelId · side). ② is ① pushed in by that value per edge.
 - **The rung:** *operator override ?? **the city's measured width for this ① edge** ?? the kit's base.*
   The operator still wins; the kit's base is unchanged where the city says nothing.
@@ -182,7 +182,7 @@ fes".)*
   requirements follow, all already doctrine:
   1. **Every width reader takes the rung — one resolution everywhere (`SECTION §3.3` step 1).** Section
      does NOT call `protoMeasureOf`: frozen runs carry `baseMeasure: protoBase.get(skelId)` and Section
-     resolves `stampMeasure` / `edgeDepth(run.baseMeasure…)` as override ?? base, skipping the city.
+     resolves `resolveProtoMeasure` / `edgeDepth(run.baseMeasure…)` as override ?? base, skipping the city.
      ⇒ the measured value must reach Section's resolution too, so Survey and Section agree.
      ▶ Gate: `node checks/claims-survey-and-section-agree.mjs` must stay at 0 m² with the rung live.
   2. **A live re-mint of ① carries no measurement — disclose it.** If the frozen ① is missing / empty /
