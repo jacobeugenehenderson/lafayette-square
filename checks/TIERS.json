@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 412,
+  "total": 421,
   "counts": {
-    "safe": 307,
-    "local-effect": 19,
-    "live": 86
+    "safe": 313,
+    "local-effect": 20,
+    "live": 88
   },
   "checks": [
     {
@@ -196,6 +196,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-fitted-loop-stays-on-its-road.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-flat-town-is-not-refined.mjs",
       "tier": "safe",
       "why": [
@@ -293,6 +300,14 @@
       ]
     },
     {
+      "file": "checks/claims-a-missing-height-fails-loudly.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/elevationSources.mjs, which can: calls fetch()"
+      ]
+    },
+    {
       "file": "checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs",
       "tier": "safe",
       "why": [
@@ -304,6 +319,20 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-nodeless-crossing-is-grade-separated.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-parcel-keeps-all-its-parts.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -1052,6 +1081,13 @@
       ]
     },
     {
+      "file": "checks/claims-every-authored-corner-resolves.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-every-baked-species-has-an-impostor.mjs",
       "tier": "safe",
       "why": [
@@ -1437,6 +1473,13 @@
     },
     {
       "file": "checks/claims-intake-is-consumed.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-intake-is-lossless.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -2423,6 +2466,15 @@
       ]
     },
     {
+      "file": "checks/claims-the-ground-stays-in-budget.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files"
+      ]
+    },
+    {
       "file": "checks/claims-the-ground-tiles-without-a-gap.mjs",
       "tier": "safe",
       "why": [
@@ -2469,6 +2521,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-land-is-painted-by-its-evidence.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -2706,6 +2765,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-terrain-is-the-mean-of-its-lidar.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/elevationSources.mjs, which can: calls fetch()"
       ]
     },
     {

@@ -1,7 +1,7 @@
 # Intake census: what we take in, and where it is lost
 
 *Lath, 2026-10-20, for Boz (Jacob: "we need to make sure we are keeping as much as we take in"). Read-only.*
-*Reproduce with `node scratch/intake-census/census.mjs [town …]`. ⛔ The figures below are as of each town's last pour;
+*Reproduce with `node scratch/intake-census/census.mjs [town …]`. The standing check is `node checks/claims-intake-is-lossless.mjs`. ⛔ The figures below are as of each town's last pour;
 re-run the command rather than quoting them.*
 
 **Verdicts.**
@@ -123,6 +123,7 @@ They come out as rings carrying at most `use` / `surface` / `access` / `name` / 
 
 | town | absent | of |
 |---|---|---|
+| lafayette-square | 2283 | 3219 |
 | hipointedemun | 7189 | 11237 |
 | huron | 762 | 916 |
 | jacksonheights | 11429 | 13373 |
@@ -133,7 +134,7 @@ By kind:
 - `service` (no subtag), `driveway`, `parking_aisle`, `drive-through`, `emergency_access`: no filter takes them; derive's `alleys` takes only `service=alley`. **SILENT.** The audit's "an unnamed lot aisle draws nothing".
 - `track`, `corridor`, `elevator`: **SILENT.**
 
-LS has no `clean/ribbons.json`; not traced.
+LS's ribbons are `src/data/ribbons.json` (declared; `scene.js#ribbonsPathOf`), now traced like the rest.
 
 ## 3 · → `public/baked/<town>` (served)
 

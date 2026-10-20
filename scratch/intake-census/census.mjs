@@ -5,6 +5,7 @@
 // ⛔ "carried" is measured, never restated: a way's tag is CARRIED onto a chain iff the chain record holds that key with
 // that value (`chain[k]` or `chain.tags[k]`); a feature is CARRIED iff its OSM id appears in the next record.
 import fs from 'node:fs'
+const { ribbonsPathOf } = await (async () => { const l = console.log; console.log = () => {}; try { return await import('../../cartograph/scene.js') } finally { console.log = l } })()
 const TOWNS = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointedemun', 'huron', 'jacksonheights', 'provincetown']
 const J = (p) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')) } catch { return null } }
 const inc = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; return o }
@@ -84,7 +85,7 @@ for (const town of TOWNS) {
   console.log(`   highway pois: ${sum(poiHw)} [${top(poiHw, 10)}]`)
 
   // ── S3 · clean/map.json + clean/ribbons.json (derive) ─────────────────────────────────────────
-  const map = J(`${D}/clean/map.json`), rib = J(`${D}/clean/ribbons.json`)
+  const map = J(`${D}/clean/map.json`), rib = J(ribbonsPathOf(town))   // LS's ribbons are src/data/ribbons.json (declared), not clean/
   if (map) {
     const L = map.layers || {}
     const lay = Object.entries(L).filter(([, v]) => Array.isArray(v) && v.length)
