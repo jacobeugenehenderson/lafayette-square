@@ -44,9 +44,11 @@
 //             shared surface, edge to edge with no curb, is not built (step 7). The `halfWidth` rows are
 //             today's `streetProfiles` `TYPE_PAVEMENT_HW` (service = `standards.js` `STANDARDS.alley`, 15 ft):
 //             such a class reaches a chain only when a NAME made it one (the check's `name-made`).
+import { KIT_CURB_WIDTH } from './streetProfiles.js'   // read at call time only: streetProfiles imports this module
 const FT = 0.3048
-const street = (lane, parking, treelawn, sidewalk, cornerR) => ({ lane: lane * FT, parking: parking * FT, treelawn, sidewalk, curb: 0.15, cornerR })
-const fixed = (halfWidthFt) => ({ halfWidth: halfWidthFt * FT, treelawn: 0, sidewalk: 0, curb: 0.15, cornerR: 4.5 })
+// ⛔ No row carries a curb width: the curb is the Look's (`curbWidth`), else the kit's one home, `streetProfiles.js#KIT_CURB_WIDTH`.
+const street = (lane, parking, treelawn, sidewalk, cornerR) => ({ lane: lane * FT, parking: parking * FT, treelawn, sidewalk, cornerR })
+const fixed = (halfWidthFt) => ({ halfWidth: halfWidthFt * FT, treelawn: 0, sidewalk: 0, cornerR: 4.5 })
 export const CLASSES = {
   'not-built':     { network: 'none',   guide: '§1' },
   'highway':       { network: 'street', guide: '§1', labelTier: 'major', swept: true },
@@ -54,7 +56,12 @@ export const CLASSES = {
   'primary':       { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(11, 0, 4 * FT, 8 * FT, 7.5) },
   'secondary':     { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(11, 0, 4 * FT, 6 * FT, 6.0) },
   'tertiary':      { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(10, 0, 4 * FT, 6 * FT, 5.0) },
-  'local':         { network: 'street', guide: '§1', surveyed: true, section: street(10, 8, 1.5, 1.5, 4.5) },
+  // ⭐ THE LOCAL ROW IS THE KIT'S STREET DEFAULT (Jacob, 2026-10-20: "yes to imperial") — exact US values, metres:
+  //   treelawn 5 ft = 1.524 (f-massdot-buffer-width, the preferred buffer) · sidewalk 5 ft = 1.524 (f-massdot-sidewalk-width,
+  //   the minimum) · corner radius 15 ft = 4.572 (f-caltrans-corner-radii, the minor-street minimum).
+  // ⚠️ The painter and ② read THIS row for every street, uniformly, until classifier step 7 makes them read each street's
+  // own class row (`LOCAL_SECTION` below). ▶ node checks/claims-a-look-authors-its-curb-width.mjs (one home, no second copy)
+  'local':         { network: 'street', guide: '§1', surveyed: true, section: street(10, 8, 1.524, 1.524, 4.572) },
   'living-street': { network: 'street', guide: '§1 §3', section: street(10, 8, 0, 0, 4.5) },
   'pedestrian':    { network: 'path',   guide: '§1', section: fixed(5) },      // street or path: guide Q1.b, open
   'plaza':         { network: 'area',   guide: '§9', section: fixed(5) },
@@ -151,6 +158,10 @@ export const labelMajor = (tags) => { const c = classOf(tags); return CLASSES[c.
  * configuration the data selected (a positive integer), or null for an untagged chain.
  * ⛔ A swept (highway) class has no class constant: its seed says so and carries no widths.
  */
+/** The local row's ped depths and corner radius — the kit's street defaults, read by the painter, ②, the survey seed and
+ *  the authoring tools. ⚠️ Uniform for every street until classifier step 7. */
+export const LOCAL_SECTION = CLASSES.local.section
+
 export function classSection(cls, { lanes = null, oneway = false, expressway = false } = {}) {
   const c = CLASSES[cls]
   if (!c) throw new Error(`⛔ classSection: "${cls}" is not a class in the vocabulary`)
@@ -167,11 +178,10 @@ export function classSection(cls, { lanes = null, oneway = false, expressway = f
     seededClass: cls,
     ...(s.lane && { lanesAssumed: nLanes, lanesRung: tagged ? 'data' : 'kit' }),
     pavementHW,
-    curb: s.curb,
     treelawn,
     sidewalk,
     cornerR: s.cornerR,
-    rowHalf: +(pavementHW + s.curb + treelawn + sidewalk).toFixed(2),
+    rowHalf: +(pavementHW + KIT_CURB_WIDTH + treelawn + sidewalk).toFixed(2),
     ...(noPed && { pedRealm: false }),
   }
 }

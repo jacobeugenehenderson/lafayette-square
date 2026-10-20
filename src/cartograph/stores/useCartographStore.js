@@ -2832,12 +2832,11 @@ const useCartographStore = create((set, get) => ({
     const st = centerlineData?.streets?.[streetIdx]
     if (!st) return
     const v = Math.min(30, Math.max(0.5, Number.isFinite(+hw) ? +hw : 0))
-    const seedSide = (m) => ({ pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk', ...(m || {}) })
-    const base = {
-      left: seedSide(st.measure?.left),
-      right: seedSide(st.measure?.right),
-      symmetric: st.measure?.symmetric,
-    }
+    // ⛔ NO SEEDED SIDE: a street whose measure lacks a side has no width to keep there. Inventing one (it was pavementHW 5 +
+    // ped 1.5/1.5) wrote it into the overlay as if surveyed. Said, and nothing is written.
+    const missing = ['left', 'right'].filter(k => !st.measure?.[k])
+    if (missing.length) { console.error(`[Survey] ⛔ ${st.skelId || st.name}: the measure carries no ${missing.join(' or ')} side — nothing written`); return }
+    const base = { left: { ...st.measure.left }, right: { ...st.measure.right }, symmetric: st.measure.symmetric }
     const other = side === 'left' ? 'right' : 'left'
     base[side] = { ...base[side], pavementHW: v }
     if (mirror) base[other] = { ...base[other], pavementHW: v }

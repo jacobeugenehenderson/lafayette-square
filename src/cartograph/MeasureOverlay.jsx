@@ -546,14 +546,16 @@ export default function MeasureOverlay() {
     // constant `innerSign` key and seeded a drag on the OUTBOARD side from a zeroed
     // base — streetProfiles.js.)
     const chainSeed = chainMeasure(st)
-    const FALLBACK = { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
     // ⭐ One depth truth (SECTION.md §5): seed the drag from the SAME resolution
     // the FILL renders, so the drag redistributes within the depths on screen —
     // the write carries the resolved depths as intent, never surveyed-depth
     // baggage. writeBlockEdgeCustoms fans this across the fe's owned segOrds.
     const existing = readFeCustom(blockCustoms, fe)
     const ped = resolvePedDepths(chainSeed, side, existing)
-    const seed = { ...(chainSeed[side] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
+    // ⛔ NO FALLBACK MEASURE: a chain side the pour gave no measure has no asphalt width to drag from. Inventing one (it was
+    // pavementHW 5 + ped 1.5/1.5) wrote a width nobody surveyed into the town's authoring. Said, and the drag writes nothing.
+    if (!chainSeed?.[side]) { console.error(`[Section] ⛔ ${st.skelId || st.name} ${side}: the pour carries no measure for this side — nothing to drag from; nothing written`); return }
+    const seed = { ...chainSeed[side], ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
     store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r, curbWidthOf(store)) }])
   }, [nearestFeForSide])
 

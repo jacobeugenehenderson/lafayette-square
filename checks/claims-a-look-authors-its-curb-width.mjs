@@ -18,9 +18,13 @@
 //   3 · THE BUILDERS REFUSE — buildTileGround and buildBlockGeometryV2, called with no curbWidth, throw naming the fix.
 //   4 · THE SAVE NEVER WRITES THE KIT — the store hydrates an absent curbWidth to null (evaluated from its descriptor),
 //       the serializer drops a null one, and the initial state carries no number.
+//   5 · THE STREET DEFAULTS' ONE HOME — the local class row (`src/cartograph/streetClass.js`, Jacob 2026-10-20 "yes to
+//       imperial") carries treelawn 1.524 · sidewalk 1.524 · corner R 4.572 m, each naming its registry finding; the painter's
+//       unauthored depths and ②'s base radius read it; row 2 also finds a second copy anywhere in src/ or cartograph/.
 // ⭐ MUTANTS (--mutants), each must go RED: (a) the kit default deleted from the home → 1, by name · (b) a literal 0.1524
 // put into buildTileGround → 2 · (c) a raw design.curbWidth read put into an instrument → 2 · (d) the store hydrating to
-// the kit's value, and the serializer's drop removed → 4.
+// the kit's value, and the serializer's drop removed → 4 · (e) the local row back to 1.5/1.5/4.5 → 5 · (f) STD_TREELAWN = 1.5
+// back in tileGround → 2 · (g) ②'s base radius back to `opts.cornerR ?? 4.5` → 2 and 5 · (h) `curb: 0.15` back in a class row → 2.
 //   node checks/claims-a-look-authors-its-curb-width.mjs [--mutants]
 // Read-only. Exits 1 on any failing judge or any mutant left GREEN.
 import fs from 'fs'
@@ -74,8 +78,20 @@ const RULES = [
   ['substitute', /isFinite\([^)]*curbWidth\)\s*\?[^:\n]*:\s*((KIT_)?CURB_WIDTH|\d)/],              // isFinite(curbWidth) ? curbWidth : 6
   ['substitute', /^\s*(const|let|var)?\s*\{?[^\n]*\bcurbWidth\s*=\s*((KIT_)?CURB_WIDTH|\d)/],      // a parameter default / assignment
   ['second 6', /(?<![\d.])0\.1524(?!\d)|\b6\s*\*\s*0\.0254\b|\b0\.0254\s*\*\s*6\b/],                // the kit's number, restated
+  ['second 6', /\bcurb\w*\s*[:=]\s*0\.15\b|\.curb\)\s*\?[^:\n]*:\s*\d/],                             // a 0.15 curb in a curb role (streetClass's rows carried one)
   ['raw read', /\b(\w*[dD]esign\w*|d|D)\??\.curbWidth\b|design\.json[^\n]*\)\??\.curbWidth\b/],    // design.curbWidth, not resolved
   ['raw read', /\b(s|store|state)\??\.curbWidth\b/],                                              // the store's authored-or-null, not curbWidthOf
+]
+// ⭐ THE KIT'S STREET DEFAULTS HAVE ONE HOME TOO — the local class row (`streetClass.js`, Jacob 2026-10-20 "yes to imperial"):
+// treelawn 5 ft, sidewalk 5 ft, corner radius 15 ft. In the product (src/, cartograph/; a check's fixture measure is data),
+// outside that file, no line declares a second copy or restates the value.
+const CLASS_HOME = 'src/cartograph/streetClass.js'
+const STREET_RULES = [
+  /\b(STD_TREELAWN|ADA_SIDEWALK|SV_SIDEWALK)\s*=/,                                                  // a named second copy
+  /\b(treelawn|sidewalk|treeLawn)\s*:\s*(1\.5|1\.524|4\.5\s*\*\s*FT|5\s*\*\s*FT)\b/,                // a default width written in place
+  /\b(baseR|R_CLASS_DEFAULT|DEFAULT_R|curbReturnRadius)\b\s*[:=][^\n]*?((?<![\d.])(4\.5|4\.572)(?!\d)|\b15\s*\*\s*FT)/,   // a radius default
+  /cornerR\b[^\n]*?(\?\?|\|\||:)\s*4\.5\b/,                                                         // a radius fallback
+  /(?<![\d.])(1\.524|4\.572)(?!\d)/,                                                                  // the home's value, restated
 ]
 const BUILDER_RULE = /\b(KIT_CURB_WIDTH|resolveCurbWidth)\b/                                        // a builder resolving the default itself
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? (['node_modules', '_archive'].includes(e.name) ? [] : walk(path.join(d, e.name)))
@@ -92,6 +108,7 @@ function offences(textOf) {
       if (rx.test(code)) { out.push(`${kind.padEnd(10)} ${f}:${i + 1}  ${s.trim().slice(0, 130)}`); return }
     }
     if (BUILDERS.includes(f) && BUILDER_RULE.test(code)) out.push(`builder    ${f}:${i + 1}  ${s.trim().slice(0, 130)}`)
+    else if (f !== CLASS_HOME && /^(src|cartograph)\//.test(f) && STREET_RULES.some(rx => rx.test(code))) out.push(`street 2nd ${f}:${i + 1}  ${s.trim().slice(0, 130)}`)
   })
   return out
 }
@@ -127,6 +144,29 @@ console.log(`${ST.length ? '⛔' : '✅'} 4 the save never writes the kit: ${ST.
 for (const w of ST) console.log(`      ⛔ ${w}`)
 if (ST.length) bad++
 
+// ── 5 · THE STREET DEFAULTS' ONE HOME — the local class row, exact US values, each with its finding ─────────────────────
+const STREET_HOME = [['treelawn', 1.524, 'f-massdot-buffer-width'], ['sidewalk', 1.524, 'f-massdot-sidewalk-width'], ['cornerR', 4.572, 'f-caltrans-corner-radii']]
+const registryIds = new Set((JSON.parse(read('references/registry.json')).findings || []).map(x => x.id))
+const { LOCAL_SECTION } = await import('../src/cartograph/streetClass.js')
+const { resolvePedDepths } = await import('../src/lib/tileGround.js')
+function judgeStreetHome(classSrc, tgSrc) {
+  const why = [], m = classSrc.match(/^\s*'local':[^\n]*\bstreet\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/m)
+  if (!m) return [`${CLASS_HOME}: no local row of the form street(lane, parking, treelawn, sidewalk, cornerR) — re-aim the check`]
+  STREET_HOME.forEach(([k, v, id], j) => {
+    if (+m[j + 1] !== v) why.push(`the local row's ${k} is ${m[j + 1]}, not ${v} m — the kit's US default is gone`)
+    if (!classSrc.includes(id)) why.push(`${CLASS_HOME} does not name ${id} for its ${k}`)
+    if (!registryIds.has(id)) why.push(`${id} is not a finding in references/registry.json`)
+  })
+  if (!/const baseR = LOCAL_SECTION\.cornerR\b/.test(tgSrc)) why.push('buildTileGround\'s base corner radius does not read LOCAL_SECTION.cornerR')
+  return why
+}
+const SH = judgeStreetHome(read(CLASS_HOME), read(BUILDERS[0]))
+const d0 = resolvePedDepths({ left: {} }, 'left', null)
+if (d0.tl !== LOCAL_SECTION.treelawn || d0.sw !== LOCAL_SECTION.sidewalk) SH.push(`the painter's unauthored depths are tl ${d0.tl} / sw ${d0.sw}, not the local row's`)
+console.log(`${SH.length ? '⛔' : '✅'} 5 street defaults, one home (${CLASS_HOME}, local row): treelawn ${LOCAL_SECTION.treelawn} · sidewalk ${LOCAL_SECTION.sidewalk} · corner R ${LOCAL_SECTION.cornerR} m — the painter and ② read it`)
+for (const w of SH) console.log(`      ⛔ ${w}`)
+if (SH.length) bad++
+
 // ── MUTANTS ──────────────────────────────────────────────────────────────────
 if (process.argv.includes('--mutants')) {
   const res = []
@@ -147,6 +187,15 @@ if (process.argv.includes('--mutants')) {
   const stSer = st.replace(/^\s*if \(out\.curbWidth == null\) delete out\.curbWidth\n/m, '')
   verdict('d1 · the store hydrating to the kit', stHyd !== st, judgeStore(stHyd).length > ST.length)
   verdict('d2 · the serializer writing an unauthored curb', stSer !== st, judgeStore(stSer).length > ST.length)
+  // (e) the local row back to its metric guesses · (f) a named copy back in the painter · (g) ②'s literal back · (h) 0.15 curb back in a row
+  const cs = read(CLASS_HOME), csOld = cs.replace(/(\bstreet\(\s*10\s*,\s*8\s*,\s*)1\.524\s*,\s*1\.524\s*,\s*4\.572\s*\)/, '$11.5, 1.5, 4.5)')
+  verdict('e · the local row back to 1.5 / 1.5 / 4.5', csOld !== cs, judgeStreetHome(csOld, read(BUILDERS[0])).length > SH.length)
+  const tgS = read(TG), tgF = tgS.replace(/^(import \{ LOCAL_SECTION \} from[^\n]*\n)/m, '$1const STD_TREELAWN = 1.5\n')
+  verdict('f · STD_TREELAWN = 1.5 back in tileGround', tgF !== tgS, offences(f => f === TG ? tgF : read(f)).length > S.length)
+  const tgG = tgS.replace(/const baseR = LOCAL_SECTION\.cornerR\b/, 'const baseR = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5')
+  verdict('g · ②\'s base radius back to opts.cornerR ?? 4.5', tgG !== tgS, offences(f => f === TG ? tgG : read(f)).length > S.length && judgeStreetHome(cs, tgG).length > SH.length)
+  const csH = cs.replace(/(const street = \(lane, parking, treelawn, sidewalk, cornerR\) => \(\{ lane: lane \* FT, parking: parking \* FT, treelawn, sidewalk, )cornerR \}\)/, '$1curb: 0.15, cornerR })')
+  verdict('h · curb: 0.15 back in a class row', csH !== cs, offences(f => f === CLASS_HOME ? csH : read(f)).length > S.length)
   for (const r of res) console.log(`   mutant ${r}`)
 }
 console.log(bad ? '\n⛔ RED — the curb has no single home, a reader bypasses it, a builder resolves or refuses wrongly, or the save writes the kit'

@@ -19,6 +19,7 @@ import { blockKeyFromRing } from './buildBlockGeometryV2.js'
 import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 import { CLIP_SCALE as SCALE } from './lattice.js'
+import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
@@ -2852,8 +2853,6 @@ function edgeDepth(measure, side, curbWidth, level) {
 // (also the Revert state). This replaces the old per-tile AVERAGED measures, which
 // drew noisy sub-meter treelawn slivers everywhere.
 const TREELAWN_YN_THRESHOLD = 0.6   // natural gap below this → no treelawn (the bimodal valley)
-const STD_TREELAWN = 1.5            // standard treelawn depth where present (m) — tunable
-const ADA_SIDEWALK = 1.5            // ADA-standard sidewalk depth — the Revert default (m) — tunable
 const VALLEY_LO = 0.25, VALLEY_HI = 0.75   // the bimodal valley span (the ~92 ambiguous run-sides)
 // ⛔⛔ A CLAMPED ZERO IS NOT A SURVEYED ZERO. `skeleton.js`'s `fromSurveyDist` pins the asphalt
 // flush when the lanes/AASHTO seed will not fit inside a MEASURED sidewalk position, and the
@@ -2931,7 +2930,7 @@ function reportGlean(measures, streets) {
 
 // ⭐ THE ONE PER-EDGE DEPTH RESOLUTION (SECTION.md §3.3 step 1 / §5 one-depth-truth).
 // override (blockCustoms[skelId][side][segOrd].{treelawn,sidewalk}) else the
-// best-effort default (gleaned-Y ? STD_TREELAWN : 0; ADA_SIDEWALK). Exported so
+// best-effort default (gleaned-Y ? the local row's treelawn : 0; its sidewalk). Exported so
 // the FILL stroke (sectionPass) and the authoring-handle placement (Measure
 // overlay) read the SAME resolution — if they read different depths they
 // diverge, which was the root of both handle symptoms (don't match + don't
@@ -2940,15 +2939,16 @@ function reportGlean(measures, streets) {
 // strips of EQUAL width; the gleaned treelawn Y/N is a MATERIAL decision (which
 // strip is grass vs walk), NOT a width. A sidewalk-only edge is "sidewalk then
 // LU/lawn" — the strips swap materials, they never collapse one to zero. So BOTH
-// widths default to the same standard (STD_TREELAWN == ADA_SIDEWALK), and the
+// widths default to the LOCAL class row (`streetClass.js#LOCAL_SECTION`, 5 ft each — the kit's one home, uniform for
+// every street until classifier step 7 makes the painter read each street's own class row), and the
 // ribbon total is uniform whether the edge is Y or N. `hasTL` carries the
 // surveyed Y/N to drive the strip ORDERING / default materials downstream.
 // ⭐ `pedRealm:false` on the side (an expressway — skeleton.js `isExpressway`) makes
 // the DEFAULT zero, not the standard; the operator's override still wins.
 export function resolvePedDepths(baseMeasure, side, custom = null) {
   const none = baseMeasure?.[side]?.pedRealm === false
-  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn) : (none ? 0 : STD_TREELAWN)
-  const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : (none ? 0 : ADA_SIDEWALK)
+  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn) : (none ? 0 : LOCAL_SECTION.treelawn)
+  const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : (none ? 0 : LOCAL_SECTION.sidewalk)
   return { tl, sw, hasTL: none ? false : gleanTreelawn(baseMeasure, side) }
 }
 
@@ -5745,12 +5745,11 @@ export function buildTileGround(ribbons, opts = {}) {
   // concentric ped bands (offsets of the asphalt-inner) follow. segOrd is
   // computed on the original chain so it matches the authoring key.
   const blockCustoms = (opts.blockCustoms && typeof opts.blockCustoms === 'object') ? opts.blockCustoms : null
-  // A2 / F3 — corner R reads the authored controls: base 4.5 m (AASHTO
-  // residential baseline, R_CLASS_DEFAULT) × the global Corners slider
-  // (cornerRadiusScale), with per-corner / per-IX overrides resolved per tile
-  // vertex (the gold-dot authoring). Each tile vertex IS a centerline node = an
-  // IX point; its two bounding tile edges are the corner's two legs.
-  const baseR = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5
+  // A2 / F3 — corner R reads the authored controls: the base is the LOCAL class row's radius (`LOCAL_SECTION.cornerR`,
+  // 15 ft — the kit's one home; uniform for every corner until classifier step 7 makes ② read each street's class row)
+  // × the global Corners slider (cornerRadiusScale), with per-corner / per-IX overrides resolved per tile vertex (the
+  // gold-dot authoring). ⛔ No `opts.cornerR` substitution: no caller passed one, so it was a fallback that always fired.
+  const baseR = LOCAL_SECTION.cornerR
   const scale = Number.isFinite(opts.cornerRadiusScale) ? opts.cornerRadiusScale : 1
   const ixOverrides = (opts.cornerRadiusOverrides && typeof opts.cornerRadiusOverrides === 'object') ? opts.cornerRadiusOverrides : null
   const cornerOverrides = (opts.cornerCornerRadiusOverrides && typeof opts.cornerCornerRadiusOverrides === 'object') ? opts.cornerCornerRadiusOverrides : null

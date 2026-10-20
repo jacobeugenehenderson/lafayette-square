@@ -109,9 +109,10 @@ const inHood = (x, z) => {
 const nCustoms = Object.keys(design.blockCustoms || {}).length
 if (!nCustoms) console.log(`⚠️  ${SCENE}: design.json carries NO blockCustoms — this scene is at default, not authored.`)
 
+const CW = resolveCurbWidth(design).value
 const pr = buildTileGround(ribbons, {
   stencil,
-  curbWidth: resolveCurbWidth(design).value,
+  curbWidth: CW,
   smooth: 0,
   blockLandUse: design.blockLandUse || null,
   cornerRadiusScale: design.cornerRadiusScale ?? 1,
@@ -281,7 +282,7 @@ for (const st of ribbons.streets || []) {
       }
       // RAY, Measure rules (MeasureOverlay.jsx:441): same ray capped at
       // pavHW + curb + 8 m; a miss falls back to the centreline ruler SILENTLY
-      const cw = Number.isFinite(m[side]?.curb) ? m[side].curb : 0.15
+      const cw = CW   // the Look's curb, resolved once (MeasureOverlay reads `curbWidthOf`, the same resolver)
       const capped = Number.isFinite(ray) && ray > 0.05 && ray <= pavHW + cw + 8 ? ray : null
       if (capped == null) measureNoHit++
       else if (Math.abs(capped - arcD) > TOL) measureStray++

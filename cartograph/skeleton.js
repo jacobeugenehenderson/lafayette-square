@@ -17,7 +17,8 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
-import { KIT_CURB_WIDTH, SV_SIDEWALK } from '../src/cartograph/streetProfiles.js'
+import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { LOCAL_SECTION } from '../src/cartograph/streetClass.js'   // the kit's sidewalk: the local row (uniform until classifier step 7)
 import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER } from '../src/cartograph/streetClass.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
@@ -1479,7 +1480,7 @@ function chainHighway(sources, sourceTags) {
 // where a place has one; LS: 61/68 streets measured). Its semantics, per its
 // generator (survey.js): `sidewalkLeft/Right` = centerline → SIDEWALK
 // CENTERLINE on that side — i.e. where the BLOCK EDGE goes (back-of-sidewalk
-// = swDist + SV_SIDEWALK/2); `pavementHalfWidth` = their average; `rowWidth`
+// = swDist + LOCAL_SECTION.sidewalk/2); `pavementHalfWidth` = their average; `rowWidth`
 // = assessor ROW. It is NOT an asphalt half-width — the asphalt is
 // lanes-driven (`classSection`). Feeding the survey float in as asphalt is the
 // block-edge/asphalt conflation that flooded streets out to their sidewalks
@@ -1584,12 +1585,12 @@ const MAX_CUSTOM_TREELAWN = 6
 // datum against the fragment's own seed would reject real data. The name is
 // the survey's key, so the name's best lane evidence is the fair yardstick.
 const plausibleSwDist = (maxPav, swDist) => {
-  const room = swDist - SV_SIDEWALK / 2 - KIT_CURB_WIDTH
+  const room = swDist - LOCAL_SECTION.sidewalk / 2 - KIT_CURB_WIDTH
   if (room < MIN_CUSTOM_PAV_HW) return false
   return room - Math.min(maxPav, room) <= MAX_CUSTOM_TREELAWN
 }
 const plausibleRowHalf = (maxPav, rowHalf) => {
-  const room = rowHalf - SV_SIDEWALK - KIT_CURB_WIDTH
+  const room = rowHalf - LOCAL_SECTION.sidewalk - KIT_CURB_WIDTH
   if (room < MIN_CUSTOM_PAV_HW) return false
   return room - Math.min(maxPav, room) <= MAX_CUSTOM_TREELAWN
 }
@@ -1599,7 +1600,7 @@ function stampCustomWidths(streets, survey, sidewalks) {
   // the back of sidewalk; treelawn is the natural gap; the asphalt keeps its
   // lanes/AASHTO seed unless that would cross the sidewalk.
   const fromSurveyDist = (seed, swDist) => {
-    const swInner = swDist - SV_SIDEWALK / 2
+    const swInner = swDist - LOCAL_SECTION.sidewalk / 2
     const room = swInner - KIT_CURB_WIDTH
     const pav = Math.min(seed.pavementHW, Math.max(0.5, room))
     const treelawn = Math.max(0, swInner - (pav + KIT_CURB_WIDTH))
@@ -1619,20 +1620,20 @@ function stampCustomWidths(streets, survey, sidewalks) {
     return {
       pavementHW: +pav.toFixed(2),
       treelawn: +treelawn.toFixed(2),
-      sidewalk: +SV_SIDEWALK.toFixed(2),
-      blockEdgeHW: +(swDist + SV_SIDEWALK / 2).toFixed(2),
+      sidewalk: +LOCAL_SECTION.sidewalk.toFixed(2),
+      blockEdgeHW: +(swDist + LOCAL_SECTION.sidewalk / 2).toFixed(2),
       source: 'survey',
       ...(tlClamped ? { tlClamped: true } : {}),
     }
   }
   // Assessor tier: ROW/2 IS the block edge; work the ped section back from it.
   const fromRowHalf = (seed, rowHalf) => {
-    const pav = Math.min(seed.pavementHW, Math.max(0.5, rowHalf - KIT_CURB_WIDTH - SV_SIDEWALK))
-    const treelawn = Math.max(0, rowHalf - SV_SIDEWALK - (pav + KIT_CURB_WIDTH))
+    const pav = Math.min(seed.pavementHW, Math.max(0.5, rowHalf - KIT_CURB_WIDTH - LOCAL_SECTION.sidewalk))
+    const treelawn = Math.max(0, rowHalf - LOCAL_SECTION.sidewalk - (pav + KIT_CURB_WIDTH))
     return {
       pavementHW: +pav.toFixed(2),
       treelawn: +treelawn.toFixed(2),
-      sidewalk: +SV_SIDEWALK.toFixed(2),
+      sidewalk: +LOCAL_SECTION.sidewalk.toFixed(2),
       blockEdgeHW: +rowHalf.toFixed(2),
       source: 'survey-row',
     }

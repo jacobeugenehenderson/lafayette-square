@@ -19,6 +19,7 @@ import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readFeCustom } from './feCustomKey.js'
 import { smoothChain } from './smoothCenterline.js'
 import { CLIP_SCALE as SCALE } from './lattice.js'
+import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const RAD = Math.PI / 180
 
@@ -119,7 +120,7 @@ function depthForSide(s) {
 // Default-R rule (k = 0.5 pinch tolerance). See NOTES.md 2026-05-07.
 //   R = min(R_class, R_max(d_min, θ, k))
 //   R_max = d × (1 - k·sin(θ/2)) / (1 - sin(θ/2))
-const R_CLASS_DEFAULT = 4.5  // residential×residential AASHTO baseline
+const R_CLASS_DEFAULT = LOCAL_SECTION.cornerR  // the local class row's 15 ft — the kit's one home (uniform until classifier step 7)
 
 // Resolve an IX-street reference (name + sref.ix) to a specific chain and
 // vertex index. Handles two real-world quirks of LS-baked ribbons.json:

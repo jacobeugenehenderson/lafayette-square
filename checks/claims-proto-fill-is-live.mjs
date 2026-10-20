@@ -11,9 +11,10 @@
 // WHAT IT ASSERTS
 //   1. the live FILL reproduces ③'s own frozen bands (same construction, both sides of the wall)
 //   2. authoring REACHES it (the whole point of the keystone), judged PER AUTHORED EDGE, at the product's door:
-//      2a · FILL — every authored slot whose treelawn / sidewalk / materials differ from the DEFAULT the painter would take
-//           (`resolvePedDepths` unauthored, the §3.1 arrangement) moves the paint of a tile it is stamped on, when that one
-//           slot is removed. Reports reached / could; a slot stamped on no contour point is named, not counted.
+//      2a · FILL — every authored FRONTAGE (road · side) carrying a slot whose treelawn / sidewalk / materials differ from
+//           the DEFAULT the painter would take (`resolvePedDepths` unauthored, the §3.1 arrangement) moves the paint of a tile
+//           it is stamped on, when that frontage's authoring is removed. Reports reached / could; a frontage stamped on no
+//           contour point is named, not counted.
 //      2b · DROPPED — the whole build with `blockCustoms: null` (buildTileGround, the bake's door) moves the map.
 //      2c · ② — every authored slot whose pavementHW differs from the street's base moves the depth ② offsets one of its
 //           blocks by (`protoDepthByBlock`, the construction's own number), authored vs dropped.
@@ -55,7 +56,14 @@ function slotSignal(blockCustoms, streets) {
   }
   return out
 }
-const without = (bc, s) => { const o = JSON.parse(JSON.stringify(bc)); delete o[s.skelId][s.side][s.segOrd]; return o }
+// ⭐ THE UNIT IS THE FRONTAGE — one road, one side (the painter's own `roadOf` key: a skelId less its trailing ordinal).
+// The painter resolves a frontage ONCE and authoring wins its vote, so removing one slot of a frontage that carries another
+// authored slot hands the frontage to that sibling and moves nothing (LS, measured: every one of 29 such slots). Removing the
+// frontage's authoring is the question that has an answer.
+const roadOf = (id) => String(id ?? '').replace(/-\d+$/, '')
+const withoutFrontage = (bc, road, side) => { const o = JSON.parse(JSON.stringify(bc))
+  for (const sk of Object.keys(o)) if (roadOf(sk) === road && o[sk]?.[side]) delete o[sk][side]
+  return o }
 const MUT = process.argv.includes('--mutants')
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const cannotSpeak = []
@@ -121,16 +129,18 @@ for (const scene of (named.length ? named : feedScenes())) {
   console.log(`  authored slots ${SIG.length} · differ from their default: fill ${fillSig.length} · pavementHW ${pavSig.length}`)
   if (!SIG.length) { console.log(`  ⛔ CANNOT SPEAK — ${scene} authors no slot: 2a–2c have nothing to measure (not a pass)`); cannotSpeak.push(`${scene} (authors nothing)`) }
 
-  // 2a · FILL, per authored edge: remove THAT slot; a tile it is stamped on must repaint.
+  // 2a · FILL, per authored FRONTAGE: remove that road|side's authoring; a tile one of its differing slots is stamped on must repaint.
   const fillReach = (bcFor) => {
     let could = 0, reached = 0; const offDrawing = [], missed = []
-    for (const s of fillSig) {
-      const tiles = T.filter(t => (t.runs || []).some((r, ri) => r.skelId === s.skelId && r.side === s.side && r.segOrd === s.segOrd
+    const fronts = new Map()
+    for (const s of fillSig) { const k = `${roadOf(s.skelId)}|${s.side}`; if (!fronts.has(k)) fronts.set(k, []); fronts.get(k).push(s) }
+    for (const [k, ss] of fronts) {
+      const tiles = T.filter(t => (t.runs || []).some((r, ri) => ss.some(s => r.skelId === s.skelId && r.side === s.side && r.segOrd === s.segOrd)
         && (t.iaStamp || []).some(a => a.includes(ri))))
-      if (!tiles.length) { offDrawing.push(`${s.skelId}|${s.side}|${s.segOrd}`); continue }
+      if (!tiles.length) { offDrawing.push(k); continue }
       could++
-      const bc0 = without(f.blockCustoms, s)
-      if (tiles.some(t => Math.abs(paintA(t, bcFor(f.blockCustoms)) - paintA(t, bcFor(bc0))) > 1e-2)) reached++; else missed.push(`${s.skelId}|${s.side}|${s.segOrd} (${s.why.join('+')})`)
+      const [road, side] = k.split('|'), bc0 = withoutFrontage(f.blockCustoms, road, side)
+      if (tiles.some(t => Math.abs(paintA(t, bcFor(f.blockCustoms)) - paintA(t, bcFor(bc0))) > 1e-2)) reached++; else missed.push(`${k} (${[...new Set(ss.flatMap(s => s.why))].join('+')})`)
     }
     return { could, reached, offDrawing, missed }
   }
@@ -138,7 +148,7 @@ for (const scene of (named.length ? named : feedScenes())) {
   else if (fillSig.length) {
     const R2a = fillReach(bc => bc)
     const ok = R2a.reached === R2a.could; if (!ok) bad++
-    console.log(`  2a fill, per authored edge: ${R2a.reached}/${R2a.could} reached the paint ${ok ? '✅' : '⛔'}${R2a.offDrawing.length ? ` · ${R2a.offDrawing.length} stamped on no contour point (not counted): ${R2a.offDrawing.slice(0, 4).join(', ')}` : ''}`)
+    console.log(`  2a fill, per authored frontage: ${R2a.reached}/${R2a.could} reached the paint ${ok ? '✅' : '⛔'}${R2a.offDrawing.length ? ` · ${R2a.offDrawing.length} stamped on no contour point (not counted): ${R2a.offDrawing.slice(0, 4).join(', ')}` : ''}`)
     for (const m of R2a.missed.slice(0, 8)) console.log(`     ⛔ inert: ${m}`)
     if (MUT) { const M = fillReach(() => null), red = M.could > 0 && M.reached < M.could; if (!red) bad++
       console.log(`     mutant · the painter given no authoring: ${M.reached}/${M.could} ${red ? 'RED, as it must be' : '⛔ still GREEN'}`) }

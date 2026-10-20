@@ -20,7 +20,7 @@
 // No per-stripe pulldowns: stripe position in the sequence determines material.
 // Parking is authored as a separate overlay layer — not represented here.
 
-import { CLASSES, classSection } from './streetClass.js'
+import { CLASSES, classSection, LOCAL_SECTION } from './streetClass.js'
 
 const FT = 0.3048
 
@@ -38,7 +38,6 @@ export function resolveCurbWidth(design) {
   if (!Number.isFinite(a) || a < 0) throw new Error(`[curbWidth] ⛔ design.json's curbWidth is ${JSON.stringify(a)} — author a width in metres (≥ 0), or remove the field to inherit the kit's ${KIT_CURB_WIDTH} m`)
   return { value: a, rung: 'authored' }
 }
-export const SV_SIDEWALK = 5 * FT
 
 // ── THE HIGHWAY TYPICAL SECTION (H-3 step 1, `r-highway-positive-object`) ──────────
 // A motorway/trunk carriageway or a ramp is an alignment swept by a typical section, composed
@@ -264,12 +263,12 @@ export function defaultSideMeasure(cls, survey, sideKey = 'left', { lanes = null
     : survey?.sidewalkLeft
   if (swDist && Number.isFinite(swDist)) {
     const curbOuter = hw + KIT_CURB_WIDTH
-    const swInner = swDist - SV_SIDEWALK / 2
+    const swInner = swDist - LOCAL_SECTION.sidewalk / 2
     const treelawn = Math.max(0, swInner - curbOuter)
     return {
       pavementHW: hw,
       treelawn,
-      sidewalk: SV_SIDEWALK,
+      sidewalk: LOCAL_SECTION.sidewalk,
       terminal: 'sidewalk',
     }
   }
