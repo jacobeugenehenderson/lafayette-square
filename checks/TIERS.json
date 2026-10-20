@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 430,
+  "total": 428,
   "counts": {
-    "safe": 313,
+    "safe": 311,
     "local-effect": 27,
     "live": 90
   },
@@ -966,13 +966,6 @@
       ]
     },
     {
-      "file": "checks/claims-corner-decline-vs-partition.mjs",
-      "tier": "safe",
-      "why": [
-        "computed import of src/lib/tileGround.js — read, safe"
-      ]
-    },
-    {
       "file": "checks/claims-corner-takeover.mjs",
       "tier": "safe",
       "why": [
@@ -1901,13 +1894,6 @@
     },
     {
       "file": "checks/claims-price-of-record.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-producer-does-not-decide-partition.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

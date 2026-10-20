@@ -21,6 +21,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
+import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 import { sectionPassProtoTile, resolvePedDepths, tilePieceLus } from '../src/lib/tileGround.js'
 
 const shapeOverride = process.argv.find(a => a.startsWith('--shape='))?.slice('--shape='.length)
@@ -37,17 +38,22 @@ for (const look of (shapeOverride ? named : scenes('public/baked/<scene>/shape.j
   const stamped = tiles.some(t => (t.runs || []).some(r => r.hwy))
   if (!(shape.highway || []).length) { console.log(`── ${look}   no highway in this town`); continue }
   if (!stamped) { console.log(`── ${look}   ⛔ NOT CHECKED — highways but no \`hwy\` stamp: frozen before H-3. Re-bake.`); red = true; continue }
-  const cw = 6 * 0.0254
   const lookEntry = JSON.parse(readFileSync(join(ROOT, 'public/looks/index.json'), 'utf8')).looks.find(l => l.id === look)
   const designP = join(ROOT, 'public/looks', look, 'design.json')
-  const blockCustoms = existsSync(designP) ? (JSON.parse(readFileSync(designP, 'utf8')).blockCustoms || null) : null
+  if (!existsSync(designP)) { console.log(`── ${look}   ⛔ NOT CHECKED — no ${designP}`); red = true; continue }
+  const design = JSON.parse(readFileSync(designP, 'utf8'))
+  const blockCustoms = design.blockCustoms || null
+  // ⭐ THE PRODUCT'S DOOR: buildTileGround → sectionOpen → sectionPassProtoTile(tile, cw, mat, blockCustoms, cornerOverrides),
+  // cornerOverrides being the town's cornerCornerRadiusOverrides (the corner flags) — both, as the bake passes them.
+  const cornerOverrides = (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : null
+  const cw = resolveCurbWidth(design).value   // the bake's curb: authored, else the kit's
   if (!lookEntry) console.log(`   ⚠️ ${look} is not in public/looks/index.json — judged without authoring`)
   const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; const t = L2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0; return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz) }
   const o = console.log, w = console.warn; console.log = console.warn = () => {}
   let verge = 0, vergeBad = [], edges = 0, edgeBad = []
   try {
     for (const [ti, t] of tiles.entries()) {
-      const out = sectionPassProtoTile(t, cw, { outer: 'LU', inner: 'SW' }, null)
+      const out = sectionPassProtoTile(t, cw, { outer: 'LU', inner: 'SW' }, blockCustoms, cornerOverrides)   // WITH the look's authoring (Layer 0 q3)
       const bands = [...(out.curb || []), ...(out.Wacc || []), ...Object.values(out.tlByLu || {}).flat()]
       if (t.blockClass === 'verge') {
         verge++

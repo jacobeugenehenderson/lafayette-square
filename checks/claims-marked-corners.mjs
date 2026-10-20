@@ -8,7 +8,7 @@ import { scenes } from './_scenes.mjs'
 
 let bad = 0
 for (const scene of scenes('cartograph/data/<scene>/clean/marker_strokes.json')) {   // the towns the operator has marked
-  const f = feed(scene); if (!f || f.curbWidth == null) { bad++; continue }
+  const f = feed(scene); if (!f) { bad++; continue }
   const marks = JSON.parse(fs.readFileSync(`cartograph/data/${scene}/clean/marker_strokes.json`, 'utf8'))
   const strokes = Object.values(marks).filter(Array.isArray)
   const tg = buildProto(f)

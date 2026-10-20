@@ -35,6 +35,7 @@ const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.leng
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'   // the partition's grid, from its one home
+import { resolveCurbWidth, KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 const MIN_WIDTH_GRID = 2                          // the tolerance: a piece must be wider than 2 grid steps (1/SCALE m each)
 const toC = (r) => r.map(p => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) }))
 const areaC = (r) => { let s = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; s += p.X * q.Y - q.X * p.Y } return Math.abs(s / 2) / SCALE / SCALE }
@@ -59,10 +60,10 @@ if (process.argv.includes('--selftest')) {
   const m = { left: { pavementHW: 4, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }, right: { pavementHW: 4, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' } }
   const line = (id, a, b) => ({ skelId: id, name: id, highway: 'residential', oneway: false, points: [a, b], measure: m, gradeSeparated: false })
   const streets = [line('n', [-200, -100], [200, -100]), line('s', [-200, 100], [200, 100]), line('w', [-100, -200], [-100, 200]), line('e', [100, -200], [100, 200])]
-  const tileWith = (scale) => (quiet(() => buildTileGround({ streets }, { curbWidth: 0.1524, curbedMinWidth: curbedMinWidthOf(null), smooth: 0, cornerRadiusScale: scale })).protoShapeTiles || []).find(x => x.iaStamp)
+  const tileWith = (scale) => (quiet(() => buildTileGround({ streets }, { curbWidth: KIT_CURB_WIDTH, curbedMinWidth: curbedMinWidthOf(null), smooth: 0, cornerRadiusScale: scale })).protoShapeTiles || []).find(x => x.iaStamp)
   const t = tileWith(0), te = tileWith(1)       // square corners (clean) · eased corners (the painter's known gap)
   if (!t || !te) { console.log('⛔ SELFTEST could not build a synthetic ① tile'); process.exit(2) }
-  const clean = holesOf(t, 0.1524, null), dropped = holesOf(t, 0.1524, null, 'lu'), eased = holesOf(te, 0.1524, null)
+  const clean = holesOf(t, KIT_CURB_WIDTH, null), dropped = holesOf(t, KIT_CURB_WIDTH, null, 'lu'), eased = holesOf(te, KIT_CURB_WIDTH, null)
   console.log(`selftest: the same block with EASED corners → ${eased.length} hole(s) (the painter's corner class, reported not gated)`)
   const ok = clean.length === 0 && dropped.length > 0
   console.log(`selftest: clean synthetic block → ${clean.length ? `⛔ ${clean.length} hole(s)` : '✅ covered'} · land use dropped → ${dropped.length ? `✅ red (${dropped.reduce((s, h) => s + h.area, 0).toFixed(0)} m² unpainted)` : '⛔ still green — the check is blind'}`)
@@ -77,7 +78,7 @@ for (const scene of (arg('shape') ? named : scenes('public/baked/<scene>/shape.j
   const stamped = tiles.filter(t => t.iaStamp)
   if (!stamped.length) { console.log(`── ${scene}   SKIPPED — its frozen shape predates ① (no stamped tile): the painter this checks never drew it. Re-pour + re-bake to judge.`); continue }
   const dp = join(ROOT, 'public/looks', scene, 'design.json'), d = existsSync(dp) ? JSON.parse(readFileSync(dp, 'utf8')) : {}
-  const cw = Number.isFinite(d.curbWidth) ? d.curbWidth : (() => { throw new Error(`⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look`) })()
+  const cw = resolveCurbWidth(d).value   // the bake's curb: authored, else the kit's
   let holed = 0, total = 0; const rows = []
   for (const [ti, t] of tiles.entries()) {
     if (!t.iaStamp) continue

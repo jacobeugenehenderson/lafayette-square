@@ -9,7 +9,6 @@ const scenes = feedScenes()
 
 for (const scene of scenes) {
   const f = feed(scene); if (!f) continue
-  if (f.curbWidth == null) continue
   const P = f.ribbons.protopolygon
   if (!P?.blocks) { console.log(`⛔ ${scene}: ① carries no blocks — NOT checked`); continue }
   const bR = P.boundaryRing

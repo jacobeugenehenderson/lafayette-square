@@ -7,7 +7,8 @@
  * To customize for a different city, swap this file.
  */
 
-import { CLASSES, classOf, classSection } from '../src/cartograph/streetClass.js'
+import { CLASSES, classOf, classSection, LOCAL_SECTION } from '../src/cartograph/streetClass.js'
+import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 
 const FT = 0.3048 // feet to meters
 
@@ -20,24 +21,22 @@ export const STANDARDS = {
 
   // ── Curb ──────────────────────────────────────────────────────────
   curb: {
-    width:    6 * 0.0254,    // 6" wide on top
-    reveal:   6 * 0.0254,    // 6" face height
-    // For 2D map purposes, curb is rendered as a line at the
-    // pavement edge with a configurable stroke width
+    width:    KIT_CURB_WIDTH,   // the kit's 6" on top — its one home is streetProfiles.js
   },
 
   // ── Sidewalk zone ─────────────────────────────────────────────────
+  // ⭐ the local class row's (`streetClass.js#LOCAL_SECTION`) — the kit's one home, 5 ft each
   treeLawn: {
-    width:  4.5 * FT,         // 4–5 ft planting strip
+    width:  LOCAL_SECTION.treelawn,
   },
 
   sidewalk: {
-    width:  5 * FT,            // 5 ft standard residential
+    width:  LOCAL_SECTION.sidewalk,
   },
 
   // ── Intersection geometry ─────────────────────────────────────────
   intersection: {
-    curbReturnRadius:  15 * FT, // curb fillet radius at corners
+    curbReturnRadius:  LOCAL_SECTION.cornerR, // curb fillet radius at corners — the local row's 15 ft, the kit's one home
     crosswalkWidth:     8 * FT, // between outer edges
     stopBarOffset:      4 * FT, // from crosswalk edge
     stopBarWidth:      18 * 0.0254, // 18" wide

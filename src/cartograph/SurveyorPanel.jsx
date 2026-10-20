@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
+import { noMeasureFor } from './measureModel.js'
 import { loadInstanceData } from '../data/loadInstanceData.js'
 import { useLandscapeManifest } from '../components/MountainBackdrop.jsx'
 
@@ -282,6 +283,8 @@ export default function SurveyorPanel() {
       <HeroSubjectPicker />
       <div className="carto-section">
         <h2>Survey</h2>
+      {/* ⛔ a side with no measure is said where its width would be read — the asphalt-edge drag refuses it too */}
+      {['left', 'right'].map(k => noMeasureFor(st, k)).filter(Boolean).map(w => <div key={w} className="carto-meta carto-meta--warn" role="alert">⛔ {w}</div>)}
 
       {/* Asymmetric authoring — when off (default) an asphalt-edge drag mirrors
           to both sides; when on, each side is set independently. Mirrors the

@@ -24,7 +24,7 @@ import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { defaultMeasure, measureFromSeed, CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
 import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
@@ -2606,8 +2606,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // Full spectrum: pavement + curb + treelawn + sidewalk (matches
       // streetProfiles.getHalfWidth — the exact back-of-sidewalk reach
       // that StreetRibbons renders).
-      const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
-      const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
+      const lCurb = L.terminal === 'none' ? 0 : KIT_CURB_WIDTH
+      const rCurb = R.terminal === 'none' ? 0 : KIT_CURB_WIDTH
       // ⭐ ASPHALT EDGE — pavement + curb. ⛔ NOT `+ treelawn + sidewalk`; see the block above.
       rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)
     } else if (isSweptClass(classOf(f.tags).class)) {
@@ -2623,8 +2623,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       const n = parseInt(f.tags?.lanes, 10)
       const dm = defaultMeasure(classOf(f.tags).class, correctedSurvey[name], { lanes: Number.isFinite(n) && n > 0 ? n : null, oneway: f.tags?.oneway === 'yes' })
       const L = dm.left, R = dm.right
-      const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
-      const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
+      const lCurb = L.terminal === 'none' ? 0 : KIT_CURB_WIDTH
+      const rCurb = R.terminal === 'none' ? 0 : KIT_CURB_WIDTH
       rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)   // asphalt edge, as above
     }
     // NOTE: no divide-by-2 for divided streets here.  For alley clipping we

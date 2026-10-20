@@ -12,7 +12,7 @@
 //   }
 //
 // Stripe order from centerline outward (always fixed):
-//   asphalt (pavementHW) → curb (const CURB_WIDTH) → [treelawn] → [sidewalk | lawn]
+//   asphalt (pavementHW) → curb (the Look's curbWidth, else KIT_CURB_WIDTH) → [treelawn] → [sidewalk | lawn]
 //
 // The last stripe's material is named by `terminal`. When terminal='none' the
 // side stops at curb (alleys, footways).
@@ -20,12 +20,24 @@
 // No per-stripe pulldowns: stripe position in the sequence determines material.
 // Parking is authored as a separate overlay layer — not represented here.
 
-import { CLASSES, classSection } from './streetClass.js'
+import { CLASSES, classSection, LOCAL_SECTION } from './streetClass.js'
 
 const FT = 0.3048
 
-export const CURB_WIDTH = 6 * 0.0254   // fixed constant — not editable
-export const SV_SIDEWALK = 5 * FT
+// ⭐ THE KIT'S CURB — metres, the one home of the kit's 6 in (Jacob, 2026-10-20: "6 inches everywhere"). A town that
+// authors no `curbWidth` in its home Look inherits it through `resolveCurbWidth`, which names the rung that decided.
+// ⛔ Resolved at the DESIGN-READ layer only (the bake's `cartograph/lookDesign.mjs`, the store, the probe feed); a builder
+// called with no width still refuses. ▶ node checks/claims-a-look-authors-its-curb-width.mjs
+export const KIT_CURB_WIDTH = 0.1524   // m (6 in)
+
+/** A design's curb width and the rung that decided: `authored` (the town's Look) or `kit` (KIT_CURB_WIDTH). An authored
+ *  value that is not a finite number ≥ 0 refuses — it is a broken authoring, not an absence. */
+export function resolveCurbWidth(design) {
+  const a = design?.curbWidth
+  if (a == null) return { value: KIT_CURB_WIDTH, rung: 'kit' }
+  if (!Number.isFinite(a) || a < 0) throw new Error(`[curbWidth] ⛔ design.json's curbWidth is ${JSON.stringify(a)} — author a width in metres (≥ 0), or remove the field to inherit the kit's ${KIT_CURB_WIDTH} m`)
+  return { value: a, rung: 'authored' }
+}
 
 // ── THE HIGHWAY TYPICAL SECTION (H-3 step 1, `r-highway-positive-object`) ──────────
 // A motorway/trunk carriageway or a ramp is an alignment swept by a typical section, composed
@@ -250,13 +262,13 @@ export function defaultSideMeasure(cls, survey, sideKey = 'left', { lanes = null
     ? survey?.sidewalkRight
     : survey?.sidewalkLeft
   if (swDist && Number.isFinite(swDist)) {
-    const curbOuter = hw + CURB_WIDTH
-    const swInner = swDist - SV_SIDEWALK / 2
+    const curbOuter = hw + KIT_CURB_WIDTH
+    const swInner = swDist - LOCAL_SECTION.sidewalk / 2
     const treelawn = Math.max(0, swInner - curbOuter)
     return {
       pavementHW: hw,
       treelawn,
-      sidewalk: SV_SIDEWALK,
+      sidewalk: LOCAL_SECTION.sidewalk,
       terminal: 'sidewalk',
     }
   }
@@ -359,7 +371,7 @@ export function sideToStripes(side) {
   // curb — always present unless pavement is zero, at the kit's reference width (there is no per-side curb width:
   // the kerb is the Look's cosmetic `curbWidth`, Jacob 2026-10-06)
   if (side.pavementHW > 0 && side.terminal !== undefined) {
-    const cw = CURB_WIDTH
+    const cw = KIT_CURB_WIDTH
     out.push({ material: 'curb', innerR: r, outerR: r + cw })
     r += cw
   }

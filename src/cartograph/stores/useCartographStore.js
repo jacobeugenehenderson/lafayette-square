@@ -8,7 +8,8 @@ import {
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
   saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
-import { setSceneMeasureSource } from '../measureModel.js'
+import { setSceneMeasureSource, chainMeasure, noMeasureFor } from '../measureModel.js'
+import { resolveCurbWidth } from '../streetProfiles.js'
 import { readAddress, resolveTown, lookForScene, isValidMapId, ADDRESS_STORAGE } from '../../lib/authoringAddress.js'
 import { feCustomKey } from '../../lib/feCustomKey.js'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
@@ -325,6 +326,11 @@ const HERO_KEYFRAMES_DEFAULT = []
 // the commit that split the Tool/Shot axes; reported from the screen 2026-09-19.
 const STAGE_SHOTS = ['browse', 'hero', 'street']
 export const isStageShot = (shot) => STAGE_SHOTS.includes(shot)
+// ⭐ THE CURB THE MAP DRAWS: the Look's authored `curbWidth`, else the kit's (streetProfiles.js#resolveCurbWidth — the
+// one resolver the bake shares). `s.curbWidth` holds only what is AUTHORED (null = none), so the save never writes
+// the kit's value into a town. Read the width through these, never `s.curbWidth` directly.
+export const curbWidthOf = (s) => resolveCurbWidth({ curbWidth: s.curbWidth }).value
+export const curbRungOf = (s) => resolveCurbWidth({ curbWidth: s.curbWidth }).rung
 // Every valid destination. ⛔ NOT a superset to test Stage-ness with: 'designer'
 // and 'extent' are here precisely because they are NOT Stage shots.
 const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
@@ -357,7 +363,8 @@ const DESIGN_FIELDS = [
   { key: 'cornerCornerRadiusOverrides', hydrate: (d) => _isObj(d.cornerCornerRadiusOverrides) ? d.cornerCornerRadiusOverrides : {} },
   // (streetSmooth retired 2026-06-04 — smoothing is always-on at fixed quality,
   // no design-persisted dial; see BlockGeometryV2Debug / smoothCenterline.)
-  // ⛔ null = NOT AUTHORED, shown as such (Panel › Curb), and the ground refuses to build: never a kit substitute.
+  // null = NOT AUTHORED: the map draws the kit's width (`curbWidthOf`) and Panel › Curb says "kit". Never hydrated to the kit's
+  // number — the save would then write it into the town as if authored.
   { key: 'curbWidth',    hydrate: (d) => Number.isFinite(d.curbWidth) ? d.curbWidth : null },
   // Operator override for the park title's world position ([x,z]); null = the
   // computed default. Persisted + baked like every other design field so the
@@ -524,6 +531,8 @@ function serializeDesign(s) {
   // existing towns], now"). Writing it would freeze today's default into the town, and the next change to the
   // kit's day would never reach it. Only what the operator actually authored is the town's.
   for (const k of KIT_DAY_CHANNELS) if (k in out && JSON.stringify(out[k]) === JSON.stringify(kitDayChannel(k))) delete out[k]
+  // …and a curb the town has not authored is not written: absent = the kit's (`curbWidthOf`).
+  if (out.curbWidth == null) delete out.curbWidth
   return out
 }
 
@@ -581,8 +590,8 @@ const useCartographStore = create((set, get) => ({
   labels: { ...LABEL_STYLE_DEFAULT },
   // Look-level global curb width (meters). V2 emits the curb as a single
   // unified stroke around the rounded asphalt boundary, so width is
-  // global (not per-side, not per-chain). AUTHORED per Look (design.json), no default:
-  // null until the design hydrates, and null after it on a Look that authors none.
+  // global (not per-side, not per-chain). What the Look AUTHORS (design.json); null = none, and the
+  // map draws the kit's (`curbWidthOf`).
   curbWidth: null,
   edgeFadeBand: null,
   // [x,z] override for the park title center; null = computed default (LafayettePark).
@@ -850,9 +859,9 @@ const useCartographStore = create((set, get) => ({
     get()._saveDesignDebounced()
   },
   // Look-level global curb width (meters). Clamp to a sane band — at 0
-  // the curb stroke vanishes; at ~1 m it visually overruns the band stack.
+  // the curb stroke vanishes; at ~1 m it visually overruns the band stack. null = un-author it (back to the kit's).
   setCurbWidth: (v) => {
-    const n = Math.max(0, Math.min(1.0, Number(v) || 0))
+    const n = v == null ? null : Math.max(0, Math.min(1.0, Number(v) || 0))
     set({ curbWidth: n })
     get()._saveDesignDebounced()
   },
@@ -2823,12 +2832,13 @@ const useCartographStore = create((set, get) => ({
     const st = centerlineData?.streets?.[streetIdx]
     if (!st) return
     const v = Math.min(30, Math.max(0.5, Number.isFinite(+hw) ? +hw : 0))
-    const seedSide = (m) => ({ pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk', ...(m || {}) })
-    const base = {
-      left: seedSide(st.measure?.left),
-      right: seedSide(st.measure?.right),
-      symmetric: st.measure?.symmetric,
-    }
+    // ⛔ NO SEEDED SIDE: the write starts from the chain's own measure (`chainMeasure` — the street's, else the pour's, else
+    // its class row). A side with none has no width to keep: inventing one (it was pavementHW 5 + ped 1.5/1.5, and it was
+    // used even where the pour HAD a measure) wrote it as if surveyed. Said — the panel shows the same line — and nothing is written.
+    const why = ['left', 'right'].map(k => noMeasureFor(st, k)).filter(Boolean)
+    if (why.length) { console.error(`[Survey] ⛔ ${why.join(' · ')} — nothing written`); return }
+    const cm = chainMeasure(st)
+    const base = { left: { ...cm.left }, right: { ...cm.right }, symmetric: cm.symmetric }
     const other = side === 'left' ? 'right' : 'left'
     base[side] = { ...base[side], pavementHW: v }
     if (mirror) base[other] = { ...base[other], pavementHW: v }

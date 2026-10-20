@@ -119,7 +119,7 @@ if (args.includes('--selftest')) {
   // own depth, is WALK — the landing reaches the kerb — never lawn; and at each corner's wedge (`wedgeAt`, where the
   // corner has room for one) is lawn where the wedge is lawn and walk where it is concrete. A point painted neither is
   // off the drawing (the disc, or the curb) and skipped.
-  const cwOf = JSON.parse(readFileSync(`public/looks/${f.look}/design.json`, 'utf8')).curbWidth
+  const cwOf = f.curbWidth   // the feed's: the bake's curb, authored else the kit's
   const paintAt = (R) => { const idx = (rs) => (rs || []).map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
       for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return { r, x0, x1, z0, z1 } })
     const pin = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }

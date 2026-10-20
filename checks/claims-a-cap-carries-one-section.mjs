@@ -15,6 +15,7 @@
 //   node checks/claims-a-cap-carries-one-section.mjs [--town=a,b] [--shape=<shape.json> --town=<one>] [--mutants] [--show=n]
 // Read-only. Exits 1 on any cap edge with no walk where its owner has one, or a cap that cannot be judged.
 import { readFileSync, existsSync } from 'fs'
+import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=').slice(1).join('=')
 const { sectionPassProtoTile, stripLadder, resolvePedDepths } = await import('../src/lib/tileGround.js')
 const towns = (arg('town') || 'hipointedemun').split(','), SHOW = +(arg('show') || 6)
@@ -24,8 +25,7 @@ for (const town of towns) {
   if (!existsSync(shp) || !existsSync(dp)) { console.log(`⛔ ${town}: REFUSED — ${existsSync(shp) ? dp : shp} is missing`); bad++; continue }
   const tiles = JSON.parse(readFileSync(shp, 'utf8')).tiles, design = JSON.parse(readFileSync(dp, 'utf8'))
   if (!tiles.some(t => t.iaCap)) { console.log(`⛔ ${town}: REFUSED — ${shp} carries no iaCap (poured before caps were frozen); re-pour it, or pass a scratch slab's --shape=`); bad++; continue }
-  const cw = design.curbWidth, BC = design.blockCustoms || null, CO = design.cornerCornerRadiusOverrides || null
-  if (!(cw > 0)) { console.log(`⛔ ${town}: REFUSED — design.json has no curbWidth`); bad++; continue }
+  const cw = resolveCurbWidth(design).value, BC = design.blockCustoms || null, CO = design.cornerCornerRadiusOverrides || null
   const rib = ['cartograph/data/' + town + '/clean/ribbons.json', ...(town === 'lafayette-square' ? ['src/data/ribbons.json'] : [])].find(existsSync)
   const measOf = new Map((rib ? JSON.parse(readFileSync(rib, 'utf8')).streets || [] : []).map(s => [s.skelId, s.measure]))
   let caps = 0, edges = 0, noWalkOwner = 0, unjudged = 0, dip = 0; const ex = [], judged = []

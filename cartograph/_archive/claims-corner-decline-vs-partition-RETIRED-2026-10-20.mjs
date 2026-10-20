@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+// ⛔ RETIRED 2026-10-20 (Lintel, for Boz; row 5 of Lath's triage). The gate this check re-executed is GONE:
+// `sectionPassTile`'s partition branch (`!single && st.iaEdge` → `ringRunOwners` → `bandSpans`) is deleted, because nothing
+// produces `iaEdge` since ① became the producer (every frozen tile in the six towns carries ①'s `iaStamp`, none `iaEdge`)
+// and the carve population it classified belonged to the legacy chain shape pass (retired 80d28a26). Its question cannot
+// be asked of the live painter (`sectionPassProtoTile`, which partitions per POINT off `iaStamp`). Kept as the record.
 /**
  * "IS THE DOMINANT CORNER DECLINE SITTING ON TILES THAT ALREADY OWN THEIR ARC?"
  *

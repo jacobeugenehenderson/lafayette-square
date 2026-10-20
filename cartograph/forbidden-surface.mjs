@@ -36,7 +36,7 @@
  * the frozen shape — a scene missing it must bake the ground first, not fall through
  * to a wrong mask.
  */
-import { readTownDesign } from './lookDesign.mjs'
+import { readTownDesign, resolveCurbWidth } from './lookDesign.mjs'
 import { readFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -130,8 +130,6 @@ export function polyWithBbox(ring, holes) {
  * @param {string}  scene       the town (map id). Its blockCustoms + curbWidth are the TOWN's design fields, read
  *   from its home Look (`cartograph/lookDesign.mjs#readTownDesign`), so the rebuilt surfaces match the ground the
  *   operator authored — for every Look of the town. ⛔ Required: no town ⇒ no surfaces, never kit defaults.
- * @param {number}  curbWidth   overrides the curb-stroke depth; else the town's authored design.curbWidth.
- *   ⛔ Neither ⇒ THROWS by name — never a substitute.
  * @param {boolean} allowUnpoured  treat ground outside every tile but off the
  *   carriageway as plantable. Default FALSE: outside the poured extent we have
  *   no honest surface model, and guessing there is what made the canopy read
@@ -139,12 +137,11 @@ export function polyWithBbox(ring, holes) {
  * @returns {function} classify(x,z) → forbidden reason, or null when plantable.
  *   Carries `.zoneOf(x,z)` (reporting) and `.nudge(x,z)` (nearest legal ground).
  */
-export function makeZoneTester({ shapePath, mapPath, curbWidth, allowUnpoured = false, scene = null, quiet = false } = {}) {
+export function makeZoneTester({ shapePath, mapPath, allowUnpoured = false, scene = null, quiet = false } = {}) {
   const shape = JSON.parse(readFileSync(shapePath, 'utf-8'))
   const design = readTownDesign(scene, 'zone tester')
-  const cw = Number.isFinite(curbWidth) ? curbWidth
-           : Number.isFinite(design.curbWidth) ? design.curbWidth
-           : (() => { throw new Error(`[zone tester] ⛔ ${scene}: design.json carries no curbWidth — author curbWidth in this town's Look`) })()
+  const { value: cw, rung: cwRung } = resolveCurbWidth(design)   // the bake's curb: authored, else the kit's
+  if (!quiet) console.log(`[zone tester] ${scene}: curb ${cw} m (${cwRung})`)
   const blockCustoms = (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : null
   const toArr = (ring) => ring.map(p => Array.isArray(p) ? p : [p.x, p.z])
 

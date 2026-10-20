@@ -1,10 +1,10 @@
 import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob (SSoT; SKELETON.md §3.5) — the SURVEY navy renders the smooth curve
-import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
+import { chainMeasure, findFeForSide, applyKindToMeasure, noMeasureFor } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { resolveChainSegmentation } from '../lib/chainSegmentation.js'
@@ -271,7 +271,6 @@ export default function SurveyorOverlay() {
     // The bake already zeroed a divided carriageway's inboard ped on the
     // geometrically-resolved side, so the chain measure IS the seed (streetProfiles.js).
     const chainSeed = chainMeasure(st)
-    const FALLBACK = { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
     const entries = []
     for (const s of sides) {
       const fe = findFeForSide(fes, st, segOrd, s)
@@ -294,8 +293,10 @@ export default function SurveyorOverlay() {
       // blockCustoms — the FILL reads .treelawn/.sidewalk as ped intent now.
       const existing = readFeCustom(store.blockCustoms, fe)
       const ped = resolvePedDepths(chainSeed, s, existing)
-      const seed = { ...(chainSeed[s] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-      const measure = applyKindToMeasure(seed, 'pavementHW', r, store.curbWidth)
+      // ⛔ NO FALLBACK MEASURE: a side the pour gave no measure is said and skipped — never seeded with an invented width.
+      if (!chainSeed?.[s]) { console.error(`[Survey] ⛔ ${noMeasureFor(st, s)} — nothing written (the panel says so too)`); continue }
+      const seed = { ...chainSeed[s], ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
+      const measure = applyKindToMeasure(seed, 'pavementHW', r, curbWidthOf(store))
       // One entry per owned segOrd — each shim carries a single-segOrd fe so
       // feCustomKey stores it under (skelId, side, THAT segOrd), not just min().
       for (const seg of runSegOrds) entries.push({ fe: { ...fe, segOrds: [seg] }, measure })

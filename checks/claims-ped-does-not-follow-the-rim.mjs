@@ -6,7 +6,7 @@ import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
 import { buildTileGround } from '../src/lib/tileGround.js'
 
 for (const scene of feedScenes()) {
-  const f = feed(scene); if (!f || f.curbWidth == null) continue
+  const f = feed(scene); if (!f) continue
   const bR = f.ribbons.protopolygon?.boundaryRing
   if (!bR) { console.log(`⛔ ${scene}: no frozen boundaryRing — NOT checked`); continue }
   const dArc = p => { let m = Infinity

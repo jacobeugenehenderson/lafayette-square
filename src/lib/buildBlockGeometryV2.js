@@ -19,6 +19,7 @@ import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readFeCustom } from './feCustomKey.js'
 import { smoothChain } from './smoothCenterline.js'
 import { CLIP_SCALE as SCALE } from './lattice.js'
+import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const RAD = Math.PI / 180
 
@@ -119,7 +120,7 @@ function depthForSide(s) {
 // Default-R rule (k = 0.5 pinch tolerance). See NOTES.md 2026-05-07.
 //   R = min(R_class, R_max(d_min, θ, k))
 //   R_max = d × (1 - k·sin(θ/2)) / (1 - sin(θ/2))
-const R_CLASS_DEFAULT = 4.5  // residential×residential AASHTO baseline
+const R_CLASS_DEFAULT = LOCAL_SECTION.cornerR  // the local class row's 15 ft — the kit's one home (uniform until classifier step 7)
 
 // Resolve an IX-street reference (name + sref.ix) to a specific chain and
 // vertex index. Handles two real-world quirks of LS-baked ribbons.json:
@@ -1381,8 +1382,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     blockLandUse = null,
     smooth = 0,
     useRingBandEmitter = false } = opts  // C4 flag — every caller passes true since C5
-  // ⛔ The Look's authored curb width, never a substitute (Boz ruled 2026-10-19).
-  if (!Number.isFinite(curbWidth)) throw new Error(`[buildBlockGeometryV2] ⛔ no curbWidth given (${curbWidth}) — the Look's design.json carries no curbWidth — author curbWidth in this town's Look`)
+  // ⛔ The curb width arrives RESOLVED (authored, else the kit's); the default lives at the design-read layer (Boz, 2026-10-20).
+  if (!Number.isFinite(curbWidth)) throw new Error(`[buildBlockGeometryV2] ⛔ no curbWidth given (${curbWidth}) — pass the width the design reader resolved (authored, else the kit's: lookDesign.mjs#bakeCurbWidth, the store's curbWidthOf); a builder never picks one`)
   // ⛔ The inner-edge anchor transform that used to run here is DELETED
   // (2026-08-13, streetProfiles.js). It re-applied `derive.js innerEdgeAssign`'s
   // ped-zeroing through the persisted `innerSign` key — a constant `-1` on every

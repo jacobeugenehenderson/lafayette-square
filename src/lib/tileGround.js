@@ -19,6 +19,7 @@ import { blockKeyFromRing } from './buildBlockGeometryV2.js'
 import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 import { CLIP_SCALE as SCALE } from './lattice.js'
+import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
@@ -2454,7 +2455,9 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null, nose = 
     if (arcsOut) {
       const sgn = cross >= 0 ? 1 : -1
       const nA = [-dIn[1] * sgn, dIn[0] * sgn]
-      arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2, src: vtx ? vtx[i] : undefined })
+      // `asked` = the radius this corner was given; `leg` = the leg that bounded it when the ease drew less (else null)
+      const leg = s < want - 1e-9 ? (s >= legBack[i] / 2 - 1e-9 ? legBack[i] : legFwd[i]) : null
+      arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2, src: vtx ? vtx[i] : undefined, asked: R, leg })
     }
   }
 
@@ -2850,8 +2853,6 @@ function edgeDepth(measure, side, curbWidth, level) {
 // (also the Revert state). This replaces the old per-tile AVERAGED measures, which
 // drew noisy sub-meter treelawn slivers everywhere.
 const TREELAWN_YN_THRESHOLD = 0.6   // natural gap below this → no treelawn (the bimodal valley)
-const STD_TREELAWN = 1.5            // standard treelawn depth where present (m) — tunable
-const ADA_SIDEWALK = 1.5            // ADA-standard sidewalk depth — the Revert default (m) — tunable
 const VALLEY_LO = 0.25, VALLEY_HI = 0.75   // the bimodal valley span (the ~92 ambiguous run-sides)
 // ⛔⛔ A CLAMPED ZERO IS NOT A SURVEYED ZERO. `skeleton.js`'s `fromSurveyDist` pins the asphalt
 // flush when the lanes/AASHTO seed will not fit inside a MEASURED sidewalk position, and the
@@ -2929,7 +2930,7 @@ function reportGlean(measures, streets) {
 
 // ⭐ THE ONE PER-EDGE DEPTH RESOLUTION (SECTION.md §3.3 step 1 / §5 one-depth-truth).
 // override (blockCustoms[skelId][side][segOrd].{treelawn,sidewalk}) else the
-// best-effort default (gleaned-Y ? STD_TREELAWN : 0; ADA_SIDEWALK). Exported so
+// best-effort default (gleaned-Y ? the local row's treelawn : 0; its sidewalk). Exported so
 // the FILL stroke (sectionPass) and the authoring-handle placement (Measure
 // overlay) read the SAME resolution — if they read different depths they
 // diverge, which was the root of both handle symptoms (don't match + don't
@@ -2938,15 +2939,16 @@ function reportGlean(measures, streets) {
 // strips of EQUAL width; the gleaned treelawn Y/N is a MATERIAL decision (which
 // strip is grass vs walk), NOT a width. A sidewalk-only edge is "sidewalk then
 // LU/lawn" — the strips swap materials, they never collapse one to zero. So BOTH
-// widths default to the same standard (STD_TREELAWN == ADA_SIDEWALK), and the
+// widths default to the LOCAL class row (`streetClass.js#LOCAL_SECTION`, 5 ft each — the kit's one home, uniform for
+// every street until classifier step 7 makes the painter read each street's own class row), and the
 // ribbon total is uniform whether the edge is Y or N. `hasTL` carries the
 // surveyed Y/N to drive the strip ORDERING / default materials downstream.
 // ⭐ `pedRealm:false` on the side (an expressway — skeleton.js `isExpressway`) makes
 // the DEFAULT zero, not the standard; the operator's override still wins.
 export function resolvePedDepths(baseMeasure, side, custom = null) {
   const none = baseMeasure?.[side]?.pedRealm === false
-  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn) : (none ? 0 : STD_TREELAWN)
-  const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : (none ? 0 : ADA_SIDEWALK)
+  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn) : (none ? 0 : LOCAL_SECTION.treelawn)
+  const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : (none ? 0 : LOCAL_SECTION.sidewalk)
   return { tl, sw, hasTL: none ? false : gleanTreelawn(baseMeasure, side) }
 }
 
@@ -2983,174 +2985,6 @@ function trimPolyline(poly, t0, t1) {
 }
 
 
-
-// ══ [A10-③] PAINT THE BAND FROM THE PARTITION ════════════════════════════════
-// "The ring is already partitioned, one owner per edge. The band must be painted
-//  FROM THAT PARTITION — each owner painting its own arc of the inset — not by
-//  re-stroking each run's polyline into an area and intersecting. Ends exist only
-//  because we make areas out of lines that have ends." (Jacob, ratified 2026-08-08.)
-//
-// The three pieces below turn that sentence into geometry. They read ONLY the
-// frozen artifact (ring / runs / iA / iaEdge / fillets) — no chain, no centerline,
-// no street name, no tuned distance deciding ownership.
-//
-// ⛔ NO FALLBACK. Each returns `null` with the reason NAMED on `partitionDump`
-// when it cannot establish the partition; the caller then leaves that tile on the
-// old construction, and the A10 invariant still reports its defect, so a refusal
-// can never read as a cure.
-export const partitionDump = { rows: [] }
-const _pdump = (why) => { if (partitionDump.rows.length < 5000) partitionDump.rows.push(why) }
-
-// WHICH RUN OWNS EACH RING EDGE. `groupRuns` built `runs[]` by walking `edges[]`
-// in ring order and grouping consecutive edges sharing (streetIdx, side), so the
-// runs are consecutive and consume the ring exactly — that is the partition, and
-// this recovers its index form from the frozen artifact without a new key.
-// ⭐ INTERIOR vertices are asserted, ENDS are not: the shape pass may snap a
-// dead-end run's END onto a fillet apex, but it never moves an interior vertex.
-// The rotation is chosen by exact-match score and must be UNIQUE — a tie is a
-// refusal, never a coin-flip.
-export function ringRunOwners(st) {
-  const ring = st.ring, runs = st.runs || [], n = ring?.length || 0
-  if (!n || !runs.length) return null
-  let total = 0
-  for (const r of runs) { if (!r.poly || r.poly.length < 2) return null; total += r.poly.length - 1 }
-  if (total !== n) { _pdump('runs-do-not-consume-ring'); return null }
-  const K = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
-  const key = ring.map(K)
-  let best = null, bestScore = -1, ties = 0
-  for (let s = 0; s < n; s++) {
-    let c = s, ok = true, score = 0
-    for (const r of runs) {
-      for (let k = 1; k < r.poly.length - 1; k++) if (key[(c + k) % n] !== K(r.poly[k])) { ok = false; break }
-      if (!ok) break
-      for (let k = 0; k < r.poly.length; k++) if (key[(c + k) % n] === K(r.poly[k])) score++
-      c = (c + r.poly.length - 1) % n
-    }
-    if (!ok) continue
-    if (score > bestScore) { bestScore = score; best = s; ties = 1 }
-    else if (score === bestScore) ties++
-  }
-  if (best == null) { _pdump('no-rotation-matches-the-ring'); return null }
-  if (ties !== 1) { _pdump('ambiguous-rotation'); return null }
-  const owner = new Array(n)
-  let c = best
-  runs.forEach((r, ri) => { for (let k = 0; k < r.poly.length - 1; k++) owner[(c + k) % n] = ri; c = (c + r.poly.length - 1) % n })
-  return owner
-}
-
-// THE ARCS OF `iA`, ONE OWNER EACH. Cut the curb ring at (a) every fillet's two
-// TANGENT POINTS — frozen, and exact vertices of `iA` (346/346 measured) — and
-// (b) every ownership change that is not inside a fillet arc, which is a corner
-// the curb rounded at R=0, where the two legs meet at a miter with no arc to hand
-// over. Between the cuts sits exactly one owner: a run, or a corner.
-// ⭐ This is doctrine §6.9.4 with the takeover made UNCONDITIONAL — "both legs
-// stop at tA/tB; the corner ribbon takes over; legs resume". Step over and step
-// back are now the SAME cut, so neither can leave a gap.
-export function bandSpans(st, owner) {
-  const K = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
-  const out = []
-  for (let r = 0; r < st.iA.length; r++) {
-    const A = st.iA[r], lab = st.iaEdge[r], m = A.length
-    if (!Array.isArray(lab) || lab.length !== m) { _pdump('stamp-shape-mismatch'); return null }
-    if (m < 3) continue
-    const idx = new Map()
-    for (let k = 0; k < m; k++) { const kk = K(A[k]); if (!idx.has(kk)) idx.set(kk, k) }
-    const arcs = []
-    for (const f of (st.fillets || [])) {
-      const a = idx.get(K(f.tA)), b = idx.get(K(f.tB))
-      if (a == null || b == null) continue          // not this ring's corner
-      const fwd = (b - a + m) % m, bwd = (a - b + m) % m
-      const [s, e, len] = fwd <= bwd ? [a, b, fwd] : [b, a, bwd]
-      if (len === 0 || len * 2 > m) continue        // a fillet is the MINOR arc, as arcSectorPoly says
-      arcs.push({ s, e, len, f })
-    }
-    const inArc = new Array(m).fill(false)
-    for (const ar of arcs) for (let k = 1; k < ar.len; k++) inArc[(ar.s + k) % m] = true
-    const cuts = new Set()
-    for (const ar of arcs) { cuts.add(ar.s); cuts.add(ar.e) }
-    for (let k = 0; k < m; k++) {
-      const a = owner[lab[(k - 1 + m) % m]], b = owner[lab[k]]
-      if (a !== b && !inArc[k]) cuts.add(k)
-    }
-    const cs = [...cuts].sort((x, y) => x - y)
-    if (!cs.length) { out.push({ r, i0: 0, i1: 0, len: m, owner: owner[lab[0]], fillet: null }); continue }
-    const arcAt = new Map(arcs.map(ar => [`${ar.s}|${ar.e}`, ar.f]))
-    for (let j = 0; j < cs.length; j++) {
-      const i0 = cs[j], i1 = cs[(j + 1) % cs.length]
-      const len = (i1 - i0 + m) % m || m
-      const fillet = arcAt.get(`${i0}|${i1}`) || null
-      // ⭐ EVERY span carries an owning run, fillet or not. A fillet arc is a
-      // corner only where a corner actually bid; where none did (a name transition,
-      // a through-continuation) the road runs straight past and the arc belongs to
-      // the run the stamp gives it. A span with no owner at all would be an arc
-      // nobody paints — the very hole this ticket is about.
-      // [A10-③ · the keyhole ruling] A vertex whose stamp is `null` has NO OWNER
-      // (the keyhole splice minted it inside the bulb disc). Tally only OWNED
-      // vertices, and if a span has none, DROP it — "an arc with no owner is
-      // simply never walked". ⛔ Never let an unowned majority elect an owner:
-      // that would paint minted ground with a neighbour's identity, which is the
-      // proximity recovery this ticket exists to avoid.
-      const tally = new Map()
-      for (let t = 0; t < len; t++) {
-        const src = lab[(i0 + t) % m]
-        if (src == null) continue
-        const w = owner[src]
-        if (w === undefined) continue
-        tally.set(w, (tally.get(w) || 0) + 1)
-      }
-      if (!tally.size) continue                    // unowned arc — not painted, not guessed
-      let o = null, bestN = -1
-      for (const [w, c] of tally) if (c > bestN) { bestN = c; o = w }
-      out.push({ r, i0, i1, len, owner: o, fillet })
-    }
-  }
-  return out
-}
-
-// THE ARC'S OWN SLICE OF THE BAND. A quad strip swept inward off the arc, joined
-// at every interior vertex, and closed at each END on the ring's own inward
-// BISECTOR — which both neighbouring spans compute identically, so their claims
-// share that cut exactly: no gap to fall into land use, no overlap to double-paint.
-// ⛔ Not a buffer of a polyline: the geometry is the arc of the FROZEN curb, so a
-// claim cannot end anywhere the ownership does not.
-export function spanClaimPoly(A, i0, len, m, D, sgn) {
-  const nrm = (i, j) => { const dx = A[j][0] - A[i][0], dy = A[j][1] - A[i][1]; const L = Math.hypot(dx, dy); if (L < 1e-12) return null; return [-dy / L * sgn, dx / L * sgn] }
-  const bis = (k) => {
-    const a = nrm((k - 1 + m) % m, k), b = nrm(k, (k + 1) % m)
-    if (!a) return b; if (!b) return a
-    const x = a[0] + b[0], y = a[1] + b[1], L = Math.hypot(x, y)
-    return L < 1e-9 ? b : [x / L, y / L]
-  }
-  const at = (p, d) => [p[0] + d[0] * D, p[1] + d[1] * D]
-  const i1 = (i0 + len) % m
-  const parts = []
-  for (let t = 0; t < len; t++) {
-    const i = (i0 + t) % m, j = (i0 + t + 1) % m
-    const n = nrm(i, j)
-    if (!n) continue                                   // a zero-length ring edge sweeps nothing
-    const di = t === 0 ? (bis(i0) || n) : n
-    const dj = t === len - 1 ? (bis(i1) || n) : n
-    parts.push([A[i], A[j], at(A[j], dj), at(A[i], di)])
-    // the join: fan the turn between the two edge normals so a bend cannot open a
-    // wedge inside the span (the ends are handled by the shared bisector above).
-    if (t < len - 1) {
-      const n2 = nrm(j, (i0 + t + 2) % m)
-      if (n2) {
-        let da = Math.atan2(n2[1], n2[0]) - Math.atan2(n[1], n[0])
-        while (da > Math.PI) da -= 2 * Math.PI
-        while (da < -Math.PI) da += 2 * Math.PI
-        if (Math.abs(da) > 1e-4) {
-          const steps = Math.max(1, Math.round(Math.abs(da) / (Math.PI / 24)))
-          const a0 = Math.atan2(n[1], n[0])
-          const fanPts = [A[j]]
-          for (let q = 0; q <= steps; q++) { const a = a0 + da * (q / steps); fanPts.push(at(A[j], [Math.cos(a), Math.sin(a)])) }
-          parts.push(fanPts)
-        }
-      }
-    }
-  }
-  return parts.length ? unionRings(parts) : []
-}
 
 // ── THE WALL · sectionPassTile ─────────────────────────────────────────────
 // The per-RUN painter, for a frozen tile that carries no stamp inquiry (`sectionOpen` routes every stamped tile to
@@ -3423,25 +3257,6 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     const luExtra = []       // authored-shallower band residual along legs → LU
     const cornerT = new Map()   // corner vertex → { p, T: max-adjacent ped total, trim }
     let bandRem = fullBand
-    // [A10-③] THE PARTITION, IF THIS TILE CARRIES THE STAMP. The spans hand each
-    // run its own arcs of the band and each corner its own; together they consume
-    // the ring, so there is nothing left over to fall into land use.
-    // A tile whose stamp is absent, or whose partition cannot be established, keeps
-    // the old polyline-stroked construction — byte-identical, and still reported by
-    // the A10 invariant, so a refusal can never read as a cure.
-    const spansRaw = (!single && st.iaEdge && Array.isArray(st.iaEdge))
-      ? (() => { const own = ringRunOwners(st); return own ? bandSpans(st, own) : null })()
-      : null
-    const partitioned = !!spansRaw?.length
-    // The sweep must out-reach the band EVERYWHERE, including the miter the band's
-    // own inner ring throws at a reflex vertex — which `offsetRings` bounds at
-    // `miterLimit 2` × the offset depth (`:63`). So the reach is that same limit,
-    // read off the same construction, not a number chosen to make a case pass.
-    const spanD = 2 * Math.min(cw + TLmax + SWmax, cap) + 1
-    const spanSgn = iA.map(r => signedArea(r) > 0 ? 1 : -1)
-    const spanPoly = (s) => spanClaimPoly(iA[s.r], s.i0, s.len, iA[s.r].length, spanD, spanSgn[s.r])
-    const runSpans = new Map()     // run index → its arcs' claims (filled after the bids)
-    const cornerSpans = new Map()  // fillet → its arc's claim
     if (single) {
       const iMid = ringAt(single.o)
       const iWrun = ringAt(single.total)
@@ -3573,10 +3388,6 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           // CORNER_DUMP: remember WHICH runs met here. Inert — nothing below reads it.
           if (cornerDump.on) { const c = cornerT.get(k); (c.dbg || (c.dbg = [])).push(`${run.skelId}|${run.side}|${run.segOrd}`) }
         })
-        // [A10-③] On a partitioned tile the claim is not built here: it is each
-        // run's own ARCS of the frozen curb, assembled after this loop (the corner
-        // spans need the bids above to know which fillets are corners at all).
-        if (partitioned) continue
         let t0 = legTrim[0]
         let t1 = legTrim[1]
         // [DEAD-END MOUTH WRAP] Trim the THROUGH-road run back from a dead-end mouth
@@ -3629,59 +3440,6 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         g.sectors.push(...sector)
       }
       // ── [A10-③] THE PARTITION PATH · assemble the claims from the ARCS ────────
-      // Each span painted by its own owner. A fillet arc is a CORNER only where a
-      // corner actually bid (the same pairing the corner pass makes below); at a
-      // name-transition or a through-continuation no corner exists, so the arc
-      // belongs to the run the stamp gives it and the band flows straight through
-      // — which is what the doctrine says happens there.
-      if (partitioned) {
-        const byIdx = new Map(rr.map(e => [e.ri, e]))
-        // The SAME pairing the corner pass makes below — each corner takes its
-        // nearest fillet — so a fillet cannot be a corner here and a leg there.
-        const cornerFillet = new Map()
-        for (const [, c] of cornerT) {
-          let bf = null, bd = Infinity
-          for (const f of fillets) { const d = Math.hypot(f.apex[0] - c.p[0], f.apex[1] - c.p[1]); if (d < bd) { bd = d; bf = f } }
-          if (bf && bd <= bf.r + c.trim + 1) cornerFillet.set(bf, c)
-        }
-        for (const s of spansRaw) {
-          const corner = s.fillet ? cornerFillet.get(s.fillet) : null
-          const poly = spanPoly(s)
-          if (!poly.length) continue
-          if (corner) { cornerSpans.set(s.fillet, poly); continue }
-          const e = byIdx.get(s.owner)
-          if (!e) continue                       // an owner index with no resolved run: refuse the arc rather than guess an owner — the invariant still reports it
-          const a = runSpans.get(s.owner) || []
-          a.push(...poly)
-          runSpans.set(s.owner, a)
-        }
-        // [THE BULB HAS NO HALVES] The stamp splits a cul-de-sac's cap arc between
-        // the two legs that produced it. Where the pair resolves DIFFERENTLY the
-        // bulb goes WHOLE to the cap owner (SECTION §6.3, Jacob 2026-07-22) — the
-        // other leg hands its half over inside the frozen cap's own curb radius.
-        // Every uniform cap leaves `capOwner` empty, so nothing happens here.
-        for (const [k, ownerE] of capOwner) {
-          const t = roundTipByKey.get(k)
-          if (!t) continue
-          const disk = [circlePoly(capCentre(t)[0], capCentre(t)[1], t.hw + cw)]
-          for (const e of rr) {
-            if (e === ownerE || e.run.skelId !== ownerE.run.skelId) continue
-            const mine = runSpans.get(e.ri)
-            if (!mine?.length) continue
-            const handed = intersectRings(mine, disk)
-            runSpans.set(e.ri, differenceRings(mine, disk))
-            if (handed.length) runSpans.set(ownerE.ri, unionRings([...(runSpans.get(ownerE.ri) || []), ...handed]))
-          }
-        }
-        for (const e of rr) {
-          const sector = runSpans.get(e.ri)
-          if (!sector?.length) continue
-          const gk = gkOf(e)
-          let g = groups.get(gk)
-          if (!g) { g = { o: e.o, inn: e.inn, total: e.total, mat: e.mat, hasTL: e.hasTL, sectors: [] }; groups.set(gk, g) }
-          g.sectors.push(...sector)
-        }
-      }
       // Peel treelawn-Y groups first (rr is Y-sorted, but make it explicit):
       // where two legs' sectors graze near a corner the treelawn claims the
       // overlap — the grass ends at its tangent, the walk yields.
@@ -3796,10 +3554,6 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         let best = null, bestD = Infinity
         for (const f of fillets) { const d = Math.hypot(f.apex[0] - c.p[0], f.apex[1] - c.p[1]); if (d < bestD) { bestD = d; best = f } }
         if (!best || bestD > best.r + c.trim + 1) { dump('no-fillet-in-range', { bestD: best ? +bestD.toFixed(3) : null, tol: best ? +(best.r + c.trim + 1).toFixed(3) : null }); continue }
-        // [A10-③] On a partitioned tile the corner OWNS ITS ARC, so the takeover is
-        // not a bid: the legs already stopped at this arc's two tangents and nothing
-        // else can claim it. Step over and step back are the same cut.
-        const ownArc = partitioned ? cornerSpans.get(best) : null
         let shallow = shallowByT.get(c.T)
         if (!shallow) {
           shallow = (c.T >= TLmax + SWmax - 1e-9)
@@ -3809,14 +3563,8 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         }
         // margin = c.trim (asphalt-hw + R) extends the sector up each leg to the
         // leg slab's pulled-back end, closing the leg↔corner seam (the LU notch).
-        const sector = ownArc || [arcSectorPoly(best.C, best.r, best.tA, best.tB, sectorDepth, c.trim)]
+        const sector = [arcSectorPoly(best.C, best.r, best.tA, best.tB, sectorDepth, c.trim)]
         const pad = intersectRings(shallow, sector)
-        // The corner's own band DEEPER than its max-adjacent total is the same
-        // authored-shallower residual a leg routes to LU (`luExtra`) — on the
-        // partition path the corner owns that ground, so it must route it too or
-        // it reads as this ticket's defect. Genuine default: c.T is the envelope,
-        // so this is empty.
-        if (ownArc && c.T < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(intersectRings(sector, bandRem), ringAt(c.T)))
         // A FOURTH decline the brief's three gates do not name: the sector met the
         // band but their intersection is empty (the band above c.T is already fully
         // claimed by the leg strips here, or the sector missed bandRem entirely).
@@ -5313,10 +5061,21 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const spanOfSrc = (si, e) => { const c = st.iaCap?.[si]?.[e], a = st.iaArc?.[si]?.[e], r = (stamps[si] || [])[e]
     return (c != null ? 'c' + c : a != null ? 'a' + a : r != null ? 'r' + r : '-') + '/' + (r ?? '-') }
   for (const p of parts) p.dspan = p.dring.map((_, j) => spanOfSrc(p.si, p.dsrc[j]))
+  // ⭐ A ZERO-DEPTH OFFSET IS THE RING (Boz, 2026-10-20). Where every depth on a part is 0 (a VERGE: bare on every edge),
+  // the line IS the region boundary — the part's own `ring`, exactly the ring `curbOuter` is built from — never an offset
+  // computed off the densified ring. ⛔ That offset fell up to 0.6 mm short of the region at the lattice, and the gap was
+  // painted as CURB on bare verges (Huron 13/61/139/142/145, JH 439; mean width ≤ 0.3 mm). A part with ANY nonzero
+  // depth is offset as before. ▶ node checks/claims-verge-bare.mjs
   const insDL = (pick) => {
     const o = [], h = [], per = []
     for (const p of parts) {
-      const S = {}, rs = offsetRingByRects(p.dring, pick(p), p.hole, S, null, 0, null, (e) => p.dspan[e])
+      const pk = pick(p)
+      if (p.dring.every((_, j) => !(pk(j) > 0))) {
+        ;(p.hole ? h : o).push(p.ring)
+        per.push({ p, rings: [p.ring], labs: [p.ring.map((_, e) => spanOfSrc(p.si, e))], clips: [], edges: [], dropped: [], areaMin: null })
+        continue
+      }
+      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, 0, null, (e) => p.dspan[e])
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
         clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
@@ -5938,8 +5697,9 @@ export function cornerFlagOf(v) { return v != null && typeof v === 'object' && t
 export function cutOf(v) { return v != null && typeof v === 'object' && typeof v.cut === 'string' ? v.cut : null }
 
 export function buildTileGround(ribbons, opts = {}) {
-  // ⛔ The curb width is the Look's AUTHORED value (design.json `curbWidth`) — no substitute (Boz ruled 2026-10-19).
-  if (!Number.isFinite(opts.curbWidth)) throw new Error(`[tileGround] ⛔ no curbWidth given (${opts.curbWidth}) — the Look's design.json carries no curbWidth — author curbWidth in this town's Look`)
+  // ⛔ The curb width arrives RESOLVED (the Look's authored value, else the kit's) — the default lives at the design-read
+  // layer, never here (Boz ruled 2026-10-20). ▶ checks/claims-a-look-authors-its-curb-width.mjs
+  if (!Number.isFinite(opts.curbWidth)) throw new Error(`[tileGround] ⛔ no curbWidth given (${opts.curbWidth}) — pass the width the design reader resolved (authored, else the kit's: lookDesign.mjs#bakeCurbWidth, the store's curbWidthOf); a builder never picks one`)
   const curbWidth = opts.curbWidth
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
   // Smooth centerlines BEFORE face extraction so the grout (shared tile edges)
@@ -5992,12 +5752,11 @@ export function buildTileGround(ribbons, opts = {}) {
   // concentric ped bands (offsets of the asphalt-inner) follow. segOrd is
   // computed on the original chain so it matches the authoring key.
   const blockCustoms = (opts.blockCustoms && typeof opts.blockCustoms === 'object') ? opts.blockCustoms : null
-  // A2 / F3 — corner R reads the authored controls: base 4.5 m (AASHTO
-  // residential baseline, R_CLASS_DEFAULT) × the global Corners slider
-  // (cornerRadiusScale), with per-corner / per-IX overrides resolved per tile
-  // vertex (the gold-dot authoring). Each tile vertex IS a centerline node = an
-  // IX point; its two bounding tile edges are the corner's two legs.
-  const baseR = Number.isFinite(opts.cornerR) ? opts.cornerR : 4.5
+  // A2 / F3 — corner R reads the authored controls: the base is the LOCAL class row's radius (`LOCAL_SECTION.cornerR`,
+  // 15 ft — the kit's one home; uniform for every corner until classifier step 7 makes ② read each street's class row)
+  // × the global Corners slider (cornerRadiusScale), with per-corner / per-IX overrides resolved per tile vertex (the
+  // gold-dot authoring). ⛔ No `opts.cornerR` substitution: no caller passed one, so it was a fallback that always fired.
+  const baseR = LOCAL_SECTION.cornerR
   const scale = Number.isFinite(opts.cornerRadiusScale) ? opts.cornerRadiusScale : 1
   const ixOverrides = (opts.cornerRadiusOverrides && typeof opts.cornerRadiusOverrides === 'object') ? opts.cornerRadiusOverrides : null
   const cornerOverrides = (opts.cornerCornerRadiusOverrides && typeof opts.cornerCornerRadiusOverrides === 'object') ? opts.cornerCornerRadiusOverrides : null
@@ -6845,7 +6604,7 @@ export function buildTileGround(ribbons, opts = {}) {
             if (!o1 || !o2) return
             const fil = { apex: a.V, C: a.C, r: a.r, tA: a.tA, tB: a.tB }
             const cc = protoCornerOf(o1, o2)
-            if (cc) { protoCornerSet.push({ key: cc.key, V: cc.ix, legA: cc.legA, legB: cc.legB, kind: cc.legA.split(':')[0] === cc.legB.split(':')[0] ? 'bend' : 'junction', vertR: a.R, fillet: fil })
+            if (cc) { protoCornerSet.push({ key: cc.key, V: cc.ix, legA: cc.legA, legB: cc.legB, kind: cc.legA.split(':')[0] === cc.legB.split(':')[0] ? 'bend' : 'junction', vertR: a.R, fillet: fil, asked: a.asked, leg: a.leg })
                       ;(protoArcKeyByBlock[k] ||= new Map()).set(u, cc.key) }
             ;(protoArcsByBlock[k] ||= []).push(fil)
           })
@@ -6889,7 +6648,13 @@ export function buildTileGround(ribbons, opts = {}) {
         // moved its node or renamed a leg — reaches nothing. Printed, every one, by name and value; never refused: re-aiming
         // it is the operator's. ▶ node checks/claims-every-authored-corner-resolves.mjs
         const have = new Set(protoCornerSet.map(c => c.key)), orphan = Object.entries(cornerOverrides || {}).filter(([k]) => !legacy.includes(k) && !have.has(k))
-        if (orphan.length) console.warn(`[tileGround][PROTO②] ⛔ ${orphan.length} authored corner entr${orphan.length === 1 ? 'y names' : 'ies name'} NO corner of this pour — ${orphan.length === 1 ? 'it reaches' : 'they reach'} nothing until re-aimed: ${orphan.map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join(' · ')}`) }
+        if (orphan.length) console.warn(`[tileGround][PROTO②] ⛔ ${orphan.length} authored corner entr${orphan.length === 1 ? 'y names' : 'ies name'} NO corner of this pour — ${orphan.length === 1 ? 'it reaches' : 'they reach'} nothing until re-aimed: ${orphan.map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join(' · ')}`)
+        // ⭐ AN AUTHORED RADIUS THE LEG CANNOT HOLD (Boz, 2026-10-20): the corner still bends — the operator asked for more than
+        // the leg allows, and the geometry wins (the product) — but it is said PER CORNER: the key, the radius asked, the radius
+        // drawn, the bounding leg. An unauthored corner clamped the same way stays a count (below).
+        // ▶ node checks/claims-every-authored-corner-resolves.mjs (its synthetic row)
+        const clampedAuthored = protoCornerSet.filter(c => c.leg != null && radiusOf(cornerOverrides?.[c.key]) != null)
+        for (const c of clampedAuthored) console.warn(`[tileGround][PROTO②] ⚠️ authored corner ${c.key}: asked R ${c.asked.toFixed(2)} m, drawn R ${c.vertR.toFixed(2)} m — bounded by its leg (${c.leg.toFixed(2)} m; a corner may not ease past half its leg)`) }
       // ⭐⭐⭐ THE EASE NOW SAYS WHY IT DECLINED A CORNER — wired 2026-09-08 (`easeSkips`, declared
       // and unreferenced since it was written). ⛔ `noR` is the line to read: those vertices TURN
       // past `FILLET_TURN_TOL` and were still not corners, because `isCorner_` also requires
@@ -6920,7 +6685,7 @@ export function buildTileGround(ribbons, opts = {}) {
         protoNoses = { w: cmw.m, sources: cmw.sources, capped: sk.noseCapped, spike: sk.noseSpike, narrow: sk.noseNarrow, at: ns }
         console.warn(`[tileGround][PROTO②] the nose: a curbed feature ends where the block narrows to ${cmw.m.toFixed(3)} m (${cmw.label}) and is capped at r = ${(cmw.m / 2).toFixed(3)} m ([U] q-curbed-nose-radius) — ${sk.noseCapped} capped · ${sk.noseSpike} folded back past 180° (a SPIKE, not cut) · ${sk.noseNarrow} narrower than that to the next corner (no place to end, not cut)${ns.find(x => x.kind !== 'capped') ? `. First not cut at (${ns.find(x => x.kind !== 'capped').a.map(c => c.toFixed(2)).join(', ')})` : ''}.`)
         if (sk.pairClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.pairClamped} PAIR(S) of named corners share one leg too short for both — each eased below its R, so the pair reads as one squeezed corner. First at (${sk.pairSites[0].a.map(c => c.toFixed(2)).join(', ')}) ↔ (${sk.pairSites[0].b.map(c => c.toFixed(2)).join(', ')}), leg ${sk.pairSites[0].leg.toFixed(2)} m.`)
-        if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their authored radius — bounded by their own leg, not by a budget. Not absent, but not the authored dimension either.`)
+        if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their radius — bounded by their own leg, not by a budget. Not absent, but not the asked dimension either (the AUTHORED ones are named, each, above).`)
         if (sk.straightWithR) console.warn(`[tileGround][PROTO②] ⛔⛔ ${sk.straightWithR} vertex/vertices CARRY AN AUTHORED RADIUS and were skipped as STRAIGHT — ① ruled them corners, the OFFSET ring says they do not turn, and the ease walks the offset ring. ① is the authority (\`RIBBONS §1\`). These are corners lost to a disagreement between two rings.`)
         console.warn(`[tileGround][PROTO②] ease: ${sk.eased} corner(s) built · ${sk.straight} vertex/vertices passed through as curve samples.`)
       }

@@ -34,7 +34,7 @@ import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
 import { LAND_USE_COLORS } from '../lib/ribbonsGeometry.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
-import useCartographStore from './stores/useCartographStore.js'
+import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { makeBoundary } from './boundary.js'
 import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { slabFetch } from '../lib/slabUrl.js'
@@ -266,7 +266,7 @@ export default function BlockGeometryV2Debug({
   const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const cornerEditMode            = useCartographStore(s => s.cornerEditMode)
-  const curbWidth                 = useCartographStore(s => s.curbWidth)   // null = not authored: the builds refuse by name
+  const curbWidth                 = useCartographStore(curbWidthOf)   // the Look's authored width, else the kit's
   // [curve-fit — THE ONE KNOB] The curb derives from the single shared smoothing
   // tension `STREET_SMOOTH` (smoothCenterline.js). The smooth>0 path re-walks
   // extractFaces over the smoothed centerline → the curb iA + ped ribbon follow
