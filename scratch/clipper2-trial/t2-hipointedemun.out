@@ -1,0 +1,55 @@
+T2 · hipointedemun (look hipointedemun, authored slots 17) · 1468 blocks, 1477 contours · STEP 0.25 m · STUB 0.1 m · spike < 30°
+ours = offsetRingByRects (live ②), ease off. Distances in m.
+
+per contour            p50      p90      p99      max     contours with H > 0.01 / > 0.5 / ∞ (one side empty)
+H vertex        2.453    8.361        ∞        ∞    1191 / 1143 / 67
+H stub-min      0.001    4.098        ∞        ∞    558 / 271 / 66
+H stub-max      0.001    3.324        ∞        ∞    485 / 251 / 65
+H vertex     (C2 rings under AREA_MIN dropped)  p99 ∞  max ∞  > 0.5: 1084
+H stub-min   (C2 rings under AREA_MIN dropped)  p99 5.486  max ∞  > 0.5: 181
+H stub-max   (C2 rings under AREA_MIN dropped)  p99 5.485  max ∞  > 0.5: 163
+XOR m² vertex     total 265157.5  p99 1468.755  max 4249.694
+XOR m² stub-min   total 6603.9  p99 101.449  max 432.154
+XOR m² stub-max   total 5998.0  p99 89.233  max 365.458
+
+vertices   ours 70005 · vertex 38703 · stub-min 91789 · stub-max 91946
+pieces     ours 1402 · vertex 1481 · stub-min 1500 · stub-max 1497
+holes      ours 0 · vertex 0 · stub-min 0 · stub-max 0
+spikes     ours 573 · vertex 420 · stub-min 559 · stub-max 383
+under AREA_MIN   ours (before its floor) 496 rings, 911.48 m², largest 60.38 m² · vertex 81 rings, 943.54 m², largest 79.64 m² · stub-min 102 rings, 901.69 m², largest 60.38 m² · stub-max 99 rings, 896.84 m², largest 60.38 m²
+  by area < 0.01 / 0.01–0.5 / ≥ 0.5 m²:  ours 328 / 85 / 83 · vertex 2 / 11 / 68 · stub-min 7 / 20 / 75 · stub-max 4 / 20 / 75
+
+seams (a depth change at a working-ring vertex): local H within 2·depth + 2 m
+  street = both edges town streets at depth > 0 · hwy = a highway-owned edge (its depth is H-3's placeholder inside H) · zero = an edge at depth 0 (rim, verge)
+  street step       3   vertex p50 3.255 p90 3.658 max 3.658 · stub-min p50 0.099 p90 0.100 max 0.100 · stub-max p50 0.099 p90 0.100 max 0.100
+  street jog       71   vertex p50 2.770 p90 6.135 max 8.539 · stub-min p50 0.100 p90 0.100 max 6.498 · stub-max p50 0.001 p90 0.003 max 6.498
+  street taper    779   vertex p50 0.001 p90 0.902 max ∞ · stub-min p50 0.010 p90 0.034 max ∞ · stub-max p50 0.010 p90 0.031 max ∞
+  street corner  2705   vertex p50 1.473 p90 4.334 max ∞ · stub-min p50 0.001 p90 0.010 max ∞ · stub-max p50 0.001 p90 0.001 max ∞
+  hwy    step      25   vertex p50 0.914 p90 2.434 max 3.494 · stub-min p50 0.914 p90 1.830 max 3.356 · stub-max p50 0.914 p90 1.829 max 3.355
+  hwy    jog       83   vertex p50 1.437 p90 4.704 max 70.105 · stub-min p50 1.607 p90 4.227 max 70.058 · stub-max p50 1.607 p90 4.227 max 70.058
+  hwy    taper      1   vertex p50 1.782 p90 1.782 max 1.782 · stub-min p50 0.010 p90 0.010 max 0.010 · stub-max p50 0.010 p90 0.010 max 0.010
+  hwy    corner   453   vertex p50 1.014 p90 4.990 max ∞ · stub-min p50 0.001 p90 1.081 max ∞ · stub-max p50 0.001 p90 1.068 max ∞
+  zero   step      61   vertex p50 5.356 p90 9.296 max ∞ · stub-min p50 0.100 p90 1.824 max ∞ · stub-max p50 0.100 p90 1.821 max ∞
+  zero   jog       52   vertex p50 5.435 p90 8.267 max ∞ · stub-min p50 1.824 p90 7.952 max ∞ · stub-max p50 1.710 p90 7.769 max ∞
+  zero   taper      3   vertex p50 10.476 p90 11.351 max 11.351 · stub-min p50 3.344 p90 10.476 max 10.476 · stub-max p50 0.014 p90 4.568 max 4.568
+  zero   corner   318   vertex p50 5.241 p90 11.653 max ∞ · stub-min p50 0.100 p90 7.867 max ∞ · stub-max p50 0.100 p90 6.529 max ∞
+
+worst 8 STREET seams by stub-min local H
+  block 96 v0 corner turn 110.1° 5.49→5.03  west-bruno-avenue-1|left|0 → south-hanley-road-23|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 96 v1 corner turn 108.9° 5.03→1.52  south-hanley-road-23|left|0 → strassner-drive-2|left|2  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 96 v2 corner turn 141.0° 1.52→5.49  strassner-drive-2|left|2 → west-bruno-avenue-1|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 107 v0 taper turn 168.3° 5.03→5.03  south-hanley-road-27|left|0 → south-hanley-road-18|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 107 v2 corner turn 68.4° 5.03→5.49  south-hanley-road-18|left|0 → west-bruno-avenue-1|right|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 107 v3 corner turn 121.6° 5.49→8.38  west-bruno-avenue-1|right|0 → south-hanley-road-17|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 107 v5 taper turn 0.0° 8.38→8.38  south-hanley-road-27|left|0 → south-hanley-road-27|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 147 v0 corner turn 149.2° 10.05→1.68  south-brentwood-boulevard-9|right|5 → primary-link-105|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+
+worst 8 contours by stub-min H
+  block 38 n 8 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 6 v · stub-min H ∞ 1 pc 6 v · stub-max H ∞ 1 pc 6 v
+  block 39 n 22 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 13 v · stub-min H ∞ 1 pc 13 v · stub-max H ∞ 1 pc 13 v
+  block 47 n 8 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 6 v · stub-min H ∞ 1 pc 6 v · stub-max H ∞ 1 pc 6 v
+  block 92 n 3 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 3 v · stub-max H ∞ 1 pc 3 v
+  block 96 n 3 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 3 v · stub-max H ∞ 1 pc 3 v
+  block 107 n 6 maxD 8.38  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 3 v · stub-max H ∞ 1 pc 3 v
+  block 147 n 9 maxD 10.05  ours 0 pc 0 v · vertex H ∞ 1 pc 4 v · stub-min H ∞ 1 pc 6 v · stub-max H ∞ 1 pc 6 v
+  block 167 n 8 maxD 11.72  ours 0 pc 0 v · vertex H ∞ 1 pc 7 v · stub-min H ∞ 1 pc 16 v · stub-max H ∞ 1 pc 16 v

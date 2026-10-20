@@ -1,0 +1,55 @@
+T2 · huron (look huron, authored slots 0) · 238 blocks, 244 contours · STEP 0.25 m · STUB 0.1 m · spike < 30°
+ours = offsetRingByRects (live ②), ease off. Distances in m.
+
+per contour            p50      p90      p99      max     contours with H > 0.01 / > 0.5 / ∞ (one side empty)
+H vertex        1.451    5.485        ∞        ∞    140 / 137 / 8
+H stub-min      0.001    2.433        ∞        ∞    69 / 43 / 8
+H stub-max      0.001    1.520        ∞        ∞    63 / 39 / 8
+H vertex     (C2 rings under AREA_MIN dropped)  p99 12.509  max 18.348  > 0.5: 129
+H stub-min   (C2 rings under AREA_MIN dropped)  p99 4.539  max 5.485  > 0.5: 35
+H stub-max   (C2 rings under AREA_MIN dropped)  p99 4.520  max 4.724  > 0.5: 31
+XOR m² vertex     total 87470.9  p99 5112.300  max 7978.504
+XOR m² stub-min   total 2589.3  p99 175.939  max 1568.489
+XOR m² stub-max   total 2580.4  p99 175.142  max 1567.888
+
+vertices   ours 29178 · vertex 15394 · stub-min 38285 · stub-max 38319
+pieces     ours 237 · vertex 247 · stub-min 248 · stub-max 248
+holes      ours 1 · vertex 1 · stub-min 1 · stub-max 1
+spikes     ours 52 · vertex 33 · stub-min 62 · stub-max 34
+under AREA_MIN   ours (before its floor) 104 rings, 73.86 m², largest 14.71 m² · vertex 10 rings, 74.17 m², largest 14.72 m² · stub-min 11 rings, 72.84 m², largest 14.72 m² · stub-max 11 rings, 72.84 m², largest 14.72 m²
+  by area < 0.01 / 0.01–0.5 / ≥ 0.5 m²:  ours 71 / 24 / 9 · vertex 0 / 1 / 9 · stub-min 1 / 1 / 9 · stub-max 1 / 1 / 9
+
+seams (a depth change at a working-ring vertex): local H within 2·depth + 2 m
+  street = both edges town streets at depth > 0 · hwy = a highway-owned edge (its depth is H-3's placeholder inside H) · zero = an edge at depth 0 (rim, verge)
+  street step       0
+  street jog        6   vertex p50 2.112 p90 5.270 max 5.270 · stub-min p50 0.100 p90 0.100 max 0.100 · stub-max p50 0.001 p90 0.003 max 0.003
+  street taper    118   vertex p50 0.009 p90 0.244 max 2.061 · stub-min p50 0.010 p90 0.105 max 0.620 · stub-max p50 0.010 p90 0.105 max 0.620
+  street corner   385   vertex p50 1.998 p90 2.278 max ∞ · stub-min p50 0.001 p90 0.001 max ∞ · stub-max p50 0.001 p90 0.001 max ∞
+  hwy    step       5   vertex p50 0.915 p90 1.524 max 1.524 · stub-min p50 1.523 p90 4.539 max 4.539 · stub-max p50 1.522 p90 4.539 max 4.539
+  hwy    jog       13   vertex p50 1.130 p90 1.828 max 4.521 · stub-min p50 1.506 p90 2.426 max 4.520 · stub-max p50 1.505 p90 2.426 max 4.520
+  hwy    taper      0
+  hwy    corner    61   vertex p50 0.892 p90 2.530 max 3.609 · stub-min p50 0.000 p90 0.001 max 0.884 · stub-max p50 0.000 p90 0.001 max 0.914
+  zero   step      15   vertex p50 3.344 p90 5.484 max 5.484 · stub-min p50 0.100 p90 2.434 max 3.346 · stub-max p50 0.100 p90 0.100 max 2.433
+  zero   jog        3   vertex p50 5.354 p90 5.434 max 5.434 · stub-min p50 0.100 p90 0.100 max 0.100 · stub-max p50 0.100 p90 0.119 max 0.119
+  zero   taper      0
+  zero   corner    68   vertex p50 3.041 p90 5.486 max 8.689 · stub-min p50 0.095 p90 3.045 max 5.485 · stub-max p50 0.001 p90 2.357 max 3.277
+
+worst 8 STREET seams by stub-min local H
+  block 73 v1 corner turn 92.6° 3.96→3.35  beachwood-villas-apartments-1|left|1 → cleveland-road-east-1|left|16  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 73 v2 corner turn 92.0° 3.35→3.96  cleveland-road-east-1|left|16 → beachwood-villas-apartments-1|left|0  vertex ∞ · stub-min ∞ · stub-max ∞
+  block 59 v3 taper turn 0.0° 3.35→3.35  main-street-2|left|0 → main-street-2|left|0  vertex 0.619 · stub-min 0.620 · stub-max 0.620
+  block 159 v7 corner turn 132.7° 1.52→3.04  tertiary-97|left|0 → university-drive-east-1|left|0  vertex 0.000 · stub-min 0.352 · stub-max 0.352
+  block 146 v21 taper turn 4.5° 4.84→4.84  primary-91|left|1 → primary-91|left|1  vertex 0.152 · stub-min 0.148 · stub-max 0.148
+  block 146 v22 taper turn 3.2° 4.49→4.49  primary-91|left|1 → primary-91|left|1  vertex 0.152 · stub-min 0.148 · stub-max 0.148
+  block 146 v23 taper turn 3.3° 4.12→4.12  primary-91|left|1 → primary-91|left|1  vertex 0.152 · stub-min 0.148 · stub-max 0.148
+  block 146 v24 taper turn 3.2° 3.74→3.74  primary-91|left|1 → primary-91|left|1  vertex 0.152 · stub-min 0.148 · stub-max 0.148
+
+worst 8 contours by stub-min H
+  block 65 n 7 maxD 3.96  ours 0 pc 0 v · vertex H ∞ 2 pc 6 v · stub-min H ∞ 2 pc 6 v · stub-max H ∞ 2 pc 6 v
+  block 73 n 5 maxD 3.96  ours 0 pc 0 v · vertex H ∞ 1 pc 5 v · stub-min H ∞ 1 pc 5 v · stub-max H ∞ 1 pc 5 v
+  block 80 n 32 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 32 v · stub-min H ∞ 1 pc 32 v · stub-max H ∞ 1 pc 32 v
+  block 101 n 12 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 2 pc 9 v · stub-min H ∞ 2 pc 13 v · stub-max H ∞ 2 pc 13 v
+  block 102 n 14 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 4 v · stub-min H ∞ 1 pc 6 v · stub-max H ∞ 1 pc 6 v
+  block 128 n 5 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 3 v · stub-max H ∞ 1 pc 3 v
+  block 130 n 3 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 3 v · stub-max H ∞ 1 pc 3 v
+  block 135 n 3 maxD 5.49  ours 0 pc 0 v · vertex H ∞ 1 pc 3 v · stub-min H ∞ 1 pc 3 v · stub-max H ∞ 1 pc 3 v

@@ -1,0 +1,45 @@
+T3 · huron (authored slots 0) · 244 contours · the carve: ① − ∪(bands, wedges, bevels), NonZero, 1 mm grid
+Clipper2 minted 24775 vertices through zCallback; 146 of them got an empty owner set
+raw carve:
+  vertices 30819: no owner 0 (0.00%) · one 28597 (92.79%) · two or more 2222 (7.21%)
+  edges 30819: no owner 53 (0.17%) · ambiguous 357 (1.16%) · one 30409 (98.67%)
+    of the one-owner edges: ≤ TOL long (not judged) 677 · judged 29732: on no contributor of that owner 60 (0.20%) · differs from the containment rule 27 (0.09%) · rule finds none 60 (0.20%)
+    edges > TOL 29971: Z where it names one owner the edge lies on, else the containment rule → still unlabelled 64 (0.21%)
+    no-owner edges by what the rule says they are: {"rule kind 2 (rim) · ends 2/1 owners":9,"rule kind 2 (rim) · ends 1/1 owners":4,"rule kind 1 · ends 1/1 owners":17,"rule none · ends 1/1 owners":4,"rule kind 2 · ends 1/1 owners":7,"rule kind 2 · ends 2/1 owners":4,"rule kind 2 · ends 1/2 owners":3,"rule kind 1 · ends 1/2 owners":4,"rule kind 1 (rim) · ends 1/1 owners":1}
+    rule disagreements by contributor kind (1 curb line · 2 ① edge · 3 band end cap): {"rule kind 1 vs Z's kind 3":17,"rule kind 1 vs Z's kind 1":9,"rule kind 2 vs Z's kind 3":1}
+rings kept (> AREA_MIN):
+  vertices 30624: no owner 0 (0.00%) · one 28512 (93.10%) · two or more 2112 (6.90%)
+  edges 30624: no owner 46 (0.15%) · ambiguous 320 (1.04%) · one 30258 (98.80%)
+    of the one-owner edges: ≤ TOL long (not judged) 672 · judged 29586: on no contributor of that owner 60 (0.20%) · differs from the containment rule 26 (0.09%) · rule finds none 60 (0.20%)
+    edges > TOL 29790: Z where it names one owner the edge lies on, else the containment rule → still unlabelled 62 (0.21%)
+    no-owner edges by what the rule says they are: {"rule kind 2 (rim) · ends 2/1 owners":9,"rule kind 2 (rim) · ends 1/1 owners":4,"rule kind 1 · ends 1/1 owners":17,"rule none · ends 1/1 owners":4,"rule kind 2 · ends 1/1 owners":4,"rule kind 2 · ends 2/1 owners":3,"rule kind 1 · ends 1/2 owners":4,"rule kind 1 (rim) · ends 1/1 owners":1}
+    rule disagreements by contributor kind (1 curb line · 2 ① edge · 3 band end cap): {"rule kind 1 vs Z's kind 3":17,"rule kind 1 vs Z's kind 1":9}
+ours (Clipper 1 carve + containment labelOf): edges 29901, unlabelled 537 (1.80%); on kept rings 29539, unlabelled 477 (1.61%); of those > TOL 29103, unlabelled 41 (0.14%)
+examples eOff:
+  block 22 at (4540.77, 1806.18) early-successional-access|left|0  len 0.002 m
+  block 24 at (4484.34, 2019.79) estuary-overlook-trail|right|2  len 0.002 m
+  block 26 at (4735.68, 1879.35) prairie-access|left|0  len 0.002 m
+  block 30 at (1910.19, 2438.94) sprowl-road|right|0  len 0.002 m
+  block 31 at (234.13, 2760.01) motorway-56|left|0  len 0.002 m
+  block 32 at (167.22, 2017.27) riverside-drive|right|5  len 0.002 m
+examples eRule:
+  block 0 at (-3642.07, 4893.69) huron-avery-road|right|5 · rule: __boundary__|right|0  len 3.045 m
+  block 1 at (-1153.78, 4933.43) mudbrook-road|right|7 · rule: __boundary__|right|0  len 3.345 m
+  block 2 at (895.83, 4916.19) river-road|right|5 · rule: __boundary__|right|0  len 5.485 m
+  block 2 at (611.52, 4689.21) huron-river-path|right|0 · rule: __boundary__|right|0  len 5.485 m
+  block 2 at (541.43, 4933.03) river-view-drive|right|3 · rule: __boundary__|right|0  len 5.485 m
+  block 3 at (1518.22, 4658.87) wikel-road|right|0 · rule: __boundary__|right|0  len 5.485 m
+examples eAmb:
+  block 1 at (-3240.23, 4059.37) huron-avery-road|left|5 + scheid-road|right|4 · ends huron-avery-road|left|5 | scheid-road|right|4  len 0.001 m
+  block 1 at (-3240.23, 4059.37) huron-avery-road|left|5 + scheid-road|right|4 · ends huron-avery-road|left|5 | scheid-road|right|4  len 0.001 m
+  block 2 at (-100.92, 2780.7) motorway-link-46|right|0 + motorway-65|right|0 · ends motorway-link-46|right|0 | motorway-65|right|0  len 11.617 m
+  block 2 at (1458.03, 2814.24) river-road|right|2 + motorway-65|right|0 · ends river-road|right|2 | motorway-65|right|0  len 0.001 m
+  block 2 at (285.05, 4612.26) river-view-drive|left|2 + holiday-lane|left|0 · ends river-view-drive|left|2 | holiday-lane|left|0  len 0.001 m
+  block 2 at (285.05, 4612.26) holiday-lane|left|0 + river-view-drive|left|2 · ends holiday-lane|left|0 | river-view-drive|left|2  len 0.001 m
+examples eNone:
+  block 2 at (616.95, 4690.04) __boundary__|right|0+huron-river-path|right|0 + huron-river-path|left|0 · ends __boundary__|right|0+huron-river-path|right|0 | huron-river-path|left|0  len 252.914 m
+  block 2 at (574.79, 4944.98) huron-river-path|left|0 + river-view-drive|left|3 · ends huron-river-path|left|0 | river-view-drive|left|3  len 0.068 m
+  block 4 at (2156.64, 4826.28) __boundary__|right|0+jeffries-road|right|1 + wikel-road|left|0 · ends __boundary__|right|0+jeffries-road|right|1 | wikel-road|left|0  len 113.317 m
+  block 5 at (3817.97, 4898.31) __boundary__|right|0+old-berlin-road|right|0 + jeffries-road|left|1 · ends __boundary__|right|0+old-berlin-road|right|0 | jeffries-road|left|1  len 41.525 m
+  block 6 at (3869.34, 4925.06) __boundary__|right|0+barrows-road-0|left|0 + old-berlin-road|left|0 · ends __boundary__|right|0+barrows-road-0|left|0 | old-berlin-road|left|0  len 24.667 m
+  block 8 at (4945.4, 3334.66) __boundary__|right|0 + berlin-road-0|left|9 · ends __boundary__|right|0 | berlin-road-0|left|9  len 1607.347 m

@@ -1,0 +1,25 @@
+(1) LS today, west-18th-street × dolman-street-2
+  block 251 v32 west-18th-street → dolman-street-2  depth 5.485 → 5.485  vertex H(local) 0.508 · stub-min H(local) 0.988 · stub-max H(local) 0.510
+  block 282 v18 dolman-street-2 → west-18th-street  depth 5.9923318952652735 → 5.9923318952652735  vertex H(local) 0.001 · stub-min H(local) 0.001 · stub-max H(local) 0.001
+
+(2) synthetic: 3.24° turn at (0,0) on the bottom side of a 200 m block, depth step 1.4369 m
+  turn toward the block · 4.0000 → 5.4369
+    ours      (-0.31,5.43) (-0.23,4.00)
+    vertex    H 1.433  (-0.15,5.43)
+    stub-min  H 0.098  (-0.23,4.00) (-0.21,5.43)
+    stub-max  H 0.003  (-0.23,4.00) (-0.31,5.43) (-0.21,5.43)
+  turn toward the block · 5.4369 → 4.0000
+    ours      (0.00,5.44) (0.00,4.01)
+    vertex    H 1.433  (-0.09,4.00)
+    stub-min  H 0.100  (-0.10,5.44) (-0.00,4.01)
+    stub-max  H 0.001  (0.00,5.44) (0.00,4.01)
+  turn away from it · 4.0000 → 5.4369
+    ours      (0.00,4.00) (0.31,5.43)
+    vertex    H 1.435  (0.15,5.44)
+    stub-min  H 0.112  (0.11,4.00) (0.41,5.40) (0.41,5.42) (0.41,5.42)
+    stub-max  H 0.150  (-0.10,4.00) (0.16,5.44) (0.41,5.42) (0.41,5.42)
+  turn away from it · 5.4369 → 4.0000
+    ours      (0.00,5.44) (0.23,3.99)
+    vertex    H 1.435  (0.11,4.00)
+    stub-min  H 0.110  (-0.10,5.44) (0.11,4.00) (0.33,3.99) (0.33,3.99)
+    stub-max  H 0.153  (0.16,5.44) (0.33,3.99) (0.33,3.99)
