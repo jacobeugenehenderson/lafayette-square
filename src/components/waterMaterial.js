@@ -119,7 +119,7 @@ export function phaseSpeed(lambdaM) { return Math.sqrt(GRAVITY_MPS2 * lambdaM / 
 
 // ⭐⭐ THE WIND IS REAL AND IT IS ALREADY IN THE APP — I said otherwise here and
 // I was wrong. `useSkyState.windSpeedMs` and `.windDirDeg` are polled live from
-// open-meteo (`wind_speed_10m` / `wind_direction_10m`, `useWeather.js`) for the
+// the NWS grid (`windSpeed` / `windDirection`, `lib/nws.js`) for the
 // town's own coordinates. ⇒ The wave field does not need an authored wind knob;
 // it reads the weather, which is what a weather-and-environment tracker is for.
 // The octaves fan around that live bearing with the ±spread real wave trains have.
@@ -327,7 +327,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uSunAltitude:   { value: 0.5 },
     uWaveK:         { value: waveKForExtent(extentDiag) },
     uGlint:         { value: glint },
-    // ⭐ Live from the town's own weather (open-meteo via useSkyState); the
+    // ⭐ Live from the town's own weather (NWS via useSkyState); the
     // caller drives both every frame. Defaults are a light breeze so a surface
     // with no weather attached is still water and not glass.
     uWindDir:       { value: new THREE.Vector2(0.88, 0.47) },

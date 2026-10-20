@@ -13,6 +13,7 @@ export function getWeatherCondition(wmoCode) {
   if (wmoCode >= 51 && wmoCode <= 57) return { label: 'Drizzle', iconKey: 'drizzle' }
   if (wmoCode >= 61 && wmoCode <= 67) return { label: 'Rain', iconKey: 'rain' }
   if (wmoCode >= 71 && wmoCode <= 77) return { label: 'Snow', iconKey: 'snow' }
+  if (wmoCode === 79) return { label: 'Sleet', iconKey: 'snow' }   // ice pellets (NWS sleet); no sleet icon in the set
   if (wmoCode >= 80 && wmoCode <= 82) return { label: 'Rain Showers', iconKey: 'rain' }
   if (wmoCode >= 85 && wmoCode <= 86) return { label: 'Snow Showers', iconKey: 'snow' }
   if (wmoCode >= 95 && wmoCode <= 99) return { label: 'Thunderstorm', iconKey: 'thunderstorms' }

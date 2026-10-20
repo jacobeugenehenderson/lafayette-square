@@ -16,6 +16,7 @@
  * ⭐ THE SET, IN THE CARD (Jacob: "surprisingly useful to be able to see them all side by side"): the eight files
  *    Capture wrote, read from the slab on disk, four to a row (a toggle: two) with the slot names. No overlay. The button
  *    reads Recapture once the town has a full set.
+ * ⭐ THE CREDIT IS PRINTED IN EACH IMAGE'S CORNER, from the town's sources.json (creditFor below).
  */
 import { useState } from 'react'
 import { addAfterEffect, useThree } from '@react-three/fiber'
@@ -26,7 +27,8 @@ import useCartographStore from './stores/useCartographStore.js'
 import { getTodSlotMinutes, getTodSlotLabel } from './animatedParam.js'
 import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { townDateAtMinute, townClockOf, townMinuteOf } from '../lib/townClock.js'
-import { slabUrl } from '../lib/slabUrl.js'
+import { slabUrl, slabFetch } from '../lib/slabUrl.js'
+import { printedCredit } from '../lib/sources.js'
 import { shareImageRel } from '../lib/shareCard.js'
 import { cardBtn } from '../stage/StageApp.jsx'
 
@@ -58,8 +60,9 @@ function until(pred, what, pose) {
   })
 }
 
-// The frame `n` frames from now, read straight after it is drawn (r3f's after-effect runs before the browser clears it).
-function frameAfter(n, pose) {
+// The frame `n` frames from now, read straight after it is drawn (r3f's after-effect runs before the browser clears it),
+// with the map's credit printed in its corner.
+function frameAfter(n, pose, credit) {
   return new Promise((resolve, reject) => {
     let left = n
     const off = addAfterEffect(() => {
@@ -69,7 +72,9 @@ function frameAfter(n, pose) {
       const src = _three.gl.domElement, s = Math.min(src.width, src.height)
       const c = document.createElement('canvas')
       c.width = SIZE; c.height = SIZE
-      c.getContext('2d').drawImage(src, (src.width - s) / 2, (src.height - s) / 2, s, s, 0, 0, SIZE, SIZE)
+      const ctx = c.getContext('2d')
+      ctx.drawImage(src, (src.width - s) / 2, (src.height - s) / 2, s, s, 0, 0, SIZE, SIZE)
+      if (credit) drawCredit(ctx, credit)
       resolve(c.toDataURL('image/jpeg', 0.9))
     })
   })
@@ -99,8 +104,34 @@ async function settleAt(when, what, pose) {
   }, `${what}: the weather`, pose)
 }
 
-async function captureSet() {
+/**
+ * ⭐ THE CREDIT IS IN THE PICTURE. A share image is a static image of an OSM-derived map, so it owes the same credit as
+ * the map (ODbL; the OSMF guidelines: a static image is attributed like a browsable map, and where it cannot carry a
+ * link the URL is printed). Read from the town's own slab (`sources.json`, lib/sources.js#printedCredit) — never a
+ * written string. ⛔ A slab with no readable sources.json REFUSES the capture: a picture without its credit is the
+ * failure, not a picture.
+ */
+async function creditFor(lookId) {
+  let j = null
+  try { const r = await slabFetch(lookId, 'sources.json', undefined, Date.now()); if (r.ok) j = await r.json() } catch { j = null }
+  if (!Array.isArray(j?.credits)) throw new Error(`"${lookId}" has no readable sources.json in its slab, so its share images could not carry the map's credit — pour the town (its sources step), then capture`)
+  return printedCredit(j.credits)   // null: this slab owes no attribution
+}
+
+const CREDIT_PX = 20   // at SIZE 1200: legible in a link preview, quiet in the corner
+function drawCredit(ctx, text) {
+  ctx.save()
+  ctx.font = `${CREDIT_PX}px ${getComputedStyle(document.body).fontFamily}`
+  ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'; ctx.shadowBlur = 4
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+  ctx.fillText(text, SIZE - CREDIT_PX, SIZE - CREDIT_PX * 0.75)
+  ctx.restore()
+}
+
+async function captureSet(lookId) {
   if (!_three?.gl?.domElement) throw new Error('Stage is not drawing yet')
+  const credit = await creditFor(lookId)
   const pose = poseOf(_three.camera)
   const tod = useTimeOfDay.getState()
   const was = { time: tod.currentTime, live: tod.isLive, paused: tod.isPaused }
@@ -128,7 +159,7 @@ async function captureSet() {
         await settleAt(new Date(when.getTime() - 30 * 60000), getTodSlotLabel(id), pose)
       }
       await settleAt(when, getTodSlotLabel(id), pose)
-      images[id] = await frameAfter(2, pose)
+      images[id] = await frameAfter(2, pose, credit)
     }
   } finally {
     if (wasWeather !== SHARE_WEATHER) useCartographStore.getState().setWeatherMode(wasWeather)
@@ -180,7 +211,7 @@ export default function ShareCapture({ playing }) {
     setBusy(true); setMsg(null)
     try {
       if (playing) throw new Error('the Hero shot is playing — pause it (⏸) on the frame you want, then capture')
-      const images = await captureSet()
+      const images = await captureSet(lookId)
       const r = await fetch(`/api/cartograph/looks/${encodeURIComponent(lookId)}/share`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images }) })
       const data = await r.json()

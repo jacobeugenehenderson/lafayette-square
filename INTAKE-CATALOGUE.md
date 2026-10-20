@@ -180,15 +180,16 @@ Mark these "kit-global, already acquired" so town #3 never sees them as work.
 | **Planetary orbital elements** (Keplerian) | `src/data/planetarium/planets.json` | **JPL SSD "Approximate Positions of the Major Planets"** — US-gov public domain |
 
 ### 2.3 ⚠️ LIVE NETWORK — the kit's one hard doctrine violation
-**Open-Meteo**, queried live at `src/hooks/useWeather.js:9`, polled by `WeatherPoller.jsx`. Supplies
-WMO code, cloud cover, precip, temp, humidity, pressure, visibility, wind, radiation + 48 h forecast.
-Drives **everything**: Condition selection, Degrees response, sky darkening, rain/snow/wetness/lightning,
-cloud advection, **tree sway**.
+**The US National Weather Service** (`api.weather.gov`, public domain), read by `src/lib/nws.js` through
+`src/hooks/useWeather.js`, polled by `WeatherPoller.jsx`. Supplies temp, humidity, cloud cover, precip, visibility,
+wind, the NWS weather type (mapped to WMO) and observed pressure + a 48 h forecast; ⛔ **no radiation**. Drives
+**everything**: Condition selection, Degrees response, sky darkening, rain/snow/wetness/lightning, cloud advection,
+**tree sway**. *(Open-Meteo until 2026-10-20: its free API is non-commercial only.)*
 
 - **The pour is clean** — no bake step touches it. **The player is not.**
-- Absent → `catch (e) { /* Silently ignore */ }` + zeroed initial state = **a cloudless, windless, permanent-fair sky forever.** ✅ Degrades to *nothing*, which is the correct direction — not a bleed, but a different violation.
+- ⛔ **US only.** A town outside NWS coverage is refused by name and gets no live weather — the open row for town #2 abroad.
 - `public/clouds/fixtures/` is specified in `ARCHITECTURE.md`, marked ⛔ not populated in `STATUS.md`, and **does not exist on disk.** There is no offline weather path at all.
-- ⭐ **Cleanly closable:** Open-Meteo is **CC BY 4.0 — redistribution permitted, including commercially**, with attribution. Their **Historical Weather API** serves **ERA5 reanalysis 1940–present, gap-free, global**. So **one fetch per town** yields a local year of that town's real hourly weather → the player runs offline by loop or date-match. **One acquisition closes both the doctrine violation and the missing cloud-regime input.**
+- ⭐ **Closable:** ERA5 reanalysis (1940–present, gap-free, global) — **one fetch per town** yields a local year of hourly weather → the player runs offline by loop or date-match, and it is the cloud-regime input too. ⚠️ Via Copernicus CDS directly: Open-Meteo's archive *data* is CC BY 4.0, but its free *API* is non-commercial.
 
 ### 2.4 HAND-AUTHORED — and what could stand in
 | Artifact | Per-town? |
@@ -198,13 +199,13 @@ cloud advection, **tree sway**.
 | **The Modulators** — 7 continuous deltas | **Global.** "Tornado green" / "wildfire smoke" are *American idioms* — harmless (signal-gated, never fire in Łódź) but worth a note |
 | **Sky & Light TOD channels** (14) | Per-Look in principle, **LS's in practice** — §2.0 bleed #2 |
 | **Cloud preset per TOD slot** | Every Look carries `{"preset":"auto"}` → defers to the Almanac. No bleed |
-| **Wind** | Live from Open-Meteo; authored values are the fallback |
+| **Wind** | Live from the NWS (US towns); authored values are the fallback |
 | **Tree phenology anchors** (`annualCycle` day-numbers) | ⚠️ **Latent bleed** — authored northern-temperate on a Missouri calendar (`day:105` spring buds, `day:288` fall peak). Łódź/Lisbon/Brisbane leaf out on St. Louis's schedule |
 
 **Substitutes, in increasing effort:**
 1. ⭐ **Sky mosaic — no data needed**, just parameterise the generator (§2.0). *Highest-leverage item in the report: converts the largest hand-authored surface into a computed one at zero acquisition cost.*
 2. **Climate character → WorldClim v2.1** — ~1 km global grids: monthly tmin/tmax/tavg, precip, **solar radiation, wind speed**, vapour pressure + 19 bioclim variables, plain GeoTIFF zips from `worldclim.org/data/worldclim21.html`. One pixel at the town's lat/lon = a 12-number-per-variable climate fingerprint → defensible defaults for turbidity, base wind, seasonal warmth, mist frequency. v1 is CC BY-SA 4.0; **v2.1's licence could not be confirmed — check the page [unverified]**.
-3. **Cloud regime + offline fixture → ERA5**, via Open-Meteo's archive (CC BY 4.0, verified) or the **Copernicus CDS** directly (`total_cloud_cover`, `low/mid/high`, 1940–present). Łódź is overcast far more of the year than St. Louis, and that one statistic should visibly change the install's default mood. **Same file solves §2.3.**
+3. **Cloud regime + offline fixture → ERA5**, via the **Copernicus CDS** directly (Open-Meteo's archive is CC BY 4.0 data behind a non-commercial free API) (`total_cloud_cover`, `low/mid/high`, 1940–present). Łódź is overcast far more of the year than St. Louis, and that one statistic should visibly change the install's default mood. **Same file solves §2.3.**
 
 **Supporting sources [unverified, confirm before shipping]:** NOAA NCEI 1991–2020 Climate Normals (US, public domain) · national met services for non-US — **IMGW (Poland)**, DWD, Met Office MIDAS, Météo-France · NOAA **GHCN-Daily** (global) · phenology: **USA-NPN** (CC0) + **PEP725** (Pan-European) — though the kit-shaped answer is to **derive it from growing-degree-days** off WorldClim/ERA5, converting another acquisition row into a computed one · aerosol/haze: Copernicus **CAMS** AOD or NASA **MERRA-2** · **light pollution: NOAA VIIRS night-lights** (public domain; Falchi's World Atlas is purpose-built but research-terms) — **not currently an input at all**, and a genuine aspirational row: it would make a rural town's sky properly spectacular and a city's properly washed out.
 
@@ -409,7 +410,7 @@ versioned layer name from GetCapabilities, request WMS GetMap as geotiff"* and *
 | OSM landmarks / addresses / trees / lamps / **kerbs** (`raw/osm_kerbs.json`: `node["kerb"]` ∪ `node["barrier"="kerb"]` over `osm.json`'s own bbox — additive, never a re-fetch; read at derive by `curb-cut-evidence.mjs`, the curb-cut evidence rung) | Overpass (⚠️ real User-Agent) | ODbL |
 | Building footprints | MSBF (`fetch-msbf.js`, in the Extent fetch) | CDLA Permissive 2.0 |
 | Canopy raster | MRLC WMS GetMap · ESA WorldCover | public domain · CC BY |
-| Weather year (offline fixture + cloud regime) | Open-Meteo ERA5 archive | **CC BY 4.0, redistributable** |
+| Weather year (offline fixture + cloud regime) | ERA5 via Copernicus CDS | Copernicus licence (attribution) — ⚠️ confirm |
 | Climate fingerprint | WorldClim v2.1 | ⚠️ licence unconfirmed |
 | Bark + leaf textures | ambientCG · Poly Haven | **CC0** |
 | Reference plates | Wikimedia (URLs **already recorded** in the 10 `sources.json`) | per-image CC |
@@ -609,4 +610,4 @@ EU one is button-acquirable (§4.2) and the US one is not.
 2. **Hand-authored judgment** — dossiers (~20 min/species, no corpus exists), compositions, chassis curation, the species-collapse table.
 3. **Content hand-work** — ~100–150 operator hours for a 60–100 landmark town, plus the CLAIMED rows that can never be acquired at all.
 
-⚠️ **The two structural gaps:** the **LS-bleed class** (§0) and the **live Open-Meteo runtime dependency** (§2.3) — the only place a lit render depends on a corporate API being reachable, and cleanly closable.
+⚠️ **The two structural gaps:** the **LS-bleed class** (§0) and the **live NWS runtime dependency** (§2.3, US only) — the only place a lit render depends on a corporate API being reachable, and cleanly closable.

@@ -2,7 +2,7 @@
  * weather-payload — bridges runtime weather state to the Almanac
  * evaluator's input schema (meteorologist/pipeline/schema/weather-payload.schema.json).
  *
- * useWeather.js fetches open-meteo and writes targets into useSkyState.
+ * useWeather.js fetches the NWS weather (lib/nws.js) and writes targets into useSkyState.
  * This module reads the latest weather targets + the current scrub time
  * + the town's place (townPlace), derives the schema-aligned payload (sun
  * position, tod, season, precip kind), and returns it for
@@ -26,6 +26,7 @@ const WEATHER_CODE_TO_PRECIP_KIND = {
   66: 'sleet', 67: 'sleet',                            // freezing rain
   71: 'snow', 73: 'snow', 75: 'snow', 77: 'snow',
   80: 'rain', 81: 'rain', 82: 'rain',
+  79: 'sleet',                                         // ice pellets (NWS sleet)
   85: 'snow', 86: 'snow',
   95: 'rain',                                          // thunderstorm
   96: 'hail', 99: 'hail',
@@ -70,7 +71,7 @@ function deriveSeason(date, lat) {
 /**
  * Build a payload conforming to weather-payload.schema.json.
  *
- * @param {object} weatherTargets — useSkyState weather slice (raw open-meteo
+ * @param {object} weatherTargets — useSkyState weather slice (the parsed live
  *   parse). Optional fields default to schema-safe values; never throws.
  * @param {Date} currentTime — scrub time from useTimeOfDay.
  * @returns {object} payload — passable to selectDirective({weather: ...}).
@@ -82,7 +83,7 @@ export function buildWeatherPayload(weatherTargets, currentTime) {
   const tempF = weatherTargets?.temperatureF
   const tempC = tempF != null ? (tempF - 32) * 5 / 9 : null
 
-  // windKph from open-meteo's wind_speed_10m (m/s) — useWeather stores
+  // windKph from the reading's windSpeedMs (m/s) — useWeather stores
   // both the raw speed (windSpeedMs) and the directional vector.
   const windMs = weatherTargets?.windSpeedMs ?? (
     weatherTargets?.windVector
@@ -92,7 +93,7 @@ export function buildWeatherPayload(weatherTargets, currentTime) {
   const windKph = windMs * 3.6
 
   // Direction the wind is blowing FROM (meteorological convention,
-  // matches schema). open-meteo's wind_direction_10m is already
+  // matches schema). NWS's windDirection is already
   // FROM-degrees (0=N, 90=E).
   const windDirDeg = weatherTargets?.windDirDeg ?? 0
 
@@ -110,7 +111,7 @@ export function buildWeatherPayload(weatherTargets, currentTime) {
     windDirDeg: windDirDeg,
     precipMmHr: weatherTargets?.precipitationIntensity ?? 0,
     precipKind: WEATHER_CODE_TO_PRECIP_KIND[weatherTargets?.currentWeatherCode] ?? null,
-    // open-meteo doesn't publish storm distance; default far so storm
+    // the feed doesn't publish storm distance; default far so storm
     // distance rules don't false-fire on clear days.
     stormDistanceKm: weatherTargets?.stormDistanceKm ?? 100,
     sunElevationDeg: sun.altitude * 180 / Math.PI,

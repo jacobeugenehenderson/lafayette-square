@@ -1,0 +1,15 @@
+NOTICE
+
+This repository, and the map files it serves (each town's slab, under
+public/baked/ and as published), contain data derived from OpenStreetMap.
+
+  © OpenStreetMap contributors — https://www.openstreetmap.org/copyright
+
+That data is available under the Open Database License (ODbL) 1.0:
+https://opendatacommons.org/licenses/odbl/1-0/
+
+Derived databases built from it, in this repository and in the served files,
+are made available under the same licence.
+
+Each town's own sources, and the licence each is under, are listed in its
+slab's sources.json.

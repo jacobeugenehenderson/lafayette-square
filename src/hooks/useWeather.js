@@ -2,43 +2,30 @@ import useSkyState from './useSkyState'
 import useAtmosphere from './useAtmosphere.js'
 import { deriveStorminess, windTendencyFromDeg } from '../lib/weatherPresets.js'
 import { townPlace } from '../lib/townPlace.js'
+import { nwsWeather, OutsideCoverageError, skyCode } from '../lib/nws.js'
 
-// The quantities a reading carries, asked for BOTH as `current` and `hourly`, so a forecast hour is a whole weather —
-// the sky can be drawn from it at a scrubbed time (lib/weatherAt.js), not only the label. (Until 2026-10-04 the hourly
-// carried temperature, code and pressure only, so a scrubbed sky could only show current conditions.)
-const QUANTITIES = 'temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,direct_radiation,diffuse_radiation'
-// The forecast for the town being drawn — built at FETCH time from its place (lib/townPlace.js), never from the
-// kit's boot town at module load (which drew the boot town's weather over any other).
-// ⭐ The window: yesterday 00:00 → tomorrow 23:00 in the town (`past_days=1&forecast_days=2`; `forecast_hours` would
-// override `past_days` and start at this hour). It holds the Almanac's whole dawn-to-dawn scrub, and the back-fill
-// deriveSignals reads for the pressure trend.
-function apiUrl() {
-  const { lat, lon, timezone } = townPlace()
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${QUANTITIES}&hourly=${QUANTITIES}&past_days=1&forecast_days=2&temperature_unit=fahrenheit&wind_speed_unit=ms&timezone=${encodeURIComponent(timezone)}`
+// The town's weather comes from the US National Weather Service (lib/nws.js: why, the field-by-field sources, and
+// what NWS cannot supply). Asked at FETCH time for the placed town (lib/townPlace.js), never the kit's boot town.
+// ⛔ A town outside NWS coverage is said by name (OutsideCoverageError) — there is no other provider.
+function townWeather() {
+  const { lat, lon, lookId } = townPlace()
+  return nwsWeather({ lat, lon, name: lookId })
+}
+/** A failed read, said: a town outside coverage by its own message (it names the town), anything else with its error. */
+function say(e, consequence) {
+  if (e instanceof OutsideCoverageError) console.error(`${e.message} — ${consequence}`)
+  else console.error(`[weather] ⛔ the forecast could not be read — ${consequence}:`, e)
 }
 
 /**
- * Reconcile Open-Meteo's current `weather_code` against the live Degrees.
- *
- * Open-Meteo's `current.weather_code` can go stale / inconsistent with the
- * other current fields — e.g. it returns 95 ("thunderstorm") with cloud_cover 0
- * and precipitation 0 on a clear evening (verified St. Louis 2026-06-28). The
- * code is the unreliable tier; the Degrees (precip, cloud cover) are the ground
- * truth (WEATHER-MODEL.md: a Condition × its Degrees). So: if the code claims
- * active precipitation (any WMO ≥ 51 — drizzle/rain/snow/showers/thunderstorm)
- * but nothing is actually falling, downgrade to the dry condition the cloud
- * cover supports. Fog (45/48) is visibility-driven, not precip — left alone.
- * This stops the public app from reading "thunderstorm" on a clear day, and
- * keeps the phantom code out of storminess (sky darkening).
+ * Reconcile a weather code against the Degrees: if the code claims active precipitation (any WMO ≥ 51 —
+ * drizzle/rain/snow/showers/thunderstorm) but nothing is falling, downgrade to the dry condition the cloud cover
+ * supports (lib/nws.js#skyCode). The code is the less reliable tier; the Degrees (precip, cloud cover) are the
+ * ground truth (WEATHER-MODEL.md: a Condition × its Degrees). Under NWS this also keeps a "slight chance" period with
+ * no precipitation amount from reading as rain. Fog (45/48) is visibility-driven, not precip — left alone.
  */
 function reconcileWeatherCode(code, precipMm, cloudCoverPct) {
-  if (code >= 51 && (precipMm ?? 0) <= 0) {
-    const cc = cloudCoverPct ?? 0
-    if (cc < 12) return 0   // clear
-    if (cc < 50) return 1   // mainly clear
-    if (cc < 87) return 2   // partly cloudy
-    return 3                // overcast
-  }
+  if (code >= 51 && (precipMm ?? 0) <= 0) return skyCode(cloudCoverPct)
   return code
 }
 
@@ -50,17 +37,6 @@ function deriveTurbidity(visibility) {
   if (visibility >= 50000) return 0
   if (visibility <= 1000) return 1
   return 1 - (visibility - 1000) / (50000 - 1000)
-}
-
-/** One Open-Meteo reading (current, or hourly column `i`) → the shape lib/weatherAt.js reads. */
-function readingOf(src, i = null) {
-  const v = (k) => (i == null ? src[k] : src[k]?.[i]) ?? null
-  return {
-    temperatureF: v('temperature_2m'), humidity: v('relative_humidity_2m'), pressureMb: v('pressure_msl'),
-    cloudCover: v('cloud_cover'), precipitation: v('precipitation'), weatherCode: v('weather_code'),
-    visibility: v('visibility'), windSpeedMs: v('wind_speed_10m'), windDirDeg: v('wind_direction_10m'), windGustsMs: v('wind_gusts_10m'),
-    directRadiation: v('direct_radiation'), diffuseRadiation: v('diffuse_radiation'),
-  }
 }
 
 /**
@@ -91,48 +67,31 @@ export function targetsOf(r) {
 }
 
 /**
- * Fetch the town's weather from Open-Meteo: the current reading → the live feed (useSkyState), and the hourly
+ * Fetch the town's weather (lib/nws.js): the current reading → the live feed (useSkyState), and the hourly
  * forecast → `hourlyForecast` (whole readings, lib/weatherAt.js).
  * `snap`: the operator chose Live on Stage's Weather switch, so this reading lands
  * at once instead of easing in over the directive tween. The snap is requested when
  * the reading arrives, not when it was asked for, so a slow fetch still lands at once.
  * ⛔ A failed fetch is SAID (console.error), never swallowed: the sky then holds its last reading, and the page says
- * why. (Until 2026-10-04 a non-OK answer and every exception returned in silence.)
+ * why. A town outside NWS coverage is said by name.
  */
 export async function fetchWeather({ snap = false } = {}) {
-  let data
+  let w
   try {
-    const res = await fetch(apiUrl())
-    if (!res.ok) { console.error(`[weather] ⛔ the forecast provider answered ${res.status} — the weather is not updated`); return }
-    data = await res.json()
+    w = await townWeather()
   } catch (e) {
-    console.error('[weather] ⛔ the forecast could not be fetched — the weather is not updated:', e)
+    say(e, 'the weather is not updated')
     return
   }
   // Stage's Weather switch is standing a preset: the live feed writes nothing.
   if (useSkyState.getState().feedPaused) return
-  if (!data?.current) { console.error('[weather] ⛔ the forecast carries no current reading — the weather is not updated'); return }
 
-  const now = readingOf(data.current)
   if (snap) useAtmosphere.getState().requestSnap()
-  useSkyState.getState().setWeatherTargets(targetsOf(now))
+  useSkyState.getState().setWeatherTargets(targetsOf(w.current))
   // When the live reading arrived — about the reading, not a weather value, so it is not a weather target (a
   // preset writes every target; this is only ever the feed's).
-  useSkyState.setState({ weatherAt: Date.now(), currentReading: now })
-
-  // Open-Meteo returns times in the requested timezone without offset suffix.
-  // ⛔ The offset is the TOWN's, as the provider answered for its timezone. It used to fall back to -21600
-  // (CST: Lafayette Square's) — every other town's forecast would have been shifted silently. Absent, the
-  // forecast is not parsed, and that is said.
-  if (!data.hourly) { console.error('[weather] ⛔ the forecast carries no hourly readings — a scrubbed time has no weather'); return }
-  const utcOffset = data.utc_offset_seconds
-  if (!Number.isFinite(utcOffset)) { console.error('[weather] ⛔ the forecast carries no utc_offset_seconds — its hours cannot be placed; hourly forecast not read'); return }
-  const offsetHours = Math.floor(Math.abs(utcOffset) / 3600)
-  const offsetMins = Math.floor((Math.abs(utcOffset) % 3600) / 60)
-  const suffix = `${utcOffset >= 0 ? '+' : '-'}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`
-  // t is like "2026-02-19T14:00" — placed in the town by appending its offset.
-  const hourly = (data.hourly.time || []).map((t, i) => ({ time: new Date(`${t}${suffix}`), ...readingOf(data.hourly, i) }))
-  useSkyState.getState().setHourlyForecast(hourly)
+  useSkyState.setState({ weatherAt: Date.now(), currentReading: w.current })
+  useSkyState.getState().setHourlyForecast(w.hourly)
 }
 
 /**
@@ -142,13 +101,9 @@ export async function fetchWeather({ snap = false } = {}) {
  */
 export async function fetchWindTendencyFromDeg() {
   try {
-    const res = await fetch(apiUrl())
-    if (!res.ok) { console.error(`[weather] ⛔ the forecast provider answered ${res.status} — no wind tendency for the preset`); return null }
-    const data = await res.json()
-    const n = data?.hourly?.time?.length || 0
-    return windTendencyFromDeg(Array.from({ length: n }, (_, i) => readingOf(data.hourly, i)))
+    return windTendencyFromDeg((await townWeather()).hourly)
   } catch (e) {
-    console.error('[weather] ⛔ the forecast could not be fetched — no wind tendency for the preset:', e)
+    say(e, 'no wind tendency for the preset')
     return null
   }
 }

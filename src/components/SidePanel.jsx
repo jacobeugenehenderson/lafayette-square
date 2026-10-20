@@ -21,8 +21,6 @@ import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { weatherAt, WeatherRangeError } from '../lib/weatherAt.js'
 import { TodStrip } from './DawnTimeline'
 import { useContact } from './ContactModal'
-import { useInfo } from './InfoModal'
-import { useSources, creditLine } from '../lib/sources.js'
 import useCommunityStats from '../hooks/useCommunityStats'
 
 // ── Camera helpers ──────────────────────────────────────────────────
@@ -893,11 +891,6 @@ function SidePanel() {
   const setPanelState = useCamera((s) => s.setPanelState)
   const collapsed = panelState === 'collapsed'
   const isNeutral = panelState === 'neutral'
-  // This map's attribution, per look, read off the slab (see lib/sources.js).
-  // `creditLine` returns null when nothing on this slab requires crediting, so
-  // an installation with no baked sources shows no line rather than a hollow one.
-  const { credits: mapCredits } = useSources()
-  const creditText = creditLine(mapCredits)
   const isBrowse = panelState === 'browse'
   const isFull = panelState === 'full'
   const showCard = useSelectedBuilding((s) => s.showCard)
@@ -1095,35 +1088,9 @@ function SidePanel() {
         </div>
       )}
 
-      {/* ── Persistent footer — attribution + Contact, visible when not collapsed ── */}
+      {/* ── Persistent footer — Contact, visible when not collapsed. (The map's credit is MapCredit, in the map's corner: it must stay visible when this panel collapses.) ── */}
       {!collapsed && (
-        <div className="relative flex-shrink-0 flex items-center justify-end px-4 py-1.5 bg-surface border-t border-outline-variant">
-          {/* ⭐ THE MAP'S CREDIT. OpenStreetMap's data is ODbL and a rendered map
-              is a Produced Work, so this notice is an obligation, not a nicety:
-              it must name the source, say the data is available under the
-              licence, and stay reachable. The OSMF attribution guidelines allow
-              it to be collapsed but require it still be findable — the panel
-              footer is persistent whenever the panel is open, and the line opens
-              the full Sources list, which carries the licence names and links.
-
-              ⛔ PER-LOOK, OFF THE SLAB. Never hardcode "© OpenStreetMap" here:
-              this renders for every installation, and a credit that is right for
-              one town and wrong for the next is a false legal notice that looks
-              correct. An installation with no baked sources renders nothing here
-              rather than borrowing another town's. */}
-          {/* Centred on the FOOTER, not between its contents: absolute so the
-              credit sits at the true middle of the panel regardless of how wide
-              the Contact button is. `max-w` + truncate keep it off that button
-              on a narrow phone. */}
-          {creditText && (
-            <button
-              onClick={() => useInfo.getState().openTo('sources')}
-              className="absolute left-1/2 -translate-x-1/2 max-w-[60%] truncate text-caption text-on-surface-subtle hover:text-on-surface-variant transition-colors"
-              title="Where this map's data comes from"
-            >
-              {creditText}
-            </button>
-          )}
+        <div className="flex-shrink-0 flex items-center justify-end px-4 py-1.5 bg-surface border-t border-outline-variant">
           <button
             onClick={() => useContact.getState().setOpen(true)}
             className="text-yellow-300 hover:text-yellow-200 transition-colors flex items-center gap-1 text-caption"

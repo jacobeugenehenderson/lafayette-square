@@ -114,6 +114,7 @@ import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { createRoot } from 'react-dom/client'
 import { warmImpostorLoader } from './impostorTexture.js'
 import TownSplash from './TownSplash.jsx'
+import MapCredit from './MapCredit.jsx'
 import useCalendar from '../hooks/useCalendar'
 import { titleOf as _titleOf } from '../lib/townRecord.js'
 import { skyModeOf } from '../lib/skyMode'
@@ -293,7 +294,8 @@ function isolate(g) {
   }
   return () => { for (const [o, v] of undo) o.visible = v }
 }
-// DOM over the canvas, filling the canvas's own box in every app (the Ward, Preview, Stage, the LS player): a div in
+// DOM over the canvas, filling the canvas's own box in every app (the Ward, Preview, Stage, the LS player) — the splash
+// and the map's credit: a div in
 // the canvas's container with its own root. ⛔ Not drei's <Html fullscreen>: it still positions by projecting a 3D
 // point, and in the LS player's layout it put the splash 971 px off-screen.
 function CanvasOverlay({ children }) {
@@ -668,6 +670,8 @@ export default function Town({
       <Suspense fallback={null}>
         <RevealGate need={PHYSICAL.filter((k) => on(k))} lingerMs={revealTiming.linger * 1000} skyAt={skyAt} />
         {splash}
+        {/* The map's data credit (ODbL), in the canvas's corner in every app that draws a town (MapCredit.jsx). */}
+        <CanvasOverlay><MapCredit lookId={lookId} /></CanvasOverlay>
         <group name="town:ground" visible={on('ground') && revealed} userData={{ gatedOn: on('ground') }}>
           <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} swellMs={revealTiming.swell * 1000} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
           {/* The shore median diagnostic shows the region with every treatment OFF, so the revetment hides while it is on. */}

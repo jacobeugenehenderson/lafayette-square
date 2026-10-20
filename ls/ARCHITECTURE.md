@@ -101,7 +101,7 @@ The rest of this section is payload (1); payloads (2)–(3) are §6 + `SLAB-CONT
 | Google Apps Script `getInit` batch | `hooks/useInit.js` | End-user-mutable: listings + events + handle hydrated on boot |
 | GAS individual endpoints (**~54 actions / 57 routes** via `?action=` in `lib/api.js` → `Code.js`) | Various hooks + modals | Reviews, replies, claims, bulletins, comments, threads, qr designs, staff, residence, guardian, link tokens, check-ins, init batch (full table in `reference/INVENTORY-API.md` / inventory §6) |
 | Supabase | `useCary`, `ChatModal`, `SmsInbox`, `ContactModal`, `CourierDots`, `useInit` | Cary realtime sessions + auth + chat |
-| open-meteo.com forecast | `hooks/useWeather.js` (called by `WeatherPoller`) | Live weather, 48-hour forecast; lat/lon/timezone templated from `INSTANCE.geography` |
+| api.weather.gov (NWS) | `lib/nws.js` via `hooks/useWeather.js` (called by `WeatherPoller`) | Live weather + 48-hour forecast for the placed town (`townPlace`); US only |
 
 ### Consumed live — could/should bake or freeze (v1 BACKLOG candidates)
 
@@ -138,7 +138,7 @@ The rest of this section is payload (1); payloads (2)–(3) are §6 + `SLAB-CONT
 | Google Apps Script (`apps-script/Code.js`) | Listings, reviews, events, check-ins, residence, guardian, handles, bulletins, comments, threads, QR designs, staff perms, link tokens, claim secrets, init batch (**~54 actions / 57 GET+POST routes** — reconciled 2026-06-30 against `Code.js`; one shared 14-tab Google Sheet) | Device hash (forgeable naming anchor) + admin passphrase → 6h token (localStorage client-side, Script Cache server-side). **Privileged writes re-verify device_hash → Guardians/Residents/Checkins sheet server-side** (25+ endpoints). See `OPERATIONS.md` + `project_ls_security_arc` for the gating verdict + the admin-token hotspot. | Live |
 | Supabase | Cary courier system (requests, sessions, phone OTP, profiles, courier_profiles, edge functions: `onboarding`, `dispatch`); also realtime channels for `CourierDots`, `ChatModal`, `SmsInbox`, `ContactModal` | Phone OTP | Hosted project live; LS UI behind "coming soon" placeholders |
 | Cloudflare Worker (`worker.js`) | Per-place OG meta tags for social previews on `/place/*` | None | Live |
-| open-meteo.com | 48-hour weather forecast for St. Louis | None (free) | Live |
+| api.weather.gov (NWS) | live weather + 48-hour forecast, US towns | None (public domain) | Live |
 | Cartograph backend (`cartograph/serve.js`) | Looks API, bake CLI runner, overlay I/O | None (local-only) | Dev-only; not deployed |
 
 **Boot sequence** (`hooks/useInit.js`):
