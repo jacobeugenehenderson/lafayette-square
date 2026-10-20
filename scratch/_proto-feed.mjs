@@ -15,7 +15,7 @@
 // never silently borrows another town's.
 import fs from 'fs'
 import { buildTileGround } from '../src/lib/tileGround.js'
-import { curbedMinWidth, townState } from '../src/cartograph/streetProfiles.js'
+import { curbedMinWidthOf } from '../cartograph/curbedMinWidthOf.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 
 // ⛔ ONE OWNER — `checks/_scenes.mjs`. Re-exported here so the 27 forensics that import
@@ -72,9 +72,8 @@ export function feed(scene) {
     // authored curb width is a real state; it must be reported, not filled in.
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth
       : (console.log(`⛔ ${scene}: design.json carries NO curbWidth — author curbWidth in this town's Look; the producer refuses without one`), null),
-    // the minimum curbed width (the nose), read by finding id for the town's state — as the bake reads it
-    curbedMinWidth: curbedMinWidth(JSON.parse(fs.readFileSync('references/registry.json', 'utf8')),
-      fs.existsSync(`cartograph/data/${scene}/raw/osm.json`) ? townState(JSON.parse(fs.readFileSync(`cartograph/data/${scene}/raw/osm.json`, 'utf8'))) : { code: null }),
+    // the minimum curbed width (the nose): the bake's own reader, so the two cannot read it from different places
+    curbedMinWidth: curbedMinWidthOf(scene),
     slots: Object.values(design.blockCustoms || {}).reduce((n, sides) =>
       n + Object.values(sides || {}).reduce((m, ords) => m + Object.keys(ords || {}).length, 0), 0),
   }

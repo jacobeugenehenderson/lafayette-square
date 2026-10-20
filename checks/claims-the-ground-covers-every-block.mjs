@@ -27,6 +27,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import clipperLib from 'clipper-lib'
+import { curbedMinWidthOf } from '../cartograph/curbedMinWidthOf.mjs'
 import { ROOT, scenes } from './_scenes.mjs'
 import { sectionPassProtoTile, buildTileGround, tilePieceLus } from '../src/lib/tileGround.js'
 
@@ -58,7 +59,7 @@ if (process.argv.includes('--selftest')) {
   const m = { left: { pavementHW: 4, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }, right: { pavementHW: 4, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' } }
   const line = (id, a, b) => ({ skelId: id, name: id, highway: 'residential', oneway: false, points: [a, b], measure: m, gradeSeparated: false })
   const streets = [line('n', [-200, -100], [200, -100]), line('s', [-200, 100], [200, 100]), line('w', [-100, -200], [-100, 200]), line('e', [100, -200], [100, 200])]
-  const tileWith = (scale) => (quiet(() => buildTileGround({ streets }, { curbWidth: 0.1524, smooth: 0, cornerRadiusScale: scale })).protoShapeTiles || []).find(x => x.iaStamp)
+  const tileWith = (scale) => (quiet(() => buildTileGround({ streets }, { curbWidth: 0.1524, curbedMinWidth: curbedMinWidthOf(null), smooth: 0, cornerRadiusScale: scale })).protoShapeTiles || []).find(x => x.iaStamp)
   const t = tileWith(0), te = tileWith(1)       // square corners (clean) · eased corners (the painter's known gap)
   if (!t || !te) { console.log('⛔ SELFTEST could not build a synthetic ① tile'); process.exit(2) }
   const clean = holesOf(t, 0.1524, null), dropped = holesOf(t, 0.1524, null, 'lu'), eased = holesOf(te, 0.1524, null)

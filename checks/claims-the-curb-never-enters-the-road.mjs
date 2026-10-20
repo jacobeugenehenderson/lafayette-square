@@ -34,6 +34,7 @@ import { ROOT } from './_scenes.mjs'
 import clipperLib from 'clipper-lib'
 import { buildTileGround } from '../src/lib/tileGround.js'
 import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
+import { curbedMinWidthOf } from '../cartograph/curbedMinWidthOf.mjs'
 
 const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'   // the partition's grid, from its one home
@@ -113,7 +114,7 @@ if (MAIN && process.argv.includes('--selftest')) {
   const neck = [...W, line('n', [-200, -30], [-100, -30], [0, -3], [100, -30], [200, -30]), line('s', [-200, 30], [-100, 30], [0, 3], [100, 30], [200, 30])]
   const t6 = Math.tan(6 * Math.PI / 180)
   const sliver = [line('a', [-300, 0], [300, 0]), line('b', [-300, -300 * t6], [300, 300 * t6]), line('c', [40, -300], [40, 300]), line('d', [-240, -300], [-240, 300])]
-  const recs = (streets) => Object.values(build({ streets }, { curbWidth: 0.1524 }).protoDepthByBlock || {})
+  const recs = (streets) => Object.values(build({ streets }, { curbWidth: 0.1524, curbedMinWidth: curbedMinWidthOf(null) }).protoDepthByBlock || {})
   const B = recs(square).filter(r => r.curb?.length)
   if (!B.length) { console.log('⛔ SELFTEST could not build a synthetic ① block (no protoDepthByBlock)'); process.exit(2) }
   const rec = B.sort((x, y) => Math.abs(y.curb[0].length) - Math.abs(x.curb[0].length))[0]
@@ -141,7 +142,8 @@ const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 let red = false
 for (const scene of (MAIN ? (named.length ? named : feedScenes()) : [])) {
   const f = feed(scene); if (!f) { red = true; continue }
-  const tg = build(f.ribbons, { curbWidth: f.curbWidth, blockCustoms: f.blockCustoms })
+  if (f.curbWidth == null) { console.log(`── ${scene}   ⛔ NOT CHECKED — the producer refuses: author curbWidth in this town's Look`); red = true; continue }
+  const tg = build(f.ribbons, { curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth, blockCustoms: f.blockCustoms })
   const blocks = Object.entries(tg.protoDepthByBlock || {})
   if (!blocks.length) { console.log(`── ${scene}   ⛔ NOT CHECKED — the build recorded no ② depths (no ① producer?)`); red = true; continue }
   const O = tg.protoOwners || [], rows = []
@@ -153,7 +155,7 @@ for (const scene of (MAIN ? (named.length ? named : feedScenes()) : [])) {
     const w = hits.sort((x, y) => (y.need - y.got) - (x.need - x.got))[0]
     rows.push({ k, n: hits.length, w })
   }
-  console.log(`── ${scene} ── ${blocks.length} block(s) · (1) ${nB} with ② inside the road · ${nV} vertex(es) ${nB ? '⛔' : '✅'}${f.curbWidth == null ? '  (no authored curbWidth — irrelevant to ②)' : ''}`)
+  console.log(`── ${scene} ── ${blocks.length} block(s) · (1) ${nB} with ② inside the road · ${nV} vertex(es) ${nB ? '⛔' : '✅'}`)
   for (const r of rows.sort((x, y) => (y.w.need - y.w.got) - (x.w.need - x.w.got)).slice(0, 10))
     console.log(`   ⛔ block ${r.k}: ${r.n} vertex(es) — worst ${(r.w.need - r.w.got).toFixed(2)} m into the road at (${r.w.p[0].toFixed(1)}, ${r.w.p[1].toFixed(1)}) (depth ${r.w.need.toFixed(2)}, got ${r.w.got.toFixed(2)})`)
   console.log(`   (2) ${nO} block(s) whose ② leaves its own ① block · ${aO.toFixed(1)} m² ${nO ? '⛔' : '✅'}`)

@@ -41,10 +41,8 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { ribbonsPath } from './_scenes.mjs'
-import { curbedMinWidth, townState } from '../src/cartograph/streetProfiles.js'
-// the minimum curbed width (the nose), read by finding id for the town's state — as the bake and `_proto-feed` read it
-const curbedMinWidthOf = (scene) => curbedMinWidth(JSON.parse(fs.readFileSync(path.join(ROOT, 'references/registry.json'), 'utf8')),
-  fs.existsSync(path.join(ROOT, `cartograph/data/${scene}/raw/osm.json`)) ? townState(JSON.parse(fs.readFileSync(path.join(ROOT, `cartograph/data/${scene}/raw/osm.json`), 'utf8'))) : { code: null })
+import { curbedMinWidthOf } from '../cartograph/curbedMinWidthOf.mjs'
+// the minimum curbed width (the nose): the bake's own reader (`cartograph/curbedMinWidthOf.mjs`)
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
