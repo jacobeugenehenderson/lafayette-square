@@ -14,9 +14,11 @@
 // arc-owned replacement is blocked behind stamp coverage.
 //
 // This check asks the polygon instead. `tile.runs[]` names every arc
-// (skelId · side · segOrd) and `iaEdge` binds every `iA` vertex to the ring edge
-// that produced it, so `ringRunOwners` + `bandSpans` — both already exported and
-// already used by the FILL — hand back the curb ARCS with one owner each.
+// (skelId · side · segOrd) and ①'s per-POINT stamp `iaStamp[ring][q]` names the run that owns
+// each contour edge of `iaFull` (q → q+1) — the stamp the FILL's own painter reads
+// (`sectionPassProtoTile`) — so a maximal run of one stamp IS a curb ARC with one owner.
+// ⛔ It read `iaEdge` (`ringRunOwners` + `bandSpans`) until 2026-10-20; ① never writes `iaEdge`
+// (LS 148/148 tiles stamped, 0 with iaEdge), so every tile read as unstamped and every side dark.
 //
 //   RAY  — what the tool places today (both overlays' exact acceptance rules)
 //   ARC  — the point on the arc that THIS run owns at this station
@@ -35,7 +37,9 @@
 // ⛔ TOL below only classifies how far a RAY strayed, for reporting. Nothing here
 // uses a distance to decide ownership.
 //
-//   node checks/claims-handle-rides-its-arc.mjs [scene]
+//   node checks/claims-handle-rides-its-arc.mjs [scene] [--mutant-no-stamp]
+// ⭐ MUTANT (--mutant-no-stamp): the stamp read broken — every tile unstamped — must turn every side dark (it did, silently,
+// for as long as this read `iaEdge`).
 
 import fs from 'fs'
 import path from 'path'
@@ -48,11 +52,29 @@ const curbedMinWidthOf = (scene) => curbedMinWidth(JSON.parse(fs.readFileSync(pa
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
-const SCENE = process.argv[2] || 'lafayette-square'
+const SCENE = process.argv.slice(2).find(a => !a.startsWith('--')) || 'lafayette-square'
 const TOL = 0.5          // m — reporting bucket only, never an ownership test
 const STEP = 10          // m — station spacing along each chain
 
-const { buildTileGround, ringRunOwners, bandSpans } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
+const { buildTileGround, hasStampInquiry } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
+// ⭐ THE ARC PARTITION, off ①'s per-point stamp: `iaStamp[si][q]` = the run owning `iaFull[si]`'s edge q → q+1. A maximal
+// cyclic stretch of one run is one arc; an unstamped edge (the rim, an unlabelled ①) owns nothing. → [{ owner, poly }]
+function stampArcs(st) {
+  const out = []
+  ;(st.iaFull || []).forEach((ring, si) => {
+    const stp = st.iaStamp?.[si] || [], n = ring.length
+    if (n < 2 || stp.length !== n) return
+    let start = 0; while (start < n && stp[start] === stp[(start - 1 + n) % n]) start++
+    if (start === n) { if (stp[0] != null) out.push({ owner: stp[0], poly: [...ring, ring[0]] }); return }   // one owner all round
+    for (let k = 0; k < n;) {
+      const q0 = (start + k) % n, r = stp[q0]; let len = 0
+      while (k + len < n && stp[(start + k + len) % n] === r) len++
+      if (r != null) { const poly = []; for (let t = 0; t <= len; t++) poly.push(ring[(q0 + t) % n]); out.push({ owner: r, poly }) }
+      k += len
+    }
+  })
+  return out
+}
 
 const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'))
 const ribbons = rd(ribbonsPath(SCENE))   // the town's own declared ribbons (cartograph/scene.js#ribbonsPathOf)
@@ -176,30 +198,24 @@ const addRun = (run, arcs, why) => {
   if (!runsByKey.has(k)) runsByKey.set(k, [])
   runsByKey.get(k).push({ span: [s0, s1], arcs, segOrd: run.segOrd, why })
 }
+const MUT = process.argv.includes('--mutant-no-stamp')   // the stamp read broken: every tile reads as unstamped → must go RED
 for (const st of tiles) {
-  if (!st.iaEdge) {
+  if (MUT || !hasStampInquiry(st)) {
     unstamped++
-    const why = st.iaEdgeReason || 'unstamped'
+    const why = MUT ? 'mutant: stamp read broken' : 'no iaStamp/iaFull'
     refusedWhy[why] = (refusedWhy[why] || 0) + 1
     for (const run of (st.runs || [])) if (run.skelId) addRun(run, [], why)
     continue
   }
-  const owner = ringRunOwners(st)
-  const spans = owner ? bandSpans(st, owner) : null
-  if (!spans) {
+  const arcs = stampArcs(st)
+  if (!arcs.length) {
     refused++
-    for (const run of (st.runs || [])) if (run.skelId) addRun(run, [], 'partition refused')
+    for (const run of (st.runs || [])) if (run.skelId) addRun(run, [], 'stamp names no arc')
     continue
   }
   stamped++
   const arcsByRun = new Map()
-  for (const s of spans) {
-    const A = st.iA[s.r], m = A.length
-    const poly = []
-    for (let t = 0; t <= s.len; t++) poly.push(A[(s.i0 + t) % m])
-    if (!arcsByRun.has(s.owner)) arcsByRun.set(s.owner, [])
-    arcsByRun.get(s.owner).push(poly)
-  }
+  for (const a of arcs) { if (!arcsByRun.has(a.owner)) arcsByRun.set(a.owner, []); arcsByRun.get(a.owner).push(a.poly) }
   st.runs.forEach((run, ri) => { if (run.skelId) addRun(run, arcsByRun.get(ri) || [], arcsByRun.has(ri) ? null : 'run owns no arc') })
 }
 
@@ -276,7 +292,7 @@ for (const st of ribbons.streets || []) {
 const pct = (a, b) => b ? `${(100 * a / b).toFixed(1)}%` : '—'
 console.log(`\n══ HANDLE PLACEMENT · ${SCENE} ══`)
 console.log(`   authored:   ${nCustoms} blockCustoms chain(s) loaded`)
-console.log(`   tiles:      ${tiles.length} — ${stamped} partitioned into arcs · ${unstamped} no iaEdge stamp · ${refused} stamp present, partition refused`)
+console.log(`   tiles:      ${tiles.length} — ${stamped} partitioned into arcs (iaStamp) · ${unstamped} unstamped · ${refused} stamped, no arc`)
 if (unstamped) console.log(`   no stamp:   ${Object.entries(refusedWhy).map(([k, v]) => `${k} ${v}`).join(' · ')}`)
 console.log(`\n   stations sampled inside the hood (every ${STEP} m, both sides): ${anchors}`)
 console.log(`   (${outsideHood} chain stations lie outside the hood polygon — no tile there, not sampled)`)

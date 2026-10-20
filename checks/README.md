@@ -152,7 +152,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 313. This is `npm test`.
+## safe — 311. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -235,7 +235,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-contact-sms-rate-limit.mjs` | can a stranger still flood the Host's phone? |
 | `checks/claims-coplanar-ground-has-a-painters-order.mjs` | order.mjs — CAN TWO TOUCHING SURFACES FIGHT? |
 | `checks/claims-coplanar-groups-do-not-overlap.mjs` | overlap |
-| `checks/claims-corner-decline-vs-partition.mjs` | "IS THE DOMINANT CORNER DECLINE SITTING ON TILES THAT ALREADY OWN THEIR ARC?" |
 | `checks/claims-corner-takeover.mjs` | "WHERE DOES THE CORNER RIBBON'S TAKEOVER DECLINE?" — A10 / D1, the population. |
 | `checks/claims-crop-rows-derived-per-field.mjs` | field.mjs — DO A TOWN'S CROP ROWS RUN EACH FIELD'S OWN WAY? |
 | `checks/claims-curated-centerlines-unread.mjs` | "DOES THE FRAME AGREE WITH THE AUTHORITATIVE GEOMETRY WE ALREADY PAID FOR?" |
@@ -344,7 +343,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-parcels-vote-by-area.mjs` | area.mjs |
 | `checks/claims-ped-does-not-follow-the-rim.mjs` | rim runs ALONG the arc for tens of metres; a band that is CUT by the stamp meets it in chords |
 | `checks/claims-price-of-record.mjs` | Can a DISPLAY FIGURE ever be charged? |
-| `checks/claims-producer-does-not-decide-partition.mjs` | carry through the splice" (`ROADMAP.md` A06). It is FALSE as a statement about |
 | `checks/claims-proto-band-flood-mechanism.mjs` | ⭐ WHICH DISEASE IS THE FAT BAND? — the discriminating measurement, not a thickness histogram. |
 | `checks/claims-proto-blocks-are-faces.mjs` | + the raw neighborhood boundary) with the WORKING-TREE `mintProtopolygon`, so the frozen |
 | `checks/claims-proto-corner-is-authored-radius.mjs` | the gate is: does ②'s eased contour actually turn at the radius the operator asked for? |
