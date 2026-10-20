@@ -1,5 +1,12 @@
 # BRIEF — the classifier
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Tally
+written: 2026-10-19
+evict-when: RULING: Pass A, step 7 (resolvePedDepths, the shared surface, island paint) and Pass B have landed, and Jacob has seen the pictures after step 7.
+-->
+
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds (check with
 `ListAgents`, then `/rename`). **Agent: FRESH**: the work needs eyes not anchored by the months of chain-world work.
 Boz is your report line (`SendMessage`).

@@ -1,5 +1,12 @@
 # BRIEF — retire the legacy shape pass
 
+<!-- BRIEF-STATE
+status: LANDED
+dispatched: Lintel
+written: 2026-10-19
+evict-when: git merge-base --is-ancestor 27af35f2 main
+-->
+
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds (check with
 `ListAgents`, then `/rename`). **Agent: FRESH**: this is mostly deletion, and it needs someone who won't be tempted to
 keep the old path "just in case." Boz is your report line (`SendMessage`).
