@@ -43,6 +43,7 @@ export default {
       jurisdiction: 'town',
       file: 'ma_parcels.json',
       attribution: 'MassGIS (Bureau of Geographic Information) — Massachusetts Property Tax Parcels (Level 3)',
+      terms: {"read": "2026-10-19", "says": "not an authoritative source", "note": "licenseInfo is a disclaimer only; the mass.gov parcels page returned 403; terms not established"},
       endpoint: 'https://services1.arcgis.com/hGdibHYSPO59RG1h/ArcGIS/rest/services/Massachusetts_Property_Tax_Parcels/FeatureServer/0/query',
       select: { where: 'TOWN_ID = {town_id}' },
       land_use_code_format: 'ma-dor-numeric',

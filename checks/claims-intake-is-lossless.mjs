@@ -50,9 +50,9 @@ const DROPS = [
     says: 'a building outside the boundary, in an authored exclusion loop, or authored hidden' },
   { id: 'curated-buildings', scope: 'internal', file: 'cartograph/pipeline.js', symbol: /join\(PROJECT_ROOT, 'src', 'data', 'buildings\.json'\)/,
     says: 'the town draws a curated building set (src/data/buildings.json), not OSM footprints' },
-  { id: 'served-parcel-privacy', scope: 'served', file: 'scratch/data-licences/REGISTER.md', symbol: /No information may be sold or redistributed/,
+  { id: 'served-parcel-privacy', scope: 'served', file: 'cartograph/states/mo.mjs', symbol: /No information may be sold or redistributed/,
     fields: ['owner', 'appraised_value', 'land_area', 'building_sqft', 'units', 'num_buildings', 'year_built', 'last_year_built', 'neighborhood_code'],
-    says: 'parcel owner and assessor fields are withheld from the browser: privacy, and St. Louis City\'s no-redistribution terms (REGISTER row 4)' },
+    says: 'parcel owner and assessor fields are withheld from the browser: privacy, and St. Louis City\'s no-redistribution terms (the stl-city well\'s terms, cartograph/states/mo.mjs)' },
 ]
 
 function setFromSource(text, name) {
