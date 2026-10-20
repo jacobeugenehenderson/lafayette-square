@@ -52,7 +52,7 @@ import CircleHandle from './CircleHandle.jsx'
 import CenterHandle from './CenterHandle.jsx'
 import { CompassRoseSVG } from '../components/CompassRose.jsx'
 import {
-  TileMesh, TILE_URL, lonLatToTile, tileToLonLat, wgs84ToLocal, localToWgs84,
+  TileMesh, TILE_URL, AerialCredit, lonLatToTile, tileToLonLat, wgs84ToLocal, localToWgs84,
 } from './AerialTiles.jsx'
 
 // Extent's OWN persisted working scene — separate from the global `cartograph-scene`
@@ -2058,6 +2058,7 @@ export default function ExtentApp() {
             up the aerial (boundaries, notes) while defining the extent. */}
         <MarkerOverlay cameraRef={orthoRef} />
         <MarkerFAB />
+        {located && <AerialCredit bbox={geo?.bbox} />}
 
         {/* The editable bezier pen — the EXCLUSION-LOOP authoring surface. SVG overlay
             in the MarkerOverlay pattern (viewBox = camera frustum). Draws every loop
