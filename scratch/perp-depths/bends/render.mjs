@@ -16,9 +16,9 @@ const OUT = resolve(ROOT, (args.find(a => a.startsWith('--out=')) || '--out=scra
 const HALF = +(process.env.HALF || 12), PPM = +(process.env.PPM || 34)
 const at = sites.split(';').filter(Boolean).map(s => s.split(',').map(Number))
 const f = feed(scene), src = readSources(scene), nm = resolveCurbCutNorm(scene, src.declared ? src.state : null)
-const today = (await import('./tg.today.mjs')).buildTileGround, walks = (await import('../../../src/lib/tileGround.js')).buildTileGround
+const today = (await import(process.env.TODAY || './tg.today.mjs')).buildTileGround   // TODAY: a painter copy with the not-corner pass off, walks = (await import('../../../src/lib/tileGround.js')).buildTileGround
 const build = (fn) => { const pl = console.log, pw = console.warn; console.log = () => {}; console.warn = () => {}
-  try { return fn({ ...f.ribbons, curbCutNorm: nm }, { grout: 'proto', smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth, blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse, cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides, cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1, protoProducer: true }) }
+  try { return fn({ ...f.ribbons, curbCutNorm: nm }, { smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth, blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse, cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides, cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale ?? 1 }) }
   finally { console.log = pl; console.warn = pw } }
 const A = build(today), B = build(walks)
 for (const [i, [cx, cz]] of at.entries()) for (const [tag, R, what] of [['today', A, 'TODAY: the corner test says junction'], ['walks', B, 'DRAWN WALK: no walk reaches the road — the band bent through, not a corner']]) {

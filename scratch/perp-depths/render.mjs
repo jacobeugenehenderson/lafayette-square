@@ -14,16 +14,18 @@ const args = process.argv.slice(2), [scene = 'huron', sites = ''] = args.filter(
 const OUT = resolve(ROOT, (args.find(a => a.startsWith('--out=')) || '--out=scratch/perp-depths-out').slice(6))
 const HALF = +(process.env.HALF || 10), PPM = +(process.env.PPM || 40)
 // BEFORE: the base painter, its relative imports pointed back at this tree's src/lib (nothing else differs from the base)
-const REV = process.env.REV || '20d3529f', lib = resolve(ROOT, 'src/lib'), base = execSync(`git show ${REV}:src/lib/tileGround.js`, { cwd: ROOT, maxBuffer: 1 << 26 }).toString()
+// SKIP_BEFORE=1: no BEFORE column (a painter whose sibling modules this tree no longer has cannot be loaded here)
+const SKIP = process.env.SKIP_BEFORE === '1'
+const REV = process.env.REV || '20d3529f', lib = resolve(ROOT, 'src/lib'), base = SKIP ? '' : execSync(`git show ${REV}:src/lib/tileGround.js`, { cwd: ROOT, maxBuffer: 1 << 26 }).toString()
   .replace(/from '(\.\.?\/[^']+)'/g, (_, p) => `from '${pathToFileURL(resolve(lib, p)).href}'`)
-writeFileSync(`${OUT}/tileGround.base.mjs`, base)
-const painters = { before: (await import(pathToFileURL(`${OUT}/tileGround.base.mjs`).href)).buildTileGround, after: (await import('../../src/lib/tileGround.js')).buildTileGround }
+if (!SKIP) writeFileSync(`${OUT}/tileGround.base.mjs`, base)
+const painters = { before: SKIP ? null : (await import(pathToFileURL(`${OUT}/tileGround.base.mjs`).href)).buildTileGround, after: (await import('../../src/lib/tileGround.js')).buildTileGround }
 const f = feed(scene), norm = f.ribbons.curbCutNorm
 const at = sites.split(';').filter(Boolean).map(s => s.split(',').map(Number))
 const build = (fn, nm) => { const prev = console.log; console.log = () => {}
-  try { return fn({ ...f.ribbons, curbCutNorm: nm }, { grout: 'proto', smooth: 0, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth, blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse,
-    cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides, cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale, protoProducer: true }) } finally { console.log = prev } }
-for (const [tag, fn, nm] of [['before', painters.before, norm], ['after', painters.after, norm], ['diagonal', painters.after, { ...norm, style: 'diagonal' }]]) {
+  try { return fn({ ...f.ribbons, curbCutNorm: nm }, { smooth: 0, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth, blockCustoms: f.blockCustoms, blockLandUse: f.blockLandUse,
+    cornerCornerRadiusOverrides: f.cornerCornerRadiusOverrides, cornerRadiusOverrides: f.cornerRadiusOverrides, cornerRadiusScale: f.cornerRadiusScale }) } finally { console.log = prev } }
+for (const [tag, fn, nm] of [['before', painters.before, norm], ['after', painters.after, norm], ['diagonal', painters.after, { ...norm, style: 'diagonal' }]].filter(([, fn]) => fn)) {
   const R = build(fn, nm)
   // asphalt first, so a ped layer is never hidden under it in the proxy
   const layers = [['asphalt', R.asphalt, '#3b3b3b'], ['lu', Object.values(R.luByClass || {}).flat(), '#d9cfb8'], ['lawn', Object.values(R.treelawnByLu || {}).flat(), '#6fa35a'],
