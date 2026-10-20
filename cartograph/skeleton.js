@@ -18,7 +18,7 @@ import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { CURB_WIDTH, SV_SIDEWALK } from '../src/cartograph/streetProfiles.js'
-import { classifyWay, CLASSES, CLASS_ORDER } from '../src/cartograph/streetClass.js'
+import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER } from '../src/cartograph/streetClass.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('skeleton.js (writes data/<scene>/clean/skeleton.json)')
@@ -1160,21 +1160,11 @@ function splitAtSeamCoord(pts, segs, coord) {
   return segIdx + 1
 }
 
-// --- Standards-seeded cross-section (OSM-FORENSICS.md Part 4) --------------
-// Default/prior cross-section per street class. NACTO-by-class for the
-// pedestrian-zone dims + curb-return R (the 2026-06-01 decision: tight
-// pedestrian-scale radii are honest to LS; AASHTO truck radii deferred [U]).
-// width has 0% OSM coverage at LS, so it MUST be seeded from lanes; sidewalk
-// is too sparse (4/333) to trust, so PROWAG-seed it. The operator overrides
-// only genuine exceptions (the north-star). Values in meters (ft × 0.3048).
+// --- Seeded cross-section ------------------------------------------------
+// ⭐ THE SECTION IS THE CLASS'S (`src/cartograph/streetClass.js` `classSection`, the kit house style).
+// The `STD_SECTION` table and `seedSection` that stood here — which seeded any class without a row as
+// 'residential' — are gone (BRIEF-the-classifier step 1). FT stays for the survey guards below.
 const FT = 0.3048
-const STD_SECTION = {
-  residential: { lane: 10 * FT, parking: 8 * FT, sidewalk: 5 * FT, treelawn: 5 * FT, curb: 0.15, cornerR: 4.5 },
-  unclassified:{ lane: 10 * FT, parking: 8 * FT, sidewalk: 5 * FT, treelawn: 5 * FT, curb: 0.15, cornerR: 4.5 },
-  tertiary:    { lane: 10 * FT, parking: 8 * FT, sidewalk: 6 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 5.0 },
-  secondary:   { lane: 11 * FT, parking: 8 * FT, sidewalk: 6 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 6.0 },
-  primary:     { lane: 11 * FT, parking: 0,      sidewalk: 8 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 7.5 },
-}
 // ⭐ A road OSM tags `expressway=yes` carries NO pedestrian realm — no treelawn,
 // no sidewalk (Jacob, 2026-09-23, on Huron's US 6: "not supposed to have
 // sidewalks"). Read off the data, so it holds in a town nobody has looked at;
@@ -1192,7 +1182,7 @@ function isExpressway(sources) {
   return n > 0
 }
 // ⭐ THE TAG DECIDES ONE-WAY. OSM's `junction=roundabout|circular` IMPLIES `oneway=yes`;
-// read literally, an untagged ring seeded TWO lanes (`seedSection`: `oneway ? 1 : 2`).
+// read literally, an untagged ring seeded TWO lanes (`classSection`: `oneway ? 1 : 2`).
 // An explicit `oneway` tag still wins. Every site that asks "is this way one-way?" asks this.
 const RING_JUNCTIONS = new Set(['roundabout', 'circular'])
 const isRingWay = (tags) => RING_JUNCTIONS.has(tags?.junction)
@@ -1200,29 +1190,6 @@ function onewayOf(tags) {
   if (tags?.oneway != null) return tags.oneway === 'yes'
   return isRingWay(tags)
 }
-function seedSection(highway, lanes, oneway, { expressway = false } = {}) {
-  const base = highway && highway.replace(/_link$/, '')
-  const cls = STD_SECTION[base] ? base : 'residential'
-  const s = STD_SECTION[cls]
-  const nLanes = Number.isFinite(lanes) && lanes > 0 ? lanes : (oneway ? 1 : 2)
-  // curb-to-curb carriageway: lanes + on-street parking (residential only)
-  const carriage = nLanes * s.lane + (cls === 'residential' || cls === 'unclassified' ? 2 * s.parking : 0)
-  const pavementHW = +(carriage / 2).toFixed(2)
-  const treelawn = expressway ? 0 : +s.treelawn.toFixed(2)
-  const sidewalk = expressway ? 0 : +s.sidewalk.toFixed(2)
-  return {
-    seededClass: cls,
-    lanesAssumed: nLanes,
-    pavementHW,                         // curb-to-curb half width (width residual — 0% OSM)
-    curb: s.curb,
-    treelawn,                           // PROWAG/NACTO furnishing zone (absent in OSM)
-    sidewalk,                           // PROWAG min (sparse in OSM)
-    cornerR: s.cornerR,                 // NACTO-by-class curb-return radius
-    rowHalf: +(pavementHW + s.curb + treelawn + sidewalk).toFixed(2),
-    ...(expressway && { pedRealm: false }),
-  }
-}
-
 // --- Grade separation: carry layer/bridge/tunnel per chain (Part 2) -------
 // OSM marks elevated/buried roadway with `bridge`/`tunnel` and a signed
 // `layer`. fetch.js carries every tag verbatim, so these arrive on each source
@@ -1418,7 +1385,7 @@ function chainHighway(sources, sourceTags) {
 // CENTERLINE on that side — i.e. where the BLOCK EDGE goes (back-of-sidewalk
 // = swDist + SV_SIDEWALK/2); `pavementHalfWidth` = their average; `rowWidth`
 // = assessor ROW. It is NOT an asphalt half-width — the asphalt is
-// lanes-driven (seedSection). Feeding the survey float in as asphalt is the
+// lanes-driven (`classSection`). Feeding the survey float in as asphalt is the
 // block-edge/asphalt conflation that flooded streets out to their sidewalks
 // (E1 forensics; streetProfiles.defaultSideMeasure carries that legacy).
 //
@@ -1582,12 +1549,14 @@ function stampCustomWidths(streets, survey, sidewalks) {
   const rejected = []   // [Benton guard] rejected datum log: `${name} ${tier} ${value}`
   // [Benton guard] name-level max seed asphalt (see plausibleSwDist header)
   const nameMaxPav = new Map()
+  // A swept (highway) seed carries no widths: its section is H-3's, and survey.json never reaches it.
+  const surveyable = (s) => s.seed && s.name && !s.seed.swept
   for (const s of streets) {
-    if (!s.seed || !s.name) continue
+    if (!surveyable(s)) continue
     nameMaxPav.set(s.name, Math.max(nameMaxPav.get(s.name) || 0, s.seed.pavementHW || 0))
   }
   for (const s of streets) {
-    if (!s.seed || !s.name) continue
+    if (!surveyable(s)) continue
     const sv = survey[s.name]
     if (!sv) continue
     // [Benton guard] drop implausibly-small custom data BEFORE tier selection:
@@ -1764,14 +1733,15 @@ function weldHighwayChains(streets) {
       if (m !== keep) gone.add(m)
     }
     const lanes = chainLanes(sources)
+    const cf = classFields(sources)
     Object.assign(keep, {
       points, sources, osmIds, ref: chainRef(sources),
       ...(Number.isFinite(lanes) && lanes > 0 ? { lanes } : {}),
       laneProfile, length: +s0.toFixed(2),
       weldedFrom: run.map(m => m.id),
-      seed: seedSection(keep.highway, lanes, keep.oneway, { expressway: isExpressway(sources) }),
+      ...cf,
+      seed: classSection(cf.class, { lanes, oneway: keep.oneway, expressway: isExpressway(sources) }),
       ...gradeFields(keep.highway, sources),
-      ...classFields(sources),
     })
   }
   for (let i = streets.length - 1; i >= 0; i--) if (gone.has(streets[i])) streets.splice(i, 1)
@@ -1868,15 +1838,16 @@ function weldRoundabouts(streets) {
       if (m !== keep) gone.add(m)
     }
     const lanes = chainLanes(sources)
+    const cf = classFields(sources)
     delete keep.lanes
     Object.assign(keep, {
       points, sources, osmIds, ref: chainRef(sources),
       ...(Number.isFinite(lanes) && lanes > 0 ? { lanes } : {}),
       laneProfile, length: +s0.toFixed(2),
       weldedFrom: run.map(m => m.id),
-      seed: seedSection(keep.highway, lanes, keep.oneway, { expressway: isExpressway(sources) }),
+      ...cf,
+      seed: classSection(cf.class, { lanes, oneway: keep.oneway, expressway: isExpressway(sources) }),
       ...gradeFields(keep.highway, sources),
-      ...classFields(sources),
     })
     welded++; pieces += run.length
   }
@@ -1899,8 +1870,8 @@ function main() {
   // ⛔⛔ A ROAD THAT DOES NOT EXIST IS NOT A STREET. OSM tags a planned or
   // under-construction alignment with `highway=proposed` / `construction` /
   // `planned` / `abandoned` / `razed` and puts it on the REAL road it will one
-  // day replace. Nothing filtered these, and `seedSection` below maps any
-  // unknown class to 'residential' (`STD_SECTION[base] ? base : 'residential'`),
+  // day replace. Nothing filtered these, and the seed then mapped any
+  // unknown class to 'residential' (since retired: the class decides, `streetClass.js`),
   // so such a way was poured as a residential street lying exactly on top of a
   // real one — a doubled centerline the operator sees as a duplicate chain.
   // ⭐ MEASURED, LS 2026-09-06: `Green Line BRT` (`highway=proposed`,
@@ -1941,6 +1912,17 @@ function main() {
       console.error(`   osm ${f.osmId}  ${t.name ? `"${t.name}"` : '(unnamed)'}  ${keys}`)
     }
     console.error('   Decide each in the vocabulary table (a class, or a new row) — never a default.')
+    process.exit(1)
+  }
+  // ⛔ "lanes picks the configuration" (§5 ruling 1): a lanes tag on a way that is seeded from lanes must
+  // be a positive integer. "2;3", 0 or text is not a configuration, and parseInt would round it silently.
+  const lanesBad = highwaysRaw.filter(f => {
+    const c = CLASSES[wayClass.get(f.osmId).class]
+    return (c.swept || c.section?.lane) && !lanesTagIsReadable(f.tags?.lanes)
+  })
+  if (lanesBad.length) {
+    console.error(`\n⛔ ${lanesBad.length} way(s) carry a lanes tag that is not a lane count. Refusing to pour:`)
+    for (const f of lanesBad) console.error(`   osm ${f.osmId}  ${f.tags.name ? `"${f.tags.name}"` : '(unnamed)'}  highway=${f.tags.highway} lanes=${JSON.stringify(f.tags.lanes)}`)
     process.exit(1)
   }
   const notBuilt = highwaysRaw.filter(f => wayClass.get(f.osmId).class === 'not-built')
@@ -2111,7 +2093,7 @@ function main() {
   for (const f of unnamedVehicular) promotedBy.set(f.tags.highway, (promotedBy.get(f.tags.highway) || 0) + 1)
   console.log(`\nUnnamed ways promoted to streets (class decides, not name): ${unnamedVehicular.length}`)
   console.log(`  ${[...promotedBy].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' · ') || '(none)'}`)
-  if (promotedBy.has('road')) console.log(`  ⚠️ highway=road × ${promotedBy.get('road')} — OSM says "class unknown"; seedSection seeds it as residential.`)
+  if (promotedBy.has('road')) console.log(`  ⚠️ highway=road × ${promotedBy.get('road')} — OSM says "class unknown"; the kit rung classes it local.`)
   // Promote unnamed vehicular fragments into streets with synthetic names.
   // Each fragment becomes its own chain here; highway fragments are then
   // joined by `weldHighwayChains`, after the numbering, so no id shifts.
@@ -2135,8 +2117,8 @@ function main() {
       osmIds: [f.osmId],
       sources: [f.osmId],
       tags: f.tags || {},
-      seed: seedSection(hw, lanes, oneway, { expressway: isExpressway([f.osmId]) }),
       ...classFields([f.osmId]),
+      seed: classSection(WAY_CLASS_BY_ID.get(f.osmId).class, { lanes, oneway, expressway: isExpressway([f.osmId]) }),
       // No real name: the label is made up (serve.js keeps it out of pickers).
       synthetic: true,
       // Grade separation (Part 2), computed like any street: true for the
@@ -2763,6 +2745,14 @@ function main() {
     idOwner.set(s.id, s)
   }
 
+  // ⭐ The lanes rung, every pour: an untagged chain takes the KIT configuration (2 lanes, 1 if one-way),
+  // carried over from before the ruling, not newly ruled (BRIEF-the-classifier §5 ruling 1).
+  {
+    const laned = streets.filter(s => s.seed?.lanesRung)
+    const kit = laned.filter(s => s.seed.lanesRung === 'kit')
+    console.log(`\nLanes (the configuration): ${laned.length - kit.length} chain(s) from the data, ${kit.length} at the KIT rung (untagged → 2, 1 if one-way)`)
+  }
+
   const outArg = process.argv.find(a => a.startsWith('--out='))
   const outPath = outArg ? outArg.slice('--out='.length) : join(CLEAN_DIR, 'skeleton.json')
   // `junctions` is additive frame metadata (typed nodes). Downstream consumers
@@ -2797,6 +2787,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
   // carries none), so a first-fragment read silently drops the OSM width
   // marrow. Mode across sources, ties to the larger count.
   const lanes = chainLanes(chain?.sources, sourceTags)
+  const cf = classFields(chain.sources)
   return {
     id,
     name,
@@ -2811,7 +2802,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
     points: chain.coords.map(c => ({ x: c.x, z: c.z })),
     sources: chain.sources || [],
     // Standards-seeded default cross-section (Part 2 bucket d / north-star).
-    seed: seedSection(highway, lanes, oneway, { expressway: isExpressway(chain?.sources) }),
+    seed: classSection(cf.class, { lanes, oneway, expressway: isExpressway(chain?.sources) }),
     // Grade separation (Part 2): layer/bridge/tunnel summarized over ALL source
     // ways + the operative `gradeSeparated` flag. Earlier this dropped on named
     // streets (only fragments[0].tags reached here, no grade at all) — fixed by
@@ -2819,7 +2810,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
     // is graded honestly (bridge:true, layer:1, but gradeSeparated:false — it
     // still bounds blocks).
     ...gradeFields(highway, chain.sources),
-    ...classFields(chain.sources),
+    ...cf,
     ...extras,
   }
 }

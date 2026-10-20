@@ -15,9 +15,10 @@
 //   · a CATCH-ALL row in the table (a `highway` rule that is not an explicit list);
 //   · a CONTRADICTION — the record says one thing and the class says another:
 //       name-made   a chain whose class does not enter the network as a street (a name made it);
-//       mixed       a chain whose source ways hold more than one class (a name grouped across classes);
-//       seed        a chain of a non-local street class seeded as `residential` (curb, lawn and walk
-//                   it should not have: a living street with a curb);
+//       mixed       a chain whose source ways span more than one NETWORK (a footway in a street chain;
+//                   §5 ruling 9 — street classes mixed under one name are disclosed, not RED);
+//       seed        a chain seeded with another class's section (the old residential fallback reads
+//                   as this: a living street seeded `residential`);
 //       stale       the record's class is not one its source ways' tags give.
 //   Each contradiction prints its OWNER, the old site that still produces it. Pass A changed no paint,
 //   so the owners stand until the consumers are rewired (the brief §2 "Both passes").
@@ -39,10 +40,6 @@ if (!existsSync(skelPath)) {
   process.exit(2)
 }
 const RUNGS = new Set(['authored', 'data', 'norm', 'kit'])
-// Classes whose `residential` seed does not reach the paint: `streetProfiles#measureFromSeed`
-// takes `highwaySection` for a highway class. Disclosed, not RED. Read as a fact about the
-// consumer, so it goes when that consumer reads the class.
-const SEED_NOT_PAINTED = new Set(['highway', 'highway-link'])
 
 function tableFaults(rules, classes) {
   const out = []
@@ -57,7 +54,7 @@ function tableFaults(rules, classes) {
 }
 
 function measure(skel, tagsById, { rules = RULES, classes = CLASSES, classify = classifyWay } = {}) {
-  const r = { table: tableFaults(rules, classes), unclassified: [], nameMade: [], mixed: [], seed: [], stale: [], seedNotPainted: 0,
+  const r = { table: tableFaults(rules, classes), unclassified: [], nameMade: [], mixed: [], mixedStreet: [], seed: [], stale: [],
     chains: new Map(), paths: new Map(), rungs: new Map(), offGuide: new Map() }
   const where = (s) => { const p = (s.points || s.coords || [])[0]; return p ? `(${p.x.toFixed(0)}, ${p.z.toFixed(0)})` : '(no geometry)' }
   const tally = (m, k) => m.set(k, (m.get(k) || 0) + 1)
@@ -82,13 +79,11 @@ function measure(skel, tagsById, { rules = RULES, classes = CLASSES, classify = 
     if (kind !== 'chain') return
     if (srcClasses.size > 1) {
       const nets = new Set([...srcClasses].map(k => classes[k].network))
-      r.mixed.push(`${label}: ${s.classReason.split('MIXED by name: ')[1] || [...srcClasses].join(' + ')}${nets.size > 1 ? '   [across networks]' : '   [street classes only]'}`)
+      const what = `${label}: ${s.classReason.split('MIXED by name: ')[1] || [...srcClasses].join(' + ')}`
+      ;(nets.size > 1 ? r.mixed : r.mixedStreet).push(what)
     }
     if (classes[s.class].network !== 'street') r.nameMade.push(`${label}: class ${s.class} (network ${classes[s.class].network})`)
-    else if (s.seed?.seededClass === 'residential' && s.class !== 'local') {
-      if (SEED_NOT_PAINTED.has(s.class)) r.seedNotPainted++
-      else r.seed.push(`${label}: class ${s.class} seeded residential`)
-    }
+    else if (s.seed?.seededClass !== s.class) r.seed.push(`${label}: class ${s.class} seeded as ${s.seed?.seededClass ?? '∅'}`)
   }
   for (const s of skel.streets || []) one(s, 'chain')
   for (const p of skel.paths || []) one(p, 'path')
@@ -149,15 +144,14 @@ console.log(`\n${scene}   ${skelPath.replace(ROOT + '/', '')}`)
 console.log(`   chains ${skel.streets?.length ?? 0} by class:  ${fmt(r.chains)}`)
 console.log(`   paths  ${skel.paths?.length ?? 0} by class:  ${fmt(r.paths)}`)
 console.log(`   by rung:  ${fmt(r.rungs)}`)
-if (r.offGuide.size) console.log(`   ⚠️ classes NOT IN THE STYLE GUIDE (open for Jacob):  ${fmt(r.offGuide)}`)
+if (r.offGuide.size) console.log(`   ⚠️ PROPOSED classes, not ruled (open for Jacob):  ${fmt(r.offGuide)}`)
 list('table faults', 'src/cartograph/streetClass.js', r.table)
 list('UNCLASSIFIED', 'skeleton.js classification', r.unclassified)
 list('stale class', 'skeleton.js classFields', r.stale)
 list('name-made chains', 'skeleton.js groupByName (a name makes a chain whatever its class)', r.nameMade)
-list('mixed-class chains', 'skeleton.js groupByName (a name groups across classes)', r.mixed)
-if (r.mixed.length) console.log(`        of which across networks (a path/lot class grouped into a street): ${r.mixed.filter(x => x.endsWith('[across networks]')).length}`)
-list('seeded residential', 'skeleton.js seedSection (`STD_SECTION[base] ? base : \'residential\'`)', r.seed)
-if (r.seedNotPainted) console.log(`   ⚠️ ${r.seedNotPainted} highway-class chain(s) seeded residential in the record; not painted (measureFromSeed → highwaySection)`)
+list('mixed across networks', 'skeleton.js groupByName (a name grouped a path/lot class into a street)', r.mixed)
+if (r.mixedStreet.length) console.log(`   ·  ${r.mixedStreet.length} chain(s) mix street classes under one name — not RED (§5 ruling 9: each piece carries its own class)`)
+list('seeded as another class', 'skeleton.js classSection (the seed must be its own class\'s section)', r.seed)
 console.log(`   ·  Pass B (faces · tips · crossings) is NOT BUILT — not checked`)
 console.log(r.red ? `\n⛔ ${r.red} red — every one named above with the site that owns it` : '\n✅ every feature is classified and no record contradicts its class')
 process.exit(r.red ? 1 : 0)
