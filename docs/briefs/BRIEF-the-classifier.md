@@ -146,9 +146,12 @@ of either.
 ## 5 · Ruled (Jacob, 2026-10-19, relayed by Boz; recorded verbatim)
 
 1. C1: data SELECTS a style, never measures. lanes/width no longer size the carriageway.
-   *Clarified (Jacob, 2026-10-19, relayed by Boz): "lanes picks the configuration." The lane count selects a house
-   configuration: each class has a house lane width, and the tag picks 1, 2, 4 or 6 lanes. `width` in metres stays
-   unread. A lane count outside the house configurations refuses by name, never rounds silently.*
+   *Clarified (Jacob, 2026-10-19): "lanes picks the configuration." `width` in metres stays unread.*
+   *Boz, interim, pending Jacob on turn lanes: a configuration is any positive-integer lane count the data gives;
+   carriageway = count × the class's house lane width. Only a `lanes` value that is not a positive integer refuses,
+   by place. Odd counts get no turn-lane treatment yet. An untagged chain keeps 2 lanes (1 if one-way) as the KIT
+   rung, carried over from today, not newly ruled, and disclosed per pour. (An earlier line here gave "1, 2, 4 or
+   6 lanes … refuses" as Jacob's; that was Boz's illustration, not a ruling.)*
 2. One island class for every median and sliver: no walk, no lawn, its surface set by the town norm.
 3. Slivers: by topology first (a face bounded by a divided pair), with ①'s centreline-to-centreline width as a back-up selector.
 4. An untagged dead end is BLUNT; turning_circle/turning_loop selects round.
