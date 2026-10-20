@@ -414,7 +414,7 @@
       "jurisdiction": "global",
       "url": "https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9",
       "covers": [
-        "the aerial the kit DISPLAYS in Survey/Extent"
+        "nothing: the Designer's aerial left it for USDA NAIP on 2026-10-20 (row naip); it had been the aerial in Survey/Extent"
       ],
       "terms": {
         "aiUse": "unchecked",
@@ -431,7 +431,8 @@
       "jurisdiction": "federal (US-wide)",
       "url": "https://planetarycomputer.microsoft.com/dataset/naip",
       "covers": [
-        "0.3–0.6 m 4-band orthoimagery of every US town (dated flights)"
+        "0.3–0.6 m 4-band orthoimagery of every US town (dated flights)",
+        "the aerial the Designer DISPLAYS in Survey/Extent, served by USGS The National Map (imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer), whose description calls it \"public domain\""
       ],
       "terms": {
         "aiUse": "permitted",

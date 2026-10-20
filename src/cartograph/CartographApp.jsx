@@ -13,7 +13,7 @@ import DesignerLamps from './DesignerLamps.jsx'
 import OneWayArrows from './OneWayArrows.jsx'
 
 // Designer-only (aerial + authoring overlays)
-import AerialBase, { AerialFocus } from './AerialTiles.jsx'
+import AerialBase, { AerialFocus, AerialCredit } from './AerialTiles.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import ParkTitleHandle from './ParkTitleHandle.jsx'
 import { PARK_TITLE_DEFAULT_CENTER } from '../components/LafayetteParkBody.jsx'
@@ -704,6 +704,7 @@ export default function CartographApp() {
   const setParkTitlePos = useCartographStore(s => s.setParkTitlePos)
   const luColors = useCartographStore(s => activeChannel(s, 'luColors'))
   const aerialVisible = useCartographStore(s => s.aerialVisible)
+  const aerialBbox = useCartographStore(s => s.mapGeography?.bbox)
   const centerlineData = useCartographStore(s => s.centerlineData)
   const sceneRibbons = useCartographStore(s => s.sceneRibbons)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
@@ -1092,6 +1093,7 @@ export default function CartographApp() {
             onChange={setParkTitlePos} />
         )}
         {inDesigner && <MarkerFAB />}
+        {inDesigner && sceneCfg.hasAerial && (!!tool || aerialVisible) && <AerialCredit bbox={aerialBbox} />}
         <Toolbar />
         <StatusBar />
 
