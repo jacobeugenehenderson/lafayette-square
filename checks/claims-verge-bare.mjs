@@ -50,7 +50,7 @@ for (const look of (shapeOverride ? named : scenes('public/baked/<scene>/shape.j
   let verge = 0, vergeBad = [], edges = 0, edgeBad = []
   try {
     for (const [ti, t] of tiles.entries()) {
-      const out = sectionPassProtoTile(t, cw, { outer: 'LU', inner: 'SW' }, null)
+      const out = sectionPassProtoTile(t, cw, { outer: 'LU', inner: 'SW' }, blockCustoms)   // WITH the look's authoring (Layer 0 q3)
       const bands = [...(out.curb || []), ...(out.Wacc || []), ...Object.values(out.tlByLu || {}).flat()]
       if (t.blockClass === 'verge') {
         verge++
