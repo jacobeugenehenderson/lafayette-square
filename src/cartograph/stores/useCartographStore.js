@@ -8,7 +8,7 @@ import {
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
   saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
-import { setSceneMeasureSource } from '../measureModel.js'
+import { setSceneMeasureSource, chainMeasure, noMeasureFor } from '../measureModel.js'
 import { resolveCurbWidth } from '../streetProfiles.js'
 import { readAddress, resolveTown, lookForScene, isValidMapId, ADDRESS_STORAGE } from '../../lib/authoringAddress.js'
 import { feCustomKey } from '../../lib/feCustomKey.js'
@@ -2832,11 +2832,13 @@ const useCartographStore = create((set, get) => ({
     const st = centerlineData?.streets?.[streetIdx]
     if (!st) return
     const v = Math.min(30, Math.max(0.5, Number.isFinite(+hw) ? +hw : 0))
-    // ⛔ NO SEEDED SIDE: a street whose measure lacks a side has no width to keep there. Inventing one (it was pavementHW 5 +
-    // ped 1.5/1.5) wrote it into the overlay as if surveyed. Said, and nothing is written.
-    const missing = ['left', 'right'].filter(k => !st.measure?.[k])
-    if (missing.length) { console.error(`[Survey] ⛔ ${st.skelId || st.name}: the measure carries no ${missing.join(' or ')} side — nothing written`); return }
-    const base = { left: { ...st.measure.left }, right: { ...st.measure.right }, symmetric: st.measure.symmetric }
+    // ⛔ NO SEEDED SIDE: the write starts from the chain's own measure (`chainMeasure` — the street's, else the pour's, else
+    // its class row). A side with none has no width to keep: inventing one (it was pavementHW 5 + ped 1.5/1.5, and it was
+    // used even where the pour HAD a measure) wrote it as if surveyed. Said — the panel shows the same line — and nothing is written.
+    const why = ['left', 'right'].map(k => noMeasureFor(st, k)).filter(Boolean)
+    if (why.length) { console.error(`[Survey] ⛔ ${why.join(' · ')} — nothing written`); return }
+    const cm = chainMeasure(st)
+    const base = { left: { ...cm.left }, right: { ...cm.right }, symmetric: cm.symmetric }
     const other = side === 'left' ? 'right' : 'left'
     base[side] = { ...base[side], pavementHW: v }
     if (mirror) base[other] = { ...base[other], pavementHW: v }

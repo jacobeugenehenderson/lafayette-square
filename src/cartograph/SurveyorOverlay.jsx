@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob (SSoT; SKELETON.md §3.5) — the SURVEY navy renders the smooth curve
-import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
+import { chainMeasure, findFeForSide, applyKindToMeasure, noMeasureFor } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { resolveChainSegmentation } from '../lib/chainSegmentation.js'
@@ -294,7 +294,7 @@ export default function SurveyorOverlay() {
       const existing = readFeCustom(store.blockCustoms, fe)
       const ped = resolvePedDepths(chainSeed, s, existing)
       // ⛔ NO FALLBACK MEASURE: a side the pour gave no measure is said and skipped — never seeded with an invented width.
-      if (!chainSeed?.[s]) { console.error(`[Survey] ⛔ ${st.skelId || st.name} ${s}: the pour carries no measure for this side — nothing written`); continue }
+      if (!chainSeed?.[s]) { console.error(`[Survey] ⛔ ${noMeasureFor(st, s)} — nothing written (the panel says so too)`); continue }
       const seed = { ...chainSeed[s], ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
       const measure = applyKindToMeasure(seed, 'pavementHW', r, curbWidthOf(store))
       // One entry per owned segOrd — each shim carries a single-segOrd fe so

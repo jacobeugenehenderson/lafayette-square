@@ -7,7 +7,7 @@ import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
 import { resolveChainSegmentation } from '../lib/chainSegmentation.js'
-import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure } from './measureModel.js'
+import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure, noMeasureFor } from './measureModel.js'
 import { readFeCustom, makeCapFe, feCustomKey } from '../lib/feCustomKey.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
@@ -554,7 +554,7 @@ export default function MeasureOverlay() {
     const ped = resolvePedDepths(chainSeed, side, existing)
     // ⛔ NO FALLBACK MEASURE: a chain side the pour gave no measure has no asphalt width to drag from. Inventing one (it was
     // pavementHW 5 + ped 1.5/1.5) wrote a width nobody surveyed into the town's authoring. Said, and the drag writes nothing.
-    if (!chainSeed?.[side]) { console.error(`[Section] ⛔ ${st.skelId || st.name} ${side}: the pour carries no measure for this side — nothing to drag from; nothing written`); return }
+    if (!chainSeed?.[side]) { console.error(`[Section] ⛔ ${noMeasureFor(st, side)} — nothing to drag from; nothing written (the panel says so too)`); return }
     const seed = { ...chainSeed[side], ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
     store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r, curbWidthOf(store)) }])
   }, [nearestFeForSide])

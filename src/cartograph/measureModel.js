@@ -74,6 +74,13 @@ export function chainMeasure(st) {
   return defaultMeasure(st.class, null, { lanes: Number.isInteger(st.lanes) ? st.lanes : null, oneway: !!st.oneway })
 }
 
+// ⭐ "NO MEASURE FOR <street> <side>" — the one predicate behind the Survey/Section refusals (the overlays, the store's
+// whole-chain write) and the panel line that says so where the number would be. null = the side has a measure.
+export function noMeasureFor(st, side) {
+  let m; try { m = chainMeasure(st) } catch (e) { return `no measure for ${st?.name || st?.skelId} ${side} (${e.message.replace(/^⛔ chainMeasure: /, '')})` }
+  return m?.[side] ? null : `no measure for ${st?.name || st?.skelId} ${side}`
+}
+
 // Resolve a (street, segOrd, side) tuple to its containing block-edge fe.
 // streetIdx callers index centerlineData.streets, but fe.chainIdx indexes
 // liveRibbons.streets (different ordering) — match by chain identity

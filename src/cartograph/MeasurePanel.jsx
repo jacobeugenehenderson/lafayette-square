@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { BAND_COLORS } from './streetProfiles.js'
-import { chainMeasure, findFeForSide } from './measureModel.js'
+import { chainMeasure, findFeForSide, noMeasureFor } from './measureModel.js'
 import { readFeCustom, feCustomKey } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 
@@ -88,7 +88,7 @@ function NumberRow({ label, swatch, valueM, onCommit, readOnly }) {
   )
 }
 
-function SideBlock({ sideKey, side, onChange, single }) {
+function SideBlock({ sideKey, side, onChange, single, missing }) {
   const set = (patch) => {
     const next = { ...side, ...patch }
     next.terminal = inferTerminal(next)
@@ -105,12 +105,15 @@ function SideBlock({ sideKey, side, onChange, single }) {
       {/* Asphalt width is authored in Survey (the asphalt-edge handle), not here
           — Measure (→ Section) owns the ped profile. pavementHW stays in the
           measure as the reference the ped bands position off; just no editor. */}
+      {/* ⛔ a side with no measure shows that, where its numbers would be — never a default (the drag refuses too) */}
+      {missing ? <div className="carto-meta carto-meta--warn" role="alert">⛔ {missing}</div> : <>
       <NumberRow label="Treelawn" swatch={BAND_COLORS.treelawn}
         valueM={side.treelawn || 0}
         onCommit={v => set({ treelawn: v })} />
       <NumberRow label="Sidewalk" swatch={BAND_COLORS.sidewalk}
         valueM={side.sidewalk || 0}
         onCommit={v => set({ sidewalk: v })} />
+      </>}
     </div>
   )
 }
@@ -243,9 +246,9 @@ export default function MeasurePanel() {
           street" head-start comes from the automatic survey best-guess (real
           sidewalk data), not a manual batch mode; per-fe override handles the
           rest. Both sides edit independently. */}
-      <SideBlock sideKey="left" side={measure.left}
+      <SideBlock sideKey="left" side={measure.left} missing={noMeasureFor(st, 'left')}
         onChange={s => updateSide('left', s)} />
-      <SideBlock sideKey="right" side={measure.right}
+      <SideBlock sideKey="right" side={measure.right} missing={noMeasureFor(st, 'right')}
         onChange={s => updateSide('right', s)} />
 
       <div className="carto-meta">
