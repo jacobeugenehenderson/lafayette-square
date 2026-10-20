@@ -1,0 +1,7 @@
+{
+  "name": "osm2streets-trial",
+  "private": true,
+  "description": "T1 (Boz, 2026-10-19): osm2streets as an independent topology-class oracle. Scratch only; not a producer.",
+  "type": "module",
+  "dependencies": { "osm2streets-js-node": "0.1.4" }
+}
