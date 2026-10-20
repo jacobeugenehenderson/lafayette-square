@@ -13,7 +13,7 @@
  *  · SERVED — public/baked/<town> is a CURATED set. Carriage is not demanded there; every served drop must be NAMED.
  *    ⛔ Never push a withheld field (a parcel owner) toward the browser to turn this green: the row is the answer.
  *
- * ⛔ The drop rules are READ, never restated: NOT_BUILT and EXCLUDE_FROM_STREETS are parsed out of skeleton.js; building
+ * ⛔ The drop rules are READ, never restated: the not-built classes are read from streetClass.js (network 'none'), EXCLUDE_FROM_STREETS is parsed out of skeleton.js; building
  *    membership is `membership.mjs#createMembershipFilter`, called as pipeline.js calls it. Every DROPS row names the
  *    code symbol it stands for and is RED (stale) when that symbol is gone from the source.
  * ⛔ A record that carries NO source id cannot be shown lossless, so it is its own RED class (`no-source-id`), not a pass.
@@ -21,7 +21,7 @@
  * ⭐ The chain shape it accepts for tags: `chain[k]`, `chain.tags[k]`, or a source entry `{osmId, tags}` in
  *    `chain.sources` (the per-segment carriage the classifier branch is adding).
  * ⭐ MUTANTS (each RED, on a fixture that is GREEN first): a chain's source removed · a path's osmId stripped · a building
- *    twin dropped · a tag deleted off a synthetic chain · a source-entry tag deleted · NOT_BUILT parsed without the value
+ *    twin dropped · a tag deleted off a synthetic chain · a source-entry tag deleted · the not-built set read without the value
  *    a dropped way relies on · a DROPS row whose symbol is deleted · a map layer item without its id · the served
  *    privacy row removed · a poi with no frozen record.
  */
@@ -29,6 +29,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createMembershipFilter, buildingIdOf } from '../cartograph/membership.mjs'
+import { CLASSES, RULES } from '../src/cartograph/streetClass.js'
 import { setFlagsFromString } from 'node:v8'
 import { runInNewContext } from 'node:vm'
 
@@ -41,8 +42,8 @@ const SRC = (rel) => readFileSync(join(ROOT, rel), 'utf8')
 // ── the named rules ───────────────────────────────────────────────────────────────────────────────────────────────
 // Every row names the source that IS the rule; a row whose symbol is gone is RED (`stale-drop-rule`).
 const DROPS = [
-  { id: 'not-built', scope: 'internal', file: 'cartograph/skeleton.js', symbol: /const NOT_BUILT = new Set\(/,
-    says: 'a way tagged as not existing (proposed, construction, …) leaves the road network' },
+  { id: 'not-built', scope: 'internal', file: 'src/cartograph/streetClass.js', symbol: /class: 'not-built'/,
+    says: 'a way whose class has network \'none\' (proposed, construction, …) leaves the road network' },
   { id: 'exclude-from-streets', scope: 'internal', file: 'cartograph/skeleton.js', symbol: /const EXCLUDE_FROM_STREETS = new Set\(/,
     says: '⚠ a per-NAME list (LS proper nouns); it drops the whole name group, paths included' },
   { id: 'building-membership', scope: 'internal', file: 'cartograph/pipeline.js', symbol: /createMembershipFilter\(\{ nb, activate, hide/,
@@ -63,9 +64,11 @@ function setFromSource(text, name) {
 
 function readRules(srcOf = SRC) {
   const sk = srcOf('cartograph/skeleton.js')
-  const notBuilt = setFromSource(sk, 'NOT_BUILT'), exclude = setFromSource(sk, 'EXCLUDE_FROM_STREETS')
+  // the dropped highway values: every vocabulary row whose class's network is 'none' (skeleton.js drops the 'not-built' class)
+  const notBuilt = new Set(RULES.filter(r => CLASSES[r.class]?.network === 'none').flatMap(r => r.highway))
+  const exclude = setFromSource(sk, 'EXCLUDE_FROM_STREETS')
   const stale = DROPS.filter(r => { try { return !r.symbol.test(srcOf(r.file)) } catch { return true } }).map(r => `${r.id} (${r.file}: ${r.symbol})`)
-  if (!notBuilt) stale.push('not-built: NOT_BUILT not parseable in skeleton.js')
+  if (!notBuilt.size) stale.push("not-built: no class with network 'none' in streetClass.js")
   if (!exclude) stale.push('exclude-from-streets: EXCLUDE_FROM_STREETS not parseable in skeleton.js')
   return { notBuilt: notBuilt || new Set(), exclude: exclude || new Set(), stale, drops: DROPS }
 }
@@ -222,7 +225,7 @@ function proveTheInstrument() {
   M('a building twin dropped', r => { r.map.buildings[1].twinOsmIds = [] }, null, 'building-not-carried')
   M('a tag deleted off a synthetic chain', r => { delete r.sk.streets[1].tags.highway; r.sk.streets[1].highway = 'x' }, null, 'chain-tag-not-carried')
   M('a source-entry tag deleted (per-segment shape)', r => { r.sk.streets[0] = { name: 'A Street', sources: [{ osmId: 1, tags: { highway: 'residential', name: 'A Street' } }] } }, null, 'chain-tag-not-carried')
-  M('NOT_BUILT read without the value a dropped way relies on', () => {}, (R) => ({ ...R, notBuilt: new Set([...R.notBuilt].filter(v => v !== 'proposed')) }), 'way-not-carried')
+  M('the not-built set read without the value a dropped way relies on', () => {}, (R) => ({ ...R, notBuilt: new Set([...R.notBuilt].filter(v => v !== 'proposed')) }), 'way-not-carried')
   {
     const gone = readRules((rel) => rel === 'cartograph/pipeline.js' ? SRC(rel).replace(/createMembershipFilter\(\{ nb, activate, hide/g, 'removed(') : SRC(rel))
     if (!evaluate(fixture(), gone).some(o => o.cls === 'stale-drop-rule')) fails.push('MUTANT stayed GREEN: a DROPS row whose symbol is deleted')
