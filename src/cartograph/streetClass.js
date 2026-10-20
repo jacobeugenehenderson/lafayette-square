@@ -26,14 +26,19 @@
 //             'none' dropped from the network (printed).
 //   guide   — the style-guide section it comes from; `null` = NOT IN THE GUIDE, added here so the
 //             five towns pour, and open for Jacob (printed by the check).
+//   surveyed — the classes the width survey and the centreline seed measure (`survey.js`,
+//             `seed-centerlines.js`, `extend-centerlines.js`). ⚠️ living-street is out of it, as
+//             it was out of their copied sets; whether it belongs is not ruled.
+//   labelTier — 'major' = the arterial label tier an operator frames a boundary on (`serve.js`
+//             OSM labels). ⛔ A `*_link` way of a major class is NOT major (`labelMajor`).
 export const CLASSES = {
   'not-built':     { network: 'none',   guide: '§1' },
-  'highway':       { network: 'street', guide: '§1' },
+  'highway':       { network: 'street', guide: '§1', labelTier: 'major' },
   'highway-link':  { network: 'street', guide: '§1' },
-  'primary':       { network: 'street', guide: '§1' },
-  'secondary':     { network: 'street', guide: '§1' },
-  'tertiary':      { network: 'street', guide: '§1' },
-  'local':         { network: 'street', guide: '§1' },
+  'primary':       { network: 'street', guide: '§1', labelTier: 'major', surveyed: true },
+  'secondary':     { network: 'street', guide: '§1', labelTier: 'major', surveyed: true },
+  'tertiary':      { network: 'street', guide: '§1', labelTier: 'major', surveyed: true },
+  'local':         { network: 'street', guide: '§1', surveyed: true },
   'living-street': { network: 'street', guide: '§1 §3' },
   'pedestrian':    { network: 'path',   guide: '§1' },      // street or path: guide Q1.b, open
   'plaza':         { network: 'area',   guide: '§9' },
@@ -107,6 +112,19 @@ export function classifyWay(tags) {
   if (!rule) return null
   return { class: rule.class, rung: rule.rung, reason: reasonOf(rule, tags), ...(rule.link && { link: true }) }
 }
+
+/**
+ * A way's class for a consumer that reads raw tags. ⛔ It refuses, by the way's tags, when the
+ * vocabulary has no entry — the pour refuses the same way, so this never fires on a poured town.
+ */
+export function classOf(tags) {
+  const c = classifyWay(tags || {})
+  if (!c) throw new Error(`⛔ no class in the vocabulary (src/cartograph/streetClass.js) for highway=${tags?.highway ?? '(none)'}${tags?.area ? ` area=${tags.area}` : ''}${tags?.name ? ` "${tags.name}"` : ''}`)
+  return c
+}
+
+/** The major label tier: a major class, and not a `*_link` of it. */
+export const labelMajor = (tags) => { const c = classOf(tags); return CLASSES[c.class].labelTier === 'major' && !c.link }
 
 /** The table's order, for a deterministic tie-break in a chain's vote. */
 export const CLASS_ORDER = Object.keys(CLASSES)

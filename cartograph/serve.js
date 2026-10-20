@@ -17,6 +17,7 @@ import { instanceForMap } from '../src/instances/registry.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
+import { labelMajor } from '../src/cartograph/streetClass.js'
 import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
@@ -426,9 +427,8 @@ function needsRebuild(inputs, outputs) {
 // One label per named street, from raw/osm.json's ground.highway (coords carry
 // the scene's local x/z). Mirrors src/lib/streetLabels.js's placement (longest
 // way per name → arclength-midpoint + local angle normalized to read L→R), but
-// scene-agnostic and PRE-skeleton. `major` = the arterial classes a neighborhood
-// is bounded on. Cached by file mtime (the 18 MB parse runs once per fetch).
-const OSM_LABEL_MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary'])
+// scene-agnostic and PRE-skeleton. `major` = the vocabulary's major label tier
+// (streetClass.js `labelMajor`). Cached by file mtime (the 18 MB parse runs once per fetch).
 const _osmLabelCache = new Map()   // scene → { mtime, labels }
 function computeLabelsFromOsm(osm) {
   const feats = (osm.ground && osm.ground.highway) || []
@@ -464,7 +464,7 @@ function computeLabelsFromOsm(osm) {
       lon: a.lon + (b.lon - a.lon) * t,
       lat: a.lat + (b.lat - a.lat) * t,
       angle,
-      major: OSM_LABEL_MAJOR.has(f.tags.highway),
+      major: labelMajor(f.tags),
       cls: f.tags.highway,
       _total: total,
     })
