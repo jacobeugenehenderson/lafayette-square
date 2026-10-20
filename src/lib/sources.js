@@ -23,13 +23,15 @@
 // licence; the OSMF attribution guidelines want it visible on a browsable map,
 // collapsible but always findable. See cartograph/intake-rows.mjs `licence`.
 import { useState, useEffect } from 'react'
-import { INSTANCE } from '../instance.js'
 import { slabFetch } from './slabUrl.js'
-import { resolveLookId } from './resolveLookId.js'
+import { lookOf } from './lookOf.js'
 
 
 /**
- * @param {string} [lookId] — explicit Look id; falls back to `?look=`, then INSTANCE.
+ * @param {string} lookId — REQUIRED: the Look whose slab is read (lib/lookOf.js). <Town> passes the one it draws
+ *   (MapCredit); app code that means "this page's Look" resolves it first (InfoModal: resolveLookId). ⛔ No fallback
+ *   here: this module is in <Town>'s closure, which never reaches the kit's registry
+ *   (checks/claims-the-town-reads-no-player-store.mjs).
  * @returns {{credits: Array, owed: Array, loaded: boolean}}
  *   credits — [{ source, sourceUrl, credit, licence, licenceUrl, requires, from }]
  *   owed    — filled inputs whose terms the kit cannot state (never credited)
@@ -37,7 +39,7 @@ import { resolveLookId } from './resolveLookId.js'
  *             instead of flashing a to-do at every visitor on first paint.
  */
 export function useSources(lookId) {
-  const resolved = resolveLookId(lookId)
+  const resolved = lookOf(lookId, 'useSources')
   const [state, setState] = useState({ credits: [], owed: [], loaded: false })
   useEffect(() => {
     let cancelled = false

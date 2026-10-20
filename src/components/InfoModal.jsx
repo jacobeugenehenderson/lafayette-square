@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { create } from 'zustand'
 import useCamera from '../hooks/useCamera'
 import { useSources } from '../lib/sources.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 import { COPY, NotDeclared } from '../instances/copy/index.jsx'
 
 // ── Store ────────────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ export default function InfoModal() {
   const close = useInfo((s) => s.close)
   const panelCollapsedPx = useCamera((s) => s.panelCollapsedPx)
   // Per-look, straight off the slab. Never a list in this file.
-  const { credits, owed, loaded: sourcesLoaded } = useSources()
+  const { credits, owed, loaded: sourcesLoaded } = useSources(resolveLookId())
   const scrollRef = useRef(null)
   const sectionRefs = useRef({})
   const observerRef = useRef(null)
