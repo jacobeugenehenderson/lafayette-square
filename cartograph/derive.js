@@ -24,7 +24,8 @@ import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH, isHighwayClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure, measureFromSeed, CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
+import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
@@ -1383,6 +1384,19 @@ function findStreetForPoint(px, pz, index) {
  * Get the pavementHalfWidth for each edge of a face polygon,
  * by matching edges to original streets and looking up survey data.
  */
+// The carriageway half-width of one RAW way, for the legacy layers that buffer raw ways: its class section
+// (`getStreetSpec`), or the highway typical section for a swept class. ⛔ No residential default — the
+// `defaultHalfWidth = crossSection(STANDARDS.streets.residential)` that these sites fell back to is gone.
+function wayHalfWidth(tags) {
+  const cls = classOf(tags).class
+  if (isSweptClass(cls)) {
+    const n = parseInt(tags.lanes, 10)
+    const hs = highwaySection({ class: cls, oneway: tags.oneway === 'yes', lanes: n > 0 ? n : null, ref: tags.ref ?? null }, hwyStd())
+    return Math.max(hs.left.pavementHW, hs.right.pavementHW)
+  }
+  return crossSection(getStreetSpec(tags)).pavement
+}
+
 function getEdgeWidths(ring, sourceStreets, survey, defaultWidth) {
   const n = ring.length
   const widths = []
@@ -1397,12 +1411,8 @@ function getEdgeWidths(ring, sourceStreets, survey, defaultWidth) {
       const name = street.tags?.name
       if (name && survey[name]?.pavementHalfWidth) {
         widths.push(survey[name].pavementHalfWidth)
-      } else if (street.tags) {
-        const spec = getStreetSpec(street.tags)
-        const section = crossSection(spec)
-        widths.push(section.pavement)
       } else {
-        widths.push(defaultWidth)
+        widths.push(wayHalfWidth(street.tags))
       }
     } else {
       widths.push(defaultWidth)
@@ -1807,7 +1817,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   console.log('  [4/8] Buffering streets by standards...')
 
   const survey = loadSurvey()
-  const defaultHalfWidth = crossSection(STANDARDS.streets.residential).pavement
 
   const correctedSurvey = correctStreetWidths(vehicularStreets, streetlamps, survey)
   const corrections = Object.values(correctedSurvey).filter(s => s.correctedBy).length
@@ -1872,10 +1881,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       let hw
       if (name && correctedSurvey[name]?.pavementHalfWidth) {
         hw = correctedSurvey[name].pavementHalfWidth / 2
-      } else if (f.tags) {
-        hw = crossSection(getStreetSpec(f.tags)).pavement
       } else {
-        hw = defaultHalfWidth
+        hw = wayHalfWidth(f.tags)
       }
       if (name && dividedStreets.has(name)) hw = hw / 2
       const simplified = simplifyPolyline(f.coords, 1.0)
@@ -1894,7 +1901,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     if (correctedSurvey[name]?.pavementHalfWidth) {
       hw = correctedSurvey[name].pavementHalfWidth
     } else {
-      hw = crossSection(getStreetSpec(segs[0].tags)).pavement
+      hw = wayHalfWidth(segs[0].tags)
     }
 
     // Chain segments into continuous polylines
@@ -1958,10 +1965,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     let hw
     if (name && correctedSurvey[name]?.pavementHalfWidth) {
       hw = correctedSurvey[name].pavementHalfWidth
-    } else if (f.tags) {
-      hw = crossSection(getStreetSpec(f.tags)).pavement
     } else {
-      hw = defaultHalfWidth
+      hw = wayHalfWidth(f.tags)
     }
     if (name && dividedStreets.has(name)) hw = hw / 2
     const simplified = simplifyPolyline(f.coords, 1.0)
@@ -2087,7 +2092,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       const dx = ep.x - adj.x, dz = ep.z - adj.z
       const len = Math.sqrt(dx*dx + dz*dz)
       if (len < 0.1) continue
-      const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || defaultHalfWidth
+      const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || wayHalfWidth(f.tags)
       // Use a longer segment (up to 15 points / ~60m) so the pad overlaps
       // well with the existing block, preventing disconnected gaps
       const segLen = Math.min(15, c.length)
@@ -2438,7 +2443,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
           if (!onFace) continue
           const key = `${Math.round(ep.x*10)},${Math.round(ep.z*10)}`
           if (!deadEndNodes.has(key)) continue
-          const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || defaultHalfWidth
+          const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || wayHalfWidth(f.tags)
           // Approximate circle at the dead-end point
           const N = 24
           const circle = []
@@ -2605,22 +2610,18 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
       // ⭐ ASPHALT EDGE — pavement + curb. ⛔ NOT `+ treelawn + sidewalk`; see the block above.
       rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)
-    } else if (isHighwayClass(f.tags?.highway)) {
+    } else if (isSweptClass(classOf(f.tags).class)) {
       // A highway way's reach is its typical section (H-3), from the way's own tags.
       const n = parseInt(f.tags?.lanes, 10)
-      const hs = highwaySection({ highway: f.tags.highway, oneway: f.tags?.oneway === 'yes', lanes: Number.isFinite(n) ? n : null, ref: f.tags?.ref ?? null }, hwyStd())
+      const hs = highwaySection({ class: classOf(f.tags).class, oneway: f.tags?.oneway === 'yes', lanes: Number.isFinite(n) ? n : null, ref: f.tags?.ref ?? null }, hwyStd())
       rowHW = Math.max(hs.left.pavementHW, hs.right.pavementHW)
     } else {
-      const hw = f.tags?.highway
-      const type = hw === 'motorway' ? 'motorway'
-                 : hw === 'motorway_link' || hw === 'trunk_link' ? 'motorway_link'
-                 : hw === 'trunk' ? 'trunk'
-                 : hw === 'primary' ? 'primary'
-                 : hw === 'secondary' || hw === 'tertiary' ? 'secondary'
-                 : 'residential'
-      // Pass survey so fallback streets (Chouteau, Jefferson, Dolman, …)
-      // still pick up their surveyed pavementHalfWidth + sidewalk offsets.
-      const dm = defaultMeasure(type, correctedSurvey[name])
+      // The way's own class section (`streetClass.js`), configured by its own lanes. Pass survey so
+      // fallback streets (Chouteau, Jefferson, Dolman, …) still pick up their surveyed
+      // pavementHalfWidth + sidewalk offsets. The inline highway→type ternary that stood here (a
+      // copy of `mapHighwayToStreetType`, defaulting to 'residential') is gone.
+      const n = parseInt(f.tags?.lanes, 10)
+      const dm = defaultMeasure(classOf(f.tags).class, correctedSurvey[name], { lanes: Number.isFinite(n) && n > 0 ? n : null, oneway: f.tags?.oneway === 'yes' })
       const L = dm.left, R = dm.right
       const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
       const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
@@ -2701,8 +2702,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
 
   for (const f of highways) {
     const t = f.tags?.highway
-    if (!['residential', 'primary', 'primary_link', 'secondary', 'secondary_link',
-          'tertiary', 'tertiary_link', 'unclassified'].includes(t)) continue
+    if (!CLASSES[classOf(f.tags).class].surveyed) continue   // the vocabulary's surveyed street classes
     if (f.coords.length < 2) continue
 
     const coords = f.coords.map(c => ({ x: c.x, z: c.z }))
@@ -2719,7 +2719,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       bikeLanes.push({ coords, name, offset: laneOffset })
     }
 
-    if (f.tags.highway !== 'service') {
+    {
       const spec = getStreetSpec(f.tags)
       if (spec.parkingWidth > 0) {
         const parkOffset = (spec.lanes / 2) * spec.laneWidth
@@ -2843,25 +2843,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     }
   } catch { /* no centerlines */ }
 
-  // Map OSM highway tag → streetProfiles.js type vocabulary
-  function mapHighwayToStreetType(highway) {
-    switch (highway) {
-      case 'motorway':       return 'motorway'
-      case 'motorway_link':  return 'motorway_link'
-      case 'trunk':          return 'trunk'
-      case 'trunk_link':     return 'motorway_link'
-      case 'primary': case 'primary_link': return 'primary'
-      case 'secondary': case 'secondary_link':
-      case 'tertiary': case 'tertiary_link': return 'secondary'
-      case 'service':  return 'service'
-      case 'footway':  return 'footway'
-      case 'cycleway': return 'cycleway'
-      case 'pedestrian': return 'pedestrian'
-      case 'steps':    return 'steps'
-      default:         return 'residential'
-    }
-  }
-
   /**
    * Resolve the cross-section measure for a street. Returns {left, right, source}
    * where each side is {pavementHW, treelawn, sidewalk, terminal}.
@@ -2877,32 +2858,22 @@ export function deriveLayers(highways, { cropland = null } = {}) {
    * broadcast them), so the tier could only re-shadow the seed base with
    * stale machine values — South 18th's pavementHW=2 lived there.
    */
-  function computeStreetMeasure(name, tags, seed, chain = null) {
-    const type = mapHighwayToStreetType(tags?.highway)
-    if (isHighwayClass(tags?.highway)) {
-      if (!chain) throw new Error(`⛔ computeStreetMeasure: highway "${name}" reached without its chain — the section needs lanes/ref/oneway`)
+  function computeStreetMeasure(name, cls, seed, chain) {
+    if (isSweptClass(cls)) {
       const hs = highwaySection(chain, hwyStd())
       hwyReport.push({ id: chain.id, ...hs.report, sources: hs.right.section.sources })
-      const m = measureFromSeed(seed, type, hs)
+      const m = measureFromSeed(seed, cls, hs)
       return { left: m.left, right: m.right, symmetric: m.symmetric, source: 'highway-section' }
     }
-
-    if (seed) {
-      const m = measureFromSeed(seed, type)
-      return {
-        left: m.left,
-        right: m.right,
-        symmetric: m.symmetric,
-        source: seed.widthSource === 'survey' ? 'seed-survey' : 'seed',
-      }
-    }
-
-    const survey = correctedSurvey[name]
-    const d = defaultMeasure(type, survey)
+    // ⛔ Every skeleton chain is seeded from its class (`classSection`); a chain without a seed is a
+    // skeleton that predates it. The seedless survey/type default that stood here is gone.
+    if (!seed) throw new Error(`⛔ computeStreetMeasure: "${name}" (${chain.id}) has no seed — re-pour the skeleton`)
+    const m = measureFromSeed(seed, cls)
     return {
-      left: d.left,
-      right: d.right,
-      source: survey?.rowWidth ? 'survey-default' : 'default',
+      left: m.left,
+      right: m.right,
+      symmetric: m.symmetric,
+      source: seed.widthSource === 'survey' ? 'seed-survey' : 'seed',
     }
   }
 
@@ -3030,12 +3001,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // so the serializer whitelist drops it from the artifact.
     // ⛔ A highway takes no authoring (`r-highway-no-authoring`): an overlay measure on one is
     // REFUSED, kept in the file, and printed by name with its source — never applied, never dropped.
-    const ovOnHighway = isHighwayClass(s.highway) && !!(ov?.measure?.left && ov?.measure?.right)
+    if (!s.class) throw new Error(`⛔ derive: skeleton chain ${s.id} carries no class — re-pour the skeleton (streetClass.js)`)
+    const ovOnHighway = isSweptClass(s.class) && !!(ov?.measure?.left && ov?.measure?.right)
     if (ovOnHighway) hwyRefused.push(`${s.id}(source:${ov.measure.source ?? 'none'})`)
     const ovAuthored = !ovOnHighway && !!(ov?.measure?.left && ov?.measure?.right)
     const measure = ovAuthored
       ? ov.measure
-      : computeStreetMeasure(s.name, { highway: s.highway }, s.seed, s)
+      : computeStreetMeasure(s.name, s.class, s.seed, s)
     // [curve-primitive] Convert the skeleton's index-referenced curve segments
     // (HANDOFF-curve-primitive-skeleton.md) to SELF-CONTAINED ribbon segments —
     // each carries its own endpoints + handles ([x,z]) so it survives the points
@@ -3068,12 +3040,10 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       ...(s.throughId ? { throughId: s.throughId } : {}),
       ...(s.through ? { through: s.through } : {}),
       phase: s.phase || null,
-      // OSM highway class carried through from skeleton.js so V2 corner
-      // radii (and any other class-conditional logic) can resolve to
-      // the right AASHTO/NACTO defaults. Falls back to 'residential'
-      // when missing — matches mapHighwayToStreetType's default.
-      highway: s.highway || 'residential',
-      type: mapHighwayToStreetType(s.highway),
+      // The raw OSM highway tag (the chain's length vote), and its CLASS from the one vocabulary
+      // (`streetClass.js`) — what every consumer reads. The re-guessed `type` vocabulary is gone.
+      highway: s.highway,
+      class: s.class,
       _measureAuthored: ovAuthored,
       // [P1 frame-enrichment] Carry the enriched frame fields off the skeleton
       // street so they survive into ribbons.json. These are PRESENT-but-not-yet-
@@ -4345,7 +4315,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const interior = overlayLoops[loopId]?.interior || 'median'
     if (interior !== 'median') continue               // 'block' → interior is a block, not grass
     pts[pts.length - 1] = [pts[0][0], pts[0][1]]       // SNAP closed (kill the quantization gap)
-    const hw = S.measure?.left?.pavementHW || S.measure?.right?.pavementHW || defaultHalfWidth
+    const hw = S.measure?.left?.pavementHW || S.measure?.right?.pavementHW
+    if (!(hw > 0)) throw new Error(`⛔ derive loop body ${loopId}: its measure carries no carriageway (pavementHW)`)
     // LOOP-STREETS §2 body cross-section: the inner (median-facing) side is curb +
     // treelawn only, NO sidewalk — the treelawn flows into the median (all grass
     // from the curb inward). So inset to the CURB's inner edge (hw + curb), not past
@@ -4472,7 +4443,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const uv = new Map(); for (const r of hwyReport) for (const u of r.unknowns) { if (!uv.has(u)) uv.set(u, []); uv.get(u).push(r.id) }
     for (const [u, xs] of uv) console.log(`      ⚠️ ${u} on ${xs.length}: ${xs.join(', ')}`)
     if (hwyRefused.length) console.log(`      ⚠️ ${hwyRefused.length} overlay measure(s) on a highway REFUSED (r-highway-no-authoring), kept in the file: ${hwyRefused.join(', ')}`)
-    const flat = ribbonStreets.filter(s => s.anchor === 'inner-edge' && isHighwayClass(s.highway)).map(s => s.skelId)
+    const flat = ribbonStreets.filter(s => s.anchor === 'inner-edge' && isSweptClass(s.class)).map(s => s.skelId)
     if (flat.length) console.log(`      ⚠️ ${flat.length} divided highway carriageway(s): section flattened + anchored inner-edge by the divided pass — Jacob: B now, (A) the highway guard lands WITH the LS pour: ${flat.join(', ')}`)
   }
 
@@ -5291,8 +5262,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // `medianWidth` — it measures chain-to-chain, not the median; D1). The
       // `?? medianWidth` read is back-compat for a pre-rename skeleton.json.
       ...(st.phase ? { phase: { role: st.phase.role || null, kind: st.phase.kind || null, pairKey: st.phase.pairKey || null, ...((st.phase.chainGap ?? st.phase.medianWidth) != null ? { chainGap: st.phase.chainGap ?? st.phase.medianWidth } : {}), ...(st.phase.spineAtStart ? { spineAtStart: st.phase.spineAtStart } : {}), ...(st.phase.spineAtEnd ? { spineAtEnd: st.phase.spineAtEnd } : {}) } } : {}),
-      highway: st.highway || 'residential',
-      type: st.type || 'residential',
+      highway: st.highway,
+      class: st.class,
       // Operator-intent fields the V2 emitter consumes. Designer reads
       // these from the live store via `_loadCenterlines`; if we strip
       // them here, the bake's V2 call sees a narrower per-side ped

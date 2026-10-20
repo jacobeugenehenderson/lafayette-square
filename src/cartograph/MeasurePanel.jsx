@@ -249,7 +249,7 @@ export default function MeasurePanel() {
         onChange={s => updateSide('right', s)} />
 
       <div className="carto-meta">
-        {st.type || 'residential'} · {st.points.length} nodes · {hasCustom ? 'custom block' : 'inherits chain'}
+        {st.class ?? '⛔ no class — re-pour'} · {st.points.length} nodes · {hasCustom ? 'custom block' : 'inherits chain'}
       </div>
 
       {hasCustom && (
