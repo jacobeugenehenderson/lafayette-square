@@ -43,6 +43,9 @@ for (const look of (shapeOverride ? named : scenes('public/baked/<scene>/shape.j
   if (!existsSync(designP)) { console.log(`── ${look}   ⛔ NOT CHECKED — no ${designP}`); red = true; continue }
   const design = JSON.parse(readFileSync(designP, 'utf8'))
   const blockCustoms = design.blockCustoms || null
+  // ⭐ THE PRODUCT'S DOOR: buildTileGround → sectionOpen → sectionPassProtoTile(tile, cw, mat, blockCustoms, cornerOverrides),
+  // cornerOverrides being the town's cornerCornerRadiusOverrides (the corner flags) — both, as the bake passes them.
+  const cornerOverrides = (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : null
   const cw = resolveCurbWidth(design).value   // the bake's curb: authored, else the kit's
   if (!lookEntry) console.log(`   ⚠️ ${look} is not in public/looks/index.json — judged without authoring`)
   const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; const t = L2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0; return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz) }
@@ -50,7 +53,7 @@ for (const look of (shapeOverride ? named : scenes('public/baked/<scene>/shape.j
   let verge = 0, vergeBad = [], edges = 0, edgeBad = []
   try {
     for (const [ti, t] of tiles.entries()) {
-      const out = sectionPassProtoTile(t, cw, { outer: 'LU', inner: 'SW' }, blockCustoms)   // WITH the look's authoring (Layer 0 q3)
+      const out = sectionPassProtoTile(t, cw, { outer: 'LU', inner: 'SW' }, blockCustoms, cornerOverrides)   // WITH the look's authoring (Layer 0 q3)
       const bands = [...(out.curb || []), ...(out.Wacc || []), ...Object.values(out.tlByLu || {}).flat()]
       if (t.blockClass === 'verge') {
         verge++
