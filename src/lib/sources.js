@@ -60,18 +60,25 @@ export function useSources(lookId) {
 }
 
 /**
- * The one-line credit for the map chrome. ODbL §4.3 asks that the notice name
- * the database and say it is available under the licence; the OSMF guidelines
- * accept "© OpenStreetMap contributors" as the credit half.
+ * The credits the map must SHOW: only sources whose obligation IS attribution. ODbL §4.3 asks that the notice name
+ * the database and say it is available under the licence; the OSMF guidelines accept "© OpenStreetMap contributors"
+ * as the credit, linked to the source's copyright page (`sourceUrl`), which carries the licence.
  *
- * ⭐ Only sources whose obligation IS attribution appear here. CDLA Permissive
- * 2.0 (Microsoft's footprints) does not ask to be credited — it asks that the
- * licence text be made available — so putting it in this line would state an
- * obligation we were not under while leaving the real one undone. It belongs in
- * the full list, which is what the line links to.
+ * ⭐ CDLA Permissive 2.0 (Microsoft's footprints) does not ask to be credited — it asks that the licence text be
+ * made available — so putting it here would state an obligation we were not under while leaving the real one
+ * undone. It belongs in the full Sources list (InfoModal).
+ * → [{ text, url }]
  */
-export function creditLine(credits) {
-  const attributed = credits.filter(c => c.requires === 'attribution')
-  if (!attributed.length) return null
-  return attributed.map(c => c.credit || `© ${c.source}`).join(' · ')
+export function attributedCredits(credits) {
+  return credits.filter(c => c.requires === 'attribution').map(c => ({ text: c.credit || `© ${c.source}`, url: c.sourceUrl || null }))
+}
+
+/**
+ * The credit as PRINTED, for an image that cannot carry a link (a share JPEG): each credit followed by its URL,
+ * written out — the OSMF guidelines' rule for a static image with no hyperlink. null when nothing is owed.
+ */
+export function printedCredit(credits) {
+  const a = attributedCredits(credits)
+  if (!a.length) return null
+  return a.map(c => (c.url ? `${c.text} · ${c.url.replace(/^https?:\/\/(www\.)?/, '')}` : c.text)).join('  ·  ')
 }
