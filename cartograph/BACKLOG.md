@@ -25,9 +25,15 @@ listings only and prints "hasn't published its buildings yet", so HPDM's registe
 listed places on the partner's domain before the meeting; the exposure has been live since 07-07. Fast-track the
 withheld roster instead. Taking it down stays a legitimate choice if you weigh the terms more heavily. (2) the
 re-bake + Publish + Promote (Boz + Ward), on the Thursday path.
-⚠️ Possibly a second exposure (Truss, read): `src/data/buildings.json` carries `year_built` on 1,013 of LS's 1,082
-buildings, read by the old LS player on lafayette-square.com (PlaceCard, LafayetteScene, foundationGeometry). Its source
-is not established; Zob is checking. If it's the City assessor, the same terms apply.
+⚠️ A SECOND EXPOSURE, source ESTABLISHED (Zob): `src/data/buildings.json` (LS's curated file, bundled into the old LS player
+on lafayette-square.com) carries year_built 1,013 · building_sqft 1,036 · **assessed_value 1,009** of 1,082 buildings,
+from the City Assessor (`scripts/11-merge-all.py#enrich_buildings` ← `scripts/03-fetch-stl-parcels.py`, since ce97343d).
+`assessed_value` has no reader outside src/data (dead weight). year_built is read by PlaceCard etc. bake-content's
+withholding doesn't reach this file. Your call: strip the withheld fields from it (and which, since year_built is shown).
+⚠️ AND A RULING (Zob): roster records still serve `prominence.signals`, per-building PERCENTILES of appraised_value /
+building_sqft / units. Interim tonight (Boz, reversible, no visible change): strip those per-field signals; the score
+and rank stay. Yours: (a) drop withheld fields from prominence entirely (ranks move) or (c) rule a percentile isn't
+redistribution.
 
 **🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
 Start here. State at the restart:
