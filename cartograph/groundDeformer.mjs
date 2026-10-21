@@ -64,7 +64,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
   const stats = { memoTurns: 0, byBothSides: 0, bothSidesSplit: 0, bothSidesMaxDH: 0, frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
-    road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0, byLeg: 0, legCross: 0, legCrossMaxDH: 0, rayAndLeg: 0, legNotHeld: 0 }
+    road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0, byLeg: 0, legCross: 0, legCrossMaxDH: 0, rayAndLeg: 0, legNotHeld: 0, legsAtRim: 0, byLegAtRim: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -283,8 +283,8 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // ⭐ and where the paint minted its own rim crossings, the rim is the painter's NODED ring (`rims`, live): the paint's rim is
   // then a piece of it, so a ray from past the rim enters paint with nothing between (HPDM tile 49's 7.7 mm wedge)
   for (const t of T) { const N = rims?.[t.ti], R = N?.ring?.length >= 3 ? frozenCopy(N.ring) : t.ring, O = N?.ring?.length >= 3 ? N.owners : tiles[t.ti].ringOwner, n = R.length
-    t.rim = false; t.rimRing = R
-    for (let i = 0; i < n; i++) if (O[i]?.kind === 'rim') { t.rim = true; addSeg('beyond', R[i], R[(i + 1) % n]) } }
+    t.rim = false; t.rimRing = R; t.rimEdges = []
+    for (let i = 0; i < n; i++) if (O[i]?.kind === 'rim') { t.rim = true; t.rimEdges.push({ p: R[i], q: R[(i + 1) % n] }); addSeg('beyond', R[i], R[(i + 1) % n]) } }
   const recOf = new Map(T.map(r => [r.ti, r]))
   // ── THE INK: ① between the tiles, as owned pieces (`shape.json#ink`) ──
   // ⭐ A piece is one NONZERO region (a hole wound against its outer), so a point is in it where the winding of its rings is
@@ -513,7 +513,14 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     if (!R || !(x.i >= 0 && x.i < R.ring.length) || R.exempt[x.i]) throw new Error(`groundDeformer: ⛔ ${town}: a perpendicular leg of tile ${tile} names ② ring ${x.si} edge ${x.i}, which the deformer does not carry — its extension has no owner`)
     const rings = (x.faces || []).filter(r => r?.length >= 3).map(frozenCopy); if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rings) for (const [px, pz] of r) { a = Math.min(a, px); b = Math.min(b, pz); c = Math.max(c, px); d = Math.max(d, pz) }
-    const rec = { t, R, i: x.i, atEnd: !!x.atEnd, rings, bb: [a, b, c, d] }
+    // ⭐ A LEG WHOSE FACES REACH THE RIM is counted, and so is every point it holds (Boz, 2026-10-21): the leg reads no rim, so
+    // it meets the rim only where no ray holds a point — on HPDM nowhere (tile 52's four such legs hold 0 of 27,319 samples, all
+    // ray-held), so no row can be cut. A town where the leg holds ground at the rim shows it here, in the bake's census line.
+    // A face edge lies on the rim where its midpoint is within LATTICE of a rim edge (the paint is on the lattice's grid).
+    const atRim = t.rim && rings.some(r => r.some((p, j) => { const q = r[(j + 1) % r.length], mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2
+      return t.rimEdges.some(s => segD(s, mx, mz) < LATTICE) }))
+    if (atRim) stats.legsAtRim++
+    const rec = { t, R, i: x.i, atEnd: !!x.atEnd, atRim, rings, bb: [a, b, c, d] }
     for (let gx = Math.floor(a / TCELL); gx <= Math.floor(c / TCELL); gx++) for (let gz = Math.floor(b / TCELL); gz <= Math.floor(d / TCELL); gz++) { const k = gx * 1000003 + gz; (legGrid.get(k) || legGrid.set(k, []).get(k)).push(rec) }
   }
   // the legs whose own regions hold (x, z) in tile t: one per leg edge
@@ -578,7 +585,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     // equal-weight mean — symmetric, no distance, no tiebreak.
     const Ls = legGrid.size ? legsAt(t, x, z) : []
     if (Ls.length) { const P = Ls.map(L => ({ L, p: legProfile(L, x, z) })).filter(o => o.p.held)
-      if (P.length) { stats.byLeg++
+      if (P.length) { stats.byLeg++; if (P.some(o => o.L.atRim)) stats.byLegAtRim++
         if (P.length > 1) { stats.legCross++; const vs = P.map(o => o.p.v); stats.legCrossMaxDH = Math.max(stats.legCrossMaxDH, Math.max(...vs) - Math.min(...vs)) }
         return { v: P.reduce((a, o) => a + o.p.v, 0) / P.length, owner: `${t.ti}|leg|${P.map(o => `${o.L.R.k}:r${o.L.R.stamp[o.L.i]}`).join('+')}` } }
       stats.legNotHeld++ }
