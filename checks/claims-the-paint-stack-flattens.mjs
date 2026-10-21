@@ -14,7 +14,9 @@
 //   (1) noding off — the same towns' UN-noded stacks (`stackOnly` returns both) must refuse somewhere;
 //   (2) a vertex past the bound (0.8 step) is never inserted, so it still refuses;
 //   (3) the bound written as a literal at its definition or at the call site (a Class D constant) — a source-reading row;
-//   (4) a vertex off the lattice — the noding refuses it, never rounds it.
+//   (4) a vertex off the lattice — the noding refuses it, never rounds it;
+//   (5) a ring pinching below the lattice (a needle) reaches planGroup unsplit — read on the plane (`nodeThePlane`), and
+//       the cut removed from its source, or the plane noded before the ease split, in bake-ground.js's source.
 //   node checks/claims-the-paint-stack-flattens.mjs [town…] [--shore=pending] [--mutants] [--selftest]
 // Exits 1 on any refusal (or a mutant that stays green), 2 when a town could not be checked.
 import { readFileSync } from 'node:fs'
@@ -30,7 +32,7 @@ const argv = process.argv.slice(2), arg = (k) => argv.find(a => a.startsWith(`--
 // ── one town, in this process: its flatten on the noded (or, `--unnoded`, the raw) stack → one JSON line ────────────
 if (arg('one')) {
   const town = arg('one')
-  const { bakeGround, flattenPaintStack } = await import('../cartograph/bake-ground.js')
+  const { bakeGround, flattenPaintStack, nodeThePlane } = await import('../cartograph/bake-ground.js')
   const { lookFor } = await import('../scratch/_proto-feed.mjs')
   const log = console.log, lines = []
   console.log = (...a) => lines.push(a.join(' '))
@@ -39,9 +41,13 @@ if (arg('one')) {
     const st = await bakeGround({ look: lookFor(town), scene: town, shorePending: arg('shore') === 'pending', stackOnly: true })
     const entries = argv.includes('--unnoded') ? st.unnoded : st.stackEntries
     try {
-      const out = flattenPaintStack(entries, { keepOwnSlot: st.keepOwnSlot, doesNotCut: st.doesNotCut })
+      // the plane as planGroup reads it, less the ease split (the deformer's, not run here)
+      const out = nodeThePlane(flattenPaintStack(entries, { keepOwnSlot: st.keepOwnSlot, doesNotCut: st.doesNotCut }))
       const drops = Object.entries(out.subLattice).flatMap(([g, v]) => [...(v.bowTies || []).map(() => 'bowTie ' + g), ...(v.orphanHoles || []).map(() => 'orphan ' + g)])
-      r = { town, refused: null, inserted: st.stackEntries.inserted, pairs: st.stackEntries.pairs, drops }
+      const pinches = Object.values(out.subLattice).flatMap(v => v.pinches || [])
+      r = { town, refused: null, inserted: st.stackEntries.inserted, pairs: st.stackEntries.pairs, drops, output: out.noded,
+            pinches: { loops: pinches.length, m2: +pinches.reduce((t, p) => t + p.m2, 0).toFixed(6), widestMm: Math.max(0, ...pinches.map(p => p.widthMm)) },
+            unsplit: [...out.values()].reduce((t, items) => t + pinchesIn(items), 0) }
     } catch (e) { r = { town, refused: String(e.message).split('\n')[0], inserted: st.stackEntries.inserted, pairs: st.stackEntries.pairs } }
   } catch (e) { r = { town, notChecked: String(e.message).split('\n')[0] } }
   console.log = log
@@ -61,9 +67,37 @@ export function boundIsDerived(src) {
   return null
 }
 
+// ── the source-reading row: `nodeThePlane` nodes, then cuts at the pinches (an inserted vertex can be the pinch), and
+// bakeGround calls it once, after the plane's last re-clip (the ease split) and before planGroup reads it ─────────────
+export function planeNodedLast(src) {
+  const at = src.indexOf('export function nodeThePlane('), end = src.indexOf('\n}\n', at)
+  if (at < 0 || end < 0) return 'no `export function nodeThePlane(` in bake-ground.js'
+  const body = src.slice(at, end), n = body.indexOf('nodeAcrossGroups('), c = body.indexOf('splitAtPinches(')
+  if (n < 0) return 'nodeThePlane never nodes'
+  if (c < 0) return 'nodeThePlane never cuts at the pinches'
+  if (c < n) return 'nodeThePlane cuts before it nodes'
+  const calls = [...src.matchAll(/nodeThePlane\(/g)].map(m => m.index).filter(i => i !== at + 'export function '.length)
+  if (calls.length !== 1) return `bakeGround calls nodeThePlane ${calls.length} time(s), not once`
+  const ease = src.indexOf('flattened.set(k, [...outside, ...inside])'), plan = src.indexOf('const planGroup = (kind, key)')
+  if (ease < 0 || plan < 0) return 'the ease split or planGroup moved — this row cannot read the order'
+  return calls[0] > ease && calls[0] < plan ? null : 'nodeThePlane is not called between the ease split and planGroup'
+}
+// an independent reader of the class: in each ring, a vertex within √2/2 step of another of its own edges (not touching
+// it), projecting strictly inside — on the integer lattice
+export function pinchesIn(items) {
+  let n = 0, b2 = (Math.SQRT1_2 * CLIP_SCALE * LATTICE_M) ** 2
+  for (const it of items) for (const r of (Array.isArray(it) ? [it] : [it?.outer, ...(it?.holes || [])]).filter(r => r?.length >= 3)) {
+    const k = r.map(([x, z]) => [Math.round(x * CLIP_SCALE), Math.round(z * CLIP_SCALE)])
+    k.forEach((P, j) => k.forEach((a, i) => { const b = k[(i + 1) % k.length]
+      if ((a[0] === P[0] && a[1] === P[1]) || (b[0] === P[0] && b[1] === P[1])) return
+      const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, dot = (P[0] - a[0]) * dx + (P[1] - a[1]) * dy, cr = (P[0] - a[0]) * dy - (P[1] - a[1]) * dx
+      if (L2 && dot > 0 && dot < L2 && cr * cr <= b2 * L2) n++ })) }
+  return n
+}
+
 // ── synthetic rows (milliseconds) ────────────────────────────────────────────────────────────────────────────────────
 async function synthetic() {
-  const { nodeAcrossGroups, NODE_BOUND } = await import('../cartograph/bake-ground.js')
+  const { nodeAcrossGroups, NODE_BOUND, flattenPaintStack, nodeThePlane } = await import('../cartograph/bake-ground.js')
   const log = console.log; console.log = () => {}
   const mm = (pts) => pts.map(([x, z]) => [x * LATTICE_M, z * LATTICE_M])
   // an edge (0,0)→(8000,6000) of group a; a vertex of group b at 0.6 step (inserted) or 0.8 step (past √2/2: untouched)
@@ -80,6 +114,24 @@ async function synthetic() {
   rows.push([`(3) the bound is derived, not written${why ? ` — ${why}` : ''}`, !why])
   rows.push(['(3) mutant: NODE_BOUND = 0.7071 is RED', !!boundIsDerived(src.replace(/^export const NODE_BOUND = .+$/m, 'export const NODE_BOUND = 0.7071'))])
   rows.push(['(3) mutant: a literal bound at the call site is RED', !!boundIsDerived(src.replace('nodeAcrossGroups(stackEntries)', 'nodeAcrossGroups(stackEntries, { bound: 0.71 })'))])
+  // (5) a needle narrower than the bound: a's vertex (11000, 5000) is 0.1 step off its own edge (10000,5000)→(20000,4999),
+  // and b runs the same needle from the other side. The plane (flattened, then `nodeThePlane`) must pinch nowhere, and
+  // record the dropped loops
+  const A = mm([[0, 0], [10000, 0], [10000, 5000], [20000, 4999], [11000, 5000], [10000, 6000], [10000, 10000], [0, 10000]])
+  const Bn = mm([[10000, 0], [30000, 0], [30000, 10000], [10000, 10000], [10000, 6000], [11000, 5000], [20000, 4999], [10000, 5000]])
+  const stack = [{ groupKey: 'b', items: [{ outer: Bn, holes: [] }] }, { groupKey: 'a', items: [{ outer: A, holes: [] }] }]
+  // and a third group, keeping its own slot, whose items are bare rings (a ribbon band's), goes through with them
+  const flat = nodeThePlane(flattenPaintStack([...stack, { groupKey: 'c', items: [mm([[40000, 0], [41000, 0], [41000, 1000]])] }], { keepOwnSlot: new Set(['c']) }))
+  const live = [...flat.values()].reduce((t, items) => t + pinchesIn(items), 0)
+  rows.push([`(5) the plane pinches nowhere below the lattice${live ? ` — ${live} pinch(es)` : ''}`, live === 0])
+  rows.push(['(5) the cut needle is recorded (ground.json#flatten.subLattice[group].pinches)', !!(flat.subLattice.a?.pinches?.length && flat.subLattice.b?.pinches?.length)])
+  // the mutant: the same plane noded but never cut (`nodeThePlane` without `splitAtPinches`) must read as pinching
+  const unsplit = nodeAcrossGroups(stack.map(e => ({ ...e, items: e.items.map(it => ({ outer: it.outer, holes: [] })) })))
+  rows.push(['(5) mutant: a ring with a sub-lattice needle reaches the noder unsplit → RED', unsplit.reduce((t, e) => t + pinchesIn(e.items), 0) > 0])
+  const why5 = planeNodedLast(src)
+  rows.push([`(5) the plane is noded, then cut at its pinches, after its last re-clip and before planGroup${why5 ? ` — ${why5}` : ''}`, !why5])
+  rows.push(['(5) mutant: the cut removed is RED', !!planeNodedLast(src.replace(/splitAtPinches\(noded\[g\]\.items, k, flattened\.subLattice\)/, 'noded[g].items'))])
+  rows.push(['(5) mutant: the plane noded before the ease split is RED', !!planeNodedLast(src.replace(/\n  nodeThePlane\(flattened\)\n/, '\n').replace('const flattened = flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })', 'const flattened = nodeThePlane(flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }))'))])
   console.log = log
   for (const [m, ok] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
   return rows.filter(r => !r[1]).length
@@ -100,7 +152,9 @@ for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--')))) {
   const pairs = Object.entries(r.pairs || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, c]) => `${k} ${c}`).join(' · ') + (Object.keys(r.pairs || {}).length > 6 ? ' · …' : '')
   console.log(`  ${r.refused ? '⛔' : '✅'} ${town}: ${r.refused ? `REFUSED — ${r.refused}` : 'flattens'} · noded ${r.inserted} vertex(es)${pairs ? ` (${pairs})` : ''}`
     + (r.drops ? ` · dropped below the lattice: ${r.drops.length}${r.drops.length ? ` (${r.drops.join(', ')})` : ''}` : ''))
-  if (r.refused) bad++
+  if (r.output) console.log(`     the plane: noded ${r.output.inserted} · cut at ${r.pinches.loops} pinch loop(s), ${r.pinches.m2} m², widest ${r.pinches.widestMm} mm`
+    + ` · ${r.unsplit ? `⛔ ${r.unsplit} pinch(es) left` : 'pinches nowhere'} · past the bound, within two roundings: ${r.output.pastBound.vertices} vertex(es), worst ${r.output.pastBound.worstMm} mm (not joined; rim brief (A))`)
+  if (r.refused || r.unsplit) bad++
   if (argv.includes('--mutants')) { const m = one(town, true)
     console.log(`     (1) mutant, noding off: ${m.notChecked ? `NOT CHECKED — ${m.notChecked}` : m.refused ? `REFUSED — ${m.refused}` : 'flattens'}`)
     if (m.refused) mutantRefused++ }
