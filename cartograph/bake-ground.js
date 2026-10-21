@@ -1767,7 +1767,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // ⭐ the block rings as every reader below sees them: noded with the paint (`nodeThePlane`). The rim rings take part too
   // (their vertices enter the paint); their one reader in the bake, the deformer above, read them before this, on the same
   // lines (noding only inserts)
-  const { blockRings: nodedBlockRings } = timed('nodeThePlane', () => nodeThePlane(flattened, { blockRings, rimRings }))
+  const { blockRings: nodedBlockRings, rimRings: nodedRimRings } = timed('nodeThePlane', () => nodeThePlane(flattened, { blockRings, rimRings }))
   // ⭐ ONE source for a ground group's polygons, read by the kerb plan and by `planGroup`: the flattened paint, else the
   // group as drawn. null when the layer is hidden or empty.
   const partitionItems = (kind, key) => {
@@ -1779,9 +1779,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // a lifted face the curb does not stand on meets the road, or the drawing's edge, carries a taper — read by the riser's
   // own owner test (`kerbLift.mjs#curblessEdges`), so an alley painted over the curb makes its own mouth curbless.
   const kerbGroups = PAINT_ORDER.filter(([kind, key]) => !DOES_NOT_CUT.has(kind + ':' + key)).map(([kind, key]) => ({ id: kind + ':' + key, key, items: partitionItems(kind, key) })).filter(g => g.items)
-  const { inBlock: kerbInside, curblessM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, orphanRoadM: kerbOrphanM, narrowBlock: kerbNarrow, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
-    ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, groups: kerbGroups, ramps: curbCutRamps, kerb }))
+  const { inBlock: kerbInside, curblessM, roadM: kerbRoadM, rimM: kerbRimM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, interiorM: kerbInteriorM, orphanRoadM: kerbOrphanM, narrowBlock: kerbNarrow, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
+    ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, rimRings: nodedRimRings, groups: kerbGroups, ramps: curbCutRamps, kerb }))
     : { inBlock: null, curblessM: 0, regions: [] }
+  if (kerbH) console.log(`  [kerb] curbless: road ${kerbRoadM.toFixed(0)} m · rim ${kerbRimM.toFixed(0)} m (named by the rim rings' owners) · block stretches with nothing across and no rim identity ${kerbUnpairedM.toFixed(1)} m (${kerbUnpaired.length}) · inside the block, no candidate ${kerbInteriorM.toFixed(0)} m · road with nothing across ${kerbOrphanM.toFixed(0)} m`)
   if (kerbH) console.log(`  [kerb] narrow blocks (a taper's crease reaching its own block's far side, clipped to the block): ${kerbNarrow.length} crease(s) on ${new Set(kerbNarrow.map(c => c.ring)).size} ring(s)${kerbNarrow.length ? `, first at (${kerbNarrow[0].at.map(v => v.toFixed(2)).join(', ')}) ${kerbNarrow[0].pastFarEdgeM} m past` : ''}`)
   // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
