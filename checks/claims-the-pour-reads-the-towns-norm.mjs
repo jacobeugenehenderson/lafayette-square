@@ -11,7 +11,12 @@
 //   (a) a scene's norms.json sets `curbCuts` / `crosswalks` and the pour-side resolver does not return it from rung 'scene'
 //   (b) a scene with no data directory resolves at all (it must THROW — a wrong name is never "no norm")
 //   (c) a town's FROZEN `curbCutNorm` (public/baked/<town>/shape.json) differs from what the resolver gives now —
-//       STALE: the town is owed a re-pour. True state, printed red with its cure.
+//       STALE: the town is owed a re-pour. True state, printed red with its cure. (`passed`, the reason a rung gave
+//       nothing, is not a value and is not compared.)
+//   (d) a value from below the scene rung does not say, rung by rung, why each above gave nothing (`passed`), or the
+//       kit's curb cut does not name its citations (`cites`) — the kit's value must never print as the town's.
+//       (Lath, 2026-10-18: HPDM, PTown and JH all printed "the town's norm is 'none'", a missing file and a missing
+//       entry alike.)
 // The norms are READ from each norms.json, never restated here.
 //
 //   node checks/claims-the-pour-reads-the-towns-norm.mjs
@@ -67,7 +72,7 @@ if (got.__missing.threw) console.log('  ✅ __no_such_scene__ threw')
 else fail('__no_such_scene__ resolved silently — a wrong name reads as "no norm"')
 
 console.log('(c) the frozen norm is the norm the resolver gives now')
-const strip = (n) => JSON.stringify(n, Object.keys(n ?? {}).sort())
+const strip = (n) => JSON.stringify(n, Object.keys(n ?? {}).filter(k => k !== 'passed').sort())
 for (const s of scenes) {
   const f = join(ROOT, 'public', 'baked', s, 'shape.json')
   if (!existsSync(f) || got[s].error) { if (got[s].error) fail(`${s}: resolver threw — ${got[s].error}`); continue }
@@ -80,6 +85,14 @@ for (const s of scenes) {
   if (same) console.log(`  ✅ ${s}: ${frozen.style} (${frozen.source})`)
   else { stale++; console.log(`  🟥 ${s}: frozen ${frozen.style} (${frozen.source}), resolver now ${now.style} (${now.source}). STALE: re-pour owed`) }
 }
+
+console.log('(d) a value from below the scene names why each rung above gave nothing; the kit names its citations')
+for (const s of scenes) { const n0 = got[s].norm; if (!n0) continue
+  for (const [kind, n] of [['curbCuts', n0], ['crosswalks', n0.crosswalks], ['kerb', n0.kerb]]) {
+    if (n.source === 'scene') continue
+    if (!Array.isArray(n.passed) || !n.passed.length) { fail(`${s}: ${kind} from ${n.source} says nothing of the rungs above it`); continue }
+    if (kind === 'curbCuts' && n.source === 'kit' && !(Array.isArray(n.cites) && n.cites.length)) { fail(`${s}: the kit's curb cut names no citation`); continue }
+    console.log(`  ✅ ${s}: ${kind} ${kind === 'kerb' ? n.height + ' m' : n.style} from ${n.source} (${n.passed.join(' · ')})${n.cites ? `, cited ${n.cites.join(', ')}` : ''}`) } }
 
 if (bad) console.log(`⛔ ${bad} wrong — a town's norm does not reach its pour`)
 else if (stale) console.log(`🟥 the resolver is sound; ${stale} town(s) owe a re-pour to freeze it`)

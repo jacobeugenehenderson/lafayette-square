@@ -412,18 +412,18 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
 - **TL↔TL** (both set back) → the lawn runs full width to each tangent and stops **blunt**; the pad
   (the walk continuing to the kerb) fills the arc behind it, tangent to tangent. See `§4`.
-- **A junction corner also carries CURB CUTS** — positions on the arc where the kerb drops, by the town's
-  norm or the operator (`curbCutsOnJunctionCorners`, `cartograph/curb-cut-norm.mjs`). A corner a SHORE or RIM edge flanks
-  (`__water__`/`__boundary__` — no street) is no corner at all: no pad, no cut. A BEND carries no pad and no cut —
-  the walk and lawn bend through — unless Survey makes it a corner, and a junction Survey calls "not a corner" loses both
-  (the corner's `corner` flag, read by the pad licence; Jacob, 2026-10-07). A diagonal
-  corner keeps the pad. ⭐ **A PERPENDICULAR corner has NO BEND** (Jacob, 2026-10-18: *"there is no bend at all, only
-  straight extension thru"*): each leg's walk runs STRAIGHT ON past the tangent to the kerb, which is its landing and
-  its cut, its sides the walk's own lines (in line with its leg; at an oblique corner, not square to the crossed street). The two walks meet in a plain L at the block corner. Only the CURB rounds, and
-  everything else between the L, the two landings and the curb arc keeps the leg's outer strip (lawn), with no pad.
-  When a leg has no lawn, its walk is already at the kerb; the other leg still extends and keeps its lawn up to the L. A walk that never meets the kerb
-  gets no landing and is counted. ⛔ Neither the 10-07 sector (`perpGeom`) nor radial landings are this. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
-  (`crosswalksSquareAcross`; a pair is matched on the junction node + the chain's two sides). ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>`
+- **A corner gets CURB CUTS only when BOTH hold** (Boz's ruling, 2026-10-18): a STREET is crossed there (`iaJunction`) **and** a walk ENDS
+  IN THE ROAD (run straight on from its tangent, it reaches the road edge within the corner's reach). A junction where no walk lands is
+  **not a corner** (`notCorner`, a second pass): no pad, no cut, the band bent through as at a BEND, which never gets one. A SHORE or RIM
+  flank is no corner; Survey's `corner` flag overrules either way (Jacob, 2026-10-07). Style: the town's norm or the operator
+  (`curbCutsOnJunctionCorners`, `curb-cut-norm.mjs`). ⚠️ ASPIRATION: a recorded crossing on a bend making it a corner. A **DIAGONAL**
+  corner keeps the pad; its cut is a band of constant depth from the road edge, centred on the arc. ⭐ A **PERPENDICULAR** corner has NO
+  BEND (Jacob, 2026-10-18: *"only straight extension thru"*): each leg's walk runs straight on, the two meet in a plain L, only the CURB
+  rounds, the rest keeps the leg's lawn. Its cut is the walk's own extension (*"the ramps need to be extensions of the sidewalks"*): sides
+  its two side lines, front the road edge through the curb, back square to the walk `warningDepth` behind where its first side meets the
+  road. One per crossing (`f-prowag-curb-ramp-per-crosswalk`); two on one arc with only walk or curb between are ONE pad, PROWAG's blended
+  transition (⚠️ ASPIRATION: its 5 % running slope in the kerb build). Crosswalks run square across, centred on their cut.
+  ▶ `checks/claims-{every-junction-corner-has-a-curb-cut-source,a-perpendicular-landing-runs-straight-on,a-bend-bends-the-band}.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.
 

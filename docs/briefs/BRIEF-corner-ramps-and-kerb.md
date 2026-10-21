@@ -88,10 +88,8 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    stays on top. Jacob also asks for a **town-wide switch in Survey or Section** that repaints the default (perpendicular ↔
    diagonal) live; say where it lives (norms are read at derive, so a live switch belongs in the Look) before building.
    ⚠️ The shelved perpendicular-fill slivers (§9 Open) now reach every town, so they are first in the queue.
-   **NOT BUILT as of 2026-10-18:** `cartograph/curb-cut-norm.mjs` still states the kit default is 'none', so HPDM, PTown and
-   JH (no norms.json) draw no cuts. Jacob, 2026-10-18: *"Jackson heights almost certainly has all perpendicular corners with
-   ramps… even LS and HPDM are likely majority perpendicular."* **Signalised corners are CONCRETE** (Jacob, same day: *"because
-   most intersections have traffic signals they are also concrete at the corner"*): a corner whose junction carries recorded
+   **Signalised corners are CONCRETE** (Jacob, 2026-10-18: *"because most intersections have traffic signals they are
+   also concrete at the corner"*): a corner whose junction carries recorded
    signal evidence (OSM `highway=traffic_signals`) is paved through, with no lawn in the L. Unbuilt; absent evidence keeps the lawn.
    Evidence coverage: re-run `scratch/ground-budget/corner-style/run.sh` (Loess, `37c3201b`). Few corners are decided by
    recorded kerbs, and crosswalks add no independent read, because a kerb node binds through its crossing.
@@ -230,19 +228,24 @@ scene recorded.
   `62955496` + `66547bfb` (Boz's task; `ROADMAP` carries the one open line, Altadena's disc past its bbox).
 
 **Open:** → §3 (the sequence), and:
+- **Intake gap: LS's, HPDM's and Altadena's `raw/osm.json` carry no `pois`, so their signal nodes (and crossing nodes) were never fetched — not "no signals". Re-fetch `pois` at each town's next intake; no fetch until then.** ▶ `node scratch/perp-depths/signals/count.mjs <scene> --corners`
 - ⏸ **PARKED by Jacob's call, 2026-10-07 ("not right now"): a click-to-open corner popover in Survey** (radius slider ·
   Corner / Not a corner · Revert), replacing ⌥-click. Nothing built; today's controls are the handle's drag + ⌥-click.
-- ⏸ **SHELVED 2026-10-07 for the bakes (Sill, via Boz): the perpendicular fill's slivers.** Diagnosis: committed
-  `a9b5e80d` re-fills each perpendicular corner with a SECTOR built beside the contour, and its seams leave 12 mm × ~1.5 m
-  wedges of walk across the lawn. Thin walks on Huron: 342 perpendicular vs 5 diagonal. Plan (2), built and unshipped,
-  diff at `scratch/perp-corner/radial-landings-SHELVED-2026-10-07.diff`: no re-fill and no pad on a both-lawn corner. Each
-  leg's landing is a DEPTH on the one inset (`dland`, the ring split at the landing's t-bounds). Diagonal stays
-  byte-identical (Provincetown; Huron with its authored corner set aside). Open reds on Huron, built with (2): thin walk
-  10 vs 5 · walk behind a cut 1216/1299 · lawn apex 479/481 · concrete wedge walk 1/2. These rows were not measured at
-  HEAD. One cause measured: on a one-lawn corner (tile 114, Brunswick × Cleveland Rd W) the pad's inner edge is
-  `arcMin` = min(conD) = the shallow leg's 1.5 m, so a lawn ring is painted behind it and the lawn leg's walk
-  (1.5–3 m) breaks at the arc. HEAD's sector hid this. The other reds: cause not established. Radial vs parallel
-  landings is Jacob's look call.
+- **The perpendicular corner: straight extension thru, built 2026-10-18 (Loess, branch `loess/perp-depths`, unmerged).**
+  Jacob's model (`SECTION §6.1`): each leg's walk runs straight on past its tangent to the kerb, the walks meet in an L,
+  only the curb rounds. Built from each leg's own band (the rect `offsetRingByRects` strikes for its last ② edge, run on
+  along that edge and clipped by ②); the arc carries no band. The cut is that walk's end, read off the drawn extension:
+  its sides are the walk's two side lines and it spans the walk's whole contact with the kerb (Boz's ruling, 2026-10-18;
+  a walk narrower than the norm width is counted short, not widened). Between those lines it runs through the curb to the
+  pavement and the curb is not painted there (Jacob: "cut through and contour the curbs all the way to the pavement"). Removed: the 10-07 sector, plan (2)'s radial
+  landings (`dland`), and `perpGeom`'s own contact solve with its norm-width piece centred on it. ▶ `node
+  checks/claims-a-perpendicular-landing-runs-straight-on.mjs huron` (sides parallel to their leg, red on plan (2); each
+  cut's ends on its walk's side lines, red on a89e3c36; each cut reaching the pavement with no curb under it, red on
+  38d03e41; prints the corners more than 10° off square) · `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs huron --live --selftest`
+  · `node scratch/perp-depths/thin-both.mjs huron` · `node scratch/perp-depths/diag-same.mjs huron provincetown --uncut` ·
+  proxies: `REV=38d03e41 node scratch/perp-depths/render.mjs huron "<x,z;…>"`. **Open, cause not established:** the
+  landing check and three selftest rows are red at a few sites (neighbouring corners, grazing kinks, narrow tips; the
+  narrow tips are `RIBBONS §3.5`'s queue), and records whose cut is painted nowhere (at the town's rim).
 - ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
   longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the

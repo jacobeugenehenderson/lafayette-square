@@ -2,9 +2,9 @@
 // CLAIM — WHERE THERE IS NO CORNER, THE BAND BENDS (`RIBBONS §1` invariant 1, "the corner is the band BENT", scoped by
 // b2d5a549 to the curb, the diagonal corner and every non-corner; Jacob, 2026-10-18: "when sidewalk meets sidewalk it also just
 // continues smoothly"; "why doesn't grass bend with sidewalk on non-corners?"). Every eased arc that is not PADDED — a bend
-// (one street), a corner the operator unmarked — is the ordinary band bent through it: no pad, no ramp, each strip at its own
-// depth and continuous round the turn; a leg ends on it only where the ladder's DEPTHS change (50a64997, 6a64c44b).
-// (On loess/perp-depths, unmerged, a junction where no walk reaches the road — `notCorner` — is unpadded too.)
+// (one street), a corner the operator unmarked, a junction where no walk reaches the road (`notCorner`, Boz's ruling,
+// 2026-10-18) — is the ordinary band bent through it: no pad, no ramp, each strip at its own depth and continuous round the
+// turn; a leg ends on it only where the ladder's DEPTHS change (50a64997, 6a64c44b).
 // READS the paint (authoring loaded, the norm the pour would freeze now): at every unpadded arc (the painter's `cornerArcs`;
 // its points tangent to tangent read off the frozen tile's `iaFull` + `iaArc`), the strips met casting inward from the road edge — at both tangents and at three stations along the
 // arc. ASSERTS: along the arc the strips come in the tangents' own order, each boundary between the two tangents' depths
@@ -13,6 +13,7 @@
 // SEEN RED: this branch before 50a64997 (the corner mark ended a leg at every arc vertex: Huron 190 of 365) and before
 // 6a64c44b (an owner change with equal depths still ended one). At 6a64c44b, Huron: 9 of 181, at 5 places — the land use
 // starting 0.1–0.4 m off its tangents' depth mid-arc, and one lawn start 8 cm off; cause not established.
+// Also RED: the painter with its not-corner pass off (each such arc padded with walk to the kerb).
 import { pathToFileURL } from 'node:url'
 import { resolve } from 'node:path'
 import { feed } from '../scratch/_proto-feed.mjs'

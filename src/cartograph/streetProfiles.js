@@ -152,6 +152,19 @@ export function curbedMinWidth(registry, state = { code: null }, read = null) {
   return { m: ft * FT, sources: [id, '[U] q-curbed-nose-radius (r = w/2)'], label: `${id}, ${ft} ft${own ? '' : `, borrowed for ${state.code ?? 'a town whose state is unknown'}`}` }
 }
 
+// ⭐ THE KIT'S CURB CUT (Jacob, 2026-10-17, `r-curb-ramp-default-perpendicular`): the ruled style, PROWAG's run width
+// (`f-prowag-curb-ramp-geometry`, 48 in) and warning depth (`f-prowag-perpendicular-ramp-dws`, 24 in minimum), read from
+// the registry by id like every kit value here, and recorded in `read` so a registry edit re-pours. A missing value
+// THROWS. ⛔ The bottom rung only: a town that authors its own (norms.json, LS and Huron's warningDepth 0.6) never reaches
+// it (`cartograph/curb-cut-norm.mjs`). ▶ node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>
+export function kitCurbCut(registry, read = null) {
+  const byId = registryIndex(registry), ids = ['r-curb-ramp-default-perpendicular', 'f-prowag-curb-ramp-geometry', 'f-prowag-perpendicular-ramp-dws']
+  const [rule, geo, dws] = ids.map(id => { const f = byId.get(id); read?.set(id, f?.value ?? null); return f })
+  const style = rule?.value?.kitDefaultCurbCutStyle, w = geo?.value?.width_in, d = dws?.value?.dwsDepth_in?.min
+  if (typeof style !== 'string' || !(w > 0) || !(d > 0)) throw new Error(`⛔ references/registry.json: the kit curb cut is drawn only from cited values — ${ids.join(', ')} must give value.kitDefaultCurbCutStyle, value.width_in and value.dwsDepth_in.min`)
+  return { style, width: w * FT / 12, warningDepth: d * FT / 12, cites: ids }
+}
+
 // The recorded entries (`{ id: value | true }`) that differ in `registry` now → their ids. ⛔ A missing record
 // (a map.json poured before the record existed, or unreadable) is NOT clean: it returns ['(no record)'].
 export function registryReadChanged(record, registry) {

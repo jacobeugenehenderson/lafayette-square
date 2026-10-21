@@ -66,11 +66,19 @@ for (const scene of feedScenes()) {   // no town named ⇒ every town with ribbo
           const blunt = arcSide && legSide
             && Math.abs(S(arcSide.walkFrom)) < 1e-6                 // the pad is at the kerb
             && Math.abs(worst - Math.abs(E(legSide.walkFrom))) < 0.02  // the step IS the lawn width
+          // ⭐ A PERPENDICULAR CORNER'S ARC CARRIES NO BAND (`SECTION §6.1`: the walk runs straight on past the tangent, so
+          // on the arc the contour's walk is EMPTY and the leg's own band, extended, is the corner). So at its tangent the
+          // depth drops to the arc's none — recognised, never suppressed: the arc side is the painter's own `perp` edge and
+          // its walk is empty (both edges at the curb), the leg side is not.
+          const perpSide = !blunt && (cur.perp && !nxt.perp ? cur : nxt.perp && !cur.perp ? nxt : null)
+          const straightOn = !!perpSide && Math.abs(S(perpSide.walkFrom)) < 1e-6 && Math.abs(E(perpSide.walkFrom)) < 1e-6
+            && Math.abs(S(perpSide.walkTo)) < 1e-6 && Math.abs(E(perpSide.walkTo)) < 1e-6
           const k = (cur.inArc && nxt.inArc) ? 'inside one arc'
                   : blunt ? 'BLUNT treelawn end at a tangent (the ADA pad — EXPECTED)'
+                  : straightOn ? 'PERPENDICULAR tangent, the walk runs straight on (EXPECTED)'
                   : (cur.inArc || nxt.inArc) ? 'leg <-> ARC (the corner)'
                                              : 'leg <-> leg (frontage change, NO corner)'
-          if (!blunt) byClass[k] = (byClass[k] || 0) + 1
+          if (!blunt && !straightOn) byClass[k] = (byClass[k] || 0) + 1
           else { byClass[k] = (byClass[k] || 0) + 1; steps-- ; jump.pop() }
         }
       }

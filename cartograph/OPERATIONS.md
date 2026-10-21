@@ -124,10 +124,13 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   at both ends = perpendicular, raised only = none, else *unreadable* → counted, to the norm, and listed by position when
   it CONTRADICTS the norm, for an override; landed at the pour) →
   `cartograph/data/<scene>/norms.json` `{"curbCuts": {"style", "width", "warningDepth"}}` → the state record's `norms.curbCuts`
-  → the kit's `none`. The pour throws on a style without its own width + warning depth (metres), and on a scene with no data directory. Read at derive, so a
-  norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no curb-cut
-  source"*. ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>` · a town whose frozen norm
-  lags its `norms.json` (re-pour owed) ▶ `node checks/claims-the-pour-reads-the-towns-norm.mjs`
+  → the kit: **perpendicular**, at PROWAG's width and warning depth, read from `references/registry.json`
+  (`r-curb-ramp-default-perpendicular` · `f-prowag-curb-ramp-geometry` · `f-prowag-perpendicular-ramp-dws`). The pour
+  prints the rung that decided it and why each rung above gave nothing (*"no norms.json"*, *"norms.json has no curbCuts"*,
+  *"state MO has no curbCuts"*), and the kerb's rung the same way. It throws on a style without its own width + warning
+  depth (metres), on a scene with no data directory, and on a kit citation the registry does not hold. Read at derive, so
+  a norm change needs a **skeleton pour**; the per-leg override is live. ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>`
+  · a town whose frozen norm lags the resolver (re-pour owed), and every rung's reasons ▶ `node checks/claims-the-pour-reads-the-towns-norm.mjs`
 - **Kerb height** — `norms.json` → `{"kerb": {"height", "rampSlope", "flareSlope", "taperRun"}}` (metres; slopes as
   `"rise:run"`, the jurisdiction's — LS: 0.15, ADA 1:12 / 1:10, taper 1.0). Kit = 0, one flat plane. Never tied to the Look's
   `curbWidth`. Read at derive (skeleton pour); raised by the ground bake (`kerbLift.mjs`): a kerb face where the curb is
