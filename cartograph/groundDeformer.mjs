@@ -45,7 +45,8 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
 // that (2026-10-21). At the cap the memo is CLEARED and a fresh one starts: memory stays one Map's worth, and a point asked
 // again is recomputed (the answer is a function of the exact point, so it is the same answer). A town under the cap never
 // turns and pays nothing. ⛔ After a turn the counters in `stats` count RESOLVES, not distinct points; the turn is printed and
-// bake-ground writes `memoTurns` into ground.json's deform block. `memoCap` exists for the turn test.
+// bake-ground writes `memoTurns` into ground.json's deform block. Each turn's warning carries its time and the resolves so far
+// (`stats.resolves`, every uncached answer), so a long bake's turns can be placed against its RSS and progress. `memoCap` exists for the turn test.
 // ▶ checks/claims-the-ground-height-is-a-function-of-the-point.mjs
 export const V8_MAP_MAX_ENTRIES = 2 ** 24
 // ⭐ THE KEY OF A POINT IS ITS EXACT POSITION — the memo's own key, and the one the bake records an unowned ped vertex at
@@ -63,7 +64,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { memoTurns: 0, byBothSides: 0, bothSidesSplit: 0, bothSidesMaxDH: 0, frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
+  const stats = { memoTurns: 0, resolves: 0, byBothSides: 0, bothSidesSplit: 0, bothSidesMaxDH: 0, frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
     road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0, byLeg: 0, legCross: 0, legCrossMaxDH: 0, rayAndLeg: 0, legNotHeld: 0, legsAtRim: 0, byLegAtRim: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
@@ -552,9 +553,9 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   function resolve(x, z) {
     const mk = unownedKey(x, z)
     if (memo.has(mk)) return memo.get(mk)
-    const v = resolveUncached(x, z)
+    const v = resolveUncached(x, z); stats.resolves++
     if (memo.size >= memoCap) { memo.clear(); stats.memoTurns++
-      console.warn(`  [deform] ⛔ ${town}: the memo reached ${memoCap} answers (V8's Map cap) and was cleared, turn ${stats.memoTurns} — a point asked again is recomputed; the deformer's counters now count resolves, not distinct points`) }
+      console.warn(`  [deform] ⛔ ${town}: the memo reached ${memoCap} answers (V8's Map cap) and was cleared, turn ${stats.memoTurns} at ${new Date().toISOString()} after ${stats.resolves} resolves — a point asked again is recomputed; the deformer's counters now count resolves, not distinct points`) }
     memo.set(mk, v); return v
   }
   function resolveUncached(x, z) {
