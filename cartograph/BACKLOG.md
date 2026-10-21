@@ -14,6 +14,15 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 > the revetment · no splitting over terrain · a smaller ground). ⛔ **Bake, then look.** A full check board never gates a
 > bake; a check pins down what was seen. The rulings behind these items are in `cartograph/STYLE-GUIDE.md`.
 
+**⛔ FOR JACOB FIRST (Ward's find, 2026-10-21 ~00:50): HPDM PRODUCTION SERVES ST. LOUIS CITY ASSESSOR FIELDS.**
+`https://hipointedemun.online/baked/hipointedemun/content/roster.json` (200, 1.66 MB) carries appraised_value, year_built,
+building_sqft, units and zoning on all 1,446 records. The City's GIS terms forbid redistribution without written permission
+(`scratch/data-licences/REGISTER.md` row 4, gap #1); none is on record. The kit's own check names these fields as
+withheld (`claims-intake-is-lossless`, DROPS `served-parcel-privacy`), but the bake never implemented it. Tonight: the
+withholding goes into `bake-content.js` (Truss, with LS's first roster); nothing on production is touched. Your calls:
+(1) take `content/roster.json` off production now, before the fixed one ships? (2) the re-bake + Publish + Promote
+(Boz + Ward), on the Thursday path.
+
 **🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
 Start here. State at the restart:
 - **Bakes:** nothing new is served. LS refused at flatten; HPDM's derive refused (classless skeleton); Huron's 3-step
