@@ -320,8 +320,10 @@ Thursday's (lafayette-square.com's old player, or the Ward)?
     (counted, with sites). ✅ RULED (Jacob, 2026-10-21): "Yes, stay flush." Ground too narrow for its taper stays at road
 level (Plumb builds; supersedes the ridge question). Measured on LS (Plumb): 59 rings have a part narrower than the taper
 allows; none borders the highway group; fills: verge 20 rings (205 m²) · land-use lots 10 (432 m², ring 49 the finger) ·
-sidewalk/curb band 29 (71 m², mostly corners). Ruled (Boz): flush applies to the NARROW PART by the taper's own crossing,
-whatever its fill; counted by fill; the lot and band sites go to Jacob as an eye list. Eye list was: the finger
+sidewalk/curb band 29 (71 m², mostly corners). CORRECTED (Plumb): the field already takes the LOWEST region (kerbLift
+makeHeightField), so where both sides taper a narrow part is already near-flush (the finger peaks at 2.8 cm); a hard flush
+would need carve + re-taper (a bake-order change), so it is DROPPED. The two #39 remnants (the finger's 4 mm points, and the
+0.18 mm crack at (−149, 319)) are placed and fixed as defects (Plumb). Eye list was: the finger
     tips (191.276, 461.413), (149.027, 437.185), (-634.945, 213.268), (324.619, 728.015), (422.640, 459.247).
     Mitre gates on LS (Plumb, harness): heights byte-identical > 1.5 m from a bend; reflex wedges 0; new-and-unexplained
     crossings 0; converging-crease points 191 → 83 (split-made total 370 → 259). Next: one shared crease computed once, then
