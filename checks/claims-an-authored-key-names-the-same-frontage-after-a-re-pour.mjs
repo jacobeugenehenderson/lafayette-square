@@ -17,11 +17,21 @@
 //               the before-stretch (its length within the node tolerance)
 //     MOVES     one other key lies under every station (the ground survives; the authored slot no longer names it)
 //     SPLITS    more than one key lies under it — or the same key covers only part of it, or more than it (changes meaning)
-//     DIES      no after-chain lies under some station
+//     REFINED   some stations lie under no after-chain, but the SAME key's after-slot runs between the same two ends (each
+//               within the node tolerance, start to start) — the same frontage between the same two intersections, its line
+//               re-drawn (a refined OSM curve). NOT red; printed with its largest lateral move, because it is a real change
+//               of the drawn edge that the operator may want to see. ⛔ The node tolerance is the SEGMENTATION's (two vertices
+//               within it are one node), not a "same street" test, so a refined line falls outside it without being lost.
+//     DIES      no after-chain lies under some station, and the slot's ends do not survive either
 //   Corner keys (`cornerCornerRadiusOverrides`, `cornerRadiusOverrides`: `x,z|skelA:side|skelB:side`) are judged the same way
 //   at their node: each leg's chain carries the node in both skeletons and runs the same way through it (a reversed chain
-//   swaps its sides, and the key names the other corner). A key whose sides are not left/right is a LEGACY form the ① mint
-//   never produces (`protoCornerOf`): dead before and after, said.
+//   swaps its sides, and the key names the other corner). A leg whose id is gone, or no longer passes the node, is looked
+//   up BY GEOMETRY — the before leg's edge at the node, through the same station search as a slot — so a chain that was
+//   only RENAMED (positional ids like `<highway>-<n>` renumber when an earlier way is added or removed) reads MOVES, with
+//   its new id; DIES only when no after-chain lies along that edge. A key whose sides are not left/right is a LEGACY form
+//   the ① mint never produces (`protoCornerOf`): dead before and after, said.
+// ⛔ A skeleton carrying two AT-GRADE chains with one id REFUSES (either side): every key on that id is ambiguous, and the
+//   pour itself refuses it (skeleton.js, derive.js, lineHeight.mjs). A by-id map would silently keep one of the two.
 // ⭐ BESIDE PARITY, WHAT IS LIVE TODAY: each blockCustoms key is looked up in the SERVED slab's runs (`shape.json`
 //   tile.runs). A key that owns no run is authored but drawn nowhere — before any re-pour. Printed, never folded into parity.
 // ⛔ The BEFORE street set is proven against the town's own frozen ribbons (`ribbons.json` streets: skelId · gradeSeparated)
@@ -34,7 +44,8 @@
 // Exit 1: any authored key that is not SAME, a before set that is not derive's, or a missing input.
 // ⭐ MUTATION TEST (`--selftest`, in memory, on the town's own before skeleton): after = before → GREEN; after with a junction
 //   added on an authored slot (one segOrd renumbered) → RED; after with an authored chain reversed → RED; after with an
-//   authored chain removed → RED.
+//   authored chain removed → RED; an at-grade id duplicated → REFUSED (RED); a corner leg's chain renamed → RED, verdict
+//   MOVES (not DIES); an authored slot's line bent 2 node-tolerances off, its ends kept → GREEN, verdict REFINED.
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { tessellateAdaptive } from '../cartograph/derive.js'
@@ -70,6 +81,9 @@ function model(sk) {
     return { skelId: s.id, gradeSeparated: !!s.gradeSeparated, points: pts }
   }).filter(s => s.points?.length >= 2)
   const flat = streets.filter(s => !s.gradeSeparated)
+  { const seen = new Map(), dup = []
+    for (const s of flat) { if (seen.has(s.skelId)) dup.push(s.skelId); else seen.set(s.skelId, s) }
+    if (dup.length) throw new Error(`two at-grade chains share the id ${[...new Set(dup)].join(', ')} — every key on it is ambiguous (the pour refuses it too)`) }
   const seg = resolveChainSegmentation(flat)
   const byId = new Map()
   for (const s of streets) {
@@ -138,7 +152,16 @@ function judgeSlot(K, B, A, idxA) {
   for (const { p, d } of st) { const u = idxA.under(p, d); if (!u.length) { lost++; continue }
     for (const h of u) { const k = `${h.skelId}|${h.flip ? flipSide(K.side) : K.side}|${h.segOrd}`; hits.set(k, (hits.get(k) || 0) + 1) } }
   const before = `${len(P).toFixed(1)} m (${K.skelId} pts ${slotB[0]}–${slotB[1]})`
-  if (lost) return { verdict: 'DIES', why: `${lost} of ${st.length} station(s) of the before-stretch ${before} lie under no after-chain${hits.size ? `; the rest under ${[...hits.keys()].join(', ')}` : ''}` }
+  if (lost) {
+    // the same key's after-slot between the same two ends (start to start): the frontage survives, its line re-drawn
+    const sA = A.byId.get(K.skelId), slotA = sA && (sA.gradeSeparated ? (K.segOrd === 0 ? [0, sA.points.length - 1] : null) : sA.slots[K.segOrd])
+    if (slotA) { const Q = sub(sA.points, slotA), d0 = Math.hypot(Q[0][0] - P[0][0], Q[0][1] - P[0][1]), d1 = Math.hypot(Q.at(-1)[0] - P.at(-1)[0], Q.at(-1)[1] - P.at(-1)[1])
+      if (d0 <= SEG_EPS && d1 <= SEG_EPS) {
+        const off = (p) => { let m = Infinity; for (let i = 0; i + 1 < Q.length; i++) { const a = Q[i], b = Q[i + 1], ex = b[0] - a[0], ez = b[1] - a[1], L2 = ex * ex + ez * ez || 1
+          const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * ex + (p[1] - a[1]) * ez) / L2)); m = Math.min(m, Math.hypot(p[0] - a[0] - t * ex, p[1] - a[1] - t * ez)) } return m }
+        const mx = Math.max(...st.map(x => off(x.p)))
+        return { verdict: 'REFINED', why: `same key, same two ends (${d0.toFixed(3)} / ${d1.toFixed(3)} m); its line re-drawn, ${lost} of ${st.length} station(s) past the node tolerance, largest lateral move ${mx.toFixed(2)} m · before ${before}, after ${len(Q).toFixed(1)} m` } } }
+    return { verdict: 'DIES', why: `${lost} of ${st.length} station(s) of the before-stretch ${before} lie under no after-chain, and its slot's ends do not survive${hits.size ? `; the rest under ${[...hits.keys()].join(', ')}` : ''}` } }
   const same = `${K.skelId}|${K.side}|${K.segOrd}`
   if (hits.size === 1 && hits.has(same)) {
     // the same key lies under all of it — does its after-stretch hold MORE than the before-stretch?
@@ -152,7 +175,7 @@ function judgeSlot(K, B, A, idxA) {
 }
 
 // ── judge one corner key ────────────────────────────────────────────────────────────────────────────────────────────
-function judgeCorner(K, B, A) {
+function judgeCorner(K, B, A, idxA) {
   if (K.legs.length !== 2 || K.legs.some(l => l.side !== 'left' && l.side !== 'right'))
     return { verdict: 'DEAD BEFORE', why: `legacy key form (sides ${K.legs.map(l => l.side).join('/')}); the ① mint keys corners skelId:left|right (protoCornerOf), so no corner ever reads it` }
   const near = (M, skelId) => { const s = M.byId.get(skelId); if (!s) return null
@@ -164,10 +187,16 @@ function judgeCorner(K, B, A) {
   for (const l of K.legs) { const b = near(B, l.skelId), a = near(A, l.skelId)
     if (!b) return { verdict: 'DEAD BEFORE', why: `no chain ${l.skelId} before` }
     if (b.off != null) return { verdict: 'DEAD BEFORE', why: `${l.skelId} carries no vertex at the key's node before (nearest ${b.off.toFixed(3)} m)` }
-    if (!a) { rows.push(`${l.skelId} is gone`); continue }
-    if (a.off != null) { rows.push(`${l.skelId} no longer passes through the node (nearest vertex ${a.off.toFixed(3)} m)`); continue }
+    if (!a || a.off != null) {
+      // BY GEOMETRY: the before leg's edge leaving the node (toward the neighbour it runs to), searched like a slot's stations
+      const P = b.s.points, j = b.i < P.length - 1 ? b.i + 1 : b.i - 1, seg = [P[b.i], P[j]]
+      const hit = new Map(); for (const { p, d } of stations(seg)) for (const h of idxA.under(p, d)) { const k = `${h.skelId}|${h.flip ? '-' : '+'}`; hit.set(k, (hit.get(k) || 0) + 1) }
+      const top = [...hit.entries()].sort((x, y) => y[1] - x[1])[0]
+      if (!top) { rows.push(`${l.skelId} ${!a ? 'is gone' : `no longer passes through the node (nearest vertex ${a.off.toFixed(3)} m)`}, and no after-chain lies along its edge at the node`); continue }
+      const [id, dir] = top[0].split('|'), side = dir === '-' ? flipSide(l.side) : l.side
+      rows.push(`${l.skelId}:${l.side} is now ${id}:${side} (by geometry along its edge at the node${id === l.skelId ? '' : '; renamed'}${!a ? '' : '; the node moved'})`); continue }
     if (b.d[0] * a.d[0] + b.d[1] * a.d[1] < 0) rows.push(`${l.skelId} runs the other way through the node: its ${l.side} is now its ${flipSide(l.side)}`) }
-  return rows.length ? { verdict: rows.some(r => /gone|no longer/.test(r)) ? 'DIES' : 'MOVES', why: rows.join(' · ') } : { verdict: 'SAME', why: 'both legs pass through the node, running the same way' }
+  return rows.length ? { verdict: rows.some(r => /no after-chain lies along/.test(r)) ? 'DIES' : 'MOVES', why: rows.join(' · ') } : { verdict: 'SAME', why: 'both legs pass through the node, running the same way' }
 }
 
 // ── what is live today: a slot key that owns a run in the served slab ─────────────────────────────────────────────────
@@ -181,14 +210,14 @@ function servedRuns() {
 function run(beforeSk, afterSk, { quiet = false } = {}) {
   const B = model(beforeSk), A = model(afterSk), idxA = edgeIndex(A)
   const keys = authoredKeys(readJSON(paths.design)), live = servedRuns()
-  const res = keys.map(K => ({ K, ...(K.kind === 'slot' ? judgeSlot(K, B, A, idxA) : K.kind === 'corner' ? judgeCorner(K, B, A) : { verdict: 'NOT JUDGED', why: 'blockLandUse keys are not slot or corner keys; their form is not read here' }) }))
-  const bad = res.filter(r => r.verdict !== 'SAME' && r.verdict !== 'DEAD BEFORE')
+  const res = keys.map(K => ({ K, ...(K.kind === 'slot' ? judgeSlot(K, B, A, idxA) : K.kind === 'corner' ? judgeCorner(K, B, A, idxA) : { verdict: 'NOT JUDGED', why: 'blockLandUse keys are not slot or corner keys; their form is not read here' }) }))
+  const bad = res.filter(r => !['SAME', 'DEAD BEFORE', 'REFINED'].includes(r.verdict))
   if (!quiet) {
     console.log(`${scene}: ${keys.length} authored key(s) · before ${paths.before} · after ${paths.after ?? '(selftest)'} · node tolerance ${SEG_EPS} m (chainSegmentation.js)`)
     for (const r of res) { const l = r.K.kind === 'slot' && live ? (live.has(r.K.key) ? '' : '  ⚠️ owns NO run in the served slab today') : ''
-      console.log(`  ${r.verdict === 'SAME' ? '✅' : r.verdict === 'DEAD BEFORE' ? '⚪' : '⛔'} ${r.verdict.padEnd(11)} ${r.K.map}  ${r.K.key}  — ${r.why}${l}`) }
-    const dead = res.filter(r => r.verdict === 'DEAD BEFORE').length, unlive = live ? res.filter(r => r.K.kind === 'slot' && !live.has(r.K.key)).length : null
-    console.log(`\n${bad.length ? '⛔' : '✅'} ${res.length - bad.length - dead} SAME · ${bad.length} that move, split or die · ${dead} dead before the re-pour (unchanged by it)${unlive != null ? ` · ${unlive} slot key(s) owning no run in the served slab` : ' · served slab not found: liveness not judged'}`)
+      console.log(`  ${r.verdict === 'SAME' ? '✅' : r.verdict === 'DEAD BEFORE' ? '⚪' : r.verdict === 'REFINED' ? '🔶' : '⛔'} ${r.verdict.padEnd(11)} ${r.K.map}  ${r.K.key}  — ${r.why}${l}`) }
+    const dead = res.filter(r => r.verdict === 'DEAD BEFORE').length, refined = res.filter(r => r.verdict === 'REFINED').length, unlive = live ? res.filter(r => r.K.kind === 'slot' && !live.has(r.K.key)).length : null
+    console.log(`\n${bad.length ? '⛔' : '✅'} ${res.length - bad.length - dead - refined} SAME · ${refined} REFINED (same frontage, line re-drawn) · ${bad.length} that move, split or die · ${dead} dead before the re-pour (unchanged by it)${unlive != null ? ` · ${unlive} slot key(s) owning no run in the served slab` : ' · served slab not found: liveness not judged'}`)
   }
   return { res, bad }
 }
@@ -196,7 +225,8 @@ function run(beforeSk, afterSk, { quiet = false } = {}) {
 const before = readJSON(paths.before)
 // ⛔ the before street set must BE derive's: the frozen ribbons' skelIds and grade flags, exactly
 { const rb = readJSON(paths.ribbons), R = new Map((rb.streets || []).map(s => [s.skelId, !!s.gradeSeparated]))
-  const M = model(before), diff = []
+  let M; try { M = model(before) } catch (e) { console.error(`⛔ ${scene}: the BEFORE skeleton refuses — ${e.message}`); process.exit(1) }
+  const diff = []
   for (const s of M.streets) if (!R.has(s.skelId)) diff.push(`${s.skelId} in the skeleton set, not in ribbons`); else if (R.get(s.skelId) !== s.gradeSeparated) diff.push(`${s.skelId} gradeSeparated ${s.gradeSeparated} here, ${R.get(s.skelId)} in ribbons`)
   for (const id of R.keys()) if (!M.byId.has(id)) diff.push(`${id} in ribbons, not in the skeleton set`)
   if (diff.length) { console.error(`⛔ ${scene}: the before street set is not derive's (${diff.length}): ${diff.slice(0, 8).join(' · ')}${diff.length > 8 ? ' …' : ''}`); process.exit(1) }
@@ -208,6 +238,7 @@ if (SELFTEST) {
   if (!slotKeys.length) { console.error(`⛔ ${scene} authors no slot key: the mutations have nothing to move`); process.exit(1) }
   const target = slotKeys[0], M = model(before), s = M.byId.get(target.skelId), slot = s?.slots[target.segOrd]
   if (!slot) { console.error(`⛔ selftest: ${target.key} is dead before; pick a town whose first slot key is live`); process.exit(1) }
+  const cornerKey = (() => { const id = run(before, clone(), { quiet: true }).res; return id.find(r => r.K.kind === 'corner' && r.verdict === 'SAME')?.K || null })()
   const P = sub(s.points, slot), mid = [(P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2], e = [P[1][0] - P[0][0], P[1][1] - P[0][1]], eL = Math.hypot(e[0], e[1])
   const cases = [
     ['after = before', clone, false],
@@ -222,14 +253,27 @@ if (SELFTEST) {
       if (st.segments) st.segments = st.segments.reverse().map(g => g.type === 'bezier' ? { ...g, c1: g.c2, c2: g.c1 } : g)
       return sk }, true],
     ['an authored chain removed', () => { const sk = clone(); sk.streets = sk.streets.filter(x => x.id !== target.skelId); return sk }, true],
+    ['an at-grade id duplicated (refuses)', () => { const sk = clone(), st = sk.streets.find(x => x.id === target.skelId)
+      sk.streets.push({ ...JSON.parse(JSON.stringify(st)), name: st.name + ' (selftest twin)', points: st.points.map(q => ({ x: q.x + 1000, z: q.z + 1000 })) }); return sk }, true],
+    // the refined line: one new vertex on the slot's first edge, pushed 2 node-tolerances sideways, no street meeting it
+    ['an authored slot\'s line bent, its ends kept (REFINED)', () => { const sk = clone(), st = sk.streets.find(x => x.id === target.skelId)
+      st.points.splice(slot[0] + 1, 0, { x: mid[0] - 2 * SEG_EPS * e[1] / eL, z: mid[1] + 2 * SEG_EPS * e[0] / eL })
+      if (st.segments) st.segments.splice(slot[0], 1, { type: 'line' }, { type: 'line' })
+      return sk }, false, { key: target.key, verdict: 'REFINED' }],
+    ...(cornerKey ? [['a corner leg\'s chain renamed (MOVES, not DIES)', () => { const sk = clone(), st = sk.streets.find(x => x.id === cornerKey.legs[0].skelId)
+      st.id = st.id + '-selftest-renamed'; return sk }, true, { key: cornerKey.key, verdict: 'MOVES' }]] : []),
   ]
+  if (!cornerKey) console.log('  ⚪ the town authors no live corner key: the rename row is not run, said')
   let ok = true
-  for (const [name, mk, wantRed] of cases) { const { bad } = run(before, mk(), { quiet: true }), red = bad.length > 0
-    console.log(`  ${red === wantRed ? '✅' : '⛔'} ${name}: ${red ? 'RED' : 'GREEN'} (want ${wantRed ? 'RED' : 'GREEN'})${red ? ' — ' + bad.slice(0, 2).map(b => `${b.K.key} ${b.verdict}`).join(' · ') : ''}`)
-    if (red !== wantRed) ok = false }
+  for (const [name, mk, wantRed, want] of cases) {
+    let R = null, refused = null; try { R = run(before, mk(), { quiet: true }) } catch (e) { refused = e.message }
+    const red = refused != null || R.bad.length > 0, got = want && R ? R.res.find(r => r.K.key === want.key)?.verdict : null
+    const pass = red === wantRed && (!want || got === want.verdict)
+    console.log(`  ${pass ? '✅' : '⛔'} ${name}: ${red ? 'RED' : 'GREEN'} (want ${wantRed ? 'RED' : 'GREEN'})${want ? ` · ${want.key} → ${got ?? '—'} (want ${want.verdict})` : ''}${refused ? ' — refused: ' + refused.slice(0, 90) : red ? ' — ' + R.bad.slice(0, 2).map(b => `${b.K.key} ${b.verdict}`).join(' · ') : ''}`)
+    if (!pass) ok = false }
   console.log(ok ? '\n✅ selftest: every planted re-key is caught, and the identity re-pour passes' : '\n⛔ selftest: the instrument missed a planted case')
   process.exit(ok ? 0 : 1)
 }
 
-const { bad } = run(before, readJSON(paths.after))
-process.exit(bad.length ? 1 : 0)
+let out; try { out = run(before, readJSON(paths.after)) } catch (e) { console.error(`⛔ ${scene}: the AFTER skeleton refuses — ${e.message}`); process.exit(1) }
+process.exit(out.bad.length ? 1 : 0)
