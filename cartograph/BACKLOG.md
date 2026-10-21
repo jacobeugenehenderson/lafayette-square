@@ -95,8 +95,9 @@ Start here. State at the restart:
     Zob's capture (metre-rounded points, ±2.5 m samples): 5 of the 6 pairs (vacant/underived/verge/commercial/sidewalk|asphalt)
     are ON a block-ring edge AND listed curbless, with no curb inboard, so the finder found them and the TAPER still didn't
     flatten them: neither of Zob's (a)/(b); cause not established, kerbLift's taperRegions is the place to look. verge|stripe
-    differs: 46 of 48 samples have the road side INSIDE the block too, so it's paint: a stripe/verge overlap inside the
-    block, Zob's (a). Owners: the kerb lift (Sill/Swale lineage) for the five; the verge/junction-residual paint for the one. and #40
+    differs: Mississippi's centre stripe straddles the block edge (the road lies only east of it; its west half sits on lifted
+    verge), because `centreStripeRings` draws from the ribbon centreline and never reads the road's extent. Design call:
+    confine the stripe to the road, or make the west half road (beside motorway_link 40) (Zob, measured). Owners: the kerb lift (Sill/Swale lineage) for the five; the verge/junction-residual paint for the one. and #40
     unowned ped vertices (exact count in lafayette-square.census.json). Flatten and the deformer refuse nothing; every later
     step clean through manifest.
   · Merged tonight after the census began: the memo bound (1e6958f2), the shore-pass gate + exact unowned list (b88f7245),
