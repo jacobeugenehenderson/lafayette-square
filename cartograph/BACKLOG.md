@@ -141,8 +141,9 @@ deriving lower edges from the union acc. Fix scope: (i) bands REFERENCE one shar
 (iii) no edges from acc. Located (Zob, measured per tile): asphalt/curb 1,628 m (inferred: a depth-0
 edge's offset is a recomputed COPY of ②'s ring) · curb/walk 723 m + walk/walk 602 m (the perpendicular extension rects
 unioned into the walk band) · land use 2,447 m (S2 + the evidence). Then nodeAcrossGroups, the pinch cuts, sub-lattice
-drops and welds lose their reason (inferred). Per-site probe next (Zob). ❓ Jacob: (iv) land use: two datasets (OSM vs
-parcels) draw one real line 3–5 mm apart: which source's line wins?
+drops and welds lose their reason (inferred). Per-site probe next (Zob). ✅ (iv) RULED (Jacob, 2026-10-21): "keep the order, close the
+gap". OSM keeps first claim, parcels fill after it; a gap between two claims narrower than the data's own stated accuracy
+(recorded per source, never an invented number) goes to the neighbouring claim, not to underived.
 
 **🌅 MORNING 2026-10-21: the ground for Thursday, and your calls (Boz).** Nothing pushed, published or baked into `public/`.
 - **HPDM, unowned ped vertices (#40): 269 → 38 on integration** (measured on producer dumps, Mitre; B1 merged 9ca3f6cf). Merged overnight:
