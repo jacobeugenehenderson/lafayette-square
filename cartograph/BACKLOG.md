@@ -322,7 +322,8 @@ level (Plumb builds; supersedes the ridge question). Measured on LS (Plumb): 59 
 allows; none borders the highway group; fills: verge 20 rings (205 m²) · land-use lots 10 (432 m², ring 49 the finger) ·
 sidewalk/curb band 29 (71 m², mostly corners). CORRECTED (Plumb): the field already takes the LOWEST region (kerbLift
 makeHeightField), so where both sides taper a narrow part is already near-flush (the finger peaks at 2.8 cm); a hard flush
-would need carve + re-taper (a bake-order change), so it is DROPPED. The two #39 remnants (the finger's 4 mm points, and the
+would need carve + re-taper (a bake-order change), so it is DROPPED. ✅ RULED (Jacob, 2026-10-21): "'looks flush, a slight hump of a
+centimetre or two' is good enough": today's lowest-slope field is the rule. The two #39 remnants (the finger's 4 mm points, and the
 0.18 mm crack at (−149, 319)) are placed and fixed as defects (Plumb). Eye list was: the finger
     tips (191.276, 461.413), (149.027, 437.185), (-634.945, 213.268), (324.619, 728.015), (422.640, 459.247).
     Mitre gates on LS (Plumb, harness): heights byte-identical > 1.5 m from a bend; reflex wedges 0; new-and-unexplained
