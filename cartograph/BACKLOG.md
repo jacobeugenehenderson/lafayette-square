@@ -459,6 +459,8 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
 - Spur legs off their authored width; swap-mid-street RED; Huron bend row; PTown's 3 missing dead ends; LS highway-edge
   slivers; ② only warns on unresolved corner keys; `claims-band-is-one-ring` hardcodes 0.381; production LS rulemap 404.
 
+✅ RULED (Jacob, 2026-10-21): "Fidelity to height is a very low priority for now." ⇒ refinement against the deformer's height is
+the lever for size and time; a coarser refine tolerance (an OPERATIONS knob) is measured next (Kerf).
 **⭐ THE GROUND'S SIZE AND TIME (Zob, measured 2026-10-21):** LS ground 174,752 triangles served (10-06) → 2,867,676 today (16.4×;
 vertices 10.3×); ground 40 s → ~15 min. The growth is REFINEMENT (triangulation → mesh: 1.7× served, 15.4× today), in the ped
 bands and the road (asphalt 897k · sidewalk 754k · curb 301k · stripe 228k), refined against the deformer's heights. Both
