@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 435,
+  "total": 436,
   "counts": {
     "safe": 315,
     "local-effect": 29,
-    "live": 91
+    "live": 92
   },
   "checks": [
     {
@@ -2754,6 +2754,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-rim-is-cut-once.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
