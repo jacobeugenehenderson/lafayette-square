@@ -83,7 +83,9 @@ with no refusal (Zob, .claude/worktrees/zob-hpdm926): 9 slab files differ from p
 24,759 → 2,464 vertices, underived 12,918 → 34,755; Forest Park trees 496 → 2,730 (slab 8,775 → 11,054); one crop ring
 (86 m²) in the last 8 m of the fade band. ⚠️ 926ac3a4's pour rewrites content/roster.json without its NR join; production's
 roster was restored. PROBED (Ward, proxy render): Forest Park reads as WOODED PARKLAND, the tan is gone; load/download
-same; frames ~5–10% fewer (within noise); the crop ring is not visible. Open: trees over the park's drives (Zob measuring).
+same; frames ~5–10% fewer (within noise); the crop ring is not visible. Trees over the drives (Zob): no anchor on a road; crown
+over road 30,384 → 36,563 m² (+20%, mostly pre-existing census trees); 13 new derived trees on park footways (filed: does
+the forbidden map cover footways?).
 Shots: Ward's scratchpad zoom-east.jpg, cand/cand-*.jpg. ❓ Jacob: eye, then staging → press. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
 (+ checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs). FILED, after Thursday: (i) source a St. Louis CITY land-use
