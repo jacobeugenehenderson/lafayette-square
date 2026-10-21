@@ -500,7 +500,8 @@ export function cutCreases(groups, cells, { maxRounds = 16, onRound = null } = {
  *  and then CARRIED to every triangle (`groundConformity.js#emit`) — never re-read per triangle. Board: the painter would
  *  stamp its block on each band it emits (`tileGround.js#sectionOpen`) and the flatten keep it. */
 export function withSide(items, inBlock) {
-  return items.map(it => { const o = Array.isArray(it) ? { outer: it, holes: [] } : it, at = pointInside(o)
+  return items.map(it => { if (it?.side === 0 || it?.side === 1) return it           // carried (`splitAtCreases`): never re-read
+    const o = Array.isArray(it) ? { outer: it, holes: [] } : it, at = pointInside(o)
     if (!at) throw new Error(`[kerbLift] withSide: a ground polygon of ${o.outer?.length} vertices has no interior point to read its side at`)
     return { ...o, side: inBlock(at) ? 1 : 0 } })
 }
@@ -522,7 +523,8 @@ function pointInside(it) {
  *  exactly the same ground. ⭐ ONLY A POLYGON THE LIFT RAISES IS SPLIT — read at a point just inside it by the lift's own
  *  predicate (`inBlock`, the plan's): a road polygon is returned as it is, so a cell's rounded vertex a millimetre past
  *  the block edge never re-grids the road. Per block-side polygon: one Clipper pass against the cells' union (the outer
- *  outlines), then each piece inside it split by each cell it meets (the outlines between and across regions). */
+ *  outlines), then each piece inside it split by each cell it meets (the outlines between and across regions). Every
+ *  piece of a lifted polygon carries `side: 1`; `withSide` keeps a carried side. */
 export function splitAtCreases(items, cells, inBlock) {
   if (!cells.length || !items?.length) return items
   const norm = items.map(it => (Array.isArray(it) ? { outer: it, holes: [] } : it)).filter(it => it.outer?.length >= 3)
@@ -539,7 +541,9 @@ export function splitAtCreases(items, cells, inBlock) {
     if (!at || !inBlock(at)) { out.push(it); continue }
     const inn = clipItems([it], zone, _C.ClipType.ctIntersection)
     if (!inn.length) { out.push(it); continue }
-    out.push(...clipItems([it], zone, _C.ClipType.ctDifference)); inside.push(...inn)
+    // ⭐ every piece of a lifted polygon IS lifted: its side is carried from the polygon, never re-read off a piece (a
+    // needle cut along a crease from the block edge read its side 0.07 mm past it: LS, 1.4 m of lifted verge left as road)
+    out.push(...clipItems([it], zone, _C.ClipType.ctDifference).map(q => ({ ...q, side: 1 }))); inside.push(...inn)
   }
   for (const piece of inside) {
     let pcs = [piece]
@@ -549,7 +553,7 @@ export function splitAtCreases(items, cells, inBlock) {
         const a = clipItems([p], [regionPaths[gi]], _C.ClipType.ctIntersection)
         if (!a.length) return [p]
         return [...a, ...clipItems([p], [regionPaths[gi]], _C.ClipType.ctDifference)] }) })
-    out.push(...pcs)
+    out.push(...pcs.map(q => ({ ...q, side: 1 })))
   }
   return out
 }

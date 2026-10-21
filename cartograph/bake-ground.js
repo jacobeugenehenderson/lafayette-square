@@ -1271,7 +1271,7 @@ function toPolys(items) {
     if (Array.isArray(it)) {
       if (it.length >= 3) polys.push({ outer: it, holes: [] })
     } else if (it.outer && it.outer.length >= 3) {
-      polys.push({ outer: it.outer, holes: it.holes || [] })
+      polys.push({ outer: it.outer, holes: it.holes || [], ...(it.side != null ? { side: it.side } : {}) })   // a carried kerb side stays
     }
   }
   return polys
