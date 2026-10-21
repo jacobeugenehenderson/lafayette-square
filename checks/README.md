@@ -154,7 +154,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 312. This is `npm test`.
+## safe — 313. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -191,6 +191,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-pour-adds-no-gitignore-lines.mjs` | "DOES A POUR ADD LINES TO .gitignore?" — the standing guard on scene tracking. |
 | `checks/claims-a-production-host-serves-only-its-own-town.mjs` | A TOWN'S PRODUCTION DOMAIN SERVES THAT TOWN AND NOTHING ELSE — and only a domain we own, live. |
 | `checks/claims-a-published-edit-reaches-the-map.mjs` | a Host's published correction is what the map shows. |
+| `checks/claims-a-re-fetch-keeps-its-envelope-and-names-what-it-changes.mjs` | changes.mjs — A RE-FETCHED raw/osm.json, BEFORE IT REPLACES THE |
 | `checks/claims-a-roundabout-is-one-ring.mjs` | CLAIM — EVERY ROUNDABOUT OSM DECLARES ARRIVES AS ONE CLOSED CHAIN (cartograph/_archive/BRIEF-roundabout-is-one-ring-DELIVERED-2026-10-03.md). |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | CLAIM — A SCENE SWITCH DROPS THE OLD TOWN, AND ITS DESIGN SAVES TO THE NEW TOWN'S OWN LOOK. |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | twice.mjs |

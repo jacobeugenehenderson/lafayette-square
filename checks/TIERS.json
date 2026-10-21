@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 431,
+  "total": 432,
   "counts": {
-    "safe": 312,
+    "safe": 313,
     "local-effect": 28,
     "live": 91
   },
@@ -411,6 +411,14 @@
       "tier": "safe",
       "why": [
         "computed import of src/lib/publishedLayerApply.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-re-fetch-keeps-its-envelope-and-names-what-it-changes.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only",
+        "declares @args --after=<path>"
       ]
     },
     {
