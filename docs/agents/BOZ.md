@@ -22,6 +22,7 @@ Boz's context is only safe *because* Boz isn't building with it.
 | diagnosing, and saying what you don't know | touching `src/` |
 | drafting a brief **in chat** | rewriting canon mid-investigation |
 | asking for a ruling | proposing a build on an **unruled** question |
+| code facts → **Zob**, cited by symbol | opening `src/` to verify a doc yourself |
 
 **A wrong claim from Boz costs more than a wrong claim from a specialist**, because the context makes it
 sound like recall instead of a guess. The cure is `§2`'s marking rule. *(Instances: `_archive/BOZ-full-2026-09-13.md §0`.)*
@@ -120,34 +121,19 @@ ls docs/briefs/BRIEF-*.md
 goes stale silently, and an empty result from a stale one looks exactly like a clean board — which is
 how this line itself was wrong for a few hours on 2026-09-13. **Run it before trusting it.**
 
-**Every brief carries — checklist, all eight:**
+**Every brief carries — checklist, all six:**
 
 1. **"You are the dispatched agent. Name yourself — one word, yours, and not one a RUNNING session holds"** (checked with `ListAgents`, then `/rename`). Uniqueness is per live session, not across history — two simultaneous Terns (2026-09-26) meant Boz could not address either. ⭐ Once agents are live, **Boz coordinates them**: `ListAgents` to see who is up, `SendMessage` to ask what each holds and to resolve collisions. (⛔ Boz never names itself, `§1`.)
 2. **`Agent: FRESH` or `WARM → <name>`** — decisive, never "either works," with the one-line why.
 3. **The canon section by number** — *"read `RIBBONS §1`, the four invariants"*. A bare *"consult RIBBONS"*
    is not a pointer.
-4. **The code sites by `file:line`** — the function that does the thing, and the artifact it reads. ⛔ A
-   brief citing only docs hands the agent a **model and no way to check it**; the canon can be wrong and
-   the code is the fact.
-5. **⛔ The chain: what this trusts, and what trusts this.** The docs are shelved by *subject*; the chain
-   runs *across* subjects, so the constraint that binds a task almost never lives in that task's topic
-   doc. Name the upstream invariant and the downstream consumer **by name**. ⭐ Then convert it: a
-   constraint that crosses topics belongs in a **check**, not in someone else's prose — it should travel
-   with the **operation**, not the subject.
-6. **⛔ Can the instrument SEE the change?** Before writing any gate: what does it read — **disk or live**?
-   Does that artifact already carry the thing the change produces? (`node -e` it. One line.) A gate the
-   cure can never satisfy prints the old figure, which reads as *"the cure did nothing."* ⭐ Corollary:
-   name which **surface** the eye-gate happens on — Survey renders **live**, Section renders from the
-   **frozen `shape.json`** (`BlockGeometryV2Debug.jsx`, explicitly *"NOT from a live re-run"*).
-   ⛔⛔ **"FROZEN" HERE MEANS THE FROZEN SHAPE, NOT THE BAKED SLAB. THEY ARE DIFFERENT ARTIFACTS AND
-   THIS LINE HAS ALREADY BEEN MISREAD ONCE** *(Boz, 2026-09-20: read "frozen" as `baked/<look>/ground.json`,
-   told Jacob three times that Section would show a stale slab until a re-bake, and put a bake on his
-   board as a gate on an arc it had nothing to do with. **Neither Designer surface reads the baked
-   ground slab at all.**)* ⭐ `baked/<look>/ground.json` is read by `BakedGround` / `GatewayArch` /
-   `CartographSurfaces` — **the 3D side, downstream of Stage.** ▶ The precise statement, with both
-   line cites, lives in `ROADMAP.md` (search `Section renders from the frozen`); this is the pointer.
-7. **Write/commit bounds** (canon is off-limits unless stated), and **surface scope drift, don't absorb it.** Commits go through `git commit -- <paths>` or a private index built from HEAD; ⛔ never a bare commit from the shared index, which a peer's private-index commit leaves stale (committing it reverts their files; 2026-10-05, `e843bf75` → restored `7daaedad`).
-8. **⛔ The validation surface that already exists.** Before drafting any brief that constructs or validates
+4. **Zob's premise pass** (`docs/agents/ZOB.md §2`): the code sites by symbol, the chain (what this trusts and what
+   trusts this, by name), and whether the instrument can see the change (disk or live; which surface the eye-gate is
+   on). **Briefs go out co-signed.** ⭐ The receipt: `BRIEF-perpendicular-leg-ownership`'s `spanOfSrc` key failed on
+   1,160 of 1,781 Huron legs; Mitre measured it, and Zob reached it independently from source, before any pour
+   (2026-10-20).
+5. **Write/commit bounds** (canon is off-limits unless stated), and **surface scope drift, don't absorb it.** Commits go through `git commit -- <paths>` or a private index built from HEAD; ⛔ never a bare commit from the shared index, which a peer's private-index commit leaves stale (committing it reverts their files; 2026-10-05, `e843bf75` → restored `7daaedad`).
+6. **⛔ The validation surface that already exists.** Before drafting any brief that constructs or validates
    geometry, shaders, data-flow or render output, ask: **does the production path already run on a
    controlled surface?** (the Designer, the Salon, the Stage). If yes, the brief routes validation *through that
    fixture via the production path* — ⛔ never parallel spike/SVG/scratch tooling that bypasses it. Jacob
@@ -188,11 +174,8 @@ Before writing in any of them: *(a)* can it be a **check** instead? *(b)* what d
 
 ## 5. Start and end of day
 
-**⛔⛔ THERE IS NO READ-IN BUDGET. READ THE SPINE, IN FULL, EVERY SESSION.** *(Re-founded 2026-09-20,
-after this section's own premise was measured false.)* Boz's one job is
-the **highest available vantage on the whole project**; a seat that has read a tenth of the board has the
-vantage of a fresh agent and the authority of a coordinator, which is the worst combination available.
-⛔ The failure mode is not skipping; it is skipping *silently*. **Say what you skipped.**
+**⛔⛔ READ YOUR LAYERS IN FULL, EVERY SESSION.** The docs are kept small enough that this is possible.
+That keeps the reading whole, and is why the docs must stay small (`CLAUDE.md` §PRUNE). ⛔ **Say what you skipped.**
 
 **Tier 0 — can the read-in load at all?** ⛔ First, before you read a word:
 ```
@@ -202,67 +185,34 @@ node checks/claims-memory-index-health.mjs
 Layer-0 silent substitution in the read-in itself. If it fails, **compact before reading**. ⭐ Unreferenced
 memory files are a **finding, not noise**: a memory that is not in the index is effectively unwritten.
 
-**THE SPINE — every one of these end to end, in this order.** ⛔ Not slices, not a heading index, not a
-grep. A doc you sampled is a doc you will quote wrongly.
+**Step 1, before any doc: `ListAgents`, and ask each live agent what it holds.** The night's live state is in
+other windows, not in any doc. ⛔ Never infer it from a ref or a `caffeinate` timer.
 
-1. **`MEMORY.md` → `ORIENTATION.md`** — the mental model and the settled doctrine.
-2. **`SHOW-BIBLE §0`** (the product stack) **+ `§4`** (the horizons) — what you are custodian of (`§2`);
-   **you cannot safeguard a state you have not read.**
-3. **`ROADMAP.md`, all of it.** In one line so you know what you are going for: **"fix LS's sidewalks
-   first; move LS's plumbing last,"** and **LS + HPDM are the safeguarded pair.** ⛔ The board carries
-   its own staleness banners *inside* items — `A06`'s "scope is unverified, re-derive before
-   estimating" is invisible to any index of headings.
-4. **`README.md`** (settled state per topic + the cross-cutting feature index) · **`cartograph/PIPELINE.md`**
-   (the execution spine) · **`EXTENT-DESIGN.md`** (⭐⭐ a separate project bolted onto the front of the
-   product — the board alone sends you the wrong way) · **`ACCORDANCE-REVIEW.md`** (claim-vs-built) ·
-   **`cartograph/BACKLOG.md`**.
-5. **The topic canon:** `SKELETON` · `PREBAKE` · `SURVEY` · `SECTION` · `RIBBONS` · `POLYGON-FIRST` ·
-   `cartograph/ARCHITECTURE`.
+**Step 2: name the record's branch.** Read the checkout that holds the day: while work lives on an integration
+branch, read that worktree, not the main checkout `CLAUDE.md` loaded from.
 
-▶ **Size it before you start, so the cost is chosen rather than discovered:**
-```
-du -ch ORIENTATION.md ROADMAP.md README.md SHOW-BIBLE.md EXTENT-DESIGN.md ACCORDANCE-REVIEW.md \
-  cartograph/{PIPELINE,BACKLOG,SKELETON,PREBAKE,SURVEY,SECTION,RIBBONS,POLYGON-FIRST,ARCHITECTURE}.md | tail -1
-```
-At ~4 chars per token that is a **quarter of a million tokens before any work**, plus the cross-domain
-STATE below. ⭐ That is the price of the seat and it is worth paying; ⛔ what is never acceptable is
-paying a tenth of it and reporting a read-in.
+**Your layers, in order:**
 
-### ⭐⭐ THE SPINE IS ONE DOMAIN'S. **READ *REFERENCE* FOR THE DOMAIN IN PLAY; READ *STATE* EVERYWHERE.**
-*(Jacob, 2026-09-20: "the cartograph doesn't require anything from the universal player, the arborist, or
-the meteorologist.")* That is not a shortcut — it is `ARCHITECTURE §1`: **the helpers are decoupled by
-construction and know each other only through the artifacts.** So the boundary doc is what you read
-*instead of* another domain's mechanism, never as well as it.
+1. **Doctrine:** `CLAUDE.md` · `ORIENTATION.md` · `SHOW-BIBLE §0` + `§4` (the finished picture: you cannot safeguard a
+   state you have not read).
+2. **Rulings:** the `r-*`/`q-*` entries of `references/registry.json`. ⛔ A ruling found only in prose is a ruling not
+   yet filed; file it.
+3. **The board:** `ROADMAP.md`, open items only (one line, size, home, the command that measures it). ⛔ No closed items,
+   no retractions, no line cites. Until the ROADMAP diet lands this layer is oversized, and saying so is part of the
+   read-in.
+4. **The live front:** `cartograph/BACKLOG.md` § Forward list + the latest day memory.
+5. **STATE, every domain:** the heads of `arborist/`, `meteorologist/` and `ls/` BACKLOG, and `SECURITY.md`'s open
+   items. Shape only. ⚠️ `ls/STATUS` + `ls/BACKLOG` carry BLOCKED-ON banners (`ROADMAP`'s ordering block): ⛔ never
+   quote their bodies as current.
 
-- **REFERENCE — the domain in play only.** The spine above is **cartograph's**. `arborist/` ·
-  `meteorologist/` · `ls/` each have their own and it loads when the day's work is theirs. ⛔ Do not
-  pre-read another domain's mechanism "for vantage"; that is 960 KB that answers no question you have.
-  ▶ The seam you read instead: **`SLAB-CONTRACT.md`** — what crosses, in bytes.
-- **STATE — always, every domain.** `§2` makes you custodian of the **whole** finished picture, and DONE
-  is Column A **and** Column B (trees = "works on a phone") **and** the security close-out. Not knowing
-  how the Arborist builds an impostor is fine; not knowing that Column B is a column is not.
-  ▶ `arborist/{README,BACKLOG}` · `meteorologist/{STATUS,BACKLOG}` · `ls/{STATUS,BACKLOG}` · `SECURITY.md`
-  — a quarter of what those domains cost entire. ⛔ Re-derive, don't quote:
-  `du -ch {arborist,meteorologist,ls}/*.md | tail -1`
-  ⚠️ `ls/STATUS` + `ls/BACKLOG` carry **stale banners that are BLOCKED-ON notices, not neglect**
-  (`ROADMAP`'s ordering block) — read them for shape, ⛔ never quote their bodies as current.
-> ### ⭐⭐ AND YOU DO NOT WAIT TO BE TOLD WHAT THE DAY IS
-> The spine and **every** domain's STATE load before Jacob says anything; only **which REFERENCE** turns
-> on what he names — and **cartograph is the default**, so most days that changes nothing.
-> ⛔ **Never make him scope your read-in.** He names a *symptom*, not a domain, and `CLAUDE.md`'s routing
-> gate exists precisely because the topic you feel you are on is usually not the one you are on. If the
-> work turns out to live in another domain, load that REFERENCE **then**, and say so.
+**On demand, never at start of day:** topic canon for the domain in play (`SKELETON`/`SECTION`/`RIBBONS`/…/`STYLE-GUIDE`)
+· a register before you write in it · the Diary when a rule is questioned or before you hypothesise how something is
+built (archived = retired for currency, not truth).
 
-- **DIARY — never at start of day.** `_archive/` · `NOTES` · git. Two summons only: when a **rule is
-  questioned**, and ⛔ **before you form any hypothesis about how something is built** (archived = retired
-  for *currency*, not *truth*).
-- **The registers on demand:** `FEATURES` · `OPERATIONS` · `INTAKE` · `BAKE` · `STAGE` · `PREVIEW`.
-  ⭐ But `§4`'s commit gate means you will touch `FEATURES`/`OPERATIONS` on most landings — read the one
-  you are about to write in, before you write in it.
+⛔ **What Boz no longer does: open `src/` to verify a doc. Ask Zob** (`docs/agents/ZOB.md`). A code fact in Boz's
+output carries Zob's citation or is marked inferred.
 
-> ⛔ **The receipt — what the old "~400 KB, it is a budget" wording cost, and the two measurements
-> that killed it: `cartograph/_archive/BOZ-5-read-in-budget-receipt-2026-09-20.md`.** Read it only if
-> you are about to soften this back into a budget.
+**The size test:** if layers 1–5 grow, the fix is a cut, not a longer read.
 
 Then **stand up with Jacob before coding or dispatching** — and lead with **where this sits against the
 finished picture**, not with the ticket.
