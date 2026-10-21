@@ -1132,13 +1132,18 @@ export function splitAtPinches(items, groupKey, subLattice, { bound = NODE_BOUND
     // several outers is a hole placed by a point of it — and a hole that touches its outer at every vertex has none to offer
     // (HPDM mat:curb at (323.74, 1111.476), 2026-10-21: a 0.41 mm hole the flatten emitted along its own outer, sent here
     // because the item's other holes were needles the cut dropped)
+    // ⭐ NO OUTER LOOP LEFT: the item was below the lattice whole (every loop of its outer thinner than a step, so all dropped),
+    // and its holes go with it — a hole whose outer is gone removes no paint, the flatten's own orphan rule — COUNTED as
+    // `from: 'orphan'`, neither paint removed nor filled (LS mat:treelawn:underived at (124.008, -252.635), 2026-10-21: a
+    // 0.000106 m² outer with a 0.000042 m² hole on it). Where outers remain and none holds a hole, it still THROWS.
+    if (!bySize.length) { for (const h of holes) dropped.push({ from: 'orphan', m2: +(Math.abs(areaOf(h)) / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [h[0].X / CLIP_SCALE, h[0].Y / CLIP_SCALE], widthMm: +(2 * Math.abs(areaOf(h)) / perimOf(h) / CLIP_SCALE * 1000).toFixed(4) }); continue }
     for (const h of holes) { const o2 = bySize.length === 1 ? bySize[0] : bySize.find(o2 => o2.a > Math.abs(areaOf(h)) && inside(o2.q, h))
       if (!o2) throw new Error(`[flatten] ${groupKey}: a hole loop split at a pinch that no outer loop holds, at (${h[0].X / CLIP_SCALE}, ${h[0].Y / CLIP_SCALE}) — refusing`)
       o2.holes.push(h) }
     for (const o2 of bySize) out.push({ ...src, outer: _pathToRing(o2.q), holes: o2.holes.map(_pathToRing) })
   }
   if (dropped.length) { const rec = (subLattice[groupKey] ||= { rings: 0, m2: 0 }); rec.pinches = [...(rec.pinches || []), ...dropped]
-    console.log(`  [flatten] ${groupKey}: ${dropped.length} loop(s) below the lattice cut off at a pinch (${dropped.filter(r => r.from === 'outer').length} off an outer, paint removed · ${dropped.filter(r => r.from === 'hole').length} off a hole, paint filled), ${dropped.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², widest ${Math.max(...dropped.map(r => r.widthMm)).toFixed(4)} mm`) }
+    console.log(`  [flatten] ${groupKey}: ${dropped.length} loop(s) below the lattice cut off at a pinch (${dropped.filter(r => r.from === 'outer').length} off an outer, paint removed · ${dropped.filter(r => r.from === 'hole').length} off a hole, paint filled · ${dropped.filter(r => r.from === 'orphan').length} hole(s) of an item dropped whole), ${dropped.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², widest ${Math.max(...dropped.map(r => r.widthMm)).toFixed(4)} mm`) }
   return out
 }
 
@@ -1252,7 +1257,7 @@ export function nodeThePlane(flattened, { blockRings = [], rimRings = [] } = {})
   const pin = keys.flatMap(k => flattened.subLattice[k]?.pinches || [])
   const tally = (from) => { const p = pin.filter(r => r.from === from); return { rule: 'bow-tie', loops: p.length, m2: +p.reduce((t, r) => t + r.m2, 0).toFixed(9), widestMm: Math.max(0, ...p.map(r => r.widthMm)) } }
   flattened.noded = { layers: keys, insertOnly: true, inserted: noded.inserted, pairs: noded.pairs, pastBound: noded.pastBound,
-    removedBelowLattice: tally('outer'), filledBelowLattice: tally('hole'),
+    removedBelowLattice: tally('outer'), filledBelowLattice: tally('hole'), orphanedBelowLattice: tally('orphan'),
     blockCut: partSub['participant:block']?.pinches || [], refused: refused.length }
   return { blockRings: block, rimRings: rimOut, refused }
 }

@@ -137,7 +137,7 @@ async function synthetic() {
   rows.push([`(5) the plane pinches nowhere below the lattice${live ? ` — ${live} pinch(es)` : ''}`, live === 0])
   rows.push(['(5) the cut needle is recorded (ground.json#flatten.subLattice[group].pinches)', !!(flat.subLattice.a?.pinches?.length && flat.subLattice.b?.pinches?.length)])
   rows.push(['(5) ground.json states it: every layer, insert-only, and the paint removed below the lattice by the bow-tie rule',
-    flat.noded?.insertOnly === true && ['a', 'b', 'c'].every(k => flat.noded.layers.includes(k)) && flat.noded.removedBelowLattice?.rule === 'bow-tie' && flat.noded.removedBelowLattice.loops === 2 && flat.noded.filledBelowLattice?.loops === 0])
+    flat.noded?.insertOnly === true && ['a', 'b', 'c'].every(k => flat.noded.layers.includes(k)) && flat.noded.removedBelowLattice?.rule === 'bow-tie' && flat.noded.removedBelowLattice.loops === 2 && flat.noded.filledBelowLattice?.loops === 0 && flat.noded.orphanedBelowLattice?.loops === 0])
   // the mutant: the same plane noded but never cut (`nodeThePlane` without `splitAtPinches`) must read as pinching
   const unsplit = nodeAcrossGroups(stack.map(e => ({ ...e, items: e.items.map(it => ({ outer: it.outer, holes: [] })) })))
   rows.push(['(5) mutant: a ring with a sub-lattice needle reaches the noder unsplit → RED', unsplit.reduce((t, e) => t + pinchesIn(e.items), 0) > 0])
@@ -184,6 +184,17 @@ async function synthetic() {
     const why7 = /bySize\.length === 1 \? bySize\[0\] :/.test(src)
     rows.push(['(7) the source: with one outer loop, every hole is its (no point test)', why7])
     rows.push(['(7) mutant: the shortcut removed is RED', !/bySize\.length === 1 \? bySize\[0\] :/.test(src.replace('bySize.length === 1 ? bySize[0] : ', ''))]) }
+  // (8) an item below the lattice WHOLE (LS mat:treelawn:underived at (124.008, -252.635), 2026-10-21, on the lattice in mm): the
+  // cut drops every loop of its outer, and its hole, every vertex on that outer, goes with it, counted as from: 'orphan'
+  { const { splitAtPinches } = await import('../cartograph/bake-ground.js'), sub = {}
+    const outer = mm([[124028, -252701], [124034, -252719], [124068, -252827], [124057, -252791], [124029, -252701], [124000, -252608], [124008, -252635]])
+    const hole = mm([[124008, -252635], [124029, -252701], [124034, -252719], [124028, -252701]])
+    let out = null, err = null; try { out = splitAtPinches([{ outer, holes: [hole] }], 'g', sub) } catch (e) { err = e.message }
+    const p = sub.g?.pinches || []
+    rows.push([`(8) an item below the lattice whole drops with its hole${err ? ` — THREW: ${err.split('\n')[0]}` : ''}`, !err && out.length === 0])
+    rows.push(['(8) its hole is counted as orphaned (neither removed nor filled)', p.filter(r => r.from === 'orphan').length === 1 && p.some(r => r.from === 'outer')])
+    rows.push(['(8) the source: no outer left → the holes go with it', /if \(!bySize\.length\) \{ for \(const h of holes\) dropped\.push\(\{ from: 'orphan'/.test(src)])
+    rows.push(['(8) mutant: that line removed is RED', !/if \(!bySize\.length\) \{ for \(const h of holes\) dropped\.push\(\{ from: 'orphan'/.test(src.replace(/    if \(!bySize\.length\) \{[^\n]*\n/, ''))]) }
   const why5 = planeNodedLast(src)
   rows.push([`(5) the plane is noded, then cut at its pinches, after its last re-clip and before planGroup${why5 ? ` — ${why5}` : ''}`, !why5])
   rows.push(['(5) mutant: the cut removed is RED', !!planeNodedLast(src.replace(/splitAtPinches\(noded\[g\]\.items, k, flattened\.subLattice\)/, 'noded[g].items'))])
