@@ -80,8 +80,9 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   (−91.6, −654.6), the ease split suspected. Class 3 is B1's source fix (PLACED,
   Mitre: bake-ground's `clipAllToStencil` re-clips the already-stamped ① paint to the exact chord, a second cut; candidate
   skips it on the recorded stamp, overlays keep their one cut). ⭐ BUILT and MEASURED (Mitre, mitre/b1-rim-vertices, HPDM
-  A/B): class 3 53 → 0; census 91 → 38, 0 newly unowned; tile 55's gate point reads walk; fade and ink identical. Before
-  landing: held Δh up to 67.65 mm (tile 44) to be placed; Zob reviews.
+  A/B): class 3 53 → 0; census 91 → 38, 0 newly unowned; tile 55's gate point reads walk; fade and ink identical. STOPPED:
+  tile 44's 67.65 mm is a self-crossing painter ring (lawn #443) that the old second clip had repaired (17 such; 241 more
+  self-cross today). Next (Mitre, measure only): simplify each item once at the PAINTER'S EXIT; a three-way A/B.
   (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
   (b0d8c9bb: a hole that touches its one outer stays its own); per-town gate (Truss, f206543d): LS ✅ · HPDM ✅ · Huron after
   PTown. Mitre's probe is running.
