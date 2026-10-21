@@ -72,7 +72,9 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   drawn plane. A drawn-geometry form that keeps your ruling's ownership is specified and waits on one probe (Mitre; Zob
   reviewed). PROBE RESULT (Mitre, HPDM): census 91 → 89, but 692 held owners move and held heights shift up to 0.75 m;
   tile 32 closes; class 3 doesn't move (53 → 53). NOT YET ATTRIBUTABLE (Zob): 57 of the input's 177 slits are its own
-  un-noded overlay edges; Zob reruns with the overlay noded before any ruling. Class 3 is B1's source fix
+  un-noded overlay edges; Zob reruns with the overlay noded before any ruling. Class 3 is B1's source fix (PLACED,
+  Mitre: bake-ground's `clipAllToStencil` re-clips the already-stamped ① paint to the exact chord, a second cut; candidate
+  skips it on the recorded stamp, overlays keep their one cut; being built and measured, fade/ink/membership checked)
   (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
   (b0d8c9bb: a hole that touches its one outer stays its own); per-town gate (Truss, f206543d): LS ✅ · HPDM ✅ · Huron after
   PTown. Mitre's probe is running.
