@@ -103,8 +103,11 @@ lafayettesquare.online for a while, then retires at renewal. ⚠️ Jacob: Huron
 'gorgeous'); Ward probing. SIZED (Zob): the rename is ~2–4 h, mechanical (the town ids are
 already sealed); traps: T1, a slab must be RE-BAKED under the new name, never moved (the renderer reads manifest.look) · T2, the
 old site's apps-script entry stays · T3, never upload to prod under the old name. Gate: a clean LS slab. Being built (Kerf, no
-bake); a T1 upload refusal (Plumb) + check (Zob). The rename is BRIEF-ls-cutover-to-its-address step 1; defaults are ruled
-per the brief (each a question, not re-spelled); it lands only with LS's re-bake under the new name. LS SLAB OPTIONS (Zob): (1) a
+bake); a T1 upload refusal (Plumb) + check (Zob). The rename is BRIEF-ls-cutover-to-its-address step 1. ⭐ RULED (Jacob, 2026-10-21):
+"This is a preexisting project which we really need to manage once and for all. LS is only the fallback because it was first."
+⇒ the same branch DELETES the default town (cartograph/scene.js#DEFAULT_MAP, src DEFAULT_LOOK; BRIEF-no-default-town §4); every
+`=== DEFAULT_MAP` branch becomes a declared per-town property; callers without a scene refuse. Zob extends the check so it
+can't return; it lands only with LS's re-bake under the new name. LS SLAB OPTIONS (Zob): (1) a
 HEAD bake, which needs Jacob's 1.03 m call; (2) staging's Oct-5 LS slab reproduced under the new name at its kit commit
 (candidate b67caf47; 5 name tests re-spelled; proven byte-identical but for the stamps; ~2–3 h; LS as of Oct 5, without
 later authoring). ❓ Jacob picks. JH (Zob): showable today as the authoring view of its 10-06 pour on :5173. ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
