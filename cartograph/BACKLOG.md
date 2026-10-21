@@ -100,6 +100,9 @@ Start here. State at the restart:
     corner point on tile 159); held points unchanged. MERGED 0942a899 with its narrowness row → 85 (in memory). What
     remains (Zob, binned at 91): 57 from BEYOND the rim (tiles 134 ×33, 55 ×19: Mitre's class 3) · ~25 perpendicular-corner
     (tile 170 ×16, 211, 152) · Jacob's 4 here of 6 · back-edge rounding 1 (tile 159).
+    Tile 170 (Mitre, HEAD ba02b826): fix B owns 10 of 26, including Jacob's pair at (−230.56, −508.73); the 16 left are in
+    no perpendicular rect (12 'band but no piece', possibly a stale-dump mismatch; 4 the tile-211 shape). Class 3 needs a fresh
+    producer dump: Mitre's slot run, right after Huron.
     REVISED (Zob, measured): **~81 are a ray running ALONG a partition line** (the 'holes' were the instrument sampling along it;
     no ground is missing). bandsAlong reads one 10 µm side; on the land-use side it reads lot. Fix, being built (Kerf): read
     both sides at ±LATTICE; the band still decides. Of the rest · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
