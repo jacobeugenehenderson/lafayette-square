@@ -8,9 +8,10 @@
 //   2. (B) A RAY FROM BEYOND THE RIM READS THE DRAWING'S OWN RIM. HPDM tile 89 (fixture): the deformer, on that tile's own paint,
 //      owns the point (−1250.07, 605.28), whose station lies past the rim. Read off the stencil's exact chord, the rounded
 //      crossings left a wedge the ray (65° off the normal) read as ~1.1 mm of lot (B1: 341 points).
-//   4. A STAMPED TILE IS NOT CLIPPED AGAIN. HPDM tile 242 through `sectionOpen` (the finish both the bake and Survey run, with
-//      the stencil): no painted vertex on the rim that the tile's own painter did not draw. Clipping its paint to the same
-//      stencil again re-cut the rim and minted a crossing per class.
+//   4. A STAMPED SHAPE IS NOT CLIPPED AGAIN. HPDM tiles 242, 234, 10, 5, 35 and 246 (five whose rings round past the stencil)
+//      through `sectionOpen` (the finish the bake and Survey run), stamped with the stencil: no painted vertex on the rim that
+//      the tiles' own painter did not draw. Clipping the paint to the same disc again re-cut the rim and minted a crossing
+//      per class; gated on the ring reaching past the stencil, it still fired on half the rim tiles.
 //   3. (C) THE TILE RING CARRIES THE BLOCK'S RIM CROSSINGS (synthetic): a ring and its block, cut by an oblique disc chord
 //      separately, then `shareRimCrossings`: every block vertex on a rim edge of the ring is a ring vertex. Unshared, `ring − iA`
 //      left LS tile 133 a 12.7 m, ≤ 0.166 mm needle.
@@ -43,11 +44,14 @@ const rows = async (TG, DM) => {
   const onRim = (v) => rim.some(([a, b]) => segHolds(v, a, b))
   const cls = { curb: flat(o.curb), lawn: flat(o.tlByLu), walk: flat(o.Wacc) }, pts = {}
   for (const [k, rs] of Object.entries(cls)) pts[k] = rs.flat().filter(onRim)
-  // 4 — the same tile through the finish: every rim vertex it paints is one its own painter drew
-  const key = (v) => Math.round(v[0] * CLIP_SCALE) + ',' + Math.round(v[1] * CLIP_SCALE), own = new Set(Object.values(pts).flat().map(key))
+  // 4 — the tiles through the finish, stamped with the stencil: every rim vertex it paints is one their own painter drew
+  const key = (v) => Math.round(v[0] * CLIP_SCALE) + ',' + Math.round(v[1] * CLIP_SCALE), Ts = [W.tile, ...F.outward.map(x => x.tile)]
+  const rimOf = (t) => t.ring.map((a, k) => t.ringOwner[k]?.kind === 'rim' ? [a, t.ring[(k + 1) % t.ring.length]] : null).filter(Boolean), rims = Ts.flatMap(rimOf)
+  const onAnyRim = (v) => rims.some(([a, b]) => segHolds(v, a, b)), own = new Set()
+  for (const t of Ts) { const q = paint({ tile: t, blockCustoms: {}, cornerOverrides: {} }); for (const r of [...flat(q.curb), ...flat(q.Wacc), ...flat(q.tlByLu), ...flat(q.luByLu), ...flat(q.curbCut)]) for (const v of r) own.add(key(v)) }
   const lw = console.log, ww = console.warn; console.log = () => {}; console.warn = () => {}
-  let SO; try { SO = TG.sectionOpen([W.tile], F.cw, { outer: 'LU', inner: 'SW' }, F.stencil, W.blockCustoms, null, null, W.cornerOverrides) } finally { console.log = lw; console.warn = ww }
-  const finRim = [...SO.curb, ...SO.sidewalk, ...Object.values(SO.treelawnByLu || {}).flat()].flat().filter(onRim), minted = finRim.filter(v => !own.has(key(v))).length
+  let SO; try { SO = TG.sectionOpen(Ts, F.cw, { outer: 'LU', inner: 'SW' }, F.stencil, {}, null, null, {}, { stampedWith: F.stencil }) } finally { console.log = lw; console.warn = ww }
+  const finRim = [...SO.curb, ...SO.curbCut, ...SO.sidewalk, ...Object.values(SO.treelawnByLu || {}).flat(), ...Object.values(SO.luByClass || {}).flat()].flat().filter(onAnyRim), minted = finRim.filter(v => !own.has(key(v))).length
   let near = 0, pairsSeen = 0; const ks = Object.keys(pts)
   for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) for (const p of pts[ks[i]]) for (const q of pts[ks[j]]) {
     const d = Math.hypot(p[0] - q[0], p[1] - q[1]); if (d <= U) { pairsSeen++; if (d > 0) near++ } }
@@ -67,7 +71,7 @@ const rows = async (TG, DM) => {
   return [
     [`(A) tile 242 is live: ${pairsSeen} cross-class rim vertex pair(s) within two lattice steps`, pairsSeen > 0],
     [`(A) every one of them is the same point (near misses: ${near})`, near === 0],
-    [`(D) tile 242 through the finish paints ${finRim.length} rim vertex(es)`, finRim.length > 0],
+    [`(D) the six tiles through the finish paint ${finRim.length} rim vertex(es)`, finRim.length > 0],
     [`(D) none of them is new to the finish (minted by a second cut: ${minted})`, minted === 0],
     [`(B) the fixture point lies in tile 89's paint`, inPaint],
     [`(B) a ray from past the rim owns it (the drawing's own rim)`, D.unownedIn(px, pz) == null],
@@ -82,8 +86,8 @@ const PKG = ['clipper', 'lib'].join('-')   // the painter's one bare import, re-
 const LIB = (m) => pathToFileURL(join(ROOT, 'src/lib', m)).href, SRC = (m) => pathToFileURL(join(ROOT, 'src', m)).href, CLIP = pathToFileURL(join(ROOT, 'node_modules/clipper-lib/clipper.js')).href
 const must = (src, a) => { if (src.split(a).length !== 2) throw new Error(`selftest: the source no longer carries \`${a.slice(0, 80)}\` — re-aim the mutation`) }
 const g = "globalThis.__RIM_MUT"
-const T8 = 'const pastStencil = (st) => hasStencil && st?.ring?.length >= 3 && differenceRings([st.ring], [stencil]).length > 0'
-const R8 = `const pastStencil = (st) => hasStencil && st?.ring?.length >= 3 && (${g} === 'reclip' || differenceRings([st.ring], [stencil]).length > 0)`
+const T8 = 'const reclip = hasStencil && !sameRing(stampedWith, stencil)'
+const R8 = `const reclip = hasStencil && (${g} === 'reclip' || !sameRing(stampedWith, stencil))`
 const T1 = 'const curbB = inBlock(curbOuter), pedB = inBlock(pedOuter), luB = inBlock(luIn0)', T2 = 'W = bandCut(LV_wf.rings, inBlock(LV_wf.rings), LV_wt.rings, inBlock(LV_wt.rings))'
 const T3 = 'Wacc:   cutByStamp(st, Wall, sp),', T4 = 'tlByLu: rekeyByPiece(st, { [key]: less(Wp.length ? differenceRings(env, Wp) : env) }, sp),', T5 = '  if (!minted.length) return { ring, owners, added: 0 }'
 const T6 = 'curb:   cutByStamp(st, less(bandCut(curbOuter, curbB, pedOuter, pedB)), sp),', T7 = 'luByLu: rekeyByPiece(st, { [key]: less(luIn) }, sp),'
@@ -115,7 +119,7 @@ const mutantDEF = () => { const dfSrc = readFileSync(DEF, 'utf8')
 if (self) { const tgCopy = mutantTG()
   const dfCopy = mutantDEF()
   let bad = 0
-  for (const [k, name, row] of [['end', 'the bands cut at the end, past the rim', 1], ['reclip', 'a stamped tile clipped to the stencil again in the finish', 3], ['stencil', "beyond read off the stencil's chord", 5], ['unshared', 'the block\'s rim crossings not shared with the ring', 7]]) {
+  for (const [k, name, row] of [['end', 'the bands cut at the end, past the rim', 1], ['reclip', 'a stamped shape clipped to the stencil again in the finish', 3], ['stencil', "beyond read off the stencil's chord", 5], ['unshared', 'the block\'s rim crossings not shared with the ring', 7]]) {
     globalThis.__RIM_MUT = k; const R = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)), red = !R[row][1]
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'} (${R[row][0]})`) }
   globalThis.__RIM_MUT = null; const R0 = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)); if (!R0.every(r => r[1])) { bad++; console.log('  ⛔ the mutated copies, switched off, are not GREEN — the mutation changed more than its switch') }

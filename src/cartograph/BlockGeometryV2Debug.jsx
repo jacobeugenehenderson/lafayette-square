@@ -606,7 +606,8 @@ export default function BlockGeometryV2Debug({
         const tiles = Array.isArray(d?.tiles) ? d.tiles : null
         const highway = Array.isArray(d?.highway) ? d.highway : []
         setFrozenPending(false)
-        setFrozenShape(tiles && tiles.length ? { tiles, highway } : null)
+        // `boundaryRing`: the disc the pour stamped these tiles with — the finish clips nothing it already cut (`stampedWith`)
+        setFrozenShape(tiles && tiles.length ? { tiles, highway, boundaryRing: Array.isArray(d?.boundaryRing) ? d.boundaryRing : null } : null)
         // [ROADMAP A02] Door 1 — the freeze is ABSENT (404, or a shape with no
         // tiles). Legitimate on a scene that has never been frozen; NOT legitimate
         // to hide, because the live build below draws a map indistinguishable from
@@ -737,7 +738,7 @@ export default function BlockGeometryV2Debug({
     // [LOAD-FORENSIC 2026-07-14] see the note at buildBlockGeometryV2 above.
     console.log(`[LOAD] ▶ sectionGeos rebuilding — trigger: ${__whyRerun()}`)
     console.time(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`)
-    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustomsX, sectionCacheRef.current.map, selSet, cornerCornerRadiusOverrides) }
+    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustomsX, sectionCacheRef.current.map, selSet, cornerCornerRadiusOverrides, { stampedWith: frozenShape.boundaryRing }) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     finally { console.timeEnd(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`) }
     // [LOAD-FORENSIC 2026-07-15] The 19.8s frozen-shape task = sectionOpen (timed

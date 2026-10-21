@@ -5718,7 +5718,7 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
   return { rings, cuts, farCuts, pairs, tally }
 }
 
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, cornerOverrides = null, { pieces = false } = {}) {
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, cornerOverrides = null, { pieces = false, stampedWith = null } = {}) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
   // Section drag (which writes a fresh blockCustoms object every frame but
@@ -5817,16 +5817,19 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutCorners = [], cornerArcs = []
   const rest = mkAcc(), bandByTile = []
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
-  // ⭐ THE RIM IS CUT ONCE: A STAMPED TILE IS NOT CLIPPED AGAIN (BRIEF-the-rim-is-cut-once follow-on, Boz 2026-10-21). The pour
-  // stamps every tile with the disc and its paint is cut to the block inside it, so clipping that paint to the same stencil
-  // here was a SECOND cut at the rim, minting a fresh crossing per class (HPDM's rim set: 16 unowned without it, 30 with).
-  // A tile is clipped only where its own ring reaches past the stencil (an exact difference): a pour with no boundary keeps
-  // its clip, and the bake and Survey, which both run this, paint alike. ▶ node checks/claims-the-rim-is-cut-once.mjs
+  // ⭐ THE RIM IS CUT ONCE: A STAMPED SHAPE IS NOT CLIPPED AGAIN (BRIEF-the-rim-is-cut-once follow-on, Boz 2026-10-21). The pour
+  // stamps every tile with its disc (`stampedWith`, the pour's own boundaryRing, recorded in shape.json) and the paint is cut
+  // to the block inside it, so clipping that paint to the SAME disc here was a second cut at the rim, minting a fresh crossing
+  // per class. ⭐ Decided on the recorded fact, never on geometry: a shape stamped with exactly this stencil (vertex for vertex
+  // on the grid) is not clipped; one stamped with no disc, or with another, is. ⛔ Not "the ring reaches past the stencil":
+  // ring vertices round up to 0.6 mm either side of the chord, so that test fired on half the rim tiles (Zob: HPDM 36/71).
+  // The bake and Survey both pass it, so they paint alike. ▶ node checks/claims-the-rim-is-cut-once.mjs
   const hasStencil = !!(stencil && stencil.length >= 3)
+  const sameRing = (a, b) => a?.length === b?.length && a.every((v, k) => { const p = toClipper(v), q = toClipper(b[k]); return p.X === q.X && p.Y === q.Y })
+  const reclip = hasStencil && !sameRing(stampedWith, stencil)
   const clip = (rings) => hasStencil && rings.length ? intersectRings(rings, [stencil]) : rings
-  const pastStencil = (st) => hasStencil && st?.ring?.length >= 3 && differenceRings([st.ring], [stencil]).length > 0
   for (let i = 0; i < shapeTiles.length; i++) {
-    const b = tileGeo(shapeTiles[i], i), cl = pastStencil(shapeTiles[i]) ? clip : (r) => r
+    const b = tileGeo(shapeTiles[i], i), cl = reclip ? clip : (r) => r
     const acc = (sel && selectedTileSet.has(i)) ? sel : rest
     for (const f of Object.keys(PAINTED)) acc[f].push(...cl(b[f] || []))
     acc.block.push(...cl(b.block))
@@ -7767,7 +7770,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const cornerFillets = {}, cornerSet = []
   for (const c of protoCornerSet) { cornerFillets[c.key] = c.fillet; cornerSet.push(c) }
   console.log(`[tileGround][①⇢LIVE] corner truth swapped to ②'s achieved arcs: ${protoCornerSet.length} corner(s); the handle rides the curb that is drawn.`)
-  const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: true })
+  const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: true, stampedWith: protoBoundaryRing })
   let asphalt = S.asphalt
   const curb = S.curb, sidewalk = S.sidewalk, block = S.block
   const highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
@@ -7893,5 +7896,5 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
+  return { protoBoundaryRing, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
 }
