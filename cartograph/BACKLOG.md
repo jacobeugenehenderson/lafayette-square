@@ -469,8 +469,10 @@ bakes). This is BRIEF-the-ground-stays-in-budget's target.
 SAME); ground runs END TO END (27 min, peak 10.4 GB; needs a solo machine, the 35% watchdog can't hold it) and refuses on ONE
 site, #39's finger, vacant|asphalt at (68, 381), the sub-lattice curb needle. RUN 4 (with the finger fix): #39 GONE;
 refuses at #40, 208 unowned on 7 tiles (136 ×100, the face-trim class at papin-street; 44 ×43; 35 ×24 at the tile-35 curb
-sliver; 15, 20, 18, 17). Ground 951 s, peak 10.1 GB; conformAndRefine 557 s is the biggest step. Mitre classifies (lawn-land
-applied) and builds the face-trim fix. Truss's sub-lattice drop is REJECTED (Plumb, measured:
+sliver; 15, 20, 18, 17). Ground 951 s, peak 10.1 GB; conformAndRefine 557 s is the biggest step. CLASSIFIED (Mitre, lawn-land applied):
+113 lawn → land (92 of them tile 136's face-trim nose, so they go back to the street with (3)); 95 still refuse: the face-trim
+nose ×8, PAINT-VS-PROFILE ×72 (tiles 44, 35, 18, 17: walk painted where the profile has none; being placed, Zob), slit ×12 (tile
+20), back edge ×3 (tile 15). HPDM lawn-land gate: 38 → 5 unowned (5 walk: back edge + one slit), held samples Δh 0. Truss's sub-lattice drop is REJECTED (Plumb, measured:
 the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). PLACED (Zob, LS tile 47): the needle is a depth-0 curb band: on a 1 mm bare
 ② edge (motorway-27), the curb level re-mints iA's vertex 1 mm off. BUILT (Plumb bc6bdf4f): offsetRingByRects#mergeGrid had merged a 1 mm bare
 edge's two ends; a vertex depth-0 on both edges now stays iA's own. LS: NO bare edge. MERGED 717d5792. One-ring merged 0da7df25. Next
