@@ -64,6 +64,12 @@ years (18 explicitly parsed), and no code reads them. Withholding LS's assessor 
 committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next: Zob's LS Inputs gap census → the
 LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
+**✅ HPDM PRESSED TO PRODUCTION 2026-10-21 22:18Z (Ward, on Jacob's word):** the Forest Park land-use fix (production's kit
+926ac3a4 + parcel-landuse only) + Ward 382f1bd (kit aff2751e). Gates T1 + md5 = staging; fresh backup at
+scratch/promote-rollback/hipointedemun-prod-2026-10-21-prepress/; live probe 14/14 desk + phone. Filed: the host record's bakedAt
+keeps the 10-11 stamp (scene.json wasn't re-stamped by the candidate bake); claims-a-production-town-plays-the-player-promote-pinned
+doesn't bundle in the main checkout ("Could not resolve suncalc"). The new ground (corners, kerb, terrain) is NOT in it.
+
 **⭐ RULED (Jacob, 2026-10-21 morning): "HPDM assessor fields is 0% priority. The app has to look good and 'work'. I doubt
 anybody will even click on cards. The map needs to DRAW and play."** ⇒ the roster/assessor items below are parked; first
 Thursday job: Ward checks production HPDM + LS as a visitor (draw, play, load). DONE (Ward, proxy render): HPDM and LS
