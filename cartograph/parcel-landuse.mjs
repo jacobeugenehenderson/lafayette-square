@@ -63,7 +63,18 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 export const UNDERIVED = 'underived'
 
 // ── St. Louis CITY — 4-digit assessor codes ─────────────────────────────────
-// Verbatim from derive.js's classifyLandUse, catch-all removed.
+// ⚠️ UNVERIFIED: no published City code table stands behind these ranges (the County has its own,
+// county-land-use-codes.csv). They were lifted from derive.js's old mapper, and the data has since
+// contradicted two of them, which are removed (2026-10-21, Boz's ruling on Truss's trace):
+//   · bare 5000 was read 'commercial'. It is a mixed bucket: churches, the Board of Education, the
+//     State of Missouri, the Zoological Park Subdistrict and ALL of Forest Park (one parcel) sit in it
+//     beside LLCs, so HPDM's whole east third painted commercial tan.
+//   · 4000–4999 was read 'recreation'. It holds Bi-State, Union Electric and the railroads (4000,
+//     4800), the Missouri Historical Society (4600) and apartments (4630, 4640): no park.
+// Both now return null, so the parcel ABSTAINS and the face reads `underived`, the rule at the top of
+// this file. The specific 51xx–59xx read coherently as trade (5300 a dollar store, 5811 eating
+// places, 5530 a fuel dealer), with strays (Washington University at 5530), so they stay commercial
+// until a City table is sourced. ▶ node checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs
 function classifyCity(code) {
   const c = Number(code)
   if (!Number.isFinite(c)) return null
@@ -72,11 +83,10 @@ function classifyCity(code) {
   if (c >= 1100 && c <= 1199) return 'residential'        // all residential types
   if (c >= 1300 && c <= 1399) return 'institutional'      // schools, churches
   if (c === 3000 || c === 3300 || c === 3900) return 'vacant-commercial'
-  if (c >= 4000 && c <= 4999) return 'recreation'         // parks, rec
-  if (c >= 5000 && c <= 5999) return 'commercial'         // commercial/retail
+  if (c >= 5001 && c <= 5999) return 'commercial'         // the specific trade codes (UNVERIFIED, above)
   if (c >= 6000 && c <= 6999) return 'institutional'      // govt, utilities
   if (c >= 7000 && c <= 7999) return 'industrial'
-  return null                                             // ⛔ no catch-all
+  return null                                             // ⛔ no catch-all: 4000–4999 and bare 5000 among it
 }
 
 /**
