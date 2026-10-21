@@ -25,10 +25,11 @@ export const ROWS = [
   { id: 'one-ring', topic: '② is ONE ring per tile, read by the bands and by the block',
     doc: { file: 'cartograph/SECTION.md', quote: 'Every strip boundary is a concentric offset of `iA`' },
     code: [{ file: TG, symbol: 'const iA = st.iaFull || []', note: 'sectionPassProtoTile strikes the bands from iaFull' },
-           { file: TG, symbol: 'iA: intersectRings(t.iA, [t.ring])', note: 'buildTileGround re-derives iA (the face trim; the circle cut follows)' }],
-    verdict: 'MISMATCH, aspiration: the bands read iaFull, the block (asphalt, inBlock, rekey) reads a re-derived iA. Measured: '
-      + 'identical on 35 of 144 LS tiles; two lines for 4,202 m, all on rim tiles. Being built (Mitre): the circle\'s crossings into iaFull',
-    probe: 'scratchpad ribbon/iafull.mjs (Zob, 2026-10-21); the build carries it into a check' },
+           { file: TG, symbol: 'const iA = intersectRings(t.iA, [t.ring]), have = new Set([...(t.iaFull || []).flat(), ...t.ring].map(keyOf))', note: 'the face trim, its crossings tracked' },
+           { file: TG, symbol: 'written into the struck contour (iaFull): ② is one ring', note: 'buildTileGround writes the trim\'s and the circle\'s crossings into iaFull (Mitre, f8891b68)' }],
+    verdict: 'AGREES (since f8891b68, merged). Measured on LS, integration + f8891b68: iA vs iaFull two lines 4,202 m → 0 m; '
+      + 'per-tile asphalt/curb doubled line 1,627.7 → 351.2 m',
+    probe: 'scratchpad ribbon/iafull.mjs, ribbon/stage.mjs (Zob, 2026-10-21)' },
   { id: 'one-line-per-depth', topic: 'a band boundary at one depth is ONE line, taken once',
     doc: { file: 'cartograph/RIBBONS.md', quote: 'The **concentric law** (the curb is *always* a concentric offset of the centerline)' },
     code: [{ file: TG, symbol: 'const LV_cw = insDL(', note: 'curb|ped' },
@@ -60,15 +61,17 @@ export const ROWS = [
     verdict: 'NO CANON CLAIM. Read in source; NOT MEASURED as a cause (the ribbon brief\'s (iii))', probe: '—' },
   { id: 'one-grid', topic: 'the kit cuts on ONE grid, land use included (Jacob, 2026-10-17)',
     doc: { file: 'docs/briefs/BRIEF-the-stamp-lands-on-the-lattice.md', quote: "The kit cuts on `src/lib/lattice.js`'s 1 mm grid everywhere, the coast and the land use included." },
-    code: [{ file: 'cartograph/derive.js', symbol: 'const SCALE = 100', note: 'layerLandEvidence cuts on 1 cm' }],
-    verdict: 'MISMATCH, aspiration (ruled, unbuilt): every land-evidence vertex is on whole centimetres (measured: LS 32,491, HPDM '
-      + '158,581); parcel corners 0–5 mm off OSM edges (HPDM 2,805, LS 900). The re-pour at SCALE 1000 is pending',
-    probe: 'scratchpad grid/welds.mjs (Zob, 2026-10-21)' },
-  { id: 'one-grid-instrument', topic: 'the lattice check is blind to the land-use grid',
+    code: [{ file: 'cartograph/derive.js', symbol: "import { CLIP_SCALE } from '../src/lib/lattice.js'", note: 'derive cuts land evidence, alleys and medians on the lattice (Truss, one-grid/derive)' }],
+    verdict: 'AGREES for the land use (one-grid/derive). Measured, HPDM scratch pours SCALE 100 vs 1000: parcel corners 1–6 mm off an '
+      + 'OSM edge 2,179 → 11; within the noding bound (≤ 0.707 mm) 426 → 2,809; streets, tiles and ① byte-identical. The COAST is not '
+      + 'yet on it (next row)',
+    probe: 'scratchpad grid/welds.mjs, grid/welds-bound.mjs (Zob, 2026-10-21)' },
+  { id: 'one-grid-instrument', topic: 'the lattice check sees a second Clipper grid anywhere',
     doc: { file: 'src/lib/lattice.js', quote: "// lattice.js — THE PARTITION'S GRID: ONE HOME. Every polygon of the ground (the ink, the curb, the bands, the land use," },
-    code: [{ file: 'checks/claims-the-lattice-has-one-home.mjs', symbol: "derive's 1 cm", note: 'its header exempts a grid at another value' }],
-    verdict: 'MISMATCH, instrument: lattice.js says the land use is cut on its grid; the check that guards it exempts derive\'s 1 cm '
-      + 'by design (read in source). Narrowing it is part of building one-grid',
+    code: [{ file: 'checks/claims-the-lattice-has-one-home.mjs', symbol: '(4) ⭐ A SECOND GRID (Jacob, 2026-10-17, ONE GRID', note: 'its rule (4): a constant or literal at another value rounded into a Clipper point' }],
+    verdict: 'MISMATCH, aspiration (ruled, unbuilt for the coast): the check now sees every second grid and is RED on the two the '
+      + 'ruling names and nobody has moved: cartograph/outer-coast.mjs (S = 100, the coast) and cartograph/bake-terrain.js (S = 100, '
+      + 'the flood outline). Measured; the derive land-use grid and one check\'s 0.01 mm grid are moved',
     probe: 'node checks/claims-the-lattice-has-one-home.mjs' },
 ]
 
