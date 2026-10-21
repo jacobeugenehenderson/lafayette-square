@@ -131,8 +131,9 @@ Thursday's (lafayette-square.com's old player, or the Ward)?
 - **LS #39 (kerb step):** 22.1 m bare on the real baseline (Truss). On the whole stack (Truss's noding + Plumb's crease
   split, polyline mitre and ownership finder, refinement off): **1.03 m**, all sub-cm. The Mississippi stripe straddle was a DEFECT (a
   verge span edge given depth 0), fixed and merged; your "confine the stripe" call is moot. Plumb's branch isn't
-  landable yet [with B1 merged: the 43 m rim-side census → 0 m, named rim 4,649 → 4,692 m (Plumb, 1aeaea6c); per-site
-  confirmation after PTown; in Zob's review]: earlier, 43 m of LS rim-side stretches were the rim brief's B1 residue (the paint's rim edge and
+  landable yet [with B1 merged: the 43 m rim-side census → 0 m; all 15 sites named rim (per-site, measured); OLDCLIP
+  reproduces the before, so B1 owns it; stripe stays in kerbGroups (filtering it manufactures 45 km of orphan road); Zob:
+  landable; lands with Truss's after the combined LS bake]: earlier, 43 m of LS rim-side stretches were the rim brief's B1 residue (the paint's rim edge and
   the rim ring rounded twice, 1–1.35 mm apart). RULED: no tolerance in the rim read; the fix is at the source (B1, Mitre).
 - **PTown census** STOPPED 09:31 to free the machine for HPDM (Kerf): ground ran 1 h 42 m on b8e7b868 without finishing
   (peak 11.26 GB, 6 memo turns, no refusal reached); record in kerf/scratch/…/census-b8e7b868/provincetown/; reruns tonight. **Huron census done** (older code): only #40, 96% on tile 6; 2.7 h of
