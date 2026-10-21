@@ -144,7 +144,10 @@ Start here. State at the restart:
     verge, and tileGround.js `mkDepth` gives a verge's span edge depth 0, so the verge reaches Mississippi's centreline (0.100 m
     from the stripe). #39's verge|stripe is a DEFECT, not a design call. RULED: a span edge takes its street's roadway depth
     (Truss builds; Zob reviews); the dead `skOffGrade || new Set()` is deleted. ❓ Jacob: r-highway-verge says 'ENTIRELY by
-    highway'; is a block closed by a surface bridge verge (94002fae's span) or a block/JR? Counts per town to come.
+    highway'; is a block closed by a surface bridge verge (94002fae's span) or a block/JR? Counted (Truss): 77 of 115
+    verge blocks are verge ONLY through the span (LS 29/42 · HPDM 30/54 · Huron 18/19). BUILT df0b7a4f (truss/verge-span-depth,
+    Zob reviews): Mississippi clean (1.716 → 0 m²); LS 96 m² verge → asphalt. HPDM Oakland mostly REMAINS (17.7 + 12.8 m²): a
+    second cause, being traced (Truss), plus a gradeSeparated:true primary appearing as a ① run.
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
