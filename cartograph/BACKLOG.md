@@ -70,12 +70,13 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   trigger (Kerf) · the verge span depth (Truss). Left: 52 "beyond" on tiles 134/55 and tile 32's 67 cm² fix-B hole. Both
   trace to ONE question: the deformer reads pre-flatten paint (`byMaterial`, your 10-11 ruling, 6be9cbaf), not the
   drawn plane. A drawn-geometry form that keeps your ruling's ownership is specified and waits on one probe (Mitre; Zob
-  reviewed), and the probe waits on Truss's plane noding getting through HPDM: it refuses at a curb pinch,
-  (323.74, 1111.476), being placed.
+  reviewed), and the probe waits on Truss's plane noding getting through HPDM: its curb pinch refusal is FIXED
+  (b0d8c9bb: a hole that touches its one outer stays its own), with the per-town gate pending.
 - **LS #39 (kerb step):** 22.1 m bare on the real baseline (Truss). On the whole stack (Truss's noding + Plumb's crease
   split, polyline mitre and ownership finder, refinement off): **1.03 m**, all sub-cm. The Mississippi stripe straddle was a DEFECT (a
   verge span edge given depth 0), fixed and merged; your "confine the stripe" call is moot. Plumb's branch isn't
-  landable yet: checks being ported, 46.5 m of rim-side stretches to place.
+  landable yet: checks being ported, and 43 m of LS rim-side stretches are B2 (the paint's rim edge and the rim ring
+  rounded twice, 1–1.35 mm apart). RULED: no tolerance in the rim read; the fix is at the source (the rim brief's B2, Mitre).
 - **PTown census** running on b8e7b868 (Kerf). **Huron census done** (older code): only #40, 96% on tile 6; 2.7 h of
   ground baking.
 - ❓ **Your calls, each with its numbers in the lines below:**
