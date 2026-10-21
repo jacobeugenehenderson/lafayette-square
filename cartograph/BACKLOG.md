@@ -73,7 +73,7 @@ the brief. Raw purchased files never go in git or anything public.
 **Triage:** the two blocks retired tonight to `cartograph/_archive/BACKLOG-final-macro-list-2026-07-16-RETIRED-2026-10-20.md` (the 07-16 macro list and the June–July NOW frontier) may hold unbuilt items; check each against the code before treating it as done or dropped.
 
 **Housekeeping:** the parked worktrees (tern-coast, tern-frame, tern-revet, meridian-browse, gantry-expwy,
-wellhead-joins, a0-deadend, classifier, hpdm-gate); unmerged branches loess/compound-ease (cd08f455, compound faces through hole subtraction; faces still go through SHARP: Huron 3, HPDM 8, JH 6) and loess/ls-scratch-pour (f39adb56, 6cd83c32, 37c3201b, d6cdabed); `ny.mjs` terms; weather fallbacks (missing
+wellhead-joins, a0-deadend, classifier, hpdm-gate; ⚠ before removing hpdm-gate, resolve what links into it: a worktree's JH `clean/ribbons.json` was a symlink into `.claude/worktrees/hpdm-gate`, per Loess); unmerged branches loess/compound-ease (cd08f455, compound faces through hole subtraction; faces still go through SHARP: Huron 3, HPDM 8, JH 6) and loess/ls-scratch-pour (f39adb56, 6cd83c32, 37c3201b, d6cdabed); `ny.mjs` terms; weather fallbacks (missing
 visibility read as clear).
 
 **JH, after its extent is set up:** pre-authoring from NYC Planimetrics at the authored rung
