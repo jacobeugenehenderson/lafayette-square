@@ -89,8 +89,9 @@ Start here. State at the restart:
     point (arc 117, run 66); next: identify the strip; if it's authored land use, the deformer's ray rule is a RULING for Jacob
     · **(3) 59 rays from beyond the rim** on tiles 134/55, where the noded rim and the painted band disagree by METRES on 29
     (Mitre next) · **(4) 27 lot-first** at tile 189: the painted curb's road edge cm inside ② (Mitre next).
-    Classes 1+2's strip, identified (Zob): **~33 unpainted HOLES between band pieces of the same street** (tiles 183, 53, 174,
-    189: a painter defect; tile 183 first) · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
+    REVISED (Zob, measured): **~81 are a ray running ALONG a partition line** (the 'holes' were the instrument sampling along it;
+    no ground is missing). bandsAlong reads one 10 µm side; on the land-use side it reads lot. Fix, being built (Kerf): read
+    both sides at ±LATTICE; the band still decides. Of the rest · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
     tangent that no leg extension covers): a FIX by SECTION §6.1 (each leg's walk runs straight on; every piece its leg's), not a
     ruling. PLACED (Mitre): sub-mm rounding. The deformer's legs are the offset's FLOAT rects; the painted band is their 1 mm rounding, so a
     vertex on the band's outer edge falls 0.01–0.51 mm outside its leg ring (74 of 74 re-resolved). Fix (B), being built: hand the
