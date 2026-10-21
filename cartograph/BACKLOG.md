@@ -71,7 +71,8 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   trace to ONE question: the deformer reads pre-flatten paint (`byMaterial`, your 10-11 ruling, 6be9cbaf), not the
   drawn plane. A drawn-geometry form that keeps your ruling's ownership is specified and waits on one probe (Mitre; Zob
   reviewed). PROBE RESULT (Mitre, HPDM): census 91 → 89, but 692 held owners move and held heights shift up to 0.75 m;
-  tile 32 closes; class 3 doesn't move (53 → 53). Not landable; ❓ Jacob, recommended against. Class 3 is B1's source fix
+  tile 32 closes; class 3 doesn't move (53 → 53). NOT YET ATTRIBUTABLE (Zob): 57 of the input's 177 slits are its own
+  un-noded overlay edges; Zob reruns with the overlay noded before any ruling. Class 3 is B1's source fix
   (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
   (b0d8c9bb: a hole that touches its one outer stays its own); per-town gate (Truss, f206543d): LS ✅ · HPDM ✅ · Huron after
   PTown. Mitre's probe is running.
@@ -91,7 +92,7 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
       "highway" (three readings)?
   (6) A hairline median (0.24–0.31 m, I-64 at Oakland): draw it as verge?
   (7) HPDM's ~4 "no street reaches" points.
-  (8) The deformer reading the drawn plane (overlays restored): measured, owners move; recommended against for now.
+  (8) The deformer reading the drawn plane (overlays restored): being re-measured (Zob); a ruling only after.
 - **REFUSAL CENSUS (Kerf; record-and-continue in a sandbox; files `.claude/worktrees/kerf/scratch/ground-budget/step7/census/`):**
   · ⭐ **HPDM TRUE LIST** (integration 1e6958f2 + the noded rim; ground only, 16 min): ONE refusal, **269 unowned ped vertices
     at EXACT positions**, the full list in `.claude/worktrees/kerf/scratch/ground-budget/step7/census-truelist/hipointedemun/
