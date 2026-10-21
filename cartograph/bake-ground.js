@@ -45,10 +45,7 @@ import { LANDSCAPE_OVERLAY_KEYS, horizonRecord } from './groundCover.mjs'   // o
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
-import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, cutCreases, splitAtCreases, withSide, polyTreeToItems } from './kerbLift.mjs'
-import { lineHeights } from './lineHeight.mjs'
-import { buildDeformer, unownedKey } from './groundDeformer.mjs'   // an unowned ped vertex is recorded at its exact position, the memo's own key
-import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
+import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, cutCreases, splitAtCreases, withSide } from './kerbLift.mjs'
 import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { curbedMinWidthOf } from './curbedMinWidthOf.mjs'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
@@ -585,7 +582,6 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
-           perpLegs: (pr.protoBandPieces || []).map(t => ({ tile: t.tile, perp: t.perp || [] })),
            // each rim tile's ring noded with its paint's own rim crossings (live): the deformer's 'beyond' (BRIEF-the-rim-is-cut-once)
            rimRings: pr.protoRimRings || [] }
 }
@@ -1407,44 +1403,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
-  // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
-  // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
-  // at each point of ② through the edge's own owner (`groundLine.heightAt(skelId, p)`); nothing is sampled onto the runs.
-  // The window is the town's (`design.json#groundLineSigmaM`), else one terrain grid step. A coast run's line is the HIGH
-  // WATER (below). A run or cap with no line (a bridge, a highway stroke's edge, the rim, a label naming no at-grade chain)
-  // carries `noLine` and is COUNTED, by reason.
-  const lineTerrain = loadSceneTerrain(scene)
-  let groundLine = null
-  if (lineTerrain && shapeArtifact?.length) {
-    const authored = Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : null
-    if (!authored && !(lineTerrain.stepM > 0)) throw new Error(`[bake-ground] ⛔ the terrain carries no grid step and the town authors no groundLineSigmaM — the line's smoothing window is unknown`)
-    const LH = lineHeights({ streets: ribbons.streets, raw: lineTerrain.getElevationRaw, sigma: authored ?? lineTerrain.stepM })
-    const why = { bridge: 0, highway: 0, rim: 0, unknown: 0 }, bridgeIds = new Set((ribbons.streets || []).filter(st => st?.gradeSeparated).map(st => st.skelId ?? st.name))
-    const noLine = (id) => id === '__highway__' ? 'highway' : id === '__boundary__' ? 'rim' : bridgeIds.has(id) ? 'bridge' : 'unknown'
-    let onLine = 0, coast = 0, capsOn = 0
-    // ⭐ THE COAST'S LINE IS THE HIGH WATER (Jacob 2026-10-11, brief §5 "The shore"): a coast run's height IS the town's
-    // high level there (the tide datum where tidal, the authored lake level on a lake; `waterLevel.mjs`), so the land
-    // meets the water at the line and the gusset runs from it down to low water. ⛔ A drawn coast with no water record throws.
-    let W = null
-    for (const t of shapeArtifact) for (const run of t?.runs || []) {
-      if (run.skelId === '__water__') {
-        if (!W) { if (!lineTerrain.water) throw new Error(`[bake-ground] ⛔ ${scene} draws a coast but its terrain carries no water record — the coast line's height (the high water) is unknown. ▶ re-bake the terrain`); W = waterLevels(lineTerrain.water) }
-        coast++; continue
-      }
-      if (run.poly?.length && LH.heightAt(run.skelId, run.poly[0]) != null) { onLine++; continue }
-      // the reason travels with the run: the deformer gives a highway or bridge run the terrain under it (its rule for that
-      // class), and refuses the rest
-      run.noLine = noLine(run.skelId); why[run.noLine]++
-    }
-    // ⭐ A DEAD-END CAP'S LINE IS ITS OWN CHAIN'S (the cap is an end coupler): a cap whose chain has no line carries the
-    // reason, as a run does
-    for (const t of shapeArtifact) for (const c of t?.caps || []) { if (LH.heightAt(c.skelId, t.ring[0]) == null) c.noLine = noLine(c.skelId); else capsOn++ }
-    groundLine = { step: LH.step, heightAt: (id, p) => id === '__water__' ? W.highAt(p[0], p[1]) : LH.heightAt(id, p) }
-    console.log(`  [line] the height along ①: σ ${LH.sigma.toFixed(2)} m (${authored ? 'design.json groundLineSigmaM' : 'one terrain grid step'}) · ${LH.chains} at-grade chain(s), ${LH.stations} station(s) every ${LH.step.toFixed(2)} m · ${onLine} run(s) on a line · ${coast} coast run(s) at the high water (${W ? W.highName : '—'}) · no line: ${why.bridge} bridge · ${why.highway} highway edge · ${why.rim} rim · ${why.unknown} unknown · ${capsOn} dead-end cap(s) on their chain's line`)
-    if (why.unknown) console.warn(`  [line] ⛔ ${why.unknown} ① run(s) whose label names no at-grade chain — they carry no line height`)
-  }
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -1592,33 +1552,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // third bin section, after the indices; only groups whose surface asks for it carry one.
   let fieldByteOffset = 0, edgeByteOffset = 0
   const fieldChunks = [], edgeChunks = []
-  // ⭐ THE DRAWN TERRAIN PART, per vertex (the deformer: `terrainPartAt`), and its gradient pair (∂D/∂x, ∂D/∂z, ∂y/∂x,
-  // ∂y/∂z) — fifth and sixth bin sections. The runtime lifts by D × uExag + y and lights by normalize(−(e∇D + ∇y), 1),
-  // exact at every exaggeration. A town with no terrain writes neither.
-  let rawByteOffset = 0, gradByteOffset = 0
-  const rawChunks = [], gradChunks = []
-  const deformTally = { verts: 0, terrainOnly: 0, unowned: new Map() }
-  // per-vertex D, and the area-weighted mean of the incident triangles' gradients of D and of the mesh's own y
-  const terrainPart = (P, I) => {
-    const nv = P.length / 3, D = new Float32Array(nv), G = new Float32Array(nv * 4), W = new Float32Array(nv)
-    for (let v = 0; v < nv; v++) { const h = deform.heightAt(P[v * 3], P[v * 3 + 2])
-      if (h == null) { D[v] = deformTerrain.getElevationRaw(P[v * 3], P[v * 3 + 2])
-        // ⛔ a ped vertex no painted band owns is its own class: collected here, and the bake THROWS on it below
-        const ti = deform.unownedIn(P[v * 3], P[v * 3 + 2])
-        if (ti != null) deformTally.unowned.set(unownedKey(P[v * 3], P[v * 3 + 2]), { x: P[v * 3], z: P[v * 3 + 2], tile: ti })
-        else deformTally.terrainOnly++ } else D[v] = h }
-    deformTally.verts += nv
-    for (let t = 0; t < I.length; t += 3) {
-      const a = I[t], b = I[t + 1], c = I[t + 2]
-      const e1x = P[b * 3] - P[a * 3], e1z = P[b * 3 + 2] - P[a * 3 + 2], e2x = P[c * 3] - P[a * 3], e2z = P[c * 3 + 2] - P[a * 3 + 2]
-      const det = e1x * e2z - e2x * e1z, area = Math.abs(det) / 2; if (!(area > 0)) continue
-      const g = (h0, h1, h2) => { const d1 = h1 - h0, d2 = h2 - h0; return [(d1 * e2z - d2 * e1z) / det, (e1x * d2 - e2x * d1) / det] }
-      const gd = g(D[a], D[b], D[c]), gy = g(P[a * 3 + 1], P[b * 3 + 1], P[c * 3 + 1])
-      for (const v of [a, b, c]) { G[v * 4] += gd[0] * area; G[v * 4 + 1] += gd[1] * area; G[v * 4 + 2] += gy[0] * area; G[v * 4 + 3] += gy[1] * area; W[v] += area }
-    }
-    for (let v = 0; v < nv; v++) if (W[v] > 0) for (let k = 0; k < 4; k++) G[v * 4 + k] /= W[v]
-    return { D, G }
-  }
   const surfaceTable = resolveClassTable(design?.surfaces?.classes)
 
   // Polygon groups (large land-use blocks + leisure/natural overlays) get
@@ -1719,54 +1652,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])
   if (kerbH && curbCutRamps.length && !(kerb.rampSlope > 0 && kerb.flareSlope > 0))
     throw new Error(`[bake-ground] ⛔ the kerb stands ${kerbH} m and ${curbCutRamps.length} curb cut(s) drop it, but the town's kerb norm gives no rampSlope/flareSlope — the jurisdiction's values, never the kit's (norms.json → kerb).`)
-  // ⭐⭐ THE DEFORMER (`groundDeformer.mjs`, BRIEF-the-ground-knows-its-height §5): the ground's TERRAIN height near the
-  // streets is decided HERE, before the mesh — read off the line (`groundLine`, asked at each point of ②), swept across
-  // the DRAWN bands as one profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
-  // eased into the lot over B) — and the mesh is refined against it and carries it per vertex. Nothing is cut after.
-  // B is the town's (`design.json#groundBlendM`), else one terrain grid step (Boz, 2026-10-11).
-  let deform = null, deformTerrain = null
-  if (hasTerrain && shapeArtifact?.length) {
-    deformTerrain = loadSceneTerrain(scene)
-    const walkN = resolveWalkNorm(scene, null), lawnN = resolveLawnNorm(scene, null)
-    const blendM = Number.isFinite(design.groundBlendM) && design.groundBlendM > 0 ? design.groundBlendM : deformTerrain.stepM
-    const _td = Date.now()
-    // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
-    // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
-    const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine, legs: perpLegs, rims: rimRings,
-      bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
-      stencil: stencil.clipPolygon,
-      raw: deformTerrain.getElevationRaw,
-      // a town naming no walk limit keeps its walk exactly level (the limit only PERMITS a fall); no lawn limit = the lawn takes it all
-      // σ: the line's own window (lineHeight.mjs), so the absorption is smoothed along ② exactly as H is along the line
-      limits: { walkMax: walkN.crossSlopeMax ?? 0, lawnMax: lawnN.slopeMax ?? null, exag: deformTerrain.exag, blend: blendM,
-                sigma: Number.isFinite(design.groundLineSigmaM) && design.groundLineSigmaM > 0 ? design.groundLineSigmaM : deformTerrain.stepM } })
-    // ⭐ THE EASE'S END IS A LINE OF THE PARTITION, never cut in afterwards: every lot within B of the ped band is split
-    // there (same group, one more boundary), so the linear ease has a vertex on both of its ends.
-    const pedKeys = ['mat:curb', 'mat:curbCut', 'mat:sidewalk', ...[...flattened.keys()].filter(k => k.startsWith('mat:treelawn'))]
-    const ped = pedKeys.flatMap(k => ringsOf(flattened.get(k)))
-    const S = CLIP_SCALE, co = new clipperLib.ClipperOffset()
-    co.AddPaths(ped.map(_ringToPath), clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon)
-    const grown = new clipperLib.Paths(); co.Execute(grown, blendM * S)
-    const zone = new clipperLib.Paths(), cz = new clipperLib.Clipper()
-    cz.AddPaths(grown, clipperLib.PolyType.ptSubject, true); cz.AddPaths(ped.map(_ringToPath), clipperLib.PolyType.ptClip, true)
-    cz.Execute(clipperLib.ClipType.ctDifference, zone, clipperLib.PolyFillType.pftNonZero, clipperLib.PolyFillType.pftNonZero)
-    let split = 0
-    for (const k of [...flattened.keys()].filter(k => k.startsWith('face:'))) {
-      const rings = ringsOf(flattened.get(k)); if (!rings.length) continue
-      const run = (type) => { const c = new clipperLib.Clipper(); c.AddPaths(rings.map(_ringToPath), clipperLib.PolyType.ptSubject, true); c.AddPaths(zone, clipperLib.PolyType.ptClip, true)
-        const t = new clipperLib.PolyTree(); c.Execute(type, t, clipperLib.PolyFillType.pftNonZero, clipperLib.PolyFillType.pftNonZero); return polyTreeToItems(t) }
-      const inside = run(clipperLib.ClipType.ctIntersection), outside = run(clipperLib.ClipType.ctDifference)
-      if (inside.length) { flattened.set(k, [...outside, ...inside]); split++ }
-    }
-    stepMs.deform = Date.now() - _td
-    // the time FIRST: this line runs long, and a log cut at its width must not lose it
-    console.log(`  [deform] ${(stepMs.deform / 1000).toFixed(1)}s · the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end`)
-  }
-  // the plane, noded after its last re-clip (the flatten's, the ease split's) and cut at its pinches below the lattice
+  // the plane, noded after its last re-clip (the flatten's) and cut at its pinches below the lattice
   // ⭐ the block rings as every reader below sees them: noded with the paint (`nodeThePlane`). The rim rings take part too
-  // (their vertices enter the paint); their one reader in the bake, the deformer above, read them before this, on the same
-  // lines (noding only inserts)
+  // (their vertices enter the paint); the kerb plan reads them, noded
   const { blockRings: nodedBlockRings, rimRings: nodedRimRings } = timed('nodeThePlane', () => nodeThePlane(flattened, { blockRings, rimRings }))
   // ⭐ ONE source for a ground group's polygons, read by the kerb plan and by `planGroup`: the flattened paint, else the
   // group as drawn. null when the layer is hidden or empty.
@@ -1796,14 +1684,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   if (creaseCut) console.log(`  [kerb] creases cut once through the partition: ${creaseCut.inserted} points in ${creaseCut.rounds} round(s)`)
   const kerbCellPaths = creaseCut?.cells || []
   const creaseItems = new Map((creaseCut?.groups || []).map(g => [g.id, g.items]))
-  const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
-  // ⭐ THE STRIPE FOLLOWS ITS SWEEP: `claims-the-stripe-lies-on-its-road` gates each stripe against a lift of millimetres at
-  // its edge midpoints, so it refines against D as the ped bands do (a 29–60 m stripe edge chorded the line, HPDM, db0bebb6's
-  // slab). The carriageway itself (asphalt, highway) takes the lots' policy (Jacob, 2026-10-20: BRIEF-the-ground-stays-in-budget
-  // §3 step 7b); conformity welds the fine stripe and curb beside it with closures. ⚠️ A road-derived tolerance is unruled.
-  const ROAD_KEYS = (key) => key === 'stripe'
-  // the drawn terrain part at (x, z): the deformer where it reaches, else the terrain itself
-  const terrainPartAt = deform ? (x, z) => deform.heightAt(x, z) ?? deformTerrain.getElevationRaw(x, z) : null
   const _planMemo = new Map()
   const planGroup = (kind, key) => {
     const mk = kind + ':' + key
@@ -1846,11 +1726,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       // coarse cap it used to emit here bred Provincetown's 10.3M slivers (Altadena, 2026-07-14, was the
       // first no-terrain blow-up — the fine mesh then; the cap now).
       refinePolicy = refineMode === 'adaptive' && refineSampler
-        ? { mode: 'adaptive', sampler: terrainPartAt ? (x, z) => terrainPartAt(x, z) * deformTerrain.exag : refineSampler,
-            // ⭐ the ped bands carry a walk that must stay level ACROSS: they refine to the drawing's half of the walk limit
-            // (`groundDeformer.mjs` WALK_SHARE), down to the deformer's own station spacing — never the lots' 0.5 m / 6 m
-            ...((PED_KEYS(key) || ROAD_KEYS(key)) && deform?.refineTol ? { tol: deform.refineTol * deformTerrain.exag, minEdge: deform.stationM }
-                : { tol: key === 'bed' || key === 'shore' ? bedTol : refineTol, minEdge: refineMinEdge }),
+        ? { mode: 'adaptive', sampler: refineSampler,
+            // ⭐ ONE POLICY AGAINST THE ONE FIELD (BRIEF-the-ground-stands-on-one-field, Jacob 2026-10-21): every draped group —
+            // the lots, the carriageway, the ped bands and the stripe — refines against the town's height field to the lots'
+            // tolerance (GROUND_REFINE_TOL_M / --refine-tol=). The bands' mm-scale refinement against the deformer is retired with it.
+            tol: key === 'bed' || key === 'shore' ? bedTol : refineTol, minEdge: refineMinEdge,
             maxEdge: refineMaxEdge, band: tideBand }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
     } else if (isContourRibbon) {
@@ -2044,7 +1924,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const posOut = perField ? perField.positions : positions
     const idxOut = perField ? perField.indices : indices
     const isWater = key === 'water' || key.startsWith('water:')
-    const tp = terrainPartAt && !isWater ? terrainPart(posOut, idxOut) : null
 
     // Color resolution: per-Look design.json wins, then the canonical
     // Designer palette (DEFAULT_LAYER_COLORS / DEFAULT_LU_COLORS), then
@@ -2074,7 +1953,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       indexByteOffset: idxByteOffset,
       // Float32 field index per vertex (third bin section) + each field's axis: bearing (rad,
       // world XZ, along the rows), centre, half-extents along/across the rows (m), area (m²).
-      ...(tp ? { rawByteOffset, gradByteOffset } : {}),
       ...(perField ? { fieldByteOffset, fieldEdgeByteOffset: edgeByteOffset, fields: perField.fields.map(f => ({
         bearing: +f.bearing.toFixed(5), cx: +f.cx.toFixed(2), cz: +f.cz.toFixed(2),
         halfLen: +f.halfLen.toFixed(2), halfWid: +f.halfWid.toFixed(2), areaM2: f.areaM2 })) } : {}),
@@ -2084,7 +1962,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     indexChunks.push(idxOut)
     posByteOffset += posOut.byteLength
     idxByteOffset += idxOut.byteLength
-    if (tp) { rawChunks.push(tp.D); rawByteOffset += tp.D.byteLength; gradChunks.push(tp.G); gradByteOffset += tp.G.byteLength }
     if (perField) {
       fieldChunks.push(perField.fieldOfVertex); fieldByteOffset += perField.fieldOfVertex.byteLength
       edgeChunks.push(perField.edgeOfVertex); edgeByteOffset += perField.edgeOfVertex.byteLength
@@ -2096,11 +1973,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // the renderer it is a wall, not ground: ⚠️ BakedGround does not read it yet (step 5 pieces 4–5, after Strobe's
   // shader work lands) — until then it would be lit like ground. Coloured as the curb it faces.
   if (kerbRiser?.indices.length) {
-    const rtp = terrainPartAt ? terrainPart(kerbRiser.positions, kerbRiser.indices) : null
     groups.push({ kind: 'mat', id: 'kerbFace', color: colorOf('mat', 'curb'), renderOrder: renderOrder++, polygonOffsetUnits: -renderOrder,
       partition: false, vertical: true, vertexCount: kerbRiser.positions.length / 3, vertexByteOffset: posByteOffset,
-      indexCount: kerbRiser.indices.length, indexByteOffset: idxByteOffset, ...(rtp ? { rawByteOffset, gradByteOffset } : {}) })
-    if (rtp) { rawChunks.push(rtp.D); rawByteOffset += rtp.D.byteLength; gradChunks.push(rtp.G); gradByteOffset += rtp.G.byteLength }
+      indexCount: kerbRiser.indices.length, indexByteOffset: idxByteOffset })
     positionChunks.push(kerbRiser.positions); indexChunks.push(kerbRiser.indices)
     posByteOffset += kerbRiser.positions.byteLength; idxByteOffset += kerbRiser.indices.byteLength
   }
@@ -2117,7 +1992,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // positions section, then offsets within the indices section).
   const totalPosBytes = posByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset + rawByteOffset + gradByteOffset)
+  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -2145,28 +2020,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }
-  // Fifth and sixth sections: the drawn terrain part per vertex, then its gradient pair (4 floats per vertex).
-  const rawSectionStart = edgeSectionStart + edgeByteOffset
-  for (const g of groups) if (g.rawByteOffset != null) g.rawByteOffset += rawSectionStart
-  for (const c of rawChunks) { buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off); off += c.byteLength }
-  const gradSectionStart = rawSectionStart + rawByteOffset
-  for (const g of groups) if (g.gradByteOffset != null) g.gradByteOffset += gradSectionStart
-  for (const c of gradChunks) { buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off); off += c.byteLength }
-  // ⛔⛔ NO FALLBACK (Boz, 2026-10-11): a walk no painted band owns would be drawn at the terrain and look like a
-  // success. The bake refuses, and names every point — town, coordinate, tile — so the orphans are the work.
-  // a refusal's list never sits beside a good slab: the uploader carries every file of a look dir (Zob, 2026-10-21)
-  const unownedPath = join(outDir, 'ground.unowned.json')
-  if (!deformTally.unowned.size && existsSync(unownedPath)) { rmSync(unownedPath); console.log(`  [deform] removed ${unownedPath}: this bake owns every ped vertex`) }
-  if (deformTally.unowned.size) {
-    const pts = [...deformTally.unowned.values()]
-    writeIfChanged(unownedPath, JSON.stringify({ scene, count: pts.length, counts: 'distinct exact positions', points: pts }))
-    throw new Error(`[bake-ground] ⛔ ${scene}: ${pts.length} ped vertex(es) lie in a drawn band that NO painted band owns `
-      + `(the band decides, never the nearer line — groundDeformer.mjs). Every one, exact: ${unownedPath}. First: ${pts.slice(0, 5).map(p => `(${p.x}, ${p.z}) tile ${p.tile}`).join(' · ')}`) }
-  if (deform?.stats.bothSidesSplit) console.log(`  [deform] ⚠️ ${deform.stats.bothSidesSplit} seam point(s) held by two owners whose heights differ, up to ${(deform.stats.bothSidesMaxDH * 100).toFixed(1)} cm: each takes their mean, every one listed in ground.json deform.splits`)
-  // the rim path of a perpendicular leg (groundDeformer.mjs legsAtRim): a point it holds is a live site the rows have never seen
-  if (deform) console.log(`  [deform] ${deform.stats.byLegAtRim ? '⚠️ ' : ''}perpendicular legs whose faces reach the rim: ${deform.stats.legsAtRim} · point(s) they hold: ${deform.stats.byLegAtRim}${deform.stats.byLegAtRim ? ' — the leg meets the rim where no ray reaches: a live site for a rim row (checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs)' : ''}`)
-  if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile and the ink, or deeper than the bands + ease) draw the terrain itself · the road swept from ① to ② at ${deform.stats.road} point(s), the owners' blend at ${deform.stats.roadBlended} · the ink at ${deform.stats.ink} (${deform.stats.inkCrossing} at a crossing, ${deform.stats.inkOnGrid} on the grid between a tile and the ink) · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
 
+  // ⛔ ground.unowned.json is RETIRED with the deformer (BRIEF-the-ground-stands-on-one-field): one left by an older bake is
+  // removed, because the uploader carries every file of a look dir
+  { const stale = join(outDir, 'ground.unowned.json'); if (existsSync(stale)) { rmSync(stale); console.log(`  [bake-ground] removed the retired ${stale}`) } }
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
   // BakedGround's UV2 stay concentric with face/street fades. The half-extent must
   // ENCLOSE the silhouette: both consumers map texel→world THROUGH this bbox, so a
@@ -2283,14 +2140,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     ...(groundShape ? { groundShape } : {}),
     // band rings that cross themselves on the grid (bandSelfCrossings): counted, with every site
     selfCrossing,
-    // the deformer's ownership disclosure, read by claims-the-walk-is-level-across: a written slab carries 0 (the bake throws
-    // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
-    ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand,
-      // a memo that turned (groundDeformer.mjs V8_MAP_MAX_ENTRIES) recomputes, so byBand counts resolves there: said, never silent
-      ...(deform.stats.memoTurns ? { memoTurns: deform.stats.memoTurns, counts: 'resolves' } : {}),
-      // a seam point two owners both hold, whose heights differ: every one, exact, with its owners and spread (groundDeformer.mjs
-      // the both-sides read; the point takes their mean). Every point the deformer resolved, vertex or conformity sample
-      bothSides: deform.stats.byBothSides, splits: deform.splits(), legsAtRim: deform.stats.legsAtRim, byLegAtRim: deform.stats.byLegAtRim } } : {}),
     // the paint stack's rings narrower than the lattice's rounding, per group, whose role is Clipper's winding (flattenPaintStack);
     // read and printed by claims-the-ground-is-painted-once beside the residue it cannot sample; and the vertices the noding
     // inserted where two groups met without sharing one, per group pair, into the stack and into the plane after its last

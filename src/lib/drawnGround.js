@@ -1,34 +1,25 @@
-// drawnGround.js — THE DRAWN GROUND'S HEIGHT AT (x, z): ONE HOME (Boz, 2026-10-11; BRIEF-the-ground-knows-its-height).
+// drawnGround.js — THE DRAWN GROUND'S HEIGHT AT (x, z): ONE HOME (Boz, 2026-10-11; one field, 2026-10-21).
 //
-// The ground the slab renders is `aRaw × uExag + y` per vertex (terrainShader.js `baked`): aRaw the bake's terrain part
-// (`groundDeformer.mjs`), y the mesh's own kerb part. Anything that must sit ON that ground — a tree, a lamp, a
-// building at bake time; a mover, the user's dot at runtime — reads it HERE, barycentric over the triangle of the
-// top-most group at that point. ⛔ Never a second copy of this function: the bake's anchors (`cartograph/groundSampler.js`)
+// The ground the slab renders is `field × uExag + y` per vertex (BRIEF-the-ground-stands-on-one-field): the town's one
+// height field sampled at each vertex (terrainShader.js `_terrainRaw`, the CPU sampler's own bilinear), and y the mesh's
+// own kerb part; the raster interpolates both linearly across each triangle. Anything that must sit ON that ground — a
+// tree, a lamp, a building at bake time; a mover, the user's dot at runtime — reads it HERE, barycentric over the
+// triangle of the top-most group at that point, so it reads what is DRAWN (the field at the triangle's corners), not
+// the field at the point. ⛔ Never a second copy of this function: the bake's anchors (`cartograph/groundSampler.js`)
 // and the runtime import this one, so the two cannot drift.
-// ⭐ VIEWS, NOT COPIES: positions, indices and aRaw are read as typed-array views on the bin the caller already holds;
-//   the only new memory is the triangle grid (two Int32Arrays). The old sampler copied 13 floats per triangle into a JS
-//   array (~100 MB at HPDM's 1.9M triangles).
-// ⚠️ THE MIGRATION PATH: a group whose bake predates the deformer carries no aRaw; its terrain part is the field at each
-//   vertex (`rawAt`), which is exactly what the runtime draws for it (the texture). Said once per call, by the caller,
-//   from `path` — and deleted once every slab carries the sections.
+// ⭐ VIEWS, NOT COPIES: positions and indices are read as typed-array views on the bin the caller already holds, and the
+//   field is read at a triangle's three corners per query; the only new memory is the triangle grid (two Int32Arrays).
 
 /** @param manifest ground.json ({ groups, bbox }) · @param bin ground.bin as an ArrayBuffer
- *  @param opts.groups (g) → whether this group is sampled (default: every group) · opts.rawAt (x, z) → the field, for a
- *  group with no aRaw (required if any sampled group lacks one) · opts.cell grid cell in metres (default 8)
- *  @returns { partsAt(x, z) → { raw, y, group } | null, heightAt(x, z, exag) → number | null, triCount, path } */
-export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawAt = null, cell = 8 } = {}) {
+ *  @param opts.rawAt (x, z) → the town's height field, raw (required) · opts.groups (g) → whether this group is sampled
+ *  (default: every group) · opts.cell grid cell in metres (default 8)
+ *  @returns { partsAt(x, z) → { raw, y, group } | null, heightAt(x, z, exag) → number | null, triCount } */
+export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawAt, cell = 8 } = {}) {
+  if (typeof rawAt !== 'function') throw new Error('drawnGround: no height field given (opts.rawAt) — the drawn ground is the field plus the mesh\'s own y')
   const G = []
-  let baked = 0, field = 0
   for (const g of manifest.groups) {
     if (!pick(g)) continue
-    const P = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(bin, g.indexByteOffset, g.indexCount)
-    let R
-    if (g.rawByteOffset != null) { R = new Float32Array(bin, g.rawByteOffset, g.vertexCount); baked++ }
-    else {
-      if (!rawAt) throw new Error(`drawnGround: group ${g.id} carries no baked terrain part and no field was given to read it from`)
-      R = new Float32Array(g.vertexCount); for (let v = 0; v < g.vertexCount; v++) R[v] = rawAt(P[v * 3], P[v * 3 + 2]); field++
-    }
-    G.push({ g, P, I, R, ro: g.renderOrder })
+    G.push({ g, P: new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3), I: new Uint32Array(bin, g.indexByteOffset, g.indexCount), ro: g.renderOrder })
   }
   const minX = manifest.bbox.min[0], minZ = manifest.bbox.min[2], maxX = manifest.bbox.max[0], maxZ = manifest.bbox.max[2]
   const nx = Math.max(1, Math.ceil((maxX - minX) / cell)), nz = Math.max(1, Math.ceil((maxZ - minZ) / cell))
@@ -48,7 +39,7 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
 
   // barycentric at (px, pz) in triangle t of group gi, or null outside it (the old sampler's own math and tolerance)
   function sample(gi, t, px, pz) {
-    const { P, I, R } = G[gi], a = I[t], b = I[t + 1], c = I[t + 2]
+    const { P, I } = G[gi], a = I[t], b = I[t + 1], c = I[t + 2]
     const ax = P[a * 3], az = P[a * 3 + 2], bx = P[b * 3], bz = P[b * 3 + 2], cxx = P[c * 3], czz = P[c * 3 + 2]
     const v0x = cxx - ax, v0z = czz - az, v1x = bx - ax, v1z = bz - az, v2x = px - ax, v2z = pz - az
     const d00 = v0x * v0x + v0z * v0z, d01 = v0x * v1x + v0z * v1z, d11 = v1x * v1x + v1z * v1z
@@ -58,7 +49,7 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
     const wc = (d11 * d20 - d01 * d21) / denom, wb = (d00 * d21 - d01 * d20) / denom, wa = 1 - wc - wb
     const EPS = 1e-4
     if (wa < -EPS || wb < -EPS || wc < -EPS) return null
-    return { raw: R[a] * wa + R[b] * wb + R[c] * wc, y: P[a * 3 + 1] * wa + P[b * 3 + 1] * wb + P[c * 3 + 1] * wc }
+    return { raw: rawAt(ax, az) * wa + rawAt(bx, bz) * wb + rawAt(cxx, czz) * wc, y: P[a * 3 + 1] * wa + P[b * 3 + 1] * wb + P[c * 3 + 1] * wc }
   }
   /** The drawn ground at (x, z): the top-most group's triangle → { raw, y, group }, or null off the mesh. */
   function partsAt(x, z) {
@@ -73,6 +64,5 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
     return best && { ...best, group: bestG }
   }
   const heightAt = (x, z, exag) => { const p = partsAt(x, z); return p ? p.raw * exag + p.y : null }
-  const path = field === 0 ? 'baked' : baked === 0 ? 'field' : 'mixed'
-  return { partsAt, heightAt, triCount, path, groupsBaked: baked, groupsField: field }
+  return { partsAt, heightAt, triCount }
 }

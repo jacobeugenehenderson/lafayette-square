@@ -19,18 +19,18 @@
 // `raw × uExag + y`. `groundAt(x, z)` returns both; `y` is 0 on a flat town and h on a raised block.
 
 // ⭐ ONE HOME (2026-10-11): the function itself lives in `src/lib/drawnGround.js`, which the runtime imports too, so the
-// bake's anchors and the runtime's movers cannot read two different grounds. This file is the bake's thin wrapper: the
-// same API it always had, plus the migration path said aloud (a slab baked before the deformer is read off the field).
+// bake's anchors and the runtime's movers cannot read two different grounds. This file is the bake's thin wrapper, with
+// the same API it always had. The terrain part is the town's one height field at the drawn triangle's corners
+// (BRIEF-the-ground-stands-on-one-field, 2026-10-21).
 
 import { makeDrawnGround } from '../src/lib/drawnGround.js'
 
 // groundJson  — parsed ground.json manifest (groups + bbox)
 // groundAB    — ground.bin as an ArrayBuffer
-// elevationSampler — from terrainCommon.makeElevationSampler (getElevationRaw): the field, for a group with no aRaw
+// elevationSampler — from terrainCommon.makeElevationSampler (getElevationRaw): the town's height field
 export function makeGroundSampler(groundJson, groundAB, elevationSampler) {
   const getRaw = elevationSampler.getElevationRaw
   const D = makeDrawnGround(groundJson, groundAB, { rawAt: getRaw })
-  if (D.path !== 'baked') console.warn(`[groundSampler] ⛔ ${D.groupsField} ground group(s) carry no baked terrain part — anchored on the FIELD at their vertices (the slab predates the ground deformer; the migration path)`)
   // The drawn ground at (x,z): the top-most group's triangle wins → { raw, y }. If the point is off the mesh, the smooth
   // field with y 0 so a caller never NaNs — and `offMesh` says so (a disc-rim object, not a seated one).
   function groundAt(x, z) {

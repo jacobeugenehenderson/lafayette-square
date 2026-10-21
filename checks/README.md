@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 91. Never in a default run.
+## ⛔ live — 90. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -85,7 +85,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of src/preview/heroAnim.js — read, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports package(s) vite — not read from source |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known-local command |
-| `checks/claims-the-road-is-swept-from-its-line-to-its-curb.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-sun-dims-with-the-weather-now.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-the-terrain-is-the-mean-of-its-lidar.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() |
@@ -119,7 +118,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 30. `npm run test:all`, never CI.
+## local-effect — 28. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -141,9 +140,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | label.mjs — DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
 | `checks/claims-the-built-ground-has-no-needles.mjs` | needles.mjs — A CURB, A WALK OR A LAWN NEVER COMES TO A SHARP POINT. |
-| `checks/claims-the-ground-meets-its-terrain.mjs` | terrain.mjs — DOES THE DRAWN GROUND'S TERRAIN PART STAY ON ITS TERRAIN, WITH NO WALLS? |
 | `checks/claims-the-ground-stays-in-budget.mjs` | "DOES THIS GROUND BAKE FIT UNDER ITS TOWN'S SERVED SLAB SIZE AND SERVED GROUND-BAKE TIME?" |
-| `checks/claims-the-line-is-continuous.mjs` | continuous.mjs — THE LINE'S HEIGHT IS A CONTINUOUS FUNCTION OF THE POINT ASKED. |
 | `checks/claims-the-paint-stack-flattens.mjs` | flattens.mjs — DOES EVERY TOWN'S PAINT STACK PRESS DOWN WITHOUT A REFUSAL? |
 | `checks/claims-the-road-lies-on-the-lattice.mjs` | lattice.mjs — EVERY ROAD VERTEX IN THE DISC LIES IN A TILE OR AN INK PIECE (`roadOffTheLattice`). |
 | `checks/claims-the-road-meets-itself-across-its-centreline.mjs` | centreline.mjs — DOES THE DRAWN ROAD MEET ITSELF WHERE ITS TWO HALVES READ |
@@ -156,13 +153,12 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 321. This is `npm test`.
+## safe — 317. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
 | `checks/claims-a-bake-never-uploads.mjs` | a bake ends on disk; Publish is the one gesture that uploads to staging. |
 | `checks/claims-a-bake-reads-design-through-one-reader.mjs` | "DOES EVERY BAKE READ ITS DESIGN THROUGH THE ONE READER — AND DOES THAT READER REFUSE?" |
-| `checks/claims-a-band-is-the-pieces-that-hold-it.mjs` | it.mjs — THE GROUND DEFORMER READS A POINT AS IN A CLASS (walk · lawn · curb) |
 | `checks/claims-a-bare-edge-paints-no-curb-sliver.mjs` | CLAIM — A BARE EDGE PAINTS NO CURB. An edge whose curb depth is 0 (a highway's, a shore's, a verge's) contributes no curb |
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-cap-carries-one-section.mjs` | section.mjs — DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |
@@ -289,7 +285,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-frontage-covers-the-block.mjs` | ⭐⭐⭐ CAN ONE FRONTAGE OWN THREE SIDES OF A BLOCK? On some blocks it does, and that is the |
 | `checks/claims-gas-schema.mjs` | The GAS backend's real shape, READ FROM SOURCE — never restated. |
 | `checks/claims-ground-cover-beats-jurisdiction.mjs` | jurisdiction.mjs |
-| `checks/claims-ground-normals-come-from-the-terrain.mjs` | terrain.mjs — IS THE GROUND LIT BY THE HILL IT IS DRAPED ON? |
+| `checks/claims-ground-normals-come-from-the-terrain.mjs` | terrain.mjs — IS THE GROUND LIT BY THE HILL IT IS DRAPED ON, AND DOES EVERY |
 | `checks/claims-ground-refinement-does-not-breed-slivers.mjs` | CLAIM — REFINEMENT DOES NOT BREED SLIVERS PAST WHAT A GROUP'S OWN AREA CAN NEED (F2/F3, 2026-09-24). |
 | `checks/claims-handle-rides-its-arc.mjs` | ── DOES THE AUTHORING HANDLE SIT ON THE ARC IT OWNS? ──────────────────────── |
 | `checks/claims-hero-cards-write-their-depth.mjs` | depth.mjs — DO HERO CARDS CARRY A DEPTH PAGE FROM CAPTURE TO SHADER, SO CROWNS MEET AS VOLUMES? |
@@ -418,11 +414,9 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-fade-tracks-the-active-disc.mjs` | disc.mjs — WHOSE CIRCLE IS THE MAP FADING OVER? |
 | `checks/claims-the-ground-covers-every-block.mjs` | CLAIM — THE GROUND COVERS EVERY BLOCK: nothing inside a block is painted by NOBODY. |
 | `checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs` | junctions |
-| `checks/claims-the-ground-height-is-a-function-of-the-point.mjs` | point.mjs — THE DEFORMER'S ANSWER AT (x, z) DEPENDS ON (x, z) ALONE, never |
 | `checks/claims-the-ground-is-painted-once.mjs` | once.mjs — IS EVERY POINT OF THE GROUND PAINTED BY EXACTLY ONE GROUP? |
 | `checks/claims-the-ground-tiles-without-a-gap.mjs` | gap.mjs — DOES THE DRAWN GROUND TILE THE DISC, WITH NO SEAM LEFT OPEN? |
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | trees.mjs — CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
-| `checks/claims-the-height-code-owns-what-is-drawn.mjs` | drawn.mjs — THE DEFORMER GIVES NO HEIGHT IT DOES NOT OWN, AND REFUSES WHAT THE DRAWING |
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | cover.mjs — DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | wood.mjs |
 | `checks/claims-the-ink-is-held-by-its-owners.mjs` | owners.mjs — ① (THE 2ε STRIP BETWEEN TILES) IS COVERED BY OWNED PIECES, AND EACH NAMES WHO IT IS. |
@@ -443,7 +437,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |
 | `checks/claims-the-publish-panel-reports-the-address-it-shipped.mjs` | no site URL is a module constant. |
 | `checks/claims-the-ramp-has-room.mjs` | ⭐⭐⭐ THE RAMP NEEDS SOMEWHERE TO HAPPEN, AND ① HAS NOWHERE TO PUT IT. |
-| `checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs` | reads.mjs — DOES THE DEFORMER'S RAY SEE THE BANDS ITS OWN POINT TEST SEES? |
 | `checks/claims-the-revetment-builds-on-the-wet-face.mjs` | face.mjs — DOES THE STONE FACE THE WATER? |
 | `checks/claims-the-revetment-ends-as-a-heap.mjs` | heap.mjs — DOES THE STONE STOP IN A CUT? |
 | `checks/claims-the-rim-is-cut-once.mjs` | once.mjs — WHERE THE DRAWING MEETS THE DISC, EACH LINE IS CUT ONCE AND EVERY CROSSING IS SHARED |

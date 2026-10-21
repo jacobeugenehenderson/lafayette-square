@@ -342,7 +342,7 @@ function WindSheetDebug({ air, layoutRef }) {
       varying vec2 vXZ;
       void main() {
         vec4 w = modelMatrix * vec4(position, 1.0);
-        w.y = texture2D(uTerrainMap, _terrainUV(vec2((w.x - uBMinX) / uSpanX, (w.z - uBMinZ) / uSpanZ))).r * uExag + uLift;
+        w.y = _terrainRaw(vec2((w.x - uBMinX) / uSpanX, (w.z - uBMinZ) / uSpanZ)) * uExag + uLift;
         vXZ = w.xz;
         gl_Position = projectionMatrix * viewMatrix * w;
         #include <logdepthbuf_vertex>

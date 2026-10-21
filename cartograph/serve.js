@@ -2496,11 +2496,10 @@ createServer(async (req, res) => {
         const existing = readLookDesign(id)
         // Preserve keys another endpoint owns (read-merge-write behind Stage's back) if the incoming
         // payload omits them: the Arborist's `trees`, the Grove's `groveThreshold`, and the keys authored in the
-        // file (no Stage control) and read by the bakes — `water` (the town's water level and bed values), and the
-        // ground deformer's `groundBlendM` and `groundLineSigmaM` (bake-ground.js).
+        // file (no Stage control) and read by the bakes — `water` (the town's water level and bed values) and `pour`.
         // ▶ checks/claims-autosave-keeps-what-bakes-read.mjs
         const merged = { ...parsed }
-        for (const k of ['trees', 'groveThreshold', 'water', 'pour', 'groundBlendM', 'groundLineSigmaM']) {
+        for (const k of ['trees', 'groveThreshold', 'water', 'pour']) {
           if (!(k in parsed) && k in existing) merged[k] = existing[k]
         }
         mkdirSync(lookDir(id), { recursive: true })

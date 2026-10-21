@@ -741,7 +741,7 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          vec2 wUV = vec2((vWaterWorld.x - uBMinX) / uSpanX, (vWaterWorld.z - uBMinZ) / uSpanZ);
          float wPast = uRimOut > uRimIn ? smoothstep(uRimIn, uRimOut, length(vWaterWorld.xz - uHorizonC)) : 0.0;
          // Depth is measured from the water's level, not from the terrain's zero (the survey flight's level).
-         float wDepth = mix(max(0.0, vLevel - texture2D(uTerrainMap, _terrainUV(wUV)).r), uVisibleM, wPast);
+         float wDepth = mix(max(0.0, vLevel - _terrainRaw(wUV)), uVisibleM, wPast);
          float wSeen = 1.0 - smoothstep(uVisibleM - uFadeM, uVisibleM, wDepth);   // 1 = the bottom shows
          // ⭐ Deep water keeps a FAINT see-through over the bed — the sheet's own ripple alpha (0.72-0.88), as the look
          // Jacob loved had it (2026-09-27: "yes faint see thru"; 4ab1dae3 had made it opaque, and with the tide at HIGH
@@ -1107,7 +1107,7 @@ export function makeWaterAbsorption(waterUniforms, terrain) {
         #include <logdepthbuf_fragment>
         if (uVisibleM <= 0.0) { gl_FragColor = vec4(1.0); return; }   // no bed record: the sheet says so; nothing to absorb
         vec2 uv = vec2((vAbsWorld.x - uBMinX) / uSpanX, (vAbsWorld.z - uBMinZ) / uSpanZ);
-        float depth = max(0.0, vAbsLevel - texture2D(uTerrainMap, _terrainUV(uv)).r);
+        float depth = max(0.0, vAbsLevel - _terrainRaw(uv));
         vec3 aw = vec3(${PURE_WATER_ABSORPTION});
         vec3 k = max(0.0, 1.7 / uVisibleM - aw.g) + aw;
         vec3 T = exp(-2.0 * k * depth);

@@ -8,7 +8,7 @@
 // ⛔ WHY (2026-10-15, ground budget step 5): the served grid was a bilinear read of the source's 4 m overview. Against
 // the true 5 m mean it read p90 1.00 m off on Provincetown's coast and tens of mm across the land of every town
 // (scratch/ground-budget/heightmap/*.summary.txt, |r2|). Every reader of the grid inherited it: the datum, the ground's
-// lift, lineHeights, the bed.
+// lift, the bed.
 //
 // The mean here is computed its own way — each node's box projected corner by corner into the source's pixel space and
 // tested pixel by pixel against that quadrilateral — and the bake's (an affine per node, a priority across tiles) is

@@ -22,11 +22,11 @@
  * constant sized against St. Louis and applied to every town — site 15, ruled
  * 2026-09-20. Raw values are normalized to local-min = 0 by bake-terrain.
  *
- * CPU/GPU reconcile (2026-06-29): the GPU `texture2D` sample is remapped
- * through the `_terrainUV` helper so it lands on the SAME grid index as the
- * CPU bilinear sampler (terrainCommon.makeElevationSampler). They previously
- * diverged up to ~2 m at the domain edges (texel-center vs grid-corner
- * convention); CPU and GPU now return identical world-Y.
+ * ⭐ ONE BILINEAR, CPU AND GPU (BRIEF-the-ground-stands-on-one-field, Boz 2026-10-21): every shader reads the field
+ * through `_terrainRaw`, a MANUAL 4-tap bilinear on the same grid index as the CPU sampler
+ * (terrainCommon.makeElevationSampler), from a NEAREST-filtered texture. ⛔ Never the hardware's linear filter: a Float32
+ * texture filters linearly only with OES_texture_float_linear, and a phone without it steps per grid cell (or reads an
+ * incomplete texture). Device-proof by construction, not by a check.
  */
 
 import * as THREE from 'three'
@@ -144,8 +144,9 @@ function makeTerrainTexture(t) {
     new Float32Array(t.data), t.width, t.height,
     THREE.RedFormat, THREE.FloatType,
   )
-  tex.magFilter = THREE.LinearFilter
-  tex.minFilter = THREE.LinearFilter
+  // ⛔ NEAREST, deliberately: the shaders interpolate themselves (`_terrainRaw`), so no device needs float linear filtering
+  tex.magFilter = THREE.NearestFilter
+  tex.minFilter = THREE.NearestFilter
   tex.wrapS = THREE.ClampToEdgeWrapping
   tex.wrapT = THREE.ClampToEdgeWrapping
   tex.needsUpdate = true
@@ -259,21 +260,18 @@ uniform sampler2D uTerrainMap;
 uniform float uBMinX, uBMinZ, uSpanX, uSpanZ, uExag;
 uniform float uTexW, uTexH;
 uniform float uTerrainNormals;
-// Reconcile the GPU texture sample with the CPU sampler
-// (terrainCommon.makeElevationSampler) so BOTH return the identical world-Y at
-// the same XZ — one field, no float/sink between a CPU-placed object and the
-// GPU-rendered ground. The CPU indexes the grid at u*(N-1); a raw texture2D
-// samples at texel CENTERS (u*N-0.5), up to ±0.5 cell off, worst at the domain
-// edges. Remap the normalized coord to land on the CPU grid index at the texel
-// center: u_tex = (u*(N-1)+0.5)/N. (2026-06-29 — the "nothing sits on the
-// ground" reconcile; buildings/foundations are baked off the CPU sampler and
-// never sample this texture, so they are unaffected.)
-vec2 _terrainUV(vec2 raw) {
-  raw = clamp(raw, 0.0, 1.0);
-  return vec2(
-    (raw.x * (uTexW - 1.0) + 0.5) / uTexW,
-    (raw.y * (uTexH - 1.0) + 0.5) / uTexH
-  );
+// THE FIELD'S RAW HEIGHT at a normalized domain coord (0..1 across the bounds) — the CPU sampler's own arithmetic
+// (terrainCommon.makeElevationSampler: grid index u*(N-1), the cell's four corners, fractions clamped), as four
+// NEAREST texel-centre fetches, so CPU and GPU return the identical height at the same XZ on any device. Scalar on
+// purpose: claims-ground-normals-come-from-the-terrain transpiles it and runs it against the CPU sampler.
+float _terrainRaw(vec2 raw) {
+  float gx = raw.x * (uTexW - 1.0), gz = raw.y * (uTexH - 1.0);
+  float ix = clamp(floor(gx), 0.0, uTexW - 2.0), iz = clamp(floor(gz), 0.0, uTexH - 2.0);
+  float fx = clamp(gx - ix, 0.0, 1.0), fz = clamp(gz - iz, 0.0, 1.0);
+  float u0 = (ix + 0.5) / uTexW, u1 = (ix + 1.5) / uTexW, v0 = (iz + 0.5) / uTexH, v1 = (iz + 1.5) / uTexH;
+  float e00 = texture2D(uTerrainMap, vec2(u0, v0)).r, e10 = texture2D(uTerrainMap, vec2(u1, v0)).r;
+  float e01 = texture2D(uTerrainMap, vec2(u0, v1)).r, e11 = texture2D(uTerrainMap, vec2(u1, v1)).r;
+  return mix(mix(e00, e10, fx), mix(e01, e11, fx), fz);
 }`
 
 /**
@@ -285,11 +283,11 @@ export const TERRAIN_DISPLACE = `
 #include <begin_vertex>
 {
   vec4 _tw = modelMatrix * vec4(transformed, 1.0);
-  vec2 _tuv = _terrainUV(vec2(
+  vec2 _tuv = vec2(
     (_tw.x - uBMinX) / uSpanX,
     (_tw.z - uBMinZ) / uSpanZ
-  ));
-  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  );
+  transformed.y += _terrainRaw(_tuv) * uExag;
 }`
 
 /**
@@ -305,11 +303,11 @@ export const TERRAIN_DISPLACE_CENTROID = `
 {
   // aCentroidXZ is declared by the material as: attribute vec2 aCentroidXZ;
   // (x, z) in world space.
-  vec2 _tuv = _terrainUV(vec2(
+  vec2 _tuv = vec2(
     (aCentroidXZ.x - uBMinX) / uSpanX,
     (aCentroidXZ.y - uBMinZ) / uSpanZ
-  ));
-  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  );
+  transformed.y += _terrainRaw(_tuv) * uExag;
 }`
 
 /**
@@ -320,11 +318,11 @@ export const TERRAIN_DISPLACE_CENTROID = `
  */
 const TERRAIN_DISPLACE_RIGID = `
 {
-  vec2 _tuv = _terrainUV(vec2(
+  vec2 _tuv = vec2(
     (modelMatrix[3].x - uBMinX) / uSpanX,
     (modelMatrix[3].z - uBMinZ) / uSpanZ
-  ));
-  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  );
+  transformed.y += _terrainRaw(_tuv) * uExag;
 }
 #include <project_vertex>`
 
@@ -343,46 +341,30 @@ const TERRAIN_DISPLACE_RIGID = `
  * because bake-terrain happens to write a 5 m grid today (Layer 0 Class D: a constant
  * whose unit is only stable because something ELSE is fixed). A finer lidar grid would
  * have been smoothed over, a coarser one sampled inside a single cell.
- * ▶ node checks/claims-ground-normals-come-from-the-terrain.mjs
+ * ▶ node checks/claims-ground-normals-come-from-the-terrain.mjs --mutants
+ *
+ * ⭐ COMPOSED, NOT REPLACED (BRIEF-the-ground-stands-on-one-field, Boz 2026-10-21). The drawn surface is the mesh moved
+ * by y += h(x, z), h = field × uExag, so its normal is the mesh's own normal carried through that map — the inverse
+ * transpose of its Jacobian: n' = (n.x − h_x·n.y, n.y, n.z − h_z·n.y). Exact for every face, with no division and no
+ * guard: a flat face gets (−h_x, 1, −h_z), the kerb's slopes and ramps keep their own tilt on top of the hill, and a
+ * vertical riser (n.y = 0) keeps its own normal. At uExag = 0 the gradient is 0 and the geometry normal stands.
  *
  * ⛔ A town with no terrain BY INTAKE (ground.json groundShape.terrain = false) gets a flat field from
- * `fetchTerrain`, so the normal is UP because nothing is there — a named state, never a default.
- * `uExag ≤ 0.01` (the flat Browse map) keeps the geometry normal, which is also up.
+ * `fetchTerrain`, so the gradient is 0 because nothing is there — a named state, never a default.
  */
 export const TERRAIN_NORMAL = `
 #include <beginnormal_vertex>
-if (uExag > 0.01) {
+{
   vec4 _nw = modelMatrix * vec4(position, 1.0);
   float _sx = uSpanX / (uTexW - 1.0);
   float _sz = uSpanZ / (uTexH - 1.0);
-  float _eL = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x - _sx - uBMinX) / uSpanX, (_nw.z - uBMinZ) / uSpanZ))).r * uExag;
-  float _eR = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x + _sx - uBMinX) / uSpanX, (_nw.z - uBMinZ) / uSpanZ))).r * uExag;
-  float _eD = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x - uBMinX) / uSpanX, (_nw.z - _sz - uBMinZ) / uSpanZ))).r * uExag;
-  float _eU = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x - uBMinX) / uSpanX, (_nw.z + _sz - uBMinZ) / uSpanZ))).r * uExag;
-  vec3 _tn = normalize(vec3((_eL - _eR) / (2.0 * _sx), 1.0, (_eD - _eU) / (2.0 * _sz)));
+  float _eL = _terrainRaw(vec2((_nw.x - _sx - uBMinX) / uSpanX, (_nw.z - uBMinZ) / uSpanZ)) * uExag;
+  float _eR = _terrainRaw(vec2((_nw.x + _sx - uBMinX) / uSpanX, (_nw.z - uBMinZ) / uSpanZ)) * uExag;
+  float _eD = _terrainRaw(vec2((_nw.x - uBMinX) / uSpanX, (_nw.z - _sz - uBMinZ) / uSpanZ)) * uExag;
+  float _eU = _terrainRaw(vec2((_nw.x - uBMinX) / uSpanX, (_nw.z + _sz - uBMinZ) / uSpanZ)) * uExag;
+  vec2 _h = vec2((_eR - _eL) / (2.0 * _sx), (_eU - _eD) / (2.0 * _sz));
+  vec3 _tn = normalize(vec3(objectNormal.x - _h.x * objectNormal.y, objectNormal.y, objectNormal.z - _h.y * objectNormal.y));
   objectNormal = normalize(mix(objectNormal, _tn, uTerrainNormals));
-}`
-
-/**
- * THE BAKED GROUND'S OWN HEIGHT (BRIEF-the-ground-knows-its-height §5) — replaces #include <project_vertex>.
- * The ground bake decides the terrain part per vertex (`groundDeformer.mjs`: the street's line, the level walk, the lawn,
- * the ease into the lot) and ships it as `aRaw`, raw metres; the drawn height is aRaw × uExag + the mesh's own y (the
- * kerb, unexaggerated). ⛔ No texture lookup: the 5 m texture cannot carry a level walk or a lawn's rise.
- */
-const TERRAIN_DISPLACE_BAKED = `
-transformed.y += aRaw * uExag;
-#include <project_vertex>`
-
-/**
- * The baked ground's normal — replaces #include <beginnormal_vertex>. `aGrad` = (∂aRaw/∂x, ∂aRaw/∂z, ∂y/∂x, ∂y/∂z), so the
- * drawn surface's gradient is aGrad.xy × uExag + aGrad.zw and its normal is exact at EVERY exaggeration (Boz, 2026-10-11:
- * not flat per face — a faceted lawn is a visible regression).
- */
-export const TERRAIN_NORMAL_BAKED = `
-#include <beginnormal_vertex>
-{
-  vec2 _g = aGrad.xy * uExag + aGrad.zw;
-  objectNormal = normalize(mix(objectNormal, normalize(vec3(-_g.x, 1.0, -_g.y)), uTerrainNormals));
 }`
 
 /**
@@ -393,11 +375,11 @@ export const TERRAIN_NORMAL_BAKED = `
 const TERRAIN_DISPLACE_PERVERTEX = `
 {
   vec4 _tw = modelMatrix * vec4(transformed, 1.0);
-  vec2 _tuv = _terrainUV(vec2(
+  vec2 _tuv = vec2(
     (_tw.x - uBMinX) / uSpanX,
     (_tw.z - uBMinZ) / uSpanZ
-  ));
-  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  );
+  transformed.y += _terrainRaw(_tuv) * uExag;
 }
 #include <project_vertex>`
 
@@ -494,14 +476,13 @@ export function patchTerrainAtCentroidRaw(mat, centroidRaw) {
   mat.customProgramCacheKey = () => `terrain-centroid-${prevKey ? prevKey() : 'std'}`
 }
 
-export function patchTerrain(mat, { terrainNormals = false, perVertex = false, baked = false } = {}) {
-  // `baked`: the geometry carries the ground bake's own height (aRaw, aGrad) — read it, never the texture
-  const displaceSnippet = baked ? TERRAIN_DISPLACE_BAKED : perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
+export function patchTerrain(mat, { terrainNormals = false, perVertex = false } = {}) {
+  const displaceSnippet = perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
   const prev = mat.onBeforeCompile
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL + (baked ? '\nattribute float aRaw;\nattribute vec4 aGrad;' : ''))
+      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL)
       .replace('#include <project_vertex>', displaceSnippet)
     if (prev) prev(shader)
     // ⛔ AFTER prev, deliberately. `applyWeatherToShader` (called inside prev) appends
@@ -511,11 +492,11 @@ export function patchTerrain(mat, { terrainNormals = false, perVertex = false, b
     // geometry normal and the terrain override landed after it.
     if (terrainNormals) {
       shader.vertexShader = shader.vertexShader
-        .replace('#include <beginnormal_vertex>', baked ? TERRAIN_NORMAL_BAKED : TERRAIN_NORMAL)
+        .replace('#include <beginnormal_vertex>', TERRAIN_NORMAL)
     }
   }
   const prevKey = mat.customProgramCacheKey?.bind(mat)
-  const mode = baked ? 'b' : perVertex ? 'v' : 'r'
+  const mode = perVertex ? 'v' : 'r'
   mat.customProgramCacheKey = () =>
     `terrain-${mode}${terrainNormals ? 'n' : 'p'}-${prevKey ? prevKey() : 'std'}`
 }

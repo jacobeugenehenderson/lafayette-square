@@ -1,7 +1,8 @@
 // claims-the-stripe-lies-on-its-road.mjs — DOES THE PAINTED STRIPE LIE ON THE ROAD IT IS PAINTED ON?
 //
 // ⭐ THE INVARIANT: a stripe is paint. It is cut into the carriageway's partition (`mat:stripe`), so its TERRAIN part
-// (aRaw) must be the road's where it lies; its only intended departure is its LIFT — the baked y it keeps over the one
+// (the town's one height field at its vertices, interpolated across its triangles, as the shader draws it:
+// BRIEF-the-ground-stands-on-one-field) must be the road's where it lies; its only intended departure is its LIFT — the baked y it keeps over the one
 // ground plane (bake-ground.js `KEEP_OWN_SLOT`: the stripe keeps renderOrder × GROUND_Y_EPS while the road is flattened to
 // y 0, so a residual overlap cannot z-fight). The lift is read off the slab (the stripe's y over the road's), never restated.
 // ⭐ "THE ROAD BENEATH" is the nearest road triangle (`mat:asphalt` / `mat:highway`) to the point, read AT ITS NEAREST POINT
@@ -9,12 +10,13 @@
 //   under it (the partition cut it out), and it is a few decimetres wide, so the road beside it is the road it is painted on.
 // ⭐ SAMPLED WHERE A THIN TRIANGLE CANNOT HIDE IT: at every stripe vertex AND at every stripe edge's midpoint (a long, thin
 //   stripe triangle is linear between its ends, so it does not bend with a road that does).
-// ⭐ AT EVERY EXAGGERATION: drawn = aRaw × e + y. The departure is linear in e, so its worst over [0, E] (E the town's
+// ⭐ AT EVERY EXAGGERATION: drawn = field × e + y. The departure is linear in e, so its worst over [0, E] (E the town's
 //   ceiling) is at an end; both ends are judged.
 // ⭐ THE GATE: the terrain part's departure |Δraw| × e > the lift — the stripe sinks under the road it is painted on, or
 //   stands off it by more than its own lift again. Departures inside that are counted, not gated.
-// ⛔ A slab with no baked terrain part on its road or stripe, no stripe, or a bake-ground.js with no GROUND_Y_EPS cannot be
-//   judged: it fails, said so.
+// ⭐ TWO MESHES, ONE FIELD: both read the same field at their own vertices, so they part only where their triangles
+//   interpolate it differently — the refine tolerance is what bounds this.
+// ⛔ A slab with no stripe, or a bake-ground.js with no GROUND_Y_EPS, cannot be judged: it fails, said so.
 //
 //   node checks/claims-the-stripe-lies-on-its-road.mjs [--town=a,b] [--dir=<slab dir>] [--show=n] [--selftest]
 // Read-only. Exits 1 on any floating or sunk stripe sample, or on a slab that cannot be judged.
@@ -40,13 +42,13 @@ function judge(dir, mutate = false) {
   const stripe = gj.groups.filter(g => g.kind === 'mat' && g.id === 'stripe'), road = gj.groups.filter(g => g.kind === 'mat' && ROAD.test(g.id))
   if (!stripe.length) return { town, refused: 'no mat:stripe group — nothing to judge' }
   if (!road.length) return { town, refused: 'no road group (mat:asphalt · mat:highway) for the stripe to lie on' }
-  if ([...stripe, ...road].some(g => g.rawByteOffset == null)) return { town, refused: 'a stripe or road group carries no baked terrain part (aRaw): the 5 m texture path — re-bake the ground' }
-  const E = loadSceneTerrain(town).exag
+  const T = loadSceneTerrain(town), E = T.exag
+  const fieldAt = (P, n) => { const R = new Float32Array(n); for (let v = 0; v < n; v++) R[v] = T.getElevationRaw(P[v * 3], P[v * 3 + 2]); return R }
   if (!(E > 0)) return { town, refused: 'the town names no exaggeration' }
   const gb = readFileSync(join(dir, gj.bin || 'ground.bin')), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
-  // the road's triangles as planes (raw and y separately: aRaw·e + y), gridded
+  // the road's triangles as planes (raw and y separately: field·e + y), gridded
   const CELL = 1, grid = new Map(), tris = []
-  for (const g of road) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = new Float32Array(AB, g.rawByteOffset, g.vertexCount)
+  for (const g of road) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = fieldAt(P, g.vertexCount)
     for (let k = 0; k < I.length; k += 3) { const v = [I[k], I[k + 1], I[k + 2]], xs = v.map(w => P[w * 3]), zs = v.map(w => P[w * 3 + 2])
       const id = tris.push({ xs, zs, r: v.map(w => R[w]), y: v.map(w => P[w * 3 + 1]), ro: g.renderOrder, g: g.id }) - 1
       for (let x = Math.floor(Math.min(...xs) / CELL); x <= Math.floor(Math.max(...xs) / CELL); x++) for (let z = Math.floor(Math.min(...zs) / CELL); z <= Math.floor(Math.max(...zs) / CELL); z++) { const key = x * 1000003 + z; (grid.get(key) || grid.set(key, []).get(key)).push(id) } } }
@@ -65,8 +67,7 @@ function judge(dir, mutate = false) {
           w = [0, 0, 0]; w[E3.i] = 1 - E3.u; w[E3.j] = E3.u }
         best = { raw: w[0] * t.r[0] + w[1] * t.r[1] + w[2] * t.r[2], y: w[0] * t.y[0] + w[1] * t.y[1] + w[2] * t.y[2], ro: t.ro, d: dist, g: t.g } } }
     return best }
-  // ⭐ WHICH: a sample in the ① INK (the 2ε between two tiles' rings, held by no tile: the deformer reads the ink's owners
-  // there, `groundDeformer.mjs#onInk`, not a tile's sweep), when the slab carries its shape.json
+  // ⭐ WHICH: a sample in the ① INK (the 2ε between two tiles' rings, held by no tile), when the slab carries its shape.json
   const tiles = existsSync(join(dir, 'shape.json')) ? JSON.parse(readFileSync(join(dir, 'shape.json'), 'utf8')).tiles || [] : null
   const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a[1] > z) !== (b[1] > z) && x < (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]) + a[0]) c = !c } return c }
   const tb = tiles?.map(t => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, z] of t.ring || []) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) } return [a, b, c, d] })
@@ -74,7 +75,7 @@ function judge(dir, mutate = false) {
   const out = [], all = [], lifts = []
   let n = 0, mutated = null, noRoad = 0
   for (const g of stripe) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount)
-    let R = new Float32Array(AB, g.rawByteOffset, g.vertexCount)
+    let R = fieldAt(P, g.vertexCount)
     if (mutate) { R = Float32Array.from(R); const v = g.vertexCount >> 1; R[v] += 4 * Math.max(...Array.from({ length: g.vertexCount }, (_, k) => P[k * 3 + 1])) / E + 1; mutated = `v${v} at (${P[v * 3].toFixed(1)}, ${P[v * 3 + 2].toFixed(1)})` }
     const samples = []
     for (let v = 0; v < g.vertexCount; v++) samples.push({ x: P[v * 3], z: P[v * 3 + 2], raw: R[v], y: P[v * 3 + 1], what: 'vertex' })

@@ -87,12 +87,12 @@ export function judge(dir, roots = ROOTS) {
 function selfTest() {
   const root = mkdtempSync(join(tmpdir(), 'ground-budget-'))
   const roots = { baked: join(root, 'baked'), data: join(root, 'data') }
-  // a slab of `v` verts / `t` tris in one group, padded with terrain sections when `terrain`
-  const slab = (dir, town, { v = 3, t = 1, terrain = false, ms = null, shoreMs = null } = {}) => {
+  // a slab of `v` verts / `t` tris in one group, padded with 20 B per vertex more when `extra`
+  const slab = (dir, town, { v = 3, t = 1, extra = false, ms = null, shoreMs = null } = {}) => {
     mkdirSync(dir, { recursive: true })
-    const g = { id: 'x', vertexCount: v, indexCount: t * 3, ...(terrain ? { rawByteOffset: 0, gradByteOffset: 0 } : {}) }
+    const g = { id: 'x', vertexCount: v, indexCount: t * 3 }
     writeFileSync(join(dir, 'ground.json'), JSON.stringify({ look: town, groups: [g] }))
-    writeFileSync(join(dir, 'ground.bin'), Buffer.alloc(v * 12 + t * 12 + (terrain ? v * 20 : 0)))
+    writeFileSync(join(dir, 'ground.bin'), Buffer.alloc(v * 12 + t * 12 + (extra ? v * 20 : 0)))
     if (ms != null || shoreMs != null) writeFileSync(join(dir, 'bake-timings.json'), JSON.stringify({ ...(ms != null ? { [`${town}:ground`]: { ms } } : {}),
       ...(shoreMs != null ? { [`${town}:ground-shore`]: { ms: shoreMs } } : {}) }))
   }
@@ -109,7 +109,7 @@ function selfTest() {
     ['equal size, equal time', { town: 'a', v: 100, t: 100, ms: 1000 }, true],
     ['smaller slab, faster', { town: 'a', v: 50, t: 50, ms: 10 }, true],
     ['one triangle over', { town: 'a', v: 100, t: 101, ms: 1000 }, false],
-    ['same triangles + terrain sections', { town: 'a', v: 100, t: 100, terrain: true, ms: 1000 }, false],
+    ['same triangles + more bytes per vertex', { town: 'a', v: 100, t: 100, extra: true, ms: 1000 }, false],
     ['one ms over the two served passes', { town: 'a', v: 100, t: 100, ms: 1001 }, false],
     ['one pass under the two-pass ceiling', { town: 'a', v: 100, t: 100, ms: 999 }, true],
     ['two passes, one ms over', { town: 'a', v: 100, t: 100, ms: 601, shoreMs: 400 }, false],
