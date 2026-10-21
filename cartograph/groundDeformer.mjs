@@ -38,7 +38,8 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
  *  @param line { heightAt(skelId, [x, z]) → the line's raw height, step } (lineHeight.mjs, the coast's high water folded in by the caller)
  *  @param limits { walkMax, lawnMax (null = none), exag, blend } · @param town the scene, named in every refusal
  *  @param legs per tile, each perpendicular corner's own ground with the leg edge that built it ([{ tile, perp: [{ cls, kind,
- *  si, i, atEnd, spans, rings }] }], tileGround's `bandPiecesOfTile` `perp`, live — never frozen) */
+ *  si, i, atEnd, spans, rings }] }], tileGround's `bandPiecesOfTile` `perp`, live — never frozen) · @param rims per tile index, its ①
+ *  ring noded with its paint's own rim crossings ({ ring, owners }, tileGround's `rimRings`, live); a tile with none reads its own ring */
 // ⭐ THE MEMO IS BOUNDED BY THE RUNTIME, NOT BY A TOWN. A V8 Map holds at most 2^24 entries (measured: node 22 throws
 // `RangeError: Map maximum size exceeded` at the 16,777,217th) and Provincetown's conformity asks more distinct points than
 // that (2026-10-21). At the cap the memo is CLEARED and a fresh one starts: memory stays one Map's worth, and a point asked
@@ -48,7 +49,7 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
 // ▶ checks/claims-the-ground-height-is-a-function-of-the-point.mjs
 export const V8_MAP_MAX_ENTRIES = 2 ** 24
 
-export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits, legs = [], memoCap = V8_MAP_MAX_ENTRIES }) {
+export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits, legs = [], rims = [], memoCap = V8_MAP_MAX_ENTRIES }) {
   if (!Number.isInteger(memoCap) || memoCap < 1 || memoCap > V8_MAP_MAX_ENTRIES) throw new Error(`groundDeformer: the memo cap must be 1…${V8_MAP_MAX_ENTRIES} answers (V8's Map cap), got ${memoCap}`)
   if (!town) throw new Error('groundDeformer: the caller names no town — a refusal could not say where')
   if (typeof line?.heightAt !== 'function' || !(line.step > 0)) throw new Error(`groundDeformer: ⛔ ${town}: the caller passes no line (lineHeight.mjs: heightAt and its station step) — ② cannot take its height`)
@@ -275,8 +276,11 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // (tileGround's `shareRimCrossings`), so the paint, cut by that block, meets them with no lot between. ⛔ Never the stencil's
   // exact chord: the cut rounds its crossings up to √2/2 step off it, and a ray meeting the rim 65° off its normal read the
   // wedge between as ~1.1 mm of lot (HPDM B1: 341 points). A tile with no rim edge has no beyond.
-  for (const t of T) { const O = tiles[t.ti].ringOwner, n = t.ring.length; t.rim = false
-    for (let i = 0; i < n; i++) if (O[i]?.kind === 'rim') { t.rim = true; addSeg('beyond', t.ring[i], t.ring[(i + 1) % n]) } }
+  // ⭐ and where the paint minted its own rim crossings, the rim is the painter's NODED ring (`rims`, live): the paint's rim is
+  // then a piece of it, so a ray from past the rim enters paint with nothing between (HPDM tile 49's 7.7 mm wedge)
+  for (const t of T) { const N = rims?.[t.ti], R = N?.ring?.length >= 3 ? frozenCopy(N.ring) : t.ring, O = N?.ring?.length >= 3 ? N.owners : tiles[t.ti].ringOwner, n = R.length
+    t.rim = false; t.rimRing = R
+    for (let i = 0; i < n; i++) if (O[i]?.kind === 'rim') { t.rim = true; addSeg('beyond', R[i], R[(i + 1) % n]) } }
   const recOf = new Map(T.map(r => [r.ti, r]))
   // ── THE INK: ① between the tiles, as owned pieces (`shape.json#ink`) ──
   // ⭐ A piece is one NONZERO region (a hole wound against its outer), so a point is in it where the winding of its rings is
@@ -354,7 +358,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     // ⛔ the first state is probed PAST the lattice: the bands are on Clipper's 1 mm grid and ② is not, so a probe nearer
     // than the grid can sit outside a curb whose edge is ② itself — and the whole band read as lot (measured, HPDM)
     const eps = 2 * LATTICE, held = { walk: itemsAt('walk', px + ux * eps, pz + uz * eps), lawn: itemsAt('lawn', px + ux * eps, pz + uz * eps), curb: itemsAt('curb', px + ux * eps, pz + uz * eps) }
-    let beyond = !!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.ring])
+    let beyond = !!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.rimRing])
     const cls = () => beyond ? 'beyond' : held.walk.size ? 'walk' : held.lawn.size ? 'lawn' : held.curb.size ? 'curb' : 'lot'
     const out = [{ from: 0, to: len, cls: cls() }]
     const seen = new Set()
