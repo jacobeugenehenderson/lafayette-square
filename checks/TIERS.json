@@ -2786,7 +2786,10 @@
         "computed import of src/lib/tileGround.js — read, safe",
         "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
         "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "computed import of cartograph/groundDeformer.mjs — read, safe"
+        "computed import of cartograph/groundDeformer.mjs — read, safe",
+        "imports a mutated copy of src/lib/ribbonsGeometry.js from its own temp dir — read as src/lib/ribbonsGeometry.js, safe",
+        "imports a mutated copy of src/lib/ribbonsGeometry.js from its own temp dir — read as src/lib/ribbonsGeometry.js, safe",
+        "computed import of src/lib/ribbonsGeometry.js — read, safe"
       ]
     },
     {

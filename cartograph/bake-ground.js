@@ -53,7 +53,7 @@ import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { curbedMinWidthOf } from './curbedMinWidthOf.mjs'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
-import { buildTileGround, roadOffTheLattice } from '../src/lib/tileGround.js'
+import { buildTileGround, roadOffTheLattice, sameStamp } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
@@ -532,6 +532,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     const polys = ringsToHoledPolys(rings)
     if (polys.length) byFaceUse.set(lu, (byFaceUse.get(lu) || []).concat(polys))
   }
+  // ⭐ EVERYTHING ABOVE IS ①'s PAINT, already cut once to the stencil inside the painter (the stamp, or tileGround's own
+  // intersect with it): the bake's stencil clip passes these items through when the stamp is this stencil (`cutOnce`, below)
+  const cutOnce = new Set([...[...byMaterial.values()].flat(), ...[...byFaceUse.values()].flat()])
   // Non-street ribbons (alleys + footway/cycleway/steps/path). The Designer
   // renders these live (BlockGeometryV2Debug → buildPathRibbons), but the bake
   // dropped them: the call lived ONLY in the figure-ground path (deleted at T4)
@@ -579,7 +582,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
   if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
-  return { byMaterial, byFaceUse, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
+  return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
            perpLegs: (pr.protoBandPieces || []).map(t => ({ tile: t.tile, perp: t.perp || [] })),
@@ -1124,6 +1127,26 @@ export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePendin
   return { paint: null, state: 'pending', why }
 }
 
+// ⭐ A BAND RING THAT CROSSES ITSELF ON THE GRID IS COUNTED, WHEREVER IT APPEARS (Boz, 2026-10-21). Clipper rounds its
+// intersections onto the 1 mm lattice and can hand back a ring whose own edges cross (a sub-mm bow-tie); read even-odd, its lobe
+// is lot inside a band, and the deformer's absorption along ② carries it to heights metres away (HPDM tile 44: lawn #443, 67.65 mm
+// over 2,449 samples). Exact on the grid (integer cross products). The cause (what hands Clipper geometry it rounds into a
+// crossing) is NOT established; this only makes the class loud. Returns { curb, lawn, walk, sites }.
+export function bandSelfCrossings(byMaterial) {
+  const I = (v) => [Math.round(v[0] * CLIP_SCALE), Math.round(v[1] * CLIP_SCALE)]
+  const sgn = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]))
+  const crossesAt = (r0) => { const r = r0.map(I), m = r.length
+    for (let i = 0; i < m; i++) for (let j = i + 2; j < m; j++) { if (i === 0 && j === m - 1) continue
+      const a = r[i], b = r[(i + 1) % m], c = r[j], d = r[(j + 1) % m]
+      if (sgn(a, b, c) * sgn(a, b, d) < 0 && sgn(c, d, a) * sgn(c, d, b) < 0) return r0[i] }
+    return null }
+  const CLS = { curb: (k) => k === 'curb' || k === 'curbCut', lawn: (k) => k === 'treelawn' || k.startsWith('treelawn:'), walk: (k) => k === 'sidewalk' }
+  const out = { curb: 0, lawn: 0, walk: 0, sites: [] }
+  for (const [k, items] of byMaterial) { const c = Object.keys(CLS).find(x => CLS[x](k)); if (!c) continue
+    for (const it of items) for (const r of (Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])) { if (!r || r.length < 4) continue
+      const at = crossesAt(r); if (at) { out[c]++; out.sites.push({ group: k, at }) } } }
+  return out
+}
 export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
@@ -1213,7 +1236,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1353,11 +1376,19 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     }
   }
 
-  // Re-clip to the stencil — V2 already clipped its own output, but
-  // our injected overlays haven't seen the clipper yet. Run it again
-  // so nothing leaks past the silhouette. No-op when stencil.clipPolygon
-  // is null (a scene with no neighborhood_boundary.json).
-  if (stencil.clipPolygon) clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon)
+  // ⭐ THE RIM IS CUT ONCE (BRIEF-the-rim-is-cut-once B1, Boz 2026-10-21): the injected overlays (paths, park paths, map layers)
+  // are clipped to the stencil here; ①'s paint, cut once by the painter to the drawn block inside this same disc, is NOT cut
+  // again. Clipped a second time to the exact chord, it minted fresh crossings ~1 mm off the rim ring's own vertices, or cut
+  // those vertices away (HPDM tiles 134, 55: the 53 'beyond' wedges the deformer read as lot). ⭐ Decided on the recorded
+  // fact (`sameStamp`: the tiles were stamped with exactly this stencil), never on geometry; any other stamp is clipped as
+  // before. No-op when stencil.clipPolygon is null (a scene with no neighborhood_boundary.json).
+  // ▶ node checks/claims-the-rim-is-cut-once.mjs
+  if (stencil.clipPolygon) { const once = sameStamp(stampedWith, stencil.clipPolygon) ? cutOnce : null
+    const cc = clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon, { cutOnce: once })
+    console.log(`  [bake-ground] the stencil clip: ${cc.clipped} overlay item(s) clipped · ${cc.kept} of ①'s item(s) passed through, cut once (${once ? 'stamped with this stencil' : '⛔ NOT stamped with this stencil, so clipped again'})`) }
+  // the bands as the deformer and the flatten read them: every ring that crosses itself, counted with its site (ground.json#selfCrossing)
+  const selfCrossing = bandSelfCrossings(byMaterial)
+  console.log(`  [bake-ground] ${selfCrossing.sites.length ? '⚠️ ' : ''}band rings that self-cross on the grid: curb ${selfCrossing.curb} · lawn ${selfCrossing.lawn} · walk ${selfCrossing.walk}${selfCrossing.sites.length ? ` — first ${selfCrossing.sites.slice(0, 3).map(x => `${x.group} at (${x.at.map(v => v.toFixed(3)).join(', ')})`).join(' · ')}; every one in ground.json#selfCrossing (cause not established)` : ''}`)
 
   // ⛔⛔ THE SILENT DROP, MADE LOUD. PAINT_ORDER is an ALLOW-LIST: anything
   // collected into byMaterial/byFaceUse under a key no entry consumes is
@@ -2038,6 +2069,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // F3 / F2 disclosure: did this scene have terrain, how was each partition group refined, and how many
     // slivers it came out with — read by the two ground-shape checks.
     ...(groundShape ? { groundShape } : {}),
+    // band rings that cross themselves on the grid (bandSelfCrossings): counted, with every site
+    selfCrossing,
     // the deformer's ownership disclosure, read by claims-the-walk-is-level-across: a written slab carries 0 (the bake throws
     // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
     ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand,
