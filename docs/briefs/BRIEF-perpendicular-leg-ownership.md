@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: no
 written: 2026-10-20
-evict-when: refusedPerp is 0 on every town with perpendicular corners (live norm), the five mutants below each go RED, and the build is merged to integration; then this moves to cartograph/_archive/ dated.
+evict-when: refusedPerp is 0 on every town with perpendicular corners (live norm), the six mutants below each go RED, and the build is merged to integration; then this moves to cartograph/_archive/ dated.
 -->
 
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds (`ListAgents`,
@@ -27,8 +27,26 @@ Huron refusedPerp 6,179 m² · LS 45 m² · HPDM 4,532 m² with the norm resolve
 
 ## 1. The ruling (Boz and Jacob, 2026-10-20), option A of Screed's note
 
-1. **Carry the owner from construction.** Each extension and each cut keeps `spanOfSrc(p.si, i)` of the leg edge that
-   built it. Nothing is found by distance (A15: never by nearness).
+1. **Carry the owner from construction.** Each extension and each cut keeps the owner of the leg edge that built
+   it: **`runs[stamps[p.si][i]]`**, where `i` is `c.before` (atEnd) or `c.after`, indexing `p.ring = st.iaFull[p.si]`.
+   That is the run `iaJunction`'s legs already read (`stp[eb]`/`stp[ea]`). Carry `stamps[p.si][i]` at push time.
+   Nothing is found by distance (A15: never by nearness).
+   ⛔ **Not `spanOfSrc(p.si, i)`.** `iaArc` is per-VERTEX and `spanOfSrc` reads the edge's start vertex, so an
+   `after` leg reads its own arc (`a<arc>`), and a `before` leg reads another arc's label where arcs abut. Mitre
+   measured 2026-10-20: Huron 1,160 of 1,781 legs, LS 7 of 10. ⛔ Not `cuts[k].serves[0].leg` (the CROSSED street,
+   no `segOrd`), not `junctions[j].legs` (drops `segOrd`). An arc edge's stamp carries `lIn` for its first half
+   and `lOut` for its second, so the stamp says which half an edge is in, not that it is an arc.
+   ⭐ **Verified against an independent oracle** (Mitre, `scratch/perp-own/run3.mjs` on `mitre/perp-leg-ownership`:
+   a first-hit ray from the leg edge's midpoint to the ribbons' own centerlines, used only to judge): Huron 1,778 of
+   1,781 right, 1 wrong (an `after` leg on a 0.0 m edge, where the midpoint ray itself may be what fails; cause not
+   established), 2 unresolvable · LS 10 of 10. The side agrees with the centerline crossing on every right leg.
+   ⚠️ **OPEN, Jacob's call before building:** the CELLS carry the same wrong key. Every source edge whose start vertex
+   lies on an arc takes the arc's span in `bandPiecesOfTile` (LS 710 of 15,934 edges, Huron 1,651 of 55,175; on
+   708 and 1,632 of them leg and arc share one span, so `o.depths` merges the arc's depths into the leg's). It reaches
+   no pixel today: nothing outside `tileGround.js` reads `bandPieces`, and `groundDeformer.mjs` reads `iaArc` per
+   vertex correctly. But an extension keyed by its run would meet its own leg's cell keyed by the arc, and rule 4
+   would then call that overlap shared. Either this build keys the cells by run too (one key for one leg), or it
+   stays a separate defect and rule 4 must not treat leg-vs-own-cell as shared.
 2. **The crossing square**, where the two legs' extensions overlap, is one piece owned by **both** legs [A, B].
 3. **One-pad hull ground** that lies in neither leg's quad goes to the **corner's arc span** (Jacob).
 4. **Ground inside another span's cell** (an extension running into the other leg's or a third span's cell) is
@@ -49,7 +67,8 @@ extending the cells (reopens ②); nearest cell or arc (forbidden).
 ## 3. Code sites (src/lib/tileGround.js on integration; cite symbols, not lines)
 
 1. `sectionPassProtoTile`: `legExt(p, i, atEnd, …)` builds each extension from one leg edge. The owner is dropped at
-   `walkX.push(w)` / `envX0.push(e2)`. Keep `{ ring, span: spanOfSrc(p.si, i), corner }`.
+   `walkX.push(w)` / `envX0.push(e2)`; the ramps and `perpPieces` keep only `{c, p, quad}`, and the hull `H` merges
+   two legs. Keep `{ ring, stamp: stamps[p.si][i], corner }` and resolve the owner as `runs[stamp]` (§1.1).
 2. The ramps loop and the one-pad block in the same function: each quad keeps its leg's span; the hull minus both quads
    is emitted with the arc span.
 3. `bandPiecesOfTile`: the `for (const g of (perp || []))` branch and `sectors` are the dead 10-17 sector model
@@ -61,7 +80,7 @@ extending the cells (reopens ②); nearest cell or arc (forbidden).
 
 ## 4. The chain
 
-- **Trusts:** ①'s edge stamp (`iaStamp` → `runs` → `{skelId, side, segOrd}`, and `iaArc`), via `spanOfSrc`.
+- **Trusts:** ①'s edge stamp (`iaStamp` → `runs` → `{skelId, side, segOrd}`), read at construction (§1.1); `iaArc` only for the hull's arc span (§1.3).
 - **Trusted by:** the band blend (not yet reading pieces) and the check above. Nothing else reads `bandPieces`.
 
 ## 5. Can the instrument see the change?
@@ -71,13 +90,14 @@ extending the cells (reopens ②); nearest cell or arc (forbidden).
   (`resolveCurbCutNorm`), or measure on Huron and LS, whose frozen norms are already perpendicular.
 - The probe `scratch/perp-own/` (make.mjs anchors a copy of tileGround.js; `WT` is hardcoded to a removed worktree,
   so repoint it). Measure first, and report before building:
-  (a) how many legs' span is an ARC's label (Huron shows `a…` labels on legs);
+  (a) ✅ answered (§1.1): the stamp names the leg; `spanOfSrc` does not.
   (b) why Huron's extension ground in no cell (10,853 m²) exceeds refusedPerp (6,179 m²). Cause not established.
 
-## 6. The check: five mutants, each must go RED
+## 6. The check: six mutants, each must go RED
 
 1. The legs swapped. 2. The crossing given to the arc. 3. The hull given to a leg. 4. A leg's span dropped (its ground
-refused again). 5. Overlap ground given to one owner only. Plus: refusedPerp = 0 on every town that builds
+refused again). 5. Overlap ground given to one owner only. 6. An `after` leg labelled as its own arc (the owner read through
+`spanOfSrc` instead of the stamp). Plus: refusedPerp = 0 on every town that builds
 perpendicular corners.
 
 ## 7. Bounds
