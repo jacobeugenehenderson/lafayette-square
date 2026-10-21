@@ -74,7 +74,10 @@ them, so a class in HPDM and LS. Fix: drop both ranges (→ underived) and re-ba
 it. RULED (refined, Truss): only bare 5000 and 4000–4999 → underived (HPDM 518 + 7 parcels, LS 238 + 22); the specific
 51xx–59xx stay commercial, marked unverified until a City code table is sourced. Forest Park then paints underived (grass);
 its OSM park relation is absent from the fetch (an intake item). The bake path is being assessed (Zob). D2: HPDM production predates the 10-14 Ward tranche
-(a Promote). D4/D6: a pale rim haze band behind LS's Arch. D5: LS phone ticker line clipped. ❓ Jacob: which LS link is
+(a Promote; prepared by Ward, rollback saved in scratch/promote-rollback/). ⚠️ FINDING (Ward; ASPIRATION filed as done, Boz):
+serve.js says nothing visitor-reachable changes until step 5, but on a RE-promote step 2 overwrites the live, UNVERSIONED
+prod slab keys under the old player. Fix: versioned slab keys switched by the host record. Thursday: mitigated by a full-slab
+backup + a staging dry run. With no re-bake, the press adds 8 share images (never eyed) + shape.json (player-unread). D4/D6: a pale rim haze band behind LS's Arch. D5: LS phone ticker line clipped. ❓ Jacob: which LS link is
 Thursday's (lafayette-square.com's old player, or the Ward)?
 
 **🌅 MORNING 2026-10-21: the ground for Thursday, and your calls (Boz).** Nothing pushed, published or baked into `public/`.
