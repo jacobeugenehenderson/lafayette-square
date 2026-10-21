@@ -216,7 +216,8 @@ Start here. State at the restart:
     191 → 71, all split-made 370 → 242; heights identical within one lattice rounding away from bends (gate restated). Only
     LS has a kerb (HPDM/Huron/PTown h = 0), so this tranche is LS's. STOPPED at 71; follow-up (named): an exact arrangement
     for the split, since Clipper invents crossings within half a step. ⭐ LS #39 ON THE WHOLE STACK (Plumb, rebased on Truss's
-    9ee9e327, refinement off): 40 m → 1.03 m; M1 0, verge|stripe 0. Left: one crease-born crack (0.18 mm, 0.95 m) and the
+    9ee9e327, refinement off): 40 m → 1.03 m; M1 0, verge|stripe 0. BASELINE real bake at integration b8e7b868 (Truss,
+    refinement on): refuses at #39 with 22.1 m bare; 2,866,250 triangles; 1,053 s; peak 11.4 GB. Left: one crease-born crack (0.18 mm, 0.95 m) and the
     ring-49 finger tip (4 mm, narrow block). ❓ Jacob: those stay a refusal tonight; a ridge rule, ON_EDGE_M's derived
     reach, or a listed allowance at flushTol? The rim by identity: 4,464 m; 185 m on the stencil in NO rim ring (42 of 148
     rimRings entries carry one). PLACED (Zob): nodeRimWithPaint returns null when a rim-edged tile mints nothing. RULED
