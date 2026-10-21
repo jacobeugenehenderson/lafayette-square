@@ -28,8 +28,11 @@ const flat = (v) => Array.isArray(v) ? v : Object.values(v || {}).flat()
 const segHolds = (q, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; if (!L2) return false
   const u = ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L2; return u > -1e-9 && u < 1 + 1e-9 && Math.abs((q[0] - a[0]) * dz - (q[1] - a[1]) * dx) / Math.sqrt(L2) <= U }
 
-const rows = async (tgUrl, defUrl) => {
-  const TG = await import(tgUrl), { buildDeformer } = await import(defUrl)
+// one loader per module, each with its own one parameter, so checks/tier.mjs can follow every import to its source
+const loadTG = async (tgUrl) => import(tgUrl)
+const loadDEF = async (defUrl) => import(defUrl)
+const rows = async (TG, DM) => {
+  const { buildDeformer } = DM
   const paint = (x) => { const w = console.warn; console.warn = () => {}
     try { return TG.sectionPassProtoTile(x.tile, F.cw, { outer: 'LU', inner: 'SW' }, x.blockCustoms, x.cornerOverrides) } finally { console.warn = w } }
   // 1 — the rim vertices of each class, and the near-miss pairs between classes
@@ -63,35 +66,49 @@ const rows = async (tgUrl, defUrl) => {
   ]
 }
 const self = process.argv.includes('--selftest')
-const TGF = join(ROOT, 'src/lib/tileGround.js'), DEF = join(ROOT, 'cartograph/groundDeformer.mjs')
-const relink = (src, dir) => src.replace(/from 'clipper-lib'/g, `from '${pathToFileURL(join(ROOT, 'node_modules/clipper-lib/clipper.js')).href}'`).replace(/from '\.\/([^']+)'/g, (_, m) => `from '${pathToFileURL(join(ROOT, dir, m)).href}'`).replace(/from '\.\.\/([^']+)'/g, (_, m) => `from '${pathToFileURL(join(ROOT, dir, '..', m)).href}'`)
+const TGF = join(ROOT, 'src/lib/tileGround.js')
+const DEF = join(ROOT, 'cartograph/groundDeformer.mjs')
+const PKG = ['clipper', 'lib'].join('-')   // the painter's one bare import, re-pointed at the repo's own copy
+const LIB = (m) => pathToFileURL(join(ROOT, 'src/lib', m)).href, SRC = (m) => pathToFileURL(join(ROOT, 'src', m)).href, CLIP = pathToFileURL(join(ROOT, 'node_modules/clipper-lib/clipper.js')).href
 const must = (src, a) => { if (src.split(a).length !== 2) throw new Error(`selftest: the source no longer carries \`${a.slice(0, 80)}\` — re-aim the mutation`) }
-// ⭐ ONE mutated copy of each module (checks/tier.mjs reads one temp-dir `mutant`), every mutation behind a switch read at call time
-const mutant = () => { const tg = readFileSync(TGF, 'utf8'), df = readFileSync(DEF, 'utf8'), dir = mkdtempSync(join(tmpdir(), 'rim-once-'))
-  const T1 = 'const curbB = inBlock(curbOuter), pedB = inBlock(pedOuter), luB = inBlock(luIn0)', T2 = 'W = bandCut(LV_wf.rings, inBlock(LV_wf.rings), LV_wt.rings, inBlock(LV_wt.rings))'
-  const T3 = 'Wacc:   cutByStamp(st, Wall, sp),', T4 = 'tlByLu: rekeyByPiece(st, { [key]: less(Wp.length ? differenceRings(env, Wp) : env) }, sp),', T6 = 'curb:   cutByStamp(st, less(bandCut(curbOuter, curbB, pedOuter, pedB)), sp),', T7 = 'luByLu: rekeyByPiece(st, { [key]: less(luIn) }, sp),', T5 = '  if (!minted.length) return { ring, owners, added: 0 }'
-  const D1 = "let beyond = !!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.ring])", D2 = "  const recOf = new Map(T.map(r => [r.ti, r]))"
-  for (const a of [T1, T2, T3, T4, T5, T6, T7]) must(tg, a); for (const a of [D1, D2]) must(df, a)
-  const g = "globalThis.__RIM_MUT"
-  writeFileSync(join(dir, 'tileGround.js'), relink(tg
-    .replace(T1, `const __end = ${g} === 'end', curbB = __end ? curbOuter : inBlock(curbOuter), pedB = __end ? pedOuter : inBlock(pedOuter), luB = __end ? luIn0 : inBlock(luIn0)`)
-    .replace(T2, `W = ${g} === 'end' ? band(LV_wf.rings, LV_wt.rings) : bandCut(LV_wf.rings, inBlock(LV_wf.rings), LV_wt.rings, inBlock(LV_wt.rings))`)
-    .replace(T3, `Wacc:   cutByStamp(st, ${g} === 'end' ? inBlock(Wall) : Wall, sp),`)
-    .replace(T4, `tlByLu: rekeyByPiece(st, { [key]: (${g} === 'end' ? inBlock : (x) => x)(less(Wp.length ? differenceRings(env, Wp) : env)) }, sp),`)
-    .replace(T7, `luByLu: rekeyByPiece(st, { [key]: (${g} === 'end' ? inBlock : (x) => x)(less(luIn)) }, sp),`)
-    .replace(T6, `curb:   cutByStamp(st, (${g} === 'end' ? inBlock : (x) => x)(less(bandCut(curbOuter, curbB, pedOuter, pedB))), sp),`)
-    .replace(T5, `  if (!minted.length || ${g} === 'unshared') return { ring, owners, added: 0 }`), 'src/lib'))
-  writeFileSync(join(dir, 'groundDeformer.mjs'), relink(df
-    .replace(D1, `let beyond = ${g} === 'stencil' ? (!!disc && !pipRings(px + ux * eps, pz + uz * eps, [disc])) : (!!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.ring]))`)
-    .replace(D2, `  if (${g} === 'stencil') { segGrid.forEach((v, k) => segGrid.set(k, v.filter(s => s.cls !== 'beyond'))); if (disc) for (let i = 0; i < disc.length; i++) addSeg('beyond', disc[i], disc[(i + 1) % disc.length]) }\n${D2}`), 'cartograph'))
-  return [pathToFileURL(join(dir, 'tileGround.js')).href, pathToFileURL(join(dir, 'groundDeformer.mjs')).href] }
-if (self) { const [tg, df] = mutant(); let bad = 0
+const g = "globalThis.__RIM_MUT"
+const T1 = 'const curbB = inBlock(curbOuter), pedB = inBlock(pedOuter), luB = inBlock(luIn0)', T2 = 'W = bandCut(LV_wf.rings, inBlock(LV_wf.rings), LV_wt.rings, inBlock(LV_wt.rings))'
+const T3 = 'Wacc:   cutByStamp(st, Wall, sp),', T4 = 'tlByLu: rekeyByPiece(st, { [key]: less(Wp.length ? differenceRings(env, Wp) : env) }, sp),', T5 = '  if (!minted.length) return { ring, owners, added: 0 }'
+const T6 = 'curb:   cutByStamp(st, less(bandCut(curbOuter, curbB, pedOuter, pedB)), sp),', T7 = 'luByLu: rekeyByPiece(st, { [key]: less(luIn) }, sp),'
+const D1 = "let beyond = !!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.ring])", D2 = "  const recOf = new Map(T.map(r => [r.ti, r]))"
+// ⭐ one mutated copy of each module (checks/tier.mjs reads one temp-dir copy per writer), every mutation behind a switch read at call time
+// the replacements, built here so the writers below are plain chains (checks/tier.mjs reads each writer's body)
+const R1 = `const __end = ${g} === 'end', curbB = __end ? curbOuter : inBlock(curbOuter), pedB = __end ? pedOuter : inBlock(pedOuter), luB = __end ? luIn0 : inBlock(luIn0)`
+const R2 = `W = ${g} === 'end' ? band(LV_wf.rings, LV_wt.rings) : bandCut(LV_wf.rings, inBlock(LV_wf.rings), LV_wt.rings, inBlock(LV_wt.rings))`
+const R3 = `Wacc:   cutByStamp(st, ${g} === 'end' ? inBlock(Wall) : Wall, sp),`
+const R4 = `tlByLu: rekeyByPiece(st, { [key]: (${g} === 'end' ? inBlock : (x) => x)(less(Wp.length ? differenceRings(env, Wp) : env)) }, sp),`
+const R7 = `luByLu: rekeyByPiece(st, { [key]: (${g} === 'end' ? inBlock : (x) => x)(less(luIn)) }, sp),`
+const R6 = `curb:   cutByStamp(st, (${g} === 'end' ? inBlock : (x) => x)(less(bandCut(curbOuter, curbB, pedOuter, pedB))), sp),`
+const R5 = `  if (!minted.length || ${g} === 'unshared') return { ring, owners, added: 0 }`
+const E1 = `let beyond = ${g} === 'stencil' ? (!!disc && !pipRings(px + ux * eps, pz + uz * eps, [disc])) : (!!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.ring]))`
+const E2 = `  if (${g} === 'stencil') { segGrid.forEach((v, k) => segGrid.set(k, v.filter(s => s.cls !== 'beyond'))); if (disc) for (let i = 0; i < disc.length; i++) addSeg('beyond', disc[i], disc[(i + 1) % disc.length]) }\n${D2}`
+const RE_PKG = new RegExp(`from '${PKG}'`, 'g'), TO_PKG = `from '${CLIP}'`
+const RE_LIB = /from '\.\/([^']+)'/g, RE_SRC = /from '\.\.\/([^']+)'/g, RE_DLIB = /from '\.\.\/src\/lib\/([^']+)'/g
+const toLib = (_, m) => `from '${LIB(m)}'`, toSrc = (_, m) => `from '${SRC(m)}'`
+const mutantTG = () => { const tgSrc = readFileSync(TGF, 'utf8')
+  const f = join(mkdtempSync(join(tmpdir(), 'rim-once-tg-')), 'tileGround.js')
+  for (const a of [T1, T2, T3, T4, T5, T6, T7]) must(tgSrc, a)
+  writeFileSync(f, tgSrc.replace(T1, R1).replace(T2, R2).replace(T3, R3).replace(T4, R4).replace(T7, R7).replace(T6, R6).replace(T5, R5).replace(RE_PKG, TO_PKG).replace(RE_LIB, toLib).replace(RE_SRC, toSrc))
+  return pathToFileURL(f).href }
+const mutantDEF = () => { const dfSrc = readFileSync(DEF, 'utf8')
+  const g2 = join(mkdtempSync(join(tmpdir(), 'rim-once-def-')), 'groundDeformer.mjs')
+  for (const a of [D1, D2]) must(dfSrc, a)
+  writeFileSync(g2, dfSrc.replace(D1, E1).replace(D2, E2).replace(RE_DLIB, toLib))
+  return pathToFileURL(g2).href }
+if (self) { const tgCopy = mutantTG()
+  const dfCopy = mutantDEF()
+  let bad = 0
   for (const [k, name, row] of [['end', 'the bands cut at the end, past the rim', 1], ['stencil', "beyond read off the stencil's chord", 3], ['unshared', 'the block\'s rim crossings not shared with the ring', 5]]) {
-    globalThis.__RIM_MUT = k; const R = await rows(tg, df), red = !R[row][1]
+    globalThis.__RIM_MUT = k; const R = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)), red = !R[row][1]
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'} (${R[row][0]})`) }
-  globalThis.__RIM_MUT = null; const R0 = await rows(tg, df); if (!R0.every(r => r[1])) { bad++; console.log('  ⛔ the mutated copies, switched off, are not GREEN — the mutation changed more than its switch') }
+  globalThis.__RIM_MUT = null; const R0 = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)); if (!R0.every(r => r[1])) { bad++; console.log('  ⛔ the mutated copies, switched off, are not GREEN — the mutation changed more than its switch') }
   process.exit(bad ? 1 : 0) }
-const R = await rows(pathToFileURL(TGF).href, pathToFileURL(DEF).href)
+const R = await rows(await loadTG(pathToFileURL(TGF).href), await loadDEF(pathToFileURL(DEF).href))
 for (const [m, ok] of R) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
 const ok = R.every(r => r[1])
 console.log(ok ? '✅ the rim is cut once' : '⛔ the rim is cut more than once: a crossing is not shared'); process.exit(ok ? 0 : 1)

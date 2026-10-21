@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 92. Never in a default run.
+## ⛔ live — 91. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -85,7 +85,6 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of src/preview/heroAnim.js — read, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports package(s) vite — not read from source |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known-local command |
-| `checks/claims-the-rim-is-cut-once.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · imports package(s) clipper-lib — not read from source |
 | `checks/claims-the-road-is-swept-from-its-line-to-its-curb.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-sun-dims-with-the-weather-now.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
@@ -156,7 +155,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 315. This is `npm test`.
+## safe — 316. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -442,6 +441,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs` | reads.mjs — DOES THE DEFORMER'S RAY SEE THE BANDS ITS OWN POINT TEST SEES? |
 | `checks/claims-the-revetment-builds-on-the-wet-face.mjs` | face.mjs — DOES THE STONE FACE THE WATER? |
 | `checks/claims-the-revetment-ends-as-a-heap.mjs` | heap.mjs — DOES THE STONE STOP IN A CUT? |
+| `checks/claims-the-rim-is-cut-once.mjs` | once.mjs — WHERE THE DRAWING MEETS THE DISC, EACH LINE IS CUT ONCE AND EVERY CROSSING IS SHARED |
 | `checks/claims-the-search-outlives-an-empty-ticker.mjs` | the header's chrome may not be gated on |
 | `checks/claims-the-shadow-box-has-no-cliff.mjs` | the fitted shadow box is continuous at the horizon. |
 | `checks/claims-the-shore-is-closed.mjs` | closed |
