@@ -102,7 +102,11 @@ Start here. State at the restart:
     (tile 170 ×16, 211, 152) · Jacob's 4 here of 6 · back-edge rounding 1 (tile 159).
     Tile 170 (Mitre, HEAD ba02b826): fix B owns 10 of 26, including Jacob's pair at (−230.56, −508.73); the 16 left are in
     no perpendicular rect (12 'band but no piece', possibly a stale-dump mismatch; 4 the tile-211 shape). Class 3 needs a fresh
-    producer dump: Mitre's slot run, right after Huron.
+    producer dump: Mitre's slot run, right after Huron. ⭐ MEASURED at HEAD ba02b826 (Mitre, fresh producer dump, 3.08 GB):
+    HPDM 91 of the census's 269 unowned (faces vs rects: 177 → 91), 0 newly unowned, corner decisions unchanged. Left: 134 ×33,
+    55 ×19 (class 3, shape confirmed on fresh paint), 170 ×16 (stale paint ruled out), 152 ×5, 211 ×5, 215 ×3, singles.
+    ⛔ A fix-B REGRESSION: a 67 cm² walk strip on tile 32 at (251.0, 1048.4) that the rect held and no face does. Mitre fixes it
+    first. Rim row: tile 52 (4 faces reach the rim).
   · HURON CENSUS DONE (Kerf, on 83652943, before fix B and the both-sides read): every step exits 0; the ONLY refusal is #40,
     19,655 unowned, 96% on tile 6 (18,855). Ground 5,196 s / 11.8 GB + ground-shore 4,591 s / 11.3 GB: 2.7 h of ground baking
     (Jacob: long bakes are not acceptable). Tile 6 re-measured at HEAD by Zob, in memory, at low priority (not Thursday).
