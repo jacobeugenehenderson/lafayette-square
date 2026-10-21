@@ -54,13 +54,14 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import clipperLib from 'clipper-lib'
 import { sectionPassTile } from '../src/lib/tileGround.js'
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 
 // ⚠️ UNION FIRST. `sectionPassTile` returns the band's CLAIMS — one polygon per run and
 // per corner — which ABUT but are not merged; the union happens downstream in
 // `buildTileGround`. Counting the raw claims reports 8–78 "pieces" on every tile and is
 // a measure of the construction, not of what the operator sees. Measured claims, called
 // them components, got 0 clean rings out of 101 — the instrument, not the map.
-const SC = 1e5
+const SC = CLIP_SCALE   // the union is judged on the partition's own grid (lattice.js), never a finer one: a finer grid sees gaps the kit's union closes
 const unionAll = (rings) => {
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
   const c = new Clipper(); let n = 0
