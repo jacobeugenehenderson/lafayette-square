@@ -136,7 +136,8 @@ export function edgeKeysOf(rings, keep = null) {
 /** Everything the bake needs to lift its ground: `blockRings` (the painter's block — what lifts), `groups` (the NODED
  *  ground partition, [{ key, items }], key without its kind — the curb is `curb`/`curbCut`), the curb cuts' `ramps`, the
  *  town's `kerb`, and the noded `rimRings` ([{ ring, owners }], the rim named by its owners). Returns { inBlock, curbless,
- *  curblessM, roadM, rimM, unpaired, unpairedM, rimSide, rimSideM, interiorM, orphanRoadM, flushTol, narrowBlock, regions }. Throws when the
+ *  curblessM, roadM, rimM, unpaired, unpairedM, rimSide, rimSideM, interiorM, orphanRoadM, flushTol, narrowBlock, bends (each
+ *  side of a bend no bisector could be drawn at: on its neighbour's line, or square and why), regions }. Throws when the
  *  block has curbless edges and the town's kerb norm gives no taperRun. */
 export function kerbPlan({ blockRings, rimRings = [], groups, ramps, kerb }) {
   const inBlock = ringsInside(blockRings)
@@ -166,7 +167,7 @@ export function kerbPlan({ blockRings, rimRings = [], groups, ramps, kerb }) {
   const narrow = crossed.filter(c => c.sameRing), foreign = crossed.filter(c => !c.sameRing)
   if (foreign.length) throw new Error(`[kerbLift] ⛔ ${foreign.length} mitred taper crease(s) cross ANOTHER block's edge (or start on no block ring) — a bend too sharp for the run ${kerb.taperRun} m: ${foreign.slice(0, 6).map(c => `from (${c.from.map(v => v.toFixed(3))}) reaching ${c.reach.toFixed(2)} m, across ring ${c.ring} (${c.edge[0].map(v => v.toFixed(3))})→(${c.edge[1].map(v => v.toFixed(3))})`).join(' · ')}`)
   const narrowBlock = narrow.map(c => ({ ring: c.ring, at: c.from, reachM: +c.reach.toFixed(3), pastFarEdgeM: +c.past.toFixed(3) }))
-  return { inBlock, curbless, curblessM, roadM, rimM, unpaired, unpairedM, rimSide, rimSideM, interiorM, orphanRoadM, flushTol, narrowBlock, regions: [...kerbRegions(ramps, kerb), ...tapers] }
+  return { inBlock, curbless, curblessM, roadM, rimM, unpaired, unpairedM, rimSide, rimSideM, interiorM, orphanRoadM, flushTol, narrowBlock, bends: tapers.bends, regions: [...kerbRegions(ramps, kerb), ...tapers] }
 }
 
 /** Every MITRED crease (k ≠ 0) of `tapers` that properly crosses a block-ring edge other than those at its own vertex:
@@ -266,29 +267,58 @@ export function mitreBases(edges, taperRun) {
     return unit(s) }
   // ⭐ A MITRE ONLY WHERE IT CAN BE DRAWN: a region's two creases must not cross inside its run (w + run·(kB − kA) ≥ 0), or
   // its trapezoid turns inside out and stops covering its own base — a short edge between two sharp bends, where the
-  // bisector reaches run / cos(θ/2) (82 m at LS's 178.6° finger tip). Such a bend keeps both perpendicular sides, as the
-  // rectangles had (the narrow-block class: `mitresCrossing`, counted by the caller). Resolved to a fixpoint, one bend
-  // at a time, so a crease is always shared by both regions on it.
-  const flat = new Set()                                     // bend vertices kept perpendicular
-  const k = (i, P) => { if (flat.has(k2(P))) return 0
-    const n = edges[i].inward, m = crease(i, P), u = unit([edges[i].B[0] - edges[i].A[0], edges[i].B[1] - edges[i].A[1]])
+  // bisector reaches run / cos(θ/2) (82 m at LS's 178.6° finger tip). Such a bend's sides run on their neighbour's line
+  // where they can (below), else stay perpendicular, as the rectangles had (the narrow-block class: `mitresCrossing`,
+  // counted by the caller). Resolved to a fixpoint, one bend at a time, so a crease is always shared by both regions on it.
+  const flat = new Set()                                     // bend vertices whose bisector cannot be drawn
+  const kOf = (i, m) => { const n = edges[i].inward, u = unit([edges[i].B[0] - edges[i].A[0], edges[i].B[1] - edges[i].A[1]])
     return (m[0] * u[0] + m[1] * u[1]) / (m[0] * n[0] + m[1] * n[1]) }
-  for (let changed = true; changed;) { changed = false
+  const kBis = (i, P) => flat.has(k2(P)) ? 0 : kOf(i, crease(i, P))
+  const fixpoint = (k, out) => { for (let changed = true; changed;) { changed = false
     edges.forEach((e, i) => { const w = Math.hypot(e.B[0] - e.A[0], e.B[1] - e.A[1])
       if (w + taperRun * (k(i, e.B) - k(i, e.A)) >= 0) return
-      for (const P of [e.A, e.B]) if (!flat.has(k2(P)) && k(i, P) !== 0) { flat.add(k2(P)); changed = true } }) }
+      for (const P of [e.A, e.B]) if (!out.has(k2(P)) && k(i, P) !== 0) { out.add(k2(P)); changed = true } }) } }
+  fixpoint(kBis, flat)
+  // ⭐ WHERE THE BISECTOR CANNOT BE DRAWN, EACH CREASE IS ITS NEIGHBOUR'S EDGE LINE (Boz, 2026-10-21 — one line, used by
+  // both sides, no new vertex): the region's end crease at the bend runs along the other base, which IS the block's edge,
+  // so no crease runs beside it. A perpendicular crease there leaned off that edge by the bend's departure from square and
+  // left a sub-lattice sliver of block between them, which conformity welded onto the road (LS #39, (−148.79, 318.64):
+  // 1.25 mm over the 1 m run at a 90.07° bend, 0.18 mm lifted). Only where that line leans INTO the region (a convex bend;
+  // at a reflex one it leaves behind the base), where the crease ENDS ON that edge (its reach, run / cos, no longer than the
+  // neighbour's base — past it the line is no edge of anything, and at a hairpin it reached 40 m across another block, LS
+  // (714.29, 498.62)), and where the region stays drawable with it; else the side stays perpendicular.
+  const along = (i, P) => { if (!flat.has(k2(P))) return null
+    const here = at.get(k2(P)); if (here.length !== 2) return null
+    const e = edges[here[0] === i ? here[1] : here[0]], Q = k2(e.A) === k2(P) ? e.B : e.A, L = Math.hypot(Q[0] - P[0], Q[1] - P[1])
+    const m = [(Q[0] - P[0]) / L, (Q[1] - P[1]) / L], n = edges[i].inward, c = m[0] * n[0] + m[1] * n[1]
+    return c > 0 && taperRun / c <= L ? m : null }
+  const square = new Set()                                   // bends whose neighbour line cannot be drawn either: perpendicular
+  const k = (i, P) => { if (!flat.has(k2(P))) return kBis(i, P)
+    const m = square.has(k2(P)) ? null : along(i, P); return m ? kOf(i, m) : 0 }
+  fixpoint(k, square)
   // a shared crease's far end is computed ONCE, so both regions carry the identical point (computed in each region's own
-  // frame it rounded a unit apart, and the split met two creases instead of one)
+  // frame it rounded a unit apart, and the split met two creases instead of one); a crease along the neighbour's line is
+  // the region's own, keyed by region
   const far = new Map()
-  const farEnd = (i, P) => { const key = k2(P); if (far.has(key)) return far.get(key)
-    const m = crease(i, P), n = edges[i].inward, L = taperRun / (m[0] * n[0] + m[1] * n[1]), Q = [P[0] + m[0] * L, P[1] + m[1] * L]
+  const farEnd = (i, P) => { const m = flat.has(k2(P)) ? along(i, P) : crease(i, P), key = flat.has(k2(P)) ? k2(P) + '#' + i : k2(P)
+    if (far.has(key)) return far.get(key)
+    const n = edges[i].inward, L = taperRun / (m[0] * n[0] + m[1] * n[1]), Q = [P[0] + m[0] * L, P[1] + m[1] * L]
     far.set(key, Q); return Q }
-  return edges.map(({ A, B, inward: n }, i) => {
+  const regions = edges.map(({ A, B, inward: n }, i) => {
     const w = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / w, (B[1] - A[1]) / w], kA = k(i, A), kB = k(i, B)
     const pt = (s, t) => [A[0] + u[0] * s + n[0] * t, A[1] + u[1] * s + n[1] * t]
-    return { kind: 'ramp', taper: true, A, u, inward: n, w, R: taperRun, F: null, kA, kB,
+    const onEdge = (P) => flat.has(k2(P)) && !square.has(k2(P)) && !!along(i, P)
+    return { kind: 'ramp', taper: true, A, u, inward: n, w, R: taperRun, F: null, kA, kB, edgeA: onEdge(A), edgeB: onEdge(B),
       poly: [A, B, kB ? farEnd(i, B) : pt(w, taperRun), kA ? farEnd(i, A) : pt(0, taperRun)] }   // the base on the edge's own ends
   })
+  // every bend whose bisector could not be drawn, per region side: on its neighbour's line, or square — and why
+  regions.bends = []
+  edges.forEach((e, i) => { for (const P of [e.A, e.B]) { if (!flat.has(k2(P)) || at.get(k2(P)).length !== 2) continue
+    const o = edges[at.get(k2(P))[0] === i ? at.get(k2(P))[1] : at.get(k2(P))[0]], Q = k2(o.A) === k2(P) ? o.B : o.A
+    const m = unit([Q[0] - P[0], Q[1] - P[1]]), convex = m[0] * e.inward[0] + m[1] * e.inward[1] > 0
+    regions.bends.push({ at: P, region: i, w: Math.hypot(e.B[0] - e.A[0], e.B[1] - e.A[1]),
+      side: !convex ? 'square: reflex' : !along(i, P) ? 'square: past the neighbour' : square.has(k2(P)) ? 'square: undrawable' : 'neighbour line' }) } })
+  return regions
 }
 
 /** Ramp + flare regions for every cut. Each: { kind, poly, A, u, inward, w, R, F }. */
@@ -440,10 +470,18 @@ function pastBase(g) {
   const L = Math.hypot(g.inward[0], g.inward[1]), n = [g.inward[0] / L, g.inward[1] / L]
   const tc = (P) => (P[0] - g.A[0]) * n[0] + (P[1] - g.A[1]) * n[1]
   const P = g.poly, m = P.length
-  return P.map((p, i) => { if (Math.abs(tc(p)) > 1e-9) return p
+  const out = P.map((p, i) => { if (Math.abs(tc(p)) > 1e-9) return p
     const q = [P[(i + m - 1) % m], P[(i + 1) % m]].find(r => tc(r) > 1e-9)
     if (!q) return p
     const k = TOL / tc(q); return [p[0] + (p[0] - q[0]) * k, p[1] + (p[1] - q[1]) * k] })
+  // ⭐ a side ON the neighbour's edge (`mitreBases`, edgeA/edgeB) is carried TOL past it too, away from the region, so the
+  // clip makes that side the block's own lattice edge as well — a copy of the line, rounded, crossed it at a hair's angle
+  // and the crease cut minted a crossing every round (LS, 16 rounds, refused)
+  if (g.kind === 'ramp' && g.taper && (g.edgeA || g.edgeB) && m === 4) for (const [on, a, b] of [[g.edgeA, 0, 3], [g.edgeB, 1, 2]]) { if (!on) continue
+    const d = [P[b][0] - P[a][0], P[b][1] - P[a][1]], dl = Math.hypot(d[0], d[1]), md = [d[0] / dl, d[1] / dl]
+    const into = a === 0 ? g.u : [-g.u[0], -g.u[1]], c = into[0] * md[0] + into[1] * md[1], v = [into[0] - c * md[0], into[1] - c * md[1]], vl = Math.hypot(v[0], v[1])
+    for (const j of [a, b]) out[j] = [out[j][0] - v[0] / vl * TOL, out[j][1] - v[1] / vl * TOL] }
+  return out
 }
 
 /** The kerb regions' outlines as CELLS of the partition: each region clipped to the lifted block ON THE LATTICE, so a

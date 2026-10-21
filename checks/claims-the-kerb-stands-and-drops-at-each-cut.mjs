@@ -28,7 +28,8 @@
 //   with the groups not split at the creases (2c5560ca's bake) · the cut's ramp and flares dropped from the field · a road
 //   sliver's side read off its centroid (the old rule) · the finder's old 1 mm-INBOARD sample (LS #39 M1) · every taper's
 //   inward flipped · RECTANGLES for the tapers (no mitre) · a taper per partition EDGE (no stretch) · the crease split
-//   without `cutCreases` (each polygon rounding its own crossing).
+//   without `cutCreases` (each polygon rounding its own crossing) · a side at an undrawable bend left perpendicular,
+//   beside its neighbour's edge instead of on it (LS #39's 0.18 mm crack).
 //   node checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs [--selftest]
 import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, cutCreases, splitAtCreases, withSide, ringsInside,
   curblessEdges, taperRegions, mitreBases, kerbRegions } from '../cartograph/kerbLift.mjs'
@@ -51,17 +52,22 @@ const blockC = ring([[40, 0], [50, 0], [50, tC], [50, tC + 0.3], [50, 10], [40, 
 // D: a 5° reflex bend at (65, 0) on the south side; on the north, a vertex at the lattice point nearest the side's middle —
 // within one rounding of its chord, which is what noding leaves along a straight edge
 const dD = 5 * Math.tan(5 * Math.PI / 180), blockD = ring([[60, 0], [65, 0], [70, -dD], [70, 10], [65, 10], [60, 10]])
+// E: a FINGER 7 cm wide and 5 m long off a 10 m block, curbless all round; its 7 cm tip meets the south side at a bend
+// 0.07° off square, convex at both ends, so no bisector can be drawn on it (w + run·(kB − kA) < 0) and its side there must
+// be the south side's own line (LS #39, the finger at (−148.79, 318.64))
+const aE = 0.07 * Math.PI / 180, qE = [90 + 0.07 * Math.sin(aE), 0.07 * Math.cos(aE)]
+const blockE = ring([[80, 0], [90, 0], qE, [85, qE[1]], [85, 10], [80, 10]])
 const cut = { face: [Wl([4, 0]), Wl([5.5, 0])], inward: (() => { const a = W([0, 0]), b = W([0, 1]); return [b[0] - a[0], b[1] - a[1]] })() }
 // each group as the bake hands it over: polygons, outer + holes, never regrouped
 const groupsIn = [
-  ['mat:asphalt', [{ outer: sq(-5, -5, 75, 15), holes: [rev(block), rev(blockB), rev(blockC), rev(blockD)] }]],
+  ['mat:asphalt', [{ outer: sq(-5, -5, 95, 15), holes: [rev(block), rev(blockB), rev(blockC), rev(blockD), rev(blockE)] }]],
   ['mat:curb', [{ outer: block, holes: [rev(inner)] }, { outer: bareCurb, holes: [] }, { outer: curbC, holes: [] }]],
   ['mat:sidewalk', [{ outer: inner, holes: [] }]],
-  ['face:vacant', [{ outer: bare, holes: [] }, { outer: wedgeC, holes: [] }, { outer: restC, holes: [] }, { outer: blockD, holes: [] }]],
+  ['face:vacant', [{ outer: bare, holes: [] }, { outer: wedgeC, holes: [] }, { outer: restC, holes: [] }, { outer: blockD, holes: [] }, { outer: blockE, holes: [] }]],
 ]
 const keyOf = (k) => k.slice(k.indexOf(':') + 1)
 // what lifts is the painter's block (`pr.block`), noded with the paint
-const blockRings = [block, blockB, blockC, blockD]
+const blockRings = [block, blockB, blockC, blockD, blockE]
 const P0 = kerbPlan({ blockRings, groups: groupsIn.map(([k, items]) => ({ key: keyOf(k), items })), ramps: [cut], kerb })
 const inBlock = P0.inBlock
 const R = h / kerb.rampSlope, F = h / kerb.flareSlope
@@ -87,19 +93,24 @@ function inboardCurbless(blockRings, curbRings) {
       out.push({ A: at(t0), B: at(t1), inward: n }) } }
   return out
 }
+const squared = (regions) => regions.map(g => { if (!g.edgeA && !g.edgeB) return g
+  const pt = (s, t) => [g.A[0] + g.u[0] * s + g.inward[0] * t, g.A[1] + g.u[1] * s + g.inward[1] * t], poly = [...g.poly]
+  if (g.edgeA) poly[3] = pt(0, taperRun); if (g.edgeB) poly[2] = pt(g.w, taperRun)
+  return { ...g, kA: g.edgeA ? 0 : g.kA, kB: g.edgeB ? 0 : g.kB, edgeA: false, edgeB: false, poly } })
 const rectangles = (edges) => edges.map(({ A, B, inward: n }) => { const w = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / w, (B[1] - A[1]) / w]
   const pt = (s, t) => [A[0] + u[0] * s + n[0] * t, A[1] + u[1] * s + n[1] * t]
   return { kind: 'ramp', taper: true, A, u, inward: n, w, R: taperRun, F: null, kA: 0, kB: 0, poly: [pt(0, 0), pt(w, 0), pt(w, taperRun), pt(0, taperRun)] } })
 
 /** run the bake's pieces on the scene. The default is the bake's own path (P0 = kerbPlan); a mutant swaps one piece:
  *  `split` (the crease split at all), `regionsOf` (drop regions from the FIELD), `finder` ('inboard'), `flip` (inward),
- *  `tapers` ('rect' | 'perEdge'), `cutOnce` (cutCreases before the split). This scene has no terrain: nothing refines. */
+ *  `tapers` ('rect' | 'perEdge' | 'square': a side on its neighbour's line rebuilt perpendicular), `cutOnce` (cutCreases
+ *  before the split). This scene has no terrain: nothing refines. */
 function judge({ regionsOf = (r) => r, split = true, finder = 'owner', flip = false, tapers = 'stretch', cutOnce = true } = {}) {
   let curbless = P0.curbless, regions0 = P0.regions
   if (finder !== 'owner' || flip || tapers !== 'stretch') {
     if (finder === 'inboard') curbless = inboardCurbless(blockRings, [block, rev(inner), bareCurb, curbC])
     if (flip) curbless = curbless.map(c => ({ ...c, inward: [-c.inward[0], -c.inward[1]] }))
-    const t = tapers === 'rect' ? rectangles(curbless) : tapers === 'perEdge' ? mitreBases(curbless, taperRun) : taperRegions(curbless, taperRun)
+    const t = tapers === 'rect' ? rectangles(curbless) : tapers === 'perEdge' ? mitreBases(curbless, taperRun) : tapers === 'square' ? squared(taperRegions(curbless, taperRun)) : taperRegions(curbless, taperRun)
     regions0 = [...kerbRegions([cut], kerb), ...t]
   }
   const regions = regionsOf(regions0)
@@ -153,6 +164,10 @@ function judge({ regionsOf = (r) => r, split = true, finder = 'owner', flip = fa
   const farAt = (g) => Math.hypot(g.poly[0][0] - bend[0], g.poly[0][1] - bend[1]) < 1e-6 ? g.poly[3] : g.poly[2]
   const oneCrease = atBend.length === 2 && Math.hypot(farAt(atBend[0])[0] - farAt(atBend[1])[0], farAt(atBend[0])[1] - farAt(atBend[1])[1]) < 1e-9
   // D's north side, wiggle and all: the tapers whose base lies on it
+  // E's bend: the short taper's side there ends ON the south side's line (no crease beside the block edge)
+  const bendE = Wl([90, 0]), southE = [Wl([80, 0]), bendE], lineOff = (P, [a, b]) => Math.abs((b[0] - a[0]) * (P[1] - a[1]) - (b[1] - a[1]) * (P[0] - a[0])) / Math.hypot(b[0] - a[0], b[1] - a[1])
+  const shortE = tapersNow.filter(g => g.w < 0.1 && [g.poly[0], g.poly[1]].some(p => Math.hypot(p[0] - bendE[0], p[1] - bendE[1]) < 1e-6))
+  const sideE = shortE.map(g => Math.hypot(g.poly[0][0] - bendE[0], g.poly[0][1] - bendE[1]) < 1e-6 ? g.poly[3] : g.poly[2])
   const north = tapersNow.filter(g => [g.poly[0], g.poly[1]].every(p => { const q = Lc(p); return q[0] > 59.9 && q[0] < 70.1 && Math.abs(q[1] - 10) < 1e-3 }))
   const rows = [
     ['the asphalt stays at 0', asph.every(([, y]) => Math.abs(y) < e)],
@@ -169,6 +184,7 @@ function judge({ regionsOf = (r) => r, split = true, finder = 'owner', flip = fa
     ["D: the two tapers at the 5° bend share ONE crease", oneCrease],
     ["D: the bend's wedge slopes, as its own base's taper (field)", field.y(W([65.03, 0.8])) <= h * 0.85],
     ['D: a vertex within one rounding of its chord is no bend (one taper on the north side)', north.length === 1],
+    ["E: at a bend too sharp for its 7 cm stretch's bisector, that taper's side IS its neighbour's edge line", shortE.length === 1 && sideE.every(P => lineOff(P, southE) < 1e-9), sideE.map(P => lineOff(P, southE).toExponential(1)).join(',')],
     ['the crease split leaves every edge shared', Math.abs(onceAfter - onceBefore) < 1e-6, (onceAfter - onceBefore).toFixed(4)],
     ['the riser stands along every kerb but the flush span', riser.kerbM > 40 - 1.5 && riserH.length > 0 && riserH.every(v => v <= h + e)],
     ['no step anywhere is left without a face',         Object.keys(riser.bareM).length === 0],
@@ -200,6 +216,7 @@ if (process.argv.includes('--selftest')) {
     ['RECTANGLES for the tapers (no mitre)', { tapers: 'rect' }],
     ['a taper per partition EDGE (no stretch)', { tapers: 'perEdge' }],
     ['the crease split without cutCreases', { cutOnce: false }],
+    ['a side at an undrawable bend left perpendicular, beside its neighbour (LS #39 crack)', { tapers: 'square' }],
   ].map(([name, o]) => [name, judge(o)])
   const tests = [["the bake's path is GREEN", real.rows.every(([, ok]) => ok)],
     ...mutants.map(([name, r]) => [`${name}: RED`, r.rows.some(([, ok]) => !ok)]),
