@@ -141,7 +141,7 @@ export function kerbPlan({ blockRings, rimRings = [], groups, ramps, kerb }) {
   const inBlock = ringsInside(blockRings)
   const { curbless, roadM, rimM, unpaired, unpairedM, interior, interiorM: allInteriorM, orphanRoadM } = curblessEdges(groups.map(({ key, items }) => ({ key, items: withSide(items, inBlock) })), KERB_KEYS,
     { rimEdges: edgeKeysOf(rimRings.filter(Boolean), (o) => o?.kind === 'rim'), blockEdges: edgeKeysOf(blockRings) })
-  // ⚠️ A CENSUS, NOT A DECISION (Boz, 2026-10-21): of the edges with nothing across that are on neither the noded rim nor
+  // ⚠️ A DIAGNOSTIC, NOT A DECISION (Boz, 2026-10-21: "diagnostic: ends within two roundings of a rim-owned edge; decides nothing"): of the edges with nothing across that are on neither the noded rim nor
   // the block ring, those whose ends lie within TWO roundings of a rim-owned rim edge are the rim's own paint left
   // un-noded (on LS ~1 mm off it, past the plane noding's one-rounding bound: its `pastBound` count). Named, so they never
   // hide among the block's interior edges; nothing tapers or refuses by this distance.
