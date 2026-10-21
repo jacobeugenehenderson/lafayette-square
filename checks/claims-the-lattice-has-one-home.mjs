@@ -13,6 +13,9 @@
 //       seams against the first are the partition's gaps (HPDM, measured 2026-10-21: the 1 cm land evidence put 2,179
 //       parcel corners 1–6 mm off the OSM line they meet; on the lattice, 11). Rounding an OUTPUT value to centimetres
 //       (`Math.round(v * 100) / 100` for a label, a datum) is not a grid and is not judged.
+// ⛔ RED WHERE TRUE, BY RULING (Boz, 2026-10-21): OPEN at landing, the unbuilt half of ONE GRID — the coast's second grid
+//   (cartograph/outer-coast.mjs `const S = 100`) and the flood outline's (cartograph/bake-terrain.js `const S = 100`). Named,
+//   never excused; they clear when the coast moves onto the lattice (docs/briefs/BRIEF-the-stamp-lands-on-the-lattice.md §1a).
 // It READS lattice.js for the values, never restates them.
 // ⭐ MUTATION TEST: `--selftest` — tileGround.js with its old `const SCALE = 1000` put back (in memory) → RED; a literal
 //   coordinate key → RED; a lattice-named literal → RED; tileGround.js as it is → GREEN.
