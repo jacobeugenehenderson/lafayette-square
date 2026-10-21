@@ -22,7 +22,7 @@ Start here. State at the restart:
 - **⭐ Thursday 2026-10-22 afternoon: Jacob meets potential HPDM partners.** Required: **LS and HPDM** in good working
   order. Huron and PTown help ("sales momentum") but are not required. JH is not shown. Proposed cutoff: what has not
   passed Jacob's eye by Wednesday evening ships as served today.
-- **In flight (2026-10-20 night, Boz):** Mitre builds `BRIEF-perpendicular-leg-ownership` (heavy slot) · Kerf builds step 7
+- **In flight (2026-10-20 night, Boz):** ✅ perpendicular-leg ownership LANDED (Mitre, merged; brief in `cartograph/_archive/`) · HPDM re-poured on its existing fetch (parity GREEN) · Kerf builds step 7
   of `BRIEF-the-ground-stays-in-budget` (simplifier in the bake, road split), HPDM first, slot after Mitre · Zob builds
   HPDM's key-parity check (HPDM's re-pour waits on it) · Plumb records every LS flatten refusal at a3426465 and at
   integration (the refusal predates the range: a3426465 refuses too, at `mat:sidewalk`).
@@ -43,7 +43,6 @@ Start here. State at the restart:
 - Sidewalk spikes where a treelawn ends near a T (HPDM wide view at (-156.7, 416.1), before and after perp-depths).
 
 **Builds, planned and ruled (not started):**
-- **Perpendicular-corner leg ownership**: ruled (option A); the build is `docs/briefs/BRIEF-perpendicular-leg-ownership.md` (OPEN).
 - **Classifier step 7**: the plan, Jacob's rulings, the checks and mutants: `docs/briefs/BRIEF-the-classifier.md` §5b
   (OPEN, not dispatched). Repaints every unauthored arterial and collector edge (LS: 44 chains).
 - Classifier Pass B: islands (walk and ramps only where a crossing passes), plazas, living street (both-side walks to
@@ -58,6 +57,7 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
+- A perpendicular leg and its own arc's half name one run under two keys (`a<arc>/<t>` and the run): a duplicate owner, no pixel. HPDM 1,382 → 3,150 pieces (149 m²) after the leg-ownership build (Mitre, 3a55accb; `claims-the-bands-are-held-by-their-owners` row 6f reports it).
 - `claims-handle-rides-its-arc`'s dark-sides row skips the boundary filter (191 of LS's 202 lie outside); fix with one
   rule: a side counts only if a tile lies on it, inside the boundary.
 - PTown: 9 coincident twin chains (one twin's side goes dark); sides facing no tile (the marina footways).
