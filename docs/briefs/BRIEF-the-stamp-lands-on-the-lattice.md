@@ -30,7 +30,9 @@ revetment as stamped ground, and the ground budget (`BRIEF-the-ground-stays-in-b
 
 The kit cuts on `src/lib/lattice.js`'s 1 mm grid everywhere, the coast and the land use included. Lath found Huron's
 refusal is a mat:shore edge on the 1 cm grid beside its own 1 mm twin, about 4 mm apart (23adbb41's report). The coast
-moves in this brief; `derive.js`'s land-use grid is the pour-side job that follows, under the same ruling.
+moves in this brief. ⛔ The land use is ON the grid at integration 70eba3f5: frozen `landEvidence` has 0 off-lattice
+vertices on LS (of 32,491) and HPDM (of 158,569) (Zob, measured 2026-10-20). What it lacks is CONFORMITY: two rings
+meeting on the lattice without sharing their vertices (§3b).
 Measured input, NOT matched to this cause: Provincetown's served slab has 4,972 open holes that findTJunctions' end rule
 passes. Their median gap is 4.59 mm, mostly shore↔beach/wetland/park (2026-10-18, on the served slab).
 ▶ `node scratch/ground-budget/tj-class/end-rule.mjs provincetown`
@@ -67,6 +69,40 @@ passes. Their median gap is 4.59 mm, mostly shore↔beach/wetland/park (2026-10-
    `bake-timings.json`, and peak memory.
 6. **Stop and bring Boz:** what the code said, the counts, the bakes. Items 2 and 3 of 02da626e's "FOR THE MORNING"
    (the shallow-angle Clipper residual and the dead chain-pass paint) are separate items; raise them, don't fold them in.
+
+## 3b. Tonight's build: the rings agree before flatten (Jacob, 2026-10-20 night: "option 3, building option 1 tonight")
+
+**Why.** LS's and HPDM's ground bakes refuse at flatten (`bakeGround` → `flattenPaintStack` → `itemsByMembership`:
+"a hole below the lattice … that no painted ring holds by its probe, yet a ring of N vertices meets it"). The cause,
+measured by Zob at 70eba3f5 (probes in Zob's session scratchpad, `fl/`): a cross-group T-JUNCTION on the lattice. One
+ring carries a lattice vertex less than half a step off another ring's straight edge, the edge doesn't carry it, and
+`layer − above` emits a 3-vertex sub-lattice hole. HPDM: face:recreation × face:industrial/underived at
+(−621.157, 81.411), made in `derive.js#layerLandEvidence`'s parcel difference (`ctDifference(u, [...claimed, ...others])`),
+whose rounded crossing lies 0.49 units off the OSM recreation edge. LS: 4 holes on one line near (−703.3, −582.4),
+face:recreation × mat:asphalt, 0.22–0.28 units apart, no land evidence within 15 m; the asphalt edge's producer is not
+established. The refusal is right (the 10-14 sub-lattice ruling, `4bc6150e`); the inputs are wrong.
+
+**The build (option 1).** At the head of `flattenPaintStack`, before the first difference, NODE the stack: every vertex
+of every ring that lies within HALF A LATTICE STEP of another ring's edge (any group, either way) is inserted into that
+edge. The bound is read from `src/lib/lattice.js` (`LATTICE_M / 2`, the lattice's own rounding bound); ⛔ a literal at the
+call site is Class D. Inserted vertices are existing lattice points, so nothing leaves the grid. ⛔ A vertex further than
+half a step is untouched and still refuses: this conforms rings, it never tolerates a hole.
+- **Count it, loudly:** the bake prints how many vertices it inserted, per group pair. A town where the count is large is
+  telling us a producer is wrong.
+- **The two drops** in `itemsByMembership` (the orphan and the bow-tie, "a downstream tolerance for an upstream class"):
+  measure them after noding on LS, HPDM, Huron and PTown. If both are 0 everywhere, delete them in the same commit
+  (fix in three parts, `CLAUDE.md`); if not, report the counts and leave them.
+- **Parked (option 2), not this build:** noding the evidence against itself in `layerLandEvidence`, the pour-side
+  cleanliness. And LS's asphalt producer, once found.
+
+**Mutants, each must go RED in a check that reads the flatten:** (1) noding off → the LS and HPDM refusals return ·
+(2) a vertex 0.6 steps off an edge → still refuses · (3) the bound read as a literal, not from `lattice.js` → caught ·
+(4) an inserted vertex off the lattice → refuses.
+
+**Gates, in order:** Plumb's flatten census harness (`flatten-all.mjs`, Plumb's session scratchpad; ~30–90 s per town)
+shows LS and HPDM flatten with 0 refusals → scratch ground bakes of HPDM, then LS, reach the end with T-junctions 0
+(`claims-the-ground-has-no-cross-polygon-t-junctions --dir=`) → report to Boz. The heavy slot: Kerf holds it for step 7
+of `BRIEF-the-ground-stays-in-budget`; ask Boz before any full bake. The census runs are light.
 
 ## 4. Bounds
 
