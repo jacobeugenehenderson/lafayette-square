@@ -11,6 +11,8 @@ evict-when: RULING: Jacob passes a deformed ground at street level on Huron and 
 already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/rename`). **Agent: FRESH.** **Report to
 Boz.**
 
+**Step 7 premise pass: Zob, 2026-10-20 night, on c08890f1; corrections folded in.**
+
 **Instruction: confirm-then-build.** Every premise below is a claim. Check each one against the code and say what you
 found. If the code contradicts this brief, stop and flag Boz before building.
 
@@ -64,21 +66,43 @@ found. If the code contradicts this brief, stop and flag Boz before building.
    (3.76M), the ped bands are +2.27M (sidewalk +1.65M, treelawn +0.54M) and the road +0.10M (Zob, measured per group
    from `ground.json`; the script is in Zob's session scratchpad, so re-derive it). Since `6fe30a8a` (10-17) today's code
    also puts the road on the fine policy, and no slab on disk has measured what that costs.
-   - **(a) The simplifier moves into `cartograph/bake-ground.js`, after conformity**, from the step 6 prototype: same
-     derivation of the bound, group seams locked, the attributes BakedGround reads (`aRaw`, `aGrad`, the rest named in
-     ground.json) kept. ⛔ A bound that merely fits one town is Class D. The scratch prototype retires in the same commit
-     (fix in three parts, `CLAUDE.md`).
+   - **(a) The simplifier moves into `cartograph/bake-ground.js`**, from the step 6 prototype
+     (`scratch/ground-budget/simplify/simplify.mjs`, a CLI over a finished slab, with no exports). Corrections from Zob's
+     premise pass (read in source):
+     - **Where:** over the per-group OUTPUTS, after each group's `terrainPart` (the first point where `aRaw`/`aGrad`
+       exist) and before the chunks are concatenated. It works on the in-memory group buffers, not `ground.bin`, and
+       the cross-group seam map (`groupsAt`) must see every group before any is simplified, so not inside one group's
+       loop iteration. Call the bake's own `terrainPart` for `aGrad`; the prototype's port of it retires.
+     - **The bound:** read `deform.refineTol × deformTerrain.exag` in the bake. ⛔ The prototype takes `--tol` by hand,
+       and `sweep.sh` hardcodes 0.0078: either at the call site would be a Class D literal. One bound for every group,
+       as step 6 measured; per-group bounds are a later option.
+     - ⛔ **Field groups** (`splitByField`'s `perField` faces, which carry `fieldOfVertex`/`edgeOfVertex`; Huron's
+       `agricultural`) make the prototype REFUSE ("not handled"). Pass them through unsimplified, counted and printed
+       by name, unless you keep each kept vertex's field id and edge distance. Either way, never silently.
+     - **`groundShape`** (per-group tris, slivers, boundary verts) is rewritten from the simplified output, so the sliver
+       check judges the mesh that ships.
+     - Group seams stay locked; the kerb riser's edges lie on locked seams. The attributes BakedGround reads (`aRaw`,
+       `aGrad`, the rest named in ground.json) are kept. The scratch prototype retires in the same commit (fix in three
+       parts, `CLAUDE.md`).
    - **(b) The road splits.** `asphalt` and `highway` go back to the lots' policy (`GROUND_REFINE_TOL_M`,
      `GROUND_REFINE_MIN_EDGE_M`); `stripe` keeps the fine one (the ped `refineTol`, floor `stationM`), because
      `claims-the-stripe-lies-on-its-road` gates each stripe against a lift of millimetres and samples edge midpoints
-     (`6fe30a8a`'s measured reason). Site: the refine-policy branch of `bakeGround` (`PED_KEYS || ROAD_KEYS`).
+     (`6fe30a8a`'s measured reason). Site: the `isDraped` adaptive branch of `bakeGround`
+     (`(PED_KEYS(key) || ROAD_KEYS(key)) && deform?.refineTol`). Narrow `ROAD_KEYS` to `stripe` (it is used nowhere
+     else); asphalt and highway fall to the lots' arm (the locals `refineTol`/`refineMinEdge`, which default to
+     `GROUND_REFINE_TOL_M`/`GROUND_REFINE_MIN_EDGE_M` and are overridden by `--refine-tol=`/`--refine-min-edge=`).
      Conformity welds a fine stripe or curb beside coarse asphalt with red-green closures and throws on any T-junction
      left (Zob, read in source, `groundConformity.js#conformAndRefine`), so the seam needs no new code.
      ⚠️ Whether the road deserves a road-derived tolerance at all is unruled: there is no road norm to derive it from.
    - **(c) Measure on scratch slabs, HPDM first** (HPDM draws stripes; Huron draws none), then Huron. Three slabs each:
      today's code (road all fine) · (b) alone · (a)+(b). Per slab: triangles per group, `ground.bin` bytes, the ground bake
-     time, `claims-the-walk-is-level-across`, `claims-the-stripe-lies-on-its-road`,
-     `claims-the-road-meets-itself-across-its-centreline`, T-junctions, `claims-ground-refinement-does-not-breed-slivers`.
+     time, and these checks: `claims-the-walk-is-level-across --dir=` (it also needs `shape.json` in the dir),
+     `claims-the-stripe-lies-on-its-road --dir=`, `claims-the-road-meets-itself-across-its-centreline --dir=`,
+     `claims-the-ground-has-no-cross-polygon-t-junctions --dir=` (the only post-simplify T-junction judge: the bake's own
+     `findTJunctions` throw runs before the simplifier), and `claims-ground-refinement-does-not-breed-slivers --ground=`
+     (it reads `groundShape` only, hence (a)'s rewrite).
+     ⚠️ "Today's code" has never been baked with the road fine (`6fe30a8a`: "UNEXERCISED"). Its first bake may throw
+     somewhere else; if it does, report the throw and stop.
    - Bring Boz the table and stop. The batch bake (this, plus `BRIEF-perpendicular-leg-ownership`'s build, then ONE Huron
      bake) is Boz's to run after Jacob's go.
 
