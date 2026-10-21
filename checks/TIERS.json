@@ -1,9 +1,9 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 430,
+  "total": 431,
   "counts": {
     "safe": 312,
-    "local-effect": 27,
+    "local-effect": 28,
     "live": 91
   },
   "checks": [
@@ -2633,6 +2633,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-paint-stack-flattens.mjs",
+      "tier": "local-effect",
+      "why": [
+        "re-runs its own file (process.execPath + its own path) — the same tier as itself",
+        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
