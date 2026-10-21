@@ -471,7 +471,8 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
   slivers; ② only warns on unresolved corner keys; `claims-band-is-one-ring` hardcodes 0.381; production LS rulemap 404.
 
 ✅ RULED (Jacob, 2026-10-21): "Fidelity to height is a very low priority for now." Clarified: "I like the smoothness and the variety we're seeing, so I am
-speaking mainly of the need to match reality at every point." ⇒ keep the LOOK; relax point-accuracy. The bands' derived ~8 mm refine
+speaking mainly of the need to match reality at every point." And: "relative height accuracy is important; literal
+point-in-space accuracy is not important" ⇒ judge heights by CONTINUITY (no steps between neighbours), not by agreement with D. ⇒ keep the LOOK; relax point-accuracy. The bands' derived ~8 mm refine
 is the lever; candidate tolerances are measured from a mesh dump (Kerf), then chosen by Jacob's eye. And: "The Provincetown Pilgrim Monument
 should be a specific and correct height; but the stretch between two streets" need not match reality at every point. ⇒ landmark HEIGHTS
 are exact; the ground between streets is approximate. VERIFIED (Zob): the Monument is drawn from a cited dossier (pilgrim-dossier-v1,
