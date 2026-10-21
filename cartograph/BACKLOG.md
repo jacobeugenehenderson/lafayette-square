@@ -87,7 +87,9 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   census of self-crossing band rings. Both done (Mitre): 18 rings named; the 1–10 cm tail 822 → 3, all rim-side; census
   `bandSelfCrossings` 257. ✅ MERGED 9ca3f6cf (Zob: merge). no-edge-is-drawn-twice is RED at integration too (pre-existing).
   Interior near-miss changes > 5 m from the rim are named in the merge, cause not established. The self-crossing source (257 rings) is its own piece (Mitre, after Thursday).
-  (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
+  (Mitre, next), then tile 32's slit at its source (PLACED, PARKED: offsetRingByRects' slanted join at a perpendicular
+  tangent vs walkCut's float edge, two copies of one line; the fix is walkCut from the band's own join edge via edgeLabels;
+  being checked as the same class as tile 170's 12). Truss's plane noding: its curb pinch refusal is FIXED
   (b0d8c9bb: a hole that touches its one outer stays its own). Rebased on B1 (tip 106094ad), with one new refusal fixed
   (an item wholly below the lattice: its holes go with it, the flatten's orphan rule, counted). Gate: LS ✅ · HPDM ✅ · Huron
   after PTown. Waits on the combined LS bake to land.
