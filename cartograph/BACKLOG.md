@@ -156,6 +156,9 @@ Start here. State at the restart:
     the 20k). Zob: sound to merge, after the heavy run. REVISED (Zob, one reader): after nodeThePlane the bake's block
     and rim rings ARE the noded rings for every in-bake reader (the frozen rings untouched); pinches are cut by
     splitAtPinches (block ring exact 83.6% → 99.9%).
+    The crease split (Plumb, cutCreases: every crossing computed and rounded ONCE, written into both edges): LS added
+    unshared 30.2 km → 2.9 km. RULED in scope: MITRED tapers (neighbours share one crease at the bisector), since rectangles
+    overlap at convex bends and leave h-wedges at reflex ones. ❓ Jacob: eye-gate the mitred taper at a bend.
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
