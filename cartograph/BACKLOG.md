@@ -120,7 +120,11 @@ Start here. State at the restart:
     confine the stripe to the road, or make the west half road (beside motorway_link 40) (Zob, measured). PLACED (Plumb, measured, all 14 bare vertices): M1 ×6, a curb leaving the block edge at < 26.6° that the
     finder's 1 mm-inboard read calls curbed while the riser's ownership read doesn't: RULED, the finder reads the partition's
     owner per stretch, one predicate shared with the riser (pending Zob's premise pass) · M2 ×8, 0.16–0.61 mm cracks between
-    flushTol (1 lattice) and ON_EDGE_M (5 mm): HELD until Zob says what ON_EDGE_M closes. Vacant (-826, 190–196) doesn't
+    flushTol (1 lattice) and ON_EDGE_M (5 mm): HELD; re-measured after M1 (Zob: likely caused by the
+    taper base sitting off the block line). M1 BUILDING (Plumb): one exported bare-edge predicate shared by the riser (on
+    triangles) and the finder (on the noded stack); unmatched lifted|unlifted length refuses. Open, Class D, not ruled:
+    groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
+    gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
     reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
     unowned ped vertices (exact count in lafayette-square.census.json). Flatten and the deformer refuse nothing; every later
     step clean through manifest.
