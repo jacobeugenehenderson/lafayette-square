@@ -99,8 +99,12 @@ host record, and LS's prod slab keys are lafayette-square.com's live old-player 
 Cloudflare (Hover) and differs from the live provincetown.online. ❓ Jacob: lafayette-square.com stays / redirects / retires?
 ✅ RULED (Jacob): the domains are the FULL spellings, all in the Operations utility
 (lafayettesquare.online · hipointedemun.online · provincetown.online · jacksonheights.online); lafayette-square.com REDIRECTS to
-lafayettesquare.online for a while, then retires at renewal. ⚠️ Jacob: Huron's shore 'looks bad' on staging (PTown's is
-'gorgeous'); Ward probing. SIZED (Zob): the rename is ~2–4 h, mechanical (the town ids are
+lafayettesquare.online for a while, then retires at renewal. ⚠️ Jacob: Huron's shore 'looks bad' (PTown's 'gorgeous').
+PLACED (Mitre, measured): (1) one shore drawn from TWO sources: ①'s OSM coast (the water sheet and revetment) vs the median's
+lidar trace, off by p50 4 m / p90 42 m, with sand painted between and 22k m² of it below lake level, dry; (2) the water-side
+ground is draped on raw terrain, never lowered (7.4k m² of dry bed, sliver triangles: the jag). The fix is briefed (BRIEF-the-
+coast-from-the-lidar + the ground-knows-its-height water side) and was built WIP on tern/coast-from-lidar (33 commits,
+unmerged). Post-Thursday project. SIZED (Zob): the rename is ~2–4 h, mechanical (the town ids are
 already sealed); traps: T1, a slab must be RE-BAKED under the new name, never moved (the renderer reads manifest.look) · T2, the
 old site's apps-script entry stays · T3, never upload to prod under the old name. Gate: a clean LS slab. Being built (Kerf, no
 bake); a T1 upload refusal (Plumb) + check (Zob). The rename is BRIEF-ls-cutover-to-its-address step 1. ⭐ RULED (Jacob, 2026-10-21):
