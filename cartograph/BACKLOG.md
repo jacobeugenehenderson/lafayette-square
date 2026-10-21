@@ -205,7 +205,10 @@ gap". OSM keeps first claim, parcels fill after it; a gap between two claims nar
   (5) r-highway-verge: 77 of 115 verges are verge only through a surface-bridge "span". Verge or block/JR? And who is
       "highway" (three readings)?
   (6) A hairline median (0.24–0.31 m, I-64 at Oakland): draw it as verge?
-  (7) HPDM's "no street reaches" points: 29 of the 38 (Mitre, all traced: tile 170 ×16, 152 ×5, 211 ×5, 215 ×3; lawn
+  ✅ (7) RULED (Jacob, 2026-10-21): "yes, terrain height": lawn no street's band reaches is LAND-owned at the terrain height
+      (Mitre builds; only lawn, unowned walk/curb still refuse). ✅ LS re-skeleton + re-pour + re-bake under `lafayettesquare`: "yes,
+      go ahead" (Kerf; Zob measured 321/321 chains kept, 82/82 authored keys SAME).
+  (was 7) HPDM's "no street reaches" points: 29 of the 38 (Mitre, all traced: tile 170 ×16, 152 ×5, 211 ×5, 215 ×3; lawn
       ground with lot between it and every street's band). What height do they take? This ruling gates HPDM's bake. The
       other 9 (Mitre, placed): rim back-corner 6 (tiles 24, 89, 177, 198, 200, 202; next) · painter wedge/slit 2 (tiles
       8, 93; tile 32's family) · back-edge rounding 1 (tile 159). The rim six and tile 159 are one class of 7 (Mitre). Zob
