@@ -17,10 +17,13 @@
 //   inside. Stated, not judged.
 //
 //   node checks/claims-a-road-marking-lies-inside-its-road.mjs [<town> …] [--show=n] [--selftest]
-// Exit 1 on any finding (or a town that cannot be judged); 2 only if no town could be measured.
+// Exit 1 on any finding (or a town that cannot be judged); 2 when no town had a marking to judge.
+// ⛔ A TOWN THAT PAINTS NO MARKING IS NEVER GREEN (Boz, 2026-10-21): its verdict reads "⚪ nothing to judge: no road marking
+//   painted" and it counts as not measured. A ✅ over an empty set is a plausible-looking success (Huron, 2026-10-21).
 // TIER: local-effect, honestly: it imports cartograph/bake-ground.js (whose closure can write); `stackOnly` writes nothing.
 // ⭐ MUTATION TEST (`--selftest`, in memory, on each town's own stack): a real stripe moved 20 m sideways → found;
-//   an asphalt piece with no holes offered as a marking (on the road by construction) → not found.
+//   an asphalt piece with no holes offered as a marking (on the road by construction) → not found; the town's markings
+//   all removed → "nothing to judge", never GREEN.
 import clipperLib from 'clipper-lib'
 import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
 
@@ -60,18 +63,21 @@ function judge(stack) {
   }
   return { per, sites, road: road.length }
 }
+// the town's verdict: 'red' (a marking off its road) · 'nothing' (no marking painted: never green) · 'green'
+const verdictOf = (r) => r.sites.length ? 'red' : MARKINGS.every(k => !r.per[k]?.rings) ? 'nothing' : 'green'
 const print = (town, r) => {
-  const bad = r.sites.length
-  console.log(`${bad ? '⛔' : '✅'} ${town}: road ${r.road} ring(s) · ` + MARKINGS.map(k => r.per[k] ? `${k} ${r.per[k].found}/${r.per[k].rings} off the road (${r.per[k].m2.toFixed(3)} m²)` : `${k}: none painted`).join(' · '))
+  const v = verdictOf(r)
+  if (v === 'nothing') { console.log(`⚪ ${town}: nothing to judge: no road marking painted (road ${r.road} ring(s); ${MARKINGS.join(', ')}: none)`); return v }
+  console.log(`${v === 'red' ? '⛔' : '✅'} ${town}: road ${r.road} ring(s) · ` + MARKINGS.map(k => r.per[k] ? `${k} ${r.per[k].found}/${r.per[k].rings} off the road (${r.per[k].m2.toFixed(3)} m²)` : `${k}: none painted`).join(' · '))
   for (const s of r.sites.sort((a, b) => b.a - a.a).slice(0, SHOW))
     console.log(`     ${s.k} at (${s.at[0].toFixed(1)}, ${s.at[1].toFixed(1)}): ${s.a.toFixed(6)} m² of its ${s.of.toFixed(3)} m² lies off the road`)
-  return bad
+  return v
 }
 
 const { bakeGround } = await import('../cartograph/bake-ground.js')
 const { lookFor } = await import('../scratch/_proto-feed.mjs')
 const { ribbonScenes } = await import('./_scenes.mjs')
-let fail = 0, measured = 0, selfBad = 0
+let fail = 0, measured = 0, judged = 0, selfBad = 0
 for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--')))) {
   const look = lookFor(town)
   if (!look) { console.log(`⛔ ${town}: no look names this scene (public/looks/index.json) — NOT CHECKED`); fail++; continue }
@@ -79,7 +85,10 @@ for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--')))) {
   let st
   try { st = await bakeGround({ look, scene: town, shorePending: true, stackOnly: true }) } finally { console.log = log; console.warn = warn }
   measured++
-  if (!SELF) { if (print(town, judge(st.stackEntries))) fail++; continue }
+  if (!SELF) { const v = print(town, judge(st.stackEntries)); if (v === 'red') fail++; if (v !== 'nothing') judged++; continue }
+  const bare = judge(st.stackEntries.filter(e => !MARKINGS.some(k => e.groupKey === 'mat:' + k))), empty = verdictOf(bare) === 'nothing'
+  console.log(`  ${empty ? '✅' : '⛔'} ${town}: with every marking removed, the verdict is "nothing to judge", never GREEN (${verdictOf(bare)})`)
+  if (!empty) selfBad++
   const base = judge(st.stackEntries), stripe = st.stackEntries.find(e => e.groupKey === 'mat:stripe'), asphalt = st.stackEntries.find(e => e.groupKey === 'mat:asphalt')
   if (!stripe || !asphalt || !asphalt.items.some(x => Array.isArray(x?.[0]) || !(x?.holes?.length))) { console.log(`  ⚪ ${town}: no stripe or no asphalt to plant on — selftest not run here, said`); continue }
   const moved = ringsOf(stripe.items)[0].map(([x, z]) => [x + 20, z]), onRoad = (() => { const it = asphalt.items.find(x => Array.isArray(x?.[0]) || !(x?.holes?.length)); return it ? ringsOf([it])[0] : null })()
@@ -93,5 +102,7 @@ for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--')))) {
 }
 if (SELF) { console.log(selfBad || !measured ? '\n⛔ selftest: the instrument missed a planted case' : '\n✅ selftest: a marking off its road is found; one on it is not'); process.exit(selfBad || !measured ? 1 : 0) }
 if (!measured) { console.log('⛔ NOT MEASURED — no town could be judged'); process.exit(2) }
-console.log(fail ? `\n⛔ a road marking lies off its road (or a town could not be judged)` : '\n✅ every road marking lies on the road')
-process.exit(fail ? 1 : 0)
+if (fail) { console.log(`\n⛔ a road marking lies off its road (or a town could not be judged)`); process.exit(1) }
+if (!judged) { console.log('\n⚪ NOT MEASURED: no town painted a road marking, so nothing was judged'); process.exit(2) }
+console.log(`\n✅ every road marking lies on the road (${judged} town(s) judged)`)
+process.exit(0)
