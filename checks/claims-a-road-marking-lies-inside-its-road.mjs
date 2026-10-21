@@ -24,6 +24,9 @@
 // ⭐ MUTATION TEST (`--selftest`, in memory, on each town's own stack): a real stripe moved 20 m sideways → found;
 //   an asphalt piece with no holes offered as a marking (on the road by construction) → not found; the town's markings
 //   all removed → "nothing to judge", never GREEN.
+// MUTATION (must go red, in the source): give a verge block's span edge depth 0 again in tileGround.js's `mkDepth`
+//   (`if (blockCls === 'verge' && !isHwyLab(L[i])) return 0`) — LS reads RED on Mississippi's stripe at (139.0, 415.3), its
+//   west half on verge (Truss, 2026-10-21, at f9c5b630). ▶ node checks/claims-a-road-marking-lies-inside-its-road.mjs lafayette-square
 import clipperLib from 'clipper-lib'
 import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
 

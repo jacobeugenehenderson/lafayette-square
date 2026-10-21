@@ -5020,7 +5020,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         ? (JSON.parse(readFileSync(msbfPath, 'utf-8')).buildings || []).filter(b => b.coords?.length >= 3)
             .map(b => { let x = 0, z = 0; for (const c of b.coords) { x += c.x; z += c.z } return [x / b.coords.length, z / b.coords.length] })
         : null
-      const C = classifyHighwayBlocks(MP, { hwy: hwySk, offGrade: skOffGrade || new Set(), centroids })
+      const C = classifyHighwayBlocks(MP, { hwy: hwySk, offGrade: skOffGrade, centroids })
       protoBlockClass = C.cls
       const where = (k) => { const r = MP.blocks[k]; let x = 0, z = 0; for (const p of r) { x += p[0]; z += p[1] } return `(${Math.round(x / r.length)}, ${Math.round(z / r.length)})` }
       const nBlock = C.cls.filter(c => c === 'block').length
@@ -5052,7 +5052,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
           console.log(`      parcel-vs-building (measured, not acted on): ${cands.length} ramp-end block(s), ${dis.length} disagree${dis.length ? ': ' + dis.join(' · ') : ''}`)
         }
       }
-      if (!skOffGrade) console.warn(`      ⛔ no skeleton grade facts — no overpass span can be recognised`)
     }
     // ⭐⭐ THE RAMP-TERMINAL FLARE (`r-ramp-terminal-flares`): where a highway end arrives at full width and its butt
     // corner lies outside the town street, the town street flares to receive it. Frozen per corner here, beside the
