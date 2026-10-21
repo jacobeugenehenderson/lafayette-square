@@ -20,8 +20,11 @@ building_sqft, units and zoning on all 1,446 records. The City's GIS terms forbi
 (`scratch/data-licences/REGISTER.md` row 4, gap #1); none is on record. The kit's own check names these fields as
 withheld (`claims-intake-is-lossless`, DROPS `served-parcel-privacy`), but the bake never implemented it. Tonight: the
 withholding goes into `bake-content.js` (Truss, with LS's first roster); nothing on production is touched. Your calls:
-(1) take `content/roster.json` off production now, before the fixed one ships? (2) the re-bake + Publish + Promote
-(Boz + Ward), on the Thursday path.
+(1) take `content/roster.json` off production now? **Ward recommends AGAINST:** with no roster the Ward's Society falls back to
+listings only and prints "hasn't published its buildings yet", so HPDM's register drops from 1,446 buildings to 147
+listed places on the partner's domain before the meeting; the exposure has been live since 07-07. Fast-track the
+withheld roster instead. Taking it down stays a legitimate choice if you weigh the terms more heavily. (2) the
+re-bake + Publish + Promote (Boz + Ward), on the Thursday path.
 
 **🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
 Start here. State at the restart:
