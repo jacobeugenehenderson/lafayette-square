@@ -58,7 +58,6 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
-- HPDM `south-seminary-terrace-3|left` is AUTHORED (blockCustoms seg 0) and owns no run: nothing paints it. First.
 - `claims-handle-rides-its-arc`'s dark-sides row skips the boundary filter (191 of LS's 202 lie outside); fix with one
   rule: a side counts only if a tile lies on it, inside the boundary.
 - PTown: 9 coincident twin chains (one twin's side goes dark); sides facing no tile (the marina footways).
