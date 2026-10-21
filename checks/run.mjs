@@ -27,7 +27,10 @@
 import { spawn } from 'node:child_process'
 import { cpus } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { classifyAll, claimOf, blockedReason, bucketOf, runsFor, ROOT } from './tier.mjs'
+import { tiersDrift, driftCount, driftLines } from './_tiersDrift.mjs'
 
 /**
  * ⭐ ACCEPTANCE IS ENFORCED, NOT ASSERTED. Every check in a default run is spawned with the network
@@ -42,6 +45,20 @@ const want = argv.includes('--live') ? 'live' : argv.includes('--all') ? 'all' :
 const LIST = argv.includes('--list')
 
 const all = classifyAll()
+
+// ⛔ A DRIFTED TABLE STOPS THE RUN, BEFORE ANYTHING RUNS (Boz, 2026-10-21). The tier above is today's; the committed
+//    TIERS.json is what review saw. Where they differ, a check has entered or left this run without anyone choosing it
+//    (two deformer checks went LIVE silently that way), so a green suite would hide it. Every drifted check is named.
+//    ▶ npm run test:tiers regenerates the table; look at what moved before committing it.
+//    ▶ node checks/claims-the-tiers-are-current.mjs [--selftest] tests the comparison and this wiring.
+const drift = tiersDrift(JSON.parse(readFileSync(join(ROOT, 'checks/TIERS.json'), 'utf8')), all)
+if (driftCount(drift)) {
+  console.error(`⛔ checks/TIERS.json is not what checks/tier.mjs classifies today: ${drift.changed.length} changed · ${drift.added.length} added · ${drift.removed.length} removed`)
+  for (const l of driftLines(drift)) console.error(`   ${l}`)
+  console.error('\n   ▶ npm run test:tiers, look at what moved, and commit the table with the change that moved it. Nothing was run.')
+  process.exit(1)
+}
+
 const tiers = want === 'all' ? ['safe', 'local-effect'] : [want]
 const run = all.filter(r => tiers.includes(r.tier))
 

@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 436,
+  "total": 437,
   "counts": {
-    "safe": 316,
+    "safe": 317,
     "local-effect": 29,
     "live": 91
   },
@@ -2908,6 +2908,13 @@
     },
     {
       "file": "checks/claims-the-tide-phase-stays-in-bounds.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-tiers-are-current.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

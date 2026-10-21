@@ -155,7 +155,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 316. This is `npm test`.
+## safe — 317. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -453,6 +453,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-stamp-keeps-its-owners.mjs` | owners.mjs — DOES STAMPING A TILE WITH ITS LAND USE LEAVE EVERY EDGE'S OWNER WHERE IT WAS, |
 | `checks/claims-the-survey-reaches-the-measure.mjs` | ⭐⭐⭐ DOES THE CITY'S SURVEY REACH THE MAP? — the join, scored, for any town that has one. |
 | `checks/claims-the-tide-phase-stays-in-bounds.mjs` | bounds.mjs — the water never leaves the town's own low and high (BRIEF-tide). |
+| `checks/claims-the-tiers-are-current.mjs` | current.mjs — A DRIFTED checks/TIERS.json STOPS `npm test`, NAMING EVERY CHECK THAT MOVED. |
 | `checks/claims-the-town-moon-is-the-sky-moon.mjs` | "IS THE TOWN'S MOON PICTURE THE SKY'S OWN MOON — ON THE TOWN'S ONE WEBGL CONTEXT?" |
 | `checks/claims-the-town-reads-no-player-store.mjs` | "CAN AN APP DRAW THE TOWN WITHOUT BEING THE OLD PLAYER?" |
 | `checks/claims-the-town-sees-its-sky.mjs` | "DOES <Town> DRAW ITS SKY IN ANY APP'S CANVAS — OR ONLY IN ONE WHOSE CAMERA HAPPENS TO REACH IT?" |
