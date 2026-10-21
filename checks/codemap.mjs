@@ -73,6 +73,14 @@ export const ROWS = [
       + 'ruling names and nobody has moved: cartograph/outer-coast.mjs (S = 100, the coast) and cartograph/bake-terrain.js (S = 100, '
       + 'the flood outline). Measured; the derive land-use grid and one check\'s 0.01 mm grid are moved',
     probe: 'node checks/claims-the-lattice-has-one-home.mjs' },
+  { id: 'one-owner-per-piece', topic: 'a ped point\'s owner is decided once',
+    doc: { file: 'cartograph/groundDeformer.mjs', quote: 'THE BAND DECIDES, NEVER THE NEARER LINE' },
+    code: [{ file: TG, symbol: 'export function rekeyByPiece(st, byLu, sp = null) {', note: 'the painter: each piece carries one owner' },
+           { file: 'cartograph/groundDeformer.mjs', symbol: 'const p = profile(c, x, z)', note: 'the deformer: re-derives the owner by a straight ray from each span\'s station' }],
+    verdict: 'MISMATCH, aspiration pending Jacob (Boz, 2026-10-21): the painter assigns each piece\'s owner, the deformer decides it again '
+      + 'by ray and reads no width (read in source). Measured on LS (Mitre\'s k dump, Kerf\'s ground.unowned.json): at the unowned '
+      + 'points on tiles 44, 35, 17, 18 the painter names an owner whose ray leaves the band before the point',
+    probe: 'scratchpad ribbon/pieces44.mjs + why44.mjs (Zob, 2026-10-21)' },
 ]
 
 const occurrences = (text, s) => { let n = 0, i = -1; while ((i = text.indexOf(s, i + 1)) >= 0) n++; return n }
