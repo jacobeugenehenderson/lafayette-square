@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 436,
   "counts": {
-    "safe": 315,
+    "safe": 316,
     "local-effect": 29,
-    "live": 92
+    "live": 91
   },
   "checks": [
     {
@@ -2758,13 +2758,15 @@
     },
     {
       "file": "checks/claims-the-rim-is-cut-once.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "writeFileSync",
-        "computed import() with no readable target — runs arbitrary modules",
-        "computed import() with no readable target — runs arbitrary modules",
-        "imports package(s) clipper-lib — not read from source"
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "computed import of src/lib/tileGround.js — read, safe",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
+        "computed import of cartograph/groundDeformer.mjs — read, safe"
       ]
     },
     {
