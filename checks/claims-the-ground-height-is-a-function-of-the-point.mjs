@@ -48,18 +48,25 @@ const rows = async (url) => {
 }
 const self = process.argv.includes('--selftest')
 const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
-const mutant = (key, to) => { const src = readFileSync(HOME, 'utf8')
-  if (src.split(key).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${key}\` once — re-aim the mutation`)
+// ⭐ ONE mutated copy (checks/tier.mjs reads one temp-dir `mutant`, never a loop variable fed to import()) carrying both
+//   mutations behind a switch read at call time: 'lattice' plants the 1 mm memo key, 'noclear' a turn that does not clear
+const KEY = 'const mk = unownedKey(x, z)', CLEAR = 'memo.clear(); stats.memoTurns++'
+const mutant = () => { const src = readFileSync(HOME, 'utf8')
+  for (const a of [KEY, CLEAR]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a}\` once — re-aim the mutation`)
   const f = join(mkdtempSync(join(tmpdir(), 'height-of-point-')), 'groundDeformer.mjs')
-  writeFileSync(f, src.replace(key, to).replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
+  writeFileSync(f, src.replace(KEY, `const mk = globalThis.__MUT === 'lattice' ? \`\${Math.round(x * ${CLIP_SCALE})},\${Math.round(z * ${CLIP_SCALE})}\` : unownedKey(x, z)`)
+    .replace(CLEAR, "if (globalThis.__MUT !== 'noclear') memo.clear(); stats.memoTurns++")
+    .replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
   return pathToFileURL(f).href }
 if (self) {
-  const M = [['the 1 mm lattice key answers by sampling order', mutant('const mk = unownedKey(x, z)', `const mk = \`\${Math.round(x * ${CLIP_SCALE})},\${Math.round(z * ${CLIP_SCALE})}\``), (R) => R[0][1] && (!R[1][1] || !R[2][1])],
-    ['a turn that does not clear lets the memo grow past its cap', mutant('memo.clear(); stats.memoTurns++', 'stats.memoTurns++'), (R) => R[3][1] && !R[5][1]]]
-  let all = true
-  for (const [what, url, red] of M) { const R = await rows(url), caught = red(R); all &&= caught
-    console.log(caught ? `✅ selftest: ${what} (RED)` : `⛔ selftest: the check does not catch it — ${what}`) }
-  process.exit(all ? 0 : 1) }
+  const MURL = mutant()
+  globalThis.__MUT = 'lattice'
+  const L = await rows(MURL), lattice = L[0][1] && (!L[1][1] || !L[2][1])
+  console.log(lattice ? '✅ selftest: the 1 mm lattice key answers by sampling order (RED)' : '⛔ selftest: the check does not catch a lattice-keyed memo')
+  globalThis.__MUT = 'noclear'
+  const N = await rows(MURL), noclear = N[3][1] && !N[5][1]
+  console.log(noclear ? '✅ selftest: a turn that does not clear lets the memo grow past its cap (RED)' : '⛔ selftest: the check does not catch a turn that does not clear')
+  process.exit(lattice && noclear ? 0 : 1) }
 const R = await rows(pathToFileURL(HOME).href)
 for (const [m, ok] of R) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
 const ok = R.every(r => r[1])
