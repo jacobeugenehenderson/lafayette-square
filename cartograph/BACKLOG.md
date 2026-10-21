@@ -64,6 +64,10 @@ years (18 explicitly parsed), and no code reads them. Withholding LS's assessor 
 committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next: Zob's LS Inputs gap census → the
 LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
+**⭐ RULED (Jacob, 2026-10-21 morning): "HPDM assessor fields is 0% priority. The app has to look good and 'work'. I doubt
+anybody will even click on cards. The map needs to DRAW and play."** ⇒ the roster/assessor items below are parked; first
+Thursday job: Ward checks production HPDM + LS as a visitor (draw, play, load); that decides whether a new bake is needed.
+
 **🌅 MORNING 2026-10-21: the ground for Thursday, and your calls (Boz).** Nothing pushed, published or baked into `public/`.
 - **HPDM, unowned ped vertices (#40): 269 → 38 on integration** (measured on producer dumps, Mitre; B1 merged 9ca3f6cf). Merged overnight:
   fix B (a perpendicular leg's region is its painted faces) · the deformer's both-sides read plus its narrow station
