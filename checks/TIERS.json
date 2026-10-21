@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 436,
   "counts": {
-    "safe": 315,
+    "safe": 316,
     "local-effect": 29,
-    "live": 92
+    "live": 91
   },
   "checks": [
     {
@@ -2476,11 +2476,12 @@
     },
     {
       "file": "checks/claims-the-ground-height-is-a-function-of-the-point.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
         "writeFileSync — only under its own temp dir",
-        "computed import() with no readable target — runs arbitrary modules"
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
+        "computed import of cartograph/groundDeformer.mjs — read, safe"
       ]
     },
     {
