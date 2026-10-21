@@ -14,12 +14,16 @@
 //     a town with no coast (or an inland one) owes none;
 //   - bakeGround decides through shoreMedianFor (one rule), and parses --shore=pending;
 //   - serve.js passes --shore=pending on the 'ground' step and on NO other bake-ground run ('ground-shore' included);
+//   - 'ground-shore' runs ONLY when the first pass stamped the shore pending (`shoreRuns.mjs#groundShorePass`, imported):
+//     an inland town and a coast whose median was current skip it, each with its reason; a missing first-pass ground.json
+//     or an unknown stamp refuses; serve.js decides the step through that rule and skips it by name (Boz, 2026-10-21);
 //   - a slab stamped pending does not SHIP: the uploader's plan (`scripts/upload-baked-to-r2.mjs#plan`, imported; it is
 //     what Publish, Promote and the CLI all run) refuses it on a scratch tree, naming the look; an unstamped one plans.
 //     ⛔ No env, no network: plan() only reads the tree it is given.
 // ⭐ MUTATION TEST: `--selftest` — the rule as shipped is GREEN; the warn-and-continue it replaced (no throw, no stamp)
 //   is RED; a pending pass that paints a stale median is RED; a serve.js that flags 'ground-shore' too is RED; the
-//   uploader with its ground.json read dropped is RED.
+//   uploader with its ground.json read dropped is RED; the old gate (a serve.js that runs 'ground-shore' whenever 'ground'
+//   ran) is RED; a rule that always runs the second pass is RED.
 //   node checks/claims-a-drawn-coast-never-bakes-shoreless.mjs [--selftest]
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'fs'
 import { join } from 'path'
@@ -27,6 +31,7 @@ import { tmpdir } from 'os'
 import { pathToFileURL } from 'url'
 import { shoreMedianFor } from '../cartograph/bake-ground.js'
 import { plan } from '../scripts/upload-baked-to-r2.mjs'
+import { groundShorePass } from '../cartograph/shoreRuns.mjs'
 
 const R = new URL('../', import.meta.url).pathname
 const groundSrc = readFileSync(R + 'cartograph/bake-ground.js', 'utf8')
@@ -55,6 +60,18 @@ function judgeRule(rule) {
   return rows
 }
 
+// the second pass's gate, on the first pass's ground.json
+function judgeGate(gate) {
+  const g = (ground, medianWritten) => outcome(() => gate(ground, { medianWritten }))
+  const inland = g({}, false), current = g({}, true), pending = g({ shore: 'pending' }, true), none = g(null, false), odd = g({ shore: 'later' }, true)
+  return [
+    ["inland (no stamp, no median written): 'ground-shore' skipped, saying so", inland.ok?.run === false && /inland/.test(inland.ok.why), JSON.stringify(inland.ok ?? inland.threw)],
+    ["median current (no stamp, median written): skipped, saying so", current.ok?.run === false && /median current/.test(current.ok.why), JSON.stringify(current.ok ?? current.threw)],
+    ["the first pass stamped the shore pending: 'ground-shore' runs", pending.ok?.run === true, JSON.stringify(pending.ok ?? pending.threw)],
+    ['no first-pass ground.json refuses', !!none.threw, JSON.stringify(none.ok ?? none.threw)],
+    ['a shore stamp the rule does not know refuses', !!odd.threw, JSON.stringify(odd.ok ?? odd.threw)],
+  ]
+}
 // every bake-ground command serve.js runs, by step name: runIfDirty('<step>', …, `node bake-ground.js …`
 function bakeGroundSteps(src) {
   const out = []
@@ -73,6 +90,7 @@ function judgeWiring(gsrc, ssrc) {
     ['bakeGround decides the shore through shoreMedianFor', /bakeGround\(\{[^]*shoreMedianFor\(\{/.test(gsrc.slice(gsrc.indexOf('export async function bakeGround'))), 'bake-ground.js'],
     ['bake-ground parses --shore=pending', /arg === '--shore=pending'/.test(gsrc), 'bake-ground.js main'],
     ['no warn-and-continue shore branch is left', !/NO shore sand painted/.test(gsrc), 'bake-ground.js'],
+    ["serve.js decides 'ground-shore' through groundShorePass, and skips it by name", /const shorePass = groundShorePass\(/.test(ssrc) && /if \(shorePass\.run\) await runIfDirty\('ground-shore'/.test(ssrc) && /else skip\(`ground-shore \(\$\{shorePass\.why\}\)`\)/.test(ssrc), 'serve.js'],
   ]
 }
 // a scratch baked tree: one look stamped pending, one not
@@ -112,12 +130,16 @@ if (process.argv.includes('--selftest')) {
     ['a pending pass painting a stale median is RED', judgeRule(pendingPaintsStale).some(r => !r[1])],
     ['the wiring as shipped is GREEN', judgeWiring(groundSrc, serveSrc).every(r => r[1])],
     ["'ground-shore' flagged pending too is RED", groundShoreFlagged !== serveSrc && judgeWiring(groundSrc, groundShoreFlagged).some(r => !r[1])],
+    ['the gate as shipped is GREEN', judgeGate(groundShorePass).every(r => r[1])],
+    ['a gate that always runs the second pass is RED', judgeGate(() => ({ run: true, why: 'always' })).some(r => !r[1])],
+    ["the old gate (serve.js runs 'ground-shore' whenever 'ground' ran) is RED", (() => { const old = serveSrc.replace('if (shorePass.run) await runIfDirty(', 'await runIfDirty(')
+      return old !== serveSrc && judgeWiring(groundSrc, old).some(r => !r[1]) })()],
   ]
   for (const [m, ok] of tests) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
   process.exit(tests.every(t => t[1]) ? 0 : 1)
 }
 
-const rows = [...judgeRule(shoreMedianFor), ...judgeWiring(groundSrc, serveSrc), ...judgeShip(plan)]
+const rows = [...judgeRule(shoreMedianFor), ...judgeGate(groundShorePass), ...judgeWiring(groundSrc, serveSrc), ...judgeShip(plan)]
 show(rows)
 const bad = rows.filter(r => !r[1]).length
 console.log(bad ? `⛔ ${bad} row(s): a drawn coast can bake with no shore` : '✅ a drawn coast never bakes shoreless: no current median refuses, except the Bake\'s first pass, which is stamped pending and does not ship')

@@ -159,3 +159,18 @@ export function shoreFingerprint(shape) {
   for (const s of runs) for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0 }
   return `${runs.length}:${h.toString(16)}`
 }
+
+// ⭐ THE SECOND GROUND PASS RUNS ONLY WHEN THE FIRST LEFT THE SHORE PENDING (Boz, 2026-10-21). The Bake's 'ground' step runs
+// with --shore=pending and stamps ground.json `shore: "pending"` exactly when it could not paint a coast's median
+// (bake-ground.js#shoreMedianFor); 'ground-shore' exists to paint it. An inland town, or a coast whose median was already
+// current, was baked TWICE for nothing (HPDM: 1,020 s of its 38 min, 2026-10-21 census). A stale median after
+// 'shore-median' still refuses in the second pass, as before. ⛔ No ground.json from the first pass, or a `shore` stamp
+// this rule does not know, refuses: never a guess. ▶ checks/claims-a-drawn-coast-never-bakes-shoreless.mjs
+// @param ground the first pass's ground.json (parsed) · @param medianWritten does the look carry a shore-median.json
+// @returns { run: boolean, why: string }
+export function groundShorePass(ground, { medianWritten }) {
+  if (!ground || typeof ground !== 'object') throw new Error("groundShorePass: the first ground pass wrote no ground.json — 'ground-shore' cannot be decided")
+  if (ground.shore === 'pending') return { run: true, why: 'the first pass stamped the shore pending' }
+  if (ground.shore != null) throw new Error(`groundShorePass: ground.json carries shore = ${JSON.stringify(ground.shore)}, which this rule does not know`)
+  return { run: false, why: medianWritten ? 'median current: the first pass painted it' : 'inland: no shore' }
+}
