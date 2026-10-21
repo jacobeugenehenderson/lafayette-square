@@ -147,7 +147,10 @@ Start here. State at the restart:
     highway'; is a block closed by a surface bridge verge (94002fae's span) or a block/JR? Counted (Truss): 77 of 115
     verge blocks are verge ONLY through the span (LS 29/42 · HPDM 30/54 · Huron 18/19). BUILT df0b7a4f (truss/verge-span-depth,
     Zob reviews): Mississippi clean (1.716 → 0 m²); LS 96 m² verge → asphalt. HPDM Oakland mostly REMAINS (17.7 + 12.8 m²): a
-    second cause, being traced (Truss), plus a gradeSeparated:true primary appearing as a ① run.
+    REMAINDER, placed (Truss): Oakland's carriageway is CLEAR with the fix; what's left is I-64's MEDIAN (0.24–0.31 m between
+    its two carriageways), r-highway-verge's own output. ❓ Jacob: draw a hairline median as verge? Three readings of
+    'highway' (mint: gradeSeparated · painter/classifier: the motorway/trunk class · span: bridge/layer) put a gs:true primary
+    in 7 HPDM verges; it folds into the class question. LS: 23 of 26 unchanged span-verges are explained; #90 isn't yet.
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
