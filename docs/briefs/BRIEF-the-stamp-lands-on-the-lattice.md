@@ -33,8 +33,9 @@ refusal is a mat:shore edge on the 1 cm grid beside its own 1 mm twin, about 4 m
 moves in this brief. ⛔ UNBUILT for the land use (Zob, read in source and measured 2026-10-21): `derive.js` cuts every
 evidence region on its own `SCALE = 100`, a 1 CENTIMETRE grid (all LS and HPDM evidence vertices sit on whole cm).
 claims-the-lattice-has-one-home exempts derive's grid by its header, so it can't see this. Likely source of the parcel-vs-OSM
-weld class (vertices 0–5 mm off, flat then cut off at 5 mm). The build: derive cuts on CLIP_SCALE, and the check's exemption
-narrows (being measured, Zob).
+weld class (vertices 0–5 mm off, flat then cut off at 5 mm). CONFIRMED (Zob, HPDM scratch pours, SCALE 100 vs 1000): the 1–6 mm
+weld class 2,179 → 11; streets, tiles, protopolygon byte-identical; only landEvidence, alleys and medians move, sub-cm. Being built
+(Truss: derive on CLIP_SCALE; Zob: the check's exemption narrows, the codemap rows).
 Measured input, NOT matched to this cause: Provincetown's served slab has 4,972 open holes that findTJunctions' end rule
 passes. Their median gap is 4.59 mm, mostly shore↔beach/wetland/park (2026-10-18, on the served slab).
 ▶ `node scratch/ground-budget/tj-class/end-rule.mjs provincetown`
