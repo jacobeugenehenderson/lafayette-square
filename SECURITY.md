@@ -472,7 +472,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   (Authentication → Users). `auth.users` is not readable with the anon key, so this was NOT verified here.
 
 
-### F-18 · HIGH · Starting a thread on an ANONYMOUS bulletin post reveals its author  — ⚙️ FIXED + DEPLOYED 2026-09-28 (`27dc1f2f`, Apps Script @68) · not yet observed live
+### F-30 · HIGH · Starting a thread on an ANONYMOUS bulletin post reveals its author *(numbered F-18 until 2026-10-20, when the ID was found used twice; the anti-scraping finding keeps F-18)*  — ⚙️ FIXED + DEPLOYED 2026-09-28 (`27dc1f2f`, Apps Script @68) · not yet observed live
 `apps-script/Code.js#postStartThread` does not refuse a thread on an anonymous post: it stores the poster's
 real handle as `a_handle`, and `getThreads` returns it to the thread's starter as `other_handle`. So anyone
 who calls `start-thread` directly on a Missed Connections or Emergency post learns who wrote it. Only the old

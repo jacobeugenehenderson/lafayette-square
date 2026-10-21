@@ -1565,7 +1565,7 @@ function postStartThread(body) {
   if (!bulletin) return errorResponse('Bulletin not found', 'not_found')
   if (bulletin.rowData.status !== 'active') return errorResponse('Bulletin no longer active', 'bad_request')
 
-  // ⛔ F-18: a private thread on an anonymous post would hand its author's handle to
+  // ⛔ F-30 (was F-18): a private thread on an anonymous post would hand its author's handle to
   // whoever started it (a_handle below, returned by getThreads). An anonymous post
   // takes comments, never private messages.
   if (isAnonymousFlag(bulletin.rowData.anonymous)) {
@@ -1635,7 +1635,7 @@ function getThreads(deviceHash) {
 
   const threads = sheetToObjects(getSheet('Threads'))
   const messages = sheetToObjects(getSheet('Messages'))
-  // F-18: threads opened on an anonymous post before start-thread refused them must
+  // F-30 (was F-18): threads opened on an anonymous post before start-thread refused them must
   // not name the post's author. A post that is gone is treated as anonymous too:
   // its flag can no longer be read, so its author is never revealed by default.
   const postIsAnon = {}
