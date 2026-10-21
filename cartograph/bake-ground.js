@@ -1779,10 +1779,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // a lifted face the curb does not stand on meets the road, or the drawing's edge, carries a taper — read by the riser's
   // own owner test (`kerbLift.mjs#curblessEdges`), so an alley painted over the curb makes its own mouth curbless.
   const kerbGroups = PAINT_ORDER.filter(([kind, key]) => !DOES_NOT_CUT.has(kind + ':' + key)).map(([kind, key]) => ({ id: kind + ':' + key, key, items: partitionItems(kind, key) })).filter(g => g.items)
-  const { inBlock: kerbInside, curblessM, roadM: kerbRoadM, rimM: kerbRimM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, interiorM: kerbInteriorM, orphanRoadM: kerbOrphanM, narrowBlock: kerbNarrow, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
+  const { inBlock: kerbInside, curblessM, roadM: kerbRoadM, rimM: kerbRimM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, rimSide: kerbRimSide, rimSideM: kerbRimSideM, interiorM: kerbInteriorM, orphanRoadM: kerbOrphanM, narrowBlock: kerbNarrow, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
     ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, rimRings: nodedRimRings, groups: kerbGroups, ramps: curbCutRamps, kerb }))
     : { inBlock: null, curblessM: 0, regions: [] }
-  if (kerbH) console.log(`  [kerb] curbless: road ${kerbRoadM.toFixed(0)} m · rim ${kerbRimM.toFixed(0)} m (named by the rim rings' owners) · block stretches with nothing across and no rim identity ${kerbUnpairedM.toFixed(1)} m (${kerbUnpaired.length}${kerbUnpaired.length ? `, first ${kerbUnpaired[0].key} (${kerbUnpaired[0].A.map(v => v.toFixed(2)).join(', ')})` : ''}; counted, not refused) · inside the block, no candidate ${kerbInteriorM.toFixed(0)} m · road with nothing across ${kerbOrphanM.toFixed(0)} m`)
+  if (kerbH) console.log(`  [kerb] curbless: road ${kerbRoadM.toFixed(0)} m · rim ${kerbRimM.toFixed(0)} m (named by the rim rings' owners) · block stretches with nothing across and no rim identity ${kerbUnpairedM.toFixed(1)} m (${kerbUnpaired.length}${kerbUnpaired.length ? `, first ${kerbUnpaired[0].key} (${kerbUnpaired[0].A.map(v => v.toFixed(2)).join(', ')})` : ''}; counted, not refused) · rim-side stretches on neither the noded rim nor the block ring ${kerbRimSideM.toFixed(1)} m (${kerbRimSide.length}${kerbRimSide.length ? `, first ${kerbRimSide[0].key} (${kerbRimSide[0].A.map(v => v.toFixed(2)).join(', ')})` : ''}; counted, not refused) · inside the block, no candidate ${kerbInteriorM.toFixed(0)} m · road with nothing across ${kerbOrphanM.toFixed(0)} m`)
   if (kerbH) console.log(`  [kerb] narrow blocks (a taper's crease reaching its own block's far side, clipped to the block): ${kerbNarrow.length} crease(s) on ${new Set(kerbNarrow.map(c => c.ring)).size} ring(s)${kerbNarrow.length ? `, first at (${kerbNarrow[0].at.map(v => v.toFixed(2)).join(', ')}) ${kerbNarrow[0].pastFarEdgeM} m past` : ''}`)
   // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
@@ -2101,7 +2101,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   if (groundShape && kerbH) groundShape.kerb = { height: kerbH, source: kerb.source, cuts: curbCutRamps.length, riserM: Math.round(kerbRiser?.kerbM ?? 0), narrowBlock: kerbNarrow,
     curbless: { roadM: Math.round(kerbRoadM), rimM: Math.round(kerbRimM), interiorM: Math.round(kerbInteriorM), orphanRoadM: Math.round(kerbOrphanM),
       // counted, not refused (Boz, 2026-10-21): a block stretch with nothing across and no rim identity, until the painter names its rim
-      noRimIdentity: { m: +kerbUnpairedM.toFixed(2), sites: kerbUnpaired.map(u => ({ group: u.key, A: u.A, B: u.B })) } } }
+      noRimIdentity: { m: +kerbUnpairedM.toFixed(2), sites: kerbUnpaired.map(u => ({ group: u.key, A: u.A, B: u.B })) },
+      rimSideOffRings: { m: +kerbRimSideM.toFixed(2), sites: kerbRimSide.map(u => ({ group: u.key, A: u.A, B: u.B })) } } }
 
   // Concatenate positions (all Float32) and indices (all Uint32) into one
   // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset

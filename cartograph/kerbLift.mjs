@@ -101,9 +101,9 @@ export const triangleEdges = (groups) => (visit) => {
  *  rest, one on the block ring (`blockEdges`) is a block stretch with nothing across and no rim identity: returned
  *  `unpaired` for the caller to refuse; one off it lies inside the lifted block, no taper's candidate: counted (`interiorM`).
  *  Returns { curbless: [{ A, B, inward, across: 'road'|'rim' }] (`inward` toward the lifted face), roadM, rimM,
- *  unpaired: [{ A, B, key }], unpairedM, interiorM, orphanRoadM (an unlifted face with nothing across) }. */
+ *  unpaired: [{ A, B, key }], unpairedM, interior: [{ A, B, key }], interiorM, orphanRoadM (an unlifted face with nothing across) }. */
 export function curblessEdges(groups, kerbKeys = KERB_KEYS, { rimEdges = new Set(), blockEdges = new Set() } = {}) {
-  const curbless = [], unpaired = []
+  const curbless = [], unpaired = [], interior = []
   let roadM = 0, rimM = 0, unpairedM = 0, interiorM = 0, orphanRoadM = 0
   for (const rec of edgesAcross(ringEdges(groups)).values()) {
     const f = rec.in || rec.out, L = Math.hypot(f.b[0] - f.a[0], f.b[2] - f.a[2])
@@ -114,12 +114,12 @@ export function curblessEdges(groups, kerbKeys = KERB_KEYS, { rimEdges = new Set
     if (!rec.out) { if (rec.uses !== 1) continue
       const k = edgeKey([a[0], a[2]], [b[0], b[2]])
       if (rimEdges.has(k)) across = 'rim'
-      else { if (blockEdges.has(k)) { unpaired.push({ A: [a[0], a[2]], B: [b[0], b[2]], key: rec.in.key }); unpairedM += L } else interiorM += L; continue } }
+      else { if (blockEdges.has(k)) { unpaired.push({ A: [a[0], a[2]], B: [b[0], b[2]], key: rec.in.key }); unpairedM += L } else { interior.push({ A: [a[0], a[2]], B: [b[0], b[2]], key: rec.in.key }); interiorM += L } continue } }
     const u = [(b[0] - a[0]) / L, (b[2] - a[2]) / L]
     curbless.push({ A: [a[0], a[2]], B: [b[0], b[2]], inward: left ? [-u[1], u[0]] : [u[1], -u[0]], across })
     if (across === 'road') roadM += L; else rimM += L
   }
-  return { curbless, roadM, rimM, unpaired, unpairedM, interiorM, orphanRoadM }
+  return { curbless, roadM, rimM, unpaired, unpairedM, interior, interiorM, orphanRoadM }
 }
 
 /** An edge's key by its two LATTICE points, order-free — the identity `edgesAcross`, the rim and the block rings share. */
@@ -135,12 +135,21 @@ export function edgeKeysOf(rings, keep = null) {
 /** Everything the bake needs to lift its ground: `blockRings` (the painter's block — what lifts), `groups` (the NODED
  *  ground partition, [{ key, items }], key without its kind — the curb is `curb`/`curbCut`), the curb cuts' `ramps`, the
  *  town's `kerb`, and the noded `rimRings` ([{ ring, owners }], the rim named by its owners). Returns { inBlock, curbless,
- *  curblessM, roadM, rimM, unpaired, unpairedM, interiorM, orphanRoadM, flushTol, narrowBlock, regions }. Throws when the
+ *  curblessM, roadM, rimM, unpaired, unpairedM, rimSide, rimSideM, interiorM, orphanRoadM, flushTol, narrowBlock, regions }. Throws when the
  *  block has curbless edges and the town's kerb norm gives no taperRun. */
 export function kerbPlan({ blockRings, rimRings = [], groups, ramps, kerb }) {
   const inBlock = ringsInside(blockRings)
-  const { curbless, roadM, rimM, unpaired, unpairedM, interiorM, orphanRoadM } = curblessEdges(groups.map(({ key, items }) => ({ key, items: withSide(items, inBlock) })), KERB_KEYS,
+  const { curbless, roadM, rimM, unpaired, unpairedM, interior, interiorM: allInteriorM, orphanRoadM } = curblessEdges(groups.map(({ key, items }) => ({ key, items: withSide(items, inBlock) })), KERB_KEYS,
     { rimEdges: edgeKeysOf(rimRings.filter(Boolean), (o) => o?.kind === 'rim'), blockEdges: edgeKeysOf(blockRings) })
+  // ⚠️ A CENSUS, NOT A DECISION (Boz, 2026-10-21): of the edges with nothing across that are on neither the noded rim nor
+  // the block ring, those whose ends lie within TWO roundings of a rim-owned rim edge are the rim's own paint left
+  // un-noded (on LS ~1 mm off it, past the plane noding's one-rounding bound: its `pastBound` count). Named, so they never
+  // hide among the block's interior edges; nothing tapers or refuses by this distance.
+  const rimSegs = []; for (const r of rimRings.filter(Boolean)) r.ring.forEach((a, i) => { if (r.owners?.[i]?.kind === 'rim') rimSegs.push([a, r.ring[(i + 1) % r.ring.length]]) })
+  const near2 = (P) => rimSegs.some(([a, b]) => { const d = [b[0] - a[0], b[1] - a[1]], L2 = d[0] ** 2 + d[1] ** 2; let t = L2 ? ((P[0] - a[0]) * d[0] + (P[1] - a[1]) * d[1]) / L2 : 0; t = Math.max(0, Math.min(1, t))
+    return Math.hypot(P[0] - a[0] - d[0] * t, P[1] - a[1] - d[1] * t) <= 2 * Math.SQRT1_2 * LATTICE_M })
+  const rimSide = interior.filter(e => near2(e.A) && near2(e.B)), rimSideM = rimSide.reduce((n, e) => n + Math.hypot(e.B[0] - e.A[0], e.B[1] - e.A[1]), 0)
+  const interiorM = allInteriorM - rimSideM
   const curblessM = roadM + rimM
   if (curbless.length && !(kerb.taperRun > 0))
     throw new Error(`[kerbLift] ⛔ the kerb stands ${kerb.height} m and ${curblessM.toFixed(0)} m of block edge has NO curb drawn (alleys, shoulders, land meeting the road), where the block slopes down flush — but the town's kerb norm gives no taperRun, the town's value, never the kit's (norms.json → kerb.taperRun, metres).`)
@@ -156,7 +165,7 @@ export function kerbPlan({ blockRings, rimRings = [], groups, ramps, kerb }) {
   const narrow = crossed.filter(c => c.sameRing), foreign = crossed.filter(c => !c.sameRing)
   if (foreign.length) throw new Error(`[kerbLift] ⛔ ${foreign.length} mitred taper crease(s) cross ANOTHER block's edge (or start on no block ring) — a bend too sharp for the run ${kerb.taperRun} m: ${foreign.slice(0, 6).map(c => `from (${c.from.map(v => v.toFixed(3))}) reaching ${c.reach.toFixed(2)} m, across ring ${c.ring} (${c.edge[0].map(v => v.toFixed(3))})→(${c.edge[1].map(v => v.toFixed(3))})`).join(' · ')}`)
   const narrowBlock = narrow.map(c => ({ ring: c.ring, at: c.from, reachM: +c.reach.toFixed(3), pastFarEdgeM: +c.past.toFixed(3) }))
-  return { inBlock, curbless, curblessM, roadM, rimM, unpaired, unpairedM, interiorM, orphanRoadM, flushTol, narrowBlock, regions: [...kerbRegions(ramps, kerb), ...tapers] }
+  return { inBlock, curbless, curblessM, roadM, rimM, unpaired, unpairedM, rimSide, rimSideM, interiorM, orphanRoadM, flushTol, narrowBlock, regions: [...kerbRegions(ramps, kerb), ...tapers] }
 }
 
 /** Every MITRED crease (k ≠ 0) of `tapers` that properly crosses a block-ring edge other than those at its own vertex:
