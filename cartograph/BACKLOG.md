@@ -508,7 +508,12 @@ no-owner); the 62 are PAINTED band ground the PIECES don't cover (14 at 2–9 mm
 the same root as the owners check's RED since birth. Candidate (Boz → Zob premise): ONE cut, where paint IS the union of the pieces
 and unpieced band ground refuses by name. No widened lookup. Heights being judged by continuity (Zob). ⛔ The painter's no-owner census
 names 21 of the 48; tile 102's 27 are painted ground NOTHING names (Kerf). The census refusal now throws, since the ownership build is
-its reader (the 10-18 ruling). ✅ RULED + DISPATCHED (Jacob: "take whatever easier approach … sidewalks as close to level as possible … else add the
+its reader (the 10-18 ruling). ⭐ MERGED 284d4c49 (Kerf; Zob passed): the ground on one field. LS: 311,344 triangles, 7.19 MB, ground 226 s, peak 1.5 GB (deformer
+era 2.91M / 87 MB / ~951 s; served 10-06: 174,752, pre-kerb). Seams: p99 124 mm (served 205 mm). OPEN: walk cross-slope p50 7.6% as
+drawn (field alone 4.2%; the 0.5 m tolerance doubles it); 1,616 of 20,813 stripe samples under the asphalt (worst 0.63 m);
+getTerrainSampler bakes FLAT when terrain is missing (a fallback: refusing next, Kerf); nodePaint's mutant unguarded (Zob, A/B queued).
+Next: LS deploy bake as `lafayettesquare`, then HPDM; then a 0.1 m tolerance variant.
+✅ RULED + DISPATCHED (Jacob: "take whatever easier approach … sidewalks as close to level as possible … else add the
 sidewalk tilt to the backlog"): docs/briefs/BRIEF-the-ground-stands-on-one-field.md, choice A (smoothed terrain), Kerf. ⭐ JACOB'S DIRECTION (2026-10-21): "clip the full terrain gamut into ffffff and
 000000 and create a single-channel vector map … pretty fine steps": ONE height field for the whole area, vector, that every layer
 samples, continuous by construction. The ownership-once build is HELD (Zob, measured: +60% height steps, at owner seams). Zob
