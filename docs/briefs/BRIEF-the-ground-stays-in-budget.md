@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: (Jacob, FRESH)
+dispatched: step 7 — (Jacob, FRESH), 2026-10-20 night
 written: 2026-10-13
 evict-when: RULING: Jacob passes a deformed ground at street level on Huron and Provincetown, at a slab size and a ground-bake time no larger than each town's served one, and a check that reads the served sizes and times refuses any scratch bake that grows them.
 -->
@@ -54,35 +54,33 @@ found. If the code contradicts this brief, stop and flag Boz before building.
 5. ✅ **The height map, measured** (Loess, abfd78ac, `scratch/ground-budget/heightmap/`). Jacob ruled its three
    takeaways on 2026-10-15: a 1 m band at the shore only (`BRIEF-the-shore-keeps-its-lidar`); the coarse grid is the true
    mean of the 1 m lidar (eb5aa261); streets and lots keep the deformer's profile.
-6. **Simplify the fine ground after it is built** (Jacob, 2026-10-16). **It starts now, offline, on a finished slab**
-   (Jacob, 2026-10-17). It needs no new bake, so it does not wait for the pour fix (`BRIEF-the-stamp-lands-on-the-lattice`).
-   - **The input:** a finished deformer ground already on disk, read-only: HPDM's 10-14 HEAD gate slab,
-     `.claude/worktrees/rings-only/scratch/ground-budget/flatten-r1/slabs/hipointedemun-HEAD/` (ground.bin + ground.json),
-     beside the served `public/baked/hipointedemun/`. Confirm both exist and say what they hold before building. It
-     predates the pour fix; that doesn't matter for a simplifier, but say so in every number.
-   - **The premise to confirm:** the growth is the ped bands, refined to 7.8 mm (89% of HPDM's added triangles,
-     17405943), not the open terrain. The precision of the band is the lever (c1726d21's sweep).
-   - **The method:** merge triangles wherever the drawn surface (`aRaw × uExag + y`, `src/lib/drawnGround.js`) moves
-     less than a bound, so flat walk collapses and the kerb steps and bends keep their vertices.
-     - Group seams survive: a vertex on a seam between groups is never moved or removed unless both sides agree.
-       Report T-junctions after (`cartograph/groundConformity.js#findTJunctions`); the target is 0.
-     - The bound is derived from the town and judged at the close camera (memory
-       `feedback_build_for_close_inspection_not_for_distance`), never a constant that fits HPDM. Sweep a few to show the
-       curve, and say which derivation you propose.
-     - Group ids, materials and the attributes BakedGround reads (`aRaw`, `aGrad` and the rest named in ground.json)
-       survive.
-   - **Measure** at each bound, beside the served and the unsimplified slabs: triangles, `ground.bin` bytes, the time
-     simplification adds, and the walk's vertical error against the unsimplified surface (p50/p99/max). Use the walk
-     gate (`checks/claims-the-walk-is-level-across.mjs`) if it reads a slab path.
-   - **Write the best one as a scratch slab** (a copy of the input slab with the simplified ground) and say how Jacob
-     can open it in the player without overwriting `public/baked/`. If no such route exists, propose the smallest one
-     and stop; ⛔ don't copy over served files.
-   - **Streaming** (ROADMAP H5; Brace's chunk study ee72057a, `scratch/ground-budget/stream/`) stays parked. It is the
-     next step only if the simplified sizes still hurt on a phone. Browse sees the whole disc, so streaming alone does
-     not shrink it.
-   - The simplifier lands in the bake later (`cartograph/bake-ground.js`, after conformity). Prototype it in `scratch/`
-     tonight; the move into the bake is Boz's and Jacob's call.
-   - Bring Boz the numbers and stop.
+6. ✅ **The simplifier, prototyped offline** (Jacob, 2026-10-16/17; `d1c2c54c` + `0f644469`, `scratch/ground-budget/simplify/`):
+   half-edge collapse under a bound derived from the slab's own `refineTol`, group seams locked, no new folds. Measured on
+   HPDM's 10-14 gate slab (before the pour fix) at ×1: triangles 2,561,327 → 1,123,753 · ground.bin 79.96 → 39.70 MB ·
+   T-junctions 0 → 0 · walk gate +66 stations against HEAD · 11 min, 3.04 GB peak. It does not reach the served size;
+   Phase 2 (seam agreement) is probed, not built. Step 6's full text: `cartograph/_archive/BRIEF-ground-budget-step6-RETIRED-2026-10-20.md`.
+7. **Into the bake, and the road on its own policy** (Jacob, 2026-10-20 night: *"yes"* to both, then *"option 1"* for the road).
+   Why: tonight's Huron bake was stopped before it wrote. Of Huron's growth from the served slab (1.24M) to the 7.8 mm slab
+   (3.76M), the ped bands are +2.27M (sidewalk +1.65M, treelawn +0.54M) and the road +0.10M (Zob, measured per group
+   from `ground.json`; the script is in Zob's session scratchpad, so re-derive it). Since `6fe30a8a` (10-17) today's code
+   also puts the road on the fine policy, and no slab on disk has measured what that costs.
+   - **(a) The simplifier moves into `cartograph/bake-ground.js`, after conformity**, from the step 6 prototype: same
+     derivation of the bound, group seams locked, the attributes BakedGround reads (`aRaw`, `aGrad`, the rest named in
+     ground.json) kept. ⛔ A bound that merely fits one town is Class D. The scratch prototype retires in the same commit
+     (fix in three parts, `CLAUDE.md`).
+   - **(b) The road splits.** `asphalt` and `highway` go back to the lots' policy (`GROUND_REFINE_TOL_M`,
+     `GROUND_REFINE_MIN_EDGE_M`); `stripe` keeps the fine one (the ped `refineTol`, floor `stationM`), because
+     `claims-the-stripe-lies-on-its-road` gates each stripe against a lift of millimetres and samples edge midpoints
+     (`6fe30a8a`'s measured reason). Site: the refine-policy branch of `bakeGround` (`PED_KEYS || ROAD_KEYS`).
+     Conformity welds a fine stripe or curb beside coarse asphalt with red-green closures and throws on any T-junction
+     left (Zob, read in source, `groundConformity.js#conformAndRefine`), so the seam needs no new code.
+     ⚠️ Whether the road deserves a road-derived tolerance at all is unruled: there is no road norm to derive it from.
+   - **(c) Measure on scratch slabs, HPDM first** (HPDM draws stripes; Huron draws none), then Huron. Three slabs each:
+     today's code (road all fine) · (b) alone · (a)+(b). Per slab: triangles per group, `ground.bin` bytes, the ground bake
+     time, `claims-the-walk-is-level-across`, `claims-the-stripe-lies-on-its-road`,
+     `claims-the-road-meets-itself-across-its-centreline`, T-junctions, `claims-ground-refinement-does-not-breed-slivers`.
+   - Bring Boz the table and stop. The batch bake (this, plus `BRIEF-perpendicular-leg-ownership`'s build, then ONE Huron
+     bake) is Boz's to run after Jacob's go.
 
 ## 4. Bounds
 
