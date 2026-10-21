@@ -72,7 +72,6 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   }
   for (const [cls, rings] of Object.entries(classRings)) for (const { r, item } of rings) for (let i = 0; i < r.length; i++) addSeg(cls, r[i], r[(i + 1) % r.length], item)
   const disc = stencil?.length >= 3 ? frozenCopy(stencil) : null
-  if (disc) for (let i = 0; i < disc.length; i++) addSeg('beyond', disc[i], disc[(i + 1) % disc.length])
   // ⭐ EVEN-ODD THROUGH A ROW INDEX, per ring: an edge can cross the ray at z only if z lies in its own z-span, so each ring
   // keeps its edges by row (as many rows as edges, over its z-extent) and a point tests only its row's edges. The same
   // test on the same edges, in the same arithmetic, as walking the whole ring: the answer is identical, only cheaper (a
@@ -90,16 +89,13 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c }
     return c }
   const pipRings = (x, z, rings) => { let c = false; for (const r of rings) if (ringOdd(x, z, r)) c = !c; return c }
-  // ⭐ A SEGMENT WHOLLY OUTSIDE THE DRAWING: both ends outside the disc and no crossing of its edge (the disc's own
-  // segments, `beyond`, read from the grid). ⛔ No disc, nothing is outside it.
+  // ⭐ A SEGMENT WHOLLY OUTSIDE THE DISC: both ends outside it and no crossing of its edge (the disc's own segments).
+  // ⛔ No disc, nothing is outside it.
   const outsideDisc = (a, b) => { if (!disc || pipRings(a[0], a[1], [disc]) || pipRings(b[0], b[1], [disc])) return false
-    const sx = b[0] - a[0], sz = b[1] - a[1], seen = new Set()
-    for (let x = Math.floor(Math.min(a[0], b[0]) / CELL); x <= Math.floor(Math.max(a[0], b[0]) / CELL); x++)
-      for (let z = Math.floor(Math.min(a[1], b[1]) / CELL); z <= Math.floor(Math.max(a[1], b[1]) / CELL); z++)
-        for (const g of segGrid.get(x * 1000003 + z) || []) { if (g.cls !== 'beyond' || seen.has(g)) continue; seen.add(g)
-          const gx = g.b[0] - g.a[0], gz = g.b[1] - g.a[1], den = sx * gz - sz * gx; if (Math.abs(den) < 1e-15) continue
-          const wx = g.a[0] - a[0], wz = g.a[1] - a[1], t = (wx * gz - wz * gx) / den, v = (wx * sz - wz * sx) / den
-          if (t >= 0 && t <= 1 && v >= 0 && v <= 1) return false }
+    const sx = b[0] - a[0], sz = b[1] - a[1]
+    for (let k = 0; k < disc.length; k++) { const ga = disc[k], gb = disc[(k + 1) % disc.length], gx = gb[0] - ga[0], gz = gb[1] - ga[1], den = sx * gz - sz * gx; if (Math.abs(den) < 1e-15) continue
+      const wx = ga[0] - a[0], wz = ga[1] - a[1], t = (wx * gz - wz * gx) / den, v = (wx * sz - wz * sx) / den
+      if (t >= 0 && t <= 1 && v >= 0 && v <= 1) return false }
     return true }
   // per-class point-in-polygon through a coarse ring index (rings by bbox cell)
   const ringIdx = {}
@@ -264,6 +260,14 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     T.push(rec); stats.tiles++
     for (let x = Math.floor(a / TCELL); x <= Math.floor(c / TCELL); x++) for (let z = Math.floor(b / TCELL); z <= Math.floor(d / TCELL); z++) { const k = x * 1000003 + z; (tileGrid.get(k) || tileGrid.set(k, []).get(k)).push(rec) }
   }
+  // ⭐ BEYOND IS PAST THE DRAWING'S OWN RIM (BRIEF-the-rim-is-cut-once (B), Boz 2026-10-21: "the drawing decides"). The rim is
+  // each rim tile's ① ring edges the disc cut made (`ringOwner` { kind: 'rim' }), which carry the block's own rim crossings
+  // (tileGround's `shareRimCrossings`), so the paint, cut by that block, meets them with no lot between. ⛔ Never the stencil's
+  // exact chord: the cut rounds its crossings up to √2/2 step off it, and a ray meeting the rim 65° off its normal read the
+  // wedge between as ~1.1 mm of lot (HPDM B1: 341 points). A tile with no rim edge has no beyond.
+  for (const t of T) { const O = tiles[t.ti].ringOwner, n = t.ring.length; t.rim = false
+    for (let i = 0; i < n; i++) if (O[i]?.kind === 'rim') { t.rim = true; addSeg('beyond', t.ring[i], t.ring[(i + 1) % n]) } }
+  const recOf = new Map(T.map(r => [r.ti, r]))
   // ── THE INK: ① between the tiles, as owned pieces (`shape.json#ink`) ──
   // ⭐ A piece is one NONZERO region (a hole wound against its outer), so a point is in it where the winding of its rings is
   // not 0. A single owner's piece is that owner's ① too: its boundary joins the owned segments, so a crossing reads every
@@ -335,12 +339,12 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // the bands along a ray from (px, pz) in direction (ux, uz), out to `len`: [{ from, to, cls }]. Cells are walked in
   // order along the ray; each class's state starts from one point-in-polygon just inside ② and toggles at every crossing
   // of its own boundary, so no interval needs a polygon test; the walk stops once a lot follows the band.
-  const bandsAlong = (px, pz, ux, uz, len) => {
+  const bandsAlong = (px, pz, ux, uz, len, tr) => {
     stats.rays++
     // ⛔ the first state is probed PAST the lattice: the bands are on Clipper's 1 mm grid and ② is not, so a probe nearer
     // than the grid can sit outside a curb whose edge is ② itself — and the whole band read as lot (measured, HPDM)
     const eps = 2 * LATTICE, held = { walk: itemsAt('walk', px + ux * eps, pz + uz * eps), lawn: itemsAt('lawn', px + ux * eps, pz + uz * eps), curb: itemsAt('curb', px + ux * eps, pz + uz * eps) }
-    let beyond = !!disc && !pipRings(px + ux * eps, pz + uz * eps, [disc])
+    let beyond = !!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.ring])
     const cls = () => beyond ? 'beyond' : held.walk.size ? 'walk' : held.lawn.size ? 'lawn' : held.curb.size ? 'curb' : 'lot'
     const out = [{ from: 0, to: len, cls: cls() }]
     const seen = new Set()
@@ -348,7 +352,9 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     const stepX = ux > 0 ? 1 : -1, stepZ = uz > 0 ? 1 : -1
     let tMaxX = ux !== 0 ? (((ux > 0 ? cx + 1 : cx) * CELL) - px) / ux : Infinity, tMaxZ = uz !== 0 ? (((uz > 0 ? cz + 1 : cz) * CELL) - pz) / uz : Infinity
     const tDX = ux !== 0 ? CELL / Math.abs(ux) : Infinity, tDZ = uz !== 0 ? CELL / Math.abs(uz) : Infinity
-    let tCell = 0, sawBand = out[0].cls !== 'lot'
+    // ⭐ 'beyond' is the drawing's edge, never a band (`pedOf` skips it too): a ray that starts past the rim has seen no band
+    // yet, so the paint it meets before or after the rim crossing is not cut off as "lot after a band" (HPDM B1, Mitre 2026-10-21)
+    let tCell = 0, sawBand = out[0].cls !== 'lot' && out[0].cls !== 'beyond'
     const pending = []                     // crossings found but beyond the current cell's exit, kept sorted
     while (tCell <= len) {
       for (const sg of segGrid.get(cx * 1000003 + cz) || []) {
@@ -433,7 +439,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       if (S.u === 0) { const [ax, az] = nrm((S.i + n - 1) % n), L = Math.hypot(ux + ax, uz + az); if (L > 1e-9) { ux = (ux + ax) / L; uz = (uz + az) / L } }
       ux *= sideSign; uz *= sideSign
       const H = R.Hat(S.i, S.u)
-      const B = bandsAlong(px - uz * SIDESTEP, pz + ux * SIDESTEP, ux, uz, CAP)
+      const B = bandsAlong(px - uz * SIDESTEP, pz + ux * SIDESTEP, ux, uz, CAP, t)
       const { ped, back } = pedOf(B); let lawnW = 0, walkW = 0
       for (const b of ped) { if (b.cls === 'lawn') lawnW += b.to - b.from; else if (b.cls === 'walk') walkW += b.to - b.from }
       const head = 4 * ulp32(H)
@@ -594,7 +600,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     const ux = (x - n.px) / n.d, uz = (z - n.pz) / n.d
     // ⛔ the ray is aimed AT this point, which is often a band polygon's own vertex: run it 10 µm to the side, so it never
     // passes exactly through a boundary vertex (where the half-open crossing rule can count a boundary 0 or 2 times)
-    const B = bandsAlong(n.px - uz * SIDESTEP, n.pz + ux * SIDESTEP, ux, uz, CAP)
+    const B = bandsAlong(n.px - uz * SIDESTEP, n.pz + ux * SIDESTEP, ux, uz, CAP, recOf.get(n.R.t))
     const { ped, back } = pedOf(B)
     const held = ped.length > 0 && n.d <= back + LATTICE
     const R = absorbAt(n.R, n.i, n.u)                        // the absorption along ②, continuous along the street
@@ -624,11 +630,11 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // for probes: the station, the depth and the band intervals a point's ray finds (never used by the bake)
   const explain = (x, z) => { const t = tileAt(x, z); if (!t) return { outside: true }; const n = nearest(t, x, z, CAP); if (!n) return { deep: true }
     const ux = (x - n.px) / n.d, uz = (z - n.pz) / n.d
-    return { station: [n.px, n.pz], H: n.H, d: n.d, inBlock: pipRings(x, z, t.iA), bands: n.d > 0 ? bandsAlong(n.px - uz * SIDESTEP, n.pz + ux * SIDESTEP, ux, uz, CAP) : [] } }
+    return { station: [n.px, n.pz], H: n.H, d: n.d, inBlock: pipRings(x, z, t.iA), bands: n.d > 0 ? bandsAlong(n.px - uz * SIDESTEP, n.pz + ux * SIDESTEP, ux, uz, CAP, t) : [] } }
   // for probes: every owner candidate at (x, z) with the bands its ray finds (never used by the bake)
   const _owners = (x, z) => { const t = tileAt(x, z); if (!t) return []
     return owners(t, x, z, CAP).map(c => { const ux = (x - c.px) / c.d, uz = (z - c.pz) / c.d
-      return { key: c.key, run: c.run, d: c.d, H: c.H, bands: c.d > 0 ? bandsAlong(c.px - uz * SIDESTEP, c.pz + ux * SIDESTEP, ux, uz, CAP) : [] } }) }
+      return { key: c.key, run: c.run, d: c.d, H: c.H, bands: c.d > 0 ? bandsAlong(c.px - uz * SIDESTEP, c.pz + ux * SIDESTEP, ux, uz, CAP, t) : [] } }) }
   // the drawing's half of the walk limit, as a vertical chord tolerance over the town's narrower walks (p10 of the walk
   // widths the stations measured): what the bake refines the ped bands to. Null where the town names no walk limit.
   walkWidths.sort((a, b) => a - b)
