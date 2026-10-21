@@ -56,7 +56,7 @@ import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
 import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
-import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
+import { loadSceneTerrain, requireSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign, bakeCurbWidth } from './lookDesign.mjs'
 import { lookFade } from './boundaryRecords.mjs'
 import { BAND_COLORS } from '../src/cartograph/streetProfiles.js'
@@ -122,12 +122,15 @@ const GROUND_Y_EPS = 0.002;   // metres per renderOrder slot (~5 cm over ~26 gro
 // terrainExag changes. `getElevation(x,z)` is raw × that exag (world-space lift in m).
 // ⛔ Re-bake the ground after changing terrainExag: refinement subdivides where the
 // heightfield BENDS, and how much it bends is a function of the exaggeration.
-// false if the heightmap is absent.
+// ⛔ A MISSING TERRAIN REFUSES (Boz, 2026-10-21): through terrainLoad#requireSceneTerrain, the anchor bakes' own gate.
+// false ONLY when the town has put "no elevation" on the record (`pourPolicyFor`); a terrain that is merely not there
+// (not baked, not copied) throws by name. It used to read a missing file as "no terrain" and bake the town flat.
+// ▶ node checks/claims-a-missing-height-fails-loudly.mjs (⑦)
 let _terrainSampler = null;
 function getTerrainSampler(scene) {
   if (_terrainSampler !== null) return _terrainSampler;
-  const t = loadSceneTerrain(scene);
-  _terrainSampler = t ? t.getElevation : false;  // false → scene has no terrain (bake flat)
+  const t = requireSceneTerrain(scene, 'bake-ground');
+  _terrainSampler = t.identity === 'none' ? false : t.getElevation;  // 'none' → flat, on the record
   return _terrainSampler;
 }
 
@@ -1347,7 +1350,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     console.log(`  [ground] tide band: ${L.lowName}…${L.highName} (${L.range.low[0].toFixed(2)}…${L.range.high[1].toFixed(2)} m), refined to ±${tol.toFixed(3)} m, edges ≥ ${(t.stepM / 2).toFixed(2)} m`)
     return { levels: (x, z) => [L.lowAt(x, z) * t.exag, L.highAt(x, z) * t.exag], tol, minEdge: t.stepM / 2 }
   })()
-  if (!hasTerrain) console.log(`  [ground] no terrain for ${look} — refinement off (nothing to drape)`)
+  if (!hasTerrain) console.log(`  [ground] ${look}: flat ON THE RECORD (no elevation) — refinement off (nothing to drape)`)
   // Bake-target guards — phantom-look + SCENE≠LOOK. Both were written here, inline
   // (2026-06-01 and 2026-07-21), each after a lost session; four other bakers never
   // got them. Hoisted to ./bake-target.js so the rule has ONE home. Refuses BEFORE
