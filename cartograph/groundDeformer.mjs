@@ -36,8 +36,10 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
  *  PAINTED (before the flatten punches overlays through them) · @param stencil the town's disc ring (beyond it nothing is
  *  drawn: the rim is an edge of the drawing, never a lot) · @param raw (x, z) → terrain raw
  *  @param line { heightAt(skelId, [x, z]) → the line's raw height, step } (lineHeight.mjs, the coast's high water folded in by the caller)
- *  @param limits { walkMax, lawnMax (null = none), exag, blend } · @param town the scene, named in every refusal */
-export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits }) {
+ *  @param limits { walkMax, lawnMax (null = none), exag, blend } · @param town the scene, named in every refusal
+ *  @param legs per tile, each perpendicular corner's own ground with the leg edge that built it ([{ tile, perp: [{ cls, kind,
+ *  si, i, atEnd, spans, rings }] }], tileGround's `bandPiecesOfTile` `perp`, live — never frozen) */
+export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits, legs = [] }) {
   if (!town) throw new Error('groundDeformer: the caller names no town — a refusal could not say where')
   if (typeof line?.heightAt !== 'function' || !(line.step > 0)) throw new Error(`groundDeformer: ⛔ ${town}: the caller passes no line (lineHeight.mjs: heightAt and its station step) — ② cannot take its height`)
   if (!Array.isArray(ink)) throw new Error(`groundDeformer: ⛔ ${town}: the caller passes no ink (shape.json \`ink\`, ① between the tiles as owned pieces; a --legacy freeze carries none) — the road on the centreline has no owner`)
@@ -46,8 +48,8 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
-    road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0 }
+  const stats = { frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
+    road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0, byLeg: 0, legCross: 0, legCrossMaxDH: 0, rayAndLeg: 0, legNotHeld: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
   const CELL = 8
@@ -88,6 +90,17 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c }
     return c }
   const pipRings = (x, z, rings) => { let c = false; for (const r of rings) if (ringOdd(x, z, r)) c = !c; return c }
+  // ⭐ A SEGMENT WHOLLY OUTSIDE THE DRAWING: both ends outside the disc and no crossing of its edge (the disc's own
+  // segments, `beyond`, read from the grid). ⛔ No disc, nothing is outside it.
+  const outsideDisc = (a, b) => { if (!disc || pipRings(a[0], a[1], [disc]) || pipRings(b[0], b[1], [disc])) return false
+    const sx = b[0] - a[0], sz = b[1] - a[1], seen = new Set()
+    for (let x = Math.floor(Math.min(a[0], b[0]) / CELL); x <= Math.floor(Math.max(a[0], b[0]) / CELL); x++)
+      for (let z = Math.floor(Math.min(a[1], b[1]) / CELL); z <= Math.floor(Math.max(a[1], b[1]) / CELL); z++)
+        for (const g of segGrid.get(x * 1000003 + z) || []) { if (g.cls !== 'beyond' || seen.has(g)) continue; seen.add(g)
+          const gx = g.b[0] - g.a[0], gz = g.b[1] - g.a[1], den = sx * gz - sz * gx; if (Math.abs(den) < 1e-15) continue
+          const wx = g.a[0] - a[0], wz = g.a[1] - a[1], t = (wx * gz - wz * gx) / den, v = (wx * sz - wz * sx) / den
+          if (t >= 0 && t <= 1 && v >= 0 && v <= 1) return false }
+    return true }
   // per-class point-in-polygon through a coarse ring index (rings by bbox cell)
   const ringIdx = {}
   for (const [cls, rings] of Object.entries(classRings)) {
@@ -194,6 +207,13 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       const len = (i) => { const p = ring[i], q = ring[(i + 1) % n]; return Math.hypot(q[0] - p[0], q[1] - p[1]) }
       const E = new Array(n)
       let refused = null   // the first edge with no height: { k, o, arcId, end }
+      // ⭐ A FRAME EDGE OUTSIDE THE DRAWING HAS NO HEIGHT TO GIVE (Jacob, 2026-10-20): an edge whose run is the frame's
+      // (`__boundary__`) and which lies WHOLLY outside the disc is not part of the drawing (①'s blocks run to the fetch frame,
+      // and ② is carried uncut). It takes no height and leaves the nearest-span search and the stations along ②, and a corner
+      // arc wholly outside the disc with such an edge at a tangent goes with it. ⛔ The same edge inside the disc still refuses
+      // (the frame must contain the disc), and so does an unstamped edge: no rim height, no fallback.
+      const exempt = new Uint8Array(n)
+      for (let i = 0; i < n; i++) { const o = ownerOf(i); if (o?.skelId === '__boundary__' && !isArcEdge(i) && outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1 }
       // ⭐ A CORNER ARC blends by ITS OWN arclength between its two tangent points (its first and last vertex), each end the
       // line's h there read through the straight edge that meets it — so H is one continuous value round the fillet, where
       // the owner changes. ⛔ The approach edges never count: counted (fb953109), an arc's first vertex took nearly the far
@@ -203,12 +223,13 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
         const span = []; let j = i, L = 0
         while (isArcEdge(j % n) && span.length < n) { span.push(j % n); L += len(j % n); j++ }
         const A = i, B = j % n, oA = ownerOf((A + n - 1) % n), oB = ownerOf(B)
+        if ((exempt[(A + n - 1) % n] || exempt[B]) && span.every(k => outsideDisc(ring[k], ring[(k + 1) % n]))) { for (const k of span) exempt[k] = 1; continue }
         const hA = hOf(oA, ring[A]), hB = hOf(oB, ring[B])
         if (hA == null || hB == null) { refused ??= { k: hA == null ? A : B, o: hA == null ? oA : oB, arcId: arc[i], end: true }; continue }
         let s0 = 0; for (const k of span) { E[k] = { arc: true, s0, len: len(k), L, hA, hB }; s0 += len(k) }
         stats.arcBlended += span.length
       }
-      for (let i = 0; i < n; i++) { if (E[i]) continue
+      for (let i = 0; i < n; i++) { if (E[i] || exempt[i]) continue
         const o = ownerOf(i)
         if (!o || o.noLine && !onTerrain(o) || isArcEdge(i)) { refused ??= { k: i, o, arcId: isArcEdge(i) ? arc[i] : null }; continue }
         if (onTerrain(o)) { E[i] = { terrain: true }; stats.onTerrain++; continue }
@@ -226,7 +247,8 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
         if (e.arc) return e.L > 0 ? e.hA + (e.hB - e.hA) * (e.s0 + u * e.len) / e.L : e.hA
         if (e.terrain) { const p = at(i, u); return raw(p[0], p[1]) }
         const f = u * e.m, j = Math.min(e.m - 1, Math.floor(f)); return e.h[j] + (f - j) * (e.h[j + 1] - e.h[j]) }
-      rings.push({ ring, Hat, stamp, arc, t: ti, k: ri })
+      if (exempt.some(v => v)) stats.frameExempt += exempt.reduce((a, v) => a + v, 0)
+      rings.push({ ring, Hat, stamp, arc, t: ti, k: ri, exempt })
     })
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
@@ -234,7 +256,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     const rec = { ti, ring: frozenCopy(t.ring), iA: t.iA.filter(r => r?.length >= 3).map(frozenCopy), rings, bb: [a, b, c, d], segs: new Map(), one: new Map(), diag: Math.hypot(c - a, d - b) }
     for (let i = 0; i < t.ring.length; i++) { const o = owned(t.ringOwner[i], `① edge ${i} of the tile whose ring starts at (${t.ring[0][0].toFixed(1)}, ${t.ring[0][1].toFixed(1)})`)
       addOwned(rec.one, rec.ring[i], rec.ring[(i + 1) % t.ring.length], o); addOwned(oneGrid, rec.ring[i], rec.ring[(i + 1) % t.ring.length], o) }
-    for (const R of rings) for (let i = 0; i < R.ring.length; i++) {
+    for (const R of rings) for (let i = 0; i < R.ring.length; i++) { if (R.exempt[i]) continue
       const p = R.ring[i], q = R.ring[(i + 1) % R.ring.length], s = { p, q, R, i }
       const x0 = Math.floor(Math.min(p[0], q[0]) / CELL), x1 = Math.floor(Math.max(p[0], q[0]) / CELL), z0 = Math.floor(Math.min(p[1], q[1]) / CELL), z1 = Math.floor(Math.max(p[1], q[1]) / CELL)
       for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) { const k = x * 1000003 + z; (rec.segs.get(k) || rec.segs.set(k, []).get(k)).push(s) }
@@ -340,9 +362,13 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       pending.sort((a, b) => a.t - b.t)
       // ⛔ every crossing at ONE point is applied before the class is read: where the curb's inner edge IS the lawn's outer
       // edge, reading between the two toggles saw a 'lot' that is not there and ended the band at the curb
+      // ⭐ THE WINDOW IS CHAINED (Jacob, 2026-10-20; Tern's forensic): a crossing within one lattice of the PREVIOUS joins the
+      // group, so a sub-lattice gap between two pieces of a band (0.8 mm on Huron's fox-road) is never read as a lot. Grouped
+      // from the FIRST crossing instead, the next piece's entry 1.3 mm on fell outside and the band ended there.
+      // ▶ node checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs [--selftest]
       while (pending.length && pending[0].t <= tExit) {
         const t0 = pending[0].t
-        while (pending.length && pending[0].t - t0 <= LATTICE) { const h = pending.shift()
+        let tp = t0; while (pending.length && pending[0].t - tp <= LATTICE) { const h = pending.shift(); tp = h.t
           if (h.cls === 'beyond') beyond = !beyond; else { const H = held[h.cls]; if (H.has(h.item)) H.delete(h.item); else H.add(h.item) } }
         const c = cls(), last = out[out.length - 1]
         if (c !== last.cls) { last.to = t0; out.push({ from: t0, to: len, cls: c }) }
@@ -375,12 +401,20 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   const STATION_M = sigma / 10
   const walkWidths = []
   for (const t of T) for (const R of t.rings) {
-    const ring = R.ring, n = ring.length, st = [], segStart = new Array(n)
-    let s0 = 0
-    for (let i = 0; i < n; i++) {
+    const ring = R.ring, n = ring.length, st = [], segStart = new Array(n), segEnd = new Array(n), ex = R.exempt
+    // ⭐ OPEN RUNS AT A FRAME EDGE (Boz, 2026-10-20): where ② has exempt edges (outside the drawing) its stations are walked
+    // from the edge after one, and each run of in-drawing edges is OPEN — it closes on its last edge's far vertex (that edge's
+    // own end, u = 1), and the smoothing and the envelope below neither bridge the gap nor read a value across it. A ring with
+    // none is one closed run, exactly as before.
+    const e0 = ex.indexOf(1), open = e0 >= 0, runOf = []
+    let s0 = 0, run = -1
+    for (let c = 0; c < n; c++) { const i = open ? (e0 + 1 + c) % n : c
       const p = ring[i], q = ring[(i + 1) % n], L = Math.hypot(q[0] - p[0], q[1] - p[1]), k = Math.max(1, Math.ceil(L / STATION_M))
       segStart[i] = st.length
-      for (let j = 0; j < k; j++) st.push({ i, u: j / k, s: s0 + L * j / k })
+      if (!ex[i]) { if (!st.length || ex[(i + n - 1) % n]) run++
+        for (let j = 0; j < k; j++) { st.push({ i, u: j / k, s: s0 + L * j / k }); runOf.push(run) }
+        if (open && ex[(i + 1) % n]) { st.push({ i, u: 1, s: s0 + L }); runOf.push(run) } }
+      segEnd[i] = st.length
       s0 += L
     }
     const total = s0
@@ -389,6 +423,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     let li = 0, lL = -1; for (let i = 0; i < n; i++) { const L = Math.hypot(ring[(i + 1) % n][0] - ring[i][0], ring[(i + 1) % n][1] - ring[i][1]); if (L > lL) { lL = L; li = i } }
     const [m0, m1] = nrm(li), mx = (ring[li][0] + ring[(li + 1) % n][0]) / 2, mz = (ring[li][1] + ring[(li + 1) % n][1]) / 2
     const sideSign = pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.iA) ? 1 : -1
+    R.side = sideSign
     for (const S of st) {
       const p = ring[S.i], q = ring[(S.i + 1) % n], px = p[0] + (q[0] - p[0]) * S.u, pz = p[1] + (q[1] - p[1]) * S.u
       let [ux, uz] = nrm(S.i)
@@ -404,14 +439,15 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       if (walkW > 0) walkWidths.push(walkW)
     }
     stats.stations += st.length
-    // the gap from each station to the next round the closed ring
+    // the gap from each station to the next round the closed ring (in an open run, the last station's is never read)
     const m = st.length, gap = st.map((S, a) => a + 1 < m ? st[a + 1].s - S.s : total - S.s + st[0].s)
+    const joined = (a, b) => !open || runOf[a] === runOf[b]          // b is a's neighbour within the same run
     // smooth A_raw along the ring (Gaussian, σ), walking out both ways to 3σ
     const A = new Float64Array(m)
     for (let a = 0; a < m; a++) {
       let w = 1, v = st[a].Araw
-      for (let b = a, d = 0, g = 0; g < m - 1; g++) { d += gap[b]; b = (b + 1) % m; if (d > 3 * sigma) break; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
-      for (let b = a, d = 0, g = 0; g < m - 1; g++) { b = (b + m - 1) % m; d += gap[b]; if (d > 3 * sigma) break; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
+      for (let b = a, d = 0, g = 0; g < m - 1; g++) { const b1 = (b + 1) % m; if (!joined(b, b1) || (open && b1 === 0)) break; d += gap[b]; b = b1; if (d > 3 * sigma) break; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
+      for (let b = a, d = 0, g = 0; g < m - 1; g++) { const b1 = (b + m - 1) % m; if (!joined(b, b1) || (open && b === 0)) break; b = b1; d += gap[b]; if (d > 3 * sigma) break; const k = Math.exp(-d * d / (2 * sigma * sigma)); w += k; v += k * st[b].Araw }
       A[a] = v / w
     }
     // the capacity's lower envelope with slope kk along the ring (two passes each way, so it closes round the ring).
@@ -419,19 +455,49 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     // (Jacob) — so the walk's along-street departure from the line is bounded by the same norm that bounds its fall across.
     const kk = walkMax / exag, env = st.map(S => S.cap)
     for (let pass = 0; pass < 2; pass++) {
-      for (let a = 0; a < m; a++) { const b = (a + 1) % m; env[b] = Math.min(env[b], env[a] + kk * gap[a]) }
-      for (let a = m - 1; a >= 0; a--) { const b = (a + m - 1) % m; env[b] = Math.min(env[b], env[a] + kk * gap[b]) }
+      for (let a = 0; a < m; a++) { const b = (a + 1) % m; if (open && (b === 0 || !joined(a, b))) continue; env[b] = Math.min(env[b], env[a] + kk * gap[a]) }
+      for (let a = m - 1; a >= 0; a--) { const b = (a + m - 1) % m; if (open && (a === 0 || !joined(a, b))) continue; env[b] = Math.min(env[b], env[a] + kk * gap[b]) }
     }
     st.forEach((S, a) => { const c = Math.max(-env[a], Math.min(env[a], A[a])); if (c !== A[a]) stats.absorbClamped++; S.A = c })
-    R.st = st; R.segStart = segStart
+    R.st = st; R.segStart = segStart; R.segEnd = segEnd
   }
   // the absorption at (ring R, segment i, parameter u): linear between the two stations that bracket it
-  const absorbAt = (R, i, u) => { const st = R.st, a0 = R.segStart[i], a1 = i + 1 < R.segStart.length ? R.segStart[i + 1] : st.length
+  const absorbAt = (R, i, u) => { const st = R.st, a0 = R.segStart[i], a1 = R.segEnd[i]
     // the last station of segment i at or before u (stations are in increasing u within a segment): by bisection
     let a = a0, hi = a1 - 1; while (a < hi) { const m = (a + hi + 1) >> 1; if (st[m].u <= u) a = m; else hi = m - 1 }
     const next = a + 1 < st.length ? st[a + 1] : st[0], uN = a + 1 < a1 ? next.u : 1
     const f = uN > st[a].u ? (u - st[a].u) / (uN - st[a].u) : 0
     return st[a].A + f * (next.A - st[a].A) }
+
+  // ── THE PERPENDICULAR LEGS: each extension (and cut) owned by the leg edge that built it (Jacob, 2026-10-20) ──
+  // A perpendicular corner's legs run their bands straight on past the tangent, where no ② station's ray reaches and the arc
+  // carries no band. The painter hands each such region with its leg (`legs`: the ② ring `si` and edge `i` of `iaFull`, the
+  // tangent at its end when `atEnd`), so the leg is READ, never found by distance: a point in it takes the leg's profile along
+  // the leg's own inward normal at its tangent station, at the point's depth on that normal. ⛔ A region whose leg is not a ②
+  // edge of its tile here throws: never a neighbour's.
+  const legGrid = new Map(), byTi = new Map(T.map(r => [r.ti, r]))
+  for (const { tile, perp } of legs || []) for (const x of perp || []) {
+    if (x.kind === 'hull' || x.i == null) continue                     // the hull is the arc's, not a leg's
+    const t = byTi.get(tile); if (!t) continue                         // a tile the deformer does not carry (no ②): nothing of it is resolved here
+    const R = t.rings.find(r => r.k === x.si)
+    if (!R || !(x.i >= 0 && x.i < R.ring.length) || R.exempt[x.i]) throw new Error(`groundDeformer: ⛔ ${town}: a perpendicular leg of tile ${tile} names ② ring ${x.si} edge ${x.i}, which the deformer does not carry — its extension has no owner`)
+    const rings = (x.rings || []).filter(r => r?.length >= 3).map(frozenCopy); if (!rings.length) continue
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rings) for (const [px, pz] of r) { a = Math.min(a, px); b = Math.min(b, pz); c = Math.max(c, px); d = Math.max(d, pz) }
+    const rec = { t, R, i: x.i, atEnd: !!x.atEnd, rings, bb: [a, b, c, d] }
+    for (let gx = Math.floor(a / TCELL); gx <= Math.floor(c / TCELL); gx++) for (let gz = Math.floor(b / TCELL); gz <= Math.floor(d / TCELL); gz++) { const k = gx * 1000003 + gz; (legGrid.get(k) || legGrid.set(k, []).get(k)).push(rec) }
+  }
+  // the legs whose own regions hold (x, z) in tile t: one per leg edge
+  const legsAt = (t, x, z) => { const by = new Map()
+    for (const L of legGrid.get(Math.floor(x / TCELL) * 1000003 + Math.floor(z / TCELL)) || []) {
+      if (L.t !== t || x < L.bb[0] || x > L.bb[2] || z < L.bb[1] || z > L.bb[3]) continue
+      const k = `${L.R.k}|${L.i}`; if (!by.has(k) && pipRings(x, z, L.rings)) by.set(k, L) }
+    return [...by.values()] }
+  // the leg's profile at (x, z): its tangent station, its inward normal there, the point's depth along it
+  const legProfile = (L, x, z) => { const ring = L.R.ring, n = ring.length, p = ring[L.i], q = ring[(L.i + 1) % n], len = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1
+    const ux = -(q[1] - p[1]) / len * L.R.side, uz = (q[0] - p[0]) / len * L.R.side, T0 = L.atEnd ? q : p, u = L.atEnd ? 1 : 0
+    const d = (x - T0[0]) * ux + (z - T0[1]) * uz, H = L.R.Hat(L.i, u)
+    if (d < LATTICE) return { v: H, held: d > -LATTICE }
+    return profile({ px: T0[0], pz: T0[1], d, H, R: L.R, i: L.i, u }, T0[0] + ux * d, T0[1] + uz * d) }
 
   /** D(x, z): the deformed raw height, or null where the deformer does not reach (the caller draws the terrain). */
   const memo = new Map()
@@ -472,8 +538,17 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       // station a fraction of a millimetre away points nowhere in particular (measured: 536 of 664 orphan clusters on HPDM)
       if (c.d < LATTICE) return { v: c.H, owner: own(c) }
       const p = profile(c, x, z)
-      if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; return { v: p.v, owner: own(c) } }
+      if (p.held) { if (c.R !== n.R || c.key !== nearKey(n)) stats.byBand++; if (legGrid.size && legsAt(t, x, z).length) stats.rayAndLeg++; return { v: p.v, owner: own(c) } }
     }
+    // ⭐ NO RAY HOLDS IT: a perpendicular leg's own region does (Boz, 2026-10-20: the leg applies only here, so nothing a ray
+    // holds changes). Where two legs' regions cross, the point is BOTH legs' (the band pieces' ruling): the two profiles'
+    // equal-weight mean — symmetric, no distance, no tiebreak.
+    const Ls = legGrid.size ? legsAt(t, x, z) : []
+    if (Ls.length) { const P = Ls.map(L => ({ L, p: legProfile(L, x, z) })).filter(o => o.p.held)
+      if (P.length) { stats.byLeg++
+        if (P.length > 1) { stats.legCross++; const vs = P.map(o => o.p.v); stats.legCrossMaxDH = Math.max(stats.legCrossMaxDH, Math.max(...vs) - Math.min(...vs)) }
+        return { v: P.reduce((a, o) => a + o.p.v, 0) / P.length, owner: `${t.ti}|leg|${P.map(o => `${o.L.R.k}:r${o.L.R.stamp[o.L.i]}`).join('+')}` } }
+      stats.legNotHeld++ }
     if (inBand(x, z)) { stats.unowned++; return { v: null, owner: null, unowned: t.ti } }
     return { v: profile(n, x, z).v, owner: own(n) }
   }

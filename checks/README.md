@@ -155,7 +155,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 313. This is `npm test`.
+## safe — 315. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -417,6 +417,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ground-is-painted-once.mjs` | once.mjs — IS EVERY POINT OF THE GROUND PAINTED BY EXACTLY ONE GROUP? |
 | `checks/claims-the-ground-tiles-without-a-gap.mjs` | gap.mjs — DOES THE DRAWN GROUND TILE THE DISC, WITH NO SEAM LEFT OPEN? |
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | trees.mjs — CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
+| `checks/claims-the-height-code-owns-what-is-drawn.mjs` | drawn.mjs — THE DEFORMER GIVES NO HEIGHT IT DOES NOT OWN, AND REFUSES WHAT THE DRAWING |
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | cover.mjs — DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | wood.mjs |
 | `checks/claims-the-ink-is-held-by-its-owners.mjs` | owners.mjs — ① (THE 2ε STRIP BETWEEN TILES) IS COVERED BY OWNED PIECES, AND EACH NAMES WHO IT IS. |
@@ -437,6 +438,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |
 | `checks/claims-the-publish-panel-reports-the-address-it-shipped.mjs` | no site URL is a module constant. |
 | `checks/claims-the-ramp-has-room.mjs` | ⭐⭐⭐ THE RAMP NEEDS SOMEWHERE TO HAPPEN, AND ① HAS NOWHERE TO PUT IT. |
+| `checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs` | reads.mjs — DOES THE DEFORMER'S RAY SEE THE BANDS ITS OWN POINT TEST SEES? |
 | `checks/claims-the-revetment-builds-on-the-wet-face.mjs` | face.mjs — DOES THE STONE FACE THE WATER? |
 | `checks/claims-the-revetment-ends-as-a-heap.mjs` | heap.mjs — DOES THE STONE STOP IN A CUT? |
 | `checks/claims-the-search-outlives-an-empty-ticker.mjs` | the header's chrome may not be gated on |
