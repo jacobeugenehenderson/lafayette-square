@@ -93,6 +93,8 @@ Start here. State at the restart:
     MERGED fc264a14 (Zob: merge); the town count waits on the slot after Huron. Jacob's 'no street reaches' ruling is
     sized at ~6 points (Zob's tile-170 re-cut: tile 170 ×2, 215 ×3, 93 ×1); points fix B doesn't own may rejoin it. Open, cause not established: tile 211's 5 (a lawn piece in
     leg r6's cell rect) · tile 47's 6 painted-walk points in no band piece.
+    BOTH-SIDES READ MERGED d08e14b5 (Kerf; Zob measured in memory): HPDM unowned 269 → 183 (86 by both sides; 6 seam
+    splits ≤ 2.2 cm take the leg-crossing mean, listed). Owed: dedupe per owner, the full-step offset (6 of the 81 remain).
     REVISED (Zob, measured): **~81 are a ray running ALONG a partition line** (the 'holes' were the instrument sampling along it;
     no ground is missing). bandsAlong reads one 10 µm side; on the land-use side it reads lot. Fix, being built (Kerf): read
     both sides at ±LATTICE; the band still decides. Of the rest · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
