@@ -38,7 +38,7 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
  *  @param line { heightAt(skelId, [x, z]) → the line's raw height, step } (lineHeight.mjs, the coast's high water folded in by the caller)
  *  @param limits { walkMax, lawnMax (null = none), exag, blend } · @param town the scene, named in every refusal
  *  @param legs per tile, each perpendicular corner's own ground with the leg edge that built it ([{ tile, perp: [{ cls, kind,
- *  si, i, atEnd, spans, rings }] }], tileGround's `bandPiecesOfTile` `perp`, live — never frozen) · @param rims per tile index, its ①
+ *  si, i, atEnd, spans, rings, faces }] }], tileGround's `bandPiecesOfTile` `perp`, live — never frozen; the region read is `faces`) · @param rims per tile index, its ①
  *  ring noded with its paint's own rim crossings ({ ring, owners }, tileGround's `rimRings`, live); a tile with none reads its own ring */
 // ⭐ THE MEMO IS BOUNDED BY THE RUNTIME, NOT BY A TOWN. A V8 Map holds at most 2^24 entries (measured: node 22 throws
 // `RangeError: Map maximum size exceeded` at the 16,777,217th) and Provincetown's conformity asks more distinct points than
@@ -502,13 +502,16 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // tangent at its end when `atEnd`), so the leg is READ, never found by distance: a point in it takes the leg's profile along
   // the leg's own inward normal at its tangent station, at the point's depth on that normal. ⛔ A region whose leg is not a ②
   // edge of its tile here throws: never a neighbour's.
+  // ⭐ The region is the record's PAINTED faces (`faces`: the band pieces arranged with its rect, on the band's own rounded
+  // edges), never its float rect (`rings`, the as-built disclosure): a vertex on the band's edge lay in the band and up to
+  // 0.5 mm outside the rect, owned by nothing (HPDM, 2026-10-21). ▶ node checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs
   const legGrid = new Map(), byTi = new Map(T.map(r => [r.ti, r]))
   for (const { tile, perp } of legs || []) for (const x of perp || []) {
     if (x.kind === 'hull' || x.i == null) continue                     // the hull is the arc's, not a leg's
     const t = byTi.get(tile); if (!t) continue                         // a tile the deformer does not carry (no ②): nothing of it is resolved here
     const R = t.rings.find(r => r.k === x.si)
     if (!R || !(x.i >= 0 && x.i < R.ring.length) || R.exempt[x.i]) throw new Error(`groundDeformer: ⛔ ${town}: a perpendicular leg of tile ${tile} names ② ring ${x.si} edge ${x.i}, which the deformer does not carry — its extension has no owner`)
-    const rings = (x.rings || []).filter(r => r?.length >= 3).map(frozenCopy); if (!rings.length) continue
+    const rings = (x.faces || []).filter(r => r?.length >= 3).map(frozenCopy); if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rings) for (const [px, pz] of r) { a = Math.min(a, px); b = Math.min(b, pz); c = Math.max(c, px); d = Math.max(d, pz) }
     const rec = { t, R, i: x.i, atEnd: !!x.atEnd, rings, bb: [a, b, c, d] }
     for (let gx = Math.floor(a / TCELL); gx <= Math.floor(c / TCELL); gx++) for (let gz = Math.floor(b / TCELL); gz <= Math.floor(d / TCELL); gz++) { const k = gx * 1000003 + gz; (legGrid.get(k) || legGrid.set(k, []).get(k)).push(rec) }

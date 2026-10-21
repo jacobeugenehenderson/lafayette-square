@@ -4380,7 +4380,8 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 // Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB }, edges: [{ si, e }] (depths on the tile's edgeDepths) } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk, env, perpRects = {}, perpUnbuilt = {} }) {
-  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: perpUnbuilt.bare || 0, perpLegNoSub: perpUnbuilt.noSub || 0, perpLegNoStamp: perpUnbuilt.noStamp || 0, refusedAt: [], refusedNear: [], byRectsLost: 0, byRectsLostM2: 0, byRectsLostBy: {} }
+  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: perpUnbuilt.bare || 0, perpLegNoSub: perpUnbuilt.noSub || 0, perpLegNoStamp: perpUnbuilt.noStamp || 0, refusedAt: [], refusedNear: [], byRectsLost: 0, byRectsLostM2: 0, byRectsLostBy: {}, perpFaceRecs: [0, 0, 0] }
+  const perpFaces = new Map()   // a perpendicular record → its painted faces (`cut`)
   // a run's or an arc's owner is its stamp run; a dead-end cap's is the cap's own (`iaCap` → `caps`, the cap is an end coupler)
   const ownerOf = (span) => { if (span == null) return null; const [h, t] = span.split('/'), R = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+t) ? runs[+t] : null
     return R ? { skelId: R.skelId, side: R.side, segOrd: R.segOrd } : null }
@@ -4552,9 +4553,23 @@ function bandPiecesOfTile({ st, parts, runs, stamps, inBlock, sp, L0, LV_cw, LV_
     // what the exact pass leaves (sub-mm, along the rects' edges) is asked again within TOL part by part, with the perpendicular
     // rects that meet each part: rounding the union of those rects leaves such slivers on BOTH sides of its edge
     const Xnear = (rs) => { const b = bb(rs); return Xb.filter(y => meets(b, y.b)).map(y => y.x) }
+    // ⭐ a face arranged WITH perpendicular rects is that corner's ground as PAINTED (Clipper's rounding, the band's own
+    // edges): it is handed to the deformer as the region of each record that built it (`perpFaces`), so the height code's
+    // leg test reads the very rings its band test reads. ⛔ Never the float rect: a vertex on the rounded band edge fell up
+    // to 0.5 mm outside it, and no ray reaches past the tangent (HPDM, 74 unowned, 2026-10-21). A record built the face when
+    // its span is one the face carries AND its own rect, at the reach the face was arranged with (`grow`), holds ground of
+    // it: two legs on one run share a span, so the span alone gave a face to the wrong leg (37 of 235 on four HPDM tiles).
+    // A face two such records built is each one's less the ground only the OTHERS' rects hold: their overlap is both legs',
+    // as the rects' is, and the face's outer edge stays the painted one.
+    const tag = (f, Xs, grow) => { const rectOf = (x) => grow ? x.rings.flatMap(r => offsetRings([r], grow, 'miter')) : x.rings
+      const recs = Xs.filter(x => x.spans.some(s => f.spans.includes(s)) && ar(intersectRings(f.rings, rectOf(x))) > 0)
+      for (const x of recs) { const others = recs.filter(y => y !== x).flatMap(rectOf), only = others.length ? differenceRings(unionRings(others), rectOf(x)) : []
+        const g = only.length ? differenceRings(f.rings, only) : f.rings; if (g.length && ar(g) > 0) (perpFaces.get(x) || perpFaces.set(x, []).get(x)).push(...g) }
+      if (Xs.length) census.perpFaceRecs[Math.min(recs.length, 2)]++ }
     for (const { comp, X: Xc } of comps) {
       const R0 = byRects(cls, comp, I, 0, Xc), R1 = { faces: [], left: [] }
-      if (R0.left.length && ar(R0.left) > 0) for (const c of (X.length ? partsOf(R0.left) : [R0.left])) { const r = byRects(cls, c, I, 2 / SCALE, X.length ? Xnear(c) : Xc); R1.faces.push(...r.faces); R1.left.push(...r.left) }
+      for (const f of R0.faces) tag(f, Xc, 0)
+      if (R0.left.length && ar(R0.left) > 0) for (const c of (X.length ? partsOf(R0.left) : [R0.left])) { const Xs = X.length ? Xnear(c) : Xc, r = byRects(cls, c, I, 2 / SCALE, Xs); for (const f of r.faces) tag(f, Xs, 2 / SCALE); R1.faces.push(...r.faces); R1.left.push(...r.left) }
       left.push(...R1.left)
       for (const f of [...R0.faces, ...R1.faces.map(f => ({ ...f, why: f.why + ' (within TOL)' }))]) { emit(cls, f.rings, f.spans, ri, f.why, f.src ?? null); census.byRects[f.why] = (census.byRects[f.why] || 0) + 1; census.byRectsM2[f.why] = (census.byRectsM2[f.why] || 0) + ar(f.rings) } }
     // a refused region names the rects and joins within 2 m of it — a REPORTING reach for the trace (Boz, 2026-10-18): it
@@ -4604,7 +4619,7 @@ function bandPiecesOfTile({ st, parts, runs, stamps, inBlock, sp, L0, LV_cw, LV_
     for (const k of Object.keys(LEVELS)) if (r.depths[k]) rec[k].push([tOf(r.a), r.depths[k][0]], [tOf(r.b), r.depths[k][1]]) }
   for (const ring of edgeDepths) for (const rec of ring) if (rec) for (const k of Object.keys(LEVELS)) {
     const pts = rec[k].sort((u, v) => u[0] - v[0] || u[1] - v[1]); rec[k] = pts.length ? pts.filter((q, i) => !i || q[0] !== pts[i - 1][0] || q[1] !== pts[i - 1][1]) : null }
-  return { pieces, seams, census, edgeDepths }
+  return { pieces, seams, census, edgeDepths, perpFaces: new Map([...perpFaces].map(([x, rs]) => [x, unionRings(rs)])) }
 }
 // an open segment clipped to a region (Clipper, the lattice's grid) → the polylines inside it
 function clipLine(seg, region) {
@@ -5572,10 +5587,11 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const flatLu = (o) => Object.values(o || {}).flat()
   const rim = nodeRimWithPaint(st, [...paint.curbCut, ...paint.Wacc, ...flatLu(paint.tlByLu), ...flatLu(paint.luByLu), ...paint.curb], (node) => {
     for (const k of ['curbCut', 'Wacc', 'curb']) paint[k] = paint[k].map(node)
-    for (const k of ['tlByLu', 'luByLu']) for (const lu of Object.keys(paint[k] || {})) paint[k][lu] = paint[k][lu].map(node) })
+    for (const k of ['tlByLu', 'luByLu']) for (const lu of Object.keys(paint[k] || {})) paint[k][lu] = paint[k][lu].map(node)
+    if (BP) for (const [x, rs] of BP.perpFaces) BP.perpFaces.set(x, rs.map(node)) })   // the leg's faces meet the noded paint on its own vertices
   return {
     ...(BP ? { bandPieces: BP.pieces, bandSeams: BP.seams, bandCensus: BP.census, bandEdgeDepths: BP.edgeDepths,
-      bandPerp: Object.entries(perpRects).flatMap(([cls, xs]) => xs.map(x => ({ cls, ...x }))) } : {}),
+      bandPerp: Object.entries(perpRects).flatMap(([cls, xs]) => xs.map(x => ({ cls, ...x, faces: BP.perpFaces.get(x) || [] }))) } : {}),
     ...paint, curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
     ...(rim ? { rim } : {}),
     capped,
@@ -5881,7 +5897,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const out = finish(rest)
   // the band pieces, clipped to the stencil exactly where the painted bands are (a tile whose ring reaches past it)
   if (pieces) out.bandPieces = bandByTile.map(({ clipped, ...t }) => { const cl = clipped ? clip : (r) => r
-    return { ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, cl(v)])), pieces: t.pieces.map(q => ({ ...q, rings: cl(q.rings) })).filter(q => q.rings.length),
+    return { ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, cl(v)])), pieces: t.pieces.map(q => ({ ...q, rings: cl(q.rings) })).filter(q => q.rings.length), perp: t.perp.map(x => ({ ...x, faces: cl(x.faces || []) })),
       seams: t.seams.map(q => ({ ...q, line: clipped ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) } })
   out.selected = sel ? finish(sel) : null
   out.rimRings = rimRings   // per tile, the ring noded with its paint's rim crossings (live): the deformer's 'beyond'
