@@ -488,7 +488,9 @@ already labelled, so ownership is decided once." PREMISE PASSED (Zob, with chang
 silently); two-owner pieces take the mean; no-owner pieces refuse; deleted: the both-sides read, alongBoundary, the leg channel,
 the ray's ownership role. ✅ RULED (Jacob, 2026-10-21): "retire the lawn exception" (a treelawn LOOKS like its
 block's land use and SITS at its street's height; land-use fill beyond the band is the land's, at terrain). mitre/lawn-land
-retired unmerged. Kerf builds.), slit ×12 (tile
+retired unmerged. BUILT (Kerf, kerf/ownership-once aa04e9d9; in Zob's review): owners and heights read off the pieces' struck
+depths, the ray gone entirely (both-sides read, alongBoundary, the leg channel, the rim's 'beyond' deleted). Gates measured on the
+next LS bake. On landing, BRIEF-the-height-code-owns-what-is-drawn and BRIEF-the-rim-is-cut-once are conformed or evicted.), slit ×12 (tile
 20), back edge ×3 (tile 15). HPDM lawn-land gate: 38 → 5 unowned (5 walk: back edge + one slit), held samples Δh 0. Truss's sub-lattice drop is REJECTED (Plumb, measured:
 the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). PLACED (Zob, LS tile 47): the needle is a depth-0 curb band: on a 1 mm bare
 ② edge (motorway-27), the curb level re-mints iA's vertex 1 mm off. BUILT (Plumb bc6bdf4f): offsetRingByRects#mergeGrid had merged a 1 mm bare
