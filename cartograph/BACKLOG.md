@@ -459,6 +459,9 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
 - Spur legs off their authored width; swap-mid-street RED; Huron bend row; PTown's 3 missing dead ends; LS highway-edge
   slivers; ② only warns on unresolved corner keys; `claims-band-is-one-ring` hardcodes 0.381; production LS rulemap 404.
 
+**Checks judged nowhere until towns re-bake (Zob, 2026-10-21):** claims-a-cap-carries-one-section refuses on all six served
+slabs, because every shape.json predates frozen caps (`iaCap`). Not new; it clears as towns re-bake.
+
 **The checks themselves:** split a short pre-bake set (minutes) from the rest; the 35 runs that hit 600 s (mostly
 `proto-*`, plus `the-curb-never-enters-the-road`) leave routine runs until made fast. Promote
 `scratch/claims-attribution-is-per-town.mjs` (every baked town that owes a credit carries `sources.json`; it must
