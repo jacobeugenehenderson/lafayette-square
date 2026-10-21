@@ -2028,7 +2028,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     ...(groundShape ? { groundShape } : {}),
     // the deformer's ownership disclosure, read by claims-the-walk-is-level-across: a written slab carries 0 (the bake throws
     // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
-    ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand } } : {}),
+    ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand,
+      // a memo that turned (groundDeformer.mjs V8_MAP_MAX_ENTRIES) recomputes, so byBand counts resolves there: said, never silent
+      ...(deform.stats.memoTurns ? { memoTurns: deform.stats.memoTurns, counts: 'resolves' } : {}) } } : {}),
     // the paint stack's rings narrower than the lattice's rounding, per group, whose role is Clipper's winding (flattenPaintStack);
     // read and printed by claims-the-ground-is-painted-once beside the residue it cannot sample; and the vertices the noding
     // inserted where two groups met without sharing one, per group pair (`nodeAcrossGroups`: a large count is a producer)

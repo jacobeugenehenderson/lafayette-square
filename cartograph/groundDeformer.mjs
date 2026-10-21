@@ -39,7 +39,17 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
  *  @param limits { walkMax, lawnMax (null = none), exag, blend } · @param town the scene, named in every refusal
  *  @param legs per tile, each perpendicular corner's own ground with the leg edge that built it ([{ tile, perp: [{ cls, kind,
  *  si, i, atEnd, spans, rings }] }], tileGround's `bandPiecesOfTile` `perp`, live — never frozen) */
-export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits, legs = [] }) {
+// ⭐ THE MEMO IS BOUNDED BY THE RUNTIME, NOT BY A TOWN. A V8 Map holds at most 2^24 entries (measured: node 22 throws
+// `RangeError: Map maximum size exceeded` at the 16,777,217th) and Provincetown's conformity asks more distinct points than
+// that (2026-10-21). At the cap the memo is CLEARED and a fresh one starts: memory stays one Map's worth, and a point asked
+// again is recomputed (the answer is a function of the exact point, so it is the same answer). A town under the cap never
+// turns and pays nothing. ⛔ After a turn the counters in `stats` count RESOLVES, not distinct points; the turn is printed and
+// bake-ground writes `memoTurns` into ground.json's deform block. `memoCap` exists for the turn test.
+// ▶ checks/claims-the-ground-height-is-a-function-of-the-point.mjs
+export const V8_MAP_MAX_ENTRIES = 2 ** 24
+
+export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits, legs = [], memoCap = V8_MAP_MAX_ENTRIES }) {
+  if (!Number.isInteger(memoCap) || memoCap < 1 || memoCap > V8_MAP_MAX_ENTRIES) throw new Error(`groundDeformer: the memo cap must be 1…${V8_MAP_MAX_ENTRIES} answers (V8's Map cap), got ${memoCap}`)
   if (!town) throw new Error('groundDeformer: the caller names no town — a refusal could not say where')
   if (typeof line?.heightAt !== 'function' || !(line.step > 0)) throw new Error(`groundDeformer: ⛔ ${town}: the caller passes no line (lineHeight.mjs: heightAt and its station step) — ② cannot take its height`)
   if (!Array.isArray(ink)) throw new Error(`groundDeformer: ⛔ ${town}: the caller passes no ink (shape.json \`ink\`, ① between the tiles as owned pieces; a --legacy freeze carries none) — the road on the centreline has no owner`)
@@ -48,7 +58,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
+  const stats = { memoTurns: 0, frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
     road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0, byLeg: 0, legCross: 0, legCrossMaxDH: 0, rayAndLeg: 0, legNotHeld: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
@@ -524,7 +534,10 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   function resolve(x, z) {
     const mk = `${x},${z}`
     if (memo.has(mk)) return memo.get(mk)
-    const v = resolveUncached(x, z); memo.set(mk, v); return v
+    const v = resolveUncached(x, z)
+    if (memo.size >= memoCap) { memo.clear(); stats.memoTurns++
+      console.warn(`  [deform] ⛔ ${town}: the memo reached ${memoCap} answers (V8's Map cap) and was cleared, turn ${stats.memoTurns} — a point asked again is recomputed; the deformer's counters now count resolves, not distinct points`) }
+    memo.set(mk, v); return v
   }
   function resolveUncached(x, z) {
     const t = tileAt(x, z)
@@ -642,5 +655,5 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // over HALF the walk: the gate judges each half of the cross-section (front→middle, middle→back), so the drawing's
   // chord error is spent over a half-width, never the whole one
   const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * (walkP10 / 2) / exag : null
-  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, _owners, _inClass: inClass, _bandsAlong: bandsAlong }
+  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, _owners, _inClass: inClass, _bandsAlong: bandsAlong, _memoSize: () => memo.size }
 }
