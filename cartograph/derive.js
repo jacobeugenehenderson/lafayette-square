@@ -20,6 +20,7 @@ import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
 import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
 import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_MAP, wgs84ToLocal } from './config.js'
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
@@ -42,7 +43,8 @@ import { parcelParts, pointInside, parcelId } from './parcelParts.js'
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
 
-const SCALE = 100
+// ⭐ ONE GRID (Jacob, 2026-10-17): derive cuts land evidence, alleys and medians on the kit's one lattice, never a grid of its own
+// (it was its own `SCALE = 100`, a 1 cm grid; HPDM's parcel-vs-OSM weld class at 1–6 mm went 2,179 → 11 on the lattice, Zob measured)
 // The highway typical section's cited values (H-3) — read from references/, never restated — and
 // the town's state (voted from its own OSM `addr:state`), which picks the ramp manual. Built once.
 let _hwyStd = null
@@ -55,7 +57,7 @@ function hwyStd() {
   console.log(`    Highway section: town state ${state.code ?? '⛔ UNKNOWN'} (addr:state vote: ${state.vote}${state.tied ? ', TIED' : ''})`)
   return (_hwyStd = highwayStandard(JSON.parse(readFileSync(join(CARTOGRAPH_DIR, '..', 'references', 'registry.json'), 'utf8')), state, _registryRead))
 }
-const ARC_TOL = 0.01 * SCALE  // 1cm — smooth arcs
+const ARC_TOL = 0.01 * CLIP_SCALE  // 1cm — smooth arcs
 
 // [curve-primitive] The ONE place a curve becomes points (HANDOFF-curve-primitive-skeleton.md).
 // Tessellate a ribbon street's SELF-CONTAINED segments ({type, a,b[,c1,c2]}, all [x,z]) to a
@@ -161,10 +163,10 @@ function tessellateStreet(street, spacing = 1) {
 }
 
 function toClipper(x, z) {
-  return new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))
+  return new IntPoint(Math.round(x * CLIP_SCALE), Math.round(z * CLIP_SCALE))
 }
 function fromClipper(pt) {
-  return { x: pt.X / SCALE, z: pt.Y / SCALE }
+  return { x: pt.X / CLIP_SCALE, z: pt.Y / CLIP_SCALE }
 }
 function pathFromClipper(p) {
   return p.map(fromClipper)
@@ -422,7 +424,7 @@ export function luCoverageForFace(faceRing, luPolys) {
     // pond measured 50,000 m² rather than 30,000, i.e. the hole voted for its own enclosing
     // class, twice over. ⭐ Caught by this function's own check, not by reading it.
     let a = 0
-    for (const path of merged) a += Clipper.Area(path) / (SCALE * SCALE)
+    for (const path of merged) a += Clipper.Area(path) / (CLIP_SCALE * CLIP_SCALE)
     a = Math.abs(a)
     if (a > 0) out[tag] = { lu, area: a }
   }
@@ -461,8 +463,8 @@ export function layerLandEvidence(osm, parcels, cdl = null) {
   }
   const op = (type, a, b) => { const c = new Clipper(); c.AddPaths(a, PolyType.ptSubject, true); if (b.length) c.AddPaths(b, PolyType.ptClip, true)
     const out = new Paths(); c.Execute(type, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return out }
-  const areaOf = (ps) => Math.abs(ps.reduce((t, q) => t + Clipper.Area(q), 0)) / (SCALE * SCALE)
-  const toRings = (ps) => ps.map(q => q.map(pt => [pt.X / SCALE, pt.Y / SCALE]))
+  const areaOf = (ps) => Math.abs(ps.reduce((t, q) => t + Clipper.Area(q), 0)) / (CLIP_SCALE * CLIP_SCALE)
+  const toRings = (ps) => ps.map(q => q.map(pt => [pt.X / CLIP_SCALE, pt.Y / CLIP_SCALE]))
   const evidence = []
   const cdlPaths = cdl?.length ? op(ClipType.ctUnion, cdl.filter(r => r?.length >= 3).map(pathOf), []) : []
   const bbOf = (ps) => { let b = [Infinity, -Infinity, Infinity, -Infinity]; for (const q of ps) for (const pt of q) { if (pt.X < b[0]) b[0] = pt.X; if (pt.X > b[1]) b[1] = pt.X; if (pt.Y < b[2]) b[2] = pt.Y; if (pt.Y > b[3]) b[3] = pt.Y } return b }
@@ -541,7 +543,7 @@ export function parcelWinnerByArea(faceRing, parcels, classify) {
   if (!ranked.length) return { use: null, byUse }
   if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) {
     const tie = ranked.filter(r => r[1] === ranked[0][1]).map(r => r[0]).sort()
-    return { use: null, byUse, tie, tieArea: ranked[0][1] / (SCALE * SCALE) }
+    return { use: null, byUse, tie, tieArea: ranked[0][1] / (CLIP_SCALE * CLIP_SCALE) }
   }
   return { use: ranked[0][0], byUse }
 }
@@ -562,7 +564,7 @@ function pointInRing(px, pz, ring) {
 
 function roundCorners(paths, radius) {
   if (radius <= 0) return paths
-  const r = radius * SCALE
+  const r = radius * CLIP_SCALE
   const co1 = new ClipperOffset()
   co1.ArcTolerance = ARC_TOL
   co1.AddPaths(paths, JoinType.jtRound, EndType.etClosedPolygon)
@@ -582,7 +584,7 @@ function shrinkPaths(paths, dist) {
   co.ArcTolerance = ARC_TOL
   co.AddPaths(paths, JoinType.jtRound, EndType.etClosedPolygon)
   const result = new Paths()
-  co.Execute(result, -dist * SCALE)
+  co.Execute(result, -dist * CLIP_SCALE)
   return result
 }
 
@@ -593,7 +595,7 @@ function bufferPolyline(coords, halfWidth) {
   // Otherwise a closed loop buffer fills the interior.
   if (path.length > 2) {
     const first = path[0], last = path[path.length - 1]
-    if (Math.abs(first.X - last.X) < 1 * SCALE && Math.abs(first.Y - last.Y) < 1 * SCALE) {
+    if (Math.abs(first.X - last.X) < 1 * CLIP_SCALE && Math.abs(first.Y - last.Y) < 1 * CLIP_SCALE) {
       path = path.slice(0, -1)
     }
   }
@@ -602,7 +604,7 @@ function bufferPolyline(coords, halfWidth) {
   co.ArcTolerance = ARC_TOL
   co.AddPath(path, JoinType.jtRound, EndType.etOpenRound)
   const result = new Paths()
-  co.Execute(result, halfWidth * SCALE)
+  co.Execute(result, halfWidth * CLIP_SCALE)
   return result
 }
 
@@ -848,8 +850,8 @@ function solveLampConstraints(blocks, lamps) {
   // Test each lamp
   const failed = [] // lamps outside all blocks
   for (const lamp of lamps) {
-    const lx = Math.round(lamp.x * SCALE)
-    const lz = Math.round(lamp.z * SCALE)
+    const lx = Math.round(lamp.x * CLIP_SCALE)
+    const lz = Math.round(lamp.z * CLIP_SCALE)
     const pt = new IntPoint(lx, lz)
 
     let inside = false
@@ -909,7 +911,7 @@ function solveLampConstraints(blocks, lamps) {
       }
     }
 
-    if (bestBlock >= 0 && bestDist < 30 * SCALE) {
+    if (bestBlock >= 0 && bestDist < 30 * CLIP_SCALE) {
       edgeAdjustments.push({
         blockIdx: bestBlock,
         edgeIdx: bestEdge,
@@ -951,7 +953,7 @@ function solveLampConstraints(blocks, lamps) {
 
     // Determine push direction (toward the lamp, not away)
     const push = normalDist > 0 ? 1 : -1
-    const amount = Math.abs(normalDist) + 2 * SCALE // add 2m margin so lamp is clearly inside
+    const amount = Math.abs(normalDist) + 2 * CLIP_SCALE // add 2m margin so lamp is clearly inside
 
     // Move both vertices of this edge
     a.X += nx * amount * push
@@ -1128,7 +1130,7 @@ export function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
     // Find which rounded block holds this part's test point
     const own = !!p.centroid && (parts.length === 1 || pointInRing(p.centroid[0], p.centroid[1], outer.map(([x, z]) => ({ x, z }))))
     const [tx, tz] = own ? p.centroid : pointInside(outer)
-    const testPt = new IntPoint(Math.round(tx * SCALE), Math.round(tz * SCALE))
+    const testPt = new IntPoint(Math.round(tx * CLIP_SCALE), Math.round(tz * CLIP_SCALE))
 
     let blockIdx = -1
     for (let i = 0; i < roundedBlocks.length; i++) {
@@ -2031,7 +2033,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const co = new ClipperOffset(); co.ArcTolerance = ARC_TOL
     const fp = new Paths(); fp.push(facePath)
     co.AddPaths(fp, JoinType.jtMiter, EndType.etClosedPolygon)
-    const result = new Paths(); co.Execute(result, -FACE_INSET * SCALE)
+    const result = new Paths(); co.Execute(result, -FACE_INSET * CLIP_SCALE)
     return result
   }
 
@@ -2223,7 +2225,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     let useStreetOffset = false
     for (let ci = 0; ci < closed.length && !useStreetOffset; ci++) {
       for (const pt of closed[ci]) {
-        const px = pt.X / SCALE, pz = pt.Y / SCALE
+        const px = pt.X / CLIP_SCALE, pz = pt.Y / CLIP_SCALE
         if (px > 15 && px < 55 && pz > -510 && pz < -430) { useStreetOffset = true; break }
         if (px > -270 && px < -94 && pz > -490 && pz < -410) { useStreetOffset = true; break }
         if (px > -32 && px < 268 && pz > -421 && pz < -181) { useStreetOffset = true; break }
@@ -2244,7 +2246,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // Check if dead end is inside the block already
       let insideBlock = false
       for (let ci = 0; ci < closed.length; ci++) {
-        const ring = closed[ci].map(pt => ({ x: pt.X / SCALE, z: pt.Y / SCALE }))
+        const ring = closed[ci].map(pt => ({ x: pt.X / CLIP_SCALE, z: pt.Y / CLIP_SCALE }))
         if (pointInRing(dep.x, dep.z, ring)) { insideBlock = true; break }
       }
       // If not inside, fill first — but only if the block is close to the
@@ -2254,7 +2256,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         const proxDist = dep.halfWidth + 10  // ~16m proximity check
         for (let ci = 0; ci < closed.length && !blockNearDead; ci++) {
           for (const pt of closed[ci]) {
-            if (Math.hypot(pt.X/SCALE - dep.x, pt.Y/SCALE - dep.z) < proxDist) {
+            if (Math.hypot(pt.X/CLIP_SCALE - dep.x, pt.Y/CLIP_SCALE - dep.z) < proxDist) {
               blockNearDead = true; break
             }
           }
@@ -2345,7 +2347,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // Smooth + round corners
     for (let i = 0; i < closed.length; i++) {
       const area = Math.abs(Clipper.Area(closed[i]))
-      if (area < 50 * SCALE * SCALE) continue
+      if (area < 50 * CLIP_SCALE * CLIP_SCALE) continue
       const single = new Paths(); single.push(closed[i])
       const smoothed = roundCorners(single, 1.0)
       for (let j = 0; j < smoothed.length; j++) {
@@ -2387,10 +2389,10 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const medPaths = new Paths()
     // Inset by road half-width + sidewalk to get green median
     const curatedHW = (correctedSurvey[name]?.pavementHalfWidth) || 2
-    medInset.Execute(medPaths, -(curatedHW + 1.0) * SCALE)  // road + small gap
+    medInset.Execute(medPaths, -(curatedHW + 1.0) * CLIP_SCALE)  // road + small gap
     for (let i = 0; i < medPaths.length; i++) {
       const area = Math.abs(Clipper.Area(medPaths[i]))
-      if (area < 20 * SCALE * SCALE) continue
+      if (area < 20 * CLIP_SCALE * CLIP_SCALE) continue
       allBlockPaths.push(medPaths[i])
       blockMeta.push({ clipperPath: medPaths[i], dominantUse: 'park', isMedian: true })
     }
@@ -2469,7 +2471,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // Round corners same as regular blocks
       for (let i = 0; i < mask.length; i++) {
         const area = Math.abs(Clipper.Area(mask[i]))
-        if (area < 50 * SCALE * SCALE) continue
+        if (area < 50 * CLIP_SCALE * CLIP_SCALE) continue
         const single = new Paths(); single.push(mask[i])
         const smoothed = roundCorners(single, 1.0)
         for (let j = 0; j < smoothed.length; j++) {
@@ -2656,8 +2658,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       if (seg.length < 2) continue
       let segLen = 0
       for (let k = 1; k < seg.length; k++) {
-        const dx = (seg[k].X - seg[k - 1].X) / SCALE
-        const dy = (seg[k].Y - seg[k - 1].Y) / SCALE
+        const dx = (seg[k].X - seg[k - 1].X) / CLIP_SCALE
+        const dy = (seg[k].Y - seg[k - 1].Y) / CLIP_SCALE
         segLen += Math.hypot(dx, dy)
       }
       // Drop tiny fragments (OSM polyline ends that barely poked past a
@@ -2668,7 +2670,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // strokes) matching street treatment in Survey/Measure/Design.
       const pts = []
       for (let k = 0; k < seg.length; k++) {
-        pts.push([seg[k].X / SCALE, seg[k].Y / SCALE])
+        pts.push([seg[k].X / CLIP_SCALE, seg[k].Y / CLIP_SCALE])
       }
       alleyCenterlines.push({
         name: f.tags?.name || null,
@@ -2682,7 +2684,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // the polyline was trimmed — no rounded caps, no pavement poke.
       co.AddPath(seg, JoinType.jtRound, EndType.etOpenButt)
       const buf = new Paths()
-      co.Execute(buf, STANDARDS.alley.pavedWidth / 2 * SCALE)
+      co.Execute(buf, STANDARDS.alley.pavedWidth / 2 * CLIP_SCALE)
       for (let i = 0; i < buf.length; i++) alleyKeptPieces.push(buf[i])
     }
   }
@@ -2793,7 +2795,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     parkPaths.push(parkPolygon)
     parkSWOffset.AddPaths(parkPaths, JoinType.jtRound, EndType.etClosedPolygon)
     const parkSidewalkPaths = new Paths()
-    parkSWOffset.Execute(parkSidewalkPaths, PARK_SIDEWALK * SCALE)
+    parkSWOffset.Execute(parkSidewalkPaths, PARK_SIDEWALK * CLIP_SCALE)
 
     parkSidewalkFeats = Array.from({ length: parkSidewalkPaths.length }, (_, i) => ({
       ring: pathFromClipper(parkSidewalkPaths[i])
@@ -4304,11 +4306,11 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const co = new ClipperOffset(); co.ArcTolerance = ARC_TOL
     const lp = new Paths(); lp.push(pts.map(p => toClipper(p[0], p[1])))
     co.AddPaths(lp, JoinType.jtRound, EndType.etClosedPolygon)
-    const out = new Paths(); co.Execute(out, -inset * SCALE)
+    const out = new Paths(); co.Execute(out, -inset * CLIP_SCALE)
     let best = null, bestA = 0                          // largest surviving ring = the island
     for (let i = 0; i < out.length; i++) { const a = Math.abs(Clipper.Area(out[i])); if (a > bestA) { bestA = a; best = out[i] } }
-    if (!best || bestA / (SCALE * SCALE) < LOOP_MIN_MED) continue  // collapsed → paved turning circle
-    medians.push({ kind: 'median', name: S.name, loopId, ring: best.map(p => [p.X / SCALE, p.Y / SCALE]) })
+    if (!best || bestA / (CLIP_SCALE * CLIP_SCALE) < LOOP_MIN_MED) continue  // collapsed → paved turning circle
+    medians.push({ kind: 'median', name: S.name, loopId, ring: best.map(p => [p.X / CLIP_SCALE, p.Y / CLIP_SCALE]) })
     loopMedians++
   }
   if (loopMedians) console.log(`    ${loopMedians} closed loop-body median island${loopMedians > 1 ? 's' : ''}`)
@@ -5346,7 +5348,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // Validate: how many lamps are inside blocks?
   let lampsInside = 0
   for (const lamp of streetlamps) {
-    const pt = new IntPoint(Math.round(lamp.x * SCALE), Math.round(lamp.z * SCALE))
+    const pt = new IntPoint(Math.round(lamp.x * CLIP_SCALE), Math.round(lamp.z * CLIP_SCALE))
     for (let i = 0; i < allBlockPaths.length; i++) {
       if (Clipper.PointInPolygon(pt, allBlockPaths[i]) !== 0) { lampsInside++; break }
     }
