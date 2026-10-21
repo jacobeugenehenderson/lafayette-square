@@ -32,6 +32,7 @@ import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { ROOT, scenes } from './_scenes.mjs'
 import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 
 const SELF = process.argv.includes('--selftest')
 const shapeOverride = process.argv.find(a => a.startsWith('--shape='))?.slice('--shape='.length)
@@ -114,7 +115,7 @@ function judge(TG, look) {
         // exactly) with a TOWN-run piece of its own class is a town miter carrying the highway's label — a defect of the
         // pieces producer (`bandPiecesOfTile`), RED here until it is labelled right; measured on LS tiles 33/76 and HPDM tile
         // 20: no paint or height effect (the deformer owns those points by the town's ② span, |Δh| ≤ 0.5 mm across the edge)
-        const K = (v) => Math.round(v[0] * 1000) + ',' + Math.round(v[1] * 1000)
+        const K = (v) => Math.round(v[0] * CLIP_SCALE) + ',' + Math.round(v[1] * CLIP_SCALE)   // the partition's own lattice
         const townV = new Set(pieces.filter(q => holding.some(h => h.cls === q.cls) && (q.owners || []).some(o => isTown(ownerRun(t, o.span)))).flatMap(q => q.rings.flat()).map(K))
         const miter = holding.some(q => q.rings.some(rr => rr.some((v, k) => townV.has(K(v)) && townV.has(K(rr[(k + 1) % rr.length])))))
         edgeBad.push(`tile ${ti} @(${mx.toFixed(1)}, ${mz.toFixed(1)}) ${runs[r].skelId}: ${miter ? `a town miter labelled ${names.join('+')} (pieces label; no paint or height effect, measured)` : holding.length ? `in a band held by ${names.join('+')}` : 'paint no band piece holds'}`)

@@ -52,9 +52,9 @@ if (MUTATE && !['lift', 'shift'].includes(MUTATE)) throw new Error(`--mutate=${M
 // quadrilateral whose fourth corner sits off that parallelogram by the projection's curvature. A pixel centre closer to an
 // edge than that defect is in the box by one reading and out by the other, so it belongs to either box (Huron: a 26-pixel
 // box 3.9 mm off, its disputed pixel 1.1e-6 px from the edge, the defect 3.5e-6 px; scratch/ground-budget/terrain-mean/
-// edge-pixel.mjs). LATTICE: two tiles whose origins differ by less than this (in pixels) are one pixel lattice — USGS tile origins carry
+// edge-pixel.mjs). PIXEL_ORIGIN_TOL: two tiles whose origins differ by less than this (in pixels) are one pixel lattice — USGS tile origins carry
 // float noise (Huron x36y459 vs x37y459: 3.4e-5 px).
-const LATTICE = 1e-3
+const PIXEL_ORIGIN_TOL = 1e-3
 const valid = (v) => Number.isFinite(v) && v >= NODATA_THRESHOLD
 const f32ulp = (x) => { const a = Math.abs(Math.fround(x)); if (a === 0) return 2 ** -149; const e = Math.floor(Math.log2(a)); return 2 ** (e - 23) }
 
@@ -149,7 +149,7 @@ for (const town of towns) {
       if (held.length > 1) {
         const S0 = held[0].S
         const aligned = held.every(({ S }) => S.proj.epsg === S0.proj.epsg && S.rx === S0.rx && S.ry === S0.ry
-          && Math.abs(((S.x0 - S0.x0) / S.rx) - Math.round((S.x0 - S0.x0) / S.rx)) < LATTICE && Math.abs(((S.y0 - S0.y0) / S.ry) - Math.round((S.y0 - S0.y0) / S.ry)) < LATTICE)
+          && Math.abs(((S.x0 - S0.x0) / S.rx) - Math.round((S.x0 - S0.x0) / S.rx)) < PIXEL_ORIGIN_TOL && Math.abs(((S.y0 - S0.y0) / S.ry) - Math.round((S.y0 - S0.y0) / S.ry)) < PIXEL_ORIGIN_TOL)
         if (!aligned) { n.seamUnaligned++; if (unalignedWhy.length < 3) unalignedWhy.push(held.map(({ S }) => `${S.label.slice(0, 40)} epsg ${S.proj.epsg} rx ${S.rx} ry ${S.ry} x0 ${S.x0} y0 ${S.y0}`).join(' | ')); continue }
         const seen = new Map()
         if (held.some(h => h.ties.length)) { n.seamTie = (n.seamTie || 0) + 1; continue }
