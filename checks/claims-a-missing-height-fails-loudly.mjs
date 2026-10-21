@@ -16,12 +16,17 @@
 //     groundShape.terrain, written by bake-ground, F3): false → the flat field, a named state; true → refused; no
 //     record, ground.json missing, terrain.bin missing, a network error → refused. A whole slab → its field. (Its
 //     source text is run against stubbed slab responses; SHADER_SRC=<file> runs another copy, e.g. HEAD's.)
+//   ⑦ bake-ground#getTerrainSampler REFUSES a town whose terrain is not there and is not on the record as flat (it read
+//     a missing file as "no terrain" and baked flat, silently — Kerf's LS bake, 2026-10-21), and is flat (false) only
+//     for a town on the record. (Its source text is run against the real terrainLoad#requireSceneTerrain for a town
+//     that does not exist, and against a stub of the on-the-record state; BAKE_SRC=<file> runs another copy.)
 //
 // ▶ MUTATION-TEST IT (seen RED before the fix; each put back):
 //     · in terrainCommon makeElevationSampler, drop the `assertHeightfield(terrain)` call         → ① RED
 //     · in elevationSources fillMisses, drop the `throw` for a grid with nothing to fill from       → ③ RED
 //     · in terrainShader reloadTerrain, drop the `assertHeightfield(t, …)` call                     → ⑤ RED
 //     · in terrainShader fetchTerrain, return FLAT_TERRAIN for every `!r.ok` (the old fallback)     → ⑥ RED
+//     · in bake-ground getTerrainSampler, `loadSceneTerrain(scene)` and `t ? t.getElevation : false` (the old fallback) → ⑦ RED
 //
 //   node checks/claims-a-missing-height-fails-loudly.mjs
 // Read-only. Exits 1 when a missing height can be read as a value.
@@ -29,6 +34,7 @@ import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { makeElevationSampler } from '../src/lib/terrainCommon.js'
 import { fillMisses } from '../cartograph/elevationSources.mjs'
+import { loadSceneTerrain, requireSceneTerrain } from '../cartograph/terrainLoad.js'
 
 const ROOT = new URL('../', import.meta.url).pathname
 let red = 0
@@ -69,6 +75,7 @@ console.log('③ the miss fill refuses a grid with nothing to fill from')
 console.log('④ every served and clean terrain builds a sampler')
 for (const [kind, base] of [['served', 'public/baked/<t>'], ['clean', 'cartograph/data/<t>/clean']]) {
   const parent = join(ROOT, base.split('/<t>')[0])
+  if (!existsSync(parent)) { console.log(`   ?  no ${base.split('/<t>')[0]} in this checkout — the ${kind} terrains are not checked here`); continue }
   for (const t of readdirSync(parent).sort()) {
     const dir = join(ROOT, base.replace('<t>', t))
     if (!existsSync(join(dir, 'terrain.json')) || !existsSync(join(dir, 'terrain.bin'))) continue
@@ -118,6 +125,22 @@ console.log('⑥ fetchTerrain: a missing terrain is flat only when the slab says
       want(r) ? ok(`${name}: ${r.e ? 'refused — ' + r.e.message.slice(0, 90) : r.t === FLAT ? 'the flat field, as named' : 'its field'}`)
         : bad(`${name}: ${r.e ? 'refused — ' + r.e.message : r.t === FLAT ? 'rendered FLAT' : 'returned a field'}`)
     }
+  }
+}
+console.log('⑦ bake-ground: a missing terrain refuses; flat only on the record')
+{
+  const path = process.env.BAKE_SRC || join(ROOT, 'cartograph/bake-ground.js')
+  const m = readFileSync(path, 'utf8').match(/function getTerrainSampler\(scene\) \{[\s\S]*?\n\}\n/)
+  if (!m) bad(`getTerrainSampler not found in ${path}`)
+  else {
+    const mk = (req) => new Function('loadSceneTerrain', 'requireSceneTerrain', `let _terrainSampler = null;\n${m[0]}; return getTerrainSampler`)(loadSceneTerrain, req)
+    const quiet = (f) => { const l = console.log, w = console.warn; console.log = console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
+    const e = throws(() => quiet(() => mk(requireSceneTerrain)('__no_such_town__')))
+    e ? ok(`a town with no terrain and nothing on the record refuses: ${e.message.slice(0, 90)}`) : bad('a town with no terrain and nothing on the record bakes FLAT, silently')
+    const flat = quiet(() => mk(() => ({ getElevationRaw: () => 0, identity: 'none', baseElev: null }))('on-the-record'))
+    flat === false ? ok('a town flat on the record → false (refinement off, groundShape.terrain = false)') : bad(`a town flat on the record → ${typeof flat}`)
+    const g = (x, z) => x + z, real = quiet(() => mk(() => ({ getElevation: g, identity: 'abc' }))('hilly'))
+    real === g ? ok('a town with a terrain → its getElevation') : bad('a town with a terrain did not get its sampler')
   }
 }
 console.log(red ? `\n⛔ ${red} way(s) a missing height reads as a value.` : '\n✅ A missing height refuses; a whole field reads as before; a town is flat only when its slab says so.')
