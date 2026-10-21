@@ -45,7 +45,7 @@ import { LANDSCAPE_OVERLAY_KEYS, horizonRecord } from './groundCover.mjs'   // o
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
-import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, withSide, polyTreeToItems } from './kerbLift.mjs'
+import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, cutCreases, splitAtCreases, withSide, polyTreeToItems } from './kerbLift.mjs'
 import { lineHeights } from './lineHeight.mjs'
 import { buildDeformer, unownedKey } from './groundDeformer.mjs'   // an unowned ped vertex is recorded at its exact position, the memo's own key
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
@@ -1716,9 +1716,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // (the kit) is one flat plane and nothing below runs. Each cut's ramp + flares are regions of the kerb's own height
   // field (h → 0, continuous); the lift and the riser run on the conformed mesh further down, and nothing is cut.
   const kerbH = kerb?.height > 0 ? kerb.height : 0
+  const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])
   if (kerbH && curbCutRamps.length && !(kerb.rampSlope > 0 && kerb.flareSlope > 0))
     throw new Error(`[bake-ground] ⛔ the kerb stands ${kerbH} m and ${curbCutRamps.length} curb cut(s) drop it, but the town's kerb norm gives no rampSlope/flareSlope — the jurisdiction's values, never the kit's (norms.json → kerb).`)
-  const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])
   // ⭐⭐ THE DEFORMER (`groundDeformer.mjs`, BRIEF-the-ground-knows-its-height §5): the ground's TERRAIN height near the
   // streets is decided HERE, before the mesh — read off the line (`groundLine`, asked at each point of ②), swept across
   // the DRAWN bands as one profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
@@ -1768,14 +1768,28 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // (their vertices enter the paint); their one reader in the bake, the deformer above, read them before this, on the same
   // lines (noding only inserts)
   const { blockRings: nodedBlockRings } = timed('nodeThePlane', () => nodeThePlane(flattened, { blockRings, rimRings }))
-  // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): the curbless stretches of every block
-  // edge, read off the POST-PAINT curb (an alley painted over the curb makes its mouth curbless), each carry a taper.
-  const { inBlock: kerbInside, curblessM, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
-    ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, curbRings: [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))], ramps: curbCutRamps, kerb }))
+  // ⭐ ONE source for a ground group's polygons, read by the kerb plan and by `planGroup`: the flattened paint, else the
+  // group as drawn. null when the layer is hidden or empty.
+  const partitionItems = (kind, key) => {
+    if (bakeLayerVis[groupLayerId(kind, key)] === false) return null
+    const items = flattened.get(kind + ':' + key) ?? (kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key))
+    return items?.length ? toPolys(items) : null
+  }
+  // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): every edge of the PAINTED partition where
+  // a lifted face the curb does not stand on meets the road, or the drawing's edge, carries a taper — read by the riser's
+  // own owner test (`kerbLift.mjs#curblessEdges`), so an alley painted over the curb makes its own mouth curbless.
+  const kerbGroups = PAINT_ORDER.filter(([kind, key]) => !DOES_NOT_CUT.has(kind + ':' + key)).map(([kind, key]) => ({ id: kind + ':' + key, key, items: partitionItems(kind, key) })).filter(g => g.items)
+  const { inBlock: kerbInside, curblessM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, orphanRoadM: kerbOrphanM, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
+    ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, groups: kerbGroups, ramps: curbCutRamps, kerb }))
     : { inBlock: null, curblessM: 0, regions: [] }
   // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
-  const kerbCellPaths = kerbH ? kerbCells(kerbRegs, nodedBlockRings) : []
+  // ⭐ ONE CUT PER CREASE (`kerbLift.mjs#cutCreases`): every crossing of a crease with the partition — the road included —
+  // is written into every polygon on it before the split, so the faces on both sides carry the same vertex
+  const creaseCut = kerbH ? cutCreases(kerbGroups, kerbCells(kerbRegs, nodedBlockRings)) : null
+  if (creaseCut) console.log(`  [kerb] creases cut once through the partition: ${creaseCut.inserted} points in ${creaseCut.rounds} round(s)`)
+  const kerbCellPaths = creaseCut?.cells || []
+  const creaseItems = new Map((creaseCut?.groups || []).map(g => [g.id, g.items]))
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
   // ⭐ THE ROAD FOLLOWS ITS SWEEP (the deformer's road side, ① to ②): the carriageway refines against D exactly as the ped bands
   // do, or a 6–9 m road triangle and a 29–60 m stripe edge chord the line (measured HPDM, db0bebb6's slab)
@@ -1790,16 +1804,15 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     return _planMemo.get(mk)
   }
   const planGroupUncached = (kind, key) => {
-    if (bakeLayerVis[groupLayerId(kind, key)] === false) return null
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
     // toPolys normalizes both — holes are honored at triangulation
     // time so the lawn ribbon underneath a clipped face fill stays visible.
-    let items = flattened.get(kind + ':' + key) ?? (kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key))
-    if (!items || items.length === 0) return null
+    let items = partitionItems(kind, key)
+    if (!items) return null
     // ⭐ THE KERB'S CREASES ARE LINES OF THE PARTITION (`kerbLift.mjs#splitAtCreases`): every group is split along every
     // cut's ramp + flares and every curbless taper before it is triangulated, so the lift finds vertices on each crease
     // and the drawn kerb is its field — nothing cut into the mesh after, nothing refined to a floor. No region, no change.
-    if (kerbCellPaths.length) items = splitAtCreases(items, kerbCellPaths, kerbInside)
+    if (kerbCellPaths.length && creaseItems.has(kind + ':' + key)) items = splitAtCreases(creaseItems.get(kind + ':' + key), kerbCellPaths, kerbInside)
 
     // ⛔ The pairwise "cut overlays out of faces" that lived here is GONE — the
     // paint-stack flatten above supersedes it and does the whole stack, not one

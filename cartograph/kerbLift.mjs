@@ -20,9 +20,10 @@
 // ⭐ This is the KERB part of the ground's height (the mesh's own y, unexaggerated); the TERRAIN part is the deformer's
 //   (`groundDeformer.mjs`), and the runtime draws D × uExag + y.
 // ⭐ WHERE NO CURB IS DRAWN, THE BLOCK SLOPES DOWN FLUSH (Jacob, 2026-10-06, Q1): a highway shoulder, an alley mouth, land
-//   that just meets the road. Every stretch of a block ring's OWN edge with no curb drawn inboard of it (`curblessEdges`
-//   — split exactly where the post-paint curb starts and stops, never a rounded copy) carries a TAPER `taperRun` deep
-//   (the town's value), 0 at the road to h at the run. ⛔ A step left without a riser after that is a defect, counted.
+//   that just meets the road, and the drawing's edge (the rim). Every edge of the noded partition where a lifted face the
+//   curb does not stand on meets the road, or nothing (`curblessEdges` — the riser's own read, `edgesAcross` +
+//   `curbStands`, so the two cannot disagree), carries a TAPER `taperRun` deep (the town's value), 0 at the road to h at
+//   the run. ⛔ A step left without a riser after that is a defect, counted.
 // ⚠️ A region claims a point within `TOL` of it: the partition sits on Clipper's 1 mm grid, so a curbless edge's own
 //   vertices can sit half a millimetre off the taper base drawn along it, and the clamp then puts them exactly on it.
 
@@ -45,45 +46,84 @@ export function ringsInside(rings) {
     return c }
 }
 
-/** The stretches of the block rings' own edges with NO curb drawn inboard of them. `blockRings` (the painter's block),
- *  `curbRings` (the post-paint curb + cut strips: an alley painted over the curb makes its mouth curbless). Each edge is
- *  split where a line 1 mm inboard of it crosses the curb, and each piece kept when its middle lies on no curb. Returns
- *  [{ A, B, inward }] on the block edge's own line, `inward` toward the block. */
-export function curblessEdges(blockRings, curbRings) {
-  const inBlock = ringsInside(blockRings), inCurb = ringsInside(curbRings), E = 1e-3, CELL = 8, cells = new Map()
-  for (const r of curbRings) for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]
-    for (let x = Math.floor(Math.min(a[0], b[0]) / CELL); x <= Math.floor(Math.max(a[0], b[0]) / CELL); x++)
-      for (let z = Math.floor(Math.min(a[1], b[1]) / CELL); z <= Math.floor(Math.max(a[1], b[1]) / CELL); z++)
-        (cells.get(`${x},${z}`) || cells.set(`${x},${z}`, []).get(`${x},${z}`)).push([a, b]) }
-  const out = []
-  for (const r of blockRings) for (let i = 0; i < r.length; i++) {
-    const A = r[i], B = r[(i + 1) % r.length], L = Math.hypot(B[0] - A[0], B[1] - A[1]); if (L < 1e-6) continue
-    const u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]
-    let n = [-u[1], u[0]]; if (!inBlock([M[0] + n[0] * E, M[1] + n[1] * E])) n = [-n[0], -n[1]]
-    const P0 = [A[0] + n[0] * E, A[1] + n[1] * E], d = [B[0] - A[0], B[1] - A[1]]
-    // where the inboard line crosses a curb edge, as fractions of the edge
-    const ts = [0, 1], seen = new Set()
-    for (let x = Math.floor(Math.min(A[0], B[0]) / CELL) - 1; x <= Math.floor(Math.max(A[0], B[0]) / CELL) + 1; x++)
-      for (let z = Math.floor(Math.min(A[1], B[1]) / CELL) - 1; z <= Math.floor(Math.max(A[1], B[1]) / CELL) + 1; z++)
-        for (const s2 of cells.get(`${x},${z}`) || []) { if (seen.has(s2)) continue; seen.add(s2)
-          const [c, e] = s2, f = [e[0] - c[0], e[1] - c[1]], den = d[0] * f[1] - d[1] * f[0]; if (Math.abs(den) < 1e-12) continue
-          const w = [c[0] - P0[0], c[1] - P0[1]], t = (w[0] * f[1] - w[1] * f[0]) / den, v = (w[0] * d[1] - w[1] * d[0]) / den
-          if (t > 0 && t < 1 && v >= 0 && v <= 1) ts.push(t) }
-    ts.sort((a, b) => a - b)
-    for (let k = 0; k + 1 < ts.length; k++) { const t0 = ts[k], t1 = ts[k + 1]; if ((t1 - t0) * L < 1e-6) continue
-      const tm = (t0 + t1) / 2; if (inCurb([P0[0] + d[0] * tm, P0[1] + d[1] * tm])) continue
-      const at = (t) => t === 0 ? A : t === 1 ? B : [A[0] + d[0] * t, A[1] + d[1] * t]
-      out.push({ A: at(t0), B: at(t1), inward: n }) }
-  }
-  return out
+// ── ONE OWNER PER EDGE (A10): WHO STANDS ON THE EDGE BETWEEN THE LIFTED BLOCK AND THE ROAD ───────────────────────────
+// ⭐ The finder (before the mesh, on the noded partition) and the riser (after it, on the triangles) ask ONE question
+//   through ONE reader: for every edge with a lifted face on one side and an unlifted face on the other — matched by its
+//   EXACT ends, never by a distance — is the lifted face the curb? The curb (or a cut) stands a face there; anything else
+//   slopes flush (a taper). So the two cannot disagree.
+// ⛔ The finder used to read a point 1 mm INBOARD of the block edge ("is curb drawn there?"). Where a curb leaves the edge
+//   at θ it saw the curb for 1 mm / tan θ past where the curb stops owning it, and the land-use wedge between got neither a
+//   face nor a taper: LS #39, six steps of 0.15 m at θ 2.4°–11.4° (Plumb, 2026-10-21).
+export const KERB_KEYS = new Set(['curb', 'curbCut'])
+
+/** Every edge between a lifted face and an unlifted one, from `walk(visit)` — `ringEdges` (polygons) or `triangleEdges`
+ *  (a mesh) — keyed by its exact (x, z) ends. Returns Map(key → { in, out, uses }): `in`/`out` the FIRST lifted / unlifted
+ *  use, each { key, a, b, left } (a, b = [x, y, z]; `left` = the face lies left of a → b in (x, z), when the walk knows). */
+export function edgesAcross(walk) {
+  const edges = new Map()
+  walk((key, side, a, b, left) => {
+    const ka = `${a[0]},${a[2]}`, kb = `${b[0]},${b[2]}`, k = ka < kb ? ka + '|' + kb : kb + '|' + ka
+    const rec = edges.get(k) || edges.set(k, { in: null, out: null, uses: 0 }).get(k)
+    rec.uses++
+    if (side) rec.in = rec.in || { key, a, b, left }; else rec.out = rec.out || { key, a, b, left }
+  })
+  return edges
+}
+/** THE ONE READER: on an edge with a lifted side and an unlifted side, does the curb stand it? */
+export const curbStands = (rec, kerbKeys = KERB_KEYS) => kerbKeys.has(rec.in.key)
+
+/** A walk over polygons: `groups` [{ key, items: [{ outer, holes, side }] }] (rings in metres). `left` from each ring's
+ *  own winding: an outer's face lies on the side its winding turns to, a hole's on the other. */
+export const ringEdges = (groups) => (visit) => {
+  for (const { key, items } of groups) for (const it of items) [it.outer, ...(it.holes || [])].forEach((r, ri) => {
+    let s = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) s += r[j][0] * r[i][1] - r[i][0] * r[j][1]
+    const left = (s > 0) === (ri === 0)               // shoelace in (x, z): s > 0 winds counter-clockwise, its inside on the left
+    // a vertex is its LATTICE point (the partition sits on it), so 3.8130000000000024 and 3.813 are one vertex
+    const L = (v) => Math.round(v * CLIP_SCALE) / CLIP_SCALE
+    for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length], a = [L(p[0]), 0, L(p[1])], b = [L(q[0]), 0, L(q[1])]
+      if (a[0] === b[0] && a[2] === b[2]) continue
+      visit(key, it.side, a, b, left) } })
+}
+/** A walk over a mesh: `groups` [{ key, positions, indices, side }] (after `liftBuffer`; `side` one per triangle). */
+export const triangleEdges = (groups) => (visit) => {
+  for (const { key, positions: P, indices: I, side } of groups) for (let t = 0; t < side.length; t++) for (let e = 0; e < 3; e++) {
+    const a = I[3 * t + e], b = I[3 * t + (e + 1) % 3]
+    visit(key, side[t], [P[a * 3], P[a * 3 + 1], P[a * 3 + 2]], [P[b * 3], P[b * 3 + 1], P[b * 3 + 2]]) }
 }
 
-/** Everything the bake needs to lift its ground: `blockRings` (the painter's block — what lifts), `curbRings` (the
- *  post-paint curb + cut strips), the curb cuts' `ramps`, the town's `kerb`. Returns { inBlock, curbless, curblessM,
- *  regions }. Throws when the block has curbless edges and the town's kerb norm gives no taperRun. */
-export function kerbPlan({ blockRings, curbRings, ramps, kerb }) {
-  const curbless = curblessEdges(blockRings, curbRings)
-  const curblessM = curbless.reduce((n, { A, B }) => n + Math.hypot(B[0] - A[0], B[1] - A[1]), 0)
+/** The CURBLESS edges of the noded ground partition: a lifted face the curb does not stand on (`curbStands`, the riser's
+ *  own read, on the polygons) with an unlifted face — the ROAD — across it. `groups` as `ringEdges` takes them, each item's
+ *  `side` stamped by `withSide`.
+ *  ⛔ AN EDGE WITH NOTHING ACROSS IS NEVER READ AS THE RIM. Q1 slopes the rim too (Boz, R1, 2026-10-21: the rim keeps its
+ *  taper), but an edge only one face uses is also what two faces leave when they meet without sharing their vertices —
+ *  on LS 3,068 m of lifted|lifted edges inside blocks, which a rim read would have trenched to grade. Such edges are
+ *  returned `unpaired` (lifted, not the curb's) for the caller to refuse until the rim is named POSITIVELY.
+ *  Returns { curbless: [{ A, B, inward }] (on the edge, `inward` toward the lifted face), roadM, unpaired: [{ A, B, key }],
+ *  unpairedM, orphanRoadM (an unlifted face with nothing across) }. */
+export function curblessEdges(groups, kerbKeys = KERB_KEYS) {
+  const curbless = [], unpaired = []
+  let roadM = 0, unpairedM = 0, orphanRoadM = 0
+  for (const rec of edgesAcross(ringEdges(groups)).values()) {
+    const f = rec.in || rec.out, L = Math.hypot(f.b[0] - f.a[0], f.b[2] - f.a[2])
+    if (!rec.in) { if (rec.uses === 1) orphanRoadM += L; continue }
+    if (kerbKeys.has(rec.in.key)) continue
+    const { a, b, left } = rec.in
+    if (!rec.out) { if (rec.uses === 1) { unpaired.push({ A: [a[0], a[2]], B: [b[0], b[2]], key: rec.in.key }); unpairedM += L } continue }
+    const u = [(b[0] - a[0]) / L, (b[2] - a[2]) / L]
+    curbless.push({ A: [a[0], a[2]], B: [b[0], b[2]], inward: left ? [-u[1], u[0]] : [u[1], -u[0]] })
+    roadM += L
+  }
+  return { curbless, roadM, unpaired, unpairedM, orphanRoadM }
+}
+
+/** Everything the bake needs to lift its ground: `blockRings` (the painter's block — what lifts), `groups` (the NODED
+ *  ground partition, [{ key, items }], key without its kind — the curb is `curb`/`curbCut`), the curb cuts' `ramps`, the
+ *  town's `kerb`. Returns { inBlock, curbless, curblessM, unpaired, unpairedM, orphanRoadM, flushTol, regions }. Throws when the
+ *  block has curbless edges and the town's kerb norm gives no taperRun. */
+export function kerbPlan({ blockRings, groups, ramps, kerb }) {
+  const inBlock = ringsInside(blockRings)
+  const { curbless, roadM, unpaired, unpairedM, orphanRoadM } = curblessEdges(groups.map(({ key, items }) => ({ key, items: withSide(items, inBlock) })))
+  const curblessM = roadM
   if (curbless.length && !(kerb.taperRun > 0))
     throw new Error(`[kerbLift] ⛔ the kerb stands ${kerb.height} m and ${curblessM.toFixed(0)} m of block edge has NO curb drawn (alleys, shoulders, land meeting the road), where the block slopes down flush — but the town's kerb norm gives no taperRun, the town's value, never the kit's (norms.json → kerb.taperRun, metres).`)
   // ⭐ FLUSH, TO THE LATTICE: a crease that ends on a block edge ends on a vertex Clipper rounded up to half a grid step off
@@ -91,18 +131,78 @@ export function kerbPlan({ blockRings, curbRings, ramps, kerb }) {
   // step at its steepest run — never a unitless epsilon (the riser read `1e-6` and called a 0.1 mm lift a step).
   const runs = [kerb.rampSlope > 0 ? kerb.height / kerb.rampSlope : null, kerb.flareSlope > 0 ? kerb.height / kerb.flareSlope : null, kerb.taperRun > 0 ? kerb.taperRun : null].filter(v => v != null)
   const flushTol = runs.length ? kerb.height * LATTICE_M / Math.min(...runs) : kerb.height * LATTICE_M
-  return { inBlock: ringsInside(blockRings), curbless, curblessM, flushTol, regions: [...kerbRegions(ramps, kerb), ...taperRegions(curbless, kerb.taperRun)] }
+  const tapers = taperRegions(curbless, kerb.taperRun), crossed = mitresCrossing(tapers, blockRings)
+  if (crossed.length) throw new Error(`[kerbLift] ⛔ ${crossed.length} mitred taper crease(s) cross another block edge — a bend too sharp for the run ${kerb.taperRun} m to reach its bisector inside the block: ${crossed.slice(0, 6).map(c => `from (${c.from.map(v => v.toFixed(3))}) reaching ${c.reach.toFixed(2)} m, across (${c.edge[0].map(v => v.toFixed(3))})→(${c.edge[1].map(v => v.toFixed(3))})`).join(' · ')}`)
+  return { inBlock, curbless, curblessM, unpaired, unpairedM, orphanRoadM, flushTol, regions: [...kerbRegions(ramps, kerb), ...tapers] }
 }
 
-/** A TAPER per curbless edge: the edge × `taperRun` inward (toward the lifted group), 0 → h linearly. */
-export function taperRegions(edges, taperRun) {
-  const out = []
-  for (const { A, B, inward: n } of edges) {
-    const w = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / w, (B[1] - A[1]) / w]
-    const at = (s, t) => [A[0] + u[0] * s + n[0] * t, A[1] + u[1] * s + n[1] * t]
-    out.push({ kind: 'ramp', taper: true, A, u, inward: n, w, R: taperRun, F: null, poly: [at(0, 0), at(w, 0), at(w, taperRun), at(0, taperRun)] })
-  }
+/** Every MITRED crease (k ≠ 0) of `tapers` that properly crosses a block-ring edge other than those at its own vertex:
+ *  [{ from, reach, edge }]. A perpendicular side is the rectangle's, as before; only the bisector's longer reach is new. */
+export function mitresCrossing(tapers, blockRings) {
+  const CELL = 8, cells = new Map(), out = [], seen = new Set()
+  for (const r of blockRings) for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]
+    for (let x = Math.floor(Math.min(a[0], b[0]) / CELL); x <= Math.floor(Math.max(a[0], b[0]) / CELL); x++)
+      for (let z = Math.floor(Math.min(a[1], b[1]) / CELL); z <= Math.floor(Math.max(a[1], b[1]) / CELL); z++) (cells.get(x + ',' + z) || cells.set(x + ',' + z, []).get(x + ',' + z)).push([a, b]) }
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  for (const g of tapers) for (const [k, P, Q] of [[g.kA, g.poly[0], g.poly[3]], [g.kB, g.poly[1], g.poly[2]]]) {
+    if (!k) continue
+    const key = P + '|' + Q; if (seen.has(key)) continue; seen.add(key)
+    const hit = new Set()
+    for (let x = Math.floor(Math.min(P[0], Q[0]) / CELL); x <= Math.floor(Math.max(P[0], Q[0]) / CELL); x++)
+      for (let z = Math.floor(Math.min(P[1], Q[1]) / CELL); z <= Math.floor(Math.max(P[1], Q[1]) / CELL); z++)
+        for (const e of cells.get(x + ',' + z) || []) { if (hit.has(e)) continue; hit.add(e)
+          const [a, b] = e; if ((a[0] === P[0] && a[1] === P[1]) || (b[0] === P[0] && b[1] === P[1])) continue
+          const d1 = cr(a, b, P), d2 = cr(a, b, Q), d3 = cr(P, Q, a), d4 = cr(P, Q, b)
+          if (Math.abs(d1) <= 1e-9 * Math.hypot(b[0] - a[0], b[1] - a[1])) continue      // the crease starts ON this edge
+          if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) out.push({ from: P, reach: Math.hypot(Q[0] - P[0], Q[1] - P[1]), edge: e }) } }
   return out
+}
+
+/** A TAPER per curbless edge: the edge × `taperRun` inward (toward the lifted group), 0 → h linearly.
+ *  ⭐ MITRED (Boz, 2026-10-21, in the crease-split fix): where exactly two curbless edges share a vertex, both tapers end
+ *  on ONE crease, the bisector of their inward normals, reaching run / cos(θ/2) — a band of uniform depth along a
+ *  polyline, drawn as Q1 asks. Rectangles left two creases leaving one vertex a bend's angle apart: overlapping at a
+ *  convex bend (a sliver Clipper rounded crossings into — 191 on LS), and at a reflex bend a WEDGE no taper covered, which
+ *  stood at h. At a convex bend each point keeps the lower plane, as before: a point is on the side of the bisector whose
+ *  base is nearer. A stretch's free end (a curb starts there, or three edges meet) keeps the perpendicular side.
+ *  Each region carries `kA`/`kB`: its end creases as s = t·kA and s = w + t·kB in its own frame (0 = perpendicular).
+ *  ⛔ Two curbless edges folding back on each other (normals opposite) have no bisector: refused. */
+export function taperRegions(edges, taperRun) {
+  const k2 = (p) => p[0] + ',' + p[1], at = new Map()
+  edges.forEach((e, i) => { for (const end of ['A', 'B']) { const k = k2(e[end]); (at.get(k) || at.set(k, []).get(k)).push(i) } })
+  const unit = (v) => { const L = Math.hypot(v[0], v[1]); return [v[0] / L, v[1] / L] }
+  // the crease direction leaving vertex P of edge i: the bisector with the one other curbless edge there, else the normal
+  const crease = (i, P) => { const n = edges[i].inward, here = at.get(k2(P))
+    if (here.length !== 2) return n
+    const o = edges[here[0] === i ? here[1] : here[0]].inward, s = [n[0] + o[0], n[1] + o[1]]
+    if (n[0] === o[0] && n[1] === o[1]) return n
+    if (Math.hypot(s[0], s[1]) < 1e-12) throw new Error(`[kerbLift] ⛔ taperRegions: two curbless edges fold back on each other at (${P}) — their tapers have no shared crease`)
+    return unit(s) }
+  // ⭐ A MITRE ONLY WHERE IT CAN BE DRAWN: a region's two creases must not cross inside its run (w + run·(kB − kA) ≥ 0), or
+  // its trapezoid turns inside out and stops covering its own base — a short edge between two sharp bends, where the
+  // bisector reaches run / cos(θ/2) (82 m at LS's 178.6° finger tip). Such a bend keeps both perpendicular sides, as the
+  // rectangles had (the narrow-block class: `mitresCrossing`, counted by the caller). Resolved to a fixpoint, one bend
+  // at a time, so a crease is always shared by both regions on it.
+  const flat = new Set()                                     // bend vertices kept perpendicular
+  const k = (i, P) => { if (flat.has(k2(P))) return 0
+    const n = edges[i].inward, m = crease(i, P), u = unit([edges[i].B[0] - edges[i].A[0], edges[i].B[1] - edges[i].A[1]])
+    return (m[0] * u[0] + m[1] * u[1]) / (m[0] * n[0] + m[1] * n[1]) }
+  for (let changed = true; changed;) { changed = false
+    edges.forEach((e, i) => { const w = Math.hypot(e.B[0] - e.A[0], e.B[1] - e.A[1])
+      if (w + taperRun * (k(i, e.B) - k(i, e.A)) >= 0) return
+      for (const P of [e.A, e.B]) if (!flat.has(k2(P)) && k(i, P) !== 0) { flat.add(k2(P)); changed = true } }) }
+  // a shared crease's far end is computed ONCE, so both regions carry the identical point (computed in each region's own
+  // frame it rounded a unit apart, and the split met two creases instead of one)
+  const far = new Map()
+  const farEnd = (i, P) => { const key = k2(P); if (far.has(key)) return far.get(key)
+    const m = crease(i, P), n = edges[i].inward, L = taperRun / (m[0] * n[0] + m[1] * n[1]), Q = [P[0] + m[0] * L, P[1] + m[1] * L]
+    far.set(key, Q); return Q }
+  return edges.map(({ A, B, inward: n }, i) => {
+    const w = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / w, (B[1] - A[1]) / w], kA = k(i, A), kB = k(i, B)
+    const pt = (s, t) => [A[0] + u[0] * s + n[0] * t, A[1] + u[1] * s + n[1] * t]
+    return { kind: 'ramp', taper: true, A, u, inward: n, w, R: taperRun, F: null, kA, kB,
+      poly: [A, B, kB ? farEnd(i, B) : pt(w, taperRun), kA ? farEnd(i, A) : pt(0, taperRun)] }   // the base on the edge's own ends
+  })
 }
 
 /** Ramp + flare regions for every cut. Each: { kind, poly, A, u, inward, w, R, F }. */
@@ -127,7 +227,7 @@ function regionAt(g, P, h) {
   const d = sub(P, g.A), s = dot(d, g.u), t = dot(d, g.inward)
   if (t < -TOL || t > g.R + TOL) return null
   const tc = Math.max(0, Math.min(g.R, t))
-  if (g.kind === 'ramp') return s < -TOL || s > g.w + TOL ? null : h * tc / g.R
+  if (g.kind === 'ramp') return s < (g.kA || 0) * tc - TOL || s > g.w + (g.kB || 0) * tc + TOL ? null : h * tc / g.R
   const ds = g.kind === 'flareA' ? -s : s - g.w                      // distance past the ramp's end, along the kerb
   if (ds < -TOL || ds > g.F * (1 - tc / g.R) + TOL) return null
   return Math.min(h, h * (tc / g.R + Math.max(0, ds) / g.F))
@@ -181,23 +281,14 @@ export function liftBuffer({ positions, indices, side: carried }, field) {
  *  below which a lifted vertex is at grade. Returns { positions, indices, kerbM, bareM }. */
 export function riserFromEdges(groups, kerbKeys, flushTol) {
   if (!(flushTol > 0)) throw new Error(`[kerbLift] riserFromEdges: no flush tolerance (got ${flushTol}) — pass kerbPlan().flushTol`)
-  const k2 = (x, z) => `${x},${z}`, edges = new Map()
-  for (const g of groups) {
-    const { positions: P, indices: I, side } = g
-    for (let t = 0; t < side.length; t++) for (let e = 0; e < 3; e++) {
-      const a = I[3 * t + e], b = I[3 * t + (e + 1) % 3]
-      const ka = k2(P[a * 3], P[a * 3 + 2]), kb = k2(P[b * 3], P[b * 3 + 2]), key = ka < kb ? ka + '|' + kb : kb + '|' + ka
-      const rec = edges.get(key) || edges.set(key, { in: null, out: null }).get(key)
-      const v = { key: g.key, a: [P[a * 3], P[a * 3 + 1], P[a * 3 + 2]], b: [P[b * 3], P[b * 3 + 1], P[b * 3 + 2]] }
-      if (side[t]) rec.in = rec.in || v; else rec.out = rec.out || v
-    }
-  }
   const pos = [], idx = [], bareM = {}, bareAt = {}
   let kerbM = 0
-  for (const { in: I, out: O } of edges.values()) {
+  // ⭐ the finder's own reader (`edgesAcross` + `curbStands`), on the triangles
+  for (const rec of edgesAcross(triangleEdges(groups)).values()) {
+    const { in: I, out: O } = rec
     if (!I || !O) continue
     const L = Math.hypot(I.b[0] - I.a[0], I.b[2] - I.a[2])
-    if (!kerbKeys.has(I.key)) { if (I.a[1] > flushTol || I.b[1] > flushTol) { const k = `${I.key}|${O.key}`; bareM[k] = (bareM[k] || 0) + L
+    if (!curbStands(rec, kerbKeys)) { if (I.a[1] > flushTol || I.b[1] > flushTol) { const k = `${I.key}|${O.key}`; bareM[k] = (bareM[k] || 0) + L
       const at = (bareAt[k] ||= []); if (at.length < 6) at.push([(I.a[0] + I.b[0]) / 2, (I.a[2] + I.b[2]) / 2]) } continue }
     // bottom = the unlifted side's own vertices at the same xz (their y), top = the lifted side's
     const bot = (p) => (Math.abs(O.a[0] - p[0]) + Math.abs(O.a[2] - p[2]) < 1e-9 ? O.a : O.b)
@@ -279,6 +370,78 @@ export function kerbCells(regions, blockRings) {
     c.AddPath(toPath(pastBase(g), +1), _C.PolyType.ptSubject, true); c.AddPaths(blk, _C.PolyType.ptClip, true)
     const out = new _C.Paths(); c.Execute(_C.ClipType.ctIntersection, out, _C.PolyFillType.pftNonZero, _C.PolyFillType.pftEvenOdd)
     return out.filter(p => p.length >= 3) })
+}
+
+/** ONE CUT PER CREASE, CARRIED BY EVERY POLYGON ON IT. The crease split (`splitAtCreases`) clips each LIFTED polygon by
+ *  the cells on its own, so where a crease crosses an edge two faces share, each face's Clipper pass rounded its own
+ *  crossing, and the ROAD, never split, never had one: on LS 6,365 crease vertices sat on the road's edge with no vertex
+ *  across, and 1,449 on a lifted neighbour's (Plumb, 2026-10-21). So before the split, every crossing of a cell edge with
+ *  an edge of the partition — road included — or with another cell's edge is computed ONCE, rounded to the lattice ONCE,
+ *  and written into BOTH edges; a vertex of one within the rounding (√2/2 step) of the other's edge, projecting strictly
+ *  inside it, enters that edge. A partition edge is keyed by its ends, so the faces on its two sides take the same points.
+ *  The split then meets every crossing as a vertex both rings already carry, and makes no point of its own there.
+ *  `groups` [{ items: [{ outer, holes }] }] (metres, on the lattice), `cells` Clipper paths (`kerbCells`). Returns
+ *  { groups, cells, inserted, rounds } in the same shapes, nothing moved, only vertices added. The round cap is a guard:
+ *  hitting it THROWS, never a partial cut. ⛔ Not a noding of the partition
+ *  with itself: only crease × partition and crease × crease. */
+export function cutCreases(groups, cells, { maxRounds = 16, onRound = null } = {}) {
+  const S = CLIP_SCALE, BOUND = Math.SQRT1_2 * CLIP_SCALE * LATTICE_M, B2 = BOUND * BOUND
+  const P = (x, z) => [Math.round(x * S), Math.round(z * S)]
+  // every ring as integer points; `cell` rings and partition rings, the partition's edges keyed so both faces share them
+  const rings = []
+  groups.forEach((g, gi) => g.items.forEach((it, ii) => [it.outer, ...(it.holes || [])].forEach((r, ri) => rings.push({ cell: false, gi, ii, ri, p: r.map(([x, z]) => P(x, z)) }))))
+  cells.forEach((c, ci) => rings.push({ cell: true, ci, p: c.map(q => [q.X, q.Y]) }))
+  const ek = (a, b) => { const x = a[0] + ',' + a[1], y = b[0] + ',' + b[1]; return x < y ? x + '|' + y : y + '|' + x }
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  let inserted = 0, rounds = 0
+  for (let round = 0; ; round++) {
+    rounds = round + 1
+    if (round === maxRounds) throw new Error(`[kerbLift] ⛔ cutCreases: the creases and the partition did not agree in ${maxRounds} rounds — an insertion keeps making another`)
+    const E = []                                   // [ringIndex, i] per edge
+    rings.forEach((r, ri) => r.p.forEach((_, i) => E.push([ri, i])))
+    const CELL = 4 * S, grid = new Map()
+    E.forEach((e, n) => { const r = rings[e[0]].p, a = r[e[1]], b = r[(e[1] + 1) % r.length]
+      for (let x = Math.floor((Math.min(a[0], b[0]) - BOUND) / CELL); x <= Math.floor((Math.max(a[0], b[0]) + BOUND) / CELL); x++)
+        for (let z = Math.floor((Math.min(a[1], b[1]) - BOUND) / CELL); z <= Math.floor((Math.max(a[1], b[1]) + BOUND) / CELL); z++) { const k = x + ',' + z; (grid.get(k) || grid.set(k, []).get(k)).push(n) } })
+    // insertions per EDGE KEY for the partition (both faces), per (ring, edge) for cells: point + t along the edge
+    const addP = new Map(), addC = new Map(), has = rings.map(r => new Set(r.p.map(q => q[0] + ',' + q[1])))
+    const put = (n, pt) => { const [ri, i] = E[n], r = rings[ri], a = r.p[i], b = r.p[(i + 1) % r.p.length], k = pt[0] + ',' + pt[1]
+      if (has[ri].has(k)) return
+      const d = [b[0] - a[0], b[1] - a[1]], t = ((pt[0] - a[0]) * d[0] + (pt[1] - a[1]) * d[1]) / (d[0] * d[0] + d[1] * d[1])
+      if (!(t > 0 && t < 1)) return
+      const m = r.cell ? addC : addP, key = r.cell ? ri + ':' + i : ek(a, b), l = m.get(key) || m.set(key, new Map()).get(key)
+      l.set(k, pt) }
+    const seen = new Set()
+    for (const list of grid.values()) for (let x = 0; x < list.length; x++) for (let y = x + 1; y < list.length; y++) {
+      const n1 = list[x], n2 = list[y], r1 = rings[E[n1][0]], r2 = rings[E[n2][0]]
+      if (!r1.cell && !r2.cell) continue                                    // partition × partition is not the crease's
+      if (E[n1][0] === E[n2][0]) continue                                   // a ring's own edges
+      const pk = n1 < n2 ? n1 + ',' + n2 : n2 + ',' + n1; if (seen.has(pk)) continue; seen.add(pk)
+      const a = r1.p[E[n1][1]], b = r1.p[(E[n1][1] + 1) % r1.p.length], c = r2.p[E[n2][1]], d = r2.p[(E[n2][1] + 1) % r2.p.length]
+      const d1 = cross(c, d, a), d2 = cross(c, d, b), d3 = cross(a, b, c), d4 = cross(a, b, d)
+      if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {     // a proper crossing
+        const t = d3 / (d3 - d4), pt = [Math.round(c[0] + (d[0] - c[0]) * t), Math.round(c[1] + (d[1] - c[1]) * t)]
+        put(n1, pt); put(n2, pt); continue }
+      // a vertex of one within the rounding of the other's edge, strictly inside it
+      for (const [q, n] of [[a, n2], [b, n2], [c, n1], [d, n1]]) { const [ri, i] = E[n], r = rings[ri].p, e0 = r[i], e1 = r[(i + 1) % r.length]
+        const dx = e1[0] - e0[0], dz = e1[1] - e0[1], L2 = dx * dx + dz * dz; if (!L2) continue
+        const dot = (q[0] - e0[0]) * dx + (q[1] - e0[1]) * dz, cr = (q[0] - e0[0]) * dz - (q[1] - e0[1]) * dx
+        if (dot > 0 && dot < L2 && cr * cr <= B2 * L2) put(n, q) }
+    }
+    if (onRound) onRound(round, addP, addC, rings)
+    if (!addP.size && !addC.size) break
+    // rebuild every ring with its edges' new points in order along each edge
+    for (const [ri, r] of rings.entries()) { const out = []
+      for (let i = 0; i < r.p.length; i++) { const a = r.p[i], b = r.p[(i + 1) % r.p.length]; out.push(a)
+        const l = (r.cell ? addC.get(ri + ':' + i) : addP.get(ek(a, b))); if (!l) continue
+        const d = [b[0] - a[0], b[1] - a[1]], pts = [...l.values()].map(q => [((q[0] - a[0]) * d[0] + (q[1] - a[1]) * d[1]), q]).sort((u, v) => u[0] - v[0])
+        for (const [, q] of pts) { out.push(q); inserted++ } }
+      r.p = out }
+  }
+  const back = (p) => p.map(([X, Y]) => [X / S, Y / S])
+  const outGroups = groups.map(g => ({ ...g, items: g.items.map(it => ({ ...it, outer: null, holes: [] })) }))
+  for (const r of rings) { if (r.cell) continue; const it = outGroups[r.gi].items[r.ii]; if (r.ri === 0) it.outer = back(r.p); else it.holes[r.ri - 1] = back(r.p) }
+  return { groups: outGroups, cells: rings.filter(r => r.cell).map(r => r.p.map(([X, Y]) => new _C.IntPoint(X, Y))), inserted, rounds }
 }
 
 /** Each polygon's SIDE of the kerb, stamped onto it: 1 when the lift raises it, else 0 — read at a point just inside it
