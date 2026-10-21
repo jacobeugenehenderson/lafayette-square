@@ -101,10 +101,9 @@ Start here. State at the restart:
     unowned ped vertices (exact count in lafayette-square.census.json). Flatten and the deformer refuse nothing; every later
     step clean through manifest.
   · Merged tonight after the census began: the memo bound (1e6958f2), the shore-pass gate + exact unowned list (b88f7245),
-    the re-gated finish clip (7ec93e8e). AWAITING ZOB'S REVIEW (Zob and Mitre hit usage limits ~02:40): Mitre's noded rim
-    with (A) retired, 4be86489 on mitre/rim-cut-once (HPDM rim class 0; tile 242's needles 0; no tile worse). Zob reviewed:
-    mergeable after a tile-242 consequence row and a measure of insertions > 0.71 mm off the rim. ⚠️ B2's 1.41 mm GEOMETRIC
-    pair still exists: it's accepted as harmless (the deformer reading the noded rim owns its points), NOT closed.
+    the re-gated finish clip (7ec93e8e), and Mitre's noded rim with (A) retired (8c891606, Zob-reviewed): HPDM rim class 0;
+    unshared rim vertices 0 on HPDM and LS; tile 242's needles 0; no tile worse. ⚠️ B2's 1.41 mm GEOMETRIC pair still exists:
+    accepted as harmless (the paint carries the shared crossing), NOT closed.
   · Running (Kerf), on a detached scratch merge of HEAD + 4be86489: HPDM's exact remaining list → Huron census → PTown census.
 - **LS REAPPLICATION PLAN (Jacob, 2026-10-21: "reapply all we can to LS"; Zob's Inputs census, read from
   `cartograph/intake-rows.mjs#intakeStatusForMap` + each town's `sources.json`):**
@@ -149,7 +148,7 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
-- ⚠️ TIER DRIFT from tonight's merges: `claims-the-ground-height-is-a-function-of-the-point` (since 1e6958f2) and `claims-the-height-code-owns-what-is-drawn` (since c5304a89) now tier LIVE, so `npm test` no longer runs them (Mitre, regenerating TIERS). A coverage loss; reshape both back to safe (Zob placing why).
+- ⚠️ TIER DRIFT from tonight's merges: `claims-the-ground-height-is-a-function-of-the-point` (since 1e6958f2) and `claims-the-height-code-owns-what-is-drawn` (since c5304a89) tiered LIVE, so `npm test` stopped running them (Mitre). `claims-the-height-code-owns-what-is-drawn` is SAFE again (8c891606); the other awaits Kerf's reshape (one mutated copy behind a switch; Zob tested it).
 - The noded rim inserts a few crossings past √2/2 off the rim line: on the SHIPPING paint HPDM 1 (0.827 mm, tile 177), LS 2 (max 0.931 mm, tiles 42, 145); the painter's own count (`out.rimFar`), printed by the pour. Accepted. Why a crossing sits past the single-rounding bound: cause not established. (An earlier 10/5 came from a paint that no longer ships.)
 - Tern's chained window (merged 336a9824) is a CORRECTION (Zob, measured on Mitre's dumps): every moved height is inside the disc (LS 108 · HPDM 686 · Huron 1,349), and of the 20 largest per town 41 are corrections, 1 a new error (LS (702.47, 23.90), 2.7 cm) and 18 indirect (≤ 0.022 m). The big ones (LS 1.05 m) were the rim class: the old window let 'beyond' swallow the band's entry. Optional guard against an unbounded chain: end a chain where `_inClass` at the gap's midpoint reads lot.
 - bake-content's header says an overture town "PRESERVES listings.json"; the code produces and writes them, and `claims-an-external-base-survives-a-bake` pins that. Rot or an intent change, not established (Truss). The `producer !== 'osm'` census line misdescribes a hand-curated town.
