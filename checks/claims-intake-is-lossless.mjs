@@ -29,6 +29,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createMembershipFilter, buildingIdOf } from '../cartograph/membership.mjs'
+import { WITHHELD_PARCEL_FIELDS } from '../cartograph/sources.js'
 import { CLASSES, RULES } from '../src/cartograph/streetClass.js'
 import { setFlagsFromString } from 'node:v8'
 import { runInNewContext } from 'node:vm'
@@ -51,7 +52,7 @@ const DROPS = [
   { id: 'curated-buildings', scope: 'internal', file: 'cartograph/pipeline.js', symbol: /join\(PROJECT_ROOT, 'src', 'data', 'buildings\.json'\)/,
     says: 'the town draws a curated building set (src/data/buildings.json), not OSM footprints' },
   { id: 'served-parcel-privacy', scope: 'served', file: 'cartograph/states/mo.mjs', symbol: /No information may be sold or redistributed/,
-    fields: ['owner', 'appraised_value', 'land_area', 'building_sqft', 'units', 'num_buildings', 'year_built', 'last_year_built', 'neighborhood_code'],
+    fields: WITHHELD_PARCEL_FIELDS,   // read from its one home, never restated here
     says: 'parcel owner and assessor fields are withheld from the browser: privacy, and St. Louis City\'s no-redistribution terms (the stl-city well\'s terms, cartograph/states/mo.mjs)' },
 ]
 

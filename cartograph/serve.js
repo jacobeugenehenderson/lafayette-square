@@ -3045,9 +3045,9 @@ createServer(async (req, res) => {
       // sources (OSM POIs · assessor parcels · NR survey) onto the just-baked
       // building set → content/{roster,listings}.json, so content MEMBERSHIP ==
       // slab membership by construction (0 orphans). Runs AFTER buildings (needs
-      // the baked id set). A town that declares its listings hand-curated (meta.baseSource, LS) is skipped by
-      // bake-content itself, from its own data. Hand-authoring survives via the committed override sidecars
-      // (listings.overrides.json).
+      // the baked id set). A town that declares its listings hand-curated (meta.baseSource, LS) gets its roster
+      // only: bake-content reads its listings.json and never writes it. Hand-authoring survives via the committed
+      // override sidecars (listings.overrides.json).
       {
         const SCENE_BAKED_BUILDINGS = join(REPO_ROOT, 'public', 'baked', bakeScene, 'buildings.json')
         const CONTENT_DIR = join(bakePaths.raw, '..', 'content')

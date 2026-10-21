@@ -185,7 +185,7 @@ LS's building metadata (historic status, style, architect, year) was **bulk-auth
 | `id` | **key** | — | must equal the slab building id |
 | footprint · position · size · `stories` | RENDER | ①/② | automated (MSBF + assessor) — don't hand-collect |
 | `wall_material` · `roof_material` · color | RENDER | ①/③ | facade match + overrides |
-| `zoning` · `building_sqft` · `units` · `vacant` · `appraised_value` | RENDER-ledger | ② | assessor; re-point per town |
+| `zoning` · `building_sqft` · `units` · `vacant` · `appraised_value` | RENDER-ledger | ② | assessor; re-point per town. ⛔ A parcel well's `building_sqft` · `units` · `appraised_value` · `year_built` never reach the served roster (privacy and the well's terms; the list's one home is `cartograph/sources.js#WITHHELD_PARCEL_FIELDS`) |
 | `name`/label · `all_names` | CONTENT | ②/③ | display |
 | `address` · `municipality` · `jurisdiction` | CONTENT | ② | assessor |
 | `historic_status`/`historic_district` · `contributing` · `architect` · `style` · `period` · `year_built` | CONTENT | ③ | 🔴 completist-record luck — LLM-assist or omit for a normal town |

@@ -28,7 +28,8 @@
  * Scene-generic. TWO guards, because a re-bake here can DESTROY hand-authored
  * content rather than merely regenerate it:
  *   · a town that declares its base `hand-curated` (meta.baseSource in its own listings.overrides.json — LS today)
- *     keeps its listings by hand: the step skips it unless --force.
+ *     keeps its LISTINGS by hand (Layer 2), and still gets its ROSTER (Layer 1): the step reads its own
+ *     content/listings.json as the base and writes roster.json only; listings.json and the id registry are untouched.
  *   · EXTERNAL BASE — a scene whose listings base did NOT come from OSM POIs
  *     declares `meta.baseSource` in listings.overrides.json (Łódź: "overture").
  *     This step can only derive an OSM base, so for those scenes it writes
@@ -47,7 +48,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
-import { readSources, undeclaredMessage, PARCEL_FIELDS } from './sources.js'
+import { readSources, undeclaredMessage, PARCEL_FIELDS, WITHHELD_PARCEL_FIELDS } from './sources.js'
 import { classifyUseFromText } from './parcel-landuse.mjs'
 import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
@@ -1064,7 +1065,10 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
 
     const contributing = nr ? (nr.contrib === 'contributing') : null
     const style = nr ? (nr.style || null) : null
-    const year_built = (par && par.year_built) || (nr && nr.year) || null
+    // ⛔ THE RECORD READS THE PARCEL THROUGH `served`, which has no withheld field (`WITHHELD_PARCEL_FIELDS`, sources.js):
+    // a parcel well's owner, value, size and dates never reach a served file. The rank (`bundles`) still reads `par`.
+    const served = par && Object.fromEntries(Object.entries(par).filter(([k]) => !WITHHELD_PARCEL_FIELDS.includes(k)))
+    const year_built = (served && served.year_built) || (nr && nr.year) || null
     const period = year_built ? `${Math.floor(year_built / 10) * 10}s` : null
 
     const architecture = {}
@@ -1092,10 +1096,10 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
       period,
       year_built,
       building_type: par ? (luMap.get(String(par.land_use_code).replace(/\D/g, '')) || {}).desc || null : null,
-      building_sqft: par ? par.building_sqft : null,
-      units: par ? par.units : null,
+      building_sqft: served ? served.building_sqft ?? null : null,
+      units: served ? served.units ?? null : null,
       zoning: par ? par.zoning : null,
-      appraised_value: par ? par.appraised_value : null,
+      appraised_value: served ? served.appraised_value ?? null : null,
       // ⛔ No parcel, no well spoke: `false` asserted "not vacant" about every unmatched building. null, as loadParcels keeps it.
       vacant: par ? par.vacant : null,
       stories,
@@ -1148,15 +1152,11 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
 
 export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   if (!scene) throw new Error('bakeContent: scene is required')
-  // ⭐ THE BASE IS THE TOWN'S DECLARATION (meta.baseSource in its own listings.overrides.json), read first: a town whose
-  // listings are curated by hand declares `hand-curated` and is not baked at all. ⛔ It was a test of the town's NAME
-  // (LS), the kit deciding a town's content by who it is (G4, 2026-10-07).
+  // ⭐ THE BASE IS THE TOWN'S DECLARATION (meta.baseSource in its own listings.overrides.json). ⛔ It was a test of the
+  // town's NAME (LS), the kit deciding a town's content by who it is (G4, 2026-10-07). `meta.baseSource` is a LISTINGS
+  // field: a town whose listings are curated by hand still gets its roster (below, the `hand-curated` producer).
   const listingOverrides = loadJsonOr(join(contentDir(scene), 'listings.overrides.json'), { adds: [], patches: {} })
   const declaredBase = listingOverrides?.meta?.baseSource || 'osm'
-  if (declaredBase === 'hand-curated' && !force) {
-    console.log(`[bake-content] ${scene} declares its listings hand-curated (meta.baseSource) — skipping. Use --force to regenerate from OSM.`)
-    return { skipped: true }
-  }
   const t0 = Date.now()
   console.log(`[bake-content] scene=${scene}${dryRun ? ' (dry-run)' : ''}`)
 
@@ -1238,6 +1238,22 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     const report = r.gate.report(scene)
     if (report) console.log(report)
 
+  } else if (declaredBase === 'hand-curated' && !force) {
+    // ⭐ LAYER 2 IS KEPT BY HAND, LAYER 1 IS STILL BAKED (Boz, 2026-10-21: a hand-curated town is published with no
+    // buildings otherwise). The base IS the served file: no overrides are laid over it and no ids assigned, because the
+    // bake does not write it, so the roster joins exactly the listings a visitor sees. ⛔ No file is a refusal, never [].
+    producer = 'hand-curated'
+    producerReason = 'declared meta.baseSource: "hand-curated"'
+    const p = join(contentDir(scene), 'listings.json')
+    if (!existsSync(p)) throw new Error(`scene "${scene}" declares meta.baseSource "hand-curated" and has no ${p} — the hand-kept listings ARE its base. Refusing to bake a roster against none.`)
+    baseListings = JSON.parse(readFileSync(p, 'utf8')).listings
+    if (!Array.isArray(baseListings)) throw new Error(`${p} has no listings array — refusing to bake a roster against it`)
+    // ⛔ An add or patch beside a hand-kept file reaches no served listing (this bake never writes it): refused, never ignored
+    const authored = (listingOverrides.adds || []).length + Object.keys(listingOverrides.patches || {}).length
+    if (authored) throw new Error(`scene "${scene}" keeps its listings by hand (meta.baseSource "hand-curated") yet listings.overrides.json carries ${authored} add(s)/patch(es), which no bake will lay over the hand-kept listings.json. Edit listings.json itself, or declare a producer.`)
+    skipListings = true
+    console.log(`  base listings: ${baseListings.length} · producer=hand-curated (${producerReason}) — listings.json is read, never written`)
+
   } else if (declaredBase !== 'osm' && force) {
     // ⛔ THE DESTRUCTIVE PATH, AND IT STAYS REACHABLE BUT LOUD. `--force` is the
     // operator saying "regenerate from OSM anyway"; it is the only way to leave
@@ -1260,32 +1276,37 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     // answered with a plausible-looking default.
     throw new Error(
       `scene "${scene}" declares meta.baseSource "${declaredBase}" and this step has no producer for it.\n` +
-      `   Known producers: 'osm' (raw/osm.json) · 'overture' (raw/overture-places.json) · and 'hand-curated', which bakes nothing.\n` +
+      `   Known producers: 'osm' (raw/osm.json) · 'overture' (raw/overture-places.json) · 'hand-curated' (content/listings.json, read, never written).\n` +
       `   ⛔ Refusing to fall back to the OSM base: the OSM join yields ~0 on a town whose base is\n` +
       `     external, so the write would keep only hand-authored adds and DESTROY the rest.\n` +
       `   ▶ Add a producer, fix the spelling, or --force to deliberately regenerate from OSM and lose it.`)
   }
   const rosterOverrides = loadJsonOr(join(contentDir(scene), 'roster.overrides.json'), { patches: {} })
-  const { listings: merged, report } = applyListingOverrides(baseListings, listingOverrides,
-    { buildingGrid, bakedIds, parcels, parcelByAddr })
-  // ⭐ PERMANENT LISTING IDS — sealed by the scene's registry (`listing-identity.js`, ROADMAP H-29).
-  // The prefix is sealed WITH the registry and read back from it; the scene's name seeds it only on
-  // the first seal, so renaming a town never renames its listings.
-  const idPath = listingIdPath(contentDir(scene))
-  const { registry: listingIds, report: idReport } = assignListingIds(merged, loadListingIds(idPath), { sealPrefix: seedPrefix(scene), scene, sealedBy: sealedPrefixes(dirname(mapDir(scene)), scene) })
-  if (idReport.sealed) {
-    // The first sealed bake numbers positionally; that carries today's ids over only if the input
-    // is unchanged since the last bake. Prove it against the file on disk before sealing.
-    const onDisk = loadJsonOr(join(contentDir(scene), 'listings.json'), { listings: [] }).listings
-    const warning = guardSeal(idsThatWouldMove(merged, onDisk), { dryRun })   // a real bake throws inside
-    if (warning) console.warn(`  ⚠️ ${warning}`)
+  let listings, report = null, listingIds, idPath
+  if (skipListings) listings = baseListings
+  else {
+    const { listings: merged, report: r } = applyListingOverrides(baseListings, listingOverrides,
+      { buildingGrid, bakedIds, parcels, parcelByAddr })
+    report = r
+    // ⭐ PERMANENT LISTING IDS — sealed by the scene's registry (`listing-identity.js`, ROADMAP H-29).
+    // The prefix is sealed WITH the registry and read back from it; the scene's name seeds it only on
+    // the first seal, so renaming a town never renames its listings.
+    idPath = listingIdPath(contentDir(scene))
+    const { registry, report: idReport } = assignListingIds(merged, loadListingIds(idPath), { sealPrefix: seedPrefix(scene), scene, sealedBy: sealedPrefixes(dirname(mapDir(scene)), scene) })
+    if (idReport.sealed) {
+      // The first sealed bake numbers positionally; that carries today's ids over only if the input
+      // is unchanged since the last bake. Prove it against the file on disk before sealing.
+      const onDisk = loadJsonOr(join(contentDir(scene), 'listings.json'), { listings: [] }).listings
+      const warning = guardSeal(idsThatWouldMove(merged, onDisk), { dryRun })   // a real bake throws inside
+      if (warning) console.warn(`  ⚠️ ${warning}`)
   }
   // The source key stays on the record: it is the listing's identity outside this repo too.
   for (const l of merged) { l.source_key = l._key ?? null; delete l._key }
-  const listings = merged
+  listings = merged; listingIds = registry
   console.log(`  listing ids: ${idReport.sealed ? `SEALED ${idReport.minted} into ${idPath.split('/').slice(-3).join('/')}` : `${idReport.reused} kept · ${idReport.minted} new (high water ${listingIds.meta.highWater})`}`)
   console.log(`  overrides: +${report.added} adds (${report.add_reanchored} re-anchored, ${report.add_dropped.length} dropped), ${report.patched} patches, ${report.base_superseded} base superseded`)
   if (report.add_dropped.length) for (const d of report.add_dropped) console.log(`    ⚠️ dropped add: ${d.name} (${d.id}) — ${d.reason} → check the Extent`)
+  }
 
   // Layer 1 — roster
   const osmProm = gatherOsmProminence(pois, buildingGrid, buildingGeom)
@@ -1438,7 +1459,9 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     meta: { scene, schema: 'NEIGHBORHOOD-INPUTS §5.1.1', layer: 'Layer 1 — building ledger (one record per slab building)',
       generated: now, generator: 'bake-content.js', visible_buildings: roster.length,
       parcel_matched: stat.parcel_matched, nr_attributed: stat.nr_attributed, in_historic_district: stat.in_district,
-      buildings_with_listings: stat.with_listings, join_key: 'id == slab building id (msbf-* on a US pour, osm-* on an OSM pour, the project id on a curated one)',
+      buildings_with_listings: stat.with_listings,
+      withheld: { fields: WITHHELD_PARCEL_FIELDS, why: 'a parcel well\'s privacy and redistribution terms (cartograph/sources.js WITHHELD_PARCEL_FIELDS)' },
+      join_key: 'id == slab building id (msbf-* on a US pour, osm-* on an OSM pour, the project id on a curated one)',
       prominence: { scorer: 'prominence.mjs', rank: '1..N over EVERY building — a sort, never a filter',
         promoted_wins: 'records with .promoted set sort above every scored building',
         wells_absent: Object.entries(prominenceCtx.wells).filter(([, v]) => !v).map(([k]) => k) } },
@@ -1463,7 +1486,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   }
   // profile.json is fully authored (Layer 0) — leave it in place; the join
   // does not regenerate it. (It rides the instance/content payload as-is.)
-  console.log(`[bake-content] wrote roster.json (${roster.length})${skipListings ? ' — listings.json PRESERVED (external base)' : ` + listings.json (${listings.length})`} in ${Date.now() - t0}ms`)
+  console.log(`[bake-content] wrote roster.json (${roster.length})${skipListings ? ' — listings.json PRESERVED (hand-curated)' : ` + listings.json (${listings.length})`} in ${Date.now() - t0}ms`)
   return { roster, listings, orphans: orphans.length, report, stat }
 }
 
