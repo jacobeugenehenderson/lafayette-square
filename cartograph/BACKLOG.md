@@ -97,7 +97,10 @@ Required LS + HPDM; desired PTown + Huron; JH not expected but 'fortifying'. Mea
 host record, and LS's prod slab keys are lafayette-square.com's live old-player keys, so the LS cutover is the RENAME job
 (look `lafayettesquare`, new keys; OPERATIONS § 'A town's name is its address'), being sized (Zob). ptown.online is NOT on
 Cloudflare (Hover) and differs from the live provincetown.online. ❓ Jacob: lafayette-square.com stays / redirects / retires?
-ptown.online or provincetown.online? jacksonheights.online? SIZED (Zob): the rename is ~2–4 h, mechanical (the town ids are
+✅ RULED (Jacob): the domains are the FULL spellings, all in the Operations utility
+(lafayettesquare.online · hipointedemun.online · provincetown.online · jacksonheights.online); lafayette-square.com REDIRECTS to
+lafayettesquare.online for a while, then retires at renewal. ⚠️ Jacob: Huron's shore 'looks bad' on staging (PTown's is
+'gorgeous'); Ward probing. SIZED (Zob): the rename is ~2–4 h, mechanical (the town ids are
 already sealed); traps: T1, a slab must be RE-BAKED under the new name, never moved (the renderer reads manifest.look) · T2, the
 old site's apps-script entry stays · T3, never upload to prod under the old name. Gate: a clean LS slab. Being built (Kerf, no
 bake); a T1 upload refusal (Plumb) + check (Zob). The rename is BRIEF-ls-cutover-to-its-address step 1; defaults are ruled
