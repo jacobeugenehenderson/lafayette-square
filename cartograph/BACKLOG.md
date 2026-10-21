@@ -82,7 +82,10 @@ Start here. State at the restart:
   with the old slabs backed up first (reversible; nothing published) for Jacob's eye in the morning. Publish/Promote are
   Boz's + Ward's together, after Jacob's eye.
 - **REFUSAL CENSUS (Kerf; record-and-continue in a sandbox; files `.claude/worktrees/kerf/scratch/ground-budget/step7/census/`):**
-  · **HPDM** (8189c609, 38 min): ONE class left: the unowned-ped refusal (1,234 distinct 1-cm CELLS, both ground passes; ⚠️ the refusal rounds to 1 cm and logs only 15 examples, all of which re-resolve OWNED, so the true remainder is not established until the instrument keys exact positions and writes the full list (Kerf, being fixed); on real band-ring vertices, the rim merge moved 44 → 17 of ~190k (Zob). Mitre's "612 → 599" counted rounded points: retracted; first
+  · ⭐ **HPDM TRUE LIST** (integration 1e6958f2 + the noded rim; ground only, 16 min): ONE refusal, **269 unowned ped vertices
+    at EXACT positions**, the full list in `.claude/worktrees/kerf/scratch/ground-budget/step7/census-truelist/hipointedemun/
+    ground.unowned.json`; top tiles 67 · 134 · 189 · 170 · 183 · 55. No flatten, deformer, rim or kerb refusal. Zob classifying.
+  · **HPDM** (8189c609, 38 min, superseded by the true list above): ONE class left: the unowned-ped refusal (1,234 distinct 1-cm CELLS, both ground passes; ⚠️ the refusal rounds to 1 cm and logs only 15 examples, all of which re-resolve OWNED, so the true remainder is not established until the instrument keys exact positions and writes the full list (Kerf, being fixed); on real band-ring vertices, the rim merge moved 44 → 17 of ~190k (Zob). Mitre's "612 → 599" counted rounded points: retracted; first
     (-705.47,-491.22) tile 183, a cluster at (170.5,1254.9) tile 1). 0 must-stops; every later step clean (buildings 1,446 ·
     roster 1,446 + listings 196, 0 orphans · lamps · scene · trees · ground-ao · manifest: 880 files, 273.5 MB). Peak
     11.5 GB. The two ground passes are ~35 of the 38 minutes, and the second (ground-shore) does nothing for an inland
