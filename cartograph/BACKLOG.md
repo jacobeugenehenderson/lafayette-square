@@ -132,7 +132,9 @@ Start here. State at the restart:
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
-    (conformAndRefine step 1) stops it. Open, Class D, not ruled:
+    (conformAndRefine step 1) stops it. Measured (Truss, LS): all three re-clips mint (the flatten, the ease split, kerbLift's
+    splitAtCreases). RULED: node + pinch cut ONCE at planGroup's input, every layer (residual 1.13 km, all pastBound). The
+    crease split's ≈15 km (7.0 km same-group) is kerbLift's PRODUCER defect → Plumb, with M1. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
     reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
