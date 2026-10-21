@@ -81,6 +81,15 @@ Start here. State at the restart:
   run in the same pass) → if both reach the end with every gate green, a LOCAL bake of HPDM then LS into `public/baked`
   with the old slabs backed up first (reversible; nothing published) for Jacob's eye in the morning. Publish/Promote are
   Boz's + Ward's together, after Jacob's eye.
+- **REFUSAL CENSUS (Kerf; record-and-continue in a sandbox; files `.claude/worktrees/kerf/scratch/ground-budget/step7/census/`):**
+  · **HPDM** (8189c609, 38 min): ONE class left: the unowned-ped refusal (1,234 vertices, both ground passes; first
+    (-705.47,-491.22) tile 183, a cluster at (170.5,1254.9) tile 1). 0 must-stops; every later step clean (buildings 1,446 ·
+    roster 1,446 + listings 196, 0 orphans · lamps · scene · trees · ground-ao · manifest: 880 files, 273.5 MB). Peak
+    11.5 GB. The two ground passes are ~35 of the 38 minutes, and the second (ground-shore) does nothing for an inland
+    town (the median wrote nothing). Not yet including Mitre's rim build (c4064ab5).
+  · **PTown** (4713c478, before tonight's fixes): flatten ×13 → rim ×2 (fixed since) → the deformer memo hits V8's Map
+    cap (Kerf's bound 2a2579ff, reviewed, merges on the LS identity gate).
+  · LS, Huron: queued.
 - **LS REAPPLICATION PLAN (Jacob, 2026-10-21: "reapply all we can to LS"; Zob's Inputs census, read from
   `cartograph/intake-rows.mjs#intakeStatusForMap` + each town's `sources.json`):**
   · *No ruling, normal path:* declare LS's `historicDistricts` in its sources.json (today the name lives only inline in
