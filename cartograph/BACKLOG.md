@@ -503,7 +503,10 @@ block's land use and SITS at its street's height; land-use fill beyond the band 
 retired unmerged. BUILT (Kerf, kerf/ownership-once aa04e9d9 + 4e3244ff; Zob: passed to bake): owners and heights read off the pieces' struck
 depths, the ray gone entirely (both-sides read, alongBoundary, the leg channel, the rim's 'beyond' deleted). GATE NOT MET (Kerf, LS committed pour): 74
 old-unowned now held, but 62 NEW unowned (tiles 102, 125, 50, 81, 67); held heights move: same owner up to 0.80 m, changed owner
-(arc → run) up to 1.66 m. Being placed (Kerf: piece coverage; Zob: the height deltas). Triangles: bands 86.8% of 1.85M. On landing, BRIEF-the-height-code-owns-what-is-drawn and BRIEF-the-rim-is-cut-once are conformed or evicted.), slit ×12 (tile
+(arc → run) up to 1.66 m. PLACED (Kerf): the deformer's records are clean (11,880 pieces, 0
+no-owner); the 62 are PAINTED band ground the PIECES don't cover (14 at 2–9 mm, 48 at 1–21 cm): the painter's two cuts of one band,
+the same root as the owners check's RED since birth. Candidate (Boz → Zob premise): ONE cut, where paint IS the union of the pieces
+and unpieced band ground refuses by name. No widened lookup. Heights being judged by continuity (Zob). Triangles: bands 86.8% of 1.85M. On landing, BRIEF-the-height-code-owns-what-is-drawn and BRIEF-the-rim-is-cut-once are conformed or evicted.), slit ×12 (tile
 20), back edge ×3 (tile 15). HPDM lawn-land gate: 38 → 5 unowned (5 walk: back edge + one slit), held samples Δh 0. Truss's sub-lattice drop is REJECTED (Plumb, measured:
 the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). PLACED (Zob, LS tile 47): the needle is a depth-0 curb band: on a 1 mm bare
 ② edge (motorway-27), the curb level re-mints iA's vertex 1 mm off. BUILT (Plumb bc6bdf4f): offsetRingByRects#mergeGrid had merged a 1 mm bare
