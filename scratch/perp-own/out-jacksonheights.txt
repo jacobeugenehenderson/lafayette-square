@@ -1,0 +1,7 @@
+gate: free 71% load 4 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+jacksonheights · authoring slots 0 · tiles with pieces 720
+(1) refused 17 region(s) 5.043 m² · of them refusedPerp 0 region(s) 0.000 m²
+(2) leg extensions 0 (with painted walk 0) · painted 0.00 m²: in own-leg cells 0.00 · in the OTHER leg's cells 0.00 · in a third span's cells 0.00 · in no cell 0.00
+    extensions entering the other leg's cell: 0 (> 0.01 m²: 0) · area p50 NaN max 0.0000 m² · entering a third span's cell: 0
+    peak rss 1.71 GB
