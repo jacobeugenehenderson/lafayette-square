@@ -154,7 +154,9 @@ Start here. State at the restart:
     highway'; is a block closed by a surface bridge verge (94002fae's span) or a block/JR? Counted (Truss): 77 of 115
     verge blocks are verge ONLY through the span (LS 29/42 · HPDM 30/54 · Huron 18/19). BUILT df0b7a4f (truss/verge-span-depth,
     MERGED, Zob reviewed): Mississippi clean (1.716 → 0 m²); LS 96 m² verge → asphalt. claims-verge-bare can't see it (it
-    reads the baked shape and never judges where a span edge sits): Zob writes a live-producer row. HPDM Oakland mostly REMAINS (17.7 + 12.8 m²): a
+    reads the baked shape and never judges where a span edge sits): Zob's live-producer check merged b6d6dcdc
+    (claims-a-verge-span-edge-is-its-street-edge; LS/HPDM GREEN). Oakland's edge reads 3.8 m DEEPER: H's 12:1 taper of
+    motorway-link-21 into Oakland, i.e. road (Zob); disclosed, not failed. Open, minor: a 0.34 m run owns that 33.7 m edge. HPDM Oakland mostly REMAINS (17.7 + 12.8 m²): a
     REMAINDER, placed (Truss): Oakland's carriageway is CLEAR with the fix; what's left is I-64's MEDIAN (0.24–0.31 m between
     its two carriageways), r-highway-verge's own output. ❓ Jacob: draw a hairline median as verge? Three readings of
     'highway' (mint: gradeSeparated · painter/classifier: the motorway/trunk class · span: bridge/layer) put a gs:true primary
