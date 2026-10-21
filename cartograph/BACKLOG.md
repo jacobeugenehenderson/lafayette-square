@@ -122,7 +122,10 @@ Start here. State at the restart:
     owner per stretch, one predicate shared with the riser (pending Zob's premise pass) · M2 ×8, 0.16–0.61 mm cracks between
     flushTol (1 lattice) and ON_EDGE_M (5 mm): HELD; re-measured after M1 (Zob: likely caused by the
     taper base sitting off the block line). M1 BUILDING (Plumb): one exported bare-edge predicate shared by the riser (on
-    triangles) and the finder (on the noded stack); unmatched lifted|unlifted length refuses. Open, Class D, not ruled:
+    triangles) and the finder (on the noded stack); unmatched lifted|unlifted length refuses. STOPPED by Plumb (measured):
+    the FLATTEN's output isn't noded (it re-clips after nodeAcrossGroups): 139 km of once-used interior edges on LS, 3.6 km
+    after re-noding. RULED: the flatten nodes its output as its last step (Truss builds, Zob reviews), and Truss places the
+    ≈80 m of lifted|unlifted that still won't match. M1 lands on top. ⛔ Not a second conformity pass. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
     reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
