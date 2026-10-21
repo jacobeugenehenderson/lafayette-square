@@ -56,6 +56,7 @@ re-runs every step.
 - PTown: 9 coincident twin chains (one twin's side goes dark); sides facing no tile (the marina footways).
 - The Surveyor's asphalt drag resolves against `_v2FrontageEdges` while Measure moved to `_protoFrontageEdges`; both
   overlays skip silently when no frontage edge resolves.
+- Perpendicular legs whose walk never meets the kerb, so no cut: Huron 2, HPDM 13 (live norm). `claims-proto-stack-reads-authoring` still carries the dead grout/protoProducer flags.
 - Spur legs off their authored width; swap-mid-street RED; Huron bend row; PTown's 3 missing dead ends; LS highway-edge
   slivers; ② only warns on unresolved corner keys; `claims-band-is-one-ring` hardcodes 0.381; production LS rulemap 404.
 
@@ -72,7 +73,7 @@ the brief. Raw purchased files never go in git or anything public.
 **Triage:** the two blocks retired tonight to `cartograph/_archive/BACKLOG-final-macro-list-2026-07-16-RETIRED-2026-10-20.md` (the 07-16 macro list and the June–July NOW frontier) may hold unbuilt items; check each against the code before treating it as done or dropped.
 
 **Housekeeping:** the parked worktrees (tern-coast, tern-frame, tern-revet, meridian-browse, gantry-expwy,
-wellhead-joins, a0-deadend, compound-ease, classifier, hpdm-gate); `ny.mjs` terms; weather fallbacks (missing
+wellhead-joins, a0-deadend, classifier, hpdm-gate); unmerged branches loess/compound-ease (cd08f455, compound faces through hole subtraction; faces still go through SHARP: Huron 3, HPDM 8, JH 6) and loess/ls-scratch-pour (f39adb56, 6cd83c32, 37c3201b, d6cdabed); `ny.mjs` terms; weather fallbacks (missing
 visibility read as clear).
 
 **JH, after its extent is set up:** pre-authoring from NYC Planimetrics at the authored rung
