@@ -197,6 +197,9 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
     2.25 m², Huron tile 105 lawn 4.99 m², HPDM tile 34's 9 wrong-owner seams. Cause not established; owner bandPiecesOfTile.
     PLACED (Zob): RED since birth (dac3525d, improved since), mostly INTERIOR (the rim lead is refuted), and DISJOINT
     from HPDM's #40 (nearest 152 m). Not Thursday. Start, when a builder is free: HPDM tile 181 walk, Huron tile 105 lawn.
+    Same producer, a second label defect (Zob, measured): at a JR's sharp town↔highway corner, the town walk's mitred end
+    takes the `__highway__` span's label (LS tiles 33/76, HPDM tile 20; 8 sites). No paint or height effect (the deformer
+    owns those points by town rays; Δh ≤ 0.5 mm), but owner readers see it. claims-verge-bare, now judged by owner, reads it RED.
   · LS #39 M1 in the harness (Plumb, plumb/kerb-owner): one edgesAcross reader shared by the finder and the riser; the 6 M1 +
     2 wedge-born M2 are gone. splitAtCreases cuts each lifted polygon alone and never the road (6,365 road T-junctions,
     1,449 cross-group misses): Plumb fixes it FIRST, one cut through every polygon on the line. RULED: the rim is named
