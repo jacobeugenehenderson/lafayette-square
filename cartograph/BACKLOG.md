@@ -91,7 +91,12 @@ Start here. State at the restart:
     cap (Kerf's bound 2a2579ff, reviewed, merges on the LS identity gate).
   · **LS** (7ec93e8e, 15 min, ONE ground pass now: "SKIPPED (inland: no shore)"): TWO classes, both in ground: #39 the
     kerb STEP with no face and no taper (40 m; 6 group pairs incl. verge|stripe at (138, 423), vacant/underived/commercial/
-    sidewalk|asphalt; Zob placed it: kerbLift.mjs#riserFromEdges, rule 8bd2751f; paint vs finder not yet decided) and #40
+    sidewalk|asphalt; Zob placed it: kerbLift.mjs#riserFromEdges, rule 8bd2751f). Zob's three questions, answered by Kerf on
+    Zob's capture (metre-rounded points, ±2.5 m samples): 5 of the 6 pairs (vacant/underived/verge/commercial/sidewalk|asphalt)
+    are ON a block-ring edge AND listed curbless, with no curb inboard, so the finder found them and the TAPER still didn't
+    flatten them: neither of Zob's (a)/(b); cause not established, kerbLift's taperRegions is the place to look. verge|stripe
+    differs: 46 of 48 samples have the road side INSIDE the block too, so it's paint: a stripe/verge overlap inside the
+    block, Zob's (a). Owners: the kerb lift (Sill/Swale lineage) for the five; the verge/junction-residual paint for the one. and #40
     unowned ped vertices (exact count in lafayette-square.census.json). Flatten and the deformer refuse nothing; every later
     step clean through manifest.
   · Merged tonight after the census began: the memo bound (1e6958f2), the shore-pass gate + exact unowned list (b88f7245),
