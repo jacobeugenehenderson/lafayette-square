@@ -25,6 +25,9 @@ listings only and prints "hasn't published its buildings yet", so HPDM's registe
 listed places on the partner's domain before the meeting; the exposure has been live since 07-07. Fast-track the
 withheld roster instead. Taking it down stays a legitimate choice if you weigh the terms more heavily. (2) the
 re-bake + Publish + Promote (Boz + Ward), on the Thursday path.
+⚠️ Possibly a second exposure (Truss, read): `src/data/buildings.json` carries `year_built` on 1,013 of LS's 1,082
+buildings, read by the old LS player on lafayette-square.com (PlaceCard, LafayetteScene, foundationGeometry). Its source
+is not established; Zob is checking. If it's the City assessor, the same terms apply.
 
 **🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
 Start here. State at the restart:
@@ -75,6 +78,9 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
+- bake-content's header says an overture town "PRESERVES listings.json"; the code produces and writes them, and `claims-an-external-base-survives-a-bake` pins that. Rot or an intent change, not established (Truss). The `producer !== 'osm'` census line misdescribes a hand-curated town.
+- LS's `content/listings.json` meta says `count: 87` but holds 86 listings (Truss).
+- serve.js's content step doesn't list `listings.json` as an input, so editing a hand-curated town's listings won't re-run its roster (Truss).
 - `bake-shore-median.mjs` reads its shape from the SERVED path (`public/baked/<look>/shape.json`) even with `--out=`, so a scratch run traces the served shape (Kerf, read in source). Probably: read the shape beside `--out`. Small; not built.
 - **Design call for Jacob:** a coastal Bake runs ground (--shore=pending) → shore-median → ground-shore, so TWO full ground passes (PTown ~87 + ~82 min, 10-11 timings). The median needs only the new shape.json, so shape → median → ONE ground pass would save a pass (Kerf). Moot if the median retires with the tern merge (7f4531d8, whose premise, the lidar coast, isn't on integration).
 - Flatten's noding inserts thousands of vertices (LS 8,850 · HPDM 16,552; top pairs LS crosswalk→asphalt 1,443 · crosswalk→curb 1,377 · HPDM sidewalk→asphalt 2,208): producers draw shared lines twice. `ground.json#flatten.noded` is the census to drive to 0, producer by producer (Truss 2f50e565; Zob).
