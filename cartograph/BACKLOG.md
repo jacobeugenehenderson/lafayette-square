@@ -150,7 +150,7 @@ Start here. State at the restart:
     REMAINDER, placed (Truss): Oakland's carriageway is CLEAR with the fix; what's left is I-64's MEDIAN (0.24–0.31 m between
     its two carriageways), r-highway-verge's own output. ❓ Jacob: draw a hairline median as verge? Three readings of
     'highway' (mint: gradeSeparated · painter/classifier: the motorway/trunk class · span: bridge/layer) put a gs:true primary
-    in 7 HPDM verges; it folds into the class question. LS: 23 of 26 unchanged span-verges are explained; #90 isn't yet.
+    in 7 HPDM verges; it folds into the class question. LS: all 26 unchanged span-verges placed (19 outside the disc · 4 with the span edge outside · 3 under H paint, #90 incl.).
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
