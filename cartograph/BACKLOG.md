@@ -138,7 +138,12 @@ Start here. State at the restart:
   · claims-the-bands-are-held-by-their-owners is RED in HPDM, Huron and LS, PRE-EXISTING (Zob: identical at b50d4b3b and
     with fix B). The band pieces don't exactly tile the painted bands: mostly sub-cm² lattice residue, plus HPDM tile 181 walk
     2.25 m², Huron tile 105 lawn 4.99 m², HPDM tile 34's 9 wrong-owner seams. Cause not established; owner bandPiecesOfTile.
-    Next (Zob): rim vs non-rim split · last GREEN · overlap with #40. Open, Class D, not ruled:
+    Next (Zob): rim vs non-rim split · last GREEN · overlap with #40.
+  · LS #39 M1 in the harness (Plumb, plumb/kerb-owner): one edgesAcross reader shared by the finder and the riser; the 6 M1 +
+    2 wedge-born M2 are gone. splitAtCreases cuts each lifted polygon alone and never the road (6,365 road T-junctions,
+    1,449 cross-group misses): Plumb fixes it FIRST, one cut through every polygon on the line. RULED: the rim is named
+    POSITIVELY, never by absence (3,068 m of same-group edges would trench); within-group noding is asked of Truss/Zob.
+    rimRings ≠ the stencil's once-used edges (2.87 vs 2.66 km): a finding for the rim brief (B). Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
     reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
