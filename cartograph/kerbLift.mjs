@@ -221,7 +221,15 @@ export function stretchLines(edges) {
   edges.forEach((e, i) => { if (used[i]) return; for (const P of [e.A, e.B]) if (at.get(k2(P)).length !== 2) { chains.push(walk(i, P)); return } })
   edges.forEach((e, i) => { if (!used[i]) chains.push(walk(i, e.A)) })        // closed loops
   const off = (Q, a, b) => { const d = [b[0] - a[0], b[1] - a[1]], L = Math.hypot(d[0], d[1]); return L ? Math.abs((Q[0] - a[0]) * d[1] - (Q[1] - a[1]) * d[0]) / L : Math.hypot(Q[0] - a[0], Q[1] - a[1]) }
-  for (const { pts, ids } of chains) {
+  for (const chain of chains) {
+    let { pts, ids } = chain
+    // a CLOSED stretch (a block curbless all round) has no ends: it starts at its sharpest turn, a vertex it keeps anyway,
+    // so the loop's seam is never a vertex the bound would have dropped
+    if (pts.length > 3 && k2(pts[0]) === k2(pts[pts.length - 1])) {
+      const n = pts.length - 1, turn = (i) => { const a = pts[(i + n - 1) % n], b = pts[i], c = pts[(i + 1) % n], u = [b[0] - a[0], b[1] - a[1]], v = [c[0] - b[0], c[1] - b[1]]
+        return Math.abs(Math.atan2(u[0] * v[1] - u[1] * v[0], u[0] * v[0] + u[1] * v[1])) }
+      let best = 0; for (let i = 1; i < n; i++) if (turn(i) > turn(best)) best = i
+      pts = [...pts.slice(best, n), ...pts.slice(0, best), pts[best]]; ids = [...ids.slice(best), ...ids.slice(0, best)] }
     const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1
     const dp = (a, b) => { let m = -1, mi = -1; for (let i = a + 1; i < b; i++) { const d = off(pts[i], pts[a], pts[b]); if (d > m) { m = d; mi = i } }
       if (m > BOUND) { keep[mi] = 1; dp(a, mi); dp(mi, b) } }

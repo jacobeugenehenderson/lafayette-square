@@ -55,7 +55,10 @@ const rows = async (TG, DM, RG, BAKE) => {
   const key = (v) => Math.round(v[0] * CLIP_SCALE) + ',' + Math.round(v[1] * CLIP_SCALE), Ts = [W.tile, ...F.outward.map(x => x.tile)]
   const rimOf = (t) => t.ring.map((a, k) => t.ringOwner[k]?.kind === 'rim' ? [a, t.ring[(k + 1) % t.ring.length]] : null).filter(Boolean), rims = Ts.flatMap(rimOf)
   const onAnyRim = (v) => rims.some(([a, b]) => segHolds(v, a, b)), own = new Set()
-  for (const t of Ts) { const q = paint({ tile: t, blockCustoms: {}, cornerOverrides: {} }); for (const r of [...flat(q.curb), ...flat(q.Wacc), ...flat(q.tlByLu), ...flat(q.luByLu), ...flat(q.curbCut)]) for (const v of r) own.add(key(v)) }
+  let rimEdged = 0, entries = 0, mintedNone = 0
+  for (const t of Ts) { const q = paint({ tile: t, blockCustoms: {}, cornerOverrides: {} })
+    if (t.ringOwner?.some(o => o?.kind === 'rim')) { rimEdged++; if (q.rim?.ring?.length >= 3) { entries++; if (!q.rim.added) mintedNone++ } }
+    for (const r of [...flat(q.curb), ...flat(q.Wacc), ...flat(q.tlByLu), ...flat(q.luByLu), ...flat(q.curbCut)]) for (const v of r) own.add(key(v)) }
   const lw = console.log, ww = console.warn; console.log = () => {}; console.warn = () => {}
   let SO; try { SO = TG.sectionOpen(Ts, F.cw, { outer: 'LU', inner: 'SW' }, F.stencil, {}, null, null, {}, { stampedWith: F.stencil }) } finally { console.log = lw; console.warn = ww }
   const finRim = [...SO.curb, ...SO.curbCut, ...SO.sidewalk, ...Object.values(SO.treelawnByLu || {}).flat(), ...Object.values(SO.luByClass || {}).flat()].flat().filter(onAnyRim), minted = finRim.filter(v => !own.has(key(v))).length
@@ -67,7 +70,9 @@ const rows = async (TG, DM, RG, BAKE) => {
     && /const cutOnce = new Set\(\[\.\.\.\[\.\.\.byMaterial\.values\(\)\]\.flat\(\), \.\.\.\[\.\.\.byFaceUse\.values\(\)\]\.flat\(\)\]\)\n  \/\/ Non-street ribbons/.test(BAKE.replace(/\n  \/\/ ⭐ EVERYTHING ABOVE[^\n]*\n  \/\/[^\n]*\n/, '\n'))
   // 2 — the deformer on tile 55's own paint, its point past-the-rim station
   const S = F.slice, s = paint(S), tiles = []; tiles[S.ti] = S.tile; for (let i = 0; i < S.ti; i++) tiles[i] ||= {}
-  const D = buildDeformer({ town: F.scene, tiles, ink: [], raw: () => 0, line: { step: 1, heightAt: () => 0 }, stencil: F.stencil, limits: F.limits, legs: [{ tile: S.ti, perp: S.legs }],
+  // the tile's own rim entry, as the bake hands every rim-edged tile's to the deformer (`nodeRimWithPaint`, minted or not)
+  const r2 = []; r2[S.ti] = s.rim
+  const D = buildDeformer({ town: F.scene, tiles, ink: [], raw: () => 0, line: { step: 1, heightAt: () => 0 }, stencil: F.stencil, limits: F.limits, legs: [{ tile: S.ti, perp: S.legs }], rims: r2,
     bands: { curb: [...flat(s.curb), ...flat(s.curbCut)], lawn: flat(s.tlByLu), walk: flat(s.Wacc) } })
   const [px, pz] = S.point, inPaint = D._inClass('walk', px, pz) || D._inClass('lawn', px, pz) || D._inClass('curb', px, pz)
   // 5 — tile 49 through the finish: its paint's rim vertices all on the noded ring, and the deformer, given that rim, owns the point
@@ -111,6 +116,8 @@ const rows = async (TG, DM, RG, BAKE) => {
     [`(F) bake-ground.js passes cutOnce (①'s items) exactly when the tiles were stamped with this stencil`, wired],
     [`(C) the synthetic block meets the chord at ${onChord.length} point(s)`, onChord.length >= 2],
     [`(C) every one of them is a vertex of the tile ring`, onChord.every(v => keys.has(v.join()))],
+    // (F) the rim's positive name: EVERY rim-edged tile's paint carries a rim entry, minted or not (0c65681c)
+    [`(F) every rim-edged tile carries a rim entry (${entries} of ${rimEdged}; ${mintedNone} minted nothing)`, rimEdged > 0 && entries === rimEdged && mintedNone > 0],
   ]
 }
 const self = process.argv.includes('--selftest')
@@ -125,6 +132,8 @@ const g = "globalThis.__RIM_MUT"
 const T5 = '  if (!minted.length) return { ring, owners, added: 0 }'
 const T9 = '  nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)'
 const R9 = `  if (${g} !== 'nopaint') nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)`
+const T10 = '  if (!minted.length) return { ring: st.ring, owners: st.ringOwner, block: st.iA || [], added: 0, far: 0, farMax: 0 }'
+const R10 = `  if (!minted.length) return ${g} === 'nullrim' ? null : { ring: st.ring, owners: st.ringOwner, block: st.iA || [], added: 0, far: 0, farMax: 0 }`
 const T8 = 'const reclip = hasStencil && !sameStamp(stampedWith, stencil)'
 const R8 = `const reclip = hasStencil && (${g} === 'reclip' || !sameStamp(stampedWith, stencil))`
 const G1 = '      if (cutOnce?.has(item)) { out.push(item); kept++; continue }', H1 = `      if (${g} !== 'clipall' && cutOnce?.has(item)) { out.push(item); kept++; continue }`
@@ -141,8 +150,8 @@ const RE_LIB = /from '\.\/([^']+)'/g, RE_SRC = /from '\.\.\/([^']+)'/g, RE_DLIB 
 const toLib = (_, m) => `from '${LIB(m)}'`, toSrc = (_, m) => `from '${SRC(m)}'`
 const mutantTG = () => { const tgSrc = readFileSync(TGF, 'utf8')
   const f = join(mkdtempSync(join(tmpdir(), 'rim-once-tg-')), 'tileGround.js')
-  for (const a of [T5, T8, T9]) must(tgSrc, a)
-  writeFileSync(f, tgSrc.replace(T5, R5).replace(T9, R9).replace(T8, R8).replace(RE_PKG, TO_PKG).replace(RE_LIB, toLib).replace(RE_SRC, toSrc))
+  for (const a of [T5, T8, T9, T10]) must(tgSrc, a)
+  writeFileSync(f, tgSrc.replace(T5, R5).replace(T9, R9).replace(T8, R8).replace(T10, R10).replace(RE_PKG, TO_PKG).replace(RE_LIB, toLib).replace(RE_SRC, toSrc))
   return pathToFileURL(f).href }
 const mutantRG = () => { const rgSrc = readFileSync(RGF, 'utf8')
   const g3 = join(mkdtempSync(join(tmpdir(), 'rim-once-rg-')), 'ribbonsGeometry.js')
@@ -160,8 +169,11 @@ if (self) { const tgCopy = mutantTG()
   const BAKE0 = readFileSync(BAKEF, 'utf8'); must(BAKE0, B1)
   const bakeOf = () => globalThis.__RIM_MUT === 'nocutonce' ? BAKE0.replace(B1, B2) : BAKE0
   let bad = 0
-  for (const [k, name, row] of [['reclip', 'a stamped shape clipped to the stencil again in the finish', 1], ['stencil', "beyond read off the stencil's chord", 3], ['norims', "the painter's noded rim dropped from the deformer (tile 49)", 6], ['nopaint', "the painted pieces not noded with the rim crossings (B2, tile 242)", 8], ['unshared', 'the block\'s rim crossings not shared with the ring', 13], ['clipall', "the bake's stencil clip cutting ①'s paint again (cutOnce ignored)", 10], ['nocutonce', 'bake-ground.js passing no cutOnce to its stencil clip', 11]]) {
-    globalThis.__RIM_MUT = k; const R = await rows(await loadTG(tgCopy), await loadDEF(dfCopy), await loadRG(rgCopy), bakeOf()), red = !R[row][1]
+  for (const [k, name, row] of [['reclip', 'a stamped shape clipped to the stencil again in the finish', 1], ['stencil', "beyond read off the stencil's chord", 3], ['norims', "the painter's noded rim dropped from the deformer (tile 49)", 6], ['nullrim', 'a rim-edged tile that mints nothing given no rim entry (the painter before 0c65681c)', 14], ['nopaint', "the painted pieces not noded with the rim crossings (B2, tile 242)", 8], ['unshared', 'the block\'s rim crossings not shared with the ring', 13], ['clipall', "the bake's stencil clip cutting ①'s paint again (cutOnce ignored)", 10], ['nocutonce', 'bake-ground.js passing no cutOnce to its stencil clip', 11]]) {
+    // a mutant the deformer REFUSES (a rim-edged tile with no rim entry, groundDeformer.mjs) is caught as loudly as a RED row
+    globalThis.__RIM_MUT = k; let R, red
+    try { R = await rows(await loadTG(tgCopy), await loadDEF(dfCopy), await loadRG(rgCopy), bakeOf()); red = !R[row][1] }
+    catch (e) { if (!/gave it no rim entry/.test(e.message)) throw e; R = { [row]: [`refused by the deformer: ${e.message.slice(0, 90)}`] }; red = true }
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'} (${R[row][0]})`) }
   globalThis.__RIM_MUT = null; const R0 = await rows(await loadTG(tgCopy), await loadDEF(dfCopy), await loadRG(rgCopy), bakeOf()); if (!R0.every(r => r[1])) { bad++; console.log('  ⛔ the mutated copies, switched off, are not GREEN — the mutation changed more than its switch') }
   process.exit(bad ? 1 : 0) }

@@ -4645,7 +4645,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // was stamped. Strike off the first, CUT with the second: a rim band is a clean cut through a
   // finished band, never a band that turned a corner to follow the rim.
   const iA = st.iaFull || [], stamps = st.iaStamp || [], runs = st.runs || []
-  const empty = { Wacc: [], tlByLu: {}, luByLu: {}, curb: [] }
+  // ⭐ a tile that paints nothing still names its rim (`nodeRimWithPaint`, nothing minted): every rim-edged tile carries an entry
+  const emptyRim = nodeRimWithPaint(st, [], () => {})
+  const empty = { Wacc: [], tlByLu: {}, luByLu: {}, curb: [], ...(emptyRim ? { rim: emptyRim } : {}) }
   if (!iA.length) return empty
   // ⛔ A CUT THAT LEFT NO BLOCK PAINTS NOTHING. The disc can cut a tile's block away entirely and keep the tile (its ring
   // still meets the disc); `inBlock` used to read an EMPTY `iA` as "no clip" and struck the whole uncut contour — on
@@ -4864,7 +4866,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // shape"`: the drawing has no holes). A MATERIAL state, never a missing one.
   // ⭐ the open field is the REGION ITSELF (`curbOuter`), never an offset of it by 0: the offset's lattice merge drops a sliver
   // ring, and the drop is a hole in the ground (measured on HPDM's verge tile 36: 0.30 m², the sky through it)
-  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: rekeyByPiece(st, { [key]: inBlock(curbOuter) }), curb: [], capped, openField: true, feArcs, feRepeat }
+  if (WB < cw) {
+    const luByLu = rekeyByPiece(st, { [key]: inBlock(curbOuter) })
+    // ⭐ an open field on the rim names its rim too (`nodeRimWithPaint`): every rim-edged tile carries an entry
+    const rim = nodeRimWithPaint(st, Object.values(luByLu).flat(), (node) => { for (const lu of Object.keys(luByLu)) luByLu[lu] = luByLu[lu].map(node) })
+    return { Wacc: [], tlByLu: {}, luByLu, curb: [], capped, openField: true, feArcs, feRepeat, ...(rim ? { rim } : {}) }
+  }
 
   // ── THE ARRANGEMENT, PER POINT. Two strips always — they SWAP, they never collapse (`§3.1`) —
   // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the
