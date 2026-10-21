@@ -66,16 +66,23 @@ export function stripComments(src, shell = false) {
  * quotes (`/from '([^']+)'/`) opened a "string" that swallowed what followed, so a later comment's `from 'x'` was read as
  * an import; and an escaped `\/\//` inside one read as `//`, a comment, which DROPS the rest of the line — code included.
  */
+// ⭐ A TEMPLATE'S `${…}` IS CODE, and may hold a template of its own (Zob, 2026-10-21): read flat, the inner backtick closed the
+// outer one and an apostrophe after it opened a "string" that swallowed the code below, so a loader's import() read as
+// unreadable and its check left `npm test` (claims-verge-bare's report line). `exprs` holds each open `${`'s brace depth.
 function lex(src) {
   let stripped = '', blank = '', q = null, prev = ''
+  const exprs = []
   const put = (keep, shown = keep) => { stripped += keep; blank += shown }
   for (let i = 0; i < src.length; i++) {
     const c = src[i], n = src[i + 1]
     if (q) {
       if (c === '\\') { put(c + (n ?? ''), n === undefined ? ' ' : '  '); i++; continue }
+      if (q === '`' && c === '$' && n === '{') { q = null; exprs.push(0); put('${'); i++; prev = '{'; continue }
       if (c === q) { q = null; put(c); prev = c; continue }
       put(c, c === '\n' ? '\n' : ' '); continue
     }
+    if (exprs.length && c === '{') exprs[exprs.length - 1]++
+    if (exprs.length && c === '}') { if (exprs[exprs.length - 1] === 0) { exprs.pop(); q = '`'; put(c); prev = c; continue } exprs[exprs.length - 1]-- }
     if (c === '"' || c === "'" || c === '`') { q = c; put(c); prev = c; continue }
     if (c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') i++; i--; continue }
     if (c === '/' && n === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i++; continue }
@@ -471,6 +478,10 @@ export function importSelfTest() {
     ["const k = /'/\n// fetch(u) — prose\nexport const n = 1", (r) => r.tier === 'safe', "a comment's fetch( after a quoted regex is not a call"],
     ["const re = /https?:\\/\\//; fetch(u)", (r) => r.tier === 'live', 'an escaped // inside a regex does not comment out the fetch( after it'],
     ["const h = a / b // it's half\n// fetch(u) — prose\nexport const n = 1", (r) => r.tier === 'safe', 'a division is not a regex (its comment is still a comment)'],
+    // ⭐ a template nested in `${…}` closes only itself: read flat, the apostrophe inside it opened a "string", so a comment
+    //    below read as code (and a loader's import() as unreadable: claims-verge-bare left npm test, silently — the row in
+    //    `cases` below). Both rows go RED on the flat reader.
+    ["const a = `x ${b ? `it's ${c ? `d's` : 'e'}` : ''} z`\n// fetch(u) — prose\nexport const n = 1", (r) => r.tier === 'safe', 'two levels of nested templates, then a comment: the comment is still a comment'],
   ]
   for (const [src, ok, what] of lexCases) {
     const r = classifyVirtual({ 'checks/claims-planted.mjs': src }, 'checks/claims-planted.mjs')
@@ -481,6 +492,8 @@ export function importSelfTest() {
   const cases = [
     [root + "await import(join(ROOT, 'cartograph', 'x.mjs'))", 'safe'],
     [root + "await import(pathToFileURL(join(ROOT, 'cartograph/x.mjs')).href)", 'safe'],
+    // ⭐ claims-verge-bare's shape (2026-10-21): an apostrophe in a template nested in `${…}`, then the one-parameter loader
+    [root + "const say = (j) => console.log(`── ${j.n}${j.bad ? ` · ⛔ ${j.bad} have a highway's curb` : ' bare'} ✅`)\nconst load = async (u) => import(u)\nawait load(pathToFileURL(join(ROOT, 'cartograph/x.mjs')).href)", 'safe'],
     ["import { ROOT } from './_scenes.mjs'\nimport { join } from 'node:path'\nawait import(join(ROOT, 'cartograph/x.mjs'))", 'safe'],
     ["const MOD = '../cartograph/x.mjs'\nawait import(MOD)", 'safe'],
     ["console.log(`load it with import() behind a guard; import(s) of one town`)", 'safe'],
