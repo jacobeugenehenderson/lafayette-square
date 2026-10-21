@@ -1211,7 +1211,11 @@ export function nodeThePlane(flattened) {
   const keys = [...flattened.keys()]
   const noded = nodeAcrossGroups(keys.map(k => ({ groupKey: k, items: flattened.get(k) })))
   keys.forEach((k, g) => flattened.set(k, splitAtPinches(noded[g].items, k, flattened.subLattice)))
-  flattened.noded = { inserted: noded.inserted, pairs: noded.pairs, pastBound: noded.pastBound }
+  // ground.json says what this did (Zob, 2026-10-21): every layer took part, insert-only (water among them, where a town has
+  // it), and the loops cut off at a pinch are paint REMOVED below the lattice, under the bow-tie's rule (subLattice[group].pinches)
+  const pin = keys.flatMap(k => flattened.subLattice[k]?.pinches || [])
+  flattened.noded = { layers: keys, insertOnly: true, inserted: noded.inserted, pairs: noded.pairs, pastBound: noded.pastBound,
+    removedBelowLattice: { rule: 'bow-tie', loops: pin.length, m2: +pin.reduce((t, r) => t + r.m2, 0).toFixed(9), widestMm: Math.max(0, ...pin.map(r => r.widthMm)) } }
   return flattened
 }
 

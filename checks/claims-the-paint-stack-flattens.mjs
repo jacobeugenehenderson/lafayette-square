@@ -125,6 +125,8 @@ async function synthetic() {
   const live = [...flat.values()].reduce((t, items) => t + pinchesIn(items), 0)
   rows.push([`(5) the plane pinches nowhere below the lattice${live ? ` — ${live} pinch(es)` : ''}`, live === 0])
   rows.push(['(5) the cut needle is recorded (ground.json#flatten.subLattice[group].pinches)', !!(flat.subLattice.a?.pinches?.length && flat.subLattice.b?.pinches?.length)])
+  rows.push(['(5) ground.json states it: every layer, insert-only, and the paint removed below the lattice by the bow-tie rule',
+    flat.noded?.insertOnly === true && ['a', 'b', 'c'].every(k => flat.noded.layers.includes(k)) && flat.noded.removedBelowLattice?.rule === 'bow-tie' && flat.noded.removedBelowLattice.loops === 2])
   // the mutant: the same plane noded but never cut (`nodeThePlane` without `splitAtPinches`) must read as pinching
   const unsplit = nodeAcrossGroups(stack.map(e => ({ ...e, items: e.items.map(it => ({ outer: it.outer, holes: [] })) })))
   rows.push(['(5) mutant: a ring with a sub-lattice needle reaches the noder unsplit → RED', unsplit.reduce((t, e) => t + pinchesIn(e.items), 0) > 0])
