@@ -120,6 +120,7 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
+- Tern's chained window (merged 336a9824) is a CORRECTION (Zob, measured on Mitre's dumps): every moved height is inside the disc (LS 108 · HPDM 686 · Huron 1,349), and of the 20 largest per town 41 are corrections, 1 a new error (LS (702.47, 23.90), 2.7 cm) and 18 indirect (≤ 0.022 m). The big ones (LS 1.05 m) were the rim class: the old window let 'beyond' swallow the band's entry. Optional guard against an unbounded chain: end a chain where `_inClass` at the gap's midpoint reads lot.
 - bake-content's header says an overture town "PRESERVES listings.json"; the code produces and writes them, and `claims-an-external-base-survives-a-bake` pins that. Rot or an intent change, not established (Truss). The `producer !== 'osm'` census line misdescribes a hand-curated town.
 - LS's `content/listings.json` meta says `count: 87` but holds 86 listings (Truss).
 - serve.js's content step doesn't list `listings.json` as an input, so editing a hand-curated town's listings won't re-run its roster (Truss).
