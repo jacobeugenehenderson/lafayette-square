@@ -51,6 +51,7 @@ import { join } from 'path'
 import { tessellateAdaptive } from '../cartograph/derive.js'
 import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 import { LATTICE_M } from '../src/lib/lattice.js'
+import { ribbonsPath } from './_scenes.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=').slice(1).join('=')
@@ -61,7 +62,7 @@ const clean = join(ROOT, 'cartograph/data', scene, 'clean')
 const paths = {
   before: arg('before') || join(clean, 'skeleton.json'),
   after: arg('after'),
-  ribbons: arg('ribbons') || join(clean, 'ribbons.json'),
+  ribbons: arg('ribbons') || join(ROOT, ribbonsPath(scene)),   // the town's DECLARED ribbons (cartograph/scene.js#ribbonsPathOf), never assumed to be clean/
   design: arg('design') || join(ROOT, 'public/looks', scene, 'design.json'),
   shape: arg('shape') || join(ROOT, 'public/baked', scene, 'shape.json'),
 }
