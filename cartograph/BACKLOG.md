@@ -215,7 +215,11 @@ Start here. State at the restart:
     the mitre on the curbless POLYLINE (ruled). Both BUILT (Plumb, plumb/kerb-owner checkpoints): converging points
     191 → 71, all split-made 370 → 242; heights identical within one lattice rounding away from bends (gate restated). Only
     LS has a kerb (HPDM/Huron/PTown h = 0), so this tranche is LS's. STOPPED at 71; follow-up (named): an exact arrangement
-    for the split, since Clipper invents crossings within half a step. Next: #39 cleared? Then landable, baked with Truss's.
+    for the split, since Clipper invents crossings within half a step. ⭐ LS #39 ON THE WHOLE STACK (Plumb, rebased on Truss's
+    9ee9e327, refinement off): 40 m → 1.03 m; M1 0, verge|stripe 0. Left: one crease-born crack (0.18 mm, 0.95 m) and the
+    ring-49 finger tip (4 mm, narrow block). ❓ Jacob: those stay a refusal tonight; a ridge rule, ON_EDGE_M's derived
+    reach, or a listed allowance at flushTol? The rim by identity: 4,464 m; 185 m on the stencil in NO rim ring (42 of 148
+    rimRings entries carry one): counted, not refused, and placed by Zob before M1 lands.
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
