@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 90. Never in a default run.
+## ⛔ live — 91. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -40,6 +40,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-look-link-opens-that-town.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-missing-height-fails-loudly.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-a-paused-town-draws-nothing.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
+| `checks/claims-a-perpendicular-landing-runs-straight-on.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-a-production-town-plays-the-player-promote-pinned.mjs` | outbound | imports a network module · imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
 | `checks/claims-a-reimport-keeps-curation.mjs` | unreadable | deletes files · copies/renames files · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-salon-save-keeps-provenance.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
@@ -152,7 +153,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 311. This is `npm test`.
+## safe — 312. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -211,6 +212,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a16-materials-write.mjs` | A16 GATE — "does a materials flip invent authoring, and did the resolver fix |
 | `checks/claims-akas-never-merge-species.mjs` | species.mjs — DO COLLOQUIAL NAMES ROUTE WITHOUT MERGING TWO SPECIES INTO ONE? |
 | `checks/claims-alley-stub-pairs.mjs` | ⭐⭐⭐ IS "BRIDGE THE ALLEY ACROSS A JUNCTION" A RULE, OR A SPECIAL CASE? |
+| `checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs` | pour.mjs — WHEN A TOWN'S SKELETON IS RE-POURED, DOES EVERY KEY |
 | `checks/claims-an-unanswered-axis-matches-nothing.mjs` | nothing.mjs — WHEN A SPECIES HAS NO ANSWER ON AN AXIS, DOES ANY PART "MATCH" IT? |
 | `checks/claims-anchors-follow-the-placements.mjs` | `tree-anchors.json` keys to its own slab’s placements. |
 | `checks/claims-anchors-know-their-terrain.mjs` | terrain.mjs — DO GROUND ANCHORS KNOW WHICH HEIGHTFIELD THEY CAME FROM? |
