@@ -14,10 +14,24 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 > the revetment · no splitting over terrain · a smaller ground). ⛔ **Bake, then look.** A full check board never gates a
 > bake; a check pins down what was seen. The rulings behind these items are in `cartograph/STYLE-GUIDE.md`.
 
-**Tonight's bakes** (integration 63256183, Lath, on Jacob's approval): LS ground (+AO +manifest; never `clean/`) →
-HPDM derive + bake (re-freezes the curb-cut norm, frozen as "none" before cba287c4) → Huron 3-step shore → PTown
-re-pour, derive, bake. Then Jacob looks. CLI bakes skip `bake-reads.json`/`bake-timings.json`, so the next server Bake
-re-runs every step.
+**🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
+Start here. State at the restart:
+- **Bakes:** nothing new is served. LS refused at flatten; HPDM's derive refused (classless skeleton); Huron's 3-step
+  shore was stopped in step 1 before writing (verify: `public/baked/huron/` mtimes still 2026-10-11); PTown not started.
+  JH dropped (no extent yet).
+- **Next, in order:**
+  1. **Perpendicular-corner ownership:** a FRESH agent on `docs/briefs/BRIEF-perpendicular-leg-ownership.md`. Jacob's
+     pick for tonight. It holds the heavy slot when it pours.
+  2. **LS refusal:** bisect a3426465 → integration with a harness that stops at `flattenPaintStack` (30 s, 0.9 GB per
+     step), never writing served files or `clean/`. Lath's log was in a session scratchpad, now gone; the error text is
+     below.
+  3. **Huron, then PTown bakes:** the CLI replay of the server route's order (bake-ground → … → ground-ao → manifest).
+     Bakes need Jacob's approval in the baking session (a permission prompt).
+- ⛔ **Not tonight:** HPDM skeleton re-pour (authoring key parity first) · step 7 (repaints; Jacob's eye) · the long
+  check board (`feedback_bake_then_look_checks_dont_gate_bakes`).
+- The day's work is on `integration/2026-10-20` only. Jacob rejected merging it into the main checkout
+  (`docs/conformance-2026-09-21`) on 10-20, so ask him first. Nothing is pushed. The dev server runs the main
+  checkout's code.
 
 **LS's ground bake REFUSED on 63256183** (Lath, 2026-10-20; nothing written, `clean/` unchanged by sha): `[flatten] face:recreation: a hole below the lattice (3 vertices) that no painted ring holds by its probe, yet a ring of 47 vertices meets it, at (-703.5, -582.1)`, from `bakeGround` → `flattenPaintStack` → `itemsByMembership`. Cause not established; bisect a3426465 → 63256183 with a harness that stops at flatten (30 s, 0.9 GB per step).
 
