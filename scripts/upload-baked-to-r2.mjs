@@ -67,6 +67,7 @@ import { promisify } from 'node:util'
 import { createHash } from 'node:crypto'
 import { HASHED, CACHE, contentName, shaOf } from '../src/lib/slabNames.js'
 import { EXCLUDE, notPublished } from './slab-publish-rule.mjs'
+import { slabNameMismatches } from './slab-name-rule.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -126,31 +127,6 @@ const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
 })
 
 const sha256 = (abs) => createHash('sha256').update(readFileSync(abs)).digest('hex')
-
-// ⛔ A SLAB CARRIES ITS NAME INSIDE ITS FILES, and the player keys every URL by it: a slab moved or copied under another
-// name keeps the old stamp and reads `baked/<old>/…` (for LS, the live site's prod keys; HPDM's rename, 2026-10-04). Every
-// root-level .json of a look is judged by these fields, wherever a STRING holds one, so a file a baker adds is judged too.
-// A non-string field is not a name (manifest.json's `look` is the look record); SLAB_REQUIRED_STAMPS is what guarantees
-// the name is read at all.
-export const SLAB_NAME_STAMPS = ['look', 'scene', 'town', 'lookName']
-export const SLAB_REQUIRED_STAMPS = { 'manifest.json': 'town', 'ground.json': 'look' }
-const slabNameMismatches = (town, l) => {
-  const bad = []
-  for (const e of readdirSync(town, { withFileTypes: true })) {
-    if (!e.isFile() || extname(e.name) !== '.json') continue
-    let j
-    try { j = JSON.parse(readFileSync(join(town, e.name), 'utf8')) } catch { bad.push(`${e.name}: unparseable — a stamp that cannot be read is not a stamp that matched`); continue }
-    if (!j || typeof j !== 'object' || Array.isArray(j)) continue
-    for (const f of SLAB_NAME_STAMPS) if (typeof j[f] === 'string' && j[f] !== l) bad.push(`${e.name}:${f} = "${j[f]}"`)
-  }
-  for (const [file, f] of Object.entries(SLAB_REQUIRED_STAMPS)) {
-    let j = null
-    try { j = JSON.parse(readFileSync(join(town, file), 'utf8')) } catch { /* absent or unparseable: named here or above */ }
-    if (!existsSync(join(town, file))) bad.push(`${file}: absent — it must carry the slab's name in "${f}"`)
-    else if (j && typeof j[f] !== 'string') bad.push(`${file}:${f} missing — it must carry the slab's name`)
-  }
-  return bad
-}
 
 /**
  * What to put, in ORDER. `root` is the directory holding `<look>/…` (public/baked by default).
