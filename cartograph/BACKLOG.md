@@ -74,7 +74,10 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   tile 32 closes; class 3 doesn't move (53 → 53). NOT YET ATTRIBUTABLE (Zob): 57 of the input's 177 slits are its own
   un-noded overlay edges. RERUN noded (Zob): census 90; owners still move. The top Δh are where TODAY's paint and the
   plane disagree: an even-odd walk with winding 0, a 1 cm lawn sliver, and curb ground held by a LOWER face in the plane
-  (a possible plane defect). Being traced (Zob) before any ruling. Class 3 is B1's source fix (PLACED,
+  (a possible plane defect). TRACED (Zob): no plane defect (a sub-unit rounding at an edge, and a sampling artefact in his
+  instrument). PARKED: today's input is the 10-11 ruling as built; the gain is one census point. Open, cause not established:
+  (a) the input's ray skips a walk its own plane holds; (b) a treelawn edge moves 216 mm into face:institutional near
+  (−91.6, −654.6), the ease split suspected. Class 3 is B1's source fix (PLACED,
   Mitre: bake-ground's `clipAllToStencil` re-clips the already-stamped ① paint to the exact chord, a second cut; candidate
   skips it on the recorded stamp, overlays keep their one cut; being built and measured, fade/ink/membership checked)
   (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
@@ -96,7 +99,7 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
       "highway" (three readings)?
   (6) A hairline median (0.24–0.31 m, I-64 at Oakland): draw it as verge?
   (7) HPDM's ~4 "no street reaches" points.
-  (8) The deformer reading the drawn plane (overlays restored): being re-measured (Zob); a ruling only after.
+  (8) None needed now: the deformer reading the drawn plane was measured and PARKED (one census point; your 10-11 read stands).
 - **REFUSAL CENSUS (Kerf; record-and-continue in a sandbox; files `.claude/worktrees/kerf/scratch/ground-budget/step7/census/`):**
   · ⭐ **HPDM TRUE LIST** (integration 1e6958f2 + the noded rim; ground only, 16 min): ONE refusal, **269 unowned ped vertices
     at EXACT positions**, the full list in `.claude/worktrees/kerf/scratch/ground-budget/step7/census-truelist/hipointedemun/
