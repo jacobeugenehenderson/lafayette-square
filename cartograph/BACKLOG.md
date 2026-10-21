@@ -149,6 +149,8 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
+- ⚠️ TIER DRIFT from tonight's merges: `claims-the-ground-height-is-a-function-of-the-point` (since 1e6958f2) and `claims-the-height-code-owns-what-is-drawn` (since c5304a89) now tier LIVE, so `npm test` no longer runs them (Mitre, regenerating TIERS). A coverage loss; reshape both back to safe (Zob placing why).
+- The noded rim inserts 15 crossings past √2/2 off the rim line (HPDM 10, LS 5, max 1.18 mm; all genuine crossings). Accepted, counted and printed; why a crossing sits past the single-rounding bound: cause not established.
 - Tern's chained window (merged 336a9824) is a CORRECTION (Zob, measured on Mitre's dumps): every moved height is inside the disc (LS 108 · HPDM 686 · Huron 1,349), and of the 20 largest per town 41 are corrections, 1 a new error (LS (702.47, 23.90), 2.7 cm) and 18 indirect (≤ 0.022 m). The big ones (LS 1.05 m) were the rim class: the old window let 'beyond' swallow the band's entry. Optional guard against an unbounded chain: end a chain where `_inClass` at the gap's midpoint reads lot.
 - bake-content's header says an overture town "PRESERVES listings.json"; the code produces and writes them, and `claims-an-external-base-survives-a-bake` pins that. Rot or an intent change, not established (Truss). The `producer !== 'osm'` census line misdescribes a hand-curated town.
 - LS's `content/listings.json` meta says `count: 87` but holds 86 listings (Truss).
