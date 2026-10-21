@@ -154,6 +154,10 @@ Thursday's (lafayette-square.com's old player, or the Ward)?
   (b0d8c9bb: a hole that touches its one outer stays its own). Rebased on B1 (tip 106094ad), with one new refusal fixed
   (an item wholly below the lattice: its holes go with it, the flatten's orphan rule, counted). Gate: LS ✅ · HPDM ✅ · Huron
   after PTown. Waits on the combined LS bake to land.
+- **LS #39 (kerb step), COMBINED BAKE (Truss, 2a971354 vs 5cf20f59, real bake, refinement on): bare 22.1 → 1.0 m** (left:
+  commercial|asphalt 1.0 m at (-149, 319), the crack; vacant 0.1 m at (68, 381), the finger, both Plumb's). Churn > 10 m: 3,068
+  triangles (PASSES; not the 20k). Conformity's input T-junctions 10,705 → 369. ⚠️ Time 897 → 1,603 s (+80%), being attributed
+  before landing. Huron's light gate and PTown's census deferred to tonight (Jacob is on the machine).
 - **LS #39 (kerb step):** 22.1 m bare on the real baseline (Truss). On the whole stack (Truss's noding + Plumb's crease
   split, polyline mitre and ownership finder, refinement off): **1.03 m**, all sub-cm. The Mississippi stripe straddle was a DEFECT (a
   verge span edge given depth 0), fixed and merged; your "confine the stripe" call is moot. Plumb's branch isn't
