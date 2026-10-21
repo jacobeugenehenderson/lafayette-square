@@ -486,7 +486,10 @@ for ② (Mitre, placed, not built): the FACE TRIM's crossings never reach the ti
 class as the Huron/PTown coast residue); candidate: insertOnEdges into the ring's non-rim edges, carrying ringOwner. Per-step (run 2, clean): deform build 18 s · nodeThePlane 9 · cutCreases 98 · planGroup 130 · conformAndRefine 574 (run 3).
 **⚠️ DROPPED OVERNIGHT, recovered 2026-10-21:** the triangle fix Jacob approved (BRIEF-the-ground-stays-in-budget step 7 (a)+(b): the
 simplifier in the bake + the road on the lots' refine policy) is BUILT on kerf/simplify-in-bake 444456df but never baked or merged.
-Kerf rebases it onto integration; Zob reviews; it joins tonight's timed LS bakes.
+MEASURED (Kerf, LS committed pour): (b) the road on the lots' refine policy:
+2.87M → 1.93M triangles, conform 557 → 368 s (lands, after Zob's review); (a) the simplifier: 1.93M → 0.77M (−60%, worst 7.81 mm,
+0 T-junctions) but 725 s, more than it saves: HELD until profiled. #40 on the committed pour: 110 unowned (the re-pour adds ~98 on
+tile 136).
 
 **Scratch pours and the network (Zob, 2026-10-21):** a pour of a town with no raw/elevation.json FETCHES from USGS (HPDM: 13,770
 public read-only point queries this morning, cached in a throwaway worktree only). HPDM has no elevation cache in the main
