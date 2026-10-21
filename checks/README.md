@@ -156,7 +156,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 319. This is `npm test`.
+## safe — 320. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -400,6 +400,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-armoured-shore-is-never-empty.mjs` | empty.mjs — IS THERE A WALL AT EVERY DISTANCE? |
 | `checks/claims-the-bands-are-held-by-their-owners.mjs` | owners.mjs — EACH TILE'S CURB, WALK AND LAWN ARE CUT INTO PIECES, EACH WITH ONE OWNER (`bandPiecesOfTile`). |
 | `checks/claims-the-bed-is-seen-to-depth-at-low-water.mjs` | CLAIM: a town's bed is cut where the bottom stops being seen AT LOW WATER — the visibility depth below the town's LOW |
+| `checks/claims-the-block-is-one-ring.mjs` | ring.mjs — ② IS ONE RING PER TILE: THE CONTOUR THE BANDS ARE STRUCK FROM AND THE BLOCK THE ASPHALT IS |
 | `checks/claims-the-block-underlay-never-shows.mjs` | `BlockGeometryV2Debug.jsx`: `sectionGeos.block` is "the frozen block silhouette, under the LU |
 | `checks/claims-the-camera-has-one-definition.mjs` | definition.mjs — DOES EVERY APP DRIVE THE CAMERA THE SAME WAY? |
 | `checks/claims-the-canvas-is-the-towns.mjs` | "DOES EVERY APP DRAW ITS TOWN THROUGH THE CANVAS THE TOWN'S QUALITY PROFILE ASKS FOR?" |

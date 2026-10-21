@@ -2141,6 +2141,39 @@ function stampCrossings(rings, skip, maxRounds = 8) {
   }
   throw new Error(`[tileGround][stamp] ⛔ the crossing pass did not settle in ${maxRounds} rounds — a crossing keeps making another (${rings.length} rings)`)
 }
+// ⭐ AN iaFull-ALIGNED ARRAY THROUGH AN INSERTION, one rule for every pass that adds a vertex to iaFull. `o` is the new ring,
+// each vertex either an old one (`src`, its index) or one inserted inside edge `edge`: it starts a half that carries that
+// edge's stamp (the same owner), is no corner, and keeps the edge's arc / junction only when both ends share it.
+const expandAligned = (arr, ring, o, kind, arc) => o.map(v => { if (v.src != null) return arr[v.src]
+  const q = v.edge, q1 = (q + 1) % ring.length
+  if (kind === 'stamp') return arr[q]
+  if (kind === 'corner') return false
+  if (kind === 'arc') return arr[q] === arr[q1] ? arr[q] : null
+  return (arc && arc[q] != null && arc[q] === arc[q1] && arr[q] === arr[q1]) ? arr[q] : null })   // junction
+const ALIGNED_KIND = { iaStamp: 'stamp', iaCap: 'stamp', iaArc: 'arc', iaCorner: 'corner', iaJunction: 'junction' }
+// ⭐ ② IS ONE RING: A CROSSING A CUT MINTED IN THE BLOCK IS WRITTEN INTO THE STRUCK CONTOUR TOO (02da626e's MORNING item 1, its
+// first site; Boz, 2026-10-21). The bands are struck from `iaFull` (uncut, so a rim band is cut, never bent) and the block is
+// `iA` (cut). A cut rounds its crossing onto the lattice in `iA` alone, so the cut sub-edge tilts off the struck edge it came
+// from (LS tile 1: ≤ 0.4 mm along 79 m) and the asphalt (ring − iA) and the bands drew one line twice. Each such point is
+// inserted into `iaFull` on the edge that holds it (insertOnEdges: the boolean's own containment, two grid units), and every
+// iaFull-aligned array is carried (`expandAligned`). iaFull stays whole; its edge now passes through the crossing, so the
+// block's edge IS a piece of the struck one. ⛔ An aligned array with no rule here, or a point no iaFull edge holds, throws.
+function shareIntoFull(st, pts, where) {
+  if (!pts.length) return st
+  for (const [key, v] of Object.entries(st)) if (key !== 'iaFull' && /^ia[A-Z]/.test(key) && Array.isArray(v) && v.every(r => r == null || Array.isArray(r)) && !ALIGNED_KIND[key])
+    throw new Error(`[tileGround][②] ⛔ ${where}: \`${key}\` is aligned to iaFull and has no insertion rule (ALIGNED_KIND) — it would read its neighbour's entry. Refusing.`)
+  let rest = pts
+  const full = [], out = { ...st }
+  for (const k of Object.keys(ALIGNED_KIND)) if (st[k]) out[k] = []
+  st.iaFull.forEach((ring, ri) => {
+    const x = insertOnEdges(ring, ring.map((_, k) => ({ k })), rest, () => true)
+    const o = x.ring.map((p, i) => ring[x.owners[i].k] === p ? { p, src: x.owners[i].k } : { p, edge: x.owners[i].k })
+    rest = x.missed; full[ri] = x.ring
+    for (const [k, kind] of Object.entries(ALIGNED_KIND)) if (st[k]) out[k][ri] = st[k][ri] ? expandAligned(st[k][ri], ring, o, kind, st.iaArc?.[ri]) : st[k][ri] })
+  if (rest.length) throw new Error(`[tileGround][②] ⛔ ${where}: the cut minted a block crossing at (${rest[0][0].toFixed(3)}, ${rest[0][1].toFixed(3)}) that no edge of the struck contour (iaFull) holds — the block and its contour disagree. Refusing.`)
+  out.iaFull = full
+  return out
+}
 // `groups`: `prepareEvidence`'s output. Returns { tile: st⁺ (iaFull, iA and the aligned arrays stamped), groups: the
 // evidence near this tile, stamped, in the same shape } — or { tile: st, groups } where there is nothing to stamp.
 export function stampTile(st, groups) {
@@ -2156,12 +2189,7 @@ export function stampTile(st, groups) {
   const out = stampCrossings(items.map(x => x.r), (a, b) => (items[a].kind === 'ev') === (items[b].kind === 'ev'))
   const pts = (o) => o.map(v => v.p)
   const iaFull = [], iA = [], evRings = near.map(() => [])
-  const expand = (arr, ring, o, kind, arc) => o.map(v => { if (v.src != null) return arr[v.src]
-    const q = v.edge, q1 = (q + 1) % ring.length
-    if (kind === 'stamp') return arr[q]
-    if (kind === 'corner') return false
-    if (kind === 'arc') return arr[q] === arr[q1] ? arr[q] : null
-    return (arc && arc[q] != null && arc[q] === arc[q1] && arr[q] === arr[q1]) ? arr[q] : null })   // junction
+  const expand = expandAligned
   const st2 = { ...st, iaStamp: [], iaArc: [], iaCorner: [], iaJunction: [], ...(st.iaCap ? { iaCap: [] } : {}) }
   items.forEach((x, n) => { const o = out[n]
     if (x.kind === 'cut') iA[x.ri] = pts(o)
@@ -7656,8 +7684,16 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ THE CURB IS TRIMMED TO ITS FACE FIRST, so the stamp nodes the curb the tile keeps. ⛔ The face trim used to ride
         // the circle's `iA ∩ piece`: on a tile whose ring runs inside its curb by under 1 mm, the cut iA took the RING's edge
         // there and every crossing stamped into the curb on it was dropped (Huron 53 of 60, PTown 96 of 104 one-sided).
-        let stamped = 0, added = 0
-        protoShapeTiles = protoShapeTiles.map(t => t.iA?.length ? { ...t, iA: intersectRings(t.iA, [t.ring]) } : t)
+        // ⭐ A trim that cuts nothing leaves iA AS IT IS (the same contour as iaFull, not Clipper's re-emitted copy of it); one that
+        // cuts writes its crossings into iaFull too (`shareIntoFull`). Its other new vertices are the ring's own, where the ring
+        // runs inside the curb.
+        let stamped = 0, added = 0, sharedIntoFull = 0
+        const keyOf = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
+        protoShapeTiles = protoShapeTiles.map(t => { if (!t.iA?.length || !differenceRings(t.iA, [t.ring]).length) return t
+          const iA = intersectRings(t.iA, [t.ring]), have = new Set([...(t.iaFull || []).flat(), ...t.ring].map(keyOf))
+          const pts = []; for (const r of iA) for (const v of r) { const k = keyOf(v); if (!have.has(k)) { have.add(k); pts.push(v) } }
+          sharedIntoFull += pts.length
+          return { ...shareIntoFull(t, pts, `the face trim, tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`), iA } })
         if (landEv) protoShapeTiles = protoShapeTiles.map(t => { const { fixed, override } = t._luSeed
           if (fixed || override) return t
           const { tile, groups } = stampTile(t, landEv)
@@ -7738,6 +7774,12 @@ export function buildTileGround(ribbons, opts = {}) {
             // which the cut must not disturb.
             const inside = !differenceRings([t.ring], [stamp]).length
             const curb = inside ? (t.iA || []) : cut(t.iA)
+            // ⭐ the crossings the circle minted in the block go into the struck contour too, BEFORE the pieces: every piece's
+            // iaFull is the block's, and takes all of them (`shareIntoFull`; minted = in neither the input block nor the stamp)
+            if (!inside) { const known = new Set([...(t.iA || []).flat(), ...stamp, ...(t.iaFull || []).flat()].map(keyOf)), pts = []
+              for (const r of curb) for (const v of r) { const k = keyOf(v); if (!known.has(k)) { known.add(k); pts.push(v) } }
+              sharedIntoFull += pts.length
+              Object.assign(t, shareIntoFull(t, pts, `the circle, tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`)) }
             const mine = ring.map(() => [])
             if (ring.length === 1) mine[0] = curb
             else for (const c of curb) {
@@ -7751,6 +7793,7 @@ export function buildTileGround(ribbons, opts = {}) {
           }
           protoShapeTiles = kept
           console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice)`)
+          console.log(`[tileGround][PROTO⊙] ${sharedIntoFull} block crossing(s) the face trim and the circle minted, written into the struck contour (iaFull): ② is one ring`)
           console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)
         } else {
           console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)

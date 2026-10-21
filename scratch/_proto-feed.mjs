@@ -82,11 +82,12 @@ export function feed(scene) {
 // ⭐ `bare: true` is the DELIBERATE un-authored state, for a dual-state gate that reports which
 // state produced each row (`A03`'s harness pattern, `A05`'s prescription). It is the only
 // legitimate way to reach `blockCustoms: null`, and it has to be asked for by name.
-export function buildProto(f, { bare = false, quiet = true, ...rest } = {}) {
+// `tg`: a tileGround module to build with in place of the live one (a check's mutated copy); the call stays this one.
+export function buildProto(f, { bare = false, quiet = true, tg = null, ...rest } = {}) {
   const prev = console.log
   if (quiet) console.log = () => {}
   try {
-    return buildTileGround(f.ribbons, {
+    return (tg?.buildTileGround || buildTileGround)(f.ribbons, {
       smooth: 0, stencil: f.stencil, curbWidth: f.curbWidth, curbedMinWidth: f.curbedMinWidth,
       blockCustoms: bare ? null : f.blockCustoms, blockLandUse: bare ? null : f.blockLandUse,
       cornerCornerRadiusOverrides: bare ? null : f.cornerCornerRadiusOverrides, cornerRadiusOverrides: bare ? null : f.cornerRadiusOverrides,
