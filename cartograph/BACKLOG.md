@@ -106,7 +106,11 @@ Start here. State at the restart:
     HPDM 91 of the census's 269 unowned (faces vs rects: 177 → 91), 0 newly unowned, corner decisions unchanged. Left: 134 ×33,
     55 ×19 (class 3, shape confirmed on fresh paint), 170 ×16 (stale paint ruled out), 152 ×5, 211 ×5, 215 ×3, singles.
     ⛔ A fix-B REGRESSION: a 67 cm² walk strip on tile 32 at (251.0, 1048.4) that the rect held and no face does. Mitre fixes it
-    first. Rim row: tile 52 (4 faces reach the rim).
+    first. Rim row: tile 52 (4 faces reach the rim). PLACED: the face is right; a 1 mm SLIT in the painted lawn (#618)
+    makes the ray read lot. 232 such slits in HPDM's bands. ⭐ The deformer's bands are byMaterial (paint BEFORE
+    flattenPaintStack); the mesh is drawn from the flattened, noded plane, so the height code reads different paint from
+    the drawing (Mitre). Splitting byMaterial's pinches closes tile 32 but moves 14,338 held heights by ≤ 0.23 m: not
+    landable. Premise pass (Zob): why pre-flatten, and can the deformer read the drawn paint?
   · HURON CENSUS DONE (Kerf, on 83652943, before fix B and the both-sides read): every step exits 0; the ONLY refusal is #40,
     19,655 unowned, 96% on tile 6 (18,855). Ground 5,196 s / 11.8 GB + ground-shore 4,591 s / 11.3 GB: 2.7 h of ground baking
     (Jacob: long bakes are not acceptable). Tile 6 re-measured at HEAD by Zob, in memory, at low priority (not Thursday).
