@@ -22,11 +22,17 @@ Start here. State at the restart:
 - **⭐ Thursday 2026-10-22 afternoon: Jacob meets potential HPDM partners.** Required: **LS and HPDM** in good working
   order. Huron and PTown help ("sales momentum") but are not required. JH is not shown. Proposed cutoff: what has not
   passed Jacob's eye by Wednesday evening ships as served today.
-- **In flight (2026-10-20 night, Boz):** ✅ perpendicular-leg ownership LANDED (Mitre, merged; brief in `cartograph/_archive/`) · HPDM re-poured on its existing fetch (parity GREEN) · Kerf builds step 7
-  of `BRIEF-the-ground-stays-in-budget` (simplifier in the bake, road split), HPDM first, slot after Mitre · Zob builds
-  HPDM's key-parity check (HPDM's re-pour waits on it) · Plumb records every LS flatten refusal at a3426465 and at
-  integration (the refusal predates the range: a3426465 refuses too, at `mat:sidewalk`).
-- **Then:** HPDM re-pour if parity holds → one batch bake of HPDM and LS → Jacob's eye → Huron and PTown if time allows.
+- **Overnight 10-20 → 10-21 (Jacob asleep; Boz leads, Zob holds the code view; Ward runs the player side).** Landed on
+  integration: perpendicular-leg ownership (Mitre) · HPDM + PTown re-poured on their existing fetch (parity + building ids
+  GREEN; backups in `.claude/backups/2026-10-20-night/`) · flatten noding (Truss, a2b34ab9): LS 4 → 0, HPDM 3 → 0.
+  **In flight:** Mitre, `BRIEF-the-height-code-owns-what-is-drawn` (HPDM's 2,426 unowned ped vertices; LS's frame-edge rim
+  refusal; Tern's window) · Zob, LS's missing `content/roster.json` (staging Society: "hasn't published its buildings").
+  **Then, in order:** Zob reviews Mitre → merge → scratch ground bakes of HPDM and LS on integration (Kerf's step-7 arms
+  run in the same pass) → if both reach the end with every gate green, a LOCAL bake of HPDM then LS into `public/baked`
+  with the old slabs backed up first (reversible; nothing published) for Jacob's eye in the morning. Publish/Promote are
+  Boz's + Ward's together, after Jacob's eye.
+- **Re-fetch, measured (Zob):** LS safe (82/82 authored keys SAME; +1 address, +27 crosswalk records); HPDM breaks 2
+  corner keys on unnamed (positional) ids, so after Thursday: stable ids first, then both re-fetches behind the gates.
 - ⛔ **Not tonight:** HPDM skeleton re-pour (authoring key parity first) · step 7 (repaints; Jacob's eye) · the long
   check board (`feedback_bake_then_look_checks_dont_gate_bakes`).
 - The day's work is on `integration/2026-10-20` only. Jacob rejected merging it into the main checkout
