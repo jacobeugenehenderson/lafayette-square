@@ -45,7 +45,8 @@ established). Your call for Thursday: (i) leave HPDM's 81 as served, (ii) interi
 district (HPDM's 81 lose the wrong name; LS stays unnamed), or (iii) the full fix first.
 **Ward recommends (ii) for Thursday, then (iii):** the Ward shows only the district NAME (Facts.jsx), so the 81 cards just
 lose a line and say nothing false. The partner knows their district's boundary; a Wydown house labelled HPDM's district is
-what they'd spot first. I agree. (ii) is being prepared on a branch tonight, unmerged, ready for your yes.
+what they'd spot first. I agree. (ii) is PREPARED: Truss, `1cfc3f47` on `truss/district-flag-interim`, unmerged (HPDM dry run: named 598 → 517, the 81
+unnamed, in-district unchanged; check `claims-a-flag-names-no-district`, safe tier). Zob reviews; it merges on your yes.
 The National Register as a replacement source (Zob, measured): HPDM's nr-inventory keeps a "Built" year on 253 of 1,446
 after the withholding (OCR'd, accuracy not measured). LS's "NPS" data is mostly INFERRED from the assessor year
 (nps_style_inferred on 741; 32 buildings actually named with pages); the nomination spreadsheets give ≤ 80 plausible
