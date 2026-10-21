@@ -195,7 +195,10 @@ Start here. State at the restart:
     tips (191.276, 461.413), (149.027, 437.185), (-634.945, 213.268), (324.619, 728.015), (422.640, 459.247).
     Mitre gates on LS (Plumb, harness): heights byte-identical > 1.5 m from a bend; reflex wedges 0; new-and-unexplained
     crossings 0; converging-crease points 191 → 83 (split-made total 370 → 259). Next: one shared crease computed once, then
-    the mitre on the curbless POLYLINE (ruled), then the 46 and the ramp/flare 12.
+    the mitre on the curbless POLYLINE (ruled). Both BUILT (Plumb, plumb/kerb-owner checkpoints): converging points
+    191 → 71, all split-made 370 → 242; heights identical within one lattice rounding away from bends (gate restated). Only
+    LS has a kerb (HPDM/Huron/PTown h = 0), so this tranche is LS's. STOPPED at 71; follow-up (named): an exact arrangement
+    for the split, since Clipper invents crossings within half a step. Next: #39 cleared? Then landable, baked with Truss's.
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
