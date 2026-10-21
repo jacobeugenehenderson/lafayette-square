@@ -16,6 +16,10 @@
 //     test excused a sample within the widest town band (WB) of a town edge, by point-to-segment distance: a mitred
 //     corner reaches ≈ WB / sin(θ/2), and LS tile 44 (a junction residual, an edge that nearly doubles back) was
 //     judged 0.177 m past the reach — town walk, called a highway's.
+//   ⛔ RED TODAY ON LS (tiles 33, 76) AND HPDM (tile 20), BY RULING (Boz, 2026-10-21): a junction-residual miter whose
+//     band piece is labelled with the highway run. Named in the output as "a town miter labelled __highway__"; the
+//     defect is `bandPiecesOfTile`'s label, and the check stays RED until that label is right. HPDM tile 39's
+//     "paint no band piece holds" is a separate finding, cause not established.
 // A frozen shape with highways but no `hwy` stamp predates H-3 and is NOT CHECKED, loudly.
 //
 //   node checks/claims-verge-bare.mjs [look…] [--shape=path] [--selftest]
@@ -43,8 +47,11 @@ const TGF = join(ROOT, 'src/lib/tileGround.js')
 const ANCHOR = 'const isHighwayRun = (run) => !!run?.hwy'
 const NOHWY = 'const isHighwayRun = (run) => false'
 const CLIP = pathToFileURL(join(ROOT, 'node_modules/clipper-lib/clipper.js')).href
-const RE_PKG = /from 'clipper-lib'/g, RE_LIB = /from '\.\/([^']+)'/g, RE_SRC = /from '\.\.\/([^']+)'/g
-const toLib = (_, m) => `from '${pathToFileURL(join(ROOT, 'src/lib', m)).href}'`, toSrc = (_, m) => `from '${pathToFileURL(join(ROOT, 'src', m)).href}'`
+const RE_PKG = /from 'clipper-lib'/g
+const RE_LIB = /from '\.\/([^']+)'/g
+const RE_SRC = /from '\.\.\/([^']+)'/g
+const toLib = (_, m) => `from '${pathToFileURL(join(ROOT, 'src/lib', m)).href}'`
+const toSrc = (_, m) => `from '${pathToFileURL(join(ROOT, 'src', m)).href}'`
 const mutantTG = () => { const tgSrc = readFileSync(TGF, 'utf8')
   if (tgSrc.split(ANCHOR).length !== 2) throw new Error('selftest: tileGround.js no longer defines isHighwayRun as read — re-aim the mutation')
   const tgPath = join(mkdtempSync(join(tmpdir(), 'verge-bare-')), 'tileGround.js')
@@ -103,7 +110,14 @@ function judge(TG, look) {
         const holding = pieces.filter(q => q.rings.some(rr => rr?.length >= 3 && pip(x, z, rr)))
         if (holding.some(q => (q.owners || []).some(o => isTown(ownerRun(t, o.span))))) { townHeld++; return }
         const names = [...new Set(holding.flatMap(q => (q.owners || []).map(o => ownerRun(t, o.span)?.skelId ?? String(o.span))))]
-        edgeBad.push(`tile ${ti} @(${mx.toFixed(1)}, ${mz.toFixed(1)}) ${runs[r].skelId}: in ${holding.length ? `a band held by ${names.join('+')}` : 'paint no band piece holds'}`)
+        // ⭐ NAMED, NEVER EXCUSED (Boz's ruling, 2026-10-21): a highway-held piece that shares an edge (two consecutive vertices,
+        // exactly) with a TOWN-run piece of its own class is a town miter carrying the highway's label — a defect of the
+        // pieces producer (`bandPiecesOfTile`), RED here until it is labelled right; measured on LS tiles 33/76 and HPDM tile
+        // 20: no paint or height effect (the deformer owns those points by the town's ② span, |Δh| ≤ 0.5 mm across the edge)
+        const K = (v) => Math.round(v[0] * 1000) + ',' + Math.round(v[1] * 1000)
+        const townV = new Set(pieces.filter(q => holding.some(h => h.cls === q.cls) && (q.owners || []).some(o => isTown(ownerRun(t, o.span)))).flatMap(q => q.rings.flat()).map(K))
+        const miter = holding.some(q => q.rings.some(rr => rr.some((v, k) => townV.has(K(v)) && townV.has(K(rr[(k + 1) % rr.length])))))
+        edgeBad.push(`tile ${ti} @(${mx.toFixed(1)}, ${mz.toFixed(1)}) ${runs[r].skelId}: ${miter ? `a town miter labelled ${names.join('+')} (pieces label; no paint or height effect, measured)` : holding.length ? `in a band held by ${names.join('+')}` : 'paint no band piece holds'}`)
       }))
     }
   } finally { console.log = o; console.warn = w }
@@ -114,7 +128,7 @@ const report = (look, j) => {
   if (j.none) { console.log(`── ${look}   ${j.none}`); return false }
   if (j.warnNoEntry) console.log(`   ⚠️ ${look} is not in public/looks/index.json — judged without authoring`)
   const bad = j.vergeBad.length + j.edgeBad.length
-  console.log(`── ${look} ── ${j.verge} verge tile(s)${j.vergeBad.length ? ` · ⛔ ${j.vergeBad.length} carry curb/ped or another land use` : ' bare, land use verge'} · ${j.edges} highway-owned edge(s) on other tiles${j.edgeBad.length ? ` · ⛔ ${j.edgeBad.length} have a highway's curb/ped against H` : ' bare'}${j.townHeld ? ` (${j.townHeld} sample(s) in a town run's band, by owner: a sharp corner's)` : ''} ${bad ? '⛔' : '✅'}`)
+  console.log(`── ${look} ── ${j.verge} verge tile(s)${j.vergeBad.length ? ` · ⛔ ${j.vergeBad.length} carry curb/ped or another land use` : ' bare, land use verge'} · ${j.edges} highway-owned edge(s) on other tiles${j.edgeBad.length ? ` · ⛔ ${j.edgeBad.length} have the highway curb/ped against H` : ' bare'}${j.townHeld ? ` (${j.townHeld} sample(s) in the band of a town run, by owner: a sharp corner)` : ''} ${bad ? '⛔' : '✅'}`)
   for (const b of [...j.vergeBad, ...j.edgeBad].slice(0, 8)) console.log(`   ⛔ ${b}`)
   return bad > 0
 }

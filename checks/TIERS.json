@@ -3079,7 +3079,10 @@
       "file": "checks/claims-verge-bare.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "writeFileSync — only under its own temp dir",
+        "computed import of src/lib/tileGround.js — read, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
