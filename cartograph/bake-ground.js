@@ -35,7 +35,7 @@
  * AO lightmap is a follow-on pass (see `bake-ground-ao.js`, separate task).
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
@@ -1110,6 +1110,12 @@ function toPolys(items) {
  * - not current and no coast → nothing owed.
  * @returns {{ paint: object|null, state: 'pending'|null, why: string|null }}
  */
+// ⭐ AN UNOWNED PED VERTEX IS RECORDED AT ITS EXACT POSITION, as the deformer's memo keys it (Zob, 2026-10-21): keyed at 1 cm,
+// HPDM's 1,234 could not be re-resolved (all 15 logged points came back OWNED at their rounded coordinates), and the count
+// merged vertices 1 cm apart. The count is distinct exact positions; the full list is written beside the slab.
+// ▶ checks/claims-the-height-code-owns-what-is-drawn.mjs
+export const unownedKey = (x, z) => `${x},${z}`
+
 export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePending = false }) {
   const why = !doc ? 'is absent'
     : doc.version !== 2 ? `is version ${doc.version}; this bake reads v2 (the traced waterline)`
@@ -1400,7 +1406,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       if (h == null) { D[v] = deformTerrain.getElevationRaw(P[v * 3], P[v * 3 + 2])
         // ⛔ a ped vertex no painted band owns is its own class: collected here, and the bake THROWS on it below
         const ti = deform.unownedIn(P[v * 3], P[v * 3 + 2])
-        if (ti != null) deformTally.unowned.set(`${P[v * 3].toFixed(2)},${P[v * 3 + 2].toFixed(2)}`, ti)
+        if (ti != null) deformTally.unowned.set(unownedKey(P[v * 3], P[v * 3 + 2]), { x: P[v * 3], z: P[v * 3 + 2], tile: ti })
         else deformTally.terrainOnly++ } else D[v] = h }
     deformTally.verts += nv
     for (let t = 0; t < I.length; t += 3) {
@@ -1908,8 +1914,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   for (const c of gradChunks) { buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off); off += c.byteLength }
   // ⛔⛔ NO FALLBACK (Boz, 2026-10-11): a walk no painted band owns would be drawn at the terrain and look like a
   // success. The bake refuses, and names every point — town, coordinate, tile — so the orphans are the work.
-  if (deformTally.unowned.size) throw new Error(`[bake-ground] ⛔ ${scene}: ${deformTally.unowned.size} ped vertex(es) lie in a drawn band that NO painted band owns `
-    + `(the band decides, never the nearer line — groundDeformer.mjs): ${[...deformTally.unowned].map(([p, ti]) => `(${p}) tile ${ti}`).join(' · ')}`)
+  // a refusal's list never sits beside a good slab: the uploader carries every file of a look dir (Zob, 2026-10-21)
+  const unownedPath = join(outDir, 'ground.unowned.json')
+  if (!deformTally.unowned.size && existsSync(unownedPath)) { rmSync(unownedPath); console.log(`  [deform] removed ${unownedPath}: this bake owns every ped vertex`) }
+  if (deformTally.unowned.size) {
+    const pts = [...deformTally.unowned.values()]
+    writeIfChanged(unownedPath, JSON.stringify({ scene, count: pts.length, counts: 'distinct exact positions', points: pts }))
+    throw new Error(`[bake-ground] ⛔ ${scene}: ${pts.length} ped vertex(es) lie in a drawn band that NO painted band owns `
+      + `(the band decides, never the nearer line — groundDeformer.mjs). Every one, exact: ${unownedPath}. First: ${pts.slice(0, 5).map(p => `(${p.x}, ${p.z}) tile ${p.tile}`).join(' · ')}`) }
   if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile and the ink, or deeper than the bands + ease) draw the terrain itself · the road swept from ① to ② at ${deform.stats.road} point(s), the owners' blend at ${deform.stats.roadBlended} · the ink at ${deform.stats.ink} (${deform.stats.inkCrossing} at a crossing, ${deform.stats.inkOnGrid} on the grid between a tile and the ink) · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
 
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and

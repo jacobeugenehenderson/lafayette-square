@@ -37,6 +37,7 @@ import tzLookup from 'tz-lookup'
 import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
+import { groundShorePass } from './shoreRuns.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -133,6 +134,13 @@ function readBakeTimings(mapJson) { try { return JSON.parse(readFileSync(bakeTim
 function saveBakeTiming(mapJson, lookId, label, ms) {
   try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { ms, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
   catch (e) { console.warn(`[bake] could not record the ${label} timing: ${e.message}`) }
+}
+// ⭐ A GROUND PASS THE BAKE SKIPS IS RECORDED AS SKIPPED, never left at its old time (Boz, 2026-10-21): the budget's ceiling
+// sums only the passes a Bake actually runs, so a stale 'ground-shore' time would loosen it by a pass nobody pays.
+// ▶ checks/claims-the-ground-stays-in-budget.mjs
+function saveBakeSkip(mapJson, lookId, label, why) {
+  try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { skipped: why, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
+  catch (e) { console.warn(`[bake] could not record the ${label} skip: ${e.message}`) }
 }
 // ⭐ WHAT EACH STEP READ WHEN IT LAST RAN — `${lookId}:${label}` → { code, data }, each { path: sha1 }, beside the timings.
 // runIfDirty re-runs a step when its code (its scripts' import closure) or a declared data input differs by CONTENT
@@ -2978,11 +2986,19 @@ createServer(async (req, res) => {
         // median is walked on, so it cannot wait for it: when the median just changed, the ground is baked AGAIN with it.
         // Inputs are the median and the shoreline only, so an ordinary bake (median unchanged) skips this.
         // not-inputs: building-overrides.json (the ground step's input — it re-runs ground when this changes) · buildings.json (the ground step's input — it re-runs ground when this changes) · centerlines.json (the ground step's input — it re-runs ground when this changes) · derived_trees.json (the ground step's input — it re-runs ground when this changes) · design.json (the ground step's input — it re-runs ground when this changes) · elevation-sources.txt (the ground step's input — it re-runs ground when this changes) · elevation.tif (the ground step's input — it re-runs ground when this changes) · forest_park_trees.json (the ground step's input — it re-runs ground when this changes) · geography.json (the ground step's input — it re-runs ground when this changes) · index.json (the ground step's input — it re-runs ground when this changes) · intake-sources.json (the ground step's input — it re-runs ground when this changes) · intake.json (the ground step's input — it re-runs ground when this changes) · jurisdiction.json (the ground step's input — it re-runs ground when this changes) · map.json (the ground step's input — it re-runs ground when this changes) · measurements.json (the ground step's input — it re-runs ground when this changes) · msbf.json (the ground step's input — it re-runs ground when this changes) · neighborhood_boundary.json (the ground step's input — it re-runs ground when this changes) · neighborhood.json (the ground step's input — it re-runs ground when this changes) · osm_trees.json (the ground step's input — it re-runs ground when this changes) · osm.json (the ground step's input — it re-runs ground when this changes) · overture-places.json (the ground step's input — it re-runs ground when this changes) · park_trees.json (the ground step's input — it re-runs ground when this changes) · park_water.json (the ground step's input — it re-runs ground when this changes) · park-polygon.json (the ground step's input — it re-runs ground when this changes) · ribbons.json (the ground step's input — it re-runs ground when this changes) · sources.json (the ground step's input — it re-runs ground when this changes) · survey.json (the ground step's input — it re-runs ground when this changes) · terrain.bin (the ground step's input — it re-runs ground when this changes) · terrain.json (the ground step's input — it re-runs ground when this changes) · tree-species-map.json (the ground step's input — it re-runs ground when this changes)
-        await runIfDirty('ground-shore',
+        // ⭐ ONLY WHEN THE FIRST PASS LEFT THE SHORE PENDING (shoreRuns.mjs#groundShorePass): an inland town, or a coast whose
+        // median was already current, is not baked twice; it runs when the median was re-walked. A plan whose 'ground' would
+        // run says the step is decided after the first pass.
+        const inPlan = (s) => !!P.plan?.stale.some(x => x.step === s)
+        const shorePass = groundShorePass(readJsonOrNull(join(LOOK_DIR, 'ground.json')), { medianWritten: existsSync(join(LOOK_DIR, 'shore-median.json')),
+          medianRan: P.plan ? inPlan('shore-median') : ranSteps.includes('shore-median'), plan: !!P.plan, groundStale: inPlan('ground') })
+        if (shorePass.run === null) P.plan.stale.push({ step: 'ground-shore', why: [shorePass.why] })
+        else if (shorePass.run) await runIfDirty('ground-shore',
           [join(LOOK_DIR, 'shore-median.json'), join(LOOK_DIR, 'shape.json'), join(here, 'bake-ground.js')],
           [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
           `node bake-ground.js --look=${id} ${sceneFlag}`,
-          { cwd: here, timeout: 300000 })
+          { cwd: here })
+        else { skip(`ground-shore (${shorePass.why})`); if (!P.plan) saveBakeSkip(MAP_JSON, id, 'ground-shore', shorePass.why) }
       }
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
