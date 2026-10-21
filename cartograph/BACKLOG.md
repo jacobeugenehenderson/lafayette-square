@@ -133,6 +133,11 @@ Start here. State at the restart:
     ~1e-4 m² at stripe ends; not a bake gate. PLACED (Zob): the stripe is right (Oakland Ave, on its centreline); a
     face:verge sliver (H-3, a junction residual's remainder by the Jack Buck motorway) lies INSIDE the carriageway, and the
     stripe exposes it. Owner: the junction-residual→verge assignment; cause not established.
+    ⭐ ONE ROOT with LS's Mississippi straddle (Zob): both streets are bridge/layer 1 but gradeSeparated:false, and
+    classifyHighwayBlocks' off-grade test (94002fae's overpass span) disagrees with gradeSeparated (ARCHITECTURE §7: surface
+    bridges keep bounding blocks). Off-grade but not gradeSeparated: HPDM 46 · LS 11 · Huron 18. HPDM has no kerb (h=0), so no
+    bump; LS lifts. The tags → paint-over-road step is being traced (Truss, LS). It may turn Jacob's stripe call into a
+    defect. Also: derive.js's `skOffGrade || new Set()` only warns (a fallback).
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
