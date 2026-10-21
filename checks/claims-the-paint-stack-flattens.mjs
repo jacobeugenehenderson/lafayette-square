@@ -68,9 +68,18 @@ export function boundIsDerived(src) {
   return null
 }
 
+// ── the source-reading row: each named step is wrapped in `timed`, and ground.json carries the timings ─────────────
+export const TIMED_STEPS = ['flatten', 'nodeThePlane', 'kerbPlan', 'planGroup', 'conformAndRefine', 'liftBuffer', 'riser']
+export function stepsAreTimed(src) {
+  const missing = TIMED_STEPS.filter(n => !src.includes(`timed('${n}', `))
+  if (missing.length) return `not timed: ${missing.join(', ')}`
+  if (!/console\.log\(`  \[deform\] \$\{\(stepMs\.deform/.test(src)) return "the deformer's time does not lead its line"
+  if (!/\btimings: Object\.fromEntries\(Object\.entries\(stepMs\)/.test(src)) return 'ground.json carries no timings'
+  return null
+}
 // ── the source-reading row: the kerb's plan and cells read the block rings `nodeThePlane` returns, below it ───────────
 export function kerbReadsTheNodedRings(src) {
-  const at = src.indexOf('const { blockRings: nodedBlockRings } = nodeThePlane(')
+  const at = src.search(/const \{ blockRings: nodedBlockRings \} = [^\n]*\bnodeThePlane\(/)   // timed or not
   if (at < 0) return 'bakeGround does not take its block rings from nodeThePlane'
   const plan = src.indexOf('kerbPlan({ blockRings: nodedBlockRings,'), cells = src.indexOf('kerbCells(kerbRegs, nodedBlockRings)')
   if (plan < 0) return 'kerbPlan does not read the noded block rings'
@@ -195,6 +204,11 @@ async function synthetic() {
     rows.push(['(8) its hole is counted as orphaned (neither removed nor filled)', p.filter(r => r.from === 'orphan').length === 1 && p.some(r => r.from === 'outer')])
     rows.push(['(8) the source: no outer left → the holes go with it', /if \(!bySize\.length\) \{ for \(const h of holes\) dropped\.push\(\{ from: 'orphan'/.test(src)])
     rows.push(['(8) mutant: that line removed is RED', !/if \(!bySize\.length\) \{ for \(const h of holes\) dropped\.push\(\{ from: 'orphan'/.test(src.replace(/    if \(!bySize\.length\) \{[^\n]*\n/, ''))]) }
+  // (9) every named step of the bake prints its wall time and records it in ground.json#timings (Boz, 2026-10-21: a +80%
+  // LS bake could not be attributed from its own log); the deformer's time leads its line, so a cut log keeps it
+  const why9 = stepsAreTimed(src)
+  rows.push([`(9) the bake times each named step into ground.json#timings${why9 ? ` — ${why9}` : ''}`, !why9])
+  rows.push(['(9) mutant: the riser untimed is RED', !!stepsAreTimed(src.replace("timed('riser', () => riserFromEdges(", "(() => riserFromEdges("))])
   const why5 = planeNodedLast(src)
   rows.push([`(5) the plane is noded, then cut at its pinches, after its last re-clip and before planGroup${why5 ? ` — ${why5}` : ''}`, !why5])
   rows.push(['(5) mutant: the cut removed is RED', !!planeNodedLast(src.replace(/splitAtPinches\(noded\[g\]\.items, k, flattened\.subLattice\)/, 'noded[g].items'))])

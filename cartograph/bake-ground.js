@@ -1693,8 +1693,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const nodedEntries = nodeAcrossGroups(stackEntries)
   // `stackOnly`: the stack exactly as the flatten receives it, nothing written (checks/claims-no-edge-is-drawn-twice.mjs)
   if (stackOnly) return { stackEntries: nodedEntries, unnoded: stackEntries, keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }
+  // ⭐ EVERY STEP SAYS HOW LONG IT TOOK (Boz, 2026-10-21: a +80% LS bake could not be attributed from its own log). Each
+  // named step's wall time is printed as `[time] <step> <s>` and recorded in ground.json#timings, so a slower bake
+  // answers WHICH step grew from its own record. `timed` accumulates, so a step run per group sums.
+  const stepMs = {}
+  const timed = (name, f, { say = true } = {}) => { const t = Date.now()
+    try { return f() } finally { const ms = Date.now() - t; stepMs[name] = (stepMs[name] || 0) + ms; if (say) console.log(`  [time] ${name} ${(ms / 1000).toFixed(1)}s`) } }
   const _t0 = Date.now()
-  const flattened = flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })
+  const flattened = timed('flatten', () => flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }), { say: false })
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
     + `(${KEEP_OWN_SLOT.size} keeping their own slot, ${DOES_NOT_CUT.size} not cutting) in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)
 
@@ -1753,17 +1759,19 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       const inside = run(clipperLib.ClipType.ctIntersection), outside = run(clipperLib.ClipType.ctDifference)
       if (inside.length) { flattened.set(k, [...outside, ...inside]); split++ }
     }
-    console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
+    stepMs.deform = Date.now() - _td
+    // the time FIRST: this line runs long, and a log cut at its width must not lose it
+    console.log(`  [deform] ${(stepMs.deform / 1000).toFixed(1)}s · the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end`)
   }
   // the plane, noded after its last re-clip (the flatten's, the ease split's) and cut at its pinches below the lattice
   // ⭐ the block rings as every reader below sees them: noded with the paint (`nodeThePlane`). The rim rings take part too
   // (their vertices enter the paint); their one reader in the bake, the deformer above, read them before this, on the same
   // lines (noding only inserts)
-  const { blockRings: nodedBlockRings } = nodeThePlane(flattened, { blockRings, rimRings })
+  const { blockRings: nodedBlockRings } = timed('nodeThePlane', () => nodeThePlane(flattened, { blockRings, rimRings }))
   // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): the curbless stretches of every block
   // edge, read off the POST-PAINT curb (an alley painted over the curb makes its mouth curbless), each carry a taper.
   const { inBlock: kerbInside, curblessM, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
-    ? kerbPlan({ blockRings: nodedBlockRings, curbRings: [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))], ramps: curbCutRamps, kerb })
+    ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, curbRings: [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))], ramps: curbCutRamps, kerb }))
     : { inBlock: null, curblessM: 0, regions: [] }
   // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
@@ -1777,7 +1785,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const _planMemo = new Map()
   const planGroup = (kind, key) => {
     const mk = kind + ':' + key
-    if (!_planMemo.has(mk)) _planMemo.set(mk, planGroupUncached(kind, key))
+    // timed per group, quietly; the sum is printed once the plane is planned (it includes splitAtCreases)
+    if (!_planMemo.has(mk)) _planMemo.set(mk, timed('planGroup', () => planGroupUncached(kind, key), { say: false }))
     return _planMemo.get(mk)
   }
   const planGroupUncached = (kind, key) => {
@@ -1923,9 +1932,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       planeKeys.push(kind + ':' + key)
       planeSpecs.push({ polys: plan.polys, refine: plan.refinePolicy, yLift: 0 })
     }
+    console.log(`  [time] planGroup ${((stepMs.planGroup || 0) / 1000).toFixed(1)}s (every group, splitAtCreases included)`)
     const _tc = Date.now()
     const cstats = {}
-    let bufs = conformAndRefine(planeSpecs, cstats)
+    let bufs = timed('conformAndRefine', () => conformAndRefine(planeSpecs, cstats))
     // ⭐ NOTHING IS CUT INTO THE CONFORMED MESH. A cut's ramp, flares and a curbless taper are the kerb part's own
     // continuous h → 0 (`kerbLift.mjs#makeHeightField`), evaluated per shared vertex, so they cannot open a T-junction;
     // the one step in the ground is the kerb face, and it already IS a partition edge (curb | road). The creases that
@@ -1947,9 +1957,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
         + `a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge. Refusing to write a ground that cracks.`)
     }
     if (kerbH) {
-      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), kerbField) }))
+      const lifted = timed('liftBuffer', () => planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), kerbField) })))
       lifted.forEach((L, i) => planeBuffers.set(planeKeys[i], { positions: L.positions, indices: L.indices }))
-      kerbRiser = riserFromEdges(lifted, new Set(['curb', 'curbCut']), kerbFlushTol)
+      kerbRiser = timed('riser', () => riserFromEdges(lifted, new Set(['curb', 'curbCut']), kerbFlushTol))
       const bare = Object.entries(kerbRiser.bareM).sort((a, b) => b[1] - a[1])
       console.log(`  [kerb] the block stands ${kerbH} m (${kerb.source}) · ${curbCutRamps.length} cut(s) ramp it to 0 at ${kerb.rampSlopeText ?? '—'}, flares ${kerb.flareSlopeText ?? '—'} · ${curblessM.toFixed(0)} m of curbless edge tapers flush over ${kerb.taperRun ?? '—'} m · riser ${kerbRiser.kerbM.toFixed(0)} m · ${lifted.reduce((n, L) => n + L.split, 0)} vertices split at the kerb`)
       // ⛔ After the tapers, a lifted edge meeting the road with neither a kerb nor a taper is a DEFECT of this construction
@@ -2259,6 +2269,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // read and printed by claims-the-ground-is-painted-once beside the residue it cannot sample; and the vertices the noding
     // inserted where two groups met without sharing one, per group pair, into the stack and into the plane after its last
     // re-clip (`nodeAcrossGroups`, `nodeThePlane`: a large count is a producer)
+    // each named step's wall time, seconds (`timed`, above): a slower bake answers which step grew from its own record
+    timings: Object.fromEntries(Object.entries(stepMs).map(([k, v]) => [k, +(v / 1000).toFixed(1)])),
     flatten: { subLattice: flattened.subLattice, noded: { stack: { inserted: nodedEntries.inserted, pairs: nodedEntries.pairs, pastBound: nodedEntries.pastBound }, plane: flattened.noded } },
     // the first of the Bake's two ground passes: no shore yet (above); 'ground-shore' writes a slab without it
     ...(shoreState ? { shore: shoreState } : {}),
