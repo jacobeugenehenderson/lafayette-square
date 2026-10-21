@@ -47,7 +47,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
 import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, withSide, polyTreeToItems } from './kerbLift.mjs'
 import { lineHeights } from './lineHeight.mjs'
-import { buildDeformer } from './groundDeformer.mjs'
+import { buildDeformer, unownedKey } from './groundDeformer.mjs'   // an unowned ped vertex is recorded at its exact position, the memo's own key
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
 import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { curbedMinWidthOf } from './curbedMinWidthOf.mjs'
@@ -582,7 +582,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   return { byMaterial, byFaceUse, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
-           perpLegs: (pr.protoBandPieces || []).map(t => ({ tile: t.tile, perp: t.perp || [] })) }
+           perpLegs: (pr.protoBandPieces || []).map(t => ({ tile: t.tile, perp: t.perp || [] })),
+           // each rim tile's ring noded with its paint's own rim crossings (live): the deformer's 'beyond' (BRIEF-the-rim-is-cut-once)
+           rimRings: pr.protoRimRings || [] }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -1110,11 +1112,6 @@ function toPolys(items) {
  * - not current and no coast → nothing owed.
  * @returns {{ paint: object|null, state: 'pending'|null, why: string|null }}
  */
-// ⭐ AN UNOWNED PED VERTEX IS RECORDED AT ITS EXACT POSITION, as the deformer's memo keys it (Zob, 2026-10-21): keyed at 1 cm,
-// HPDM's 1,234 could not be re-resolved (all 15 logged points came back OWNED at their rounded coordinates), and the count
-// merged vertices 1 cm apart. The count is distinct exact positions; the full list is written beside the slab.
-// ▶ checks/claims-the-height-code-owns-what-is-drawn.mjs
-export const unownedKey = (x, z) => `${x},${z}`
 
 export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePending = false }) {
   const why = !doc ? 'is absent'
@@ -1216,7 +1213,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1536,7 +1533,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
     // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
     const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine, legs: perpLegs,
+    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine, legs: perpLegs, rims: rimRings,
       bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
       stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,

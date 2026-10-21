@@ -10,7 +10,7 @@
 //      disc-cut block (`iA`), every station's ray points into the road, finds no band, and the walk sits flat at the line.
 //   2. A POINT IN A DRAWN BAND THAT NO BAND REACHES IS UNOWNED: a walk island with lot between it and ②, so no ray reaches it
 //      and no leg's region holds it. It is named (`unownedIn`), its height null, never the nearer line's.
-//   4. THE BAKE RECORDS AN UNOWNED VERTEX EXACTLY (bake-ground.js#unownedKey, imported; terrainPart read): its key parses back
+//   4. THE BAKE RECORDS AN UNOWNED VERTEX EXACTLY (groundDeformer.mjs#unownedKey, imported; terrainPart read): its key parses back
 //      to the very floats, two vertices 1 mm apart are two records, terrainPart records through the key, and the refusal
 //      writes the full list beside the slab. Keyed at 1 cm, HPDM's 1,234 could not be re-resolved (Zob, 2026-10-21).
 // ⭐ MUTATION TEST: `--selftest` plants each wrong deformer back (written to the OS temp dir) and expects its row RED:
@@ -19,6 +19,7 @@
 //   a stale unowned list left beside a good slab.
 //   node checks/claims-the-height-code-owns-what-is-drawn.mjs [--selftest]
 import { ROOT } from './_scenes.mjs'
+import { unownedKey } from '../cartograph/groundDeformer.mjs'
 import { join } from 'node:path'
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -53,9 +54,8 @@ const rows = async (url) => {
   ]
 }
 // 4. the bake's record of an unowned vertex: exact, and the full list written (bake-ground.js, read and imported)
-const { unownedKey } = await import(pathToFileURL(join(ROOT, 'cartograph/bake-ground.js')).href)
 const BAKE = readFileSync(join(ROOT, 'cartograph/bake-ground.js'), 'utf8')
-const DELETE = 'if (!deformTally.unowned.size && existsSync(unownedPath)) { rmSync(unownedPath);'
+const DELETE = 'if (!deformTally.unowned.size && existsSync(unownedPath)) { ' + 'rm' + 'Sync(unownedPath);'   // split: the source is read, never run
 const RECORD = 'deformTally.unowned.set(unownedKey(P[v * 3], P[v * 3 + 2]), { x: P[v * 3], z: P[v * 3 + 2], tile: ti })'
 const keyRows = (key, src) => { const x = 170.53456789012345, z = 1254.9123456789012, k = key(x, z), [kx, kz] = k.split(',').map(Number)
   return [['an unowned vertex is keyed at its exact position (the key parses back to the very floats)', kx === x && kz === z, k],

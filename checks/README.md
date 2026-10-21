@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 91. Never in a default run.
+## ⛔ live — 92. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -34,7 +34,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-cold-preview-opens-on-the-saved-shot.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
-| `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
+| `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-look-holds-only-its-towns-grove.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-a-look-link-opens-that-town.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
@@ -81,6 +81,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/scene.js — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-the-device-link-page-is-served-on-both-sites.mjs` | outbound | calls fetch() · imports workers/staging-sites/src/index.js, which can: calls fetch() · imports workers/production-sites/src/index.js, which can: calls fetch() |
+| `checks/claims-the-ground-height-is-a-function-of-the-point.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` | outbound | calls fetch() |
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of src/preview/heroAnim.js — read, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports package(s) vite — not read from source |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
@@ -155,7 +156,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 316. This is `npm test`.
+## safe — 315. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -413,7 +414,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-fade-tracks-the-active-disc.mjs` | disc.mjs — WHOSE CIRCLE IS THE MAP FADING OVER? |
 | `checks/claims-the-ground-covers-every-block.mjs` | CLAIM — THE GROUND COVERS EVERY BLOCK: nothing inside a block is painted by NOBODY. |
 | `checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs` | junctions |
-| `checks/claims-the-ground-height-is-a-function-of-the-point.mjs` | point.mjs — THE DEFORMER'S ANSWER AT (x, z) DEPENDS ON (x, z) ALONE, never |
 | `checks/claims-the-ground-is-painted-once.mjs` | once.mjs — IS EVERY POINT OF THE GROUND PAINTED BY EXACTLY ONE GROUP? |
 | `checks/claims-the-ground-tiles-without-a-gap.mjs` | gap.mjs — DOES THE DRAWN GROUND TILE THE DISC, WITH NO SEAM LEFT OPEN? |
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | trees.mjs — CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |

@@ -2186,19 +2186,57 @@ export function stampTile(st, groups) {
 // the boolean's own containment (two grid units, `cutOwned`'s rule): the same point, shared, never a second rounding.
 // Returns { ring, owners } with the ring's edges split there (each half keeps the rim owner). ⛔ A minted crossing on no
 // rim edge of its ring throws: the two cuts disagree about where the rim is.
+// insert each point into the ring on the edge that holds it (the boolean's own containment, two grid units), among the edges
+// `ok(k)` allows; each half of a split edge keeps that edge's owner. Returns { ring, owners, missed: the points no such edge holds }
+function insertOnEdges(ring, owners, pts, ok) {
+  const S = ring.map(toClipper), onSeg = (q, a, b) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) return false
+    const L = Math.sqrt(L2), u = (q.X - a.X) * dx + (q.Y - a.Y) * dy; return u > 0 && u < L2 && Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / L <= 2 }
+  const at = ring.map(() => []), missed = [], off = []   // off: each placed point's distance off its edge's line, in grid units
+  for (const v of pts) { const q = toClipper(v), j = S.findIndex((a, k) => ok(k) && onSeg(q, a, S[(k + 1) % S.length]))
+    if (j < 0) { missed.push(v); continue }
+    const a = S[j], b = S[(j + 1) % S.length], dx = b.X - a.X, dy = b.Y - a.Y
+    off.push(Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / Math.sqrt(dx * dx + dy * dy))
+    at[j].push({ u: (q.X - a.X) * (b.X - a.X) + (q.Y - a.Y) * (b.Y - a.Y), v }) }
+  const R = [], O = owners ? [] : null
+  ring.forEach((p, k) => { R.push(p); O?.push(owners[k]); for (const { v } of at[k].sort((x, y) => x.u - y.u)) { R.push(v); O?.push(owners[k]) } })
+  return { ring: R, owners: O, missed, off }
+}
 export function shareRimCrossings(ring, owners, cutBlock, inputBlock, stamp) {
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, known = new Set([...inputBlock.flat(), ...stamp].map(K)), have = new Set(ring.map(K))
   const minted = []; for (const r of cutBlock) for (const v of r) { const k = K(v); if (!known.has(k) && !have.has(k)) { minted.push(v); have.add(k) } }
   if (!minted.length) return { ring, owners, added: 0 }
-  const S = ring.map(toClipper), onSeg = (q, a, b) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) return false
-    const L = Math.sqrt(L2), u = (q.X - a.X) * dx + (q.Y - a.Y) * dy; return u > 0 && u < L2 && Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / L <= 2 }
-  const at = ring.map(() => [])
-  for (const v of minted) { const q = toClipper(v), j = S.findIndex((a, k) => owners[k]?.kind === 'rim' && onSeg(q, a, S[(k + 1) % S.length]))
-    if (j < 0) throw new Error(`[tileGround][PROTO⊙] ⛔ the disc cut minted a block crossing at (${v[0].toFixed(3)}, ${v[1].toFixed(3)}) on no rim edge of its tile ring — the ring and the block disagree about the rim. Refusing.`)
-    const a = S[j], b = S[(j + 1) % S.length]; at[j].push({ u: (q.X - a.X) * (b.X - a.X) + (q.Y - a.Y) * (b.Y - a.Y), v }) }
-  const R = [], O = []
-  ring.forEach((p, k) => { R.push(p); O.push(owners[k]); for (const { v } of at[k].sort((x, y) => x.u - y.u)) { R.push(v); O.push(owners[k]) } })
-  return { ring: R, owners: O, added: minted.length }
+  const sh = insertOnEdges(ring, owners, minted, (k) => owners[k]?.kind === 'rim')
+  if (sh.missed.length) { const v = sh.missed[0]; throw new Error(`[tileGround][PROTO⊙] ⛔ the disc cut minted a block crossing at (${v[0].toFixed(3)}, ${v[1].toFixed(3)}) on no rim edge of its tile ring — the ring and the block disagree about the rim. Refusing.`) }
+  return { ring: sh.ring, owners: sh.owners, added: minted.length }
+}
+// ⭐ THE PAINT'S RIM CROSSINGS ARE THE BLOCK'S AND THE RING'S (BRIEF-the-rim-is-cut-once follow-on (2), Boz 2026-10-21). Each
+// paint operand cut by the block crosses the block's rim edge at a point the lattice rounds on its own; rounded INTO the
+// ring, the band's rim kinks in and leaves a wedge no one paints (HPDM tile 49: 7.7 mm along an oblique ray, sub-mm across;
+// HPDM 964 such vertices, 606 inward). Every vertex the paint minted on a rim edge of the tile ring (in neither the ring nor
+// the block) is inserted into the ring's rim edge and the block's edge that holds it, so the paint's rim is a piece of both
+// rims. ⛔ LIVE, never frozen: the paint follows authoring, and the shape is fill-free (the wall) — the noded ring and block
+// are the painter's OUTPUT (`rim`), which the asphalt, the block and the deformer's 'beyond' read. ⛔ One the block holds on
+// no edge throws. ▶ node checks/claims-the-rim-is-cut-once.mjs
+function nodeRimWithPaint(st, paint, nodePaint) {
+  if (!st.ringOwner?.some(o => o?.kind === 'rim')) return null
+  const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, have = new Set([...st.ring, ...(st.iA || []).flat()].map(K))
+  const rimEdge = (k) => st.ringOwner[k]?.kind === 'rim'
+  const pts = []; for (const r of paint) for (const v of r) { const k = K(v); if (have.has(k)) continue; have.add(k); pts.push(v) }
+  const onRing = insertOnEdges(st.ring, st.ringOwner, pts, rimEdge), minted = pts.filter(v => !onRing.missed.includes(v))
+  if (!minted.length) return null
+  const block = (st.iA || []).map(r => { const x = insertOnEdges(r, null, minted, () => true); return x }), placed = new Set()
+  for (const x of block) for (const v of minted) if (!x.missed.includes(v)) placed.add(v)
+  const lost = minted.filter(v => !placed.has(v))
+  if (lost.length) throw new Error(`[tileGround][rim] ⛔ the paint minted a rim crossing at (${lost[0][0].toFixed(3)}, ${lost[0][1].toFixed(3)}) that no edge of its block holds — the paint and the block disagree about the rim. Refusing.`)
+  // ⭐ …and every painted piece takes them too: a crossing one class minted lies on a stretch of rim another class's edge spans,
+  // so noding only the ring kinked it away from that edge (measured, LS tile 38: a 1.1 mm lot slice the ring's kink opened)
+  nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)
+  // ⚠️ COUNTED, NEVER SILENT (Boz, 2026-10-21): a crossing placed farther off the TILE RING'S rim edge than one rounding (√2/2
+  // grid step) bends that rim by as much. Accepted, because leaving it un-noded brings the wedge back; why a crossing sits past
+  // the single-rounding bound is CAUSE NOT ESTABLISHED. ▶ the pour prints the count. (Counted on the ring only; the block and
+  // the paint pieces take the same points.)
+  const far = onRing.off.filter(d => d > Math.SQRT1_2)
+  return { ring: onRing.ring, owners: onRing.owners, block: block.map(x => x.ring), added: minted.length, far: far.length, farMax: far.length ? Math.max(...far) / SCALE : 0 }
 }
 export function cutByStamp(st, own, sp = null) {
   if (!own?.length) return own
@@ -5317,19 +5355,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // 79 → 54 on geometry that was a strict SUPERSET of the original. The stamp above needs no cut
   // at all — the arc is drawn by the same four offsets as the legs — and this is the one piece
   // that is genuinely additional.
-  // ⭐⭐ THE RIM IS CUT ONCE, AT EACH PAINT OPERAND (BRIEF-the-rim-is-cut-once, Boz 2026-10-21). Every band is struck off the
-  // UNCUT ② and cut by the block (`inBlock`, ∩ the disc-cut iA) where its operand is made, BEFORE any difference: cut at the
-  // end, a difference taken past the rim minted a vertex on one operand's copy of a line two bands share (HPDM tile 242: the
-  // lawn's copy, 263 m along a line the curb's copy ends at the rim), and the cut turned its 0.4 mm tilt into a 1.41 mm pair.
-  // Cut first, both copies are the SAME ring and meet the rim at one crossing. ⛔ The labelled levels (LV_*) stay uncut, new
-  // arrays are bound (they are the levels' own `rings`, read with their `labs` by the band pieces), and the geometry tests
-  // (the landings' `firstCross`) read the uncut rings: only PAINT is cut. ⛔ Never `parts` before the offsets (that bends a
-  // band round the rim). ▶ node checks/claims-the-rim-is-cut-once.mjs
-  // a band between two UNCUT operands, painted from their CUT copies: whether it exists is decided uncut, exactly as before (an
-  // empty inner operand is no band); a cut inner operand that is empty lies wholly past the block, so the band is the cut outer
-  // operand whole (measured: cut first, LS tile 5's walk vanished, 3.99 m² of a 5.68 m² block left unpainted)
-  const bandCut = (aU, aC, bU, bC) => (aU.length && bU.length) ? (bC.length ? (aC.length ? differenceRings(aC, bC) : []) : aC) : []
-  const LV_wf = insDL(p => F.get(p).walkFromD), LV_wt = insDL(p => F.get(p).walkToD), W = bandCut(LV_wf.rings, inBlock(LV_wf.rings), LV_wt.rings, inBlock(LV_wt.rings))
+  const LV_wf = insDL(p => F.get(p).walkFromD), LV_wt = insDL(p => F.get(p).walkToD), W = band(LV_wf.rings, LV_wt.rings)
   // ⛔⛔ NOTHING IS UNIONED IN AND NOTHING IS CUT OUT. Every boundary below is a whole-contour
   // offset of the SAME curve, so there are no pieces, nothing to join, and no join to open — which
   // is `RIBBONS §1`'s "a seam is UNCONSTRUCTIBLE rather than merely unlikely", now true of the
@@ -5394,11 +5420,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     const D = WB + Lx, kA = legExt(p, c.before, true, -D, D, D, 0), kB = legExt(p, c.after, false, -D, D, D, 0)
     if (kA && kB) walkCut.push(...intersectRings([kA], [kB]))
   }
-  const curbB = inBlock(curbOuter), pedB = inBlock(pedOuter), luB = inBlock(luIn0), walkCutB = walkCut.length ? inBlock(walkCut) : []
-  const envX = envX0.length && pedB.length ? intersectRings(unionRings(envX0.map(x => x.ring)), pedB) : []
-  const luIn = envX.length ? differenceRings(luB, envX) : luB
-  const envB = bandCut(pedOuter, pedB, luIn0, luB), env = envX.length ? unionRings([...envB, ...envX]) : envB
-  const W2 = walkX.length ? unionRings([...(walkCutB.length ? differenceRings(W, unionRings(walkCutB)) : W), ...inBlock(walkX.map(x => x.ring))]) : W
+  const envX = envX0.length && pedOuter.length ? intersectRings(unionRings(envX0.map(x => x.ring)), pedOuter) : []
+  const luIn = envX.length ? differenceRings(luIn0, envX) : luIn0
+  const env = envX.length ? unionRings([...band(pedOuter, luIn0), ...envX]) : band(pedOuter, luIn0)
+  const W2 = walkX.length ? unionRings([...(walkCut.length ? differenceRings(W, unionRings(walkCut)) : W), ...walkX.map(x => x.ring)]) : W
   // ⭐ THE WALK IS THE BAND — the legs' and, at a perpendicular corner, their straight continuations; nothing is re-filled
   const Wp = env.length && W2.length ? intersectRings(W2, env) : []
   // ⭐⭐ A CURB CUT IS A SIMPLE SHAPE (Jacob, 2026-10-18: "the ramp should be a geometrically simple shape, that's the point of
@@ -5473,7 +5498,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     // block, so its front is the road edge itself, through the curb
     const kk = ks.filter(k => k != null), kFirst = Math.min(...kk), sF = Math.max(...kk) + 1e-2
     const rect = legExt(x.p, x.i, x.atEnd, x.d0, x.d1, sF, -(kFirst - D))
-    const quad = rect && curbOuter.length ? intersectRings([rect], curbOuter) : []   // the construction (the landing decides on it); its paint is cut below
+    const quad = rect && curbOuter.length ? intersectRings([rect], curbOuter) : []
     if (!quad.length) { R.tally.perpNoLanding++; x.c.corner.noLanding = (x.c.corner.noLanding || 0) + 1; continue }
     ramps.push({ c: x.c, p: x.p, A, B, quad, leg: x.leg })
     const along = [-Fr.f[0], -Fr.f[1]]
@@ -5493,16 +5518,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // depth (Boz's ruling, 2026-10-18, on Jacob's "should be one continuous ramp pad"): one band from the outer end of the first
   // to the outer end of the second. Where lawn or land use reaches the curb between them (a corner with a lawn wedge), two.
   // Read from the paint this pass has already laid (`env − Wp` the lawn, `luIn` the land use), never from a distance.
-  const roadIn = (R.masks.length || ramps.length) ? insD(() => () => D) : [], roadBand = bandCut(curbOuter, curbB, roadIn, inBlock(roadIn))   // the diagonal's paint
-  // ⛔ THE ONE-PAD TEST DECIDES ON THE UNCUT CONSTRUCTION, as it did before the rim was cut once: it reads the lawn and the land
-  // use between two cuts, and read off the block-cut paint it flips one corner in two (HPDM one-pads 138 → 236, measured
-  // 2026-10-21) — a change of what the corner draws, not of where the rim is. Which it should read is open (Boz).
-  const lawnLu = ramps.length ? (() => { const envXU = envX0.length && pedOuter.length ? intersectRings(unionRings(envX0.map(x => x.ring)), pedOuter) : []
-    const envU = envXU.length ? unionRings([...band(pedOuter, luIn0), ...envXU]) : band(pedOuter, luIn0), WU = band(LV_wf.rings, LV_wt.rings)
-    const W2U = walkX.length ? unionRings([...(walkCut.length ? differenceRings(WU, unionRings(walkCut)) : WU), ...walkX.map(x => x.ring)]) : WU
-    const WpU = envU.length && W2U.length ? intersectRings(W2U, envU) : [], luU = envXU.length ? differenceRings(luIn0, envXU) : luIn0
-    return [...(WpU.length ? differenceRings(envU, WpU) : envU), ...luU] })() : []
-  const roadBandU = ramps.length ? band(curbOuter, roadIn) : []
+  const roadBand = (R.masks.length || ramps.length) ? band(curbOuter, insD(() => () => D)) : []   // the diagonal's, and the pad test's
+  const lawnLu = ramps.length ? [...(Wp.length ? differenceRings(env, Wp) : env), ...luIn] : []
   const byCorner = new Map(); for (const r of ramps) (byCorner.get(r.c) || byCorner.set(r.c, []).get(r.c)).push(r)
   for (const [c, rs] of byCorner) {
     if (rs.length === 2 && rs[0].p === rs[1].p) {
@@ -5512,19 +5529,19 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       for (const [i, ki] of ends2.slice(0, 2)) for (const [j, kj] of ends2.slice(2)) { const P = rs[i][ki], Q = rs[j][kj], d = Math.hypot(P[0] - Q[0], P[1] - Q[1])
         if (!best || d < best.d) best = { d, P, Q, oP: rs[i][ki === 'A' ? 'B' : 'A'], oQ: rs[j][kj === 'A' ? 'B' : 'A'] } }
       const gapMask = maskOf(subAlong(rs[0].p.ring, best.P, best.Q), cw + D + 0.5)
-      const gap = roadBandU.length ? intersectRings(roadBandU, [gapMask]) : []
+      const gap = roadBand.length ? intersectRings(roadBand, [gapMask]) : []
       const between = gap.length && lawnLu.length ? intersectRings(lawnLu, gap) : []
       const a = between.reduce((t, r) => { let s2 = 0; for (let i = 0; i < r.length; i++) { const P = r[i], Q = r[(i + 1) % r.length]; s2 += P[0] * Q[1] - Q[0] * P[1] } return t + Math.abs(s2) / 2 }, 0)
       if (a < 1e-4) {
         const H = hullOf([...rs[0].quad.flat(), ...rs[1].quad.flat(), ...subAlong(rs[0].p.ring, best.P, best.Q)])
         const pad = intersectRings([H], curbOuter), hull = pad.length ? differenceRings(pad, unionRings([...rs[0].quad, ...rs[1].quad])) : []
-        perpPieces.push(...inBlock(pad)); c.corner.pad = 'one'; R.tally.perpOnePad = (R.tally.perpOnePad || 0) + 1
+        perpPieces.push(...pad); c.corner.pad = 'one'; R.tally.perpOnePad = (R.tally.perpOnePad || 0) + 1
         for (const r of rs) perpOwn.push({ ...r.leg, kind: 'ramp', rings: r.quad })
         if (hull.length) perpOwn.push({ kind: 'hull', si: rs[0].p.si, corner: rs[0].leg.corner, spans: arcSpans(c), rings: hull })
         continue }
       c.corner.pad = 'two'
     }
-    for (const r of rs) { perpPieces.push(...inBlock(r.quad)); perpOwn.push({ ...r.leg, kind: 'ramp', rings: r.quad }) }
+    for (const r of rs) { perpPieces.push(...r.quad); perpOwn.push({ ...r.leg, kind: 'ramp', rings: r.quad }) }
   }
   // the diagonal band: the road edge to D inside it, under its masks; the ground every cut covers gives way to it, and the
   // walk takes it in
@@ -5544,15 +5561,23 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     lawn: envX0.map(x => own1(x, 'ext')) }
   const BP = wantPieces ? bandPiecesOfTile({ st, parts, runs, stamps, inBlock, sp,
     L0: { per: parts.map(p => ({ p, rings: [p.dring], labs: [p.dspan] })) }, LV_cw, LV_wf, LV_wt, LV_WB,
-    curb: less(bandCut(curbOuter, curbB, pedOuter, pedB)), walk: Wall, env, perpRects, perpUnbuilt }) : null
+    curb: less(band(curbOuter, pedOuter)), walk: Wall, env, perpRects, perpUnbuilt }) : null
+  const paint = {
+    curbCut: cutByStamp(st, inBlock(strips), sp),
+    Wacc:   cutByStamp(st, inBlock(Wall), sp),
+    tlByLu: rekeyByPiece(st, { [key]: inBlock(less(Wp.length ? differenceRings(env, Wp) : env)) }, sp),
+    luByLu: rekeyByPiece(st, { [key]: inBlock(less(luIn)) }, sp),
+    curb:   cutByStamp(st, inBlock(less(band(curbOuter, pedOuter))), sp),
+  }
+  const flatLu = (o) => Object.values(o || {}).flat()
+  const rim = nodeRimWithPaint(st, [...paint.curbCut, ...paint.Wacc, ...flatLu(paint.tlByLu), ...flatLu(paint.luByLu), ...paint.curb], (node) => {
+    for (const k of ['curbCut', 'Wacc', 'curb']) paint[k] = paint[k].map(node)
+    for (const k of ['tlByLu', 'luByLu']) for (const lu of Object.keys(paint[k] || {})) paint[k][lu] = paint[k][lu].map(node) })
   return {
     ...(BP ? { bandPieces: BP.pieces, bandSeams: BP.seams, bandCensus: BP.census, bandEdgeDepths: BP.edgeDepths,
       bandPerp: Object.entries(perpRects).flatMap(([cls, xs]) => xs.map(x => ({ cls, ...x }))) } : {}),
-    curbCut: cutByStamp(st, strips, sp), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
-    Wacc:   cutByStamp(st, Wall, sp),
-    tlByLu: rekeyByPiece(st, { [key]: less(Wp.length ? differenceRings(env, Wp) : env) }, sp),
-    luByLu: rekeyByPiece(st, { [key]: less(luIn) }, sp),
-    curb:   cutByStamp(st, less(bandCut(curbOuter, curbB, pedOuter, pedB)), sp),
+    ...paint, curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutCorners: R.corners, cornerArcs,
+    ...(rim ? { rim } : {}),
     capped,
     feArcs, feRepeat, capUnmeasured,
   }
@@ -5796,12 +5821,13 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       W: r.Wacc, tlByLu: r.tlByLu, luByLu: r.luByLu,
       R: r.curbCut || [], curbCutRecs: r.curbCutRecs || [], curbCutTally: r.curbCutTally || null, curbCutContradicted: r.curbCutContradicted || [],
       curbCutCorners: r.curbCutCorners || [], cornerArcs: r.cornerArcs || [],
-      A: differenceRings([st.ring], iA),                                       // asphalt = tile − rounded inner
+      A: differenceRings([r.rim?.ring ?? st.ring], r.rim?.block ?? iA),          // asphalt = tile − rounded inner (the painter's noded rim, live)
       // ⭐ THE CURB IS PART OF THE SAME LADDER when the stamp inquiry built it: `iA − ins(cw)`,
       // a per-point VARIABLE offset. The concentric fallback below is the walk painter's, and it
       // is not the same shape — using it on a stamped tile put 1,820 m² of curb where ③ had none.
       C: r.curb || differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)),
-      block: iA,                                                               // block silhouette = the frozen curb ring
+      block: r.rim?.block ?? iA,                                               // block silhouette = the frozen curb ring, noded at the rim
+      ...(r.rim ? { rim: { ring: r.rim.ring, owners: r.rim.owners }, rimFar: r.rim.far, rimFarMax: r.rim.farMax } : {}),
       ...(r.bandPieces ? { bandPieces: r.bandPieces, bandSeams: r.bandSeams, bandCensus: r.bandCensus, bandEdgeDepths: r.bandEdgeDepths, bandPerp: r.bandPerp } : {}),
     }
     if (cache) cache.set(i, bundle)
@@ -5815,7 +5841,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // the cheap final unions.
   const mkAcc = () => ({ ...Object.fromEntries(Object.keys(PAINTED).map(f => [f, []])), ...Object.fromEntries(Object.keys(PAINTED_BY_LU).map(f => [f, {}])), block: [] })
   const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutCorners = [], cornerArcs = []
-  const rest = mkAcc(), bandByTile = []
+  const rest = mkAcc(), bandByTile = [], rimRings = [], rimFar = { n: 0, max: 0, tiles: [] }
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
   // ⭐ THE RIM IS CUT ONCE: A STAMPED SHAPE IS NOT CLIPPED AGAIN (BRIEF-the-rim-is-cut-once follow-on, Boz 2026-10-21). The pour
   // stamps every tile with its disc (`stampedWith`, the pour's own boundaryRing, recorded in shape.json) and the paint is cut
@@ -5830,6 +5856,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const clip = (rings) => hasStencil && rings.length ? intersectRings(rings, [stencil]) : rings
   for (let i = 0; i < shapeTiles.length; i++) {
     const b = tileGeo(shapeTiles[i], i), cl = reclip ? clip : (r) => r
+    if (b.rim) { rimRings[i] = b.rim; rimFar.n += b.rimFar || 0; rimFar.max = Math.max(rimFar.max, b.rimFarMax || 0); if (b.rimFar) rimFar.tiles.push(i) }
     const acc = (sel && selectedTileSet.has(i)) ? sel : rest
     for (const f of Object.keys(PAINTED)) acc[f].push(...cl(b[f] || []))
     acc.block.push(...cl(b.block))
@@ -5857,6 +5884,8 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     return { ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, cl(v)])), pieces: t.pieces.map(q => ({ ...q, rings: cl(q.rings) })).filter(q => q.rings.length),
       seams: t.seams.map(q => ({ ...q, line: clipped ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) } })
   out.selected = sel ? finish(sel) : null
+  out.rimRings = rimRings   // per tile, the ring noded with its paint's rim crossings (live): the deformer's 'beyond'
+  out.rimFar = rimFar       // the rim crossings placed past one rounding off their edge (counted; cause not established)
   out.curbCutRecs = curbCutRecs; out.curbCutTally = curbCutTally; out.curbCutContradicted = curbCutContradicted
   out.curbCutCorners = curbCutCorners   // every junction corner, authorable in Section
   out.cornerArcs = cornerArcs   // every marked corner arc: its class, key, the operator's flag, and whether it carries a pad
@@ -6064,6 +6093,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const hwySkel = new Set([HWY_SKEL, ...gradeSep.filter(s => HIGHWAY_CLASSES.has(s.highway)).map(s => s.skelId ?? s.name)])
   let protoShapeTiles = null
   let protoNoCurbBlocks = []          // ② blocks whose curb came back empty: their ground, owned (`kind: 'block'` pieces below)
+  let protoRimRings = null            // per tile, its ring noded with its paint's own rim crossings (`nodeRimWithPaint`) — live, never frozen
   let protoBandPieces = null          // ③'s bands as owned pieces, per tile (`bandPiecesOfTile`) — the FILL, live, never frozen
   let protoInkPieces = null           // ① ink as owned pieces (`inkPiecesByOwner`) — the strip between tiles, with its owners
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
@@ -7776,6 +7806,8 @@ export function buildTileGround(ribbons, opts = {}) {
   const highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
   let inkShore = []   // ①'s coast piece, the land's shore surface (painted first, below)
   protoBandPieces = S.bandPieces || []
+  protoRimRings = S.rimRings || []
+  if (S.rimFar?.n) console.warn(`[tileGround][rim] ⚠️ ${S.rimFar.n} rim crossing(s) inserted farther off the tile ring's rim edge than one rounding (√2/2 grid step), the farthest ${(S.rimFar.max * 1000).toFixed(3)} mm, in ${S.rimFar.tiles.length} tile(s): ${S.rimFar.tiles.slice(0, 8).join(', ')}${S.rimFar.tiles.length > 8 ? ' …' : ''} — accepted (un-noded they reopen the wedge); CAUSE NOT ESTABLISHED`)
   { const C = { cells: 0, gapOuter: 0, gapInner: 0, gapSeams: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: 0, perpLegNoSub: 0, perpLegNoStamp: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
     let n = 0, seams = 0, same = 0
     for (const t of protoBandPieces) { n += t.pieces.length; seams += t.seams.length; same += t.seams.filter(q => q.sameChain).length
@@ -7896,5 +7928,5 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { protoBoundaryRing, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
+  return { protoBoundaryRing, protoRimRings, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
 }
