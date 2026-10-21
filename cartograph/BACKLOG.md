@@ -86,7 +86,8 @@ roster was restored. PROBED (Ward, proxy render): Forest Park reads as WOODED PA
 same; frames ~5–10% fewer (within noise); the crop ring is not visible. Trees over the drives (Zob): no anchor on a road; crown
 over road 30,384 → 36,563 m² (+20%, mostly pre-existing census trees); 13 new derived trees on park footways (filed: does
 the forbidden map cover footways?).
-Shots: Ward's scratchpad zoom-east.jpg, cand/cand-*.jpg. ❓ Jacob: eye, then staging → press. Integration HEAD
+✅ Jacob's eye on the before/after (2026-10-21): "Image looks great. Confirmed those are NEON rooftops, expected, correct."
+Next: staging publish (needs Jacob's go) → his look on his own screen → the press. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
 (+ checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs). FILED, after Thursday: (i) source a St. Louis CITY land-use
 code table (the surviving ranges are unverified; the 4xxx–5xxx look SIC-like, a lead) · (ii) ONE City code reader shared by
