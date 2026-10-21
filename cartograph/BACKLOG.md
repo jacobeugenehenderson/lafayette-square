@@ -463,8 +463,9 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
 speaking mainly of the need to match reality at every point." ⇒ keep the LOOK; relax point-accuracy. The bands' derived ~8 mm refine
 is the lever; candidate tolerances are measured from a mesh dump (Kerf), then chosen by Jacob's eye. And: "The Provincetown Pilgrim Monument
 should be a specific and correct height; but the stretch between two streets" need not match reality at every point. ⇒ landmark HEIGHTS
-are exact; the ground between streets is approximate. Open: verify the Monument's served height (77 m tower, 107 m above sea level by
-reference; not checked).
+are exact; the ground between streets is approximate. VERIFIED (Zob): the Monument is drawn from a cited dossier (pilgrim-dossier-v1,
+Carpenter 1911: 252′7.5″ = 77.00 m), seated on the lowest drawn ground under its plinth, never exaggerated; claims-pilgrim-monument-site ✅.
+Open: its record's neon frontage strips sit at y 77.3 (bake-buildings' fh+h+0.3) and may float at the tower top (Ward to look).
 **⭐ THE GROUND'S SIZE AND TIME (Zob, measured 2026-10-21):** LS ground 174,752 triangles served (10-06) → 2,867,676 today (16.4×;
 vertices 10.3×); ground 40 s → ~15 min. The growth is REFINEMENT (triangulation → mesh: 1.7× served, 15.4× today), in the ped
 bands and the road (asphalt 897k · sidewalk 754k · curb 301k · stripe 228k), refined against the deformer's heights. Both
