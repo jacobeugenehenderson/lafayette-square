@@ -5,10 +5,14 @@
 //   1. A FRAME EDGE OUTSIDE THE DRAWING HAS NO HEIGHT TO GIVE: with the disc clear of that edge, the deformer builds and counts
 //      it exempt; with the disc over it, the same edge REFUSES (the frame must contain the disc), and so does the same edge
 //      unstamped at all. No rim height, no fallback.
+//   3. A RIM RING READS ITS SIDE OFF THE UNCUT ② (`iaFull`): a block whose longest ② edge lies outside the disc, a walk along
+//      an edge inside it, the terrain falling inward. Read off ②, the walk takes up its share of the fall; read off the
+//      disc-cut block (`iA`), every station's ray points into the road, finds no band, and the walk sits flat at the line.
 //   2. A POINT IN A DRAWN BAND THAT NO BAND REACHES IS UNOWNED: a walk island with lot between it and ②, so no ray reaches it
 //      and no leg's region holds it. It is named (`unownedIn`), its height null, never the nearer line's.
 // ⭐ MUTATION TEST: `--selftest` plants each wrong deformer back (written to the OS temp dir) and expects its row RED:
-//   the exemption without the disc test (an edge inside the disc exempted) · a nearest-line fallback for an unowned point.
+//   the exemption without the disc test (an edge inside the disc exempted) · a nearest-line fallback for an unowned point ·
+//   the side read off the disc-cut block.
 //   node checks/claims-the-height-code-owns-what-is-drawn.mjs [--selftest]
 import { ROOT } from './_scenes.mjs'
 import { join } from 'node:path'
@@ -29,7 +33,14 @@ const rows = async (url) => {
   const refuses = (f) => { try { f(); return false } catch (e) { return /has no height/.test(e.message) } }
   const clear = sq(-20, -4, 20, 20), over = sq(-20, -20, 20, 20)        // the disc clear of edge 0, and the disc over it
   let D = null; try { D = make({ disc: clear }) } catch { D = null }
+  // 3: ② a 100 × 10 m block, its long bottom edge outside a disc that starts 2 m above it; a walk along the top edge, inside
+  const full = sq(-50, -5, 50, 5), cut = sq(-50, -3, 50, 5)
+  const S = buildDeformer({ town: 'selftest', tiles: [{ ring: sq(-60, -15, 60, 15), ringOwner: [0, 1, 2, 3].map(() => ({ skelId: 'l' })), iA: [cut], iaFull: [full], iaStamp: [[0, 0, 0, 0]],
+      runs: [{ skelId: 'l', poly: [...full, full[0]] }] }], ink: [], raw: (x, z) => -0.1 * (5 - z), line: { step: 1, heightAt: () => 0 }, stencil: sq(-70, -3, 70, 70),
+    limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], lawn: [], walk: [sq(-50, 3, 50, 5)] } })
+  const hw = S.heightAt(0, 3.5)
   return [
+    ['a rim ring whose longest ② edge lies outside the disc reads its side off ②: the walk takes up its share of the fall', hw != null && hw < 0],
     ['a frame edge wholly outside the disc: the deformer builds, and counts it exempt', !!D && D.stats.frameExempt === 1],
     ['the same frame edge inside the disc REFUSES', refuses(() => make({ disc: over }))],
     ['an unstamped edge outside the disc still REFUSES', refuses(() => make({ disc: clear, stamp0: null }))],
@@ -39,16 +50,17 @@ const rows = async (url) => {
 }
 const self = process.argv.includes('--selftest')
 const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
-const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) { stats.unowned++;"
+const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) { stats.unowned++;", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)"
 // ⭐ ONE mutated copy (checks/tier.mjs reads one temp-dir `mutant`) carrying both mutations behind a switch read at call time
 const mutant = () => { const src = readFileSync(HOME, 'utf8')
-  for (const a of [EXEMPT, UNOWNED]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
+  for (const a of [EXEMPT, UNOWNED, SIDE]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
   const f = join(mkdtempSync(join(tmpdir(), 'height-owns-')), 'groundDeformer.mjs')
   writeFileSync(f, src.replace(EXEMPT, "&& (globalThis.__MUT === 'exempt' || outsideDisc(ring[i], ring[(i + 1) % n]))) exempt[i] = 1")
     .replace(UNOWNED, "if (inBand(x, z) && globalThis.__MUT !== 'fallback') { stats.unowned++;")
+    .replace(SIDE, "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, globalThis.__MUT === 'side' ? t.iA : t.full)")
     .replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
   return pathToFileURL(f).href }
-const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point' }
+const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point', side: 'the side read off the disc-cut block (iA)' }
 if (self) { let bad = 0; const url = mutant()
   for (const [k, name] of Object.entries(MUTANTS)) { globalThis.__MUT = k; const R = await rows(url), red = R.some(r => !r[1])
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'}${red ? ` (${R.filter(r => !r[1]).map(r => r[0]).join(' · ')})` : ''}`) }

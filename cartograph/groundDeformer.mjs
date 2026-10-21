@@ -253,7 +253,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     if (!rings.length) continue
     let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
     for (const [x, z] of t.ring) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) }
-    const rec = { ti, ring: frozenCopy(t.ring), iA: t.iA.filter(r => r?.length >= 3).map(frozenCopy), rings, bb: [a, b, c, d], segs: new Map(), one: new Map(), diag: Math.hypot(c - a, d - b) }
+    const rec = { ti, ring: frozenCopy(t.ring), iA: t.iA.filter(r => r?.length >= 3).map(frozenCopy), full: t.iaFull.filter(r => r?.length >= 3).map(frozenCopy), rings, bb: [a, b, c, d], segs: new Map(), one: new Map(), diag: Math.hypot(c - a, d - b) }
     for (let i = 0; i < t.ring.length; i++) { const o = owned(t.ringOwner[i], `① edge ${i} of the tile whose ring starts at (${t.ring[0][0].toFixed(1)}, ${t.ring[0][1].toFixed(1)})`)
       addOwned(rec.one, rec.ring[i], rec.ring[(i + 1) % t.ring.length], o); addOwned(oneGrid, rec.ring[i], rec.ring[(i + 1) % t.ring.length], o) }
     for (const R of rings) for (let i = 0; i < R.ring.length; i++) { if (R.exempt[i]) continue
@@ -419,10 +419,13 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     }
     const total = s0
     const nrm = (i) => { const p = ring[i], q = ring[(i + 1) % n], L = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1; return [-(q[1] - p[1]) / L, (q[0] - p[0]) / L] }
-    // which way is into the block: tested once per ring on its longest segment
+    // which way is into the block: tested once per ring on its longest segment, against the UNCUT ② (`iaFull`), the contour
+    // the stations sit on. ⛔ Never the disc-cut block (`iA`): where a rim ring's longest segment lies outside the disc, iA
+    // does not hold it, and every station normal on the ring pointed OUT of the block (Mitre, 2026-10-21: HPDM 45 rings,
+    // 59.7 km of ② · LS 30, 32.1 km · Huron 16, 153.6 km). ▶ node checks/claims-the-height-code-owns-what-is-drawn.mjs
     let li = 0, lL = -1; for (let i = 0; i < n; i++) { const L = Math.hypot(ring[(i + 1) % n][0] - ring[i][0], ring[(i + 1) % n][1] - ring[i][1]); if (L > lL) { lL = L; li = i } }
     const [m0, m1] = nrm(li), mx = (ring[li][0] + ring[(li + 1) % n][0]) / 2, mz = (ring[li][1] + ring[(li + 1) % n][1]) / 2
-    const sideSign = pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.iA) ? 1 : -1
+    const sideSign = pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full) ? 1 : -1
     R.side = sideSign
     for (const S of st) {
       const p = ring[S.i], q = ring[(S.i + 1) % n], px = p[0] + (q[0] - p[0]) * S.u, pz = p[1] + (q[1] - p[1]) * S.u
