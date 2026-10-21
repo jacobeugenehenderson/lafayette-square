@@ -46,6 +46,13 @@ Two mechanisms, both lattice rounding meeting the disc (Zob, measured; scripts i
    crossings), not `stencil.clipPolygon`. "The rim is an edge of the drawing" (`ORIENTATION`, the compound shape): the
    drawing decides. ⛔ A lattice point can't lie on a general chord, so "snap the paint onto the stencil" isn't buildable.
    If (ii) touches the fade, the ink clip or membership, stop and say which.
+   **STATUS 2026-10-21 morning (Mitre, measured at integration ba02b826): route (ii) is BUILT (the deformer reads the
+   painter's noded rim, 4be86489) and B1's gate is STILL OPEN.** The point (1352.96, 310.57) is unowned. Its ray reads beyond →
+   1.56 mm of lot → lawn, across a wedge between lawn #430's edge and the noded rim edge (1354.413, 307.852) →
+   (1354.072, 309.290). The paint's rim edges and the noded rim ring are two rounded copies of one line, 0.34–1.35 mm
+   apart: HPDM's class 3 (53 points, tiles 134/55) and 43 m of LS rim-side kerb stretches. **B1's source fix (Boz):** the
+   paint's rim edges take the rim ring's OWN vertices, from one rounding, matched exactly. ⛔ Never a two-roundings bound.
+   Sized after Mitre's plane probe, which may close part of it.
 3. **(C), route (i) on the ring: the disc stamp inserts iA's rim crossings into the cut tile ring** (the exact vertices
    `cut(t.iA)` minted, matched exactly, never within a tolerance), so `ring − iA` leaves no needle.
 

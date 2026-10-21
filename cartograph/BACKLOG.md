@@ -75,8 +75,8 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
 - **LS #39 (kerb step):** 22.1 m bare on the real baseline (Truss). On the whole stack (Truss's noding + Plumb's crease
   split, polyline mitre and ownership finder, refinement off): **1.03 m**, all sub-cm. The Mississippi stripe straddle was a DEFECT (a
   verge span edge given depth 0), fixed and merged; your "confine the stripe" call is moot. Plumb's branch isn't
-  landable yet: checks being ported, and 43 m of LS rim-side stretches are B2 (the paint's rim edge and the rim ring
-  rounded twice, 1–1.35 mm apart). RULED: no tolerance in the rim read; the fix is at the source (the rim brief's B2, Mitre).
+  landable yet: checks being ported, and 43 m of LS rim-side stretches are the rim brief's B1 residue (the paint's rim edge and
+  the rim ring rounded twice, 1–1.35 mm apart). RULED: no tolerance in the rim read; the fix is at the source (B1, Mitre).
 - **PTown census** running on b8e7b868 (Kerf). **Huron census done** (older code): only #40, 96% on tile 6; 2.7 h of
   ground baking.
 - ❓ **Your calls, each with its numbers in the lines below:**
