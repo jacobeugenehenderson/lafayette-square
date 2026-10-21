@@ -10,12 +10,14 @@
 //      disc-cut block (`iA`), every station's ray points into the road, finds no band, and the walk sits flat at the line.
 //   2. A POINT IN A DRAWN BAND THAT NO BAND REACHES IS UNOWNED: a walk island with lot between it and ②, so no ray reaches it
 //      and no leg's region holds it. It is named (`unownedIn`), its height null, never the nearer line's.
+//   5. A VERTEX ON A STAMP LINE WHOSE RAY RUNS ALONG IT is read on both sides at ±LATTICE and held by the band on its other
+//      side (Zob placed 81 of HPDM's 269 there; Boz ruled 2026-10-21); the mirror, already held, is untouched.
 //   4. THE BAKE RECORDS AN UNOWNED VERTEX EXACTLY (groundDeformer.mjs#unownedKey, imported; terrainPart read): its key parses back
 //      to the very floats, two vertices 1 mm apart are two records, terrainPart records through the key, and the refusal
 //      writes the full list beside the slab. Keyed at 1 cm, HPDM's 1,234 could not be re-resolved (Zob, 2026-10-21).
 // ⭐ MUTATION TEST: `--selftest` plants each wrong deformer back (written to the OS temp dir) and expects its row RED:
 //   the exemption without the disc test (an edge inside the disc exempted) · a nearest-line fallback for an unowned point ·
-//   the side read off the disc-cut block · the 1 cm rounding restored to the unowned key (in the key and in terrainPart) ·
+//   the side read off the disc-cut block · a ray along a stamp line read on one side only · the 1 cm rounding restored to the unowned key (in the key and in terrainPart) ·
 //   a stale unowned list left beside a good slab.
 //   node checks/claims-the-height-code-owns-what-is-drawn.mjs [--selftest]
 import { ROOT } from './_scenes.mjs'
@@ -44,7 +46,17 @@ const rows = async (url) => {
       runs: [{ skelId: 'l', poly: [...full, full[0]] }] }], ink: [], raw: (x, z) => -0.1 * (5 - z), line: { step: 1, heightAt: () => 0 }, stencil: sq(-70, -3, 70, 70),
     limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], lawn: [], walk: [sq(-50, 3, 50, 5)] } })
   const hw = S.heightAt(0, 3.5)
+  // 5: a vertex ON a stamp line (lot one side, walk the other) whose station is the line's foot on ②: its ray runs along the
+  //    line, and the 10 µm sidestep reads the lot's side. Read on both sides at ±LATTICE, the walk holds it. The mirror (the
+  //    sidestep already in the walk) is held by the first ray, and the second read never runs.
+  const ib = [[-5, -5], [0, -5], [5, -5], [5, 5], [-5, 5]]
+  const along = (walk) => buildDeformer({ town: 'selftest', tiles: [{ ring: sq(-10, -10, 10, 10), ringOwner: [0, 1, 2, 3].map(() => ({ skelId: 'l' })), iA: [ib], iaFull: [ib], iaStamp: [[0, 0, 0, 0, 0]],
+      runs: [{ skelId: 'l', poly: [...ib, ib[0]] }] }], ink: [], raw: () => 0, line: { step: 1, heightAt: () => 1 },
+    limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], lawn: [], walk: [walk] } })
+  const E = along(sq(0, -5, 5, -3)), W = along(sq(-5, -5, 0, -3))
   return [
+    ['a vertex on a stamp line whose ray runs along it is held by the band on its other side, never unowned', E.unownedIn(0, -4) == null && E.heightAt(0, -4) != null && E.ownerAt(0, -4) != null && E.stats.byBothSides === 1],
+    ['the mirror, its sidestep already in the band, is held by the first ray (the both-sides read never runs)', W.unownedIn(0, -4) == null && W.heightAt(0, -4) != null && W.stats.byBothSides === 0],
     ['a rim ring whose longest ② edge lies outside the disc reads its side off ②: the walk takes up its share of the fall', hw != null && hw < 0],
     ['a frame edge wholly outside the disc: the deformer builds, and counts it exempt', !!D && D.stats.frameExempt === 1],
     ['the same frame edge inside the disc REFUSES', refuses(() => make({ disc: over }))],
@@ -65,17 +77,18 @@ const keyRows = (key, src) => { const x = 170.53456789012345, z = 1254.912345678
     ['a bake that owns every ped vertex removes a stale list (the uploader carries every file of a look dir)', src.includes(DELETE), 'bake-ground.js']] }
 const self = process.argv.includes('--selftest')
 const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
-const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) { stats.unowned++;", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)"
+const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) {\n      const H = []", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)", BOTH = 'for (const side of [LATTICE, -LATTICE])'
 // ⭐ ONE mutated copy (checks/tier.mjs reads one temp-dir `mutant`) carrying both mutations behind a switch read at call time
 const mutant = () => { const src = readFileSync(HOME, 'utf8')
-  for (const a of [EXEMPT, UNOWNED, SIDE]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
+  for (const a of [EXEMPT, UNOWNED, SIDE, BOTH]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
   const f = join(mkdtempSync(join(tmpdir(), 'height-owns-')), 'groundDeformer.mjs')
   writeFileSync(f, src.replace(EXEMPT, "&& (globalThis.__MUT === 'exempt' || outsideDisc(ring[i], ring[(i + 1) % n]))) exempt[i] = 1")
-    .replace(UNOWNED, "if (inBand(x, z) && globalThis.__MUT !== 'fallback') { stats.unowned++;")
+    .replace(UNOWNED, "if (inBand(x, z) && globalThis.__MUT !== 'fallback') {\n      const H = []")
+    .replace(BOTH, "for (const side of (globalThis.__MUT === 'oneside' ? [] : [LATTICE, -LATTICE]))")
     .replace(SIDE, "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, globalThis.__MUT === 'side' ? t.iA : t.full)")
     .replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
   return pathToFileURL(f).href }
-const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point', side: 'the side read off the disc-cut block (iA)' }
+const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point', side: 'the side read off the disc-cut block (iA)', oneside: 'a ray along a stamp line read on one side only (today\'s 10 µm sidestep)' }
 if (self) { let bad = 0; const url = mutant()
   for (const [k, name] of Object.entries(MUTANTS)) { globalThis.__MUT = k; const R = await rows(url), red = R.some(r => !r[1])
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'}${red ? ` (${R.filter(r => !r[1]).map(r => r[0]).join(' · ')})` : ''}`) }

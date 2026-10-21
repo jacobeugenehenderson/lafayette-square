@@ -63,7 +63,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   if (!(blend > 0)) throw new Error(`groundDeformer: the blend must be metres > 0, got ${blend}`)
   if (!(exag > 0)) throw new Error(`groundDeformer: the exaggeration ceiling must be > 0, got ${exag}`)
   if (!(walkMax >= 0)) throw new Error('groundDeformer: the town names no walk cross-slope limit — the girdle cannot hold the walk level')
-  const stats = { memoTurns: 0, frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
+  const stats = { memoTurns: 0, byBothSides: 0, bothSidesSplit: 0, bothSidesMaxDH: 0, frameExempt: 0, noFull: 0, stations: 0, absorbClamped: 0, tiles: 0, onTerrain: 0, arcBlended: 0, outside: 0, deep: 0, evaluated: 0, rays: 0, eased: 0, lawnFull: 0, byBand: 0, unowned: 0,
     road: 0, roadBlended: 0, ink: 0, inkCrossing: 0, inkOnGrid: 0, byLeg: 0, legCross: 0, legCrossMaxDH: 0, rayAndLeg: 0, legNotHeld: 0 }
 
   // ── the band boundaries, as segments in a grid, one class each ──
@@ -582,7 +582,21 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
         if (P.length > 1) { stats.legCross++; const vs = P.map(o => o.p.v); stats.legCrossMaxDH = Math.max(stats.legCrossMaxDH, Math.max(...vs) - Math.min(...vs)) }
         return { v: P.reduce((a, o) => a + o.p.v, 0) / P.length, owner: `${t.ti}|leg|${P.map(o => `${o.L.R.k}:r${o.L.R.stamp[o.L.i]}`).join('+')}` } }
       stats.legNotHeld++ }
-    if (inBand(x, z)) { stats.unowned++; return { v: null, owner: null, unowned: t.ti } }
+    // ⭐ THE RAY ALONG A BOUNDARY (Zob placed 81 of HPDM's 269; Boz ruled 2026-10-21): a vertex ON a partition line that runs
+    // from its own station has its ray run exactly ALONG that line, and the 10 µm sidestep reads ONE side of it: on the lot's
+    // side, no band, and the point went unowned. Only there, and only where nothing above held it, the ray is read on BOTH
+    // sides at ±LATTICE (the partition's own grid), and the point is held if either side's band holds it. ⛔ The band still
+    // decides: never the nearer line. A point any ray or leg held above is untouched. ⭐ EVERY holding read is taken, never the
+    // first: where they give different heights the point is counted (`bothSidesSplit`, the spread in `bothSidesMaxDH`) and
+    // takes their mean, as a leg crossing does above. The rule is provisional until HPDM's split is measured (Boz, 2026-10-21).
+    if (inBand(x, z)) {
+      const H = []
+      for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) { if (!alongBoundary(c.px, c.pz, x, z)) continue
+        for (const side of [LATTICE, -LATTICE]) { const p = profile(c, x, z, side); if (p.held) H.push({ c, v: p.v }) } }
+      if (H.length) { stats.byBothSides++; const vs = H.map(h => h.v), dh = Math.max(...vs) - Math.min(...vs)
+        if (dh > 0) { stats.bothSidesSplit++; stats.bothSidesMaxDH = Math.max(stats.bothSidesMaxDH, dh) }
+        return { v: vs.reduce((a, v) => a + v, 0) / vs.length, owner: [...new Set(H.map(h => own(h.c)))].sort().join('+') } }
+      stats.unowned++; return { v: null, owner: null, unowned: t.ti } }
     return { v: profile(n, x, z).v, owner: own(n) }
   }
   // ⭐ THE SWEEP (the road side of tile t): D = (1 − s)·L + s·H②, s = d① / (d① + d②). L is the owners' blend of t's own ①
@@ -616,15 +630,23 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
       by.set(o, e.d) }
     return { v: lineBlend(by, x, z), owner: `ink|${p.owners.map(o => o.id).join('+')}` }
   }
+  // is (x, z) on a band piece's edge whose line passes within the lattice of the station (px, pz)? Then a ray from the
+  // station to the point runs along that edge (`resolveUncached`, the both-sides read)
+  const alongBoundary = (px, pz, x, z) => {
+    const segD = (a, b, qx, qz) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((qx - a[0]) * dx + (qz - a[1]) * dz) / L2)) : 0; return Math.hypot(qx - a[0] - u * dx, qz - a[1] - u * dz) }
+    const lineD = (a, b, qx, qz) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); return L ? Math.abs((qx - a[0]) * dz - (qz - a[1]) * dx) / L : Infinity }
+    for (let gx = Math.floor((x - LATTICE) / CELL); gx <= Math.floor((x + LATTICE) / CELL); gx++) for (let gz = Math.floor((z - LATTICE) / CELL); gz <= Math.floor((z + LATTICE) / CELL); gz++)
+      for (const s of segGrid.get(gx * 1000003 + gz) || []) if (segD(s.a, s.b, x, z) <= LATTICE && lineD(s.a, s.b, px, pz) <= LATTICE) return true
+    return false }
   const nearKey = (n) => n.R.arc[n.i] != null ? `a${n.R.arc[n.i]}` : `r${n.R.stamp[n.i]}`
   const inBand = (x, z) => inClass('walk', x, z) || inClass('lawn', x, z) || inClass('curb', x, z)
   // THE PROFILE from one ② span `n` (its station, H, ring position) at (x, z): { v, held } — held = the point lies in
   // that span's own ped band (to the lattice)
-  function profile(n, x, z) {
+  function profile(n, x, z, side = SIDESTEP) {
     const ux = (x - n.px) / n.d, uz = (z - n.pz) / n.d
     // ⛔ the ray is aimed AT this point, which is often a band polygon's own vertex: run it 10 µm to the side, so it never
     // passes exactly through a boundary vertex (where the half-open crossing rule can count a boundary 0 or 2 times)
-    const B = bandsAlong(n.px - uz * SIDESTEP, n.pz + ux * SIDESTEP, ux, uz, CAP, recOf.get(n.R.t))
+    const B = bandsAlong(n.px - uz * side, n.pz + ux * side, ux, uz, CAP, recOf.get(n.R.t))
     const { ped, back } = pedOf(B)
     const held = ped.length > 0 && n.d <= back + LATTICE
     const R = absorbAt(n.R, n.i, n.u)                        // the absorption along ②, continuous along the street
