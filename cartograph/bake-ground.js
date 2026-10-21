@@ -1779,9 +1779,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // a lifted face the curb does not stand on meets the road, or the drawing's edge, carries a taper — read by the riser's
   // own owner test (`kerbLift.mjs#curblessEdges`), so an alley painted over the curb makes its own mouth curbless.
   const kerbGroups = PAINT_ORDER.filter(([kind, key]) => !DOES_NOT_CUT.has(kind + ':' + key)).map(([kind, key]) => ({ id: kind + ':' + key, key, items: partitionItems(kind, key) })).filter(g => g.items)
-  const { inBlock: kerbInside, curblessM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, orphanRoadM: kerbOrphanM, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
+  const { inBlock: kerbInside, curblessM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, orphanRoadM: kerbOrphanM, narrowBlock: kerbNarrow, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
     ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, groups: kerbGroups, ramps: curbCutRamps, kerb }))
     : { inBlock: null, curblessM: 0, regions: [] }
+  if (kerbH) console.log(`  [kerb] narrow blocks (a taper's crease reaching its own block's far side, clipped to the block): ${kerbNarrow.length} crease(s) on ${new Set(kerbNarrow.map(c => c.ring)).size} ring(s)${kerbNarrow.length ? `, first at (${kerbNarrow[0].at.map(v => v.toFixed(2)).join(', ')}) ${kerbNarrow[0].pastFarEdgeM} m past` : ''}`)
   // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
   // ⭐ ONE CUT PER CREASE (`kerbLift.mjs#cutCreases`): every crossing of a crease with the partition — the road included —
@@ -2096,7 +2097,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     positionChunks.push(kerbRiser.positions); indexChunks.push(kerbRiser.indices)
     posByteOffset += kerbRiser.positions.byteLength; idxByteOffset += kerbRiser.indices.byteLength
   }
-  if (groundShape && kerbH) groundShape.kerb = { height: kerbH, source: kerb.source, cuts: curbCutRamps.length, riserM: Math.round(kerbRiser?.kerbM ?? 0) }
+  if (groundShape && kerbH) groundShape.kerb = { height: kerbH, source: kerb.source, cuts: curbCutRamps.length, riserM: Math.round(kerbRiser?.kerbM ?? 0), narrowBlock: kerbNarrow }
 
   // Concatenate positions (all Float32) and indices (all Uint32) into one
   // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset

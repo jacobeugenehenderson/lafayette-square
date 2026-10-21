@@ -131,18 +131,26 @@ export function kerbPlan({ blockRings, groups, ramps, kerb }) {
   // step at its steepest run — never a unitless epsilon (the riser read `1e-6` and called a 0.1 mm lift a step).
   const runs = [kerb.rampSlope > 0 ? kerb.height / kerb.rampSlope : null, kerb.flareSlope > 0 ? kerb.height / kerb.flareSlope : null, kerb.taperRun > 0 ? kerb.taperRun : null].filter(v => v != null)
   const flushTol = runs.length ? kerb.height * LATTICE_M / Math.min(...runs) : kerb.height * LATTICE_M
+  // ⭐ A NARROW BLOCK (narrower than two runs) is the one place a taper reaches past the block: across ITS OWN ring, the far
+  // side. The cells clip it to the block (`kerbCells`), as they have since 8bd2751f — counted, never silent (Boz,
+  // 2026-10-21; the ridge rule is Jacob's). A crease reaching ANOTHER block's ring, or starting on no ring, is refused.
   const tapers = taperRegions(curbless, kerb.taperRun), crossed = mitresCrossing(tapers, blockRings)
-  if (crossed.length) throw new Error(`[kerbLift] ⛔ ${crossed.length} mitred taper crease(s) cross another block edge — a bend too sharp for the run ${kerb.taperRun} m to reach its bisector inside the block: ${crossed.slice(0, 6).map(c => `from (${c.from.map(v => v.toFixed(3))}) reaching ${c.reach.toFixed(2)} m, across (${c.edge[0].map(v => v.toFixed(3))})→(${c.edge[1].map(v => v.toFixed(3))})`).join(' · ')}`)
-  return { inBlock, curbless, curblessM, unpaired, unpairedM, orphanRoadM, flushTol, regions: [...kerbRegions(ramps, kerb), ...tapers] }
+  const narrow = crossed.filter(c => c.sameRing), foreign = crossed.filter(c => !c.sameRing)
+  if (foreign.length) throw new Error(`[kerbLift] ⛔ ${foreign.length} mitred taper crease(s) cross ANOTHER block's edge (or start on no block ring) — a bend too sharp for the run ${kerb.taperRun} m: ${foreign.slice(0, 6).map(c => `from (${c.from.map(v => v.toFixed(3))}) reaching ${c.reach.toFixed(2)} m, across ring ${c.ring} (${c.edge[0].map(v => v.toFixed(3))})→(${c.edge[1].map(v => v.toFixed(3))})`).join(' · ')}`)
+  const narrowBlock = narrow.map(c => ({ ring: c.ring, at: c.from, reachM: +c.reach.toFixed(3), pastFarEdgeM: +c.past.toFixed(3) }))
+  return { inBlock, curbless, curblessM, unpaired, unpairedM, orphanRoadM, flushTol, narrowBlock, regions: [...kerbRegions(ramps, kerb), ...tapers] }
 }
 
 /** Every MITRED crease (k ≠ 0) of `tapers` that properly crosses a block-ring edge other than those at its own vertex:
- *  [{ from, reach, edge }]. A perpendicular side is the rectangle's, as before; only the bisector's longer reach is new. */
+ *  [{ from, reach, edge, ring, sameRing, past }] — `ring` the crossed edge's block ring, `sameRing` when the crease starts
+ *  on that same ring (a vertex of it, by its lattice point: the block rings are noded with the paint), `past` how far the
+ *  crease runs beyond the crossing. A perpendicular side is the rectangle's, as before; only the bisector's reach is new. */
 export function mitresCrossing(tapers, blockRings) {
-  const CELL = 8, cells = new Map(), out = [], seen = new Set()
-  for (const r of blockRings) for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]
+  const CELL = 8, cells = new Map(), out = [], seen = new Set(), lk = (p) => Math.round(p[0] / LATTICE_M) + ',' + Math.round(p[1] / LATTICE_M), ringsAt = new Map()
+  blockRings.forEach((r, ri) => { for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]
+    ;(ringsAt.get(lk(a)) || ringsAt.set(lk(a), new Set()).get(lk(a))).add(ri)
     for (let x = Math.floor(Math.min(a[0], b[0]) / CELL); x <= Math.floor(Math.max(a[0], b[0]) / CELL); x++)
-      for (let z = Math.floor(Math.min(a[1], b[1]) / CELL); z <= Math.floor(Math.max(a[1], b[1]) / CELL); z++) (cells.get(x + ',' + z) || cells.set(x + ',' + z, []).get(x + ',' + z)).push([a, b]) }
+      for (let z = Math.floor(Math.min(a[1], b[1]) / CELL); z <= Math.floor(Math.max(a[1], b[1]) / CELL); z++) (cells.get(x + ',' + z) || cells.set(x + ',' + z, []).get(x + ',' + z)).push([a, b, ri]) } })
   const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
   for (const g of tapers) for (const [k, P, Q] of [[g.kA, g.poly[0], g.poly[3]], [g.kB, g.poly[1], g.poly[2]]]) {
     if (!k) continue
@@ -151,10 +159,12 @@ export function mitresCrossing(tapers, blockRings) {
     for (let x = Math.floor(Math.min(P[0], Q[0]) / CELL); x <= Math.floor(Math.max(P[0], Q[0]) / CELL); x++)
       for (let z = Math.floor(Math.min(P[1], Q[1]) / CELL); z <= Math.floor(Math.max(P[1], Q[1]) / CELL); z++)
         for (const e of cells.get(x + ',' + z) || []) { if (hit.has(e)) continue; hit.add(e)
-          const [a, b] = e; if ((a[0] === P[0] && a[1] === P[1]) || (b[0] === P[0] && b[1] === P[1])) continue
+          const [a, b, ri] = e; if ((a[0] === P[0] && a[1] === P[1]) || (b[0] === P[0] && b[1] === P[1])) continue
           const d1 = cr(a, b, P), d2 = cr(a, b, Q), d3 = cr(P, Q, a), d4 = cr(P, Q, b)
           if (Math.abs(d1) <= 1e-9 * Math.hypot(b[0] - a[0], b[1] - a[1])) continue      // the crease starts ON this edge
-          if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) out.push({ from: P, reach: Math.hypot(Q[0] - P[0], Q[1] - P[1]), edge: e }) } }
+          if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+            const reach = Math.hypot(Q[0] - P[0], Q[1] - P[1]), f = d1 / (d1 - d2)
+            out.push({ from: P, reach, edge: [a, b], ring: ri, sameRing: !!ringsAt.get(lk(P))?.has(ri), past: reach * (1 - f) }) } } }
   return out
 }
 
