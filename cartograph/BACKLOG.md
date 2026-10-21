@@ -35,6 +35,13 @@ building_sqft / units. Interim tonight (Boz, reversible, no visible change): str
 and rank stay; they still embed the withheld fields in aggregate, in roster.json and in every served listing's
 `prominence_rank` (Zob: nothing downstream reads `signals`, so the strip breaks nothing). Yours: (a) drop withheld fields
 from prominence upstream (ranks move) or (c) rule a percentile isn't redistribution.
+The National Register as a replacement source (Zob, measured): HPDM's nr-inventory keeps a "Built" year on 253 of 1,446
+after the withholding (OCR'd, accuracy not measured). LS's "NPS" data is mostly INFERRED from the assessor year
+(nps_style_inferred on 741; 32 buildings actually named with pages); the nomination spreadsheets give ≤ 80 plausible
+years (18 explicitly parsed), and no code reads them. Withholding LS's assessor years also removes the basis of those
+741 inferred style labels. Terms of an NR nomination are not established: no registry entry; LS's nomination PDF is
+committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next: Zob's LS Inputs gap census → the
+LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
 **🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
 Start here. State at the restart:
