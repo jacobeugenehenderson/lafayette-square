@@ -89,6 +89,9 @@ Start here. State at the restart:
     point (arc 117, run 66); next: identify the strip; if it's authored land use, the deformer's ray rule is a RULING for Jacob
     · **(3) 59 rays from beyond the rim** on tiles 134/55, where the noded rim and the painted band disagree by METRES on 29
     (Mitre next) · **(4) 27 lot-first** at tile 189: the painted curb's road edge cm inside ② (Mitre next).
+    Fix B BUILT (Mitre, mitre/leg-faces 2213998d): tiles 67/74/211/47 → 69 of 74 owned, each by its leg; paint byte-identical;
+    in review (Zob); the town count waits on the slot after Huron. Open, cause not established: tile 211's 5 (a lawn piece in
+    leg r6's cell rect) · tile 47's 6 painted-walk points in no band piece.
     REVISED (Zob, measured): **~81 are a ray running ALONG a partition line** (the 'holes' were the instrument sampling along it;
     no ground is missing). bandsAlong reads one 10 µm side; on the land-use side it reads lot. Fix, being built (Kerf): read
     both sides at ±LATTICE; the band still decides. Of the rest · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
