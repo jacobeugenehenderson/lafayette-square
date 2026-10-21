@@ -129,6 +129,8 @@ Start here. State at the restart:
     The 4.7 km (old 18.4 vs ownership 13.7 km) is the RIM (Plumb, by stretch). RULED: the rim keeps its taper (Jacob's Q1
     rule, kerbLift header); 'nothing across' is a named case, and the rim metres stay equal. verge|stripe: no exclusion; Zob
     writes 'a road marking lies inside its road' (RED on Mississippi), which gates M1's landing. ❓ Jacob: should the rim stand?
+    The marking check (1e3ac0d0) on HPDM: RED, small: 5 of 162 stripes; one real site (706.4, 1104.8), 0.056 m²; four
+    ~1e-4 m² at stripe ends. Owner centreStripeRings; not a bake gate.
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
@@ -151,7 +153,9 @@ Start here. State at the restart:
     block ring (4,529 m), but the flattened paint keeps only 2,868 m of them (≈2.4 km of rim vertices are lost in the re-clip;
     rim brief B). BUILT (Truss, truss/flatten-output-noded; Zob reviews, heavy run pending): nodeThePlane + splitAtPinches
     after the ease split: LS once-used 139 km → 1.78 km (all pastBound), a fixpoint, step-1 churn 199 triangles > 10 m (not
-    the 20k). Provisional, pending Zob: block + rim rings as identity-only noded copies (block ring exact 83.6% → 99.9%).
+    the 20k). Zob: sound to merge, after the heavy run. REVISED (Zob, one reader): after nodeThePlane the bake's block
+    and rim rings ARE the noded rings for every in-bake reader (the frozen rings untouched); pinches are cut by
+    splitAtPinches (block ring exact 83.6% → 99.9%).
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
