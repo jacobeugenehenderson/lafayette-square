@@ -35,6 +35,11 @@ building_sqft / units. Interim tonight (Boz, reversible, no visible change): str
 and rank stay; they still embed the withheld fields in aggregate, in roster.json and in every served listing's
 `prominence_rank` (Zob: nothing downstream reads `signals`, so the strip breaks nothing). Yours: (a) drop withheld fields
 from prominence upstream (ranks move) or (c) rule a percentile isn't redistribution.
+✅ RULED (Jacob, 2026-10-21 ~01:30): "Buildings can be listed as historic; and perhaps we can do historic neighborhoods but
+we are not orchestrated around that." Historic status is a BUILDING's property. Town membership is Jacob's authoring
+(Extent), never a district. The district concept was agent-introduced (162a084b, 266d3505) and never ruled. ⇒ the card's
+"Historic district" line comes off (Ward); a building may show its own listing. The district-naming work below is
+superseded: Truss's interim (1cfc3f47) and Plumb's LS declaration (9477fdd8) stay unmerged; the code-carry fix is moot.
 ⚠️ HISTORIC DISTRICT NAMES ARE MIS-ASSIGNED, a kit class, LIVE ON HPDM (Zob, measured): fetch-parcels reduces the City's
 district CODES to booleans, so with one declared district every flagged parcel takes its name. HPDM: 81 buildings
 (Wydown, Woodbourne, Buena Vista, Fauquier, Skinker …, no declared street, no NR match) are named "Hi-Pointe–DeMun
