@@ -147,7 +147,9 @@ Start here. State at the restart:
     rimRings ≠ the stencil's once-used edges (2.87 vs 2.66 km): a finding for the rim brief (B).
     Zob: nodeAcrossGroups stays CROSS-GROUP ONLY (within-group re-opens the 10-20 fold, and can't close a sub-lattice gap).
     Direction being measured (Plumb): candidates are the block ring's own edges; the rim comes from ringOwner 'rim'/rimRings;
-    anything else refuses. Open, Class D, not ruled:
+    anything else refuses. Measured (Plumb, exact keys): 83.6% of the block ring IS a paint edge; rimRings' rim edges match the
+    block ring (4,529 m), but the flattened paint keeps only 2,868 m of them (≈2.4 km of rim vertices are lost in the re-clip;
+    rim brief B). Being measured (Truss): the block rings and rimRings as participants in the once-noding. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
     reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
