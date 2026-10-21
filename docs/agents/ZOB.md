@@ -53,10 +53,11 @@ corrects a doc toward the code alone.
 
 Zob's memory is **executable**: `checks/` and git. ⛔ A Zob finding that isn't a check or a commit isn't packed.
 
-## 7. Owed — Zob's first jobs (⛔ none of these exists yet; do not cite them as runnable)
+## 7. Owed (⛔ not built yet; do not cite as runnable)
+
+Built: ▶ `node checks/codemap.mjs` (each site's doc claim beside its code fact; a moved line goes STALE).
 
 - `checks/rulings.mjs`: prints every `r-*` ruling with its code site, and fails where a ruling names no check.
-- `checks/codemap.mjs`: the symbol map a premise pass starts from.
 
 **Receipt:** the 2026-10-20 pilot. Given Mitre's question cold, Zob reached Mitre's measured result
 (`BRIEF-perpendicular-leg-ownership`: `spanOfSrc` labels an after leg as its own arc) from source alone,
