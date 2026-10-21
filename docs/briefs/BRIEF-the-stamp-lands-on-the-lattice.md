@@ -106,6 +106,13 @@ within the bound of an edge of ANOTHER group is inserted into that edge, both di
 - **The two drops** in `itemsByMembership` (the orphan and the bow-tie, "a downstream tolerance for an upstream class"):
   measure them after noding on LS, HPDM, Huron and PTown. If both are 0 everywhere, delete them in the same commit
   (fix in three parts, `CLAUDE.md`); if not, report the counts and leave them.
+- **LS's asphalt needle, measured (Plumb, ce9f3b26):** born in the rim-tile branch of tileGround's circle stamp,
+  `const curb = inside ? (t.iA || []) : cut(t.iA)` with `cut = rings => intersectRings(rings, [MP.boundaryRing])`.
+  California's curb edge crosses the rim chord, Clipper rounds the crossing onto the lattice 0.166 mm off the chord, and
+  the tile ring gets no vertex there, so `ring − iA` leaves a 12.7 m, ≤ 0.166 mm needle. iA is 100/100 on the lattice
+  BEFORE any cut on that tile, so §3 item 1's premise ("iA is FLOAT until the circle cut") does not hold at HEAD, and its
+  order (trim → stamp → circle cut) is already built (23adbb41). What remains is the circle cut minting crossings the
+  tile ring doesn't share. §3b noding clears the refusal there (inferred); the needle itself is a separate, later fix.
 - **Parked (option 2), not this build:** noding the evidence against itself in `layerLandEvidence`, the pour-side
   cleanliness. And LS's asphalt producer, once found.
 
