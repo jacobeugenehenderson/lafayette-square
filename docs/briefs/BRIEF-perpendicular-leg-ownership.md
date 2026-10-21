@@ -10,6 +10,8 @@ evict-when: refusedPerp is 0 on every town with perpendicular corners (live norm
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds (`ListAgents`,
 then `/rename`). **Agent: FRESH.** The design is settled and written here, and nobody's window carries the context.
 
+**Premise pass: Zob, 2026-10-20 night, on d8e1396e; corrections folded in.**
+
 **Instruction: confirm-then-build.** Read the canon and the code below and tell Boz what you found. If the code
 contradicts this brief, **stop and flag**: the stop is the deliverable, not a failure.
 
@@ -44,15 +46,21 @@ Huron refusedPerp 6,179 m² · LS 45 m² · HPDM 4,532 m² with the norm resolve
    lies on an arc takes the arc's span in `bandPiecesOfTile` (LS 710 of 15,934 edges, Huron 1,651 of 55,175; on
    708 and 1,632 of them leg and arc share one span, so `o.depths` merges the arc's depths into the leg's). It reaches
    no pixel today: nothing outside `tileGround.js` reads `bandPieces`, and `groundDeformer.mjs` reads `iaArc` per
-   vertex correctly. But an extension keyed by its run would meet its own leg's cell keyed by the arc, and rule 4
-   would then call that overlap shared. Either this build keys the cells by run too (one key for one leg), or it
-   stays a separate defect and rule 4 must not treat leg-vs-own-cell as shared.
+   vertex correctly. Spans are compared as STRINGS in `bandPiecesOfTile` (`runsOf`, the `align` LCS, `byRects`'
+   `bands`), so the extension's 0.5 m `back` overlap with its own leg's arc-keyed first ② edge becomes a face marked
+   'shared' whose two owners resolve (through `ownerOf`'s `/t` suffix) to the SAME `{skelId, side, segOrd}`: a
+   duplicate owner, not a second one (Zob, read in source; the outcome inferred). Keying the cells by run
+   (`'r'+stamp`) makes it one key, and nothing else in `bandPiecesOfTile` needs the `a` prefix on a leg edge
+   (inferred). Either this build keys the cells by run too (one key for one leg), or it stays a separate defect and
+   the check must accept a duplicate owner.
 2. **The crossing square**, where the two legs' extensions overlap, is one piece owned by **both** legs [A, B].
 3. **One-pad hull ground** that lies in neither leg's quad goes to the **corner's arc span** (Jacob).
 4. **Ground inside another span's cell** (an extension running into the other leg's or a third span's cell) is
    **shared** by every span whose own rect holds it: the existing rule. ⭐ To get that, the extension must enter
-   `bandPiecesOfTile`'s arrangement **as leg A's own rect, alongside the cells**. A separate pass after the cells would
-   hand the overlap to the cell alone.
+   `bandPiecesOfTile`'s arrangement **as leg A's own rect, among the RECTS (`byRects`' `U`/`bands`)**, never as a
+   cell: sharing is decided only in `byRects`, a cell keeps `own` and sends its overlap there, so an extension added
+   to `raw` would lose that overlap (Zob, read in source). A separate pass after the cells would hand the overlap to
+   the cell alone.
 
 Rejected: giving the crossing to the arc (its walk is zero-width on a perpendicular arc); one leg by a tiebreak rule;
 extending the cells (reopens ②); nearest cell or arc (forbidden).
@@ -67,15 +75,19 @@ extending the cells (reopens ②); nearest cell or arc (forbidden).
 ## 3. Code sites (src/lib/tileGround.js on integration; cite symbols, not lines)
 
 1. `sectionPassProtoTile`: `legExt(p, i, atEnd, …)` builds each extension from one leg edge. The owner is dropped at
-   `walkX.push(w)` / `envX0.push(e2)`; the ramps and `perpPieces` keep only `{c, p, quad}`, and the hull `H` merges
-   two legs. Keep `{ ring, stamp: stamps[p.si][i], corner }` and resolve the owner as `runs[stamp]` (§1.1).
+   `walkX.push(w)` / `envX0.push(e2)`; `ramps` keeps `{c, p, A, B, quad}` and `perpPieces` `{c, p, quad}`, with no
+   stamp, and the hull `H` merges two legs. Keep `{ ring, stamp: stamps[p.si][i], corner }` and resolve the owner as
+   `runs[stamp]` (§1.1). The `ends` record already holds `{c, p, i, atEnd}`. ⛔ Two `continue`s in the extension loop
+   (`bareAt(p, i)` and no densified sub-edge) drop a leg with no count: count them into the residue, never skip
+   silently (Layer 0 q2).
 2. The ramps loop and the one-pad block in the same function: each quad keeps its leg's span; the hull minus both quads
    is emitted with the arc span.
 3. `bandPiecesOfTile`: the `for (const g of (perp || []))` branch and `sectors` are the dead 10-17 sector model
    (`perp` is always `[]` since 6c048fdf). Rewrite that branch in place for the extension records and **delete** the
-   sector code and the header lines describing it (fix in three parts, `CLAUDE.md`).
-4. `buildTileGround`'s census and warn line: the "(leg ownership not built)" clause and the "(the corner's arc owns the
-   crossing)" text go. `perpGround`/`refusedPerp` stay only as the residue count.
+   sector code and the header lines describing it (fix in three parts, `CLAUDE.md`). Dead with it: `census.landings`
+   and `landingCross`, which only that loop increments.
+4. `buildTileGround`'s census: the "(leg ownership not built)" clause in the `C.refused` warn, and the `landings … (the
+   corner's arc owns the crossing)` text in the console.log after it (it prints the dead counters, so always 0), go. `perpGround`/`refusedPerp` stay only as the residue count.
 5. `checks/claims-the-bands-are-held-by-their-owners.mjs`: a perpendicular clause.
 
 ## 4. The chain
