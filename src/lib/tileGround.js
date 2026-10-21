@@ -1516,14 +1516,22 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
   // and gives the next inward strike no normal. Vertices within one Clipper grid step (1/SCALE) are the grid's own
   // rounding of ONE point: merged, keeping the edge that LEAVES the pair (a sub-grid edge owns nothing), the
   // corner it is part of, and its ① source. Run before the corner test and again after the ease.
+  // ⭐ A DEPTH-0 EDGE CONTRIBUTES NO BAND: ITS LINE IS THE RING'S OWN (Boz's ruling, 2026-10-21). A vertex with depth 0 on
+  // both its edges is not moved by the offset — it IS the input ring's vertex, a lattice point — so two such vertices a grid
+  // step apart are two ends of a real edge (LS tile 47: motorway-27's 1 mm ② edge at (67.738→67.739, 381.187)), never one
+  // point rounded twice. Merged, the depth line cut the corner off iA and `band(curbOuter, pedOuter)` painted the 3-vertex
+  // curb needle the riser then stood a bare step on (#39's finger, 4 mm). They are kept.
+  const unmoved = new Set()
+  for (let i = 0; i < n; i++) { const A = seg[(i - 1 + n) % n], S = seg[i]; if (!(A.dE > 0) && !(S.dS > 0)) unmoved.add(ring[i][0] + ',' + ring[i][1]) }
+  const isUnmoved = (p) => unmoved.has(p[0] + ',' + p[1])
   const mergeGrid = (R0, E0, V0, A0) => {
     const kR = [], kE = [], kV = [], kA = []
     for (let j = 0; j < R0.length; j++) {
       const L = kR.length
-      if (L && sameGridPt(R0[j], kR[L - 1])) { kE[L - 1] = E0[j]; kV[L - 1] = kV[L - 1] ?? V0[j]; kA[L - 1] = kA[L - 1] ?? A0[j]; continue }
+      if (L && sameGridPt(R0[j], kR[L - 1]) && !(isUnmoved(R0[j]) && isUnmoved(kR[L - 1]))) { kE[L - 1] = E0[j]; kV[L - 1] = kV[L - 1] ?? V0[j]; kA[L - 1] = kA[L - 1] ?? A0[j]; continue }
       kR.push(R0[j]); kE.push(E0[j]); kV.push(V0[j]); kA.push(A0[j])
     }
-    while (kR.length > 3 && sameGridPt(kR[0], kR.at(-1))) { kV[0] = kV[0] ?? kV.at(-1); kA[0] = kA[0] ?? kA.at(-1); kR.pop(); kE.pop(); kV.pop(); kA.pop() }
+    while (kR.length > 3 && sameGridPt(kR[0], kR.at(-1)) && !(isUnmoved(kR[0]) && isUnmoved(kR.at(-1)))) { kV[0] = kV[0] ?? kV.at(-1); kA[0] = kA[0] ?? kA.at(-1); kR.pop(); kE.pop(); kV.pop(); kA.pop() }
     return { R: kR, E: kE, V: kV, A: kA }
   }
   const dropped = []   // the rings left out below for their size (a DISCLOSURE for the band-piece trace; nothing reads it to decide)
