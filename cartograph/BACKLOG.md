@@ -115,7 +115,10 @@ Thursday job: Ward checks production HPDM + LS as a visitor (draw, play, load); 
   (7) HPDM's "no street reaches" points: 29 of the 38 (Mitre, all traced: tile 170 ×16, 152 ×5, 211 ×5, 215 ×3; lawn
       ground with lot between it and every street's band). What height do they take? This ruling gates HPDM's bake. The
       other 9 (Mitre, placed): rim back-corner 6 (tiles 24, 89, 177, 198, 200, 202; next) · painter wedge/slit 2 (tiles
-      8, 93; tile 32's family) · back-edge rounding 1 (tile 159).
+      8, 93; tile 32's family) · back-edge rounding 1 (tile 159). The rim six and tile 159 are one class of 7 (Mitre). Zob
+      (read + one site): `profile` already holds to back + LATTICE, but `back` is the chained group's FIRST crossing; a candidate
+      takes the LAST where the band ends (owns tile 159; the narrow row unchanged). Unmeasured risks: long chains, held-height
+      shifts. HELD until Ward's production check says the 38 matter before Thursday.
   (8) None needed now: the deformer reading the drawn plane was measured and PARKED (one census point; your 10-11 read stands).
 - **REFUSAL CENSUS (Kerf; record-and-continue in a sandbox; files `.claude/worktrees/kerf/scratch/ground-budget/step7/census/`):**
   · ⭐ **HPDM TRUE LIST** (integration 1e6958f2 + the noded rim; ground only, 16 min): ONE refusal, **269 unowned ped vertices
