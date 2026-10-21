@@ -183,6 +183,9 @@ Start here. State at the restart:
     SILENTLY since 8bd2751f (LS: 147 rectangle vertices; mitre 134, 117 shared). RULED tonight: the clip stays, made LOUD
     (counted, with sites). ❓ Jacob: the ridge rule (run ≤ the block's half-width, the two sides meet); eye list: the finger
     tips (191.276, 461.413), (149.027, 437.185), (-634.945, 213.268), (324.619, 728.015), (422.640, 459.247).
+    Mitre gates on LS (Plumb, harness): heights byte-identical > 1.5 m from a bend; reflex wedges 0; new-and-unexplained
+    crossings 0; converging-crease points 191 → 83 (split-made total 370 → 259). Next: one shared crease computed once, then
+    the mitre on the curbless POLYLINE (ruled), then the 46 and the ramp/flare 12.
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
