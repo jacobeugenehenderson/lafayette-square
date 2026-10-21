@@ -65,7 +65,7 @@ committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next:
 LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
 **🌅 MORNING 2026-10-21: the ground for Thursday, and your calls (Boz).** Nothing pushed, published or baked into `public/`.
-- **HPDM, unowned ped vertices (#40): 269 → 91**, measured at HEAD on a fresh producer dump (Mitre). Merged overnight:
+- **HPDM, unowned ped vertices (#40): 269 → 91 at HEAD** (fresh producer dump, Mitre), **→ 38 with B1's fix** (not yet landed). Merged overnight:
   fix B (a perpendicular leg's region is its painted faces) · the deformer's both-sides read plus its narrow station
   trigger (Kerf) · the verge span depth (Truss). Left: 52 "beyond" on tiles 134/55 and tile 32's 67 cm² fix-B hole. Both
   trace to ONE question: the deformer reads pre-flatten paint (`byMaterial`, your 10-11 ruling, 6be9cbaf), not the
@@ -79,7 +79,9 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   (a) the input's ray skips a walk its own plane holds; (b) a treelawn edge moves 216 mm into face:institutional near
   (−91.6, −654.6), the ease split suspected. Class 3 is B1's source fix (PLACED,
   Mitre: bake-ground's `clipAllToStencil` re-clips the already-stamped ① paint to the exact chord, a second cut; candidate
-  skips it on the recorded stamp, overlays keep their one cut; being built and measured, fade/ink/membership checked)
+  skips it on the recorded stamp, overlays keep their one cut). ⭐ BUILT and MEASURED (Mitre, mitre/b1-rim-vertices, HPDM
+  A/B): class 3 53 → 0; census 91 → 38, 0 newly unowned; tile 55's gate point reads walk; fade and ink identical. Before
+  landing: held Δh up to 67.65 mm (tile 44) to be placed; Zob reviews.
   (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
   (b0d8c9bb: a hole that touches its one outer stays its own); per-town gate (Truss, f206543d): LS ✅ · HPDM ✅ · Huron after
   PTown. Mitre's probe is running.
