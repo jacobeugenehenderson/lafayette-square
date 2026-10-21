@@ -369,7 +369,7 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 2. **EXACT leg trim** (`tangentTrim`). Each leg strip is trimmed to **where its fillet tangent actually begins** — `dot(tangent − node, legDir)` off the frozen fillet — not the old `e.a + R` approximation. This is what makes the leg strips meet the arc with no cream step / green sliver. (Falls back to `e.a + R` only where no fillet rounds the corner.)
 3. **Street-edge ALWAYS concrete (ADA).** The curb side of the corner is the ADA ramp — concrete — *always*. Treelawn never wraps the curb.
 4. **CONCENTRIC arc at the shallow depth** (Idea A). The arc is a clean constant-offset ring at `cMin = min(both legs' concrete depth conD)`, where `conD = mat.inner==='SW' ? total : outerWidth` (a set-back-sidewalk leg → full `total`; a curb-side SW leg → its one strip width). The band shallower than `cMin` → concrete; deeper → **LU (parcel-matched, via `tlByLu[lu]`)**.
-5. **The deep leg SLIDES to the curb** (Idea A). The deeper (set-back) leg's sidewalk slides to the curb over a short **ramp on its own straight leg** — the treelawn taper out, the walk's deep tail becomes parcel — so by the tangent it's a curb-side walk matching the concentric ring. Built as two polygons in a local `(along-leg, depth)` frame at the tangent (`pt(s,d) = T + dir·s + perp·(cw+d)`, `perp = C→T`): a **slid-walk quad** (`[0,cMin]` at the tangent → `[tloD, conMax]` up the leg) added as concrete, and an **LU wedge** (`[cMin,conMax]` at the tangent, tapering to zero up the leg) carved from the SW strip (`swCarve`) and routed to LU. `rampLen = max(2, 2·(conMax−cMin))`.
+5. **The deep leg SLIDES to the curb** (Idea A). The deeper (set-back) leg's sidewalk slides to the curb over a short **ramp on its own straight leg** — the treelawn taper out, the walk's deep tail becomes parcel — so by the tangent it's a curb-side walk matching the concentric ring. Built as two polygons in a local `(along-leg, depth)` frame at the tangent (`pt(s,d) = T + dir·s + perp·(cw+d)`, `perp = T→C`: `d` grows inward from the kerb toward the arc centre): a **slid-walk quad** (`[0,cMin]` at the tangent → `[tloD, conMax]` up the leg) added as concrete, and an **LU wedge** (`[cMin,conMax]` at the tangent, tapering to zero up the leg) carved from the SW strip (`swCarve`) and routed to LU. `rampLen = max(2, 2·(conMax−cMin))`.
 
 > ### ⭐⭐⭐ WHERE THE PAD IS — AND THE ANSWER IS THAT IT IS NOT *LOCATED* AT ALL
 > **`RIBBONS §1` INVARIANT 1 IS THE WHOLE OF IT, AND IT OUTRANKS EVERY REFINEMENT BELOW:**
@@ -403,9 +403,6 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 > - **An arc's extent is `len` EDGES, not `len + 1`.** The inclusive bound also claimed the first edge
 >   of the next leg, and on ①'s sparse contour a straight frontage is ONE EDGE — a quadrilateral block
 >   painted 458 m of 458 m as curb ramp. ▶ `SECTION_DUMP=1 node checks/claims-the-pad-is-the-size-of-the-corner.mjs`
-> ⚠️ **AND ONE DOC/CODE DISAGREEMENT, RESOLVED IN FAVOUR OF THE CODE:** step 5 above writes
-> `perp = C→T`; `sectionPassTile` computes `C − T`, i.e. **T→C**, and it must, because `d` increases
-> INWARD from the kerb toward the arc centre. **The arrow in step 5 is backwards.**
 
 > ⭐ **The RAMP is unconditional and lives in `§4`.** ⛔ Not restated here — one home.
 
@@ -422,7 +419,10 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
   rounds, the rest keeps the leg's lawn. Its cut is the walk's own extension (*"the ramps need to be extensions of the sidewalks"*): sides
   its two side lines, front the road edge through the curb, back square to the walk `warningDepth` behind where its first side meets the
   road. One per crossing (`f-prowag-curb-ramp-per-crosswalk`); two on one arc with only walk or curb between are ONE pad, PROWAG's blended
-  transition (⚠️ ASPIRATION: its 5 % running slope in the kerb build). Crosswalks run square across, centred on their cut.
+  transition (⚠️ ASPIRATION: its 5 % running slope in the kerb build). Crosswalks run square across, centred on their cut. ⭐ Every
+  piece of its ground has an OWNER, carried from construction (Jacob, 2026-10-20): an extension or cut is its leg's, the run of the leg
+  edge it is struck from (`iaStamp`; ⛔ never `iaArc`, which is per vertex); where two cross, both legs'; a one-pad's hull beyond its two
+  cuts, the arc's; inside another span's cell, shared. ▶ `checks/claims-the-bands-are-held-by-their-owners.mjs --mutants` (clause 6)
   ▶ `checks/claims-{every-junction-corner-has-a-curb-cut-source,a-perpendicular-landing-runs-straight-on,a-bend-bends-the-band}.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.

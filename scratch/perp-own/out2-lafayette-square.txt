@@ -1,0 +1,15 @@
+gate: free 82% load 1 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+lafayette-square · authoring slots 82 · tiles with pieces 144
+(1) refused 19 region(s) 67.432 m² · of them refusedPerp 9 region(s) 45.046 m²
+(2) leg extensions 10 (with painted walk 10) · painted 66.28 m²: own-leg cells 7.43 · OTHER leg's cells 0.00 · third span's 0.00 · no cell 58.84 (per-extension sum)
+(a) legs by span label:
+      4 · after · own arc · edge not an arc edge · start vertex corner arc · end vertex unlabelled
+      3 · before · run · edge not an arc edge · start vertex unlabelled · end vertex corner arc
+      2 · before · other arc · edge not an arc edge · start vertex other arc · end vertex corner arc
+      1 · after · own arc · edge not an arc edge · start vertex corner arc · end vertex other arc
+    legs whose stamp run equals the arc's first edge's: 5 of 10
+(b) extensions' walk ground as ONE union, in the walk cut (5 tiles): held by a cell 7.43 · not held 47.73 = outside the disc 0.00 + in the disc 47.73
+    of in the disc: byRects faces 2.68 [one rect 2.61 · shared 0.01 · join 0.00 · one rect (within TOL) 0.07 · shared (within TOL) 0.00 · join (within TOL) 0.00] · left (refused) 45.05 · unaccounted 0.00
+    refused ground that is a cut, not an extension: 0.00 · ⇒ refusedPerp reconstructed 45.05 vs census 45.05
+    peak rss 0.59 GB
