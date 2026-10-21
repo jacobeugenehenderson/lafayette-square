@@ -2226,7 +2226,10 @@ function nodeRimWithPaint(st, paint, nodePaint) {
   const rimEdge = (k) => st.ringOwner[k]?.kind === 'rim'
   const pts = []; for (const r of paint) for (const v of r) { const k = K(v); if (have.has(k)) continue; have.add(k); pts.push(v) }
   const onRing = insertOnEdges(st.ring, st.ringOwner, pts, rimEdge), minted = pts.filter(v => !onRing.missed.includes(v))
-  if (!minted.length) return null
+  // ⭐ EVERY TILE WITH A RIM EDGE HAS AN ENTRY, minted or not (Zob placed it, Boz ruled, 2026-10-21): it is the rim's positive
+  // name, read by the kerb's finder and the deformer. ⛔ An absent entry used to mean "nothing minted" as well as "no rim",
+  // and LS lost 185 m of named rim that way; now it means only a tile with no rim edge.
+  if (!minted.length) return { ring: st.ring, owners: st.ringOwner, block: st.iA || [], added: 0, far: 0, farMax: 0 }
   const block = (st.iA || []).map(r => { const x = insertOnEdges(r, null, minted, () => true); return x }), placed = new Set()
   for (const x of block) for (const v of minted) if (!x.missed.includes(v)) placed.add(v)
   const lost = minted.filter(v => !placed.has(v))

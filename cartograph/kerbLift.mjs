@@ -192,9 +192,9 @@ export function mitresCrossing(tapers, blockRings) {
  *  stretches, and each stretch keeps only the vertices that lie more than ONE LATTICE ROUNDING (√2/2 step, the bound
  *  `nodeAcrossGroups` conforms to) off the chord between its neighbours: every vertex dropped lies within a rounding of its
  *  region's base, where the field lifts it by at most h·(√2/2 step)/run — under `flushTol` (h·step/run). The bases' ends
- *  are partition vertices. Then each base is a region of `mitred`. */
+ *  are partition vertices. Then each base is a region of `mitreBases`. */
 export function taperRegions(edges, taperRun) {
-  return mitred(stretchLines(edges), taperRun)
+  return mitreBases(stretchLines(edges), taperRun)
 }
 
 /** The curbless edges as STRETCHES ([{ A, B, inward }], fewer and longer): chained where exactly two edges meet, each chain
@@ -235,7 +235,7 @@ export function stretchLines(edges) {
  *  base is nearer. A stretch's free end (a curb starts there, or three edges meet) keeps the perpendicular side.
  *  Each region carries `kA`/`kB`: its end creases as s = t·kA and s = w + t·kB in its own frame (0 = perpendicular).
  *  ⛔ Two curbless edges folding back on each other (normals opposite) have no bisector: refused. */
-function mitred(edges, taperRun) {
+export function mitreBases(edges, taperRun) {
   const k2 = (p) => p[0] + ',' + p[1], at = new Map()
   edges.forEach((e, i) => { for (const end of ['A', 'B']) { const k = k2(e[end]); (at.get(k) || at.set(k, []).get(k)).push(i) } })
   const unit = (v) => { const L = Math.hypot(v[0], v[1]); return [v[0] / L, v[1] / L] }

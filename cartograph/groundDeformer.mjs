@@ -280,9 +280,12 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // (tileGround's `shareRimCrossings`), so the paint, cut by that block, meets them with no lot between. ⛔ Never the stencil's
   // exact chord: the cut rounds its crossings up to √2/2 step off it, and a ray meeting the rim 65° off its normal read the
   // wedge between as ~1.1 mm of lot (HPDM B1: 341 points). A tile with no rim edge has no beyond.
-  // ⭐ and where the paint minted its own rim crossings, the rim is the painter's NODED ring (`rims`, live): the paint's rim is
-  // then a piece of it, so a ray from past the rim enters paint with nothing between (HPDM tile 49's 7.7 mm wedge)
-  for (const t of T) { const N = rims?.[t.ti], R = N?.ring?.length >= 3 ? frozenCopy(N.ring) : t.ring, O = N?.ring?.length >= 3 ? N.owners : tiles[t.ti].ringOwner, n = R.length
+  // ⭐ and a rim tile's rim is the painter's NODED ring (`rims`, live), which every tile with a rim edge carries, minted or not
+  // (tileGround's `nodeRimWithPaint`): the paint's rim is a piece of it, so a ray from past the rim enters paint with nothing
+  // between (HPDM tile 49's 7.7 mm wedge). ⛔ A rim-edged tile with no entry is the painter skipping it: refused.
+  for (const t of T) { const N = rims?.[t.ti], rimEdged = !!tiles[t.ti].ringOwner?.some(o => o?.kind === 'rim')
+    if (rimEdged && !(N?.ring?.length >= 3)) throw new Error(`[deform] ⛔ tile ${t.ti} has a rim edge but the painter gave it no rim entry (rims[${t.ti}]) — the beyond would fall back to the frozen ring. Refusing.`)
+    const R = rimEdged ? frozenCopy(N.ring) : t.ring, O = rimEdged ? N.owners : tiles[t.ti].ringOwner, n = R.length
     t.rim = false; t.rimRing = R; t.rimEdges = []
     for (let i = 0; i < n; i++) if (O[i]?.kind === 'rim') { t.rim = true; t.rimEdges.push({ p: R[i], q: R[(i + 1) % n] }); addSeg('beyond', R[i], R[(i + 1) % n]) } }
   const recOf = new Map(T.map(r => [r.ti, r]))
