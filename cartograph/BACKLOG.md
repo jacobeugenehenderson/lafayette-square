@@ -139,7 +139,11 @@ Start here. State at the restart:
     classifyHighwayBlocks' off-grade test (94002fae's overpass span) disagrees with gradeSeparated (ARCHITECTURE §7: surface
     bridges keep bounding blocks). Off-grade but not gradeSeparated: HPDM 46 · LS 11 · Huron 18. HPDM has no kerb (h=0), so no
     bump; LS lifts. The tags → paint-over-road step is being traced (Truss, LS). It may turn Jacob's stripe call into a
-    defect. Also: derive.js's `skOffGrade || new Set()` only warns (a fallback).
+    defect. TRACED (Truss, LS): Mississippi's run is read as an OVERPASS SPAN, so blocks 145/167 are
+    verge, and tileGround.js `mkDepth` gives a verge's span edge depth 0, so the verge reaches Mississippi's centreline (0.100 m
+    from the stripe). #39's verge|stripe is a DEFECT, not a design call. RULED: a span edge takes its street's roadway depth
+    (Truss builds; Zob reviews); the dead `skOffGrade || new Set()` is deleted. ❓ Jacob: r-highway-verge says 'ENTIRELY by
+    highway'; is a block closed by a surface bridge verge (94002fae's span) or a block/JR? Counts per town to come.
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
