@@ -140,7 +140,10 @@ S2 rekeyByPiece per class · S3 sectionOpen's per-material town-wide unions · S
 deriving lower edges from the union acc. Fix scope: (i) bands REFERENCE one shared polyline (cutCreases is the pattern) ·
 (iii) no edges from acc. ⭐ FOUND (Zob, measured): ② exists TWICE per tile. The bands are struck from st.iaFull,
 the block from st.iA, which buildTileGround re-derives (the face trim + the rim disc cut); they agree on 35 of 144 LS tiles. One
-ring (a counterfactual) cuts the doubling 29% (asphalt/curb −77%). Build (i-a): ② is ONE ring per tile (Mitre). Located before
+ring (a counterfactual) cuts the doubling 29% (asphalt/curb −77%). ⛔ CORPUS: this is Swale's 10-16 finding (02da626e;
+BRIEF-the-stamp-lands-on-the-lattice §3, OPEN, NEVER BUILT; only §3b, tonight's noding patch, was): the ① contour is FLOAT at
+the mint and the circle cut rounds it first. The fix is at the POUR: round iA onto the lattice once, then stamp, then the
+circle. Swale's work: .claude/worktrees/rings-only (swale/flatten-paths-r1). Mitre confirms against today's code first. Located before
 (depth-0 and corner extensions: both FALSIFIED): asphalt/curb 1,628 m · curb/walk 723 m + walk/walk 602 m (the perpendicular extension rects
 unioned into the walk band) · land use 2,447 m (S2 + the evidence). Then nodeAcrossGroups, the pinch cuts, sub-lattice
 drops and welds lose their reason (inferred). Per-site probe next (Zob). ✅ (iv) RULED (Jacob, 2026-10-21): "keep the order, close the
