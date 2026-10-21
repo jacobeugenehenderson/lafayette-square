@@ -75,6 +75,7 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
+- **Design call for Jacob:** a coastal Bake runs ground (--shore=pending) → shore-median → ground-shore, so TWO full ground passes (PTown ~87 + ~82 min, 10-11 timings). The median needs only the new shape.json, so shape → median → ONE ground pass would save a pass (Kerf). Moot if the median retires with the tern merge (7f4531d8, whose premise, the lidar coast, isn't on integration).
 - Flatten's noding inserts thousands of vertices (LS 8,850 · HPDM 16,552; top pairs LS crosswalk→asphalt 1,443 · crosswalk→curb 1,377 · HPDM sidewalk→asphalt 2,208): producers draw shared lines twice. `ground.json#flatten.noded` is the census to drive to 0, producer by producer (Truss 2f50e565; Zob).
 - LS's asphalt needle (~9.2 m × ≤ 0.13 mm) is drawn as a spike; born in the rim-tile circle cut (Plumb; `BRIEF-the-stamp-lands-on-the-lattice` §3b).
 - PTown's shore-median.json is stale after its 2026-10-20 re-pour (walked on the old shoreline); its flatten is unmeasured until shore-median re-runs. Flatten's orphan/bow-tie drops stay until Huron and PTown measure 0.
