@@ -22,10 +22,10 @@ export const getElevation    = (x, z) => sampler.getElevation(x, z)
 export const getElevationRaw = (x, z) => sampler.getElevationRaw(x, z)
 export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 
-// ── The DRAWN ground (BRIEF-the-ground-knows-its-height) ─────────────────────
+// ── The DRAWN ground (BRIEF-the-ground-stands-on-one-field) ──────────────────
 // BakedGround publishes `src/lib/drawnGround.js` over the bin it holds — the ONE function the bake's anchors read too —
 // so whatever stands on the ground at runtime (the street eye, the movers, the user's dot) stands on the ground AS
-// DRAWN: the deformer's terrain part × the exaggeration + the kerb part. Off the mesh (past the disc), or before the
+// DRAWN: the height field at the drawn triangle's corners × the exaggeration + the kerb part. Off the mesh (past the disc), or before the
 // ground has loaded, there is no drawn ground: the field is what is there.
 let drawn = null
 const drawnListeners = new Set()

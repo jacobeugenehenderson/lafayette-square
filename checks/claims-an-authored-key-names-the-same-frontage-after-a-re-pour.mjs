@@ -31,7 +31,7 @@
 //   its new id; DIES only when no after-chain lies along that edge. A key whose sides are not left/right is a LEGACY form
 //   the ① mint never produces (`protoCornerOf`): dead before and after, said.
 // ⛔ A skeleton carrying two AT-GRADE chains with one id REFUSES (either side): every key on that id is ambiguous, and the
-//   pour itself refuses it (skeleton.js, derive.js, lineHeight.mjs). A by-id map would silently keep one of the two.
+//   pour itself refuses it (skeleton.js, derive.js). A by-id map would silently keep one of the two.
 // ⭐ BESIDE PARITY, WHAT IS LIVE TODAY: each blockCustoms key is looked up in the SERVED slab's runs (`shape.json`
 //   tile.runs). A key that owns no run is authored but drawn nowhere — before any re-pour. Printed, never folded into parity.
 // ⛔ The BEFORE street set is proven against the town's own frozen ribbons (`ribbons.json` streets: skelId · gradeSeparated)

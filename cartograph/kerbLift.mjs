@@ -17,8 +17,8 @@
 //     and a lifted vertex takes the height field (`liftBuffer`). The only step is the kerb face: a partition edge.
 //   · the riser is every mesh edge with a lifted triangle on one side and an unlifted one on the other — built from
 //     the conformed mesh itself, so it shares the ground's vertices and cannot crack (`riserFromEdges`).
-// ⭐ This is the KERB part of the ground's height (the mesh's own y, unexaggerated); the TERRAIN part is the deformer's
-//   (`groundDeformer.mjs`), and the runtime draws D × uExag + y.
+// ⭐ This is the KERB part of the ground's height (the mesh's own y, unexaggerated); the TERRAIN part is the town's one
+//   height field, sampled in the shader (BRIEF-the-ground-stands-on-one-field), and the runtime draws field × uExag + y.
 // ⭐ WHERE NO CURB IS DRAWN, THE BLOCK SLOPES DOWN FLUSH (Jacob, 2026-10-06, Q1): a highway shoulder, an alley mouth, land
 //   that just meets the road, and the drawing's edge (the rim). Every edge of the noded partition where a lifted face the
 //   curb does not stand on meets the road, or nothing (`curblessEdges` — the riser's own read, `edgesAcross` +

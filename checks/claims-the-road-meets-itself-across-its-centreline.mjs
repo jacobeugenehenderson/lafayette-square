@@ -1,23 +1,23 @@
 // claims-the-road-meets-itself-across-its-centreline.mjs — DOES THE DRAWN ROAD MEET ITSELF WHERE ITS TWO HALVES READ
 // DIFFERENT OWNERS?
 //
-// ⭐ THE INVARIANT (BRIEF-the-ground-knows-its-height §5, the road side): the carriageway's terrain part is ONE surface. Each
-// half is swept from its own street's line on ① to its tile's ② (groundDeformer.mjs#road), and the two halves meet on ①,
-// the road's own ink, which IS the centreline (a tile's ring, `shape.json`
-// tile.ring). Where the two owners' heights disagree there, the drawn road steps or creases along the centreline.
+// ⭐ THE INVARIANT: the carriageway's terrain part is ONE surface — the town's one height field (BRIEF-the-ground-stands-on-
+// one-field, 2026-10-21), read at each vertex and interpolated across each triangle, as the shader draws it. Each half is
+// its own tile's mesh, and the two halves meet on ①, the road's own ink, which IS the centreline (a tile's ring,
+// `shape.json` tile.ring). A field cannot step; two meshes interpolating it can, where their vertices do not meet.
 // ⭐ READ, NOT SEARCHED: the centreline is each tile's own ① ring, and each half's owner is the ② edge of the tile that holds
 //   the point (by its ① ring, never by tile index), its label read off `iaStamp` → `runs[]` / `iaArc` / `iaCap`. No chain is
 //   looked up by proximity.
 // ⭐ THE DRAWN ROAD is the slab's own mesh: the road groups (`mat:asphalt`, `mat:highway`, `mat:stripe` — the carriageway's
-//   partition groups) interpolated at the point. Only the TERRAIN part is compared (`aRaw × E`, E the town's exaggeration
+//   partition groups) interpolated at the point. Only the TERRAIN part is compared (`field × E`, E the town's exaggeration
 //   ceiling): the groups' own y is their stacking slot (renderOrder × GROUND_Y_EPS) and differs on purpose.
 // ⭐ EACH STEP IS NAMED by what its triangles reach: a vertex in the ① INK (the 2ε between two tiles' rings, held by no tile,
-//   the deformer reads the ink's owners there, `#onInk`) — or two halves inside their tiles whose owners disagree.
+//   its triangles are the ink's own) — or two halves inside their tiles whose meshes disagree.
 // ⭐ THE GATE (C0): across the centreline, ±δ (δ = 10 × LATTICE_M, src/lib/lattice.js, read) — the drawn step may exceed
 //   the terrain's own change across 2δ by at most LATTICE_M. More is a STEP. The CREASE (the change in cross-slope, from
 //   δ to δ + one terrain grid step on each side) is measured and printed: no norm bounds a road's crease, so it is reported,
 //   never gated.
-// ⛔ A slab with no baked terrain part, or no shape.json, cannot be judged: it fails, said so.
+// ⛔ A slab with no shape.json cannot be judged: it fails, said so.
 //
 //   node checks/claims-the-road-meets-itself-across-its-centreline.mjs [--town=a,b] [--dir=<slab dir>] [--show=n] [--selftest]
 // Read-only. Exits 1 on any step, or on a slab that cannot be judged.
@@ -45,12 +45,12 @@ function judge(dir, mutate = false) {
   const gb = readFileSync(join(dir, gj.bin || 'ground.bin')), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
   const road = gj.groups.filter(g => ROAD.test(`${g.kind}:${g.id}`))
   if (!road.length) return { town, refused: 'no road group (mat:asphalt · mat:highway · mat:stripe)' }
-  if (road.some(g => g.rawByteOffset == null)) return { town, refused: 'a road group carries no baked terrain part (aRaw): the 5 m texture path — re-bake the ground' }
   const T = loadSceneTerrain(town), E = T.exag, stepM = T.stepM
   if (!(E > 0)) return { town, refused: 'the town names no exaggeration' }
-  // the road's triangles, gridded: point → its terrain part, drawn (aRaw × E)
+  // the road's triangles, gridded: point → its terrain part, drawn (the field at its corners × E)
   const CELL = 2, grid = new Map(), tris = []
-  for (const g of road) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = new Float32Array(AB, g.rawByteOffset, g.vertexCount)
+  for (const g of road) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = new Float32Array(g.vertexCount)
+    for (let v = 0; v < g.vertexCount; v++) R[v] = T.getElevationRaw(P[v * 3], P[v * 3 + 2])
     for (let k = 0; k < I.length; k += 3) { const v = [I[k], I[k + 1], I[k + 2]], xs = v.map(w => P[w * 3]), zs = v.map(w => P[w * 3 + 2])
       const t = { xs, zs, r: v.map(w => R[w]), g: g.id, ink: null }, id = tris.push(t) - 1
       for (let x = Math.floor(Math.min(...xs) / CELL); x <= Math.floor(Math.max(...xs) / CELL); x++) for (let z = Math.floor(Math.min(...zs) / CELL); z <= Math.floor(Math.max(...zs) / CELL); z++) { const key = x * 1000003 + z; (grid.get(key) || grid.set(key, []).get(key)).push(id) } } }
@@ -70,8 +70,8 @@ function judge(dir, mutate = false) {
       if (d < best) { best = d; const arc = t.iaArc?.[ri], st = t.iaStamp?.[ri]?.[i], cap = t.iaCap?.[ri]?.[i]
         out = arc?.[i] != null && arc[(i + 1) % n] === arc[i] ? { kind: 'arc', id: `t${ti}a${arc[i]}` } : st != null ? { kind: 'run', id: t.runs?.[st]?.skelId ?? '?' } : cap != null ? { kind: 'cap', id: t.caps?.[cap]?.skelId ?? '?' } : null } } })
     return out }
-  // ⭐ WHICH: a triangle with a vertex in the ① INK (the 2ε between two tiles' rings, held by no tile: the deformer draws the
-  // terrain there) carries the terrain onto the centreline; else the two halves' owners disagree
+  // ⭐ WHICH: a triangle with a vertex in the ① INK (the 2ε between two tiles' rings, held by no tile); else the two halves'
+  // own meshes, each in its tile, disagree
   const inkOf = (t) => t.ink ??= t.xs.some((x, k) => tileOf(x, t.zs[k]) < 0)
   const seen = new Set(), steps = [], creases = []
   let n = 0, mutated = null
@@ -109,7 +109,7 @@ const say = (r) => {
   if (!r.steps.length) { console.log(`  ✓   ${head} · no step\n        ${crease}`); return 0 }
   const ink = r.steps.filter(s => s.ink), own = r.steps.filter(s => !s.ink)
   console.log(`  ⛔   ${head}\n        ${r.steps.length} STEP(S) beyond the terrain's own change + LATTICE_M, worst ${r.steps[0].ex.toFixed(3)} m · by owner pair: ${by(r.steps)}`)
-  console.log(`        on a triangle reaching into the ① ink (held by no tile — read off the ink's owners): ${ink.length}${ink.length ? `, worst ${Math.max(...ink.map(s => s.ex)).toFixed(3)} m` : ''} · both halves inside tiles (their owners disagree): ${own.length}${own.length ? `, worst ${Math.max(...own.map(s => s.ex)).toFixed(3)} m (${by(own)})` : ''}\n        by the groups the two halves sit in: ${(() => { const m = new Map(); for (const s of r.steps) m.set(s.groups, (m.get(s.groups) || 0) + 1); return [...m].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') })()}\n        ${crease}`)
+  console.log(`        on a triangle reaching into the ① ink (held by no tile): ${ink.length}${ink.length ? `, worst ${Math.max(...ink.map(s => s.ex)).toFixed(3)} m` : ''} · both halves inside tiles (their meshes disagree): ${own.length}${own.length ? `, worst ${Math.max(...own.map(s => s.ex)).toFixed(3)} m (${by(own)})` : ''}\n        by the groups the two halves sit in: ${(() => { const m = new Map(); for (const s of r.steps) m.set(s.groups, (m.get(s.groups) || 0) + 1); return [...m].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') })()}\n        ${crease}`)
   for (const s of r.steps.slice(0, SHOW)) console.log(`          (${s.at.map(v => v.toFixed(1)).join(', ')}): ${s.ex.toFixed(3)} m · ${s.a} ↔ ${s.b} (${s.pair})${s.ink ? ' · ① ink' : ''}`)
   return 1
 }

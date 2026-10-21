@@ -7908,7 +7908,10 @@ export function buildTileGround(ribbons, opts = {}) {
   const cornerFillets = {}, cornerSet = []
   for (const c of protoCornerSet) { cornerFillets[c.key] = c.fillet; cornerSet.push(c) }
   console.log(`[tileGround][①⇢LIVE] corner truth swapped to ②'s achieved arcs: ${protoCornerSet.length} corner(s); the handle rides the curb that is drawn.`)
-  const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: true, stampedWith: protoBoundaryRing })
+  const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: opts.bandPieces === true, stampedWith: protoBoundaryRing })
+  // ⛔ THE BAND PIECES ARE CUT ONLY ON ASK (`opts.bandPieces: true`) — BRIEF-the-ground-stands-on-one-field (Boz, 2026-10-21):
+  // the ground reads one height field, so no product path reads a piece; the bake and Survey leave them uncut, and the checks
+  // that judge them (`claims-the-bands-are-held-by-their-owners`) ask for them.
   let asphalt = S.asphalt
   const curb = S.curb, sidewalk = S.sidewalk, block = S.block
   const highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
@@ -7916,7 +7919,7 @@ export function buildTileGround(ribbons, opts = {}) {
   protoBandPieces = S.bandPieces || []
   protoRimRings = S.rimRings || []
   if (S.rimFar?.n) console.warn(`[tileGround][rim] ⚠️ ${S.rimFar.n} rim crossing(s) inserted farther off the tile ring's rim edge than one rounding (√2/2 grid step), the farthest ${(S.rimFar.max * 1000).toFixed(3)} mm, in ${S.rimFar.tiles.length} tile(s): ${S.rimFar.tiles.slice(0, 8).join(', ')}${S.rimFar.tiles.length > 8 ? ' …' : ''} — accepted (un-noded they reopen the wedge); CAUSE NOT ESTABLISHED`)
-  { const C = { cells: 0, gapOuter: 0, gapInner: 0, gapSeams: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: 0, perpLegNoSub: 0, perpLegNoStamp: 0, perpFaceTags: 0, perpFaceSliverTags: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
+  if (protoBandPieces.length) { const C = { cells: 0, gapOuter: 0, gapInner: 0, gapSeams: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: 0, perpLegNoSub: 0, perpLegNoStamp: 0, perpFaceTags: 0, perpFaceSliverTags: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
     let n = 0, seams = 0, same = 0
     for (const t of protoBandPieces) { n += t.pieces.length; seams += t.seams.length; same += t.seams.filter(q => q.sameChain).length
       for (const k of Object.keys(C)) C[k] += t.census[k] || 0; gone.push(...t.census.goneBoth.map(g => `tile ${t.tile}: ${g}`))
@@ -7924,9 +7927,8 @@ export function buildTileGround(ribbons, opts = {}) {
       refAt.push(...t.census.refusedAt.map(g => `tile ${t.tile} ${g}`))
       for (const [k, v] of Object.entries(t.census.gapByPair)) pairs[k] = (pairs[k] || 0) + v }
     console.log(`[tileGround][①⇢LIVE] band ground no cell holds alone (${C.necks} neck transition(s) · ${C.noInner} island(s), ${C.noInnerM2.toFixed(0)} m² of ring · and where cells overlap), given by the inner level's own rects (\`offsetRingByRects\`' clips): ${Object.keys(BR).sort().map(k => `${k} ${BR[k]} piece(s) ${BRm[k].toFixed(1)} m²`).join(' · ') || 'none'}${C.byRectsWide ? ` · ⛔ ${C.byRectsWide} too wide to arrange (more than 12 spans)` : ''} · perpendicular faces tagged to the records that built them: ${C.perpFaceTags} tag(s), ${C.perpFaceSliverTags} on a sliver of a grown rect only`)
-    // ⛔ NAMED, NOT STOPPING — for now (Boz, 2026-10-18): no height reader consumes the band pieces yet (the band blend is not
-    // in), so ground with no owner cannot put a wrong height on the slab. When a reader lands, this throws.
-    if (C.refused || C.byRectsWide) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.refused} region(s), ${C.refusedM2.toFixed(3)} m², in no span's rect and no single join — NO OWNER (named, not stopping: nothing reads the pieces yet)${C.refusedPerp ? `, ${C.refusedPerp} of them (${C.refusedPerpM2.toFixed(3)} m²) a perpendicular corner's own ground (an extension, cut or pad) that its builder's rect does not reach` : ''}: ${refAt.slice(0, 6).join(' · ')}${refAt.length > 6 ? ` … +${refAt.length - 6}` : ''}`)
+    // ⛔ NAMED, NOT STOPPING: no height reader consumes the band pieces (the ground reads one field). When a reader lands, this throws.
+    if (C.refused || C.byRectsWide) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.refused} region(s), ${C.refusedM2.toFixed(3)} m², in no span's rect and no single join — NO OWNER (named, not stopping: nothing reads the pieces)${C.refusedPerp ? `, ${C.refusedPerp} of them (${C.refusedPerpM2.toFixed(3)} m²) a perpendicular corner's own ground (an extension, cut or pad) that its builder's rect does not reach` : ''}: ${refAt.slice(0, 6).join(' · ')}${refAt.length > 6 ? ` … +${refAt.length - 6}` : ''}`)
     const top = Object.entries(pairs).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `${k} ×${v}`).join(' · ')
     console.log(`[tileGround][①⇢LIVE] the bands cut by their owners: ${n} piece(s) from ${C.cells} cell(s) · ${seams} seam(s) (${seams - same} where the owner changes · ${same} on one chain) · unmatched runs between two matches, their ground left to the rects: ${C.gapOuter} outer (top pairs of a span with no width on the inner side ${top || '—'}) · ${C.gapInner} inner · ${C.gapSeams} match(es) with no seam to the next, a gap between`)
     // a perpendicular leg that builds no extension is counted, never skipped silently: a bare (highway) edge has no walk to run

@@ -434,7 +434,7 @@ function emit(groupSpecs, PX, PZ, T, TG) {
  * is a vertical sliver filling the gap), so it is not counted as a crack; nor is a
  * sliver's own apex on its unshared edge.
  * ⭐ A VERTEX IS ITS EXACT float32 POSITION, never a lattice cell: nothing between conformity and the screen welds or
- * rounds (emit copies a shared vertex bit-identically into each group; liftBuffer, terrainPart's per-vertex aRaw, the
+ * rounds (emit copies a shared vertex bit-identically into each group; liftBuffer, the
  * slab writer and BakedGround all keep each vertex's own position), so two vertices 0.7 mm apart are two vertices on the
  * screen. Welded on the 1 mm lattice, such a pair of refinement midpoints read as one, a shared edge read as used once,
  * and the bake refused on a crack the slab never had (HPDM 2026-10-18, a 0.698 mm twin; Huron's 2026-10-12 refusal was

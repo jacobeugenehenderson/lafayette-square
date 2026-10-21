@@ -17,14 +17,16 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 // The shapes: a depth from the negated terrain map (GLSL), or from a negated height on the CPU next to "depth".
 const SHAPES = [
-  /max\(\s*0\.0\s*,\s*-\s*texture2D\(\s*uTerrainMap/,
+  /max\(\s*0\.0\s*,\s*-\s*(texture2D\(\s*uTerrainMap|_terrainRaw\()/,
   /depth\w*\s*=\s*Math\.max\(\s*0\s*,\s*-\s*\w+/i,
 ]
 const scan = (text) => text.split('\n').map((l, i) => [i + 1, l]).filter(([, l]) => !/^\s*(\/\/|\*)/.test(l) && SHAPES.some(r => r.test(l)))
 
 // the mutation first: an instrument that cannot see the old shape proves nothing
+// (the line as it was, and as it would read through today's sampler, `_terrainRaw`)
 const OLD = "         float wDepth = max(0.0, -texture2D(uTerrainMap, _terrainUV(wUV)).r);"
-if (!scan(OLD).length) { console.log('⛔ MUTATION SURVIVED: the scanner does not flag the pre-level shader line — this check sees nothing'); process.exit(1) }
+const OLD_NOW = "         float wDepth = max(0.0, -_terrainRaw(wUV));"
+if (!scan(OLD).length || !scan(OLD_NOW).length) { console.log('⛔ MUTATION SURVIVED: the scanner does not flag the pre-level shader line — this check sees nothing'); process.exit(1) }
 
 const files = []
 const walk = (d) => { for (const n of readdirSync(d)) { const p = join(d, n); const st = statSync(p)

@@ -7,9 +7,11 @@
 // e ≤ the town's authored ceiling (`terrainExag`, the most any shot draws) iff |∇y·n| + E·|∇terrain·n| ≤ the limit.
 // "Across" is the normal of the ① run the band lines (`shape.json` tile.runs: skelId · side · segOrd), the run found
 // inside the tile whose ring holds the triangle — by geometry, never by tile index.
-// ⭐ THE TERRAIN PART is what the runtime draws: the group's baked per-vertex terrain height (`rawByteOffset`) when the
-//   bake wrote one, else the terrain field sampled at each vertex (the shader's texture lookup, which is what a group
-//   with no baked height is drawn from — the two are the same surface, so this is not a substitution). Said per town.
+// ⭐ THE TERRAIN PART is what the runtime draws: the town's one height field sampled at each vertex (terrainShader.js
+//   `_terrainRaw`, the CPU sampler's own bilinear; BRIEF-the-ground-stands-on-one-field, 2026-10-21), interpolated across
+//   each triangle. ⚠️ Under the one field, the walk is as level as the terrain under it: this check is RED on any town whose
+//   streets cross a slope steeper than the limit, and that is the TRUE state — the cross-slope distribution it prints is
+//   where the backlog's "sidewalks closer to level" (a shaped field) starts.
 // ⭐ A CUT IS NOT A WALK: a triangle whose kerb part varies (a ramp, flare or taper, which falls by the town's rampSlope
 //   on purpose) is counted apart, never gated here.
 // ⭐ A SLIVER IS GATED LIKE ANY TRIANGLE: its plane is computed from the same float32 vertices the GPU draws, so a steep
@@ -31,9 +33,7 @@
 //     along divided by its altitude. Counted, not gated.
 // ⭐ MUTATION TEST: `--selftest` on one town, in memory, on the STATION gate: (1) every terrain part one value (a flat
 //   world) → GREEN; (2) the terrain part tilted across x at twice the limit → RED; (3) the walk's MIDDLE bowed up by
-//   twice the limit over a half-width, its edges untouched → RED; (4) a flat world whose
-//   bake names ONE ped vertex no painted band owns → RED. (The served, undeformed slab is RED: 71.7% of HPDM's
-//   street-walk stations, 2026-10-11.)
+//   twice the limit over a half-width, its edges untouched → RED.
 //
 //   node checks/claims-the-walk-is-level-across.mjs [--town=a,b] [--dir=<slab dir>] [--selftest] [--show=n] [--json=<over stations>]
 // Read-only. Exits 1 on any street-walk station over the limit, or on a town whose limit cannot be read.
@@ -100,12 +100,10 @@ function measure(dir, { mutate = null } = {}) {
   const ribP = ribbonsPathOf(town)
   if (!existsSync(ribP)) throw new Error(`${town}: no ribbons (${ribP}) — a run's class cannot be read`)
   const classOf = new Map(JSON.parse(readFileSync(ribP, 'utf8')).streets.map(st => [st.skelId ?? st.name, PATH.has(st.highway) ? 'path' : 'street']))
-  const out = { town, E, norm, band: [0, 0, 0, 0], path: { n: 0, area: 0 }, subLattice: { n: 0, area: 0 }, sources: {}, tris: 0, area: 0, over: [], overArea: 0, cut: 0, cutArea: 0, thin: 0, unowned: 0, worst: 0, worstRaw: 0, worstY: 0 }
+  const out = { town, E, norm, band: [0, 0, 0, 0], path: { n: 0, area: 0 }, subLattice: { n: 0, area: 0 }, tris: 0, area: 0, over: [], overArea: 0, cut: 0, cutArea: 0, thin: 0, unowned: 0, worst: 0, worstRaw: 0, worstY: 0 }
   for (const g of groups) {
     const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount)
-    let raw
-    if (g.rawByteOffset != null) { raw = new Float32Array(AB, g.rawByteOffset, g.vertexCount); out.sources[g.id] = 'baked terrain height' }
-    else { raw = new Float64Array(g.vertexCount); for (let v = 0; v < g.vertexCount; v++) raw[v] = T.getElevationRaw(P[v * 3], P[v * 3 + 2]); out.sources[g.id] = 'terrain field at each vertex (no baked height)' }
+    let raw = new Float64Array(g.vertexCount); for (let v = 0; v < g.vertexCount; v++) raw[v] = T.getElevationRaw(P[v * 3], P[v * 3 + 2])
     if (mutate) raw = Float64Array.from(raw, (h, v) => mutate(h, P[v * 3], P[v * 3 + 2]))
     for (let i = 0; i < I.length; i += 3) {
       const a = I[i], b = I[i + 1], c = I[i + 2]
@@ -137,14 +135,14 @@ function measure(dir, { mutate = null } = {}) {
 const STATION_M = 1, PROBE_M = 0.02, EDGE_IN_M = 0.01
 // the walk's cross-section at stations along every ② run — THE GATE. `mutate(h, x, z, frac)` bends the read height for
 // the selftest (frac = 0 at the walk's front edge, 1 at its back; W the walk's width there).
-function stations(dir, { mutate = null, owned = null } = {}) {
+function stations(dir, { mutate = null } = {}) {
   const { gj, AB, shape } = load(dir)
   const town = gj.look ?? basename(dir), norm = resolveWalkNorm(town, null), T = loadSceneTerrain(town), E = T.exag
   const g = gj.groups.find(g => g.id === 'sidewalk'); if (!g) return { town, none: true }
   const PATH = new Set(['footway', 'cycleway', 'path', 'pedestrian', 'steps', 'bridleway'])
   const classOf = new Map(JSON.parse(readFileSync(ribbonsPathOf(town), 'utf8')).streets.map(st => [st.skelId ?? st.name, PATH.has(st.highway) ? 'path' : 'street']))
   const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount)
-  const R = g.rawByteOffset != null ? new Float32Array(AB, g.rawByteOffset, g.vertexCount) : Float64Array.from({ length: g.vertexCount }, (_, v) => T.getElevationRaw(P[v * 3], P[v * 3 + 2]))
+  const R = Float64Array.from({ length: g.vertexCount }, (_, v) => T.getElevationRaw(P[v * 3], P[v * 3 + 2]))
   const C = 4, grid = new Map()
   for (let i = 0; i < I.length; i += 3) { const v = [I[i], I[i + 1], I[i + 2]], xs = v.map(k => P[k * 3]), zs = v.map(k => P[k * 3 + 2])
     for (let x = Math.floor(Math.min(...xs) / C); x <= Math.floor(Math.max(...xs) / C); x++) for (let z = Math.floor(Math.min(...zs) / C); z <= Math.floor(Math.max(...zs) / C); z++) { const k = x * 100003 + z; (grid.get(k) || grid.set(k, []).get(k)).push(v) } }
@@ -155,11 +153,7 @@ function stations(dir, { mutate = null, owned = null } = {}) {
     if (l1 >= -1e-9 && l2 >= -1e-9 && l3 >= -1e-9) return { raw: l1 * R[a] + l2 * R[b] + l3 * R[c], y: l1 * P[a * 3 + 1] + l2 * P[b * 3 + 1] + l3 * P[c * 3 + 1] } }
     return null }
   const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
-  const out = { town, E, norm, source: g.rawByteOffset != null ? 'baked terrain height' : 'terrain field at each vertex (no baked height)', street: { n: 0, over: [] }, path: { n: 0, over: 0 }, falls: [],
-    // ⭐ WHO OWNS THE WALK: the band decides, never the nearer line (Jacob, 2026-10-11). The bake names every ped vertex no
-    // painted band owns (`ground.json` deform.unowned; the bake throws on any, so a written slab says 0) — RED if not 0.
-    // A deformed slab that does not say is RED too.
-    owner: owned ?? (g.rawByteOffset == null ? { na: true } : gj.deform ? { n: gj.deform.unowned, at: gj.deform.unownedAt || [] } : { undisclosed: true }) }
+  const out = { town, E, norm, street: { n: 0, over: [] }, path: { n: 0, over: 0 }, falls: [] }
   for (const [ti, t] of shape.tiles.entries()) { if (!t.ring) continue
     for (const run of t.runs || []) { if (!run.skelId || run.skelId.startsWith('__')) continue
       const p = run.poly, cls = classOf.get(run.skelId) || 'street'
@@ -187,13 +181,10 @@ function reportStations(r) {
   if (r.none) { console.log(`  ?   ${r.town}: no walk drawn — not this check's question`); return 0 }
   const lim = r.norm.crossSlopeMax
   const q = (p) => { const s = [...r.falls].sort((a, b) => a - b); return s.length ? s[Math.floor(p * (s.length - 1))] : NaN }
-  const head = `${r.town}: ${r.street.n} street-walk station(s) every ${STATION_M} m · ceiling exag ${r.E} · drawn from ${r.source}`
+  const head = `${r.town}: ${r.street.n} street-walk station(s) every ${STATION_M} m · ceiling exag ${r.E} · drawn from the town's height field`
   if (lim == null) { console.log(`  ⛔  ${head}\n        the town names NO cross-slope limit (norms.json walk.crossSlopeMax) — measured, not gated: fall p90 ${pct(q(0.9))}`); return 1 }
-  const unowned = !!(r.owner.undisclosed || r.owner.n > 0), bad = r.street.over.length > 0 || unowned
+  const bad = r.street.over.length > 0
   console.log(`  ${bad ? '⛔ ' : '✅'}  ${head} · limit ${r.norm.crossSlopeMaxText} (${r.norm.source})`)
-  console.log(r.owner.na ? `        who owns the walk: not asked (no baked height — the walk is the terrain's)`
-    : r.owner.undisclosed ? `        ⛔ who owns the walk: NOT DISCLOSED — this slab was deformed before the band decided; re-bake it`
-    : `        ${r.owner.n ? '⛔' : '✅'} who owns the walk: ${r.owner.n} ped vertex(es) that NO painted band owns${r.owner.n ? `, first at ${r.owner.at.slice(0, 3).map(p => `(${p})`).join(' ')}` : ''}`)
   console.log(`        THE GATE — the walk's cross-section (front · middle · back): fall p50 ${pct(q(0.5))} p90 ${pct(q(0.9))} p99 ${pct(q(0.99))} · over the limit at ${r.street.over.length} station(s), ${pct(r.street.over.length / Math.max(1, r.street.n))}`)
   console.log(`        not gated: path walks ${r.path.over} of ${r.path.n} station(s) over (A19's)`)
   if (bad) { const by = new Map(); for (const o of r.street.over) { const k = `tile ${o.ti} · ${o.key}`; const s = by.get(k) || by.set(k, { n: 0, worst: 0, at: o.at }).get(k); s.n++; if (o.fall > s.worst) { s.worst = o.fall; s.at = o.at } }
@@ -203,8 +194,7 @@ function reportStations(r) {
 function report(r) {
   if (r.none) { console.log(`  ?   ${r.town}: no walk or curb drawn — not this check's question`); return 0 }
   const lim = r.norm.crossSlopeMax
-  const src = [...new Set(Object.values(r.sources))].join(' / ')
-  const head = `the DRAWING (per triangle, a diagnostic — NOT the gate): ${r.tris} walk+curb triangle(s), ${(r.area / 1e4).toFixed(2)} ha · ceiling exag ${r.E} · drawn from ${src}`
+  const head = `the DRAWING (per triangle, a diagnostic — NOT the gate): ${r.tris} walk+curb triangle(s), ${(r.area / 1e4).toFixed(2)} ha · ceiling exag ${r.E} · drawn from the town's height field`
   if (lim == null) { console.log(`  ⛔  ${head}\n        the town names NO cross-slope limit (norms.json walk.crossSlopeMax, rung ${r.norm.source}) — measured, not gated: worst fall ${pct(r.worst)}`); return 1 }
   const bad = r.over.length > 0
   console.log(`        ${head} · limit ${r.norm.crossSlopeMaxText} (${pct(lim)}, ${r.norm.source})`)
@@ -226,14 +216,12 @@ if (SELFTEST) {
   const town = load(dir).gj.look ?? basename(dir), lim = resolveWalkNorm(town, null).crossSlopeMax
   if (lim == null) throw new Error(`--selftest needs a town with a cross-slope limit; ${town} names none`)
   const E = loadSceneTerrain(town).exag || 1
-  const flat = stations(dir, { mutate: () => 0, owned: { n: 0, at: [] } })
-  const orphan = stations(dir, { mutate: () => 0, owned: { n: 1, at: [[0, 0]] } })
+  const flat = stations(dir, { mutate: () => 0 })
   const tilt = stations(dir, { mutate: (h, x) => h + x * 2 * lim / E })
   const bow = stations(dir, { mutate: (h, x, z, frac, W) => frac === 0.5 ? h + 2 * lim * (W / 2) / E : h })   // the middle only; the edges untouched
   const rows = [['a flat world (every terrain part one value) is GREEN', flat.street.over.length === 0 && flat.street.n > 0],
                 ['a world tilted across x at twice the limit is RED', tilt.street.over.length > 0],
-                ['a walk BOWED in its middle at twice the limit, its edges untouched, is RED', bow.street.over.length > 0],
-                ['a flat world with ONE ped vertex no painted band owns is RED', reportStations(orphan) === 1]]
+                ['a walk BOWED in its middle at twice the limit, its edges untouched, is RED', bow.street.over.length > 0]]
   for (const [m, ok] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
   console.log(`  (${town}: ${flat.street.n} station(s) · flat → ${flat.street.over.length} over · tilted → ${tilt.street.over.length} · bowed → ${bow.street.over.length})`)
   process.exit(rows.every(r => r[1]) ? 0 : 1)

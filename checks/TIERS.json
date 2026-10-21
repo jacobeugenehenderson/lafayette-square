@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 442,
+  "total": 435,
   "counts": {
-    "safe": 321,
-    "local-effect": 30,
-    "live": 91
+    "safe": 317,
+    "local-effect": 28,
+    "live": 90
   },
   "checks": [
     {
@@ -29,15 +29,6 @@
       "why": [
         "computed import of cartograph/pour-code.mjs — read, safe",
         "computed import() with no readable target — runs arbitrary modules"
-      ]
-    },
-    {
-      "file": "checks/claims-a-band-is-the-pieces-that-hold-it.mjs",
-      "tier": "safe",
-      "why": [
-        "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "computed import of cartograph/groundDeformer.mjs — read, safe"
       ]
     },
     {
@@ -2524,28 +2515,10 @@
       ]
     },
     {
-      "file": "checks/claims-the-ground-height-is-a-function-of-the-point.mjs",
-      "tier": "safe",
-      "why": [
-        "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "computed import of cartograph/groundDeformer.mjs — read, safe"
-      ]
-    },
-    {
       "file": "checks/claims-the-ground-is-painted-once.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-the-ground-meets-its-terrain.mjs",
-      "tier": "local-effect",
-      "why": [
-        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -2569,14 +2542,6 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-the-height-code-owns-what-is-drawn.mjs",
-      "tier": "safe",
-      "why": [
-        "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe"
       ]
     },
     {
@@ -2658,16 +2623,6 @@
         "computed import of src/lib/almanac-eval.js — read, safe",
         "computed import of a data: module — hermetic",
         "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
-      ]
-    },
-    {
-      "file": "checks/claims-the-line-is-continuous.mjs",
-      "tier": "local-effect",
-      "why": [
-        "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of cartograph/lineHeight.mjs from its own temp dir — read as cartograph/lineHeight.mjs, safe",
-        "computed import of cartograph/lineHeight.mjs — read, safe",
-        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -2786,14 +2741,6 @@
       ]
     },
     {
-      "file": "checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs",
-      "tier": "safe",
-      "why": [
-        "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe"
-      ]
-    },
-    {
       "file": "checks/claims-the-revetment-builds-on-the-wet-face.mjs",
       "tier": "safe",
       "why": [
@@ -2815,21 +2762,9 @@
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "computed import of src/lib/tileGround.js — read, safe",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "computed import of cartograph/groundDeformer.mjs — read, safe",
         "imports a mutated copy of src/lib/ribbonsGeometry.js from its own temp dir — read as src/lib/ribbonsGeometry.js, safe",
         "imports a mutated copy of src/lib/ribbonsGeometry.js from its own temp dir — read as src/lib/ribbonsGeometry.js, safe",
         "computed import of src/lib/ribbonsGeometry.js — read, safe"
-      ]
-    },
-    {
-      "file": "checks/claims-the-road-is-swept-from-its-line-to-its-curb.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
-      "why": [
-        "writeFileSync — only under its own temp dir",
-        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {

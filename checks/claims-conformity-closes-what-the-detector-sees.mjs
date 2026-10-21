@@ -6,7 +6,7 @@
  *    back a mesh closed by exact vertex identity, but `findTJunctions` welded vertices on the 1 mm lattice. Two refinement
  *    midpoints under 1 mm apart (Huron's shore 0.61 mm; HPDM's asphalt on wydown-terrace-7's stripe, 0.698 mm) read as
  *    one, an edge each used read as used once, and the bake refused on a crack the slab never had: nothing between
- *    conformity and the screen welds or rounds a position (`emit` → `liftBuffer` → per-vertex `aRaw` → ground.bin →
+ *    conformity and the screen welds or rounds a position (`emit` → `liftBuffer` → ground.bin →
  *    `BakedGround`). The weld was removed (Boz, 2026-10-18, option (b)).
  * ⭐ THE RULE: the detector names a vertex by its exact float32 position, the way the slab draws it — so conformity's own
  *    output passes it, and a real gap under 1 mm is still a crack. Shown on:
