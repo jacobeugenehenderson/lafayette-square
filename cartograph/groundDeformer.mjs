@@ -593,7 +593,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     // its owners and its spread (`splits`, written to ground.json by bake-ground.js).
     if (inBand(x, z)) {
       const H = []
-      for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) { const off = alongBoundary(c.px, c.pz, x, z); if (off == null) continue
+      for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) { const off = alongBoundary(c, x, z); if (off == null) continue
         const vs = [LATTICE + off, -LATTICE - off].map(side => profile(c, x, z, side)).filter(p => p.held).map(p => p.v)
         if (vs.length) H.push({ owner: own(c), v: vs.reduce((a, v) => a + v, 0) / vs.length }) }
       if (H.length) { stats.byBothSides++; const vs = H.map(h => h.v), dh = Math.max(...vs) - Math.min(...vs)
@@ -637,13 +637,20 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // is (x, z) on a band piece's edge whose line passes within the lattice of the station (px, pz)? Then a ray from the
   // station to the point runs along that edge (`resolveUncached`, the both-sides read), and this is how far off that line
   // the ray's two ends sit (the larger, over every such edge); null where no edge runs along it
-  const alongBoundary = (px, pz, x, z) => {
+  const alongBoundary = (c, x, z) => { const px = c.px, pz = c.pz
     const segD = (a, b, qx, qz) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((qx - a[0]) * dx + (qz - a[1]) * dz) / L2)) : 0; return Math.hypot(qx - a[0] - u * dx, qz - a[1] - u * dz) }
     const lineD = (a, b, qx, qz) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); return L ? Math.abs((qx - a[0]) * dz - (qz - a[1]) * dx) / L : Infinity }
     let off = null
     for (let gx = Math.floor((x - LATTICE) / CELL); gx <= Math.floor((x + LATTICE) / CELL); gx++) for (let gz = Math.floor((z - LATTICE) / CELL); gz <= Math.floor((z + LATTICE) / CELL); gz++)
       for (const s of segGrid.get(gx * 1000003 + gz) || []) { const dp = segD(s.a, s.b, x, z), ds = lineD(s.a, s.b, px, pz)
         if (dp <= LATTICE && ds <= LATTICE) off = Math.max(off ?? 0, dp, ds) }
+    // ⭐ OR THE RAY STARTS ON A BOUNDARY (Zob placed HPDM's last 6, Boz 2026-10-21): the station within the lattice of a band
+    // edge that LEAVES ② (a curb end, a corner), the ray leaving it at a shallow angle; the point may be metres from that edge.
+    // ⛔ An edge lying ALONG ② (a curb's outer edge IS ②) is not one: every station sits on such an edge, and taking it would
+    // make this a second chance for every unowned point (Boz, 2026-10-21: the narrow form only)
+    const R = c.R.ring, onIa = (q) => { for (let i = 0; i < R.length; i++) if (segD(R[i], R[(i + 1) % R.length], q[0], q[1]) <= LATTICE) return true; return false }
+    for (let gx = Math.floor((px - LATTICE) / CELL); gx <= Math.floor((px + LATTICE) / CELL); gx++) for (let gz = Math.floor((pz - LATTICE) / CELL); gz <= Math.floor((pz + LATTICE) / CELL); gz++)
+      for (const s of segGrid.get(gx * 1000003 + gz) || []) { const dq = segD(s.a, s.b, px, pz); if (dq <= LATTICE && !(onIa(s.a) && onIa(s.b))) off = Math.max(off ?? 0, dq) }
     return off }
   const nearKey = (n) => n.R.arc[n.i] != null ? `a${n.R.arc[n.i]}` : `r${n.R.stamp[n.i]}`
   const inBand = (x, z) => inClass('walk', x, z) || inClass('lawn', x, z) || inClass('curb', x, z)

@@ -62,11 +62,29 @@ const rows = async (url) => {
       runs: [{ skelId: 'a', poly: [[-5, -5], [5, -5]] }, { skelId: 'b', poly: [[5, -3], [-5, -3]] }] }], ink: [], raw: () => 0, line: { step: 1, heightAt: (id) => (id === 'a' ? 1 : 2) },
     limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], lawn: [], walk: [sq(0, -5, 5, -3.9), sq(-5, -4.1, 0, -3)] } })
   const sh = SEAM.heightAt(0, -4), sl = SEAM.splits()
+  // 7: THE RAY STARTS ON A BOUNDARY (HPDM (477.138, −466.781), Zob's geometry): the station is ON a curb's END edge, which
+  //    leaves ②, and the ray runs along it; past the curb a sub-mm lot sliver lies between the walk and the ray's 10 µm
+  //    side, and the point sits on the lawn's edge, whose line passes 1.2 mm off the station (so the point-on-edge test
+  //    misses). Read a full step to the side, the walk and lawn hold it.
+  const ST = buildDeformer({ town: 'selftest', tiles: [{ ring: sq(-10, -10, 10, 10), ringOwner: [0, 1, 2, 3].map(() => ({ skelId: 'l' })), iA: [inner], iaFull: [inner], iaStamp: [[0, 0, 0, 0]],
+      runs: [{ skelId: 'l', poly: [...inner, inner[0]] }] }], ink: [], raw: () => 0, line: { step: 1, heightAt: () => 1 },
+    limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 },
+    bands: { curb: [sq(-5, -5, 0, -4.85)], walk: [sq(-5, -4.85, -0.0006, -4)], lawn: [[[-5, -4], [-0.0006, -4], [0.0006, -2], [-5, -2]]] } })
+  // 8: THE TRIGGER STAYS NARROW (HPDM (−1043.425, −242.910), tile 159; Zob's geometry): the point sits in a 1 mm lawn sliver
+  //    just past the walk's far edge, 1.1 mm past where the ray leaves the walk. Its station lies only on ②'s own edge (the
+  //    curb's), so the station trigger must not fire: a trigger on ANY band edge reads it 1 mm aside, into the sliver, and
+  //    owns it by rounding (what this point needs is not established; it stays unowned and named)
+  const NW = buildDeformer({ town: 'selftest', tiles: [{ ring: sq(-10, -10, 10, 10), ringOwner: [0, 1, 2, 3].map(() => ({ skelId: 'l' })), iA: [inner], iaFull: [inner], iaStamp: [[0, 0, 0, 0]],
+      runs: [{ skelId: 'l', poly: [...inner, inner[0]] }] }], ink: [], raw: () => 0, line: { step: 1, heightAt: () => 1 },
+    limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 },
+    bands: { curb: [sq(-5, -5, 5, -4.85)], walk: [sq(-5, -3.5, 5, -2.0011), sq(-4.9, 0.5, -1, 4.9)], lawn: [sq(-5, -4.85, 5, -3.5), [[5.4e-5, -2.0011], [0.0015, -2.0011], [0.0015, -2], [0, -2]]] } })
   return [
     ['a vertex on a stamp line whose ray runs along it is held by the band on its other side, never unowned', E.unownedIn(0, -4) == null && E.heightAt(0, -4) != null && E.ownerAt(0, -4) != null && E.stats.byBothSides === 1],
     ['the mirror, its sidestep already in the band, is held by the first ray (the both-sides read never runs)', W.unownedIn(0, -4) == null && W.heightAt(0, -4) != null && W.stats.byBothSides === 0],
     ['a seam point two owners both hold takes their mean, never the first owner\'s height', sh === 1.5 && SEAM.ownerAt(0, -4) === '0|0|r0+0|0|r1' && SEAM.stats.bothSidesSplit === 1],
     ['and it is listed: its exact position, both owners, and their spread', sl.length === 1 && sl[0].x === 0 && sl[0].z === -4 && sl[0].owners.length === 2 && sl[0].spread === 1],
+    ['a ray that starts on a curb\'s end edge and runs along it is held by the band a full step to its side, never unowned', ST.unownedIn(-0.00002, -3) == null && ST.heightAt(-0.00002, -3) != null && ST.stats.byBothSides === 1],
+    ['the station trigger stays narrow: a station on ②\'s own edge alone does not fire it (a sliver past the far edge stays unowned)', NW.unownedIn(0.000002, -2.000002) != null && NW.stats.byBothSides === 0],
     ['a rim ring whose longest ② edge lies outside the disc reads its side off ②: the walk takes up its share of the fall', hw != null && hw < 0],
     ['a frame edge wholly outside the disc: the deformer builds, and counts it exempt', !!D && D.stats.frameExempt === 1],
     ['the same frame edge inside the disc REFUSES', refuses(() => make({ disc: over }))],
@@ -88,19 +106,20 @@ const keyRows = (key, src) => { const x = 170.53456789012345, z = 1254.912345678
     ['a bake that owns every ped vertex removes a stale list (the uploader carries every file of a look dir)', src.includes(DELETE), 'bake-ground.js']] }
 const self = process.argv.includes('--selftest')
 const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
-const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) {\n      const H = []", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)", BOTH = 'const vs = [LATTICE + off, -LATTICE - off]', FIRST = 'if (vs.length) H.push('
+const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) {\n      const H = []", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)", BOTH = 'const vs = [LATTICE + off, -LATTICE - off]', FIRST = 'if (vs.length) H.push(', STATION = 'if (dq <= LATTICE && !(onIa(s.a) && onIa(s.b)))'
 // ⭐ ONE mutated copy (checks/tier.mjs reads one temp-dir `mutant`) carrying both mutations behind a switch read at call time
 const mutant = () => { const src = readFileSync(HOME, 'utf8')
-  for (const a of [EXEMPT, UNOWNED, SIDE, BOTH, FIRST]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
+  for (const a of [EXEMPT, UNOWNED, SIDE, BOTH, FIRST, STATION]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
   const f = join(mkdtempSync(join(tmpdir(), 'height-owns-')), 'groundDeformer.mjs')
   writeFileSync(f, src.replace(EXEMPT, "&& (globalThis.__MUT === 'exempt' || outsideDisc(ring[i], ring[(i + 1) % n]))) exempt[i] = 1")
     .replace(UNOWNED, "if (inBand(x, z) && globalThis.__MUT !== 'fallback') {\n      const H = []")
     .replace(BOTH, "const vs = (globalThis.__MUT === 'oneside' ? [] : [LATTICE + off, -LATTICE - off])")
     .replace(FIRST, "if (vs.length && !(globalThis.__MUT === 'first' && H.length)) H.push(")
+    .replace(STATION, "if (globalThis.__MUT !== 'nostation' && dq <= LATTICE && (globalThis.__MUT === 'wide' || !(onIa(s.a) && onIa(s.b))))")
     .replace(SIDE, "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, globalThis.__MUT === 'side' ? t.iA : t.full)")
     .replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
   return pathToFileURL(f).href }
-const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point', side: 'the side read off the disc-cut block (iA)', oneside: 'a ray along a stamp line read on one side only (today\'s 10 µm sidestep)', first: 'the first owner that holds a seam wins (the order decides)' }
+const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point', side: 'the side read off the disc-cut block (iA)', oneside: 'a ray along a stamp line read on one side only (today\'s 10 µm sidestep)', first: 'the first owner that holds a seam wins (the order decides)', nostation: 'no both-sides read for a ray that starts on a band edge leaving ②', wide: 'the station trigger on ANY band edge, ②\'s own included' }
 if (self) { let bad = 0; const url = mutant()
   for (const [k, name] of Object.entries(MUTANTS)) { globalThis.__MUT = k; const R = await rows(url), red = R.some(r => !r[1])
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'}${red ? ` (${R.filter(r => !r[1]).map(r => r[0]).join(' · ')})` : ''}`) }
