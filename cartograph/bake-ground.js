@@ -1797,9 +1797,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const kerbCellPaths = creaseCut?.cells || []
   const creaseItems = new Map((creaseCut?.groups || []).map(g => [g.id, g.items]))
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
-  // ⭐ THE ROAD FOLLOWS ITS SWEEP (the deformer's road side, ① to ②): the carriageway refines against D exactly as the ped bands
-  // do, or a 6–9 m road triangle and a 29–60 m stripe edge chord the line (measured HPDM, db0bebb6's slab)
-  const ROAD_KEYS = (key) => key === 'asphalt' || key === 'highway' || key === 'stripe'
+  // ⭐ THE STRIPE FOLLOWS ITS SWEEP: `claims-the-stripe-lies-on-its-road` gates each stripe against a lift of millimetres at
+  // its edge midpoints, so it refines against D as the ped bands do (a 29–60 m stripe edge chorded the line, HPDM, db0bebb6's
+  // slab). The carriageway itself (asphalt, highway) takes the lots' policy (Jacob, 2026-10-20: BRIEF-the-ground-stays-in-budget
+  // §3 step 7b); conformity welds the fine stripe and curb beside it with closures. ⚠️ A road-derived tolerance is unruled.
+  const ROAD_KEYS = (key) => key === 'stripe'
   // the drawn terrain part at (x, z): the deformer where it reaches, else the terrain itself
   const terrainPartAt = deform ? (x, z) => deform.heightAt(x, z) ?? deformTerrain.getElevationRaw(x, z) : null
   const _planMemo = new Map()
