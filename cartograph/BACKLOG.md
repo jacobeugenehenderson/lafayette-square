@@ -508,7 +508,10 @@ no-owner); the 62 are PAINTED band ground the PIECES don't cover (14 at 2–9 mm
 the same root as the owners check's RED since birth. Candidate (Boz → Zob premise): ONE cut, where paint IS the union of the pieces
 and unpieced band ground refuses by name. No widened lookup. Heights being judged by continuity (Zob). ⛔ The painter's no-owner census
 names 21 of the 48; tile 102's 27 are painted ground NOTHING names (Kerf). The census refusal now throws, since the ownership build is
-its reader (the 10-18 ruling). ❓ Jacob: should a baked grayscale height raster drive the map instead (scratch/ground-budget/heightmap/)? Triangles: bands 86.8% of 1.85M. On landing, BRIEF-the-height-code-owns-what-is-drawn and BRIEF-the-rim-is-cut-once are conformed or evicted.), slit ×12 (tile
+its reader (the 10-18 ruling). ⭐ JACOB'S DIRECTION (2026-10-21): "clip the full terrain gamut into ffffff and
+000000 and create a single-channel vector map … pretty fine steps": ONE height field for the whole area, vector, that every layer
+samples, continuous by construction. The ownership-once build is HELD (Zob, measured: +60% height steps, at owner seams). Zob
+assesses the vector field (what it replaces; street shape baked in or not; encoding; refinement). Triangles: bands 86.8% of 1.85M. On landing, BRIEF-the-height-code-owns-what-is-drawn and BRIEF-the-rim-is-cut-once are conformed or evicted.), slit ×12 (tile
 20), back edge ×3 (tile 15). HPDM lawn-land gate: 38 → 5 unowned (5 walk: back edge + one slit), held samples Δh 0. Truss's sub-lattice drop is REJECTED (Plumb, measured:
 the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). PLACED (Zob, LS tile 47): the needle is a depth-0 curb band: on a 1 mm bare
 ② edge (motorway-27), the curb level re-mints iA's vertex 1 mm off. BUILT (Plumb bc6bdf4f): offsetRingByRects#mergeGrid had merged a 1 mm bare
