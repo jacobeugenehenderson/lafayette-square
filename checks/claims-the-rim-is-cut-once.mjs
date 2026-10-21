@@ -14,6 +14,8 @@
 //   5. THE PAINT'S RIM IS THE RING'S RIM. HPDM tile 49 (fixture): every painted vertex on a rim edge is a vertex of the
 //      painter's noded ring (its `rim`, live), and the deformer, reading that rim, owns (1113.03, 830.88), where each class's
 //      own rounded rim crossing had left an unpainted wedge (7.7 mm along its oblique ray).
+//      And on HPDM tile 242, B2's own wedge point is owned the same way (its curb/lawn pair stays 1.41 mm apart: the guard is the
+//      consequence).
 //   3. (C) THE TILE RING CARRIES THE BLOCK'S RIM CROSSINGS (synthetic): a ring and its block, cut by an oblique disc chord
 //      separately, then `shareRimCrossings`: every block vertex on a rim edge of the ring is a ring vertex. Unshared, `ring − iA`
 //      left LS tile 133 a 12.7 m, ≤ 0.166 mm needle.
@@ -64,6 +66,15 @@ const rows = async (TG, DM) => {
   const r5 = []; r5[X.ti] = R5
   const D5 = buildDeformer({ town: F.scene, tiles: t5, ink: [], raw: () => 0, line: { step: 1, heightAt: () => 0 }, stencil: F.stencil, limits: F.limits, legs: [{ tile: X.ti, perp: X.legs }], rims: r5,
     bands: { curb: [...S5.curb, ...S5.curbCut], lawn: Object.values(S5.treelawnByLu || {}).flat(), walk: S5.sidewalk } })
+  // 5b — B2 on tile 242 (Zob, 2026-10-21): the geometric pair is NOT closed (the lawn's crossing went into the curb, 1.41 mm
+  // still), so its guard is the consequence: the deformer, reading the painter's noded rim, owns B2's wedge point
+  let S6; { const l6 = console.log, w6 = console.warn; console.log = () => {}; console.warn = () => {}
+    try { S6 = TG.sectionOpen([W.tile], F.cw, { outer: 'LU', inner: 'SW' }, F.stencil, {}, null, null, {}, { stampedWith: F.stencil }) } finally { console.log = l6; console.warn = w6 } }
+  const t6 = []; t6[W.ti] = W.tile; for (let i = 0; i < W.ti; i++) t6[i] ||= {}
+  const r6 = []; if (S6.rimRings?.[0]) r6[W.ti] = S6.rimRings[0]
+  const D6 = buildDeformer({ town: F.scene, tiles: t6, ink: [], raw: () => 0, line: { step: 1, heightAt: () => 0 }, stencil: F.stencil, limits: F.limits, legs: [{ tile: W.ti, perp: W.legs || [] }], rims: r6,
+    bands: { curb: [...S6.curb, ...S6.curbCut], lawn: Object.values(S6.treelawnByLu || {}).flat(), walk: S6.sidewalk } })
+  const B2 = [-629.61, -1234.17], b2In = D6._inClass('walk', ...B2) || D6._inClass('lawn', ...B2) || D6._inClass('curb', ...B2)
   // 3 — synthetic: a 10 × 10 ring, its block inset 1 m, the disc's chord crossing both obliquely
   const sq = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], ring0 = sq(0, 0, 10, 10), block0 = sq(1, 1, 9, 9)
   const stamp = [[-5, -5], [15, -5], [15, 7.3], [-5, 8.9]]                     // the chord from (15, 7.3) to (−5, 8.9)
@@ -80,6 +91,8 @@ const rows = async (TG, DM) => {
     [`(E) tile 49's paint noded the ring (${rim5.length} rim edge(s))`, !!R5 && rim5.length > 0],
     [`(E) every painted vertex on its rim is a vertex of the noded ring (off it: ${off5})`, off5 === 0],
     [`(E) the deformer, reading the noded rim, owns the wedge point (1113.03, 830.88)`, D5.unownedIn(...X.point) == null],
+    [`(E) B2's wedge point (−629.61, −1234.17) lies in tile 242's paint`, b2In],
+    [`(E) the deformer, on tile 242's noded paint and rim, owns it`, D6.unownedIn(...B2) == null],
     [`(C) the synthetic block meets the chord at ${onChord.length} point(s)`, onChord.length >= 2],
     [`(C) every one of them is a vertex of the tile ring`, onChord.every(v => keys.has(v.join()))],
   ]
@@ -92,6 +105,8 @@ const LIB = (m) => pathToFileURL(join(ROOT, 'src/lib', m)).href, SRC = (m) => pa
 const must = (src, a) => { if (src.split(a).length !== 2) throw new Error(`selftest: the source no longer carries \`${a.slice(0, 80)}\` — re-aim the mutation`) }
 const g = "globalThis.__RIM_MUT"
 const T5 = '  if (!minted.length) return { ring, owners, added: 0 }'
+const T9 = '  nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)'
+const R9 = `  if (${g} !== 'nopaint') nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)`
 const T8 = 'const reclip = hasStencil && !sameRing(stampedWith, stencil)'
 const R8 = `const reclip = hasStencil && (${g} === 'reclip' || !sameRing(stampedWith, stencil))`
 const D1 = "let beyond = !!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.rimRing])", D2 = "  const recOf = new Map(T.map(r => [r.ti, r]))"
@@ -106,8 +121,8 @@ const RE_LIB = /from '\.\/([^']+)'/g, RE_SRC = /from '\.\.\/([^']+)'/g, RE_DLIB 
 const toLib = (_, m) => `from '${LIB(m)}'`, toSrc = (_, m) => `from '${SRC(m)}'`
 const mutantTG = () => { const tgSrc = readFileSync(TGF, 'utf8')
   const f = join(mkdtempSync(join(tmpdir(), 'rim-once-tg-')), 'tileGround.js')
-  for (const a of [T5, T8]) must(tgSrc, a)
-  writeFileSync(f, tgSrc.replace(T5, R5).replace(T8, R8).replace(RE_PKG, TO_PKG).replace(RE_LIB, toLib).replace(RE_SRC, toSrc))
+  for (const a of [T5, T8, T9]) must(tgSrc, a)
+  writeFileSync(f, tgSrc.replace(T5, R5).replace(T9, R9).replace(T8, R8).replace(RE_PKG, TO_PKG).replace(RE_LIB, toLib).replace(RE_SRC, toSrc))
   return pathToFileURL(f).href }
 const mutantDEF = () => { const dfSrc = readFileSync(DEF, 'utf8')
   const g2 = join(mkdtempSync(join(tmpdir(), 'rim-once-def-')), 'groundDeformer.mjs')
@@ -117,7 +132,7 @@ const mutantDEF = () => { const dfSrc = readFileSync(DEF, 'utf8')
 if (self) { const tgCopy = mutantTG()
   const dfCopy = mutantDEF()
   let bad = 0
-  for (const [k, name, row] of [['reclip', 'a stamped shape clipped to the stencil again in the finish', 1], ['stencil', "beyond read off the stencil's chord", 3], ['norims', "the painter's noded rim dropped from the deformer", 6], ['unshared', 'the block\'s rim crossings not shared with the ring', 8]]) {
+  for (const [k, name, row] of [['reclip', 'a stamped shape clipped to the stencil again in the finish', 1], ['stencil', "beyond read off the stencil's chord", 3], ['norims', "the painter's noded rim dropped from the deformer (tile 49)", 6], ['nopaint', "the painted pieces not noded with the rim crossings (B2, tile 242)", 8], ['unshared', 'the block\'s rim crossings not shared with the ring', 10]]) {
     globalThis.__RIM_MUT = k; const R = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)), red = !R[row][1]
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'} (${R[row][0]})`) }
   globalThis.__RIM_MUT = null; const R0 = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)); if (!R0.every(r => r[1])) { bad++; console.log('  ⛔ the mutated copies, switched off, are not GREEN — the mutation changed more than its switch') }
