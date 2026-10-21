@@ -486,7 +486,9 @@ edge point, or starts on a mm-wide curb. ✅ RULED (Jacob, 2026-10-21): "take ea
 already labelled, so ownership is decided once." PREMISE PASSED (Zob, with changes): bakeGround passes the band pieces
 (+ edgeDepths); the profile reads the owner's STRUCK depths, not the ray (otherwise a point past the ray's band gets raw terrain,
 silently); two-owner pieces take the mean; no-owner pieces refuse; deleted: the both-sides read, alongBoundary, the leg channel,
-the ray's ownership role. ❓ Jacob: does it supersede his lawn-land ruling (every lawn piece has an owner)?), slit ×12 (tile
+the ray's ownership role. ✅ RULED (Jacob, 2026-10-21): "retire the lawn exception" (a treelawn LOOKS like its
+block's land use and SITS at its street's height; land-use fill beyond the band is the land's, at terrain). mitre/lawn-land
+retired unmerged. Kerf builds.), slit ×12 (tile
 20), back edge ×3 (tile 15). HPDM lawn-land gate: 38 → 5 unowned (5 walk: back edge + one slit), held samples Δh 0. Truss's sub-lattice drop is REJECTED (Plumb, measured:
 the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). PLACED (Zob, LS tile 47): the needle is a depth-0 curb band: on a 1 mm bare
 ② edge (motorway-27), the curb level re-mints iA's vertex 1 mm off. BUILT (Plumb bc6bdf4f): offsetRingByRects#mergeGrid had merged a 1 mm bare
