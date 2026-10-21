@@ -180,7 +180,8 @@ gap". OSM keeps first claim, parcels fill after it; a gap between two claims nar
   after PTown. Waits on the combined LS bake to land.
 - **LS #39 (kerb step), COMBINED BAKE (Truss, 2a971354 vs 5cf20f59, real bake, refinement on): bare 22.1 → 1.0 m** (left:
   commercial|asphalt 1.0 m at (-149, 319), the crack; vacant 0.1 m at (68, 381), the finger, both Plumb's). The CRACK is
-  CLOSED by construction (Plumb 68f1410c: a refused bisector's square side runs on its neighbour's line; field unchanged); the
+  CLOSED by construction (Plumb 68f1410c: a refused bisector's square side runs on its neighbour's line; field unchanged).
+  ✅ MERGED to integration 52db4b5e with Truss's noding (Zob: landable; Jacob: "attempt to deploy the work"); the
   finger waits on the sub-lattice ring ruling; 11 drifting square sides go into the ribbon brief. Churn > 10 m: 3,068
   triangles (PASSES; not the 20k). Conformity's input T-junctions 10,705 → 369. ⚠️ Time 897 → 1,603 s (+80%): about half is kernel
   time (sys 84 → 389 s, resident memory down at the same footprint: paging at 25% free); the rest (+327 s user) is compute
