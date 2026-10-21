@@ -90,7 +90,7 @@ function judgeWiring(gsrc, ssrc) {
     ['bakeGround decides the shore through shoreMedianFor', /bakeGround\(\{[^]*shoreMedianFor\(\{/.test(gsrc.slice(gsrc.indexOf('export async function bakeGround'))), 'bake-ground.js'],
     ['bake-ground parses --shore=pending', /arg === '--shore=pending'/.test(gsrc), 'bake-ground.js main'],
     ['no warn-and-continue shore branch is left', !/NO shore sand painted/.test(gsrc), 'bake-ground.js'],
-    ["serve.js decides 'ground-shore' through groundShorePass, and skips it by name", /const shorePass = groundShorePass\(/.test(ssrc) && /if \(shorePass\.run\) await runIfDirty\('ground-shore'/.test(ssrc) && /else skip\(`ground-shore \(\$\{shorePass\.why\}\)`\)/.test(ssrc), 'serve.js'],
+    ["serve.js decides 'ground-shore' through groundShorePass, and skips it by name", /const shorePass = groundShorePass\(/.test(ssrc) && /if \(shorePass\.run\) await runIfDirty\('ground-shore'/.test(ssrc) && /else \{ skip\(`ground-shore \(\$\{shorePass\.why\}\)`\)/.test(ssrc), 'serve.js'],
   ]
 }
 // a scratch baked tree: one look stamped pending, one not

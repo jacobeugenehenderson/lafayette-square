@@ -135,6 +135,13 @@ function saveBakeTiming(mapJson, lookId, label, ms) {
   try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { ms, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
   catch (e) { console.warn(`[bake] could not record the ${label} timing: ${e.message}`) }
 }
+// ⭐ A GROUND PASS THE BAKE SKIPS IS RECORDED AS SKIPPED, never left at its old time (Boz, 2026-10-21): the budget's ceiling
+// sums only the passes a Bake actually runs, so a stale 'ground-shore' time would loosen it by a pass nobody pays.
+// ▶ checks/claims-the-ground-stays-in-budget.mjs
+function saveBakeSkip(mapJson, lookId, label, why) {
+  try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { skipped: why, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
+  catch (e) { console.warn(`[bake] could not record the ${label} skip: ${e.message}`) }
+}
 // ⭐ WHAT EACH STEP READ WHEN IT LAST RAN — `${lookId}:${label}` → { code, data }, each { path: sha1 }, beside the timings.
 // runIfDirty re-runs a step when its code (its scripts' import closure) or a declared data input differs by CONTENT
 // (pour-code.mjs `contentChanged`), or an output is missing — never on an mtime, so a checkout or writeIfChanged's
@@ -2987,7 +2994,7 @@ createServer(async (req, res) => {
           [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
           `node bake-ground.js --look=${id} ${sceneFlag}`,
           { cwd: here })
-        else skip(`ground-shore (${shorePass.why})`)
+        else { skip(`ground-shore (${shorePass.why})`); if (!P.plan) saveBakeSkip(MAP_JSON, id, 'ground-shore', shorePass.why) }
       }
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named

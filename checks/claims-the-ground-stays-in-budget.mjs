@@ -45,9 +45,12 @@ export function servePasses(src = readFileSync(join(REPO, 'cartograph', 'serve.j
 }
 const groundMs = (timingsPath, town) => {
   if (!existsSync(timingsPath)) return { why: `no ${timingsPath}` }
-  const T = readJson(timingsPath), paid = GROUND_PASSES.filter(p => Number.isFinite(T[`${town}:${p}`]?.ms))
+  // ⭐ a pass the Bake SKIPPED (serve.js saveBakeSkip: `{ skipped: why }`) contributes 0 and is named; only the passes a Bake
+  //   actually runs are summed (Boz, 2026-10-21: a stale time would loosen the ceiling by a pass nobody pays)
+  const T = readJson(timingsPath), paid = GROUND_PASSES.filter(p => Number.isFinite(T[`${town}:${p}`]?.ms) && T[`${town}:${p}`].skipped == null)
+  const skipped = GROUND_PASSES.filter(p => T[`${town}:${p}`]?.skipped != null).map(p => `${p} skipped (${T[`${town}:${p}`].skipped})`)
   if (!paid.includes('ground')) return { why: `${timingsPath} has no "${town}:ground" time` }
-  return { ms: paid.reduce((s, p) => s + T[`${town}:${p}`].ms, 0), passes: paid }
+  return { ms: paid.reduce((s, p) => s + T[`${town}:${p}`].ms, 0), passes: [...paid, ...skipped] }
 }
 
 // The served ceiling for one town, or the reason there is none.
@@ -99,6 +102,9 @@ function selfTest() {
   slab(join(roots.baked, 'b'), 'b', { v: 100, t: 100 })   // served slab, no served time
   mkdirSync(join(roots.data, 'c', 'clean'), { recursive: true })   // served time, no served slab
   writeFileSync(join(roots.data, 'c', 'clean', 'bake-timings.json'), JSON.stringify({ 'c:ground': { ms: 1000 } }))
+  slab(join(roots.baked, 'd'), 'd', { v: 100, t: 100 })   // served: the second pass SKIPPED (inland), so the ceiling is the first alone
+  mkdirSync(join(roots.data, 'd', 'clean'), { recursive: true })
+  writeFileSync(join(roots.data, 'd', 'clean', 'bake-timings.json'), JSON.stringify({ 'd:ground': { ms: 600 }, 'd:ground-shore': { skipped: 'inland: no shore' } }))
   const cases = [
     ['equal size, equal time', { town: 'a', v: 100, t: 100, ms: 1000 }, true],
     ['smaller slab, faster', { town: 'a', v: 50, t: 50, ms: 10 }, true],
@@ -112,6 +118,8 @@ function selfTest() {
     ['no recorded time', { town: 'a', v: 10, t: 10 }, false],
     ['a town with no served time', { town: 'b', v: 10, t: 10, ms: 1 }, false],
     ['a town with a served time but no served slab', { town: 'c', v: 10, t: 10, ms: 1 }, false],
+    ['a skipped served pass contributes 0: one ms over the pass that ran', { town: 'd', v: 100, t: 100, ms: 601 }, false],
+    ['a skipped served pass contributes 0: equal to the pass that ran', { town: 'd', v: 100, t: 100, ms: 600 }, true],
   ]
   let bad = 0
   cases.forEach(([name, o, want], i) => {
@@ -127,8 +135,17 @@ function selfTest() {
   const covPass = seen.join() === 'ground,ground-new' && miss.join() === 'ground-new'
   if (!covPass) bad++
   console.log(`  ${covPass ? '✓' : '✗'} an unlisted serve.js bake-ground pass is seen: [${seen}] · unlisted [${miss}]`)
+  // a skipped pass is NAMED in the ceiling, and serve.js records the skip (so no stale time survives it); mutant: the record dropped
+  const dC = ceilingOf('d', roots), named = dC.ms === 600 && dC.passes.includes('ground-shore skipped (inland: no shore)')
+  if (!named) bad++
+  console.log(`  ${named ? '✓' : '✗'} a skipped served pass is named and adds 0: ${dC.why ?? `${dC.ms} ms (${dC.passes.join(' + ')})`}`)
+  const serveSrc = readFileSync(join(REPO, 'cartograph/serve.js'), 'utf8'), REC = "if (!P.plan) saveBakeSkip(MAP_JSON, id, 'ground-shore', shorePass.why)"
+  const records = (src) => src.split(REC).length === 2 && /function saveBakeSkip\([^)]*\) \{\s*try \{[^\n]*skipped: why/.test(src)
+  const wired = records(serveSrc) && !records(serveSrc.replace(REC, ''))
+  if (!wired) bad++
+  console.log(`  ${wired ? '✓' : '✗'} serve.js records a skipped 'ground-shore' as skipped (and the record dropped is caught)`)
   rmSync(root, { recursive: true, force: true })
-  console.log(bad ? `⛔ self-test: ${bad} case(s) wrong` : `self-test: ${cases.length + 1} cases as expected`)
+  console.log(bad ? `⛔ self-test: ${bad} case(s) wrong` : `self-test: ${cases.length + 3} cases as expected`)
   return bad === 0
 }
 
