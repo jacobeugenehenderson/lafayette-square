@@ -60,6 +60,17 @@ Start here. State at the restart:
   run in the same pass) → if both reach the end with every gate green, a LOCAL bake of HPDM then LS into `public/baked`
   with the old slabs backed up first (reversible; nothing published) for Jacob's eye in the morning. Publish/Promote are
   Boz's + Ward's together, after Jacob's eye.
+- **LS REAPPLICATION PLAN (Jacob, 2026-10-21: "reapply all we can to LS"; Zob's Inputs census, read from
+  `cartograph/intake-rows.mjs#intakeStatusForMap` + each town's `sources.json`):**
+  · *No ruling, normal path:* declare LS's `historicDistricts` in its sources.json (today the name lives only inline in
+    `src/instances/lafayette-square.js`) → LS's roster (bake-content, Truss's merged change) → parcels + lamps refresh →
+    the OSM re-fetch (all four §3.4 gates pass; LS's listings are hand-curated, so OSM doesn't change them).
+  · *Needs Jacob:* the curated `src/data/buildings.json` assessor fields (City terms) · a City land-use code table
+    (LS's is null) · NR nomination terms (and ≤ 80 plausible nomination years, not 1,013) · `content/profile.json` lifted
+    from LS's inline profile (dual hydration, INTAKE-CATALOGUE A4) · LS's footprints/ids onto the kit wells (HELD
+    plumbing: every `bldg-` id would change; move last).
+  · *Keep, they're authoring:* survey.json / centerlines / measurements, the park polygon. Re-deriving them touches the
+    measures under LS's 82 authored keys.
 - **Re-fetch, measured (Zob):** LS safe (82/82 authored keys SAME; +1 address, +27 crosswalk records); HPDM breaks 2
   corner keys on unnamed (positional) ids, so after Thursday: stable ids first, then both re-fetches behind the gates.
 - ⛔ **Not tonight:** HPDM skeleton re-pour (authoring key parity first) · step 7 (repaints; Jacob's eye) · the long
