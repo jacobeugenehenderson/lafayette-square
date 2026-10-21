@@ -5718,7 +5718,7 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
   return { rings, cuts, farCuts, pairs, tally }
 }
 
-export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, cornerOverrides = null, { pieces = false } = {}) {
+export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null, cornerOverrides = null, { pieces = false, stampedWith = null } = {}) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
   // Section drag (which writes a fresh blockCustoms object every frame but
@@ -5817,11 +5817,22 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutCorners = [], cornerArcs = []
   const rest = mkAcc(), bandByTile = []
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
+  // ⭐ THE RIM IS CUT ONCE: A STAMPED SHAPE IS NOT CLIPPED AGAIN (BRIEF-the-rim-is-cut-once follow-on, Boz 2026-10-21). The pour
+  // stamps every tile with its disc (`stampedWith`, the pour's own boundaryRing, recorded in shape.json) and the paint is cut
+  // to the block inside it, so clipping that paint to the SAME disc here was a second cut at the rim, minting a fresh crossing
+  // per class. ⭐ Decided on the recorded fact, never on geometry: a shape stamped with exactly this stencil (vertex for vertex
+  // on the grid) is not clipped; one stamped with no disc, or with another, is. ⛔ Not "the ring reaches past the stencil":
+  // ring vertices round up to 0.6 mm either side of the chord, so that test fired on half the rim tiles (Zob: HPDM 36/71).
+  // The bake and Survey both pass it, so they paint alike. ▶ node checks/claims-the-rim-is-cut-once.mjs
+  const hasStencil = !!(stencil && stencil.length >= 3)
+  const sameRing = (a, b) => a?.length === b?.length && a.every((v, k) => { const p = toClipper(v), q = toClipper(b[k]); return p.X === q.X && p.Y === q.Y })
+  const reclip = hasStencil && !sameRing(stampedWith, stencil)
+  const clip = (rings) => hasStencil && rings.length ? intersectRings(rings, [stencil]) : rings
   for (let i = 0; i < shapeTiles.length; i++) {
-    const b = tileGeo(shapeTiles[i], i)
+    const b = tileGeo(shapeTiles[i], i), cl = reclip ? clip : (r) => r
     const acc = (sel && selectedTileSet.has(i)) ? sel : rest
-    for (const f of Object.keys(PAINTED)) acc[f].push(...(b[f] || []))
-    acc.block.push(...b.block)
+    for (const f of Object.keys(PAINTED)) acc[f].push(...cl(b[f] || []))
+    acc.block.push(...cl(b.block))
     for (const rr of (b.curbCutRecs || [])) curbCutRecs.push({ tile: i, ...rr })
     for (const c of (b.curbCutContradicted || [])) curbCutContradicted.push({ tile: i, ...c })
     for (const c of (b.curbCutCorners || [])) curbCutCorners.push({ tile: i, ...c })
@@ -5830,21 +5841,21 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       if (k === 'bySource') { const o = (curbCutTally.bySource ||= {}); for (const [s2, m] of Object.entries(v)) o[s2] = (o[s2] || 0) + m }
       else curbCutTally[k] = (curbCutTally[k] || 0) + v
     }
-    for (const f of Object.keys(PAINTED_BY_LU)) for (const k in b[f]) (acc[f][k] || (acc[f][k] = [])).push(...b[f][k])
-    if (b.bandPieces) bandByTile.push({ tile: i, pieces: b.bandPieces, seams: b.bandSeams, census: b.bandCensus, edgeDepths: b.bandEdgeDepths, perp: b.bandPerp || [], painted: { curb: b.C || [], walk: b.W || [], lawn: Object.values(b.tlByLu || {}).flat() } })
+    for (const f of Object.keys(PAINTED_BY_LU)) for (const k in b[f]) (acc[f][k] || (acc[f][k] = [])).push(...cl(b[f][k]))
+    if (b.bandPieces) bandByTile.push({ tile: i, clipped: cl === clip, pieces: b.bandPieces, seams: b.bandSeams, census: b.bandCensus, edgeDepths: b.bandEdgeDepths, perp: b.bandPerp || [], painted: { curb: b.C || [], walk: b.W || [], lawn: Object.values(b.tlByLu || {}).flat() } })
   }
-  const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
   const finish = (acc) => {
     const out = {}
-    for (const [f, name] of Object.entries(PAINTED)) out[name] = clip(unionRings(acc[f]))
-    for (const [f, name] of Object.entries(PAINTED_BY_LU)) { out[name] = {}; for (const k of Object.keys(acc[f])) out[name][k] = clip(unionRings(acc[f][k])) }
-    out.block = clip(acc.block)
+    for (const [f, name] of Object.entries(PAINTED)) out[name] = unionRings(acc[f])
+    for (const [f, name] of Object.entries(PAINTED_BY_LU)) { out[name] = {}; for (const k of Object.keys(acc[f])) out[name][k] = unionRings(acc[f][k]) }
+    out.block = acc.block
     return out
   }
   const out = finish(rest)
-  // the band pieces, clipped to the stencil exactly as the painted bands are (`finish`)
-  if (pieces) out.bandPieces = bandByTile.map(t => ({ ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, clip(v)])), pieces: t.pieces.map(q => ({ ...q, rings: clip(q.rings) })).filter(q => q.rings.length),
-    seams: t.seams.map(q => ({ ...q, line: (stencil && stencil.length >= 3) ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) }))
+  // the band pieces, clipped to the stencil exactly where the painted bands are (a tile whose ring reaches past it)
+  if (pieces) out.bandPieces = bandByTile.map(({ clipped, ...t }) => { const cl = clipped ? clip : (r) => r
+    return { ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, cl(v)])), pieces: t.pieces.map(q => ({ ...q, rings: cl(q.rings) })).filter(q => q.rings.length),
+      seams: t.seams.map(q => ({ ...q, line: clipped ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) } })
   out.selected = sel ? finish(sel) : null
   out.curbCutRecs = curbCutRecs; out.curbCutTally = curbCutTally; out.curbCutContradicted = curbCutContradicted
   out.curbCutCorners = curbCutCorners   // every junction corner, authorable in Section
@@ -7759,7 +7770,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const cornerFillets = {}, cornerSet = []
   for (const c of protoCornerSet) { cornerFillets[c.key] = c.fillet; cornerSet.push(c) }
   console.log(`[tileGround][①⇢LIVE] corner truth swapped to ②'s achieved arcs: ${protoCornerSet.length} corner(s); the handle rides the curb that is drawn.`)
-  const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: true })
+  const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms, null, null, cornerOverrides, { pieces: true, stampedWith: protoBoundaryRing })
   let asphalt = S.asphalt
   const curb = S.curb, sidewalk = S.sidewalk, block = S.block
   const highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
@@ -7885,5 +7896,5 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
+  return { protoBoundaryRing, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
 }
