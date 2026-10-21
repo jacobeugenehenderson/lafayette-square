@@ -57,6 +57,9 @@ Start here. State at the restart:
   (LS: 2,092 way/key pairs and 6,379 building tags not carried). Carry `turning_circle`/`turning_loop` (ROADMAP A09).
 
 **Open findings (cause not established):**
+- Flatten's noding inserts thousands of vertices (LS 8,850 · HPDM 16,552; top pairs LS crosswalk→asphalt 1,443 · crosswalk→curb 1,377 · HPDM sidewalk→asphalt 2,208): producers draw shared lines twice. `ground.json#flatten.noded` is the census to drive to 0, producer by producer (Truss 2f50e565; Zob).
+- LS's asphalt needle (~9.2 m × ≤ 0.13 mm) is drawn as a spike; born in the rim-tile circle cut (Plumb; `BRIEF-the-stamp-lands-on-the-lattice` §3b).
+- PTown's shore-median.json is stale after its 2026-10-20 re-pour (walked on the old shoreline); its flatten is unmeasured until shore-median re-runs. Flatten's orphan/bow-tie drops stay until Huron and PTown measure 0.
 - A perpendicular leg and its own arc's half name one run under two keys (`a<arc>/<t>` and the run): a duplicate owner, no pixel. HPDM 1,382 → 3,150 pieces (149 m²) after the leg-ownership build (Mitre, 3a55accb; `claims-the-bands-are-held-by-their-owners` row 6f reports it).
 - `claims-handle-rides-its-arc`'s dark-sides row skips the boundary filter (191 of LS's 202 lie outside); fix with one
   rule: a side counts only if a tile lies on it, inside the boundary.
