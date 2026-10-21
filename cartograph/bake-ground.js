@@ -35,7 +35,7 @@
  * AO lightmap is a follow-on pass (see `bake-ground-ao.js`, separate task).
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
@@ -1914,8 +1914,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   for (const c of gradChunks) { buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off); off += c.byteLength }
   // ⛔⛔ NO FALLBACK (Boz, 2026-10-11): a walk no painted band owns would be drawn at the terrain and look like a
   // success. The bake refuses, and names every point — town, coordinate, tile — so the orphans are the work.
+  // a refusal's list never sits beside a good slab: the uploader carries every file of a look dir (Zob, 2026-10-21)
+  const unownedPath = join(outDir, 'ground.unowned.json')
+  if (!deformTally.unowned.size && existsSync(unownedPath)) { rmSync(unownedPath); console.log(`  [deform] removed ${unownedPath}: this bake owns every ped vertex`) }
   if (deformTally.unowned.size) {
-    const unownedPath = join(outDir, 'ground.unowned.json'), pts = [...deformTally.unowned.values()]
+    const pts = [...deformTally.unowned.values()]
     writeIfChanged(unownedPath, JSON.stringify({ scene, count: pts.length, counts: 'distinct exact positions', points: pts }))
     throw new Error(`[bake-ground] ⛔ ${scene}: ${pts.length} ped vertex(es) lie in a drawn band that NO painted band owns `
       + `(the band decides, never the nearer line — groundDeformer.mjs). Every one, exact: ${unownedPath}. First: ${pts.slice(0, 5).map(p => `(${p.x}, ${p.z}) tile ${p.tile}`).join(' · ')}`) }

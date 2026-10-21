@@ -16,14 +16,17 @@
 //   - serve.js passes --shore=pending on the 'ground' step and on NO other bake-ground run ('ground-shore' included);
 //   - 'ground-shore' runs ONLY when the first pass stamped the shore pending (`shoreRuns.mjs#groundShorePass`, imported):
 //     an inland town and a coast whose median was current skip it, each with its reason; a missing first-pass ground.json
-//     or an unknown stamp refuses; serve.js decides the step through that rule and skips it by name (Boz, 2026-10-21);
+//     or an unknown stamp refuses; serve.js decides the step through that rule and skips it by name (Boz, 2026-10-21); it
+//     also runs when 'shore-median' re-walked the median in this bake, and a plan whose 'ground' would run (or a new town)
+//     says "decided after the first pass" (Zob);
 //   - a slab stamped pending does not SHIP: the uploader's plan (`scripts/upload-baked-to-r2.mjs#plan`, imported; it is
 //     what Publish, Promote and the CLI all run) refuses it on a scratch tree, naming the look; an unstamped one plans.
 //     ⛔ No env, no network: plan() only reads the tree it is given.
 // ⭐ MUTATION TEST: `--selftest` — the rule as shipped is GREEN; the warn-and-continue it replaced (no throw, no stamp)
 //   is RED; a pending pass that paints a stale median is RED; a serve.js that flags 'ground-shore' too is RED; the
 //   uploader with its ground.json read dropped is RED; the old gate (a serve.js that runs 'ground-shore' whenever 'ground'
-//   ran) is RED; a rule that always runs the second pass is RED.
+//   ran) is RED; a rule that always runs the second pass is RED; one that ignores a re-walked median is RED; a plan that
+//   decides off the old stamp is RED.
 //   node checks/claims-a-drawn-coast-never-bakes-shoreless.mjs [--selftest]
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'fs'
 import { join } from 'path'
@@ -62,9 +65,16 @@ function judgeRule(rule) {
 
 // the second pass's gate, on the first pass's ground.json
 function judgeGate(gate) {
-  const g = (ground, medianWritten) => outcome(() => gate(ground, { medianWritten }))
+  const g = (ground, medianWritten, more = {}) => outcome(() => gate(ground, { medianWritten, ...more }))
   const inland = g({}, false), current = g({}, true), pending = g({ shore: 'pending' }, true), none = g(null, false), odd = g({ shore: 'later' }, true)
+  const rewalked = g({}, true, { medianRan: true }), inlandRan = g({}, false, { medianRan: true })
+  const planStale = g({}, true, { plan: true, groundStale: true }), planNew = g(null, false, { plan: true }), planClean = g({}, true, { plan: true })
   return [
+    ["the median re-walked in this bake ('shore-median' ran, median written): runs, so new sand never ships under an old ground", rewalked.ok?.run === true, JSON.stringify(rewalked.ok ?? rewalked.threw)],
+    ["inland with 'shore-median' run (it wrote nothing): still skipped", inlandRan.ok?.run === false && /inland/.test(inlandRan.ok.why), JSON.stringify(inlandRan.ok ?? inlandRan.threw)],
+    ["a plan whose 'ground' would run: decided after the first pass, never off the old stamp", planStale.ok?.run === null && /after the first pass/.test(planStale.ok.why), JSON.stringify(planStale.ok ?? planStale.threw)],
+    ['a plan for a town with no ground.json yet: decided after the first pass, no throw', planNew.ok?.run === null, JSON.stringify(planNew.ok ?? planNew.threw)],
+    ["a plan whose 'ground' is clean decides as a bake would", planClean.ok?.run === false, JSON.stringify(planClean.ok ?? planClean.threw)],
     ["inland (no stamp, no median written): 'ground-shore' skipped, saying so", inland.ok?.run === false && /inland/.test(inland.ok.why), JSON.stringify(inland.ok ?? inland.threw)],
     ["median current (no stamp, median written): skipped, saying so", current.ok?.run === false && /median current/.test(current.ok.why), JSON.stringify(current.ok ?? current.threw)],
     ["the first pass stamped the shore pending: 'ground-shore' runs", pending.ok?.run === true, JSON.stringify(pending.ok ?? pending.threw)],
@@ -90,6 +100,7 @@ function judgeWiring(gsrc, ssrc) {
     ['bakeGround decides the shore through shoreMedianFor', /bakeGround\(\{[^]*shoreMedianFor\(\{/.test(gsrc.slice(gsrc.indexOf('export async function bakeGround'))), 'bake-ground.js'],
     ['bake-ground parses --shore=pending', /arg === '--shore=pending'/.test(gsrc), 'bake-ground.js main'],
     ['no warn-and-continue shore branch is left', !/NO shore sand painted/.test(gsrc), 'bake-ground.js'],
+    ["serve.js feeds the gate this bake's 'shore-median' (ranSteps, or a plan's stale list) and a plan's stale 'ground'", /medianRan: P\.plan \? inPlan\('shore-median'\) : ranSteps\.includes\('shore-median'\), plan: !!P\.plan, groundStale: inPlan\('ground'\)/.test(ssrc) && /if \(shorePass\.run === null\) P\.plan\.stale\.push/.test(ssrc), 'serve.js'],
     ["serve.js decides 'ground-shore' through groundShorePass, and skips it by name", /const shorePass = groundShorePass\(/.test(ssrc) && /if \(shorePass\.run\) await runIfDirty\('ground-shore'/.test(ssrc) && /else \{ skip\(`ground-shore \(\$\{shorePass\.why\}\)`\)/.test(ssrc), 'serve.js'],
   ]
 }
@@ -132,6 +143,8 @@ if (process.argv.includes('--selftest')) {
     ["'ground-shore' flagged pending too is RED", groundShoreFlagged !== serveSrc && judgeWiring(groundSrc, groundShoreFlagged).some(r => !r[1])],
     ['the gate as shipped is GREEN', judgeGate(groundShorePass).every(r => r[1])],
     ['a gate that always runs the second pass is RED', judgeGate(() => ({ run: true, why: 'always' })).some(r => !r[1])],
+    ["a gate that ignores a re-walked median is RED", judgeGate((gr, o) => groundShorePass(gr, { ...o, medianRan: false })).some(r => !r[1])],
+    ['a plan that decides off the old stamp is RED', judgeGate((gr, o) => groundShorePass(gr ?? {}, { ...o, plan: false })).some(r => !r[1])],
     ["the old gate (serve.js runs 'ground-shore' whenever 'ground' ran) is RED", (() => { const old = serveSrc.replace('if (shorePass.run) await runIfDirty(', 'await runIfDirty(')
       return old !== serveSrc && judgeWiring(groundSrc, old).some(r => !r[1]) })()],
   ]

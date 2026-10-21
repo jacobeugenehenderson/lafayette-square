@@ -15,7 +15,8 @@
 //      writes the full list beside the slab. Keyed at 1 cm, HPDM's 1,234 could not be re-resolved (Zob, 2026-10-21).
 // ⭐ MUTATION TEST: `--selftest` plants each wrong deformer back (written to the OS temp dir) and expects its row RED:
 //   the exemption without the disc test (an edge inside the disc exempted) · a nearest-line fallback for an unowned point ·
-//   the side read off the disc-cut block · the 1 cm rounding restored to the unowned key (in the key and in terrainPart).
+//   the side read off the disc-cut block · the 1 cm rounding restored to the unowned key (in the key and in terrainPart) ·
+//   a stale unowned list left beside a good slab.
 //   node checks/claims-the-height-code-owns-what-is-drawn.mjs [--selftest]
 import { ROOT } from './_scenes.mjs'
 import { join } from 'node:path'
@@ -54,12 +55,14 @@ const rows = async (url) => {
 // 4. the bake's record of an unowned vertex: exact, and the full list written (bake-ground.js, read and imported)
 const { unownedKey } = await import(pathToFileURL(join(ROOT, 'cartograph/bake-ground.js')).href)
 const BAKE = readFileSync(join(ROOT, 'cartograph/bake-ground.js'), 'utf8')
+const DELETE = 'if (!deformTally.unowned.size && existsSync(unownedPath)) { rmSync(unownedPath);'
 const RECORD = 'deformTally.unowned.set(unownedKey(P[v * 3], P[v * 3 + 2]), { x: P[v * 3], z: P[v * 3 + 2], tile: ti })'
 const keyRows = (key, src) => { const x = 170.53456789012345, z = 1254.9123456789012, k = key(x, z), [kx, kz] = k.split(',').map(Number)
   return [['an unowned vertex is keyed at its exact position (the key parses back to the very floats)', kx === x && kz === z, k],
     ['two vertices 1 mm apart are two records', key(x, z) !== key(x + 0.001, z), `${key(x, z)} vs ${key(x + 0.001, z)}`],
     ['terrainPart records through the exact key, with x, z and tile', src.split(RECORD).length === 2, 'bake-ground.js terrainPart'],
-    ['the refusal writes every unowned vertex beside the slab', /join\(outDir, 'ground\.unowned\.json'\)/.test(src) && /points: pts/.test(src), 'bake-ground.js']] }
+    ['the refusal writes every unowned vertex beside the slab', /join\(outDir, 'ground\.unowned\.json'\)/.test(src) && /points: pts/.test(src), 'bake-ground.js'],
+    ['a bake that owns every ped vertex removes a stale list (the uploader carries every file of a look dir)', src.includes(DELETE), 'bake-ground.js']] }
 const self = process.argv.includes('--selftest')
 const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
 const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) { stats.unowned++;", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)"
@@ -79,6 +82,8 @@ if (self) { let bad = 0; const url = mutant()
   const rounded = (x, z) => `${x.toFixed(2)},${z.toFixed(2)}`, roundedSrc = BAKE.replace(RECORD, 'deformTally.unowned.set(`${P[v * 3].toFixed(2)},${P[v * 3 + 2].toFixed(2)}`, ti)')
   const K = keyRows(rounded, roundedSrc), red = roundedSrc !== BAKE && K.some(r => !r[1]); if (!red) bad++
   console.log(`  ${red ? '✅' : '⛔'} mutant · the 1 cm rounding restored to the unowned key: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'}${red ? ` (${K.filter(r => !r[1]).map(r => r[0]).join(' · ')})` : ''}`)
+  const kept = keyRows(unownedKey, BAKE.replace(DELETE, 'if (false) {')), redKept = kept.some(r => !r[1]); if (!redKept) bad++
+  console.log(`  ${redKept ? '✅' : '⛔'} mutant · a stale unowned list left beside a good slab: ${redKept ? 'RED, as it must be' : 'still GREEN — the check cannot see it'}`)
   process.exit(bad ? 1 : 0) }
 const R = [...await rows(pathToFileURL(HOME).href), ...keyRows(unownedKey, BAKE)]
 for (const [m, ok] of R) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)

@@ -163,14 +163,20 @@ export function shoreFingerprint(shape) {
 // ⭐ THE SECOND GROUND PASS RUNS ONLY WHEN THE FIRST LEFT THE SHORE PENDING (Boz, 2026-10-21). The Bake's 'ground' step runs
 // with --shore=pending and stamps ground.json `shore: "pending"` exactly when it could not paint a coast's median
 // (bake-ground.js#shoreMedianFor); 'ground-shore' exists to paint it. An inland town, or a coast whose median was already
-// current, was baked TWICE for nothing (HPDM: 1,020 s of its 38 min, 2026-10-21 census). A stale median after
-// 'shore-median' still refuses in the second pass, as before. ⛔ No ground.json from the first pass, or a `shore` stamp
-// this rule does not know, refuses: never a guess. ▶ checks/claims-a-drawn-coast-never-bakes-shoreless.mjs
-// @param ground the first pass's ground.json (parsed) · @param medianWritten does the look carry a shore-median.json
-// @returns { run: boolean, why: string }
-export function groundShorePass(ground, { medianWritten }) {
+// current, was baked TWICE for nothing (HPDM: 1,020 s of its 38 min, 2026-10-21 census). It also runs when 'shore-median'
+// re-walked the median in this bake (Zob): the median is not an input of 'ground', so a changed median under a clean ground
+// would otherwise ship the OLD sand. A stale median after 'shore-median' still refuses in the second pass, as before.
+// ⛔ In a bake, no ground.json from the first pass, or a `shore` stamp this rule does not know, refuses: never a guess.
+// A PLAN whose 'ground' would run (or a town with no ground.json yet) decides nothing: { run: null } "decided after the first
+// pass", never the old stamp and never a throw. ▶ checks/claims-a-drawn-coast-never-bakes-shoreless.mjs
+// @param ground the first pass's ground.json (parsed, or null) · @param medianWritten does the look carry a shore-median.json
+// @param medianRan did 'shore-median' run in this bake (in a plan: would it) · @param plan / groundStale a plan, and its 'ground' would run
+// @returns { run: boolean | null, why: string }
+export function groundShorePass(ground, { medianWritten, medianRan = false, plan = false, groundStale = false }) {
+  if (plan && (groundStale || !ground)) return { run: null, why: 'decided after the first pass' }
   if (!ground || typeof ground !== 'object') throw new Error("groundShorePass: the first ground pass wrote no ground.json — 'ground-shore' cannot be decided")
   if (ground.shore === 'pending') return { run: true, why: 'the first pass stamped the shore pending' }
   if (ground.shore != null) throw new Error(`groundShorePass: ground.json carries shore = ${JSON.stringify(ground.shore)}, which this rule does not know`)
+  if (medianRan && medianWritten) return { run: true, why: "the median was re-walked in this bake ('shore-median' ran)" }
   return { run: false, why: medianWritten ? 'median current: the first pass painted it' : 'inland: no shore' }
 }
