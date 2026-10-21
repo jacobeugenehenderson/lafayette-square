@@ -53,6 +53,12 @@ passes. Their median gap is 4.59 mm, mostly shore↔beach/wetland/park (2026-10-
 
 ## 3. The work
 
+> **STATUS 2026-10-21 (Mitre, read in source at integration 70fcb922):** item 1's premise is ROT at HEAD. ② goes onto the
+> lattice where it is born (23adbb41, Lath, 10-16, construction B + D: face trim → stampTile → circle), as §3b already notes
+> from ce9f3b26. What remains is 02da626e's MORNING item 1 at its FIRST site: the circle cut writes its crossings into iA
+> only, never into iaFull, so on rim tiles the bands and the asphalt sit on two copies of one line (LS: 4,202 m, all on rim
+> tiles). Being built (Mitre). Items still unbuilt: MORNING 2 (the shallow-angle residual) and 4.1 (derive.js SCALE = 100).
+
 1. **Confirm the next step against the code.** Swale's reading: in the ① producer, iA and iaFull are the same
    contour, and it is FLOAT until the circle cut (`intersectRings(t.iA, [r])`) puts it on the lattice. That one cut
    does two jobs. The construction to build is **round iA onto the lattice once → stamp the land use → cut with the
