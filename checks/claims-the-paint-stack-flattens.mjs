@@ -209,7 +209,7 @@ for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--')))) {
   console.log(`  ${r.refused ? '⛔' : '✅'} ${town}: ${r.refused ? `REFUSED — ${r.refused}` : 'flattens'} · noded ${r.inserted} vertex(es)${pairs ? ` (${pairs})` : ''}`
     + (r.drops ? ` · dropped below the lattice: ${r.drops.length}${r.drops.length ? ` (${r.drops.join(', ')})` : ''}` : ''))
   if (r.output) console.log(`     the plane: noded ${r.output.inserted} · cut at ${r.pinches.loops} pinch loop(s), ${r.pinches.m2} m², widest ${r.pinches.widestMm} mm`
-    + ` · ${r.unsplit ? `⛔ ${r.unsplit} pinch(es) left` : 'pinches nowhere'} · past the bound, within two roundings: ${r.output.pastBound.vertices} vertex(es), worst ${r.output.pastBound.worstMm} mm (not joined; rim brief (A))`)
+    + ` · ${r.unsplit ? `⛔ ${r.unsplit} pinch(es) left` : 'pinches nowhere'} · past the bound, within two roundings: ${r.output.pastBound.vertices} vertex(es), worst ${r.output.pastBound.worstMm} mm (not joined; at the rim, the rim brief's B1/B2)`)
   if (r.refused || r.unsplit) bad++
   if (argv.includes('--mutants')) { const m = one(town, true)
     console.log(`     (1) mutant, noding off: ${m.notChecked ? `NOT CHECKED — ${m.notChecked}` : m.refused ? `REFUSED — ${m.refused}` : 'flattens'}`)

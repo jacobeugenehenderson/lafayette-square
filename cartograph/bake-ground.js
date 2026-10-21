@@ -1006,7 +1006,7 @@ export function nodeAcrossGroups(entries, { bound = NODE_BOUND, maxRounds = 8 } 
         const dot = (X - a[0]) * dx + (Y - a[1]) * dy, cr = (X - a[0]) * dy - (Y - a[1]) * dx
         if (dot <= 0 || dot >= L2 || cr * cr > B2 * L2) {                 // strictly inside the edge, within the bound
           // ⭐ PAST THE BOUND, WITHIN TWO ROUNDINGS: two rounded copies of one point lie up to 2·bound apart (√2 of a step), and
-          // this rule never joins them — counted (the last round's) and printed so the class stays loud (rim brief (A), B2)
+          // this rule never joins them — counted (the last round's) and printed so the class stays loud (at the rim it is BRIEF-the-rim-is-cut-once's B1 and B2 residues)
           if (!has[ri].has(X + ',' + Y)) { const t = Math.max(0, Math.min(1, dot / L2)), ex = X - a[0] - t * dx, ey = Y - a[1] - t * dy, d2 = ex * ex + ey * ey
             if (d2 && d2 <= 4 * B2) { const nk = ri + '|' + X + ',' + Y, was = near.get(nk); if (was === undefined || d2 < was) near.set(nk, d2) } }
           continue }
