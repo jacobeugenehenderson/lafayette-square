@@ -259,7 +259,8 @@ See **§8 "Data flow & the bake chain"** below for the canonical pipeline diagra
 > and left ground unpainted (2026-10-14). Two groups that meet on the lattice are made to share
 > their vertices (`nodeAcrossGroups`, within the rounding's √2/2 step) before the flatten and again
 > on its output, since its own clips mint crossings the layer above never gets. Then a ring that pinches
-> below the lattice is cut there and the part narrower than a step dropped (`splitAtPinches`).
+> below the lattice is cut there and the part narrower than a step dropped (`splitAtPinches`). The block
+> and rim rings take part, and every reader after (the kerb) reads the noded block rings; a rim ring that pinches is refused there.
 > Counts: `ground.json#flatten.noded.{stack,plane}` and `subLattice[group].pinches`; what the
 > noding does not join (past its bound, within two roundings) is counted as `pastBound`. ▶ `node checks/claims-the-ground-is-painted-once.mjs`
 > · `node checks/claims-the-paint-stack-flattens.mjs [--mutants]`

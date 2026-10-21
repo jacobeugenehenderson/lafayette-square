@@ -42,7 +42,8 @@ if (arg('one')) {
     const entries = argv.includes('--unnoded') ? st.unnoded : st.stackEntries
     try {
       // the plane as planGroup reads it, less the ease split (the deformer's, not run here)
-      const out = nodeThePlane(flattenPaintStack(entries, { keepOwnSlot: st.keepOwnSlot, doesNotCut: st.doesNotCut }))
+      const out = flattenPaintStack(entries, { keepOwnSlot: st.keepOwnSlot, doesNotCut: st.doesNotCut })
+      nodeThePlane(out)
       const drops = Object.entries(out.subLattice).flatMap(([g, v]) => [...(v.bowTies || []).map(() => 'bowTie ' + g), ...(v.orphanHoles || []).map(() => 'orphan ' + g)])
       const pinches = Object.values(out.subLattice).flatMap(v => v.pinches || [])
       r = { town, refused: null, inserted: st.stackEntries.inserted, pairs: st.stackEntries.pairs, drops, output: out.noded,
@@ -67,14 +68,23 @@ export function boundIsDerived(src) {
   return null
 }
 
+// ── the source-reading row: the kerb's plan and cells read the block rings `nodeThePlane` returns, below it ───────────
+export function kerbReadsTheNodedRings(src) {
+  const at = src.indexOf('const { blockRings: nodedBlockRings } = nodeThePlane(')
+  if (at < 0) return 'bakeGround does not take its block rings from nodeThePlane'
+  const plan = src.indexOf('kerbPlan({ blockRings: nodedBlockRings,'), cells = src.indexOf('kerbCells(kerbRegs, nodedBlockRings)')
+  if (plan < 0) return 'kerbPlan does not read the noded block rings'
+  if (cells < 0) return 'kerbCells does not read the noded block rings'
+  return plan > at && cells > at ? null : 'the kerb reads the block rings before nodeThePlane'
+}
 // ── the source-reading row: `nodeThePlane` nodes, then cuts at the pinches (an inserted vertex can be the pinch), and
 // bakeGround calls it once, after the plane's last re-clip (the ease split) and before planGroup reads it ─────────────
 export function planeNodedLast(src) {
   const at = src.indexOf('export function nodeThePlane('), end = src.indexOf('\n}\n', at)
   if (at < 0 || end < 0) return 'no `export function nodeThePlane(` in bake-ground.js'
-  const body = src.slice(at, end), n = body.indexOf('nodeAcrossGroups('), c = body.indexOf('splitAtPinches(')
+  const body = src.slice(at, end), n = body.indexOf('nodeAcrossGroups('), c = body.indexOf('splitAtPinches(noded[g].items, k, flattened.subLattice)')
   if (n < 0) return 'nodeThePlane never nodes'
-  if (c < 0) return 'nodeThePlane never cuts at the pinches'
+  if (c < 0) return 'nodeThePlane never cuts the paint at its pinches'
   if (c < n) return 'nodeThePlane cuts before it nodes'
   const calls = [...src.matchAll(/nodeThePlane\(/g)].map(m => m.index).filter(i => i !== at + 'export function '.length)
   if (calls.length !== 1) return `bakeGround calls nodeThePlane ${calls.length} time(s), not once`
@@ -121,7 +131,8 @@ async function synthetic() {
   const Bn = mm([[10000, 0], [30000, 0], [30000, 10000], [10000, 10000], [10000, 6000], [11000, 5000], [20000, 4999], [10000, 5000]])
   const stack = [{ groupKey: 'b', items: [{ outer: Bn, holes: [] }] }, { groupKey: 'a', items: [{ outer: A, holes: [] }] }]
   // and a third group, keeping its own slot, whose items are bare rings (a ribbon band's), goes through with them
-  const flat = nodeThePlane(flattenPaintStack([...stack, { groupKey: 'c', items: [mm([[40000, 0], [41000, 0], [41000, 1000]])] }], { keepOwnSlot: new Set(['c']) }))
+  const flat = flattenPaintStack([...stack, { groupKey: 'c', items: [mm([[40000, 0], [41000, 0], [41000, 1000]])] }], { keepOwnSlot: new Set(['c']) })
+  nodeThePlane(flat)
   const live = [...flat.values()].reduce((t, items) => t + pinchesIn(items), 0)
   rows.push([`(5) the plane pinches nowhere below the lattice${live ? ` — ${live} pinch(es)` : ''}`, live === 0])
   rows.push(['(5) the cut needle is recorded (ground.json#flatten.subLattice[group].pinches)', !!(flat.subLattice.a?.pinches?.length && flat.subLattice.b?.pinches?.length)])
@@ -130,10 +141,39 @@ async function synthetic() {
   // the mutant: the same plane noded but never cut (`nodeThePlane` without `splitAtPinches`) must read as pinching
   const unsplit = nodeAcrossGroups(stack.map(e => ({ ...e, items: e.items.map(it => ({ outer: it.outer, holes: [] })) })))
   rows.push(['(5) mutant: a ring with a sub-lattice needle reaches the noder unsplit → RED', unsplit.reduce((t, e) => t + pinchesIn(e.items), 0) > 0])
+  // (6) the block and rim rings take part, and what comes back IS the bake's block and rim rings for every reader after:
+  // a block ring through a paint vertex takes it (its edges are then exactly the paint's); a block ring pinching below the
+  // lattice is CUT (the loop recorded, not paint); a rim ring pinching is REFUSED at its stretch (its owners do not follow a
+  // cut) and counted; the frozen rings are never touched; a rim ring's inserted vertex takes its edge's owner
+  const key = (a, b) => [a, b].map(v => v.map(c => Math.round(c / LATTICE_M)).join(',')).sort().join('|')
+  { const fl = new Map([['g', [{ outer: mm([[0, 0], [5000, 0], [10000, 0], [10000, 5000], [0, 5000]]), holes: [] }]]]); fl.subLattice = {}
+    const { blockRings: [blk] } = nodeThePlane(fl, { blockRings: [mm([[0, 0], [10000, 0], [10000, -5000], [0, -5000]])] }), paintE = new Set()
+    for (const it of fl.get('g')) it.outer.forEach((a, i) => paintE.add(key(a, it.outer[(i + 1) % it.outer.length])))
+    rows.push(['(6) a block ring takes the paint\'s vertex within the bound; its edges are then exactly the paint\'s',
+      blk.length === 5 && paintE.has(key(blk[0], blk[1])) && paintE.has(key(blk[1], blk[2]))]) }
+  const frozenB = mm([[0, 0], [10000, 0], [10000, 5000], [2000, 0], [0, 5000]]), beforeB = JSON.stringify(frozenB)
+  const owners = [{ kind: 'rim' }, { kind: 'street' }, { kind: 'street' }, { kind: 'street' }, { kind: 'street' }]
+  const frozenR = mm([[20000, 0], [30000, 0], [30000, 5000], [22000, 0], [20000, 5000]])
+  const fl6 = new Map([['g', [{ outer: mm([[0, 6000], [9000, 6000], [9000, 9000], [0, 9000]]), holes: [] }]]]); fl6.subLattice = {}
+  const N6 = nodeThePlane(fl6, { blockRings: [frozenB], rimRings: [{ ring: frozenR, owners }] })
+  const cutOk = (n) => pinchesIn(n.blockRings.map(r => ({ outer: r }))) === 0
+  rows.push([`(6) a block ring touching itself below the lattice is CUT there, into its ${N6.blockRings.length} loops (none in the paint's subLattice)`,
+    cutOk(N6) && N6.blockRings.length === 2 && !fl6.subLattice['participant:block']])
+  rows.push(['(6) mutant: the block ring returned uncut is RED', !cutOk({ blockRings: [frozenB] })])
+  const rimAgrees = (n, refused) => pinchesIn(n.rimRings.filter(Boolean).map(r => ({ outer: r.ring }))) === refused.filter(r => r.who === 'rim').length
+  rows.push([`(6) a rim ring pinching is REFUSED at its stretch and counted (${N6.refused.length}, ground.json ${fl6.noded.refused})`, rimAgrees(N6, N6.refused) && N6.refused.length === 1 && fl6.noded.refused === 1])
+  rows.push(['(6) mutant: the rim refusal silently dropped is RED', !rimAgrees(N6, [])])
+  rows.push(['(6) the frozen block and rim rings are never touched', JSON.stringify(frozenB) === beforeB && N6.rimRings[0].ring !== frozenR])
+  { const fl = new Map([['g', [{ outer: mm([[0, 0], [5000, 0], [10000, 0], [10000, 5000], [0, 5000]]), holes: [] }]]]); fl.subLattice = {}
+    const R = nodeThePlane(fl, { rimRings: [null, { ring: mm([[0, 0], [10000, 0], [10000, -5000], [0, -5000]]), owners: owners.slice(0, 4) }] }).rimRings[1]
+    rows.push(['(6) a rim ring\'s inserted vertex takes its edge\'s owner, at its own tile', R.ring.length === 5 && R.owners.map(o => o.kind).join() === 'rim,rim,street,street,street']) }
+  const why6 = kerbReadsTheNodedRings(src)
+  rows.push([`(6) the kerb's finder and cells read the noded block rings, after nodeThePlane${why6 ? ` — ${why6}` : ''}`, !why6])
+  rows.push(['(6) mutant: kerbPlan reading the frozen block rings is RED', !!kerbReadsTheNodedRings(src.replace('kerbPlan({ blockRings: nodedBlockRings,', 'kerbPlan({ blockRings,'))])
   const why5 = planeNodedLast(src)
   rows.push([`(5) the plane is noded, then cut at its pinches, after its last re-clip and before planGroup${why5 ? ` — ${why5}` : ''}`, !why5])
   rows.push(['(5) mutant: the cut removed is RED', !!planeNodedLast(src.replace(/splitAtPinches\(noded\[g\]\.items, k, flattened\.subLattice\)/, 'noded[g].items'))])
-  rows.push(['(5) mutant: the plane noded before the ease split is RED', !!planeNodedLast(src.replace(/\n  nodeThePlane\(flattened\)\n/, '\n').replace('const flattened = flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })', 'const flattened = nodeThePlane(flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }))'))])
+  rows.push(['(5) mutant: the plane noded before the ease split is RED', !!planeNodedLast(src.replace(/nodeThePlane\(flattened, \{ blockRings, rimRings \}\)/, '({ blockRings })').replace('const flattened = flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })', 'const flattened = nodeThePlane(flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }))'))])
   console.log = log
   for (const [m, ok] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
   return rows.filter(r => !r[1]).length

@@ -1037,6 +1037,30 @@ export function nodeAcrossGroups(entries, { bound = NODE_BOUND, maxRounds = 8 } 
   return noded
 }
 
+// A ring's pinches below the lattice, on Clipper's integer path: each vertex j within `bound` of another of its own edges i
+// (not one it ends), projecting strictly inside it — [j, i] for the vertex's nearest such edge. `first`: stop at the first.
+function pinchesOfRing(q, bound, first = false) {
+  const n = q.length, B2 = bound * bound, found = []
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  for (const v of q) { if (v.X < x0) x0 = v.X; if (v.X > x1) x1 = v.X; if (v.Y < y0) y0 = v.Y; if (v.Y > y1) y1 = v.Y }
+  const C = Math.max(1, Math.sqrt((x1 - x0 + 1) * (y1 - y0 + 1) / n)), NX = Math.floor((x1 - x0 + 2 * bound) / C) + 1, cells = new Map()
+  for (let i = 0; i < n; i++) { const a = q[i], b = q[(i + 1) % n]
+    for (let cx = Math.floor((Math.min(a.X, b.X) - x0) / C); cx <= Math.floor((Math.max(a.X, b.X) + 2 * bound - x0) / C); cx++)
+      for (let cy = Math.floor((Math.min(a.Y, b.Y) - y0) / C); cy <= Math.floor((Math.max(a.Y, b.Y) + 2 * bound - y0) / C); cy++) {
+        const c = cy * NX + cx; let l = cells.get(c); if (!l) cells.set(c, l = []); l.push(i) } }
+  for (let j = 0; j < n; j++) { const P = q[j], l = cells.get(Math.floor((P.Y - y0 + bound) / C) * NX + Math.floor((P.X - x0 + bound) / C)); if (!l) continue
+    let best = null
+    for (const i of l) { if (i === j || (i + 1) % n === j) continue
+      const a = q[i], b = q[(i + 1) % n]
+      if ((a.X === P.X && a.Y === P.Y) || (b.X === P.X && b.Y === P.Y)) continue
+      const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) continue
+      const dot = (P.X - a.X) * dx + (P.Y - a.Y) * dy, cr = (P.X - a.X) * dy - (P.Y - a.Y) * dx
+      if (dot <= 0 || dot >= L2 || cr * cr > B2 * L2) continue
+      if (!best || cr * cr / L2 < best.d2) best = { i, d2: cr * cr / L2 } }
+    if (best) { found.push([j, best.i, best.d2]); if (first) break } }
+  return found
+}
+
 // ⭐ A RING THAT PINCHES BELOW THE LATTICE IS SPLIT THERE (Boz, 2026-10-21). The flatten's own differences can emit a ring
 // that comes within the rounding of ITSELF: one of its vertices within NODE_BOUND of another of its edges, projecting
 // strictly inside it — a needle narrower than the bound (LS treelawn:commercial, 82.5 m), or a neck where the ring runs
@@ -1054,28 +1078,7 @@ export function splitAtPinches(items, groupKey, subLattice, { bound = NODE_BOUND
   const B2 = bound * bound, dropped = []
   const areaOf = (q) => { let a = 0; for (let i = 0, j = q.length - 1; i < q.length; j = i++) a += q[j].X * q[i].Y - q[i].X * q[j].Y; return a / 2 }
   const perimOf = (q) => q.reduce((t, a, i) => t + Math.hypot(q[(i + 1) % q.length].X - a.X, q[(i + 1) % q.length].Y - a.Y), 0)
-  // the first pinch of a ring: [vertex j, edge i] (edge i runs q[i] → q[i+1]), the vertex's nearest such edge; null if none
-  const pinchOf = (q) => {
-    const n = q.length
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
-    for (const v of q) { if (v.X < x0) x0 = v.X; if (v.X > x1) x1 = v.X; if (v.Y < y0) y0 = v.Y; if (v.Y > y1) y1 = v.Y }
-    const C = Math.max(1, Math.sqrt((x1 - x0 + 1) * (y1 - y0 + 1) / n)), NX = Math.floor((x1 - x0 + 2 * bound) / C) + 1, cells = new Map()
-    for (let i = 0; i < n; i++) { const a = q[i], b = q[(i + 1) % n]
-      for (let cx = Math.floor((Math.min(a.X, b.X) - bound - x0 + bound) / C); cx <= Math.floor((Math.max(a.X, b.X) + bound - x0 + bound) / C); cx++)
-        for (let cy = Math.floor((Math.min(a.Y, b.Y) - bound - y0 + bound) / C); cy <= Math.floor((Math.max(a.Y, b.Y) + bound - y0 + bound) / C); cy++) {
-          const c = cy * NX + cx; let l = cells.get(c); if (!l) cells.set(c, l = []); l.push(i) } }
-    for (let j = 0; j < n; j++) { const P = q[j], l = cells.get(Math.floor((P.Y - y0 + bound) / C) * NX + Math.floor((P.X - x0 + bound) / C)); if (!l) continue
-      let best = null
-      for (const i of l) { if (i === j || (i + 1) % n === j) continue
-        const a = q[i], b = q[(i + 1) % n]
-        if ((a.X === P.X && a.Y === P.Y) || (b.X === P.X && b.Y === P.Y)) continue
-        const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) continue
-        const dot = (P.X - a.X) * dx + (P.Y - a.Y) * dy, cr = (P.X - a.X) * dy - (P.Y - a.Y) * dx
-        if (dot <= 0 || dot >= L2 || cr * cr > B2 * L2) continue
-        if (!best || cr * cr / L2 < best.d2) best = { i, d2: cr * cr / L2 } }
-      if (best) return [j, best.i] }
-    return null
-  }
+  const pinchOf = (q) => pinchesOfRing(q, bound, true)[0] ?? null
   // a ring → its loops at or above the step (each with the ring's sign or against it); the thinner ones dropped and recorded
   const loopsOf = (ring) => {
     const todo = [ring], kept = [], n0 = ring.length
@@ -1129,7 +1132,7 @@ export function splitAtPinches(items, groupKey, subLattice, { bound = NODE_BOUND
       o2.holes.push(h) }
     for (const o2 of bySize) out.push({ ...src, outer: _pathToRing(o2.q), holes: o2.holes.map(_pathToRing) })
   }
-  if (dropped.length) { (subLattice[groupKey] ||= { rings: 0, m2: 0 }).pinches = dropped
+  if (dropped.length) { const rec = (subLattice[groupKey] ||= { rings: 0, m2: 0 }); rec.pinches = [...(rec.pinches || []), ...dropped]
     console.log(`  [flatten] ${groupKey}: ${dropped.length} loop(s) below the lattice cut off at a pinch, ${dropped.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², widest ${Math.max(...dropped.map(r => r.widthMm)).toFixed(4)} mm — dropped`) }
   return out
 }
@@ -1207,16 +1210,44 @@ export function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut
 // other side). The cut only removes loops, and halves an edge at a vertex both groups already carry, so nothing it leaves
 // needs noding again. ⛔ What is cut later (kerbLift's creases, per group in planGroup) is that producer's to conform.
 // ▶ node checks/claims-the-paint-stack-flattens.mjs
-export function nodeThePlane(flattened) {
+export function nodeThePlane(flattened, { blockRings = [], rimRings = [] } = {}) {
   const keys = [...flattened.keys()]
-  const noded = nodeAcrossGroups(keys.map(k => ({ groupKey: k, items: flattened.get(k) })))
+  // ⭐ THE BLOCK RINGS AND THE RIM RINGS TAKE PART, as groups of their own (Zob + Boz, 2026-10-21: ONE ring, one reader):
+  // their vertices enter the paint and the paint's enter them, and what comes back IS the bake's block and rim rings for
+  // every reader after this point (kerbPlan's finder, ringsInside, withSide, the lift), so each agrees with the mesh the
+  // riser judges. Noding only inserts, so the lines are the frozen ones; the frozen rings (shape.json, the deformer's
+  // shapeArtifact) stay frozen and the noded ones are never written back. LS: the block ring exactly a paint edge 83.6% →
+  // 99.9%, rim-owned 2,877 → 5,143 of 5,232 m (measured on a capture).
+  const rims = rimRings.map((N, ti) => (N?.ring?.length >= 3 ? { ti, ring: N.ring, owners: N.owners } : null)).filter(Boolean)
+  const parts = [{ groupKey: 'participant:block', items: blockRings }, { groupKey: 'participant:rim', items: rims.map(r => r.ring) }]
+  const noded = nodeAcrossGroups([...keys.map(k => ({ groupKey: k, items: flattened.get(k) })), ...parts])
   keys.forEach((k, g) => flattened.set(k, splitAtPinches(noded[g].items, k, flattened.subLattice)))
-  // ground.json says what this did (Zob, 2026-10-21): every layer took part, insert-only (water among them, where a town has
-  // it), and the loops cut off at a pinch are paint REMOVED below the lattice, under the bow-tie's rule (subLattice[group].pinches)
+  const refused = []
+  // a block ring that pinches below the lattice is CUT there like the paint (its dropped loops, with area and width, in
+  // ground.json#flatten.noded.plane.blockCut — not paint, so not in subLattice); ⛔ where the cut leaves a hole a bare ring
+  // cannot carry, the ring is kept noded and uncut, REFUSED
+  const partSub = {}
+  const block = noded[keys.length].items.flatMap((ring, i) => {
+    const cut = splitAtPinches([ring], 'participant:block', partSub)
+    if (cut.every(it => Array.isArray(it) || !(it.holes || []).length)) return cut.map(it => (Array.isArray(it) ? it : it.outer))
+    refused.push({ who: 'block', ring: i, at: ring[0], why: 'its cut leaves a hole' }); return [ring] })
+  // ⛔ a rim ring is not cut: its owners are per edge and do not follow a cut, so each stretch it pinches is REFUSED
+  // (counted, stamped, read as unmatched); an inserted vertex inherits the owner of the edge it went into
+  const carry = (orig, ring, owners) => { const out = []; let k = 0
+    for (const v of ring) { if (k < orig.length && v[0] === orig[k][0] && v[1] === orig[k][1]) k++; out.push(owners[k - 1]) }
+    return out }
+  const rimOut = []
+  noded[keys.length + 1].items.forEach((ring, i) => { const { ti, ring: orig, owners } = rims[i]
+    for (const [j, e, d2] of pinchesOfRing(_ringToPath(ring), NODE_BOUND)) refused.push({ who: 'rim', ring: ti, edge: e, at: ring[j], mm: +(Math.sqrt(d2) / CLIP_SCALE * 1000).toFixed(4) })
+    rimOut[ti] = { ...rimRings[ti], ring, owners: carry(orig, ring, owners) } })
+  if (refused.length) console.log(`  [flatten] ${refused.length} block or rim ring stretch(es) REFUSED below the lattice (${['block', 'rim'].map(w => `${w} ${refused.filter(r => r.who === w).length}`).join(' · ')}), first at (${refused[0].at.join(', ')}) — read as unmatched, never as shared`)
+  // ground.json: every layer took part, insert-only (water among them), and the loops cut off at a pinch are paint REMOVED
+  // below the lattice, under the bow-tie's rule (subLattice[group].pinches)
   const pin = keys.flatMap(k => flattened.subLattice[k]?.pinches || [])
   flattened.noded = { layers: keys, insertOnly: true, inserted: noded.inserted, pairs: noded.pairs, pastBound: noded.pastBound,
-    removedBelowLattice: { rule: 'bow-tie', loops: pin.length, m2: +pin.reduce((t, r) => t + r.m2, 0).toFixed(9), widestMm: Math.max(0, ...pin.map(r => r.widthMm)) } }
-  return flattened
+    removedBelowLattice: { rule: 'bow-tie', loops: pin.length, m2: +pin.reduce((t, r) => t + r.m2, 0).toFixed(9), widestMm: Math.max(0, ...pin.map(r => r.widthMm)) },
+    blockCut: partSub['participant:block']?.pinches || [], refused: refused.length }
+  return { blockRings: block, rimRings: rimOut, refused }
 }
 
 // Normalise a group's items (bare rings for ribbon bands, {outer, holes} for faces)
@@ -1669,15 +1700,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const kerbH = kerb?.height > 0 ? kerb.height : 0
   if (kerbH && curbCutRamps.length && !(kerb.rampSlope > 0 && kerb.flareSlope > 0))
     throw new Error(`[bake-ground] ⛔ the kerb stands ${kerbH} m and ${curbCutRamps.length} curb cut(s) drop it, but the town's kerb norm gives no rampSlope/flareSlope — the jurisdiction's values, never the kit's (norms.json → kerb).`)
-  // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): the curbless stretches of every block
-  // edge, read off the POST-PAINT curb (an alley painted over the curb makes its mouth curbless), each carry a taper.
   const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])
-  const { inBlock: kerbInside, curblessM, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
-    ? kerbPlan({ blockRings, curbRings: [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))], ramps: curbCutRamps, kerb })
-    : { inBlock: null, curblessM: 0, regions: [] }
-  // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
-  const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
-  const kerbCellPaths = kerbH ? kerbCells(kerbRegs, blockRings) : []
   // ⭐⭐ THE DEFORMER (`groundDeformer.mjs`, BRIEF-the-ground-knows-its-height §5): the ground's TERRAIN height near the
   // streets is decided HERE, before the mesh — read off the line (`groundLine`, asked at each point of ②), swept across
   // the DRAWN bands as one profile (road and curb at the line · the walk level, the lawn taking the rise up to the town's limits · the rest
@@ -1721,7 +1744,18 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     console.log(`  [deform] the line swept across the bands: ${deform.stats.tiles} tile(s) · ${deform.stats.arcBlended} corner-arc vertices blended · ${deform.stats.onTerrain} ② read(s) of a highway or bridge run's terrain (no at-grade line) · walk ≤ ${walkN.crossSlopeMaxText ?? 'level (no limit named)'} · lawn ≤ ${lawnN.slopeMaxText ?? 'no limit'} · ease ${blendM.toFixed(2)} m (${Number.isFinite(design.groundBlendM) ? 'design.json groundBlendM' : 'one terrain grid step'}) · the ped bands refine to ${deform.refineTol != null ? (deform.refineTol * 1000).toFixed(1) + ' mm' : '—'} (half the walk limit over half the p10 walk, ${deform.walkP10?.toFixed(2) ?? '—'} m) · ${deform.stats.stations} station(s) along ②, ${deform.stats.absorbClamped} held inside the band's capacity envelope · ${split} land-use group(s) split at the ease's end · ${((Date.now() - _td) / 1000).toFixed(1)}s`)
   }
   // the plane, noded after its last re-clip (the flatten's, the ease split's) and cut at its pinches below the lattice
-  nodeThePlane(flattened)
+  // ⭐ the block rings as every reader below sees them: noded with the paint (`nodeThePlane`). The rim rings take part too
+  // (their vertices enter the paint); their one reader in the bake, the deformer above, read them before this, on the same
+  // lines (noding only inserts)
+  const { blockRings: nodedBlockRings } = nodeThePlane(flattened, { blockRings, rimRings })
+  // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): the curbless stretches of every block
+  // edge, read off the POST-PAINT curb (an alley painted over the curb makes its mouth curbless), each carry a taper.
+  const { inBlock: kerbInside, curblessM, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
+    ? kerbPlan({ blockRings: nodedBlockRings, curbRings: [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))], ramps: curbCutRamps, kerb })
+    : { inBlock: null, curblessM: 0, regions: [] }
+  // ⭐ ONE kerb field, built with the plan: the lift below applies it at vertices the crease split put on its outlines
+  const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
+  const kerbCellPaths = kerbH ? kerbCells(kerbRegs, nodedBlockRings) : []
   const PED_KEYS = (key) => key === 'sidewalk' || key === 'curb' || key === 'curbCut' || key.startsWith('treelawn')
   // ⭐ THE ROAD FOLLOWS ITS SWEEP (the deformer's road side, ① to ②): the carriageway refines against D exactly as the ped bands
   // do, or a 6–9 m road triangle and a 29–60 m stripe edge chord the line (measured HPDM, db0bebb6's slab)
