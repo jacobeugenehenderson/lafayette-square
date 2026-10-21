@@ -459,6 +459,12 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
 - Spur legs off their authored width; swap-mid-street RED; Huron bend row; PTown's 3 missing dead ends; LS highway-edge
   slivers; ② only warns on unresolved corner keys; `claims-band-is-one-ring` hardcodes 0.381; production LS rulemap 404.
 
+**⭐ THE GROUND'S SIZE AND TIME (Zob, measured 2026-10-21):** LS ground 174,752 triangles served (10-06) → 2,867,676 today (16.4×;
+vertices 10.3×); ground 40 s → ~15 min. The growth is REFINEMENT (triangulation → mesh: 1.7× served, 15.4× today), in the ped
+bands and the road (asphalt 897k · sidewalk 754k · curb 301k · stripe 228k), refined against the deformer's heights. Both
+production slabs PREDATE the height code (5255b311 10-11: the deformer + ped refinement; 6fe30a8a 10-17: the road refined
+against its sweep). HPDM/Huron today, and the deformer's share of the time vs refinement's: not established (tonight's timed
+bakes). This is BRIEF-the-ground-stays-in-budget's target.
 **⚠️ DROPPED OVERNIGHT, recovered 2026-10-21:** the triangle fix Jacob approved (BRIEF-the-ground-stays-in-budget step 7 (a)+(b): the
 simplifier in the bake + the road on the lots' refine policy) is BUILT on kerf/simplify-in-bake 444456df but never baked or merged.
 Kerf rebases it onto integration; Zob reviews; it joins tonight's timed LS bakes.
