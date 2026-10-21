@@ -2227,15 +2227,36 @@ export function stampTile(st, groups) {
 function insertOnEdges(ring, owners, pts, ok) {
   const S = ring.map(toClipper), onSeg = (q, a, b) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) return false
     const L = Math.sqrt(L2), u = (q.X - a.X) * dx + (q.Y - a.Y) * dy; return u > 0 && u < L2 && Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / L <= 2 }
-  const at = ring.map(() => []), missed = [], off = []   // off: each placed point's distance off its edge's line, in grid units
+  const at = ring.map(() => []), missed = [], off = [], edgeOf = new Map()   // off: each placed point's distance off its edge's line, in grid units; edgeOf: its key → the edge
   for (const v of pts) { const q = toClipper(v), j = S.findIndex((a, k) => ok(k) && onSeg(q, a, S[(k + 1) % S.length]))
     if (j < 0) { missed.push(v); continue }
+    edgeOf.set(q.X + ',' + q.Y, j)
     const a = S[j], b = S[(j + 1) % S.length], dx = b.X - a.X, dy = b.Y - a.Y
     off.push(Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / Math.sqrt(dx * dx + dy * dy))
     at[j].push({ u: (q.X - a.X) * (b.X - a.X) + (q.Y - a.Y) * (b.Y - a.Y), v }) }
   const R = [], O = owners ? [] : null
   ring.forEach((p, k) => { R.push(p); O?.push(owners[k]); for (const { v } of at[k].sort((x, y) => x.u - y.u)) { R.push(v); O?.push(owners[k]) } })
-  return { ring: R, owners: O, missed, off }
+  return { ring: R, owners: O, missed, off, edgeOf }
+}
+// ⭐ WHERE THE BLOCK FOLLOWS THE RING, THE RING CARRIES THE BLOCK'S VERTICES (Boz, 2026-10-21, on LS's papin-street nose and the
+// coast). Where ① runs inside ② the face trim makes the block take the ring's own edges, and the points where it leaves them (the
+// trim's crossings, and the land-use stamp's crossings along that stretch) were the block's alone: `ring − iA` and the deformer's
+// rays then met two lines a rounding apart (LS tile 136: 100 unowned at the nose). Each such vertex — a block vertex the ring
+// lacks, on a ring edge (insertOnEdges: the boolean's own two-unit containment), whose block neighbour is that edge's end or on
+// that edge too, so the block runs along it — is inserted into the ring, splitting the edge, each half keeping its owner.
+// ⛔ A block vertex merely NEAR a ring edge, the block not running along it, is not taken.
+function shareBlockIntoRing(t) {
+  if (!t.iA?.length || !t.ring?.length) return { t, added: 0 }
+  const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, have = new Set(t.ring.map(K))
+  if (!t.iA.some(r => r.some(v => have.has(K(v))))) return { t, added: 0 }   // the block takes none of the ring: nothing to share
+  const cand = [], seen = new Set(); for (const r of t.iA) for (const v of r) { const k = K(v); if (!have.has(k) && !seen.has(k)) { seen.add(k); cand.push(v) } }
+  const { edgeOf } = insertOnEdges(t.ring, t.ringOwner, cand, () => true), n = t.ring.length, keep = [], took = new Set()
+  for (const r of t.iA) r.forEach((v, i) => { const k = K(v), e = edgeOf.get(k); if (e == null || took.has(k)) return
+    const ends = new Set([K(t.ring[e]), K(t.ring[(e + 1) % n])])
+    if ([r[(i - 1 + r.length) % r.length], r[(i + 1) % r.length]].some(w => ends.has(K(w)) || edgeOf.get(K(w)) === e)) { took.add(k); keep.push(v) } })
+  if (!keep.length) return { t, added: 0 }
+  const sh = insertOnEdges(t.ring, t.ringOwner, keep, () => true)
+  return { t: { ...t, ring: sh.ring, ringOwner: sh.owners }, added: keep.length }
 }
 // a shape stamped with exactly this stencil, vertex for vertex on the grid: the recorded fact that decides the rim is cut once
 // (sectionOpen's finish here, the bake's stencil clip in bake-ground.js). ⛔ Never decided on geometry.
@@ -7695,18 +7716,21 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ A trim that cuts nothing leaves iA AS IT IS (the same contour as iaFull, not Clipper's re-emitted copy of it); one that
         // cuts writes its crossings into iaFull too (`shareIntoFull`). Its other new vertices are the ring's own, where the ring
         // runs inside the curb.
-        let stamped = 0, added = 0, sharedIntoFull = 0
+        let stamped = 0, added = 0, sharedIntoFull = 0, sharedIntoRing = 0
         const keyOf = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
         protoShapeTiles = protoShapeTiles.map(t => { if (!t.iA?.length || !differenceRings(t.iA, [t.ring]).length) return t
           const iA = intersectRings(t.iA, [t.ring]), have = new Set([...(t.iaFull || []).flat(), ...t.ring].map(keyOf))
           const pts = []; for (const r of iA) for (const v of r) { const k = keyOf(v); if (!have.has(k)) { have.add(k); pts.push(v) } }
           sharedIntoFull += pts.length
-          return { ...shareIntoFull(t, pts, `the face trim, tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`), iA } })
+          const sh = shareBlockIntoRing({ ...shareIntoFull(t, pts, `the face trim, tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`), iA }); sharedIntoRing += sh.added
+          return sh.t })
         if (landEv) protoShapeTiles = protoShapeTiles.map(t => { const { fixed, override } = t._luSeed
           if (fixed || override) return t
           const { tile, groups } = stampTile(t, landEv)
           stamped++; added += tile.iaFull.reduce((u, r, i) => u + r.length - t.iaFull[i].length, 0)
-          return { ...tile, _evGroups: groups } })
+          // the stamp's crossings on a stretch where the block follows the ring go into the ring too
+          const sh = shareBlockIntoRing(tile); sharedIntoRing += sh.added
+          return { ...sh.t, _evGroups: groups } })
         const stamp = MP.boundaryRing
         if (stamp?.length > 2) {
           const before = protoShapeTiles.length; let rimShared = 0
@@ -7802,6 +7826,7 @@ export function buildTileGround(ribbons, opts = {}) {
           protoShapeTiles = kept
           console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice)`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoFull} block crossing(s) the face trim and the circle minted, written into the struck contour (iaFull): ② is one ring`)
+          console.log(`[tileGround][PROTO⊙] ${sharedIntoRing} block vertex(es) where the block follows the ring (the face trim's and the stamp's crossings there), written into the tile ring`)
           console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)
         } else {
           console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)
