@@ -158,8 +158,48 @@ export function mitresCrossing(tapers, blockRings) {
   return out
 }
 
-/** A TAPER per curbless edge: the edge × `taperRun` inward (toward the lifted group), 0 → h linearly.
- *  ⭐ MITRED (Boz, 2026-10-21, in the crease-split fix): where exactly two curbless edges share a vertex, both tapers end
+/** A TAPER per curbless STRETCH: the stretch × `taperRun` inward (toward the lifted group), 0 → h linearly.
+ *  ⭐ THE STRETCH IS THE SUBJECT, NOT THE PARTITION EDGE (Boz, 2026-10-21): Q1 slopes a curbless stretch flush, and a
+ *  millimetre-long edge between two lattice vertices is no bend of anything drawn. So the curbless edges are chained into
+ *  stretches, and each stretch keeps only the vertices that lie more than ONE LATTICE ROUNDING (√2/2 step, the bound
+ *  `nodeAcrossGroups` conforms to) off the chord between its neighbours: every vertex dropped lies within a rounding of its
+ *  region's base, where the field lifts it by at most h·(√2/2 step)/run — under `flushTol` (h·step/run). The bases' ends
+ *  are partition vertices. Then each base is a region of `mitred`. */
+export function taperRegions(edges, taperRun) {
+  return mitred(stretchLines(edges), taperRun)
+}
+
+/** The curbless edges as STRETCHES ([{ A, B, inward }], fewer and longer): chained where exactly two edges meet, each chain
+ *  kept at the vertices more than one lattice rounding off its chord (Douglas–Peucker at that bound). */
+export function stretchLines(edges) {
+  const BOUND = Math.SQRT1_2 * LATTICE_M, k2 = (p) => Math.round(p[0] / LATTICE_M) + ',' + Math.round(p[1] / LATTICE_M), at = new Map()
+  edges.forEach((e, i) => { for (const P of [e.A, e.B]) { const k = k2(P); (at.get(k) || at.set(k, []).get(k)).push(i) } })
+  const used = new Uint8Array(edges.length), out = []
+  const other = (i, P) => { const e = edges[i]; return k2(e.A) === k2(P) ? e.B : e.A }
+  const walk = (i, P) => { const pts = [P], ids = []                      // from vertex P along edge i while degree is 2
+    for (;;) { used[i] = 1; ids.push(i); const Q = other(i, P); pts.push(Q); const here = at.get(k2(Q))
+      if (here.length !== 2) break; const j = here[0] === i ? here[1] : here[0]; if (used[j]) break; i = j; P = Q }
+    return { pts, ids } }
+  const chains = []
+  edges.forEach((e, i) => { if (used[i]) return; for (const P of [e.A, e.B]) if (at.get(k2(P)).length !== 2) { chains.push(walk(i, P)); return } })
+  edges.forEach((e, i) => { if (!used[i]) chains.push(walk(i, e.A)) })        // closed loops
+  const off = (Q, a, b) => { const d = [b[0] - a[0], b[1] - a[1]], L = Math.hypot(d[0], d[1]); return L ? Math.abs((Q[0] - a[0]) * d[1] - (Q[1] - a[1]) * d[0]) / L : Math.hypot(Q[0] - a[0], Q[1] - a[1]) }
+  for (const { pts, ids } of chains) {
+    const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1
+    const dp = (a, b) => { let m = -1, mi = -1; for (let i = a + 1; i < b; i++) { const d = off(pts[i], pts[a], pts[b]); if (d > m) { m = d; mi = i } }
+      if (m > BOUND) { keep[mi] = 1; dp(a, mi); dp(mi, b) } }
+    dp(0, pts.length - 1)
+    let a = 0
+    for (let b = 1; b < pts.length; b++) { if (!keep[b]) continue
+      const A = pts[a], B = pts[b], L = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L]
+      const ref = edges[ids[a]].inward, n = [-u[1], u[0]], s = n[0] * ref[0] + n[1] * ref[1]
+      out.push({ A, B, inward: s >= 0 ? n : [-n[0], -n[1]] }); a = b }
+  }
+  return out
+}
+
+/** A TAPER per base: the base × `taperRun` inward, 0 → h linearly.
+ *  ⭐ MITRED (Boz, 2026-10-21, in the crease-split fix): where exactly two bases share a vertex, both tapers end
  *  on ONE crease, the bisector of their inward normals, reaching run / cos(θ/2) — a band of uniform depth along a
  *  polyline, drawn as Q1 asks. Rectangles left two creases leaving one vertex a bend's angle apart: overlapping at a
  *  convex bend (a sliver Clipper rounded crossings into — 191 on LS), and at a reflex bend a WEDGE no taper covered, which
@@ -167,7 +207,7 @@ export function mitresCrossing(tapers, blockRings) {
  *  base is nearer. A stretch's free end (a curb starts there, or three edges meet) keeps the perpendicular side.
  *  Each region carries `kA`/`kB`: its end creases as s = t·kA and s = w + t·kB in its own frame (0 = perpendicular).
  *  ⛔ Two curbless edges folding back on each other (normals opposite) have no bisector: refused. */
-export function taperRegions(edges, taperRun) {
+function mitred(edges, taperRun) {
   const k2 = (p) => p[0] + ',' + p[1], at = new Map()
   edges.forEach((e, i) => { for (const end of ['A', 'B']) { const k = k2(e[end]); (at.get(k) || at.set(k, []).get(k)).push(i) } })
   const unit = (v) => { const L = Math.hypot(v[0], v[1]); return [v[0] / L, v[1] / L] }
