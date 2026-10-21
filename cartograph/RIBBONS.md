@@ -1160,7 +1160,7 @@
 >        branch; town #2 is where that half first gets tested.**
 >      - ⛔⛔ **A BOZ DIAGNOSIS THAT WOULD HAVE MASKED A REAL HOLE — do not repeat it.** Boz read
 >        `truman-parkway-0|right` as `treelawn 0 · sidewalk 0 · terminal 'none'` and briefed excluding it
->        as no-ped-by-design. **`resolvePedDepths` (`tileGround.js:1234`) NEVER READS those fields for
+>        as no-ped-by-design. **`resolvePedDepths` (`tileGround.js#resolvePedDepths`) NEVER READS those fields for
 >        depth** — it takes `custom?.treelawn ?? STD_TREELAWN` / `custom?.sidewalk ?? ADA_SIDEWALK`, both
 >        **1.5**; `measure.{treelawn,sidewalk,terminal}` feed only `gleanTreelawn`, which picks strip
 >        ORDERING (`SECTION §3.1`: the standard depths deliberately replaced the averaged measures).
