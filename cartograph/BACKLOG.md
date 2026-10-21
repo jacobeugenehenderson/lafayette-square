@@ -89,7 +89,15 @@ Start here. State at the restart:
     town (the median wrote nothing). Not yet including Mitre's rim build (c4064ab5).
   · **PTown** (4713c478, before tonight's fixes): flatten ×13 → rim ×2 (fixed since) → the deformer memo hits V8's Map
     cap (Kerf's bound 2a2579ff, reviewed, merges on the LS identity gate).
-  · LS, Huron: queued.
+  · **LS** (7ec93e8e, 15 min, ONE ground pass now: "SKIPPED (inland: no shore)"): TWO classes, both in ground: #39 the
+    kerb STEP with no face and no taper (40 m; 6 group pairs incl. verge|stripe at (138, 423), vacant/underived/commercial/
+    sidewalk|asphalt; Zob placed it: kerbLift.mjs#riserFromEdges, rule 8bd2751f; paint vs finder not yet decided) and #40
+    unowned ped vertices (exact count in lafayette-square.census.json). Flatten and the deformer refuse nothing; every later
+    step clean through manifest.
+  · Merged tonight after the census began: the memo bound (1e6958f2), the shore-pass gate + exact unowned list (b88f7245),
+    the re-gated finish clip (7ec93e8e). AWAITING ZOB'S REVIEW (Zob and Mitre hit usage limits ~02:40): Mitre's noded rim
+    with (A) retired, 4be86489 on mitre/rim-cut-once (HPDM rim class 0; tile 242's needles 0; no tile worse).
+  · Running (Kerf), on a detached scratch merge of HEAD + 4be86489: HPDM's exact remaining list → Huron census → PTown census.
 - **LS REAPPLICATION PLAN (Jacob, 2026-10-21: "reapply all we can to LS"; Zob's Inputs census, read from
   `cartograph/intake-rows.mjs#intakeStatusForMap` + each town's `sources.json`):**
   · *No ruling, normal path:* declare LS's `historicDistricts` in its sources.json (today the name lives only inline in
