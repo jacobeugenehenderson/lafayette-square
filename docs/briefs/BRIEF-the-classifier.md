@@ -2,8 +2,8 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: Tally
-written: 2026-10-19
+dispatched: no (§5b, step 7 — OPEN). Pass A was dispatched to Tally and delivered (§5a, in the Diary).
+written: 2026-10-19 · §5b 2026-10-20
 evict-when: RULING: Pass A, step 7 (resolvePedDepths, the shared surface, island paint) and Pass B have landed, and Jacob has seen the pictures after step 7.
 -->
 
@@ -12,7 +12,7 @@ evict-when: RULING: Pass A, step 7 (resolvePedDepths, the shared surface, island
 Boz is your report line (`SendMessage`).
 
 *Jacob, 2026-10-19 ("write the master classifier brief"); written by Boz. §5 was ruled by Jacob on 2026-10-19;
-Pass A landed as 6429ac08 and 42bcc360. It depends on `scratch/style-guide/STYLE-GUIDE.draft.md`, which is a draft and replaces nothing yet.*
+Pass A landed as 6429ac08 and 42bcc360. It depends on the street style guide, canon since 2026-10-20: `cartograph/STYLE-GUIDE.md`.*
 
 ## 0 · What this is for
 
@@ -174,38 +174,133 @@ of either.
 9. Mixed classes under one name are RED only across networks (e.g. a footway in a street chain). Within a network, each piece carries its own class.
 10. Motorway/trunk: one `highway` class with a lamp sub-key.
 
-## 5a · This dispatch: Pass A, classification only (until §5 is ruled)
+## 5b · The next dispatch: step 7, the painter and ② read the class (OPEN, not dispatched)
 
-- **Read first:**
-  1. `CLAUDE.md` Layer 0, `ORIENTATION.md`, `README.md §⭐ START HERE`;
-  2. this brief;
-  3. `scratch/style-guide/CLASSIFIER-SITES.md` and `AUDIT.md`;
-  4. `STYLE-GUIDE.draft.md` §0, §1 and §4. This is the vocabulary; it is a draft and replaces nothing.
-  5. `PIPELINE` step 3 and §6a.
-- **Build:**
-  - the one vocabulary table;
-  - `class` · `classRung` · `classReason` on every chain, decided in `skeleton.js` before `groupByName` /
-    `seedSection`; an unknown class refuses by name;
-  - the check's Pass A part, mutation-tested.
-- ⛔ **Change no paint.** The consumers keep their behaviour until §5 is ruled; say in each commit that the old sites
-  still stand.
-- **Then STOP and report:**
-  - the class counts per town;
-  - the rewiring plan per consumer (its symbol → the class column it reads → the old site it deletes);
-  - the §5 ruling each step needs.
-- **Where:** a worktree at `.claude/worktrees/classifier`, on a new branch `classifier` from
-  `docs/conformance-2026-09-21`.
-  - ⚠ `boz/hpdm-gate` has diverged from it (about 80 commits each way; `tileGround.js` differs by about 1,100 lines),
-    so touch `tileGround.js` not at all without asking Boz.
-  - ⛔ Not the legacy chain shape pass (a separate retirement).
-  - ⛔ Not derive's `roadId`.
-- **The house rules:** `CLAUDE.md`, plus the machine-wide heavy-job gate:
-  - start at ≥70% free and load <8, abort <30%, explicit heap;
-  - ask Boz before a heavy run;
-  - a one-town skeleton + derive pour is heavy.
+*Planned by Tally, 2026-10-20, read-only against integration/2026-10-20. Jacob's rulings for it: "yes to all four"
+(2026-10-20, relayed by Boz) and the taper run (same night). §5a, the Pass A dispatch, was delivered and is in the
+Diary: `cartograph/_archive/BRIEF-the-classifier-5a-pass-A-dispatch-DELIVERED-2026-10-20.md`. The shared surface and
+the island paint named in this brief's evict-when are Pass B's (`cartograph/BACKLOG.md`, the 2026-10-20 forward list).*
 
-  ⛔ Never write `cartograph/data/lafayette-square/clean/`, nor any town's `clean/`, without Boz. No bake, Publish,
-  Stage or Promote. Commit by pathspec, never push, and name the register in every commit.
+**Already true (confirm against the code before building):**
+- Pass A is landed: every chain carries `class` · `classRung` · `classReason`; ribbon streets carry `class` (513ce90a).
+- `streetClass.js#LOCAL_SECTION` = the local row, `street(10, 8, 1.524, 1.524, 4.572)`, the kit's one home for the ped
+  depths and the corner radius (Lintel, 4a67bcf8). For now, `resolvePedDepths` and ②'s `baseR` read it for EVERY
+  street ("uniform until classifier step 7" at each site). The other rows are frozen into seeds and read by neither.
+- `tileGround.js` reads no `.class` anywhere; `protoBase` maps skelId → measure only.
+- LS's ribbons are `src/data/ribbons.json` (`scene.js#ribbonsPathOf`, declared), written by `promote-ribbons.js` from
+  `clean/map.json`. Its 321 streets carry `highway` and the old `type`, no `class`. LS's frozen `clean/skeleton.json`
+  has no class either, but every chain has `sources`: all 321 ribbon skelIds match a chain, and all source ways are in
+  `raw/osm.json` (0 missing, 2026-10-20).
+- The kerb is one scalar per town: `curb-cut-norm.mjs` `validateKerb` / `resolveKind('kerb', …, { height: 0 })`;
+  `bake-ground.js` lifts `kerbH`; `kerbLift.mjs#kerbPlan` tapers flush wherever no curb ring is drawn and throws
+  without `taperRun`. Norms: LS authors `{ height 0.15, rampSlope 1:12, flareSlope 1:10, taperRun 1 }`; HPDM, Huron
+  and PTown have no kerb key; JH has no `norms.json`.
+
+**Ruled (Jacob, 2026-10-20):**
+- a · One `streetClass.json` per town, `skelId → { class, rung, reason }`, built by the pour's own classify
+  functions. Every town's painter reads class from that file and nowhere else; a missing file or class THROWS.
+  Until LS's exists, step 7 refuses LS by name.
+- b · A two-class corner takes the LARGER leg's radius.
+- c · The house 6 in kit kerb is built in this step. Huron curbs only its bigger streets (`kerb.byClass`).
+- Radii 15 / 20 / 25 ft (local / collector / arterial; the guide maps primary = arterial, secondary and tertiary =
+  collector), every corner authorable. The half-leg bound on easing stays.
+- The kit taper run is DERIVED, height / rampSlope (1:12, ADA 2010 Standards §405.2): a 6 in kerb gives 1.83 m. A
+  town norm may still author it (LS's 1.0 m stays LS's).
+
+**Build (by symbol):**
+- **A · the class record.**
+  1. `scene.js` gains `streetClassPathOf(scene)`, shaped like `ribbonsPathOf`: the town's declared path, else
+     `data/<scene>/clean/streetClass.json`. LS declares `cartograph/data/lafayette-square/streetClass.json` (outside
+     `clean/`, tracked).
+  2. The record is `{ scene, from: { skeleton, osm, sha256 of each }, classes: { skelId: { class, rung, reason } } }`,
+     built by `skeleton.js`'s own `classifyWay` + `classFields`, exported; no copy of the rule.
+  3. derive writes it beside `ribbons.json` for poured towns.
+  4. For a frozen town, a light script `cartograph/classify-frozen.mjs <scene>` reads the frozen skeleton's `sources`
+     and `raw/osm.json` and writes only the declared path. It refuses a target inside `clean/` and refuses any chain
+     whose source way is missing from raw.
+  5. `buildTileGround` takes `opts.streetClass`. `bake-ground.js` and `src/cartograph/BlockGeometryV2Debug.jsx` (the
+     live Survey caller) load it through the resolver; `serve.js` serves it per Look. A missing file, or a ribbon
+     skelId absent from it, throws by scene and skelId.
+- **B · the painter and ② read the class.**
+  6. `streetClass.js` rows: `cornerR` local 4.572 · tertiary and secondary 6.096 · primary 7.620, each citing
+     `f-caltrans-corner-radii`. Add `classPed(cls)` and `classCornerR(cls)`; both throw on an unknown class, never
+     fall to local. `LOCAL_SECTION` stays only for `skeleton.js`'s survey stamp (C1 doesn't reach it).
+  7. `resolvePedDepths(baseMeasure, side, custom, cls)` reads `classPed(cls)`; `resolveProtoMeasure` passes the
+     run's class from the record (a skelId → class map built beside `protoBase`).
+  8. ②'s base radius: a junction corner takes `max(classCornerR(legA), classCornerR(legB))`; a bend takes its own
+     chain's class. Only the two class-seed returns change; per-corner and per-IX overrides, the half-leg bound and
+     the clamped-authored print stay. The log prints corners by class pair.
+  9. `derive.js`'s `STANDARDS.sidewalk.width + STANDARDS.treeLawn.width` sites (8) and `standards.js`'s
+     `LOCAL_SECTION`-backed `STANDARDS.*` are replaced by `classPed` of the street's class, and deleted.
+- **C · the kerb.**
+  10. `curb-cut-norm.mjs`'s kit rung becomes the house kerb: height 0.1524 m (`r-house-kerb-height`), rampSlope 1:12,
+      flareSlope 1:10, and taperRun = height / rampSlope, computed at that site with a comment citing ADA 2010
+      §405.2. Add a registry finding `f-ada-ramp-running-slope`: the verbatim §405.2 text read from the source, its
+      URL, the date and the reviewer; `approvedBy` left unset for Jacob. Every rung prints per pour.
+  11. `validateKerb` accepts `byClass { class: height ≥ 0 }`. `resolveProtoMeasure`'s `curb` becomes per run: 0 where
+      the run's class kerb is 0, so no curb ring is drawn there and `kerbPlan`'s curbless path tapers it flush. The
+      bake's `kerbH` becomes per block edge from the same rule.
+  12. Norms: Huron gets `kerb { byClass: { local: 0, living-street: 0 } }` on the kit height. HPDM and PTown take the
+      kit kerb; JH takes the kit rung, disclosed. LS's authored 0.15 m is unchanged.
+
+**Checks (each mutant must go RED):**
+- `claims-a-look-authors-its-curb-width` §5, rewritten: every street row's `cornerR` equals its ruled value with its
+  finding id; `resolvePedDepths` for a primary, secondary and local run returns that row; the base radius is no single
+  constant. Mutants:
+  - `LOCAL_SECTION.cornerR` back as the base radius;
+  - `resolvePedDepths` ignoring class;
+  - a missing class falling to local;
+  - a literal 4.5 / 7.5 in a row;
+  - the smaller leg's radius at a two-class corner;
+  - a missing `streetClass.json` (the painter must throw);
+  - a class read from ribbons' `highway` (a source scan for `.highway` / `.type` in the painter and ②, plus a run that
+    deletes the record but keeps `highway` on ribbons, which must still throw);
+  - `classify-frozen.mjs` writing into `clean/` (it must refuse).
+- `claims-the-pour-reads-the-towns-norm`, with mutants:
+  - `byClass` ignored;
+  - the kit kerb back to 0;
+  - a literal taperRun at the kit rung;
+  - the kit rampSlope changed without the kit taperRun moving with it.
+- `claims-every-feature-is-classified --record`: every record entry equals what `classifyWay` gives from raw tags,
+  and the record's hashes match its inputs (stale → RED).
+- The existing `resolvePedDepths` callers (`claims-a-cap-carries-one-section`, `claims-a-frontage-can-ask-for-no-ped-band`)
+  pass the class.
+- `claims-references-are-sound` stays sound with the new finding row.
+
+**Order:**
+1. rows + resolvers;
+2. the record + `classify-frozen.mjs`;
+3. painter and ②;
+4. derive;
+5. kerb;
+6. checks;
+7. LS's record written (light);
+8. re-derive HPDM, Huron, JH and PTown (heavy: Boz's slot, one town at a time, by the standing gate);
+9. a paint diff per town;
+10. pictures for Jacob.
+
+**What will repaint:** every unauthored arterial and collector edge in every town (LS: 44 chains are primary or
+secondary): walk 6 / 8 ft, lawn 4 ft, corners 20 / 25 ft. Also the towns gaining the 6 in kerb, and Huron's local
+streets going curbless. Authored `blockCustoms` still win.
+
+**Registers:**
+- `FEATURES`: each street draws to its class (walk, lawn, corner radius and kerb), all overridable.
+- `OPERATIONS`:
+  - Corners: the 1× baseline is per class; a two-class corner takes the larger.
+  - Section: unauthored depths are per class.
+  - Kerb: the kit is 6 in, its taper run is height × 12 (ADA 2010 §405.2), and a town norm can set `kerb.byClass`.
+  - Pour: `streetClass.json` per town; `classify-frozen.mjs` for a frozen town.
+- To the Diary: the "uniform until classifier step 7" lines (`tileGround.js` ×2, `skeleton.js`, `RIBBONS`, `SECTION`,
+  `standards.js`) and `STYLE-GUIDE.md` §6's ⚠️ about the unread per-class radii.
+
+**The house rules** are §5a's (now in the Diary), and these bind this step:
+- ⛔⛔ **Never write, move or regenerate `cartograph/data/lafayette-square/clean/`.** LS gets its record from
+  `classify-frozen.mjs` outside `clean/`, and a ground bake only. No other town's `clean/` without Boz.
+- `CLAUDE.md`, plus the heavy-job gate: start at ≥70% free and load <8; abort below 30%; set an explicit heap; ask Boz
+  before a heavy run.
+- No bake, Publish, Stage or Promote. Commit by pathspec, never push, name the register in every commit.
+- Build only on Boz's go.
+- ⛔ Not the legacy chain shape pass. ⛔ Not derive's `roadId`. Stay out of derive's junctionMap IIFE and `ribbons.tiles`.
 
 ## 6 · Done when
 
