@@ -465,7 +465,9 @@ is the lever; candidate tolerances are measured from a mesh dump (Kerf), then ch
 should be a specific and correct height; but the stretch between two streets" need not match reality at every point. ⇒ landmark HEIGHTS
 are exact; the ground between streets is approximate. VERIFIED (Zob): the Monument is drawn from a cited dossier (pilgrim-dossier-v1,
 Carpenter 1911: 252′7.5″ = 77.00 m), seated on the lowest drawn ground under its plinth, never exaggerated; claims-pilgrim-monument-site ✅.
-Open: its record's neon frontage strips sit at y 77.3 (bake-buildings' fh+h+0.3) and may float at the tower top (Ward to look).
+Its neon does NOT float (Ward, seen with the place open: placeNeon skips a wall-less
+set-piece). Filed, small: that skip comes BEFORE the dark-places census, so a lit place with no sign is silent; and neon-faces.mjs
+writes frontage for a wall-less record (dead data).
 **⭐ THE GROUND'S SIZE AND TIME (Zob, measured 2026-10-21):** LS ground 174,752 triangles served (10-06) → 2,867,676 today (16.4×;
 vertices 10.3×); ground 40 s → ~15 min. The growth is REFINEMENT (triangulation → mesh: 1.7× served, 15.4× today), in the ped
 bands and the road (asphalt 897k · sidewalk 754k · curb 301k · stripe 228k), refined against the deformer's heights. Both
