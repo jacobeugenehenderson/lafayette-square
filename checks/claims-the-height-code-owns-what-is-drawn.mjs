@@ -54,9 +54,19 @@ const rows = async (url) => {
       runs: [{ skelId: 'l', poly: [...ib, ib[0]] }] }], ink: [], raw: () => 0, line: { step: 1, heightAt: () => 1 },
     limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], lawn: [], walk: [walk] } })
   const E = along(sq(0, -5, 5, -3)), W = along(sq(-5, -5, 0, -3))
+  // 6: a SEAM: two owners (runs a and b, heights 1 and 2) whose rays each run along the same partition line from opposite
+  //    ends, each sidestep in the lot; read on both sides, each holds its own walk. The point is both streets': their mean,
+  //    and it is LISTED (owners, spread), never the first owner's height
+  const sb = [[-5, -5], [0, -5], [5, -5], [5, -3], [-5, -3]]
+  const SEAM = buildDeformer({ town: 'selftest', tiles: [{ ring: sq(-10, -10, 10, 10), ringOwner: [0, 1, 2, 3].map(() => ({ skelId: 'a' })), iA: [sb], iaFull: [sb], iaStamp: [[0, 0, 0, 1, 0]],
+      runs: [{ skelId: 'a', poly: [[-5, -5], [5, -5]] }, { skelId: 'b', poly: [[5, -3], [-5, -3]] }] }], ink: [], raw: () => 0, line: { step: 1, heightAt: (id) => (id === 'a' ? 1 : 2) },
+    limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 }, bands: { curb: [], lawn: [], walk: [sq(0, -5, 5, -3.9), sq(-5, -4.1, 0, -3)] } })
+  const sh = SEAM.heightAt(0, -4), sl = SEAM.splits()
   return [
     ['a vertex on a stamp line whose ray runs along it is held by the band on its other side, never unowned', E.unownedIn(0, -4) == null && E.heightAt(0, -4) != null && E.ownerAt(0, -4) != null && E.stats.byBothSides === 1],
     ['the mirror, its sidestep already in the band, is held by the first ray (the both-sides read never runs)', W.unownedIn(0, -4) == null && W.heightAt(0, -4) != null && W.stats.byBothSides === 0],
+    ['a seam point two owners both hold takes their mean, never the first owner\'s height', sh === 1.5 && SEAM.ownerAt(0, -4) === '0|0|r0+0|0|r1' && SEAM.stats.bothSidesSplit === 1],
+    ['and it is listed: its exact position, both owners, and their spread', sl.length === 1 && sl[0].x === 0 && sl[0].z === -4 && sl[0].owners.length === 2 && sl[0].spread === 1],
     ['a rim ring whose longest ② edge lies outside the disc reads its side off ②: the walk takes up its share of the fall', hw != null && hw < 0],
     ['a frame edge wholly outside the disc: the deformer builds, and counts it exempt', !!D && D.stats.frameExempt === 1],
     ['the same frame edge inside the disc REFUSES', refuses(() => make({ disc: over }))],
@@ -73,22 +83,24 @@ const keyRows = (key, src) => { const x = 170.53456789012345, z = 1254.912345678
   return [['an unowned vertex is keyed at its exact position (the key parses back to the very floats)', kx === x && kz === z, k],
     ['two vertices 1 mm apart are two records', key(x, z) !== key(x + 0.001, z), `${key(x, z)} vs ${key(x + 0.001, z)}`],
     ['terrainPart records through the exact key, with x, z and tile', src.split(RECORD).length === 2, 'bake-ground.js terrainPart'],
+    ['ground.json lists every seam split (the deformer\'s splits, with the both-sides count)', /bothSides: deform\.stats\.byBothSides, splits: deform\.splits\(\)/.test(src), 'bake-ground.js'],
     ['the refusal writes every unowned vertex beside the slab', /join\(outDir, 'ground\.unowned\.json'\)/.test(src) && /points: pts/.test(src), 'bake-ground.js'],
     ['a bake that owns every ped vertex removes a stale list (the uploader carries every file of a look dir)', src.includes(DELETE), 'bake-ground.js']] }
 const self = process.argv.includes('--selftest')
 const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
-const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) {\n      const H = []", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)", BOTH = 'for (const side of [LATTICE, -LATTICE])'
+const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) {\n      const H = []", SIDE = "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, t.full)", BOTH = 'const vs = [LATTICE + off, -LATTICE - off]', FIRST = 'if (vs.length) H.push('
 // ⭐ ONE mutated copy (checks/tier.mjs reads one temp-dir `mutant`) carrying both mutations behind a switch read at call time
 const mutant = () => { const src = readFileSync(HOME, 'utf8')
-  for (const a of [EXEMPT, UNOWNED, SIDE, BOTH]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
+  for (const a of [EXEMPT, UNOWNED, SIDE, BOTH, FIRST]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
   const f = join(mkdtempSync(join(tmpdir(), 'height-owns-')), 'groundDeformer.mjs')
   writeFileSync(f, src.replace(EXEMPT, "&& (globalThis.__MUT === 'exempt' || outsideDisc(ring[i], ring[(i + 1) % n]))) exempt[i] = 1")
     .replace(UNOWNED, "if (inBand(x, z) && globalThis.__MUT !== 'fallback') {\n      const H = []")
-    .replace(BOTH, "for (const side of (globalThis.__MUT === 'oneside' ? [] : [LATTICE, -LATTICE]))")
+    .replace(BOTH, "const vs = (globalThis.__MUT === 'oneside' ? [] : [LATTICE + off, -LATTICE - off])")
+    .replace(FIRST, "if (vs.length && !(globalThis.__MUT === 'first' && H.length)) H.push(")
     .replace(SIDE, "pipRings(mx + m0 * 0.01, mz + m1 * 0.01, globalThis.__MUT === 'side' ? t.iA : t.full)")
     .replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
   return pathToFileURL(f).href }
-const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point', side: 'the side read off the disc-cut block (iA)', oneside: 'a ray along a stamp line read on one side only (today\'s 10 µm sidestep)' }
+const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point', side: 'the side read off the disc-cut block (iA)', oneside: 'a ray along a stamp line read on one side only (today\'s 10 µm sidestep)', first: 'the first owner that holds a seam wins (the order decides)' }
 if (self) { let bad = 0; const url = mutant()
   for (const [k, name] of Object.entries(MUTANTS)) { globalThis.__MUT = k; const R = await rows(url), red = R.some(r => !r[1])
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'}${red ? ` (${R.filter(r => !r[1]).map(r => r[0]).join(' · ')})` : ''}`) }

@@ -1919,6 +1919,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     writeIfChanged(unownedPath, JSON.stringify({ scene, count: pts.length, counts: 'distinct exact positions', points: pts }))
     throw new Error(`[bake-ground] ⛔ ${scene}: ${pts.length} ped vertex(es) lie in a drawn band that NO painted band owns `
       + `(the band decides, never the nearer line — groundDeformer.mjs). Every one, exact: ${unownedPath}. First: ${pts.slice(0, 5).map(p => `(${p.x}, ${p.z}) tile ${p.tile}`).join(' · ')}`) }
+  if (deform?.stats.bothSidesSplit) console.log(`  [deform] ⚠️ ${deform.stats.bothSidesSplit} seam point(s) held by two owners whose heights differ, up to ${(deform.stats.bothSidesMaxDH * 100).toFixed(1)} cm: each takes their mean, every one listed in ground.json deform.splits`)
   if (deform) console.log(`  [deform] terrain part written for ${deformTally.verts} vertices · ${deformTally.terrainOnly} past the deformer's reach (outside every tile and the ink, or deeper than the bands + ease) draw the terrain itself · the road swept from ① to ② at ${deform.stats.road} point(s), the owners' blend at ${deform.stats.roadBlended} · the ink at ${deform.stats.ink} (${deform.stats.inkCrossing} at a crossing, ${deform.stats.inkOnGrid} on the grid between a tile and the ink) · ${deform.stats.byBand} owned by their band rather than the nearer line · ${deform.stats.rays} ray(s) through the bands · ${deform.stats.eased} eased · ${deform.stats.lawnFull} station(s) where the lawn reached its limit`)
 
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
@@ -2039,7 +2040,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // on any ped vertex no painted band owns, above); a deformed slab without this block predates the band deciding
     ...(deform ? { deform: { unowned: deformTally.unowned.size, unownedAt: [], byBand: deform.stats.byBand,
       // a memo that turned (groundDeformer.mjs V8_MAP_MAX_ENTRIES) recomputes, so byBand counts resolves there: said, never silent
-      ...(deform.stats.memoTurns ? { memoTurns: deform.stats.memoTurns, counts: 'resolves' } : {}) } } : {}),
+      ...(deform.stats.memoTurns ? { memoTurns: deform.stats.memoTurns, counts: 'resolves' } : {}),
+      // a seam point two owners both hold, whose heights differ: every one, exact, with its owners and spread (groundDeformer.mjs
+      // the both-sides read; the point takes their mean). Every point the deformer resolved, vertex or conformity sample
+      bothSides: deform.stats.byBothSides, splits: deform.splits() } } : {}),
     // the paint stack's rings narrower than the lattice's rounding, per group, whose role is Clipper's winding (flattenPaintStack);
     // read and printed by claims-the-ground-is-painted-once beside the residue it cannot sample; and the vertices the noding
     // inserted where two groups met without sharing one, per group pair (`nodeAcrossGroups`: a large count is a producer)

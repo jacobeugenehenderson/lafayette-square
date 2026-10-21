@@ -530,7 +530,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     return profile({ px: T0[0], pz: T0[1], d, H, R: L.R, i: L.i, u }, T0[0] + ux * d, T0[1] + uz * d) }
 
   /** D(x, z): the deformed raw height, or null where the deformer does not reach (the caller draws the terrain). */
-  const memo = new Map()
+  const memo = new Map(), splits = new Map()   // splits: a seam point whose owners differ, exact-keyed (never cleared with the memo)
   const heightAt = (x, z) => resolve(x, z).v
   /** who owns (x, z): `${tile}|${ring}|${span}` of the ② span whose band holds it (or, in the lot, the nearest span), or null */
   const ownerAt = (x, z) => resolve(x, z).owner
@@ -585,17 +585,21 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     // ⭐ THE RAY ALONG A BOUNDARY (Zob placed 81 of HPDM's 269; Boz ruled 2026-10-21): a vertex ON a partition line that runs
     // from its own station has its ray run exactly ALONG that line, and the 10 µm sidestep reads ONE side of it: on the lot's
     // side, no band, and the point went unowned. Only there, and only where nothing above held it, the ray is read on BOTH
-    // sides at ±LATTICE (the partition's own grid), and the point is held if either side's band holds it. ⛔ The band still
-    // decides: never the nearer line. A point any ray or leg held above is untouched. ⭐ EVERY holding read is taken, never the
-    // first: where they give different heights the point is counted (`bothSidesSplit`, the spread in `bothSidesMaxDH`) and
-    // takes their mean, as a leg crossing does above. The rule is provisional until HPDM's split is measured (Boz, 2026-10-21).
+    // sides, each a full LATTICE clear of the line at both of the ray's ends (`alongBoundary` measures how far the station
+    // and the point sit off it), and the point is held if either side's band holds it. ⛔ The band still decides: never the
+    // nearer line. A point any ray or leg held above is untouched. Each owner gives ONE value, the mean of its sides that hold.
+    // ⭐ A SEAM: where two owners both hold, the point is both streets' and takes their equal-weight mean, the rule a leg
+    // crossing takes above (Boz, 2026-10-21) — and where their heights differ it is LISTED, never silent: every such point,
+    // its owners and its spread (`splits`, written to ground.json by bake-ground.js).
     if (inBand(x, z)) {
       const H = []
-      for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) { if (!alongBoundary(c.px, c.pz, x, z)) continue
-        for (const side of [LATTICE, -LATTICE]) { const p = profile(c, x, z, side); if (p.held) H.push({ c, v: p.v }) } }
+      for (const c of owners(t, x, z, Math.min(CAP, REACH + LATTICE))) { const off = alongBoundary(c.px, c.pz, x, z); if (off == null) continue
+        const vs = [LATTICE + off, -LATTICE - off].map(side => profile(c, x, z, side)).filter(p => p.held).map(p => p.v)
+        if (vs.length) H.push({ owner: own(c), v: vs.reduce((a, v) => a + v, 0) / vs.length }) }
       if (H.length) { stats.byBothSides++; const vs = H.map(h => h.v), dh = Math.max(...vs) - Math.min(...vs)
-        if (dh > 0) { stats.bothSidesSplit++; stats.bothSidesMaxDH = Math.max(stats.bothSidesMaxDH, dh) }
-        return { v: vs.reduce((a, v) => a + v, 0) / vs.length, owner: [...new Set(H.map(h => own(h.c)))].sort().join('+') } }
+        if (dh > 0) { stats.bothSidesSplit++; stats.bothSidesMaxDH = Math.max(stats.bothSidesMaxDH, dh)
+          splits.set(unownedKey(x, z), { x, z, tile: t.ti, spread: dh, owners: H.map(h => ({ owner: h.owner, v: h.v })) }) }
+        return { v: vs.reduce((a, v) => a + v, 0) / vs.length, owner: [...new Set(H.map(h => h.owner))].sort().join('+') } }
       stats.unowned++; return { v: null, owner: null, unowned: t.ti } }
     return { v: profile(n, x, z).v, owner: own(n) }
   }
@@ -631,13 +635,16 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
     return { v: lineBlend(by, x, z), owner: `ink|${p.owners.map(o => o.id).join('+')}` }
   }
   // is (x, z) on a band piece's edge whose line passes within the lattice of the station (px, pz)? Then a ray from the
-  // station to the point runs along that edge (`resolveUncached`, the both-sides read)
+  // station to the point runs along that edge (`resolveUncached`, the both-sides read), and this is how far off that line
+  // the ray's two ends sit (the larger, over every such edge); null where no edge runs along it
   const alongBoundary = (px, pz, x, z) => {
     const segD = (a, b, qx, qz) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((qx - a[0]) * dx + (qz - a[1]) * dz) / L2)) : 0; return Math.hypot(qx - a[0] - u * dx, qz - a[1] - u * dz) }
     const lineD = (a, b, qx, qz) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); return L ? Math.abs((qx - a[0]) * dz - (qz - a[1]) * dx) / L : Infinity }
+    let off = null
     for (let gx = Math.floor((x - LATTICE) / CELL); gx <= Math.floor((x + LATTICE) / CELL); gx++) for (let gz = Math.floor((z - LATTICE) / CELL); gz <= Math.floor((z + LATTICE) / CELL); gz++)
-      for (const s of segGrid.get(gx * 1000003 + gz) || []) if (segD(s.a, s.b, x, z) <= LATTICE && lineD(s.a, s.b, px, pz) <= LATTICE) return true
-    return false }
+      for (const s of segGrid.get(gx * 1000003 + gz) || []) { const dp = segD(s.a, s.b, x, z), ds = lineD(s.a, s.b, px, pz)
+        if (dp <= LATTICE && ds <= LATTICE) off = Math.max(off ?? 0, dp, ds) }
+    return off }
   const nearKey = (n) => n.R.arc[n.i] != null ? `a${n.R.arc[n.i]}` : `r${n.R.stamp[n.i]}`
   const inBand = (x, z) => inClass('walk', x, z) || inClass('lawn', x, z) || inClass('curb', x, z)
   // THE PROFILE from one ② span `n` (its station, H, ring position) at (x, z): { v, held } — held = the point lies in
@@ -688,5 +695,5 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // over HALF the walk: the gate judges each half of the cross-section (front→middle, middle→back), so the drawing's
   // chord error is spent over a half-width, never the whole one
   const refineTol = walkMax > 0 && walkP10 ? (1 - WALK_SHARE) * walkMax * (walkP10 / 2) / exag : null
-  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, _owners, _inClass: inClass, _bandsAlong: bandsAlong, _memoSize: () => memo.size }
+  return { heightAt, stats, reach: CAP, explain, refineTol, walkP10, stationM: STATION_M, unownedIn, ownerAt, splits: () => [...splits.values()], _owners, _inClass: inClass, _bandsAlong: bandsAlong, _memoSize: () => memo.size }
 }
