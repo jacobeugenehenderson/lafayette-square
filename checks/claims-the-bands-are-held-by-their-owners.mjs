@@ -12,6 +12,15 @@
 //   5. DEPTHS — every owner carries its span's depths as struck (`offsetRingByRects`' rects) for the levels its class lies
 //      between, which Screed's band blend reads as is.
 //   4. SEAMS — at each seam's midpoint, a point just either side lies in a piece of that class owned by `a` and by `b`.
+//   6. THE PERPENDICULAR CORNER (Jacob, 2026-10-20) — the painter discloses each corner's own ground as built (`t.perp`: each
+//      leg's extension, each cut, a one-pad's hull), and this reads the owner OFF THE FROZEN TILE, never off the disclosure's
+//      label: a leg's key is its edge's run, `r<t>/<t>` with t = `iaStamp[si][i]`. Within each record (shrunk by two grid steps,
+//      so a neighbour that only meets its edge is not judged) on the painted band: a. every point is in a piece · b. every piece
+//      names that leg · c. where two legs' extensions cross, both legs · d. a hull piece names its corner's arc (`a<arc>/…`).
+//      Over every piece: e. an owner keyed by an arc (`a<arc>/…`) names only that arc's own edges (both ends in it, `iaArc` per
+//      vertex) · f. pieces naming one owner twice, REPORTED, not failed: an arc's half is keyed `a<arc>/<t>` and its owner IS
+//      its leg's run t (`ownerOf`), so ground a leg and its own arc's half share names that run twice (measured on HEAD before
+//      the perpendicular build too: HPDM 1,382 pieces; open for Boz, 2026-10-20).
 //   node checks/claims-the-bands-are-held-by-their-owners.mjs [--scene=<town> …] [--mutants] (or MUTANTS=1) · BANDS_ALL=1 lists every site with its position
 import clipperLib from 'clipper-lib'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
@@ -34,6 +43,40 @@ const CAP = process.env.BANDS_ALL ? Infinity : 4, ALL = !!process.env.BANDS_ALL
 const mid = (rs) => { const [a, b, c, d] = bbOf(rs); return `(${((a + c) / 2).toFixed(2)}, ${((b + d) / 2).toFixed(2)})` }
 const NEED = { curb: ['cw'], walk: ['walkFrom', 'walkTo'], lawn: ['cw', 'WB'] }   // the levels each class lies between
 
+// ⭐ the perpendicular clause (6), on the same output; `t.perp` is the painter's disclosure, the owners are read off the tile
+const shrink = (rings, steps = 2) => { const co = new clipperLib.ClipperOffset(2, 0.25), out = new clipperLib.Paths()
+  co.AddPaths(rings.filter(r => r?.length >= 3).map(C), clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon); co.Execute(out, -steps)
+  return out.map(p => p.map(q => [q.X / CLIP_SCALE, q.Y / CLIP_SCALE])) }
+const judgePerp = (T, R) => {
+  const J = { perpRecords: 0, perpUncovered: 0, perpWrongLeg: 0, perpCross: 0, perpCrossWrong: 0, perpHull: 0, perpHullWrong: 0, perpNoStamp: 0, arcKeyBad: 0, dupOwner: 0, at: [] }
+  const note = (s) => { if (J.at.length < CAP) J.at.push(s) }
+  for (const t of T) {
+    const st = R.protoShapeTiles[t.tile], recs = t.perp || []
+    const byCls = (cls) => t.pieces.filter(q => q.cls === cls).map(q => ({ q, b: bbOf(q.rings) }))
+    const P = { walk: byCls('walk'), lawn: byCls('lawn') }
+    const hitting = (cls, region) => { const b = bbOf(region); return (P[cls] || []).filter(x => meet(x.b, b) && area(op(ClipType.ctIntersection, x.q.rings, region)) > 0).map(x => x.q) }
+    const legKey = (x) => { const tt = st.iaStamp?.[x.si]?.[x.i]; return tt == null ? null : `r${tt}/${tt}` }
+    const legs = new Map()   // corner → its ext records (walk), for the crossing
+    for (const x of recs) { J.perpRecords++
+      const reg = op(ClipType.ctIntersection, shrink(x.rings), t.painted[x.cls] || []); if (!reg.length) continue
+      const got = op(ClipType.ctDifference, reg, t.pieces.filter(q => q.cls === x.cls).flatMap(q => q.rings)), u = area(got)
+      if (u > 0) { J.perpUncovered += u; note(`tile ${t.tile} ${x.cls} ${x.kind} at ${mid(reg)}: ${u.toFixed(6)} m² in no piece`) }
+      if (x.kind === 'hull') { J.perpHull++; const arc = String(x.corner).split('|')[1]
+        for (const q of hitting(x.cls, reg)) if (!q.owners.some(o => String(o.span).startsWith(`a${arc}/`))) { J.perpHullWrong++; note(`tile ${t.tile} hull at ${mid(reg)}: a piece owned by ${q.owners.map(o => o.span).join('+')}, not arc ${arc}`) }
+        continue }
+      const k = legKey(x); if (k == null) { J.perpNoStamp++; continue }
+      for (const q of hitting(x.cls, reg)) if (!q.owners.some(o => o.span === k)) { J.perpWrongLeg++; note(`tile ${t.tile} ${x.cls} ${x.kind} of leg ${k} at ${mid(reg)}: a piece owned by ${q.owners.map(o => o.span).join('+')}`) }
+      if (x.kind === 'ext' && x.cls === 'walk') (legs.get(x.corner) || legs.set(x.corner, []).get(x.corner)).push({ x, k, reg }) }
+    for (const [, ls] of legs) for (let a = 0; a < ls.length; a++) for (let b = a + 1; b < ls.length; b++) {
+      const X = op(ClipType.ctIntersection, ls[a].reg, ls[b].reg); if (!(area(X) > 0)) continue; J.perpCross++
+      for (const q of hitting('walk', X)) if (!(q.owners.some(o => o.span === ls[a].k) && q.owners.some(o => o.span === ls[b].k))) { J.perpCrossWrong++; note(`tile ${t.tile} crossing at ${mid(X)}: a piece owned by ${q.owners.map(o => o.span).join('+')}, not both ${ls[a].k} and ${ls[b].k}`) } }
+    for (const q of t.pieces) { const ks = q.owners.map(key); if (new Set(ks).size < ks.length) J.dupOwner++
+      for (const o of q.owners) { const m = String(o.span).match(/^a(\d+)\//); if (!m) continue
+        for (const e of o.edges || []) { const A = st.iaArc?.[e.si] || [], n = A.length
+          if (!(A[e.e] === +m[1] && A[(e.e + 1) % n] === +m[1])) { J.arcKeyBad++; note(`tile ${t.tile} ${q.cls} owner ${o.span}: edge ${e.si}:${e.e} is not an edge of arc ${m[1]} (iaArc ${A[e.e]} → ${A[(e.e + 1) % n]})`); break } } } }
+  }
+  return J
+}
 const judge = (T, R, scene, say) => {
   let n = 0, multi = 0, multiM2 = 0, noDepth = 0, noEdgeDepth = 0, uncovered = 0, beyond = 0, overlap = 0, wrongOwner = 0, notOnRing = 0, noOwner = 0, seamN = 0, seamWrong = 0, seamUnread = 0
   const unAt = [], ovAt = [], woAt = [], swAt = [], ndAt = [], neAt = []
@@ -71,7 +114,8 @@ const judge = (T, R, scene, say) => {
       if ([...want].some(k => !got.has(k))) { seamWrong++; if (swAt.length < CAP) swAt.push(`tile ${t.tile} ${sm.cls} at (${m.map(v => v.toFixed(2))}): seam names ${sm.a} | ${sm.b}, the pieces either side are ${[...got].join(' | ')}`) } }
   }
   const list = (a) => !a.length ? '' : ALL ? `\n      ${a.join('\n      ')}\n  ` : ` (${a.join(' · ')})`
-  const ok = !uncovered && !beyond && !overlap && !wrongOwner && !noOwner && !seamWrong && !noDepth && !noEdgeDepth
+  const Jp = judgePerp(T, R)
+  const ok = !uncovered && !beyond && !overlap && !wrongOwner && !noOwner && !seamWrong && !noDepth && !noEdgeDepth && !Jp.perpUncovered && !Jp.perpWrongLeg && !Jp.perpCrossWrong && !Jp.perpHullWrong && !Jp.perpNoStamp && !Jp.arcKeyBad
   say(`${ok ? '✅' : '⛔'} ${scene}: ${T.length} tile(s) · ${n} band piece(s)`)
   say(`   1 cover (exact): painted in no piece ${uncovered.toFixed(6)} m² · piece not painted ${beyond.toFixed(6)} m²${list(unAt)}`)
   say(`   2 disjoint: overlap ${overlap.toFixed(6)} m²${list(ovAt)}`)
@@ -79,7 +123,8 @@ const judge = (T, R, scene, say) => {
   say(`   4 seams: ${seamN} read · naming an owner the pieces either side are not ${seamWrong}${list(swAt)} · a side in no piece of the class ${seamUnread} (reported, not failed)`)
   say(`   5 depths: owners missing a depth their class needs (curb: cw · walk: walkFrom, walkTo · lawn: cw, WB) ${noDepth}${list(ndAt)}`)
   say(`   5b depths via the tile's edgeDepths (owner.edges → tile.edgeDepths[si][e]): owners with no edge carrying them ${noEdgeDepth}${list(neAt)}`)
-  return { ok, uncovered, beyond, overlap, wrongOwner, noOwner, seamWrong, noDepth, noEdgeDepth }
+  say(`   6 perpendicular (${Jp.perpRecords} record(s) · ${Jp.perpCross} crossing(s) · ${Jp.perpHull} hull(s)): a in no piece ${Jp.perpUncovered.toFixed(6)} m² · b a piece not naming its leg ${Jp.perpWrongLeg} · c a crossing not both legs' ${Jp.perpCrossWrong} · d a hull not its arc's ${Jp.perpHullWrong} · a leg edge with no stamp run ${Jp.perpNoStamp} · e an arc key on an edge not that arc's ${Jp.arcKeyBad} · f one owner named twice ${Jp.dupOwner} (reported, not failed)${list(Jp.at)}`)
+  return { ok, uncovered, beyond, overlap, wrongOwner, noOwner, seamWrong, noDepth, noEdgeDepth, ...Jp }
 }
 let bad = 0, towns = 0
 for (const scene of feedScenes()) {
@@ -111,6 +156,13 @@ for (const scene of feedScenes()) {
   // ⭐ MUTANTS (--mutants): each breaks ONE claim on this same output, and that claim must go RED — a check never seen to fail
   // proves nothing
   if (process.argv.includes('--mutants') || process.env.MUTANTS) {
+    // per corner: its legs' walk extensions (key off the frozen stamp, region on the painted walk) and its hulls
+    const perpEach = (X, f) => { for (const t of X) { const st = R.protoShapeTiles[t.tile], by = new Map()
+      for (const x of t.perp || []) { if (x.cls !== 'walk') continue; const g = by.get(x.corner) || by.set(x.corner, { legs: [], hulls: [] }).get(x.corner)
+        const reg = op(ClipType.ctIntersection, shrink(x.rings), t.painted.walk || []); if (!reg.length) continue
+        if (x.kind === 'hull') g.hulls.push(reg); else if (x.kind === 'ext') { const tt = st.iaStamp?.[x.si]?.[x.i]; if (tt != null) g.legs.push({ k: `r${tt}/${tt}`, reg }) } }
+      for (const [ck, g] of by) f(t, st, g.legs, String(ck).split('|')[1], g.hulls) } }
+    const inRec = (t, L) => t.pieces.filter(q => q.cls === 'walk' && area(op(ClipType.ctIntersection, q.rings, L.reg)) > 0)
     const clone = () => T.map(t => ({ ...t, pieces: t.pieces.map(q => ({ ...q, owners: q.owners.map(o => ({ ...o })) })), seams: t.seams.map(q => ({ ...q })) }))
     const M = {
       'drop a piece (→ 1 cover)': (X) => { for (const t of X) if (t.pieces.length > 1) { let k = 0; t.pieces.forEach((q, i) => { if (area(q.rings) > area(t.pieces[k].rings)) k = i }); t.pieces.splice(k, 1) } return 'uncovered' },
@@ -119,8 +171,32 @@ for (const scene of feedScenes()) {
       'the tile loses its edgeDepths (→ 5b)': (X) => { for (const t of X) t.edgeDepths = null; return 'noEdgeDepth' },
       'an owner loses its depths (→ 5 depths)': (X) => { for (const t of X) for (const q of t.pieces) for (const o of q.owners) o.depths = null; return 'noDepth' },
       'seam names another owner (→ 4 seams)': (X) => { for (const t of X) for (const sm of t.seams) if (sm.a && sm.b && sm.a !== sm.b) sm.a = sm.b + '#'; return 'seamWrong' },
+      // the perpendicular corner (6): each mimics one wrong producer on this same output
+      'P1 the legs swapped (→ 6b)': (X) => { perpEach(X, (t, st, legs) => { if (legs.length < 2) return; const [A, B] = legs
+        for (const q of inRec(t, A)) for (const o of q.owners) if (o.span === A.k) o.span = B.k
+        for (const q of inRec(t, B)) for (const o of q.owners) if (o.span === B.k) o.span = A.k }); return 'perpWrongLeg' },
+      'P2 the crossing given to the arc (→ 6c)': (X) => { perpEach(X, (t, st, legs, arc) => { if (legs.length < 2) return
+        const Xr = op(ClipType.ctIntersection, legs[0].reg, legs[1].reg); if (!(area(Xr) > 0)) return
+        for (const q of t.pieces) if (q.cls === 'walk' && area(op(ClipType.ctIntersection, q.rings, Xr)) > 0) q.owners = [{ ...q.owners[0], span: `a${arc}/0` }] }); return 'perpCrossWrong' },
+      'P3 the hull given to a leg (→ 6d)': (X) => { perpEach(X, (t, st, legs, arc, hulls) => { if (!legs.length) return
+        for (const h of hulls) for (const q of t.pieces) if (q.cls === 'walk' && area(op(ClipType.ctIntersection, q.rings, h)) > 0) q.owners = [{ ...q.owners[0], span: legs[0].k }] }); return 'perpHullWrong' },
+      "P4 a leg's span dropped, its ground refused (→ 6a)": (X) => { perpEach(X, (t, st, legs) => { if (!legs.length) return; const kill = new Set(inRec(t, legs[0]))
+        t.pieces = t.pieces.filter(q => !kill.has(q)) }); return 'perpUncovered' },
+      'P5 overlap ground given to one owner only (→ 6b)': (X) => { perpEach(X, (t, st, legs) => { for (const L of legs) for (const q of inRec(t, L))
+        if (q.owners.length > 1) q.owners = q.owners.filter(o => o.span !== L.k) }); return 'perpWrongLeg' },
+      "P6 an after leg read as its own arc, through spanOfSrc (→ 6b)": (X) => { perpEach(X, (t, st, legs, arc) => { for (const L of legs) for (const q of inRec(t, L))
+        for (const o of q.owners) if (o.span === L.k) o.span = `a${arc}/${L.k.split('/')[1]}` }); return 'perpWrongLeg' },
+      'P7 a cell edge starting on an arc keyed by the arc again (→ 6e)': (X) => { for (const t of X) { const st = R.protoShapeTiles[t.tile]
+        for (const q of t.pieces) for (const o of q.owners) { if (!/^r/.test(String(o.span))) continue
+          const e = (o.edges || []).find(e => { const A = st.iaArc?.[e.si] || []; return A[e.e] != null && A[(e.e + 1) % A.length] !== A[e.e] })
+          if (e) o.span = `a${st.iaArc[e.si][e.e]}/${String(o.span).split('/')[1]}` } } return 'arcKeyBad' },
     }
-    for (const [name, f] of Object.entries(M)) { const X = clone(), claim = f(X), r = judge(X, R, scene, () => {})
+    const nPerp = T.reduce((n, t) => n + (t.perp || []).length, 0), nHull = T.reduce((n, t) => n + (t.perp || []).filter(x => x.kind === 'hull').length, 0)
+    for (const [name, f] of Object.entries(M)) {
+      // a corner mutant needs a corner: on a town that builds none it cannot be seen to fail, so it is NAMED as not run
+      if (/^P[1-6] /.test(name) && !nPerp) { console.log(`   mutant · ${name}: ⚠️ NOT RUN — ${scene} builds no perpendicular corner (its norm, or its frozen ribbons' norm), so this town cannot show it RED`); continue }
+      if (/^P3 /.test(name) && !nHull) { console.log(`   mutant · ${name}: ⚠️ NOT RUN — ${scene} has no one-pad corner, so no hull to give away`); continue }
+      const X = clone(), claim = f(X), r = judge(X, R, scene, () => {})
       const red = r[claim] > 0; if (!red) bad++; console.log(`   mutant · ${name}: ${red ? 'RED, as it must be' : '⛔ still GREEN — the claim cannot see it'} (${claim} ${typeof r[claim] === 'number' ? +r[claim].toFixed(6) : r[claim]})`) }
   }
 }
