@@ -35,6 +35,14 @@ building_sqft / units. Interim tonight (Boz, reversible, no visible change): str
 and rank stay; they still embed the withheld fields in aggregate, in roster.json and in every served listing's
 `prominence_rank` (Zob: nothing downstream reads `signals`, so the strip breaks nothing). Yours: (a) drop withheld fields
 from prominence upstream (ranks move) or (c) rule a percentile isn't redistribution.
+⚠️ HISTORIC DISTRICT NAMES ARE MIS-ASSIGNED, a kit class, LIVE ON HPDM (Zob, measured): fetch-parcels reduces the City's
+district CODES to booleans, so with one declared district every flagged parcel takes its name. HPDM: 81 buildings
+(Wydown, Woodbourne, Buena Vista, Fauquier, Skinker …, no declared street, no NR match) are named "Hi-Pointe–DeMun
+Historic District", likely other districts. LS's declaration (Plumb, 9477fdd8, correct in itself) is HELD: it would
+name ≤ 80 at-risk LS buildings the same way. The fix: carry the code (fetch-parcels → sources.js codes → districtOf by
+code; a foreign code gets no name) + a City parcels re-fetch for LS and HPDM + the City's code→name table (source not
+established). Your call for Thursday: (i) leave HPDM's 81 as served, (ii) interim: a flag with no code match names no
+district (HPDM's 81 lose the wrong name; LS stays unnamed), or (iii) the full fix first.
 The National Register as a replacement source (Zob, measured): HPDM's nr-inventory keeps a "Built" year on 253 of 1,446
 after the withholding (OCR'd, accuracy not measured). LS's "NPS" data is mostly INFERRED from the assessor year
 (nps_style_inferred on 741; 32 buildings actually named with pages); the nomination spreadsheets give ≤ 80 plausible
