@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 436,
   "counts": {
-    "safe": 316,
+    "safe": 314,
     "local-effect": 29,
-    "live": 91
+    "live": 93
   },
   "checks": [
     {
@@ -183,7 +183,7 @@
         "mkdirSync",
         "deletes files",
         "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
-        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync",
+        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
       ]
     },
@@ -1663,7 +1663,7 @@
       "tier": "local-effect",
       "why": [
         "writeFileSync",
-        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -2476,11 +2476,11 @@
     },
     {
       "file": "checks/claims-the-ground-height-is-a-function-of-the-point.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
-        "computed import of cartograph/groundDeformer.mjs — read, safe"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2522,10 +2522,13 @@
     },
     {
       "file": "checks/claims-the-height-code-owns-what-is-drawn.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "writeFileSync — only under its own temp dir",
-        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe"
+        "writeFileSync",
+        "deletes files",
+        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
+        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -2666,7 +2669,7 @@
       "tier": "local-effect",
       "why": [
         "re-runs its own file (process.execPath + its own path) — the same tier as itself",
-        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -2782,7 +2785,7 @@
       "file": "checks/claims-the-road-lies-on-the-lattice.mjs",
       "tier": "local-effect",
       "why": [
-        "imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
