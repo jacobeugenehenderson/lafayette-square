@@ -5817,11 +5817,19 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutCorners = [], cornerArcs = []
   const rest = mkAcc(), bandByTile = []
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
+  // ⭐ THE RIM IS CUT ONCE: A STAMPED TILE IS NOT CLIPPED AGAIN (BRIEF-the-rim-is-cut-once follow-on, Boz 2026-10-21). The pour
+  // stamps every tile with the disc and its paint is cut to the block inside it, so clipping that paint to the same stencil
+  // here was a SECOND cut at the rim, minting a fresh crossing per class (HPDM's rim set: 16 unowned without it, 30 with).
+  // A tile is clipped only where its own ring reaches past the stencil (an exact difference): a pour with no boundary keeps
+  // its clip, and the bake and Survey, which both run this, paint alike. ▶ node checks/claims-the-rim-is-cut-once.mjs
+  const hasStencil = !!(stencil && stencil.length >= 3)
+  const clip = (rings) => hasStencil && rings.length ? intersectRings(rings, [stencil]) : rings
+  const pastStencil = (st) => hasStencil && st?.ring?.length >= 3 && differenceRings([st.ring], [stencil]).length > 0
   for (let i = 0; i < shapeTiles.length; i++) {
-    const b = tileGeo(shapeTiles[i], i)
+    const b = tileGeo(shapeTiles[i], i), cl = pastStencil(shapeTiles[i]) ? clip : (r) => r
     const acc = (sel && selectedTileSet.has(i)) ? sel : rest
-    for (const f of Object.keys(PAINTED)) acc[f].push(...(b[f] || []))
-    acc.block.push(...b.block)
+    for (const f of Object.keys(PAINTED)) acc[f].push(...cl(b[f] || []))
+    acc.block.push(...cl(b.block))
     for (const rr of (b.curbCutRecs || [])) curbCutRecs.push({ tile: i, ...rr })
     for (const c of (b.curbCutContradicted || [])) curbCutContradicted.push({ tile: i, ...c })
     for (const c of (b.curbCutCorners || [])) curbCutCorners.push({ tile: i, ...c })
@@ -5830,21 +5838,21 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       if (k === 'bySource') { const o = (curbCutTally.bySource ||= {}); for (const [s2, m] of Object.entries(v)) o[s2] = (o[s2] || 0) + m }
       else curbCutTally[k] = (curbCutTally[k] || 0) + v
     }
-    for (const f of Object.keys(PAINTED_BY_LU)) for (const k in b[f]) (acc[f][k] || (acc[f][k] = [])).push(...b[f][k])
-    if (b.bandPieces) bandByTile.push({ tile: i, pieces: b.bandPieces, seams: b.bandSeams, census: b.bandCensus, edgeDepths: b.bandEdgeDepths, perp: b.bandPerp || [], painted: { curb: b.C || [], walk: b.W || [], lawn: Object.values(b.tlByLu || {}).flat() } })
+    for (const f of Object.keys(PAINTED_BY_LU)) for (const k in b[f]) (acc[f][k] || (acc[f][k] = [])).push(...cl(b[f][k]))
+    if (b.bandPieces) bandByTile.push({ tile: i, clipped: cl === clip, pieces: b.bandPieces, seams: b.bandSeams, census: b.bandCensus, edgeDepths: b.bandEdgeDepths, perp: b.bandPerp || [], painted: { curb: b.C || [], walk: b.W || [], lawn: Object.values(b.tlByLu || {}).flat() } })
   }
-  const clip = (rings) => (stencil && stencil.length >= 3) ? intersectRings(rings, [stencil]) : rings
   const finish = (acc) => {
     const out = {}
-    for (const [f, name] of Object.entries(PAINTED)) out[name] = clip(unionRings(acc[f]))
-    for (const [f, name] of Object.entries(PAINTED_BY_LU)) { out[name] = {}; for (const k of Object.keys(acc[f])) out[name][k] = clip(unionRings(acc[f][k])) }
-    out.block = clip(acc.block)
+    for (const [f, name] of Object.entries(PAINTED)) out[name] = unionRings(acc[f])
+    for (const [f, name] of Object.entries(PAINTED_BY_LU)) { out[name] = {}; for (const k of Object.keys(acc[f])) out[name][k] = unionRings(acc[f][k]) }
+    out.block = acc.block
     return out
   }
   const out = finish(rest)
-  // the band pieces, clipped to the stencil exactly as the painted bands are (`finish`)
-  if (pieces) out.bandPieces = bandByTile.map(t => ({ ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, clip(v)])), pieces: t.pieces.map(q => ({ ...q, rings: clip(q.rings) })).filter(q => q.rings.length),
-    seams: t.seams.map(q => ({ ...q, line: (stencil && stencil.length >= 3) ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) }))
+  // the band pieces, clipped to the stencil exactly where the painted bands are (a tile whose ring reaches past it)
+  if (pieces) out.bandPieces = bandByTile.map(({ clipped, ...t }) => { const cl = clipped ? clip : (r) => r
+    return { ...t, painted: Object.fromEntries(Object.entries(t.painted).map(([k, v]) => [k, cl(v)])), pieces: t.pieces.map(q => ({ ...q, rings: cl(q.rings) })).filter(q => q.rings.length),
+      seams: t.seams.map(q => ({ ...q, line: clipped ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) } })
   out.selected = sel ? finish(sel) : null
   out.curbCutRecs = curbCutRecs; out.curbCutTally = curbCutTally; out.curbCutContradicted = curbCutContradicted
   out.curbCutCorners = curbCutCorners   // every junction corner, authorable in Section
