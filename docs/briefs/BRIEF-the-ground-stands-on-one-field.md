@@ -33,6 +33,13 @@ height steps at owner seams under ownership-once. A field is a function of (x, z
    halves it; WebGL float/norm16 filtering is a phone question, not established). The "ffffff/000000" normalisation is a
    manifest scale + offset if the encoding changes.
 
+## 1b. Zob's corrections and Boz's calls (2026-10-21)
+- The field path's normal must compose field gradient × uExag + the mesh's own y gradient, so the kerb's slopes and riser keep shading.
+- SlabRevetment rides the field with the ground. The codemap row one-owner-per-piece retires. "89%" is HPDM's figure.
+- Float filtering (OES_texture_float_linear) is guarded: a check or a manual bilinear.
+- DELETE lineHeight.mjs + claims-the-line-is-continuous (name the last commit carrying them, for (B)). DROP `pieces: true` in the
+  bake until the paint one-cut is built.
+
 ## 2. Gates (measured, LS then HPDM)
 Triangles and ground time against the served slabs (LS 174,752 · HPDM 504,599) · no seam steps (Zob's steps probe) · the kerb
 still stands and drops (kerb checks) · the walk's cross-slope measured on the bands (the backlog item below starts from it) ·
