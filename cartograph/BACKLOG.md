@@ -87,7 +87,9 @@ same; frames ~5–10% fewer (within noise); the crop ring is not visible. Trees 
 over road 30,384 → 36,563 m² (+20%, mostly pre-existing census trees); 13 new derived trees on park footways (filed: does
 the forbidden map cover footways?).
 ✅ Jacob's eye on the before/after (2026-10-21): "Image looks great. Confirmed those are NEON rooftops, expected, correct."
-Next: staging publish (needs Jacob's go) → his look on his own screen → the press. Integration HEAD
+✅ Jacob's GO for staging (2026-10-21): "yes, go ahead". Preview happens on STAGING, never via local branch switches. Both Ward
+changes are merged onto theward main by Jacob (382f1bd, local). Next: the production backup → staging publish (the HPDM
+slab from zob-hpdm926 + the Ward build at 382f1bd) → the rose's owed checks against staging → Jacob's look → the press. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
 (+ checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs). FILED, after Thursday: (i) source a St. Louis CITY land-use
 code table (the surviving ranges are unverified; the 4xxx–5xxx look SIC-like, a lead) · (ii) ONE City code reader shared by
