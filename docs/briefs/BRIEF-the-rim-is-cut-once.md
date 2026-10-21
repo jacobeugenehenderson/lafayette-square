@@ -7,7 +7,7 @@ written: 2026-10-21
 evict-when: HPDM's rim residue (B1 + B2) and LS's asphalt needle are gone at the source, the mutants below each go RED, the build is merged to integration; then this moves to cartograph/_archive/ dated.
 -->
 
-**Agent: WARM → Mitre.** **Report to Boz.** **Instruction: confirm-then-build.** Premises are Zob's and Mitre's
+**Premise pass: Zob, on db33055c; corrections folded in.** **Agent: WARM → Mitre.** **Report to Boz.** **Instruction: confirm-then-build.** Premises are Zob's and Mitre's
 measurements (2026-10-21 night); check each against the code and say what you found. If the code contradicts this
 brief, stop and flag Boz.
 
@@ -22,23 +22,32 @@ Two mechanisms, both lattice rounding meeting the disc (Zob, measured; scripts i
   ~199 m. Rounding that vertex to the lattice tilts the lawn's copy 0.416 mm. The oblique block cut (`inBlock` =
   `intersectRings(rings, st.iA)`) then crosses the two copies 0.6 mm apart, which rounding takes to a 1.41 mm pair.
   Inside the disc the copies stay within the flatten noding's √2/2 bound. Only the oblique cut magnifies them past it.
-- **(B) the drawn rim sits up to √2/2 step off the stencil** (most of HPDM's B1: 341 points 0–2 m inside the disc; Huron
-  15; LS 3). A one-sided offset (0.46 mm across the rim) that the deformer's ray, meeting the rim 65° off its normal, reads
-  as a ~1.1 mm lot slice, so `bandsAlong` returns before the band (`sawBand` starts true when the ray starts 'beyond').
+- **(B) a rounded crossing ON the rim chord, not shared with the stencil the deformer reads** (HPDM's B1: 341 points 0–2 m
+  inside the disc; Huron 15; LS 3; the split between B1's kinds is measured on one point of each only). All 256 vertices of
+  `MP.boundaryRing` are on the lattice, so the painted rim runs exactly along the chord, EXCEPT at crossings minted on it
+  (band lines × iA's rim edge in `inBlock`; iaFull × disc in `cut(t.iA)`), each rounded up to √2/2 step off the chord
+  (Zob, measured). The deformer's 'beyond' test reads the exact chord (`stencil.clipPolygon`), so between the chord and a
+  paint edge tilted toward a rounded crossing lies a thin lot wedge; its ray, 65° off the normal (station (1354.904,
+  308.036), direction (−0.60868, 0.79341)), reads ~1.1 mm of lot and `bandsAlong` returns before the band.
 - **(C) related, separate site:** LS's asphalt needle (Plumb): the disc stamp in the sectionOpen finish (`cut`/`cutOwned`
   → `intersectRings(…, [MP.boundaryRing])`) mints a crossing 0.166 mm off the rim chord that the tile ring doesn't share.
 
 ## 1. The fix, at the source (⛔ never a deformer tolerance, never a wider window)
 
-1. **(A): cut the band OPERANDS by the disc BEFORE the band differences** (pedOuter, luIn0, env, envX, curbOuter …), so
-   no crossing past the rim ever exists on any copy of a shared line. ⛔ Adding a disc cut to each operand at the end
-   does NOT close it (Zob). Alternatively, if (1) is wider than it looks: share ONE rim crossing per line across classes.
-   Say which you build and why.
-2. **(B): make the drawn rim the stencil.** The rim edge of every painted piece lies ON the stencil's own lattice
-   vertices (the same ring the deformer's 'beyond' test reads), so a ray leaving 'beyond' enters paint with no lot
-   between. Find where the drawn rim and `stencil.clipPolygon` / `MP.boundaryRing` diverge, and make it one ring.
-3. **(C): the disc stamp's crossing is shared with the tile ring** (the block and the road strip `ring − iA` meet the rim
-   at the same vertex), so no sub-lattice needle is left in `A`.
+**Boz's call (overnight, under ruled doctrine; flagged to Jacob): (A) + (B via route ii) + (C via route i on the ring).**
+1. **(A): move `inBlock` (∩ `st.iA`, never the disc) onto each PAINT operand before the band differences**, at its
+   producer sites: (1) `insDL`'s return (pedOuter, luIn0, LV_wf/LV_wt → W) · (2) `ins` · (3) `curbOuter` · (4) `legExt`
+   (walkX, envX0, walkCut) · (5) perpPieces / ramps / R.masks / roadBand. Leave the labelled level rings (LV_*) that
+   bandPiecesOfTile's cells read uncut: the pieces cut the painted band, so they follow the paint (Mitre; confirm).
+   ⛔ Never cut `parts` (iaFull) by the disc before the offsets: that bends the bands around the rim, which the design
+   forbids. ⛔ A disc cut added at the END doesn't close it, and a wider snap across classes is a tolerance.
+   Measure whether two independently offset copies still arrive with different crossings at the rim; say so if any remain.
+2. **(B), route (ii): the deformer's 'beyond' test reads the DRAWN block's rim** (the cut iA, which carries the rounded
+   crossings), not `stencil.clipPolygon`. "The rim is an edge of the drawing" (`ORIENTATION`, the compound shape): the
+   drawing decides. ⛔ A lattice point can't lie on a general chord, so "snap the paint onto the stencil" isn't buildable.
+   If (ii) touches the fade, the ink clip or membership, stop and say which.
+3. **(C), route (i) on the ring: the disc stamp inserts iA's rim crossings into the cut tile ring** (the exact vertices
+   `cut(t.iA)` minted, matched exactly, never within a tolerance), so `ring − iA` leaves no needle.
 
 ## 2. Mutants, each must go RED
 
@@ -48,8 +57,8 @@ shared with the tile ring → a sub-lattice needle in `A` (LS's class). Name the
 
 ## 3. Gates
 
-Light first, on your producer dumps / an in-memory tile run: HPDM tile 242's 1.41 mm pair gone; B1's ray at
-(1352.96, 310.57) reads walk, not lot; LS's tile-133 needle gone. Then the unowned count per town with the deformer
+Light first, on your producer dumps / an in-memory tile run: HPDM tile 242's 1.41 mm pair gone; B1's point (1352.96, 310.57),
+read along Mitre's ray (station (1354.904, 308.036), direction (−0.60868, 0.79341)), reads walk, not lot; LS's tile-133 needle gone. Then the unowned count per town with the deformer
 alone (target: HPDM's 599 → its non-rim remainder; name what's left by class). Then report and stop. The batch bake is
 Boz's, after Jacob's go.
 
