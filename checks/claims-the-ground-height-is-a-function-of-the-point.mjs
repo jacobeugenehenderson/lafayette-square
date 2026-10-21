@@ -54,7 +54,7 @@ const mutant = (key, to) => { const src = readFileSync(HOME, 'utf8')
   writeFileSync(f, src.replace(key, to).replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
   return pathToFileURL(f).href }
 if (self) {
-  const M = [['the 1 mm lattice key answers by sampling order', mutant('const mk = `${x},${z}`', `const mk = \`\${Math.round(x * ${CLIP_SCALE})},\${Math.round(z * ${CLIP_SCALE})}\``), (R) => R[0][1] && (!R[1][1] || !R[2][1])],
+  const M = [['the 1 mm lattice key answers by sampling order', mutant('const mk = unownedKey(x, z)', `const mk = \`\${Math.round(x * ${CLIP_SCALE})},\${Math.round(z * ${CLIP_SCALE})}\``), (R) => R[0][1] && (!R[1][1] || !R[2][1])],
     ['a turn that does not clear lets the memo grow past its cap', mutant('memo.clear(); stats.memoTurns++', 'stats.memoTurns++'), (R) => R[3][1] && !R[5][1]]]
   let all = true
   for (const [what, url, red] of M) { const R = await rows(url), caught = red(R); all &&= caught

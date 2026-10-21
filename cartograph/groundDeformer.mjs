@@ -48,6 +48,10 @@ const WALK_SHARE = 0.5   // derived, not free (Boz, 2026-10-11): the profile's t
 // bake-ground writes `memoTurns` into ground.json's deform block. `memoCap` exists for the turn test.
 // ▶ checks/claims-the-ground-height-is-a-function-of-the-point.mjs
 export const V8_MAP_MAX_ENTRIES = 2 ** 24
+// ⭐ THE KEY OF A POINT IS ITS EXACT POSITION — the memo's own key, and the one the bake records an unowned ped vertex at
+// (Zob, 2026-10-21: keyed at 1 cm, HPDM's 1,234 could not be re-resolved, and the count merged vertices 1 cm apart).
+// ▶ checks/claims-the-height-code-owns-what-is-drawn.mjs · checks/claims-the-ground-height-is-a-function-of-the-point.mjs
+export const unownedKey = (x, z) => `${x},${z}`
 
 export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, line, limits, legs = [], rims = [], memoCap = V8_MAP_MAX_ENTRIES }) {
   if (!Number.isInteger(memoCap) || memoCap < 1 || memoCap > V8_MAP_MAX_ENTRIES) throw new Error(`groundDeformer: the memo cap must be 1…${V8_MAP_MAX_ENTRIES} answers (V8's Map cap), got ${memoCap}`)
@@ -536,7 +540,7 @@ export function buildDeformer({ town, tiles, ink, bands, stencil = null, raw, li
   // answer for every later one, and the bake's heights, owners and unowned verdicts followed the order it sampled in
   // (measured on Huron 2026-10-12: forward vs reversed, 13,789 heights by up to 0.62 m raw). ▶ checks/claims-the-ground-height-is-a-function-of-the-point.mjs
   function resolve(x, z) {
-    const mk = `${x},${z}`
+    const mk = unownedKey(x, z)
     if (memo.has(mk)) return memo.get(mk)
     const v = resolveUncached(x, z)
     if (memo.size >= memoCap) { memo.clear(); stats.memoTurns++

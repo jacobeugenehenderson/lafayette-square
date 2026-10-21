@@ -47,7 +47,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
 import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges, kerbCells, splitAtCreases, withSide, polyTreeToItems } from './kerbLift.mjs'
 import { lineHeights } from './lineHeight.mjs'
-import { buildDeformer } from './groundDeformer.mjs'
+import { buildDeformer, unownedKey } from './groundDeformer.mjs'   // an unowned ped vertex is recorded at its exact position, the memo's own key
 import { resolveWalkNorm, resolveLawnNorm } from './curb-cut-norm.mjs'
 import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { curbedMinWidthOf } from './curbedMinWidthOf.mjs'
@@ -1112,11 +1112,6 @@ function toPolys(items) {
  * - not current and no coast → nothing owed.
  * @returns {{ paint: object|null, state: 'pending'|null, why: string|null }}
  */
-// ⭐ AN UNOWNED PED VERTEX IS RECORDED AT ITS EXACT POSITION, as the deformer's memo keys it (Zob, 2026-10-21): keyed at 1 cm,
-// HPDM's 1,234 could not be re-resolved (all 15 logged points came back OWNED at their rounded coordinates), and the count
-// merged vertices 1 cm apart. The count is distinct exact positions; the full list is written beside the slab.
-// ▶ checks/claims-the-height-code-owns-what-is-drawn.mjs
-export const unownedKey = (x, z) => `${x},${z}`
 
 export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePending = false }) {
   const why = !doc ? 'is absent'
