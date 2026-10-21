@@ -76,7 +76,10 @@ it. RULED (refined, Truss): only bare 5000 and 4000–4999 → underived (HPDM 5
 its OSM park relation is absent from the fetch (an intake item). BAKE PATH (Zob, measured by hash): production's own kit
 926ac3a4 + the backup's clean/ reproduce production's ground input exactly, so the candidate is 926ac3a4 + ONLY the fix:
 a re-pour + bake (~15 min) in a throwaway worktree to scratch, with a control pour first (the County parcels file was
-re-fetched 10-12 with no backup, so not bit-exact there). Being run (Zob); Ward probes the result. Integration HEAD
+re-fetched 10-12 with no backup, so not bit-exact there). MEASURED so far (Zob): the control pour is byte-identical to
+production except the County re-fetch (~0.5 ha moved); the patched pour takes parcel:commercial 440.9 → 26.0 ha, and Forest
+Park → underived; side effect cdl:agricultural 0 → 7 rings (0.54 ha), outside the disc, the fade band being checked. Bake
+chain running; Ward probes the result. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
 (+ checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs). FILED, after Thursday: (i) source a St. Louis CITY land-use
 code table (the surviving ranges are unverified; the 4xxx–5xxx look SIC-like, a lead) · (ii) ONE City code reader shared by
