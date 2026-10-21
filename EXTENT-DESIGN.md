@@ -239,8 +239,9 @@ renumbers**. "Never move the center" is the whole content safeguard.
 *"If we go into the exchange acting defensively and preemptively it's not a big deal."* ⇒ Don't avoid a re-fetch;
 protect **identity** (the numbering and the authored keys), never the fetch's date. A re-fetch passes in this order, and
 a failed gate stops it loudly, naming what moved:
-1. **Same envelope.** The new `raw/osm.json` `bbox` equals `geography.json`'s; the frame origin (`lat`/`lon`) is untouched.
-2. **The raw diff** (what's added, what's gone, what the old fetch never carried). ⚠️ Owed as a check; measured by hand so far.
+1. **Same envelope** and 2. **the raw diff** (what's added, what's gone, what the old fetch never carried; a class the old
+   fetch carried coming back empty is RED, the shape of a half-failed fetch):
+   `node checks/claims-a-re-fetch-keeps-its-envelope-and-names-what-it-changes.mjs --scene=<town> --after=<re-fetched osm.json>`
 3. **Authoring parity:** `node checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs --scene=<town> --after=<new skeleton.json>`
 4. **Building ids:** `node checks/claims-a-pour-keeps-building-ids.mjs --record=<file> <town>` before, `--before=<file>` after.
 
