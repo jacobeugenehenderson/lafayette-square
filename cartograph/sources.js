@@ -77,6 +77,16 @@ export const PARCEL_FIELDS = [
   'row_type', 'land_use_desc',
 ]
 
+/** ⛔ The fields a parcel well supplies that NO SERVED FILE CARRIES: privacy, and St. Louis City's terms ("No information
+ *  may be sold or redistributed in any manner unless written permission is received", `states/mo.mjs` `stl-city`;
+ *  scratch/data-licences/REGISTER.md row 4). ⚠️ No well marks its terms in a form code can read (`terms` is prose), so
+ *  this applies to EVERY parcel well until one does (Boz, 2026-10-21). ONE home: bake-content withholds them from the
+ *  roster, and the checks read them here — ⛔ never restate this list. */
+export const WITHHELD_PARCEL_FIELDS = [
+  'owner', 'appraised_value', 'land_area', 'building_sqft', 'units', 'num_buildings',
+  'year_built', 'last_year_built', 'neighborhood_code',
+]
+
 /** What a well's `historic_district` column can hold, and whose designation it is. */
 export const HD_HOLDS = ['name', 'code']
 export const HD_DESIGNATIONS = ['national', 'local', 'certified_local']

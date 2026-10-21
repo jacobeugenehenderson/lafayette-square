@@ -634,7 +634,8 @@ The kit's street hardware (lamps, signals, name signs, benches, …) is cataloge
   2. **Declare** — put `{ "meta": { "baseSource": "overture" } }` in
      `data/<scene>/content/listings.overrides.json`. ⛔ **The declaration lives in the DATA, never
      in the code** — that is what protects the next town without anyone editing `bake-content.js`.
-     `"hand-curated"` declares listings kept by hand: the bake skips the town (`--force` regenerates from OSM, loudly).
+     `"hand-curated"` declares listings kept by hand: the bake reads `content/listings.json` as the base and writes
+     `roster.json` only — the listings and their id registry are never written (`--force` regenerates from OSM, loudly).
   3. **Bake** — `node cartograph/bake-content.js --scene=<id>` as usual. The bake prints which
      producer ran and why, so *"the external base was used"* and *"nothing was produced"* can never
      look alike in the log.
