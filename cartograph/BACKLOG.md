@@ -476,6 +476,10 @@ merged 0da7df25. Per-step (run 2, clean): deform build 18 s · nodeThePlane 9 ·
 simplifier in the bake + the road on the lots' refine policy) is BUILT on kerf/simplify-in-bake 444456df but never baked or merged.
 Kerf rebases it onto integration; Zob reviews; it joins tonight's timed LS bakes.
 
+**Scratch pours and the network (Zob, 2026-10-21):** a pour of a town with no raw/elevation.json FETCHES from USGS (HPDM: 13,770
+public read-only point queries this morning, cached in a throwaway worktree only). HPDM has no elevation cache in the main
+checkout, so its next real pour fetches too. Scratch pours pass --skip-elevation, or say so first.
+
 **Checks judged nowhere until towns re-bake (Zob, 2026-10-21):** claims-a-cap-carries-one-section refuses on all six served
 slabs, because every shape.json predates frozen caps (`iaCap`). Not new; it clears as towns re-bake.
 
