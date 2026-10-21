@@ -90,7 +90,14 @@ the forbidden map cover footways?).
 ✅ Jacob's GO for staging (2026-10-21): "yes, go ahead". Preview happens on STAGING, never via local branch switches. Both Ward
 changes are merged onto theward main by Jacob (382f1bd, local). Next: the production backup → staging publish (the HPDM
 slab from zob-hpdm926 + the Ward build at 382f1bd) → the rose's owed checks against staging → Jacob's look → the press. Running
-(Ward, A–D). ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
+(Ward, A–D). Staging checks GREEN 14/14 ×4 (Ward); the local MUTANT is blocked by an
+instrument defect (Chrome's 250-entry resource-timing buffer; the specialist fixes it). ⭐ ADDRESSES (Jacob, 2026-10-21):
+LS → lafayettesquare.online · HPDM → hipointedemun.online · Huron stays staging · JH → its .online · PTown → ptown.online.
+Required LS + HPDM; desired PTown + Huron; JH not expected but 'fortifying'. Measured (Ward): lafayettesquare.online has no
+host record, and LS's prod slab keys are lafayette-square.com's live old-player keys, so the LS cutover is the RENAME job
+(look `lafayettesquare`, new keys; OPERATIONS § 'A town's name is its address'), being sized (Zob). ptown.online is NOT on
+Cloudflare (Hover) and differs from the live provincetown.online. ❓ Jacob: lafayette-square.com stays / redirects / retires?
+ptown.online or provincetown.online? jacksonheights.online? ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
 it's beautiful. Just gorgeous." The rose's mutant check runs locally while :5173 is up. ⚠️ FINDING (Ward): the Stage panel's Publish (serve.js, main checkout) re-freezes and uploads the MAIN checkout's
 slab and commits; a candidate in a worktree is published with scripts/upload-baked-to-r2.mjs run from that worktree. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
