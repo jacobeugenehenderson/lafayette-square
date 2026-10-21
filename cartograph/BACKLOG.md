@@ -32,8 +32,9 @@ from the City Assessor (`scripts/11-merge-all.py#enrich_buildings` ← `scripts/
 withholding doesn't reach this file. Your call: strip the withheld fields from it (and which, since year_built is shown).
 ⚠️ AND A RULING (Zob): roster records still serve `prominence.signals`, per-building PERCENTILES of appraised_value /
 building_sqft / units. Interim tonight (Boz, reversible, no visible change): strip those per-field signals; the score
-and rank stay. Yours: (a) drop withheld fields from prominence entirely (ranks move) or (c) rule a percentile isn't
-redistribution.
+and rank stay; they still embed the withheld fields in aggregate, in roster.json and in every served listing's
+`prominence_rank` (Zob: nothing downstream reads `signals`, so the strip breaks nothing). Yours: (a) drop withheld fields
+from prominence upstream (ranks move) or (c) rule a percentile isn't redistribution.
 
 **🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
 Start here. State at the restart:
