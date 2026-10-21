@@ -97,7 +97,9 @@ Start here. State at the restart:
     splits take the leg-crossing mean, listed). Follow-ups merged 89bed22f: splits are 3, ≤ 0.0085 mm (the 2.2 cm was double
     counting). ⭐ HPDM unowned at integration e1c6861d: 97 (Zob, in memory; fix B and the merges since own 86 more). The
     station trigger, NARROW form (e35c537e): owns exactly the 6 left along a boundary, nothing else (WIDE also takes one
-    corner point on tile 159); held points unchanged. MERGED 0942a899 with its narrowness row → 91 (in memory).
+    corner point on tile 159); held points unchanged. MERGED 0942a899 with its narrowness row → 85 (in memory). What
+    remains (Zob, binned at 91): 57 from BEYOND the rim (tiles 134 ×33, 55 ×19: Mitre's class 3) · ~25 perpendicular-corner
+    (tile 170 ×16, 211, 152) · Jacob's 4 here of 6 · back-edge rounding 1 (tile 159).
     REVISED (Zob, measured): **~81 are a ray running ALONG a partition line** (the 'holes' were the instrument sampling along it;
     no ground is missing). bandsAlong reads one 10 µm side; on the land-use side it reads lot. Fix, being built (Kerf): read
     both sides at ±LATTICE; the band still decides. Of the rest · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
@@ -148,7 +150,8 @@ Start here. State at the restart:
     (Truss builds; Zob reviews); the dead `skOffGrade || new Set()` is deleted. ❓ Jacob: r-highway-verge says 'ENTIRELY by
     highway'; is a block closed by a surface bridge verge (94002fae's span) or a block/JR? Counted (Truss): 77 of 115
     verge blocks are verge ONLY through the span (LS 29/42 · HPDM 30/54 · Huron 18/19). BUILT df0b7a4f (truss/verge-span-depth,
-    Zob reviews): Mississippi clean (1.716 → 0 m²); LS 96 m² verge → asphalt. HPDM Oakland mostly REMAINS (17.7 + 12.8 m²): a
+    MERGED, Zob reviewed): Mississippi clean (1.716 → 0 m²); LS 96 m² verge → asphalt. claims-verge-bare can't see it (it
+    reads the baked shape and never judges where a span edge sits): Zob writes a live-producer row. HPDM Oakland mostly REMAINS (17.7 + 12.8 m²): a
     REMAINDER, placed (Truss): Oakland's carriageway is CLEAR with the fix; what's left is I-64's MEDIAN (0.24–0.31 m between
     its two carriageways), r-highway-verge's own output. ❓ Jacob: draw a hairline median as verge? Three readings of
     'highway' (mint: gradeSeparated · painter/classifier: the motorway/trunk class · span: bridge/layer) put a gs:true primary
