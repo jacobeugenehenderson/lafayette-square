@@ -222,7 +222,7 @@ independent centers**, and the two fetches doing **different jobs**:
 > **upstream of the clip, of ①, and of the caps** — a chopped-looking rim is not evidence about any
 > of them until this check is green. ⛔ **Cause not established** — `geography.json`'s declared bbox
 > is *smaller than the data it contains*, so it is not the fetch bound and the bound cannot be read
-> off it. ⛔ The remedy is a **re-fetch, which is the irreversible step** — the operator's call.
+> off it. The remedy is a **re-fetch**, the operator's call, behind the gates in §3.4.
 
 **⭐ The bb centroid must never MOVE.** Once laid down at the hard fetch, the frame origin is frozen
 forever. The extent *may* grow (append) and *may* shrink (**destructively** — you lose the trimmed
@@ -233,6 +233,20 @@ reprojects everything at once and re-orders identity (the 84→5 content death).
 already embodies this: on any re-fetch, retained footprints keep their `msbfId` and dropped ones keep
 reserved numbers — **verified**, the tight re-fetch shrank 13,427→8,460 footprints with **zero
 renumbers**. "Never move the center" is the whole content safeguard.
+
+### 3.4 ⭐ A re-fetch is routine when it is GATED (Jacob, 2026-10-21)
+
+*"If we go into the exchange acting defensively and preemptively it's not a big deal."* ⇒ Don't avoid a re-fetch;
+protect **identity** (the numbering and the authored keys), never the fetch's date. A re-fetch passes in this order, and
+a failed gate stops it loudly, naming what moved:
+1. **Same envelope.** The new `raw/osm.json` `bbox` equals `geography.json`'s; the frame origin (`lat`/`lon`) is untouched.
+2. **The raw diff** (what's added, what's gone, what the old fetch never carried). ⚠️ Owed as a check; measured by hand so far.
+3. **Authoring parity:** `node checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs --scene=<town> --after=<new skeleton.json>`
+4. **Building ids:** `node checks/claims-a-pour-keeps-building-ids.mjs --record=<file> <town>` before, `--before=<file>` after.
+
+⛔ **The one measured risk is POSITIONAL ids** on unnamed chains (`<highway>-<n>`): a way added earlier renumbers the
+rest, and an authored key on one stops resolving. Gate 3 catches it; the fix is a stable id at the minting, owed.
+Receipts, 2026-10-20 (Zob, scratch re-fetches): LS passed every gate; HPDM failed gate 3 on two corner keys of that class.
 
 **Two centers (R10), and the interaction that follows:** the **bb / frame origin is poured once and
 frozen** (fetch center, append-only); the **disc centroid is a separate, draggable value** that roams
@@ -316,8 +330,8 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 >   roads by construction**. Fine as a *validator*, never as the key.
 > - ⛔ **OSM node ids are RECEIVED AND THROWN AWAY** — `fetch.js:122`/`:140` discard `el.id` when
 >   projecting to coords. Carrying it would make the consult **exact rather than positional. Own ticket.**
-> - ⚠️ **UNMEASURED, the live exposure: node stability across a RE-FETCH** (a weld concatenates; a
->   re-fetch may re-*digitize*). ❓ And whether a divided road's 4-node cluster is one node or four.
+> - ⚠️ **Node stability across a RE-FETCH: measured at the CHAIN level only** (§3.4's gate 3); per node,
+>   unmeasured. ❓ And whether a divided road's 4-node cluster is one node or four.
 
 > ### ⛔⛔ THE KEY BUILT ON IT IS **OPEN, NOT SETTLED** — parity measured 2026-08-21; it does NOT pass
 > *(agent Gimbal, `aa7bdf44`. The retired "settled" text + a clause-by-clause verdict:
