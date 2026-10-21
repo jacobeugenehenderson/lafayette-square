@@ -30,9 +30,11 @@ revetment as stamped ground, and the ground budget (`BRIEF-the-ground-stays-in-b
 
 The kit cuts on `src/lib/lattice.js`'s 1 mm grid everywhere, the coast and the land use included. Lath found Huron's
 refusal is a mat:shore edge on the 1 cm grid beside its own 1 mm twin, about 4 mm apart (23adbb41's report). The coast
-moves in this brief. ⛔ The land use is ON the grid at integration 70eba3f5: frozen `landEvidence` has 0 off-lattice
-vertices on LS (of 32,491) and HPDM (of 158,569) (Zob, measured 2026-10-20). What it lacks is CONFORMITY: two rings
-meeting on the lattice without sharing their vertices (§3b).
+moves in this brief. ⛔ UNBUILT for the land use (Zob, read in source and measured 2026-10-21): `derive.js` cuts every
+evidence region on its own `SCALE = 100`, a 1 CENTIMETRE grid (all LS and HPDM evidence vertices sit on whole cm).
+claims-the-lattice-has-one-home exempts derive's grid by its header, so it can't see this. Likely source of the parcel-vs-OSM
+weld class (vertices 0–5 mm off, flat then cut off at 5 mm). The build: derive cuts on CLIP_SCALE, and the check's exemption
+narrows (being measured, Zob).
 Measured input, NOT matched to this cause: Provincetown's served slab has 4,972 open holes that findTJunctions' end rule
 passes. Their median gap is 4.59 mm, mostly shore↔beach/wetland/park (2026-10-18, on the served slab).
 ▶ `node scratch/ground-budget/tj-class/end-rule.mjs provincetown`
