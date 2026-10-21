@@ -71,7 +71,8 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   trace to ONE question: the deformer reads pre-flatten paint (`byMaterial`, your 10-11 ruling, 6be9cbaf), not the
   drawn plane. A drawn-geometry form that keeps your ruling's ownership is specified and waits on one probe (Mitre; Zob
   reviewed), and the probe waits on Truss's plane noding getting through HPDM: its curb pinch refusal is FIXED
-  (b0d8c9bb: a hole that touches its one outer stays its own), with the per-town gate pending.
+  (b0d8c9bb: a hole that touches its one outer stays its own); per-town gate (Truss, f206543d): LS ✅ · HPDM ✅ · Huron after
+  PTown. Mitre's probe is running.
 - **LS #39 (kerb step):** 22.1 m bare on the real baseline (Truss). On the whole stack (Truss's noding + Plumb's crease
   split, polyline mitre and ownership finder, refinement off): **1.03 m**, all sub-cm. The Mississippi stripe straddle was a DEFECT (a
   verge span edge given depth 0), fixed and merged; your "confine the stripe" call is moot. Plumb's branch isn't
