@@ -133,12 +133,14 @@ backup + a staging dry run. With no re-bake, the press adds 8 share images (neve
 Thursday's (lafayette-square.com's old player, or the Ward)?
 
 **⭐⭐ THE ROOT (Jacob: "RIBBONS … we use ribbons to avoid this topic in the first place"; Zob's trace, 2026-10-21):** each
-ribbon LINE is computed once, but each BAND is cut from it by its own Clipper boolean, which mints its own crossings and
-STRIPS collinear vertices (PreserveCollinear is false; the kit never sets it). So two neighbours carry different vertex sets
-on one line, and LS's stack carries 5,428 m drawn twice before the flatten. Sites: S1 sectionPassProtoTile's band booleans ·
+ribbon LINE is computed once, but each BAND is cut from it by its own Clipper boolean, which mints its own crossings, and
+some lines are RE-DERIVED rather than referenced (PreserveCollinear: FALSIFIED as a cause, Zob's probe). So two neighbours carry
+different vertex sets on one line, BORN INSIDE EACH TILE (the town-wide unions add none), and LS's stack carries 5,428 m drawn twice before the flatten. Sites: S1 sectionPassProtoTile's band booleans ·
 S2 rekeyByPiece per class · S3 sectionOpen's per-material town-wide unions · S4 asphalt's extra unions · S5 the flatten
 deriving lower edges from the union acc. Fix scope: (i) bands REFERENCE one shared polyline (cutCreases is the pattern) ·
-(ii) PreserveCollinear on partition booleans · (iii) no edges from acc. Then nodeAcrossGroups, the pinch cuts, sub-lattice
+(iii) no edges from acc. Located (Zob, measured per tile): asphalt/curb 1,628 m (inferred: a depth-0
+edge's offset is a recomputed COPY of ②'s ring) · curb/walk 723 m + walk/walk 602 m (the perpendicular extension rects
+unioned into the walk band) · land use 2,447 m (S2 + the evidence). Then nodeAcrossGroups, the pinch cuts, sub-lattice
 drops and welds lose their reason (inferred). Per-site probe next (Zob). ❓ Jacob: (iv) land use: two datasets (OSM vs
 parcels) draw one real line 3–5 mm apart: which source's line wins?
 
