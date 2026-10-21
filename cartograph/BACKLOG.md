@@ -110,7 +110,10 @@ Start here. State at the restart:
     makes the ray read lot. 232 such slits in HPDM's bands. ⭐ The deformer's bands are byMaterial (paint BEFORE
     flattenPaintStack); the mesh is drawn from the flattened, noded plane, so the height code reads different paint from
     the drawing (Mitre). Splitting byMaterial's pinches closes tile 32 but moves 14,338 held heights by ≤ 0.23 m: not
-    landable. Premise pass (Zob): why pre-flatten, and can the deformer read the drawn paint?
+    landable. PREMISE (Zob): the switch to pre-flatten paint was deliberate (6be9cbaf, 10-11, Jacob's ruling: an overlay
+    must not cut a walk off its street); no dependency forces it. Proposal being MEASURED (Zob, probe): the deformer reads
+    (the flattened band ∪ painted ∩ the groups above it) after nodeThePlane, i.e. the ruling's ownership on the drawn geometry.
+    Lands with Truss's noding if owners don't move; otherwise it goes to Jacob.
   · HURON CENSUS DONE (Kerf, on 83652943, before fix B and the both-sides read): every step exits 0; the ONLY refusal is #40,
     19,655 unowned, 96% on tile 6 (18,855). Ground 5,196 s / 11.8 GB + ground-shore 4,591 s / 11.3 GB: 2.7 h of ground baking
     (Jacob: long bakes are not acceptable). Tile 6 re-measured at HEAD by Zob, in memory, at low priority (not Thursday).
