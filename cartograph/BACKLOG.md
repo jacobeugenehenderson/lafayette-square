@@ -64,6 +64,11 @@ years (18 explicitly parsed), and no code reads them. Withholding LS's assessor 
 committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next: Zob's LS Inputs gap census → the
 LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
+**⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
+merge ownership-once → LS deploy bake as `lafayettesquare` → HPDM deploy bake → staging → his eye → press. THEN PTown and Huron
+(the shore project), with JH in the wings, built from the kit's parts. After the deploy: the slab budget (band refine chosen by
+eye; the simplifier made fast). PTown's census was paused (4 memo turns, 71 min) to free the machine.
+
 **✅ HPDM PRESSED TO PRODUCTION 2026-10-21 22:18Z (Ward, on Jacob's word):** the Forest Park land-use fix (production's kit
 926ac3a4 + parcel-landuse only) + Ward 382f1bd (kit aff2751e). Gates T1 + md5 = staging; fresh backup at
 scratch/promote-rollback/hipointedemun-prod-2026-10-21-prepress/; live probe 14/14 desk + phone. Filed: the host record's bakedAt
