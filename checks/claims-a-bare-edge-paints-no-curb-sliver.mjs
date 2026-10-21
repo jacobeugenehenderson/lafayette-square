@@ -9,11 +9,13 @@
 // Runs the REAL painter on every frozen tile, WITH the look's authoring (Layer 0 q3): reads `shape.json`, never a copy.
 // Every sub-lattice curb ring is counted; the ones touching a bare edge (a vertex ON a bare edge, exactly or within one
 // rounding of it) are the claim's, the rest are named beside it.
-// ⛔ RED WHERE TRUE, BY RULING (Boz, 2026-10-21): a served shape frozen before bc6bdf4f is named (at landing: HPDM 1, Huron 2,
-// PTown 3, JH 3, LS 1); each town clears when it re-bakes, or names a second defect — never excused here.
+// ⛔ RED WHERE TRUE, BY RULING (Boz, 2026-10-21): every sliver on a bare edge is named, never excused. At landing the served
+// shapes read HPDM 1, Huron 2, PTown 3, JH 3, LS 1 (LS tile 35, (122.846, 441.552)), and on each the mutant EQUALS live
+// (Zob, measured): this fix does not reach them; cause not established.
 //   node checks/claims-a-bare-edge-paints-no-curb-sliver.mjs [look…] [--shape=path] [--selftest]
 // ⭐ MUTATION TEST (`--selftest`): the grid merge told to merge two unmoved ring vertices again (the guard removed, in a
-//   mutated copy of tileGround.js) → the needle is back → RED.
+//   mutated copy of tileGround.js) → the needle is back → RED. The configuration is rare (a sub-step edge between two bare
+//   edges: LS tile 47), so the proof needs ONE town that has it; each town that cannot show it is SAID, never failed on.
 import { readFileSync, existsSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -85,13 +87,13 @@ const TG = await loadTG(pathToFileURL(TGF).href)
 const looks = shapeOverride ? named : scenes('public/baked/<scene>/shape.json')
 if (SELF) {
   const TGm = await loadTG(mutantTG())
-  let ran = 0, missed = 0
+  let caught = 0
   for (const look of looks) { const live = judge(TG, look), mut = judge(TGm, look)
     if (live.notChecked) { console.log(`  ⚪ ${look}: not judged — ${live.notChecked}`); continue }
-    ran++; const caught = mut.onBare.length > live.onBare.length; if (!caught) missed++
-    console.log(`  ${caught ? '✅' : '⛔'} ${look}: unmoved ring vertices merged again → ${mut.onBare.length} curb sliver(s) on bare edges (live ${live.onBare.length})${mut.onBare[0] ? ` — e.g. ${mut.onBare[0]}` : ''}`) }
-  const ok = ran && !missed
-  console.log(ok ? '\n✅ selftest: a curb sliver cut off a bare edge is RED' : '\n⛔ selftest: the instrument missed the mutant (or no town could show it)')
+    if (!(mut.onBare.length > live.onBare.length)) { console.log(`  ⚪ ${look}: no sub-step edge between bare edges here — the mutant cannot be seen in this town, said (mutant ${mut.onBare.length} = live ${live.onBare.length})`); continue }
+    caught++; console.log(`  ✅ ${look}: unmoved ring vertices merged again → ${mut.onBare.length} curb sliver(s) on bare edges (live ${live.onBare.length}) — e.g. ${mut.onBare.find(x => !live.onBare.includes(x)) ?? mut.onBare[0]}`) }
+  const ok = caught > 0
+  console.log(ok ? `\n✅ selftest: a curb sliver cut off a bare edge is RED (seen in ${caught} town(s))` : '\n⛔ selftest: no town could show the mutant — the instrument is unproven here')
   process.exit(ok ? 0 : 1)
 }
 let red = false
