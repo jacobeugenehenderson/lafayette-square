@@ -337,6 +337,7 @@
       "tier": "live",
       "reasonClass": "outbound",
       "why": [
+        "writeFileSync",
         "imports cartograph/elevationSources.mjs, which can: calls fetch()",
         "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
