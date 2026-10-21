@@ -1,0 +1,1 @@
+`node scratch/dark-sides/dark-sides.mjs <town> [--frozen]` (writes `<town>[.frozen].json` here). Data source: the main checkout (DATA); code (CODE) from a detached integration worktree: `git worktree add --detach .claude/worktrees/census-202 integration/2026-10-20` (helpers take `<town>` too; read-only, Lintel 2026-10-20).

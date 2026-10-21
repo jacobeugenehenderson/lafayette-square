@@ -1,0 +1,1 @@
+From a worktree root: `node scratch/town-credit-hook/build.mjs $PWD/scratch/town-credit-hook && node scratch/town-credit-hook/run.mjs $PWD/scratch/town-credit-hook` (bundles src/lib/sources.js with a stub React and a mocked slab fetch, modes ok/404/nolist/throw; esbuild from the main checkout's node_modules; Lintel 2026-10-20).
