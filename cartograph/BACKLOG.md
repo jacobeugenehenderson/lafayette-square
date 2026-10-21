@@ -43,6 +43,9 @@ name ≤ 80 at-risk LS buildings the same way. The fix: carry the code (fetch-pa
 code; a foreign code gets no name) + a City parcels re-fetch for LS and HPDM + the City's code→name table (source not
 established). Your call for Thursday: (i) leave HPDM's 81 as served, (ii) interim: a flag with no code match names no
 district (HPDM's 81 lose the wrong name; LS stays unnamed), or (iii) the full fix first.
+**Ward recommends (ii) for Thursday, then (iii):** the Ward shows only the district NAME (Facts.jsx), so the 81 cards just
+lose a line and say nothing false. The partner knows their district's boundary; a Wydown house labelled HPDM's district is
+what they'd spot first. I agree. (ii) is being prepared on a branch tonight, unmerged, ready for your yes.
 The National Register as a replacement source (Zob, measured): HPDM's nr-inventory keeps a "Built" year on 253 of 1,446
 after the withholding (OCR'd, accuracy not measured). LS's "NPS" data is mostly INFERRED from the assessor year
 (nps_style_inferred on 741; 32 buildings actually named with pages); the nomination spreadsheets give ≤ 80 plausible
