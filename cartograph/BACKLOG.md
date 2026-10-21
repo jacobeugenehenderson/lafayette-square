@@ -138,8 +138,10 @@ Start here. State at the restart:
   against the rim-cut iA) then magnifies that to a 1.41 mm pair. Fix candidate: cut the operands (pedOuter, luIn0, env) by
   the disc BEFORE the band differences, so a beyond-rim crossing never exists, or share one crossing per line. Not a cut
   added at the end. HPDM's B1 (341 points; Mitre: a 1.3 mm lot slice at the rim along the ray) is partly the same pair
-  (one sample) and partly not reproduced in the paint (cause not established). ⛔ Not a deformer tolerance.
-- The deformer reads a ring's SIDE off the disc-cut iA when its longest ② segment lies outside the disc, so every station on that ring points out of the block (Mitre: HPDM 45 rings, LS 30, Huron 16), against its own rule ('the carrier is iaFull'). The fix is being built (a defect, not a ruling); it moves heights (HPDM max 0.87 m), so it's on Jacob's eye list.
+  (one sample). The rest of B1 is a SECOND mechanism (Zob): the drawn rim sits up to √2/2 step off the stencil, a one-sided
+  offset that the deformer's oblique ray (65° off normal) stretches to ~1.1 mm. A brief must cover both or say which it closes.
+  ⛔ Not a deformer tolerance.
+- ✅ The deformer's side now reads off iaFull (Mitre e5dc6b7b, merged): the old side was wrong on 91 rings; heights move (HPDM max 0.87 m), all checked maxes corrections; on Jacob's eye list.
 - **Ruling for Jacob:** who owns INTERIOR sidewalk paint no street band reaches (Huron 88 points of walk 41–48 m from any street; a path? a plaza?).
 - PTown's shore-median.json is stale after its 2026-10-20 re-pour (walked on the old shoreline); its flatten is unmeasured until shore-median re-runs. Flatten's orphan/bow-tie drops stay until Huron and PTown measure 0.
 - A perpendicular leg and its own arc's half name one run under two keys (`a<arc>/<t>` and the run): a duplicate owner, no pixel. HPDM 1,382 → 3,150 pieces (149 m²) after the leg-ownership build (Mitre, 3a55accb; `claims-the-bands-are-held-by-their-owners` row 6f reports it).
