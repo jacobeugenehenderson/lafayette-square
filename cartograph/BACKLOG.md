@@ -88,8 +88,9 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   `bandSelfCrossings` 257. ✅ MERGED 9ca3f6cf (Zob: merge). no-edge-is-drawn-twice is RED at integration too (pre-existing).
   Interior near-miss changes > 5 m from the rim are named in the merge, cause not established. The self-crossing source (257 rings) is its own piece (Mitre, after Thursday).
   (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
-  (b0d8c9bb: a hole that touches its one outer stays its own); per-town gate (Truss, f206543d): LS ✅ · HPDM ✅ · Huron after
-  PTown. Mitre's probe is running.
+  (b0d8c9bb: a hole that touches its one outer stays its own). Rebased on B1 (tip 106094ad), with one new refusal fixed
+  (an item wholly below the lattice: its holes go with it, the flatten's orphan rule, counted). Gate: LS ✅ · HPDM ✅ · Huron
+  after PTown. Waits on the combined LS bake to land.
 - **LS #39 (kerb step):** 22.1 m bare on the real baseline (Truss). On the whole stack (Truss's noding + Plumb's crease
   split, polyline mitre and ownership finder, refinement off): **1.03 m**, all sub-cm. The Mississippi stripe straddle was a DEFECT (a
   verge span edge given depth 0), fixed and merged; your "confine the stripe" call is moot. Plumb's branch isn't
