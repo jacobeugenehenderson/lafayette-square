@@ -72,6 +72,8 @@ passes. Their median gap is 4.59 mm, mostly shore↔beach/wetland/park (2026-10-
 
 ## 3b. Tonight's build: the rings agree before flatten (Jacob, 2026-10-20 night: "option 3, building option 1 tonight")
 
+*Premise pass: Zob, on d6443b08; corrections folded in (the √2/2 bound, cross-group only, the placement, the check).*
+
 **Why.** LS's and HPDM's ground bakes refuse at flatten (`bakeGround` → `flattenPaintStack` → `itemsByMembership`:
 "a hole below the lattice … that no painted ring holds by its probe, yet a ring of N vertices meets it"). The cause,
 measured by Zob at 70eba3f5 (probes in Zob's session scratchpad, `fl/`): a cross-group T-JUNCTION on the lattice. One
@@ -82,11 +84,23 @@ whose rounded crossing lies 0.49 units off the OSM recreation edge. LS: 4 holes 
 face:recreation × mat:asphalt, 0.22–0.28 units apart, no land evidence within 15 m; the asphalt edge's producer is not
 established. The refusal is right (the 10-14 sub-lattice ruling, `4bc6150e`); the inputs are wrong.
 
-**The build (option 1).** At the head of `flattenPaintStack`, before the first difference, NODE the stack: every vertex
-of every ring that lies within HALF A LATTICE STEP of another ring's edge (any group, either way) is inserted into that
-edge. The bound is read from `src/lib/lattice.js` (`LATTICE_M / 2`, the lattice's own rounding bound); ⛔ a literal at the
-call site is Class D. Inserted vertices are existing lattice points, so nothing leaves the grid. ⛔ A vertex further than
-half a step is untouched and still refuses: this conforms rings, it never tolerates a hole.
+**The build (option 1).** NODE the stack before the first difference: every vertex of a ring of one GROUP that lies
+within the bound of an edge of ANOTHER group is inserted into that edge, both directions.
+- **The bound is (√2/2) · `LATTICE_STEP`** (bake-ground's `LATTICE_STEP = CLIP_SCALE * LATTICE_M`, from `lattice.js`).
+  Each axis rounds independently (`_ringToPath`, Clipper's crossings), so a rounded point lies up to √2/2 of a unit off
+  the line it traces, as `PROBE_CLEAR`'s own comment says. ⛔ Not ½ (Zob, read in source; the measured offsets 0.22–0.49
+  are a sample, not the bound). ⛔ A literal at the call site is Class D.
+- **Cross-group only.** ⛔ Never a ring's own edges (a needle narrower than the bound would pinch or self-intersect:
+  exactly HPDM's industrial and LS's asphalt needles), nor an outer and its own hole. Same group, different rings is
+  unneeded: `layerRegion` unions a group first.
+- **Insert only where the vertex projects strictly inside the edge**, several insertions ordered by parameter, and iterate
+  to a fixpoint with capped rounds that THROW if it doesn't settle (the `stampCrossings` pattern).
+- **Where:** its own exported function on `stackEntries`, before `bakeGround`'s `stackOnly` return, so
+  `checks/claims-no-edge-is-drawn-twice.mjs` (which reads `bakeGround({ stackOnly: true })`) sees the noded stack.
+  Include DOES_NOT_CUT groups (water); KEEP_OWN_SLOT groups (stripe) change nothing drawn.
+- Inserted vertices are existing lattice points (LS's stack: 0 of 149,318 vertices off the lattice, measured; HPDM's
+  full stack not measured). ⛔ A vertex further than the bound is untouched and still refuses: this conforms rings,
+  it never tolerates a hole. Proper edge–edge crossings stay Clipper's, as today.
 - **Count it, loudly:** the bake prints how many vertices it inserted, per group pair. A town where the count is large is
   telling us a producer is wrong.
 - **The two drops** in `itemsByMembership` (the orphan and the bow-tie, "a downstream tolerance for an upstream class"):
@@ -95,9 +109,12 @@ half a step is untouched and still refuses: this conforms rings, it never tolera
 - **Parked (option 2), not this build:** noding the evidence against itself in `layerLandEvidence`, the pour-side
   cleanliness. And LS's asphalt producer, once found.
 
-**Mutants, each must go RED in a check that reads the flatten:** (1) noding off → the LS and HPDM refusals return ·
-(2) a vertex 0.6 steps off an edge → still refuses · (3) the bound read as a literal, not from `lattice.js` → caught ·
-(4) an inserted vertex off the lattice → refuses.
+**The check, which must be written** (nothing in `checks/` runs `flattenPaintStack` and counts refusals per town;
+Plumb's census lives in a session scratchpad and writes into the worktree): it runs flatten per town, writing only to
+tmp, and carries synthetic rows. Mutants, each RED: (1) noding off → LS's 4 and HPDM's 1 refusals return · (2) a
+vertex at ~0.75 step (past √2/2) → still refuses · (3) the bound as a literal → caught by a source-reading row (first
+check whether `checks/claims-the-lattice-has-one-home.mjs` already forbids it) · (4) an inserted vertex off the lattice
+→ refuses. `claims-no-edge-is-drawn-twice` should show its near-miss count fall.
 
 **Gates, in order:** Plumb's flatten census harness (`flatten-all.mjs`, Plumb's session scratchpad; ~30–90 s per town)
 shows LS and HPDM flatten with 0 refusals → scratch ground bakes of HPDM, then LS, reach the end with T-junctions 0
