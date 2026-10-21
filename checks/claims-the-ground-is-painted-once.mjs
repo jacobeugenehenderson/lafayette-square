@@ -17,7 +17,8 @@
 // Σ triangle area − the ring's area = double area − hole area, exactly, at any resolution; where the two disagree, the
 // difference is what the grid could not see. Beside them, the bake's own count of rings it resolved below the lattice's
 // rounding (`ground.json#flatten.subLattice`, bake-ground.js `itemsByMembership`), whose role is Clipper's winding, and
-// of those, the orphan holes it dropped (no outer meets them, so they remove no paint), each with its area and point.
+// of those, the orphan holes it dropped (no outer meets them, so they remove no paint), each with its area and point; and
+// the loops the flatten cut off its output at a pinch below the lattice (`splitAtPinches`), with their area and width.
 //
 // ⭐ MUTATION TEST: `--selftest` drops one interior triangle (must report a HOLE there) and copies one triangle into a
 // second group (must report a DOUBLE naming both), in memory.
@@ -165,10 +166,11 @@ function ringOf(gj, dir) {
 function report(dir, r) {
   const name = dir.split('/').pop(), a = (x) => x.toFixed(x < 10 ? 3 : 1)
   const hA = r.holeN * H * H, dA = r.dblN * H * H
-  const sl = r.subLattice ? Object.values(r.subLattice).reduce((t, x) => ({ n: t.n + x.rings, m2: t.m2 + x.m2, orphans: [...t.orphans, ...(x.orphanHoles || [])] }), { n: 0, m2: 0, orphans: [] }) : null
+  const sl = r.subLattice ? Object.values(r.subLattice).reduce((t, x) => ({ n: t.n + x.rings, m2: t.m2 + x.m2, orphans: [...t.orphans, ...(x.orphanHoles || [])], pinches: [...t.pinches, ...(x.pinches || [])] }), { n: 0, m2: 0, orphans: [], pinches: [] }) : null
   const orph = sl?.orphans.length ? ` (of them ${sl.orphans.length} orphan hole(s) dropped, ${sl.orphans.reduce((t, o) => t + o.m2, 0).toFixed(9)} m²: ${sl.orphans.slice(0, 3).map(o => `(${o.at.map(v => v.toFixed(2)).join(', ')})`).join(' ')}${sl.orphans.length > 3 ? ' …' : ''})` : ''
+  const pin = sl?.pinches.length ? ` · ${sl.pinches.length} loop(s) cut off at a pinch below the lattice, ${sl.pinches.reduce((t, o) => t + o.m2, 0).toFixed(9)} m², widest ${Math.max(...sl.pinches.map(o => o.widthMm))} mm (ground.json#flatten.subLattice[group].pinches)` : ''
   const line = `${r.groups} groups · ${r.tris} triangles · ${r.samples} samples at ${H} m · exact: Σ triangles − ring = ${a(r.triA - r.ringA)} m² · sampled: double − hole = ${a(dA - hA)} m²`
-    + ` · below the lattice: ${sl ? `${sl.n} ring(s), ${sl.m2.toFixed(9)} m², role by Clipper's winding${orph}` : 'not disclosed (the slab predates ground.json#flatten)'}`
+    + ` · below the lattice: ${sl ? `${sl.n} ring(s), ${sl.m2.toFixed(9)} m², role by Clipper's winding${orph}${pin}` : 'not disclosed (the slab predates ground.json#flatten)'}`
   if (!r.holeN && !r.dblN) { console.log(`  ok  ${name}: painted once everywhere · ${line}`); return true }
   console.error(`  ⛔  ${name}: ${a(hA)} m² painted by NO group (${r.regions.filter(x => x.k === 'hole').length} region(s)) · ${a(dA)} m² painted TWICE (${r.regions.filter(x => x.k === 'double').length} region(s))${r.capped ? ' · ⚠️ defect cells capped, regions incomplete' : ''}`)
   console.error(`        ${line}`)

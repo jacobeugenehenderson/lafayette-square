@@ -13,15 +13,15 @@
 // ⭐ MUTATION TEST: `--selftest` — the split as the bake runs it is GREEN; the same split's output re-holed with one hole
 //   handed to the WRONG outer (5d465009's defect, planted) is RED; the polygons with a hole DROPPED is RED.
 //   node checks/claims-every-group-meshes-its-own-area.mjs [--selftest]
-import { kerbPlan, kerbCells, splitAtCreases } from '../cartograph/kerbLift.mjs'
+import { kerbPlan, kerbCells, cutCreases, splitAtCreases } from '../cartograph/kerbLift.mjs'
 import { conformAndRefine } from '../cartograph/groundConformity.js'
 import { LATTICE_M } from '../src/lib/lattice.js'
 
 const h = 0.15, kerb = { height: h, rampSlope: 1 / 12, flareSlope: 1 / 10, taperRun: 1.0 }
 const th = 0.37, C = Math.cos(th), S = Math.sin(th), O = [123.4567, 98.7654]
-const W = ([x, z]) => [O[0] + C * x - S * z, O[1] + S * x + C * z]
+const W = ([x, z]) => [O[0] + C * x - S * z, O[1] + S * x + C * z].map(v => Math.round(v * 1e3) / 1e3)   // on the lattice, as the bake's partition is
 const sq = (a, b, c, d) => [[a, b], [c, b], [c, d], [a, d]].map(W), rev = (r) => [...r].reverse()
-const block = sq(0, 0, 10, 10), inner = sq(0.3, 0.3, 9.7, 9.7), blockB = sq(20, 0, 30, 10)
+const block = sq(0, 0, 10, 10), inner = sq(0.3, 0.3, 9.7, 9.7), blockB = [[20, 0], [20.3, 0], [30, 0], [30, 10], [20.3, 10], [20, 10]].map(W)   // noded with the paint, as the bake hands it over
 const cut = { face: [W([4, 0]), W([5.5, 0])], inward: (() => { const a = W([0, 0]), b = W([0, 1]); return [b[0] - a[0], b[1] - a[1]] })() }
 const groupsIn = [
   ['mat:asphalt', [{ outer: sq(-5, -5, 35, 15), holes: [rev(block), rev(blockB)] }]],
@@ -31,8 +31,9 @@ const groupsIn = [
   ['face:vacant', [{ outer: sq(20.3, 0, 30, 10), holes: [] }]],
 ]
 const blockRings = [block, blockB]
-const P = kerbPlan({ blockRings, curbRings: [block, rev(inner), sq(20, 0, 20.3, 10)], ramps: [cut], kerb })
-const cells = kerbCells(P.regions, blockRings)
+const P = kerbPlan({ blockRings, groups: groupsIn.map(([k, items]) => ({ key: k.slice(k.indexOf(':') + 1), items })), ramps: [cut], kerb })
+// each crease cut once through every polygon on it (`cutCreases`), as the bake does before the split
+const cut1 = cutCreases(groupsIn.map(([k, items]) => ({ key: k, items })), kerbCells(P.regions, blockRings)), cells = cut1.cells
 
 const A = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return Math.abs(a / 2) }
 const polyArea = (its) => its.reduce((t, it) => t + A(it.outer) - (it.holes || []).reduce((u, x) => u + A(x), 0), 0)
@@ -44,7 +45,7 @@ const meshArea = (b) => { let a = 0; const P_ = b.positions, I = b.indices
 
 /** the bake's path for each group: `prep` stands where the bake splits it (planGroup) */
 function judge(prep = (polys) => splitAtCreases(polys, cells, P.inBlock)) {
-  const prepped = groupsIn.map(([, polys]) => prep(polys))
+  const prepped = cut1.groups.map(g => prep(g.items))
   const bufs = conformAndRefine(prepped.map(polys => ({ polys, refine: null, yLift: 0 })))
   return groupsIn.map(([k, polys], i) => { const want = polyArea(polys), got = meshArea(bufs[i]), allow = perim(polys) * LATTICE_M
     return [`${k} meshes its own ${want.toFixed(2)} m²`, Math.abs(got - want) <= allow, `mesh ${got.toFixed(3)} m², allowance ±${allow.toFixed(3)}`] })

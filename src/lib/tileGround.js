@@ -2226,7 +2226,10 @@ function nodeRimWithPaint(st, paint, nodePaint) {
   const rimEdge = (k) => st.ringOwner[k]?.kind === 'rim'
   const pts = []; for (const r of paint) for (const v of r) { const k = K(v); if (have.has(k)) continue; have.add(k); pts.push(v) }
   const onRing = insertOnEdges(st.ring, st.ringOwner, pts, rimEdge), minted = pts.filter(v => !onRing.missed.includes(v))
-  if (!minted.length) return null
+  // ⭐ EVERY TILE WITH A RIM EDGE HAS AN ENTRY, minted or not (Zob placed it, Boz ruled, 2026-10-21): it is the rim's positive
+  // name, read by the kerb's finder and the deformer. ⛔ An absent entry used to mean "nothing minted" as well as "no rim",
+  // and LS lost 185 m of named rim that way; now it means only a tile with no rim edge.
+  if (!minted.length) return { ring: st.ring, owners: st.ringOwner, block: st.iA || [], added: 0, far: 0, farMax: 0 }
   const block = (st.iA || []).map(r => { const x = insertOnEdges(r, null, minted, () => true); return x }), placed = new Set()
   for (const x of block) for (const v of minted) if (!x.missed.includes(v)) placed.add(v)
   const lost = minted.filter(v => !placed.has(v))
@@ -4642,7 +4645,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // was stamped. Strike off the first, CUT with the second: a rim band is a clean cut through a
   // finished band, never a band that turned a corner to follow the rim.
   const iA = st.iaFull || [], stamps = st.iaStamp || [], runs = st.runs || []
-  const empty = { Wacc: [], tlByLu: {}, luByLu: {}, curb: [] }
+  // ⭐ a tile that paints nothing still names its rim (`nodeRimWithPaint`, nothing minted): every rim-edged tile carries an entry
+  const emptyRim = nodeRimWithPaint(st, [], () => {})
+  const empty = { Wacc: [], tlByLu: {}, luByLu: {}, curb: [], ...(emptyRim ? { rim: emptyRim } : {}) }
   if (!iA.length) return empty
   // ⛔ A CUT THAT LEFT NO BLOCK PAINTS NOTHING. The disc can cut a tile's block away entirely and keep the tile (its ring
   // still meets the disc); `inBlock` used to read an EMPTY `iA` as "no clip" and struck the whole uncut contour — on
@@ -4861,7 +4866,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // shape"`: the drawing has no holes). A MATERIAL state, never a missing one.
   // ⭐ the open field is the REGION ITSELF (`curbOuter`), never an offset of it by 0: the offset's lattice merge drops a sliver
   // ring, and the drop is a hole in the ground (measured on HPDM's verge tile 36: 0.30 m², the sky through it)
-  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: rekeyByPiece(st, { [key]: inBlock(curbOuter) }), curb: [], capped, openField: true, feArcs, feRepeat }
+  if (WB < cw) {
+    const luByLu = rekeyByPiece(st, { [key]: inBlock(curbOuter) })
+    // ⭐ an open field on the rim names its rim too (`nodeRimWithPaint`): every rim-edged tile carries an entry
+    const rim = nodeRimWithPaint(st, Object.values(luByLu).flat(), (node) => { for (const lu of Object.keys(luByLu)) luByLu[lu] = luByLu[lu].map(node) })
+    return { Wacc: [], tlByLu: {}, luByLu, curb: [], capped, openField: true, feArcs, feRepeat, ...(rim ? { rim } : {}) }
+  }
 
   // ── THE ARRANGEMENT, PER POINT. Two strips always — they SWAP, they never collapse (`§3.1`) —
   // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the

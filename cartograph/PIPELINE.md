@@ -529,7 +529,9 @@ single-glance test in the whole progression — use it.
 - **The gate is then topological, with no number:** an edge used once inside the disc is a hole, and the rim's
   edges carry no other piece's vertex. ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` (exact identity).
 - 🔴 **ASPIRATION, not built (2026-10-18):** conformity still repairs by distance (the 5 mm closer, `ON_EDGE_M`;
-  the 1 mm input weld), so the check is RED on every served slab; and a lot point takes the nearest ② span's
+  the 1 mm input weld), so the check is RED on every served slab. Built toward it: the paint is noded once after its last
+  re-clip, within the lattice's own rounding (`nodeThePlane`); the kerb's creases are cut after it and are not
+  (`kerbLift#splitAtCreases`, a producer defect, 2026-10-21). And a lot point takes the nearest ② span's
   ease, whatever its owner (`resolveUncached` → `nearest`). ⭐ End state (Lath · Screed): the lot's ease
   struck at the mint as owned pieces. Route, in order: band check GREEN on cover and disjoint → the flatten
   carries piece ids → the triangle's tag carries the id → D asked per piece, with the ease pieces.
