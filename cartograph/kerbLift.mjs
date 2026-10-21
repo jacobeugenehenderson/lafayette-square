@@ -108,7 +108,7 @@ export function curblessEdges(groups, kerbKeys = KERB_KEYS, { rimEdges = new Set
   for (const rec of edgesAcross(ringEdges(groups)).values()) {
     const f = rec.in || rec.out, L = Math.hypot(f.b[0] - f.a[0], f.b[2] - f.a[2])
     if (!rec.in) { if (rec.uses === 1) orphanRoadM += L; continue }
-    if (kerbKeys.has(rec.in.key)) continue
+    if (curbStands(rec, kerbKeys)) continue
     const { a, b, left } = rec.in
     let across = 'road'
     if (!rec.out) { if (rec.uses !== 1) continue

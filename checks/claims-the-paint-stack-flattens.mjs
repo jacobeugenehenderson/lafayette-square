@@ -79,7 +79,8 @@ export function stepsAreTimed(src) {
 }
 // ── the source-reading row: the kerb's plan and cells read the block rings `nodeThePlane` returns, below it ───────────
 export function kerbReadsTheNodedRings(src) {
-  const at = src.search(/const \{ blockRings: nodedBlockRings \} = [^\n]*\bnodeThePlane\(/)   // timed or not
+  // the destructure, not the whole line (it may take the noded rim rings too), timed or not
+  const at = src.search(/const \{[^}]*\bblockRings: nodedBlockRings\b[^}]*\} = [^\n]*\bnodeThePlane\(/)
   if (at < 0) return 'bakeGround does not take its block rings from nodeThePlane'
   const plan = src.indexOf('kerbPlan({ blockRings: nodedBlockRings,'), cells = src.indexOf('kerbCells(kerbRegs, nodedBlockRings)')
   if (plan < 0) return 'kerbPlan does not read the noded block rings'
