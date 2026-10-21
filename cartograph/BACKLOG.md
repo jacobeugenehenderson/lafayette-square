@@ -344,7 +344,10 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
     (Plumb builds): emit the entry for every rim-edged tile; absence there then refuses; the deformer's else-branch goes.
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
-    gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
+    gap check is the only net if it shrinks. MEASURED (Plumb, LS, 937148f4): the derived reach clears #39's 0.18 mm crack
+    and the t-junction check, but OPENS 85 seams (363 m) the 5 mm weld was closing (it also closes 399 / 643 m the derived
+    reach doesn't make). HELD behind the past-bound class (B1/B2 pairs ≤ 1.414 mm, plus 21 welds at 2–5 mm, cause not
+    established); patch parked. Vacant (-826, 190–196) doesn't
     reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
     unowned ped vertices (exact count in lafayette-square.census.json). Flatten and the deformer refuse nothing; every later
     step clean through manifest.
