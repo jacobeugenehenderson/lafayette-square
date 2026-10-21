@@ -32,7 +32,7 @@ re-runs every step.
   another span's cell is shared by every span whose own rect holds it (the extension enters `bandPiecesOfTile`'s
   arrangement as leg A's rect). The check `claims-the-bands-are-held-by-their-owners` gains the clause and 5 mutants.
   Measure first: legs whose span is an arc's label (Huron), and Huron's extension no-cell ground 10,853 m² vs refusedPerp
-  6,179 m². refusedPerp today: Huron 6,179 m², HPDM 4,532 m², LS 45 m².
+  6,179 m². refusedPerp on 44b3ab2f: Huron 6,179 m² and LS 45 m² (Screed, frozen norms); HPDM, PTown and JH 0 with their frozen "none" norm, while HPDM is 4,532 m² with the norm resolved live as the next derive will freeze it (Loess's render).
 - **Classifier step 7** (Tally's plan): one `streetClass.json` per town, from the pour's own classifier (LS by a
   light script over its frozen sources, never `clean/`); a missing file throws. Corner radii 15/20/25 ft by class, a
   two-class corner takes the larger. Ped depths by class. The house 6 in kit kerb; `kerb.byClass` (Huron: local and
