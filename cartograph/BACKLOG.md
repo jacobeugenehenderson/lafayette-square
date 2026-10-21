@@ -89,7 +89,9 @@ the forbidden map cover footways?).
 ✅ Jacob's eye on the before/after (2026-10-21): "Image looks great. Confirmed those are NEON rooftops, expected, correct."
 ✅ Jacob's GO for staging (2026-10-21): "yes, go ahead". Preview happens on STAGING, never via local branch switches. Both Ward
 changes are merged onto theward main by Jacob (382f1bd, local). Next: the production backup → staging publish (the HPDM
-slab from zob-hpdm926 + the Ward build at 382f1bd) → the rose's owed checks against staging → Jacob's look → the press. Integration HEAD
+slab from zob-hpdm926 + the Ward build at 382f1bd) → the rose's owed checks against staging → Jacob's look → the press. Running
+(Ward, A–D). ⚠️ FINDING (Ward): the Stage panel's Publish (serve.js, main checkout) re-freezes and uploads the MAIN checkout's
+slab and commits; a candidate in a worktree is published with scripts/upload-baked-to-r2.mjs run from that worktree. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
 (+ checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs). FILED, after Thursday: (i) source a St. Louis CITY land-use
 code table (the surviving ranges are unverified; the 4xxx–5xxx look SIC-like, a lead) · (ii) ONE City code reader shared by
