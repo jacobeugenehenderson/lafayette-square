@@ -159,6 +159,10 @@ Start here. State at the restart:
     The crease split (Plumb, cutCreases: every crossing computed and rounded ONCE, written into both edges): LS added
     unshared 30.2 km → 2.9 km. RULED in scope: MITRED tapers (neighbours share one crease at the bisector), since rectangles
     overlap at convex bends and leave h-wedges at reflex ones. ❓ Jacob: eye-gate the mitred taper at a bend.
+    NARROW BLOCKS (Plumb): a finger narrower than 2 × run, where a taper reaches across the block; kerbCells has clipped it
+    SILENTLY since 8bd2751f (LS: 147 rectangle vertices; mitre 134, 117 shared). RULED tonight: the clip stays, made LOUD
+    (counted, with sites). ❓ Jacob: the ridge rule (run ≤ the block's half-width, the two sides meet); eye list: the finger
+    tips (191.276, 461.413), (149.027, 437.185), (-634.945, 213.268), (324.619, 728.015), (422.640, 459.247).
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
