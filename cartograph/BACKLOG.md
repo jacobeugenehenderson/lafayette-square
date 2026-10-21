@@ -117,7 +117,11 @@ Start here. State at the restart:
     flatten them: neither of Zob's (a)/(b); cause not established, kerbLift's taperRegions is the place to look. verge|stripe
     differs: Mississippi's centre stripe straddles the block edge (the road lies only east of it; its west half sits on lifted
     verge), because `centreStripeRings` draws from the ribbon centreline and never reads the road's extent. Design call:
-    confine the stripe to the road, or make the west half road (beside motorway_link 40) (Zob, measured). Owners: the kerb lift (Sill/Swale lineage) for the five; the verge/junction-residual paint for the one. and #40
+    confine the stripe to the road, or make the west half road (beside motorway_link 40) (Zob, measured). PLACED (Plumb, measured, all 14 bare vertices): M1 ×6, a curb leaving the block edge at < 26.6° that the
+    finder's 1 mm-inboard read calls curbed while the riser's ownership read doesn't: RULED, the finder reads the partition's
+    owner per stretch, one predicate shared with the riser (pending Zob's premise pass) · M2 ×8, 0.16–0.61 mm cracks between
+    flushTol (1 lattice) and ON_EDGE_M (5 mm): HELD until Zob says what ON_EDGE_M closes. Vacant (-826, 190–196) doesn't
+    reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
     unowned ped vertices (exact count in lafayette-square.census.json). Flatten and the deformer refuse nothing; every later
     step clean through manifest.
   · Merged tonight after the census began: the memo bound (1e6958f2), the shore-pass gate + exact unowned list (b88f7245),
