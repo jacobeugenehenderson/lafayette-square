@@ -103,6 +103,9 @@ Start here. State at the restart:
     Tile 170 (Mitre, HEAD ba02b826): fix B owns 10 of 26, including Jacob's pair at (−230.56, −508.73); the 16 left are in
     no perpendicular rect (12 'band but no piece', possibly a stale-dump mismatch; 4 the tile-211 shape). Class 3 needs a fresh
     producer dump: Mitre's slot run, right after Huron.
+  · HURON CENSUS DONE (Kerf, on 83652943, before fix B and the both-sides read): every step exits 0; the ONLY refusal is #40,
+    19,655 unowned, 96% on tile 6 (18,855). Ground 5,196 s / 11.8 GB + ground-shore 4,591 s / 11.3 GB: 2.7 h of ground baking
+    (Jacob: long bakes are not acceptable). Tile 6 re-measured at HEAD by Zob, in memory, at low priority (not Thursday).
     REVISED (Zob, measured): **~81 are a ray running ALONG a partition line** (the 'holes' were the instrument sampling along it;
     no ground is missing). bandsAlong reads one 10 µm side; on the land-use side it reads lot. Fix, being built (Kerf): read
     both sides at ±LATTICE; the band still decides. Of the rest · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
