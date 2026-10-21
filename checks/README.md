@@ -119,7 +119,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 29. `npm run test:all`, never CI.
+## local-effect — 30. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -129,6 +129,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-false-map-is-not-a-fallback.mjs` | fallback.mjs — IS ANY INPUT'S ABSENCE PRETENDING TO BE FINE? |
 | `checks/claims-a-hand-curated-town-gets-its-roster.mjs` | CLAIM: a town that keeps its LISTINGS by hand (`meta.baseSource: "hand-curated"`) still gets its ROSTER from |
 | `checks/claims-a-pour-keeps-building-ids.mjs` | Building ids are minted ONCE, at fetch (`fetch-msbf.js` → `identity-registry.json`, the seal). |
+| `checks/claims-a-road-marking-lies-inside-its-road.mjs` | road.mjs — EVERY ROAD MARKING THE GROUND PAINTS LIES ON THE ROAD. |
 | `checks/claims-a-scene-is-named-not-numbered.mjs` | numbered.mjs — a neighborhood's scene id is the slug |
 | `checks/claims-a-town-owns-its-raw-inputs.mjs` | inputs.mjs — DOES ANY TOWN READ ANOTHER TOWN'S RAW INPUT? |
 | `checks/claims-coast-distance-is-the-coast.mjs` | coast.mjs — IS THE COAST-DISTANCE CHANNEL THE DISTANCE TO THIS TOWN'S COAST? |

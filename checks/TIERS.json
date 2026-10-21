@@ -1,9 +1,9 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 437,
+  "total": 438,
   "counts": {
     "safe": 317,
-    "local-effect": 29,
+    "local-effect": 30,
     "live": 91
   },
   "checks": [
@@ -439,6 +439,14 @@
         "deletes files",
         "copies/renames files",
         "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-road-marking-lies-inside-its-road.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
