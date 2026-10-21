@@ -119,7 +119,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 27. `npm run test:all`, never CI.
+## local-effect — 28. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -142,6 +142,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ground-meets-its-terrain.mjs` | terrain.mjs — DOES THE DRAWN GROUND'S TERRAIN PART STAY ON ITS TERRAIN, WITH NO WALLS? |
 | `checks/claims-the-ground-stays-in-budget.mjs` | "DOES THIS GROUND BAKE FIT UNDER ITS TOWN'S SERVED SLAB SIZE AND SERVED GROUND-BAKE TIME?" |
 | `checks/claims-the-line-is-continuous.mjs` | continuous.mjs — THE LINE'S HEIGHT IS A CONTINUOUS FUNCTION OF THE POINT ASKED. |
+| `checks/claims-the-paint-stack-flattens.mjs` | flattens.mjs — DOES EVERY TOWN'S PAINT STACK PRESS DOWN WITHOUT A REFUSAL? |
 | `checks/claims-the-road-lies-on-the-lattice.mjs` | lattice.mjs — EVERY ROAD VERTEX IN THE DISC LIES IN A TILE OR AN INK PIECE (`roadOffTheLattice`). |
 | `checks/claims-the-road-meets-itself-across-its-centreline.mjs` | centreline.mjs — DOES THE DRAWN ROAD MEET ITSELF WHERE ITS TWO HALVES READ |
 | `checks/claims-the-street-eye-stands-on-the-ground.mjs` | ground.mjs — IS EVERY STREET CAMERA 5′8″ ABOVE THE DRAWN GROUND? |

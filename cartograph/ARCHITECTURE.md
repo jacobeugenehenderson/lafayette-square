@@ -256,7 +256,10 @@ See **§8 "Data flow & the bake chain"** below for the canonical pipeline diagra
 > layer against the union of everything above it, and emits only what is visible. A layer
 > is the **union of its items** (`layerRegion`); each emitted ring is an outer or a hole by
 > the ground inside it (`itemsByMembership`), never by PolyTree nesting, which double-painted
-> and left ground unpainted (2026-10-14). ▶ `node checks/claims-the-ground-is-painted-once.mjs`
+> and left ground unpainted (2026-10-14). Before it, two groups that meet on the lattice are
+> made to share their vertices (`nodeAcrossGroups`, within the rounding's √2/2 step; the count per
+> group pair is in `ground.json#flatten.noded`). ▶ `node checks/claims-the-ground-is-painted-once.mjs`
+> · `node checks/claims-the-paint-stack-flattens.mjs [--mutants]`
 > ⇒ **33 of 35 layers on one plane at y=0; `GROUND_Y_EPS` has no work left to do for
 > them.** Paint order stops being a render concern and becomes a bake-time flattening
 > order — the only place it was ever meaningful — and the Designer and the slab agree
