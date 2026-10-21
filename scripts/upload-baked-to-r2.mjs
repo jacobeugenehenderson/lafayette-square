@@ -67,6 +67,7 @@ import { promisify } from 'node:util'
 import { createHash } from 'node:crypto'
 import { HASHED, CACHE, contentName, shaOf } from '../src/lib/slabNames.js'
 import { EXCLUDE, notPublished } from './slab-publish-rule.mjs'
+import { slabNameMismatches } from './slab-name-rule.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -160,6 +161,12 @@ export function plan({ look, prefix, root = BAKED_ROOT, names } = {}) {
     if (ground?.shore === 'pending') {
       throw new Error(`"${l}"'s ground is shore: "pending" — the Bake's first ground pass, with no shore sand yet. `
         + `Nothing was uploaded. ▶ Bake "${l}" again: its 'shore-median' and 'ground-shore' steps paint the shore`)
+    }
+    const misnamed = slabNameMismatches(town, l)
+    if (misnamed.length) {
+      throw new Error(`"${l}"'s slab does not carry the name "${l}" — ${misnamed.length} stamp(s) disagree. Nothing was uploaded.\n     `
+        + `${misnamed.slice(0, 12).join('\n     ')}${misnamed.length > 12 ? `\n     …and ${misnamed.length - 12} more` : ''}`
+        + `\n   ▶ A slab carries its name inside its files: re-bake it under this name, never move or re-stamp it`)
     }
     const why = notPublished(town, l)      // lod0, viz sheets, and an all-impostor town's model-tree files
     for (const abs of walk(town)) {
