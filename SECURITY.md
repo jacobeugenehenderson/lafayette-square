@@ -795,15 +795,7 @@ supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
 1. ~~**F-2**~~ ✅ closed + deployed 2026-08-24.
 2. ~~**F-5 (Twilio half)** + **F-9**~~ ✅ closed + deployed 2026-08-24. ▶ Owed: send a real text and
    confirm it lands — the accept path could not be verified from here.
-3. **F-4** — `requests` carries an open **UPDATE** policy and is handing rows to anon right now
-   (`scratch/claims-cary-anon-exposure.mjs` fails on it).
-   ### ⭐ AND **F-13/`contact-sms` IS NOW ABOVE ITS OWN RANK** *(2026-08-24)*
-   Jacob is adding a **public "direct contact" QR** that routes into `contact-sms`. That function is
-   deployed, takes `ACAO: *`, has **no auth and no rate limit**, and every POST sends a real Twilio SMS
-   to `CONTACT_PHONE` and a SendGrid email. A QR makes the endpoint *more* discoverable, and the abuse
-   is billable spend plus SMS-flooding a personal phone. `ls/OPERATIONS.md` has called this a ⛔ for a
-   while; this register still files it under **F-13 · LOW · broad CORS**, which is the wrong severity.
-   ⛔ **Rate-limit / abuse-gate it before the QR is printed**, not after.
+3. ~~**F-4**~~ ✅ closed by `010`, applied + verified live 2026-08-24 (its §3 heading).
 4. ~~**F-10**~~ ✅ closed by `011` — and re-ranked MEDIUM→HIGH on the way, because `010` had widened it.
 5. **F-14** — `courier_profiles` hands every column (license plate, Stripe account id, expiry dates) to
    the anon key for any *active* courier. Latent only because there are none yet; **live on the first
@@ -813,6 +805,7 @@ supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
    prerequisite before either is. `cary/stripe/webhooks.js` has no HTTP entrypoint at all.
 7. ~~**F-13** (`contact-sms` half)~~ ✅ capped + origin-locked 2026-08-24.
 8. **F-6, F-11, F-12, F-13 (the other three functions)** — harden as the surfaces mature.
+9. **Not yet ranked in this list** (states from their §3 headings; ranking them is the security session's call): **F-16** (HIGH, launch blocker, console-side) · **F-20** · **F-19** · and **F-25**, **F-26**, **F-29**, fixed in draft 2026-10-13 with F-24/F-27, unreviewed, not deployed.
 
 _Also check the Supabase **Auth** dashboard settings (OTP expiry, leaked-password protection,
 allowed redirect URLs) — those Advisor lints live in the console, not this repo._
