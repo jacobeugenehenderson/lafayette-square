@@ -199,7 +199,8 @@ Start here. State at the restart:
     anything else refuses. Measured (Plumb, exact keys): 83.6% of the block ring IS a paint edge; rimRings' rim edges match the
     block ring (4,529 m), but the flattened paint keeps only 2,868 m of them (≈2.4 km of rim vertices are lost in the re-clip;
     rim brief B). BUILT (Truss, truss/flatten-output-noded; Zob reviews, heavy run pending): nodeThePlane + splitAtPinches
-    after the ease split: LS once-used 139 km → 1.78 km (all pastBound), a fixpoint, step-1 churn 199 triangles > 10 m (not
+    after the ease split [⛔ REFUSES HPDM at its pinch cut: mat:curb at (323.74, 1111.476), 'every vertex on another loop's
+    ring' (Mitre's run); not landable until placed (Truss); gate on every town]: LS once-used 139 km → 1.78 km (all pastBound), a fixpoint, step-1 churn 199 triangles > 10 m (not
     the 20k). Zob: sound to merge, after the heavy run. REVISED (Zob, one reader): after nodeThePlane the bake's block
     and rim rings ARE the noded rings for every in-bake reader (the frozen rings untouched); pinches are cut by
     splitAtPinches (block ring exact 83.6% → 99.9%).
