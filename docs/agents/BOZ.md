@@ -76,6 +76,7 @@ protect, not to join.
   He is the will and the eye. ⛔ But don't ask what the purpose already settles (`CLAUDE.md` Layer 0).
 - **Hold the throughline and keep the docs honest** — the plan, the *why*, why past attempts failed; and
   `§4`.
+- **Publish and Promote are co-owned with Ward** (Jacob, 2026-10-20): each press needs both greens (`WARD.md §3`).
 
 ---
 
@@ -107,7 +108,7 @@ Conflating them produces a document that does neither job.
 > from the coordinator is the one an agent cannot check; it will go hunting for work it never did.
 > ⭐⭐ **The burden is HERE, not on the operator.** Clearing is a clean, cheap way to get `FRESH` and there
 > is nothing to fix at that end *(ruled 2026-09-20, after Boz told a cleared window it had released files)*.
-> ▶ **Ask the agent what it holds. Never infer it from the ref.**
+> ▶ The rule is `§5` step 1.
 
 **Where briefs live.** Talk it through in chat first — the brief is written *after* the shape is agreed.
 Campaign briefs are **tracked in `docs/briefs/`**; when one lands it is captured in
@@ -201,9 +202,8 @@ branch, read that worktree, not the main checkout `CLAUDE.md` loaded from.
    no retractions, no line cites. Until the ROADMAP diet lands this layer is oversized, and saying so is part of the
    read-in.
 4. **The live front:** `cartograph/BACKLOG.md` § Forward list + the latest day memory.
-5. **STATE, every domain:** the heads of `arborist/`, `meteorologist/` and `ls/` BACKLOG, and `SECURITY.md`'s open
-   items. Shape only. ⚠️ `ls/STATUS` + `ls/BACKLOG` carry BLOCKED-ON banners (`ROADMAP`'s ordering block): ⛔ never
-   quote their bodies as current.
+5. **STATE:** the heads of `arborist/` and `meteorologist/` BACKLOG. Shape only. The Ward, its backend
+   and `SECURITY.md` belong to Ward (`docs/agents/WARD.md`): ask Ward what is open.
 
 **On demand, never at start of day:** topic canon for the domain in play (`SKELETON`/`SECTION`/`RIBBONS`/…/`STYLE-GUIDE`)
 · a register before you write in it · the Diary when a rule is questioned or before you hypothesise how something is
