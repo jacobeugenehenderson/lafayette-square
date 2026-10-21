@@ -29,12 +29,7 @@ re-runs every step.
 - Sidewalk spikes where a treelawn ends near a T (HPDM wide view at (-156.7, 416.1), before and after perp-depths).
 
 **Builds, planned and ruled (not started):**
-- **Perpendicular-corner leg ownership** (Screed's note, option A): each extension keeps its leg's span from
-  construction; the crossing square belongs to both legs; one-pad hull ground goes to the arc span; ground inside
-  another span's cell is shared by every span whose own rect holds it (the extension enters `bandPiecesOfTile`'s
-  arrangement as leg A's rect). The check `claims-the-bands-are-held-by-their-owners` gains the clause and 5 mutants.
-  Measure first: legs whose span is an arc's label (Huron), and Huron's extension no-cell ground 10,853 m² vs refusedPerp
-  6,179 m². refusedPerp on 44b3ab2f: Huron 6,179 m² and LS 45 m² (Screed, frozen norms); HPDM, PTown and JH 0 with their frozen "none" norm, while HPDM is 4,532 m² with the norm resolved live as the next derive will freeze it (Loess's render).
+- **Perpendicular-corner leg ownership**: ruled (option A); the build is `docs/briefs/BRIEF-perpendicular-leg-ownership.md` (OPEN).
 - **Classifier step 7**: the plan, Jacob's rulings, the checks and mutants: `docs/briefs/BRIEF-the-classifier.md` §5b
   (OPEN, not dispatched). Repaints every unauthored arterial and collector edge (LS: 44 chains).
 - Classifier Pass B: islands (walk and ramps only where a crossing passes), plazas, living street (both-side walks to
