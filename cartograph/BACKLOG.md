@@ -71,7 +71,9 @@ both LOAD, DRAW and PLAY; no new ground bake is needed to play. ⭐ D1 PLACED (T
 Park classed COMMERCIAL. City parcel #3177 has land_use_code 5000, and parcel-landuse.mjs#classifyCity maps 5000–5999 →
 commercial (and 4000–4999 → recreation, which in the data is railroads/utilities), ranges with no City code table behind
 them, so a class in HPDM and LS. Fix: drop both ranges (→ underived) and re-bake the ground; a served recolour can't separate
-it. The bake path is being assessed (Zob), and what Forest Park becomes is being measured (Truss). D2: HPDM production predates the 10-14 Ward tranche
+it. RULED (refined, Truss): only bare 5000 and 4000–4999 → underived (HPDM 518 + 7 parcels, LS 238 + 22); the specific
+51xx–59xx stay commercial, marked unverified until a City code table is sourced. Forest Park then paints underived (grass);
+its OSM park relation is absent from the fetch (an intake item). The bake path is being assessed (Zob). D2: HPDM production predates the 10-14 Ward tranche
 (a Promote). D4/D6: a pale rim haze band behind LS's Arch. D5: LS phone ticker line clipped. ❓ Jacob: which LS link is
 Thursday's (lafayette-square.com's old player, or the Ward)?
 
