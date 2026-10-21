@@ -113,7 +113,10 @@ Start here. State at the restart:
     landable. PREMISE (Zob): the switch to pre-flatten paint was deliberate (6be9cbaf, 10-11, Jacob's ruling: an overlay
     must not cut a walk off its street); no dependency forces it. Proposal being MEASURED (Zob, probe): the deformer reads
     (the flattened band ∪ painted ∩ the groups above it) after nodeThePlane, i.e. the ruling's ownership on the drawn geometry.
-    Lands with Truss's noding if owners don't move; otherwise it goes to Jacob.
+    Lands with Truss's noding if owners don't move; otherwise it goes to Jacob. CLASS 3 PLACED (Mitre): 53 of the 59 'beyond' are a 0.34–0.82 mm
+    wedge between the painter's noded rim and byMaterial's bands (B1's shape again), so the same input question. One probe
+    (Mitre runs it on Zob's definition, with the rims from the same plane). 6 others: back-edge ×2 (tiles 24, 89) · long lot
+    after the rim ×4 (tiles 177, 198, 200, 202; cause not established).
   · HURON CENSUS DONE (Kerf, on 83652943, before fix B and the both-sides read): every step exits 0; the ONLY refusal is #40,
     19,655 unowned, 96% on tile 6 (18,855). Ground 5,196 s / 11.8 GB + ground-shore 4,591 s / 11.3 GB: 2.7 h of ground baking
     (Jacob: long bakes are not acceptable). Tile 6 re-measured at HEAD by Zob, in memory, at low priority (not Thursday).
