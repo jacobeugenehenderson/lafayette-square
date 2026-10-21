@@ -33,11 +33,8 @@ re-runs every step.
   arrangement as leg A's rect). The check `claims-the-bands-are-held-by-their-owners` gains the clause and 5 mutants.
   Measure first: legs whose span is an arc's label (Huron), and Huron's extension no-cell ground 10,853 m² vs refusedPerp
   6,179 m². refusedPerp on 44b3ab2f: Huron 6,179 m² and LS 45 m² (Screed, frozen norms); HPDM, PTown and JH 0 with their frozen "none" norm, while HPDM is 4,532 m² with the norm resolved live as the next derive will freeze it (Loess's render).
-- **Classifier step 7** (Tally's plan): one `streetClass.json` per town, from the pour's own classifier (LS by a
-  light script over its frozen sources, never `clean/`); a missing file throws. Corner radii 15/20/25 ft by class, a
-  two-class corner takes the larger. Ped depths by class. The house 6 in kit kerb; `kerb.byClass` (Huron: local and
-  living-street 0). The kit taper run is height × 12 (ADA 2010 §405.2); a finding row `f-ada-ramp-running-slope` goes in
-  the registry for Jacob's approval. Repaints every unauthored arterial and collector edge (LS: 44 chains).
+- **Classifier step 7**: the plan, Jacob's rulings, the checks and mutants: `docs/briefs/BRIEF-the-classifier.md` §5b
+  (OPEN, not dispatched). Repaints every unauthored arterial and collector edge (LS: 44 chains).
 - Classifier Pass B: islands (walk and ramps only where a crossing passes), plazas, living street (both-side walks to
   the frontage, low kerb, no lawn), unknown class refuses → the Type pulldown.
 - Frontage: garden vs street-wall, selected by a building within one band depth; nothing painted under a building.
