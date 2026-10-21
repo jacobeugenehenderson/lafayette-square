@@ -2201,6 +2201,9 @@ function insertOnEdges(ring, owners, pts, ok) {
   ring.forEach((p, k) => { R.push(p); O?.push(owners[k]); for (const { v } of at[k].sort((x, y) => x.u - y.u)) { R.push(v); O?.push(owners[k]) } })
   return { ring: R, owners: O, missed, off }
 }
+// a shape stamped with exactly this stencil, vertex for vertex on the grid: the recorded fact that decides the rim is cut once
+// (sectionOpen's finish here, the bake's stencil clip in bake-ground.js). ⛔ Never decided on geometry.
+export const sameStamp = (a, b) => a?.length === b?.length && a.every((v, k) => { const p = toClipper(v), q = toClipper(b[k]); return p.X === q.X && p.Y === q.Y })
 export function shareRimCrossings(ring, owners, cutBlock, inputBlock, stamp) {
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, known = new Set([...inputBlock.flat(), ...stamp].map(K)), have = new Set(ring.map(K))
   const minted = []; for (const r of cutBlock) for (const v of r) { const k = K(v); if (!known.has(k) && !have.has(k)) { minted.push(v); have.add(k) } }
@@ -5870,8 +5873,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // ring vertices round up to 0.6 mm either side of the chord, so that test fired on half the rim tiles (Zob: HPDM 36/71).
   // The bake and Survey both pass it, so they paint alike. ▶ node checks/claims-the-rim-is-cut-once.mjs
   const hasStencil = !!(stencil && stencil.length >= 3)
-  const sameRing = (a, b) => a?.length === b?.length && a.every((v, k) => { const p = toClipper(v), q = toClipper(b[k]); return p.X === q.X && p.Y === q.Y })
-  const reclip = hasStencil && !sameRing(stampedWith, stencil)
+  const reclip = hasStencil && !sameStamp(stampedWith, stencil)
   const clip = (rings) => hasStencil && rings.length ? intersectRings(rings, [stencil]) : rings
   for (let i = 0; i < shapeTiles.length; i++) {
     const b = tileGeo(shapeTiles[i], i), cl = reclip ? clip : (r) => r

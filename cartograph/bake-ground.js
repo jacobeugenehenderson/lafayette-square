@@ -53,7 +53,7 @@ import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { curbedMinWidthOf } from './curbedMinWidthOf.mjs'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
-import { buildTileGround, roadOffTheLattice } from '../src/lib/tileGround.js'
+import { buildTileGround, roadOffTheLattice, sameStamp } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
@@ -532,6 +532,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     const polys = ringsToHoledPolys(rings)
     if (polys.length) byFaceUse.set(lu, (byFaceUse.get(lu) || []).concat(polys))
   }
+  // ⭐ EVERYTHING ABOVE IS ①'s PAINT, already cut once to the stencil inside the painter (the stamp, or tileGround's own
+  // intersect with it): the bake's stencil clip passes these items through when the stamp is this stencil (`cutOnce`, below)
+  const cutOnce = new Set([...[...byMaterial.values()].flat(), ...[...byFaceUse.values()].flat()])
   // Non-street ribbons (alleys + footway/cycleway/steps/path). The Designer
   // renders these live (BlockGeometryV2Debug → buildPathRibbons), but the bake
   // dropped them: the call lived ONLY in the figure-ground path (deleted at T4)
@@ -579,7 +582,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
   if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
-  return { byMaterial, byFaceUse, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
+  return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
            perpLegs: (pr.protoBandPieces || []).map(t => ({ tile: t.tile, perp: t.perp || [] })),
@@ -1213,7 +1216,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1353,11 +1356,16 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     }
   }
 
-  // Re-clip to the stencil — V2 already clipped its own output, but
-  // our injected overlays haven't seen the clipper yet. Run it again
-  // so nothing leaks past the silhouette. No-op when stencil.clipPolygon
-  // is null (a scene with no neighborhood_boundary.json).
-  if (stencil.clipPolygon) clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon)
+  // ⭐ THE RIM IS CUT ONCE (BRIEF-the-rim-is-cut-once B1, Boz 2026-10-21): the injected overlays (paths, park paths, map layers)
+  // are clipped to the stencil here; ①'s paint, cut once by the painter to the drawn block inside this same disc, is NOT cut
+  // again. Clipped a second time to the exact chord, it minted fresh crossings ~1 mm off the rim ring's own vertices, or cut
+  // those vertices away (HPDM tiles 134, 55: the 53 'beyond' wedges the deformer read as lot). ⭐ Decided on the recorded
+  // fact (`sameStamp`: the tiles were stamped with exactly this stencil), never on geometry; any other stamp is clipped as
+  // before. No-op when stencil.clipPolygon is null (a scene with no neighborhood_boundary.json).
+  // ▶ node checks/claims-the-rim-is-cut-once.mjs
+  if (stencil.clipPolygon) { const once = sameStamp(stampedWith, stencil.clipPolygon) ? cutOnce : null
+    const cc = clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon, { cutOnce: once })
+    console.log(`  [bake-ground] the stencil clip: ${cc.clipped} overlay item(s) clipped · ${cc.kept} of ①'s item(s) passed through, cut once (${once ? 'stamped with this stencil' : '⛔ NOT stamped with this stencil, so clipped again'})`) }
 
   // ⛔⛔ THE SILENT DROP, MADE LOUD. PAINT_ORDER is an ALLOW-LIST: anything
   // collected into byMaterial/byFaceUse under a key no entry consumes is

@@ -63,8 +63,11 @@ export const LAND_USE_COLORS = {
 // entries — bare rings (paths, OSM overlays) and {outer, holes} polygons
 // (V2 Clipper output via the bake adapter) both supported. Stencil
 // intersection preserves outer/hole topology via Clipper's PolyTree.
-export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon) {
-  if (!stencilPolygon || stencilPolygon.length < 3) return
+// ⭐ `cutOnce`: the items already cut to THIS stencil by the painter (bake-ground.js#buildTileBakeShape, decided on the stamp),
+// passed through unclipped — a second cut at the rim mints fresh crossings (BRIEF-the-rim-is-cut-once B1). Returns the counts.
+export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon, { cutOnce = null } = {}) {
+  if (!stencilPolygon || stencilPolygon.length < 3) return { kept: 0, clipped: 0 }
+  let kept = 0, clipped = 0
   const { Clipper, PolyType, ClipType, PolyFillType, Paths, PolyTree } = clipperLib
   const toClipper = (p) => ({ X: Math.round(p[0] * CLIP_SCALE), Y: Math.round(p[1] * CLIP_SCALE) })
   const toWorld   = (path) => path.map(p => [p.X / CLIP_SCALE, p.Y / CLIP_SCALE])
@@ -74,6 +77,8 @@ export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon) {
     const out = []
     for (const item of rings) {
       if (!item) continue
+      if (cutOnce?.has(item)) { out.push(item); kept++; continue }
+      clipped++
       // ⛔⛔ A BARE RING GOES THROUGH THE PolyTree TOO — it used to be clipped into a flat
       // `Paths` and every path pushed as a bare ring, which cannot say which one is a HOLE.
       // A polyline buffered by `polylineToRing` along a CLOSED line (a turning-circle stripe,
@@ -126,6 +131,8 @@ export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon) {
     const out = []
     for (const f of faces) {
       if (!f.outer || f.outer.length < 3) continue
+      if (cutOnce?.has(f)) { out.push(f); kept++; continue }
+      clipped++
       const subj = new Paths()
       subj.push(f.outer.map(toClipper))
       for (const h of (f.holes || [])) {
@@ -161,4 +168,5 @@ export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon) {
     }
     byFaceUse.set(use, out)
   }
+  return { kept, clipped }
 }

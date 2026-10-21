@@ -16,11 +16,17 @@
 //      own rounded rim crossing had left an unpainted wedge (7.7 mm along its oblique ray).
 //      And on HPDM tile 242, B2's own wedge point is owned the same way (its curb/lawn pair stays 1.41 mm apart: the guard is the
 //      consequence).
+//   6. (F) THE BAKE CUTS ①'s PAINT ONCE TOO (B1, Mitre 2026-10-21). The same six tiles' finish, handed to the bake's own stencil
+//      clip (`clipAllToStencil`, the real one) as the bake hands it (`cutOnce`, every item ①'s painter drew): no rim vertex
+//      new to the finish. Clipped again to the stencil's exact chord, the rim re-rounded ~1 mm off the rim ring's own vertices
+//      or lost them (HPDM tiles 134, 55: class 3's 53 'beyond' wedges). And bake-ground.js passes `cutOnce` exactly when the
+//      tiles were stamped with this stencil (`sameStamp`, the recorded fact), from the items ①'s painter returned.
 //   3. (C) THE TILE RING CARRIES THE BLOCK'S RIM CROSSINGS (synthetic): a ring and its block, cut by an oblique disc chord
 //      separately, then `shareRimCrossings`: every block vertex on a rim edge of the ring is a ring vertex. Unshared, `ring − iA`
 //      left LS tile 133 a 12.7 m, ≤ 0.166 mm needle.
 // ⭐ MUTATION TEST: `--selftest` plants each wrong producer back (written to the OS temp dir) and expects its row RED: the bands
-//   cut at the end · beyond read off the stencil · the crossings not shared.
+//   cut at the end · beyond read off the stencil · the crossings not shared · the bake's clip ignoring `cutOnce` · the bake
+//   passing no `cutOnce`.
 //   node checks/claims-the-rim-is-cut-once.mjs [--selftest]
 import { ROOT } from './_scenes.mjs'
 import { join } from 'node:path'
@@ -39,7 +45,8 @@ const segHolds = (q, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = d
 // one loader per module, each with its own one parameter, so checks/tier.mjs can follow every import to its source
 const loadTG = async (tgUrl) => import(tgUrl)
 const loadDEF = async (defUrl) => import(defUrl)
-const rows = async (TG, DM) => {
+const loadRG = async (rgUrl) => import(rgUrl)
+const rows = async (TG, DM, RG, BAKE) => {
   const { buildDeformer } = DM
   const paint = (x) => { const w = console.warn; console.warn = () => {}
     try { return TG.sectionPassProtoTile(x.tile, F.cw, { outer: 'LU', inner: 'SW' }, x.blockCustoms, x.cornerOverrides) } finally { console.warn = w } }
@@ -52,6 +59,12 @@ const rows = async (TG, DM) => {
   const lw = console.log, ww = console.warn; console.log = () => {}; console.warn = () => {}
   let SO; try { SO = TG.sectionOpen(Ts, F.cw, { outer: 'LU', inner: 'SW' }, F.stencil, {}, null, null, {}, { stampedWith: F.stencil }) } finally { console.log = lw; console.warn = ww }
   const finRim = [...SO.curb, ...SO.curbCut, ...SO.sidewalk, ...Object.values(SO.treelawnByLu || {}).flat(), ...Object.values(SO.luByClass || {}).flat()].flat().filter(onAnyRim), minted = finRim.filter(v => !own.has(key(v))).length
+  // 6 — the same finish through the bake's own stencil clip, handed as the bake hands it: ①'s items, cut once
+  const finItems = [...SO.curb, ...SO.curbCut, ...SO.sidewalk, ...Object.values(SO.treelawnByLu || {}).flat(), ...Object.values(SO.luByClass || {}).flat()]
+  const byM = new Map([['paint', finItems.slice()]]), cc = RG.clipAllToStencil(byM, new Map(), F.stencil, { cutOnce: new Set(finItems) })
+  const bakeRim = byM.get('paint').flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]).flat().filter(onAnyRim), mintedBake = bakeRim.filter(v => !own.has(key(v))).length
+  const wired = BAKE.includes("const once = sameStamp(stampedWith, stencil.clipPolygon) ? cutOnce : null") && BAKE.includes("clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon, { cutOnce: once })")
+    && /const cutOnce = new Set\(\[\.\.\.\[\.\.\.byMaterial\.values\(\)\]\.flat\(\), \.\.\.\[\.\.\.byFaceUse\.values\(\)\]\.flat\(\)\]\)\n  \/\/ Non-street ribbons/.test(BAKE.replace(/\n  \/\/ ⭐ EVERYTHING ABOVE[^\n]*\n  \/\/[^\n]*\n/, '\n'))
   // 2 — the deformer on tile 55's own paint, its point past-the-rim station
   const S = F.slice, s = paint(S), tiles = []; tiles[S.ti] = S.tile; for (let i = 0; i < S.ti; i++) tiles[i] ||= {}
   const D = buildDeformer({ town: F.scene, tiles, ink: [], raw: () => 0, line: { step: 1, heightAt: () => 0 }, stencil: F.stencil, limits: F.limits, legs: [{ tile: S.ti, perp: S.legs }],
@@ -93,6 +106,9 @@ const rows = async (TG, DM) => {
     [`(E) the deformer, reading the noded rim, owns the wedge point (1113.03, 830.88)`, D5.unownedIn(...X.point) == null],
     [`(E) B2's wedge point (−629.61, −1234.17) lies in tile 242's paint`, b2In],
     [`(E) the deformer, on tile 242's noded paint and rim, owns it`, D6.unownedIn(...B2) == null],
+    [`(F) the bake's stencil clip passes the finish's ${cc.kept} item(s) through (clipped ${cc.clipped})`, cc.kept === finItems.length && cc.clipped === 0],
+    [`(F) no rim vertex new to the finish after the bake's clip (minted: ${mintedBake})`, mintedBake === 0],
+    [`(F) bake-ground.js passes cutOnce (①'s items) exactly when the tiles were stamped with this stencil`, wired],
     [`(C) the synthetic block meets the chord at ${onChord.length} point(s)`, onChord.length >= 2],
     [`(C) every one of them is a vertex of the tile ring`, onChord.every(v => keys.has(v.join()))],
   ]
@@ -100,6 +116,8 @@ const rows = async (TG, DM) => {
 const self = process.argv.includes('--selftest')
 const TGF = join(ROOT, 'src/lib/tileGround.js')
 const DEF = join(ROOT, 'cartograph/groundDeformer.mjs')
+const RGF = join(ROOT, 'src/lib/ribbonsGeometry.js')
+const BAKEF = join(ROOT, 'cartograph/bake-ground.js')
 const PKG = ['clipper', 'lib'].join('-')   // the painter's one bare import, re-pointed at the repo's own copy
 const LIB = (m) => pathToFileURL(join(ROOT, 'src/lib', m)).href, SRC = (m) => pathToFileURL(join(ROOT, 'src', m)).href, CLIP = pathToFileURL(join(ROOT, 'node_modules/clipper-lib/clipper.js')).href
 const must = (src, a) => { if (src.split(a).length !== 2) throw new Error(`selftest: the source no longer carries \`${a.slice(0, 80)}\` — re-aim the mutation`) }
@@ -107,8 +125,10 @@ const g = "globalThis.__RIM_MUT"
 const T5 = '  if (!minted.length) return { ring, owners, added: 0 }'
 const T9 = '  nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)'
 const R9 = `  if (${g} !== 'nopaint') nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)`
-const T8 = 'const reclip = hasStencil && !sameRing(stampedWith, stencil)'
-const R8 = `const reclip = hasStencil && (${g} === 'reclip' || !sameRing(stampedWith, stencil))`
+const T8 = 'const reclip = hasStencil && !sameStamp(stampedWith, stencil)'
+const R8 = `const reclip = hasStencil && (${g} === 'reclip' || !sameStamp(stampedWith, stencil))`
+const G1 = '      if (cutOnce?.has(item)) { out.push(item); kept++; continue }', H1 = `      if (${g} !== 'clipall' && cutOnce?.has(item)) { out.push(item); kept++; continue }`
+const B1 = '{ cutOnce: once }', B2 = '{ cutOnce: null }'
 const D1 = "let beyond = !!tr?.rim && !pipRings(px + ux * eps, pz + uz * eps, [tr.rimRing])", D2 = "  const recOf = new Map(T.map(r => [r.ti, r]))"
 // ⭐ one mutated copy of each module (checks/tier.mjs reads one temp-dir copy per writer), every mutation behind a switch read at call time
 // the replacements, built here so the writers below are plain chains (checks/tier.mjs reads each writer's body)
@@ -124,6 +144,11 @@ const mutantTG = () => { const tgSrc = readFileSync(TGF, 'utf8')
   for (const a of [T5, T8, T9]) must(tgSrc, a)
   writeFileSync(f, tgSrc.replace(T5, R5).replace(T9, R9).replace(T8, R8).replace(RE_PKG, TO_PKG).replace(RE_LIB, toLib).replace(RE_SRC, toSrc))
   return pathToFileURL(f).href }
+const mutantRG = () => { const rgSrc = readFileSync(RGF, 'utf8')
+  const g3 = join(mkdtempSync(join(tmpdir(), 'rim-once-rg-')), 'ribbonsGeometry.js')
+  must(rgSrc, G1)
+  writeFileSync(g3, rgSrc.replace(G1, H1).replace(RE_PKG, TO_PKG).replace(RE_LIB, toLib).replace(RE_SRC, toSrc))
+  return pathToFileURL(g3).href }
 const mutantDEF = () => { const dfSrc = readFileSync(DEF, 'utf8')
   const g2 = join(mkdtempSync(join(tmpdir(), 'rim-once-def-')), 'groundDeformer.mjs')
   for (const a of [D1, D2, D3]) must(dfSrc, a)
@@ -131,13 +156,16 @@ const mutantDEF = () => { const dfSrc = readFileSync(DEF, 'utf8')
   return pathToFileURL(g2).href }
 if (self) { const tgCopy = mutantTG()
   const dfCopy = mutantDEF()
+  const rgCopy = mutantRG()
+  const BAKE0 = readFileSync(BAKEF, 'utf8'); must(BAKE0, B1)
+  const bakeOf = () => globalThis.__RIM_MUT === 'nocutonce' ? BAKE0.replace(B1, B2) : BAKE0
   let bad = 0
-  for (const [k, name, row] of [['reclip', 'a stamped shape clipped to the stencil again in the finish', 1], ['stencil', "beyond read off the stencil's chord", 3], ['norims', "the painter's noded rim dropped from the deformer (tile 49)", 6], ['nopaint', "the painted pieces not noded with the rim crossings (B2, tile 242)", 8], ['unshared', 'the block\'s rim crossings not shared with the ring', 10]]) {
-    globalThis.__RIM_MUT = k; const R = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)), red = !R[row][1]
+  for (const [k, name, row] of [['reclip', 'a stamped shape clipped to the stencil again in the finish', 1], ['stencil', "beyond read off the stencil's chord", 3], ['norims', "the painter's noded rim dropped from the deformer (tile 49)", 6], ['nopaint', "the painted pieces not noded with the rim crossings (B2, tile 242)", 8], ['unshared', 'the block\'s rim crossings not shared with the ring', 13], ['clipall', "the bake's stencil clip cutting ①'s paint again (cutOnce ignored)", 10], ['nocutonce', 'bake-ground.js passing no cutOnce to its stencil clip', 11]]) {
+    globalThis.__RIM_MUT = k; const R = await rows(await loadTG(tgCopy), await loadDEF(dfCopy), await loadRG(rgCopy), bakeOf()), red = !R[row][1]
     if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'} (${R[row][0]})`) }
-  globalThis.__RIM_MUT = null; const R0 = await rows(await loadTG(tgCopy), await loadDEF(dfCopy)); if (!R0.every(r => r[1])) { bad++; console.log('  ⛔ the mutated copies, switched off, are not GREEN — the mutation changed more than its switch') }
+  globalThis.__RIM_MUT = null; const R0 = await rows(await loadTG(tgCopy), await loadDEF(dfCopy), await loadRG(rgCopy), bakeOf()); if (!R0.every(r => r[1])) { bad++; console.log('  ⛔ the mutated copies, switched off, are not GREEN — the mutation changed more than its switch') }
   process.exit(bad ? 1 : 0) }
-const R = await rows(await loadTG(pathToFileURL(TGF).href), await loadDEF(pathToFileURL(DEF).href))
+const R = await rows(await loadTG(pathToFileURL(TGF).href), await loadDEF(pathToFileURL(DEF).href), await loadRG(pathToFileURL(RGF).href), readFileSync(BAKEF, 'utf8'))
 for (const [m, ok] of R) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
 const ok = R.every(r => r[1])
 console.log(ok ? '✅ the rim is cut once' : '⛔ the rim is cut more than once: a crossing is not shared'); process.exit(ok ? 0 : 1)
