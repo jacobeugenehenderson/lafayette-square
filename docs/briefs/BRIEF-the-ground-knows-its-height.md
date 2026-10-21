@@ -15,8 +15,9 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 
 **Landed** (measured on scratch slabs; no town is served with the deformer yet):
 - The height along ①: `lineHeight.mjs`, `h[]` on every shape run (f0082e6a). ① painted first (d504d7eb).
-- The deformer: `groundDeformer.mjs`; `cutAlong` deleted; the runtime draws `aRaw × uExag + y` (5255b311). Ped bands
-  refine to 7.8 mm (686dff56). The painted band decides, and an unowned walk vertex throws (6be9cbaf, 49665eec).
+- The deformer: `groundDeformer.mjs`, drawn `aRaw × uExag + y` (5255b311); ped bands refine to 7.8 mm (686dff56). The band decides,
+  a ray's crossings chain, a perpendicular leg owns its extension, a frame edge outside the disc gives no height; an unowned
+  ped vertex throws. ▶ `checks/claims-{the-ray-reads-the-bands-the-point-test-reads,the-height-code-owns-what-is-drawn}.mjs --selftest`
 - Readers on the drawn ground (`src/lib/drawnGround.js`): d05e3cc1, c7c433e5, and b0e65999 (the shore median and the
   revetment).
 - The kerb: creases are partition lines (eb1d3876); the lift reads each polygon's carried side (de1c2f83).

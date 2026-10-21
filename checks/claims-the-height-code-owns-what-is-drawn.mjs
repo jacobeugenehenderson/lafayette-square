@@ -1,0 +1,59 @@
+// claims-the-height-code-owns-what-is-drawn.mjs — THE DEFORMER GIVES NO HEIGHT IT DOES NOT OWN, AND REFUSES WHAT THE DRAWING
+// NEEDS AND NOBODY OWNS (BRIEF-the-height-code-owns-what-is-drawn, Jacob 2026-10-20).
+//
+// Synthetic, in memory: one tile, a square ② whose bottom edge is the frame's (`__boundary__`, no line: the rim).
+//   1. A FRAME EDGE OUTSIDE THE DRAWING HAS NO HEIGHT TO GIVE: with the disc clear of that edge, the deformer builds and counts
+//      it exempt; with the disc over it, the same edge REFUSES (the frame must contain the disc), and so does the same edge
+//      unstamped at all. No rim height, no fallback.
+//   2. A POINT IN A DRAWN BAND THAT NO BAND REACHES IS UNOWNED: a walk island with lot between it and ②, so no ray reaches it
+//      and no leg's region holds it. It is named (`unownedIn`), its height null, never the nearer line's.
+// ⭐ MUTATION TEST: `--selftest` plants each wrong deformer back (written to the OS temp dir) and expects its row RED:
+//   the exemption without the disc test (an edge inside the disc exempted) · a nearest-line fallback for an unowned point.
+//   node checks/claims-the-height-code-owns-what-is-drawn.mjs [--selftest]
+import { ROOT } from './_scenes.mjs'
+import { join } from 'node:path'
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { pathToFileURL } from 'node:url'
+
+const rows = async (url) => {
+  const { buildDeformer } = await import(url)
+  const sq = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], inner = sq(-5, -5, 5, 5)
+  // ② edge 0 runs (-5,-5)→(5,-5): the frame's run; the other three a street's
+  const make = ({ disc, stamp0 = 1 }) => buildDeformer({ town: 'selftest',
+    tiles: [{ ring: sq(-10, -10, 10, 10), ringOwner: [0, 1, 2, 3].map(() => ({ skelId: 'l' })), iA: [inner], iaFull: [inner], iaStamp: [[stamp0, 0, 0, 0]],
+      runs: [{ skelId: 'l', poly: [...inner, inner[0]] }, { skelId: '__boundary__', noLine: 'rim', poly: [inner[0], inner[1]] }] }],
+    ink: [], raw: () => 0, line: { step: 1, heightAt: (id) => (id === 'l' ? 1 : null) }, stencil: disc,
+    limits: { walkMax: 0.02, lawnMax: null, exag: 1, blend: 1, sigma: 1 },
+    bands: { curb: [], lawn: [], walk: [sq(-1, 2.5, 1, 3.5)] } })   // a walk island 1.5 m in from the top edge, lot between
+  const refuses = (f) => { try { f(); return false } catch (e) { return /has no height/.test(e.message) } }
+  const clear = sq(-20, -4, 20, 20), over = sq(-20, -20, 20, 20)        // the disc clear of edge 0, and the disc over it
+  let D = null; try { D = make({ disc: clear }) } catch { D = null }
+  return [
+    ['a frame edge wholly outside the disc: the deformer builds, and counts it exempt', !!D && D.stats.frameExempt === 1],
+    ['the same frame edge inside the disc REFUSES', refuses(() => make({ disc: over }))],
+    ['an unstamped edge outside the disc still REFUSES', refuses(() => make({ disc: clear, stamp0: null }))],
+    ['a point in a drawn band that no band reaches is unowned, its height null', !!D && D.unownedIn(0, 3) != null && D.heightAt(0, 3) == null],
+    ['a point in the lot beside it is owned (the fixture is live)', !!D && D.unownedIn(3, 4.5) == null && D.heightAt(3, 4.5) != null],
+  ]
+}
+const self = process.argv.includes('--selftest')
+const HOME = join(ROOT, 'cartograph/groundDeformer.mjs')
+const EXEMPT = "&& outsideDisc(ring[i], ring[(i + 1) % n])) exempt[i] = 1", UNOWNED = "if (inBand(x, z)) { stats.unowned++;"
+// ⭐ ONE mutated copy (checks/tier.mjs reads one temp-dir `mutant`) carrying both mutations behind a switch read at call time
+const mutant = () => { const src = readFileSync(HOME, 'utf8')
+  for (const a of [EXEMPT, UNOWNED]) if (src.split(a).length !== 2) throw new Error(`selftest: groundDeformer.mjs no longer carries \`${a.slice(0, 70)}\` — re-aim the mutation`)
+  const f = join(mkdtempSync(join(tmpdir(), 'height-owns-')), 'groundDeformer.mjs')
+  writeFileSync(f, src.replace(EXEMPT, "&& (globalThis.__MUT === 'exempt' || outsideDisc(ring[i], ring[(i + 1) % n]))) exempt[i] = 1")
+    .replace(UNOWNED, "if (inBand(x, z) && globalThis.__MUT !== 'fallback') { stats.unowned++;")
+    .replace(/from '\.\.\/src\/lib\/lattice\.js'/, `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
+  return pathToFileURL(f).href }
+const MUTANTS = { exempt: 'the exemption without the disc test (an edge inside the disc exempted)', fallback: 'a nearest-line fallback for an unowned point' }
+if (self) { let bad = 0; const url = mutant()
+  for (const [k, name] of Object.entries(MUTANTS)) { globalThis.__MUT = k; const R = await rows(url), red = R.some(r => !r[1])
+    if (!red) bad++; console.log(`  ${red ? '✅' : '⛔'} mutant · ${name}: ${red ? 'RED, as it must be' : 'still GREEN — the check cannot see it'}${red ? ` (${R.filter(r => !r[1]).map(r => r[0]).join(' · ')})` : ''}`) }
+  process.exit(bad ? 1 : 0) }
+const R = await rows(pathToFileURL(HOME).href)
+for (const [m, ok] of R) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
+const ok = R.every(r => r[1])
+console.log(ok ? '✅ the height code owns what is drawn' : '⛔ the deformer gives a height it does not own, or owns one the drawing lacks'); process.exit(ok ? 0 : 1)

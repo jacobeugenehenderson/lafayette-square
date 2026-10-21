@@ -5352,7 +5352,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       const j = atEnd ? jj[jj.length - 1] : jj[0], pick = atEnd ? endOf : startOf
       const d0 = pick(g.walkFromD(j)), d1 = pick(g.walkToD(j))
       const w = legExt(p, i, atEnd, d0, d1, Lx), e2 = legExt(p, i, atEnd, cw, WB, Lx)
-      const stamp = stamps[p.si]?.[i] ?? null, leg = { si: p.si, i, stamp, span: runSpan(stamp), corner: ck }
+      const stamp = stamps[p.si]?.[i] ?? null, leg = { si: p.si, i, atEnd, stamp, span: runSpan(stamp), corner: ck }
       if (stamp == null && (w || e2)) perpUnbuilt.noStamp++
       if (w) walkX.push({ ...leg, ring: w }); if (e2) envX0.push({ ...leg, ring: e2 })
       if (w) { c.corner.walks = (c.corner.walks || 0) + 1; ends.push({ c, cut, p, i, atEnd, d0, d1, Lx, leg }) }   // walks and ramps, per corner, for the checks
@@ -5496,8 +5496,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // `spans`), so ground no cell holds is its builder's, ground in two of them (the crossing) is both legs', and ground inside
   // another span's cell is shared, by the existing rule. ⛔ Never matched by distance.
   const Wall = strips.length ? unionRings([...Wp, ...strips]) : Wp
-  const own1 = (x, kind) => ({ kind, si: x.si, i: x.i, corner: x.corner, spans: x.span ? [x.span] : [], rings: [x.ring] })
-  const perpRects = { walk: [...walkX.map(x => own1(x, 'ext')), ...perpOwn.map(x => ({ kind: x.kind, si: x.si, i: x.i, corner: x.corner, spans: x.spans || (x.span ? [x.span] : []), rings: x.rings }))],
+  const own1 = (x, kind) => ({ kind, si: x.si, i: x.i, atEnd: x.atEnd, corner: x.corner, spans: x.span ? [x.span] : [], rings: [x.ring] })
+  const perpRects = { walk: [...walkX.map(x => own1(x, 'ext')), ...perpOwn.map(x => ({ kind: x.kind, si: x.si, i: x.i, atEnd: x.atEnd, corner: x.corner, spans: x.spans || (x.span ? [x.span] : []), rings: x.rings }))],
     lawn: envX0.map(x => own1(x, 'ext')) }
   const BP = wantPieces ? bandPiecesOfTile({ st, parts, runs, stamps, inBlock, sp,
     L0: { per: parts.map(p => ({ p, rings: [p.dring], labs: [p.dspan] })) }, LV_cw, LV_wf, LV_wt, LV_WB,

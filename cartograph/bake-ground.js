@@ -580,7 +580,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
   if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
   return { byMaterial, byFaceUse, shapeArtifact: pr.protoShapeTiles, highwayRings: pr.highway || [],
-           inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
+           inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
+           // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
+           perpLegs: (pr.protoBandPieces || []).map(t => ({ tile: t.tile, perp: t.perp || [] })) }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -1208,7 +1210,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, perpLegs } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
   // ⭐ THE HEIGHT ALONG ①, ONCE (`lineHeight.mjs`, BRIEF-the-ground-knows-its-height §5 step 1): the terrain sampled along
   // the at-grade network and smoothed over it as ONE graph — the one line everything after it reads. The deformer ASKS it
@@ -1528,7 +1530,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // ⭐ THE BANDS AS PAINTED (`byMaterial`, before the flatten): the painted partition decides who owns a point (Jacob,
     // 2026-10-11) — a fence, a stripe or a path drawn over a walk is still that walk's, and must not cut it off its street
     const painted = (pre) => [...byMaterial.keys()].filter(k => k === pre || k.startsWith(pre + ':')).flatMap(k => byMaterial.get(k) || [])
-    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine,
+    deform = buildDeformer({ town: scene, tiles: shapeArtifact, ink: inkPieces, line: groundLine, legs: perpLegs,
       bands: { curb: [...painted('curb'), ...painted('curbCut')], lawn: painted('treelawn'), walk: painted('sidewalk') },
       stencil: stencil.clipPolygon,
       raw: deformTerrain.getElevationRaw,

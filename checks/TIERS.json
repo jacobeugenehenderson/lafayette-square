@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 433,
+  "total": 435,
   "counts": {
-    "safe": 313,
+    "safe": 315,
     "local-effect": 29,
     "live": 91
   },
@@ -2521,6 +2521,14 @@
       ]
     },
     {
+      "file": "checks/claims-the-height-code-owns-what-is-drawn.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe"
+      ]
+    },
+    {
       "file": "checks/claims-the-horizon-takes-the-towns-cover.mjs",
       "tier": "safe",
       "why": [
@@ -2724,6 +2732,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ray-reads-the-bands-the-point-test-reads.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe"
       ]
     },
     {
