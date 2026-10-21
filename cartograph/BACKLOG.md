@@ -21,6 +21,8 @@ re-runs every step.
 
 **LS's ground bake REFUSED on 63256183** (Lath, 2026-10-20; nothing written, `clean/` unchanged by sha): `[flatten] face:recreation: a hole below the lattice (3 vertices) that no painted ring holds by its probe, yet a ring of 47 vertices meets it, at (-703.5, -582.1)`, from `bakeGround` → `flattenPaintStack` → `itemsByMembership`. Cause not established; bisect a3426465 → 63256183 with a harness that stops at flatten (30 s, 0.9 GB per step).
 
+**HPDM's derive REFUSED on 63256183** (Lath): `skeleton chain daniel-boone-expressway-0 carries no class — re-pour the skeleton`. HPDM, Huron and PTown skeletons predate the classifier (0 chains carry `class`). HPDM's re-pour waits for a key-parity check on its authoring (skelId+segOrd) and Jacob's eye; nothing was written.
+
 **Ground regressions seen 2026-10-20, cause not established** (the board ran on a3426465 vs 754cef1d):
 - `claims-band-is-one-ring` LS: severed 55 → 59. `claims-the-ground-covers-every-block` Huron: tile 24, 2 holes, 0.03 m².
   Look on the bake first; bisect light from a3426465 only if it shows.
