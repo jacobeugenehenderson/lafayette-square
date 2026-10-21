@@ -12,24 +12,31 @@
 // every other — which is the failure this whole surface exists to prevent, and
 // it would be wrong in the worst direction: a legal notice that looks right.
 //
-// ⛔ AND NO FALLBACK. A look with no sources.json gets an empty list and the
-// surface renders a visible to-do (SidePanel.jsx's "features degrade, they
-// don't detonate"). It never borrows another look's credits: showing a visitor
-// St. Louis's data providers for a Polish map is a false statement about
-// provenance, and a false credit is worse than an absent one.
+// ⛔ AND NO FALLBACK. A look with no sources.json gets an empty list, never
+// another look's credits: showing a visitor St. Louis's data providers for a
+// Polish map is a false statement about provenance, and a false credit is worse
+// than an absent one. What each surface then does:
+//   · the map's corner (MapCredit.jsx) renders nothing;
+//   · the info panel's Sources section (InfoModal.jsx) says "No sources recorded
+//     for this map yet";
+//   · a share image (ShareCapture.jsx#creditFor) refuses the capture.
+// Each of these is also said in the console by useSources, naming the Look and
+// the URL: a 404, a failed fetch, and a file with no credits list alike.
 //
 // Why the map owes this at all: OpenStreetMap's data is ODbL, and a rendered
 // map is a Produced Work. ODbL §4.3 wants a notice naming the database and the
 // licence; the OSMF attribution guidelines want it visible on a browsable map,
 // collapsible but always findable. See cartograph/intake-rows.mjs `licence`.
 import { useState, useEffect } from 'react'
-import { INSTANCE } from '../instance.js'
 import { slabFetch } from './slabUrl.js'
-import { resolveLookId } from './resolveLookId.js'
+import { lookOf } from './lookOf.js'
 
 
 /**
- * @param {string} [lookId] — explicit Look id; falls back to `?look=`, then INSTANCE.
+ * @param {string} lookId — REQUIRED: the Look whose slab is read (lib/lookOf.js). <Town> passes the one it draws
+ *   (MapCredit); app code that means "this page's Look" resolves it first (InfoModal: resolveLookId). ⛔ No fallback
+ *   here: this module is in <Town>'s closure, which never reaches the kit's registry
+ *   (checks/claims-the-town-reads-no-player-store.mjs).
  * @returns {{credits: Array, owed: Array, loaded: boolean}}
  *   credits — [{ source, sourceUrl, credit, licence, licenceUrl, requires, from }]
  *   owed    — filled inputs whose terms the kit cannot state (never credited)
@@ -37,21 +44,28 @@ import { resolveLookId } from './resolveLookId.js'
  *             instead of flashing a to-do at every visitor on first paint.
  */
 export function useSources(lookId) {
-  const resolved = resolveLookId(lookId)
+  const resolved = lookOf(lookId, 'useSources')
   const [state, setState] = useState({ credits: [], owed: [], loaded: false })
   useEffect(() => {
     let cancelled = false
     setState({ credits: [], owed: [], loaded: false })
     slabFetch(resolved, 'sources.json')
-      .then(r => (r.ok ? r.json() : null))
+      .then(async r => {
+        // ⛔ A non-ok response is a MISSING credit, not an empty one: a town that owes the OSM credit and shows none
+        // is a silent licence failure (Layer 0 q2). So a 404 warns like a thrown fetch, naming the Look and the URL.
+        if (!r.ok) throw new Error(`${r.status} at ${r.url || 'sources.json'}`)
+        const j = await r.json()
+        if (!Array.isArray(j?.credits)) throw new Error(`no credits list in ${r.url || 'sources.json'}`)
+        return j
+      })
       .then(j => {
         if (cancelled) return
-        setState({ credits: j?.credits || [], owed: j?.owed || [], loaded: true })
+        setState({ credits: j.credits, owed: j.owed || [], loaded: true })
       })
       .catch(e => {
         // Loud in the console, quiet-but-honest on screen. An operator needs to
         // know the artifact is missing; a visitor is not served by a stack trace.
-        console.warn(`[sources] no attribution for look '${resolved}':`, e)
+        console.warn(`[sources] ⛔ no attribution for look '${resolved}' — ${e?.message || e}`)
         if (!cancelled) setState({ credits: [], owed: [], loaded: true })
       })
     return () => { cancelled = true }
