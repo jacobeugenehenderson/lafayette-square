@@ -108,7 +108,8 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   (5) r-highway-verge: 77 of 115 verges are verge only through a surface-bridge "span". Verge or block/JR? And who is
       "highway" (three readings)?
   (6) A hairline median (0.24–0.31 m, I-64 at Oakland): draw it as verge?
-  (7) HPDM's ~4 "no street reaches" points.
+  (7) HPDM's "no street reaches" points: now ~20 of the 38 (Mitre: tile 170 ×16, all lawn ground with metres of lot between
+      it and every street's band; plus 215 ×3, 93 ×1). What height do they take? This ruling now gates HPDM's bake.
   (8) None needed now: the deformer reading the drawn plane was measured and PARKED (one census point; your 10-11 read stands).
 - **REFUSAL CENSUS (Kerf; record-and-continue in a sandbox; files `.claude/worktrees/kerf/scratch/ground-budget/step7/census/`):**
   · ⭐ **HPDM TRUE LIST** (integration 1e6958f2 + the noded rim; ground only, 16 min): ONE refusal, **269 unowned ped vertices
