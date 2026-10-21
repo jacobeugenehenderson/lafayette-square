@@ -311,7 +311,8 @@ Thursday's (lafayette-square.com's old player, or the Ward)?
     overlap at convex bends and leave h-wedges at reflex ones. ❓ Jacob: eye-gate the mitred taper at a bend.
     NARROW BLOCKS (Plumb): a finger narrower than 2 × run, where a taper reaches across the block; kerbCells has clipped it
     SILENTLY since 8bd2751f (LS: 147 rectangle vertices; mitre 134, 117 shared). RULED tonight: the clip stays, made LOUD
-    (counted, with sites). ❓ Jacob: the ridge rule (run ≤ the block's half-width, the two sides meet); eye list: the finger
+    (counted, with sites). ✅ RULED (Jacob, 2026-10-21): "Yes, stay flush." Ground too narrow for its taper stays at road
+level (Plumb builds; supersedes the ridge question). Eye list was: the finger
     tips (191.276, 461.413), (149.027, 437.185), (-634.945, 213.268), (324.619, 728.015), (422.640, 459.247).
     Mitre gates on LS (Plumb, harness): heights byte-identical > 1.5 m from a bend; reflex wedges 0; new-and-unexplained
     crossings 0; converging-crease points 191 → 83 (split-made total 370 → 259). Next: one shared crease computed once, then
