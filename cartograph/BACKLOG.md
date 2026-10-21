@@ -77,7 +77,12 @@ its OSM park relation is absent from the fetch (an intake item). BAKE PATH (Zob,
 926ac3a4 + the backup's clean/ reproduce production's ground input exactly, so the candidate is 926ac3a4 + ONLY the fix:
 a re-pour + bake (~15 min) in a throwaway worktree to scratch, with a control pour first (the County parcels file was
 re-fetched 10-12 with no backup, so not bit-exact there). Being run (Zob); Ward probes the result. Integration HEAD
-(refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. D2: HPDM production predates the 10-14 Ward tranche
+(refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
+(+ checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs). FILED, after Thursday: (i) source a St. Louis CITY land-use
+code table (the surviving ranges are unverified; the 4xxx–5xxx look SIC-like, a lead) · (ii) ONE City code reader shared by
+parcel-landuse#classifyCity and bake-content#classifyUse (the roster reads 4000–6999 as commercial, HIGH) · (iii) intake:
+Forest Park's OSM relation is absent from HPDM's raw/osm.json (the envelope cuts it; why it isn't fetched clipped is not
+established). D2: HPDM production predates the 10-14 Ward tranche
 (a Promote; prepared by Ward, rollback saved in scratch/promote-rollback/). ⚠️ FINDING (Ward; ASPIRATION filed as done, Boz):
 serve.js says nothing visitor-reachable changes until step 5, but on a RE-promote step 2 overwrites the live, UNVERSIONED
 prod slab keys under the old player. Fix: versioned slab keys switched by the host record. Thursday: mitigated by a full-slab
