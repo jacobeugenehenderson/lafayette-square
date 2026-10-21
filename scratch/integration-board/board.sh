@@ -6,7 +6,9 @@ free_pct() { memory_pressure | awk -F': ' '/free percentage/ {print int($2)}' }
 F=$(free_pct); BIG=$(ps -axo rss,command | awk '$1 > 1000000 && /node/' | wc -l | tr -d ' ')
 (( $(sysctl -n vm.loadavg | awk '{print int($2)}') >= 8 || F < 70 || BIG > 0 )) && { echo "not launched (load $(sysctl -n vm.loadavg) · free $F% · node > 1 GB: $BIG)"; exit 2 }
 cd $W
-CHECKS_JOBS=1 node checks/run.mjs "$@" > $O/${TAG:-safe}.log 2>&1 &
+# The log's first line names the commit it ran on, so a later sort has a printed base, not one inferred from timestamps.
+echo "board HEAD $(git rev-parse --short HEAD)$(git diff --quiet HEAD -- || echo ' + uncommitted tracked changes')" > $O/${TAG:-safe}.log
+CHECKS_JOBS=1 node checks/run.mjs "$@" >> $O/${TAG:-safe}.log 2>&1 &
 PID=$!; MINF=100
 while kill -0 $PID 2>/dev/null; do
   F=$(free_pct); (( F < MINF )) && MINF=$F
