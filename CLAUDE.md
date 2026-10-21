@@ -8,6 +8,8 @@ When Jacob summons you at day's start by the name **"Pip"**, read **`docs/agents
 
 When Jacob calls you **"Zob"**, read **`docs/agents/ZOB.md`**: the code's first-person master, Boz's counterpart. (Named summon, like Boz and Pip; not part of the universal path.)
 
+When Jacob calls you **"Ward"**, read **`docs/agents/WARD.md`**: the player's product owner (*the Ward* is the product; *Ward* is the seat). (Named summon, like Boz and Zob.)
+
 ---
 
 ## ⛔⛔ LAYER 0 — WHAT WE ARE BUILDING. Answer this before you route, every time.
