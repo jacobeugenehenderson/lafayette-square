@@ -64,23 +64,29 @@ years (18 explicitly parsed), and no code reads them. Withholding LS's assessor 
 committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next: Zob's LS Inputs gap census → the
 LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
-**🌙 Night shift, 2026-10-20 (Jacob restarted the machine and Claude at ~22:00; every session's context is gone).**
-Start here. State at the restart:
-- **Bakes:** nothing new is served. LS refused at flatten; HPDM's derive refused (classless skeleton); Huron's 3-step
-  shore was stopped in step 1 before writing (verify: `public/baked/huron/` mtimes still 2026-10-11); PTown not started.
-  JH dropped (no extent yet).
-- **⭐ Thursday 2026-10-22 afternoon: Jacob meets potential HPDM partners.** Required: **LS and HPDM** in good working
-  order. Huron and PTown help ("sales momentum") but are not required. JH is not shown. Proposed cutoff: what has not
-  passed Jacob's eye by Wednesday evening ships as served today.
-- **Overnight 10-20 → 10-21 (Jacob asleep; Boz leads, Zob holds the code view; Ward runs the player side).** Landed on
-  integration: perpendicular-leg ownership (Mitre) · HPDM + PTown re-poured on their existing fetch (parity + building ids
-  GREEN; backups in `.claude/backups/2026-10-20-night/`) · flatten noding (Truss, a2b34ab9): LS 4 → 0, HPDM 3 → 0.
-  **In flight:** Mitre, `BRIEF-the-height-code-owns-what-is-drawn` (HPDM's 2,426 unowned ped vertices; LS's frame-edge rim
-  refusal; Tern's window) · Zob, LS's missing `content/roster.json` (staging Society: "hasn't published its buildings").
-  **Then, in order:** Zob reviews Mitre → merge → scratch ground bakes of HPDM and LS on integration (Kerf's step-7 arms
-  run in the same pass) → if both reach the end with every gate green, a LOCAL bake of HPDM then LS into `public/baked`
-  with the old slabs backed up first (reversible; nothing published) for Jacob's eye in the morning. Publish/Promote are
-  Boz's + Ward's together, after Jacob's eye.
+**🌅 MORNING 2026-10-21: the ground for Thursday, and your calls (Boz).** Nothing pushed, published or baked into `public/`.
+- **HPDM, unowned ped vertices (#40): 269 → 91**, measured at HEAD on a fresh producer dump (Mitre). Merged overnight:
+  fix B (a perpendicular leg's region is its painted faces) · the deformer's both-sides read plus its narrow station
+  trigger (Kerf) · the verge span depth (Truss). Left: 52 "beyond" on tiles 134/55 and tile 32's 67 cm² fix-B hole. Both
+  trace to ONE question: the deformer reads pre-flatten paint (`byMaterial`, your 10-11 ruling, 6be9cbaf), not the
+  drawn plane. A drawn-geometry form that keeps your ruling's ownership is specified and waits on one probe (Mitre; Zob
+  reviewed), and the probe waits on Truss's plane noding getting through HPDM: it refuses at a curb pinch,
+  (323.74, 1111.476), being placed.
+- **LS #39 (kerb step):** 22.1 m bare on the real baseline (Truss). On the whole stack (Truss's noding + Plumb's crease
+  split, polyline mitre and ownership finder, refinement off): **1.03 m**, all sub-cm. The Mississippi stripe straddle was a DEFECT (a
+  verge span edge given depth 0), fixed and merged; your "confine the stripe" call is moot. Plumb's branch isn't
+  landable yet: checks being ported, 46.5 m of rim-side stretches to place.
+- **PTown census** running on b8e7b868 (Kerf). **Huron census done** (older code): only #40, 96% on tile 6; 2.7 h of
+  ground baking.
+- ❓ **Your calls, each with its numbers in the lines below:**
+  (1) LS's 1.03 m sub-cm M2: a ridge rule, ON_EDGE_M derived, or a listed allowance at flushTol.
+  (2) The narrow-block ridge, with five finger tips to eye.
+  (3) Should the rim stand instead of taper?
+  (4) The mitred taper at a bend, for your eye.
+  (5) r-highway-verge: 77 of 115 verges are verge only through a surface-bridge "span". Verge or block/JR? And who is
+      "highway" (three readings)?
+  (6) A hairline median (0.24–0.31 m, I-64 at Oakland): draw it as verge?
+  (7) HPDM's ~4 "no street reaches" points.
 - **REFUSAL CENSUS (Kerf; record-and-continue in a sandbox; files `.claude/worktrees/kerf/scratch/ground-budget/step7/census/`):**
   · ⭐ **HPDM TRUE LIST** (integration 1e6958f2 + the noded rim; ground only, 16 min): ONE refusal, **269 unowned ped vertices
     at EXACT positions**, the full list in `.claude/worktrees/kerf/scratch/ground-budget/step7/census-truelist/hipointedemun/
