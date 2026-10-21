@@ -95,7 +95,9 @@ Start here. State at the restart:
     leg r6's cell rect) · tile 47's 6 painted-walk points in no band piece.
     BOTH-SIDES READ MERGED d08e14b5 (Kerf; Zob measured in memory): HPDM unowned 269 → 183 (86 by both sides; 6 seam
     splits take the leg-crossing mean, listed). Follow-ups merged 89bed22f: splits are 3, ≤ 0.0085 mm (the 2.2 cm was double
-    counting). The 6 of the 81 that remain: the ray STARTS on a boundary at ~6.6°; a station-on-a-boundary trigger (Kerf).
+    counting). ⭐ HPDM unowned at integration e1c6861d: 97 (Zob, in memory; fix B and the merges since own 86 more). The
+    station trigger, NARROW form (e35c537e): owns exactly the 6 left along a boundary, nothing else (WIDE also takes one
+    corner point on tile 159); held points unchanged. Lands with its narrowness row → 91.
     REVISED (Zob, measured): **~81 are a ray running ALONG a partition line** (the 'holes' were the instrument sampling along it;
     no ground is missing). bandsAlong reads one 10 µm side; on the land-use side it reads lot. Fix, being built (Kerf): read
     both sides at ±LATTICE; the band still decides. Of the rest · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
