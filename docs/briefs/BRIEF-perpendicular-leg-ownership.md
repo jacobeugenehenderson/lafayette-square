@@ -2,9 +2,9 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: yes — Mitre (WARM), approved by Jacob 2026-10-20 night
 written: 2026-10-20
-evict-when: refusedPerp is 0 on every town with perpendicular corners (live norm), the six mutants below each go RED, and the build is merged to integration; then this moves to cartograph/_archive/ dated.
+evict-when: refusedPerp is 0 on every town with perpendicular corners (live norm), the seven mutants below each go RED, and the build is merged to integration; then this moves to cartograph/_archive/ dated.
 -->
 
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds (`ListAgents`,
@@ -42,7 +42,7 @@ Huron refusedPerp 6,179 m² · LS 45 m² · HPDM 4,532 m² with the norm resolve
    a first-hit ray from the leg edge's midpoint to the ribbons' own centerlines, used only to judge): Huron 1,778 of
    1,781 right, 1 wrong (an `after` leg on a 0.0 m edge, where the midpoint ray itself may be what fails; cause not
    established), 2 unresolvable · LS 10 of 10. The side agrees with the centerline crossing on every right leg.
-   ⚠️ **OPEN, Jacob's call before building:** the CELLS carry the same wrong key. Every source edge whose start vertex
+   ✅ **RULED (Jacob, 2026-10-20 night): fix the cells' key in this build — one key for one leg.** The CELLS carry the same wrong key. Every source edge whose start vertex
    lies on an arc takes the arc's span in `bandPiecesOfTile` (LS 710 of 15,934 edges, Huron 1,651 of 55,175; on
    708 and 1,632 of them leg and arc share one span, so `o.depths` merges the arc's depths into the leg's). It reaches
    no pixel today: nothing outside `tileGround.js` reads `bandPieces`, and `groundDeformer.mjs` reads `iaArc` per
@@ -51,8 +51,7 @@ Huron refusedPerp 6,179 m² · LS 45 m² · HPDM 4,532 m² with the norm resolve
    'shared' whose two owners resolve (through `ownerOf`'s `/t` suffix) to the SAME `{skelId, side, segOrd}`: a
    duplicate owner, not a second one (Zob, read in source; the outcome inferred). Keying the cells by run
    (`'r'+stamp`) makes it one key, and nothing else in `bandPiecesOfTile` needs the `a` prefix on a leg edge
-   (inferred). Either this build keys the cells by run too (one key for one leg), or it stays a separate defect and
-   the check must accept a duplicate owner.
+   (inferred). ⇒ This build keys the cells by run (`'r'+stamp`) too.
 2. **The crossing square**, where the two legs' extensions overlap, is one piece owned by **both** legs [A, B].
 3. **One-pad hull ground** that lies in neither leg's quad goes to the **corner's arc span** (Jacob).
 4. **Ground inside another span's cell** (an extension running into the other leg's or a third span's cell) is
@@ -105,11 +104,12 @@ extending the cells (reopens ②); nearest cell or arc (forbidden).
   (a) ✅ answered (§1.1): the stamp names the leg; `spanOfSrc` does not.
   (b) why Huron's extension ground in no cell (10,853 m²) exceeds refusedPerp (6,179 m²). Cause not established.
 
-## 6. The check: six mutants, each must go RED
+## 6. The check: seven mutants, each must go RED
 
 1. The legs swapped. 2. The crossing given to the arc. 3. The hull given to a leg. 4. A leg's span dropped (its ground
 refused again). 5. Overlap ground given to one owner only. 6. An `after` leg labelled as its own arc (the owner read through
-`spanOfSrc` instead of the stamp). Plus: refusedPerp = 0 on every town that builds
+`spanOfSrc` instead of the stamp). 7. A cell edge whose start vertex lies on an arc keyed by the arc again (the
+duplicate owner returns). Plus: refusedPerp = 0 on every town that builds
 perpendicular corners.
 
 ## 7. Bounds
