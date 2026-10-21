@@ -474,7 +474,10 @@ sliver; 15, 20, 18, 17). Ground 951 s, peak 10.1 GB; conformAndRefine 557 s is t
 nose ×8, TWO OWNERS ×72 (tiles 44, 35, 18, 17; Zob: the painter assigns each band piece's owner by key
 (rekeyByPiece), and the deformer RE-DERIVES it by a straight ray from the nearest station, which leaves a bent band, misses an
 edge point, or starts on a mm-wide curb. ✅ RULED (Jacob, 2026-10-21): "take each walk point's owner from the piece the painting code
-already labelled, so ownership is decided once." Premise pass (Zob), then Kerf builds; the ray-ownership patches it supersedes go.), slit ×12 (tile
+already labelled, so ownership is decided once." PREMISE PASSED (Zob, with changes): bakeGround passes the band pieces
+(+ edgeDepths); the profile reads the owner's STRUCK depths, not the ray (otherwise a point past the ray's band gets raw terrain,
+silently); two-owner pieces take the mean; no-owner pieces refuse; deleted: the both-sides read, alongBoundary, the leg channel,
+the ray's ownership role. ❓ Jacob: does it supersede his lawn-land ruling (every lawn piece has an owner)?), slit ×12 (tile
 20), back edge ×3 (tile 15). HPDM lawn-land gate: 38 → 5 unowned (5 walk: back edge + one slit), held samples Δh 0. Truss's sub-lattice drop is REJECTED (Plumb, measured:
 the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). PLACED (Zob, LS tile 47): the needle is a depth-0 curb band: on a 1 mm bare
 ② edge (motorway-27), the curb level re-mints iA's vertex 1 mm off. BUILT (Plumb bc6bdf4f): offsetRingByRects#mergeGrid had merged a 1 mm bare
