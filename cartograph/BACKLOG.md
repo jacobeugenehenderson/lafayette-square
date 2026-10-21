@@ -65,7 +65,7 @@ committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next:
 LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
 **🌅 MORNING 2026-10-21: the ground for Thursday, and your calls (Boz).** Nothing pushed, published or baked into `public/`.
-- **HPDM, unowned ped vertices (#40): 269 → 91 at HEAD** (fresh producer dump, Mitre), **→ 38 with B1's fix** (not yet landed). Merged overnight:
+- **HPDM, unowned ped vertices (#40): 269 → 38 on integration** (measured on producer dumps, Mitre; B1 merged 9ca3f6cf). Merged overnight:
   fix B (a perpendicular leg's region is its painted faces) · the deformer's both-sides read plus its narrow station
   trigger (Kerf) · the verge span depth (Truss). Left: 52 "beyond" on tiles 134/55 and tile 32's 67 cm² fix-B hole. Both
   trace to ONE question: the deformer reads pre-flatten paint (`byMaterial`, your 10-11 ruling, 6be9cbaf), not the
@@ -85,8 +85,8 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
   self-cross today). The painter's exit is already a Clipper union, and a Clipper re-union can't reach 0 (StrictlySimple:
   258 → 32). RULED: cut-once lands with the 17 newly exposed rings named (attribution proven town-wide first) and a loud
   census of self-crossing band rings. Both done (Mitre): 18 rings named; the 1–10 cm tail 822 → 3, all rim-side; census
-  `bandSelfCrossings` 257. In Zob's review: paint-stack-flattens ✅ LS/HPDM; no-edge-is-drawn-twice ⛔ on both (baseline
-  pending); an outside-stencil area probe pending. The self-crossing source (257 rings) is its own piece (Mitre, after Thursday).
+  `bandSelfCrossings` 257. ✅ MERGED 9ca3f6cf (Zob: merge). no-edge-is-drawn-twice is RED at integration too (pre-existing).
+  Interior near-miss changes > 5 m from the rim are named in the merge, cause not established. The self-crossing source (257 rings) is its own piece (Mitre, after Thursday).
   (Mitre, next), then tile 32's slit at its source. Truss's plane noding: its curb pinch refusal is FIXED
   (b0d8c9bb: a hole that touches its one outer stays its own); per-town gate (Truss, f206543d): LS ✅ · HPDM ✅ · Huron after
   PTown. Mitre's probe is running.
