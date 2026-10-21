@@ -459,6 +459,10 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
 - Spur legs off their authored width; swap-mid-street RED; Huron bend row; PTown's 3 missing dead ends; LS highway-edge
   slivers; ② only warns on unresolved corner keys; `claims-band-is-one-ring` hardcodes 0.381; production LS rulemap 404.
 
+**⚠️ DROPPED OVERNIGHT, recovered 2026-10-21:** the triangle fix Jacob approved (BRIEF-the-ground-stays-in-budget step 7 (a)+(b): the
+simplifier in the bake + the road on the lots' refine policy) is BUILT on kerf/simplify-in-bake 444456df but never baked or merged.
+Kerf rebases it onto integration; Zob reviews; it joins tonight's timed LS bakes.
+
 **Checks judged nowhere until towns re-bake (Zob, 2026-10-21):** claims-a-cap-carries-one-section refuses on all six served
 slabs, because every shape.json predates frozen caps (`iaCap`). Not new; it clears as towns re-bake.
 
