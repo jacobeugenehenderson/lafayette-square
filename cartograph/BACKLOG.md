@@ -19,14 +19,14 @@ Start here. State at the restart:
 - **Bakes:** nothing new is served. LS refused at flatten; HPDM's derive refused (classless skeleton); Huron's 3-step
   shore was stopped in step 1 before writing (verify: `public/baked/huron/` mtimes still 2026-10-11); PTown not started.
   JH dropped (no extent yet).
-- **Next, in order:**
-  1. **Perpendicular-corner ownership:** a FRESH agent on `docs/briefs/BRIEF-perpendicular-leg-ownership.md`. Jacob's
-     pick for tonight. It holds the heavy slot when it pours.
-  2. **LS refusal:** bisect a3426465 → integration with a harness that stops at `flattenPaintStack` (30 s, 0.9 GB per
-     step), never writing served files or `clean/`. Lath's log was in a session scratchpad, now gone; the error text is
-     below.
-  3. **Huron, then PTown bakes:** the CLI replay of the server route's order (bake-ground → … → ground-ao → manifest).
-     Bakes need Jacob's approval in the baking session (a permission prompt).
+- **⭐ Thursday 2026-10-22 afternoon: Jacob meets potential HPDM partners.** Required: **LS and HPDM** in good working
+  order. Huron and PTown help ("sales momentum") but are not required. JH is not shown. Proposed cutoff: what has not
+  passed Jacob's eye by Wednesday evening ships as served today.
+- **In flight (2026-10-20 night, Boz):** Mitre builds `BRIEF-perpendicular-leg-ownership` (heavy slot) · Kerf builds step 7
+  of `BRIEF-the-ground-stays-in-budget` (simplifier in the bake, road split), HPDM first, slot after Mitre · Zob builds
+  HPDM's key-parity check (HPDM's re-pour waits on it) · Plumb records every LS flatten refusal at a3426465 and at
+  integration (the refusal predates the range: a3426465 refuses too, at `mat:sidewalk`).
+- **Then:** HPDM re-pour if parity holds → one batch bake of HPDM and LS → Jacob's eye → Huron and PTown if time allows.
 - ⛔ **Not tonight:** HPDM skeleton re-pour (authoring key parity first) · step 7 (repaints; Jacob's eye) · the long
   check board (`feedback_bake_then_look_checks_dont_gate_bakes`).
 - The day's work is on `integration/2026-10-20` only. Jacob rejected merging it into the main checkout
