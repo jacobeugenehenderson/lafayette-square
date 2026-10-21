@@ -130,7 +130,9 @@ Start here. State at the restart:
     rule, kerbLift header); 'nothing across' is a named case, and the rim metres stay equal. verge|stripe: no exclusion; Zob
     writes 'a road marking lies inside its road' (RED on Mississippi), which gates M1's landing. ❓ Jacob: should the rim stand?
     The marking check (1e3ac0d0) on HPDM: RED, small: 5 of 162 stripes; one real site (706.4, 1104.8), 0.056 m²; four
-    ~1e-4 m² at stripe ends. Owner centreStripeRings; not a bake gate.
+    ~1e-4 m² at stripe ends; not a bake gate. PLACED (Zob): the stripe is right (Oakland Ave, on its centreline); a
+    face:verge sliver (H-3, a junction residual's remainder by the Jack Buck motorway) lies INSIDE the carriageway, and the
+    stripe exposes it. Owner: the junction-residual→verge assignment; cause not established.
     Flatten output (Truss, placed): the 1.1 km 'has' residual is the flatten emitting sub-lattice necks/needles, and 'a point
     enters a ring once' rightly refuses them: RULED, split at the pinch and drop the sub-lattice part, counted like bowTies.
     The ease split is a second re-clip: node once, at the last. ⛔ A rerun of the prior 20k interior-triangle churn
