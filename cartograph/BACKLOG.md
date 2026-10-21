@@ -219,7 +219,8 @@ Start here. State at the restart:
     9ee9e327, refinement off): 40 m → 1.03 m; M1 0, verge|stripe 0. Left: one crease-born crack (0.18 mm, 0.95 m) and the
     ring-49 finger tip (4 mm, narrow block). ❓ Jacob: those stay a refusal tonight; a ridge rule, ON_EDGE_M's derived
     reach, or a listed allowance at flushTol? The rim by identity: 4,464 m; 185 m on the stencil in NO rim ring (42 of 148
-    rimRings entries carry one): counted, not refused, and placed by Zob before M1 lands.
+    rimRings entries carry one). PLACED (Zob): nodeRimWithPaint returns null when a rim-edged tile mints nothing. RULED
+    (Plumb builds): emit the entry for every rim-edged tile; absence there then refuses; the deformer's else-branch goes.
     B2 (one line rounded twice) is NOT rim-only: 694.8 m of LS interior block edge. Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
