@@ -156,7 +156,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 318. This is `npm test`.
+## safe — 319. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -197,6 +197,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-roundabout-is-one-ring.mjs` | CLAIM — EVERY ROUNDABOUT OSM DECLARES ARRIVES AS ONE CLOSED CHAIN (cartograph/_archive/BRIEF-roundabout-is-one-ring-DELIVERED-2026-10-03.md). |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | CLAIM — A SCENE SWITCH DROPS THE OLD TOWN, AND ITS DESIGN SAVES TO THE NEW TOWN'S OWN LOOK. |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | twice.mjs |
+| `checks/claims-a-slab-uploads-only-under-its-own-name.mjs` | name.mjs — A SLAB UPLOADS ONLY UNDER THE NAME IT WAS BAKED UNDER (T1). |
 | `checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs` | coast.mjs |
 | `checks/claims-a-state-gives-its-towns-their-wells.mjs` | wells.mjs |
 | `checks/claims-a-suggested-palette-passes.mjs` | passes.mjs — DOES WHAT STAGE SUGGESTS FROM A MARK CLEAR THE PLAYER'S RULES? |

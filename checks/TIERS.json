@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 439,
+  "total": 440,
   "counts": {
-    "safe": 318,
+    "safe": 319,
     "local-effect": 30,
     "live": 91
   },
@@ -537,6 +537,17 @@
         "deletes files",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync",
         "imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync — only under its own temp dir"
+      ]
+    },
+    {
+      "file": "checks/claims-a-slab-uploads-only-under-its-own-name.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "mkdirSync — only under its own temp dir",
+        "computed import of scripts/slab-name-rule.mjs — read, safe",
+        "imports a mutated copy of scripts/slab-name-rule.mjs from its own temp dir — read as scripts/slab-name-rule.mjs, safe",
+        "imports a mutated copy of scripts/slab-name-rule.mjs from its own temp dir — read as scripts/slab-name-rule.mjs, safe"
       ]
     },
     {
@@ -2498,6 +2509,7 @@
       "tier": "safe",
       "why": [
         "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
         "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
         "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
         "computed import of cartograph/groundDeformer.mjs — read, safe"
