@@ -1,0 +1,15 @@
+gate: free 83% load 1 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+huron · authoring slots 0 · centerlines 412
+(1) perpendicular legs with an extension: 1781 · oracle: first centerline crossed from the leg edge's midpoint toward the road (ray length p50 5.5 m, p95 5.5 m, max 21.8 m)
+      1 · after · own-arc label · WRONG
+      888 · after · own-arc label · right: same skelId
+      2 · after · own-arc label · unresolvable: ray meets no centerline
+      269 · before · other-arc label · right: same skelId
+      621 · before · run label · right: same skelId
+    side (where right): 971 centerline-right vs stamp side left · 807 centerline-left vs stamp side right
+      WRONG: after a3/5 stamp lake-shore-electric-trail|right · ray → lake-erie-parkway at 21.8 m · mid (-2088.9,-1012.5) · edge 0.0 m
+(2) 186 tiles with pieces · source edges 55175 (arc edges 21054) · edges with an arc's label that are NOT arc edges 1651 (52800.3 m), of which the end vertex is in a different arc 465
+    span labels 4700 (per tile, summed) · labels carried by such an edge 1651, of which also carried by true arc edges (leg and arc share one span) 1632
+    pieces m² by class: curb 29245.1 · walk 283208.6 · lawn 290014.3 · pieces owned (in part) by such a span: 11081, m² curb 6019.8 · walk 57547.5 · lawn 58440.8
+    peak rss 1.51 GB

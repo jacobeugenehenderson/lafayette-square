@@ -1,0 +1,27 @@
+gate: free 78% load 1 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+norm: frozen "none" → live perpendicular
+hipointedemun · __tileGround.HEAD.mjs · tiles with pieces 238 · perpendicular records 0 · refused 364 region(s) 6962.348 m² · refusedPerp 331 region(s) 4532.036 m² · legs bare 0 · no sub-edge 0 · no stamp 0 · noOwner 0 · peak rss 1.71 GB
+gate: free 78% load 2 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+norm: frozen "none" → live perpendicular
+hipointedemun · tileGround.js · tiles with pieces 238 · perpendicular records 4247 · refused 6 region(s) 6.281 m² · refusedPerp 0 region(s) 0 m² · legs bare 0 · no sub-edge 0 · no stamp 0 · noOwner 0 · peak rss 1.59 GB
+gate: free 78% load 1 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+norm: frozen "none" → live perpendicular
+provincetown · __tileGround.HEAD.mjs · tiles with pieces 159 · perpendicular records 0 · refused 237 region(s) 7268.366 m² · refusedPerp 219 region(s) 4946.409 m² · legs bare 0 · no sub-edge 0 · no stamp 0 · noOwner 0 · peak rss 1.53 GB
+gate: free 79% load 2 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+norm: frozen "none" → live perpendicular
+provincetown · tileGround.js · tiles with pieces 159 · perpendicular records 3515 · refused 5 region(s) 0.883 m² · refusedPerp 0 region(s) 0 m² · legs bare 0 · no sub-edge 0 · no stamp 0 · noOwner 0 · peak rss 1.45 GB
+gate: free 80% load 2 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+norm: frozen "none" → live perpendicular
+jacksonheights · __tileGround.HEAD.mjs · tiles with pieces 720 · perpendicular records 0 · refused 1276 region(s) 122837.228 m² · refusedPerp 1192 region(s) 18691.37 m² · legs bare 0 · no sub-edge 0 · no stamp 0 · noOwner 0 · peak rss 1.86 GB
+gate: free 78% load 4 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+norm: frozen "none" → live perpendicular
+jacksonheights · tileGround.js · tiles with pieces 720 · perpendicular records 14841 · refused 5 region(s) 0.046 m² · refusedPerp 0 region(s) 0 m² · legs bare 0 · no sub-edge 0 · no stamp 0 · noOwner 0 · peak rss 1.94 GB
+check huron exit 1
+check lafayette-square exit 1
+ALL DONE

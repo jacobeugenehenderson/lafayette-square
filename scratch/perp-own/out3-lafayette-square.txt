@@ -1,0 +1,12 @@
+gate: free 83% load 2 other node >1GB 0
+[config] scene not named — defaulting to 'lafayette-square'. Pass --scene=<id> to be explicit.
+lafayette-square · authoring slots 82 · centerlines 321
+(1) perpendicular legs with an extension: 10 · oracle: first centerline crossed from the leg edge's midpoint toward the road (ray length p50 7.1 m, p95 10.5 m, max 10.5 m)
+      5 · after · own-arc label · right: same skelId
+      2 · before · other-arc label · right: same skelId
+      3 · before · run label · right: same skelId
+    side (where right): 4 centerline-right vs stamp side left · 6 centerline-left vs stamp side right
+(2) 144 tiles with pieces · source edges 15934 (arc edges 9257) · edges with an arc's label that are NOT arc edges 710 (32104.0 m), of which the end vertex is in a different arc 238
+    span labels 2217 (per tile, summed) · labels carried by such an edge 710, of which also carried by true arc edges (leg and arc share one span) 708
+    pieces m² by class: curb 9278.2 · walk 90597.2 · lawn 84544.4 · pieces owned (in part) by such a span: 4115, m² curb 3709.5 · walk 36310.1 · lawn 34217.8
+    peak rss 0.55 GB
