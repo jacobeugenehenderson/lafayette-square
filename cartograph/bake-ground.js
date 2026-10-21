@@ -1778,6 +1778,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): every edge of the PAINTED partition where
   // a lifted face the curb does not stand on meets the road, or the drawing's edge, carries a taper — read by the riser's
   // own owner test (`kerbLift.mjs#curblessEdges`), so an alley painted over the curb makes its own mouth curbless.
+  // ⛔ A group that keeps its own slot (stripe) stays IN: it is the far side of road edges in the drawn partition (Boz, 2026-10-21).
+  // Measured on LS, left out it changes no taper, crease or rim, and the orphan census goes 1,235 m → 46,521 m.
   const kerbGroups = PAINT_ORDER.filter(([kind, key]) => !DOES_NOT_CUT.has(kind + ':' + key)).map(([kind, key]) => ({ id: kind + ':' + key, key, items: partitionItems(kind, key) })).filter(g => g.items)
   const { inBlock: kerbInside, curblessM, roadM: kerbRoadM, rimM: kerbRimM, unpaired: kerbUnpaired, unpairedM: kerbUnpairedM, rimSide: kerbRimSide, rimSideM: kerbRimSideM, interiorM: kerbInteriorM, orphanRoadM: kerbOrphanM, narrowBlock: kerbNarrow, flushTol: kerbFlushTol, regions: kerbRegs } = kerbH
     ? timed('kerbPlan', () => kerbPlan({ blockRings: nodedBlockRings, rimRings: nodedRimRings, groups: kerbGroups, ramps: curbCutRamps, kerb }))
