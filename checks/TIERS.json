@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 441,
+  "total": 442,
   "counts": {
-    "safe": 320,
+    "safe": 321,
     "local-effect": 30,
     "live": 91
   },
@@ -38,6 +38,16 @@
         "writeFileSync — only under its own temp dir",
         "imports a mutated copy of cartograph/groundDeformer.mjs from its own temp dir — read as cartograph/groundDeformer.mjs, safe",
         "computed import of cartograph/groundDeformer.mjs — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-bare-edge-paints-no-curb-sliver.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "computed import of src/lib/tileGround.js — read, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
