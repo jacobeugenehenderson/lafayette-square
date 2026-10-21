@@ -111,7 +111,10 @@ bake); a T1 upload refusal (Plumb) + check (Zob). The rename is BRIEF-ls-cutover
 "This is a preexisting project which we really need to manage once and for all. LS is only the fallback because it was first."
 ⇒ the same branch DELETES the default town (cartograph/scene.js#DEFAULT_MAP, src DEFAULT_LOOK; BRIEF-no-default-town §4); every
 `=== DEFAULT_MAP` branch becomes a declared per-town property; callers without a scene refuse. Zob extends the check so it
-can't return; it lands only with LS's re-bake under the new name. LS SLAB OPTIONS (Zob): (1) a
+can't return. BUILT (Kerf, kerf/ls-to-its-address f80515be on Zob's 4a50b612; Rule B green): the rename, DEFAULT_MAP ×3
+and DEFAULT_LOOK deleted, each name branch now a declaration (geography, lamps, pour.buildings, bundledPark, BUNDLED_MAPS),
+scene-less serve routes 400/404, the dead /rebuild route deleted, A12 superseded (an unregistered ?look= now throws). Zob reviews.
+The main checkout's gitignored LS raw/clean (26 files, 651 MB) is moved by hand at merge; the slab is RE-BAKED, never moved; it lands only with LS's re-bake under the new name. LS SLAB OPTIONS (Zob): (1) a
 HEAD bake, which needs Jacob's 1.03 m call; (2) staging's Oct-5 LS slab reproduced under the new name at its kit commit
 (candidate b67caf47; 5 name tests re-spelled; proven byte-identical but for the stamps; ~2–3 h; LS as of Oct 5, without
 later authoring). ❓ Jacob picks. JH (Zob): showable today as the authoring view of its 10-06 pour on :5173. ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
