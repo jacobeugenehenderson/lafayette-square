@@ -73,7 +73,11 @@ commercial (and 4000–4999 → recreation, which in the data is railroads/utili
 them, so a class in HPDM and LS. Fix: drop both ranges (→ underived) and re-bake the ground; a served recolour can't separate
 it. RULED (refined, Truss): only bare 5000 and 4000–4999 → underived (HPDM 518 + 7 parcels, LS 238 + 22); the specific
 51xx–59xx stay commercial, marked unverified until a City code table is sourced. Forest Park then paints underived (grass);
-its OSM park relation is absent from the fetch (an intake item). The bake path is being assessed (Zob). D2: HPDM production predates the 10-14 Ward tranche
+its OSM park relation is absent from the fetch (an intake item). BAKE PATH (Zob, measured by hash): production's own kit
+926ac3a4 + the backup's clean/ reproduce production's ground input exactly, so the candidate is 926ac3a4 + ONLY the fix:
+a re-pour + bake (~15 min) in a throwaway worktree to scratch, with a control pour first (the County parcels file was
+re-fetched 10-12 with no backup, so not bit-exact there). Being run (Zob); Ward probes the result. Integration HEAD
+(refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. D2: HPDM production predates the 10-14 Ward tranche
 (a Promote; prepared by Ward, rollback saved in scratch/promote-rollback/). ⚠️ FINDING (Ward; ASPIRATION filed as done, Boz):
 serve.js says nothing visitor-reachable changes until step 5, but on a RE-promote step 2 overwrites the live, UNVERSIONED
 prod slab keys under the old player. Fix: versioned slab keys switched by the host record. Thursday: mitigated by a full-slab
