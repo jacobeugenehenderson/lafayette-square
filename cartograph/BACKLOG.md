@@ -97,7 +97,10 @@ Required LS + HPDM; desired PTown + Huron; JH not expected but 'fortifying'. Mea
 host record, and LS's prod slab keys are lafayette-square.com's live old-player keys, so the LS cutover is the RENAME job
 (look `lafayettesquare`, new keys; OPERATIONS § 'A town's name is its address'), being sized (Zob). ptown.online is NOT on
 Cloudflare (Hover) and differs from the live provincetown.online. ❓ Jacob: lafayette-square.com stays / redirects / retires?
-ptown.online or provincetown.online? jacksonheights.online? ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
+ptown.online or provincetown.online? jacksonheights.online? SIZED (Zob): the rename is ~2–4 h, mechanical (the town ids are
+already sealed); traps: T1, a slab must be RE-BAKED under the new name, never moved (the renderer reads manifest.look) · T2, the
+old site's apps-script entry stays · T3, never upload to prod under the old name. Gate: a clean LS slab. Being built (Kerf, no
+bake); a T1 upload check (Zob). JH (Zob): showable today as the authoring view of its 10-06 pour on :5173. ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
 it's beautiful. Just gorgeous." The rose's mutant check runs locally while :5173 is up. ⚠️ FINDING (Ward): the Stage panel's Publish (serve.js, main checkout) re-freezes and uploads the MAIN checkout's
 slab and commits; a candidate in a worktree is published with scripts/upload-baked-to-r2.mjs run from that worktree. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
