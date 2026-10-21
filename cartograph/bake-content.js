@@ -1452,6 +1452,14 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   }
 
   // ── write ──
+  // ⛔ THE BREAKDOWN WITHHOLDS WHAT THE RECORD WITHHOLDS (Boz, 2026-10-21, interim): `prominence.signals` carries a
+  // per-building percentile of each value field the rank read, and `unknown` names the ones it could not. Both lose
+  // every WITHHELD_PARCEL_FIELDS key here, at the write; `score` and `rank` are unchanged, so the order does not move and
+  // the score is the sum of the signals it no longer shows. Whether the score may embed them at all is Jacob's ruling.
+  for (const b of roster) if (b.prominence) {
+    for (const f of WITHHELD_PARCEL_FIELDS) delete b.prominence.signals[f]
+    b.prominence.unknown = b.prominence.unknown.filter(f => !WITHHELD_PARCEL_FIELDS.includes(f))
+  }
   const cdir = contentDir(scene)
   mkdirSync(cdir, { recursive: true })
   const now = '2026-07-07'
