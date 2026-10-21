@@ -90,8 +90,9 @@ Start here. State at the restart:
     · **(3) 59 rays from beyond the rim** on tiles 134/55, where the noded rim and the painted band disagree by METRES on 29
     (Mitre next) · **(4) 27 lot-first** at tile 189: the painted curb's road edge cm inside ② (Mitre next).
     Classes 1+2's strip, identified (Zob): **~33 unpainted HOLES between band pieces of the same street** (tiles 183, 53, 174,
-    189: a painter defect; tile 183 first) · **~52 at arc corners whose walk doesn't wrap the arc** (tiles 67, 74, 211, 47;
-    being routed to SECTION §6.1/§6.9 before calling it a ruling) · **~26 band pieces no street reaches** (tile 170:
+    189: a painter defect; tile 183 first) · **~117 at PERPENDICULAR corners** (tiles 67, 74, 211, 47; walk painted past a
+    tangent that no leg extension covers): a FIX by SECTION §6.1 (each leg's walk runs straight on; every piece its leg's), not a
+    ruling; Mitre probing (walkCut leftover vs a short extension; `notCorner` for a bare link leg) · **~26 band pieces no street reaches** (tile 170:
     footways, interior lawn; same question as Huron's interior walk: RULING for Jacob, what height they take) · **scrub
     painted over the band** (tile 189: a paint-order question; likely ruling: does OSM natural cover win over a ped band?).
   · **HPDM** (8189c609, 38 min, superseded by the true list above): ONE class left: the unowned-ped refusal (1,234 distinct 1-cm CELLS, both ground passes; ⚠️ the refusal rounds to 1 cm and logs only 15 examples, all of which re-resolve OWNED, so the true remainder is not established until the instrument keys exact positions and writes the full list (Kerf, being fixed); on real band-ring vertices, the rim merge moved 44 → 17 of ~190k (Zob). Mitre's "612 → 599" counted rounded points: retracted; first
