@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 438,
+  "total": 439,
   "counts": {
-    "safe": 317,
+    "safe": 318,
     "local-effect": 30,
     "live": 91
   },
@@ -750,6 +750,17 @@
       "reasonClass": "outbound",
       "why": [
         "imports cartograph/fetch-trees.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out"
+      ]
+    },
+    {
+      "file": "checks/claims-a-verge-span-edge-is-its-street-edge.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "computed import of scratch/_proto-feed.mjs — read, safe",
+        "computed import of src/lib/tileGround.js — read, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
