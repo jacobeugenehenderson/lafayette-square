@@ -6596,8 +6596,9 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ H-3 step 4: the block's frozen class (verge / jr / block — classified at the mint).
         const blockCls = (protoUseBlocks && MP.blockClass?.[k]) || 'block'
         const mkDepth = (L) => (i) => {
-          // A VERGE is ①'s hole − H: its non-highway edges (an overpass span over it) get no offset at all.
-          if (blockCls === 'verge' && !isHwyLab(L[i])) return 0
+          // ⭐ A VERGE's span edge (a street on a bridge between two highway runs) is a STREET EDGE: the drawing is flat and
+          // the span is drawn, so it takes its own roadway's depth below, like any street (Boz, 2026-10-21; LS Mississippi's
+          // west half was painted verge to its centreline). The verge begins at the carriageway's edge, still bare (`bareAt`).
           // ⭐ H-3: a highway-owned edge is offset to a depth STRICTLY INSIDE H, and the difference below then
           // draws the edge exactly on H's boundary. Any depth in (0, the section's narrowest span) is inside
           // H; both ends of that interval are degenerate, so the MIDPOINT is taken — the one furthest from
