@@ -27,10 +27,12 @@
 //     · in terrainShader reloadTerrain, drop the `assertHeightfield(t, …)` call                     → ⑤ RED
 //     · in terrainShader fetchTerrain, return FLAT_TERRAIN for every `!r.ok` (the old fallback)     → ⑥ RED
 //     · in bake-ground getTerrainSampler, `loadSceneTerrain(scene)` and `t ? t.getElevation : false` (the old fallback) → ⑦ RED
+//     · in terrainCommon makeElevationSampler, drop `assertHeightfield(terrain)`: an empty terrain loads as identity 'none' → ⑦ RED too
 //
 //   node checks/claims-a-missing-height-fails-loudly.mjs
 // Read-only. Exits 1 when a missing height can be read as a value.
-import { readFileSync, existsSync, readdirSync } from 'fs'
+import { readFileSync, existsSync, readdirSync, writeFileSync, mkdtempSync } from 'fs'
+import { tmpdir } from 'os'
 import { join } from 'path'
 import { makeElevationSampler } from '../src/lib/terrainCommon.js'
 import { fillMisses } from '../cartograph/elevationSources.mjs'
@@ -141,6 +143,22 @@ console.log('⑦ bake-ground: a missing terrain refuses; flat only on the record
     flat === false ? ok('a town flat on the record → false (refinement off, groundShape.terrain = false)') : bad(`a town flat on the record → ${typeof flat}`)
     const g = (x, z) => x + z, real = quiet(() => mk(() => ({ getElevation: g, identity: 'abc' }))('hilly'))
     real === g ? ok('a town with a terrain → its getElevation') : bad('a town with a terrain did not get its sampler')
+    // identity 'none' is the flat-on-the-record state only: a terrain FILE that is empty (or not a whole grid) must refuse in
+    // loadSceneTerrain, never load as a field whose identity is 'none' (terrainCommon#terrainIdentity) — Zob, 2026-10-21
+    // a town that loads normally (so its Look and exaggeration resolve), its heightfield swapped for a broken one; the
+    // refusal must be the HEIGHTFIELD's (assertHeightfield), not some earlier one
+    const dir = mkdtempSync(join(tmpdir(), 'empty-terrain-')), prev = process.env.CARTOGRAPH_TERRAIN_DIR
+    const town = readdirSync(join(ROOT, 'cartograph/data')).sort().find(t => { try { return !!quiet(() => loadSceneTerrain(t)) } catch { return false } })
+    if (!town) bad('no town here loads a terrain — the empty-terrain rows cannot be run')
+    else     for (const [name, meta, bin] of [['an empty terrain.bin', { width: 2, height: 2, bounds: { minX: 0, maxX: 1, minZ: 0, maxZ: 1 } }, Buffer.alloc(0)],
+                                     ['a 0 × 0 terrain', { width: 0, height: 0, bounds: { minX: 0, maxX: 1, minZ: 0, maxZ: 1 } }, Buffer.alloc(0)]]) {
+      writeFileSync(join(dir, 'terrain.json'), JSON.stringify(meta)); writeFileSync(join(dir, 'terrain.bin'), bin)
+      process.env.CARTOGRAPH_TERRAIN_DIR = dir
+      let got; const e2 = throws(() => quiet(() => { got = loadSceneTerrain(town) }))
+      e2 && /heightfield/.test(e2.message) ? ok(`${name} (${town}'s, swapped) refuses as a heightfield: ${e2.message.slice(0, 70)}`)
+        : bad(e2 ? `${name}: refused, but not by the heightfield — ${e2.message.slice(0, 90)}` : `${name} loaded, identity ${got?.identity} — the flat state by another door`)
+    }
+    if (prev == null) delete process.env.CARTOGRAPH_TERRAIN_DIR; else process.env.CARTOGRAPH_TERRAIN_DIR = prev
   }
 }
 console.log(red ? `\n⛔ ${red} way(s) a missing height reads as a value.` : '\n✅ A missing height refuses; a whole field reads as before; a town is flat only when its slab says so.')
