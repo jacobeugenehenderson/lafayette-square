@@ -102,7 +102,9 @@ Start here. State at the restart:
     step clean through manifest.
   · Merged tonight after the census began: the memo bound (1e6958f2), the shore-pass gate + exact unowned list (b88f7245),
     the re-gated finish clip (7ec93e8e). AWAITING ZOB'S REVIEW (Zob and Mitre hit usage limits ~02:40): Mitre's noded rim
-    with (A) retired, 4be86489 on mitre/rim-cut-once (HPDM rim class 0; tile 242's needles 0; no tile worse).
+    with (A) retired, 4be86489 on mitre/rim-cut-once (HPDM rim class 0; tile 242's needles 0; no tile worse). Zob reviewed:
+    mergeable after a tile-242 consequence row and a measure of insertions > 0.71 mm off the rim. ⚠️ B2's 1.41 mm GEOMETRIC
+    pair still exists: it's accepted as harmless (the deformer reading the noded rim owns its points), NOT closed.
   · Running (Kerf), on a detached scratch merge of HEAD + 4be86489: HPDM's exact remaining list → Huron census → PTown census.
 - **LS REAPPLICATION PLAN (Jacob, 2026-10-21: "reapply all we can to LS"; Zob's Inputs census, read from
   `cartograph/intake-rows.mjs#intakeStatusForMap` + each town's `sources.json`):**
