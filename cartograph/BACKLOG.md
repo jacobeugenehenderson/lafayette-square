@@ -125,7 +125,10 @@ Start here. State at the restart:
     triangles) and the finder (on the noded stack); unmatched lifted|unlifted length refuses. STOPPED by Plumb (measured):
     the FLATTEN's output isn't noded (it re-clips after nodeAcrossGroups): 139 km of once-used interior edges on LS, 3.6 km
     after re-noding. RULED: the flatten nodes its output as its last step (Truss builds, Zob reviews), and Truss places the
-    ≈80 m of lifted|unlifted that still won't match. M1 lands on top. ⛔ Not a second conformity pass. Open, Class D, not ruled:
+    ≈80 m of lifted|unlifted that still won't match. M1 lands on top. ⛔ Not a second conformity pass.
+    The 4.7 km (old 18.4 vs ownership 13.7 km) is the RIM (Plumb, by stretch). RULED: the rim keeps its taper (Jacob's Q1
+    rule, kerbLift header); 'nothing across' is a named case, and the rim metres stay equal. verge|stripe: no exclusion; Zob
+    writes 'a road marking lies inside its road' (RED on Mississippi), which gates M1's landing. ❓ Jacob: should the rim stand? Open, Class D, not ruled:
     groundConformity's ON_EDGE_M = 5 mm; Zob's derived form is √2/2·LATTICE + the float32 ulp at the town's max |coord|; the
     gap check is the only net if it shrinks. Vacant (-826, 190–196) doesn't
     reproduce without refinement: cause not established. Earlier owners named: the verge/junction-residual paint for the one. and #40
