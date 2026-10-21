@@ -142,6 +142,8 @@ Start here. State at the restart:
   offset that the deformer's oblique ray (65° off normal) stretches to ~1.1 mm. A brief must cover both or say which it closes.
   ⛔ Not a deformer tolerance.
 - ✅ The deformer's side now reads off iaFull (Mitre e5dc6b7b, merged): the old side was wrong on 91 rings; heights move (HPDM max 0.87 m), all checked maxes corrections; on Jacob's eye list.
+- **Question for Jacob:** should the one-pad corner test read the CUT paint (it reads 'the paint already laid', which was uncut until the rim build)? Reading the cut paint would move HPDM's one-pads 138 → 236 and turn 234 cuts into 'not a corner'; Mitre kept it on the uncut construction (c4064ab5).
+- Rim residue after the rim build: HPDM 16 / Huron 5 B1 points, where each class's own band-line × rim crossing rounds inside the rim (1.3–7.8 mm along oblique rays). Next: share those crossings too. No tolerance.
 - **Ruling for Jacob:** who owns INTERIOR sidewalk paint no street band reaches (Huron 88 points of walk 41–48 m from any street; a path? a plaza?).
 - PTown's shore-median.json is stale after its 2026-10-20 re-pour (walked on the old shoreline); its flatten is unmeasured until shore-median re-runs. Flatten's orphan/bow-tie drops stay until Huron and PTown measure 0.
 - A perpendicular leg and its own arc's half name one run under two keys (`a<arc>/<t>` and the run): a duplicate owner, no pixel. HPDM 1,382 → 3,150 pieces (149 m²) after the leg-ownership build (Mitre, 3a55accb; `claims-the-bands-are-held-by-their-owners` row 6f reports it).
