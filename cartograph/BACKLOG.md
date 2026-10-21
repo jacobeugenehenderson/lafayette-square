@@ -35,6 +35,10 @@ building_sqft / units. Interim tonight (Boz, reversible, no visible change): str
 and rank stay; they still embed the withheld fields in aggregate, in roster.json and in every served listing's
 `prominence_rank` (Zob: nothing downstream reads `signals`, so the strip breaks nothing). Yours: (a) drop withheld fields
 from prominence upstream (ranks move) or (c) rule a percentile isn't redistribution.
+**Ward's two approvals for you (each ~2 min, in Ward's specialist's window):** (1) fast-forward theward `ward/no-district`
+(047b391: the card's district row removed + `checks/the-ward-never-says-district.mjs`) onto main, then Ward publishes it
+to staging. The specialist's session refused the commit to main (a permission prompt), and nobody bypassed it. (2) the
+:5173 okay for the rose/Tower-Light branch. Staging still serves 883b03f, WITH the district line.
 ✅ RULED (Jacob, 2026-10-21 ~01:30): "Buildings can be listed as historic; and perhaps we can do historic neighborhoods but
 we are not orchestrated around that." Historic status is a BUILDING's property. Town membership is Jacob's authoring
 (Extent), never a district. The district concept was agent-introduced (162a084b, 266d3505) and never ruled. ⇒ the card's
