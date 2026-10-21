@@ -132,6 +132,16 @@ prod slab keys under the old player. Fix: versioned slab keys switched by the ho
 backup + a staging dry run. With no re-bake, the press adds 8 share images (never eyed) + shape.json (player-unread). D4/D6: a pale rim haze band behind LS's Arch. D5: LS phone ticker line clipped. ❓ Jacob: which LS link is
 Thursday's (lafayette-square.com's old player, or the Ward)?
 
+**⭐⭐ THE ROOT (Jacob: "RIBBONS … we use ribbons to avoid this topic in the first place"; Zob's trace, 2026-10-21):** each
+ribbon LINE is computed once, but each BAND is cut from it by its own Clipper boolean, which mints its own crossings and
+STRIPS collinear vertices (PreserveCollinear is false; the kit never sets it). So two neighbours carry different vertex sets
+on one line, and LS's stack carries 5,428 m drawn twice before the flatten. Sites: S1 sectionPassProtoTile's band booleans ·
+S2 rekeyByPiece per class · S3 sectionOpen's per-material town-wide unions · S4 asphalt's extra unions · S5 the flatten
+deriving lower edges from the union acc. Fix scope: (i) bands REFERENCE one shared polyline (cutCreases is the pattern) ·
+(ii) PreserveCollinear on partition booleans · (iii) no edges from acc. Then nodeAcrossGroups, the pinch cuts, sub-lattice
+drops and welds lose their reason (inferred). Per-site probe next (Zob). ❓ Jacob: (iv) land use: two datasets (OSM vs
+parcels) draw one real line 3–5 mm apart: which source's line wins?
+
 **🌅 MORNING 2026-10-21: the ground for Thursday, and your calls (Boz).** Nothing pushed, published or baked into `public/`.
 - **HPDM, unowned ped vertices (#40): 269 → 38 on integration** (measured on producer dumps, Mitre; B1 merged 9ca3f6cf). Merged overnight:
   fix B (a perpendicular leg's region is its painted faces) · the deformer's both-sides read plus its narrow station
