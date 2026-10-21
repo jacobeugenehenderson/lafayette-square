@@ -1790,7 +1790,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const kerbField = kerbH ? makeHeightField(kerbRegs, kerbH) : null
   // ⭐ ONE CUT PER CREASE (`kerbLift.mjs#cutCreases`): every crossing of a crease with the partition — the road included —
   // is written into every polygon on it before the split, so the faces on both sides carry the same vertex
-  const creaseCut = kerbH ? cutCreases(kerbGroups, kerbCells(kerbRegs, nodedBlockRings)) : null
+  const creaseCut = kerbH ? timed('cutCreases', () => cutCreases(kerbGroups, kerbCells(kerbRegs, nodedBlockRings))) : null
   if (creaseCut) console.log(`  [kerb] creases cut once through the partition: ${creaseCut.inserted} points in ${creaseCut.rounds} round(s)`)
   const kerbCellPaths = creaseCut?.cells || []
   const creaseItems = new Map((creaseCut?.groups || []).map(g => [g.id, g.items]))

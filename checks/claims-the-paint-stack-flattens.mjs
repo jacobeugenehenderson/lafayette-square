@@ -69,7 +69,7 @@ export function boundIsDerived(src) {
 }
 
 // ── the source-reading row: each named step is wrapped in `timed`, and ground.json carries the timings ─────────────
-export const TIMED_STEPS = ['flatten', 'nodeThePlane', 'kerbPlan', 'planGroup', 'conformAndRefine', 'liftBuffer', 'riser']
+export const TIMED_STEPS = ['flatten', 'nodeThePlane', 'kerbPlan', 'cutCreases', 'planGroup', 'conformAndRefine', 'liftBuffer', 'riser']
 export function stepsAreTimed(src) {
   const missing = TIMED_STEPS.filter(n => !src.includes(`timed('${n}', `))
   if (missing.length) return `not timed: ${missing.join(', ')}`
