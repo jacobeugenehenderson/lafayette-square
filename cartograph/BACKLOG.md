@@ -468,8 +468,8 @@ bakes). This is BRIEF-the-ground-stays-in-budget's target.
 **LS RE-BAKE under `lafayettesquare` (Kerf, kerf-rename worktree, 2026-10-21):** re-skeleton + pour clean (82/82 authored keys
 SAME); ground runs END TO END (27 min, peak 10.4 GB; needs a solo machine, the 35% watchdog can't hold it) and refuses on ONE
 site, #39's finger, vacant|asphalt at (68, 381), the sub-lattice curb needle. Truss's sub-lattice drop is REJECTED (Plumb, measured:
-the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). The needle's producer
-is being placed (Zob). Per-step (run 2, clean): deform build 18 s · nodeThePlane 9 · cutCreases 98 · planGroup 130 · conformAndRefine 574 (run 3).
+the finger 0.08 → 0.88 m, and 563 m of seams open; a ring below the lattice must be absorbed, not deleted). PLACED (Zob, LS tile 47): the needle is a depth-0 curb band: on a 1 mm bare
+② edge (motorway-27), the curb level re-mints iA's vertex 1 mm off. Fix (Plumb building): a depth-0 edge contributes NO curb band. Per-step (run 2, clean): deform build 18 s · nodeThePlane 9 · cutCreases 98 · planGroup 130 · conformAndRefine 574 (run 3).
 **⚠️ DROPPED OVERNIGHT, recovered 2026-10-21:** the triangle fix Jacob approved (BRIEF-the-ground-stays-in-budget step 7 (a)+(b): the
 simplifier in the bake + the road on the lots' refine policy) is BUILT on kerf/simplify-in-bake 444456df but never baked or merged.
 Kerf rebases it onto integration; Zob reviews; it joins tonight's timed LS bakes.
