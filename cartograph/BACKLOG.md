@@ -67,8 +67,11 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
 **⭐ RULED (Jacob, 2026-10-21 morning): "HPDM assessor fields is 0% priority. The app has to look good and 'work'. I doubt
 anybody will even click on cards. The map needs to DRAW and play."** ⇒ the roster/assessor items below are parked; first
 Thursday job: Ward checks production HPDM + LS as a visitor (draw, play, load). DONE (Ward, proxy render): HPDM and LS
-both LOAD, DRAW and PLAY; no new ground bake is needed to play. ⭐ D1: HPDM's east third (Forest Park) draws as flat TAN
-SAND (console: surface 'sand' with no coastline), being placed by Truss. D2: HPDM production predates the 10-14 Ward tranche
+both LOAD, DRAW and PLAY; no new ground bake is needed to play. ⭐ D1 PLACED (Truss): HPDM's tan east third is Forest
+Park classed COMMERCIAL. City parcel #3177 has land_use_code 5000, and parcel-landuse.mjs#classifyCity maps 5000–5999 →
+commercial (and 4000–4999 → recreation, which in the data is railroads/utilities), ranges with no City code table behind
+them, so a class in HPDM and LS. Fix: drop both ranges (→ underived) and re-bake the ground; a served recolour can't separate
+it. The bake path is being assessed (Zob), and what Forest Park becomes is being measured (Truss). D2: HPDM production predates the 10-14 Ward tranche
 (a Promote). D4/D6: a pale rim haze band behind LS's Arch. D5: LS phone ticker line clipped. ❓ Jacob: which LS link is
 Thursday's (lafayette-square.com's old player, or the Ward)?
 
