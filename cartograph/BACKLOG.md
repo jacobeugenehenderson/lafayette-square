@@ -19,6 +19,8 @@ HPDM derive + bake (re-freezes the curb-cut norm, frozen as "none" before cba287
 re-pour, derive, bake. Then Jacob looks. CLI bakes skip `bake-reads.json`/`bake-timings.json`, so the next server Bake
 re-runs every step.
 
+**LS's ground bake REFUSED on 63256183** (Lath, 2026-10-20; nothing written, `clean/` unchanged by sha): `[flatten] face:recreation: a hole below the lattice (3 vertices) that no painted ring holds by its probe, yet a ring of 47 vertices meets it, at (-703.5, -582.1)`, from `bakeGround` → `flattenPaintStack` → `itemsByMembership`. Cause not established; bisect a3426465 → 63256183 with a harness that stops at flatten (30 s, 0.9 GB per step).
+
 **Ground regressions seen 2026-10-20, cause not established** (the board ran on a3426465 vs 754cef1d):
 - `claims-band-is-one-ring` LS: severed 55 → 59. `claims-the-ground-covers-every-block` Huron: tile 24, 2 holes, 0.03 m².
   Look on the bake first; bisect light from a3426465 only if it shows.
