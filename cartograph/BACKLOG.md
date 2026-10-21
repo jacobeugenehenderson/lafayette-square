@@ -180,7 +180,9 @@ gap". OSM keeps first claim, parcels fill after it; a gap between two claims nar
   (an item wholly below the lattice: its holes go with it, the flatten's orphan rule, counted). Gate: LS ✅ · HPDM ✅ · Huron
   after PTown. Waits on the combined LS bake to land.
 - **LS #39 (kerb step), COMBINED BAKE (Truss, 2a971354 vs 5cf20f59, real bake, refinement on): bare 22.1 → 1.0 m** (left:
-  commercial|asphalt 1.0 m at (-149, 319), the crack; vacant 0.1 m at (68, 381), the finger, both Plumb's). Churn > 10 m: 3,068
+  commercial|asphalt 1.0 m at (-149, 319), the crack; vacant 0.1 m at (68, 381), the finger, both Plumb's). The CRACK is
+  CLOSED by construction (Plumb 68f1410c: a refused bisector's square side runs on its neighbour's line; field unchanged); the
+  finger waits on the sub-lattice ring ruling; 11 drifting square sides go into the ribbon brief. Churn > 10 m: 3,068
   triangles (PASSES; not the 20k). Conformity's input T-junctions 10,705 → 369. ⚠️ Time 897 → 1,603 s (+80%): about half is kernel
   time (sys 84 → 389 s, resident memory down at the same footprint: paging at 25% free); the rest (+327 s user) is compute
   before the mesh, step not established. Next: per-step duration lines in bake-ground (Truss), then a solo instrumented run
