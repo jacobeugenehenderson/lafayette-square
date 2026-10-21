@@ -138,8 +138,10 @@ some lines are RE-DERIVED rather than referenced (PreserveCollinear: FALSIFIED a
 different vertex sets on one line, BORN INSIDE EACH TILE (the town-wide unions add none), and LS's stack carries 5,428 m drawn twice before the flatten. Sites: S1 sectionPassProtoTile's band booleans ·
 S2 rekeyByPiece per class · S3 sectionOpen's per-material town-wide unions · S4 asphalt's extra unions · S5 the flatten
 deriving lower edges from the union acc. Fix scope: (i) bands REFERENCE one shared polyline (cutCreases is the pattern) ·
-(iii) no edges from acc. Located (Zob, measured per tile): asphalt/curb 1,628 m (inferred: a depth-0
-edge's offset is a recomputed COPY of ②'s ring) · curb/walk 723 m + walk/walk 602 m (the perpendicular extension rects
+(iii) no edges from acc. ⭐ FOUND (Zob, measured): ② exists TWICE per tile. The bands are struck from st.iaFull,
+the block from st.iA, which buildTileGround re-derives (the face trim + the rim disc cut); they agree on 35 of 144 LS tiles. One
+ring (a counterfactual) cuts the doubling 29% (asphalt/curb −77%). Build (i-a): ② is ONE ring per tile (Mitre). Located before
+(depth-0 and corner extensions: both FALSIFIED): asphalt/curb 1,628 m · curb/walk 723 m + walk/walk 602 m (the perpendicular extension rects
 unioned into the walk band) · land use 2,447 m (S2 + the evidence). Then nodeAcrossGroups, the pinch cuts, sub-lattice
 drops and welds lose their reason (inferred). Per-site probe next (Zob). ✅ (iv) RULED (Jacob, 2026-10-21): "keep the order, close the
 gap". OSM keeps first claim, parcels fill after it; a gap between two claims narrower than the data's own stated accuracy
