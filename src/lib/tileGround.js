@@ -2191,13 +2191,15 @@ export function stampTile(st, groups) {
 function insertOnEdges(ring, owners, pts, ok) {
   const S = ring.map(toClipper), onSeg = (q, a, b) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) return false
     const L = Math.sqrt(L2), u = (q.X - a.X) * dx + (q.Y - a.Y) * dy; return u > 0 && u < L2 && Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / L <= 2 }
-  const at = ring.map(() => []), missed = []
+  const at = ring.map(() => []), missed = [], off = []   // off: each placed point's distance off its edge's line, in grid units
   for (const v of pts) { const q = toClipper(v), j = S.findIndex((a, k) => ok(k) && onSeg(q, a, S[(k + 1) % S.length]))
     if (j < 0) { missed.push(v); continue }
-    const a = S[j], b = S[(j + 1) % S.length]; at[j].push({ u: (q.X - a.X) * (b.X - a.X) + (q.Y - a.Y) * (b.Y - a.Y), v }) }
+    const a = S[j], b = S[(j + 1) % S.length], dx = b.X - a.X, dy = b.Y - a.Y
+    off.push(Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / Math.sqrt(dx * dx + dy * dy))
+    at[j].push({ u: (q.X - a.X) * (b.X - a.X) + (q.Y - a.Y) * (b.Y - a.Y), v }) }
   const R = [], O = owners ? [] : null
   ring.forEach((p, k) => { R.push(p); O?.push(owners[k]); for (const { v } of at[k].sort((x, y) => x.u - y.u)) { R.push(v); O?.push(owners[k]) } })
-  return { ring: R, owners: O, missed }
+  return { ring: R, owners: O, missed, off }
 }
 export function shareRimCrossings(ring, owners, cutBlock, inputBlock, stamp) {
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, known = new Set([...inputBlock.flat(), ...stamp].map(K)), have = new Set(ring.map(K))
@@ -2229,7 +2231,11 @@ function nodeRimWithPaint(st, paint, nodePaint) {
   // ⭐ …and every painted piece takes them too: a crossing one class minted lies on a stretch of rim another class's edge spans,
   // so noding only the ring kinked it away from that edge (measured, LS tile 38: a 1.1 mm lot slice the ring's kink opened)
   nodePaint((r) => insertOnEdges(r, null, minted, () => true).ring)
-  return { ring: onRing.ring, owners: onRing.owners, block: block.map(x => x.ring), added: minted.length }
+  // ⚠️ COUNTED, NEVER SILENT (Boz, 2026-10-21): a crossing placed farther off its rim edge than one rounding (√2/2 grid step)
+  // bends the rim by that much (measured up to 1.18 mm on HPDM). Accepted, because leaving it un-noded brings the wedge back;
+  // why a crossing sits past the single-rounding bound is CAUSE NOT ESTABLISHED. The pour prints the count per town.
+  const far = onRing.off.filter(d => d > Math.SQRT1_2)
+  return { ring: onRing.ring, owners: onRing.owners, block: block.map(x => x.ring), added: minted.length, far: far.length, farMax: far.length ? Math.max(...far) / SCALE : 0 }
 }
 export function cutByStamp(st, own, sp = null) {
   if (!own?.length) return own
@@ -5820,7 +5826,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       // is not the same shape — using it on a stamped tile put 1,820 m² of curb where ③ had none.
       C: r.curb || differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)),
       block: r.rim?.block ?? iA,                                               // block silhouette = the frozen curb ring, noded at the rim
-      ...(r.rim ? { rim: { ring: r.rim.ring, owners: r.rim.owners } } : {}),
+      ...(r.rim ? { rim: { ring: r.rim.ring, owners: r.rim.owners }, rimFar: r.rim.far, rimFarMax: r.rim.farMax } : {}),
       ...(r.bandPieces ? { bandPieces: r.bandPieces, bandSeams: r.bandSeams, bandCensus: r.bandCensus, bandEdgeDepths: r.bandEdgeDepths, bandPerp: r.bandPerp } : {}),
     }
     if (cache) cache.set(i, bundle)
@@ -5834,7 +5840,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // the cheap final unions.
   const mkAcc = () => ({ ...Object.fromEntries(Object.keys(PAINTED).map(f => [f, []])), ...Object.fromEntries(Object.keys(PAINTED_BY_LU).map(f => [f, {}])), block: [] })
   const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutCorners = [], cornerArcs = []
-  const rest = mkAcc(), bandByTile = [], rimRings = []
+  const rest = mkAcc(), bandByTile = [], rimRings = [], rimFar = { n: 0, max: 0, tiles: [] }
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
   // ⭐ THE RIM IS CUT ONCE: A STAMPED SHAPE IS NOT CLIPPED AGAIN (BRIEF-the-rim-is-cut-once follow-on, Boz 2026-10-21). The pour
   // stamps every tile with its disc (`stampedWith`, the pour's own boundaryRing, recorded in shape.json) and the paint is cut
@@ -5849,7 +5855,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const clip = (rings) => hasStencil && rings.length ? intersectRings(rings, [stencil]) : rings
   for (let i = 0; i < shapeTiles.length; i++) {
     const b = tileGeo(shapeTiles[i], i), cl = reclip ? clip : (r) => r
-    if (b.rim) rimRings[i] = b.rim
+    if (b.rim) { rimRings[i] = b.rim; rimFar.n += b.rimFar || 0; rimFar.max = Math.max(rimFar.max, b.rimFarMax || 0); if (b.rimFar) rimFar.tiles.push(i) }
     const acc = (sel && selectedTileSet.has(i)) ? sel : rest
     for (const f of Object.keys(PAINTED)) acc[f].push(...cl(b[f] || []))
     acc.block.push(...cl(b.block))
@@ -5878,6 +5884,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       seams: t.seams.map(q => ({ ...q, line: clipped ? q.line.flatMap(l => clipLine(l, [stencil])) : q.line })).filter(q => q.line.length) } })
   out.selected = sel ? finish(sel) : null
   out.rimRings = rimRings   // per tile, the ring noded with its paint's rim crossings (live): the deformer's 'beyond'
+  out.rimFar = rimFar       // the rim crossings placed past one rounding off their edge (counted; cause not established)
   out.curbCutRecs = curbCutRecs; out.curbCutTally = curbCutTally; out.curbCutContradicted = curbCutContradicted
   out.curbCutCorners = curbCutCorners   // every junction corner, authorable in Section
   out.cornerArcs = cornerArcs   // every marked corner arc: its class, key, the operator's flag, and whether it carries a pad
@@ -7799,6 +7806,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let inkShore = []   // ①'s coast piece, the land's shore surface (painted first, below)
   protoBandPieces = S.bandPieces || []
   protoRimRings = S.rimRings || []
+  if (S.rimFar?.n) console.warn(`[tileGround][rim] ⚠️ ${S.rimFar.n} rim crossing(s) inserted farther off their rim edge than one rounding (√2/2 grid step), the farthest ${(S.rimFar.max * 1000).toFixed(3)} mm, in ${S.rimFar.tiles.length} tile(s): ${S.rimFar.tiles.slice(0, 8).join(', ')}${S.rimFar.tiles.length > 8 ? ' …' : ''} — accepted (un-noded they reopen the wedge); CAUSE NOT ESTABLISHED`)
   { const C = { cells: 0, gapOuter: 0, gapInner: 0, gapSeams: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: 0, perpLegNoSub: 0, perpLegNoStamp: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
     let n = 0, seams = 0, same = 0
     for (const t of protoBandPieces) { n += t.pieces.length; seams += t.seams.length; same += t.seams.filter(q => q.sameChain).length
