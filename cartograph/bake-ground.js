@@ -1069,10 +1069,11 @@ function pinchesOfRing(q, bound, first = false) {
 // its neighbour's edge stays unmatched. The noding can make one: a vertex it inserts into one side of a needle
 // (`nodeThePlane` cuts after it nodes). So the ring is cut at the pinch into the two loops it already is, and a loop
 // thinner than one lattice step (mean width 2·area / perimeter, the bow-tie's own measure) is DROPPED — a part below the
-// grid is not drawable — COUNTED and stamped with its area, a point and its width (ground.json#flatten.subLattice
-// [group].pinches). A loop at or above the step is kept, and searched again. A kept loop that winds against its ring
-// (a hole joined to its outer below the lattice) becomes a hole of the outer loop holding it, or an island of a hole
-// becomes an outer; one that nothing holds THROWS.
+// grid is not drawable — COUNTED and stamped with its area, a point, its width and which ring it came `from`
+// (ground.json#flatten.subLattice[group].pinches): off an outer it is paint removed, off a hole it is paint filled. A loop
+// at or above the step is kept, and searched again. A kept loop that winds against its ring (a hole joined to its outer
+// below the lattice) becomes a hole of the outer loop holding it, or an island of a hole becomes an outer; with one outer
+// loop every hole is its; with several, one that nothing holds THROWS.
 // ▶ node checks/claims-the-paint-stack-flattens.mjs --selftest
 export function splitAtPinches(items, groupKey, subLattice, { bound = NODE_BOUND } = {}) {
   const B2 = bound * bound, dropped = []
@@ -1080,7 +1081,7 @@ export function splitAtPinches(items, groupKey, subLattice, { bound = NODE_BOUND
   const perimOf = (q) => q.reduce((t, a, i) => t + Math.hypot(q[(i + 1) % q.length].X - a.X, q[(i + 1) % q.length].Y - a.Y), 0)
   const pinchOf = (q) => pinchesOfRing(q, bound, true)[0] ?? null
   // a ring → its loops at or above the step (each with the ring's sign or against it); the thinner ones dropped and recorded
-  const loopsOf = (ring) => {
+  const loopsOf = (ring, from) => {
     const todo = [ring], kept = [], n0 = ring.length
     let cuts = 0
     while (todo.length) {
@@ -1093,7 +1094,7 @@ export function splitAtPinches(items, groupKey, subLattice, { bound = NODE_BOUND
         const A = areaOf(loop), w = loop.length < 3 || !A ? 0 : 2 * Math.abs(A) / perimOf(loop)
         return { loop, A, w, keep: w >= LATTICE_STEP } })
       for (const { loop, A, w, keep } of loops) if (!keep)
-        dropped.push({ m2: +(Math.abs(A) / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [P.X / CLIP_SCALE, P.Y / CLIP_SCALE], widthMm: +(w / CLIP_SCALE * 1000).toFixed(4) })
+        dropped.push({ from, m2: +(Math.abs(A) / (CLIP_SCALE * CLIP_SCALE)).toFixed(9), at: [P.X / CLIP_SCALE, P.Y / CLIP_SCALE], widthMm: +(w / CLIP_SCALE * 1000).toFixed(4) })
       // ⭐ A DROPPED LOOP'S VERTICES STAY ON THE BOUNDARY: a needle's far side can carry a neighbour's vertex (the noding put it
       // in its nearest edge), and the kept loop's edge runs within the bound of it — so each goes into the kept loop's
       // nearest edge it projects strictly inside, unless the kept loop carries it already. Otherwise the cut would undo the
@@ -1123,17 +1124,21 @@ export function splitAtPinches(items, groupKey, subLattice, { bound = NODE_BOUND
     if (!src?.outer || src.outer.length < 3) { out.push(it); continue }
     const o = _ringToPath(src.outer), s = Math.sign(areaOf(o)), was = dropped.length
     const outers = [], holes = []
-    for (const q of loopsOf(o)) (Math.sign(areaOf(q)) === s ? outers : holes).push(q)
-    for (const h of src.holes || []) if (h?.length >= 3) for (const q of loopsOf(_ringToPath(h))) (Math.sign(areaOf(q)) === s ? outers : holes).push(q)
+    for (const q of loopsOf(o, 'outer')) (Math.sign(areaOf(q)) === s ? outers : holes).push(q)
+    for (const h of src.holes || []) if (h?.length >= 3) for (const q of loopsOf(_ringToPath(h), 'hole')) (Math.sign(areaOf(q)) === s ? outers : holes).push(q)
     if (outers.length === 1 && holes.length === (src.holes || []).filter(h => h?.length >= 3).length && dropped.length === was) { out.push(it); continue }
     const bySize = outers.map(q => ({ q, a: Math.abs(areaOf(q)), holes: [] })).sort((p, r) => p.a - r.a)
-    for (const h of holes) { const o2 = bySize.find(o2 => o2.a > Math.abs(areaOf(h)) && inside(o2.q, h))
+    // ⭐ ONE OUTER LOOP HOLDS EVERY HOLE: the item's own holes and any cut loop that winds against it. Only when the cut leaves
+    // several outers is a hole placed by a point of it — and a hole that touches its outer at every vertex has none to offer
+    // (HPDM mat:curb at (323.74, 1111.476), 2026-10-21: a 0.41 mm hole the flatten emitted along its own outer, sent here
+    // because the item's other holes were needles the cut dropped)
+    for (const h of holes) { const o2 = bySize.length === 1 ? bySize[0] : bySize.find(o2 => o2.a > Math.abs(areaOf(h)) && inside(o2.q, h))
       if (!o2) throw new Error(`[flatten] ${groupKey}: a hole loop split at a pinch that no outer loop holds, at (${h[0].X / CLIP_SCALE}, ${h[0].Y / CLIP_SCALE}) — refusing`)
       o2.holes.push(h) }
     for (const o2 of bySize) out.push({ ...src, outer: _pathToRing(o2.q), holes: o2.holes.map(_pathToRing) })
   }
   if (dropped.length) { const rec = (subLattice[groupKey] ||= { rings: 0, m2: 0 }); rec.pinches = [...(rec.pinches || []), ...dropped]
-    console.log(`  [flatten] ${groupKey}: ${dropped.length} loop(s) below the lattice cut off at a pinch, ${dropped.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², widest ${Math.max(...dropped.map(r => r.widthMm)).toFixed(4)} mm — dropped`) }
+    console.log(`  [flatten] ${groupKey}: ${dropped.length} loop(s) below the lattice cut off at a pinch (${dropped.filter(r => r.from === 'outer').length} off an outer, paint removed · ${dropped.filter(r => r.from === 'hole').length} off a hole, paint filled), ${dropped.reduce((t, r) => t + r.m2, 0).toFixed(9)} m², widest ${Math.max(...dropped.map(r => r.widthMm)).toFixed(4)} mm`) }
   return out
 }
 
@@ -1241,11 +1246,13 @@ export function nodeThePlane(flattened, { blockRings = [], rimRings = [] } = {})
     for (const [j, e, d2] of pinchesOfRing(_ringToPath(ring), NODE_BOUND)) refused.push({ who: 'rim', ring: ti, edge: e, at: ring[j], mm: +(Math.sqrt(d2) / CLIP_SCALE * 1000).toFixed(4) })
     rimOut[ti] = { ...rimRings[ti], ring, owners: carry(orig, ring, owners) } })
   if (refused.length) console.log(`  [flatten] ${refused.length} block or rim ring stretch(es) REFUSED below the lattice (${['block', 'rim'].map(w => `${w} ${refused.filter(r => r.who === w).length}`).join(' · ')}), first at (${refused[0].at.join(', ')}) — read as unmatched, never as shared`)
-  // ground.json: every layer took part, insert-only (water among them), and the loops cut off at a pinch are paint REMOVED
-  // below the lattice, under the bow-tie's rule (subLattice[group].pinches)
+  // ground.json: every layer took part, insert-only (water among them), and the loops cut off at a pinch, under the bow-tie's
+  // rule (subLattice[group].pinches, each with `from`): one cut off an OUTER is paint REMOVED below the lattice; one cut off a
+  // HOLE closes that part of the hole, so it is paint FILLED below the lattice
   const pin = keys.flatMap(k => flattened.subLattice[k]?.pinches || [])
+  const tally = (from) => { const p = pin.filter(r => r.from === from); return { rule: 'bow-tie', loops: p.length, m2: +p.reduce((t, r) => t + r.m2, 0).toFixed(9), widestMm: Math.max(0, ...p.map(r => r.widthMm)) } }
   flattened.noded = { layers: keys, insertOnly: true, inserted: noded.inserted, pairs: noded.pairs, pastBound: noded.pastBound,
-    removedBelowLattice: { rule: 'bow-tie', loops: pin.length, m2: +pin.reduce((t, r) => t + r.m2, 0).toFixed(9), widestMm: Math.max(0, ...pin.map(r => r.widthMm)) },
+    removedBelowLattice: tally('outer'), filledBelowLattice: tally('hole'),
     blockCut: partSub['participant:block']?.pinches || [], refused: refused.length }
   return { blockRings: block, rimRings: rimOut, refused }
 }

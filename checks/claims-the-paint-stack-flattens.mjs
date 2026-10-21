@@ -137,7 +137,7 @@ async function synthetic() {
   rows.push([`(5) the plane pinches nowhere below the lattice${live ? ` — ${live} pinch(es)` : ''}`, live === 0])
   rows.push(['(5) the cut needle is recorded (ground.json#flatten.subLattice[group].pinches)', !!(flat.subLattice.a?.pinches?.length && flat.subLattice.b?.pinches?.length)])
   rows.push(['(5) ground.json states it: every layer, insert-only, and the paint removed below the lattice by the bow-tie rule',
-    flat.noded?.insertOnly === true && ['a', 'b', 'c'].every(k => flat.noded.layers.includes(k)) && flat.noded.removedBelowLattice?.rule === 'bow-tie' && flat.noded.removedBelowLattice.loops === 2])
+    flat.noded?.insertOnly === true && ['a', 'b', 'c'].every(k => flat.noded.layers.includes(k)) && flat.noded.removedBelowLattice?.rule === 'bow-tie' && flat.noded.removedBelowLattice.loops === 2 && flat.noded.filledBelowLattice?.loops === 0])
   // the mutant: the same plane noded but never cut (`nodeThePlane` without `splitAtPinches`) must read as pinching
   const unsplit = nodeAcrossGroups(stack.map(e => ({ ...e, items: e.items.map(it => ({ outer: it.outer, holes: [] })) })))
   rows.push(['(5) mutant: a ring with a sub-lattice needle reaches the noder unsplit → RED', unsplit.reduce((t, e) => t + pinchesIn(e.items), 0) > 0])
@@ -170,6 +170,20 @@ async function synthetic() {
   const why6 = kerbReadsTheNodedRings(src)
   rows.push([`(6) the kerb's finder and cells read the noded block rings, after nodeThePlane${why6 ? ` — ${why6}` : ''}`, !why6])
   rows.push(['(6) mutant: kerbPlan reading the frozen block rings is RED', !!kerbReadsTheNodedRings(src.replace('kerbPlan({ blockRings: nodedBlockRings,', 'kerbPlan({ blockRings,'))])
+  // (7) a hole the flatten emitted along its own outer, touching it at every vertex (0.5 step wide, uncut), beside a needle hole
+  // the cut drops: the item reassembles with that hole still the outer's, and the drop is recorded as paint FILLED (HPDM
+  // mat:curb at (323.74, 1111.476), 2026-10-21, refused here before)
+  { const { splitAtPinches } = await import('../cartograph/bake-ground.js'), sub = {}
+    const outer = mm([[0, 0], [4000, 0], [5000, -1], [6000, 0], [10000, 0], [10000, 10000], [0, 10000]])
+    const along = mm([[4000, 0], [6000, 0], [5000, -1]]), needle = mm([[2000, 5000], [5000, 5000], [8000, 5001]])
+    let out = null, err = null; try { out = splitAtPinches([{ outer, holes: [along, needle] }], 'g', sub) } catch (e) { err = e.message }
+    const p = sub.g?.pinches || []
+    rows.push([`(7) a hole touching its outer at every vertex stays the outer's when the item reassembles${err ? ` — THREW: ${err.split('\n')[0]}` : ''}`,
+      !err && out.length === 1 && out[0].holes.length === 1 && out[0].holes[0].length === 3])
+    rows.push(['(7) the needle hole the cut drops is recorded as paint FILLED (from: hole)', p.length > 0 && p.every(r => r.from === 'hole')])
+    const why7 = /bySize\.length === 1 \? bySize\[0\] :/.test(src)
+    rows.push(['(7) the source: with one outer loop, every hole is its (no point test)', why7])
+    rows.push(['(7) mutant: the shortcut removed is RED', !/bySize\.length === 1 \? bySize\[0\] :/.test(src.replace('bySize.length === 1 ? bySize[0] : ', ''))]) }
   const why5 = planeNodedLast(src)
   rows.push([`(5) the plane is noded, then cut at its pinches, after its last re-clip and before planGroup${why5 ? ` — ${why5}` : ''}`, !why5])
   rows.push(['(5) mutant: the cut removed is RED', !!planeNodedLast(src.replace(/splitAtPinches\(noded\[g\]\.items, k, flattened\.subLattice\)/, 'noded[g].items'))])
