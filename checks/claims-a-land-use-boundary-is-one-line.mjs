@@ -7,7 +7,7 @@
 //   pass (tileGround#stampCrossings) could not settle: "did not settle in 8 rounds". The stamp was right to refuse; the
 //   INPUT draws one line twice.
 // ⭐ THE PREDICATE, read, never restated: for every vertex of one region that lies within the paint's own noding bound
-//   (bake-ground.js#NODE_BOUND, imported; in Clipper units, so ÷ CLIP_SCALE metres) of another region's edge, that vertex
+//   (src/lib/latticeNode.js#NODE_BOUND, imported; in Clipper units, so ÷ CLIP_SCALE metres) of another region's edge, that vertex
 //   is ON the edge (distance 0) or IS one of its endpoints. A vertex 0 < d ≤ bound off another class's edge is a DOUBLED
 //   line: two copies of one boundary, closer than the lattice can tell apart. Farther than the bound is a separate line
 //   and is not this check's business. ⛔ No tolerance of its own: the bound is the paint's.
@@ -17,11 +17,14 @@
 // ⭐ MUTATION TEST (`--selftest`, synthetic, in memory): an exact shared boundary → one line (GREEN) · the HPDM shape, one
 //   copy's end 0.369 mm off the other's line → DOUBLED (RED) · a vertex exactly on the other's edge → GREEN · 5 mm off (a
 //   separate line) → GREEN · and the PRODUCER itself, layerLandEvidence on an OSM polygon and a parcel cut by it, is run and
-//   its verdict printed (RED today; it turns GREEN when derive.js leaves the evidence as one partition).
-import { readFileSync, existsSync } from 'node:fs'
+//   must leave one partition (GREEN), and the same with derive.js's noding pass removed must not (RED: the mutant).
+import { readFileSync, existsSync, writeFileSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { pathToFileURL } from 'node:url'
+import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { ROOT, ribbonsPath, declaredScenes, requestedScenes } from './_scenes.mjs'
-import { NODE_BOUND } from '../cartograph/bake-ground.js'
+import { NODE_BOUND } from '../src/lib/latticeNode.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { layerLandEvidence } from '../cartograph/derive.js'
 
@@ -63,8 +66,22 @@ if (process.argv.includes('--selftest')) {
   // the PRODUCER: an OSM polygon, and a parcel of another class that it cuts along an oblique edge
   const osm = [{ lu: 'recreation', tag: 'leisure:park', ring: [[0, 0], [7.003, 101.3], [60, 100], [60, 0]].map(([x, z]) => ({ x, z })) }]
   const parcels = [{ lu: 'vacant', rings: [[[-20, 30.1234], [20, 30.1234], [20, 70.4567], [-20, 70.4567]]] }]
-  const ev = layerLandEvidence(osm, parcels).evidence, P = doubled(ev)
-  console.log(`  ${P.length ? '⚠️ ' : '✅'} the producer (layerLandEvidence: an OSM polygon and a parcel it cuts): ${P.length} doubled vertex(es)${P.length ? ` — e.g. ${P[0].a}|${P[0].b} at (${P[0].at}), ${P[0].mm} mm off (the boundary leaves as two lines; RED until derive.js leaves one partition)` : ' (one partition)'}`)
+  const producer = (fn) => { const log = console.log; console.log = () => {}; try { return doubled(fn(osm, parcels).evidence) } finally { console.log = log } }
+  const P = producer(layerLandEvidence)
+  console.log(`  ${P.length ? '⛔' : '✅'} the producer (layerLandEvidence: an OSM polygon and a parcel it cuts): ${P.length} doubled vertex(es)${P.length ? ` — e.g. ${P[0].a}|${P[0].b} at (${P[0].at}), ${P[0].mm} mm off (the boundary leaves as two lines)` : ' (one partition)'}`)
+  if (P.length) bad++
+  // MUTANT: derive.js with its noding pass removed (a copy in the OS temp dir, its imports made absolute) must turn that row RED
+  const dSrc = readFileSync(join(ROOT, 'cartograph/derive.js'), 'utf8'), PASS = '  noded.forEach((n, i) => { evidence[i].rings = n.items })\n'
+  if (dSrc.split(PASS).length !== 2) { console.log('  ⛔ mutant: derive.js no longer carries the noding pass this mutant removes — re-aim it'); bad++ }
+  else {
+    const abs = (rel, from) => pathToFileURL(join(from, rel)).href, D = join(ROOT, 'cartograph')
+    const mSrc = dSrc.replace(PASS, '').replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from '${abs(r, D)}'`)
+      .replace(/from 'clipper-lib'/g, `from '${pathToFileURL(createRequire(import.meta.url).resolve('clipper-lib')).href}'`)
+    const f = join(mkdtempSync(join(tmpdir(), 'land-one-line-')), 'derive.js'); writeFileSync(f, mSrc)
+    const M = producer((await import(pathToFileURL(f).href)).layerLandEvidence)
+    console.log(`  ${M.length ? '✅' : '⛔'} mutant: derive.js without its noding pass → the producer row ${M.length ? `RED (${M.length} doubled), as it must be` : 'still GREEN — this row cannot see the pass'}`)
+    if (!M.length) bad++
+  }
   process.exit(bad ? 1 : 0)
 }
 

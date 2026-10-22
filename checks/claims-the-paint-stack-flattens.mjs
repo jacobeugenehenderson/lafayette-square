@@ -27,6 +27,8 @@ import { ROOT, ribbonScenes } from './_scenes.mjs'
 import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
 
 const SRC = join(ROOT, 'cartograph/bake-ground.js')
+// the noding rule's home, and every producer that calls it (read together by the bound row)
+const NODE_SRCS = ['src/lib/latticeNode.js', 'cartograph/bake-ground.js', 'cartograph/derive.js'].map(f => join(ROOT, f))
 const argv = process.argv.slice(2), arg = (k) => argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 
 // ── one town, in this process: its flatten on the noded (or, `--unnoded`, the raw) stack → one JSON line ────────────
@@ -59,7 +61,7 @@ if (arg('one')) {
 // ── the source-reading row: the bound is derived from lattice.js, and the call site passes none ──────────────────────
 export function boundIsDerived(src) {
   const def = src.match(/^export const NODE_BOUND = (.+)$/m)
-  if (!def) return 'no `export const NODE_BOUND = …` in bake-ground.js'
+  if (!def) return 'no `export const NODE_BOUND = …` in src/lib/latticeNode.js'
   if (/\d*\.\d+|\b\d+e[-+]?\d+/.test(def[1].replace(/\/\/.*$/, ''))) return `NODE_BOUND is written as a literal (${def[1].trim()})`
   if (!/LATTICE_STEP/.test(def[1]) || !/SQRT1_2|Math\.sqrt\(2\)\s*\/\s*2/.test(def[1])) return `NODE_BOUND is not √2/2 · LATTICE_STEP (${def[1].trim()})`
   const calls = [...src.matchAll(/nodeAcrossGroups\(([^)]*)\)/g)].map(m => m[1]).filter(a => !/^entries,/.test(a))
@@ -117,7 +119,8 @@ export function pinchesIn(items) {
 
 // ── synthetic rows (milliseconds) ────────────────────────────────────────────────────────────────────────────────────
 async function synthetic() {
-  const { nodeAcrossGroups, NODE_BOUND, flattenPaintStack, nodeThePlane } = await import('../cartograph/bake-ground.js')
+  const { flattenPaintStack, nodeThePlane } = await import('../cartograph/bake-ground.js')
+  const { nodeAcrossGroups, NODE_BOUND } = await import('../src/lib/latticeNode.js')
   const log = console.log; console.log = () => {}
   const mm = (pts) => pts.map(([x, z]) => [x * LATTICE_M, z * LATTICE_M])
   // an edge (0,0)→(8000,6000) of group a; a vertex of group b at 0.6 step (inserted) or 0.8 step (past √2/2: untouched)
@@ -130,7 +133,7 @@ async function synthetic() {
   let off = null; try { run([3999.5, 3000]) } catch (e) { off = e.message }
   rows.push(['(4) a vertex off the lattice is refused, never rounded', /off the lattice/.test(off || '')])
   rows.push(['the bound is √2/2 of lattice.js\'s step', NODE_BOUND === Math.SQRT1_2 * CLIP_SCALE * LATTICE_M])
-  const src = readFileSync(SRC, 'utf8'), why = boundIsDerived(src)
+  const src = NODE_SRCS.map(f => readFileSync(f, 'utf8')).join('\n'), why = boundIsDerived(src)
   rows.push([`(3) the bound is derived, not written${why ? ` — ${why}` : ''}`, !why])
   rows.push(['(3) mutant: NODE_BOUND = 0.7071 is RED', !!boundIsDerived(src.replace(/^export const NODE_BOUND = .+$/m, 'export const NODE_BOUND = 0.7071'))])
   rows.push(['(3) mutant: a literal bound at the call site is RED', !!boundIsDerived(src.replace('nodeAcrossGroups(stackEntries)', 'nodeAcrossGroups(stackEntries, { bound: 0.71 })'))])

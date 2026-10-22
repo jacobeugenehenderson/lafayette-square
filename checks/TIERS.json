@@ -3,8 +3,8 @@
   "total": 436,
   "counts": {
     "safe": 317,
-    "local-effect": 29,
-    "live": 90
+    "local-effect": 28,
+    "live": 91
   },
   "checks": [
     {
@@ -278,9 +278,12 @@
     },
     {
       "file": "checks/claims-a-land-use-boundary-is-one-line.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
+        "writeFileSync",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {

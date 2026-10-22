@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 90. Never in a default run.
+## ⛔ live — 91. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -36,6 +36,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
+| `checks/claims-a-land-use-boundary-is-one-line.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules · imports package(s) clipper-lib — not read from source |
 | `checks/claims-a-look-holds-only-its-towns-grove.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-a-look-link-opens-that-town.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-missing-height-fails-loudly.mjs` | outbound | writeFileSync · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
@@ -118,7 +119,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 29. `npm run test:all`, never CI.
+## local-effect — 28. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -127,7 +128,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-failed-apply-leaves-one-state.mjs` | state.mjs |
 | `checks/claims-a-false-map-is-not-a-fallback.mjs` | fallback.mjs — IS ANY INPUT'S ABSENCE PRETENDING TO BE FINE? |
 | `checks/claims-a-hand-curated-town-gets-its-roster.mjs` | CLAIM: a town that keeps its LISTINGS by hand (`meta.baseSource: "hand-curated"`) still gets its ROSTER from |
-| `checks/claims-a-land-use-boundary-is-one-line.mjs` | line.mjs — WHERE TWO LAND-USE CLASSES TOUCH, THEIR SHARED BOUNDARY IS ONE POLYLINE. |
 | `checks/claims-a-pour-keeps-building-ids.mjs` | Building ids are minted ONCE, at fetch (`fetch-msbf.js` → `identity-registry.json`, the seal). |
 | `checks/claims-a-road-marking-lies-inside-its-road.mjs` | road.mjs — EVERY ROAD MARKING THE GROUND PAINTS LIES ON THE ROAD. |
 | `checks/claims-a-scene-is-named-not-numbered.mjs` | numbered.mjs — a neighborhood's scene id is the slug |

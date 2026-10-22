@@ -21,6 +21,7 @@ import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
 import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
 import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_MAP, wgs84ToLocal } from './config.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
+import { nodeAcrossGroups } from '../src/lib/latticeNode.js'
 import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
@@ -508,6 +509,15 @@ export function layerLandEvidence(osm, parcels, cdl = null) {
     cdlM2 = areaOf(open_)
     if (cdlM2 > 0) evidence.push({ lu: 'agricultural', src: 'cdl', crop: true, cropSource: 'usda-cdl', rings: toRings(open_) })
   }
+  // ⭐ ONE PARTITION LEAVES (Boz's ruling, 2026-10-21, on HPDM's stamp refusal). Each region above is cut by its OWN boolean,
+  // and each boolean rounds its own crossings, so where two regions meet their shared boundary left as two polylines up to a
+  // lattice step apart, and the stamp could not settle on them (tileGround#stampCrossings). The paint's own noding rule
+  // (src/lib/latticeNode.js#nodeAcrossGroups at NODE_BOUND, imported, one rule for both producers) joins them: every region is
+  // its own group, and a vertex of one within the bound of another's edge is inserted into that edge, both ways, to a
+  // fixpoint. Insert-only: ownership, the precedence above and parcelConflictM2 are untouched; a vertex farther off is a
+  // separate line and is left as it is. ▶ node checks/claims-a-land-use-boundary-is-one-line.mjs
+  const noded = nodeAcrossGroups(evidence.map((e, i) => ({ groupKey: `${e.src}:${e.lu}#${i}`, items: e.rings })), { who: 'land evidence' })
+  noded.forEach((n, i) => { evidence[i].rings = n.items })
   return { evidence, parcelConflictM2, cdlM2 }
 }
 
