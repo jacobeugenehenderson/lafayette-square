@@ -75,3 +75,23 @@ Branch off `integration/2026-10-20` in a worktree under `.claude/worktrees/`; co
 ⛔ No served bake, Publish, Promote or Stage; never write `clean/` or `public/baked/`. Heavy runs: ask Boz (Kerf's
 census holds the slot overnight). Measure before writing. Registers: `RIBBONS §1` (the compound shape: "the rim is an
 edge of the drawing") if the construction's description changes, or say "reaches no register".
+
+## 5. (D) The overlays are stamped with ①'s paint (Jacob, 2026-10-21 night)
+
+**Ruling:** *"all of those layers are supposed to be flat and stamped at the same time."* **Premises are Zob's read on
+integration 1011f428, not yet confirmed by the builder; confirm each against the code, and stop and flag Boz on a contradiction.**
+- **Why:** `bake-ground#buildTileBakeShape` takes `cutOnce` from ①'s paint, then `pushMat`s the non-① overlays, and
+  `clipAllToStencil` cuts each of them at the disc in its own op. That is a second rounding of the rim, and it's the 20 LS rim
+  T-vertices of `claims-the-paint-takes-the-rim-crossings` (scrub × face, stripe × asphalt, 1.2–1.33 mm).
+- **In:** non-street paths · park paths (not bridges) · leisure · parking lots · natural · the water BED · shore · barriers ·
+  edgelines · bike lanes · the centre stripe. Each joins ①'s one stamp in tileGround: one cut, one rim pass, the precedence
+  of the paint stack. Paths take their parcel interior from that stamp, not from a difference of ①'s paint.
+- **Out (ruled):** the water SHEET stays a tint over its bed (`DOES_NOT_CUT`/`KEEP_OWN_SLOT` for the sheet only). Bridges
+  stay out: they belong to the off-the-ground family, `STYLE-GUIDE §10` Q10.a.
+- **The stripe's slot** goes when stripe ∩ asphalt measures zero, which is its own comment's condition. Measure it; don't assume.
+- **Removed in the same commit:** the overlays' path through `clipAllToStencil`, and that function itself if nothing else
+  calls it; the stale yLift comment ("stripe — real overlays, real slots").
+- **Gates:** `claims-the-paint-takes-the-rim-crossings` GREEN on LS (live 20 → 0) with its mutant still RED · stripe ∩ asphalt
+  0 m² · a ground bake on LS and HPDM with no refusal · tris and time vs today's (LS 309k / 225 s) · Jacob's eye.
+- **Open (Boz's call, unless it changes the look):** refine policy. The hard overlays and park paths use a fixed edge
+  length today, against the ground's adaptive tolerance.
