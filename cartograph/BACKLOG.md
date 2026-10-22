@@ -83,6 +83,16 @@ last exactly like the rest of the geometry" and "the sand line should be made as
 made in the pour; the ground-pass shore median retires. The stripe's slot goes when
 its residual measures zero (its own comment's condition). Brief next (Boz).
 
+**▶ THE SPOTLIGHT CENSUS (Zob, read, 2026-10-21 night; ORIENTATION's compound-shape picture).** The bb-map-first, disc-last
+order and the disc as the ONE selector of the slab are not yet the code. (1) The boundary file is read FIVE ways: the ring ·
+HPDM's `polygon` · a circle about `center` · ⛔ a circle about the ORIGIN (`neighborhood-membership.mjs#makeMembership`,
+`scripts/17-fill-canopy-trees.mjs`; LS 21 m and Huron 59 m off the ground's disc at the rim: REGRESSION, Layer 0 class D;
+a check is Zob's) · constant margins. (2) The pour crops early: derive's face walk splits at the ring; `clipStreet` (ribbons.tiles,
+likely dead); `coastRings` drops water past `discR × 1.25`; the shore median comes from a ground pass. (3) The height field is
+disc + 50 m, so the bb's dark part has no height (⇒ a flat datum, to state). (4) Slab selectors differ per family (buildings ×3
+incl. LS's ledger bypass; trees ×4; lamps; labels; content's 25 m join). ❓ JACOB: surveyed trees outside the disc (kept by
+design) · the outer coast's water past the rim (the horizon) · LS's buildings ledger skipping the cull.
+
 **⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
 merge ownership-once → LS deploy bake as `lafayettesquare` → HPDM deploy bake → staging → his eye → press. THEN PTown and Huron
 (the shore project), with JH in the wings, built from the kit's parts. After the deploy: the slab budget (band refine chosen by
