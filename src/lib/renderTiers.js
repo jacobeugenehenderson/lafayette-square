@@ -3,7 +3,7 @@
  *
  * ⛔⛔ UNFINISHED — THIS REACHES NOTHING THAT RENDERS (re-verified 2026-10-04, Phase 2 D). Three breaks, each its own:
  *   1. Preview's tuner edits a copy of RENDER_TIERS and hands it only to its sliders (the unused reader, pyramidDegreeFor, is gone).
- *   2. `DownsamplePyramid` accepts and IGNORES levels / radius (the dial was removed 2026-06-26, in 7d1bb238).
+ *   2. `DownsamplePyramid` takes no props: its ladder height is fixed at PYRAMID_LEVELS (the dial was removed 2026-06-26, in 7d1bb238).
  * ⛔ The RESOLUTION rung is gone (2026-10-07): BRIEF-pyramid-ladder step 1 measured a lower rung — rung 0 at 1/4 and 1/8
  *   of the buffer — costing what the full ladder costs (huron and LS, Hero and Browse, desktop): the money is in the
  *   consumers' full-screen passes, not the downsample. A dial that buys nothing is not kept as config.

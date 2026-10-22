@@ -155,7 +155,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 318. This is `npm test`.
+## safe — 319. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -337,6 +337,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-tree-stands-on-drawn-hardscape.mjs` | NO TREE MAY STAND ON A SURFACE THE MAP DRAWS AS HARDSCAPE. |
 | `checks/claims-node-pair-key-parity.mjs` | SLICE 1 of "fix the key". PROVE, DON'T SWITCH. |
 | `checks/claims-objects-dissolve-with-the-ground.mjs` | CLAIM: trees, lamps and labels thin out over the SAME band the ground fades on — |
+| `checks/claims-one-blur-ladder.mjs` | "IS THERE ONE BLUR LADDER?" |
 | `checks/claims-one-building-id-minter.mjs` | minter.mjs — a building has ONE id minter and a town has ONE answer to "where do my |
 | `checks/claims-one-corner-write-moves-one-corner.mjs` | ⭐⭐ ONE CORNER WRITE MOVES ONE CORNER — every field (Jacob, 2026-10-07: "every corner should be authorable on its own"). |
 | `checks/claims-one-face-one-arrangement.mjs` | ⭐⭐⭐ "There should be no seams in runs, ever, period." (Jacob, 2026-09-07) |

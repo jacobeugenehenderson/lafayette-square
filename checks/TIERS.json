@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 438,
+  "total": 439,
   "counts": {
-    "safe": 318,
+    "safe": 319,
     "local-effect": 27,
     "live": 93
   },
@@ -1825,6 +1825,13 @@
     },
     {
       "file": "checks/claims-objects-dissolve-with-the-ground.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-one-blur-ladder.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
