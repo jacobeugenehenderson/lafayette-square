@@ -15,6 +15,11 @@
 //   same bound of one of its OWN edges, or touches itself, is a PINCH: one region narrowing below the lattice. The noder rightly
 //   never inserts a point a ring already carries, so a site where the other ring already has the point is named HERE, in that
 //   ring, never as a doubled line. The remedy is the paint's splitAtPinches, before the noding. RED where true.
+// ⭐ AND NO EDGE RUNS BESIDE ANOTHER (Boz's ruling, 2026-10-22, on Huron's stamp refusal): the vertex rule above is blind to two
+//   copies of one line that leave a SHARED vertex at a hair's angle — no vertex of either lies within the bound of the other
+//   (Huron: two agricultural pieces, 0 to 0.91 mm apart over 30 m; the block crossed the wedge and the stamp never settled).
+//   So the evidence is also read EDGE AGAINST EDGE by the paint stack's own detector (./_nearMiss.mjs, one rule: overlap
+//   longer than a step, both ends within a step, not one integer line), between regions and within one region. RED where true.
 // ROWS: per town, its frozen evidence (the ribbons' `landEvidence`, the map the painter reads): the doubled vertices, by
 //   class pair, with the first sites. RED where true. A town whose ribbons carry no evidence is NOT CHECKED, said.
 //   node checks/claims-a-land-use-boundary-is-one-line.mjs [--scene=<id>] [--selftest]
@@ -31,6 +36,7 @@ import { ROOT, ribbonsPath, declaredScenes, requestedScenes } from './_scenes.mj
 import { NODE_BOUND } from '../src/lib/latticeNode.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { layerLandEvidence } from '../cartograph/derive.js'
+import { nearMisses } from './_nearMiss.mjs'
 
 const BOUND = NODE_BOUND / CLIP_SCALE   // metres
 
@@ -83,6 +89,10 @@ export function pinches(regions, bound = BOUND) {
   return out
 }
 
+/** Edge against edge: every pair of evidence edges (two regions, or one region's own) running within a lattice step of each
+ *  other over more than a step — the paint stack's detector (./_nearMiss.mjs), each region a group, each ring an item. */
+export const edgesTwice = (regions) => nearMisses(regions.map((R, i) => ({ groupKey: `${R.lu}#${i}`, items: R.rings || [] })))
+
 if (process.argv.includes('--selftest')) {
   const sq = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]
   const A = { lu: 'recreation', rings: [[[-1622.39, -2367.69], [-1620.99, -2381.87], [-1610, -2381.87], [-1610, -2367.69]]] }
@@ -94,6 +104,10 @@ if (process.argv.includes('--selftest')) {
     // a PINCH: B's ring comes back to within 0.4 mm of its own edge, at a point B also carries; A's vertex sits there
     ['a ring that comes back within the bound of its own edge is a PINCH', pinches([{ lu: 'b', rings: [[[0, 0], [10, 0], [10, 10], [5, 0.0004], [0, 10]]] }]).length > 0],
     ['a ring touching itself at one point (a revisit) is a PINCH', pinches([{ lu: 'b', rings: [[[0, 0], [5, 5], [10, 0], [10, 10], [5, 5], [0, 10]]] }]).length > 0],
+    ['an exact shared boundary has no edge running beside another', edgesTwice([{ lu: 'a', rings: [sq(0, 0, 10, 10)] }, { lu: 'b', rings: [sq(10, 0, 20, 10)] }]).length === 0],
+    ["Huron's wedge (two agricultural pieces leaving a shared vertex, 0.9 mm apart at 30 m) runs beside itself", edgesTwice([{ lu: 'agricultural', rings: [[[0, 0], [30, 0], [30, -5]]] }, { lu: 'agricultural', rings: [[[0, 0], [-1, 5], [30, 0.0009]]] }]).length > 0],
+    ["the same wedge as two pieces of ONE region (Huron's ev 112/114: one cdl region; the noder and the vertex rule both skip a region's own pairs)", edgesTwice([{ lu: 'agricultural', rings: [[[0, 0], [30, 0], [30, -5]], [[0, 0], [-1, 5], [30, 0.0009]]] }]).length > 0],
+    ["…and the vertex rule alone cannot see it (why the edge row exists)", doubled([{ lu: 'agricultural', rings: [[[0, 0], [30, 0], [30, -5]]] }, { lu: 'agricultural', rings: [[[0, 0], [-1, 5], [30, 0.0009]]] }]).length === 0],
     ['a plain ring has no pinch', pinches([{ lu: 'b', rings: [sq(0, 0, 10, 10)] }]).length === 0],
     ['a site where the other ring already carries the point is a pinch there, never a doubled line', doubled([{ lu: 'a', rings: [[[5, 0.0004], [5, -10], [-5, -10]]] }, { lu: 'b', rings: [[[0, 0], [10, 0], [10, 10], [5, 0.0004], [0, 10]]] }]).length === 0],
   ]
@@ -102,7 +116,7 @@ if (process.argv.includes('--selftest')) {
   // the PRODUCER: an OSM polygon, and a parcel of another class that it cuts along an oblique edge
   const osm = [{ lu: 'recreation', tag: 'leisure:park', ring: [[0, 0], [7.003, 101.3], [60, 100], [60, 0]].map(([x, z]) => ({ x, z })) }]
   const parcels = [{ lu: 'vacant', rings: [[[-20, 30.1234], [20, 30.1234], [20, 70.4567], [-20, 70.4567]]] }]
-  const producer = (fn) => { const log = console.log; console.log = () => {}; try { return doubled(fn(osm, parcels).evidence) } finally { console.log = log } }
+  const producer = (fn) => { const log = console.log; console.log = () => {}; try { const ev = fn(osm, parcels).evidence; return [...doubled(ev), ...edgesTwice(ev)] } finally { console.log = log } }
   const P = producer(layerLandEvidence)
   console.log(`  ${P.length ? '⛔' : '✅'} the producer (layerLandEvidence: an OSM polygon and a parcel it cuts): ${P.length} doubled vertex(es)${P.length ? ` — e.g. ${P[0].a}|${P[0].b} at (${P[0].at}), ${P[0].mm} mm off (the boundary leaves as two lines)` : ' (one partition)'}`)
   if (P.length) bad++
@@ -129,12 +143,16 @@ for (const s of towns) {
   const j = JSON.parse(readFileSync(p, 'utf8')), ev = j.landEvidence ?? j.layers?.ribbons?.landEvidence
   if (!Array.isArray(ev)) { console.log(`   ⚠️ ${s}: NOT CHECKED (its ribbons carry no landEvidence)`); continue }
   const D = doubled(ev), N = pinches(ev), pairs = {}
+  const E = edgesTwice(ev)
   for (const d of D) { const k = [d.a, d.b].sort().join(' | '); pairs[k] = (pairs[k] || 0) + 1 }
-  if (D.length || N.length) red++
+  if (D.length || N.length || E.length) red++
   console.log(`${D.length ? '⛔' : '✅'} ${s}: ${ev.length} region(s) · ${D.length} doubled vertex(es) (0 < d ≤ ${(BOUND * 1000).toFixed(3)} mm off another class's edge)`
     + (D.length ? `\n     by pair: ${Object.entries(pairs).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `${k} ×${n}`).join(' · ')}\n     first: ${D.slice(0, 3).map(d => `(${d.at.join(', ')}) ${d.a}|${d.b} ${d.mm} mm`).join(' · ')}` : ''))
   console.log(`${N.length ? '⛔' : '✅'} ${s}: ${N.length} pinch(es) — a ring back within ${(BOUND * 1000).toFixed(3)} mm of its own edge, or touching itself`
     + (N.length ? `\n     first: ${N.slice(0, 3).map(d => `(${d.at.join(', ')}) ${d.lu} ${d.kind} ${d.mm} mm`).join(' · ')}` : ''))
+  const eSelf = E.filter(e => e.self).length, eM = E.reduce((t, e) => t + e.m, 0)
+  console.log(`${E.length ? '⛔' : '✅'} ${s}: ${E.length} edge pair(s) running within a lattice step of each other, ${eM.toFixed(2)} m alongside (${eSelf} within one region)`
+    + (E.length ? `\n     first: ${[...E].sort((a, b) => b.m - a.m).slice(0, 3).map(e => `(${e.at.map(v => v.toFixed(3)).join(', ')}) ${e.a} vs ${e.b} ${e.m.toFixed(2)} m`).join(' · ')}` : ''))
 }
-console.log(red ? `\n⛔ ${red} town(s) draw a land-use boundary twice, or pinch a region below the lattice (derive.js#layerLandEvidence)` : '\n✅ every land-use boundary is one line, and no region pinches')
+console.log(red ? `\n⛔ ${red} town(s) draw a land-use boundary twice (by vertex or edge against edge), or pinch a region below the lattice (derive.js#layerLandEvidence)` : '\n✅ every land-use boundary is one line, no edge runs beside another, and no region pinches')
 process.exit(red ? 1 : 0)
