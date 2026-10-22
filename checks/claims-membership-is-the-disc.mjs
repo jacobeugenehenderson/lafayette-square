@@ -45,8 +45,9 @@ export function rimDisagreements(file, isInside) {
 if (process.argv.includes('--selftest')) {
   const dir = mkdtempSync(join(tmpdir(), 'membership-disc-'))
   const disc = (cx, cz, R) => Array.from({ length: 256 }, (_, k) => [cx + R * Math.cos(2 * Math.PI * k / 256), cz + R * Math.sin(2 * Math.PI * k / 256)])
-  const fixture = (name, cx, cz) => { const f = join(dir, name); writeFileSync(f, JSON.stringify({ center: [cx, cz], radius: 100, boundary: disc(cx, cz, 100) })); return f }
-  const centred = fixture('centred.json', 0, 0), moved = fixture('moved.json', -15, -15)
+  const body = (cx, cz) => JSON.stringify({ center: [cx, cz], radius: 100, boundary: disc(cx, cz, 100) })
+  writeFileSync(join(dir, 'centred.json'), body(0, 0)); writeFileSync(join(dir, 'moved.json'), body(-15, -15))
+  const centred = join(dir, 'centred.json'), moved = join(dir, 'moved.json')
   const live = (f) => makeMembership(f).isInside
   const ringOf = (f) => { const r = JSON.parse(readFileSync(f, 'utf8')).boundary; return (x, z) => pip(x, z, r) }
   const rows = [

@@ -2,8 +2,8 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 438,
   "counts": {
-    "safe": 317,
-    "local-effect": 28,
+    "safe": 318,
+    "local-effect": 27,
     "live": 93
   },
   "checks": [
@@ -1637,9 +1637,9 @@
     },
     {
       "file": "checks/claims-membership-is-the-disc.mjs",
-      "tier": "local-effect",
+      "tier": "safe",
       "why": [
-        "writeFileSync"
+        "writeFileSync — only under its own temp dir"
       ]
     },
     {
