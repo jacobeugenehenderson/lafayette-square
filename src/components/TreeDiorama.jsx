@@ -3,7 +3,6 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
-import { IS_MOBILE } from '../lib/isMobile.js'
 import CelestialBodies from './CelestialBodies'
 import CloudDome from './CloudDome'
 import WeatherEffects from './WeatherEffects'
@@ -11,7 +10,8 @@ import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
-import { QualityProvider, authoringQuality } from '../lib/qualityProfile.js'
+import { QualityProvider, authoringQuality, canvasAntialias } from '../lib/qualityProfile.js'
+
 import WindSheet from './WindSheet.jsx'
 import {
   useTreeAtlas, stampTreeVertexAttrs, measureChassisRadius, setLeafTransmission,
@@ -24,6 +24,10 @@ import { makeGrassMaterial } from './grassMaterial.js'
 import { CANARY_GROUND_CAMERA } from './canaryCamera.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { suspendSlabUrl } from '../lib/slabUrl.js'
+
+// ⭐ The device question is answered in ONE module (src/lib/qualityProfile.js): this canvas reads the authoring profile,
+// never the userAgent sniff (claims-the-town-reads-no-player-store, widened to any canvas, 2026-10-22).
+const PROFILE = authoringQuality()
 
 /**
  * TREE DIORAMA — one specimen, fully dressed, under the neighbourhood's real
@@ -716,17 +720,15 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       camera={{ position: [0, 12, 40], fov: 45, near: 0.5, far: 60000 }}
       gl={{
         alpha: alpha,
-        antialias: !IS_MOBILE,
-        logarithmicDepthBuffer: !IS_MOBILE,
+        antialias: canvasAntialias(PROFILE, { composer: !alpha }),
+        logarithmicDepthBuffer: PROFILE.logDepth,
         toneMapping: THREE.ACESFilmicToneMapping,
       }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, alpha ? 0 : 1)}
-      /* One specimen, near-certainly desktop — spend the pixels the map
-         cannot (Jacob, 2026-08-23). The map caps at 1.5 for 745 trees. */
-      dpr={IS_MOBILE ? 1 : [1, 2]}
+      dpr={PROFILE.dpr}
       shadows
     >
-      <QualityProvider quality={authoringQuality()}>
+      <QualityProvider quality={PROFILE}>
       {/* The clock, and the weather it drives — the same seam every other embed
           uses, so an embedding page's slider moves this sky, this light and
           this wind together. */}

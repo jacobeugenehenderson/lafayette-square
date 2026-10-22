@@ -28,10 +28,11 @@ import { RUNTIME_PHONE_SURFACE, surfacePolicy } from './deployment.js'
 export const QUALITY = {
   desktop: {
     id: 'desktop',
-    // ⛔ No canvas MSAA: the canvas only ever receives the composer's final full-screen draw, which MSAA leaves
-    // identical (0 of 11.5 M values differ, scratch/msaa/probe.mjs --quad); ~1 ms/frame on huron at 2268×1270. The
-    // scene's anti-aliasing is the composer's (its multisampling + SMAA). With the post layer off, nothing smooths edges.
-    antialias: false,
+    // The DEVICE's canvas anti-aliasing. ⛔ A canvas that receives a composer's final draw takes none (canvasAntialias):
+    // MSAA leaves that full-screen draw identical (0 of 11.5 M values differ, scratch/msaa/probe.mjs --quad; ~1 ms/frame
+    // on huron at 2268×1270), the composer's multisampling + SMAA being the scene's AA. A canvas with NO composer (the
+    // sky embed, the transparent diorama) keeps this, or nothing smooths its edges.
+    antialias: true,
     logDepth: true,
     // The movie shot's near plane (MovieCamera): log depth keeps precision at near 1 to the horizon.
     movieNear: 1,
@@ -87,7 +88,7 @@ export function townCanvasProps(quality) {
   return {
     gl: {
       alpha: false,
-      antialias: quality.antialias,
+      antialias: canvasAntialias(quality, { composer: true }),
       logarithmicDepthBuffer: quality.logDepth,
       stencil: true,
       powerPreference: 'high-performance',
@@ -97,6 +98,17 @@ export function townCanvasProps(quality) {
     shadows: quality.shadows,
     camera: { near: 1 },
   }
+}
+
+/**
+ * ⭐ THE CANVAS'S ANTI-ALIASING, answered structurally (Zob's review, 2026-10-22): a canvas whose COMPOSER supplies the AA
+ * takes none (MSAA would leave the composer's final draw unchanged); any other canvas takes the device's (`antialias`:
+ * desktop true, phone false). Every canvas asks here, saying whether it mounts a composer. ⛔ `composer` is required.
+ */
+export function canvasAntialias(quality, { composer } = {}) {
+  if (!quality?.id) throw new Error('[quality] ⛔ canvasAntialias needs a profile from src/lib/qualityProfile.js')
+  if (typeof composer !== 'boolean') throw new Error('[quality] ⛔ canvasAntialias needs { composer: true | false } — whether this canvas mounts the composer')
+  return composer ? false : !!quality.antialias
 }
 
 /** Does this profile run the post-FX pass `id` (renderPipeline.jsx's manifest id)? The one question, asked here. */
