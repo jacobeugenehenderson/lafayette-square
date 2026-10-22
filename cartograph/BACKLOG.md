@@ -72,6 +72,8 @@ the STAGING CANDIDATE, with its re-written roster (privacy withholding of b94d0c
 LS 0.1 m refine variant (kerf scratch `slabs/lafayette-square-tol01`): ×2.35 tris, walk p99 56 → 27%: ❓ Jacob's eye. Open, unplaced:
 HPDM 11 seed-declared no-band tiles (measure WITH authoring) · LS tile 145's 26 plane T-vertices (nodePaint's reader is the plane:
 Zob's A/B) · band check FLAP's depth reads fields no tile carries (false comment, uncalibrated row) · land past-bound (12, ≤ 1.27 mm).
+LS rim T-vertices on layers outside nodePaint (scrub · stripe · asphalt, 20, 1.2–1.33 mm; `claims-the-paint-takes-the-rim-crossings`, RED where true):
+the BRIEF-the-rim-is-cut-once class on another producer — place first (Zob), then fix at the cut.
 
 **⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
 merge ownership-once → LS deploy bake as `lafayettesquare` → HPDM deploy bake → staging → his eye → press. THEN PTown and Huron
