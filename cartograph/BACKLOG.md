@@ -76,8 +76,10 @@ LS rim T-vertices on layers outside nodePaint (scrub · stripe · asphalt, 20, 1
 PLACED (Zob, read): the disc is cut a SECOND time for the non-① overlays (path ribbons, leisure, natural incl. scrub, water,
 shore, parking/bike/barriers, the centre stripe), pushed after `buildTileBakeShape`'s `cutOnce` and clipped by `clipAllToStencil`, each
 op rounding its own rim crossings. ✅ RULED (Jacob, 2026-10-21 night): "all of those layers are supposed to be flat and stamped at the
-same time" ⇒ the overlays join ①'s one stamp (one cut, one rim pass), never a later clip or re-node. Unbuilt; Zob reads what the
-overlays do differently today (timing, lift, own clip) before the brief.
+same time" ⇒ the overlays join ①'s one stamp (one cut, one rim pass), never a later clip or re-node. READ (Zob): every overlay is a second
+producer only by WHEN it is cut (after `cutOnce`, by `clipAllToStencil`). ✅ RULED (Jacob): the water BED stamps, the water
+SHEET stays a tint over it; bridges stay out (the off-the-ground family, `STYLE-GUIDE §10` Q10.a). The stripe's slot goes when
+its residual measures zero (its own comment's condition). Brief next (Boz).
 
 **⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
 merge ownership-once → LS deploy bake as `lafayettesquare` → HPDM deploy bake → staging → his eye → press. THEN PTown and Huron

@@ -642,8 +642,10 @@ so (▶ `node checks/claims-a-nodeless-crossing-is-grade-separated.mjs`). Per to
 
 **Precedent.** As above. ⛔ No conflict found.
 
-**Open for Jacob.** Q10.a Does an elevated rail viaduct (JH's 7 train, named in `BRIEF-nyc-adapter`) draw as a
-grade-separated object over the street, or is it out of the street style?
+**Ruled (Jacob, 2026-10-21, Q10.a):** "Eventually, we'll want to build out the geometry (or whatever) for the
+overpasses/bridges, etc. because the elevated trains also happen in that milieu." ⇒ bridges, overpasses, elevated rail
+(JH's 7 train) and structures over water (piers, docks: `cartograph/_archive/BRIEF-the-shore-is-closed-2026-09-26.md`
+"STRUCTURES OVER WATER") are ONE off-the-ground family, built later as geometry; never stamped into the ground. Unbuilt.
 
 ---
 
