@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs'
-import { lookFade } from './boundaryRecords.mjs'
+import { lookFade, pointInPolygon, discOf, insideHood, vx, vz } from './boundaryRecords.mjs'
+// the disc's point tests live with the disc record (boundaryRecords.mjs, pure, so the browser reads the same ones); re-exported here
+export { pointInPolygon, discOf, insideHood }
 
 /**
  * membership.mjs — THE ONE membership decision: buildings (ROADMAP A08), and the point test and dissolve every other
@@ -46,63 +48,6 @@ import { lookFade } from './boundaryRecords.mjs'
  * a malformed footprint is an INTAKE defect and must be fixed at source. The
  * bake's mesh loop separately (and now audibly) skips what it cannot extrude.
  */
-
-/**
- * Even-odd ray cast, FORMAT-AGNOSTIC — a ring vertex may be `{x, z}` or `[x, z]`.
- *
- * ⚠️ Read this before "simplifying" it. `nb.polygon` and `nb.exclusions` are
- * persisted as `{x, z}` OBJECTS (verified on every scene on disk), while building
- * rings appear in both shapes depending on the stage. Both old copies of this
- * function hard-coded the object form; a unification that assumed `[x, z]` would
- * read `undefined` for every coordinate, make every comparison false, and return
- * `false` for every point — i.e. it would silently drop EVERY building in any
- * scene that has a polygon. That failure renders as an empty map, not an error.
- */
-const vx = (p) => (Array.isArray(p) ? p[0] : p.x)
-const vz = (p) => (Array.isArray(p) ? p[1] : p.z)
-
-export function pointInPolygon(px, pz, poly) {
-  let inside = false
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = vx(poly[i]), zi = vz(poly[i])
-    const xj = vx(poly[j]), zj = vz(poly[j])
-    if ((zi > pz) !== (zj > pz) && px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi) inside = !inside
-  }
-  return inside
-}
-
-/**
- * ⭐ THE DISC, ABOUT ITS OWN CENTRE (BRIEF-the-disc-is-one-source §1a, 2026-10-21). The boundary file stores `radius` and
- * `center`; the disc is the circle of that radius about that centre, never about the origin. Right only where the centre is
- * (0, 0): LS's is (−15, −15), Huron's (−46.42, −36.21), and an origin circle disagreed with the ring by 21 m and 59 m at the rim.
- * ⛔ A file with no `center` or no `radius` is refused by name (a reader without a disc refuses; no default stands in).
- * ▶ node checks/claims-membership-is-the-disc.mjs
- */
-export function discOf(nb, who = 'membership') {
-  const c = nb?.center, R = nb?.radius
-  if (!Array.isArray(c) || c.length < 2 || !Number.isFinite(c[0]) || !Number.isFinite(c[1]))
-    throw new Error(`[${who}] ⛔ the boundary file carries no \`center\` (${JSON.stringify(c)}) — the disc cannot be placed; never the origin`)
-  if (!(Number.isFinite(R) && R > 0)) throw new Error(`[${who}] ⛔ the boundary file carries no \`radius\` (${JSON.stringify(R)}) — the disc has no size`)
-  const cx = c[0], cz = c[1]
-  const dist = (x, z) => Math.hypot(x - cx, z - cz)
-  return { cx, cz, R, dist, inDisc: (x, z) => dist(x, z) <= R }
-}
-
-/**
- * ⭐ THE CANON'S POINT TEST, ONE HOME: is (x, z) inside the neighbourhood? In any exclusion loop ⇒ OUT · else the authored
- * `polygon` decides · else the disc (`discOf`). The ID-keyed gestures (activate/hide) are the building filter's, below; this
- * is the same order without them, for objects that have no id (labels, lamps, trees).
- */
-export function insideHood(nb, who = 'membership') {
-  const polygon = Array.isArray(nb?.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
-  const exclusions = Array.isArray(nb?.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
-  const disc = polygon ? null : discOf(nb, who)
-  const inside = (x, z) => {
-    for (const e of exclusions) if (pointInPolygon(x, z, e)) return false
-    return polygon ? pointInPolygon(x, z, polygon) : disc.inDisc(x, z)
-  }
-  return { inside, polygon, exclusions }
-}
 
 /**
  * Build the membership predicate for one scene.

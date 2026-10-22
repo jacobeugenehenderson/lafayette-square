@@ -36,7 +36,7 @@ import { LAND_USE_COLORS } from '../lib/ribbonsGeometry.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { makeBoundary } from './boundary.js'
-import { lookFade } from '../../cartograph/boundaryRecords.mjs'
+import { lookFade, discOf } from '../../cartograph/boundaryRecords.mjs'
 import { slabFetch } from '../lib/slabUrl.js'
 import { fetchCurbedMinWidth } from './api.js'
 
@@ -540,7 +540,12 @@ export default function BlockGeometryV2Debug({
   // point, stamped at the mint), so the Measure tool can flip a cul-de-sac cap like a leg. Measure sits after the Wall,
   // so the frozen shape is its source (BRIEF-the-disc-is-one-source §2a; it read ribbons.tiles[].caps, now deleted).
   // A cap has one record per side; the handle is one per (skelId, capEnd). No shape yet → no handles, said by absence.
+  // ⭐ ONLY WHERE THE TIP IS LIT (Boz, 2026-10-22, the spotlight canon): what the disc leaves dark is not drawn, so it is not
+  // authored either; pulling the circle out is the operator's gesture that lights more. Read through the disc record
+  // (boundaryRecords.mjs#discOf, the bakes' own test), never a radius of its own. No boundary yet → no handles.
   const v2Caps = useMemo(() => {
+    if (!sceneBoundaryRaw) return []
+    const disc = discOf(sceneBoundaryRaw, 'cap handles')
     const nameOf = new Map()
     for (const s of (liveRibbons?.streets || [])) {
       const k = s?.skelId || s?.name
@@ -550,13 +555,13 @@ export default function BlockGeometryV2Debug({
     for (const t of (frozenShape?.tiles || [])) {
       for (const c of (t.caps || [])) {
         const key = `${c.skelId}|${c.capEnd}`
-        if (seen.has(key)) continue
+        if (seen.has(key) || !disc.inDisc(c.tip[0], c.tip[1])) continue
         seen.add(key)
         out.push({ skelId: c.skelId, chainName: nameOf.get(c.skelId) || null, capEnd: c.capEnd, tip: [c.tip[0], c.tip[1]] })
       }
     }
     return out
-  }, [liveRibbons, frozenShape])
+  }, [liveRibbons, frozenShape, sceneBoundaryRaw])
   useEffect(() => {
     useCartographStore.getState()._setV2Caps(v2Caps)
   }, [v2Caps])
