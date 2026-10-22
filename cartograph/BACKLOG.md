@@ -8,6 +8,31 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 ## ▶ Forward list (2026-10-20 night) — LS · HPDM · PTown · Huron first
 
+### ⭐ HANDOFF — 2026-10-22 morning (Boz). Read this block first; everything below is detail.
+**Live:** HPDM production = staging as served (pressed 03:54Z). **Staging:** LS as `lafayettesquare` (impostors carried, 6 s
+reveal) · HPDM · Ward d4b43fa on kit pin 7b68aad5 (movie pace/fov efdcc0bd + shadow box 630339b3; neon on one clock e947c22).
+**Integration branch** `integration/2026-10-20` @ 3d9c171f, unpushed, not in the main checkout. Landed tonight: land evidence one
+partition (latticeNode.js) · membership one formula about `center` · cdl round-once · embeds through the quality profile · checks:
+edge-against-edge (_nearMiss), one blur ladder, membership-is-the-disc, paint-takes-the-rim-crossings · ORIENTATION = the compact
+end-to-end account (PIPELINE.md to the Diary).
+**Held branches (each lands with ONE re-pour + bake of every town, "the tranche"):**
+- `kerf/caps-from-shape` 8c691a33: across/cap split, cap handles from shape.json, only where lit; deletes ribbons.tiles. Refuses a
+  stale frozen ① → needs the re-pour. Five in-disc handles lost in ② (below, OPEN).
+- `kerf/leg-ends-at-ladder` (worktree kerf-leg, uncommitted when written): a band leg ends where ladders differ or at iaCorner;
+  iaCorner = arc OR ① turns (carried through the compound boolean). Gates owed: (a)–(c) re-baselines, mutant, band pairs, PTown run.
+- `kerf/publish-impostor-records` d15fb231: publish only impostor files the atlas names (−113 MB/LS upload). Needs Zob's review.
+- `kerf/ls-to-its-address` f44df473: the rename + no default town. Merges after Jacob opens LS in Stage from kerf-rename.
+- Kerf's own note: `.claude/worktrees/kerf-publish/HANDOFF-kerf.md` (⚠️ its "kerf-land HPDM candidate" is stale: staging is the reference).
+**Blocked:** PTown + Huron deploy bakes. Huron's stamp refusal is FIXED (cdl, merged). PTown refuses at the flatten on the ① seam
+(below) — ❓ Jacob's ① design call. **Rulings owed by Jacob:** ① seam fix (options below) · fine vs coarse ground for LS (0.1 m
+variant in kerf scratch) · roof tint / happenings for the neon contract fix · delete LS staging orphan GLBs · LS data untracked from git
+(the rename's 20 MB) · raw parcel files in the repo · trees outside the disc / horizon water / LS buildings ledger (disc brief §4).
+**Next builds, in order:** the tranche (above + `BRIEF-the-disc-is-one-source` §1b/§2a/§2b) → `BRIEF-the-rim-is-cut-once §5` (overlays
+stamped with ①) → one line per depth (the band census: HPDM 22.5 km doubled). Bake-look silent-carry refusal queued (Kerf).
+**Seats:** Boz reads docs in full and states readings; Zob checks code against them; Ward holds the player and presses only on Jacob's
+word in Ward's window. One heavy run at a time. Hashes copied from git, never typed.
+
+
 > Jacob, 2026-10-20: *"LS, HPDM, PTown, and Huron are absolutely more presently important, and getting the Ward in solid
 > shape."* JH waits until its extent is set up. The goal for the ground is `project_what_improving_the_ground_means`
 > (no splinters or holes · correctly drawn fields · continuous walks, lawns and curbs with correct ramps · markings ·
