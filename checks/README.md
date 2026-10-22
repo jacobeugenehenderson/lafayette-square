@@ -121,7 +121,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 27. `npm run test:all`, never CI.
+## local-effect — 28. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -139,6 +139,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-lit-town-has-lamps.mjs` | CLAIM — EVERY TOWN WHOSE STREETS TAKE LAMPS SHIPS LAMPS, EACH ONE SAYING WHERE IT CAME FROM, |
 | `checks/claims-every-metre-of-drawn-shore-is-named.mjs` | named.mjs — IS ANY DRAWN SHORE BARE FOR NO REASON? |
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |
+| `checks/claims-membership-is-the-disc.mjs` | disc.mjs — WHERE A TOWN HAS NO AUTHORED POLYGON, MEMBERSHIP'S "INSIDE" IS THE DISC THE GROUND IS |
 | `checks/claims-no-edge-is-drawn-twice.mjs` | twice.mjs — DOES EVERY LINE TWO PRODUCERS SHARE COME OUT AS ONE LINE? |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | label.mjs — DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |

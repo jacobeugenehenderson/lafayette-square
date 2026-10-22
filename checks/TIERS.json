@@ -1,9 +1,9 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 437,
+  "total": 438,
   "counts": {
     "safe": 317,
-    "local-effect": 27,
+    "local-effect": 28,
     "live": 93
   },
   "checks": [
@@ -1633,6 +1633,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-membership-is-the-disc.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync"
       ]
     },
     {
