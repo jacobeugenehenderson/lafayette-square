@@ -87,6 +87,11 @@ its residual measures zero (its own comment's condition). Brief next (Boz).
 of the boundary, early crops in the pour, height extent, per-family slab selectors) is the premise list of
 `docs/briefs/BRIEF-the-disc-is-one-source.md`. ❓ JACOB: surveyed trees outside the disc · the horizon water · LS's buildings ledger.
 
+**▶ OPEN, placed partly (Zob, 2026-10-22): five in-disc dead ends whose ② round end carries no cap label, so no Measure handle**
+(LS hickory-street-4|end, geyer-avenue-0|end; HPDM west-fairview-drive|start, wheels-path-3|end, underpass|end). ① carries the cap edge
+at each (read). Candidate "② severs the tip's block before it can wrap" fits 3 of 5; NOT established. Out-of-disc losses are expected.
+Lands named with kerf/caps-from-shape in the tranche.
+
 **✅ HPDM PRESSED TO PRODUCTION 2026-10-22 03:54Z (Ward, on Jacob's "Press it baby"):** staging's objects as served (the new
 ground, land-use one partition, the withheld roster: appraised_value/building_sqft/units 0/1446). 18 objects changed of 905; verify
 905/905; desk 4.9 s / phone 3.9 s; impostors only. Backup: scratch/promote-rollback/hipointedemun-prod-2026-10-22-prepress/. Note: the
