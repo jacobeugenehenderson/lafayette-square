@@ -25,7 +25,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
-import { discOf } from '../cartograph/membership.mjs'
+import { discOf } from '../cartograph/boundaryRecords.mjs'
 import { requireExplicitMap } from '../cartograph/scene.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -74,7 +74,7 @@ const main = async () => {
   const geo = JSON.parse(readFileSync(path.join(dir, 'geography.json'), 'utf8'))
   const bnd = JSON.parse(readFileSync(path.join(dir, 'neighborhood_boundary.json'), 'utf8'))
   const mix = JSON.parse(readFileSync(path.join(dir, 'tree-mix.json'), 'utf8'))
-  // ⭐ the disc about its OWN centre (cartograph/membership.mjs#discOf; BRIEF-the-disc-is-one-source §1a): this grid and
+  // ⭐ the disc about its OWN centre (cartograph/boundaryRecords.mjs#discOf; BRIEF-the-disc-is-one-source §1a): this grid and
   // its two tests used to be laid about the origin, so on a town whose centre is off it the fill missed one side of the rim
   const D = discOf(bnd, '17-fill-canopy-trees'), R = D.R
   const { lon: CLON, lat: CLAT, lonToMeters: LON_M, latToMeters: LAT_M } = geo
