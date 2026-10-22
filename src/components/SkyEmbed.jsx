@@ -1,13 +1,18 @@
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
-import { IS_MOBILE } from '../lib/isMobile.js'
+import { authoringQuality, canvasAntialias } from '../lib/qualityProfile.js'
+
 import CelestialBodies from './CelestialBodies'
 import CloudDome from './CloudDome'
 import WeatherEffects from './WeatherEffects'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
+
+// ⭐ The device question is answered in ONE module (src/lib/qualityProfile.js): this canvas reads the authoring profile,
+// never the userAgent sniff (claims-the-town-reads-no-player-store, widened to any canvas, 2026-10-22).
+const PROFILE = authoringQuality()
 
 /**
  * SKY EMBED — the neighbourhood's actual sky, and nothing else.
@@ -63,8 +68,8 @@ export default function SkyEmbed() {
       camera={{ position: [0, 2, 0], fov: 62, near: 1, far: 60000 }}
       gl={{
         alpha: false,
-        antialias: !IS_MOBILE,
-        logarithmicDepthBuffer: !IS_MOBILE,
+        antialias: canvasAntialias(PROFILE, { composer: false }),
+        logarithmicDepthBuffer: PROFILE.logDepth,
         powerPreference: 'low-power',   // a sky is not a map; do not spin the fans
         toneMapping: THREE.ACESFilmicToneMapping,
       }}
@@ -74,7 +79,7 @@ export default function SkyEmbed() {
         // a view up — the sun and moon then rise and set THROUGH it.
         camera.lookAt(0, 2, -1000)
       }}
-      dpr={IS_MOBILE ? 1 : [1, 1.5]}
+      dpr={PROFILE.dpr}
       shadows={false}
     >
       <TimeTicker />
