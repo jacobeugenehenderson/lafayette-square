@@ -985,6 +985,8 @@
 > closes the rest of the LU polygons, especially the dead-ends.")*
 > ⭐ **It is still not a street:** no coupler, no `baseMeasure`, no band, no ADA, no cap. It closes
 > faces; nothing offsets a curb from it.
+> ⭐ **The SAND LINE is ink in ① too** *(Jacob, 2026-10-21: "the sand line should be made as part of the protopoly")*:
+> made in the pour beside the coast, never by a ground pass. Unbuilt (`BRIEF-the-rim-is-cut-once §5`).
 >
 > ### ⭐⭐⭐ HOW A COAST ARRIVES, AND WHY IT IS **TWO OBJECTS FROM ONE CHAIN**
 > A lake and an open sea are the same shore to the kit and **different things in OSM**: a lake is a

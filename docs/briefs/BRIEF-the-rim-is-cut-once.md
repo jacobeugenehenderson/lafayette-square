@@ -92,11 +92,11 @@ integration 1011f428, premise pass folded in (11d01178 → next); confirm each a
   is re-pointed at the new producer.
 - **Out (ruled):** the water SHEET stays a tint over its bed (`DOES_NOT_CUT`/`KEEP_OWN_SLOT` for the sheet only). Bridges
   stay out: they belong to the off-the-ground family, `STYLE-GUIDE §10` Q10.a. **Water, sand, shore (Jacob, 2026-10-21 night):** *"it makes
-  most sense to run to the bb and get stamped last exactly like the rest of the geometry."* ⇒ they extend to the bb (the frame,
-  `BRIEF-coastal-hood`) and enter the one stamp LAST. ⚠️ The consequence: `shore-median.json` is written by a first ground pass
-  today, so it isn't a pour input yet. The shore joins when it's made before the stamp: the coast-from-lidar work
-  (`tern/coast-from-lidar`, unmerged). Until then the stamp takes the water bed and sand it has, and the shore second pass is
-  named as the one thing left outside.
+  most sense to run to the bb and get stamped last exactly like the rest of the geometry"* and *"the sand line should be made
+  as part of the protopoly."* ⇒ they run to the bb, and the disc stamps LAST over them, as over everything (`RIBBONS`
+  shoreline doctrine). The sand line is INK in ①, beside the coast (closes faces, not a street), made in the POUR. So
+  `shore-median.json`'s ground-pass production and the 'ground-shore' second pass retire. How the pour derives the sand line
+  (the median's lidar trace today; `tern/coast-from-lidar`, unmerged, is the related work): premise pass owed.
 - **The stripe's slot** goes when stripe ∩ asphalt measures zero, which is its own comment's condition. Measure it; don't assume.
 - **Removed in the same commit:** the overlays' path through `clipAllToStencil`, and the function itself once only the shore
   is left in it (else it stays for the shore alone, named). Its "not stamped with this disc" branch becomes a REFUSAL by name,

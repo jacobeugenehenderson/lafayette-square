@@ -79,7 +79,8 @@ op rounding its own rim crossings. ✅ RULED (Jacob, 2026-10-21 night): "all of 
 same time" ⇒ the overlays join ①'s one stamp (one cut, one rim pass), never a later clip or re-node. READ (Zob): every overlay is a second
 producer only by WHEN it is cut (after `cutOnce`, by `clipAllToStencil`). ✅ RULED (Jacob): the water BED stamps, the water
 SHEET stays a tint over it; bridges stay out (the off-the-ground family, `STYLE-GUIDE §10` Q10.a). ✅ RULED (Jacob): water, sand and shore "run to the bb and get stamped
-last exactly like the rest of the geometry" (the shore joins when coast-from-lidar makes it before the stamp). The stripe's slot goes when
+last exactly like the rest of the geometry" and "the sand line should be made as part of the protopoly": the sand line is ink in ①,
+made in the pour; the ground-pass shore median retires. The stripe's slot goes when
 its residual measures zero (its own comment's condition). Brief next (Boz).
 
 **⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
