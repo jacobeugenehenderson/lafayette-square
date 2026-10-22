@@ -77,6 +77,8 @@ try {
   put('trees/oak/skeleton-1-lod1.glb', 'GLB')
   put('trees/hero-impostor/oak/az0_leaf0.albedo.ktx2', 'KTX')
   put('scene.json', '{}')
+  // the slab carries its own name (T1, scripts/slab-name-rule.mjs): the uploader refuses a fixture whose stamps don't say 'fx'
+  put('manifest.json', JSON.stringify({ town: 'fx' })); put('ground.json', JSON.stringify({ look: 'fx' }))
   const keys = (meshTier) => {
     put('trees.json', JSON.stringify(base({ meshTier }).trees))
     return up.plan({ look: 'fx', prefix: 'staging/', root }).files.map((f) => f.key.replace('staging/baked/fx/', ''))
