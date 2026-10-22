@@ -154,7 +154,9 @@ works the item out) or only **storage**. ⛔ marks a gap. Each home's header wil
 | Scene resolver | `scene.js#requireExplicitMap` | `claims-a-cli-scene-has-one-resolver` (readers) |
 | Town id | `townRecord.js` | `claims-a-town-has-one-sealed-id` |
 | The camera | `cameraRegimes.js` | `claims-the-camera-has-one-definition` (readers) |
-| The wind | `windSheet.js#windStateOfWeather` | `claims-the-wind-has-one-authority` (readers) |
+| The wind sheet | one field a frame, read by everything that moves: `src/lib/windSheet.js` (`windAt`, `windDetail`; the one cable `#windStateOfWeather`); `cartograph/ARCHITECTURE.md` "The wind sheet" | `claims-the-wind-has-one-authority` (readers) |
+| The downres ladder | the one answer to "which device, how much detail": `src/lib/qualityProfile.js` (per surface: desktop, phone-hi, phone-lo), set by the town's deployment policy (`src/lib/deployment.js`); ⛔ never a second LOD/quality/device regime | ⟦Zob⟧ |
+| The blur pyramid | one shared downsample, 8 rungs, sampled by DoF and bloom, never collapsed or duplicated: `src/components/DownsamplePyramid.jsx`; `cartograph/ARCHITECTURE.md §8` | ⟦Zob⟧ |
 
 ## 5. How we work on it
 
