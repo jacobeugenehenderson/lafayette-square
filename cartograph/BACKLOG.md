@@ -75,8 +75,9 @@ Zob's A/B) · band check FLAP's depth reads fields no tile carries (false commen
 LS rim T-vertices on layers outside nodePaint (scrub · stripe · asphalt, 20, 1.2–1.33 mm; `claims-the-paint-takes-the-rim-crossings`, RED where true):
 PLACED (Zob, read): the disc is cut a SECOND time for the non-① overlays (path ribbons, leisure, natural incl. scrub, water,
 shore, parking/bike/barriers, the centre stripe), pushed after `buildTileBakeShape`'s `cutOnce` and clipped by `clipAllToStencil`, each
-op rounding its own rim crossings. Fix (Boz, by the cut-once doctrine): the overlays take ①'s rim pass in tileGround (i), not a
-later re-node (ii). Unbuilt.
+op rounding its own rim crossings. ✅ RULED (Jacob, 2026-10-21 night): "all of those layers are supposed to be flat and stamped at the
+same time" ⇒ the overlays join ①'s one stamp (one cut, one rim pass), never a later clip or re-node. Unbuilt; Zob reads what the
+overlays do differently today (timing, lift, own clip) before the brief.
 
 **⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
 merge ownership-once → LS deploy bake as `lafayettesquare` → HPDM deploy bake → staging → his eye → press. THEN PTown and Huron
