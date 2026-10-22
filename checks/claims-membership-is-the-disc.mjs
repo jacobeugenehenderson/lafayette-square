@@ -2,10 +2,11 @@
 // STAMPED WITH: the same ring, about the same centre.
 //
 // ⭐ WHY (Zob's spotlight census, 2026-10-21; Boz): `neighborhood_boundary.json` is read five ways. The ground is stamped with
-//   its `boundary` RING; `neighborhood-membership.mjs#makeMembership.isInside`, which decides labels, lamps and the trees' and
-//   lamps' dissolve, falls back (no `polygon`) to `Math.hypot(x, z) <= R`: a circle about the ORIGIN, ignoring the file's own
-//   `center`. Right only where the centre is (0, 0). LS's centre is (−15, −15) and Huron's (−46.42, −36.21): the two selectors
-//   disagree by 21 m and 59 m at the rim (Layer 0 class D: a constant that happened to be right for one town).
+//   its `boundary` RING; `makeMembership.isInside` (labels, lamps and the trees' and lamps' dissolve) fell back (no `polygon`)
+//   to `Math.hypot(x, z) <= R`: a circle about the ORIGIN, ignoring the file's own `center`. LS's centre is (−15, −15) and
+//   Huron's (−46.42, −36.21): the two selectors disagreed by 21 m and 59 m at the rim (Layer 0 class D). Fixed 2026-10-21
+//   (BRIEF-the-disc-is-one-source §1a): makeMembership now lives in cartograph/membership.mjs and reads the canon's
+//   `insideHood`, its disc about `center` (`discOf`).
 // THE PREDICATE, read, never restated: points a hair inside and a hair outside every vertex of the RING, along the ray from the
 //   file's `center` (the hair = a quarter of the ring's own mean edge, so it scales with the ring), each classified by the ring
 //   itself (point-in-polygon); `isInside` must agree with the ring at every one.
@@ -15,14 +16,14 @@
 //   judged, and a point inside an authored `exclusion` is skipped.
 // ROWS: per town (none named = every declared town with a boundary file) — disagreements at the rim, with the worst site.
 // ⭐ MUTATION TEST (`--selftest`, synthetic files in the OS temp dir): a centred ring → GREEN · the same ring moved off the
-//   origin → the live isInside goes RED (the defect this check exists for) · a planted membership that reads the ring → GREEN
-//   on the moved fixture (GREEN is reachable).
+//   origin → the live isInside agrees with it (GREEN) · the MUTANT, a planted origin circle (the old makeMembership's
+//   `Math.hypot(x, z) <= R`), on the moved ring → RED: the defect this check exists for is still seen.
 //   node checks/claims-membership-is-the-disc.mjs [--scene=<id>] [--selftest]
 import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { ROOT, declaredScenes, requestedScenes, refuseUnknownFlags } from './_scenes.mjs'
-import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
+import { makeMembership } from '../cartograph/membership.mjs'
 
 refuseUnknownFlags(['selftest'])
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const xi = r[i].x ?? r[i][0], zi = r[i].z ?? r[i][1], xj = r[j].x ?? r[j][0], zj = r[j].z ?? r[j][1]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
@@ -49,11 +50,13 @@ if (process.argv.includes('--selftest')) {
   writeFileSync(join(dir, 'centred.json'), body(0, 0)); writeFileSync(join(dir, 'moved.json'), body(-15, -15))
   const centred = join(dir, 'centred.json'), moved = join(dir, 'moved.json')
   const live = (f) => makeMembership(f).isInside
+  const originCircle = (f) => { const R = JSON.parse(readFileSync(f, 'utf8')).radius; return (x, z) => Math.hypot(x, z) <= R }
   const ringOf = (f) => { const r = JSON.parse(readFileSync(f, 'utf8')).boundary; return (x, z) => pip(x, z, r) }
   const rows = [
     ['a centred ring: the live isInside agrees with it everywhere at the rim', rimDisagreements(centred, live(centred)).n === 0],
-    ['the same ring moved to (−15, −15): the live isInside DISAGREES (the origin circle) — RED, as it must be', rimDisagreements(moved, live(moved)).n > 0],
-    ['a planted membership that reads the ring agrees on the moved fixture — GREEN is reachable', rimDisagreements(moved, ringOf(moved)).n === 0],
+    ['the same ring moved to (−15, −15): the live isInside agrees with it everywhere at the rim', rimDisagreements(moved, live(moved)).n === 0],
+    ['MUTANT: a planted origin circle (the old makeMembership) on the moved ring DISAGREES — RED, as it must be', rimDisagreements(moved, originCircle(moved)).n > 0],
+    ['a membership that reads the ring itself agrees on the moved fixture — GREEN is reachable', rimDisagreements(moved, ringOf(moved)).n === 0],
   ]
   let bad = 0; for (const [what, ok] of rows) { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) bad++ }
   process.exit(bad ? 1 : 0)
@@ -70,5 +73,5 @@ for (const s of towns) {
   console.log(`${r.n ? '⛔' : '✅'} ${s}: ${r.n} of ${r.samples} rim sample(s) where membership's isInside disagrees with the ring the ground is stamped with (centre ${r.center.join(', ')})`
     + (r.worst ? ` — worst at (${r.worst.at.join(', ')}), ${r.worst.ring} the ring; origin vs centre differ there by ${r.worst.off} m` : ''))
 }
-console.log(red ? `\n⛔ ${red} town(s): membership's "inside" is not the disc (neighborhood-membership.mjs#makeMembership.isInside: a circle about the origin)` : '\n✅ membership is the disc wherever no polygon is authored')
+console.log(red ? `\n⛔ ${red} town(s): membership's "inside" is not the disc (cartograph/membership.mjs#makeMembership.isInside does not read the disc about its centre)` : '\n✅ membership is the disc wherever no polygon is authored')
 process.exit(red ? 1 : 0)

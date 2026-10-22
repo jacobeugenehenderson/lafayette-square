@@ -25,6 +25,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
+import { discOf } from '../cartograph/membership.mjs'
 import { requireExplicitMap } from '../cartograph/scene.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -73,7 +74,9 @@ const main = async () => {
   const geo = JSON.parse(readFileSync(path.join(dir, 'geography.json'), 'utf8'))
   const bnd = JSON.parse(readFileSync(path.join(dir, 'neighborhood_boundary.json'), 'utf8'))
   const mix = JSON.parse(readFileSync(path.join(dir, 'tree-mix.json'), 'utf8'))
-  const R = bnd.radius
+  // ⭐ the disc about its OWN centre (cartograph/membership.mjs#discOf; BRIEF-the-disc-is-one-source §1a): this grid and
+  // its two tests used to be laid about the origin, so on a town whose centre is off it the fill missed one side of the rim
+  const D = discOf(bnd, '17-fill-canopy-trees'), R = D.R
   const { lon: CLON, lat: CLAT, lonToMeters: LON_M, latToMeters: LAT_M } = geo
 
   // Weighted COMMON distribution (identical to the OSM drape's source).
@@ -139,7 +142,7 @@ const main = async () => {
         const ang = jit + (a / 8) * Math.PI * 2
         const nx = +(x + Math.cos(ang) * r).toFixed(1)
         const nz = +(z + Math.sin(ang) * r).toFixed(1)
-        if (nx * nx + nz * nz > R * R) continue
+        if (!D.inDisc(nx, nz)) continue
         if (!isForbidden(nx, nz) && !tooClose(nx, nz)) return [nx, nz]
       }
     }
@@ -169,11 +172,11 @@ const main = async () => {
   const n = Math.ceil((2 * R) / GRID_SPACING)
   for (let gi = 0; gi <= n; gi++) {
     for (let gj = 0; gj <= n; gj++) {
-      const cx = -R + gi * GRID_SPACING
-      const cz = -R + gj * GRID_SPACING
+      const cx = D.cx - R + gi * GRID_SPACING
+      const cz = D.cz - R + gj * GRID_SPACING
       const x = +(cx + (hash01(gi, gj, 7) - 0.5) * GRID_SPACING).toFixed(1)
       const z = +(cz + (hash01(gi, gj, 8) - 0.5) * GRID_SPACING).toFixed(1)
-      if (x * x + z * z > R * R) continue                 // in disc
+      if (!D.inDisc(x, z)) continue                       // in disc
       const frac = canopyAt(x, z) / 100
       if (frac <= 0) continue
       const ix = Math.round(x * 10), iz = Math.round(z * 10)

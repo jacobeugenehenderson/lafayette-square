@@ -5,7 +5,7 @@
  *
  * ⭐ THE RECEIPT. The fade-SSoT work deleted the stored `fade: {inner, outer}` from
  * every neighborhood_boundary.json because it was a copy of numbers derivable from
- * `radius`. `neighborhood-membership.mjs` read that field with `?? R` on BOTH sides,
+ * `radius`. `makeMembership` (then neighborhood-membership.mjs, now cartograph/membership.mjs) read that field with `?? R` on BOTH sides,
  * so both fallbacks fired at once and fadeIn === fadeOut === R. `density()` collapsed
  * to 1-inside / 0-outside — the exact on/off dichotomy the module's own header quotes
  * Jacob ruling against. Measured on HPDM before the fix: 34 lamps and 1,417 derived
@@ -27,7 +27,7 @@
  */
 import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
-import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
+import { makeMembership } from '../cartograph/membership.mjs'
 import { lookFade, edgeBandOf } from '../cartograph/boundaryRecords.mjs'
 import { readBakeDesign, designPath } from '../cartograph/lookDesign.mjs'
 // ⭐ The band is the town's home LOOK's (Stage › Horizon › Edge, 2026-10-06) — what its lamps bake and its ground fades on.
@@ -60,13 +60,13 @@ for (const s of scenes) {
   const m = makeMembership(p, { design, look: s })
   const band = edgeBandOf(design, nb.radius, 'check', s).band
   const want = lookFade(design, nb.radius, 'check', s)
-  // makeMembership measures from the ORIGIN. ⚠️ Probe several bearings, not one:
+  // makeMembership measures from the disc's own CENTRE (`center`; BRIEF-the-disc-is-one-source §1a). ⚠️ Probe several bearings, not one:
   // a scene with EXCLUSION loops (staging has them) can have the +X ray land inside
   // one, where isInside is correctly false — a single probe would read that as a
   // broken ramp when it is an authored hole doing its job.
   const atBearing = (r, deg) => {
     const a = deg * Math.PI / 180
-    return m.density(r * Math.cos(a), r * Math.sin(a))
+    return m.density(nb.center[0] + r * Math.cos(a), nb.center[1] + r * Math.sin(a))
   }
   const BEARINGS = [0, 45, 90, 135, 180, 225, 270, 315]
   const at = (r) => Math.max(...BEARINGS.map(d => atBearing(r, d)))
@@ -126,7 +126,7 @@ const walk = (d) => {
     if (e.isDirectory()) walk(f)
     else if (/\.(mjs|js|jsx)$/.test(e.name)) {
       const src = readFileSync(f, 'utf8')
-      if (/from\s+['"].*neighborhood-membership\.mjs['"]/.test(src)) importers.push(f)
+      if (/import\s*\{[^}]*\bmakeMembership\b[^}]*\}\s*from\s+['"][^'"]*membership\.mjs['"]/.test(src)) importers.push(f)
     }
   }
 }
