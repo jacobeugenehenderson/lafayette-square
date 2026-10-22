@@ -183,10 +183,11 @@ function selftest() {
 if (argv.includes('--selftest')) { const bad = selftest(); process.exit(bad ? 1 : 0) }
 const { bakeGround } = await import('../cartograph/bake-ground.js')
 const { lookFor } = await import('../scratch/_proto-feed.mjs')
-const { ribbonScenes } = await import('./_scenes.mjs')
+const { ribbonScenes, refuseUnknownFlags } = await import('./_scenes.mjs')
+refuseUnknownFlags(['selftest', 'show', 'out', 'expect'], argv)
 const expect = (arg('expect') || '').split(';').filter(Boolean).map(s => s.split(',').map(Number))
 let fail = 0, miss = 0
-for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--')))) {
+for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--') || a === '--scene' || a.startsWith('--scene=')))) {   // ⛔ --scene= is a town, never dropped (it ran every town, 2026-10-21)
   const look = lookFor(town)
   if (!look) { console.error(`⛔ ${town}: no look names this scene (public/looks/index.json) — NOT CHECKED`); fail++; continue }
   const log = console.log; console.log = () => {}

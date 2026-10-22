@@ -45,7 +45,7 @@
  *    (Jacob: "the medians are fine, with no sidewalks").
  * ⛔ Runs with the scene's authored blockCustoms (Rule 1).
  *
- * Usage: node checks/claims-band-is-one-ring.mjs [--scene <name>] [--tiles]
+ * Usage: node checks/claims-band-is-one-ring.mjs [--scene=<name>] [--tiles]   (no town named ⇒ every town with a shape)
  * Exit 0 = every banded block is one clean ring · 1 = RED · 2 = instrument failure
  * → SECTION §7/§8 · RIBBONS §1 · CLAUDE.md Layer 0
  */
@@ -55,6 +55,7 @@ import { fileURLToPath } from 'node:url'
 import clipperLib from 'clipper-lib'
 import { sectionPassTile } from '../src/lib/tileGround.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
+import { eachTown, refuseUnknownFlags } from './_scenes.mjs'
 
 // ⚠️ UNION FIRST. `sectionPassTile` returns the band's CLAIMS — one polygon per run and
 // per corner — which ABUT but are not merged; the union happens downstream in
@@ -74,7 +75,10 @@ const unionAll = (rings) => {
 }
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const argScene = process.argv.includes('--scene') ? process.argv[process.argv.indexOf('--scene') + 1] : 'lafayette-square'
+// ⛔ NO DEFAULT TOWN (Layer 0; Rule B): `--scene=<x>` used to fall through to 'lafayette-square', so a named town was measured
+//    as LS and printed under its own name. A town named is that town; none named walks every town that has a shape.
+refuseUnknownFlags(['tiles'])
+const argScene = eachTown('public/baked/<scene>/shape.json')
 const showTiles = process.argv.includes('--tiles')
 
 const shapeP = path.join(ROOT, 'public/baked', argScene, 'shape.json')
@@ -106,7 +110,8 @@ const flaps = (rings, bandDepth) => { let n = 0
       if (ang < 20 && Math.max(lu, lv) > armMin) n++ } }
   return n }
 
-let oneRing = 0, severed = 0, noBand = 0, withSlit = 0, withFlap = 0, threw = 0
+let oneRing = 0, severed = 0, noBand = 0, noBandDeclared = 0, withSlit = 0, withFlap = 0, threw = 0
+const noBandAt = []
 const bad = []
 for (const [ti, st] of tiles.entries()) {
   let out
@@ -115,7 +120,11 @@ for (const [ti, st] of tiles.entries()) {
   const band = unionAll([...(out.Wacc || []), ...Object.values(out.tlByLu || {}).flat()])
   const outers = band.filter(r => r.length >= 3 && area(r) > 0.05)
   const depth = 0.381 + (st.tl || 0) + (st.sw || 0)
-  if (!outers.length) { noBand++; continue }                     // median / zero-ped — its own class
+  if (!outers.length) { noBand++                                  // median / zero-ped — its own class
+    // ⚠️ SAID, NOT JUDGED: a no-band tile one of whose runs' SEED measure declares a walk or a lawn. Authoring can zero it
+    //    (blockCustoms, read above), so this is not a verdict; it is the part of "no band" a real absence could hide in.
+    if ((st.runs || []).some(r => { const m = r.baseMeasure?.[r.side]; return m && ((m.sidewalk || 0) + (m.treelawn || 0)) > 0 })) { noBandDeclared++; noBandAt.push(ti) }
+    continue }
   const sl = slits(band), fl = flaps(band, depth)
   if (outers.length > 1) severed++; else oneRing++
   if (sl) withSlit++
@@ -133,6 +142,7 @@ console.log(`   ⛔ SEVERED (>1 piece)      ${severed}`)
 console.log(`   ⚠️  with a SLIT (UNVALIDATED) ${withSlit}`)
 console.log(`   ⚠️  with a FLAP (UNVALIDATED) ${withFlap}`)
 console.log(`      no band at all (median / zero-ped — correct, not a failure)  ${noBand}`)
+console.log(`         of which a run's SEED measure declares a walk or lawn (authoring may zero it — said, not judged)  ${noBandDeclared}${noBandDeclared ? ` · tiles ${noBandAt.slice(0, 12).join(', ')}${noBandAt.length > 12 ? ' …' : ''}` : ''}`)
 if (threw) console.log(`   ⚠️  threw, NOT MEASURED    ${threw}`)
 if (showTiles && bad.length) { console.log(`\n   tile   defect                          streets`)
   for (const b of bad) console.log(`   ${String(b[0]).padStart(4)}   ${String(b[1]).padEnd(34)} ${b[2]}`) }

@@ -204,6 +204,20 @@ export function eachTown(need, opt = {}) {
 /** `eachTown` over the towns whose ribbons can be measured (the feed-built checks). */
 export const eachRibbonsTown = (opt = {}) => eachTown('<scene>', { ...opt, has: (s) => existsSync(join(ROOT, ribbonsPath(s))), label: 'ribbons' })
 
+// ── A flag the check does not take is REFUSED, never ignored ─────────────────────────────────
+// ⛔ An unread flag is a silent default one layer down: `--scene=hipointedemun` handed to a check that only read `--scene <x>`
+//    measured lafayette-square and printed it under the name the caller typed (claims-band-is-one-ring, 2026-10-21), and a
+//    check that dropped `--scene=` ran every town, so an LS figure was quoted as HPDM's (claims-no-edge-is-drawn-twice).
+//    `known` lists the flag NAMES the check reads; `--scene` is always known. ⇒ exit 2 and the words.
+//   refuseUnknownFlags(['tiles'])
+export function refuseUnknownFlags(known, argv = process.argv.slice(2)) {
+  const ok = new Set(['scene', ...known])
+  const bad = argv.filter(a => a.startsWith('--') && !ok.has(a.slice(2).split('=')[0]))
+  if (!bad.length) return
+  console.error(`⛔ NOT CHECKED — this check does not take ${bad.join(', ')} (it reads: ${[...ok].map(k => '--' + k).join(', ')}). A flag it ignored would answer a question nobody asked.`)
+  process.exit(2)
+}
+
 // ── A LIVE check's one town ──────────────────────────────────────────────────────────────────
 // ⛔ NO DEFAULT TOWN. A check that drives a browser cannot walk every town (a browser per town), so it takes ONE —
 //    and a default (`|| 'huron'`) made a town the silent subject of every run that forgot to say which (Layer 0:
