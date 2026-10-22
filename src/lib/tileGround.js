@@ -2797,22 +2797,8 @@ export function extractFaces(streets) {
   return faces.filter(f => signedArea(f.ring) > 1e-3)
 }
 
-// [D2 — THE PREBAKE FACE FREEZE] Rehydrate the frozen tile topology.
-// ribbons.tiles is the prebake artifact (derive.js runs extractFaces once
-// over the serialized skeleton chains and freezes per tile the ring +
-// per-edge (skelId, side)). Here each frozen edge resolves skelId → the
-// CURRENT streets index, so every downstream lookup (measures[streetIdx],
-// groupRuns, cornerKeyAt) reads exactly what a live walk would have tagged;
-// `forward` is recovered from `side` (forward ⇔ 'right' — the convention
-// documented in the walk above, bijective). Rings are copied: the parsed
-// artifact arrays live for the session and downstream must never alias them
-// across rebuilds. Returns null (caller falls back to the live walk) when
-// the artifact carries no tiles (pre-D2 data) or a skelId no longer
-// resolves (stale artifact — topology must then be re-frozen, not papered).
-// [F — EDGE OF MAP] The skelId a perimeter tile's map-edge carries (frozen by
-// derive.js's D2 freeze when it injects the boundary ring as closing edges). It
-// resolves to NO street: sentinel streetIdx -1 → edgeDepth returns 0 → land-use
-// floods to the boundary, no curb/sidewalk on the map edge. Shared with derive.js.
+// [F — EDGE OF MAP] The skelId ①'s rim edges carry (the disc ring stroked into the mint). It resolves to NO street:
+// no curb or sidewalk on the map edge, land use floods to the boundary.
 export const BOUNDARY_EDGE_SKEL = '__boundary__'
 // ⭐⭐⭐ THE COAST IS INK, AND THAT IS WHAT MAKES IT UNLIKE THE RIM (Jacob, 2026-09-20:
 // "we see the difference between land and water, and the geometry creates the water field
@@ -2856,55 +2842,6 @@ export function capCentre(t) {
 // caller tested '① as the TILE SOURCE', which is the premise `5560cf6a` ruled wrong: "I CHANGED THE
 // SUBSTRATE, NOT THE PRODUCER." Dead code is excised here, not archived; git holds it.
 
-
-
-// ── Dead-end CAP identity on the frozen face (HANDOFF-dead-end-cap-flip §36) ──
-// The prebake face freeze (derive.js → extractFaces) walks a dead-end spur
-// OUT-and-BACK inside its enclosing face, so the turn-around at the tip is a
-// ring vertex whose two adjacent edges carry the SAME chain (skelId) on OPPOSITE
-// sides (right→left). That vertex — when it coincides with the chain's own
-// start/end endpoint — IS the cul-de-sac / dead-end cap. This is the ONE cap
-// criterion (RIBBONS §1 tile model): the fe layer (buildBlockGeometryV2) can't
-// make it — it sees every naive degree-1 chain-end (LS: 100), half of them
-// boundary danglers that never form an out-and-back inside a bounded face (LS:
-// exactly 50 real caps survive, 1:1 with the rendered tips). So cap identity is
-// a FACE-topology fact, frozen ONCE at prebake into ribbons.tiles[].caps and
-// read identically by Survey/Designer (the flip) and section/bake (the render).
-
-// skelId → { start, end } endpoint node-keys, for cap-end resolution.
-export function chainEndpointKeys(streets) {
-  const m = new Map()
-  for (const s of streets || []) {
-    const pts = s?.points
-    if (!pts || pts.length < 2) continue
-    const k = s.skelId || s.name
-    if (k == null) continue
-    m.set(k, { start: tipKey(pts[0]), end: tipKey(pts[pts.length - 1]) })
-  }
-  return m
-}
-
-// Detect dead-end cap tips on ONE tile face → [{ vertexIdx, skelId, capEnd }].
-// `skelIdOfEdge` reads the chain id from an edge (frozen edges carry `.skelId`;
-// live extractFaces edges carry `.streetIdx`, resolved by the caller).
-export function detectTileCaps(ring, edges, endpointKeys, skelIdOfEdge = (e) => e?.skelId) {
-  const caps = []
-  const n = edges?.length || 0
-  if (!n || !Array.isArray(ring) || ring.length !== n) return caps
-  for (let i = 0; i < n; i++) {
-    const inc = edges[(i - 1 + n) % n], out = edges[i]
-    const sk = skelIdOfEdge(inc)
-    if (sk == null || sk === BOUNDARY_EDGE_SKEL || sk === WATER_EDGE_SKEL) continue
-    if (sk !== skelIdOfEdge(out) || inc.side === out.side) continue   // not a same-chain turn-around
-    const ends = endpointKeys?.get(sk)
-    if (!ends) continue
-    const tk = tipKey(ring[i])
-    const capEnd = ends.start === tk ? 'start' : (ends.end === tk ? 'end' : null)
-    if (!capEnd) continue   // same-skelId/opposite-side but NOT at a chain endpoint → not a cap
-    caps.push({ vertexIdx: i, skelId: sk, capEnd })
-  }
-  return caps
-}
 
 
 // Inboard-side ped zeroing for divided carriageways (anchor='inner-edge'):

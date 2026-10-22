@@ -66,7 +66,9 @@ function runsCovering(tile, skelId, q) {
 const rows = []
 sh.tiles.forEach((t, ti) => {
   const rings = t.iA || []; if (!rings.length) return
-  for (const c of (rb.tiles[ti]?.caps || [])) {
+  // the tile's OWN cap records (shape.json: skelId, side, segOrd, capEnd, tip — stamped at the mint). It read
+  // `rb.tiles[ti].caps`, the deleted ribbons freeze, by THIS tile's index: the two number tiles differently.
+  for (const c of (t.caps || [])) {
     if (ONLY && c.skelId !== ONLY) continue
     const st = stBySkel.get(c.skelId); if (!st) continue
     const seq = c.capEnd === 'end' ? [...st.points].reverse() : st.points

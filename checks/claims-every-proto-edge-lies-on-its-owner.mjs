@@ -19,8 +19,8 @@
 // and the true side (measure-right = (−dz, dx)). An edge beside several segments passes if any agrees. Wrong ones
 // are split END SEGMENT (a chain's first/last) vs INTERIOR, because the residual after the 2026-09-25 fix is
 // almost all the former (cause not established) — an interior one is the regression to watch for.
-// ⭐ AND A `cap` RECORD LABELS ONLY ITS CAP: an edge longer than 3·eps carrying one is red (the run emitter
-// declines cap edges, so a leak there would silently drop frontage).
+// ⭐ AND A STROKE-END RECORD LABELS ONLY ITS END EDGE: an edge longer than 3·eps carrying `across` (or `cap`, which is
+// always across too) is red (the run emitter declines across edges, so a leak there would silently drop frontage).
 //
 //   node checks/claims-every-proto-edge-lies-on-its-owner.mjs [scene…] [--ribbons=path]
 //
@@ -72,7 +72,7 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
       for (let i = 0; i < ring.length; i++) {
         const o = P.owners[labs[i]]
         const a = ring[i], c = ring[(i + 1) % ring.length], mid = [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]
-        if (o?.cap && Math.hypot(c[0] - a[0], c[1] - a[1]) > 3 * P.eps) capLeak.push(`block ${k} @(${mid[0].toFixed(1)}, ${mid[1].toFixed(1)}) ${Math.hypot(c[0] - a[0], c[1] - a[1]).toFixed(1)} m carries ${o.skelId} ${o.side}@${o.srcIdx}'s CAP record`)
+        if ((o?.across || o?.cap) && Math.hypot(c[0] - a[0], c[1] - a[1]) > 3 * P.eps) capLeak.push(`block ${k} @(${mid[0].toFixed(1)}, ${mid[1].toFixed(1)}) ${Math.hypot(c[0] - a[0], c[1] - a[1]).toFixed(1)} m carries ${o.skelId} ${o.side}@${o.srcIdx}'s CAP record`)
         const Q = o && chain.get(o.skelId); if (!Q) continue
         if (C && !pip(mid[0], mid[1], C)) continue
         n++

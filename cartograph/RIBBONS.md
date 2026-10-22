@@ -985,6 +985,7 @@
 > closes the rest of the LU polygons, especially the dead-ends.")*
 > ⭐ **It is still not a street:** no coupler, no `baseMeasure`, no band, no ADA, no cap. It closes
 > faces; nothing offsets a curb from it.
+> ⭐ **A coast's end edges are ACROSS edges (not frontage), never caps** (2026-10-22): the mint marks them `across`, which the run emitter declines; `cap` is only a degree-1 street tip (`tileGround.js#mintProtopolygon`).
 > ⭐ **The SAND LINE is ink in ① too** *(Jacob, 2026-10-21: "the sand line should be made as part of the protopoly")*:
 > made in the pour beside the coast, never by a ground pass. Unbuilt (`BRIEF-the-rim-is-cut-once §5`).
 >
