@@ -91,9 +91,12 @@ integration 1011f428, premise pass folded in (11d01178 → next); confirm each a
   ①'s paint. A closed buffered line (turning-circle stripe, yard fence) keeps its hole: `claims-a-closed-stripe-keeps-its-hole`
   is re-pointed at the new producer.
 - **Out (ruled):** the water SHEET stays a tint over its bed (`DOES_NOT_CUT`/`KEEP_OWN_SLOT` for the sheet only). Bridges
-  stay out: they belong to the off-the-ground family, `STYLE-GUIDE §10` Q10.a. **The shore stays out for now (Boz):**
-  `shore-median.json` is written by a first ground pass, so it isn't a pour input, and Survey never has it. It's revisited
-  with the coast-from-lidar work (Huron), which changes how the coast is made.
+  stay out: they belong to the off-the-ground family, `STYLE-GUIDE §10` Q10.a. **Water, sand, shore (Jacob, 2026-10-21 night):** *"it makes
+  most sense to run to the bb and get stamped last exactly like the rest of the geometry."* ⇒ they extend to the bb (the frame,
+  `BRIEF-coastal-hood`) and enter the one stamp LAST. ⚠️ The consequence: `shore-median.json` is written by a first ground pass
+  today, so it isn't a pour input yet. The shore joins when it's made before the stamp: the coast-from-lidar work
+  (`tern/coast-from-lidar`, unmerged). Until then the stamp takes the water bed and sand it has, and the shore second pass is
+  named as the one thing left outside.
 - **The stripe's slot** goes when stripe ∩ asphalt measures zero, which is its own comment's condition. Measure it; don't assume.
 - **Removed in the same commit:** the overlays' path through `clipAllToStencil`, and the function itself once only the shore
   is left in it (else it stays for the shore alone, named). Its "not stamped with this disc" branch becomes a REFUSAL by name,
