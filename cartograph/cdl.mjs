@@ -10,9 +10,12 @@
  *   DECLARED-NONE  "cropland": [], "cropland_absent_reason": "<why>"  (a town outside the US, say)
  *   UNDECLARED     no key — LOUD at the pour: crop then grows on mapped fields only, and the pour says so.
  *
- * ⭐ Read in its OWN projection (EPSG:5070, USGS Albers / NAD83, by the standard formulas — no library), each crop
- * pixel's corners carried into the kit's local frame by `wgs84ToLocal`, a row's contiguous crop pixels merged into one
- * rectangle. ⛔ No smoothing and no minimum patch: a 30 m pixel is what the source says; anything else is invention.
+ * ⭐ Read in its OWN projection (EPSG:5070, USGS Albers / NAD83, by the standard formulas — no library). ⭐ ROUND ONCE WHERE
+ * BORN (Boz, Zob, 2026-10-22): the crop pixels are unioned in the raster's INTEGER pixel grid, where two pixels' shared edge
+ * is exact, and each outline vertex is carried into the kit's local frame by `wgs84ToLocal` ONCE. Projecting each row's run
+ * as its own rectangle left adjacent rows' shared Albers line as two chords (0.91 mm apart over 30 m on huron); their union
+ * left slit wedges the land evidence's pinch split cut into lobes. ⛔ No smoothing and no minimum patch: a 30 m pixel is what
+ * the source says; anything else is invention.
  * ▶ node checks/claims-every-piece-takes-its-own-land-use.mjs (the crop cases)
  */
 import { readFileSync, writeFileSync, existsSync } from 'fs'
@@ -46,6 +49,59 @@ export function fromAlbers(x, y) {
   return [(l0 + th / n) / d, p / d]
 }
 
+/**
+ * The crop region's outline in the raster's pixel-corner grid: closed loops of integer corners (I, J), I across 0..W, J down
+ * 0..H, the crop always on the loop's right (in J-down) — so an outer and a hole wind opposite ways and a non-zero union
+ * reads them as the region. ⭐ EVERY pixel corner is kept, the straight ones too: a row or column line of the raster is a CURVE
+ * in the local frame (1.4 mm off its chord over 10 pixels, 142 mm over 100, at huron), so a chord longer than one pixel would
+ * move the line. Two crop pixels meeting at a corner alone are separate loops (at such a corner the trace turns toward its
+ * own pixel).
+ */
+export function cropOutline(W, H, isCropAt) {
+  const crop = (i, j) => i >= 0 && j >= 0 && i < W && j < H && isCropAt(i, j)
+  const out = new Map(), key = (I, J) => I * (H + 2) + J
+  const edge = (I, J, dx, dy) => { const k = key(I, J); (out.get(k) || out.set(k, []).get(k)).push([I, J, dx, dy]) }
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    if (!crop(i, j)) continue
+    if (!crop(i, j - 1)) edge(i, j, 1, 0)              // top, left to right
+    if (!crop(i + 1, j)) edge(i + 1, j, 0, 1)          // right, downward
+    if (!crop(i, j + 1)) edge(i + 1, j + 1, -1, 0)     // bottom, right to left
+    if (!crop(i - 1, j)) edge(i, j + 1, 0, -1)         // left, upward
+  }
+  const loops = []
+  for (const list of out.values()) while (list.length) {
+    const e0 = list.pop(), sk = key(e0[0], e0[1]), loop = []
+    let [I, J, dx, dy] = e0
+    for (;;) {
+      I += dx; J += dy
+      const k = key(I, J), nx = k === sk ? [...(out.get(k) || []), e0] : out.get(k) || []
+      if (!nx.length) throw new Error(`[cdl] the crop outline does not close at pixel corner (${I}, ${J})`)
+      // a corner with two ways on (a checkerboard): turn right, toward this loop's own pixel
+      const e = nx.find(([, , ex, ey]) => ex === -dy && ey === dx) || nx[0]
+      loop.push([I, J])
+      if (e === e0) break
+      const own = out.get(k); own.splice(own.indexOf(e), 1)
+      dx = e[2]; dy = e[3]
+    }
+    if (loop.length >= 3) loops.push(loop)
+  }
+  return loops
+}
+
+/**
+ * The crop region's rings in the local frame: the outline unioned on the pixel grid (`cropOutline`), each pixel corner
+ * carried by `cornerToLocal(I, J)` ONCE — a corner two loops share is the same point in both.
+ * ▶ node checks/claims-a-land-use-boundary-is-one-line.mjs --selftest (the crop rows, and the per-run mutant)
+ */
+export function cropRings(W, H, isCropAt, cornerToLocal) {
+  const seen = new Map(), local = (I, J) => {
+    const k = I * (H + 2) + J; let v = seen.get(k)
+    if (!v) seen.set(k, v = cornerToLocal(I, J))
+    return v
+  }
+  return cropOutline(W, H, isCropAt).map((loop) => loop.map(([I, J]) => local(I, J)))
+}
+
 /** The town's crop region from its declared CDL raster: { year, attribution, rings: [[x,z]...] } in the local frame. */
 export async function readCdlCrop(rawDir, year, wgs84ToLocal) {
   const p = join(rawDir, cdlFile(year))
@@ -53,18 +109,9 @@ export async function readCdlCrop(rawDir, year, wgs84ToLocal) {
   const buf = readFileSync(p), tif = await fromArrayBuffer(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
   const img = await tif.getImage(), W = img.getWidth(), H = img.getHeight(), [x0, , , y1] = img.getBoundingBox()
   const [rx, ry] = img.getResolution(), px = (await img.readRasters())[0], dy = Math.abs(ry)
-  const local = (ax, ay) => { const [lon, lat] = fromAlbers(ax, ay); const [x, z] = wgs84ToLocal(lon, lat); return [x, z] }
-  const rings = []
-  for (let j = 0; j < H; j++) {
-    let i = 0
-    while (i < W) {
-      if (!CDL.isCrop(px[j * W + i])) { i++; continue }
-      let k = i; while (k + 1 < W && CDL.isCrop(px[j * W + k + 1])) k++
-      const xa = x0 + i * rx, xb = x0 + (k + 1) * rx, ya = y1 - j * dy, yb = y1 - (j + 1) * dy
-      rings.push([local(xa, ya), local(xb, ya), local(xb, yb), local(xa, yb)])
-      i = k + 1
-    }
-  }
+  const rings = cropRings(W, H, (i, j) => CDL.isCrop(px[j * W + i]), (I, J) => {
+    const [lon, lat] = fromAlbers(x0 + I * rx, y1 - J * dy); const [x, z] = wgs84ToLocal(lon, lat); return [x, z]
+  })
   return { year, attribution: CDL.attribution, rings }
 }
 

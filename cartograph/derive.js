@@ -4612,7 +4612,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   const landEvidence = layerLandEvidence(osmLUPolys,
     parcels.map(p => ({ lu: classifyLandUse(p), rings: p.rings })).filter(p => p.lu && p.lu !== UNDERIVED),
     cropland?.crop?.rings || null)
-  if (cropland?.crop) console.log(`    cropland: ${cropland.crop.attribution} ${cropland.crop.year} — ${cropland.crop.rings.length} crop run(s); ${(landEvidence.cdlM2 / 1e4).toFixed(1)} ha of crop, across the fetch extent, on ground no other evidence reaches`)
+  if (cropland?.crop) console.log(`    cropland: ${cropland.crop.attribution} ${cropland.crop.year} — ${cropland.crop.rings.length} crop ring(s), unioned on the pixel grid; ${(landEvidence.cdlM2 / 1e4).toFixed(1)} ha of crop, across the fetch extent, on ground no other evidence reaches`)
   {
     const by = {}; for (const e of landEvidence.evidence) { const k = `${e.src}:${e.lu}`; by[k] = (by[k] || 0) + Math.abs(e.rings.reduce((t, r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return t + a / 2 }, 0)) }
     console.log(`    land evidence: ${landEvidence.evidence.length} region(s) — ${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / 1e4).toFixed(1)} ha`).join(' · ')}`)

@@ -27,6 +27,10 @@
 //   copy's end 0.369 mm off the other's line → DOUBLED (RED) · a vertex exactly on the other's edge → GREEN · 5 mm off (a
 //   separate line) → GREEN · and the PRODUCER itself, layerLandEvidence on an OSM polygon and a parcel cut by it, is run and
 //   must leave one partition (GREEN), and the same with derive.js's noding pass removed must not (RED: the mutant).
+//   ⭐ THE CROP AT ITS SOURCE (Zob placed Huron's refusal in cartograph/cdl.mjs, 2026-10-22): a staggered CDL raster near
+//   Huron, through the real EPSG:5070 inverse, read by cdl.mjs#cropRings and painted by layerLandEvidence, must leave no edge
+//   beside another and no revisit (GREEN); the same with each row's run projected as its own rectangle must not (RED: the
+//   per-run mutant, the reading that drew one Albers row line as two chords).
 import { readFileSync, existsSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
@@ -36,6 +40,7 @@ import { ROOT, ribbonsPath, declaredScenes, requestedScenes } from './_scenes.mj
 import { NODE_BOUND } from '../src/lib/latticeNode.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { layerLandEvidence } from '../cartograph/derive.js'
+import { cropRings, toAlbers, fromAlbers } from '../cartograph/cdl.mjs'
 import { nearMisses } from './_nearMiss.mjs'
 
 const BOUND = NODE_BOUND / CLIP_SCALE   // metres
@@ -131,6 +136,36 @@ if (process.argv.includes('--selftest')) {
     const M = producer((await import(pathToFileURL(f).href)).layerLandEvidence)
     console.log(`  ${M.length ? '✅' : '⛔'} mutant: derive.js without its noding pass → the producer row ${M.length ? `RED (${M.length} doubled), as it must be` : 'still GREEN — this row cannot see the pass'}`)
     if (!M.length) bad++
+  }
+  // THE CROP AT ITS SOURCE: a staggered raster (adjacent rows share one row line between different ends), 30 m pixels placed at Huron through the real inverse projection, a local frame in metres about the corner
+  const [X0, Y1] = toAlbers(-82.55, 41.39).map(v => Math.round(v / 30) * 30), [lon0, lat0] = fromAlbers(X0, Y1)
+  const corner = (I, J) => { const [lon, lat] = fromAlbers(X0 + I * 30, Y1 - J * 30)
+    return [(lon - lon0) * 111320 * Math.cos(lat0 * Math.PI / 180), -(lat - lat0) * 110540] }
+  // each row's run [start, end): adjacent rows share one end and differ by ONE pixel at the other, both ways round. Huron's
+  // site: two such chords ~16 px long part by under a millimetre over their whole length (0.91 mm at 30 m)
+  const RUNS = [[0, 16], [0, 17], [0, 16], [1, 16], [0, 16], [0, 15], [2, 15], [1, 15]]
+  const W = 20, H = RUNS.length, crop = (i, j) => i >= RUNS[j][0] && i < RUNS[j][1]
+  const cropRow = (read) => { const log = console.log; console.log = () => {}
+    try { const L = layerLandEvidence([], [], read(W, H, crop, corner)), ev = L.evidence
+      return { bad: doubled(ev).length + pinches(ev).length + edgesTwice(ev).length, revisits: L.pinchDropped.revisits, dropped: L.pinchDropped.n } }
+    finally { console.log = log } }
+  const C = cropRow(cropRings), cOk = !C.bad && !C.revisits && !C.dropped
+  console.log(`  ${cOk ? '✅' : '⛔'} the crop at its source (cdl.mjs#cropRings, a staggered raster at Huron): ${C.bad} doubled/pinch/edge-beside · ${C.revisits} revisit(s) · ${C.dropped} loop(s) dropped`)
+  if (!cOk) bad++
+  // MUTANT: cdl.mjs with each row's run projected as its own rectangle (a copy in the OS temp dir, its imports made absolute)
+  const cSrc = readFileSync(join(ROOT, 'cartograph/cdl.mjs'), 'utf8'), ONCE = '  return cropOutline(W, H, isCropAt).map((loop) => loop.map(([I, J]) => local(I, J)))\n'
+  if (cSrc.split(ONCE).length !== 2) { console.log('  ⛔ mutant: cdl.mjs#cropRings no longer carries the line this mutant replaces — re-aim it'); bad++ }
+  else {
+    const RUNS = `  const rings = []
+  for (let j = 0; j < H; j++) for (let i = 0; i < W;) { if (!isCropAt(i, j)) { i++; continue }
+    let k = i; while (k + 1 < W && isCropAt(k + 1, j)) k++
+    rings.push([local(i, j), local(k + 1, j), local(k + 1, j + 1), local(i, j + 1)]); i = k + 1 }
+  return rings\n`
+    const mSrc = cSrc.replace(ONCE, RUNS).replace(/from 'geotiff'/g, `from '${import.meta.resolve('geotiff')}'`)
+    const f = join(mkdtempSync(join(tmpdir(), 'land-one-line-cdl-')), 'cdl.mjs'); writeFileSync(f, mSrc)
+    const M = cropRow((await import(pathToFileURL(f).href)).cropRings), red = M.bad || M.revisits || M.dropped
+    console.log(`  ${red ? '✅' : '⛔'} mutant: each row's run projected as its own rectangle → ${red ? `RED (${M.bad} doubled/pinch/edge-beside · ${M.revisits} revisit(s) · ${M.dropped} dropped), as it must be` : 'still GREEN — this row cannot see the per-run reading'}`)
+    if (!red) bad++
   }
   process.exit(bad ? 1 : 0)
 }
