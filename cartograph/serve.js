@@ -1508,7 +1508,7 @@ createServer(async (req, res) => {
   // ── The SHAPE freeze (the Data Wall, autosaved) ──────────────────────────
   // POST /<scene>/shape — write the frozen SHAPE artifact (the per-tile
   // curb/corner silhouette Section opens). The client autosaves this on
-  // Survey-exit (`PIPELINE.md` §5 (the Wall)) with the live `protoShapeTiles` it just rendered,
+  // Survey-exit (`ORIENTATION §3 (the Wall)`) with the live `protoShapeTiles` it just rendered,
   // so the freeze always tracks the eye-gated Survey shape WITHOUT the heavy
   // slab bake. Lands at public/baked/<scene>/shape.json — exactly where the
   // Section surface fetches it. Scene-keyed; reserved prefixes excluded.

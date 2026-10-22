@@ -13,7 +13,7 @@
 // judgment `CLAUDE.md` sends to Boz, and it is the whole reason a conformance pass deletes decisions
 // if it runs on autopilot. What it CAN do is stop the corpus growing new instances while we sleep.
 import fs from 'fs'
-const DOCS = ['cartograph/SECTION.md','cartograph/RIBBONS.md','cartograph/SKELETON.md','cartograph/PIPELINE.md',
+const DOCS = ['cartograph/SECTION.md','cartograph/RIBBONS.md','cartograph/SKELETON.md',
               'cartograph/SURVEY.md','cartograph/PREBAKE.md','cartograph/POLYGON-FIRST.md','ORIENTATION.md','README.md']
 const BANNER = /(RESOLVED,? kept|kept for context|superseded but|no longer true|this is now wrong|correction:|✅ CURED|was wrong above)/i
 // ⛔ A QUOTABLE CLAIM, NOT ANY NUMBER. First pass flagged 505 lines and was catching dates, § refs,

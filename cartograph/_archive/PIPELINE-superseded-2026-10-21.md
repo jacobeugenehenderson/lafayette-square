@@ -1,3 +1,5 @@
+> **Superseded 2026-10-21** by the compact end-to-end `ORIENTATION.md` (repo root), which now carries the narrative; kept whole here as the Diary copy, and every `PIPELINE §…` address cited elsewhere still resolves in this file. Retired for currency, not truth.
+
 # The Progression — from nodes and chains to the drawn surface
 
 **The one narrative for how a street network becomes a drawn map.** Read this before any stage doc.

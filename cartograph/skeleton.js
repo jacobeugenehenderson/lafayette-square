@@ -829,7 +829,7 @@ function resamplePolyline(coords, n) {
 // inward ped-band offset of that rippled ring bulges/pinches. RDP instead
 // keeps the MINIMAL control set whose chords stay within `eps` of every
 // dropped vertex — a smooth curve collapses to its few real control points,
-// then ONE smoothing pass regenerates it cleanly (PIPELINE P1: "the simpler
+// then ONE smoothing pass regenerates it cleanly (cartograph/_archive/PIPELINE-superseded-2026-10-21.md P1: "the simpler
 // the skeleton output, the healthier downstream").
 //
 // Topology is preserved byte-for-byte: sharp corners survive automatically

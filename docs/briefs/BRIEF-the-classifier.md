@@ -91,7 +91,7 @@ The row numbers are AUDIT.md's.
   - A face bounded entirely by street-owned edges of a divided pair is an island.
   - A degree-1 tip with its tag picks a cap style.
   - Leg count and the angles at a crossing give the junction kind.
-  - ⛔ **Never a street name, never a list, never a distance lookup** (the second wall, `PIPELINE §6a`).
+  - ⛔ **Never a street name, never a list, never a distance lookup** (the second wall, `cartograph/_archive/PIPELINE-superseded-2026-10-21.md §6a`).
 - **Output:** a class on every face, tip and crossing, carried in the frozen record beside the existing
   `labels / owners / crossings`. It is read by ②/③ and the paint, never re-derived downstream.
 

@@ -114,7 +114,7 @@ node -e "const t=require('./public/baked/lafayette-square/shape.json').tiles;con
   passes `emitArtifact: true`; **the live path builds it too**, which is what makes the Survey-exit
   re-freeze work at all. **`tileGround.js:4913`'s comment carries the same false claim — ROT, excise it
   in this ticket.**
-- ⛔ **Prebake does not read `design.json`/`blockCustoms`** (`ORIENTATION` step 3). Anything frozen that
+- ⛔ **Prebake does not read `design.json`/`blockCustoms`** (`cartograph/_archive/ORIENTATION-superseded-2026-10-21.md` step 3). Anything frozen that
   depends on per-fe SHAPE intent freezes the to-code default. The facts are look-agnostic **by design** —
   keep them that way; the moment `authoredHW` leaks into `freezeCurbEdgeFacts`, this ticket has failed.
 - ⛔ **The forward/reverse `edgeKey` ordering at `:230-238` is LOAD-BEARING** — an unconditional reverse
@@ -123,7 +123,7 @@ node -e "const t=require('./public/baked/lafayette-square/shape.json').tiles;con
   historical — that is what the authoring tools are FOR. Ask what the map looks like if the code is RIGHT
   before reporting anything.
 - ⛔ **"Polygon" means TWO things here** — the **curb** to Jacob, the **tile face** to the code
-  (`ORIENTATION`, "Polygons, not pen-strokes"). Say which, every time.
+  (`ORIENTATION §5`, "Polygon" means two things). Say which, every time.
 
 ## 7. THE CHAIN — what this trusts, and what trusts this
 

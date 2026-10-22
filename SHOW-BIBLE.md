@@ -64,7 +64,7 @@ Each helper publishes **one canonical artifact**; the slab is the boundary; the 
 | **Meteorologist** | `public/clouds/{presets, almanac}.json` | runtime Atmosphere |
 
 ### The factory line (the pipeline)
-Raw data flows downhill; each stage freezes a thing the next trusts (`PIPELINE.md`, `ORIENTATION.md §"dependency chain"`):
+Raw data flows downhill; each stage freezes a thing the next trusts (`ORIENTATION.md §3`):
 `intake → skeleton → prebake → survey → ⟦THE WALL⟧ → section → bake → THE SLAB → the public app`.
 The hard-won doctrine: *the skeleton is the first bake · chains die at the wall · the curb is a concentric offset of the centerline · every output is a best guess, and everything is overridable* (`NEIGHBORHOOD-INPUTS §0.0`).
 
@@ -85,10 +85,10 @@ LOOK is authored; the open work is the SHAPE campaign (make the skeleton produce
 One canonical reading order, every session: **`ORIENTATION.md`** (the plain-language mental model) → **`README.md §⭐ START HERE`** (the settled conclusion per topic + the cross-cutting feature index "where does X live") → **the topic canon** it names. (`docs/agents/BOZ.md` is the coordinator's doc, summoned only when you're Boz.)
 
 ### What it is, per stage (the authoritative homes)
-Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · the freeze (folded into `PIPELINE.md` §5) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`PIPELINE.md`**. The doc system itself (3 kinds × 3 registers) is `docs/agents/BOZ.md §4` + `CLAUDE.md §PRUNE AS YOU GO`.
+Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · the freeze (`ORIENTATION.md` §3, the Wall) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`ORIENTATION.md` §3**. The doc system itself (3 kinds × 3 registers) is `docs/agents/BOZ.md §4` + `CLAUDE.md §PRUNE AS YOU GO`.
 
 ### How to fix / troubleshoot
-- **First diagnostic: "is this chains again?"** A wrong silhouette is upstream (skeleton/survey); how the ribbon *bends* is Section. The fix is to move the wall earlier, never patch chains deeper. (`PIPELINE §Wall`.)
+- **First diagnostic: "is this chains again?"** A wrong silhouette is upstream (skeleton/survey); how the ribbon *bends* is Section. The fix is to move the wall earlier, never patch chains deeper. (`ORIENTATION §3 (the Wall)`.)
 - **The derivation chain:** centerline → polygon → ribbon. Fix at the centerline; patching the shadow comes right back. (`RIBBONS §1`, `SKELETON §3.5`.)
 - **The eye is the gate.** Proxy renders mislead on this map; verify map-wide, zoomed-out, on the operator's eye (`feedback_proxy_render_is_not_the_operator_eye`).
 - **The correctness suite** automates the operator's eye — one RED-until-true invariant per bug-class; the detector is the deliverable. (`POLYGON-FIRST §5`.)

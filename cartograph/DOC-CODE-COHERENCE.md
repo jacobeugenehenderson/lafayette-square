@@ -26,7 +26,7 @@
 
 **Commissioned by Jacob:** *"We have a huge corpus of docs, and I think that's the problem. The agents
 self-confuse. The technical issues frequently expose themselves when you just drop the jargon and say
-logically what we're trying to do."* The scrub produced the rewritten `PIPELINE.md`; this is the
+logically what we're trying to do."* The scrub produced the rewritten `_archive/PIPELINE-superseded-2026-10-21.md`; this is the
 divergence half — **where we are off, and on which side.**
 
 ⛔ **Scope:** the eight docs that describe the progression — `SKELETON` · `PREBAKE` · `SURVEY` ·
@@ -36,7 +36,7 @@ changed** beyond repointing doc citations inside comments.
 ### S0 · The finding that contains all the others — 445 KB of one storyline
 
 Measured before touching anything:
-▶ `wc -c cartograph/{SKELETON,RIBBONS,POLYGON-FIRST,SECTION,PIPELINE,PREBAKE,SURVEY}.md`
+▶ `wc -c cartograph/{SKELETON,RIBBONS,POLYGON-FIRST,SECTION,_archive/PIPELINE-superseded-2026-10-21,PREBAKE,SURVEY}.md`
 
 **Eight docs, 445 KB, one progression.** Every one of them opened by re-explaining what its stage *is*.
 ⭐ **The re-explanations are where they contradicted each other; the deep detail below them mostly did
@@ -44,7 +44,7 @@ not.** That is the whole diagnosis, and it is why the cure was to say the narrat
 detail where it was, rather than to rewrite eight docs.
 
 **Done:** the six openings excised to `_archive/stage-doc-openings-2026-09-06.md`, `WALL.md` folded
-whole into `PIPELINE.md` (`_archive/WALL-2026-09-06.md`), each doc now carrying one pointer up.
+whole into `_archive/PIPELINE-superseded-2026-10-21.md` (`_archive/WALL-2026-09-06.md`), each doc now carrying one pointer up.
 ✅ Type: **rot, structural.**
 
 ---
@@ -68,11 +68,11 @@ canon is stale, and **re-derives from grep** — which is precisely the failure 
 to prevent. The gate holds and the pointer breaks.
 
 **Worse — 14 citations point at sections that never existed.** `WALL.md §31` is cited **13 times**,
-including by the previous `PIPELINE.md` as *"the accurate SSOT"* and by `README.md` as *"Accurate
+including by the previous `_archive/PIPELINE-superseded-2026-10-21.md` as *"the accurate SSOT"* and by `README.md` as *"Accurate
 SSOT"*; `WALL.md §5b` once, from a code comment. **`WALL.md` had sections 0–6.** A phantom section
 cited as the authority is the purest form of this disease: **it cannot be checked, so it is believed.**
 
-**Fix, and it is a method not a sweep:** `PIPELINE.md` now cites **symbols, not line numbers** — `grep -n`
+**Fix, and it is a method not a sweep:** `_archive/PIPELINE-superseded-2026-10-21.md` now cites **symbols, not line numbers** — `grep -n`
 is one keystroke and never rots. ⛔ **A line number reintroduced into a canonical doc is a regression.**
 Run the check when you touch one. *(The 51 in the other seven docs are **not** repaired — repairing them
 by hand re-creates the same rot on the next refactor. The right cure is to stop citing lines.)*
@@ -94,14 +94,14 @@ nobody propagated it.**
 
 **Cost:** an agent, reasoning from the doc, told Jacob to reload Survey to see a producer change that
 **structurally could not appear there**. He did. Nothing changed. ✅ **Excised** — the claim is gone with
-`WALL.md`, and `PIPELINE.md §5` does not repeat it.
+`WALL.md`, and `_archive/PIPELINE-superseded-2026-10-21.md §5` does not repeat it.
 
 > ⛔⛔ **AND THE FRAMING THAT GREW OUT OF IT IS THE MORE DANGEROUS HALF.** The same agent then wrote
 > *"Survey never reads the frozen artifact; it live-builds from the chains, always"* and used it to
 > explain why its work was invisible. **Jacob's correction: the axis is CHAINS vs ①, not frozen vs
 > live.** ① is frozen into `ribbons.json`, which the live build already loads — so a live build can build
 > **from ①**, and the frozen/live distinction is beside the point. ⭐ **Stating the gate as a constraint
-> turned a defect into an excuse.** Carried into `PIPELINE.md §3a` as a standing warning.
+> turned a defect into an excuse.** Carried into `_archive/PIPELINE-superseded-2026-10-21.md §3a` as a standing warning.
 
 ---
 
@@ -122,7 +122,7 @@ why the survey named the tension instead of resolving it.
 match the code that morning, it would have deleted the thing that shipped that night** — an aspiration
 is not a slower kind of rot, and the only reliable tell is that **which side is wrong is a judgment
 about where the project is going**, which is why this class goes to Jacob rather than to an edit.
-⛔ **`PIPELINE §3a` is no longer holding two answers; do not read it as though it were.**
+⛔ **`_archive/PIPELINE-superseded-2026-10-21.md §3a` is no longer holding two answers; do not read it as though it were.**
 
 **Why the ruling exists — the evidence, not the preference:** a graph face **cannot close around a
 dead end**; the walk goes out and back over the same vertices, so **all 50 dead-end tips are zero-width
@@ -135,13 +135,13 @@ identity.
 
 ### S4 · 🔎 **CORPSE-LIE, doc side: "the curb is a concentric offset, parallel everywhere"**
 
-Printed as load-bearing fact #2 in the previous `PIPELINE.md step 3a (what a block is)`, with no mention of the carve.
+Printed as load-bearing fact #2 in the previous `_archive/PIPELINE-superseded-2026-10-21.md` step 3a, with no mention of the carve.
 `ORIENTATION.md` and `POLYGON-FIRST §1` have carried the corrected version since A07: **the curb has two
 producers**, and the carved share **varies by town** — 59 of 101 offset in the first town, 19 of 77 in
 another — **so no single scene reveals the split.**
 
 **Consequence:** a reader who believes the headline debugs a carved block with reasoning that cannot
-apply to it. ✅ **Fixed** — `PIPELINE.md §6` now carries the two-producer rule and the instruction to
+apply to it. ✅ **Fixed** — `_archive/PIPELINE-superseded-2026-10-21.md §6` now carries the two-producer rule and the instruction to
 **read the `producer` stamp before reasoning about a curb.**
 
 ---
@@ -159,7 +159,7 @@ Also landmined, same day: **the authored corner radius is not built** on the ①
 node's bezier handles; a rounding pass was written, grew four guards each propping up the last, and was
 excised. On that path, corners are sharp.
 
-✅ **Documented** in `PIPELINE.md §3a`. ⛔ Neither is a defect *in the docs* — they are live work, and the
+✅ **Documented** in `_archive/PIPELINE-superseded-2026-10-21.md §3a`. ⛔ Neither is a defect *in the docs* — they are live work, and the
 defect was that the docs did not know about them.
 
 ---
@@ -194,7 +194,7 @@ citation on the word "shape."
 > the question you asked.** ⭐ And prefer an instrument that fails loudly on the wrong region — that is
 > the same Law-2 discipline as `--proto`'s throw-and-refuse, applied to measurement.
 
-✅ **Fixed structurally, not by exhortation:** every stage in `PIPELINE.md` now carries a **"how you would
+✅ **Fixed structurally, not by exhortation:** every stage in `_archive/PIPELINE-superseded-2026-10-21.md` now carries a **"how you would
 tell it was wrong"** line **naming an existing instrument**. ⛔ **A ruling without an instrument is half a
 ruling** — when you land one, land the check with it.
 
@@ -216,7 +216,7 @@ street-keyed overlay and **does not** read `design.json`/`blockCustoms`.
 
 ⛔ **A correction banner sitting next to the sentence it corrects is the anti-pattern** — the false
 sentence outlives its correction because it is shorter and reached first. ✅ Partially cured: the wall is
-now stated **once**, in `PIPELINE.md §5`, and eight files point at it. **Still owed:** the same
+now stated **once**, in `_archive/PIPELINE-superseded-2026-10-21.md §5`, and eight files point at it. **Still owed:** the same
 consolidation for the producer/Check-C language in `BAKE` · `BACKLOG` · `README`, which still carry their
 own paraphrases.
 
@@ -236,7 +236,7 @@ survey that hid its own would be arguing against itself.
   This codebase gates on argv rather than `process.env` on purpose. **"Environment flag" sends a reader
   hunting for something that does not exist — the same class of error as `WALL.md §31`.**
 
-✅ Both corrected in `PIPELINE.md §3a`, verified in the code before the edit.
+✅ Both corrected in `_archive/PIPELINE-superseded-2026-10-21.md §3a`, verified in the code before the edit.
 
 **And three more, from the other side of the same conversation — logged here at that agent's own
 request, because a survey that records its author's errors and not its sources' is only half honest:**
@@ -272,7 +272,7 @@ called it "the open design question"; it was open for about four hours.)*
 ⭐ **Only the required/optional split made the right question askable.** That is the whole finding: the
 counts were not wrong, the question was — and *nothing in any of the four numbers said so.*
 
-▶ Derive it, both sides, and don't sample one block — the one-liner is in `PIPELINE.md §3a`.
+▶ Derive it, both sides, and don't sample one block — the one-liner is in `_archive/PIPELINE-superseded-2026-10-21.md §3a`.
 
 ---
 
@@ -364,7 +364,7 @@ Triggered by Jacob: *"we can't take the BACKLOG's word for it; we need a forensi
 | # | Corpse-lie (doc) | Locus | Status |
 |---|---|---|---|
 | D1 | Body describes dead figure-ground as the primary construction | `RIBBONS.md` §1 / §3.1-3.8 / §6 / §7 | 🔎 |
-| D2 | prong-4 "skeleton-consolidation / `osm2streets`" red herring for the false corner | `BACKLOG.md` ✅ (reshaped 2026-06-05) · `PIPELINE.md §5 (the Wall)` 🔎 | 🔎 partial |
+| D2 | prong-4 "skeleton-consolidation / `osm2streets`" red herring for the false corner | `BACKLOG.md` ✅ (reshaped 2026-06-05) · `_archive/PIPELINE-superseded-2026-10-21.md §5` 🔎 | 🔎 partial |
 | D3 | figure-ground-as-live passages (`cornersAtIx` / "V2 curb" / treelawn-LU) | `FEATURES.md` | ✅ **RESOLVED 2026-06-14** — the figure-ground passages were **removed** from FEATURES in the purification (FEATURES is now the pure pitch; the engineer/figure-ground content → `ARCHITECTURE.md §8` or git history). The treelawn-matches-abutting-LU *behaviour* survives where still true; the figure-ground *plumbing* prose is gone. (The doc-side T4 code deletion of `buildBlockGeometryV2`/`cornersAtIx` is still pending — separate from this doc cleanup.) |
 | D4 | ✅ **FIXED 2026-09-06** — was: `SURVEY.md`/`SKELETON.md` cited the killed `HANDOFF-divided-false-corner.md`, a dead pointer since June; repointed to `_archive/handoffs/HANDOFF-divided-false-corner-KILLED-2026-06-05.md` | `SURVEY.md` §Cross-references | ✅ fixed 2026-06-05 |
 | D5 | `SKELETON.md` §2/§3 drift (junctions "degree ≥3" / divided-id "-0/-1" / `spineAt*` missing from schema / unnamed "no seed" / `continuesAs` missing / write "via writeIfChanged") | `SKELETON.md` §2, §3 | ✅ conformed 2026-06-05 (the skeleton audit) |

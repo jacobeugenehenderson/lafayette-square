@@ -24,9 +24,9 @@
 >   committed.
 
 
-> 🗄️ **CLOSED FORENSIC (the P1 fix landed) — archive PENDING (2026-06-14, doc cleanup).** Not yet moved to `_archive/`: it is still cited as the live **frame-forensics evidence base** by active doctrine (the "OSM or us = 100% us" verdict, the "79 interior Ts" rationale in `PIPELINE §P1`/`SKELETON`). **Held back per the lift-first gate** — needs Jacob's eye to confirm its evidence is fully homed before the physical move. Live conclusions: `PIPELINE.md §5 (the Wall)`/`§P1` · `SKELETON.md` · `INTAKE.md`.
+> 🗄️ **CLOSED FORENSIC (the P1 fix landed) — archive PENDING (2026-06-14, doc cleanup).** Not yet moved to `_archive/`: it is still cited as the live **frame-forensics evidence base** by active doctrine (the "OSM or us = 100% us" verdict, the "79 interior Ts" rationale in `_archive/PIPELINE-superseded-2026-10-21.md §P1`/`SKELETON`). **Held back per the lift-first gate** — needs Jacob's eye to confirm its evidence is fully homed before the physical move. Live conclusions: `ORIENTATION §3 (the Wall)`/`_archive/PIPELINE-superseded-2026-10-21.md §P1` · `SKELETON.md` · `INTAKE.md`.
 
-> **Forensic report.** Pathologist: **Vesalius** (named for the anatomist who corrected centuries of received error by *dissecting the bones* instead of trusting the textbook). Dispatched 2026-05-31, delivered 2026-06-01. **Read-only forensics — this is a report, not a fix.** Companion brief: `HANDOFF-osteopathologist.md`. Doctrine: `PIPELINE.md §P1, §Wall`; memory `project_skeleton_is_the_first_bake`.
+> **Forensic report.** Pathologist: **Vesalius** (named for the anatomist who corrected centuries of received error by *dissecting the bones* instead of trusting the textbook). Dispatched 2026-05-31, delivered 2026-06-01. **Read-only forensics — this is a report, not a fix.** Companion brief: `HANDOFF-osteopathologist.md`. Doctrine: `_archive/PIPELINE-superseded-2026-10-21.md §P1`, `ORIENTATION §3 (the Wall)`; memory `project_skeleton_is_the_first_bake`.
 
 ## The verdict, up front
 
@@ -107,7 +107,7 @@ For each situation: ① the real thing · ② how OSM (mis)represents it · ③ 
 | ① Real thing | Medians, concrete aprons/expanses on thoroughfares, traffic islands, refuge islands, plazas. Paved/landscaped positive space that is *not* a travel street and *not* a block interior. |
 | ② OSM | Scattered across tags, **no median tag at all**. LS carries: `highway=pedestrian, area=yes` plazas/aprons (**9** ways), `crossing:island=yes` refuge islands (**31**), and **implicit median gaps** between divided carriageways (never tagged). `man_made` = 0. |
 | ③ Correct skeleton rep | A **first-class `apron`/`median`/`island` polygon layer** in the frame, parallel to streets and blocks — paved positive space with its own material tag. The median specifically is **derivable**: it is the polygon *between* a divided pair the frame already pairs. |
-| ④ Eliminates | The figure-ground hole. `PIPELINE.md §P5`: `block = stencil − asphalt` has **no slot** for paved-positive-that-isn't-a-street, so these are silently lost (memory `feedback_silhouette_straight_emitter_skipped_fes` is the same disease downstream). |
+| ④ Eliminates | The figure-ground hole. `_archive/PIPELINE-superseded-2026-10-21.md §P5`: `block = stencil − asphalt` has **no slot** for paved-positive-that-isn't-a-street, so these are silently lost (memory `feedback_silhouette_straight_emitter_skipped_fes` is the same disease downstream). |
 | ⑤ Resolved by | **Ingest** (plazas/islands from existing tags) + **derivation** (median = gap polygon between paired carriageways). |
 
 **Median width is computed today and thrown away.** `skeleton.js#analyzePhases` already pairs antiparallel carriageways (28 divided pairs at LS) and **measures the gap** (`meanPerpDistanceXZ`) — then emits two centerlines and discards the number. Measured real medians: **South Jefferson ~12 m**, **Truman Parkway ~41 m**. The median polygon is one `difference` away from data the frame already holds.
@@ -257,7 +257,7 @@ Treelawn and sidewalk land in the correct real-world spots by default, derived f
 
 ### Corner-relief test: **confirmed — chains-root + corner-confusion are one disease.**
 
-`PIPELINE.md §5 (the Wall)` claims a correct frame relieves the 13-month corner saga from upstream. The evidence supports it. The corner machinery (`cornersAtIx`, P7) needs three things the frame should *hand it as facts* but today *guesses*: (1) a **clean single junction node** (we delete 79); (2) a **butt-vs-cap decision** (today operator-authored or blunt-and-pray); (3) a **class-seeded `R`** (Part 4). Give the corner pass typed nodes + cap decisions + seeded `R`, and the per-leg/constructed-corner temptation — the thing the mono-width regime exists to kill — loses its last excuse, exactly as §Wall predicts. The corner saga is downstream of a thin frame.
+`_archive/PIPELINE-superseded-2026-10-21.md §5` claims a correct frame relieves the 13-month corner saga from upstream. The evidence supports it. The corner machinery (`cornersAtIx`, P7) needs three things the frame should *hand it as facts* but today *guesses*: (1) a **clean single junction node** (we delete 79); (2) a **butt-vs-cap decision** (today operator-authored or blunt-and-pray); (3) a **class-seeded `R`** (Part 4). Give the corner pass typed nodes + cap decisions + seeded `R`, and the per-leg/constructed-corner temptation — the thing the mono-width regime exists to kill — loses its last excuse, exactly as §Wall predicts. The corner saga is downstream of a thin frame.
 
 ### Wall-move read: **a richer frame makes clean-slate cheap and correct — lean clean-slate.**
 

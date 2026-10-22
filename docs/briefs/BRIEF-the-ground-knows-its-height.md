@@ -115,7 +115,7 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
   one dial, corner-mean anchor", and the `PAINT_ORDER` decision rule.
 - `cartograph/SECTION.md §4` and `cartograph/RIBBONS.md §1`: ① is the producer for Survey AND Section, and the fill
   paints from the partition.
-- `cartograph/POLYGON-FIRST.md`, `cartograph/SKELETON.md §0.1`, and `cartograph/PIPELINE.md §5` (the Wall: what is
+- `cartograph/POLYGON-FIRST.md`, `cartograph/SKELETON.md §0.1`, and `ORIENTATION.md §3` (the Wall: what is
   frozen, and why freezing wrong data is worse than not freezing).
 - `docs/briefs/BRIEF-corner-ramps-and-kerb.md §3` step 5 (the kerb ruling: the whole block inboard of the kerb face
   lifts by h, the road stays at 0, a riser where the kerb is drawn, cuts slope h → 0, curbless edges taper) and **§9**
