@@ -155,7 +155,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 317. This is `npm test`.
+## safe — 318. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -315,6 +315,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-look-seed-scene-clean.mjs` | "DOES A NEW LOOK START CLEAN?" — A11 / D-C, the recurrence gate. |
 | `checks/claims-marked-corners.mjs` | `clean/marker_strokes.json`; this classifies what is inside each one by CARRIED IDENTITY, so a |
 | `checks/claims-matched-axes-have-matrices.mjs` | Without one, enumDistance returns farDistance (9) for ANY non-identical pair |
+| `checks/claims-membership-is-the-disc.mjs` | disc.mjs — WHERE A TOWN HAS NO AUTHORED POLYGON, MEMBERSHIP'S "INSIDE" IS THE DISC THE GROUND IS |
 | `checks/claims-memory-index-health.mjs` | "WILL THE READ-IN STILL LOAD?" — the standing guard on the coordinator memory index. |
 | `checks/claims-menu-item-ids.mjs` | Does every orderable menu item have a STABLE identity? |
 | `checks/claims-named-way-becomes-street.mjs` | ⭐⭐ DOES A NON-VEHICULAR WAY BOUND A CITY BLOCK? — the check behind `ROADMAP A19`. |
