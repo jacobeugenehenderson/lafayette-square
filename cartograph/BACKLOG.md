@@ -68,7 +68,7 @@ LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per 
 regions drew their shared boundary twice (derive.js#layerLandEvidence, one boolean per class). FIXED, merged 4c232190 + f93cf2aa:
 split → node → split, one home `src/lib/latticeNode.js`, `pinchDropped` logged; check `claims-a-land-use-boundary-is-one-line`.
 HPDM deploy slab (kerf-land, 93d3d637): the stamp settles · doubled 0 · pinch 0 · land overlap 45.5 m² → 0.007 m² (1 site, past-bound) —
-the STAGING CANDIDATE, with its re-written roster (privacy withholding of b94d0c97; nothing that draws reads it: Zob, pending).
+the STAGING CANDIDATE, with its re-written roster (privacy withholding of b94d0c97; nothing the slab draws reads it, Zob read; a pre-1920 map pin drops ≤ 1.2 m onto its slab building).
 LS 0.1 m refine variant (kerf scratch `slabs/lafayette-square-tol01`): ×2.35 tris, walk p99 56 → 27%: ❓ Jacob's eye. Open, unplaced:
 HPDM 11 seed-declared no-band tiles (measure WITH authoring) · LS tile 145's 26 plane T-vertices (nodePaint's reader is the plane:
 Zob's A/B) · band check FLAP's depth reads fields no tile carries (false comment, uncalibrated row) · land past-bound (12, ≤ 1.27 mm).
