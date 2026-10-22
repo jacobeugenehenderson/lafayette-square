@@ -6,11 +6,13 @@
 // The paint stack then takes differences and unions of the two and leaves slivers narrower than the lattice can hold:
 // the flatten has to rule on rings no input decides, and the painter has drawn two lines where it meant one.
 // ⇒ This reads the stack exactly as the flatten receives it — `bakeGround({ stackOnly: true })` returns it before any
-//   geometry is built, so nothing here restates the bake — and reports every pair of edges, from two DIFFERENT items,
-//   that run alongside each other within one lattice step without being the same line on the lattice.
+//   geometry is built, so nothing here restates the bake — and reports every pair of edges that run alongside each other
+//   within one lattice step without being the same line on the lattice. The detector is ./_nearMiss.mjs (one rule, also
+//   read by claims-a-land-use-boundary-is-one-line for the land evidence).
 //
 // DEFINITION (a NEAR-MISS). Vertices rounded to the bake's integer lattice (`CLIP_SCALE`, src/lib/lattice.js), as the
-// flatten sees them. Edges e (item A) and f (item B), A ≠ B, are a near-miss where
+// flatten sees them. Edges e and f — of two items, or two edges of ONE item (a ring folding back along itself, PTown 2026-10-22)
+// — are a near-miss where
 //   · f projected onto e overlaps e by MORE THAN ONE LATTICE STEP (shorter is two edges meeting near a shared vertex at an
 //     angle — a touch, not a line drawn twice; it scored ~0.0002 m "near-misses" at every such corner until 2026-10-14), and
 //   · both ends of that overlap lie within ONE lattice step of f (distance to a segment is convex, so the whole overlap
@@ -47,94 +49,32 @@
 // temp directory unless --out names one — and its path printed. A pair missing from the screen is not a pair at zero.
 // Builds each town's stack (the bake up to the flatten; nothing is written). The town's shore median is read as the
 // Bake's first ground pass reads it (`shorePending`). Exits 1 on any near-miss or a missed --expect.
-import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
+import { LATTICE_M } from '../src/lib/lattice.js'
+import { nearMisses } from './_nearMiss.mjs'
 import { writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
-const STEP = CLIP_SCALE * LATTICE_M          // one lattice step, in the integer units the flatten works in
 const argv = process.argv.slice(2)
 const arg = (k) => argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const SHOW = +(arg('show') || 12)
 
-// ── the detector: entries [{ groupKey, items }] → near-miss pairs ─────────────────────────────────────────────────
-export function nearMisses(entries) {
-  // the edges, in typed arrays (a town's stack is ~10⁶ edges): integer lattice ends, and which entry/item/ring drew each
-  let n = 0
-  const ringsOf = (it) => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]
-  for (const e of entries) for (const it of e.items) for (const r of ringsOf(it)) if (r && r.length >= 2) n += r.length
-  const AX = new Int32Array(n), AY = new Int32Array(n), BX = new Int32Array(n), BY = new Int32Array(n), G = new Int32Array(n), I = new Int32Array(n), R = new Int32Array(n)
-  const NXT = new Int32Array(n), PRV = new Int32Array(n)            // the ring's next / previous edge (skipping degenerate ones)
-  let m = 0
-  entries.forEach((e, gi) => e.items.forEach((it, ii) => ringsOf(it).forEach((r, ri) => { if (!r || r.length < 2) return
-    const first = m
-    for (let k = 0; k < r.length; k++) { const a = r[k], b = r[(k + 1) % r.length]
-      const ax = Math.round(a[0] * CLIP_SCALE), ay = Math.round(a[1] * CLIP_SCALE), bx = Math.round(b[0] * CLIP_SCALE), by = Math.round(b[1] * CLIP_SCALE)
-      if (ax === bx && ay === by) continue
-      AX[m] = ax; AY[m] = ay; BX[m] = bx; BY[m] = by; G[m] = gi; I[m] = ii; R[m] = ri; m++ }
-    for (let k = first; k < m; k++) { NXT[k] = k + 1 < m ? k + 1 : first; PRV[k] = k > first ? k - 1 : m - 1 } })))
-  // a grid sized to the edges themselves; each edge listed in every cell its box, widened a step, meets — a compressed
-  // index (counts, then offsets), keyed by an integer per cell. The cell is the median edge, but never smaller than the
-  // extent shared out over the edges (√(area / edges)): a town of long edges and a tiny median otherwise asks for more
-  // cells than a Map holds (2²⁴) — measured on HPDM's unclipped tile rings, 2026-10-14, a RangeError, not a finding.
-  const lens = new Float64Array(m); for (let k = 0; k < m; k++) lens[k] = Math.hypot(BX[k] - AX[k], BY[k] - AY[k])
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
-  for (let k = 0; k < m; k++) { x0 = Math.min(x0, AX[k], BX[k]); x1 = Math.max(x1, AX[k], BX[k]); y0 = Math.min(y0, AY[k], BY[k]); y1 = Math.max(y1, AY[k], BY[k]) }
-  const C = Math.max(STEP, Float64Array.from(lens).sort()[m >> 1] || STEP, Math.sqrt((x1 - x0 + 2 * STEP) * (y1 - y0 + 2 * STEP) / Math.max(1, m)))
-  const NX = Math.floor((x1 - x0 + 2 * STEP) / C) + 1
-  const cellsOf = (k, f) => { for (let gx = Math.floor((Math.min(AX[k], BX[k]) - STEP - x0 + STEP) / C), gx1 = Math.floor((Math.max(AX[k], BX[k]) + STEP - x0 + STEP) / C); gx <= gx1; gx++)
-    for (let gy = Math.floor((Math.min(AY[k], BY[k]) - STEP - y0 + STEP) / C), gy1 = Math.floor((Math.max(AY[k], BY[k]) + STEP - y0 + STEP) / C); gy <= gy1; gy++) f(gy * NX + gx) }
-  const slot = new Map(); let cnt = []
-  for (let k = 0; k < m; k++) cellsOf(k, (c) => { let s = slot.get(c); if (s === undefined) { slot.set(c, s = cnt.length); cnt.push(0) } cnt[s]++ })
-  const start = new Int32Array(cnt.length + 1); for (let s = 0; s < cnt.length; s++) start[s + 1] = start[s] + cnt[s]
-  const fill = start.slice(0, cnt.length), list = new Int32Array(start[cnt.length]); cnt = null
-  for (let k = 0; k < m; k++) cellsOf(k, (c) => { list[fill[slot.get(c)]++] = k })
-  const segD = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L2)) : 0
-    return Math.hypot(px - ax - t * dx, py - ay - t * dy) }
-  const out = [], seen = new Set()
-  for (let s = 0; s < start.length - 1; s++) for (let i = start[s]; i < start[s + 1]; i++) for (let j = i + 1; j < start[s + 1]; j++) {
-    const p = list[i], q = list[j]
-    if (G[p] === G[q] && I[p] === I[q]) continue                                   // one item: not two producers
-    const ex = BX[p] - AX[p], ey = BY[p] - AY[p]
-    const c1 = ex * (AY[q] - AY[p]) - ey * (AX[q] - AX[p]), c2 = ex * (BY[q] - AY[p]) - ey * (BX[q] - AX[p])
-    if (c1 === 0 && c2 === 0) continue                                             // one integer line: shared, the goal
-    const L = lens[p], t = (x, y) => ((x - AX[p]) * ex + (y - AY[p]) * ey) / L
-    const lo = Math.max(0, Math.min(t(AX[q], AY[q]), t(BX[q], BY[q]))), hi = Math.min(L, Math.max(t(AX[q], AY[q]), t(BX[q], BY[q])))
-    if (!(hi - lo > STEP)) continue                                                  // a line drawn twice overlaps longer than a step
-    const xa = AX[p] + ex / L * lo, ya = AY[p] + ey / L * lo, xb = AX[p] + ex / L * hi, yb = AY[p] + ey / L * hi
-    const d0 = segD(xa, ya, AX[q], AY[q], BX[q], BY[q]); if (d0 > STEP) continue
-    const d1 = segD(xb, yb, AX[q], AY[q], BX[q], BY[q]); if (d1 > STEP) continue
-    const key = p < q ? p * m + q : q * m + p; if (seen.has(key)) continue; seen.add(key)
-    const A = entries[G[p]].groupKey, B = entries[G[q]].groupKey
-    // the shape: does an end vertex of one edge sit on the other's interior with its ring running on along that edge?
-    const onInterior = (vx, vy, k) => { const dx = BX[k] - AX[k], dy = BY[k] - AY[k], L2 = dx * dx + dy * dy, t = ((vx - AX[k]) * dx + (vy - AY[k]) * dy) / L2
-      return t * Math.sqrt(L2) > STEP && (1 - t) * Math.sqrt(L2) > STEP && segD(vx, vy, AX[k], AY[k], BX[k], BY[k]) <= STEP }
-    const runsOn = (x, k) => { // edge x's two ring neighbours: does the one through a vertex on k's interior continue along k?
-      if (onInterior(BX[x], BY[x], k)) { const nx = NXT[x]; if (segD(BX[nx], BY[nx], AX[k], AY[k], BX[k], BY[k]) <= STEP) return true }
-      if (onInterior(AX[x], AY[x], k)) { const px = PRV[x]; if (segD(AX[px], AY[px], AX[k], AY[k], BX[k], BY[k]) <= STEP) return true }
-      return false }
-    const shape = runsOn(p, q) || runsOn(q, p) ? 'straight-through-vertex' : 'ends-or-parallel'
-    out.push({ a: `${A}#${I[p]}.${R[p]}`, b: `${B}#${I[q]}.${R[q]}`, ga: A, gb: B, same: A === B, shape, m: (hi - lo) / CLIP_SCALE,
-      gap: Math.max(d0, d1), at: [(xa + xb) / 2 / CLIP_SCALE, (ya + yb) / 2 / CLIP_SCALE], seg: [[xa / CLIP_SCALE, ya / CLIP_SCALE], [xb / CLIP_SCALE, yb / CLIP_SCALE]] })
-  }
-  return out
-}
-
 function report(town, pairs, expect) {
   const by = new Map()
-  for (const p of pairs) { const k = [p.ga, p.gb].sort().join(' / '); let r = by.get(k); if (!r) by.set(k, r = { k, same: p.same, n: 0, m: 0, gap: 0, shapes: {}, xs: [] }); r.n++; r.m += p.m; r.gap = Math.max(r.gap, p.gap)
+  for (const p of pairs) { const k = p.self ? `${p.ga} (one item)` : [p.ga, p.gb].sort().join(' / '); let r = by.get(k); if (!r) by.set(k, r = { k, same: p.same, self: !!p.self, n: 0, m: 0, gap: 0, shapes: {}, xs: [] }); r.n++; r.m += p.m; r.gap = Math.max(r.gap, p.gap)
     const sh = (r.shapes[p.shape] ||= { n: 0, m: 0 }); sh.n++; sh.m += p.m; r.xs.push(p) }
   const rows = [...by.values()].sort((a, b) => b.m - a.m)
   const file = join(arg('out') || tmpdir(), `claims-no-edge-is-drawn-twice-${town}.json`)
   writeFileSync(file, JSON.stringify({ town, pairs: pairs.length, m: +pairs.reduce((t, p) => t + p.m, 0).toFixed(3),
-    rows: rows.map(r => ({ pair: r.k, sameGroup: r.same, edgePairs: r.n, m: +r.m.toFixed(3), maxGapSteps: +r.gap.toFixed(3),
+    rows: rows.map(r => ({ pair: r.k, sameGroup: r.same, oneItem: r.self, edgePairs: r.n, m: +r.m.toFixed(3), maxGapSteps: +r.gap.toFixed(3),
       byShape: Object.fromEntries(Object.entries(r.shapes).map(([k, v]) => [k, { edgePairs: v.n, m: +v.m.toFixed(3) }])) })) }, null, 1))
   const line = (r) => `${String(r.n).padStart(7)} edge pair(s) · ${r.m.toFixed(2).padStart(9)} m alongside · max gap ${r.gap.toFixed(3)} step(s) · ${r.k} · ${Object.entries(r.shapes).map(([k, v]) => `${k} ${v.m.toFixed(0)} m`).join(', ')}`
   console.log(`\n${town}: ${pairs.length} near-miss edge pair(s), ${pairs.reduce((t, p) => t + p.m, 0).toFixed(1)} m of line drawn twice · full table (${rows.length} pair(s)): ${file}`)
   const shapeM = (s) => pairs.filter(p => p.shape === s).reduce((t, p) => t + p.m, 0).toFixed(1)
   console.log(`  by shape: ends-or-parallel ${shapeM('ends-or-parallel')} m · straight-through-vertex ${shapeM('straight-through-vertex')} m`)
   console.log(`  BETWEEN PRODUCERS (two groups):`); for (const r of rows.filter(r => !r.same).slice(0, SHOW)) console.log('   ' + line(r))
-  console.log(`  WITHIN ONE GROUP (two items the stack unions):`); for (const r of rows.filter(r => r.same).slice(0, SHOW)) console.log('   ' + line(r))
+  console.log(`  WITHIN ONE GROUP (two items the stack unions):`); for (const r of rows.filter(r => r.same && !r.self).slice(0, SHOW)) console.log('   ' + line(r))
+  console.log(`  WITHIN ONE ITEM (a ring folding back along itself, or meeting its own hole):`); for (const r of rows.filter(r => r.self).slice(0, SHOW)) console.log('   ' + line(r))
   console.log(`  longest:`); for (const p of [...pairs].sort((a, b) => b.m - a.m).slice(0, SHOW)) console.log(`     ${p.m.toFixed(3)} m at (${p.at.map(v => v.toFixed(3)).join(', ')}) · ${p.a}  vs  ${p.b} · gap ${p.gap.toFixed(3)}`)
   let missed = 0
   for (const [x, z] of expect) {
@@ -157,6 +97,19 @@ function selftest() {
     const touch = nearMisses(tri([[[0, 0], [10, 0], [10, 10]], [[10, 10], [10.0004, 0.0005], [20, 0]]])).length
     const short = nearMisses(tri([[[0, 0], [10, 0], [10, 10]], [[10 + LATTICE_M / 2, 5], [10 + LATTICE_M / 2, 5 + 2.5 * LATTICE_M], [20, 5]]])).length
     for (const [name, got, want] of [['two edges touching at a vertex, at an angle', touch > 0, false], ['a near-miss overlapping 2.5 steps', short > 0, true]]) {
+      if (got !== want) bad++; console.log(`  ${got === want ? '✅' : '⛔'} ${name}: ${got ? 'reported' : 'not reported'} (must ${want ? '' : 'NOT '}report)`) } }
+  // ⭐ ONE ITEM (PTown, 2026-10-22): a ring that runs out 3 m and back half a step beside itself is one line drawn twice by
+  // one producer; a plain square and a sharp-but-real 5° corner are not. And Huron's evidence shape: two pieces of one
+  // group leaving a shared vertex 0.9 mm apart at 30 m (a wedge with no vertex within NODE_BOUND of the other).
+  { const h2 = LATTICE_M / 2
+    const spur = [[0, 0], [10, 0], [10, 5], [13, 5], [10, 5 + h2], [10, 10], [0, 10]]
+    const one = (r) => nearMisses([{ groupKey: 'mut:a', items: [r] }])
+    const wedge = nearMisses([{ groupKey: 'mut:ag', items: [[[0, 0], [30, 0], [30, -5]], [[0, 0], [-1, 5], [30, 0.0009]]] }])
+    for (const [name, got, want] of [
+      ['a ring folding back along itself (a spur half a step wide)', one(spur).some(p => p.self), true],
+      ['a plain square alone', one(sq(0, 0, 10, 10)).length > 0, false],
+      ['a sharp 5° corner of one ring', one([[0, 0], [10, 0], [0, 0.875]]).length > 0, false],
+      ["two pieces of one group leaving a shared vertex 0.9 mm apart at 30 m (Huron's wedge)", wedge.length > 0, true]]) {
       if (got !== want) bad++; console.log(`  ${got === want ? '✅' : '⛔'} ${name}: ${got ? 'reported' : 'not reported'} (must ${want ? '' : 'NOT '}report)`) } }
   for (const [name, shift, want] of cases) { const got = run(shift).length > 0; if (got !== want) bad++
     console.log(`  ${got === want ? '✅' : '⛔'} ${name}: ${got ? 'reported' : 'not reported'} (must ${want ? '' : 'NOT '}report)`) }
