@@ -451,7 +451,9 @@ export function luCoverageForFace(faceRing, luPolys) {
  * (`CROP_TAGS`) and on farmland the CDL reads as crop — a farm parcel's CDL-crop part, and ground no other evidence
  * reaches where the CDL reads crop (src 'cdl'). False on meadow and farmyard (grass, by his ruling) and on a farm
  * parcel's ground the CDL does not read as crop.
- * @returns {{ evidence: [{ lu, src: 'osm'|'parcel'|'cdl', tag?, crop?, rings: [[x,z]...] }], parcelConflictM2: number, cdlM2: number }}
+ * @returns {{ evidence: [{ lu, src: 'osm'|'parcel'|'cdl', tag?, crop?, rings: [[x,z]...] }], parcelConflictM2: number, cdlM2: number,
+ *   pinchDropped: { n, m2, outer, hole, orphan, revisits, at } }} — `pinchDropped`: the loops below the lattice the pinch split
+ *   cut off (counted, never silent: off an outer it is evidence removed, off a hole evidence filled), and the revisits cut into lobes
  * ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs
  */
 export function layerLandEvidence(osm, parcels, cdl = null) {
@@ -531,7 +533,12 @@ export function layerLandEvidence(osm, parcels, cdl = null) {
   // drops loops below the lattice; it is not a second noding round. ⛔ Not looped: what this split leaves is what leaves.
   evidence.forEach((e, i) => { e.rings = splitAtPinches(e.rings, `${e.src}:${e.lu}#${i}`, pinchSub, { who: 'land evidence, after the noding' })
     .flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]) })
-  return { evidence, parcelConflictM2, cdlM2 }
+  // ⭐ WHAT THE SPLIT DROPPED IS REPORTED (Zob, 2026-10-21: a silent drop otherwise), as the flatten's subLattice goes into ground.json
+  const dropped = Object.values(pinchSub).flatMap(v => v.pinches || [])
+  const pinchDropped = { n: dropped.length, m2: +dropped.reduce((t, d) => t + d.m2, 0).toFixed(9),
+    outer: dropped.filter(d => d.from === 'outer').length, hole: dropped.filter(d => d.from === 'hole').length, orphan: dropped.filter(d => d.from === 'orphan').length,
+    revisits: Object.values(pinchSub).reduce((t, v) => t + (v.revisits || 0), 0), at: dropped.slice(0, 5).map(d => d.at) }
+  return { evidence, parcelConflictM2, cdlM2, pinchDropped }
 }
 
 /**
@@ -4609,6 +4616,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   {
     const by = {}; for (const e of landEvidence.evidence) { const k = `${e.src}:${e.lu}`; by[k] = (by[k] || 0) + Math.abs(e.rings.reduce((t, r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return t + a / 2 }, 0)) }
     console.log(`    land evidence: ${landEvidence.evidence.length} region(s) — ${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / 1e4).toFixed(1)} ha`).join(' · ')}`)
+    { const P = landEvidence.pinchDropped
+      console.log(`    land evidence, pinches split: ${P.n} loop(s) below the lattice dropped, ${P.m2.toFixed(6)} m² (${P.outer} off an outer, evidence removed · ${P.hole} off a hole, evidence filled · ${P.orphan} orphan hole(s)) · ${P.revisits} revisit(s) cut into lobes${P.n ? ` · first at ${P.at.map(a => `(${a.map(v => v.toFixed(3))})`).join(' ')}` : ''}`) }
     if (landEvidence.parcelConflictM2 > 0) console.warn(`    ⛔ ${(landEvidence.parcelConflictM2 / 1e4).toFixed(2)} ha where parcels of DIFFERENT classes overlap — evidence of nothing, painted underived.`)
   }
   const ribbonsLayer = {
