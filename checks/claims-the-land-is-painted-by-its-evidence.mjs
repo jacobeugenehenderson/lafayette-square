@@ -159,7 +159,7 @@ export function brute(regions, perPair = false) {
   for (let i = 0; i < E.length; i++) for (let j = i + 1; j < E.length; j++) {
     const a = E[i].b, b = E[j].b; if (a[0] > b[1] || a[1] < b[0] || a[2] > b[3] || a[3] < b[2]) continue
     const out = intersect(E[i].p, E[j].p), area = areaOf(out)
-    if (area > 0) { total += area; perAll += perimeter(out); pairs.add(`${i},${j}`); if (perPair) byPair.set(`${i},${j}`, area) }
+    if (area > 0) { const per = perimeter(out); total += area; perAll += per; pairs.add(`${i},${j}`); if (perPair) byPair.set(`${i},${j}`, { area, per }) }
   }
   return { total, perAll, pairs, byPair }
 }
@@ -226,12 +226,26 @@ function selftest() {
   say(clean.total === 0, `a disjoint off-lattice partition with shared vertices (a hole and its fill included) reads ${clean.total} m² — GREEN is reachable`)
   const mutant = overlaps(grid((k) => k % 2 ? floorCm : cm))
   say(mutant.total > 0, `mutant: ONE-SIDED ROUNDING (alternate regions floored to the cm) reads ${mutant.total.toFixed(4)} m² over ${mutant.pairs.length} pair(s) → RED`)
-  const { osm, parcels } = hermeticInput(), ev = layerLandEvidence(osm, parcels, null).evidence
-  // ⭐ the SAME pairs, exactly; the area within what the measuring grid can round: every crossing vertex moves ≤ ½√2/M,
-  //    so an area moves ≤ its pieces' perimeter × ½√2/M (the index cuts at cell borders, so its pieces differ from brute's)
-  const I = overlaps(ev), B = brute(ev), ip = new Set(I.pairs.map(p => `${p.i},${p.j}`))
-  const samePairs = ip.size === B.pairs.size && [...ip].every(k => B.pairs.has(k)), bound = (I.perAll + B.perAll) * Math.SQRT1_2 / M
-  say(samePairs && Math.abs(I.total - B.total) <= bound, `the cell index finds the same ${ip.size} pair(s) as brute-force pairwise Clipper (${B.pairs.size}) on the hermetic output; area ${I.total.toFixed(6)} vs ${B.total.toFixed(6)} m², |Δ| ${Math.abs(I.total - B.total).toFixed(6)} ≤ the grid's rounding bound ${bound.toFixed(6)}`)
+  // ⭐ THE INDEX AGAINST BRUTE FORCE, ON A PLANTED INPUT (Boz, 2026-10-21): the hermetic input's raw quads, overlapping by
+  //    construction and never through the producer, so this row keeps its power when the producer's output is disjoint
+  //    (it compared 0 pairs with 0 once derive.js noded the evidence). The SAME pairs, exactly — among the pairs the
+  //    measuring grid can RESOLVE: a pair whose overlap is within that grid's rounding of zero (area ≤ its pieces'
+  //    perimeter × ½√2/M, the same bound the area row uses) exists or not depending on where the rounding falls, and is
+  //    counted, not compared. Measured at e51c4e5b on the producer's output: the index missed 2 pairs and found 1 extra,
+  //    all slivers 0.020–0.048 mm wide, below the 0.1 mm grid; read alone, the index gave each 0 m² and brute 3.2–3.4e-4 m².
+  const { osm, parcels } = hermeticInput()
+  const raw = [...osm.map(o => ({ rings: [o.ring.map(p => [p.x, p.z])] })), ...parcels.map(q => ({ rings: q.rings }))]
+  const I = overlaps(raw), B = brute(raw, true)
+  const cmp = (I) => { const resolved = (area, per) => area > per * Math.SQRT1_2 / M
+    const ii = new Set(I.pairs.filter(p => resolved(p.area, p.per)).map(p => `${p.i},${p.j}`))
+    const bb = new Set([...B.byPair].filter(([, v]) => resolved(v.area, v.per)).map(([k]) => k))
+    const missed = [...bb].filter(k => !ii.has(k) && !I.pairs.some(p => `${p.i},${p.j}` === k)), extra = [...ii].filter(k => !B.pairs.has(k))
+    return { ii, bb, missed, extra, below: I.pairs.length + B.pairs.size - ii.size - bb.size } }
+  const bound = (I.perAll + B.perAll) * Math.SQRT1_2 / M, c = cmp(I)
+  say(c.bb.size > 100 && !c.missed.length && !c.extra.length && Math.abs(I.total - B.total) <= bound, `the cell index finds every pair brute-force Clipper resolves on a PLANTED input (${raw.length} raw quads): ${c.ii.size} vs ${c.bb.size} resolved pair(s), missed ${c.missed.length}, extra ${c.extra.length} (${c.below} below the measuring grid, counted not compared); area ${I.total.toFixed(6)} vs ${B.total.toFixed(6)} m², |Δ| ${Math.abs(I.total - B.total).toFixed(6)} ≤ ${bound.toFixed(6)}`)
+  // MUTANT: an index that DROPS one resolved pair must turn that row RED
+  const drop = [...c.bb][0], dropped = { ...I, pairs: I.pairs.filter(p => `${p.i},${p.j}` !== drop) }, cd = cmp(dropped)
+  say(cd.missed.length === 1, `mutant: the index drops one resolved pair (${drop}) → the row sees ${cd.missed.length} missed → RED`)
   return fails
 }
 
