@@ -1,157 +1,180 @@
-# Orientation — start here (everyone, first)
+# How a neighborhood is poured — end to end
 
-**The universal first read.** Plain-language, no jargon — what we're building, how the pieces depend on each other, the handful of things we've already figured out (so nobody re-derives them), and where to go for your piece. This is the *bridge* doc: not the sales pitch (`cartograph/FEATURES.md`), not the deep dev canon (`SKELETON` / `RIBBONS` / `PIPELINE`) — the throughline that connects them, in language you can say out loud to anyone.
+**One read for everyone: Jacob, Boz, Zob, a new developer.** Compact on purpose. Every settled item gets one
+paragraph here and one home in the code; the depth lives at that home and in its check, never in a second
+account. If this and the code disagree, one of them is wrong: find out which (`CLAUDE.md`, the smell detector).
+Marks: ⟦unbuilt⟧ = ruled but not yet the code · ⛔ = a gap.
 
----
+## 1. What we are building
 
-## What we're building, in one breath
+A **kit that pours neighborhoods**. Real city data goes in; a **slab** comes out: a flat, fast, trusted map that the
+public app, **The Ward**, plays without recomputing anything. Lafayette Square was the first town off the line, so
+most names in the repo are its names; the subject is always the kit. LS is the mould the kit was cast around
+(`EXTENT-DESIGN §2.1`); every town runs the same pipeline, never a private one.
 
-> ### ⛔ READ THIS AS A CONSTRAINT, NOT A PREAMBLE
-> Every doc below this line is written in **Lafayette Square proper nouns** — `south-18th-street-3`,
-> "LS's 50 dead ends", `park-avenue-1`. That is because LS was **first**, not because it is the
-> subject. **The subject is the kit.** When a doc says *"LS has 50 dead ends,"* read it as *"50 dead
-> ends in the first town — the method has to find them in a town nobody has looked at."*
->
-> **The test, before you propose anything: what does this do for town #2?** If the answer needs an
-> operator who has already seen that street, it is not a fix. And **no fallbacks** — a failed pour
-> must fail loudly, because a plausible-looking wrong map is worse than no map. Full form:
-> `CLAUDE.md` **Layer 0**. *(Written down here since the beginning; promoted to a gate 2026-07-31
-> after a full day was spent patching LS instances and ending in an exception table.)*
+Three questions come before any change (`CLAUDE.md` Layer 0):
+1. **What does this do for town #2?** A fix that needs someone to have seen this street is not a fix.
+2. **What happens when it's wrong on a town nobody inspected?** It must fail loudly. No fallbacks.
+3. **Am I calling the operator's authoring a defect?** The machine pours a strong first draft and the operator may
+   override any of it. The override is the product. Never measure without the town's authoring loaded.
 
-A **kit for pouring 3D neighborhoods.** You feed it real city data; it produces a **slab** — a flat, fast, fortified map the public app stands on like a foundation. Lafayette Square is the first neighborhood off the line. The whole point is that the *next* neighborhood pours from the same kit, by a different operator, with almost no hand-work. **Aesthetics and performance are co-equal and non-negotiable** — it has to be beautiful *and* run on a phone.
+## 2. The picture
 
-## The dependency chain — in plain words
+*"Imagine a big square map (the bb) rolled out on a desk. We have a spotlight (the radius) which shows which part
+of the map is 'displayed'. The map exists first, then we shine a light on part of it and it's that part that we
+elevate"* — and the light also decides *"what makes it thru to the slab."* (Jacob)
 
-> ⛔ **THE FULL NARRATIVE IS NOW `cartograph/PIPELINE.md` (rewritten 2026-09-06).** What follows is the
-> **one-screen** version — the chain and the vocabulary pairing, enough to orient. **PIPELINE.md is the
-> ironclad one**: every stage with what it is for, what goes in and out, the rule, and — the part this
-> summary cannot carry — **how you would tell if that stage were wrong**, naming a real instrument.
-> ⚠️ **These two are now the only plain-language accounts of the chain, and that is one more than the
-> scrub wanted.** If they ever disagree, `PIPELINE.md` wins and this list is the bug.
+So: **everything is drawn to the bb first** (streets, blocks, land use, water, sand). **The disc is applied once,
+to the finished shape.** What's lit is what's raised and what ships. The rim is an edge of the drawing, never an
+absence; the soft fade is a look, applied after.
 
-*(Confirmed with Jacob 2026-07-31, in his corrections. If you read only one thing before touching the pipeline, read this — three separate passes in one day went wrong on **step 3** alone.)*
+## 3. The lineage, and the three tools on it
 
-> ⭐⭐ **THE TOOLS AND THE STAGES HAVE DIFFERENT NAMES, AND BOTH ARE LIVE. Learn the pairing or every doc reads as though it is about something else.** *(Added 2026-08-09 — Jacob: "The Survey comes from the Extent; Survey feeds Measure." That sentence is the chain in the operator's words, and this doc did not contain it.)*
->
-> | the operator opens… | the canon calls the stage… |
-> |---|---|
-> | **Extent** | intake / the served skeleton (`EXTENT-DESIGN.md`) |
-> | **Survey** | Survey — SHAPE (step 4) |
-> | **Measure** | **Section — FILL (step 6)** ⭐ *the same thing; `SECTION.md` is its home* |
-> | **Stage** · **Preview** | look / bake / stress-test (step 7) |
->
-> ⛔ **And the steps below are NUMBERED FROM 1 = Intake for historical reasons — other docs cite "step 3" by number, so Extent is step 0 rather than a renumber.** Extent is *first*, not optional: **it is a separate project bolted onto the front of the product** and has its own ruled ordering. **Read `EXTENT-DESIGN.md` before proposing anything cross-town** (`ROADMAP`'s ordering block).
-
-0. **Extent — say what the neighborhood IS, and freeze the frame.** Before any of the below there is no town: you size a generous envelope, fetch, then **author the boundary out of real streets** (click the bounding streets and watch the ring close; the gazetteer is a hint, never a requirement). What it produces is the **served skeleton** — a labeled point cloud — plus the **frame origin**, which may grow or shrink but ⛔ **must never move.** Everything downstream is keyed to it. → **`EXTENT-DESIGN.md`**.
-1. **Intake — stamp and label, simultaneously.** Pull OSM, parcels and right-of-way, whatever **street widths** the city has, ML footprints, aerials. The first minibake stamps and labels in **one** pass.
-2. **Skeleton — the generic "to code" bake.** The messy traced lines become a clean, **hardened and named** frame: fragments welded, wiggles simplified (junction-protected — a junction-*blind* pass once deleted 79 of them), name-transitions resolved so a road stays one road across a name change. ⭐ **What comes out is to *spec*, not to reality** — regular, to-code streets.
-   > ### ⭐⭐⭐ AND IT IS THE **SSoT** — ruled 2026-09-06 (Jacob): *"All data should skew to SSoT. The skeleton should simplify and make ironclad and foolproof."*
-   > **Every downstream consumer takes the SIMPLIFIED skeleton geometry** — the tile/face walk and the protopolygon both. ⛔ Not the densified trace, not a locally-corrected copy of it. Prebake was freezing **three geometries out of one pass**, so the tiles and the protopolygon's holes were two independent partitions of the same map; both render, neither can be seen to be wrong.
-   > ⭐⭐ **THE COROLLARY IS THE TIME-SAVER: IF A DOWNSTREAM CONSTRUCTION NEEDS ELABORATE SCAFFOLDING, SUSPECT THE INPUT.** A day went into guards — corner clusters, fillet budgets, self-intersection, severance — against a protopolygon built from the densified chains (8.5× the points; **705 vertices on a block that should have ~8**). Feeding it the skeleton moved every failure at once with no new code. ⛔ **A blocks-are-quadrilaterals map should not need scaffolding.** → `cartograph/SKELETON.md §0.1`
-3. **Prebake — the polygon world. ⚠️⚠️ THIS IS THE ARMED MINE.** The centerline graph is cut into **tiles** (the bounded faces between streets) and that topology is frozen. ⚠️ **PREBAKE SEES ONE OF THE TWO AUTHORING CHANNELS, NOT ZERO.** It **does** read `clean/overlay.json` — the skelId-keyed measures/caps/anchors Survey and Measure write (`derive.js`, the `overlayById`/`overlayLoops` load — count it, don't quote it: `node -e "console.log(Object.keys(require('./cartograph/data/<scene>/clean/overlay.json').streets).length)"`. ⚠️ **LS's figure MOVED**: it was reverted to genuine default on 2026-08-06 (`2481ffad`), and the pre-reset state is kept beside it as `overlay.json.pre-reset`). What it does **not** read is `design.json`/`blockCustoms`, the per-frontage-edge SHAPE SSoT — zero reads in `derive.js`/`pipeline.js`/`promote-ribbons.js`. **So anything frozen here that depends on per-fe SHAPE intent freezes the to-code default instead of the actual town**; anything that depends only on chain measure does not. That is the precise form of `CLAUDE.md` **Layer 0 q3** — and it is *narrower* than "prebake is authoring-blind," which is the overgeneralisation that mis-scoped the curb-freeze question.
-4. **Survey — conform the drawn map to reality.** The operator opens regular, to-spec streets over the **aerial** and reshapes them until the drawing matches the ground: widths, caps, corner radius. ⭐ **A single block may change width several times across its span** — LS is historical and idiosyncratic, and **this is what the authoring tools are FOR.**
-5. **The Wall — chain *links* die; welded chains become polygons.** After it there is no such thing as *"this chain link."* Forever after it is **"this surface / this edge of this tile."** Chains stop being independent entities.
-6. **Section — the pedestrian FILL** *(⭐ **the operator opens this tool as `Measure`** — same thing, two names)*, stroked *inward* from the frozen curb: treelawn, sidewalk, materials, ADA pads. It physically cannot see a chain.
-7. **Bake → Stage → Preview.** The geometry is poured; the **slab** proper also carries trees, weather and lighting. We render **from Preview** into commits, staging sites and live URLs.
-8. **The Ward — the public app.** The slab ships to **The Ward**, and The Ward has everything it needs to **animate** everything in the slab.
-
-> ### ⭐⭐ WHY THERE ARE BAKES AT ALL — the principle under the whole architecture
-> **It is all about managing and condensing complex data into simple data.** *(Jacob.)* Authoring has to be **fluid**: the operator must reshape a curb or corner **asymmetrically, on a single polygon**, and see it immediately. **Anything that requires the whole map to be retraced 60× a second does not work** — and that constraint governs the **pre-wall** bakes just as much as the post-wall ones. Every freeze in this chain exists to hand the next stage something simpler than what it received. ⚠️ **A freeze is therefore a PERFORMANCE move as much as a correctness one**, and "correct but re-derived every frame" is a failure of the same architecture.
-
----
-
-## The same chain, as a diagram
+The data has one lineage. Each step is a **freeze**: it hands the next something simpler, and the next trusts it
+completely. A freeze is a performance move as much as a correctness one: authoring must be fluid, so nothing may
+retrace the whole map every frame. The operator works on it with three tools, each at its own place:
 
 ```
-EXTENT → intake → SKELETON → prebake → SURVEY → ⟦THE WALL⟧ → SECTION → BAKE → the SLAB → the public app
+         EXTENT                       SURVEY                         SECTION (opened as Measure)
+           ↓                            ↓                                 ↓
+intake → skeleton → ① protopolygon → the fe walk/stamp → ② the curb → ⟦THE WALL⟧ → the ribbons → the bake → slab → The Ward
+                                       + land use stamped → the disc cuts the shape
 ```
 
-| | stage | what happens | the tool the operator opens |
+| Tool | The operator authors… | It writes | It sits… |
 |---|---|---|---|
-| 0 | **Extent** | say what the hood IS; freeze the frame origin | **Extent** |
-| 1 | intake | OSM, parcels, measured widths, aerials | *(runs with Extent)* |
-| 2 | **Skeleton** | the clean, named street frame | — |
-| 3 | prebake | the frozen tile topology ⚠️ *the armed mine* | — |
-| 4 | **Survey** | author the hardscape **SHAPE** | **Survey** |
-| 5 | ⟦**THE WALL**⟧ | **freeze — chains die here** | — |
-| 6 | **Section** | author the sidewalks — the **FILL** | ⭐ **Measure** |
-| 7 | Bake → Stage → Preview | pour the slab; author the look; stress-test | **Stage** · **Preview** |
-| 8 | **The Ward** | the public app plays the slab | — |
+| **Extent** | what the neighborhood *is*: an inclusion polygon of real streets, exclusions, per-building toggles; the radius and hood centre | `neighborhood_boundary.json`, `geography.json`, `neighborhood.json`, `building-overrides.json` (via `commit-extent`) | before the pour: it decides the data and freezes the frame |
+| **Survey** | the SHAPE: each street's width, caps, corner radii, block by block | `overlay.json`, centerlines, measurements, `blockCustoms…pavementHW` | on ① and the stamp, built live; **its exit IS the Wall** (it posts `shape.json`) |
+| **Section** | the FILL: treelawn and sidewalk depths, materials, terminals; corner overrides | `design.json` `blockCustoms` (its own fields) | after the Wall, inside the frozen curb |
 
-Read it left-to-right: **you say what the hood is**, messy inputs get traced into a clean **frame**, frozen into **shapes**, dressed with **sidewalks**, given a **look**, and **baked** into the slab **The Ward** trusts. We're currently working the early stages (skeleton + survey); the look is largely authored.
+Survey and Section write one record, `blockCustoms`, different fields: the one place two tools meet.
 
-⭐ **Each arrow is a freeze, and each freeze is what makes the next step possible** — that is why a defect is almost never fixable at the step where you see it (`§"Why there are bakes at all"`). ⛔ **And Extent is co-existent, not finished:** the migration onto it is still running and has its own ruled ordering — **`EXTENT-DESIGN.md`** before any cross-town proposal.
+**Extent.** You size an envelope, fetch, and say what the neighborhood is. Commit freezes the **frame origin**, which
+may grow or shrink but never moves: every coordinate and building id is keyed to it. The **bb** is the fetch's
+envelope, frozen (`cartograph/fetch.js` `BBOX` → the raw `bbox`), never derived from the disc. Two centrepoints: the
+fetch centre (the frame) and the hood centre (where the disc is drawn). Home: `src/cartograph/ExtentApp.jsx`; the disc
+record `neighborhood_boundary.json` (`center`, `radius`, `boundary`). The gazetteer's ring is a hint: drawn inert, it
+reaches membership only when the operator adopts it, so picking streets must work from zero (`EXTENT-DESIGN §1`).
+One compass frame, true GPS positions, no rotation constants (`cartograph/ARCHITECTURE.md`, "Coordinate systems").
 
----
+**Intake.** OSM, parcels, measured widths, footprints, aerials, lidar, labelled by source in one pass. What we take
+in we keep, or a named rule says why not (`claims-intake-is-lossless`). A census is the union of its wells: lamps
+and trees union every source and dedupe, never the first source found (`cartograph/BAKE.md §4.5`).
 
-## What's already figured out (don't re-derive these)
+**Skeleton.** The traced lines become a clean, named, simplified frame: a block should have about four corners, not
+thirty wiggles. It is the single source of truth downstream, built to spec; reality comes from Survey.
 
-> These are the things we keep having to *stop re-discovering*. Each is a plain phrase you can hold and repeat; the **→** points to the deep home if you need the engineering.
+**① The protopolygon.** Every chain expanded at ε across the whole bb: the ink of the frame. A **block is a hole of
+①**. ① is width-free and has **no nodes**: a chain cut is not a corner. Coasts are ink too (they close the land and
+make the water); the sand line will be ⟦unbuilt⟧. Home: `src/lib/tileGround.js#mintProtopolygon`.
 
-### How the map gets built
+**The fe walk and stamp.** Every edge of every block knows which street and which side made it, and its place along
+the street: `skelId · side · segOrd`, the **frontage edge (fe)**. Authoring is keyed to it (`design.json`
+`blockCustoms[skelId][side][segOrd]`), so a re-pour keeps the operator's work on the same frontage. Land use is
+stamped the same way: evidence (OSM, then parcels; the class order decides contested ground) is built as **one
+partition** (`cartograph/derive.js#layerLandEvidence`), where two classes meet in one line, and stamped per tile
+(`tileGround.js#stampTile`). Where no evidence reaches, a piece takes the voted face's class, else `underived`.
 
-- **The skeleton is the first bake.** Before any prettifying, we trace the real streets into a clean, *simplified* frame — a city block should be ~4 corners, not 30 wiggles. Get the bones simple and everything downstream is healthy. → `SKELETON.md`
-- **Chains die at the wall.** We start from messy traced street-lines ("chains"). At one point — *the Wall* — we **freeze** them into finished shapes, and after that nobody may reach back to the messy lines. When something looks broken, the first question is always *"did we sneak back across the wall?"* — and the fix is to move the freeze *earlier*, never to patch the messy lines deeper. → `cartograph/PIPELINE.md §5 (the Wall)`
-- **Polygons, not pen-strokes.** The map is made of **shapes**, not drawn lines. We paint the sidewalk and grass *inward* from each block's edge. → `cartograph/RIBBONS.md §1`
-  > ### ⛔⛔ AND **"POLYGON" MEANS TWO THINGS HERE. LEARN BOTH OR YOU WILL LOSE A DAY — SEVERAL ALREADY HAVE.**
-  > **To Jacob it is THE CURB** — the drawn edge of the roadway, pushed out from the centerline by the authored half-width. **To the code and most docs it is THE TILE** — the block face between streets. *(`docs/agents/BOZ.md §1` records 2026-08-06 running for hours on exactly this; it recurred 2026-08-21 with the coordinator writing "the polygons are the tiles" back at him.)*
-  > ⭐ **When Jacob says *"if we were properly polygonized we wouldn't be having these conversations,"* he is talking about THE CURB.** ⛔ Do not answer it with tile-face reasoning.
-  > ▶ **Say which one you mean, every time. "Tile face" or "curb ring" — never the bare word.**
-- **⭐⭐ The neighborhood is ONE CLOSED SHAPE — a compound path.** Think of it the way Illustrator does: the **circle is the outer contour**, and the streets and land-use fills **run out and close against it**. Nothing is left open; nothing is "outside the data." The soft edge you see is a **fade applied last, as a look** — not the drawing running out. ⛔ **So the rim is an edge of the drawing, never an absence** — code that reads *"no street on this edge"* as *"nothing here"* leaves a hole exactly where the shape should close. *(Ratified 2026-08-08 — said in conversation for months and written down nowhere, which is precisely why it kept being re-derived wrong.)* ⭐ **The order, in Jacob's picture (2026-10-21):** *"Imagine a big square map (the bb) rolled out on a desk. We have a spotlight (the radius) which shows which part of the map is 'displayed'. The map exists first, then we shine a light on part of it and it's that part that we elevate."* ⇒ everything (streets, land use, water, sand) is drawn to the bb first; the disc selects; what's lit is what's raised *and* what makes it through to the slab (Jacob: *"it's not only about raising; it's also about what 'makes it thru to the slab'"*). → `cartograph/ARCHITECTURE.md §"The compound shape"`
+**② The curb (Survey).** One producer: the block's ① outline stepped out by each edge's own half-width
+(`tileGround.js#offsetRingByRects`). A block may change width several times along its span; that is what Survey is
+for. Fix the line and the curb follows.
 
-### The golden rule for fixing things
+**The disc.** The radius cuts the finished shape once (`buildTileGround`'s disc stamp); geometry never reads the
+fade. ⛔ Two producers still apply it early, in the pour (the land-use face walk; water dropped past `discR × 1.25`):
+`BRIEF-the-disc-is-one-source` ⟦unbuilt⟧.
 
-- **Everything is a shadow of the centerline.** The order is **centerline → block shape → sidewalk ribbon.** The street's centerline is the one true source; the curb is just that line pushed outward by half the road's width; even *what counts as a corner* is read off it.
-- **So fix it at the centerline, not the shadow.** If a block or a curb looks wrong, the real bug is almost always upstream in the centerline. Patching the shape while the centerline stays rough is editing a shadow — it comes right back. → `cartograph/RIBBONS.md §1`, `SKELETON.md §3.5`
-- **The curb has ONE producer: the block's outline, offset.** Every block's curb is the protopolygon's block stepped out by each edge's own half-width — fix the line, the curb follows. *(An earlier "two producers" rule described the retired chain shape pass, not the map anyone draws.)* → `cartograph/POLYGON-FIRST.md §1`
+**⟦The Wall⟧.** Chains die here. After it there is no "this chain link", only "this edge of this surface". Nothing
+downstream reaches back across it. Authoring is not a chain: a lookup by street key that returns the operator's
+numbers is legitimate; every polygon comes from the frozen `shape.json`.
 
-### What's automatic vs. hand-made (this is the kit)
+**The ribbons (Section).** The fill is painted *inward* from the frozen curb (`tileGround.js#sectionOpen`): curb,
+treelawn, sidewalk, ramps; the treelawn takes its block's land use (`treelawn:<class>`). **Every band boundary is one
+offset line of the curb, shared by both neighbours** — so a doubled edge means the code left the ribbon. ⛔ Today
+the four depths are four separate offset runs (`checks/codemap.mjs` row `one-line-per-depth`). **Mono width**: one
+total pedestrian depth per block, curb to property line; the strips inside may vary, the total may not.
+**Corners**: the band bends around the corner arc, never glued onto two legs' ends; the one licensed hard seam is
+ADA → treelawn | land use.
 
-- **⭐⭐ Everything is a best guess, and everything is overridable — THE OVERRIDE IS THE PRODUCT.** The kit machine-pours any town's geometry, land-use, trees, weather, and content — a strong first draft — and the operator can override *any* of it. Automation's job is to make the guess better; override is first-class at every layer, **never a "defect."** *(Supersedes "shape is automatic; hand-fixes are bugs-to-zero," retired 2026-07-02.)* → `NEIGHBORHOOD-INPUTS.md §0.0`
-  > ⛔⛔ **THE COROLLARY, AND IT IS LOAD-BEARING (`CLAUDE.md` Layer 0, question 3):** a real neighborhood is **historical and idiosyncratic — that is why the authoring tools exist at all.** So **any measurement taken without the scene's authored state loaded is measuring the wrong thing**, and it fails in the kit's signature shape: **worst on the most heavily authored town, cleanest on a fresh pour** — blind exactly where the map is most worked-on.
-  >
-  > **Before calling anything a defect, ask whether it is the authoring gesture's intended output.** Worked example, and it fooled three passes in one day: `Block = iA = tile − the authored roadway` (`SURVEY §3`), and the asphalt-edge handle *"strokes the pavement half-width outward; the block follows"* (`SURVEY §4`). **So a small block is what a wide authored street LOOKS like.** A census that measured block *area* and reported "collapsed curb rings" was measuring the operator's own edits. The only honest test is a **distance** one — *is the curb at the **authored** half-width from its centerline* — and it must run **with** authoring loaded.
-- **Let the machine catch the bugs.** Instead of an operator eyeballing every street, one automatic check per kind-of-bug flags the bad ones. That checker is the real prize — it's what lets the kit work on town #2, #3, #100 without a human re-inspecting everything. → `cartograph/POLYGON-FIRST.md §5`
-- **The inputs are real, not guessed.** Real city parcels and right-of-way, operator-*measured* street widths, real map geometry, ML building footprints — all fortified against high-res aerial photos. A generic 3D map extrudes a default city; ours is grounded in the actual record, block by block. → `cartograph/INTAKE.md`
+**Rounding, three kinds.** (1) **Smoothing**: the street lines are simplified once, in the skeleton
+(`cartograph/skeleton.js#rdpKeep`, junction-protected, then `#curveFitSegments`). ⛔ It is not yet one home: other
+knobs smooth too (`smoothCenterline.js#STREET_SMOOTH`, dormant at 0; paths; derive's own simplify; the seed
+centerlines), their metre constants are unchecked. Ruled 2026-10-21: smoothing is one thing, the skeleton's
+fit, and the other knobs retire ⟦unbuilt⟧. (2) **The corner radius**: authored in Survey, the curb's fillet.
+(3) **The lattice**: every cut rounds to one 1 mm grid (`src/lib/lattice.js#CLIP_SCALE`), once, where the line is
+born; near-coincident vertices join only within the rounding's own bound, √2/2 of a step
+(`src/lib/latticeNode.js#NODE_BOUND`). A line cut twice and rounded twice is the recurring defect of this repo;
+the cure is always to cut it once, never a tolerance.
 
-### How it ships
+**The bake.** The painted layers flatten into one plane of non-overlapping pieces, noded to each other
+(`cartograph/bake-ground.js#flattenPaintStack`, `#nodeThePlane`). The overlays (paths, parks, scrub, the water bed,
+lane lines, the stripe) are flat and stamped with everything else; the water sheet stays a tint over its bed;
+bridges stay out (`BRIEF-the-rim-is-cut-once §5` ⟦unbuilt⟧). Height is **one field**: drawn = field × exaggeration +
+kerb lift (`src/utils/terrainShader.js`, read on the CPU by `src/lib/drawnGround.js`); relative height matters,
+literal height doesn't. Only what's lit is raised. Everything that stands on the ground (trees, lamps, paths) sits
+on the one drawn surface, by a height baked per object (`cartograph/ARCHITECTURE.md`, "Ground conformance").
 
-- **The slab is the contract.** We pour a flat, dumb, fast "slab" the public app trusts blindly and can't argue with. The catch: **if it isn't baked into the slab, the public never sees it** — what the operator sees in authoring only ships if it travels through the bake. → `SLAB-CONTRACT.md`
-- **⭐ The public app is called THE WARD** *(named 2026-07-31 — a shared word so it can be discussed without saying "the public app" every time; it appears in no older doc)*. **The slab ships to The Ward, and The Ward has everything it needs to ANIMATE everything in the slab.**
-- **The Ward reads three payloads, not one.** It is a generic **player**; Lafayette Square is just installation #1 (`?look=lafayette-square`). It reads (1) the **slab** — the *render* (geometry, ground, buildings' render-side, trees), poured by the kit; (2) the **content** — names, history, listings — a separate per-installation layer read *alongside* the slab, not baked in; and (3) the **installation config** (`src/instances/<look>.js`) — identity, geography, branding, and a **module manifest** that switches whole features on or off. **The kit *pours* slabs; the player *plays* them — the consumer app is not itself a kit** (the kit is the authoring side: cartograph/arborist/meteorologist). → `SLAB-CONTRACT.md §0/§C2`, `NEIGHBORHOOD-INPUTS §5.1`, `ls/ARCHITECTURE.md §2`
-- **Features are switched by the manifest, not guessed from presence.** Each installation turns on only the features it runs (`INSTANCE.modules.*` — bulletin, delivery/Cary, events, …). "Show it if the data's there" is leaky — a feature with empty data still tries to mount (the ungated-Cary bug) — so the switch is an **explicit declarative flag**, not an inference. LS = everything on. → `ls/ARCHITECTURE.md §6`
-- **⭐ What a neighborhood IS — the definition everything else serves.** Jacob, 2026-07-21: *"A neighborhood is a collection of buildings/structures which are connected by people-run accounts. The idea is that a neighborhood can be described by its **hard surfaces** but it is **enlivened by their soft contents**."* The unit is the **structure**, not the area. Geometry is a **proxy** for the account relation, and proxies fail at the margin — which is why per-building correction is first-class rather than a gap to design away. **Corollary: losing soft contents outranks losing geometry.** ⭐ **But the boundary isn't everything and also is — it's a "self-tensing circle"** (Jacob): you must determine the polygon to determine who is included, and you don't know where the hood *is* until you have them. Don't collapse that into a hierarchy in either direction. And **the circle is the fundamental graphical piece — the ground plane of the map**: we present in a virtual environment where the **horizon is "whatever is outside the neighborhood,"** so the hood reads as a planet of its own. That links the disc's centroid to the hood's mass — an off-center disc doesn't just offend the eye, it breaks the world. → `cartograph/ARCHITECTURE.md §Extent`
-- **A census is the union of its wells.** Lamps and trees come from several sources at once (a city fetch, an OSM fetch, a hand-placed set). We **combine them all** and remove duplicates — we never let one source win and hide the others. Density is part of the product: a missing source doesn't error, it just makes the place look thinner and deader. *(This bit us: the day Lafayette Square gained an automatic lamp fetch, its 80 hand-placed **park** lamps quietly stopped shipping, and nobody noticed because the total went up.)* → `cartograph/BAKE.md §4.5`
-- **⛔⛔ NO FALLBACKS — a fallback turns a failure into a plausible-looking success, which is the worst outcome a kit can have.** If town #2 fails to load and the operator is shown Lafayette Square, they do not see a bug; they see a map, and they trust it. Jacob, 2026-07-31: *"There should be no fallback; it would help exactly 0 to have a failed neighborhood loading to fall back to Lafayette Square."* **The receipt is a check, not prose:** `node checks/claims-a-look-authors-its-curb-width.mjs --mutants` reads the code sites and fails if a silent curb-width substitution returns (`CLAUDE.md` Layer 0). *(The prose receipt that sat here, Check A, is retired: `cartograph/_archive/CLAUDE-check-A-receipt-RETIRED-2026-10-20.md`.)* Silent substitution is the defect — the same shape as a stale artifact that still renders, a scene that quietly isn't the one you built, and a skip list that makes unhandled cases look handled.
-- **⛔ Lafayette Square is not just a scene — it's the mold the kit was cast around, and that's still dangerous.** Every other neighborhood's data lives in its own folder; LS's lives at the *shared default* paths that the kit falls back to when a poured scene's input is missing. So **LS is the fallback**, and **pouring a second neighborhood can overwrite production LS** — it happened on 2026-07-23. Until those defaults are retired, treat any non-LS pour as destructive to LS and check what changed right after. → `cartograph/ARCHITECTURE.md §Extent` (the palimpsest warning), `EXTENT-DESIGN.md §2.1`
-- **One compass frame, no trick rotations.** Every coordinate sits at its true GPS position; there are no secret rotation constants hiding in the math. → `cartograph/ARCHITECTURE.md`
-- **Everything sits on the ground we actually draw.** On a rolling site, objects look fake the instant they float. So every object — tree, lamp, path — is anchored to the **one rendered ground surface** (a height baked per object), not each guessing its own elevation off a smoother field the coarse ground only approximates. The buildings always worked this way (their foundations); it now covers everything that stands on the ground. → `cartograph/ARCHITECTURE.md §8 "Ground conformance"`
+**The slab and The Ward.** The bake writes the slab: ground, buildings, trees, lamps, labels, terrain, ambient
+occlusion, a manifest. One rule decides what's lit, for every family:
+`((polygon − exclusions) ∪ activate) − hide`, ordered so the finest gesture wins (`activate` beats an exclusion,
+`hide` beats everything; `NEIGHBORHOOD-INPUTS §5.2`), the disc where no polygon is authored
+(`cartograph/membership.mjs#createMembershipFilter`; ⛔ a second copy measures from the origin). The Ward plays three
+payloads: the slab, the content (names, listings, history) and the installation config (identity, branding, and
+a manifest that switches features on, never inferred from the data's presence; `ls/ARCHITECTURE.md §6`). If it
+isn't in the slab, the public never sees it. Publish puts a slab on staging; Promote puts it on the town's address.
 
-### A few more, settled (won't reopen)
-Divided roads stay two centerlines with the median between them · grade-separated roads (bridges/ramps) are pulled out of the block grid and drawn flat · street smoothing rides **one knob** (`STREET_SMOOTH`), never two copies kept in sync by hand · every scene routes through the *same* pipeline, never a private one · a neighborhood is **an inclusion polygon made of real streets** — you say what it IS (the gazetteer's boundary, or click the bounding streets and watch the ring close), and exclusion loops + per-building toggles are *corrections* to that. The circle is what we **render**, not what decides. Membership = `((polygon − exclusions) ∪ activate) − hide` — ⭐ **the formula is ORDERED, and the finest gesture wins: a per-building `activate` beats an exclusion loop, and `hide` beats everything** (ruled 2026-08-04; the code was right and eleven docs were wrong — `NEIGHBORHOOD-INPUTS §5.2`, `INTAKE §0.5`). *(Retracted 2026-07-20: this line used to read "a circle with bites taken out — the disc IS the boundary"; that made subtraction the only gesture and cost 147 Księży Młyn buildings, silently.)* **Street names come FROM the fetch**, so the boundary is authored only *after* the data lands — the search sizes a generous envelope, it does not know the hood. **The gazetteer is a hint, never a requirement — and since 2026-09-19 the CODE agrees:** a published ring is drawn inert (violet) and reaches membership only when the operator **adopts** it. It used to be written straight into the inclusion polygon on search, so the hint *was* the default decision — a suggestion that behaved like a ruling, invisible on any town whose operator was there to correct it.  an *invented* neighborhood (Hi-Pointe–DeMun is two areas someone joined) gets no usable ring, and that is the normal case for any hood a person named — so picking streets must work from zero. Consequently there are **two centerpoints**: the fetch center, frozen as the frame origin, and the hood center derived from the kept buildings, which is what the disc should be drawn on. A correctly-isolated hood sits **off-center** in its envelope; that is expected, not a defect. ⭐ **And the frame origin may grow or shrink, but must NEVER move** — grow/shrink from a fixed center leaves every retained coordinate and building id resolving; *moving* it reprojects everything at once and re-orders identity, which is how a hood's content once went from 84 anchors to 5. **Design of record: [`EXTENT-DESIGN.md`](EXTENT-DESIGN.md)** (what the Extent tool actually makes is the **served skeleton** — a labeled point cloud — not the disc; hood<disc<bb; the seal is the identity registry); as-built: `cartograph/ARCHITECTURE §Extent`. *(Where each lives: the `README` cross-cutting feature index.)*
+## 4. The canonical items
 
----
+One row each: the item · its home · its check, and whether the check guards **readers** (fails if anything else
+works the item out) or only **storage**. ⛔ marks a gap. Each home's header will point back here and at its check.
 
-## Find your piece
+| Item | Home | Check (guards) |
+|---|---|---|
+| The disc / radius | `neighborhood_boundary.json` via `boundaryRecords.mjs`, `sceneStencil.js#loadSceneStencil` | `claims-radius-has-one-home` (storage; readers ⟦unbuilt⟧) · `claims-membership-is-the-disc` (RED) |
+| The bb / frame | `fetch.js` `BBOX` → raw `bbox` | ⛔ none |
+| Smoothing | `skeleton.js#rdpKeep`, `#curveFitSegments` (⛔ also STREET_SMOOTH, PATH_SMOOTH, derive, seed) | ⛔ none |
+| The lattice | `src/lib/lattice.js#CLIP_SCALE` | `claims-the-lattice-has-one-home` (readers; RED on two second grids) |
+| The noding rule | `src/lib/latticeNode.js#nodeAcrossGroups`, `#NODE_BOUND` | `claims-the-paint-stack-flattens` |
+| ① the protopolygon | `tileGround.js#mintProtopolygon` | behaviour only; ⛔ no one-home |
+| fe walk / stamp | `buildBlockGeometryV2.js#assignSegOrdsToFes`, `feCustomKey.js`, `tileGround.js#stampTile` | `claims-an-authored-key-names-the-same-frontage-after-a-re-pour` (behaviour); ⛔ no single home |
+| ② the curb | `tileGround.js#offsetRingByRects` | `claims-a-look-authors-its-curb-width` |
+| Corners / corner radius | seeded `STANDARDS.intersection.curbReturnRadius`; authored `design.json` corner overrides; truth `tileGround.js` `protoCornerSet` | `claims-every-corner-is-one-of-three`, `claims-proto-corner-is-authored-radius`; ⛔ no one-home |
+| The ribbons | `tileGround.js#sectionOpen`; record `scene.js#ribbonsPathOf` | ⛔ none; codemap `one-line-per-depth` (MISMATCH) |
+| Mono width | `tileGround.js#sectionPassProtoTile` | ⛔ none |
+| The land-use stamp | `derive.js#layerLandEvidence` → `tileGround.js#stampTile` | `claims-a-land-use-boundary-is-one-line` |
+| The height field | `terrainCommon.js#makeElevationSampler`, `terrainShader.js`, `drawnGround.js` | `claims-ground-normals-come-from-the-terrain`; ⛔ no reader check |
+| The fade | `boundaryRecords.mjs#lookFade` | `claims-fade-derives-from-radius` |
+| Membership | `membership.mjs#createMembershipFilter` (⛔ copy in `neighborhood-membership.mjs`) | `claims-membership-is-the-disc` (RED) |
+| Paint order | `bake-ground.js` `PAINT_ORDER` | ⛔ none |
+| Scene resolver | `scene.js#requireExplicitMap` | `claims-a-cli-scene-has-one-resolver` (readers) |
+| Town id | `townRecord.js` | `claims-a-town-has-one-sealed-id` |
+| The camera | `cameraRegimes.js` | `claims-the-camera-has-one-definition` (readers) |
+| The wind | `windSheet.js#windStateOfWeather` | `claims-the-wind-has-one-authority` (readers) |
 
-The project is **four parts** plus the public runtime. Each is documented next to its code in three flavors — **FEATURES** (the pitch: what & why), **OPERATIONS** (the operator's manual: the knobs), and the **dev** docs (how it's built).
+## 5. How we work on it
 
-| If you're working on… | Go to |
+- **Fix the line, not the shadow.** Centerline → block → curb → ribbon. A defect is almost never fixable where it's seen.
+- **Freezing wrong data is worse than not freezing.** Each freeze must be real and correct before it's trusted.
+- **Scaffolding is a symptom.** A fourth guard means look at the input.
+- **Every fix has three parts:** the code works and its predecessor is gone · the register is updated (FEATURES for
+  the capability, OPERATIONS for the knobs) · superseded prose goes to the Diary (`cartograph/_archive/`).
+- **A fact that can be run is a check, not prose.** A check reads the source and is seen to fail before it's trusted.
+  The checker that catches a class on a town nobody looked at is the real prize.
+- **"Polygon" means two things.** To Jacob it is the curb ring (②); to most code it is the tile face (a hole of ①).
+  Say which, every time.
+- **Cite symbols, never line numbers** (`module#symbol`); `checks/codemap.mjs` keeps each doc claim beside its code.
+
+## 6. Where to go next
+
+`README.md` — where each item lives. `ROADMAP.md` — what's left. `cartograph/BACKLOG.md` — the live front.
+`ONBOARDING.md` — pouring and hydrating a new town. `ACCORDANCE-REVIEW.md` — does the code deliver what the docs claim.
+The deep homes: `SKELETON` · `RIBBONS` · `SECTION` · `SURVEY` · `ARCHITECTURE` · `SLAB-CONTRACT` · `EXTENT-DESIGN`.
+
+| The four parts | Live in |
 |---|---|
-| **The map kit** — streets, blocks, curbs, the bake | `cartograph/` — start `README §⭐ START HERE` (settled-state by stage) + the `README` cross-cutting feature index (where-X-lives) |
-| **The public app** — place cards, residences, the courier | `ls/` — `FEATURES` / `ARCHITECTURE` / `STATUS` |
-| **The trees** — the kit-matcher tree builder | `arborist/` — start **`arborist/README.md §⭐ START HERE`** (the goal + current state) → **`SALON-INTERFACE.md`** (root — the Salon **plate-rack**, the realized rubric-forward front, 2026-06-25) → `scratch/FOREST-BUILDER-KIT-MATCHER.md` (the ratified architecture); **no-cull** — all trees draw; Authored-only, LiDAR/Procedural kept as peers |
-| **The weather** — clouds + sky rules | `meteorologist/` — `README` / `WEATHER-MODEL` |
+| The map kit: streets, blocks, curbs, the bake | `cartograph/` (start `README.md §⭐ START HERE`) |
+| The public app, The Ward: place cards, residences, the courier | `ls/` (`FEATURES` · `ARCHITECTURE` · `STATUS`) |
+| The trees | `arborist/` (start `arborist/README.md §⭐ START HERE`) |
+| The weather: clouds and sky | `meteorologist/` (`README` · `WEATHER-MODEL`) |
 
-**The three navigational indexes** (when you need to *find* something, not be *oriented*) — all in `README.md` + `PIPELINE.md`, never `docs/agents/BOZ.md` (that's the coordinator's doc, summoned only when you're Boz):
-- `README.md §⭐ START HERE` — the settled conclusion **per pipeline stage**, with status.
-- `README.md` Documentation map — **where does X live**: the artifact homes + the cross-cutting feature index.
-- `cartograph/PIPELINE.md` — the **execution spine**: how raw data becomes the slab, step by step.
-
-**And when you need to know *what's left*** (not where it lives): **[`ROADMAP.md`](ROADMAP.md)** — the one cross-domain master of all remaining work, ranked and pruned to zero. We're in the home stretch; ROADMAP is the surface we prune the whole board against. Two columns to done (the SHAPE finish + the tree impostor/placement scheme = "works on a phone") + the security close-out, then the cleanup tail toward human-developer engagement, then the approaching horizon.
-
-**And when you want the *outside-in* read** — does the shipped code deliver what the docs promise? — **[`ACCORDANCE-REVIEW.md`](ACCORDANCE-REVIEW.md)**: an investor-lens diligence report + a two-way punchlist (**build the thing we claim** ↔ **correct the claim to match the thing**). The lens; `ROADMAP`/`AUDIT-MATRIX` are the boards.
-
-**And when you're onboarding a NEW town** — how do we actually pour *and* hydrate an installation? — **[`ONBOARDING.md`](ONBOARDING.md)**: the followable intake→hydration playbook (slab → instance → content/cards/menus → activation → isolation) + the card-depth standard, so nobody re-derives it from the code.
-
-> *New doc, 2026-06-14 — the executive-orientation surface the doc-system arc called for. Reference-kind; keep it plain and lean. The doctrine here is the colloquial face of the dev canon — when the canon changes, change the one-liner, keep the pointer.*
+*Superseded 2026-10-21: the previous ORIENTATION → `cartograph/_archive/ORIENTATION-superseded-2026-10-21.md`; the
+PIPELINE narrative → `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` (its §-addresses still resolve there).*
