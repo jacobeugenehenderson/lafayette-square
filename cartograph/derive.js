@@ -21,7 +21,7 @@ import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
 import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
 import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_MAP, wgs84ToLocal } from './config.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
-import { nodeAcrossGroups } from '../src/lib/latticeNode.js'
+import { nodeAcrossGroups, splitAtPinches } from '../src/lib/latticeNode.js'
 import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
@@ -516,6 +516,14 @@ export function layerLandEvidence(osm, parcels, cdl = null) {
   // its own group, and a vertex of one within the bound of another's edge is inserted into that edge, both ways, to a
   // fixpoint. Insert-only: ownership, the precedence above and parcelConflictM2 are untouched; a vertex farther off is a
   // separate line and is left as it is. ▶ node checks/claims-a-land-use-boundary-is-one-line.mjs
+  // ⭐ FIRST, EACH REGION'S OWN PINCHES ARE SPLIT (Boz's ruling (b), 2026-10-21): a boolean can leave a ring that passes within
+  // the bound of its OWN vertex, and the noder puts a point into a ring once (it would fold a needle), so a neighbour's
+  // vertex at that point stayed off the pinching edge (HPDM, 11 sites after noding alone). The paint's own split
+  // (latticeNode.js#splitAtPinches, the flatten's rule: cut at the pinch, a loop thinner than a step dropped and counted)
+  // runs first, so the noder meets rings that do not pass near their own vertices.
+  const pinchSub = {}
+  evidence.forEach((e, i) => { e.rings = splitAtPinches(e.rings, `${e.src}:${e.lu}#${i}`, pinchSub, { who: 'land evidence' })
+    .flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]) })
   const noded = nodeAcrossGroups(evidence.map((e, i) => ({ groupKey: `${e.src}:${e.lu}#${i}`, items: e.rings })), { who: 'land evidence' })
   noded.forEach((n, i) => { evidence[i].rings = n.items })
   return { evidence, parcelConflictM2, cdlM2 }

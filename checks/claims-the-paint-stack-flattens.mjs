@@ -16,10 +16,12 @@
 //   (3) the bound written as a literal at its definition or at the call site (a Class D constant) — a source-reading row;
 //   (4) a vertex off the lattice — the noding refuses it, never rounds it;
 //   (5) a ring pinching below the lattice (a needle) reaches planGroup unsplit — read on the plane (`nodeThePlane`), and
-//       the cut removed from its source, or the plane noded before the ease split, in bake-ground.js's source.
+//       the cut removed from its source, or the plane noded before the flatten, in bake-ground.js's source.
 //   node checks/claims-the-paint-stack-flattens.mjs [town…] [--shore=pending] [--mutants] [--selftest]
 // Exits 1 on any refusal (or a mutant that stays green), 2 when a town could not be checked.
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { pathToFileURL } from 'node:url'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -75,7 +77,6 @@ export const TIMED_STEPS = ['flatten', 'nodeThePlane', 'kerbPlan', 'cutCreases',
 export function stepsAreTimed(src) {
   const missing = TIMED_STEPS.filter(n => !src.includes(`timed('${n}', `))
   if (missing.length) return `not timed: ${missing.join(', ')}`
-  if (!/console\.log\(`  \[deform\] \$\{\(stepMs\.deform/.test(src)) return "the deformer's time does not lead its line"
   if (!/\btimings: Object\.fromEntries\(Object\.entries\(stepMs\)/.test(src)) return 'ground.json carries no timings'
   return null
 }
@@ -90,7 +91,8 @@ export function kerbReadsTheNodedRings(src) {
   return plan > at && cells > at ? null : 'the kerb reads the block rings before nodeThePlane'
 }
 // ── the source-reading row: `nodeThePlane` nodes, then cuts at the pinches (an inserted vertex can be the pinch), and
-// bakeGround calls it once, after the plane's last re-clip (the ease split) and before planGroup reads it ─────────────
+// bakeGround calls it once, after the plane's last re-clip (the flatten's; the deformer's ease split, which came after it,
+// retired with the deformer, BRIEF-the-ground-stands-on-one-field) and before planGroup reads it ─────────────────────
 export function planeNodedLast(src) {
   const at = src.indexOf('export function nodeThePlane('), end = src.indexOf('\n}\n', at)
   if (at < 0 || end < 0) return 'no `export function nodeThePlane(` in bake-ground.js'
@@ -100,9 +102,9 @@ export function planeNodedLast(src) {
   if (c < n) return 'nodeThePlane cuts before it nodes'
   const calls = [...src.matchAll(/nodeThePlane\(/g)].map(m => m.index).filter(i => i !== at + 'export function '.length)
   if (calls.length !== 1) return `bakeGround calls nodeThePlane ${calls.length} time(s), not once`
-  const ease = src.indexOf('flattened.set(k, [...outside, ...inside])'), plan = src.indexOf('const planGroup = (kind, key)')
-  if (ease < 0 || plan < 0) return 'the ease split or planGroup moved — this row cannot read the order'
-  return calls[0] > ease && calls[0] < plan ? null : 'nodeThePlane is not called between the ease split and planGroup'
+  const flat = src.indexOf("const flattened = timed('flatten', () => flattenPaintStack("), plan = src.indexOf('const planGroup = (kind, key)')
+  if (flat < 0 || plan < 0) return 'the flatten or planGroup moved — this row cannot read the order'
+  return calls[0] > flat && calls[0] < plan ? null : 'nodeThePlane is not called between the flatten and planGroup'
 }
 // an independent reader of the class: in each ring, a vertex within √2/2 step of another of its own edges (not touching
 // it), projecting strictly inside — on the integer lattice
@@ -186,7 +188,7 @@ async function synthetic() {
   // (7) a hole the flatten emitted along its own outer, touching it at every vertex (0.5 step wide, uncut), beside a needle hole
   // the cut drops: the item reassembles with that hole still the outer's, and the drop is recorded as paint FILLED (HPDM
   // mat:curb at (323.74, 1111.476), 2026-10-21, refused here before)
-  { const { splitAtPinches } = await import('../cartograph/bake-ground.js'), sub = {}
+  { const { splitAtPinches } = await import('../src/lib/latticeNode.js'), sub = {}
     const outer = mm([[0, 0], [4000, 0], [5000, -1], [6000, 0], [10000, 0], [10000, 10000], [0, 10000]])
     const along = mm([[4000, 0], [6000, 0], [5000, -1]]), needle = mm([[2000, 5000], [5000, 5000], [8000, 5001]])
     let out = null, err = null; try { out = splitAtPinches([{ outer, holes: [along, needle] }], 'g', sub) } catch (e) { err = e.message }
@@ -199,7 +201,7 @@ async function synthetic() {
     rows.push(['(7) mutant: the shortcut removed is RED', !/bySize\.length === 1 \? bySize\[0\] :/.test(src.replace('bySize.length === 1 ? bySize[0] : ', ''))]) }
   // (8) an item below the lattice WHOLE (LS mat:treelawn:underived at (124.008, -252.635), 2026-10-21, on the lattice in mm): the
   // cut drops every loop of its outer, and its hole, every vertex on that outer, goes with it, counted as from: 'orphan'
-  { const { splitAtPinches } = await import('../cartograph/bake-ground.js'), sub = {}
+  { const { splitAtPinches } = await import('../src/lib/latticeNode.js'), sub = {}
     const outer = mm([[124028, -252701], [124034, -252719], [124068, -252827], [124057, -252791], [124029, -252701], [124000, -252608], [124008, -252635]])
     const hole = mm([[124008, -252635], [124029, -252701], [124034, -252719], [124028, -252701]])
     let out = null, err = null; try { out = splitAtPinches([{ outer, holes: [hole] }], 'g', sub) } catch (e) { err = e.message }
@@ -209,14 +211,36 @@ async function synthetic() {
     rows.push(['(8) the source: no outer left → the holes go with it', /if \(!bySize\.length\) \{ for \(const h of holes\) dropped\.push\(\{ from: 'orphan'/.test(src)])
     rows.push(['(8) mutant: that line removed is RED', !/if \(!bySize\.length\) \{ for \(const h of holes\) dropped\.push\(\{ from: 'orphan'/.test(src.replace(/    if \(!bySize\.length\) \{[^\n]*\n/, ''))]) }
   // (9) every named step of the bake prints its wall time and records it in ground.json#timings (Boz, 2026-10-21: a +80%
-  // LS bake could not be attributed from its own log); the deformer's time leads its line, so a cut log keeps it
+  // LS bake could not be attributed from its own log)
   const why9 = stepsAreTimed(src)
   rows.push([`(9) the bake times each named step into ground.json#timings${why9 ? ` — ${why9}` : ''}`, !why9])
   rows.push(['(9) mutant: the riser untimed is RED', !!stepsAreTimed(src.replace("timed('riser', () => riserFromEdges(", "(() => riserFromEdges("))])
   const why5 = planeNodedLast(src)
   rows.push([`(5) the plane is noded, then cut at its pinches, after its last re-clip and before planGroup${why5 ? ` — ${why5}` : ''}`, !why5])
   rows.push(['(5) mutant: the cut removed is RED', !!planeNodedLast(src.replace(/splitAtPinches\(noded\[g\]\.items, k, flattened\.subLattice\)/, 'noded[g].items'))])
-  rows.push(['(5) mutant: the plane noded before the ease split is RED', !!planeNodedLast(src.replace(/nodeThePlane\(flattened, \{ blockRings, rimRings \}\)/, '({ blockRings })').replace('const flattened = flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })', 'const flattened = nodeThePlane(flattenPaintStack(nodedEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT }))'))])
+  rows.push(['(5) mutant: the plane noded before the flatten is RED', !!planeNodedLast(src.replace(/nodeThePlane\(flattened, \{ blockRings, rimRings \}\)/, '({ blockRings, rimRings })').replace("  const flattened = timed('flatten', () => flattenPaintStack(", "  nodeThePlane(nodedEntries)\n  const flattened = timed('flatten', () => flattenPaintStack("))])
+  // (10) BOTH KINDS OF PINCH ARE SPLIT by the one producer (src/lib/latticeNode.js#splitAtPinches; Zob's pinch row, Boz
+  // 2026-10-21): a REVISIT (a ring touching itself at one lattice point, two lobes) and a NECK (a vertex within the bound of
+  // its own edge). Read on the producer's output by an independent reader (`pinchesIn` for necks, a repeated lattice point
+  // for revisits); each kind's branch removed from a temp copy of the module must leave its row RED.
+  { const LN = join(ROOT, 'src/lib/latticeNode.js'), lnSrc = readFileSync(LN, 'utf8')
+    const revisitRing = [[0, 0], [5, 5], [10, 0], [10, 10], [5, 5], [0, 10]], neckRing = [[0, 0], [10, 0], [10, 10], [5, 0.0004], [0, 10]]
+    const ringsOf = (out) => out.flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])
+    const revisits = (out) => ringsOf(out).filter(r => { const k = r.map(([x, z]) => Math.round(x * CLIP_SCALE) + ',' + Math.round(z * CLIP_SCALE)); return new Set(k).size < k.length }).length
+    const judge = (split) => { const sub = {}
+      const rv = split([revisitRing], 'r', sub, { who: 'probe' }), nk = split([neckRing], 'n', sub, { who: 'probe' })
+      return { revisit: revisits(rv) === 0 && ringsOf(rv).length === 2, neck: pinchesIn(nk) === 0 } }
+    const mutant = async (from, to) => { if (lnSrc.split(from).length !== 2) throw new Error(`(10) mutant site gone: ${from.slice(0, 60)}`)
+      const f = join(mkdtempSync(join(tmpdir(), 'pinch-kind-')), 'latticeNode.js')
+      writeFileSync(f, lnSrc.replace(from, to).replace("from './lattice.js'", `from '${pathToFileURL(join(ROOT, 'src/lib/lattice.js')).href}'`))
+      return (await import(pathToFileURL(f).href)).splitAtPinches }
+    const J = judge((await import('../src/lib/latticeNode.js')).splitAtPinches)
+    rows.push(['(10) a revisit (two lobes joined at one lattice point) is cut into its two lobes', J.revisit])
+    rows.push(['(10) a neck (a vertex within the bound of its own edge) is cut', J.neck])
+    const noRevisit = judge(await mutant('const r = revisitOf(q); if (r) return', 'const r = null; if (r) return'))
+    rows.push(['(10) mutant: the revisit branch removed → its row RED', !noRevisit.revisit && noRevisit.neck])
+    const noNeck = judge(await mutant('const h = pinchesOfRing(q, bound, true)[0]', 'const h = null'))
+    rows.push(['(10) mutant: the neck branch removed → its row RED', !noNeck.neck && noNeck.revisit]) }
   console.log = log
   for (const [m, ok] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${m}`)
   return rows.filter(r => !r[1]).length
