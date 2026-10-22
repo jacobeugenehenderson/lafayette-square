@@ -1536,7 +1536,7 @@ Where a side street **dead-ends/T's into a through street**, `extractFaces` walk
 - **mono-width** — one total ped depth per block (clean concentric corners); the divider + materials vary per-edge. "Ribbon monowidth, strips variable."
 - **terminal** — `'sidewalk'` (ped zone present) or `'none'` (no ped zone — bare median).
 - **anchor** — `'center'` (default) or `'inner-edge'` (divided-carriageway authoring mode; inboard ped zone zeroed).
-- **STREET_SMOOTH** — the single smoothing constant (`smoothCenterline.js`), read by every consumer; one curve, concentric by construction. Currently `0`.
+- **smoothing** — one thing, the skeleton's fit (`cartograph/skeleton.js#rdpKeep`, junction-protected, then `#curveFitSegments`); ruled 2026-10-21. ⟦unbuilt⟧ the other knobs retire: `smoothCenterline.js#STREET_SMOOTH` (dormant at `0`), path smoothing, derive's own simplify, the seed centerlines.
 - **cw / tl / sw** — curb width / treelawn / sidewalk depths (m), perpendicular, outboard inward.
 
 ---
