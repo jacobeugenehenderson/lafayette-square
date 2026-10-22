@@ -28,7 +28,7 @@ import { readBakeDesign } from './lookDesign.mjs'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { makeMembership } from './neighborhood-membership.mjs'
+import { makeMembership } from './membership.mjs'
 import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { authoredLabelStyle, LABELS_FULL_STYLE_VERSION } from '../src/lib/labelStyle.js'
 
