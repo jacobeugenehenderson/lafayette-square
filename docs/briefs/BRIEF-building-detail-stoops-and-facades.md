@@ -94,7 +94,7 @@ mirrored in pairs. Walk-up apartment buildings: one central entrance.
 
 ## 4. Read first
 
-- `CLAUDE.md` Layer 0 · `ORIENTATION.md` · `cartograph/PIPELINE.md` step 7 (bake) and §5.
+- `CLAUDE.md` Layer 0 · `ORIENTATION.md` · `ORIENTATION.md` §3 (the bake, the Wall).
 - `cartograph/ARCHITECTURE.md §8` ("Ground conformance" — everything sits on the drawn ground).
 - `The Ward Punchlist` (Jacob's dossier, `~/Desktop/dev.nosync/NYC_Ward/`) — façade family, LPC vocabulary,
   "spend pixels on evidence, not simulation".

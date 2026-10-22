@@ -46,7 +46,7 @@ just do it in extent"*).
 ## 1. Read first (canon, by section)
 
 - `ORIENTATION.md` — whole; `CLAUDE.md` Layer 0 (all three questions).
-- `cartograph/PIPELINE.md` steps 0–4 and §5 (the Wall).
+- `ORIENTATION.md` §3 (Extent through the Wall).
 - `EXTENT-DESIGN.md` §1, §3.3, §4 (the seal = the identity registry).
 - `cartograph/SURVEY.md` §4 (the authoring panel — what a width write IS).
 - `ROADMAP.md` **A23** (a machine value in the operator's authoring file must record its author) and
@@ -211,13 +211,13 @@ LOD1.5/2 pieces) → later; heights come from footprints first. Transit / 311 / 
 - **Trusts:** the Extent seal (frame origin frozen — reprojection must land in THAT frame) · the
   skeleton's skelIds (the pre-fill is keyed on them) · the resolver's no-fallback contract.
 - **Trusted by:** prebake (reads overlay) → the curb (`edgeDepth`) → Section → the bake. A wrong
-  pre-fill freezes into every downstream artifact (`PIPELINE` Law 2). Hence the check in 3.4 runs
+  pre-fill freezes into every downstream artifact (`ORIENTATION §5`). Hence the check in 3.4 runs
   BEFORE anyone trusts the pour.
 
 ## 5. Can the instrument see the change?
 
 The curb check must read the curb the operator SEES — Survey renders live, Section renders the frozen
-`shape.json`, and `shape.json` is written on Survey-exit (`PIPELINE §5`, "who writes the frozen
+`shape.json`, and `shape.json` is written on Survey-exit (`cartograph/_archive/PIPELINE-superseded-2026-10-21.md §5`, "who writes the frozen
 file"). State which artifact your check reads and confirm it carries the pre-filled widths.
 
 ## 6. Validation surface

@@ -4759,7 +4759,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // tiles survive array-order shifts across builds; `side` is the
   // measure-side tag ('right' ⇔ forward half-edge — the extractFaces
   // convention), from which the consumer recovers `forward` bijectively.
-  // Chains die at this boundary for block-shape topology (`PIPELINE.md` §5 (the Wall) — the
+  // Chains die at this boundary for block-shape topology (`ORIENTATION §3 (the Wall)` — the
   // wall at ~P3). L1 ONLY: corner construction stays live in Survey
   // (L2 = D3, deferred to §HARDENING); the raw-OSM LU faces
   // (ribbons.faces) are untouched (C5 = D4).

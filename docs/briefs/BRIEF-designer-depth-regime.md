@@ -49,7 +49,7 @@ depth-sorting at all. Hold that; it is the design constraint the work is built t
 
 ## 1. What is measured — read these yourself before you build
 
-All read in source 2026-09-20. ⚠️ Line numbers are a *hint*, not a citation — `PIPELINE §How to
+All read in source 2026-09-20. ⚠️ Line numbers are a *hint*, not a citation — `cartograph/_archive/PIPELINE-superseded-2026-10-21.md §How to
 read` rule 3 records 51 of 99 corpus citations as provably stale. **Grep the symbol.**
 
 | where | what |

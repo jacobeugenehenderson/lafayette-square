@@ -302,7 +302,7 @@ git grep -n -o '_handoffs/[A-Za-z0-9_.-]*\.md' -- ':!.gitignore' ':!scratch' | s
 
 | cited file | cited from |
 |---|---|
-| `HANDOFF-deadend-face-resolution.md` | `README.md`×4, `ROADMAP.md`, `cartograph/PIPELINE.md`, `POLYGON-FIRST.md`, `PREBAKE.md`, `RIBBONS.md`×2, `SECTION.md` |
+| `HANDOFF-deadend-face-resolution.md` | `README.md`×4, `ROADMAP.md`, `cartograph/_archive/PIPELINE-superseded-2026-10-21.md`, `POLYGON-FIRST.md`, `PREBAKE.md`, `RIBBONS.md`×2, `SECTION.md` |
 | `CARY-BRIEF.md` | `README.md`×2 |
 | `BRIEF-intake-manifest.md` | `README.md` |
 | `HANDOFF-A06-legacy-carve-chain-free.md` | `ROADMAP.md` |

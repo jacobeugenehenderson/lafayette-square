@@ -48,7 +48,7 @@ data lives at `data/<scene>/clean/`; it omits `derive.js`, `promote-ribbons.js` 
 scripts. **This is the file an outside developer opens first.**
 
 **The through-line:** the substance of this canon is unusually good — `SECTION.md`, `SURVEY.md`,
-`RIBBONS.md`, `PIPELINE.md` and `WALL.md` are accurate, self-correcting and often verbatim-right
+`RIBBONS.md`, `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` and `WALL.md` are accurate, self-correcting and often verbatim-right
 about the code. What has rotted is almost entirely **addressing and signage**. `NOTES.md:24` names
 the disease in the opposite direction: *"a retraction is not done when the headers change. Fix the
 steps, not the signage."* **Here the steps were fixed and the signage was not.**
@@ -72,7 +72,7 @@ for f in cartograph/*.md; do printf "%-45s %5s %s\n" "$f" "$(wc -l < $f)" \
 | `SECTION.md` | 477 | 08-14 | the ped FILL | **CANON — best-maintained doc here** (L11) | KEEP |
 | `RIBBONS.md` | 926 | 08-14 | geometry doctrine, tile model | CANON | KEEP |
 | `POLYGON-FIRST.md` | 561 | 08-12 | doctrine as red-until-true checks | CANON | KEEP |
-| `PIPELINE.md` | 231 | 08-12 | the execution spine + §Wall | CANON, branch ROT | KEEP (L3) |
+| `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` | 231 | 08-12 | the execution spine + §Wall | CANON, branch ROT | KEEP (L3) |
 | `OSM2STREETS-GROUNDING.md` | 157 | 08-12 | our road model vs the standard | CANON (self-scoped) | KEEP |
 | `ARCHITECTURE.md` | 415 | 08-12 | file layout, publish loop, §8 | CANON | KEEP |
 | `OSM-FORENSICS.md` | 296 | 08-11 | the skeleton's evidence base | CANON w/ accord banner | KEEP |
@@ -220,14 +220,14 @@ data/<scene>/clean/map.json)')`.
 ROT. HIGH.**
 `grep -c "curb-offset-draw" cartograph/*.md` → BACKLOG 3 · OPERATIONS 5 · PIPELINE 3 ·
 DOC-CODE-COHERENCE 1 · SECTION 1 · NOTES 3 · SECTION-CAP-CLAMP-FORENSIC 2 = **18 mentions**.
-`staging.yml:5` → `branches: [land-use-derivation]`. Load-bearing because `PIPELINE.md:52`/`:70`
+`staging.yml:5` → `branches: [land-use-derivation]`. Load-bearing because `cartograph/_archive/PIPELINE-superseded-2026-10-21.md:52`/`:70`
 use it to state deployment status — *"LANDED (on trunk `curb-offset-draw`; not yet in prod)"* —
 which an outside reader takes as "unshipped." NOTES' three are correct as Diary; **the other 15
 are live claims.**
 
-**L4 · `BAKE.md` steps 1–2 say "LS-only"; `PIPELINE.md` says scene-generic. ROT (BAKE). HIGH.
+**L4 · `BAKE.md` steps 1–2 say "LS-only"; `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` says scene-generic. ROT (BAKE). HIGH.
 ⭐ Cross-doc contradiction.**
-`BAKE.md:49` *"clean/map.json | **LS-only**"*; `:50` *"**LS-only.**"* vs `PIPELINE.md:63`
+`BAKE.md:49` *"clean/map.json | **LS-only**"*; `:50` *"**LS-only.**"* vs `cartograph/_archive/PIPELINE-superseded-2026-10-21.md:63`
 *"STATUS: working, and now **scene-generic** — the whole prebake→bake arc runs for a fresh non-LS
 neighborhood (hipointe-demun poured a full slab)."* Code settles it: `pipeline.js:13` imports
 `SCENE/CLEAN_DIR`, `:21` refuses without `--scene`; `promote-ribbons.js:9,13` the same; six scene
@@ -236,7 +236,7 @@ data dirs exist. **BAKE.md is rot — and it is the doc a developer reads to lea
 **L5 · `FEATURES.md:22` assigns street WIDTH to Section. Every other doc and the code assign it to
 Survey. ROT. HIGH. ⭐ Load-bearing for an outsider's mental model.**
 Doc: *"**+ thickness** (Section) → provable truth: this street is N meters wide on each side."*
-Contradicted by `PIPELINE.md:75` (*"⛔ Survey = SHAPE ONLY. No ped depth in Survey"*),
+Contradicted by `cartograph/_archive/PIPELINE-superseded-2026-10-21.md:75` (*"⛔ Survey = SHAPE ONLY. No ped depth in Survey"*),
 `SURVEY.md:13`, and `SURVEY.md:80` — the asphalt-edge drag writes
 `blockCustoms[skelId][side][segOrd].pavementHW`, **in Survey**. Code: `pavementHW` resolves in the
 SHAPE pass (`freezeCurbEdgeFacts` at `tileGround.js:200`, producer gate `:4289`); Section's
@@ -288,7 +288,7 @@ exists only as a code comment.**
 BOUNDARY_EDGE_SKEL = '__boundary__'`. The mechanism is described *accurately*. **The canonical
 instance of H2.**
 
-**L10 · `PIPELINE.md:177` cites `tileGround.js:984` for the face-area filter; it is `:1014`.
+**L10 · `cartograph/_archive/PIPELINE-superseded-2026-10-21.md:177` cites `tileGround.js:984` for the face-area filter; it is `:1014`.
 ROT. HIGH.**
 Predicate verbatim correct (`return faces.filter(f => signedArea(f.ring) > 1e-3)`), address 30
 lines off. **This line carries a ⛔ CORRECTED banner dated 2026-08-12** — it was actively
@@ -327,8 +327,8 @@ flag as live.** The cleanest evidence that the ledger is now a source of the thi
 string: *"Frozen shape for '<scene>' FAILED to load… The Data Wall is not holding."* Line refs
 `:589`/`:595` are ~30 off.
 
-**L17 · `FEATURES.md:100` sells `PIPELINE.md` as "P1–P15"; it has P1–P10.**
-`grep -cE "^### P[0-9]+ ·" cartograph/PIPELINE.md` → **10**. Implies five undocumented stages.
+**L17 · `FEATURES.md:100` sells `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` as "P1–P15"; it has P1–P10.**
+`grep -cE "^### P[0-9]+ ·" cartograph/_archive/PIPELINE-superseded-2026-10-21.md` → **10**. Implies five undocumented stages.
 
 **L18 · `WALL.md:5` and `SURVEY.md:5` still stamp "v0.1 (2026-06-05) — new" over bodies amended
 through 2026-08-04. ROT (signage). MED.**

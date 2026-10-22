@@ -1,6 +1,6 @@
 # Features & Roles — the pitch
 
-What Cartograph is and why it's special — the user/investor read (the *brochure* register). **New here?** Read **[`/ORIENTATION.md`](../ORIENTATION.md)** first — the universal first read (what we're building, how it fits together, the settled doctrine in plain language). This doc is the *what & why*; the operator's knobs are in **[OPERATIONS.md](OPERATIONS.md)**, the engineering in **[ARCHITECTURE.md](ARCHITECTURE.md)** / **[PIPELINE.md](PIPELINE.md)** / **[RIBBONS.md](RIBBONS.md)**, the geometry canon in **RIBBONS.md**.
+What Cartograph is and why it's special — the user/investor read (the *brochure* register). **New here?** Read **[`/ORIENTATION.md`](../ORIENTATION.md)** first — the universal first read (what we're building, how it fits together, the settled doctrine in plain language). This doc is the *what & why*; the operator's knobs are in **[OPERATIONS.md](OPERATIONS.md)**, the engineering in **[ARCHITECTURE.md](ARCHITECTURE.md)** / **[RIBBONS.md](RIBBONS.md)**, how a town is poured end to end in **[`/ORIENTATION.md` §3](../ORIENTATION.md)**, the geometry canon in **RIBBONS.md**.
 
 > Part of the **cartograph quintet** (`FEATURES` / `ARCHITECTURE` / `BACKLOG` / `NOTES` / `RIBBONS`). Read at session start; flag contradictions; update at session end. Stale claims are worse than no claims — they actively mistrain readers.
 
@@ -113,7 +113,7 @@ Each authors a discrete content type, ships one canonical artifact, knows nothin
 - `ARCHITECTURE.md` — file layout, the publish-loop pattern, render/bake internals (§8: layering & depth precision, terrain doctrine, the 5-env render topology, neon, async-bake + cache-bust + dirty-skip, frame discipline, map state) + the §7 conventions
 - `OPERATIONS.md` — the operator's manual (every knob: corner radius, sky gain, shadows, the Hero bounce, bake buttons, alley cap, tube radius, drag)
 - `/ORIENTATION.md` — the settled doctrine in plain language
-- `PIPELINE.md` — the execution spine (raw data → slab, P1–P15)
+- `/ORIENTATION.md §3` — the lineage, end to end (raw data → slab)
 - `RIBBONS.md` — the geometry canon (tiles / ribbons / corners / curbs)
 - `BACKLOG.md` — current punchlist · `NOTES.md` — historical decisions
 - `arborist/SPEC.md` · `meteorologist/SPEC.md` — the helper kits

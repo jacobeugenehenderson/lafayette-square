@@ -307,7 +307,7 @@ git grep -ohE '_handoffs/[A-Za-z0-9_.-]+' -- '*.md' | sort -u | wc -l  # → 11 
 ```
 
 **17 tracked documents — `README.md` (7 citations), `ROADMAP.md` (5),
-`cartograph/{PIPELINE,POLYGON-FIRST,PREBAKE,RIBBONS,SECTION}.md`, `arborist/ARCHITECTURE.md` — cite
+`cartograph/{_archive/PIPELINE-superseded-2026-10-21,POLYGON-FIRST,PREBAKE,RIBBONS,SECTION}.md`, `arborist/ARCHITECTURE.md` — cite
 11 distinct files inside a gitignored directory as authoritative.**
 
 **On your machine these resolve. On a fresh clone every one is a 404.** A stranger following the

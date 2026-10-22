@@ -40,10 +40,10 @@ So the kit does three things, in this order:
    permitted manuals (a value's ancestry), never imported from them as truth. A type's form is the same in every town
    unless the town's **norm** (`norms.json`) says otherwise.
 3. **JOIN.** Where types meet (a junction, a corner, a cap, a transition, the rim), a **join rule** says how the forms
-   connect. The join is the band bent, never a constructed primitive (`RIBBONS §1` invariant 1; `PIPELINE` step 6).
+   connect. The join is the band bent, never a constructed primitive (`RIBBONS §1` invariant 1; `/ORIENTATION.md` §3, the ribbons).
 
-**The canvas all three are drawn on: the protopolygon ①** *(added by Boz at Jacob's note, 2026-10-19; `PIPELINE`
-step 3, ruled 2026-08-12)*. Every street centreline is stroked to a **hairline width** and all are united into one
+**The canvas all three are drawn on: the protopolygon ①** *(added by Boz at Jacob's note, 2026-10-19; `/ORIENTATION.md`
+§3, ruled 2026-08-12)*. Every street centreline is stroked to a **hairline width** and all are united into one
 closed compound path; **the holes are the blocks.** It reads no width and no authoring; every edge carries the street
 and side that made it, and every crossing carries the two streets that met there. *A corner is a crossing you read,
 not an angle you compute.* ⭐ **Because the stroke has thickness, a dead end closes into a real notch instead of a
@@ -414,7 +414,7 @@ per corner, per IX, global. Section: cut style per corner.
 - Across-intersection consolidation in `skeleton.js` was a red herring for the live defect (`SKELETON §5c/§5e`).
 - Mouth co-claim at dead-end junctions (`SECTION §6.3`).
 - ⚠️ **CONFLICT 5.1, junction as a constructed thing.** `SKELETON §5e`'s 2026-06-06 note proposes "construct the junction
-  at prebake … one apron per node". `PIPELINE` step 6 says "If you find yourself constructing a corner shape, stop."
+  at prebake … one apron per node". `_archive/PIPELINE-superseded-2026-10-21.md` step 6 says "If you find yourself constructing a corner shape, stop."
   These are about different layers (the asphalt apron vs the band's corner), but the word "construct" is in both.
   Not a ruling conflict as far as established; flagged for reading.
 
@@ -457,7 +457,7 @@ authored diagonal norm.
 style per corner (writes `cut` in `cornerCornerRadiusOverrides`), ⌃-click clears.
 
 **Precedent.**
-- The corner is the band bent, never a constructed primitive (`RIBBONS §1` invariant 1; `PIPELINE` step 6).
+- The corner is the band bent, never a constructed primitive (`RIBBONS §1` invariant 1; `/ORIENTATION.md` §3, the ribbons).
 - `jtMiter`, never `jtRound` (`SURVEY §3`) — ⛔ but `RIBBONS §3.3` says `filletRing`, the jtMiter doctrine and the
   miter limit "retire under §1's 2026-09-04 grout ruling".
 - ① is sharp; rounding happens once, downstream `[R RIBBONS §1, 2026-09-05]`.
@@ -536,7 +536,7 @@ two points where the street's straight curb turns into the bulb.
 
 **Construction (where the dead end comes from).** ⭐ The dead end is **given thickness in the protopolygon ①**
 *(Boz, at Jacob's note 2026-10-19)*. The centreline is stroked to a hairline before the punch-out, so the spur is a
-two-sided **notch** in its block, never the zero-width out-and-back slit a graph-face walk produces (`PIPELINE` step 3;
+two-sided **notch** in its block, never the zero-width out-and-back slit a graph-face walk produces (`_archive/PIPELINE-superseded-2026-10-21.md` step 3a;
 the slit history is in `RIBBONS §1` and `cartograph/_archive/A0-deadend-history-2026-08-11.md`). Its two sides and its
 tip carry their owner `{skelId · side · segOrd}` from the mint. ② offsets those labelled edges to the curb; the cap
 style below decides how the tip's offset is drawn, and ③ folds the band round it. ⛔ The cap is never patched in the
@@ -837,7 +837,7 @@ attributed.
 So this draft's conceptions for those sources' subjects (shared streets, plazas, frontage zones, NYC medians) come from
 the permitted findings, the OSM wiki, and the canon. Where a conception has no such source, it is marked `[P]` or `[U]`.
 
-**Canon read:** `ORIENTATION.md`; `README.md`; `CLAUDE.md` Layer 0; `cartograph/{PIPELINE, SURVEY, SKELETON, SECTION,
+**Canon read:** `ORIENTATION.md`; `README.md`; `CLAUDE.md` Layer 0; `cartograph/{_archive/PIPELINE-superseded-2026-10-21, SURVEY, SKELETON, SECTION,
 RIBBONS, OPERATIONS, ARCHITECTURE (compound shape, grade separation), LOOP-STREETS, INTAKE (cul-de-sacs),
 OSM-FORENSICS (third category)}.md`; `ROADMAP.md` (named-way entry); briefs `the-street-ends-at-the-parcel`,
 `corner-ramps-and-kerb`, `a-curbed-nose-has-a-source`, `junction-shape-where-the-offset-crosses`, `nyc-adapter` (grep);

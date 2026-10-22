@@ -76,7 +76,7 @@ export default function SourcesPanel({ scene, onClose, onOpenIdentity }) {
   // ⭐ "+ other source" — the escape hatch. Our list is a best guess and for a
   // town nobody here has seen the right well may be a municipal portal this
   // repo has never heard of. Everything is a guess and everything is
-  // overridable (`ORIENTATION §What's automatic`); a catalogue that cannot take
+  // overridable (`ORIENTATION §1`, question 3); a catalogue that cannot take
   // the operator's own answer silently caps the kit at the towns we imagined.
   // Build the instruction an agent can run cold. It is assembled from the SAME
   // steps shown above — one home per fact, so the human path and the agent path

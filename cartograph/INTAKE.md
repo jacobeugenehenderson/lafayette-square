@@ -2,7 +2,7 @@
 
 **The pipeline's first stage: external sources → a cleaned local frame.** This is the SSOT for *data provenance* — every source we pull, how we fetch it, what we transform it into, and (the load-bearing part) **which layer is authoritative vs. which is OSM-default.** Written because "how do we troubleshoot if we don't even know where the data comes from?" (Jacob, 2026-06-13) — provenance you can't see is provenance you can't debug.
 
-> **Status: v0.4 (2026-07-20) — intake is a UI, and boundary authoring is the INCLUSION POLYGON.** The **Extent tool** (`src/cartograph/ExtentApp.jsx`) is the realized front-end of this stage (§0.5) — intake is no longer "hand-edit two JSON files + CLI," and the boundary is an **inclusion polygon** — membership = `((polygon − exclusions) ∪ activate) − hide`; the disc RENDERS. *(v0.3 said the circle IS the boundary and the excluder was settled; retracted §0.5.)* Grounded in `scripts/`, `cartograph/fetch-msbf.js`, `config.py`, `serve.js`, and the `data/lafayette-square/{raw,clean}` artifacts. Some source attributions are marked **⚠️ confirm**. The developer-reference home for the **intake** pipeline stage (`PIPELINE steps 0–1 (Extent + intake)`); FEATURES carries the one-line pitch.
+> **Status: v0.4 (2026-07-20) — intake is a UI, and boundary authoring is the INCLUSION POLYGON.** The **Extent tool** (`src/cartograph/ExtentApp.jsx`) is the realized front-end of this stage (§0.5) — intake is no longer "hand-edit two JSON files + CLI," and the boundary is an **inclusion polygon** — membership = `((polygon − exclusions) ∪ activate) − hide`; the disc RENDERS. *(v0.3 said the circle IS the boundary and the excluder was settled; retracted §0.5.)* Grounded in `scripts/`, `cartograph/fetch-msbf.js`, `config.py`, `serve.js`, and the `data/lafayette-square/{raw,clean}` artifacts. Some source attributions are marked **⚠️ confirm**. The developer-reference home for the **intake** pipeline stage (`ORIENTATION §3` (Extent, Intake)); FEATURES carries the one-line pitch.
 
 ---
 
@@ -16,7 +16,7 @@ The neighborhood frame is **assembled from many open + measured sources**, not o
 
 > ⭐ **Design of record for this subsystem: [`EXTENT-DESIGN.md`](../EXTENT-DESIGN.md)** (ratified 2026-07-22) — what the Extent tool actually *makes* (the served skeleton = a labeled point cloud + node stamps), the hood<disc<bb size model, the two centers, the seal-as-identity-registry, and the ordered v1 worklist. `_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` is its evidence layer. **This §0.5 is the as-built flow;** read EXTENT-DESIGN before changing the model.
 
-**Intake used to be "hand-edit `geography.json` + `neighborhood_boundary.json`, then run the CLI." It is now a screen: the `◎ Extent` tool (`src/cartograph/ExtentApp.jsx`).** It is the intake/step-0 destination — the operator-driven onboarding of a *new* place, front-to-back, with no JSON hand-editing and no CLI. This IS the "intake — onboard a place" stage `PIPELINE.md` had marked deferred; it is no longer deferred.
+**Intake used to be "hand-edit `geography.json` + `neighborhood_boundary.json`, then run the CLI." It is now a screen: the `◎ Extent` tool (`src/cartograph/ExtentApp.jsx`).** It is the intake/step-0 destination — the operator-driven onboarding of a *new* place, front-to-back, with no JSON hand-editing and no CLI. This IS the "intake — onboard a place" stage the pipeline doc (now `_archive/PIPELINE-superseded-2026-10-21.md`) had marked deferred; it is no longer deferred.
 
 **Nav:** `◎ Extent` button in `Toolbar.jsx` → `setShot('extent')` → `CartographApp` early-returns `<ExtentApp/>`. Fresh arrival = **no map** (nothing fetched yet); every overlay is gated on `located` — a blank global aerial until the operator locates.
 
@@ -157,7 +157,7 @@ The two levers that shrink the *automation-debt* share (never the idiosyncratic)
 
 ## Cross-references
 - `SKELETON.md` — the frame built from this intake (`seedSection`, the RDP + corner-round, width-sourcing).
-- `PIPELINE.md steps 0–1 (Extent + intake)` — the stage in the execution spine (this is its deep doc).
+- `ORIENTATION §3` (Extent, Intake) — the stage in the lineage (this is its deep doc).
 - `OSM-FORENSICS.md` — "OSM or us" (the frame was strictly poorer than raw OSM until we stopped dropping tags) + "stop dropping it."
 - `OSM2STREETS-GROUNDING.md` — the reference algorithm to ground in (don't reinvent).
 - `FEATURES.md` — the user/investor pitch line (*grounded in authoritative municipal + survey data, not guessed*) — **to add.**

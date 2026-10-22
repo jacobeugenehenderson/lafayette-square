@@ -74,7 +74,7 @@ The street's cross-section, from the road edge to the property line, is decided 
 
 ⛔ Absent data says so **by name, per pour** (no parcels for this town · no width tag on this street). It never
 silently becomes the kit default. ⛔ Never a per-street exception list. ⭐ Mono-width still holds within an edge
-(`PIPELINE §6`); what changes is the total depth the data allows.
+(`ORIENTATION §3`, the ribbons); what changes is the total depth the data allows.
 
 ## 3 · Answer before building, against the code, and report to Boz
 
@@ -92,9 +92,9 @@ b. **Which towns have parcels at all**, from which source, and what the pour pri
 c. **What OSM `width` means** on each town's streets (carriageway or whole ROW), measured against the parcels, and why
    Commercial Street paints 8.0 m against a width-6 tag. Read where the carriageway width is decided and name the
    code site.
-d. **Where in the chain each input enters.** ① stays width-free (`PIPELINE` step 3). The road width is ②'s offset
+d. **Where in the chain each input enters.** ① stays width-free (`ORIENTATION §3`). The road width is ②'s offset
    (`pavementHW`), the band depth is ③'s. Say which frozen record carries the parcel line to ③. Per the second
-   wall (`PIPELINE §6a`), it travels as data on the edge, not as a lookup by distance.
+   wall (`cartograph/_archive/PIPELINE-superseded-2026-10-21.md §6a`), it travels as data on the edge, not as a lookup by distance.
    *(Read, Lath 2026-10-18: ③'s depths come only through `tileGround.js` `protoMeasureOf(label)`, which resolves a ① edge's
    owner key {skelId · side · segOrd} to the frozen street measure (`ribbons.json` `streets[].measure`) and the authored
    `blockCustoms` at that same key. **No frozen record carries a parcel line today.** The natural carrier is the frozen

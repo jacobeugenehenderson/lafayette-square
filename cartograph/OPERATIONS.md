@@ -1,6 +1,6 @@
 # Cartograph — Operations (the operator's manual)
 
-> **The engineering/operator counterpoint to [FEATURES.md](FEATURES.md).** FEATURES is the *brochure* — what it is, why it's special (user/investor-facing). **This is the *manual* — here's the panel, here's the knob, here's when to turn it (operator-facing).** Same tools, two books: one sells it, one runs it. Reference-kind (eternal-present); **operator** audience (distinct from FEATURES = user/investor, and from ARCHITECTURE/PIPELINE/RIBBONS = developer). Engineer-internals behind these knobs live in `ARCHITECTURE.md`; the geometry in `RIBBONS.md`.
+> **The engineering/operator counterpoint to [FEATURES.md](FEATURES.md).** FEATURES is the *brochure* — what it is, why it's special (user/investor-facing). **This is the *manual* — here's the panel, here's the knob, here's when to turn it (operator-facing).** Same tools, two books: one sells it, one runs it. Reference-kind (eternal-present); **operator** audience (distinct from FEATURES = user/investor, and from ARCHITECTURE/ORIENTATION/RIBBONS = developer). Engineer-internals behind these knobs live in `ARCHITECTURE.md`; the geometry in `RIBBONS.md`.
 
 ---
 
@@ -927,7 +927,7 @@ Promote to staging = commit on the trunk and push (or fast-forward a feature bra
 | Section shows **no change** after a CLI bake | The `shape.json` cache-buster (`?t=freezeTag`, `BlockGeometryV2Debug`) — a CLI bake can't bump client state. Exit Survey (autosave-freeze) or click **Bake** to bump it. |
 | A **baked artifact looks wrong** | First ask "is this the *live re-stroke's* defect, faithfully captured?" — the bake is the messenger, not the bug (`BAKE.md §4`). Diagnose **upstream** (the live construction), never patch the output. |
 | Proxy / node render disagrees with the app | **The operator's eye is the gate** (`[[feedback_proxy_render_is_not_the_operator_eye]]`). The proxy misleads in both directions — trust the lit app. |
-| A SHAPE/curb silhouette is wrong | Upstream — Survey · skeleton · prebake. *How a ribbon bends* is Section (FILL). Name the layer before you fix (`CLAUDE.md` route gate · `PIPELINE §5 (the Wall)`). |
+| A SHAPE/curb silhouette is wrong | Upstream — Survey · skeleton · prebake. *How a ribbon bends* is Section (FILL). Name the layer before you fix (`CLAUDE.md` route gate · `ORIENTATION §3 (the Wall)`). |
 | **Bloom (or another post effect) suddenly looks broken / no glow** right after DoF turned on or off (a Blur edit to or from 0) | An **HMR artifact, not a real bug.** The `EffectComposer` is keyed on its mounted pass set, so DoF turning on or off rebuilds the composer and Vite HMR can leave it detached → **hard-refresh the page.** Don't chase a DoF↔Bloom coupling — they share the pyramid by design. |
 | **Trees don't show in Browse** | Known render "wake-up" — **nudge any look dial** and they pop in. It's the render/cull layer, not a look knob (tracked, unresolved). |
 

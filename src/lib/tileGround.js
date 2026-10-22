@@ -1,7 +1,7 @@
 // tileGround — the ground construction. ONE module shared by the live Designer (BlockGeometryV2Debug) and the bake
 // (bake-ground), so live == bake by construction (WYSIWYG).
 //
-// The construction (`PIPELINE` step 3, `RIBBONS §1`):
+// The construction (`ORIENTATION §3`, `RIBBONS §1`):
 //   ① the PROTOPOLYGON — every at-grade centreline stroked to ε and united into one closed compound path. Its holes are
 //      the blocks, and every edge carries which street and which side made it (`mintProtopolygon`).
 //   ② the CURB — each block offset once by its edges' authored half-widths (`offsetRingByRects`), its corners eased to
@@ -185,7 +185,7 @@ function dropFoldSpurs(ring) { return dropFoldSpursTracked(ring).ring }
 //
 // ⭐ THIS IS A PURE FUNCTION OF THE FRAME, and that is the whole point: it takes
 // chains and ε and nothing else. No `blockCustoms`, no look, no authored width —
-// so it can be minted ONCE AT PREBAKE and frozen, which is `PIPELINE §5 (the Wall)`'s
+// so it can be minted ONCE AT PREBAKE and frozen, which is `ORIENTATION §3 (the Wall)`'s
 // Check C for the object the curb is offset from. `POLYGON-FIRST §3`'s blocker on
 // D6b ("freezing iA at prebake would bake a bare-defaults curb") does NOT apply,
 // because ① HAS no width to bake.
@@ -5867,7 +5867,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     // isn't working" rather than as an error. ⭐ The branch stays because a stale artifact is a
     // REAL state and refusing to draw it would make a re-pour a prerequisite for opening the tool;
     // the DEFECT WAS NEVER THE DRAW, it is the silence — so it says so, once per pass.
-    // ▶ The cure is a re-pour. `PIPELINE §5`: the browser writes `shape.json` on Survey-exit.
+    // ▶ The cure is a re-pour. `ORIENTATION §3` (Survey): the browser writes `shape.json` on Survey-exit.
     if (st.bands) {
       if (!_staleBandsWarned) {
         _staleBandsWarned = true
@@ -6251,7 +6251,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // draws. ⭐ But it is LABELLED: `protoSource` carries a REASON STRING, never a boolean, so
     // "this scene was never poured with ①" and "the artifact is at a different ε" read
     // differently to whoever is looking. **The defect was always the silence, not the draw**
-    // (`PIPELINE.md` §5 (the Wall), `ROADMAP A02` — the same shape as `shapeFreezeMissing`, deliberately).
+    // (`ORIENTATION §3 (the Wall)`, `ROADMAP A02` — the same shape as `shapeFreezeMissing`, deliberately).
     //
     // ⚠️ ε IS PART OF THE IDENTITY OF THE OBJECT, not a tuning knob applied after. A caller
     // that asks for a different ε than the artifact was frozen at is asking for a DIFFERENT
@@ -7894,7 +7894,7 @@ export function buildTileGround(ribbons, opts = {}) {
     }
   }
 
-  // ⭐⭐⭐ ①②③ IS THE PRODUCER OF EVERY LAYER EITHER TOOL DRAWS (`PIPELINE` step 3) — Survey live, and Section and the bake
+  // ⭐⭐⭐ ①②③ IS THE PRODUCER OF EVERY LAYER EITHER TOOL DRAWS (`ORIENTATION §3`) — Survey live, and Section and the bake
   // from the frozen artifact, which is `protoShapeTiles` itself. `sectionOpen` consumes a tile that CARRIES ITS BANDS as-is
   // and unions them into exactly these layers. (The pre-① chain shape pass that ran beside this on every build and was
   // then overwritten is deleted, 2026-10-20: cartograph/_archive/BRIEF-retire-the-legacy-shape-pass-LANDED-2026-10-20.md.)

@@ -4,7 +4,7 @@
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing.
 >
-> **Where the rest lives:** the **frame** (centerlines, divided pairs, the across-intersection organ) is `SKELETON.md`; the **ped FILL** (treelawn/sidewalk depths, the bent corner fill, ADA pads, caps, the authoring panel) is `SECTION.md` (the FILL SSoT); the **execution order** is `PIPELINE.md`. This doc owns the **geometry doctrine + the tile construction** that connects them.
+> **Where the rest lives:** the **frame** (centerlines, divided pairs, the across-intersection organ) is `SKELETON.md`; the **ped FILL** (treelawn/sidewalk depths, the bent corner fill, ADA pads, caps, the authoring panel) is `SECTION.md` (the FILL SSoT); the **execution order** is `/ORIENTATION.md` §3. This doc owns the **geometry doctrine + the tile construction** that connects them.
 
 ---
 
@@ -23,11 +23,11 @@
 
 ## §1. The regime, in plain words
 
-> ⛔ **THE PLAIN-LANGUAGE MODEL NOW LIVES IN `PIPELINE.md` (step 3a) — read that first.** What stays
+> ⛔ **THE PLAIN-LANGUAGE MODEL NOW LIVES IN `/ORIENTATION.md` §3 (① the protopolygon) — read that first.** What stays
 > here is the **mechanism and the evidence**: how the substrate is built, what carries identity through
 > it, and every open defect. ⛔ This section was **not** excised in the 2026-09-06 narrative scrub, unlike
 > the other stage docs' openings, because it was rewritten the same day and is the live substrate ruling.
-> ⚠️ If this section and `PIPELINE.md` step 3a disagree, **one of them is wrong and finding out which is
+> ⚠️ If this section and `/ORIENTATION.md` §3 disagree, **one of them is wrong and finding out which is
 > the work** — do not settle it by trusting either.
 
 ### ⭐ The model in one sentence
@@ -37,7 +37,7 @@
 > ⚠️ **"Faces of the centerline graph" is the assumption now under challenge (2026-07-25).** A graph face
 > cannot close around a **degree-1** chain: `extractFaces` walks a dead-end spur out and back over the
 > same vertices, so **ALL 50 LS dead-end tips are zero-width slits** — a chain traversal, not a shape
-> (`PREBAKE §4.0`, `PIPELINE §5 (the Wall)`). Proposed replacement (Jacob): the SSoT radius as the **outer
+> (`PREBAKE §4.0`, `ORIENTATION §3 (the Wall)`). Proposed replacement (Jacob): the SSoT radius as the **outer
 > polygon**, everything inside **punched out** — blocks = boundary − stroked roads — which closes a spur
 > into a real notch and makes the concentric law literal (the block boundary IS the curb). Not ratified;
 > it re-founds the tile substrate and this sentence changes with it. Spike + risks:
@@ -89,7 +89,7 @@
 > mitigating it:** every ring edge is owned by one `(skelId, side)` **by construction**, so identity is
 > never lost and never has to be recovered. That is `§C6`'s own 2026-07-30 ruling — *"build the compound
 > path from STAMPED strokes… identity must be carried THROUGH the boolean, never recovered from ring
-> geometry afterward"* — finally given a mechanism. ⇒ **The `PIPELINE step 3a (what a block is)` "figure-ground is dead"
+> geometry afterward"* — finally given a mechanism. ⇒ **The `_archive/PIPELINE-superseded-2026-10-21.md` step 3a (what a block is) "figure-ground is dead"
 > contradiction dissolves:** the objection to figure-ground was that streets-subtracted loses identity.
 > This does not.
 >
@@ -100,7 +100,7 @@
 >
 > **The grout is a first-class COMPOUND PATH — stroke every chain at a very small width, unite, and the
 > blocks are its HOLES.** ⛔ Not the negative space between painted tiles, which is what *"the centerlines
-> are the grout"* has meant in the code since `PIPELINE step 3a (what a block is)`.
+> are the grout"* has meant in the code since `_archive/PIPELINE-superseded-2026-10-21.md` step 3a (what a block is).
 >
 > #### ⭐⭐ ε IS A DECLARATION, NOT A TOLERANCE — and that is its entire content.
 > A zero-width grout and an ε-width grout **render identically and are mathematically different objects.**
@@ -653,11 +653,11 @@
 >
 > ### ⭐⭐ THE SPLIT THAT MAKES IT BUILDABLE — combinatorial at prebake, geometric after authoring
 > Punching with the *stroked* road makes tile topology **width-dependent** (risk 2). Prebake is blind to
-> `design.json`/`blockCustoms` (`ORIENTATION §3`, `POLYGON-FIRST §3`), so freezing a width-dependent
+> `design.json`/`blockCustoms` (`_archive/ORIENTATION-superseded-2026-10-21.md` step 3, `POLYGON-FIRST §3`), so freezing a width-dependent
 > topology there would freeze **bare-default widths** — Layer 0 q3, baked into an artifact. **Therefore:**
 > - **The COUPLER RELATION is width-INDEPENDENT** — which side hands off to which is a graph property.
->   Prebake, frozen once. ⭐ **It is ①'s own record — every crossing carries which two streets met there** (`PIPELINE`
->   step 3). *(`junctionMap.nodes[].cornersAdjacent` carried it first; retired with its producer 2026-10-20 — `PREBAKE §2.5`.)*
+>   Prebake, frozen once. ⭐ **It is ①'s own record — every crossing carries which two streets met there** (`/ORIENTATION.md`
+>   §3, ①). *(`junctionMap.nodes[].cornersAdjacent` carried it first; retired with its producer 2026-10-20 — `PREBAKE §2.5`.)*
 > - **The GEOMETRY is width-DEPENDENT** — where the side-chain lands. Resolves AFTER width authoring.
 >
 > ⭐ This is `PREBAKE §5`'s own unexecuted sentence: *"corner identity (topology) = prebake, frozen once;
@@ -1257,7 +1257,7 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
 - ❌ Snapping or editing chain endpoints to "clean up" a corner. The corner comes from the offset of the centerline; chain endpoints are descriptive, not prescriptive.
 - ❌ Per-IX special-case extension math (extending a chain segment to find where it meets another).
 - ❌ Authoring a fillet-wedge primitive at a corner as a separately-constructed polygon.
-- ❌ Re-deriving geometry from chains *past the Wall*. Section is a pure consumer of the frozen shape (`PIPELINE.md` §5 (the Wall)).
+- ❌ Re-deriving geometry from chains *past the Wall*. Section is a pure consumer of the frozen shape (`ORIENTATION §3 (the Wall)`).
 - ❌ Smoothing/simplifying the **polygon** (curb) while the centerline stays faceted — the wrong layer (the Derivation Chain corollary).
 - ❌ Splitting a chain at every slight bend. Slight bends are OSM noise; the junction-protected RDP already collapses them (`SKELETON.md §3 step 8`).
 
@@ -1265,7 +1265,7 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
 
 1. **Is the CENTERLINE clean at this location?** (Survey navy line, `SurveyorOverlay`.) A faceted/kinked centerline corrupts shape *and* identity downstream. If rough → fix the frame (`SKELETON.md`), not the polygon.
 2. **Does the polygon move but the centerline doesn't?** → you're at the wrong (downstream) layer. Go up.
-3. **Is this SHAPE (Survey, pre-Wall) or FILL (Section, post-Wall)?** A wrong silhouette is upstream; how the ribbon *bends* is Section. "Is this chains again?" (`PIPELINE §5 (the Wall)`).
+3. **Is this SHAPE (Survey, pre-Wall) or FILL (Section, post-Wall)?** A wrong silhouette is upstream; how the ribbon *bends* is Section. "Is this chains again?" (`ORIENTATION §3 (the Wall)`).
 4. **Only then, the construction:** the tile curb-builder (`tileGround.filletRing` / `offsetRingVariable`) or the FILL (`sectionPass`). The legs are almost always clean (`SKELETON.md §5d`); the bug is usually which legs the corner-builder paired, or a width datum (`SKELETON.md §5a/§5g`), not the input.
 
 ---
@@ -1375,7 +1375,7 @@ as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it
 
 - **Centerline smoothing rides ONE knob.** `smoothCenterline.js` exports `STREET_SMOOTH` (`:150`, currently `0`) + `junctionKeysOf` (`:159`); `buildTileGround` takes `opts.smooth = STREET_SMOOTH`. `smoothChain` (`:101`) is an interpolating centripetal Catmull-Rom, **corner-protected** (30° splits sharp corners as hard vertices) + **junction-pinned** + **arc-length-uniform** (no scallop on sparse input). Applied at **consume time** on a COPY — it must never bake into the frozen frame (the IX-index constraint, `SKELETON §3.5`). One constant + one pin-set ⇒ one smooth curve, concentric by construction.
 - **Divided carriageways stay two centerlines; the median is a BLOCK.** ⭐ **`§1`'s 2026-08-14 ruling owns the model and this line does not restate it** — its grass is the ordinary `luRemainder` of that tile; **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring (the E2 stamp ring that briefly contradicted this is deleted — `§3.5`). ⭐⭐ **The chain POINTS sit at the carriageway CENTRELINE, and each carriageway emits to BOTH sides — the outboard emission bounds its block, the inboard one bounds the gusset.** `innerEdgeAssign`'s `surveyHW/2` per side is exactly that, and it is **correct**. ⛔ **`anchor:'inner-edge'` on all 38 LS carriageways is a FLAG, not a position** — it tells the runtime to *render* the centerline at the inner edge *(measured 2026-08-14: read as a position, every LS divided road would carry a 7–20 m median; as a centreline, 1.5–3.5 m)*. What retires under `§1` is the inboard **ped-zeroing** and `anchor`/`innerSign`/`pairId` as **geometric inputs** — ⛔ **not** the per-side widths. ⭐⭐ **`SKELETON.md:183` ALREADY HAD THIS, MEASURED 2026-08-11 — *"the once-documented 'seeds inboard `pavementHW=0`' is present on ZERO of them."*** ⛔ **A whole day's datum confusion was re-derived because the topic felt like ribbons and nobody opened `SKELETON.md`.** Only its `§61` clause ("chains sit at the inner edges") was wrong; **corrected there 2026-08-14, not here.** ⭐ The lesson is the routing one: **this fact lives in the SKELETON doc, and a ribbons question reached it only by accident.** The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
-- **Divided↔undivided transition (the "special sauce", `SKELETON §5d/§5e`).** At a transition the outer curb must run **straight through**; the median opens **inward**. The corner-builder must round the **two corridor outer-edge legs** (treat the divided corridor as ONE road at the corner), never the carriageway *stubs* — rounding a stub against the cross-street fabricates the **false corner**. Detect via `phase.spineAt*` (a frozen frame fact, never re-derived by node-matching at construction). This cured the live false corner (`9c275ce`). The residual transition "d" bulge comes from the **PRODUCER** — the curb is minted by stroking chains and then snapshotted, so the bow is frozen *into* the artifact (**Check C, RED**). ⚠️ *Precision fix 2026-07-31: this is not "the curb is unfrozen for consumers" — every non-Survey view already reads the frozen `shape.json` (`PIPELINE.md` §5 (the Wall) ⚠️ *(was cited as `WALL.md §31` — a section that never existed)*).* Fixed by building the curb once in prebake from the frozen frame (`HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c), not by more construction.
+- **Divided↔undivided transition (the "special sauce", `SKELETON §5d/§5e`).** At a transition the outer curb must run **straight through**; the median opens **inward**. The corner-builder must round the **two corridor outer-edge legs** (treat the divided corridor as ONE road at the corner), never the carriageway *stubs* — rounding a stub against the cross-street fabricates the **false corner**. Detect via `phase.spineAt*` (a frozen frame fact, never re-derived by node-matching at construction). This cured the live false corner (`9c275ce`). The residual transition "d" bulge comes from the **PRODUCER** — the curb is minted by stroking chains and then snapshotted, so the bow is frozen *into* the artifact (**Check C, RED**). ⚠️ *Precision fix 2026-07-31: this is not "the curb is unfrozen for consumers" — every non-Survey view already reads the frozen `shape.json` (`ORIENTATION §3 (the Wall)` ⚠️ *(was cited as `WALL.md §31` — a section that never existed)*).* Fixed by building the curb once in prebake from the frozen frame (`HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c), not by more construction.
 
 ### 3.2–3.3 Blocks and the curb — ① and ② (`§1`; the data model above)
 
@@ -1398,7 +1398,7 @@ edge's owner changes, and bend vs junction is `classifyCornerLegs` → `sameRoad
 
 ### 3.6 The Wall + the bake
 
-Survey-exit freezes the live `protoShapeTiles` → `shape.json` (`serve.js` POST `/shape`); the full slab bake (`bake-ground.js`) runs the same `buildTileGround` (+ `STREET_SMOOTH`) → the slab. WYSIWYG: live == bake, one module. (`PIPELINE.md` §5 (the Wall), `BAKE.md`.)
+Survey-exit freezes the live `protoShapeTiles` → `shape.json` (`serve.js` POST `/shape`); the full slab bake (`bake-ground.js`) runs the same `buildTileGround` (+ `STREET_SMOOTH`) → the slab. WYSIWYG: live == bake, one module. (`ORIENTATION §3 (the Wall)`, `BAKE.md`.)
 
 ---
 
@@ -1541,4 +1541,4 @@ Where a side street **dead-ends/T's into a through street**, `extractFaces` walk
 
 ---
 
-*Updated 2026-06-15 — the tile-model rewrite (v1.0). Promoted the live `tileGround.js` construction into the body; migrated the figure-ground emitter reference to the dated archive. Live siblings: `SKELETON.md` (frame), `SECTION.md` (FILL SSoT), `PIPELINE.md` (execution spine). Verify §3 against `src/lib/tileGround.js` before building.*
+*Updated 2026-06-15 — the tile-model rewrite (v1.0). Promoted the live `tileGround.js` construction into the body; migrated the figure-ground emitter reference to the dated archive. Live siblings: `SKELETON.md` (frame), `SECTION.md` (FILL SSoT), `/ORIENTATION.md` (the lineage). Verify §3 against `src/lib/tileGround.js` before building.*

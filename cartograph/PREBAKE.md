@@ -2,12 +2,12 @@
 
 **The compile that turns the Skeleton's clean frame into the document Survey opens — and the stage where the Data Wall belongs.** Today it is a thin, **two-source** compile that freezes the *wrong* polygons; the program is to elevate it into the **polygon-ization + freeze** stage. This is its single-source-of-truth reference: what it does now (grounded in code), what `ribbons.json` actually holds, the gap, and the target.
 
-> **Status: v0.3 (2026-09-08) — §2.5 rewritten: the boundary clip was EXCISED `ec7dd3f4`; what remains there is building membership + the coupler's switched-off consumer.** The SSOT for the prebake stage. **Grounded in code** (`pipeline.js`, `derive.js`, `promote-ribbons.js`, `io.js`), verified against `ribbons.json` 2026-06-05. The middle of the front-half rebuild spec: **`SKELETON.md` → this → `SURVEY.md`.** Register docs (`PIPELINE` execution · `ARCHITECTURE` build · `FEATURES` what-it-is) reference this; they carry only their audience's slice.
+> **Status: v0.3 (2026-09-08) — §2.5 rewritten: the boundary clip was EXCISED `ec7dd3f4`; what remains there is building membership + the coupler's switched-off consumer.** The SSOT for the prebake stage. **Grounded in code** (`pipeline.js`, `derive.js`, `promote-ribbons.js`, `io.js`), verified against `ribbons.json` 2026-06-05. The middle of the front-half rebuild spec: **`SKELETON.md` → this → `SURVEY.md`.** Register docs (`ORIENTATION` execution · `ARCHITECTURE` build · `FEATURES` what-it-is) reference this; they carry only their audience's slice.
 
 ---
 
-> ⛔ **THE NARRATIVE LIVES IN `PIPELINE.md` — read it first.** This doc holds **detail only**:
-> the mechanism, the schema, the open defect. **What prebake is FOR** is now said once, in `PIPELINE.md` step 3 (and the block-substrate question in step 3a).
+> ⛔ **THE NARRATIVE LIVES IN `/ORIENTATION.md` — read it first.** This doc holds **detail only**:
+> the mechanism, the schema, the open defect. **What prebake is FOR** is now said once, in `/ORIENTATION.md` §3 (and the block-substrate question in `_archive/PIPELINE-superseded-2026-10-21.md` step 3a).
 > *(The "what this stage is" opening that used to sit here was excised 2026-09-06 in the narrative
 > scrub — one storyline, one home. Text preserved verbatim in
 > `_archive/stage-doc-openings-2026-09-06.md`.)*
@@ -168,10 +168,10 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 
 ### 4.1 ⭐⭐ What is frozen, and what is not — CONSUMER done, PRODUCER open
 
-**Verified in code 2026-07-31. SSOT: `PIPELINE.md` §5 (the Wall).**
+**Verified in code 2026-07-31. SSOT: `ORIENTATION §3 (the Wall)`.**
 
 - ✅ **Consumer — done.** Every non-Survey view (Section/Measure **and** the neutral Design view) renders from the frozen `shape.json`: frozen `iA` on **93/101** LS tiles plus per-run curb polylines with measures. `sectionOpen` has no chain in lexical scope and cannot re-derive. Race-guarded twice (`72bbc989`, `59e5f109`).
-- ✅ **Survey strokes live — **not a WALL violation** — Survey is the tool that *edits* the SHAPE, so re-stroking the edited element is the requirement. ⚠️ **But that is not a blessing of the current implementation:** today every edit re-strokes the **WHOLE MAP**, and the standing requirement is fluid asymmetric editing of a **single polygon** — nothing that retraces the whole map at 60fps works (`ORIENTATION` §the-chain, the condensation principle). The whole-map scope is a known perf defect (D6c / the block-local loop), just not a wall one.
+- ✅ **Survey strokes live — **not a WALL violation** — Survey is the tool that *edits* the SHAPE, so re-stroking the edited element is the requirement. ⚠️ **But that is not a blessing of the current implementation:** today every edit re-strokes the **WHOLE MAP**, and the standing requirement is fluid asymmetric editing of a **single polygon** — nothing that retraces the whole map at 60fps works (`ORIENTATION §3`, a freeze is a performance move). The whole-map scope is a known perf defect (D6c / the block-local loop), just not a wall one.
 - 🔴 **Producer — open (`ROADMAP A03`, Check C RED).** `shape.json` is **minted** by `buildTileGround(liveRibbons,…)` and snapshotted, so the artifact is a **photograph of a chain-stroke, not a function of the frozen frame**. The tracing errors are frozen in at mint time, which is why a defect in the artifact cannot be cured downstream. Brief: `_handoffs/HANDOFF-freeze-the-curb-in-the-first-bake.md`.
 - ⛔ **Do NOT cite "the bow" in metres as the symptom — measured 2026-07-31, it is not one defect and mostly not a bow.** Largely a **shifted datum**: the curb is parallel at the *authored* width, and the check was comparing it to the un-authored one — **not a defect**. Some genuine **wander** remains, on specific tiles rather than in the offset math. ⛔ A same-day *"collapsed curb rings"* census was **WITHDRAWN**: it measured `iA` **area**, and `Block = iA = tile − the authored roadway` (`SURVEY §3`/`§4`), so it was measuring the width edits themselves. **Nothing here is a defect until re-measured as a DISTANCE against authored widths** (`ROADMAP A05`).
 - ⛔ **`POLYGON-FIRST` Check A is RED *and mis-specified*** — it runs with `blockCustoms: null` (authoring OFF, so it scores the operator's decisions as defects) and skips tiles with no curb ring (so a total failure prints as a modest bow). **Its aggregate is not evidence.** The parallelism *idea* is still right; the instrument is not. Full account + the three detector rules it forced: **`POLYGON-FIRST.md §2` Check A** and **`§5`**.
@@ -212,7 +212,7 @@ The split this buys: **corner identity (topology) = prebake, frozen once; curb p
 - `_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md` — the retired clip, its census, and the instruments that read it. ⛔ Nothing in it is true of the code today.
 - `SKELETON.md` — the frame prebake consumes.
 - `SURVEY.md §5.1` (polygon-first) + `§4.1` (the activated-block editing/perf model) — this doc is where that cure is built.
-- `PIPELINE.md step 3 (prebake)` + `§Wall` + `P3` — the execution spine.
+- `ORIENTATION §3` (①, the Wall) + `P3` (`_archive/PIPELINE-superseded-2026-10-21.md`) — the lineage.
 - `OSM-FORENSICS-EVAL.md` — the two-source seam + the Layer-2 (faces-on-frame) cleanup, in detail.
 - `src/lib/tileGround.js` — the downstream consumer that today re-derives the polygon.
 - `pipeline.js` (building membership, §2.5 — ⛔ the boundary clip is gone, `ec7dd3f4`) · `bake-buildings.js` (the belt-and-suspenders building cull) · `neighborhood_boundary.json` (the gate — center/radius disc).

@@ -358,7 +358,7 @@ export async function fetchCurbedMinWidth(scene) {
 }
 
 // Autosave the frozen SHAPE artifact — the Section-enabling freeze (the
-// per-tile curb/corner silhouette). Written on Survey-exit (`PIPELINE.md` §5 (the Wall)
+// per-tile curb/corner silhouette). Written on Survey-exit (`ORIENTATION §3 (the Wall)`
 // "freeze at Survey-exit"), decoupled from the heavy slab bake. Section
 // opens it via shape.json. `artifact` = the `protoShapeTiles` from the live
 // Survey build (WYSIWYG: freeze exactly what Survey rendered).

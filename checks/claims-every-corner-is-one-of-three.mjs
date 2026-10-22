@@ -10,7 +10,7 @@
 //   SW↔TL  mixed                    → the RAMP (Jacob's "slope joiner", renamed 2026-09-07)
 //
 // ⭐⭐ THE ACCEPTANCE IS WHAT ALL THREE SHARE, NOT THREE SEPARATE TESTS. Whichever spec a corner is,
-// the drawn walk must be (A) ONE PIECE through the corner — `PIPELINE` step 6, "a seam between two
+// the drawn walk must be (A) ONE PIECE through the corner — `cartograph/_archive/PIPELINE-superseded-2026-10-21.md` step 6, "a seam between two
 // bands is not constructible" — and (B) TOUCHING THE CURB, which is `§6.1` step 3 and absolute: the
 // street edge of a corner is the ADA ramp, concrete, ALWAYS. A corner failing either is the FOURTH
 // thing: the two legs' own arrangements butting, "two depth ranges that do not overlap".
