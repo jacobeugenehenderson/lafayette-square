@@ -35,8 +35,9 @@ ORIGIN (`neighborhood-membership.mjs#makeMembership`, `scripts/17-fill-canopy-tr
   authored value with a neutral default, or delete it when the order below makes it unnecessary.
 - ⛔ ARCHITECTURE's open DISPLAY half (`ExtentApp#boundaryCentroid` returns `{0,0}` when committed; `CenterHandle` gated) is the
   same origin assumption: in scope.
-- New check: no reader of the boundary outside the one module (it reads the source; mutation-tested), beside
-  `claims-membership-is-the-disc`.
+- ⚠️ `checks/claims-radius-has-one-home.mjs` already exists and is GREEN (5/5) while five readers exist: it guards where
+  the radius is STORED, never who READS it. Extend it with the reader row (no reader of the boundary outside the one module;
+  reads the source; mutation-tested). Don't write a second radius check.
 
 ## 2. The map first, the light last (the pour)
 
@@ -62,7 +63,7 @@ today) · the outer coast's water past the rim (the horizon) · LS's buildings l
 
 ## 5. Gates
 
-`claims-membership-is-the-disc` GREEN on LS and Huron · the one-reader check GREEN, mutant RED · `claims-fade-derives-from-radius`,
+`claims-membership-is-the-disc` GREEN on LS and Huron · `claims-radius-has-one-home`'s reader row GREEN, mutant RED · `claims-fade-derives-from-radius`,
 `claims-fade-has-something-to-dissolve`, `claims-a-land-use-boundary-is-one-line` unchanged or better · a re-pour + bake of
 LS, HPDM, Huron, PTown with no refusal · what each slab gained or lost at the rim, counted by family · Jacob's eye.
 
