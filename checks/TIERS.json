@@ -279,11 +279,13 @@
     {
       "file": "checks/claims-a-land-use-boundary-is-one-line.mjs",
       "tier": "live",
-      "reasonClass": "unreadable",
+      "reasonClass": "outbound",
       "why": [
         "writeFileSync",
         "computed import() with no readable target — runs arbitrary modules",
-        "imports package(s) clipper-lib — not read from source"
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/cdl.mjs, which can: calls fetch(), writeFileSync",
+        "imports package(s) clipper-lib, geotiff — not read from source"
       ]
     },
     {

@@ -1,14 +1,17 @@
 #!/usr/bin/env node
-// ⭐⭐⭐ A CORNER IS A VERTEX WHERE ① TURNS *AND* THE OWNER CHANGES — the shape answers WHETHER,
-// the label answers WHOSE. ▶ node checks/claims-a-corner-is-where-one-turns.mjs [scene ...]
+// ⭐⭐⭐ A CORNER IS WHERE ① TURNS — THE LABEL NEVER DECIDES IT. A CENSUS, not a gate: where the owner label changes on
+// ①'s block contours, does ① turn there? ▶ node checks/claims-a-corner-is-where-one-turns.mjs [scene ...]
 //
-// ⛔ THE DEFECT THIS EXISTS FOR. `iaCorner` asked ONLY "did the owner change", and an owner is
-// `protoOwners[].skelId` with the chain ordinal stripped — a CHAIN identity. `RIBBONS §1`: "① HAS
-// NO NODES… ①'s contour runs straight through them and the only thing that changes is the LABEL."
-// Jacob, 2026-09-07: "the protopolygon doesn't have a node/corner there in the first place."
-// Where ① does not turn, a corner was minted anyway, no fillet rounded it (nothing turns, so
-// nothing was rounded), and the pad fell back to "the one edge the owners meet across" — which on
-// ①'s sparse contour is an entire block side.
+// THE CANON (RIBBONS §1, "the corner test, in its corrected form"; SECTION's corner mark, 2026-09-08): a corner is a vertex
+// where ① TURNS, and the MARK the consumers read is `iaCorner`, the ease's own per-vertex stamp (`EC.arc[i] != null`): the
+// ease arcs ① wherever it turns past FILLET_TURN_TOL. The owner answers WHOSE; it may not answer WHETHER. ① has no nodes, so
+// a label changing where ① runs straight (a chain cut on a straight face, the back of a T) is NO corner.
+// ⛔ ROT REMOVED 2026-10-22: this header stated "a corner is where ① turns AND the owner changes" (09-07). That conjunction
+// was retired on 09-08 — it vetoed 54.8% of LS's arcs, each a missing ADA ramp (SECTION) — and the header was cited as live
+// canon on 10-22. What the check measures never depended on it: it counts the label changes and splits them by ①'s turn.
+// ⭐ WHY KEEP IT: the "does not turn" row is exactly the population a consumer must not treat as a corner. On 10-22 the
+// band's leg rule (tileGround#sectionPassProtoTile's `end`) was measured ending a leg at such label changes off an arc,
+// ramping the walk to the kerb (Boz's ruling: a leg ends where the ladders differ, or at iaCorner).
 //
 // ⛔ MEASURED ON ①'s OWN SHARP RING, NEVER ON ②. ② eases a 90° corner into ~12 vertices of 7.5°,
 // so a turn test on ② finds no corners at all on a rectangle. This reads ① directly.
@@ -55,16 +58,16 @@ for (const scene of scenes) {
   bad.sort((x, y) => y.edge - x.edge)
   console.log(`\n══ ${scene} · ①'s sharp ring · owner change vs whether ① TURNS (tol ${TOL_DEG}°, read from source) ══`)
   console.log(`  owner-label changes on block contours   ${chg}`)
-  console.log(`  ✅ ① TURNS — a real corner              ${turns}  (${(100 * turns / Math.max(1, chg)).toFixed(1)}%)`)
-  console.log(`  ⛔ ① DOES NOT TURN — no node there      ${straight}  (${(100 * straight / Math.max(1, chg)).toFixed(1)}%)`)
+  console.log(`  ✅ ① TURNS — a corner (the ease arcs it) ${turns}  (${(100 * turns / Math.max(1, chg)).toFixed(1)}%)`)
+  console.log(`  ⛔ ① DOES NOT TURN — no corner, a label ${straight}  (${(100 * straight / Math.max(1, chg)).toFixed(1)}%)`)
   if (bad.length) {
-    console.log(`  the longest frontage each one would have claimed as pad, had the label decided alone:`)
+    console.log(`  label changes where ① runs straight (no corner: nothing may end, ramp or pad here on the label alone), longest frontage first:`)
     for (const b of bad.slice(0, 5)) console.log(`     ${b.edge.toFixed(0).padStart(4)} m  at (${b.V[0].toFixed(1)},${b.V[1].toFixed(1)})  turn ${b.deg.toFixed(1)}°  ${b.a} → ${b.b}`)
   }
   // ⛔ THIS IS A POPULATION, NOT A PASS/FAIL. A label changing where ① runs straight is a REAL
   // state (a road's chunks meet on a straight face; the back of a T). What must never happen is
   // that state being treated as a corner — and THAT is gated by the pad-extent check, not here.
-  console.log(`  ⇒ reported, not failed: these are legitimate label changes. The gate is that none`)
-  console.log(`    of them draws a corner — ▶ node checks/claims-the-pad-is-the-size-of-the-corner.mjs ${scene}`)
+  console.log(`  ⇒ reported, not failed: these are legitimate label changes. The gate that none of them`)
+  console.log(`    draws a corner pad: ▶ node checks/claims-the-pad-is-the-size-of-the-corner.mjs ${scene}`)
 }
 process.exit(failures ? 1 : 0)
