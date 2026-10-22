@@ -11,8 +11,8 @@
 //   5. THE PAINT'S RIM IS THE RING'S RIM. HPDM tile 49 (fixture): every painted vertex on a rim edge is a vertex of the
 //      painter's noded ring (its `rim`, live). (The deformer's rows — a ray from past the rim owning the wedge points of tiles
 //      89, 49 and 242 — retired with the deformer, BRIEF-the-ground-stands-on-one-field, 2026-10-21: the ground reads one field.)
-//      ⚠️ OPEN: the painter noding its pieces with the rim crossings (`nodePaint`) was guarded only by those rows; its mutant
-//      ('nopaint') turns no row here RED, and its paint consequence is not measured.
+//      The painter noding its pieces with the rim crossings (`nodePaint`) is read where it is consumed, the plane the bake meshes:
+//      ▶ node checks/claims-the-paint-takes-the-rim-crossings.mjs --scene=<town> [--selftest] (heavy; LS tile 42 shows it).
 //   6. (F) THE BAKE CUTS ①'s PAINT ONCE TOO (B1, Mitre 2026-10-21). The same six tiles' finish, handed to the bake's own stencil
 //      clip (`clipAllToStencil`, the real one) as the bake hands it (`cutOnce`, every item ①'s painter drew): no rim vertex
 //      new to the finish. Clipped again to the stencil's exact chord, the rim re-rounded ~1 mm off the rim ring's own vertices
