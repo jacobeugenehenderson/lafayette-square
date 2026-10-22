@@ -87,6 +87,11 @@ its residual measures zero (its own comment's condition). Brief next (Boz).
 of the boundary, early crops in the pour, height extent, per-family slab selectors) is the premise list of
 `docs/briefs/BRIEF-the-disc-is-one-source.md`. ❓ JACOB: surveyed trees outside the disc · the horizon water · LS's buildings ledger.
 
+**✅ HPDM PRESSED TO PRODUCTION 2026-10-22 03:54Z (Ward, on Jacob's "Press it baby"):** staging's objects as served (the new
+ground, land-use one partition, the withheld roster: appraised_value/building_sqft/units 0/1446). 18 objects changed of 905; verify
+905/905; desk 4.9 s / phone 3.9 s; impostors only. Backup: scratch/promote-rollback/hipointedemun-prod-2026-10-22-prepress/. Note: the
+backup's plain GETs warmed the edge with old bytes for ~3 min (max-age 300); backup-prod-slab now fetches cache-busted.
+
 **✅ RULED (Jacob, 2026-10-21 night): the per-surface blur rung (`renderTiers.js`, `BRIEF-pyramid-ladder`) is BUILD LATER** —
 *"we need to get the basics playing perfectly first and then we can turn more fulsomely to optimization."* Tomorrow's star is HPDM.
 
