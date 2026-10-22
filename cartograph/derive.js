@@ -526,6 +526,11 @@ export function layerLandEvidence(osm, parcels, cdl = null) {
     .flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]) })
   const noded = nodeAcrossGroups(evidence.map((e, i) => ({ groupKey: `${e.src}:${e.lu}#${i}`, items: e.rings })), { who: 'land evidence' })
   noded.forEach((n, i) => { evidence[i].rings = n.items })
+  // ⭐ AND SPLIT AGAIN (Boz's ruling (ii), 2026-10-21): a vertex the noder inserts can itself be a pinch in the ring that
+  // receives it (HPDM osm:institutional#3973, 0.38 mm: 0 necks before the noding, 1 after). A split only cuts at a pinch and
+  // drops loops below the lattice; it is not a second noding round. ⛔ Not looped: what this split leaves is what leaves.
+  evidence.forEach((e, i) => { e.rings = splitAtPinches(e.rings, `${e.src}:${e.lu}#${i}`, pinchSub, { who: 'land evidence, after the noding' })
+    .flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])]) })
   return { evidence, parcelConflictM2, cdlM2 }
 }
 
