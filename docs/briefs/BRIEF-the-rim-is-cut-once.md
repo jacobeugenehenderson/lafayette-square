@@ -78,20 +78,30 @@ edge of the drawing") if the construction's description changes, or say "reaches
 
 ## 5. (D) The overlays are stamped with ①'s paint (Jacob, 2026-10-21 night)
 
-**Ruling:** *"all of those layers are supposed to be flat and stamped at the same time."* **Premises are Zob's read on
-integration 1011f428, not yet confirmed by the builder; confirm each against the code, and stop and flag Boz on a contradiction.**
+**Ruling:** *"all of those layers are supposed to be flat and stamped at the same time."* **Premises: Zob's read on
+integration 1011f428, premise pass folded in (11d01178 → next); confirm each against the code, and stop and flag Boz on a contradiction.**
 - **Why:** `bake-ground#buildTileBakeShape` takes `cutOnce` from ①'s paint, then `pushMat`s the non-① overlays, and
   `clipAllToStencil` cuts each of them at the disc in its own op. That is a second rounding of the rim, and it's the 20 LS rim
   T-vertices of `claims-the-paint-takes-the-rim-crossings` (scrub × face, stripe × asphalt, 1.2–1.33 mm).
-- **In:** non-street paths · park paths (not bridges) · leisure · parking lots · natural · the water BED · shore · barriers ·
+- **In:** non-street paths · park paths (not bridges) · leisure · parking lots · natural · the water BED · barriers ·
   edgelines · bike lanes · the centre stripe. Each joins ①'s one stamp in tileGround: one cut, one rim pass, the precedence
-  of the paint stack. Paths take their parcel interior from that stamp, not from a difference of ①'s paint.
+  of the paint stack. The map layers enter as `opts.overlays` to `buildTileGround`, passed by BOTH its callers (the bake
+  and Survey's `BlockGeometryV2Debug`), so Survey still matches the bake. A missing input refuses; it never reads as "no
+  overlays". Paths take their ground from the stamp's land-use fills (`paint.luByLu` minus park), never from a difference of
+  ①'s paint. A closed buffered line (turning-circle stripe, yard fence) keeps its hole: `claims-a-closed-stripe-keeps-its-hole`
+  is re-pointed at the new producer.
 - **Out (ruled):** the water SHEET stays a tint over its bed (`DOES_NOT_CUT`/`KEEP_OWN_SLOT` for the sheet only). Bridges
-  stay out: they belong to the off-the-ground family, `STYLE-GUIDE §10` Q10.a.
+  stay out: they belong to the off-the-ground family, `STYLE-GUIDE §10` Q10.a. **The shore stays out for now (Boz):**
+  `shore-median.json` is written by a first ground pass, so it isn't a pour input, and Survey never has it. It's revisited
+  with the coast-from-lidar work (Huron), which changes how the coast is made.
 - **The stripe's slot** goes when stripe ∩ asphalt measures zero, which is its own comment's condition. Measure it; don't assume.
-- **Removed in the same commit:** the overlays' path through `clipAllToStencil`, and that function itself if nothing else
-  calls it; the stale yLift comment ("stripe — real overlays, real slots").
-- **Gates:** `claims-the-paint-takes-the-rim-crossings` GREEN on LS (live 20 → 0) with its mutant still RED · stripe ∩ asphalt
-  0 m² · a ground bake on LS and HPDM with no refusal · tris and time vs today's (LS 309k / 225 s) · Jacob's eye.
+- **Removed in the same commit:** the overlays' path through `clipAllToStencil`, and the function itself once only the shore
+  is left in it (else it stays for the shore alone, named). Its "not stamped with this disc" branch becomes a REFUSAL by name,
+  never a silent re-clip. `claims-the-rim-is-cut-once` row (F) retires with its subject, named in the commit. Also removed:
+  the stale yLift comment ("stripe — real overlays, real slots").
+- **Gates:** `claims-the-paint-takes-the-rim-crossings` GREEN on LS (live 20 → 0) with its mutant still RED ·
+  `claims-a-closed-stripe-keeps-its-hole` (re-pointed) and `claims-a-land-use-boundary-is-one-line` GREEN · stripe ∩ asphalt
+  0 m² by the instrument the slot's own comment names · a ground bake on LS and HPDM with no refusal · tris and time vs
+  today's (LS deploy run6, 2026-10-21: 309,018 tris, ground 224.8 s) · Jacob's eye.
 - **Open (Boz's call, unless it changes the look):** refine policy. The hard overlays and park paths use a fixed edge
   length today, against the ground's adaptive tolerance.
