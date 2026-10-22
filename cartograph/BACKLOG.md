@@ -64,6 +64,15 @@ years (18 explicitly parsed), and no code reads them. Withholding LS's assessor 
 committed (`assets/lafayette-square-hd.pdf`) with no licence-register row. Next: Zob's LS Inputs gap census → the
 LS reapplication plan (Jacob: "reapply all we can to LS"; data packs differ per town; the Inputs tab shows them).
 
+**▶ 2026-10-21 NIGHT (Boz).** HPDM's deploy bake refused at `stampCrossings`. Bisected to 48732204 (the one grid): two land-use
+regions drew their shared boundary twice (derive.js#layerLandEvidence, one boolean per class). FIXED, merged 4c232190 + f93cf2aa:
+split → node → split, one home `src/lib/latticeNode.js`, `pinchDropped` logged; check `claims-a-land-use-boundary-is-one-line`.
+HPDM deploy slab (kerf-land, 93d3d637): the stamp settles · doubled 0 · pinch 0 · land overlap 45.5 m² → 0.007 m² (1 site, past-bound) —
+the STAGING CANDIDATE, with its re-written roster (privacy withholding of b94d0c97; nothing that draws reads it: Zob, pending).
+LS 0.1 m refine variant (kerf scratch `slabs/lafayette-square-tol01`): ×2.35 tris, walk p99 56 → 27%: ❓ Jacob's eye. Open, unplaced:
+HPDM 11 seed-declared no-band tiles (measure WITH authoring) · LS tile 145's 26 plane T-vertices (nodePaint's reader is the plane:
+Zob's A/B) · band check FLAP's depth reads fields no tile carries (false comment, uncalibrated row) · land past-bound (12, ≤ 1.27 mm).
+
 **⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
 merge ownership-once → LS deploy bake as `lafayettesquare` → HPDM deploy bake → staging → his eye → press. THEN PTown and Huron
 (the shore project), with JH in the wings, built from the kit's parts. After the deploy: the slab budget (band refine chosen by
@@ -125,10 +134,7 @@ bake); a T1 upload refusal (Plumb) + check (Zob). The rename is BRIEF-ls-cutover
 can't return. BUILT (Kerf, kerf/ls-to-its-address f80515be on Zob's 4a50b612; Rule B green): the rename, DEFAULT_MAP ×3
 and DEFAULT_LOOK deleted, each name branch now a declaration (geography, lamps, pour.buildings, bundledPark, BUNDLED_MAPS),
 scene-less serve routes 400/404, the dead /rebuild route deleted, A12 superseded (an unregistered ?look= now throws). Zob reviews.
-LS's bundled fast path is deleted too (24b99394: LS is fetched by id like every town). Merge eye-check: LS opens in Stage. The main checkout's gitignored LS raw/clean (26 files, 651 MB) is moved by hand at merge; the slab is RE-BAKED, never moved; it lands only with LS's re-bake under the new name. LS SLAB OPTIONS (Zob): (1) a
-HEAD bake, which needs Jacob's 1.03 m call; (2) staging's Oct-5 LS slab reproduced under the new name at its kit commit
-(candidate b67caf47; 5 name tests re-spelled; proven byte-identical but for the stamps; ~2–3 h; LS as of Oct 5, without
-later authoring). ❓ Jacob picks. JH (Zob): showable today as the authoring view of its 10-06 pour on :5173. ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
+LS's bundled fast path is deleted too (24b99394: LS is fetched by id like every town). Merge eye-check: LS opens in Stage. The main checkout's gitignored LS raw/clean (26 files, 651 MB) is moved by hand at merge; the slab is RE-BAKED, never moved; it lands only with LS's re-bake under the new name. LS is RE-BAKED under the new name at HEAD (Kerf, 2026-10-21 night; Jacob's 1.03 m call: "stay flush"). JH (Zob): showable today as the authoring view of its 10-06 pour on :5173. ✅ Jacob's eye on the Ward changes, locally on :5180 with the kit on :5173: "ward features are working … my god
 it's beautiful. Just gorgeous." The rose's mutant check runs locally while :5173 is up. ⚠️ FINDING (Ward): the Stage panel's Publish (serve.js, main checkout) re-freezes and uploads the MAIN checkout's
 slab and commits; a candidate in a worktree is published with scripts/upload-baked-to-r2.mjs run from that worktree. Integration HEAD
 (refuses at #40) and a served-side re-class (an instance patch) are rejected for Thursday. The fix is BUILT: truss/city-landuse 6616be0a
