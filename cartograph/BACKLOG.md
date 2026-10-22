@@ -22,6 +22,7 @@ end-to-end account (PIPELINE.md to the Diary).
   iaCorner = arc OR ① turns (carried through the compound boolean). Gates owed: (a)–(c) re-baselines, mutant, band pairs, PTown run.
 - `kerf/publish-impostor-records` d15fb231: publish only impostor files the atlas names (−113 MB/LS upload). Needs Zob's review.
 - `kerf/ls-to-its-address` f44df473: the rename + no default town. Merges after Jacob opens LS in Stage from kerf-rename.
+- `zob/no-town-default` b8abba10: same change as 766a8c65 already on the rename branch (same subject); retire it when the rename merges.
 - Kerf's own note: `.claude/worktrees/kerf-publish/HANDOFF-kerf.md` (⚠️ its "kerf-land HPDM candidate" is stale: staging is the reference).
 **Blocked:** PTown + Huron deploy bakes. Huron's stamp refusal is FIXED (cdl, merged). PTown refuses at the flatten on the ① seam
 (below) — ❓ Jacob's ① design call. **Rulings owed by Jacob:** ① seam fix (options below) · fine vs coarse ground for LS (0.1 m
