@@ -18,8 +18,9 @@ end-to-end account (PIPELINE.md to the Diary).
 **Held branches (each lands with ONE re-pour + bake of every town, "the tranche"):**
 - `kerf/caps-from-shape` 8c691a33: across/cap split, cap handles from shape.json, only where lit; deletes ribbons.tiles. Refuses a
   stale frozen ① → needs the re-pour. Five in-disc handles lost in ② (below, OPEN).
-- `kerf/leg-ends-at-ladder` (worktree kerf-leg, uncommitted when written): a band leg ends where ladders differ or at iaCorner;
-  iaCorner = arc OR ① turns (carried through the compound boolean). Gates owed: (a)–(c) re-baselines, mutant, band pairs, PTown run.
+- `kerf/leg-ends-at-ladder` 98994f98 (WIP, worktree kerf-leg): a band leg ends where ladders differ or at iaCorner; iaCorner = arc OR
+  ① turns (carried through the compound boolean). New check claims-a-label-change-ends-no-leg GREEN on 4 towns, mutant RED. Owed: the
+  AFTER run of the corner/band checks, (a)–(c) re-baselines, band pairs PTown/HPDM, PTown stackOnly, TIERS. Residue: the ① seam (below).
 - `kerf/publish-impostor-records` d15fb231: publish only impostor files the atlas names (−113 MB/LS upload). Needs Zob's review.
 - `kerf/ls-to-its-address` f44df473: the rename + no default town. Merges after Jacob opens LS in Stage from kerf-rename.
 - Ward: theward `ward/pin-2026-10-22` 9d6b303 (OPERATIONS 'Where things stand'; neon e947c22, check a5be102); kit `ward-pin/2026-10-22` 7b68aad5; the cache-busted `scratch/promote-rollback/backup-prod-slab.mjs` is kit 21936023 on `docs/conformance-2026-09-21` (bring it to integration). Ward parked: an unguarded localStorage read at start-up.
