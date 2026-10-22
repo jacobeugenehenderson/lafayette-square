@@ -87,6 +87,9 @@ its residual measures zero (its own comment's condition). Brief next (Boz).
 of the boundary, early crops in the pour, height extent, per-family slab selectors) is the premise list of
 `docs/briefs/BRIEF-the-disc-is-one-source.md`. ❓ JACOB: surveyed trees outside the disc · the horizon water · LS's buildings ledger.
 
+**✅ RULED (Jacob, 2026-10-21 night): the per-surface blur rung (`renderTiers.js`, `BRIEF-pyramid-ladder`) is BUILD LATER** —
+*"we need to get the basics playing perfectly first and then we can turn more fulsomely to optimization."* Tomorrow's star is HPDM.
+
 **⭐ JACOB'S ORDER (2026-10-21 evening):** finish LS and HPDM this round ("done enough") on today's code: LS gate bake →
 merge ownership-once → LS deploy bake as `lafayettesquare` → HPDM deploy bake → staging → his eye → press. THEN PTown and Huron
 (the shore project), with JH in the wings, built from the kit's parts. After the deploy: the slab budget (band refine chosen by
