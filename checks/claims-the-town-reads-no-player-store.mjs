@@ -16,8 +16,9 @@
  *   · ANY renderer file imports a player store (useCamera, useSelectedBuilding, useListings, …)
  *   · a renderer file imports the user's location or the landmark filter (the player's overlays)
  *   · a renderer file reads `data-scene-pause` or imports `FRAMED` (pausing arrives as a prop)
- *   · a renderer file, or an app that mounts <Town>, imports the device sniff (lib/isMobile) —
- *     the device question is answered in ONE module, src/lib/qualityProfile.js
+ *   · a renderer file, an app that mounts <Town>, or ANY file that makes a canvas (<Canvas>, a WebGLRenderer; widened
+ *     2026-10-22), imports the device sniff (lib/isMobile) — the device question is answered in ONE module,
+ *     src/lib/qualityProfile.js
  *   · any file names `townShot` or `shotOverride` — the shot is Town's context, not a store field
  *   · a renderer file reads the BOOT town's place on the globe (INSTANCE.geography's lat / lon /
  *     metre scales / timezone, or the whole object) — the town it draws is the one it is given, and
@@ -57,6 +58,7 @@ export function closureOf(files, entry, { throughStores = false } = {}) {
 }
 const importsStore = (x, store) => specsOf(x.src).some(s => new RegExp(`/${store}(\\.jsx?)?$`).test(s))
 const code = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+const MAKES_CANVAS = /<Canvas\b|new\s+(?:THREE\.)?WebGLRenderer\b/
 const importsSniff = (x) => specsOf(x.src).some(s => /\/isMobile(\.js)?$/.test(s))
 
 export function audit(files) {
@@ -97,6 +99,10 @@ export function audit(files) {
   }
   for (const x of files) {
     if (/^import\s+Town\b[^;\n]*from\s+'[^']*\/Town(\.jsx)?'/m.test(x.src) && importsSniff(x)) f.push(`${x.path} mounts <Town> and imports the device sniff — the device question is ${PROFILE}'s`)
+    // ⭐ WIDENED (Boz, 2026-10-22): ANY file that makes a canvas, not only the ones that mount <Town>. The canvas's
+    // antialias / depth buffer / pixel ratio are the quality profile's to answer; an embed that sniffs them for itself is a
+    // second device regime (SkyEmbed, TreeDiorama: Zob's census, 2026-10-22). Harness files are exempt, as above.
+    else if (x.path !== PROFILE && !x.path.startsWith('src/harness/') && MAKES_CANVAS.test(code(x.src)) && importsSniff(x)) f.push(`${x.path} makes a canvas and imports the device sniff — ask the quality profile (${PROFILE}), never the device`)
     if (x.path !== PLACE && x.path !== PLACER && /\bsetTownPlace\s*\(/.test(x.src)) f.push(`${x.path} moves the town's place — only ${PLACER} does (the place is <Town town>'s)`)
     if (/\btownShot\b|shotOverride/.test(code(x.src))) f.push(`${x.path} names townShot/shotOverride — the shot is Town's context (townContext.js), not a store field`)
   }
@@ -122,6 +128,7 @@ if (process.argv.includes('--self-test')) {
     ['a leaf imports the selection store', () => audit(swap(leaf, s => `import useSelectedBuilding from '../hooks/useSelectedBuilding'\n` + s)).f.length],
     ['the bridge comes back', () => audit([...files, { path: BRIDGE, src: '' }]).f.length],
     ['an app that mounts Town sniffs the device', () => audit(swap('src/components/Scene.jsx', s => `import { IS_MOBILE } from '../lib/isMobile.js'\n` + s)).f.length],
+    ['a canvas that does not mount Town sniffs the device', () => audit(swap('src/arborist/Grove.jsx', s => `import { IS_MOBILE } from '../lib/isMobile.js'\n` + s)).f.length],
     ['an app moves the town\'s place', () => audit(swap('src/cartograph/CartographApp.jsx', s => s + `\nsetTownPlace(geo, look)`)).f.length],
     ['a leaf imports the kit\'s instance', () => audit(swap(leaf, s => `import { INSTANCE } from '../instance.js'\n` + s)).f.length],
     ['nothing places the town', () => audit(swap(TOWN, s => s.replace(/<TownPlace\b[^>]*\/>/g, ''))).f.length],
