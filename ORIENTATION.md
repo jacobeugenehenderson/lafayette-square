@@ -117,7 +117,13 @@ on the one drawn surface, by a height baked per object (`cartograph/ARCHITECTURE
 occlusion, a manifest. One rule decides what's lit, for every family:
 `((polygon − exclusions) ∪ activate) − hide`, ordered so the finest gesture wins (`activate` beats an exclusion,
 `hide` beats everything; `NEIGHBORHOOD-INPUTS §5.2`), the disc where no polygon is authored
-(`cartograph/membership.mjs#createMembershipFilter`; ⛔ a second copy measures from the origin). The Ward plays three
+(`cartograph/membership.mjs#createMembershipFilter`). **Trees are impostors, not models** (Jacob: *"We're all
+impostor, no models, no textures"*; *"THERE ARE NO MESHES UNLESS SPECIFIED IN THE ARBORIST, PERIOD"*,
+`arborist/ARCHITECTURE` §Tree-render reality): every tree draws as its species' hero impostor, an AUTHORED capture
+carried in the look's `trees-atlas.json`; a model draws only for a species on the Arborist's mesh bar. One rule,
+`src/lib/treeGeometry.js#slabTreeGeometry`, read by the player, the uploader and the verifier. The models are
+authoring input, never payload. ⛔ A renamed look must carry its hero impostors, or every tree falls back to a model.
+The Ward plays three
 payloads: the slab, the content (names, listings, history) and the installation config (identity, branding, and
 a manifest that switches features on, never inferred from the data's presence; `ls/ARCHITECTURE.md §6`). If it
 isn't in the slab, the public never sees it. Publish puts a slab on staging; Promote puts it on the town's address.
