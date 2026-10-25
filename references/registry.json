@@ -1129,6 +1129,24 @@
       "status": "PERMITTED (pending Jacob's confirmation)"
     },
     {
+      "id": "usace-ncmp-topobathy-erie-2020",
+      "title": "2020 USACE NCMP Topobathy Lidar DEM: Lake Erie (MI, OH) — 1 m bare-earth GeoTIFFs, NAD83(2011) UTM 17N + IGLD85 (NOAA Digital Coast 9971)",
+      "publisher": "U.S. Army Corps of Engineers, JALBTCX (National Coastal Mapping Program); distributed by NOAA Office for Coastal Management",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.fisheries.noaa.gov/inport/item/71402",
+      "covers": [
+        "the lake bottom and shore within ~1 km of Ohio's Lake Erie shoreline, flown 2020-06-05…06-13 (Huron: 32 tiles, 17TLF…)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (InPort 71402: a USACE survey distributed by NOAA — a federal work). ⚠️ One tile (17TLF6984) was read before this row was written, to measure the depth it reached; recorded here, not hidden.",
+        "quote": "Access Constraints: None · Use Constraints: These data depict the heights at the time of the survey and are only accurate for that time. · Data Set Credit: Acknowledgement of the Joint Airborne Lidar Bathymetry Technical Center of eXpertise (JALBTCX)",
+        "approvedBy": "PENDING — Jacob to confirm (a federal work, as his standing acceptance of 2026-09-23 covers)"
+      },
+      "status": "PERMITTED (pending Jacob's confirmation)"
+    },
+    {
       "id": "noaa-bluetopo",
       "title": "NOAA OCS BlueTopo: national bathymetric compilation (COG tiles, NAD83 UTM + NAVD88)",
       "publisher": "NOAA Office of Coast Survey",
