@@ -25,7 +25,14 @@ clean/ is a SYMLINK into the main checkout, so the pour wrote there; pre-pour or
 **Splice (seam):** cuts, nodes and rim↔water BUILT (185e36b1, 839cf19f); LS 0 in every bucket. Ruled 2026-10-25: true offset at
 EVERY bend (one rule for the ink) · the reversed-face label shift (__boundary__ on street edges leaving a frame run, LS 91 …
 JH 179; pre-existing, a kit class) fixed in booleanLabelled's `segs` path, Zob reading first · unnoded skeleton crossings (HPDM
-primary-link-124 × heels-wheels, JH ×3) are skeleton-side, brief owed; the folds wait on them (one code path). Filed for later: Huron university-drive-east-1 = tertiary-97 (skeleton-side, 9 m apart in raw);
+primary-link-124 × heels-wheels, JH ×2) are the MINT's (crossings landing by a stroke vertex; Zob, measured; Boz first
+said skeleton, wrong) → brief §5a, construction owed by Splice; the folds wait on them (one code path).
+**Leg-ends:** the stop is a REGRESSION against SECTION's "a SHORE or RIM flank is no corner" (Jacob, 10-07): 608 PTown / 384 Huron
+shore turns became corners. Fix: `noStreetFlank` on `isStreetLeg` (Kerf, in measurement). The bar is restated (Boz): shore/rim
+census 0 as a check row; drawn-twice totals ≤ BEFORE on 4 towns, no new row > 1 m, every > 10% row with exhibits.
+**Filed for their own briefs:** protoRAt's smoothBend fires on coast vertices (no skeleton chain there) · skeleton.js#gradeFacts
+needs EVERY way off-grade (a part-tunnel chain inks at grade) · streetClass.js#isArea reads only area=yes (highway multipolygons
+chained as streets: JH 3, PTown 1, Huron 1). Filed for later: Huron university-drive-east-1 = tertiary-97 (skeleton-side, 9 m apart in raw);
 fetch.js#mergeGround dedupes on `f.id` but features carry `osmId` (latent; no town has a heavy pass); a pour-side refusal of
 two features from one source way (brief owed). **⛔ kerf/leg-ends-at-ladder STOP:** it moves PTown's curb (drawn-twice
 10623/16274 m → 12619/27953 m; mat:curb rows new); candidate: booleanLabelled calls moved off the byte-identical path; Kerf bisecting.
