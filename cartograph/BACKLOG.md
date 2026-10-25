@@ -8,10 +8,19 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 ## ▶ Forward list (2026-10-20 night) — LS · HPDM · PTown · Huron first
 
-### ⭐ HANDOFF — 2026-10-22 morning (Boz). Read this block first; everything below is detail.
+### ⭐ HANDOFF — 2026-10-25 overnight (Boz). Read this block first; everything below is detail.
+**▶ TONIGHT (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
+place.mjs, claims-a-chain-cut-keeps-its-owner-change. Briefed and DISPATCHED: the ① seam fix → **Splice**
+(`docs/briefs/BRIEF-the-ink-meets-inside-the-ink.md`; carrier = ioPreserveCollinear on both mint booleans, both folds go;
+Splice brings the node choice to Boz before step 2). **Kerf** (heavy slot, all night): leg-ends gates (the corner check pairs
+BEFORE/AFTER by position before Zob) → caps-from-shape → disc §1b/§2b (premise check first). **Zob** supports Splice, reviews
+Kerf first. **Ward** asleep: the Tower Light check RED/GREEN (Ward 400f687); ruling filed (14f20b8): the light goes out and its
+control goes away in every room except Society and Street; Street keeping both is ASPIRATION, parked. :5180 stays up.
+Disk: botanica/trees + test moved to the external drive Today (symlinked; INTAKE-CATALOGUE B1), dup zips deleted; 123 GB free.
+Memory index check: 11 dead citations left (most are LS data paths mid-rename, valid in the main checkout); go through them one at a time.
 **Live:** HPDM production = staging as served (pressed 03:54Z). **Staging:** LS as `lafayettesquare` (impostors carried, 6 s
 reveal) · HPDM · Ward d4b43fa on kit pin 7b68aad5 (movie pace/fov efdcc0bd + shadow box 630339b3; neon on one clock e947c22).
-**Integration branch** `integration/2026-10-20` @ 3d9c171f, unpushed, not in the main checkout. Landed tonight: land evidence one
+**Integration branch** `integration/2026-10-20` (`git log -1` for the head), unpushed, not in the main checkout. Landed 10-21/22: land evidence one
 partition (latticeNode.js) · membership one formula about `center` · cdl round-once · embeds through the quality profile · checks:
 edge-against-edge (_nearMiss), one blur ladder, membership-is-the-disc, paint-takes-the-rim-crossings · ORIENTATION = the compact
 end-to-end account (PIPELINE.md to the Diary).
@@ -21,7 +30,7 @@ end-to-end account (PIPELINE.md to the Diary).
 - `kerf/leg-ends-at-ladder` 98994f98 (WIP, worktree kerf-leg): a band leg ends where ladders differ or at iaCorner; iaCorner = arc OR
   ① turns (carried through the compound boolean). New check claims-a-label-change-ends-no-leg GREEN on 4 towns, mutant RED. Owed: the
   AFTER run of the corner/band checks, (a)–(c) re-baselines, band pairs PTown/HPDM, PTown stackOnly, TIERS. Residue: the ① seam (below).
-- `kerf/publish-impostor-records` d15fb231: publish only impostor files the atlas names (−113 MB/LS upload). Needs Zob's review.
+- ✅ `kerf/publish-impostor-records` MERGED (7ea04412, Zob PASS 2026-10-24). Old unnamed R2 objects: Ward's sweep call at press.
 - ✅ `kerf/ls-to-its-address` MERGED (squash d3d7400f, 2026-10-24, after Jacob opened LS in Stage). Its raw parcel files and LS's map.json are now untracked.
 - Ward: theward `ward/pin-2026-10-22` 9d6b303 (OPERATIONS 'Where things stand'; neon e947c22, check a5be102); kit `ward-pin/2026-10-22` 7b68aad5; the cache-busted `scratch/promote-rollback/backup-prod-slab.mjs` is kit 21936023 on `docs/conformance-2026-09-21` (bring it to integration). Ward parked: an unguarded localStorage read at start-up.
 - Ward chain: cbb42ca (ward/page-module-lookup) ← e947c22 (ward/lit-at-the-time-shown) ← a5be102 ← d4b43fa ← 9d6b303 (ward/pin-2026-10-22).
