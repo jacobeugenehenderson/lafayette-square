@@ -62,8 +62,8 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
 1. **Absorb the ink at the mint's exit:** each cell of the ink cut by the mint's own input centrelines touches exactly one FACE
    edge, and it joins that face. MEASURED (Zob, 2026-10-25, a buffered-cut instrument, Huron + PTown): street ink HOLDS (one tile
    per cell at a 4–6 mm cut; the interior misses vanish as the cut widens, so they're the instrument). The coast's water side
-   touches NO tile; it touches the water ring. So the faces are tiles AND water (both are faces of D). ❓ Jacob: the water-side
-   half of the coast ink goes to the water face (Boz's recommendation, under the shoreline doctrine). The frame-edge cells are
+   touches NO tile; it touches the water ring. So the faces are tiles AND water (both are faces of D). ✅ RULED (Jacob, 2026-10-25:
+   "yes, coast slit joins the water"): the water-side half of the coast ink joins the water face. The frame-edge cells are
    outside the disc. ⛔ The build's own construction is a ZERO-width cut (the centrelines noded into the ink by
    `latticeNode#nodeCrossings`, then the faces walked), not the buffered instrument. The tiles then meet on the centrelines, with
    no slit. At a node, the shared vertex closes each tile's wedge. Coast ink splits on the coast arc (sealed with it). §5a's
@@ -77,9 +77,9 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    That's a Layer 0 class-D constant that suited town #1. The centreline record carries a stripe KIND per run, chosen the way the
    style guide rules everything (2026-10-20: "choose only; the style decides, authoring handles fidelity"): the town's style picks
    the kind, data SELECTS among styles (OSM `lane_markings`, `lanes`, `divider`, `oneway`, class, grade) and never measures, and
-   Survey can override per run. ⛔ No class list in code. The KINDS (the set to draw) are owed to Jacob before build: a STYLE-GUIDE
-   question, proposed by Boz from MUTCD's centreline family (none · single broken yellow · double solid yellow · solid + broken),
-   with what data selects each.
+   Survey can override per run. ⛔ No class list in code. ✅ The KINDS, RULED (Jacob, 2026-10-25: "stripe kinds look right"):
+   none · single broken yellow · double solid yellow · solid + broken yellow (MUTCD's centreline family). What data selects each
+   is the builder's proposal to Boz, recorded in `STYLE-GUIDE` (one home) with its sources.
 4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, the slit's painting, and every
    reader of the removed paths (the ground deformer reads shape.json's `ink`: name what it reads instead).
 
