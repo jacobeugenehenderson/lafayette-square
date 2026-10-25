@@ -10,7 +10,7 @@
 //      extrapolate), and REFUSES a record with only the old single offset (never falls back to it);
 //   3. waterDatums#waterRecord places a lake level through that conversion;
 //   4. every lake town's raw/water-datums.json carries the conversion at its heights (a town without it is NAMED red).
-// MUTANTS (each RED): s_z=0 in the VDatum call · the span test dropped · the reader falls back to igld85InNavd88M · waterRecord adds the old offset.
+// MUTANTS (each RED): s_z=0 in the VDatum call · the span test dropped (extrapolates past the range) · the dedupe dropped · the reader falls back to igld85InNavd88M · waterRecord adds the old offset.
 //
 //   node checks/claims-a-lake-level-converts-at-its-own-height.mjs
 import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
@@ -47,6 +47,13 @@ say(threw, 'a record with only the offset asked at height 0 REFUSES')
 threw = false
 try { conv(H[0] - 0.5) } catch { threw = true }
 say(threw, `a height outside the recorded span (${H[0] - 0.5} m, below ${H[0]}) REFUSES, never extrapolated`)
+{
+  const dup = igld85ToNavd88({ igld85ToNavd88: { points: [[173.5, 173.567], [173.5, 173.567], [174.354, 174.421]] } }, 'fixture')
+  say(Number.isFinite(dup(173.9)), `duplicate heights are deduped, never a NaN (${dup(173.9).toFixed(4)})`)
+  let one = false
+  try { igld85ToNavd88({ igld85ToNavd88: { points: [[173.5, 173.567], [173.5, 173.567]] } }, 'fixture') } catch { one = true }
+  say(one, 'fewer than two distinct heights REFUSES')
+}
 
 console.log('── 3. the lake level is placed through it')
 {

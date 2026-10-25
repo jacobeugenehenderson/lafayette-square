@@ -26,7 +26,12 @@ import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './te
 export function igld85ToNavd88(D, scene = '?') {
   const P = D?.igld85ToNavd88?.points
   if (!Array.isArray(P) || P.length < 2) throw new Error(`⛔ the water level: '${scene}''s raw/water-datums.json carries no IGLD85 → NAVD88 conversion at the lake's heights${D?.igld85InNavd88M != null ? ` (only the old offset asked at height 0, ${D.igld85InNavd88M} m — wrong for a dynamic height)` : ''}. ▶ node cartograph/fetch-water-datums.mjs --scene=${scene}`)
-  const pts = [...P].sort((a, b) => a[0] - b[0])
+  // ⛔ ONE POINT PER HEIGHT: two at the same height (LWD equal to the record's min, a short record) would divide by zero
+  // below, a silent NaN. Deduped; fewer than two distinct heights REFUSES (Zob, 2026-10-25).
+  const byH = new Map()
+  for (const [h, n] of P) if (Number.isFinite(h) && Number.isFinite(n) && !byH.has(h)) byH.set(h, n)
+  const pts = [...byH].sort((a, b) => a[0] - b[0])
+  if (pts.length < 2) throw new Error(`⛔ the water level: '${scene}''s IGLD85 → NAVD88 conversion has ${pts.length} distinct height(s); two are needed to interpolate. ▶ node cartograph/fetch-water-datums.mjs --scene=${scene}`)
   const lo = pts[0][0], hi = pts[pts.length - 1][0]
   return (h) => {
     if (!(h >= lo - 1e-9 && h <= hi + 1e-9)) throw new Error(`⛔ IGLD85 → NAVD88: ${h} m lies outside the heights '${scene}''s record was converted at (${lo}…${hi} m); never extrapolated. ▶ node cartograph/fetch-water-datums.mjs --scene=${scene}`)

@@ -72,7 +72,7 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 > measured from it. ▶ `cat cartograph/data/<scene>/clean/terrain.json` · `node checks/claims-the-coast-is-the-lidars.mjs`
 > - ⭐ **THEN IT WRITES THE BED UNDER THE WATER — the REAL floor where there is one.** `fetch-bathymetry.mjs` lists
 >   the town's bathymetry tiles (`raw/bathymetry-sources.txt`, by coordinates: NOAA BlueTopo, then USACE NCMP
->   topobathy — one survey, the newest with a permitted registry row; NCEI CUDEM is a named rung not yet built, so a
+>   topobathy — one survey, ranked by its share of the town's water edge then recency, only with a permitted registry row; NCEI CUDEM is a named rung not yet built, so a
 >   town only it would cover is **not** verified-absent). ▶ `node checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs` Under the water
 >   the floor's depth below the level replaces the stand-in, down to the depth the bottom stops showing **at the town's
 >   LOW water** (the visibility depth below `water.low` — the town's `design.json#water`, else the kit's recorded

@@ -19,8 +19,10 @@
  *      at high water could not see: BRIEF-the-shore-is-one-line). Found on NOAA Digital Coast's public bucket by
  *      COORDINATES: every USACE collection's STAC extent is met against the bbox. ⛔ A survey is read only when its
  *      Digital Coast id has a PERMITTED row in references/registry.json (`digitalCoastId`; README rule 1): one with
- *      none is NAMED, never read. ⭐ ONE SURVEY (the kit's rule for the DEM too): the newest permitted survey that
- *      meets the bbox; the others are listed, not mixed. A collection with no STAC record is named, not asked.
+ *      none is NAMED, never read. ⭐ ONE SURVEY, ranked as the DEM is — COVERAGE first, recency last (Boz, 2026-10-25):
+ *      an NCMP survey is a shoreline corridor, so the newest may only clip a corner. Coverage = the share of the town's
+ *      water edge (coastline.mjs#coastRings, sampled at the terrain step) that lies on the survey's tiles. The others are
+ *      listed with their shares, never mixed. A town with no water edge ranks none. A collection with no STAC is named.
  *   3. NOAA NCEI CUDEM — ⛔ NOT BUILT YET.
  * ⛔ So a town the built rungs cannot cover is NOT verified-absent: rung 3 was never asked. The file says
  * which rungs ran and which did not, and the town keeps the profile, said, until they are built.
@@ -38,6 +40,10 @@ import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { requireExplicitMap } from './scene.js'
 import { writeIfChanged } from './io.js'
+import { coastRings } from './coastline.mjs'
+import { geographyFor, projectorOf, metresPerDegree, localBB } from './geography.mjs'
+import { discOf } from './boundaryRecords.mjs'
+import { TERRAIN_STEP_M } from './elevationSources.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const BUCKET = 'https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com'
@@ -100,6 +106,23 @@ export async function findBlueTopo(bbox, { fetcher = fetch } = {}) {
   } finally { rmSync(dir, { recursive: true, force: true }) }
 }
 
+/** The town's water edge as [lon, lat] samples one terrain step apart: coastline.mjs#coastRings (OSM's water, closed against
+ *  the bb, its own reading of "this is water"), the edge only where it lies inside the bb (the bb's own sides are no shore). */
+export function waterEdgeLL(scene, osm) {
+  const geo = geographyFor(scene), { lonToM, latToM } = metresPerDegree(geo, 'fetch-bathymetry'), bb = localBB(osm, projectorOf(geo))
+  const nb = JSON.parse(readFileSync(join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json'), 'utf8')), disc = discOf(nb, 'fetch-bathymetry')
+  const rings = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: [disc.cx, disc.cz], discR: disc.R, bb }).rings || []
+  const onBB = ([x, z]) => Math.abs(x - bb.x0) < 1e-3 || Math.abs(x - bb.x1) < 1e-3 || Math.abs(z - bb.z0) < 1e-3 || Math.abs(z - bb.z1) < 1e-3
+  const out = []
+  for (const r of rings) for (let k = 0; k < r.length; k++) {
+    const a = r[k], b = r[(k + 1) % r.length]
+    if (onBB(a) && onBB(b)) continue
+    const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / TERRAIN_STEP_M))
+    for (let i = 0; i < n; i++) { const x = a[0] + (b[0] - a[0]) * i / n, z = a[1] + (b[1] - a[1]) * i / n; out.push([geo.lon + x / lonToM, geo.lat - z / latToM]) }
+  }
+  return out
+}
+
 const meets = (b, bbox) => !(b[2] < bbox.minLon || b[0] > bbox.maxLon || b[3] < bbox.minLat || b[1] > bbox.maxLat)
 
 /** The Digital Coast ids with a PERMITTED registry row (references/registry.json `digitalCoastId`), → the row's id. */
@@ -125,9 +148,10 @@ async function usaceCollections(fetcher) {
 
 /**
  * USACE NCMP topobathy surveys that meet the bbox: { delivered: [{ tile, url, resolution, survey }], survey, others,
- * unpermitted, noStac }. ⭐ ONE survey: the newest (STAC temporal end) of those PERMITTED that meet the bbox.
+ * unpermitted, noStac, why }. ⭐ ONE survey: of those PERMITTED that meet the bbox, the one whose tiles hold the largest
+ * share of `edgeLL` (the town's water edge as [lon, lat] samples), then the newest (STAC temporal end).
  */
-export async function findNcmp(bbox, { fetcher = fetch, permitted = permittedDigitalCoast() } = {}) {
+export async function findNcmp(bbox, { fetcher = fetch, permitted = permittedDigitalCoast(), edgeLL = [] } = {}) {
   const meet = [], noStac = []
   for (const prefix of await usaceCollections(fetcher)) {
     const r = await fetcher(`${DC_BUCKET}/${prefix}stac/collection.json`)
@@ -142,20 +166,24 @@ export async function findNcmp(bbox, { fetcher = fetch, permitted = permittedDig
     meet.push({ prefix, id, start: t[0] || null, end: t[1] || t[0] || null, registry: permitted.get(id) || null })
   }
   const unpermitted = meet.filter(m => !m.registry)
-  const ok = meet.filter(m => m.registry).sort((a, b) => String(b.end).localeCompare(String(a.end)))
+  const ok = meet.filter(m => m.registry)
+  if (!edgeLL.length) return { delivered: [], survey: null, others: ok, unpermitted, noStac, why: 'the town has no water edge to rank a survey by' }
   for (const m of ok) {
     const r = await fetcher(`${DC_BUCKET}/${m.prefix}stac/noaa_item_collection_m${m.id}.json`)
     if (!r.ok) throw new Error(`Digital Coast ${m.prefix} item collection: HTTP ${r.status}`)
-    const items = (await r.json()).features || []
-    const delivered = []
-    for (const f of items) {
+    m.tiles = []
+    for (const f of (await r.json()).features || []) {
       if (!f.bbox || !meets(f.bbox, bbox)) continue
       const a = Object.values(f.assets || {}).find(x => /geotiff/i.test(x.type || '') && /\.tif$/i.test(x.href || ''))
-      if (a) delivered.push({ tile: f.id, url: a.href, resolution: /_1mGrid/i.test(f.id) ? '1m' : 'see tile', survey: m.id })
+      if (a) m.tiles.push({ tile: f.id, url: a.href, resolution: /_1mGrid/i.test(f.id) ? '1m' : 'see tile', survey: m.id, bbox: f.bbox })
     }
-    if (delivered.length) return { delivered, survey: m, others: ok.filter(o => o !== m), unpermitted, noStac }
+    const on = ([lon, lat]) => m.tiles.some(t => lon >= t.bbox[0] && lon <= t.bbox[2] && lat >= t.bbox[1] && lat <= t.bbox[3])
+    m.share = edgeLL.filter(on).length / edgeLL.length
   }
-  return { delivered: [], survey: null, others: ok, unpermitted, noStac }
+  ok.sort((a, b) => (b.share - a.share) || String(b.end).localeCompare(String(a.end)))
+  const best = ok.find(m => m.share > 0 && m.tiles.length)
+  if (!best) return { delivered: [], survey: null, others: ok, unpermitted, noStac, why: 'no permitted survey holds any of the town\'s water edge' }
+  return { delivered: best.tiles.map(({ bbox: _, ...t }) => t), survey: best, others: ok.filter(o => o !== best), unpermitted, noStac }
 }
 
 function render({ scene, bbox, found, tried }) {
@@ -179,7 +207,7 @@ async function main() {
   const rawDir = join(ROOT, 'cartograph', 'data', scene, 'raw')
   const osmPath = join(rawDir, 'osm.json')
   if (!existsSync(osmPath)) { console.error(`fetch-bathymetry: ${scene} has no raw/osm.json — fetch the town first`); process.exit(2) }
-  const bbox = JSON.parse(readFileSync(osmPath, 'utf8')).bbox
+  const osm = JSON.parse(readFileSync(osmPath, 'utf8')), bbox = osm.bbox
   if (!bbox) { console.error(`fetch-bathymetry: ${scene}'s raw/osm.json has no bbox`); process.exit(2) }
 
   console.log(`[fetch-bathymetry] ${scene}  bbox ${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
@@ -194,10 +222,10 @@ async function main() {
       tried.push({ ...rung, n: bt.delivered.length, note })
       if (bt.delivered.length) found = { name: rung.name, tiles: bt.delivered }
     } else if (rung.id === 'ncmp') {
-      const nc = await findNcmp(bbox)
-      const S = nc.survey
-      const note = (S ? `${nc.delivered.length} tile(s) of ${S.prefix.slice(4, -1)} (registry ${S.registry}), flown ${S.start?.slice(0, 10)}…${S.end?.slice(0, 10)}` : 'no permitted survey with tiles over the bbox')
-        + (nc.others.length ? ` · also permitted, NOT mixed: ${nc.others.map(o => o.prefix.slice(4, -1)).join(', ')}` : '')
+      const nc = await findNcmp(bbox, { edgeLL: waterEdgeLL(scene, osm) })
+      const S = nc.survey, pct = (m) => m.share == null ? 'not ranked' : `${(100 * m.share).toFixed(1)}% of the water edge`
+      const note = (S ? `${nc.delivered.length} tile(s) of ${S.prefix.slice(4, -1)} (registry ${S.registry}; ${pct(S)}), flown ${S.start?.slice(0, 10)}…${S.end?.slice(0, 10)}` : nc.why)
+        + (nc.others.length ? ` · also permitted, NOT mixed: ${nc.others.map(o => `${o.prefix.slice(4, -1)} (${pct(o)})`).join(', ')}` : '')
         + (nc.unpermitted.length ? ` · ⛔ meets the bbox but has NO permitted registry row (not read): ${nc.unpermitted.map(o => `${o.prefix.slice(4, -1)} (Digital Coast ${o.id})`).join(', ')}` : '')
         + (nc.noStac.length ? ` · ${nc.noStac.length} USACE collection(s) publish no STAC record, not asked` : '')
       tried.push({ ...rung, n: nc.delivered.length, note })
