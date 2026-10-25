@@ -124,7 +124,10 @@ async function main() {
   // ⭐ the town's cropland (USDA CDL) is a raster, read async here and handed to the synchronous derive
   const cropland = await loadCropland(SCENE, RAW_DIR, wgs84ToLocal)
   // a oneway=-1 way runs in travel order before anything reads it (streetClass#travelOrdered: the skeleton reads it so too)
-  const layers = deriveLayers(travelOrdered(snapped.ground.highway || [], 'derive'), { cropland })
+  // ⚙ DIAGNOSTIC, opt-in on the command line (never env): `--absorb-dump=<path>` writes the ink absorption's inputs if it refuses
+  const absorbDump = process.argv.find(a => a.startsWith('--absorb-dump='))?.slice('--absorb-dump='.length)
+  const onAbsorbRefusal = absorbDump ? (d) => { writeFileSync(absorbDump, JSON.stringify(d)); console.log(`    [①][absorb] ⚙ refusal inputs written to ${absorbDump}`) } : null
+  const layers = deriveLayers(travelOrdered(snapped.ground.highway || [], 'derive'), { cropland, onAbsorbRefusal })
   let buildings = deriveBuildings(snapped.buildings, raw.buildingSource)
 
   // ── Elevation ───────────────────────────────────────────────────────

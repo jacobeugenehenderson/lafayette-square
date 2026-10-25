@@ -405,7 +405,7 @@ export function outlineCorner(o, legs, eps = INK_EPS) {
   }
   return { bad, W }
 }
-export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null }) {
+export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null, onAbsorbRefusal = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
   // one — so it is computed unconditionally here. ⚠️ The live path used to gate
@@ -1065,8 +1065,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       // ⭐⭐ THE INK IS ABSORBED HERE, AT THE MINT'S EXIT (absorbInk.js): each face's PAINTED boundary, the ε strip cut along the
       // centrelines and spliced into the face that owns it. ② keeps reading `blocks` (the un-absorbed face); the tiles paint
       // from `paint`. Frozen beside the faces.
-      absorbed = absorbInk({ inkRings: R.rings, inkLabels: R.labels, frame: rect, frameOwner: bIdx, waterRings: Array.isArray(coast) ? coast : [], waterOwner: wIdx,
-        centrelines, spokes, outlineRefused, faces: blocks.map((_, k) => ({ labels: blockLabels[k], holeLabels: blockHoleLabels[k] })), owners })
+      const absorbIn = { inkRings: R.rings, inkLabels: R.labels, frame: rect, frameOwner: bIdx, waterRings: Array.isArray(coast) ? coast : [], waterOwner: wIdx,
+        centrelines, spokes, outlineRefused, faces: blocks.map((_, k) => ({ labels: blockLabels[k], holeLabels: blockHoleLabels[k] })), owners }
+      // a refusal hands its inputs (and the faces' rings) to the caller's diagnostic, when it asked for one, then stands
+      try { absorbed = absorbInk(absorbIn) } catch (e) { if (onAbsorbRefusal) onAbsorbRefusal({ ...absorbIn, blocks, blockHoles, error: e.message }); throw e }
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
     }

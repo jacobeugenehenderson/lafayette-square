@@ -1552,7 +1552,8 @@ function correctStreetWidths(streets, lamps, survey) {
 
 // ══════════════════════════════════════════════════════════════════
 
-export function deriveLayers(highways, { cropland = null } = {}) {
+export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null } = {}) {
+  const opts = { onAbsorbRefusal }
   console.log(`  ${highways.length} highway features`)
 
   // ── Load parcels ──────────────────────────────────────────────
@@ -4905,7 +4906,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     if (_holes > _coastHoles) throw new Error(`[①] ⛔ ${SCENE}: ${_holes - _coastHoles} street deck(s) stand clear of every shore (holes in the water the coast did not draw), so none has a land root to take its height from: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}`)
     if (_coast.coast) console.log(`    [①] coast: ${_water.rings.length} water ring(s), ${_water.arcs.length} shoreline arc(s) — ${_coast.doc.from}${_holes ? ` · ${_holes} island(s)` : ''}${_decks.decks.length ? ` · ${_decks.decks.length} street deck(s) taken out of the water: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}`)
     else console.log(`    [①] no coast: ${_coast.why}`)
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _water.rings, coastArcs: _water.arcs, bb: _bb })
+    // ⚙ DIAGNOSTIC: the caller's `onAbsorbRefusal` (pipeline.js, on `--absorb-dump=<path>`) receives the absorption's inputs when it refuses
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _water.rings, coastArcs: _water.arcs, bb: _bb, onAbsorbRefusal: opts.onAbsorbRefusal || null })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
     let protoBlockClass = null

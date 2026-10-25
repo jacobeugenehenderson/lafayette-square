@@ -37,7 +37,8 @@ export function holeProbe(hs, who = '①') {
   return [(h.from[0] + h.to[0]) / 2 - dy / L * 0.25, (h.from[1] + h.to[1]) / 2 + dx / L * 0.25]
 }
 
-export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings = [], waterOwner = null, centrelines, spokes = [], outlineRefused = [], faces, owners, who = '①' }) {
+export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings = [], waterOwner = null, centrelines, spokes = [], outlineRefused = [], faces, owners, who = '①', diag = null }) {
+  // `diag` (optional, a diagnostic's): filled with the PLACES behind a refusal — what each refused face or cell is made of
   if (!Array.isArray(centrelines)) throw new Error(`[${who}][absorb] ⛔ no sealed centreline — nothing to cut the ink by. Refusing.`)
   // ── 1. the inputs, on the lattice, each knowing what it is ──
   const inputs = []
@@ -62,7 +63,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
       const ku = key(u.k), kv = key(v.k), fwd = ku < kv, id = fwd ? ku + '|' + kv : kv + '|' + ku
       let e = edges.get(id); if (!e) edges.set(id, e = { a: fwd ? u.k : v.k, b: fwd ? v.k : u.k, tags: [] })
       // `along`: this input runs a → b along the edge
-      if (x.kind === 'ink') e.tags.push({ kind: 'ink', label: inkLabels[x.i]?.[u.edge] ?? null, along: fwd })
+      if (x.kind === 'ink') e.tags.push({ kind: 'ink', label: inkLabels[x.i]?.[u.edge] ?? null, along: fwd, ring: x.i })
       else if (x.kind === 'cl') e.tags.push({ kind: 'cl', rec: x.i, seg: u.edge, along: fwd })
       else if (x.kind === 'spoke') e.tags.push({ kind: 'spoke' })
       else e.tags.push({ kind: x.kind, along: fwd, side: sideOf[n] })
@@ -112,7 +113,9 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     let ink = null, water = false, frameIn = null, flags = false
     for (const c of f.cycles) for (const h of c.hs) { if (h.e.tags.some(t => t.kind === 'cl' || t.kind === 'spoke')) continue   // a centreline or a spoke: ink on both sides, says nothing
       for (const t of h.e.tags) { flags = true; const L = leftOf(h, t)
-        if (t.kind === 'ink') { if (ink === null) ink = L; else if (ink !== L) throw new Error(`[${who}][absorb] ⛔ a face at (${h.from.map(v => v / CLIP_SCALE)}) is both ink and not ink by its own edges. Refusing.`) }
+        if (t.kind === 'ink') { if (ink === null) ink = L; else if (ink !== L) {
+          if (diag) diag.bothInk = f.cycles.flatMap(c => c.hs.flatMap(g => g.e.tags.filter(u => u.kind === 'ink').map(u => ({ at: g.from.map(v => v / CLIP_SCALE), to: g.to.map(v => v / CLIP_SCALE), label: u.label, ring: u.ring, inkLeft: leftOf(g, u), cycle: g.cyc }))))
+          throw new Error(`[${who}][absorb] ⛔ a face at (${h.from.map(v => v / CLIP_SCALE)}) is both ink and not ink by its own edges. Refusing.`) } }
         else if (t.kind === 'water') { if (L) water = true }
         else if (t.kind === 'frame') frameIn = L } }
     f.type = (ink === true || (ink === null && !flags)) ? 'cell' : water ? 'water' : (frameIn === false || f === unbounded) ? 'outside' : 'land'
@@ -138,7 +141,10 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
       const S = facesOfLabel.get(t.label); ks = ks ? new Set([...ks].filter(k => S.has(k))) : new Set(S) }
     ks ||= new Set()
     if (ks.size === 1) f.group = [...ks][0]
-    else if (!ks.size) { f.group = 'none'; census.landUnnamed++ }
+    else if (!ks.size) { f.group = 'none'; census.landUnnamed++
+      if (diag) (diag.unnamed ||= []).push({ at: at0(f), cycles: f.cycles.length, area: f.cycles.reduce((t, c) => t + cycArea(c), 0) / 2 / CLIP_SCALE / CLIP_SCALE,
+        labels: [...new Set(f.cycles.flatMap(c => c.hs.flatMap(h => h.e.tags.filter(t => t.kind === 'ink').map(t => t.label))))].map(l => ({ l, owner: owners[l] ? `${owners[l].skelId}/${owners[l].side}/${owners[l].segOrd}` : null, faces: [...(facesOfLabel.get(l) || [])] })),
+        tags: [...new Set(f.cycles.flatMap(c => c.hs.flatMap(h => h.e.tags.map(t => t.kind))))] }) }
     else { f.group = 'none'; census.landTwoNames.push(`${[...ks].join('+')}@${at0(f)}`) } }
   // ── 3. every cell joins the one group across its ink edges ──
   const fr = frame.map(q => [rl(q[0]) * CLIP_SCALE, rl(q[1]) * CLIP_SCALE]), fx0 = Math.min(...fr.map(p => p[0])), fx1 = Math.max(...fr.map(p => p[0])), fz0 = Math.min(...fr.map(p => p[1])), fz1 = Math.max(...fr.map(p => p[1]))
@@ -151,7 +157,9 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     for (const c of f.cycles) for (const h of c.hs) if (h.e.tags.some(t => t.kind === 'ink') && !h.e.tags.some(t => t.kind === 'cl' || t.kind === 'spoke')) { const g = faceOfH(h.twin).group; if (g != null && g !== 'none') gs.add(g) }
     if (gs.size === 1) { f.group = [...gs][0]; census.joined++; if (f.group === 'water') census.toWater++ }
     else if (!gs.size) { f.group = 'none'; if (inFrame(f)) census.zero.push(at0(f)); else census.outside++ }
-    else { f.group = 'none'; census.two.push(`${[...gs].join('+')}@${at0(f)}`) }
+    else { f.group = 'none'; census.two.push(`${[...gs].join('+')}@${at0(f)}`)
+      if (diag) (diag.two ||= []).push({ at: at0(f), groups: [...gs], area: f.cycles.reduce((t, c) => t + cycArea(c), 0) / 2 / CLIP_SCALE / CLIP_SCALE,
+        labels: [...new Set(f.cycles.flatMap(c => c.hs.flatMap(h => h.e.tags.filter(t => t.kind === 'ink').map(t => t.label))))].map(l => ({ l, owner: owners[l] ? `${owners[l].skelId}/${owners[l].side}/${owners[l].segOrd}` : null })) }) }
   }
   for (const c of cycles) c.group = c.face.group ?? null
   const print = `[${who}][absorb] the ink cut by its centrelines: ${census.cells} cell(s) · ${census.joined} joined ONE face (${census.toWater} the water) · ${census.zero.length} touch none · ${census.two.length} touch two · ${census.outside} beyond the frame · land faces with no ① label ${census.landUnnamed}${census.landTwoNames.length ? ` · ⛔ ${census.landTwoNames.length} land face(s) named by two faces' labels` : ''}`
@@ -191,6 +199,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     paint[g] = { outer: o.p, outerLabels: o.l, holes: H2.map(x => x.p), holeLabels: H2.map(x => x.l) }
   }
   const unpainted = faces.map((f, k) => f && !paint[k] ? k : null).filter(k => k != null)
+  if (diag && unpainted.length) diag.unpainted = unpainted.map(k => ({ k, labels: [...new Set([...(faces[k].labels || []), ...(faces[k].holeLabels || []).flat()])].map(l => ({ l, owner: owners[l] ? `${owners[l].skelId}/${owners[l].side}/${owners[l].segOrd}` : null, faces: [...(facesOfLabel.get(l) || [])] })) }))
   if (unpainted.length) throw new Error(`[${who}][absorb] ⛔ ${unpainted.length} face(s) came out of the arrangement with no boundary (e.g. ${unpainted.slice(0, 6).join(', ')}). Refusing.`)
   if (unlabelled) throw new Error(`[${who}][absorb] ⛔ ${unlabelled} painted edge(s) carry no label — an edge whose owner the splice could not read. Refusing.`)
   // ── the cells the ground paints apart from the road: water and grade-separated owners ──
