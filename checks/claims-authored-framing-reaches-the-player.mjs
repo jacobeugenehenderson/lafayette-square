@@ -13,7 +13,10 @@
 // claims-the-camera-has-one-definition (a) fails any camera that reads it. It is listed, never failed.
 //
 // The Ward imports the kit through its PIN (the ward-kit worktree, theward/checks/kit.mjs). By default the graph
-// follows the pin — what the Ward reads TODAY. KIT_DIR=<kit> re-roots those imports onto another kit tree, which shows
+// follows the pin — what the Ward reads TODAY. ⭐ The pin is a worktree of the MAIN checkout (`<main>/.claude/worktrees/ward-kit`,
+// where the Ward's imports point), so it is found from git's common directory, never from this checkout's root: run from any
+// other worktree, the root-relative path named a folder that does not exist and the check reported itself blind (2026-10-25).
+// No pin there ⇒ refused by name. KIT_DIR=<kit> re-roots those imports onto another kit tree, which shows
 // what the Ward will read after the pin moves: run it with KIT_DIR=. before moving the pin.
 //
 //   node checks/claims-authored-framing-reaches-the-player.mjs            # the Ward as pinned
@@ -26,8 +29,23 @@ import { fileURLToPath } from 'node:url'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const WARD = path.resolve(process.env.WARD_DIR || path.join(process.env.HOME || '', 'Desktop/dev.nosync/theward'))
 const ENTRY = path.join(WARD, 'src/main.jsx')
-const PIN = path.join(ROOT, '.claude/worktrees/ward-kit')
+// the main checkout: ROOT itself when `.git` is a directory; else `.git` names this worktree's gitdir, whose `commondir` is
+// the main checkout's `.git`
+function mainCheckout(root) {
+  const dotgit = path.join(root, '.git')
+  if (!fs.existsSync(dotgit)) return null
+  if (fs.statSync(dotgit).isDirectory()) return root
+  const gitdir = fs.readFileSync(dotgit, 'utf8').match(/^gitdir:\s*(.+)$/m)?.[1]?.trim()
+  if (!gitdir) return null
+  const wt = path.resolve(root, gitdir), cf = path.join(wt, 'commondir')
+  if (!fs.existsSync(cf)) return null
+  return path.dirname(path.resolve(wt, fs.readFileSync(cf, 'utf8').trim()))
+}
+const MAIN = mainCheckout(ROOT)
+if (!MAIN) { console.error(`⛔ cannot find the main checkout from ${ROOT} (no .git, or a worktree .git with no commondir) — NOT CHECKED`); process.exit(1) }
+const PIN = path.join(MAIN, '.claude/worktrees/ward-kit')
 const KIT = process.env.KIT_DIR ? path.resolve(process.env.KIT_DIR) : null
+if (!process.env.KIT_DIR && !fs.existsSync(path.join(PIN, 'src'))) { console.error(`⛔ the Ward's kit pin is not at ${PIN} (no src/) — NOT CHECKED; recreate the ward-kit worktree, or set KIT_DIR`); process.exit(1) }
 if (!fs.existsSync(ENTRY)) { console.error(`⛔ the Ward is not at ${WARD} (no src/main.jsx) — set WARD_DIR`); process.exit(1) }
 
 // ── the framing keys, read off bake-scene's camera block ──
