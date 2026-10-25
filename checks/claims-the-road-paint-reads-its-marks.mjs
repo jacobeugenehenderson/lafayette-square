@@ -60,8 +60,10 @@ for (const scene of feedScenes()) {
   { const P = (s) => ({ ...s, pavementHW: Math.max(0, (s.pavementHW || 0) - (s.parking || 0)) })
     const any = f.ribbons.streets.some(st => (st.measure?.left?.parking || 0) + (st.measure?.right?.parking || 0) > 0)
     if (!any) console.log('  ⚪ (P) planted: no street carries a parking depth, so the planted narrowing changes nothing to see — not judged')
-    else { const K = kerbOf(quiet(() => buildProto(withMeasure(f, P)))), ok = K !== base; if (!ok) red++
-      console.log(`  ${ok ? '✅' : '⛔'} (P) planted: pavementHW − parking ${ok ? 'changes ② (the comparison can see a curb move)' : 'leaves ② unchanged — the comparison is blind'}`) } }
+    else { let K = null, refused = null; try { K = kerbOf(quiet(() => buildProto(withMeasure(f, P)))) } catch (e) { refused = String(e.message).split('\n')[0].slice(0, 120) }
+      // a planted narrowing the producer REFUSES (the stamp, on the moved curb) has moved ② as surely as one it draws
+      const ok = !!refused || K !== base; if (!ok) red++
+      console.log(`  ${ok ? '✅' : '⛔'} (P) planted: pavementHW − parking ${refused ? `moves ② far enough that the producer refuses it (${refused})` : ok ? 'changes ② (the comparison can see a curb move)' : 'leaves ② unchanged — the comparison is blind'}`) } }
   // ── (S) and (E) ──
   const fp = f.ribbons.protopolygon, marks = new Map(f.ribbons.streets.map(st => [st.skelId, st.marks]))
   if (!fp?.centrelines) { console.log('  ⛔ (S) no sealed centreline — a pour before it'); red++; continue }

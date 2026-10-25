@@ -2312,11 +2312,15 @@ const PAINTED = { A: 'asphalt', C: 'curb', W: 'sidewalk', R: 'curbCut', S: 'shor
 // absorbed ink a WATER-owned edge holds is the land's shore (`S`), a HIGHWAY's is the highway's, left to H and painted by it,
 // everything else is the asphalt (`A`). Both cut from the one band, so the rim is never cut again. A tile with no such cell
 // is all asphalt.
+// ⛔ The shore is the CELLS THEMSELVES — exact lattice rings out of the arrangement, wholly inside the band — never band ∩ cells:
+// that second boolean rounded the boundary it shared with the asphalt a second time, and the two met up to a step apart
+// (claims-no-edge-is-drawn-twice, the probe of 2026-10-25: asphalt / shore drawn twice). Only the asphalt is cut, by the cells'
+// own edges.
 function bandByClass(band, st) {
   const of = (cls) => (st.inkCells || []).filter(c => c.cls === cls).flatMap(c => c.rings)
   const shore = of('shore'), hwy = of('highway')
   if (!shore.length && !hwy.length) return { A: band, S: [] }
-  return { A: differenceRings(band, [...shore, ...hwy]), S: shore.length ? intersectRings(band, shore) : [] }
+  return { A: differenceRings(band, [...shore, ...hwy]), S: shore }
 }
 const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
 
@@ -4288,7 +4292,9 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
       const probe = Math.min(0.01, bl / 4), inRegion = (x, z) => rings.reduce((w, r) => w + windingXZ(r, x, z), 0) !== 0
       const lIn = inRegion(mx - uz * probe, mz + ux * probe), rIn = inRegion(mx + uz * probe, mz - ux * probe)
       if (lIn === rIn) throw new Error(`[tileGround][paint] ⛔ kerb ring ${si} of a tile: the region is on ${lIn ? 'both' : 'neither'} side(s) of its longest edge at (${mx.toFixed(3)}, ${mz.toFixed(3)}) — no outward side to strike the paint toward. Refusing.`)
-      const toward = lIn ? -1 : 1   // +1: the street is on the edge's RIGHT; −1: on its left
+      // the region (the block, inside its curb) is on the side the probe found it; the street is on the OTHER side. ⛔ This was
+      // inverted (the probe of 2026-10-25): every leg struck its paint INTO the block, so no corridor met and no stripe was drawn
+      const toward = lIn ? 1 : -1   // +1: the street is on the edge's RIGHT (the block on its left); −1: on its left
       let start = -1
       for (let e = 0; e < n; e++) if (runOf(e) != null && runOf((e - 1 + n) % n) !== runOf(e)) { start = e; break }
       if (start < 0) return       // no leg ends on this ring (one run all round, or none): no frontage to stop at
