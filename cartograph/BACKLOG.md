@@ -24,6 +24,9 @@ end-to-end account (PIPELINE.md to the Diary).
 - `kerf/publish-impostor-records` d15fb231: publish only impostor files the atlas names (−113 MB/LS upload). Needs Zob's review.
 - `kerf/ls-to-its-address` f44df473: the rename + no default town. Merges after Jacob opens LS in Stage from kerf-rename.
 - Ward: theward `ward/pin-2026-10-22` 9d6b303 (OPERATIONS 'Where things stand'; neon e947c22, check a5be102); kit `ward-pin/2026-10-22` 7b68aad5; the cache-busted `scratch/promote-rollback/backup-prod-slab.mjs` is kit 21936023 on `docs/conformance-2026-09-21` (bring it to integration). Ward parked: an unguarded localStorage read at start-up.
+- Ward chain: cbb42ca (ward/page-module-lookup) ← e947c22 (ward/lit-at-the-time-shown) ← a5be102 ← d4b43fa ← 9d6b303 (ward/pin-2026-10-22).
+  Owed: the Tower Light mutant for cbb42ca (Scene.jsx's putOutTowerLight on leaving Society, removed → its check RED), awaiting Jacob's
+  okay for hot reloads. Dev servers: :5173 is Jacob's; :5180 was started 10-21 by Ward's specialist (still running).
 - `zob/no-town-default` b8abba10: same change as 766a8c65 already on the rename branch (same subject); retire it when the rename merges.
 - `kerf/ownership-once` f21f288c (kerf-own): SUPERSEDED by the one height field (it edits the retired groundDeformer.mjs; it raised seam
   steps 60%). Retire it. `kerf/simplify-in-bake` 03c42d5f (worktree kerf): the mesh simplifier, HELD (too slow, 725 s), not superseded.
