@@ -81,18 +81,8 @@ the eye:
 
 ⚠️ **This is a gate to MAKE green, not a regression test that passes today: on the frozen LS face it fails
 on ALL 50 dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or
-an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`; **target 0**.
-
-> ⭐ **THE PROBES RUN ON TRUNK (ported 2026-07-30, Boz).** `coupler-fold-legs.mjs` (the shared helper) +
-> `coupler-slit-universal.mjs` · `coupler-slit-anatomy.mjs` · `coupler-fe-coverage.mjs` derive every dead-end
-> fold from the **frozen face artifact alone** — `ribbons.tiles[].{ring, edges{skelId,side}, caps{vertexIdx}}`
-> — walking run spans by INTEGER RING INDEX, never by position (position collapses at a zero-width spur).
-> No Slice-1 fields, no src change. Just `node scratch/coupler-slit-universal.mjs`.
->
-> ⛔ **The BRANCH originals (`polygon-asks-stamp`) still read `run.foldBranch` / `run.walkOrd` /
-> `buildFoldWalkIndex`, and copying THOSE to trunk does not fail — it lies** (`coupler-slit-anatomy` prints
-> nothing; `coupler-slit-universal` prints `0 slits`, which reads as *"no defect"*). The ported versions
-> replaced them; don't re-copy from the branch.
+an equivalent. Checks 1–2 have no live instrument: their probes walked `ribbons.tiles[]`, which is deleted (record:
+`_archive/POLYGON-FIRST-slit-probes-on-ribbons-tiles-RETIRED-2026-10-25.md`); **target 0**.
 
 > ⭐⭐ **THE MEASUREMENT — two different vertices, two different numbers. Never conflate them.**
 > ▶ `node scratch/coupler-slit-universal.mjs` (TIP, Checks 1–2) · `node scratch/coupler-slit-anatomy.mjs` (MOUTH, Check 5)

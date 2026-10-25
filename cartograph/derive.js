@@ -29,9 +29,7 @@ import { classify } from './classify.js'
 import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
 import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 import { expresswaySpeeds } from './speedContext.mjs'
-// [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
-// tileGround consumes the frozen result and keeps this same function only as
-// its fallback for pre-D2 artifacts.
+// ① is minted HERE at prebake (`mintProtopolygon`) and frozen into the artifact; the other two imports run beside it.
 import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
@@ -1809,9 +1807,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // Inject neighborhood boundary as closing edges (dense polyline so face
   // rings step through many short segments rather than one long chord —
   // avoids visible straight edges in the fade zone).
-  // boundaryPolyXZ is captured here (raw [x,z] pairs) and reused by the D2
-  // block-face freeze far below, which clips the face-streets to it + injects
-  // it as closing edges so the perimeter block faces CLOSE (Brief F edge-of-map).
+  // boundaryPolyXZ is captured here (raw [x,z] pairs) and read again far below as ①'s `boundary`
+  // (mintProtopolygon) and by the ramp flares.
   let boundaryPolyXZ = null
   let boundaryCenter = null, boundaryRadius = 0
   let protoWaterRings = null
@@ -3824,8 +3821,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // B's global CENTROID — on a snaking corridor a segment's perp can point
     // away from the centroid while the mate runs right alongside (s18-6
     // verified flipped; the E3.4 foot-vote bug class). The local foot is the
-    // operational half-edge adjacency until the D2 face freeze carries it as
-    // a frozen face fact (OSM2STREETS-GROUNDING §2 'innerSign' row).
+    // operational half-edge adjacency until a frozen face fact carries it (the port
+    // to face adjacency is open: RIBBONS, E3.4's prescription; OSM2STREETS-GROUNDING §2 'innerSign' row).
     // CONVENTION (pin it here, it has bitten twice — see tileGround.js:347):
     // the perp used below, (-dz, dx), is what production's measure calls the
     // RIGHT-perp. So innerSign === +1 means the partner (the median) lies on
@@ -4791,8 +4788,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // (1,123 skeleton points vs 9,547) — so this loses no shape, only density. SMOOTHNESS IS
   // SKELETON's and it is already in these points; ROUNDING is Survey's and happens after ② is
   // offset (`RIBBONS §1`). ① sits between the two stages and does neither.
-  // ⚠️ The D2 walk above deliberately uses `strokePoints` (the corrected chains, so a
-  // divided→through median face does not pinch). ① does NOT and now must not.
+  // ⚠️ ① does NOT use `strokePoints` (the corrected chains) and must not.
   {
     // ⛔ NO FALLBACK TO THE DENSE CHAINS. A silently dense ① is exactly the failure this ruling
     // fixes and it is invisible — it renders, it just carries hundreds of phantom vertices. So a
