@@ -58,7 +58,7 @@ import { wetLoops } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
 import { deckStructures, defaultDeckWidthM } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
-import { COAST_FILE } from './coastFile.mjs'
+import { COAST_FILE, heldCells } from './coastFile.mjs'
 import { discOf } from './boundaryRecords.mjs'
 
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -158,30 +158,6 @@ export function flattenedWater(wet, deck, ground) {
   let mode = null, best = 0
   for (const [key, c] of hist) if (c > best) { best = c; mode = key }
   return best >= 2 ? { navd88: mode / 100, share: +(best / cells).toFixed(4), cells } : null
-}
-
-/** Mapped lines that hold water, drawn into the grid in half-cell steps (an 8-connected line a 4-way fill cannot cross). */
-export function heldCells(osmGround, grid) {
-  const { W, H, x0, z0, step } = grid
-  const held = new Uint8Array(W * H)
-  let n = 0
-  for (const bucket of Object.values(osmGround || {})) {
-    if (!Array.isArray(bucket)) continue
-    for (const f of bucket) {
-      const t = f?.tags || {}
-      if (!(t.man_made === 'dyke' || t.embankment === 'yes' || t.waterway === 'dam')) continue
-      const c = (f.coords || []).filter(q => Number.isFinite(q.x) && Number.isFinite(q.z))
-      for (let m = 1; m < c.length; m++) {
-        const L = Math.hypot(c[m].x - c[m - 1].x, c[m].z - c[m - 1].z), steps = Math.max(1, Math.ceil(L / (step / 2)))
-        for (let u = 0; u <= steps; u++) {
-          const i = Math.round((c[m - 1].x + (c[m].x - c[m - 1].x) * u / steps - x0) / step)
-          const j = Math.round((c[m - 1].z + (c[m].z - c[m - 1].z) * u / steps - z0) / step)
-          if (i >= 0 && j >= 0 && i < W && j < H && !held[j * W + i]) { held[j * W + i] = 1; n++ }
-        }
-      }
-    }
-  }
-  return { held, n }
 }
 
 /**

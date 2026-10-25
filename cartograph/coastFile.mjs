@@ -55,3 +55,28 @@ export function maskOf(rings, width, height, bounds) {
   }
   return mask
 }
+
+/** Mapped lines that hold water (man_made=dyke · embankment=yes · waterway=dam), drawn into the grid in half-cell steps (an 8-connected line a 4-way fill cannot cross). */
+export function heldCells(osmGround, grid) {
+  const { W, H, x0, z0, step } = grid
+  const held = new Uint8Array(W * H)
+  let n = 0
+  for (const bucket of Object.values(osmGround || {})) {
+    if (!Array.isArray(bucket)) continue
+    for (const f of bucket) {
+      const t = f?.tags || {}
+      if (!(t.man_made === 'dyke' || t.embankment === 'yes' || t.waterway === 'dam')) continue
+      const c = (f.coords || []).filter(q => Number.isFinite(q.x) && Number.isFinite(q.z))
+      for (let m = 1; m < c.length; m++) {
+        const L = Math.hypot(c[m].x - c[m - 1].x, c[m].z - c[m - 1].z), steps = Math.max(1, Math.ceil(L / (step / 2)))
+        for (let u = 0; u <= steps; u++) {
+          const i = Math.round((c[m - 1].x + (c[m].x - c[m - 1].x) * u / steps - x0) / step)
+          const j = Math.round((c[m - 1].z + (c[m].z - c[m - 1].z) * u / steps - z0) / step)
+          if (i >= 0 && j >= 0 && i < W && j < H && !held[j * W + i]) { held[j * W + i] = 1; n++ }
+        }
+      }
+    }
+  }
+  return { held, n }
+}
+

@@ -23,8 +23,8 @@ export function waterRuns(shape) {
   return out
 }
 
-// ── Shared by every bake that walks the shore (bake-revetment, bake-shore-median); moved here from bake-revetment.js
-// 2026-10-04 so a second walker reads the shore the same way without inheriting the revetment's own inputs. ──
+// ── Shared by every walker of the shore (bake-revetment, the shore checks and the gaps harness); moved here from
+// bake-revetment.js 2026-10-04 so a second walker reads the shore the same way without inheriting the revetment's inputs. ──
 
 /** Walk a polyline at a fixed step. ⛔ NOT optional after `simplify`. */
 export function resample(pts, step) {
@@ -128,7 +128,7 @@ export function clipTraceToDisc(trace, D) {
 }
 
 /**
- * ⭐ THE COAST VERDICT, decided ONCE for every shore step (revetment, shore-median, coast-distance, ground).
+ * ⭐ THE COAST VERDICT, decided ONCE for every shore step that reads the slab's shoreline (revetment, coast-distance).
  * Only shoreline runs that reach the town's DRAWING — the terrain grid, `terrain.json#bounds`, the same region
  * bake-terrain#waterDatum asks (coast-in-drawing.mjs) — count toward the agreement. A run wholly outside it is in the
  * fetch envelope only: NO SHORE for this town, set aside and NAMED (Jacob, 2026-10-06; Jackson Heights' Flushing Bay).

@@ -5,11 +5,14 @@
 // the height field must say the same thing about where the land ends:
 //   (a) DRY BED — cells under the mask whose lidar stood above that cell's HIGH level: land the coast called water. The
 //       bed overwrites them, so terrain.bin cannot show it; bake-terrain#writeBed RECORDS them, before digging, as
-//       terrain.json `bed.dry` (row runs; rock excluded, `bed.rock`). Read here, never recomputed.
+//       terrain.json `bed.dry` (row runs; rock excluded, `bed.rock`). Read here, never recomputed (the slot-run
+//       cross-check is checks/claims-the-dry-bed-record-is-the-lidar.mjs). ⭐ GATED AT 0 off the line (Boz, 2026-10-25):
+//       a cell whose centre lies within one grid diagonal of a coast edge straddles a line traced at the source's pixel,
+//       so it may read either way; those are printed, never gated. No dry baseline is carried.
 //   (b) WET LAND — on terrain.bin: ground OUTSIDE the mask, inside the disc, below that cell's LOW level: water at every
 //       tide that the coast called land (Zob's definition; Boz, 2026-10-25).
 //   and, printed for the sand line (step 4), never gated: the INTERTIDAL — ground outside the mask below HIGH and
-//       4-connected to the water (a mapped dike holds it: bake-coast#heldCells), the band the tide covers: the beach.
+//       4-connected to the water (a mapped dike holds it: coastFile.mjs#heldCells), the band the tide covers: the beach.
 // Both are printed in m² per town against a DATED BASELINE (on the OSM coast, below) and are RED if worse than it. The brief's target is ~0 for both.
 // ⭐ SEEN TO FAIL, every run: (b) is measured again with the mask shifted by the brief's p50 coast-vs-lidar offset
 // (4.34 m) on each axis; a mask that is not the shore must not score better, or the instrument cannot see the shore.
@@ -19,16 +22,15 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
-import { readCoast, maskOf, COAST_FILE } from '../cartograph/coastFile.mjs'
-import { heldCells } from '../cartograph/bake-coast.mjs'
+import { readCoast, maskOf, heldCells, COAST_FILE } from '../cartograph/coastFile.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 import { localBB, projectorOf, geographyFor } from '../cartograph/geography.mjs'
 import { ringsInDrawing } from '../cartograph/coast-in-drawing.mjs'
 import { discOf } from '../cartograph/boundaryRecords.mjs'
 
-// m², on ①'s waterRings (the OSM coast) and the 2026-10-25 tranche terrain: Zob's probe (cause not established for
-// PTown's dry). `dry` is re-measured here once a terrain carries bed.dry; `wet` was reproduced by this instrument.
-const BASELINE = { huron: { dry: 8123, wet: 350 }, provincetown: { dry: 249438, wet: 0 } }
+// (b)'s dated baseline, m², on ①'s waterRings (the OSM coast) and the 2026-10-25 tranche terrain: Zob's probe, reproduced
+// by this instrument. ⛔ No (a) baseline: Zob's post-dig figure was the kept rock, which bed.dry excludes (Boz, 2026-10-25).
+const BASELINE = { huron: { wet: 350 }, provincetown: { wet: 0 } }
 const P50_M = 4.34   // the brief's §0: the lidar trace's p50 offset off ①'s OSM coast on Huron
 
 const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
@@ -92,11 +94,24 @@ for (const scene of scenes) {
   const dry = tj.bed?.dry
   if (!dry) console.log(`  (a) NOT CHECKED — terrain.json has no bed.dry (baked before writeBed recorded it; ▶ re-bake the terrain)`)
   else {
-    const m2 = dry.cells * dry.cellM2, ok = !base || m2 <= base.dry + dry.cellM2 / 2
-    console.log(`  ${ok ? '✅' : '⛔'} (a) dry bed ${Math.round(m2).toLocaleString()} m² (${dry.cells.toLocaleString()} cells; rock kept apart: ${tj.bed.rock?.cells ?? 0})${base ? ` (baseline ${base.dry.toLocaleString()} m²)` : ''}`)
+    // the coast's edges in a 20 m bucket grid; a dry cell is ON THE LINE within one grid diagonal of one
+    const diag = Math.hypot(sx, sz), CELL = 20, segs = new Map()
+    for (const r of rings) for (let k = 0; k < r.length; k++) { const a = r[k], b = r[(k + 1) % r.length]
+      for (let gx = Math.floor(Math.min(a[0], b[0]) / CELL); gx <= Math.floor(Math.max(a[0], b[0]) / CELL); gx++)
+        for (let gz = Math.floor(Math.min(a[1], b[1]) / CELL); gz <= Math.floor(Math.max(a[1], b[1]) / CELL); gz++) {
+          const key = gx + ',' + gz; if (!segs.has(key)) segs.set(key, []); segs.get(key).push([a, b]) } }
+    const near = (x, z) => { for (let gx = Math.floor((x - diag) / CELL); gx <= Math.floor((x + diag) / CELL); gx++) for (let gz = Math.floor((z - diag) / CELL); gz <= Math.floor((z + diag) / CELL); gz++)
+      for (const [a, b] of segs.get(gx + ',' + gz) || []) { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
+        if (Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= diag) return true } return false }
+    let onLine = 0, off = 0
+    const R = dry.runs
+    for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) { if (near(X(i), Z(R[q]))) onLine++; else off++ }
+    if (onLine + off !== dry.cells) { console.log(`  ⛔ (a) bed.dry says ${dry.cells} cells and its runs hold ${onLine + off}`); red++ }
+    const ok = off === 0
+    console.log(`  ${ok ? '✅' : '⛔'} (a) dry bed off the line: ${off.toLocaleString()} cell(s) = ${Math.round(off * dry.cellM2).toLocaleString()} m² (gate 0) · on the line (within ${diag.toFixed(2)} m of a coast edge): ${onLine.toLocaleString()} cell(s) = ${Math.round(onLine * dry.cellM2).toLocaleString()} m², printed · rock kept apart: ${tj.bed.rock?.cells ?? 0}`)
     if (!ok) red++
   }
 }
-if (red) { console.log(`\n⛔ ${red} town(s) disagree with the field more than their baseline, or the instrument is blind.`); process.exit(1) }
+if (red) { console.log(`\n⛔ ${red} failure(s): a dry bed off the line, wet land past its baseline, or a blind instrument.`); process.exit(1) }
 if (!checked) { console.log('\n⚠️ NOT CHECKED: no town has its coast, terrain and levels yet.'); process.exit(2) }
-console.log(`\n✅ ${checked} town(s): the shore agrees with the field at least as well as the dated baseline.`)
+console.log(`\n✅ ${checked} town(s): no dry bed off the line, and no more wet land than the dated baseline.`)

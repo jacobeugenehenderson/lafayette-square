@@ -12,7 +12,8 @@
  *     `cartograph/data/<town>/clean/bake-timings.json` (serve.js `saveBakeTiming`) — `ground`, plus `ground-shore` where
  *     the town paid it (Boz's ruling, 2026-10-13: the shore median is retired — 2026-10-25, BRIEF-the-shore-is-one-line
  *     step 3 — so ONE pass must fit under what the town paid for two). `ground` is required; a pass the town never ran costs it nothing.
- *     ⭐ GROUND_PASSES is a list, not read from serve.js, ON PURPOSE: the ceiling is what was PAID, and must not shrink
+ *     ⭐ 'ground-shore' is RETIRED as of 9d2f915f (2026-10-25, with the shore median); it stays in the list only so a town's
+ *     ceiling is still what it PAID. GROUND_PASSES is a list, not read from serve.js, ON PURPOSE: the ceiling is what was PAID, and must not shrink
  *     the day a pass is retired. It cannot go stale silently: every serve.js step that runs `node bake-ground.js` must
  *     be in it, or the check refuses.
  *   · the candidate's town = its own `ground.json` `look` (never an argument, so a slab cannot be judged against another
