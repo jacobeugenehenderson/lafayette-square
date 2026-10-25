@@ -61,7 +61,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-worker-deploy-darkens-no-town.mjs` | outbound | calls fetch() |
 | `checks/claims-an-early-frame-key-is-held.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
 | `checks/claims-an-external-base-survives-a-bake.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · runs `node` — not a known-local command |
-| `checks/claims-an-impostor-town-fetches-no-atlas.mjs` | outbound | writeFileSync · mkdirSync · deletes files · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
+| `checks/claims-an-impostor-town-fetches-no-atlas.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of scripts/slab-publish-rule.mjs — read, safe · computed import() with no readable target — runs arbitrary modules · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-authored-skelids-keep-their-ways.mjs` | unreadable | deletes files — only under its own temp dir · child_process with a non-literal command — cannot be read |
 | `checks/claims-deployment-has-one-authority.mjs` | outbound | calls fetch() · imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-app-mounts-the-set-piece.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
@@ -155,7 +155,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 319. This is `npm test`.
+## safe — 320. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -330,6 +330,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-photo-loads-from-someone-elses-server.mjs` | every listing photograph is ours, and |
 | `checks/claims-no-shadowed-chains.mjs` | WHY. Jacob's eye, 2026-09-06, on Survey: two navy centerlines running near-parallel with a |
 | `checks/claims-no-slab-outlives-its-schema.mjs` | CLAIM: no baked slab is read under a fade model it was not baked for. |
+| `checks/claims-no-sub-ink-edge-between-two-owners.mjs` | CLAIM — ① HAS NO EDGE SHORTER THAN ITS INK IS WIDE BETWEEN TWO CHAINS. ① is every chain stroked to ε and united, so its ink |
 | `checks/claims-no-town-carries-the-mould.mjs` | "DOES ANY TOWN CARRY ANOTHER TOWN'S PLACES?" — continuity map §7 #2 (Phase 2 C, 2026-10-04). |
 | `checks/claims-no-town-name-gates-the-kit.mjs` | "DOES ANY KIT CODE STILL DECIDE BY A TOWN'S NAME?" — BRIEF-ls-bleed-excision (Jacob, 2026-10-07: "fix the LS |
 | `checks/claims-no-town-rides-in-the-bundle.mjs` | "DOES ONE TOWN'S DATA SHIP TO EVERY TOWN?" — the stowaway, made impossible. |

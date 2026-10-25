@@ -6,8 +6,6 @@ off-arc leg ends (tileGround#sectionPassProtoTile `end`) where the two ladders a
 Kerf's leg-end build, it should read 0. **`cap-label/`**: `run.mjs <worktree> <scene> <re-mint ribbons>` asks ② (EC.labs)
 whether each ① cap record's label reaches a ② vertex, split by the disc (discOf); the 5 in-disc losses are BACKLOG's open class.
 **`flatten-refusal/`**: `probe.mjs <worktree> <scene> <out.json>` dumps a flatten `itemsByMembership` refusal — the hole, the
-ring that meets it, and which paint regions have edges there (it placed PTown's band spur). **`seam1mm.mjs <re-mint ribbons>`**
-(file only) lists ① block-ring edges ≤ 1.5 mm between two owners, by the skeleton's node degree (BACKLOG 3d9c171f).
-**`spur-depth.mjs <worktree> <scene>`** prints edgeDepths / bandPerp / pieces at a fixed point (edit P). `wd25.sh` is the
+ring that meets it, and which paint regions have edges there (it placed PTown's band spur). (`seam1mm.mjs` is promoted: `checks/claims-no-sub-ink-edge-between-two-owners.mjs`.) **`spur-depth.mjs <worktree> <scene>`** prints edgeDepths / bandPerp / pieces at a fixed point (edit P). `wd25.sh` is the
 watchdog the heavy runs used: it kills its process group below 25% free memory (a 1.5 GB bake sits under 35% on this machine).
-Each is a candidate check, not one: `leg-end` and `seam1mm` are the two worth promoting into `checks/`, mutation-tested.
+`leg-end` is not promoted: Kerf's `claims-a-label-change-ends-no-leg` (kerf/leg-ends-at-ladder) judges the painter's ramp ends and supersedes it.
