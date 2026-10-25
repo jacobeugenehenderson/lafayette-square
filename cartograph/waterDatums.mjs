@@ -17,6 +17,23 @@ import fs from 'fs'
 import { join } from 'path'
 import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './terrainReads.mjs'
 
+/**
+ * IGLD85 → NAVD88 for a lake town's record, piecewise linear through the heights VDatum was asked at
+ * (fetch-water-datums.mjs#igld85ToNavd88Points), linear past the ends. ⛔ A record with only the old single offset
+ * (`igld85InNavd88M`, asked at height 0: 7 cm wrong at Lake Erie) REFUSES, by name, so it is re-fetched, never used.
+ */
+export function igld85ToNavd88(D, scene = '?') {
+  const P = D?.igld85ToNavd88?.points
+  if (!Array.isArray(P) || P.length < 2) throw new Error(`⛔ the water level: '${scene}''s raw/water-datums.json carries no IGLD85 → NAVD88 conversion at the lake's heights${D?.igld85InNavd88M != null ? ` (only the old offset asked at height 0, ${D.igld85InNavd88M} m — wrong for a dynamic height)` : ''}. ▶ node cartograph/fetch-water-datums.mjs --scene=${scene}`)
+  const pts = [...P].sort((a, b) => a[0] - b[0])
+  return (h) => {
+    let k = 0
+    while (k < pts.length - 2 && h > pts[k + 1][0]) k++
+    const [h0, n0] = pts[k], [h1, n1] = pts[k + 1]
+    return n0 + (n1 - n0) * (h - h0) / (h1 - h0)
+  }
+}
+
 /** The town's authored water values (design.json `water`), { key: { value, from } }. ⛔ Two looks disagreeing refuses. */
 export function authoredWater(scene, reads = terrainValueReads(scene)) {
   const out = {}
@@ -74,7 +91,7 @@ export function waterRecord({ mapDir, scene, auth, wgs84ToLocal, zero }) {
     if (!name) throw new Error(`⛔ the water level: '${scene}' is a lake (${D.station.name}, ${D.station.id}) and no level is ruled. Author design.json water.lakeLevel as one of: ${opts}.`)
     const L = D.levels[name]
     if (!L || !Number.isFinite(L.igld85M)) throw new Error(`⛔ the water level: water.lakeLevel = '${name}' — '${scene}' has ${opts}`)
-    const v = up(L.igld85M + D.igld85InNavd88M)
+    const v = up(igld85ToNavd88(D, scene)(L.igld85M))
     return { tidal: false, navd88OfZero: zero, datums: { grid: { min: [0, 0], step: [0, 0], w: 1, h: 1 }, [name]: [v], uncertaintyM: null },
              low: name, lowFrom: auth.lakeLevel.from, high: name, highFrom: auth.lakeLevel.from, station: D.station, source: `${D.source}, fetched ${D.fetchedOn}` }
   }

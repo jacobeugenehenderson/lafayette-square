@@ -42,9 +42,10 @@ lines, or `node cartograph/fetch-bathymetry.mjs --scene=<id> --dry`.
 `fetch-water-datums.mjs` → `raw/water-datums.json` → `bake-terrain` `waterLevels` → `terrain.json#water` = { tidal,
 navd88OfZero, datums: { grid: { min, step, w, h }, <DATUM>: m above y = 0 (row-major z then x, north first), uncertaintyM },
 low, lowFrom, high, highFrom, station, source }. ▶ a town's levels: the `LEVELS` line of its terrain bake.
-**Open:** Huron's lake level is Jacob's to rule (`water.lakeLevel`: `LWD` or `mean`; its terrain refuses until then) ·
-an explicit authored height · VDatum's NAVD88→IGLD85 at Huron reads −0.004 m where the research above says +0.067 m
-(cause not established).
+**Open:** an explicit authored height. (Huron's level is authored: `water.lakeLevel` = `mean`.) ⭐ The −0.004 / +0.067 m
+gap is ESTABLISHED (Swash, 2026-10-25): IGLD85 is a dynamic height, and the record had asked VDatum at height 0. The lake's
+levels are now converted at their own heights (`fetch-water-datums.mjs#igld85ToNavd88Points`; 174.354 → 174.421 m at
+Huron). ▶ `node checks/claims-a-lake-level-converts-at-its-own-height.mjs`
 
 ## ⭐ The water's LEVEL is a tide, chosen — ruled 2026-09-27 (Jacob)
 **Found:** the level is the lidar's own water surface (Provincetown −0.99 m NAVD88), i.e. **the tide on the day the
