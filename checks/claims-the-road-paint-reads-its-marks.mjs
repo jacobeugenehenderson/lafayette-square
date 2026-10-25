@@ -31,25 +31,27 @@
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { roadMarkings } from '../src/lib/tileGround.js'
 import { LATTICE_M } from '../src/lib/lattice.js'
-import { readFileSync, writeFileSync, mkdtempSync, rmSync, cpSync, symlinkSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { createRequire } from 'node:module'
+import { pathToFileURL } from 'node:url'
 import { ROOT } from './_scenes.mjs'
 
 const slot = process.argv.find(a => a.startsWith('--slot='))?.slice('--slot='.length)
 if (!slot) { console.log('⛔ NOT RUN — heavy: pass --slot=<who granted it> (three producer builds per town; never in npm test)'); process.exit(2) }
 console.log(`(heavy run, slot granted by ${slot})`)
 let red = 0, towns = 0, plantedSeen = 0, plantedRefused = 0
-// the E2 mutant's paint: roadMarkings from a copy of src/ (its sibling imports resolve there) with the toward-street sign flipped
+// the E2 mutant's paint: ONE modified tileGround.js in its own temp dir, the toward-street sign flipped, its relative imports
+// rewritten to the live src/lib's file URLs (the pattern of claims-no-corner-at-a-true-geometry-edge). The anchor must occur ONCE.
 const SIGN = 'const toward = lIn ? 1 : -1'
-const flipDir = mkdtempSync(join(tmpdir(), 'paint-side-'))
-process.on('exit', () => rmSync(flipDir, { recursive: true, force: true }))
 const tgSrc = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
-if (!tgSrc.includes(SIGN)) { console.log(`⛔ the toward-street sign (\`${SIGN}\`) is not in tileGround.js#roadMarkings — the E2 mutant has nothing to flip`); process.exit(1) }
-cpSync(join(ROOT, 'src'), join(flipDir, 'src'), { recursive: true }); symlinkSync(dirname(dirname(createRequire(import.meta.url).resolve('clipper-lib'))), join(flipDir, 'node_modules'))
-writeFileSync(join(flipDir, 'src/lib/tileGround.js'), tgSrc.replace(SIGN, 'const toward = lIn ? -1 : 1'))
-const { roadMarkings: flippedMarkings } = await import(join(flipDir, 'src/lib/tileGround.js'))
+if (tgSrc.split(SIGN).length !== 2) { console.log(`⛔ NOT CHECKED — the toward-street sign (\`${SIGN}\`) occurs ${tgSrc.split(SIGN).length - 1} time(s) in tileGround.js#roadMarkings, not once — re-aim the E2 mutant's anchor`); process.exit(2) }
+const LIB = join(ROOT, 'src/lib'), flipDir = mkdtempSync(join(tmpdir(), 'paint-side-'))
+process.on('exit', () => rmSync(flipDir, { recursive: true, force: true }))
+writeFileSync(join(flipDir, 'tileGround.js'), tgSrc.replace(SIGN, 'const toward = lIn ? -1 : 1')
+  .replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from '${pathToFileURL(join(LIB, r)).href}'`)
+  .replace(/from 'clipper-lib'/g, `from '${import.meta.resolve('clipper-lib')}'`))
+const { roadMarkings: flippedMarkings } = await import(pathToFileURL(join(flipDir, 'tileGround.js')).href)
 const quiet = (f) => { const l = console.log, w = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
 const sd = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
 // segments in a grid; `within(p, d)` = some segment lies within d of p
