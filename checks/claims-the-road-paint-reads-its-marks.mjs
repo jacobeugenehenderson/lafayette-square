@@ -14,7 +14,8 @@
 //   (S) EVERY STRIPE RING LIES ON A MARKED STREET: each vertex within half a double line (+ a lattice step) of a sealed
 //       centreline run whose street's centre kind is not 'none'. A stripe beside only unmarked runs is RED.
 //   (E) EVERY EDGE LINE LIES BESIDE A STREET THAT TAKES ONE: each vertex within the look's reach of a kerb edge whose run's
-//       street has edge lines or a parking lane on that side.
+//       street has edge lines or a parking lane on that side. (E2) …and on the ROAD side of it: no edge line inside a block.
+//   (S0) A town with marked streets draws SOME stripe: zero stripe vertices with marked runs present is RED.
 //   MUTANT (S, E; in process, always run): `roadMarkings` with every street marked double-solid and both edges must go RED
 //       on a town with any unmarked street — or (S) and (E) prove nothing there.
 //
@@ -89,8 +90,20 @@ for (const scene of feedScenes()) {
     for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) for (const p of ring) { n++; if (!nearKerb(p, reach)) { off++; at ||= p } }
     return { off, n, at, label } }
   const say = (x, what) => console.log(`  ${x.off ? '⛔' : '✅'} ${what}: ${x.n} vertex(es) · ${x.off} not ${what.startsWith('(S)') ? 'on a marked street' : 'beside a street that takes one'}${x.at ? ` (e.g. ${x.at.map(v => v.toFixed(2)).join(', ')})` : ''}`)
-  const S = judgeS(R.roadPaint, 'live'), E = judgeE(R.roadPaint, 'live')
+  // (E2) ON THE ROAD SIDE — a distance to the kerb is the same either side of it, so (E) cannot see a line struck into the BLOCK
+  // (that inversion shipped once, the probe of 2026-10-25). No edge-line vertex may lie inside any tile's block (its curb ring, iA).
+  const blocks = R.protoShapeTiles.flatMap(t => t.iA || []).filter(r => r?.length >= 3)
+  const bbs = blocks.map(r => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const [x, z] of r) a = [Math.min(a[0], x), Math.min(a[1], z), Math.max(a[2], x), Math.max(a[3], z)]; return a })
+  const wind = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+  const inBlock = (p) => blocks.some((r, i) => p[0] > bbs[i][0] && p[0] < bbs[i][2] && p[1] > bbs[i][1] && p[1] < bbs[i][3] && wind(p, r) !== 0)
+  const judgeSide = (paint) => { let n = 0, inside = 0, at = null
+    for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) { const c = ring.reduce((t, p) => [t[0] + p[0] / ring.length, t[1] + p[1] / ring.length], [0, 0]); n++; if (inBlock(c)) { inside++; at ||= c } }
+    return { n, inside, at } }
+  const S = judgeS(R.roadPaint, 'live'), E = judgeE(R.roadPaint, 'live'), E2 = judgeSide(R.roadPaint)
   say(S, '(S) stripe'); say(E, '(E) edge lines'); red += (S.off ? 1 : 0) + (E.off ? 1 : 0)
+  console.log(`  ${E2.inside ? '⛔' : '✅'} (E2) edge lines on the road side: ${E2.n} ring(s) · ${E2.inside} inside a block${E2.at ? ` (e.g. ${E2.at.map(v => v.toFixed(2)).join(', ')})` : ''}`); if (E2.inside) red++
+  if (!S.n) { console.log('  ⛔ (S) no stripe was drawn on this town at all — a marked street must show one'); if (marked.length) red++ }
   // ── the mutant: every street marked ──
   const hasUnmarked = unmarked.length > 0
   if (!hasUnmarked) console.log('  ⚪ mutant: every street here is marked — the mutant cannot be told from the truth, not judged')
