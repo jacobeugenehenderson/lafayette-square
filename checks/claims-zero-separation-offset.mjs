@@ -36,31 +36,33 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const scene = eachRibbonsTown()
 
 // ---- read the scales out of the SOURCE, never restate them -------------------
-// A stage either declares its own `const SCALE = N` or imports the partition's lattice
-// (`import { CLIP_SCALE as SCALE } from './lattice.js'`, one home since e45ab42f). The import is
+// A stage either declares its own `const SCALE = N` or imports the partition's lattice, under its own name or any
+// alias (`import { CLIP_SCALE } from '../src/lib/lattice.js'` in derive.js; `CLIP_SCALE as SCALE` in tileGround). The import is
 // FOLLOWED: its specifier must resolve to src/lib/lattice.js, whose CLIP_SCALE this probe imports, so a
 // moved grid moves the probe with it, and an import from anywhere else throws, naming the module.
 function scaleOf(rel, text) {
   const own = text.match(/^const SCALE = (\d+)/m)
   if (own) return { file: rel, scale: Number(own[1]) }
-  const imp = text.match(/import \{[^}]*\bCLIP_SCALE as SCALE\b[^}]*\} from '([^']+)'/)
+  const imp = text.match(/import \{[^}]*\bCLIP_SCALE\b[^}]*\} from '([^']+)'/)
   if (imp) {
     const mod = path.relative(ROOT, path.resolve(ROOT, path.dirname(rel), imp[1]))
     if (mod !== LATTICE) throw new Error(`${rel} imports CLIP_SCALE from ${mod}, not ${LATTICE} — probe is stale, fix it`)
     if (!Number.isFinite(CLIP_SCALE)) throw new Error(`${LATTICE} exports no numeric CLIP_SCALE — probe is stale, fix it`)
     return { file: `${rel} (via ${mod})`, scale: CLIP_SCALE }
   }
-  throw new Error(`SCALE not found in ${rel} (neither \`const SCALE = N\` nor CLIP_SCALE imported as SCALE) — probe is stale, fix it`)
+  throw new Error(`SCALE not found in ${rel} (neither \`const SCALE = N\` nor an import of CLIP_SCALE) — probe is stale, fix it`)
 }
 const STAGES = ['cartograph/derive.js', 'src/lib/tileGround.js', 'src/lib/buildPathRibbons.js']
 const SCALES = []
 for (const rel of STAGES) SCALES.push(scaleOf(rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')))
-// ⭐ MUTATION, every run: a stage whose scale has no readable source must throw, never default.
+// ⭐ MUTATIONS, every run, each must throw, never default: a stage whose scale has no readable source (its CLIP_SCALE import
+// renamed away), and a stage that imports CLIP_SCALE from a module other than the lattice.
 {
-  let caught = false
-  try { scaleOf('src/lib/tileGround.js', fs.readFileSync(path.join(ROOT, 'src/lib/tileGround.js'), 'utf8').replace(/CLIP_SCALE as SCALE/g, 'CLIP_SCALE as GRID')) } catch { caught = true }
-  if (!caught) { console.error('⛔ MUTATION NOT CAUGHT: a stage with no readable SCALE was read anyway'); process.exit(1) }
-  console.log('   mutation (a stage with no readable SCALE) caught ✓')
+  const mutant = (rel, edit, want) => { try { scaleOf(rel, edit(fs.readFileSync(path.join(ROOT, rel), 'utf8'))) } catch (e) { return want.test(e.message) } return false }
+  const noScale = mutant('src/lib/tileGround.js', t => t.replace(/\bCLIP_SCALE\b/g, 'CLIP_GRID'), /SCALE not found/)
+  const elsewhere = mutant('cartograph/derive.js', t => t.replace("'../src/lib/lattice.js'", "'../src/lib/grid.js'"), /imports CLIP_SCALE from/)
+  if (!noScale || !elsewhere) { console.error(`⛔ MUTATION NOT CAUGHT: no readable SCALE ${noScale ? 'caught' : 'READ ANYWAY'} · CLIP_SCALE from another module ${elsewhere ? 'caught' : 'READ ANYWAY'}`); process.exit(1) }
+  console.log('   mutations (a stage with no readable SCALE · CLIP_SCALE imported from another module) caught ✓')
 }
 
 const area = ring => {
