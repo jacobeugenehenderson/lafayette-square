@@ -16,7 +16,7 @@ temporary integration server (:3343 serve.js + :5183 Vite, Jacob's okay; stop bo
 81 of 162 labels out of the hood proper) + Kerf's listings stack (1ec16996 → c27897d2 → b298b606, awaiting Zob, who hit his usage
 limit). Running: Kerf re-skeletons HPDM + PTown via commit-extent (the one-way fix) and re-bakes them; then Ferrule's slot
 (BRIEF-the-ink-is-owned-by-its-labels, 0a9fa286 → 379282f2). NEXT: Huron's shore, `docs/briefs/BRIEF-the-shore-is-one-line.md`,
-ready to dispatch FRESH. ✅ Jacob 2026-10-25: "Keep PTown's trees" ⇒ a SURVEYED tree is never dropped by land use (a kit rule; Kerf builds it after the re-bakes). LS: Jacob adjusts the loops himself. ✅ MacMillan Wharf: "the street rides the deck" (in the shore brief).
+ready to dispatch FRESH. ✅ Jacob 2026-10-25: "Keep PTown's trees" ⇒ a SURVEYED tree is never dropped, by land use OR hardscape ("keep those too, that's why things are authorable"): kept at its point, named per town and reason (a kit rule; Kerf builds it). LS: Jacob adjusts the loops himself. ✅ MacMillan Wharf: "the street rides the deck" (in the shore brief).
 **▶ THE NIGHT BEFORE (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
 place.mjs, claims-a-chain-cut-keeps-its-owner-change. Briefed and DISPATCHED: the ① seam fix → **Splice**
 (`cartograph/_archive/BRIEF-the-ink-meets-inside-the-ink-LANDED-2026-10-25.md`; carrier = ioPreserveCollinear on both mint booleans, both folds go;
