@@ -98,6 +98,14 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
 4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, the slit's painting, and every
    reader of the removed paths (the ground deformer reads shape.json's `ink`: name what it reads instead).
 
+**Rulings on the builder's premise pass (Boz, 2026-10-25, Ferrule's read at 08cdea53):** (A) ② keeps reading the UN-absorbed face
+(its −ε and subInkClusters stay); absorption produces the PAINTED tile ring only; asphalt = absorbed ring − ②. Absorbing before ②
+would re-found the tiles on the centreline, which at a dead end is the zero-width spur the ε punch-out prevents (vetoable by Jacob).
+(B) The Designer's chain-drawn stripes/parking lines (derive's stripeMeta + parkingLine, drawn by MapLayers) are deleted; MapLayers
+draws the sealed-record ribbons. (C) The pour freezes lane_markings, lanes:forward/backward, overtaking*, parking:* and oneway=-1's
+sense on the street record. Record: `protopolygon.centrelines` (per stroke: points, closed; per segment: owner index; per run: dir,
+kind, rung). shape.json `ink` has no live reader (the deformer retired 2026-10-21) and retires; roadOffTheLattice's gate becomes
+tiles ∪ H; bake-shore-median's inkByOwner call and three checks move in the same commit. Bike lanes: out, filed.
 ⚠️ This reaches `protoShapeTiles` / `sectionOpen`'s ring choice and every reader of tile rings (Survey, Section, the bake, authoring
 keys). **Keys are the risk:** `skelId · side · segOrd` per edge must be identical before and after; the absorbed edge takes the
 label of the ink edge it replaces.
