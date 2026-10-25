@@ -82,6 +82,13 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    a two-way street with no passing data → DOUBLE SOLID; a town norm or Survey may override. Grade-separated is a named exclusion
    (the off-the-ground family, STYLE-GUIDE §10; Boz). What data selects each
    is the builder's proposal to Boz, recorded in `STYLE-GUIDE` (one home) with its sources.
+3b. **Edge lines, in the same system (Jacob, 2026-10-25: "yes, add edge lines to Ferrule's brief; both lines default").** Today no
+   edge line exists on a split carriageway or a one-way; the only edge lines are parking-lane lines built from `map.json`'s
+   `parkingLine` coords by `lateralOffset` (chain geometry past the Wall, so the same breach as the stripe). Kinds: yellow LEFT edge
+   (the median side of each carriageway of a divided pair, and a one-way's left) · white RIGHT edge (the curb side) · the white
+   parking edge (as today, but struck from the sealed tile). Each is a ribbon struck from the tile's own edge inward, owned by that
+   edge. DEFAULT: BOTH lines on divided carriageways and one-ways (Boz's reading of Jacob's words: residential/local stays NONE,
+   per the stripe ruling; vetoable). The MUTCD basis (§3B edge lines) is cited from mutcd-11r1 by the builder, section checked.
 4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, the slit's painting, and every
    reader of the removed paths (the ground deformer reads shape.json's `ink`: name what it reads instead).
 
