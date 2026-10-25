@@ -117,6 +117,16 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
    each hot pixel it passes; exact integer arithmetic with its bound asserted. The stamp's loop is deleted. Fixtures (PTown
    capture; a searched near-parallel cycle; the guarantee) run as a safe-tier check. Phase 2 (one function for conform +
    cross, the bake's `nodeAcrossGroups`) is its own item, not this brief.
+5d. **② builds its bands with SHARED join vertices (ruled Boz, 2026-10-25; Splice, measured on captured joins).** The fold this
+   brief deletes was ②'s mask. With it gone, the new stamp's honouring turns ② slits into exact retraces, and the arc-boundary
+   refusal names them on LS, JH and HPDM. All four placed sites are in `offsetRingByRects`' band union, from near-coincident
+   band geometry rounded independently: a 1.9° join's four near-collinear edges (HPDM, 2 mm); a FAR miter used outside the caps
+   (HPDM; the code lacks the extent test its own comment promises, so the code is fixed to the comment); near-coincident end caps
+   (JH, a 3.96 m needle); a cap running along a depth-0 ① edge (LS, a 4.58 m needle). The fix: each join is computed ONCE and
+   shared by both neighbouring bands; a miter only between the caps, else the chord; a coinciding cap IS that segment. The same
+   polygon in exact arithmetic, with no tolerance and no snap. Gates: no ② near-reversal on five towns (the four captured joins as
+   mutants); `claims-a-look-authors-its-curb-width --mutants`; corner gates; keys identical; the stamp settles on all five with
+   the refusal unchanged. Kerf's HPDM tile-230 9 mm stub between two arcs: to be placed in this family or named apart.
 5. **Unplaced (d):** report what steps 1–3 leave of each exhibit. Don't chase them before 1–3 are built.
 
 **Acceptance is 0 at `subInkLen` for the construction class, on every town (Boz, 2026-10-24; narrowed by §5a, 2026-10-25).** ⛔ If the fix can't reach 0, stop and flag. The
