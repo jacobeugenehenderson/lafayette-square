@@ -1,7 +1,8 @@
 # BRIEF — the disc is one source: drawn to the bb, lit once, and the light decides the slab
 
 <!-- BRIEF-STATE
-status: OPEN — premise pass done (Zob, on 7389f2bd), folded in; build order §7
+status: OPEN
+premise: Zob, on 7389f2bd, folded in; build order §6; §1a merged (cec0b328); §1b/§2b with Kerf next
 written: 2026-10-21 night (Boz)
 evict-when: every reader of the boundary goes through one function of the ring; the census rows below are each closed
   or ruled; claims-membership-is-the-disc and the new one-reader check are GREEN on every poured town, mutants RED; merged.
