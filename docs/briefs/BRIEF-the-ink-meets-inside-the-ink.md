@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: no
 written: 2026-10-24 (Boz)
-evict-when: `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants` is GREEN on every poured town and its mutant RED; offsetRingByRects' sub-ink fold is deleted in the same commit; the build is merged to integration. Then this moves to cartograph/_archive/ dated, and BACKLOG's ① seam entry goes with it.
+evict-when: `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants` and `node checks/claims-a-chain-cut-keeps-its-owner-change.mjs --mutants` are GREEN on every poured town and their mutants RED; offsetRingByRects' sub-ink fold is deleted in the same commit; the build is merged to integration. Then this moves to cartograph/_archive/ dated, and BACKLOG's ① seam entry goes with it.
 -->
 
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds. Check with `ListAgents`, then `/rename`.
@@ -24,7 +24,7 @@ The class, today (the command is the number; never quote the count):
 node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants      # RED on every town today
 node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json …   # each edge placed by node, with coordinates
 ```
-`place.mjs` sorts the class into four buckets:
+`place.mjs` sorts the class into four buckets, and the presence check adds a fifth symptom:
 - **(a) A pure chain cut** (degree 2, both chains end). The largest bucket on every town, mostly 4.5–6.7 mm edges.
 - **(b) A real node** (degree ≥ 3).
 - **(c) A rim↔water join** (`__boundary__` → `__water__`; Huron, PTown).
