@@ -27,6 +27,11 @@ EVERY bend (one rule for the ink) · the reversed-face label shift (__boundary__
 JH 179; pre-existing, a kit class) fixed in booleanLabelled's `segs` path, Zob reading first · unnoded skeleton crossings (HPDM
 primary-link-124 × heels-wheels, JH ×2) are the MINT's (crossings landing by a stroke vertex; Zob, measured; Boz first
 said skeleton, wrong) → brief §5a, construction owed by Splice; the folds wait on them (one code path).
+**ALTADENA JOINS THE TRANCHE (Jacob, 2026-10-25: "AD stays… sure").** Its shapes are from 07-14 and its ground from 09-19 (pre-①,
+no landEvidence, no identity), so the tranche re-pour is its first under the current kit. Mark ⛰️ set (ee592d46). ⚠️ The mountains
+(Jacob): "very very large… may be prohibitively complex (until we do something to manage)". The managing move already planned is
+disc brief §3 (only the lit part is raised; the height extent from the one module), not yet built. Pour it; if the terrain bake
+refuses or runs away, it's a named stop, not a reason to hold the other towns.
 **Seam (Splice) state, 2026-10-25 ~02:00:** feature-complete, and Zob's final tree review PASSES; the corner gates hold; no-corner
 GREEN on 4 towns. ⛔ HELD: PTown's ② refuses at the land-use stamp ("crossing pass did not settle in 8 rounds"). Zob: stampCrossings
 is a SECOND noding rule (round, insert, re-test), which can't terminate on shallow crossings (OSM wetland/reserve vs the water
