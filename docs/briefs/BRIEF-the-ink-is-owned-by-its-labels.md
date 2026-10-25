@@ -59,8 +59,13 @@ and is painted separately by `inkByOwner` and frozen by `inkPiecesByOwner`, both
 band of the tile (ring − ②) in geometry, but it's unioned across tiles with no owner. `protopolygon.nodes` is ONE POINT per chain
 pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
 
-1. **Absorb the ink at the mint's exit:** each cell of the ink cut by the mint's own input centrelines touches exactly one tile edge
-   (to be MEASURED first: Zob's component test, Huron then PTown), and it joins that tile. The tiles then meet on the centrelines, with
+1. **Absorb the ink at the mint's exit:** each cell of the ink cut by the mint's own input centrelines touches exactly one FACE
+   edge, and it joins that face. MEASURED (Zob, 2026-10-25, a buffered-cut instrument, Huron + PTown): street ink HOLDS (one tile
+   per cell at a 4–6 mm cut; the interior misses vanish as the cut widens, so they're the instrument). The coast's water side
+   touches NO tile; it touches the water ring. So the faces are tiles AND water (both are faces of D). ❓ Jacob: the water-side
+   half of the coast ink goes to the water face (Boz's recommendation, under the shoreline doctrine). The frame-edge cells are
+   outside the disc. ⛔ The build's own construction is a ZERO-width cut (the centrelines noded into the ink by
+   `latticeNode#nodeCrossings`, then the faces walked), not the buffered instrument. The tiles then meet on the centrelines, with
    no slit. At a node, the shared vertex closes each tile's wedge. Coast ink splits on the coast arc (sealed with it). §5a's
    true-geometry crossings split into quadrants (a fixture case).
 2. **No fresh strips:** the quads, their overlap resolution and the second union of ① are deleted. Asphalt, highway and shore are
