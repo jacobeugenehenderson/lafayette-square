@@ -590,7 +590,7 @@ function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
  * ⭐ EVERY town goes through the same cull, LS's ledger included (Boz's default in the 2026-10-24 handoff, vetoable:
  * "LS's buildings ledger goes through the same circle check"). The ledger exemption ("a ledger already declares its
  * membership") is retired: it made LS's exclusion loops and overrides inert in the slab.
- * `nb` / `overrides` default to the town's files; pass them to judge a HYPOTHETICAL membership. ⛔ An unreadable overrides
+ * `nb` / `overrides` default to the town's files; pass them to judge a HYPOTHETICAL membership. A town with no boundary REFUSES. ⛔ An unreadable overrides
  * file REFUSES (it was warned about and ignored, which baked as if the operator had authored nothing). An absent one is
  * no overrides, said in `overridesFrom`.
  * → { buildings, ledger, culled, overridesFrom, report() }
@@ -609,7 +609,8 @@ export function keptBy(scene, buildings, { nb = undefined, overrides = undefined
       overridesFrom = 'building-overrides.json'
     }
   }
-  if (!nb) return { buildings, ledger, culled: false, overridesFrom, report: () => {} }
+  // ⛔ No disc, no membership: REFUSE by name, like the disc reader everywhere else. It returned every building uncull'd.
+  if (!nb) throw new Error(`[bake-buildings] ⛔ ${scene} has no neighborhood_boundary.json — no membership to keep buildings by; author the extent first`)
   const membership = createMembershipFilter({ nb, activate: new Set(overrides.activate || []), hide: new Set(overrides.hide || []), label: 'bake-buildings' })
   const kept = buildings.filter(b => membership.decide(b.id, b.footprint || null))
   return { buildings: kept, ledger, culled: true, overridesFrom, report: () => membership.report() }
