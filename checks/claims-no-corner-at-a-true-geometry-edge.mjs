@@ -15,7 +15,10 @@
 // `protoRAt`, the radius `easeAt` hands the offset). Hole rings take no ease (their offset passes none), so they cannot corner.
 // The site predicate is the SAME module claims-no-sub-ink-edge-between-two-owners reads, so the two cannot drift.
 //
-//   node checks/claims-no-corner-at-a-true-geometry-edge.mjs [scene …] [--ribbons=path] [--mutants]
+//   node checks/claims-no-corner-at-a-true-geometry-edge.mjs --slot=<granted> [scene …] [--ribbons=path] [--mutants]
+// @args --slot=<granted>
+//     --slot: the town builds are HEAVY (one ② build per town); without it the check stops after the fixture, NOT RUN (exit 2),
+//     so `npm test` (this check reads SAFE: it writes only its own temp copy) never builds a town unasked.
 //     --ribbons=path (with one scene): build on that ribbons (e.g. a re-mint) in place of the scene's own.
 //     --fixture-only: the mutant fixture and the anchors, no build (light; the town runs need the heavy slot).
 //
@@ -77,14 +80,9 @@ function judge(captured, owners, streets, eps) {
 // the anchor is the `rSrc` statement itself: its first line, then the line that calls `protoRAt(` (its body may change; it
 // must bind `ring`, `labs` and `rSrc`). Not found exactly once ⇒ NOT CHECKED.
 const ANCHOR = /\n([ \t]*)const rSrc = ring\.map\([^\n]*\n[^\n]*protoRAt\([^\n]*\n/g
-const capturedModule = () => {
-  const src = readFileSync(SRC, 'utf8'), hits = [...src.matchAll(ANCHOR)]
-  if (hits.length !== 1) return null
-  const D = join(ROOT, 'src/lib'), [m, ind] = hits[0]
-  return src.replace(m, m + `${ind};(globalThis.__rSrcCapture ||= []).push({ ring, labs, rSrc })\n`)
-    .replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from '${pathToFileURL(join(D, r)).href}'`)
-    .replace(/from 'clipper-lib'/g, `from '${import.meta.resolve('clipper-lib')}'`)
-}
+// ⭐ the copy in the tier reader's own shape (checks/tier.mjs#copiedFrom): the source read once into a const, the copy written
+// from it in one expression into this run's temp dir, so the tiering reads WHAT it copies (src/lib/tileGround.js) and calls it safe
+const tgSrc = readFileSync(SRC, 'utf8'), hits = [...tgSrc.matchAll(ANCHOR)]
 
 let red = 0
 if (process.argv.includes('--mutants')) {
@@ -103,10 +101,14 @@ if (process.argv.includes('--mutants')) {
   if (!ok) red++
 }
 
-const modSrc = capturedModule()
-if (!modSrc) { console.log('⛔ NOT CHECKED — the rSrc statement this check captures after is not in src/lib/tileGround.js (re-aim the anchor)'); process.exit(2) }
+if (hits.length !== 1) { console.log('⛔ NOT CHECKED — the rSrc statement this check captures after is not in src/lib/tileGround.js (re-aim the anchor)'); process.exit(2) }
 if (process.argv.includes('--fixture-only')) { console.log(red ? '⛔ fixture RED' : '✅ fixture GREEN · anchors found'); process.exit(red ? 1 : 0) }
-const file = join(mkdtempSync(join(tmpdir(), 'no-corner-tg-')), 'tileGround.js'); writeFileSync(file, modSrc)
+if (!arg('slot')) { console.log(`${red ? '⛔ fixture RED' : '✅ fixture GREEN · anchors found'} · ⛔ NOT RUN on the towns — heavy (one ② build per town): pass --slot=<granted>`); process.exit(red ? 1 : 2) }
+const [hit, ind] = hits[0], LIB = join(ROOT, 'src/lib')
+const file = join(mkdtempSync(join(tmpdir(), 'no-corner-tg-')), 'tileGround.js')
+writeFileSync(file, tgSrc.replace(hit, hit + `${ind};(globalThis.__rSrcCapture ||= []).push({ ring, labs, rSrc })\n`)
+  .replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from '${pathToFileURL(join(LIB, r)).href}'`)
+  .replace(/from 'clipper-lib'/g, `from '${import.meta.resolve('clipper-lib')}'`))
 const tg = await import(pathToFileURL(file).href)
 const scenes = feedScenes().filter(a => !a.startsWith('--'))
 if (arg('ribbons') && scenes.length !== 1) { console.log('⛔ NOT CHECKED — --ribbons takes exactly one scene'); process.exit(2) }
