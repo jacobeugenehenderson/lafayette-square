@@ -89,6 +89,8 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    parking edge (as today, but struck from the sealed tile). Each is a ribbon struck from the tile's own edge inward, owned by that
    edge. DEFAULT: BOTH lines on divided carriageways and one-ways (Boz's reading of Jacob's words: residential/local stays NONE,
    per the stripe ruling; vetoable). The MUTCD basis (§3B edge lines) is cited from mutcd-11r1 by the builder, section checked.
+   Lines STOP at intersections (Jacob, 2026-10-25: "I think I would be ok to stop lines at intersections"): no dotted
+   extension through a node (MUTCD §3B.11 ¶05's dotted extension is not drawn).
 3c. **The Designer keeps its on/off (Jacob, 2026-10-25: "The user can still turn the lines on and off in the Designer").** Today
    `CartographSurfaces.jsx` lists `stripe` ("Center Stripes") and `edgeline` ("Edge Lines") as layers (read, Boz). The new kinds
    and the new edge lines must stay switchable there, through the same controls, and reach the bake. Confirm how the toggle reaches
