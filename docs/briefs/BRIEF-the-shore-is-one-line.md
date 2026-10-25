@@ -79,8 +79,8 @@ trace solid decks as land. So step 1 masks `structures.mjs#DECK_KINDS` (read by 
 OUT of the lidar intersection (by OSM tag, from the data, never a site list), so the coast runs under them,
 and the water continues beneath. PTown's MacMillan Wharf (a street meets it: `macmillan-wharf|end`, a lost cap handle in
 caps-from-shape) and Huron's equivalent are the exhibits. Each deck then becomes its own off-the-ground object, fed by structures.mjs's deck side.
-❓ JACOB: a wharf that is also a STREET (MacMillan): does the street ride the deck (its walk and curb on the deck, at the land's
-height), or stay ink? Gates: on PTown, the traced coast has no land inside a deck footprint, and MacMillan Wharf is drawn as a
+✅ RULED (Jacob, 2026-10-25: "a, the street rides the deck"): a wharf that is also a STREET (MacMillan) carries its street ON the
+deck: its walk and curb built on the deck, at the land's height, never ink over water. Gates: on PTown, the traced coast has no land inside a deck footprint, and MacMillan Wharf is drawn as a
 deck at land height.
 **Dead on tern, don't port:** the gusset (`9c95f43a`, `5f19280c`; per-vertex heights for the retired deformer).
 
