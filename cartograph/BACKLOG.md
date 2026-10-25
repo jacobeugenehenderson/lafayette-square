@@ -19,7 +19,7 @@ limit). Running: Kerf re-skeletons HPDM + PTown via commit-extent (the one-way f
 ready to dispatch FRESH. ✅ Jacob 2026-10-25: "Keep PTown's trees" ⇒ a SURVEYED tree is never dropped, by land use OR hardscape ("keep those too, that's why things are authorable"): kept at its point, named per town and reason (a kit rule; Kerf builds it). LS: Jacob adjusts the loops himself. ✅ MacMillan Wharf: "the street rides the deck" (in the shore brief).
 ⛔ **REGRESSION FOUND (Boz, 2026-10-25, from Kerf's surveyed-tree census):** the 10-21 Forest Park fix (truss/city-landuse 6616be0a)
 was pressed to PRODUCTION on its own kit and NEVER reached integration, so the tranche's HPDM bake classes Forest Park commercial
-again (1,180 surveyed trees "on commercial"). Kerf cherry-picks it; Zob reads it and censuses for any other production-only fix.
+again (1,180 surveyed trees "on commercial"). FIXED (6154b267). Zob's census found three more, in the PLAYER (the Tower Light, lean-never-turn, the Browse hang fix, pressed on ward-pin/2026-10-17 + -22): merged back (83b616b2; patch-ids identical). The kit repo is now fully covered. ⛔ OWED BEFORE ANY PRESS: the same `--not` census in WARD's own repo (theward pins vs its main).
 ⛔ Rule: a fix pressed to production on a side branch is merged back to the record the same day.
 **▶ THE NIGHT BEFORE (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
 place.mjs, claims-a-chain-cut-keeps-its-owner-change. Briefed and DISPATCHED: the ① seam fix → **Splice**
