@@ -22,13 +22,13 @@ end-to-end account (PIPELINE.md to the Diary).
   ① turns (carried through the compound boolean). New check claims-a-label-change-ends-no-leg GREEN on 4 towns, mutant RED. Owed: the
   AFTER run of the corner/band checks, (a)–(c) re-baselines, band pairs PTown/HPDM, PTown stackOnly, TIERS. Residue: the ① seam (below).
 - `kerf/publish-impostor-records` d15fb231: publish only impostor files the atlas names (−113 MB/LS upload). Needs Zob's review.
-- `kerf/ls-to-its-address` f44df473: the rename + no default town. Merges after Jacob opens LS in Stage from kerf-rename.
+- ✅ `kerf/ls-to-its-address` MERGED (squash d3d7400f, 2026-10-24, after Jacob opened LS in Stage). Its raw parcel files and LS's map.json are now untracked.
 - Ward: theward `ward/pin-2026-10-22` 9d6b303 (OPERATIONS 'Where things stand'; neon e947c22, check a5be102); kit `ward-pin/2026-10-22` 7b68aad5; the cache-busted `scratch/promote-rollback/backup-prod-slab.mjs` is kit 21936023 on `docs/conformance-2026-09-21` (bring it to integration). Ward parked: an unguarded localStorage read at start-up.
 - Ward chain: cbb42ca (ward/page-module-lookup) ← e947c22 (ward/lit-at-the-time-shown) ← a5be102 ← d4b43fa ← 9d6b303 (ward/pin-2026-10-22).
   Owed: the Tower Light mutant for cbb42ca (Scene.jsx's putOutTowerLight on leaving Society, removed → its check RED), awaiting Jacob's
   okay for hot reloads. Dev servers: :5173 is Jacob's; :5180 was started 10-21 by Ward's specialist (still running).
 - Keep `zob-hpdm926` (detached 926ac3a4: HPDM's Forest Park candidate, standing order). Zob's night probes are in `scratch/zob-2026-10-22/` (leg-end and seam1mm are check candidates).
-- `zob/no-town-default` b8abba10: same change as 766a8c65 already on the rename branch (same subject); retire it when the rename merges.
+- `zob/no-town-default` b8abba10: carried by the rename (766a8c65, now merged): retire it.
 - `kerf/ownership-once` f21f288c (kerf-own): SUPERSEDED by the one height field (it edits the retired groundDeformer.mjs; it raised seam
   steps 60%). Retire it. `kerf/simplify-in-bake` 03c42d5f (worktree kerf): the mesh simplifier, HELD (too slow, 725 s), not superseded.
 - Kerf's own note: `.claude/worktrees/kerf-publish/HANDOFF-kerf.md` (⚠️ its "kerf-land HPDM candidate" is stale: staging is the reference).
@@ -38,7 +38,7 @@ all its legs; never a post-union snap. Builds in the tranche. **Decided (2026-10
 tolerance stays 0.5 m, revisit later · open places KEEP their roof tint (the neon contract fix keeps it as its own channel) · Ward
 deletes LS's orphan GLBs/atlas PNGs on staging · LS's tracked data is untracked when the rename merges · the City's raw parcel files
 stop being tracked (no history scrub without asking Jacob) · the circle decides surveyed trees outside it · horizon water stays ·
-LS's buildings ledger goes through the same circle check. **Owed by Jacob:** open LS in Stage from `kerf-rename` (then the rename merges).
+LS's buildings ledger goes through the same circle check.
 **⭐ JACOB'S ORDER (2026-10-24): get through the immediate backlog; ADD HURON TO THE POLISH LIST.** *"LS and HPDM have made
 appreciable progress; now we need to bring Huron up to parity and then move forward with finally fixing the shoreline."* At night Boz
 keeps it moving. In order:
