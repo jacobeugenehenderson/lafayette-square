@@ -28,6 +28,7 @@ import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
 import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
 import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
+import { selectMarkings, parkingSeed, MARKING_LOOK } from '../src/cartograph/streetMarkings.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // ① is minted HERE at prebake (`mintProtopolygon`) and frozen into the artifact; the other two imports run beside it.
 import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
@@ -1421,6 +1422,27 @@ function findStreetForPoint(px, pz, index) {
 // The carriageway half-width of one RAW way, for the legacy layers that buffer raw ways: its class section
 // (`getStreetSpec`), or the highway typical section for a swept class. ⛔ No residential default — the
 // `defaultHalfWidth = crossSection(STANDARDS.streets.residential)` that these sites fell back to is gone.
+// ⭐ THE PARKING DEPTH rides the measure beside pavementHW (`measure[side].parking`, the kerb → the parking edge; Boz,
+// 2026-10-25): the type's house parking lane, the data selecting presence (streetMarkings.js#parkingSeed). Read only by
+// the parking edge line. ⛔ It never changes pavementHW, the curb's input: an authored side keeps its pavementHW and
+// takes the seed's parking only where it carries none (Survey's control is owed, BACKLOG). A highway's typical section has
+// no parking lane: 0, said by its class, never left absent.
+function withParkingSeed(st) {
+  const m = st.measure
+  if (!m?.left || !m?.right) return m
+  const seed = (k) => isSweptClass(st.class) ? 0 : parkingSeed(st.class, st.markings, k).parking
+  const side = (k) => Number.isFinite(m[k].parking) ? m[k] : { ...m[k], parking: seed(k) }
+  return { ...m, left: side('left'), right: side('right') }
+}
+// the town's paint norm (`norms.json` → `markings`: { centre, edges }), or null when the town declares none
+let _markingNorm
+function townMarkingNorm() {
+  if (_markingNorm !== undefined) return _markingNorm
+  const p = join(CLEAN_DIR, '..', 'norms.json')
+  _markingNorm = existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).markings ?? null) : null
+  return _markingNorm
+}
+
 function wayHalfWidth(tags) {
   const cls = classOf(tags).class
   if (isSweptClass(cls)) {
@@ -2722,35 +2744,19 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   console.log(`    ${alleyUnion.length} alley polygons (trimmed at the ASPHALT edge, not the back of sidewalk)`)
 
   // ── Street markings ─────────────────────────────────────────
-  const stripeMeta = []
+  // ⛔ The centre stripe and the parking edge line are NOT built here any more (BRIEF-the-ink-is-owned-by-its-labels §3,
+  // 2026-10-25): they were raw-OSM chains past the Wall (`centerStripe`, every non-oneway surveyed class; `parkingLine`, a
+  // spec offset of the way). The road's paint is selected per street (`marks`, below) and drawn by the ground from the
+  // sealed centreline and ②'s labelled kerb (`tileGround.js#roadMarkings`). Bike lanes stay here (filed, BACKLOG).
   const bikeLanes = []
-  const parkingLines = []
-
   for (const f of highways) {
     const t = f.tags?.highway
     if (!CLASSES[classOf(f.tags).class].surveyed) continue   // the vocabulary's surveyed street classes
     if (f.coords.length < 2) continue
-
-    const coords = f.coords.map(c => ({ x: c.x, z: c.z }))
-    const name = f.tags.name || t
-
-    if (!isOneway(f.tags)) {
-      stripeMeta.push({ coords, name, dashed: t === 'residential' })
-    }
-
     const cyc = f.tags.cycleway || f.tags['cycleway:left'] || f.tags['cycleway:right']
     if (cyc === 'lane' || cyc === 'track') {
       const spec = getStreetSpec(f.tags)
-      const laneOffset = (spec.lanes / 2) * spec.laneWidth
-      bikeLanes.push({ coords, name, offset: laneOffset })
-    }
-
-    {
-      const spec = getStreetSpec(f.tags)
-      if (spec.parkingWidth > 0) {
-        const parkOffset = (spec.lanes / 2) * spec.laneWidth
-        parkingLines.push({ coords, name, offset: parkOffset })
-      }
+      bikeLanes.push({ coords: f.coords.map(c => ({ x: c.x, z: c.z })), name: f.tags.name || t, offset: (spec.lanes / 2) * spec.laneWidth })
     }
   }
 
@@ -3048,6 +3054,10 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       points,
       ...(segments ? { segments } : {}),
       measure,
+      // the road's paint tags in point order (skeleton.js#carryMarkings) and Survey's street-keyed override slot
+      // (overlay.json streets[id].markings — reserved: no control writes it yet, BACKLOG)
+      markings: s.markings ?? null,
+      _marksAuthored: ov?.markings ?? null,
       intersections: [],
       oneway: !!s.oneway,
       skelId: s.id,
@@ -4660,7 +4670,11 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // skeleton.md) — the editor's "few nodes" + the concentric curb read these; `points`
       // above is their dense tessellation (so ix/legacy consumers stay byte-identical).
       ...(st.segments ? { segments: st.segments } : {}),
-      measure: st.measure,
+      measure: withParkingSeed(st),
+      // ⭐ THE ROAD'S PAINT, SELECTED AT THE POUR (streetMarkings.js#selectMarkings; BRIEF-the-ink-is-owned-by-its-labels §3a/§3b):
+      // the centre kind and the edge lines, each with the rung that chose it. The ground draws them past the Wall.
+      ...(st.markings ? { markings: st.markings } : {}),
+      marks: selectMarkings(st, { norm: townMarkingNorm(), authored: st._marksAuthored }),
       capEnds: st.capEnds,
       anchor: st.anchor || 'center',
       innerSign: st.innerSign || 0,
@@ -4743,7 +4757,19 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // strip so the data is available when that consumer lands.
     ...(skeleton.junctions ? { junctions: skeleton.junctions } : {}),
     ...(skeleton.nameTransitions ? { nameTransitions: skeleton.nameTransitions } : {}),
+    // the paint's look, frozen for the ground: the kit's house look, each value the town's norm names overriding it
+    markingLook: { ...MARKING_LOOK, ...(townMarkingNorm()?.look || {}) },
   }
+  console.log(`    [paint] look: ${Object.entries(ribbonsLayer.markingLook).map(([k, v]) => `${k} ${v.toFixed(3)} m${townMarkingNorm()?.look?.[k] != null ? ' (norm)' : ' (house)'}`).join(' · ')}`)
+  // ⭐ THE PAINT, PRINTED BY RUNG, EVERY POUR — so a kit default is never read as the town's (streetMarkings.js)
+  { const c = {}, e = {}, ex = { 'grade-separated': 0 }
+    for (const st of ribbonsLayer.streets) { const M = st.marks
+      if (M.excluded) { ex[M.excluded]++; continue }
+      const k = `${M.centre.kind} (${M.centre.rung}${M.centre.rung === 'data' ? ': ' + M.centre.why : ''})`; c[k] = (c[k] || 0) + 1
+      const ek = M.edges.kind ? `both (${M.edges.rung})` : `none (${M.edges.why})`; e[ek] = (e[ek] || 0) + 1 }
+    const list = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${v} ${k}`).join(' · ')
+    const parked = ribbonsLayer.streets.filter(st => (st.measure?.left?.parking || 0) + (st.measure?.right?.parking || 0) > 0).length
+    console.log(`    [paint] centre: ${list(c)} · edges: ${list(e)} · ${ex['grade-separated']} grade-separated (excluded) · ${parked} street(s) with a parking lane`) }
 
   // ⛔ THE D2 FACE FREEZE (`ribbons.tiles[]`, with its early boundary crop of the face streets, `clipStreet`) is DELETED
   // (BRIEF-the-disc-is-one-source §2a, 2026-10-22): its last reader, the Measure tool's cap handles, reads the frozen
@@ -5002,6 +5028,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         nodes: Object.fromEntries(Object.entries(MP.nodes).map(([k, v]) =>
           [k, v ? [Math.round(v[0] * 1e6) / 1e6, Math.round(v[1] * 1e6) / 1e6] : null])),
       } : {}),
+      // ⭐ the SEALED CENTRELINE, frozen with ① (mintProtopolygon): the road's paint reads it past the Wall, never the chains
+      ...(MP.centrelines ? { centrelines: MP.centrelines } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.
       ...(MP.boundaryRing ? { boundaryRing: MP.boundaryRing.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]) } : {}),
       // ⛔⛔ CROSSINGS MUST BE FROZEN OR ① HAS NO CORNERS. A corner is exactly where two chains
@@ -5170,9 +5198,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     park:           parkFeats,
     parcel:         clipParcelsToRoundedBlocks(parcels, allBlockPaths, classifyLandUse),
     alley:          toFeats(alleyUnion),
-    centerStripe:   stripeMeta,
     bikeLane:       bikeLanes,
-    parkingLine:    parkingLines,
     footway:        bufferEach(footways, STANDARDS.footway.width / 2),
     cycleway:       bufferEach(cycleways, STANDARDS.cycleway.width / 2),
     steps:          bufferEach(steps,    STANDARDS.steps.width    / 2),

@@ -76,7 +76,7 @@ narrow slivers · 5. Junctions (T, cross, skew, multi-leg, offset) · 6. Corners
 7. Curb ramps and crossings · 8. Dead ends and caps · 9. Plazas and `area=yes` · 10. Grade separation and bridges ·
 11. Driveways and lot access · 12. The rim · 13. Where streets meet parcels and buildings ·
 14. Conflicts register · 15. Open for Jacob (top 10) · 16. Sources, and what was not read ·
-17. Wrong notions being faithfully rendered
+17. Wrong notions being faithfully rendered · 18. The road's paint (centre stripe, edge lines)
 
 ---
 
@@ -869,5 +869,49 @@ Each is a precedent that draws a thing *correctly by its own rule*, where the ru
    AASHTO guesses end to end"). How often this is wrong in JH: not measured.
 8. **The street's back is a constant depth.** The band ends at curb + 3.0 m whatever stands there; buildings sit on
    walk and lawn (PTown 34.9% of footprints). `SECTION §3.3`; footprint census.
+
+---
+
+## 18 · The road's paint: the centre stripe and the edge lines
+
+**Conception.** The centre line separates OPPOSING traffic and is yellow; an edge line marks a roadway's edge, white on
+the right and yellow on the left of a one-way roadway `[F f-mutcd-centre-line → mutcd-11r1, §3B.01 ¶01]`
+`[F f-mutcd-edge-lines → mutcd-11r1, §3B.09 ¶02–03]`. Code: `src/cartograph/streetMarkings.js` (the kinds, the ladder, the
+look) · `tileGround.js#roadMarkings` (drawn from the sealed centreline and ②'s labelled kerb, never the chains).
+
+**The kinds** (Jacob, 2026-10-25: *"stripe kinds look right"*): centre `none` · single broken yellow · double solid yellow ·
+solid + broken yellow, MUTCD's two-lane family `[F f-mutcd-centre-kinds → mutcd-11r1, §3B.01 ¶04]`; a single solid yellow is
+not a centre line `[same, ¶05]`. Edge: yellow left · white right · white parking edge.
+
+**What picks it** (each street prints its rung per pour, `derive.js` `[paint]`). Authored (Survey's street-keyed slot,
+reserved) → data → town norm (`norms.json` → `markings`) → the type's house style (`streetClass.js` `marking`).
+- *No residential stripes* (Jacob, 2026-10-25: *"no residential stripes, double yellow OK for default otherwise"*):
+  local, living street, service, alley, driveway, lot aisle and paths are unmarked unless the data says `lane_markings=yes`.
+  `unclassified` (a `local` road) is unmarked — Boz's call, vetoable by Jacob. tertiary and above are marked.
+- Centre, a two-way street: `overtaking=no` → double solid · `=yes` → broken · one direction `=no` → solid + broken, solid on
+  that side · lanes 2 + 1 → solid + broken, solid on the two-lane side `[F f-mutcd-three-lane → mutcd-11r1, §3B.01 ¶08]` ·
+  four or more lanes → double solid `[F f-mutcd-four-lane → mutcd-11r1, §3B.01 ¶06]` · else the norm · else double solid.
+  `lane_markings=no` unmarks anything. A one-way has none. Grade-separated is EXCLUDED, outside the vocabulary (§10).
+- Edges (Jacob: *"both lines default"*): a one-way roadway of a marked type — a divided carriageway is one — takes both. A
+  town norm may drop them, since edges may be omitted where curbs or parking delineate the roadway `[F f-mutcd-edge-omit →
+  mutcd-11r1, §3B.10 ¶05]`. A two-way street takes none.
+- ⛔ Width and traffic volume are never read (§0): MUTCD's warrant is by class, width and ADT `[F f-mutcd-centre-warrant →
+  mutcd-11r1, §3B.02 ¶01–02]`; only its class half survives, as the type's house style. Measured 2026-10-25 (raw osm.json,
+  six towns): no road carries `overtaking*` or `divider`, and `lane_markings` is mostly `no` — the passing rungs select
+  nothing today.
+
+**Joins** (Jacob, 2026-10-25: *"I think I would be ok to stop lines at intersections"*). The stripe is kept only where both
+sides of its street have frontage; an edge line is struck from one kerb leg, which ends at its corner arc. So every line
+stops at an approach and runs on along a T's far side `[F f-mutcd-edge-at-intersections → mutcd-11r1, §3B.11 ¶07–08]`; no
+dotted extension. ① has no driveways, across which edge lines continue anyway `[same, ¶09]`.
+
+**Drawn form** (the house look, `MARKING_LOOK`; a town norm overrides). Line 4 in, the normal line's lower bound
+`[F f-mutcd-line-width → mutcd-11r1, §3A.04 ¶02]` · double-line space 4 in, at most twice a line `[same, ¶03]` · broken
+10 ft on, 30 ft off `[same, ¶06]` · edge line 1 ft in from the kerb face `[U]`, a look. The parking edge sits at the side's
+parking depth, `measure[side].parking`: the type's parking lane, the data (`parking:*`) selecting presence; it never moves the
+curb (▶ `node checks/claims-the-road-paint-reads-its-marks.mjs`, part P).
+
+**Open.** Survey controls for the parking depth and the per-street kind override (BACKLOG). Bike lanes still draw from
+the raw way (BACKLOG).
 
 *End of draft.*

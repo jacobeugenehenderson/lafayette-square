@@ -230,7 +230,8 @@
       "url": "https://mutcd.fhwa.dot.gov/pdfs/11th_Edition/part3.pdf",
       "covers": [
         "Part 3 markings: islands, channelizing lines, gore / neutral areas at ramps",
-        "curbed vs painted island treatment"
+        "curbed vs painted island treatment",
+        "Part 3 longitudinal markings: centre lines (§3B.01–§3B.03), edge lines (§3B.09–§3B.10), lines through intersections (§3B.11), line widths and patterns (§3A.04)"
       ],
       "terms": {
         "aiUse": "permitted",
@@ -8219,6 +8220,167 @@
       "scope": "the TOPOGRAPHIC returns (the seam is measured on dry ground); RMSEz = the 95% figure / 1.96 (NSSDA). The bathymetric returns are SQRT(0.25² + (0.0075d)²) m at 95%, shallow FOV",
       "foundOn": "2026-10-25",
       "foundBy": "Swash"
+    },
+    {
+      "id": "f-mutcd-centre-line",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "separates": "opposing traffic",
+        "colour": "yellow"
+      },
+      "where": "§3B.01 ¶01 (Standard)",
+      "quote": "Center line pavement markings, when used, shall be the pavement markings used to delineate the separation of traffic lanes that have opposite directions of travel on a roadway and shall be yellow."
+    },
+    {
+      "id": "f-mutcd-centre-kinds",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "twoLaneTwoWay": [
+          "broken yellow (passing both ways)",
+          "solid + broken yellow (passing one way)",
+          "double solid yellow (no passing)"
+        ],
+        "singleSolidYellow": "not a centre line"
+      },
+      "where": "§3B.01 ¶04–¶05 (Standard)",
+      "quote": "A single solid yellow line shall not be used as a center line marking on a two-way roadway."
+    },
+    {
+      "id": "f-mutcd-four-lane",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "undividedTwoWayLanesAtLeast": 4,
+        "kind": "double solid yellow"
+      },
+      "where": "§3B.01 ¶06 (Standard)",
+      "quote": "the center line markings on undivided two-way roadways with four or more lanes for moving motor vehicle traffic always available shall be the two-direction no-passing zone markings consisting of normal width double solid yellow lines"
+    },
+    {
+      "id": "f-mutcd-three-lane",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "throughLanes": 3,
+        "kind": "no-passing markings, two lanes one direction"
+      },
+      "where": "§3B.01 ¶08 (Guidance)",
+      "quote": "On two-way roadways with three through lanes for moving motor vehicle traffic, two lanes should be designated for traffic in one direction by using one-direction or two-direction no-passing zone markings"
+    },
+    {
+      "id": "f-mutcd-centre-warrant",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "by": [
+          "functional class (urban arterials and collectors)",
+          "traveled-way width",
+          "ADT"
+        ],
+        "alwaysWhenLanesAtLeast": 3
+      },
+      "where": "§3B.02 ¶01–¶02",
+      "quote": "Center line markings shall be placed on all paved undivided two-way urban arterials and collectors that have a traveled way of 20 feet or more in width and an ADT of 6,000 vehicles per day or greater."
+    },
+    {
+      "id": "f-mutcd-edge-lines",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "right": "normal solid white",
+        "leftOfDividedOrOneWay": "normal solid yellow"
+      },
+      "where": "§3B.09 ¶02–¶03 (Standard)",
+      "quote": "If used on the roadways of divided highways or one-way streets, or on any ramp in the direction of travel, left edge line pavement markings shall consist of a normal width solid yellow line"
+    },
+    {
+      "id": "f-mutcd-edge-omit",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "mayOmitWhere": [
+          "curbs",
+          "parking",
+          "other markings"
+        ]
+      },
+      "where": "§3B.10 ¶05 (Option)",
+      "quote": "Edge line markings may be excluded, based on engineering judgment, for reasons such as if the traveled way edges are delineated by curbs, parking, or other markings."
+    },
+    {
+      "id": "f-mutcd-edge-at-intersections",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "discontinuedAcrossApproaches": true,
+        "solidThroughFarSideOfT": true,
+        "maintainedAcrossDriveways": true
+      },
+      "where": "§3B.11 ¶07–¶09",
+      "quote": "Edge line markings should be discontinued across intersecting approaches at intersections or interchanges."
+    },
+    {
+      "id": "f-mutcd-line-width",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "normalLine_in": [
+          4,
+          6
+        ],
+        "doubleLineSpaceMax": "2 × line width",
+        "brokenSegment_ft": 10,
+        "brokenGap_ft": 30
+      },
+      "where": "§3A.04 ¶02–¶03, ¶06",
+      "quote": "Broken lines should consist of 10-foot line segments and 30-foot gaps, or dimensions in a similar ratio of line segments to gaps as appropriate for traffic speeds and the need for delineation."
     }
   ]
 }

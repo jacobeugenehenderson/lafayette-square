@@ -1,12 +1,13 @@
 // claims-a-road-marking-lies-inside-its-road.mjs — EVERY ROAD MARKING THE GROUND PAINTS LIES ON THE ROAD.
 //
 // ⭐ WHY (Boz, 2026-10-21, LS #39): Mississippi Avenue's centre stripe straddles the block edge at (137.7, 423.5)→
-//   (140.5, 406.0): its west half lies on lifted verge, because the stripe is struck from the street's centreline
-//   (`bake-ground.js#centreStripeRings`) and never reads where the road was actually painted. Paint on the wrong ground
+//   (140.5, 406.0): its west half lies on lifted verge, because the stripe was struck from the street's centreline
+//   (then `bake-ground.js#centreStripeRings`, since replaced by `tileGround.js#roadMarkings`, which keeps the stripe only
+//   where both sides have frontage) and never read where the road was actually painted. Paint on the wrong ground
 //   is a defect whatever the kerb does with it, so it is judged here, by itself.
 // ⭐ READ, NEVER RESTATED: the markings and the road are the ground bake's own paint stack, exactly as the flatten receives
 //   it (`bakeGround({ stackOnly: true })`): the marking groups are every `mat:` group the bake paints as a marking on the
-//   carriageway — `stripe` (centre stripes), `edgeline` (parking-lane lines), `bikelane`, `crosswalk` — and the road is
+//   carriageway — `stripe` (centre stripes), `edgeline` / `edgeline:yellow` (edge and parking lines), `bikelane`, `crosswalk` — and the road is
 //   `mat:asphalt` ∪ `mat:highway`. A marking group absent from a town is said, never assumed.
 // ⛔ THE GATE: each piece of a marking's ground lying outside the road is judged by its own THICKNESS (2 × area ÷ perimeter):
 //   thicker than one lattice step (`lattice.js`) is paint off the road, thinner is the boolean's own rounding along a shared
@@ -32,7 +33,7 @@ import { CLIP_SCALE, LATTICE_M } from '../src/lib/lattice.js'
 
 const argv = process.argv.slice(2), SELF = argv.includes('--selftest')
 const SHOW = Number(argv.find(a => a.startsWith('--show='))?.slice(7) || 6)
-const MARKINGS = ['stripe', 'edgeline', 'bikelane', 'crosswalk'], ROAD = ['asphalt', 'highway']
+const MARKINGS = ['stripe', 'edgeline', 'edgeline:yellow', 'bikelane', 'crosswalk'], ROAD = ['asphalt', 'highway']
 const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
 const C = (r) => r.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) }))
 const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it?.[0]) && typeof it[0][0] === 'number' ? [it] : it?.outer ? [it.outer, ...(it.holes || [])] : []).filter(r => r?.length >= 3)

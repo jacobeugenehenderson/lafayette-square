@@ -53,9 +53,7 @@ const PRI = {
   alley: 10,
   footway: 11,
   building: 12,
-  edgeline: 13,
   bikelane: 13,
-  stripe: 14,
   barrier: 14,       // fences/walls/hedges as thin strokes on top
   centerline: 15,
   labels: 16,
@@ -433,11 +431,11 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // it past the circle — and the per-tree / per-lamp / per-label meshes are
   // hundreds of draw calls. Suppress all of it in Survey; keep only the
   // centerline skeleton (force-shown, recolored blue below). The roadway marking
-  // paint (stripe/edge/bike) is Measure/Design-era and also hidden. landscape /
+  // paint (bike lanes here; the stripe and edge lines are the V2 ground's, hidden there too) is Measure/Design-era and also hidden. landscape /
   // barriers are subtype-keyed (not single keys) and gated directly in the
   // render below.
   const SURVEY_HIDE = new Set([
-    'stripe', 'edgeline', 'bikelane',
+    'bikelane',
     'building', 'parking_lot', 'lamp', 'tree', 'water', 'labels',
   ])
   const hide = new Proxy(hideIn, {
@@ -554,35 +552,10 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return mergeGeos(geos)
   }, [mapData])
 
-  // ── Center stripes (yellow paint on road, thin ribbon) ──
-  const stripeGeo = useMemo(() => {
-    const geos = []
-    for (const s of (mapData.layers?.centerStripe || [])) {
-      if (s.coords?.length >= 2) {
-        const mid = s.coords[Math.floor(s.coords.length / 2)]
-        if (!pointInBoundary(mid.x ?? mid[0], mid.z ?? mid[1])) continue
-        const geo = stripeRibbonGeo(s.coords, 0.1)
-        if (geo) geos.push(geo)
-      }
-    }
-    return mergeGeos(geos)
-  }, [mapData, B])
-
-  // ── Edge lines (white parking lines, thin ribbon) ───────
-  const edgeGeo = useMemo(() => {
-    const geos = []
-    for (const pl of (mapData.layers?.parkingLine || [])) {
-      if (!pl.coords || pl.coords.length < 2 || !pl.offset) continue
-      const mid = pl.coords[Math.floor(pl.coords.length / 2)]
-      if (!pointInBoundary(mid.x ?? mid[0], mid.z ?? mid[1])) continue
-      for (const side of [-1, 1]) {
-        const pts = offsetLine(pl.coords, pl.offset, side)
-        const geo = stripeRibbonGeo(pts, 0.08)
-        if (geo) geos.push(geo)
-      }
-    }
-    return mergeGeos(geos)
-  }, [mapData, B])
+  // ⛔ The centre stripe and the edge lines are NOT drawn here any more (BRIEF-the-ink-is-owned-by-its-labels §3, 2026-10-25):
+  // they were map.json's raw-OSM chains (`centerStripe`, `parkingLine`), a second picture beside the bake's. The Designer's
+  // ground draws the road's paint the bake does (`BlockGeometryV2Debug` ← `tileGround.js#roadMarkings`), under the same
+  // Center Stripes / Edge Lines toggles.
 
   // ── Bike lanes (green, thin ribbon) ─────────────────────
   const bikeGeo = useMemo(() => {
@@ -845,12 +818,8 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     // building's fate: the polygon said in-or-out, the circle then made it
     // translucent. A building that passed membership now renders at full alpha.
     building: makeFlatMat(color('building'), PRI.building, { fade: null }),
-    stripe: makeLineMat(color('stripe')),
-    edgeline: makeLineMat(color('edgeline'), 0.7),
     bikelane: makeLineMat(color('bikelane')),
     // Flat (mesh) variants — terrain-aware ribbons used in shots
-    stripeFlat: makeFlatMat(color('stripe'), PRI.stripe, { fade }),
-    edgelineFlat: makeFlatMat(color('edgeline'), PRI.edgeline, { fade }),
     bikelaneFlat: makeFlatMat(color('bikelane'), PRI.bikelane, { fade }),
     centerline: makeLineMat(color('centerline'), 0.9),
     centerlineSurvey: makeLineMat(STROKE_COLORS.surveyCenterline, 1),
@@ -901,20 +870,6 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       {!hide.building && buildingGeo && (
         <mesh geometry={buildingGeo} material={mats.building} renderOrder={PRI.building}
           position={[0, 0.1, 0]} />
-      )}
-
-      {/* Center stripes — ribbon mesh so they follow terrain.  Lifted just
-          above the StreetRibbons face fills (group y=0.15 in shot mode) so
-          the stripe paint never z-fights the asphalt underneath it. */}
-      {!hide.stripe && stripeGeo && (
-        <mesh geometry={stripeGeo} material={mats.stripeFlat} renderOrder={PRI.stripe}
-          position={[0, 0.15, 0]} />
-      )}
-
-      {/* Edge lines */}
-      {!hide.edgeline && edgeGeo && (
-        <mesh geometry={edgeGeo} material={mats.edgelineFlat} renderOrder={PRI.edgeline}
-          position={[0, 0.15, 0]} />
       )}
 
       {/* Bike lanes */}

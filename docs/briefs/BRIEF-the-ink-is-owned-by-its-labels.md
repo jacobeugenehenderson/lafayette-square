@@ -116,8 +116,11 @@ label of the ink edge it replaces.
   and every row that moves explained. ▶ the asphalt/curb row's cause is being measured separately (Zob's HPDM site read); this
   brief doesn't own that row unless the read says it's an ink-ownership row.
 - shape.json's `ink` owners equal ①'s labels on every ink edge (a new check reading both; mutant: a re-stroke resolution).
-- The stripe: the same stripe geometry as today within the lattice step, on four towns (a check), plus
-  `claims-a-closed-stripe-keeps-its-hole`.
+- The stripe and the edge lines: `checks/claims-the-road-paint-reads-its-marks.mjs` on the four towns (heavy, `--slot=`): every
+  stripe on a marked run (S), every edge line beside a kerb that takes one (E), an every-street-marked mutant RED, and ② byte-
+  identical whatever the parking depth (P); plus `claims-a-closed-stripe-keeps-its-hole`. ⛔ Not "the same stripe geometry as
+  today": the rulings changed the stripe on purpose (Jacob, 2026-10-25: *"no residential stripes, double yellow OK for default
+  otherwise"* · *"I think I would be ok to stop lines at intersections"*); Boz ruled the replacement 2026-10-25.
 - `claims-proto-frozen-matches-live` (cited by Zob, not run at this head): run it.
 - Validation through the production path (Survey and the Stage bake), never a parallel spike.
 

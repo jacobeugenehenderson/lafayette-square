@@ -143,6 +143,11 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   ▶ `node checks/claims-the-walk-is-level-across.mjs` (every walk and curb, at the town's exaggeration ceiling)
 - **Lawn slope limit** — `norms.json` → `{"lawn": {"slopeMax": "1:3.5"}}`: the steepest a tree lawn takes the cross-fall before the
   rest eases into the lot. The four US towns carry 1:3.5, a DESIGN CHOICE (Jacob, 2026-10-11), not a standard. Kit = no limit.
+- **Road paint** *(layers "Center Stripes" `stripe`, "Edge Lines" `edgeline`; the one-way's yellow left edge takes the stripe's
+  colour)* — the kind per street is selected at the pour and printed by rung (`[paint]`): `norms.json` → `{"markings": {"centre":
+  "none"|"broken"|"double-solid"|"solid-broken", "edges": false, "look": {"line", "gap", "dash", "space", "edgeInset"}}}`
+  (metres) over the kit's house style (`STYLE-GUIDE §18`). Parking depth: seeded by street type, selected by `parking:*` tags;
+  Survey control owed. Re-pour to take a norm change. ▶ `node checks/claims-the-road-paint-reads-its-marks.mjs`
 - **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them
   (or on a recorded OSM crossing whose ends land in that corner's arc — read from `osm.json`, nothing to fetch), kerb to kerb;
   no curb cuts ⇒ none. Same ladder under `crosswalks`: `{"style": "lines"|"continental", "width", "line",

@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, differenceRings } from '../lib/buildBlockGeometryV2.js'
-import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — tiles (shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
+import { buildTileGround, sectionOpen, clipPaintToStencil } from '../lib/tileGround.js'  // T1 — tiles (shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
 import { expandCustomsAcrossFeSegOrds } from '../lib/feCustomKey.js'  // spread a per-fe custom across all its segOrds so split (T) block-edges render the flip (renderer reads per-run-segOrd; store keys min-segOrd)
 import { STREET_SMOOTH } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the MeasureOverlay navy draw (SSoT; SKELETON.md §3.5)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
@@ -52,7 +52,13 @@ import { fetchCurbedMinWidth } from './api.js'
 // Match StreetRibbons' BAND_PRIORITY for the bands V2 renders. Residential
 // block fill sits at face-level (pri 1) — below all street/strip layers.
 // Curb sits between sidewalk and asphalt to match V1's stack order.
-const PRI = { residential: 1, treelawn: 3, sidewalk: 5, curbCut: 5.5, curb: 6, asphalt: 8, crosswalk: 8.5 }
+const PRI = { residential: 1, treelawn: 3, sidewalk: 5, curbCut: 5.5, curb: 6, asphalt: 8, crosswalk: 8.5, edgeline: 8.7, stripe: 8.8 }
+// the road's paint as flat geometry, cut to the disc for display (the record stays uncut: the bake cuts the rim once)
+function paintGeos(paint, stencil, where) {
+  if (!paint) { console.warn(`[BlockGeometryV2Debug] ⛔ the ${where} carries no road paint (stripe / edge lines) — frozen before the paint was sealed. Leave and re-enter Survey to re-freeze, or re-bake.`); return {} }
+  const flat = (rings, y) => rings?.length ? ringsToFlatGeo(clipPaintToStencil(rings, stencil), y, true) : null
+  return { edgeline: flat(paint.edgeline, 0.047), edgelineYellow: flat(paint['edgeline:yellow'], 0.047), stripe: flat(paint.stripe, 0.048) }
+}
 
 function ringSignedArea(ring) {
   let a = 0
@@ -299,6 +305,10 @@ export default function BlockGeometryV2Debug({
   const sidewalkVisible           = layerVis?.sidewalk  !== false
   const curbCutVisible            = layerVis?.curbCut   !== false
   const crosswalkVisible          = layerVis?.crosswalk !== false
+  // the road's paint: the Designer's Center Stripes / Edge Lines toggles (the bake reads the same ids); hidden in Survey,
+  // which draws the shape, not its paint (as MapLayers' SURVEY_HIDE did)
+  const stripeVisible             = layerVis?.stripe    !== false && !surveyActive
+  const edgelineVisible           = layerVis?.edgeline  !== false && !surveyActive
   const treelawnVisible           = layerVis?.treelawn  !== false
   const lotVisible                = layerVis?.lot       !== false
   const medianVisible             = layerVis?.median    !== false
@@ -352,6 +362,7 @@ export default function BlockGeometryV2Debug({
   const sidewalkCol = colorFor('sidewalk')
   const curbCutCol   = colorFor('curbCut')
   const crosswalkCol = colorFor('crosswalk')
+  const stripeCol = colorFor('stripe'), edgelineCol = colorFor('edgeline')
   const liveRibbons = useMemo(
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
@@ -776,6 +787,9 @@ export default function BlockGeometryV2Debug({
       curb:     __time('curb',     () => ringsToFlatGeo(sg.curb,     0.035, true)),
       asphalt:  __time('asphalt',  () => ringsToFlatGeo(sg.asphalt,  0.040, true)),
       crosswalk: __time('crosswalk', () => ringsToFlatGeo(sg.crosswalk, 0.045, true)),   // curb-cut-to-curb-cut markings
+      // ⭐ the road's paint, FROZEN with the shape (tileGround.js#roadMarkings, posted on Survey-exit and by the bake): a shape
+      // frozen before it carries none, and that is said by name, never read as "no paint"
+      ...paintGeos(frozenShape.paint, stencil, 'frozen shape.json'),
       highway:  __time('highway',  () => ringsToFlatGeo(frozenShape.highway, 0.015, true)),   // G1 — frozen grade-sep highways (sibling group, not tile-derived)
       block:    __time('block',    () => ringsToFlatGeo(sg.block, 0.008, true)),   // frozen block silhouette, under the LU paint
       blockRings: sg.block,   // raw iA rings — handle anchoring (one geometry truth)
@@ -858,6 +872,8 @@ export default function BlockGeometryV2Debug({
       sidewalk: ringsToFlatGeo(tg.sidewalk, 0.030, true),
       curbCut:  ringsToFlatGeo(tg.curbCut,  0.032, true),
       crosswalk: ringsToFlatGeo(tg.crosswalk, 0.045, true),
+      ...paintGeos(tg.roadPaint, stencil, 'live build'),
+      roadPaint: tg.roadPaint,   // frozen with the shape on Survey-exit
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
@@ -894,7 +910,7 @@ export default function BlockGeometryV2Debug({
     // they can't ride a tile, and the bare-array artifact dropped them from every
     // non-Survey view (regression 4924d9a). Now Section/Design restore them.
     if (surveyActive && art && art.length) {
-      latestShapeArtifactRef.current = { tiles: art, highway: tileGeos.highwayRings || [] }
+      latestShapeArtifactRef.current = { tiles: art, highway: tileGeos.highwayRings || [], paint: tileGeos.roadPaint }
     }
   }, [surveyActive, tileGeos])
   const wasSurveyRef = useRef(surveyActive)
@@ -1058,6 +1074,9 @@ export default function BlockGeometryV2Debug({
     sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     curbCut:           makeMaterial(curbCutCol, PRI.curbCut, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     crosswalk:         makeMaterial(crosswalkCol, PRI.crosswalk, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
+    stripe:            makeMaterial(stripeCol, PRI.stripe, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
+    edgeline:          makeMaterial(edgelineCol, PRI.edgeline, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
+    edgelineYellow:    makeMaterial(stripeCol, PRI.edgeline, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     sidewalkSelected:  makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
     // Curb is the silhouette STROKE — stays solid even while editing so the
     // hardscape outline reads against the translucent fills (Jacob's "solid
@@ -1070,7 +1089,7 @@ export default function BlockGeometryV2Debug({
     // Median color edit previews live; faceFade + PRI.residential to sit with
     // the LU faces it lives among.
     median:            makeMaterial(medianCol,   PRI.residential, faceFade, { measureActive, surveyActive, editing: surveyEditing }),
-  }), [makeMaterial, asphaltCol, highwayCol, medianCol, treelawnCol, sidewalkCol, curbCutCol, crosswalkCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade, faceFade])
+  }), [makeMaterial, asphaltCol, highwayCol, medianCol, treelawnCol, sidewalkCol, curbCutCol, crosswalkCol, stripeCol, edgelineCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade, faceFade])
 
   // Non-street ribbons (alley/footway/cycleway/steps/path). Pavement-only
   // strips buffered from each ribbon's pavedWidth via the shared helper
@@ -1276,6 +1295,9 @@ export default function BlockGeometryV2Debug({
         {crosswalkVisible && sectionGeos.crosswalk && (
           <mesh geometry={sectionGeos.crosswalk} renderOrder={PRI.crosswalk} receiveShadow material={bandMats.crosswalk} />
         )}
+        {edgelineVisible && sectionGeos.edgeline && <mesh geometry={sectionGeos.edgeline} renderOrder={PRI.edgeline} material={bandMats.edgeline} />}
+        {edgelineVisible && sectionGeos.edgelineYellow && <mesh geometry={sectionGeos.edgelineYellow} renderOrder={PRI.edgeline} material={bandMats.edgelineYellow} />}
+        {stripeVisible && sectionGeos.stripe && <mesh geometry={sectionGeos.stripe} renderOrder={PRI.stripe} material={bandMats.stripe} />}
         {curbVisible && sectionGeos.curb && (
           <mesh geometry={sectionGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
         )}
@@ -1381,6 +1403,9 @@ export default function BlockGeometryV2Debug({
       {crosswalkVisible && tileGeos?.crosswalk && (
         <mesh geometry={tileGeos.crosswalk} renderOrder={PRI.crosswalk} receiveShadow material={bandMats.crosswalk} />
       )}
+      {edgelineVisible && tileGeos?.edgeline && <mesh geometry={tileGeos.edgeline} renderOrder={PRI.edgeline} material={bandMats.edgeline} />}
+      {edgelineVisible && tileGeos?.edgelineYellow && <mesh geometry={tileGeos.edgelineYellow} renderOrder={PRI.edgeline} material={bandMats.edgelineYellow} />}
+      {stripeVisible && tileGeos?.stripe && <mesh geometry={tileGeos.stripe} renderOrder={PRI.stripe} material={bandMats.stripe} />}
       {curbVisible && tileGeos?.curb && (
         <mesh geometry={tileGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
       )}

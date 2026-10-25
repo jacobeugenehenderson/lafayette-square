@@ -257,6 +257,7 @@ const PAINT_ORDER = [
   ['mat', 'hedge'],
   // Roadway markings (paint), drawn last so they sit on top of asphalt.
   ['mat', 'edgeline'],
+  ['mat', 'edgeline:yellow'],   // a one-way roadway's LEFT edge: the stripe's yellow, under the Edge Lines toggle
   ['mat', 'bikelane'],
   ['mat', 'stripe'],
   // ⭐⭐ THE BED — the ground UNDER every water body (Jacob, 2026-09-26: "there must be no
@@ -304,11 +305,10 @@ const PAINT_ORDER = [
 const FLOOR_KEYS = new Set(['mat:bed'])
 
 
-// Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
-// MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
+// Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors MapLayers.jsx's stripeRibbonGeo widths so
+// the bake matches the live render. ⛔ The road's paint (stripe, edge lines) is not here: the ground strikes it from the
+// sealed shape at the look's line width (`streetMarkings.js#MARKING_LOOK`).
 export const POLYLINE_HALF_WIDTHS = {
-  stripe:         0.10,
-  edgeline:       0.08,
   bikelane:       0.25,
   fence:          0.05,
   wall:           0.10,
@@ -344,27 +344,9 @@ export function polylineToRing(coords, halfWidth) {
   return ring
 }
 
-// ⭐ THE CENTRE STRIPE IS ①'s LINE (Boz's ruling, 2026-10-17, on Jacob's "everything uses ① as the SSoT"): each eligible
-// street's own `points` from the ribbons — the line ① was struck from, so the stripe lies inside ①'s ink by construction.
-// It replaces map.json's `centerStripe`, which derive.js pushes from the raw OSM way and which departed from ① by up to
-// 7.85 m (HPDM; ▶ checks/claims-the-road-lies-on-the-lattice.mjs). Eligibility is derive.js's own rule, read off the
-// street RECORD, never by matching names: an OSM class among the eight below · not oneway (a divided road's `pairId`
-// carriageways are each oneway, so the rule already leaves them out) · not grade-separated (a bridge's paint is not the
-// ground's). `dashed` is carried as derive.js carried it; nothing here reads it.
-const STRIPE_CLASSES = new Set(['residential', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified'])
-export function centreStripeRings(streets) {
-  const out = []
-  for (const s of streets || []) {
-    if (!STRIPE_CLASSES.has(s.highway) || s.oneway === true || s.gradeSeparated) continue
-    const ring = polylineToRing(s.points, POLYLINE_HALF_WIDTHS.stripe)
-    if (ring) out.push({ skelId: s.skelId, dashed: s.highway === 'residential', ring })
-  }
-  return out
-}
-
 // Lateral-offset a polyline by `offset` to one side, then return the
-// offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by parking_line
-// (edgeline) + bike_lane which carry a single centerline + lateral offset
+// offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by bike_lane, which
+// carries a single centerline + lateral offset
 // — the actual paint sits on the offset, not the centerline.
 export function lateralOffset(coords, offset, side) {
   const out = []
@@ -596,7 +578,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
            // each rim tile's ring noded with its paint's own rim crossings (live): the deformer's 'beyond' (BRIEF-the-rim-is-cut-once)
-           rimRings: pr.protoRimRings || [] }
+           rimRings: pr.protoRimRings || [],
+           // the road's paint, struck from the sealed shape (tileGround.js#roadMarkings): stripe · edgeline · edgeline:yellow
+           roadPaint: pr.roadPaint }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -1177,14 +1161,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, bridgePaint, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, bridgePaint, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, rimRings, roadPaint } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
   // so layerVis can hide it in Stage/Preview. Polygon overlays (parking_lot,
   // leisure subtypes, natural subtypes) drop in as raw rings; line features
-  // (parkingLine / bikeLane / barriers; the centre stripe is ①'s, below) buffer to thin
+  // (bikeLane / barriers; the road's paint is the ground's own, below) buffer to thin
   // polygons via polylineToRing.
   const mapLayers = mapData.layers || {}
   const pushMat = (key, ring) => {
@@ -1227,9 +1211,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const ring = polylineToRing(item.coords, hw)
     if (ring) pushMat(item.kind, ring)
   }
-  // Centre stripes — ①'s own line per eligible street (`centreStripeRings`), never map.json's.
-  const stripeRings = centreStripeRings(ribbons.streets).map(x => x.ring)
-  for (const ring of stripeRings) pushMat('stripe', ring)
+  // ⭐ THE ROAD'S PAINT — the centre stripe in its selected kind and the edge lines, struck from the sealed centreline and
+  // ②'s labelled kerb by the ground itself (`tileGround.js#roadMarkings`), the same rings Survey draws. ⛔ Never map.json's
+  // chains and never `ribbons.streets[].points` (BRIEF-the-ink-is-owned-by-its-labels §3).
+  if (!roadPaint) throw new Error('[bake-ground] ⛔ the ground returned no road paint (roadPaint) — refusing to bake a road with no stripe or edge record.')
+  const stripeRings = roadPaint.stripe
+  for (const key of ['stripe', 'edgeline', 'edgeline:yellow']) for (const ring of roadPaint[key]) pushMat(key, ring)
   // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile, no ink piece (the curbless blocks'
   // ground included) and not under H has no owner to take its line from. Refused by group and point, never dropped or nudged.
   {
@@ -1238,15 +1225,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no ink piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
     console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, an ink piece or H`)
   }
-  // Parking-lane edge lines + bike lanes — both sides offset from a centerline.
-  for (const item of (mapLayers.parkingLine || [])) {
-    if (!item.coords || !item.offset) continue
-    for (const side of [-1, 1]) {
-      const off = lateralOffset(item.coords, item.offset, side)
-      const ring = polylineToRing(off, POLYLINE_HALF_WIDTHS.edgeline)
-      if (ring) pushMat('edgeline', ring)
-    }
-  }
+  // Bike lanes — both sides offset from a centerline (filed: they move to the sealed shape too, BACKLOG).
   for (const item of (mapLayers.bikeLane || [])) {
     if (!item.coords || !item.offset) continue
     for (const side of [-1, 1]) {
@@ -1677,6 +1656,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       // Per-LU treelawn variants inherit the adjacent parcel's LU color.
       const lu = key.slice('treelawn:'.length)
       color = designLuColors[lu] || DEFAULT_LU_COLORS[lu] || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown
+    } else if (key === 'edgeline:yellow') {
+      // ⭐ the yellow edge line is the CENTRE STRIPE's paint (mutcd-11r1 §3B.09 ¶03: a left edge is yellow), so it takes the
+      // stripe's colour; its toggle is still 'edgeline' (`groupLayerId` reads the bare key)
+      color = designLayerColors.stripe || DEFAULT_LAYER_COLORS.stripe
+      if (!color) throw new Error('[bake-ground] ⛔ no stripe colour for the yellow edge line (layerColors.stripe / DEFAULT_LAYER_COLORS.stripe)')
     } else {
       const layerKey = BAND_TO_LAYER[key] || key
       color = designLayerColors[layerKey]
@@ -1984,7 +1968,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // between tiles; a crossing names every owner) and, `kind: 'block'`, the curbless blocks' ground (a block whose curbs
   // meet has no tile, and its ground is road, owned by its own ① edges).
   // `boundaryRing`: the disc the pour stamped the tiles with — a SHAPE fact (fill-free), read by Survey's finish (`stampedWith`)
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ink: inkPieces, boundaryRing: stampedWith }))
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ink: inkPieces, boundaryRing: stampedWith, paint: roadPaint }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

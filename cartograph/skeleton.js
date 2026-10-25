@@ -20,6 +20,7 @@ import { writeIfChanged } from './io.js'
 import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { LOCAL_SECTION } from '../src/cartograph/streetClass.js'   // the kit's sidewalk: the local row (uniform until classifier step 7)
 import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER, isOneway, isRingWay, travelOrdered } from '../src/cartograph/streetClass.js'
+import { chainMarkings } from '../src/cartograph/streetMarkings.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('skeleton.js (writes data/<scene>/clean/skeleton.json)')
@@ -1302,6 +1303,36 @@ function carryWays(streets) {
     s.segmentWays = runs
   }
   console.log(`\nSource ways carried (full tags, per segment): ${single} segment(s) on single-way chains, ${exact} by exact vertex identity, ${oneEnd} by one exact end, ${byOrder} by order along the chain`)
+}
+
+// ⭐ THE ROAD'S PAINT TAGS, IN THE CHAIN'S POINT ORDER (BRIEF-the-ink-is-owned-by-its-labels §3a, grant C): `streetMarkings.js
+// #chainMarkings` votes them over the chain's source ways, and each way is read in the direction it runs ALONG THE CHAIN,
+// found by exact vertex identity on a segment `carryWays` attributed to it (both ends on its raw coords) — never by
+// geometry. A one-way runs in travel order already (`travelOrdered`); a two-way way a weld laid backwards is read flipped.
+// Printed: the chains with any paint tag, the fields the ways split on, and the ways whose direction no segment shows.
+function carryMarkings(streets) {
+  const key = (p) => `${p.x},${p.z}`
+  let tagged = 0, split = 0, undirected = 0
+  for (const s of streets) {
+    const dir = new Map()
+    for (const r of s.segmentWays || []) {
+      if (r.ways.length !== 1 || r.by) continue
+      const id = r.ways[0]; if (dir.has(id)) continue
+      const wc = WAY_COORDS_BY_ID.get(id) || [], n = wc.length, closed = n > 2 && key(wc[0]) === key(wc[n - 1]), idx = new Map()
+      wc.forEach((c, i) => { if (!idx.has(key(c))) idx.set(key(c), i) })
+      for (let i = r.from; i < r.to; i++) {
+        const a = idx.get(key(s.points[i])), b = idx.get(key(s.points[i + 1]))
+        if (a == null || b == null || a === b || (closed && (a === 0 || b === 0))) continue
+        dir.set(id, Math.sign(b - a)); break
+      }
+    }
+    const m = chainMarkings(s.segmentWays, s.ways || {}, (id) => dir.get(id) ?? null)
+    s.markings = m
+    if (Object.entries(m).some(([k, v]) => v != null && k !== 'split' && k !== 'undirected')) tagged++
+    if (m.split) split++
+    if (m.undirected) undirected++
+  }
+  console.log(`\nPaint tags carried (streetMarkings#chainMarkings): ${tagged} chain(s) carry one · ${split} where the source ways disagree (field left unset) · ${undirected} with a way whose direction along the chain no exact segment shows (its forward-relative tags not read)`)
 }
 
 // A chain's class: the length-weighted vote over its OWN source ways' classes (the same vote
@@ -2867,6 +2898,7 @@ function main() {
   }
 
   carryWays(streets)
+  carryMarkings(streets)
 
   // ⭐ The lanes rung, every pour: an untagged chain takes the KIT configuration (2 lanes, 1 if one-way),
   // carried over from before the ruling, not newly ruled (BRIEF-the-classifier §5 ruling 1).

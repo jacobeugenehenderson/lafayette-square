@@ -3019,6 +3019,14 @@
       ]
     },
     {
+      "file": "checks/claims-the-road-paint-reads-its-marks.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only",
+        "declares @args --slot=<granted>"
+      ]
+    },
+    {
       "file": "checks/claims-the-search-outlives-an-empty-ticker.mjs",
       "tier": "safe",
       "why": [

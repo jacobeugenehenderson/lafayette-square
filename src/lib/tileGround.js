@@ -638,6 +638,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
   }
   if (frameRefusal.length) console.warn(`    ⛔ [①] shore cap on the frame REFUSED, left butted: ${frameRefusal.join(' · ')}`)
+  // the owner (①'s own table) of each stroke segment k → k+1: the label its right-hand pass carries, captured as it is pushed
+  const lineOwn = S.map(() => [])
   for (const [si, { seq, closed, V, nrm }] of S.entries()) {
     const nV = V.length
     // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it 'left' puts every ASYMMETRIC authored
@@ -665,7 +667,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       if (nV < 3) continue
       // the left boundary is walked BACK, so each of its edges is owned by the left stamp at its start
       const rR = [], lR = [], rL = [], lL = []
-      for (let k = 0; k < nV; k++) for (const q of Rk(k)) { rR.push([q[0], q[1]]); lR.push(right(V[k].f)) }
+      for (let k = 0; k < nV; k++) for (const q of Rk(k)) { rR.push([q[0], q[1]]); lR.push(right(V[k].f)); if (lineOwn[si][k] == null) lineOwn[si][k] = lR[lR.length - 1] }
       for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { rL.push([q[0], q[1]]); lL.push(left(V[k].b)) }
       const outerR = Math.abs(signedArea(rR)) >= Math.abs(signedArea(rL))
       orient(rR, lR, outerR); orient(rL, lL, !outerR)
@@ -674,7 +676,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
     const ring = [], labs = [], pass = [], pEnd = []   // pass: true = the right-hand pass; reversed WITH the ring below
     const endOf = (k) => (k === 0 ? 'start' : k === nV - 1 ? 'end' : null)
-    for (let k = 0; k < nV; k++) for (const q of Rk(k)) { ring.push([q[0], q[1]]); labs.push(right(V[k].f)); pass.push(true); pEnd.push(endOf(k)) }
+    for (let k = 0; k < nV; k++) for (const q of Rk(k)) { ring.push([q[0], q[1]]); labs.push(right(V[k].f)); pass.push(true); pEnd.push(endOf(k)); if (lineOwn[si][k] == null) lineOwn[si][k] = labs[labs.length - 1] }
     for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { ring.push([q[0], q[1]]); labs.push(left(V[k].b)); pass.push(false); pEnd.push(endOf(k)) }
     if (ring.length < 3) continue
     // the stroke's two TRUE ends, as (chain, end): a cut inside the stroke is no end, so it gets no cap mark
@@ -723,6 +725,30 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
     return pair
   })()
+
+  // ⭐⭐ THE SEALED CENTRELINE — the line ① was struck from, frozen beside it (BRIEF-the-ink-is-owned-by-its-labels §3.3;
+  // Boz approved the record 2026-10-25). Past the Wall the road's paint reads THIS, never `ribbons.streets[].points`: one
+  // entry per STROKE as the mint expanded it (chain cuts stroked through, its working copy, not the survey), on the lattice.
+  //   points  [[x, z]…] lattice-rounded, consecutive duplicates removed · closed
+  //   own     per segment k → k+1: the owner index (①'s `owners`) of its right-hand edge — skelId · segOrd from ONE table
+  //   runs    [{ from, to, skelId, dir }] maximal spans of one chain; `dir` +1 when the stroke runs with the chain's own
+  //           point order, −1 against (a stroke may walk a chain reversed). A one-way chain runs in travel order (intake).
+  // ⛔ A segment rounding to nothing (shorter than the lattice) is dropped and counted, never merged silently.
+  const rl = (v) => Math.round(v * SCALE) / SCALE
+  let lineDropped = 0
+  const centrelines = S.map(({ closed, V }, si) => {
+    const pts = [], own = [], chainOf = []
+    const nV = V.length, nSeg = closed ? nV : nV - 1
+    for (let k = 0; k < nV; k++) { const p = [rl(V[k].p[0]), rl(V[k].p[1])], q = pts[pts.length - 1]
+      if (q && q[0] === p[0] && q[1] === p[1]) { lineDropped++; own.pop(); chainOf.pop() } else pts.push(p)
+      if (k < nSeg) { own.push(lineOwn[si][k] ?? null); chainOf.push(V[k].f) } }
+    if (closed && pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) { pts.pop(); lineDropped++ }
+    const runs = []
+    chainOf.forEach((m, k) => { const r = runs[runs.length - 1], id = m.c.skelId, dir = m.rev ? -1 : 1
+      if (r && r.skelId === id && r.dir === dir) r.to = k + 1; else runs.push({ from: k, to: k + 1, skelId: id, dir }) })
+    return { points: pts, closed: !!closed, own, runs }
+  }).filter(l => l.points.length >= 2)
+  if (lineDropped) console.log(`    [①] sealed centreline: ${lineDropped} vertex(es) under the lattice dropped (their segment with them)`)
 
   // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled`, N subject rings each with its
   // own label, labels on Clipper's Z channel, crossings resolved by walking the
@@ -1031,9 +1057,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, eps }
+             nodes, centrelines, eps }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, eps }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, eps }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -4240,14 +4266,146 @@ export function resolveProtoMeasure(run, blockCustoms, curbWidth) {
   const base = mz?.[run.side]?.pavementHW
   const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
   const d = resolvePedDepths(mz, run.side, c)
+  // the parking lane's depth inside the carriageway (the kerb → the parking edge): the authored slot, else the pour's seed
+  // (`measure[side].parking`). Read ONLY by the parking edge line; it never reaches pavementHW. A pour before the field
+  // carries none (`null`), and the paint refuses by name rather than read it as 0.
+  const pk = (c && Number.isFinite(c.parking)) ? Math.max(0, c.parking) : mz?.[run.side]?.parking
   return {
     pavementHW: Number.isFinite(hw) ? hw : null,
+    parking: Number.isFinite(pk) ? pk : null,
     curb: curbWidth,
     treelawn: d.tl, sidewalk: d.sw, hasTL: !!d.hasTL,
     matOuter: c?.materials?.outer ?? (d.hasTL ? 'LU' : 'SW'),
     matInner: c?.materials?.inner ?? (d.hasTL ? 'SW' : 'LU'),
   }
 }
+// ⭐⭐ THE ROAD'S PAINT, STRUCK FROM THE SEALED SHAPE (BRIEF-the-ink-is-owned-by-its-labels §3.3/§3a/§3b, 2026-10-25). Two
+// sources, both frozen, neither a chain:
+//   · the CENTRE STRIPE is the sealed centreline's ribbon (`protopolygon.centrelines`, the line ① was struck from), in the
+//     kind its street's `marks` selected (`streetMarkings.js`), and it STOPS AT INTERSECTIONS (Jacob, 2026-10-25: "I think I
+//     would be ok to stop lines at intersections"): it is kept only where BOTH sides of its street have frontage — the
+//     corridor each kerb LEG reaches across the carriageway (the leg extruded toward the street by its own resolved
+//     pavementHW). A leg is a maximal span of ②'s kerb (`iaFull`) owned by one run (`iaStamp`), no arc and no cap, so
+//     a corner arc ends it: the stripe stops where the curb turns, on the far side of a T too, by identity.
+//   · the EDGE LINES are struck from those same legs, toward the street: yellow on the LEFT of a one-way roadway, white
+//     on its RIGHT (mutcd-11r1 §3B.09), at the look's inset from the kerb face, or at the parking lane's depth where the
+//     side has one (the parking edge, white unless the side's edge is yellow). A leg ends at its arc, so a line stops at
+//     every approach and runs on through a T's far side, by construction (§3B.11 ¶07–08); ① has no driveways (¶09).
+// ⛔ Nothing here is searched or recovered: the street of a line is its run's or its centreline's label; the depth is
+// the run's resolved measure (`resolveProtoMeasure`, the one rule ② reads). → { stripe, edgeline, 'edgeline:yellow' }
+// rings, and a census. ⛔ No centreline record, a street with no `marks`, or a parking depth the pour never sealed REFUSES.
+// the road's paint cut to the disc, for a viewer (the Designer); the bake cuts the rim once itself (`clipAllToStencil`)
+export const clipPaintToStencil = (rings, stencil) => (stencil && stencil.length >= 3 ? intersectRings(rings, [stencil]) : rings)
+// the winding number of (x, z) about a ring of [x, z]
+const windingXZ = (r, x, z) => { let w = 0
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= z) { if (zi > z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) > 0) w++ } else if (zi <= z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) < 0) w-- }
+  return w }
+export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }) {
+  if (!Array.isArray(centrelines)) throw new Error('[tileGround][paint] ⛔ the protopolygon carries no sealed centreline (`centrelines`) — this town was poured before the road paint read it. Re-pour; the stripe never falls back to the chains.')
+  const W = look.line, out = { stripe: [], edgeline: [], 'edgeline:yellow': [] }
+  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, noMarks: new Set() }
+  const marks = (id) => { const M = marksOf(id); if (!M) census.noMarks.add(id); return M }
+  // ── the kerb legs ──
+  const legsOf = new Map()   // skelId → { left: [legs], right: [legs] }
+  for (const t of tiles) {
+    const rings = t.iaFull || []
+    rings.forEach((ring, si) => {
+      const n = ring?.length || 0; if (n < 3) return
+      const st = t.iaStamp?.[si], A = t.iaArc?.[si], cap = t.iaCap?.[si]
+      if (!st) return
+      const runOf = (e) => { if (cap?.[e] != null) return null; if (A && A[e] != null && A[e] === A[(e + 1) % n]) return null; return st[e] ?? null }
+      // the region lies on one side of every ring of the contour: read which, once, off the ring's longest edge
+      let best = 0, bl = -1
+      for (let e = 0; e < n; e++) { const a = ring[e], b = ring[(e + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L > bl) { bl = L; best = e } }
+      const a = ring[best], b = ring[(best + 1) % n], ux = (b[0] - a[0]) / bl, uz = (b[1] - a[1]) / bl, mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2
+      const probe = Math.min(0.01, bl / 4), inRegion = (x, z) => rings.reduce((w, r) => w + windingXZ(r, x, z), 0) !== 0
+      const lIn = inRegion(mx - uz * probe, mz + ux * probe), rIn = inRegion(mx + uz * probe, mz - ux * probe)
+      if (lIn === rIn) throw new Error(`[tileGround][paint] ⛔ kerb ring ${si} of a tile: the region is on ${lIn ? 'both' : 'neither'} side(s) of its longest edge at (${mx.toFixed(3)}, ${mz.toFixed(3)}) — no outward side to strike the paint toward. Refusing.`)
+      const toward = lIn ? -1 : 1   // +1: the street is on the edge's RIGHT; −1: on its left
+      let start = -1
+      for (let e = 0; e < n; e++) if (runOf(e) != null && runOf((e - 1 + n) % n) !== runOf(e)) { start = e; break }
+      if (start < 0) return       // no leg ends on this ring (one run all round, or none): no frontage to stop at
+      for (let k = 0, e = start; k < n;) {
+        const r = runOf(e); if (r == null) { e = (e + 1) % n; k++; continue }
+        const pts = [ring[e]]
+        while (k < n && runOf(e) === r) { pts.push(ring[(e + 1) % n]); e = (e + 1) % n; k++ }
+        const run = t.runs?.[r]; if (!run?.skelId) continue
+        census.legs++
+        const L = legsOf.get(run.skelId) || legsOf.set(run.skelId, { left: [], right: [] }).get(run.skelId)
+        L[run.side]?.push({ pts, out: toward, run })
+      }
+    })
+  }
+  // an open polyline offset toward the street by d (miter; a vertex sharper than 60° splits the line, counted)
+  const offsetBy = (pts, out, d) => {
+    const nrm = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]); return [out * (b[1] - a[1]) / L, -out * (b[0] - a[0]) / L] }
+    const pieces = [[]]
+    for (let i = 0; i < pts.length; i++) {
+      const n0 = i > 0 ? nrm(pts[i - 1], pts[i]) : null, n1 = i < pts.length - 1 ? nrm(pts[i], pts[i + 1]) : null
+      if (n0 && n1) { const m = [n0[0] + n1[0], n0[1] + n1[1]], ml = Math.hypot(m[0], m[1]), c = (m[0] * n0[0] + m[1] * n0[1]) / ml
+        if (c < 0.5) { census.sharpSplits++; pieces[pieces.length - 1].push([pts[i][0] + n0[0] * d, pts[i][1] + n0[1] * d]); pieces.push([[pts[i][0] + n1[0] * d, pts[i][1] + n1[1] * d]]); continue }
+        pieces[pieces.length - 1].push([pts[i][0] + m[0] / ml / c * d, pts[i][1] + m[1] / ml / c * d]) }
+      else { const q = n0 || n1; pieces[pieces.length - 1].push([pts[i][0] + q[0] * d, pts[i][1] + q[1] * d]) }
+    }
+    return pieces.filter(p => p.length >= 2)
+  }
+  const band = (pts, out, d1, d2) => { const A = offsetBy(pts, out, d1), B = offsetBy(pts, out, d2)
+    if (A.length !== B.length) return []
+    return A.map((a, i) => [...a, ...B[i].slice().reverse()]).filter(r => Math.abs(signedArea(r)) > 0) }
+  // ── the edge lines ──
+  for (const [id, L] of legsOf) {
+    const M = marks(id); if (!M || M.excluded) continue
+    for (const side of ['left', 'right']) for (const g of L[side]) {
+      const m = measureOfRun(g.run)
+      if (!m) continue
+      if (m.parking == null) throw new Error(`[tileGround][paint] ⛔ ${id}|${side}|${g.run.segOrd} carries no parking depth (measure.${side}.parking) — the pour predates the field. Re-pour; a missing depth is never read as no parking lane.`)
+      const edge = M.edges?.kind?.[side] || null, park = m.parking > 0 && m.parking < (m.pavementHW || 0)
+      if (!edge && !park) continue
+      const kind = edge === 'yellow' ? 'yellow' : edge ? 'white' : 'parking'
+      const d = park ? m.parking - W / 2 : look.edgeInset
+      census.edgeLegs[park && !edge ? 'parking' : kind]++
+      out[kind === 'yellow' ? 'edgeline:yellow' : 'edgeline'].push(...band(g.pts, g.out, d, d + W))
+    }
+  }
+  // ── the centre stripe ──
+  const corridor = new Map()   // skelId → the region both sides' legs reach across the carriageway
+  const corridorOf = (id) => {
+    if (corridor.has(id)) return corridor.get(id)
+    const L = legsOf.get(id), reach = (legs) => unionRings(legs.flatMap(g => { const m = measureOfRun(g.run); return m?.pavementHW > 0 ? band(g.pts, g.out, -W, m.pavementHW + 2 * W + look.gap) : [] }))
+    const c = L && L.left.length && L.right.length ? intersectRings(reach(L.left), reach(L.right)) : []
+    corridor.set(id, c); return c
+  }
+  const along = (P) => { const s = [0]; for (let i = 1; i < P.length; i++) s.push(s[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); return s }
+  // a polyline's sub-polylines over [a, b] of its arc length
+  const cut = (P, S, a, b) => { const o = []; for (let i = 0; i < P.length - 1; i++) { const s0 = S[i], s1 = S[i + 1]; if (s1 <= a || s0 >= b) continue
+    const at = (s) => { const t = (s - s0) / (s1 - s0); return [P[i][0] + (P[i + 1][0] - P[i][0]) * t, P[i][1] + (P[i + 1][1] - P[i][1]) * t] }
+    if (!o.length) o.push(at(Math.max(a, s0))); o.push(s1 <= b ? P[i + 1] : at(b)) } return o }
+  const lineAt = (P, off, dashed) => {        // a line of width W centred `off` to the polyline's right (stroke order)
+    const pieces = dashed ? (() => { const S = along(P), o = []; for (let s = 0; s < S[S.length - 1]; s += look.dash + look.space) o.push(cut(P, S, s, s + look.dash)); return o.filter(q => q.length >= 2) })() : [P]
+    return pieces.flatMap(q => band(q, 1, off - W / 2, off + W / 2))
+  }
+  for (const C of centrelines) for (const r of C.runs) {
+    const M = marks(r.skelId); if (!M || M.excluded) continue
+    const kind = M.centre?.kind; census.stripeRuns[kind] = (census.stripeRuns[kind] || 0) + 1
+    if (!kind || kind === 'none') continue
+    const P = C.points.slice(r.from, r.to + 1).concat(C.closed && r.to === C.points.length ? [C.points[0]] : [])
+    if (P.length < 2) continue
+    const half = look.gap / 2 + W / 2
+    // `solid` names a side in the STREET's point order; the stroke may run the chain reversed (`dir` −1)
+    const solidRight = (M.centre.solid === 'right') === (r.dir > 0)
+    const rings = kind === 'broken' ? lineAt(P, 0, true)
+      : kind === 'double-solid' ? [...lineAt(P, half, false), ...lineAt(P, -half, false)]
+      : [...lineAt(P, half, !solidRight), ...lineAt(P, -half, solidRight)]
+    const c = corridorOf(r.skelId)
+    if (c.length) out.stripe.push(...intersectRings(rings, c))
+  }
+  const list = (o) => Object.entries(o).map(([k, v]) => `${v} ${k}`).join(' · ')
+  console.log(`[tileGround][paint] centre runs by kind: ${list(census.stripeRuns) || 'none'} · stripe ${out.stripe.length} ring(s), cut to where both sides have frontage · ${census.legs} kerb leg(s) · edge lines on ${list(census.edgeLegs)} leg(s) · ${census.sharpSplits} sharp vertex split(s)`)
+  if (census.noMarks.size) throw new Error(`[tileGround][paint] ⛔ ${census.noMarks.size} street(s) carry no selected paint (\`marks\`): ${[...census.noMarks].slice(0, 6).join(' · ')} — the pour predates streetMarkings. Re-pour.`)
+  return out
+}
+
 // A run the highway owns (H-3), read off the frozen `hwy` stamp — the SAME set the shape pass differenced
 // against H. ⛔ Not `material: 'highway'`: an at-grade two-way ramp (ruling a) has that material and is a
 // street, with its curb.
@@ -6407,6 +6565,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let protoNoCurbBlocks = []          // ② blocks whose curb came back empty: their ground, owned (`kind: 'block'` pieces below)
   let protoRimRings = null            // per tile, its ring noded with its paint's own rim crossings (`nodeRimWithPaint`) — live, never frozen
   let protoBandPieces = null          // ③'s bands as owned pieces, per tile (`bandPiecesOfTile`) — the FILL, live, never frozen
+  let protoCentrelines = null, protoRunMeasure = null   // the sealed centreline and a run's resolved measure, for the road's paint
   let protoInkPieces = null           // ① ink as owned pieces (`inkPiecesByOwner`) — the strip between tiles, with its owners
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
@@ -6493,6 +6652,8 @@ export function buildTileGround(ribbons, opts = {}) {
              blockHoles: frozenProto.blockHoles || null, blockHoleLabels: frozenProto.blockHoleLabels || null,
              // ⭐ the corner nodes, frozen — so ② never reaches for a chain to key the authored R
              nodes: frozenProto.nodes || null,
+             // the sealed centreline (the road's paint); a pour before it carries none, and the paint refuses by name
+             centrelines: frozenProto.centrelines || null,
              boundaryRing: frozenProto.boundaryRing || null,
              // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped this would lose its
              // waterfront silently — every other field present, the pour looking complete. So an ABSENT field refuses
@@ -6604,6 +6765,8 @@ export function buildTileGround(ribbons, opts = {}) {
       if (hwy && blockCustoms?.[o.skelId]?.[o.side]?.[o.segOrd]) hwyRefusedCustoms.add(`${o.skelId}|${o.side}|${o.segOrd}`)
       return (protoMeasureCache[label] = resolveProtoMeasure({ skelId: o.skelId, side: o.side, segOrd: o.segOrd, baseMeasure: protoBase.get(o.skelId), hwy }, blockCustoms, curbWidth))
     }
+    protoRunMeasure = (run) => resolveProtoMeasure({ skelId: run.skelId, side: run.side, segOrd: run.segOrd, baseMeasure: protoBase.get(run.skelId), hwy: hwySkel.has(run.skelId) }, blockCustoms, curbWidth)
+    protoCentrelines = MP.centrelines ?? null
     { const M = protoOwners.map((_, l) => protoMeasureOf(l) || {})
       const n=protoOwners.length, hw=M.filter(o=>o.pavementHW>0).length,
         tl=M.filter(o=>o.treelawn>0).length, sw=M.filter(o=>o.sidewalk>0).length
@@ -8249,6 +8412,10 @@ export function buildTileGround(ribbons, opts = {}) {
     if (T.contradicted) console.warn(`[tileGround][curb cuts] ⛔ ${T.contradicted} corner(s): the NORM IS CONTRADICTED BY PARTIAL EVIDENCE — drawn by the norm; override them in Section if the record is right: ${curbCutContradicted.slice(0, 12).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)}) norm ${c.norm}, drops at ${c.drops.join('/')}`).join(' · ')}${curbCutContradicted.length > 12 ? ` … +${curbCutContradicted.length - 12}` : ''}`)
     if (T.unreadable) console.warn(`[tileGround][curb cuts] ${T.unreadable} corner(s) whose recorded cuts are UNREADABLE (one end only, middle and end, or an unlisted kerb kind) — counted, and drawn by the norm.`)
   }
+  // ⭐ the road's paint (the centre stripe and the edge lines), struck from the sealed shape — the bake and Survey both read it
+  const marksBy = new Map((ribbons?.streets || []).map(s => [s.skelId, s.marks]))
+  if (!ribbons?.markingLook) throw new Error('[tileGround][paint] ⛔ the ribbons carry no paint look (`markingLook`) — this town was poured before the road paint. Re-pour.')
+  const roadPaint = roadMarkings({ tiles: protoShapeTiles, centrelines: protoCentrelines, marksOf: (id) => marksBy.get(id) ?? null, measureOfRun: protoRunMeasure, look: ribbons.markingLook })
   const treelawnByLu = { ...S.treelawnByLu }, luByClass = { ...S.luByClass }
   console.log(`[tileGround][①⇢LIVE] every layer Survey draws is now ①②③ through sectionOpen: ${protoShapeTiles.length} tile(s) — asphalt ${asphalt.length} · curb ${curb.length} · sidewalk ${sidewalk.length} · block ${block.length} ring(s) · LU classes ${Object.keys(luByClass).join(', ') || 'none'}. Highway stays a flat stroke.`)
   // ⛔⛔ THE MEDIAN CLASS CANNOT APPEAR, AND THAT MUST BE SAID OUT LOUD. ③ carries no median or
@@ -8263,5 +8430,5 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { protoBoundaryRing, protoRimRings, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
+  return { roadPaint, protoBoundaryRing, protoRimRings, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
 }

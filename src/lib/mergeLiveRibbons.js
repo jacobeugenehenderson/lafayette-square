@@ -39,9 +39,12 @@ export function mergeLiveRibbons(staticRibbons, liveCenterlines) {
     const merged = { ...st }
     if (live.disabled) merged.disabled = true
     if (live.measure?.left && live.measure?.right) {
+      // the poured parking depth rides under the live widths: no Survey control writes it yet (BACKLOG), so the store's
+      // measure never carries one, and dropping it would read as "the pour predates the field" (tileGround#roadMarkings)
+      const pk = (side) => Number.isFinite(st.measure?.[side]?.parking) ? { parking: st.measure[side].parking } : {}
       merged.measure = {
-        left: { ...live.measure.left },
-        right: { ...live.measure.right },
+        left: { ...pk('left'), ...live.measure.left },
+        right: { ...pk('right'), ...live.measure.right },
         symmetric: live.measure.symmetric,
       }
     }
