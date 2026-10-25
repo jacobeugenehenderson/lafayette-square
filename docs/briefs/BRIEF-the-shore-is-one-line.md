@@ -71,8 +71,14 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
 
 ## 4. Gates
 
-- **The shore agrees with the field:** Zob's dry-bed/wet-land check (water mask above high + land below low, per town), RED at
-  head, ~0 after. ▶ its command when it lands.
+- **The shore agrees with the field.** ⚠️ terrain.bin can't show it: `bake-terrain#writeBed` OVERWRITES every masked cell with the
+  bed, so "OSM drew water over land" is destroyed before anyone reads it (Zob, read). So (Boz, 2026-10-25), in step 2: writeBed
+  RECORDS in terrain.json `bed` the cells under the mask whose lidar stood above that cell's HIGH (row runs, like `rock.runs`;
+  rock excluded and named separately), and a new check reads that record for (a) dry bed and judges (b) wet land on terrain.bin.
+  One independent cross-check in a slot: recompute (a) on one Huron tile through `elevationSources.mjs` and assert it equals the
+  record. Mutant: shift the mask by the p50 offset, and it must not improve. Dated baseline (Zob's probe, 2026-10-25, ①'s
+  waterRings): Huron (a) 8,123 m² (≈ its 354 kept-rock cells, inferred) · (b) 350 m²; PTown (a) 249,438 m² (cause not
+  established) · (b) 0.
 - **The coast is on the lidar:** the replacement for `shore-sources.mjs` (bake-coast's trace vs ①'s coast), p50/p90 → ~0.
 - **The water ring's winding** (Ferrule's flag): `coastline.mjs` must never emit a CW water ring into D's nonzero fill; a check.
 - Authoring: `claims-authored-skelids-keep-their-ways` + the authored-key check (Huron's 3 keys; PTown none).
