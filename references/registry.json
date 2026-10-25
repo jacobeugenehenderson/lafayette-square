@@ -1142,9 +1142,9 @@
         "checkedOn": "2026-10-25",
         "checkedBy": "Swash (InPort 71402: a USACE survey distributed by NOAA — a federal work). ⚠️ One tile (17TLF6984) was read before this row was written, to measure the depth it reached; recorded here, not hidden.",
         "quote": "Access Constraints: None · Use Constraints: These data depict the heights at the time of the survey and are only accurate for that time. · Data Set Credit: Acknowledgement of the Joint Airborne Lidar Bathymetry Technical Center of eXpertise (JALBTCX)",
-        "approvedBy": "PENDING — Jacob to confirm (a federal work, as his standing acceptance of 2026-09-23 covers)"
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
       },
-      "status": "PERMITTED (pending Jacob's confirmation)"
+      "status": "PERMITTED"
     },
     {
       "id": "noaa-bluetopo",
