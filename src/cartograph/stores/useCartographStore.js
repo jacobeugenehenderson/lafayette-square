@@ -662,10 +662,10 @@ const useCartographStore = create((set, get) => ({
   // else — *(Jacob, 2026-09-07)* "when I click the top, the customs in the adjacent block to the
   // left change instead." One question, two answers.
   _protoFrontageEdges: [],
-  // Dead-end CAP handles, surfaced from the frozen tile topology (ribbons
-  // .tiles[].caps) so the Measure tool can flip a cul-de-sac cap like a leg.
+  // Dead-end CAP handles, surfaced from the frozen shape (shape.json's ① tiles' cap records: capEnd + the ① tip,
+  // stamped at the mint) so the Measure tool can flip a cul-de-sac cap like a leg.
   // Each: { skelId, chainName, capEnd, tip:[x,z] } — the flip resolves the cap
-  // slot via makeCapFe(skelId, capEnd). One source (the freeze), never re-derived.
+  // slot via makeCapFe(skelId, capEnd). One source (the frozen shape), never re-derived.
   _v2Caps: [],
   // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
   // Operator-authored via the Corner-edit center handles. Per-Look (lives in

@@ -36,7 +36,7 @@ import { LAND_USE_COLORS } from '../lib/ribbonsGeometry.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
 import { makeBoundary } from './boundary.js'
-import { lookFade } from '../../cartograph/boundaryRecords.mjs'
+import { lookFade, discOf } from '../../cartograph/boundaryRecords.mjs'
 import { slabFetch } from '../lib/slabUrl.js'
 import { fetchCurbedMinWidth } from './api.js'
 
@@ -467,29 +467,6 @@ export default function BlockGeometryV2Debug({
     useCartographStore.getState()._setV2FrontageEdges(enrichedFrontageEdges)
   }, [enrichedFrontageEdges])
 
-  // Surface dead-end CAP handles from the FROZEN tile topology (ribbons.tiles[]
-  // .caps, stamped once at prebake) so the Measure tool can flip a cul-de-sac
-  // cap like a leg. The tip coord is the tile ring vertex; identity (skelId,
-  // capEnd) resolves the cap slot via makeCapFe. One source, never re-derived.
-  const v2Caps = useMemo(() => {
-    const nameOf = new Map()
-    for (const s of (liveRibbons?.streets || [])) {
-      const k = s?.skelId || s?.name
-      if (k != null && !nameOf.has(k)) nameOf.set(k, s?.name || null)
-    }
-    const out = []
-    for (const t of (liveRibbons?.tiles || [])) {
-      for (const c of (t.caps || [])) {
-        const tip = t.ring?.[c.vertexIdx]
-        if (!tip) continue
-        out.push({ skelId: c.skelId, chainName: nameOf.get(c.skelId) || null, capEnd: c.capEnd, tip: [tip[0], tip[1]] })
-      }
-    }
-    return out
-  }, [liveRibbons])
-  useEffect(() => {
-    useCartographStore.getState()._setV2Caps(v2Caps)
-  }, [v2Caps])
 
   // A block-edge custom is stored under ONE slot (feCustomKey = min segOrd), but
   // the FILL renderer reads per-run-segOrd — so on a T-split edge the flip/drag
@@ -559,6 +536,35 @@ export default function BlockGeometryV2Debug({
   // [ROADMAP A02] The wall's honesty flag — see the store's `shapeFreezeMissing`.
   const setShapeFreezeMissing = useCartographStore(s => s.setShapeFreezeMissing)
   const [frozenShape, setFrozenShape] = useState(null)
+  // ⭐ Dead-end CAP handles from the FROZEN SHAPE (shape.json's ① tiles: each cap record carries `capEnd` and the ① tip
+  // point, stamped at the mint), so the Measure tool can flip a cul-de-sac cap like a leg. Measure sits after the Wall,
+  // so the frozen shape is its source (BRIEF-the-disc-is-one-source §2a; it read ribbons.tiles[].caps, now deleted).
+  // A cap has one record per side; the handle is one per (skelId, capEnd). No shape yet → no handles, said by absence.
+  // ⭐ ONLY WHERE THE TIP IS LIT (Boz, 2026-10-22, the spotlight canon): what the disc leaves dark is not drawn, so it is not
+  // authored either; pulling the circle out is the operator's gesture that lights more. Read through the disc record
+  // (boundaryRecords.mjs#discOf, the bakes' own test), never a radius of its own. No boundary yet → no handles.
+  const v2Caps = useMemo(() => {
+    if (!sceneBoundaryRaw) return []
+    const disc = discOf(sceneBoundaryRaw, 'cap handles')
+    const nameOf = new Map()
+    for (const s of (liveRibbons?.streets || [])) {
+      const k = s?.skelId || s?.name
+      if (k != null && !nameOf.has(k)) nameOf.set(k, s?.name || null)
+    }
+    const out = [], seen = new Set()
+    for (const t of (frozenShape?.tiles || [])) {
+      for (const c of (t.caps || [])) {
+        const key = `${c.skelId}|${c.capEnd}`
+        if (seen.has(key) || !disc.inDisc(c.tip[0], c.tip[1])) continue
+        seen.add(key)
+        out.push({ skelId: c.skelId, chainName: nameOf.get(c.skelId) || null, capEnd: c.capEnd, tip: [c.tip[0], c.tip[1]] })
+      }
+    }
+    return out
+  }, [liveRibbons, frozenShape, sceneBoundaryRaw])
+  useEffect(() => {
+    useCartographStore.getState()._setV2Caps(v2Caps)
+  }, [v2Caps])
   // TRUE while the frozen-shape fetch for the current (scene, freeze) is in
   // flight. ⛔ Load-bearing: without it the live build RACES the fetch. Both
   // `frozenShape` and `sectionGeos` are null until shape.json resolves, so

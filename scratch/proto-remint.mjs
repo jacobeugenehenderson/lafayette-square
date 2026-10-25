@@ -10,11 +10,11 @@ const scene = process.env.CARTOGRAPH_SCENE
 if (!scene) { console.error('⛔ set CARTOGRAPH_SCENE (config.js resolves the projection from it at import)'); process.exit(2) }
 const root = process.argv.find(a => a.startsWith('--data='))?.slice(7) || '.', out = process.argv.find(a => a.startsWith('--out='))?.slice(6)
 const D = (p) => join(root, 'cartograph/data', scene, p)
-const { wgs84ToLocal, DEFAULT_MAP } = await import('../cartograph/config.js')
+const { wgs84ToLocal, ribbonsPathOf } = await import('../cartograph/config.js')
 const { tessellateAdaptive } = await import('../cartograph/derive.js')
 const { coastRings } = await import('../cartograph/coastline.mjs')
 const { mintProtopolygon } = await import('../src/lib/tileGround.js')
-const ribP = scene === DEFAULT_MAP ? join(root, 'src/data/ribbons.json') : D('clean/ribbons.json')
+const ribP = root === '.' ? ribbonsPathOf(scene) : D('clean/ribbons.json')   // the one answer (scene.js); --data reads another checkout's clean/
 const rb = JSON.parse(fs.readFileSync(ribP, 'utf8')), F = rb.protopolygon
 const sk = JSON.parse(fs.readFileSync(D('clean/skeleton.json'), 'utf8')), osm = JSON.parse(fs.readFileSync(D('raw/osm.json'), 'utf8'))
 const bnd = JSON.parse(fs.readFileSync(D('neighborhood_boundary.json'), 'utf8'))

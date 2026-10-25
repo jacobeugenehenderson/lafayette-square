@@ -29,10 +29,8 @@ import { classify } from './classify.js'
 import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
 import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
 import { expresswaySpeeds } from './speedContext.mjs'
-// [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
-// tileGround consumes the frozen result and keeps this same function only as
-// its fallback for pre-D2 artifacts.
-import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
+// ① is minted HERE at prebake (`mintProtopolygon`) and frozen into the artifact; the other two imports run beside it.
+import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
@@ -1809,9 +1807,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // Inject neighborhood boundary as closing edges (dense polyline so face
   // rings step through many short segments rather than one long chord —
   // avoids visible straight edges in the fade zone).
-  // boundaryPolyXZ is captured here (raw [x,z] pairs) and reused by the D2
-  // block-face freeze far below, which clips the face-streets to it + injects
-  // it as closing edges so the perimeter block faces CLOSE (Brief F edge-of-map).
+  // boundaryPolyXZ is captured here (raw [x,z] pairs) and read again far below as ①'s `boundary`
+  // (mintProtopolygon) and by the ramp flares.
   let boundaryPolyXZ = null
   let boundaryCenter = null, boundaryRadius = 0
   let protoWaterRings = null
@@ -3824,8 +3821,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // B's global CENTROID — on a snaking corridor a segment's perp can point
     // away from the centroid while the mate runs right alongside (s18-6
     // verified flipped; the E3.4 foot-vote bug class). The local foot is the
-    // operational half-edge adjacency until the D2 face freeze carries it as
-    // a frozen face fact (OSM2STREETS-GROUNDING §2 'innerSign' row).
+    // operational half-edge adjacency until a frozen face fact carries it (the port
+    // to face adjacency is open: RIBBONS, E3.4's prescription; OSM2STREETS-GROUNDING §2 'innerSign' row).
     // CONVENTION (pin it here, it has bitten twice — see tileGround.js:347):
     // the perp used below, (-dz, dx), is what production's measure calls the
     // RIGHT-perp. So innerSign === +1 means the partner (the median) lies on
@@ -4075,10 +4072,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   const OVL_KINK_DEG = 30 // ° — a leg whose tip approach bends less than this off its body has no
                           //     terminal kink → it already runs where it points → leave it natural
   let overlayCount = 0
-  // Landings the FACE walk must splice into the through-road so the corrected
-  // carriageway tips share a vertex with it (else they dangle → the median face
-  // won't close). { thruSkel, pt } — pt is the exact foot on the through centerline.
-  const faceThruSplits = []
   const rayHitPolyline = (o, d, poly) => {
     let best = null, bestT = Infinity
     for (let i = 0; i < poly.length - 1; i++) {
@@ -4165,7 +4158,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       if (!thru) continue   // not the divided-into-through-road class — leave emergent
       for (const [idx, tas] of [[aIdx, endA === 'start'], [bIdx, endB === 'start']]) {
         const r = correctedTipChain(idx, tas, thru, node)
-        if (r) { ribbonStreets[idx].strokePoints = r.sp; faceThruSplits.push({ thruSkel: thru.skelId || thru.name, pt: r.tip }); overlayCount++ }
+        if (r) { ribbonStreets[idx].strokePoints = r.sp; overlayCount++ }
       }
     }
   }
@@ -4745,175 +4738,9 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     ...(skeleton.nameTransitions ? { nameTransitions: skeleton.nameTransitions } : {}),
   }
 
-  // [D2 — THE PREBAKE FACE FREEZE] The block-face TOPOLOGY is decided here,
-  // once, and frozen into the artifact. extractFaces — the same pure DCEL
-  // walk Survey used to re-run on every render and bake — walks the
-  // SERIALIZED chains (exactly the consumer's input: ≥2 points, not
-  // grade-separated, UNSMOOTHED — smoothing is an interpolating,
-  // junction-pinned geometric map that cannot change topology and must never
-  // bake into the artifact) and the result freezes as ribbons.tiles[]:
-  // per tile { ring, edges:[{ skelId, side }] }. The walk's per-edge
-  // streetIdx (an array index) is resolved to the stable skelId so frozen
-  // tiles survive array-order shifts across builds; `side` is the
-  // measure-side tag ('right' ⇔ forward half-edge — the extractFaces
-  // convention), from which the consumer recovers `forward` bijectively.
-  // Chains die at this boundary for block-shape topology (`ORIENTATION §3 (the Wall)` — the
-  // wall at ~P3). L1 ONLY: corner construction stays live in Survey
-  // (L2 = D3, deferred to §HARDENING); the raw-OSM LU faces
-  // (ribbons.faces) are untouched (C5 = D4).
-  // ⛔ THE ONE LIVE LEGACY RECORD (Boz, 2026-10-20): no ground reader since the legacy pass was deleted; kept only
-  // because the Measure tool's cap handles read tiles[].caps. Retires when ① carries a cap record (classifier Pass B).
-  {
-    // [through-edge overlay] The face walk builds off the prevailing-direction
-    // CORRECTED chains (strokePoints) so a divided→through-road median face does
-    // NOT pinch to a needle at the shared node; the through-roads are SPLICED at
-    // the corrected landing points so the carriageway tips SHARE a vertex with
-    // them (else the tips dangle and the median face won't close). Serialized
-    // `points` (the survey centerline) is untouched — this is the frozen-tile
-    // geometry only. (BRIEF-through-road-edge-straight.)
-    const splitsByThru = new Map()
-    for (const { thruSkel, pt } of faceThruSplits) {
-      if (!splitsByThru.has(thruSkel)) splitsByThru.set(thruSkel, [])
-      splitsByThru.get(thruSkel).push(pt)
-    }
-    const spliceHits = (pts, hits) => {
-      const out = pts.map(p => [p[0], p[1]])
-      for (const h of hits) {
-        if (out.some(p => Math.hypot(p[0] - h[0], p[1] - h[1]) < 1e-6)) continue
-        let bi = -1, bd = Infinity
-        for (let i = 0; i < out.length - 1; i++) {
-          const a = out[i], b = out[i + 1]
-          const ex = b[0] - a[0], ez = b[1] - a[1], L2 = ex * ex + ez * ez || 1
-          const t = Math.max(0, Math.min(1, ((h[0] - a[0]) * ex + (h[1] - a[1]) * ez) / L2))
-          const d = Math.hypot(h[0] - (a[0] + ex * t), h[1] - (a[1] + ez * t))
-          if (d < bd) { bd = d; bi = i }
-        }
-        if (bi >= 0) out.splice(bi + 1, 0, [h[0], h[1]])
-      }
-      return out
-    }
-    // ⭐⭐⭐ RULED 2026-09-06 (Jacob) — **ALL DATA SKEWS TO THE SSoT, AND THE SKELETON IS IT.**
-    // "All data should skew to SSoT." · "The skeleton should simplify and make ironclad and
-    // foolproof." ⇒ The face walk takes the SIMPLIFIED SKELETON, the same geometry ① is minted
-    // from. Three geometries were being frozen from this one pass — `points` (densified),
-    // `strokePoints` (densified + tips straightened), and the skeleton — so the tiles and ①'s holes
-    // were two independent partitions of the map that could not agree, and every probe comparing
-    // them was measuring that rather than a defect.
-    // ⛔ MEASURED BEFORE MOVING, not after: topology UNCHANGED (102 faces either input), 94 of 102
-    // blocks move under 5%, median 0.05%. The tail is EIGHT blocks and they are the ones the canon
-    // already names — `park-place-2` and `st-vincent-court-0` (`A10`'s keyhole-splice pair),
-    // `benton-place-1` (§1's own grout eye-gate), `saint-vincent-avenue`.
-    // ⭐ And the objection to this collapsed on measurement: `strokePoints` straightens carriageway
-    // tips at divided→through nodes and I expected retiring it to cost the median faces — EXACTLY
-    // ONE CHAIN IN THE MAP CARRIES IT, and one of the eight movers touches it.
-    // ▶ `node checks/claims-faces-on-the-ssot.mjs <scene>` — re-run it; the digits are a snapshot.
-    // ⛔ NO FALLBACK to the densified chains: a face walk that silently uses a different geometry
-    // from ① is what produced two partitions in the first place, and it is invisible — both render.
-    const faceSimplified = (() => {
-      const fp = join(CLEAN_DIR, 'skeleton.json')
-      if (!existsSync(fp)) return null
-      const j = JSON.parse(readFileSync(fp, 'utf-8'))
-      return new Map((j.streets || []).map(st => [st.id,
-        (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
-    })()
-    const faceBase = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
-    const faceMissing = faceSimplified
-      ? faceBase.filter(s => !(faceSimplified.get(s.skelId || s.name)?.length >= 2)).map(s => s.skelId || s.name)
-      : faceBase.map(s => s.skelId || s.name)
-    if (faceMissing.length) throw new Error(
-      `[faces] ⛔ REFUSING TO WALK FACES: ${faceMissing.length} chain(s) have no simplified skeleton geometry (${faceMissing.slice(0, 4).join(', ')}). ` +
-      `The skeleton is the SSoT and the face walk may not silently fall back to the densified chains — that produces a tile set ① cannot agree with, and both render.`)
-    let faceStreets = faceBase.map(s => ({ ...s, points: faceSimplified.get(s.skelId || s.name) }))
-    // [F — EDGE OF MAP] Close the perimeter block faces. The street network
-    // extends PAST the circular boundary (frame extent ≫ silhouette radius), so
-    // an undecorated extractFaces walk leaves the region between the outermost
-    // streets and the boundary OPEN (no edge bounds it on the outer side) → the
-    // perimeter faces never close → bare N/SE. FIX (boundary-trio "build full,
-    // crop LAST"): clip the face-streets to the boundary and inject the
-    // boundary ring AS closing edges, sharing nodes at the crossings (the SAME
-    // boundary already noded into the polygonize/LU-faces walk above). The
-    // perimeter faces then close into real frozen tiles. extractFaces does NOT
-    // node its input (unlike nodeEdges), so the crossing point is inserted into
-    // BOTH the clipped street endpoint AND the boundary ring — identical coords
-    // → identical 0.1 mm node. Boundary edges carry skelId '__boundary__'; the
-    // consumer (buildTileGround) resolves them to a zero-width MAP EDGE
-    // (edgeDepth → 0, land-use floods to the boundary, no curb/sidewalk on the
-    // map edge). These perimeter tiles are FROZEN in shape (not Survey-editable)
-    // but get land-use shaders + customs in Section like any tile.
-    const BOUNDARY_SKEL = BOUNDARY_EDGE_SKEL
-    if (boundaryPolyXZ && boundaryPolyXZ.length > 2) {
-      const bp = boundaryPolyXZ
-      const bn = bp.length
-      const pip = (px, pz) => { let inside = false; for (let i = 0, j = bn - 1; i < bn; j = i++) { const xi = bp[i][0], zi = bp[i][1], xj = bp[j][0], zj = bp[j][1]; if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside } return inside }
-      const segX = (ax, az, bx, bz, cx, cz, dx, dz) => {
-        const rX = bx - ax, rZ = bz - az, sX = dx - cx, sZ = dz - cz
-        const denom = rX * sZ - rZ * sX
-        if (Math.abs(denom) < 1e-12) return null
-        const t = ((cx - ax) * sZ - (cz - az) * sX) / denom
-        const u = ((cx - ax) * rZ - (cz - az) * rX) / denom
-        if (t <= 1e-9 || t >= 1 - 1e-9 || u < -1e-9 || u > 1 + 1e-9) return null
-        return { t, u }
-      }
-      const crossingsOnEdge = Array.from({ length: bn }, () => [])   // [{u, p}] per boundary edge
-      const clipStreet = (pts) => {
-        const out = []
-        let cur = pip(pts[0][0], pts[0][1]) ? [pts[0]] : null
-        for (let i = 0; i < pts.length - 1; i++) {
-          const a = pts[i], b = pts[i + 1]
-          const xs = []
-          for (let k = 0, j = bn - 1; k < bn; j = k++) {
-            const hit = segX(a[0], a[1], b[0], b[1], bp[j][0], bp[j][1], bp[k][0], bp[k][1])
-            if (hit) xs.push({ t: hit.t, u: hit.u, edge: j })
-          }
-          xs.sort((p, q) => p.t - q.t)
-          for (const x of xs) {
-            const P = [a[0] + (b[0] - a[0]) * x.t, a[1] + (b[1] - a[1]) * x.t]
-            crossingsOnEdge[x.edge].push({ u: x.u, p: P })
-            if (cur) { cur.push(P); if (cur.length >= 2) out.push(cur); cur = null } else { cur = [P] }
-          }
-          if (cur) cur.push(b)
-          else if (pip(b[0], b[1])) cur = [b]
-        }
-        if (cur && cur.length >= 2) out.push(cur)
-        return out
-      }
-      const clipped = []
-      for (const s of faceStreets) {
-        for (const pc of clipStreet(s.points)) clipped.push({ ...s, points: pc })
-      }
-      // Subdivide the boundary ring at the crossings (sorted along each edge),
-      // then close it — its segments become the perimeter faces' outer edges.
-      const ring = []
-      for (let i = 0; i < bn; i++) {
-        ring.push([bp[i][0], bp[i][1]])
-        for (const x of crossingsOnEdge[i].sort((m, q) => m.u - q.u)) ring.push(x.p)
-      }
-      ring.push([bp[0][0], bp[0][1]])
-      faceStreets = [...clipped, { points: ring, skelId: BOUNDARY_SKEL }]
-      const nCross = crossingsOnEdge.reduce((a, e) => a + e.length, 0)
-      console.log(`    [F] clipped face-streets to boundary (${clipped.length} pieces, ${nCross} crossings) → perimeter faces close`)
-    }
-    const fzTiles = extractFaces(faceStreets)
-    // [CAP FREEZE] Dead-end cap identity is a FACE-topology fact — frozen ONCE
-    // here (the single source both the flip and the render read; feCustomKey.js
-    // §cap). Resolve capEnd against the ORIGINAL chain endpoints (ribbonsLayer
-    // .streets), not the boundary-clipped faceStreets — interior dead-ends are
-    // never clipped, so their endpoints are intact.
-    const capEndpointKeys = chainEndpointKeys(ribbonsLayer.streets)
-    let nPerim = 0, nCaps = 0
-    ribbonsLayer.tiles = fzTiles.map(f => {
-      const ring = f.ring.map(p => [p[0], p[1]])
-      const edges = f.edges.map(e => {
-        const sk = faceStreets[e.streetIdx].skelId || faceStreets[e.streetIdx].name
-        if (sk === BOUNDARY_SKEL) nPerim++
-        return { skelId: sk, side: e.side }
-      })
-      const caps = detectTileCaps(ring, edges, capEndpointKeys)
-      nCaps += caps.length
-      return caps.length ? { ring, edges, caps } : { ring, edges }
-    })
-    console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology; ${nPerim} boundary edges; ${nCaps} dead-end caps)`)
-  }
+  // ⛔ THE D2 FACE FREEZE (`ribbons.tiles[]`, with its early boundary crop of the face streets, `clipStreet`) is DELETED
+  // (BRIEF-the-disc-is-one-source §2a, 2026-10-22): its last reader, the Measure tool's cap handles, reads the frozen
+  // shape's own cap records (capEnd + the ① tip, stamped at the mint). Record: cartograph/_archive/ (SURVEY's eviction).
 
   // [① — THE PROTOPOLYGON FREEZE] The width-free ink of the whole network, minted
   // ONCE here and frozen into the artifact. `RIBBONS §1` (ruled 2026-09-04/05):
@@ -4961,8 +4788,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // (1,123 skeleton points vs 9,547) — so this loses no shape, only density. SMOOTHNESS IS
   // SKELETON's and it is already in these points; ROUNDING is Survey's and happens after ② is
   // offset (`RIBBONS §1`). ① sits between the two stages and does neither.
-  // ⚠️ The D2 walk above deliberately uses `strokePoints` (the corrected chains, so a
-  // divided→through median face does not pinch). ① does NOT and now must not.
+  // ⚠️ ① does NOT use `strokePoints` (the corrected chains) and must not.
   {
     // ⛔ NO FALLBACK TO THE DENSE CHAINS. A silently dense ① is exactly the failure this ruling
     // fixes and it is invisible — it renders, it just carries hundreds of phantom vertices. So a

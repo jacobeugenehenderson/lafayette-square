@@ -63,9 +63,9 @@ export function feCustomKey(fe) {
 // storage convention (every consumer resolves through makeCapFe, so they agree),
 // not a geometric side. Cap fes are kept OUT of the main frontageEdges array, so
 // feesForChainSide / findFeForSide never sweep them; the flip (piece 2) and the
-// render (piece 3) reach a cap explicitly via its FROZEN prebake identity
-// (ribbons.tiles[].caps = [{ vertexIdx, skelId, capEnd }], stamped once at the
-// face freeze — the single source both consumers read; RIBBONS §1 tile model).
+// render (piece 3) reach a cap explicitly via its FROZEN identity (shape.json's
+// ① tiles' caps = [{ skelId, side, segOrd, capEnd, tip }], stamped once at the
+// mint — the single source both consumers read; RIBBONS §1 tile model).
 export const CAP_SEGORD = { start: -1, end: -2 }
 export const isCapSegOrd = (s) => s === CAP_SEGORD.start || s === CAP_SEGORD.end
 

@@ -43,7 +43,7 @@ if (!ribbons) throw new Error('map.json has no layers.ribbons')
 // COMMITTED artifact is the stale one. The "worse on the eye" verdict came from a session
 // that was measuring the wrong scene with a flag-off bake and a stale cache.
 // ⭐ MEASURED AGAIN 2026-09-06 on LS: skeleton `[unchanged]`, and every layer the map is
-// made of — streets, tiles, faces, junctionMap, medians, corridors, paths, alleys,
+// made of — streets, faces, junctionMap, medians, corridors, paths, alleys,
 // intersections, junctions, nameTransitions — byte-identical to the committed artifact. The
 // only delta was one ADDED key (`protopolygon`), which is additive and cannot move the map.
 // ⛔ RE-RUN IT, DO NOT QUOTE IT: `node checks/claims-repour-changes-nothing.mjs <scene>`.
@@ -64,9 +64,8 @@ if (existsSync(BUNDLED_PATH)) {
   try {
     const prev = JSON.parse(readFileSync(BUNDLED_PATH, 'utf-8'))
     const shape = (r) => ({
-      streets: r.streets?.length || 0, tiles: r.tiles?.length || 0,
+      streets: r.streets?.length || 0,
       faces: r.faces?.length || 0, medians: r.medians?.length || 0,
-      caps: (r.tiles || []).reduce((a, t) => a + (t.caps?.length || 0), 0),
     })
     const a = shape(prev), b = shape(ribbons)
     const moved = Object.keys(a).filter(k => a[k] !== b[k])
@@ -98,4 +97,3 @@ console.log(`  streets: ${ribbons.streets?.length || 0}`)
 console.log(`  corridors: ${ribbons.corridors?.length || 0}`)
 console.log(`  medians: ${ribbons.medians?.length || 0}`)
 console.log(`  faces: ${ribbons.faces?.length || 0}`)
-console.log(`  tiles: ${ribbons.tiles?.length || 0}`)   // [D2] the frozen block-face topology

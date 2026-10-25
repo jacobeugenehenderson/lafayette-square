@@ -469,7 +469,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // shore edge from a street edge by IDENTITY, never by the absence of a measure.
     const isCoast = skelId === WATER_EDGE_SKEL
     const stamp = (side, i, segI) => { const ge = gradeEndOf(i)
-      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }) }) - 1 }
+      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }) }) - 1 }
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -499,8 +499,13 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // ribbon. ⛔ Marked AFTER the flip, never by position: before it, `P.length-1` and `2·P.length-1` are the cap
     // vertices; after it, those records label LEGS (▶ `scratch/ink-cap-marks.mjs`). A record is one vertex's
     // (`stamp` pushes a new one per call), so the mark names that vertex's edge. ⛔ Additive: `skelId`, `srcIdx`, `tipEnd` stay — the tip ease reads them.
-    const capSurvives = (end) => isCoast || (end === 'start' ? dg0 : dg1) === 1
-    for (let k = 0; k < labs.length; k++) if (pass[k] !== pass[(k + 1) % labs.length] && capSurvives(pEnd[k])) owners[labs[k]].cap = true
+    // ⭐ TWO MARKS, NOT ONE (Boz's ruling, 2026-10-21, on the coast's capless ends): `across` — the edge runs ACROSS the
+    // stroke, so it is not frontage and the run emitter declines it (fc3faf43's reason, which the coast needs too: its end
+    // edges survive the union at the frame) — and `cap`, the doctrine's dead end (RIBBONS: a coast has no CAP), only where
+    // the owner is a degree-1 tip, so `cap` ⇔ `tipEnd` by construction and a cap always knows its end.
+    const endSurvives = (end) => isCoast || (end === 'start' ? dg0 : dg1) === 1
+    for (let k = 0; k < labs.length; k++) if (pass[k] !== pass[(k + 1) % labs.length] && endSurvives(pEnd[k])) {
+      const o = owners[labs[k]]; o.across = true; if (o.tipEnd) o.cap = true }
     rings.push(ring); labels.push(labs)
   }
   // ⭐⭐⭐ THE CORNER NODE, FROZEN — so ② NEVER TOUCHES A CHAIN.
@@ -2792,22 +2797,8 @@ export function extractFaces(streets) {
   return faces.filter(f => signedArea(f.ring) > 1e-3)
 }
 
-// [D2 — THE PREBAKE FACE FREEZE] Rehydrate the frozen tile topology.
-// ribbons.tiles is the prebake artifact (derive.js runs extractFaces once
-// over the serialized skeleton chains and freezes per tile the ring +
-// per-edge (skelId, side)). Here each frozen edge resolves skelId → the
-// CURRENT streets index, so every downstream lookup (measures[streetIdx],
-// groupRuns, cornerKeyAt) reads exactly what a live walk would have tagged;
-// `forward` is recovered from `side` (forward ⇔ 'right' — the convention
-// documented in the walk above, bijective). Rings are copied: the parsed
-// artifact arrays live for the session and downstream must never alias them
-// across rebuilds. Returns null (caller falls back to the live walk) when
-// the artifact carries no tiles (pre-D2 data) or a skelId no longer
-// resolves (stale artifact — topology must then be re-frozen, not papered).
-// [F — EDGE OF MAP] The skelId a perimeter tile's map-edge carries (frozen by
-// derive.js's D2 freeze when it injects the boundary ring as closing edges). It
-// resolves to NO street: sentinel streetIdx -1 → edgeDepth returns 0 → land-use
-// floods to the boundary, no curb/sidewalk on the map edge. Shared with derive.js.
+// [F — EDGE OF MAP] The skelId ①'s rim edges carry (the disc ring stroked into the mint). It resolves to NO street:
+// no curb or sidewalk on the map edge, land use floods to the boundary.
 export const BOUNDARY_EDGE_SKEL = '__boundary__'
 // ⭐⭐⭐ THE COAST IS INK, AND THAT IS WHAT MAKES IT UNLIKE THE RIM (Jacob, 2026-09-20:
 // "we see the difference between land and water, and the geometry creates the water field
@@ -2851,55 +2842,6 @@ export function capCentre(t) {
 // caller tested '① as the TILE SOURCE', which is the premise `5560cf6a` ruled wrong: "I CHANGED THE
 // SUBSTRATE, NOT THE PRODUCER." Dead code is excised here, not archived; git holds it.
 
-
-
-// ── Dead-end CAP identity on the frozen face (HANDOFF-dead-end-cap-flip §36) ──
-// The prebake face freeze (derive.js → extractFaces) walks a dead-end spur
-// OUT-and-BACK inside its enclosing face, so the turn-around at the tip is a
-// ring vertex whose two adjacent edges carry the SAME chain (skelId) on OPPOSITE
-// sides (right→left). That vertex — when it coincides with the chain's own
-// start/end endpoint — IS the cul-de-sac / dead-end cap. This is the ONE cap
-// criterion (RIBBONS §1 tile model): the fe layer (buildBlockGeometryV2) can't
-// make it — it sees every naive degree-1 chain-end (LS: 100), half of them
-// boundary danglers that never form an out-and-back inside a bounded face (LS:
-// exactly 50 real caps survive, 1:1 with the rendered tips). So cap identity is
-// a FACE-topology fact, frozen ONCE at prebake into ribbons.tiles[].caps and
-// read identically by Survey/Designer (the flip) and section/bake (the render).
-
-// skelId → { start, end } endpoint node-keys, for cap-end resolution.
-export function chainEndpointKeys(streets) {
-  const m = new Map()
-  for (const s of streets || []) {
-    const pts = s?.points
-    if (!pts || pts.length < 2) continue
-    const k = s.skelId || s.name
-    if (k == null) continue
-    m.set(k, { start: tipKey(pts[0]), end: tipKey(pts[pts.length - 1]) })
-  }
-  return m
-}
-
-// Detect dead-end cap tips on ONE tile face → [{ vertexIdx, skelId, capEnd }].
-// `skelIdOfEdge` reads the chain id from an edge (frozen edges carry `.skelId`;
-// live extractFaces edges carry `.streetIdx`, resolved by the caller).
-export function detectTileCaps(ring, edges, endpointKeys, skelIdOfEdge = (e) => e?.skelId) {
-  const caps = []
-  const n = edges?.length || 0
-  if (!n || !Array.isArray(ring) || ring.length !== n) return caps
-  for (let i = 0; i < n; i++) {
-    const inc = edges[(i - 1 + n) % n], out = edges[i]
-    const sk = skelIdOfEdge(inc)
-    if (sk == null || sk === BOUNDARY_EDGE_SKEL || sk === WATER_EDGE_SKEL) continue
-    if (sk !== skelIdOfEdge(out) || inc.side === out.side) continue   // not a same-chain turn-around
-    const ends = endpointKeys?.get(sk)
-    if (!ends) continue
-    const tk = tipKey(ring[i])
-    const capEnd = ends.start === tk ? 'start' : (ends.end === tk ? 'end' : null)
-    if (!capEnd) continue   // same-skelId/opposite-side but NOT at a chain endpoint → not a cap
-    caps.push({ vertexIdx: i, skelId: sk, capEnd })
-  }
-  return caps
-}
 
 
 // Inboard-side ped zeroing for divided carriageways (anchor='inner-edge'):
@@ -6280,6 +6222,10 @@ export function buildTileGround(ribbons, opts = {}) {
              blockClass: frozenProto.blockClass || null,
              // H-3: the ramp-terminal flares frozen at the mint — drawn into ②'s working copy (`flareWorkingCopy`)
              flares: frozenProto.flares || null }
+      // ⛔ A ① FROZEN BEFORE THE across/cap SPLIT is refused by name: its owners mark a stroke's end edges `cap` only, so this
+      // emitter (which declines `across`) would emit them as frontage runs, silently. Re-pour the town.
+      if (frozenProto.owners.some(o => o?.cap && !o.across))
+        throw new Error(`[tileGround][①] ⛔ this scene's frozen protopolygon was minted before the across/cap split (owners mark \`cap\` without \`across\`) — its stroke ends would be emitted as frontage. Re-pour it (pipeline.js + promote-ribbons).`)
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
@@ -7484,8 +7430,14 @@ export function buildTileGround(ribbons, opts = {}) {
               // ⛔ A CAP EDGE IS NOT FRONTAGE: it runs ACROSS the ribbon, so as a run it would answer "which side is
               // the water on" with a segment perpendicular to the shore. It ENDS the run (the leg stops where it
               // stops in the world). The record keeps its identity for the tip ease; only the RUN declines it.
-              if (o.cap) { if (!capIx.has(key)) capIx.set(key, caps.push({ skelId: o.skelId, side: o.side, segOrd: o.segOrd }) - 1)
-                iaCap[ri][i] = capIx.get(key); cur = null; continue }
+              if (o.across) {
+                // ⭐ A CAP RECORD KNOWS ITS END AND ITS TIP (BRIEF-the-disc-is-one-source §2a): `capEnd` and the ① tip point
+                // (the chain's end, stamped at the mint), so the Measure tool's cap handle reads the frozen shape and never
+                // the chain. ⛔ A cap without its end is refused; an `across` edge that is no cap (a coast's end) owns no record.
+                if (o.cap) { if (!o.tipEnd || !o.tip) throw new Error(`[tileGround][PROTO②] ⛔ a cap owner (${o.skelId} ${o.side}) carries no ${!o.tipEnd ? 'capEnd (tipEnd)' : 'tip point'} — the mint stamps both with the cap; refusing`)
+                  if (!capIx.has(key)) capIx.set(key, caps.push({ skelId: o.skelId, side: o.side, segOrd: o.segOrd, capEnd: o.tipEnd, tip: o.tip }) - 1)
+                  iaCap[ri][i] = capIx.get(key) }
+                cur = null; continue }
               // ⭐ `baseMeasure` — the MEASURED cross-section for this street side. `SECTION §3.1`:
               // treelawn Y/N is "gleaned from data", and `resolvePedDepths(baseMeasure, side, custom)`
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
@@ -7631,6 +7583,7 @@ export function buildTileGround(ribbons, opts = {}) {
                 // a flank with no run: WHY — a dead-end cap edge (ends a run by construction), the rim, or unowned
                 const whyNull = (e) => { const l = EC.labs?.[e], o = l == null ? null : protoOwners[l]
                   if (o?.cap) return 'capEdge'
+                  if (o?.across) return 'acrossEdge'   // a stroke's end edge that is no cap (a coast's end)
                   const A = EC.ring[e], B = EC.ring[(e + 1) % n2]
                   if (outsideDisc([(A[0] + B[0]) / 2, (A[1] + B[1]) / 2])) return 'rim'
                   return l == null ? 'unlabelled' : 'other' }
