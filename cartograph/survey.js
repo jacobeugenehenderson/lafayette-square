@@ -21,7 +21,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CARTOGRAPH_DIR, requireExplicitMap } from './scene.js'
 import { STANDARDS } from './standards.js'
-import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
+import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
@@ -87,7 +87,7 @@ function main() {
     entry.sharrows = (!entry.cycleway && info.tags.some(t =>
       t.cycleway === 'shared_lane')) || undefined
 
-    entry.oneway = info.tags.some(t => t.oneway === 'yes') || undefined
+    entry.oneway = info.tags.some(t => isOneway(t)) || undefined
 
     entry.diagonalParking = info.tags.some(t =>
       t['parking:left:orientation'] === 'perpendicular' ||
@@ -96,7 +96,7 @@ function main() {
       t['parking:right:orientation'] === 'diagonal') || undefined
 
     // Detect divided roads: opposing one-way carriageways
-    const owSegs = info.segs.filter(f => f.tags?.oneway === 'yes')
+    const owSegs = info.segs.filter(f => isOneway(f.tags))
     let divided = false
     if (owSegs.length >= 2) {
       for (let i = 0; i < owSegs.length && !divided; i++) {

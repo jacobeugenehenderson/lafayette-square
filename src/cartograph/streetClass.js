@@ -189,11 +189,50 @@ export function classSection(cls, { lanes = null, oneway = false, expressway = f
 /** A `lanes` tag the configuration can read: a positive integer, or absent. ⛔ Anything else refuses the pour. */
 export const lanesTagIsReadable = (v) => v == null || /^[1-9][0-9]*$/.test(String(v).trim())
 
+// ⭐ THE TAG DECIDES ONE-WAY — every site that asks "is this way one-way?" asks this. OSM: `yes` (and the discouraged
+// `1`/`true`) and `-1` are one-way; `junction=roundabout|circular` IMPLIES `yes`; an explicit `oneway` tag still wins.
+// ⛔ Reading `oneway === 'yes'` alone made every `-1` way TWO-WAY to the whole pour (welds, sections, the stripe):
+// invisible on LS, which has none (HPDM 15 ways, PTown 1, raw osm.json). `reversible` / `alternating` are not one-way
+// here (a lane whose direction changes by the hour).
+const RING_JUNCTIONS = new Set(['roundabout', 'circular'])
+const ONEWAY_TAGS = new Set(['yes', '1', 'true', '-1'])
+export const isOneway = (tags) => tags?.oneway != null ? ONEWAY_TAGS.has(tags.oneway) : RING_JUNCTIONS.has(tags?.junction)
+export const isRingWay = (tags) => RING_JUNCTIONS.has(tags?.junction)
+
+// ⭐⭐ A ONE-WAY RUNS IN TRAVEL ORDER — ONE INVARIANT, MADE AT INTAKE (Zob's ruling (A), Boz, 2026-10-25). Every reader
+// downstream assumes a one-way's points run the way traffic does (the canonical-direction pass, the divided pairing on
+// anti-parallel coords, OneWayArrows, `highwayEndContact`, the highway shoulders), so a `oneway=-1` way is REVERSED here,
+// as the pour reads it, and becomes `oneway=yes`; there is no sense to carry after this. ⛔ The reversal flips what is
+// relative to the way's node order WITH it, or a reversed way's tags point to the wrong side: the `:left`↔`:right` and
+// `:forward`↔`:backward` key segments (lanes, overtaking, parking, cycleway, sidewalk, maxspeed…), the `left`/`right`
+// VALUES of `sidewalk` and `cycleway*`, and `incline`'s sign. `turn:lanes` is travel-relative already and stays.
+// The skeleton and the layer derive (`pipeline.js`) both read the ways through this. The way says so (`reversedAtIntake`).
+const SIDE_SWAP = { left: 'right', right: 'left', forward: 'backward', backward: 'forward' }
+const flipKey = (k) => k.split(':').map(s => SIDE_SWAP[s] ?? s).join(':')
+const flipValue = (k, v) => {
+  if (k === 'incline') return v === 'up' ? 'down' : v === 'down' ? 'up' : /^-?[0-9.]+%?$/.test(v) ? (v.startsWith('-') ? v.slice(1) : '-' + v) : v
+  if (/^(sidewalk|cycleway)(:|$)/.test(k) && (v === 'left' || v === 'right')) return SIDE_SWAP[v]
+  return v
+}
+export function travelOrdered(ways, who = 'intake') {
+  let n = 0
+  const out = (ways || []).map(w => {
+    if (w?.tags?.oneway !== '-1') return w
+    n++
+    const tags = {}
+    for (const [k, v] of Object.entries(w.tags)) { const fk = flipKey(k); tags[fk] = fk === 'oneway' ? 'yes' : flipValue(fk, v) }
+    return { ...w, coords: [...w.coords].reverse(), tags, reversedAtIntake: true }
+  })
+  console.log(`    [${who}] oneway=-1: ${n} way(s) reversed into travel order (tags flipped with them)`)
+  return out
+}
+
 /**
  * THE CHAIN'S SOURCE RECORD — what `skeleton.js` `carryWays` writes on every chain in `skeleton.json`, so nothing
  * the intake took in is lost (Jacob, 2026-10-20). Paint reads none of it; it reads `class` and the columns above.
  *   chain.sources      [osmId, …]                   the chain's ways (unchanged; every consumer keys on it)
- *   chain.ways         { [osmId]: tags }             each source way's FULL raw tags, verbatim from osm.json
+ *   chain.ways         { [osmId]: tags }             each source way's FULL raw tags, verbatim from osm.json — except a
+ *                      oneway=-1 way's, flipped with its reversal into travel order (`travelOrdered`)
  *   chain.segmentWays  [{ from, to, ways, by? }, …]  runs over segment indices [from, to) of `chain.points`;
  *                      `ways` = the osmIds that segment came from (two when it spans a way joint). `by` is
  *                      absent when both ends sit exactly on a source way's vertices; 'one-end' when only one

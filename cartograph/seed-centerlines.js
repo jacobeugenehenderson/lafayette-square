@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, requireExplicitMap } from './scene.js'
-import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
+import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
@@ -138,13 +138,13 @@ for (const f of osmVehicular) {
   if (pts.length < 2) continue
   if (polyLength(pts) < 10 && !name) continue
 
-  const isOneway = f.tags?.oneway === 'yes'
+  const isOw = isOneway(f.tags)
 
   streets.push({
     id: nextId(name || 'unnamed'),
     name: name || '',
     type: mapType(f.tags?.highway),
-    oneway: isOneway,
+    oneway: isOw,
     deadEnd: false,
     loop: false,
     smooth: false,

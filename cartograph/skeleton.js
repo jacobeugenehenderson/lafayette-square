@@ -19,7 +19,7 @@ import { RAW_DIR, CLEAN_DIR, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { LOCAL_SECTION } from '../src/cartograph/streetClass.js'   // the kit's sidewalk: the local row (uniform until classifier step 7)
-import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER } from '../src/cartograph/streetClass.js'
+import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER, isOneway, isRingWay, travelOrdered } from '../src/cartograph/streetClass.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('skeleton.js (writes data/<scene>/clean/skeleton.json)')
@@ -341,8 +341,8 @@ function scoreOnewayPair(aCoords, bCoords) {
 }
 
 function analyzePhases(name, fragments, rejoinAdj) {
-  const oneway = fragments.filter(f => onewayOf(f.tags))
-  const bidi = fragments.filter(f => !onewayOf(f.tags))
+  const oneway = fragments.filter(f => isOneway(f.tags))
+  const bidi = fragments.filter(f => !isOneway(f.tags))
 
   // Score every candidate oneway pair, then resolve by ascending gap so
   // the cleanest matches claim partners first. Greedy first-match was
@@ -381,7 +381,7 @@ function analyzePhases(name, fragments, rejoinAdj) {
   }
 
   const classified = fragments.map(f => {
-    if (onewayOf(f.tags)) {
+    if (isOneway(f.tags)) {
       const p = paired.get(f.osmId)
       if (p) return { osmId: f.osmId, kind: 'divided', role: p.role, partner: p.partner, gap: p.gap, pairKey: p.pairKey }
       return { osmId: f.osmId, kind: 'single-oneway' }
@@ -536,7 +536,7 @@ function weldChains(fragments, signatureByOsmId, pairKeyByOsmId) {
     // every weld so splitAtFolds can attribute each slice to its real ways.
     segSources: new Array(Math.max(0, f.coords.length - 1)).fill(f.osmId),
     tags: f.tags,
-    oneway: onewayOf(f.tags),
+    oneway: isOneway(f.tags),
     isClosed: f.isClosed,
     signature: signatureByOsmId.get(f.osmId) || 'single-bidi',
     pairKey: pairKeyByOsmId.get(f.osmId) || null,
@@ -1218,15 +1218,8 @@ function isExpressway(sources) {
   }
   return n > 0
 }
-// ⭐ THE TAG DECIDES ONE-WAY. OSM's `junction=roundabout|circular` IMPLIES `oneway=yes`;
-// read literally, an untagged ring seeded TWO lanes (`classSection`: `oneway ? 1 : 2`).
-// An explicit `oneway` tag still wins. Every site that asks "is this way one-way?" asks this.
-const RING_JUNCTIONS = new Set(['roundabout', 'circular'])
-const isRingWay = (tags) => RING_JUNCTIONS.has(tags?.junction)
-function onewayOf(tags) {
-  if (tags?.oneway != null) return tags.oneway === 'yes'
-  return isRingWay(tags)
-}
+// ⭐ ONE-WAY IS THE VOCABULARY'S (`streetClass.js#isOneway`): a ring junction implies `oneway=yes` (read literally, an
+// untagged ring seeded TWO lanes). A `oneway=-1` way was reversed into travel order as `main` read it (`travelOrdered`).
 // --- Grade separation: carry layer/bridge/tunnel per chain (Part 2) -------
 // OSM marks elevated/buried roadway with `bridge`/`tunnel` and a signed
 // `layer`. fetch.js carries every tag verbatim, so these arrive on each source
@@ -1968,7 +1961,7 @@ function weldRoundabouts(streets) {
 
 function main() {
   const osm = JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf8'))
-  const highwaysRaw = osm.ground?.highway || []
+  const highwaysRaw = travelOrdered(osm.ground?.highway || [], 'skeleton')
 
   // ⛔⛔ A ROAD THAT DOES NOT EXIST IS NOT A STREET. OSM tags a planned or
   // under-construction alignment with `highway=proposed` / `construction` /
@@ -2220,7 +2213,7 @@ function main() {
     const f = unnamedVehicular[i]
     const hw = f.tags?.highway
     const synthName = `${hw} ${i + 1}`
-    const oneway = onewayOf(f.tags)
+    const oneway = isOneway(f.tags)
     const lanes = parseInt(f.tags?.lanes, 10)
     streets.push({
       id: slugify(synthName),
@@ -2910,7 +2903,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
   // leaving divided carriageways flagged oneway=false. The welded chain carries
   // its own oneway (the seed fragment's flag, true for any carriageway); prefer
   // it so Survey's One-way checkbox reads the carriageway honestly.
-  const oneway = typeof chain?.oneway === 'boolean' ? chain.oneway : onewayOf(sourceTags)
+  const oneway = typeof chain?.oneway === 'boolean' ? chain.oneway : isOneway(sourceTags)
   // [E1] lanes summarized over ALL of the chain's source ways — sourceTags is
   // the group's FIRST fragment, and on a multi-way chain the lanes tag often
   // lives on other fragments (South 18th: lanes sit mid-corridor; fragment[0]
