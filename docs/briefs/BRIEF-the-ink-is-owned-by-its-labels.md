@@ -89,6 +89,10 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    parking edge (as today, but struck from the sealed tile). Each is a ribbon struck from the tile's own edge inward, owned by that
    edge. DEFAULT: BOTH lines on divided carriageways and one-ways (Boz's reading of Jacob's words: residential/local stays NONE,
    per the stripe ruling; vetoable). The MUTCD basis (§3B edge lines) is cited from mutcd-11r1 by the builder, section checked.
+3c. **The Designer keeps its on/off (Jacob, 2026-10-25: "The user can still turn the lines on and off in the Designer").** Today
+   `CartographSurfaces.jsx` lists `stripe` ("Center Stripes") and `edgeline` ("Edge Lines") as layers (read, Boz). The new kinds
+   and the new edge lines must stay switchable there, through the same controls, and reach the bake. Confirm how the toggle reaches
+   the slab today (look-level? baked?) and that the new records honour it; the toggle is authoring, never a fallback.
 4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, the slit's painting, and every
    reader of the removed paths (the ground deformer reads shape.json's `ink`: name what it reads instead).
 
