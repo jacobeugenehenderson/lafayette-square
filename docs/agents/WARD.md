@@ -51,26 +51,23 @@ Ward doesn't rename itself. Every claim is marked **measured**, **read in source
 - Briefs use `BOZ §3`'s checklist; dispatch is Jacob's.
 - Live risks first: the security findings, and anything touching residents' data.
 
-## 5. Read-in, in full
+## 5. Read-in, compact
 
-1. `ListAgents`, and ask each live agent what it holds.
+1. `ListAgents`; ask Boz what is open for the Ward.
 2. `CLAUDE.md` Layer 0.
-3. The `r-*` rulings that touch the player (`references/registry.json`).
-4. The Ward repo's `README.md`, with its open board in §11 "Open before building", plus its `FEATURES.md` and
-   `OPERATIONS.md`.
-5. `SLAB-CONTRACT.md`.
-6. `SECURITY.md`'s open items (§5 is the priority list).
-7. `ls/FEATURES.md`.
-8. `cartograph/OPERATIONS.md` § "Production sites — the knobs".
+3. The Ward repo's `OPERATIONS.md` "Where things stand" (what each town serves, which pin, the last press and its backup),
+   then its `README.md` §11 "Open before building".
+4. `cartograph/BACKLOG.md`'s ⭐ HANDOFF block for what the kit is sending next.
+5. On demand: `SLAB-CONTRACT.md`, `SECURITY.md` §5, the `r-*` rulings that touch the player.
 
-⛔ `ls/STATUS.md` and `ls/BACKLOG.md` carry BLOCKED-ON banners: read them for shape, never quote their bodies.
-⚠️ This list was drafted from what ROADMAP cites, and each path was checked to exist on 2026-10-20. The first Ward
-session corrects its own §5.
+## 6. Presses, and the code counterpart
 
-## 6. A code counterpart: not yet
-
-Add one when Ward's briefs start failing their premises against the Ward's code, as the cartograph's did on 2026-10-20
-(`docs/agents/ZOB.md`). Until then Ward reads code to check its own claims.
+- **A press is Jacob's word in Ward's own window**, after Boz's green (the slab) and Ward's (the player).
+- **Production = staging AS SERVED**, never a worktree upload: mirror staging, back up production (cache-busted fetches),
+  copy with the kit's own uploader unmodified, verify by md5, then the live probe (desk + phone, `green.mjs`, the tree
+  request log: impostors only). Rollback = re-put the backup.
+- **Ward has a code specialist** (2026-10-22: the neon one-clock fix). Ward briefs and reviews; the specialist builds.
+  A kit pin moves on a `ward-pin/<date>` branch, recorded in the Ward's `OPERATIONS` in the same commit.
 
 ## 7. Continuity
 

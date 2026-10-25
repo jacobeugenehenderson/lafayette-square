@@ -30,8 +30,16 @@ end-to-end account (PIPELINE.md to the Diary).
 (below) — ❓ Jacob's ① design call. **Rulings owed by Jacob:** ① seam fix (options below) · fine vs coarse ground for LS (0.1 m
 variant in kerf scratch) · roof tint / happenings for the neon contract fix · delete LS staging orphan GLBs · LS data untracked from git
 (the rename's 20 MB) · raw parcel files in the repo · trees outside the disc / horizon water / LS buildings ledger (disc brief §4).
-**Next builds, in order:** the tranche (above + `BRIEF-the-disc-is-one-source` §1b/§2a/§2b) → `BRIEF-the-rim-is-cut-once §5` (overlays
-stamped with ①) → one line per depth (the band census: HPDM 22.5 km doubled). Bake-look silent-carry refusal queued (Kerf).
+**⭐ JACOB'S ORDER (2026-10-24): get through the immediate backlog; ADD HURON TO THE POLISH LIST.** *"LS and HPDM have made
+appreciable progress; now we need to bring Huron up to parity and then move forward with finally fixing the shoreline."* At night Boz
+keeps it moving. In order:
+1. **The tranche:** finish `kerf/leg-ends-at-ladder`'s owed gates → merge it, caps-from-shape, publish-impostor-records (Zob review)
+   → disc brief §1b/§2a/§2b → ONE re-pour + bake of every town. (The ① seam waits on Jacob's call; PTown stays blocked by it.)
+2. **Huron to parity with LS/HPDM:** its deploy bake on the tranche (the cdl fix is merged; the stamp settles), impostors carried
+   first (`slabTreeGeometry` needed:false), staging, Jacob's look. Its 8 remaining land edge pairs read first.
+3. **The shoreline, finally:** `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
+   `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
+Then: one line per depth (the band census: HPDM 22.5 km doubled). Bake-look silent-carry refusal queued.
 **Seats:** Boz reads docs in full and states readings; Zob checks code against them; Ward holds the player and presses only on Jacob's
 word in Ward's window. One heavy run at a time. Hashes copied from git, never typed.
 
