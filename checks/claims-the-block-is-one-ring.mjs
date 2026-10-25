@@ -13,8 +13,8 @@
 //      cuts nothing does not re-emit the block (Clipper's copy of iaFull, LS 59 of 91 interior tiles).
 // ⭐ MUTATION TEST: `--selftest` builds with a copy of tileGround.js (OS temp dir) carrying both mutations behind a switch:
 //   the cut's crossings not written into iaFull (rows 1 and 2 RED) · the face trim re-run where it cuts nothing (row 3 RED).
-//   node checks/claims-the-block-is-one-ring.mjs [--scene=<town> …] [--selftest]      (default: lafayette-square, hipointedemun)
-import { ROOT } from './_scenes.mjs'
+//   node checks/claims-the-block-is-one-ring.mjs [--scene=<town> …] [--selftest]      (default: every town whose ribbons can be measured)
+import { ROOT, ribbonScenes } from './_scenes.mjs'
 import { join } from 'node:path'
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -24,7 +24,7 @@ import { CLIP_SCALE } from '../src/lib/lattice.js'
 
 const argv = process.argv.slice(2), self = argv.includes('--selftest')
 const SCENES = argv.filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
-const TOWNS = SCENES.length ? SCENES : ['lafayette-square', 'hipointedemun']
+const TOWNS = SCENES.length ? SCENES : ribbonScenes([])   // ⛔ no typed roster: the measurable towns, read (checks/_scenes.mjs)
 const K = (v) => Math.round(v[0] * CLIP_SCALE) + ',' + Math.round(v[1] * CLIP_SCALE)
 
 const rows = async (tg, f, town) => {

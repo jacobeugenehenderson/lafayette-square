@@ -24,7 +24,7 @@
 // A town nobody has authored is the test, because that is town #2.
 //
 // ⛔⛔ READ THE `① SOURCE` LINE BEFORE QUOTING A CROSS-TOWN NUMBER. Only
-// lafayette-square carries a FROZEN ①; the others have not been poured since ① landed
+// lafayettesquare carries a FROZEN ①; the others have not been poured since ① landed
 // (`ROADMAP A20`), so their rows come from the live re-derivation. Not void — a live
 // row is evidence — but weaker, and a reader who cannot see which is which will treat
 // them alike.

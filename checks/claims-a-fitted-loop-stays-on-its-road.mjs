@@ -15,9 +15,10 @@
 //   node checks/claims-a-fitted-loop-stays-on-its-road.mjs [--town=a,b] [--mutants]
 // Read-only. Exits 1 on any loop off its road or unjudgeable. Numbers behind it: scratch/footprint-census/closed-loop-fit.mjs.
 import { readFileSync, existsSync, readdirSync } from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=')[1]
 const D = 'cartograph/data'
-const ribbonsOf = (t) => [`${D}/${t}/clean/ribbons.json`, ...(t === 'lafayette-square' ? ['src/data/ribbons.json'] : [])].find(existsSync)
+const ribbonsOf = (t) => [ribbonsPath(t)].find(existsSync)   // the town's declared ribbons (cartograph/scene.js#ribbonsPathOf), never a test of its name
 const towns = arg('town')?.split(',') || readdirSync(D).filter(t => !t.endsWith('-staging') && existsSync(`${D}/${t}/clean/skeleton.json`) && existsSync(`${D}/${t}/raw/osm.json`) && ribbonsOf(t))
 const same = (p, q) => Math.hypot(p.x - q.x, p.z - q.z) < 1e-3
 const segD = (p, a, b) => { const dx = b.x - a.x, dz = b.z - a.z, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(p.x - a.x - t * dx, p.z - a.z - t * dz) }

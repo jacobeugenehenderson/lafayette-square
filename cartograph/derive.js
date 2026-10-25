@@ -19,7 +19,7 @@ import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
 import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
-import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_MAP, wgs84ToLocal } from './config.js'
+import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, wgs84ToLocal } from './config.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { nodeAcrossGroups, splitAtPinches } from '../src/lib/latticeNode.js'
 import { footprintWell } from './footprint-well.mjs'
@@ -1661,10 +1661,10 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   //
   // Two DECLARED sources, merged and deduped, provenance printed:
   //   ① `pois` — the live pull. Works for any town fetched after the ingest fix.
-  //   ② the per-scene `osm_street_lamps.json` — LS's hand export (641 elements).
-  //      ⛔ NOT a cross-installation fallback: DEFAULT_MAP reads ITS OWN file and a
-  //      poured scene reads ITS OWN. No town ever inherits LS's lamps. It retires
-  //      itself the day LS is re-fetched.
+  //   ② the town's own `raw/osm_street_lamps.json` where it has one — LS's is a hand
+  //      export (641 elements). Every town reads its OWN; no town inherits LS's. (LS's
+  //      used to be read from scripts/raw/ by a test of the default map's name; the two
+  //      files were byte-identical on 2026-10-21 when the default went.)
   // ⛔ Positions are RE-PROJECTED from lon/lat, never taken from the poi's cached
   // x/z: that was computed at fetch time and the extent may have moved since.
   const streetlamps = []
@@ -1687,9 +1687,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     if (_addLamp(c.lon, c.lat, poi.tags.lamp_type)) nFromPois++
   }
 
-  const lampSourcePath = SCENE === DEFAULT_MAP
-    ? join(CARTOGRAPH_DIR, '..', 'scripts', 'raw', 'osm_street_lamps.json')
-    : join(RAW_DIR, 'osm_street_lamps.json')
+  const lampSourcePath = join(RAW_DIR, 'osm_street_lamps.json')
   let nFromFile = 0, lampFileNote = 'absent'
   if (existsSync(lampSourcePath)) {
     // ⛔ Only the ABSENT case is silent. A file that exists and will not parse is a

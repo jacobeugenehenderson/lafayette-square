@@ -10,12 +10,11 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 // component (see the `map`/`ribbons`/`B` locals below) and shadows these. This
 // is what makes MapLayers scene-generic — one renderer for LS + every pour —
 // retiring the LS-only gate + the thin SceneMapLayers substitute (2026-07-23).
-import _lsMapData from '../../cartograph/data/lafayette-square/clean/map.json'
-import _lsRibbonsData from '../data/ribbons.json'
-import _lsParkWaterData from '../data/lafayette-square/park_water.json'
-import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius, makeBoundary } from './boundary.js'
+import _parkWaterData from '../data/lafayettesquare/park_water.json'   // the bundled park's water (LafayettePark.jsx#declaresPark)
+import { makeBoundary } from './boundary.js'
 import { fetchMap } from './api.js'
 import useCartographStore from './stores/useCartographStore.js'
+import { declaresPark } from '../components/LafayettePark.jsx'
 import { townForLook } from '../instance.js'
 import StreetLabels from '../components/StreetLabels.jsx'
 import { useStreetLabels } from '../lib/streetLabels.js'
@@ -91,7 +90,6 @@ const PRI = {
 // ⭐ The fade is the ACTIVE LOOK's (Stage › Horizon › Edge, 2026-10-06): the store's `edgeFadeBand` on the scene's own
 // disc, derived by `boundaryRecords.mjs#lookFade` — the same rule the ground bake uses. The disc geometry (centre,
 // radius, polygon) is boundary.js's.
-import { BOUNDARY_CENTER_XZ as _BC, BOUNDARY_RADIUS as _BR } from './boundary.js'
 import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
 
@@ -100,14 +98,6 @@ import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoo
 // the barrier-line note below), so we clip tighter instead of fading.
 const CENTERLINE_PAST_INNER_M = 52
 
-// The LS boundary bundle, assembled from the module singletons so a POURED scene
-// can swap in its own via makeBoundary(sceneBoundary) with the SAME shape. For
-// scene==='lafayette-square' the component uses this object → every clip/fade
-// resolves to exactly the pre-unification singleton (byte-identical).
-const _LS_BUNDLE = {
-  pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius,
-  center: _BC, radius: _BR,
-}
 // Safe empties for a poured scene whose map/ribbons haven't fetched yet.
 const _EMPTY_MAP = { bbox: { minX: 0, maxX: 0, minZ: 0, maxZ: 0 }, buildings: [], layers: {} }
 const _EMPTY_RIBBONS = { streets: [] }
@@ -472,9 +462,8 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // scene-agnostic. This replaces the old `scene === 'lafayette-square'` gate +
   // the thin SceneMapLayers substitute (buildings+LU only) with ONE renderer.
   const scene = useCartographStore(s => s.scene)
-  // ⛔ LS's bundled data is used only when the scene IS LS. `!scene ||` used to put LS's
-  // map on screen before any scene was set; no scene now draws nothing.
-  const isLS = scene === 'lafayette-square'
+  // ⛔ Every town's map, ribbons and boundary are fetched by id, Lafayette Square's included: it had a bundled fast-path
+  // here (static imports, behind a test of its name), which went with the default town (2026-10-21). No scene draws nothing.
   const sceneRibbonsRaw = useCartographStore(s => s.sceneRibbons)
   const sceneBoundaryRaw = useCartographStore(s => s.sceneBoundary)
   const sceneMapPrefetch = useCartographStore(s => s.sceneMap)
@@ -483,27 +472,25 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // memos below guard and render nothing until it lands.
   const [fetchedMap, setFetchedMap] = useState(null)
   useEffect(() => {
-    if (isLS || !scene) { setFetchedMap(null); return }
+    if (!scene) { setFetchedMap(null); return }
     if (sceneMapPrefetch?.scene === scene && sceneMapPrefetch.map) { setFetchedMap(sceneMapPrefetch.map); return }
     let cancelled = false
     fetchMap(scene).then(m => { if (!cancelled) setFetchedMap(m) }).catch(() => {})
     return () => { cancelled = true }
-  }, [scene, isLS, sceneMapPrefetch])
+  }, [scene, sceneMapPrefetch])
   // These SHADOW the module imports of the same name — the body is unchanged.
   // Empty-object defaults (not null) so the geometry memos read safely while a
   // poured scene's map/ribbons are still loading (they render nothing until the
   // real data lands, then the deps below recompute them).
-  const mapData = isLS ? _lsMapData : (fetchedMap || _EMPTY_MAP)
-  const ribbonsData = isLS ? _lsRibbonsData : (sceneRibbonsRaw || _EMPTY_RIBBONS)
-  const parkWaterData = isLS ? _lsParkWaterData : _EMPTY_MAP   // authored LS content; poured scenes have none
-  // Boundary bundle: LS singleton for LS, else built from the scene's OWN nb. Same shape.
-  // ⛔ A non-LS scene with no boundary (a fresh pour, or the fetch window) used to get
-  // LS's polygon for its clip and fade (bleed site B2b). makeBoundary(null) is the
-  // neutral answer: no clip, the town's own data (boundary.js: "no boundary = show everything").
-  const B = useMemo(
-    () => isLS ? _LS_BUNDLE : makeBoundary(sceneBoundaryRaw ?? null),
-    [isLS, sceneBoundaryRaw],
-  )
+  const mapData = fetchedMap || _EMPTY_MAP
+  const ribbonsData = sceneRibbonsRaw || _EMPTY_RIBBONS
+  // the park's water only for a town that DECLARES the bundled park; no other town has any
+  const parkLookId = useCartographStore(s => s.activeLookId)
+  const parkWaterData = parkLookId && declaresPark(townForLook(parkLookId, 'MapLayers park water')) ? _parkWaterData : _EMPTY_MAP
+  // Boundary bundle: built from the scene's OWN nb, every town. ⛔ A scene with no boundary (a fresh pour, or the fetch
+  // window) used to get LS's polygon for its clip and fade (bleed site B2b). makeBoundary(null) is the neutral answer:
+  // no clip, the town's own data (boundary.js: "no boundary = show everything").
+  const B = useMemo(() => makeBoundary(sceneBoundaryRaw ?? null), [sceneBoundaryRaw])
   const pointInBoundary = B.pointInBoundary
   const boundaryPolygon = B.boundaryPolygon
   const clipPolylineToBoundary = B.clipPolylineToBoundary
@@ -1050,10 +1037,9 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           switches maps through the STORE — the pulldown never touches the URL —
           so `INSTANCE.lookId` is 'lafayette-square' no matter which town is open,
           and "LAFAYETTE PARK" printed over Huron's aerial (Jacob, 2026-09-19).
-          ⭐ `isLS` three hundred lines up is the same question asked of the STORE,
-          which is the thing that actually changes. One file had two answers to
-          "am I Lafayette Square" and the label picked the frozen one. */}
-      {!hide.parkTitle && isLS && <ParkTitleMesh town={townForLook(activeLookId, 'MapLayers')} style={labelStyle} pos={parkTitlePos} y={2.6} />}
+          ⭐ It asks the town the store has OPEN whether it declares the park
+          (LafayettePark.jsx#declaresPark) — the thing that actually changes. */}
+      {!hide.parkTitle && activeLookId && declaresPark(townForLook(activeLookId, 'MapLayers')) && <ParkTitleMesh town={townForLook(activeLookId, 'MapLayers')} style={labelStyle} pos={parkTitlePos} y={2.6} />}
     </group>
   )
 }

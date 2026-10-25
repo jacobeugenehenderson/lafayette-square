@@ -37,22 +37,22 @@ Going Designer → Stage silently re-bakes the active Look so the rendered scene
 
 ## API endpoints (`cartograph/serve.js`, port 3333)
 
-Mounted under `/api/cartograph` from the web app's perspective (vite proxies).
+Mounted under `/api/cartograph` from the web app's perspective (vite proxies). ⛔ Every town's data route names its town (`/<scene>/<verb>`); a scene-less `/<verb>` is refused (400), and an unrouted path is a 404 — there is no default town.
 
 ### Geometry
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET`  | `/markers` | Marker strokes (annotation overlay) |
-| `POST` | `/markers` | Save marker strokes |
-| `GET`  | `/analyze` | Spatial analysis of marker strokes (parcels/blocks intersected) |
-| `GET`  | `/measurements` | Read raw measurements |
-| `POST` | `/measurements` | Save raw measurements |
-| `GET`  | `/skeleton` | Read derived skeleton (geometry source of truth) |
-| `GET`  | `/centerlines` | Read legacy centerlines.json |
-| `POST` | `/centerlines` | Save centerlines |
-| `GET`  | `/overlay` | Read operator-intent overlay (caps, couplers, measures, segmentMeasures) |
-| `POST` | `/overlay` | Save overlay |
+| `GET`  | `/<scene>/markers` | Marker strokes (annotation overlay) |
+| `POST` | `/<scene>/markers` | Save marker strokes |
+| `GET`  | `/<scene>/analyze` | Spatial analysis of that town's marker strokes (parcels/blocks intersected) |
+| `GET`  | `/<scene>/measurements` | Read raw measurements |
+| `POST` | `/<scene>/measurements` | Save raw measurements |
+| `GET`  | `/<scene>/skeleton` | Read derived skeleton (geometry source of truth) |
+| `GET`  | `/<scene>/centerlines` | Read legacy centerlines.json |
+| `POST` | `/<scene>/centerlines` | Save centerlines |
+| `GET`  | `/<scene>/overlay` | Read operator-intent overlay (caps, couplers, measures, segmentMeasures) |
+| `POST` | `/<scene>/overlay` | Save overlay |
 
 ### Looks
 
@@ -63,13 +63,7 @@ Mounted under `/api/cartograph` from the web app's perspective (vite proxies).
 | `POST`   | `/looks/:id/design` | Autosave a Look's design block |
 | `POST`   | `/looks/:id/bake` | Re-bake the Look's bundle from its `design.json` (runs the full pipeline: ground geometry → buildings → lamps → scene → AO lightmap) |
 | `POST`   | `/looks` | Create a new Look from current state. Body: `{ name, fromLookId? }` |
-| `DELETE` | `/looks/:id` | Delete a Look. Default Look (`lafayette-square`) cannot be deleted |
-
-### Misc
-
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/rebuild` | Re-run `render.js` (legacy debug script) |
+| `DELETE` | `/looks/:id` | Delete a Look. The kit's 0-state Look (`kit-default`) cannot be deleted |
 
 ---
 
@@ -84,7 +78,6 @@ Mounted under `/api/cartograph` from the web app's perspective (vite proxies).
 | `node cartograph/bake-lamps.js --look=<id>`     | Bake lamp instance data. |
 | `node cartograph/bake-scene.js --look=<id>`     | Bake the scene snapshot (palette, material physics, layerVis). |
 | `node cartograph/skeleton.js` *then* `node cartograph/pipeline.js` | Two-step skeleton → ribbons rebuild. The pipeline does NOT run the skeleton extractor; both steps are needed. (See `memory/feedback_skeleton_pipeline_two_step.md`.) |
-| `node cartograph/render.js`             | Legacy preview renderer |
 | `node cartograph/fetch.js`              | Fetch fresh OSM data (destructive — see `memory/feedback_never_refetch_data.md` before running) |
 
 ---

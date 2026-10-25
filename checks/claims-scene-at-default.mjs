@@ -24,7 +24,7 @@
  *
  * Usage:
  *   node checks/claims-scene-at-default.mjs                 # every look
- *   node checks/claims-scene-at-default.mjs lafayette-square
+ *   node checks/claims-scene-at-default.mjs lafayettesquare
  */
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'

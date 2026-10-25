@@ -21,7 +21,7 @@
 //
 // ⭐⭐ THE DEFAULT OF 1 IS THE POINT, NOT A DETAIL. The kit default is the NEUTRAL value —
 // draw the ground at the height the ground actually is. LS's 1.5 is now LS's AUTHORED DATA
-// (`public/looks/lafayette-square/design.json#terrainExag`), which is where a decision made
+// (`public/looks/lafayettesquare/design.json#terrainExag`), which is where a decision made
 // by looking at one town belongs. A town nobody has authored gets truth, not St. Louis's
 // drama; `ORIENTATION` — the override IS the product.
 //

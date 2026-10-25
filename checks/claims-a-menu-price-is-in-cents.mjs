@@ -47,8 +47,8 @@ for (const scene of readdirSync(path.join(ROOT, 'cartograph/data'))) {
   const m = path.join(ROOT, 'cartograph/data', scene, 'content/menus.json')
   if (existsSync(m)) wells.push({ name: `${scene}/menus`, path: m, kind: 'menus' })
 }
-const lsMenus = path.join(ROOT, 'cartograph/data/lafayette-square/content/menus.json')
-if (existsSync(lsMenus)) wells.push({ name: 'lafayette-square/menus', path: lsMenus, kind: 'menus' })
+const lsMenus = path.join(ROOT, 'cartograph/data/lafayettesquare/content/menus.json')
+if (existsSync(lsMenus)) wells.push({ name: 'lafayettesquare/menus', path: lsMenus, kind: 'menus' })
 if (!wells.length) { bad('no menu wells found — the check is looking in the wrong place'); process.exit(1) }
 
 function* pricesOf(raw, kind) {

@@ -84,7 +84,7 @@ else bad('bake-content does not call assignListingIds(…, { sealPrefix }) — t
 // ── every LEGAL scene name seeds a sealable prefix (serve.js: `[a-z0-9][a-z0-9-]*`) ──
 // The raw `scene.slice(0, 4)` seeded `st-l` for `st-louis`; the seal refused it, so the town could never bake listings.
 const seals = (seed) => !throws(() => assignListingIds(base(['ovt-a']), null, { sealPrefix: seed }))
-const legalNames = ['st-louis', 'el-paso', 'la-jolla', 'a-b-c-d-e', 'huron', 'hipointedemun']
+const legalNames = ['st-louis', 'el-paso', 'la-jolla', 'a-b-c-d-e', 'huron', 'hipointedemun'] /* fixture */
 const unsealable = legalNames.filter(n => !seals(seedPrefix(n)))
 if (!unsealable.length) ok(`every legal scene name seeds a sealable prefix (st-louis → ${seedPrefix('st-louis')})`)
 else bad(`legal scene name(s) seed an unsealable prefix: ${unsealable.map(n => `${n} → "${seedPrefix(n)}"`).join(', ')}`)

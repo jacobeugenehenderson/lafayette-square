@@ -1,6 +1,6 @@
 /**
  * tripwire-ls-reads.cjs — preload that flags LS-specific file access during a
- * NON-LS bake. Any read of `src/data/…` or `cartograph/data/lafayette-square/…`
+ * NON-LS bake. Any read of `src/data/…` or `cartograph/data/lafayettesquare/…`
  * while baking another scene is a hardwire (the LS-fallback bug class).
  *
  *   NODE_OPTIONS="--require ./cartograph/tripwire-ls-reads.cjs" \
@@ -18,7 +18,7 @@ const CWD = process.cwd()
 const isLS = (p) => {
   const s = String(p)
   return s.includes(`${path.sep}src${path.sep}data${path.sep}`) ||
-         s.includes(`${path.sep}data${path.sep}lafayette-square${path.sep}`)
+         s.includes(`${path.sep}data${path.sep}lafayettesquare${path.sep}`)
 }
 const rel = (p) => String(p).replace(CWD + path.sep, '')
 const caller = () => {

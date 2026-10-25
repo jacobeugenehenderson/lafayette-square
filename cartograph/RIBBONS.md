@@ -372,7 +372,7 @@
 >
 >   ⛔⛔ **A SKELETON STREET'S `points` IS THE CONTROL POLYGON.** The curves are in `segments`
 >   (`{type:'bezier',c1,c2}`), and both ① and the drawn centreline were reading the ANCHORS ALONE.
->   ▶ `node -e "const s=require('./cartograph/data/lafayette-square/clean/skeleton.json').streets;const w=s.filter(x=>x.segments&&x.segments.length);console.log(w.reduce((a,c)=>a+c.segments.filter(g=>g.type==='bezier').length,0),'bezier segments on',w.length,'of',s.length,'chains')"`
+>   ▶ `node -e "const s=require('./cartograph/data/lafayettesquare/clean/skeleton.json').streets;const w=s.filter(x=>x.segments&&x.segments.length);console.log(w.reduce((a,c)=>a+c.segments.filter(g=>g.type==='bezier').length,0),'bezier segments on',w.length,'of',s.length,'chains')"`
 >   — so every curve was minted as a straight chord, throwing away a real sagitta on every one of them.
 >   ⭐⭐ **THAT 20.80 m IS THE FIGURE THIS SECTION USED TO RECORD AS "the drawn centreline vs ①".**
 >   It was never two lines diverging — it is **the discarded curve**, and converging them to 0.00 m
@@ -461,7 +461,7 @@
 >   > rectangle."* · *"Back to the protopolygon and not chains."*
 >
 >   Read as written, "the owner changing" is a **CHAIN** law, and the kit cuts one road into many
->   chains (LS: South 18th Street into **eleven**; a third of roads are multi-chain — ▶ `node -e "const s=require('./cartograph/data/lafayette-square/clean/skeleton.json').streets;const b={};for(const c of s)(b[c.name]=b[c.name]||[]).push(c);const n=Object.keys(b);console.log(n.filter(k=>b[k].length>1).length,'of',n.length)"`). A chain cut and a
+>   chains (LS: South 18th Street into **eleven**; a third of roads are multi-chain — ▶ `node -e "const s=require('./cartograph/data/lafayettesquare/clean/skeleton.json').streets;const b={};for(const c of s)(b[c.name]=b[c.name]||[]).push(c);const n=Object.keys(b);console.log(n.filter(k=>b[k].length>1).length,'of',n.length)"`). A chain cut and a
 >   `segOrd` boundary are chain-world bookkeeping — **①'s contour runs straight through them and the
 >   only thing that changes is the LABEL.** ⇒ Taken literally it puts the chain graph's nodes back
 >   into the one construction built to have none, and the ribbon is disrupted at every junction.

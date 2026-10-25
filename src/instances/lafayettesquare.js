@@ -7,7 +7,7 @@
  */
 export default {
   // Slab pointer — which baked Look the runtime loads.
-  lookId: 'lafayette-square',
+  lookId: 'lafayettesquare',
 
   // Sky renderer (TEMPORARY stopgap — see src/lib/skyMode.js). 'cheap' ships the
   // restored procedural <CloudDome/>; 'volumetric' mounts the Meteorologist
@@ -62,9 +62,9 @@ export default {
     // exception. The arch was never the kit's; it is this town's, and it is already live.
     markSvg: 'arch',   // the OLD player's mark (it reads this first), kept until the old player is retired
     // The Ward's mark is the fleur-de-lis (Jacob, 2026-09-28: "in keeping with the kit"; "only in the Ward"), authored
-    // in the Look (public/looks/lafayette-square/design.json identity.mark). This line is its copy:
+    // in the Look (public/looks/lafayettesquare/design.json identity.mark). This line is its copy:
     mark: '⚜️',   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
-    assetSlug: 'lafayette-square',                               // per-look asset filenames; == lookId for #1
+    assetSlug: 'lafayettesquare',                               // per-look asset filenames; == lookId for #1
   },
 
   // Legal entity + governing law (installation-specific).
@@ -81,6 +81,11 @@ export default {
   commerce: {
     salesTaxRate: 0.08725,   // MO 4.225% + St. Louis 4.5%
   },
+
+  // ⭐ The bundled park this town carries — the component key, never the town's name. `LafayettePark.jsx` (and its body,
+  // and the Designer's title handle and mesh) mount only for a town that declares 'lafayette-park' here: whether a
+  // town-specific component mounts is the town's declaration, not a test of its name (Jacob, 2026-10-21).
+  bundledPark: 'lafayette-park',
 
   // Neighborhood profile — content Layer-0 facts (masthead, InfoModal).
   // buildingCount is live-derived from the slab; the rest are supplied.

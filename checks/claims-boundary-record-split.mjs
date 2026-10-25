@@ -54,8 +54,8 @@ for (const s of scenes) {
 
 // ── C. THE LS SURVIVAL TEST, with the mutation check that gives it teeth ─────
 console.log('\n── C. LS survives a simulated rescope / commit ──────────────────')
-const LS = 'lafayette-square'
-if (!scenes.includes(LS)) { ok(false, 'lafayette-square artifact is missing'); }
+const LS = 'lafayettesquare'
+if (!scenes.includes(LS)) { ok(false, 'lafayettesquare artifact is missing'); }
 else {
   const nb = load(LS)                       // FIXTURE: parsed copy, never written back
   const recs = splitBoundary(nb, LS)

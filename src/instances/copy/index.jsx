@@ -13,11 +13,11 @@
  * Browser-only (JSX). Node-side code imports `../registry.js`, never this.
  */
 import { INSTANCE } from '../../instance.js'
-import * as lafayetteSquare from './lafayette-square.jsx'
+import * as lafayetteSquare from './lafayettesquare.jsx'
 import * as caryMissouri from './legal/cary-missouri.jsx'
 
 const ABOUT_BY_MAP = {
-  'lafayette-square': lafayetteSquare,
+  'lafayettesquare': lafayetteSquare,
 }
 
 export const LEGAL_DOCUMENTS = {

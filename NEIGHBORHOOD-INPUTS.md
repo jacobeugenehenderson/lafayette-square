@@ -71,7 +71,7 @@ Prior canon (`cartograph/INTAKE.md §6.1`, `cartograph/SKELETON.md §6`) framed 
 | Input | Gives | LS source | File | Tier | Mode |
 |---|---|---|---|---|---|
 | **Municipal tree census** | real placements (species + DBH + condition) | **City of St. Louis Forestry** ArcGIS | ⚠️ **separate wells, never merged** — `cartograph/data/<scene>/clean/{park_census,park_trees,forest_park_trees,osm_trees,derived_trees}.json`. The union-of-wells doctrine (`BAKE §4.5`) turns on these staying separate layers. | **②** | automated (re-point per town) |
-| Street-lamp positions | 80 lamps (drive tree glow + ground pools) | OSM interior + procedural perimeter ring | `cartograph/data/lafayette-square/authored_lamps.json` | ②/① | automated + procedural |
+| Street-lamp positions | 80 lamps (drive tree glow + ground pools) | OSM interior + procedural perimeter ring | `cartograph/data/lafayettesquare/authored_lamps.json` | ②/① | automated + procedural |
 | Species roster + dossiers | canonical IDs, botanical spec per species | authored (Hortus + operator, from botanical refs) | `arborist/species-map.json`, `arborist/dossiers/*` | ③ (schema ①) | authored / LLM-assistable |
 | Rubric vocabulary | the botanical axes (▶ `node checks/claims-reference-credits.mjs`) | authored, species-agnostic | `arborist/rubric.json` | ① | — (universal) |
 | Chassis GLB library | 241 de-leafed skeletons | vendor (Whittle) + LiDAR + procedural (SCA) | `public/trees/_chassis/` | ① | reuse or commission |
@@ -127,7 +127,7 @@ This is the layer Jacob pointed at. LS's content was seeded from **unusually com
 | wall/roof material, color | Mapillary facade match + overrides | ①/③ | coverage-dependent |
 | **historic_status / contributing / architect / style / period** | **National Register nomination** (`inventory/` OCR) | **③** | 🔴 **does not exist for a normal town** — LLM-assist or omit |
 
-### 4.2 Landmarks / listings — `cartograph/data/lafayette-square/content/listings.json` (87), tracked in `ls/BUSINESS_LISTINGS.md`
+### 4.2 Landmarks / listings — `cartograph/data/lafayettesquare/content/listings.json` (87), tracked in `ls/BUSINESS_LISTINGS.md`
 
 Names, categories, phone, website, hours, photos, amenities, descriptions, history, tags, menus (`menus.json`, ~25% of listings). **All hand-compiled** by the operator over 3–6 months from Google/Yelp/business sites/site visits + historic records. No automated listing discovery; edits flow through the Apps Script → Sheets backend, not a per-place UI in the app (except guardian claims). **Tier ③ throughout.**
 

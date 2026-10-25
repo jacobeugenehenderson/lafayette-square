@@ -32,7 +32,7 @@ import { lookOf } from './lookOf.js'
  * read out of the CARTOGRAPH STORE — which only Cartograph hydrates. The
  * Designer laid out at the authored style and the player at store defaults, so
  * the rendered labels were never the ones the operator approved. Measured on
- * lafayette-square: sizeK 0.7 vs 1, letterSpacing 0.04 vs 0.05. See
+ * lafayettesquare: sizeK 0.7 vs 1, letterSpacing 0.04 vs 0.05. See
  * useLabelPlacements.js, which asserted they could not drift.
  */
 export function useStreetLabels(lookId, reread) {

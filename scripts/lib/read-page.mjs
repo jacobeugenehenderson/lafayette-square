@@ -9,7 +9,7 @@
  *    settle carries `{ error }` — and still its screenshot, when one could be taken.
  *
  *   const r = await readPage({
- *     url: 'http://localhost:5180/lafayette-square/society',
+ *     url: 'http://localhost:5180/lafayettesquare/society',
  *     viewport: { width: 390, height: 844, deviceScaleFactor: 3, mobile: true },
  *     place: { lat, lon },                         // the town's manifest identity.geography — the caller reads it
  *     at: ['noon', 'dusk', 'midnight'],            // solar noon · civil dusk · solar midnight (nadir), today, at place

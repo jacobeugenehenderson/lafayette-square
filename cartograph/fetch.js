@@ -54,7 +54,7 @@ const pass = _passArg === 'all' ? null : (_passArg || null)
 //   1. the gate is the interesting part, and a gate you cannot exercise is a gate
 //      nobody trusts — `MEMORY §C`: a passing check proves nothing until seen to FAIL;
 //   2. without it, the only way to test this is to run a REAL fetch against a real
-//      scene. Testing it on lafayette-square is one keystroke from overwriting
+//      scene. Testing it on lafayettesquare is one keystroke from overwriting
 //      production's raw OSM, which is exactly the class `scene.js` exists to prevent.
 const dryRun = (process.argv || []).includes('--dry-run')
 

@@ -10,9 +10,9 @@
 //     works at all; do not guard serve.js itself.
 import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync } from 'fs'
-import { join, extname, dirname, relative } from 'path'
+import { join, dirname, relative } from 'path'
 import { spawn } from 'child_process'
-import { DEFAULT_MAP, mapRawDir, mapCleanDir, ribbonsPathOf, declaredRibbonsOf } from './config.js'
+import { mapRawDir, mapCleanDir, ribbonsPathOf, declaredRibbonsOf } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
@@ -329,17 +329,6 @@ function mapDataPaths(scene) {
   }
 }
 
-// Default-scene aliases — preserved so the static-file serving path and
-// the analyze() routine keep working without per-request scene plumbing.
-// Per-scene routes resolve via mapDataPaths(scene) instead.
-const DEFAULT_PATHS = mapDataPaths(DEFAULT_MAP)
-const DIR     = DEFAULT_PATHS.clean
-const RAW     = DEFAULT_PATHS.raw
-const MARKERS = DEFAULT_PATHS.markers
-const MEASUREMENTS = DEFAULT_PATHS.measurements
-const CENTERLINES  = DEFAULT_PATHS.centerlines
-const SKELETON     = DEFAULT_PATHS.skeleton
-const OVERLAY      = DEFAULT_PATHS.overlay
 
 // mtime-based dirty check used by the bake chain. Returns true if any output
 // is missing or any input is newer than the oldest output. Missing inputs
@@ -1055,9 +1044,6 @@ const LOOKS_DIR = join(PUBLIC_DIR, 'looks')
 const LOOKS_INDEX = join(LOOKS_DIR, 'index.json')
 // The kit's 0-state Look id. ⛔ Not a town — see the block above.
 const DEFAULT_LOOK_ID = 'kit-default'
-// The historical 0-state, kept ONLY so migrateLooksOnBoot can still name the
-// Look it creates out of a pre-Looks overlay.design. ⛔ Never a fallback target.
-const LEGACY_LS_LOOK_ID = 'lafayette-square'
 const PORT = Number(process.env.CARTO_PORT) || 3333
 
 // ── Looks helpers ──────────────────────────────────────────────────────────
@@ -1109,7 +1095,7 @@ function orFail(res, fn) {
 // WRITES THAT BACK, erasing every Look registration on disk. Silent, total, and
 // it looks exactly like a fresh install.
 // ⭐ Absent ⇒ the first-boot skeleton, which is honest: there genuinely are no
-// Looks yet, and migrateLooksOnBoot is about to create the 0-state. Present but
+// Looks yet. Present but
 // unparseable ⇒ refuse, and say which file, because the recovery is to fix that
 // file — never to let the server rebuild it from nothing.
 function readLooksIndex() {
@@ -1226,36 +1212,9 @@ function seedDesignForScene(seedDesign, seedScene, newScene) {
   return { design, stripped }
 }
 
-// One-time migration: if public/looks/ doesn't exist, create it and seed the
-// default Look from overlay.json's design block (or empty if absent). Strip
-// the design block from overlay.json so it stops drifting from the Look.
-function migrateLooksOnBoot() {
-  if (existsSync(LOOKS_INDEX)) return
-  // This migration lifts LS's own overlay.design into LS's own Look — so it
-  // names LS explicitly. The INDEX DEFAULT is the kit 0-state, not that Look.
-  mkdirSync(lookDir(LEGACY_LS_LOOK_ID), { recursive: true })
-  mkdirSync(lookDir(DEFAULT_LOOK_ID), { recursive: true })
-  const overlay = readJsonOrNull(OVERLAY) || {}
-  const design = overlay.design || {}
-  writeJson(lookDesignPath(LEGACY_LS_LOOK_ID), design)
-  writeJson(lookDesignPath(DEFAULT_LOOK_ID), {})
-  saveLooksIndex({
-    default: DEFAULT_LOOK_ID,
-    looks: [
-      { id: DEFAULT_LOOK_ID, name: 'Kit Default', createdAt: Date.now() },
-      { id: LEGACY_LS_LOOK_ID, name: 'Lafayette Square', scene: DEFAULT_MAP, createdAt: Date.now() },
-    ],
-  })
-  if (overlay.design) {
-    delete overlay.design
-    writeJson(OVERLAY, overlay)
-  }
-  console.log(`[looks] migrated overlay.design → ${LEGACY_LS_LOOK_ID}; 0-state = ${DEFAULT_LOOK_ID}`)
-}
-migrateLooksOnBoot()
 
 // Idempotent migration: stamp `scene` on any pre-existing Look entry that
-// lacks it. Defaults to the project's 0-state scene (Lafayette Square).
+// lacks it. ⛔ Never assigns one: a Look with no scene is named, and its consumers refuse.
 // Runs every boot but only writes if something needed stamping.
 function backfillLookScenesOnBoot() {
   const idx = readJsonOrNull(LOOKS_INDEX)
@@ -1270,7 +1229,7 @@ function backfillLookScenesOnBoot() {
     // every boot would train the operator to ignore this line, which is the one
     // line that matters when a REAL Look has lost its scene.
     if (!entry.scene && entry.id !== idx.default) {
-      console.warn(`[looks] '${entry.id}' has no scene — left unset (was silently assigned '${DEFAULT_MAP}')`)
+      console.warn(`[looks] '${entry.id}' has no scene — left unset (its consumers refuse; no town is assumed)`)
     }
   }
   if (changed) {
@@ -1280,30 +1239,10 @@ function backfillLookScenesOnBoot() {
 }
 backfillLookScenesOnBoot()
 
-const MIME = {
-  '.html': 'text/html',
-  '.svg': 'image/svg+xml',
-  '.json': 'application/json',
-  '.css': 'text/css',
-  '.js': 'text/javascript',
-  '.png': 'image/png',
-}
 
-if (!existsSync(MARKERS)) writeFileSync(MARKERS, '[]')
-if (!existsSync(MEASUREMENTS)) writeFileSync(MEASUREMENTS, '{"measurements":[]}')
-if (!existsSync(CENTERLINES)) writeFileSync(CENTERLINES, '{"streets":[]}')
-if (!existsSync(OVERLAY)) writeFileSync(OVERLAY, '{"version":1,"streets":{}}')
 
-function pointInRing(px, pz, ring) {
-  let inside = false
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], zi = ring[i][1]
-    const xj = ring[j][0], zj = ring[j][1]
-    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside
-  }
-  return inside
-}
 
+// GET /<scene>/analyze — what is under that town's marker strokes: the parcels and blocks they overlap.
 function strokeBBox(strokes) {
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
   for (const stroke of strokes) {
@@ -1317,17 +1256,19 @@ function strokeBBox(strokes) {
   return { minX, maxX, minZ, maxZ }
 }
 
-function analyzeMarkers() {
-  const strokes = JSON.parse(readFileSync(MARKERS, 'utf-8'))
+function analyzeMarkers(scene) {
+  const { markers, clean } = mapDataPaths(scene)
+  if (!existsSync(markers)) return { scene, strokes: 0, message: 'No marker strokes' }
+  const strokes = JSON.parse(readFileSync(markers, 'utf-8'))
   if (!strokes.length) return { strokes: 0, message: 'No marker strokes' }
 
   const bbox = strokeBBox(strokes)
-  const result = { strokes: strokes.length, bbox }
+  const result = { scene, strokes: strokes.length, bbox }
 
   // Find parcels overlapping the marker bbox — from the scene's DECLARED wells.
   // ⛔ This read `scripts/raw/stl_parcels.json`, which has not existed since LS's copy
   // moved into its scene dir (2026-07-13), so the parcel half silently did nothing.
-  const parcelFiles = declaredParcelPaths(DEFAULT_MAP).filter(existsSync)
+  const parcelFiles = declaredParcelPaths(scene).filter(existsSync)
   if (parcelFiles.length) {
     const overlapping = []
     for (const p of parcelFiles.flatMap(f => Object.values(JSON.parse(readFileSync(f, 'utf-8')).parcels || {}))) {
@@ -1351,7 +1292,7 @@ function analyzeMarkers() {
   }
 
   // Find blocks overlapping the marker bbox
-  const mapFile = join(DIR, 'map.json')
+  const mapFile = join(clean, 'map.json')
   if (existsSync(mapFile)) {
     const map = JSON.parse(readFileSync(mapFile, 'utf-8'))
     const blocks = map.layers?.block || []
@@ -1372,6 +1313,7 @@ function analyzeMarkers() {
   }
 
   return result
+
 }
 
 createServer(async (req, res) => {
@@ -1385,15 +1327,17 @@ createServer(async (req, res) => {
   // Strip query string for route matching. Clients add cache-busting
   // ?t=... that would otherwise miss exact-equality checks.
   const path = (req.url || '').split('?')[0]
-  // GET /analyze — report what's under the marker strokes (LS-only helper).
-  if (req.method === 'GET' && path === '/analyze') {
+
+  // GET /<scene>/analyze — report what's under that town's marker strokes (FEATURES § The Marker).
+  const analyzeMatch = req.method === 'GET' && path.match(/^\/([a-z0-9][a-z0-9-]*)\/analyze$/)
+  if (analyzeMatch) {
     res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify(analyzeMarkers(), null, 2))
+    res.end(JSON.stringify(analyzeMarkers(analyzeMatch[1]), null, 2))
     return
   }
 
   // ── Per-scene data routes ──────────────────────────────────────────────
-  // Canonical: /<scene>/<verb> (e.g. /lafayette-square/centerlines, /huron/overlay).
+  // Canonical: /<scene>/<verb> (e.g. /lafayettesquare/centerlines, /huron/overlay).
   // Legacy: /<verb> with no scene prefix resolves to the default scene; this
   // alias exists so older clients keep working through Phase 0c's store
   // migration. Once every caller is scene-aware we can retire it.
@@ -1414,10 +1358,12 @@ createServer(async (req, res) => {
     boundary:     'null',
   }
   // Reserved top-level prefixes that must NOT be mistaken for scene names.
-  const RESERVED_PREFIXES = new Set(['looks', 'analyze', 'rebuild'])
+  const RESERVED_PREFIXES = new Set(['looks'])
   const sceneRouteMatch = path.match(/^\/(?:([a-z0-9][a-z0-9-]*)\/)?(markers|measurements|skeleton|centerlines|overlay|ribbons|map|geography|boundary)$/)
   if (sceneRouteMatch && !RESERVED_PREFIXES.has(sceneRouteMatch[1])) {
-    const scene = sceneRouteMatch[1] || DEFAULT_MAP
+    const scene = sceneRouteMatch[1]
+    // ⛔ A scene-less /<verb> names no town, and there is no default to read: refuse, and say how to name one.
+    if (!scene) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: `/${sceneRouteMatch[2]} names no town — ask /<scene>/${sceneRouteMatch[2]}` })); return }
     const verb = sceneRouteMatch[2]
     const paths = mapDataPaths(scene)
     const filePath = paths[verb]
@@ -2706,7 +2652,7 @@ createServer(async (req, res) => {
       // it already fired once, 2026-07-23. Nothing that WRITES may fall back.
       const bakeScene = bakeLookEntry?.scene
       if (!bakeScene) {
-        const msg = `refusing to bake: look '${bakeLookEntry?.id ?? '?'}' has no scene. Defaulting would bake over '${DEFAULT_MAP}'.`
+        const msg = `refusing to bake: look '${bakeLookEntry?.id ?? '?'}' has no scene, and there is no default town to bake into.`
         console.error('[bake] ⛔ ' + msg)
         res.writeHead(409, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: msg }))
@@ -3194,9 +3140,9 @@ createServer(async (req, res) => {
       // this ordering load-bearing; that line now describes the code.)
       // ⚠️ Keep this BEFORE `ground-ao` — that step reads `trees.json` too, and the pour
       // stays in one topological order rather than two.
-      // ⛔ Both flags are passed explicitly: bake-tree-anchors defaults BOTH look and
-      // scene to 'lafayette-square', so an omitted flag writes LS's trunk heights into
-      // another town's slab (the A00 class — that exact bug was fixed 2026-07-15).
+      // ⛔ Both flags are passed explicitly: bake-tree-anchors refuses without them (it once defaulted BOTH look and
+      // scene to Lafayette Square, so an omitted flag wrote LS's trunk heights into another town's slab — the A00
+      // class, fixed 2026-07-15).
       // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
       await runIfDirty('tree-anchors',
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'trees.json'),
@@ -3751,27 +3697,11 @@ createServer(async (req, res) => {
     return
   }
 
-  // POST /rebuild — re-run render.js and reload preview
-  if (req.method === 'POST' && path === '/rebuild') {
-    try {
-      await runShell('node render.js', { cwd: import.meta.dirname, timeout: 30000 })
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end('{"ok":true}')
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: err.message }))
-    }
-    return
-  }
 
-  // Static file serving — uses the query-stripped path so cache-busting
-  // suffixes don't break file resolution.
-  const file = path === '/' ? '/preview.html' : path
-  const filePath = join(DIR, file)
-  if (!existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return }
-  const ext = extname(filePath)
-  res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' })
-  res.end(readFileSync(filePath))
+  // ⛔ No route. This used to serve any path out of the DEFAULT town's clean/ dir (and `/` as its preview.html), so an
+  // unrouted request read Lafayette Square's files under no town's name. There is no default town: a town's data is
+  // asked by /<scene>/<verb>.
+  res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: `no route for ${req.method} ${path} — a town's data is /<scene>/<verb>` }))
  } catch (err) {
   console.error(`[serve] ${req.method} ${req.url} — ${err.message}`)
   if (!res.headersSent) res.writeHead(err.statusCode || 500, { 'Content-Type': 'application/json' })

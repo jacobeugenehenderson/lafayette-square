@@ -4,7 +4,7 @@
  *
  * Computes, live + read-only, the comparison hand-maintained in
  * The live have-vs-need join (retired prose: _archive/ROSTER-COVERAGE-2026-08-23.md): one row per CANONICALIZED Lafayette Square park species
- * (cartograph/data/lafayette-square/clean/park_census.json, merged via roster-name-canon.json), each tagged
+ * (cartograph/data/lafayettesquare/clean/park_census.json, merged via roster-name-canon.json), each tagged
  * literal / composite / gap with covering library species + park_species_map
  * routing. Brief 24's `GET /coverage` is a thin wrapper over computeCoverage().
  *
@@ -51,8 +51,7 @@ const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 // up with identical content (adjacent geography, same city forestry), but each
 // owns a SEPARATE file and is never listed as related to another. A scene with no
 // clean park_census.json reads EMPTY (honest zero) until its OWN census is
-// authored — do NOT resolve it to LS's. DEFAULT_MAP keeps pre-scene callers working.
-export const DEFAULT_MAP = 'lafayette-square'
+// authored — do NOT resolve it to LS's. ⛔ No default scene: every caller names its town (computeCoverage refuses).
 export const parkMapForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'tree-species-map.json')
 // ⛔⛔ THE CENSUS IS SEVERAL WELLS, NOT ONE FILE (`ORIENTATION §6`): park_census · park_trees ·
 // forest_park_trees · osm_trees · derived_trees. This read ONLY `park_census.json` — 756 of
@@ -96,7 +95,8 @@ const GENUS_STOP = new Set([
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 const toks = (s) => norm(s).split(' ').filter(Boolean)
 
-export async function computeCoverage(scene = DEFAULT_MAP) {
+export async function computeCoverage(scene) {
+  if (!scene) throw new Error('computeCoverage: no scene named — the roster board is per town, and there is no default town')
   const PARK_TREES = parkTreesForMap(scene)
   const PARK_MAP   = parkMapForScene(scene)
   // ── What actually EXPORTED (the output axis) ────────────────────────────

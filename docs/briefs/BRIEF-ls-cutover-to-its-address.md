@@ -1,6 +1,6 @@
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: Kerf, step 1 (code + data rename, 2026-10-21; lands only with LS re-baked under the new name). The R2 slab and staging/renamed.json stay open (R2 writes).
 written: 2026-09-27
 evict-when: Lafayette Square is the map `lafayettesquare`, served at lafayettesquare.online by Promote; lafayette-square.com 301s to it with paths kept (old links land); and GitHub Pages production is retired.
 -->

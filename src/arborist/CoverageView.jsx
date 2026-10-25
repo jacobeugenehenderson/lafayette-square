@@ -3,7 +3,7 @@
  * 2026-05-25). The Coverage half of the Grove's Gallery ↔ Coverage toggle.
  *
  * Read-only. Renders the live join computed by `GET /api/arborist/coverage`:
- * one row per CANONICALIZED Lafayette Square park species (cartograph/data/lafayette-square/clean/park_census
+ * one row per CANONICALIZED Lafayette Square park species (cartograph/data/lafayettesquare/clean/park_census
  * .json, merged via arborist/roster-name-canon.json), sorted by placement count
  * descending, each tagged 🟢 literal / 🟡 composite / 🔴 gap with the covering
  * library species and the current park_species_map routing. The map column
@@ -16,6 +16,7 @@
  * map. Supersedes the hand-authored tracker (_archive/ROSTER-COVERAGE-2026-08-23.md).
  */
 import { useEffect, useState } from 'react'
+import useArboristStore from './stores/useArboristStore.js'
 
 const CLASS_META = {
   literal:   { dot: '🟢', label: 'literal',   color: '#6a9a4a' },
@@ -24,6 +25,7 @@ const CLASS_META = {
 }
 
 export default function CoverageView() {
+  const look = useArboristStore(s => s.activeLookId)
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -32,12 +34,14 @@ export default function CoverageView() {
   useEffect(() => {
     let alive = true
     setLoading(true)
-    fetch(`/api/arborist/coverage?t=${Date.now()}`)
+    // ⛔ Per town: no Look open → no board (the server refuses a scene-less coverage; there is no default town's).
+    if (!look) { setError('no Look open — choose a Look'); setLoading(false); return () => { alive = false } }
+    fetch(`/api/arborist/coverage?t=${Date.now()}&look=${encodeURIComponent(look)}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
       .then(d => { if (alive) { setData(d); setError(null); setLoading(false) } })
       .catch(e => { if (alive) { setError(String(e)); setLoading(false) } })
     return () => { alive = false }
-  }, [])
+  }, [look])
 
   if (loading) return <div style={msg}>Computing coverage…</div>
   if (error)   return <div style={{ ...msg, color: '#f88' }}>Coverage failed: {error}</div>

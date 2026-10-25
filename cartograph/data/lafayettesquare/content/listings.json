@@ -1,6 +1,6 @@
 {
  "meta": {
-  "scene": "lafayette-square",
+  "scene": "lafayettesquare",
   "layer": "Layer 2 — listings (hand-curated; installation #1 has no content bake)",
   "generated": "2026-09-24",
   "generator": "authored — consolidated from src/data/landmarks.json with the live Apps Script sheet's edits to those listings laid over, merged as useInit#runInit merges; the sheet's bookkeeping fields are not content",

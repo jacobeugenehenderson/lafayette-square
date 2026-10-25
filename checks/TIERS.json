@@ -1785,7 +1785,7 @@
       "file": "checks/claims-no-town-name-gates-the-kit.mjs",
       "tier": "safe",
       "why": [
-        "runs `git ls-files \"cartograph/*.js\"` — local, read-only"
+        "runs `git ls-files \"*.js\" \"*.mjs\" \"*` — local, read-only"
       ]
     },
     {
@@ -2372,7 +2372,6 @@
         "writeFileSync",
         "deletes files",
         "computed import() of a path an argument or the environment can supply — arbitrary",
-        "computed import of cartograph/scene.js — read, safe",
         "computed import of cartograph/geography.mjs — read, safe",
         "computed import of src/cartograph/streetProfiles.js — read, safe"
       ]

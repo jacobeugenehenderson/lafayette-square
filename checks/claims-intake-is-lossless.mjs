@@ -49,8 +49,8 @@ const DROPS = [
     says: '⚠ a per-NAME list (LS proper nouns); it drops the whole name group, paths included' },
   { id: 'building-membership', scope: 'internal', file: 'cartograph/pipeline.js', symbol: /createMembershipFilter\(\{ nb, activate, hide/,
     says: 'a building outside the boundary, in an authored exclusion loop, or authored hidden' },
-  { id: 'curated-buildings', scope: 'internal', file: 'cartograph/pipeline.js', symbol: /join\(PROJECT_ROOT, 'src', 'data', 'buildings\.json'\)/,
-    says: 'the town draws a curated building set (src/data/buildings.json), not OSM footprints' },
+  { id: 'curated-buildings', scope: 'internal', file: 'cartograph/pipeline.js', symbol: /const declaredBldg = declaredBuildingsOf\(SCENE\)/,
+    says: 'the town draws the curated building set it declares (pour.buildings, e.g. src/data/buildings.json), not OSM footprints' },
   { id: 'served-parcel-privacy', scope: 'served', file: 'cartograph/states/mo.mjs', symbol: /No information may be sold or redistributed/,
     fields: WITHHELD_PARCEL_FIELDS,   // read from its one home, never restated here
     says: 'parcel owner and assessor fields are withheld from the browser: privacy, and St. Louis City\'s no-redistribution terms (the stl-city well\'s terms, cartograph/states/mo.mjs)' },

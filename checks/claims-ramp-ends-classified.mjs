@@ -35,7 +35,6 @@ import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
-const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
 const ribbonsOf = (s) => ribbonsPathOf(s)
 const HW = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
 const XY = (p) => Array.isArray(p) ? p : [p.x, p.z]

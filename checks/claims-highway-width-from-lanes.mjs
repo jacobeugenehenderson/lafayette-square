@@ -53,7 +53,6 @@ const survivors = [...tph[1].matchAll(/^\s*(motorway|motorway_link|trunk|trunk_l
 console.log(`TYPE_PAVEMENT_HW highway keys: ${survivors.length ? '⛔ ' + survivors.join(', ') : '✅ none'}`)
 if (survivors.length) red = true
 
-const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
 const ribbonsOf = (scene) => ribbonsPathOf(scene)
 const isInterstate = (ref) => typeof ref === 'string' && /(^|;)\s*I[\s-]?\d/.test(ref)
 const MAIN = new Set(['motorway', 'trunk']), RAMP = new Set(['motorway_link', 'trunk_link'])

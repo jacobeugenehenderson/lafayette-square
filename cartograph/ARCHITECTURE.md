@@ -62,7 +62,7 @@ This same split shows up in every helper that has both kinds of editing:
 | Which trees stand at which positions | Cartograph Designer (Plant tool, v1.1) |
 | What color sugar maples are | Stage Surfaces (per Look) |
 
-**Looks vary styling, never shape.** That rule is what lets the runtime swap Looks at zero cost — just a different `design.json` (+ the baked `ground.json`/`ground.bin`), the geometry is identical. *(The per-Look runtime `ground.svg` was retired and `bake-svg.js` is **gone from the tree** — no producer, no consumer; the runtime reads `ground.json`/`bin`. A stale `public/looks/lafayette-square/ground.svg` artifact still sits on disk and is read by nothing.)*
+**Looks vary styling, never shape.** That rule is what lets the runtime swap Looks at zero cost — just a different `design.json` (+ the baked `ground.json`/`ground.bin`), the geometry is identical. *(The per-Look runtime `ground.svg` was retired and `bake-svg.js` is **gone from the tree** — no producer, no consumer; the runtime reads `ground.json`/`bin`. A stale `public/looks/lafayettesquare/ground.svg` artifact still sits on disk and is read by nothing.)*
 
 ### ⭐ 2.1 The three tools (target architecture): Survey · Section · Stage
 

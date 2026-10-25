@@ -8,7 +8,7 @@
  * fields (name/historic/listings). To make LS "just a look at the render level"
  * (so `loadBuildings` reads a per-scene render ledger uniformly and the
  * `scene === 'lafayette-square'` hardwire at bake-buildings.js:62 retires), we
- * emit ONLY the render fields to `cartograph/data/lafayette-square/buildings.json`.
+ * emit ONLY the render fields to `cartograph/data/lafayettesquare/buildings.json`.
  *
  * The CONTENT stays in `src/data/buildings.json` untouched — the ~10 townie
  * imports keep reading it (the render/content split; content decoupling is the
@@ -29,14 +29,14 @@
 // marker and will FAIL if it is absent from a writer that is reachable as a CLI entry point.
 // A writer is guilty until this line says otherwise, with a reason.
 // @scene-independent: LAFAYETTE SQUARE BY DEFINITION. This derives the LS render ledger
-//     specifically (it is in the filename) and writes the single path data/lafayette-square/buildings.json. Not a per-scene writer; it is an LS-only artifact that will
+//     specifically (it is in the filename) and writes the single path data/lafayettesquare/buildings.json. Not a per-scene writer; it is an LS-only artifact that will
 //     retire with the bake-buildings LS hardwire.
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 
 const ROOT = join(import.meta.dirname, '..')
 const SRC = join(ROOT, 'src', 'data', 'buildings.json')
-const OUT = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'buildings.json')
+const OUT = join(ROOT, 'cartograph', 'data', 'lafayettesquare', 'buildings.json')
 
 const RENDER_FIELDS = [
   'id', 'footprint', 'size', 'color', 'stories',
@@ -54,7 +54,7 @@ const buildings = src.map((b) => {
 
 const doc = {
   _generated: 'RENDER ledger — projected from src/data/buildings.json render fields. Regenerable; do NOT hand-edit. Overrides live in a sidecar.',
-  scene: 'lafayette-square',
+  scene: 'lafayettesquare',
   buildings,
 }
 

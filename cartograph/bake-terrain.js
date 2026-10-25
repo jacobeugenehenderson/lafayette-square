@@ -39,7 +39,7 @@
 
 import fs from 'fs'
 import { join } from 'path'
-import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
+import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
 import { coastRings } from './coastline.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
@@ -49,14 +49,8 @@ import { waterLevels as levelsOf } from './waterLevel.mjs'
 import clipperLib from 'clipper-lib'
 import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, ABOVE_WATER_M } from './elevationSources.mjs'
 
-// ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
-requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
-
-// Scene resolution — the installation whose terrain we bake. Resolve order:
-// --scene=<id> flag (how serve.js's bake handler invokes us) > CARTOGRAPH_SCENE
-// env (CLI) > the default installation.
-const _sceneArg = process.argv.slice(2).map(a => a.match(/^--scene=(.+)$/)).find(Boolean)
-const SCENE = _sceneArg?.[1] || process.env.CARTOGRAPH_SCENE || DEFAULT_MAP
+// ⛔ No default on a WRITE path: the one resolver names the town (--scene= or CARTOGRAPH_SCENE), or refuses.
+const SCENE = requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
 
 const MAP_DIR     = join(CARTOGRAPH_DIR, 'data', SCENE)
 const GEO_PATH      = join(MAP_DIR, 'geography.json')

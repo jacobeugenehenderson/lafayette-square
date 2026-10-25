@@ -28,7 +28,7 @@
  *
  * usage: node checks/claims-node-pair-key-parity.mjs --source=pour|bundle [scene ...]
  * @args --source=pour|bundle   (npm test runs it once per source — tier.mjs#declaredArgs)
- *        default scenes: lafayette-square hipointedemun
+ *        default scenes: lafayettesquare hipointedemun
  *        (altadena is declared and measurable — size on it. It was listed here as CHILLERED
  *        alongside two towns that have since been excised; it never shared their status.)
  */

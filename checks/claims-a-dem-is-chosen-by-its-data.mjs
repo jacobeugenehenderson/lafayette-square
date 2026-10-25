@@ -9,7 +9,7 @@
 // (IL_HicksDome_FluorsparDistrict_2019: 0% data over LS) over the one that covers it (MO_SaintLouis_2017: 100%), and the
 // list would have baked a flat town. fetch-dem now ranks by data (`byData`).
 //
-// ⭐ MUTATION TEST: `--coverage-by=bbox --town=lafayette-square` re-runs fetch-dem's choice the OLD way (in memory, no
+// ⭐ MUTATION TEST: `--coverage-by=bbox --town=lafayettesquare` re-runs fetch-dem's choice the OLD way (in memory, no
 // file written) and must go RED: the survey it picks holds no data over LS.
 //
 //   node checks/claims-a-dem-is-chosen-by-its-data.mjs [--town=a,b] [--coverage-by=bbox]

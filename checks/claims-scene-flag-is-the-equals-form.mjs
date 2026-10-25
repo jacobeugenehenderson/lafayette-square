@@ -3,8 +3,8 @@
  *
  * ⭐ CLASS D WEARING A FLAG. `--scene <id>` does not error. `cartograph/scene.js`
  * parses `/^--scene=(.+)$/` and nothing else, so the space form goes UNPARSED and
- * falls through to DEFAULT_MAP — 'lafayette-square'. A caller written that way
- * therefore WORKS ON EXACTLY ONE TOWN, by accident, and is refused on every other.
+ * fell through to DEFAULT_MAP — Lafayette Square, until the default went (2026-10-21; now it is refused). A caller
+ * written that way WORKED ON EXACTLY ONE TOWN, by accident, and was refused on every other.
  *
  * Instance: `cartograph/serve.js`'s one-button pour built `--scene ${scene}` for the
  * tree bake. huron's Publish-to-Staging died `code=2` there on 2026-09-21 — the

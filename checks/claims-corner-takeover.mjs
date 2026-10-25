@@ -49,7 +49,7 @@
  *
  * Usage:
  *   node checks/claims-corner-takeover.mjs                  # every baked scene
- *   node checks/claims-corner-takeover.mjs lafayette-square # one scene
+ *   node checks/claims-corner-takeover.mjs lafayettesquare # one scene
  *   node checks/claims-corner-takeover.mjs --rows           # dump every row
  */
 import { readFileSync, existsSync, readdirSync } from 'fs'
@@ -242,10 +242,10 @@ if (never.length) {
 // ── the direct yes/no ──────────────────────────────────────────────────────
 const modesOf = (scene) => new Set(table.filter(r => r.scene === scene).flatMap(r => Object.keys(r.t).filter(k => !BUILT.includes(k) && r.t[k])))
 const towns = [...new Set(table.map(r => r.scene))]
-const LS = 'lafayette-square'
+const LS = 'lafayettesquare'
 console.log('\n══ DOES ANY TOWN CARRY A DECLINE MODE LAFAYETTE SQUARE LACKS? ══')
 if (!towns.includes(LS)) {
-  console.log('⚠️  UNANSWERABLE — lafayette-square was not measured in this run.')
+  console.log('⚠️  UNANSWERABLE — lafayettesquare was not measured in this run.')
 } else {
   const lsModes = modesOf(LS)
   console.log(`   LS declines by: ${[...lsModes].join(', ') || '(none — LS declines nowhere)'}`)

@@ -19,7 +19,7 @@
  * that decided it. Exits non-zero if anything is BLANK or MISSING, so this can
  * gate a ship.
  *
- * Usage: node arborist/ship-audit.js [--look lafayette-square] [--json]
+ * Usage: node arborist/ship-audit.js --look <look> [--json]   (⛔ no default Look: it audits the town you name)
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -35,12 +35,13 @@ const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const BLANK_COVERAGE = 0.002
 
 function parseArgs() {
-  const out = { look: 'lafayette-square', json: false }
+  const out = { look: null, json: false }
   for (let i = 2; i < process.argv.length; i++) {
     const a = process.argv[i]
     if (a === '--look') out.look = process.argv[++i]
     else if (a === '--json') out.json = true
   }
+  if (!out.look) { console.error('⛔ ship-audit: name the Look to audit — --look <look>. There is no default town.'); process.exit(2) }
   return out
 }
 

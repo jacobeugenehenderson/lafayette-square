@@ -1,17 +1,17 @@
 """
 Shared configuration for the Cartograph data pipeline.
 
-Single-scene per process, and the scene MUST be named (CARTOGRAPH_SCENE). Lafayette
-Square keeps its hardcoded geography and legacy scripts/raw + src/data layout; every
-other scene reads cartograph/data/<scene>/geography.json — the same pre-bake
-extent/projection SSOT the JS backend (cartograph/config.js) reads — and writes into
-its own folder. A scene with no geography.json is refused, never given LS's.
+Single-scene per process, and the scene MUST be named (CARTOGRAPH_SCENE). Every scene,
+Lafayette Square included, reads cartograph/data/<scene>/geography.json — the same pre-bake
+extent/projection SSOT the JS backend (cartograph/config.js) reads — and writes into its
+own folder. A scene with no geography.json is refused, never given another town's.
+(LS kept a hardcoded geography and the legacy scripts/raw + src/data layout, by a test of
+the default scene's name, until the default town went on 2026-10-21.)
 """
 import os
 import sys
 import json
 
-DEFAULT_SCENE = 'lafayette-square'
 # ⛔ NO DEFAULT SCENE. An unset CARTOGRAPH_SCENE used to mean Lafayette Square, so a
 # script run without naming a town wrote into LS's data. Name the town, LS included.
 SCENE = os.environ.get('CARTOGRAPH_SCENE')
@@ -23,64 +23,35 @@ if not SCENE:
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPTS_DIR)
 
-# ── Geography: DEFAULT (Lafayette Square) ────────────────────────────────
-# Lafayette Park center (actual park centroid from OSM)
-CENTER_LAT = 38.6160
-CENTER_LON = -90.2161
-
-# Bounding box (N: Chouteau Ave, S: I-44, W: Jefferson Ave, E: Dolman St)
+# ── Geography: the scene's own geography.json (camelCase → snake_case BBOX) ──
+_geo_path = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'geography.json')
+if not os.path.exists(_geo_path):
+    # ⛔ Was: print a warning and carry on with LAFAYETTE SQUARE's centre and bbox,
+    # so a town with no frame fetched and projected St. Louis under its own name.
+    print(f"[config] CARTOGRAPH_SCENE={SCENE} has no {_geo_path} — "
+          f"run the Extent fetch for this town first. Refusing to use another town's geography.",
+          file=sys.stderr)
+    sys.exit(2)
+with open(_geo_path) as _gf:
+    _g = json.load(_gf)
+CENTER_LAT = _g['lat']
+CENTER_LON = _g['lon']
+LON_TO_METERS = _g['lonToMeters']
+LAT_TO_METERS = _g['latToMeters']
+_b = _g['bbox']
 BBOX = {
-    'min_lat': 38.6090,
-    'max_lat': 38.6250,
-    'min_lon': -90.2255,  # Original: reaches ~1 block west of Jefferson
-    'max_lon': -90.2070,
+    'min_lat': _b['minLat'], 'max_lat': _b['maxLat'],
+    'min_lon': _b['minLon'], 'max_lon': _b['maxLon'],
 }
-
-# Conversion constants at this latitude
-LON_TO_METERS = 86774
-LAT_TO_METERS = 111000
-
-# ── Non-default scene: load geography.json (camelCase → snake_case BBOX) ──
-if SCENE != DEFAULT_SCENE:
-    _geo_path = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'geography.json')
-    if os.path.exists(_geo_path):
-        with open(_geo_path) as _gf:
-            _g = json.load(_gf)
-        CENTER_LAT = _g['lat']
-        CENTER_LON = _g['lon']
-        LON_TO_METERS = _g['lonToMeters']
-        LAT_TO_METERS = _g['latToMeters']
-        _b = _g['bbox']
-        BBOX = {
-            'min_lat': _b['minLat'], 'max_lat': _b['maxLat'],
-            'min_lon': _b['minLon'], 'max_lon': _b['maxLon'],
-        }
-    else:
-        # ⛔ Was: print a warning and carry on with LAFAYETTE SQUARE's centre and bbox,
-        # so a town with no frame fetched and projected St. Louis under its own name.
-        print(f"[config] CARTOGRAPH_SCENE={SCENE} has no {_geo_path} — "
-              f"run the Extent fetch for this town first. Refusing to use another town's geography.",
-              file=sys.stderr)
-        sys.exit(2)
 
 # Overture Maps release
 OVERTURE_RELEASE = '2026-01-21.0'
 
-# Directories (SCRIPTS_DIR / PROJECT_DIR defined above). Default scene keeps
-# the legacy layout (scripts/raw + src/data); a non-default scene redirects
-# into cartograph/data/<scene>/{raw,clean} so LS's live data is never touched.
-if SCENE == DEFAULT_SCENE:
-    DATA_DIR = os.path.join(PROJECT_DIR, 'src', 'data')
-    RAW_DIR = os.path.join(SCRIPTS_DIR, 'raw')
-else:
-    DATA_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'clean')
-    RAW_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'raw')
+# Directories: every scene writes into its own cartograph/data/<scene>/{raw,clean}.
+DATA_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'clean')
+RAW_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'raw')
 
-# Tree-intake outputs are ALWAYS scene-homed (cartograph/data/<scene>/{clean,raw}),
-# even for the default scene. LS's tree pipeline was normalized off the legacy
-# src/data layout 2026-07-16 (HANDOFF-ls-statistical-planting.md, Move 1). For a
-# non-default scene these equal DATA_DIR/RAW_DIR above; only LS differs (its OTHER
-# intake — parcels/osm/lamps/merge — deliberately stays on src/data).
+# Tree-intake outputs are scene-homed too (the same dirs, named for the tree scripts).
 SCENE_CLEAN_DIR = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'clean')
 SCENE_RAW_DIR   = os.path.join(PROJECT_DIR, 'cartograph', 'data', SCENE, 'raw')
 

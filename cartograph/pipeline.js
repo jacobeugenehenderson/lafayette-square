@@ -10,7 +10,8 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap, GEOGRAPHY_READ, wgs84ToLocal } from './config.js'
+import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, requireExplicitMap, GEOGRAPHY_READ, wgs84ToLocal } from './config.js'
+import { declaredBuildingsOf } from './scene.js'
 import { loadCropland } from './cdl.mjs'
 import { pourCodeRecord, contentRecord, pourDataReads } from './pour-code.mjs'
 import { writeIfChanged } from './io.js'
@@ -38,19 +39,18 @@ async function main() {
   console.log(`  ${hwCount} highway features, ${raw.buildings.length} OSM buildings`)
 
   // Building source priority:
-  //   1. src/data/buildings.json — curated project data (detailed footprints
-  //      with materials, stories, sqft, addresses). Built for the 3D app.
+  //   1. the town's DECLARED curated set (`pour.buildings` in its Look, scene.js#declaredBuildingsOf) — detailed
+  //      footprints with materials, stories, sqft, addresses (Lafayette Square: src/data/buildings.json).
   //   2. data/raw/msbf.json ∪ osm.buildings — the union of the two footprint wells
   //   3. osm.buildings            — OSM alone, when a town has no MSBF
-  // The curated src/data/buildings.json is the DEFAULT scene's (Lafayette
-  // Square) hand-enriched building set — it must NOT be pulled into another
-  // scene. A non-default scene uses its own msbf.json / OSM buildings.
-  const PROJECT_ROOT = join(RAW_DIR, '..', '..', '..', '..')
-  const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')
+  // ⛔ A town's curated set is ITS declaration, never another town's: a town that declares none takes its own wells.
+  // (This was a test of the DEFAULT map's name, until the default went, 2026-10-21.)
+  const declaredBldg = declaredBuildingsOf(SCENE)
+  const projectBldgPath = declaredBldg && join(CARTOGRAPH_DIR, '..', declaredBldg)
   // ⭐ The town's footprint GEOMETRY well — MSBF unless it declares one (footprint-well.mjs). SAID either way.
   const fw = footprintWell(SCENE)
   const msbfPath = fw.path
-  if (SCENE === DEFAULT_MAP && existsSync(projectBldgPath)) {
+  if (projectBldgPath) {
     const proj = JSON.parse(readFileSync(projectBldgPath, 'utf-8'))
     const list = proj.buildings || []
     raw.buildings = list
@@ -71,7 +71,7 @@ async function main() {
         isClosed: true,
         coords: b.footprint.map(([x, z]) => ({ x, z })),
       }))
-    console.log(`  Using src/data/buildings.json: ${raw.buildings.length} curated buildings`)
+    console.log(`  Using ${declaredBldg} (declared pour.buildings): ${raw.buildings.length} curated buildings`)
     raw.buildingSource = 'project'
   } else if (existsSync(msbfPath)) {
     // ⭐ THE UNION OF THE WELLS, never MSBF instead of OSM (building-union.mjs): MSBF keeps

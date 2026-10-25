@@ -536,15 +536,11 @@ function serializeDesign(s) {
   return out
 }
 
-// The kit is installation-agnostic: any neighborhood opens BY ID (its data is
-// fetched per-scene from serve.js). The name below is NOT a registry of
-// installations — it's the only one with a bundled fast-path: the default
-// installation ('lafayette-square'). A new installation (hipointedemun,
-// provincetown, …) is never added here; it fetches. Nothing enumerates the set
-// of installations in code.
-// The one town whose ribbons ship as a static import (src/data/ribbons.json) — named, not a default: Stage opens no
-// town until one is chosen (Jacob's standing order, 2026-09-28: Lafayette Square is never the fallback).
-const BUNDLED_MAPS = new Set(['lafayette-square'])
+// The kit is installation-agnostic: EVERY neighborhood opens BY ID — its ribbons, map.json, geography and boundary are
+// fetched per-scene from serve.js, Lafayette Square included (its ribbons are its DECLARED path, pour.ribbons, which
+// serve.js resolves through scene.js#ribbonsPathOf). ⛔ LS had a bundled fast-path here (BUNDLED_MAPS, a set naming
+// it), the last town listed by name in the authoring app; it went with the default town (2026-10-21). Nothing
+// enumerates installations in code.
 // A scene id is any lowercase slug; existence is validated by the server (a
 // missing installation just serves empty). No hardcoded installation list.
 
@@ -1773,8 +1769,8 @@ const useCartographStore = create((set, get) => ({
   // ── Looks ────────────────────────────────────────────────
   // A Look is a styling snapshot — `{ layerColors, luColors, layerStrokes, … }`
   // plus the per-Look bake bundle (public/baked/<id>/ground.json + bin +
-  // lightmap + buildings + lamps + scene). `lafayette-square` is the project's 0-state
-  // and can't be deleted; user-created Looks ('Valentines', 'Cardinals Win',
+  // lightmap + buildings + lamps + scene). The kit's 0-state (`kit-default`, not a town)
+  // can't be deleted; user-created Looks ('Valentines', 'Cardinals Win',
   // …) sit alongside it. The active Look's design block is what Designer's
   // panel binds to — autosave goes to `/looks/<id>/design`, not /overlay.
   // Geometry (centerlines, measures, caps, couplers) stays in overlay.json
@@ -1978,11 +1974,10 @@ const useCartographStore = create((set, get) => ({
     // Clear only if no newer freeze superseded this one.
     if (get().shapeFreezePending === p) set({ shapeFreezePending: null })
   },
-  // → re-reads a poured town's ribbons + map.json after a bake and rebuilds the 2D map from them in place.
-  // The bundled scene (LS) reads a static import and is refreshed by the dev server, not here.
+  // → re-reads a town's ribbons + map.json after a bake and rebuilds the 2D map from them in place (every town).
   _refreshPouredMap: async () => {
     const sc = get().scene, held = get().sceneRibbons
-    if (BUNDLED_MAPS.has(sc) || !held) return
+    if (!held) return
     let why = null
     try {
       const fresh = await fetchRibbons(sc)
@@ -2340,12 +2335,10 @@ const useCartographStore = create((set, get) => ({
         fetchCenterlines(scene).catch(() => ({ streets: [] })),
         fetchOverlay(scene).catch(() => ({ version: 1, streets: {} })),
       ])
-      // Load the active installation's data BY ID. The bundled fast-path scene
-      // (the default) reads a static import for ribbons; every other installation
-      // fetches ribbons + its geography + boundary per-scene. Geography/boundary
-      // are fetched for ALL scenes (small) so the kit reads them uniformly.
+      // Load the active installation's data BY ID: every installation fetches its ribbons + geography + boundary
+      // per-scene, so the kit reads them uniformly.
       let fetchedRibbons = get().sceneRibbons
-      if (!BUNDLED_MAPS.has(scene) && !fetchedRibbons) {
+      if (!fetchedRibbons) {
         fetchedRibbons = await fetchRibbons(scene).catch(() => null)
         if (stale()) return
         if (fetchedRibbons) set({ sceneRibbons: fetchedRibbons })
@@ -2385,16 +2378,7 @@ const useCartographStore = create((set, get) => ({
       // must read the SAME ribbons the scene renders — a scene-blind LS lookup
       // leaves every other town's chain with `undefined` measure → MeasureOverlay
       // renders no handles. Mirror CartographApp's sceneCfg.ribbons keying.
-      // The bundled towns' ribbons load as their OWN chunk, only for that town. A static import put
-      // them in every town's bundle — 6 MB of one town's ribbons downloaded by all of them
-      // (docs/briefs/BRIEF-slab-loading.md ③; ▶ node checks/claims-no-town-rides-in-the-bundle.mjs).
-      // Same stale() guard as every other await in this loader.
-      let bundledRibbons = null
-      if (BUNDLED_MAPS.has(scene)) {
-        bundledRibbons = (await import('../../data/ribbons.json')).default
-        if (stale()) return
-      }
-      const ribbonsFixture = bundledRibbons ?? (fetchedRibbons || { streets: [] })
+      const ribbonsFixture = fetchedRibbons || { streets: [] }
       // ⭐ Register THIS scene's fixture as the Measure seed source. Was a static
       // LS import inside measureModel (BRIEF-ls-bleed-excision site 9) — every
       // scene seeded its widths from Lafayette Square, keyed by street name.

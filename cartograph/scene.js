@@ -10,9 +10,10 @@
  * A fallback turns a failure into a plausible-looking success; for a kit that is
  * the worst available outcome (`CLAUDE.md` Layer 0).
  *
- * READ paths may still resolve to the default (the dev server imports this at
- * module load and must not die), but the choice is now VISIBLE. Anything that
- * WRITES must call `requireExplicitMap()` and refuse.
+ * ⛔⛔ AND NO DEFAULT AT ALL, ON ANY PATH (Jacob, 2026-10-21: "LS is only the fallback because it was first and we
+ * didn't conceive it against a generic backdrop"; standing order 2026-09-28, `BRIEF-no-default-town`). With no scene
+ * named, `SCENE` is null and so are `RAW_DIR` / `CLEAN_DIR`: a multi-town reader (the dev servers, a library, a check)
+ * imports this and names its town per call; anything that WRITES calls `requireExplicitMap()` and refuses.
  *
  * ⭐⭐ WHY THIS IS A SEPARATE FILE FROM `config.js`, AND WHY IT MUST STAY ONE.
  *
@@ -46,17 +47,15 @@
  */
 import { dirname, join, isAbsolute, normalize } from 'path'
 import { fileURLToPath } from 'url'
-import { existsSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 import { designPath, readTownDesign } from './lookDesign.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-export const DEFAULT_MAP = 'lafayette-square'
-
 const _sceneArg = (process.argv || []).map(a => /^--scene=(.+)$/.exec(a)).find(Boolean)?.[1]
 /** true when the operator actually named the scene (flag or env), false when defaulted. */
 export const SCENE_IS_EXPLICIT = !!(_sceneArg || process.env.CARTOGRAPH_SCENE)
-export const SCENE = _sceneArg || process.env.CARTOGRAPH_SCENE || DEFAULT_MAP
+export const SCENE = _sceneArg || process.env.CARTOGRAPH_SCENE || null
 
 /**
  * Refuse to proceed unless the operator named the scene. Call this FIRST in any
@@ -69,19 +68,22 @@ export function requireExplicitMap(who = 'this command') {
   console.error(`
 ⛔ ${who} refuses to run without an explicit scene.
 
-   It writes artifacts, and defaulting would silently target '${DEFAULT_MAP}' —
-   overwriting Lafayette Square's build with another town's run, or vice versa.
+   It writes artifacts, and there is no default town to write them into.
+   Towns: ${townsOnDisk().join(' · ') || '(none under cartograph/data/)'}
 
    Name the scene, by EITHER channel — both are read here, by one resolver:
-     node ${me} --scene=${DEFAULT_MAP}
-     CARTOGRAPH_SCENE=${DEFAULT_MAP} node ${me}
+     node ${me} --scene=<town>
+     CARTOGRAPH_SCENE=<town> node ${me}
 
    (BRIEF-ls-bleed-excision site 11 · CLAUDE.md Layer 0 — no fallbacks.)
 `)
   process.exit(2)
 }
 
-if (!SCENE_IS_EXPLICIT) console.warn(`[config] scene not named — defaulting to '${DEFAULT_MAP}'. Pass --scene=<id> to be explicit.`)
+// The towns on disk, for the refusal above: what an operator may name. Read, never typed.
+function townsOnDisk() {
+  try { return readdirSync(join(__dirname, 'data'), { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(join(__dirname, 'data', d.name, 'geography.json'))).map(d => d.name).sort() } catch { return [] }
+}
 
 // Paths. Per-scene data lives under cartograph/data/<scene>/. Each scene mirrors
 // the same raw/ + clean/ split (raw = ingested inputs; clean = derived /
@@ -99,14 +101,24 @@ export function mapCleanDir(scene) { return join(__dirname, 'data', scene, 'clea
  * home Look, or none declared, declares nothing. ⛔ A declaration that is not a plain path inside the repo, or names a file
  * that does not exist, THROWS — clean/ is only ever the path of a town that declares nothing.
  */
-export function declaredRibbonsOf(scene) {
-  if (!scene) throw new Error('declaredRibbonsOf: no scene')
+export function declaredRibbonsOf(scene) { return declaredPourPath(scene, 'ribbons', 'declaredRibbonsOf') }
+
+/**
+ * WHERE A TOWN DECLARES A CURATED BUILDING SET, or null: `pour.buildings` in its home Look's design.json — a repo-relative
+ * path to a hand-enriched set (footprints with materials, stories, addresses) the pour takes INSTEAD of its footprint
+ * wells (Lafayette Square: src/data/buildings.json). The declaration replaced a test of the DEFAULT map's name
+ * (pipeline.js, 2026-10-21). Same rules as `pour.ribbons`: not a plain in-repo path, or declared and absent, THROWS.
+ */
+export function declaredBuildingsOf(scene) { return declaredPourPath(scene, 'buildings', 'declaredBuildingsOf') }
+
+function declaredPourPath(scene, key, who) {
+  if (!scene) throw new Error(`${who}: no scene`)
   if (!existsSync(designPath(scene))) return null
-  const d = readTownDesign(scene, 'declaredRibbonsOf').pour?.ribbons
+  const d = readTownDesign(scene, who).pour?.[key]
   if (d == null) return null
-  if (typeof d !== 'string' || !d || isAbsolute(d) || normalize(d).startsWith('..')) throw new Error(`[scene] ⛔ "${scene}" declares pour.ribbons ${JSON.stringify(d)} — a repo-relative path inside the repo`)
-  // ⛔ DECLARED AND ABSENT IS A FAILURE, never a quiet drop to clean/: clean/ is for a town that declares nothing.
-  if (!existsSync(join(__dirname, '..', normalize(d)))) throw new Error(`[scene] ⛔ "${scene}" declares its ribbons at ${d}, and there is no such file — refusing to read or publish another path in its place`)
+  if (typeof d !== 'string' || !d || isAbsolute(d) || normalize(d).startsWith('..')) throw new Error(`[scene] ⛔ "${scene}" declares pour.${key} ${JSON.stringify(d)} — a repo-relative path inside the repo`)
+  // ⛔ DECLARED AND ABSENT IS A FAILURE, never a quiet drop to the town's own wells: those are for a town that declares nothing.
+  if (!existsSync(join(__dirname, '..', normalize(d)))) throw new Error(`[scene] ⛔ "${scene}" declares its ${key} at ${d}, and there is no such file — refusing to read or publish another path in its place`)
   return normalize(d)
 }
 
@@ -120,5 +132,6 @@ export function ribbonsPathOf(scene) {
   const declared = declaredRibbonsOf(scene)
   return declared ? join(__dirname, '..', declared) : join(mapCleanDir(scene), 'ribbons.json')
 }
-export const RAW_DIR   = mapRawDir(SCENE)
-export const CLEAN_DIR = mapCleanDir(SCENE)
+// null with no scene named: a reader that joins onto it without naming its town fails at that line, never in another town's dir
+export const RAW_DIR   = SCENE ? mapRawDir(SCENE) : null
+export const CLEAN_DIR = SCENE ? mapCleanDir(SCENE) : null

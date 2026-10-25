@@ -26,7 +26,7 @@
  * ⛔ READ-ONLY. Reads public/looks/**, cartograph/serve.js, src/cartograph/**.
  *
  * MUTATION TEST (run it; a check only ever seen to pass is not evidence):
- *   node -e "const f='public/looks/index.json',j=require('./'+f);j.default='lafayette-square';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
+ *   node -e "const f='public/looks/index.json',j=require('./'+f);j.default='lafayettesquare';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
  *   node checks/claims-look-default-has-no-town.mjs   # ⇒ must FAIL
  *   git checkout public/looks/index.json
  *

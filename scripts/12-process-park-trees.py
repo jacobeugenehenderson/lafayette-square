@@ -2,7 +2,7 @@
 """Process City of St. Louis tree inventory data for Lafayette Park.
 
 Input:  scripts/raw/lafayette_park_trees.json (ArcGIS REST API export)
-Output: cartograph/data/lafayette-square/clean/park_census.json (the authored park well)
+Output: cartograph/data/lafayettesquare/clean/park_census.json (the authored park well)
 
 Converts GPS coordinates to local meters (un-rotated, relative to park center).
 The LafayettePark.jsx group rotation handles alignment with the scene.
@@ -25,7 +25,7 @@ LAT_TO_METERS = 111000
 # orientation. Run cartograph/pipeline.js first if map.json is stale.
 def _load_park_polygon():
     here = os.path.dirname(os.path.abspath(__file__))
-    map_json = os.path.normpath(os.path.join(here, '..', 'cartograph', 'data', 'lafayette-square', 'clean', 'map.json'))
+    map_json = os.path.normpath(os.path.join(here, '..', 'cartograph', 'data', 'lafayettesquare', 'clean', 'map.json'))
     with open(map_json) as f:
         m = json.load(f)
     park = m.get('layers', {}).get('park', [])
@@ -189,7 +189,7 @@ def main():
         'trees': trees,
     }
 
-    out_path = 'cartograph/data/lafayette-square/clean/park_census.json'
+    out_path = 'cartograph/data/lafayettesquare/clean/park_census.json'
     with open(out_path, 'w') as f:
         json.dump(output, f, separators=(',', ':'))
 

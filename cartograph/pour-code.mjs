@@ -15,7 +15,7 @@ import { join, dirname, relative } from 'path'
 import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
 import { geographyFor } from './geography.mjs'
-import { mapDir, DEFAULT_MAP } from './scene.js'
+import { mapDir, declaredBuildingsOf } from './scene.js'
 import { declaredParcelPaths, sourcesPath } from './sources.js'
 import { footprintWell } from './footprint-well.mjs'
 
@@ -96,11 +96,12 @@ export function pourDataReads(scene) {
   const raw = join(mapDir(scene), 'raw'), clean = join(mapDir(scene), 'clean')
   return [
     footprintWell(scene).path,                                // pipeline.js main — the footprint well (footprint-well.mjs)
+    ...[declaredBuildingsOf(scene)].filter(Boolean).map(p => join(REPO_ROOT, p)),  // pipeline.js main — a declared curated set (pour.buildings)
     join(mapDir(scene), 'neighborhood_boundary.json'),        // pipeline.js — membership
     join(mapDir(scene), 'building-overrides.json'),           // pipeline.js — authored building edits
     join(raw, 'survey.json'),                                 // derive.js — surveyed widths
     join(clean, 'park-polygon.json'),                         // derive.js — the authored park
-    scene === DEFAULT_MAP ? join(REPO_ROOT, 'scripts', 'raw', 'osm_street_lamps.json') : join(raw, 'osm_street_lamps.json'),  // derive.js
+    join(raw, 'osm_street_lamps.json'),                       // derive.js
     join(mapDir(scene), 'content', 'county-land-use-codes.csv'),  // derive.js → parcel-landuse#loadCountyCodeTable
     sourcesPath(scene), ...declaredParcelPaths(scene),        // derive.js → sources.js#readSources, and its parcel wells
     join(raw, 'osm_kerbs.json'),                              // derive.js → curb-cut-evidence.mjs — the recorded curb cuts

@@ -41,8 +41,8 @@ const ARG = (k, d) => { const a = process.argv.find(x => x.startsWith(`--${k}=`)
 const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }
 
 const RIBBONS = 'src/data/ribbons.json'
-const DESIGN = 'public/looks/lafayette-square/design.json'
-const SHAPE = 'public/baked/lafayette-square/shape.json'
+const DESIGN = 'public/looks/lafayettesquare/design.json'
+const SHAPE = 'public/baked/lafayettesquare/shape.json'
 const ribbons = JSON.parse(fs.readFileSync(RIBBONS, 'utf8'))
 const design = JSON.parse(fs.readFileSync(DESIGN, 'utf8'))
 const shape = fs.existsSync(SHAPE) ? JSON.parse(fs.readFileSync(SHAPE, 'utf8')) : null
@@ -53,7 +53,7 @@ const CURB_W = resolveCurbWidth(design).value   // the bake's curb: authored, el
 const WB = CURB_W + STD_TREELAWN + ADA_SIDEWALK
 
 console.log('═══ SCENE + INPUTS ═══')
-console.log(`  scene ......... lafayette-square   (⛔ not staging)`)
+console.log(`  scene ......... lafayettesquare   (⛔ not staging)`)
 console.log(`  ribbons ....... ${H(RIBBONS)}`)
 console.log(`  design ........ ${H(DESIGN)}   ${Object.keys(design.blockCustoms || {}).length} authored streets`)
 console.log(`  shape ......... ${H(SHAPE)}`)

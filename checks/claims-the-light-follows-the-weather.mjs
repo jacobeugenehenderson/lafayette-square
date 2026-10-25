@@ -35,7 +35,7 @@ const { buildWeatherPayload } = await import(path.join(ROOT, 'src/lib/weather-pa
 // used to get INSTANCE's town implicitly, which under Node is the default (Lafayette Square); it now names it.
 const { setTownPlace } = await import(path.join(ROOT, 'src/lib/townPlace.js'))
 const { instanceForMap } = await import(path.join(ROOT, 'src/instances/registry.js'))
-setTownPlace(instanceForMap('lafayette-square').geography, 'lafayette-square')
+setTownPlace(instanceForMap('lafayettesquare').geography, 'lafayettesquare')
 const { deriveSignals } = await import(path.join(ROOT, 'src/lib/weather-signals.js'))
 const { deriveSkyScalars, weatherExposureScale } = await import(path.join(ROOT, 'src/lib/sky-scalars.js'))
 const useSkyState = (await import(path.join(ROOT, 'src/hooks/useSkyState.js'))).default

@@ -51,7 +51,7 @@ export function treeLibraryFiles() {
 /**
  * The NEIGHBOURHOOD a Look is a Look OF. This is the axis split, in one function.
  *
- * Every Look's `scene` currently equals its `id` (`lafayette-square→lafayette-square`,
+ * Every Look's `scene` currently equals its `id` (`lafayettesquare→lafayettesquare`,
  * `huron→huron`, …), which is why passing a Look id where a scene was wanted has been
  * ACCIDENTALLY correct everywhere except the one path that used the fossil
  * `default`. That 1:1 is history, not a constraint — the day a second Look sits

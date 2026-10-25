@@ -482,7 +482,7 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
 - **LS REAPPLICATION PLAN (Jacob, 2026-10-21: "reapply all we can to LS"; Zob's Inputs census, read from
   `cartograph/intake-rows.mjs#intakeStatusForMap` + each town's `sources.json`):**
   · *No ruling, normal path:* declare LS's `historicDistricts` in its sources.json (today the name lives only inline in
-    `src/instances/lafayette-square.js`) → LS's roster (bake-content, Truss's merged change) → parcels + lamps refresh →
+    `src/instances/lafayettesquare.js`) → LS's roster (bake-content, Truss's merged change) → parcels + lamps refresh →
     the OSM re-fetch (all four §3.4 gates pass; LS's listings are hand-curated, so OSM doesn't change them).
   · *Needs Jacob:* the curated `src/data/buildings.json` assessor fields (City terms) · a City land-use code table
     (LS's is null) · NR nomination terms (and ≤ 80 plausible nomination years, not 1,013) · `content/profile.json` lifted

@@ -10,12 +10,9 @@
 //   store's design by each faded layer (`boundaryRecords.mjs#lookFade`). This module is the GEOMETRY of the disc: the
 //   radius cuts it — intended; more content at the edge is an Extent gesture (pull the circle out).
 //
-// The module-level named exports below are the DEFAULT installation (Lafayette
-// Square), kept identical for every existing LS-context consumer. `makeBoundary(nb)`
-// is the KIT factory: hand it ANY installation's neighborhood_boundary.json —
-// loaded by id, never imported here — and it returns the same clip bundle.
-// No installation but the default is named in this module.
-import boundaryData from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
+// `makeBoundary(nb)` is the KIT factory: hand it ANY installation's neighborhood_boundary.json —
+// loaded by id, never imported here — and it returns the clip bundle. No installation is named in this module
+// (the default installation's singleton exports went with the default town, 2026-10-21).
 
 // Clip a polyline to a CIRCLE (center + radius). Scene-agnostic (params only),
 // so it lives at module scope and is shared by every boundary bundle.
@@ -204,15 +201,3 @@ export function makeBoundary(nb) {
     clipRingToBoundary,
   }
 }
-
-// ── Default-installation (Lafayette Square) exports — identical to before ───
-// Consumers that render a SPECIFIC other installation build their own bundle
-// via makeBoundary(<that installation's boundary, loaded by id>).
-const _ls = makeBoundary(boundaryData)
-export const BOUNDARY_CENTER_XZ = _ls.center
-export const BOUNDARY_RADIUS = _ls.radius
-export const boundaryPolygon = _ls.boundaryPolygon
-export const pointInBoundary = _ls.pointInBoundary
-export const streetInBoundary = _ls.streetInBoundary
-export const faceInBoundary = _ls.faceInBoundary
-export const clipPolylineToBoundary = _ls.clipPolylineToBoundary

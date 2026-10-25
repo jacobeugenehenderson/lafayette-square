@@ -970,6 +970,7 @@
   "pour": {
     "held": "Lafayette Square's pour is held (Boz's ruling Q3, 2026-09-24): no re-pour, and nothing rewrites its committed runtime files unasked",
     "elevation": true,
-    "ribbons": "src/data/ribbons.json"
+    "ribbons": "src/data/ribbons.json",
+    "buildings": "src/data/buildings.json"
   }
 }

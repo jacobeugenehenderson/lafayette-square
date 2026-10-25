@@ -14,7 +14,7 @@
  * another town's mark: an unauthored town must LOOK unauthored rather than look finished
  * and be wrong (`CLAUDE.md` Layer 0 q2).
  *
- * ⛔ THIS CHECKS THE SHARED SURFACES ONLY. `src/instances/lafayette-square.js` may name
+ * ⛔ THIS CHECKS THE SHARED SURFACES ONLY. `src/instances/lafayettesquare.js` may name
  * lafayette-square.com all it likes — that is a town describing itself, which is the
  * product. The defect is a SHARED file naming one town.
  */

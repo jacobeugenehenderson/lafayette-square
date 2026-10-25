@@ -1,7 +1,7 @@
 /**
  * THE SURFACE LAB — one GL test environment for every procedural surface.
  * ▶ http://localhost:5173/lab.html?look=huron&at=class:agricultural
- * ▶ http://localhost:5173/lab.html?look=lafayette-square&at=class:park   ← the CONTROL
+ * ▶ http://localhost:5173/lab.html?look=lafayettesquare&at=class:park   ← the CONTROL
  * ▶ http://localhost:5173/lab.html?look=huron&at=revetment                ← the boulders, as the map draws them
  *
  * ⛔ HARNESS ONLY. Nothing here is wired into the bake, the slab or The Ward.

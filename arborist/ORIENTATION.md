@@ -85,7 +85,7 @@ are all botanical-named while every shipping tree is roster-named.** So the side
 different languages. **One key, and it is the operator's.**
 ⚠️ One of those twins holds a real composition that routes nowhere — so the move is
 **merge, then retire**, never delete.
-▶ `node -e "const m=require('./cartograph/data/lafayette-square/tree-species-map.json').map;const t=new Set(Object.values(m).flat());console.log([...t].filter(Boolean).sort().join(' '))"`
+▶ `node -e "const m=require('./cartograph/data/lafayettesquare/tree-species-map.json').map;const t=new Set(Object.values(m).flat());console.log([...t].filter(Boolean).sort().join(' '))"`
 
 ⚠️ **A word already taken: `Native`.** In the app today *native* means **the leaf this
 species actually has** (the dossier's target pack/arrangement — the Salon's

@@ -2,7 +2,7 @@
  * loadInstanceData — the installation-data seam (Universal Reader Phase 2).
  *
  * The reader is a generic reader of an installation payload; LS is
- * installation #1 (`?look=lafayette-square`). Every LS-specific data
+ * installation #1 (`?look=lafayettesquare`). Every LS-specific data
  * file the reader used to `import … from '../data/X'` now loads through
  * THIS seam, keyed by `INSTANCE.lookId`, so a different installation
  * swaps its data by pointing at a different look — no reader edit.
@@ -38,24 +38,24 @@
  */
 
 const MANIFESTS = {
-  'lafayette-square': {
+  'lafayettesquare': {
     // Relocated into the look dir (reader-private).
-    menus:            () => import('../../cartograph/data/lafayette-square/content/menus.json'),
-    seedEvents:       () => import('./lafayette-square/seedEvents.json'),
+    menus:            () => import('../../cartograph/data/lafayettesquare/content/menus.json'),
+    seedEvents:       () => import('./lafayettesquare/seedEvents.json'),
     // In-place: shared with authoring + bake pipeline; moves belong to the
     // producer-emit arc. Loaded by lookId here regardless of physical path.
     buildings:        () => import('./buildings.json'),
     streets:          () => import('./streets.json'),
     // Installation #1's listings, consolidated 2026-09-24 into its own content dir like every other town.
-    landmarks:        () => import('../../cartograph/data/lafayette-square/content/listings.json'),
+    landmarks:        () => import('../../cartograph/data/lafayettesquare/content/listings.json'),
     ribbons:          () => import('./ribbons.json'),
-    streetLamps:      () => import('../../cartograph/data/lafayette-square/authored_lamps.json'),
-    parkWater:        () => import('./lafayette-square/park_water.json'),
+    streetLamps:      () => import('../../cartograph/data/lafayettesquare/authored_lamps.json'),
+    parkWater:        () => import('./lafayettesquare/park_water.json'),
     parkFeatureElev:  () => import('./park-feature-elev.json'),
     facadeMapping:    () => import('./facade_mapping.json'),
     // Bucket-1 identity offender folded in here: the reader no longer
-    // hardcodes the `cartograph/data/lafayette-square/` path (LafayettePark:9).
-    parkPolygon:      () => import('../../cartograph/data/lafayette-square/clean/park-polygon.json'),
+    // hardcodes the `cartograph/data/lafayettesquare/` path (LafayettePark:9).
+    parkPolygon:      () => import('../../cartograph/data/lafayettesquare/clean/park-polygon.json'),
   },
 
   'hipointedemun': {
@@ -99,7 +99,7 @@ const MANIFESTS = {
     landmarks: () => import('../../cartograph/data/huron/content/listings.json'),
     buildings: () => import('../../cartograph/data/huron/content/roster.json'),
     // ⭐ THE SAME SEAM, A DIFFERENT HOME — and that is what MANIFESTS is for.
-    // LS's seed set is reader-private (`src/data/lafayette-square/seedEvents.json`);
+    // LS's seed set is reader-private (`src/data/lafayettesquare/seedEvents.json`);
     // a POURED town's calendar lives with the rest of its content, beside
     // listings.json, so one town's content is in one place (Jacob, 2026-09-22).
     // ⛔ Validated at bake time by `bake-content.js#validateEvents` — every

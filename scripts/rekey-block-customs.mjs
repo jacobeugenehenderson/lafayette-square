@@ -28,7 +28,6 @@ import { ROOT } from '../checks/_scenes.mjs'
 const scene = process.argv[2]
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 if (!scene || scene.startsWith('--') || !arg('before')) { console.error('usage: rekey-block-customs.mjs <scene> --before=<ribbons.json> [--after=<ribbons.json>] [--write]'); process.exit(2) }
-const DEFAULT_MAP = fs.readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
 const afterP = arg('after') || (ribbonsPathOf(scene))
 const PB = JSON.parse(fs.readFileSync(arg('before'), 'utf8')).protopolygon, PA = JSON.parse(fs.readFileSync(afterP, 'utf8')).protopolygon
 if (!PB?.blocks || !PA?.blocks) { console.error(`⛔ ${!PB?.blocks ? 'the BEFORE' : 'the AFTER'} ribbons carry no frozen ① blocks — nothing to match faces by`); process.exit(1) }

@@ -929,11 +929,11 @@ export default function ExtentApp() {
     try {
       const ext = localStorage.getItem(EXTENT_SCENE_KEY)
       if (ok(ext)) return ext
-      // First-ever entry (no Extent history): honour an EXPLICIT non-default store
-      // scene (a ?scene= deep-link or a real neighborhood), else blank — never the
-      // bare LS default.
+      // First-ever entry (no Extent history): honour the store's scene (a ?scene= deep-link or a town the operator
+      // chose), else blank. ⛔ It used to skip Lafayette Square as "the bare default"; the store has no default town
+      // (it opens none until one is chosen), so a scene there was chosen.
       const s = useCartographStore.getState().scene
-      if (ok(s) && s !== 'lafayette-square') return s
+      if (ok(s)) return s
     } catch { /* ignore */ }
     return null
   })

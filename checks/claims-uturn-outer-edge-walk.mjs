@@ -20,7 +20,7 @@ import crypto from 'crypto'
 import { requireArtifact } from './_scenes.mjs'
 
 const argv = process.argv.slice(2)
-const scene = argv.find(a => !a.startsWith('--')) || 'lafayette-square'
+const scene = argv.find(a => !a.startsWith('--')) || 'lafayettesquare'
 const nearArg = (argv.find(a => a.startsWith('--near=')) || '').split('=')[1]
 const NEAR = nearArg ? nearArg.split(',').map(Number) : null
 const RADIUS = Number((argv.find(a => a.startsWith('--radius=')) || '').split('=')[1]) || 60

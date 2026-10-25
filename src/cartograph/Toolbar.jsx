@@ -177,8 +177,7 @@ export default function Toolbar() {
 
 /**
  * Looks pulldown — switch active Look and create new ones from the current
- * working draft. The default Look (lafayette-square) is the project's 0-state
- * and can't be deleted.
+ * working draft. The kit's 0-state Look (`kit-default`, not a town) can't be deleted.
  */
 function LooksMenu() {
   const looks = useCartographStore(s => s.looks)

@@ -41,7 +41,7 @@
  * (`project_slab_is_the_instance_identity`). A look module would have nothing to
  * hold. What lives HERE is the fixed truth the slab does not carry.
  */
-import lafayetteSquare from './lafayette-square.js'
+import lafayetteSquare from './lafayettesquare.js'
 import hipointeDemun from './hipointedemun.js'
 import huron from './huron.js'
 import provincetown from './provincetown.js'
@@ -50,7 +50,7 @@ import altadena from './altadena.js'
 // 2026-10-04). Every backend keys a town by it (the Apps Script tenant, the Operations overlay, the Ward's
 // calls), so a town's name and address stay free to change. Never shown to operators.
 // ▶ node checks/claims-a-town-has-one-sealed-id.mjs
-import lafayetteSquareId from '../../cartograph/data/lafayette-square/town-id.json' with { type: 'json' }
+import lafayetteSquareId from '../../cartograph/data/lafayettesquare/town-id.json' with { type: 'json' }
 import hipointeDemunId from '../../cartograph/data/hipointedemun/town-id.json' with { type: 'json' }
 import huronId from '../../cartograph/data/huron/town-id.json' with { type: 'json' }
 import provincetownId from '../../cartograph/data/provincetown/town-id.json' with { type: 'json' }
@@ -63,20 +63,12 @@ const withId = (town, { townId }) => {
 }
 
 const INSTANCES = {
-  'lafayette-square': withId(lafayetteSquare, lafayetteSquareId),
+  'lafayettesquare': withId(lafayetteSquare, lafayetteSquareId),
   'hipointedemun': withId(hipointeDemun, hipointeDemunId),
   huron: withId(huron, huronId),
   'provincetown': withId(provincetown, provincetownId),
   'altadena': withId(altadena, altadenaId),
 }
-
-/**
- * ⛔ The registry's fallback town, and it is a DEPLOYMENT fact, not a default in
- * the ordinary sense: Lafayette Square is installation #1 and owns the bare domain.
- * It is NOT `looksIndex.default` — that is the authoring 0-state (`kit-default`), an
- * empty Look bound to no map with nothing baked.
- */
-export const DEFAULT_MAP = 'lafayette-square'
 
 /**
  * The town module for a map id, or `undefined` when the map is not registered.

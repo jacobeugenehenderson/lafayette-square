@@ -11,7 +11,7 @@
  *                                  `--scene <name>` goes unparsed and hits the refusal.
  *   --styles realistic[,winter…] — active style set (defaults 'realistic')
  *   --lod lod0|lod1|lod2         — LOD to ship (defaults 'lod2')
- *   --heroLook <name>            — Look whose hero pan drives heroTier (def 'lafayette-square')
+ *   --heroLook <name>            — Look whose hero pan drives heroTier (def: the scene's own Look)
  *   --zone-shape <path>          — baked shape.json: the FROZEN Section surfaces that
  *                                  answer "may a tree stand here" (poured scenes)
  *   --boundary <path>            — neighborhood_boundary.json: the hood's edge. Inside
@@ -44,7 +44,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 import { readTownDesign, readBakeDesign } from '../cartograph/lookDesign.mjs'
 import { makeMembership } from '../cartograph/membership.mjs'
-import { DEFAULT_MAP, requireExplicitMap } from '../cartograph/config.js'
+import { requireExplicitMap } from '../cartograph/scene.js'
 import { declaredTreeWellPaths } from '../cartograph/sources.js'
 import { DEDUP_M } from './census-dedup.mjs'
 import { resolveSpecies } from './vocabulary.mjs'
@@ -586,7 +586,7 @@ function classifyHeroTiers(canopies, heroPan) {
 }
 
 export async function bakeTrees({
-  scene = DEFAULT_MAP,
+  scene,
   styles = ['realistic'],
   lod = 'lod2',
   // Which Look's baked hero pan + canopy dims drive heroTier. Defaults to the
@@ -601,6 +601,8 @@ export async function bakeTrees({
   boundaryPath, // poured scene's neighborhood_boundary.json — the literal/GPU line
   verbose = false,
 } = {}) {
+  // ⛔ No default town: a caller names the scene (the CLI through requireExplicitMap, serve.js through treeBakeInputsForMap).
+  if (!scene) throw new Error('bakeTrees: no scene named — there is no default town to bake trees into')
   const mapName = scene
   const activeStyles = new Set(styles)
   const targetLod = lod
@@ -1307,7 +1309,7 @@ export async function bakeTrees({
 const isDirect = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 if (isDirect) {
   const args = parseArgs()
-  // ⛔⛔ NAME THE TOWN. `bakeTrees` defaults `scene = DEFAULT_MAP`, and `outPath` defaults to
+  // ⛔⛔ NAME THE TOWN. `bakeTrees` used to default `scene = DEFAULT_MAP`, and `outPath` defaults to
   // `public/baked/<scene>/trees.json` — so `node arborist/bake-trees.js` with no --scene did not
   // merely bake the wrong town, it OVERWROTE LAFAYETTE SQUARE'S trees.json with an input-less bake
   // (BRIEF-ls-bleed-excision site 16, Class C).

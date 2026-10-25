@@ -29,18 +29,21 @@
 // Read-only. Exits 1 when a poured installation would feather on someone else's disc.
 import fs from 'fs'
 import path from 'path'
-import { DEFAULT_MAP } from '../cartograph/scene.js'
 
 const APP = 'src/cartograph/CartographApp.jsx'
 const V2 = 'src/cartograph/BlockGeometryV2Debug.jsx'
 const BOUNDARY = 'src/cartograph/boundary.js'
 const DATA = 'cartograph/data'
-const DEFAULT_INSTALLATION = DEFAULT_MAP   // the one held default-map name (cartograph/scene.js), never retyped
 
 const read = (p) => {
   if (!fs.existsSync(p)) throw new Error(`⛔ ${p} is gone — the guard is blind; fix the path before trusting a PASS`)
   return fs.readFileSync(p, 'utf8')
 }
+// ⭐ The installation whose band IS the module constant: the one town V2 imports statically (its park data), PARSED from
+// V2 — there is no default town to name it by (2026-10-21; this read cartograph/scene.js#DEFAULT_MAP).
+const staticTowns = [...new Set([...read(V2).matchAll(/from\s+['"][^'"]*cartograph\/data\/([a-z0-9-]+)\//g)].map(m => m[1]))]
+if (staticTowns.length !== 1) throw new Error(`⛔ ${V2} statically imports ${staticTowns.length} installations' data (${staticTowns.join(', ') || 'none'}) — expected exactly the one whose band is the module constant; re-read before trusting a PASS`)
+const DEFAULT_INSTALLATION = staticTowns[0]
 
 let failures = 0
 const fail = (msg) => { failures++; console.log(`  ✗ ${msg}`) }
@@ -97,7 +100,7 @@ const defOuter = def.fade?.outer ?? def.radius
 for (const s of scenes) {
   const nb = nbOf(s)
   const outer = nb.fade?.outer ?? nb.radius
-  const tag = s === DEFAULT_INSTALLATION ? ' (default installation)' : ''
+  const tag = s === DEFAULT_INSTALLATION ? ' (its band is the module constant)' : ''
   console.log(`  ${s.padEnd(24)} radius ${String(Math.round(nb.radius)).padStart(5)}  fade→ ${String(Math.round(outer)).padStart(5)}${tag}`)
   if (s === DEFAULT_INSTALLATION) continue
   if (!(nb.radius > 0)) { fail(`${s}: no usable radius — it cannot feather over its own disc`); continue }
@@ -112,8 +115,8 @@ for (const s of scenes) {
   }
 }
 if (scenes.filter(s => s !== DEFAULT_INSTALLATION).length === 0)
-  fail(`only the default installation is on disk — this check cannot witness the class; pour a second town`)
-else pass(`${scenes.length - 1} non-default installation(s) available to witness the class`)
+  fail(`only the module-constant installation is on disk — this check cannot witness the class; pour a second town`)
+else pass(`${scenes.length - 1} other installation(s) available to witness the class`)
 
 console.log('')
 if (failures) {

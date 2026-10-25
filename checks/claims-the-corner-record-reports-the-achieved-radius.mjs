@@ -13,7 +13,7 @@
 // (`easeSkipsTake` resets). They are disclosed as `console.warn`, so the honest way to
 // read them is to capture what the producer says about itself during the pour.
 //
-// ⛔⛔ READ THE `① SOURCE` LINE — only lafayette-square is frozen (`ROADMAP A20`).
+// ⛔⛔ READ THE `① SOURCE` LINE — only lafayettesquare is frozen (`ROADMAP A20`).
 //
 // ▶ node checks/claims-the-corner-record-reports-the-achieved-radius.mjs [scene ...]
 import fs from 'fs'

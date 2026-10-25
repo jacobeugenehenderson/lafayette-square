@@ -1,12 +1,10 @@
 const BASE = '/api/cartograph'
 
-// Scene-aware route helper. The server accepts both /<verb> (default scene)
-// and /<scene>/<verb> (explicit). Pass the scene id, e.g. 'lafayette-square'.
-// Omitting scene falls through to the server's default-scene alias — kept
-// for any caller that genuinely shouldn't care (currently none in the store
-// after Phase 0c, but the alias keeps small CLIs / probes working).
+// Scene-aware route helper: /<scene>/<verb>. ⛔ There is no default town — the server refuses a scene-less /<verb>,
+// and this refuses first, naming the call, so a page with no town open never asks for one.
 function sceneUrl(scene, verb) {
-  return scene ? `${BASE}/${encodeURIComponent(scene)}/${verb}` : `${BASE}/${verb}`
+  if (!scene) throw new Error(`[cartograph api] ⛔ ${verb}: no scene — a town's data is asked by name (there is no default town)`)
+  return `${BASE}/${encodeURIComponent(scene)}/${verb}`
 }
 
 export async function fetchMarkers(scene) {
@@ -313,11 +311,6 @@ export async function saveOverlay(data, scene) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
-}
-
-export async function rebuild() {
-  const res = await fetch(`${BASE}/rebuild`, { method: 'POST' })
-  return res.json()
 }
 
 // ── Looks ──────────────────────────────────────────────────────────────────

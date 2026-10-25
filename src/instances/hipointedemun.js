@@ -53,7 +53,7 @@ export default {
     dba: null,
     governingState: 'Missouri',
     // Shares LS's Missouri documents by declaration (Jacob, 2026-09-24:
-    // "HPDM can share the MO docs with LS"). See lafayette-square.js.
+    // "HPDM can share the MO docs with LS"). See lafayettesquare.js.
     documents: 'cary-missouri',
   },
   commerce: {

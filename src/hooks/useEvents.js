@@ -4,8 +4,10 @@ import { INSTANCE } from '../instance.js'
 
 // Seed events load via the installation-data seam. LS's seed set is empty ([]),
 // so this is byte-identical ([] → []); a different install ships its own.
+// ⛔ The page's town, or none: with no town (a node importer, an authoring page with none open) no seed events load —
+// it read the default town's (LS's) until the default went (2026-10-21).
 let _seedEvents = []
-loadInstanceData(INSTANCE.lookId, 'seedEvents').ready.then(v => {
+if (INSTANCE) loadInstanceData(INSTANCE.lookId, 'seedEvents').ready.then(v => {
   _seedEvents = Array.isArray(v) ? v : []
   const s = useEvents.getState()
   if (!s.fetched && s.events.length === 0 && _seedEvents.length > 0) {

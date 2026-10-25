@@ -1,22 +1,10 @@
 /**
  * Cartograph — shared configuration (GEOGRAPHY).
  *
- * Geography is sourced from the per-instance SSOT (src/instance.js#geography)
- * for the DEFAULT scene (Lafayette Square). A non-default scene selected via
- * the CARTOGRAPH_SCENE env var carries its OWN geography in
- * data/<scene>/geography.json (the pre-bake extent/projection SSOT that later
- * bakes into the slab — multi-instance routing decision, 2026-07-02). This is
- * how the fetch/prebake pipeline targets neighborhood #2 without hand-editing
- * instance.js or clobbering LS: `CARTOGRAPH_SCENE=hipointedemun node fetch.js`
- * fetches HiPointe's extent and writes to data/hipointedemun/raw/. With the
- * env unset, every export below is byte-identical to before.
- * ⛔ IT IMPORTS THE MAP **REGISTRY**, NOT `src/instance.js` (2026-09-21). instance.js
- * statically imports `public/looks/index.json`, which the dev server REWRITES on
- * every bake — and `node --watch` watches a module graph, so importing it here made
- * serve.js (and arborist, via this file) kill themselves mid-pour. The registry is
- * the same town modules with the look→map table left out, which is all this file
- * ever wanted. Full account: `src/instances/registry.js`.
- * ▶ node checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs
+ * Every town carries its OWN geography in data/<scene>/geography.json (the pre-bake extent/projection SSOT that later
+ * bakes into the slab), Lafayette Square included: `CARTOGRAPH_SCENE=hipointedemun node fetch.js` projects HiPointe's
+ * extent. ⛔ With NO scene named there is no geography: the dev servers, libraries and checks import this for the names
+ * and helpers, and every projected value below REFUSES by name when read (`noTown`), never a default town's.
  *
  * ⛔ SCENE RESOLUTION LIVES IN `scene.js`, NOT HERE — and importing THIS file to
  * ask what scene you are on is a mistake. `_loadGeography()` runs at module load
@@ -27,31 +15,33 @@
  */
 import { geographyFor } from './geography.mjs'
 import {
-  DEFAULT_MAP, SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
+  SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
   CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR, ribbonsPathOf, declaredRibbonsOf,
 } from './scene.js'
 
 export {
-  DEFAULT_MAP, SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
+  SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
   CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR, ribbonsPathOf, declaredRibbonsOf,
 }
 
-// Geography resolver — `geography.mjs` is the single answer (a non-default scene's
-// data/<scene>/geography.json, else the default map's registry module), and it is
+// Geography resolver — `geography.mjs` is the single answer (the town's data/<scene>/geography.json), and it is
 // what the pour stamps into map.json as `geographyRead`. Unbuildable → exit loudly.
-let _geo
-try { _geo = geographyFor(SCENE) } catch (e) { console.error(e.message); process.exit(2) }
+// ⛔ No scene named: every projected value is a refusal that names itself the moment it is read or spread.
+const noTown = (what) => { const refuse = () => { throw new Error(`[config] ⛔ ${what} read with no scene named — there is no default town's geography. Pass --scene=<town> or CARTOGRAPH_SCENE.`) }
+  return new Proxy({}, { get: refuse, has: refuse, ownKeys: refuse, getOwnPropertyDescriptor: refuse }) }
+let _geo = null
+if (SCENE) { try { _geo = geographyFor(SCENE) } catch (e) { console.error(e.message); process.exit(2) } }
 // ⭐ the value the pour read — pipeline.js stamps it; the Bake compares it (pour-code.mjs).
-export const GEOGRAPHY_READ = _geo
+export const GEOGRAPHY_READ = _geo ?? noTown('GEOGRAPHY_READ')
 
 // Center + extent from the resolved SSOT.
-export const CENTER = { lat: _geo.lat, lon: _geo.lon }
+export const CENTER = _geo ? { lat: _geo.lat, lon: _geo.lon } : noTown('CENTER')
 
-export const BBOX = { ..._geo.bbox }
+export const BBOX = _geo ? { ..._geo.bbox } : noTown('BBOX')
 
-// WGS84 → local meters conversion at this latitude (from the SSOT).
-export const LON_TO_METERS = _geo.lonToMeters
-export const LAT_TO_METERS = _geo.latToMeters
+// WGS84 → local meters conversion at this latitude (from the SSOT). NaN with no town: nothing is projected through it.
+export const LON_TO_METERS = _geo ? _geo.lonToMeters : NaN
+export const LAT_TO_METERS = _geo ? _geo.latToMeters : NaN
 
 export function wgs84ToLocal(lon, lat) {
   const x = (lon - CENTER.lon) * LON_TO_METERS

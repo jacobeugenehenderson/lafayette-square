@@ -33,11 +33,9 @@
 // Read-only. Exits 1 when a town has overlapping coplanar polygons that could fight.
 import fs from 'fs'
 import path from 'path'
-import { DEFAULT_MAP } from '../cartograph/scene.js'
 
 const SRC = 'src/cartograph/MapLayers.jsx'
 const DATA = 'cartograph/data'
-const DEFAULT_INSTALLATION = DEFAULT_MAP   // the one held default-map name (cartograph/scene.js), never retyped
 
 const src = fs.existsSync(SRC) ? fs.readFileSync(SRC, 'utf8') : null
 if (src === null) throw new Error(`⛔ ${SRC} is gone — the guard is blind; fix the path before trusting a PASS`)
@@ -249,8 +247,7 @@ for (const s of scenes) {
     if (hitSame) same++
   }
   const pct = items.length ? (cross / items.length * 100) : 0
-  const tag = s === DEFAULT_INSTALLATION ? '  (default installation)' : ''
-  console.log(`  ${s.padEnd(24)} ${String(items.length).padStart(5)} polys · ${String(cross).padStart(4)} cross-kind (${pct.toFixed(1)}%) · ${String(same).padStart(3)} same-kind${tag}`)
+  console.log(`  ${s.padEnd(24)} ${String(items.length).padStart(5)} polys · ${String(cross).padStart(4)} cross-kind (${pct.toFixed(1)}%) · ${String(same).padStart(3)} same-kind`)
   if (!worst || pct > worst.pct) worst = { s, pct, cross, same }
 }
 if (worst) {

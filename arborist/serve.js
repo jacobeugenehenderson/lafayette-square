@@ -4,11 +4,9 @@
 //   does) and resolves the neighbourhood PER REQUEST from the Look being operated on.
 //   Requiring a scene at startup would make it unstartable, the same reasoning
 //   cartograph/serve.js carries for itself.
-// ⚠️ THIS EXEMPTION COVERS THE BOOT, NOT EVERY ROUTE. Two known LS defaults live inside and
-//   are NOT excused by it — they are tracked as BRIEF-ls-bleed-excision site 17
-//   (:1107, a routing write falling back to LS when ?look= is absent) and the /inventory read
-//   that is hardcoded to LS's census. An exemption is a statement about the entry point; it
-//   must never become cover for what the file does once running.
+// ⚠️ THIS EXEMPTION COVERS THE BOOT, NOT EVERY ROUTE: every route that reads or writes a town names it (?look= or the
+//   body's lookId) or refuses — there is no default town (2026-10-21). An exemption is a statement about the entry
+//   point; it must never become cover for what the file does once running.
 /**
  * Arborist backend.
  *
@@ -24,7 +22,6 @@ import { fileURLToPath } from 'url'
 import { bakeLook } from './bake-look.js'
 import { encodeToKtx2 } from './encode-ktx2.mjs'
 import { treeBakeInputsForMap, mapForLook } from '../cartograph/tree-bake-inputs.mjs'
-import { DEFAULT_MAP } from '../cartograph/config.js'
 import { publishLidarSpecies } from './lidar-publish.js'
 import {
   PRESETS as PROCEDURAL_PRESETS,
@@ -959,16 +956,19 @@ const server = createServer(async (req, res) => {
           timings.bakeLookMs = Date.now() - t2
         }
 
-        // (6) bake-trees AWAITED — rebuilds placement substitution into
-        // public/baked/lafayette-square/trees.json, which InstancedTrees fetches
-        // at runtime. Without this the 88 Sugar Maple placements stay on the old
-        // variant. LS-only by design (the Salon publishes into LS's census);
-        // named through the helper so the scene axis is explicit and this file's
-        // output matches the Grove bake's byte-for-byte.
+        // (6) bake-trees AWAITED — rebuilds placement substitution into the NAMED Look's town's
+        // public/baked/<map>/trees.json, which InstancedTrees fetches at runtime. ⛔ This re-baked the DEFAULT
+        // town (LS) whatever Look was named, until the default went (2026-10-21). No Look named → no town's trees
+        // are re-baked, and the response says so; named through the helper so this output matches the Grove bake's.
         const t3 = Date.now()
-        const { bakeTrees } = await import('./bake-trees.js')
-        const { inputs: _lsInputs, ...lsBakeArgs } = treeBakeInputsForMap(DEFAULT_MAP)
-        await bakeTrees({ ...lsBakeArgs })
+        const treeMap = lookId ? mapForLook(lookId) : null
+        let treesRebaked = null
+        if (treeMap) {
+          const { bakeTrees } = await import('./bake-trees.js')
+          const { inputs: _inputs, ...bakeArgs } = treeBakeInputsForMap(treeMap)
+          await bakeTrees({ ...bakeArgs })
+          treesRebaked = treeMap
+        }
         timings.bakeTreesMs = Date.now() - t3
 
         return jsonRes(res, 200, {
@@ -978,6 +978,7 @@ const server = createServer(async (req, res) => {
           treeId,
           lookId,
           rosterMutated,
+          treesRebaked: treesRebaked ?? `none — ${lookId ? `look '${lookId}' has no map` : 'no lookId named'}, so no town's trees were re-baked`,
           timings,
           bakeLog: bakeStdout?.slice(-2000) || '',
           bakeLook: bakeLookResult,
@@ -1045,16 +1046,21 @@ const server = createServer(async (req, res) => {
       } catch (e) {
         console.warn('[arborist] index rebuild failed:', e.message)
       }
-      try {
+      // Re-bake the NAMED Look's town's placements so the cartograph reflects the new rating (?look=). ⛔ This re-baked
+      // the DEFAULT town (LS) until the default went (2026-10-21); no Look named → none re-baked, and the response says so.
+      const rateLook = new URL(req.url, 'http://x').searchParams.get('look')
+      const rateMap = rateLook ? mapForLook(rateLook) : null
+      let treesRebaked = `none — ${rateLook ? `look '${rateLook}' has no map` : 'no ?look= named'}, so no town's trees were re-baked`
+      if (rateMap) try {
         const { bakeTrees } = await import('./bake-trees.js')
-        // Re-bake LS's placements so the cartograph reflects the new rating.
-        // LS-only by design; scene named explicitly via the helper.
-        const { inputs: _rateInputs, ...rateBakeArgs } = treeBakeInputsForMap(DEFAULT_MAP)
+        const { inputs: _rateInputs, ...rateBakeArgs } = treeBakeInputsForMap(rateMap)
         await bakeTrees({ ...rateBakeArgs })
+        treesRebaked = rateMap
       } catch (e) {
         console.warn('[arborist] bake failed:', e.message)
+        treesRebaked = `failed — ${e.message}`
       }
-      return jsonRes(res, 200, { ok: true, variant })
+      return jsonRes(res, 200, { ok: true, variant, treesRebaked })
     }
 
     // DELETE /species/:id — placeholder
@@ -1074,10 +1080,11 @@ const server = createServer(async (req, res) => {
     // computeCoverage via the matcher. READ-ONLY.
     if (req.method === 'GET' && path === '/coverage') {
       try {
-        // Roster is per-neighbourhood: scope to the active Look's scene (?look=).
-        // Absent → computeCoverage's default scene (back-compat).
+        // Roster is per-neighbourhood: scope to the active Look's scene (?look=). ⛔ No look is refused: it used to answer
+        // the default town's (LS's) roster board, so another town's Grove could be ordered by LS's demand.
         const look = new URL(req.url, 'http://x').searchParams.get('look')
-        const scene = look ? (mapForLook(look) || look) : undefined
+        if (!look) return jsonRes(res, 400, { error: 'no ?look= — the roster board is per town; pick a Look first' })
+        const scene = mapForLook(look) || look
         return jsonRes(res, 200, await computeCoverage(scene))
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })

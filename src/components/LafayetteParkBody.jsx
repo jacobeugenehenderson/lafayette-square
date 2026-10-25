@@ -12,9 +12,9 @@ import useSkyState from '../hooks/useSkyState'
 // park + ready-gates) — the producer/render-emit arc's job, not this reader phase.
 // Left static; the component is mount-guarded to LS (below) so a non-LS look
 // renders no park rather than LS's. Owner: roster/render arc.
-import parkWaterData from '../data/lafayette-square/park_water.json'
+import parkWaterData from '../data/lafayettesquare/park_water.json'
 import ribbonsData from '../data/ribbons.json'
-import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
+import parkPolygon from '../../cartograph/data/lafayettesquare/clean/park-polygon.json'
 import { getElevationRaw, drawnGroundParts, onDrawnGround } from '../utils/elevation'
 import { sceneExag } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -56,7 +56,7 @@ import { lookOf } from '../lib/lookOf.js'
 // All spatial data is in compass frame; the polygon's natural axes
 // (axis-aligned ±a) bake in the real-world tilt via parkAxisToCompass
 // to land at correct compass-frame positions. Source of truth: the
-// authored 4-corner polygon at cartograph/data/lafayette-square/clean/
+// authored 4-corner polygon at cartograph/data/lafayettesquare/clean/
 // park-polygon.json — see cartograph/FEATURES.md "The ribbon doctrine"
 // for why polygons own corner geometry.
 // LABEL_TEXT_ROT_Y rotates label text to read along the fence direction.
@@ -629,7 +629,7 @@ export function ParkTitle({ town, lookId }) {
   // This set-piece's own title position (labels.json setPieceTitles — only this set-piece reads it).
   const { labelStyle, setPieceTitles } = useTownContext()
   const posOverride = setPieceTitles?.['lafayette-park'] ?? null
-  if (lookId !== 'lafayette-square') return null   // HPDM-safety: guarded on the Look being drawn
+  if (town?.bundledPark !== 'lafayette-park') return null   // guarded on the drawn town's declaration (LafayettePark.jsx#declaresPark)
   const cx = posOverride ? posOverride[0] : PARK_TITLE_DEFAULT_CENTER[0]
   const cz = posOverride ? posOverride[1] : PARK_TITLE_DEFAULT_CENTER[1]
   return (
@@ -639,10 +639,10 @@ export function ParkTitle({ town, lookId }) {
   )
 }
 
-function LafayettePark({ lookId, bakeLastMs } = {}) {
-  // HPDM-safety: LS-specific landmark render (see deferred-to-producer note at the
-  // imports). Guarded on the Look being DRAWN (<Town lookId>); a non-LS look renders no park.
-  if (lookId !== 'lafayette-square') return null
+function LafayettePark({ town, lookId, bakeLastMs } = {}) {
+  // The park's own render (see deferred-to-producer note at the imports). Guarded on the town being DRAWN declaring it
+  // (`bundledPark`, LafayettePark.jsx#declaresPark); a town that declares none renders no park.
+  if (town?.bundledPark !== 'lafayette-park') return null
   return (
     <group>
       <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />

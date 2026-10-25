@@ -20,7 +20,7 @@
  * deferred horizon; this selection swaps to it without touching consumers.
  * Doctrine: project_slab_is_the_instance_identity, project_kit_helpers_pattern.
  */
-import { instanceForMap, registeredMaps, DEFAULT_MAP } from './instances/registry.js'
+import { instanceForMap, registeredMaps } from './instances/registry.js'
 import { tenantOf } from './lib/townRecord.js'
 import { readAddress, resolveTown } from './lib/authoringAddress.js'
 // ⛔⛔ THE LOOK→MAP TABLE, STATICALLY — AND THIS IMPORT IS WHY `registry.js` EXISTS.
@@ -38,21 +38,17 @@ import { readAddress, resolveTown } from './lib/authoringAddress.js'
 // ▶ node checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs
 import looksIndex from '../public/looks/index.json' with { type: 'json' }
 
-// ⛔ The PLAYER's default look — what the BARE address shows, with no `?look=`. It is
-// NOT `looksIndex.default`: that is the authoring 0-state (`kit-default`), an empty Look
-// bound to no map with nothing baked, and defaulting a visitor to it would render
-// nothing.
-//
-// ⭐ IT IS THE ANSWER FOR THE BUILD THAT OWNS THE BARE DOMAIN, and only that one. Every
-// other town is addressed by PATH — see `readLookParam` below.
-const DEFAULT_LOOK = 'lafayette-square'
+// ⛔⛔ THERE IS NO DEFAULT TOWN (Jacob, 2026-10-21: "LS is only the fallback because it was first"; BRIEF-no-default-town
+// §4). A page names its town by the production host's `<meta name="ward-look">`, `?look=`, or its first path segment —
+// or it has none: an authoring page opens with no town (INSTANCE null), a node importer gets null, and any other page
+// THROWS at boot, naming what it looked for. The bare-domain default (`DEFAULT_LOOK`, Lafayette Square) is gone with it.
 
 // An authoring page (Designer/Stage, Preview) declares itself with `<meta name="ward-authoring">`.
 const AUTHORING_PAGE = (() => { try { return !!document.querySelector('meta[name="ward-authoring"]') } catch { return false } })()
 
 /**
  * Which look this page is. `?look=` wins; otherwise the FIRST PATH SEGMENT, if it names a
- * look we know; otherwise the bare-domain default.
+ * look we know; otherwise none (null) — there is no default town.
  *
  * ⭐⭐ THE PATH IS HOW A TOWN IS ADDRESSED, AND IT IS WHY THERE IS ONE BUILD RATHER THAN N
  * (2026-09-21). The Ward is the UNIVERSAL PLAYER and a town is a slab instantiated inside
@@ -95,10 +91,10 @@ function readLookParam() {
     if (q) return q
     const seg = window.location.pathname.split('/').filter(Boolean)[0]
     if (seg && (looksIndex.looks || []).some(l => l.id === seg)) return seg
-    return DEFAULT_LOOK
+    return null
   } catch {
-    // Non-browser importers (node scripts, tests) have no `window`.
-    return DEFAULT_LOOK
+    // Non-browser importers (node scripts, tests) have no `window`, and so no town.
+    return null
   }
 }
 
@@ -134,10 +130,12 @@ export function mapForLook(lookId) {
   return entry.scene || null
 }
 
-// Two cases, two rulings.
-// ① A Look NOT IN THE INDEX (`?look=<unregistered>`) resolves to the default town, loudly — ROADMAP A12, ruled closed
-//   as accepted behaviour (Jacob, 2026-09-20). It keeps the ASKED-FOR `lookId` and is marked `identityResolved: false`,
-//   so it has no backend tenant (`townTenant` throws): it may draw LS, it may never write LS's rows.
+// Three cases, one rule: no page wears a town it did not name.
+// ⓪ NO TOWN NAMED (no host meta, no `?look=`, no path segment naming a look): an authoring page or a node importer has
+//   INSTANCE null; any other page THROWS at boot. ⛔ It drew Lafayette Square, the bare-domain default, until 2026-10-21.
+// ① A Look NOT IN THE INDEX (`?look=<unregistered>`) THROWS (null on an authoring page). ⛔ It resolved to the default
+//   town, loudly, marked `identityResolved: false` (ROADMAP A12, ruled accepted 2026-09-20) — until the default went
+//   (Jacob, 2026-10-21: the LS default goes "once and for all"), so there is no town left for it to wear.
 // ② ⛔ A REGISTERED Look whose MAP HAS NO MODULE never wears another town's identity (Jacob, 2026-10-04). That is a
 //   real town poured without its identity (altadena), and dressing it as LS — name, geography, legal jurisdiction — is
 //   the inheritance the spec forbids. An authoring page (`<meta name="ward-authoring">`: Designer, Stage, Preview) opens
@@ -145,17 +143,23 @@ export function mapForLook(lookId) {
 
 function resolveInstance() {
   const lookId = readLookParam()
-  if (lookId === null) return null   // an authoring page with no town open — no identity is guessed
+  const browser = typeof window !== 'undefined'
+  if (lookId === null) {
+    // an authoring page with no town open, or a node importer — no identity is guessed
+    if (AUTHORING_PAGE || !browser) return null
+    throw new Error(`[instance] ⛔ this page names no town — no <meta name="ward-look">, no ?look=, and no first path segment ` +
+      `naming a look in public/looks/index.json (path "${window.location?.pathname}"). There is no default town to show.`)
+  }
   const mapId = mapForLook(lookId)
   if (!mapId) {
-    console.error(
-      `[instance] Look "${lookId}" is not in public/looks/index.json, so there is no ` +
-      `map to resolve its identity from. Falling back to "${DEFAULT_MAP}" (ROADMAP A12) — this page has no backend tenant.`)
-    return { ...instanceForMap(DEFAULT_MAP), lookId, mapId: DEFAULT_MAP, identityResolved: false }
+    const msg = `[instance] ⛔ Look "${lookId}" is not in public/looks/index.json, so there is no map to resolve its ` +
+      `identity from — and no default town to wear instead.`
+    if (AUTHORING_PAGE) { console.error(msg); return null }
+    throw new Error(msg)
   }
   const town = instanceForMap(mapId)
   // ⛔ `lookId` last: it OVERRIDES the module's own literal, which names the map.
-  if (town) return { ...town, lookId, mapId, identityResolved: true }
+  if (town) return { ...town, lookId, mapId }
   const msg = `[instance] ⛔ map "${mapId}" (look "${lookId}") has no installation module — src/instances/${mapId}.js ` +
     `is not registered (registry has: ${registeredMaps().join(', ')}). This page has NO town identity; it will not borrow ` +
     `another town's. ▶ node cartograph/scaffold-instance.mjs --scene=${mapId}, then register it in src/instances/registry.js.`
@@ -167,11 +171,10 @@ export const INSTANCE = resolveInstance()
 
 /**
  * The town's backend key: its sealed opaque id (`cartograph/data/<map>/town-id.json`, attached by the registry).
- * One reader, shared with the Ward (`src/lib/townRecord.js#tenantOf`). ⛔ A page with no town, or one wearing the default
- * town (A12), has no tenant: it throws.
+ * One reader, shared with the Ward (`src/lib/townRecord.js#tenantOf`). ⛔ A page with no town has no tenant: it throws.
+ * (A page can no longer wear a default town — A12's unresolved identity went with the default, 2026-10-21.)
  */
 export function townTenant() {
-  if (INSTANCE && !INSTANCE.identityResolved) throw new Error(`[instance] look "${INSTANCE.lookId}" is wearing the default town (ROADMAP A12), so it has no backend tenant — refusing to call the backend as another town.`)
   return tenantOf(INSTANCE, INSTANCE ? `look "${INSTANCE.lookId}"` : 'this page (no town open)')
 }
 

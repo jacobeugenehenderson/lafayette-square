@@ -42,7 +42,7 @@ async function elevAt(x, z) {
 
 async function main() {
   const rb = JSON.parse(readFileSync(join(ROOT, 'src/data/ribbons.json'), 'utf-8'))
-  const poly = JSON.parse(readFileSync(join(ROOT, 'cartograph/data/lafayette-square/clean/park-polygon.json'), 'utf-8'))
+  const poly = JSON.parse(readFileSync(join(ROOT, 'cartograph/data/lafayettesquare/clean/park-polygon.json'), 'utf-8'))
   const steps = (rb.paths || []).filter(p => p.kind === 'steps' && fracInRing(p.points, poly.corners) >= 0.5)
   console.log(`Probing 3DEP at ${steps.length} park-step endpoints…`)
   const out = []

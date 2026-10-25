@@ -33,7 +33,7 @@
  *
  * Usage:
  *   node checks/claims-ring-partition.mjs                  # every baked scene
- *   node checks/claims-ring-partition.mjs lafayette-square # one scene
+ *   node checks/claims-ring-partition.mjs lafayettesquare # one scene
  */
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'

@@ -25,7 +25,7 @@ import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 const SA=r=>{let a=0;for(let i=0;i<r.length;i++){const j=(i+1)%r.length;a+=r[i][0]*r[j][1]-r[j][0]*r[i][1]}return a/2}
 const net=rs=>Math.abs((rs||[]).reduce((s,r)=>s+SA(r),0))
 const sym=(A,B)=>net(differenceRings(A,B))+net(differenceRings(B,A))
-const f=feed('lafayette-square')
+const f=feed('lafayettesquare')
 const T=buildProto(f).protoShapeTiles
 const clone=o=>JSON.parse(JSON.stringify(o||{}))
 let tested=0, dead=0, live=0

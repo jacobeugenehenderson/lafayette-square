@@ -38,7 +38,6 @@ const { tessellateAdaptive } = await quietly(() => import('../cartograph/derive.
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'   // the partition's grid, from its one home
-const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
 const ribbonsOf = (s) => ribbonsPathOf(s)
 const XY = (q) => Array.isArray(q) ? q : [q.x, q.z]
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }

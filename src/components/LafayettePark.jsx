@@ -14,20 +14,22 @@
  */
 import { lazy, Suspense } from 'react'
 
-// The park's town — the same guard the body applies itself.
-const PARK_TOWN = 'lafayette-square'
+// ⭐ A town mounts this park by DECLARING it (`bundledPark` in its instance module) — the same guard the body applies.
+// ⛔ Was a test of one town's name (PARK_TOWN), until the default town went (2026-10-21).
+export const PARK_KEY = 'lafayette-park'
+export const declaresPark = (town) => town?.bundledPark === PARK_KEY
 
 const Body = lazy(() => import('./LafayetteParkBody.jsx'))
 const Title = lazy(() => import('./LafayetteParkBody.jsx').then(m => ({ default: m.ParkTitle })))
 
-// Guarded on the town being DRAWN (`lookId`, which <Town> passes), not the page's boot town: Stage
+// Guarded on the town being DRAWN (`town`, which <Town> passes), not the page's boot town: Stage
 // switches towns live, and a park guarded on the boot town followed Lafayette Square into the next one.
 export default function LafayettePark({ town, lookId, ...props }) {
-  if (lookId !== PARK_TOWN) return null
+  if (!declaresPark(town)) return null
   return <Suspense fallback={null}><Body town={town} lookId={lookId} {...props} /></Suspense>
 }
 
 export function ParkTitle({ town, lookId, ...props }) {
-  if (lookId !== PARK_TOWN) return null
+  if (!declaresPark(town)) return null
   return <Suspense fallback={null}><Title town={town} lookId={lookId} {...props} /></Suspense>
 }

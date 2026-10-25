@@ -40,7 +40,7 @@ import { fileURLToPath } from 'url'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const scene = process.argv.includes('--scene') ? process.argv[process.argv.indexOf('--scene') + 1] : 'lafayette-square'
+const scene = process.argv.includes('--scene') ? process.argv[process.argv.indexOf('--scene') + 1] : 'lafayettesquare'
 
 const shapeP = path.join(ROOT, 'public/baked', scene, 'shape.json')
 const ribP = ribbonsPathOf(scene)                               // the town's OWN ribbons — never LS's for every town

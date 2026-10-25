@@ -290,7 +290,7 @@ const useArboristStore = create((set, get) => ({
     set({ groveVariants: next })
     try {
       await fetch(
-        `/api/arborist/species/${encodeURIComponent(speciesId)}/variants/${variantId}/overrides`,
+        `/api/arborist/species/${encodeURIComponent(speciesId)}/variants/${variantId}/overrides${get().activeLookId ? `?look=${encodeURIComponent(get().activeLookId)}` : ''}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -612,11 +612,11 @@ const useArboristStore = create((set, get) => ({
   loadRosterCoverage: async () => {
     set({ rosterLoading: true, rosterError: null })
     try {
-      // Scope the roster to the active Look's neighbourhood (server resolves the
-      // scene via mapForLook). Absent look → server's default scene.
+      // Scope the roster to the active Look's neighbourhood (server resolves the scene via mapForLook). ⛔ No Look → no
+      // board: the server refuses, and there is no default town's roster to show in its place.
       const look = get().activeLookId
-      const lookQ = look ? `&look=${encodeURIComponent(look)}` : ''
-      const r = await fetch(`/api/arborist/coverage?t=${Date.now()}${lookQ}`)
+      if (!look) throw new Error('no Look open — the roster board is per town; choose a Look')
+      const r = await fetch(`/api/arborist/coverage?t=${Date.now()}&look=${encodeURIComponent(look)}`)
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json()
       // A response for a Look the operator has already left is the previous town's board: drop it.
@@ -1153,7 +1153,7 @@ const useArboristStore = create((set, get) => ({
     })
     try {
       await fetch(
-        `/api/arborist/species/${encodeURIComponent(speciesId)}/variants/${variantId}/overrides`,
+        `/api/arborist/species/${encodeURIComponent(speciesId)}/variants/${variantId}/overrides${get().activeLookId ? `?look=${encodeURIComponent(get().activeLookId)}` : ''}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

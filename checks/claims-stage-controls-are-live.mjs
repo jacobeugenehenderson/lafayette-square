@@ -81,7 +81,7 @@ function renderClosure(roots, srcOf = (f) => read(f)) {
 // ── CartographApp regions ───────────────────────────────────────────────────
 function regionsOf(appText) {
   const t = strip(appText)
-  const ls0 = t.indexOf("'lafayette-square': {")
+  const ls0 = t.indexOf("'lafayettesquare': {")
   const reg1 = t.indexOf('\n}\n', ls0)
   const gen0 = t.indexOf('function genericSceneConfig'), gen1 = t.indexOf('\n}\n', gen0)
   const c0 = t.indexOf('<Canvas'), c1 = t.indexOf('</Canvas>', c0)

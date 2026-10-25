@@ -30,7 +30,6 @@ const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.leng
 const strip = process.argv.includes('--strip-gradeend')
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
-const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
 const ribbonsOf = (s) => ribbonsPathOf(s)
 const HWY = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
 const area = (r) => { let a = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; a += p[0] * q[1] - q[0] * p[1] } return Math.abs(a / 2) }

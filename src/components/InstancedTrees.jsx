@@ -524,9 +524,8 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
 // (role-at-bake doctrine).
 
 function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOverride, treeWindOverride }) {
-  // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
-  // default 'lafayette-square'. Cartograph passes the active Look explicitly
-  // via the StageEnvironment thread; Preview reads ?look= from the URL.
+  // Active Look: the one this piece is GIVEN (lookOf throws without one — no URL fallback, no default town).
+  // Cartograph passes the active Look via the StageEnvironment thread.
   const lookName = lookOf(propLookId, 'InstancedTrees')
   const scene = useSceneJson(lookName, bakeLastMs)
   // The re-read key: Stage's bakeLastMs, else scene.bakedAt (and the fetch waits for it).

@@ -17,6 +17,7 @@ import AerialBase, { AerialFocus, AerialCredit } from './AerialTiles.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import ParkTitleHandle from './ParkTitleHandle.jsx'
 import { PARK_TITLE_DEFAULT_CENTER } from '../components/LafayetteParkBody.jsx'
+import { declaresPark } from '../components/LafayettePark.jsx'
 import MeasureOverlay from './MeasureOverlay.jsx'
 import CornerEditHandles from './CornerEditHandles.jsx'
 import BlockGeometryV2Debug from './BlockGeometryV2Debug.jsx'
@@ -41,7 +42,7 @@ import { createCameraTween } from '../camera/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
 
 import ribbonsRaw from '../data/ribbons.json'
-import lsNeighborhoodBoundary from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
+import lsNeighborhoodBoundary from '../../cartograph/data/lafayettesquare/neighborhood_boundary.json'
 import { slabFetch } from '../lib/slabUrl.js'
 import { townForLook, INSTANCE, mapForLook } from '../instance.js'
 
@@ -626,13 +627,13 @@ const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 // (centerline geometry comes from the live store, scene-aware). Once
 // promote-ribbons is scene-keyed (Phase 0e) this can shrink to a path.
 const MAP_REGISTRY = {
-  'lafayette-square': {
+  'lafayettesquare': {
     ribbons: ribbonsRaw,
     stencil: LS_STENCIL,
     hasAerial: true,
   },
 }
-// MAP_REGISTRY holds only the DEFAULT installation ('lafayette-square', with
+// MAP_REGISTRY holds only the DEFAULT installation ('lafayettesquare', with
 // its bundled ribbons — Designer's). Its 3D is <Town>, like every town's. Any
 // OTHER installation is a generic "poured neighborhood": its config is built
 // from data loaded BY ID (ribbons + boundary from the store), so no specific
@@ -1085,9 +1086,9 @@ export default function CartographApp() {
         </Canvas>
 
         {inDesigner && <MarkerOverlay cameraRef={orthoRef} />}
-        {/* Drag-to-move handle for the park title — Designer only, LS only, only
-            when the title is shown and no tool owns the click. */}
-        {inDesigner && scene === 'lafayette-square' && !tool && layerVis.parkTitle !== false && (
+        {/* Drag-to-move handle for the park title — Designer only, only for a town that DECLARES the park
+            (LafayettePark.jsx#declaresPark), only when the title is shown and no tool owns the click. */}
+        {inDesigner && activeLookId && declaresPark(townForLook(activeLookId, 'CartographApp park handle')) && !tool && layerVis.parkTitle !== false && (
           <ParkTitleHandle cameraRef={orthoRef}
             pos={parkTitlePos || PARK_TITLE_DEFAULT_CENTER}
             onChange={setParkTitlePos} />

@@ -80,7 +80,7 @@ if (process.argv.includes('--self-test')) {
     ['nothing', [], [], false],
     ['a bake process', ['123 01:00 node cartograph/bake-ground.js'], [], true],
     ['worktree-add mass touch (one instant, backups included) ⇒ NOT in flight', [],
-      Array.from({ length: 24 }, (_, i) => [T + (i % 3), i % 2 ? `cartograph/data/lafayette-square/clean/overlay.json.backup-17${i}` : `public/baked/x/f${i}.json`]), false],
+      Array.from({ length: 24 }, (_, i) => [T + (i % 3), i % 2 ? `cartograph/data/lafayettesquare/clean/overlay.json.backup-17${i}` : `public/baked/x/f${i}.json`]), false],
     ['mass touch straddling a second boundary ⇒ NOT in flight', [],
       [[T + 999, 'public/baked/x/a.json'], [T + 1001, 'public/baked/x/b.json'], [T + 1400, 'public/baked/x/c.json']], false],
     ['a bake between steps: artifacts over time, no process', [], [[T, 'public/baked/x/ground.json'], [T + 40_000, 'public/baked/x/ground.bin']], true],

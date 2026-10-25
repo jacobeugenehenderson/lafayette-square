@@ -76,14 +76,14 @@ console.log(`\nLOOK SEED — does a new Look start clean?\ndeclared scene-keyed 
 // 1. The real regression, replayed. Seed LS's HISTORICAL authored design (the
 //    pre-reset copy — LS's live design.json now carries zero slots, so seeding
 //    from it would pass vacuously) into a foreign scene.
-const lsAuthored = readJsonOrNull(join(PUBLIC_DIR, 'looks/lafayette-square/design.json.pre-reset'))
+const lsAuthored = readJsonOrNull(join(PUBLIC_DIR, 'looks/lafayettesquare/design.json.pre-reset'))
 check('the 2026-07-14 regression cannot recur — LS authoring does not reach a foreign scene', () => {
   if (!lsAuthored) return 'no design.json.pre-reset to replay against; test is vacuous'
   if (!slotCount(lsAuthored.blockCustoms)) return 'the replay fixture carries no authoring; test is vacuous'
   // Target names only — `seedDesignForScene` is pure, so these need not be real towns. One that
   // does not exist is deliberate: the stripping must be scene-generic, i.e. correct for town #2.
   for (const target of ['altadena', 'hipointedemun', 'a-town-nobody-has-poured-yet']) { /* fixture */
-    const { design: d, stripped } = seedDesignForScene(lsAuthored, 'lafayette-square', target) /* fixture */
+    const { design: d, stripped } = seedDesignForScene(lsAuthored, 'lafayettesquare', target) /* fixture */
     if (slotCount(d.blockCustoms)) return `${target} still received ${slotCount(d.blockCustoms)} blockCustoms slots`
     if (!stripped.length) return `${target}: nothing reported stripped — the drop was silent`
   }
@@ -93,7 +93,7 @@ check('the 2026-07-14 regression cannot recur — LS authoring does not reach a 
 // 2. Every declared field is actually dropped, not just blockCustoms.
 check('every declared scene-keyed field is dropped on a cross-scene seed', () => {
   const seed = { ...lsAuthored, cornerRadiusOverrides: { a: 1 }, cornerCornerRadiusOverrides: { b: 2 }, blockLandUse: { c: 3 } }
-  const { design: d } = seedDesignForScene(seed, 'lafayette-square', 'altadena') /* fixture */
+  const { design: d } = seedDesignForScene(seed, 'lafayettesquare', 'altadena') /* fixture */
   const left = SCENE_KEYED_DESIGN_FIELDS.filter(f => d[f] != null)
   return left.length ? `survived the strip: ${left.join(', ')}` : null
 })
@@ -113,8 +113,8 @@ check('style still travels (palette / exposure / labels survive)', () => {
 // 3b. The town's fields and its places never cross towns (lookDesign.mjs#SEED_STRIPPED_FIELDS) — Huron's copy of LS's
 //     parkTitlePos is the instance this closes.
 check("a cross-town seed carries none of the seed town's fields or places", () => {
-  const src = { ...design('lafayette-square'), parkTitlePos: [-22.48, -97.31], trees: [{ species: 'x' }], terrainExag: 1.5 } /* fixture */
-  const { design: d } = seedDesignForScene(src, 'lafayette-square', 'altadena') /* fixture */
+  const src = { ...design('lafayettesquare'), parkTitlePos: [-22.48, -97.31], trees: [{ species: 'x' }], terrainExag: 1.5 } /* fixture */
+  const { design: d } = seedDesignForScene(src, 'lafayettesquare', 'altadena') /* fixture */
   const left = SEED_STRIPPED_FIELDS.filter(f => d[f] != null)
   return left.length ? `travelled to another town: ${left.join(', ')}` : null
 })
@@ -133,11 +133,11 @@ check('a SAME-scene clone keeps its own authoring', () => {
 //    scene-keyed field must refuse, not travel. Synthesised with a real street
 //    name from the seed scene's own bake, so it is the genuine failure shape.
 check('an UNDECLARED scene-keyed field REFUSES (409) instead of travelling', () => {
-  const names = bakedStreetNames('lafayette-square') /* fixture */
-  if (!names?.size) return 'lafayette-square has no bake; cannot synthesise the case'
+  const names = bakedStreetNames('lafayettesquare') /* fixture */
+  if (!names?.size) return 'lafayettesquare has no bake; cannot synthesise the case'
   const street = [...names][0]
   const seed = { ...lsAuthored, someFutureFieldNobodyDeclared: { [`${street}|left|0`]: 42 } }
-  try { seedDesignForScene(seed, 'lafayette-square', 'altadena') } /* fixture */
+  try { seedDesignForScene(seed, 'lafayettesquare', 'altadena') } /* fixture */
   catch (err) {
     if (err.statusCode !== 409) return `refused with statusCode ${err.statusCode}, expected 409`
     if (!/someFutureFieldNobodyDeclared/.test(err.message)) return `the refusal does not name the offending field: ${err.message}`

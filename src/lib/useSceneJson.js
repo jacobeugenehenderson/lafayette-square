@@ -41,10 +41,7 @@ function fetchSceneOnce(lookId, reread) {
 }
 
 /**
- * @param {string} lookId — which slab to read; today passed as the
- *   literal `'lafayette-square'` from production call sites pending the
- *   INSTANCE coupler (couplers plan §6). When INSTANCE lands, call
- *   sites flip to `INSTANCE.lookId`.
+ * @param {string} lookId — which slab to read: the Look the caller is drawing (never a default town's).
  * @param {string|number} [reread] — change it to read the file again
  *   (Stage passes its last bake time).
  * @returns {object|null} the parsed scene.json, or null until the

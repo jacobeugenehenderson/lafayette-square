@@ -12,13 +12,15 @@
 // The cap owner's ladder: `caps[c]` with the `baseMeasure` of a run of the same `skelId` on the tile (or the town's ribbons),
 // through `stripLadder` — its walk exists iff walkTo > walkFrom.
 // ⭐ MUTANT (--mutants): one judged cap edge's struck walkTo set to `cw` → must go RED.
-//   node checks/claims-a-cap-carries-one-section.mjs [--town=a,b] [--shape=<shape.json> --town=<one>] [--mutants] [--show=n]
+//   node checks/claims-a-cap-carries-one-section.mjs [--town=a,b] (default: every town with a baked shape.json) [--shape=<shape.json> --town=<one>] [--mutants] [--show=n]
 // Read-only. Exits 1 on any cap edge with no walk where its owner has one, or a cap that cannot be judged.
 import { readFileSync, existsSync } from 'fs'
 import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
+import { scenes, ribbonsPath } from './_scenes.mjs'
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=').slice(1).join('=')
 const { sectionPassProtoTile, stripLadder, resolvePedDepths } = await import('../src/lib/tileGround.js')
-const towns = (arg('town') || 'hipointedemun').split(','), SHOW = +(arg('show') || 6)
+// every town with a baked shape, unless --town names some (no default town: claims-no-town-name-gates-the-kit, Rule B)
+const towns = arg('town') ? arg('town').split(',') : scenes('public/baked/<scene>/shape.json'), SHOW = +(arg('show') || 6)
 let bad = 0
 for (const town of towns) {
   const shp = arg('shape') || `public/baked/${town}/shape.json`, dp = `public/looks/${town}/design.json`
@@ -26,7 +28,7 @@ for (const town of towns) {
   const tiles = JSON.parse(readFileSync(shp, 'utf8')).tiles, design = JSON.parse(readFileSync(dp, 'utf8'))
   if (!tiles.some(t => t.iaCap)) { console.log(`⛔ ${town}: REFUSED — ${shp} carries no iaCap (poured before caps were frozen); re-pour it, or pass a scratch slab's --shape=`); bad++; continue }
   const cw = resolveCurbWidth(design).value, BC = design.blockCustoms || null, CO = design.cornerCornerRadiusOverrides || null
-  const rib = ['cartograph/data/' + town + '/clean/ribbons.json', ...(town === 'lafayette-square' ? ['src/data/ribbons.json'] : [])].find(existsSync)
+  const rib = [ribbonsPath(town)].find(existsSync)   // the town's declared ribbons (cartograph/scene.js#ribbonsPathOf), never a test of its name
   const measOf = new Map((rib ? JSON.parse(readFileSync(rib, 'utf8')).streets || [] : []).map(s => [s.skelId, s.measure]))
   let caps = 0, edges = 0, noWalkOwner = 0, unjudged = 0, dip = 0; const ex = [], judged = []
   // a rim piece repeats its block's UNCUT contour (`iaFull`, by design — the disc cut): that contour's caps are judged once,

@@ -293,4 +293,4 @@ The wall-move's clean-slate-vs-migrate decision tilts hard toward **clean-slate*
 — *Vesalius*
 
 ---
-*Scripts (all read-only, in `scratch/`): `vesalius-skeleton-forensics.cjs` (catalog + node precision), `vesalius-raw-vs-us.cjs` (raw-vs-us + Dolman trace), `vesalius-rich-frame-proto.cjs` (extractability proof). Every numeric claim here is reproducible by running them against `cartograph/data/lafayette-square/raw/osm.json` + `clean/skeleton.json`.*
+*Scripts (all read-only, in `scratch/`): `vesalius-skeleton-forensics.cjs` (catalog + node precision), `vesalius-raw-vs-us.cjs` (raw-vs-us + Dolman trace), `vesalius-rich-frame-proto.cjs` (extractability proof). Every numeric claim here is reproducible by running them against `cartograph/data/lafayettesquare/raw/osm.json` + `clean/skeleton.json`.*

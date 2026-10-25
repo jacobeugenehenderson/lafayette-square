@@ -9,8 +9,9 @@
 //   · the pipeline's code inputs are `pourCodeClosure()` — the import closure of pipeline.js, walked by
 //     `importClosure`, stopped at the town registry; run on the live tree it contains the files that DEFINE
 //     `mintProtopolygon` and `coastRings` (found by grepping for the export, so a move stays covered);
-//   · no town module is in it, and the ONLY file in it that imports from src/instances/ is geography.mjs —
-//     whose value the pour stamps as `geographyRead` (so the boundary cannot quietly swallow a real dependency);
+//   · no town module is in it, and NO file in it imports from src/instances/ — every town's geography is its own
+//     data/<scene>/geography.json, whose value the pour stamps as `geographyRead` (the default town's registry read went
+//     with the default, 2026-10-21);
 //   · pipeline.js stamps `codeRead: pourCodeRecord()` and `geographyRead` into map.json;
 //   · `pourCodeChanged`, exercised on temp files: a CONTENT edit is named · an mtime-only touch is not · no record
 //     is dirty; `geographyReadChanged`: equal ⇒ null · edited ⇒ named · no record ⇒ dirty;
@@ -22,7 +23,7 @@
 // MUTATIONS (each must go red): PIPELINE_SRC set back to importClosure([pipeline.js]) (town modules re-enter) ·
 // the 428 stop removed · pourCodeChanged made to return [] · pourCodeChanged made to compare mtimes · the registry
 // check dropped from the 428 list · the stopAt removed in pour-code.mjs.
-import { readFileSync, mkdtempSync, writeFileSync, utimesSync, rmSync } from 'node:fs'
+import { readFileSync, mkdtempSync, writeFileSync, utimesSync, rmSync, readdirSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
@@ -47,7 +48,7 @@ const townMods = closure.filter(f => rel(f).startsWith('src/instances/'))
 if (townMods.length) bad.push(`town modules are hashed as pour code — any town's favicon asks every town: ${townMods.map(rel).join(', ')}`)
 const spec = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)['"](\.{1,2}\/[^'"]+)['"]/gm
 const importers = closure.filter(f => { try { return [...readFileSync(f, 'utf8').matchAll(spec)].some(m => /(^|\/)instances\//.test(m[1])) } catch { return false } })
-if (importers.map(rel).join() !== 'cartograph/geography.mjs') bad.push(`files in the pour importing src/instances/ must be exactly [cartograph/geography.mjs] (its value is recorded); found [${importers.map(rel).join(', ')}]`)
+if (importers.length) bad.push(`no file in the pour may import src/instances/ (a town's geography is its own geography.json); found [${importers.map(rel).join(', ')}]`)
 
 // ── the pour stamps both records ──
 const pipe = readFileSync(join(ROOT, 'cartograph/pipeline.js'), 'utf8')
@@ -68,12 +69,16 @@ if (!/geographyRead:\s*GEOGRAPHY_READ/.test(pipe)) bad.push('pipeline.js does no
   rmSync(d, { recursive: true, force: true })
 }
 {
-  const { DEFAULT_MAP } = await import(pathToFileURL(join(ROOT, 'cartograph/scene.js')).href)
+  // every town on disk with a geography (read, never typed — there is no default town to pick)
   const { geographyFor } = await import(pathToFileURL(join(ROOT, 'cartograph/geography.mjs')).href)
-  const g = geographyFor(DEFAULT_MAP)
-  if (pc.geographyReadChanged(g, DEFAULT_MAP) !== null) bad.push('an unchanged geography reads as changed')
-  if (!pc.geographyReadChanged({ ...g, lat: g.lat + 1e-3 }, DEFAULT_MAP)) bad.push('a moved geography does not re-pour')
-  if (!pc.geographyReadChanged(undefined, DEFAULT_MAP)) bad.push('a map.json with NO geography record counts as clean — it must be dirty')
+  const towns = readdirSync(join(ROOT, 'cartograph/data'), { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(join(ROOT, 'cartograph/data', d.name, 'geography.json'))).map(d => d.name)
+  if (!towns.length) bad.push('no town on disk has a geography.json — the geography rows tested nothing')
+  for (const town of towns) {
+    const g = geographyFor(town)
+    if (pc.geographyReadChanged(g, town) !== null) bad.push(`${town}: an unchanged geography reads as changed`)
+    if (!pc.geographyReadChanged({ ...g, lat: g.lat + 1e-3 }, town)) bad.push(`${town}: a moved geography does not re-pour`)
+    if (!pc.geographyReadChanged(undefined, town)) bad.push(`${town}: a map.json with NO geography record counts as clean — it must be dirty`)
+  }
 }
 
 // ── the registry, by what the pour READ ──

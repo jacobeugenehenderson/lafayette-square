@@ -51,7 +51,7 @@ import { resolveCurbWidth } from '../src/cartograph/streetProfiles.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
-const SCENE = process.argv.slice(2).find(a => !a.startsWith('--')) || 'lafayette-square'
+const SCENE = process.argv.slice(2).find(a => !a.startsWith('--')) || 'lafayettesquare'
 const TOL = 0.5          // m — reporting bucket only, never an ownership test
 const STEP = 10          // m — station spacing along each chain
 

@@ -4,10 +4,7 @@
  * Preview so both surfaces consume the canonical pipeline artifact (see
  * memory entry `feedback_preview_uses_production_pipeline`).
  *
- * Look resolution mirrors BakedGround:
- *   1. explicit `lookId` prop (cartograph passes activeLookId)
- *   2. URL `?look=` param (preview standalone behavior)
- *   3. 'lafayette-square' final fallback
+ * Look resolution: the `lookId` it is GIVEN (lookOf throws without one — no URL fallback, no default town).
  *
  * Cache-bust resolution mirrors BakedGround per couplers plan §1:
  *   Stage's `bakeLastMs` prop wins (live ↻ refresh); production falls back

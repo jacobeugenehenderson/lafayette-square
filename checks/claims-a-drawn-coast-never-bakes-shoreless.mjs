@@ -51,14 +51,14 @@ const outcome = (rule, a) => { try { return { ok: rule(a) } } catch (e) { return
 function judgeRule(rule) {
   const rows = []
   for (const [name, doc] of cases) {
-    const r = outcome(rule, { scene: 'huron', medPath: MED, doc, here: HERE, coastal: () => true, shorePending: false })
-    rows.push([`coastal, median ${name}: refuses, naming the town and the file`, !!r.threw && r.threw.includes('huron') && r.threw.includes(MED), r.threw ?? `returned ${JSON.stringify(r.ok)}`])
-    const p = outcome(rule, { scene: 'huron', medPath: MED, doc, here: HERE, coastal: () => true, shorePending: true })
+    const r = outcome(rule, { scene: 'huron', medPath: MED, doc, here: HERE, coastal: () => true, shorePending: false }) /* fixture */
+    rows.push([`coastal, median ${name}: refuses, naming the town and the file`, !!r.threw && r.threw.includes('huron') && r.threw.includes(MED), r.threw ?? `returned ${JSON.stringify(r.ok)}`]) /* fixture */
+    const p = outcome(rule, { scene: 'huron', medPath: MED, doc, here: HERE, coastal: () => true, shorePending: true }) /* fixture */
     rows.push([`coastal, median ${name}, --shore=pending: no sand, stamped pending`, !!p.ok && !p.ok.paint && p.ok.state === 'pending', JSON.stringify(p.ok ?? p.threw)])
     const n = outcome(rule, { scene: 'inland', medPath: MED, doc, here: HERE, coastal: () => false, shorePending: false })
     rows.push([`no coast (or inland), median ${name}: owes none`, !!n.ok && !n.ok.paint && !n.ok.state, JSON.stringify(n.ok ?? n.threw)])
   }
-  const c = outcome(rule, { scene: 'huron', medPath: MED, doc: current, here: HERE, coastal: () => true, shorePending: false })
+  const c = outcome(rule, { scene: 'huron', medPath: MED, doc: current, here: HERE, coastal: () => true, shorePending: false }) /* fixture */
   rows.push(['coastal, median current: painted', !!c.ok && c.ok.paint === current && !c.ok.state, JSON.stringify(c.ok ?? c.threw)])
   return rows
 }

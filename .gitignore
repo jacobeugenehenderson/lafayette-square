@@ -52,8 +52,7 @@ public/photos/lafayette-square/
 
 # Raw data cache (regenerable via scripts/)
 scripts/raw/*
-# stl_parcels.json moved to cartograph/data/lafayette-square/raw/ (scene-homed)
-!scripts/raw/osm_street_lamps.json
+# stl_parcels.json moved to cartograph/data/lafayettesquare/raw/ (scene-homed)
 
 # Archived/defunct scripts
 _archive/
@@ -116,7 +115,6 @@ cartograph/data/*/raw/*
 !cartograph/data/*/raw/bathymetry-sources.txt
 !cartograph/data/*/raw/centerlines.json
 !cartograph/data/*/raw/measurements.json
-!cartograph/data/*/raw/stl_parcels.json
 
 # KIT POLICY (2026-07-18) — carried forward verbatim, because this comment is
 # the thing that keeps the rule from being re-broken. clean/ carries the SOURCE

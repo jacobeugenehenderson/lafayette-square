@@ -117,7 +117,7 @@ Vendor tree GLBs. `arborist/ORIENTATION.md`: *"A tree's identity is mostly its b
 
 **B7 · Curation state** — `_chassis-curation.json`, `state/<id>/compositions.json`, `part-index.json`, `roster-name-canon.json`, `low-poly-mapping.json`, `species-map.json`. All **tracked**. **Pure human judgment; no net source, ever.** Chassis curation + rubric carry over globally; compositions re-author per species.
 
-**Soft bleeds (authoring/UI only, do not reach the render):** `roster-coverage.js:48` (`DEFAULT_MAP` param) · `serve.js:1056` (`GET /inventory` reads LS's census unscoped) · `serve.js:959,1041` (Salon publish + variant-rating re-bake **LS**, unconditionally — so authoring from a Łódź Look re-bakes LS's placements) · `serve.js:1106`.
+**Soft bleeds — closed 2026-10-21:** Arborist's coverage, routing write, lidar-publish and variant-rating re-bakes take the town from the named Look or refuse; there is no default town (`ROADMAP A00`).
 
 ---
 
@@ -166,7 +166,7 @@ fixed).
 
 **Their only input:** `lat` / `lon` / IANA `timezone`, from `src/instances/<look>.js geography{}`,
 transcribed from `cartograph/data/<scene>/geography.json`.
-⚠️ Absent → falls through `DEFAULT_LOOK` to **LS's geography** (bleed #5). ⚠️ `useWeather.js:112`
+⛔ Absent → no town: the page throws at boot (an authoring page opens none) — there is no default Look (bleed #5 closed 2026-10-21). ⚠️ `useWeather.js:112`
 hourly fallback hardcodes `-21600` = **CST**.
 
 ### 2.2 ACQUIRED — already local, and **kit-global** (acquire once, never per-town)

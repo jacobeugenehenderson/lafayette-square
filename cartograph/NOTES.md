@@ -129,7 +129,7 @@ A long day with Jacob (Boz), much of it shipped live (staging + prod, branch `cu
 
 
 
-A look-authoring day with Jacob (agent "Wren"), eye-gated throughout. Authored the complete time-of-day arc for lafayette-square — **dawn → sunrise → noon → golden → sunset → dusk → night** as one continuous curve. Data lives in `public/looks/lafayette-square/design.json` (authored via `scratch/set-slot.mjs`, baked with `node cartograph/bake-scene.js --look=lafayette-square`); recipe table in `scratch/DAWN-DESIGN-NOTES.md`. This is where `HANDOFF-design-dawn` conceptually retires. Commits `bc9a74ea`, `4ca9ab5f`, `986a4f8f`.
+A look-authoring day with Jacob (agent "Wren"), eye-gated throughout. Authored the complete time-of-day arc for lafayette-square — **dawn → sunrise → noon → golden → sunset → dusk → night** as one continuous curve. Data lives in `public/looks/lafayettesquare/design.json` (authored via `scratch/set-slot.mjs`, baked with `node cartograph/bake-scene.js --look=lafayette-square`); recipe table in `scratch/DAWN-DESIGN-NOTES.md`. This is where `HANDOFF-design-dawn` conceptually retires. Commits `bc9a74ea`, `4ca9ab5f`, `986a4f8f`.
 
 - **Promoted flat → TOD-animated this pass:** lantern, ambient, exposure, halo, mist, dof, warmth, dirMoon, fill (lampGlow/hemi/skyGain/bloom were already animated).
 - **The artistic arc:** dawn = moody (DoF up, bloom OFF) · noon = "blown out" (superbloom 6 + exposure 0.8) · sunset = sharp + ELECTRIC sky overrides (hour 20) · dusk = blue moonglow (warmth 0.3, hemi 1.6, dirMoon 1.2, blue mist + sky overrides hour 21) · night = dark but **softened** (Fill lifted to 1.3 to kill the stark crushed shadows + hemi/ambient/exposure nudged).

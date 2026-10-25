@@ -40,7 +40,6 @@ let red = false
   if (!r.ok) red = true
 }
 
-const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
 const ribbonsOf = (s) => ribbonsPathOf(s)
 const H = /^(motorway|motorway_link|trunk|trunk_link)$/
 for (const scene of scenes('cartograph/data/<scene>/raw/osm.json')) {

@@ -80,7 +80,7 @@ if (Math.abs(kPond - 1) > 1e-9) {
 
 // ── 4. NO SCENE LITERAL IN THE KIT MATERIAL ──────────────────────────────────
 // The §4① regression: the good shader was welded to one mould once already.
-const SCENE_LITERALS = /\b(lafayette|lafayette-square|huron|altadena|hipointe|demun|park_water)\b/i
+const SCENE_LITERALS = /\b(lafayette|lafayettesquare|lafayette-square|huron|altadena|hipointe|demun|park_water)\b/i
 for (const [i, line] of src.split('\n').entries()) {
   // The header cites `LafayettePark.jsx` as provenance — a comment naming where
   // the code CAME FROM is not a dependency on it. Only code lines are in scope.

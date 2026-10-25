@@ -49,7 +49,7 @@ export function assertBakeTarget(tool, look, scene) {
     throw new Error(
       `[${tool}] no --look given. Refusing to guess: the old default was 'default', ` +
       `which is not a look — it wrote a phantom public/baked/default/ that nothing read ` +
-      `(15 MB, removed 2026-09-20). Pass --look=<id> (e.g. --look=lafayette-square).`
+      `(15 MB, removed 2026-09-20). Pass --look=<id> (e.g. --look=lafayettesquare).`
     )
   }
 
@@ -61,7 +61,7 @@ export function assertBakeTarget(tool, look, scene) {
     throw new Error(
       `[${tool}] no such look: public/looks/${look}/ does not exist. ` +
       `Baking it would write a phantom baked/${look}/ that nothing reads. ` +
-      `Pass an existing look, e.g. --look=lafayette-square.`
+      `Pass an existing look, e.g. --look=lafayettesquare.`
     )
   }
 
