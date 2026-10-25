@@ -57,7 +57,10 @@ function judge(P) {
   for (const [id, es] of dir) for (const e of es) { if (!isStreet(e.label)) continue
     street++
     const [a, b] = id.split('>'), tw = (dir.get(b + '>' + a) || []).filter(t => t.face !== e.face)
-    if (tw.length === 0 && waterHas.has(b + '>' + a)) { toWater++; continue }   // its other side joined the WATER (the ruling): no tile across
+    // its other side joined the WATER (the ruling): the water cell holds the edge in the SAME direction — a painted face is wound
+    // to the block convention (its outer clockwise), a cell keeps the walk's (its region on the left), so across a face | cell
+    // boundary the shared edge runs one way in both, where across face | face it runs reversed
+    if (tw.length === 0 && waterHas.has(a + '>' + b)) { toWater++; continue }
     if (tw.length === 0) noTwin.push(`face ${e.face} at (${a.split(',').map(v => (v / CLIP_SCALE).toFixed(3)).join(', ')})`)
     else if (tw.length > 1) twoTwins++ }
   // (C)
