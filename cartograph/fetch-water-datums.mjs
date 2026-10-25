@@ -33,6 +33,8 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { requireExplicitMap } from './scene.js'
 import { writeIfChanged } from './io.js'
+import { terrainValueReads } from './terrainReads.mjs'
+import { authoredWater } from './waterDatums.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const VDATUM = 'https://vdatum.noaa.gov/vdatumweb/api/convert'
@@ -274,7 +276,14 @@ async function main() {
     }
     const cx = +((bbox.minLon + bbox.maxLon) / 2).toFixed(5), cy = +((bbox.minLat + bbox.maxLat) / 2).toFixed(5)
     const mean = months.length ? +(months.reduce((a, b) => a + b, 0) / months.length).toFixed(3) : null
-    const conv = await igld85ToNavd88Points(cx, cy, [lwd, mean, Math.min(...months), Math.max(...months)])
+    // ⭐ THE SPAN THE KIT READS, and no further (the reader refuses outside it): from the deepest the bed is ever drawn —
+    // the lowest level the town could stand at, less its visibility depth (bake-terrain's own rule: the town's authored
+    // `water.secchiM`, else r-bottom-visibility-default) — up to the highest month on the record.
+    const reads = terrainValueReads(scene), auth = authoredWater(scene, reads)
+    const visM = auth.secchiM?.value ?? reads.findings['r-bottom-visibility-default']?.value?.visibleToM
+    if (!Number.isFinite(visM)) throw new Error(`⛔ ${scene}: no visibility depth (design.json water.secchiM, or the registry's r-bottom-visibility-default) — the span the bed reads is unknown`)
+    const floorM = Math.min(lwd, ...months) - visM
+    const conv = await igld85ToNavd88Points(cx, cy, [floorM, lwd, mean, Math.min(...months), Math.max(...months)])
     out = { kind: 'lake', source: `NOAA CO-OPS ${s.id} ${s.name} (Great Lakes gauge, ${s.km.toFixed(0)} km) + VDatum IGLD85 → NAVD88 at the lake's heights`,
       fetchedOn: new Date().toISOString().slice(0, 10), station: { id: s.id, name: s.name, lat: s.lat, lon: s.lng, km: +s.km.toFixed(1),
         url: `https://tidesandcurrents.noaa.gov/datums.html?id=${s.id}` },

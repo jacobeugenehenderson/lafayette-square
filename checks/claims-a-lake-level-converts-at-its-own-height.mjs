@@ -6,11 +6,11 @@
 // lake 7 cm low, which is a quarter of the shore band the coast is traced through. ASSERTS:
 //   1. fetch-water-datums#igld85ToNavd88Points asks VDatum IGLD85 → NAVD88 AT EACH HEIGHT it is given (s_z = the height,
 //      source frame IGLD85), and records what it answered: on a fake VDatum whose offset grows with height;
-//   2. waterDatums#igld85ToNavd88 interpolates between the recorded heights, and REFUSES a record with only the old
-//      single offset (never falls back to it);
+//   2. waterDatums#igld85ToNavd88 interpolates between the recorded heights, REFUSES outside them (Zob: never
+//      extrapolate), and REFUSES a record with only the old single offset (never falls back to it);
 //   3. waterDatums#waterRecord places a lake level through that conversion;
 //   4. every lake town's raw/water-datums.json carries the conversion at its heights (a town without it is NAMED red).
-// MUTANTS (each RED): s_z=0 in the VDatum call · the reader falls back to igld85InNavd88M · waterRecord adds the old offset.
+// MUTANTS (each RED): s_z=0 in the VDatum call · the span test dropped · the reader falls back to igld85InNavd88M · waterRecord adds the old offset.
 //
 //   node checks/claims-a-lake-level-converts-at-its-own-height.mjs
 import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
@@ -44,6 +44,9 @@ say(Math.abs(conv(174.354) - (174.354 + offsetAt(174.354))) < 1e-4, `174.354 m I
 let threw = false
 try { igld85ToNavd88({ igld85InNavd88M: -0.004 }, 'fixture') } catch { threw = true }
 say(threw, 'a record with only the offset asked at height 0 REFUSES')
+threw = false
+try { conv(H[0] - 0.5) } catch { threw = true }
+say(threw, `a height outside the recorded span (${H[0] - 0.5} m, below ${H[0]}) REFUSES, never extrapolated`)
 
 console.log('── 3. the lake level is placed through it')
 {
