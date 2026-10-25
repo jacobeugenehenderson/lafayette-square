@@ -1380,8 +1380,8 @@ as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it
 ### 3.2–3.3 Blocks and the curb — ① and ② (`§1`; the data model above)
 
 *(The legacy function-by-function — `extractFaces` tiles, the `offsetRingVariable` + `filletRing` curb and the 18th/Dolman
-`cornerAt` tooth that lived in it — → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`. Under ① a corner is where an
-edge's owner changes, and bend vs junction is `classifyCornerLegs` → `sameRoad` over derive's `roadId`.)*
+`cornerAt` tooth that lived in it — → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`. Under ① a corner is where ①
+TURNS (`protoRAt`; `SECTION` rule 6), never where an owner changes, and bend vs junction is `classifyCornerLegs` → `sameRoad` over derive's `roadId`.)*
 
 ### 3.4 The ped FILL — `sectionOpen` (`sectionPassProtoTile` per tile)
 
