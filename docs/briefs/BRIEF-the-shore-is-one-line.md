@@ -87,6 +87,11 @@ its high level leaves a bank with no owner, which is a NAMED REFUSAL ("flown abo
 (2) A line pier's width: OSM width where mapped, else a SOURCED typical width, with an authored override (Jacob 2026-09-27, registry's
 structures-over-water finding); no permitted source ⇒ throws. (3) Step 1 is a 'coast' Bake step before 'pipeline' (judged by the dirty
 detector), with clean/coast.json in pour-code's pourDataReads; /pour and the rescope run bake-coast first; derive refuses without it.
+**Step 2's datum, ruled (Boz, 2026-10-25, Swash's (B)):** y=0 = the flattened water's 1 cm mode over bake-coast's COARSE flood sheet
+(lidar + the water record, before any line is traced), recorded in coast.json `flattened: { navd88, share, cells }`; bake-terrain reads
+it; waterDatum's own histogram is deleted. Mutant: move the coast by its p50 offset, and y=0 must not change. Too little water in the
+sheet to take a mode refuses by name. Also in step 2: bake-coast-distance.js (the water past the rim) reads the lidar coast too, so
+inside and past the rim are one line. Step 1 does NOT merge alone; steps 1–3 land together, validated on the shore branch.
 **Dead on tern, don't port:** the gusset (`9c95f43a`, `5f19280c`; per-vertex heights for the retired deformer).
 
 ## 4. Gates
