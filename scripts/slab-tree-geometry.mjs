@@ -6,9 +6,14 @@
  */
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { slabTreeGeometry } from '../src/lib/treeGeometry.js'
+import { slabTreeGeometry, namedImpostorFiles } from '../src/lib/treeGeometry.js'
 
 const readJson = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null)
+
+/** The impostor capture paths this town's atlas records name (src/lib/treeGeometry.js#namedImpostorFiles), as `/trees/…`. */
+export function impostorFilesOfTown(townDir) {
+  return namedImpostorFiles(readJson(join(townDir, 'trees-atlas.json')))
+}
 
 export function treeGeometryOfTown(townDir, look) {
   return slabTreeGeometry({

@@ -4,8 +4,8 @@
  * (Phase 2 C row 6: it listed lod0 GLBs, viz sheets and an all-impostor town's atlas, none of them ever uploaded).
  * ⛔ The verifier (verify-baked-in-r2.mjs) keeps its own reading of the runtime rule on purpose, so the two can disagree.
  */
-import { ATLAS_ONLY_FILE } from '../src/lib/treeGeometry.js'
-import { treeGeometryOfTown } from './slab-tree-geometry.mjs'
+import { ATLAS_ONLY_FILE, IMPOSTOR_CAPTURE_FILE } from '../src/lib/treeGeometry.js'
+import { treeGeometryOfTown, impostorFilesOfTown } from './slab-tree-geometry.mjs'
 
 /** Files the bake PRODUCES and deliberately does not publish. Each names why — do not add one without it. */
 export const EXCLUDE = [
@@ -28,12 +28,14 @@ export const EXCLUDE = [
  * (src/lib/treeGeometry.js), so this can never withhold a file the player would ask for.
  */
 export function notPublished(townDir, look) {
-  const geom = treeGeometryOfTown(townDir, look)
+  const geom = treeGeometryOfTown(townDir, look), named = impostorFilesOfTown(townDir)
   return (rel) => {
     const p = `/baked/${look}/${rel}`
     const ex = EXCLUDE.find((e) => e.test(p))
     if (ex) return ex.why
     if (!geom.needed && ATLAS_ONLY_FILE(p)) return `no model trees — ${geom.why}`
+    // an impostor capture no atlas record names is an authoring source (the PNG beside each KTX2): kept on disk, never fetched
+    if (IMPOSTOR_CAPTURE_FILE(p) && !named.has(`/${rel}`)) return 'an impostor capture no atlas record names (an authoring source, kept on disk)'
     return null
   }
 }

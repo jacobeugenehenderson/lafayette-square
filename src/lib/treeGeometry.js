@@ -58,6 +58,21 @@ export function slabTreeGeometry({ trees, atlasManifest, scene, look }) {
     : { needed: false, count: 0, why: 'every placement is a hero impostor' }
 }
 
+/**
+ * ⭐ THE IMPOSTOR CAPTURE FILES THE RUNTIME FETCHES: exactly the paths the atlas's impostor records name, each hero layer's
+ * `albedo` + `ao` (HeroImpostorTrees) and each overhead band's (OverheadTrees). The Grove's capture keeps an authoring PNG
+ * beside each KTX2 (and the other format of each AO) that no record names and nothing fetches (~113 MB on LS, 2026-10-22):
+ * those are authoring sources, kept on disk, never published. Paths as recorded: `/trees/…`, relative to the Look's slab.
+ */
+export function namedImpostorFiles(atlasManifest) {
+  const out = new Set(), add = (p) => { if (typeof p === 'string' && p.startsWith('/trees/')) out.add(p) }
+  for (const rec of Object.values(atlasManifest?.heroImpostorBySpecies || {})) for (const l of rec?.layers || []) { add(l.albedo); add(l.ao) }
+  for (const rec of Object.values(atlasManifest?.overheadBySpecies || {})) for (const b of rec?.bands || []) { add(b.albedo); add(b.ao) }
+  return out
+}
+/** A file under a Look's impostor capture folders (`trees/hero-impostor/`, `trees/overhead/`). Keys as `/…/baked/<look>/<rel>`. */
+export const IMPOSTOR_CAPTURE_FILE = (p) => /\/baked\/[^/]+\/trees\/(hero-impostor|overhead)\//.test(p)
+
 /** The files only atlas-drawn trees fetch: the model GLBs and the atlas PNGs. Keys as `/…/baked/<look>/<rel>`. */
 export const ATLAS_ONLY_FILE = (p) => /\/baked\/[^/]+\/trees\/[^/]+\/[^/]+\.glb$/.test(p) || /\/baked\/[^/]+\/trees-atlas-[^/]*\.png$/.test(p)
 
