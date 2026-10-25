@@ -73,7 +73,7 @@ the street: `skelId · side · segOrd`, the **frontage edge (fe)**. Authoring is
 `blockCustoms[skelId][side][segOrd]`), so a re-pour keeps the operator's work on the same frontage. Land use is
 stamped the same way: evidence (OSM, then parcels; the class order decides contested ground) is built as **one
 partition** (`cartograph/derive.js#layerLandEvidence`), where two classes meet in one line, and stamped per tile
-(`tileGround.js#stampTile`). Where no evidence reaches, a piece takes the voted face's class, else `underived`.
+(`tileGround.js#stampTile`). Where no evidence reaches, the ground is `underived` (ruled 2026-10-05, 9cf113be).
 
 **② The curb (Survey).** One producer: the block's ① outline stepped out by each edge's own half-width
 (`tileGround.js#offsetRingByRects`). A block may change width several times along its span; that is what Survey is
