@@ -157,7 +157,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 321. This is `npm test`.
+## safe — 325. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -324,6 +324,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-named-way-becomes-street.mjs` | ⭐⭐ DOES A NON-VEHICULAR WAY BOUND A CITY BLOCK? — the check behind `ROADMAP A19`. |
 | `checks/claims-neon-per-place.mjs` | "DOES EVERY OPEN PLACE GET ITS OWN NEON — OR SAY WHY NOT?" — BRIEF-neon-reads-at-every-distance §3.3. |
 | `checks/claims-neon-two-drawings.mjs` | "DOES EVERY NEON FIELD REACH A DRAWING, AND IS THE TUBE NEVER INFLATED?" — BRIEF-neon-reads-at-every-distance §2. |
+| `checks/claims-no-band-union-reversal.mjs` | CLAIM — ②'s BAND DIFFERENCE NEVER DRAWS ONE LINE TWICE, AND A JOIN LEAVES NO SLIVER. `offsetRingByRects` strikes ② as |
 | `checks/claims-no-coarse-value-decides.mjs` | The defect this exists for, measured 2026-08-26: SelecTree's `leaf_form` has three |
 | `checks/claims-no-dossier-rests-on-a-wrong-species.mjs` | species.mjs — DOES ANY DOSSIER CITE A SOURCE THAT ANSWERED FOR ANOTHER SPECIES? |
 | `checks/claims-no-hairline-ring-reaches-the-operator.mjs` | CLAIM: every ring the operator is shown — ① and the ②/③ ped bands — has a real |
@@ -414,12 +415,15 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-corner-extent-is-carried.mjs` | ⭐⭐⭐ THE CORNER'S EXTENT IS CARRIED, NOT RECOVERED — and this reads the artifact, never a rule. |
 | `checks/claims-the-corner-record-reports-the-achieved-radius.mjs` | CLAIM: the corner record the operator's handle rides reports the radius the arc |
 | `checks/claims-the-crest-is-measured-behind-the-shore.mjs` | shore.mjs — WHERE WAS THE WALL'S HEIGHT READ? |
+| `checks/claims-the-crossings-are-noded-once.mjs` | CLAIM — CROSSINGS ARE NODED ONCE, BY ONE HOME, AND THE NODING ENDS. Rings that only overlap (a tile's contours and the |
 | `checks/claims-the-curb-never-enters-the-road.mjs` | CLAIM — THE CURB NEVER ENTERS THE ROAD: no point of ② lies nearer a ① edge than that edge's own depth. |
 | `checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs` | no dev server imports a file it WRITES. |
 | `checks/claims-the-directory-has-exactly-one-order.mjs` | every writer of the listings store orders |
 | `checks/claims-the-disc-stays-inside-the-bb.mjs` | ⭐ THE DISC STAYS INSIDE THE BOUNDING BOX — `EXTENT-DESIGN §4`: the seal must enforce `bbox ⊇ disc + padding`. |
 | `checks/claims-the-ease-is-the-corner.mjs` | ⭐⭐⭐ THE EASE IS THE CORNER TEST. `iaCorner` used to be "① TURNS *and* the owner changes" — a |
 | `checks/claims-the-fade-tracks-the-active-disc.mjs` | disc.mjs — WHOSE CIRCLE IS THE MAP FADING OVER? |
+| `checks/claims-the-frame-makes-no-intersection.mjs` | intersection.mjs — IS EVERY `ribbons.intersections` ENTRY A PLACE WHERE STREETS MEET? |
+| `checks/claims-the-frame-owns-only-the-frame.mjs` | CLAIM — ON ①'S BLOCK RINGS, THE FRAME (`__boundary__`) OWNS ONLY EDGES THAT LIE ON THE FRAME. The frame is the bb rectangle |
 | `checks/claims-the-ground-covers-every-block.mjs` | CLAIM — THE GROUND COVERS EVERY BLOCK: nothing inside a block is painted by NOBODY. |
 | `checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs` | junctions |
 | `checks/claims-the-ground-is-painted-once.mjs` | once.mjs — IS EVERY POINT OF THE GROUND PAINTED BY EXACTLY ONE GROUP? |

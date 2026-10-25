@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 443,
+  "total": 447,
   "counts": {
-    "safe": 321,
+    "safe": 325,
     "local-effect": 27,
     "live": 95
   },
@@ -1716,6 +1716,13 @@
       ]
     },
     {
+      "file": "checks/claims-no-band-union-reversal.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-no-coarse-value-decides.mjs",
       "tier": "safe",
       "why": [
@@ -2512,6 +2519,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-crossings-are-noded-once.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-curb-never-enters-the-road.mjs",
       "tier": "safe",
       "why": [
@@ -2558,6 +2572,20 @@
     },
     {
       "file": "checks/claims-the-fade-tracks-the-active-disc.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-frame-makes-no-intersection.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-frame-owns-only-the-frame.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

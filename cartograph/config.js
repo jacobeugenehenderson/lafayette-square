@@ -13,7 +13,7 @@
  * `config.js` keep working; `scene.js`'s header explains why the split is
  * load-bearing and must not be undone.
  */
-import { geographyFor } from './geography.mjs'
+import { geographyFor, projectorOf } from './geography.mjs'
 import {
   SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
   CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR, ribbonsPathOf, declaredRibbonsOf,
@@ -43,10 +43,10 @@ export const BBOX = _geo ? { ..._geo.bbox } : noTown('BBOX')
 export const LON_TO_METERS = _geo ? _geo.lonToMeters : NaN
 export const LAT_TO_METERS = _geo ? _geo.latToMeters : NaN
 
+const _project = _geo ? projectorOf(_geo) : null
 export function wgs84ToLocal(lon, lat) {
-  const x = (lon - CENTER.lon) * LON_TO_METERS
-  const z = (CENTER.lat - lat) * LAT_TO_METERS // Z = south (+)
-  return [x, z]
+  if (!_project) return CENTER.lon   // no town: CENTER refuses by name
+  return _project(lon, lat)          // Z = south (+)
 }
 
 export function localToWgs84(x, z) {

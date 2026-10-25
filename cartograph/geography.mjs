@@ -26,3 +26,14 @@ export function geographyFor(scene) {
    Create data/${scene}/geography.json (lat/lon/bbox) first.
 `)
 }
+
+/** lon/lat → local metres (x east, z south) for one geography. config.js#wgs84ToLocal IS this, for the scene it names. */
+export const projectorOf = (g) => (lon, lat) => [(lon - g.lon) * g.lonToMeters, (g.lat - lat) * g.latToMeters]
+
+/** The bb in LOCAL coords: the frozen fetch envelope (`osm.bbox`) through `project`. null when the fetch wrote none. */
+export function localBB(osm, project) {
+  const bx = osm?.bbox
+  if (!bx) return null
+  const a = project(bx.minLon, bx.maxLat), b = project(bx.maxLon, bx.minLat)
+  return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
+}

@@ -37,6 +37,9 @@ import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
+import { splitBoundary, discOf } from './boundaryRecords.mjs'
+import { onGrid } from './snap.js'
+import { localBB } from './geography.mjs'
 import { parcelParts, pointInside, parcelId } from './parcelParts.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
@@ -1804,33 +1807,31 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     f.coords.map(c => ({ x: c.x, z: c.z }))
   )
 
-  // Inject neighborhood boundary as closing edges (dense polyline so face
-  // rings step through many short segments rather than one long chord —
-  // avoids visible straight edges in the fade zone).
-  // boundaryPolyXZ is captured here (raw [x,z] pairs) and read again far below as ①'s `boundary`
-  // (mintProtopolygon) and by the ramp flares.
-  let boundaryPolyXZ = null
-  let boundaryCenter = null, boundaryRadius = 0
+  // ⭐ THE FACES ARE WALKED ON THE BB (ORIENTATION §2, "everything is drawn to the bb first"; BRIEF-the-disc-is-one-source
+  // §2b, Boz 2026-10-25). The bb is the frozen fetch envelope (`osm.bbox`), never derived from the disc; its rectangle
+  // closes the outermost faces. The disc is applied to finished geometry, last. ⛔ The boundary ring is NOT a closing
+  // edge here: splitting faces at the circle before they are voted made the rim a seam of the land-use partition.
+  // ONE bb (geography.mjs#localBB, through this scene's projection) and TWO VIEWS OF IT, ≤ 5 cm apart:
+  //   `_bb`     — the coast and the mint read it raw;
+  //   `_frame`  — the face walk's closing edge, the same bb on the noding grid (snap.js#onGrid): nodeEdges snaps every
+  //               crossing to that grid, so a frame off it puts its own nodes up to half a cell off its lines, where no
+  //               test can tell a frame segment from a street one.
+  // ⚠️ Not one view, MEASURED (Boz's condition, 2026-10-25): handing the gridded frame to the coast and the mint changes ①
+  // (LS's `blocks`; a Huron ring 3.4 cm at the frame, (−4944.6, −3037.3)), so the mint keeps the raw bb.
+  const _bb = localBB(osmData, wgs84ToLocal), _frame = onGrid(_bb)
+  if (!_bb) throw new Error(`[faces] ⛔ ${SCENE}'s raw/osm.json carries no bbox — the face walk closes against the fetched envelope and there is none. Re-fetch.`)
+  streetPolylines.push([[_frame.x0, _frame.z0], [_frame.x1, _frame.z0], [_frame.x1, _frame.z1], [_frame.x0, _frame.z1], [_frame.x0, _frame.z0]].map(([x, z]) => ({ x, z })))
+  console.log(`    Faces close against the bb (${Math.round(_bb.x1 - _bb.x0)} × ${Math.round(_bb.z1 - _bb.z0)} m)`)
+
+  // The disc: ①'s `boundary` ring, the coast's centre + radius and the ramp flares read it far below. ⛔ No fallback: a
+  // missing file, ring, centre or radius refuses by name (splitBoundary, discOf).
+  const { disc: _disc } = splitBoundary(JSON.parse(readFileSync(join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8')), `derive: ${SCENE}'s neighborhood_boundary.json`)
+  const _discAt = discOf(_disc, `derive: ${SCENE}`)
+  const boundaryPolyXZ = _disc.boundary
+  const boundaryCenter = [_discAt.cx, _discAt.cz], boundaryRadius = _discAt.R
   let protoWaterRings = null
   // Parallel to protoWaterRings: `{subtype, name}` per water ring, off the feature's own tags.
   let protoWaterMeta = null
-  try {
-    const boundaryData = JSON.parse(readFileSync(
-      join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
-    ))
-    boundaryPolyXZ = boundaryData.boundary
-    boundaryCenter = boundaryData.center || null
-    boundaryRadius = boundaryData.radius || 0
-    const boundaryRing = boundaryData.boundary.map(([x, z]) => ({ x, z }))
-    if (boundaryRing.length > 2) {
-      const first = boundaryRing[0], last = boundaryRing[boundaryRing.length - 1]
-      if (first.x !== last.x || first.z !== last.z) boundaryRing.push({ x: first.x, z: first.z })
-      streetPolylines.push(boundaryRing)
-      console.log(`    Injected neighborhood boundary (${boundaryRing.length} points)`)
-    }
-  } catch (e) {
-    console.log(`    (no neighborhood_boundary.json — skipping: ${e.message})`)
-  }
 
   const nodedSegments = nodeEdges(streetPolylines)
   const faces = polygonize(nodedSegments)
@@ -3230,8 +3231,15 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   const IX_SNAP = 1.0 // meters — tolerance for matching noded vertices to polylines
 
   // Collect all noded intersection vertices (degree >= 3 in the noded graph)
+  // ⛔ THE FRAME IS NOT A STREET (Boz, 2026-10-25): an intersection is where ≥ 2 STREET polylines meet. The bb rectangle
+  // closes the faces (above) and is noded with them, so a street that runs off the frame meets it at a degree-3 node; it
+  // is an edge of the drawing, never a junction, and its segments carry no degree here. (The disc ring used to feed this
+  // list the same way, at the rim.) ▶ node checks/claims-the-frame-makes-no-intersection.mjs
+  const onFrame = (seg) => [[0, 'x0'], [0, 'x1'], [1, 'z0'], [1, 'z1']].some(([c, k]) =>
+    Math.abs((c ? seg[0].z : seg[0].x) - _frame[k]) < 1e-6 && Math.abs((c ? seg[1].z : seg[1].x) - _frame[k]) < 1e-6)
   const nodedVertexDeg = new Map()
   for (const seg of nodedSegments) {
+    if (onFrame(seg)) continue
     for (const pt of [seg[0], seg[1]]) {
       const key = `${Math.round(pt.x * 10)},${Math.round(pt.z * 10)}`
       nodedVertexDeg.set(key, (nodedVertexDeg.get(key) || 0) + 1)
@@ -3241,6 +3249,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // Intersection vertices have degree >= 3 (two streets crossing = 4 segments meeting)
   const nodedIxPts = []
   for (const seg of nodedSegments) {
+    if (onFrame(seg)) continue
     for (const pt of [seg[0], seg[1]]) {
       const key = `${Math.round(pt.x * 10)},${Math.round(pt.z * 10)}`
       if (nodedVertexDeg.get(key) >= 3) {
@@ -4855,13 +4864,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // x/z the fetch already writes on every vertex, so no second projection can disagree with
     // the first. ⛔ The coast closes against THIS, never against the disc: the disc is a render
     // knob and the bb is declared data.
-    const _bb = (() => {
-      const bx = osmData.bbox
-      if (!bx) return null
-      const a = wgs84ToLocal(bx.minLon, bx.maxLat), b2 = wgs84ToLocal(bx.maxLon, bx.minLat)
-      return { x0: Math.min(a[0], b2[0]), x1: Math.max(a[0], b2[0]),
-               z0: Math.min(a[1], b2[1]), z1: Math.max(a[1], b2[1]) }
-    })()
+    // (`_bb` is computed once, at the face walk: the raw bb; the walk itself closes on its gridded view.)
     const _coast = coastRings({ ground: osmData.ground || {}, buildings: osmData.buildings || [],
                                center: boundaryCenter, discR: boundaryRadius, bb: _bb })
     for (const line of _coast.report) console.log(line)

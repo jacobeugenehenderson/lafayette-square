@@ -9,11 +9,15 @@
  */
 
 // Snap precision in meters (0.1 = 10cm grid)
-const GRID = 0.1
+export const GRID = 0.1
 
 export function snapCoord(v) {
   return Math.round(v / GRID) * GRID
 }
+
+/** A bb rectangle on this grid. The face walk's noding (node.js) snaps every crossing to the grid, so a frame off it puts
+ *  its own nodes up to half a cell off its lines (BRIEF-the-disc-is-one-source §2b). */
+export const onGrid = (bb) => bb && ({ x0: snapCoord(bb.x0), x1: snapCoord(bb.x1), z0: snapCoord(bb.z0), z1: snapCoord(bb.z1) })
 
 export function snapCoords(coords) {
   const snapped = []
