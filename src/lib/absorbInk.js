@@ -199,8 +199,8 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     // ⭐ A CELL AT A CROSSING WITH NO NODE (a grade separation, a street over the coast) has no outline point, so no spoke split it:
     // its boundary runs one class, then the other. It changes class at exactly TWO of its own vertices — where the centrelines
     // cross, and where the two strokes' ink edges meet — and the chord between them splits it, one piece per class: topology,
-    // no new vertex, no search. ⛔ A cell whose class changes more than twice (or that has a hole) keeps its labels whole,
-    // classed by precedence (water, highway, road) and COUNTED by place: never silent.
+    // no new vertex, no search. ⛔ A cell that cannot be split so (an odd pairing, or a hole) REFUSES by name and place, as a
+    // cell touching zero or two faces does (Boz, 2026-10-25: no precedence fallback).
     const hs = f.cycles.length === 1 ? f.cycles[0].hs : null
     let split = false
     if (hs) {
@@ -225,8 +225,8 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
           pieces.forEach((P, q) => { const L = inkLabelsOf(P.map(k => hs[k])); if (L.some(l => owners[l]?.water || owners[l]?.gradeSeparated)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) }
       }
     }
-    if (!split) { census.mixed.push(`${[...kinds].join('+')}@${at0(f)}`); const rings = f.cycles.map(ringOf).filter(Boolean); if (rings.length) cells.push({ rings, labels, group: f.group }) }
+    if (!split) census.mixed.push(`${[...kinds].join('+')}@${at0(f)}`)
   }
-  if (census.mixed.length) console.log(`    [${who}][absorb] ⚠️ ${census.mixed.length} cell(s) hold two classes of owner and could not be split at two class changes — classed by label precedence (water, highway, road): ${census.mixed.slice(0, 6).join(' · ')}${census.mixed.length > 6 ? ' …' : ''}`)
+  if (census.mixed.length) throw new Error(`[${who}][absorb] ⛔ ${census.mixed.length} cell(s) hold two classes of owner and cannot be split at their class changes (an odd pairing, or a hole): ${census.mixed.slice(0, 8).join(' · ')}${census.mixed.length > 8 ? ' …' : ''}. Refusing.`)
   return { paint, cells, census }
 }
