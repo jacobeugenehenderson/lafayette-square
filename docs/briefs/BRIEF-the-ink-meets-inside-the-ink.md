@@ -112,8 +112,9 @@ bar is not lowered: once the fold is gone, anything under it reaches ② unfolde
    Not a missing node: skeleton.js nodes only at shared OSM nodes, and these pairs share none (mostly correct: different
    levels). ① unions every crossing whatever its layer, by ruling (Jacob, 2026-09-05: grade-separated chains are in the drawing,
    kept out of the block grid by the `gradeSeparated` stamp). So the sub-ink edge is a crossing coinciding with a vertex, and the
-   rule has to cover crossings, not only nodes. Exhibits: HPDM primary-link-124 × heels-wheels-path-0 · JH 99th-street-6 ×
-   99th-street-5 · JH tertiary-link-166 × motorway-link-97. ⛔ Not by moving geometry or by a post-union snap. **The builder
+   rule has to cover crossings, not only nodes. Exhibits (coincidence measured): HPDM primary-link-124 × heels-wheels-path-0 · JH 99th-street-6 ×
+   99th-street-5. ⚠️ JH tertiary-link-166 × motorway-link-97 crosses MID-segment on the skeleton (t 0.75); the mint strokes the
+   tessellated ribbons points, so a vertex may sit there, but that isn't measured. Cause NOT established for that one. ⛔ Not by moving geometry or by a post-union snap. **The builder
    proposes the construction to Boz before building it.** The folds go only when every town reads 0; until then the branch may
    land with the folds in, behind a named "fold still absorbs: <counts>" line.
    *Not this brief's* (filed for their own briefs): `skeleton.js#gradeFacts` marks a chain off-grade only if EVERY source way is
