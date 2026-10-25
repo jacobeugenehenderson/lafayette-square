@@ -29,6 +29,13 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
 - **(b) A real node** (degree ≥ 3).
 - **(c) A rim↔water join** (`__boundary__` → `__water__`; Huron, PTown).
 - **(d) Unplaced chain edges.** A handful of named exhibits; **cause not established.**
+- **(e) ⚠️ The ink is BROKEN at a chain cut (Zob, measured).** At some near-straight degree-2 cuts (bends of about 6°) the two
+  strokes don't touch. One block ring wraps both chains' butt ends and runs through the street, so the blocks either side
+  are one ring. Cause not established. Exhibits: LS `south-ewing-avenue-0|papin-street-5` (-713.034, -920.418); Huron
+  `meeker-street|temper-avenue` (1281.696, 553.452). It's part 1's ground (join the cut), and the presence check catches it:
+  ```
+  node checks/claims-a-chain-cut-keeps-its-owner-change.mjs --mutants   # RED today on every town, mostly missing on BOTH sides
+  ```
 
 ## 1. Read first (in full, these sections)
 
@@ -93,8 +100,8 @@ bar is not lowered: once the fold is gone, anything under it reaches ② unfolde
 
 - `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants`: GREEN on every poured town. Its mutant (today's
   mint) must go RED. Altadena has no protopolygon and counts RED loudly; that's correct, leave it.
-- **Every chain cut's owner change is a ① vertex:** a check Zob writes first (degree-2 chain ends against block-ring label
-  changes). Run on today's mint, it sizes the frontages already merged silently. It must be GREEN after your build.
+- **Every chain cut's owner change is a ① vertex, on both sides:** `node checks/claims-a-chain-cut-keeps-its-owner-change.mjs --mutants`.
+  It is RED today, and must be GREEN after your build. Report what happens to the (e) exhibits.
 - **Authoring survives:** `node checks/claims-simplify-preserves-authoring.mjs <scene>` (0 orphaned **and** 0 re-pointed)
   and `node checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs`, on every town.
 - **Corners unchanged where ① didn't change:** `claims-every-corner-is-one-of-three` and `claims-proto-corner-is-authored-radius`.
