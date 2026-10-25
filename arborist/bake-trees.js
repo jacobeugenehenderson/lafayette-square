@@ -119,8 +119,6 @@ function lampGlowAt(wx, wz) {
 // forbidden reason, land use (`lu:*`) and hardscape (sidewalk / asphalt / curb / parking) alike.
 export const SURVEYED_KEPT_ON = (reason) => typeof reason === 'string' && reason.length > 0
 
-// Canonical census-well filename → per-tree provenance `source` (Move 4). A well
-// may override with `meta.well`; unnamed wells fall back to their __kind.
 // The kit's canonical tree-well FILENAMES, read by default when a bake names no
 // placements (`cartograph/tree-bake-inputs.mjs` lists the same set). Provenance is
 // NOT read off these names: each well declares it (meta.well; readCensus).
