@@ -78,7 +78,9 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    style guide rules everything (2026-10-20: "choose only; the style decides, authoring handles fidelity"): the town's style picks
    the kind, data SELECTS among styles (OSM `lane_markings`, `lanes`, `divider`, `oneway`, class, grade) and never measures, and
    Survey can override per run. ⛔ No class list in code. ✅ The KINDS, RULED (Jacob, 2026-10-25: "stripe kinds look right"):
-   none · single broken yellow · double solid yellow · solid + broken yellow (MUTCD's centreline family). What data selects each
+   none · single broken yellow · double solid yellow · solid + broken yellow (MUTCD's centreline family). Defaults RULED (Jacob, 2026-10-25: "no residential stripes, double yellow OK for default otherwise"): residential/local → NONE;
+   a two-way street with no passing data → DOUBLE SOLID; a town norm or Survey may override. Grade-separated is a named exclusion
+   (the off-the-ground family, STYLE-GUIDE §10; Boz). What data selects each
    is the builder's proposal to Boz, recorded in `STYLE-GUIDE` (one home) with its sources.
 4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, the slit's painting, and every
    reader of the removed paths (the ground deformer reads shape.json's `ink`: name what it reads instead).
