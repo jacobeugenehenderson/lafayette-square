@@ -110,13 +110,15 @@ try {
     writeFileSync(join(d, 'neighborhood_boundary.json'), JSON.stringify(nb))
   }
   write('plain',     { version: 2, center: [0, 0], radius: R, boundary: ring })
-  write('withband',  { version: 2, center: [0, 0], radius: R, fadeBand: 200, boundary: ring })   // a retired field: geometry must ignore it
+  write('withband',  { version: 2, center: [0, 0], radius: R, fadeBand: 200, boundary: ring })   // a retired field: the reader refuses it (F)
   const reach = (st) => Math.round(Math.max(...st.clipPolygon.map(([x, z]) => Math.hypot(x, z))))
-  for (const sc of ['plain', 'withband']) {
-    const st = loadSceneStencil(tmp, sc)
-    ok(reach(st) === R, `${sc.padEnd(9)} clip reaches the radius exactly: ${reach(st)} m (want ${R})`)
-    ok(!('faceFade' in st), `${sc.padEnd(9)} the stencil carries no fade — geometry does not read it`)
-  }
+  const st = loadSceneStencil(tmp, 'plain')
+  ok(reach(st) === R, `plain     clip reaches the radius exactly: ${reach(st)} m (want ${R})`)
+  ok(!('faceFade' in st), `plain     the stencil carries no fade — geometry does not read it`)
+  // ⭐ a band in the boundary file can no longer move geometry because the one reader REFUSES the file by name
+  // (boundaryRecords.mjs#splitBoundary through sceneStencil, BRIEF-the-disc-is-one-source §1b) — stronger than ignoring it
+  let refused = null; try { loadSceneStencil(tmp, 'withband') } catch (e) { refused = e.message }
+  ok(!!refused && /fadeBand/.test(refused), `withband  the stencil reader refuses the retired field by name${refused ? '' : ' — it was READ'}`)
 } finally {
   rmSync(tmp, { recursive: true, force: true })
 }

@@ -30,7 +30,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { ZONE_PAD, squareAroundDisc, minimumEnclosingCircle } from '../../cartograph/discSquare.mjs'
-import { deriveFade, edgeBandOf } from '../../cartograph/boundaryRecords.mjs'
+import { deriveFade, edgeBandOf, discOf } from '../../cartograph/boundaryRecords.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { Text, Line } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
@@ -678,7 +678,7 @@ function ExtentBuildings({ footprints, centroid, radiusM, curating, excludedIds,
       }`,
   }), [])
   useEffect(() => {
-    mat.uniforms.uCenter.value.set(centroid?.x ?? 0, centroid?.z ?? 0)
+    if (centroid) mat.uniforms.uCenter.value.set(centroid.x, centroid.z)   // the disc's centre, never a defaulted origin
     // No circle yet → treat every building as inside (all warm) until the
     // operator resolves a boundary.
     mat.uniforms.uRadius.value = radiusM > 0 ? radiusM : 1e9
@@ -1335,7 +1335,14 @@ export default function ExtentApp() {
   // The centre is now: the operator's authored handle, else the TINT's centre, else the
   // frame origin. All three are stable — none of them moves when a loop is drawn.
   const discCenter = useMemo(() => {
-    if (committed) return { x: 0, z: 0 }
+    // ⛔ COMMITTED: the applied disc's own centre, through the one reader (boundaryRecords.mjs#discOf). It was hard-set to
+    // the ORIGIN, so a committed town whose centre is off it (LS (−15, −15), Huron (−46.42, −36.21)) drew its circle, tint
+    // and membership preview in the wrong place (BRIEF-the-disc-is-one-source §1b). Until the boundary arrives: no centre.
+    if (committed) {
+      if (!sceneBoundary) return null
+      const D = discOf(sceneBoundary, 'Extent (committed)')
+      return { x: D.cx, z: D.cz }
+    }
     // The draggable handle wins over everything. Stored lon/lat, projected live.
     if (centerLL && geo) {
       const [x, z] = wgs84ToLocal(geo, centerLL.lon, centerLL.lat)
@@ -1343,7 +1350,7 @@ export default function ExtentApp() {
     }
     if (coverageFit) return { x: coverageFit.x, z: coverageFit.z }
     return { x: 0, z: 0 }
-  }, [committed, centerLL, geo, coverageFit])
+  }, [committed, sceneBoundary, centerLL, geo, coverageFit])
 
   // Membership (INVERTED): a building is EXCLUDED if hand-hidden, or (not force-kept
   // AND (inside any loop OR outside the extent circle)). The circle is a coarse dial
@@ -1370,7 +1377,7 @@ export default function ExtentApp() {
 
   const excludedIds = useMemo(() => {
     const set = new Set()
-    if (!buildingCentroids) return set
+    if (!buildingCentroids || !discCenter) return set   // no centre yet (a committed disc still loading): nothing is drawn
     const R2 = radiusM > 0 ? radiusM * radiusM : Infinity
     // Mirrors pipeline.js:246-255 EXACTLY, including the polygon branch:
     //   hide → out · activate → in · inside any loop → out · then polygon, else circle.
@@ -1390,7 +1397,7 @@ export default function ExtentApp() {
 
   // The kept set's reach from the center — drives the auto-fit radius + the Pour gate.
   const keptFit = useMemo(() => {
-    if (!buildingCentroids?.length) return { radius: 0, count: 0 }
+    if (!buildingCentroids?.length || !discCenter) return { radius: 0, count: 0 }
     let radius = 0, count = 0
     for (const c of buildingCentroids) {
       if (loopOrHandOut(c.id)) continue

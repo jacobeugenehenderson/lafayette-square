@@ -23,6 +23,7 @@
  * Usage:    node fetch.js
  */
 
+import { discOf } from './boundaryRecords.mjs'
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { overpassQuery } from './overpass.mjs'
@@ -102,9 +103,10 @@ function main() {
     const nbPath = join(mapDir(SCENE), 'neighborhood.json')
     let nb
     if (existsSync(bndPath)) {
-      const bnd = JSON.parse(readFileSync(bndPath, 'utf-8'))
-      const [lon, lat] = localToWgs84(bnd.center?.[0] || 0, bnd.center?.[1] || 0)
-      nb = { radius: bnd.radius, center: { lon, lat }, from: 'applied disc (neighborhood_boundary.json)' }
+      // through the one reader: a file with no centre, radius or ring REFUSES (it used to read a missing centre as 0, 0)
+      const D = discOf(JSON.parse(readFileSync(bndPath, 'utf-8')), `fetch --pass=heavy: ${SCENE}`)
+      const [lon, lat] = localToWgs84(D.cx, D.cz)
+      nb = { radius: D.R, center: { lon, lat }, from: 'applied disc (neighborhood_boundary.json)' }
     } else {
       let d
       try { d = JSON.parse(readFileSync(nbPath, 'utf-8')) } catch {
@@ -114,8 +116,12 @@ function main() {
       nb = { radius: d.draftRadius, center: d.center, from: 'Extent DRAFT (no applied disc yet — this town has not been built)' }
     }
     console.log(`HEAVY pass disc: r=${nb.radius} m — ${nb.from}`)
-    const centre = nb.center && Number.isFinite(nb.center.lon) ? nb.center
-      : { lon: BBOX ? (BBOX.minLon + BBOX.maxLon) / 2 : NaN, lat: (BBOX.minLat + BBOX.maxLat) / 2 }
+    // ⛔ No invented centre: a DRAFT disc with no centre is refused (it used to take the bbox's midpoint, a disc nobody placed)
+    if (!(nb.center && Number.isFinite(nb.center.lon) && Number.isFinite(nb.center.lat))) {
+      console.error(`\n⛔ --pass=heavy: the ${nb.from} carries no centre — place the disc in Extent first. The heavy fetch is scoped to the disc.\n`)
+      process.exit(2)
+    }
+    const centre = nb.center
     let sq
     try { sq = squareAroundDisc(centre, nb.radius) } catch (err) {
       console.error(`\n⛔ --pass=heavy: ${err.message}\n   A scene always has a radius; this one does not, so the square cannot be derived.\n`)

@@ -44,6 +44,7 @@ import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M, d50For } from './shore-armour.mjs'
+import { discOf } from './boundaryRecords.mjs'
 import { waterRuns, WATER_EDGE_SKEL, resample, clipTraceToDisc, coastVerdict } from './shoreRuns.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels } from './waterLevel.mjs'
@@ -195,10 +196,8 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   // drawing, and shore outside the map would be reported as dry shore inside it.
   const bndPath = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
   if (!existsSync(bndPath)) throw new Error(`bake-revetment: ${scene} has no neighborhood_boundary.json — the disc is what says which shore is in the drawing, and without it every arc would be ruled as though the whole fetch were the map.`)
-  const bnd = JSON.parse(readFileSync(bndPath, 'utf8'))
-  const discC = Array.isArray(bnd.center) ? bnd.center : null
-  const discR = Number.isFinite(bnd.radius) ? bnd.radius : NaN
-  if (!discC || !(discR > 0)) throw new Error(`bake-revetment: ${scene}'s neighborhood_boundary.json has no usable center/radius (center=${JSON.stringify(bnd.center)}, radius=${bnd.radius}).`)
+  // the one reader: a file with no centre, radius or ring REFUSES by name (boundaryRecords.mjs#discOf)
+  const disc = discOf(JSON.parse(readFileSync(bndPath, 'utf8')), `bake-revetment: ${scene}`), discR = disc.R
 
   // ⭐⭐ THE DRAWN WATER DECIDES WHERE THE SHORE IS (Jacob, 2026-09-26: "The drawn water's edge
   // IS the mapped shoreline, and the revetment sits on it"). The same rings `bake-ground` paints
@@ -252,7 +251,7 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   // answer on the coast. It is COUNTED as outside and never ruled. (`clipTraceToDisc`.)
   const clipped = []
   for (let idx = 0; idx < raw.length; idx++) {
-    const { inside, outsideM: cut } = clipTraceToDisc(raw[idx], discC, discR)
+    const { inside, outsideM: cut } = clipTraceToDisc(raw[idx], disc)
     if (cut > 0) { outsideM += cut; outside.push({ index: idx, outsideM: +cut.toFixed(1), keptRuns: inside.length }) }
     for (const run of inside) clipped.push(run)
   }
@@ -412,7 +411,7 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   let structureM = 0
   for (const s of [...stoneAreas.map(a => ({ ...a, trace: [...a.ring, a.ring[0]] })), ...stoneLines.map(l => ({ ...l, trace: l.line }))]) {
     const rec = { id: s.id, kind: s.kind, name: s.name, form: s.ring ? 'area' : 'line', lengthM: 0, shoreM: 0, ownM: 0, outsideM: 0, noRockM: 0 }
-    const { inside, outsideM: cut } = clipTraceToDisc(s.trace, discC, discR)
+    const { inside, outsideM: cut } = clipTraceToDisc(s.trace, disc)
     rec.outsideM = cut
     for (const run of inside) {
       const path = resample(simplify(run, gridM / 2), gridM)

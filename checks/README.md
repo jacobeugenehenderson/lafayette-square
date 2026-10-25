@@ -157,7 +157,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 325. This is `npm test`.
+## safe — 326. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -191,6 +191,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | town.mjs |
 | `checks/claims-a-mover-stands-where-it-is.mjs` | "DOES A LIVE DOT — THE VISITOR, A COURIER — STAND WHERE IT IS, IN ANY TOWN, DRAWN BY THE TOWN?" |
 | `checks/claims-a-nodeless-crossing-is-grade-separated.mjs` | separated.mjs — WHERE TWO OSM STREET WAYS CROSS IN 2D WITHOUT A SHARED NODE, DOES OSM |
+| `checks/claims-a-oneway-runs-in-travel-order.mjs` | CLAIM — EVERY ONE-WAY CHAIN RUNS IN TRAVEL ORDER, AND A REVERSED WAY'S TAGS POINT THE WAY IT NOW RUNS. |
 | `checks/claims-a-parcel-keeps-all-its-parts.mjs` | parts.mjs — DOES A MULTIPART PARCEL REACH THE MAP WHOLE? |
 | `checks/claims-a-pour-adds-no-gitignore-lines.mjs` | "DOES A POUR ADD LINES TO .gitignore?" — the standing guard on scene tracking. |
 | `checks/claims-a-production-host-serves-only-its-own-town.mjs` | A TOWN'S PRODUCTION DOMAIN SERVES THAT TOWN AND NOTHING ELSE — and only a domain we own, live. |

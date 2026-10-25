@@ -42,7 +42,7 @@ import { createCameraTween } from '../camera/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
 
 import ribbonsRaw from '../data/ribbons.json'
-import lsNeighborhoodBoundary from '../../cartograph/data/lafayettesquare/neighborhood_boundary.json'
+import { discOf } from '../../cartograph/boundaryRecords.mjs'
 import { slabFetch } from '../lib/slabUrl.js'
 import { townForLook, INSTANCE, mapForLook } from '../instance.js'
 
@@ -251,7 +251,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // target (and on Designer, also re-assert the ortho's orientation) here
   // after a frame delay — giving the new controls instance time to mount.
   useEffect(() => {
-    const key = `${mapKey}:${shot}:${designHydrated}:${sceneBoundary?.radius || 0}`
+    const key = `${mapKey}:${shot}:${designHydrated}:${sceneBoundary ? sceneBoundary.radius : 'no-disc'}`
     if (appliedShot.current === key) return
     appliedShot.current = key
     const applyTarget = () => {
@@ -605,18 +605,18 @@ function useLoadData() {
 // Without this, V2's `blockRounded = stencil − asphaltRounded` is empty, which
 // kills cornerSidewalkPads (clipped against blockRounded and lands at zero rings)
 // and any other stencil-bound clip. ⚠️ It is a MASK for block fill — it is not the
-// clip for barriers (clipPolylineToBoundary) or centerlines (clipPolylineToRadius).
+// clip for barriers or centerlines (both clipPolylineToBoundary, the disc ring).
 // Shared by every center+radius scene so a new neighborhood is a one-line add.
 //
 // ⛔⛔ GEOMETRY DOES NOT READ THE FADE (Jacob, 2026-10-06, ruling (a)): the mask is the disc's own ring, at the radius
 // exactly — the same as the bake (`cartograph/sceneStencil.js`). It reached `fade.outer + 50` when a band was set; the
 // fade is now a Look's, ends at the radius and ruffles inward only, so nothing past the radius renders.
+// ⭐ Through the one reader (boundaryRecords.mjs#discOf): the ring, refused by name when the file lacks its disc. null only
+// while the scene's boundary has not been fetched. ⛔ Every town alike: LS's stencil used to be a static import of its own
+// boundary file (LS_STENCIL), a second channel for one town (BRIEF-the-disc-is-one-source §1b).
 function stencilFromBoundary(nb) {
-  const poly = nb?.boundary
-  if (!poly?.length || !nb?.center || !nb?.radius) return null
-  return poly.map(([x, z]) => [x, z])
+  return nb ? discOf(nb, 'Designer stencil').ring.map(([x, z]) => [x, z]) : null
 }
-const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 
 // Per-scene configuration. The single source of truth for "what's
 // different about this scene" — components above this line should not
@@ -629,7 +629,6 @@ const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 const MAP_REGISTRY = {
   'lafayettesquare': {
     ribbons: ribbonsRaw,
-    stencil: LS_STENCIL,
     hasAerial: true,
   },
 }
@@ -642,13 +641,14 @@ const MAP_REGISTRY = {
 function genericSceneConfig(sceneBoundary) {
   return {
     ribbons: null,                                  // → store.sceneRibbons at render
-    stencil: sceneBoundary ? stencilFromBoundary(sceneBoundary) : null,
+    stencil: stencilFromBoundary(sceneBoundary),
     hasAerial: true,                                // AerialTiles reads the active installation's geography
     // Its 3D is <Town> (src/components/Town.jsx) — the assembly production and Preview mount.
   }
 }
 function sceneConfig(scene, sceneBoundary) {
-  return MAP_REGISTRY[scene] || genericSceneConfig(sceneBoundary)
+  const reg = MAP_REGISTRY[scene]
+  return reg ? { ...reg, stencil: stencilFromBoundary(sceneBoundary) } : genericSceneConfig(sceneBoundary)
 }
 
 // ── Stage's live channels → <Town overrides> ─────────────────────────────────
@@ -709,6 +709,7 @@ export default function CartographApp() {
   const centerlineData = useCartographStore(s => s.centerlineData)
   const sceneRibbons = useCartographStore(s => s.sceneRibbons)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
+  const boundaryRefused = useCartographStore(s => s.boundaryRefused)
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const activeLookId = useCartographStore(s => s.activeLookId)
@@ -908,6 +909,15 @@ export default function CartographApp() {
       style={!inDesigner ? { background: '#000' }
         : bgColor !== '#1a1a18' ? { background: bgColor } : undefined}>
       <div className="carto-canvas-wrap" style={{ cursor }}>
+        {inDesigner && boundaryRefused && (
+          // ⛔ IN PLACE OF THE MAP: a boundary the one reader refused (or that is absent / unfetchable) is said, never drawn
+          // around (Zob's condition, BRIEF-the-disc-is-one-source §1b). Pending (undefined) shows nothing yet.
+          <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', padding: 32, background: '#1a1a18', color: '#f3d9a4', font: '14px/1.5 system-ui',
+            textAlign: 'center' }}>
+            <div style={{ maxWidth: 640 }}><strong>No map: the town's disc was refused.</strong><br />{boundaryRefused}</div>
+          </div>
+        )}
         <Canvas
           {...townCanvas}
           orthographic

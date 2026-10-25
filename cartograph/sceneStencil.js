@@ -2,24 +2,22 @@
  * sceneStencil — THE bake-side stencil derivation, in one place.
  *
  * The stencil's SSoT is the EXTENT tool: it authors
- * `cartograph/data/<scene>/neighborhood_boundary.json` (the pen boundary + radius
- * + fade bands). Every bake-side consumer derives its clip polygon from THAT file
+ * `cartograph/data/<scene>/neighborhood_boundary.json` (the centre, the radius and the ring
+ * derived from them). Every bake-side consumer derives its clip polygon from THAT file
  * through THIS function — never its own copy. Extracted from bake-ground.js
  * (2026-07-15) when bake-landscape needed the same polygon to cut the mountain
  * back off the town's base plate; a second derivation is how three
  * representations start drifting (project_ribbon_three_representations).
  *
- * ⚠️ TWO OTHER DERIVATIONS OF THIS SAME POLYGON EXIST and this header used to claim
- * the bake side had only one. Measured 2026-09-20: `stencilFromBoundary` in
- * CartographApp.jsx:783 (Designer) AND `deriveStencilBbox` in bake-terrain.js:76
- * (bake-side, so the "one place" claim above was false). All three now apply the
- * same rule — the clip IS the disc's ring — but they are still three call sites, not
- * one function, and collapsing them is unfinished work.
+ * ⭐ The disc itself is read through the ONE READER, boundaryRecords.mjs#discOf (BRIEF-the-disc-is-one-source §1b): the
+ * Designer's stencil (CartographApp.jsx#stencilFromBoundary) reads it the same way. bake-terrain's height extent
+ * (`deriveStencilBbox`, radius + STENCIL_BUFFER_M) is the one left outside, owned by the brief's §3.
  */
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
+import { splitBoundary, discOf } from './boundaryRecords.mjs'
 
-// Reads cartograph/data/<scene>/neighborhood_boundary.json and derives:
+// Reads cartograph/data/<scene>/neighborhood_boundary.json THROUGH THE ONE READER (boundaryRecords.mjs#discOf):
 //   - center, radius   — manifest emission + AO bbox anchor
 //   - clipPolygon      — Clipper mask: the disc's own ring, AT THE RADIUS exactly
 //
@@ -30,25 +28,12 @@ import { join } from 'path'
 // and nothing past it needs keeping. The fade itself is derived by its one reader, the ground bake
 // (`boundaryRecords.mjs#lookFade`). ▶ node checks/claims-the-disc-stays-inside-the-bb.mjs
 //
-// No-boundary (file absent / no `boundary`): clipPolygon = null.
-// ⚠️ An absent file still coerces radius to 1 and centre to [0,0] — a stand-in the ground bake refuses
-// (`bake-ground.js`, "no authored extent"). Its own ticket; not this one.
+// ⛔ NO INVENTED DISC (BRIEF-the-disc-is-one-source §1b): an absent file, ring, centre or radius REFUSES by name. It used
+// to return `{ center: [0, 0], radius: 1 }` and coerce `s.center || [0, 0]`, `s.radius || 1`, a stand-in only the ground
+// bake caught, by its own `radius > 1` sentinel.
 export function loadSceneStencil(root, scene) {
   const path = join(root, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
-  if (!existsSync(path)) return { center: [0, 0], radius: 1, clipPolygon: null }
-  const s = JSON.parse(readFileSync(path, 'utf-8'))
-  const center = s.center || [0, 0]
-  const radius = s.radius || 1
-  const clipPolygon = s.boundary?.length ? s.boundary.map(([x, z]) => [x, z]) : null
-  return { center, radius, clipPolygon }
-}
-
-// Even-odd point-in-polygon on the XZ plane.
-export function pointInPolygon(x, z, poly) {
-  let inside = false
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const [xi, zi] = poly[i], [xj, zj] = poly[j]
-    if (((zi > z) !== (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi)) inside = !inside
-  }
-  return inside
+  if (!existsSync(path)) throw new Error(`[sceneStencil] ⛔ ${scene} has no neighborhood_boundary.json — no disc, nothing to clip to. Author the extent first.`)
+  const D = discOf(splitBoundary(JSON.parse(readFileSync(path, 'utf-8')), path).disc, `sceneStencil: ${scene}`)
+  return { center: [D.cx, D.cz], radius: D.R, clipPolygon: D.ring.map(([x, z]) => [x, z]) }
 }
