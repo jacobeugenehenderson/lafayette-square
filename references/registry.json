@@ -5033,6 +5033,16 @@
         "cartograph/curb-cut-norm.mjs validateKerb / resolveCurbCutNorm — kit kerb rung (still 0: the house 6 in is not built)"
       ],
       "notes": "Answered by the kit house standard, r-house-kerb-height (6 in). A town's own norm (e.g. LS 0.15 m) stays on top."
+    },
+    {
+      "id": "q-survey-vertical-accuracy",
+      "ask": "A survey's stated vertical accuracy (RMSEz), to derive the seam cutoff where two surveys meet",
+      "neededBy": "BRIEF-the-shore-is-one-line — the seam gate where the bathymetry meets the lidar (Boz 2026-10-25: derive the cutoff from both surveys' stated accuracy; refuse a survey that states none)",
+      "status": "answered",
+      "findings": [
+        "f-3dep-ql-rmsez",
+        "f-ncmp-erie-2020-topo-vertical"
+      ]
     }
   ],
   "findings": [
@@ -8157,6 +8167,40 @@
       "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
       "canon": "references/README.md \"Codes first\" (the kit house standard)",
       "notes": "Smaller than this, a channelising leftover is not a raised island. The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation."
+    },
+    {
+      "id": "f-3dep-ql-rmsez",
+      "question": "q-survey-vertical-accuracy",
+      "kind": "value",
+      "value": {
+        "rmsezM": {
+          "QL0": 0.05,
+          "QL1": 0.1,
+          "QL2": 0.1,
+          "QL3": 0.2
+        }
+      },
+      "source": "usgs-3dep-lidar",
+      "where": "usgs.gov 3DEP 'Topographic Data Quality Levels (QLs)' table; a project's QL from WESM (`ql`)",
+      "quote": "QL0 Lidar 5 cm · QL1 Lidar 10 cm · QL2 Lidar 10 cm · QL3 Lidar 20 cm (RMSEz, non-vegetated)",
+      "scope": "the specification's REQUIRED RMSEz for the quality level, not a project's tested value",
+      "foundOn": "2026-10-25",
+      "foundBy": "Swash"
+    },
+    {
+      "id": "f-ncmp-erie-2020-topo-vertical",
+      "question": "q-survey-vertical-accuracy",
+      "kind": "value",
+      "value": {
+        "rmsezM": 0.102,
+        "at95M": 0.2
+      },
+      "source": "usace-ncmp-topobathy-erie-2020",
+      "where": "InPort 71402, Data Quality › Vertical Positional Accuracy",
+      "quote": "CZMIL topographic data - Compiled to meet 20 cm vertical accuracy at 95% confidence level.",
+      "scope": "the TOPOGRAPHIC returns (the seam is measured on dry ground); RMSEz = the 95% figure / 1.96 (NSSDA). The bathymetric returns are SQRT(0.25² + (0.0075d)²) m at 95%, shallow FOV",
+      "foundOn": "2026-10-25",
+      "foundBy": "Swash"
     }
   ]
 }
