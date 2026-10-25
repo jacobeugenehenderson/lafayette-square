@@ -17,8 +17,11 @@
 //      is one the neighbour shares — neighbours meet on the centreline exactly. Each edge carries a label: a centreline
 //      edge the stroke's pass on the face's side (`own` right, `ownL` left), the frame its owner, the water its owner.
 //      A dead end's spur is a dangling centreline inside one face's cell, so it is never a boundary: the face closes round it.
-// → { paint: [{ outer, outerLabels, holes, holeLabels } | null per face], cells: [{ rings, labels, group }] (the cells whose
-//   owners are water or a grade-separated highway — the classes the ground paints apart from the road), census }.
+// → { paint: [{ outer, outerLabels, holes, holeLabels, winding: 'block' } | null per face], cells: [{ rings, outer, labels, group,
+//   winding: 'left' }] (the cells whose owners are water or a grade-separated highway — the classes the ground paints apart
+//   from the road), census }. ⭐ THE TWO WIND OPPOSITE WAYS, and each record says which: a painted face is in the BLOCK
+//   convention (①'s holes: its outer clockwise, its holes counter-clockwise, the face on their RIGHT); a cell keeps the walk's
+//   (its region on the LEFT of every ring: the outer counter-clockwise). A cell's `outer` says whether `rings[0]` is its outer.
 // ⛔ ② never reads this (Boz's ruling A(i)): it offsets the un-absorbed face, so the authoring keys cannot move.
 import { nodeCrossings } from './latticeNode.js'
 import { CLIP_SCALE } from './lattice.js'
@@ -285,7 +288,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     // the block convention (`blocks` wound as ①'s holes): the outer negative, a hole positive, labels rotated with a reversal
     const flip = (r) => { const p = [...r.pts].reverse(), l = [...r.labs].reverse(); l.push(l.shift()); return { p, l } }
     const o = flip(outers[0]), H2 = rings.filter(r => r.a < 0).map(flip)
-    paint[g] = { outer: o.p, outerLabels: o.l, holes: H2.map(x => x.p), holeLabels: H2.map(x => x.l) }
+    paint[g] = { outer: o.p, outerLabels: o.l, holes: H2.map(x => x.p), holeLabels: H2.map(x => x.l), winding: 'block' }
   }
   // ⭐ A FACE THAT BORDERS NO INK HAS NOTHING TO ABSORB: its painted face IS its face, exactly (an absorption with no cells is
   // the identity; Boz, 2026-10-25), named and counted. "Borders no ink" is exact: none of its labels is one of ①'s ink labels
@@ -295,7 +298,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   faces.forEach((f, k) => { if (!f || paint[k] || !f.ring?.length) return
     const ls = [...(f.labels || []), ...(f.holeLabels || []).flat()]
     if (ls.some(l => inkLabel.has(l))) return
-    paint[k] = { outer: f.ring, outerLabels: [...f.labels], holes: (f.holes || []).map(h => h), holeLabels: (f.holeLabels || []).map(L => [...L]) }; noInk++ })
+    paint[k] = { outer: f.ring, outerLabels: [...f.labels], holes: (f.holes || []).map(h => h), holeLabels: (f.holeLabels || []).map(L => [...L]), winding: 'block' }; noInk++ })
   if (noInk) console.log(`    [${who}][absorb] ${noInk} face(s) border no ink — painted as themselves (nothing to absorb)`)
   const unpainted = faces.map((f, k) => f && !paint[k] ? k : null).filter(k => k != null)
   if (diag && unpainted.length) diag.unpainted = unpainted.map(k => ({ k, labels: [...new Set([...(faces[k].labels || []), ...(faces[k].holeLabels || []).flat()])].map(l => ({ l, owner: owners[l] ? `${owners[l].skelId}/${owners[l].side}/${owners[l].segOrd}` : null, faces: [...(facesOfLabel.get(l) || [])] })) }))
@@ -323,14 +326,16 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   // where the chord back to the first begins. ⛔ The starts alone dropped that vertex, so a two-edge piece came out degenerate
   // and every split piece lost a corner at its chord (the probe, 2026-10-25).
   const pieceRing = (hs) => ringOf({ hs: [...hs, { from: hs[hs.length - 1].to }] })
+  // a whole cell's record: its cycles as rings, `cycles[0]` its outer (the counter-clockwise cycle it was founded on)
+  const cellOf = (f, labels) => { const R = f.cycles.map(ringOf), rings = R.filter(Boolean); return rings.length ? { rings, outer: !!R[0], labels, group: f.group, winding: 'left' } : null }
   for (const f of allFaces) { if (f.type !== 'cell' || f.group == null || f.group === 'none') continue
     const labels = [...new Set(f.cycles.flatMap(c => inkLabelsOf(c.hs)))]
     // kept: every cell the WATER absorbed (whoever's ink it was — a breakwater's water side is the water's), and every land cell
     // holding a water or highway owner (the shore, the highway's); a land cell of road alone is the tile's asphalt, not kept
-    if (f.group === 'water') { const rings = f.cycles.map(ringOf).filter(Boolean); if (rings.length) cells.push({ rings, labels, group: f.group }); continue }
+    if (f.group === 'water') { const c = cellOf(f, labels); if (c) cells.push(c); continue }
     if (!labels.some(l => owners[l]?.water || owners[l]?.hwy)) continue
     const kinds = new Set(labels.map(classOfLabel))
-    if (kinds.size === 1) { const rings = f.cycles.map(ringOf).filter(Boolean); if (rings.length) cells.push({ rings, labels, group: f.group }); continue }
+    if (kinds.size === 1) { const c = cellOf(f, labels); if (c) cells.push(c); continue }
     // ⭐ A CELL AT A CROSSING WITH NO NODE (a grade separation, a street over the coast) has no outline point, so no spoke split it:
     // its boundary runs one class, then the other. It changes class at exactly TWO of its own vertices — where the centrelines
     // cross, and where the two strokes' ink edges meet — and the chord between them splits it, one piece per class: topology,
@@ -359,7 +364,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
         const rings = pieces && pieces.map(P => pieceRing(P.map(k => hs[k])))
         if (diag) Object.assign(f.splitWhy, { chords: chords.map(c => c.join('-')), pieces: pieces ? pieces.map(P => P.length) : 'chord endpoints not in one piece', rings: rings ? rings.map(r => r ? r.length : 'degenerate') : null })
         if (rings && rings.every(Boolean)) { split = true
-          pieces.forEach((P, q) => { const L = inkLabelsOf(P.map(k => hs[k])); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) }
+          pieces.forEach((P, q) => { const L = inkLabelsOf(P.map(k => hs[k])); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], outer: true, labels: L, group: f.group, winding: 'left' }) }) }
       }
     }
     // an annulus (a cell round a face no spoke reached): split by its own class changes, paired by owner (splitAnnulus)
@@ -367,7 +372,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
       const A = splitAnnulus(f.cycles[0].hs, f.cycles[1].hs, classOfH, ownOfH)
       if (A.pieces) { const rings = A.pieces.map(pieceRing)
         if (rings.every(Boolean)) { split = true; census.annuli++
-          A.pieces.forEach((P, q) => { const L = inkLabelsOf(P.filter(h => h.e)); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) } }
+          A.pieces.forEach((P, q) => { const L = inkLabelsOf(P.filter(h => h.e)); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], outer: true, labels: L, group: f.group, winding: 'left' }) }) } }
       else if (diag) f.splitWhy = { annulus: A.refused } }
     if (!split) { census.mixed.push(`${[...kinds].join('+')}@${at0(f)}`)
       if (diag) { const why = { at: at0(f), cycles: f.cycles.length, area: f.cycles.reduce((t, c) => t + cycArea(c), 0) / 2 / CLIP_SCALE / CLIP_SCALE }

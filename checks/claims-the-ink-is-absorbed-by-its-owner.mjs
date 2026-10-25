@@ -8,15 +8,20 @@
 // Read off each town's frozen ① (`ribbons.json` → protopolygon: `paint`, `blocks` / `blockLabels` / `blockHoleLabels`,
 // `owners`) — light, no build:
 //   (A) LABELLED — every edge of every painted face (outer and holes) carries a label naming an owner.
-//   (B) NEIGHBOURS SHARE THE CENTRELINE EXACTLY — each painted edge owned by a street (not the frame, not the water) has its
-//       reverse in exactly ONE other face's painted boundary: the two tiles meet on the same vertices, with no slit. Where the
-//       street's other side joined the WATER (a breakwater's water side; the ruling), its reverse lies on that water cell instead.
+//   (B) NEIGHBOURS SHARE THE CENTRELINE EXACTLY — each painted edge owned by a street (not the frame, not the water) lies, as
+//       the same two vertices in either direction, on exactly ONE other region's boundary — another painted face, or the water
+//       cell its other side joined (a breakwater's water side; the ruling) — and the two regions lie on OPPOSITE sides of it.
+//       ⭐ CORRECT BY CONSTRUCTION (Zob, 2026-10-25): which side a ring's region is on is read off the ring's own geometry and
+//       its role — an outer has its region on the left iff its signed area > 0, a hole the opposite — and the role from the
+//       record's structure (a face's `outer` / `holes`; a cell's `rings[0]` when `outer`). No rule per kind of record, so a
+//       producer that changes its winding convention cannot invert (B) silently.
 //   (C) THE OWNER IS THE FACE'S OWN — each painted edge's street is one the face's UN-absorbed ring already bordered
 //       (`blockLabels` / `blockHoleLabels`): the absorption reads ①'s labels, it never resolves a junction by geometry.
 //   (P) PLANTED, the hole link's probe (absorbInk#holeProbe): a hole cycle whose LONGEST edge is a spur walked out and back
 //       takes its probe off its longest REAL edge, never the spur (Zob, 2026-10-25).
-//   MUTANTS (in process, always run): one painted vertex moved one lattice step (B must go RED); one centreline edge given
-//   its twin's label, which is what a resolution by overlap does at a junction (C must go RED).
+//   MUTANTS (in process, always run): one painted vertex moved one lattice step (B must go RED); every painted face re-wound
+//   to the cells' convention (B must stay GREEN — it reads the winding, it does not assume it); one painted edge handed a
+//   street its face does not border, which is what a resolution by overlap does at a junction (C must go RED).
 //
 //   node checks/claims-the-ink-is-absorbed-by-its-owner.mjs [--scene=<town> …]
 // Exit 1 on any RED row, a town poured before the absorption, or a mutant that stays green.
@@ -49,27 +54,31 @@ function judge(P) {
     for (const [r, L] of ringsOf(f)) r.forEach((a, i) => { edges++; const l = L[i]
       if (l == null || !owners[l]) { unlabelled++; return }
       const id = K(a) + '>' + K(r[(i + 1) % r.length]); (dir.get(id) || dir.set(id, []).get(id)).push({ face: k, label: l }) }) })
-  // (B)
-  // an edge whose other side is the water lies on a WATER-group cell the mint absorbed into the water (inkCells): read there
-  const waterHas = new Set()
-  for (const c of (P.inkCells || [])) if (c.group === 'water') for (const r of c.rings) r.forEach((p, i) => waterHas.add(K(p) + '>' + K(r[(i + 1) % r.length])))
-  let street = 0, noTwin = [], twoTwins = 0, toWater = 0
+  // (B) every region's rings, each with the side its region is on read off its own geometry and role
+  const area2 = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
+  const side = new Map()      // undirected "lo|hi" → [{ region, left }]: `left` = the region lies left of lo→hi
+  const addRing = (region, r, isOuter) => { const regionLeft = (area2(r) > 0) === isOuter
+    r.forEach((p, i) => { const a = K(p), b = K(r[(i + 1) % r.length]); if (a === b) return
+      const fwd = a < b, id = fwd ? a + '|' + b : b + '|' + a
+      ;(side.get(id) || side.set(id, []).get(id)).push({ region, left: fwd ? regionLeft : !regionLeft }) }) }
+  faces.forEach((f, k) => { if (!f) return; addRing('f' + k, f.outer, true); (f.holes || []).forEach(h => addRing('f' + k, h, false)) })
+  ;(P.inkCells || []).forEach((c, j) => { if (c.group === 'water') c.rings.forEach((r, q) => addRing('w' + j, r, q === 0 && c.outer === true)) })
+  let street = 0, noTwin = [], twoTwins = 0, toWater = 0, sameSide = []
   for (const [id, es] of dir) for (const e of es) { if (!isStreet(e.label)) continue
     street++
-    const [a, b] = id.split('>'), tw = (dir.get(b + '>' + a) || []).filter(t => t.face !== e.face)
-    // its other side joined the WATER (the ruling): the water cell holds the edge in the SAME direction — a painted face is wound
-    // to the block convention (its outer clockwise), a cell keeps the walk's (its region on the left), so across a face | cell
-    // boundary the shared edge runs one way in both, where across face | face it runs reversed
-    if (tw.length === 0 && waterHas.has(a + '>' + b)) { toWater++; continue }
-    if (tw.length === 0) noTwin.push(`face ${e.face} at (${a.split(',').map(v => (v / CLIP_SCALE).toFixed(3)).join(', ')})`)
-    else if (tw.length > 1) twoTwins++ }
+    const [a, b] = id.split('>'), u = a < b ? a + '|' + b : b + '|' + a, all = side.get(u) || []
+    const mine = all.find(t => t.region === 'f' + e.face), tw = all.filter(t => t.region !== 'f' + e.face)
+    const at = `face ${e.face} at (${a.split(',').map(v => (v / CLIP_SCALE).toFixed(3)).join(', ')})`
+    if (tw.length === 0) noTwin.push(at)
+    else if (tw.length > 1) twoTwins++
+    else { if (tw[0].region[0] === 'w') toWater++; if (mine && tw[0].left === mine.left) sameSide.push(at) } }
   // (C)
   const own = (k) => new Set([...(P.blockLabels?.[k] || []), ...(P.blockHoleLabels?.[k] || []).flat()].map(l => owners[l]?.skelId).filter(Boolean))
   const cache = new Map(), foreign = []
   for (const es of dir.values()) for (const e of es) { if (!isStreet(e.label)) continue
     const S = cache.get(e.face) || cache.set(e.face, own(e.face)).get(e.face)
     if (!S.has(owners[e.label].skelId)) foreign.push(`face ${e.face}: ${owners[e.label].skelId}`) }
-  return { edges, unlabelled, street, noTwin, twoTwins, foreign, toWater }
+  return { edges, unlabelled, street, noTwin, twoTwins, foreign, toWater, sameSide }
 }
 
 for (const scene of ribbonScenes()) {
@@ -78,10 +87,12 @@ for (const scene of ribbonScenes()) {
   const P = JSON.parse(readFileSync(rp, 'utf8')).protopolygon
   console.log(`\n── ${scene}`)
   if (!P?.paint || !P?.owners) { console.log('  ⛔ its ① carries no absorbed faces (protopolygon.paint) — a pour before the absorption. Re-pour.'); red++; continue }
+  if ((P.inkCells || []).some(c => typeof c.outer !== 'boolean')) { console.log('  ⛔ its absorbed cells do not say which ring is the outer (inkCells[].outer) — a pour before the record carried its role; (B) cannot read a side. Re-pour.'); red++; continue }
   towns++
   const J = judge(P)
   row(!J.unlabelled, `(A) ${J.edges} painted edge(s) · ${J.unlabelled} with no owner`)
-  row(!J.noTwin.length && !J.twoTwins, `(B) ${J.street} street-owned edge(s) · ${J.toWater} with the water across (joined the water) · ${J.noTwin.length} with no neighbour on the same vertices${J.noTwin.length ? ` (e.g. ${J.noTwin.slice(0, 3).join(' · ')})` : ''} · ${J.twoTwins} shared by more than two faces`)
+  const okB = (m) => !m.noTwin.length && !m.twoTwins && !m.sameSide.length
+  row(okB(J), `(B) ${J.street} street-owned edge(s) · ${J.toWater} with the water across (joined the water) · ${J.noTwin.length} with no neighbour on the same vertices${J.noTwin.length ? ` (e.g. ${J.noTwin.slice(0, 3).join(' · ')})` : ''} · ${J.twoTwins} shared by more than two regions · ${J.sameSide.length} whose neighbour lies on the SAME side${J.sameSide.length ? ` (e.g. ${J.sameSide.slice(0, 3).join(' · ')})` : ''}`)
   row(!J.foreign.length, `(C) street-owned painted edges whose street the face did not already border: ${J.foreign.length}${J.foreign.length ? ` (e.g. ${J.foreign.slice(0, 3).join(' · ')})` : ''}`)
   // ── mutants ──
   const k0 = P.paint.findIndex(f => f?.outer?.length >= 4 && f.outerLabels.some(l => P.owners[l] && !P.owners[l].water && !P.owners[l].boundary))
@@ -91,20 +102,28 @@ for (const scene of ribbonScenes()) {
     const m = judge(moved), ok = m.noTwin.length > 0
     if (!ok) red++
     console.log(`  ${ok ? '✅' : '⛔'} mutant (B): face ${k0}'s vertex ${i} moved one lattice step — ${ok ? `RED as it must be (${m.noTwin.length} edge(s) lose their neighbour)` : 'stayed GREEN — (B) is blind'}`) }
-  { // a centreline edge given the label its TWIN carries in the other face (the overlap resolution's answer at a junction)
+  { // every painted face re-wound to the CELLS' convention (its region on the left), its labels carried with each edge
+    const rew = (r, L) => { const p = [...r].reverse(), l = [...L].reverse(); l.push(l.shift()); return [p, l] }
+    const paint = P.paint.map(f => { if (!f) return f; const [o, ol] = rew(f.outer, f.outerLabels), H = (f.holes || []).map((h, q) => rew(h, f.holeLabels?.[q] || []))
+      return { ...f, outer: o, outerLabels: ol, holes: H.map(x => x[0]), holeLabels: H.map(x => x[1]) } })
+    const m = judge({ ...P, paint }), ok = okB(m) && m.street === J.street
+    if (!ok) red++
+    console.log(`  ${ok ? '✅' : '⛔'} mutant (B): every painted face re-wound to the cells' convention — ${ok ? 'GREEN as it must be (B reads the winding, it does not assume it)' : `went RED (${m.noTwin.length} no neighbour · ${m.sameSide.length} same side) — (B) assumes a winding`}`) }
+  { // one street-owned painted edge handed a street the face does NOT border (a resolution by overlap at a junction hands a
+    // face its neighbour's street). ⛔ Was: the label its centreline twin carries — but both sides of a centreline are ONE
+    // street, so that mutant never found a case on any town and was never judged (the trial of 2026-10-25).
     const owners = P.owners, isSt = (l) => owners[l] && !owners[l].water && !owners[l].boundary
+    const bordered = (k) => new Set([...(P.blockLabels?.[k] || []), ...(P.blockHoleLabels?.[k] || []).flat()].map(l => owners[l]?.skelId).filter(Boolean))
     let done = null
-    const paint = P.paint.map((f) => f && { ...f, outerLabels: [...f.outerLabels] })
-    const dir = new Map(); paint.forEach((f, k) => f && f.outer.forEach((a, i) => dir.set(K(a) + '>' + K(f.outer[(i + 1) % f.outer.length]), { k, i })))
-    for (const [k, f] of paint.entries()) { if (!f || done) continue
-      for (let i = 0; i < f.outer.length && !done; i++) { const l = f.outerLabels[i]; if (!isSt(l)) continue
-        const t = dir.get(K(f.outer[(i + 1) % f.outer.length]) + '>' + K(f.outer[i])); if (!t || t.k === k) continue
-        const tl = paint[t.k].outerLabels[t.i]; if (!isSt(tl) || owners[tl].skelId === owners[l].skelId) continue
-        f.outerLabels[i] = tl; done = { k, other: owners[tl].skelId } } }
-    if (!done) console.log('  ⚪ mutant (C): no centreline edge between two DIFFERENT streets\' faces to swap — not judged')
-    else { const m = judge({ ...P, paint }), ok = m.foreign.length > 0
+    for (const [k, f] of P.paint.entries()) { if (!f || done) continue
+      const i = f.outerLabels.findIndex(isSt); if (i < 0) continue
+      const S = bordered(k), l2 = owners.findIndex((o, l) => isSt(l) && !S.has(o.skelId)); if (l2 < 0) continue
+      done = { k, i, l2, other: owners[l2].skelId } }
+    if (!done) { console.log('  ⛔ mutant (C): no painted face and foreign street to plant — (C) is not exercised on this town'); red++ }
+    else { const paint = P.paint.map((f, k) => k !== done.k ? f : { ...f, outerLabels: f.outerLabels.map((l, j) => j === done.i ? done.l2 : l) })
+      const m = judge({ ...P, paint }), ok = m.foreign.length > 0
       if (!ok) red++
-      console.log(`  ${ok ? '✅' : '⛔'} mutant (C): face ${done.k} handed its neighbour's street (${done.other}) on one edge — ${ok ? 'RED as it must be' : 'stayed GREEN — (C) is blind'}`) } }
+      console.log(`  ${ok ? '✅' : '⛔'} mutant (C): face ${done.k} handed a street it does not border (${done.other}) on one edge — ${ok ? 'RED as it must be' : 'stayed GREEN — (C) is blind'}`) } }
 }
 if (!towns) { console.log('\n⛔ no town carries absorbed faces — nothing was checked'); red++ }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the ink is absorbed by its owners: every painted edge labelled, neighbours on the same vertices, no foreign owner')
