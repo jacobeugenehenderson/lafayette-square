@@ -106,8 +106,9 @@ export function moonIntensity(moonAlt, illumFraction, sunAlt) {
 /**
  * Both bodies, as lights, at their real positions.
  *
- * `key` is the BRIGHTER of the two and is the one that casts — one shadow map,
- * never two. ⚠️ There is a visible handover at the crossover, when the shadow
+ * `key` is the BRIGHTER of the two and is the one that casts — ONE BODY casts, never
+ * both. (The reader's Tower Light, TowerLight.jsx, is the one other caster, ruled:
+ * Jacob, 2026-10-14, option C: "C may be the biggest cost but it's likely 50% or more of use cases".) ⚠️ There is a visible handover at the crossover, when the shadow
  * direction changes body. It is accepted rather than hidden: cross-fading it
  * would mean casting twice, and averaging it is the bug this file deletes.
  *

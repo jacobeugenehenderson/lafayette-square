@@ -80,6 +80,10 @@
  *   overrides        Stage's live authoring channels (see OVERRIDE_KEYS) — an operator drag shows
  *                    without a bake
  *   weatherMode      'live' (default) or Stage's forced weather
+ *   towerLight       the reader's Tower Light, in the plan shot: a light over the map for reading it at any hour (TowerLight.jsx).
+ *                    Nothing of it loads until the first true; then it compiles (a brief pause, said through onTowerLight)
+ *                    and every later toggle only moves its intensity. Default false.
+ *   onTowerLight     ('warming' | 'on' | 'off') => void — what the Tower Light is doing, for the app's control
  *   holdScrubbedTime a scrubbed clock stays where the operator put it (Stage)
  *   time             the town's clock, when the APP owns it (The Ward's scrubbed time): a Date draws the town at
  *                    that instant (sky, sun, light, neon's opening hours) and nothing ticks it; null is live (the
@@ -97,6 +101,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { TownPlace, useTownLoaded } from './TownPlace.jsx'
+import TowerLight from './TowerLight.jsx'
 import { TownScope, SHOT_KEY } from './townContext.js'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 import { QualityProvider } from '../lib/qualityProfile.js'
@@ -201,7 +206,7 @@ export const OVERRIDE_KEYS = [
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
   'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'heroSubject', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
-// PostProcessing's view vocabulary (half-res AO off the movie shot, the street-level bloom bump).
+// PostProcessing's view vocabulary (halo and grain off in the plan, the street-level bloom bump: usePostFxDriver).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 
 // Under a demand frameloop nothing renders unless invalidated. The movie shot on a profile that
@@ -548,7 +553,7 @@ export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
   holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, onFramed, planHeading = 'town', bearingRef,
-  controls = false, movers, onMovers, children,
+  controls = false, movers, onMovers, children, towerLight = false, onTowerLight,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -559,6 +564,9 @@ export default function Town({
   for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Error(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
   for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Error(`[Town] ⛔ unknown override "${k}"`)
   const on = (k) => DIAGNOSTIC_LAYERS.has(k) ? layers?.[k] === true : layers?.[k] !== false
+  // Latched on the first ask: the Tower Light stays mounted after (its programs compiled once), off by intensity.
+  const [towerArmed, setTowerArmed] = useState(false)
+  if (towerLight && !towerArmed) setTowerArmed(true)
   // The overhead plan's water reflects the sky as seen across it, not the zenith (waterMaterial WATER_PLAN).
   useEffect(() => { WATER_PLAN.value = shot === 'plan' ? 1 : 0 }, [shot])
   const o = overrides
@@ -630,7 +638,7 @@ export default function Town({
       <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
         onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} frameMode={frameMode}
         frameKey={frameKey} frameKeyAtMount={frameKeyAtMount} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} movers={movers} frameMover={frameMover} />
-      {controls && <RegimeControls regime={shot === 'plan' ? 'plan' : shot === 'street' ? 'street' : 'playback'} />}
+      {controls && <RegimeControls regime={shot === 'plan' ? 'overhead' : shot === 'street' ? 'street' : 'playback'} />}
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} paused={paused} />}
       <SkyStateTicker paused={paused} />
@@ -647,6 +655,8 @@ export default function Town({
       <LampGlowDriver lookId={lookId} bakeLastMs={bake} lampGlowOverride={o.lampGlow} />
       <NeonDriver lookId={lookId} bakeLastMs={bake} neonOverride={o.neon} />
       <WeatherPoller mode={weatherMode} />
+      {/* The Tower Light loads on its first ask and never before (Jacob: "the lamp is totally last place"). */}
+      {towerArmed && <TowerLight on={towerLight && shot === 'plan'} lookId={lookId} onState={onTowerLight} />}
       <AtmosphereDirectiveDriver lookId={lookId} />
       <WeatherEffects />
       {/* The wind, computed once per frame over the town's own disc; every wind consumer reads it. */}

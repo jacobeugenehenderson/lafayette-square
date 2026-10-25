@@ -1589,7 +1589,7 @@ function CelestialBodies({
 
     // ⭐⭐ THE TWO BODIES, EACH AT ITS OWN REAL POSITION. `bodyLights` returns the
     // sun and the moon as lights and hands back whichever is BRIGHTER as the key
-    // (it casts; one shadow map, never two) and the other as the counter.
+    // (it casts; one body casts, never both — the Tower Light is the one other caster, TowerLight.jsx) and the other as the counter.
     // ⛔ WHAT WAS HERE: `_sunLP.clone().lerp(_nightLP, nightBlend)` — the key
     // light's POSITION averaged between the two bodies. Real at each end, a
     // phantom across the whole twilight handover, and everything in the scene
@@ -1780,9 +1780,11 @@ function CelestialBodies({
           specular lobe per light, and waterMaterial already hands it a wave
           normal, so a low sun and a risen moon lay TWO paths on the lake, on
           their two real azimuths, with no shader change at all.
-          ⛔ IT DOES NOT CAST. One shadow map, never two — and the casting light
+          ⛔ IT DOES NOT CAST. One body casts, never both — and the casting light
           keeps PrimaryOrb's camera-fitted frustum (3dcb5dd3) precisely because a
           second caster without that treatment silently gets LS's old ±900 box.
+          (The one other caster is the reader's Tower Light, ruled — Jacob, 2026-10-14, option C: "C may be the biggest cost but it's likely 50% or more of use cases" —
+          and its frustum is fitted to the view, never a box: TowerLight.jsx.)
           ⚠️ It carries NO operator channel. `dirSun`/`dirMoon` are authored per
           town against the two slots that exist today, and quietly repointing one
           would rewrite what an operator already tuned. Giving the counter its own

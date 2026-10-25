@@ -210,8 +210,12 @@ export const POSTFX_PIPELINE = [
   {
     id: 'ao', pass: N8AO, channel: 'ao', order: 10, ref: 'ao',
     props: (ctx) => ({
-      // half-res AO in any non-hero view (undefined viewMode = Stage, full-res).
-      halfRes: ctx.viewMode !== undefined && ctx.viewMode !== 'hero',
+      // ⭐ HALF-RES IN EVERY SHOT AND EVERY APP (Jacob, 2026-10-14). ⛔ Never per shot: a halfRes change makes N8AO
+      // build its AO, compositor and downsample materials anew, so the flight into Browse linked four programs
+      // synchronously (getProgramInfoLog ~420 ms on huron) — the hang into Browse. Measured at the movie's close camera,
+      // half beside full sits under the frame-to-frame noise (depth-aware upsampling on, N8AO's default). REMOVED: the
+      // per-shot switch (`ctx.viewMode !== 'hero'`). ▶ node checks/claims-the-flight-builds-no-ao.mjs
+      halfRes: true,
       aoRadius: AO_FLAT_DEFAULTS.radius,
       intensity: AO_FLAT_DEFAULTS.intensity,
       distanceFalloff: AO_FLAT_DEFAULTS.distanceFalloff,
@@ -277,14 +281,13 @@ export function mountedPasses({ quality, dofOn, inspect }) {
  * Mount the post-FX pipeline from POSTFX_PIPELINE (which passes: `mountedPasses`).
  *
  * @param refs      { ao, bloom } — refs the driver reaches the live passes through.
- * @param viewMode  production's view mode (undefined in Stage → full-res AO).
  * @param dofOn     resolved DoF on/off (drives the DoF gate + remount key).
  * @param inspect   Preview only: { toggles:{id:bool} } — the per-pass visibility matrix (an FX toggle unmounts its
  *                  pass to measure it). Per-pass cost is measured externally off renderer.info via GpuMonitor's
  *                  measureToggle.
  */
-export function RenderPipeline({ refs, viewMode, dofOn, inspect }) {
-  const ctx = { refs, viewMode, dofOn }
+export function RenderPipeline({ refs, dofOn, inspect }) {
+  const ctx = { refs, dofOn }
   // Which passes run is the quality profile's (qualityProfile.js), never a device sniff here.
   const mounted = mountedPasses({ quality: useQuality(), dofOn, inspect })
   // EffectComposer can only add/remove passes on REMOUNT, so its key is the mounted set.
