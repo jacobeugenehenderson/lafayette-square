@@ -37,12 +37,11 @@ import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
-import { readCoast } from './coastFile.mjs'
+import { mintInputs } from './mintInputs.mjs'
 import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { onGrid } from './snap.js'
 import { localBB } from './geography.mjs'
 import { parcelParts, pointInside, parcelId } from './parcelParts.js'
-import { streetDecks, waterWithoutDecks } from './structures.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1852,7 +1851,6 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
   const { disc: _disc } = splitBoundary(JSON.parse(readFileSync(join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8')), `derive: ${SCENE}'s neighborhood_boundary.json`)
   const _discAt = discOf(_disc, `derive: ${SCENE}`)
   const boundaryPolyXZ = _disc.boundary
-  const boundaryCenter = [_discAt.cx, _discAt.cz], boundaryRadius = _discAt.R
 
   const nodedSegments = nodeEdges(streetPolylines)
   const faces = polygonize(nodedSegments)
@@ -4850,34 +4848,15 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
           for (const row of E.rows) console.log(`      ${row.id}: ${row.candidates.length ? row.candidates.join(' or ') + ' mph' : '[U]'} (${row.basis}) ⇒ edge ${row.edge}${row.unknowns.length ? ' · ' + row.unknowns.join(' · ') : ''}`)
         }
       }
-      // ⭐⭐⭐ TESSELLATE THE CURVE PRIMITIVE. `st.points` is the CONTROL POLYGON — the smoothness
-      // lives in `st.segments`, and reading the anchors alone minted every curve into ① as a
-      // straight chord (LS: 225 beziers over 9,948 m, sagitta median 1.34 m / max 20.80 m).
-      // Jacob, on the render: "the protopoly isn't smooth at all, anywhere."
-      // ⛔ The SAME `tessellateAdaptive` the drawn centreline uses — one line everywhere, or the
-      // curb is a parallel offset of a line the operator cannot see. That half-migration has now
-      // happened twice on this one source; it does not happen a third time.
-      simplified = new Map((sk.streets || []).map(st => [st.id,
-        tessellateAdaptive((st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z])), st.segments)]))
-      // ⛔ `{x,z}` OBJECTS, NOT `[x,z]` PAIRS — the skeleton and the ribbons store the same frame
-      // in different shapes, and reading one as the other yields `undefined` for every coordinate
-      // and an EMPTY protopolygon that looks like "no blocks". Same near-miss `A08` records for
-      // `nb.polygon`. Converted here, once.
+      // ⭐ ①'s inputs (the tessellated curve, `hard`, the coast, the bb, the disc) are built in ONE place,
+      // `cartograph/mintInputs.mjs`, which claims-proto-frozen-matches-live calls too: the witness mints what the pour minted.
+      simplified = sk.streets || []
     }
-    const simplify = (s) => {
-      const pts = simplified?.get(s.skelId ?? s.name)
-      // ⭐ `hard` travels with the points: the mint stamps it onto every owner, so ② can ask
-      // "is this node a corner?" without ever reaching for a chain.
-      return pts?.length >= 2 ? { ...s, points: pts, hard: pts.hard || null } : null
-    }
-    const all = ribbonsLayer.streets.filter(s => s?.points?.length >= 2)
-    const mapped = all.map(s => ({ s, sim: simplify(s) }))
-    const unjoined = mapped.filter(m => !m.sim)
-    if (!simplified || unjoined.length) {
-      console.warn(`    ⛔ [①] NOT FROZEN — ${!simplified ? `no skeleton at ${skPath}` : `${unjoined.length} of ${all.length} chain(s) have no simplified geometry (${unjoined.slice(0, 4).map(m => m.s.skelId ?? m.s.name).join(', ')})`}. ⛔ Refusing to mint ① from the DERIVED chains: that silently produces a dense contour with phantom blocks, which renders and cannot be seen to be wrong.`)
+    const MI = simplified && mintInputs({ ribbonStreets: ribbonsLayer.streets, skeletonStreets: simplified, osm: osmData, bb: _bb, disc: _disc, discAt: _discAt, cleanDir: CLEAN_DIR, who: `derive: ${SCENE}` })
+    if (!simplified || MI.unjoined.length) {
+      console.warn(`    ⛔ [①] NOT FROZEN — ${!simplified ? `no skeleton at ${skPath}` : `${MI.unjoined.length} of ${MI.total} chain(s) have no simplified geometry (${MI.unjoined.slice(0, 4).join(', ')})`}. ⛔ Refusing to mint ① from the DERIVED chains: that silently produces a dense contour with phantom blocks, which renders and cannot be seen to be wrong.`)
     } else {
-    const pStreets = mapped.filter(m => !m.s.gradeSeparated).map(m => m.sim)
-    const pGradeSep = mapped.filter(m => m.s.gradeSeparated).map(m => m.sim)
+    const pStreets = MI.streets, pGradeSep = MI.gradeSep
     // ⭐ THE CIRCLE STENCILS ① (Jacob, 2026-09-06). The whole grid is built, then cut square
     // at the perimeter — "there should be no tips; the streets clip at the perimeter edge."
     // ⛔ The boundary is NOT passed as a chain; it is the CLIP. See mintProtopolygon's header.
@@ -4890,24 +4869,9 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     // the first. ⛔ The coast closes against THIS, never against the disc: the disc is a render
     // knob and the bb is declared data.
     // (`_bb` is computed once, at the face walk: the raw bb; the walk itself closes on its gridded view.)
-    // ⭐ THE COAST IS THE LIDAR'S (BRIEF-the-shore-is-one-line §1): clean/coast.json, traced by bake-coast.mjs where the
-    // lidar meets high water, OSM's water only its verifier. ⛔ No coast.json refuses; there is no OSM coast to fall to.
-    const _coast = readCoast(CLEAN_DIR, _bb, 'derive')
-    // ⭐ THE STREET RIDES THE DECK (Jacob, 2026-10-25): a deck a mint street crosses (structures.mjs#streetDecks, clipped by
-    // construction) is taken OUT of the water, so it is a land face and its street's walk and curb are built on it.
-    const _decks = _coast.coast ? streetDecks(osmData.ground || {}, pStreets) : { rings: [], decks: [] }
-    const _water = _coast.coast ? waterWithoutDecks(_coast.rings, _coast.arcs, _decks.rings) : { rings: [], arcs: [] }
-    const _holes = _water.rings.filter(r => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) < 0).length
-    // ⭐ ISLANDS go through the mint as HOLES in the water (step 5; Jacob 2026-10-26): ① strokes each island's closed shore arc,
-    // the land inside closes as a face, and every filled draw takes the face as holed polygons (coastFile.mjs#faceAsPolygons).
-    // ⛔ A STREET DECK standing clear of every shore is a hole the coast did not draw: it has no land root to take a height
-    // from (shoreStamp.mjs#deckHeights), so it refuses here, by name.
-    const _coastHoles = _coast.coast ? _coast.holes : 0
-    if (_holes > _coastHoles) throw new Error(`[①] ⛔ ${SCENE}: ${_holes - _coastHoles} street deck(s) stand clear of every shore (holes in the water the coast did not draw), so none has a land root to take its height from: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}`)
-    if (_coast.coast) console.log(`    [①] coast: ${_water.rings.length} water ring(s), ${_water.arcs.length} shoreline arc(s) — ${_coast.doc.from}${_holes ? ` · ${_holes} island(s)` : ''}${_decks.decks.length ? ` · ${_decks.decks.length} street deck(s) taken out of the water: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}`)
-    else console.log(`    [①] no coast: ${_coast.why}`)
+    for (const line of MI.coastReport) console.log(line)
     // ⚙ DIAGNOSTIC: the caller's `onAbsorbRefusal` (pipeline.js, on `--absorb-dump=<path>`) receives the absorption's inputs when it refuses
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _water.rings, coastArcs: _water.arcs, bb: _bb, onAbsorbRefusal: opts.onAbsorbRefusal || null })
+    const MP = mintProtopolygon({ streets: MI.streets, gradeSep: MI.gradeSep, boundary: MI.boundary, coast: MI.coast, coastArcs: MI.coastArcs, bb: MI.bb, onAbsorbRefusal: opts.onAbsorbRefusal || null })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
     let protoBlockClass = null
@@ -4969,7 +4933,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     // junction corner's curb cuts live off the shape without reaching for a state record (`cartograph/curb-cut-norm.mjs`).
     {
       const src = readSources(SCENE)
-      ribbonsLayer.streetDecks = _decks.decks.map(d => ({ ring: d.ring.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)]), streets: d.streets }))   // frozen beside ①, for the terrain
+      ribbonsLayer.streetDecks = MI.decks.map(d => ({ ring: d.ring.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)]), streets: d.streets }))   // frozen beside ①, for the terrain
     ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null, _registryRead)
       const N = ribbonsLayer.curbCutNorm
       // ⭐ the RUNG that decided each, and why every rung above it gave nothing — never the kit's value printed as the town's

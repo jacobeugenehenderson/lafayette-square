@@ -18,6 +18,7 @@
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
 import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
+import { mintInputsOf } from '../cartograph/mintInputs.mjs'
 
 const scenes = ribbonScenes()
 const RIB = ribbonsPath
@@ -36,24 +37,16 @@ for (const scene of scenes) {
     console.log('       The tool will re-derive it live and say so. Pour to freeze it.')
     continue
   }
-  // ⛔⛔ FIXED 2026-09-06 — THIS CHECK WAS MINTING FROM THE WRONG INPUT AND REPORTING A CORRECT
-  // ARTIFACT AS STALE. It built the live side from `rb.streets` — the DERIVED, densified chains —
-  // while `derive.js` freezes ① from `clean/skeleton.json`'s SIMPLIFIED points (ruled 2026-09-06,
-  // `SKELETON.md §0.1`). So it compared two different constructions and printed
-  // "⛔ THE ARTIFACT IS STALE — Re-pour this scene" over an artifact that was provably correct:
-  // frozen 147 rings / 2,246 owners vs a live 157 / 19,094, where 19,094 is precisely the
-  // pre-ruling densified stamp count. ⭐ A wrong INSTRUCTION is worse than a wrong number — this
-  // one sent its reader to re-pour a good scene. The instrument did not move when its input did.
-  const skPath = `cartograph/data/${scene}/clean/skeleton.json`
-  if (!fs.existsSync(skPath)) { console.log(`   ⛔ no skeleton at ${skPath} — REFUSING to check (⛔ never fall back to the dense chains: that is the bug this comment records)`); failed = true; continue }
-  const simp = new Map((JSON.parse(fs.readFileSync(skPath, 'utf8')).streets || []).map(st => [st.id,
-    (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
-  const mapped = rb.streets.filter(s => s?.points?.length >= 2)
-    .map(s => { const pts = simp.get(s.skelId ?? s.name); return pts?.length >= 2 ? { ...s, points: pts } : null })
-  if (mapped.some(m => !m)) { console.log(`   ⛔ ${mapped.filter(m => !m).length} chain(s) have no simplified geometry — REFUSING, exactly as derive.js does`); failed = true; continue }
-  const streets = mapped.filter(m => !m.gradeSeparated)
-  const gradeSep = mapped.filter(m => m.gradeSeparated)
-  const L = mintProtopolygon({ streets, gradeSep, eps: F.eps })
+  // ⭐ THE LIVE SIDE IS MINTED FROM THE POUR'S OWN INPUTS — `cartograph/mintInputs.mjs`, the one builder derive.js calls:
+  // the simplified skeleton tessellated, `hard`, the boundary, the coast and its arcs, the bb. ⛔ This check once built its own
+  // copy twice over and was wrong both times: from the densified chains (2026-09-06), then without boundary / coast /
+  // coastArcs / bb (Zob, 2026-10-25), so every coast town read STALE over a correct artifact. A wrong instruction ("re-pour")
+  // is worse than a wrong number.
+  let MI
+  try { MI = mintInputsOf(scene, rb.streets) } catch (e) { console.log(`   ${e.message} — REFUSING to check`); failed = true; continue }
+  if (MI.unjoined.length) { console.log(`   ⛔ ${MI.unjoined.length} chain(s) have no simplified geometry — REFUSING, exactly as derive.js does`); failed = true; continue }
+  const quiet = (f) => { const l = console.log, w = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
+  const L = quiet(() => mintProtopolygon({ streets: MI.streets, gradeSep: MI.gradeSep, boundary: MI.boundary, coast: MI.coast, coastArcs: MI.coastArcs, bb: MI.bb, eps: F.eps }))
   const q = (v) => Math.round(v * 1e6) / 1e6      // the artifact's own write precision
   const ringsEq = F.rings.length === L.rings.length && F.rings.every((r, i) =>
     r.length === L.rings[i].length && r.every((p, j) => q(p[0]) === q(L.rings[i][j][0]) && q(p[1]) === q(L.rings[i][j][1])))
