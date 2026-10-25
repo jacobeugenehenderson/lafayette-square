@@ -85,7 +85,7 @@ an equivalent. Checks 1–2 have no live instrument: their probes walked `ribbon
 `_archive/POLYGON-FIRST-slit-probes-on-ribbons-tiles-RETIRED-2026-10-25.md`); **target 0**.
 
 > ⭐⭐ **THE MEASUREMENT — two different vertices, two different numbers. Never conflate them.**
-> ▶ `node scratch/coupler-slit-universal.mjs` (TIP, Checks 1–2) · `node scratch/coupler-slit-anatomy.mjs` (MOUTH, Check 5)
+> ⚰️ No live instrument: both probes (`coupler-slit-universal`, `coupler-slit-anatomy`) read `ribbons.tiles`, deleted 2026-10-25 with caps-from-shape. The table is a dated record (→ `_archive/POLYGON-FIRST-slit-probes-on-ribbons-tiles-RETIRED-2026-10-25.md`); the two ⛔ reading rules below stay live doctrine.
 >
 > | | measured | what it means |
 > |---|---|---|
