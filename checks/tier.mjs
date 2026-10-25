@@ -204,14 +204,25 @@ export function execSelfTest() {
 }
 
 /** The text between the parenthesis at `open` and its partner, strings respected. null if it never closes. */
-function balancedArg(code, open) {
+// ⭐ STRUCTURE IS READ ON THE BLANKED TEXT (`lex`): a quote inside a REGEX literal opens no string, so a `(`, `)` or `,` after it
+// is still seen (claims-no-corner-at-a-true-geometry-edge's `.replace(/from '(…)'/g, …)` mis-tiered LIVE, 2026-10-25). The
+// blanked text has the same length as comment-free code, so a position found there slices the real text. Where the lengths
+// differ (text that still holds a comment), the raw text is scanned as before.
+const _structural = new Map()
+function structural(s) {
+  let b = _structural.get(s)
+  if (b === undefined) { b = lex(s).blank; if (b.length !== s.length) b = s; if (_structural.size > 4096) _structural.clear(); _structural.set(s, b) }
+  return b
+}
+function balancedArg(text, open) {
+  const code = structural(text)
   let depth = 0, q = null
   for (let i = open; i < code.length; i++) {
     const c = code[i]
     if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
     if (c === '"' || c === "'" || c === '`') { q = c; continue }
     if (c === '(') depth++
-    else if (c === ')' && --depth === 0) return code.slice(open + 1, i)
+    else if (c === ')' && --depth === 0) return text.slice(open + 1, i)
   }
   return null
 }
@@ -231,17 +242,17 @@ function inStringHere(code, at) {
 }
 
 /** `s` split at each top-level `sep` (outside brackets and strings). */
-function splitTop(s, sep) {
-  const parts = []; let depth = 0, q = null, start = 0
+function splitTop(text, sep) {
+  const s = structural(text), parts = []; let depth = 0, q = null, start = 0
   for (let i = 0; i < s.length; i++) {
     const c = s[i]
     if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
     if (c === '"' || c === "'" || c === '`') { q = c; continue }
     if ('([{'.includes(c)) depth++
     else if (')]}'.includes(c)) depth--
-    else if (depth === 0 && s.startsWith(sep, i)) { parts.push(s.slice(start, i)); start = i + sep.length; i += sep.length - 1 }
+    else if (depth === 0 && s.startsWith(sep, i)) { parts.push(text.slice(start, i)); start = i + sep.length; i += sep.length - 1 }
   }
-  parts.push(s.slice(start))
+  parts.push(text.slice(start))
   return parts.map(p => p.trim())
 }
 
@@ -274,7 +285,8 @@ function union(rs) {
   return { paths: rs.flatMap(r => r.paths) }
 }
 /** A top-level `c ? a : b` → [c, a, b], else null (`?.` and `??` are not it). */
-function ternaryOf(expr) {
+function ternaryOf(text) {
+  const expr = structural(text)
   let depth = 0, q = null, qi = -1, nest = 0
   for (let i = 0; i < expr.length; i++) {
     const c = expr[i]
@@ -283,7 +295,7 @@ function ternaryOf(expr) {
     if ('([{'.includes(c)) depth++
     else if (')]}'.includes(c)) depth--
     else if (depth === 0 && c === '?' && expr[i + 1] !== '.' && expr[i + 1] !== '?' && expr[i - 1] !== '?') { if (qi < 0) qi = i; else nest++ }
-    else if (depth === 0 && c === ':' && qi >= 0) { if (nest) nest--; else return [expr.slice(0, qi).trim(), expr.slice(qi + 1, i).trim(), expr.slice(i + 1).trim()] }
+    else if (depth === 0 && c === ':' && qi >= 0) { if (nest) nest--; else return [text.slice(0, qi).trim(), text.slice(qi + 1, i).trim(), text.slice(i + 1).trim()] }
   }
   return null
 }
@@ -294,14 +306,15 @@ function functionBody(name, code) {
   const at = defs[0].index + defs[0][0].length
   return code[at] === '{' ? '{' + braceBody(code, at) + '}' : code.slice(at).split('\n')[0].trim()
 }
-function braceBody(code, open) {
+function braceBody(text, open) {
+  const code = structural(text)
   let depth = 0, q = null
   for (let i = open; i < code.length; i++) {
     const c = code[i]
     if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
     if (c === '"' || c === "'" || c === '`') { q = c; continue }
     if (c === '{') depth++
-    else if (c === '}' && --depth === 0) return code.slice(open + 1, i)
+    else if (c === '}' && --depth === 0) return text.slice(open + 1, i)
   }
   return ''
 }
@@ -380,8 +393,9 @@ function readImportPath(expr, file, code, depth = 0) {
     const decls = [...code.matchAll(new RegExp(`\\b(const|let|var)\\s+${expr.replace(/\$/g, '\\$')}\\s*=`, 'g'))]
     if (decls.length === 1 && decls[0][1] === 'const') {
       const start = decls[0].index + decls[0][0].length
-      const rest = code.slice(start).split('\n')[0]
-      return readImportPath(splitTop(rest, ',')[0].replace(/;\s*$/, ''), file, code, depth + 1)
+      // the binding's expression ends at its line's first top-level `;` (a second statement on the line is not part of it)
+      const rest = splitTop(code.slice(start).split('\n')[0], ';')[0]
+      return readImportPath(splitTop(rest, ',')[0], file, code, depth + 1)
     }
     if (decls.length) return { opaque: true }
     // The one parameter of one function of this file: every value its call sites pass.
@@ -482,6 +496,9 @@ export function importSelfTest() {
     //    below read as code (and a loader's import() as unreadable: claims-verge-bare left npm test, silently — the row in
     //    `cases` below). Both rows go RED on the flat reader.
     ["const a = `x ${b ? `it's ${c ? `d's` : 'e'}` : ''} z`\n// fetch(u) — prose\nexport const n = 1", (r) => r.tier === 'safe', 'two levels of nested templates, then a comment: the comment is still a comment'],
+    // ⭐ a `from '…'` inside a regex literal is not an import (claims-no-corner's import rewrite, 2026-10-25) — and a real one still is
+    ["const k = /from 'pkg-x'/g\nexport const n = 1", (r) => !r.why.some(w => /package\(s\) pkg-x\b/.test(w)), "a regex's `from 'pkg-x'` names no package"],
+    ["import y from 'pkg-x'\nexport const n = y", (r) => r.why.some(w => /package\(s\) pkg-x\b/.test(w)), 'a real `import … from` still names its package'],
   ]
   for (const [src, ok, what] of lexCases) {
     const r = classifyVirtual({ 'checks/claims-planted.mjs': src }, 'checks/claims-planted.mjs')
@@ -534,6 +551,14 @@ export function importSelfTest() {
     [copy({ home: 'cartograph/net.mjs', call: 'await rows(mutant())' }), 'live'],                // the copied module reaches out
     [copy({ post: "\nfor (const n of names) writeFileSync(n, '')" }), 'live'],                  // a write it cannot read
     [copy({ pre: "const tmpdir = () => ROOT\n" }).replace("import { tmpdir } from 'node:os'\n", ''), 'live'], // a `tmpdir` that is not the OS's
+    // ⭐ a binding followed by a second statement on its line is still read (claims-no-corner's shape, 2026-10-25) …
+    [copy().replace("'x.mjs')\n  writeFileSync(f", "'x.mjs'); writeFileSync(f"), 'safe'],
+    // … and that second statement is still judged on its own
+    [copy().replace("'x.mjs')\n", "'x.mjs'); writeFileSync(join(ROOT, 'out.json'), '{}')\n"), 'live'],
+    // ⭐ a quote inside a REGEX in the write's own argument (an odd count: `[^']`) opens no string: the write is still read, and lands in the temp dir
+    [copy().replace("src.replace('1', '2')", "src.replace(/from '([^']+)'/g, 'y')"), 'safe'],
+    // … and the same regex does not hide a write outside it
+    [copy().replace("src.replace('1', '2'))", "src.replace(/from '([^']+)'/g, 'y'))\n  writeFileSync(join(ROOT, 'out.json'), '{}')"), 'live'],
   ]
   for (const [src, want] of mutation) {
     const got = classifyVirtual({ ...disk, 'checks/claims-planted.mjs': src }, 'checks/claims-planted.mjs').tier
@@ -683,7 +708,9 @@ export function classify(file, seen = new Set(), depth = 0) {
     const sub = classify(dep, seen, depth + 1)
     if (sub.tier !== 'safe') { bump(sub.tier); why.push(`imports ${dep}, which can: ${sub.why.join(', ')}`) }
   }
-  const bare = [...code.matchAll(/from\s*['"]([^.'"][^'"]*)['"]/g)].map(m => m[1]).filter(s2 => !s2.startsWith('node:') && !builtinModules.includes(s2))
+  // an import's `from '…'` is CODE: one sitting inside a string or a regex literal's body (blanked by `lex`) names no package
+  const blankForPkgs = blankStrings(code)
+  const bare = [...code.matchAll(/from\s*['"]([^.'"][^'"]*)['"]/g)].filter(m => blankForPkgs.slice(m.index, m.index + 4) === 'from').map(m => m[1]).filter(s2 => !s2.startsWith('node:') && !builtinModules.includes(s2))
   const pkgs = [...new Set(bare.filter(b => /^[@a-z]/.test(b) && !/\s/.test(b) && b.length < 40))]
   if (pkgs.length && depth === 0) why.push(`imports package(s) ${pkgs.join(', ')} — not read from source`)
 
