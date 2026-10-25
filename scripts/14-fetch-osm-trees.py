@@ -287,6 +287,9 @@ def main():
 
     output = {
         "meta": {
+            # the well declares itself: SURVEYED reality, OSM natural=tree positions (arborist/bake-trees.js#readCensus reads
+            # kind and well off the file, never off its name)
+            "kind": "census", "well": "osm",
             "source": "OpenStreetMap (natural=tree, Overpass)",
             "url": OVERPASS,
             "scene": SCENE,
