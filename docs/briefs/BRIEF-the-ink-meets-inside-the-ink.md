@@ -114,8 +114,9 @@ bar is not lowered: once the fold is gone, anything under it reaches ② unfolde
    the sub-ink check's claim narrows to the CONSTRUCTION class. It allows a sub-ink edge only where two centrelines cross within
    `subInkLen` of a vertex or end of one stroke, by an exact predicate computed from the polylines (⛔ never a site list), printed on
    its own "true geometry" line (Zob changes the check; a planted butt beside a 5a site stays RED). **The folds go**, and ② must
-   take a true short edge: the corner gates at the 5a sites (HPDM, JH) test it. A faked corner there is a ② defect, never a
-   reason to restore the fold.
+   take a true short edge, proven by a CHECK (Zob's condition): no ① vertex at either end of a 5a edge gets a corner radius
+   (`protoRAt` R = 0) and `turnOf` reports no corner there. It uses the same exact predicate as the narrowed check, with a mutant.
+   If it's RED after the folds go, that's a ② defect and a stop, never a reason to restore the fold.
    *Not this brief's* (filed for their own briefs): `skeleton.js#gradeFacts` marks a chain off-grade only if EVERY source way is
    (a part-tunnel chain inks at grade) · `streetClass.js#isArea` reads only `area=yes`, so a highway multipolygon (JH Diversity
    Plaza, 21237405) is chained as a street.
