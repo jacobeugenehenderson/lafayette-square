@@ -19,8 +19,13 @@ control goes away in every room except Society and Street; Street keeping both i
 Disk: botanica/trees + test moved to the external drive Today (symlinked; INTAKE-CATALOGUE B1), dup zips deleted; 123 GB free.
 **PTown + Huron RE-FETCHED** (Jacob's go, 2026-10-25): raw/osm.json in integration AND the main checkout; backups
 `.claude/backups/refetch-2026-10-25/`; `claims-osm-ground-has-no-duplicates` 14/14 green (was RED since 09-25, 3950935c). Clears
-PTown's doubled chains (Zob: all 96 shared segments came from doubled ways). Owed: re-pour both (one heavy window) → Splice's
-PTown refusals should vanish. Filed for later: Huron university-drive-east-1 = tertiary-97 (skeleton-side, 9 m apart in raw);
+PTown's doubled chains (Zob: all 96 shared segments came from doubled ways). RE-POURED 00:28–00:33 (skeleton → pipeline
+--skip-elevation → promote-ribbons --yes; freshness + authoring-key checks green; PTown streets 426 → 419). ⚠️ integration's
+clean/ is a SYMLINK into the main checkout, so the pour wrote there; pre-pour originals are in the backups dir.
+**Splice (seam):** cuts, nodes and rim↔water BUILT (185e36b1, 839cf19f); LS 0 in every bucket. Ruled 2026-10-25: true offset at
+EVERY bend (one rule for the ink) · the reversed-face label shift (__boundary__ on street edges leaving a frame run, LS 91 …
+JH 179; pre-existing, a kit class) fixed in booleanLabelled's `segs` path, Zob reading first · unnoded skeleton crossings (HPDM
+primary-link-124 × heels-wheels, JH ×3) are skeleton-side, brief owed; the folds wait on them (one code path). Filed for later: Huron university-drive-east-1 = tertiary-97 (skeleton-side, 9 m apart in raw);
 fetch.js#mergeGround dedupes on `f.id` but features carry `osmId` (latent; no town has a heavy pass); a pour-side refusal of
 two features from one source way (brief owed). **⛔ kerf/leg-ends-at-ladder STOP:** it moves PTown's curb (drawn-twice
 10623/16274 m → 12619/27953 m; mat:curb rows new); candidate: booleanLabelled calls moved off the byte-identical path; Kerf bisecting.
