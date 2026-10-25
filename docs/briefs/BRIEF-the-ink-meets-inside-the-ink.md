@@ -93,10 +93,25 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
 4. **Then delete BOTH folds**, `offsetRingByRects`' and `taperWorkingCopy`'s first loop (it runs first, on the same ring;
    Splice, read), and `subInkLen` itself if nothing else reads it, **in the same commit**: the predecessor goes.
    ⚠️ Delete it only once the check is 0, or ② will read the edges unfolded.
+3a. **One rule for the ink's width (Boz, 2026-10-25):** a true offset (miter) at EVERY bend of every stroke, so the ink is ε wide
+   everywhere. Plain bends today leave it ε·cos(β/2) wide, and at sharp coast vertices that leaves water↔water sub-ink loops.
+   A named refusal past a miter bound, counted and never clamped. Corner gates on LS first, with every change explained by a
+   mitered bend.
+3b. **The reversed-face label shift (pre-existing; a kit class, ruled 2026-10-25):** after D the mint reverses positive-area faces
+   without rotating labels, so a street edge leaving a frame run is stamped `__boundary__` (a town whose disc reaches its bb would
+   lose that curb). The fix is in `booleanLabelled`'s `segs` path only (the two sameStroke callers, R and D). A surviving vertex
+   walked backward is labelled by the input edge it lies on. Set it in `res`, NEVER in `raw` (the minted fallbacks read raw[j] of
+   the next surviving vertex). Rotate in both reversal branches (outer + hole). The other three callers stay byte-identical
+   (Zob, read). Gate: off-bb `__boundary__` edges 0 on every town (Splice's rimoff.mjs, promoted with a mutant), keys identical.
 5. **Unplaced (d):** report what steps 1–3 leave of each exhibit. Don't chase them before 1–3 are built.
 
 **Acceptance is 0 at `subInkLen`, on every town (Boz, 2026-10-24).** ⛔ If the fix can't reach 0, stop and flag. The
 bar is not lowered: once the fold is gone, anything under it reaches ② unfolded.
+
+⚠️ **Not this brief's:** unnoded skeleton crossings within 8 mm of a vertex (HPDM primary-link-124 × heels-wheels-path-0; JH
+diversity-plaza-0 × -1, tertiary-link-166 × motorway-link-97, 99th-street-6) leave sub-ink edges the mint can't remove without
+moving geometry. The skeleton fix is a separate brief. **The folds go only when every town reads 0**; until then the branch may
+land with the folds in, behind a named "fold still absorbs: <counts>" line.
 
 ## 4. Gates
 
