@@ -5541,9 +5541,14 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     // slope, both falling out of the one multiplier with no case split.
     const kS = p.dkS, kE = p.dkE, src = p.dsrc, cSa = p.dcS, cEa = p.dcE, fSa = p.dfS, fEa = p.dfE
     // ⛔ `c` is the INNER target (`cMin`), `a` the OUTER (`arcFrom`). Never one array for both.
+    // ⭐ A DEPTH THAT IS THE ENVELOPE IS THE ENVELOPE — by derivation, never by arithmetic (Boz, 2026-10-25). A strip that runs
+    // to the envelope reads `lim` (= WB − cw), and cw + (WB − cw) is not WB in floats (1 ulp off in ~4% of pairs), so the walk's
+    // inner line and the land use's (LV_WB, struck AT WB) were two depths, and every `===` downstream (sameLadder, the
+    // joins' depth tests) could read one line as two. The datum is cw, the envelope WB: those two values, never a sum.
+    const at = (v) => (v === lim ? WB : cw + v)
     const span = (j, f) => {
       const l = L(src[j]), a = f(l, kS[j], cSa[j], fSa[j]), b = f(l, kE[j], cEa[j], fEa[j])
-      return a === b ? cw + a : [cw + a, cw + b]
+      return a === b ? at(a) : [at(a), at(b)]
     }
     // ⭐⭐⭐ THE SLIDE — `§6.1` step 5's `slidQuad`, both of whose edges travel. The port kept only
     // the outer one, so the walk WIDENED along the leg instead of sliding and then met the arc at a
@@ -5552,8 +5557,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     // ⛔ ONE MULTIPLIER STILL. `k` is the same scalar; it now moves the STRIP rather than one of its
     // edges. Nothing is constructed at the corner and the arc still resolves one depth for itself
     // (`RIBBONS §1` invariant 1) — the leg simply ARRIVES at that depth instead of stepping onto it.
-    const wFrom = (l, k, _c, a) => { const t = a == null ? 0 : a; return t + (l.walkFrom - t) * k }
-    const wTo   = (l, k, c) => (c == null ? l.walkTo : c + (l.walkTo - c) * k)
+    // on the open leg (k = 1) the strip IS the leg's own depth — the value itself, not `t + (d − t)·1`, which can miss it by an ulp
+    const wFrom = (l, k, _c, a) => { const t = a == null ? 0 : a; return k === 1 ? l.walkFrom : t + (l.walkFrom - t) * k }
+    const wTo   = (l, k, c) => (c == null || k === 1 ? l.walkTo : c + (l.walkTo - c) * k)
     // ⭐ Inside a licensed arc every edge answers with the ARC'S one depth, so the contour carries
     // no step across the corner: the band is BENT, not two bands meeting. Off an arc this returns
     // undefined and the leg is untouched — the leg keeps its own cross-section and its own ramp.
