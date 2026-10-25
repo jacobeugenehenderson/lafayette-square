@@ -53,6 +53,11 @@ census 0 as a check row; drawn-twice totals ≤ BEFORE on 4 towns, no new row > 
 findings, each to be briefed: two second 1 cm Clipper grids (`bake-terrain.js` flood union, `outer-coast.mjs`), Layer 0 class D ·
 `scripts/archive-photos-to-r2.mjs` takes the space-form scene flag. Instruments (Zob fixing): zero-separation-offset's stale SCALE
 reader · authored-framing's worktree-blind pin lookup. ~45 geometry REDs unclassified until one consistent bake: re-run after the tranche.
+**THE DIRTY DETECTOR CAN'T TELL A REFACTOR FROM A CHANGE (Kerf, measured on Huron's tranche bake, 2026-10-25).** `pour-code.mjs#contentChanged`
+hashes each step's code closure, so §2b moving wgs84ToLocal into geography#projectorOf (the same formula, new content) dirtied EVERY
+step through config.js/geography.mjs. No false dirty by its own definition, and no false clean seen; but it fails Jacob's "no
+rebakes unless it's a real change". Proposed (Boz): OUTPUT-hash propagation: a dirty step re-runs, but if its output is
+byte-identical, its downstream steps stay clean. Brief owed.
 **⭐ THE BUILD IS A RATCHET (Jacob, 2026-10-25).** "The step between the Extent tool and the Survey actually makes the artifact
 that populates Survey… when the user navigates to Section the map is baked… The bake from the designer into Stage is the major
 flattening and stamping step… We confuse things by using the API backdoor (you running things without the literal buttons) but in
