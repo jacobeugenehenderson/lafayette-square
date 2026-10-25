@@ -105,18 +105,17 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
    (Zob, read). Gate: off-bb `__boundary__` edges 0 on every town (Splice's rimoff.mjs, promoted with a mutant), keys identical.
 5. **Unplaced (d):** report what steps 1–3 leave of each exhibit. Don't chase them before 1–3 are built.
 
-**Acceptance is 0 at `subInkLen`, on every town (Boz, 2026-10-24).** ⛔ If the fix can't reach 0, stop and flag. The
+**Acceptance is 0 at `subInkLen` for the construction class, on every town (Boz, 2026-10-24; narrowed by §5a, 2026-10-25).** ⛔ If the fix can't reach 0, stop and flag. The
 bar is not lowered: once the fold is gone, anything under it reaches ② unfolded.
 
-5a. **A crossing that lands within `subInkLen` of a stroke's vertex or end (OPEN, design owed; Zob placed it 2026-10-25).**
-   Not a missing node: skeleton.js nodes only at shared OSM nodes, and these pairs share none (mostly correct: different
-   levels). ① unions every crossing whatever its layer, by ruling (Jacob, 2026-09-05: grade-separated chains are in the drawing,
-   kept out of the block grid by the `gradeSeparated` stamp). So the sub-ink edge is a crossing coinciding with a vertex, and the
-   rule has to cover crossings, not only nodes. Exhibits (coincidence measured): HPDM primary-link-124 × heels-wheels-path-0 · JH 99th-street-6 ×
-   99th-street-5. ⚠️ JH tertiary-link-166 × motorway-link-97 crosses MID-segment on the skeleton (t 0.75); the mint strokes the
-   tessellated ribbons points, so a vertex may sit there, but that isn't measured. Cause NOT established for that one. ⛔ Not by moving geometry or by a post-union snap. **The builder
-   proposes the construction to Boz before building it.** The folds go only when every town reads 0; until then the branch may
-   land with the folds in, behind a named "fold still absorbs: <counts>" line.
+5a. **A crossing that lands within `subInkLen` of a stroke's vertex or end is TRUE GEOMETRY (Splice, measured; ruled Boz
+   2026-10-25, vetoable by Jacob).** One mechanism (JH tertiary × motorway-link is a tessellated vertex 3.3 mm away). The exact ε
+   inks' union really has that short edge, so removing it needs a mm "near enough" tolerance, which the rounding rule forbids. So:
+   the sub-ink check's claim narrows to the CONSTRUCTION class. It allows a sub-ink edge only where two centrelines cross within
+   `subInkLen` of a vertex or end of one stroke, by an exact predicate computed from the polylines (⛔ never a site list), printed on
+   its own "true geometry" line (Zob changes the check; a planted butt beside a 5a site stays RED). **The folds go**, and ② must
+   take a true short edge: the corner gates at the 5a sites (HPDM, JH) test it. A faked corner there is a ② defect, never a
+   reason to restore the fold.
    *Not this brief's* (filed for their own briefs): `skeleton.js#gradeFacts` marks a chain off-grade only if EVERY source way is
    (a part-tunnel chain inks at grade) · `streetClass.js#isArea` reads only `area=yes`, so a highway multipolygon (JH Diversity
    Plaza, 21237405) is chained as a street.
