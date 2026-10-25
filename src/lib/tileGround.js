@@ -5154,9 +5154,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   for (const p of parts) {
     const ring = p.ring, n = ring.length
     const isC = (i) => padC.has(`${p.ri}|${i}`)
-    // ⭐⭐⭐ A LEG ENDS IN EXACTLY THREE PLACES AND THEY ARE ONE TEST — a PADDED arc's TANGENT, ①'s SQUARE corner (R = 0,
-    // so the ease made no arc; its two streets are two frontages), and a change of FRONTAGE. ⛔ An UNPADDED arc (a bend, a
-    // corner the operator unmarked) ends nothing: it is the band bent (`RIBBONS §1` invariant 1). `iaCorner` is not read
+    // ⭐⭐⭐ A LEG ENDS IN EXACTLY TWO PLACES AND THEY ARE ONE TEST — a PADDED arc's TANGENT, and a change of LADDER (the two
+    // edges' strips at different depths), on an arc or off one. ⛔ A change of LABEL whose ladders draw the same strips ends
+    // nothing, and neither does a corner the ease made no pad at (a square or declined corner): it is the band bent, exactly
+    // as an UNPADDED arc (a bend, a corner the operator unmarked) is (`RIBBONS §1` invariant 1). Boz, 2026-10-25, revising his
+    // 2026-10-22 ruling: PTown's stable-path-0 → stable-path-1 dipped to the kerb at a same-ladder label change, and a cut at
+    // ①'s declined corner only ever drew a seam (two legs abutting along the band's own depth). `iaCorner` is not read
     // here — it marks EVERY vertex of every eased arc, tangents included, so it ended a leg at each one: a lawn sawtooth and
     // both legs tapering into every bend (Loess, 2026-10-18; ▶ node checks/claims-a-bend-bends-the-band.mjs). Inside a padded arc that test was never reached; outside one it was only ever wrong. ⛔ NO GATE ON THE TWO DEPTHS: "the two depths decide the FORM, never WHETHER"
     // (`SECTION §4`, THE RAMP). Where nothing travels the ramp is zero-length and draws nothing —
@@ -5172,11 +5175,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       if (perpAt(p.ri, back) || perpAt(p.ri, v)) return false        // a perpendicular corner: the leg runs straight on
       if (isC(back) !== isC(v)) return true                          // the arc's tangent
       if (isC(v)) return false                                       // inside it, nothing ends
-      // ⭐ ON AN UNPADDED ARC only a change of DEPTHS ends a leg (Boz, 2026-10-18, Jacob: "sidewalk meets sidewalk continues
-      // smoothly"): an owner change mid-bend whose ladder draws the same strips at the same depths is no seam, so the band
-      // bends straight through it. Off an arc a change of frontage ends a leg as before (①'s square corner among them).
-      if (st.iaArc?.[p.si]?.[v] != null) return !sameLadder(M(p.ri, back), M(p.ri, v))
-      return M(p.ri, back) !== M(p.ri, v)
+      // ⭐ only a change of DEPTHS ends a leg (Boz, 2026-10-18, Jacob: "sidewalk meets sidewalk continues smoothly"): an owner
+      // change whose ladder draws the same strips at the same depths is no seam, so the band bends straight through it
+      return !sameLadder(M(p.ri, back), M(p.ri, v))
     }
     // ⭐⭐⭐ WHICH ARC IS THIS LEG RAMPING INTO — and it is the piece the port dropped.
     // `§6.1` step 5's slid quad ends at `pt(0, cMin)`: the inner edge's TARGET is the arc's own
@@ -5408,7 +5409,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   }
   if (sectionDump.on) for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
     const m = M(p.ri, i), l = stripLadder(m || {}, lim), r = (stamps[p.si] || [])[i]
-    sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: padC.has(`${p.ri}|${i}`) || null,
+    sectionDump.rows.push({ ri: p.ri, si: p.si, i, lu: key, cw, lim, corner: padC.has(`${p.ri}|${i}`) || null,
       owner: r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`,
       resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
       hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
