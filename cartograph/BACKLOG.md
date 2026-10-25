@@ -267,7 +267,7 @@ Cloudflare (Hover) and differs from the live provincetown.online. ❓ Jacob: laf
 lafayettesquare.online for a while, then retires at renewal. ⚠️ Jacob: Huron's shore 'looks bad' (PTown's 'gorgeous').
 PLACED (Mitre, measured): (1) one shore drawn from TWO sources: ①'s OSM coast (the water sheet and revetment) vs the median's
 lidar trace, off by p50 4 m / p90 42 m, with sand painted between and 22k m² of it below lake level, dry; (2) the water-side
-ground is draped on raw terrain, never lowered (7.4k m² of dry bed, sliver triangles: the jag). The fix is briefed (BRIEF-the-
+ground was diagnosed as draped on raw terrain (2026-10-21; deformer era; its dry-bed number had no command and is dropped; at HEAD the bed is written into terrain.bin under the OSM mask, so the live diagnosis is `docs/briefs/BRIEF-the-shore-is-one-line.md` §0). The fix is briefed (BRIEF-the-
 coast-from-the-lidar + the ground-knows-its-height water side) and was built WIP on tern/coast-from-lidar (33 commits,
 unmerged). Post-Thursday project. SIZED (Zob): the rename is ~2–4 h, mechanical (the town ids are
 already sealed); traps: T1, a slab must be RE-BAKED under the new name, never moved (the renderer reads manifest.look) · T2, the

@@ -42,7 +42,7 @@ at a time (load ≤ 8), scratch slabs only. No Publish or Promote. LS's pour sta
 1. **The water-side half:** lower the water side to the LOW-water plane, roll it into the S-curve, and write the
    gusset record (height gap and run per station) that the treatment reads (§5 "The shore's gusset").
 2. **(a) The coast from lidar**, Jacob's go ("OK", 2026-10-12), and with it the shore (the water-side half above and
-   (d) below): **moved to `BRIEF-the-coast-from-the-lidar.md`** for a fresh agent (Boz, 2026-10-13).
+   (d) below): **moved to `BRIEF-the-shore-is-one-line.md`** (via the retired `BRIEF-the-coast-from-the-lidar`) for a fresh agent (Boz, 2026-10-13).
 3. **(d)'s render:** a browser eye-check of `ShoreMedian` and `SlabRevetment` on the drawn ground (b0e65999).
 
 **Known, not yet in canon:** below 1 cm `gusset.mjs` reads ①'s ε band, not the gusset, and at 0.3 m with B = 5 m it

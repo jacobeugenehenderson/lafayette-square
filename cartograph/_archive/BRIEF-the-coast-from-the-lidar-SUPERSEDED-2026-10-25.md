@@ -1,7 +1,7 @@
 # BRIEF — the coast is drawn from the lidar: where the land meets high water
 
 <!-- BRIEF-STATE
-status: OPEN
+status: RETIRED (superseded by BRIEF-the-shore-is-one-line, 2026-10-25)
 dispatched: (Jacob, FRESH)
 written: 2026-10-13
 evict-when: RULING: Jacob passes Huron's and Provincetown's shorelines by eye at street level (smooth where land meets water, no jags, no cracks), each re-poured once from the lidar coast; scratch/ground-height/shore-sources.mjs reads the lidar waterline ON the ① coast chain, and gusset.mjs's open stations are 0 on both towns.
