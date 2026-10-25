@@ -29,7 +29,8 @@ end-to-end account (PIPELINE.md to the Diary).
   steps 60%). Retire it. `kerf/simplify-in-bake` 03c42d5f (worktree kerf): the mesh simplifier, HELD (too slow, 725 s), not superseded.
 - Kerf's own note: `.claude/worktrees/kerf-publish/HANDOFF-kerf.md` (⚠️ its "kerf-land HPDM candidate" is stale: staging is the reference).
 **Blocked:** PTown + Huron deploy bakes. Huron's stamp refusal is FIXED (cdl, merged). PTown refuses at the flatten on the ① seam
-(below) — ❓ Jacob's ① design call. **Rulings owed by Jacob:** ① seam fix (options below) · fine vs coarse ground for LS (0.1 m
+(below) — ✅ ruled by Boz under doctrine (2026-10-24): join chain cuts before stroking; build each real node's outline once from
+all its legs; never a post-union snap. Builds in the tranche. **Rulings owed by Jacob:** fine vs coarse ground for LS (0.1 m
 variant in kerf scratch) · roof tint / happenings for the neon contract fix · delete LS staging orphan GLBs · LS data untracked from git
 (the rename's 20 MB) · raw parcel files in the repo · trees outside the disc / horizon water / LS buildings ledger (disc brief §4).
 **⭐ JACOB'S ORDER (2026-10-24): get through the immediate backlog; ADD HURON TO THE POLISH LIST.** *"LS and HPDM have made
@@ -125,7 +126,7 @@ its residual measures zero (its own comment's condition). Brief next (Boz).
 of the boundary, early crops in the pour, height extent, per-family slab selectors) is the premise list of
 `docs/briefs/BRIEF-the-disc-is-one-source.md`. ❓ JACOB: surveyed trees outside the disc · the horizon water · LS's buildings ledger.
 
-**▶ PLACED (Zob, 2026-10-22), ① DESIGN QUESTION FOR JACOB: a stroke's own butt corners poke ≤ 1 lattice step out of the ink it
+**▶ PLACED (Zob, 2026-10-22), RULED (Boz, 2026-10-24, under '① has no nodes' + cut once; Jacob: it didn't need to come to him): a stroke's own butt corners poke ≤ 1 lattice step out of the ink it
 meets, and the union keeps them.** mintProtopolygon strokes each chain at ε then unions; where a stroke ENDS at a node, its end corners
 (end ± its own normal × ε) can sit < 1 step outside the neighbours' ink, leaving a sub-step ring edge between two owners. turnOf reads it
 as a turn (PTown Stable Path: 121°, a faked corner and PTown's flatten refusal site; protoRAt resolves R there). Counts (≤ 1.5 mm, owners
