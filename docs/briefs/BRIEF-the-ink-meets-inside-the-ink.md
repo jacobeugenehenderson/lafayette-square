@@ -108,10 +108,17 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
 **Acceptance is 0 at `subInkLen`, on every town (Boz, 2026-10-24).** ⛔ If the fix can't reach 0, stop and flag. The
 bar is not lowered: once the fold is gone, anything under it reaches ② unfolded.
 
-⚠️ **Not this brief's:** unnoded skeleton crossings within 8 mm of a vertex (HPDM primary-link-124 × heels-wheels-path-0; JH
-diversity-plaza-0 × -1, tertiary-link-166 × motorway-link-97, 99th-street-6) leave sub-ink edges the mint can't remove without
-moving geometry. The skeleton fix is a separate brief. **The folds go only when every town reads 0**; until then the branch may
-land with the folds in, behind a named "fold still absorbs: <counts>" line.
+5a. **A crossing that lands within `subInkLen` of a stroke's vertex or end (OPEN, design owed; Zob placed it 2026-10-25).**
+   Not a missing node: skeleton.js nodes only at shared OSM nodes, and these pairs share none (mostly correct: different
+   levels). ① unions every crossing whatever its layer, by ruling (Jacob, 2026-09-05: grade-separated chains are in the drawing,
+   kept out of the block grid by the `gradeSeparated` stamp). So the sub-ink edge is a crossing coinciding with a vertex, and the
+   rule has to cover crossings, not only nodes. Exhibits: HPDM primary-link-124 × heels-wheels-path-0 · JH 99th-street-6 ×
+   99th-street-5 · JH tertiary-link-166 × motorway-link-97. ⛔ Not by moving geometry or by a post-union snap. **The builder
+   proposes the construction to Boz before building it.** The folds go only when every town reads 0; until then the branch may
+   land with the folds in, behind a named "fold still absorbs: <counts>" line.
+   *Not this brief's* (filed for their own briefs): `skeleton.js#gradeFacts` marks a chain off-grade only if EVERY source way is
+   (a part-tunnel chain inks at grade) · `streetClass.js#isArea` reads only `area=yes`, so a highway multipolygon (JH Diversity
+   Plaza, 21237405) is chained as a street.
 
 ## 4. Gates
 
