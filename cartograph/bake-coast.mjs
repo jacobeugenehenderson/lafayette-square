@@ -142,6 +142,24 @@ export function waterAsFlown(wet, nr, w, W, H) {
   return { n, above: above.length, share: n ? above.length / n : 0, gapM: above.length ? above[above.length >> 1] : null }
 }
 
+/**
+ * The flattened water's level: the 1 cm mode of `ground` (NAVD88) over the wet cells with a value, decks excluded.
+ * @returns { navd88, share, cells } — share = the mode's count over every wet cell with a value; null with no mode
+ */
+export function flattenedWater(wet, deck, ground) {
+  const hist = new Map()
+  let cells = 0
+  for (let k = 0; k < wet.length; k++) {
+    if (!wet[k] || deck[k] || !Number.isFinite(ground[k])) continue
+    cells++
+    const key = Math.round(ground[k] * 100)
+    hist.set(key, (hist.get(key) || 0) + 1)
+  }
+  let mode = null, best = 0
+  for (const [key, c] of hist) if (c > best) { best = c; mode = key }
+  return best >= 2 ? { navd88: mode / 100, share: +(best / cells).toFixed(4), cells } : null
+}
+
 /** Mapped lines that hold water, drawn into the grid in half-cell steps (an 8-connected line a 4-way fill cannot cross). */
 export function heldCells(osmGround, grid) {
   const { W, H, x0, z0, step } = grid
@@ -352,6 +370,10 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // the guard reads the lidar's OWN no-return water: a deck borders its own landward root, which is not the water's rim
   const guard = waterAsFlown(wet, nr.map((v, k) => v && !deck[k] ? 1 : 0), w, W, H)
   if (guard.share > 0.5) throw new Error(`⛔ bake-coast: ${scene} — the water was flown ABOVE its high level (${levels.highName}${levels.tidal ? ', tidal' : ', a lake'}): ${(100 * guard.share).toFixed(1)}% of the ${guard.n.toLocaleString()} lidar cells bordering the open water stand above high water, median ${guard.gapM.toFixed(2)} m. Flown above high by ${guard.gapM.toFixed(2)} m; NO OWNER FOR THE BANK from the flown edge down to the water. Whether the coast is the authored level or the flown edge is Jacob's call (BRIEF-the-shore-is-one-line), not the code's. ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
+  // ⭐ THE FLATTENED WATER — the terrain's datum (Boz's ruling (B), 2026-10-25): the 1 cm MODE of the lidar over the coarse
+  // flood sheet, found from the lidar and the water record alone BEFORE any line is traced, so no line can move it.
+  const flattened = flattenedWater(wet, deck, ground)
+  if (!flattened) throw new Error(`⛔ bake-coast: ${scene} — the flood sheet holds no water with a lidar value whose level repeats (a mode of one sample is no mode), so there is no flattened water to take the terrain's datum from`)
   let nrIn = 0, nrOut = 0
   for (let k = 0; k < W * H; k++) if (nr[k]) { if (wet[k]) nrIn++; else nrOut++ }
 
@@ -422,6 +444,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     from: `the lidar meets ${levels.highName} (${levels.tidal ? 'tidal' : 'lake'}; NAVD88 ${levels.range.high.map(v => v.toFixed(3)).join('…')} m), traced at ${+fine.toFixed(3)} m along a ${G} m sheet over the fetched square`,
     level: { high: levels.highName, low: levels.lowName, tidal: levels.tidal, navd88High: levels.range.high, navd88Low: levels.range.low },
     dem: vd, gridM: G, fineM: +fine.toFixed(3),
+    flattened,
     water: simple,
     arcs, islands,
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
@@ -438,6 +461,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   console.log(`  VERIFY: ${(100 * V.lidarWetShareOfOsm).toFixed(1)}% of OSM's ${V.osmWaterHa} ha of water is lidar-wet · ${V.lidarWetWithoutOsmHa} ha lidar-wet with no OSM water (reported, not refused)`)
   console.log(`  DECKS: ${D.areas} area(s) + ${D.lines} line(s) (${D.unmappedWidth} at the typical ${D.typicalWidthM ?? '—'} m, f-ufc-main-walkway-width) = ${D.footprintHa} ha read as no return; ${D.offOsmWaterHa} ha of it lies off OSM's water`)
   console.log(`  NO RETURN (inside a tile, no value): ${T.noReturnEnteredHa} ha entered by the water · ${T.noReturnNotReachedHa} ha not reached (land dropouts) · NO COVERAGE (outside every tile): ${T.noCoverageHa} ha, never entered`)
+  console.log(`  THE FLATTENED WATER (the terrain's datum): NAVD88 ${flattened.navd88.toFixed(2)} m, the mode of ${flattened.cells.toLocaleString()} wet cell(s) with a value, share ${(100 * flattened.share).toFixed(1)}%`)
   console.log(`  THE WATER AS FLOWN: ${(100 * out.guard.share).toFixed(1)}% of ${out.guard.rimCells.toLocaleString()} cells bordering the open water stand above high water${out.guard.gapM != null ? ` (median ${out.guard.gapM.toFixed(2)} m above)` : ''} — the line is high water`)
   if (noValue) console.log(`  ${noValue.toLocaleString()} fine sample(s) along the line had no lidar value — no return traced as water, no coverage as dry`)
   if (hollows.length) console.log(`  ${hollows.length} hollow(s) below the line that the water does not reach (${T.hollowHa} ha) — dry, by the coast rule`)

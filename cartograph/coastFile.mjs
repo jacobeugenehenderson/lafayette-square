@@ -30,3 +30,28 @@ export function readCoast(cleanDir, bb, who) {
   for (const b of doc.water || []) { rings.push(b.outer); for (const h of b.holes || []) { rings.push(h); holes++ } }
   return { coast: true, rings, holes, arcs, doc }
 }
+
+/**
+ * The terrain grid's cells under `rings` (local metres): a scanline fill, EVEN-ODD over every ring at once, so a hole is
+ * an island. One copy: bake-terrain digs its bed under it and the shore check reads the same cells.
+ * @returns Uint8Array (width × height, row-major by z), 1 = under the water
+ */
+export function maskOf(rings, width, height, bounds) {
+  const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
+  const mask = new Uint8Array(width * height)
+  for (let j = 0; j < height; j++) {
+    const z = bounds.minZ + stepZ * j, xs = []
+    for (const ring of rings) for (let k = 0, n = ring.length; k < n; k++) {
+      const a = ring[k], b = ring[(k + 1) % n]
+      if ((a[1] > z) === (b[1] > z)) continue
+      xs.push(a[0] + (z - a[1]) * (b[0] - a[0]) / (b[1] - a[1]))
+    }
+    if (xs.length < 2) continue
+    xs.sort((m, n) => m - n)
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const i0 = Math.max(0, Math.ceil((xs[k] - bounds.minX) / stepX)), i1 = Math.min(width - 1, Math.floor((xs[k + 1] - bounds.minX) / stepX))
+      for (let i = i0; i <= i1; i++) mask[j * width + i] = 1
+    }
+  }
+  return mask
+}

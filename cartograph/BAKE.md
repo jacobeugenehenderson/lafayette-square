@@ -65,11 +65,11 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 > **`bake-terrain.js` IS now in the per-Look bake** (2026-07-02, the HiPointe bake→3D phase). Terrain is a **per-installation** artifact: `bake-terrain.js --scene=<id>` writes the scene's own heightfield to the portable folder `cartograph/data/<scene>/clean/terrain.{json,bin}`, and the bake **publishes it into the slab** (`public/baked/<look>/terrain.{json,bin}`) so the runtime fetches it BY lookId like `ground.bin`. `src/utils/terrainShader.js` loads the active look's slab terrain and re-points live on a Stage scene-switch (`reloadTerrain`). Runs before `ground` (its adaptive refine samples the relief). *(Rationale: `feedback_installations_are_independent` — a poured neighborhood must lift on its OWN relief.)*
 >
 > ### ⭐⭐⭐ THE HEIGHTFIELD IS NOT JUST A RESAMPLED DEM — IT DERIVES **WHERE ZERO IS**
-> `bake-terrain` asks `coastline.mjs` where the water is and takes **the sea as y = 0** when the town
-> has a coast; with no coast the datum is the **local minimum**. ⛔ **So the terrain depends on the
-> SHORELINE as much as on the raster**, and that is not an implementation detail — every
-> height-above-water in the town is measured from it. ▶ the datum a town actually got:
-> `cat cartograph/data/<scene>/clean/terrain.json`
+> `bake-terrain` reads the water from the **lidar's coast** (`clean/coast.json`, `bake-coast.mjs`, through
+> `coastFile.mjs#readCoast` — the one the mint reads) and takes y = 0 from that file's **flattened water**: the
+> lidar's 1 cm mode over the flood sheet, found before any line is traced, so the line cannot move it (Boz's
+> ruling (B), 2026-10-25). With no coast the datum is the **local minimum**. Every height-above-water in the town is
+> measured from it. ▶ `cat cartograph/data/<scene>/clean/terrain.json` · `node checks/claims-the-coast-is-the-lidars.mjs`
 > - ⭐ **THEN IT WRITES THE BED UNDER THE WATER — the REAL floor where there is one.** `fetch-bathymetry.mjs` lists
 >   the town's bathymetry tiles (`raw/bathymetry-sources.txt`, by coordinates: NOAA BlueTopo today; USACE NCMP and
 >   NCEI CUDEM are named rungs not yet built, so a town they would cover is **not** verified-absent). Under the water
@@ -104,11 +104,10 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 >   (placed by the bank above y = 0, crest built to ≥ HIGH + a course, toe below LOW; breakwaters sized against LOW —
 >   `levelM/levelFrom/lowM` per walk). ▶ `node checks/claims-the-shore-is-closed.mjs` (walks HIGH and LOW) ·
   `node checks/claims-water-depth-reads-the-level.mjs`
-> - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** ⛔ The dirty set is a **computed import closure**
->   of `bake-terrain.js` — which reaches `coastline.mjs` — plus the town's `raw/osm.json`, never a
->   hand-listed file: a town's shore can move because the kit learned to read a shape it could not
->   read before, and a data-only list misses exactly that. (It did, once: a town kept a
->   `local minimum` datum for hours after its coast closed, and only `bake-revetment` noticed.)
+> - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** The terrain step declares `clean/coast.json` (by content) beside
+>   the computed import closure of `bake-terrain.js`, never a hand list of files.
+> - ⭐ **The dry bed is recorded before it is dug** (`terrain.json#bed.dry`: cells under the water whose lidar stood
+>   above their HIGH level, rock apart). ▶ `node checks/claims-the-shore-agrees-with-the-field.mjs`
 > - ⛔ **NO DEM ⇒ THE BAKE STOPS.** Elevation is declared `ABSENT.FALSE_MAP`: flat ground is
 >   town-neutral only where the town is flat, and a dune town baked as a plane is a FALSE map, not a
 >   degraded one. The `terrain` step FAILS and prints the command for that town. **The way past it is

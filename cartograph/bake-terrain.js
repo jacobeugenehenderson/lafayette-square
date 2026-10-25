@@ -41,7 +41,8 @@ import fs from 'fs'
 import { join } from 'path'
 import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
-import { coastRings } from './coastline.mjs'
+import { readCoast, maskOf, COAST_FILE } from './coastFile.mjs'
+import { localBB } from './geography.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { authoredWater, waterRecord } from './waterDatums.mjs'
@@ -100,29 +101,14 @@ function wgs84ToLocal(lon, lat) {
 // ⭐ A hydro-flattened body is the one thing in a DEM that is genuinely level, so
 // its surface is the MODE of the samples beneath it — not the mean (the shore
 // drags it) and not the minimum (that is the bug being fixed).
-// ⛔ The water polygons come from `coastline.mjs` — the SAME `coastRings` and
-// `isWaterFeature` that `derive.js` uses. A second definition of "this is water"
-// is how the first vocabulary drifted.
-function waterDatum({ raw, width, height, bounds, boundary }) {
-  if (!fs.existsSync(OSM_PATH)) {
-    console.log('  water datum: no raw/osm.json — cannot ask where the water is')
-    return null
-  }
+// ⭐ The water polygons are the LIDAR'S COAST (clean/coast.json, bake-coast.mjs) through coastFile.mjs#readCoast — the
+// SAME reader derive.js mints ① from, so the bed is dug under exactly the water the pour drew. ⛔ No coast.json refuses.
+function waterDatum({ raw, width, height, bounds }) {
   const osm = JSON.parse(fs.readFileSync(OSM_PATH, 'utf8'))
-  const ground = osm.ground || {}
-
-  // The coast, closed against the bb, exactly as derive.js closes it.
-  const bx = osm.bbox
-  const bb = bx ? (() => {
-    const a = wgs84ToLocal(bx.minLon, bx.maxLat), b = wgs84ToLocal(bx.maxLon, bx.minLat)
-    return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]),
-             z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
-  })() : null
+  const coast = readCoast(join(MAP_DIR, 'clean'), localBB(osm, wgs84ToLocal), 'bake-terrain')
   const rings = []
-  if (bb) {
-    const c = coastRings({ ground, buildings: osm.buildings || [],
-                           center: boundary.center, discR: boundary.radius, bb })
-    const { inDrawing, outside } = ringsInDrawing(c.rings || [], bounds)
+  if (coast.coast) {
+    const { inDrawing, outside } = ringsInDrawing(coast.rings, bounds)
     for (const r of inDrawing) rings.push(r)
     if (outside.length) {
       const ext = (r) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return `x ${Math.round(x0)}…${Math.round(x1)}, z ${Math.round(z0)}…${Math.round(z1)}` }
@@ -136,10 +122,8 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
   // so it moved the entire town's datum by 25.22 m, for a town that has no
   // `water:*` group in its slab at all. A perched pond is an OBJECT ON the land;
   // a coast is the plane the land sits beside, and only the second can be a datum.
-  // ⭐ `coastline.mjs` already draws exactly this distinction and we should use its
-  // judgment rather than invent a size threshold: `coastRings` returns rings for a
-  // body that CROSSES THE BB, and nothing for an enclosed one. `bake-ground.js`
-  // says the same in as many words — coastline "does NOT reach an inland pond".
+  // ⭐ The coast already draws exactly this distinction, with no size threshold: bake-coast keeps only water that
+  // REACHES THE BB (bodiesAtEdge), so an enclosed pond is never a coast ring.
   // ⚠️ So an inland pond is still drawn at y ≈ 0 and is still wrong for it. That is
   // a REAL and separate defect — every body wants its own mesh Y — and it is not
   // fixed by moving the whole world to meet one pond.
@@ -148,37 +132,10 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
     return null
   }
 
-  // Scanline fill of every ring at once (even-odd), collecting the samples under water.
-  const stepX = (bounds.maxX - bounds.minX) / (width - 1)
-  const stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
-  const hist = new Map()
-  const mask = new Uint8Array(width * height)   // the cells under the mapped water — the bed is written into these
+  // The cells under the water (coastFile.mjs#maskOf, even-odd over every ring: a hole is an island).
+  const mask = maskOf(rings, width, height, bounds)
   let wet = 0
-  for (let j = 0; j < height; j++) {
-    const z = bounds.minZ + stepZ * j
-    const xs = []
-    for (const ring of rings) {
-      for (let k = 0, n = ring.length; k < n; k++) {
-        const a = ring[k], b = ring[(k + 1) % n]
-        if ((a[1] > z) === (b[1] > z)) continue
-        xs.push(a[0] + (z - a[1]) * (b[0] - a[0]) / (b[1] - a[1]))
-      }
-    }
-    if (xs.length < 2) continue
-    xs.sort((m, n) => m - n)
-    for (let k = 0; k + 1 < xs.length; k += 2) {
-      const i0 = Math.max(0, Math.ceil((xs[k] - bounds.minX) / stepX))
-      const i1 = Math.min(width - 1, Math.floor((xs[k + 1] - bounds.minX) / stepX))
-      for (let i = i0; i <= i1; i++) {
-        const v = raw[j * width + i]
-        mask[j * width + i] = 1
-        if (!Number.isFinite(v)) continue
-        wet++
-        const key = Math.round(v * 100)          // 1 cm buckets
-        hist.set(key, (hist.get(key) || 0) + 1)
-      }
-    }
-  }
+  for (let k = 0; k < mask.length; k++) if (mask[k] && Number.isFinite(raw[k])) wet++
   if (!wet) {
     // ⛔ LOUD. Water rings exist and not one sample fell inside them — the rings
     // and the grid are in different frames, or the stencil excludes the body.
@@ -187,10 +144,11 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
     throw new Error('⛔ water datum: ' + rings.length + ' water ring(s) and ZERO grid samples inside them. ' +
       'The rings and the terrain grid disagree about the frame; a datum derived from nothing would be a plausible-looking lie.')
   }
-  let mode = null, best = 0
-  for (const [k, c] of hist) if (c > best) { best = c; mode = k }
-  const elev = mode / 100
-  const share = best / wet
+  // ⭐ THE DATUM IS THE FLATTENED WATER bake-coast found before tracing any line (Boz's ruling (B)): never re-derived
+  // here, so the line this mask follows cannot move y = 0.
+  const F = coast.doc.flattened
+  if (!F || !Number.isFinite(F.navd88)) throw new Error(`⛔ water datum: ${COAST_FILE} carries no \`flattened\` level — re-run bake-coast`)
+  const elev = F.navd88, share = F.share
   return { elev, share, wet, rings: rings.length, mask }
 }
 
@@ -478,9 +436,14 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
     wFloor = shoreDistance(keep, width, height, stepX, stepZ)             // metres to the nearest wet cell the floor misses
   }
   const fromFloor = new Uint8Array(known ? mask.length : 0)
+  // ⭐ THE DRY BED, RECORDED BEFORE IT IS DUG (Boz, 2026-10-25): a cell under the mask whose lidar stood above that
+  // cell's HIGH water is land the coast called water. The bed overwrites it below, so this is the only place it can be
+  // seen. Rock is kept and named apart (rock.runs). ▶ node checks/claims-the-shore-agrees-with-the-field.mjs
+  const dryBed = new Uint8Array(mask.length)
   let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0, atHigh = 0
   for (let k = 0; k < mask.length; k++) {
     if (!mask[k] || rock.has(k)) continue
+    if (Number.isFinite(normalized[k]) && normalized[k] > highAt(k)) dryBed[k] = 1
     const deep = deepestAt(k)
     let h = Math.min(A * Math.pow(dist[k], 2 / 3), deep)
     if (known && Number.isFinite(known.depth[k])) {
@@ -525,6 +488,7 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
              ? { source: 'NOAA OCS BlueTopo (raw/bathymetry-sources.txt)', tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
                  cellM: known.cellM, cells: nFloor, aboveZeroCells: above, cappedAtHighCells: atHigh, seam: known.seam, runs }
              : { none: floor?.none || 'not asked' },
+           dry: { cells: dryBed.reduce((t, v) => t + v, 0), cellM2: +(stepX * stepZ).toFixed(4), from: 'cells under the mask whose lidar stood above their HIGH level, before the bed was written (rock excluded)', runs: rowRuns(k => dryBed[k]) },
            // ⭐ The kept rock (rockCells): stands above the level by ruling, so the check names it rather than calling it proud.
            rock: { cells: rock.size, from: 'structures.mjs stoneStructures (mapped breakwaters/groynes) × the lidar above the water', runs: rock.size ? rowRuns(k => rock.has(k)) : [] } }
 }
@@ -650,7 +614,7 @@ async function main() {
   // ⭐⭐ THE DATUM. Water when there is water, the local minimum when there is not —
   // and which one was used is PRINTED, because a datum chosen silently is exactly
   // how the previous one survived. ▶ checks/claims-a-level-body-has-one-surface.mjs
-  const wd = waterDatum({ raw, width, height, bounds, boundary })
+  const wd = waterDatum({ raw, width, height, bounds })
   const baseElev = wd ? wd.elev : mn
   const datumKind = wd ? 'water' : 'local minimum'
 
@@ -674,8 +638,8 @@ async function main() {
   console.log(`Wrote ${OUT_BIN}   (${binKb} KB)`)
   console.log(`  elevation range ${mn.toFixed(2)}..${mx.toFixed(2)}m  (normalized to ${(mn-baseElev).toFixed(2)}..${(mx-baseElev).toFixed(2)})`)
   if (wd) {
-    console.log(`  DATUM = the water: ${baseElev.toFixed(2)} m, from ${wd.wet.toLocaleString()} samples under ${wd.rings} ring(s)`)
-    console.log(`    the datum bucket holds ${(wd.share * 100).toFixed(1)}% of them — a hydro-flattened body should be most of its own area`)
+    console.log(`  DATUM = the flattened water (bake-coast, before any line): ${baseElev.toFixed(2)} m · the bed is dug under ${wd.wet.toLocaleString()} samples of ${wd.rings} lidar-coast ring(s)`)
+    console.log(`    the datum bucket holds ${(wd.share * 100).toFixed(1)}% of the flood sheet's wet cells — a hydro-flattened body should be most of its own area`)
     if (wd.share < 0.5) {
       // ⛔ NOT a fallback and not a silent pass: the datum is still the mode, but
       // the body is NOT one surface and anything seated on it will be wrong

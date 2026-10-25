@@ -12,12 +12,15 @@
 //      coast.json each outer is positive and each hole negative (a nonzero fill in the mint then reads a hole as a hole).
 //   D. PER TOWN WITH A coast.json: the deck footprints hold no land (deck ∖ water ≤ the trace's pixel × the deck's
 //      perimeter), and where map.json was poured from this coast, ①'s waterRings ARE coast.json's rings.
+//   E. THE DATUM DOES NOT DEPEND ON THE LINE (Boz's ruling (B)): bake-terrain takes y = 0 from coast.json `flattened`,
+//      which bake-coast#flattenedWater finds on the flood sheet before any line is traced (decks excluded), and keeps no
+//      histogram of its own; so moving the coast by any offset cannot move y = 0.
 // A town with no coast.json is NOT CHECKED for D, and says so (exit 2 if no town was checked at all).
 //
 //   node checks/claims-the-coast-is-the-lidars.mjs [--scene=<id> …]
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
-// absent · markSheet ignores onDeck · wound returns its ring unreversed · a coast.json hole written positive.
+// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -25,7 +28,7 @@ import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
 import { readCoast, COAST_FILE } from '../cartograph/coastFile.mjs'
-import { markSheet, floodFromEdge, deckFootprints, wound } from '../cartograph/bake-coast.mjs'
+import { markSheet, floodFromEdge, deckFootprints, wound, flattenedWater } from '../cartograph/bake-coast.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 
@@ -77,6 +80,20 @@ console.log('── C. the winding: outers positive, holes negative')
   say(signed(wound(cw, 1)) > 0 && signed(wound(ccw, 1)) > 0 && signed(wound(ccw, -1)) < 0 && signed(wound(cw, -1)) < 0, 'wound(r, ±1) sets the sign either way round')
 }
 
+// ── E. the datum ──
+console.log('── E. the datum is the flattened water, found before any line')
+{
+  const t = readFileSync(join(ROOT, 'cartograph/bake-terrain.js'), 'utf8')
+  const wd = t.slice(t.indexOf('function waterDatum('), t.indexOf('\n}\n', t.indexOf('function waterDatum(')))
+  say(/const elev = F\.navd88\b/.test(wd) && /coast\.doc\.flattened/.test(wd) && !/hist\.set\(/.test(wd), 'bake-terrain#waterDatum takes y = 0 from coast.json `flattened` and keeps no histogram of its own')
+  // a flood sheet of 10 cells at 174.44 m and a deck at 176.00 m on 3 more: the deck must not vote
+  const wet = new Uint8Array(13).fill(1), deck = new Uint8Array(13), ground = new Float32Array(13).fill(174.44)
+  for (const k of [10, 11, 12]) { deck[k] = 1; ground[k] = 176 }
+  for (const k of [3, 4]) ground[k] = 174.9
+  const F = flattenedWater(wet, deck, ground)
+  say(F && Math.abs(F.navd88 - 174.44) < 1e-9 && F.cells === 10 && F.share === 0.8, `flattenedWater is the mode of the wet cells, decks excluded (${JSON.stringify(F)})`)
+}
+
 // ── D. per town ──
 const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
 const scenes = args.length ? args : readdirSync(join(ROOT, 'cartograph/data')).filter(s => existsSync(join(ROOT, 'cartograph/data', s, 'clean', COAST_FILE)))
@@ -107,7 +124,7 @@ for (const scene of scenes) {
   const mp = join(dir, 'clean/map.json')
   if (existsSync(mp)) {
     const map = JSON.parse(readFileSync(mp, 'utf8'))
-    const proto = map.protopolygon || map.layers?.protopolygon || null
+    const proto = map.layers?.ribbons?.protopolygon || null   // derive.js freezes ① here
     const wr = proto?.waterRings
     const rings = doc.water.flatMap(b => [b.outer, ...b.holes])
     if (!wr) console.log(`  (map.json carries no protopolygon waterRings — poured before this coast; ①'s rings not compared)`)

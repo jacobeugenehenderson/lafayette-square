@@ -23,7 +23,7 @@
 // CLASSES (each counted, never filled): asserted = every pixel in the box from ONE source (whole), some no-data pixels
 // with one source holding the rest (partial; the mean of the valid ones), or two sources holding pixels in the box
 // (seam: the mean of the UNION of their valid pixels, a pixel position held by both taken once, from the first in list
-// order — asserted only when the sources share one CRS and one pixel lattice, else counted as seam-unaligned) · no lidar = no valid pixel in the box (the bake's miss) · water = under the mapped coast
+// order — asserted only when the sources share one CRS and one pixel lattice, else counted as seam-unaligned) · no lidar = no valid pixel in the box (the bake's miss) · water = under the coast the bake reads (clean/coast.json)
 // (the bed is written there; not this check's question) · coarser source = a source whose pixel is not finer than the
 // grid (read bilinear by design; counted, not asserted).
 //
@@ -39,7 +39,8 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { elevationSpecs, openRasters, readWindow, NODATA_THRESHOLD } from '../cartograph/elevationSources.mjs'
-import { coastRings } from '../cartograph/coastline.mjs'
+import { readCoast } from '../cartograph/coastFile.mjs'
+import { localBB } from '../cartograph/geography.mjs'
 import { ringsInDrawing } from '../cartograph/coast-in-drawing.mjs'
 
 const ROOT = new URL('../cartograph/data/', import.meta.url).pathname
@@ -76,15 +77,11 @@ for (const town of towns) {
   const toLL = (x, z) => [geo.lon + x / geo.lonToMeters, geo.lat - z / geo.latToMeters]
   const toLocal = (lon, lat) => [(lon - geo.lon) * geo.lonToMeters, (geo.lat - lat) * geo.latToMeters]
 
-  // The mapped coast, as the bake asks it (coastline.mjs + coast-in-drawing.mjs — the shared definitions, not a copy).
+  // The coast, as the bake reads it (coastFile.mjs#readCoast — the lidar's — and coast-in-drawing.mjs: the shared definitions).
   const osm = JSON.parse(readFileSync(join(dir, 'raw', 'osm.json'), 'utf8'))
   const bnd = JSON.parse(readFileSync(join(dir, 'neighborhood_boundary.json'), 'utf8'))
-  let rings = []
-  if (osm.bbox) {
-    const a = toLocal(osm.bbox.minLon, osm.bbox.maxLat), b = toLocal(osm.bbox.maxLon, osm.bbox.minLat)
-    const bb = { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
-    rings = ringsInDrawing(coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: bnd.center, discR: bnd.radius, bb }).rings || [], B).inDrawing
-  }
+  const coast = osm.bbox ? readCoast(join(dir, 'clean'), localBB(osm, toLocal), 'claims-the-terrain-is-the-mean-of-its-lidar') : { coast: false }
+  const rings = coast.coast ? ringsInDrawing(coast.rings, B).inDrawing : []
   const inWater = (x, z) => { let c = false
     for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const p = r[i], q = r[j]
       if ((p[1] > z) !== (q[1] > z) && x < (q[0] - p[0]) * (z - p[1]) / (q[1] - p[1]) + p[0]) c = !c }
