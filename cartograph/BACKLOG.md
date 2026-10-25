@@ -25,6 +25,8 @@ end-to-end account (PIPELINE.md to the Diary).
 - `kerf/ls-to-its-address` f44df473: the rename + no default town. Merges after Jacob opens LS in Stage from kerf-rename.
 - Ward: theward `ward/pin-2026-10-22` 9d6b303 (OPERATIONS 'Where things stand'; neon e947c22, check a5be102); kit `ward-pin/2026-10-22` 7b68aad5; the cache-busted `scratch/promote-rollback/backup-prod-slab.mjs` is kit 21936023 on `docs/conformance-2026-09-21` (bring it to integration). Ward parked: an unguarded localStorage read at start-up.
 - `zob/no-town-default` b8abba10: same change as 766a8c65 already on the rename branch (same subject); retire it when the rename merges.
+- `kerf/ownership-once` f21f288c (kerf-own): SUPERSEDED by the one height field (it edits the retired groundDeformer.mjs; it raised seam
+  steps 60%). Retire it. `kerf/simplify-in-bake` 03c42d5f (worktree kerf): the mesh simplifier, HELD (too slow, 725 s), not superseded.
 - Kerf's own note: `.claude/worktrees/kerf-publish/HANDOFF-kerf.md` (⚠️ its "kerf-land HPDM candidate" is stale: staging is the reference).
 **Blocked:** PTown + Huron deploy bakes. Huron's stamp refusal is FIXED (cdl, merged). PTown refuses at the flatten on the ① seam
 (below) — ❓ Jacob's ① design call. **Rulings owed by Jacob:** ① seam fix (options below) · fine vs coarse ground for LS (0.1 m
