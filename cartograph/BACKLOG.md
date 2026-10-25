@@ -35,7 +35,7 @@ rule, one pass, with the stamp's loop deleted. Splice proposes; Zob reads first.
 **Leg-ends:** the stop is a REGRESSION against SECTION's "a SHORE or RIM flank is no corner" (Jacob, 10-07): 608 PTown / 384 Huron
 shore turns became corners. Fix: `noStreetFlank` on `isStreetLeg` (Kerf, in measurement). The bar is restated (Boz): shore/rim
 census 0 as a check row; drawn-twice totals ≤ BEFORE on 4 towns, no new row > 1 m, every > 10% row with exhibits.
-**Filed for their own briefs:** protoRAt's smoothBend fires on coast vertices (no skeleton chain there) · skeleton.js#gradeFacts
+**Filed for their own briefs:** kerbLift.mjs#cutCreases is a THIRD round-and-retest noding loop (live in the bake, maxRounds 16) → migrate to latticeNode's crossing rule after the seam lands · groundConformity.js ON_EDGE_M 5 mm vs NODE_BOUND √2/2 (a second T-junction bound) · noding phase 2 (one function for conform + cross) · protoRAt's smoothBend fires on coast vertices (no skeleton chain there) · skeleton.js#gradeFacts
 needs EVERY way off-grade (a part-tunnel chain inks at grade) · streetClass.js#isArea reads only area=yes (highway multipolygons
 chained as streets: JH 3, PTown 1, Huron 1). Filed for later: Huron university-drive-east-1 = tertiary-97 (skeleton-side, 9 m apart in raw);
 fetch.js#mergeGround dedupes on `f.id` but features carry `osmId` (latent; no town has a heavy pass); a pour-side refusal of
