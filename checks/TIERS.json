@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 441,
+  "total": 442,
   "counts": {
     "safe": 321,
     "local-effect": 27,
-    "live": 93
+    "live": 94
   },
   "checks": [
     {
@@ -1710,6 +1710,16 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-corner-at-a-true-geometry-edge.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
