@@ -10,7 +10,9 @@
 // never a post-union snap). This check is that fix's acceptance check.
 // ASSERTS, per town, file only: no block-ring edge (outer + holes) shorter than 2ε less two Clipper grid steps (rounding) has
 // owners on its two ends with different skelIds. ε is read off the artifact (`protopolygon.eps`), the grid off
-// src/lib/lattice.js (`CLIP_SCALE`). An end with no owner (rim, water) is not judged.
+// src/lib/lattice.js (`CLIP_SCALE`). An end with no owner record is not judged. The rim (`__boundary__`) and the water
+// (`__water__`) ARE judged: `offsetRingByRects` folds their sub-ink edges too, so they reach ② once the fold goes. They print
+// apart from chain pairs, because the chain-stroke fix (join cuts, one node outline) does not reach them.
 //
 //   node checks/claims-no-sub-ink-edge-between-two-owners.mjs [scene…] [--ribbons=path] [--mutants]
 //
@@ -37,7 +39,7 @@ function judge(P) {
       if (L >= sub) continue
       const oa = O[lab[i]], ob = O[lab[(i + 1) % r.length]]
       if (!oa?.skelId || !ob?.skelId || oa.skelId === ob.skelId) continue
-      bad.push({ at: a, L, a: `${oa.skelId}|${oa.side}`, b: `${ob.skelId}|${ob.side}` })
+      bad.push({ at: a, L, a: `${oa.skelId}|${oa.side}`, b: `${ob.skelId}|${ob.side}`, chains: !oa.skelId.startsWith('__') && !ob.skelId.startsWith('__') })
     }
   }
   return bad
@@ -51,7 +53,9 @@ for (const scene of list) {
   if (!P) { console.log(`⛔ ${scene}: NOT CHECKED — ${path} carries no protopolygon`); red++; continue }
   const bad = judge(P)
   if (bad.length) red++
-  console.log(`${bad.length ? '⛔' : '✅'} ${scene}: ${bad.length} sub-ink edge(s) between two chains (< ${((2 * P.eps - 2 / SCALE) * 1000).toFixed(1)} mm)`
+  const rim = bad.filter(x => !x.chains)
+  console.log(`${bad.length ? '⛔' : '✅'} ${scene}: ${bad.length - rim.length} sub-ink edge(s) between two chains · ${rim.length} with the rim or water (< ${((2 * P.eps - 2 / SCALE) * 1000).toFixed(1)} mm)`
+    + (rim.length ? `\n     rim/water: ${rim.map(x => `(${x.at.map(v => v.toFixed(3)).join(', ')}) ${(x.L * 1000).toFixed(2)} mm ${x.a} → ${x.b}`).join(' · ')}` : '')
     + (bad.length ? `\n     first: ${bad.slice(0, 3).map(x => `(${x.at.map(v => v.toFixed(3)).join(', ')}) ${(x.L * 1000).toFixed(2)} mm ${x.a} → ${x.b}`).join(' · ')}` : ''))
 }
 
@@ -66,6 +70,6 @@ if (process.argv.includes('--mutants')) {
   if (!ok) red++
 }
 
-console.log(red ? '\n⛔ RED — ① carries a sub-ink edge between two chains (mintProtopolygon), or the fixture failed'
-  : '\n✅ GREEN — no ① edge shorter than its ink is wide lies between two chains')
+console.log(red ? '\n⛔ RED — ① carries a sub-ink edge between two owners (mintProtopolygon), or the fixture failed'
+  : '\n✅ GREEN — no ① edge shorter than its ink is wide lies between two owners')
 process.exit(red ? 1 : 0)
