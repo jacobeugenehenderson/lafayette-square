@@ -1,0 +1,32 @@
+/**
+ * coastFile.mjs — the coast's artifact (clean/coast.json, written by bake-coast.mjs) and its ONE reader, in a module with
+ * no import but fs and path, so a reader (the pour, the terrain, their checks) does not take bake-coast.mjs's lidar
+ * reader into its import closure — and with it the network.
+ */
+import fs from 'fs'
+import { join } from 'path'
+
+export const COAST_FILE = 'coast.json'
+
+/**
+ * The town's coast as ① takes it: { coast: false } for an inland town, else { coast: true, rings, holes, arcs, doc }.
+ * `rings` are every body's outer (positive signed area) and its holes (negative), in order; `holes` counts the latter.
+ * ⛔ No coast.json REFUSES by name — never OSM's coast in its place (BRIEF-the-shore-is-one-line §1: no fallback).
+ * ⛔ A coast traced on another square (a re-fetch since) REFUSES: its arcs end on edges that are no longer the frame.
+ * @param cleanDir  cartograph/data/<scene>/clean
+ * @param bb        the frame the reader closes against (geography.mjs#localBB), compared to the square traced on
+ */
+export function readCoast(cleanDir, bb, who) {
+  const p = join(cleanDir, COAST_FILE)
+  if (!fs.existsSync(p)) throw new Error(`[${who}] ⛔ no ${p} — the coast is the lidar's (bake-coast.mjs), and there is no other source. ▶ the Bake's 'coast' step, or node cartograph/bake-coast.mjs --scene=<id>`)
+  const doc = JSON.parse(fs.readFileSync(p, 'utf8'))
+  if (!doc || typeof doc.coast !== 'boolean') throw new Error(`[${who}] ⛔ ${p} carries no coast verdict — not a bake-coast artifact`)
+  const S = doc.square
+  if (!bb || !S || ['x0', 'x1', 'z0', 'z1'].some(k => !(Math.abs(S[k] - bb[k]) < 1e-6)))
+    throw new Error(`[${who}] ⛔ ${p} was traced on the square ${JSON.stringify(S)} and this frame is ${JSON.stringify(bb)} — the fetch moved since the coast was baked. ▶ re-run bake-coast`)
+  if (!doc.coast) return { coast: false, why: doc.why, doc }
+  const rings = [], arcs = doc.arcs || []
+  let holes = 0
+  for (const b of doc.water || []) { rings.push(b.outer); for (const h of b.holes || []) { rings.push(h); holes++ } }
+  return { coast: true, rings, holes, arcs, doc }
+}

@@ -36,7 +36,7 @@ import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
-import { coastRings } from './coastline.mjs'
+import { readCoast } from './coastFile.mjs'
 import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { onGrid } from './snap.js'
 import { localBB } from './geography.mjs'
@@ -4865,10 +4865,14 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // the first. ⛔ The coast closes against THIS, never against the disc: the disc is a render
     // knob and the bb is declared data.
     // (`_bb` is computed once, at the face walk: the raw bb; the walk itself closes on its gridded view.)
-    const _coast = coastRings({ ground: osmData.ground || {}, buildings: osmData.buildings || [],
-                               center: boundaryCenter, discR: boundaryRadius, bb: _bb })
-    for (const line of _coast.report) console.log(line)
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings, coastArcs: _coast.arcs, bb: _bb })
+    // ⭐ THE COAST IS THE LIDAR'S (BRIEF-the-shore-is-one-line §1): clean/coast.json, traced by bake-coast.mjs where the
+    // lidar meets high water, OSM's water only its verifier. ⛔ No coast.json refuses; there is no OSM coast to fall to.
+    const _coast = readCoast(CLEAN_DIR, _bb, 'derive')
+    if (_coast.coast && _coast.holes) throw new Error(`[①] ⛔ ${SCENE}'s lidar coast has ${_coast.holes} island(s) (holes in the water), and the water layer below emits every ring as its own face, so an island would be painted as water. Islands through the mint are BRIEF-the-shore-is-one-line §3 step 5.`)
+    if (_coast.coast) console.log(`    [①] coast: ${_coast.rings.length} water ring(s), ${_coast.arcs.length} shoreline arc(s) — ${_coast.doc.from}`)
+    else console.log(`    [①] no coast: ${_coast.why}`)
+    _coast.meta = (_coast.rings || []).map(() => ({ subtype: null, name: null }))   // the lidar names no body
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings || [], coastArcs: _coast.arcs || [], bb: _bb })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
     let protoBlockClass = null
@@ -5153,13 +5157,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // dropped at pour time cannot be recovered without re-pouring every town, and a pond wants a
   // different surface from a Great Lake. It is carried for the town that asks.
   // ⛔ ALIGNMENT IS ASSERTED, NOT ASSUMED. `MP.waterRings` is `coast.map(copy)` — 1:1 with the
-  // rings `coastRings` returned, in order — so the meta indexes match by construction. If that
+  // rings readCoast returned, in order — so the meta indexes match by construction. If that
   // ever stops being true the subtypes would silently attach to the WRONG bodies, which is the
   // plausible-looking success this kit must never ship. So: fail loudly instead.
   if (protoWaterMeta && protoWaterRings && protoWaterMeta.length !== protoWaterRings.length) {
     throw new Error(`[LAND/WATER] ⛔ water ring/meta misalignment: ${protoWaterRings.length} ring(s) ` +
       `but ${protoWaterMeta.length} meta entr(ies). The \`water=*\` subtype would attach to the wrong ` +
-      `body. ▶ coastRings() pushes ring and meta in the same statement — something between it and ` +
+      `body. ▶ the coast's meta is made 1:1 with readCoast's rings — something between it and ` +
       `mintProtopolygon's waterRings is now reordering or filtering.`)
   }
   const waterFeats = (protoWaterRings || []).map((r, i) => ({

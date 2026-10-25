@@ -43,11 +43,12 @@ import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
 import { coastRings } from './coastline.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
-import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './terrainReads.mjs'
+import { terrainValueReads } from './terrainReads.mjs'
+import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels as levelsOf } from './waterLevel.mjs'
 import clipperLib from 'clipper-lib'
-import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, ABOVE_WATER_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, demVerticalDatum, NAVD88, ABOVE_WATER_M, TERRAIN_STEP_M } from './elevationSources.mjs'
 
 // ⛔ No default on a WRITE path: the one resolver names the town (--scene= or CARTOGRAPH_SCENE), or refuses.
 const SCENE = requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -75,7 +76,6 @@ function localToWgs84(x, z) {
 }
 
 const STENCIL_BUFFER_M = 50  // ⚠️ a constant margin on the disc: owned by BRIEF-the-disc-is-one-source §3 (the height extent from the one module), printed as a dated exception by claims-radius-has-one-home
-const M_PER_SAMPLE     = 5   // see prior commit comment in this file
 
 function wgs84ToLocal(lon, lat) {
   return [(lon - _geo.lon) * _geo.lonToMeters, (_geo.lat - lat) * _geo.latToMeters]
@@ -208,18 +208,7 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
 // serve.js declares as this step's value input.
 const READS = terrainValueReads(SCENE)
 const finding = (id) => READS.findings[id]
-// The town's authored water values. ⛔ Two looks on one scene disagreeing is refused — the terrain is one per scene.
-function waterAuthoring() {
-  const out = {}
-  for (const key of TERRAIN_WATER_KEYS) {
-    const set = READS.water.filter(([, w]) => w[key] != null)
-    if (new Set(set.map(([, w]) => w[key])).size > 1)
-      throw new Error(`⛔ looks on scene '${SCENE}' author different water.${key}: ${set.map(([id, w]) => `${id}=${w[key]}`).join(', ')} — the terrain is one per scene`)
-    if (set.length) out[key] = { value: TERRAIN_WATER_NAMES.includes(key) ? String(set[0][1][key]) : +set[0][1][key],
-                                 from: `authored (design.json water.${key}, ${set.map(([id]) => id).join(', ')})` }
-  }
-  return out
-}
+const waterAuthoring = () => authoredWater(SCENE, READS)
 function deanA(d50) {
   const table = finding('f-cem-dean-a-table').value.A_m13_by_D_mm
   const pts = Object.entries(table).map(([d, a]) => [+d, a]).sort((p, q) => p[0] - q[0])
@@ -293,57 +282,7 @@ function rockCells(normalized, mask, width, height, bounds) {
   if (areas.length + lines.length) console.log(`  ROCK: ${areas.length + lines.length} mapped breakwater/groyne(s) — ${keep.size.toLocaleString()} cells under the water keep the lidar's rock (of ${[...cand].filter(k => mask[k]).length.toLocaleString()} in their footprints)`)
   return keep
 }
-// ⭐⭐ WHERE THE WATER STANDS (BRIEF-bathymetry, "The water's LEVEL is a tide"; Jacob, 2026-09-27). y = 0 stays the
-// lidar's water — the tide on the day the survey flew, which no one chose — and the floor stays as baked. What this
-// adds is the town's NAMED levels, as heights above y = 0: a LOW and a HIGH tide (MLLW and MHW by default, a town may
-// name others it has), or a lake's one level. They come from raw/water-datums.json (fetch-water-datums.mjs; the bake
-// calls no service). A tidal town's datums vary across it, so they are a GRID, row-major by z then x, rows north →
-// south; a point the datum service does not cover (land) takes its nearest covered neighbour, COUNTED.
-// ⭐ A level is a value read at a place and a time (the runtime's levelAt): the clock that moves between low and high
-// is next, and this record is what it reads. ⛔ A coastal town with no datums, or a lake with no ruled level, REFUSES.
-const DATUMS_PATH = join(MAP_DIR, 'raw', 'water-datums.json')
-function waterLevels(baseElev, auth) {
-  if (!fs.existsSync(DATUMS_PATH))
-    throw new Error(`⛔ the water level: '${SCENE}' has a coast and no raw/water-datums.json — its water would stand at the tide the lidar flew at, which no one chose. ▶ node cartograph/fetch-water-datums.mjs --scene=${SCENE}`)
-  const D = JSON.parse(fs.readFileSync(DATUMS_PATH, 'utf8'))
-  const up = navd => +(navd - baseElev).toFixed(3)         // NAVD88 → metres above y = 0 (baseElev is the lidar's NAVD88 water)
-  if (D.kind === 'tidal') {
-    const { lons, lats } = D.grid, w = lons.length, h = lats.length
-    const [x0, z0] = wgs84ToLocal(lons[0], lats[0]), [x1, z1] = wgs84ToLocal(lons[w - 1], lats[h - 1])
-    const have = { [D.high.datum]: D.high.navd88M, [D.low.datum]: D.low.navd88M }
-    let filled = 0
-    const field = arr => arr.map((v, k) => {
-      if (v != null) return up(v)
-      let best = null, bd = Infinity                          // nearest covered sample on the grid
-      arr.forEach((u, q) => { if (u == null) return; const d = Math.hypot((q % w) - (k % w), Math.floor(q / w) - Math.floor(k / w)); if (d < bd) { bd = d; best = u } })
-      filled++
-      return up(best)
-    })
-    const datums = { grid: { min: [+x0.toFixed(2), +z0.toFixed(2)], step: [+((x1 - x0) / (w - 1)).toFixed(3), +((z1 - z0) / (h - 1)).toFixed(3)], w, h },
-                     uncertaintyM: D.uncertaintyM }
-    for (const [name, arr] of Object.entries(have)) datums[name] = field(arr)
-    const pick = (key, dflt) => {
-      const name = auth[key]?.value ?? dflt
-      if (!datums[name]) throw new Error(`⛔ the water level: design.json water.${key} = '${name}', and '${SCENE}' has only ${Object.keys(have).join(', ')} (raw/water-datums.json) — fetch it, or name one of those`)
-      return { name, from: auth[key] ? auth[key].from : 'kit default' }
-    }
-    const high = pick('high', 'MHW'), low = pick('low', 'MLLW')
-    return { tidal: true, navd88OfZero: baseElev, datums, low: low.name, lowFrom: low.from, high: high.name, highFrom: high.from,
-             station: D.station, source: `${D.source}, fetched ${D.fetchedOn}`, filledFromNeighbour: filled / Object.keys(have).length }
-  }
-  if (D.kind === 'lake') {
-    const name = auth.lakeLevel?.value
-    const opts = Object.entries(D.levels).map(([k, v]) => `${k} = ${v.igld85M} m IGLD85 (${v.what})`).join(' · ')
-    if (!name) throw new Error(`⛔ the water level: '${SCENE}' is a lake (${D.station.name}, ${D.station.id}) and no level is ruled. Author design.json water.lakeLevel as one of: ${opts}. The lidar flew at ${baseElev} m NAVD88.`)
-    const L = D.levels[name]
-    if (!L || !Number.isFinite(L.igld85M)) throw new Error(`⛔ the water level: water.lakeLevel = '${name}' — '${SCENE}' has ${opts}`)
-    const v = up(L.igld85M + D.igld85InNavd88M)
-    return { tidal: false, navd88OfZero: baseElev, datums: { grid: { min: [0, 0], step: [0, 0], w: 1, h: 1 }, [name]: [v], uncertaintyM: null },
-             low: name, lowFrom: auth.lakeLevel.from, high: name, highFrom: auth.lakeLevel.from, station: D.station, source: `${D.source}, fetched ${D.fetchedOn}` }
-  }
-  throw new Error(`⛔ the water level: raw/water-datums.json for '${SCENE}' names no datum (${D.why || D.kind}) — its water level cannot be named`)
-}
-
+// ⭐ The reader is waterDatums.mjs#waterRecord, shared with bake-coast (which reads it with zero = 0: NAVD88).
 // ⭐⭐ THE REAL FLOOR (BRIEF-bathymetry; Jacob, 2026-09-26/27: "where there is depth data, we only use it out to
 // stair's edge. Where we don't have it, we gently slope it"). `fetch-bathymetry.mjs` lists the town's bathymetry
 // tiles (raw/bathymetry-sources.txt); they are range-read here through the same reader as the DEM, finest first,
@@ -352,16 +291,6 @@ function waterLevels(baseElev, auth) {
 // ⛔ Two vertical datums are never subtracted: the floor's is read off its tile, the DEM's off its tile or its
 // product's specification, and a pair this file cannot reconcile is REFUSED (no conversion is built yet).
 const BATHY_LIST = join(MAP_DIR, 'raw', 'bathymetry-sources.txt')
-const NAVD88 = 5103   // EPSG vertical datum code
-// The DEM's vertical datum. USGS 3DEP 1 m tiles carry no vertical GeoKey; the 3DEP product is NAVD88 over the
-// conterminous US (USGS Lidar Base Specification), so that is taken for a 3DEP tile inside CONUS and SAID.
-function demVerticalDatum(sources, cornersLL) {
-  if (sources.every(S => S.geoKeys?.VerticalDatumGeoKey === NAVD88)) return { datum: 'NAVD88', from: 'the DEM tiles\' own VerticalDatumGeoKey' }
-  const conus = cornersLL.every(([lon, lat]) => lon > -125 && lon < -66 && lat > 24 && lat < 50)
-  if (conus && sources.every(S => /\/StagedProducts\/Elevation\//.test(S.ref)))
-    return { datum: 'NAVD88', from: 'USGS 3DEP product specification (CONUS elevations are NAVD88) — the tiles carry no vertical key' }
-  return null
-}
 async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev, demSources }) {
   if (!fs.existsSync(BATHY_LIST)) return { none: `no raw/bathymetry-sources.txt — ▶ node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` }
   const urls = fs.readFileSync(BATHY_LIST, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
@@ -634,8 +563,8 @@ async function main() {
   const bounds = deriveStencilBbox(boundary)
   const spanX = bounds.maxX - bounds.minX
   const spanZ = bounds.maxZ - bounds.minZ
-  const width  = Math.ceil(spanX / M_PER_SAMPLE) + 1
-  const height = Math.ceil(spanZ / M_PER_SAMPLE) + 1
+  const width  = Math.ceil(spanX / TERRAIN_STEP_M) + 1
+  const height = Math.ceil(spanZ / TERRAIN_STEP_M) + 1
   const total = width * height
 
   console.log(`Bake terrain  scene=${SCENE}  bbox=${JSON.stringify(bounds)}  span=${spanX}×${spanZ}m`)
@@ -728,7 +657,7 @@ async function main() {
   const normalized = new Float32Array(total)
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
   const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
-  const water = wd ? waterLevels(baseElev, waterAuthoring()) : null
+  const water = wd ? waterRecord({ mapDir: MAP_DIR, scene: SCENE, auth: waterAuthoring(), wgs84ToLocal, zero: baseElev }) : null
   const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor, water) : null
 
   if (water) water.flood = floodExtent(normalized, wd.mask, width, height, bounds, water)

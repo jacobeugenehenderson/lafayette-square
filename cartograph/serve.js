@@ -22,6 +22,7 @@ import { labelMajor } from '../src/cartograph/streetClass.js'
 import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY, judgeStale } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
+import { COAST_FILE } from './coastFile.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -2100,6 +2101,7 @@ createServer(async (req, res) => {
       try {
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+        await runShell('node bake-coast.mjs', { cwd: here, env, timeout: 600000 })   // the mint reads clean/coast.json and refuses without it
         await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
         // --yes: the Bake that called this IS the operator's decision; the change is RETURNED, not hidden.
         let promoteDiff = null
@@ -2263,6 +2265,7 @@ createServer(async (req, res) => {
         }
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
+        await runShell('node bake-coast.mjs', { cwd: here, env, timeout: 600000 })   // the mint reads clean/coast.json and refuses without it
         await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
         let promoteDiff = null
         await runShell(`node promote-ribbons.js --scene=${scene} --yes`, { cwd: here, env, timeout: 60000,
@@ -2684,6 +2687,19 @@ createServer(async (req, res) => {
       // Whether poured towns should carry pipeline elevation is its own decision.
       const elevFlag = bakeDesign.pour?.elevation === true ? '' : ' --skip-elevation'   // the town's declaration (design.json pour.elevation)
       if (hasOsm) {
+        // ⭐ THE COAST BEFORE THE POUR (BRIEF-the-shore-is-one-line step 1; Boz, 2026-10-25). bake-coast traces where the
+        // lidar meets high water and writes clean/coast.json, which the mint reads as data (pour-code.mjs#pourDataReads),
+        // so a coast that moved re-pours through the confirm below and one that did not re-pours nothing. Its own step,
+        // judged by content: the lidar is read over the network, and an authoring re-pour must not read it again.
+        await runIfDirty('coast',
+          [join(bakePaths.raw, 'elevation.tif'), join(bakePaths.raw, 'elevation-sources.txt'), join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
+           join(bakePaths.raw, 'water-datums.json'), join(bakePaths.raw, 'osm.json'),
+           bakePaths.boundary, bakePaths.geography,
+           { value: 'terrainValueReads', read: () => terrainValueReads(bakeScene) },   // the authored lake level / tide names
+           join(here, 'bake-coast.mjs')],
+          [join(bakePaths.clean, COAST_FILE)],
+          `node bake-coast.mjs ${sceneFlag}`,
+          { cwd: here, timeout: 600000 })
         // ⛔⛔ A CODE CHANGE RE-POURS THE TOWN — SAY SO BEFORE DOING IT (Boz's ruling (d), 2026-09-24). The pour's code
         // inputs are its import closure, so a change to the ① mint, the coastline or the section builder makes every
         // poured town's next Bake a RE-POUR. That is correct, and it is also how a town gets poured by accident (LS,
@@ -2807,6 +2823,7 @@ createServer(async (req, res) => {
            join(bakePaths.raw, 'water-datums.json'),        // where the water stands: tide datums or the lake's levels (fetch-water-datums.mjs)
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
+           join(bakePaths.clean, COAST_FILE),                // the lidar's coast (bake-coast.mjs): where the water is
            // the coast bed reads design.water from every Look of this town and three registry findings — declared as
            // the VALUES read, so a slider or a research edit elsewhere in those files re-bakes nothing (Strand, 3ab2b794)
            { value: 'terrainValueReads', read: () => terrainValueReads(bakeScene) },
