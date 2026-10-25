@@ -86,6 +86,167 @@ export function nodeAcrossGroups(entries, { bound = NODE_BOUND, maxRounds = 8, w
   return noded
 }
 
+// ⭐⭐ THE CROSSINGS, NODED ONCE: SNAP ROUNDING BY HOT PIXELS (Hobby; Guibas–Marimont). Two producers mint crossings
+// between rings that only overlap, and each used to round a crossing, insert it into both edges and test again, a loop
+// that need not end on shallow crossings (PTown's land-use stamp, 2026-10-25: "did not settle in 8 rounds"). Here,
+// in ONE pass and never re-intersected:
+//   1. every proper crossing between two rings the caller lets meet (`pairs`) is computed ONCE from the INPUT segments
+//      and rounded ONCE to the lattice; that one point goes to both segments;
+//   2. the HOT PIXELS are those crossings plus every input vertex (already lattice points);
+//   3. EVERY segment, of every ring and whatever its pair, is routed through each hot pixel whose half-open unit square
+//      [X − ½, X + ½) × [Y − ½, Y + ½) it enters, in order along it. ⛔ Honouring is universal: a segment that skipped a hot
+//      pixel another one takes could end up across it, at no hot pixel, and that is the crossing this exists to end.
+// Then, only where the caller asks (`tjoin`, a crease cutter), the home's own T-junction rule (`nodeAcrossGroups`, above)
+// as a second step. ⭐ The topology is PROVEN for step 3 on the square; it is also VERIFIED on every run: any proper
+// crossing left between two rings that may meet, or an output vertex that is neither an input vertex nor a hot pixel, is a
+// named refusal with the ring's tag and the coordinate, never a cap to raise. ⭐ EXACT AT ANY EXTENT (`crossOf`, below): the
+// predicates in doubles under 2^24 units and in BigInt past it; the crossing POINT in BigInt always, ties half-up. ⛔ No
+// extent bound: two fixed ones refused PTown in turn (2^25 absolute, 50 km out; 2^24 per segment, its 17.7 km frame side).
+// `rings` [{ p: [[x, z]…] metres on the lattice, tag }], `pairs(a, b)` (ring indices) → may they cross. Returns per ring
+// [{ p, k, src, edge }] (src = input vertex index, or null for an inserted point on input edge `edge`), plus `.counts`:
+// insertions by "ringTag ← origin" (a crossing's two tags, or a vertex's tag), which the stamp's build log prints summed.
+// the shared machinery of the noding and its verification: a grid over boxes, a segment's box, a proper crossing
+// a grid over every segment (cell = the median segment, never smaller than the extent shared over the segments)
+const grid = (items, box) => { const B = items.map(box)
+  let gx0 = Infinity, gy0 = Infinity, gx1 = -Infinity, gy1 = -Infinity
+  for (const b of B) { gx0 = Math.min(gx0, b[0]); gy0 = Math.min(gy0, b[1]); gx1 = Math.max(gx1, b[2]); gy1 = Math.max(gy1, b[3]) }
+  const lens = B.map(b => Math.max(b[2] - b[0], b[3] - b[1])).sort((x, y) => x - y)
+  const C = Math.max(1, lens[lens.length >> 1] || 1, Math.sqrt((gx1 - gx0 + 1) * (gy1 - gy0 + 1) / Math.max(1, B.length))), NX = Math.floor((gx1 - gx0) / C) + 1
+  const cells = new Map(), cellOf = (x, y) => Math.floor((y - gy0) / C) * NX + Math.floor((x - gx0) / C)
+  B.forEach((b, n) => { for (let cx = Math.floor((b[0] - gx0) / C); cx <= Math.floor((b[2] - gx0) / C); cx++) for (let cy = Math.floor((b[1] - gy0) / C); cy <= Math.floor((b[3] - gy0) / C); cy++) {
+    const c = cy * NX + cx; let l = cells.get(c); if (!l) cells.set(c, l = []); l.push(n) } })
+  return { cells, cellOf, B, near: (x0, y0, x1, y1) => { const out = new Set()
+    for (let cx = Math.floor((x0 - gx0) / C); cx <= Math.floor((x1 - gx0) / C); cx++) for (let cy = Math.floor((y0 - gy0) / C); cy <= Math.floor((y1 - gy0) / C); cy++) for (const n of cells.get(cy * NX + cx) || []) out.add(n)
+    return out } } }
+const sbox = (s) => [Math.min(s.a[0], s.b[0]), Math.min(s.a[1], s.b[1]), Math.max(s.a[0], s.b[0]), Math.max(s.a[1], s.b[1])]
+// ⭐ EXACT AT ANY EXTENT, ONE ROUNDING RULE (Zob's ruling, 2026-10-25). A PREDICATE (a sign) multiplies differences within
+// one segment, or between two whose boxes overlap (< 2E), so under 2^24 units every product is under 2^51 and exact in
+// doubles; past it the same predicate runs in BigInt (`small` decides, per call; `numberOnly` is the check's mutant; the
+// same switch in `entersPixel` and `alongOf`, below). THE
+// POINT is never a predicate: rx·tn is up to 4E³ and not exact in doubles at any extent we use, so it is computed in BigInt on
+// EVERY crossing, rounded once, ties half-UP (⌊v + ½⌋), the rule that puts a tie inside its own half-open square.
+const SMALL = 2 ** 24
+const small = (...v) => v.every(x => Math.abs(x) < SMALL)
+const sgnB = (v) => (v > 0n ? 1 : v < 0n ? -1 : 0)
+const halfUp = (n, d) => { const q = 2n * n + d, e = 2n * d; return q >= 0n ? q / e : -((-q + e - 1n) / e) }   // ⌊n/d + ½⌋, d > 0
+export const crossOf = (s, t, numberOnly = false) => {
+  const rx = s.b[0] - s.a[0], ry = s.b[1] - s.a[1], sx = t.b[0] - t.a[0], sy = t.b[1] - t.a[1], ex = t.a[0] - s.a[0], ey = t.a[1] - s.a[1]
+  // proper crossing ⇔ 0 < tn/den < 1 and 0 < un/den < 1 (the same test on both paths; zero is a literal of each)
+  const inside = (v, d, z) => (d > z ? v > z && v < d : v < z && v > d)
+  if (numberOnly || small(rx, ry, sx, sy, ex, ey)) { const den = rx * sy - ry * sx; if (!den) return null
+    if (!inside(ex * sy - ey * sx, den, 0) || !inside(ex * ry - ey * rx, den, 0)) return null }
+  const [Rx, Ry, Sx, Sy, Ex, Ey] = [rx, ry, sx, sy, ex, ey].map(BigInt)
+  let D = Rx * Sy - Ry * Sx, T = Ex * Sy - Ey * Sx
+  if (!(numberOnly || small(rx, ry, sx, sy, ex, ey))) { if (!D || !inside(T, D, 0n) || !inside(Ex * Ry - Ey * Rx, D, 0n)) return null }
+  // the point: exact, once, half-up — a + r·tn/den, with den made positive
+  if (D < 0n) { D = -D; T = -T }
+  return [Number(halfUp(BigInt(s.a[0]) * D + Rx * T, D)), Number(halfUp(BigInt(s.a[1]) * D + Ry * T, D))] }
+// does segment s ENTER hot pixel h's half-open square [X − ½, X + ½) × [Y − ½, Y + ½)? In doubled units (the square is
+// [2X−1, 2X+1)), so integer endpoints are even and a segment can lie along no pixel edge: the box test, then the four
+// corners' sides of the line, signs in doubles while every difference is under 2^24 and in BigInt past it.
+export const entersPixel = (s, h, numberOnly = false) => {
+  const ax = 2 * s.a[0], ay = 2 * s.a[1], bx = 2 * s.b[0], by = 2 * s.b[1], x0 = 2 * h.X - 1, x1 = 2 * h.X + 1, y0 = 2 * h.Y - 1, y1 = 2 * h.Y + 1
+  if (Math.max(ax, bx) < x0 || Math.min(ax, bx) >= x1 || Math.max(ay, by) < y0 || Math.min(ay, by) >= y1) return false
+  const dx = bx - ax, dy = by - ay, f = numberOnly || small(dx, dy, x0 - ax, y0 - ay, x1 - ax, y1 - ay)
+    ? (x, y) => Math.sign(dx * (y - ay) - dy * (x - ax))
+    : (x, y) => sgnB(BigInt(dx) * BigInt(y - ay) - BigInt(dy) * BigInt(x - ax))
+  const v = [f(x0, y0), f(x1, y0), f(x0, y1), f(x1, y1)]
+  return Math.min(...v) <= 0 && Math.max(...v) >= 0 }
+// where hot pixel h falls along segment s: the projection's integer numerator (the common /|ab|² dropped), compared with
+// < and > only, in doubles while the segment is under 2^24 units and in BigInt past it (one segment never mixes the two)
+export const alongOf = (s, h, numberOnly = false) => { const dx = s.b[0] - s.a[0], dy = s.b[1] - s.a[1]
+  return numberOnly || small(2 * dx, 2 * dy) ? (h.X - s.a[0]) * dx + (h.Y - s.a[1]) * dy
+    : BigInt(h.X - s.a[0]) * BigInt(dx) + BigInt(h.Y - s.a[1]) * BigInt(dy) }
+// ⛔ THE VERIFICATION, run by nodeCrossings on every output and exported so a check can hand it a planted bad output: no
+// proper crossing left between two rings that may meet, no vertex that is neither an input vertex nor a hot pixel, and no
+// retrace (an antenna A,B,A).
+// `K` the input rings' lattice points, `R` the output, `tags` per ring, `hot` the hot pixels ("X,Y" keys). Throws, by name.
+export function verifyNoded(K, R, pairs, tags, who, hot) {
+  const known = new Set(hot.keys())
+  R.forEach((o, ri) => o.forEach((v, n) => { const u = o[(n - 1 + o.length) % o.length], w = o[(n + 1) % o.length]
+    if (o.length >= 3 && u.k[0] === w.k[0] && u.k[1] === w.k[1]) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[ri]} retraces through (${v.k.map(c => c / CLIP_SCALE)}) and back to (${u.k.map(c => c / CLIP_SCALE)}) — an antenna. Refusing.`) }))
+  R.forEach((o, ri) => o.forEach(v => { if (!known.has(v.k[0] + ',' + v.k[1])) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[ri]} carries (${v.k.map(c => c / CLIP_SCALE)}), neither an input vertex nor a hot pixel — an invented point. Refusing.`) }))
+  const outSegs = []; R.forEach((o, ri) => o.forEach((v, n) => outSegs.push({ ri, a: v.k, b: o[(n + 1) % o.length].k })))
+  const OG = grid(outSegs, sbox)
+  for (const [c, l] of OG.cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
+    const s = outSegs[l[u]], t = outSegs[l[w]]; if (s.ri === t.ri || !pairs(s.ri, t.ri)) continue
+    const A = OG.B[l[u]], B = OG.B[l[w]]; if (A[0] > B[2] || B[0] > A[2] || A[1] > B[3] || B[1] > A[3]) continue
+    if (OG.cellOf(Math.max(A[0], B[0]), Math.max(A[1], B[1])) !== c) continue
+    const X = crossOf(s, t)
+    if (X) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[s.ri]} and ${tags[t.ri]} still cross at (${X.map(v => v / CLIP_SCALE)}) after the noding — a hot pixel was not honoured. Refusing.`) }
+}
+export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {}) {
+  if (typeof pairs !== 'function') throw new Error(`[${who}] ⛔ nodeCrossings: no \`pairs\` — which rings may cross is the caller's to say`)
+  const K = rings.map((r, ri) => (r.p || []).map(([x, z]) => {
+    const X = Math.round(x * CLIP_SCALE), Y = Math.round(z * CLIP_SCALE)
+    if (Math.abs(x * CLIP_SCALE - X) > 1e-6 || Math.abs(z * CLIP_SCALE - Y) > 1e-6) throw new Error(`[${who}] ⛔ (${x}, ${z}) of ${rings[ri].tag} is off the lattice (1 / ${CLIP_SCALE} m) — every ring the noding is given must already be on it. Refusing.`)
+    return [X, Y] }))
+  const segs = []; K.forEach((k, ri) => k.forEach((a, i) => segs.push({ ri, i, a, b: k[(i + 1) % k.length] })))
+  const SG = grid(segs, sbox)
+  // 1 + 2: the hot pixels. A crossing's point is computed once per pair and shared, so its two sides cannot round apart.
+  const hot = new Map()                                     // "X,Y" → { X, Y, from: tag string }
+  K.forEach((k, ri) => k.forEach(([X, Y]) => { const key = X + ',' + Y; if (!hot.has(key)) hot.set(key, { X, Y, from: rings[ri].tag }) }))
+  let crossings = 0
+  for (const [c, l] of SG.cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
+    const s = segs[l[u]], t = segs[l[w]]; if (s.ri === t.ri || !pairs(s.ri, t.ri)) continue
+    const A = SG.B[l[u]], B = SG.B[l[w]]; if (A[0] > B[2] || B[0] > A[2] || A[1] > B[3] || B[1] > A[3]) continue
+    if (SG.cellOf(Math.max(A[0], B[0]), Math.max(A[1], B[1])) !== c) continue          // each pair once, in its first shared cell
+    const X = crossOf(s, t); if (!X) continue
+    crossings++; const key = X[0] + ',' + X[1]
+    if (!hot.has(key)) hot.set(key, { X: X[0], Y: X[1], from: `${rings[s.ri].tag}×${rings[t.ri].tag}` }) }
+  // 3: route every segment through every hot pixel whose half-open square it enters (doubled units: the square is
+  // [2X−1, 2X+1) on each axis; integer endpoints are even, so a segment can lie along no pixel edge)
+  const H = [...hot.values()], HG = grid(H, h => [h.X, h.Y, h.X, h.Y])
+  const counts = {}, out = K.map(() => [])
+  segs.forEach(s => { const { ri, i, a, b } = s, o = out[ri]
+    o.push({ p: [a[0] / CLIP_SCALE, a[1] / CLIP_SCALE], k: a, src: i, edge: i })
+    const via = [...HG.near(Math.min(a[0], b[0]) - 1, Math.min(a[1], b[1]) - 1, Math.max(a[0], b[0]) + 1, Math.max(a[1], b[1]) + 1)]
+      .map(n => H[n]).filter(h => !(h.X === a[0] && h.Y === a[1]) && !(h.X === b[0] && h.Y === b[1]) && entersPixel(s, h))
+      .map(h => ({ h, t: alongOf(s, h) })).sort((x, y) => (x.t < y.t ? -1 : x.t > y.t ? 1 : 0))
+    for (const { h } of via) { o.push({ p: [h.X / CLIP_SCALE, h.Y / CLIP_SCALE], k: [h.X, h.Y], src: null, edge: i })
+      const ck = `${rings[ri].tag} ← ${h.from}`; counts[ck] = (counts[ck] || 0) + 1 } })
+  // consecutive duplicates collapse, then the ANTENNAS: routing a ring through its own vertices' pixels turns a reversal
+  // within a pixel into a retrace A,B,A (HPDM tile 144, 2026-10-25: a 2 mm zigzag became A,B,A,B). A retrace encloses no
+  // area and decides nothing, so it is removed here, the last step of snap rounding (Zob's rules, Boz's ruling): one stack
+  // pass, then the cyclic seam; only an EXACT lattice retrace k[i−1] = k[i+1], never a near one, and never a self-touch
+  // (A…loop…A keeps its area). The survivor sits at A with the SECOND A's outgoing edge (the label names the edge leaving
+  // its vertex) and whichever A's `src`, the first's if both (the second's then dropped). Every input vertex the collapse
+  // drops is reported (`R.dropped`), and a survivor whose `src` came from the first A with the second's edge
+  // (`R.relabelled`: { src, edge }), so the caller checks its own flags against them; nothing there decides geometry.
+  const dropped = K.map(() => []), relabelled = K.map(() => [])
+  let R = out.map((o, ri) => { const d = o.filter((v, n) => { const w = o[(n + 1) % o.length]; return o.length < 2 || !(v.k[0] === w.k[0] && v.k[1] === w.k[1]) })
+    const same = (u, w) => u.k[0] === w.k[0] && u.k[1] === w.k[1]
+    const merge = (a1, a2) => { if (a1.src == null) return a2
+      if (a2.src != null && a2.src !== a1.src) dropped[ri].push(a2.src)
+      relabelled[ri].push({ src: a1.src, edge: a2.edge }); return { ...a2, src: a1.src } }
+    const pop = (b) => { if (b.src != null) dropped[ri].push(b.src); const ck = `${rings[ri].tag} ✂ antenna`; counts[ck] = (counts[ck] || 0) + 1 }
+    const c = []
+    for (const v of d) { if (c.length >= 2 && same(c[c.length - 2], v)) { pop(c.pop()); c.push(merge(c.pop(), v)) } else c.push(v) }
+    for (let n = c.length; n >= 3; n = c.length) {                    // the seam: …A1, B | A2… or …A1 | B, A2…
+      if (same(c[n - 2], c[0])) { pop(c.pop()); c[0] = merge(c.pop(), c[0]) }
+      else if (same(c[n - 1], c[1])) { pop(c.shift()); c[0] = merge(c.pop(), c[0]) }
+      else if (same(c[n - 1], c[0])) c.pop()
+      else break }
+    if (new Set(c.map(v => v.k.join(','))).size < 3) throw new Error(`[${who}] ⛔ nodeCrossings: ${rings[ri].tag} at (${K[ri][0]?.map(v => v / CLIP_SCALE)}) collapsed under three distinct points when routed through its hot pixels. Refusing.`)
+    return c })
+  if (tjoin) {
+    // ⭐ the home's own T-junction rule, as a SECOND step: an existing vertex within NODE_BOUND of another ring's edge enters
+    // it. One ring per group, so `nodeAcrossGroups` nodes across every pair of rings; the caller's `pairs` then keeps only the
+    // insertions between rings that may meet (a vertex nodeAcrossGroups added to a ring that may not meet its owner is dropped).
+    const N = nodeAcrossGroups(R.map((o, ri) => ({ groupKey: `${rings[ri].tag}#${ri}`, items: [o.map(v => v.p)] })), { who: `${who} t-join` })
+    R = R.map((o, ri) => { const pts = N[ri].items[0], next = []; let m = 0
+      for (const p of pts) { const k = [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
+        if (m < o.length && o[m].k[0] === k[0] && o[m].k[1] === k[1]) { next.push(o[m]); m++; continue }
+        const owner = K.findIndex((kk, rj) => rj !== ri && kk.some(q => q[0] === k[0] && q[1] === k[1]))
+        if (owner >= 0 && !pairs(ri, owner)) continue
+        next.push({ p, k, src: null, edge: o[Math.max(0, m - 1)].edge }); const ck = `${rings[ri].tag} ← t-join`; counts[ck] = (counts[ck] || 0) + 1 }
+      return next })
+  }
+  verifyNoded(K, R, pairs, rings.map(r => r.tag), who, hot)
+  R.counts = counts; R.crossings = crossings; R.dropped = dropped; R.relabelled = relabelled
+  return R
+}
+
 // a ring of [x, z] metres ↔ its lattice points ({ X, Y } in Clipper units): what the pinch search and the split read
 const ringToPath = (ring) => ring.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) }))
 const pathToRing = (path) => path.map(pt => [pt.X / CLIP_SCALE, pt.Y / CLIP_SCALE])

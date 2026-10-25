@@ -511,7 +511,7 @@ export function layerLandEvidence(osm, parcels, cdl = null) {
   }
   // ⭐ ONE PARTITION LEAVES (Boz's ruling, 2026-10-21, on HPDM's stamp refusal). Each region above is cut by its OWN boolean,
   // and each boolean rounds its own crossings, so where two regions meet their shared boundary left as two polylines up to a
-  // lattice step apart, and the stamp could not settle on them (tileGround#stampCrossings). The paint's own noding rule
+  // lattice step apart, and the stamp could not settle on them (then tileGround#stampCrossings; the stamp now nodes through latticeNode.js#nodeCrossings). The paint's own noding rule
   // (src/lib/latticeNode.js#nodeAcrossGroups at NODE_BOUND, imported, one rule for both producers) joins them: every region is
   // its own group, and a vertex of one within the bound of another's edge is inserted into that edge, both ways, to a
   // fixpoint. Insert-only: ownership, the precedence above and parcelConflictM2 are untouched; a vertex farther off is a
@@ -4949,7 +4949,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       console.log(`    [crosswalks] crossing evidence: ${CX.census.crossings} footway=crossing way(s) → ${CX.census.records} bound to the road they cross · unbound: ${CX.census.notOneRoadNode} not on exactly one road node · ${CX.census.roadNotInSkeleton} road in no chain`)
     }
     ribbonsLayer.protopolygon = {
-      eps: 0.005,
+      eps: MP.eps,                          // the ε the mint stroked at (tileGround.js#INK_EPS), recorded, never retyped
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
       labels: MP.labels,
       owners: MP.owners,
@@ -5017,7 +5017,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // may not have (`CLAUDE.md` Layer 0 q2).
     if (MP.refused) console.warn(`    ⛔ [①] identity REFUSED on the union — the protopolygon is frozen WITHOUT usable labels; downstream must not offset from it.`)
     const nCross = (MP.crossings || []).reduce((n, rg) => n + rg.filter(Boolean).length, 0)
-    console.log(`    [①] froze the protopolygon: ${MP.chainRings} chain outline(s) → ${MP.rings.length} ring(s), ${holes} holes (= blocks), ${MP.owners.length} identity stamps, ${nCross} crossings (= the corners) at ε=0.005 m`)
+    console.log(`    [①] froze the protopolygon: ${MP.chainRings} chain outline(s) → ${MP.rings.length} ring(s), ${holes} holes (= blocks), ${MP.owners.length} identity stamps, ${nCross} crossings (= the corners) at ε=${MP.eps} m`)
     if (!nCross) console.warn(`    ⛔ [①] ZERO crossings frozen — every downstream consumer will read this contour as having NO CORNERS and round nothing.`)
     }
   }

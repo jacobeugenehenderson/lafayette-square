@@ -1,0 +1,2 @@
+# re-mint outputs (tens of MB each) are run products, never committed
+out-*/

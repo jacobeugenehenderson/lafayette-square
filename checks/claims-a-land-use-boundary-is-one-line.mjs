@@ -4,7 +4,7 @@
 //   cuts each class's evidence by its OWN boolean, so where an OSM polygon meets a parcel class the boundary leaves as two
 //   independently rounded polylines. Measured on HPDM (Kerf's stamp dump, 2026-10-21): recreation's OSM edge and vacant's
 //   copy of it, 0.369 mm apart at vacant's rounded crossing. ② crossed both within a grid unit, and the stamp's crossing
-//   pass (tileGround#stampCrossings) could not settle: "did not settle in 8 rounds". The stamp was right to refuse; the
+//   pass (then tileGround#stampCrossings, now latticeNode.js#nodeCrossings) could not settle: "did not settle in 8 rounds". The stamp was right to refuse; the
 //   INPUT draws one line twice.
 // ⭐ THE PREDICATE, read, never restated: for every vertex of one region that lies within the paint's own noding bound
 //   (src/lib/latticeNode.js#NODE_BOUND, imported; in Clipper units, so ÷ CLIP_SCALE metres) of another region's edge, that vertex
@@ -62,7 +62,7 @@ export function doubled(regions, bound = BOUND) {
       // ⭐ the other ring already carries this point as a vertex ELSEWHERE: not a second copy of a line, a PINCH in that ring
       // (`pinches`, below, names it there), which the noder rightly does not insert twice
       if (e.has.has(K(v).join(','))) continue
-      // ON the lattice, in Clipper's integer units, so "on the edge" is an exact zero cross product (stampCrossings' own test)
+      // ON the lattice, in Clipper's integer units, so "on the edge" is an exact zero cross product (the noding's own test, latticeNode.js#nodeCrossings)
       const V = K(v), P = K(e.p), Q = K(e.q), dx = Q[0] - P[0], dz = Q[1] - P[1], L2 = dx * dx + dz * dz; if (!L2) continue
       if ((V[0] === P[0] && V[1] === P[1]) || (V[0] === Q[0] && V[1] === Q[1])) continue
       const u = ((V[0] - P[0]) * dx + (V[1] - P[1]) * dz) / L2; if (u <= 0 || u >= 1) continue

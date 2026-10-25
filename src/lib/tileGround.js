@@ -18,7 +18,8 @@ import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
 import { blockKeyFromRing } from './buildBlockGeometryV2.js'
 import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
-import { CLIP_SCALE as SCALE } from './lattice.js'
+import { CLIP_SCALE as SCALE, LATTICE_M } from './lattice.js'
+import { nodeCrossings } from './latticeNode.js'
 import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -366,7 +367,11 @@ export function classifyHighwayBlocks({ blocks, blockLabels, blockHoles, blockHo
   return { cls, verges, jr, jrRejected, jrRefused, gores }
 }
 
-export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary = null, coast = [], coastArcs = [], bb = null }) {
+// ⭐ ε, THE INK'S HALF-WIDTH: ONE KIT CONSTANT. Its value carries no information, only its non-zero-ness (the topology is
+// byte-stable across ε = 0.002 … 0.5 m); it must clear the 1 mm integer floor of the stage that holds it. The mint strokes
+// at it and RECORDS it (`MP.eps` → `protopolygon.eps`); ② reads it off the frozen artifact, never from here.
+export const INK_EPS = 0.005
+export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
   // one — so it is computed unconditionally here. ⚠️ The live path used to gate
@@ -417,14 +422,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // change exists to end.
   if (coastChains.length) console.log(`    [①] shoreline expanded as INK: ${coastChains.length} arc(s), ${coastChains.reduce((a, c) => a + c.st.points.length, 0)} vertices → two-sided at ε=${eps} m`)
   else if (Array.isArray(coast) && coast.length) console.warn(`    ⛔ [①] ${coast.length} water ring(s) but NO shoreline arc to expand — the land will close against the clip edge, which carries ONE owner and no landward side.`)
-  for (const { st, ci } of chains) {
-    if (!(st?.points?.length >= 2)) continue
-    const P = st.points, nrm = []
-    for (let i = 0; i < P.length; i++) {
-      const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)]
-      const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
-      nrm.push(L > 1e-9 ? [-dz / L * eps, dx / L * eps] : (nrm[nrm.length - 1] || [0, 0]))
-    }
+  // ⭐ ONE CONTEXT PER CHAIN — its stamp, its ends. The stroke below may span several chains; every vertex is still
+  // stamped by its OWN chain, in that chain's own indexing, so `segOrdAt` is asked exactly as before (the authoring key).
+  const ctxOf = ({ st, ci }) => {
+    const P = st.points
     const skelId = st?.skelId ?? st?.name ?? null, gs = !!st?.gradeSeparated
     // ⭐ `srcIdx` is the chain POINT INDEX this boundary vertex was struck from — carried, never
     // recovered. The corner-R key space is `ixKeyOf(node)|legA|legB` (`resolveVertR`), i.e. it is
@@ -470,43 +471,218 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     const isCoast = skelId === WATER_EDGE_SKEL
     const stamp = (side, i, segI) => { const ge = gradeEndOf(i)
       return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }) }) - 1 }
-    const ring = [], labs = []
-    for (let i = 0; i < P.length; i++) {
-      ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
-      // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it
-      // 'left' puts every ASYMMETRIC authored width on the wrong side of its street.
-      labs.push(stamp('right', i, i))
+    return { st, ci, P, skelId, isCoast, dg0, dg1, lastI, stamp }
+  }
+  const live = chains.filter(({ st }) => st?.points?.length >= 2).map(ctxOf)
+  // ⭐⭐⭐ THE INK MEETS INSIDE THE INK: A CHAIN CUT IS STROKED THROUGH, NEVER BUTTED. ① has no nodes; a degree-2 cut
+  // (two chains end on one shared vertex, nothing else there) is bookkeeping, so the chains it joins are ONE stroke and
+  // only the label changes at the cut. ⛔ Butted, each end's corners (end ± its own normal × ε) sit up to 2ε outside
+  // the neighbour's ink: the union keeps them as sub-ink edges between two owners, and at a near-straight cut the two
+  // butts' overlap falls below the grid and the ink parts (`BRIEF-the-ink-meets-inside-the-ink`). The cut is read off
+  // the frame's own `caps.*.degree` and the exact shared vertex (0.1 mm key, as `nodes` below); the coast is never
+  // joined. ⛔ No endpoint moves and `streets[].points` is never written: the stroke is a walk over the chains as given.
+  // ⭐ A group with no free end is a CLOSED stroke — a loop chain whose own two ends meet, or chains in a ring.
+  const qk4 = (p) => `${Math.round(p[0] * 1e4)},${Math.round(p[1] * 1e4)}`
+  const endsAt = new Map()
+  live.forEach((c, n) => { if (c.isCoast) return
+    for (const e of ['start', 'end']) if (c.st.caps?.[e]?.degree === 2) { const k = qk4(e === 'start' ? c.P[0] : c.P[c.lastI]); let a = endsAt.get(k); if (!a) endsAt.set(k, a = []); a.push([n, e]) } })
+  const partner = new Map(), hairpins = []
+  let oddCuts = 0
+  // the vertex beside a chain end, along the chain: where a stroke through the cut comes from or goes to
+  const besideEnd = ([n, e]) => { const c = live[n]; return c.P[e === 'start' ? 1 : c.lastI - 1] }
+  for (const a of endsAt.values()) {
+    if (a.length !== 2) { oddCuts++; continue }
+    // ⛔ A STROKE THROUGH THE CUT MUST HAVE A DIRECTION THERE. Where both chains leave the cut toward the SAME vertex the
+    // stroke would double back on itself and its normal at the cut is undefined: two chains drawn over each other (PTown
+    // `old-colony-way-1`/`-2`, identical twice) — a frame duplicate, not a cut. Left butted and named, never joined.
+    if (a[0][0] !== a[1][0] && qk4(besideEnd(a[0])) === qk4(besideEnd(a[1]))) { hairpins.push(`${live[a[0][0]].skelId}|${live[a[1][0]].skelId}`); continue }
+    partner.set(`${a[0][0]}:${a[0][1]}`, a[1]); partner.set(`${a[1][0]}:${a[1][1]}`, a[0])
+  }
+  // ⛔ LOUD: a degree-2 end that is not joined is left butted, and the sub-ink check sees it.
+  if (oddCuts) console.warn(`    ⛔ [①] ${oddCuts} degree-2 chain end(s) meet no single other chain end — left butted, NOT joined`)
+  if (hairpins.length) console.warn(`    ⛔ [①] ${hairpins.length} degree-2 cut(s) where both chains leave toward the same vertex (a chain drawn twice) — left butted, NOT joined: ${hairpins.join(' · ')}`)
+  const strokes = [], seen = new Set()
+  const walk = (n, e) => { const seq = []; let cur = [n, e]
+    while (cur && !seen.has(cur[0])) { const [m, en] = cur, rev = en === 'end'; seen.add(m); seq.push({ c: live[m], rev }); cur = partner.get(`${m}:${rev ? 'start' : 'end'}`) || null }
+    return { seq, closed: !!cur } }
+  live.forEach((_, n) => { if (!seen.has(n)) for (const e of ['start', 'end']) if (!seen.has(n) && !partner.has(`${n}:${e}`)) strokes.push(walk(n, e)) })
+  live.forEach((_, n) => { if (!seen.has(n)) strokes.push(walk(n, 'start')) })
+  const joined = strokes.filter(s => s.seq.length > 1 || s.closed)
+  if (joined.length) console.log(`    [①] chain cuts stroked through: ${joined.length} stroke(s) join ${joined.reduce((a, s) => a + s.seq.length, 0)} chains (${joined.filter(s => s.closed).length} closed)`)
+  // ⭐ ONE VERTEX PER POINT, TWO MEMBERS AT A CUT: `f` is the chain whose edge LEAVES the vertex walking forward, `b`
+  // walking back. So the right pass stamps the cut with the chain ahead and the left pass with the chain behind,
+  // and the owner change sits ON the cut vertex, on both sides (kept by `preserveCollinear` in the union).
+  const S = strokes.map(({ seq, closed }, si) => {
+    const V = []
+    seq.forEach(({ c, rev }, s) => { for (let t = 0; t < c.P.length; t++) { const i = rev ? c.lastI - t : t, m = { c, rev, i }
+      if (s > 0 && t === 0) V[V.length - 1].f = m; else V.push({ p: c.P[i], f: m, b: m }) } })
+    if (closed) { V[0].b = V[V.length - 1].b; V.pop() }
+    const nV = V.length, nrm = []
+    for (let k = 0; k < nV; k++) {
+      const a = V[closed ? (k - 1 + nV) % nV : Math.max(0, k - 1)].p, b = V[closed ? (k + 1) % nV : Math.min(nV - 1, k + 1)].p
+      const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
+      nrm.push(L > 1e-9 ? [-dz / L * eps, dx / L * eps] : (nrm[nrm.length - 1] || [0, 0]))
     }
-    for (let i = P.length - 1; i >= 0; i--) {
-      ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
-      labs.push(stamp('left', i, Math.max(0, i - 1)))
+    return { seq, closed, V, nrm }
+  })
+  // ⭐⭐⭐ A REAL NODE'S OUTLINE IS BUILT ONCE, FROM ALL ITS LEGS (Boz, 2026-10-25: "one outline per node"). Where three or
+  // more legs leave one shared vertex (a stroke passing through it is two legs, in and out), the legs are sorted by angle
+  // and each pair of angular neighbours meets at ONE point: where the first's counter-clockwise ε side crosses the
+  // second's clockwise one (the point their inks' boundaries cross anyway), or, across a wedge of 180° or more (a bend's
+  // outer corner), the point ε out along the wedge's bisector, ON the ink's round ε corner. Every stroke at the node reads its corners from
+  // that one outline: a leg that ENDS there closes on its two points and the node itself, in place of a butt whose
+  // corners poked up to 2ε past its neighbours' ink; a stroke passing through takes, on each side, the points of the
+  // legs either side of it. So neighbours share exact points and the union finds nothing under the grid to round.
+  // ⭐⭐ AND EVERY BEND IS THE SAME OUTLINE, WITH TWO LEGS (Boz, 2026-10-25: "the ink is ε wide everywhere: a true offset at
+  // every bend, every stroke"). A stroke's interior vertex, a chain cut or a plain bend, coast included, is outlined
+  // exactly as a node is: the inner side is the crossing of the two segments' ε sides, the outer side the point on the
+  // round ε corner. So the polygon is INSCRIBED in the true ε ink: nothing outside it, one vertex per corner. ⛔ The ε
+  // along the bisector on BOTH sides, which this replaces, cut the inner side short of ε: the land met the water a few
+  // mm apart at sharp coast vertices (PTown, Huron) and a sharp cut lost ink (Huron jefferson-street→huron-street-0).
+  // ⛔ A MITER on the outer side was tried and is wrong: its point lies ε/cos(turn/2) out, OUTSIDE the ink, and the edges
+  // leaving it no longer lie on their owner (claims-every-proto-edge-lies-on-its-owner: LS 4, HPDM 44 edges).
+  // ⛔ Never a union followed by a merge, and never clamped: an inner crossing past either leg's own first segment
+  // (acute), or a leg of no length, is left with its plain offsets and NAMED; so is a chain end at a node no passing
+  // chain has a vertex at.
+  const over = new Map(), nodeRefusal = { acute: [], degenerate: [], noVertex: [] }
+  {
+    const at = new Map()
+    S.forEach((s, si) => {
+      s.V.forEach((v, k) => { const q = qk4(v.p); let a = at.get(q); if (!a) at.set(q, a = []); a.push({ si, k }) }) })
+    const rot = (u) => [-u[1], u[0]]                         // the ε side `nrm` names 'right', counter-clockwise of travel
+    for (const [q, here] of at) {
+      const legs = []
+      for (const { si, k } of here) { const { V, closed } = S[si], n = V.length
+        if (closed || k > 0) legs.push({ si, k, dir: 'in', to: V[closed ? (k - 1 + n) % n : k - 1].p })
+        if (closed || k < n - 1) legs.push({ si, k, dir: 'out', to: V[closed ? (k + 1) % n : k + 1].p }) }
+      // two legs are a BEND only when one stroke passes through; two strokes' ends meeting were not joined, and stay butted
+      if (legs.length < 3 && !(legs.length === 2 && here.length === 1)) {
+        for (const { si, k } of here) { const s = S[si]; if (s.closed || (k > 0 && k < s.V.length - 1)) continue
+          const m = k === 0 ? s.V[0].f : s.V[k].b, e = (k === 0) !== m.rev ? 'start' : 'end'
+          if ((e === 'start' ? m.c.dg0 : m.c.dg1) >= 3) nodeRefusal.noVertex.push(`${m.c.skelId}@${q}`) }
+        continue
+      }
+      const o = S[here[0].si].V[here[0].k].p
+      let bad = null
+      for (const g of legs) { const dx = g.to[0] - o[0], dz = g.to[1] - o[1], len = Math.hypot(dx, dz)
+        if (!(len > 0)) { bad = 'degenerate'; break }
+        g.u = [dx / len, dz / len]; g.len = len; g.ang = Math.atan2(dz, dx) }
+      const W = []
+      if (!bad) {
+        legs.sort((a, b) => a.ang - b.ang)
+        for (let j = 0; j < legs.length && !bad; j++) {
+          const A = legs[j], B = legs[(j + 1) % legs.length], rA = rot(A.u), rB = rot(B.u)
+          const cross = A.u[0] * B.u[1] - A.u[1] * B.u[0], dot = A.u[0] * B.u[0] + A.u[1] * B.u[1]
+          if (cross > 0) {
+            // A's ccw side o + ε·rot(uA) + s·uA meets B's cw side o − ε·rot(uB) + t·uB
+            const c0 = -eps * (rA[0] + rB[0]), c1 = -eps * (rA[1] + rB[1]), det = -cross
+            const s = (-c0 * B.u[1] + B.u[0] * c1) / det, t = (A.u[0] * c1 - A.u[1] * c0) / det
+            if (!(s >= 0 && t >= 0 && s <= A.len && t <= B.len)) { bad = 'acute'; break }
+            W.push([o[0] + eps * rA[0] + s * A.u[0], o[1] + eps * rA[1] + s * A.u[1]])
+          } else if (cross < 0 || dot < 0) {
+            const th = ((B.ang - A.ang) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), w = A.ang + th / 2
+            W.push([o[0] + eps * Math.cos(w), o[1] + eps * Math.sin(w)])
+          } else bad = 'acute'                                 // two legs leave in one direction
+        }
+      }
+      if (bad) { nodeRefusal[bad].push(`${[...new Set(here.map(({ si }) => S[si].seq[0].c.skelId))].join('|')}@${q}`); continue }
+      legs.forEach((g, j) => { g.ccw = W[j]; g.cw = W[(j - 1 + W.length) % W.length] })
+      const one = (a, b) => (a === b ? [a] : [a, b])
+      for (const { si, k } of here) {
+        const gi = legs.find(g => g.si === si && g.k === k && g.dir === 'in'), go = legs.find(g => g.si === si && g.k === k && g.dir === 'out')
+        over.set(`${si}:${k}`, gi && go ? { R: one(gi.cw, go.ccw), L: one(go.cw, gi.ccw) }
+          : go ? { R: [go.ccw], L: [go.cw, o] } : { R: [gi.cw, o], L: [gi.ccw] })
+      }
     }
-    if (ring.length < 3) continue
+    const nr = Object.entries(nodeRefusal).filter(([, v]) => v.length)
+    // ⛔ LOUD: a refused vertex keeps its plain offsets (its butts, at a node), and the sub-ink check reads it RED.
+    if (nr.length) console.warn(`    ⛔ [①] outline REFUSED, plain offsets kept: ${nr.map(([k, v]) => `${v.length} ${k} (${v.slice(0, 4).join(' · ')}${v.length > 4 ? ' …' : ''})`).join(' · ')}`)
+    console.log(`    [①] outlines: ${over.size} stroke vertices take their corners from one outline (node, cut or bend)`)
+  }
+  // ⭐⭐ THE SHORE MEETS THE FRAME ACROSS ITS WHOLE INK. A coast arc ends ON a bb edge (`coastline.mjs`: the run inside the bb,
+  // both ends on its edge), and the bb is the frame the land is cut from. Butted square to the arc, its cap crossed the
+  // edge at a slant, so one corner fell inside the frame and the water face's corner on the edge sat a sub-ink step from
+  // it (Huron, PTown: `__boundary__` → `__water__`). ⇒ The cap is where the arc's two ε sides cross that edge, so the frame
+  // cuts the stroke once, square to the frame. "On the edge" is the lattice's own rounding bound, never a constant.
+  // ⛔ Named refusals, left butted: an end on two edges (a frame corner), an arc running along the edge, a crossing past
+  // the arc's last segment.
+  const frameRefusal = []
+  if (bb && [bb.x0, bb.x1, bb.z0, bb.z1].every(Number.isFinite)) {
+    const ON = Math.SQRT1_2 * LATTICE_M
+    for (const [si, s] of S.entries()) { if (!s.seq[0].c.isCoast || s.closed || s.V.length < 2) continue
+      const n = s.V.length
+      for (const k of [0, n - 1]) {
+        const p = s.V[k].p, on = [[0, bb.x0], [0, bb.x1], [1, bb.z0], [1, bb.z1]].filter(([a, v]) => Math.abs(p[a] - v) <= ON)
+        if (!on.length) continue
+        const where = `${s.seq[0].c.skelId}@(${p[0].toFixed(3)}, ${p[1].toFixed(3)})`
+        if (on.length > 1) { frameRefusal.push(`${where} on a frame corner`); continue }
+        const [a, v] = on[0], A = s.V[k === 0 ? 0 : n - 2].p, B = s.V[k === 0 ? 1 : n - 1].p
+        const L = Math.hypot(B[0] - A[0], B[1] - A[1]), d = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], r = [-d[1] * eps, d[0] * eps]
+        const cut = (sg) => { const o = [p[0] + sg * r[0], p[1] + sg * r[1]], t = (v - o[a]) / d[a]
+          return Number.isFinite(t) && Math.abs(t) <= L ? [o[0] + t * d[0], o[1] + t * d[1]] : null }
+        const pr = cut(1), pl = cut(-1)
+        if (!pr || !pl) { frameRefusal.push(`${where} runs along the edge or crosses it past its last segment`); continue }
+        over.set(`${si}:${k}`, { R: [pr], L: [pl] })
+      }
+    }
+  }
+  if (frameRefusal.length) console.warn(`    ⛔ [①] shore cap on the frame REFUSED, left butted: ${frameRefusal.join(' · ')}`)
+  for (const [si, { seq, closed, V, nrm }] of S.entries()) {
+    const nV = V.length
+    // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it 'left' puts every ASYMMETRIC authored
+    // width on the wrong side of its street. ⭐ A member walked REVERSED has its sides swapped: the stroke's right is its left.
+    const right = ({ c, rev, i }) => (rev ? c.stamp('left', i, Math.max(0, i - 1)) : c.stamp('right', i, i))
+    const left = ({ c, rev, i }) => (rev ? c.stamp('right', i, i) : c.stamp('left', i, Math.max(0, i - 1)))
+    // each vertex's side points in travel order: its own ε offset, or the node outline's points (above)
+    const Rk = (k) => over.get(`${si}:${k}`)?.R ?? [[V[k].p[0] + nrm[k][0], V[k].p[1] + nrm[k][1]]]
+    const Lk = (k) => over.get(`${si}:${k}`)?.L ?? [[V[k].p[0] - nrm[k][0], V[k].p[1] - nrm[k][1]]]
+    const add = (ring, labs) => { rings.push(ring); labels.push(labs) }
     // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon
     // overlaps, so a mixed pile unions into confetti instead of one object.
     // ⛔ The earlier ruling here — reverse, do NOT rotate ("47 with the rotation, 2 without") — was measured while
     // booleanLabelled's forward scan still handed a minted vertex the NEXT record, which partly cancelled the
     // missing rotation. With the containing edge taken first, rotation is what the geometry oracle agrees with.
     // Retired text + the measurement: `cartograph/_archive/PROTO-labels-reversed-not-rotated-RETIRED-2026-09-25.md`.
-    const pass = labs.map((_, k) => k < P.length)   // true = the right-hand pass; reversed WITH the ring below
-    const pEnd = labs.map((_, k) => { const i = k < P.length ? k : 2 * P.length - 1 - k; return i === 0 ? 'start' : i === lastI ? 'end' : null })
     // ⭐ `labs` is PER-EDGE (labs[k] names edge k→k+1: right pass segment i, left pass segment i−1 via `segI`, the two
     // caps at the seams), so a reversal must also ROTATE it: new edge k is old edge n−2−k. `pass` and `pEnd` are
     // per-VERTEX and only reverse. ⛔ The not-rotated reversal this replaces put the span of segment i on segment
     // i−1 wherever i is an IX vertex (▶ `CARTOGRAPH_SCENE=<scene> node scratch/proto-remint.mjs --oracle=<ribbons>`).
-    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse(); labs.push(labs.shift()); pass.reverse(); pEnd.reverse() }
+    const orient = (ring, labs, want, also = []) => { if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== want) { ring.reverse(); labs.reverse(); labs.push(labs.shift()); for (const a of also) a.reverse() } }
+    if (closed) {
+      // ⭐ A CLOSED STROKE IS A BAND: its right boundary and its left boundary, wound opposite, so non-zero fill keeps
+      // the ink between them and the inside stays out. No butt, so no cap.
+      if (nV < 3) continue
+      // the left boundary is walked BACK, so each of its edges is owned by the left stamp at its start
+      const rR = [], lR = [], rL = [], lL = []
+      for (let k = 0; k < nV; k++) for (const q of Rk(k)) { rR.push([q[0], q[1]]); lR.push(right(V[k].f)) }
+      for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { rL.push([q[0], q[1]]); lL.push(left(V[k].b)) }
+      const outerR = Math.abs(signedArea(rR)) >= Math.abs(signedArea(rL))
+      orient(rR, lR, outerR); orient(rL, lL, !outerR)
+      add(rR, lR); add(rL, lL)
+      continue
+    }
+    const ring = [], labs = [], pass = [], pEnd = []   // pass: true = the right-hand pass; reversed WITH the ring below
+    const endOf = (k) => (k === 0 ? 'start' : k === nV - 1 ? 'end' : null)
+    for (let k = 0; k < nV; k++) for (const q of Rk(k)) { ring.push([q[0], q[1]]); labs.push(right(V[k].f)); pass.push(true); pEnd.push(endOf(k)) }
+    for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { ring.push([q[0], q[1]]); labs.push(left(V[k].b)); pass.push(false); pEnd.push(endOf(k)) }
+    if (ring.length < 3) continue
+    // the stroke's two TRUE ends, as (chain, end): a cut inside the stroke is no end, so it gets no cap mark
+    const first = seq[0], last = seq[seq.length - 1]
+    const ends = { start: [first.c, first.rev ? 'end' : 'start'], end: [last.c, last.rev ? 'start' : 'end'] }
+    orient(ring, labs, true, [pass, pEnd])
     // ⭐ THE TWO CAP EDGES ARE MARKED, on the FINAL ring: an edge whose ends lie on opposite passes crosses the
-    // ribbon. ⛔ Marked AFTER the flip, never by position: before it, `P.length-1` and `2·P.length-1` are the cap
-    // vertices; after it, those records label LEGS (▶ `scratch/ink-cap-marks.mjs`). A record is one vertex's
-    // (`stamp` pushes a new one per call), so the mark names that vertex's edge. ⛔ Additive: `skelId`, `srcIdx`, `tipEnd` stay — the tip ease reads them.
+    // ribbon. ⛔ Marked AFTER the flip, never by position: the records at the seams label LEGS once it has flipped
+    // (▶ `scratch/ink-cap-marks.mjs`). A record is one vertex's (`stamp` pushes a new one per call), so the mark names
+    // that vertex's edge. ⛔ Additive: `skelId`, `srcIdx`, `tipEnd` stay — the tip ease reads them.
     // ⭐ TWO MARKS, NOT ONE (Boz's ruling, 2026-10-21, on the coast's capless ends): `across` — the edge runs ACROSS the
     // stroke, so it is not frontage and the run emitter declines it (fc3faf43's reason, which the coast needs too: its end
     // edges survive the union at the frame) — and `cap`, the doctrine's dead end (RIBBONS: a coast has no CAP), only where
-    // the owner is a degree-1 tip, so `cap` ⇔ `tipEnd` by construction and a cap always knows its end.
-    const endSurvives = (end) => isCoast || (end === 'start' ? dg0 : dg1) === 1
+    // the owner is a degree-1 tip, so `cap` ⇔ `tipEnd` by construction and a cap always knows its end. A stroke's ends are
+    // its TRUE ends (`ends`): a chain cut inside it is no end, so it takes neither mark.
+    const endSurvives = (end) => { const [c, e] = ends[end]; return c.isCoast || (e === 'start' ? c.dg0 : c.dg1) === 1 }
     for (let k = 0; k < labs.length; k++) if (pass[k] !== pass[(k + 1) % labs.length] && endSurvives(pEnd[k])) {
       const o = owners[labs[k]]; o.across = true; if (o.tipEnd) o.cap = true }
-    rings.push(ring); labels.push(labs)
+    add(ring, labs)
   }
   // ⭐⭐⭐ THE CORNER NODE, FROZEN — so ② NEVER TOUCHES A CHAIN.
   // ② needs one thing from the centreline: where two chains meet, because the authored corner
@@ -541,9 +717,16 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // own label, labels on Clipper's Z channel, crossings resolved by walking the
   // output ring forward. ⛔ NOT `unionRingLabelled`: that self-unions ONE ring and
   // cannot carry identity across ~200 chain rectangles.
-  // the containment rule re-owns an edge only ACROSS strokes — two labels are one stroke when they name one chain
-  const sameStroke = (a, b) => owners[a] && owners[b] && owners[a].skelId === owners[b].skelId
-  const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels, [], null, { sameStroke })   // ① needs the edge ledger; nothing else does
+  // ⭐ THE CONTAINMENT RULE LEAVES A LABEL ONLY WHERE IT ALREADY NAMES THE AUTHORING KEY OF THE EDGE IT LIES ON
+  // (skelId · side · segOrd). It re-owns a surviving vertex whose leaving edge is not on its own input edge, to the one
+  // input edge containing it; where that edge's owner is the same key the label is already right and its record stays.
+  // ⛔ "Same stroke" (same skelId) was too coarse once strokes share exact outline points: where a chain's END lands on
+  // its own vertex (a self-T) or passes back through its own start, the ring passes one point twice and either record
+  // survives, so an edge on the LEFT boundary, or on span 0, kept a RIGHT or span-1 record (Huron eagle-ridge-drive-0,
+  // meadowlark-lane; PTown willow-drive, vorse-lane-0: claims-every-proto-edge-lies-on-its-owner).
+  const keyOf = (l) => { const o = owners[l]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null }
+  const sameStroke = (a, b) => keyOf(a) != null && keyOf(a) === keyOf(b)
+  const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels, [], null, { sameStroke, preserveCollinear: true })   // ① needs the edge ledger; nothing else does
   if (R.containment) console.log(`    [①] containment: ${R.containment.reassigned} surviving vertex/vertices whose edge runs along ANOTHER stroke re-owned by the input edge it lies on${R.containment.unresolved ? ` · ⛔ ${R.containment.unresolved} with no single containing edge — left as they were` : ''}`)
 
   // ⭐⭐⭐ THE CIRCLE IS THE STENCIL, NOT A CHAIN. Home: `RIBBONS §1`, "THE RIM BOUNDS, IT DOES
@@ -692,8 +875,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // is a hole of which. Read as a flat list, `frame − ink` hands back the exterior as the
     // frame ring PLUS one hole per connected ink component, and every one of those holes was
     // being carried out as a block. See `booleanLabelled`'s header for the measurement.
-    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, { sameStroke }, true)
-    if (D.containment) console.log(`    [①] blocks containment: ${D.containment.reassigned} re-owned${D.containment.unresolved ? ` · ⛔ ${D.containment.unresolved} with no single containing edge — left as they were` : ''}`)
+    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, { sameStroke, preserveCollinear: true }, true)
+    if (D.containment) console.log(`    [①] blocks containment: ${D.containment.reassigned} re-owned · ${D.containment.walkedBack} walked backward, labelled by the edge they leave on${D.containment.unresolved ? ` · ⛔ ${D.containment.unresolved} with no single containing edge — left as they were` : ''}`)
+    if (D.containment?.walkedBackRefused) console.warn(`    ⛔ [①] ${D.containment.walkedBackRefused} vertex/vertices walked backward with two arriving input edges of different owners — label left as it was`)
     let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null
     if (!D.refused && D.faces?.length) {
       blocks = []; blockLabels = []; blockHoles = []; blockHoleLabels = []
@@ -810,10 +994,11 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
           // and dropping it would offset the face AS IF SOLID — a plausible-looking wrong curb,
           // which is the one outcome a kit may not have. Counted and reported by name.
           if (!(hr?.length >= 3) || !hl) { unlabelledHoles++; continue }
-          if (signedArea(hr) < 0) { hs.push([...hr].reverse()); hls.push([...hl].reverse()) }
+          // ⭐ labels are PER EDGE (label i names edge i→i+1), so a reversal ROTATES them, as the stroke code does
+          if (signedArea(hr) < 0) { const l = [...hl].reverse(); l.push(l.shift()); hs.push([...hr].reverse()); hls.push(l) }
           else { hs.push(hr); hls.push(hl) }
         }
-        if (signedArea(rg) > 0) { blocks.push([...rg].reverse()); blockLabels.push([...lb].reverse()) }
+        if (signedArea(rg) > 0) { const l = [...lb].reverse(); l.push(l.shift()); blocks.push([...rg].reverse()); blockLabels.push(l) }
         else { blocks.push(rg); blockLabels.push(lb) }
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
@@ -835,9 +1020,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes }
+             nodes, eps }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, eps }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -874,6 +1059,9 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   // `carryEdges` may be `{ sameStroke(labA, labB) }` — the caller's own identity test, which the containment rule
   // needs because labels are opaque here. Any truthy value keeps the ledger on, as before.
   const sameStroke = typeof carryEdges === 'object' && carryEdges ? carryEdges.sameStroke : null
+  // `preserveCollinear` (the ① mint only, both its booleans): an owner change on a straight run is a vertex by
+  // construction. Without it Clipper drops every exactly-collinear vertex, labels and all, and two frontages merge.
+  const keepCollinear = typeof carryEdges === 'object' && carryEdges ? !!carryEdges.preserveCollinear : false
   const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
   clipperLib.use_xyz = true
@@ -904,7 +1092,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   const SEG_CELL = 50 * SCALE           // their hash cell, in grid units; a lookup scans a 3×3 neighbourhood
   const mkey = (q) => q.X + ',' + q.Y
   try {
-    const c = new Clipper()
+    const c = new Clipper(keepCollinear ? Clipper.ioPreserveCollinear : 0)
     // ⛔ Records only; deliberately does NOT set pt.Z. Setting it would change the label
     // stream every current caller reads, and their byte-identity is a shipped proof.
     // ⛔ THE LABEL SET ALONE IS NOT ENOUGH — measured. Where two chains cross at BOTH ends
@@ -1020,7 +1208,11 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   const inputEdgeOwner = (v, q) => { const own = new Set()
     for (const sg of segsNear(v)) { if (!sg.a.Z || !sg.b.Z) continue; if (onSeg(v, sg.a, sg.b) && onSeg(q, sg.a, sg.b)) own.add(labOfZ(sg.a.Z)) }
     return own.size === 1 ? [...own][0] : -1 }
-  let containReassigned = 0, containRefused = 0
+  // v's own input edges, by its Z and position: the one LEAVING v that q lies ahead on; the labels of those ARRIVING at v
+  const atV = (e, v) => e.Z === v.Z && e.X === v.X && e.Y === v.Y
+  const ownLeaving = (v, q) => segsNear(v).some(sg => atV(sg.a, v) && onSeg(q, sg.a, sg.b) && (q.X - v.X) * (sg.b.X - v.X) + (q.Y - v.Y) * (sg.b.Y - v.Y) > 0)
+  const ownArriving = (v, q) => new Set(segsNear(v).filter(sg => atV(sg.b, v) && sg.a.Z && onSeg(q, sg.a, sg.b) && (q.X - v.X) * (sg.a.X - v.X) + (q.Y - v.Y) * (sg.a.Y - v.Y) > 0).map(sg => labOfZ(sg.a.Z)))
+  let containReassigned = 0, containRefused = 0, walkedBack = 0, walkedBackRefused = 0
   for (const p of out) {
     const raw = p.map(q => (q.Z ? labOfZ(q.Z) : -1))      // -1 = a crossing
     // ⛔ `raw` itself is NOT rewritten: it is what the vertex CONTRIBUTED, and the crossings before it inherit from
@@ -1031,6 +1223,14 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       if (raw[i] < 0) continue
       const q = p[(i + 1) % raw.length]
       if (Math.abs(q.X - p[i].X) + Math.abs(q.Y - p[i].Y) <= 2) continue   // a zero-length edge has no direction to own
+      // ⭐⭐ A VERTEX WALKED BACKWARD. A difference walks its clip rings against their input direction, so the output edge
+      // v→q lies on v's ARRIVING input edge (prev→v), and v's own Z names the edge v LEFT in its input, the wrong one. Its
+      // label is then that arriving edge's own (its start's Z), so every ① label names the edge leaving its vertex in
+      // OUTPUT order, whatever direction the ring was walked. (The frame difference D; Zob read it in source.)
+      // ⛔ Into `fix`, never `raw`: every minted vertex before it resolves off raw's ORIGINAL Z.
+      if (!ownLeaving(p[i], q)) { const back = ownArriving(p[i], q)
+        if (back.size === 1) { fix.set(i, [...back][0]); walkedBack++; continue }
+        if (back.size > 1) { walkedBackRefused++; continue } }
       if (ownEdge(p[i], q)) continue
       const o = containingOwner(p[i], q)
       // ⛔ ONLY ACROSS STROKES: the defect is an edge running along ANOTHER chain. Where the containing edge is the
@@ -1139,7 +1339,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     }
     labs.push(res)
   }
-  return { rings, labels: labs, refused: null, crossings, faces, ...(segs ? { containment: { reassigned: containReassigned, unresolved: containRefused } } : {}), ...(recs ? { payloads } : {}) }
+  return { rings, labels: labs, refused: null, crossings, faces, ...(segs ? { containment: { reassigned: containReassigned, unresolved: containRefused, walkedBack, walkedBackRefused } } : {}), ...(recs ? { payloads } : {}) }
 }
 // ⭐⭐⭐ A LABEL IS A PROPERTY OF AN EDGE; A STAMP IS A PROPERTY OF A VERTEX. Conflating them is
 // an off-by-one that only appears when the ring is TRAVERSED BACKWARDS — and it is, almost always.
@@ -1236,14 +1436,9 @@ const sameGridPt = (p, q) => Math.abs(Math.round(p[0] * SCALE) - Math.round(q[0]
 // vertex its ① vertex; a split point is no corner. ⛔ ① itself is untouched.
 const TAPER_RATE = 10                          // run : offset — Caltrans HDM 206.2(3) lane-widening, cited in references/
 const roadOfSkel = (id) => String(id ?? '').replace(/-\d+$/, '')
-function taperWorkingCopy(ringIn, depthOfIn, ownerOfIn, report = null, eps = 0, isHwyEdge = () => false) {
+function taperWorkingCopy(ringIn, depthOfIn, ownerOfIn, report = null, isHwyEdge = () => false, turnAt = null) {
   const ownerKeyIn = (i) => { const o = ownerOfIn(i); return o ? `${o.skelId}|${o.side}` : null }
-  // ⭐ first, ①'s sub-ε edges fold into the corner they sit in (see `offsetRingByRects`) — a width step is judged
-  // between two LEGS, never against a 2 mm junction residue
-  const keep = []
-  for (let i = 0; i < ringIn.length; i++) { const a = ringIn[i], b = ringIn[(i + 1) % ringIn.length]; if (!(Math.hypot(b[0] - a[0], b[1] - a[1]) < subInkLen(eps))) keep.push(i) }
-  if (keep.length < 3) return { ring: ringIn, depth: ringIn.map((_, i) => depthOfIn(i)), e: ringIn.map((_, i) => i), v: ringIn.map((_, i) => i), hwy: ringIn.map((_, i) => !!isHwyEdge(i)), own: ringIn.map((_, i) => ownerKeyIn(i)) }
-  const ring = keep.map(i => ringIn[i]), depthOf = (r) => depthOfIn(keep[r]), ownerOf = (r) => ownerOfIn(keep[r])
+  const ring = ringIn, depthOf = depthOfIn, ownerOf = ownerOfIn
   const n = ring.length, d = [], len = []
   for (let i = 0; i < n; i++) { d.push(depthOf(i)); const a = ring[i], b = ring[(i + 1) % n]; len.push(Math.hypot(b[0] - a[0], b[1] - a[1])) }
   // ⛔ the ROAD only, never `side`: side is relative to each chain's own direction, and two chains of one road can run
@@ -1263,8 +1458,10 @@ function taperWorkingCopy(ringIn, depthOfIn, ownerOfIn, report = null, eps = 0, 
     // and asymmetric authored widths there are the two sides of one street, not a change along it
     const oa = ownerOf(a), ob = ownerOf(b)
     if (oa.skelId === ob.skelId && oa.side !== ob.side) continue
+    // the turn here is the vertex's sub-ink CLUSTER's (`subInkClusters`, handed in as `turnAt`, radians): an owner change
+    // on a cluster's gentle vertex sits at the cluster's corner, never at a width step
     const P0 = ring[(v - 1 + n) % n], V0 = ring[v], N0 = ring[(v + 1) % n]
-    const tv = Math.abs(Math.atan2((V0[0] - P0[0]) * (N0[1] - V0[1]) - (V0[1] - P0[1]) * (N0[0] - V0[0]), (V0[0] - P0[0]) * (N0[0] - V0[0]) + (V0[1] - P0[1]) * (N0[1] - V0[1])))
+    const tv = turnAt ? turnAt(v) : Math.abs(Math.atan2((V0[0] - P0[0]) * (N0[1] - V0[1]) - (V0[1] - P0[1]) * (N0[0] - V0[0]), (V0[0] - P0[0]) * (N0[0] - V0[0]) + (V0[1] - P0[1]) * (N0[1] - V0[1])))
     if (sa !== sb && tv >= FILLET_TURN_TOL) continue
     const dn = Math.min(d[a], d[b]), dw = Math.max(d[a], d[b]), back = d[a] > d[b], L = TAPER_RATE * (dw - dn)
     // the wider LEG: edges of the wider street at the wider depth, walking away from v
@@ -1283,7 +1480,7 @@ function taperWorkingCopy(ringIn, depthOfIn, ownerOfIn, report = null, eps = 0, 
   const W = [], D = [], E = [], V = []
   for (let i = 0; i < n; i++) {
     const a = ring[i], b = ring[(i + 1) % n]
-    if (!specs[i].length) { W.push(a); D.push(d[i]); E.push(keep[i]); V.push(keep[i]); continue }
+    if (!specs[i].length) { W.push(a); D.push(d[i]); E.push(i); V.push(i); continue }
     // breakpoints along the edge (t from a to b), at every taper end that falls inside it
     const ts = new Set([0, 1])
     for (const sp of specs[i]) { const t = (sp.covered - sp.s0) / len[i]; if (t > 0 && t < 1) ts.add(sp.fromEnd ? 1 - t : t) }
@@ -1296,7 +1493,7 @@ function taperWorkingCopy(ringIn, depthOfIn, ownerOfIn, report = null, eps = 0, 
     const T = [...ts].sort((x, y) => x - y)
     for (let k = 0; k < T.length - 1; k++) {
       W.push([a[0] + (b[0] - a[0]) * T[k], a[1] + (b[1] - a[1]) * T[k]])
-      D.push([at(T[k]), at(T[k + 1])]); E.push(keep[i]); V.push(k === 0 ? keep[i] : null)
+      D.push([at(T[k]), at(T[k + 1])]); E.push(i); V.push(k === 0 ? i : null)
     }
   }
   return { ring: W, depth: D, e: E, v: V, hwy: E.map(e => !!isHwyEdge(e)), own: E.map(e => ownerKeyIn(e)) }
@@ -1367,27 +1564,18 @@ export function flareWorkingCopy(WC, flares, ownerOfOrig, hwOf, disclosure) {
   return { ring, depth, e: E, v: V, hwy: H, own: O }
 }
 
-const subInkLen = (eps) => (eps > 0 ? 2 * eps - 2 / SCALE : 0)
 const maxDepthOf = (seg) => seg.reduce((m, x) => Math.max(m, x.dS, x.dE), 0)
-function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null, ownerKeyOf = null, nose = null) {
+export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, idMap = null, ownerKeyOf = null, nose = null, turnAtSrc = null) {
   const nIn = ringIn.length
   if (nIn < 3) return []
-  // ⭐ ① IS INK EXPANDED BY ε — 2ε WIDE — so no leg of ① is shorter than the ink is wide. A shorter edge is the
-  // rounding residue of its union where two strokes meet (junctions carry 2–5 mm edges), never a leg; given a
-  // direction of its own it would split one corner into two across a noise-direction band. Its two ends are ONE
-  // vertex here: the run keeps the edge that LEAVES it. ⭐ A dead-end tip's butt end IS exactly 2ε (`RIBBONS §1`,
-  // "there are 2 apexes"), so it stays. `subInkLen`: 2ε less two Clipper grid steps for the rounding.
-  const keepV = []
-  for (let i = 0; i < nIn; i++) { const b = ringIn[(i + 1) % nIn], a = ringIn[i]; if (!(Math.hypot(b[0] - a[0], b[1] - a[1]) < subInkLen(eps))) keepV.push(i) }
-  if (keepV.length < 3) return []
-  const ring = keepV.map(v => ringIn[v])                 // reduced vertex r = original vertex keepV[r]
-  const n = ring.length
-  // reduced vertex r is the START of a leg (original edge keepV[r]); the sub-ε edges before it are absorbed, so
-  // reduced edge r IS original edge keepV[r] (to within ε), and the corner at r is original vertex keepV[r].
+  // ⭐ Every edge of ① is read as it is: the mint makes no sub-ink residue (strokes meet inside each other's ink,
+  // BRIEF-the-ink-meets-inside-the-ink), so an edge shorter than the ink is wide is TRUE geometry (two crossings a few
+  // mm apart) and is offset like any other. ⛔ The fold that dropped such edges here (and in `taperWorkingCopy`) is gone.
+  const ring = ringIn, n = nIn
   // `idMap` — when the caller hands a WORKING COPY (a taper split an edge), each working edge/vertex names the
   // ① edge/vertex it came from; a split point names none. Depth is read by WORKING index, identity leaves by ①'s.
-  const origE = keepV.map(k => (idMap ? idMap.e[k] : k)), origV = keepV.map(k => (idMap ? idMap.v[k] : k))
-  const depthAt = (r) => depthAtIn(keepV[r])
+  const origE = ring.map((_, k) => (idMap ? idMap.e[k] : k)), origV = ring.map((_, k) => (idMap ? idMap.v[k] : k))
+  const depthAt = depthAtIn
   const ccw = (signedArea(ring) > 0) !== outward
   const seg = []
   for (let i = 0; i < n; i++) {
@@ -1399,7 +1587,7 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     const dE = Math.max(0, (Array.isArray(raw) ? raw[1] : raw) || 0)
     const P = [a[0] + nx * dS, a[1] + ny * dS], Q = [b[0] + nx * dE, b[1] + ny * dE]
     let ex = Q[0] - P[0], ey = Q[1] - P[1]; const eL = Math.hypot(ex, ey) || 1
-    seg.push({ a, b, e: [dx, dy], dir: [ex / eL, ey / eL], nrm: [nx, ny], P, Q, dS, dE })
+    seg.push({ a, b, e: [dx, dy], dir: [ex / eL, ey / eL], nrm: [nx, ny], P, Q, dS, dE, eL })
   }
   const clips = []
   // ⭐ THE CONTRIBUTORS — every segment a ② edge can lie on, with the ① edge it belongs to and what it is:
@@ -1420,37 +1608,80 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     clips.push(clipperLib.Clipper.Orientation(poly.map(toClipper)) === true ? poly : [...poly].reverse()); clipOwn.push(own); clipD.push(d)
   }
   let wedges = 0, bevels = 0
-  for (let i = 0; i < n; i++) {
-    const S = seg[i]
-    addSeg(S.a, S.b, i, 2)
-    if (S.dS > 0 || S.dE > 0) { addClip([S.a, S.b, S.Q, S.P], [i], [S.dS, S.dE]); addSeg(S.P, S.Q, i, 1); addSeg(S.b, S.Q, i, 3); addSeg(S.a, S.P, i, 3) }
+  // ⭐⭐ SHARED JOINS (BRIEF-the-ink-meets-inside-the-ink §5d; Zob's rules, 2026-10-25). Each vertex's join is computed ONCE
+  // and both bands that meet there are built FROM it, so a corner point is one float and rounds to one lattice point. Built
+  // apart, a band's own corner and the join's copy of it rounded apart: at a shallow miter four near-collinear lattice edges
+  // crossed mm apart out of order (HPDM, a 2 mm zigzag), and two caps of one line lay a sub-step apart, a slit read as a
+  // needle (JH, 3.96 m). In exact arithmetic the union is the same polygon.
+  //   • ONE JOIN FOR EVERY CORNER, whichever way it turns. Where the two curb lines MEET INSIDE THE CORNER (between the two
+  //     bands' end caps) the join is their SHARP MITER, the corner "full stop" the ease rounds; where they cannot (nearly
+  //     parallel lines, a width change at a vertex that barely turns, a tip that turns straight back) it is the CHORD
+  //     between the two bands' ends. ⭐ "Between the caps" is THE test: X is never behind A's start nor past S's end (HPDM
+  //     w12: a miter 46.5 m away, 14.8 band-lengths behind a 2.9 m band, was used while a cone test decided).
+  //   • GAP (tA > 1, tS < 0: the lines meet past both bands' ends): both bands run on to X (rect ∪ the miter's triangle, exact).
+  //   • OVERLAP (tA ≤ 1, tS ≥ 0): a band stops at X only where the corner that drops lies inside the other band's rect, else it
+  //     is kept whole (a short band beside a deep one would leave a sliver of ground); the rects cover the corner, so no join
+  //     piece. Any other X (past one band only) keeps today's miter piece [v, A.Q, X, S.P].
+  //   • CHORD: the triangle [v, A.Q, S.P], whose points ARE the bands' own.
+  // ⭐ a HIGHWAY-owned edge's depth is a placeholder strictly inside H (the H-3 difference puts the real edge on H's boundary),
+  // so a chord to it would leave a notch of block the difference never removes. There the town curb line runs on to the miter,
+  // past the caps if it must, and H trims it: the sharp town↔highway corner H-3 rules for. Exempt from the extent test, said.
+  const inRect = (q, T) => { const C = [T.a, T.b, T.Q, T.P]; let pos = false, neg = false
+    for (let k = 0; k < 4; k++) { const a = C[k], b = C[(k + 1) % 4], c = (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]); if (c > 0) pos = true; if (c < 0) neg = true }
+    return !(pos && neg) }
+  const J = seg.map((S, i) => {
     const A = seg[(i - 1 + n) % n], v = ring[i], ia = (i - 1 + n) % n
+    if (!(A.dE > 0 || S.dS > 0)) return null
     const turn = A.e[0] * S.e[1] - A.e[1] * S.e[0]
-    const side = A.e[0] * A.nrm[1] - A.e[1] * A.nrm[0]            // +1: the offset side is to the left
-    if (!(A.dE > 0 || S.dS > 0)) continue
-    if (!(Math.abs(turn) > 1e-12)) continue                        // straight on: the two bands abut exactly
-    // ⭐ ONE JOIN FOR EVERY CORNER, whichever way it turns. Where the two curb lines MEET INSIDE THE CORNER (between the
-    // two bands' end caps) the join is their SHARP MITER — the corner "full stop", the one the ease rounds. Where they
-    // cannot — lines that are nearly parallel (a width change at a vertex that barely turns, a taper's tilt against the
-    // next street, or a tip that turns straight back) meet far away or never — the join is the CHORD between the two
-    // bands' ends. ⭐ No limit and no switch: as the meeting point reaches a band's end cap the miter becomes exactly
-    // that chord, so the two answers join continuously and nothing is left between them.
+    if (!(Math.abs(turn) > 1e-12)) return null                     // straight on: the two bands abut exactly
     const det = A.dir[0] * S.dir[1] - A.dir[1] * S.dir[0]
-    let X = null
+    let X = null, kind = 'chord', J_t = [NaN, NaN]
     if (Math.abs(det) > 1e-12) {
       const t = ((S.P[0] - A.Q[0]) * A.dir[1] - (S.P[1] - A.Q[1]) * A.dir[0]) / det
       const Xc = [S.P[0] + S.dir[0] * t, S.P[1] + S.dir[1] * t], u = [Xc[0] - v[0], Xc[1] - v[1]]
-      const c = A.nrm[0] * S.nrm[1] - A.nrm[1] * S.nrm[0]
-      const inCone = (A.nrm[0] * u[1] - A.nrm[1] * u[0]) * c >= 0 && (u[0] * S.nrm[1] - u[1] * S.nrm[0]) * c >= 0 &&
-        u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0
-      // ⭐ a HIGHWAY-owned edge's depth is a placeholder strictly inside H (the H-3 difference puts the real edge on H's
-      // boundary), so a chord to it would leave a notch of block the difference never removes. There the town curb line
-      // runs on to the miter and H trims it: the sharp town↔highway corner H-3 rules for.
-      const hwyJoin = idMap?.hwy && (idMap.hwy[keepV[ia]] || idMap.hwy[keepV[i]])
-      if (inCone || (hwyJoin && u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0)) X = Xc
+      const tA = ((Xc[0] - A.P[0]) * A.dir[0] + (Xc[1] - A.P[1]) * A.dir[1]) / A.eL, tS = ((Xc[0] - S.P[0]) * S.dir[0] + (Xc[1] - S.P[1]) * S.dir[1]) / S.eL
+      const hwyJoin = idMap?.hwy && (idMap.hwy[ia] || idMap.hwy[i])
+      // ⭐ THE MITER, BY ONE CRITERION (Boz's ruling, Zob's form, 2026-10-25): X between the caps (never behind A's start nor
+      // past S's end) and the miter piece [v, A.Q, X, S.P] SIMPLE: its opposite edges (v, A.Q) × (X, S.P) and (A.Q, X) ×
+      // (S.P, v) do not properly cross (A.Q = v, a depth-0 edge, makes it a triangle, simple). Else the chord. It replaced a cone test (X between the two normals at v) that decided nothing else on the
+      // captured joins (115 of 118 agree, scratch/splice/cone-vs-caps.mjs) and failed both ways on the other three: it took two
+      // miters 8.6 and 14.8 band-lengths behind A's start, and refused by float noise on its own boundary (−0.0465) the one a
+      // depth-0 edge needs, X on the ① edge itself (LS block 345, a 4.58 m × 46 mm sliver of ground left by the empty chord).
+      // The simplicity is what the cone really guarded: a mixed X that would make the piece a bow-tie.
+      // ⚠️ OPEN, not a regression: in the GAP case (tA > 1, tS < 0) tA is unbounded, so nearly parallel curb lines of unequal
+      // depth can still meet far out; the extent test bounds only the overlap side.
+      const crosses = (p1, p2, p3, p4) => { const o = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+        const d1 = o(p3, p4, p1), d2 = o(p3, p4, p2), d3 = o(p1, p2, p3), d4 = o(p1, p2, p4); return d1 * d2 < 0 && d3 * d4 < 0 }
+      const simple = ([q0, q1, q2, q3]) => !crosses(q0, q1, q2, q3) && !crosses(q1, q2, q3, q0)
+      if (hwyJoin ? u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0 : (tA >= 0 && tS <= 1 && simple([v, A.Q, Xc, S.P]))) { X = Xc
+        kind = hwyJoin ? 'piece' : (tA > 1 && tS < 0) ? 'gap' : (tA <= 1 && tS >= 0) ? 'overlap' : 'piece'; J_t = [tA, tS] }
     }
-    if (X) { addClip([v, A.Q, X, S.P], [ia, i]); addSeg(A.Q, X, ia, 1); addSeg(X, S.P, i, 1) }
-    else { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
+    return { X, kind, A, S, v, ia, i, tA: J_t[0], tS: J_t[1] }
+  })
+  // where band i starts and ends on its curb side: its own P / Q, or the shared X
+  const startOf = (i) => { const j = J[i], S = seg[i]; if (!j?.X) return S.P
+    return j.kind === 'gap' || (j.kind === 'overlap' && inRect(S.P, j.A)) ? j.X : S.P }
+  const endOf = (i) => { const j = J[(i + 1) % n], A = seg[i]; if (!j?.X) return A.Q
+    return j.kind === 'gap' || (j.kind === 'overlap' && inRect(A.Q, j.S)) ? j.X : A.Q }
+  // ⭐ AND WHERE A BAND IS KEPT WHOLE, the join's X that lies INSIDE its curb segment is a vertex of it too (Zob, 2026-10-25):
+  // collinear, so no area moves, and the shape that ends at X and the band that runs past it round X ONCE, shared, never as
+  // two copies of one line (17 of the 118 captured joins: an overlap that stops one band or none, and the mixed piece).
+  // ⛔ strictly between the band's ACTUAL ends (its P or Q, or the X it stops or runs on to), never past one: on a short band
+  // stopped at X₁, a second join's X₂ beyond X₁ would make the clip double back [a, b, Q, X₂, X₁] (Zob).
+  const onCurb = (i, P, Q) => { const at = [], js = J[i], je = J[(i + 1) % n]
+    const lo = js?.X && P === js.X ? js.tS : 0, hi = je?.X && Q === je.X ? je.tA : 1
+    for (const [j, t] of [[js, js?.tS], [je, je?.tA]])
+      if (j?.X && t > lo && t < hi && j.X !== P && j.X !== Q) at.push({ X: j.X, t })
+    return at.sort((u, w) => w.t - u.t).map(u => u.X) }                // from Q back toward P, the band's own order
+  for (let i = 0; i < n; i++) {
+    const S = seg[i]
+    addSeg(S.a, S.b, i, 2)
+    if (S.dS > 0 || S.dE > 0) { const P = startOf(i), Q = endOf(i)
+      addClip([S.a, S.b, Q, ...onCurb(i, P, Q), P], [i], [S.dS, S.dE]); addSeg(P, Q, i, 1); addSeg(S.b, Q, i, 3); addSeg(S.a, P, i, 3) }
+    const j = J[i]; if (!j) continue
+    const { A, v, ia } = j
+    if (j.X && j.kind === 'piece') { addClip([v, A.Q, j.X, S.P], [ia, i]); addSeg(A.Q, j.X, ia, 1); addSeg(j.X, S.P, i, 1) }
+    else if (!j.X) { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
     addSeg(v, A.Q, ia, 3); addSeg(S.P, v, i, 3); wedges++
   }
   // ⛔ UNITE THE BANDS FIRST, then subtract. One pass (the difference's own NonZero clip fill) leaves a zero-width
@@ -1552,7 +1783,7 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     // SWALLOWED between them (a leg shorter than the corner's setback lies wholly inside the next band), the corner is
     // the one swallowed vertex where the OWNER changes — "a run seam is a CORNER" (`SECTION`, the leg rule). None, or
     // more than one (two far-apart edges meeting across a collapsed neck), is no single corner: sharp, as ruled.
-    const own = (r) => (idMap?.own ? idMap.own[keepV[r]] : null)
+    const own = (r) => (idMap?.own ? idMap.own[r] : null)
     const seamBetween = (from, to) => {                 // walk reduced vertices from+1 … to, forward in ring order
       let hit = null, cnt = 0
       for (let r = (from + 1) % n; ; r = (r + 1) % n) { if (own((r - 1 + n) % n) !== own(r)) { hit = r; cnt++ } if (r === to) break }
@@ -1570,7 +1801,7 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
     let R2 = rg, E2 = el, V2 = vs, A2 = rg.map(() => null)
     if (easeAt) {
       const arcs = []
-      const e = easeContour(rg, (j) => easeAt(vs[j]) || 0, el, arcs, vs, nose)
+      const e = easeContour(rg, (j) => easeAt(vs[j]) || 0, el, arcs, vs, nose, turnAtSrc)
       // ⭐ an arc's id is its index in `easeArcs` — unique across every ring, so a boolean that merges rings cannot make
       // two corners share an id, and a consumer reads the arc's own entry rather than the ring it was found on
       const gid = new Map(); for (const a of arcs) { gid.set(a.i, easeArcs.length); easeArcs.push({ ...a, src: a.src }) }
@@ -1606,7 +1837,39 @@ function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, eas
 // so a vertex turning this much cannot be a curve sample of any street — it is a broken handle
 // whatever the skeleton's flag says. Move the tolerance and this moves with it.
 const PROTO_HARD_TURN = 60
-const FILLET_TURN_TOL = 18 * Math.PI / 180
+export const FILLET_TURN_TOL = 18 * Math.PI / 180
+// ⭐ "NO LEG OF ① IS SHORTER THAN THE INK IS WIDE": 2ε less two Clipper grid steps for the rounding. An edge shorter than
+// this is not a leg; it joins its neighbours into one CLUSTER, which turns once (`subInkClusters`).
+export const subInkLen = (eps) => (eps > 0 ? 2 * eps - 2 / SCALE : 0)
+// ⭐⭐ THE TURN OF A ① VERTEX, AS ② READS IT: the NET turn of its cluster (Boz, BRIEF §5b). A cluster is a maximal run of
+// ring vertices joined by edges shorter than `subInkLen`; its net turn is the angle from the edge ENTERING its first
+// vertex to the edge LEAVING its last, and its corner, if it has one, sits at ONE vertex: the one whose own turn is
+// largest (first in ring order on a tie). A vertex in no cluster is its own, so its turn is its own. ⛔ The per-vertex
+// turn this replaces read a true sub-ink edge (two crossings mm apart, §5a) as two turns: a 4 mm notch of ±45° took
+// two corner radii (JH 99th-street-6), where the ground does not turn at all.
+// Returns per vertex `{ turn: degrees, carrier: boolean, inCluster: boolean }` — ONE answer to "does ① turn here", read by
+// every corner reader (protoRAt, the ease's corner test, the taper's width-step test, the fold-spur diagnostic).
+// ⛔ A ring made only of sub-ink edges has no edge to enter by: no vertex carries a corner. The check
+// (claims-no-corner-at-a-true-geometry-edge) computes this independently.
+export function subInkClusters(ring, eps) {
+  const n = ring.length, sub = subInkLen(eps)
+  const dir = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0])
+  const deg = (a1, a2) => { const t = a2 - a1; return Math.abs(Math.atan2(Math.sin(t), Math.cos(t))) * 180 / Math.PI }
+  const own = ring.map((V, i) => deg(dir(ring[(i - 1 + n) % n], V), dir(V, ring[(i + 1) % n])))
+  const turn = own.slice(), carrier = ring.map(() => true), inCluster = ring.map(() => false)
+  const short = ring.map((p, i) => { const q = ring[(i + 1) % n]; return Math.hypot(q[0] - p[0], q[1] - p[1]) < sub })
+  if (!short.some(Boolean)) return { turn, carrier, inCluster }
+  if (short.every(Boolean)) return { turn: ring.map(() => 0), carrier: ring.map(() => false), inCluster: ring.map(() => true) }
+  for (let s = 0; s < n; s++) {
+    if (!short[s] || short[(s - 1 + n) % n]) continue      // s is a cluster's FIRST sub-ink edge (wraps index 0 freely)
+    const vs = [s]; let e = s; while (short[e % n]) { e++; vs.push(e % n) }
+    const v0 = vs[0], v1 = vs[vs.length - 1]
+    const net = deg(dir(ring[(v0 - 1 + n) % n], ring[v0]), dir(ring[v1], ring[(v1 + 1) % n]))
+    let at = v0; for (const v of vs) if (own[v] > own[at]) at = v
+    for (const v of vs) { turn[v] = net; carrier[v] = v === at; inCluster[v] = true }
+  }
+  return { turn, carrier, inCluster }
+}
 // A corner exists only where two REAL legs meet (the osm2streets doctrine:
 // corners come from leg adjacency, never from whatever stroke geometry falls
 // at a vertex). Clipper's union/difference leaves near-duplicate vertices
@@ -1757,7 +2020,7 @@ function sweepHighway(points, leftSec, rightSec, handoff = null) {
            tapers: { left: L.tapers, right: R.tapers }, length: Ltot }
 }
 
-function unionRings(rings) {
+export function unionRings(rings) {
   if (!rings.length) return []
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
   const c = new Clipper()
@@ -1768,7 +2031,7 @@ function unionRings(rings) {
   c.Execute(ClipType.ctUnion, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
   return out.map(p => p.map(fromClipper))
 }
-function differenceRings(subjectRings, clipRings) {
+export function differenceRings(subjectRings, clipRings) {
   if (!subjectRings.length) return []
   if (!clipRings.length) return subjectRings.map(r => r.slice())
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -2101,59 +2364,6 @@ function onLattice(ring, what) {
     if (a[0] === b[0] && a[1] === b[1]) throw new Error(`[tileGround][PROTO②] ⛔ ${what}: vertices ${i} and ${(i + 1) % out.length} round to one lattice point (${a}) — an edge shorter than the lattice (1 / ${SCALE} m). Refused, never merged.`) }
   return out
 }
-// The lattice key of a point the stamp is given. ⛔ Off the lattice is REFUSED, never rounded here: the contour is rounded
-// once where it is born (`onLattice`) and the evidence is poured on a coarser grid, so an off-lattice input is a ring that
-// skipped its rounding.
-const _lk = (p) => { const k = [Math.round(p[0] * SCALE), Math.round(p[1] * SCALE)]
-  if (Math.abs(p[0] * SCALE - k[0]) > 1e-6 || Math.abs(p[1] * SCALE - k[1]) > 1e-6) throw new Error(`[tileGround][stamp] ⛔ (${p}) is off the lattice (1 / ${SCALE} m) — every ring the stamp nodes must already be on it. Refusing.`)
-  return k }
-function stampCrossings(rings, skip, maxRounds = 8) {
-  // each vertex keeps its own coordinates (src = its index in the input ring) or is a crossing (src = null) on input edge `edge`
-  let R = rings.map(r => r.map((p, i) => ({ p, k: _lk(p), src: i, edge: i })))
-  for (let round = 0; round < maxRounds; round++) {
-    const add = R.map(r => r.map(() => []))
-    let n = 0
-    const inside = (v, d) => d > 0 ? (v > 0 && v < d) : (v < 0 && v > d)
-    const onEdge = (P, s0, s1) => (s1[0] - s0[0]) * (P[1] - s0[1]) - (s1[1] - s0[1]) * (P[0] - s0[0]) === 0
-      && Math.min(s0[0], s1[0]) <= P[0] && P[0] <= Math.max(s0[0], s1[0]) && Math.min(s0[1], s1[1]) <= P[1] && P[1] <= Math.max(s0[1], s1[1])
-      && !(P[0] === s0[0] && P[1] === s0[1]) && !(P[0] === s1[0] && P[1] === s1[1])
-    // candidate pairs through one grid of every edge (cell = the median edge, never smaller than the extent shared over the
-    // edges): each pair of edges from two different rings is tested once, in the first cell they share
-    const E = []; R.forEach((r, i) => r.forEach((v, p) => { const w = r[(p + 1) % r.length].k; E.push([i, p, Math.min(v.k[0], w[0]), Math.min(v.k[1], w[1]), Math.max(v.k[0], w[0]), Math.max(v.k[1], w[1])]) }))
-    if (!E.length) return R
-    const lens = E.map(e => Math.max(e[4] - e[2], e[5] - e[3])).sort((x, y) => x - y)
-    let gx0 = Infinity, gy0 = Infinity, gx1 = -Infinity, gy1 = -Infinity; for (const e of E) { gx0 = Math.min(gx0, e[2]); gy0 = Math.min(gy0, e[3]); gx1 = Math.max(gx1, e[4]); gy1 = Math.max(gy1, e[5]) }
-    const C = Math.max(1, lens[lens.length >> 1], Math.sqrt((gx1 - gx0 + 1) * (gy1 - gy0 + 1) / E.length))
-    const NX = Math.floor((gx1 - gx0) / C) + 1, cells = new Map()
-    E.forEach((e, n2) => { for (let cx = Math.floor((e[2] - gx0) / C); cx <= Math.floor((e[4] - gx0) / C); cx++) for (let cy = Math.floor((e[3] - gy0) / C); cy <= Math.floor((e[5] - gy0) / C); cy++) {
-      const c = cy * NX + cx; let l = cells.get(c); if (!l) cells.set(c, l = []); l.push(n2) } })
-    const cellOf = (x, y) => Math.floor((y - gy0) / C) * NX + Math.floor((x - gx0) / C)
-    for (const [c, l] of cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
-      const eA = E[l[u]], eB = E[l[w]], i = eA[0], j = eB[0]
-      if (i === j || skip(Math.min(i, j), Math.max(i, j))) continue
-      if (eA[2] > eB[4] || eB[2] > eA[4] || eA[3] > eB[5] || eB[3] > eA[5]) continue
-      // test the pair only in the first cell both boxes share (the lower-left of their overlap), so it counts once
-      if (cellOf(Math.max(eA[2], eB[2]), Math.max(eA[3], eB[3])) !== c) continue
-      const p = eA[1], q = eB[1], A = R[i], B = R[j]
-      const a0 = A[p].k, a1 = A[(p + 1) % A.length].k, b0 = B[q].k, b1 = B[(q + 1) % B.length].k
-      const rx = a1[0] - a0[0], ry = a1[1] - a0[1], sx = b1[0] - b0[0], sy = b1[1] - b0[1], den = rx * sy - ry * sx
-      if (den !== 0) { const ex = b0[0] - a0[0], ey = b0[1] - a0[1], tn = ex * sy - ey * sx, un = ex * ry - ey * rx
-        if (inside(tn, den) && inside(un, den)) { const X = Math.round(a0[0] + rx * tn / den), Y = Math.round(a0[1] + ry * tn / den)
-          add[i][p].push([X, Y]); add[j][q].push([X, Y]); n++ } }
-      if (onEdge(b0, a0, a1)) { add[i][p].push(b0); n++ }
-      if (onEdge(a0, b0, b1)) { add[j][q].push(a0); n++ }
-    }
-    if (!n) return R
-    R = R.map((r, i) => { const out = []
-      for (let p = 0; p < r.length; p++) { const v0 = r[p], a0 = v0.k, a1 = r[(p + 1) % r.length].k; out.push(v0)
-        const dx = a1[0] - a0[0], dy = a1[1] - a0[1], L2 = dx * dx + dy * dy, seen = new Set([a0.join(','), a1.join(',')])
-        const pts = add[i][p].filter(v => { const s = v.join(','); if (seen.has(s)) return false; seen.add(s); return true })
-          .map(v => ({ v, t: ((v[0] - a0[0]) * dx + (v[1] - a0[1]) * dy) / L2 })).sort((x, y) => x.t - y.t)
-        for (const { v } of pts) out.push({ p: [v[0] / SCALE, v[1] / SCALE], k: v, src: null, edge: v0.src != null ? v0.src : v0.edge }) }
-      return out })
-  }
-  throw new Error(`[tileGround][stamp] ⛔ the crossing pass did not settle in ${maxRounds} rounds — a crossing keeps making another (${rings.length} rings)`)
-}
 // ⭐ AN iaFull-ALIGNED ARRAY THROUGH AN INSERTION, one rule for every pass that adds a vertex to iaFull. `o` is the new ring,
 // each vertex either an old one (`src`, its index) or one inserted inside edge `edge`: it starts a half that carries that
 // edge's stamp (the same owner), is no corner, and keeps the edge's arc / junction only when both ends share it.
@@ -2199,7 +2409,19 @@ export function stampTile(st, groups) {
   ;(st.iA || []).forEach((r, ri) => items.push({ kind: 'cut', ri, r }))
   near.forEach((x, gi) => x.rings.forEach(r => items.push({ kind: 'ev', gi, r })))
   // the two block contours against each other are the disc cut's business, and evidence × evidence the pour's
-  const out = stampCrossings(items.map(x => x.r), (a, b) => (items[a].kind === 'ev') === (items[b].kind === 'ev'))
+  // ⭐ noded ONCE by the one home (latticeNode.js#nodeCrossings: snap rounding by hot pixels, verified every run); a tile
+  // contour meets the evidence, never itself or the other contour, and evidence never evidence (the pour's business)
+  const out = nodeCrossings(items.map(x => ({ p: x.r, tag: x.kind })), { pairs: (a, b) => (items[a].kind === 'ev') !== (items[b].kind === 'ev'), who: 'stamp' })
+  // an antenna the noding removed may take an input vertex with it (`out.dropped`): a CORNER or an ARC BOUNDARY (its arc
+  // differs from a neighbour's: dropping a tangent moves the arc) is never dropped silently; one inside an arc or on a leg is
+  // counted. A survivor carrying the first A's `src` with the second A's edge (`out.relabelled`) must name the same owner.
+  let antennaDropped = 0
+  items.forEach((x, n) => { if (x.kind !== 'full') return
+    const arc = st.iaArc?.[x.ri], m = x.r.length, at = (q) => `iaFull ring ${x.ri} vertex ${q} at (${x.r[q].join(', ')})`
+    for (const q of out.dropped[n]) { antennaDropped++
+      if (st.iaCorner?.[x.ri]?.[q]) throw new Error(`[tileGround][stamp] ⛔ the noding removed an antenna through the CORNER ${at(q)} — the contour retraces itself at a corner. Refusing.`)
+      if (arc && (arc[q] !== arc[(q - 1 + m) % m] || arc[q] !== arc[(q + 1) % m])) throw new Error(`[tileGround][stamp] ⛔ the noding removed an antenna through the ARC BOUNDARY ${at(q)} (arc ${arc[q]} between ${arc[(q - 1 + m) % m]} and ${arc[(q + 1) % m]}) — the arc's extent would move. Refusing.`) }
+    for (const { src, edge } of out.relabelled[n]) if (st.iaStamp?.[x.ri] && st.iaStamp[x.ri][src] !== st.iaStamp[x.ri][edge]) throw new Error(`[tileGround][stamp] ⛔ an antenna's survivor at ${at(src)} keeps its own stamp (${st.iaStamp[x.ri][src]}) but leaves along input edge ${edge} (${st.iaStamp[x.ri][edge]}) — two owners at one retrace. Refusing.`) })
   const pts = (o) => o.map(v => v.p)
   const iaFull = [], iA = [], evRings = near.map(() => [])
   const expand = expandAligned
@@ -2215,7 +2437,7 @@ export function stampTile(st, groups) {
       st2.iaCorner[x.ri] = st.iaCorner?.[x.ri] ? expand(st.iaCorner[x.ri], r, o, 'corner') : st.iaCorner?.[x.ri]
       st2.iaJunction[x.ri] = st.iaJunction?.[x.ri] ? expand(st.iaJunction[x.ri], r, o, 'junction', st.iaArc?.[x.ri]) : st.iaJunction?.[x.ri] } })
   st2.iaFull = iaFull; st2.iA = iA
-  return { tile: st2, groups: near.map((x, gi) => ({ ...x.g, rings: evRings[gi].map(r => ({ r, bb: ringBB(r) })) })) }
+  return { tile: st2, groups: near.map((x, gi) => ({ ...x.g, rings: evRings[gi].map(r => ({ r, bb: ringBB(r) })) })), counts: { ...out.counts, ...(antennaDropped ? { 'full: input vertices an antenna took': antennaDropped } : {}) } }
 }
 
 // A strip that keeps its own key, cut at the stamp's lines all the same: the same class groups, the same call.
@@ -2397,7 +2619,7 @@ const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may 
 // boolean — `A15`'s forbidden proximity recovery, wearing a 1 mm grid hash — and it reached only
 // part of the corners (▶ `node checks/claims-the-corner-extent-is-carried.mjs`, which reports the
 // share on any town). ⭐ Identity CARRIED through, never recovered afterward (`RIBBONS §1`).
-function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null, nose = null) {
+function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null, nose = null, turnAtSrc = null) {
   let n = ring.length
   if (n < 3) return { ring, labs, arc: ring.map(() => null), vtx }
   const seg = (a, b) => { const dx = b[0]-a[0], dz = b[1]-a[1]; const L = Math.hypot(dx, dz); return { L, d: L > 1e-12 ? [dx/L, dz/L] : [0, 0] } }
@@ -2431,6 +2653,10 @@ function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null, nose = 
   for (let i = 0; i < n; i++) {
     const A = seg(ring[(i - 1 + n) % n], ring[i]), B = seg(ring[i], ring[(i + 1) % n])
     turnAt_[i] = Math.atan2(Math.abs(A.d[0] * B.d[1] - A.d[1] * B.d[0]), A.d[0] * B.d[0] + A.d[1] * B.d[1])
+    // ⭐ a vertex struck from a ① sub-ink CLUSTER turns as its cluster does (`subInkClusters`, radians, null off a cluster):
+    // the offset keeps the short edge, so its own turn is only part of the corner (12° + 12° is one 24° corner)
+    const tc = turnAtSrc && vtx?.[i] != null ? turnAtSrc(vtx[i]) : null
+    if (tc != null) turnAt_[i] = tc
   }
   isCorner_ = new Array(n)
   for (let i = 0; i < n; i++) isCorner_[i] = R_[i] > 1e-9 && turnAt_[i] >= FILLET_TURN_TOL
@@ -5240,7 +5466,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         per.push({ p, rings: [p.ring], labs: [p.ring.map((_, e) => spanOfSrc(p.si, e))], clips: [], edges: [], dropped: [], areaMin: null })
         continue
       }
-      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, 0, null, (e) => p.dspan[e])
+      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, null, (e) => p.dspan[e])
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
         clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
@@ -6160,11 +6386,15 @@ export function buildTileGround(ribbons, opts = {}) {
   // ⛔ ε IS NOT A REAL WIDTH — it is not real at all (Jacob). Its value carries no
   // information, only its non-zero-ness. MEASURED, not asserted: the topology is
   // byte-stable across ε = 0.002 … 0.5 m, a 250x range — 87 rings, 85 holes, every time.
-  // `opts.protoHW` exists so that stays demonstrable.
   // ⚠️ The one constraint: ε must clear the integer floor of the stage that HOLDS it.
   // Clipper is integer-space and `toClipper` rounds — SCALE=1000 here (1 mm), SCALE=100
   // at prebake (1 cm). Below the floor the object silently ceases to exist.
-  const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
+  // ⭐⭐ ε IS READ OFF THE FROZEN ARTIFACT (`protopolygon.eps`, recorded by the mint), never a literal here (Layer 0 Class D:
+  // ② and the pour each carried their own 0.005). A frozen ① with no ε is REFUSED by name; a scene never poured with ①
+  // mints live at the kit's one constant (`INK_EPS`, the mint's own default). ⛔ The `opts.protoHW` override is gone.
+  const frozenProto = ribbons?.protopolygon
+  if (frozenProto?.rings?.length && !(frozenProto.eps > 0)) throw new Error('[tileGround][①] ⛔ the frozen protopolygon carries no ε (`protopolygon.eps`) — the ink\'s half-width is not known, so nothing offset from it can be. Re-pour the scene. Refusing.')
+  const PROTO_HW = frozenProto?.rings?.length ? frozenProto.eps : INK_EPS
   let proto = null
   {
     // ⛔ THE NOSE NEEDS THE MINIMUM CURBED WIDTH, READ AT POUR BY FINDING ID (`curbedMinWidth`, streetProfiles.js): a
@@ -6196,16 +6426,10 @@ export function buildTileGround(ribbons, opts = {}) {
     // differently to whoever is looking. **The defect was always the silence, not the draw**
     // (`ORIENTATION §3 (the Wall)`, `ROADMAP A02` — the same shape as `shapeFreezeMissing`, deliberately).
     //
-    // ⚠️ ε IS PART OF THE IDENTITY OF THE OBJECT, not a tuning knob applied after. A caller
-    // that asks for a different ε than the artifact was frozen at is asking for a DIFFERENT
-    // PROTOPOLYGON, and silently handing back the frozen one would be a substitution — so that
-    // case mints live and says which two values disagree. (`RIBBONS §1`: ε's value carries no
-    // information, but its non-zero-ness is a declaration — and two declarations are two
-    // objects.)
-    const frozenProto = ribbons?.protopolygon
+    // ⚠️ ε IS PART OF THE IDENTITY OF THE OBJECT, and it is the artifact's own (`PROTO_HW`, above), so there is no
+    // second value to disagree with.
     let MP
-    if (frozenProto?.rings?.length && frozenProto?.owners?.length &&
-        Math.abs((frozenProto.eps ?? -1) - PROTO_HW) < 1e-9) {
+    if (frozenProto?.rings?.length && frozenProto?.owners?.length) {
       MP = { rings: frozenProto.rings, labels: frozenProto.labels, owners: frozenProto.owners,
              refused: frozenProto.refused || false, chainRings: null, crossings: frozenProto.crossings || null,
              // ⭐ `blocks` = boundary − stroked roads, frozen alongside ①. See the block loop below.
@@ -6229,8 +6453,7 @@ export function buildTileGround(ribbons, opts = {}) {
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
-        : !(frozenProto.rings?.length && frozenProto.owners?.length) ? 'the frozen protopolygon is present but EMPTY'
-        : `ε mismatch — the artifact was frozen at ${frozenProto.eps} m, this build asked for ${PROTO_HW} m (a different object, not a tolerance)`
+        : 'the frozen protopolygon is present but EMPTY'
       // ⭐ ONE CONSTRUCTION, TWO CALLERS — the live path calls the SAME function prebake does,
       // so a live re-derivation is the same object, not a second implementation of it.
       MP = mintProtopolygon({ streets: streetsOrig, gradeSep, eps: PROTO_HW })
@@ -6420,7 +6643,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⭐⭐⭐ WHY R RESOLVED TO ZERO — wired 2026-09-08, alongside `easeSkips`. R = 0 does not mean
     // "a corner with no rounding": `isCorner_` requires R > 0, so a zero here DELETES the corner.
     // Four different facts shared that one silence; they are separated and counted now.
-    const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, noSrc: 0, fromRAt: 0, foldLost: 0, foldLostCorner: 0 }
+    const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, clusterMember: 0, noSrc: 0, fromRAt: 0, foldLost: 0, foldLostCorner: 0 }
     const protoTaper = { n: 0, steep: [], overlap: 0 }   // width-step tapers built this pour (`taperWorkingCopy`)
     // the ramp-terminal flares drawn this pour (`flareWorkingCopy`) — Sets, because a flare is tried on every ring
     const flareDisclosure = { drawn: new Set(), noRun: new Set(), misattributed: new Set(), received: new Set(), truncated: new Set() }
@@ -6639,8 +6862,11 @@ export function buildTileGround(ribbons, opts = {}) {
         }
         const depthOf = mkDepth(labs)
         const depthAt = (i) => depthOf(i)
+        // ⭐ the turn at each ① vertex, its CLUSTER's net turn (`subInkClusters`): ONE answer read by the taper's width-step
+        // test, the corner test (`protoRAt`), the ease's own corner test and the fold-spur diagnostic below
+        const CL = subInkClusters(ring, PROTO_HW), clTurn = (i) => CL.turn[i] * Math.PI / 180
         // ⭐ the ring ② actually offsets: ① plus the width-step tapers' split points (`taperWorkingCopy`)
-        const WC0 = taperWorkingCopy(ring, depthOf, (i) => protoOwners[labs[i]], protoTaper, PROTO_HW, (i) => isHwyLab(labs[i]))
+        const WC0 = taperWorkingCopy(ring, depthOf, (i) => protoOwners[labs[i]], protoTaper, (i) => isHwyLab(labs[i]), clTurn)
         const WC = MP.flares?.length ? flareWorkingCopy(WC0, MP.flares, (e) => protoOwners[labs[e]], (j, E) => protoMeasureOf(labs[E[j]])?.pavementHW ?? 0, flareDisclosure) : WC0
         const depthRec = { ring: WC.ring, depth: new Array(WC.ring.length).fill(null), holes: [] }
         depthByBlock[k] = depthRec
@@ -6687,13 +6913,8 @@ export function buildTileGround(ribbons, opts = {}) {
         // vertex records which ① ring vertex it was struck from, so the node identity survives
         // the offset without being re-derived from ②'s geometry.
         const st = {}
-        // ⭐⭐⭐ THE CORNER IS KNOWN ON ①, NOT ON ②. MEASURED, and this WAS the defect: reading the
-        // owner change off the OFFSET ring missed 789 of 1,033 right-angle corners, because
-        // `offsetRingVariable` mints the miter apex from ONE contributing vertex — so both edges
-        // either side of a ② corner usually carry the SAME owner and the corner is invisible there.
-        // ⭐ On ①'s block ring the owner change IS the corner and it reads true: 445 corners at a
-        // median turn of 90.1°. So resolve R per ① VERTEX, and carry it across the offset on the
-        // stamp (`src`) — the correspondence `offsetRingVariable` already keeps.
+        // ⭐⭐⭐ THE CORNER IS KNOWN ON ①, NOT ON ②: a corner is a ① vertex where ① TURNS (`SECTION` rule 6; ② eases
+        // the turn away). So resolve R per ① VERTEX (`protoRAt`, by the turn) and carry it across the offset on the stamp.
         // ⛔ CARRIED, NOT RECOVERED: a ② vertex is a corner iff the ① vertex it was struck FROM is.
         // ⛔⛔ EASE-BEFORE-OFFSET WAS TRIED AND REVERTED, 2026-09-06 — READ THIS BEFORE REBUILDING IT.
         // Easing ① at R + the pavement half-width and then offsetting looks right on paper (the
@@ -6703,15 +6924,12 @@ export function buildTileGround(ribbons, opts = {}) {
         // Jacob, on the render: "whatever you just did messed up a bunch of corners" — crossed
         // spikes at the intersections. ⛔ Do not re-derive it; the setback, not the concept, is what
         // fails, and it fails on exactly the blocks a city has most of.
-        // ⭐ the turn at each ① vertex, handed to the corner test so it can catch a `hard: false`
-        // that the geometry contradicts (see `protoRAt`). Cheap, and computed on the ring we hold.
-        const turnOf = (g, i) => { const m = g.length, P = g[(i - 1 + m) % m], V = g[i], N = g[(i + 1) % m]
-          const t = Math.atan2(N[1] - V[1], N[0] - V[0]) - Math.atan2(V[1] - P[1], V[0] - P[0])
-          return Math.abs(Math.atan2(Math.sin(t), Math.cos(t))) * 180 / Math.PI }
+        // the corner test reads the cluster's net turn too (so it can catch a `hard: false` the geometry contradicts, see
+        // `protoRAt`), and a cluster's other vertices take no corner
         // ⛔ H-3: a highway has no curb return — a corner where a town edge meets a highway edge is SHARP.
         const touchesH = labs.some(isHwyLab) || (protoBlockHoleLabels?.[k] || []).some(L => L.some(isHwyLab))
         const rSrc = ring.map((_, i) => (touchesH && (isHwyLab(labs[i]) || isHwyLab(labs[(i - 1 + ring.length) % ring.length])))
-          ? 0 : protoRAt(labs, i, ring.length, depthAt(i), turnOf(ring, i)))
+          ? 0 : !CL.carrier[i] ? (protoRZero.clusterMember++, 0) : protoRAt(labs, i, ring.length, depthAt(i), CL.turn[i]))
         // ⭐⭐⭐ THE EASE IS ASKED FOR HERE AND HAPPENS INSIDE THE OFFSET, before its self-union —
         // that is where the corner correspondence is still exact. `rSrc` is indexed by ① block-ring
         // vertex, and `easeAt` receives exactly that index off the offset's own stamp.
@@ -6736,15 +6954,16 @@ export function buildTileGround(ribbons, opts = {}) {
         // NOT a ① corner (a width step, or where two non-adjacent bands met) and is left sharp, as ruled.
         const rings2 = offsetRingByRects(WC.ring, (j) => (depthRec.depth[j] = WC.depth[j]), false, st,
                                           (srcIdx) => { if (srcIdx == null) { protoRZero.noSrc++; return 0 }
-                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, PROTO_HW, WC,
-                                          (e) => { const o = protoOwners[labs[e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null }, { w: opts.curbedMinWidth.m })
+                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, WC,
+                                          (e) => { const o = protoOwners[labs[e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null }, { w: opts.curbedMinWidth.m },
+                                          (srcIdx) => (CL.inCluster[srcIdx] ? clTurn(srcIdx) : null))
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
         if (st.foldDropped) protoRZero.foldLost += st.foldDropped
         // ⭐ of the ① vertices the fold-spur pass dropped, how many were CORNERS? That is the half
         // that costs the operator something; dropping a reversal on a straight run costs nothing.
         if (st.foldLostLabels) for (const v of st.foldLostLabels)
-          if (v != null && v < ring.length && turnOf(ring, v) >= FILLET_TURN_TOL * 180 / Math.PI) protoRZero.foldLostCorner++
+          if (v != null && v < ring.length && CL.carrier[v] && CL.turn[v] >= FILLET_TURN_TOL * 180 / Math.PI) protoRZero.foldLostCorner++
         let outRings = rings2
         // ⭐ each ② edge names the ① edge it lies on, carried through the boolean — one hop to its owner
         let outLabs = rings2.map((rg, ri) => (st.edgeLabels?.[ri] || rg.map(() => null)).map(e => (e == null ? null : labs[e])))
@@ -6766,11 +6985,12 @@ export function buildTileGround(ribbons, opts = {}) {
           for (let hi = 0; hi < holes.length; hi++) {
             const hSt = {}
             const hDepthOf = mkDepth(holeLabs[hi])
-            const HW0 = taperWorkingCopy(holes[hi], hDepthOf, (i) => protoOwners[holeLabs[hi][i]], protoTaper, PROTO_HW, (i) => isHwyLab(holeLabs[hi][i]))
+            const CLh = subInkClusters(holes[hi], PROTO_HW)
+            const HW0 = taperWorkingCopy(holes[hi], hDepthOf, (i) => protoOwners[holeLabs[hi][i]], protoTaper, (i) => isHwyLab(holeLabs[hi][i]), (i) => CLh.turn[i] * Math.PI / 180)
             const HW = MP.flares?.length ? flareWorkingCopy(HW0, MP.flares, (e) => protoOwners[holeLabs[hi][e]], (j, E) => protoMeasureOf(holeLabs[hi][E[j]])?.pavementHW ?? 0, flareDisclosure) : HW0
             const hRec = { ring: HW.ring, depth: new Array(HW.ring.length).fill(null) }
             depthRec.holes.push(hRec)
-            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, PROTO_HW, HW,
+            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, HW,
               (e) => { const o = protoOwners[holeLabs[hi][e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null })
             for (let ri = 0; ri < hOff.length; ri++) {
               hRings.push(hOff[ri])
@@ -6924,7 +7144,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ and WHY the radius was zero, which is the layer under `easeSkips.noR`.
       if (protoRZero.noSrc) console.warn(`[tileGround][PROTO②] ⛔⛔ ${protoRZero.noSrc} offset vertex/vertices carry NO ① SOURCE INDEX ⇒ easeAt returns 0 ⇒ \`isCorner_\` false ⇒ THE CORNER CEASES TO EXIST. These were MINTED by the offset or its self-union and have no provenance to resolve a radius through. ⛔ Not a shape without a corner — a corner without an identity.`)
       if (protoRZero.noOwner) console.warn(`[tileGround][PROTO②] ⛔ ${protoRZero.noOwner} vertex/vertices had NO ① OWNER on an adjacent edge ⇒ R=0 ⇒ NOT A CORNER. Provenance lost in the union, not a shape without a corner. ⛔ These are the ADA pads the operator does not get.`)
-      console.warn(`[tileGround][PROTO②] R=0, by ① vertex: ${protoRZero.belowTol} below the turn tolerance (curve samples) · ${protoRZero.smoothBend} gentle bends the SKELETON already eased (INVARIANT 2) · ${protoTipBlunt} blunt cap apexes · ${protoRZero.noOwner} no owner · ${protoRZero.noSrc} no source index.`)
+      console.warn(`[tileGround][PROTO②] R=0, by ① vertex: ${protoRZero.belowTol} below the turn tolerance (curve samples) · ${protoRZero.smoothBend} gentle bends the SKELETON already eased (INVARIANT 2) · ${protoTipBlunt} blunt cap apexes · ${protoRZero.clusterMember} sub-ink cluster member(s), whose cluster turns at another vertex · ${protoRZero.noOwner} no owner · ${protoRZero.noSrc} no source index.`)
       // ⭐⭐⭐ THE RECONCILIATION, AND IT IS THE WHOLE ANSWER TO "WHY noR": the ease asks for R at
       // OFFSET-ring vertices, `protoRAt` decides it at ① vertices, and the two rings do not agree
       // about which vertices turn. A vertex ① passes through as a curve sample can turn past the
@@ -7311,8 +7531,6 @@ export function buildTileGround(ribbons, opts = {}) {
           // (588). ⛔ No threshold — keep each owner's longest arc, absorb the rest into the longer
           // neighbour. A frontage cannot appear twice on one ring; the polygon would self-cross.
           const ownAt = new Map()                 // ① edge index → the owner that edge really has
-          // ① edge index q → ① TURNS at the vertex where edge q begins. A fact about ①'s SHAPE.
-          const protoTurns = new Set()
           {
             const PR = (protoBlockRings || R.rings)[k], L = (protoBlockLabels || R.labels)?.[k]
             if (PR?.length >= 3 && L) {
@@ -7358,15 +7576,6 @@ export function buildTileGround(ribbons, opts = {}) {
               //   to "the extent is the one edge the owners meet across", and on ① a straight
               //   frontage is ONE EDGE: median 32.8 m and up to 223 m on LS, 494 m on HPDM, painted
               //   as a curb ramp. ⭐ Town #2 carries it ~6× harder, the kit's signature.
-              const turnsAt = new Array(m2)
-              for (let q = 0; q < m2; q++) {
-                const P = PR[(q - 1 + m2) % m2], V = PR[q], N = PR[(q + 1) % m2]
-                const d1 = [V[0] - P[0], V[1] - P[1]], d2 = [N[0] - V[0], N[1] - V[1]]
-                const L1 = Math.hypot(d1[0], d1[1]) || 1, L2 = Math.hypot(d2[0], d2[1]) || 1
-                const cr = (d1[0] * d2[1] - d1[1] * d2[0]) / (L1 * L2), dt = (d1[0] * d2[0] + d1[1] * d2[1]) / (L1 * L2)
-                turnsAt[q] = Math.atan2(Math.abs(cr), dt) >= FILLET_TURN_TOL
-              }
-              for (let q = 0; q < m2; q++) if (turnsAt[q]) protoTurns.add(L[q])
               let start = 0; while (start < m2 && own[start] === own[(start - 1 + m2) % m2]) start++
               if (start < m2) {
                 const arcs = []
@@ -7403,17 +7612,15 @@ export function buildTileGround(ribbons, opts = {}) {
             // ⭐⭐⭐ THE EASE IS THE CORNER, AND IT IS THE EASE'S OWN PER-VERTEX STAMP THAT SAYS SO.
             // Where the contour turned past `FILLET_TURN_TOL` the ease made an arc; that arc IS the
             // corner. No label, no conjunction, no conditional.
-            // ⛔⛔ AND IT MUST BE READ OFF `EC.arc`, NOT OFF `protoTurns`. `protoTurns` holds
-            // LABELS (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so testing
-            // `protoTurns.has(labs[i])` marks EVERY ② vertex on that frontage once its owner turns
-            // anywhere. `end()` reads `iaCorner` to end a leg, so each one inserts a ramp: LS went
-            // to 10,606 marked vertices of 14,651 (72.4%, from 3.6%) and the operator's eye caught
+            // ⛔⛔ AND IT MUST BE READ OFF `EC.arc`, never off a set of turning LABELS: a label spans a whole ① edge, so a
+            // label test marks EVERY ② vertex on that frontage once its owner turns anywhere. `end()` reads `iaCorner` to
+            // end a leg, so each one inserts a ramp: LS went to 10,606 marked vertices of 14,651 (72.4%, from 3.6%) and the operator's eye caught
             // sawtooth notches mid-block — "weird geometry everywhere; looks like contour nodes."
             // ⭐⭐ THE LESSON, AND IT IS THE ONE TO CARRY: the owner-change half was doing TWO jobs —
             // wrongly answering WHETHER, and necessarily supplying WHERE. Deleting a term that
             // carries a second, unnamed job deletes that job too. `EC.arc` supplies the locality
             // honestly, because the ease stamped it at the moment it made the arc.
-            void o; void protoTurns
+            void o
             return EC.ring.map((_, i) => (EC.arc?.[i] ?? null) != null)
           })
           // per ② contour vertex: is this ①'s corner? ⛔ Emitted as a FACT of the shape, so the
@@ -7670,7 +7877,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ A trim that cuts nothing leaves iA AS IT IS (the same contour as iaFull, not Clipper's re-emitted copy of it); one that
         // cuts writes its crossings into iaFull too (`shareIntoFull`). Its other new vertices are the ring's own, where the ring
         // runs inside the curb.
-        let stamped = 0, added = 0, sharedIntoFull = 0, sharedIntoRing = 0
+        let stamped = 0, added = 0, sharedIntoFull = 0, sharedIntoRing = 0; const byPair = {}
         const keyOf = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
         protoShapeTiles = protoShapeTiles.map(t => { if (!t.iA?.length || !differenceRings(t.iA, [t.ring]).length) return t
           const iA = intersectRings(t.iA, [t.ring]), have = new Set([...(t.iaFull || []).flat(), ...t.ring].map(keyOf))
@@ -7680,7 +7887,8 @@ export function buildTileGround(ribbons, opts = {}) {
           return sh.t })
         if (landEv) protoShapeTiles = protoShapeTiles.map(t => { const { fixed, override } = t._luSeed
           if (fixed || override) return t
-          const { tile, groups } = stampTile(t, landEv)
+          const { tile, groups, counts } = stampTile(t, landEv)
+          for (const k in counts) byPair[k] = (byPair[k] || 0) + counts[k]
           stamped++; added += tile.iaFull.reduce((u, r, i) => u + r.length - t.iaFull[i].length, 0)
           // the stamp's crossings on a stretch where the block follows the ring go into the ring too
           const sh = shareBlockIntoRing(tile); sharedIntoRing += sh.added
@@ -7816,7 +8024,7 @@ export function buildTileGround(ribbons, opts = {}) {
           if (!Array.isArray(O) || O.length !== t.ring.length) throw new Error(`[tileGround][PROTO⇢artifact] ⛔ ${at}: \`ringOwner\` has ${O?.length ?? 'no'} entries, ring ${t.ring.length} — a pass edited the ring without carrying its owners. Refusing.`)
           const e = O.findIndex(o => o == null)
           if (e >= 0) throw new Error(`[tileGround][PROTO⇢artifact] ⛔ ${at}: ① edge ${e} (${t.ring[e].map(c => c.toFixed(3)).join(', ')} → ${t.ring[(e + 1) % t.ring.length].map(c => c.toFixed(3)).join(', ')}) has NO OWNER — the road there has no line. Refusing.`) }
-        if (landEv) console.log(`[tileGround][stamp] the land-use stamp written into ${stamped} tile(s): ${added} crossing vertex(es) added to iaFull, shared with the evidence parts · the evidence's disjointness: ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs`)
+        if (landEv) console.log(`[tileGround][stamp] the land-use stamp written into ${stamped} tile(s): ${added} crossing vertex(es) added to iaFull, shared with the evidence parts · the noding by ring (← insertions by origin, ✂ antennas removed): ${Object.entries(byPair).sort().map(([k, n]) => `${k} ${n}`).join(', ') || 'none'} · the evidence's disjointness: ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs`)
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         protoJunctionCensus = protoJxCensus
         if (protoUnlabelled.edges || protoUnlabelled.noOwner) console.warn(`[tileGround][PROTO②] ⛔ ${protoUnlabelled.edges} ② edge(s) took NO ① owner${protoUnlabelled.noOwner ? ` · ${protoUnlabelled.noOwner} name an owner ① does not have` : ''} — no run and no cap, so no height. First at (${protoUnlabelled.at[0]?.p.map(c => c.toFixed(3)).join(', ')}).`)
