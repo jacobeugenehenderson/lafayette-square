@@ -1148,6 +1148,24 @@
       "status": "PERMITTED"
     },
     {
+      "id": "glerl-ice-concentration",
+      "title": "Daily Great Lakes Ice Concentration, 1973 Onward (G10029, Version 1): daily 1.8 km gridded ice concentration (ASCII grids), Dec 1972 – May 2023",
+      "publisher": "NOAA Great Lakes Environmental Research Laboratory (GLERL); distributed by NSIDC",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://nsidc.org/data/g10029/",
+      "covers": [
+        "the ice on a Great Lake on a given day — whether the lake's water was open on a lidar's flight days (BRIEF-the-shore-is-one-line)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (NSIDC's G10029 landing page; GLERL is NOAA, a federal work. GLERL's ERDDAP copy, glerlIce, sits behind a bot wall and its licence was not read)",
+        "quote": "As a condition of using these data, you must cite the use of this data set. · Cite as: Great Lakes Environmental Research Laboratory. (2020). Daily Great Lakes Ice Concentration, 1973 Onward. (G10029, Version 1). [Data Set]. Boulder, Colorado USA. National Snow and Ice Data Center. https://doi.org/10.7265/krkb-f591",
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
+      },
+      "status": "PERMITTED"
+    },
+    {
       "id": "noaa-bluetopo",
       "title": "NOAA OCS BlueTopo: national bathymetric compilation (COG tiles, NAD83 UTM + NAVD88)",
       "publisher": "NOAA Office of Coast Survey",
