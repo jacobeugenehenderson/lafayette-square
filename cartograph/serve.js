@@ -34,6 +34,7 @@ import { unionFootprints } from './building-union.mjs'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord, assertDiscInBox } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
+import { commitExtentRecords, flattenBoundaryPath, sameJson } from './commitExtent.mjs'
 import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
@@ -658,41 +659,6 @@ function computeBoundaryFromSelection(scene, names) {
     return { name: s.name, polylines: s.polylines, direction, connected: adj.get(s.name).length === 2 }
   })
   return { corners, centroid, radius: Math.round(radius), ordered, gaps, streets, closed, source: 'selected' }
-}
-
-// Flatten ONE editable bezier loop (frame-independent lon/lat anchors + handles)
-// into a closed x/z polygon, in the given (re-centered, at-commit) frame. Project
-// each anchor + handle lon/lat → x/z, then sample every cubic segment. Absent
-// handles collapse a segment to a straight line. Deterministic — NO snap/route/
-// geocode. Used per exclusion loop at commit (`HANDOFF-extent-pen-boundary.md` +
-// the excluder pivot). Returns [{x,z}] or null.
-function flattenBoundaryPath(boundaryPath, geo) {
-  const A = boundaryPath?.anchors
-  if (!Array.isArray(A) || A.length < 3) return null
-  const r2 = (v) => Math.round(v * 100) / 100
-  // lon/lat → local x/z in the committed frame (matches reproject-raw's projection:
-  // the same lonToMeters/latToMeters the reprojected buildings use, so membership lines up).
-  const latToM = geo.latToMeters || 111000
-  const proj = (p) => ({ x: (p.lon - geo.lon) * geo.lonToMeters, z: (geo.lat - p.lat) * latToM })
-  const pts = A.map(a => ({
-    p: proj(a),
-    hIn: a.handleIn ? proj(a.handleIn) : null,
-    hOut: a.handleOut ? proj(a.handleOut) : null,
-  }))
-  const cubic = (p0, c0, c1, p3, t) => {
-    const u = 1 - t, w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t
-    return { x: w0 * p0.x + w1 * c0.x + w2 * c1.x + w3 * p3.x, z: w0 * p0.z + w1 * c0.z + w2 * c1.z + w3 * p3.z }
-  }
-  const out = []
-  for (let i = 0; i < pts.length; i++) {
-    const a = pts[i], b = pts[(i + 1) % pts.length]
-    const curved = a.hOut || b.hIn
-    if (!curved) { out.push({ x: r2(a.p.x), z: r2(a.p.z) }); continue }
-    const c0 = a.hOut || a.p, c1 = b.hIn || b.p
-    const STEPS = 18
-    for (let k = 0; k < STEPS; k++) { const q = cubic(a.p, c0, c1, b.p, k / STEPS); out.push({ x: r2(q.x), z: r2(q.z) }) }
-  }
-  return out.length >= 3 ? out : null
 }
 
 // All named streets' polylines for the clickable boundary-selection layer — one
@@ -2059,94 +2025,37 @@ createServer(async (req, res) => {
         // Stale .prebak from a prior run is cleared first so only one exists.
         snapshotApply(scene, 'prebak')
         const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
-        // ⭐ NEVER MOVE THE FRAME ORIGIN (EXTENT-DESIGN §3.3). The origin is the
-        // FROZEN fetch center; moving it would run reproject-raw over every raw
-        // file AND re-order building identity (the content death). So the hood
-        // center is stored OFF-ORIGIN on the disc instead of re-centering the
-        // frame — no reproject, ever. `discCenter` = the hood center projected
-        // into the frozen frame (x/z; +z = south, so lat is negated).
-        const latToM = geo.latToMeters || 111000
-        const discCenter = [
-          Math.round(((center.lon - geo.lon) * geo.lonToMeters) * 100) / 100,
-          Math.round(((geo.lat - center.lat) * latToM) * 100) / 100,
-        ]
-        // Timezone still derives from the hood LOCATION (not the frame origin) so
-        // weather/TOD are right for any region (Altadena → Pacific, etc.).
+        // ⭐ NEVER MOVE THE FRAME ORIGIN (EXTENT-DESIGN §3.3): the hood centre is stored OFF-ORIGIN on the disc; no
+        // reproject, ever. ⭐ AND A COMMIT CARRIES EVERY KEY IT DOES NOT OWN (commitExtent.mjs): it rebuilt
+        // neighborhood.json from fixed fields, dropping `sides` (the live extent mechanism) and `_note`, and overwrote
+        // geography's `_comment`. Each record is written only when its VALUE changed, so a re-commit of unchanged
+        // inputs leaves every file byte-identical (▶ node checks/claims-a-recommit-changes-nothing.mjs).
+        let timezone = null
+        try { timezone = tzLookup(center.lat, center.lon) } catch { /* keep prior tz */ }
+        const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
+        const priorNeighborhood = existsSync(nPath) ? JSON.parse(readFileSync(nPath, 'utf8')) : null
+        const priorRecs = readBoundaryRecords(scene)
+        const rec = commitExtentRecords({ geo, prev: { neighborhood: priorNeighborhood, boundaryRecords: priorRecs },
+          body: { center, radius, name, blurb, exclusions, polygon, polygonSource }, timezone, scene })
         // ⛔ The disc must lie inside the data that was fetched (EXTENT-DESIGN §4) — refused BEFORE anything is written.
-        assertDiscInBox(geo, discCenter, radius, `[commit-extent] ${scene}`)
-        try { geo.timezone = tzLookup(center.lat, center.lon) } catch { /* keep prior tz */ }
-        geo._comment = 'Committed extent — frame origin FROZEN at the fetch center (never moves); hood center stored off-origin on the disc. bbox = the fetch extent; timezone from the hood center.'
-        writeFileSync(geoPath, JSON.stringify(geo, null, 2))
+        assertDiscInBox(geo, rec.discCenter, radius, `[commit-extent] ${scene}`)
+        if (!sameJson(rec.geography, geo)) writeFileSync(geoPath, JSON.stringify(rec.geography, null, 2))
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        // No reproject-raw — the origin didn't move. Still bake the real skeleton
-        // (the hard fetch's job) in the frozen frame.
+        // No reproject-raw — the origin didn't move. Still bake the real skeleton (the hard fetch's job) in the frozen frame.
         await runShell('node skeleton.js', { cwd: here, env, timeout: 120000 })
         _streetLookupCache.delete(scene)
-        // ── The boundary write ────────────────────────────────────────────────
-        // TWO SEPARATE THINGS, and their field names are backwards, so read carefully:
-        //   `boundary` = the 256-gon RENDER DISC derived from `radius`. It answers
-        //                "how much world do we draw" — ground mesh, fade bands, tiles.
-        //   `polygon`  = MEMBERSHIP. It answers "what is IN the neighborhood".
-        //
-        // This used to write the disc unconditionally and NO polygon, on the settled
-        // excluder model (membership = inside-circle − exclusions). That model made
-        // subtraction the only gesture available, so the sole positive statement of
-        // intent was "everything the disc happened to catch" — which is how one
-        // exclusion loop silently removed 147 Księży Młyn buildings including the
-        // Church of St. Anne, with no per-building record of why. It also meant a
-        // first pour DESTROYED any authored polygon (hipointedemun's 4-point ring
-        // was one Bake from gone; `rescope` got a guard, this path never had one).
-        //
-        // Now an inclusion polygon is first-class and PRESERVED: membership becomes
-        // (polygon ∪ activate) − (exclusions ∪ hide), with the disc dropping out of
-        // the predicate entirely and going back to its one job, rendering. A scene
-        // with no polygon still falls back to the circle, so every hood poured under
-        // the excluder model (e.g. altadena) is byte-identical.
-        //
-        // Accepts lon/lat anchors (frame-independent, like exclusions) and flattens
-        // into the NOW re-centered frame, so a re-commit never drifts the boundary.
-        //
-        // ⭐ THREE RECORDS. Start from the prior records and replace only what this
-        // gesture addresses. (The edge's fade is not here — it is the Look's.)
-        const priorRecs = readBoundaryRecords(scene)
-        const disc = makeDiscRecord({
-          radius, center: discCenter,
-          where: `${scene}/neighborhood_boundary.json`,
-        })
-        // ⚠️ Exclusions are REQUEST-ONLY on this path — omitting the array drops any
-        // on disk. Preserved as-is (ExtentApp always sends one), not quietly changed.
-        const excl = Array.isArray(exclusions)
-          ? exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
-          : []
-        let membership = null
-        if (Array.isArray(polygon) && polygon.length >= 3) {
-          const polyXZ = flattenBoundaryPath({ closed: true, anchors: polygon }, geo)
-          if (!Array.isArray(polyXZ) || polyXZ.length < 3) throw new Error('inclusion polygon flattened to fewer than 3 points')
-          membership = { polygon: polyXZ, polygonSource: polygonSource || 'authored' }
-          console.log(`[commit-extent] ${scene}: inclusion polygon ${polyXZ.length} pts (source=${membership.polygonSource})`)
-        } else if (polygon != null && !Array.isArray(polygon)) {
-          throw new Error('polygon must be an array of {lon,lat} anchors')
-        } else if (priorRecs?.membership) {
-          // No polygon supplied → the record is simply carried, not re-stated.
-          membership = priorRecs.membership
-          console.log(`[commit-extent] ${scene}: preserved existing inclusion polygon (${membership.polygon.length} pts) — none supplied`)
-        }
-        const boundary = composeBoundary({
-          disc, membership, exclusions: excl.length ? excl : null,
-          carry: priorRecs?.carry ?? {}, keyOrder: priorRecs?.keyOrder ?? [],
-        })
-        writeFileSync(mapDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
-        const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
-        // Persist the editable exclusion loops AND the inclusion polygon (both lon/lat)
-        // so reopening a committed hood returns them fully editable — the "keep fixing
-        // across sessions" contract.
-        const nDraft = { name: name || '', blurb: blurb || '', draftRadius: Math.round(radius), timezone: geo.timezone || null, exclusions: exclusions || [], committed: true }
-        if (Array.isArray(polygon) && polygon.length >= 3) { nDraft.polygon = polygon; nDraft.polygonSource = polygonSource || 'authored' }
-        else {
-          try { const pv = JSON.parse(readFileSync(nPath, 'utf8')); if (Array.isArray(pv.polygon) && pv.polygon.length >= 3) { nDraft.polygon = pv.polygon; if (pv.polygonSource) nDraft.polygonSource = pv.polygonSource } } catch { /* none */ }
-        }
-        writeFileSync(nPath, JSON.stringify(nDraft, null, 2))
+        // The boundary: `boundary` = the 256-gon RENDER DISC derived from `radius` ("how much world do we draw");
+        // `polygon` = MEMBERSHIP ("what is IN the neighborhood"), first-class and PRESERVED when none is supplied.
+        // Membership is (polygon ∪ activate) − (exclusions ∪ hide); the disc only where no polygon is authored.
+        if (rec.membership && Array.isArray(polygon) && polygon.length >= 3) console.log(`[commit-extent] ${scene}: inclusion polygon ${rec.membership.polygon.length} pts (source=${rec.membership.polygonSource})`)
+        else if (rec.membership) console.log(`[commit-extent] ${scene}: preserved existing inclusion polygon (${rec.membership.polygon.length} pts) — none supplied`)
+        const bPath = mapDataPaths(scene).boundary
+        const priorBoundary = existsSync(bPath) ? JSON.parse(readFileSync(bPath, 'utf8')) : null
+        if (!sameJson(rec.boundary, priorBoundary)) writeFileSync(bPath, JSON.stringify(rec.boundary, null, 2))
+        // Persist the editable exclusion loops AND the inclusion polygon (both lon/lat) so reopening a committed hood
+        // returns them fully editable — the "keep fixing across sessions" contract. Every other key is carried.
+        if (!sameJson(rec.neighborhood, priorNeighborhood)) writeFileSync(nPath, JSON.stringify(rec.neighborhood, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, radius: Math.round(radius) }))
       } catch (err) {
@@ -2245,8 +2154,8 @@ createServer(async (req, res) => {
         //
         // Rescope is the LIGHT re-apply and by definition never re-centers, so the
         // center is a preserved field like polygon/exclusions below, not an input.
-        // A v1 boundary has no `center`; `makeDiscRecord` defaults it to [0,0],
-        // which is what those hoods already are. (R10 two centers, EXTENT-DESIGN
+        // A boundary with no `center` is REFUSED by `makeDiscRecord` (BRIEF-the-disc-is-one-source §1b: never the origin
+        // by default; every town on disk carries one). (R10 two centers, EXTENT-DESIGN
         // §3.3: the FRAME origin is frozen forever; the DISC center is free to roam
         // the forever zone — moving the disc must never move the frame.)
         //
