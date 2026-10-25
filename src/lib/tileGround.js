@@ -477,6 +477,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const dg0 = st?.caps?.start?.degree, dg1 = st?.caps?.end?.degree
     const lastI = P.length - 1
     const tipOf = (i) => (i === 0 && dg0 === 1) ? 'start' : (i === lastI && dg1 === 1) ? 'end' : null
+    // `hwy` rides the stamp of a grade-separated HIGHWAY (the class set the ground's hwySkel reads too): its absorbed ink is
+    // the highway's, left to H. ⛔ Not `gradeSeparated` alone: a street's own bridge is ROAD for paint (Boz, 2026-10-25).
     const hwyGs = gs && HWY_CLASS.has(st?.highway)
     // Stamped on the chain's whole LAST SPAN (the end vertex and the one before it): the town street's own ε
     // outline swallows the ramp's end vertices in the union, and the ramp edge that survives into the block
@@ -504,7 +506,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     // shore edge from a street edge by IDENTITY, never by the absence of a measure.
     const isCoast = skelId === WATER_EDGE_SKEL
     const stamp = (side, i, segI) => { const ge = gradeEndOf(i)
-      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }) }) - 1 }
+      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }), ...(hwyGs && { hwy: true }) }) - 1 }
     return { st, ci, P, skelId, isCoast, dg0, dg1, lastI, stamp }
   }
   const live = chains.filter(({ st }) => st?.points?.length >= 2).map(ctxOf)

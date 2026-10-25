@@ -17,8 +17,8 @@
 //      is one the neighbour shares — neighbours meet on the centreline exactly. Each edge carries a label: a centreline
 //      edge the stroke's pass on the face's side (`own` right, `ownL` left), the frame its owner, the water its owner.
 //      A dead end's spur is a dangling centreline inside one face's cell, so it is never a boundary: the face closes round it.
-// → { paint: [{ outer, outerLabels, holes, holeLabels } | null per face], cells: [{ ring, labels, group }] (the cells whose
-//   owners are water or grade-separated — the classes the ground paints apart from the road), census }.
+// → { paint: [{ outer, outerLabels, holes, holeLabels } | null per face], cells: [{ rings, labels, group }] (the cells whose
+//   owners are water or a grade-separated highway — the classes the ground paints apart from the road), census }.
 // ⛔ ② never reads this (Boz's ruling A(i)): it offsets the un-absorbed face, so the authoring keys cannot move.
 import { nodeCrossings } from './latticeNode.js'
 import { CLIP_SCALE } from './lattice.js'
@@ -200,7 +200,9 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
       if (ring.length >= 2 && ring[ring.length - 2][0] === p[0] && ring[ring.length - 2][1] === p[1]) ring.pop(); else ring.push(p) }
     while (ring.length >= 3 && ring[0][0] === ring[ring.length - 2][0] && ring[0][1] === ring[ring.length - 2][1]) { ring.pop(); ring.shift() }
     return ring.length >= 3 && area2(ring) !== 0 ? ring : null }
-  const classOfLabel = (l) => owners[l]?.water ? 'water' : owners[l]?.gradeSeparated ? 'gradeSep' : 'road'
+  // the three classes the ground paints apart: water (the shore) · a grade-separated HIGHWAY (left to H) · road. ⛔ A street's
+  // own bridge is road (Boz, 2026-10-25): `hwy` is stamped by the mint on a highway's owners only, never `gradeSeparated`.
+  const classOfLabel = (l) => owners[l]?.water ? 'water' : owners[l]?.hwy ? 'hwy' : 'road'
   const classOfH = (h) => { const ink = h.e.tags.find(t => t.kind === 'ink' && t.label != null); if (ink && !h.e.tags.some(t => t.kind === 'cl')) return classOfLabel(ink.label)
     const cl = h.e.tags.find(t => t.kind === 'cl'); if (cl) { const l = centrelines[cl.rec]?.own?.[cl.seg]; return l != null ? classOfLabel(l) : null }
     return null }
@@ -208,7 +210,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   const pieceRing = (hs) => ringOf({ hs })
   for (const f of allFaces) { if (f.type !== 'cell' || f.group == null || f.group === 'none') continue
     const labels = [...new Set(f.cycles.flatMap(c => inkLabelsOf(c.hs)))]
-    if (!labels.some(l => owners[l]?.water || owners[l]?.gradeSeparated)) continue
+    if (!labels.some(l => owners[l]?.water || owners[l]?.hwy)) continue
     const kinds = new Set(labels.map(classOfLabel))
     if (kinds.size === 1) { const rings = f.cycles.map(ringOf).filter(Boolean); if (rings.length) cells.push({ rings, labels, group: f.group }); continue }
     // ⭐ A CELL AT A CROSSING WITH NO NODE (a grade separation, a street over the coast) has no outline point, so no spoke split it:
@@ -237,7 +239,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
           pieces.splice(pieces.indexOf(P), 1, P.slice(lo, hi), [...P.slice(hi), ...P.slice(0, lo)]) }
         const rings = pieces && pieces.map(P => pieceRing(P.map(k => hs[k])))
         if (rings && rings.every(Boolean)) { split = true
-          pieces.forEach((P, q) => { const L = inkLabelsOf(P.map(k => hs[k])); if (L.some(l => owners[l]?.water || owners[l]?.gradeSeparated)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) }
+          pieces.forEach((P, q) => { const L = inkLabelsOf(P.map(k => hs[k])); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) }
       }
     }
     if (!split) census.mixed.push(`${[...kinds].join('+')}@${at0(f)}`)
