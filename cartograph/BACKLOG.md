@@ -34,9 +34,11 @@ end-to-end account (PIPELINE.md to the Diary).
 - Kerf's own note: `.claude/worktrees/kerf-publish/HANDOFF-kerf.md` (⚠️ its "kerf-land HPDM candidate" is stale: staging is the reference).
 **Blocked:** PTown + Huron deploy bakes. Huron's stamp refusal is FIXED (cdl, merged). PTown refuses at the flatten on the ① seam
 (below) — ✅ ruled by Boz under doctrine (2026-10-24): join chain cuts before stroking; build each real node's outline once from
-all its legs; never a post-union snap. Builds in the tranche. **Rulings owed by Jacob:** fine vs coarse ground for LS (0.1 m
-variant in kerf scratch) · roof tint / happenings for the neon contract fix · delete LS staging orphan GLBs · LS data untracked from git
-(the rename's 20 MB) · raw parcel files in the repo · trees outside the disc / horizon water / LS buildings ledger (disc brief §4).
+all its legs; never a post-union snap. Builds in the tranche. **Decided (2026-10-24; Jacob: roof tints "I think we want them"; the rest are Boz's defaults, Jacob may veto):** LS refine
+tolerance stays 0.5 m, revisit later · open places KEEP their roof tint (the neon contract fix keeps it as its own channel) · Ward
+deletes LS's orphan GLBs/atlas PNGs on staging · LS's tracked data is untracked when the rename merges · the City's raw parcel files
+stop being tracked (no history scrub without asking Jacob) · the circle decides surveyed trees outside it · horizon water stays ·
+LS's buildings ledger goes through the same circle check. **Owed by Jacob:** open LS in Stage from `kerf-rename` (then the rename merges).
 **⭐ JACOB'S ORDER (2026-10-24): get through the immediate backlog; ADD HURON TO THE POLISH LIST.** *"LS and HPDM have made
 appreciable progress; now we need to bring Huron up to parity and then move forward with finally fixing the shoreline."* At night Boz
 keeps it moving. In order:
