@@ -27,7 +27,7 @@ import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
 import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
-import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
+import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // ① is minted HERE at prebake (`mintProtopolygon`) and frozen into the artifact; the other two imports run beside it.
 import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
@@ -1089,7 +1089,7 @@ function calibrateSegmentsFromLamps(streets, lamps, survey, nameWidths) {
 }
 
 function detectDividedStreets(streets) {
-  const oneway = streets.filter(f => f.tags?.oneway === 'yes' && f.tags?.name)
+  const oneway = streets.filter(f => isOneway(f.tags) && f.tags?.name)
 
   // Group by name
   const byName = {}
@@ -1424,7 +1424,7 @@ function wayHalfWidth(tags) {
   const cls = classOf(tags).class
   if (isSweptClass(cls)) {
     const n = parseInt(tags.lanes, 10)
-    const hs = highwaySection({ class: cls, oneway: tags.oneway === 'yes', lanes: n > 0 ? n : null, ref: tags.ref ?? null }, hwyStd())
+    const hs = highwaySection({ class: cls, oneway: isOneway(tags), lanes: n > 0 ? n : null, ref: tags.ref ?? null }, hwyStd())
     return Math.max(hs.left.pavementHW, hs.right.pavementHW)
   }
   return crossSection(getStreetSpec(tags)).pavement
@@ -2178,9 +2178,9 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     for (const f of vehicularStreets) {
       const name = f.tags?.name
       if (!name || !LOOP_STREET_NAMES.has(name)) continue
-      const isOneway = f.tags?.oneway === 'yes'
+      const isOw = isOneway(f.tags)
       const curatedHW = (correctedSurvey[name]?.pavementHalfWidth) || 2
-      const renderHW = isOneway ? curatedHW : curatedHW * 2
+      const renderHW = isOw ? curatedHW : curatedHW * 2
       const swW = STANDARDS.sidewalk.width + STANDARDS.treeLawn.width
       const buf = bufferPolyline(f.coords, renderHW + swW)
       for (let bi = 0; bi < buf.length; bi++) loopCutPaths.push(buf[bi])
@@ -2641,7 +2641,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     } else if (isSweptClass(classOf(f.tags).class)) {
       // A highway way's reach is its typical section (H-3), from the way's own tags.
       const n = parseInt(f.tags?.lanes, 10)
-      const hs = highwaySection({ class: classOf(f.tags).class, oneway: f.tags?.oneway === 'yes', lanes: Number.isFinite(n) ? n : null, ref: f.tags?.ref ?? null }, hwyStd())
+      const hs = highwaySection({ class: classOf(f.tags).class, oneway: isOneway(f.tags), lanes: Number.isFinite(n) ? n : null, ref: f.tags?.ref ?? null }, hwyStd())
       rowHW = Math.max(hs.left.pavementHW, hs.right.pavementHW)
     } else {
       // The way's own class section (`streetClass.js`), configured by its own lanes. Pass survey so
@@ -2649,7 +2649,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // pavementHalfWidth + sidewalk offsets. The inline highway→type ternary that stood here (a
       // copy of `mapHighwayToStreetType`, defaulting to 'residential') is gone.
       const n = parseInt(f.tags?.lanes, 10)
-      const dm = defaultMeasure(classOf(f.tags).class, correctedSurvey[name], { lanes: Number.isFinite(n) && n > 0 ? n : null, oneway: f.tags?.oneway === 'yes' })
+      const dm = defaultMeasure(classOf(f.tags).class, correctedSurvey[name], { lanes: Number.isFinite(n) && n > 0 ? n : null, oneway: isOneway(f.tags) })
       const L = dm.left, R = dm.right
       const lCurb = L.terminal === 'none' ? 0 : KIT_CURB_WIDTH
       const rCurb = R.terminal === 'none' ? 0 : KIT_CURB_WIDTH
@@ -2736,7 +2736,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const coords = f.coords.map(c => ({ x: c.x, z: c.z }))
     const name = f.tags.name || t
 
-    if (f.tags.oneway !== 'yes') {
+    if (!isOneway(f.tags)) {
       stripeMeta.push({ coords, name, dashed: t === 'residential' })
     }
 

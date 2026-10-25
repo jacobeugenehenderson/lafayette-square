@@ -16,6 +16,7 @@ import { loadCropland } from './cdl.mjs'
 import { pourCodeRecord, contentRecord, pourDataReads } from './pour-code.mjs'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
+import { travelOrdered } from '../src/cartograph/streetClass.js'
 import { deriveLayers, deriveBuildings, _lotPaths, registryReadRecord } from './derive.js'
 import { fetchElevationGrid, interpolateElevation } from './elevation.js'
 import { createMembershipFilter, buildingIdOf } from './membership.mjs'
@@ -122,7 +123,8 @@ async function main() {
   console.log('\n[3/5] Deriving layers from centerlines + standards...')
   // ⭐ the town's cropland (USDA CDL) is a raster, read async here and handed to the synchronous derive
   const cropland = await loadCropland(SCENE, RAW_DIR, wgs84ToLocal)
-  const layers = deriveLayers(snapped.ground.highway || [], { cropland })
+  // a oneway=-1 way runs in travel order before anything reads it (streetClass#travelOrdered: the skeleton reads it so too)
+  const layers = deriveLayers(travelOrdered(snapped.ground.highway || [], 'derive'), { cropland })
   let buildings = deriveBuildings(snapped.buildings, raw.buildingSource)
 
   // ── Elevation ───────────────────────────────────────────────────────

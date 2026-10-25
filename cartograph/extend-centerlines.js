@@ -27,7 +27,7 @@
 import { readFileSync, writeFileSync, existsSync, copyFileSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, SCENE, requireExplicitMap } from './config.js'
-import { CLASSES, classOf } from '../src/cartograph/streetClass.js'
+import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
 
 requireExplicitMap()
 const APPLY = process.argv.includes('--apply')
@@ -106,7 +106,7 @@ const consider = (f, tol, minLen, type) => {
   if (pts.length < 2 || polyLength(pts) < minLen) return
   if (!isNew(pts)) return
   const name = f.tags?.name || ''
-  added.push({ id: nextId(name || type), name, type, oneway: f.tags?.oneway === 'yes',
+  added.push({ id: nextId(name || type), name, type, oneway: isOneway(f.tags),
     deadEnd: false, loop: false, smooth: false, points: pts, source: 'osm', _original: pts.map(p => [...p]) })
   byType[type] = (byType[type] || 0) + 1
 }

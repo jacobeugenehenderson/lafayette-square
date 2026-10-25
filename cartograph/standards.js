@@ -7,7 +7,7 @@
  * To customize for a different city, swap this file.
  */
 
-import { CLASSES, classOf, classSection, LOCAL_SECTION } from '../src/cartograph/streetClass.js'
+import { CLASSES, classOf, classSection, LOCAL_SECTION, isOneway } from '../src/cartograph/streetClass.js'
 import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 
 const FT = 0.3048 // feet to meters
@@ -95,7 +95,7 @@ export function getStreetSpec(tags) {
   const cls = classOf(tags).class
   if (CLASSES[cls].swept) throw new Error(`⛔ getStreetSpec: a ${cls} has no class constant — its section is highwaySection (H-3)`)
   const n = parseInt(tags.lanes, 10)
-  const sec = classSection(cls, { lanes: n > 0 ? n : null, oneway: tags.oneway === 'yes' })
+  const sec = classSection(cls, { lanes: n > 0 ? n : null, oneway: isOneway(tags) })
   const row = CLASSES[cls].section
   // A fixed-width class (no lanes) is one carriageway of `halfWidth` each side: two "lanes" of it.
   const spec = row.lane
@@ -121,7 +121,7 @@ export function getStreetSpec(tags) {
     spec.parkingWidth = 18 * FT   // 18 ft nose-in stall
   }
 
-  spec.oneway = tags.oneway === 'yes'
+  spec.oneway = isOneway(tags)
 
   return spec
 }
