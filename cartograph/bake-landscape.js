@@ -30,6 +30,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { assertBakeTarget } from './bake-target.js'
 import { requireExplicitMap } from './scene.js'
+import { metresPerDegree } from './geography.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))          // cartograph/
 const REPO_ROOT = join(here, '..')
@@ -90,8 +91,7 @@ console.log(`  parsed ${vCount.toLocaleString()} verts · ${fCount.toLocaleStrin
 const meta = JSON.parse(readFileSync(metaPath, 'utf8'))
 const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
 const [demLat, demLon] = meta.centerLatLon
-const lonToM = geo.lonToMeters || Math.round(111320 * Math.cos(geo.lat * Math.PI / 180))
-const latToM = geo.latToMeters || 111000
+const { lonToM, latToM } = metresPerDegree(geo, `bake-landscape: ${geoPath}`)   // refuses by name; no 111000, no cosine guess
 const east = (demLon - geo.lon) * lonToM         // +east
 const north = (demLat - geo.lat) * latToM        // +north
 const worldX = east, worldZ = -north             // world: +x=E, +z=S → north = −z

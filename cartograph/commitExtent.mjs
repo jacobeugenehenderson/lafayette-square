@@ -12,6 +12,7 @@
  * ▶ node checks/claims-a-recommit-changes-nothing.mjs
  */
 import { makeDiscRecord, composeBoundary } from './boundaryRecords.mjs'
+import { metresPerDegree } from './geography.mjs'
 
 /** One editable bezier loop (frame-independent lon/lat anchors + handles) → a closed x/z polygon in `geo`'s frame:
  *  each anchor and handle projected, every cubic segment sampled (18 steps); a segment with no handles is straight.
@@ -21,8 +22,8 @@ export function flattenBoundaryPath(boundaryPath, geo) {
   if (!Array.isArray(A) || A.length < 3) return null
   const r2 = (v) => Math.round(v * 100) / 100
   // lon/lat → local x/z in the committed frame (the same lonToMeters/latToMeters the buildings use, so membership lines up)
-  const latToM = geo.latToMeters || 111000
-  const proj = (p) => ({ x: (p.lon - geo.lon) * geo.lonToMeters, z: (geo.lat - p.lat) * latToM })
+  const { lonToM, latToM } = metresPerDegree(geo, 'flattenBoundaryPath')
+  const proj = (p) => ({ x: (p.lon - geo.lon) * lonToM, z: (geo.lat - p.lat) * latToM })
   const pts = A.map(a => ({ p: proj(a), hIn: a.handleIn ? proj(a.handleIn) : null, hOut: a.handleOut ? proj(a.handleOut) : null }))
   const cubic = (p0, c0, c1, p3, t) => {
     const u = 1 - t, w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t
@@ -40,8 +41,8 @@ export function flattenBoundaryPath(boundaryPath, geo) {
 
 /** The hood centre (lat/lon) → its x/z in the FROZEN frame (+z = south), to the centimetre. The frame never moves. */
 export const discCenterOf = (geo, center) => {
-  const latToM = geo.latToMeters || 111000
-  return [Math.round(((center.lon - geo.lon) * geo.lonToMeters) * 100) / 100, Math.round(((geo.lat - center.lat) * latToM) * 100) / 100]
+  const { lonToM, latToM } = metresPerDegree(geo, 'commit-extent')
+  return [Math.round(((center.lon - geo.lon) * lonToM) * 100) / 100, Math.round(((geo.lat - center.lat) * latToM) * 100) / 100]
 }
 
 /**

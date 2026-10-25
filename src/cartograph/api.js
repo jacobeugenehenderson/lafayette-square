@@ -199,8 +199,8 @@ export async function pourMap(scene) {
   return j
 }
 
-// Extent editor: the deliberate finalize — re-center to the centroid, reproject
-// + skeleton, write the boundary circle + metadata. Long-running.
+// Extent editor: the deliberate finalize — the frame never moves; skeleton.js runs in the frozen frame and the disc,
+// loops and metadata are written (serve.js commit-extent → cartograph/commitExtent.mjs). Long-running.
 export async function commitExtent(scene, payload) {
   const res = await fetch(sceneUrl(scene, 'commit-extent'), {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
