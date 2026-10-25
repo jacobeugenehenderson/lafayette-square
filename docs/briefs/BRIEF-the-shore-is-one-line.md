@@ -92,6 +92,16 @@ detector), with clean/coast.json in pour-code's pourDataReads; /pour and the res
 it; waterDatum's own histogram is deleted. Mutant: move the coast by its p50 offset, and y=0 must not change. Too little water in the
 sheet to take a mode refuses by name. Also in step 2: bake-coast-distance.js (the water past the rim) reads the lidar coast too, so
 inside and past the rim are one line. Step 1 does NOT merge alone; steps 1–3 land together, validated on the shore branch.
+**⭐ THE UNSEEN SHORE (Jacob's method, 2026-10-25; ruled after Swash's measurement + Zob's read).** Huron's lidar flew 2019-11 → 2020-04 with
+Lake Erie 0.3–0.7 m ABOVE its gauge mean (Marblehead 9063079 = Huron's lakeLevel 174.354); the flattened sheet (174.44 NAVD88) matches no
+month (set by the processor). So the shore between the mean and the flight-day water was underwater when flown. Jacob: *"If we have the
+bathymetry and a depth stick at an agreed upon point, we could just fill it to the current actual average."* ⇒ keep the level at the gauge
+mean; read the gauge over the lidar's own FLIGHT WINDOW (WESM collection dates, recorded per source); take that band's ground from
+BATHYMETRY (rung 2: USACE NCMP topobathy, terms and registry row first); trace where the mean meets lidar-above-the-flight-water ∪
+bathymetry-below-it, through ONE merged sampler used by both of bake-coast's grids; `waterAsFlown` fills the band rather than refusing,
+and refuses by name only where no bathymetry covers it; bake-terrain's floor read covers the band so coast and bed share one floor. Today
+the floor enters AFTER the coast (readFloor samples only under the mask); this moves it before. Tidal towns (PTown) need per-flight-line
+times: designed separately.
 **Dead on tern, don't port:** the gusset (`9c95f43a`, `5f19280c`; per-vertex heights for the retired deformer).
 
 ## 4. Gates
