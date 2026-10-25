@@ -128,6 +128,9 @@ keeps it moving. In order:
 3. **The shoreline, finally:** ⚠️ MERGE STEP for Swash's 60ea9243 (water record's IGLD85→NAVD88 now `igld85ToNavd88.points`,
    asked at the lake's own height; the old field was the sea-level offset, −0.004 vs +0.067 m): after the merge, re-run
    `node cartograph/fetch-water-datums.mjs --scene=huron` in each checkout, or Huron's terrain bake refuses by name.
+   ⚠️ MERGE HAZARD (Zob, 2026-10-25): Ferrule's 93bf579c moves the mint's inputs into `cartograph/mintInputs.mjs` (derive and
+   claims-proto-frozen-matches-live share it). Swash's 8878779c (coastRings → readCoast in derive) must land IN mintInputs on rebase,
+   or pour and witness both mint the OSM coast and agree. After it: claims-proto-frozen-matches-live.
    FILED (Jacob, 2026-10-25): *"With a settled bath shape we could theoretically update the lake level all the time against a
    single stick measurement"*: a live shore from one gauge (or PTown's tide). Not built. Swash's step (3) keeps the level an INPUT
    to the coast, never baked into the surface, so the door stays open.
