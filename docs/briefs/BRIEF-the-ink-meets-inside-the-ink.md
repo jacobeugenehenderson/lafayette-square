@@ -10,7 +10,7 @@ evict-when: `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds. Check with `ListAgents`, then `/rename`.
 **Agent: FRESH.** The mint has not been touched by any live seat; a warm seat would bring the corner/band context, and that context is the wrong layer here.
 **Report to Boz.** **Instruction: confirm-then-build.** Read the canon and the code below, then tell Boz what you found. If the code contradicts this brief, **stop and flag Boz. The stop is the deliverable.**
-**Premise pass: Zob, 2026-10-24, on dcfb098d; corrections folded in.** Claim 2 FAILED as first written (below); the brief now carries the fix.
+**Premise pass: Zob, 2026-10-24, on dcfb098d; the builder's (Splice, on dd150173: the second fold, both booleans); corrections folded in.** Claim 2 FAILED as first written (below); the brief now carries the fix.
 
 ## 0. Why
 
@@ -75,8 +75,9 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
 ## 3. The fix, at the source
 
 **The rule, one sentence:** every ink stroke that meets another meets **inside** its ink. That covers chains, the boundary and water.
-0. **First, the carrier (Boz, 2026-10-24; Jacob may veto).** Build ①'s union in `booleanLabelled` with
-   `ioPreserveCollinear`, on ①'s union only, so an owner change on a straight run is a vertex by construction, never by
+0. **First, the carrier (Boz, 2026-10-24; Jacob may veto).** Build BOTH of the mint's booleans (the union R and the difference D against the frame; Clipper strips collinear vertices from
+   clip paths too, Splice, read) with `ioPreserveCollinear`, opt-in through the same options object as `sameStroke`, so the
+   other callers stay byte-identical, so an owner change on a straight run is a vertex by construction, never by
    rounding luck. Every ① changes bytes. The tranche re-pours every town anyway, so the frozen consumers re-baseline
    there. ⚠️ Preserved collinear vertices can also make short same-owner edges. Measure them against `subInkLen` before
    you delete the fold (step 4). If they reach ②, stop and flag. If PreserveCollinear proves unworkable, stop and flag:
@@ -89,7 +90,8 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
 2. **Real nodes (b):** build each node's outline once, from all its legs, or end each leg's stroke inside its neighbours'
    ink. Choose one and say why. ⛔ Never a union followed by a merge.
 3. **Rim↔water (c):** the same rule, applied to the boundary and water strokes in the mint.
-4. **Then delete the fold** in `offsetRingByRects` (`subInkLen`'s drop), **in the same commit**: the predecessor goes.
+4. **Then delete BOTH folds**, `offsetRingByRects`' and `taperWorkingCopy`'s first loop (it runs first, on the same ring;
+   Splice, read), and `subInkLen` itself if nothing else reads it, **in the same commit**: the predecessor goes.
    ⚠️ Delete it only once the check is 0, or ② will read the edges unfolded.
 5. **Unplaced (d):** report what steps 1–3 leave of each exhibit. Don't chase them before 1–3 are built.
 
