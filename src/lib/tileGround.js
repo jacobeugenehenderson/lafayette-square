@@ -1817,7 +1817,12 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
     // reaches to the spans whose own rects hold it — Boz, 2026-10-18), and the source VERTEX of a join
     stamp.clips = clips.map((poly, k) => ({ poly, e: clipOwn[k].map(r => origE[r]), v: clipOwn[k].length === 2 ? origV[clipOwn[k][1]] : null, ...(clipD[k] ? { d: clipD[k] } : {}) }))
     // every source edge's depths at its two ends AS STRUCK, a zero depth included (a zero-depth edge strikes no rect, but 0 is its depth)
-    stamp.edgeDepths = seg.map((S, i) => ({ e: origE[i], a: S.a, b: S.b, d: [S.dS, S.dE] })) }
+    // ⭐ and, for a struck edge, the CURB LINE it drew, exactly as its clip has it — its start (P or the join's X), the joins'
+    // X inside it (`onCurb`), its end — the same float points, in P → Q order, with the band's own direction. A caller that
+    // continues a band (the perpendicular corner's legs) reads these, so every vertex it shares with the band is the band's
+    // own and rounds with it; a line re-derived from the edge is a second construction that rounds apart (HPDM block 556).
+    stamp.edgeDepths = seg.map((S, i) => { const struck = S.dS > 0 || S.dE > 0, P = struck ? startOf(i) : null, Q = struck ? endOf(i) : null
+      return { e: origE[i], a: S.a, b: S.b, d: [S.dS, S.dE], ...(struck ? { line: [P, ...onCurb(i, P, Q).reverse(), Q], dir: S.dir } : {}) } }) }
   return outR
 }
 
@@ -4611,7 +4616,7 @@ function curbCutsOnJunctionCorners(st, parts, inC, cornerOverrides, cw, band, pe
 // Owner = { ri (a locator only), span, skelId, side, segOrd, depths: { cw, walkFrom, walkTo, WB }, edges: [{ si, e }] (depths on the tile's edgeDepths) } — the identity quartet of the span's stamp run (a dead-end
 // cap's: the cap's own, `caps`), the same record `tile.ringOwner` and the ink carry. Seams: { cls, a, b (owner keys), aSpan, bSpan, sameChain, line }.
 function bandPiecesOfTile({ st, parts, runs, stamps, inBlock, sp, L0, LV_cw, LV_wf, LV_wt, LV_WB, curb, walk, env, perpRects = {}, perpUnbuilt = {} }) {
-  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: perpUnbuilt.bare || 0, perpLegNoSub: perpUnbuilt.noSub || 0, perpLegNoStamp: perpUnbuilt.noStamp || 0, refusedAt: [], refusedNear: [], byRectsLost: 0, byRectsLostM2: 0, byRectsLostBy: {}, perpFaceRecs: [0, 0, 0], perpFaceTags: 0, perpFaceSliverTags: 0 }
+  const census = { cells: 0, gapOuter: 0, gapByPair: {}, gapInner: 0, gapSeams: 0, goneBoth: [], goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRects: {}, byRectsM2: {}, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: perpUnbuilt.bare || 0, perpLegNoSub: perpUnbuilt.noSub || 0, perpLegNoStamp: perpUnbuilt.noStamp || 0, perpLegNoStrike: perpUnbuilt.noStrike || 0, refusedAt: [], refusedNear: [], byRectsLost: 0, byRectsLostM2: 0, byRectsLostBy: {}, perpFaceRecs: [0, 0, 0], perpFaceTags: 0, perpFaceSliverTags: 0 }
   const perpFaces = new Map()   // a perpendicular record → its painted faces (`cut`)
   // a run's or an arc's owner is its stamp run; a dead-end cap's is the cap's own (`iaCap` → `caps`, the cap is an end coupler)
   const ownerOf = (span) => { if (span == null) return null; const [h, t] = span.split('/'), R = h[0] === 'c' ? st.caps?.[+h.slice(1)] : Number.isFinite(+t) ? runs[+t] : null
@@ -5470,7 +5475,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
         clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
-        edges: (S.edgeDepths || []).map(x => ({ e: x.e, span: p.dspan[x.e], a: x.a, b: x.b, d: x.d })), dropped: S.dropped || [], areaMin: S.areaMin })
+        edges: (S.edgeDepths || []).map(x => ({ e: x.e, span: p.dspan[x.e], a: x.a, b: x.b, d: x.d, line: x.line, dir: x.dir })), dropped: S.dropped || [], areaMin: S.areaMin })
     }
     return { rings: (o.length && h.length) ? differenceRings(o, h) : o, per }
   }
@@ -5628,8 +5633,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const LV_WB = insDL((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : perpAt(p.ri, p.dsrc[j]) ? cw : WB)), luIn0 = LV_WB.rings
   // ⭐⭐ THE PERPENDICULAR CORNER'S GROUND IS ITS LEGS' OWN BANDS, RUN STRAIGHT ON (`SECTION §6.1`). For each leg, the rect
   // `offsetRingByRects` strikes for its last ② edge — that edge's line, its normal, the leg's own depths — continued along
-  // the edge's own direction past the tangent (overlapping the leg's band by up to half a metre, so the two are one area,
-  // never two abutting pieces) and clipped by ② (`pedOuter`). Two of them per leg: its WALK, and its whole envelope
+  // the edge's own direction past the tangent — its sides the very lines that rect drew (`legExt`, carried from the strike),
+  // so over the leg the two are one area with one set of vertices, never two abutting pieces and never one line drawn twice —
+  // and clipped by ② (`pedOuter`). Two of them per leg: its WALK, and its whole envelope
   // (curb-inner → WB). The two walks cross in the L; the envelopes' union is the corner's ped ground, square at the land
   // use; `env − walk` is the lawn, as everywhere. ⛔ No new depth, angle or shape: the same rect, longer.
   const endOf = (v) => (Array.isArray(v) ? v[1] : v), startOf = (v) => (Array.isArray(v) ? v[0] : v)
@@ -5640,13 +5646,33 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     const u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len], ccw = (signedArea(p.dring) > 0) !== !!p.hole
     return { T: atEnd ? b : a, f: atEnd ? u : [-u[0], -u[1]], nr: ccw ? [-u[1], u[0]] : [u[1], -u[0]], len }
   }
-  const legExt = (p, i, atEnd, d0, d1, Lx, back0 = 0.5) => {
+  // a pane: the rect past the tangent between two depths, from s0 to s1 along the leg (the walk's cut mask, which no band shares)
+  const legPane = (p, i, atEnd, d0, d1, s0, s1) => {
     const F0 = legFrame(p, i, atEnd)
-    if (!F0 || !(d1 > d0 + 1e-9)) return null
-    const { T, f, nr } = F0, back = Math.min(back0, F0.len)
-    const X = (s2, d) => [T[0] + f[0] * s2 + nr[0] * d, T[1] + f[1] * s2 + nr[1] * d]
-    const r = [X(-back, d0), X(Lx, d0), X(Lx, d1), X(-back, d1)]
+    if (!F0 || !(d1 > d0)) return null
+    const { T, f, nr } = F0, X = (s2, d) => [T[0] + f[0] * s2 + nr[0] * d, T[1] + f[1] * s2 + nr[1] * d]
+    const r = [X(s0, d0), X(s1, d0), X(s1, d1), X(s0, d1)]
     return signedArea(r) > 0 ? r : r.reverse()          // one winding for all, so the nonzero union never cancels an overlap
+  }
+  // ⭐⭐ THE LEG'S BAND, CONTINUED — CARRIED FROM ITS STRIKE, NEVER RE-DERIVED (Boz's ruling, 2026-10-25, on Kerf's capture at
+  // HPDM block 556). Between two LEVELS (two `insDL` strikes): each side is that level's struck curb line for the leg's end
+  // densified edge `j` (`stamp.edgeDepths[j].line`: the very points its clip has), and one far point `s` on past the line's end
+  // along the strike's own direction. Over the leg the extension IS the band's struck vertices, so the two round identically and
+  // the union cancels them exactly; the far segment runs where no other construction draws. ⛔ It was rebuilt from the SOURCE
+  // edge (`legFrame`) and overlapped the leg by a free 0.5 m: one line struck twice, its corners rounding apart by 0.1–0.25 mm,
+  // and the lawn between them a 0.017 mm ring the flatten refused. ⇒ `back` is gone: the overlap is edge `j`'s own band.
+  // `s(side)` → how far past the line's end (or, with `from`, the span [from, to] past it, for a ramp).
+  const struckAt = (lv, p, j) => { const r = lv.per.find(x => x.p === p), e = r?.edges[j]
+    return e && e.e === j && e.line ? e : null }
+  const carried = (lv, p, j, atEnd, s) => { const e = struckAt(lv, p, j); if (!e) return null
+    const L = e.line, end = atEnd ? L[L.length - 1] : L[0], sg = atEnd ? 1 : -1
+    return { e, at: (t) => [end[0] + e.dir[0] * t * sg, end[1] + e.dir[1] * t * sg], dEnd: atEnd ? e.d[1] : e.d[0] } }
+  const legExt = (p, j, atEnd, lvA, lvB, Lx) => {
+    const A = carried(lvA, p, j, atEnd), B = carried(lvB, p, j, atEnd)
+    if (!A || !B || !(B.dEnd > A.dEnd)) return null
+    const LA = A.e.line, LB = [...B.e.line].reverse()
+    const r = atEnd ? [...LA, A.at(Lx), B.at(Lx), ...LB] : [A.at(Lx), ...LA, ...LB, B.at(Lx)]
+    return signedArea(r) > 0 ? r : r.reverse()
   }
   // ⛔ THE LEGS' BANDS ARE CUT AT THEIR TANGENTS, past which the extensions carry them. Where a band's depth drops to the
   // arc's none, `offsetRingByRects` joins the two by a slanted wedge — a thin triangle of walk past the tangent, its side
@@ -5655,7 +5681,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   // ⭐ EACH EXTENSION CARRIES ITS OWNER FROM CONSTRUCTION (Jacob, 2026-10-20): the run of the leg edge it is struck from,
   // `runs[stamps[p.si][i]]` (the run `iaJunction`'s legs read), keyed as that edge's own cell is (`spanOfSrc`: one key for one
   // leg). ⛔ Never found by distance. A leg that builds no extension is counted (`perpUnbuilt`), never skipped silently.
-  const walkX = [], envX0 = [], walkCut = [], ends = [], perpUnbuilt = { bare: 0, noSub: 0, noStamp: 0 }
+  const walkX = [], envX0 = [], walkCut = [], ends = [], perpUnbuilt = { bare: 0, noSub: 0, noStamp: 0, noStrike: 0 }
   const runSpan = (t) => (t == null ? null : 'r' + t + '/' + t)
   for (const c of R.perpCorners) {
     const p = parts[c.ri]; if (!p?.dring) continue
@@ -5668,13 +5694,14 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       const jj = js(i); if (!jj.length) { perpUnbuilt.noSub++; continue }
       const j = atEnd ? jj[jj.length - 1] : jj[0], pick = atEnd ? endOf : startOf
       const d0 = pick(g.walkFromD(j)), d1 = pick(g.walkToD(j))
-      const w = legExt(p, i, atEnd, d0, d1, Lx), e2 = legExt(p, i, atEnd, cw, WB, Lx)
+      const w = legExt(p, j, atEnd, LV_wf, LV_wt, Lx), e2 = legExt(p, j, atEnd, LV_cw, LV_WB, Lx)
+      if (!w && !e2 && !struckAt(LV_wt, p, j)) perpUnbuilt.noStrike++     // the leg's edge struck nothing to carry: counted, never re-derived
       const stamp = stamps[p.si]?.[i] ?? null, leg = { si: p.si, i, atEnd, stamp, span: runSpan(stamp), corner: ck }
       if (stamp == null && (w || e2)) perpUnbuilt.noStamp++
       if (w) walkX.push({ ...leg, ring: w }); if (e2) envX0.push({ ...leg, ring: e2 })
-      if (w) { c.corner.walks = (c.corner.walks || 0) + 1; ends.push({ c, cut, p, i, atEnd, d0, d1, Lx, leg }) }   // walks and ramps, per corner, for the checks
+      if (w) { c.corner.walks = (c.corner.walks || 0) + 1; ends.push({ c, cut, p, i, j, atEnd, d0, d1, Lx, leg }) }   // walks and ramps, per corner, for the checks
     }
-    const D = WB + Lx, kA = legExt(p, c.before, true, -D, D, D, 0), kB = legExt(p, c.after, false, -D, D, D, 0)
+    const D = WB + Lx, kA = legPane(p, c.before, true, -D, D, 0, D), kB = legPane(p, c.after, false, -D, D, 0, D)
     if (kA && kB) walkCut.push(...intersectRings([kA], [kB]))
   }
   const envX = envX0.length && pedOuter.length ? intersectRings(unionRings(envX0.map(x => x.ring)), pedOuter) : []
@@ -5754,7 +5781,11 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     // full width; square landings are unchanged, oblique ones deeper) — to past where the last one meets it, kept to the
     // block, so its front is the road edge itself, through the curb
     const kk = ks.filter(k => k != null), kFirst = Math.min(...kk), sF = Math.max(...kk) + 1e-2
-    const rect = legExt(x.p, x.i, x.atEnd, x.d0, x.d1, sF, -(kFirst - D))
+    // ⭐ its two sides are the walk's own struck lines carried on (`carried`), measured from the tangent as `Fr` measures
+    const A0 = carried(LV_wf, x.p, x.j, x.atEnd), B0 = carried(LV_wt, x.p, x.j, x.atEnd)
+    const sOf = (C) => { const L = C.e.line, end = x.atEnd ? L[L.length - 1] : L[0]; return (end[0] - Fr.T[0]) * Fr.f[0] + (end[1] - Fr.T[1]) * Fr.f[1] }
+    const s0 = Math.max(kFirst - D, -Fr.len), rect = A0 && B0 && B0.dEnd > A0.dEnd ? (() => { const r = [A0.at(s0 - sOf(A0)), A0.at(sF - sOf(A0)), B0.at(sF - sOf(B0)), B0.at(s0 - sOf(B0))]
+      return signedArea(r) > 0 ? r : r.reverse() })() : null
     const quad = rect && curbOuter.length ? intersectRings([rect], curbOuter) : []
     if (!quad.length) { R.tally.perpNoLanding++; x.c.corner.noLanding = (x.c.corner.noLanding || 0) + 1; continue }
     ramps.push({ c: x.c, p: x.p, A, B, quad, leg: x.leg })
@@ -8081,7 +8112,7 @@ export function buildTileGround(ribbons, opts = {}) {
   protoBandPieces = S.bandPieces || []
   protoRimRings = S.rimRings || []
   if (S.rimFar?.n) console.warn(`[tileGround][rim] ⚠️ ${S.rimFar.n} rim crossing(s) inserted farther off the tile ring's rim edge than one rounding (√2/2 grid step), the farthest ${(S.rimFar.max * 1000).toFixed(3)} mm, in ${S.rimFar.tiles.length} tile(s): ${S.rimFar.tiles.slice(0, 8).join(', ')}${S.rimFar.tiles.length > 8 ? ' …' : ''} — accepted (un-noded they reopen the wedge); CAUSE NOT ESTABLISHED`)
-  if (protoBandPieces.length) { const C = { cells: 0, gapOuter: 0, gapInner: 0, gapSeams: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: 0, perpLegNoSub: 0, perpLegNoStamp: 0, perpFaceTags: 0, perpFaceSliverTags: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
+  if (protoBandPieces.length) { const C = { cells: 0, gapOuter: 0, gapInner: 0, gapSeams: 0, goneBothN: 0, noAnchor: 0, noInner: 0, noInnerM2: 0, innerShared: 0, innerSplit: 0, necks: 0, innerUnbounded: 0, onlyOnInner: 0, noOwner: 0, byRectsWide: 0, refused: 0, refusedM2: 0, refusedPerp: 0, refusedPerpM2: 0, perpLegBare: 0, perpLegNoSub: 0, perpLegNoStamp: 0, perpLegNoStrike: 0, perpFaceTags: 0, perpFaceSliverTags: 0 }, gone = [], pairs = {}, BR = {}, BRm = {}, refAt = []
     let n = 0, seams = 0, same = 0
     for (const t of protoBandPieces) { n += t.pieces.length; seams += t.seams.length; same += t.seams.filter(q => q.sameChain).length
       for (const k of Object.keys(C)) C[k] += t.census[k] || 0; gone.push(...t.census.goneBoth.map(g => `tile ${t.tile}: ${g}`))
@@ -8095,7 +8126,7 @@ export function buildTileGround(ribbons, opts = {}) {
     console.log(`[tileGround][①⇢LIVE] the bands cut by their owners: ${n} piece(s) from ${C.cells} cell(s) · ${seams} seam(s) (${seams - same} where the owner changes · ${same} on one chain) · unmatched runs between two matches, their ground left to the rects: ${C.gapOuter} outer (top pairs of a span with no width on the inner side ${top || '—'}) · ${C.gapInner} inner · ${C.gapSeams} match(es) with no seam to the next, a gap between`)
     // a perpendicular leg that builds no extension is counted, never skipped silently: a bare (highway) edge has no walk to run
     // on; no densified sub-edge or no stamp run is a leg the corner could not build from
-    if (C.perpLegBare || C.perpLegNoSub || C.perpLegNoStamp) console.warn(`[tileGround][①⇢LIVE] perpendicular legs with no owned extension: ${C.perpLegBare} bare (no walk) · ${C.perpLegNoSub} with no densified sub-edge · ${C.perpLegNoStamp} with no stamp run (its ground refused)`)
+    if (C.perpLegBare || C.perpLegNoSub || C.perpLegNoStamp || C.perpLegNoStrike) console.warn(`[tileGround][①⇢LIVE] perpendicular legs with no owned extension: ${C.perpLegBare} bare (no walk) · ${C.perpLegNoSub} with no densified sub-edge · ${C.perpLegNoStamp} with no stamp run (its ground refused) · ${C.perpLegNoStrike} whose end edge struck no line to carry`)
     if (C.goneBothN) console.log(`[tileGround][①⇢LIVE] ${C.goneBothN} span(s) with no width on either side of a band — no piece there; the ground is the neighbours' (Boz, 2026-10-18): ${gone.slice(0, 6).join(' · ')}${gone.length > 6 ? ` … +${gone.length - 6}` : ''}`)
     if (C.noAnchor || C.noInner || C.innerShared || C.innerUnbounded || C.noOwner) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.noAnchor} ring(s) with no span carried once on both levels to align from · ${C.noInner} outer ring(s) with no inner ring to align with (their runs are not closed) · ${C.innerShared} inner ring(s) aligned to two outer rings · ${C.innerUnbounded} inner ring(s) aligned to none · ${C.onlyOnInner} span(s) only on the inner side · ${C.noOwner} piece(s) whose span has no stamp run (no owner) — counted; ▶ checks/claims-the-bands-are-held-by-their-owners.mjs`)
   }
