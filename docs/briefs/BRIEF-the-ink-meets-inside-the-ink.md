@@ -10,7 +10,7 @@ evict-when: `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants
 **You are the dispatched agent. Name yourself:** one word, yours, and not one a RUNNING session holds. Check with `ListAgents`, then `/rename`.
 **Agent: FRESH.** The mint has not been touched by any live seat; a warm seat would bring the corner/band context, and that context is the wrong layer here.
 **Report to Boz.** **Instruction: confirm-then-build.** Read the canon and the code below, then tell Boz what you found. If the code contradicts this brief, **stop and flag Boz. The stop is the deliverable.**
-**Premise pass: Zob** (owed before dispatch; §2's claims are what Zob answers).
+**Premise pass: Zob, 2026-10-24, on dcfb098d; corrections folded in.** Claim 2 FAILED as first written (below); the brief now carries the fix.
 
 ## 0. Why
 
@@ -40,27 +40,45 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
 
 ## 2. Premises: claims for Zob, then for you (by symbol)
 
-1. `tileGround.js#mintProtopolygon` strokes each chain to ε **separately** and unions the strokes. A stroke ending at a
-   node or a chain cut leaves its own butt corners, and these can sit less than one lattice step outside the neighbour's ink.
-2. Every ① ring edge carries an owner (`skelId · side · segOrd`, via `iaEdge` / `tile.runs`), and **authoring is keyed to
-   it**. ⇒ Joining two chains into one stroke must **not** merge their frontages. Where the owner changes along a
-   straight run, ① still needs a boundary between owners there, a vertex with **zero turn**. That is a label, not a corner.
-   How the mint assigns owners to ring edges today is the premise the whole fix rests on. **Confirm it first.**
+1. **PARTLY (Zob, read).** `tileGround.js#mintProtopolygon` builds one ring per chain (a right pass and a left pass, with
+   a butt at each end) and unions them all at once in `#booleanLabelled`. The coast arcs (`WATER_EDGE_SKEL`) go through
+   the same stroke. The butt corners sit up to **`subInkLen`** outside the neighbour's ink, not just "one step": the
+   class runs to 6.71 mm.
+2. **FAILED as first written (Zob, measured + read).** Owners are per VERTEX in the mint: `stamp(side, i, segI)` gives
+   each one skelId, side, segOrd = `segOrdAt(ci, segI)`, srcIdx, hard, tipEnd and cap/gradeEnd/water. `labels` are per
+   edge (labs[k] names edge k→k+1). `iaEdge`/`tile.runs` are downstream readers. So a joined stroke CAN carry two skelIds,
+   if each vertex keeps its original (ci, i). **But a zero-turn label vertex does not survive the union.**
+   `booleanLabelled` builds `new Clipper()` with no init options, so PreserveCollinear is false, and Clipper drops any
+   vertex that sits exactly on a straight line (fixture: a label vertex on a straight stroke, 4 vertices out; with
+   `ioPreserveCollinear`, 6). Today's near-zero-turn label vertices survive only because grid rounding leaves them
+   slightly off the line. Exactly-collinear ones are already dropped, leaving no trace in the output.
+   ▶ the count of near-collinear survivors: Zob's file-only read (to be promoted with the presence check, §4).
+   ⇒ Remove the butt poke without a carrier, and a chain cut's owner change silently disappears, merging two
+   frontages. That fails Layer 0 q2.
 3. `tileGround.js#offsetRingByRects` drops every ① edge shorter than `#subInkLen(eps)` and keeps a dead-end butt
    (exactly 2ε). `turnOf` and `protoRAt` do not drop them. So two readers of ① disagree about whether these edges
    exist (Zob, read in source).
 4. Segmentation (`resolveChainSegmentation`) runs FIRST in the mint, on the uncorrected chain, and the `segOrd`s come from it.
    A geometry change made after it must not move an ordinal.
-5. ⚠️ **Doc conflict, to resolve with Zob:** `RIBBONS §3.2–3.3` reads *"Under ① a corner is where an edge's owner
-   changes"*. `SECTION` rule 6 says that wording is RETIRED: a corner is where ① turns. Say which one the code
-   (`turnOf`, `classifyCornerLegs`) follows. If RIBBONS is ROT, Boz evicts it; don't edit it yourself.
+5. **The code follows SECTION; RIBBONS §3.2–3.3 is ROT (Zob, read).** `protoRAt` decides a corner by the turn
+   (*"A CORNER IS WHERE THE CONTOUR TURNS. NO IDENTITY AT ALL"*); `classifyCornerLegs` only classes an existing ease as
+   junction or bend. Boz evicts the RIBBONS line. ⚠️ A stale CODE comment above `rings2 = offsetRingByRects(…)` says
+   *"On ①'s block ring the owner change IS the corner"*. **Excise it in your commit.**
 
 ## 3. The fix, at the source
 
 **The rule, one sentence:** every ink stroke that meets another meets **inside** its ink. That covers chains, the boundary and water.
-1. **Chain cuts (a):** join the chains at a degree-2 cut into one stroke **before stroking**. Carry the owner change as a
-   zero-turn label vertex on the ring (claim 2). ⛔ Never snap or move a chain endpoint (RIBBONS anti-pattern), and never
-   write `streets[].points`. Work on a copy inside the mint, after segmentation (claim 4).
+0. **First, the carrier (Boz, 2026-10-24; Jacob may veto).** Build ①'s union in `booleanLabelled` with
+   `ioPreserveCollinear`, on ①'s union only, so an owner change on a straight run is a vertex by construction, never by
+   rounding luck. Every ① changes bytes. The tranche re-pours every town anyway, so the frozen consumers re-baseline
+   there. ⚠️ Preserved collinear vertices can also make short same-owner edges. Measure them against `subInkLen` before
+   you delete the fold (step 4). If they reach ②, stop and flag. If PreserveCollinear proves unworkable, stop and flag:
+   another carrier is a design call for Boz, not one to improvise.
+1. **Chain cuts (a):** join the chains at a degree-2 cut into one stroke **before stroking**. Each joined vertex keeps its
+   original (ci, i), so `segOrdAt` is asked in the chain's own indexing (claim 4). The owner change rides on the
+   preserved label vertex (step 0). Inside a joined stroke, `sameStroke` keys on the STROKE, not on skelId equality, or
+   containment re-owns across the join. Cap marks, `tipOf` and `gradeEndOf` stay on the true ends only. ⛔ Never snap or
+   move a chain endpoint (RIBBONS anti-pattern), and never write `streets[].points`.
 2. **Real nodes (b):** build each node's outline once, from all its legs, or end each leg's stroke inside its neighbours'
    ink. Choose one and say why. ⛔ Never a union followed by a merge.
 3. **Rim↔water (c):** the same rule, applied to the boundary and water strokes in the mint.
@@ -75,6 +93,8 @@ bar is not lowered: once the fold is gone, anything under it reaches ② unfolde
 
 - `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants`: GREEN on every poured town. Its mutant (today's
   mint) must go RED. Altadena has no protopolygon and counts RED loudly; that's correct, leave it.
+- **Every chain cut's owner change is a ① vertex:** a check Zob writes first (degree-2 chain ends against block-ring label
+  changes). Run on today's mint, it sizes the frontages already merged silently. It must be GREEN after your build.
 - **Authoring survives:** `node checks/claims-simplify-preserves-authoring.mjs <scene>` (0 orphaned **and** 0 re-pointed)
   and `node checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs`, on every town.
 - **Corners unchanged where ① didn't change:** `claims-every-corner-is-one-of-three` and `claims-proto-corner-is-authored-radius`.
