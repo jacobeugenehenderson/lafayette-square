@@ -45,15 +45,27 @@ one stamp; **unbuilt**, Zob read; this brief gives the stripe its sealed INPUT, 
 3. `sectionOpen`'s `A = differenceRings([tile ring], ② block)` unions in `inStencil(roadInk)` and the curbless `kind: 'block'` ink pieces.
 4. `centreStripeRings` reads `ribbons.streets[].points` for STRIPE_CLASSES, not oneway, not grade-separated, buffered 0.10 m.
 
-## 3. The fix
+## 3. The fix: the model (Jacob, 2026-10-25, verbatim) and what it means
 
-1. **One construction for the ink's class and owner, read off ① past the Wall:** each ink edge takes its label's owner and class;
-   at a node, the frozen node outline splits the ink between its legs. The quads and the overlap resolution are deleted, in BOTH
-   functions, and the two become one function, read by asphalt/highway/shore and by shape.json's `ink`.
-2. **The stripe reads a sealed centreline.** The mint (or the pour, right beside it) carries each striped street's centreline as an
-   owned feature in ①'s record, the way the ruled sand line is ink made in the pour. `centreStripeRings` reads that, never
-   `ribbons.streets`. Which record carries it, and why: propose it to Boz before building.
-3. **Removed in the same commit:** the quad re-stroke code, `centreStripeRings`' chain read, and any reader left of the removed paths.
+> *"1. The asphalt is a ribbon like everything else 2. there should be no fresh strips … 4. The 5mm offset band is *also* ribbon
+> just like everything else."*
+
+This is `RIBBONS §1`'s own model sentence, taken to its ink edge: *"each tile is painted INWARD from its own edges (asphalt → curb →
+treelawn → sidewalk → land-use)"*. The ε band is the tile's outermost ribbon, the band between the grout and the tile, so:
+
+1. **Every band, the ε ink band and the asphalt included, is a ribbon of the tile, struck from the tile's own edges and owned by the
+   edge it's struck from** (`SECTION`'s owner rule: "an extension or cut is its leg's, the run of the leg edge it is struck from
+   (`iaStamp`)"). So ownership is read, never decided by overlap, and a junction's ink belongs to the tile edges around it,
+   each tile its own share. Class (road · highway · water) is the owning edge's label.
+2. **No fresh strips.** `inkByOwner`'s and `inkPiecesByOwner`'s 2ε quads, their overlap resolution, and the second union of ①
+   are deleted. Asphalt, highway, shore and shape.json's `ink` are all read from the tiles' ribbon bands.
+3. **The stripe** is the centreline's ribbon: it reads a sealed centreline (carried with ①), never `ribbons.streets`. Which record
+   carries it: propose it to Boz before building.
+4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, and every reader of the removed paths.
+
+⚠️ **Confirm first, before building:** how far today's code is from this. Do the tiles already paint the ε band and the asphalt as
+bands of their own ring, or is the ink outside every tile today (the tile ring = ①'s hole, so the ε slit is no tile's)? If the ink
+belongs to no tile, the change reaches `protoShapeTiles` / `sectionOpen`'s ring choice, and that is the first thing to show Boz.
 
 ## 4. Gates
 
