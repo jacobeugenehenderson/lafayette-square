@@ -1066,7 +1066,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       // centrelines and spliced into the face that owns it. ② keeps reading `blocks` (the un-absorbed face); the tiles paint
       // from `paint`. Frozen beside the faces.
       const absorbIn = { inkRings: R.rings, inkLabels: R.labels, frame: rect, frameOwner: bIdx, waterRings: Array.isArray(coast) ? coast : [], waterOwner: wIdx,
-        centrelines, spokes, outlineRefused, faces: blocks.map((_, k) => ({ labels: blockLabels[k], holeLabels: blockHoleLabels[k] })), owners }
+        centrelines, spokes, outlineRefused, faces: blocks.map((_, k) => ({ ring: blocks[k], labels: blockLabels[k], holes: blockHoles[k], holeLabels: blockHoleLabels[k] })), owners }
       // a refusal hands its inputs (and the faces' rings) to the caller's diagnostic, when it asked for one, then stands
       try { absorbed = absorbInk(absorbIn) } catch (e) { if (onAbsorbRefusal) onAbsorbRefusal({ ...absorbIn, blocks, blockHoles, error: e.message }); throw e }
     } else if (D.refused) {

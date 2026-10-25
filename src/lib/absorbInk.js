@@ -208,6 +208,16 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     const o = flip(outers[0]), H2 = rings.filter(r => r.a < 0).map(flip)
     paint[g] = { outer: o.p, outerLabels: o.l, holes: H2.map(x => x.p), holeLabels: H2.map(x => x.l) }
   }
+  // ⭐ A FACE THAT BORDERS NO INK HAS NOTHING TO ABSORB: its painted face IS its face, exactly (an absorption with no cells is
+  // the identity; Boz, 2026-10-25), named and counted. "Borders no ink" is exact: none of its labels is one of ①'s ink labels
+  // (a bb corner between the water ring and the frame). ⛔ A face that DOES border ink and came out with no boundary still refuses.
+  const inkLabel = new Set(inkLabels.flat().filter(l => l != null))
+  let noInk = 0
+  faces.forEach((f, k) => { if (!f || paint[k] || !f.ring?.length) return
+    const ls = [...(f.labels || []), ...(f.holeLabels || []).flat()]
+    if (ls.some(l => inkLabel.has(l))) return
+    paint[k] = { outer: f.ring, outerLabels: [...f.labels], holes: (f.holes || []).map(h => h), holeLabels: (f.holeLabels || []).map(L => [...L]) }; noInk++ })
+  if (noInk) console.log(`    [${who}][absorb] ${noInk} face(s) border no ink — painted as themselves (nothing to absorb)`)
   const unpainted = faces.map((f, k) => f && !paint[k] ? k : null).filter(k => k != null)
   if (diag && unpainted.length) diag.unpainted = unpainted.map(k => ({ k, labels: [...new Set([...(faces[k].labels || []), ...(faces[k].holeLabels || []).flat()])].map(l => ({ l, owner: owners[l] ? `${owners[l].skelId}/${owners[l].side}/${owners[l].segOrd}` : null, faces: [...(facesOfLabel.get(l) || [])] })) }))
   if (unpainted.length) throw new Error(`[${who}][absorb] ⛔ ${unpainted.length} face(s) came out of the arrangement with no boundary (e.g. ${unpainted.slice(0, 6).join(', ')}). Refusing.`)
@@ -271,7 +281,14 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
         if (hs) { const n = hs.length, cl = hs.map(classOfH); why.n = n
           why.seq = []; for (let k = 0; k < n; k++) { const c = cl[k] ?? '·', side = hs[k].e.tags.some(t => t.kind === 'cl') ? 'cl' : hs[k].e.tags.some(t => t.kind === 'ink') ? 'ink' : hs[k].e.tags.map(t => t.kind).join('+'); const last = why.seq[why.seq.length - 1]
             if (last && last.c === c && last.side === side) last.n++; else why.seq.push({ c, side, n: 1 }) } }
-        why.split = f.splitWhy || null; (diag.mixed ||= []).push(why) } }
+        why.split = f.splitWhy || null
+        why.rings = f.cycles.map((c, q) => { const L = [...new Set(c.hs.flatMap(h => h.e.tags.filter(t => t.kind === 'ink' && t.label != null).map(t => t.label)))]
+          return { outer: q === 0, area: cycArea(c) / 2 / CLIP_SCALE / CLIP_SCALE, n: c.hs.length, bb: (() => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const h of c.hs) a = [Math.min(a[0], h.from[0]), Math.min(a[1], h.from[1]), Math.max(a[2], h.from[0]), Math.max(a[3], h.from[1])]; return a.map(v => +(v / CLIP_SCALE).toFixed(3)) })(),
+            kinds: [...new Set(c.hs.flatMap(h => h.e.tags.map(t => t.kind)))], classes: [...new Set(L.map(classOfLabel))],
+            owners: [...new Set(L.map(l => owners[l] ? `${owners[l].skelId}/${owners[l].side}` : '?'))].slice(0, 6),
+            across: [...new Set(c.hs.map(h => cycles[h.twin.cyc].face?.group ?? null))].slice(0, 6),
+            touchesSpokeOrCl: c.hs.some(h => h.e.tags.some(t => t.kind === 'spoke' || t.kind === 'cl')) } })
+        ;(diag.mixed ||= []).push(why) } }
   }
   if (census.mixed.length) throw new Error(`[${who}][absorb] ⛔ ${census.mixed.length} cell(s) hold two classes of owner and cannot be split at their class changes (an odd pairing, or a hole): ${census.mixed.slice(0, 8).join(' · ')}${census.mixed.length > 8 ? ' …' : ''}. Refusing.`)
   return { paint, cells, census }
