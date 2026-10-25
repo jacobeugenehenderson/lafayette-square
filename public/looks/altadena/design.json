@@ -194,5 +194,9 @@
     "Land Cover": true,
     "Furniture": true
   },
-  "trees": []
+  "trees": [],
+  "identity": {
+    "mark": "⛰️",
+    "markStyle": "regular"
+  }
 }
