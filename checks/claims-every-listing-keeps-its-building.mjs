@@ -53,19 +53,22 @@ function judge(I) {
 const towns = () => declaredScenes()
 
 if (process.argv.includes('--selftest')) {
-  let fails = 0
+  let fails = 0, exercised = 0
   for (const s of towns()) {
-    const I = inputs(s); if (I.refused || I.none || I.k.ledger || !I.k.culled) continue
+    const I = inputs(s); if (I.refused || I.none || !I.k.culled) continue
     const base = judge(I).bad.length, victim = I.listings.find(l => l.building_id != null && I.k.buildings.some(b => b.id === l.building_id))
     if (!victim) continue
     const ovP = join(ROOT, 'cartograph/data', s, 'building-overrides.json'), ov = existsSync(ovP) ? rd(ovP) : {}
     const k2 = keptBy(s, I.all, { overrides: { ...ov, hide: [...(ov.hide || []), victim.building_id] } })
     const J = judge({ ...I, k: k2 })
     const ok = J.bad.length === base + 1 && J.bad.some(x => x.includes(victim.building_id))
+    exercised++
     if (!ok) fails++
     console.log(`  ${ok ? '✅' : '⛔'} ${s}: hiding ${victim.building_id} ("${victim.name}") → ${J.bad.length - base} more listing(s) RED (must be 1, naming it)`)
     break
   }
+  // ⛔ a selftest that exercised no town proved nothing: fail, never pass vacuously
+  if (!exercised) { console.log('  ⛔ no town was exercised (none with listings on kept buildings) — the selftest proved nothing'); fails++ }
   process.exit(fails ? 1 : 0)
 }
 
