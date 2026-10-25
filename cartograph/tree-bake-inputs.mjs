@@ -99,8 +99,8 @@ export function treeBakeInputsForMap(scene) {
   // spatially DISJOINT layers of one census, not alternatives — the City
   // Forestry census, the OSM county-side floor, and the NLCD canopy fill.
   // ⭐ EVERY canonical well, unioned. The list must stay in lockstep with
-  // `arborist/bake-trees.js#SOURCE_BY_BASENAME` (the filename → provenance table)
-  // — that is the one enumeration of what a census is made of.
+  // `arborist/bake-trees.js#CANONICAL_TREE_WELLS` — the one enumeration of the
+  // kit's canonical wells (provenance is each well's own meta.well, not its name).
   //
   // ⚠️ `park_census.json` was missing here until 2026-07-22, while bake-trees'
   // own no-placements DEFAULT read ONLY `park_census.json`. Two entry points,
@@ -112,7 +112,7 @@ export function treeBakeInputsForMap(scene) {
   const placements = [
     join(clean, 'park_census.json'),        // authored park census (hand-curated, real species)
     join(clean, 'park_trees.json'),         // City Forestry layer 1 (whole hood, real)
-    join(clean, 'forest_park_trees.json'),  // City Forestry layer 4 (Forest Park, rich species)
+    join(clean, 'forest_park_trees.json'),  // ⚠️ DEBT: a town's well (scripts/18) — see bake-trees.js#CANONICAL_TREE_WELLS
     join(clean, 'osm_trees.json'),          // OSM floor (real positions)
     join(clean, 'derived_trees.json'),      // NLCD canopy fill (synthetic; absent when a scene opts real-only)
     ...declaredTreeWellPaths(scene),        // the town's DECLARED tree wells (sources.json `trees`; fetch-trees.mjs)

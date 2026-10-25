@@ -198,6 +198,9 @@ def main():
 
     output = {
         "meta": {
+            # the well declares itself: SURVEYED reality, from the city inventory (arborist/bake-trees.js#readCensus reads
+            # kind and well off the file, never off its name)
+            "kind": "census", "well": "city-inventory",
             "source": "City of St. Louis Forestry Division",
             "url": ENDPOINT,
             "scene": SCENE,
