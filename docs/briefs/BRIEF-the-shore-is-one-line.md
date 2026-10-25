@@ -70,10 +70,18 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
 **⚠️ Built structures over water (Jacob, 2026-10-25: "PTown has a big pier and I believe Huron has something like it; it's built
 structure over water").** The lidar sees a pier's DECK as a surface above high water, so a coast traced where the lidar meets high
 water would draw the pier as LAND. A pier, wharf or dock is the off-the-ground family (`STYLE-GUIDE §10` Q10.a; Jacob 2026-09-27:
-OSM width where mapped), never ground; a breakwater or groyne is STONE ground (ruled 2026-09-27). So step 1 masks mapped
-structures over water OUT of the lidar intersection (by OSM tag, from the data, never a site list), so the coast runs under them,
+OSM width where mapped), never ground; a breakwater or groyne is STONE ground (ruled 2026-09-27). Zob (read + measured, 2026-10-25): `cartograph/structures.mjs`
+ALREADY holds this rule ("every mapped pier · quay · wharf · jetty · platform is a DECK above the water…; breakwaters and groynes are
+stone"), but only `stoneStructures` has an importer: the DECK side is vocabulary with no consumer (ASPIRATION). Today PTown's
+MacMillan Wharf (highway=service, 11 of 16 vertices over the drawn water), Fishermen's Wharf and the marina footways are ① INK over
+water (D merges them into the water, so no deck, no curb, only a ~1 cm line), and tern's bake-coast masks only DIKES, so it would
+trace solid decks as land. So step 1 masks `structures.mjs#DECK_KINDS` (read by tag from every bucket)
+OUT of the lidar intersection (by OSM tag, from the data, never a site list), so the coast runs under them,
 and the water continues beneath. PTown's MacMillan Wharf (a street meets it: `macmillan-wharf|end`, a lost cap handle in
-caps-from-shape) and Huron's equivalent are the exhibits. A check: no mapped pier/wharf/dock footprint lies inside ①'s land.
+caps-from-shape) and Huron's equivalent are the exhibits. Each deck then becomes its own off-the-ground object, fed by structures.mjs's deck side.
+❓ JACOB: a wharf that is also a STREET (MacMillan): does the street ride the deck (its walk and curb on the deck, at the land's
+height), or stay ink? Gates: on PTown, the traced coast has no land inside a deck footprint, and MacMillan Wharf is drawn as a
+deck at land height.
 **Dead on tern, don't port:** the gusset (`9c95f43a`, `5f19280c`; per-vertex heights for the retired deformer).
 
 ## 4. Gates
