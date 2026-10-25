@@ -21,8 +21,8 @@ const bnd = JSON.parse(fs.readFileSync(D('neighborhood_boundary.json'), 'utf8'))
 const simplified = new Map((sk.streets || []).map(st => [st.id, tessellateAdaptive((st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z])), st.segments)]))
 const mapped = rb.streets.filter(s => s?.points?.length >= 2).map(s => { const p = simplified.get(s.skelId ?? s.name); return p?.length >= 2 ? { ...s, points: p, hard: p.hard || null } : null })
 if (mapped.some(m => !m)) { console.error(`⛔ ${mapped.filter(m => !m).length} chain(s) have no skeleton geometry — refusing, as derive does`); process.exit(1) }
-const bx = osm.bbox, a = bx && wgs84ToLocal(bx.minLon, bx.maxLat), b = bx && wgs84ToLocal(bx.maxLon, bx.minLat)
-const bb = bx ? { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) } : null
+const { localBB } = await import('../cartograph/geography.mjs'), { onGrid } = await import('../cartograph/snap.js')
+const bb = process.argv.includes('--grid-frame') ? onGrid(localBB(osm, wgs84ToLocal)) : localBB(osm, wgs84ToLocal)   // derive's mint reads the raw bb (--grid-frame: the face walk's gridded view, for the A/B)
 const quiet = (f) => { const o = console.log, w = console.warn; console.log = console.warn = () => {}; try { return f() } finally { console.log = o; console.warn = w } }
 const coast = quiet(() => coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: bnd.center || null, discR: bnd.radius || 0, bb }))
 const MP = quiet(() => mintProtopolygon({ streets: mapped.filter(m => !m.gradeSeparated), gradeSep: mapped.filter(m => m.gradeSeparated), boundary: bnd.boundary, coast: coast.rings, coastArcs: coast.arcs, bb }))
