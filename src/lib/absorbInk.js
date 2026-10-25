@@ -37,6 +37,83 @@ export function holeProbe(hs, who = '①') {
   return [(h.from[0] + h.to[0]) / 2 - dy / L * 0.25, (h.from[1] + h.to[1]) / 2 + dx / L * 0.25]
 }
 
+// ⭐⭐ AN ANNULUS SPLIT BY ITS OWN CLASS CHANGES (Boz's ruling with Zob's read, 2026-10-25). A cell round a face whose corners
+// are all node-less meetings (no outline point, so no spoke reached the face) is a RING: an outer cycle (the centrelines) and a
+// hole (the face's ink outline), holding two classes. Each class change on either cycle carries the OWNER PAIR {a, b} — the
+// two strokes meeting there, read off the labels — and a change on the outer pairs with the change on the hole carrying the
+// SAME pair (identity first, as everywhere in ①). Only where one pair occurs more than once on a cycle are its matchings
+// tried (rotations and both senses), and exactly one must be SIMPLE, or the cell refuses by place. The chosen chords are then
+// VERIFIED exactly, in integers (BigInt orientation, no floats): no chord crosses or touches another chord or either cycle
+// except at its own ends, and each chord's midpoint lies inside the outer and outside the hole. One chord opens the ring, each
+// further chord splits a band — pieces of the cell's own vertices, no new vertex, no search. Exported for its planted rows.
+//   O, H: the outer and hole cycles as edges { from: [X, Y], to } (lattice integers), walked with the cell on their left.
+//   cls(e): the edge's class or null; own(e): the stroke that owns it (for the pair) or null.
+//   → { pieces: [[edge…]…] } or { refused: why }
+const orientB = (a, b, c) => { const v = (BigInt(b[0]) - BigInt(a[0])) * (BigInt(c[1]) - BigInt(a[1])) - (BigInt(b[1]) - BigInt(a[1])) * (BigInt(c[0]) - BigInt(a[0])); return v > 0n ? 1 : v < 0n ? -1 : 0 }
+const onSegB = (a, b, p) => orientB(a, b, p) === 0 && BigInt(Math.min(a[0], b[0])) <= BigInt(p[0]) && BigInt(p[0]) <= BigInt(Math.max(a[0], b[0])) && BigInt(Math.min(a[1], b[1])) <= BigInt(p[1]) && BigInt(p[1]) <= BigInt(Math.max(a[1], b[1]))
+const sameP = (p, q) => p[0] === q[0] && p[1] === q[1]
+// do segments p1p2 and q1q2 meet anywhere except at an endpoint they SHARE?
+function meetsB(p1, p2, q1, q2) {
+  const shared = [p1, p2].filter(p => sameP(p, q1) || sameP(p, q2))
+  const o1 = orientB(p1, p2, q1), o2 = orientB(p1, p2, q2), o3 = orientB(q1, q2, p1), o4 = orientB(q1, q2, p2)
+  if (o1 !== o2 && o3 !== o4 && o1 && o2 && o3 && o4) return true                       // a proper crossing
+  for (const [a, b, p] of [[p1, p2, q1], [p1, p2, q2], [q1, q2, p1], [q1, q2, p2]]) if (onSegB(a, b, p) && !shared.some(x => sameP(x, p))) return true
+  if (shared.length === 1 && !o1 && !o2) {                                               // collinear from a shared end: overlap?
+    const s0 = shared[0], far = (u, v) => sameP(u, s0) ? v : u, a = far(p1, p2), b = far(q1, q2)
+    if ((BigInt(a[0]) - BigInt(s0[0])) * (BigInt(b[0]) - BigInt(s0[0])) + (BigInt(a[1]) - BigInt(s0[1])) * (BigInt(b[1]) - BigInt(s0[1])) > 0n) return true }
+  return false
+}
+const insideB = (pt2, ring) => { let w = false   // pt2 in DOUBLED units (a chord midpoint), ring in units
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = [2 * ring[i][0], 2 * ring[i][1]], b = [2 * ring[j][0], 2 * ring[j][1]]
+    if ((a[1] > pt2[1]) !== (b[1] > pt2[1])) { const s = orientB(b, a, pt2); if ((a[1] > b[1]) ? s > 0 : s < 0) w = !w } } return w }
+export function splitAnnulus(O, H, cls, own) {
+  const changes = (E) => { const n = E.length, c = E.map(cls), o = E.map(own)
+    for (let pass = 0; pass < 2; pass++) for (let k = 0, last = null, lo = null; k < 2 * n; k++) { const i = k % n
+      if (c[i] != null) { last = c[i]; lo = o[i] } else if (last != null) { c[i] = last; if (o[i] == null) o[i] = lo } }
+    const T = []
+    for (let k = 0; k < n; k++) { const p = (k - 1 + n) % n; if (c[k] != null && c[p] != null && c[k] !== c[p]) T.push({ k, key: [o[p], o[k]].map(String).sort().join('|') }) }
+    return T }
+  const TO = changes(O), TH = changes(H)
+  if (!TO.length || TO.length !== TH.length) return { refused: `${TO.length} class change(s) on the outer, ${TH.length} on the hole` }
+  const byKey = (T) => { const m = new Map(); for (const t of T) (m.get(t.key) || m.set(t.key, []).get(t.key)).push(t); return m }
+  const MO = byKey(TO), MH = byKey(TH)
+  for (const [k, v] of MO) if ((MH.get(k)?.length || 0) !== v.length) return { refused: `owner pair ${k} occurs ${v.length}× on the outer and ${MH.get(k)?.length || 0}× on the hole` }
+  // the choices: a pair occurring once is fixed; one occurring m times tries its m rotations in both senses
+  let options = [[]]
+  for (const [k, os] of MO) { const hs = MH.get(k), m = os.length
+    const local = m === 1 ? [[[os[0], hs[0]]]] : [...Array(m).keys()].flatMap(r => [os.map((x, j) => [x, hs[(r + j) % m]]), os.map((x, j) => [x, hs[((r - j) % m + m) % m]])])
+    options = options.flatMap(prev => local.map(l => [...prev, ...l]))
+    if (options.length > 256) return { refused: `too many matchings to try (${options.length})` } }
+  // the two senses coincide for small m (m = 2: each rotation is its own reverse), so a matching is counted ONCE, by its chord set
+  { const seen = new Set(); options = options.filter(o => { const id = o.map(([x, c]) => x.k + '>' + c.k).sort().join(','); if (seen.has(id)) return false; seen.add(id); return true }) }
+  const ringO = O.map(e => e.from), ringH = H.map(e => e.from)
+  const simple = (pairs) => { const ch = pairs.map(([x, c]) => [O[x.k].from, H[c.k].from])
+    for (let i = 0; i < ch.length; i++) {
+      const [a, b] = ch[i]; if (sameP(a, b)) return false
+      for (let j = i + 1; j < ch.length; j++) if (meetsB(a, b, ch[j][0], ch[j][1])) return false
+      for (const E of [O, H]) for (const e of E) if (meetsB(a, b, e.from, e.to)) return false
+      const mid = [a[0] + b[0], a[1] + b[1]]
+      if (!insideB(mid, ringO) || insideB(mid, ringH)) return false }
+    return true }
+  // the pieces a matching cuts: one chord opens the ring (the outer from x1, the chord, the hole from c1, the chord back), and
+  // each further chord splits a band
+  const build = (match) => { const pairs = [...match].sort((p, q) => p[0].k - q[0].k), [x1, c1] = pairs[0]
+    const rot = (E, k) => [...E.slice(k), ...E.slice(0, k)]
+    let pieces = [[...rot(O, x1.k), { from: O[x1.k].from, to: H[c1.k].from, chord: true }, ...rot(H, c1.k), { from: H[c1.k].from, to: O[x1.k].from, chord: true }]]
+    for (const [x, c] of pairs.slice(1)) { const ex = O[x.k], eh = H[c.k], P = pieces.find(q => q.includes(ex) && q.includes(eh))
+      if (!P) return null
+      const ia = P.indexOf(ex), ib = P.indexOf(eh), lo = Math.min(ia, ib), hi = Math.max(ia, ib)
+      pieces.splice(pieces.indexOf(P), 1, P.slice(lo, hi), [...P.slice(hi), ...P.slice(0, lo)]) }
+    return pieces }
+  // ⭐ A MATCHING IS THE CELL'S OWN only if its chords are simple AND every piece it cuts holds ONE class: in a ring a rotated
+  // matching can give simple chords that spiral, each piece mixing two classes (a valid partition, not the cell's). ⛔ Exactly
+  // one matching may pass; none, or more than one (a thick ring whose classes repeat), refuses.
+  const oneClass = (P) => new Set(P.filter(e => !e.chord).map(cls).filter(c => c != null)).size === 1
+  const valid = options.map(o => { if (!simple(o)) return null; const P = build(o); return P && P.every(oneClass) ? P : null }).filter(Boolean)
+  if (valid.length !== 1) return { refused: `${valid.length} of ${options.length} matching(s) give simple chords and one class per piece (exactly one must)` }
+  return { pieces: valid[0] }
+}
+
 export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings = [], waterOwner = null, centrelines, spokes = [], outlineRefused = [], faces, owners, who = '①', diag = null }) {
   // `diag` (optional, a diagnostic's): filled with the PLACES behind a refusal — what each refused face or cell is made of
   if (!Array.isArray(centrelines)) throw new Error(`[${who}][absorb] ⛔ no sealed centreline — nothing to cut the ink by. Refusing.`)
@@ -136,7 +213,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   // borders, and a land face is the one face common to all of its labels — never the first face a label was seen on.
   const facesOfLabel = new Map()
   faces.forEach((f, k) => { if (!f) return; for (const L of [f.labels, ...(f.holeLabels || [])]) for (const l of (L || [])) if (l != null) (facesOfLabel.get(l) || facesOfLabel.set(l, new Set()).get(l)).add(k) })
-  const census = { cells: 0, joined: 0, toWater: 0, zero: [], two: [], outside: 0, landUnnamed: 0, landTwoNames: [], mixed: [] }
+  const census = { cells: 0, joined: 0, toWater: 0, zero: [], two: [], outside: 0, landUnnamed: 0, landTwoNames: [], mixed: [], annuli: 0 }
   // ⭐ where the mint REFUSED a node's outline (acute · degenerate · noVertex) it drew no spokes, so a cell there may span two
   // strokes: a refusal at such a cell says so, so it is read as the outline's, never as an absorb defect (Zob, 2026-10-25)
   const refusedAt = new Map(outlineRefused.map(r => [Math.round(rl(r.p[0]) * CLIP_SCALE) + ',' + Math.round(rl(r.p[1]) * CLIP_SCALE), r.why]))
@@ -232,10 +309,14 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   // the three classes the ground paints apart: water (the shore) · a grade-separated HIGHWAY (left to H) · road. ⛔ A street's
   // own bridge is road (Boz, 2026-10-25): `hwy` is stamped by the mint on a highway's owners only, never `gradeSeparated`.
   const classOfLabel = (l) => owners[l]?.water ? 'water' : owners[l]?.hwy ? 'hwy' : 'road'
-  const classOfH = (h) => { const ink = h.e.tags.find(t => t.kind === 'ink' && t.label != null); if (ink && !h.e.tags.some(t => t.kind === 'cl')) return classOfLabel(ink.label)
+  const classOfH = (h) => { if (!h.e) return null; const ink = h.e.tags.find(t => t.kind === 'ink' && t.label != null); if (ink && !h.e.tags.some(t => t.kind === 'cl')) return classOfLabel(ink.label)
     const cl = h.e.tags.find(t => t.kind === 'cl'); if (cl) { const l = centrelines[cl.rec]?.own?.[cl.seg]; return l != null ? classOfLabel(l) : null }
     return null }
-  const inkLabelsOf = (hs) => [...new Set(hs.flatMap(h => h.e.tags.filter(t => t.kind === 'ink' && t.label != null).map(t => t.label)))]
+  // the stroke that owns an edge, for an annulus's owner pairs: an ink edge's label's street, a centreline edge's run's
+  const ownOfH = (h) => { if (!h.e) return null; const cl = h.e.tags.find(t => t.kind === 'cl')
+    if (cl) { const C = centrelines[cl.rec], r = C?.runs?.find(r => cl.seg >= r.from && cl.seg < r.to); return r?.skelId ?? null }
+    const ink = h.e.tags.find(t => t.kind === 'ink' && t.label != null); return ink ? (owners[ink.label]?.skelId ?? null) : null }
+  const inkLabelsOf = (hs) => [...new Set(hs.filter(h => h.e).flatMap(h => h.e.tags.filter(t => t.kind === 'ink' && t.label != null).map(t => t.label)))]
   // a PIECE of a cycle (a run of its half-edges, closed by a chord): its points are each edge's start AND the last edge's end,
   // where the chord back to the first begins. ⛔ The starts alone dropped that vertex, so a two-edge piece came out degenerate
   // and every split piece lost a corner at its chord (the probe, 2026-10-25).
@@ -276,6 +357,13 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
           pieces.forEach((P, q) => { const L = inkLabelsOf(P.map(k => hs[k])); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) }
       }
     }
+    // an annulus (a cell round a face no spoke reached): split by its own class changes, paired by owner (splitAnnulus)
+    if (!split && f.cycles.length === 2 && cycArea(f.cycles[0]) > 0 && cycArea(f.cycles[1]) < 0) {
+      const A = splitAnnulus(f.cycles[0].hs, f.cycles[1].hs, classOfH, ownOfH)
+      if (A.pieces) { const rings = A.pieces.map(pieceRing)
+        if (rings.every(Boolean)) { split = true; census.annuli++
+          A.pieces.forEach((P, q) => { const L = inkLabelsOf(P.filter(h => h.e)); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) } }
+      else if (diag) f.splitWhy = { annulus: A.refused } }
     if (!split) { census.mixed.push(`${[...kinds].join('+')}@${at0(f)}`)
       if (diag) { const why = { at: at0(f), cycles: f.cycles.length, area: f.cycles.reduce((t, c) => t + cycArea(c), 0) / 2 / CLIP_SCALE / CLIP_SCALE }
         if (hs) { const n = hs.length, cl = hs.map(classOfH); why.n = n
@@ -290,6 +378,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
             touchesSpokeOrCl: c.hs.some(h => h.e.tags.some(t => t.kind === 'spoke' || t.kind === 'cl')) } })
         ;(diag.mixed ||= []).push(why) } }
   }
+  if (census.annuli) console.log(`    [${who}][absorb] ${census.annuli} cell(s) round a face no spoke reached, split by their own class changes (paired by owner)`)
   if (census.mixed.length) throw new Error(`[${who}][absorb] ⛔ ${census.mixed.length} cell(s) hold two classes of owner and cannot be split at their class changes (an odd pairing, or a hole): ${census.mixed.slice(0, 8).join(' · ')}${census.mixed.length > 8 ? ' …' : ''}. Refusing.`)
   return { paint, cells, census }
 }
