@@ -112,7 +112,10 @@ bar is not lowered: once the fold is gone, anything under it reaches ② unfolde
    2026-10-25, vetoable by Jacob).** One mechanism (JH tertiary × motorway-link is a tessellated vertex 3.3 mm away). The exact ε
    inks' union really has that short edge, so removing it needs a mm "near enough" tolerance, which the rounding rule forbids. So:
    the sub-ink check's claim narrows to the CONSTRUCTION class. It allows a sub-ink edge only where two centrelines cross within
-   `subInkLen` of a vertex or end of one stroke, by an exact predicate computed from the polylines (⛔ never a site list), printed on
+   **2ε + 2/CLIP_SCALE** of a vertex or end of one stroke (the reach at which a crossing can make one: corner points ε from the
+   vertex, the other side ε from the crossing, plus the rounding bound; Boz 2026-10-25 on Zob's derivation, superseding
+   "within subInkLen", which mixed up the edge threshold with the crossing bound), by an exact predicate in
+   `checks/_true-geometry.mjs` computed from the polylines (⛔ never a site list), printed on
    its own "true geometry" line (Zob changes the check; a planted butt beside a 5a site stays RED). **The folds go**, and ② must
    take a true short edge, proven by a CHECK (Zob's condition): no ① vertex at either end of a 5a edge gets a corner radius
    (`protoRAt` R = 0) and `turnOf` reports no corner there. It uses the same exact predicate as the narrowed check, with a mutant.
