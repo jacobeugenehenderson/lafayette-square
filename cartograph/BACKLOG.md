@@ -129,7 +129,12 @@ keeps it moving. In order:
    `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
 Then, QUEUED (Jacob, 2026-10-25: "yes, queue the PTown bake speed-up"): PTown's bake pays for the ground TWICE (ground 5,197 s +
 ground-shore 4,949 s of ~177 min, timings of 10-11): the shore pass must not re-run the whole ground. Brief after the tranche.
-Then: one line per depth (the band census: HPDM 22.5 km doubled). **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
+Then: one line per depth (the band census: HPDM 22.5 km doubled). ⛔ NOW A FORCING CASE (2026-10-25): HPDM's bake with the Forest Park fix
+REFUSES at the flatten: "face:industrial: a hole below the lattice (3 vertices)… at (−490.963, 113.451)". Zob placed it (file-only): inside
+one parcel:industrial region (no evidence edge within 18 m) and inside ① block 556, 8.685 m in, the band ladder's depth, so it's the land
+use's outer line meeting the band line (rekeyByPiece's per-class cut), the Section-internal class, not the stamp or the partition. To
+confirm: one ② + Section build dumping the face:industrial items near the point. Queued after Swash's Huron slot. HPDM's PRODUCTION is
+correct; only integration's slab lags (its pour is ahead, at 15:54). **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
 datawall is for"):** ① is not the on-screen source (block↔ink near-miss is the bb frame edge, clipped before the stack). The bake's
 Wall is the `protoShapeTiles` handoff inside ONE buildTileGround call, not shape.json. Past it (CORRECTED by Zob's premise pass the same day): the asphalt's outline and corners come from the
 sealed tiles (② ∩ the tile), so NO street-scale corner is refigured. What is re-decided is OWNERSHIP inside ①'s ε ink strip:
