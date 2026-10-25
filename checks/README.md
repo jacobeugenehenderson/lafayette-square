@@ -155,7 +155,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 320. This is `npm test`.
+## safe — 321. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -165,6 +165,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-cap-carries-one-section.mjs` | section.mjs — DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |
 | `checks/claims-a-capture-run-finishes-what-it-started.mjs` | started.mjs — CAN A GROVE CAPTURE RUN BE RESTARTED MID-LIST, OR UPLOAD AFTER IT WAS TORN DOWN? |
+| `checks/claims-a-chain-cut-keeps-its-owner-change.mjs` | CLAIM — WHERE A STREET IS CUT INTO TWO CHAINS, ① KEEPS THE OWNER CHANGE. A chain cut (a skeleton node of degree 2, where |
 | `checks/claims-a-chain-id-is-one-chain.mjs` | chain.mjs — DOES EVERY CHAIN ID NAME EXACTLY ONE CHAIN? |
 | `checks/claims-a-cli-scene-has-one-resolver.mjs` | resolver.mjs — DOES ANY SCRIPT ASK "WHICH TOWN?" TWICE? |
 | `checks/claims-a-closed-shore-still-yields-ink.mjs` | ink.mjs — DOES A SHORE THAT CLOSES STILL GET AN EDGE? |

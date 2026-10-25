@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 440,
+  "total": 441,
   "counts": {
-    "safe": 320,
+    "safe": 321,
     "local-effect": 27,
     "live": 93
   },
@@ -65,6 +65,13 @@
     },
     {
       "file": "checks/claims-a-capture-run-finishes-what-it-started.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-chain-cut-keeps-its-owner-change.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
