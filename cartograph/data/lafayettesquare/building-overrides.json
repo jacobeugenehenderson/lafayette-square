@@ -1,4 +1,6 @@
 {
-  "activate": [],
+  "activate": [
+    "bldg-1703"
+  ],
   "hide": []
 }
