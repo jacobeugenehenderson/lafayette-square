@@ -130,11 +130,13 @@ keeps it moving. In order:
 Then, QUEUED (Jacob, 2026-10-25: "yes, queue the PTown bake speed-up"): PTown's bake pays for the ground TWICE (ground 5,197 s +
 ground-shore 4,949 s of ~177 min, timings of 10-11): the shore pass must not re-run the whole ground. Brief after the tranche.
 Then: one line per depth (the band census: HPDM 22.5 km doubled). ⛔ NOW A FORCING CASE (2026-10-25): HPDM's bake with the Forest Park fix
-REFUSES at the flatten: "face:industrial: a hole below the lattice (3 vertices)… at (−490.963, 113.451)". Zob placed it (file-only): inside
-one parcel:industrial region (no evidence edge within 18 m) and inside ① block 556, 8.685 m in, the band ladder's depth, so it's the land
-use's outer line meeting the band line (rekeyByPiece's per-class cut), the Section-internal class, not the stamp or the partition. To
-confirm: one ② + Section build dumping the face:industrial items near the point. Queued after Swash's Huron slot. HPDM's PRODUCTION is
-correct; only integration's slab lags (its pour is ahead, at 15:54). **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
+REFUSES at the flatten: "face:industrial: a hole below the lattice (3 vertices)… at (−490.963, 113.451)" (HPDM block 556). Kerf's
+band-line probe, read by Zob 2026-10-25: ONE face:industrial item; the treelawn:industrial ring near-misses ITSELF (and face, and
+sidewalk) at 1.012 m and 1.773 m, 0.17–0.22 step apart: a treelawn of ~zero width whose two depth lines were struck as separate runs.
+Inferred: the 3-vertex hole is that sliver's end against the face; why this pour, cause not established. THE FIX: each depth line
+struck ONCE and shared by both neighbours (a zero-width band is one line). GATE: `_nearMiss`'s SELF bucket on the band rings = 0.
+Re-run: `node scratch/zob-2026-10-22/band-line/probe.mjs` (heavy). Dispatched to Kerf. HPDM's PRODUCTION is correct; only
+integration's slab lags. **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
 datawall is for"):** ① is not the on-screen source (block↔ink near-miss is the bb frame edge, clipped before the stack). The bake's
 Wall is the `protoShapeTiles` handoff inside ONE buildTileGround call, not shape.json. Past it (CORRECTED by Zob's premise pass the same day): the asphalt's outline and corners come from the
 sealed tiles (② ∩ the tile), so NO street-scale corner is refigured. What is re-decided is OWNERSHIP inside ①'s ε ink strip:
