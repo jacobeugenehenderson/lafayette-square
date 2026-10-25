@@ -142,9 +142,10 @@ Then: one line per depth (the band census: HPDM 22.5 km doubled). ⛔ NOW A FORC
 REFUSES at the flatten: "face:industrial: a hole below the lattice (3 vertices)… at (−490.963, 113.451)" (HPDM block 556). Kerf's
 band-line probe, read by Zob 2026-10-25: ONE face:industrial item; the treelawn:industrial ring near-misses ITSELF (and face, and
 sidewalk) at 1.012 m and 1.773 m, 0.17–0.22 step apart: a treelawn of ~zero width whose two depth lines were struck as separate runs.
-Inferred: the 3-vertex hole is that sliver's end against the face; why this pour, cause not established. THE FIX: each depth line
-struck ONCE and shared by both neighbours (a zero-width band is one line). GATE: `_nearMiss`'s SELF bucket on the band rings = 0.
-Re-run: `node scratch/zob-2026-10-22/band-line/probe.mjs` (heavy). Dispatched to Kerf. HPDM's PRODUCTION is correct; only
+Kerf's capture (2026-10-25): depths EQUAL; the sliver is born at S1 (sectionPassProtoTile) at a PERPENDICULAR corner, where the
+leg's depth line is struck twice: offsetRingByRects' rect and legExt's rect re-derived from legFrame, 0.1–0.25 mm apart. legExt's own
+comment says it continues the offset's rect, so this is a REGRESSION. FIX (ruled; Kerf builds after Zob's read): legExt CARRIES the
+struck edge. GATE: band rings' SELF near-miss = 0 on all four towns, plus a mutant restoring the recompute (RED). HPDM's PRODUCTION is correct; only
 integration's slab lags. **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
 datawall is for"):** ① is not the on-screen source (block↔ink near-miss is the bb frame edge, clipped before the stack). The bake's
 Wall is the `protoShapeTiles` handoff inside ONE buildTileGround call, not shape.json. Past it (CORRECTED by Zob's premise pass the same day): the asphalt's outline and corners come from the
