@@ -1796,6 +1796,16 @@ createServer(async (req, res) => {
         sources.waterDatums = wdR.code === 0 ? { ok: true, count: 1 }
           : wdR.code === 1 ? { ok: true, count: 0, note: 'no tide datum or lake gauge for this town — a coastal town\'s terrain refuses until one is named' }
           : { ok: false, count: 0, error: lastLine(wdR) }
+        // ── When the lidar flew, and the water then (fetch-flight-water.mjs; BRIEF-the-shore-is-one-line): the band between
+        //    the town's level and its flight-day water is the bathymetry's. Only for a town with a water record; a TIDAL
+        //    town refuses by name (its band needs flight-line times, not built), which is SAID here, not an error.
+        if (sources.waterDatums.count) {
+          const fwR = await runCapture('node fetch-flight-water.mjs --scene=' + scene, { cwd: here, env, timeout: 300000 })
+          const tidal = /is TIDAL/.test(fwR.stderr || fwR.stdout || '')
+          sources.flightWater = fwR.code === 0 ? { ok: true, count: 1 }
+            : tidal ? { ok: true, count: 0, note: 'a tidal town: the water on the flight days needs each flight line\'s time — not built' }
+            : { ok: false, count: 0, error: lastLine(fwR) }
+        }
         // ── Every other DECLARED well the kit can fetch (sources.json). ⛔ A declaration is a promise the fetch keeps:
         //    jacksonheights declared cropland, Extent never acquired it, and the first pour died at "Pouring map"
         //    (cdl-2024.tif absent). Undeclared / declared-none is SAID, never run and never read as "none".
