@@ -27,7 +27,7 @@ EVERY bend (one rule for the ink) · the reversed-face label shift (__boundary__
 JH 179; pre-existing, a kit class) fixed in booleanLabelled's `segs` path, Zob reading first · unnoded skeleton crossings (HPDM
 primary-link-124 × heels-wheels, JH ×2) are the MINT's (crossings landing by a stroke vertex; Zob, measured; Boz first
 said skeleton, wrong) → brief §5a, construction owed by Splice; the folds wait on them (one code path).
-**ALTADENA JOINS THE TRANCHE (Jacob, 2026-10-25: "AD stays… sure").** Its shapes are from 07-14 and its ground from 09-19 (pre-①,
+**ALTADENA JOINS THE TRANCHE (Jacob, 2026-10-25: "AD stays… sure").** ⭐ Scope today (Jacob): "the mountain size discovery will be today's final goal for AD as Huron is the real priority". The AD pour proves part of the system; no AD polish today. Its shapes are from 07-14 and its ground from 09-19 (pre-①,
 no landEvidence, no identity), so the tranche re-pour is its first under the current kit. Mark ⛰️ set (ee592d46). ⚠️ The mountains
 (Jacob): "very very large… may be prohibitively complex (until we do something to manage)". The managing move already planned is
 disc brief §3 (only the lit part is raised; the height extent from the one module), not yet built. Pour it; if the terrain bake
