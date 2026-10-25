@@ -10,9 +10,10 @@
  *   1. THE FLIGHT WINDOW of each survey the town's DEM is made of (raw/elevation-sources.txt names the project in every URL),
  *      from USGS WESM, the 3DEP work-unit metadata (3DEPElevationIndex layer 8: collect_start, collect_end). A property of
  *      the SURVEY, recorded beside its source list → raw/elevation-flights.json.
- *   2. THE GAUGE OVER THAT WINDOW: the town's own water gauge (raw/water-datums.json's station), its monthly means for
- *      every month the window touches → raw/water-during-flights.json, with the highest and lowest in the gauge's datum
- *      and in NAVD88 (waterDatums.mjs#igld85ToNavd88, the record's own conversion).
+ *   2. THE GAUGE OVER THAT WINDOW: the town's own water gauge (raw/water-datums.json's station), its monthly means and
+ *      monthly HIGHEST observed water for every month the window touches → raw/water-during-flights.json, in the gauge's
+ *      datum and in NAVD88 (waterDatums.mjs#igld85ToNavd88, the record's own conversion). ⭐ `bandTop` is the highest
+ *      observed (Boz, 2026-10-25): below it the ground is the bathymetry's, above it the lidar's.
  * ⛔ A LAKE ONLY. A TIDAL town's flight-day water changes by the hour, so its band needs the acquisition time of each
  *    flight line (not in WESM's work-unit record): it REFUSES, by name, until that reader is built.
  * ⛔ Refuses, by name: a DEM with no project in its URLs (a hand tile) · a project WESM does not know · a gauge with no
@@ -85,12 +86,17 @@ export async function gaugeOverWindows(D, windows, scene, { fetcher = fetch } = 
       const mm = String(m).padStart(2, '0'), last = new Date(Date.UTC(y, m, 0)).getUTCDate()
       const r = await fetcher(`${COOPS_DATA}?product=monthly_mean&station=${D.station.id}&begin_date=${y}${mm}01&end_date=${y}${mm}${last}&datum=IGLD&units=metric&time_zone=gmt&format=json&application=cartograph-kit`)
       if (!r.ok) throw new Error(`⛔ CO-OPS ${D.station.id} ${y}-${mm}: HTTP ${r.status}`)
-      const v = +((await r.json()).data || [])[0]?.MSL
+      const row = ((await r.json()).data || [])[0] || {}, v = +row.MSL, top = +row.highest
       if (!(v > 0)) throw new Error(`⛔ fetch-flight-water: gauge ${D.station.name} (${D.station.id}) has no monthly mean for ${y}-${mm}, inside '${project}''s flight window — the water on the flight days cannot be named`)
-      months.push({ month: `${y}-${mm}`, igld85M: v, navd88M: +toNavd(v).toFixed(3) })
+      if (!(top > 0)) throw new Error(`⛔ fetch-flight-water: gauge ${D.station.name} (${D.station.id}) has no highest observed water for ${y}-${mm}, inside '${project}''s flight window — the band's top cannot be read`)
+      months.push({ month: `${y}-${mm}`, igld85M: v, navd88M: +toNavd(v).toFixed(3), highestIgld85M: top, highestNavd88M: +toNavd(top).toFixed(3) })
     }
     const hi = months.reduce((a, b) => (b.igld85M > a.igld85M ? b : a)), lo = months.reduce((a, b) => (b.igld85M < a.igld85M ? b : a))
-    out[project] = { window: w, months, highest: hi, lowest: lo }
+    // ⭐ THE BAND'S TOP (Boz, 2026-10-25): the HIGHEST WATER OBSERVED in any month the window touches (a partial month
+    // counts whole). It bounds every flight day's water from above, so the lidar is trusted only where no flight could have
+    // flown over water; read, never a sum of statistics. (Future work, filed: each tile's own GPS time against the hourly record.)
+    const peak = months.reduce((a, b) => (b.highestIgld85M > a.highestIgld85M ? b : a))
+    out[project] = { window: w, months, highest: hi, lowest: lo, bandTop: { month: peak.month, igld85M: peak.highestIgld85M, navd88M: peak.highestNavd88M } }
   }
   return out
 }
@@ -106,7 +112,7 @@ async function main() {
   for (const [p, w] of Object.entries(windows)) console.log(`  FLIGHT: ${p} (${w.workunits.join(', ')}) flown ${w.start} … ${w.end}`)
   const D = JSON.parse(readFileSync(join(raw, 'water-datums.json'), 'utf8'))
   const water = await gaugeOverWindows(D, windows, scene)
-  for (const [p, g] of Object.entries(water)) console.log(`  WATER while ${p} flew (${D.station.name}, ${g.months.length} month(s)): ${g.lowest.navd88M} … ${g.highest.navd88M} m NAVD88 (${g.lowest.month} … ${g.highest.month})`)
+  for (const [p, g] of Object.entries(water)) console.log(`  WATER while ${p} flew (${D.station.name}, ${g.months.length} month(s)): monthly means ${g.lowest.navd88M} … ${g.highest.navd88M} m NAVD88 (${g.lowest.month} … ${g.highest.month}) · BAND TOP = the highest observed ${g.bandTop.navd88M} m (${g.bandTop.month}), ${(g.bandTop.navd88M - g.highest.navd88M).toFixed(3)} m over the highest mean`)
   const stamp = { fetchedOn: new Date().toISOString().slice(0, 10) }
   const flights = { ...stamp, from: 'USGS WESM (3DEPElevationIndex layer 8: collect_start, collect_end), the projects of raw/elevation-sources.txt', projects: windows }
   const during = { ...stamp, from: `NOAA CO-OPS ${D.station.id} ${D.station.name} monthly means (IGLD85) over each flight window; NAVD88 by raw/water-datums.json's own conversion`, projects: water }

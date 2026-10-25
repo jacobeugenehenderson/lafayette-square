@@ -253,18 +253,18 @@ async function main() {
     // means — never merely the nearest: the station list carries REMOVED gauges (Huron's own, 9063074, ran 1935–1979 and
     // serves neither; it came first for Huron on 2026-10-25 and the record went empty). Each one passed over is NAMED.
     const y1 = new Date().getUTCFullYear() - 1, y0 = y1 - 19
-    let s = null, lwd, months = []
+    let s = null, lwd, months = [], peaks = []
     const passed = []
     for (const c of gl.slice(0, 6)) {
       const meta = (await json(`${COOPS_MD}/stations/${c.id}.json`)).stations?.[0]
       if (!meta?.greatlakes) continue
       const d = await json(`${COOPS_MD}/stations/${c.id}/datums.json?units=metric`)
-      const L = d.datums?.find(x => x.name === 'GL_LWD')?.value, M = []
+      const L = d.datums?.find(x => x.name === 'GL_LWD')?.value, M = [], K = []
       for (const [a, b] of [[y0, y0 + 9], [y0 + 10, y1]]) {
         const j = await json(`${COOPS_DATA}?product=monthly_mean&station=${c.id}&begin_date=${a}0101&end_date=${b}1231&datum=IGLD&units=metric&time_zone=gmt&format=json&application=cartograph-kit`)
-        for (const r of j.data || []) if (+r.MSL > 0) M.push(+r.MSL)
+        for (const r of j.data || []) { if (+r.MSL > 0) M.push(+r.MSL); if (+r.highest > 0) K.push(+r.highest) }
       }
-      if (Number.isFinite(L) && M.length) { s = c; lwd = L; months = M; break }
+      if (Number.isFinite(L) && M.length) { s = c; lwd = L; months = M; peaks = K; break }
       passed.push(`${c.name} (${c.id}, ${c.km.toFixed(1)} km): ${!Number.isFinite(L) ? 'no GL_LWD' : ''}${!Number.isFinite(L) && !M.length ? ' · ' : ''}${!M.length ? `no monthly means ${y0}–${y1}` : ''}`)
     }
     for (const p of passed) console.log(`  lake gauge passed over — ${p}`)
@@ -278,12 +278,13 @@ async function main() {
     const mean = months.length ? +(months.reduce((a, b) => a + b, 0) / months.length).toFixed(3) : null
     // ⭐ THE SPAN THE KIT READS, and no further (the reader refuses outside it): from the deepest the bed is ever drawn —
     // the lowest level the town could stand at, less its visibility depth (bake-terrain's own rule: the town's authored
-    // `water.secchiM`, else r-bottom-visibility-default) — up to the highest month on the record.
+    // `water.secchiM`, else r-bottom-visibility-default) — up to the HIGHEST WATER OBSERVED on the record (a monthly
+    // `highest`, not a mean: the flight-water band's top is one, fetch-flight-water.mjs).
     const reads = terrainValueReads(scene), auth = authoredWater(scene, reads)
     const visM = auth.secchiM?.value ?? reads.findings['r-bottom-visibility-default']?.value?.visibleToM
     if (!Number.isFinite(visM)) throw new Error(`⛔ ${scene}: no visibility depth (design.json water.secchiM, or the registry's r-bottom-visibility-default) — the span the bed reads is unknown`)
     const floorM = Math.min(lwd, ...months) - visM
-    const conv = await igld85ToNavd88Points(cx, cy, [floorM, lwd, mean, Math.min(...months), Math.max(...months)])
+    const conv = await igld85ToNavd88Points(cx, cy, [floorM, lwd, mean, Math.min(...months), Math.max(...months), ...(peaks.length ? [Math.max(...peaks)] : [])])
     out = { kind: 'lake', source: `NOAA CO-OPS ${s.id} ${s.name} (Great Lakes gauge, ${s.km.toFixed(0)} km) + VDatum IGLD85 → NAVD88 at the lake's heights`,
       fetchedOn: new Date().toISOString().slice(0, 10), station: { id: s.id, name: s.name, lat: s.lat, lon: s.lng, km: +s.km.toFixed(1),
         url: `https://tidesandcurrents.noaa.gov/datums.html?id=${s.id}` },
