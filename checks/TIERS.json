@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 439,
+  "total": 440,
   "counts": {
-    "safe": 319,
+    "safe": 320,
     "local-effect": 27,
     "live": 93
   },
@@ -853,6 +853,8 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
+        "computed import of scripts/slab-publish-rule.mjs — read, safe",
+        "computed import() with no readable target — runs arbitrary modules",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
       ]
     },
@@ -1769,6 +1771,13 @@
     },
     {
       "file": "checks/claims-no-slab-outlives-its-schema.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-sub-ink-edge-between-two-owners.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
