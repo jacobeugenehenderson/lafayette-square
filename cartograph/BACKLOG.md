@@ -132,13 +132,7 @@ its residual measures zero (its own comment's condition). Brief next (Boz).
 of the boundary, early crops in the pour, height extent, per-family slab selectors) is the premise list of
 `docs/briefs/BRIEF-the-disc-is-one-source.md`. ❓ JACOB: surveyed trees outside the disc · the horizon water · LS's buildings ledger.
 
-**▶ PLACED (Zob, 2026-10-22), RULED (Boz, 2026-10-24, under '① has no nodes' + cut once; Jacob: it didn't need to come to him): a stroke's own butt corners poke ≤ 1 lattice step out of the ink it
-meets, and the union keeps them.** mintProtopolygon strokes each chain at ε then unions; where a stroke ENDS at a node, its end corners
-(end ± its own normal × ε) can sit < 1 step outside the neighbours' ink, leaving a sub-step ring edge between two owners. turnOf reads it
-as a turn (PTown Stable Path: 121°, a faked corner and PTown's flatten refusal site; protoRAt resolves R there). Counts (≤ 1.5 mm, owners
-differ): PTown 19 · HPDM 46 · Huron 7 · LS 8; by node: T 41 · Y 25 · deg-4 6 · pure chain cut 8. Fix at the mint (never a post-union
-merge): (1) join chain cuts into one stroke before stroking (① has no nodes); (2) at a real node, build the node outline once from all
-legs, or end each stroke inside its neighbours' ink. Needs a re-pour of every town (the tranche).
+**▶ THE ① SEAM (sub-ink edges between two owners; PTown's flatten refusal): BRIEFED** → `docs/briefs/BRIEF-the-ink-meets-inside-the-ink.md` (ruled at the mint, acceptance 0 at subInkLen, the fold in offsetRingByRects deleted with it). The class: `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants`. Lands in the tranche.
 
 **▶ OPEN, placed partly (Zob, 2026-10-22): five in-disc dead ends whose ② round end carries no cap label, so no Measure handle**
 (LS hickory-street-4|end, geyer-avenue-0|end; HPDM west-fairview-drive|start, wheels-path-3|end, underpass|end). ① carries the cap edge
