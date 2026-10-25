@@ -278,11 +278,13 @@ pointer that does not resolve reads as evidence already gathered.)*
   ▶ `node checks/claims-the-slope-is-on-the-leg.mjs <scene>` — ⛔ **it now gates BOTH edges and
   CLASSIFIES the steps.** Watching one edge is a fallback inside the detector: it read `walkFrom`
   only and reported 0 while the inner edge stepped 1.50 m at every mixed corner.
-  - **A leg ends in exactly three places and they are ONE test**: a PADDED arc's **tangent** ·
-    ①'s **square** corner (R = 0, so the ease made no arc) · a change of **frontage**. ⛔ No gate on
-    the two depths, so TL↔TL is not skipped and the additive quad that used to cover the
-    no-corner case is gone. On an UNPADDED arc (a bend) nothing ends but a change of the ladder's
-    DEPTHS: the band bends through (50a64997, 6a64c44b). ▶ `node checks/claims-a-bend-bends-the-band.mjs <scene>`
+  - **A leg ends in exactly two places and they are ONE test**: a PADDED arc's **tangent** · a change
+    of the ladder's **DEPTHS**, on an arc or off one. A same-ladder change of label, a corner with no pad
+    (square, or one the ease declined) and an unpadded arc end nothing: the band bends through (Boz,
+    2026-10-25, revising his 10-22 ruling, kept by Jacob the same day: a cut there only drew a seam). ⛔ At a tangent there is no
+    gate on the two depths, so TL↔TL is not skipped and the additive quad that used to cover the
+    no-corner case is gone. ▶ `SECTION_DUMP=1 node checks/claims-a-label-change-ends-no-leg.mjs --mutants` ·
+    `node checks/claims-a-bend-bends-the-band.mjs <scene>`
   - **The corner's EXTENT is CARRIED, not recovered** — `iaArc`, stamped by the ease that made the
     arc, beside `iaCorner`, which says only *where*. It replaced matching the frozen `fillets`'
     tangent coordinates back onto the contour, which is `A15`'s forbidden proximity recovery and
