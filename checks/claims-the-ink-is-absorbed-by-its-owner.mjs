@@ -9,7 +9,8 @@
 // `owners`) — light, no build:
 //   (A) LABELLED — every edge of every painted face (outer and holes) carries a label naming an owner.
 //   (B) NEIGHBOURS SHARE THE CENTRELINE EXACTLY — each painted edge owned by a street (not the frame, not the water) has its
-//       reverse in exactly ONE other face's painted boundary: the two tiles meet on the same vertices, with no slit.
+//       reverse in exactly ONE other face's painted boundary: the two tiles meet on the same vertices, with no slit. Where the
+//       street's other side joined the WATER (a breakwater's water side; the ruling), its reverse lies on that water cell instead.
 //   (C) THE OWNER IS THE FACE'S OWN — each painted edge's street is one the face's UN-absorbed ring already bordered
 //       (`blockLabels` / `blockHoleLabels`): the absorption reads ①'s labels, it never resolves a junction by geometry.
 //   (P) PLANTED, the hole link's probe (absorbInk#holeProbe): a hole cycle whose LONGEST edge is a spur walked out and back
@@ -49,10 +50,14 @@ function judge(P) {
       if (l == null || !owners[l]) { unlabelled++; return }
       const id = K(a) + '>' + K(r[(i + 1) % r.length]); (dir.get(id) || dir.set(id, []).get(id)).push({ face: k, label: l }) }) })
   // (B)
-  let street = 0, noTwin = [], twoTwins = 0
+  // an edge whose other side is the water lies on a WATER-group cell the mint absorbed into the water (inkCells): read there
+  const waterHas = new Set()
+  for (const c of (P.inkCells || [])) if (c.group === 'water') for (const r of c.rings) r.forEach((p, i) => waterHas.add(K(p) + '>' + K(r[(i + 1) % r.length])))
+  let street = 0, noTwin = [], twoTwins = 0, toWater = 0
   for (const [id, es] of dir) for (const e of es) { if (!isStreet(e.label)) continue
     street++
     const [a, b] = id.split('>'), tw = (dir.get(b + '>' + a) || []).filter(t => t.face !== e.face)
+    if (tw.length === 0 && waterHas.has(b + '>' + a)) { toWater++; continue }   // its other side joined the WATER (the ruling): no tile across
     if (tw.length === 0) noTwin.push(`face ${e.face} at (${a.split(',').map(v => (v / CLIP_SCALE).toFixed(3)).join(', ')})`)
     else if (tw.length > 1) twoTwins++ }
   // (C)
@@ -61,7 +66,7 @@ function judge(P) {
   for (const es of dir.values()) for (const e of es) { if (!isStreet(e.label)) continue
     const S = cache.get(e.face) || cache.set(e.face, own(e.face)).get(e.face)
     if (!S.has(owners[e.label].skelId)) foreign.push(`face ${e.face}: ${owners[e.label].skelId}`) }
-  return { edges, unlabelled, street, noTwin, twoTwins, foreign }
+  return { edges, unlabelled, street, noTwin, twoTwins, foreign, toWater }
 }
 
 for (const scene of ribbonScenes()) {
@@ -73,7 +78,7 @@ for (const scene of ribbonScenes()) {
   towns++
   const J = judge(P)
   row(!J.unlabelled, `(A) ${J.edges} painted edge(s) · ${J.unlabelled} with no owner`)
-  row(!J.noTwin.length && !J.twoTwins, `(B) ${J.street} street-owned edge(s) · ${J.noTwin.length} with no neighbour on the same vertices${J.noTwin.length ? ` (e.g. ${J.noTwin.slice(0, 3).join(' · ')})` : ''} · ${J.twoTwins} shared by more than two faces`)
+  row(!J.noTwin.length && !J.twoTwins, `(B) ${J.street} street-owned edge(s) · ${J.toWater} with the water across (joined the water) · ${J.noTwin.length} with no neighbour on the same vertices${J.noTwin.length ? ` (e.g. ${J.noTwin.slice(0, 3).join(' · ')})` : ''} · ${J.twoTwins} shared by more than two faces`)
   row(!J.foreign.length, `(C) street-owned painted edges whose street the face did not already border: ${J.foreign.length}${J.foreign.length ? ` (e.g. ${J.foreign.slice(0, 3).join(' · ')})` : ''}`)
   // ── mutants ──
   const k0 = P.paint.findIndex(f => f?.outer?.length >= 4 && f.outerLabels.some(l => P.owners[l] && !P.owners[l].water && !P.owners[l].boundary))

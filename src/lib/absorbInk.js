@@ -325,6 +325,9 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   const pieceRing = (hs) => ringOf({ hs: [...hs, { from: hs[hs.length - 1].to }] })
   for (const f of allFaces) { if (f.type !== 'cell' || f.group == null || f.group === 'none') continue
     const labels = [...new Set(f.cycles.flatMap(c => inkLabelsOf(c.hs)))]
+    // kept: every cell the WATER absorbed (whoever's ink it was — a breakwater's water side is the water's), and every land cell
+    // holding a water or highway owner (the shore, the highway's); a land cell of road alone is the tile's asphalt, not kept
+    if (f.group === 'water') { const rings = f.cycles.map(ringOf).filter(Boolean); if (rings.length) cells.push({ rings, labels, group: f.group }); continue }
     if (!labels.some(l => owners[l]?.water || owners[l]?.hwy)) continue
     const kinds = new Set(labels.map(classOfLabel))
     if (kinds.size === 1) { const rings = f.cycles.map(ringOf).filter(Boolean); if (rings.length) cells.push({ rings, labels, group: f.group }); continue }

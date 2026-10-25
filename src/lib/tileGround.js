@@ -4268,8 +4268,10 @@ const windingXZ = (r, x, z) => { let w = 0
 export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }) {
   if (!Array.isArray(centrelines)) throw new Error('[tileGround][paint] ⛔ the protopolygon carries no sealed centreline (`centrelines`) — this town was poured before the road paint read it. Re-pour; the stripe never falls back to the chains.')
   const W = look.line, out = { stripe: [], edgeline: [], 'edgeline:yellow': [] }
-  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, noMarks: new Set() }
-  const marks = (id) => { const M = marksOf(id); if (!M) census.noMarks.add(id); return M }
+  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, noMarks: new Set(), notStreet: new Set() }
+  // a run whose owner is no STREET (the frame, the coast, the highway difference: the kit's own pseudo-owners) carries no paint;
+  // a street with no selected marks is a pour before streetMarkings, and refuses
+  const marks = (id) => { const M = marksOf(id); if (M === undefined) { census.notStreet.add(id); return null } if (!M) census.noMarks.add(id); return M }
   // ── the kerb legs ──
   const legsOf = new Map()   // skelId → { left: [legs], right: [legs] }
   for (const t of tiles) {
@@ -4365,7 +4367,7 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
     if (c.length) out.stripe.push(...intersectRings(rings, c))
   }
   const list = (o) => Object.entries(o).map(([k, v]) => `${v} ${k}`).join(' · ')
-  console.log(`[tileGround][paint] centre runs by kind: ${list(census.stripeRuns) || 'none'} · stripe ${out.stripe.length} ring(s), cut to where both sides have frontage · ${census.legs} kerb leg(s) · edge lines on ${list(census.edgeLegs)} leg(s) · ${census.sharpSplits} sharp vertex split(s)`)
+  console.log(`[tileGround][paint] owners that are no street (no paint): ${[...census.notStreet].join(' · ') || 'none'} · centre runs by kind: ${list(census.stripeRuns) || 'none'} · stripe ${out.stripe.length} ring(s), cut to where both sides have frontage · ${census.legs} kerb leg(s) · edge lines on ${list(census.edgeLegs)} leg(s) · ${census.sharpSplits} sharp vertex split(s)`)
   if (census.noMarks.size) throw new Error(`[tileGround][paint] ⛔ ${census.noMarks.size} street(s) carry no selected paint (\`marks\`): ${[...census.noMarks].slice(0, 6).join(' · ')} — the pour predates streetMarkings. Re-pour.`)
   return out
 }
@@ -8381,9 +8383,10 @@ export function buildTileGround(ribbons, opts = {}) {
     if (T.unreadable) console.warn(`[tileGround][curb cuts] ${T.unreadable} corner(s) whose recorded cuts are UNREADABLE (one end only, middle and end, or an unlisted kerb kind) — counted, and drawn by the norm.`)
   }
   // ⭐ the road's paint (the centre stripe and the edge lines), struck from the sealed shape — the bake and Survey both read it
-  const marksBy = new Map((ribbons?.streets || []).map(s => [s.skelId, s.marks]))
+  // a street's selected marks (null when its pour predates them); `undefined` for an owner that is no street
+  const marksBy = new Map((ribbons?.streets || []).map(s => [s.skelId, s.marks ?? null]))
   if (!ribbons?.markingLook) throw new Error('[tileGround][paint] ⛔ the ribbons carry no paint look (`markingLook`) — this town was poured before the road paint. Re-pour.')
-  const roadPaint = roadMarkings({ tiles: protoShapeTiles, centrelines: protoCentrelines, marksOf: (id) => marksBy.get(id) ?? null, measureOfRun: protoRunMeasure, look: ribbons.markingLook })
+  const roadPaint = roadMarkings({ tiles: protoShapeTiles, centrelines: protoCentrelines, marksOf: (id) => marksBy.get(id), measureOfRun: protoRunMeasure, look: ribbons.markingLook })
   const treelawnByLu = { ...S.treelawnByLu }, luByClass = { ...S.luByClass }
   console.log(`[tileGround][①⇢LIVE] every layer Survey draws is now ①②③ through sectionOpen: ${protoShapeTiles.length} tile(s) — asphalt ${asphalt.length} · curb ${curb.length} · sidewalk ${sidewalk.length} · block ${block.length} ring(s) · LU classes ${Object.keys(luByClass).join(', ') || 'none'}. Highway stays a flat stroke.`)
   // ⛔⛔ THE MEDIAN CLASS CANNOT APPEAR, AND THAT MUST BE SAID OUT LOUD. ③ carries no median or
