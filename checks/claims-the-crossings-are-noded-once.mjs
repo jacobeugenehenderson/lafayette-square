@@ -18,6 +18,11 @@
 //   (g) no antenna: a reversal within a pixel, routed through its own vertices, comes out monotone at every rotation (one
 //       antenna counted, the input vertex it took reported); a self-touch survives whole; an input retrace keeps the first
 //       A's src with the second A's edge and reports the rest dropped
+//   (h) OPEN PATHS (a centreline; BRIEF-the-ink-is-owned-by-its-labels §3.1, Zob's read): an open path crossing a ring is
+//       noded on both with the crossing shared; it gains no closing segment; a path ENDING in A,B,A keeps its extent (the
+//       return dropped and reported, the path still reaching B); an out-and-back keeps its far end; a near-miss T (a stem ending
+//       on another path's interior, no shared vertex) routes the through path through the stem's end. MUTANT: the
+//       out-and-back fed as a closed ring collapses (refused), so the open rule is what keeps it.
 // MUTANTS (always run): each Number/BigInt switch forced to Number on a constructed long input must be wrong (crossOf
 // misses a crossing; entersPixel enters a square the segment misses; alongOf ties two pixels 3 apart) and the live path
 // right, judged by the oracle; exact ties must round half-up; the function's own verification (verifyNoded) must refuse planted bad outputs (the input un-noded; an invented
@@ -177,6 +182,22 @@ for (const [name, file] of [['(a) PTown capture', 'ptown-stamp-crossings.json'],
   const sv = u.R?.[0].find(v => v.k[0] === 5000 && v.k[1] === 0)
   row(!u.err && sv?.src === 1 && sv?.edge === 3 && u.R.dropped[0].join() === '2,3' && u.R.relabelled[0].length === 1 && u.R[0].length === 3,
     `(g) an input retrace: survivor src ${sv?.src} edge ${sv?.edge} (want 1, 3) · dropped [${u.R?.dropped[0]}] (want 2,3) · relabelled ${JSON.stringify(u.R?.relabelled[0])}${u.err ? ' · REFUSED ' + u.err : ''}`)
+}
+// (h) open paths
+open: {
+  const all = () => true, ps = (o) => o.map(v => v.k.join(',')).join(' ')
+  const tryN = (rs) => { try { return { R: nodeCrossings(rs, { pairs: all, who: '(h)' }) } } catch (e) { return { err: e.message } } }
+  const x = tryN([{ tag: 'ring', p: [[0, 0], [10, 0], [10, 10], [0, 10]] }, { tag: 'line', open: true, p: [[-5, 5], [15, 5]] }])
+  row(!x.err && ps(x.R[1]) === '-5000,5000 0,5000 10000,5000 15000,5000' && x.R[0].some(v => v.k.join() === '10000,5000') && x.R[0].some(v => v.k.join() === '0,5000'),
+    `(h) an open path across a ring: noded on both, the crossings shared, no closing segment: ${x.err || ps(x.R[1])}`)
+  const e = tryN([{ tag: 'tail', open: true, p: [[0, 0], [5, 0], [8, 0], [5, 0]] }])
+  row(!e.err && ps(e.R[0]) === '0,0 5000,0 8000,0' && e.R.dropped[0].join() === '3', `(h) a path ending in A,B,A keeps its extent: ${e.err || ps(e.R[0])} · dropped [${e.R?.dropped[0]}] (want 3)`)
+  const ob = tryN([{ tag: 'oab', open: true, p: [[0, 0], [5, 0], [0, 0]] }])
+  row(!ob.err && ob.R[0].some(v => v.k.join() === '5000,0') && ob.R[0].length === 2, `(h) an out-and-back keeps its far end: ${ob.err || ps(ob.R[0])}`)
+  const t = tryN([{ tag: 'through', open: true, p: [[0, 0], [10, 0.003]] }, { tag: 'stem', open: true, p: [[5, 5], [5, 0.001]] }])
+  row(!t.err && t.R[0].some(v => v.k.join() === '5000,1'), `(h) a near-miss T: the through path is routed through the stem's end (5,0.001): ${t.err || ps(t.R[0])}`)
+  const m = tryN([{ tag: 'oab-as-ring', p: [[0, 0], [5, 0], [0, 0]] }])
+  row(!!m.err, `mutant (h): the out-and-back fed as a CLOSED ring collapses (must refuse): ${m.err ? m.err.slice(0, 90) : 'NOT REFUSED — the open rule is not what keeps it'}`)
 }
 // MUTANTS of the function's own verification (latticeNode.js#verifyNoded, which nodeCrossings runs on every output),
 // handed planted bad outputs: the INPUT un-noded (its crossings still there) and a real output with one invented vertex

@@ -573,7 +573,6 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // ⭐ the raised kerb's inputs (`kerbLift.mjs`): the block silhouettes (the frozen curb rings), every cut's kerb face,
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
-  if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
   return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [], bridgePaint: pr.bridges,
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
@@ -1217,13 +1216,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   if (!roadPaint) throw new Error('[bake-ground] ⛔ the ground returned no road paint (roadPaint) — refusing to bake a road with no stripe or edge record.')
   const stripeRings = roadPaint.stripe
   for (const key of ['stripe', 'edgeline', 'edgeline:yellow']) for (const ring of roadPaint[key]) pushMat(key, ring)
-  // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile, no ink piece (the curbless blocks'
-  // ground included) and not under H has no owner to take its line from. Refused by group and point, never dropped or nudged.
+  // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile (whose ring now holds the ink it
+  // absorbed), no curbless block's piece and not under H has no owner to take its line from. Refused by group and point.
   {
     const off = roadOffTheLattice({ asphalt: asphaltRings, highway: highwayRings, stripe: stripeRings }, shapeArtifact, inkPieces, ribbons.protopolygon.boundaryRing, highwayRings)
     const bad = Object.entries(off).filter(([, o]) => o.off.length)
-    if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no ink piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
-    console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, an ink piece or H`)
+    if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no curbless block's piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
+    console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, a curbless block's piece or H`)
   }
   // Bike lanes — both sides offset from a centerline (filed: they move to the sealed shape too, BACKLOG).
   for (const item of (mapLayers.bikeLane || [])) {
@@ -1968,7 +1967,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // between tiles; a crossing names every owner) and, `kind: 'block'`, the curbless blocks' ground (a block whose curbs
   // meet has no tile, and its ground is road, owned by its own ① edges).
   // `boundaryRing`: the disc the pour stamped the tiles with — a SHAPE fact (fill-free), read by Survey's finish (`stampedWith`)
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ink: inkPieces, boundaryRing: stampedWith, paint: roadPaint }))
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], boundaryRing: stampedWith, paint: roadPaint }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

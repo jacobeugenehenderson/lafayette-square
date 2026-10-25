@@ -20,6 +20,7 @@ import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 import { CLIP_SCALE as SCALE, LATTICE_M } from './lattice.js'
 import { nodeCrossings } from './latticeNode.js'
+import { absorbInk } from './absorbInk.js'
 import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -578,6 +579,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   // (acute), or a leg of no length, is left with its plain offsets and NAMED; so is a chain end at a node no passing
   // chain has a vertex at.
   const over = new Map(), nodeRefusal = { acute: [], degenerate: [], noVertex: [] }
+  // ⭐ THE WEDGE SPOKES: at a real node (three or more legs), the segment from the node to each outline point — where one leg's
+  // ε side meets the next's, the block's inner corner — closes each street's wedge. absorbInk cuts the ink by these too, so
+  // every cell of it lies on ONE stroke's side and takes that owner's class (shore · highway · road) by label, never by overlap.
+  const spokes = []
   {
     const at = new Map()
     S.forEach((s, si) => {
@@ -598,6 +603,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       const { bad, W } = outlineCorner(o, legs, eps)
       if (bad) { nodeRefusal[bad].push(`${[...new Set(here.map(({ si }) => S[si].seq[0].c.skelId))].join('|')}@${q}`); continue }
       legs.forEach((g, j) => { g.ccw = W[j]; g.cw = W[(j - 1 + W.length) % W.length] })
+      if (legs.length >= 3) for (const w of W) spokes.push([[o[0], o[1]], [w[0], w[1]]])
       const one = (a, b) => (a === b ? [a] : [a, b])
       for (const { si, k } of here) {
         const gi = legs.find(g => g.si === si && g.k === k && g.dir === 'in'), go = legs.find(g => g.si === si && g.k === k && g.dir === 'out')
@@ -639,7 +645,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   }
   if (frameRefusal.length) console.warn(`    ⛔ [①] shore cap on the frame REFUSED, left butted: ${frameRefusal.join(' · ')}`)
   // the owner (①'s own table) of each stroke segment k → k+1: the label its right-hand pass carries, captured as it is pushed
-  const lineOwn = S.map(() => [])
+  const lineOwn = S.map(() => []), lineOwnL = S.map(() => [])   // the right- and left-hand pass's owner per segment
   for (const [si, { seq, closed, V, nrm }] of S.entries()) {
     const nV = V.length
     // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it 'left' puts every ASYMMETRIC authored
@@ -668,7 +674,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       // the left boundary is walked BACK, so each of its edges is owned by the left stamp at its start
       const rR = [], lR = [], rL = [], lL = []
       for (let k = 0; k < nV; k++) for (const q of Rk(k)) { rR.push([q[0], q[1]]); lR.push(right(V[k].f)); if (lineOwn[si][k] == null) lineOwn[si][k] = lR[lR.length - 1] }
-      for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { rL.push([q[0], q[1]]); lL.push(left(V[k].b)) }
+      for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { rL.push([q[0], q[1]]); lL.push(left(V[k].b)); const sg = (k - 1 + nV) % nV; if (lineOwnL[si][sg] == null) lineOwnL[si][sg] = lL[lL.length - 1] }
       const outerR = Math.abs(signedArea(rR)) >= Math.abs(signedArea(rL))
       orient(rR, lR, outerR); orient(rL, lL, !outerR)
       add(rR, lR); add(rL, lL)
@@ -677,7 +683,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const ring = [], labs = [], pass = [], pEnd = []   // pass: true = the right-hand pass; reversed WITH the ring below
     const endOf = (k) => (k === 0 ? 'start' : k === nV - 1 ? 'end' : null)
     for (let k = 0; k < nV; k++) for (const q of Rk(k)) { ring.push([q[0], q[1]]); labs.push(right(V[k].f)); pass.push(true); pEnd.push(endOf(k)); if (lineOwn[si][k] == null) lineOwn[si][k] = labs[labs.length - 1] }
-    for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { ring.push([q[0], q[1]]); labs.push(left(V[k].b)); pass.push(false); pEnd.push(endOf(k)) }
+    for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { ring.push([q[0], q[1]]); labs.push(left(V[k].b)); pass.push(false); pEnd.push(endOf(k)); if (k > 0 && lineOwnL[si][k - 1] == null) lineOwnL[si][k - 1] = labs[labs.length - 1] }
     if (ring.length < 3) continue
     // the stroke's two TRUE ends, as (chain, end): a cut inside the stroke is no end, so it gets no cap mark
     const first = seq[0], last = seq[seq.length - 1]
@@ -731,22 +737,23 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   // entry per STROKE as the mint expanded it (chain cuts stroked through, its working copy, not the survey), on the lattice.
   //   points  [[x, z]…] lattice-rounded, consecutive duplicates removed · closed
   //   own     per segment k → k+1: the owner index (①'s `owners`) of its right-hand edge — skelId · segOrd from ONE table
+  //   ownL    the same for its LEFT-hand edge (the stroke's other pass): an absorbed face takes the pass on its own side
   //   runs    [{ from, to, skelId, dir }] maximal spans of one chain; `dir` +1 when the stroke runs with the chain's own
   //           point order, −1 against (a stroke may walk a chain reversed). A one-way chain runs in travel order (intake).
   // ⛔ A segment rounding to nothing (shorter than the lattice) is dropped and counted, never merged silently.
   const rl = (v) => Math.round(v * SCALE) / SCALE
   let lineDropped = 0
   const centrelines = S.map(({ closed, V }, si) => {
-    const pts = [], own = [], chainOf = []
+    const pts = [], own = [], ownL = [], chainOf = []
     const nV = V.length, nSeg = closed ? nV : nV - 1
     for (let k = 0; k < nV; k++) { const p = [rl(V[k].p[0]), rl(V[k].p[1])], q = pts[pts.length - 1]
-      if (q && q[0] === p[0] && q[1] === p[1]) { lineDropped++; own.pop(); chainOf.pop() } else pts.push(p)
-      if (k < nSeg) { own.push(lineOwn[si][k] ?? null); chainOf.push(V[k].f) } }
-    if (closed && pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) { pts.pop(); lineDropped++ }
+      if (q && q[0] === p[0] && q[1] === p[1]) { lineDropped++; own.pop(); ownL.pop(); chainOf.pop() } else pts.push(p)
+      if (k < nSeg) { own.push(lineOwn[si][k] ?? null); ownL.push(lineOwnL[si][k] ?? null); chainOf.push(V[k].f) } }
+    if (closed && pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) { pts.pop(); own.pop(); ownL.pop(); chainOf.pop(); lineDropped++ }   // the zero-length closing segment goes with it
     const runs = []
     chainOf.forEach((m, k) => { const r = runs[runs.length - 1], id = m.c.skelId, dir = m.rev ? -1 : 1
       if (r && r.skelId === id && r.dir === dir) r.to = k + 1; else runs.push({ from: k, to: k + 1, skelId: id, dir }) })
-    return { points: pts, closed: !!closed, own, runs }
+    return { points: pts, closed: !!closed, own, ownL, runs }
   }).filter(l => l.points.length >= 2)
   if (lineDropped) console.log(`    [①] sealed centreline: ${lineDropped} vertex(es) under the lattice dropped (their segment with them)`)
 
@@ -896,8 +903,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     // was measuring the un-chopped rect.
     // ⭐ One difference cannot lose a hole, because nothing is ever re-entered as a subject.
     const clipRings = [...R.rings], clipLabels = [...R.labels]
+    let wIdx = null
     if (Array.isArray(coast) && coast.length) {
-      const wIdx = owners.push({ skelId: WATER_EDGE_SKEL, side: 'right', segOrd: 0,
+      wIdx = owners.push({ skelId: WATER_EDGE_SKEL, side: 'right', segOrd: 0,
                                  gradeSeparated: false, srcIdx: -1, water: true }) - 1
       for (const r of coast) {
         if (!Array.isArray(r) || r.length < 3) continue
@@ -915,7 +923,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, { sameStroke, preserveCollinear: true }, true)
     if (D.containment) console.log(`    [①] blocks containment: ${D.containment.reassigned} re-owned · ${D.containment.walkedBack} walked backward, labelled by the edge they leave on${D.containment.unresolved ? ` · ⛔ ${D.containment.unresolved} with no single containing edge — left as they were` : ''}`)
     if (D.containment?.walkedBackRefused) console.warn(`    ⛔ [①] ${D.containment.walkedBackRefused} vertex/vertices walked backward with two arriving input edges of different owners — label left as it was`)
-    let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null
+    let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null, absorbed = null
     if (!D.refused && D.faces?.length) {
       blocks = []; blockLabels = []; blockHoles = []; blockHoleLabels = []
       // ⛔⛔ THE COMPONENT THAT TOUCHES THE FRAME IS THE EXTERIOR, NOT A BLOCK. `frame − ink`
@@ -1046,6 +1054,11 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       if (slivers) console.warn(`    ⛔ [①] ${slivers} face(s) are THINNER THAN ε (${eps} m) and are NOT blocks — a region the ink cannot have made, dropped as a boolean residue. Counted, never silent.`)
       console.log(`    [①] ${blocks.length} block face(s); ${withHoles} carry hole(s) (a compound face — outer + its holes, carried together)`)
       if (unlabelledHoles) console.warn(`    ⛔ [①] ${unlabelledHoles} hole(s) came back with NO identity — those faces would be offset as if SOLID. NOT trustworthy.`)
+      // ⭐⭐ THE INK IS ABSORBED HERE, AT THE MINT'S EXIT (absorbInk.js): each face's PAINTED boundary, the ε strip cut along the
+      // centrelines and spliced into the face that owns it. ② keeps reading `blocks` (the un-absorbed face); the tiles paint
+      // from `paint`. Frozen beside the faces.
+      absorbed = absorbInk({ inkRings: R.rings, inkLabels: R.labels, frame: rect, frameOwner: bIdx, waterRings: Array.isArray(coast) ? coast : [], waterOwner: wIdx,
+        centrelines, spokes, faces: blocks.map((_, k) => ({ labels: blockLabels[k], holeLabels: blockHoleLabels[k] })), owners })
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
     }
@@ -1057,7 +1070,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, centrelines, eps }
+             nodes, centrelines, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
   }
   return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, eps }
 }
@@ -2284,7 +2297,17 @@ export function rekeyByPiece(st, byLu, sp = null) {
 // tiles, unioned, clipped: `sectionOpen`'s finish) and the stamp's insert targets. So a list the flatten paints is a
 // target by construction, and the block silhouette (kerbPlan's and the deformer's, not paint) is not; a painted layer
 // added later joins this table to be painted at all, and is a target from then on.
-const PAINTED = { A: 'asphalt', C: 'curb', W: 'sidewalk', R: 'curbCut' }
+const PAINTED = { A: 'asphalt', C: 'curb', W: 'sidewalk', R: 'curbCut', S: 'shore' }
+// ⭐ THE BAND FROM THE PAINTED RING TO ②, BY ITS OWNER'S CLASS (BRIEF-the-ink-is-owned-by-its-labels §3.2; Zob's (a)): the
+// absorbed ink a WATER-owned edge holds is the land's shore (`S`), a HIGHWAY's is the highway's, left to H and painted by it,
+// everything else is the asphalt (`A`). Both cut from the one band, so the rim is never cut again. A tile with no such cell
+// is all asphalt.
+function bandByClass(band, st) {
+  const of = (cls) => (st.inkCells || []).filter(c => c.cls === cls).flatMap(c => c.rings)
+  const shore = of('shore'), hwy = of('highway')
+  if (!shore.length && !hwy.length) return { A: band, S: [] }
+  return { A: differenceRings(band, [...shore, ...hwy]), S: shore.length ? intersectRings(band, shore) : [] }
+}
 const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
 
 // ⭐⭐ STAMP THE TILE ONCE, WHERE ITS LAND USE IS CUT (ROADMAP A10: "cut iA at every … ownership change …; a gap is not
@@ -2309,77 +2332,8 @@ const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
 // `iaFull`): the stamp's crossings were computed on rounded keys beside a float contour, and the cut dropped some of them
 // from contours 600–3,400 m inside the circle (02da626e). ⛔ A ring whose rounding makes two neighbours one point has an
 // edge shorter than the lattice; it is REFUSED by name, never merged (the stamp arrays are aligned to its vertices).
-// ① SPLIT BY ITS OWNERS: each piece of the ink takes the class of the edges it lies within one stroke width (2ε) of —
-// the coast's is the land's shore, a grade-separated highway's is left to the highway, the rest is road. ONE function,
-// read by the producer (which paints it). `ink` = ①'s { rings, labels }, `owners` its owner table, `hw` = ε.
-export function inkByOwner(ink, owners, hw, hwySkel = new Set()) {
-  const W2 = 2 * hw, quads = { water: [], highway: [] }
-  let unlabelled = 0
-  ink.rings.forEach((ring, ri) => { const L = ink.labels?.[ri] || []
-    for (let k = 0; k < ring.length; k++) {
-      const o = owners?.[L[k]]
-      if (!o) { unlabelled++; continue }
-      const cls = o.water ? 'water' : hwySkel.has(o.skelId) ? 'highway' : null
-      if (!cls) continue
-      const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
-      if (!(len > 0)) continue
-      const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
-      quads[cls].push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
-    } })
-  const all = unionRings(ink.rings)
-  const shoreInk = quads.water.length ? intersectRings(all, unionRings(quads.water)) : []
-  const hwyInk = quads.highway.length ? differenceRings(intersectRings(all, unionRings(quads.highway)), shoreInk) : []
-  const roadInk = differenceRings(all, [...shoreInk, ...hwyInk])
-  return { shoreInk, hwyInk, roadInk, unlabelled }
-}
-
-// ⭐ ① HELD BY ITS OWNERS — the ink (the 2ε strip between tiles, which no tile holds) as addressable PIECES, each naming who
-// it belongs to, so the ground can give it its line (BRIEF-the-ground-knows-its-height §5: "a street's ① takes that street's
-// road surface"). The same construction as `inkByOwner`, run per owner: each labelled ink edge's stroke quad (2ε each side,
-// 2ε past each end, so it spans the strip), grouped by OWNER — a street's or highway's `skelId`, or `{ kind: 'water' }` for
-// the coast — and cut to the ink. Where two owners' pieces overlap (a crossing) the overlap is its OWN piece, naming every
-// owner whose piece covers it; each owner's piece is what is left. ⛔ Nothing is searched: an owner is the edge's own label.
-// → [{ rings, owners }] — `rings` one region per piece (nonzero; a hole wound against its outer, as Clipper writes it).
-export function inkPiecesByOwner(ink, owners, hw, clip = null) {
-  const W2 = 2 * hw, quads = new Map(), ownerOfKey = new Map()
-  let unlabelled = 0
-  ink.rings.forEach((ring, ri) => { const L = ink.labels?.[ri] || []
-    for (let k = 0; k < ring.length; k++) {
-      const o = owners?.[L[k]]
-      if (!o) { unlabelled++; continue }
-      const key = o.water ? 'water' : o.skelId
-      if (!ownerOfKey.has(key)) ownerOfKey.set(key, o.water ? { kind: 'water' } : o.skelId)
-      const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
-      if (!(len > 0)) continue
-      const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
-      ;(quads.get(key) || quads.set(key, []).get(key)).push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
-    } })
-  let all = unionRings(ink.rings); if (clip?.length >= 3) all = intersectRings(all, [clip])
-  const area = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))
-  const bbox = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
-  const tiny = (hw * hw) / 100          // m² — below a hundredth of an ε square, an overlap is the grid's, not a crossing
-  // ⭐ an owner's strokes are cut against only the ink RINGS whose bounds meet them — the ink's outer rings and the holes
-  // (its blocks) near the strokes, wound as Clipper wrote them, so the nonzero region of that subset is the ink there
-  const ringBB = all.map(r => bbox([r])), hit = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]
-  const P = []; for (const [key, q] of quads) { const U = unionRings(q), b = bbox(U), near = all.filter((_, i) => hit(ringBB[i], b)); if (!near.length) continue
-    const r = intersectRings(U, near); if (r.length && area(r) > tiny) P.push({ key, r, bb: bbox(r) }) }
-  const meets = (a, b) => a.bb[0] <= b.bb[2] && b.bb[0] <= a.bb[2] && a.bb[1] <= b.bb[3] && b.bb[1] <= a.bb[3]
-  // the crossings: where two owners' pieces overlap, united, and split into its connected parts
-  const over = []; P.sort((a, b) => a.bb[0] - b.bb[0])
-  for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length && P[j].bb[0] <= P[i].bb[2]; j++) if (meets(P[i], P[j])) { const o = intersectRings(P[i].r, P[j].r); if (o.length && area(o) > tiny) over.push(...o) }
-  const C = over.length ? booleanLabelled(clipperLib.ClipType.ctUnion, over, over.map(r => r.map(() => 0)), [], null, false, true) : { rings: [], faces: [] }
-  const pieces = []
-  for (const f of C.faces || []) { const rs = [C.rings[f.outer], ...f.holes.map(h => C.rings[h])], bb = bbox(rs)
-    const own = P.filter(p => meets(p, { bb }) && area(intersectRings(p.r, rs)) > tiny).map(p => ownerOfKey.get(p.key))
-    pieces.push({ rings: rs, owners: own }) }
-  const Cf = (C.faces || []).map(f => { const rs = [C.rings[f.outer], ...f.holes.map(h => C.rings[h])]; return { rs, bb: bbox(rs) } })
-  for (const p of P) { const near = Cf.filter(c => meets(p, c)).flatMap(c => c.rs), r = near.length ? differenceRings(p.r, near) : p.r
-    if (r.length && area(r) > tiny) pieces.push({ rings: r, owners: [ownerOfKey.get(p.key)] }) }
-  return { pieces, unlabelled, crossings: (C.faces || []).length }
-}
-
 // ⭐ THE ROAD IS HELD BY ① (Boz's ruling, 2026-10-17): every vertex of a ROAD group (asphalt · stripe · highway) inside the
-// disc lies in a tile ring or an ink piece — the two things that carry an owner, so a road vertex in neither has no line
+// disc lies in a tile ring (which holds the ink it absorbed, absorbInk.js) or a curbless block's piece — the things that carry an owner, so a road vertex in neither has no line
 // to take its height from. Bounded by the road's GROUPS, not by space: water and land use are not road, so the sea never
 // enters the test. The lattice is tile rings ∪ ink pieces (with the curbless blocks' `kind: 'block'`) ∪ H: a block
 // wholly under the highway corridor is the highway's own ground (Boz, 2026-10-17), so a road vertex inside H is on the road. On a tile or piece edge (within 2 grid units, the boolean's own tolerance) counts as held.
@@ -6265,7 +6219,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
         // "drops silently from the slab — that is exactly how the divided median vanished").
         tlByLu: rekeyByPiece(st, { [OWN_LU]: b.treelawn || [] }),
         luByLu: rekeyByPiece(st, { [OWN_LU]: b.lu || [] }),
-        A: differenceRings([st.ring], st.iA || []),   // asphalt is still tile − curb
+        ...bandByClass(differenceRings([st.ring], st.iA || []), st),   // asphalt is still tile − curb, its shore and highway cells apart
         C: b.curb || [],
         block: st.iA || [],
       }
@@ -6292,7 +6246,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       W: r.Wacc, tlByLu: r.tlByLu, luByLu: r.luByLu,
       R: r.curbCut || [], curbCutRecs: r.curbCutRecs || [], curbCutTally: r.curbCutTally || null, curbCutContradicted: r.curbCutContradicted || [],
       curbCutCorners: r.curbCutCorners || [], cornerArcs: r.cornerArcs || [],
-      A: differenceRings([r.rim?.ring ?? st.ring], r.rim?.block ?? iA),          // asphalt = tile − rounded inner (the painter's noded rim, live)
+      ...bandByClass(differenceRings([r.rim?.ring ?? st.ring], r.rim?.block ?? iA), st),   // asphalt = tile − rounded inner (the painter's noded rim, live), its shore and highway cells apart
       // ⭐ THE CURB IS PART OF THE SAME LADDER when the stamp inquiry built it: `iA − ins(cw)`,
       // a per-point VARIABLE offset. The concentric fallback below is the walk painter's, and it
       // is not the same shape — using it on a stamped tile put 1,820 m² of curb where ③ had none.
@@ -6566,7 +6520,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let protoRimRings = null            // per tile, its ring noded with its paint's own rim crossings (`nodeRimWithPaint`) — live, never frozen
   let protoBandPieces = null          // ③'s bands as owned pieces, per tile (`bandPiecesOfTile`) — the FILL, live, never frozen
   let protoCentrelines = null, protoRunMeasure = null   // the sealed centreline and a run's resolved measure, for the road's paint
-  let protoInkPieces = null           // ① ink as owned pieces (`inkPiecesByOwner`) — the strip between tiles, with its owners
+  let protoInkPieces = null           // the curbless blocks' ground as owned road pieces (`kind: 'block'`); the ink itself is the tiles' (absorbInk.js)
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
   let protoUnlabelled = null          // per ② edge the walk reached with no ① owner (`offsetRingByRects` labelOf, or a boolean)
@@ -6654,6 +6608,8 @@ export function buildTileGround(ribbons, opts = {}) {
              nodes: frozenProto.nodes || null,
              // the sealed centreline (the road's paint); a pour before it carries none, and the paint refuses by name
              centrelines: frozenProto.centrelines || null,
+             // the absorbed ink: per face the painted boundary (+ labels), and the cells painted apart from the road
+             paint: frozenProto.paint || null, inkCells: frozenProto.inkCells || null,
              boundaryRing: frozenProto.boundaryRing || null,
              // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped this would lose its
              // waterfront silently — every other field present, the pour looking complete. So an ABSENT field refuses
@@ -7692,8 +7648,11 @@ export function buildTileGround(ribbons, opts = {}) {
             // survives onto ITS boundary (the stencil and H cut edges away; an owner with none left has no line here)
             const edges = [], add = (rg, ls) => rg.forEach((a, i) => { const o = protoOwners[ls?.[i]]; if (!o || o.skelId === '__boundary__') return
               edges.push({ a, b: rg[(i + 1) % rg.length], key: o.water ? 'water' : o.skelId, own: o.water ? { kind: 'water' } : o.skelId, hwy: hwySkel.has(o.skelId) }) })
-            add(ring, (protoBlockLabels || R.labels)?.[k]); (protoBlockHoles?.[k] || []).forEach((h, hi) => add(h, protoBlockHoleLabels?.[k]?.[hi]))
-            protoNoCurbBlocks.push({ k, ring, holes: protoBlockHoles?.[k] || [], edges })
+            // its ground is its PAINTED face (absorbInk.js): the ink it owns absorbed, its edges the splice's labels
+            const PC = MP.paint?.[k]
+            if (!PC?.outer?.length) throw new Error(`[tileGround][①] ⛔ curbless block ${k} has no painted face (protopolygon.paint) — a pour before the ink was absorbed. Re-pour.`)
+            add(PC.outer, PC.outerLabels); (PC.holes || []).forEach((h, hi) => add(h, PC.holeLabels?.[hi]))
+            protoNoCurbBlocks.push({ k, ring: PC.outer, holes: PC.holes || [], edges })
             continue }
           // ⛔⛔ THE FILL IS NOT FROZEN — `SECTION §4`, the keystone, verbatim: "the FILL was NEVER
           // meant to be frozen; the DataWall freezes the SILHOUETTE and the FILL is the live
@@ -7952,12 +7911,23 @@ export function buildTileGround(ribbons, opts = {}) {
           const reIx = new Map(); runs.forEach((r, i) => { const j = runs2.indexOf(r); if (j >= 0) reIx.set(i, j) })
           for (const a of iaStamp) for (let i = 0; i < a.length; i++) a[i] = a[i] == null ? null : (reIx.has(a[i]) ? reIx.get(a[i]) : null)
           for (const r of runs2) { delete r.key; delete r.iEnd }
+          // ⭐⭐ THE TILE'S RING IS ITS PAINTED FACE — the face with the ε ink it owns absorbed (absorbInk.js, at the mint's
+          // exit): neighbours meet on the centreline exactly, with no slit between them. ② above offset the UN-absorbed face
+          // (`protoBlockRings`), so iaFull/iaStamp/runs — the authoring keys — are untouched by construction (Boz, A(i)).
+          // ⛔ No painted face for this block is a pour before the absorption: refused by name, never the face substituted.
+          const P = MP.paint?.[k]
+          if (!P?.outer?.length) throw new Error(`[tileGround][①] ⛔ block ${k} has no painted face (protopolygon.paint) — this town was poured before the ink was absorbed. Re-pour; the tile never falls back to the un-absorbed face.`)
+          // the cells this face absorbed that the ground paints APART from the road, classed by their owning label
+          // (Zob's (a)): a water owner's is the land's SHORE, a highway's is the highway's (left to H, unpainted here)
+          const inkCells = (MP.inkCells || []).filter(c => c.group === k).map(c => {
+            const os = c.labels.map(l => protoOwners[l]).filter(Boolean)
+            return { rings: c.rings, cls: os.some(o => o.water) ? 'shore' : os.some(o => hwySkel.has(o.skelId)) ? 'highway' : null } }).filter(c => c.cls)
           protoShapeTiles.push({
-            ring, iA: mine.map(EC => EC.ring),
-            // ⭐ `ringOwner` — per ① ring edge (vertex i → i+1), its OWNER, off the same block labels ② is labelled from
-            // (`protoOwners`): { skelId, side, segOrd, gradeSeparated? } · { kind: 'water' } · { kind: 'rim' }. The road side
-            // reads its line from it. Carried through the disc cut below by the labelled boolean, never matched back.
-            ringOwner: ring.map((_, i) => ringOwnerOf(protoOwners[(protoBlockLabels || R.labels)?.[k]?.[i]])),
+            ring: P.outer, iA: mine.map(EC => EC.ring), ...(inkCells.length ? { inkCells } : {}),
+            // ⭐ `ringOwner` — per painted ring edge (vertex i → i+1), its OWNER, off the labels the splice carried (`protoOwners`):
+            // { skelId, side, segOrd, gradeSeparated? } · { kind: 'water' } · { kind: 'rim' }. The road side reads its line from
+            // it. Carried through the disc cut below by the labelled boolean, never matched back.
+            ringOwner: P.outerLabels.map(l => ringOwnerOf(protoOwners[l])),
             // ⭐⭐⭐ THE FILL IS NO LONGER FROZEN — `SECTION §4`'s keystone, finally kept: freeze the
             // SILHOUETTE, author the FILL live. `bands` used to sit here and `sectionOpen`
             // short-circuited on it, so an authored treelawn moved this artifact 0 m². The tile now
@@ -8325,27 +8295,17 @@ export function buildTileGround(ribbons, opts = {}) {
     if (C.goneBothN) console.log(`[tileGround][①⇢LIVE] ${C.goneBothN} span(s) with no width on either side of a band — no piece there; the ground is the neighbours' (Boz, 2026-10-18): ${gone.slice(0, 6).join(' · ')}${gone.length > 6 ? ` … +${gone.length - 6}` : ''}`)
     if (C.noAnchor || C.noInner || C.innerShared || C.innerUnbounded || C.noOwner) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.noAnchor} ring(s) with no span carried once on both levels to align from · ${C.noInner} outer ring(s) with no inner ring to align with (their runs are not closed) · ${C.innerShared} inner ring(s) aligned to two outer rings · ${C.innerUnbounded} inner ring(s) aligned to none · ${C.onlyOnInner} span(s) only on the inner side · ${C.noOwner} piece(s) whose span has no stamp run (no owner) — counted; ▶ checks/claims-the-bands-are-held-by-their-owners.mjs`)
   }
-  // ⭐⭐ ① IS PAINTED FIRST (Jacob, 2026-10-11, BRIEF-the-ground-knows-its-height §5: "we should paint it in the first
-  // step, not last"). ① is the union of the ε strokes, so it HAS area — a 2ε band over every chain — and every band
-  // offsets outward from its edge, so until now nothing painted it and it showed through as a ~10 mm slit down every
-  // centreline (`claims-the-ground-tiles-without-a-gap`). Each piece takes its OWNER's surface, read off ①'s own
-  // per-edge labels (never by nearness to a chain): a street's ① is its road, the coast's ① is the land's shore
-  // (option (a)), and a grade-separated highway's ① is left to the highway stroke that already covers it (asphalt
-  // paints above highway, so painting it as road would draw a strip down the motorway). A piece of ink takes the
-  // class of the edges it lies within one stroke width (2ε) of — the construction of the stroke itself, run back —
-  // and where a slipway T's into the coast the 2ε square at the joint goes to the coast: water, then highway, then road.
+  // ⭐⭐ THE INK IS THE TILES' OWN (BRIEF-the-ink-is-owned-by-its-labels §3, 2026-10-25). ① has area — a 2ε band over every
+  // chain — and until now nothing owned it: it was re-stroked as quads and resolved by overlap (`inkByOwner` /
+  // `inkPiecesByOwner`, DELETED with this, and the second union of ① with them). It is absorbed at the mint's exit into the
+  // face that owns each piece of it (absorbInk.js), so every tile's ring runs to the centreline and the band from it to ②
+  // is the tile's: asphalt, or its shore where a water edge owns it, or the highway's where a highway edge does (left to H).
+  // ⛔ The coast's water side joins the water (Jacob: "yes, coast slit joins the water") and is no tile's.
   if (!protoInk?.rings?.length) throw new Error('[tileGround][①⇢LIVE] ① is the producer but carries no ink rings — refusing to paint the bands without the piece they close against.')
   {
-    const { shoreInk, hwyInk, roadInk, unlabelled } = inkByOwner(protoInk, protoOwners, PROTO_HW, hwySkel)
     const inStencil = (r) => (stencil && stencil.length >= 3) ? intersectRings(r, [stencil]) : r
-    asphalt = unionRings([...asphalt, ...inStencil(roadInk)])
-    inkShore = inStencil(shoreInk)
-    // ⭐ the ink as owned pieces, for the ground (the deformer gives each its owner's line; shape.json `ink`)
-    const IP = inkPiecesByOwner(protoInk, protoOwners, PROTO_HW, stencil && stencil.length >= 3 ? stencil : null)
-    protoInkPieces = IP.pieces
-    if (IP.unlabelled) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${IP.unlabelled} ① ink edge(s) carry no owner — the ink there has no line. Refusing.`)
-    const unowned = IP.pieces.filter(p => !p.owners.length).length
-    if (unowned) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${unowned} ink piece(s) with no owner — refusing.`)
+    inkShore = S.shore || []
+    protoInkPieces = []      // the curbless blocks' ground (below): the only owned road pieces outside a tile
     // ⭐ AND THE CURBLESS BLOCKS' GROUND, as road pieces beside the ink: the block minus its holes, minus H (a block under
     // the highway corridor is the HIGHWAY's ground, painted by it — Boz, 2026-10-17), in the stencil. Painted as asphalt.
     // ⛔ AND MINUS THE TILES: a tile's ring carries no holes, so a curbless block nested in another block's hole is already
@@ -8376,9 +8336,7 @@ export function buildTileGround(ribbons, opts = {}) {
       protoInkPieces.push({ rings, owners: b.owners, kind: 'block' }); asphalt = unionRings([...asphalt, ...rings]); nb++; nbM2 += a
     }
     if (protoNoCurbBlocks.length) console.log(`[tileGround][①⇢LIVE] the curbless blocks' ground: ${nb} road piece(s), ${nbM2.toFixed(1)} m², owned by their ① edges (${nbViaH} touching only H, owned by the block's highway edges) · ${underH} wholly under the highway (its ground) or inside a tile`)
-    console.log(`[tileGround][①⇢LIVE] ① held by its owners: ${IP.pieces.length} ink piece(s) · ${IP.crossings} crossing(s) where ≥ 2 owners' strokes overlap · largest crossing ${Math.max(0, ...IP.pieces.filter(p => p.owners.length > 1).map(p => p.owners.length))} owners`)
-    const m2 = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))   // net: Clipper winds holes against their outer
-    console.log(`[tileGround][①⇢LIVE] ① painted first: road ${m2(roadInk).toFixed(1)} m² · shore ${m2(shoreInk).toFixed(1)} m² · left to the highway ${m2(hwyInk).toFixed(1)} m²${unlabelled ? ` · ⛔ ${unlabelled} ink edge(s) with no owner — painted as road` : ''}`)
+    console.log(`[tileGround][①⇢LIVE] the ink is the tiles' own (absorbed at the mint): shore ${Math.abs(inkShore.reduce((t, r) => t + signedArea(r), 0)).toFixed(1)} m² of land's shore from water-owned edges`)
   }
   const curbCut = S.curbCut || [], cornerArcs = S.cornerArcs || [], curbCutRecs = S.curbCutRecs || [], curbCutTally = S.curbCutTally || null, curbCutContradicted = S.curbCutContradicted || [], curbCutCorners = S.curbCutCorners || [], curbCutRamps = S.curbCutRamps || []
   const crosswalk = S.crosswalk || [], crosswalkPairs = S.crosswalkPairs || [], crosswalkTally = S.crosswalkTally || null

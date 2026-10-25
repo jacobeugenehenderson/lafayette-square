@@ -2766,10 +2766,10 @@
       ]
     },
     {
-      "file": "checks/claims-the-ink-is-held-by-its-owners.mjs",
+      "file": "checks/claims-the-ink-is-absorbed-by-its-owner.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) clipper-lib — not read from source"
+        "reads repo files only"
       ]
     },
     {

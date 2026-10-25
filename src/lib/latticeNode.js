@@ -161,12 +161,13 @@ export const alongOf = (s, h, numberOnly = false) => { const dx = s.b[0] - s.a[0
 // proper crossing left between two rings that may meet, no vertex that is neither an input vertex nor a hot pixel, and no
 // retrace (an antenna A,B,A).
 // `K` the input rings' lattice points, `R` the output, `tags` per ring, `hot` the hot pixels ("X,Y" keys). Throws, by name.
-export function verifyNoded(K, R, pairs, tags, who, hot) {
+export function verifyNoded(K, R, pairs, tags, who, hot, open = []) {
   const known = new Set(hot.keys())
-  R.forEach((o, ri) => o.forEach((v, n) => { const u = o[(n - 1 + o.length) % o.length], w = o[(n + 1) % o.length]
+  R.forEach((o, ri) => o.forEach((v, n) => { if (open[ri] && (n === 0 || n === o.length - 1)) return
+    const u = o[(n - 1 + o.length) % o.length], w = o[(n + 1) % o.length]
     if (o.length >= 3 && u.k[0] === w.k[0] && u.k[1] === w.k[1]) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[ri]} retraces through (${v.k.map(c => c / CLIP_SCALE)}) and back to (${u.k.map(c => c / CLIP_SCALE)}) — an antenna. Refusing.`) }))
   R.forEach((o, ri) => o.forEach(v => { if (!known.has(v.k[0] + ',' + v.k[1])) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[ri]} carries (${v.k.map(c => c / CLIP_SCALE)}), neither an input vertex nor a hot pixel — an invented point. Refusing.`) }))
-  const outSegs = []; R.forEach((o, ri) => o.forEach((v, n) => outSegs.push({ ri, a: v.k, b: o[(n + 1) % o.length].k })))
+  const outSegs = []; R.forEach((o, ri) => o.forEach((v, n) => { if (open[ri] && n === o.length - 1) return; outSegs.push({ ri, a: v.k, b: o[(n + 1) % o.length].k }) }))
   const OG = grid(outSegs, sbox)
   for (const [c, l] of OG.cells) for (let u = 0; u < l.length; u++) for (let w = u + 1; w < l.length; w++) {
     const s = outSegs[l[u]], t = outSegs[l[w]]; if (s.ri === t.ri || !pairs(s.ri, t.ri)) continue
@@ -175,13 +176,20 @@ export function verifyNoded(K, R, pairs, tags, who, hot) {
     const X = crossOf(s, t)
     if (X) throw new Error(`[${who}] ⛔ nodeCrossings: ${tags[s.ri]} and ${tags[t.ri]} still cross at (${X.map(v => v / CLIP_SCALE)}) after the noding — a hot pixel was not honoured. Refusing.`) }
 }
+// ⭐ AN INPUT MAY BE AN OPEN PATH (`{ p, tag, open: true }`, BRIEF-the-ink-is-owned-by-its-labels §3.1; Zob's read, Boz
+// 2026-10-25): a centreline is a polyline, not a ring. It has no closing segment, its two ENDPOINTS are its own (never
+// popped: the stack pass keeps the first of an A,B,A, and an open path skips the cyclic seam), and verifyNoded reads it
+// the same way. A closed ring is the default and unchanged. ⛔ `tjoin` does not take open paths (its t-join rule nodes
+// rings), and refuses rather than guess.
 export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {}) {
   if (typeof pairs !== 'function') throw new Error(`[${who}] ⛔ nodeCrossings: no \`pairs\` — which rings may cross is the caller's to say`)
+  const open = rings.map(r => !!r.open)
+  if (tjoin && open.some(Boolean)) throw new Error(`[${who}] ⛔ nodeCrossings: \`tjoin\` with an open path — the t-join rule nodes rings only. Refusing.`)
   const K = rings.map((r, ri) => (r.p || []).map(([x, z]) => {
     const X = Math.round(x * CLIP_SCALE), Y = Math.round(z * CLIP_SCALE)
     if (Math.abs(x * CLIP_SCALE - X) > 1e-6 || Math.abs(z * CLIP_SCALE - Y) > 1e-6) throw new Error(`[${who}] ⛔ (${x}, ${z}) of ${rings[ri].tag} is off the lattice (1 / ${CLIP_SCALE} m) — every ring the noding is given must already be on it. Refusing.`)
     return [X, Y] }))
-  const segs = []; K.forEach((k, ri) => k.forEach((a, i) => segs.push({ ri, i, a, b: k[(i + 1) % k.length] })))
+  const segs = []; K.forEach((k, ri) => k.forEach((a, i) => { if (open[ri] && i === k.length - 1) return; segs.push({ ri, i, a, b: k[(i + 1) % k.length] }) }))
   const SG = grid(segs, sbox)
   // 1 + 2: the hot pixels. A crossing's point is computed once per pair and shared, so its two sides cannot round apart.
   const hot = new Map()                                     // "X,Y" → { X, Y, from: tag string }
@@ -205,6 +213,8 @@ export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {
       .map(h => ({ h, t: alongOf(s, h) })).sort((x, y) => (x.t < y.t ? -1 : x.t > y.t ? 1 : 0))
     for (const { h } of via) { o.push({ p: [h.X / CLIP_SCALE, h.Y / CLIP_SCALE], k: [h.X, h.Y], src: null, edge: i })
       const ck = `${rings[ri].tag} ← ${h.from}`; counts[ck] = (counts[ck] || 0) + 1 } })
+  // an open path's last vertex starts no segment: it closes the path
+  K.forEach((k, ri) => { if (open[ri] && k.length) { const a = k[k.length - 1]; out[ri].push({ p: [a[0] / CLIP_SCALE, a[1] / CLIP_SCALE], k: a, src: k.length - 1, edge: k.length - 1 }) } })
   // consecutive duplicates collapse, then the ANTENNAS: routing a ring through its own vertices' pixels turns a reversal
   // within a pixel into a retrace A,B,A (HPDM tile 144, 2026-10-25: a 2 mm zigzag became A,B,A,B). A retrace encloses no
   // area and decides nothing, so it is removed here, the last step of snap rounding (Zob's rules, Boz's ruling): one stack
@@ -214,20 +224,27 @@ export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {
   // drops is reported (`R.dropped`), and a survivor whose `src` came from the first A with the second's edge
   // (`R.relabelled`: { src, edge }), so the caller checks its own flags against them; nothing there decides geometry.
   const dropped = K.map(() => []), relabelled = K.map(() => [])
-  let R = out.map((o, ri) => { const d = o.filter((v, n) => { const w = o[(n + 1) % o.length]; return o.length < 2 || !(v.k[0] === w.k[0] && v.k[1] === w.k[1]) })
+  let R = out.map((o, ri) => { const d = o.filter((v, n) => { if (open[ri] && n === o.length - 1) return true; const w = o[(n + 1) % o.length]; return o.length < 2 || !(v.k[0] === w.k[0] && v.k[1] === w.k[1]) })
     const same = (u, w) => u.k[0] === w.k[0] && u.k[1] === w.k[1]
     const merge = (a1, a2) => { if (a1.src == null) return a2
       if (a2.src != null && a2.src !== a1.src) dropped[ri].push(a2.src)
       relabelled[ri].push({ src: a1.src, edge: a2.edge }); return { ...a2, src: a1.src } }
     const pop = (b) => { if (b.src != null) dropped[ri].push(b.src); const ck = `${rings[ri].tag} ✂ antenna`; counts[ck] = (counts[ck] || 0) + 1 }
+    // ⭐ AN OPEN PATH KEEPS ITS EXTENT: a retrace AT AN END (A, B, A with A the endpoint) drops the ENDPOINT — the return —
+    // so the path still reaches B (an out-and-back keeps its far end); an interior retrace is removed as on a ring
+    const trimEnds = (q) => { if (!open[ri]) return q
+      while (q.length >= 3 && same(q[0], q[2])) { const e = q.shift(); if (e.src != null) dropped[ri].push(e.src) }
+      while (q.length >= 3 && same(q[q.length - 1], q[q.length - 3])) { const e = q.pop(); if (e.src != null) dropped[ri].push(e.src) }
+      return q }
     const c = []
-    for (const v of d) { if (c.length >= 2 && same(c[c.length - 2], v)) { pop(c.pop()); c.push(merge(c.pop(), v)) } else c.push(v) }
-    for (let n = c.length; n >= 3; n = c.length) {                    // the seam: …A1, B | A2… or …A1 | B, A2…
+    for (const v of trimEnds(d)) { if (c.length >= 2 && same(c[c.length - 2], v)) { pop(c.pop()); c.push(merge(c.pop(), v)) } else c.push(v) }
+    trimEnds(c)
+    for (let n = c.length; !open[ri] && n >= 3; n = c.length) {       // the seam: …A1, B | A2… or …A1 | B, A2… (a ring only)
       if (same(c[n - 2], c[0])) { pop(c.pop()); c[0] = merge(c.pop(), c[0]) }
       else if (same(c[n - 1], c[1])) { pop(c.shift()); c[0] = merge(c.pop(), c[0]) }
       else if (same(c[n - 1], c[0])) c.pop()
       else break }
-    if (new Set(c.map(v => v.k.join(','))).size < 3) throw new Error(`[${who}] ⛔ nodeCrossings: ${rings[ri].tag} at (${K[ri][0]?.map(v => v / CLIP_SCALE)}) collapsed under three distinct points when routed through its hot pixels. Refusing.`)
+    if (new Set(c.map(v => v.k.join(','))).size < (open[ri] ? 2 : 3)) throw new Error(`[${who}] ⛔ nodeCrossings: ${rings[ri].tag} at (${K[ri][0]?.map(v => v / CLIP_SCALE)}) collapsed under ${open[ri] ? 'two distinct points (an open path)' : 'three distinct points'} when routed through its hot pixels. Refusing.`)
     return c })
   if (tjoin) {
     // ⭐ the home's own T-junction rule, as a SECOND step: an existing vertex within NODE_BOUND of another ring's edge enters
@@ -242,7 +259,7 @@ export function nodeCrossings(rings, { pairs, tjoin = false, who = 'stamp' } = {
         next.push({ p, k, src: null, edge: o[Math.max(0, m - 1)].edge }); const ck = `${rings[ri].tag} ← t-join`; counts[ck] = (counts[ck] || 0) + 1 }
       return next })
   }
-  verifyNoded(K, R, pairs, rings.map(r => r.tag), who, hot)
+  verifyNoded(K, R, pairs, rings.map(r => r.tag), who, hot, open)
   R.counts = counts; R.crossings = crossings; R.dropped = dropped; R.relabelled = relabelled
   return R
 }

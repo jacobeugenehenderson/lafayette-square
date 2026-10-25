@@ -66,7 +66,7 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    "yes, coast slit joins the water"): the water-side half of the coast ink joins the water face. The frame-edge cells are
    outside the disc. ⛔ The build's own construction is a ZERO-width cut (the centrelines noded into the ink by
    `latticeNode#nodeCrossings`, then the faces walked), not the buffered instrument. The tiles then meet on the centrelines, with
-   no slit. At a node, the shared vertex closes each tile's wedge. Coast ink splits on the coast arc (sealed with it). §5a's
+   no slit. At a node, the shared vertex closes each tile's wedge. ⭐ **Neighbours now share their centreline edges exactly** (the same noded vertices, one splice, no boolean; Boz's (c), 2026-10-25), so two tiles meet on the centreline with nothing between them and nothing drawn twice: ▶ `checks/claims-the-ink-is-absorbed-by-its-owner.mjs` (B). Coast ink splits on the coast arc (sealed with it). §5a's
    true-geometry crossings split into quadrants (a fixture case).
 2. **No fresh strips:** the quads, their overlap resolution and the second union of ① are deleted. Asphalt, highway and shore are
    each tile's own band, from its (absorbed) edge to ②, owned by that edge's label. shape.json's `ink` pieces retire with the slit.
