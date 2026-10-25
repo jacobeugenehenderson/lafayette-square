@@ -10,6 +10,20 @@
   "nr_attributed": 0,
   "in_historic_district": 0,
   "buildings_with_listings": 179,
+  "withheld": {
+   "fields": [
+    "owner",
+    "appraised_value",
+    "land_area",
+    "building_sqft",
+    "units",
+    "num_buildings",
+    "year_built",
+    "last_year_built",
+    "neighborhood_code"
+   ],
+   "why": "a parcel well's privacy and redistribution terms (cartograph/sources.js WITHHELD_PARCEL_FIELDS)"
+  },
   "join_key": "id == slab building id (msbf-* on a US pour, osm-* on an OSM pour, the project id on a curated one)",
   "prominence": {
    "scorer": "prominence.mjs",
@@ -967,7 +981,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 190
+    "rank": 191
    }
   },
   {
@@ -2868,7 +2882,7 @@
      "footprint_area": 6.1
     },
     "unknown": [],
-    "rank": 131
+    "rank": 132
    }
   },
   {
@@ -4639,7 +4653,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 220
+    "rank": 221
    }
   },
   {
@@ -4682,7 +4696,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 186
+    "rank": 187
    }
   },
   {
@@ -5285,7 +5299,7 @@
      "footprint_area": 1.4
     },
     "unknown": [],
-    "rank": 153
+    "rank": 154
    }
   },
   {
@@ -5332,7 +5346,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 173
+    "rank": 174
    }
   },
   {
@@ -5853,7 +5867,7 @@
      "footprint_area": 3.3
     },
     "unknown": [],
-    "rank": 146
+    "rank": 147
    }
   },
   {
@@ -6025,7 +6039,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 205
+    "rank": 206
    }
   },
   {
@@ -6112,7 +6126,7 @@
      "footprint_area": 3.2
     },
     "unknown": [],
-    "rank": 148
+    "rank": 149
    }
   },
   {
@@ -6333,7 +6347,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 36
+    "rank": 37
    }
   },
   {
@@ -7201,7 +7215,7 @@
      "footprint_area": 2.9
     },
     "unknown": [],
-    "rank": 62
+    "rank": 63
    }
   },
   {
@@ -7991,7 +8005,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 179
+    "rank": 180
    }
   },
   {
@@ -8035,7 +8049,7 @@
      "footprint_area": 0.4
     },
     "unknown": [],
-    "rank": 156
+    "rank": 157
    }
   },
   {
@@ -9890,7 +9904,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 212
+    "rank": 213
    }
   },
   {
@@ -10795,7 +10809,7 @@
      "footprint_area": 2.9
     },
     "unknown": [],
-    "rank": 63
+    "rank": 64
    }
   },
   {
@@ -12618,7 +12632,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 70
+    "rank": 71
    }
   },
   {
@@ -12834,7 +12848,7 @@
      "footprint_area": 7.9
     },
     "unknown": [],
-    "rank": 125
+    "rank": 126
    }
   },
   {
@@ -14082,7 +14096,7 @@
      "footprint_area": 10.8
     },
     "unknown": [],
-    "rank": 112
+    "rank": 113
    }
   },
   {
@@ -14950,7 +14964,7 @@
      "footprint_area": 5.6
     },
     "unknown": [],
-    "rank": 134
+    "rank": 135
    }
   },
   {
@@ -15424,7 +15438,7 @@
      "footprint_area": 18.3
     },
     "unknown": [],
-    "rank": 78
+    "rank": 79
    }
   },
   {
@@ -15646,7 +15660,7 @@
      "footprint_area": 18.4
     },
     "unknown": [],
-    "rank": 32
+    "rank": 33
    }
   },
   {
@@ -15956,7 +15970,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 69
+    "rank": 70
    }
   },
   {
@@ -19099,7 +19113,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 217
+    "rank": 218
    }
   },
   {
@@ -20348,7 +20362,7 @@
      "footprint_area": 6.3
     },
     "unknown": [],
-    "rank": 79
+    "rank": 80
    }
   },
   {
@@ -21005,7 +21019,7 @@
      "footprint_area": 10.6
     },
     "unknown": [],
-    "rank": 113
+    "rank": 114
    }
   },
   {
@@ -21967,7 +21981,7 @@
      "footprint_area": 12.9
     },
     "unknown": [],
-    "rank": 102
+    "rank": 103
    }
   },
   {
@@ -22268,7 +22282,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 197
+    "rank": 198
    }
   },
   {
@@ -24882,7 +24896,7 @@
      "footprint_area": 17.7
     },
     "unknown": [],
-    "rank": 83
+    "rank": 84
    }
   },
   {
@@ -25656,7 +25670,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 198
+    "rank": 199
    }
   },
   {
@@ -25916,7 +25930,7 @@
      "footprint_area": 12.6
     },
     "unknown": [],
-    "rank": 59
+    "rank": 60
    }
   },
   {
@@ -26131,7 +26145,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 171
+    "rank": 172
    }
   },
   {
@@ -26863,7 +26877,7 @@
      "footprint_area": 12.3
     },
     "unknown": [],
-    "rank": 103
+    "rank": 104
    }
   },
   {
@@ -26998,7 +27012,7 @@
      "footprint_area": 18.5
     },
     "unknown": [],
-    "rank": 43
+    "rank": 44
    }
   },
   {
@@ -27170,7 +27184,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 199
+    "rank": 200
    }
   },
   {
@@ -27262,7 +27276,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 38
+    "rank": 39
    }
   },
   {
@@ -27525,7 +27539,7 @@
      "footprint_area": 18.5
     },
     "unknown": [],
-    "rank": 77
+    "rank": 78
    }
   },
   {
@@ -28825,7 +28839,7 @@
      "footprint_area": 18.4
     },
     "unknown": [],
-    "rank": 55
+    "rank": 56
    }
   },
   {
@@ -29041,7 +29055,7 @@
      "footprint_area": 15
     },
     "unknown": [],
-    "rank": 94
+    "rank": 95
    }
   },
   {
@@ -30977,7 +30991,7 @@
      "footprint_area": 3.9
     },
     "unknown": [],
-    "rank": 142
+    "rank": 143
    }
   },
   {
@@ -31030,7 +31044,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 185
+    "rank": 186
    }
   },
   {
@@ -32381,7 +32395,7 @@
      "footprint_area": 17.6
     },
     "unknown": [],
-    "rank": 84
+    "rank": 85
    }
   },
   {
@@ -32468,7 +32482,7 @@
      "footprint_area": 14.6
     },
     "unknown": [],
-    "rank": 97
+    "rank": 98
    }
   },
   {
@@ -32641,7 +32655,7 @@
      "footprint_area": 11.9
     },
     "unknown": [],
-    "rank": 104
+    "rank": 105
    }
   },
   {
@@ -33376,7 +33390,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 202
+    "rank": 203
    }
   },
   {
@@ -33940,7 +33954,7 @@
      "footprint_area": 11.9
     },
     "unknown": [],
-    "rank": 105
+    "rank": 106
    }
   },
   {
@@ -34242,7 +34256,7 @@
      "footprint_area": 18.6
     },
     "unknown": [],
-    "rank": 76
+    "rank": 77
    }
   },
   {
@@ -34893,7 +34907,7 @@
      "footprint_area": 8.1
     },
     "unknown": [],
-    "rank": 57
+    "rank": 58
    }
   },
   {
@@ -35156,7 +35170,7 @@
      "footprint_area": 19.3
     },
     "unknown": [],
-    "rank": 71
+    "rank": 72
    }
   },
   {
@@ -36362,7 +36376,7 @@
      "footprint_area": 17
     },
     "unknown": [],
-    "rank": 49
+    "rank": 50
    }
   },
   {
@@ -36664,7 +36678,7 @@
      "footprint_area": 17.9
     },
     "unknown": [],
-    "rank": 81
+    "rank": 82
    }
   },
   {
@@ -36965,7 +36979,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 203
+    "rank": 204
    }
   },
   {
@@ -37268,7 +37282,7 @@
      "footprint_area": 16.4
     },
     "unknown": [],
-    "rank": 52
+    "rank": 53
    }
   },
   {
@@ -40413,7 +40427,7 @@
      "footprint_area": 16.6
     },
     "unknown": [],
-    "rank": 51
+    "rank": 52
    }
   },
   {
@@ -40500,7 +40514,7 @@
      "footprint_area": 4.5
     },
     "unknown": [],
-    "rank": 139
+    "rank": 140
    }
   },
   {
@@ -43004,7 +43018,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 219
+    "rank": 220
    }
   },
   {
@@ -43916,7 +43930,7 @@
      "footprint_area": 7.3
     },
     "unknown": [],
-    "rank": 126
+    "rank": 127
    }
   },
   {
@@ -44175,7 +44189,7 @@
      "footprint_area": 14.7
     },
     "unknown": [],
-    "rank": 95
+    "rank": 96
    }
   },
   {
@@ -46200,7 +46214,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 221
+    "rank": 222
    }
   },
   {
@@ -48480,7 +48494,7 @@
      "footprint_area": 5.3
     },
     "unknown": [],
-    "rank": 135
+    "rank": 136
    }
   },
   {
@@ -48925,7 +48939,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 222
+    "rank": 223
    }
   },
   {
@@ -50264,7 +50278,7 @@
      "footprint_area": 18.4
     },
     "unknown": [],
-    "rank": 44
+    "rank": 45
    }
   },
   {
@@ -50488,7 +50502,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 223
+    "rank": 224
    }
   },
   {
@@ -51477,7 +51491,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 187
+    "rank": 188
    }
   },
   {
@@ -51780,7 +51794,7 @@
      "footprint_area": 5.3
     },
     "unknown": [],
-    "rank": 86
+    "rank": 87
    }
   },
   {
@@ -53596,7 +53610,7 @@
      "footprint_area": 18.3
     },
     "unknown": [],
-    "rank": 46
+    "rank": 47
    }
   },
   {
@@ -53940,7 +53954,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 204
+    "rank": 205
    }
   },
   {
@@ -55205,7 +55219,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 157
+    "rank": 158
    }
   },
   {
@@ -55987,7 +56001,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 174
+    "rank": 175
    }
   },
   {
@@ -56160,7 +56174,7 @@
      "footprint_area": 5.9
     },
     "unknown": [],
-    "rank": 132
+    "rank": 133
    }
   },
   {
@@ -56906,7 +56920,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 175
+    "rank": 176
    }
   },
   {
@@ -57814,7 +57828,7 @@
      "footprint_area": 3.2
     },
     "unknown": [],
-    "rank": 147
+    "rank": 148
    }
   },
   {
@@ -58029,7 +58043,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 224
+    "rank": 225
    }
   },
   {
@@ -59753,7 +59767,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 163
+    "rank": 164
    }
   },
   {
@@ -59840,7 +59854,7 @@
      "footprint_area": 16.5
     },
     "unknown": [],
-    "rank": 89
+    "rank": 90
    }
   },
   {
@@ -60535,7 +60549,7 @@
      "footprint_area": 16.1
     },
     "unknown": [],
-    "rank": 91
+    "rank": 92
    }
   },
   {
@@ -60621,7 +60635,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 206
+    "rank": 207
    }
   },
   {
@@ -60842,7 +60856,7 @@
      "footprint_area": 8.2
     },
     "unknown": [],
-    "rank": 67
+    "rank": 68
    }
   },
   {
@@ -62540,7 +62554,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 225
+    "rank": 226
    }
   },
   {
@@ -64691,7 +64705,7 @@
      "footprint_area": 14.7
     },
     "unknown": [],
-    "rank": 96
+    "rank": 97
    }
   },
   {
@@ -64831,7 +64845,7 @@
      "footprint_area": 13.1
     },
     "unknown": [],
-    "rank": 101
+    "rank": 102
    }
   },
   {
@@ -65304,7 +65318,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 176
+    "rank": 177
    }
   },
   {
@@ -65521,7 +65535,7 @@
      "footprint_area": 10.6
     },
     "unknown": [],
-    "rank": 64
+    "rank": 65
    }
   },
   {
@@ -65609,7 +65623,7 @@
      "footprint_area": 3.6
     },
     "unknown": [],
-    "rank": 60
+    "rank": 61
    }
   },
   {
@@ -66691,7 +66705,7 @@
      "footprint_area": 16.7
     },
     "unknown": [],
-    "rank": 87
+    "rank": 88
    }
   },
   {
@@ -66734,7 +66748,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 226
+    "rank": 227
    }
   },
   {
@@ -67079,7 +67093,7 @@
      "footprint_area": 13.9
     },
     "unknown": [],
-    "rank": 98
+    "rank": 99
    }
   },
   {
@@ -67470,7 +67484,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 227
+    "rank": 228
    }
   },
   {
@@ -67605,7 +67619,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 228
+    "rank": 229
    }
   },
   {
@@ -68250,7 +68264,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 207
+    "rank": 208
    }
   },
   {
@@ -68379,7 +68393,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 208
+    "rank": 209
    }
   },
   {
@@ -68962,7 +68976,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 39
+    "rank": 40
    }
   },
   {
@@ -69320,7 +69334,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 209
+    "rank": 210
    }
   },
   {
@@ -69923,7 +69937,7 @@
      "footprint_area": 8.2
     },
     "unknown": [],
-    "rank": 122
+    "rank": 123
    }
   },
   {
@@ -70228,7 +70242,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 188
+    "rank": 189
    }
   },
   {
@@ -71913,7 +71927,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 158
+    "rank": 159
    }
   },
   {
@@ -72601,7 +72615,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 189
+    "rank": 190
    }
   },
   {
@@ -72902,7 +72916,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 177
+    "rank": 178
    }
   },
   {
@@ -73594,7 +73608,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 178
+    "rank": 179
    }
   },
   {
@@ -74458,7 +74472,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 210
+    "rank": 211
    }
   },
   {
@@ -74717,7 +74731,7 @@
      "footprint_area": 7.3
     },
     "unknown": [],
-    "rank": 127
+    "rank": 128
    }
   },
   {
@@ -74804,7 +74818,7 @@
      "footprint_area": 3.6
     },
     "unknown": [],
-    "rank": 144
+    "rank": 145
    }
   },
   {
@@ -75977,7 +75991,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 35
+    "rank": 36
    }
   },
   {
@@ -76241,7 +76255,7 @@
      "footprint_area": 1.1
     },
     "unknown": [],
-    "rank": 66
+    "rank": 67
    }
   },
   {
@@ -77532,7 +77546,7 @@
      "footprint_area": 10.5
     },
     "unknown": [],
-    "rank": 114
+    "rank": 115
    }
   },
   {
@@ -78916,7 +78930,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 211
+    "rank": 212
    }
   },
   {
@@ -79313,7 +79327,7 @@
      "footprint_area": 18.4
     },
     "unknown": [],
-    "rank": 45
+    "rank": 46
    }
   },
   {
@@ -79752,7 +79766,7 @@
      "footprint_area": 9
     },
     "unknown": [],
-    "rank": 118
+    "rank": 119
    }
   },
   {
@@ -80446,7 +80460,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 159
+    "rank": 160
    }
   },
   {
@@ -80790,7 +80804,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 229
+    "rank": 230
    }
   },
   {
@@ -81006,7 +81020,7 @@
      "footprint_area": 11
     },
     "unknown": [],
-    "rank": 110
+    "rank": 111
    }
   },
   {
@@ -82392,7 +82406,7 @@
      "footprint_area": 15.7
     },
     "unknown": [],
-    "rank": 93
+    "rank": 94
    }
   },
   {
@@ -83641,7 +83655,7 @@
      "footprint_area": 19.4
     },
     "unknown": [],
-    "rank": 40
+    "rank": 41
    }
   },
   {
@@ -84037,7 +84051,7 @@
      "footprint_area": 8.8
     },
     "unknown": [],
-    "rank": 119
+    "rank": 120
    }
   },
   {
@@ -85288,7 +85302,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 230
+    "rank": 231
    }
   },
   {
@@ -85466,7 +85480,7 @@
      "footprint_area": 14.1
     },
     "unknown": [],
-    "rank": 54
+    "rank": 55
    }
   },
   {
@@ -85983,7 +85997,7 @@
      "footprint_area": 10.1
     },
     "unknown": [],
-    "rank": 115
+    "rank": 116
    }
   },
   {
@@ -87546,7 +87560,7 @@
      "footprint_area": 13.4
     },
     "unknown": [],
-    "rank": 99
+    "rank": 100
    }
   },
   {
@@ -87855,7 +87869,7 @@
      "footprint_area": 17.9
     },
     "unknown": [],
-    "rank": 47
+    "rank": 48
    }
   },
   {
@@ -87899,7 +87913,7 @@
      "footprint_area": 5.8
     },
     "unknown": [],
-    "rank": 133
+    "rank": 134
    }
   },
   {
@@ -88254,7 +88268,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 68
+    "rank": 69
    }
   },
   {
@@ -89201,7 +89215,7 @@
      "footprint_area": 13.4
     },
     "unknown": [],
-    "rank": 100
+    "rank": 101
    }
   },
   {
@@ -90588,7 +90602,7 @@
      "footprint_area": 9.5
     },
     "unknown": [],
-    "rank": 33
+    "rank": 34
    }
   },
   {
@@ -90718,7 +90732,7 @@
      "footprint_area": 18.1
     },
     "unknown": [],
-    "rank": 80
+    "rank": 81
    }
   },
   {
@@ -90890,7 +90904,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 231
+    "rank": 232
    }
   },
   {
@@ -91492,7 +91506,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 164
+    "rank": 165
    }
   },
   {
@@ -93643,7 +93657,7 @@
      "footprint_area": 0.8
     },
     "unknown": [],
-    "rank": 154
+    "rank": 155
    }
   },
   {
@@ -94676,7 +94690,7 @@
      "footprint_area": 8.5
     },
     "unknown": [],
-    "rank": 120
+    "rank": 121
    }
   },
   {
@@ -95111,7 +95125,7 @@
      "footprint_area": 2.6
     },
     "unknown": [],
-    "rank": 150
+    "rank": 151
    }
   },
   {
@@ -95972,7 +95986,7 @@
      "footprint_area": 19
     },
     "unknown": [],
-    "rank": 74
+    "rank": 75
    }
   },
   {
@@ -97391,7 +97405,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 160
+    "rank": 161
    }
   },
   {
@@ -99416,7 +99430,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 191
+    "rank": 192
    }
   },
   {
@@ -99727,7 +99741,7 @@
      "footprint_area": 3.9
     },
     "unknown": [],
-    "rank": 143
+    "rank": 144
    }
   },
   {
@@ -101296,7 +101310,7 @@
      "footprint_area": 2.2
     },
     "unknown": [],
-    "rank": 152
+    "rank": 153
    }
   },
   {
@@ -102500,7 +102514,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 161
+    "rank": 162
    }
   },
   {
@@ -102973,7 +102987,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 232
+    "rank": 233
    }
   },
   {
@@ -104401,7 +104415,7 @@
      "footprint_area": 17.8
     },
     "unknown": [],
-    "rank": 82
+    "rank": 83
    }
   },
   {
@@ -106337,7 +106351,7 @@
      "footprint_area": 6.3
     },
     "unknown": [],
-    "rank": 130
+    "rank": 131
    }
   },
   {
@@ -106431,7 +106445,7 @@
      "footprint_area": 14.7
     },
     "unknown": [],
-    "rank": 53
+    "rank": 54
    }
   },
   {
@@ -106475,7 +106489,7 @@
      "footprint_area": 8.1
     },
     "unknown": [],
-    "rank": 123
+    "rank": 124
    }
   },
   {
@@ -108462,7 +108476,7 @@
      "footprint_area": 5.2
     },
     "unknown": [],
-    "rank": 137
+    "rank": 138
    }
   },
   {
@@ -109151,7 +109165,7 @@
      "footprint_area": 6.6
     },
     "unknown": [],
-    "rank": 129
+    "rank": 130
    }
   },
   {
@@ -109194,7 +109208,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 192
+    "rank": 193
    }
   },
   {
@@ -109633,7 +109647,7 @@
      "footprint_area": 4.9
     },
     "unknown": [],
-    "rank": 138
+    "rank": 139
    }
   },
   {
@@ -110321,7 +110335,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 233
+    "rank": 234
    }
   },
   {
@@ -112656,7 +112670,7 @@
      "footprint_area": 10.8
     },
     "unknown": [],
-    "rank": 111
+    "rank": 112
    }
   },
   {
@@ -114178,7 +114192,7 @@
      "footprint_area": 18.4
     },
     "unknown": [],
-    "rank": 31
+    "rank": 32
    }
   },
   {
@@ -114583,7 +114597,7 @@
      "footprint_area": 18.5
     },
     "unknown": [],
-    "rank": 30
+    "rank": 31
    }
   },
   {
@@ -114971,7 +114985,7 @@
      "footprint_area": 11.3
     },
     "unknown": [],
-    "rank": 108
+    "rank": 109
    }
   },
   {
@@ -115065,7 +115079,7 @@
      "footprint_area": 19.4
     },
     "unknown": [],
-    "rank": 41
+    "rank": 42
    }
   },
   {
@@ -115195,7 +115209,7 @@
      "footprint_area": 18.8
     },
     "unknown": [],
-    "rank": 75
+    "rank": 76
    }
   },
   {
@@ -115712,7 +115726,7 @@
      "footprint_area": 9.5
     },
     "unknown": [],
-    "rank": 117
+    "rank": 118
    }
   },
   {
@@ -115756,7 +115770,7 @@
      "footprint_area": 8
     },
     "unknown": [],
-    "rank": 124
+    "rank": 125
    }
   },
   {
@@ -115848,7 +115862,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 37
+    "rank": 38
    }
   },
   {
@@ -116470,7 +116484,7 @@
      "footprint_area": 17.4
     },
     "unknown": [],
-    "rank": 85
+    "rank": 86
    }
   },
   {
@@ -118539,7 +118553,7 @@
      "footprint_area": 4.5
     },
     "unknown": [],
-    "rank": 140
+    "rank": 141
    }
   },
   {
@@ -118712,7 +118726,7 @@
      "footprint_area": 4.2
     },
     "unknown": [],
-    "rank": 141
+    "rank": 142
    }
   },
   {
@@ -119404,7 +119418,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 193
+    "rank": 194
    }
   },
   {
@@ -121310,7 +121324,7 @@
      "footprint_area": 17
     },
     "unknown": [],
-    "rank": 50
+    "rank": 51
    }
   },
   {
@@ -122687,7 +122701,7 @@
      "footprint_area": 3.6
     },
     "unknown": [],
-    "rank": 145
+    "rank": 146
    }
   },
   {
@@ -123806,7 +123820,7 @@
      "footprint_area": 5.3
     },
     "unknown": [],
-    "rank": 136
+    "rank": 137
    }
   },
   {
@@ -124925,7 +124939,7 @@
      "footprint_area": 11.5
     },
     "unknown": [],
-    "rank": 106
+    "rank": 107
    }
   },
   {
@@ -125011,7 +125025,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 180
+    "rank": 181
    }
   },
   {
@@ -125958,7 +125972,7 @@
      "footprint_area": 0.8
     },
     "unknown": [],
-    "rank": 155
+    "rank": 156
    }
   },
   {
@@ -126260,7 +126274,7 @@
      "footprint_area": 9.9
     },
     "unknown": [],
-    "rank": 116
+    "rank": 117
    }
   },
   {
@@ -129982,7 +129996,7 @@
      "footprint_area": 17.1
     },
     "unknown": [],
-    "rank": 48
+    "rank": 49
    }
   },
   {
@@ -130896,7 +130910,7 @@
      "footprint_area": 11.5
     },
     "unknown": [],
-    "rank": 107
+    "rank": 108
    }
   },
   {
@@ -131770,7 +131784,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 213
+    "rank": 214
    }
   },
   {
@@ -132511,7 +132525,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 194
+    "rank": 195
    }
   },
   {
@@ -133130,7 +133144,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 165
+    "rank": 166
    }
   },
   {
@@ -134777,7 +134791,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 214
+    "rank": 215
    }
   },
   {
@@ -135820,7 +135834,7 @@
      "footprint_area": 2.6
     },
     "unknown": [],
-    "rank": 151
+    "rank": 152
    }
   },
   {
@@ -135999,7 +136013,7 @@
      "footprint_area": 13.3
     },
     "unknown": [],
-    "rank": 34
+    "rank": 35
    }
   },
   {
@@ -136429,7 +136443,7 @@
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 234
+    "rank": 235
    }
   },
   {
@@ -136601,7 +136615,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 215
+    "rank": 216
    }
   },
   {
@@ -136652,7 +136666,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 166
+    "rank": 167
    }
   },
   {
@@ -136955,7 +136969,7 @@
      "footprint_area": 2.5
     },
     "unknown": [],
-    "rank": 65
+    "rank": 66
    }
   },
   {
@@ -137171,7 +137185,7 @@
      "footprint_area": 11.2
     },
     "unknown": [],
-    "rank": 109
+    "rank": 110
    }
   },
   {
@@ -137988,7 +138002,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 181
+    "rank": 182
    }
   },
   {
@@ -140193,7 +140207,7 @@
      "footprint_area": 8.5
     },
     "unknown": [],
-    "rank": 121
+    "rank": 122
    }
   },
   {
@@ -141015,7 +141029,7 @@
      "footprint_area": 7.2
     },
     "unknown": [],
-    "rank": 128
+    "rank": 129
    }
   },
   {
@@ -142065,7 +142079,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 182
+    "rank": 183
    }
   },
   {
@@ -142766,7 +142780,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 167
+    "rank": 168
    }
   },
   {
@@ -142856,7 +142870,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 195
+    "rank": 196
    }
   },
   {
@@ -144237,7 +144251,7 @@
      "footprint_area": 15.9
     },
     "unknown": [],
-    "rank": 92
+    "rank": 93
    }
   },
   {
@@ -145644,7 +145658,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 168
+    "rank": 169
    }
   },
   {
@@ -146684,7 +146698,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 196
+    "rank": 197
    }
   },
   {
@@ -146776,7 +146790,7 @@
      "footprint_area": 5.7
     },
     "unknown": [],
-    "rank": 56
+    "rank": 57
    }
   },
   {
@@ -147211,7 +147225,7 @@
      "footprint_area": 16.5
     },
     "unknown": [],
-    "rank": 90
+    "rank": 91
    }
   },
   {
@@ -147732,7 +147746,7 @@
      "footprint_area": 19.2
     },
     "unknown": [],
-    "rank": 72
+    "rank": 73
    }
   },
   {
@@ -147819,7 +147833,7 @@
      "footprint_area": 19.1
     },
     "unknown": [],
-    "rank": 73
+    "rank": 74
    }
   },
   {
@@ -148687,7 +148701,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 216
+    "rank": 217
    }
   },
   {
@@ -149805,7 +149819,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 169
+    "rank": 170
    }
   },
   {
@@ -151146,7 +151160,7 @@
      "footprint_area": 20
     },
     "unknown": [],
-    "rank": 162
+    "rank": 163
    }
   },
   {
@@ -151625,7 +151639,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 183
+    "rank": 184
    }
   },
   {
@@ -152675,7 +152689,7 @@
      "footprint_area": 19.8
     },
     "unknown": [],
-    "rank": 184
+    "rank": 185
    }
   },
   {
@@ -154353,12 +154367,15 @@
    "historic_status": null,
    "promoted": null,
    "prominence": {
-    "score": 19.5,
+    "score": 74.5,
     "signals": {
+     "name": 25,
+     "brand": 10,
+     "occupied": 20,
      "footprint_area": 19.5
     },
     "unknown": [],
-    "rank": 235
+    "rank": 30
    }
   },
   {
@@ -154839,7 +154856,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 170
+    "rank": 171
    }
   },
   {
@@ -154974,7 +154991,7 @@
      "footprint_area": 14.4
     },
     "unknown": [],
-    "rank": 58
+    "rank": 59
    }
   },
   {
@@ -157392,7 +157409,7 @@
      "footprint_area": 11
     },
     "unknown": [],
-    "rank": 61
+    "rank": 62
    }
   },
   {
@@ -157576,7 +157593,7 @@
      "footprint_area": 19.3
     },
     "unknown": [],
-    "rank": 42
+    "rank": 43
    }
   },
   {
@@ -157706,7 +157723,7 @@
      "footprint_area": 2.7
     },
     "unknown": [],
-    "rank": 149
+    "rank": 150
    }
   },
   {
@@ -159431,7 +159448,7 @@
      "footprint_area": 16.7
     },
     "unknown": [],
-    "rank": 88
+    "rank": 89
    }
   },
   {
@@ -160213,7 +160230,7 @@
      "footprint_area": 19.6
     },
     "unknown": [],
-    "rank": 218
+    "rank": 219
    }
   },
   {
@@ -160256,7 +160273,7 @@
      "footprint_area": 19.9
     },
     "unknown": [],
-    "rank": 172
+    "rank": 173
    }
   },
   {
@@ -160299,7 +160316,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 200
+    "rank": 201
    }
   },
   {
@@ -160342,7 +160359,7 @@
      "footprint_area": 19.7
     },
     "unknown": [],
-    "rank": 201
+    "rank": 202
    }
   }
  ]
