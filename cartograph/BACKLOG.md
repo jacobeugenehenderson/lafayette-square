@@ -8,8 +8,16 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 ## ▶ Forward list (2026-10-20 night) — LS · HPDM · PTown · Huron first
 
-### ⭐ HANDOFF — 2026-10-25 overnight (Boz). Read this block first; everything below is detail.
-**▶ TONIGHT (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
+### ⭐ HANDOFF — 2026-10-25 afternoon (Boz). Read this block first; everything below is detail.
+**▶ NOW:** THE TRANCHE IS MERGED (impostor publishing · leg-ends ce4c449d · caps-from-shape f94ab149 · the ① seam 4ed69a3a · the
+one-way fix f5c03e27 · disc §2b 816658e2 + §1b 77b3d4e8 · commit-carries 9ac0d8fc + 0b9d460f) and BAKED through the Bake route on a
+temporary integration server (:3343 serve.js + :5183 Vite, Jacob's okay; stop both at the end): Huron (11 min), PTown (19 min, was
+~3 h), HPDM (8 min), every listing kept. Altadena REFUSED (below). LS WAITS on Jacob's look at its draft exclusion loops (they take
+81 of 162 labels out of the hood proper) + Kerf's listings stack (1ec16996 → c27897d2 → b298b606, awaiting Zob, who hit his usage
+limit). Running: Kerf re-skeletons HPDM + PTown via commit-extent (the one-way fix) and re-bakes them; then Ferrule's slot
+(BRIEF-the-ink-is-owned-by-its-labels, 0a9fa286 → 379282f2). NEXT: Huron's shore, `docs/briefs/BRIEF-the-shore-is-one-line.md`,
+ready to dispatch FRESH. ❓ Jacob: PTown's 6 surveyed trees dropped by a commercial land use; MacMillan Wharf's street on its deck?
+**▶ THE NIGHT BEFORE (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
 place.mjs, claims-a-chain-cut-keeps-its-owner-change. Briefed and DISPATCHED: the ① seam fix → **Splice**
 (`cartograph/_archive/BRIEF-the-ink-meets-inside-the-ink-LANDED-2026-10-25.md`; carrier = ioPreserveCollinear on both mint booleans, both folds go;
 Splice brings the node choice to Boz before step 2). **Kerf** (heavy slot, all night): leg-ends gates (the corner check pairs
