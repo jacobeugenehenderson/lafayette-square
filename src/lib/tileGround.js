@@ -910,6 +910,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       // ⛔ A WATER RING TAKES THE INK OUTERS' WINDING (Zob, 2026-10-25): the clip set unions by nonzero fill, so a lake wound
       // against the ink cancels it where they overlap (+1 − 1 = 0) and the street ink inside the water came back as LAND faces.
       // Today's towns all match the ink; a town nobody has looked at need not. ▶ checks/claims-a-clockwise-lake-keeps-its-water.mjs
+      if (!R.rings?.length) throw new Error('[①] ⛔ the coast has water rings but ① has no ink to wind them against. Refusing.')
       const inkSign = Math.sign(signedArea(R.rings.reduce((m, r) => Math.abs(signedArea(r)) > Math.abs(signedArea(m)) ? r : m, R.rings[0])))
       for (const r of coast) {
         if (!Array.isArray(r) || r.length < 3) continue
