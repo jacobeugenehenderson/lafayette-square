@@ -67,6 +67,13 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
 6. **Later, its own commit:** rim §5's water BED stamped with ① (C8), and water to the bb (C1a, disc §2c), are the shoreline
    project's tail. Sequence them; don't fold them into 1–5 unless they fall out.
 
+**⚠️ Built structures over water (Jacob, 2026-10-25: "PTown has a big pier and I believe Huron has something like it; it's built
+structure over water").** The lidar sees a pier's DECK as a surface above high water, so a coast traced where the lidar meets high
+water would draw the pier as LAND. A pier, wharf or dock is the off-the-ground family (`STYLE-GUIDE §10` Q10.a; Jacob 2026-09-27:
+OSM width where mapped), never ground; a breakwater or groyne is STONE ground (ruled 2026-09-27). So step 1 masks mapped
+structures over water OUT of the lidar intersection (by OSM tag, from the data, never a site list), so the coast runs under them,
+and the water continues beneath. PTown's MacMillan Wharf (a street meets it: `macmillan-wharf|end`, a lost cap handle in
+caps-from-shape) and Huron's equivalent are the exhibits. A check: no mapped pier/wharf/dock footprint lies inside ①'s land.
 **Dead on tern, don't port:** the gusset (`9c95f43a`, `5f19280c`; per-vertex heights for the retired deformer).
 
 ## 4. Gates
