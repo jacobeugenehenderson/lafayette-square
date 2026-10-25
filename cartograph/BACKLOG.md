@@ -37,7 +37,7 @@ variant in kerf scratch) · roof tint / happenings for the neon contract fix · 
 appreciable progress; now we need to bring Huron up to parity and then move forward with finally fixing the shoreline."* At night Boz
 keeps it moving. In order:
 1. **The tranche:** finish `kerf/leg-ends-at-ladder`'s owed gates → merge it, caps-from-shape, publish-impostor-records (Zob review)
-   → disc brief §1b/§2a/§2b → ONE re-pour + bake of every town. (The ① seam waits on Jacob's call; PTown stays blocked by it.)
+   → disc brief §1b/§2a/§2b → ONE re-pour + bake of every town. (The ① seam fix, ruled 2026-10-24, joins the tranche; it unblocks PTown.)
 2. **Huron to parity with LS/HPDM:** its deploy bake on the tranche (the cdl fix is merged; the stamp settles), impostors carried
    first (`slabTreeGeometry` needed:false), staging, Jacob's look. Its 8 remaining land edge pairs read first.
 3. **The shoreline, finally:** `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
