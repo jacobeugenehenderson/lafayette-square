@@ -125,7 +125,10 @@ keeps it moving. In order:
    → disc brief §1b/§2a/§2b → ONE re-pour + bake of every town. (The ① seam fix, ruled 2026-10-24, joins the tranche; it unblocks PTown.)
 2. **Huron to parity with LS/HPDM:** its deploy bake on the tranche (the cdl fix is merged; the stamp settles), impostors carried
    first (`slabTreeGeometry` needed:false), staging, Jacob's look. Its 8 remaining land edge pairs read first.
-3. **The shoreline, finally:** `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
+3. **The shoreline, finally:** ⚠️ MERGE STEP for Swash's 60ea9243 (water record's IGLD85→NAVD88 now `igld85ToNavd88.points`,
+   asked at the lake's own height; the old field was the sea-level offset, −0.004 vs +0.067 m): after the merge, re-run
+   `node cartograph/fetch-water-datums.mjs --scene=huron` in each checkout, or Huron's terrain bake refuses by name.
+   `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
    `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
 Then, QUEUED (Jacob, 2026-10-25: "yes, queue the PTown bake speed-up"): PTown's bake pays for the ground TWICE (ground 5,197 s +
 ground-shore 4,949 s of ~177 min, timings of 10-11): the shore pass must not re-run the whole ground. Brief after the tranche.
