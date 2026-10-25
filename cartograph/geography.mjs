@@ -27,6 +27,15 @@ export function geographyFor(scene) {
 `)
 }
 
+/** The frame's metres-per-degree, REFUSED by name when geography.json lacks a usable one. A default (it was 111000 for a
+ *  missing latToMeters; a missing lonToMeters gave NaN, or a cosine guess) places everything plausibly wrong. */
+export function metresPerDegree(geo, who) {
+  const lon = geo?.lonToMeters, lat = geo?.latToMeters
+  if (!(Number.isFinite(lon) && lon > 0) || !(Number.isFinite(lat) && lat > 0))
+    throw new Error(`[${who}] ⛔ geography.json carries no usable lonToMeters/latToMeters (${lon}, ${lat}) — the frame cannot place anything; refusing`)
+  return { lonToM: lon, latToM: lat }
+}
+
 /** lon/lat → local metres (x east, z south) for one geography. config.js#wgs84ToLocal IS this, for the scene it names. */
 export const projectorOf = (g) => (lon, lat) => [(lon - g.lon) * g.lonToMeters, (g.lat - lat) * g.latToMeters]
 

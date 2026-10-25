@@ -1992,10 +1992,10 @@ createServer(async (req, res) => {
     }
   }
 
-  // POST /<scene>/commit-extent — the deliberate finalize: re-center geography to
-  // the boundary-polygon centroid → reproject-raw + skeleton (neighborhood lands
-  // at origin) → write neighborhood_boundary.json (the circle) + neighborhood.json.
-  // Body { center:{lat,lon}, radius, sides, name, blurb }. Long-running; guarded.
+  // POST /<scene>/commit-extent — the deliberate finalize. The FRAME NEVER MOVES (no re-centre, no reproject): the hood
+  // centre is stored off-origin on the disc; skeleton.js runs in the frozen frame; the records are written through
+  // commitExtent.mjs (each only when its value changed). Body { center:{lat,lon}, radius, name, blurb, exclusions,
+  // polygon, polygonSource }. Long-running; guarded.
   const commitMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/commit-extent$/)
   if (req.method === 'POST' && commitMatch && !RESERVED_PREFIXES.has(commitMatch[1])) {
     const scene = commitMatch[1]
@@ -2007,10 +2007,9 @@ createServer(async (req, res) => {
       }
       _seedsInFlight.add(scene)
       try {
-        const { center, radius, name, blurb, exclusions, allowRecenter, polygon, polygonSource } = JSON.parse(body || '{}')
+        const { center, radius, name, blurb, exclusions, polygon, polygonSource } = JSON.parse(body || '{}')
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
-        const r5 = (v) => Math.round(v * 1e5) / 1e5
         const geoPath = mapDataPaths(scene).geography
         // ── (Re-center guard REMOVED 2026-07-23 — EXTENT-DESIGN §3.3) ────────
         // It refused a committed hood whose `center` moved >5 m, to stop the FRAME
@@ -2018,8 +2017,7 @@ createServer(async (req, res) => {
         // the frame origin is FROZEN at the fetch center and the hood center is
         // stored OFF-ORIGIN on the disc — so there is no frame move to guard, and
         // `center` legitimately differs from the origin on any off-centre hood.
-        // (Jacob, 2026-07-23.) `allowRecenter` is now unused; kept in the destructure
-        // for payload compatibility.
+        // (Jacob, 2026-07-23.)
         // Snapshot the pre-commit frame so a failure mid-Pour can roll back.
         // Consumed by /rollback-extent when onBuild throws before the bake lands.
         // Stale .prebak from a prior run is cleared first so only one exists.
