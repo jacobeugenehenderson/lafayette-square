@@ -32,6 +32,11 @@ GREEN on 4 towns. ⛔ HELD: PTown's ② refuses at the land-use stamp ("crossing
 is a SECOND noding rule (round, insert, re-test), which can't terminate on shallow crossings (OSM wetland/reserve vs the water
 edge); ①'s sub-mm shift moved where it landed. Ruled direction (Boz, vetoable): hot-pixel snap rounding as latticeNode's crossing
 rule, one pass, with the stamp's loop deleted. Splice proposes; Zob reads first. Land the seam squash only when PTown builds.
+**❓ FOR JACOB (veto): Boz revised his own ruling (A) of 10-22, 2026-10-25.** Off an arc, a declined ① corner ends a band
+leg ONLY where the ladders differ; at equal ladders the band bends through (RIBBONS invariant 1). And the off-arc mark reads
+protoRAt's verdict, so a smoothBend is not a corner (INVARIANT 2). Why: as built, (A) cut equal-ladder bands into abutting legs,
+drawing a 1.52 m seam twice (Kerf, measured at PTown holway-avenue and Huron applewood-townhouses).
+cutCreases' migration brief is preceded by Zob's census: its T-joins > 0.5 step per town (0 everywhere ⇒ the square pixel serves both).
 **Leg-ends:** the stop is a REGRESSION against SECTION's "a SHORE or RIM flank is no corner" (Jacob, 10-07): 608 PTown / 384 Huron
 shore turns became corners. Fix: `noStreetFlank` on `isStreetLeg` (Kerf, in measurement). The bar is restated (Boz): shore/rim
 census 0 as a check row; drawn-twice totals ≤ BEFORE on 4 towns, no new row > 1 m, every > 10% row with exhibits.
