@@ -128,6 +128,9 @@ keeps it moving. In order:
 3. **The shoreline, finally:** ⚠️ MERGE STEP for Swash's 60ea9243 (water record's IGLD85→NAVD88 now `igld85ToNavd88.points`,
    asked at the lake's own height; the old field was the sea-level offset, −0.004 vs +0.067 m): after the merge, re-run
    `node cartograph/fetch-water-datums.mjs --scene=huron` in each checkout, or Huron's terrain bake refuses by name.
+   FILED (Jacob, 2026-10-25): *"With a settled bath shape we could theoretically update the lake level all the time against a
+   single stick measurement"*: a live shore from one gauge (or PTown's tide). Not built. Swash's step (3) keeps the level an INPUT
+   to the coast, never baked into the surface, so the door stays open.
    `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
    `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
 Then, QUEUED (Jacob, 2026-10-25: "yes, queue the PTown bake speed-up"): PTown's bake pays for the ground TWICE (ground 5,197 s +
