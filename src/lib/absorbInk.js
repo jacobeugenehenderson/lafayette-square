@@ -83,7 +83,9 @@ export function splitAnnulus(O, H, cls, own) {
   for (const [k, os] of MO) { const hs = MH.get(k), m = os.length
     const local = m === 1 ? [[[os[0], hs[0]]]] : [...Array(m).keys()].flatMap(r => [os.map((x, j) => [x, hs[(r + j) % m]]), os.map((x, j) => [x, hs[((r - j) % m + m) % m]])])
     options = options.flatMap(prev => local.map(l => [...prev, ...l]))
-    if (options.length > 256) return { refused: `too many matchings to try (${options.length})` } }
+    // ⛔ this bound is on WORK, not geometry: past it the matchings are not tried, and the cell refuses by name rather than
+    // spend unbounded time (Zob, 2026-10-25). No cell of the four poured towns comes near it.
+    if (options.length > 256) return { refused: `too many matchings to try (${options.length}) — a work bound, not a geometric verdict` } }
   // the two senses coincide for small m (m = 2: each rotation is its own reverse), so a matching is counted ONCE, by its chord set
   { const seen = new Set(); options = options.filter(o => { const id = o.map(([x, c]) => x.k + '>' + c.k).sort().join(','); if (seen.has(id)) return false; seen.add(id); return true }) }
   const ringO = O.map(e => e.from), ringH = H.map(e => e.from)
