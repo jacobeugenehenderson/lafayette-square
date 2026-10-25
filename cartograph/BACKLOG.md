@@ -17,6 +17,13 @@ BEFORE/AFTER by position before Zob) → caps-from-shape → disc §1b/§2b (pre
 Kerf first. **Ward** asleep: the Tower Light check RED/GREEN (Ward 400f687); ruling filed (14f20b8): the light goes out and its
 control goes away in every room except Society and Street; Street keeping both is ASPIRATION, parked. :5180 stays up.
 Disk: botanica/trees + test moved to the external drive Today (symlinked; INTAKE-CATALOGUE B1), dup zips deleted; 123 GB free.
+**PTown + Huron RE-FETCHED** (Jacob's go, 2026-10-25): raw/osm.json in integration AND the main checkout; backups
+`.claude/backups/refetch-2026-10-25/`; `claims-osm-ground-has-no-duplicates` 14/14 green (was RED since 09-25, 3950935c). Clears
+PTown's doubled chains (Zob: all 96 shared segments came from doubled ways). Owed: re-pour both (one heavy window) → Splice's
+PTown refusals should vanish. Filed for later: Huron university-drive-east-1 = tertiary-97 (skeleton-side, 9 m apart in raw);
+fetch.js#mergeGround dedupes on `f.id` but features carry `osmId` (latent; no town has a heavy pass); a pour-side refusal of
+two features from one source way (brief owed). **⛔ kerf/leg-ends-at-ladder STOP:** it moves PTown's curb (drawn-twice
+10623/16274 m → 12619/27953 m; mat:curb rows new); candidate: booleanLabelled calls moved off the byte-identical path; Kerf bisecting.
 Memory index check: 11 dead citations left (most are LS data paths mid-rename, valid in the main checkout); go through them one at a time.
 **Live:** HPDM production = staging as served (pressed 03:54Z). **Staging:** LS as `lafayettesquare` (impostors carried, 6 s
 reveal) · HPDM · Ward d4b43fa on kit pin 7b68aad5 (movie pace/fov efdcc0bd + shadow box 630339b3; neon on one clock e947c22).
