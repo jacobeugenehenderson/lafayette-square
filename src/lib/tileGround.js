@@ -582,7 +582,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   // ⭐ THE WEDGE SPOKES: at a real node (three or more legs), the segment from the node to each outline point — where one leg's
   // ε side meets the next's, the block's inner corner — closes each street's wedge. absorbInk cuts the ink by these too, so
   // every cell of it lies on ONE stroke's side and takes that owner's class (shore · highway · road) by label, never by overlap.
-  const spokes = []
+  const spokes = [], outlineRefused = []   // …and where a node's outline was refused (so it has no spokes): absorbInk names it
   {
     const at = new Map()
     S.forEach((s, si) => {
@@ -596,12 +596,12 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       if (legs.length < 3 && !(legs.length === 2 && here.length === 1)) {
         for (const { si, k } of here) { const s = S[si]; if (s.closed || (k > 0 && k < s.V.length - 1)) continue
           const m = k === 0 ? s.V[0].f : s.V[k].b, e = (k === 0) !== m.rev ? 'start' : 'end'
-          if ((e === 'start' ? m.c.dg0 : m.c.dg1) >= 3) nodeRefusal.noVertex.push(`${m.c.skelId}@${q}`) }
+          if ((e === 'start' ? m.c.dg0 : m.c.dg1) >= 3) { nodeRefusal.noVertex.push(`${m.c.skelId}@${q}`); outlineRefused.push({ p: s.V[k].p, why: 'noVertex' }) } }
         continue
       }
       const o = S[here[0].si].V[here[0].k].p
       const { bad, W } = outlineCorner(o, legs, eps)
-      if (bad) { nodeRefusal[bad].push(`${[...new Set(here.map(({ si }) => S[si].seq[0].c.skelId))].join('|')}@${q}`); continue }
+      if (bad) { nodeRefusal[bad].push(`${[...new Set(here.map(({ si }) => S[si].seq[0].c.skelId))].join('|')}@${q}`); outlineRefused.push({ p: o, why: bad }); continue }
       legs.forEach((g, j) => { g.ccw = W[j]; g.cw = W[(j - 1 + W.length) % W.length] })
       if (legs.length >= 3) for (const w of W) spokes.push([[o[0], o[1]], [w[0], w[1]]])
       const one = (a, b) => (a === b ? [a] : [a, b])
@@ -907,9 +907,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     if (Array.isArray(coast) && coast.length) {
       wIdx = owners.push({ skelId: WATER_EDGE_SKEL, side: 'right', segOrd: 0,
                                  gradeSeparated: false, srcIdx: -1, water: true }) - 1
+      // ⛔ A WATER RING TAKES THE INK OUTERS' WINDING (Zob, 2026-10-25): the clip set unions by nonzero fill, so a lake wound
+      // against the ink cancels it where they overlap (+1 − 1 = 0) and the street ink inside the water came back as LAND faces.
+      // Today's towns all match the ink; a town nobody has looked at need not. ▶ checks/claims-a-clockwise-lake-keeps-its-water.mjs
+      const inkSign = Math.sign(signedArea(R.rings.reduce((m, r) => Math.abs(signedArea(r)) > Math.abs(signedArea(m)) ? r : m, R.rings[0])))
       for (const r of coast) {
         if (!Array.isArray(r) || r.length < 3) continue
-        clipRings.push(r.map(p => [p[0], p[1]]))
+        const w = r.map(p => [p[0], p[1]]); if (Math.sign(signedArea(w)) !== inkSign) w.reverse()
+        clipRings.push(w)
         clipLabels.push(r.map(() => wIdx))
       }
       console.log(`    [①] land = bb − (water ∪ ink): ${coast.length} water ring(s) combined with ${R.rings.length} ink ring(s) and excluded in one move.`)
@@ -1058,7 +1063,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       // centrelines and spliced into the face that owns it. ② keeps reading `blocks` (the un-absorbed face); the tiles paint
       // from `paint`. Frozen beside the faces.
       absorbed = absorbInk({ inkRings: R.rings, inkLabels: R.labels, frame: rect, frameOwner: bIdx, waterRings: Array.isArray(coast) ? coast : [], waterOwner: wIdx,
-        centrelines, spokes, faces: blocks.map((_, k) => ({ labels: blockLabels[k], holeLabels: blockHoleLabels[k] })), owners })
+        centrelines, spokes, outlineRefused, faces: blocks.map((_, k) => ({ labels: blockLabels[k], holeLabels: blockHoleLabels[k] })), owners })
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
     }

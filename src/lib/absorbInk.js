@@ -26,7 +26,18 @@ import { CLIP_SCALE } from './lattice.js'
 const rl = (v) => Math.round(v * CLIP_SCALE) / CLIP_SCALE
 const area2 = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return a }
 
-export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings = [], waterOwner = null, centrelines, spokes = [], faces, owners, who = '①' }) {
+// THE POINT A HOLE CYCLE IS LINKED BY: a quarter unit to the LEFT (the face it bounds) of its longest edge with its antennas
+// removed — a spur's edge is walked both ways in one cycle (its twin is in it too), and a point off it lies on the spur, not
+// in the face (Zob, 2026-10-25). Exported for the check's planted row.
+export function holeProbe(hs, who = '①') {
+  const inN = new Set(hs), real = hs.filter(g => !inN.has(g.twin)), len = (g) => Math.hypot(g.to[0] - g.from[0], g.to[1] - g.from[1])
+  if (!real.length) throw new Error(`[${who}][absorb] ⛔ a hole cycle at (${hs[0].from.map(v => v / CLIP_SCALE)}) is all antenna — no side to probe. Refusing.`)
+  const h = real.reduce((m, g) => len(g) > len(m) ? g : m, real[0])
+  const dx = h.to[0] - h.from[0], dy = h.to[1] - h.from[1], L = Math.hypot(dx, dy)
+  return [(h.from[0] + h.to[0]) / 2 - dy / L * 0.25, (h.from[1] + h.to[1]) / 2 + dx / L * 0.25]
+}
+
+export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings = [], waterOwner = null, centrelines, spokes = [], outlineRefused = [], faces, owners, who = '①' }) {
   if (!Array.isArray(centrelines)) throw new Error(`[${who}][absorb] ⛔ no sealed centreline — nothing to cut the ink by. Refusing.`)
   // ── 1. the inputs, on the lattice, each knowing what it is ──
   const inputs = []
@@ -88,9 +99,9 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     pos.forEach((c, n) => { for (let gx = Math.floor(c.bb[0] / G); gx <= Math.floor(c.bb[2] / G); gx++) for (let gy = Math.floor(c.bb[1] / G); gy <= Math.floor(c.bb[3] / G); gy++) (grid.get(gx + ',' + gy) || grid.set(gx + ',' + gy, []).get(gx + ',' + gy)).push(n) })
     const inPoly = (pt, c) => { let w = false; const hs = c.hs; for (const h of hs) { const [xi, yi] = h.to, [xj, yj] = h.from; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) w = !w } return w }
     for (const N of neg) {
-      const h = N.hs.reduce((m, g) => Math.hypot(g.to[0] - g.from[0], g.to[1] - g.from[1]) > Math.hypot(m.to[0] - m.from[0], m.to[1] - m.from[1]) ? g : m, N.hs[0])
-      const dx = h.to[0] - h.from[0], dy = h.to[1] - h.from[1], L = Math.hypot(dx, dy)
-      const pt = [(h.from[0] + h.to[0]) / 2 - dy / L * 0.25, (h.from[1] + h.to[1]) / 2 + dx / L * 0.25]   // a quarter unit to its LEFT: the face it bounds
+      // the longest edge of the cycle with its antennas removed: a spur's edge is walked both ways in one cycle (its twin is
+      // in it too), and a point off it lies on the spur, not in the face the hole bounds
+      const pt = holeProbe(N.hs, who)
       let best = null
       for (const n of (grid.get(Math.floor(pt[0] / G) + ',' + Math.floor(pt[1] / G)) || [])) { const P = pos[n]
         if (pt[0] < P.bb[0] || pt[0] > P.bb[2] || pt[1] < P.bb[1] || pt[1] > P.bb[3] || !(cycArea(P) < (best ? cycArea(best) : Infinity))) continue
@@ -113,7 +124,11 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   const facesOfLabel = new Map()
   faces.forEach((f, k) => { if (!f) return; for (const L of [f.labels, ...(f.holeLabels || [])]) for (const l of (L || [])) if (l != null) (facesOfLabel.get(l) || facesOfLabel.set(l, new Set()).get(l)).add(k) })
   const census = { cells: 0, joined: 0, toWater: 0, zero: [], two: [], outside: 0, landUnnamed: 0, landTwoNames: [], mixed: [] }
-  const at0 = (f) => { const h = f.cycles[0]?.hs[0]; return h ? `(${h.from.map(v => (v / CLIP_SCALE).toFixed(3)).join(', ')})` : '(?)' }
+  // ⭐ where the mint REFUSED a node's outline (acute · degenerate · noVertex) it drew no spokes, so a cell there may span two
+  // strokes: a refusal at such a cell says so, so it is read as the outline's, never as an absorb defect (Zob, 2026-10-25)
+  const refusedAt = new Map(outlineRefused.map(r => [Math.round(rl(r.p[0]) * CLIP_SCALE) + ',' + Math.round(rl(r.p[1]) * CLIP_SCALE), r.why]))
+  const refusedNote = (f) => { for (const c of f.cycles) for (const h of c.hs) { const w = refusedAt.get(key(h.from)); if (w) return ` (outline refused here: ${w})` } return '' }
+  const at0 = (f) => { const h = f.cycles[0]?.hs[0]; return h ? `(${h.from.map(v => (v / CLIP_SCALE).toFixed(3)).join(', ')})${refusedNote(f)}` : '(?)' }
   for (const f of allFaces) {
     if (f.type === 'water') { f.group = 'water'; continue }
     if (f.type === 'outside') { f.group = 'none'; continue }

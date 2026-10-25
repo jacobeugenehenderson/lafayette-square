@@ -12,6 +12,8 @@
 //       reverse in exactly ONE other face's painted boundary: the two tiles meet on the same vertices, with no slit.
 //   (C) THE OWNER IS THE FACE'S OWN — each painted edge's street is one the face's UN-absorbed ring already bordered
 //       (`blockLabels` / `blockHoleLabels`): the absorption reads ①'s labels, it never resolves a junction by geometry.
+//   (P) PLANTED, the hole link's probe (absorbInk#holeProbe): a hole cycle whose LONGEST edge is a spur walked out and back
+//       takes its probe off its longest REAL edge, never the spur (Zob, 2026-10-25).
 //   MUTANTS (in process, always run): one painted vertex moved one lattice step (B must go RED); one centreline edge given
 //   its twin's label, which is what a resolution by overlap does at a junction (C must go RED).
 //
@@ -21,10 +23,20 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, ribbonsPath, ribbonScenes } from './_scenes.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
+import { holeProbe } from '../src/lib/absorbInk.js'
 
 let red = 0, towns = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`  ${ok ? '✅' : '⛔'} ${s}`) }
 const K = (p) => Math.round(p[0] * CLIP_SCALE) + ',' + Math.round(p[1] * CLIP_SCALE)
+
+// (P): a 2 m square hole (clockwise, the face on its left is outside it) with a 30 m spur out of its first corner, out and back
+{ const mk = (pts) => { const hs = []; for (let i = 0; i < pts.length; i++) hs.push({ from: pts[i], to: pts[(i + 1) % pts.length] })
+    // the spur's two half-edges are each other's twins; a square edge's twin lies outside this cycle
+    hs.forEach((h, i) => { h.twin = hs.find(g => g !== h && g.from === h.to && g.to === h.from) || { from: h.to, to: h.from } }); return hs }
+  const O = [0, 0], S = [0, 30000], hs = mk([O, S, O, [2000, 0], [2000, -2000], [0, -2000]])
+  hs[0].twin = hs[1]; hs[1].twin = hs[0]
+  const pt = holeProbe(hs), onSpur = Math.abs(pt[0]) < 1 && pt[1] > 0
+  row(!onSpur, `(P) a hole whose longest edge is a 30 m spur takes its probe off a real edge: (${pt.map(v => (v / CLIP_SCALE).toFixed(4)).join(', ')})`) }
 
 function judge(P) {
   const owners = P.owners, faces = P.paint
