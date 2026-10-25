@@ -129,6 +129,14 @@ const SOURCE_BY_BASENAME = {
   'derived_trees.json':      'derived',        // NLCD canopy fill (invented)
 }
 
+// The kit's canonical wells and what each IS — surveyed reality ('census') or invented fill ('derived'). A well that
+// carries meta.kind declares itself; any other well must, or readCensus refuses. ⛔ Kit-defined filenames only, never a
+// town's: Forest Park's well (scripts/18, HPDM) stamps its own kind (Zob).
+const KIND_BY_BASENAME = {
+  'park_census.json': 'census', 'park_trees.json': 'census', 'osm_trees.json': 'census',
+  'derived_trees.json': 'derived',
+}
+
 // Cross-well dedup priority: the same physical trunk recorded by two sources is
 // ONE tree, and we keep the RICHEST record. Real-species inventories (city /
 // Forest Park / authored park) beat OSM's real-but-sampled positions, which beat
@@ -156,12 +164,15 @@ export async function readCensus(parkPaths) {
   for (const p of parkPaths) {
     const layer = JSON.parse(await fs.readFile(p, 'utf8'))
     // Is this well SURVEYED reality or INVENTED fill? It decides whether a tree
-    // on hardscape gets nudged (reality — our strips are guesses) or dropped
-    // (invention — it has no standing). The well declares itself via meta.kind;
-    // the canopy fill is the only invented layer, so its filename is the
-    // fallback for wells written before `kind` existed.
-    const kind = layer.meta?.kind
-      ?? (path.basename(p) === 'derived_trees.json' ? 'derived' : 'census')
+    // on forbidden ground is kept at its point (reality) or dropped (invention).
+    // The well declares itself via meta.kind; a canonical well written before
+    // `kind` existed is read off the kit's table (KIND_BY_BASENAME).
+    // ⛔ NO GUESS (Zob, 2026-10-25): a well that declares no meta.kind takes the kit's own table for its CANONICAL filename
+    // (KIND_BY_BASENAME), else REFUSES. It defaulted to 'census', so an invented well written without a kind would now be
+    // treated as SURVEYED and kept on forbidden ground (SURVEYED_KEPT_ON).
+    const kind = layer.meta?.kind ?? KIND_BY_BASENAME[path.basename(p)]
+    if (kind !== 'census' && kind !== 'derived')
+      throw new Error(`[bake-trees] ⛔ tree well ${p} declares no usable meta.kind (${JSON.stringify(layer.meta?.kind)}) and is not a canonical well — say whether it is SURVEYED ('census') or INVENTED ('derived'); refusing to guess`)
     // Provenance (Move 4): a finer label than __kind — the ORIGINATING well. The
     // authored park is addressable on its own ('park' vs the fetched
     // 'city-inventory'), so richer real species data can later supersede synthetic
