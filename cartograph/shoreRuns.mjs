@@ -93,28 +93,28 @@ export function resample(pts, step) {
  * @returns {{ inside: number[][][], outsideM: number }} the runs within the disc, and the
  *          metres discarded — never merged into `refused`.
  */
-export function clipTraceToDisc(trace, center, R) {
-  if (!Array.isArray(trace) || trace.length < 2 || !Array.isArray(center) || !(R > 0)) {
-    return { inside: trace && trace.length >= 2 ? [trace] : [], outsideM: 0 }
-  }
-  const d2 = (p) => (p[0] - center[0]) ** 2 + (p[1] - center[1]) ** 2
-  const R2 = R * R
+export function clipTraceToDisc(trace, D) {
+  // ⭐ the disc RECORD (boundaryRecords.mjs#discOf): lit is the ring's own test, the same answer every reader gets. ⛔ No
+  // disc REFUSES: it used to return the trace unclipped, which is "everything is inside" (BRIEF-the-disc-is-one-source §1b).
+  if (typeof D?.inDisc !== 'function') throw new Error('clipTraceToDisc: no disc record (boundaryRecords.mjs#discOf) — refusing to rule shore against no drawing')
+  if (!Array.isArray(trace) || trace.length < 2) return { inside: [], outsideM: 0 }
+  const lit = (p) => D.inDisc(p[0], p[1])
   const seg = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1])
-  // the point where segment a→b crosses the circle, by bisection on the chord —
+  // the point where segment a→b crosses the ring, by bisection on the chord —
   // ⭐ good to a millimetre in ~20 steps and free of the quadratic's sign cases
   const cross = (a, b) => {
     let lo = 0, hi = 1
     for (let k = 0; k < 24; k++) {
       const m = (lo + hi) / 2
       const q = [a[0] + (b[0] - a[0]) * m, a[1] + (b[1] - a[1]) * m]
-      if ((d2(q) <= R2) === (d2(a) <= R2)) lo = m; else hi = m
+      if (lit(q) === lit(a)) lo = m; else hi = m
     }
     const m = (lo + hi) / 2
     return [a[0] + (b[0] - a[0]) * m, a[1] + (b[1] - a[1]) * m]
   }
   const inside = []; let cur = null, outsideM = 0
   for (let i = 0; i < trace.length; i++) {
-    const p = trace[i], within = d2(p) <= R2
+    const p = trace[i], within = lit(p)
     if (within) {
       if (!cur) { cur = []; if (i > 0) { const x = cross(trace[i - 1], p); cur.push(x); outsideM += seg(trace[i - 1], x) } }
       cur.push(p)

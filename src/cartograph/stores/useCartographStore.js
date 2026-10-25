@@ -72,6 +72,7 @@ import {
 } from '../skyLightChannels.js'
 import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
 import { validateIdentity } from '../../lib/townIdentity.js'
+import { discOf } from '../../../cartograph/boundaryRecords.mjs'
 import { assertHardPolicy } from '../../lib/colourPolicy.js'
 
 const ACTIVE_LOOK_KEY = ADDRESS_STORAGE.look
@@ -2100,7 +2101,11 @@ const useCartographStore = create((set, get) => ({
   // { scene, files, resume } — a Bake refused because the pour's code changed; BakeModal asks before re-pouring
   repourConfirm: null,
   mapGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
-  sceneBoundary: null,    // fetched neighborhood_boundary.json (raw)
+  sceneBoundary: undefined, // fetched neighborhood_boundary.json (raw), only once the one reader (discOf) accepts it; undefined = PENDING
+  // ⛔ REFUSED is not PENDING (Zob's condition, BRIEF-the-disc-is-one-source §1b): a boundary that could not be fetched, is absent,
+  // or is refused by boundaryRecords.mjs#discOf is named here ('<scene>: …') and the Designer shows it IN PLACE OF THE MAP. It
+  // used to render an empty Designer silently (absent) or throw inside MapLayers' memo (malformed).
+  boundaryRefused: null,
   // ⛔ THE ONE SCENE SWITCH. It cleared three keys and loaded nothing, so a caller that switched scene without
   // also switching Look and reloading (Extent's openScene) left the old town's streets on screen AND its Look
   // active — the next Designer edit autosaved into the other town's design.json (2026-09-25). Now: every key a
@@ -2116,7 +2121,7 @@ const useCartographStore = create((set, get) => ({
     if (activeLookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ } }
     set({
       scene, activeLookId, lookMissingForScene: s._looksHydrated && !activeLookId ? scene : null,
-      sceneRibbons: null, mapGeography: null, sceneBoundary: null,
+      sceneRibbons: null, mapGeography: null, sceneBoundary: undefined, boundaryRefused: null,
       centerlineData: { streets: [] }, protopolygon: null, svOriginals: null, corridorByIdx: new Map(),
       measurements: [], markerStrokes: [], status: '',
       selectedStreet: null, selectedNode: null, selectedMeasurePoint: null, selectedSegmentOrdinal: null, selectedMeasurement: null,
@@ -2346,10 +2351,16 @@ const useCartographStore = create((set, get) => ({
       if (!get().mapGeography || !get().sceneBoundary) {
         const [geo, bnd] = await Promise.all([
           fetchGeography(scene).catch(() => null),
-          fetchBoundary(scene).catch(() => null),
+          fetchBoundary(scene).catch((e) => ({ __fetchFailed: e?.message || String(e) })),
         ])
         if (stale()) return
-        set({ mapGeography: geo, sceneBoundary: bnd })
+        // the one reader decides: accepted → sceneBoundary; absent, unfetchable or refused → boundaryRefused, named
+        let refused = null
+        if (bnd?.__fetchFailed) refused = `${scene}: neighborhood_boundary.json could not be fetched (${bnd.__fetchFailed})`
+        else if (!bnd) refused = `${scene}: there is no neighborhood_boundary.json — no disc, nothing to draw. Author the extent in Extent.`
+        else { try { discOf(bnd, `Designer: ${scene}`) } catch (e) { refused = `${scene}: ${e.message}` } }
+        if (refused) console.error(`[boundary] ⛔ ${refused}`)
+        set({ mapGeography: geo, sceneBoundary: refused ? null : bnd, boundaryRefused: refused })
       }
       const skelStreets = (skel && skel.streets) || []
       const legacyStreets = (legacy && legacy.streets) || []

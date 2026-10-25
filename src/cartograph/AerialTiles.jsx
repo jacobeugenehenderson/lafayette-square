@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { lookFade } from '../../cartograph/boundaryRecords.mjs'
+import { lookFade, discOf } from '../../cartograph/boundaryRecords.mjs'
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
 import useCartographStore from './stores/useCartographStore.js'
 
@@ -19,8 +19,9 @@ function makeGeo(g, nb, edgeFadeBand) {
   if (!g || !nb) return null
   // ⭐ The ACTIVE LOOK's band on this scene's disc (Stage › Horizon › Edge) — the one rule, `lookFade`; the ruffle is
   // the shared uniform the edge driver sets (src/lib/neighborhoodFade.js).
-  const { inner: fadeInner, outer: fadeOuter } = lookFade({ edgeFadeBand }, nb.radius || 0, 'AerialTiles', 'active')
-  const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
+  const D = discOf(nb, 'AerialTiles')   // the one reader: a boundary with no disc refuses, never fades about the origin
+  const { inner: fadeInner, outer: fadeOuter } = lookFade({ edgeFadeBand }, D.R, 'AerialTiles', 'active')
+  const cx = D.cx, cz = D.cz
   return {
     center: { lat: g.lat, lon: g.lon },
     lonToMeters: g.lonToMeters,

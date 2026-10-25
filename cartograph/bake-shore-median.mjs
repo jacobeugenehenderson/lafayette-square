@@ -49,6 +49,7 @@ import clipperLib from 'clipper-lib'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
+import { discOf } from './boundaryRecords.mjs'
 import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastVerdict, resample, shoreFingerprint } from './shoreRuns.mjs'
 import { elevationSpecs, openRasters, readWindow, rasterToGrid, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
@@ -185,9 +186,8 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   // The same formula bake-terrain uses (its localToWgs84): the town's own frame, read from its geography.json.
   const toLL = (x, z) => [geo.lon + x / geo.lonToMeters, geo.lat - z / geo.latToMeters]
 
-  const bnd = JSON.parse(readFileSync(bndPath, 'utf8'))
-  const discC = bnd.center, discR = bnd.radius
-  if (!Array.isArray(discC) || !(discR > 0)) throw new Error(`bake-shore-median: ${scene}'s neighborhood_boundary.json has no usable center/radius`)
+  // the one reader: a file with no centre, radius or ring REFUSES by name (boundaryRecords.mjs#discOf)
+  const disc = discOf(JSON.parse(readFileSync(bndPath, 'utf8')), `bake-shore-median: ${scene}`), discC = [disc.cx, disc.cz], discR = disc.R
   const mapDoc = JSON.parse(readFileSync(mapPath, 'utf8'))
   const waterRings = (mapDoc.layers?.water || [])
     .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]))
@@ -237,7 +237,7 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const refused = []
   let outsideM = 0, shoreM = 0
   const clipped = []
-  for (const r of runs) { const { inside, outsideM: cut } = clipTraceToDisc(r, discC, discR); outsideM += cut; clipped.push(...inside) }
+  for (const r of runs) { const { inside, outsideM: cut } = clipTraceToDisc(r, disc); outsideM += cut; clipped.push(...inside) }
   const bandParts = new Paths(), shorePts = [], far = []
   for (let idx = 0; idx < clipped.length; idx++) {
     const trace = clipped[idx]

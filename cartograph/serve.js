@@ -2265,7 +2265,7 @@ createServer(async (req, res) => {
           ? center
           : prev.center
         if (Array.isArray(center) && discCenter !== prev.center) {
-          console.log(`[rescope] ${scene}: disc center ${JSON.stringify(prev.center ?? [0, 0])} → ${JSON.stringify(discCenter)} (frame origin untouched)`)
+          console.log(`[rescope] ${scene}: disc center ${JSON.stringify(prev.center)} → ${JSON.stringify(discCenter)} (frame origin untouched)`)
         }
         // ⭐ THREE RECORDS (EXTENT-DESIGN §5.1). (The edge's fade is not here — it is the Look's.)
         // ⛔ The disc must lie inside the data that was fetched (EXTENT-DESIGN §4) — refused before anything is written.

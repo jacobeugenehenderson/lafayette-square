@@ -27,6 +27,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
+import { discOf } from '../cartograph/boundaryRecords.mjs'
 import { waterRuns, clipTraceToDisc } from '../cartograph/shoreRuns.mjs'
 import { bakeRevetment } from '../cartograph/bake-revetment.js'
 
@@ -99,8 +100,8 @@ for (const scene of list) {
   const runs = waterRuns(JSON.parse(read(`public/baked/${scene}/shape.json`)))
   if (!runs.length) { console.log(`  ${scene.padEnd(24)} no shoreline in the slab — nothing to name`); continue }
   shores++
-  const bnd = JSON.parse(read(`cartograph/data/${scene}/neighborhood_boundary.json`))
-  const drawnShoreM = runs.reduce((a, r) => a + clipTraceToDisc(r, bnd.center, bnd.radius).inside.reduce((b, t) => b + len(t), 0), 0)
+  const disc = discOf(JSON.parse(read(`cartograph/data/${scene}/neighborhood_boundary.json`)), scene)
+  const drawnShoreM = runs.reduce((a, r) => a + clipTraceToDisc(r, disc).inside.reduce((b, t) => b + len(t), 0), 0)
   let doc
   if (fromCode) {
     const log = console.log, warn = console.warn

@@ -93,10 +93,6 @@ const PRI = {
 import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
 
-// Centerlines are stopped a bit into the feather band (fade.inner + 52) so the bare debug centerlines don't trail
-// past the visibly faded map edge. LineBasicMaterial can't take the radial-fade shader the ground/aerial use (see
-// the barrier-line note below), so we clip tighter instead of fading.
-const CENTERLINE_PAST_INNER_M = 52
 
 // Safe empties for a poured scene whose map/ribbons haven't fetched yet.
 const _EMPTY_MAP = { bbox: { minX: 0, maxX: 0, minZ: 0, maxZ: 0 }, buildings: [], layers: {} }
@@ -487,23 +483,21 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // the park's water only for a town that DECLARES the bundled park; no other town has any
   const parkLookId = useCartographStore(s => s.activeLookId)
   const parkWaterData = parkLookId && declaresPark(townForLook(parkLookId, 'MapLayers park water')) ? _parkWaterData : _EMPTY_MAP
-  // Boundary bundle: built from the scene's OWN nb, every town. ⛔ A scene with no boundary (a fresh pour, or the fetch
-  // window) used to get LS's polygon for its clip and fade (bleed site B2b). makeBoundary(null) is the neutral answer:
-  // no clip, the town's own data (boundary.js: "no boundary = show everything").
+  // Boundary bundle: built from the scene's OWN nb, every town, through the one reader (boundary.js → discOf). ⛔ Until it
+  // has arrived NOTHING the disc gates is lit: makeBoundary(null) is null, and the layers below draw none of their
+  // boundary-gated features. It used to be "no boundary = show everything" (and, before that, LS's polygon: bleed site B2b),
+  // which drew a town unclipped, plausibly, during the fetch window (BRIEF-the-disc-is-one-source §1b).
   const B = useMemo(() => makeBoundary(sceneBoundaryRaw ?? null), [sceneBoundaryRaw])
-  const pointInBoundary = B.pointInBoundary
-  const boundaryPolygon = B.boundaryPolygon
-  const clipPolylineToBoundary = B.clipPolylineToBoundary
-  const clipPolylineToRadius = B.clipPolylineToRadius
-  const bcXZ = B.center
+  const pointInBoundary = B ? B.pointInBoundary : () => false
+  const boundaryPolygon = B ? B.boundaryPolygon : []
+  const clipPolylineToBoundary = B ? B.clipPolylineToBoundary : () => []
   // The fade for the flat materials: the Look's band on THIS scene's disc, for every town. No disc ⇒ no fade (null).
   // Memoized on its inputs so its reference is stable (else the mats memo churns every render).
   const edgeFadeBand = useCartographStore(s => s.edgeFadeBand)
   const fade = useMemo(
-    () => (B.radius > 0) ? { ...lookFade({ edgeFadeBand }, B.radius, 'MapLayers', scene), center: B.center } : null,
+    () => B ? { ...lookFade({ edgeFadeBand }, B.radius, 'MapLayers', scene), center: B.center } : null,
     [B, edgeFadeBand, scene],
   )
-  const clcR = fade ? fade.inner + CENTERLINE_PAST_INNER_M : Infinity
   // ⭐ In the Designer there is no <Town> to drive the edge's ruffle, so the map layers drive it themselves, off the
   // store's live channel, through the same resolution (PostProcessing.jsx#driveEdgeRuffle). In a shot <Town> does.
   const edgeRuffle = useCartographStore(s => s.edgeRuffle)
@@ -607,15 +601,13 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   }, [mapData, B])
 
   // ── Centerlines (debug reference, hidden by default, radius-clipped) ─
-  // Per-segment clip to clcR (inside the feather band) so chains
-  // stop at the visible map edge instead of trailing into faded canvas. Uses
-  // the circle clip, not clipPolylineToBoundary (the hard 256-gon), which is
-  // what left them jutting past where the ground reads as gone.
+  // Centrelines clip to the DISC RING like every other line (through the one reader). They show unfaded through the band:
+  // the old circle clip at `fade.inner + 52` is gone (Jacob, 2026-10-25, ruling (d); BRIEF-the-disc-is-one-source §1b).
   const centerlineLines = useMemo(() => {
     const lines = []
     for (const st of (ribbonsData.streets || [])) {
       if (st.points.length < 2) continue
-      const pieces = clipPolylineToRadius(st.points, bcXZ, clcR)
+      const pieces = clipPolylineToBoundary(st.points)
       for (const piece of pieces) {
         if (!piece || piece.length < 2) continue
         const pts = piece.map(p => new THREE.Vector3(p[0], 0.25, p[1]))
@@ -623,7 +615,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       }
     }
     return lines
-  }, [ribbonsData, bcXZ, clcR])
+  }, [ribbonsData, clipPolylineToBoundary])
 
   // Street label placements — read per-scene from the slab (baked/<look>/
   // labels.json), shared with LafayetteScene via src/lib/streetLabels.js so
@@ -754,11 +746,11 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       for (const item of (mapData.layers?.[cat] || [])) {
         const ring = item.ring
         if (!ring || ring.length < 3) continue
-        const cut = B.clipRingToBoundary?.(ring)
+        const cut = B ? B.clipRingToBoundary(ring) : null
         if (!cut) continue
         // ⛔ Holes are cut too: the lake is a hole that STRADDLES the rim, so uncut it
         // subtracts more area than the clipped outer has (measured at −40.20 km²).
-        const holes = (item.holes || []).map(h => B.clipRingToBoundary?.(h)).filter(Boolean)
+        const holes = (item.holes || []).map(h => B.clipRingToBoundary(h)).filter(Boolean)
         const g = triangulateRing(cut, holes.length ? { holes } : undefined)
         if (!g) continue
         if (!groups[cat]) groups[cat] = []

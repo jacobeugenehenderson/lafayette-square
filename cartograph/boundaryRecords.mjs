@@ -186,11 +186,12 @@ export function composeBoundary({ disc, membership, exclusions, carry, keyOrder 
  * Build the DISC record for a commit / rescope: `radius` and `center` are the operator's gesture and always apply;
  * the ring is always re-derived. Nothing about the edge's fade — that is the Look's.
  */
-export function makeDiscRecord({ radius, center = [0, 0], where = 'boundary' }) {
+export function makeDiscRecord({ radius, center, where = 'boundary' }) {
   if (!Number.isFinite(radius) || radius <= 0) throw new Error(`${where}: need a positive radius`)
+  if (!Array.isArray(center) || center.length < 2 || !center.every(Number.isFinite)) throw new Error(`${where}: need a centre [x, z] — the disc is never placed at the origin by default`)
   const R = Math.round(radius)
   const r2 = (v) => Math.round(v * 100) / 100
-  const cx = r2(center?.[0] || 0), cz = r2(center?.[1] || 0)
+  const cx = r2(center[0]), cz = r2(center[1])
 
   return { version: 2, center: [cx, cz], radius: R, boundary: makeRing(R, cx, cz) }
 }
@@ -223,20 +224,24 @@ export function pointInPolygon(px, pz, poly) {
 
 
 /**
- * ⭐ THE DISC, ABOUT ITS OWN CENTRE (BRIEF-the-disc-is-one-source §1a, 2026-10-21). The boundary file stores `radius` and
- * `center`; the disc is the circle of that radius about that centre, never about the origin. Right only where the centre is
- * (0, 0): LS's is (−15, −15), Huron's (−46.42, −36.21), and an origin circle disagreed with the ring by 21 m and 59 m at the rim.
- * ⛔ A file with no `center` or no `radius` is refused by name (a reader without a disc refuses; no default stands in).
- * ▶ node checks/claims-membership-is-the-disc.mjs
+ * ⭐⭐ THE ONE READER OF THE DISC (BRIEF-the-disc-is-one-source §1, 2026-10-21/25). Every reader of the boundary asks "is
+ * this lit?" and "where is the edge?" HERE, and the answer to both is the RING: the 256-gon the ground is stamped with
+ * (`makeRing`, derived from `center` + `radius`). `inDisc` tests the ring, so lit and the edge are one answer; `dist` is
+ * the distance from the centre, for ramps that grade by it; `R` the radius. The disc is the circle about its OWN centre,
+ * never the origin (LS's is (−15, −15), Huron's (−46.42, −36.21)).
+ * ⛔ A file with no `center`, no `radius` or no `boundary` ring is refused by name: a reader without a disc refuses; no
+ * default, sentinel or analytic circle stands in.
+ * ▶ node checks/claims-membership-is-the-disc.mjs · node checks/claims-radius-has-one-home.mjs (the reader row)
  */
 export function discOf(nb, who = 'membership') {
-  const c = nb?.center, R = nb?.radius
+  const c = nb?.center, R = nb?.radius, ring = nb?.boundary
   if (!Array.isArray(c) || c.length < 2 || !Number.isFinite(c[0]) || !Number.isFinite(c[1]))
     throw new Error(`[${who}] ⛔ the boundary file carries no \`center\` (${JSON.stringify(c)}) — the disc cannot be placed; never the origin`)
   if (!(Number.isFinite(R) && R > 0)) throw new Error(`[${who}] ⛔ the boundary file carries no \`radius\` (${JSON.stringify(R)}) — the disc has no size`)
+  if (!Array.isArray(ring) || ring.length < 3) throw new Error(`[${who}] ⛔ the boundary file carries no \`boundary\` ring — the disc has no edge`)
   const cx = c[0], cz = c[1]
   const dist = (x, z) => Math.hypot(x - cx, z - cz)
-  return { cx, cz, R, dist, inDisc: (x, z) => dist(x, z) <= R }
+  return { cx, cz, R, ring, dist, inDisc: (x, z) => pointInPolygon(x, z, ring) }
 }
 
 /**

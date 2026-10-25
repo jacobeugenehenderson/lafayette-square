@@ -32,6 +32,7 @@ import { slabFetch } from '../../lib/slabUrl.js'
 import { INSTANCE, townForLook } from '../../instance.js'
 import { reloadTerrain, terrainExag, sceneExag, currentTerrain, terrainBed } from '../../utils/terrainShader.js'
 import { getElevationRaw } from '../../utils/elevation'
+import { discOf, makeRing } from '../../../cartograph/boundaryRecords.mjs'
 import { waterRuns, clipTraceToDisc } from '../../../cartograph/shoreRuns.mjs'
 import { drawnWaterTest } from '../../../cartograph/shore-armour.mjs'
 
@@ -59,7 +60,7 @@ async function stations(stencil) {
   const inWater = drawnWaterTest((map.layers?.water || []).filter(w => w.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]])))
   const t = currentTerrain(), gridM = Math.min((t.bounds.maxX - t.bounds.minX) / (t.width - 1), (t.bounds.maxZ - t.bounds.minZ) / (t.height - 1))
   const step = gridM * EVERY, out = []
-  for (const run of waterRuns(shape)) for (const arc of clipTraceToDisc(run, stencil.center, stencil.radius).inside) {
+  for (const run of waterRuns(shape)) for (const arc of clipTraceToDisc(run, discOf({ center: stencil.center, radius: stencil.radius, boundary: makeRing(stencil.radius, stencil.center[0], stencil.center[1]) }, 'gaps')).inside) {
     let carry = 0
     for (let i = 1; i < arc.length; i++) {
       const [ax, az] = arc[i - 1], [bx, bz] = arc[i], L = Math.hypot(bx - ax, bz - az)

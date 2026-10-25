@@ -74,7 +74,7 @@ function localToWgs84(x, z) {
   return [_geo.lon + x / _geo.lonToMeters, _geo.lat - z / _geo.latToMeters]
 }
 
-const STENCIL_BUFFER_M = 50  // kit-shared with LS_STENCIL
+const STENCIL_BUFFER_M = 50  // ⚠️ a constant margin on the disc: owned by BRIEF-the-disc-is-one-source §3 (the height extent from the one module), printed as a dated exception by claims-radius-has-one-home
 const M_PER_SAMPLE     = 5   // see prior commit comment in this file
 
 function wgs84ToLocal(lon, lat) {

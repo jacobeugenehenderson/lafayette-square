@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 447,
+  "total": 448,
   "counts": {
-    "safe": 325,
+    "safe": 326,
     "local-effect": 27,
     "live": 95
   },
@@ -387,6 +387,13 @@
     },
     {
       "file": "checks/claims-a-nodeless-crossing-is-grade-separated.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-oneway-runs-in-travel-order.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

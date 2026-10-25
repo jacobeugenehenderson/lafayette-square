@@ -1195,8 +1195,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const design  = readBakeDesign(look, scene, 'bake-ground')
   // ⭐ THE FADE IS THE BAKED LOOK'S (Stage › Horizon › Edge, 2026-10-06), derived from the disc radius and the Look's
   // band — 5% of the radius, said, where the Look authors none. Geometry never reads it (sceneStencil.js).
-  const _hasDisc = Number.isFinite(stencil.radius) && stencil.radius > 1
-  const faceFade = _hasDisc ? lookFade(design, stencil.radius, 'bake-ground', look) : null
+  const faceFade = lookFade(design, stencil.radius, 'bake-ground', look)   // loadSceneStencil refuses a town with no disc
   // Park footpaths: the clip polygon + water (the bridge split) for the
   // `park-path` group. Scene-keyed; absent → no park-path group emitted.
   // (Water-overlap bridge detection is a Phase-1 stopgap — Phase 5 carries
@@ -1844,24 +1843,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   //
   // SIZED FROM THE DISC RADIUS, never the fade (2026-10-06): the fade is the Look's and ends at the radius.
   //
-  // ⛔ NO FALLBACK. This read `?? 1000` — presented as "the prior hardcoded default",
-  // it was DEAD: loadSceneStencil coerces an absent radius to 1 (`sceneStencil.js:35`
-  // `s.radius || 1`), so the `??` never fired and a scene with no authored extent
-  // baked a 51 m bbox — silently, and looking like a successful bake. That 1 is the
-  // absent signal here; a real hood is never 1 m. ⚠️ The coercion itself is the
-  // deeper defect and it lives one layer up, in sceneStencil.js.
-  const _discR = _hasDisc ? stencil.radius : null
-  if (_discR === null) {
-    console.error(`
-⛔ scene '${scene}' has no authored extent (no radius > 1)
-   in cartograph/data/${scene}/neighborhood_boundary.json.
-
-   The bake bbox anchors the AO texel→world map and BakedGround's UV2. Baking
-   without an extent produces a 51 m bbox and a mis-mapped ground that still
-   writes a manifest and reads as a successful bake. Author the boundary first.
-`)
-    process.exit(1)
-  }
+  // ⛔ NO FALLBACK: loadSceneStencil REFUSES a town with no disc (it used to coerce an absent radius to 1, which this site
+  // caught by a `radius > 1` sentinel and an exit; both are gone, the refusal is at the one reader).
+  // ⚠️ The +50 is NOT the AO kernel's reach (bake-ground-ao's MAX_RAY_DIST is 80 m); it came through 62955496 unchanged from
+  // `max(fade.outer, R) + 50`. Cause not established. Owned by BRIEF-the-disc-is-one-source §3 (the height and texel
+  // extents from the one module), printed by the reader row as a dated exception (claims-radius-has-one-home).
+  const _discR = stencil.radius
   const _bakeHalf = _discR + 50   // the AO texel map's extent — NOT the clip, which is the radius exactly
   const bx0 = stencil.center[0] - _bakeHalf
   const bx1 = stencil.center[0] + _bakeHalf

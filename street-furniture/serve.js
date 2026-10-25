@@ -16,6 +16,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from '
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { assetStatus, assetKey, MOUNTS, ROLES, CENSUS } from '../src/street-furniture/contract.js'
+import { discOf } from '../cartograph/boundaryRecords.mjs'
 
 const PORT = 5555
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -50,7 +51,8 @@ function townCensus(look, scene) {
     const out = {}
     out.lamps = existsSync(lampsP) ? { n: readJson(lampsP).count } : { why: 'no baked lamps.json' }
     const nb = existsSync(nbP) ? readJson(nbP) : null
-    const inside = (x, z) => Math.hypot(x - nb.center[0], z - nb.center[1]) <= nb.radius
+    // the one reader's test (boundaryRecords.mjs#discOf): lit = inside the ring; a file missing its disc refuses
+    const inside = nb ? discOf(nb, `street-furniture: ${scene}`).inDisc : null
     if (!nb) for (const k of ['signals', 'junctions', 'benches', 'bins', 'bus-stops']) out[k] = { why: 'no neighborhood_boundary.json' }
     else {
       const pois = existsSync(osmP) ? readJson(osmP).pois : undefined
