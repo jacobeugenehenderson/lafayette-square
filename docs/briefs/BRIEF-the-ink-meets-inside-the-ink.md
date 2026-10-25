@@ -103,6 +103,13 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
    walked backward is labelled by the input edge it lies on. Set it in `res`, NEVER in `raw` (the minted fallbacks read raw[j] of
    the next surviving vertex). Rotate in both reversal branches (outer + hole). The other three callers stay byte-identical
    (Zob, read). Gate: off-bb `__boundary__` edges 0 on every town (Splice's rimoff.mjs, promoted with a mutant), keys identical.
+5b. **② reads a sub-ink cluster as ONE turn (ruled Boz, 2026-10-25; Splice measured JH 99th-street-6).** With the folds gone, a
+   dead end lying inside another stroke's ink leaves a ±45° notch (net 0°) across two 2 mm edges, and ② gives both ends a radius:
+   a faked corner. The invariant: vertices joined by sub-ink edges form one cluster; the cluster yields AT MOST ONE corner, and
+   only if its NET turn is a corner. `protoRAt`/`turnOf` read the cluster's summed turn. The corner sits at one vertex by a rule
+   the builder states first. The cluster bound is the code's own doctrine (2ε less the rounding), never a new number. Gate:
+   `claims-no-corner-at-a-true-geometry-edge` revised to that invariant (Zob), GREEN on HPDM + JH; the corner gates no worse;
+   keys identical.
 5. **Unplaced (d):** report what steps 1–3 leave of each exhibit. Don't chase them before 1–3 are built.
 
 **Acceptance is 0 at `subInkLen` for the construction class, on every town (Boz, 2026-10-24; narrowed by §5a, 2026-10-25).** ⛔ If the fix can't reach 0, stop and flag. The
