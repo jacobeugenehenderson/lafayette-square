@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 450,
+  "total": 451,
   "counts": {
     "safe": 327,
     "local-effect": 28,
-    "live": 95
+    "live": 96
   },
   "checks": [
     {
@@ -648,6 +648,14 @@
         "computed import of src/lib/categoryColor.js — read, safe",
         "computed import of src/lib/colourMath.js — read, safe",
         "computed import of src/tokens/playerChrome.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-surveyed-tree-is-never-dropped.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
     {

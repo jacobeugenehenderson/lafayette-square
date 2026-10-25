@@ -110,6 +110,15 @@ function lampGlowAt(wx, wz) {
 // lives in cartograph/forbidden-surface.mjs — shared with the canopy-fill
 // scatter (scripts/17), which uses it to RELOCATE candidates off hardscape.
 
+// ⭐ THE REASONS A SURVEYED TREE IS NEVER DROPPED FOR (Jacob, 2026-10-25: "Keep PTown's trees" · "keep those too, that's
+// why things are authorable"). A recorded tree whose ground the forbidden-surface tester rules out, and that the nudge
+// cannot move to legal ground within reach, STAYS AT ITS SURVEYED POINT: counted and named per town and per reason, so the
+// operator can see it and author around it (move the tree, or fix the road). Our land use and our hardscape are
+// derivations; a real tree is never deleted for disagreeing with them. Derived (invented) trees keep today's rule.
+// ONE predicate, read by the bake and by its check (checks/claims-a-surveyed-tree-is-never-dropped.mjs). Today: EVERY
+// forbidden reason, land use (`lu:*`) and hardscape (sidewalk / asphalt / curb / parking) alike.
+export const SURVEYED_KEPT_ON = (reason) => typeof reason === 'string' && reason.length > 0
+
 // Canonical census-well filename → per-tree provenance `source` (Move 4). A well
 // may override with `meta.well`; unnamed wells fall back to their __kind.
 const SOURCE_BY_BASENAME = {
@@ -876,6 +885,7 @@ export async function bakeTrees({
   let unmatched = 0
   const forbiddenCounts = {}
   const nudged = {}   // surveyed trees moved to legal ground, by the zone they came from
+  const keptOnForbidden = []   // surveyed trees kept at their point on ground ruled out for a SURVEYED_KEPT_ON reason
   let dissolved = 0   // invented trees thinned out in the greater circle
   let outside = 0     // placed trees standing outside the neighborhood proper
 
@@ -949,6 +959,9 @@ export async function bakeTrees({
       if (moved) {
         tx = moved[0]; tz = moved[1]
         nudged[reason] = (nudged[reason] || 0) + 1
+      } else if (tree.__kind !== 'derived' && SURVEYED_KEPT_ON(reason)) {
+        // kept at its surveyed point (SURVEYED_KEPT_ON): counted and named, and the eligibility guard excuses it by index
+        keptOnForbidden.push({ i: instances.length, x: tx, z: tz, reason, source: tree.__source, species: v.species })
       } else {
         forbiddenCounts[reason] = (forbiddenCounts[reason] || 0) + 1
         continue
@@ -1106,10 +1119,11 @@ export async function bakeTrees({
   // ground, a future policy drift). Loud, with a per-zone breakdown — so a wrong
   // mask can never quietly ship a slab that plants on hardscape again.
   const illegal = {}
-  for (const inst of instances) {
+  const excused = new Set(keptOnForbidden.map(k => k.i))
+  instances.forEach((inst, i) => {
     const reason = isForbidden(inst.x, inst.z)
-    if (reason) illegal[reason] = (illegal[reason] || 0) + 1
-  }
+    if (reason && !excused.has(i)) illegal[reason] = (illegal[reason] || 0) + 1
+  })
   const illegalTotal = Object.values(illegal).reduce((a, b) => a + b, 0)
   if (illegalTotal) {
     const breakdown = Object.entries(illegal).sort((a, b) => b[1] - a[1])
@@ -1251,6 +1265,12 @@ export async function bakeTrees({
         .map(([k, v]) => `${k}=${v}`).join(' ')
       console.log(`[bake-trees]   nudged onto legal ground (surveyed trees kept): ${breakdown}`)
     }
+    if (keptOnForbidden.length) {
+      const by = {}; for (const k of keptOnForbidden) by[k.reason] = (by[k.reason] || 0) + 1
+      console.log(`[bake-trees]   KEPT AT THEIR SURVEYED POINT (no legal ground within the nudge; SURVEYED_KEPT_ON): ${keptOnForbidden.length} — ` +
+        Object.entries(by).map(([k, v]) => `${k}=${v}`).join(' ') + '\n' +
+        keptOnForbidden.map(k => `[bake-trees]     (${k.x}, ${k.z}) ${k.source} ${k.species} on ${k.reason}`).join('\n'))
+    }
     if (membership) {
       const inHood = instances.length - outside
       console.log(`[bake-trees]   hood: ${inHood} inside the neighborhood proper (literal) / ${outside} in the greater circle (GPU-managed)`)
@@ -1301,7 +1321,7 @@ export async function bakeTrees({
     console.log(`[bake-trees] ${variantUseCount.size} unique variants in use`)
     console.log(`[bake-trees] → ${outPath}`)
   }
-  return { count: instances.length, unmatched, forbidden: totalForbidden, forbiddenCounts, nudged: totalNudged, uniqueVariants: variantUseCount.size, outPath,
+  return { count: instances.length, unmatched, forbidden: totalForbidden, forbiddenCounts, nudged: totalNudged, keptOnForbidden, uniqueVariants: variantUseCount.size, outPath,
     candidates: census.perWell.reduce((n, w) => n + w.count, 0), perWell: census.perWell, deduped, dedupedBySource: census.dedupedBySource, dissolved }
 }
 
