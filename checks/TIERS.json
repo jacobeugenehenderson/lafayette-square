@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 448,
+  "total": 449,
   "counts": {
-    "safe": 326,
+    "safe": 327,
     "local-effect": 27,
     "live": 95
   },
@@ -468,6 +468,13 @@
       "why": [
         "reads repo files only",
         "declares @args --after=<path>"
+      ]
+    },
+    {
+      "file": "checks/claims-a-recommit-changes-nothing.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
