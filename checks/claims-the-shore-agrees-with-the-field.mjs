@@ -6,8 +6,10 @@
 //   (a) DRY BED — cells under the mask whose lidar stood above that cell's HIGH level: land the coast called water. The
 //       bed overwrites them, so terrain.bin cannot show it; bake-terrain#writeBed RECORDS them, before digging, as
 //       terrain.json `bed.dry` (row runs; rock excluded, `bed.rock`). Read here, never recomputed.
-//   (b) WET LAND — on terrain.bin: ground OUTSIDE the mask, below that cell's HIGH level and 4-connected to the water
-//       (a mapped dike holds it: bake-coast#heldCells): water the coast called land.
+//   (b) WET LAND — on terrain.bin: ground OUTSIDE the mask, inside the disc, below that cell's LOW level: water at every
+//       tide that the coast called land (Zob's definition; Boz, 2026-10-25).
+//   and, printed for the sand line (step 4), never gated: the INTERTIDAL — ground outside the mask below HIGH and
+//       4-connected to the water (a mapped dike holds it: bake-coast#heldCells), the band the tide covers: the beach.
 // Both are printed in m² per town against a DATED BASELINE (on the OSM coast, below) and are RED if worse than it. The brief's target is ~0 for both.
 // ⭐ SEEN TO FAIL, every run: (b) is measured again with the mask shifted by the brief's p50 coast-vs-lidar offset
 // (4.34 m) on each axis; a mask that is not the shore must not score better, or the instrument cannot see the shore.
@@ -22,12 +24,11 @@ import { heldCells } from '../cartograph/bake-coast.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 import { localBB, projectorOf, geographyFor } from '../cartograph/geography.mjs'
 import { ringsInDrawing } from '../cartograph/coast-in-drawing.mjs'
+import { discOf } from '../cartograph/boundaryRecords.mjs'
 
-// m², on ①'s waterRings (the OSM coast) and the 2026-10-25 tranche terrain. `wet`: THIS instrument (Swash, 2026-10-25;
-// PTown's equals that terrain's own `water.flood.floodedHa`, 209.6 ha). `dry`: Zob's probe, the same day (cause not
-// established for PTown's); it is re-measured here once a terrain carries bed.dry. ⛔ Zob's probe also printed a (b) of
-// 350 / 0 m², by another definition, not this one: never compare across the two.
-const BASELINE = { huron: { dry: 8123, wet: 0 }, provincetown: { dry: 249438, wet: 2095680 } }
+// m², on ①'s waterRings (the OSM coast) and the 2026-10-25 tranche terrain: Zob's probe (cause not established for
+// PTown's dry). `dry` is re-measured here once a terrain carries bed.dry; `wet` was reproduced by this instrument.
+const BASELINE = { huron: { dry: 8123, wet: 350 }, provincetown: { dry: 249438, wet: 0 } }
 const P50_M = 4.34   // the brief's §0: the lidar trace's p50 offset off ①'s OSM coast on Huron
 
 const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
@@ -51,7 +52,19 @@ for (const scene of scenes) {
   const X = (i) => bounds.minX + i * sx, Z = (j) => bounds.minZ + j * sz
   const { held } = heldCells(osm.ground, { W, H: Ht, x0: bounds.minX, z0: bounds.minZ, step: sx })
   const rings = ringsInDrawing(coast.rings, bounds).inDrawing
+  const disc = discOf(JSON.parse(readFileSync(join(dir, 'neighborhood_boundary.json'), 'utf8')), 'claims-the-shore-agrees-with-the-field')
   const wetLand = (rs) => {
+    const mask = maskOf(rs, W, Ht, bounds)
+    let n = 0, any = 0
+    for (let j = 0; j < Ht; j++) for (let i = 0; i < W; i++) {
+      const k = j * W + i
+      if (mask[k]) { any++; continue }
+      if (H[k] < L.lowAt(X(i), Z(j)) && disc.inDisc(X(i), Z(j))) n++
+    }
+    if (!any) throw new Error(`⛔ ${scene}: the coast's ${rs.length} ring(s) cover NO cell of the terrain grid — the mask and the grid disagree about the frame; an empty mask would score 0 and pass blind`)
+    return n * cellM2
+  }
+  const intertidal = (rs) => {
     const mask = maskOf(rs, W, Ht, bounds), seen = new Uint8Array(W * Ht), queue = new Int32Array(W * Ht)
     let qt = 0, n = 0
     for (let k = 0; k < W * Ht; k++) if (mask[k]) { seen[k] = 1; queue[qt++] = k }
@@ -69,10 +82,11 @@ for (const scene of scenes) {
   }
   const base = BASELINE[scene]
   console.log(`── ${scene}: ${coast.doc.from}`)
-  const wet = wetLand(rings)
+  const wet = wetLand(rings), tide = intertidal(rings)
   const shifted = Math.min(...[[P50_M, 0], [-P50_M, 0], [0, P50_M], [0, -P50_M]].map(([dx, dz]) => wetLand(rings.map(r => r.map(([x, z]) => [x + dx, z + dz])))))
   const okWet = !base || wet <= base.wet + cellM2 / 2, seesShore = shifted >= wet   // half a cell: the baseline is rounded to m²
   console.log(`  ${okWet ? '✅' : '⛔'} (b) wet land ${Math.round(wet).toLocaleString()} m²${base ? ` (baseline ${base.wet.toLocaleString()} m², 2026-10-25, on the OSM coast)` : ''}`)
+  console.log(`     intertidal (below HIGH, connected; the sand line's, not gated): ${Math.round(tide).toLocaleString()} m²`)
   console.log(`  ${seesShore ? '✅' : '⛔'} the instrument sees the shore: the mask moved ${P50_M} m scores ${Math.round(shifted).toLocaleString()} m² at best, not better`)
   if (!okWet || !seesShore) red++
   const dry = tj.bed?.dry
