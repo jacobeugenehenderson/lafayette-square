@@ -438,9 +438,8 @@
 >   **WHETHER**. ▶ `node checks/claims-the-ease-is-the-corner.mjs <scene>` — ⛔ re-run it; it keeps
 >   its teeth after the fix (a residual arc with no ramp is still reported, with its turn). Whether a STREET meets
 >   that corner (curb cuts, crosswalks) is a separate frozen fact, `iaJunction` — and it never decides the pad.
->   ### ⛔⛔ AND READ IT OFF THE EASE'S OWN PER-VERTEX STAMP (`EC.arc`), NEVER OFF `protoTurns`
->   `protoTurns` holds **LABELS** (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so
->   `protoTurns.has(labs[i])` marks **every ② vertex on that frontage** once its owner turns
+>   ### ⛔⛔ AND READ IT OFF THE EASE'S OWN PER-VERTEX STAMP (`EC.arc`) — `protoTurns` (a LABEL set) is deleted (2026-10-25, the seam)
+>   A label spans a whole ① edge, so reading the corner off it marked **every ② vertex on that frontage** once its owner turned
 >   anywhere. `end()` then read `iaCorner` to end a leg, so each one inserted a ramp **mid-block**, and the eye caught
 >   sawtooth notches down straight streets — *"weird geometry everywhere; looks like contour nodes."* (`end()` reads it no
 >   more, 50a64997: the mark covers every vertex of an arc, so on an unpadded one it did the same round every bend.)

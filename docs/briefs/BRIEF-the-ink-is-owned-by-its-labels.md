@@ -11,7 +11,7 @@ evict-when: `inkByOwner`'s and `inkPiecesByOwner`'s quad re-strokes are gone, wi
 **Agent: FRESH.** Kerf and Splice are on other briefs, and this one needs no warm context beyond §1.
 **Report to Boz.** **Instruction: confirm-then-build.** Read §1 and the code sites in §2, then tell Boz what you found. If the code contradicts this brief, **stop and flag Boz. The stop is the deliverable.**
 **Premise pass: Zob, 2026-10-25, on integration 7ef32564 (read).** It corrected the first premise: the asphalt's street-scale outline and corners already come from the sealed tiles. What this brief fixes is narrower.
-⚠️ **Wait for** the seam branch (`BRIEF-the-ink-meets-inside-the-ink`, Splice) to land before building. It rewrites the mint and tileGround's corner readers.
+✅ The seam (`cartograph/_archive/BRIEF-the-ink-meets-inside-the-ink-LANDED-2026-10-25.md`) LANDED 4ed69a3a, 2026-10-25: build on integration's head. It rewrites the mint and tileGround's corner readers.
 
 ## 0. Why
 

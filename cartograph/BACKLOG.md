@@ -11,7 +11,7 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ### ⭐ HANDOFF — 2026-10-25 overnight (Boz). Read this block first; everything below is detail.
 **▶ TONIGHT (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
 place.mjs, claims-a-chain-cut-keeps-its-owner-change. Briefed and DISPATCHED: the ① seam fix → **Splice**
-(`docs/briefs/BRIEF-the-ink-meets-inside-the-ink.md`; carrier = ioPreserveCollinear on both mint booleans, both folds go;
+(`cartograph/_archive/BRIEF-the-ink-meets-inside-the-ink-LANDED-2026-10-25.md`; carrier = ioPreserveCollinear on both mint booleans, both folds go;
 Splice brings the node choice to Boz before step 2). **Kerf** (heavy slot, all night): leg-ends gates (the corner check pairs
 BEFORE/AFTER by position before Zob) → caps-from-shape → disc §1b/§2b (premise check first). **Zob** supports Splice, reviews
 Kerf first. **Ward** asleep: the Tower Light check RED/GREEN (Ward 400f687); ruling filed (14f20b8): the light goes out and its
@@ -39,11 +39,7 @@ measure: the in-circle terrain's size and bake time, and the backdrop's look and
 radius in layered flat mountain IMPOSTOR cards between the camera and the sky, separable for parallax. Real geometry inside the
 radius; painted layers where the mountain meets the cyclorama. Not for the in-circle terrain (that's real either way: a coarser
 mesh or disc §3).
-**Seam (Splice) state, 2026-10-25 ~02:00:** feature-complete, and Zob's final tree review PASSES; the corner gates hold; no-corner
-GREEN on 4 towns. ⛔ HELD: PTown's ② refuses at the land-use stamp ("crossing pass did not settle in 8 rounds"). Zob: stampCrossings
-is a SECOND noding rule (round, insert, re-test), which can't terminate on shallow crossings (OSM wetland/reserve vs the water
-edge); ①'s sub-mm shift moved where it landed. Ruled direction (Boz, vetoable): hot-pixel snap rounding as latticeNode's crossing
-rule, one pass, with the stamp's loop deleted. Splice proposes; Zob reads first. Land the seam squash only when PTown builds.
+**Seam: ✅ LANDED 4ed69a3a** (PTown's stamp builds; noding is latticeNode#nodeCrossings, one pass).
 **✅ KEPT (Jacob, 2026-10-25: "keep your change to the rule"): Boz's revision of his ruling (A) of 10-22.** Off an arc, a declined ① corner ends a band
 leg ONLY where the ladders differ; at equal ladders the band bends through (RIBBONS invariant 1). And the off-arc mark reads
 protoRAt's verdict, so a smoothBend is not a corner (INVARIANT 2). Why: as built, (A) cut equal-ladder bands into abutting legs,
@@ -196,7 +192,7 @@ its residual measures zero (its own comment's condition). Brief next (Boz).
 of the boundary, early crops in the pour, height extent, per-family slab selectors) is the premise list of
 `docs/briefs/BRIEF-the-disc-is-one-source.md`. ❓ JACOB: surveyed trees outside the disc · the horizon water · LS's buildings ledger.
 
-**▶ THE ① SEAM (sub-ink edges between two owners; PTown's flatten refusal): BRIEFED** → `docs/briefs/BRIEF-the-ink-meets-inside-the-ink.md` (ruled at the mint, acceptance 0 at subInkLen, the fold in offsetRingByRects deleted with it). The class: `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants`. Lands in the tranche.
+**✅ THE ① SEAM LANDED (4ed69a3a, 2026-10-25; Splice, Zob PASS):** the record and its open items are in the squash message and `cartograph/_archive/BRIEF-the-ink-meets-inside-the-ink-LANDED-2026-10-25.md`.
 
 **▶ OPEN, placed partly (Zob, 2026-10-22): five in-disc dead ends whose ② round end carries no cap label, so no Measure handle**
 (LS hickory-street-4|end, geyer-avenue-0|end; HPDM west-fairview-drive|start, wheels-path-3|end, underpass|end). ① carries the cap edge

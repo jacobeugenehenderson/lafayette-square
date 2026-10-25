@@ -103,7 +103,7 @@ within the bound of an edge of ANOTHER group is inserted into that edge, both di
   exactly HPDM's industrial and LS's asphalt needles), nor an outer and its own hole. Same group, different rings is
   unneeded: `layerRegion` unions a group first.
 - **Insert only where the vertex projects strictly inside the edge**, several insertions ordered by parameter, and iterate
-  to a fixpoint with capped rounds that THROW if it doesn't settle (the `stampCrossings` pattern).
+  to a fixpoint with capped rounds that THROW if it doesn't settle. ⛔ Superseded 2026-10-25: round-and-retest cannot terminate on shallow crossings (the PTown stamp); noding is `latticeNode.js#nodeCrossings`, one pass, by construction.
 - **Where:** its own exported function on `stackEntries`, before `bakeGround`'s `stackOnly` return, so
   `checks/claims-no-edge-is-drawn-twice.mjs` (which reads `bakeGround({ stackOnly: true })`) sees the noded stack.
   Include DOES_NOT_CUT groups (water); KEEP_OWN_SLOT groups (stripe) change nothing drawn.

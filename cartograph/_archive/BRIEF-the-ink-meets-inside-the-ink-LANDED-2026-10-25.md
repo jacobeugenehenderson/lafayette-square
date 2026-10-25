@@ -1,7 +1,7 @@
 # BRIEF — the ink meets inside the ink: no sub-ink edge between two owners in ①
 
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED
 dispatched: no
 written: 2026-10-24 (Boz)
 evict-when: `node checks/claims-no-sub-ink-edge-between-two-owners.mjs --mutants` and `node checks/claims-a-chain-cut-keeps-its-owner-change.mjs --mutants` are GREEN on every poured town and their mutants RED; offsetRingByRects' sub-ink fold is deleted in the same commit; the build is merged to integration. Then this moves to cartograph/_archive/ dated, and BACKLOG's ① seam entry goes with it.
