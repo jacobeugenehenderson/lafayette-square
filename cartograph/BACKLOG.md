@@ -27,6 +27,11 @@ EVERY bend (one rule for the ink) · the reversed-face label shift (__boundary__
 JH 179; pre-existing, a kit class) fixed in booleanLabelled's `segs` path, Zob reading first · unnoded skeleton crossings (HPDM
 primary-link-124 × heels-wheels, JH ×2) are the MINT's (crossings landing by a stroke vertex; Zob, measured; Boz first
 said skeleton, wrong) → brief §5a, construction owed by Splice; the folds wait on them (one code path).
+**ALTADENA'S TRANCHE BAKE REFUSED (2026-10-25, Kerf), a named stop:** "no class in the vocabulary (src/cartograph/streetClass.js) for
+highway=path area=yes" (an AREA highway is a plaza or surface, not a street: the same class as the isArea item below). Also owed: Jacob's
+Extent fix (its disc runs 981 m past its bb), and a re-fetch (zero lamps; the pull predates the 09-20 tagged-node fix). Mountain size,
+from what exists (no fresh bake): terrain 1750² at 5 m over ±4,371 m = terrain.bin 12.25 MB; the backdrop `landscape/sangabriel.glb`
+15.8 MB; the July ground.bin 43.3 MB. Bake time not recorded (no bake-timings for Altadena).
 **ALTADENA JOINS THE TRANCHE (Jacob, 2026-10-25: "AD stays… sure").** ⭐ Scope today (Jacob): "the mountain size discovery will be today's final goal for AD as Huron is the real priority". The AD pour proves part of the system; no AD polish today. Its shapes are from 07-14 and its ground from 09-19 (pre-①,
 no landEvidence, no identity), so the tranche re-pour is its first under the current kit. Mark ⛰️ set (ee592d46). ⚠️ The mountains
 (Jacob): "very very large… may be prohibitively complex (until we do something to manage)". The managing move already planned is
