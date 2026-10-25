@@ -40,6 +40,11 @@ cutCreases' migration brief is preceded by Zob's census: its T-joins > 0.5 step 
 **Leg-ends:** the stop is a REGRESSION against SECTION's "a SHORE or RIM flank is no corner" (Jacob, 10-07): 608 PTown / 384 Huron
 shore turns became corners. Fix: `noStreetFlank` on `isStreetLeg` (Kerf, in measurement). The bar is restated (Boz): shore/rim
 census 0 as a check row; drawn-twice totals ≤ BEFORE on 4 towns, no new row > 1 m, every > 10% row with exhibits.
+**Safe tier on 61b7231d (Zob, 2026-10-25): triaged, not a count.** Stale data: LS has no bake under `lafayettesquare` (its old
+`lafayette-square` dirs retire only after that re-bake), Altadena unbaked since 09-19, JH sub-ink (clears with the seam). Code
+findings, each to be briefed: two second 1 cm Clipper grids (`bake-terrain.js` flood union, `outer-coast.mjs`), Layer 0 class D ·
+`scripts/archive-photos-to-r2.mjs` takes the space-form scene flag. Instruments (Zob fixing): zero-separation-offset's stale SCALE
+reader · authored-framing's worktree-blind pin lookup. ~45 geometry REDs unclassified until one consistent bake: re-run after the tranche.
 **Filed for their own briefs:** kerbLift.mjs#cutCreases is a THIRD round-and-retest noding loop (live in the bake, maxRounds 16) → migrate to latticeNode's crossing rule after the seam lands · groundConformity.js ON_EDGE_M 5 mm vs NODE_BOUND √2/2 (a second T-junction bound) · noding phase 2 (one function for conform + cross) · protoRAt's smoothBend fires on coast vertices (no skeleton chain there) · skeleton.js#gradeFacts
 needs EVERY way off-grade (a part-tunnel chain inks at grade) · streetClass.js#isArea reads only area=yes (highway multipolygons
 chained as streets: JH 3, PTown 1, Huron 1). Filed for later: Huron university-drive-east-1 = tertiary-97 (skeleton-side, 9 m apart in raw);
