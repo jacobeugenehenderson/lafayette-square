@@ -3051,6 +3051,12 @@ export const BOUNDARY_EDGE_SKEL = '__boundary__'
 // ⛔ IT IS STILL NOT A STREET: no coupler, no baseMeasure, no band, no ADA, no cap. It closes
 // faces and is drawn as the edge between land and water; nothing offsets a curb from it.
 export const WATER_EDGE_SKEL = '__water__'
+// the owner of an edge the H difference drew (buildTileGround) — a kit PSEUDO-owner, like the two above: no street
+export const HWY_SKEL = '__highway__'
+// ⭐ THE KIT'S PSEUDO-OWNERS, BY NAME: the owners of an edge no street drew. The road paint skips exactly these (Zob, 2026-10-25):
+// ⛔ never "no marks record" — that is a skip by ABSENCE, and a stale skelId, a dropped street or a re-keyed typo would lose its
+// paint silently. Any other owner without a marks record refuses.
+export const PSEUDO_OWNERS = new Set([BOUNDARY_EDGE_SKEL, WATER_EDGE_SKEL, HWY_SKEL])
 
 // ⭐ THE CAP BULB'S CENTRE. A round dead-end's bulb is a symmetric circle on the
 // road's REAL centerline, which is the chain displaced toward the wider side by
@@ -4272,10 +4278,10 @@ const windingXZ = (r, x, z) => { let w = 0
 export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }) {
   if (!Array.isArray(centrelines)) throw new Error('[tileGround][paint] ⛔ the protopolygon carries no sealed centreline (`centrelines`) — this town was poured before the road paint read it. Re-pour; the stripe never falls back to the chains.')
   const W = look.line, out = { stripe: [], edgeline: [], 'edgeline:yellow': [] }
-  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, noMarks: new Set(), notStreet: new Set() }
-  // a run whose owner is no STREET (the frame, the coast, the highway difference: the kit's own pseudo-owners) carries no paint;
-  // a street with no selected marks is a pour before streetMarkings, and refuses
-  const marks = (id) => { const M = marksOf(id); if (M === undefined) { census.notStreet.add(id); return null } if (!M) census.noMarks.add(id); return M }
+  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, noMarks: new Set(), noStreet: new Set(), notStreet: new Set() }
+  // a run owned by one of the kit's PSEUDO-owners (the frame, the coast, the highway difference: PSEUDO_OWNERS, by name) carries
+  // no paint; ANY other owner with no marks record refuses — a street before streetMarkings, a stale skelId, a dropped street
+  const marks = (id) => { if (PSEUDO_OWNERS.has(id)) { census.notStreet.add(id); return null } const M = marksOf(id); if (M === undefined) census.noStreet.add(id); else if (!M) census.noMarks.add(id); return M ?? null }
   // ── the kerb legs ──
   const legsOf = new Map()   // skelId → { left: [legs], right: [legs] }
   for (const t of tiles) {
@@ -4374,6 +4380,7 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
   }
   const list = (o) => Object.entries(o).map(([k, v]) => `${v} ${k}`).join(' · ')
   console.log(`[tileGround][paint] owners that are no street (no paint): ${[...census.notStreet].join(' · ') || 'none'} · centre runs by kind: ${list(census.stripeRuns) || 'none'} · stripe ${out.stripe.length} ring(s), cut to where both sides have frontage · ${census.legs} kerb leg(s) · edge lines on ${list(census.edgeLegs)} leg(s) · ${census.sharpSplits} sharp vertex split(s)`)
+  if (census.noStreet.size) throw new Error(`[tileGround][paint] ⛔ ${census.noStreet.size} kerb owner(s) are neither a street of the pour nor a kit pseudo-owner (PSEUDO_OWNERS): ${[...census.noStreet].slice(0, 6).join(' · ')} — a stale skelId, a street dropped from ribbons.streets, or a re-key. Nothing is skipped for want of a record.`)
   if (census.noMarks.size) throw new Error(`[tileGround][paint] ⛔ ${census.noMarks.size} street(s) carry no selected paint (\`marks\`): ${[...census.noMarks].slice(0, 6).join(' · ')} — the pour predates streetMarkings. Re-pour.`)
   return out
 }
@@ -6531,7 +6538,6 @@ export function buildTileGround(ribbons, opts = {}) {
   // ⭐ H-3 step 3 — ONE EDGE. The union of the sweeps IS the highway's edge; every block beside it is
   // differenced against this same polygon (ruling b: no max(), no second smoothing).
   const Hpoly = unionRings(Hacc)
-  const HWY_SKEL = '__highway__'           // the owner of an edge the H difference drew
   const hwySkel = new Set([HWY_SKEL, ...gradeSep.filter(s => HIGHWAY_CLASSES.has(s.highway)).map(s => s.skelId ?? s.name)])
   let protoShapeTiles = null
   let protoNoCurbBlocks = []          // ② blocks whose curb came back empty: their ground, owned (`kind: 'block'` pieces below)
@@ -8389,7 +8395,6 @@ export function buildTileGround(ribbons, opts = {}) {
     if (T.unreadable) console.warn(`[tileGround][curb cuts] ${T.unreadable} corner(s) whose recorded cuts are UNREADABLE (one end only, middle and end, or an unlisted kerb kind) — counted, and drawn by the norm.`)
   }
   // ⭐ the road's paint (the centre stripe and the edge lines), struck from the sealed shape — the bake and Survey both read it
-  // a street's selected marks (null when its pour predates them); `undefined` for an owner that is no street
   const marksBy = new Map((ribbons?.streets || []).map(s => [s.skelId, s.marks ?? null]))
   if (!ribbons?.markingLook) throw new Error('[tileGround][paint] ⛔ the ribbons carry no paint look (`markingLook`) — this town was poured before the road paint. Re-pour.')
   const roadPaint = roadMarkings({ tiles: protoShapeTiles, centrelines: protoCentrelines, marksOf: (id) => marksBy.get(id), measureOfRun: protoRunMeasure, look: ribbons.markingLook })

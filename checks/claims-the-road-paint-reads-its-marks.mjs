@@ -10,14 +10,17 @@
 //   (P) THE PARKING DEPTH IS NOT THE CURB'S INPUT. ② is built three times — the measure as poured, every `parking` 0, and
 //       every `parking` = its side's pavementHW — and its kerb (`protoShapeTiles[].iA` / `iaFull`) must be byte-identical.
 //       PLANTED (always run): the same comparison with pavementHW reduced by the parking depth (what "parking narrows the
-//       carriageway" would do) must DIFFER, or the comparison proves nothing.
+//       carriageway" would do) must DIFFER, or the comparison proves nothing. A planted case the producer REFUSES and one it
+//       DRAWS and the comparison SEES are counted apart: at least one town must be drawn-and-seen, or (P) is vacuous (Zob).
 //   (S) EVERY STRIPE RING LIES ON A MARKED STREET: each vertex within half a double line (+ a lattice step) of a sealed
 //       centreline run whose street's centre kind is not 'none'. A stripe beside only unmarked runs is RED.
 //   (E) EVERY EDGE LINE LIES BESIDE A STREET THAT TAKES ONE: each vertex within the look's reach of a kerb edge whose run's
 //       street has edge lines or a parking lane on that side. (E2) …and on the ROAD side of it: no edge line inside a block.
 //   (S0) A town with marked streets draws SOME stripe: zero stripe vertices with marked runs present is RED.
-//   MUTANT (S, E; in process, always run): `roadMarkings` with every street marked double-solid and both edges must go RED
-//       on a town with any unmarked street — or (S) and (E) prove nothing there.
+//   MUTANTS (in process, always run): `roadMarkings` with every street marked double-solid and both edges must go RED on a
+//       town with any unmarked street — or (S) and (E) prove nothing there · `roadMarkings` from a copy of the module with the
+//       kerb leg's side flipped (the toward-street sign e5ced9b5 fixed) must put edge lines inside a block — or (E2) is blind ·
+//       a street dropped from the marks (a stale or re-keyed skelId) must REFUSE by name, never lose its paint silently.
 //
 //   node checks/claims-the-road-paint-reads-its-marks.mjs --slot=<who granted it> [--scene=<town> …]
 // ⚠️ HEAVY: three full ① ② ③ producer builds and two paint passes PER TOWN (minutes per town; LS + HPDM + Huron + PTown is a
@@ -28,11 +31,25 @@
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { roadMarkings } from '../src/lib/tileGround.js'
 import { LATTICE_M } from '../src/lib/lattice.js'
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, cpSync, symlinkSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { tmpdir } from 'node:os'
+import { createRequire } from 'node:module'
+import { ROOT } from './_scenes.mjs'
 
 const slot = process.argv.find(a => a.startsWith('--slot='))?.slice('--slot='.length)
 if (!slot) { console.log('⛔ NOT RUN — heavy: pass --slot=<who granted it> (three producer builds per town; never in npm test)'); process.exit(2) }
 console.log(`(heavy run, slot granted by ${slot})`)
-let red = 0, towns = 0
+let red = 0, towns = 0, plantedSeen = 0, plantedRefused = 0
+// the E2 mutant's paint: roadMarkings from a copy of src/ (its sibling imports resolve there) with the toward-street sign flipped
+const SIGN = 'const toward = lIn ? 1 : -1'
+const flipDir = mkdtempSync(join(tmpdir(), 'paint-side-'))
+process.on('exit', () => rmSync(flipDir, { recursive: true, force: true }))
+const tgSrc = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
+if (!tgSrc.includes(SIGN)) { console.log(`⛔ the toward-street sign (\`${SIGN}\`) is not in tileGround.js#roadMarkings — the E2 mutant has nothing to flip`); process.exit(1) }
+cpSync(join(ROOT, 'src'), join(flipDir, 'src'), { recursive: true }); symlinkSync(dirname(dirname(createRequire(import.meta.url).resolve('clipper-lib'))), join(flipDir, 'node_modules'))
+writeFileSync(join(flipDir, 'src/lib/tileGround.js'), tgSrc.replace(SIGN, 'const toward = lIn ? -1 : 1'))
+const { roadMarkings: flippedMarkings } = await import(join(flipDir, 'src/lib/tileGround.js'))
 const quiet = (f) => { const l = console.log, w = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
 const sd = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
 // segments in a grid; `within(p, d)` = some segment lies within d of p
@@ -64,6 +81,7 @@ for (const scene of feedScenes()) {
     else { let K = null, refused = null; try { K = kerbOf(quiet(() => buildProto(withMeasure(f, P)))) } catch (e) { refused = String(e.message).split('\n')[0].slice(0, 120) }
       // a planted narrowing the producer REFUSES (the stamp, on the moved curb) has moved ② as surely as one it draws
       const ok = !!refused || K !== base; if (!ok) red++
+      if (refused) plantedRefused++; else if (ok) plantedSeen++
       console.log(`  ${ok ? '✅' : '⛔'} (P) planted: pavementHW − parking ${refused ? `moves ② far enough that the producer refuses it (${refused})` : ok ? 'changes ② (the comparison can see a curb move)' : 'leaves ② unchanged — the comparison is blind'}`) } }
   // ── (S) and (E) ──
   const fp = f.ribbons.protopolygon, marks = new Map(f.ribbons.streets.map(st => [st.skelId, st.marks]))
@@ -103,13 +121,25 @@ for (const scene of feedScenes()) {
   const S = judgeS(R.roadPaint, 'live'), E = judgeE(R.roadPaint, 'live'), E2 = judgeSide(R.roadPaint)
   say(S, '(S) stripe'); say(E, '(E) edge lines'); red += (S.off ? 1 : 0) + (E.off ? 1 : 0)
   console.log(`  ${E2.inside ? '⛔' : '✅'} (E2) edge lines on the road side: ${E2.n} ring(s) · ${E2.inside} inside a block${E2.at ? ` (e.g. ${E2.at.map(v => v.toFixed(2)).join(', ')})` : ''}`); if (E2.inside) red++
+  const measureOfRun = (run) => { const st = f.ribbons.streets.find(x => x.skelId === run.skelId); const m = st?.measure?.[run.side]; return m ? { pavementHW: m.pavementHW, parking: m.parking ?? 0 } : null }
+  // mutant (E2): the kerb leg's side flipped — the edge lines must land inside a block
+  { let mp = null, refused = null; try { mp = quiet(() => flippedMarkings({ tiles: R.protoShapeTiles, centrelines: fp.centrelines, marksOf: (id) => marks.get(id), measureOfRun, look: MARKING_LOOK })) } catch (e) { refused = String(e.message).split('\n')[0].slice(0, 140) }
+    const m = mp && judgeSide(mp), ok = !!m && m.n > 0 && m.inside > 0
+    if (!ok) red++
+    console.log(`  ${ok ? '✅' : '⛔'} mutant (E2, the kerb side flipped): ${refused ? `the paint refused (${refused}) — (E2) was not exercised` : ok ? `RED as it must be — ${m.inside} of ${m.n} edge-line ring(s) inside a block` : m.n ? 'stayed GREEN — (E2) is blind' : 'no edge line drawn — (E2) not exercised on this town'}`) }
+  // mutant (membership): one street dropped from the marks — the paint must refuse it by name
+  { const gone = [...marks.keys()].find(id => R.protoShapeTiles.some(t => (t.runs || []).some(r => r?.skelId === id)))
+    let refused = null; try { quiet(() => roadMarkings({ tiles: R.protoShapeTiles, centrelines: fp.centrelines, marksOf: (id) => id === gone ? undefined : marks.get(id), measureOfRun, look: MARKING_LOOK })) } catch (e) { refused = String(e.message) }
+    const ok = !!refused && refused.includes(gone)
+    if (!ok) red++
+    console.log(`  ${ok ? '✅' : '⛔'} mutant (a street dropped from the marks: ${gone}): ${ok ? 'REFUSED by name, as it must be' : refused ? `refused, but not by name (${refused.slice(0, 120)})` : 'drawn without it — a skip by absence'}`) }
   if (!S.n) { console.log('  ⛔ (S) no stripe was drawn on this town at all — a marked street must show one'); if (marked.length) red++ }
   // ── the mutant: every street marked ──
   const hasUnmarked = unmarked.length > 0
   if (!hasUnmarked) console.log('  ⚪ mutant: every street here is marked — the mutant cannot be told from the truth, not judged')
   else {
     const all = { centre: { kind: 'double-solid', rung: 'mutant' }, edges: { kind: { left: 'yellow', right: 'white' }, rung: 'mutant' } }
-    let mp; try { mp = quiet(() => roadMarkings({ tiles: R.protoShapeTiles, centrelines: fp.centrelines, marksOf: () => all, measureOfRun: (run) => { const st = f.ribbons.streets.find(x => x.skelId === run.skelId); const m = st?.measure?.[run.side]; return m ? { pavementHW: m.pavementHW, parking: m.parking ?? 0 } : null }, look: MARKING_LOOK })) }
+    let mp; try { mp = quiet(() => roadMarkings({ tiles: R.protoShapeTiles, centrelines: fp.centrelines, marksOf: () => all, measureOfRun, look: MARKING_LOOK })) }
     catch (e) { console.log(`  ⛔ mutant: the paint refused — ${String(e.message).slice(0, 160)}`); red++; continue }
     const mS = judgeS(mp, 'mutant'), mE = judgeE(mp, 'mutant'), ok = mS.off > 0 || mE.off > 0
     if (!ok) red++
@@ -117,5 +147,8 @@ for (const scene of feedScenes()) {
   }
 }
 if (!towns) { console.log('\n⛔ no town built — nothing was checked'); red++ }
+// (P) is vacuous if every planted narrowing only refused: some town must DRAW it and the comparison SEE the curb move
+console.log(`\n${plantedSeen ? '✅' : '⛔'} (P) planted, across towns: ${plantedSeen} drawn and seen · ${plantedRefused} refused by the producer${plantedSeen ? '' : ' — no town drew the planted narrowing, so (P) never saw a curb move'}`)
+if (!plantedSeen) red++
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the road paint reads its marks, and the parking depth never moves the curb')
 process.exit(red ? 1 : 0)
