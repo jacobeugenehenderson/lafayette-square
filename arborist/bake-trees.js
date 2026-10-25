@@ -121,13 +121,20 @@ export const SURVEYED_KEPT_ON = (reason) => typeof reason === 'string' && reason
 
 // Canonical census-well filename → per-tree provenance `source` (Move 4). A well
 // may override with `meta.well`; unnamed wells fall back to their __kind.
-const SOURCE_BY_BASENAME = {
-  'park_census.json':        'park',           // authored park census (hand-curated)
-  'park_trees.json':         'city-inventory', // City Forestry layer 1 (whole hood)
-  'forest_park_trees.json':  'forest-park',    // City Forestry layer 4 (Forest Park, rich species)
-  'osm_trees.json':          'osm',            // OSM natural=tree (real positions)
-  'derived_trees.json':      'derived',        // NLCD canopy fill (invented)
-}
+// The kit's canonical tree-well FILENAMES, read by default when a bake names no
+// placements (`cartograph/tree-bake-inputs.mjs` lists the same set). Provenance is
+// NOT read off these names: each well declares it (meta.well; readCensus).
+// ⚠️ DEBT (Boz, 2026-10-25): `forest_park_trees.json` is a town's well (scripts/18,
+// HPDM) carried on the kit's list because a tree-well declaration cannot yet name
+// its producer — declaring it would make fetch-trees.mjs refuse it (it reads
+// socrata only). The fix is a `producer` on the declaration; filed as its own brief.
+const CANONICAL_TREE_WELLS = [
+  'park_census.json',        // authored park census (hand-curated)
+  'park_trees.json',         // city inventory (scripts/13)
+  'forest_park_trees.json',  // ⚠️ DEBT, above
+  'osm_trees.json',          // OSM natural=tree (scripts/14)
+  'derived_trees.json',      // canopy fill (invented; scripts/17)
+]
 
 // Cross-well dedup priority: the same physical trunk recorded by two sources is
 // ONE tree, and we keep the RICHEST record. Real-species inventories (city /
@@ -167,9 +174,12 @@ export async function readCensus(parkPaths) {
     // Provenance (Move 4): a finer label than __kind — the ORIGINATING well. The
     // authored park is addressable on its own ('park' vs the fetched
     // 'city-inventory'), so richer real species data can later supersede synthetic
-    // in exactly those spots. Declared by the well (meta.well) or read off the
-    // canonical filename; falls back to __kind for an unnamed well.
-    const source = layer.meta?.well ?? (SOURCE_BY_BASENAME[path.basename(p)] || kind)
+    // in exactly those spots. A SURVEYED well declares it (meta.well); one that does
+    // not REFUSES — it was read off the filename (a table naming one town's well).
+    // An invented well's provenance is its kind.
+    const source = kind === 'derived' ? 'derived' : layer.meta?.well
+    if (typeof source !== 'string' || !source)
+      throw new Error(`[bake-trees] ⛔ census well ${p} declares no meta.well — say which well it is (its producer stamps it); refusing to read provenance off the filename`)
     for (const t of (layer.trees || [])) trees.push({ ...t, __kind: kind, __source: source })
     perWell.push({ path: p, source, kind, count: (layer.trees || []).length })
   }
@@ -637,12 +647,12 @@ export async function bakeTrees({
   // and `osm_trees.json` (3,376) sat unread on disk — trees in the park and a
   // bare neighbourhood. The wells are spatially DISJOINT layers of one census,
   // so a bake that reads one of them silently deletes the others' trees.
-  // `SOURCE_BY_BASENAME` above is the enumeration; `cartograph/tree-bake-inputs.mjs`
+  // `CANONICAL_TREE_WELLS` above is the enumeration; `cartograph/tree-bake-inputs.mjs`
   // must list the same set (it is the other entry point — keep them in lockstep).
   const mapCleanDir = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'clean')
   // ⭐ …plus the town's DECLARED tree wells (sources.json `trees`; cartograph/fetch-trees.mjs) — the same call the other
   // entry point makes (cartograph/tree-bake-inputs.mjs), so the two cannot drift on what a census is made of.
-  const sceneDefaultWells = [...Object.keys(SOURCE_BY_BASENAME).map(basename => path.join(mapCleanDir, basename)), ...declaredTreeWellPaths(scene)]
+  const sceneDefaultWells = [...CANONICAL_TREE_WELLS.map(basename => path.join(mapCleanDir, basename)), ...declaredTreeWellPaths(scene)]
     .filter(existsSync)
   const parkPaths = placements
     ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))

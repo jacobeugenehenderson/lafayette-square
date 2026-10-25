@@ -285,7 +285,7 @@ export function readBuildingSources(scene) {
 /**
  * TREES — a town's declared tree-census wells (BRIEF-nyc-adapter §3.2a: "trees become a well kind"). Three states:
  *   UNDECLARED    — no `trees` key: the town's census is whatever canonical files it holds (arborist/bake-trees.js
- *                   SOURCE_BY_BASENAME) — the state every town was in before this kind existed.
+ *                   CANONICAL_TREE_WELLS) — the state every town was in before this kind existed.
  *   DECLARED-NONE — `trees: []` + `trees_absent_reason`.
  *   DECLARED      — [{ "from": "state", "id" }] — each fetched by cartograph/fetch-trees.mjs into clean/<file>, and READ
  *                   by both tree entry points (tree-bake-inputs.mjs, bake-trees.js), unioned with the canonical wells.
