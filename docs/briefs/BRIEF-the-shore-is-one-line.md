@@ -82,6 +82,11 @@ caps-from-shape) and Huron's equivalent are the exhibits. Each deck then becomes
 ✅ RULED (Jacob, 2026-10-25: "a, the street rides the deck"): a wharf that is also a STREET (MacMillan) carries its street ON the
 deck: its walk and curb built on the deck, at the land's height, never ink over water. Gates: on PTown, the traced coast has no land inside a deck footprint, and MacMillan Wharf is drawn as a
 deck at land height.
+**Swash's premise pass (2026-10-25), ruled by Boz:** (1) tern's flown-water branch is ported WITH its throw; a lake or sea flown above
+its high level leaves a bank with no owner, which is a NAMED REFUSAL ("flown above high by X m"), and Jacob decides which level is right.
+(2) A line pier's width: OSM width where mapped, else a SOURCED typical width, with an authored override (Jacob 2026-09-27, registry's
+structures-over-water finding); no permitted source ⇒ throws. (3) Step 1 is a 'coast' Bake step before 'pipeline' (judged by the dirty
+detector), with clean/coast.json in pour-code's pourDataReads; /pour and the rescope run bake-coast first; derive refuses without it.
 **Dead on tern, don't port:** the gusset (`9c95f43a`, `5f19280c`; per-vertex heights for the retired deformer).
 
 ## 4. Gates
