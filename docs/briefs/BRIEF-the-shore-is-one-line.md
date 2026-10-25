@@ -13,6 +13,8 @@ Boz. The stop is the deliverable.
 **Supersedes** `cartograph/_archive/BRIEF-the-coast-from-the-lidar-SUPERSEDED-2026-10-25.md` (its rulings carried here; its
 deformer-era plan is dead).
 **Priority (Jacob, 2026-10-25):** *"I want to fix Huron's shoreline next; it's unsightly."* Huron first, then PTown.
+⚠️ **Jackson Heights also gets a lidar coast** (Flushing Bay lies in its fetch; it has a tidal record and lidar), so its
+next Bake reads the lidar too. JH is out of the current tranche (Boz, 2026-10-25).
 
 ## 0. Why it looks wrong (Zob, read + measured on Huron's 2026-10-25 tranche bake)
 
@@ -80,6 +82,9 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
    which also halves PTown's bake (the queued speed-up). ⚠️ `shore-sources.mjs` reads `shore-median.json`: replace it with
    bake-coast's trace IN THE SAME COMMIT, or the measure goes blind. Retire `BRIEF-the-shore-is-closed` there too, repointing its
    ~15 references (code comments, `references/registry.json` neededBy).
+   ⭐ Folded in (Boz, 2026-10-25): `bake-terrain#floodExtent` (terrain.json `water.flood`, drawn by BakedGround.jsx) is a
+   fourth trace of the same line at 5 m. It retires here IF its `beyondDrawnHa` measures ~0 on the lidar coast (Huron,
+   PTown, in the slot); otherwise its numbers go to Boz.
 4. **The sand line as ink in ①** (Jacob 10-21): made in the pour beside the coast. Propose its source (the beach between high and
    low water from the lidar?) before building.
 5. **Islands:** closed shore arcs, so an island is a hole in the water through the mint (tern 5fa9effb's INTENT; rewrite against

@@ -579,7 +579,7 @@ async function main() {
 
   const t0 = Date.now()
   // ⭐ One reader for every raster the terrain reads — the DEM tiles and the bathymetry tiles — and one way onto the grid:
-  // `elevationSources.mjs#rasterToGrid`, the box mean of level 0 (shared with bake-shore-median).
+  // `elevationSources.mjs#rasterToGrid`, the box mean of level 0 (shared with bake-coast).
   const opened = await openRasters(specs, { cacheMB: 64, refetch: `node cartograph/fetch-dem.mjs --scene=${SCENE}` })
   const { grid: raw, sources: regimes, counts } = await rasterToGrid(opened, { width, height, bounds, toLL: localToWgs84 })
   const sources = opened.filter((o, s) => regimes[s].overlapped)

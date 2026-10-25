@@ -1,7 +1,7 @@
 /**
  * elevationSources.mjs — ONE READER FOR A TOWN'S ELEVATION RASTERS.
  *
- * Moved out of `bake-terrain.js` (2026-10-04, BRIEF-the-shore-is-closed step 1) so a second bake can read the same
+ * Moved out of `bake-terrain.js` (2026-10-04, cartograph/_archive/BRIEF-the-shore-is-closed-RETIRED-2026-10-25.md step 1) so a second bake can read the same
  * lidar the same way. One copy of the CRS handling, the no-data rule and the way a raster becomes a grid
  * (`rasterToGrid`) — a second copy is how two bakes come to disagree about where the ground is.
  *

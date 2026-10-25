@@ -86,7 +86,7 @@ for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--')))) {
   if (!look) { console.log(`⛔ ${town}: no look names this scene (public/looks/index.json) — NOT CHECKED`); fail++; continue }
   const log = console.log, warn = console.warn; console.log = () => {}; console.warn = () => {}
   let st
-  try { st = await bakeGround({ look, scene: town, shorePending: true, stackOnly: true }) } finally { console.log = log; console.warn = warn }
+  try { st = await bakeGround({ look, scene: town, stackOnly: true }) } finally { console.log = log; console.warn = warn }
   measured++
   if (!SELF) { const v = print(town, judge(st.stackEntries)); if (v === 'red') fail++; if (v !== 'nothing') judged++; continue }
   const bare = judge(st.stackEntries.filter(e => !MARKINGS.some(k => e.groupKey === 'mat:' + k))), empty = verdictOf(bare) === 'nothing'

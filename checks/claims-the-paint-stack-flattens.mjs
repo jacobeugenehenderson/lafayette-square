@@ -17,7 +17,7 @@
 //   (4) a vertex off the lattice — the noding refuses it, never rounds it;
 //   (5) a ring pinching below the lattice (a needle) reaches planGroup unsplit — read on the plane (`nodeThePlane`), and
 //       the cut removed from its source, or the plane noded before the flatten, in bake-ground.js's source.
-//   node checks/claims-the-paint-stack-flattens.mjs [town…] [--shore=pending] [--mutants] [--selftest]
+//   node checks/claims-the-paint-stack-flattens.mjs [town…] [--mutants] [--selftest]
 // Exits 1 on any refusal (or a mutant that stays green), 2 when a town could not be checked.
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -42,7 +42,7 @@ if (arg('one')) {
   console.log = (...a) => lines.push(a.join(' '))
   let r
   try {
-    const st = await bakeGround({ look: lookFor(town), scene: town, shorePending: arg('shore') === 'pending', stackOnly: true })
+    const st = await bakeGround({ look: lookFor(town), scene: town, stackOnly: true })
     const entries = argv.includes('--unnoded') ? st.unnoded : st.stackEntries
     try {
       // the plane as planGroup reads it, less the ease split (the deformer's, not run here)

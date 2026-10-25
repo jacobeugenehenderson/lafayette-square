@@ -4710,7 +4710,7 @@
     {
       "id": "q-nearshore-bed-profile",
       "ask": "The depth of the bed under a shore's water with no bathymetry, as a function of distance from the shoreline",
-      "neededBy": "BRIEF-the-shore-is-closed — the bed in the terrain (Jacob 2026-09-26: 'where we don't have [depth data], we gently slope it')",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — the bed in the terrain (Jacob 2026-09-26: 'where we don't have [depth data], we gently slope it')",
       "status": "answered",
       "findings": [
         "f-cem-equilibrium-profile",
@@ -4734,7 +4734,7 @@
     {
       "id": "q-bottom-visibility-depth",
       "ask": "The depth at which the bottom stops being visible through the water (and how much of it fades)",
-      "neededBy": "BRIEF-the-shore-is-closed — the bed stops mattering past it; the water shades by depth to it",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — the bed stops mattering past it; the water shades by depth to it",
       "status": "answered",
       "findings": [
         "r-bottom-visibility-default"
@@ -4764,7 +4764,7 @@
     {
       "id": "q-pier-walkway-width",
       "ask": "The width of a pier mapped only as a line, with no width tagged",
-      "neededBy": "BRIEF-the-shore-is-closed — structures over water (Jacob 2026-09-27: OSM width where mapped, else a sourced typical width, with an authored override)",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — structures over water (Jacob 2026-09-27: OSM width where mapped, else a sourced typical width, with an authored override)",
       "status": "answered",
       "findings": [
         "f-ufc-main-walkway-width"
@@ -4774,7 +4774,7 @@
     {
       "id": "q-revetment-toe-berm",
       "ask": "How far a revetment's toe runs out onto the bottom beyond the foot of its slope",
-      "neededBy": "BRIEF-the-shore-is-closed — Jacob 2026-09-27: 'the rocks need to extend further into the water … the harsh cutoff on the bottom'",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — Jacob 2026-09-27: 'the rocks need to extend further into the water … the harsh cutoff on the bottom'",
       "status": "answered",
       "findings": [
         "f-cem-toe-berm-size"
@@ -4784,7 +4784,7 @@
     {
       "id": "q-deck-min-thickness",
       "ask": "The minimum thickness of a deck that carries people and vehicles, by material",
-      "neededBy": "BRIEF-the-shore-is-closed — structures over water (Jacob 2026-09-27: 'a dock or a wharf or pier can't be a 2D plane' · 'engineering weight requirements … would tell us minimum thicknesses')",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — structures over water (Jacob 2026-09-27: 'a dock or a wharf or pier can't be a 2D plane' · 'engineering weight requirements … would tell us minimum thicknesses')",
       "status": "answered",
       "findings": [
         "f-fhwa-concrete-deck-min",
@@ -4889,7 +4889,7 @@
     {
       "id": "q-revetment-crest-and-toe-levels",
       "ask": "Which water levels set a revetment's crest and how deep its armour runs",
-      "neededBy": "BRIEF-the-shore-is-closed — Jacob 2026-09-27: 'fix the revetment' (placement by the bank, the crest built to the tide, the toe below LOW)",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — Jacob 2026-09-27: 'fix the revetment' (placement by the bank, the crest built to the tide, the toe below LOW)",
       "status": "answered",
       "findings": [
         "f-em1614-design-water-levels"
@@ -7719,7 +7719,7 @@
         "visibleToM": 2.4384,
         "fadeOverM": 0.6096
       },
-      "canon": "BRIEF-the-shore-is-closed; ruled (d) 2026-09-27: a town's own Secchi depth where published, else this, said out loud"
+      "canon": "cartograph/_archive/BRIEF-the-shore-is-closed-RETIRED-2026-10-25.md; ruled (d) 2026-09-27: a town's own Secchi depth where published, else this, said out loud"
     },
     {
       "id": "f-ufc-main-walkway-width",

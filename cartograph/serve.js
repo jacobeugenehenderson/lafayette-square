@@ -40,7 +40,6 @@ import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
 import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
-import { groundShorePass } from './shoreRuns.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -137,13 +136,6 @@ function readBakeTimings(mapJson) { try { return JSON.parse(readFileSync(bakeTim
 function saveBakeTiming(mapJson, lookId, label, ms) {
   try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { ms, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
   catch (e) { console.warn(`[bake] could not record the ${label} timing: ${e.message}`) }
-}
-// ⭐ A GROUND PASS THE BAKE SKIPS IS RECORDED AS SKIPPED, never left at its old time (Boz, 2026-10-21): the budget's ceiling
-// sums only the passes a Bake actually runs, so a stale 'ground-shore' time would loosen it by a pass nobody pays.
-// ▶ checks/claims-the-ground-stays-in-budget.mjs
-function saveBakeSkip(mapJson, lookId, label, why) {
-  try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { skipped: why, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
-  catch (e) { console.warn(`[bake] could not record the ${label} skip: ${e.message}`) }
 }
 // ⭐ WHAT EACH STEP READ WHEN IT LAST RAN — `${lookId}:${label}` → { code, data }, each { path: sha1 }, beside the timings.
 // runIfDirty re-runs a step when its code (its scripts' import closure) or a declared data input differs by CONTENT
@@ -2848,15 +2840,13 @@ createServer(async (req, res) => {
         const b = writeIfChanged(join(LOOK_DIR, 'terrain.bin'), readFileSync(SCENE_TERRAIN_BIN), { touch: false })
         if (a || b) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } else skip('terrain-slab')
       }
-      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json) · shore-median.json (read and painted as sand only when walked on the shoreline this bake writes; its freshness is the 'ground-shore' step's, below)
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json)
       await runIfDirty('ground',
         [MAP_JSON, DESIGN, SCENE_DESIGN, RIBBONS, bakePaths.boundary, join(bakePaths.raw, 'survey.json'),
          join(bakePaths.clean, 'park-polygon.json'), join(REPO_ROOT, 'src', 'data', bakeScene, 'park_water.json'),
          join(here, 'bake-ground.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
-        // --shore=pending: this pass writes the shoreline the median is walked on, so it cannot have the median yet;
-        // 'ground-shore' below re-runs it without the flag, and a coast with no current median then refuses
-        `node bake-ground.js --look=${id} ${sceneFlag} --shore=pending`,
+        `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
       // Shore revetment — reads the shoreline (`__water__` runs) out of the
       // shape.json the ground bake just wrote, so a pour that moves the shore
@@ -2871,32 +2861,6 @@ createServer(async (req, res) => {
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
           // a town with no shore gets no revetment.json, and the runtime reads that 404 as "none" (SlabRevetment.jsx)
           { cwd: here, timeout: 120000, absentOk: [join(LOOK_DIR, 'revetment.json')] })
-        // Shore median (BRIEF-the-shore-is-closed): the region between the drawn shoreline and the lidar's waterline,
-        // read off the town's own elevation source at its finest level. A town with no coast writes none (ShoreMedian.jsx
-        // reads the 404 as none). ⚠️ A URL list's TILES are read over the network: not tracked, as for the terrain.
-        await runIfDirty('shore-median',
-          [join(LOOK_DIR, 'shape.json'), MAP_JSON, bakePaths.boundary, bakePaths.geography, SCENE_TERRAIN_JSON,
-           ELEVATION_TIF, ELEVATION_LIST, join(bakePaths.raw, 'elevation'), join(here, 'bake-shore-median.mjs')],
-          [join(LOOK_DIR, 'shore-median.json')],
-          `node bake-shore-median.mjs --look=${id} ${sceneFlag}`,
-          { cwd: here, absentOk: [join(LOOK_DIR, 'shore-median.json')] })
-        // The shore median painted as sand (bake-ground PAINT_ORDER 'shore'). The ground bake WRITES the shoreline the
-        // median is walked on, so it cannot wait for it: when the median just changed, the ground is baked AGAIN with it.
-        // Inputs are the median and the shoreline only, so an ordinary bake (median unchanged) skips this.
-        // not-inputs: building-overrides.json (the ground step's input — it re-runs ground when this changes) · buildings.json (the ground step's input — it re-runs ground when this changes) · centerlines.json (the ground step's input — it re-runs ground when this changes) · derived_trees.json (the ground step's input — it re-runs ground when this changes) · design.json (the ground step's input — it re-runs ground when this changes) · elevation-sources.txt (the ground step's input — it re-runs ground when this changes) · elevation.tif (the ground step's input — it re-runs ground when this changes) · forest_park_trees.json (the ground step's input — it re-runs ground when this changes) · geography.json (the ground step's input — it re-runs ground when this changes) · index.json (the ground step's input — it re-runs ground when this changes) · intake-sources.json (the ground step's input — it re-runs ground when this changes) · intake.json (the ground step's input — it re-runs ground when this changes) · jurisdiction.json (the ground step's input — it re-runs ground when this changes) · map.json (the ground step's input — it re-runs ground when this changes) · measurements.json (the ground step's input — it re-runs ground when this changes) · msbf.json (the ground step's input — it re-runs ground when this changes) · neighborhood_boundary.json (the ground step's input — it re-runs ground when this changes) · neighborhood.json (the ground step's input — it re-runs ground when this changes) · osm_trees.json (the ground step's input — it re-runs ground when this changes) · osm.json (the ground step's input — it re-runs ground when this changes) · overture-places.json (the ground step's input — it re-runs ground when this changes) · park_trees.json (the ground step's input — it re-runs ground when this changes) · park_water.json (the ground step's input — it re-runs ground when this changes) · park-polygon.json (the ground step's input — it re-runs ground when this changes) · ribbons.json (the ground step's input — it re-runs ground when this changes) · sources.json (the ground step's input — it re-runs ground when this changes) · survey.json (the ground step's input — it re-runs ground when this changes) · terrain.bin (the ground step's input — it re-runs ground when this changes) · terrain.json (the ground step's input — it re-runs ground when this changes) · tree-species-map.json (the ground step's input — it re-runs ground when this changes)
-        // ⭐ ONLY WHEN THE FIRST PASS LEFT THE SHORE PENDING (shoreRuns.mjs#groundShorePass): an inland town, or a coast whose
-        // median was already current, is not baked twice; it runs when the median was re-walked. A plan whose 'ground' would
-        // run says the step is decided after the first pass.
-        const inPlan = (s) => !!P.plan?.stale.some(x => x.step === s)
-        const shorePass = groundShorePass(readJsonOrNull(join(LOOK_DIR, 'ground.json')), { medianWritten: existsSync(join(LOOK_DIR, 'shore-median.json')),
-          medianRan: P.plan ? inPlan('shore-median') : ranSteps.includes('shore-median'), plan: !!P.plan, groundStale: inPlan('ground') })
-        if (shorePass.run === null) P.plan.stale.push({ step: 'ground-shore', why: [shorePass.why] })
-        else if (shorePass.run) await runIfDirty('ground-shore',
-          [join(LOOK_DIR, 'shore-median.json'), join(LOOK_DIR, 'shape.json'), join(here, 'bake-ground.js')],
-          [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
-          `node bake-ground.js --look=${id} ${sceneFlag}`,
-          { cwd: here })
-        else { skip(`ground-shore (${shorePass.why})`); if (!P.plan) saveBakeSkip(MAP_JSON, id, 'ground-shore', shorePass.why) }
       }
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named

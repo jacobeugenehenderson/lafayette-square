@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: RETIRED 2026-10-25 — the shore median is retired by BRIEF-the-shore-is-one-line step 3 (Jacob 2026-10-13 "drop it"; 2026-10-21 "the sand line should be made as part of the protopoly"). Its live threads: the coast is the lidar's (bake-coast.mjs), the sand line is step 4 there.
 dispatched: no
 written: 2026-09-26 · REWRITTEN 2026-10-04 as the shore MEDIAN (Jacob, Huron punch list); the 09-26 body is in cartograph/_archive/BRIEF-the-shore-is-closed-2026-09-26.md
 evict-when: every town with water carries the shore median as a baked, inspectable region; every point of it holds a treatment from the grain continuum; a render-side walk of every shore finds zero views of the sky dome or a building foundation riser, and is seen to FAIL when one treatment is removed; Jacob has walked Huron and Provincetown at the water's edge, near and far.

@@ -2274,8 +2274,7 @@ const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
 // edge shorter than the lattice; it is REFUSED by name, never merged (the stamp arrays are aligned to its vertices).
 // ① SPLIT BY ITS OWNERS: each piece of the ink takes the class of the edges it lies within one stroke width (2ε) of —
 // the coast's is the land's shore, a grade-separated highway's is left to the highway, the rest is road. ONE function,
-// read by the producer (which paints it) and by bake-shore-median (whose median closes against the coast's piece, never
-// against the water face down its middle). `ink` = ①'s { rings, labels }, `owners` its owner table, `hw` = ε.
+// read by the producer (which paints it). `ink` = ①'s { rings, labels }, `owners` its owner table, `hw` = ε.
 export function inkByOwner(ink, owners, hw, hwySkel = new Set()) {
   const W2 = 2 * hw, quads = { water: [], highway: [] }
   let unlabelled = 0
