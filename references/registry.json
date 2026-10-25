@@ -1166,6 +1166,29 @@
       "status": "PERMITTED"
     },
     {
+      "id": "usgs-3dep-lidar",
+      "title": "USGS 3D Elevation Program (3DEP): 1 m lidar DEMs (The National Map, prd-tnm StagedProducts), their lidar point clouds (LPC), and WESM, the work-unit metadata (3DEPElevationIndex)",
+      "publisher": "U.S. Geological Survey",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.usgs.gov/3d-elevation-program",
+      "accessPaths": [
+        "The National Map products API + prd-tnm S3 (fetch-dem.mjs → raw/elevation-sources.txt; the DEM every town's terrain and coast are read from)",
+        "WESM, 3DEPElevationIndex MapServer layer 8 (fetch-flight-water.mjs: collect_start, collect_end, geoid, vert_crs)",
+        "USGS's Entwine (EPT) copy of the same point clouds, s3://usgs-lidar-public (a probe, 2026-10-25: GPS time of 8 windows of OH_Statewide_Phase1_3_2019; no new terms, same source)"
+      ],
+      "covers": [
+        "bare-earth elevation for every poured town, its flight window and vertical datum (geoid), and its points' GPS time"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (usgs.gov 'Copyrights and Credits'; a federal work). ⚠️ This row is LATE: the kit has read 3DEP for every town since fetch-dem landed with no row, against README rule 1 — found 2026-10-25 when the EPT probe went looking for the row to note itself on.",
+        "quote": "USGS-authored or produced data and information are considered to be in the U.S. Public Domain. · When using information from USGS information products, publications, or websites, we ask that proper credit be given. (Credit: U.S. Geological Survey)",
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
+      },
+      "status": "PERMITTED"
+    },
+    {
       "id": "noaa-bluetopo",
       "title": "NOAA OCS BlueTopo: national bathymetric compilation (COG tiles, NAD83 UTM + NAVD88)",
       "publisher": "NOAA Office of Coast Survey",
