@@ -32,7 +32,7 @@ GREEN on 4 towns. ⛔ HELD: PTown's ② refuses at the land-use stamp ("crossing
 is a SECOND noding rule (round, insert, re-test), which can't terminate on shallow crossings (OSM wetland/reserve vs the water
 edge); ①'s sub-mm shift moved where it landed. Ruled direction (Boz, vetoable): hot-pixel snap rounding as latticeNode's crossing
 rule, one pass, with the stamp's loop deleted. Splice proposes; Zob reads first. Land the seam squash only when PTown builds.
-**❓ FOR JACOB (veto): Boz revised his own ruling (A) of 10-22, 2026-10-25.** Off an arc, a declined ① corner ends a band
+**✅ KEPT (Jacob, 2026-10-25: "keep your change to the rule"): Boz's revision of his ruling (A) of 10-22.** Off an arc, a declined ① corner ends a band
 leg ONLY where the ladders differ; at equal ladders the band bends through (RIBBONS invariant 1). And the off-arc mark reads
 protoRAt's verdict, so a smoothBend is not a corner (INVARIANT 2). Why: as built, (A) cut equal-ladder bands into abutting legs,
 drawing a 1.52 m seam twice (Kerf, measured at PTown holway-avenue and Huron applewood-townhouses).
