@@ -331,7 +331,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-photo-loads-from-someone-elses-server.mjs` | every listing photograph is ours, and |
 | `checks/claims-no-shadowed-chains.mjs` | WHY. Jacob's eye, 2026-09-06, on Survey: two navy centerlines running near-parallel with a |
 | `checks/claims-no-slab-outlives-its-schema.mjs` | CLAIM: no baked slab is read under a fade model it was not baked for. |
-| `checks/claims-no-sub-ink-edge-between-two-owners.mjs` | CLAIM — ① HAS NO EDGE SHORTER THAN ITS INK IS WIDE BETWEEN TWO CHAINS. ① is every chain stroked to ε and united, so its ink |
+| `checks/claims-no-sub-ink-edge-between-two-owners.mjs` | CLAIM — ① HAS NO EDGE SHORTER THAN ITS INK IS WIDE BETWEEN TWO OWNERS, EXCEPT WHERE THE EXACT INK HAS ONE. ① is every |
 | `checks/claims-no-town-carries-the-mould.mjs` | "DOES ANY TOWN CARRY ANOTHER TOWN'S PLACES?" — continuity map §7 #2 (Phase 2 C, 2026-10-04). |
 | `checks/claims-no-town-name-gates-the-kit.mjs` | "DOES ANY KIT CODE STILL DECIDE BY A TOWN'S NAME?" — BRIEF-ls-bleed-excision (Jacob, 2026-10-07: "fix the LS |
 | `checks/claims-no-town-rides-in-the-bundle.mjs` | "DOES ONE TOWN'S DATA SHIP TO EVERY TOWN?" — the stowaway, made impossible. |
