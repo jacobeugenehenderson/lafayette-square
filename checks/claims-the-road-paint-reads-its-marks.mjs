@@ -46,11 +46,12 @@ let red = 0, towns = 0, plantedSeen = 0, plantedRefused = 0
 const SIGN = 'const toward = lIn ? 1 : -1'
 const tgSrc = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
 if (tgSrc.split(SIGN).length !== 2) { console.log(`⛔ NOT CHECKED — the toward-street sign (\`${SIGN}\`) occurs ${tgSrc.split(SIGN).length - 1} time(s) in tileGround.js#roadMarkings, not once — re-aim the E2 mutant's anchor`); process.exit(2) }
-const LIB = join(ROOT, 'src/lib'), flipDir = mkdtempSync(join(tmpdir(), 'paint-side-'))
+const LIB = join(ROOT, 'src/lib')
+const flipDir = mkdtempSync(join(tmpdir(), 'paint-side-'))
 process.on('exit', () => rmSync(flipDir, { recursive: true, force: true }))
 writeFileSync(join(flipDir, 'tileGround.js'), tgSrc.replace(SIGN, 'const toward = lIn ? -1 : 1')
-  .replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from '${pathToFileURL(join(LIB, r)).href}'`)
-  .replace(/from 'clipper-lib'/g, `from '${import.meta.resolve('clipper-lib')}'`))
+  .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`)
+  .replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
 const { roadMarkings: flippedMarkings } = await import(pathToFileURL(join(flipDir, 'tileGround.js')).href)
 const quiet = (f) => { const l = console.log, w = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
 const sd = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
