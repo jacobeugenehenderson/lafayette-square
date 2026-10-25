@@ -33,7 +33,8 @@ vote**. Zob doesn't rename itself. Every claim is marked **measured**, **read in
    rather than allowlisting what it wrongly flags.
 5. **The censuses nobody owns:** chain reach, dead code, duplicated implementations.
 
-⛔ **The heavy slot is Boz's to grant:** ask before any bake, pour or stackOnly run; release it by message.
+⛔ **The heavy slot is Boz's to grant:** ask before any bake, pour, buildProto or stackOnly run; release it by message.
+Heavy runs go under a memory watchdog at a 25% floor (a 1.5 GB bake sits under 35% on this machine and is killed there).
 
 ## 3. Disputes with Boz
 
