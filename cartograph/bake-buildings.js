@@ -581,6 +581,40 @@ function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
   }
 }
 
+/**
+ * THE SLAB'S KEEP-DECISION — which of a town's buildings the slab keeps, as bake-buildings decides it. Exported so a check
+ * asks the PRODUCER, never re-applies the formula (claims-every-listing-keeps-its-building).
+ * The neighborhood is the boundary's polygon, else its disc (membership.mjs#createMembershipFilter, the ONE decision shared
+ * with pipeline.js); the operator's overrides (building-overrides.json) layer on top: `activate` forces an outside building
+ * IN, `hide` an inside one OUT.
+ * ⭐ EVERY town goes through the same cull, LS's ledger included (Boz's default in the 2026-10-24 handoff, vetoable:
+ * "LS's buildings ledger goes through the same circle check"). The ledger exemption ("a ledger already declares its
+ * membership") is retired: it made LS's exclusion loops and overrides inert in the slab.
+ * `nb` / `overrides` default to the town's files; pass them to judge a HYPOTHETICAL membership. ⛔ An unreadable overrides
+ * file REFUSES (it was warned about and ignored, which baked as if the operator had authored nothing). An absent one is
+ * no overrides, said in `overridesFrom`.
+ * → { buildings, ledger, culled, overridesFrom, report() }
+ */
+export function keptBy(scene, buildings, { nb = undefined, overrides = undefined } = {}) {
+  const D = join(ROOT, 'cartograph', 'data', scene)
+  const ledger = existsSync(join(D, 'buildings.json'))
+  const nbP = join(D, 'neighborhood_boundary.json')
+  if (nb === undefined) nb = existsSync(nbP) ? JSON.parse(readFileSync(nbP, 'utf-8')) : null
+  let overridesFrom = 'passed in'
+  if (overrides === undefined) {
+    const ovP = join(D, 'building-overrides.json')
+    if (!existsSync(ovP)) { overrides = {}; overridesFrom = 'absent (no building-overrides.json)' }
+    else {
+      try { overrides = JSON.parse(readFileSync(ovP, 'utf-8')) } catch (e) { throw new Error(`[bake-buildings] ⛔ ${ovP} is unreadable (${e.message}) — refusing to bake as if the operator had authored no overrides`) }
+      overridesFrom = 'building-overrides.json'
+    }
+  }
+  if (!nb) return { buildings, ledger, culled: false, overridesFrom, report: () => {} }
+  const membership = createMembershipFilter({ nb, activate: new Set(overrides.activate || []), hide: new Set(overrides.hide || []), label: 'bake-buildings' })
+  const kept = buildings.filter(b => membership.decide(b.id, b.footprint || null))
+  return { buildings: kept, ledger, culled: true, overridesFrom, report: () => membership.report() }
+}
+
 export async function bakeBuildings({ look, scene } = {}) {
   assertBakeTarget('bake-buildings', look, scene)
   const outDir   = join(ROOT, 'public', 'baked', look)
@@ -588,35 +622,10 @@ export async function bakeBuildings({ look, scene } = {}) {
 
   let buildings = loadBuildings(scene)
 
-  // Membership cull (KIT). The neighborhood is the area inside the boundary-street
-  // POLYGON (persisted on commit); a building belongs if its centroid is in the
-  // polygon. The roster editor's overrides layer on top (feedback_effective_payload
-  // _layering): `activate` forces an outside building IN, `hide` forces an inside
-  // one OUT. Keep if (centroid-in-polygon OR activated) AND NOT hidden. Falls back
-  // to the boundary CIRCLE if no polygon was persisted (older scenes).
-  //
-  // ⭐ A town whose buildings come from its own LEDGER (data/<scene>/buildings.json — the same question loadBuildings
-  // asks) already declares its membership there, so the boundary cull does not apply. Asked of the town's data, never
-  // its name (was `scene !== 'lafayette-square'`, BRIEF-ls-bleed-excision).
-  const nbP = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
-  const hasLedger = existsSync(join(ROOT, 'cartograph', 'data', scene, 'buildings.json'))
-  if (!hasLedger && existsSync(nbP)) {
-    const nb = JSON.parse(readFileSync(nbP, 'utf-8'))
-    let activate = new Set(), hide = new Set()
-    const ovP = join(ROOT, 'cartograph', 'data', scene, 'building-overrides.json')
-    if (existsSync(ovP)) {
-      try { const ov = JSON.parse(readFileSync(ovP, 'utf-8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) }
-      catch (e) { console.warn(`[bake-buildings] building-overrides unreadable: ${e.message}`) }
-    }
-    // ⭐ ONE decision, shared with pipeline.js — see cartograph/membership.mjs.
-    // This used to be a hand-copied third copy under a comment claiming it "must
-    // match pipeline.js exactly"; it did not (ROADMAP A08).
-    const membership = createMembershipFilter({ nb, activate, hide, label: 'bake-buildings' })
-    const before = buildings.length
-    buildings = buildings.filter(b => membership.decide(b.id, b.footprint || null))
-    membership.report()
-
-  }
+  // Membership cull (KIT): the producer's own keep-decision, exported as keptBy (the listings check asks it).
+  const kept = keptBy(scene, buildings)
+  buildings = kept.buildings
+  kept.report()
 
   // ⭐ THE SET-PIECE'S BUILDING (BRIEF-set-piece-contract item 1). A town's set-piece stands on one of
   // its own buildings (`setPiece.buildingId`, src/instances/<town>.js). That building keeps its RECORD

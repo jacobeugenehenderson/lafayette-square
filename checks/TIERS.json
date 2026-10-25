@@ -1,9 +1,9 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 449,
+  "total": 450,
   "counts": {
     "safe": 327,
-    "local-effect": 27,
+    "local-effect": 28,
     "live": 95
   },
   "checks": [
@@ -1272,6 +1272,13 @@
       "why": [
         "writeFileSync",
         "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-every-listing-keeps-its-building.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/bake-buildings.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
