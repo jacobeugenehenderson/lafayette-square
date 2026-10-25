@@ -9,11 +9,12 @@
 //      project WESM does not know;
 //   3. monthsOf covers every month the window touches, across a year end;
 //   4. gaugeOverWindows reads each month, converts through the record's own IGLD85 → NAVD88, names the highest and
-//      lowest, takes the BAND'S TOP as the highest OBSERVED water of any month (Boz), REFUSES a month with no mean or no
-//      highest, and REFUSES a tidal town by name (not built);
+//      lowest, takes the BAND'S TOP as the highest HOURLY height on the flight days themselves (Boz), never lifted by a
+//      seiche outside them, REFUSES a month with no mean or no highest or a window with no hourly record, and REFUSES a
+//      tidal town by name (not built);
 //   5. on every town that carries both records, the NAVD88 of each month is the record's conversion of its IGLD85.
 // MUTANTS (each RED): projectsOf skips an unnamed line · the window takes the first work unit only · a missing month is
-// skipped · the conversion is dropped (NAVD88 = IGLD85) · the band's top taken from the means · a missing highest skipped.
+// skipped · the conversion is dropped (NAVD88 = IGLD85) · the band's top taken from the months · a missing highest skipped · the hourly window widened to whole months.
 //
 //   node checks/claims-the-flight-water-is-named.mjs
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -47,14 +48,23 @@ console.log('── 4. the gauge over the window')
 const D = { kind: 'lake', station: { id: 'g', name: 'G' }, igld85ToNavd88: { points: [[171, 171.066], [176, 176.068]] } }
 const level = { '2019-11': 174.63, '2019-12': 174.65, '2020-01': 174.76, '2020-02': 174.88, '2020-03': 174.96, '2020-04': 175.06 }
 const peak = { '2019-11': 174.9, '2019-12': 174.95, '2020-01': 175.05, '2020-02': 175.3, '2020-03': 175.2, '2020-04': 175.25 }
-const gauge = (holes = [], noPeak = []) => async (url) => { const b = new URL(url).searchParams.get('begin_date'), k = `${b.slice(0, 4)}-${b.slice(4, 6)}`
+// hourly heights over the flight days: 174.9 every hour, one spike of 175.20 on 2020-03-03 (inside), and a SEICHE of 176.0 on
+// 2019-11-05 (outside the window, before its first day) which must never lift the top
+const hourly = (a, b) => { const out = [], t0 = Date.parse(`${a.slice(0, 4)}-${a.slice(4, 6)}-${a.slice(6)}`), t1 = Date.parse(`${b.slice(0, 4)}-${b.slice(4, 6)}-${b.slice(6)}`) + 23 * 3.6e6
+  for (let t = t0; t <= t1; t += 3.6e6) { const d = new Date(t).toISOString(), day = d.slice(0, 10)
+    out.push({ t: d.slice(0, 16).replace('T', ' '), v: String(day === '2020-03-03' && d.slice(11, 13) === '05' ? 175.2 : day === '2019-11-05' ? 176.0 : 174.9) }) }
+  return out }
+const gauge = (holes = [], noPeak = [], noHourly = false) => async (url) => { const q = new URL(url).searchParams, b = q.get('begin_date'), k = `${b.slice(0, 4)}-${b.slice(4, 6)}`
+  if (q.get('product') === 'hourly_height') return res(noHourly ? { error: { message: 'No data was found' } } : { data: hourly(b, q.get('end_date')) })
   return res(holes.includes(k) ? { error: { message: 'No data was found' } } : { data: [{ MSL: String(level[k]), highest: noPeak.includes(k) ? '' : String(peak[k]) }] }) }
 const G = await gaugeOverWindows(D, W, 'fixture', { fetcher: gauge() })
 const conv = igld85ToNavd88(D, 'fixture'), g = G.A_2019
 say(g.months.length === 6 && g.highest.month === '2020-04' && g.lowest.month === '2019-11', `six months, highest ${g.highest.month}, lowest ${g.lowest.month}`)
 say(g.months.every(m => Math.abs(m.navd88M - conv(m.igld85M)) < 1e-3), `each month converted by the record (${g.highest.igld85M} → ${g.highest.navd88M} m NAVD88)`)
 say(await throws(() => gaugeOverWindows(D, W, 'fixture', { fetcher: gauge(['2020-02']) })), 'a month the gauge has no mean for REFUSES')
-say(g.bandTop.month === '2020-02' && Math.abs(g.bandTop.navd88M - conv(175.3)) < 1e-3, `the band's top is the HIGHEST OBSERVED in any month (${g.bandTop.month}, ${g.bandTop.navd88M} m), not the highest mean (${g.highest.month})`)
+say(g.bandTop.at?.startsWith('2020-03-03 05') && Math.abs(g.bandTop.navd88M - conv(175.2)) < 1e-3, `the band's top is the highest HOURLY height on the flight days (${g.bandTop.at}, ${g.bandTop.navd88M} m), not a month's highest (175.3) nor its mean`)
+say(g.bandTop.navd88M < conv(175.9), 'a seiche OUTSIDE the flight days (176.0 on 2019-11-05, before the window) does not lift the top')
+say(await throws(() => gaugeOverWindows(D, W, 'fixture', { fetcher: gauge([], [], true) })), 'a window with no hourly record REFUSES')
 say(await throws(() => gaugeOverWindows(D, W, 'fixture', { fetcher: gauge([], ['2019-12']) })), 'a month with no highest observed water REFUSES')
 say(await throws(() => gaugeOverWindows({ ...D, kind: 'tidal' }, W, 'fixture', { fetcher: gauge() })), 'a TIDAL town REFUSES by name (not built)')
 
