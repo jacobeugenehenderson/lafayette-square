@@ -32,6 +32,13 @@ no landEvidence, no identity), so the tranche re-pour is its first under the cur
 (Jacob): "very very large… may be prohibitively complex (until we do something to manage)". The managing move already planned is
 disc brief §3 (only the lit part is raised; the height extent from the one module), not yet built. Pour it; if the terrain bake
 refuses or runs away, it's a named stop, not a reason to hold the other towns.
+The FAR range already exists: `cartograph/bake-landscape.js` → `public/baked/altadena/landscape/sangabriel.glb`, drawn by
+`src/components/MountainBackdrop.jsx` (mounted in Town.jsx; landed 07-10, Jacob: "really beautiful"). First, after the re-pour,
+measure: the in-circle terrain's size and bake time, and the backdrop's look and cost on staging. **FALLBACK, filed (Jacob,
+2026-10-25: "yes, file it as the fallback"), used ONLY IF the backdrop mesh is too heavy or can't otherwise be managed:** ring the
+radius in layered flat mountain IMPOSTOR cards between the camera and the sky, separable for parallax. Real geometry inside the
+radius; painted layers where the mountain meets the cyclorama. Not for the in-circle terrain (that's real either way: a coarser
+mesh or disc §3).
 **Seam (Splice) state, 2026-10-25 ~02:00:** feature-complete, and Zob's final tree review PASSES; the corner gates hold; no-corner
 GREEN on 4 towns. ⛔ HELD: PTown's ② refuses at the land-use stamp ("crossing pass did not settle in 8 rounds"). Zob: stampCrossings
 is a SECOND noding rule (round, insert, re-test), which can't terminate on shallow crossings (OSM wetland/reserve vs the water
