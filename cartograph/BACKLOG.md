@@ -27,6 +27,11 @@ EVERY bend (one rule for the ink) · the reversed-face label shift (__boundary__
 JH 179; pre-existing, a kit class) fixed in booleanLabelled's `segs` path, Zob reading first · unnoded skeleton crossings (HPDM
 primary-link-124 × heels-wheels, JH ×2) are the MINT's (crossings landing by a stroke vertex; Zob, measured; Boz first
 said skeleton, wrong) → brief §5a, construction owed by Splice; the folds wait on them (one code path).
+**Seam (Splice) state, 2026-10-25 ~02:00:** feature-complete, and Zob's final tree review PASSES; the corner gates hold; no-corner
+GREEN on 4 towns. ⛔ HELD: PTown's ② refuses at the land-use stamp ("crossing pass did not settle in 8 rounds"). Zob: stampCrossings
+is a SECOND noding rule (round, insert, re-test), which can't terminate on shallow crossings (OSM wetland/reserve vs the water
+edge); ①'s sub-mm shift moved where it landed. Ruled direction (Boz, vetoable): hot-pixel snap rounding as latticeNode's crossing
+rule, one pass, with the stamp's loop deleted. Splice proposes; Zob reads first. Land the seam squash only when PTown builds.
 **Leg-ends:** the stop is a REGRESSION against SECTION's "a SHORE or RIM flank is no corner" (Jacob, 10-07): 608 PTown / 384 Huron
 shore turns became corners. Fix: `noStreetFlank` on `isStreetLeg` (Kerf, in measurement). The bar is restated (Boz): shore/rim
 census 0 as a check row; drawn-twice totals ≤ BEFORE on 4 towns, no new row > 1 m, every > 10% row with exhibits.
