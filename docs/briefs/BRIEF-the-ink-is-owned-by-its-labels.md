@@ -67,6 +67,14 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    each tile's own band, from its (absorbed) edge to ②, owned by that edge's label. shape.json's `ink` pieces retire with the slit.
 3. **One sealed centreline record** serves both the absorption and the stripe (the stripe = the centreline's ribbon). Which record
    carries it: propose it to Boz before building. ⛔ Never `ribbons.streets` past the Wall.
+3a. **The right KIND of stripe (Jacob, 2026-10-25: "make sure to get the stripe information right so it's the right kind of
+   stripe").** Today `bake-ground.js#STRIPE_CLASSES` is a hard-coded class list (residential included) with ONE stripe, 0.10 m.
+   That's a Layer 0 class-D constant that suited town #1. The centreline record carries a stripe KIND per run, chosen the way the
+   style guide rules everything (2026-10-20: "choose only; the style decides, authoring handles fidelity"): the town's style picks
+   the kind, data SELECTS among styles (OSM `lane_markings`, `lanes`, `divider`, `oneway`, class, grade) and never measures, and
+   Survey can override per run. ⛔ No class list in code. The KINDS (the set to draw) are owed to Jacob before build: a STYLE-GUIDE
+   question, proposed by Boz from MUTCD's centreline family (none · single broken yellow · double solid yellow · solid + broken),
+   with what data selects each.
 4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, the slit's painting, and every
    reader of the removed paths (the ground deformer reads shape.json's `ink`: name what it reads instead).
 
