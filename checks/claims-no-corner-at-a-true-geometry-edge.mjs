@@ -36,7 +36,7 @@ const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.leng
 // expression, evaluated. ⛔ Absent or unreadable ⇒ NOT CHECKED, never a default.
 const SRC = join(ROOT, 'src/lib/tileGround.js')
 const TOL_DEG = (() => {
-  const m = readFileSync(SRC, 'utf8').match(/^const FILLET_TURN_TOL = ([0-9.\s*/+\-()]+|[0-9.\s*/+\-()]*Math\.PI[0-9.\s*/+\-()]*)$/m)
+  const m = readFileSync(SRC, 'utf8').match(/^(?:export )?const FILLET_TURN_TOL = ([0-9.\s*/+\-()]+|[0-9.\s*/+\-()]*Math\.PI[0-9.\s*/+\-()]*)$/m)
   const v = m ? Function(`return (${m[1]})`)() : NaN
   return Number.isFinite(v) && v > 0 ? v * 180 / Math.PI : null
 })()
@@ -74,12 +74,14 @@ function judge(captured, owners, streets, eps) {
 }
 
 // the capture: one statement after `rSrc`, in a copy of tileGround.js; the live file is never written
-const ANCHOR = '? 0 : protoRAt(labs, i, ring.length, depthAt(i), turnOf(ring, i)))\n'
+// the anchor is the `rSrc` statement itself: its first line, then the line that calls `protoRAt(` (its body may change; it
+// must bind `ring`, `labs` and `rSrc`). Not found exactly once ⇒ NOT CHECKED.
+const ANCHOR = /\n([ \t]*)const rSrc = ring\.map\([^\n]*\n[^\n]*protoRAt\([^\n]*\n/g
 const capturedModule = () => {
-  const src = readFileSync(SRC, 'utf8')
-  if (src.split(ANCHOR).length !== 2) return null
-  const D = join(ROOT, 'src/lib')
-  return src.replace(ANCHOR, ANCHOR + '        ;(globalThis.__rSrcCapture ||= []).push({ ring, labs, rSrc })\n')
+  const src = readFileSync(SRC, 'utf8'), hits = [...src.matchAll(ANCHOR)]
+  if (hits.length !== 1) return null
+  const D = join(ROOT, 'src/lib'), [m, ind] = hits[0]
+  return src.replace(m, m + `${ind};(globalThis.__rSrcCapture ||= []).push({ ring, labs, rSrc })\n`)
     .replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from '${pathToFileURL(join(D, r)).href}'`)
     .replace(/from 'clipper-lib'/g, `from '${import.meta.resolve('clipper-lib')}'`)
 }
