@@ -93,7 +93,13 @@ keeps it moving. In order:
    `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
 Then, QUEUED (Jacob, 2026-10-25: "yes, queue the PTown bake speed-up"): PTown's bake pays for the ground TWICE (ground 5,197 s +
 ground-shore 4,949 s of ~177 min, timings of 10-11): the shore pass must not re-run the whole ground. Brief after the tranche.
-Then: one line per depth (the band census: HPDM 22.5 km doubled). Bake-look silent-carry refusal queued.
+Then: one line per depth (the band census: HPDM 22.5 km doubled). **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
+datawall is for"):** ① is not the on-screen source (block↔ink near-miss is the bb frame edge, clipped before the stack). The bake's
+Wall is the `protoShapeTiles` handoff inside ONE buildTileGround call, not shape.json. Past it: asphalt/highway/shore are ①'s ink
+RE-STROKED (`inkByOwner`), a second construction beside the frozen ink pieces (`inkPiecesByOwner`), so the road is built twice and
+read from neither sealed source; asphalt/curb is the largest ink row (cause not established until one site is compared) ·
+`centreStripeRings(ribbons.streets)` reads CHAIN geometry past the Wall (a literal breach) · `surveyStreets` into the bake: untraced.
+Section is clean. The two FILL causes are Section-internal, not breaches. Bake-look silent-carry refusal queued.
 **Seats:** Boz reads docs in full and states readings; Zob checks code against them; Ward holds the player and presses only on Jacob's
 word in Ward's window. One heavy run at a time. Hashes copied from git, never typed.
 
