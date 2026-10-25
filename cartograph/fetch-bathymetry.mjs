@@ -15,9 +15,14 @@
  *   1. NOAA OCS BlueTopo — the national bathymetric compilation, 2–16 m COG tiles, NAD83 UTM + NAVD88.
  *      Found through its own tile scheme (a GeoPackage on the public bucket), whose rows carry each tile's
  *      extent and download link. A tile in the scheme with NO link is not yet delivered: SAID, not counted.
- *   2. USACE NCMP topobathy lidar (1 m, the Great Lakes and open coasts) — ⛔ NOT BUILT YET.
+ *   2. USACE NCMP topobathy lidar (1 m, the Great Lakes and open coasts; built 2026-10-25 for the band a lidar flown
+ *      at high water could not see: BRIEF-the-shore-is-one-line). Found on NOAA Digital Coast's public bucket by
+ *      COORDINATES: every USACE collection's STAC extent is met against the bbox. ⛔ A survey is read only when its
+ *      Digital Coast id has a PERMITTED row in references/registry.json (`digitalCoastId`; README rule 1): one with
+ *      none is NAMED, never read. ⭐ ONE SURVEY (the kit's rule for the DEM too): the newest permitted survey that
+ *      meets the bbox; the others are listed, not mixed. A collection with no STAC record is named, not asked.
  *   3. NOAA NCEI CUDEM — ⛔ NOT BUILT YET.
- * ⛔ So a town the built rungs cannot cover is NOT verified-absent: rungs 2–3 were never asked. The file says
+ * ⛔ So a town the built rungs cannot cover is NOT verified-absent: rung 3 was never asked. The file says
  * which rungs ran and which did not, and the town keeps the profile, said, until they are built.
  *
  * ⭐ NOTHING IS DOWNLOADED but the tile scheme (a few MB, read once): the list this writes is range-read by
@@ -36,10 +41,11 @@ import { writeIfChanged } from './io.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const BUCKET = 'https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com'
+const DC_BUCKET = 'https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com'   // NOAA Digital Coast's public lidar/DEM bucket
 
 export const BATHY_LADDER = [
   { id: 'bluetopo', name: 'NOAA OCS BlueTopo', built: true },
-  { id: 'ncmp', name: 'USACE NCMP topobathy lidar', built: false },
+  { id: 'ncmp', name: 'USACE NCMP topobathy lidar', built: true },
   { id: 'cudem', name: 'NOAA NCEI CUDEM', built: false },
 ]
 
@@ -94,6 +100,64 @@ export async function findBlueTopo(bbox, { fetcher = fetch } = {}) {
   } finally { rmSync(dir, { recursive: true, force: true }) }
 }
 
+const meets = (b, bbox) => !(b[2] < bbox.minLon || b[0] > bbox.maxLon || b[3] < bbox.minLat || b[1] > bbox.maxLat)
+
+/** The Digital Coast ids with a PERMITTED registry row (references/registry.json `digitalCoastId`), → the row's id. */
+export function permittedDigitalCoast(registry = JSON.parse(readFileSync(join(ROOT, 'references', 'registry.json'), 'utf8'))) {
+  const out = new Map()
+  for (const s of registry.sources || []) if (s.digitalCoastId != null && s.terms?.aiUse === 'permitted') out.set(String(s.digitalCoastId), s.id)
+  return out
+}
+
+/** Every `dem/USACE_*` collection on the Digital Coast bucket (the listing is paged). */
+async function usaceCollections(fetcher) {
+  const out = []
+  let token = null
+  do {
+    const r = await fetcher(`${DC_BUCKET}/?list-type=2&prefix=dem/USACE_&delimiter=/&max-keys=1000${token ? `&continuation-token=${encodeURIComponent(token)}` : ''}`)
+    if (!r.ok) throw new Error(`Digital Coast listing: HTTP ${r.status}`)
+    const x = await r.text()
+    for (const m of x.matchAll(/<Prefix>(dem\/USACE_[^<]+\/)<\/Prefix>/g)) out.push(m[1])
+    token = x.match(/<NextContinuationToken>([^<]+)</)?.[1] || null
+  } while (token)
+  return out
+}
+
+/**
+ * USACE NCMP topobathy surveys that meet the bbox: { delivered: [{ tile, url, resolution, survey }], survey, others,
+ * unpermitted, noStac }. ⭐ ONE survey: the newest (STAC temporal end) of those PERMITTED that meet the bbox.
+ */
+export async function findNcmp(bbox, { fetcher = fetch, permitted = permittedDigitalCoast() } = {}) {
+  const meet = [], noStac = []
+  for (const prefix of await usaceCollections(fetcher)) {
+    const r = await fetcher(`${DC_BUCKET}/${prefix}stac/collection.json`)
+    if (r.status === 404) { noStac.push(prefix); continue }
+    if (!r.ok) throw new Error(`Digital Coast ${prefix}stac/collection.json: HTTP ${r.status}`)
+    const c = await r.json()
+    if (!/topobathy|bathymetr/i.test(c.description || '')) continue                 // a USACE topo-only DEM is no floor
+    const b = c.extent?.spatial?.bbox?.[0], t = c.extent?.temporal?.interval?.[0] || []
+    if (!b || !meets(b, bbox)) continue
+    const id = prefix.match(/_(\d+)\/$/)?.[1]
+    if (!id) throw new Error(`Digital Coast ${prefix}: no trailing dataset id — the registry cannot be asked`)
+    meet.push({ prefix, id, start: t[0] || null, end: t[1] || t[0] || null, registry: permitted.get(id) || null })
+  }
+  const unpermitted = meet.filter(m => !m.registry)
+  const ok = meet.filter(m => m.registry).sort((a, b) => String(b.end).localeCompare(String(a.end)))
+  for (const m of ok) {
+    const r = await fetcher(`${DC_BUCKET}/${m.prefix}stac/noaa_item_collection_m${m.id}.json`)
+    if (!r.ok) throw new Error(`Digital Coast ${m.prefix} item collection: HTTP ${r.status}`)
+    const items = (await r.json()).features || []
+    const delivered = []
+    for (const f of items) {
+      if (!f.bbox || !meets(f.bbox, bbox)) continue
+      const a = Object.values(f.assets || {}).find(x => /geotiff/i.test(x.type || '') && /\.tif$/i.test(x.href || ''))
+      if (a) delivered.push({ tile: f.id, url: a.href, resolution: /_1mGrid/i.test(f.id) ? '1m' : 'see tile', survey: m.id })
+    }
+    if (delivered.length) return { delivered, survey: m, others: ok.filter(o => o !== m), unpermitted, noStac }
+  }
+  return { delivered: [], survey: null, others: ok, unpermitted, noStac }
+}
+
 function render({ scene, bbox, found, tried }) {
   const L = [`# ${scene} — the floor under the water (cartograph/fetch-bathymetry.mjs). Read by HTTP RANGE REQUEST`,
     `# in bake-terrain.js, only where the bed is shallower than the town's visibility depth.`,
@@ -124,10 +188,21 @@ async function main() {
   for (const rung of BATHY_LADDER) {
     if (!rung.built) { tried.push({ ...rung, n: 0, note: 'rung not built yet — not asked' }); continue }
     if (found) { tried.push({ ...rung, n: 0, note: 'not needed' }); continue }
-    const bt = await findBlueTopo(bbox)
-    const note = `${bt.delivered.length} delivered tile(s)` + (bt.undelivered.length ? `, ${bt.undelivered.length} in the scheme NOT YET DELIVERED` : '') + ` (${bt.scheme.split('/').pop()})`
-    tried.push({ ...rung, n: bt.delivered.length, note })
-    if (bt.delivered.length) found = { name: rung.name, tiles: bt.delivered }
+    if (rung.id === 'bluetopo') {
+      const bt = await findBlueTopo(bbox)
+      const note = `${bt.delivered.length} delivered tile(s)` + (bt.undelivered.length ? `, ${bt.undelivered.length} in the scheme NOT YET DELIVERED` : '') + ` (${bt.scheme.split('/').pop()})`
+      tried.push({ ...rung, n: bt.delivered.length, note })
+      if (bt.delivered.length) found = { name: rung.name, tiles: bt.delivered }
+    } else if (rung.id === 'ncmp') {
+      const nc = await findNcmp(bbox)
+      const S = nc.survey
+      const note = (S ? `${nc.delivered.length} tile(s) of ${S.prefix.slice(4, -1)} (registry ${S.registry}), flown ${S.start?.slice(0, 10)}…${S.end?.slice(0, 10)}` : 'no permitted survey with tiles over the bbox')
+        + (nc.others.length ? ` · also permitted, NOT mixed: ${nc.others.map(o => o.prefix.slice(4, -1)).join(', ')}` : '')
+        + (nc.unpermitted.length ? ` · ⛔ meets the bbox but has NO permitted registry row (not read): ${nc.unpermitted.map(o => `${o.prefix.slice(4, -1)} (Digital Coast ${o.id})`).join(', ')}` : '')
+        + (nc.noStac.length ? ` · ${nc.noStac.length} USACE collection(s) publish no STAC record, not asked` : '')
+      tried.push({ ...rung, n: nc.delivered.length, note })
+      if (nc.delivered.length) found = { name: rung.name, tiles: nc.delivered }
+    } else throw new Error(`fetch-bathymetry: rung '${rung.id}' is marked built and has no reader`)
   }
   for (const t of tried) console.log(`    ${t.built ? (t.n ? '✅' : '⛔') : '⏸'} ${t.name} → ${t.note}`)
 

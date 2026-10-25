@@ -115,14 +115,16 @@ function projectorFor(image, label) {
   if (!epsg || keys.GTModelTypeGeoKey === 2) {
     return { kind: 'geographic', epsg: keys.GeographicTypeGeoKey || 4326, to: (lon, lat) => [lon, lat], unit: '°' }
   }
-  // NAD83 / UTM north = 269xx · WGS84 / UTM north = 326xx. Both are metres.
+  // NAD83 / UTM north = 269xx · NAD83(2011) / UTM north = 6330…6348 (zones 1–19; the USACE NCMP tiles, e.g. 6346 = 17N)
+  // · WGS84 / UTM north = 326xx. All metres, all the same transverse Mercator on GRS80/WGS84.
   const zone = (epsg >= 26903 && epsg <= 26923) ? epsg - 26900
+             : (epsg >= 6330 && epsg <= 6348) ? epsg - 6329
              : (epsg >= 32601 && epsg <= 32660) ? epsg - 32600
              : null
   if (zone == null) {
     throw new Error(`⛔ ${label}: EPSG:${epsg} is a projected CRS this reader cannot name, so it cannot `
       + `place a sample. Refusing rather than treating its coordinates as degrees — that bakes terrain `
-      + `from the wrong place and nothing downstream can tell. Supported: UTM north (EPSG 269xx/326xx) and geographic.`)
+      + `from the wrong place and nothing downstream can tell. Supported: UTM north (EPSG 269xx/6330–6348/326xx) and geographic.`)
   }
   return { kind: `UTM ${zone}N`, epsg, to: (lon, lat) => utmForward(lon, lat, zone), unit: 'm' }
 }

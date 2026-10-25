@@ -1130,6 +1130,7 @@
     },
     {
       "id": "usace-ncmp-topobathy-erie-2020",
+      "digitalCoastId": 9971,
       "title": "2020 USACE NCMP Topobathy Lidar DEM: Lake Erie (MI, OH) — 1 m bare-earth GeoTIFFs, NAD83(2011) UTM 17N + IGLD85 (NOAA Digital Coast 9971)",
       "publisher": "U.S. Army Corps of Engineers, JALBTCX (National Coastal Mapping Program); distributed by NOAA Office for Coastal Management",
       "jurisdiction": "federal (US-wide)",

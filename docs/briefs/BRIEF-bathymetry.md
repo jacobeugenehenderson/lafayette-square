@@ -26,7 +26,7 @@ thins over it. ⭐ Real depth REPLACES the profile inside that band, and nothing
 one source cell, the profile kept within two cells of the shore, rock still wins) → `terrain.json#bed.floor`. The pour
 runs the fetch after fetch-dem; the terrain step's inputs include the list. ▶ what a town got: its bake log's `FLOOR:`
 lines, or `node cartograph/fetch-bathymetry.mjs --scene=<id> --dry`.
-**Open:** rungs 2–3 (USACE NCMP for Huron; CUDEM), and step 2's conversion for any non-NAVD88 pair (Huron's IGLD85).
+**Open:** rung 3 (CUDEM), and step 2's conversion for any non-NAVD88 pair (Huron's IGLD85: being built, BRIEF-the-shore-is-one-line). Rung 2 (USACE NCMP) is BUILT (Swash, 2026-10-25): Huron gets 32 tiles of Digital Coast 9971.
 
 ## The job — the nearshore band only
 1. **Source by coordinates**, finest first: NOAA BlueTopo (Provincetown: 4 m, NAVD88, covers its water) · USACE

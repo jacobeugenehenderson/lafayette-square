@@ -71,8 +71,9 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 > ruling (B), 2026-10-25). With no coast the datum is the **local minimum**. Every height-above-water in the town is
 > measured from it. ▶ `cat cartograph/data/<scene>/clean/terrain.json` · `node checks/claims-the-coast-is-the-lidars.mjs`
 > - ⭐ **THEN IT WRITES THE BED UNDER THE WATER — the REAL floor where there is one.** `fetch-bathymetry.mjs` lists
->   the town's bathymetry tiles (`raw/bathymetry-sources.txt`, by coordinates: NOAA BlueTopo today; USACE NCMP and
->   NCEI CUDEM are named rungs not yet built, so a town they would cover is **not** verified-absent). Under the water
+>   the town's bathymetry tiles (`raw/bathymetry-sources.txt`, by coordinates: NOAA BlueTopo, then USACE NCMP
+>   topobathy — one survey, the newest with a permitted registry row; NCEI CUDEM is a named rung not yet built, so a
+>   town only it would cover is **not** verified-absent). ▶ `node checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs` Under the water
 >   the floor's depth below the level replaces the stand-in, down to the depth the bottom stops showing **at the town's
 >   LOW water** (the visibility depth below `water.low` — the town's `design.json#water`, else the kit's recorded
 >   defaults, and it says which; it was cut below y = 0, so a town whose LOW sits under y = 0 never reached its own
