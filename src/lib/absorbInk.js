@@ -45,7 +45,12 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
   inkRings.forEach((r, i) => { if (r?.length >= 3) inputs.push({ tag: 'ink', p: r.map(q => [rl(q[0]), rl(q[1])]), kind: 'ink', i }) })
   inputs.push({ tag: 'frame', p: frame.map(q => [rl(q[0]), rl(q[1])]), kind: 'frame' })
   waterRings.forEach((r, i) => { if (r?.length >= 3) inputs.push({ tag: 'water', p: r.map(q => [rl(q[0]), rl(q[1])]), kind: 'water', i }) })
-  centrelines.forEach((c, i) => { if (c.points.length >= 2) inputs.push({ tag: 'centreline', p: c.points.map(q => [rl(q[0]), rl(q[1])]), kind: 'cl', i, open: !c.closed }) })
+  // ⭐ EACH CENTRELINE SEGMENT IS ITS OWN PATH: nodeCrossings nodes two different inputs, never an input against itself, and a
+  // stroke can cross ITSELF (a cloverleaf ramp looping over its own carriageway, LS's interchange). Fed whole, that crossing was
+  // never noded, the arrangement was not planar, and its walk returned a loop wound backwards (the probe, 2026-10-25). Fed per
+  // segment, every crossing of two segments — a stroke's own included — is a vertex. The segment index rides on the tag.
+  centrelines.forEach((c, i) => { const P = c.points.map(q => [rl(q[0]), rl(q[1])]), n = P.length, m = c.closed ? n : n - 1
+    for (let k = 0; k < m; k++) { const a = P[k], b = P[(k + 1) % n]; if (a[0] !== b[0] || a[1] !== b[1]) inputs.push({ tag: 'centreline', p: [a, b], kind: 'cl', i, seg: k, open: true }) } })
   // the wedge spokes (mint: node → outline point): they divide a cell between the strokes meeting at a node
   spokes.forEach((sp, i) => { const p = sp.map(q => [rl(q[0]), rl(q[1])]); if (p[0][0] !== p[1][0] || p[0][1] !== p[1][1]) inputs.push({ tag: 'spoke', p, kind: 'spoke', i, open: true }) })
   const R = nodeCrossings(inputs.map(x => ({ tag: x.tag, p: x.p, open: !!x.open })), { pairs: () => true, who: `${who} absorb` })
@@ -64,7 +69,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
       let e = edges.get(id); if (!e) edges.set(id, e = { a: fwd ? u.k : v.k, b: fwd ? v.k : u.k, tags: [] })
       // `along`: this input runs a → b along the edge
       if (x.kind === 'ink') e.tags.push({ kind: 'ink', label: inkLabels[x.i]?.[u.edge] ?? null, along: fwd, ring: x.i })
-      else if (x.kind === 'cl') e.tags.push({ kind: 'cl', rec: x.i, seg: u.edge, along: fwd })
+      else if (x.kind === 'cl') e.tags.push({ kind: 'cl', rec: x.i, seg: x.seg, along: fwd })
       else if (x.kind === 'spoke') e.tags.push({ kind: 'spoke' })
       else e.tags.push({ kind: x.kind, along: fwd, side: sideOf[n] })
     } })
@@ -107,13 +112,18 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
       for (const n of (grid.get(Math.floor(pt[0] / G) + ',' + Math.floor(pt[1] / G)) || [])) { const P = pos[n]
         if (pt[0] < P.bb[0] || pt[0] > P.bb[2] || pt[1] < P.bb[1] || pt[1] > P.bb[3] || !(cycArea(P) < (best ? cycArea(best) : Infinity))) continue
         if (inPoly(pt, P)) best = P }
-      N.face = best ? best.face : unbounded; N.face.cycles.push(N) } }
+      if (diag && !best) (diag.unlinked ||= []).push({ pt: pt.map(v => v / CLIP_SCALE), area: cycArea(N) / 2 / CLIP_SCALE / CLIP_SCALE, n: N.hs.length,
+        containers: cycles.filter(c => c !== N && inPoly(pt, c)).map(c => ({ area: cycArea(c) / 2 / CLIP_SCALE / CLIP_SCALE, n: c.hs.length, kinds: [...new Set(c.hs.flatMap(g => g.e.tags.map(u => u.kind)))] })).sort((x, y) => Math.abs(x.area) - Math.abs(y.area)).slice(0, 5) })
+      N.face = best ? best.face : unbounded; N.face.cycles.push(N); if (diag) N.linkProbe = { pt: pt.map(v => v / CLIP_SCALE), into: best ? cycArea(best) / 2 / CLIP_SCALE / CLIP_SCALE : 'unbounded' } } }
   const allFaces = [...F, unbounded]
   for (const f of allFaces) {
     let ink = null, water = false, frameIn = null, flags = false
     for (const c of f.cycles) for (const h of c.hs) { if (h.e.tags.some(t => t.kind === 'cl' || t.kind === 'spoke')) continue   // a centreline or a spoke: ink on both sides, says nothing
       for (const t of h.e.tags) { flags = true; const L = leftOf(h, t)
         if (t.kind === 'ink') { if (ink === null) ink = L; else if (ink !== L) {
+          if (diag) diag.bothInkCycles = f.cycles.map(c => ({ area: cycArea(c) / 2 / CLIP_SCALE / CLIP_SCALE, n: c.hs.length, at: c.hs[0].from.map(v => v / CLIP_SCALE),
+            kinds: [...new Set(c.hs.flatMap(g => g.e.tags.map(u => u.kind)))], inkLeft: [...new Set(c.hs.flatMap(g => g.e.tags.filter(u => u.kind === 'ink').map(u => leftOf(g, u))))],
+            outer: c === f.cycles[0], linkedBy: c.linkProbe || null }))
           if (diag) diag.bothInk = f.cycles.flatMap(c => c.hs.flatMap(g => g.e.tags.filter(u => u.kind === 'ink').map(u => ({ at: g.from.map(v => v / CLIP_SCALE), to: g.to.map(v => v / CLIP_SCALE), label: u.label, ring: u.ring, inkLeft: leftOf(g, u), cycle: g.cyc }))))
           throw new Error(`[${who}][absorb] ⛔ a face at (${h.from.map(v => v / CLIP_SCALE)}) is both ink and not ink by its own edges. Refusing.`) } }
         else if (t.kind === 'water') { if (L) water = true }
@@ -158,7 +168,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     if (gs.size === 1) { f.group = [...gs][0]; census.joined++; if (f.group === 'water') census.toWater++ }
     else if (!gs.size) { f.group = 'none'; if (inFrame(f)) census.zero.push(at0(f)); else census.outside++ }
     else { f.group = 'none'; census.two.push(`${[...gs].join('+')}@${at0(f)}`)
-      if (diag) (diag.two ||= []).push({ at: at0(f), groups: [...gs], area: f.cycles.reduce((t, c) => t + cycArea(c), 0) / 2 / CLIP_SCALE / CLIP_SCALE,
+      if (diag) (diag.two ||= []).push({ cycles: f.cycles.map(c => ({ area: cycArea(c) / 2 / CLIP_SCALE / CLIP_SCALE, kinds: [...new Set(c.hs.flatMap(g => g.e.tags.map(u => u.kind)))], edges: c.hs.map(g => ({ at: g.from.map(v => v / CLIP_SCALE), kinds: g.e.tags.map(u => u.kind).join('+'), twin: cycles[g.twin.cyc].face?.group ?? null })) })), at: at0(f), groups: [...gs], area: f.cycles.reduce((t, c) => t + cycArea(c), 0) / 2 / CLIP_SCALE / CLIP_SCALE,
         labels: [...new Set(f.cycles.flatMap(c => c.hs.flatMap(h => h.e.tags.filter(t => t.kind === 'ink').map(t => t.label))))].map(l => ({ l, owner: owners[l] ? `${owners[l].skelId}/${owners[l].side}/${owners[l].segOrd}` : null })) }) }
   }
   for (const c of cycles) c.group = c.face.group ?? null
@@ -216,7 +226,10 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
     const cl = h.e.tags.find(t => t.kind === 'cl'); if (cl) { const l = centrelines[cl.rec]?.own?.[cl.seg]; return l != null ? classOfLabel(l) : null }
     return null }
   const inkLabelsOf = (hs) => [...new Set(hs.flatMap(h => h.e.tags.filter(t => t.kind === 'ink' && t.label != null).map(t => t.label)))]
-  const pieceRing = (hs) => ringOf({ hs })
+  // a PIECE of a cycle (a run of its half-edges, closed by a chord): its points are each edge's start AND the last edge's end,
+  // where the chord back to the first begins. ⛔ The starts alone dropped that vertex, so a two-edge piece came out degenerate
+  // and every split piece lost a corner at its chord (the probe, 2026-10-25).
+  const pieceRing = (hs) => ringOf({ hs: [...hs, { from: hs[hs.length - 1].to }] })
   for (const f of allFaces) { if (f.type !== 'cell' || f.group == null || f.group === 'none') continue
     const labels = [...new Set(f.cycles.flatMap(c => inkLabelsOf(c.hs)))]
     if (!labels.some(l => owners[l]?.water || owners[l]?.hwy)) continue
@@ -237,6 +250,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
       // the transitions pair across the band: walking the cycle, its centreline side meets them in one order (X1, X2, …) and
       // its ink side in the reverse (…, c2, c1), so the j-th centreline-side transition faces the j-th from the END of the ink side
       const onCl = (k) => hs[k].e.tags.some(t => t.kind === 'cl'), X = T.filter(onCl), C = T.filter(k => !onCl(k))
+      if (diag) f.splitWhy = { T: T.length, X: X.length, C: C.length }
       if (T.length >= 2 && X.length === C.length) {
         // rotate the ink-side list so it follows the centreline side in cycle order, then pair end to end
         const after = (k, from) => (k - from + n) % n, x0 = X[0]
@@ -247,11 +261,17 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
           const ia = P.indexOf(a), ib = P.indexOf(b), lo = Math.min(ia, ib), hi = Math.max(ia, ib)
           pieces.splice(pieces.indexOf(P), 1, P.slice(lo, hi), [...P.slice(hi), ...P.slice(0, lo)]) }
         const rings = pieces && pieces.map(P => pieceRing(P.map(k => hs[k])))
+        if (diag) Object.assign(f.splitWhy, { chords: chords.map(c => c.join('-')), pieces: pieces ? pieces.map(P => P.length) : 'chord endpoints not in one piece', rings: rings ? rings.map(r => r ? r.length : 'degenerate') : null })
         if (rings && rings.every(Boolean)) { split = true
           pieces.forEach((P, q) => { const L = inkLabelsOf(P.map(k => hs[k])); if (L.some(l => owners[l]?.water || owners[l]?.hwy)) cells.push({ rings: [rings[q]], labels: L, group: f.group }) }) }
       }
     }
-    if (!split) census.mixed.push(`${[...kinds].join('+')}@${at0(f)}`)
+    if (!split) { census.mixed.push(`${[...kinds].join('+')}@${at0(f)}`)
+      if (diag) { const why = { at: at0(f), cycles: f.cycles.length, area: f.cycles.reduce((t, c) => t + cycArea(c), 0) / 2 / CLIP_SCALE / CLIP_SCALE }
+        if (hs) { const n = hs.length, cl = hs.map(classOfH); why.n = n
+          why.seq = []; for (let k = 0; k < n; k++) { const c = cl[k] ?? '·', side = hs[k].e.tags.some(t => t.kind === 'cl') ? 'cl' : hs[k].e.tags.some(t => t.kind === 'ink') ? 'ink' : hs[k].e.tags.map(t => t.kind).join('+'); const last = why.seq[why.seq.length - 1]
+            if (last && last.c === c && last.side === side) last.n++; else why.seq.push({ c, side, n: 1 }) } }
+        why.split = f.splitWhy || null; (diag.mixed ||= []).push(why) } }
   }
   if (census.mixed.length) throw new Error(`[${who}][absorb] ⛔ ${census.mixed.length} cell(s) hold two classes of owner and cannot be split at their class changes (an odd pairing, or a hole): ${census.mixed.slice(0, 8).join(' · ')}${census.mixed.length > 8 ? ' …' : ''}. Refusing.`)
   return { paint, cells, census }
