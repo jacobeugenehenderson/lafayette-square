@@ -63,11 +63,13 @@ Ward doesn't rename itself. Every claim is marked **measured**, **read in source
 ## 6. Presses, and the code counterpart
 
 - **A press is Jacob's word in Ward's own window**, after Boz's green (the slab) and Ward's (the player).
-- **Production = staging AS SERVED**, never a worktree upload: mirror staging, back up production (cache-busted fetches),
-  copy with the kit's own uploader unmodified, verify by md5, then the live probe (desk + phone, `green.mjs`, the tree
-  request log: impostors only). Rollback = re-put the backup.
+- **Production = staging AS SERVED**, never a worktree upload: mirror staging, back up production
+  (`scratch/promote-rollback/backup-prod-slab.mjs`, cache-busted), copy with the kit's own uploader unmodified, verify by
+  md5, then the live probe on desk + phone (`scratch/promote-rollback/probes/`: `prod.mjs`, `green-prod.mjs`, and
+  `treereq.mjs`, which must show impostors only). Rollback = re-put the backup.
 - **Ward has a code specialist** (2026-10-22: the neon one-clock fix). Ward briefs and reviews; the specialist builds.
-  A kit pin moves on a `ward-pin/<date>` branch, recorded in the Ward's `OPERATIONS` in the same commit.
+  A kit pin moves on a `ward-pin/<date>` branch, recorded in the Ward's `OPERATIONS` in the same commit. Its kit bundle
+  goes up first (`scripts/publish-kit-bundle.mjs` from the `ward-kit` worktree), then the Ward's `publish:staging`.
 
 ## 7. Continuity
 
