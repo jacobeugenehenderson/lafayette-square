@@ -7,8 +7,8 @@
 // dropped bldg-1703 and with it "Architectural Artifacts of St. Louis". The fix is the operator's own channel — an
 // `activate` in building-overrides.json, the membership formula's force-in term — never a code exception.
 // ASKS THE PRODUCER, never re-applies the formula: each town's buildings as the slab loads them
-// (bake-buildings.js#loadBuildings) and its keep-decision (bake-buildings.js#keptBy: the boundary, building-overrides.json,
-// and today's ledger exemption). RED, naming listing and building, where the listing's building is absent or not kept.
+// (bake-buildings.js#loadBuildings) and its keep-decision (bake-buildings.js#keptBy: the boundary and
+// building-overrides.json). RED, naming listing and building, where the listing's building is absent or not kept.
 // Towns come from the looks manifest (_scenes.mjs#declaredScenes): no listings file is SAID, a missing boundary is NOT
 // CHECKED (red), an absent overrides file is named, and listings with no building_id are counted.
 //   node checks/claims-every-listing-keeps-its-building.mjs [scene …]
@@ -46,7 +46,7 @@ function judge(I) {
     if (!exists.has(l.building_id)) bad.push(`"${l.name}" → ${l.building_id} (no such building in the slab's source)`)
     else if (!keptIds.has(l.building_id)) bad.push(`"${l.name}" → ${l.building_id} (not kept by bake-buildings)`)
   }
-  const how = `${I.k.ledger ? 'LEDGER, no boundary cull' : I.k.culled ? 'culled by the boundary' : 'no cull'} · overrides ${I.k.overridesFrom}`
+  const how = `${I.k.ledger ? 'ledger' : 'map.json'} · ${I.k.culled ? 'culled by the boundary' : 'no cull'} · overrides ${I.k.overridesFrom}`
   return { bad, line: `${bad.length ? '⛔' : '✅'} ${I.scene}: ${onB.length} listing(s) on a building, ${I.listings.length - onB.length} with none (${how}) · ${bad.length} lose it${bad.length ? ':\n     ' + bad.slice(0, 12).join('\n     ') : ''}` }
 }
 

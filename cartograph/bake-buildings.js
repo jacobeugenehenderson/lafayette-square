@@ -587,8 +587,9 @@ function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
  * The neighborhood is the boundary's polygon, else its disc (membership.mjs#createMembershipFilter, the ONE decision shared
  * with pipeline.js); the operator's overrides (building-overrides.json) layer on top: `activate` forces an outside building
  * IN, `hide` an inside one OUT.
- * ⭐ A town whose buildings come from its own LEDGER (data/<scene>/buildings.json) already declares its membership there,
- * so the boundary cull does not apply. Asked of the town's data, never its name.
+ * ⭐ EVERY town goes through the same cull, LS's ledger included (Boz's default in the 2026-10-24 handoff, vetoable:
+ * "LS's buildings ledger goes through the same circle check"). The ledger exemption ("a ledger already declares its
+ * membership") is retired: it made LS's exclusion loops and overrides inert in the slab.
  * `nb` / `overrides` default to the town's files; pass them to judge a HYPOTHETICAL membership. ⛔ An unreadable overrides
  * file REFUSES (it was warned about and ignored, which baked as if the operator had authored nothing). An absent one is
  * no overrides, said in `overridesFrom`.
@@ -608,7 +609,7 @@ export function keptBy(scene, buildings, { nb = undefined, overrides = undefined
       overridesFrom = 'building-overrides.json'
     }
   }
-  if (ledger || !nb) return { buildings, ledger, culled: false, overridesFrom, report: () => {} }
+  if (!nb) return { buildings, ledger, culled: false, overridesFrom, report: () => {} }
   const membership = createMembershipFilter({ nb, activate: new Set(overrides.activate || []), hide: new Set(overrides.hide || []), label: 'bake-buildings' })
   const kept = buildings.filter(b => membership.decide(b.id, b.footprint || null))
   return { buildings: kept, ledger, culled: true, overridesFrom, report: () => membership.report() }
