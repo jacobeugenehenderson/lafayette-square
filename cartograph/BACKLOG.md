@@ -91,6 +91,8 @@ keeps it moving. In order:
    first (`slabTreeGeometry` needed:false), staging, Jacob's look. Its 8 remaining land edge pairs read first.
 3. **The shoreline, finally:** `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
    `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
+Then, QUEUED (Jacob, 2026-10-25: "yes, queue the PTown bake speed-up"): PTown's bake pays for the ground TWICE (ground 5,197 s +
+ground-shore 4,949 s of ~177 min, timings of 10-11): the shore pass must not re-run the whole ground. Brief after the tranche.
 Then: one line per depth (the band census: HPDM 22.5 km doubled). Bake-look silent-carry refusal queued.
 **Seats:** Boz reads docs in full and states readings; Zob checks code against them; Ward holds the player and presses only on Jacob's
 word in Ward's window. One heavy run at a time. Hashes copied from git, never typed.
