@@ -58,7 +58,7 @@
    "source": "osm",
    "osm_type": "pitch",
    "source_key": "osm-29844227",
-   "prominence_rank": 910
+   "prominence_rank": 911
   },
   {
    "id": "prov-lst-0019",
@@ -113,7 +113,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-236160458",
-   "prominence_rank": 691
+   "prominence_rank": 692
   },
   {
    "id": "prov-lst-0108",
@@ -138,7 +138,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-570547729",
-   "prominence_rank": 1577
+   "prominence_rank": 1578
   },
   {
    "id": "prov-lst-0111",
@@ -453,7 +453,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-164024976",
-   "prominence_rank": 1896
+   "prominence_rank": 1897
   },
   {
    "id": "prov-lst-0010",
@@ -779,7 +779,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215750806",
-   "prominence_rank": 2979
+   "prominence_rank": 2980
   },
   {
    "id": "prov-lst-0036",
@@ -1268,7 +1268,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751770",
-   "prominence_rank": 2101
+   "prominence_rank": 2102
   },
   {
    "id": "prov-lst-0058",
@@ -1527,7 +1527,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752307",
-   "prominence_rank": 1765
+   "prominence_rank": 1753
   },
   {
    "id": "prov-lst-0074",
@@ -1831,7 +1831,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752785",
-   "prominence_rank": 398
+   "prominence_rank": 399
   },
   {
    "id": "prov-lst-0091",
@@ -3082,7 +3082,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-591244813",
-   "prominence_rank": 1569
+   "prominence_rank": 1570
   },
   {
    "id": "prov-lst-0113",
@@ -12613,7 +12613,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 855
+   "prominence_rank": 856
   },
   {
    "id": "prov-lst-0369",
@@ -12816,7 +12816,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1413
+   "prominence_rank": 1414
   },
   {
    "id": "prov-lst-0372",
@@ -12922,7 +12922,7 @@
    "name": "Wood End Light",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 3024
+   "prominence_rank": 3025
   },
   {
    "id": "prov-lst-0375",
