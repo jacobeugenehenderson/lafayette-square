@@ -110,6 +110,13 @@ node scratch/zob-2026-10-22/place.mjs cartograph/data/<town>/clean/ribbons.json 
    the builder states first. The cluster bound is the code's own doctrine (2ε less the rounding), never a new number. Gate:
    `claims-no-corner-at-a-true-geometry-edge` revised to that invariant (Zob), GREEN on HPDM + JH; the corner gates no worse;
    keys identical.
+5c. **The land-use stamp's crossings move to the one noding home (ruled Boz, 2026-10-25).** PTown's ② refused at
+   `stampCrossings` (round, insert, re-test, 8 rounds), a second noding rule that can't terminate on shallow crossings (Zob,
+   read). `latticeNode.js` gains `nodeCrossings`: hot-pixel snap rounding in ONE pass. Every crossing computed once; hot pixels =
+   input vertices + rounded crossings, in the lattice's own rounding cell; every segment, skipped pairs included, routed through
+   each hot pixel it passes; exact integer arithmetic with its bound asserted. The stamp's loop is deleted. Fixtures (PTown
+   capture; a searched near-parallel cycle; the guarantee) run as a safe-tier check. Phase 2 (one function for conform +
+   cross, the bake's `nodeAcrossGroups`) is its own item, not this brief.
 5. **Unplaced (d):** report what steps 1–3 leave of each exhibit. Don't chase them before 1–3 are built.
 
 **Acceptance is 0 at `subInkLen` for the construction class, on every town (Boz, 2026-10-24; narrowed by §5a, 2026-10-25).** ⛔ If the fix can't reach 0, stop and flag. The
