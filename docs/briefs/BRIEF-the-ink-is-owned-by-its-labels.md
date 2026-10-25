@@ -45,27 +45,34 @@ one stamp; **unbuilt**, Zob read; this brief gives the stripe its sealed INPUT, 
 3. `sectionOpen`'s `A = differenceRings([tile ring], ② block)` unions in `inStencil(roadInk)` and the curbless `kind: 'block'` ink pieces.
 4. `centreStripeRings` reads `ribbons.streets[].points` for STRIPE_CLASSES, not oneway, not grade-separated, buffered 0.10 m.
 
-## 3. The fix: the model (Jacob, 2026-10-25, verbatim) and what it means
+## 3. The fix: the model (Jacob, 2026-10-25, verbatim)
 
 > *"1. The asphalt is a ribbon like everything else 2. there should be no fresh strips … 4. The 5mm offset band is *also* ribbon
-> just like everything else."*
+> just like everything else."* · then: *"just so we're clear tho: after the mint there is no 5mm overlap. That is math that becomes
+> absorbed and disappears."*
 
-This is `RIBBONS §1`'s own model sentence, taken to its ink edge: *"each tile is painted INWARD from its own edges (asphalt → curb →
-treelawn → sidewalk → land-use)"*. The ε band is the tile's outermost ribbon, the band between the grout and the tile, so:
+So the ε band is not a surface to paint. It's the mint's construction math, and it must be **absorbed into the tiles** so that
+after the mint the tiles meet with no slit (`RIBBONS §1`: each tile painted inward from its own edges, asphalt first).
 
-1. **Every band, the ε ink band and the asphalt included, is a ribbon of the tile, struck from the tile's own edges and owned by the
-   edge it's struck from** (`SECTION`'s owner rule: "an extension or cut is its leg's, the run of the leg edge it is struck from
-   (`iaStamp`)"). So ownership is read, never decided by overlap, and a junction's ink belongs to the tile edges around it,
-   each tile its own share. Class (road · highway · water) is the owning edge's label.
-2. **No fresh strips.** `inkByOwner`'s and `inkPiecesByOwner`'s 2ε quads, their overlap resolution, and the second union of ①
-   are deleted. Asphalt, highway, shore and shape.json's `ink` are all read from the tiles' ribbon bands.
-3. **The stripe** is the centreline's ribbon: it reads a sealed centreline (carried with ①), never `ribbons.streets`. Which record
-   carries it: propose it to Boz before building.
-4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, and every reader of the removed paths.
+**Today (Zob, read):** a tile's ring is ①'s complement face (`MP.blocks` = frame − (ink ∪ water)), so the ε slit belongs to NO tile
+and is painted separately by `inkByOwner` and frozen by `inkPiecesByOwner`, both through re-stroked quads. The asphalt is already a
+band of the tile (ring − ②) in geometry, but it's unioned across tiles with no owner. `protopolygon.nodes` is ONE POINT per chain
+pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
 
-⚠️ **Confirm first, before building:** how far today's code is from this. Do the tiles already paint the ε band and the asphalt as
-bands of their own ring, or is the ink outside every tile today (the tile ring = ①'s hole, so the ε slit is no tile's)? If the ink
-belongs to no tile, the change reaches `protoShapeTiles` / `sectionOpen`'s ring choice, and that is the first thing to show Boz.
+1. **Absorb the ink at the mint's exit:** each cell of the ink cut by the mint's own input centrelines touches exactly one tile edge
+   (to be MEASURED first: Zob's component test, Huron then PTown), and it joins that tile. The tiles then meet on the centrelines, with
+   no slit. At a node, the shared vertex closes each tile's wedge. Coast ink splits on the coast arc (sealed with it). §5a's
+   true-geometry crossings split into quadrants (a fixture case).
+2. **No fresh strips:** the quads, their overlap resolution and the second union of ① are deleted. Asphalt, highway and shore are
+   each tile's own band, from its (absorbed) edge to ②, owned by that edge's label. shape.json's `ink` pieces retire with the slit.
+3. **One sealed centreline record** serves both the absorption and the stripe (the stripe = the centreline's ribbon). Which record
+   carries it: propose it to Boz before building. ⛔ Never `ribbons.streets` past the Wall.
+4. **Removed in the same commit:** the quad code, the second union, `centreStripeRings`' chain read, the slit's painting, and every
+   reader of the removed paths (the ground deformer reads shape.json's `ink`: name what it reads instead).
+
+⚠️ This reaches `protoShapeTiles` / `sectionOpen`'s ring choice and every reader of tile rings (Survey, Section, the bake, authoring
+keys). **Keys are the risk:** `skelId · side · segOrd` per edge must be identical before and after; the absorbed edge takes the
+label of the ink edge it replaces.
 
 ## 4. Gates
 
