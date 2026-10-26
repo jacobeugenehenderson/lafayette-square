@@ -148,7 +148,9 @@ sidewalk) at 1.012 m and 1.773 m, 0.17–0.22 step apart: a treelawn of ~zero wi
 Kerf's capture (2026-10-25): depths EQUAL; the sliver is born at S1 (sectionPassProtoTile) at a PERPENDICULAR corner, where the
 leg's depth line is struck twice: offsetRingByRects' rect and legExt's rect re-derived from legFrame, 0.1–0.25 mm apart. legExt's own
 comment says it continues the offset's rect, so this is a REGRESSION. FIX (ruled; Kerf builds after Zob's read): legExt CARRIES the
-struck edge. GATE: band rings' SELF near-miss = 0 on all four towns, plus a mutant restoring the recompute (RED). HPDM's PRODUCTION is correct; only
+struck edge. Built (kerf/perp-carries-the-strike, Zob PASS): at 556 the sliver is gone and the mutant goes RED.
+Drawn-twice HPDM 21.7→11.7 km; some rows grew, being split by commit before merge. OPEN, its own item: the broad SELF bucket
+(1,500–2,200 one-item pairs per town, curb and face rings, gaps ≈1 step) remains after this fix; cause not established. HPDM's PRODUCTION is correct; only
 integration's slab lags. **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
 datawall is for"):** ① is not the on-screen source (block↔ink near-miss is the bb frame edge, clipped before the stack). The bake's
 Wall is the `protoShapeTiles` handoff inside ONE buildTileGround call, not shape.json. Past it (CORRECTED by Zob's premise pass the same day): the asphalt's outline and corners come from the
