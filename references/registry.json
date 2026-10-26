@@ -1621,6 +1621,24 @@
       "localCopy": null
     },
     {
+      "id": "noaa-ngs-geoid",
+      "title": "NOAA National Geodetic Survey geoid web service (api/geoid/ght): a geoid model's height at a point (13 = GEOID12B, 14 = GEOID18)",
+      "publisher": "NOAA National Geodetic Survey",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://geodesy.noaa.gov/web_services/geoid.shtml",
+      "covers": [
+        "the difference between the geoid a lidar was delivered on (WESM `geoid`) and the current one, at the town, so the lidar and the water record share one NAVD88 (Huron: GEOID18 − GEOID12B = +0.034 m in N, so lidar heights −0.034)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (NGS is NOAA, a federal work; NGS's own disclaimer link returns 404, so NOAA's statement is quoted, as for noaa-bluetopo). Read once before this row, at Huron, in the geoid check (2026-10-25); recorded here",
+        "quote": "The information on government servers are in the public domain, unless specifically annotated otherwise, and may be used freely by the public.",
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
+      },
+      "status": "PERMITTED"
+    },
+    {
       "id": "nps-npgallery",
       "class": "national-register",
       "title": "NPGallery — the National Park Service digital asset library (National Register nominations and their photographs)",
