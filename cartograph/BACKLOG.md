@@ -26,11 +26,12 @@ it's owned). Pre-press census DONE 2026-10-25: ward-pin/2026-10-17 and -22 are f
 - `ferrule/ink-owned-by-labels` @ c5652712 (Ferrule). All four towns absorb; most gates green; 2 RED: the paint check (now mostly an
   instrument fault, 2/2/5/0 rings left) and drawn-twice on Huron (+3.9 km; asphalt beside land-use vertices absent from ①; route
   not established; LOCUS-NOTES in the commit).
-- Zob's read (see Zob's PARKED commit): the 11.7 km of doubled edge is "struck once, CUT SEPARATELY", each piece a chain of
+- `zob/drawn-twice-seams` @ 27953ff9 (Zob; check adds 673e4cd7; the read: `.claude/worktrees/zob-seams/scratch/zob-2026-10-25/seams-read-PAUSED.md`): the 11.7 km of doubled edge is "struck once, CUT SEPARATELY", each piece a chain of
   cutouts, each rounding alone. Jacob, 2026-10-25: alternate geometries must go (the DataChain lesson: curb cut from iaFull, asphalt
   from iA); "the stamping has to happen last, and it's a stamp, not a cutout": ENFORCED SEQUENCE (draw whole, stamp once, last,
   by precedence), per `BRIEF-the-rim-is-cut-once §5`. Open: regression or aspiration; the blade-width question.
-**LS** waits on Jacob's loop adjustments. **Altadena** parked (unchanged).
+**LS** waits on Jacob's loop adjustments. **Altadena** parked (unchanged). The team (Swash, Kerf, Ferrule, Zob) stays ON CALL
+(Jacob, 2026-10-25): resume each from its own branch, one at a time.
 **▶ THE NIGHT BEFORE (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
 place.mjs, claims-a-chain-cut-keeps-its-owner-change. Briefed and DISPATCHED: the ① seam fix → **Splice**
 (`cartograph/_archive/BRIEF-the-ink-meets-inside-the-ink-LANDED-2026-10-25.md`; carrier = ioPreserveCollinear on both mint booleans, both folds go;
