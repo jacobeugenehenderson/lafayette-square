@@ -16,6 +16,8 @@
 //   picked for a town.
 // ⚠️ "Its road" is the town's road, not the marked street's own: a marking over ANOTHER street's carriageway reads as
 //   inside. Stated, not judged.
+// ⚠️ IT JUDGES WHAT THE LOOK SHOWS: the stack honours the look's `layerVis` (bake-ground skips a hidden layer), so a layer the
+//   look hides is not judged. The producer-level judgement of edge lines is claims-the-road-paint-reads-its-marks.
 //
 //   node checks/claims-a-road-marking-lies-inside-its-road.mjs [<town> …] [--show=n] [--selftest]
 // Exit 1 on any finding (or a town that cannot be judged); 2 when no town had a marking to judge.
