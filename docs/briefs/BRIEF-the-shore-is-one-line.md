@@ -52,8 +52,15 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
    exported; `waterDatums.mjs` absent). Its throws come with it (C11). ①'s coast source becomes that file; OSM coast ways stay
    only as what the lidar line is VERIFIED against, never a fallback. **Propose where it runs in the ratchet** (Jacob 2026-10-25:
    "the build is a ratchet"; agents use the buttons' routes): a pour step, before the mint, that the Bake's dirty detector sees.
-2. **The datum and the bed from that coast** (C10, C6): `waterDatum` and `writeBed`'s mask read the lidar coast, and the
-   datum is found independently of the line (the design point the old brief left open: propose it).
+2. **Everything after the mint READS ①'s water; the field is STAMPED to it** (Jacob 2026-10-25: *"This smells like a
+   protopolygon misuse"*; Zob read it by symbol the same day). The shore on screen is not ①'s line: it is where the flat water
+   sheet meets the 5 m field by DEPTH TEST, and bake-terrain decides water by itself four times (`waterDatum`'s own coastRings
+   mask, `writeBed`'s dig, `floodExtent`'s raster flood, `rockCells`). bake-ground's water is a COPY of ①'s source. So:
+   (a) ONE coast read: waterDatum, writeBed, rockCells and bake-ground's water read ①'s frozen water (`protopolygon.waterRings` /
+   the absorbed water cells), never coastRings or map.json again; (b) the field STAMPED to ①'s coast (ground = level on the line,
+   ≥ level landward, the bed ≤ level seaward), so the depth-test contour IS ①'s line; (c) `floodExtent` RETIRED as a decider.
+   Gate: along ①'s coast, |ground − level| = 0 to the field's resolution; no flood polygon outside ①'s water. The datum is found
+   independently of the line (C10).
 3. **Retire the median** (C4): a fresh deletion against today's readers (`bake-shore-median.mjs`, bake-ground's
    `shoreMedianItems` / `shorePending` / `groundShorePass`, `ABOVE_WATER_M`'s sharing, `src/lib/shoreMedianGeometry.js`,
    `ShoreMedian.jsx`, StageApp's switch, the diagnostics, and its checks) in ONE commit. The `ground-shore` second pass goes,
