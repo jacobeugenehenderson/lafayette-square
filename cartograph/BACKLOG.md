@@ -139,6 +139,12 @@ keeps it moving. In order:
    to the coast, never baked into the surface, so the door stays open.
    `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
    `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
+⛔ THE DIRTY DETECTOR HAS NO DISCRETION, live instance (2026-10-25 19:37, Huron's Publish panel): "This re-pours huron because
+the pour's code changed: cartograph/sources.js". The only change is b456bc6d, a ONE-LINE COMMENT (`SOURCE_BY_BASENAME` →
+`CANONICAL_TREE_WELLS` in a doc comment), and it demands a full re-pour plus the whole bake. Jacob's rule: no rebake unless it's a real
+change. Fix before any publish: the detector hashes what the pour EXECUTES (code with comments stripped, at minimum; output-hash
+propagation, filed, is the full answer), with a mutant where a comment-only change must NOT dirty. Also: huron.online is not on
+Operations' registrar list, so Huron has no production address and Promote refuses it; staging only, until a domain is owned.
 Then, QUEUED (Jacob, 2026-10-25: "yes, queue the PTown bake speed-up"): PTown's bake pays for the ground TWICE (ground 5,197 s +
 ground-shore 4,949 s of ~177 min, timings of 10-11): the shore pass must not re-run the whole ground. Brief after the tranche.
 Then: one line per depth (the band census: HPDM 22.5 km doubled). ⛔ NOW A FORCING CASE (2026-10-25): HPDM's bake with the Forest Park fix
