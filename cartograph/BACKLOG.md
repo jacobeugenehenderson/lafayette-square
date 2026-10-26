@@ -8,19 +8,29 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 ## ▶ Forward list (2026-10-20 night) — LS · HPDM · PTown · Huron first
 
-### ⭐ HANDOFF — 2026-10-25 afternoon (Boz). Read this block first; everything below is detail.
-**▶ NOW:** THE TRANCHE IS MERGED (impostor publishing · leg-ends ce4c449d · caps-from-shape f94ab149 · the ① seam 4ed69a3a · the
-one-way fix f5c03e27 · disc §2b 816658e2 + §1b 77b3d4e8 · commit-carries 9ac0d8fc + 0b9d460f) and BAKED through the Bake route on a
-temporary integration server (:3343 serve.js + :5183 Vite, Jacob's okay; stop both at the end): Huron (11 min), PTown (19 min, was
-~3 h), HPDM (8 min), every listing kept. Altadena REFUSED (below). LS WAITS on Jacob's look at its draft exclusion loops (they take
-81 of 162 labels out of the hood proper) + Kerf's listings stack (1ec16996 → c27897d2 → b298b606, awaiting Zob, who hit his usage
-limit). Running: Kerf re-skeletons HPDM + PTown via commit-extent (the one-way fix) and re-bakes them; then Ferrule's slot
-(BRIEF-the-ink-is-owned-by-its-labels, 0a9fa286 → 379282f2). NEXT: Huron's shore, `docs/briefs/BRIEF-the-shore-is-one-line.md`,
-ready to dispatch FRESH. ✅ Jacob 2026-10-25: "Keep PTown's trees" ⇒ a SURVEYED tree is never dropped, by land use OR hardscape ("keep those too, that's why things are authorable"): kept at its point, named per town and reason (a kit rule; Kerf builds it). LS: Jacob adjusts the loops himself. ✅ MacMillan Wharf: "the street rides the deck" (in the shore brief).
-⛔ **REGRESSION FOUND (Boz, 2026-10-25, from Kerf's surveyed-tree census):** the 10-21 Forest Park fix (truss/city-landuse 6616be0a)
-was pressed to PRODUCTION on its own kit and NEVER reached integration, so the tranche's HPDM bake classes Forest Park commercial
-again (1,180 surveyed trees "on commercial"). FIXED (6154b267). Zob's census found three more, in the PLAYER (the Tower Light, lean-never-turn, the Browse hang fix, pressed on ward-pin/2026-10-17 + -22): merged back (83b616b2; patch-ids identical). The kit repo is now fully covered. ⛔ OWED BEFORE ANY PRESS: the same `--not` census in WARD's own repo (theward pins vs its main).
-⛔ Rule: a fix pressed to production on a side branch is merged back to the record the same day.
+### ⭐ HANDOFF — 2026-10-25 night (Boz). Read this block first; everything below is detail.
+**▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
+running for the kit (:3343/:5183 stopped). Nothing pressed or published today. The afternoon's handoff: `cartograph/_archive/HANDOFF-2026-10-25-afternoon.md`.
+**FIRST, before any publish: the dirty detector** (entry below, "THE DIRTY DETECTOR HAS NO DISCRETION"): Huron's Publish demands a full
+re-pour for a one-line COMMENT in sources.js (b456bc6d). Small fix + a mutant where a comment-only change must not dirty. Then PTown
+Publish → Promote (Jacob said yes), Huron Publish to staging ONLY (huron.online is not on Operations' registrar list: Jacob to say if
+it's owned). Pre-press census DONE 2026-10-25: ward-pin/2026-10-17 and -22 are fully in the record (81b5c319 = efdcc0bd, identical code).
+**PARKED BRANCHES (each head carries its own summary):**
+- `shore/2026-10-25` @ 62f20dab (Swash, `.claude/worktrees/shore`). The shore is DESIGNED and ruled (`BRIEF-the-shore-is-one-line` §1
+  + §3 step 2): ①'s coast IS the high-water mark; one coast read after the mint; the field STAMPED to the line; water = one
+  polygon, two draws (a regular face painting the REAL bed, plus the surface sheet at the level); floodExtent and its draw deleted.
+  Built so far: NCMP fetch (coverage-first), the IGLD85 conversion at height (60ea9243; re-run fetch-water-datums --scene=huron
+  after merge), the flight-water reader. Next: the plan → Zob → build. ⚠️ readCoast goes INTO mintInputs.mjs on rebase onto Ferrule.
+- `kerf/perp-carries-the-strike` @ d74bc5c4 (Kerf). HPDM's flatten sliver FIXED (one strike, `back` deleted; Zob PASS); mutant RED;
+  drawn-twice roughly halved. Before merge: split the grown rows by commit. After merge: HPDM's Bake through the route (1,247 trees back).
+- `ferrule/ink-owned-by-labels` @ c5652712 (Ferrule). All four towns absorb; most gates green; 2 RED: the paint check (now mostly an
+  instrument fault, 2/2/5/0 rings left) and drawn-twice on Huron (+3.9 km; asphalt beside land-use vertices absent from ①; route
+  not established; LOCUS-NOTES in the commit).
+- Zob's read (see Zob's PARKED commit): the 11.7 km of doubled edge is "struck once, CUT SEPARATELY", each piece a chain of
+  cutouts, each rounding alone. Jacob, 2026-10-25: alternate geometries must go (the DataChain lesson: curb cut from iaFull, asphalt
+  from iA); "the stamping has to happen last, and it's a stamp, not a cutout": ENFORCED SEQUENCE (draw whole, stamp once, last,
+  by precedence), per `BRIEF-the-rim-is-cut-once §5`. Open: regression or aspiration; the blade-width question.
+**LS** waits on Jacob's loop adjustments. **Altadena** parked (unchanged).
 **▶ THE NIGHT BEFORE (2026-10-24/25):** merged on Zob's PASS: publish-impostor-records, claims-no-sub-ink-edge-between-two-owners,
 place.mjs, claims-a-chain-cut-keeps-its-owner-change. Briefed and DISPATCHED: the ① seam fix → **Splice**
 (`cartograph/_archive/BRIEF-the-ink-meets-inside-the-ink-LANDED-2026-10-25.md`; carrier = ioPreserveCollinear on both mint booleans, both folds go;
