@@ -97,8 +97,8 @@ for (const scene of feedScenes()) {
     const P = C.points.slice(r.from, r.to + 1).concat(C.closed && r.to === C.points.length ? [C.points[0]] : [])
     for (let i = 0; i < P.length - 1; i++) (k && k !== 'none' ? marked : unmarked).push([P[i], P[i + 1]]) }
   const nearMarked = segIndex(marked)
-  const judgeS = (paint, label) => { let off = 0, n = 0, at = null
-    for (const ring of paint.stripe) for (const p of ring) { n++; if (!nearMarked(p, MARKING_LOOK.gap / 2 + W + LAT)) { off++; at ||= p } }
+  const judgeS = (paint, label) => { let off = 0, n = 0, at = []
+    for (const ring of paint.stripe) for (const p of ring) { n++; if (!nearMarked(p, MARKING_LOOK.gap / 2 + W + LAT)) { off++; if (at.length < 6) at.push(p) } }
     return { off, n, at, label } }
   // the kerb edges whose street takes an edge line or a parking lane on that side, and the reach a line lies within
   const kerbEdges = [], reach = Math.max(MARKING_LOOK.edgeInset + W, ...f.ribbons.streets.flatMap(st => [st.measure?.left?.parking || 0, st.measure?.right?.parking || 0]).map(d => d + W)) + LAT
@@ -107,23 +107,25 @@ for (const scene of feedScenes()) {
       const M = marks.get(run.skelId), st = f.ribbons.streets.find(x => x.skelId === run.skelId)
       if (M?.edges?.kind?.[run.side] || (st?.measure?.[run.side]?.parking || 0) > 0) kerbEdges.push([a, ring[(e + 1) % ring.length]]) }) })
   const nearKerb = segIndex(kerbEdges)
-  const judgeE = (paint, label) => { let off = 0, n = 0, at = null
-    for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) for (const p of ring) { n++; if (!nearKerb(p, reach)) { off++; at ||= p } }
+  const judgeE = (paint, label) => { let off = 0, n = 0, at = []
+    for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) for (const p of ring) { n++; if (!nearKerb(p, reach)) { off++; if (at.length < 6) at.push(p) } }
     return { off, n, at, label } }
-  const say = (x, what) => console.log(`  ${x.off ? '⛔' : '✅'} ${what}: ${x.n} vertex(es) · ${x.off} not ${what.startsWith('(S)') ? 'on a marked street' : 'beside a street that takes one'}${x.at ? ` (e.g. ${x.at.map(v => v.toFixed(2)).join(', ')})` : ''}`)
+  const say = (x, what) => console.log(`  ${x.off ? '⛔' : '✅'} ${what}: ${x.n} vertex(es) · ${x.off} not ${what.startsWith('(S)') ? 'on a marked street' : 'beside a street that takes one'}${x.at.length ? ` (e.g. ${x.at.map(p => `(${p.map(v => v.toFixed(2)).join(', ')})`).join(' · ')})` : ''}`)
   // (E2) ON THE ROAD SIDE — a distance to the kerb is the same either side of it, so (E) cannot see a line struck into the BLOCK
   // (that inversion shipped once, the probe of 2026-10-25). No edge-line vertex may lie inside any tile's block (its curb ring, iA).
+  // ⛔ Judged by the ring's OWN VERTICES, never its centroid: a ring's centroid need not lie on it (a bent strip's falls off it),
+  // so a centroid inside a block says nothing about the line (Boz, 2026-10-25, after the slot-3 RED).
   const blocks = R.protoShapeTiles.flatMap(t => t.iA || []).filter(r => r?.length >= 3)
   const bbs = blocks.map(r => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const [x, z] of r) a = [Math.min(a[0], x), Math.min(a[1], z), Math.max(a[2], x), Math.max(a[3], z)]; return a })
   const wind = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
     if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
   const inBlock = (p) => blocks.some((r, i) => p[0] > bbs[i][0] && p[0] < bbs[i][2] && p[1] > bbs[i][1] && p[1] < bbs[i][3] && wind(p, r) !== 0)
-  const judgeSide = (paint) => { let n = 0, inside = 0, at = null
-    for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) { const c = ring.reduce((t, p) => [t[0] + p[0] / ring.length, t[1] + p[1] / ring.length], [0, 0]); n++; if (inBlock(c)) { inside++; at ||= c } }
-    return { n, inside, at } }
+  const judgeSide = (paint) => { let n = 0, inside = 0, verts = 0, at = []
+    for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) { n++; const ins = ring.filter(inBlock); verts += ins.length; if (ins.length) { inside++; if (at.length < 6) at.push(ins[0]) } }
+    return { n, inside, verts, at } }
   const S = judgeS(R.roadPaint, 'live'), E = judgeE(R.roadPaint, 'live'), E2 = judgeSide(R.roadPaint)
   say(S, '(S) stripe'); say(E, '(E) edge lines'); red += (S.off ? 1 : 0) + (E.off ? 1 : 0)
-  console.log(`  ${E2.inside ? '⛔' : '✅'} (E2) edge lines on the road side: ${E2.n} ring(s) · ${E2.inside} inside a block${E2.at ? ` (e.g. ${E2.at.map(v => v.toFixed(2)).join(', ')})` : ''}`); if (E2.inside) red++
+  console.log(`  ${E2.inside ? '⛔' : '✅'} (E2) edge lines on the road side: ${E2.n} ring(s) · ${E2.inside} with a vertex inside a block (${E2.verts} vertex(es))${E2.at.length ? ` (e.g. ${E2.at.map(p => `(${p.map(v => v.toFixed(2)).join(', ')})`).join(' · ')})` : ''}`); if (E2.inside) red++
   const measureOfRun = (run) => { const st = f.ribbons.streets.find(x => x.skelId === run.skelId); const m = st?.measure?.[run.side]; return m ? { pavementHW: m.pavementHW, parking: m.parking ?? 0 } : null }
   // mutant (E2): the kerb leg's side flipped — the edge lines must land inside a block
   { let mp = null, refused = null; try { mp = quiet(() => flippedMarkings({ tiles: R.protoShapeTiles, centrelines: fp.centrelines, marksOf: (id) => marks.get(id), measureOfRun, look: MARKING_LOOK })) } catch (e) { refused = String(e.message).split('\n')[0].slice(0, 140) }
