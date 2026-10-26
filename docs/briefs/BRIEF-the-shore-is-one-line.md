@@ -29,6 +29,10 @@ Three lines that should be one:
 
 - **The coast is where the lidar meets HIGH water** (Jacob 2026-10-11, `BRIEF-the-ground-knows-its-height §5` "The shore:
   RULED"): tidal → MHW, a lake → its authored level; one outline from the lidar; the sheet that finds it is discarded.
+- **⭐ ①'s coast IS the high-water mark, by definition** (Jacob 2026-10-25: *"Could we just say the polygon IS the logical
+  highest water mark?"*). Water is ①'s water face at the level, drawing back inside it below HIGH; land outside ① is land at every
+  level, even below HIGH; the field is stamped to the line in a band; HIGH is the water record's number. The lidar trace is the
+  pour's FIRST DRAFT of the line (authorable), and the bed inside ① is NCMP near shore.
 - **Water, sand and shore run to the bb and are stamped with everything; the disc stamps last; the sand line is ink in ①,
   made in the pour** (Jacob 2026-10-21 night; `BRIEF-the-rim-is-cut-once §5`).
 - **No fallback:** no lidar, no vertical datum, or no water record ⇒ THROWS by name, never OSM (`coast-from-lidar §3.2`).
