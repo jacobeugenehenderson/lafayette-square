@@ -28,7 +28,8 @@
 // MUTATIONS (each must go red): PIPELINE_SRC set back to importClosure([pipeline.js]) (town modules re-enter) ·
 // the 428 stop removed · pourCodeChanged made to return [] · pourCodeChanged made to compare mtimes · the registry
 // check dropped from the 428 list · the stopAt removed in pour-code.mjs · code hashed by its bytes (a comment dirties) ·
-// an unparseable file hashed like any other (it would read clean) · the line-break flag dropped from executedHash.
+// an unparseable file hashed like any other (it would read clean) · the line-break flag dropped from executedHash ·
+// the Bake's stale-judge refusal removed · staleJudge made to compare bytes (a comment would demand a restart).
 import { readFileSync, mkdtempSync, writeFileSync, utimesSync, rmSync, readdirSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -137,6 +138,23 @@ if (!/geographyRead:\s*GEOGRAPHY_READ/.test(pipe)) bad.push('pipeline.js does no
     if (got === sameRun) bad.push(`a raw-bytes record of sources.js before the comment-only commit b456bc6d: ${sameRun ? 'what runs is the same, yet it was NAMED' : 'what runs differs, yet it was NOT named'}`)
     if (pc.executedHash(parentBuf.toString('utf8')) !== pc.executedHash(execFileSync('git', ['-C', ROOT, 'show', `b456bc6d:${rel}`]).toString('utf8'))) bad.push('b456bc6d (a one-line doc comment) changes what runs, by executedHash — it must not')
   }
+}
+
+// ── the judge that runs is the judge in the repo (2026-10-26: :3343, started before the detector merged, named HPDM's
+// comment-only sources.js with the byte judge it had loaded) ──
+{
+  const d = mkdtempSync(join(tmpdir(), 'bakewatch-judge-')), f = join(d, 'judge.mjs')
+  writeFileSync(f, 'export const k = 1\n')
+  const stale = pc.staleJudge([f])
+  if (stale().length) bad.push('staleJudge names a file that has not changed')
+  writeFileSync(f, '// a note\nexport const k = 1\n')
+  if (stale().length) bad.push('staleJudge names a comment-only edit — a restart would be demanded for a comment')
+  writeFileSync(f, 'export const k = 2\n')
+  if (stale().length !== 1) bad.push('staleJudge does not name a judge whose code changed — a stale server would judge with old code, silently')
+  rmSync(d, { recursive: true, force: true })
+  const h0 = src.indexOf("await runIfDirty('pipeline'"), g = src.lastIndexOf('pourCodeChanged(', h0), j = src.lastIndexOf('judgeStale()', g)
+  if (j < 0 || !/const (\w+) = judgeStale\(\)\s*\n\s*if \(\1\.length\) \{\s*\n\s*res\.writeHead\(503[^\n]*\n[^\n]*\n\s*return\b/.test(src.slice(src.lastIndexOf('\n', j - 1), g))) bad.push('the Bake does not refuse (503) on a stale judge before it judges the pour (serve.js → pour-code.mjs#judgeStale)')
+  if (!/staleJudge\(\[fileURLToPath\(import\.meta\.url\), join\(HERE, 'serve\.js'\)\]\)/.test(readFileSync(join(ROOT, 'cartograph/pour-code.mjs'), 'utf8'))) bad.push('judgeStale does not watch both judges (pour-code.mjs and serve.js)')
 }
 
 // ── every OTHER step is judged by content too (Boz's rulings 2026-09-26): runIfDirty hashes each step's code closure
