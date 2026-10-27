@@ -151,8 +151,9 @@ keeps it moving. In order:
    `tern/coast-from-lidar` (33 commits, unmerged) read against canon, then built WITH
    `BRIEF-the-rim-is-cut-once §5` (water/sand/shore to the bb, stamped with ①, the disc last; the sand line as ① ink in the pour).
 ⛔ PUBLISH-PATH DEFECTS (Jacob, 2026-10-26, from PTown's promote on the :3343/:5183 integration server; cause not established):
-(1) Stage's share-image "rerender" button did nothing visible; (2) the staged AND promoted PTown's SMS/link previews are wrong
-(the share card's og: tags or image; which one is not established: `curl -s https://provincetown.online/ | grep og:`);
+(1) Stage's share-image "rerender" button did nothing visible; (2) the staged AND promoted PTown's SMS/link previews are wrong:
+MEASURED 2026-10-26, neither provincetown.online/ nor staging.theward.online/provincetown/ serves ANY og: or twitter: meta tag
+(`curl -s <url> | grep -i 'og:'` → nothing); where they should be stamped, not established;
 (3) "Hero object blur" (the rack focus on a panning shot, 237ee4db, Strobe's object-identity focus) is broken on DESKTOP.
 Reproduce each on integration before fixing; the server being a temporary one is not yet ruled out as a cause.
 ⛔ THE DIRTY DETECTOR HAS NO DISCRETION, live instance (2026-10-25 19:37, Huron's Publish panel): "This re-pours huron because
