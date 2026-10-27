@@ -1111,7 +1111,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         const diag = Math.hypot(x1 - x0, z1 - z0)
         return diag > 0 ? Math.abs(signedArea(rg)) / diag : 0
       }
-      // ⭐ EACH POCKET ITS OWN FACE (`faceLobes`, Boz's ruling B): a face ring pinched along its own edge, or at a repeated vertex,
+      // ⭐ EACH POCKET ITS OWN FACE (`faceLobes`, Boz's ruling B (b)): a face ring pinched along its own edge (a collinear retrace)
       // is split into its lobes here, before anything reads it; each hole goes with the lobe that holds it. A ring that is neither
       // goes through as the boolean returned it.
       let pinched = 0, lobesMade = 0, retracesDropped = 0
@@ -1127,7 +1127,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
           if (by.length !== 1) throw new Error(`[①] ⛔ a hole of a pinched face (at ${h.hr?.[0]?.map(v => v.toFixed(3)).join(', ')}) lies in ${by.length} of its ${L.lobes.length} lobes (want 1). Refusing.`)
           mine[by[0]].push(h) }
         L.lobes.forEach((o, q) => faceList.push({ rg: o.ring, lb: o.labels, holes: mine[q] })) }
-      if (pinched) console.log(`    [①] ${pinched} face ring(s) pinched along their own edge or at a vertex, split into ${lobesMade} face(s); ${retracesDropped} zero-width retrace(s) dropped (faceLobes)`)
+      if (pinched) console.log(`    [①] ${pinched} face ring(s) pinched along their own edge (a retrace), split into ${lobesMade} face(s); ${retracesDropped} zero-width retrace(s) dropped (faceLobes)`)
       for (const { rg, lb, holes } of faceList) {
         // ⛔ NOT SILENT. A face the boolean returned but that carries fewer than 3 vertices or no
         // identity is a real state and must be countable — on town #2 nobody is looking.
@@ -1250,7 +1250,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
 // its value through the boolean — by construction, never recovered from coordinates afterwards — and the
 // result gains `payloads` (null at a minted crossing). ⛔ Callers that pass nothing take the unchanged
 // path: Z = label + 1 exactly as before, so their output is byte-identical.
-// ⭐ A FACE PINCHED ALONG ITS OWN EDGE IS TWO FACES (Boz's ruling B, 2026-10-27). `booleanLabelled` runs with
+// ⭐ A FACE PINCHED ALONG ITS OWN EDGE IS TWO FACES (Boz's ruling B, narrowed to (b), 2026-10-27). `booleanLabelled` runs with
 // ioPreserveCollinear and without StrictlySimple, so where the water lies ALONG a frame edge for a stretch with land either side
 // of it, Clipper hands back ONE outer ring: the two land pockets joined by a zero-width double-back along the frame (PTown's
 // east edge: the frame edge down 108.7 m, the water edge back up 91.0 m of it). Each pocket is a face of its own.
@@ -1258,9 +1258,13 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
 // into that edge (so the retrace's ends become shared vertices), then the ring is cut into its loops at each repeated vertex.
 // A loop of zero area is the retrace itself and is dropped (counted). Labels are POSITIONAL (label i names edge i→i+1): an
 // inserted vertex takes the label of the edge it splits, and every loop keeps its own edges' labels.
-// → null when the ring is neither pinched nor retraced (the caller keeps the ring as it was, byte for byte), else
+// ⛔ ONLY A RETRACE SPLITS (Boz's (b)): a ring that merely touches itself at one vertex is NOT split — absorbInk accepts it, and
+// whether such a lobe is a face of its own is an open question (BACKLOG census: LS #327, PTown #40). A ring with a retrace is cut
+// at every repeated vertex once its retrace ends are inserted.
+// → null when the ring has no retrace (the caller keeps the ring as it was, byte for byte), else
 //   { lobes: [{ ring, labels }], retraces: n }. ⛔ A lobe wound against the ring refuses by name: it would be a hole, not a pocket.
 export function faceLobes(ring, labels, who = '①') {
+  if (!ringRetraces(ring).length) return null
   const n = ring.length, I = ring.map(p => [Math.round(p[0] * SCALE), Math.round(p[1] * SCALE)])
   const G = 50 * SCALE, cells = new Map(), cellOf = (x, z) => Math.floor(x / G) + ',' + Math.floor(z / G)
   I.forEach((p, k) => { const c = cellOf(p[0], p[1]); (cells.get(c) || cells.set(c, []).get(c)).push(k) })
@@ -1280,7 +1284,6 @@ export function faceLobes(ring, labels, who = '①') {
     const seen = new Set(); S.sort((u, v) => u.t - v.t)
     for (const { k } of S) { const key = I[k][0] + ',' + I[k][1]; if (seen.has(key)) continue; seen.add(key); E.push({ p: ring[k], q: I[k], lab: labels[i] }) } }
   const keyOf = (e) => e.q[0] + ',' + e.q[1]
-  { const s = new Set(); let rep = false; for (const e of E) { const k = keyOf(e); if (s.has(k)) { rep = true; break } s.add(k) } if (!rep) return null }
   const loops = [], stack = [], at = new Map()
   for (const e of E) { const k = keyOf(e)
     if (at.has(k)) { const loop = stack.splice(at.get(k)); for (const u of loop) at.delete(keyOf(u)); loops.push(loop) }

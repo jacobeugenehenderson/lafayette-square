@@ -9,7 +9,8 @@
 //       between them: the mint gives TWO pocket faces of the pockets' own areas, each painting one outer.
 //   (2) faceLobes on that ring's own shape: a ring whose frame edge is retraced the other way comes back as its two lobes, the
 //       zero-area retraces dropped, every lobe's labels its own edges' (the frame edge __boundary__, the rest __water__).
-//   (3) faceLobes on a ring neither pinched nor retraced returns null: the mint keeps it as the boolean returned it.
+//   (3) faceLobes on a ring with no retrace returns null — a plain ring, and a ring touching itself at ONE vertex (Boz's (b):
+//       only a retrace splits; a one-vertex touch is an open question, BACKLOG census): the mint keeps it as the boolean returned it.
 //   MUTANT (always run): the split removed → the plant REFUSES, by the assert's name (the retrace is caught at the mint, before
 //   absorbInk), or the row proves nothing.
 //   node checks/claims-a-pinched-face-is-two-faces.mjs
@@ -50,8 +51,9 @@ const live = await import('../src/lib/tileGround.js')
   row(!!L && lobes.length === 2 && L.retraces === 3 && frameEdges.every(n => n === 1) && lobes.every(o => o.labels.filter(l => l === '__boundary__').length === 1) && lobes.every(o => !live.ringRetraces(o.ring).length) && live.ringRetraces(ring).length === 3,
     `(2) faceLobes on that ring (its frame edge retraced the other way over ${live.ringRetraces(ring).map(o => o.m.toFixed(3)).join(' + ')} m): ${L ? `${lobes.length} lobe(s) [${lobes.map(o => Math.abs(sa(o.ring)).toFixed(3)).join(', ')} m²], ${L.retraces} zero-area retrace(s) dropped, each lobe's one frame edge __boundary__ [${frameEdges}]` : 'NOT split'}`) }
 // (3) a ring neither pinched nor retraced is not touched
-{ const sq = [[0, 0], [10, 0], [10, 5], [10, 10], [0, 10]]
-  row(live.faceLobes(sq, sq.map(() => 0)) === null && !live.ringRetraces(sq).length, `(3) a plain ring (a collinear vertex, no pinch): faceLobes ${live.faceLobes(sq, sq.map(() => 0)) === null ? 'returns null — kept as it was' : 'SPLIT IT'}`) }
+{ const sq = [[0, 0], [10, 0], [10, 5], [10, 10], [0, 10]], eight = [[0, 0], [10, 0], [10, 10], [20, 10], [20, 20], [10, 20], [10, 10], [0, 10]]
+  const a = live.faceLobes(sq, sq.map(() => 0)), b = live.faceLobes(eight, eight.map(() => 0))
+  row(a === null && b === null, `(3) a plain ring (a collinear vertex): ${a === null ? 'kept' : 'SPLIT'} · a ring touching itself at one vertex, no retrace: ${b === null ? 'kept (only a retrace splits)' : `SPLIT into ${b.lobes.length}`}`) }
 // MUTANT: the split removed, in one modified tileGround.js in its own temp dir (imports pointed at the live src/lib)
 { const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8'), ANCHOR = 'const L = (rg?.length >= 3 && lb) ? faceLobes(rg, lb) : null'
   if (src.split(ANCHOR).length !== 2) row(false, 'mutant: the split call is not in tileGround.js once — re-aim the anchor')
