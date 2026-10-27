@@ -19,11 +19,17 @@ export const COAST_FILE = 'coast.json'
  * @param cleanDir  cartograph/data/<scene>/clean
  * @param bb        the frame the reader closes against (geography.mjs#localBB), compared to the square traced on
  */
+/** The coast.json format. 2 (2026-10-27): each deck opened and closed at the trace step (structures.mjs#deckFootprints), fineM
+ *  written exact, so the mint takes out the footprints the trace saw. readCoast refuses any other version by name. */
+export const COAST_VERSION = 2
+
 export function readCoast(cleanDir, bb, who) {
   const p = join(cleanDir, COAST_FILE)
   if (!fs.existsSync(p)) throw new Error(`[${who}] ⛔ no ${p} — the coast is the lidar's (bake-coast.mjs), and there is no other source. ▶ the Bake's 'coast' step, or node cartograph/bake-coast.mjs --scene=<id>`)
   const doc = JSON.parse(fs.readFileSync(p, 'utf8'))
   if (!doc || typeof doc.coast !== 'boolean') throw new Error(`[${who}] ⛔ ${p} carries no coast verdict — not a bake-coast artifact`)
+  // ⛔ a coast traced under older deck rules pairs silently with a mint built under the new ones (Zob, 2026-10-27): refused by name
+  if (doc.version !== COAST_VERSION) throw new Error(`[${who}] ⛔ ${p} is coast version ${doc.version ?? 'none'}, and this kit reads ${COAST_VERSION}: re-bake the coast (decks are now opened and closed at the trace step, which is written exact). ▶ the Bake's 'coast' step`)
   const S = doc.square
   if (!bb || !S || ['x0', 'x1', 'z0', 'z1'].some(k => !(Math.abs(S[k] - bb[k]) < 1e-6)))
     throw new Error(`[${who}] ⛔ ${p} was traced on the square ${JSON.stringify(S)} and this frame is ${JSON.stringify(bb)} — the fetch moved since the coast was baked. ▶ re-run bake-coast`)

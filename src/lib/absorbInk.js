@@ -284,7 +284,7 @@ export function absorbInk({ inkRings, inkLabels, frame, frameOwner, waterRings =
         h = nx }
       rings.push({ pts, labs, a: area2(pts) }) }
     const outers = rings.filter(r => r.a > 0)
-    if (outers.length !== 1) throw new Error(`[${who}][absorb] ⛔ face ${g} absorbs into ${outers.length} outer boundaries (want 1). Refusing.`)
+    if (outers.length !== 1) throw new Error(`[${who}][absorb] ⛔ face ${g} absorbs into ${outers.length} outer boundaries (want 1): ${outers.slice(0, 4).map(r => `${(r.a / 2).toFixed(3)} m² from (${r.pts[0].map(v => v.toFixed(3)).join(', ')})`).join(' · ')}. Refusing.`)
     // the block convention (`blocks` wound as ①'s holes): the outer negative, a hole positive, labels rotated with a reversal
     const flip = (r) => { const p = [...r.pts].reverse(), l = [...r.labs].reverse(); l.push(l.shift()); return { p, l } }
     const o = flip(outers[0]), H2 = rings.filter(r => r.a < 0).map(flip)

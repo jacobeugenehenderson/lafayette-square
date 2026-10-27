@@ -178,7 +178,7 @@ for (const scene of scenes) {
     for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++, n++) { if (near(X(i), Z(R[q]))) onLine++; else offCells.push({ x: X(i), z: Z(R[q]), above: above ? above[n] : null }) }
     if (n !== dry.cells) { console.log(`  ⛔ (a) bed.dry says ${dry.cells} cells and its runs hold ${n}`); red++ }
     // the deck footprints, each named by the OSM features that lie in it (a feature's vertex inside its ring, or on it within 1 mm)
-    const decks = deckFootprints(osm.ground), st = deckStructures(osm.ground)
+    const decks = deckFootprints(osm.ground, coast.doc.fineM), st = deckStructures(osm.ground)   // closed at the step the coast was traced at
     const inR = (x, z, r) => { let c = false; for (let a = 0, b = r.length - 1; a < r.length; b = a++) { const [xa, za] = r[a], [xb, zb] = r[b]; if ((za > z) !== (zb > z) && x < (xb - xa) * (z - za) / (zb - za) + xa) c = !c } return c }
     const onEdge = (x, z, r) => r.some((p, a) => { const q = r[(a + 1) % r.length], dx = q[0] - p[0], dz = q[1] - p[1], L2 = dx * dx + dz * dz || 1, u = Math.max(0, Math.min(1, ((x - p[0]) * dx + (z - p[1]) * dz) / L2)); return Math.hypot(x - p[0] - u * dx, z - p[1] - u * dz) <= 1e-3 })
     const deckOf = (x, z) => decks.on(x, z) ? decks.rings.findIndex(r => inR(x, z, r)) : -1

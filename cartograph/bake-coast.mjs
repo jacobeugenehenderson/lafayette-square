@@ -58,14 +58,13 @@ import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
 import { deckFootprints } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
-import { COAST_FILE, heldCells, ringViolations, ringsMeet } from './coastFile.mjs'
+import { COAST_FILE, COAST_VERSION, heldCells, ringViolations, ringsMeet } from './coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { discOf } from './boundaryRecords.mjs'
 
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
 
-export const COAST_VERSION = 1
 
 /** The square tile, in metres, the fine line is traced in. ⛔ Not a geometric value: every tile samples ONE global lattice
  *  (the square's origin, the source's own pixel) and keeps only the loops inside its own square, padded for reading only,
@@ -326,7 +325,10 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const W = Math.ceil((R.x1 - R.x0) / G) + 1, H = Math.ceil((R.z1 - R.z0) / G) + 1
   const X = (i) => R.x0 + i * G, Z = (j) => R.z0 + j * G
   const { grid: ground } = await rasterToGrid(opened, { width: W, height: H, bounds: { minX: R.x0, maxX: X(W - 1), minZ: R.z0, maxZ: Z(H - 1) }, toLL, quiet: true })
-  const decks = deckFootprints(osm.ground)
+  // the trace's step, the source's own pixel: read first, because each deck is closed at it (structures.mjs#deckFootprints)
+  const fine = Math.min(...opened.map(o => pixelMetres(o, toLL, disc.cx, disc.cz)))
+  if (!(fine > 0 && Number.isFinite(fine))) throw new Error(`⛔ bake-coast: ${scene} — the lidar's pixel size could not be read`)
+  const decks = deckFootprints(osm.ground, fine)
   const { w, nr, deck, noLidar, noCover, deckCells } = markSheet({ ground, W, H, X, Z, highAt, onDeck: decks.on, covered: (x, z) => inCoverage(opened, ...toLL(x, z)) })
   if (noLidar === W * H) throw new Error(`⛔ bake-coast: ${scene}'s lidar holds NO value anywhere over the fetched square — no coast can be drawn from it`)
   const { held, n: heldN } = heldCells(osm.ground, { W, H, x0: R.x0, z0: R.z0, step: G })
@@ -342,8 +344,6 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   for (let k = 0; k < W * H; k++) if (nr[k]) { if (wet[k]) nrIn++; else nrOut++ }
 
   // ── THE FINE LINE, along the sheet's edge, at the source's own pixel ────────────────────────────────────────────
-  const fine = Math.min(...opened.map(o => pixelMetres(o, toLL, disc.cx, disc.cz)))
-  if (!(fine > 0 && Number.isFinite(fine))) throw new Error(`⛔ bake-coast: ${scene} — the lidar's pixel size could not be read`)
   const cellSq = (k, r) => { const i = k % W, j = (k - i) / W; return toPath([[X(i) - r, Z(j) - r], [X(i) + r, Z(j) - r], [X(i) + r, Z(j) + r], [X(i) - r, Z(j) + r]]) }
   const edge = edgeCells(wet, w, W, H)
   const band = clip(ClipType.ctUnion, edge.map(k => cellSq(k, 1.5 * G)), null)
@@ -437,13 +437,14 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     coast: true,
     from: `the lidar meets ${levels.highName} (${levels.tidal ? 'tidal' : 'lake'}; NAVD88 ${levels.range.high.map(v => v.toFixed(3)).join('…')} m), traced at ${+fine.toFixed(3)} m along a ${G} m sheet over the fetched square`,
     level: { high: levels.highName, low: levels.lowName, tidal: levels.tidal, navd88High: levels.range.high, navd88Low: levels.range.low },
-    dem: vd, gridM: G, fineM: +fine.toFixed(3),
+    dem: vd, gridM: G, fineM: fine,   // EXACT: the mint closes each deck at it (mintInputs), as the trace did
     flattened,
     water: simple,
     arcs, islands, islandFloor: { rule: 'holds a terrain node', lattice: { bounds: lat.bounds, width: lat.width, height: lat.height } }, islandsDropped,
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
+    decksOpened: { m2: decks.openedM2, sites: decks.opened }, decksClosed: { m2: decks.closedM2, sites: decks.closed }, decksBelowResolution: decks.belowResolution.map(({ m2, at }) => ({ m2, at })),
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
@@ -462,6 +463,9 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (islandsDropped.length) console.log(`  ${islandsDropped.length} island(s) holding no terrain node DROPPED, their ground the water's: ${islandsDropped.slice(0, 8).map(d => `${d.m2} m² @(${d.at.join(', ')})`).join(' · ')}${islandsDropped.length > 8 ? ` … +${islandsDropped.length - 8}` : ''}`)
   if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
+  if (decks.opened.length) console.log(`  DECKS OPENED at the trace step: ${decks.opened.length} footprint(s) lost ${decks.openedM2} m² narrower than one cell`)
+  if (decks.belowResolution.length) console.log(`  DECKS BELOW RESOLUTION: ${decks.belowResolution.length} deck(s) narrower than one trace cell everywhere, not drawn as decks: ${decks.belowResolution.slice(0, 8).map(b => `${b.m2} m² @(${b.at.map(Math.round).join(', ')})`).join(' · ')}${decks.belowResolution.length > 8 ? ` … +${decks.belowResolution.length - 8}` : ''}`)
+  if (decks.closed.length) console.log(`  DECKS CLOSED at the trace step: ${decks.closed.length} footprint(s) gained ${decks.closedM2} m² where their parts left a gap under one cell: ${decks.closed.slice(0, 8).map(c => `${c.m2} m² @(${c.at.map(Math.round).join(', ')})`).join(' · ')}`)
   if (settled.sweepClamped.length) console.log(`  SWEEP-CLAMPED: ${settled.sweepClamped.length} settle move(s) cut short so no edge sweeps over a vertex: ${settled.sweepClamped.slice(0, 8).map(c => `${c.wantM}→${c.gotM} m @(${c.at.map(Math.round).join(', ')})`).join(' · ')}${settled.sweepClamped.length > 8 ? ` … +${settled.sweepClamped.length - 8}` : ''}`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
   return out

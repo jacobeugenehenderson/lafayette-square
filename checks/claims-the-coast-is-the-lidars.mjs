@@ -42,7 +42,7 @@ import { tmpdir } from 'node:os'
 import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
-import { readCoast, COAST_FILE, ringViolations, ringsMeet } from '../cartograph/coastFile.mjs'
+import { readCoast, COAST_FILE, COAST_VERSION, ringViolations, ringsMeet } from '../cartograph/coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { wetLoops, KIND } from '../cartograph/marchingSquares.mjs'
 import { terrainLattice } from '../cartograph/elevationSources.mjs'
@@ -50,11 +50,32 @@ import { markSheet, floodFromEdge, wound, flattenedWater, clearances, settleInOr
 import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
+import { mintProtopolygon } from '../src/lib/tileGround.js'
+import { waterRuns } from '../cartograph/shoreRuns.mjs'
 
 const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
 const bad = []
 const say = (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) bad.push(what) }
 const signed = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+// the edges of `rings` no arc strokes: an edge is stroked when both ends and its midpoint lie on an arc (at the clip lattice)
+// the converse: arc edges lying on no edge of `rings` (off), and ring edges more than one arc edge covers (twice)
+const strokedOff = (rings, arcs) => { const tol = 1 / CLIP_SCALE, segD = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(v[0] - a[0] - u * dx, v[1] - a[1] - u * dz) }
+  const E = rings.flatMap(r => r.map((a, i) => [a, r[(i + 1) % r.length]])), hits = new Array(E.length).fill(0)
+  let off = 0
+  for (const a of arcs) for (let i = 0; i + 1 < a.length; i++) { const p = a[i], q = a[i + 1], m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]
+    const k = E.findIndex(([u, v]) => segD(p, u, v) <= tol && segD(q, u, v) <= tol && segD(m, u, v) <= tol)
+    if (k < 0) { const any = E.some(([u, v]) => segD(m, u, v) <= tol); if (!any) off++ } else hits[k]++ }
+  return { off, twice: hits.filter(h => h > 1).length } }
+const bareEdges = (rings, arcs, onFrame) => { const tol = 1 / CLIP_SCALE, segD = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(v[0] - a[0] - u * dx, v[1] - a[1] - u * dz) }
+  const G = 4, cells = new Map(), key = (x, z) => `${Math.floor(x / G)},${Math.floor(z / G)}`
+  for (const a of arcs) for (let i = 0; i + 1 < a.length; i++) { const p = a[i], q = a[i + 1], n = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / G) || 1
+    for (let s = 0; s <= n; s++) for (const dx of [-1, 0, 1]) for (const dz of [-1, 0, 1]) { const k = key(p[0] + (q[0] - p[0]) * s / n + dx * G, p[1] + (q[1] - p[1]) * s / n + dz * G); (cells.get(k) || cells.set(k, new Set()).get(k)).add(a.length * 0 + i + ':' + arcs.indexOf(a)) } }
+  const on = (v) => [...(cells.get(key(v[0], v[1])) || [])].some(id => { const [i, ai] = id.split(':').map(Number), a = arcs[ai]; return segD(v, a[i], a[i + 1]) <= tol })
+  const out = []
+  for (const r of rings) for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]
+    if (onFrame(a, b)) continue
+    if (!(on(a) && on(b) && on([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]))) out.push([a, b]) }
+  return out }
 
 // ── A. no fallback ──
 console.log('── A. the pour reads the lidar coast, and only it')
@@ -71,14 +92,14 @@ say(!callers.length, `no pour file calls coastRings${callers.length ? `: ${calle
   let threw = false
   try { readCoast(d, bb, 'check') } catch { threw = true }
   say(threw, 'readCoast refuses a town with no coast.json')
-  writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: false, why: 'x', square: { ...bb, x1: 11 } }))
+  writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: COAST_VERSION, coast: false, why: 'x', square: { ...bb, x1: 11 } }))
   threw = false
   try { readCoast(d, bb, 'check') } catch { threw = true }
   say(threw, 'readCoast refuses a coast traced on another square')
-  writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: false, why: 'inland', square: bb }))
+  writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: COAST_VERSION, coast: false, why: 'inland', square: bb }))
   say(readCoast(d, bb, 'check').coast === false, 'readCoast reads an inland verdict as no coast')
   const O = [[-10, -10], [10, -10], [10, 10], [-10, 10]], Hn = [[-2, -2], [-2, 2], [2, 2], [2, -2]]   // outer +, hole −
-  const wrote = (water) => writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: true, square: bb, water, arcs: [] }))
+  const wrote = (water) => writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: COAST_VERSION, coast: true, square: bb, water, arcs: [] }))
   wrote([{ outer: O, holes: [Hn] }])
   say(readCoast(d, bb, 'check').holes === 1, 'readCoast takes an outer wound positive with its island wound negative')
   for (const [why, water] of [['a hole wound positive', [{ outer: O, holes: [[...Hn].reverse()] }]], ['an outer wound negative', [{ outer: [...O].reverse(), holes: [] }]]]) {
@@ -95,7 +116,7 @@ console.log('── B. a deck is not ground: the water runs under it')
   // 100 × 60 m at 1 m: lake (ground −1) for z < 30, land (+2) beyond; a pier from (50, 35) to (50, 5), its deck +2 m.
   const W = 101, H = 61, X = (i) => i, Z = (j) => j, high = 0
   const pier = { man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 50, z: 35 }, { x: 50, z: 5 }], isClosed: false }] }
-  const decks = deckFootprints(pier)
+  const decks = deckFootprints(pier, 1)
   say(decks.count.lines === 1 && decks.count.typicalWidthM === defaultDeckWidthM(), `an unmapped pier line takes the sourced width (${decks.count.typicalWidthM} m)`)
   const field = () => { const g = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) g[j * W + i] = (j < 30 ? -1 : 2); for (let j = 5; j <= 35; j++) g[j * W + 50] = 2; return g }
   const run = (onDeck) => { const s = markSheet({ ground: field(), W, H, X, Z, highAt: () => high, onDeck, covered: () => true }); return floodFromEdge(s.w, W, H, null, s.nr) }
@@ -166,14 +187,14 @@ console.log('── H. the tracer never reads a sentinel as a height')
     `a no-return node at a diagonal neck: ${keys.size} distinct of ${pts.length} crossing points, ${loops.filter(l => ringViolations(l).length).length} loop(s) touching, ${tally.noReturn ?? 0} no-return crossing(s) at edge midpoints (want all distinct, none, 4)`)
   // a deck: a 1.4 m square pier deck over the node at (3, 3); the line must lie ON the deck's own ring
   const ground = { man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.3, z: 2.3 }, { x: 3.7, z: 2.3 }, { x: 3.7, z: 3.7 }, { x: 2.3, z: 3.7 }, { x: 2.3, z: 2.3 }], isClosed: true }] }
-  const dk = deckFootprints(ground), g = new Float32Array(n * n).fill(1), gk = new Uint8Array(n * n)
+  const dk = deckFootprints(ground, 1), g = new Float32Array(n * n).fill(1), gk = new Uint8Array(n * n)
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (dk.on(i, j)) { g[j * n + i] = NaN; gk[j * n + i] = KIND.DECK }
   const dl = wetLoops(g, n, n, 0, 0, 1, { kind: gk, deckCross: dk.crossing }).flat()
   const segD = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1, u = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)); return Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dz) }
   const off = Math.max(...dl.map(p => Math.min(...dk.rings.flatMap(r => r.map((q, m) => segD(p, q, r[(m + 1) % r.length]))))))
   say(gk.some(Boolean) && dl.length > 0 && off <= 1 / CLIP_SCALE, `a deck's crossings lie on the deck's own ring (${dl.length} point(s), furthest ${(1000 * off).toFixed(3)} mm off; the clip grid is ${1000 / CLIP_SCALE} mm)`)
   // a deck whose edge runs ALONG the lattice (a 2 m square deck on nodes 2…4): its boundary nodes lie on the ring, exact
-  const sqd = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2, z: 2 }, { x: 4, z: 2 }, { x: 4, z: 4 }, { x: 2, z: 4 }, { x: 2, z: 2 }], isClosed: true }] })
+  const sqd = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2, z: 2 }, { x: 4, z: 2 }, { x: 4, z: 4 }, { x: 2, z: 4 }, { x: 2, z: 2 }], isClosed: true }] }, 1)
   const g2 = new Float32Array(n * n).fill(1), k2 = new Uint8Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (sqd.on(i, j)) { g2[j * n + i] = NaN; k2[j * n + i] = KIND.DECK }
   const t2 = {}, d2 = wetLoops(g2, n, n, 0, 0, 1, { kind: k2, deckCross: sqd.crossing, tally: t2 }).flat()
   const off2 = Math.max(...d2.map(p => Math.min(...sqd.rings.flatMap(r => r.map((q, m) => segD(p, q, r[(m + 1) % r.length]))))))
@@ -181,8 +202,9 @@ console.log('── H. the tracer never reads a sentinel as a height')
   let td = false; try { wetLoops(g2, n, n, 0, 0, 1, { kind: k2, deckCross: () => null }) } catch (e) { td = /a deck node outside its own deck/.test(e.message) }
   say(td, 'a deck node whose edge meets no deck ring REFUSES (never the node as a guess)')
   // a deck reaching the window's edge (Huron, 2026-10-26: a deck node on a tile's last row): its edge to the tracer's PAD is
-  // the pad's, not the deck's: a midpoint, counted, never a deck-ring lookup that finds nothing
-  const edge = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.5, z: -2 }, { x: 3.5, z: -2 }, { x: 3.5, z: 0.5 }, { x: 2.5, z: 0.5 }, { x: 2.5, z: -2 }], isClosed: true }] })
+  // the pad's, not the deck's: a midpoint, counted, never a deck-ring lookup that finds nothing. 1.6 m wide: wider than the 1 m trace
+  // step, so the open at that step keeps it (it holds the one node (3, 0))
+  const edge = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.2, z: -2 }, { x: 3.8, z: -2 }, { x: 3.8, z: 0.5 }, { x: 2.2, z: 0.5 }, { x: 2.2, z: -2 }], isClosed: true }] }, 1)
   const g3 = new Float32Array(n * n).fill(1), k3 = new Uint8Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (edge.on(i, j)) { g3[j * n + i] = NaN; k3[j * n + i] = KIND.DECK }
   const t3 = {}; let ok3 = true; try { wetLoops(g3, n, n, 0, 0, 1, { kind: k3, deckCross: edge.crossing, tally: t3 }) } catch { ok3 = false }
   say(ok3 && t3.pad === 1, `a deck node on the window's edge: its edge to the pad crosses at the midpoint (${t3.pad ?? 0} pad crossing), no deck lookup`)
@@ -220,13 +242,127 @@ console.log('── F. a deck that carries a street leaves the water; one that c
     { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 50, z: -20 }, { x: 50, z: 80 }], isClosed: false },
     { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 150, z: -20 }, { x: 150, z: 80 }], isClosed: false }] }
   const streets = [{ skelId: 'wharf-st', points: [[50, -40], [50, 70]] }]
-  const sd = streetDecks(ground, streets)
+  const sd = streetDecks(ground, streets, 1)
   say(sd.decks.length === 1 && sd.decks[0].streets.join() === 'wharf-st', `by construction, only the deck the street crosses carries it (${sd.decks.length} deck: ${sd.decks.map(d => d.streets).join()})`)
-  const w = waterWithoutDecks(water, arcs, sd.rings), area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+  const w = waterWithoutDecks(water, arcs, sd.rings, 1), area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
   const A = w.rings.reduce((t, r) => t + area(r), 0)
   say(Math.abs(A - (40000 - 10 * 80)) < 1, `the water loses the street deck's 800 m² and keeps the other pier's (${A.toFixed(0)} m²)`)
-  say(w.rings.every(r => area(r) > 0) && w.arcs.length === 2, `no hole is made (the deck touches the shore), and the shoreline arc is cut where it runs under the deck (${w.arcs.length} pieces)`)
+  say(w.rings.every(r => area(r) > 0) && w.arcs.filter(a => a.deck == null).length === 2, `no hole is made (the deck touches the shore), and the shoreline arc is cut where it runs under the deck (${w.arcs.filter(a => a.deck == null).length} pieces)`)
+  // ⭐ the deck's edge over the water is shore (Boz's ruling, 2026-10-27): emitted as arcs tagged with the deck, so every edge
+  // of the returned rings is stroked; the frame (the 200 m square's own sides) excluded
+  const dk = w.arcs.filter(a => a.deck === 0), dkM = dk.reduce((t, a) => t + a.slice(1).reduce((u, q, i) => u + Math.hypot(q[0] - a[i][0], q[1] - a[i][1]), 0), 0)
+  say(dk.length === 1 && Math.abs(dkM - (80 + 10 + 80)) < 1e-6, `the street deck's outline over the water is ONE arc tagged deck 0, ${dkM.toFixed(3)} m (its in-water perimeter 170)`)
+  const frame = (q) => q[0] === 0 || q[0] === 200 || q[1] === 200
+  say(!bareEdges(w.rings, w.arcs, (a, b) => frame(a) && frame(b) && (a[0] === b[0] || a[1] === b[1])).length && w.rings.every(r => (r.deck || []).filter(k => k === 0).length === 3),
+    `every water-ring edge off the frame lies under an arc, and the ring's 3 deck edges carry deck 0`)
+  // ① itself: a lake, a pier deck across its shore, and a street ending ON the deck's water-facing edge (PTown's marina,
+  // 10-27): with the deck's outline stroked, every ink cell joins one face and the deck's edge has its own water owner
+  const sq = (id, pts) => ({ skelId: id, name: id, points: pts, highway: 'residential', caps: { start: { degree: 1 }, end: { degree: 1 } } })
+  const sa2 = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+  const shore = [[-200, -100], [0, -100], [200, -100]], lake = [...shore, [200, -200], [-200, -200]].reverse()
+  const pier = [[-10, -140], [10, -140], [10, -90], [-10, -90]], mintSt = [sq('c', [[-150, 0], [150, 0]]), sq('p', [[0, -60], [0, -140]])]
+  const disc = Array.from({ length: 48 }, (_, i) => [190 * Math.cos(i / 48 * 2 * Math.PI), 190 * Math.sin(i / 48 * 2 * Math.PI)])
+  const sd2 = streetDecks({ man_made: [{ tags: { man_made: 'pier', width: '20' }, coords: [{ x: 0, z: -90 }, { x: 0, z: -140 }], isClosed: false }] }, mintSt, 1)
+  const w2 = waterWithoutDecks([sa2(lake) > 0 ? lake : [...lake].reverse()], [shore], sd2.rings, 1)
+  const quiet = (f) => { const l = console.log, wn = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } catch (e) { return { refused: String(e.message) } } finally { console.log = l; console.warn = wn } }
+  const MP = quiet(() => mintProtopolygon({ streets: mintSt, boundary: disc, bb: { x0: -200, x1: 200, z0: -200, z1: 200 }, coast: w2.rings, coastArcs: w2.arcs }))
+  const deckOwners = (MP.owners || []).map((o, i) => [o, i]).filter(([o]) => o.deck === 0 && o.water)
+  // both: the stroked deck arc's stamps, and the WATER FACE's own owner for the deck's edges (srcIdx −1), apart from the one water label
+  const faceOwner = deckOwners.find(([o]) => o.srcIdx === -1)
+  say(!MP.refused && faceOwner && (MP.blockLabels || []).flat().some(l => deckOwners.some(([, i]) => i === l)),
+    `① mints a street deck over the water, a street ending on its edge: ${MP.refused ? `REFUSED — ${MP.refused.slice(0, 160)}` : `every ink cell joins one face, and the deck's edge is labelled by ${deckOwners.length} water owner(s) carrying deck 0`}`)
+  // ⭐ and conversely, every arc edge IS a returned ring edge, and none is stroked twice (Zob, 10-27). His plant: the water above
+  // z = 0 and a 4 × 25 m pier from z = −5 to 20, the coast running round its root: built by clipping
+  // open paths, the root (inside the land) came back as a stray deck arc
+  const rootW = [[[-50, 0], [-2, 0], [-2, -5], [2, -5], [2, 0], [50, 0], [50, 100], [-50, 100]]]
+  const rootA = [[[-50, 0], [-2, 0], [-2, -5], [2, -5], [2, 0], [50, 0]]], rootD = [[-2, -5], [2, -5], [2, 20], [-2, 20]]
+  const rw = waterWithoutDecks(rootW, rootA, [rootD], 1), stray = strokedOff(rw.rings, rw.arcs)
+  const rdM = rw.arcs.filter(a => a.deck === 0).reduce((t, a) => t + a.slice(1).reduce((u, q, i) => u + Math.hypot(q[0] - a[i][0], q[1] - a[i][1]), 0), 0)
+  say(!stray.off && !stray.twice && Math.abs(rdM - 44) < 1e-6 && !bareEdges(rw.rings, rw.arcs, (a, b) => (a[0] === b[0] && Math.abs(a[0]) === 50) || (a[1] === b[1] && a[1] === 100)).length,
+    `a pier the coast follows at its root: ${stray.off} arc edge(s) off the returned rings, ${stray.twice} ring edge(s) stroked twice, its deck arc ${rdM.toFixed(3)} m (its in-water outline 44)`)
+  // ⛔ the tag is an array property JSON drops silently: rings handed over without it, beside deck arcs, refuse at the mint's door
+  const untagged = quiet(() => mintProtopolygon({ streets: mintSt, boundary: disc, bb: { x0: -200, x1: 200, z0: -200, z1: 200 }, coast: w2.rings.map(r => r.map(p => [p[0], p[1]])), coastArcs: w2.arcs }))
+  say(/no per-edge deck tag/.test(untagged?.refused || ''), `deck arcs beside water rings with no per-edge tag REFUSE at the mint's door (${untagged?.refused ? 'refused' : 'MINTED'})`)
+  // ⭐ the shore's readers leave a deck's edge out (shoreRuns.mjs#waterRuns: the revetment, the coast distance, the shore checks)
+  const wr = waterRuns({ tiles: [{ runs: [{ skelId: '__water__', poly: [[0, 0], [1, 0]] }, { skelId: '__water__', deck: 0, poly: [[1, 0], [2, 0]] }] }] })
+  say(wr.length === 1 && wr[0][1][0] === 1, `waterRuns keeps the beach and leaves the deck's edge out (${wr.length} run)`)
 }
+
+// ── F2. a deck's footprint is its ways, joined, at the trace's own scale ──
+console.log('── F2. a deck is its ways joined, opened and closed at the trace step')
+{
+  // two pier ways ENDING on one node, widths 3 and 2, turning 0.35° there: PTown's marina, OSM ways 769135305 and 769135308 as
+  // mapped (10-27), whose unfilled butt ends left a 1.5 m hairpin. The joint is filled, no acute vertex
+  const jg = { man_made: [{ tags: { man_made: 'pier', width: '3' }, coords: [{ x: 347.6, z: 399.18 }, { x: 283.24, z: 344.44 }], isClosed: false },
+    { tags: { man_made: 'pier', width: '2' }, coords: [{ x: 283.24, z: 344.44 }, { x: 277.84, z: 339.79 }, { x: 281.69, z: 335.34 }], isClosed: false }] }
+  const jf = deckFootprints(jg, 1), jv = jf.rings.flatMap(r => ringViolations(r, acuteAt))
+  say(jf.count.joints === 1 && jf.rings.length === 1 && !jv.length, `a joint of two pier ways (3 m, 2 m, 0.35°) is filled: ${jf.count.joints} joint, ${jf.rings.length} ring, ${jv.length} violation(s) (${jv.map(v => v.kind).join(', ')})`)
+  // ⭐ EACH DECK IS CLOSED AT THE TRACE'S STEP (Boz's ruling (b), 2026-10-27): Huron's pier as mapped, OSM area 1353092362 and
+  // lines 1353092363/4 (no width: the typical 1.8 m), left a notch 5 m deep and under a cell wide between the line's buffer
+  // and the area. Closed at the trace's 0.999 m it is filled, counted, and the deck stays one ring
+  const pt = (xz) => xz.map(([x, z]) => ({ x, z }))
+  const huron = { man_made: [{ tags: { area: 'yes', man_made: 'pier' }, isClosed: true, coords: pt([[707.9, 353.78], [711.24, 353.48], [714.44, 353.19], [717.68, 386.02], [716.67, 385.71], [711.05, 383.94], [707.9, 353.78]]) },
+    { tags: { man_made: 'pier' }, isClosed: false, coords: pt([[716.67, 385.71], [716.77, 387.46], [717.17, 394.99]]) },
+    { tags: { man_made: 'pier' }, isClosed: false, coords: pt([[690.37, 379.7], [716.77, 387.46]]) }] }
+  const hf = deckFootprints(huron, 0.999)
+  say(hf.rings.length === 1 && hf.on(714, 385.29) && hf.closedM2 > 0 && hf.closed.length === 1, `Huron's pier closed at its trace step: the notch at (714, 385.29) is deck, ${hf.closedM2} m² added and named, ${hf.rings.length} ring`)
+  // ⭐ …and OPENED at it first (Boz's ruling, 2026-10-27): a needle narrower than a cell goes, so no footprint corner is too sharp
+  // for the ink (Huron's sharpest was 0.20°, PTown's 1.13°). A 10 × 4 m deck with a 0.3 m needle 5 m long, at a 1 m step
+  const needle = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [10, 0], [10, 4], [5.15, 4], [5, 9], [4.85, 4], [0, 4], [0, 0]]) }] }, 1)
+  const nv = needle.rings.flatMap(r => ringViolations(r, acuteAt))
+  say(needle.rings.length === 1 && !nv.length && needle.opened.length === 1 && Math.abs(needle.openedM2 - 0.75) < 0.05 && !needle.on(5, 7),
+    `a 0.3 m needle on a deck is opened away: ${needle.openedM2} m² removed and named (want 0.75), ${nv.length} corner(s) the ink cannot outline`)
+  // a deck narrower than a cell everywhere is LISTED, never silently lost; one a street rides REFUSES by name
+  const narrow = { man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [0.8, 0], [0.8, 20], [0, 20], [0, 0]]) }] }
+  const nf = deckFootprints(narrow, 1)
+  say(!nf.rings.length && nf.belowResolution.length === 1 && Math.abs(nf.belowResolution[0].m2 - 16) < 1e-6, `a 0.8 m pier at a 1 m step is below resolution: ${nf.belowResolution.length} listed (${nf.belowResolution[0]?.m2} m²), ${nf.rings.length} footprint(s)`)
+  let nr = null; try { streetDecks(narrow, [{ skelId: 'catwalk', points: [[0.4, -5], [0.4, 15]] }], 1) } catch (e) { nr = String(e.message) }
+  say(/catwalk rides a deck/.test(nr || ''), `a street riding a deck below the trace's resolution REFUSES by name (${nr ? 'refused' : 'ACCEPTED'})`)
+  // ⛔ per deck, never across two: two piers 0.8 m apart, under one cell, stay two
+  const two = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [5, 0], [5, 10], [0, 10], [0, 0]]) },
+    { tags: { man_made: 'pier' }, isClosed: true, coords: pt([[5.8, 0], [10, 0], [10, 10], [5.8, 10], [5.8, 0]]) }] }, 1)
+  say(two.rings.length === 2 && two.closedM2 === 0, `two piers 0.8 m apart, closed at 1 m, stay ${two.rings.length} (want 2), ${two.closedM2} m² added`)
+  // ⭐ WATER BESIDE A STREET DECK NARROWER THAN ONE TRACE CELL IS THE DECK'S (Boz's ruling (B), 2026-10-27): MacMillan's own water
+  // and street deck (fixture, from PTown's trace), where the deck taken out as is left the 4–73 cm wedge ① could not ink. After
+  // waterWithoutDecks, what an open at half a cell still removes beside the deck is no more than one lattice step along its edge
+  const mx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-macmillan-sliver-2026-10-27.json'), 'utf8'))
+  const mw = waterWithoutDecks(mx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], [mx.deck], mx.stepM)
+  const CP = (r) => r.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) })), cu = mx.stepM * CLIP_SCALE
+  const grow = (src, d) => { const co = new clipperLib.ClipperOffset(), o = new clipperLib.Paths(); co.AddPaths(src, clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon); co.Execute(o, d); return o }
+  const cop = (t, a, b) => { const k = new Clipper(), o = new clipperLib.Paths(); k.AddPaths(a, PolyType.ptSubject, true); k.AddPaths(b, PolyType.ptClip, true); k.Execute(t, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return o }
+  const mloc = cop(ClipType.ctIntersection, mw.rings.map(CP), grow([CP(mx.deck)], 2 * cu)), mopen = cop(ClipType.ctIntersection, grow(grow(mloc, -cu / 2), cu / 2), mloc)
+  const mthin = cop(ClipType.ctIntersection, cop(ClipType.ctDifference, mloc, mopen), grow([CP(mx.deck)], cu)).reduce((t, p) => t + Math.abs(Clipper.Area(p)), 0) / CLIP_SCALE ** 2
+  const mper = mx.deck.reduce((t, p, i) => { const q = mx.deck[(i + 1) % mx.deck.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
+  say(mw.slivers.length > 0 && mthin <= mper / CLIP_SCALE, `MacMillan's water beside its deck narrower than a cell is the deck's: ${mw.slivers.length} sliver(s), ${mw.slivers.reduce((t, x) => t + x.m2, 0).toFixed(2)} m², named; ${mthin.toFixed(3)} m² thin water left (at most a lattice step along its ${mper.toFixed(0)} m edge, ${(mper / CLIP_SCALE).toFixed(3)} m²)`)
+  // …and what the subtraction itself leaves: PTown's wharf, marina and memorial-park decks with their water (fixture), where a
+  // pocket bounded by one deck on every side, narrower than a cell, was left as water (FMP's 1.2 cm², and its like)
+  const wx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-wharf-sliver-2026-10-27.json'), 'utf8'))
+  let ww = null, wr = null; try { ww = waterWithoutDecks(wx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], wx.decks, wx.stepM) } catch (e) { wr = String(e.message).slice(0, 140) }
+  const wper = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
+  const pockets = ww ? ww.rings.filter(r => r.deck.every(x => x != null && x === r.deck[0]) && 2 * Math.abs(signed(r)) / wper(r) < wx.stepM) : []
+  say(ww && !pockets.length, `PTown's wharf and memorial-park decks: ${ww ? `${ww.slivers.length} sliver(s) taken, ${pockets.length} pocket(s) narrower than a cell bounded by one deck left as water (want 0)` : `REFUSED — ${wr}`}`)
+  // …and what ① is given is SIMPLE: every water ring and every deck as taken out, none crossing itself or another (PTown, 10-27:
+  // the noding left off, a point-touch left unjoined, or the subtraction left self-touching each put a crossing here)
+  const wv = ww ? [...ww.rings.flatMap(r => ringViolations(r)), ...ww.decks.flatMap(r => ringViolations(r)), ...ringsMeet(ww.rings)] : [null]
+  say(ww && !wv.length, `PTown's wharf decks and water as ① is given them are simple: ${ww ? `${wv.length} violation(s)${wv.length ? ` (${wv.slice(0, 3).map(v => `${v.kind} @(${v.at.map(c => c.toFixed(2)).join(', ')})`).join(' · ')})` : ''}` : 'REFUSED'}`)
+  // ⛔ a HOLE is not a pocket (Zob, 10-27): a 1.1 × 6 m street deck standing clear of every shore in a 100 m lake survives the
+  // open (wider than the 1 m cell) and must stay a hole, so mintInputs' "clear of every shore" refusal can fire
+  const lake100 = [[0, 0], [100, 0], [100, 100], [0, 100]], clear = waterWithoutDecks([lake100], [], [[[50, 50], [51.1, 50], [51.1, 56], [50, 56]]], 1)
+  say(clear.rings.filter(r => signed(r) < 0).length === 1 && !clear.slivers.length, `a street deck clear of the shore stays a hole: ${clear.rings.filter(r => signed(r) < 0).length} hole (want 1), ${clear.slivers.length} sliver(s)`)
+  // and nothing narrow, nothing taken (Zob's (c)): a deck crossing a straight shore square-on takes nothing; crossing it at 45° the
+  // acute water wedge's tip narrower than a cell is the deck's, at most a cell's square
+  const sq = waterWithoutDecks([[[0, 0], [100, 0], [100, 100], [0, 100]]], [[[0, 0], [100, 0]]], [[[45, -10], [55, -10], [55, 20], [45, 20]]], 1)
+  const diag = waterWithoutDecks([[[0, 0], [100, 0], [100, 100], [0, 100]]], [[[0, 0], [100, 0]]], [[[50, -10], [60, 0], [40, 20], [30, 10]]], 1)
+  const dM = diag.slivers.reduce((t, x) => t + x.m2, 0)
+  say(!sq.slivers.length && sq.rings.length === 1 && dM <= 1 && diag.rings.length === 1, `a deck across a wide shore takes no sliver square-on (${sq.slivers.length}), and at 45° only the acute wedge's tip (${dM.toFixed(3)} m², at most the 1 m cell's square)`)
+  // ⛔ a coast.json of an older version refuses by name (Zob, 10-27): a trace under the old deck rules must not pair with this mint
+  { const d = mkdtempSync(join(tmpdir(), 'coastv-')); try { writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: 1, coast: true, square: { x0: 0, x1: 1, z0: 0, z1: 1 } }))
+    let r = null; try { readCoast(d, { x0: 0, x1: 1, z0: 0, z1: 1 }, 'check') } catch (e) { r = String(e.message) }
+    say(/coast version 1/.test(r || ''), `a coast.json of version 1 REFUSES by name (${r ? 'refused' : 'READ'})`) } finally { rmSync(d, { recursive: true, force: true }) } }
+  const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
+  say(/deckFootprints\(osm\.ground, fine\)/.test(bc) && !/followDecks/.test(bc), 'bake-coast closes its decks at the trace step, and the trace stays the trace (no deck is followed)')
+}
+
 
 // ── D. per town ──
 const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
@@ -241,6 +377,7 @@ for (const scene of scenes) {
   const doc = JSON.parse(readFileSync(cp, 'utf8'))
   console.log(`── D. ${scene}: ${doc.coast ? doc.from : `inland — ${doc.why}`}`)
   checked++
+  say(doc.version === COAST_VERSION, `${scene}: coast.json is version ${doc.version ?? 'none'} (this kit reads ${COAST_VERSION}${doc.version === COAST_VERSION ? '' : '; readCoast refuses it until the coast is re-baked'})`)
   if (!doc.coast) continue
   const outersOk = doc.water.every(b => signed(b.outer) > 0), holesOk = doc.water.every(b => b.holes.every(h => signed(h) < 0))
   say(outersOk && holesOk, `${scene}: every water outer is positive and every hole negative`)
@@ -258,7 +395,7 @@ for (const scene of scenes) {
   say(doc.islandFloor?.rule === 'holds a terrain node' && Array.isArray(doc.islandsDropped) && !empty.length,
     `${scene}: every island kept holds a terrain node — ${holes.length} kept, ${empty.length} holding none${empty.length ? ` (first at ${empty[0][0].map(Math.round).join(', ')})` : ''}; ${doc.islandsDropped?.length ?? 'NOT RECORDED'} dropped, each named`)
   const osm = JSON.parse(readFileSync(join(dir, 'raw/osm.json'), 'utf8'))
-  const decks = deckFootprints(osm.ground)
+  const decks = deckFootprints(osm.ground, doc.fineM)
   if (decks.paths.length) {
     const water = doc.water.flatMap(b => [P(b.outer), ...b.holes.map(P)])
     const c = new Clipper(), out = []
@@ -277,7 +414,14 @@ for (const scene of scenes) {
     if (!wr) console.log(`  (map.json carries no protopolygon waterRings — poured before this coast; ①'s rings not compared)`)
     else if (!Array.isArray(sd)) console.log(`  ⚠️ ${scene}: map.json carries no streetDecks — poured before the decks; ①'s rings not compared (▶ the Bake)`)
     else {
-      const given = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring)).rings
+      const W = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring), doc.fineM), given = W.rings
+      // ⭐ every water-ring edge the mint is given lies under a stroked arc, the fetched square's own sides excluded (Boz, 10-27)
+      const Q = doc.square, side = (a, b) => [['x0', 0], ['x1', 0], ['z0', 1], ['z1', 1]].some(([k, c]) => Math.abs(a[c] - Q[k]) < 1 / CLIP_SCALE && Math.abs(b[c] - Q[k]) < 1 / CLIP_SCALE)
+      const bare = bareEdges(given, W.arcs, side), bareM = bare.reduce((t, [a, b]) => t + Math.hypot(b[0] - a[0], b[1] - a[1]), 0), so = strokedOff(given, W.arcs)
+      say(!so.off && !so.twice, `${scene}: no arc edge lies off the mint's water rings (${so.off}) and none of their edges is stroked twice (${so.twice})`)
+      const gv = [...given.flatMap(r => ringViolations(r)), ...ringsMeet(given)]
+      say(!gv.length, `${scene}: the water rings the mint is given are simple and meet none other (${gv.length}${gv.length ? `, first ${gv[0].kind} @(${gv[0].at.map(Math.round).join(', ')})` : ''})`)
+      say(!bare.length, `${scene}: every water-ring edge the mint is given lies under a stroked arc (${W.arcs.filter(a => a.deck != null).length} of ${W.arcs.length} arc(s) a deck's edge)${bare.length ? ` — ${bare.length} edge(s), ${bareM.toFixed(1)} m bare, first @(${bare[0][0].map(Math.round).join(', ')})` : ''}`)
       const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
       if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)
       else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from this coast (▶ the Bake)`)
