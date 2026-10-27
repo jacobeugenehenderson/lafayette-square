@@ -203,6 +203,9 @@ export function execSelfTest() {
     ["export const re = /fetch(url)/", 'safe'],
     ["export const msg = 'fetch(url) is not called here'", 'safe'],
     ["export const run = (u) => `${fetch(u)}`", 'live'],
+    // ⭐ a data: module's body is read: importing https: is live; a plain body is safe
+    ["export const run = () => import(\"data:text/javascript,import 'https://example.com/x.js'\")", 'live'],
+    ["export const run = () => import(\"data:text/javascript,export const x = 1\")", 'safe'],
   ]
   for (const [helper, want] of graph) {
     const got = classifyVirtual({ 'checks/claims-planted.mjs': check, 'checks/_helper.mjs': helper }, 'checks/claims-planted.mjs').tier
@@ -618,6 +621,33 @@ function readCheckSource(file) {
 let _virtual = null
 const onDisk = (rel) => (_virtual ? _virtual.has(rel) : existsSync(join(ROOT, rel)))
 /** Classify `entry` against planted sources { relPath: source } — the same classify, reading nothing from disk. */
+/** A data: URL's module text: `;base64,` decoded, otherwise percent-decoded. null when it cannot be. */
+function dataBody(url) {
+  const i = url.indexOf(','); if (i < 0) return null
+  const meta = url.slice(5, i), payload = url.slice(i + 1)
+  try { return /;base64$/.test(meta) ? Buffer.from(payload, 'base64').toString('utf8') : decodeURIComponent(payload) } catch { return null }
+}
+/** A data: module's body, classified as a file is: the live signals, and each import it names — a network URL is live, a
+ *  file: URL inside the repo is classified, anything else (a relative path resolves to nothing from data:) is unreadable. */
+function dataModule(body, seen, depth) {
+  const code = stripComments(body), blank = blankStrings(code), why = []
+  let tier = 'safe'
+  for (const [re, label, kind] of SIGNALS.live) if (re.test(kind === 'call' ? blank : code)) { tier = 'live'; why.push(label) }
+  for (const m of code.matchAll(/(?:\bfrom|\bimport\s*\(|\bimport)\s*['"]([^'"]+)['"]/g)) {
+    if (blank.slice(m.index, m.index + 4) !== m[0].slice(0, 4)) continue
+    const spec = m[1]
+    if (/^https?:/.test(spec)) { tier = 'live'; why.push(`imports ${spec} over the network`); continue }
+    if (/^file:/.test(spec)) {
+      const hit = relative(ROOT, fileURLToPath(spec))
+      if (hit.startsWith('..') || !onDisk(hit)) { tier = 'live'; why.push(`imports ${spec} — not a repo file`); continue }
+      const sub = classify(hit, seen, depth + 1)
+      if (sub.tier !== 'safe') { if (sub.tier === 'live' || tier === 'safe') tier = sub.tier; why.push(`imports ${hit}, which can: ${sub.why.join(', ')}`) }
+    } else if (/^(?:node:|[@a-z])/.test(spec)) continue        // a builtin or a package: as a file's are
+    else { tier = 'live'; why.push(`imports "${spec}" from a data: module — resolves to nothing it can read`) }
+  }
+  return { tier, why }
+}
+
 export function classifyVirtual(files, entry) {
   _virtual = new Map(Object.entries(files))
   try { return classify(entry) } finally { _virtual = null }
@@ -658,7 +688,9 @@ export function classify(file, seen = new Set(), depth = 0) {
   //    exec, and the one that nearly shipped: `claims-doc-pointers-resolve.mjs --run` imports and
   //    RUNS every check the docs cite, live tier included. It scans as "reads repo files only".
   //    Three cases, and only the third is undecidable:
-  //      data:   — a self-contained module, resolves to nothing on disk or the network (hermetic)
+  //      data:   — its BODY is read like a file (Zob, 2026-10-26): the live signals, and what it imports — a network URL is
+  //                live, a file: URL in the repo is classified. It was called hermetic unread, so a data: module importing
+  //                https: tiered safe. A body built at RUN TIME (not one literal) cannot be read: said so in the reason.
   //      a path built only of literals and repo-rooted bindings — READ IT (`readImportPath`), as a static import is read
   //      anything else — an argument, the environment, a loop variable — cannot be read ⇒ live
   //    `import()` written in a message is prose — but only when BOTH readers say it sits in a string: a mis-read
@@ -667,8 +699,17 @@ export function classify(file, seen = new Set(), depth = 0) {
     if (blank.slice(m.index, m.index + 6) !== 'import' && inStringHere(code, m.index)) continue
     const arg = balancedArg(code, m.index + m[0].length - 1)?.trim()
     if (arg === '') continue                                                 // `import()` with nothing in it does not parse: not a call
+    if (arg && /^['"`]data:/.test(arg)) {
+      const lit = arg.length > 1 && arg[arg.length - 1] === arg[0] && !arg.slice(1, -1).includes(arg[0]) && !/\$\{/.test(arg)
+      if (!lit) { why.push('import of a data: module built at run time — its body is not one literal, so it is not read'); continue }
+      const d = dataBody(arg.slice(1, -1))
+      if (d == null) { bump('live'); why.push('import of a data: module whose body cannot be decoded'); continue }
+      const sub = dataModule(d, seen, depth)
+      if (sub.tier !== 'safe') { bump(sub.tier); why.push(`imports a data: module, which can: ${sub.why.join(', ')}`) }
+      else why.push('imports a data: module — its body read, safe')
+      continue
+    }
     if (arg && /^['"`]/.test(arg) && !/[+`$]/.test(arg.slice(1))) continue  // a plain literal: handled elsewhere
-    if (arg && /^['"`]data:/.test(arg)) { why.push('computed import of a data: module — hermetic'); continue }
     const r = arg ? readImportPath(arg, file, code) : { opaque: true }
     if (r.arg) { bump('live'); why.push('computed import() of a path an argument or the environment can supply — arbitrary'); continue }
     if (!r.paths) { bump('live'); why.push('computed import() with no readable target — runs arbitrary modules'); continue }

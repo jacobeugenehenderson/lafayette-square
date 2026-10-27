@@ -996,7 +996,7 @@
       "file": "checks/claims-bake-progress-shows-the-route.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "import of a data: module built at run time — its body is not one literal, so it is not read"
       ]
     },
     {
@@ -1105,7 +1105,7 @@
       "file": "checks/claims-contact-sms-rate-limit.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "import of a data: module built at run time — its body is not one literal, so it is not read"
       ]
     },
     {
@@ -1569,7 +1569,7 @@
       "file": "checks/claims-highway-handedness.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "import of a data: module built at run time — its body is not one literal, so it is not read"
       ]
     },
     {
@@ -1583,7 +1583,7 @@
       "file": "checks/claims-highway-sweep-is-finite.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "import of a data: module built at run time — its body is not one literal, so it is not read"
       ]
     },
     {
@@ -2789,7 +2789,7 @@
         "computed import of src/hooks/useSkyState.js — read, safe",
         "computed import of src/hooks/useAtmosphere.js — read, safe",
         "computed import of src/lib/almanac-eval.js — read, safe",
-        "computed import of a data: module — hermetic",
+        "import of a data: module built at run time — its body is not one literal, so it is not read",
         "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
       ]
     },
@@ -3214,7 +3214,7 @@
       "file": "checks/claims-twilio-webhook-guard.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "import of a data: module built at run time — its body is not one literal, so it is not read"
       ]
     },
     {
