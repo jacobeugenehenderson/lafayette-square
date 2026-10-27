@@ -202,8 +202,9 @@ console.log('── H. the tracer never reads a sentinel as a height')
   let td = false; try { wetLoops(g2, n, n, 0, 0, 1, { kind: k2, deckCross: () => null }) } catch (e) { td = /a deck node outside its own deck/.test(e.message) }
   say(td, 'a deck node whose edge meets no deck ring REFUSES (never the node as a guess)')
   // a deck reaching the window's edge (Huron, 2026-10-26: a deck node on a tile's last row): its edge to the tracer's PAD is
-  // the pad's, not the deck's: a midpoint, counted, never a deck-ring lookup that finds nothing
-  const edge = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.5, z: -2 }, { x: 3.5, z: -2 }, { x: 3.5, z: 0.5 }, { x: 2.5, z: 0.5 }, { x: 2.5, z: -2 }], isClosed: true }] }, 1)
+  // the pad's, not the deck's: a midpoint, counted, never a deck-ring lookup that finds nothing. 1.6 m wide: wider than the 1 m trace
+  // step, so the open at that step keeps it (it holds the one node (3, 0))
+  const edge = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.2, z: -2 }, { x: 3.8, z: -2 }, { x: 3.8, z: 0.5 }, { x: 2.2, z: 0.5 }, { x: 2.2, z: -2 }], isClosed: true }] }, 1)
   const g3 = new Float32Array(n * n).fill(1), k3 = new Uint8Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (edge.on(i, j)) { g3[j * n + i] = NaN; k3[j * n + i] = KIND.DECK }
   const t3 = {}; let ok3 = true; try { wetLoops(g3, n, n, 0, 0, 1, { kind: k3, deckCross: edge.crossing, tally: t3 }) } catch { ok3 = false }
   say(ok3 && t3.pad === 1, `a deck node on the window's edge: its edge to the pad crosses at the midpoint (${t3.pad ?? 0} pad crossing), no deck lookup`)
@@ -313,6 +314,18 @@ console.log('── F2. a deck joint is filled, and along a deck the coast is th
   const hw = [[700, 375], ha, hb, [705, 370]]
   let ho = null, hr = null; try { ho = followDecks(hw.map(p => p.slice()), hf, 0.999) } catch (e) { hr = String(e.message).slice(0, 140) }
   say(ho && ho.replaced === 1 && !ho.unresolved.length, `Huron's site follows the closed deck, case (i): ${ho ? `${ho.replaced} chord replaced (+${ho.added})` : `REFUSED — ${hr}`}`)
+  // ⭐ …and OPENED at it first (Boz's ruling, 2026-10-27): a needle narrower than a cell goes, so no footprint corner is too sharp
+  // for the ink (Huron's sharpest was 0.20°, PTown's 1.13°). A 10 × 4 m deck with a 0.3 m needle 5 m long, at a 1 m step
+  const needle = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [10, 0], [10, 4], [5.15, 4], [5, 9], [4.85, 4], [0, 4], [0, 0]]) }] }, 1)
+  const nv = needle.rings.flatMap(r => ringViolations(r, acuteAt))
+  say(needle.rings.length === 1 && !nv.length && needle.opened.length === 1 && Math.abs(needle.openedM2 - 0.75) < 0.05 && !needle.on(5, 7),
+    `a 0.3 m needle on a deck is opened away: ${needle.openedM2} m² removed and named (want 0.75), ${nv.length} corner(s) the ink cannot outline`)
+  // a deck narrower than a cell everywhere is LISTED, never silently lost; one a street rides REFUSES by name
+  const narrow = { man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [0.8, 0], [0.8, 20], [0, 20], [0, 0]]) }] }
+  const nf = deckFootprints(narrow, 1)
+  say(!nf.rings.length && nf.belowResolution.length === 1 && Math.abs(nf.belowResolution[0].m2 - 16) < 1e-6, `a 0.8 m pier at a 1 m step is below resolution: ${nf.belowResolution.length} listed (${nf.belowResolution[0]?.m2} m²), ${nf.rings.length} footprint(s)`)
+  let nr = null; try { streetDecks(narrow, [{ skelId: 'catwalk', points: [[0.4, -5], [0.4, 15]] }], 1) } catch (e) { nr = String(e.message) }
+  say(/catwalk rides a deck/.test(nr || ''), `a street riding a deck below the trace's resolution REFUSES by name (${nr ? 'refused' : 'ACCEPTED'})`)
   // ⛔ per deck, never across two: two piers 0.8 m apart, under one cell, stay two
   const two = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [5, 0], [5, 10], [0, 10], [0, 0]]) },
     { tags: { man_made: 'pier' }, isClosed: true, coords: pt([[5.8, 0], [10, 0], [10, 10], [5.8, 10], [5.8, 0]]) }] }, 1)

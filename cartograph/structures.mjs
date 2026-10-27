@@ -134,21 +134,32 @@ export function deckFootprints(osmGround, stepM) {
     const hp = toPath(hull); if (Clipper.Orientation(hp) !== Clipper.Orientation(paths[paths.length - 1])) hp.reverse()
     paths.push(hp); joints++ }
   for (const l of lines) delete l._halfM
-  // ⭐ EACH DECK IS CLOSED AT THE TRACE'S STEP (Boz's ruling (b), 2026-10-27; Huron: a pier line with no width, buffered at
-  // the typical 1.8 m beside the mapped pier area, left a notch 5 m deep and under a cell wide, which no trace can follow and
-  // the lidar cannot see). Each connected deck, its own parts unioned, is dilated then eroded by half a trace cell, and kept
-  // with what it was, so a gap between its parts narrower than one cell is filled and nothing is lost. ⛔ Per deck, never
-  // across two: separate decks a metre apart stay two. What each adds is counted and named (`closed`).
+  // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): the footprint is made the lidar's
+  // own scale both ways, since a SPIKE or a GAP narrower than one cell is something neither the source nor the line can
+  // resolve. Huron: a pier line with no width beside its mapped area left a notch 5 m deep and under a cell wide; with the
+  // coast following the deck (bake-coast#followDecks), footprint corners as sharp as 0.20° (Huron) and 1.13° (PTown) became
+  // coast corners the ink cannot outline. Per connected deck (its own parts unioned; a deck in a deck's hole is its own):
+  // OPEN, eroded then dilated by half a trace cell and kept inside the deck, so what is narrower than a cell goes; then CLOSE,
+  // dilated then eroded by half a cell and kept with what it was, so a gap narrower than a cell is filled. ⛔ Per deck, never
+  // across two: separate decks a metre apart stay two. Counted and named: `opened` and `closed` [{ m2, at }]; a deck the open
+  // removes ENTIRELY is `belowResolution` [{ m2, at, ring }], never silently lost (streetDecks refuses one a street rides).
   const parts = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
   if (!cu.Execute(ClipType.ctUnion, parts, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: the deck union FAILED')
-  const h = (stepM / 2) * SCALE, closedPaths = new Paths(), closed = []
+  const h = (stepM / 2) * SCALE, closedPaths = new Paths(), closed = [], opened = [], belowResolution = []
+  const off = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
+  const both = (a, b) => { const c = new Clipper(), o = new Paths(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true)
+    if (!c.Execute(ClipType.ctIntersection, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: a deck\'s open FAILED'); return o }
+  const areaOf = (ps) => ps.reduce((t, q) => t + Clipper.Area(q), 0)
+  const place = (ch) => { const c0 = ch.Contour()[0]; return [+(c0.X / SCALE).toFixed(3), +(c0.Y / SCALE).toFixed(3)] }
   const closeAll = (node) => { for (const ch of node.Childs()) {
-    const deck = [ch.Contour(), ...ch.Childs().map(c => c.Contour())]
-    const off = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
-    const kept = union([...deck, ...off(off(deck, h), -h)])
-    const added = kept.reduce((t, q) => t + Clipper.Area(q), 0) - deck.reduce((t, q) => t + Clipper.Area(q), 0)
-    if (added > 0) { const c0 = ch.Contour()[0]; closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: [+(c0.X / SCALE).toFixed(3), +(c0.Y / SCALE).toFixed(3)] }) }
-    for (const q of kept) closedPaths.push(q)
+    const deck = [ch.Contour(), ...ch.Childs().map(c => c.Contour())], a0 = areaOf(deck)
+    const open = both(off(off(deck, -h), h), deck), a1 = areaOf(open)
+    if (!open.length || a1 <= 0) belowResolution.push({ m2: +(a0 / SCALE / SCALE).toFixed(3), at: place(ch), ring: fromPath(ch.Contour()) })
+    else {
+      if (a0 - a1 > 0) opened.push({ m2: +((a0 - a1) / SCALE / SCALE).toFixed(3), at: place(ch) })
+      const kept = union([...open, ...off(off(open, h), -h)]), added = areaOf(kept) - a1
+      if (added > 0) closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: place(ch) })
+      for (const q of kept) closedPaths.push(q) }
     for (const hole of ch.Childs()) closeAll(hole) } }   // a deck inside a deck's hole is a deck of its own
   closeAll(parts)
   const u = union(closedPaths)
@@ -176,7 +187,7 @@ export function deckFootprints(osmGround, stepM) {
       const r = rings[k]; for (let m = 0; m < r.length; m++) { const p = r[m], q = r[(m + 1) % r.length], ex = q[0] - p[0], ez = q[1] - p[1], L2 = ex * ex + ez * ez || 1
         const u = Math.max(0, Math.min(1, ((a[0] - p[0]) * ex + (a[1] - p[1]) * ez) / L2)); dmin = Math.min(dmin, Math.hypot(a[0] - p[0] - u * ex, a[1] - p[1] - u * ez)) } }
     return dmin <= 1 / SCALE ? a : null }
-  return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
+  return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), opened, openedM2: +opened.reduce((t, c) => t + c.m2, 0).toFixed(3), belowResolution, count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
 }
 
 /**
@@ -190,6 +201,15 @@ export function deckFootprints(osmGround, stepM) {
  */
 export function streetDecks(ground, streets, stepM) {
   const fp = deckFootprints(ground, stepM)
+  // ⛔ a street rides its deck, so a deck the open removed entirely (narrower than one trace cell everywhere) that a street
+  // crosses has nothing left for the street to ride: refused by name (Boz, 2026-10-27)
+  for (const b of fp.belowResolution) for (const st of streets) {
+    const c = new Clipper(), tree = new PolyTree(), line = toPath(st.points || [])
+    if (line.length < 2) continue
+    c.AddPath(line, PolyType.ptSubject, false); c.AddPath(toPath(b.ring), PolyType.ptClip, true)
+    c.Execute(ClipType.ctIntersection, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+    if (Clipper.OpenPathsFromPolyTree(tree).some(p => p.length >= 2)) throw new Error(`⛔ structures: street ${st.skelId ?? st.name} rides a deck at (${b.at.join(', ')}), ${b.m2} m², that is narrower than one trace cell (${stepM} m) everywhere, so nothing of it survives the trace's resolution and the street has no deck to ride. Refusing.`)
+  }
   const outers = fp.rings.filter(r => signedArea(r) !== 0)
   const decks = []
   for (const ring of outers) {
