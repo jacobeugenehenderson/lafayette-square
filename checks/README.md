@@ -171,7 +171,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 338. This is `npm test`.
+## safe — 339. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -208,6 +208,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-nodeless-crossing-is-grade-separated.mjs` | WHERE TWO OSM STREET WAYS CROSS IN 2D WITHOUT A SHARED NODE, DOES OSM |
 | `checks/claims-a-oneway-runs-in-travel-order.mjs` | CLAIM — EVERY ONE-WAY CHAIN RUNS IN TRAVEL ORDER, AND A REVERSED WAY'S TAGS POINT THE WAY IT NOW RUNS. |
 | `checks/claims-a-parcel-keeps-all-its-parts.mjs` | DOES A MULTIPART PARCEL REACH THE MAP WHOLE? |
+| `checks/claims-a-pinched-face-is-two-faces.mjs` | CLAIM — A FACE PINCHED ALONG ITS OWN EDGE IS TWO FACES (Boz's ruling B, 2026-10-27). ①'s land difference runs with |
 | `checks/claims-a-pour-adds-no-gitignore-lines.mjs` | "DOES A POUR ADD LINES TO .gitignore?" — the standing guard on scene tracking. |
 | `checks/claims-a-production-host-serves-only-its-own-town.mjs` | A TOWN'S PRODUCTION DOMAIN SERVES THAT TOWN AND NOTHING ELSE — and only a domain we own, live. |
 | `checks/claims-a-published-edit-reaches-the-map.mjs` | a Host's published correction is what the map shows. |
