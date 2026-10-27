@@ -3500,7 +3500,8 @@ createServer(async (req, res) => {
       const plan = await runCapture(`node scripts/promote-player-to-prod.mjs --map=${map} --look=${id} --dry-run`, { cwd: REPO_ROOT, timeout: 600000 })
       if (plan.code !== 0) throw new Error(`nothing was shipped: ${(plan.stderr || plan.stdout).trim().split('\n').pop()}`)
 
-      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id}`, { cwd: REPO_ROOT, timeout: 900000 })
+      // ⭐ UNDER CONTENT NAMES, as Publish ships staging: the same bytes at the same names, manifest.json last (the switch)
+      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id} --names=${HASHED}`, { cwd: REPO_ROOT, timeout: 900000 })
       if (up.code !== 0) throw new Error(`the slab did not reach production — nothing was switched: ${up.stderr || up.stdout || `exit ${up.code}`}`)
       const r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
 
