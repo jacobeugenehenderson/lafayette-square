@@ -29,7 +29,8 @@
       "reasonClass": "unreadable",
       "why": [
         "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "re-runs its own file (process.execPath + its own path) — the same tier as itself"
       ]
     },
     {
