@@ -154,8 +154,7 @@ if (MUTANT) {
   const ANCHOR = `  const legExt = (p, j, atEnd, lvA, lvB, Lx) => {
     const A = carried(lvA, p, j, atEnd), B = carried(lvB, p, j, atEnd)
     if (!A || !B || !(B.dEnd > A.dEnd)) return null
-    const LA = A.e.line, LB = [...B.e.line].reverse()
-    const r = atEnd ? [...LA, A.at(Lx), B.at(Lx), ...LB] : [A.at(Lx), ...LA, ...LB, B.at(Lx)]
+    const r = [A.at(0), A.at(Lx), B.at(Lx), B.at(0)]                 // at(0) IS the struck end vertex (the same float point)
     return signedArea(r) > 0 ? r : r.reverse()
   }
 `
@@ -163,8 +162,10 @@ if (MUTANT) {
   const OLD = `  const legExt = (p, j, atEnd, lvA, lvB, Lx) => {
     const A = carried(lvA, p, j, atEnd), B = carried(lvB, p, j, atEnd)
     if (!A || !B || !(B.dEnd > A.dEnd)) return null
-    const i = p.dsrc[j], F0 = legFrame(p, i, atEnd)
-    return F0 ? legPane(p, i, atEnd, A.dEnd, B.dEnd, -Math.min(0.5, F0.len), Lx) : null
+    const i = p.dsrc[j], F0 = legFrame(p, i, atEnd); if (!F0) return null
+    const { T, f, nr } = F0, back = Math.min(0.5, F0.len), X = (s2, d) => [T[0] + f[0] * s2 + nr[0] * d, T[1] + f[1] * s2 + nr[1] * d]
+    const r = [X(-back, A.dEnd), X(Lx, A.dEnd), X(Lx, B.dEnd), X(-back, B.dEnd)]
+    return signedArea(r) > 0 ? r : r.reverse()
   }
 `
   const src = live.replace(ANCHOR, OLD)

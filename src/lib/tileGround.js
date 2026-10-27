@@ -5639,8 +5639,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const LV_WB = insDL((p) => (j) => (bareAt(p, p.dsrc[j]) ? 0 : perpAt(p.ri, p.dsrc[j]) ? cw : WB)), luIn0 = LV_WB.rings
   // ⭐⭐ THE PERPENDICULAR CORNER'S GROUND IS ITS LEGS' OWN BANDS, RUN STRAIGHT ON (`SECTION §6.1`). For each leg, the rect
   // `offsetRingByRects` strikes for its last ② edge — that edge's line, its normal, the leg's own depths — continued along
-  // the edge's own direction past the tangent — its sides the very lines that rect drew (`legExt`, carried from the strike),
-  // so over the leg the two are one area with one set of vertices, never two abutting pieces and never one line drawn twice —
+  // the edge's own direction past the tangent — starting AT the very end vertices that rect drew (`legExt`, carried from the
+  // strike), where the walk's own cut ends it (`cutPast`), so the two meet on shared vertices and no line is drawn twice —
   // and clipped by ② (`pedOuter`). Two of them per leg: its WALK, and its whole envelope
   // (curb-inner → WB). The two walks cross in the L; the envelopes' union is the corner's ped ground, square at the land
   // use; `env − walk` is the lawn, as everywhere. ⛔ No new depth, angle or shape: the same rect, longer.
@@ -5652,22 +5652,17 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     const u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len], ccw = (signedArea(p.dring) > 0) !== !!p.hole
     return { T: atEnd ? b : a, f: atEnd ? u : [-u[0], -u[1]], nr: ccw ? [-u[1], u[0]] : [u[1], -u[0]], len }
   }
-  // a pane: the rect past the tangent between two depths, from s0 to s1 along the leg (the walk's cut mask, which no band shares)
-  const legPane = (p, i, atEnd, d0, d1, s0, s1) => {
-    const F0 = legFrame(p, i, atEnd)
-    if (!F0 || !(d1 > d0)) return null
-    const { T, f, nr } = F0, X = (s2, d) => [T[0] + f[0] * s2 + nr[0] * d, T[1] + f[1] * s2 + nr[1] * d]
-    const r = [X(s0, d0), X(s1, d0), X(s1, d1), X(s0, d1)]
-    return signedArea(r) > 0 ? r : r.reverse()          // one winding for all, so the nonzero union never cancels an overlap
-  }
   // ⭐⭐ THE LEG'S BAND, CONTINUED — CARRIED FROM ITS STRIKE, NEVER RE-DERIVED (Boz's ruling, 2026-10-25, on Kerf's capture at
   // HPDM block 556). Between two LEVELS (two `insDL` strikes): each side is that level's struck curb line for the leg's end
   // densified edge `j` (`stamp.edgeDepths[j].line`: the very points its clip has), and one far point `s` on past the line's end
   // along the strike's own direction. Over the leg the extension IS the band's struck vertices, so the two round identically and
   // the union cancels them exactly; the far segment runs where no other construction draws. ⛔ It was rebuilt from the SOURCE
   // edge (`legFrame`) and overlapped the leg by a free 0.5 m: one line struck twice, its corners rounding apart by 0.1–0.25 mm,
-  // and the lawn between them a 0.017 mm ring the flatten refused. ⇒ `back` is gone: the overlap is edge `j`'s own band.
-  // `s(side)` → how far past the line's end (or, with `from`, the span [from, to] past it, for a ramp).
+  // and the lawn between them a 0.017 mm ring the flatten refused. ⇒ `back` is gone, and with it every overlap.
+  // ⛔ NO OVERLAP (Boz's ruling (A), 2026-10-26): the extension STARTS at the two struck end vertices and abuts the leg there.
+  // Overlapping it over edge j's band repainted the whole struck line wherever the ring had trimmed that band (PTown: one
+  // 305 m segment beside the ring's own vertices, 71 m drawn twice) — "identical area" holds only where the band is kept whole.
+  // The walk's cut (`walkCut`) is built through the same struck vertices, so the leg's walk ends exactly where this begins.
   const struckAt = (lv, p, j) => { const r = lv.per.find(x => x.p === p), e = r?.edges[j]
     return e && e.e === j && e.line ? e : null }
   const carried = (lv, p, j, atEnd, s) => { const e = struckAt(lv, p, j); if (!e) return null
@@ -5676,8 +5671,19 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const legExt = (p, j, atEnd, lvA, lvB, Lx) => {
     const A = carried(lvA, p, j, atEnd), B = carried(lvB, p, j, atEnd)
     if (!A || !B || !(B.dEnd > A.dEnd)) return null
-    const LA = A.e.line, LB = [...B.e.line].reverse()
-    const r = atEnd ? [...LA, A.at(Lx), B.at(Lx), ...LB] : [A.at(Lx), ...LA, ...LB, B.at(Lx)]
+    const r = [A.at(0), A.at(Lx), B.at(Lx), B.at(0)]                 // at(0) IS the struck end vertex (the same float point)
+    return signedArea(r) > 0 ? r : r.reverse()
+  }
+  // the walk's cut past one leg's tangent: everything beyond the line through that leg's two struck WALK end vertices (`LV_wf`,
+  // `LV_wt`), reaching D either side of the band and D on — so W is cut exactly at the vertices its extension starts from
+  const cutPast = (p, j, atEnd, D) => {
+    const A = carried(LV_wf, p, j, atEnd), B = carried(LV_wt, p, j, atEnd)
+    if (!A || !B) return null
+    const a = A.at(0), b = B.at(0), ux = b[0] - a[0], uz = b[1] - a[1], ul = Math.hypot(ux, uz)
+    if (!(ul > 0)) return null
+    const u = [ux / ul, uz / ul], f = [A.at(1)[0] - a[0], A.at(1)[1] - a[1]]
+    const o = [a[0] - u[0] * D, a[1] - u[1] * D], i = [b[0] + u[0] * D, b[1] + u[1] * D]
+    const r = [o, a, b, i, [i[0] + f[0] * D, i[1] + f[1] * D], [o[0] + f[0] * D, o[1] + f[1] * D]]
     return signedArea(r) > 0 ? r : r.reverse()
   }
   // ⛔ THE LEGS' BANDS ARE CUT AT THEIR TANGENTS, past which the extensions carry them. Where a band's depth drops to the
@@ -5707,7 +5713,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
       if (w) walkX.push({ ...leg, ring: w }); if (e2) envX0.push({ ...leg, ring: e2 })
       if (w) { c.corner.walks = (c.corner.walks || 0) + 1; ends.push({ c, cut, p, i, j, atEnd, d0, d1, Lx, leg }) }   // walks and ramps, per corner, for the checks
     }
-    const D = WB + Lx, kA = legPane(p, c.before, true, -D, D, 0, D), kB = legPane(p, c.after, false, -D, D, 0, D)
+    const jOf = (i, atEnd) => { const jj = js(i); return jj.length ? (atEnd ? jj[jj.length - 1] : jj[0]) : null }
+    const D = WB + Lx, jA = jOf(c.before, true), jB = jOf(c.after, false)
+    const kA = jA == null ? null : cutPast(p, jA, true, D), kB = jB == null ? null : cutPast(p, jB, false, D)
     if (kA && kB) walkCut.push(...intersectRings([kA], [kB]))
   }
   const envX = envX0.length && pedOuter.length ? intersectRings(unionRings(envX0.map(x => x.ring)), pedOuter) : []
