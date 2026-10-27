@@ -20,8 +20,9 @@
 //   ⑤ EVERY RUNTIME READER OF THE GROUND'S HEIGHT IS NAMED (Ward-seat review, 2026-10-27): each file in src/ and cartograph/
 //      that reads the drawn ground (setDrawnGround's consumers, groundSampler) or lifts by the field (patchTerrain, the
 //      TERRAIN_* snippets, `_terrainRaw`), with its role read from its source: `drawn` reads the drawn ground (or lifts with
-//      `drawn`), `anchored` lifts by a per-instance anchor (`aGround`) the drawn ground supplied, and the field roles name
-//      where the field is still read and why (the water tint and WindSheet are the Ward review's open item (c));
+//      `drawn`), `anchored` lifts by a per-instance anchor (`aGround`) the drawn ground supplied, `debug` reads the field
+//      only inside its named overlay (tested), `inland (<town>)` is TESTED on that town's slab (no bed, no pins, so drawn raw
+//      = field), and the field roles name where the field is still read and why (the water tint: Ward review (c));
 //      and the revetment's drape, built at the drawn ground, is lifted by it (`drawn`), never the field.
 //
 // ▶ MUTANTS, built in (`--mutants`): each edits the source text this check reads and must turn a section RED —
@@ -33,6 +34,7 @@
 //     · an unnamed reader of the layout                               → ④ RED
 //     · an unnamed runtime reader of the ground's height              → ⑤ RED
 //     · the revetment's drape lifted by the field again               → ⑤ RED
+//     · an inland role on a coastal town · WindSheet's field read outside its overlay → ⑤ RED
 //
 //   node checks/claims-the-drawn-raw-is-one-function.mjs [--mutants]
 // Read-only (drawnGround.js's mutants are loaded from copies in the OS temp dir). Exits 1 when a reader can read a pin differently.
@@ -83,8 +85,9 @@ const RUNTIME = {
   'src/components/Movers.jsx': 'drawn', 'src/components/UserDot.jsx': 'drawn', 'src/components/PilgrimMonument.jsx': 'drawn', 'src/setpieces/pilgrimMonument.js': 'drawn',
   'cartograph/groundSampler.js': 'drawn', 'cartograph/bake-lamps.js': 'drawn', 'cartograph/bake-tree-anchors.js': 'drawn', 'cartograph/bake-buildings.js': 'drawn',
   'src/components/InstancedTrees.jsx': 'anchored', 'src/components/StreetLights.jsx': 'anchored', 'src/components/InstancedBoulders.jsx': 'anchored', 'src/components/treeAtlasMaterial.js': 'anchored',
-  'src/components/WindSheet.jsx': 'field: at the shore, Ward review (c), open', 'src/components/waterMaterial.js': 'field: at the shore, Ward review (c), open',
-  'src/components/LafayetteParkBody.jsx': "field: LS's park set piece (its own water path, BACKLOG)",
+  'src/components/WindSheet.jsx': 'debug: the field, in the "Show on map" overlay only, not the slab',
+  'src/components/waterMaterial.js': 'field: the water tint at the shore, Ward review (c), open (BACKLOG)',
+  'src/components/LafayetteParkBody.jsx': 'inland: no pins, drawn raw = field (lafayette-square)',
   'src/lib/useSurfaceMaterial.js': 'field: the authoring view, not the slab', 'src/cartograph/MapLayers.jsx': 'field: the authoring view, not the slab',
 }
 const RUNTIME_READ = /drawnGroundParts|drawnGroundY|streetEyeY|onDrawnGround|setDrawnGround|makeDrawnGround|groundSampler|patchTerrain\(|patchTerrainAtCentroidRaw|patchTerrainInstancedBaked|TERRAIN_DISPLACE|_terrainRaw\(/
@@ -215,7 +218,15 @@ async function run(D, src, log) {
     if (gone.length) bad('⑤', `named here and no longer reads the ground's height (evict the row): ${gone.join(', ')}`)
     for (const f of rt.filter(f => f in src.runtime)) { const t = src.text(f), role = src.runtime[f]
       if (role === 'drawn' && !DRAWN_RUNTIME.test(t)) bad('⑤', `${f} is 'drawn' and reads no drawn ground`)
-      if (role === 'anchored' && !/aGround|patchTerrainInstancedBaked/.test(t)) bad('⑤', `${f} is 'anchored' and carries no aGround`) }
+      if (role === 'anchored' && !/aGround|patchTerrainInstancedBaked/.test(t)) bad('⑤', `${f} is 'anchored' and carries no aGround`)
+      // 'debug': every field read sits inside the named overlay, so nothing of it is the slab
+      if (role.startsWith('debug')) { const at = t.indexOf('function WindSheetDebug('), reads = [...t.matchAll(/_terrainRaw\(/g)].map(m => m.index)
+        if (at < 0 || !reads.length || reads.some(i => i < at)) bad('⑤', `${f} is 'debug' and reads the field outside its WindSheetDebug overlay`) }
+      // 'inland (<town>)': a FACT tested on that town's slab: no bed (no ①'s water) and no pins, so its drawn raw IS the field
+      if (role.startsWith('inland')) { const town = role.match(/\(([^)]+)\)$/)?.[1], gp = town && join(ROOT, 'public/baked', town, 'ground.json')
+        if (!gp || !existsSync(gp)) bad('⑤', `${f} is 'inland' for ${town}, whose slab is not on disk to test it`)
+        else { const g = JSON.parse(readFileSync(gp, 'utf8')), bed = g.groups.some(q => q.kind === 'mat' && q.id === 'bed'), pinned = g.groups.some(q => q.drawnRawByteOffset != null)
+          if (bed || pinned) bad('⑤', `${f} is 'inland' for ${town}, and its slab has ${bed ? 'a bed (①\'s water)' : ''}${bed && pinned ? ' and ' : ''}${pinned ? 'pinned groups' : ''}: its drawn raw is not the field`) } } }
     const R = src[REV]
     if (!/drawnGroundParts\(p\.getX\(i\), p\.getZ\(i\)\)\.raw/.test(R) || !/setAttribute\('aDrawnRaw'/.test(R)) bad('⑤', 'the revetment drape is not made ground-relative to the drawn ground, carried as its pin (aDrawnRaw)')
     const drapes = [...R.matchAll(/patchTerrain\((?:drape\.material|d), \{([^}]*)\}\)/g)].map(m => m[1])
@@ -248,6 +259,8 @@ if (process.argv.includes('--mutants')) {
     ["BakedGround's FadeMesh drops drawn", null, (S) => { S[BG] = swap(S[BG], 'patchTerrain(mat, { perVertex: true, terrainNormals: true, drawn: !!geometry.attributes.aDrawnRaw })', 'patchTerrain(mat, { perVertex: true, terrainNormals: true })') }],
     ['an unnamed reader of the layout', null, (S) => { delete S.readers['src/harness/lab/stage.js'] }],
     ["an unnamed runtime reader of the ground's height", null, (S) => { delete S.runtime['src/components/Movers.jsx'] }],
+    ['an inland set piece on a coastal town', null, (S) => { S.runtime['src/components/LafayetteParkBody.jsx'] = 'inland: no pins, drawn raw = field (huron)' }],
+    ['WindSheet reading the field outside its overlay', null, (S) => { S['src/components/WindSheet.jsx'] = read('src/components/WindSheet.jsx').replace('function WindSheetDebug(', '// _terrainRaw( early\nfunction WindSheetDebug(') }],
     ["the revetment's drape lifted by the field again", null, (S) => { S[REV] = swap(S[REV], 'patchTerrain(drape.material, { perVertex: true, drawn: true })', 'patchTerrain(drape.material, { perVertex: true })') }],
   ]
   let alive = 0

@@ -16,7 +16,8 @@
  * slope there (area-weighted over its triangles), which the shader lights it by (drawnGround.js `_drawnSlope`).
  * ⭐ A STREET DECK'S EDGE IS NOT THE HIGH-WATER LINE (Boz, 2026-10-27): ① subtracts each street deck from the water, so its
  *    edge is in waterRings, but the deck stands at its root's height above the water (shoreStamp#deckHeights). Its vertices
- *    are neither pinned nor clamped, and are counted (`deckEdgeVerts`). A deck is known by IDENTITY, the frozen
+ *    are neither pinned nor clamped, and are counted (`deckEdgeVerts`); a point where a deck edge meets a real coast edge is
+ *    pinned and counted (`deckJunctions`). A deck is known by IDENTITY, the frozen
  *    streetDecks record ①'s water was cut by (map.json layers.ribbons.streetDecks), never by a shape found in the data;
  *    its edge is read on that record's own rings at the on-line tolerance.
  * ⛔ Refuses, by name: a coast vertex inside the drawing, off every deck's edge, with no ground vertex on it (the line is
@@ -42,7 +43,7 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
   if (!Array.isArray(decks)) throw new Error('⛔ the pin: no street-deck list given (pass [] for a town with none) — a deck edge would be pinned unseen')
   const segs = []
   for (const r of rings) for (let m = 0; m < r.length; m++) segs.push([r[m], r[(m + 1) % r.length]])
-  const stats = { tolM: +tol.toExponential(3), coastVertsInDrawing: 0, deckEdgeVerts: 0, pinned: 0, clampedLand: 0, clampedWater: 0, keptLand: 0, keptWater: 0, pinnedEdgeM: 0 }
+  const stats = { tolM: +tol.toExponential(3), coastVertsInDrawing: 0, deckEdgeVerts: 0, deckJunctions: 0, pinned: 0, clampedLand: 0, clampedWater: 0, keptLand: 0, keptWater: 0, pinnedEdgeM: 0 }
   if (!segs.length) return { pins: new Map(), sectionFor: () => null, stats }
   // the coast's edges, gridded at their median length
   const lens = segs.map(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1])).sort((p, q) => p - q)
@@ -52,12 +53,11 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
     for (let i = Math.floor((Math.min(a[0], b[0]) - tol) / C); i <= Math.floor((Math.max(a[0], b[0]) + tol) / C); i++)
       for (let j = Math.floor((Math.min(a[1], b[1]) - tol) / C); j <= Math.floor((Math.max(a[1], b[1]) + tol) / C); j++) {
         const k = cellKey(i, j); (grid.get(k) || grid.set(k, []).get(k)).push(s) } })
-  const onLine = (x, z) => {
-    for (const s of grid.get(cellKey(Math.floor(x / C), Math.floor(z / C))) || []) {
-      const [a, b] = segs[s], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
-      const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
-      if (Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol) return true }
-    return false }
+  const onSegs = (x, z) => (grid.get(cellKey(Math.floor(x / C), Math.floor(z / C))) || []).filter(s => {
+    const [a, b] = segs[s], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+    const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
+    return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol })
+  const onLine = (x, z) => onSegs(x, z).length > 0
   // ①'s face, even-odd over every ring (an island is a hole; a lake on an island is water again), by z-bands
   const band = new Map()
   segs.forEach(([a, b], s) => { if (a[1] === b[1]) return
@@ -71,26 +71,30 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
   const onDeckEdge = (x, z) => decks.some(r => r.some((a, m) => { const b = r[(m + 1) % r.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
     const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
     return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol }))
-  const deckKeys = new Set()
+  // ⭐ a point on a deck's edge is the deck's only if EVERY coast edge it lies on is a deck edge (each tested at its midpoint,
+  // Zob's read 2026-10-27): the vertex where a deck meets the real coast ends a coast edge too, so it is pinned (a junction)
+  const deckOnly = (x, z) => onSegs(x, z).every(q => { const [a, b] = segs[q]; return onDeckEdge((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) })
+  const deckKeys = new Set(), junctions = new Set()
 
   // 1. PINNED: every ground vertex on the line → HIGH there; a deck's edge is not the line
   const pin = new Map(), field = new Map(), pinGap = []
   const isPin = groups.map(({ positions: P }) => { const flag = new Uint8Array(P.length / 3)
     for (let v = 0; v < P.length; v += 3) { const x = P[v], z = P[v + 2]
       if (!onLine(x, z)) continue
-      if (decks.length && onDeckEdge(x, z)) { deckKeys.add(keyOf(x, z)); continue }
+      if (decks.length && onDeckEdge(x, z)) { if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue } junctions.add(keyOf(x, z)) }
       flag[v / 3] = 1; const k = keyOf(x, z)
       if (pin.has(k)) continue
       const H = highAt(x, z), f = rawAt(x, z); pin.set(k, H); field.set(k, f); pinGap.push(f - H) }
     return flag })
   stats.pinned = pin.size
   stats.deckEdgeVerts = deckKeys.size
+  stats.deckJunctions = junctions.size
   // ⛔ the line must be IN the mesh: every coast vertex inside the drawing, off the decks' edges, is a pinned ground vertex
   { const C2 = Math.max(tol * 64, C / 8), pg = new Map()
     for (const k of pin.keys()) { const [x, z] = k.split(',').map(Number), q = cellKey(Math.floor(x / C2), Math.floor(z / C2)); (pg.get(q) || pg.set(q, []).get(q)).push([x, z]) }
     const missing = []
     for (const r of rings) for (const [x, z] of r) {
-      if (!inDrawing(x, z) || (decks.length && onDeckEdge(x, z))) continue
+      if (!inDrawing(x, z) || (decks.length && onDeckEdge(x, z) && deckOnly(x, z))) continue
       stats.coastVertsInDrawing++
       let hit = false
       for (let di = -1; di <= 1 && !hit; di++) for (let dj = -1; dj <= 1 && !hit; dj++)

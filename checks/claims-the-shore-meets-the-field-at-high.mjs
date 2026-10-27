@@ -19,9 +19,10 @@
 //      every point, written in bake-ground's section format and read back through drawnGround.js: every point on ①'s rings is
 //      pinned and the drawn ground is HIGH all along the line; beside it land ≥ HIGH and water ≤ HIGH; a polder two cells
 //      from the line keeps its height (line-adjacent triangles only, never whole faces); one point takes one height in
-//      every group; a street deck's edge (by its streetDecks record) is neither pinned nor clamped; a coast vertex the
+//      every group; a street deck's edge (by its streetDecks record) is neither pinned nor clamped, but a junction where it
+//      meets the real coast is pinned; a coast vertex the
 //      mesh lacks, off every deck, and no deck list each REFUSE. `--mutants`: the sides swapped · no clamp · whole faces ·
-//      the mesh refusal dropped · the deck exclusion dropped · a deck edge clamped, each RED;
+//      the mesh refusal dropped · the deck exclusion dropped · a deck edge clamped · a junction left at the deck, each RED;
 //   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
 //      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
 //      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
@@ -94,6 +95,7 @@ console.log('── 1–2. a lake: the bed ramps to ①\'s line, and no land is 
   say(r && n > 0 && off === 0, `every seaward corner of a crossed cell is on the ramp HIGH − s·d (${off} of ${n} off it; s ${r?.slopePerRing[0]})`)
   let land = 0; for (let k = 0; k < W * H; k++) if (!mask[k] && f[k] !== before[k]) land++
   say(land === 0, `no landward node written, not raised and not lowered: the dip and the seawall stand as the lidar has them (${land} changed)`)
+  say(r?.shapes === 'bed', `the stamp's record says it shapes the bed only (shapes: ${JSON.stringify(r?.shapes)})`)
 }
 console.log('── 3. a tidal town: the ramp spans two cells between LOW and HIGH')
 {
@@ -256,9 +258,11 @@ async function pinSection(mod, log) {
   no(/not in the mesh/.test(t), 'a coast vertex with no ground vertex on it REFUSES (the line is not in the mesh)')
   // a street deck whose edge is the lake's south shore (Boz, 2026-10-27: a deck's edge is not the high-water line)
   { let K = null, w = ''; try { K = run({ decks: [[[2, 2], [8, 2], [8, 1], [2, 1]]] }) } catch (e) { w = e.message }
-    const south = K ? Array.from({ length: 7 }, (_, i) => `${2 + i},2`) : []
-    const untouched = K && south.every(k => !K.pins.has(k))
-    no(K && K.stats.deckEdgeVerts === 7 && K.stats.pinned === 25 && untouched, `a street deck's edge is neither pinned nor clamped (${K ? `${K.stats.deckEdgeVerts} deck-edge point(s), ${K.stats.pinned} pinned` : w})`) }
+    // the five points strictly inside the deck's edge are the deck's; its two ends, (2, 2) and (8, 2), also end the lake's
+    // real west and east shores, so they are JUNCTIONS and pinned (Zob's read, 2026-10-27)
+    const inner = K ? Array.from({ length: 5 }, (_, i) => `${3 + i},2`) : [], ends = ['2,2', '8,2']
+    const ok = K && inner.every(k => !K.pins.has(k)) && ends.every(k => K.pins.has(k)) && K.stats.deckEdgeVerts === 5 && K.stats.deckJunctions === 2 && K.stats.pinned === 27
+    no(ok, `a street deck's edge is neither pinned nor clamped, and where it meets the real coast the junction is pinned (${K ? `${K.stats.deckEdgeVerts} deck-edge point(s), ${K.stats.deckJunctions} junction(s), ${K.stats.pinned} pinned` : w})`) }
   t = ''; try { run({ decks: [[[2, 2], [8, 2], [8, 1], [2, 1]]], rings: [wnd([[2, 2], [8, 2], [8, 5.5], [8, 8], [2, 8]], 1), islR] }) } catch (e) { t = e.message }
   no(/not in the mesh/.test(t), 'with a deck present, a coast vertex OFF its edge that the mesh lacks still REFUSES')
   t = ''; try { run({ decks: undefined }) } catch (e) { t = e.message }
@@ -275,8 +279,9 @@ async function pinSection(mod, log) {
         'if (wet) { if (f > H) { stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { stats.clampedLand++ } else stats.keptLand++'],
       ['whole faces, not line-adjacent triangles', '    if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue\n', ''],
       ['the line-in-the-mesh refusal dropped', '    if (missing.length) {\n      // measured', '    if (false) {\n      // measured'],
-      ['the deck exclusion dropped', '      if (decks.length && onDeckEdge(x, z)) { deckKeys.add(keyOf(x, z)); continue }\n', ''],
+      ['the deck exclusion dropped', '      if (decks.length && onDeckEdge(x, z)) { if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue } junctions.add(keyOf(x, z)) }\n', ''],
       ['a deck edge clamped', '      if (sideOf.has(k) || deckKeys.has(k)) continue', '      if (sideOf.has(k)) continue'],
+      ['a junction left at the deck', 'if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue }', '{ deckKeys.add(keyOf(x, z)); continue }'],
     ]
     let alive = 0
     for (const [name, a, b] of M) { Object.assign(PIN_EDIT, { a, b }); const q = await pinSection(await load(pinMutant()), () => {}).catch(() => 1)

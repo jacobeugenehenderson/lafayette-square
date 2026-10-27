@@ -123,7 +123,9 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
       if (v && i0 < 0) i0 = i; else if (!v && i0 >= 0) { runs.push(j, i0, i - 1); i0 = -1 } } }
   console.log(`  STAMP: the bed ramps to ①'s coast — ${stamped.reduce((t, v) => t + v, 0).toLocaleString()} water node(s) on the ramp (land untouched) · ${bedWon.toLocaleString()} where the bed stood higher (flats, not stamped) · ${above.length.toLocaleString()} water node(s) at or above HIGH · slope per ring ${sOf.map(v => v ?? '—').join(', ')} · on a measured floor ${slope.map((v, ri) => slopeFrom[ri] !== null ? '—' : `${Math.round(100 * onFloor[ri] / v.length)}%`).join(', ')}${islands ? ` · ${islands} island(s), ${borrowed} on the slope of the water holding them` : ''} · cell ${cell.toFixed(2)} m${tidal ? ' · tidal: two cells of tide seaward' : ''}`)
   const slopeFloorShare = slope.map((v, ri) => slopeFrom[ri] !== null ? null : +(onFloor[ri] / v.length).toFixed(3))
-  return { cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, slopeFloorShare, slopeSamples: slope.map(v => v.length), islands, ramped, bedWon, aboveHigh: above.length, tidal, runs }
+  // `shapes: 'bed'`: the record says, positively, that this field only shapes the bed (the line is the ground's pin), so a
+  // reader never infers it from absent keys (drawnGround.js#stampShapesBedOnly; Zob's nit, 2026-10-27)
+  return { shapes: 'bed', cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, slopeFloorShare, slopeSamples: slope.map(v => v.length), islands, ramped, bedWon, aboveHigh: above.length, tidal, runs }
 }
 
 

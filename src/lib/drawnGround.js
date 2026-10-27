@@ -49,9 +49,9 @@ export function drawnRawOf(manifest, g, bin, rawAt) {
  *  read off the file itself: the bed (`mat:bed`) is drawn only under ①'s water face. An inland ground has no shore to misdraw. */
 export const predatesThePin = (manifest) => manifest.drawnRaw == null && manifest.groundShape?.terrain === true
   && (manifest.groups || []).some(g => g.kind === 'mat' && g.id === 'bed')
-/** A terrain whose stamp only SHAPES THE BED (shoreStamp.mjs since 79cb7e9f: its record has no landward raised/kept or
- *  walled counts). Such a field no longer meets ①'s line on its own: only a pinned ground does. */
-export const stampShapesBedOnly = (stamp) => !!stamp && !('raised' in stamp) && !('kept' in stamp) && !('walled' in stamp)
+/** A terrain whose stamp only SHAPES THE BED: its record says so, `shapes: 'bed'` (shoreStamp.mjs#stampCoast). Such a field
+ *  no longer meets ①'s line on its own: only a pinned ground does. ⛔ Read from the marker, never from absent keys. */
+export const stampShapesBedOnly = (stamp) => stamp?.shapes === 'bed'
 /** ⛔ THE ONE BAD MIX (Ward-seat review, Boz 2026-10-27): a bed-only terrain under a ground with no pins draws the shore off
  *  ①'s line, with nothing to say so. Returns the refusal's reason, or null when the pair is drawable. */
 export function pinsMissingUnder(manifest, terrainMeta) {

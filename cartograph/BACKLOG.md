@@ -162,6 +162,13 @@ lidar contour silently (the stamp no longer raises land). So: (1) merge shore/20
 that sha; (3) move the Ward pin on a ward-pin/<date> branch and publish:staging (reconcile ward-kit 7b68aad5 vs Ward OPERATIONS' stated
 926ac3a4 in that commit); (4) ONLY THEN re-bake terrain+ground for coastal towns (Huron, PTown) and publish them to staging (inland
 towns are unaffected); (5) Promote pins player and slab together, and a rollback restores both, never the slab alone.
+⛔ OPEN, MEASURED IN THE COMBINED BAKE: THE WATER TINT READS THE FIELD, NOT THE PINNED GROUND (Ward-seat review (c), 2026-10-27).
+Two readers: `waterMaterial.js#makeWaterMaterial`'s tint (wDepth → wSeen) and `#makeWaterAbsorption`, both `level − _terrainRaw`.
+At the shore the drawn depth is 0 (the pin) while the field's may not be. In the combined Huron bake (then PTown): take the max
+|drawnRaw − field| within one cell of ①'s line inside ①'s water, mapped through wSeen's smoothstep (uVisibleM − uFadeM …
+uVisibleM). Under one 8-bit step ⇒ accepted as named, here; otherwise it is a second shoreline and goes to Boz (the fix then:
+pins on the water sheet through sectionFor/drawnPinsOf, read by the one function; no coastDist fudge). WindSheet is not a
+reader (its field read is the "Show on map" debug overlay only; claims-the-drawn-raw-is-one-function ⑤ tests it).
 ⛔ PTOWN'S ARRIVAL IS ~9 s OF SPLASH ON DESKTOP (measured 2026-10-26, provincetown.online, warm cache, Chrome, Ward d4b43fa / kit
 7b68aad5; Jacob's "black box" in Society). ward:* marks: gate 877 · buildings 4445 · ground 5923 · trees 7862 · reveal 8977 ms. Every
 request had finished by 2.9 s, so the rest is in-browser prepare; TREES are the critical path. ASPIRATION gaps: TownSplash's header promises

@@ -22,7 +22,7 @@
  *   D. the two models genuinely disagree — so C is not vacuous
  *   E. THE PINNED COAST (drawnGround.js, Ward-seat review 2026-10-27): every terrain slab's ground declares whether it
  *      carries the pins (`drawnRaw`); one that predates them is STALE (drawn on the field's own contour, said by the
- *      player as an error), and the one bad mix (a bed-only terrain stamp under a ground with no pins) FAILS: the player
+ *      player as an error), and the one bad mix (a bed-only terrain stamp, `shapes: 'bed'`, under a ground with no pins) FAILS: the player
  *      refuses it. Read through the runtime's own predicates (predatesThePin, pinsMissingUnder), never restated.
  *
  * ⚠️ A FAILING SLAB IS NOT A CODE BUG. It means that look needs a re-bake. The check
@@ -112,9 +112,10 @@ for (const root of roots) for (const look of readdirSync(root).sort()) {
   console.log(`  ✅ ${(root + '/' + look).padEnd(40)} ${g.drawnRaw ? `pins: ${g.drawnRaw.pinned != null ? `${g.drawnRaw.pinned} pinned` : JSON.stringify(g.drawnRaw)}` : g.groundShape?.terrain === true ? 'inland (no bed): no shore to pin' : 'no terrain on the record'}${t?.stamp ? ` · stamp ${stampShapesBedOnly(t.stamp) ? 'bed-only' : 'older'}` : ''}`)
 }
 { // the refusal is not vacuous: the bad mix is refused, a pinned ground and an older stamp are not
-  const bedOnly = { stamp: { ramped: 1, runs: [] } }, older = { stamp: { raised: 1, kept: 0, walled: 0 } }
-  ok(!!pinsMissingUnder({ groundShape: { terrain: true } }, bedOnly) && !pinsMissingUnder({ drawnRaw: { pinned: 3 } }, bedOnly) && !pinsMissingUnder({ groundShape: { terrain: true } }, older),
-    'the bad mix is refused; a pinned ground on a bed-only stamp and an unpinned ground on an older stamp are drawable')
+  const bedOnly = { stamp: { shapes: 'bed', ramped: 1, runs: [] } }, older = { stamp: { raised: 1, kept: 0, walled: 0 } }, unmarked = { stamp: { ramped: 1, runs: [] } }
+  ok(!!pinsMissingUnder({ groundShape: { terrain: true } }, bedOnly) && !pinsMissingUnder({ drawnRaw: { pinned: 3 } }, bedOnly) && !pinsMissingUnder({ groundShape: { terrain: true } }, older)
+    && !stampShapesBedOnly(unmarked.stamp),
+    'the bad mix is refused; a pinned ground on a bed-only stamp and an unpinned ground on an older stamp are drawable; bed-only is read from its marker, never from absent keys')
 }
 if (pinStale.length) console.log(`\n⚠️  ${pinStale.length} slab(s) predate the pinned coast: ${pinStale.join(', ')} — their shore is the field's contour. ▶ re-bake the ground (after the new player ships: BACKLOG release order).`)
 
