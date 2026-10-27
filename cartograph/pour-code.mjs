@@ -9,6 +9,12 @@
 //   · `geographyRead` — the five numbers config.js projected with (`geography.mjs`). The walk STOPS at the town
 //     registry: those modules are read by the pour only as this value.
 // ⛔ A map.json with no record is DIRTY, named — never clean by default (the `registryRead` rule).
+// ⭐ THIS FILE IS POUR CODE TOO: pipeline.js imports it to stamp the records, so it is in the closure, and a change to it
+// names every town once. That is deliberate. A changed judge is a changed record format, and judging a town's old record
+// with a new judge is exactly the case to ask about (2026-10-26: the token-stream judge named pour-code.mjs on HPDM).
+// ⭐ AND THE JUDGE THAT RUNS MUST BE THE JUDGE IN THE REPO (`judgeStale`): serve.js loads this module once, at start, and
+// a server older than a merge judged HPDM with the byte judge it had loaded, naming a comment-only sources.js
+// (2026-10-26, :3343 started 10-25 19:52, the detector merged 10-26 20:09). The Bake refuses (503) while stale.
 //   ▶ node checks/claims-the-bake-watches-its-code.mjs
 import { readFileSync, existsSync, statSync, readdirSync } from 'fs'
 import { join, dirname, relative } from 'path'
@@ -133,6 +139,20 @@ export function contentChanged(record, files, who = 'this step') {
   for (const p of Object.keys(record)) if (!(p in now)) out.push(`${p} (no longer read by ${who})`)
   return out
 }
+
+// ⭐ THE JUDGE IS CURRENT. `staleJudge(files)` hashes `files` by what runs, NOW, and returns a function that names any of them
+// whose code has changed since: a long-running process that loaded them is judging with old code. A comment does not count.
+export function staleJudge(files) {
+  const at = new Map(files.map(f => [f, executedHash(readFileSync(f, 'utf-8'))]))
+  return () => {
+    const out = []
+    for (const [f, h] of at) { let now; try { now = executedHash(readFileSync(f, 'utf-8')) } catch (e) { now = `unreadable: ${e.message}` }
+      if (now !== h) out.push(relative(REPO_ROOT, f)) }
+    return out
+  }
+}
+// the bake's judges: this file and the server that calls it, as this process loaded them
+export const judgeStale = staleJudge([fileURLToPath(import.meta.url), join(HERE, 'serve.js')])
 
 export const pourCodeRecord = (files = pourCodeClosure()) => contentRecord(files)
 export const pourCodeChanged = (record, files = pourCodeClosure()) => contentChanged(record, files, 'the pour')

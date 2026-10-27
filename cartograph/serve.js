@@ -19,7 +19,7 @@ import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { curbedMinWidthOf, REGISTRY_PATH } from './curbedMinWidthOf.mjs'
 import { labelMajor } from '../src/cartograph/streetClass.js'
-import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY } from './pour-code.mjs'
+import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY, judgeStale } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
@@ -2674,6 +2674,14 @@ createServer(async (req, res) => {
         // geography it projected with (`geographyRead`) and the registry entries it read (`registryRead`), each
         // compared with now. A checkout or rebase that rewrites mtimes changes none of them, so it asks nothing.
         // ⛔ No record (a map.json poured before it existed, or unreadable) is DIRTY, never clean by default.
+        // ⛔ A STALE JUDGE REFUSES (pour-code.mjs#judgeStale): this server judges with the code it loaded at start. If the repo's
+        // judge has changed since, every answer below is the old judge's, so the Bake stops and says to restart.
+        const staleJudges = judgeStale()
+        if (staleJudges.length) {
+          res.writeHead(503, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ lookId: id, error: `this server is judging with old code: ${staleJudges.join(', ')} changed since it started. Restart cartograph/serve.js, then Bake.` }))
+          return
+        }
         let lastPour
         if (existsSync(MAP_JSON)) { try { lastPour = JSON.parse(readFileSync(MAP_JSON, 'utf-8')) } catch { lastPour = {} } }
         const regChanged = lastPour ? (() => {
