@@ -29,6 +29,7 @@
 //     · the GLSL twin reads the field always                          → ⓪ RED
 //     · the JS twin ignores the sentinel (reads the stored raw)       → ⓪ RED
 //     · partsAt back to the field at the corners                      → ② RED
+//     · partsAt letting an extrapolated neighbour win over the containing triangle → ② RED
 //     · the drawn displacement made from nothing (target text gone)   → ① RED
 //     · BakedGround's FadeMesh drops `drawn`                          → ③ RED
 //     · an unnamed reader of the layout                               → ④ RED
@@ -151,7 +152,13 @@ async function run(D, src, log) {
     if (!D.predatesThePin(old.manifest) || D.predatesThePin(manifest)) bad('②', 'predatesThePin does not tell a pinned ground from an older one')
     const R = D.drawnRawOf(manifest, manifest.groups[0], bin, field)
     if (Math.abs(R[1] - 7.25) > 1e-6 || Math.abs(R[0] - field(0, 0)) > 1e-6) bad('②', `drawnRawOf reads (${R[0]}, ${R[1]}), want (${field(0, 0)}, 7.25)`)
-    log(`   ② partsAt: pin ${at1?.raw?.toFixed(3)} · inside ${mid?.raw?.toFixed(4)} (want ${wantMid.toFixed(4)}) · unpinned ${at3?.raw?.toFixed(3)} · an older ground reads the field`)
+    // a point 3e-4 m inside triangle 0-1-2 is within the tolerance of its LATER neighbour 0-2-3 too: the containing triangle wins,
+    // never the neighbour extrapolated (its corner (0, 10) sits 1.5 m up; Huron's 5.7 µm, 2026-10-27)
+    { const qx = 5, qz = 5 - 3e-4, A = [0, 0], Bv = [10, 0], Cv = [10, 10], den = (Bv[1] - Cv[1]) * (A[0] - Cv[0]) + (Cv[0] - Bv[0]) * (A[1] - Cv[1])
+      const wa = ((Bv[1] - Cv[1]) * (qx - Cv[0]) + (Cv[0] - Bv[0]) * (qz - Cv[1])) / den, wb = ((Cv[1] - A[1]) * (qx - Cv[0]) + (A[0] - Cv[0]) * (qz - Cv[1])) / den, wc = 1 - wa - wb
+      const want = wa * field(0, 0) + wb * 7.25 + wc * field(10, 10), got = G.partsAt(qx, qz)?.raw
+      if (!(Math.abs(got - want) < 1e-12)) bad('②', `a point inside one triangle and within the tolerance of its neighbour reads ${got}; its own triangle gives ${want} (the neighbour extrapolated)`) }
+    log(`   ② partsAt: pin ${at1?.raw?.toFixed(3)} · inside ${mid?.raw?.toFixed(4)} (want ${wantMid.toFixed(4)}) · unpinned ${at3?.raw?.toFixed(3)} · an older ground reads the field · the containing triangle wins over an extrapolated neighbour`)
 
     // ① the shader's drawn variant, made from the one snippet, evaluated at the pinned vertex
     const S = src[SHADER]
@@ -254,6 +261,7 @@ if (process.argv.includes('--mutants')) {
   const M = [
     ['the GLSL twin reads the field always', ['return pin.x > 0.5 ? pin.y : field;', 'return field;']],
     ['the JS twin ignores the sentinel', ["pins !== null && pins[v * 4] > 0.5 ? pins[v * 4 + 1] : field", "pins !== null && !Number.isNaN(pins[v * 4 + 1]) ? pins[v * 4 + 1] : field"]],
+    ['partsAt lets the later of two triangles win though the point is outside it', ['if (s !== null && (ro > bestRO || s.inside >= best.inside))', 'if (s !== null)']],
     ['partsAt back to the field at the corners', ['drawnRaw(pins, a, rawAt(ax, az)) * wa + drawnRaw(pins, b, rawAt(bx, bz)) * wb + drawnRaw(pins, c, rawAt(cxx, czz)) * wc', 'rawAt(ax, az) * wa + rawAt(bx, bz) * wb + rawAt(cxx, czz) * wc']],
     ['the drawn displacement made from nothing', null, (S) => { S[SHADER] = swap(S[SHADER], "'transformed.y += _terrainRaw(_tuv) * uExag;', 'transformed.y += _drawnRaw", "'transformed.y += _terrainRaw(_uv) * uExag;', 'transformed.y += _drawnRaw") }],
     ["BakedGround's FadeMesh drops drawn", null, (S) => { S[BG] = swap(S[BG], 'patchTerrain(mat, { perVertex: true, terrainNormals: true, drawn: !!geometry.attributes.aDrawnRaw })', 'patchTerrain(mat, { perVertex: true, terrainNormals: true })') }],

@@ -99,9 +99,13 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
     const EPS = 1e-4
     if (wa < -EPS || wb < -EPS || wc < -EPS) return null
     return { raw: drawnRaw(pins, a, rawAt(ax, az)) * wa + drawnRaw(pins, b, rawAt(bx, bz)) * wb + drawnRaw(pins, c, rawAt(cxx, czz)) * wc,
-      y: P[a * 3 + 1] * wa + P[b * 3 + 1] * wb + P[c * 3 + 1] * wc }
+      y: P[a * 3 + 1] * wa + P[b * 3 + 1] * wb + P[c * 3 + 1] * wc, inside: Math.min(wa, wb, wc) }
   }
-  /** The drawn ground at (x, z): the top-most group's triangle → { raw, y, group }, or null off the mesh. */
+  /** The drawn ground at (x, z): the top-most group's triangle → { raw, y, group }, or null off the mesh.
+   *  ⭐ Among triangles of one renderOrder, the one that CONTAINS the point wins (the largest smallest weight), so a neighbour
+   *  the tolerance also admits is never EXTRAPOLATED: at a point 3.8e-5 outside it, a corner 151 mm away read the shore
+   *  5.7 µm off a line its own triangle holds exactly (Huron, 2026-10-27). The GPU's raster never extrapolates; this matches it.
+   *  Ties of equal containment keep the last, as before. */
   function partsAt(x, z) {
     const k = cz(z) * nx + cx(x)
     let best = null, bestRO = -Infinity, bestG = null
@@ -109,9 +113,9 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
       const gi = refG[r], ro = G[gi].ro
       if (ro < bestRO) continue
       const s = sample(gi, refT[r], x, z)
-      if (s !== null) { best = s; bestRO = ro; bestG = G[gi].g.id }
+      if (s !== null && (ro > bestRO || s.inside >= best.inside)) { best = s; bestRO = ro; bestG = G[gi].g.id }
     }
-    return best && { ...best, group: bestG }
+    return best && { raw: best.raw, y: best.y, group: bestG }
   }
   const heightAt = (x, z, exag) => { const p = partsAt(x, z); return p ? p.raw * exag + p.y : null }
   return { partsAt, heightAt, triCount }
