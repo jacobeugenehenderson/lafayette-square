@@ -93,6 +93,9 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
    `claims-the-shore-meets-the-field-at-high` §7, `claims-the-coast-is-the-lidars` D.
 6. **Later, its own commit:** rim §5's water BED stamped with ① (C8), and water to the bb (C1a, disc §2c), are the shoreline
    project's tail. Sequence them; don't fold them into 1–5 unless they fall out.
+   FILED (Boz, 2026-10-27): a street deck's edge is told from the coast by reading the frozen streetDecks rings at the pin's
+   on-line tolerance (`coastPins.mjs`). True per-edge identity is the MINT's job: ① tags each waterRings edge with its owner
+   (coast or a named deck), and the pin reads the tag.
 
 **⚠️ Built structures over water (Jacob, 2026-10-25: "PTown has a big pier and I believe Huron has something like it; it's built
 structure over water").** The lidar sees a pier's DECK as a surface above high water, so a coast traced where the lidar meets high

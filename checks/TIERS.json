@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 459,
+  "total": 466,
   "counts": {
-    "safe": 331,
-    "local-effect": 27,
-    "live": 101
+    "safe": 334,
+    "local-effect": 28,
+    "live": 104
   },
   "checks": [
     {
@@ -197,19 +197,6 @@
       ]
     },
     {
-      "file": "checks/claims-a-drawn-coast-never-bakes-shoreless.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
-      "why": [
-        "writeFileSync",
-        "mkdirSync",
-        "deletes files",
-        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
-        "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync",
-        "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
-      ]
-    },
-    {
       "file": "checks/claims-a-face-takes-the-land-use-that-covers-it.mjs",
       "tier": "safe",
       "why": [
@@ -304,6 +291,17 @@
       "why": [
         "writeFileSync",
         "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "checks/claims-a-lake-level-converts-at-its-own-height.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "mkdirSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports cartograph/fetch-water-datums.mjs, which can: calls fetch(), mkdirSync, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {
@@ -2481,6 +2479,7 @@
         "writeFileSync",
         "deletes files",
         "computed import() of a path an argument or the environment can supply — arbitrary",
+        "computed import of cartograph/coastFile.mjs — read, safe",
         "computed import of cartograph/geography.mjs — read, safe",
         "computed import of src/cartograph/streetProfiles.js — read, safe",
         "runs `git` — not a known-local command",
@@ -2555,10 +2554,23 @@
       ]
     },
     {
+      "file": "checks/claims-the-coast-is-the-lidars.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "imports cartograph/elevationSources.mjs, which can: calls fetch()",
+        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",
+        "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-the-coast-runs-on-past-the-rim.mjs",
       "tier": "safe",
       "why": [
-        "computed import of cartograph/coastline.mjs — read, safe",
+        "computed import of cartograph/coastFile.mjs — read, safe",
         "computed import of cartograph/outer-coast.mjs — read, safe",
         "computed import of src/components/waterMaterial.js — read, safe",
         "computed import of src/lib/horizonReach.js — read, safe"
@@ -2631,6 +2643,23 @@
       ]
     },
     {
+      "file": "checks/claims-the-drawn-raw-is-one-function.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "computed import of src/lib/drawnGround.js — read, safe",
+        "imports a mutated copy of src/lib/drawnGround.js from its own temp dir — read as src/lib/drawnGround.js, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-the-dry-bed-record-is-the-lidar.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/elevationSources.mjs, which can: calls fetch()"
+      ]
+    },
+    {
       "file": "checks/claims-the-ease-is-the-corner.mjs",
       "tier": "safe",
       "why": [
@@ -2654,6 +2683,14 @@
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports cartograph/fetch-bathymetry.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch()"
       ]
     },
     {
@@ -2786,6 +2823,13 @@
       "reasonClass": "outbound",
       "why": [
         "calls fetch()"
+      ]
+    },
+    {
+      "file": "checks/claims-the-lidar-flights-are-named.mjs",
+      "tier": "local-effect",
+      "why": [
+        "imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {
@@ -2989,6 +3033,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-shore-agrees-with-the-field.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-shore-is-closed.mjs",
       "tier": "safe",
       "why": [
@@ -2996,17 +3047,22 @@
       ]
     },
     {
-      "file": "checks/claims-the-shore-is-one-line.mjs",
-      "tier": "safe",
-      "why": [
-        "imports package(s) clipper-lib — not read from source"
-      ]
-    },
-    {
       "file": "checks/claims-the-shore-knows-which-side-is-wet.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-shore-meets-the-field-at-high.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "computed import of cartograph/shoreStamp.mjs — read, safe",
+        "computed import of cartograph/coastPins.mjs — read, safe",
+        "imports a mutated copy of cartograph/coastPins.mjs from its own temp dir — read as cartograph/coastPins.mjs, safe",
+        "imports a mutated copy of cartograph/shoreStamp.mjs from its own temp dir — read as cartograph/shoreStamp.mjs, safe",
+        "imports a mutated copy of cartograph/shoreStamp.mjs from its own temp dir — read as cartograph/shoreStamp.mjs, safe"
       ]
     },
     {
@@ -3156,6 +3212,13 @@
       "why": [
         "computed import of src/instances/registry.js — read, safe",
         "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-the-water-is-one-polygon.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
