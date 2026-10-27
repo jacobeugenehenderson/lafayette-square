@@ -14,7 +14,11 @@
 //       line, also a vertex of `luByClass`; Zob, 2026-10-26). Anything else is RED by name: off the line, or on it unshared.
 //   (B) every ② kerb vertex with ONE water edge (where a street meets the coast) lies on a ① water edge, within the lattice's
 //       one rounding (latticeNode#NODE_BOUND, read);
-//   (C) every ① vertex whose two edges are both the water's, inside a tile's painted face, appears in ②.
+//   (C′) every ① coast vertex (both edges the water's) inside the SPAN of a ② water run appears in ② as a vertex. A run's
+//       span is the stretch of ①'s ring between the run's two ends (where it joins a street, read by position on ①'s ring;
+//       the whole ring for a run with no end). Dropped inside a span: RED (PTown block 11 v174, a collinear coast vertex,
+//       2026-10-26). Outside every span the vertex lies under a carriageway, past a street's join with the water (Huron
+//       wall-street-1, 21–47 m past its join): not part of the kerb, counted apart. By identity on ①'s ring, never a distance.
 //   MUTANTS (always run): the producer copied with the coast clause of `rSrc` removed (the anchor must occur once) must go RED
 //   on some town; a town where it stays GREEN has nothing on its coast to fillet and is said so. In process, per town: one
 //   off-line vertex inserted mid-way along a ② water edge (pushed 2 units off it) must read RED as off the line, and one
@@ -56,12 +60,14 @@ const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.le
 // ①'s coast: its vertices with both edges the water's, and its water edges (lattice units)
 function coastOf(fp) {
   const isW = (l) => l != null && fp.owners[l]?.skelId === WATER_EDGE_SKEL
-  const both = new Map(), edges = []
+  const both = new Map(), edges = [], ringsOut = []
   const rings = (fp.blocks || []).map((r, k) => [r, fp.blockLabels?.[k] || []]).concat((fp.blockHoles || []).flatMap((hs, k) => hs.map((h, j) => [h, fp.blockHoleLabels?.[k]?.[j] || []])))
-  for (const [r, L] of rings) r.forEach((p, i) => { const n = r.length
-    if (isW(L[i])) edges.push([K(p), K(r[(i + 1) % n])])
-    if (isW(L[i]) && isW(L[(i - 1 + n) % n])) both.set(key(K(p)), p) })
-  return { both, edges }
+  for (const [r, L] of rings) { const ri = ringsOut.push({ K: r.map(K), n: r.length }) - 1
+    r.forEach((p, i) => { const n = r.length
+      if (isW(L[i])) edges.push([K(p), K(r[(i + 1) % n]), ri, i])
+      if (isW(L[i]) && isW(L[(i - 1 + n) % n])) both.set(key(K(p)), p) }) }
+  const at = new Map(); ringsOut.forEach((o, ri) => o.K.forEach((k, i) => at.set(key(k), [ri, i])))
+  return { both, edges, rings: ringsOut, at }
 }
 function judge(tiles, C, lu) {
   const vSet = new Set([...C.both.keys()]), all = new Set()
@@ -76,16 +82,40 @@ function judge(tiles, C, lu) {
       const wi = w(i), wp = w((i - 1 + n) % n)
       if (wi && wp) { A++; if (!onEdge(k)) { Aoff.push(p); Abad.push(p) } else if (!vSet.has(key(k)) && !shared.has(key(k))) { Aunshared.push(p); Abad.push(p) } }
       else if (wi || wp) { B++; if (!onEdge(k)) Bbad.push(p) } }) })
-  // (C) ① coast vertices inside a tile's painted face, missing from ②
-  let Cn = 0; const Cbad = []
-  for (const [kk, p] of C.both) { if (!tiles.some(t => t.ring && windXZ(p, t.ring) !== 0)) continue; Cn++; if (!all.has(kk)) Cbad.push(p) }
-  return { A, Abad, Aoff, Aunshared, B, Bbad, Cn, Cbad }
+  // (C′) the ① spans the ② water runs cover: a run vertex's POSITION on ①'s ring (a ① vertex: its index; on a ① water edge:
+  // index + t), the span walked from the run's first position to its last in the direction its positions step
+  const posOf = (k) => { const v = C.at.get(key(k)); if (v) return { ri: v[0], x: v[1] }
+    for (const [a, b, ri, i] of C.edges) { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy; if (!L2) continue
+      const t = ((k[0] - a[0]) * dx + (k[1] - a[1]) * dy) / L2; if (t < 0 || t > 1) continue
+      const cr = (k[0] - a[0]) * dy - (k[1] - a[1]) * dx; if (cr * cr <= NODE_BOUND * NODE_BOUND * L2) return { ri, x: i + t } }
+    return null }
+  const covered = new Set()
+  for (const t of tiles) (t.iaFull || []).forEach((ring, si) => { const st = t.iaStamp?.[si]; if (!st) return
+    const n = ring.length, w = (e) => t.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL
+    let s0 = -1; for (let e = 0; e < n; e++) if (w(e) && !w((e - 1 + n) % n)) { s0 = e; break }
+    const runs = []
+    if (s0 < 0) { if (w(0)) runs.push({ all: true, vs: ring }) }
+    else for (let k = 0, e = s0; k < n;) { if (!w(e)) { e = (e + 1) % n; k++; continue }
+      const vs = [ring[e]]; while (k < n && w(e)) { vs.push(ring[(e + 1) % n]); e = (e + 1) % n; k++ } runs.push({ vs }) }
+    for (const R of runs) { const P = R.vs.map(q => posOf(K(q))).filter(Boolean); if (!P.length) continue
+      const ri = P[0].ri, m = C.rings[ri].n
+      if (R.all) { for (let i = 0; i < m; i++) covered.add(key(C.rings[ri].K[i])); continue }
+      // the direction: the sign of the first non-zero step, taken the short way round
+      let dir = 0; for (let j = 1; j < P.length && !dir; j++) { let d = P[j].x - P[j - 1].x; if (d > m / 2) d -= m; if (d < -m / 2) d += m; dir = Math.sign(d) }
+      if (!dir) continue
+      const a = P[0].x, b = P[P.length - 1].x, span = ((dir > 0 ? b - a : a - b) % m + m) % m
+      for (let i = 0; i < m; i++) { const off = ((dir > 0 ? i - a : a - i) % m + m) % m; if (off > 0 && off < span) covered.add(key(C.rings[ri].K[i])) } } })
+  let Cn = 0, under = 0; const Cbad = []
+  for (const [kk, p] of C.both) { if (!tiles.some(t => t.ring && windXZ(p, t.ring) !== 0)) continue
+    if (!covered.has(kk)) { under++; continue }
+    Cn++; if (!all.has(kk)) Cbad.push(p) }
+  return { A, Abad, Aoff, Aunshared, B, Bbad, Cn, Cbad, under }
 }
 const say = (J, label) => {
   const at = (ps) => ps.slice(0, 4).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')
   console.log(`  ${J.Abad.length ? '⛔' : '✅'} (A)${label} ${J.A} ② kerb vertex(es) between two water edges · ${J.Aoff.length} off ①'s water edge${J.Aoff.length ? ` (e.g. ${at(J.Aoff)})` : ''} · ${J.Aunshared.length} on it but neither a ① vertex nor a stamp-shared one${J.Aunshared.length ? ` (e.g. ${at(J.Aunshared)})` : ''}`)
   console.log(`  ${J.Bbad.length ? '⛔' : '✅'} (B)${label} ${J.B} ② kerb vertex(es) where a street meets the water · ${J.Bbad.length} off ①'s water edge past one rounding${J.Bbad.length ? ` (e.g. ${at(J.Bbad)})` : ''}`)
-  console.log(`  ${J.Cbad.length ? '⛔' : '✅'} (C)${label} ${J.Cn} ① coast vertex(es) in a tile · ${J.Cbad.length} missing from ②${J.Cbad.length ? ` (e.g. ${at(J.Cbad)})` : ''}`)
+  console.log(`  ${J.Cbad.length ? '⛔' : '✅'} (C′)${label} ${J.Cn} ① coast vertex(es) on ②'s kerb line · ${J.Cbad.length} missing from ② as a vertex${J.Cbad.length ? ` (e.g. ${at(J.Cbad)})` : ''} · ${J.under} under a carriageway (not kerb; counted, not judged)`)
   return J.Abad.length + J.Bbad.length + J.Cbad.length }
 
 let red = 0, towns = 0, mutRed = 0
@@ -112,11 +142,18 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
         const okOff = off.Aoff.length > J0.Aoff.length, okOn = on.Aunshared.length > J0.Aunshared.length
         if (!okOff || !okOn) red++
         console.log(`  ${okOff ? '✅' : '⛔'} mutant (a vertex 2 units off a ② water edge): ${okOff ? 'RED as off the line, as it must be' : 'not seen — (A) is blind off the line'}`)
-        console.log(`  ${okOn ? '✅' : '⛔'} mutant (a vertex ON a ② water edge, shared by nothing): ${okOn ? 'RED as unshared, as it must be' : 'not seen — (A) is blind to an unshared vertex'}`) } } }
+        console.log(`  ${okOn ? '✅' : '⛔'} mutant (a vertex ON a ② water edge, shared by nothing): ${okOn ? 'RED as unshared, as it must be' : 'not seen — (A) is blind to an unshared vertex'}`)
+        // (C′): one ① coast vertex deleted from ② (its two water edges merged) must read missing, never "under a carriageway"
+        const v = r.findIndex((q, i) => C.both.has(key(K(q))) && t.runs?.[st[i]]?.skelId === WATER_EDGE_SKEL && t.runs?.[st[(i - 1 + r.length) % r.length]]?.skelId === WATER_EDGE_SKEL)
+        if (v < 0) console.log('  ⚪ mutant (a ① coast vertex dropped from ②): none to drop on this ring — not judged')
+        else { const tiles2 = R.protoShapeTiles.map(x => x !== t ? x : { ...t, iaFull: t.iaFull.map((q, j) => j === si ? q.filter((_, i) => i !== v) : q), iaStamp: t.iaStamp.map((q, j) => j === si ? q.filter((_, i) => i !== v) : q) })
+          const dr = judge(tiles2, C, R.luByClass), okD = dr.Cbad.length > J0.Cbad.length
+          if (!okD) red++
+          console.log(`  ${okD ? '✅' : '⛔'} mutant (a ① coast vertex dropped from ②): ${okD ? 'RED as missing, as it must be' : 'not seen — (C′) reads a dropped vertex as under a carriageway'}`) } } } }
   let M; try { M = quiet(() => buildProto(f, { tg: mutant })) } catch (e) { console.log(`  ✅ mutant (the coast clause removed): the producer refused (${String(e.message).split('\n')[0].slice(0, 120)}) — counted RED`); mutRed++; continue }
   const J = judge(M.protoShapeTiles, C, M.luByClass), bad = J.Abad.length + J.Bbad.length + J.Cbad.length
   if (bad) mutRed++
-  console.log(`  ${bad ? '✅' : '⚪'} mutant (the coast clause of rSrc removed): ${bad ? `RED as it must be — (A) ${J.Abad.length} · (B) ${J.Bbad.length} · (C) ${J.Cbad.length}` : 'GREEN here — no coast corner on this town takes a fillet without the clause'}`)
+  console.log(`  ${bad ? '✅' : '⚪'} mutant (the coast clause of rSrc removed): ${bad ? `RED as it must be — (A) ${J.Abad.length} · (B) ${J.Bbad.length} · (C′) ${J.Cbad.length}` : 'GREEN here — no coast corner on this town takes a fillet without the clause'}`)
 }
 if (!towns) { console.log('\n⛔ no town with a coast in ① — nothing was checked'); red++ }
 else if (!mutRed) { console.log('\n⛔ the mutant stayed GREEN on every town — the check cannot see a filleted coast'); red++ }
