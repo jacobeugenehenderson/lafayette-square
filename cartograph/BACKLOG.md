@@ -21,6 +21,8 @@ refuse by name when ① exists and protoShapeTiles doesn't.
 water opened and closed at the step, `structures.mjs#openCloseAtStep`; readCoast refuses v2 by name, correctly). Measured delta: open 41
 features / 3.06 m², close 75 / 35.06 m², 1 body below resolution of 1.196 m², none wider than 0.74 m. Huron's published staging is
 untouched; NOT re-baked 2026-10-27 night (Boz). ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
+**▶ LS's skeleton is stale for mintInputs** (saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses before the
+mint). Re-skeleton (commit-extent) before LS's next pour. Pre-existing; LS waits on Jacob's loop adjustments anyway (Boz, 2026-10-27).
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
 running for the kit (:3343/:5183 stopped). Nothing pressed or published today. The afternoon's handoff: `cartograph/_archive/HANDOFF-2026-10-25-afternoon.md`.
 **FIRST, before any publish: the dirty detector** (entry below, "THE DIRTY DETECTOR HAS NO DISCRETION"): Huron's Publish demands a full
