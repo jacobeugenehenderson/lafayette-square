@@ -13,13 +13,13 @@
 //       tide that the coast called land (Zob's definition; Boz, 2026-10-25).
 //   and, printed for the sand line (step 4), never gated: the INTERTIDAL — ground outside the mask below HIGH and
 //       4-connected to the water (a mapped dike holds it: coastFile.mjs#heldCells), the band the tide covers: the beach.
-// Both are printed in m² per town against a DATED BASELINE (on the OSM coast, below) and are RED if worse than it. The brief's target is ~0 for both.
+// Both are printed in m² per town. (a) is gated at 0 off the line; (b) only where it TOUCHES ①'s water, within the lidar's RMSEz (below).
 // ⭐ SEEN TO FAIL, every run: (b) is measured again with the mask shifted by the brief's p50 coast-vs-lidar offset
 // (4.34 m) on each axis; a mask that is not the shore must not score better, or the instrument cannot see the shore.
 // A town with no coast.json or no `bed.dry` (baked before the record) is NOT CHECKED for that part, and says so.
 //
 //   node checks/claims-the-shore-agrees-with-the-field.mjs [--scene=<id> …] [--data-root=<dir>]
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
 import { readCoast, maskOf, heldCells, COAST_FILE } from '../cartograph/coastFile.mjs'
@@ -28,14 +28,38 @@ import { localBB, projectorOf, geographyFor } from '../cartograph/geography.mjs'
 import { ringsInDrawing } from '../cartograph/coast-in-drawing.mjs'
 import { discOf } from '../cartograph/boundaryRecords.mjs'
 
-// (b)'s dated baseline, m², on ①'s waterRings (the OSM coast) and the 2026-10-25 tranche terrain: Zob's probe, reproduced
-// by this instrument. ⛔ No (a) baseline: Zob's post-dig figure was the kept rock, which bed.dry excludes (Boz, 2026-10-25).
-const BASELINE = { huron: { wet: 350 }, provincetown: { wet: 0 } }
+// ⭐ (b)'s GATE (Boz, 2026-10-27): only wet land that TOUCHES ①'s water is a shore drawn short; land below the level apart from it
+// stays land, as ruled (a polder, the back of a dyke), and is printed as information. A touching region passes when its depth
+// below LOW is within the lidar's own stated vertical accuracy (its RMSEz: the flights' quality level, references
+// f-3dep-ql-rmsez, read the way bake-terrain reads it). ⛔ The dated 350 m² baseline is retired: it was taken on the OSM coast,
+// a different line. No (a) baseline: Zob's post-dig figure was the kept rock, which bed.dry excludes (Boz, 2026-10-25).
+const rmsezOf = (dir, scene) => {
+  const fp = join(dir, 'raw', 'elevation-flights.json')   // cartograph/fetch-lidar-flights.mjs FLIGHTS_FILE
+  if (!existsSync(fp)) throw new Error(`⛔ ${scene}: no raw/elevation-flights.json — the lidar's quality level, so its stated vertical accuracy, is unknown`)
+  const qls = [...new Set(Object.values(JSON.parse(readFileSync(fp, 'utf8')).projects || {}).map(p => String(p.ql || '').replace(/\s+/g, '')))]
+  const table = JSON.parse(readFileSync(join(ROOT, 'references', 'registry.json'), 'utf8')).findings.find(f => f.id === 'f-3dep-ql-rmsez')?.value?.rmsezM || {}
+  const r = qls.map(q => table[q])
+  if (!r.length || !r.every(Number.isFinite)) throw new Error(`⛔ ${scene}: the lidar's quality level (${qls.join(', ') || 'none stated'}) has no stated RMSEz in references (f-3dep-ql-rmsez)`)
+  return { rmsezM: Math.max(...r), qls }
+}
+// the gate's one decision: the touching regions deeper below LOW than the lidar's stated accuracy
+const overBound = (sites, rmsezM) => sites.filter(w => w.touches && w.deep > rmsezM)
+{ // SEEN TO FAIL, every run: planted regions through the same predicate
+  const planted = [{ touches: true, deep: 0.05, m2: 25, at: [0, 0] }, { touches: false, deep: 0.5, m2: 100, at: [0, 0] }, { touches: true, deep: 0.2, m2: 25, at: [0, 0] }]
+  const o = overBound(planted, 0.1)
+  if (!(o.length === 1 && o[0].deep === 0.2)) { console.log('⛔ the (b) gate is blind: a planted touching region 0.2 m below LOW past a 0.1 m bound is not caught, or a hollow apart from the water is'); process.exit(1) }
+  console.log('✅ the (b) gate sees: of three planted regions, only the touching one past the bound fails (a deeper hollow apart from the water does not)')
+}
 const P50_M = 4.34   // the brief's §0: the lidar trace's p50 offset off ①'s OSM coast on Huron
 
 const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
 const DATA = process.argv.find(a => a.startsWith('--data-root='))?.slice(12) || ROOT   // a checkout (or probe) holding cartograph/data
-const scenes = args.length ? args : Object.keys(BASELINE)
+// every town with a coast: one with a coast.json, one whose lidar flights are on record, or one whose ① draws water (a coast
+// not yet traced is NOT CHECKED by name below, never silently absent)
+const drawsCoast = (t) => { const mp = join(DATA, 'cartograph/data', t, 'clean', 'map.json'); if (!existsSync(mp)) return false
+  try { return (JSON.parse(readFileSync(mp, 'utf8')).layers?.ribbons?.protopolygon?.waterRings?.length || 0) > 0 } catch { return false } }
+const scenes = args.length ? args : readdirSync(join(DATA, 'cartograph/data')).filter(t => existsSync(join(DATA, 'cartograph/data', t, 'clean', COAST_FILE))
+  || existsSync(join(DATA, 'cartograph/data', t, 'raw', 'elevation-flights.json')) || drawsCoast(t))
 let red = 0, checked = 0
 for (const scene of scenes) {
   const dir = join(DATA, 'cartograph/data', scene)
@@ -91,12 +115,13 @@ for (const scene of scenes) {
     }
     return n * cellM2
   }
-  const base = BASELINE[scene]
   console.log(`── ${scene}: ${coast.doc.from}`)
   const wetSites = [], wet = wetLand(rings, wetSites), tide = intertidal(rings)
   const shifted = Math.min(...[[P50_M, 0], [-P50_M, 0], [0, P50_M], [0, -P50_M]].map(([dx, dz]) => wetLand(rings.map(r => r.map(([x, z]) => [x + dx, z + dz])))))
-  const okWet = !base || wet <= base.wet + cellM2 / 2, seesShore = shifted >= wet   // half a cell: the baseline is rounded to m²
-  console.log(`  ${okWet ? '✅' : '⛔'} (b) wet land ${Math.round(wet).toLocaleString()} m²${base ? ` (baseline ${base.wet.toLocaleString()} m², 2026-10-25, on the OSM coast)` : ''}`)
+  const { rmsezM, qls } = rmsezOf(dir, scene), touching = wetSites.filter(w => w.touches), over = overBound(wetSites, rmsezM)
+  const okWet = over.length === 0, seesShore = shifted >= wet
+  console.log(`  ${okWet ? '✅' : '⛔'} (b) wet land TOUCHING ①'s water: ${touching.length} region(s), ${Math.round(touching.reduce((t, w) => t + w.m2, 0)).toLocaleString()} m², deepest ${touching.length ? Math.max(...touching.map(w => w.deep)).toFixed(3) : '—'} m below LOW (bound: the lidar's RMSEz ${rmsezM} m, ${qls.join('/')})${over.length ? ` — ${over.length} deeper, first ${Math.round(over[0].m2)} m² at (${over[0].at.map(v => v.toFixed(0)).join(', ')}) ${over[0].deep.toFixed(3)} m` : ''}`)
+  console.log(`     (b) in all: ${Math.round(wet).toLocaleString()} m² (inland hollows apart from ①'s water are land, printed, not gated)`)
   if (wetSites.length) { const by = (t) => wetSites.filter(w => w.touches === t), sum = (a) => Math.round(a.reduce((x, w) => x + w.m2, 0)).toLocaleString()
     console.log(`     wet land as ${wetSites.length} region(s): touching ①'s water ${by(true).length} (${sum(by(true))} m²) · apart from it, inland hollows ${by(false).length} (${sum(by(false))} m²)`)
     for (const w of wetSites.sort((a, b) => b.m2 - a.m2).slice(0, 8)) console.log(`       ${Math.round(w.m2).toLocaleString().padStart(6)} m² at (${w.at.map(v => v.toFixed(0)).join(', ')}) · ${w.deep.toFixed(2)} m below LOW at its deepest · ${w.touches ? 'TOUCHES ①\'s water' : 'apart (a hollow)'}`) }
@@ -124,6 +149,6 @@ for (const scene of scenes) {
     if (!ok) red++
   }
 }
-if (red) { console.log(`\n⛔ ${red} failure(s): a dry bed off the line, wet land past its baseline, or a blind instrument.`); process.exit(1) }
+if (red) { console.log(`\n⛔ ${red} failure(s): a dry bed off the line, wet land touching ①'s water deeper than the lidar's accuracy, or a blind instrument.`); process.exit(1) }
 if (!checked) { console.log('\n⚠️ NOT CHECKED: no town has its coast, terrain and levels yet.'); process.exit(2) }
-console.log(`\n✅ ${checked} town(s): no dry bed off the line, and no more wet land than the dated baseline.`)
+console.log(`\n✅ ${checked} town(s): no dry bed off the line, and no wet land touching ①'s water past the lidar's accuracy.`)
