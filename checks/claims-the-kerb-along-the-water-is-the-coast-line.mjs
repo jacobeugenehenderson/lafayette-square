@@ -190,10 +190,13 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
       console.log(`  ${seen ? '✅' : '⚪'} rim mutant (${m.name}): ${refused ? `the producer refused (${refused}) — RED` : seen ? `RED — outside ${X.out.length} · twice ${X.twice} · unshared on the rim ${X.unshared.length}` : 'GREEN on this town (not exercised here)'}`) }
     // mutant: one rim tile's cells handed to a second tile, and one cell vertex pushed 1 m outside the disc
     const t0 = R.protoShapeTiles.findIndex(t => t.inkCells?.some(c => c.cls === 'shore')), t1 = R.protoShapeTiles.findIndex((t, i) => i !== t0)
-    if (t0 >= 0 && fp.boundaryRing?.length) { const T = R.protoShapeTiles.map((t, i) => i === t1 ? { ...t, inkCells: R.protoShapeTiles[t0].inkCells } : t)
+    if (t0 >= 0 && fp.boundaryRing?.length) {
+      // two separate mutations — one tile's cells handed to a second (carried twice), and a cell vertex 1 m past the rim (outside).
+      // ⛔ Not both on one copy: the pushed vertex changed the ring's signature, so "carried twice" could never fire (slot 12)
+      const twin = R.protoShapeTiles.map((t, i) => i === t1 ? { ...t, inkCells: R.protoShapeTiles[t0].inkCells } : t)
       const b = fp.boundaryRing, cx = b.reduce((u, q) => u + q[0], 0) / b.length, cz = b.reduce((u, q) => u + q[1], 0) / b.length, far = b.reduce((m, q) => Math.max(m, Math.hypot(q[0] - cx, q[1] - cz)), 0)
-      T[t0] = { ...T[t0], inkCells: T[t0].inkCells.map((c, j) => j ? c : { ...c, rings: [[...c.rings[0], [cx + far + 1, cz]]] }) }
-      const M = rimJudge(T, b), ok = M.twice > J.twice && M.out.length > J.out.length
+      const past = R.protoShapeTiles.map((t, i) => i !== t0 ? t : { ...t, inkCells: t.inkCells.map((c, j) => c.cls !== 'shore' || c !== t.inkCells.find(x => x.cls === 'shore') ? c : { ...c, rings: [[...c.rings[0], [cx + far + 1, cz]]] }) })
+      const Mt = rimJudge(twin, b), Mp = rimJudge(past, b), M = { twice: Mt.twice, out: Mp.out }, ok = Mt.twice > J.twice && Mp.out.length > J.out.length
       if (!ok) red++
       console.log(`  ${ok ? '✅' : '⛔'} mutant (R): a tile's cells handed to a second tile, and a cell vertex 1 m past the rim → ${M.twice} carried twice, ${M.out.length} outside — ${ok ? 'RED as it must be' : '(R) is blind'}`) } }
   // in-process mutants on the town's own ②: a vertex inserted mid-way along one water edge, (i) 2 units off it, (ii) on it
