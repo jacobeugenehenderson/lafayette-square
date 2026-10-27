@@ -65,7 +65,7 @@ import { splitByField } from '../src/lib/fieldAxis.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 import { LATTICE_STEP, NODE_BOUND, nodeAcrossGroups, splitAtPinches, pinchesOfRing, windingOf } from '../src/lib/latticeNode.js'   // one lattice step in Clipper units · the paint's noding rule
 import { waterFace, faceAsPolygons } from './coastFile.mjs'
-import { pinTheCoast, onLineTolerance } from './coastPins.mjs'
+import { pinTheCoast, onLineTolerance, spanFootprints } from './coastPins.mjs'
 import { LATTICE_M } from '../src/lib/lattice.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -1647,22 +1647,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const deckList = mapData.layers?.ribbons?.streetDecks
     if (!Array.isArray(deckList)) throw new Error(`[bake-ground] ⛔ ${look}: map.json carries no streetDecks list (it predates the decks) — a deck's edge on ①'s coast would be pinned unseen. ▶ re-pour`)
     const decks = deckList.map(d => d.ring)
-    // ⭐ A BRIDGE IS PAINTED ACROSS THE WATER (Jacob, 2026-10-27, (b)). WHICH spans exist is ①'s frozen record (one entry per
-    // off-grade wet piece the mint left out of the ink: { street, segOrd, kind, hwy, points }); their FOOTPRINT is this build's
-    // live paint, so an operator's authored width moves it (Ferrule, 2026-10-27): the `bridges` entry painted for it, by
-    // { street, segOrd }, for every span (Boz's ruling (iv): a highway span's H over the water is split into it). ⛔ A recorded
-    // span with no paint here refuses by name, and so does an absent record or an absent bridge paint
+    // ⭐ A BRIDGE IS PAINTED ACROSS THE WATER (Jacob, 2026-10-27, (b)): the spans by ①'s record, each one's footprint the live
+    // paint for it (coastPins.mjs#spanFootprints, which refuses by name; a span wholly outside the drawing is counted)
     const spanList = mapData.layers?.ribbons?.protopolygon?.offGradeSpans
-    if (!Array.isArray(spanList)) throw new Error(`[bake-ground] ⛔ ${look}: ①'s frozen protopolygon carries no offGradeSpans list (it predates the record) — a coast vertex under a bridge would read as missing from the mesh. ▶ re-pour`)
-    if (spanList.length && !Array.isArray(bridgePaint)) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.length} span(s) over the water and the ground build painted no bridges list — their footprint is unknown`)
-    // a span wholly OUTSIDE the drawing is painted nowhere (the disc empties its entry, rings: []) and covers no coast in it:
-    // counted, never refused. ⛔ An empty footprint for a span that reaches into the drawing still refuses
-    let spansOutside = 0
-    const spans = spanList.flatMap(sp => {
-      const entry = bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd), rings = entry?.rings || []
-      if (entry && !rings.length && sp.points?.length && sp.points.every(([x, z]) => !inDrawing(x, z))) { spansOutside++; return [] }
-      if (!rings.length) throw new Error(`[bake-ground] ⛔ ${look}: ① records the off-grade span ${sp.street}|${sp.segOrd} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, and this build painted no footprint for it — whether the coast under it is covered is unknown`)
-      return rings.map(ring => ({ street: `${sp.street}|${sp.segOrd}`, ring })) })
+    const { spans, outside: spansOutside } = spanFootprints({ spanList, bridgePaint, inDrawing, who: `bake-ground ${look}` })
     // the group a span's paint over the water is drawn in: mat:bridge, for every span (Boz's ruling (iv); a highway span's H
     // footprint over the water is split into it, so mat:highway stays on the plane). ⛔ A span with no mat:bridge group refuses,
     // rather than leave its paint on the bed

@@ -37,6 +37,32 @@
 
 const keyOf = (x, z) => `${x},${z}`
 
+/**
+ * THE SPANS THE PIN READS, by identity and live paint (Jacob 2026-10-27 (b); Boz's ruling (iv)): WHICH spans exist is ①'s frozen
+ * record (protopolygon.offGradeSpans: { street, segOrd, kind, hwy, points }, one per off-grade wet piece the mint left out of the
+ * ink); each one's FOOTPRINT is the build's live paint for it (buildTileGround's `bridges`, matched by { street, segOrd }), so an
+ * authored width moves it. A span wholly OUTSIDE the drawing is painted nowhere (the disc empties its entry, rings: []) and covers
+ * no coast in it: counted, never refused.
+ * ⛔ Refuses, by name: no record (a pre-rule map) · spans with no bridges list · a span with no bridges entry · an empty footprint
+ *    for a span that reaches into the drawing · a span with no centreline.
+ * @returns { spans: [{ street: 'street|segOrd', ring }], outside } — `spans` is what pinTheCoast takes
+ */
+export function spanFootprints({ spanList, bridgePaint, inDrawing, who }) {
+  if (!Array.isArray(spanList)) throw new Error(`[${who}] ⛔ ①'s frozen protopolygon carries no offGradeSpans list (it predates the record) — a coast vertex under a bridge would read as missing from the mesh. ▶ re-pour`)
+  if (spanList.length && !Array.isArray(bridgePaint)) throw new Error(`[${who}] ⛔ ① records ${spanList.length} span(s) over the water and the ground build painted no bridges list — their footprint is unknown`)
+  let outside = 0
+  const spans = spanList.flatMap(sp => {
+    const name = `${sp.street}|${sp.segOrd}`
+    if (!(sp.points?.length >= 2)) throw new Error(`[${who}] ⛔ ①'s off-grade span ${name} carries no centreline`)
+    const entry = bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd)
+    if (!entry) throw new Error(`[${who}] ⛔ ① records the off-grade span ${name} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, and this build has no bridges entry for it — whether the coast under it is covered is unknown`)
+    const rings = entry.rings || []
+    if (!rings.length && sp.points.every(([x, z]) => !inDrawing(x, z))) { outside++; return [] }
+    if (!rings.length) throw new Error(`[${who}] ⛔ ① records the off-grade span ${name} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, reaching into the drawing, and this build painted no footprint for it — whether the coast under it is covered is unknown`)
+    return rings.map(ring => ({ street: name, ring })) })
+  return { spans, outside }
+}
+
 /** The on-line tolerance: the lattice's own rounding (half a step's diagonal) plus one Float32 step at the drawing's extent. */
 export function onLineTolerance(latticeM, maxAbs) {
   return latticeM * Math.SQRT1_2 + 2 ** (Math.floor(Math.log2(Math.max(1, maxAbs))) - 23)

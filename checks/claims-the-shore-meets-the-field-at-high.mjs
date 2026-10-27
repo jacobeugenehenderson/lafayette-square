@@ -24,7 +24,8 @@
 //      mesh lacks, off every deck, and no deck list each REFUSE. `--mutants`: the sides swapped · no clamp · whole faces ·
 //      the mesh refusal dropped · the deck exclusion dropped · a deck edge clamped · a junction left at the deck · a coast
 //      vertex under a bridge's paint (Jacob 2026-10-27, (b); protopolygon.offGradeSpans) not skipped · a bridge's paint over the
-//      water left on the bed instead of at HIGH (Boz's ruling), each RED;
+//      water left on the bed instead of at HIGH (Boz's ruling) · the span assembly (spanFootprints): a span outside the
+//      drawing refused, an empty footprint inside it accepted, each RED;
 //   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
 //      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
 //      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
@@ -203,7 +204,7 @@ console.log('── 8. the pin: the drawn ground carries ①\'s line (coastPins.
 // it); ①'s water is the square 2…8 with an island 4…6 in it; the field slants through HIGH (0) at x = 5, the island's middle
 // stands 1 m below HIGH (land below HIGH beside the line), and a POLDER at (0, 0), two cells from any line, stands 2 m below.
 async function pinSection(mod, log) {
-  const { pinTheCoast, onLineTolerance } = mod
+  const { pinTheCoast, onLineTolerance, spanFootprints } = mod
   let red = 0; const no = (ok, what) => { log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) red++ }
   const sa = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
   const wnd = (r, sg) => Math.sign(sa(r)) === sg ? r : [...r].reverse()
@@ -280,6 +281,20 @@ async function pinSection(mod, log) {
     no(/no off-grade span list/.test(t), 'no span list REFUSES (never read as none)')
     t = ''; try { run({ spanGroups: undefined }) } catch (e) { t = e.message }
     no(/no span paint group list/.test(t), 'no span paint group list REFUSES') }
+  // THE SPANS BY RECORD AND LIVE PAINT (coastPins.mjs#spanFootprints; Boz, 2026-10-27: a rule only a bake exercises is a rule
+  // nobody sees fail). The drawing is the 10 m square; a span at x 20 is wholly outside it.
+  { const inD = (x, z) => x > 0 && x < 10 && z > 0 && z < 10, rec = (street, points, hwy = false) => ({ street, segOrd: 0, kind: 'tagged', hwy, wetM: 1, points })
+    const sf = (o) => { try { return { r: spanFootprints({ inDrawing: inD, who: 'planted', ...o }) } } catch (e) { return { e: e.message } } }
+    const far = sf({ spanList: [rec('far', [[20, 2], [21, 2]])], bridgePaint: [{ street: 'far', segOrd: 0, rings: [] }] })
+    no(far.r && far.r.outside === 1 && far.r.spans.length === 0, `a span wholly outside the drawing, its footprint emptied by the disc, is counted and not refused (${far.r ? `outside ${far.r.outside}` : far.e})`)
+    const inEmpty = sf({ spanList: [rec('near', [[5, 1.5], [5, 2.5]])], bridgePaint: [{ street: 'near', segOrd: 0, rings: [] }] })
+    no(/reaching into the drawing/.test(inEmpty.e ?? ''), 'an empty footprint for a span reaching into the drawing REFUSES')
+    const noEntry = sf({ spanList: [rec('lost', [[5, 1.5], [5, 2.5]])], bridgePaint: [] })
+    no(/no bridges entry/.test(noEntry.e ?? ''), 'a recorded span with no bridges entry REFUSES')
+    const noRec = sf({ spanList: undefined, bridgePaint: [] })
+    no(/predates the record/.test(noRec.e ?? ''), 'no offGradeSpans record REFUSES (a pre-rule map, never read as none)')
+    const ring = [[4.8, 1.5], [5.2, 1.5], [5.2, 2.5], [4.8, 2.5]], ok = sf({ spanList: [rec('cross', [[5, 1.5], [5, 2.5]], true)], bridgePaint: [{ street: 'cross', segOrd: 0, rings: [ring] }] })
+    no(ok.r && ok.r.spans.length === 1 && ok.r.spans[0].street === 'cross|0' && ok.r.spans[0].ring === ring, `a painted span is matched to its own footprint by street|segOrd (${ok.r ? JSON.stringify(ok.r.spans.map(x => x.street)) : ok.e})`) }
   // the bridge's paint over the river stands AT HIGH, on the water (Boz's ruling, 2026-10-27): its three vertices strictly over
   // the water (x = 3, z 3…5, where the field is −0.8) lift to HIGH, exempt from the side clamp; its bank vertices are the pinned line
   { const span = { street: 'bridge-2', ring: [[2, 3], [3, 3], [3, 5], [2, 5]] }
@@ -304,6 +319,8 @@ async function pinSection(mod, log) {
       ['a junction left at the deck', 'if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue }', '{ deckKeys.add(keyOf(x, z)); continue }'],
       ['a coast vertex under a span not skipped', '      if (sp) { stats.underSpan++;', '      if (false) { stats.underSpan++;'],
       ["a bridge's paint left on the bed", '        lifted.set(k, highAt(x, z));', '        void 0;'],
+      ['a span outside the drawing refused', '{ outside++; return [] }', '{ }'],
+      ['an empty footprint inside the drawing accepted', "    if (!rings.length) throw new Error(`[${who}] ⛔ ① records the off-grade span ${name} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, reaching", "    if (!rings.length) return []; if (false) throw new Error(`[${who}] ⛔ ① records the off-grade span ${name} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, reaching"],
     ]
     let alive = 0
     for (const [name, a, b] of M) { Object.assign(PIN_EDIT, { a, b }); const q = await pinSection(await load(pinMutant()), () => {}).catch(() => 1)
