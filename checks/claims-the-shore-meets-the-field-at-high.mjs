@@ -22,7 +22,8 @@
 //      every group; a street deck's edge (by its streetDecks record) is neither pinned nor clamped, but a junction where it
 //      meets the real coast is pinned; a coast vertex the
 //      mesh lacks, off every deck, and no deck list each REFUSE. `--mutants`: the sides swapped · no clamp · whole faces ·
-//      the mesh refusal dropped · the deck exclusion dropped · a deck edge clamped · a junction left at the deck, each RED;
+//      the mesh refusal dropped · the deck exclusion dropped · a deck edge clamped · a junction left at the deck · a coast
+//      vertex under a bridge's paint (Jacob 2026-10-27, (b); protopolygon.offGradeSpans) not skipped, each RED;
 //   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
 //      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
 //      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
@@ -215,7 +216,7 @@ async function pinSection(mod, log) {
       for (const [x, z] of tri) { G.I.push(G.P.length / 3); G.P.push(x, 0, z) } }
     return Object.entries(g).map(([id, { P, I }]) => ({ id, positions: Float32Array.from(P), indices: Uint32Array.from(I) })) }
   const groups = mk(), tol = onLineTolerance(0.001, 10), inDrawing = (x, z) => x > 0 && x < 10 && z > 0 && z < 10
-  const run = (o = {}) => pinTheCoast({ groups, rings: [lakeR, islR], inDrawing, rawAt: fieldAt, highAt: () => 0, tol, decks: [], ...o })
+  const run = (o = {}) => pinTheCoast({ groups, rings: [lakeR, islR], inDrawing, rawAt: fieldAt, highAt: () => 0, tol, decks: [], spans: [], ...o })
   let R = null, why = ''
   try { R = run() } catch (e) { why = e.message }
   no(R !== null, `the drawn lake pins without refusing${why ? ` — ${why}` : ''}`)
@@ -267,6 +268,14 @@ async function pinSection(mod, log) {
   no(/not in the mesh/.test(t), 'with a deck present, a coast vertex OFF its edge that the mesh lacks still REFUSES')
   t = ''; try { run({ decks: undefined }) } catch (e) { t = e.message }
   no(/no street-deck list/.test(t), 'no deck list REFUSES (never read as none)')
+  // a bridge painted across the water (Jacob, 2026-10-27, (b)): the coast vertex at (5.5, 2) is under its paint and is NOT in
+  // the mesh; it is skipped and named, by the span's record. The same vertex with no span over it still refuses (above)
+  { const sixRing = wnd([[2, 2], [5.5, 2], [8, 2], [8, 8], [2, 8]], 1), span = { street: 'bridge-1', ring: [[5.2, 1.5], [5.8, 1.5], [5.8, 2.5], [5.2, 2.5]] }
+    let K = null, w = ''; try { K = run({ rings: [sixRing, islR], spans: [span] }) } catch (e) { w = e.message }
+    no(K && K.stats.underSpan === 1 && K.stats.underSpanByStreet['bridge-1'] === 1 && K.stats.pinned === 32,
+      `a coast vertex under a bridge's paint is skipped and named, by the span's record (${K ? `${K.stats.underSpan} under ${JSON.stringify(K.stats.underSpanByStreet)}, ${K.stats.pinned} pinned` : w})`)
+    t = ''; try { run({ spans: undefined }) } catch (e) { t = e.message }
+    no(/no off-grade span list/.test(t), 'no span list REFUSES (never read as none)') }
   return red
 }
 {
@@ -282,6 +291,7 @@ async function pinSection(mod, log) {
       ['the deck exclusion dropped', '      if (decks.length && onDeckEdge(x, z)) { if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue } junctions.add(keyOf(x, z)) }\n', ''],
       ['a deck edge clamped', '      if (sideOf.has(k) || deckKeys.has(k)) continue', '      if (sideOf.has(k)) continue'],
       ['a junction left at the deck', 'if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue }', '{ deckKeys.add(keyOf(x, z)); continue }'],
+      ['a coast vertex under a span not skipped', '      if (sp) { stats.underSpan++;', '      if (false) { stats.underSpan++;'],
     ]
     let alive = 0
     for (const [name, a, b] of M) { Object.assign(PIN_EDIT, { a, b }); const q = await pinSection(await load(pinMutant()), () => {}).catch(() => 1)

@@ -20,8 +20,12 @@
  *    pinned and counted (`deckJunctions`). A deck is known by IDENTITY, the frozen
  *    streetDecks record ①'s water was cut by (map.json layers.ribbons.streetDecks), never by a shape found in the data;
  *    its edge is read on that record's own rings at the on-line tolerance.
- * ⛔ Refuses, by name: a coast vertex inside the drawing, off every deck's edge, with no ground vertex on it (the line is
- *    not in the mesh).
+ * ⭐ A BRIDGE IS PAINTED ACROSS THE WATER (Jacob, 2026-10-27, (b)): under an off-grade span's paint the line is not ground,
+ *    so a coast vertex inside or on a span's painted footprint has no ground vertex to pin. It is skipped and counted per
+ *    street (`underSpan`). A span is known by IDENTITY: the record ①'s mint writes for every off-grade piece it leaves out
+ *    of the ink (map.json layers.ribbons.protopolygon.offGradeSpans, each { street, ring }), read the way the decks are.
+ * ⛔ Refuses, by name: a coast vertex inside the drawing, off every deck's edge and under no span, with no ground vertex on
+ *    it (the line is not in the mesh) · no span list given.
  */
 
 const keyOf = (x, z) => `${x},${z}`
@@ -37,13 +41,15 @@ export function onLineTolerance(latticeM, maxAbs) {
  * @param inDrawing (x, z) → whether the point is inside the drawing's clip
  * @param rawAt (x, z) → the field, raw · highAt (x, z) → HIGH, raw · tol → onLineTolerance
  * @param decks the street decks' rings (map.json layers.ribbons.streetDecks[].ring), [] when there are none
+ * @param spans the off-grade spans over the water ([{ street, ring }], protopolygon.offGradeSpans), [] when there are none
  * @returns { pins: Map key → [raw, ∂raw/∂x, ∂raw/∂z], sectionFor(positions) → Float32Array | null, stats }
  */
-export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, decks }) {
+export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, decks, spans }) {
+  if (!Array.isArray(spans)) throw new Error('⛔ the pin: no off-grade span list given (pass [] for a town with none) — a coast vertex under a bridge would read as missing from the mesh, or be skipped unseen')
   if (!Array.isArray(decks)) throw new Error('⛔ the pin: no street-deck list given (pass [] for a town with none) — a deck edge would be pinned unseen')
   const segs = []
   for (const r of rings) for (let m = 0; m < r.length; m++) segs.push([r[m], r[(m + 1) % r.length]])
-  const stats = { tolM: +tol.toExponential(3), coastVertsInDrawing: 0, deckEdgeVerts: 0, deckJunctions: 0, pinned: 0, clampedLand: 0, clampedWater: 0, keptLand: 0, keptWater: 0, pinnedEdgeM: 0 }
+  const stats = { tolM: +tol.toExponential(3), coastVertsInDrawing: 0, deckEdgeVerts: 0, deckJunctions: 0, underSpan: 0, underSpanByStreet: {}, pinned: 0, clampedLand: 0, clampedWater: 0, keptLand: 0, keptWater: 0, pinnedEdgeM: 0 }
   if (!segs.length) return { pins: new Map(), sectionFor: () => null, stats }
   // the coast's edges, gridded at their median length
   const lens = segs.map(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1])).sort((p, q) => p - q)
@@ -75,6 +81,16 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
   // Zob's read 2026-10-27): the vertex where a deck meets the real coast ends a coast edge too, so it is pinned (a junction)
   const deckOnly = (x, z) => onSegs(x, z).every(q => { const [a, b] = segs[q]; return onDeckEdge((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) })
   const deckKeys = new Set(), junctions = new Set()
+  // the span whose painted footprint holds (x, z) — inside its ring, or on it within the on-line tolerance — or null
+  const spanBB = spans.map(sp => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, z] of sp.ring) { a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z) } return [a - tol, b - tol, c + tol, d + tol] })
+  const spanAt = (x, z) => spans.find((sp, i) => { const bb = spanBB[i], r = sp.ring
+    if (x < bb[0] || x > bb[2] || z < bb[1] || z > bb[3]) return false
+    let inside = false; for (let m = 0, n = r.length - 1; m < r.length; n = m++) { const a = r[m], b = r[n]
+      if ((a[1] > z) !== (b[1] > z) && x < (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside }
+    if (inside) return true
+    return r.some((a, m) => { const b = r[(m + 1) % r.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+      const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
+      return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol }) }) || null
 
   // 1. PINNED: every ground vertex on the line → HIGH there; a deck's edge is not the line
   const pin = new Map(), field = new Map(), pinGap = []
@@ -89,12 +105,14 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
   stats.pinned = pin.size
   stats.deckEdgeVerts = deckKeys.size
   stats.deckJunctions = junctions.size
-  // ⛔ the line must be IN the mesh: every coast vertex inside the drawing, off the decks' edges, is a pinned ground vertex
+  // ⛔ the line must be IN the mesh: every coast vertex inside the drawing, off the decks' edges and under no span, is a pinned ground vertex
   { const C2 = Math.max(tol * 64, C / 8), pg = new Map()
     for (const k of pin.keys()) { const [x, z] = k.split(',').map(Number), q = cellKey(Math.floor(x / C2), Math.floor(z / C2)); (pg.get(q) || pg.set(q, []).get(q)).push([x, z]) }
     const missing = []
     for (const r of rings) for (const [x, z] of r) {
       if (!inDrawing(x, z) || (decks.length && onDeckEdge(x, z) && deckOnly(x, z))) continue
+      const sp = spans.length ? spanAt(x, z) : null
+      if (sp) { stats.underSpan++; stats.underSpanByStreet[sp.street] = (stats.underSpanByStreet[sp.street] || 0) + 1; continue }   // under a bridge's paint: not ground
       stats.coastVertsInDrawing++
       let hit = false
       for (let di = -1; di <= 1 && !hit; di++) for (let dj = -1; dj <= 1 && !hit; dj++)

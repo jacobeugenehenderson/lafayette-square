@@ -584,7 +584,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
   if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
-  return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
+  return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [], bridgePaint: pr.bridges,
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
            // each rim tile's ring noded with its paint's own rim crossings (live): the deformer's 'beyond' (BRIEF-the-rim-is-cut-once)
@@ -1169,7 +1169,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, bridgePaint, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
@@ -1638,9 +1638,24 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const deckList = mapData.layers?.ribbons?.streetDecks
     if (!Array.isArray(deckList)) throw new Error(`[bake-ground] ⛔ ${look}: map.json carries no streetDecks list (it predates the decks) — a deck's edge on ①'s coast would be pinned unseen. ▶ re-pour`)
     const decks = deckList.map(d => d.ring)
-    coastPin = timed('pinTheCoast', () => pinTheCoast({ groups: drawnGroups, rings: coastRings, inDrawing, rawAt: T.getElevationRaw, highAt: L.highAt, tol, decks }))
+    // ⭐ A BRIDGE IS PAINTED ACROSS THE WATER (Jacob, 2026-10-27, (b)). WHICH spans exist is ①'s frozen record (one entry per
+    // off-grade wet piece the mint left out of the ink: { street, segOrd, kind, hwy, points }); their FOOTPRINT is this build's
+    // live paint, so an operator's authored width moves it (Ferrule, 2026-10-27): a highway span's is H (the `highway` ring that
+    // holds its centreline), any other's the `bridges` overlay painted for it, by { street, segOrd }. ⛔ A recorded span with no
+    // paint here refuses by name, and so does an absent record or an absent bridge paint
+    const spanList = mapData.layers?.ribbons?.protopolygon?.offGradeSpans
+    if (!Array.isArray(spanList)) throw new Error(`[bake-ground] ⛔ ${look}: ①'s frozen protopolygon carries no offGradeSpans list (it predates the record) — a coast vertex under a bridge would read as missing from the mesh. ▶ re-pour`)
+    if (spanList.some(sp => !sp.hwy) && !Array.isArray(bridgePaint)) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.filter(sp => !sp.hwy).length} non-highway span(s) over the water and the ground build painted no bridges list — their footprint is unknown`)
+    const holds = (ring, [x, z]) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = ring[i], b = ring[j]; if ((a[1] > z) !== (b[1] > z) && x < (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]) + a[0]) c = !c } return c }
+    const spans = spanList.flatMap(sp => {
+      const mid = sp.points?.[Math.floor((sp.points?.length || 0) / 2)]
+      if (!mid) throw new Error(`[bake-ground] ⛔ ${look}: ①'s off-grade span ${sp.street}|${sp.segOrd} carries no centreline points`)
+      const rings = sp.hwy ? highwayRings.filter(r => holds(r, mid)) : (bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd)?.rings || [])
+      if (!rings.length) throw new Error(`[bake-ground] ⛔ ${look}: ① records the off-grade span ${sp.street}|${sp.segOrd} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, and this build painted no footprint for it — whether the coast under it is covered is unknown`)
+      return rings.map(ring => ({ street: `${sp.street}|${sp.segOrd}`, ring })) })
+    coastPin = timed('pinTheCoast', () => pinTheCoast({ groups: drawnGroups, rings: coastRings, inDrawing, rawAt: T.getElevationRaw, highAt: L.highAt, tol, decks, spans }))
     const st = coastPin.stats, g = st.fieldMinusHighAtPinsM
-    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm; ${st.deckEdgeVerts.toLocaleString()} on a street deck's edge, left at the deck) · `
+    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm; ${st.deckEdgeVerts.toLocaleString()} on a street deck's edge, left at the deck; ${st.underSpan.toLocaleString()} under a bridge's paint${st.underSpan ? ` (${Object.entries(st.underSpanByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}, not ground) · `
       + `field − HIGH there p10 ${g.p10} · p50 ${g.p50} · p90 ${g.p90} m (min ${g.min}, max ${g.max}) · beside the line: land ${st.clampedLand.toLocaleString()} raised to HIGH, ${st.keptLand.toLocaleString()} above it · water ${st.clampedWater.toLocaleString()} lowered to HIGH, ${st.keptWater.toLocaleString()} below it`)
   }
   let drawnRawByteOffset = 0
