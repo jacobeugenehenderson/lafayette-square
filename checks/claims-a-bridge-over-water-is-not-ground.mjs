@@ -25,17 +25,29 @@
 //       vertex both share (Zob's third form). Each is a crossing: the span is recorded and the street's ink leaves the water.
 //       MUTANTS: the crossings read off the minted points alone (a, c) and a street's own vertex never marked a crossing (b)
 //       each leave the street in the water — RED.
+//   (6b) the same bridge with ASYMMETRIC sides (left 3 m, right 6 m): the overlay is the street's own strip, each side at its own
+//       width (the side convention H's sweep uses). MUTANT: the sides swapped reads RED.
+//   (9) a street that BENDS 40° on the bank just past its crossing, and (10) one that turns 60° away from a shore its tangent would
+//       have run beside: the overlay is the CHAIN's strip (its segments' strips and miters, built here independently) ∩ the water,
+//       and it meets the coast in one run per bank. MUTANT: the run-on along the tangent instead of the chain reads RED on both.
+//   (11) a bank that WIGGLES across the strip's edge (the coast leaves the strip and comes back beside the crossing): the piece
+//       meets the coast in two runs at one bank, so the overlay REFUSES by name. MUTANT: the closure skipped paints it — RED.
+//   (12) a span that crosses a segOrd boundary (a chain meets the bridge in the middle of the water) has no one measure: the mint
+//       REFUSES it by name (Zob). MUTANT: the refusal skipped mints it — RED.
+//   (13) a street lying WHOLLY in the water crosses no coast and was kept as ink there, silently: it is one wet piece, recorded
+//       (byCoast, no banks) and out of the ink. MUTANT: the wholly-wet case skipped keeps its ink in the water — RED.
 //   (4) over LAND nothing changes: the same street, its run off grade, with no water → the same ink as with no grade runs.
 //   MUTANTS (6): the overlay disabled (a gap over the water) and the overlay not run on past the banks (butt ends at the crossing
 //   vertices leave a triangle of water at each oblique bank) must each read RED.
 //   MUTANT (always run): the mint copied with the split bypassed puts (1)'s street ink in the water — or (1) proves nothing.
 //   node checks/claims-a-bridge-over-water-is-not-ground.mjs
-import { mintProtopolygon, INK_EPS, bridgeOverlay, highwayBridges, differenceRings } from '../src/lib/tileGround.js'
+import { mintProtopolygon, INK_EPS, bridgeOverlay, highwayBridges, differenceRings, unionRings } from '../src/lib/tileGround.js'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { ROOT } from './_scenes.mjs'
+import { CLIP_SCALE } from '../src/lib/lattice.js'
 
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }
@@ -119,13 +131,71 @@ const streetOnArc = () => inletStreets().map(x => x.skelId !== 'r' ? x : { ...x,
 const atVertex = (mint, which) => { const arcV = which !== 'b', stV = which !== 'a', W = arcV ? waterOnStreet : inlet, arc = arcV ? arcOnStreet : inletArc
   let M = null; try { M = quiet(() => mint({ streets: stV ? streetOnArc() : inletStreets(), boundary, bb, coast: [W], coastArcs: [arc] })) } catch (e) { return { refused: String(e.message) } }
   const L = arc.reduce((t, p, k) => k ? t + Math.hypot(p[0] - arc[k - 1][0], p[1] - arc[k - 1][1]) : 0, 0)
-  return { span: (M.offGradeSpans || []).find(e => e.street === 'r'), wetInk: absA([W]) - absA(differenceRings([W], M.rings)), bound: INK_EPS * L * 1.01 + 1e-6 } }
+  const sp = (M.offGradeSpans || []).find(e => e.street === 'r')
+  return { span: sp && sp.banks?.[0] && sp.banks?.[1] && sp.before?.length && sp.after?.length ? sp : null, any: !!sp, wetInk: absA([W]) - absA(differenceRings([W], M.rings)), bound: INK_EPS * L * 1.01 + 1e-6 } }
 const AT = { a: 'a coast vertex exactly on the street', b: 'a street vertex exactly on the coast', c: 'a vertex the street and the coast share' }
 for (const which of ['a', 'b', 'c']) { const R = atVertex(mintProtopolygon, which)
-  row(!R.refused && !!R.span && R.wetInk <= R.bound, `(8${which}) ${AT[which]}: ${R.refused ? `REFUSED (${R.refused.slice(0, 100)})` : `${R.span ? `span r|${R.span.segOrd} recorded (${R.span.wetM} m)` : 'NO span recorded'}, the ink in the water ${R.wetInk.toFixed(3)} m² (the coast's own stroke ≤ ${R.bound.toFixed(3)})`}`) }
+  row(!R.refused && !!R.span && R.wetInk <= R.bound, `(8${which}) ${AT[which]}: ${R.refused ? `REFUSED (${R.refused.slice(0, 100)})` : `${R.span ? `span r|${R.span.segOrd} recorded bank to bank (${R.span.wetM} m), its dry ink kept either side` : R.any ? 'a span recorded, but NOT bank to bank (the street dropped whole)' : 'NO span recorded'}, the ink in the water ${R.wetInk.toFixed(3)} m² (the coast's own stroke ≤ ${R.bound.toFixed(3)})`}`) }
+// the chain's own strip, built here independently of the sweep: each segment's rectangle (left −n·hl, right +n·hr, n = (−dz, dx),
+// H's side convention) and, at each bend, both miter quads (the miter point (n₁ + n₂)/(1 + n₁·n₂) · w); ∩ the water, the piece
+// holding the span's centreline
+const windIn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+  if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w !== 0 }
+const chainStrip = (pts, hl, hr, W, span) => { const nOf = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); return [-dz / L, dx / L] }
+  const parts = []; for (let k = 0; k + 1 < pts.length; k++) { const a = pts[k], b = pts[k + 1], n = nOf(a, b)
+    parts.push([[a[0] - n[0] * hl, a[1] - n[1] * hl], [b[0] - n[0] * hl, b[1] - n[1] * hl], [b[0] + n[0] * hr, b[1] + n[1] * hr], [a[0] + n[0] * hr, a[1] + n[1] * hr]]) }
+  for (let k = 1; k + 1 < pts.length; k++) { const B = pts[k], n1 = nOf(pts[k - 1], B), n2 = nOf(B, pts[k + 1]), f = 1 / (1 + n1[0] * n2[0] + n1[1] * n2[1])
+    for (const [sg, w] of [[1, hr], [-1, hl]]) parts.push([B, [B[0] + sg * n1[0] * w, B[1] + sg * n1[1] * w], [B[0] + sg * w * (n1[0] + n2[0]) * f, B[1] + sg * w * (n1[1] + n2[1]) * f], [B[0] + sg * n2[0] * w, B[1] + sg * n2[1] * w]]) }
+  const U = unionRings(parts.map(r => wind(r, 1))), X = differenceRings(U, differenceRings(U, [W]))
+  const mids = span.points.slice(1).map((q, k) => [(q[0] + span.points[k][0]) / 2, (q[1] + span.points[k][1]) / 2])
+  return X.filter(r => mids.some(m => windIn(m, r))) }
+const diffTo = (A, R) => absA(differenceRings(A, R)) + absA(differenceRings(R, A))
+// the lattice's own allowance: one grid step (CLIP_SCALE) along the reference's whole boundary — every vertex is rounded once
+const perim = (R) => R.reduce((t, r) => t + r.reduce((u, p, k) => u + Math.hypot(r[(k + 1) % r.length][0] - p[0], r[(k + 1) % r.length][1] - p[1]), 0), 0)
+const gridTol = (R) => perim(R) / CLIP_SCALE
+// (6b) asymmetric sides, on (6)'s inlet: the strip from z = −3 (left) to z = +6 (right)
+const asymStrip = [[xl(-3), -3], [xr(-3), -3], [xr(6), 6], [xl(6), 6]]
+const asymOf = (fn) => { try { const B = quiet(() => fn(SP, MPi.waterRings, (_, side) => (side === 'left' ? 3 : 6))); return B.length ? diffTo(B[0].rings, [asymStrip]) : null } catch (e) { return String(e.message) } }
+{ const d = asymOf(bridgeOverlay)
+  row(typeof d === 'number' && d < gridTol([asymStrip]), `(6b) the same bridge, left 3 m and right 6 m: ${typeof d === 'number' ? `the overlay differs from the street's own strip (−3 … +6) by ${d.toFixed(4)} m² (the 1 mm grid allows ${gridTol([asymStrip]).toFixed(3)})` : `REFUSES (${String(d).slice(0, 100)})`}`) }
+// (9) the bend on the bank, (10) the turn away from a shore — each its own inlet, its own street r
+const bendArc = inletArc, bendWater = inlet, bendR = [[-150, 0], [51.55, 0], [51.55 + 100 * Math.cos(40 * Math.PI / 180), 100 * Math.sin(40 * Math.PI / 180)]]
+const shoreArc = [[-200, -100], [-60, -100], [-10, 60], [25, 64], [70, 60], [55, -3], [200, -3]], shoreWater = wind([...shoreArc, [200, -200], [-200, -200]], 1)
+const shoreR = [[-150, 0], [57, 0], [57 + 50 * Math.cos(60 * Math.PI / 180), 50 * Math.sin(60 * Math.PI / 180)]]
+const bentCase = (arc, W, R) => { const S = inletStreets().map(x => x.skelId !== 'r' ? x : { ...x, points: R, caps: { start: { degree: 2 }, end: { degree: 1 } }, gradeRuns: [{ from: 0, to: R.length - 1, ways: [3], offGrade: true, exact: true, by: 'exact' }] })
+  const M = quiet(() => mintProtopolygon({ streets: S, boundary, bb, coast: [W], coastArcs: [arc] })), sp = (M.offGradeSpans || []).find(e => e.street === 'r')
+  return { M, sp, ref: sp ? chainStrip(R, 4, 4, W, sp) : [] } }
+const CASES = { 9: ['a street bending 40° on the bank just past its crossing', bentCase(bendArc, bendWater, bendR)], 10: ['a street turning 60° away from a shore its tangent would run beside', bentCase(shoreArc, shoreWater, shoreR)] }
+const bentOf = (fn, C) => { try { const B = quiet(() => fn(C.M.offGradeSpans, C.M.waterRings, () => 4)); const b = B.find(x => x.street === 'r'); return b ? diffTo(b.rings, C.ref) : 'no bridge' } catch (e) { return String(e.message) } }
+for (const [k, [what, C]] of Object.entries(CASES)) { const d = bentOf(bridgeOverlay, C)
+  row(!!C.sp && C.ref.length === 1 && typeof d === 'number' && d < gridTol(C.ref), `(${k}) ${what}: ${C.sp ? `span r|${C.sp.segOrd} (${C.sp.wetM} m, dry run-on ${C.sp.before.length} + ${C.sp.after.length} point(s))` : 'NO span'}; ${typeof d === 'number' ? `the overlay differs from the chain's own strip ∩ the water by ${d.toFixed(4)} m² of ${absA(C.ref).toFixed(1)} (the 1 mm grid allows ${gridTol(C.ref).toFixed(3)})` : `REFUSES (${String(d).slice(0, 110)})`}`) }
+// (11) the right bank zigzags across the strip's +4 m edge beside the crossing
+const wiggleArc = [[-200, -100], [-60, -100], [-10, 60], [25, 64], [70, 60], [53.5, 3], [60, 5.5], [52, 2], [20, -100], [200, -100]]
+const wiggleCase = (() => { const W = wind([...wiggleArc, [200, -200], [-200, -200]], 1)
+  const M = quiet(() => mintProtopolygon({ streets: inletStreets(), boundary, bb, coast: [W], coastArcs: [wiggleArc] })); return { M, sp: (M.offGradeSpans || []).find(e => e.street === 'r') } })()
+const wiggleOf = (fn) => { try { quiet(() => fn(wiggleCase.M.offGradeSpans, wiggleCase.M.waterRings, () => 4)); return null } catch (e) { return String(e.message) } }
+{ const r = wiggleOf(bridgeOverlay)
+  row(!!wiggleCase.sp && !!r && /not one through each bank's crossing/.test(r), `(11) a bank zigzagging across the strip's edge: ${r ? (/not one through each bank/.test(r) ? `REFUSED by name (${r.slice(r.indexOf('meets'), r.indexOf('meets') + 60)}…)` : `refused otherwise (${r.slice(0, 100)})`) : 'PAINTED — the closure did not fire'}`) }
+// (12) a bridge with a junction in the middle of the water: r carries a vertex at (10, 0) where j ends (its own span runs north)
+const midJoin = () => inletStreets().map(x => x.skelId !== 'r' ? x : { ...x, points: [[-150, 0], [10, 0], [150, 0]], gradeRuns: [{ from: 0, to: 2, ways: [3], offGrade: true, exact: true, by: 'exact' }] })
+  .concat([{ ...st('j', [[10, 0], [10, 100]], [{ from: 0, to: 1, ways: [5], offGrade: true, exact: true, by: 'exact' }]), caps: { start: { degree: 3 }, end: { degree: 1 } } }])
+const segOrdRefusal = (mint) => { try { quiet(() => mint({ streets: midJoin(), boundary, bb, coast: [inlet], coastArcs: [inletArc] })); return null } catch (e) { return String(e.message) } }
+{ const r = segOrdRefusal(mintProtopolygon)
+  row(!!r && /crosses a segOrd boundary/.test(r), `(12) a bridge with a junction mid-water: ${r ? (/segOrd boundary/.test(r) ? 'REFUSED by name (no one measure)' : `refused otherwise (${r.slice(0, 100)})`) : 'MINTED — painted at the first segment\'s width'}`) }
+// (13) w lies wholly inside the inlet, at grade
+const wholly = (mint) => { let M = null; try { M = quiet(() => mint({ streets: [...inletStreets(), st('w', [[0, 10], [20, 10]], [{ from: 0, to: 1, ways: [6], offGrade: false, exact: true, by: 'exact' }])], boundary, bb, coast: [inlet], coastArcs: [inletArc] })) } catch (e) { return { refused: String(e.message) } }
+  const ink = M.rings.reduce((t, r, ri) => t + r.filter((_, k) => M.owners[M.labels[ri][k]]?.skelId === 'w').length, 0)
+  return { sp: (M.offGradeSpans || []).find(e => e.street === 'w'), ink } }
+{ const R = wholly(mintProtopolygon)
+  row(!R.refused && R.sp?.kind === 'byCoast' && R.sp.banks?.every(b => !b) && R.ink === 0, `(13) a street wholly in the water: ${R.refused ? `REFUSED (${R.refused.slice(0, 100)})` : `${R.sp ? `recorded ${R.sp.street}|${R.sp.segOrd} ${R.sp.kind}, banks [${R.sp.banks}]` : 'NOT recorded'}, ${R.ink} ink vertex(es) of it left`}`) }
 { const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
   for (const [name, a, b] of [['the overlay disabled (a gap over the water)', 'for (const sp of spans) { if (sp.hwy) continue', 'for (const sp of spans) { continue'],
-                              ['the overlay not run on past the banks', 'let E = 2 * Math.max(hl, hr), A = clip(E)', 'let E = 0, A = clip(E)'],
+                              ['the overlay not run on past the banks', 'const line = [...B.slice(0, -1), ...P, ...Af.slice(1)]', 'const line = P'],
+                              ['the run-on along the tangent, not the chain', 'const line = [...B.slice(0, -1), ...P, ...Af.slice(1)]', 'const ext = (a, f) => { const dx = a[0] - f[0], dz = a[1] - f[1], L = Math.hypot(dx, dz); return [a[0] + dx / L * 50, a[1] + dz / L * 50] }; const line = [ext(P[0], P[1]), ...P, ext(P[P.length - 1], P[P.length - 2])]'],
+                              ['the wholly-wet case skipped', "    if (!V.some(v => v.cross) && !(V.length >= 2 && wet(", "    if (!V.some(v => v.cross) && true || !(V.length >= 2 && wet("],
+                              ['the segOrd refusal skipped', '      if (ords.length > 1) throw', '      if (false) throw'],
+                              ['the closure skipped', '    if (!closed) throw', '    if (false) throw'],
+                              ['the sides swapped', 'sweepHighway(line, { spans: [{ hw: hl }] }, { spans: [{ hw: hr }] })', 'sweepHighway(line, { spans: [{ hw: hr }] }, { spans: [{ hw: hl }] })'],
                               ['H not split (the highway keeps its span over the water)', '  const H = (spans || []).filter(x => x.hwy)\n', '  const H = []\n'],
                               ['(a) the crossings read off the minted points alone', "for (const v of out[n]) { const k = v.k[0] + ',' + v.k[1]; if (onStreet.has(k)) crossKeys.add(k) }", 'for (const v of out[n]) if (v.src == null) crossKeys.add(v.k[0] + \',\' + v.k[1])'],
                               ['(b) a street\'s own vertex never marked a crossing', "edge: v.src, ...(c && { cross: true }) })", 'edge: v.src })']]) {
@@ -135,8 +205,18 @@ for (const which of ['a', 'b', 'c']) { const R = atVertex(mintProtopolygon, whic
         .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`).replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
       const M = await import(pathToFileURL(join(dir, 'tileGround.js')).href)
       if (name.startsWith('(a)') || name.startsWith('(b)')) for (const w of name[1] === 'a' ? ['a', 'c'] : ['b']) { const R = atVertex(M.mintProtopolygon, w)
-        row(!!R.refused || !R.span || R.wetInk > R.bound, `mutant (8${w}) ${name.slice(4)}: ${R.refused ? `refuses (${R.refused.slice(0, 80)})` : `${R.span ? 'span recorded' : 'NO span'}, ${R.wetInk.toFixed(3)} m² of ink in the water`} — RED as it must be`) }
+        row(!!R.refused || !R.span || R.wetInk > R.bound, `mutant (8${w}) ${name.slice(4)}: ${R.refused ? `refuses (${R.refused.slice(0, 80)})` : `${R.span ? 'span recorded bank to bank' : R.any ? 'the street dropped whole, not bank to bank' : 'NO span'}, ${R.wetInk.toFixed(3)} m² of ink in the water`} — RED as it must be`) }
       if (name.startsWith('(a)') || name.startsWith('(b)')) continue
+      if (name.startsWith('the run-on along the tangent')) { for (const [k, [, C]] of Object.entries(CASES)) { const d = bentOf(M.bridgeOverlay, C)
+          row(typeof d === 'string' || d > 1e-2, `mutant (${k}) ${name}: ${typeof d === 'number' ? `differs from the chain's strip by ${d.toFixed(3)} m²` : `refuses (${d.slice(0, 80)})`} — RED as it must be`) } continue }
+      if (name === 'the wholly-wet case skipped') { const R = wholly(M.mintProtopolygon)
+        row(!!R.refused || !R.sp || R.ink > 0, `mutant (13) ${name}: ${R.refused ? `refuses (${R.refused.slice(0, 80)})` : `${R.sp ? 'recorded' : 'NOT recorded'}, ${R.ink} ink vertex(es) in the water`} — RED as it must be`); continue }
+      if (name === 'the segOrd refusal skipped') { const r = segOrdRefusal(M.mintProtopolygon)
+        row(!r || !/segOrd boundary/.test(r), `mutant (12) ${name}: ${r ? `refuses otherwise (${r.slice(0, 80)})` : 'mints the span at one width'} — RED as it must be`); continue }
+      if (name === 'the closure skipped') { const r = wiggleOf(M.bridgeOverlay)
+        row(!r || !/not one through each bank/.test(r), `mutant (11) ${name}: ${r ? `refuses otherwise (${r.slice(0, 80)})` : 'paints the zigzag bank'} — RED as it must be`); continue }
+      if (name === 'the sides swapped') { const d = asymOf(M.bridgeOverlay)
+        row(typeof d !== 'number' || d > 1, `mutant (6b) ${name}: ${typeof d === 'number' ? `differs from the street's own strip by ${d.toFixed(2)} m²` : `refuses (${String(d).slice(0, 80)})`} — RED as it must be`); continue }
       if (name.startsWith('H not split')) { const J = judgeH(splitH(M.highwayBridges))
         row(!J || J.wet > 1, `mutant (7) ${name}: ${J ? `the highway keeps ${J.wet.toFixed(2)} m² over the water` : 'refuses'} — RED as it must be`); continue }
       const B = bridgeOf(M.bridgeOverlay), d = typeof B === 'string' ? null : symDiff(B)
