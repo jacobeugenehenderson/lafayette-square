@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 475,
   "counts": {
-    "safe": 339,
+    "safe": 338,
     "local-effect": 29,
-    "live": 107
+    "live": 108
   },
   "checks": [
     {
@@ -473,11 +473,13 @@
     },
     {
       "file": "checks/claims-a-pinched-face-is-two-faces.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "writeFileSync — only under its own temp dir",
-        "deletes files — only under its own temp dir",
-        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {

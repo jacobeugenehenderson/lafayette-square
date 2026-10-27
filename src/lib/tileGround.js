@@ -1123,8 +1123,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         pinched++; lobesMade += L.lobes.length; retracesDropped += L.retraces
         const mine = L.lobes.map(() => [])
         for (const h of holes) {
-          const by = L.lobes.map((o, q) => (h.hr || []).some(p => pointInRing(p[0], p[1], o.ring)) ? q : -1).filter(q => q >= 0)
-          if (by.length !== 1) throw new Error(`[①] ⛔ a hole of a pinched face (at ${h.hr?.[0]?.map(v => v.toFixed(3)).join(', ')}) lies in ${by.length} of its ${L.lobes.length} lobes (want 1). Refusing.`)
+          // read by the hole's vertices that lie on NO lobe's ring (exact, on the lattice); every one of them must name the same lobe
+          const free = (h.hr || []).filter(p => !L.lobes.some(o => onRingExact(p, o.ring)))
+          const by = [...new Set(free.map(p => L.lobes.findIndex(o => pointInRing(p[0], p[1], o.ring))))]
+          if (by.length !== 1 || by[0] < 0) throw new Error(`[①] ⛔ a hole of a pinched face (at ${h.hr?.[0]?.map(v => v.toFixed(3)).join(', ')}) is read in ${by.filter(q => q >= 0).length} of its ${L.lobes.length} lobes by its ${free.length} vertex(es) off every lobe ring (want exactly 1). Refusing.`)
           mine[by[0]].push(h) }
         L.lobes.forEach((o, q) => faceList.push({ rg: o.ring, lb: o.labels, holes: mine[q] })) }
       if (pinched) console.log(`    [①] ${pinched} face ring(s) pinched along their own edge (a retrace), split into ${lobesMade} face(s); ${retracesDropped} zero-width retrace(s) dropped (faceLobes)`)
@@ -1187,9 +1189,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         else { blocks.push(rg); blockLabels.push(lb) }
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
-      // ⛔ THE ASSERT: no block ring runs back over one of its own edges (a zero-width retrace is two faces, never one)
-      { const bad = blocks.map((b, k) => ({ k, o: ringRetraces(b) })).filter(x => x.o.length)
-        if (bad.length) throw new Error(`[①] ⛔ ${bad.length} block ring(s) retrace their own edge in the opposite direction after faceLobes — block ${bad[0].k} edges ${bad[0].o[0].i} and ${bad[0].o[0].j}, ${bad[0].o[0].m.toFixed(3)} m at (${blocks[bad[0].k][bad[0].o[0].i].map(v => v.toFixed(3)).join(', ')}). Refusing.`) }
+      // ⛔ THE ASSERT: no block ring, outer or hole, runs back over one of its own edges (a zero-width retrace is two faces, never one)
+      { const bad = blocks.flatMap((b, k) => [b, ...blockHoles[k]].map((r, h) => ({ k, h, r, o: ringRetraces(r) }))).filter(x => x.o.length)
+        if (bad.length) { const x = bad[0], o = x.o[0]
+          throw new Error(`[①] ⛔ ${bad.length} block ring(s) retrace their own edge in the opposite direction after faceLobes — block ${x.k} ${x.h ? `hole ${x.h - 1}` : 'outer'}, edges ${o.i} and ${o.j}, ${o.m.toFixed(3)} m at (${x.r[o.i].map(v => v.toFixed(3)).join(', ')}). Refusing.`) } }
       const withHoles = blockHoles.filter(h => h.length).length
       if (outerZones) console.log(`    [①] ${outerZones} OUTER ZONE face(s) kept as blocks — the bb + coast + street ink close into one continuous zone; its streets are its holes and are painted from them.`)
       if (keptOnEdge) console.log(`    [①] kept ${keptOnEdge} face(s) touching the frame EDGE without a corner — real land the rectangle merely truncates; the stamp cuts them.`)
@@ -1259,8 +1262,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
 // A loop of zero area is the retrace itself and is dropped (counted). Labels are POSITIONAL (label i names edge i→i+1): an
 // inserted vertex takes the label of the edge it splits, and every loop keeps its own edges' labels.
 // ⛔ ONLY A RETRACE SPLITS (Boz's (b)): a ring that merely touches itself at one vertex is NOT split — absorbInk accepts it, and
-// whether such a lobe is a face of its own is an open question (BACKLOG census: LS #327, PTown #40). A ring with a retrace is cut
-// at every repeated vertex once its retrace ends are inserted.
+// whether such a lobe is a face of its own is an open question (BACKLOG census: LS #327, PTown #40). And a ring with a retrace
+// is cut ONLY at the retrace's own vertices (the ends of an edge whose reverse is also in the ring): a one-vertex touch elsewhere
+// on it stays inside its lobe, so whether a touch is cut never depends on a retrace somewhere else (Zob's read, 2026-10-27).
 // → null when the ring has no retrace (the caller keeps the ring as it was, byte for byte), else
 //   { lobes: [{ ring, labels }], retraces: n }. ⛔ A lobe wound against the ring refuses by name: it would be a hole, not a pocket.
 export function faceLobes(ring, labels, who = '①') {
@@ -1284,10 +1288,12 @@ export function faceLobes(ring, labels, who = '①') {
     const seen = new Set(); S.sort((u, v) => u.t - v.t)
     for (const { k } of S) { const key = I[k][0] + ',' + I[k][1]; if (seen.has(key)) continue; seen.add(key); E.push({ p: ring[k], q: I[k], lab: labels[i] }) } }
   const keyOf = (e) => e.q[0] + ',' + e.q[1]
+  const dir = new Set(E.map((e, i) => keyOf(e) + '>' + keyOf(E[(i + 1) % E.length]))), R = new Set()
+  E.forEach((e, i) => { const a = keyOf(e), b = keyOf(E[(i + 1) % E.length]); if (dir.has(b + '>' + a)) { R.add(a); R.add(b) } })
   const loops = [], stack = [], at = new Map()
   for (const e of E) { const k = keyOf(e)
     if (at.has(k)) { const loop = stack.splice(at.get(k)); for (const u of loop) at.delete(keyOf(u)); loops.push(loop) }
-    at.set(k, stack.length); stack.push(e) }
+    if (R.has(k)) at.set(k, stack.length); stack.push(e) }
   if (stack.length) loops.push(stack)
   const area2 = (L) => L.reduce((t, e, i) => { const f = L[(i + 1) % L.length]; return t + e.q[0] * f.q[1] - f.q[0] * e.q[1] }, 0)
   const sign = Math.sign(area2(E)), lobes = []
@@ -1297,6 +1303,16 @@ export function faceLobes(ring, labels, who = '①') {
     if (Math.sign(a) !== sign) throw new Error(`[${who}] ⛔ a face ring pinched at (${L[0].p.map(v => v.toFixed(3)).join(', ')}) has a loop wound AGAINST it (${(a / 2 / SCALE / SCALE).toFixed(3)} m²) — a hole carried in the outer ring, not a pocket. Refusing.`)
     lobes.push({ ring: L.map(e => e.p), labels: L.map(e => e.lab) }) }
   return { lobes, retraces }
+}
+
+// Exactly on a ring's boundary, on the lattice: the point lies on one of its edges (integer cross product 0, within the edge).
+function onRingExact(p, ring) {
+  const v = [Math.round(p[0] * SCALE), Math.round(p[1] * SCALE)]
+  for (let i = 0; i < ring.length; i++) { const a = ring[i].map(c => Math.round(c * SCALE)), b = ring[(i + 1) % ring.length].map(c => Math.round(c * SCALE))
+    const dx = b[0] - a[0], dz = b[1] - a[1]
+    if (dx * (v[1] - a[1]) - dz * (v[0] - a[0]) !== 0) continue
+    const t = dx * (v[0] - a[0]) + dz * (v[1] - a[1]); if (t >= 0 && t <= dx * dx + dz * dz) return true }
+  return false
 }
 
 // The opposite-direction overlaps of a ring's own edges: [{ i, j, m }] for each pair of its edges lying on one line, overlapping by

@@ -11,8 +11,11 @@
 //       zero-area retraces dropped, every lobe's labels its own edges' (the frame edge __boundary__, the rest __water__).
 //   (3) faceLobes on a ring with no retrace returns null — a plain ring, and a ring touching itself at ONE vertex (Boz's (b):
 //       only a retrace splits; a one-vertex touch is an open question, BACKLOG census): the mint keeps it as the boolean returned it.
-//   MUTANT (always run): the split removed → the plant REFUSES, by the assert's name (the retrace is caught at the mint, before
-//   absorbInk), or the row proves nothing.
+//   (4) A RETRACE CUTS ONLY AT ITS OWN VERTICES (Zob's read, 2026-10-27): two squares touching at one vertex, plus a 5×5 pocket
+//       hung off them by a zero-width corridor → 2 lobes: the pocket (25 m²) and ONE lobe of both squares (200 m²), the touch kept
+//       inside it. Whether a touch is cut never depends on a retrace elsewhere on the ring.
+//   MUTANTS (always run): the split removed → the plant REFUSES, by the assert's name (the retrace is caught at the mint, before
+//   absorbInk) · the cut at EVERY repeated vertex → (4) splits the squares, RED.
 //   node checks/claims-a-pinched-face-is-two-faces.mjs
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -54,6 +57,11 @@ const live = await import('../src/lib/tileGround.js')
 { const sq = [[0, 0], [10, 0], [10, 5], [10, 10], [0, 10]], eight = [[0, 0], [10, 0], [10, 10], [20, 10], [20, 20], [10, 20], [10, 10], [0, 10]]
   const a = live.faceLobes(sq, sq.map(() => 0)), b = live.faceLobes(eight, eight.map(() => 0))
   row(a === null && b === null, `(3) a plain ring (a collinear vertex): ${a === null ? 'kept' : 'SPLIT'} · a ring touching itself at one vertex, no retrace: ${b === null ? 'kept (only a retrace splits)' : `SPLIT into ${b.lobes.length}`}`) }
+// (4) the cut at the retrace's own vertices only
+const ring4 = [[0, 0], [10, 0], [10, 10], [20, 10], [20, 20], [10, 20], [10, 10], [0, 10], [0, 0], [-10, 0], [-15, 0], [-15, -5], [-10, -5], [-10, 0]]
+const judge4 = (mod) => { const L = mod.faceLobes(ring4, ring4.map((_, i) => i)), A = (L?.lobes || []).map(o => Math.abs(sa(o.ring))).sort((p, q) => q - p)
+  return { ok: A.length === 2 && A[0] === 200 && A[1] === 25, says: L ? `${A.length} lobe(s) [${A.join(', ')} m²]` : 'NOT split' } }
+{ const J = judge4(live); row(J.ok, `(4) two squares touching at one vertex, a pocket hung off them by a zero-width corridor: ${J.says} (want 200 + 25: the touch kept inside its lobe)`) }
 // MUTANT: the split removed, in one modified tileGround.js in its own temp dir (imports pointed at the live src/lib)
 { const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8'), ANCHOR = 'const L = (rg?.length >= 3 && lb) ? faceLobes(rg, lb) : null'
   if (src.split(ANCHOR).length !== 2) row(false, 'mutant: the split call is not in tileGround.js once — re-aim the anchor')
@@ -64,6 +72,15 @@ const live = await import('../src/lib/tileGround.js')
       let why = null; try { plant(M) } catch (e) { why = String(e.message) }
       const byAssert = !!why && /retrace their own edge/.test(why)
       row(byAssert, `mutant: the split removed → ${why ? (byAssert ? 'REFUSED by the assert (a block ring retraces its own edge), RED as it must be' : `refused, but not by the assert (${why.slice(0, 100)})`) : 'MINTED — the plant proves nothing'}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) } } }
+// MUTANT: the cut at every repeated vertex, not only the retrace's own
+{ const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8'), ANCHOR = 'if (R.has(k)) at.set(k, stack.length)'
+  if (src.split(ANCHOR).length !== 2) row(false, 'mutant (4): the retrace-vertex gate is not in tileGround.js once — re-aim the anchor')
+  else { const dir = mkdtempSync(join(tmpdir(), 'lobes4-')), LIB = join(ROOT, 'src/lib')
+    try { writeFileSync(join(dir, 'tileGround.js'), src.replace(ANCHOR, 'at.set(k, stack.length)')
+        .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`).replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
+      const J = judge4(await import(pathToFileURL(join(dir, 'tileGround.js')).href))
+      row(!J.ok, `mutant (4): the cut at every repeated vertex → ${J.says} — ${J.ok ? 'still GREEN (the row proves nothing)' : 'RED as it must be'}`)
     } finally { rmSync(dir, { recursive: true, force: true }) } } }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ a pinched face is two faces')
 process.exit(red ? 1 : 0)
