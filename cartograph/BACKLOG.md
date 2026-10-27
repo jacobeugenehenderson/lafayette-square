@@ -157,6 +157,13 @@ MEASURED 2026-10-26, neither provincetown.online/ nor staging.theward.online/pro
 (`curl -s <url> | grep -i 'og:'` → nothing); where they should be stamped, not established;
 (3) "Hero object blur" (the rack focus on a panning shot, 237ee4db, Strobe's object-identity focus) is broken on DESKTOP.
 Reproduce each on integration before fixing; the server being a temporary one is not yet ruled out as a cause.
+⛔ PTOWN'S ARRIVAL IS ~9 s OF SPLASH ON DESKTOP (measured 2026-10-26, provincetown.online, warm cache, Chrome, Ward d4b43fa / kit
+7b68aad5; Jacob's "black box" in Society). ward:* marks: gate 877 · buildings 4445 · ground 5923 · trees 7862 · reveal 8977 ms. Every
+request had finished by 2.9 s, so the rest is in-browser prepare; TREES are the critical path. ASPIRATION gaps: TownSplash's header promises
+a ~1.5 s linger; a failed group logs `[reveal] ⛔` but the splash stays silent on screen; a group that never reports holds forever,
+unlogged. Fix (not built): the splash NAMES what it waits on and what failed (no timer, no reveal); profile trees prepare. Check: a
+headless run reading the ward:* marks per town against a stated budget, with a forced-failure mutant. Seen in the same console:
+36,333 tree placements carry y:0 (unstamped) · BakedGround "crop / sand drawn WITHOUT …" errors · a WindSheet stencil warning.
 ⛔ THE DIRTY DETECTOR HAS NO DISCRETION, live instance (2026-10-25 19:37, Huron's Publish panel): "This re-pours huron because
 the pour's code changed: cartograph/sources.js". The only change is b456bc6d, a ONE-LINE COMMENT (`SOURCE_BY_BASENAME` →
 `CANONICAL_TREE_WELLS` in a doc comment), and it demands a full re-pour plus the whole bake. Jacob's rule: no rebake unless it's a real
