@@ -284,6 +284,7 @@ export const OSM_TO_LU = {
   'leisure:fitness_centre': 'commercial', 'leisure:bowling_alley': 'commercial',
   'leisure:marina': 'commercial', 'leisure:hackerspace': 'commercial',
   'amenity:dojo': 'commercial',
+  'amenity:car_rental': 'commercial', 'amenity:payment_centre': 'commercial',   // a rental lot like car_wash, a storefront like bank (jacksonheights; Boz, 2026-10-27)
   'landuse:industrial': 'industrial', 'amenity:waste_disposal': 'industrial',
   'landuse:landfill': 'industrial', 'landuse:quarry': 'industrial',
   // — institutional: schools, worship, government, care —
@@ -300,6 +301,7 @@ export const OSM_TO_LU = {
   'amenity:kindergarten': 'institutional', 'amenity:childcare': 'institutional',
   'amenity:public_building': 'institutional', 'amenity:funeral_hall': 'institutional',
   'amenity:arts_centre': 'institutional',
+  'amenity:nursing_home': 'institutional',   // a care facility, like social_facility (jacksonheights; Boz, 2026-10-27)
   // — recreation: managed green that is PLAYED on —
   'landuse:grass': 'recreation', 'landuse:recreation_ground': 'recreation',
   'landuse:allotments': 'recreation', 'landuse:greenery': 'recreation',
@@ -3547,6 +3549,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // ── map-layer: a marker, an overlay or a line — never a block face ──
     'amenity:shelter':          'map-layer: a structure you stand under, not land use',
     'amenity:toilets':          'map-layer: a public toilet is local-map value; a marker',
+    'amenity:dog_toilet':       'map-layer: a fixture (a pet relief patch), like amenity:toilets',
+    'amenity:recycling':        'map-layer: a fixture (a recycling or compost container), like amenity:toilets. ⚠️ Keyed by tag, so a recycling_type=centre LOT reads as a fixture too; none on disk today',
     'amenity:bicycle_parking':  'map-layer: street furniture',
     'amenity:bench':            'map-layer: street furniture',
     'amenity:fountain':         'map-layer: street furniture',
@@ -3556,6 +3560,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     'leisure:bandstand':        'map-layer: a structure in a park',
     'leisure:batting_cage':     'map-layer: a structure beside a pitch',
     'landuse:flowerbed':        'map-layer: a planting bed is a sub-block overlay, not a block',
+    'man_made:compass_rose':    'map-layer: a painted ground marking, a sub-block overlay like landuse:flowerbed',
     'man_made:planter':         'map-layer: street furniture',
     'man_made:courtyard':       'map-layer: a sub-block overlay',
     'man_made:surveillance':    'map-layer: a point fixture',
@@ -3570,6 +3575,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     'man_made:breakwater':      'map-layer (STRUCTURE): huron\'s waterfront — see BRIEF-boulder-revetment.md',
     'man_made:groyne':          'map-layer (STRUCTURE): huron\'s waterfront — see BRIEF-boulder-revetment.md',
     'man_made:storage_tank':    'map-layer (STRUCTURE): an object on a lot, not the lot',
+    'man_made:gasometer':       'map-layer (STRUCTURE): a gas holder, an object on a lot like man_made:storage_tank',
+    'man_made:beacon':          'map-layer (STRUCTURE): a navigation beacon, like man_made:tower',
     'man_made:silo':            'map-layer (STRUCTURE): an object on a lot, not the lot',
     'man_made:tower':           'map-layer (STRUCTURE)',
     'man_made:water_tower':     'map-layer (STRUCTURE)',
@@ -3584,6 +3591,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     'man_made:water_works':     'map-layer (STRUCTURE): the plant, not the industrial land it sits on',
     // ── none: genuinely not a land use and not a thing to draw ──
     'man_made:bridge':          'none: the SKELETON owns grade separation (layer/bridge/tunnel). A bridge is not a land use.',
+    'man_made:tunnel':          'none: the SKELETON owns grade separation, like man_made:bridge. A tunnel is not a land use.',
     'boundary:administrative':  'none: an administrative line, not a physical feature',
     'boundary:census':          'none: a statistical line, not a physical feature',
     'place:islet':              'none: land inside water; the water producer carries its holes',
