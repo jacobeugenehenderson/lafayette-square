@@ -17,7 +17,9 @@
 //      (elevationSources.mjs#terrainLattice), and each one dropped is recorded by size and place.
 //   G. EVERY RING IS SIMPLE AND ① CAN OUTLINE EVERY VERTEX (Boz's rulings, 2026-10-26): coastFile.mjs#ringViolations
 //      finds a bow-tie's crossing, a fold, and a hairpin through the mint's own tileGround.js#outlineCorner at INK_EPS (simple,
-//      yet acute), and nothing on a square; bake-coast asks it of every ring with that predicate before it writes; and
+//      yet acute), and nothing on a square; bake-coast asks it of every ring with that predicate before it writes; settle
+//      moves each vertex through bake-coast#settleInOrder, which clamps a move whose edges sweep over another edge (PTown's
+//      own v1954–v1968, planted); and
 //      every town's coast.json rings have none (read in D).
 //   H. A SENTINEL IS NOT A VALUE: marchingSquares.mjs#wetLoops puts a no-return crossing at the edge midpoint (a diagonal
 //      neck gives distinct points, no touch), a deck crossing ON the deck's own ring (structures.mjs#deckFootprints
@@ -31,7 +33,7 @@
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
 // absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive · ringViolations misses a crossing · the acute predicate dropped from bake-coast · wetLoops interpolates against a
-// sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored · a deck crossing that
+// sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored · settleInOrder's sweep test removed · settle applying its targets without settleInOrder · a deck crossing that
 // meets no ring accepted · the pad read as a value.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -43,7 +45,7 @@ import { readCoast, COAST_FILE, ringViolations } from '../cartograph/coastFile.m
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { wetLoops, KIND } from '../cartograph/marchingSquares.mjs'
 import { terrainLattice } from '../cartograph/elevationSources.mjs'
-import { markSheet, floodFromEdge, wound, flattenedWater, clearances } from '../cartograph/bake-coast.mjs'
+import { markSheet, floodFromEdge, wound, flattenedWater, clearances, settleInOrder } from '../cartograph/bake-coast.mjs'
 import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
@@ -118,7 +120,19 @@ console.log('── G. every ring is simple, and ① can outline every vertex')
   const pin = [[0, 0], [10, 0], [10, 0.2], [5, 0.2], [0, 0.2], [-5, 5]], cl = clearances(pin, 1)
   say(Math.abs(Math.min(...cl[3]) - 0.2) < 1e-9 && /lo = -Math\.min\(step, cl\[k\]\[0\] \/ 2\), hi = Math\.min\(step, cl\[k\]\[1\] \/ 2\)/.test(readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')),
     `settle's reach is half the ring's own clearance: a hairpin leg's vertex sees the other leg ${Math.min(...cl[3]).toFixed(3)} m off (0.200), and settleOnSource brackets by half of it`)
+  // settle's sweep (Boz's ruling, 2026-10-27): PTown's traced ring at v1954–v1968 and where settle sent each vertex (the
+  // 10-27 probe, mm). Applied as given, v1962's edge to v1963 sweeps over v1961 and crosses 1960→1961; in order, clamped.
+  const tr = [[-3448.254, -1911.565], [-3445.11, -1912.763], [-3438.06, -1917.558], [-3431.127, -1916.918], [-3428.13, -1918.134], [-3426.03, -1920.554], [-3425.632, -1924.55], [-3418.612, -1928.545], [-3418.068, -1928.66], [-3418.068, -1923.66], [-3413.068, -1923.66], [-3413.068, -1918.66], [-3408.068, -1918.66], [-3408.068, -1916.308], [-3415.146, -1912.702]]
+  const sent = [[-3448.281, -1911.606], [-3445.186, -1912.893], [-3438.063, -1917.569], [-3431.141, -1917.155], [-3428.212, -1918.249], [-3425.972, -1920.531], [-3425.765, -1924.673], [-3418.66, -1928.633], [-3418.881, -1928.569], [-3418.068, -1923.66], [-3413.068, -1923.66], [-3413.068, -1918.66], [-3408.068, -1918.66], [-3408.074, -1916.315], [-3415.139, -1912.692]]
+  const swept = tr.map(p => p.slice()), sw = settleInOrder(swept, sent.map(p => p.slice()))
+  say(!ringViolations(tr).length && ringViolations(sent).some(v => v.kind === 'cross'), 'control: the traced ring is simple, and the settle targets applied as given cross')
+  say(!ringViolations(swept).length && sw.clamped.length === 1 && sw.clamped[0].at.join() === '-3418.068,-1928.66' && sw.clamped[0].gotM < sw.clamped[0].wantM,
+    `settleInOrder keeps it simple: ${sw.clamped.length} move clamped (want 1, at v1962)${sw.clamped[0] ? `, ${sw.clamped[0].wantM} → ${sw.clamped[0].gotM} m` : ''}, ${ringViolations(swept).length} violation(s)`)
   const src = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
+  // a move whose new edge would pass 0.5 mm from a vertex: closer than the written lattice can keep apart (√2 / CLIP_SCALE)
+  const w = [[0, 0], [10, 0], [10, -5], [5, -0.3], [0, -5]], wm = settleInOrder(w, [[0, -0.599], null, null, null, null])
+  say(wm.clamped.length === 1 && !ringViolations(w).length, `a move ending 0.5 mm from a vertex is clamped (${wm.clamped.length}, want 1): the margin is the lattice's, ${(Math.SQRT2 / CLIP_SCALE * 1000).toFixed(2)} mm`)
+  say(/settleInOrder\(ring, targets\.get\(ring\)\)/.test(src), 'settleOnSource applies every move through settleInOrder')
   say(/ringViolations\(r, acuteAt\)/.test(src) && /outlineCorner\(o, \[\{ to: p \}, \{ to: q \}\], INK_EPS\)/.test(src), 'bake-coast asks ringViolations of every ring, with the mint\'s outlineCorner at INK_EPS, before it writes')
 }
 

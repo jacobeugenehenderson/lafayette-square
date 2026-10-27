@@ -442,7 +442,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
-    settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
+    settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
   })
@@ -460,6 +460,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (islandsDropped.length) console.log(`  ${islandsDropped.length} island(s) holding no terrain node DROPPED, their ground the water's: ${islandsDropped.slice(0, 8).map(d => `${d.m2} m² @(${d.at.join(', ')})`).join(' · ')}${islandsDropped.length > 8 ? ` … +${islandsDropped.length - 8}` : ''}`)
   if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
+  if (settled.sweepClamped.length) console.log(`  SWEEP-CLAMPED: ${settled.sweepClamped.length} settle move(s) cut short so no edge sweeps over a vertex: ${settled.sweepClamped.slice(0, 8).map(c => `${c.wantM}→${c.gotM} m @(${c.at.map(Math.round).join(', ')})`).join(' · ')}${settled.sweepClamped.length > 8 ? ` … +${settled.sweepClamped.length - 8}` : ''}`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
   return out
 }
@@ -468,8 +469,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
  * Bisect every ring vertex off the square's edge along its normal on the real sampler, within ± one trace step, to
  * where lidar − high = 0. In place. A vertex with no sign change in that reach, or on a deck, keeps its traced place.
  * ⭐ BOUNDED BY THE RING'S OWN CLEARANCE (Zob, 2026-10-26: settle closed three spikes simplify left at 5–17°): on each side,
- * the reach is at most HALF the distance along the normal to the ring's nearest non-adjacent edge, so two vertices moving
- * toward each other can never meet or cross. Each vertex so limited is counted (`bounded`).
+ * the reach is at most HALF the distance along the normal to the ring's nearest non-adjacent edge, so a vertex's own PATH
+ * meets no other edge. Each vertex so limited is counted (`bounded`). That bounds the path, not the EDGES: see settleInOrder.
  */
 export function clearances(ring, step) {
   const n = ring.length, G = Math.max(step, 1e-6), cells = new Map(), key = (i, j) => i + ',' + j
@@ -504,7 +505,7 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
       const key = `${Math.floor(ring[k][0] / T)},${Math.floor(ring[k][1] / T)}`
       ;(groups.get(key) || groups.set(key, []).get(key)).push([ring, k, nx / n, nz / n, lo, hi])
     } }
-  const moved = []
+  const moved = [], targets = new Map(rings.map(r => [r, new Array(r.length).fill(null)]))   // applied after every group, in ring order
   let unbracketed = 0, noValue = 0
   for (const [key, items] of groups) {
     const [i, j] = key.split(',').map(Number), m = 2 * step
@@ -517,14 +518,69 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
       if (!(flo * fhi < 0)) { unbracketed++; return null }
       for (let it = 0; it < 30; it++) { const mid = (lo + hi) / 2, fm = f(p[0] + nx * mid, p[1] + nz * mid); if ((fm < 0) === (flo < 0)) { lo = mid; flo = fm } else hi = mid }
       const t = (lo + hi) / 2
-      moved.push(Math.abs(t))
       return [p[0] + nx * t, p[1] + nz * t]
     })
-    items.forEach(([ring, k], q) => { if (next[q]) ring[k] = next[q] })
+    items.forEach(([ring, k], q) => { if (next[q]) targets.get(ring)[k] = next[q] })
     win.length = 0
   }
+  const sweepClamped = []
+  for (const ring of rings) { const s = settleInOrder(ring, targets.get(ring)); moved.push(...s.moved); sweepClamped.push(...s.clamped) }
   moved.sort((x, y) => x - y)
-  return { moved: moved.length, bounded, unbracketed, noValue, p50: moved.length ? moved[moved.length >> 1] : 0, max: moved.length ? moved[moved.length - 1] : 0 }
+  return { moved: moved.length, bounded, unbracketed, noValue, sweepClamped, p50: moved.length ? moved[moved.length >> 1] : 0, max: moved.length ? moved[moved.length - 1] : 0 }
+}
+
+/**
+ * Move each vertex of `ring` to `to[k]` (or leave it, where `to[k]` is null), IN RING ORDER, so each is judged against its
+ * neighbours' SETTLED places. In place.
+ * ⭐ A MOVE IS ADMISSIBLE ONLY IF NO OTHER EDGE MEETS THE TRIANGLES ITS TWO EDGES SWEEP, (p, p′, prev) and (p, p′, next)
+ * (Boz's ruling, 2026-10-27; PTown, 10-27: a vertex moved 0.82 m along a clear normal and its edge to NEXT swept over
+ * PREV). A vertex inside is the ruling's case; an edge through the path is the other, since `clearances` was measured on
+ * the TRACED ring and the neighbours have settled since. An inadmissible move is clamped to the largest admissible fraction (the triangles are nested,
+ * so admissibility only shrinks as the move grows) and COUNTED, by place. "Inside" includes within √2 lattice steps of the
+ * triangle: the ring is written on the 1/CLIP_SCALE lattice, and rounding moves each end by at most half a diagonal.
+ */
+export function settleInOrder(ring, to) {
+  const n = ring.length, margin = Math.SQRT2 / SCALE, moved = [], clamped = []
+  let G = 0
+  for (let k = 0; k < n; k++) if (to[k]) G = Math.max(G, Math.hypot(to[k][0] - ring[k][0], to[k][1] - ring[k][1]))
+  G += margin
+  const cells = new Map(), key = (i, j) => i + ',' + j, cell = (v) => Math.floor(v / G)
+  for (let m = 0; m < n; m++) { const q = key(cell(ring[m][0]), cell(ring[m][1])); if (!cells.has(q)) cells.set(q, []); cells.get(q).push(m) }
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  const segD = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+    const u = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0
+    return Math.hypot(v[0] - a[0] - u * dx, v[1] - a[1] - u * dz) }
+  const inTri = (v, a, b, c) => { const d1 = cr(a, b, v), d2 = cr(b, c, v), d3 = cr(c, a, v)
+    return ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) || Math.min(segD(v, a, b), segD(v, b, c), segD(v, c, a)) <= margin }
+  const cross = (p1, p2, q1, q2) => { const d1 = cr(q1, q2, p1), d2 = cr(q1, q2, p2), d3 = cr(p1, p2, q1), d4 = cr(p1, p2, q2)
+    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0)) }
+  // does edge (s0, s1) meet the swept triangle (p, q, c)? An edge that shares the corner c with it (c's other edge) is judged
+  // by its far end and by the side the vertex sweeps (p, q) alone; it meets the triangle at c by construction.
+  const hits = (s0, s1, p, q, c, shared) => { if (shared) { const far = s0 === shared ? s1 : s0; return inTri(far, p, q, c) || cross(s0, s1, p, q) }
+    return inTri(s0, p, q, c) || inTri(s1, p, q, c) || cross(s0, s1, p, q) || cross(s0, s1, q, c) || cross(s0, s1, c, p) }
+  // every vertex other than k whose edges can meet a swept triangle (a neighbour too: the edge to NEXT can sweep over PREV):
+  // each triangle lies within the move (+ margin, ≤ G) of its OLD edge, so walk the cells along both old edges. Cells are keyed at the TRACED place and a settled
+  // vertex is at most G from it: a sample lies within G/2 of every point of the edge, so three cells of slack cover both.
+  const others = (k) => { const out = new Set(), a = (k - 1 + n) % n, b = (k + 1) % n
+    for (const e of [ring[a], ring[b]]) { const L = Math.hypot(e[0] - ring[k][0], e[1] - ring[k][1]), steps = Math.ceil(L / G)
+      for (let s = 0; s <= steps; s++) { const ci = cell(ring[k][0] + (e[0] - ring[k][0]) * s / (steps || 1)), cj = cell(ring[k][1] + (e[1] - ring[k][1]) * s / (steps || 1))
+        for (let i = ci - 3; i <= ci + 3; i++) for (let j = cj - 3; j <= cj + 3; j++) for (const m of cells.get(key(i, j)) || []) if (m !== k) out.add(m) } }
+    return out }
+  for (let k = 0; k < n; k++) { if (!to[k]) continue
+    const p = ring[k], prev = ring[(k - 1 + n) % n], next = ring[(k + 1) % n], want = Math.hypot(to[k][0] - p[0], to[k][1] - p[1])
+    const at = (f) => [p[0] + (to[k][0] - p[0]) * f, p[1] + (to[k][1] - p[1]) * f]
+    const near = [...others(k)]
+    const a = (k - 1 + n) % n, b = (k + 1) % n, edges = new Set()
+    for (const m of near) for (const e of [m, (m - 1 + n) % n]) if (e !== a && e !== k) edges.add(e)   // not the two moving edges
+    const ok = (f) => { const q = at(f); for (const e of edges) { const s0 = ring[e], s1 = ring[(e + 1) % n]
+      if (hits(s0, s1, p, q, prev, e === (a - 1 + n) % n ? prev : null) || hits(s0, s1, p, q, next, e === b ? next : null)) return false }
+      return true }
+    let f = 1
+    if (!ok(1)) { let lo = 0, hi = 1; for (let it = 0; it < 30; it++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid } f = lo
+      clamped.push({ at: p.map(v => +v.toFixed(3)), wantM: +want.toFixed(4), gotM: +(want * f).toFixed(4) }) }
+    if (f > 0) { ring[k] = at(f); moved.push(want * f) }
+  }
+  return { moved, clamped }
 }
 
 /** The refusal's measurement: the flattened water's level under OSM's water (its 1 cm mode) against high water there. */
