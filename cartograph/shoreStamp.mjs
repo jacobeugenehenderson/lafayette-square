@@ -16,6 +16,18 @@ import { waterLevels as levelsOf } from './waterLevel.mjs'
 // the kept rock (bake-terrain#rockCells: breakwaters and groynes, ruled stone) apart. s = the bed's own gradient two to four cells seaward (median over the ring), capped at
 // (HIGH − LOW) / 2 cells where HIGH > LOW. ⛔ s ≤ 0 on a ring REFUSES by name. Land outside ①'s water is land at every
 // level: nothing beyond these nodes is touched. The stamped nodes are recorded (row runs) for the contour gate.
+/** The crossed node nearest (i, j) within four cells, Euclidean over the whole 9 × 9 square (Zob, 2026-10-26: a diagonal
+ *  at three cells is farther than a straight one at four), as { ri, dist }, or null. It names the ring a bed node's slope
+ *  sample belongs to. */
+export function nearestCrossed(best, i, j, width, height, sx, sz) {
+  let near = null
+  for (let dj = -4; dj <= 4; dj++) for (let di = -4; di <= 4; di++) {
+    if (j + dj < 0 || i + di < 0 || i + di >= width || j + dj >= height) continue
+    const b2 = best.get((j + dj) * width + (i + di)), dist = Math.hypot(di * sx, dj * sz)
+    if (b2 && b2.crossed && (!near || dist < near.dist)) near = { ri: b2.ri, dist } }
+  return near
+}
+
 export function stampCoast(normalized, width, height, bounds, face, bb, mask, water, rock = null) {
   const L = levelsOf(water)
   const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1), cell = Math.min(sx, sz)
@@ -53,12 +65,7 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   for (let j = 0; j < height; j++) for (let i = 0; i < width; i++) {
     const k = j * width + i
     if (!mask[k] || best.has(k)) continue
-    // the nearest stamped node within four cells tells this node's ring and distance
-    let near = null
-    for (let r = 2; r <= 4 && !near; r++) for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
-      if (j + dj < 0 || i + di < 0 || i + di >= width || j + dj >= height) continue
-      const b2 = best.get((j + dj) * width + (i + di)), dist = Math.hypot(di * sx, dj * sz)
-      if (b2 && b2.crossed && (!near || dist < near.dist)) near = { ri: b2.ri, dist } }
+    const near = nearestCrossed(best, i, j, width, height, sx, sz)
     if (near && near.dist > 2 * cell) slope[near.ri].push((L.highAt(X(i), Z(j)) - normalized[k]) / near.dist)
   }
   // ⭐ AN ISLAND (a hole, wound negative) is a shore of the water that holds it. Its own bed gives its slope; an island with

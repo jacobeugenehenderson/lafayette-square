@@ -15,13 +15,14 @@
 //      ran, meets HIGH; the largest miss is printed against the field's cell. NOT CHECKED until a terrain carries it.
 // MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
 // the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench) · the mask
-// filled per ring (an island read as water) · the island's borrowed slope dropped (it refuses).
+// filled per ring (an island read as water) · the island's borrowed slope dropped (it refuses) · the nearest search
+// stopping at the first radius with a hit, or at the first hit in scan order.
 //
 //   node checks/claims-the-shore-meets-the-field-at-high.mjs
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
-import { stampCoast, deckHeights } from '../cartograph/shoreStamp.mjs'
+import { stampCoast, deckHeights, nearestCrossed } from '../cartograph/shoreStamp.mjs'
 import { waterWithoutDecks } from '../cartograph/structures.mjs'
 import { maskOf, waterFace } from '../cartograph/coastFile.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
@@ -147,6 +148,11 @@ console.log('── 7. islands: the stamp runs round each one')
   let t = false
   try { stampCoast(field(), W, H, B, [...face, wnd([[10, 10], [20, 10], [20, 20], [10, 20]], -1)], bb, mask, lake(0)) } catch (e) { t = /inside no water ring/.test(e.message) }
   say(t, 'an island inside no water ring REFUSES')
+  // d: a bed node's sample goes to the NEAREST crossed node: ring 0 on the diagonal three cells out (4.24 cells), ring 1
+  // straight four cells out (4.00), and ring 0 also first in scan order
+  const bst = new Map([[(10 - 3) * 21 + (10 - 3), { ri: 0, crossed: true }], [10 * 21 + 14, { ri: 1, crossed: true }]])
+  const nc = nearestCrossed(bst, 10, 10, 21, 21, 5, 5)
+  say(nc?.ri === 1 && Math.abs(nc.dist - 20) < 1e-9, `the slope sample goes to the Euclidean nearest crossed node (ring ${nc?.ri} at ${nc?.dist?.toFixed(2)} m, not ring 0 at 21.21 m)`)
 }
 console.log('── 5. each town whose terrain carries the stamp')
 let towns = 0

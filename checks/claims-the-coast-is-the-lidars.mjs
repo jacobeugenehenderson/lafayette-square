@@ -11,9 +11,10 @@
 //   C. THE WINDING. bake-coast#wound gives outers positive and holes negative signed area, and in every town's
 //      coast.json each outer is positive and each hole negative (a nonzero fill in the mint then reads a hole as a hole).
 //   D. PER TOWN WITH A coast.json: the deck footprints hold no land (deck ∖ water ≤ the trace's pixel × the deck's
-//      perimeter), and where map.json was poured from this coast, ①'s waterRings ARE coast.json's rings; and THE ISLAND
-//      FLOOR (Jacob 2026-10-26): it is one terrain cell's area (elevationSources.mjs TERRAIN_STEP_M², read, never typed),
-//      every hole kept is at least that, and each one dropped is recorded by size and place.
+//      perimeter); where map.json was poured from this coast, ①'s waterRings ARE what the mint was given:
+//      structures.mjs#waterWithoutDecks(coast.json's rings and arcs, map.json's streetDecks), recomputed here (Zob); and
+//      THE ISLAND FLOOR (Boz's ruling 2026-10-26): every hole kept holds a node of the terrain's own lattice
+//      (elevationSources.mjs#terrainLattice), and each one dropped is recorded by size and place.
 //   E. THE DATUM DOES NOT DEPEND ON THE LINE (Boz's ruling (B)): bake-terrain takes y = 0 from coast.json `flattened`,
 //      which bake-coast#flattenedWater finds on the flood sheet before any line is traced (decks excluded), and keeps no
 //      histogram of its own; so moving the coast by any offset cannot move y = 0.
@@ -22,7 +23,7 @@
 //   node checks/claims-the-coast-is-the-lidars.mjs [--scene=<id> …]
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
-// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied.
+// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -30,7 +31,7 @@ import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
 import { readCoast, COAST_FILE } from '../cartograph/coastFile.mjs'
-import { TERRAIN_STEP_M } from '../cartograph/elevationSources.mjs'
+import { terrainLattice } from '../cartograph/elevationSources.mjs'
 import { markSheet, floodFromEdge, wound, flattenedWater } from '../cartograph/bake-coast.mjs'
 import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
@@ -58,6 +59,15 @@ say(/readCoast\(CLEAN_DIR, _bb,/.test(readFileSync(join(ROOT, 'cartograph/derive
   say(threw, 'readCoast refuses a coast traced on another square')
   writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: false, why: 'inland', square: bb }))
   say(readCoast(d, bb, 'check').coast === false, 'readCoast reads an inland verdict as no coast')
+  const O = [[-10, -10], [10, -10], [10, 10], [-10, 10]], Hn = [[-2, -2], [-2, 2], [2, 2], [2, -2]]   // outer +, hole −
+  const wrote = (water) => writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: true, square: bb, water, arcs: [] }))
+  wrote([{ outer: O, holes: [Hn] }])
+  say(readCoast(d, bb, 'check').holes === 1, 'readCoast takes an outer wound positive with its island wound negative')
+  for (const [why, water] of [['a hole wound positive', [{ outer: O, holes: [[...Hn].reverse()] }]], ['an outer wound negative', [{ outer: [...O].reverse(), holes: [] }]]]) {
+    wrote(water); threw = false
+    try { readCoast(d, bb, 'check') } catch (e) { threw = /not wound/.test(e.message) }
+    say(threw, `readCoast REFUSES ${why} (①'s nonzero fill reads the sign)`)
+  }
   rmSync(d, { recursive: true, force: true })
 }
 
@@ -131,9 +141,15 @@ for (const scene of scenes) {
   if (!doc.coast) continue
   const outersOk = doc.water.every(b => signed(b.outer) > 0), holesOk = doc.water.every(b => b.holes.every(h => signed(h) < 0))
   say(outersOk && holesOk, `${scene}: every water outer is positive and every hole negative`)
-  const holes = doc.water.flatMap(b => b.holes), small = holes.filter(h => Math.abs(signed(h)) < TERRAIN_STEP_M ** 2)
-  say(doc.islandFloorM2 === TERRAIN_STEP_M ** 2 && Array.isArray(doc.islandsDropped) && !small.length,
-    `${scene}: the island floor is one terrain cell (${doc.islandFloorM2} m²) — ${holes.length} island(s) kept, ${small.length} under it; ${doc.islandsDropped?.length ?? 'NOT RECORDED'} dropped, each named`)
+  const lat = terrainLattice(JSON.parse(readFileSync(join(dir, 'neighborhood_boundary.json'), 'utf8')))
+  const inR = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  const holdsNode = (h) => { const xs = h.map(p => p[0]), zs = h.map(p => p[1])
+    for (let j = Math.max(0, Math.ceil((Math.min(...zs) - lat.bounds.minZ) / lat.sz)); j < lat.height && lat.Z(j) <= Math.max(...zs); j++)
+      for (let i = Math.max(0, Math.ceil((Math.min(...xs) - lat.bounds.minX) / lat.sx)); i < lat.width && lat.X(i) <= Math.max(...xs); i++) if (inR(lat.X(i), lat.Z(j), h)) return true
+    return false }
+  const holes = doc.water.flatMap(b => b.holes), empty = holes.filter(h => !holdsNode(h))
+  say(doc.islandFloor?.rule === 'holds a terrain node' && Array.isArray(doc.islandsDropped) && !empty.length,
+    `${scene}: every island kept holds a terrain node — ${holes.length} kept, ${empty.length} holding none${empty.length ? ` (first at ${empty[0][0].map(Math.round).join(', ')})` : ''}; ${doc.islandsDropped?.length ?? 'NOT RECORDED'} dropped, each named`)
   const osm = JSON.parse(readFileSync(join(dir, 'raw/osm.json'), 'utf8'))
   const decks = deckFootprints(osm.ground)
   if (decks.paths.length) {
@@ -150,12 +166,14 @@ for (const scene of scenes) {
     const map = JSON.parse(readFileSync(mp, 'utf8'))
     const proto = map.layers?.ribbons?.protopolygon || null   // derive.js freezes ① here
     const wr = proto?.waterRings
-    const rings = doc.water.flatMap(b => [b.outer, ...b.holes])
+    const sd = map.layers?.ribbons?.streetDecks
     if (!wr) console.log(`  (map.json carries no protopolygon waterRings — poured before this coast; ①'s rings not compared)`)
+    else if (!Array.isArray(sd)) console.log(`  ⚠️ ${scene}: map.json carries no streetDecks — poured before the decks; ①'s rings not compared (▶ the Bake)`)
     else {
-      const same = wr.length === rings.length && wr.every((r, k) => r.length === rings[k].length && r.every((p, i) => Math.abs(p[0] - rings[k][i][0]) < 1e-5 && Math.abs(p[1] - rings[k][i][1]) < 1e-5))
-      if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are coast.json's`)
-      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not coast.json's ${rings.length} — the town has not been re-poured from this coast (▶ the Bake)`)
+      const given = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring)).rings
+      const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
+      if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)
+      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from this coast (▶ the Bake)`)
     }
   }
 }

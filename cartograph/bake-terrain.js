@@ -51,7 +51,7 @@ import { authoredWater, waterRecord, igld85ToNavd88 } from './waterDatums.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels as levelsOf } from './waterLevel.mjs'
 import clipperLib from 'clipper-lib'
-import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, demVerticalDatum, verticalDatumOf, ABOVE_WATER_M, TERRAIN_STEP_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, demVerticalDatum, verticalDatumOf, ABOVE_WATER_M, TERRAIN_STEP_M, terrainLattice } from './elevationSources.mjs'
 
 // ⛔ No default on a WRITE path: the one resolver names the town (--scene= or CARTOGRAPH_SCENE), or refuses.
 const SCENE = requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -78,7 +78,6 @@ function localToWgs84(x, z) {
   return [_geo.lon + x / _geo.lonToMeters, _geo.lat - z / _geo.latToMeters]
 }
 
-const STENCIL_BUFFER_M = 50  // ⚠️ a constant margin on the disc: owned by BRIEF-the-disc-is-one-source §3 (the height extent from the one module), printed as a dated exception by claims-radius-has-one-home
 
 function wgs84ToLocal(lon, lat) {
   return [(lon - _geo.lon) * _geo.lonToMeters, (_geo.lat - lat) * _geo.latToMeters]
@@ -403,42 +402,14 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
            rock: { cells: rock.size, from: 'structures.mjs stoneStructures (mapped breakwaters/groynes) × the lidar above the water', runs: rock.size ? rowRuns(k => rock.has(k)) : [] } }
 }
 
-// ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
-// are the other two). sceneStencil.js's header claimed it was the only bake-side
-// one; that was false and is now corrected there. They remain three call sites —
-// collapsing them is open work.
-// ⛔ GEOMETRY DOES NOT READ THE FADE (2026-10-06): the terrain's extent is the radius + its buffer for every town.
-// It read `fade.outer + buffer` when a band was set, else the bare radius; `fade.outer` IS the radius, so every
-// fade-carrying town is unchanged, and the band's presence no longer decides how much terrain is baked.
-function deriveStencilBbox(boundary) {
-  const { boundary: poly, center, radius } = boundary
-  const targetR = radius + STENCIL_BUFFER_M
-  const scale = targetR / radius
-  const [cx, cz] = center
-  let mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity
-  for (const [x, z] of poly) {
-    const sx = cx + (x - cx) * scale
-    const sz = cz + (z - cz) * scale
-    if (sx < mnx) mnx = sx
-    if (sx > mxx) mxx = sx
-    if (sz < mnz) mnz = sz
-    if (sz > mxz) mxz = sz
-  }
-  return {
-    minX: Math.floor(mnx), maxX: Math.ceil(mxx),
-    minZ: Math.floor(mnz), maxZ: Math.ceil(mxz),
-  }
-}
 
 
 
 async function main() {
   const boundary = JSON.parse(fs.readFileSync(BOUNDARY_PATH, 'utf8'))
-  const bounds = deriveStencilBbox(boundary)
+  const { bounds, width, height } = terrainLattice(boundary)
   const spanX = bounds.maxX - bounds.minX
   const spanZ = bounds.maxZ - bounds.minZ
-  const width  = Math.ceil(spanX / TERRAIN_STEP_M) + 1
-  const height = Math.ceil(spanZ / TERRAIN_STEP_M) + 1
   const total = width * height
 
   console.log(`Bake terrain  scene=${SCENE}  bbox=${JSON.stringify(bounds)}  span=${spanX}×${spanZ}m`)

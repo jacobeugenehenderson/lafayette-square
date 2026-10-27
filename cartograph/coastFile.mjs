@@ -13,6 +13,7 @@ export const COAST_FILE = 'coast.json'
  * `rings` are every body's outer (positive signed area) and its holes (negative), in order; `holes` counts the latter.
  * ⛔ No coast.json REFUSES by name — never OSM's coast in its place (BRIEF-the-shore-is-one-line §1: no fallback).
  * ⛔ A coast traced on another square (a re-fetch since) REFUSES: its arcs end on edges that are no longer the frame.
+ * ⛔ An outer not wound positive, or a hole not wound negative, REFUSES: ①'s nonzero fill reads the sign.
  * @param cleanDir  cartograph/data/<scene>/clean
  * @param bb        the frame the reader closes against (geography.mjs#localBB), compared to the square traced on
  */
@@ -27,7 +28,14 @@ export function readCoast(cleanDir, bb, who) {
   if (!doc.coast) return { coast: false, why: doc.why, doc }
   const rings = [], arcs = doc.arcs || []
   let holes = 0
-  for (const b of doc.water || []) { rings.push(b.outer); for (const h of b.holes || []) { rings.push(h); holes++ } }
+  // ⛔ THE SIGN IS THE ISLAND (Zob, 2026-10-26): ① subtracts water nonzero, so a hole wound positive sums to +2 inside its
+  // outer and reads as WATER, silently. Every reader downstream leans on it, so it is refused here, at the one door.
+  const sa = (r) => r.reduce((t, q, i) => { const n = r[(i + 1) % r.length]; return t + q[0] * n[1] - n[0] * q[1] }, 0)
+  ;(doc.water || []).forEach((b, bi) => {
+    if (!(sa(b.outer) > 0)) throw new Error(`[${who}] ⛔ ${p}: water body ${bi}'s outer is not wound positive — ① would read it as land. ▶ re-run bake-coast`)
+    for (const h of b.holes || []) if (!(sa(h) < 0)) throw new Error(`[${who}] ⛔ ${p}: an island of water body ${bi} (at ${h[0].map(Math.round).join(', ')}) is not wound negative — ① would read it as water. ▶ re-run bake-coast`)
+    rings.push(b.outer); for (const h of b.holes || []) { rings.push(h); holes++ }
+  })
   return { coast: true, rings, holes, arcs, doc }
 }
 

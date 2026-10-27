@@ -24,6 +24,44 @@ export const ABOVE_WATER_M = 0.005
  *  before tracing the line at the source's own pixel. One copy, so the two cannot disagree about the coarse ground. */
 export const TERRAIN_STEP_M = 5
 
+const STENCIL_BUFFER_M = 50  // ⚠️ a constant margin on the disc: owned by BRIEF-the-disc-is-one-source §3 (the height extent from the one module), printed as a dated exception by claims-radius-has-one-home
+
+// ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
+// are the other two). sceneStencil.js's header claimed it was the only bake-side
+// one; that was false and is now corrected there. They remain three call sites —
+// collapsing them is open work.
+// ⛔ GEOMETRY DOES NOT READ THE FADE (2026-10-06): the terrain's extent is the radius + its buffer for every town.
+// It read `fade.outer + buffer` when a band was set, else the bare radius; `fade.outer` IS the radius, so every
+// fade-carrying town is unchanged, and the band's presence no longer decides how much terrain is baked.
+function deriveStencilBbox(boundary) {
+  const { boundary: poly, center, radius } = boundary
+  const targetR = radius + STENCIL_BUFFER_M
+  const scale = targetR / radius
+  const [cx, cz] = center
+  let mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity
+  for (const [x, z] of poly) {
+    const sx = cx + (x - cx) * scale
+    const sz = cz + (z - cz) * scale
+    if (sx < mnx) mnx = sx
+    if (sx > mxx) mxx = sx
+    if (sz < mnz) mnz = sz
+    if (sz > mxz) mxz = sz
+  }
+  return {
+    minX: Math.floor(mnx), maxX: Math.ceil(mxx),
+    minZ: Math.floor(mnz), maxZ: Math.ceil(mxz),
+  }
+}
+
+/** ⭐ THE TERRAIN'S LATTICE, ONE HOME (moved from bake-terrain.js, 2026-10-26): its bounds and node counts, so bake-terrain
+ *  samples on it and bake-coast asks it whether an island holds a node (Boz's ruling: the field's own test). */
+export function terrainLattice(boundary) {
+  const bounds = deriveStencilBbox(boundary)
+  const width = Math.ceil((bounds.maxX - bounds.minX) / TERRAIN_STEP_M) + 1, height = Math.ceil((bounds.maxZ - bounds.minZ) / TERRAIN_STEP_M) + 1
+  const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1)
+  return { bounds, width, height, X: (i) => bounds.minX + i * sx, Z: (j) => bounds.minZ + j * sz, sx, sz }
+}
+
 export const NAVD88 = 5103   // EPSG vertical datum code
 /** A raster's vertical datum from its own geokeys: 'NAVD88', 'IGLD85', or null (unknown — the caller refuses). */
 export function verticalDatumOf(S) {

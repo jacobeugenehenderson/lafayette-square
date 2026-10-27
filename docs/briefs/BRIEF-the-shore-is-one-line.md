@@ -89,7 +89,7 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
    low water from the lidar?) before building.
 5. **Islands — BUILT 2026-10-26, brought forward (Jacob: "yes river is lake, build islands with the floor").** An island is a
    hole in ①'s water and a closed shore arc. Every filled draw takes the face as holed polygons (`coastFile.mjs#faceAsPolygons`).
-   Holes under one terrain cell are dropped, each named in coast.json `islandsDropped`. ▶ `claims-the-water-is-one-polygon` §0,
+   An island holding no terrain node is dropped (Boz's ruling), each named in coast.json `islandsDropped`. ▶ `claims-the-water-is-one-polygon` §0,
    `claims-the-shore-meets-the-field-at-high` §7, `claims-the-coast-is-the-lidars` D.
 6. **Later, its own commit:** rim §5's water BED stamped with ① (C8), and water to the bb (C1a, disc §2c), are the shoreline
    project's tail. Sequence them; don't fold them into 1–5 unless they fall out.

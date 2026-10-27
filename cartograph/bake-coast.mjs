@@ -51,7 +51,7 @@ import { CARTOGRAPH_DIR } from './config.js'
 import { requireExplicitMap } from './scene.js'
 import { writeIfChanged } from './io.js'
 import { geographyFor, projectorOf, metresPerDegree, localBB } from './geography.mjs'
-import { elevationSpecs, openRasters, readWindow, rasterToGrid, sampleSources, inCoverage, pixelMetres, demVerticalDatum, TERRAIN_STEP_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, readWindow, rasterToGrid, sampleSources, inCoverage, pixelMetres, demVerticalDatum, TERRAIN_STEP_M, terrainLattice } from './elevationSources.mjs'
 import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels } from './waterLevel.mjs'
 import { wetLoops } from './marchingSquares.mjs'
@@ -280,7 +280,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   for (const f of ['geography.json', 'neighborhood_boundary.json', 'raw/osm.json'])
     if (!fs.existsSync(join(mapDir, f))) throw new Error(`⛔ bake-coast: ${scene} has no ${f}. Fetch the town first.`)
   const read = (f) => JSON.parse(fs.readFileSync(join(mapDir, f), 'utf8'))
-  const geo = geographyFor(scene), disc = discOf(read('neighborhood_boundary.json'), 'bake-coast'), osm = read('raw/osm.json')
+  const geo = geographyFor(scene), nb = read('neighborhood_boundary.json'), disc = discOf(nb, 'bake-coast'), osm = read('raw/osm.json')
   const { lonToM, latToM } = metresPerDegree(geo, 'bake-coast')
   const toLocal = projectorOf(geo)
   const toLL = (x, z) => [geo.lon + x / lonToM, geo.lat - z / latToM]
@@ -370,12 +370,18 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const water = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, [...clip(ClipType.ctDifference, sheet, band), ...fineParts], null), square)
   const minM2 = (2 * fine) ** 2
   const { bodies, hollows } = bodiesAtEdge(water, R, minM2)
-  // ⭐ ISLANDS SMALLER THAN ONE TERRAIN CELL ARE DROPPED (Jacob, 2026-10-26: "build islands with the floor"): the field is
-  // TERRAIN_STEP_M square, so it cannot carry a shore around less than one cell's area. Derived from the field, never typed;
+  // ⭐ AN ISLAND IS KEPT IFF IT HOLDS A TERRAIN NODE (Jacob 2026-10-26, "build islands with the floor"; Boz's ruling, "the
+  // field can't show it"): the field is drawn from its nodes, so an island holding none would be sunk below HIGH by the
+  // ramp while ① drew land there. The lattice is the terrain's own (elevationSources.mjs#terrainLattice), never typed;
   // each one dropped is COUNTED and NAMED (coast.json islandsDropped), and its ground is the water's.
-  const islandFloorM2 = TERRAIN_STEP_M * TERRAIN_STEP_M, islandsDropped = []
-  for (const bd of bodies) bd.holes = bd.holes.filter(h => { const a = ringArea(h); if (a >= islandFloorM2) return true
-    let cx = 0, cz = 0; for (const p of h) { cx += p[0]; cz += p[1] } islandsDropped.push({ m2: +a.toFixed(1), at: [Math.round(cx / h.length), Math.round(cz / h.length)] }); return false })
+  const lat = terrainLattice(nb), islandsDropped = []
+  const holdsNode = (h) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+    for (const [x, z] of h) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) }
+    for (let j = Math.max(0, Math.ceil((z0 - lat.bounds.minZ) / lat.sz)); j < lat.height && lat.Z(j) <= z1; j++)
+      for (let i = Math.max(0, Math.ceil((x0 - lat.bounds.minX) / lat.sx)); i < lat.width && lat.X(i) <= x1; i++) if (inRing(lat.X(i), lat.Z(j), h)) return true
+    return false }
+  for (const bd of bodies) bd.holes = bd.holes.filter(h => { if (holdsNode(h)) return true
+    let cx = 0, cz = 0; for (const p of h) { cx += p[0]; cz += p[1] } islandsDropped.push({ m2: +ringArea(h).toFixed(1), at: [Math.round(cx / h.length), Math.round(cz / h.length)] }); return false })
   if (!bodies.length) throw new Error(`⛔ bake-coast: ${scene} — no ground below high water (${levels.highName}) reaches the fetched square's edge, so the lidar draws no coast, and OSM draws ${osmWater.rings.length} water ring(s). ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
 
   // ── THE VERIFIER: OSM's water and the lidar's must agree, at a majority ─────────────────────────────────────────
@@ -407,7 +413,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     dem: vd, gridM: G, fineM: +fine.toFixed(3),
     flattened,
     water: simple,
-    arcs, islands, islandFloorM2, islandsDropped,
+    arcs, islands, islandFloor: { rule: 'holds a terrain node', lattice: { bounds: lat.bounds, width: lat.width, height: lat.height } }, islandsDropped,
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
@@ -426,7 +432,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   console.log(`  THE WATER AS FLOWN: ${(100 * out.guard.share).toFixed(1)}% of ${out.guard.rimCells.toLocaleString()} cells bordering the open water stand above high water${out.guard.gapM != null ? ` (median ${out.guard.gapM.toFixed(2)} m above)` : ''} — the line is high water`)
   if (noValue) console.log(`  ${noValue.toLocaleString()} fine sample(s) along the line had no lidar value — no return traced as water, no coverage as dry`)
   if (hollows.length) console.log(`  ${hollows.length} hollow(s) below the line that the water does not reach (${T.hollowHa} ha) — dry, by the coast rule`)
-  if (islandsDropped.length) console.log(`  ${islandsDropped.length} island(s) under one terrain cell (${islandFloorM2} m²) DROPPED, their ground the water's: ${islandsDropped.slice(0, 8).map(d => `${d.m2} m² @(${d.at.join(', ')})`).join(' · ')}${islandsDropped.length > 8 ? ` … +${islandsDropped.length - 8}` : ''}`)
+  if (islandsDropped.length) console.log(`  ${islandsDropped.length} island(s) holding no terrain node DROPPED, their ground the water's: ${islandsDropped.slice(0, 8).map(d => `${d.m2} m² @(${d.at.join(', ')})`).join(' · ')}${islandsDropped.length > 8 ? ` … +${islandsDropped.length - 8}` : ''}`)
   if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
