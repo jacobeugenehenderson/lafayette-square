@@ -75,7 +75,7 @@ const READERS = {
   'checks/claims-the-stripe-lies-on-its-road.mjs': 'drawn', 'checks/claims-the-drawn-raw-is-one-function.mjs': 'drawn',
   'checks/claims-the-shore-meets-the-field-at-high.mjs': 'drawn',
   'checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs': 'field-diagnostic',
-  'checks/claims-the-shore-is-closed.mjs': 'field-diagnostic',
+  'checks/claims-the-shore-is-closed.mjs': 'drawn',
   'checks/claims-the-shore-says-what-it-is-made-of.mjs': 'water', 'checks/claims-a-level-body-has-one-surface.mjs': 'water',
   'checks/claims-the-water-is-one-polygon.mjs': 'xz', 'checks/claims-the-horizon-takes-the-towns-cover.mjs': 'xz',
   'checks/claims-the-ground-tiles-without-a-gap.mjs': 'xz', 'checks/claims-the-ground-is-painted-once.mjs': 'xz',

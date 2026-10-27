@@ -14,7 +14,8 @@
  *     The two meet with no step because the ground is ONE conformed mesh — that half of the
  *     guarantee is `claims-the-ground-has-no-cross-polygon-t-junctions.mjs`, not restated here.
  *   · nothing under the water, and the land's edge stands above the water (draped the way the
- *     GPU drapes it: terrain × the town's exag) → OPEN, by that height: the gap.
+ *     GPU drapes it: each vertex's DRAWN raw — its pin, else the terrain — × the town's exag, plus its own y) → OPEN,
+ *     by that height: the gap.
  *   · nothing under the water, and the land's edge is at or below the water → the water
  *     covers the meeting; closed, counted as `awash`.
  *   · nothing on the land side → OPEN in plan: the drawing has a hole at the shore.
@@ -30,8 +31,9 @@
  * Stations on the disc rim are the EDGE OF THE DRAWING (`project_neighborhood_is_a_compound_shape`),
  * not a shore, and are counted as such.
  *
- * ⭐ READS THE ARTIFACTS: water groups by the runtime's own `isWaterGroupId`, the drape by
- * `terrainCommon`'s sampler at the slab's own exag, the disc from `ground.json#stencil`.
+ * ⭐ READS THE ARTIFACTS: water groups by the runtime's own `isWaterGroupId`, the drape by drawnGround.js#drawnRawOf
+ * over `terrainCommon`'s sampler at the slab's own exag, the disc from `ground.json#stencil`. A bridge's paint lies ON the
+ * water (Boz's ruling (iv)): it is judged proud by its drawn raw against the level, never by its slot just above the sheet.
  * ⛔ A slab that draws water but carries no terrain FAILS — nothing can say how high the land stands.
  * ⚠️ Water drawn OUTSIDE the slab (Lafayette Square's pond, `LafayettePark.jsx`) is not walked
  * here, and the check says so by name rather than passing it.
@@ -43,6 +45,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { isWaterGroupId } from '../src/components/waterMaterial.js'
 import { makeElevationSampler, DEFAULT_V_EXAG } from '../src/lib/terrainCommon.js'
+import { drawnRawOf } from '../src/lib/drawnGround.js'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
@@ -87,7 +90,7 @@ for (const dir of dirs) {
   }
   const tb = readFileSync(join(dir, 'terrain.bin'))
   const exag = readJSON(join(dir, 'scene.json'))?.terrainExag ?? DEFAULT_V_EXAG
-  const lift = makeElevationSampler({ ...tj, data: new Float32Array(tb.buffer.slice(tb.byteOffset, tb.byteOffset + tb.byteLength)) }, exag).getElevation
+  const field = makeElevationSampler({ ...tj, data: new Float32Array(tb.buffer.slice(tb.byteOffset, tb.byteOffset + tb.byteLength)) }, exag)
   const STEP = Math.min((tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1))
   const ACROSS = STEP / 8   // how far across the edge to look: well inside the thinnest triangle beside it
 
@@ -100,9 +103,12 @@ for (const dir of dirs) {
   for (const g of m.groups) {
     if (water.includes(g)) continue
     const [P, I] = view(g)
-    const drape = i => P[i * 3 + 1] + lift(P[i * 3], P[i * 3 + 2])
+    // ⭐ the DRAWN ground (src/lib/drawnGround.js#drawnRawOf): a vertex's own pin (the coast at HIGH, a bridge lifted), else the
+    // field there, × exag + its own y. ⛔ Never the field alone: a pinned vertex is not where the field is.
+    const R = drawnRawOf(m, g, ab, field.getElevationRaw)
+    const drape = i => P[i * 3 + 1] + R[i] * exag
     for (let t = 0; t < I.length; t += 3) {
-      const v = [I[t], I[t + 1], I[t + 2]].map(i => [P[i * 3], P[i * 3 + 2], drape(i)])
+      const v = [I[t], I[t + 1], I[t + 2]].map(i => [P[i * 3], P[i * 3 + 2], drape(i), R[i] * exag])
       const k = tris.push({ v, id: g.id }) - 1
       const xs = v.map(p => p[0]), zs = v.map(p => p[1])
       for (let cx = Math.floor(Math.min(...xs) / CELL); cx <= Math.floor(Math.max(...xs) / CELL); cx++)
@@ -123,8 +129,8 @@ for (const dir of dirs) {
       const w0 = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (z - c[1])) / d
       const w1 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (z - c[1])) / d
       if (w0 < 0 || w1 < 0 || w0 + w1 > 1) continue
-      const y = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * c[2]
-      if (!best || y > best.y) best = { y, id: tris[k].id, v: tris[k].v }
+      const y = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * c[2], raw = w0 * a[3] + w1 * b[3] + (1 - w0 - w1) * c[3]
+      if (!best || y > best.y) best = { y, raw, id: tris[k].id, v: tris[k].v }
     }
     return best
   }
@@ -219,10 +225,14 @@ for (const dir of dirs) {
         // the draped triangle takes its height from its vertices, so it is the rock's if the sample or any vertex is
         // The waterline rule is HIGH's: at LOW, flats standing out of the drawn water are the tide, not a defect.
         const hi = sheet(dx, dz, 1)
+        // ⭐ A BRIDGE'S PAINT LIES ON THE WATER (Boz's ruling (iv), 2026-10-27): drawn at its raw (lifted to HIGH by the pin) in its
+        // own slot just above the sheet, so it is judged by its RAW against the level, never by the slot's offset. Every other
+        // group by its whole height.
+        const top = deep && deep.id === 'bridge' ? WY + deep.raw : deep?.y
         // Proud beyond the level's own uncertainty (the datum's ±): a floor capped AT the high level (bake-terrain) is
         // the level meeting the ground, and its sub-centimetre interpolation is no defect.
-        if (deep && deep.y > hi + floatTol && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
-        else if (deep && deep.y > hi + floatTol) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - hi, id: deep.id } }
+        if (deep && top > hi + floatTol && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
+        else if (deep && top > hi + floatTol) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: top - hi, id: deep.id } }
         if (land && sheet(x, z, 1) - land.y > floatTol) { const h = sheet(x, z, 1) - land.y; floats.len += seg; floats.max = Math.max(floats.max, h); floats.first ||= { x, z, h, id: land.id } }
         // No bare space at EITHER level: with nothing drawn under the water, the land's edge must not stand above it.
         let gap
@@ -267,7 +277,8 @@ for (const dir of dirs) {
         for (let q = 0; q < 6; q++) { let a2 = ((q + 1) * 0.7548776662) % 1, b2 = ((q + 1) * 0.5698402909) % 1; if (a2 + b2 > 1) { a2 = 1 - a2; b2 = 1 - b2 }
           const x = V[0][0] + a2 * (V[1][0] - V[0][0]) + b2 * (V[2][0] - V[0][0]), z = V[0][1] + a2 * (V[1][1] - V[0][1]) + b2 * (V[2][1] - V[0][1])
           const d = nearest(x, z); if (!(d < reach) || onFloor(x, z)) continue
-          const bi = Math.floor(d / STEP); (bins[bi] ||= []).push(-lift(x, z) / exag) } } }
+          // the bed's depth profile is the dug FIELD (bake-terrain's stamp): the pins hold only the coast line, which `reach` starts from
+          const bi = Math.floor(d / STEP); (bins[bi] ||= []).push(-field.getElevation(x, z) / exag) } } }
     const med = bins.map(b2 => b2 && b2.length >= 20 ? b2.sort((p2, q2) => p2 - q2)[Math.floor(b2.length / 2)] : null)
     let prev = -Infinity, bad = null
     med.forEach((m2, bi) => { if (m2 == null) return; if (m2 < prev - 0.01 && !bad) bad = { bi, m2, prev }; prev = Math.max(prev, m2) })
