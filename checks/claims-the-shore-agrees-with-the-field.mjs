@@ -55,15 +55,24 @@ for (const scene of scenes) {
   const { held } = heldCells(osm.ground, { W, H: Ht, x0: bounds.minX, z0: bounds.minZ, step: sx })
   const rings = ringsInDrawing(coast.rings, bounds).inDrawing
   const disc = discOf(JSON.parse(readFileSync(join(dir, 'neighborhood_boundary.json'), 'utf8')), 'claims-the-shore-agrees-with-the-field')
-  const wetLand = (rs) => {
+  // `sites`: the wet cells as 8-connected regions — m², centre, deepest below LOW, and whether the region TOUCHES ①'s water
+  // (a neighbour in the mask: a shore the coast drew short) or stands apart from it (a hollow inland)
+  const wetLand = (rs, sites = null) => {
     const mask = maskOf(rs, W, Ht, bounds)
     let n = 0, any = 0
+    const wet = sites ? new Uint8Array(W * Ht) : null
     for (let j = 0; j < Ht; j++) for (let i = 0; i < W; i++) {
       const k = j * W + i
       if (mask[k]) { any++; continue }
-      if (H[k] < L.lowAt(X(i), Z(j)) && disc.inDisc(X(i), Z(j))) n++
+      if (H[k] < L.lowAt(X(i), Z(j)) && disc.inDisc(X(i), Z(j))) { n++; if (wet) wet[k] = 1 }
     }
     if (!any) throw new Error(`⛔ ${scene}: the coast's ${rs.length} ring(s) cover NO cell of the terrain grid — the mask and the grid disagree about the frame; an empty mask would score 0 and pass blind`)
+    if (sites) for (let k0 = 0; k0 < W * Ht; k0++) { if (wet[k0] !== 1) continue
+      const st = [k0]; wet[k0] = 2; let c = 0, sxs = 0, szs = 0, deep = 0, touches = false
+      while (st.length) { const k = st.pop(), i = k % W, j = (k - i) / W; c++; sxs += X(i); szs += Z(j); deep = Math.max(deep, L.lowAt(X(i), Z(j)) - H[k])
+        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= W || jj >= Ht) continue
+          const q = jj * W + ii; if (mask[q]) touches = true; if (wet[q] === 1) { wet[q] = 2; st.push(q) } } }
+      sites.push({ m2: c * cellM2, at: [sxs / c, szs / c], deep, touches }) }
     return n * cellM2
   }
   const intertidal = (rs) => {
@@ -84,10 +93,13 @@ for (const scene of scenes) {
   }
   const base = BASELINE[scene]
   console.log(`── ${scene}: ${coast.doc.from}`)
-  const wet = wetLand(rings), tide = intertidal(rings)
+  const wetSites = [], wet = wetLand(rings, wetSites), tide = intertidal(rings)
   const shifted = Math.min(...[[P50_M, 0], [-P50_M, 0], [0, P50_M], [0, -P50_M]].map(([dx, dz]) => wetLand(rings.map(r => r.map(([x, z]) => [x + dx, z + dz])))))
   const okWet = !base || wet <= base.wet + cellM2 / 2, seesShore = shifted >= wet   // half a cell: the baseline is rounded to m²
   console.log(`  ${okWet ? '✅' : '⛔'} (b) wet land ${Math.round(wet).toLocaleString()} m²${base ? ` (baseline ${base.wet.toLocaleString()} m², 2026-10-25, on the OSM coast)` : ''}`)
+  if (wetSites.length) { const by = (t) => wetSites.filter(w => w.touches === t), sum = (a) => Math.round(a.reduce((x, w) => x + w.m2, 0)).toLocaleString()
+    console.log(`     wet land as ${wetSites.length} region(s): touching ①'s water ${by(true).length} (${sum(by(true))} m²) · apart from it, inland hollows ${by(false).length} (${sum(by(false))} m²)`)
+    for (const w of wetSites.sort((a, b) => b.m2 - a.m2).slice(0, 8)) console.log(`       ${Math.round(w.m2).toLocaleString().padStart(6)} m² at (${w.at.map(v => v.toFixed(0)).join(', ')}) · ${w.deep.toFixed(2)} m below LOW at its deepest · ${w.touches ? 'TOUCHES ①\'s water' : 'apart (a hollow)'}`) }
   console.log(`     intertidal (below HIGH, connected; the sand line's, not gated): ${Math.round(tide).toLocaleString()} m²`)
   console.log(`  ${seesShore ? '✅' : '⛔'} the instrument sees the shore: the mask moved ${P50_M} m scores ${Math.round(shifted).toLocaleString()} m² at best, not better`)
   if (!okWet || !seesShore) red++
