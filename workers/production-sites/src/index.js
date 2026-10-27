@@ -27,7 +27,7 @@
  * Sibling: `workers/staging-sites` — the same shape, keyed by path instead of host.
  */
 import { route, hostKey, wwwRedirect } from './route.js'
-import { cardFor } from '../../../src/lib/shareCard.js'
+import { cardFor, withShareCard } from '../../../src/lib/shareCard.js'
 
 const TYPES = {
   html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8',
@@ -122,7 +122,8 @@ export default {
  * the ones that were checked there (`src/instance.js#readLookParam`, `src/lib/bakedUrl.js`).
  * ⛔ The share card (`src/lib/shareCard.js#cardFor`, shared with staging) comes from the town's own pinned
  * `towns.json` and its picture from the town's own slab, for the time of day it is there now; a town missing
- * from it gets NEUTRAL tags (its id, no image), never Lafayette Square's.
+ * from it gets NEUTRAL tags (its id, no image), never Lafayette Square's. The card's tags are WRITTEN, not
+ * rewritten (`shareCard.js#withShareCard`), so a Ward document with none still gets the whole card.
  */
 async function townPage(response, rec, url, env, kitBase) {
   // The share card's towns.json — Promote pins it at `player/<map>/` for either player, as staging
@@ -132,11 +133,8 @@ async function townPage(response, rec, url, env, kitBase) {
   const card = cardFor({ town: (tObj ? await tObj.json() : {})[rec.map] || null, map: rec.map, path: url.pathname,
     manifest: manObj ? await manObj.json() : null, slabBase: `${url.origin}/baked/${rec.look}/`,
     pageUrl: `${url.origin}/`, when: new Date() })
-  if (card.imageError) console.error(card.imageError)
-  const { title, image, icon } = card
-  const setOr = (value) => ({ element(el) { value ? el.setAttribute('content', value) : el.remove() } })
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-  return new HTMLRewriter()
+  return withShareCard(new HTMLRewriter()
     .on('head', { element(el) {
       el.prepend(`<meta name="ward-look" content="${esc(rec.look)}" />`
         + `<meta name="ward-asset-base" content="${esc(url.origin)}/" />`
@@ -145,16 +143,7 @@ async function townPage(response, rec, url, env, kitBase) {
         // the host record). The same value the staging Worker asks Operations for live; read from
         // the record here so a production page never depends on Operations being up.
         + (rec.domain ? `<meta name="ward-domain" content="${esc(rec.domain)}" />` : ''), { html: true })
-      if (card.description) el.append(`<meta property="og:description" content="${esc(card.description)}" />`, { html: true })
-    } })
-    .on('title', { element(el) { el.setInnerContent(title) } })
-    .on('meta[property="og:title"]', setOr(title))
-    .on('meta[name="twitter:title"]', setOr(title))
-    .on('meta[property="og:image"]', setOr(image))
-    .on('meta[name="twitter:image"]', setOr(image))
-    .on('meta[property="og:url"]', setOr(card.url))
-    .on('link[rel="icon"]', { element(el) { icon ? el.setAttribute('href', icon) : el.remove() } })
-    .transform(await response)
+    } }), response, card, { site: 'production-sites', map: rec.map })
 }
 
 /**

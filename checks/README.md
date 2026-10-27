@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 98. Never in a default run.
+## ⛔ live — 101. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -27,7 +27,8 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 
 | check | why | what it reaches |
 |---|---|---|
-| `checks/claims-a-bake-step-declares-what-it-reads.mjs` | unreadable | computed import of cartograph/pour-code.mjs — read, safe · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-a-bake-reads-design-through-one-reader.mjs` | unreadable | imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · computed import of cartograph/lookDesign.mjs — read, safe |
+| `checks/claims-a-bake-step-declares-what-it-reads.mjs` | unreadable | imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-bend-bends-the-band.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-a-city-building-keeps-its-permanent-id.mjs` | outbound | imports cartograph/fetch-buildings.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out, imports cartograph/msbf-identity.js, which can: writeFileSync |
 | `checks/claims-a-click-hits-what-is-drawn.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
@@ -59,6 +60,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-town-has-one-sealed-id.mjs` | unreadable | computed import of src/instances/registry.js — read, safe · runs `git` — not a known-local command |
 | `checks/claims-a-town-keeps-its-own-clock.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
+| `checks/claims-a-town-page-writes-its-own-card.mjs` | unreadable | imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command |
 | `checks/claims-a-towns-sources-are-its-own.mjs` | outbound | imports src/cartograph/sourcesCatalogue.js, which can: calls fetch() |
 | `checks/claims-a-tree-well-plants-only-standing-trees.mjs` | outbound | imports cartograph/fetch-trees.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-a-worker-deploy-darkens-no-town.mjs` | outbound | calls fetch() |
@@ -82,7 +84,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-socrata-reads-the-whole-envelope.mjs` | outbound | imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() of a path an argument or the environment can supply — arbitrary · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
-| `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe |
+| `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe · runs `git` — not a known-local command · runs `git` — not a known-local command |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-the-device-link-page-is-served-on-both-sites.mjs` | outbound | calls fetch() · imports workers/staging-sites/src/index.js, which can: calls fetch() · imports workers/production-sites/src/index.js, which can: calls fetch() |
 | `checks/claims-the-flight-builds-no-ao.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
@@ -96,6 +98,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-sun-dims-with-the-weather-now.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-the-terrain-is-the-mean-of-its-lidar.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-the-tower-light-loads-on-its-first-tap.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
+| `checks/claims-the-ward-reads-what-the-manifest-bakes.mjs` | unreadable | computed import of src/instances/registry.js — read, safe · imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command |
 | `checks/claims-the-wind-field-extent-is-the-towns.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-wind-has-one-authority.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-tree-drawn-height-by-window.mjs` | unreadable | imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command · imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source |
@@ -161,12 +164,11 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 329. This is `npm test`.
+## safe — 327. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
 | `checks/claims-a-bake-never-uploads.mjs` | a bake ends on disk; Publish is the one gesture that uploads to staging. |
-| `checks/claims-a-bake-reads-design-through-one-reader.mjs` | "DOES EVERY BAKE READ ITS DESIGN THROUGH THE ONE READER — AND DOES THAT READER REFUSE?" |
 | `checks/claims-a-bare-edge-paints-no-curb-sliver.mjs` | CLAIM — A BARE EDGE PAINTS NO CURB. An edge whose curb depth is 0 (a highway's, a shore's, a verge's) contributes no curb |
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-cap-carries-one-section.mjs` | section.mjs — DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |
@@ -476,7 +478,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-town-reads-no-player-store.mjs` | "CAN AN APP DRAW THE TOWN WITHOUT BEING THE OLD PLAYER?" |
 | `checks/claims-the-town-sees-its-sky.mjs` | "DOES <Town> DRAW ITS SKY IN ANY APP'S CANVAS — OR ONLY IN ONE WHOSE CAMERA HAPPENS TO REACH IT?" |
 | `checks/claims-the-tree-wind-is-the-looks.mjs` | looks.mjs — IS EVERY TREE'S WIND LOOK THE LOOK'S, AND DOES THE VISIBLE FLOOR ADD NOTHING IN CALM? |
-| `checks/claims-the-ward-reads-what-the-manifest-bakes.mjs` | "DOES THE WARD READ EVERY IDENTITY FIELD THE MANIFEST BAKES?" — continuity map §7 #8 (Phase 2 C, 2026-10-04). |
 | `checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs` | lib/nws.js converts every National Weather Service layer |
 | `checks/claims-through-node-width-step.mjs` | THE CHECK: at a THROUGH-NODE — a ring vertex where two consecutive runs carry |
 | `checks/claims-tide-is-present-exactly-where-tidal.mjs` | tidal.mjs — a tide where the water is tidal, and nowhere else (BRIEF-tide). |

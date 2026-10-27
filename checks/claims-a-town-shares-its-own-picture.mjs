@@ -12,12 +12,18 @@
  *      slot is the one whose kit minute (getTodSlotMinutes) is nearest. Both Workers get their card from
  *      shareCard.js#cardFor and hold no slot logic of their own.
  *   3. No kit or Worker file names a town's share image: no `og-preview.jpg`, no `ogImage`.
+ *   4. The head the Workers write carries it. For every town on disk, its real manifest → `cardFor` → `cardHead`
+ *      (the markup `withShareCard` appends) has every tag in `CARD_TAGS` and og:image = that town's own share file;
+ *      and both Workers serve their page through `withShareCard`, with no og:/twitter: selector of their own.
+ *      ▶ That the Workers really write it into a Ward document with none: claims-a-town-page-writes-its-own-card.
  * Mutations, run every time: (1) one slot's file missing → red naming the town and slot; (2) a fixed-hour slot
- * table in place of the kit's → red; (3) an `ogImage` line in a scanned file → red.
+ * table in place of the kit's → red; (3) an `ogImage` line in a scanned file → red; (4) another town's manifest
+ * → red; (5) a Worker with its own `meta[property="og:title"]` selector → red.
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { SHARE_IMAGE_RELS, shareSlotAt } from '../src/lib/shareCard.js'
+import { SHARE_IMAGE_RELS, shareSlotAt, cardFor, cardHead, CARD_TAGS } from '../src/lib/shareCard.js'
+import { servedRel, HASHED } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { setTownPlace } from '../src/lib/townPlace.js'
 import { townMinuteOf } from '../src/lib/townClock.js'
@@ -101,7 +107,7 @@ else ok(`${real.n} instants, ${registeredMaps().length} towns: the card names th
 }
 for (const w of ['workers/staging-sites/src/index.js', 'workers/production-sites/src/index.js']) {
   const src = readFileSync(path.join(ROOT, w), 'utf8')
-  if (!/import \{ cardFor \} from '\.\.\/\.\.\/\.\.\/src\/lib\/shareCard\.js'/.test(src)) bad(`${w} does not take its card from src/lib/shareCard.js#cardFor`)
+  if (!/import \{ cardFor(, withShareCard)? \} from '\.\.\/\.\.\/\.\.\/src\/lib\/shareCard\.js'/.test(src)) bad(`${w} does not take its card from src/lib/shareCard.js#cardFor`)
   else if (/suncalc|SunCalc|'(sunrise|sunset|golden|dusk|dawn)'/.test(src)) bad(`${w} holds slot logic of its own`)
   else ok(`${w} takes its card from cardFor and holds no slot logic`)
 }
@@ -126,6 +132,42 @@ if (existsSync(path.join(ROOT, 'public/photos/og-preview.jpg'))) bad('public/pho
 else ok('public/photos/og-preview.jpg is gone')
 if (scan(['mutant.js'], () => "  branding: { ogImage: 'x' },").length === 1) ok('mutation (an ogImage line) is caught')
 else bad('mutation (an ogImage line) passed')
+
+// ── 4. The head the Workers write carries the town's own picture ───────────────────────────────────────────────
+console.log('\n4. the head the Workers write carries every card tag, and the town\'s own picture')
+function headFor(t, man, ownMan = man) {
+  const base = `https://${t}.example/baked/${t}/`
+  const { html, missing } = cardHead(cardFor({ town: { title: t }, map: t, path: '/', manifest: man, slabBase: base, pageUrl: `https://${t}.example/`, when: new Date() }))
+  const tags = Object.fromEntries([...html.matchAll(/<meta (?:property|name)="([^"]+)" content="([^"]*)"/g)].map((m) => [m[1], m[2].replace(/&amp;/g, '&')]))
+  return { tags, missing, own: new Set(SHARE_IMAGE_RELS.map((rel) => base + servedRel(ownMan, rel, true))) }
+}
+const mans = {}
+// ⭐ The PUBLISHED manifest: the disk copy as the uploader stamps it (scripts/upload-baked-to-r2.mjs, `names: HASHED`).
+for (const t of towns) { const f = path.join(ROOT, 'public/baked', t, 'manifest.json'); if (existsSync(f)) mans[t] = { ...JSON.parse(readFileSync(f, 'utf8')), names: HASHED } }
+const headWrong = (t, man, ownMan) => {
+  const { tags, missing, own } = headFor(t, man, ownMan)
+  const lack = CARD_TAGS.filter((c) => !c.optional && !tags[c.key]).map((c) => c.key)
+  if (lack.length) return `lacks ${lack.join(' ')} (${missing.length ? 'the card has no value for it' : 'not written'})`
+  if (!own.has(tags['og:image'])) return `og:image ${tags['og:image']} is not one of its own share files`
+  if (tags['twitter:image'] !== tags['og:image']) return 'twitter:image differs from og:image'
+  return null
+}
+for (const t of Object.keys(mans)) { const w = headWrong(t, mans[t]); w ? bad(`"${t}": the head ${w}`) : ok(`"${t}": every card tag, og:image its own`) }
+if (!Object.keys(mans).length) bad('no town on disk has a manifest — nothing to read')
+{ // mutation: town A's head written from town B's manifest
+  const [a, b] = Object.keys(mans)
+  if (!b) bad('mutation (another town\'s manifest) needs two towns on disk')
+  else { const w = headWrong(a, mans[b], mans[a]); w ? ok(`mutation ("${a}" written from "${b}"'s manifest) is caught: ${w}`) : bad('mutation (another town\'s manifest) passed') }
+}
+const OWN_SELECTOR = /meta\[(property|name)="(og|twitter):/
+for (const w of ['workers/staging-sites/src/index.js', 'workers/production-sites/src/index.js']) {
+  const src = readFileSync(path.join(ROOT, w), 'utf8')
+  if (!/return withShareCard\(new HTMLRewriter\(\)/.test(src)) bad(`${w} does not serve its page through shareCard.js#withShareCard`)
+  else if (OWN_SELECTOR.test(src)) bad(`${w} holds an og:/twitter: selector of its own — the card is withShareCard's`)
+  else ok(`${w} serves its page through withShareCard and writes no card tag of its own`)
+}
+if (OWN_SELECTOR.test(`.on('meta[property="og:title"]', setOr(title))`)) ok('mutation (a Worker\'s own og:title selector) is caught')
+else bad('mutation (a Worker\'s own og:title selector) passed')
 
 console.log(failed ? `\n⛔ ${failed} failure(s)` : '\n✅ all passed')
 process.exit(failed ? 1 : 0)

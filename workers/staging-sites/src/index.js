@@ -219,14 +219,15 @@ async function wardBuild(env) {
 /**
  * ⭐ THE SHARE CARD — what an SMS/iMessage/social crawler reads. Crawlers never run JavaScript,
  * so the player's runtime branding (`src/lib/townMark.js`) never reaches them and every town's
- * link showed index.html's static Lafayette Square tags. Rewrite them here, per <map>, from
+ * link showed index.html's static Lafayette Square tags. WRITE them here (`shareCard.js#withShareCard`
+ * removes any the document carries and appends the whole card, so a Ward document with none gets one), per <map>, from
  * `towns.json` — generated from the instance registry by publish-player-to-staging.mjs, so
  * this file still holds no list of towns — and its picture from the town's own slab, for the time
  * of day it is in the town now. The card itself is `src/lib/shareCard.js#cardFor`, shared with production.
  * ⛔ A map with no entry gets NEUTRAL tags (its id, no image), never Lafayette Square's.
  */
 import { decideProductionDomain } from '../../../src/lib/productionDomain.js'
-import { cardFor } from '../../../src/lib/shareCard.js'
+import { cardFor, withShareCard } from '../../../src/lib/shareCard.js'
 
 /**
  * ⭐⭐ THE TOWN'S PRODUCTION DOMAIN, ON ITS STAGING PAGE (Jacob, 2026-09-26). Every public URL the
@@ -284,11 +285,8 @@ async function shareCard(response, map, url, env, kitBase) {
   const card = cardFor({ town: (await townsIndex(env))[map] || null, map, path: url.pathname,
     manifest: manObj ? await manObj.json() : null, slabBase: `${env.SLAB_BASE}baked/${map}/`,
     pageUrl: `${url.origin}/${map}/`, when: new Date() })
-  if (card.imageError) console.error(card.imageError)
   const { domain } = await townDomain(env, map)
-  const { title, image, icon } = card
-  const setOr = (value) => ({ element(el) { value ? el.setAttribute('content', value) : el.remove() } })
-  return new HTMLRewriter()
+  return withShareCard(new HTMLRewriter()
     // ⭐ WHERE THE SLAB IS — the published player is built with `VITE_ASSET_BASE=runtime` and
     // reads this (`src/lib/bakedUrl.js`), so the same bytes can be promoted to a town's domain.
     // ⛔ `SLAB_BASE` is required: without it the player refuses to load rather than guess.
@@ -298,16 +296,7 @@ async function shareCard(response, map, url, env, kitBase) {
       el.prepend(`<meta name="ward-asset-base" content="${env.SLAB_BASE}" />`
         + (kitBase ? `<meta name="ward-kit-base" content="${kitBase}" />` : '')
         + (domain ? `<meta name="ward-domain" content="${domain}" />` : ''), { html: true })
-    } })
-    .on('title', { element(el) { el.setInnerContent(title) } })
-    .on('meta[property="og:title"]', setOr(title))
-    .on('meta[name="twitter:title"]', setOr(title))
-    .on('meta[property="og:image"]', setOr(image))
-    .on('meta[name="twitter:image"]', setOr(image))
-    .on('meta[property="og:url"]', setOr(card.url))
-    .on('link[rel="icon"]', { element(el) { icon ? el.setAttribute('href', icon) : el.remove() } })
-    .on('head', { element(el) { if (card.description) el.append(`<meta property="og:description" content="${card.description.replace(/"/g, '&quot;')}" />`, { html: true }) } })
-    .transform(await response)
+    } }), response, card, { site: 'staging-sites', map })
 }
 
 function serve(request, obj, cacheControl) {
