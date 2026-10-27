@@ -80,3 +80,19 @@ export function heldCells(osmGround, grid) {
   return { held, n }
 }
 
+
+/**
+ * ①'S WATER FACE, the one read after the mint (BRIEF-the-shore-is-one-line §3 step 2a): the rings tileGround froze as
+ * map.json `layers.ribbons.protopolygon.waterRings` (built from the coast the mint was given). ①'s coast IS the high-water
+ * mark (Jacob, 2026-10-25), so every reader after the mint takes the water from here, never from coast.json, coastline.mjs
+ * or a copy. An inland town's ① carries none: []. ⛔ A map.json with no frozen ① refuses: the water is unknown.
+ * @param map  a parsed clean/map.json
+ */
+export function waterFace(map, who) {
+  const proto = map?.layers?.ribbons?.protopolygon
+  if (!proto) throw new Error(`[${who}] ⛔ map.json carries no frozen ① (layers.ribbons.protopolygon) — the water face is unknown. ▶ re-pour`)
+  const r = proto.waterRings
+  if (r == null) return []
+  if (!Array.isArray(r)) throw new Error(`[${who}] ⛔ ①'s waterRings is not a list of rings`)
+  return r.filter(ring => Array.isArray(ring) && ring.length >= 3)
+}

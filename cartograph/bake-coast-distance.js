@@ -28,7 +28,7 @@ import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
 import { edt1d } from './distanceField.mjs'
-import { readCoast } from './coastFile.mjs'
+import { waterFace } from './coastFile.mjs'
 import { localBB, projectorOf } from './geography.mjs'
 import { outerCoast } from './outer-coast.mjs'
 
@@ -170,7 +170,7 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
 
 /**
  * THE WATER PAST THE RIM (BRIEF-the-coast-runs-on-past-the-rim): the coast rings inside the fetched square — the lidar's
- * coast (clean/coast.json, through coastFile.mjs#readCoast: the one the mint and the terrain read) — carried on past the rim along the real
+ * water face, ①'s (coastFile.mjs#waterFace: the one every reader after the mint takes) — carried on past the rim along the real
  * coast and its headings (outer-coast.mjs). Written beside the slab's ground; the runtime draws it in place of the old
  * pie-slice run-on. A town with no water writes a NAMED absence.
  */
@@ -186,8 +186,9 @@ export function bakeOuterCoast({ scene, lookId, dataRoot = ROOT, outDir }) {
   const bb = localBB(osm, projectorOf(geo))
   if (!bb) throw new Error(`bake-coast-distance (outer coast): ${scene}'s raw/osm.json has no bbox — the fetched square is unknown`)
   const t0 = Date.now()
-  const coast = readCoast(join(dataRoot, 'cartograph', 'data', scene, 'clean'), bb, 'bake-coast-distance (outer coast)')
-  const rings = coast.coast ? coast.rings : []
+  const mapPath = join(dataRoot, 'cartograph', 'data', scene, 'clean', 'map.json')
+  if (!existsSync(mapPath)) throw new Error(`bake-coast-distance (outer coast): ${scene} has no clean/map.json — ①'s water face is unknown. Pour the town first.`)
+  const rings = waterFace(JSON.parse(readFileSync(mapPath, 'utf8')), 'bake-coast-distance (outer coast)')
   const outPath = join(outDir, 'outer-coast.json')
   let rec
   if (!rings.length) rec = { version: 1, look: lookId, absent: true, why: 'no coast rings inside the fetched square — the rim is land all round' }

@@ -41,7 +41,7 @@ import fs from 'fs'
 import { join } from 'path'
 import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
-import { readCoast, maskOf, COAST_FILE } from './coastFile.mjs'
+import { readCoast, maskOf, waterFace, COAST_FILE } from './coastFile.mjs'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { localBB } from './geography.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
@@ -102,14 +102,15 @@ function wgs84ToLocal(lon, lat) {
 // ⭐ A hydro-flattened body is the one thing in a DEM that is genuinely level, so
 // its surface is the MODE of the samples beneath it — not the mean (the shore
 // drags it) and not the minimum (that is the bug being fixed).
-// ⭐ The water polygons are the LIDAR'S COAST (clean/coast.json, bake-coast.mjs) through coastFile.mjs#readCoast — the
-// SAME reader derive.js mints ① from, so the bed is dug under exactly the water the pour drew. ⛔ No coast.json refuses.
+// ⭐ The water is ①'S WATER FACE (coastFile.mjs#waterFace; BRIEF-the-shore-is-one-line §3 step 2a): the mint already
+// decided it, and ①'s coast IS the high-water mark, so the bed is dug under exactly that and nothing here re-decides it.
+// The DATUM is not the face's: it is coast.json's `flattened` (ruling B), found before any line was traced.
 function waterDatum({ raw, width, height, bounds }) {
   const osm = JSON.parse(fs.readFileSync(OSM_PATH, 'utf8'))
-  const coast = readCoast(join(MAP_DIR, 'clean'), localBB(osm, wgs84ToLocal), 'bake-terrain')
+  const face = waterFace(JSON.parse(fs.readFileSync(join(CLEAN_DIR, 'map.json'), 'utf8')), 'bake-terrain')
   const rings = []
-  if (coast.coast) {
-    const { inDrawing, outside } = ringsInDrawing(coast.rings, bounds)
+  if (face.length) {
+    const { inDrawing, outside } = ringsInDrawing(face, bounds)
     for (const r of inDrawing) rings.push(r)
     if (outside.length) {
       const ext = (r) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return `x ${Math.round(x0)}…${Math.round(x1)}, z ${Math.round(z0)}…${Math.round(z1)}` }
@@ -147,7 +148,7 @@ function waterDatum({ raw, width, height, bounds }) {
   }
   // ⭐ THE DATUM IS THE FLATTENED WATER bake-coast found before tracing any line (Boz's ruling (B)): never re-derived
   // here, so the line this mask follows cannot move y = 0.
-  const F = coast.doc.flattened
+  const F = readCoast(join(MAP_DIR, 'clean'), localBB(osm, wgs84ToLocal), 'bake-terrain').doc.flattened
   if (!F || !Number.isFinite(F.navd88)) throw new Error(`⛔ water datum: ${COAST_FILE} carries no \`flattened\` level — re-run bake-coast`)
   const elev = F.navd88, share = F.share
   return { elev, share, wet, rings: rings.length, mask }
@@ -386,8 +387,7 @@ function floodExtent(normalized, mask, width, height, bounds, water) {
   for (let k = cells.length - 1; k >= 0; k--) if (cells[k].length < 3) cells.splice(k, 1)
   const mapPath = join(CLEAN_DIR, 'map.json')
   if (!fs.existsSync(mapPath)) throw new Error(`⛔ the high-water flood: ${mapPath} is missing — the drawn water it meets cannot be read. Pour the town first.`)
-  const drawn = (JSON.parse(fs.readFileSync(mapPath, 'utf8')).layers?.water || [])
-    .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3).map(w => w.ring.map(p => P(p.x ?? p[0], p.z ?? p[1])))
+  const drawn = waterFace(JSON.parse(fs.readFileSync(mapPath, 'utf8')), 'bake-terrain (flood)').map(r => r.map(p => P(p[0], p[1])))
   const cp = new C.Clipper()
   cp.AddPaths(cells, C.PolyType.ptSubject, true)
   const union = new C.Paths(); cp.Execute(C.ClipType.ctUnion, union, C.PolyFillType.pftNonZero, C.PolyFillType.pftNonZero)

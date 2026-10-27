@@ -45,7 +45,7 @@ check('an L-shaped ring whose BBOX covers the grid but which never touches it do
 // 2. the throw stays
 const bt = readFileSync(join(ROOT, 'cartograph/bake-terrain.js'), 'utf8')
 check('bake-terrain still THROWS on rings in the drawing that catch zero samples', /if \(!wet\) \{(?:(?!return\b)[\s\S]){0,600}throw new Error\('⛔ water datum: '/.test(bt))
-check('bake-terrain partitions through ringsInDrawing and names what it sets aside', /ringsInDrawing\(coast\.rings, bounds\)/.test(bt) && /WHOLLY OUTSIDE this town's drawing/.test(bt))
+check('bake-terrain partitions through ringsInDrawing and names what it sets aside', /ringsInDrawing\(face, bounds\)/.test(bt) && /WHOLLY OUTSIDE this town's drawing/.test(bt))
 
 // 3. the second home — runs and the one verdict
 check('a run with a vertex in the grid touches it', polylineTouchesRect([[50, 50], [300, 300]], R))

@@ -203,7 +203,7 @@ export function shoreArmourFor(ground) {
 
 /**
  * ⭐ THE DRAWN WATER, as a point test — the SAME rings the ground bake paints as the water
- * face (`clean/map.json#layers.water`, which `bake-ground.js` pushes as `water` / `water:*`
+ * face (①'s, coastFile.mjs#waterFace, which `bake-ground.js` pushes as `water` and `bed`
  * and whose complement ① carves as land). Inside ANY ring is water, because that is what the
  * slab draws: each ring is its own filled face.
  * @param rings  [[[x,z], …], …]

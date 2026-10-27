@@ -85,7 +85,7 @@ console.log('── E. the datum is the flattened water, found before any line')
 {
   const t = readFileSync(join(ROOT, 'cartograph/bake-terrain.js'), 'utf8')
   const wd = t.slice(t.indexOf('function waterDatum('), t.indexOf('\n}\n', t.indexOf('function waterDatum(')))
-  say(/const elev = F\.navd88\b/.test(wd) && /coast\.doc\.flattened/.test(wd) && !/hist\.set\(/.test(wd), 'bake-terrain#waterDatum takes y = 0 from coast.json `flattened` and keeps no histogram of its own')
+  say(/const elev = F\.navd88\b/.test(wd) && /\.doc\.flattened\b/.test(wd) && !/hist\.set\(/.test(wd), 'bake-terrain#waterDatum takes y = 0 from coast.json `flattened` and keeps no histogram of its own')
   // a flood sheet of 10 cells at 174.44 m and a deck at 176.00 m on 3 more: the deck must not vote
   const wet = new Uint8Array(13).fill(1), deck = new Uint8Array(13), ground = new Float32Array(13).fill(174.44)
   for (const k of [10, 11, 12]) { deck[k] = 1; ground[k] = 176 }

@@ -1829,9 +1829,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   const _discAt = discOf(_disc, `derive: ${SCENE}`)
   const boundaryPolyXZ = _disc.boundary
   const boundaryCenter = [_discAt.cx, _discAt.cz], boundaryRadius = _discAt.R
-  let protoWaterRings = null
-  // Parallel to protoWaterRings: `{subtype, name}` per water ring, off the feature's own tags.
-  let protoWaterMeta = null
 
   const nodedSegments = nodeEdges(streetPolylines)
   const faces = polygonize(nodedSegments)
@@ -3587,7 +3584,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     'boundary:administrative':  'none: an administrative line, not a physical feature',
     'boundary:census':          'none: a statistical line, not a physical feature',
     'place:islet':              'none: land inside water; the water producer carries its holes',
-    'natural:water':            'none: water has its OWN producer (`layers.water`, the coast/relation path) and both renderers skip it here on purpose. ⚠️ Whether a small INLAND pond reaches that producer is NOT established — see cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md §6.',
+    'natural:water':            'none: water is ①\'s water face (the coast the mint is given; coastFile.mjs#waterFace) and both renderers skip it here on purpose. ⚠️ Whether a small INLAND pond reaches that producer is NOT established — see cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md §6.',
     'natural:reef':             'none: submerged; belongs to the water producer, not to land use',
     'natural:coastline':        'none: a LINE — the shore is coastline.mjs\'s, and the coast is an edge of the drawing, not a face',
     'natural:bay':              'none: water; belongs to the water producer',
@@ -4871,7 +4868,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     if (_coast.coast && _coast.holes) throw new Error(`[①] ⛔ ${SCENE}'s lidar coast has ${_coast.holes} island(s) (holes in the water), and the water layer below emits every ring as its own face, so an island would be painted as water. Islands through the mint are BRIEF-the-shore-is-one-line §3 step 5.`)
     if (_coast.coast) console.log(`    [①] coast: ${_coast.rings.length} water ring(s), ${_coast.arcs.length} shoreline arc(s) — ${_coast.doc.from}`)
     else console.log(`    [①] no coast: ${_coast.why}`)
-    _coast.meta = (_coast.rings || []).map(() => ({ subtype: null, name: null }))   // the lidar names no body
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings || [], coastArcs: _coast.arcs || [], bb: _bb })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
@@ -4930,8 +4926,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       for (const u of F.unreceived) console.warn(`      ⛔ ${u.hwy}.${u.end} ${u.corner} corner at (${u.node.map(v => v.toFixed(0)).join(', ')}): NO town leg can receive it — no flare is possible, check 5 stays red`)
       return F.flares
     })()
-    protoWaterRings = MP.waterRings || null
-    protoWaterMeta = _coast.meta || null
     // ⭐ THE CURB-CUT NORM, resolved scene → state → kit (perpendicular, PROWAG's sizes, cited) and frozen with its rung, so Section paints a
     // junction corner's curb cuts live off the shape without reaching for a state record (`cartograph/curb-cut-norm.mjs`).
     {
@@ -5151,31 +5145,9 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // ⛔ They are LAYERS, not blocks: nothing offsets a curb from either, and neither carries an
   // authoring slot. Measured on Huron: 0 of 204 block faces touch a `__water__` edge, so no
   // editable surface abuts the coast and the Wall is not crossed to draw them.
-  // ⭐ The water face carries its HOLES (islands), so it is drawn as a compound face.
-  // ⭐⭐ THE `water=*` SUBTYPE TRAVELS WITH THE RING. OSM refines `natural=water` into lake ·
-  // pond · basin · reservoir · river, and nothing downstream consumes that yet — but a subtype
-  // dropped at pour time cannot be recovered without re-pouring every town, and a pond wants a
-  // different surface from a Great Lake. It is carried for the town that asks.
-  // ⛔ ALIGNMENT IS ASSERTED, NOT ASSUMED. `MP.waterRings` is `coast.map(copy)` — 1:1 with the
-  // rings readCoast returned, in order — so the meta indexes match by construction. If that
-  // ever stops being true the subtypes would silently attach to the WRONG bodies, which is the
-  // plausible-looking success this kit must never ship. So: fail loudly instead.
-  if (protoWaterMeta && protoWaterRings && protoWaterMeta.length !== protoWaterRings.length) {
-    throw new Error(`[LAND/WATER] ⛔ water ring/meta misalignment: ${protoWaterRings.length} ring(s) ` +
-      `but ${protoWaterMeta.length} meta entr(ies). The \`water=*\` subtype would attach to the wrong ` +
-      `body. ▶ the coast's meta is made 1:1 with readCoast's rings — something between it and ` +
-      `mintProtopolygon's waterRings is now reordering or filtering.`)
-  }
-  const waterFeats = (protoWaterRings || []).map((r, i) => ({
-    ring: r.map(([x, z]) => ({ x, z })),
-    use: 'water',
-    subtype: protoWaterMeta?.[i]?.subtype || null,
-    name: protoWaterMeta?.[i]?.name || null,
-  }))
-  if (waterFeats.length) {
-    const tally = waterFeats.map(f => f.subtype || 'water').join(', ')
-    console.log(`  [LAND/WATER] ${waterFeats.length} water face(s) emitted as a layer — subtype(s): ${tally}`)
-  }
+  // ⭐ THE WATER is ①'s water face, frozen as `layers.ribbons.protopolygon.waterRings` and read by every bake through
+  // coastFile.mjs#waterFace (BRIEF-the-shore-is-one-line §3 step 2a). It is no longer copied into a `water` layer: a copy
+  // is a second source, and ①'s coast IS the high-water mark.
 
   const layers = {
     pavement:       pavementFeats,                                     // streets from standards (independent)
@@ -5200,7 +5172,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     institution:    institutionOverlays,
     leisure:        leisureOverlays,
     natural:        naturalOverlays,
-    water:          waterFeats,
     barrier:        barrierLines,
     ribbons:        ribbonsLayer,
   }

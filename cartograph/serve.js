@@ -2822,7 +2822,8 @@ createServer(async (req, res) => {
            join(bakePaths.raw, 'elevation-flights.json'),   // the lidar's geoid, onto the record's basis (fetch-lidar-flights.mjs)
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
-           join(bakePaths.clean, COAST_FILE),                // the lidar's coast (bake-coast.mjs): where the water is
+           join(bakePaths.clean, COAST_FILE),                // the datum: coast.json `flattened` (ruling B), found before any line
+           MAP_JSON,                                          // the water: ①'s frozen face (coastFile.mjs#waterFace)
            // the coast bed reads design.water from every Look of this town and three registry findings — declared as
            // the VALUES read, so a slider or a research edit elsewhere in those files re-bakes nothing (Strand, 3ab2b794)
            { value: 'terrainValueReads', read: () => terrainValueReads(bakeScene) },
@@ -2876,7 +2877,7 @@ createServer(async (req, res) => {
       await runIfDirty('coast-distance',
         // The registry, the surfaces table and the town's OSM (its state) feed the RESOLVED params.
         [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, MAP_JSON, join(here, 'bake-coast-distance.js'),
-          join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json'), join(bakePaths.clean, COAST_FILE)],
+          join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json')],
         [join(LOOK_DIR, 'context.json')],
         `node bake-coast-distance.js --look=${id} ${sceneFlag}`,
         { cwd: here })

@@ -64,6 +64,7 @@ import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 import { LATTICE_STEP, NODE_BOUND, nodeAcrossGroups, splitAtPinches, pinchesOfRing, windingOf } from '../src/lib/latticeNode.js'   // one lattice step in Clipper units · the paint's noding rule
+import { waterFace } from './coastFile.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -1192,28 +1193,20 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   for (const item of (mapLayers.leisure || [])) {
     if (LEISURE_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
   }
-  // natural subtypes — `natural=water` is NOT here on purpose: it has its own
-  // producer (`layers.water`, the coast/relation path, injected just below) and
-  // a second producer for one feature class is the bug, not the fix.
+  // natural subtypes — `natural=water` is NOT here on purpose: water is ①'s water face (below), and a second
+  // producer for one feature class is the bug, not the fix.
   const NATURAL_KEYS = new Set(['wood', 'scrub', 'tree_row'])
   for (const item of (mapLayers.natural || [])) {
     if (NATURAL_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
   }
-  // ⭐⭐ THE WATER FACE. `derive.js` emits `layers.water` and until 2026-09-20 this
-  // bake never read it — the lake was acquired, classified, derived, and then
-  // dropped on the floor. In 3D huron's Lake Erie was a HOLE IN THE LAND: ①
-  // carves `bb − (WATER ∪ INK)` so the land stops at the shore, and nothing
-  // filled what it left. (The Designer DID draw it, off `map.json` directly,
-  // which is why "the lake is drawn" was believed of the slab as well.)
-  // ⛔ This does NOT reach an inland pond. `coastline.mjs` applies only water
-  // that runs on past the fetch — measured on huron, 40 bodies lie wholly inside
-  // the disc and 15 more are held whole, and none of them reach `layers.water`
-  // at all. That is a PRODUCER question and it is not fixed here; the pour
-  // prints those two counts every run.
-  for (const item of (mapLayers.water || [])) {
-    if (!item.ring) continue
-    pushMat(item.subtype ? `water:${item.subtype}` : 'water', ringFromOSM(item.ring))
-    pushMat('bed', ringFromOSM(item.ring))   // the ground under it (PAINT_ORDER 'bed')
+  // ⭐⭐ THE WATER FACE IS ①'s (BRIEF-the-shore-is-one-line §3 step 2a): one set of rings, coastFile.mjs#waterFace, for
+  // both of its draws — the SHEET (`water`, its own slot, a tint that does not cut) and the BED under it (`bed`, a
+  // partitioned face at the bottom of the stack). ①'s coast IS the high-water mark (Jacob, 2026-10-25), so nothing here
+  // decides water again. ⛔ An inland pond is not ①'s water (the coast is water that runs on past the fetch); that is a
+  // producer question, not this bake's.
+  for (const ring of waterFace(mapData, 'bake-ground')) {
+    pushMat('water', ringFromOSM(ring))
+    pushMat('bed', ringFromOSM(ring))
   }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
