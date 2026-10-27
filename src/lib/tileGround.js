@@ -1111,8 +1111,26 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         const diag = Math.hypot(x1 - x0, z1 - z0)
         return diag > 0 ? Math.abs(signedArea(rg)) / diag : 0
       }
+      // ⭐ EACH POCKET ITS OWN FACE (`faceLobes`, Boz's ruling B (b)): a face ring pinched along its own edge (a collinear retrace)
+      // is split into its lobes here, before anything reads it; each hole goes with the lobe that holds it. A ring that is neither
+      // goes through as the boolean returned it.
+      let pinched = 0, lobesMade = 0, retracesDropped = 0
+      const faceList = []
       for (const f of D.faces) {
-        const rg = D.rings[f.outer], lb = D.labels?.[f.outer]
+        const rg = D.rings[f.outer], lb = D.labels?.[f.outer], holes = f.holes.map(hi => ({ hr: D.rings[hi], hl: D.labels?.[hi] }))
+        const L = (rg?.length >= 3 && lb) ? faceLobes(rg, lb) : null
+        if (!L) { faceList.push({ rg, lb, holes }); continue }
+        pinched++; lobesMade += L.lobes.length; retracesDropped += L.retraces
+        const mine = L.lobes.map(() => [])
+        for (const h of holes) {
+          // read by the hole's vertices that lie on NO lobe's ring (exact, on the lattice); every one of them must name the same lobe
+          const free = (h.hr || []).filter(p => !L.lobes.some(o => onRingExact(p, o.ring)))
+          const by = [...new Set(free.map(p => L.lobes.findIndex(o => pointInRing(p[0], p[1], o.ring))))]
+          if (by.length !== 1 || by[0] < 0) throw new Error(`[①] ⛔ a hole of a pinched face (at ${h.hr?.[0]?.map(v => v.toFixed(3)).join(', ')}) is read in ${by.filter(q => q >= 0).length} of its ${L.lobes.length} lobes by its ${free.length} vertex(es) off every lobe ring (want exactly 1). Refusing.`)
+          mine[by[0]].push(h) }
+        L.lobes.forEach((o, q) => faceList.push({ rg: o.ring, lb: o.labels, holes: mine[q] })) }
+      if (pinched) console.log(`    [①] ${pinched} face ring(s) pinched along their own edge (a retrace), split into ${lobesMade} face(s); ${retracesDropped} zero-width retrace(s) dropped (faceLobes)`)
+      for (const { rg, lb, holes } of faceList) {
         // ⛔ NOT SILENT. A face the boolean returned but that carries fewer than 3 vertices or no
         // identity is a real state and must be countable — on town #2 nobody is looking.
         if (!(rg?.length >= 3) || !lb) { degenerate++; continue }
@@ -1158,8 +1176,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         // path's fill is inverted. Converted HERE, once, at the source — this repo carries both
         // shoelace conventions and letting each consumer guess has already cost a day.
         const hs = [], hls = []
-        for (const hi of f.holes) {
-          const hr = D.rings[hi], hl = D.labels?.[hi]
+        for (const { hr, hl } of holes) {
           // ⛔ NO SILENT DROP. A hole with no identity cannot be offset at its authored width,
           // and dropping it would offset the face AS IF SOLID — a plausible-looking wrong curb,
           // which is the one outcome a kit may not have. Counted and reported by name.
@@ -1172,6 +1189,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         else { blocks.push(rg); blockLabels.push(lb) }
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
+      // ⛔ THE ASSERT: no block ring, outer or hole, runs back over one of its own edges (a zero-width retrace is two faces, never one)
+      { const bad = blocks.flatMap((b, k) => [b, ...blockHoles[k]].map((r, h) => ({ k, h, r, o: ringRetraces(r) }))).filter(x => x.o.length)
+        if (bad.length) { const x = bad[0], o = x.o[0]
+          throw new Error(`[①] ⛔ ${bad.length} block ring(s) retrace their own edge in the opposite direction after faceLobes — block ${x.k} ${x.h ? `hole ${x.h - 1}` : 'outer'}, edges ${o.i} and ${o.j}, ${o.m.toFixed(3)} m at (${x.r[o.i].map(v => v.toFixed(3)).join(', ')}). Refusing.`) } }
       const withHoles = blockHoles.filter(h => h.length).length
       if (outerZones) console.log(`    [①] ${outerZones} OUTER ZONE face(s) kept as blocks — the bb + coast + street ink close into one continuous zone; its streets are its holes and are painted from them.`)
       if (keptOnEdge) console.log(`    [①] kept ${keptOnEdge} face(s) touching the frame EDGE without a corner — real land the rectangle merely truncates; the stamp cuts them.`)
@@ -1232,6 +1253,88 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
 // its value through the boolean — by construction, never recovered from coordinates afterwards — and the
 // result gains `payloads` (null at a minted crossing). ⛔ Callers that pass nothing take the unchanged
 // path: Z = label + 1 exactly as before, so their output is byte-identical.
+// ⭐ A FACE PINCHED ALONG ITS OWN EDGE IS TWO FACES (Boz's ruling B, narrowed to (b), 2026-10-27). `booleanLabelled` runs with
+// ioPreserveCollinear and without StrictlySimple, so where the water lies ALONG a frame edge for a stretch with land either side
+// of it, Clipper hands back ONE outer ring: the two land pockets joined by a zero-width double-back along the frame (PTown's
+// east edge: the frame edge down 108.7 m, the water edge back up 91.0 m of it). Each pocket is a face of its own.
+// The ring is split exactly, on the lattice: every vertex of the ring lying strictly inside another of its edges is inserted
+// into that edge (so the retrace's ends become shared vertices), then the ring is cut into its loops at each repeated vertex.
+// A loop of zero area is the retrace itself and is dropped (counted). Labels are POSITIONAL (label i names edge i→i+1): an
+// inserted vertex takes the label of the edge it splits, and every loop keeps its own edges' labels.
+// ⛔ ONLY A RETRACE SPLITS (Boz's (b)): a ring that merely touches itself at one vertex is NOT split — absorbInk accepts it, and
+// whether such a lobe is a face of its own is an open question (BACKLOG census: LS #327, PTown #40). And a ring with a retrace
+// is cut ONLY at the retrace's own vertices (the ends of an edge whose reverse is also in the ring): a one-vertex touch elsewhere
+// on it stays inside its lobe, so whether a touch is cut never depends on a retrace somewhere else (Zob's read, 2026-10-27).
+// → null when the ring has no retrace (the caller keeps the ring as it was, byte for byte), else
+//   { lobes: [{ ring, labels }], retraces: n }. ⛔ A lobe wound against the ring refuses by name: it would be a hole, not a pocket.
+export function faceLobes(ring, labels, who = '①') {
+  if (!ringRetraces(ring).length) return null
+  const n = ring.length, I = ring.map(p => [Math.round(p[0] * SCALE), Math.round(p[1] * SCALE)])
+  const G = 50 * SCALE, cells = new Map(), cellOf = (x, z) => Math.floor(x / G) + ',' + Math.floor(z / G)
+  I.forEach((p, k) => { const c = cellOf(p[0], p[1]); (cells.get(c) || cells.set(c, []).get(c)).push(k) })
+  const ins = new Map()   // edge i → [{ k, t }] the ring's own vertices strictly inside it
+  for (let i = 0; i < n; i++) { const a = I[i], b = I[(i + 1) % n], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+    if (!L2) continue
+    for (let gx = Math.floor(Math.min(a[0], b[0]) / G); gx <= Math.floor(Math.max(a[0], b[0]) / G); gx++)
+      for (let gz = Math.floor(Math.min(a[1], b[1]) / G); gz <= Math.floor(Math.max(a[1], b[1]) / G); gz++)
+        for (const k of cells.get(gx + ',' + gz) || []) { const v = I[k]
+          if ((v[0] === a[0] && v[1] === a[1]) || (v[0] === b[0] && v[1] === b[1])) continue
+          if (dx * (v[1] - a[1]) - dz * (v[0] - a[0]) !== 0) continue
+          const t = dx * (v[0] - a[0]) + dz * (v[1] - a[1]); if (t <= 0 || t >= L2) continue
+          (ins.get(i) || ins.set(i, []).get(i)).push({ k, t }) } }
+  const E = []
+  for (let i = 0; i < n; i++) { E.push({ p: ring[i], q: I[i], lab: labels[i] })
+    const S = ins.get(i); if (!S) continue
+    const seen = new Set(); S.sort((u, v) => u.t - v.t)
+    for (const { k } of S) { const key = I[k][0] + ',' + I[k][1]; if (seen.has(key)) continue; seen.add(key); E.push({ p: ring[k], q: I[k], lab: labels[i] }) } }
+  const keyOf = (e) => e.q[0] + ',' + e.q[1]
+  const dir = new Set(E.map((e, i) => keyOf(e) + '>' + keyOf(E[(i + 1) % E.length]))), R = new Set()
+  E.forEach((e, i) => { const a = keyOf(e), b = keyOf(E[(i + 1) % E.length]); if (dir.has(b + '>' + a)) { R.add(a); R.add(b) } })
+  const loops = [], stack = [], at = new Map()
+  for (const e of E) { const k = keyOf(e)
+    if (at.has(k)) { const loop = stack.splice(at.get(k)); for (const u of loop) at.delete(keyOf(u)); loops.push(loop) }
+    if (R.has(k)) at.set(k, stack.length); stack.push(e) }
+  if (stack.length) loops.push(stack)
+  const area2 = (L) => L.reduce((t, e, i) => { const f = L[(i + 1) % L.length]; return t + e.q[0] * f.q[1] - f.q[0] * e.q[1] }, 0)
+  const sign = Math.sign(area2(E)), lobes = []
+  let retraces = 0
+  for (const L of loops) { const a = area2(L)
+    if (L.length < 3 || a === 0) { retraces++; continue }
+    if (Math.sign(a) !== sign) throw new Error(`[${who}] ⛔ a face ring pinched at (${L[0].p.map(v => v.toFixed(3)).join(', ')}) has a loop wound AGAINST it (${(a / 2 / SCALE / SCALE).toFixed(3)} m²) — a hole carried in the outer ring, not a pocket. Refusing.`)
+    lobes.push({ ring: L.map(e => e.p), labels: L.map(e => e.lab) }) }
+  return { lobes, retraces }
+}
+
+// Exactly on a ring's boundary, on the lattice: the point lies on one of its edges (integer cross product 0, within the edge).
+function onRingExact(p, ring) {
+  const v = [Math.round(p[0] * SCALE), Math.round(p[1] * SCALE)]
+  for (let i = 0; i < ring.length; i++) { const a = ring[i].map(c => Math.round(c * SCALE)), b = ring[(i + 1) % ring.length].map(c => Math.round(c * SCALE))
+    const dx = b[0] - a[0], dz = b[1] - a[1]
+    if (dx * (v[1] - a[1]) - dz * (v[0] - a[0]) !== 0) continue
+    const t = dx * (v[0] - a[0]) + dz * (v[1] - a[1]); if (t >= 0 && t <= dx * dx + dz * dz) return true }
+  return false
+}
+
+// The opposite-direction overlaps of a ring's own edges: [{ i, j, m }] for each pair of its edges lying on one line, overlapping by
+// m metres, run in OPPOSITE directions (a zero-width retrace). The assert on every block ring after `faceLobes` reads this.
+export function ringRetraces(ring) {
+  const n = ring.length, I = ring.map(p => [Math.round(p[0] * SCALE), Math.round(p[1] * SCALE)]), out = []
+  const G = 50 * SCALE, cells = new Map()
+  for (let i = 0; i < n; i++) { const a = I[i], b = I[(i + 1) % n]
+    for (let gx = Math.floor(Math.min(a[0], b[0]) / G); gx <= Math.floor(Math.max(a[0], b[0]) / G); gx++)
+      for (let gz = Math.floor(Math.min(a[1], b[1]) / G); gz <= Math.floor(Math.max(a[1], b[1]) / G); gz++) { const c = gx + ',' + gz; (cells.get(c) || cells.set(c, []).get(c)).push(i) } }
+  const done = new Set()
+  for (const L of cells.values()) for (let x = 0; x < L.length; x++) for (let y = x + 1; y < L.length; y++) {
+    const i = Math.min(L[x], L[y]), j = Math.max(L[x], L[y]), id = i + '|' + j; if (i === j || done.has(id)) continue; done.add(id)
+    const a = I[i], b = I[(i + 1) % n], c = I[j], d = I[(j + 1) % n], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+    if (!L2 || dx * (c[1] - a[1]) - dz * (c[0] - a[0]) !== 0 || dx * (d[1] - a[1]) - dz * (d[0] - a[0]) !== 0) continue
+    const tc = dx * (c[0] - a[0]) + dz * (c[1] - a[1]), td = dx * (d[0] - a[0]) + dz * (d[1] - a[1])
+    if (td >= tc) continue   // the same direction: a collinear run, not a retrace
+    const lo = Math.max(0, td), hi = Math.min(L2, tc)
+    if (hi > lo) out.push({ i, j, m: (hi - lo) / Math.sqrt(L2) / SCALE }) }
+  return out
+}
+
 function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false, asTree = false, payload = null) {
   // `carryEdges` may be `{ sameStroke(labA, labB) }` — the caller's own identity test, which the containment rule
   // needs because labels are opaque here. Any truthy value keeps the ledger on, as before.
