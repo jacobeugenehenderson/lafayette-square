@@ -325,11 +325,14 @@ The distance: the Arch or the backdrop where the town has one, the air between, 
   `scripts/upload-baked-to-r2.mjs --env=staging` (staging keys only; prod is Promote), and a failed upload **fails
   Publish** rather than reporting a slab that reached nobody. ▶ `node checks/claims-a-bake-never-uploads.mjs` ·
   `node scripts/verify-baked-in-r2.mjs` (PUBLISH §6).
-  - ⭐ **Slab names** (`--names=sha256-16`: content-named files, `manifest.json` last) — each step Jacob's go:
-    (a) apply `scratch/serve-a/serve-names-a.patch`, then Publish each town · (b) deploy both Workers once
-    `node checks/claims-a-worker-deploy-darkens-no-town.mjs` is green · (c) add `--names` to Promote's prod upload ·
-    (d) Promote each production host · (e) `node scripts/sweep-retired-slab-keys.mjs --env=<e> --look=<t>`
+  - ⭐ **Slab names** (`--names=sha256-16`: content-named files, `manifest.json` last). **Publish and Promote both ship
+    content names**, and every read of what an environment serves goes through the town's manifest (`serve.js#servedPour`).
+    ▶ `node checks/claims-a-slab-ships-under-content-names.mjs`. A town's link card has no image until its slab is
+    content-named (`src/lib/shareCard.js`). Still Jacob's, each step: (a) **Publish** each town (it needs its share images:
+    Stage → Capture share images) · (b) deploy both Workers once `node checks/claims-a-worker-deploy-darkens-no-town.mjs`
+    is green · (d) **Promote** each production host · (e) `node scripts/sweep-retired-slab-keys.mjs --env=<e> --look=<t>`
     (⛔ `--apply` deletes — Jacob only).
+    ⚠️ A town with a slab but no `manifest.json` in an environment reads as **not published** there.
   - ⛔ **Order: publish every town with its `manifest.json`, THEN deploy a Worker** — both decide a town is
     live by it, and `wrangler deploy` refuses while it would darken one.
     ▶ `node checks/claims-a-worker-deploy-darkens-no-town.mjs`

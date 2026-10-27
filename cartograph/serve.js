@@ -36,6 +36,7 @@ import { splitBoundary, composeBoundary, makeDiscRecord, assertDiscInBox } from 
 import tzLookup from 'tz-lookup'
 import { commitExtentRecords, flattenBoundaryPath, sameJson } from './commitExtent.mjs'
 import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
+import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
 import { groundShorePass } from './shoreRuns.mjs'
@@ -209,6 +210,26 @@ const ASSET_ENV_PREFIX = { prod: '', staging: 'staging/' }
 const STAGING_SITE_BASE = 'https://staging.theward.online/'
 
 /**
+ * The pour a slab key space serves — `bakedAt` of the scene.json its MANIFEST names (`src/lib/slabNames.js`). ⛔ Never the
+ * plain `scene.json` key: once a town is content-named its plain keys are a transition artefact the retirement sweep deletes
+ * (`scripts/sweep-retired-slab-keys.mjs`), and the manifest is the one file whose name never changes.
+ * `base` ends in '/' and holds `baked/…` (an env prefix of the bucket, or a town's own domain).
+ * → { bakedAt, named }, or { bakedAt: null, why } when there is no manifest (not published). Anything else answering is thrown.
+ */
+async function servedPour(base, look) {
+  const m = await fetch(`${base}${manifestPath(look)}?cb=${Date.now()}`, { cache: 'no-store' })
+  if (m.status === 404) return { bakedAt: null, named: false, why: 'no manifest.json' }
+  if (!m.ok) throw new Error(`${base}${manifestPath(look)} answered ${m.status}`)
+  const manifest = await m.json()
+  if (manifest.names != null && manifest.names !== HASHED) throw new Error(`${base}${manifestPath(look)} names its files "${manifest.names}" — the one scheme is "${HASHED}"`)
+  const named = manifest.names === HASHED
+  const rel = servedRel(manifest, 'scene.json', named)
+  const sc = await fetch(`${base}baked/${look}/${rel}${named ? '' : `?cb=${Date.now()}`}`, { cache: 'no-store' })
+  if (!sc.ok) throw new Error(`${base}baked/${look}/${rel} answered ${sc.status} — its manifest names a scene the bucket does not serve`)
+  return { bakedAt: (await sc.json()).bakedAt ?? null, named }
+}
+
+/**
  * ⭐ THE INSTRUMENT FOR PRODUCTION (BRIEF-production-sites "Can the instrument see it?"): ask the
  * town's own domain which town it names and which pour it serves. Read off the SERVED page and
  * slab, never off what Promote believes it wrote.
@@ -229,9 +250,9 @@ async function proveProduction(domain, look, bakedAt, pinned = {}) {
       const kit = await fetch(`${kitBase}manifest.json?cb=${Date.now()}`, { cache: 'no-store' })
       if (!kit.ok) return { ok: false, why: `its kit bundle answered ${kit.status}` }
     }
-    const scene = await fetch(`https://${domain}/baked/${look}/scene.json?cb=${Date.now()}`, { cache: 'no-store' })
-    if (!scene.ok) return { ok: false, why: `its slab answered ${scene.status}` }
-    const served = (await scene.json()).bakedAt ?? null
+    const pour = await servedPour(`https://${domain}/`, look)
+    if (pour.why) return { ok: false, why: `its slab has ${pour.why}` }
+    const served = pour.bakedAt
     if (bakedAt != null && String(served) !== String(bakedAt)) return { ok: false, why: `it serves the pour of ${served}, not ${bakedAt}` }
     return { ok: true, look: named, bakedAt: served }
   } catch (e) {
@@ -3091,19 +3112,11 @@ createServer(async (req, res) => {
         return
       }
       const ms = Date.now() - t0
-      // ⛔⛔ THE SLAB'S FRESHNESS KEY MUST ADVANCE WHENEVER ANY ARTIFACT DOES (2026-08-28).
-      // `scene.json#bakedAt` is the cache-bust key for the WHOLE slab — every cold consumer
-      // busts its fetches with it (`BakedGround.jsx:458`, `InstancedTrees.jsx:617`:
-      // `bakeLastMs ?? scene?.bakedAt ?? null`). But it was written ONLY by bake-scene.js,
-      // i.e. only when the `scene` step happened to be dirty. A pour that rewrote ground and
-      // trees and skipped `scene` left the key pinned to an old value, so browsers kept
-      // serving the PREVIOUS slab from cache under a URL that never changed — for good.
-      // ⭐ WHY ONLY PREVIEW SHOWED IT (Jacob: "it's all there up until the Preview"): Stage
-      // passes an explicit `bakeLastMs` and is immune; Preview and PRODUCTION fall back to
-      // this field. The bake already knew the slab had changed — it stamped the looks index
-      // one line below — and the surface that needed to know was never told.
-      // ⛔ It is a property of THE POUR, not of the scene layer, so it is stamped here,
-      // unconditionally, with the SAME instant the index gets.
+      // ⛔ `scene.json#bakedAt` IS THE POUR'S STAMP — the slab's re-read key where an app passes none (the on-disk
+      // `?bake=` of `src/lib/slabNames.js#slabPath`) and what the Publish panel compares to say "already published". It
+      // is a property of THE POUR, not of the scene layer, so it is stamped here, unconditionally, with the SAME instant
+      // the looks index gets. (Its old job, a `?t=` cache-bust seed for remote fetches, is retired: a published file is
+      // named by its content — cartograph/_archive/slab-cache-bust-scheme-RETIRED-2026-09-28.md.)
       const stampedAt = Date.now()
       try {
         const scenePath = join(LOOK_DIR, 'scene.json')
@@ -3329,9 +3342,8 @@ createServer(async (req, res) => {
     }
     const base = ASSET_BASE_URL + ASSET_ENV_PREFIX[target]
     try {
-      const r = await fetch(`${base}baked/${id}/scene.json?t=${Date.now()}`, { cache: 'no-store' })
-      let bakedAt = null
-      if (r.ok) { try { bakedAt = (await r.json()).bakedAt ?? null } catch { /* HTML/404 while building */ } }
+      // Through the town's manifest — the one key that survives the retirement of plain names.
+      const { bakedAt } = await servedPour(base, id)
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ ok: true, target, bakedAt }))
     } catch (err) {
@@ -3414,7 +3426,9 @@ createServer(async (req, res) => {
       // ⛔ PUBLISH MAY ONLY EVER WRITE STAGING, and a bake writes nothing remote at all.
       // Promotion is the separate, deliberate gesture (`--env=prod`), because "I want to see
       // it" and "visitors should see it" are two different decisions.
-      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=staging --look=${id}`, { cwd: REPO_ROOT, timeout: 900000 })
+      // ⭐ UNDER CONTENT NAMES (`--names`): every file at a name that is its bytes, and `manifest.json` LAST — the switch
+      // (OPERATIONS "Slab names"). The uploader refuses a manifest that disagrees with the bytes on disk.
+      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=staging --look=${id} --names=${HASHED}`, { cwd: REPO_ROOT, timeout: 900000 })
       // ⛔ Loud, and the request FAILS. A 200 here would tell the operator the pour shipped when it reached nothing.
       if (up.code !== 0) {
         console.error(`[publish] ⛔ R2 upload FAILED for "${id}" — the pour is on disk only`)
@@ -3424,7 +3438,7 @@ createServer(async (req, res) => {
       console.log(`[publish] R2 ${r2}`)
       // ⛔ ASK, never assume: reporting an address for a slab that is not there is the
       // plausible-looking success this whole panel exists to prevent.
-      const slabKey = `${ASSET_ENV_PREFIX.staging}baked/${id}/scene.json`
+      const slabKey = `${ASSET_ENV_PREFIX.staging}${manifestPath(id)}`   // the switch: a town is live by its manifest
       const slabHead = await fetch(`${ASSET_BASE_URL}${slabKey}`, { method: 'HEAD' }).catch(() => null)
       if (!slabHead?.ok) {
         throw new Error(`the upload reported success but the slab is not in the bucket (${slabKey} → `
@@ -3486,7 +3500,8 @@ createServer(async (req, res) => {
       const plan = await runCapture(`node scripts/promote-player-to-prod.mjs --map=${map} --look=${id} --dry-run`, { cwd: REPO_ROOT, timeout: 600000 })
       if (plan.code !== 0) throw new Error(`nothing was shipped: ${(plan.stderr || plan.stdout).trim().split('\n').pop()}`)
 
-      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id}`, { cwd: REPO_ROOT, timeout: 900000 })
+      // ⭐ UNDER CONTENT NAMES, as Publish ships staging: the same bytes at the same names, manifest.json last (the switch)
+      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id} --names=${HASHED}`, { cwd: REPO_ROOT, timeout: 900000 })
       if (up.code !== 0) throw new Error(`the slab did not reach production — nothing was switched: ${up.stderr || up.stdout || `exit ${up.code}`}`)
       const r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
 

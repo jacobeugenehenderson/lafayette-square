@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 457,
+  "total": 458,
   "counts": {
     "safe": 328,
     "local-effect": 28,
-    "live": 101
+    "live": 102
   },
   "checks": [
     {
@@ -607,6 +607,14 @@
         "deletes files",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync",
         "imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync — only under its own temp dir"
+      ]
+    },
+    {
+      "file": "checks/claims-a-slab-ships-under-content-names.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()"
       ]
     },
     {
