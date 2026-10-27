@@ -40,6 +40,7 @@ import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
 import { groundShorePass } from './shoreRuns.mjs'
+import { stagedSlabStep, publishSlab, refuseTornCommit } from './slabStage.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -2615,6 +2616,7 @@ createServer(async (req, res) => {
       // every Look of it, so a step that reads them declares this file. Declared because it is READ.
       const SCENE_DESIGN = join(REPO_ROOT, 'public', 'looks', bakeScene, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
+      refuseTornCommit(undefined, id)   // ⛔ a torn slab commit (slabStage.mjs's journal) stops this look's Bake, by name
       const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
       const skipped = []
@@ -2637,7 +2639,9 @@ createServer(async (req, res) => {
       const townRecord = { value: `the town record of "${bakeScene}"`, read: () => instanceForMap(bakeScene) ?? null }
       // `absentOk`: outputs a step may legitimately not write (revetment on a town with no shore). Missing after a
       // recorded run is that step's answer, not a stale slab; missing with no record still runs it.
-      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], ...opts } = {}) => {
+      // `stage`: the step writes into a stage (`--out-dir=`) and its outputs reach the slab only when it succeeds
+      // (slabStage.mjs#stagedSlabStep); `stage.published` is then the names it changed.
+      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], stage, ...opts } = {}) => {
         if (judge === 'mtime') {
           if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
@@ -2652,7 +2656,8 @@ createServer(async (req, res) => {
         if (!force && !why.length && !missing.length) { skip(label); return }
         if (P.plan) { P.plan.stale.push({ step: label, why: [...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)] }); return }
         console.log(`[bake] ${label}: ${[...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)].slice(0, 5).join(', ')}`)
-        await runStep(P, label, cmd, opts)
+        if (stage) stage.published = await stagedSlabStep({ ...stage, step: (dir) => runStep(P, label, `${cmd} --out-dir="${dir}"`, opts) })
+        else await runStep(P, label, cmd, opts)
         // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
         saveBakeRead(MAP_JSON, id, label, { code: contentRecord(code), data: contentRecord(data) })
         ran(label)
@@ -2819,18 +2824,24 @@ createServer(async (req, res) => {
       // `elevPolicy.onTheRecord`, which was already reported above. An unrecorded absence
       // threw before the branch.
 
-      // terrain-slab: publish the scene terrain into this Look's slab (the runtime fetches /baked/<look>/terrain.* by
-      // lookId). A BYTE compare, not a date: writeIfChanged writes only what differs, and says whether it did.
-      if (P.plan && existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
-        const same = (from, to) => existsSync(to) && readFileSync(to).equals(readFileSync(from))
-        if (!same(SCENE_TERRAIN_JSON, join(LOOK_DIR, 'terrain.json')) || !same(SCENE_TERRAIN_BIN, join(LOOK_DIR, 'terrain.bin')))
-          P.plan.stale.push({ step: 'terrain-slab', why: ["the town's terrain differs from this Look's copy"] })
-      } else if (existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
-        mkdirSync(LOOK_DIR, { recursive: true })
-        const a = writeIfChanged(join(LOOK_DIR, 'terrain.json'), readFileSync(SCENE_TERRAIN_JSON), { touch: false })
-        const b = writeIfChanged(join(LOOK_DIR, 'terrain.bin'), readFileSync(SCENE_TERRAIN_BIN), { touch: false })
-        if (a || b) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } else skip('terrain-slab')
-      }
+      // terrain-slab: the scene terrain is owed to this Look's slab (the runtime fetches /baked/<look>/terrain.* by lookId)
+      // when its BYTES differ from the slab's copy. ⛔ It is NOT written here: it is published in the same commit as the
+      // ground (slabStage.mjs), so a ground that refuses leaves the slab's terrain and ground as they were, never a new
+      // terrain over an old ground (Huron, twice, 2026-10-27). A ground the Bake skips was baked on this terrain, so the
+      // terrain is then published alone, below.
+      // ▶ node checks/claims-a-failed-bake-leaves-the-slab.mjs
+      const terrainOwed = existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)
+        ? [['terrain.json', readFileSync(SCENE_TERRAIN_JSON)], ['terrain.bin', readFileSync(SCENE_TERRAIN_BIN)]]
+          .filter(([name, bytes]) => !(existsSync(join(LOOK_DIR, name)) && readFileSync(join(LOOK_DIR, name)).equals(bytes)))
+        : []
+      if (P.plan && terrainOwed.length) P.plan.stale.push({ step: 'terrain-slab', why: ["the town's terrain differs from this Look's copy"] })
+      else if (terrainOwed.length) markStep(P, 'terrain-slab', 'waiting', { why: 'published with the ground, once it succeeds' })
+      else skip('terrain-slab')
+      const terrainPublished = (names) => { if (names.some(n => n.startsWith('terrain.'))) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } }
+      // the ground's stage: it reads its prior ground.json (the lightmap it carries) and the shore median from its out dir
+      const groundStage = (carry) => ({ lookDir: LOOK_DIR, look: id, seed: ['ground.json', 'shore-median.json'],
+        publish: ['ground.json', 'ground.bin', 'shape.json'], carry })
+      const groundFirst = groundStage(terrainOwed)
       // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json) · shore-median.json (read and painted as sand only when walked on the shoreline this bake writes; its freshness is the 'ground-shore' step's, below)
       await runIfDirty('ground',
         [MAP_JSON, DESIGN, SCENE_DESIGN, RIBBONS, bakePaths.boundary, join(bakePaths.raw, 'survey.json'),
@@ -2840,7 +2851,9 @@ createServer(async (req, res) => {
         // --shore=pending: this pass writes the shoreline the median is walked on, so it cannot have the median yet;
         // 'ground-shore' below re-runs it without the flag, and a coast with no current median then refuses
         `node bake-ground.js --look=${id} ${sceneFlag} --shore=pending`,
-        { cwd: here, timeout: 300000 })
+        { cwd: here, timeout: 300000, stage: groundFirst })
+      if (groundFirst.published) terrainPublished(groundFirst.published)
+      else if (terrainOwed.length && !P.plan) terrainPublished(publishSlab({ lookDir: LOOK_DIR, look: id, files: terrainOwed }))
       // Shore revetment — reads the shoreline (`__water__` runs) out of the
       // shape.json the ground bake just wrote, so a pour that moves the shore
       // re-stones it; a stale revetment is stone keyed to a shore that moved.
@@ -2878,7 +2891,7 @@ createServer(async (req, res) => {
           [join(LOOK_DIR, 'shore-median.json'), join(LOOK_DIR, 'shape.json'), join(here, 'bake-ground.js')],
           [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
           `node bake-ground.js --look=${id} ${sceneFlag}`,
-          { cwd: here })
+          { cwd: here, stage: groundStage([]) })
         else { skip(`ground-shore (${shorePass.why})`); if (!P.plan) saveBakeSkip(MAP_JSON, id, 'ground-shore', shorePass.why) }
       }
       // Context channel: metres from every terrain texel to the nearest shoreline run
