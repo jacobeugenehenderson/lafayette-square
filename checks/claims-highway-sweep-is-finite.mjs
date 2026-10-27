@@ -18,11 +18,12 @@ import { readFileSync, existsSync } from 'node:fs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
+import { importSource, sourceOf } from './_importSource.mjs'
 
-const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
+const src = sourceOf('src/lib/tileGround.js')
 const a = src.indexOf('function highwayWidthProfile'), b = src.indexOf('function unionRings')
 if (a < 0 || b < a) { console.error('⛔ NOT CHECKED — highwayWidthProfile/sweepHighway not found in tileGround.js'); process.exit(2) }
-const { sweepHighway } = await import('data:text/javascript,' + encodeURIComponent(src.slice(a, b) + '\nexport { sweepHighway }'))
+const { sweepHighway } = await importSource('src/lib/tileGround.js', { span: { from: 'function highwayWidthProfile', to: 'function unionRings' }, suffix: 'export { sweepHighway }' })
 
 const finite = (sw) => sw && sw.ring.every(q => Number.isFinite(q[0]) && Number.isFinite(q[1]))
 const trySweep = (pts, L, R) => { try { const sw = sweepHighway(pts, L, R); return sw == null ? { ok: true, skipped: true } : { ok: finite(sw) } } catch (e) { return { ok: false, err: e.message } } }

@@ -21,7 +21,7 @@
  *     console.log(w.getExpectedTwilioSignature(TOKEN, URL, PARAMS)))"
  */
 
-import { readFileSync } from 'node:fs';
+import { importSource, sourceOf } from './_importSource.mjs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,7 +31,7 @@ const SRC = join(ROOT, 'cary/supabase/functions/sms-webhook/index.ts');
 // ── Load the real helpers out of the source ────────────────────────────────
 // Everything above `Deno.serve(` is pure helper code. Import it as a module so
 // the thing under test IS the deployed source, not a copy of it.
-const source = readFileSync(SRC, 'utf8');
+const source = sourceOf('cary/supabase/functions/sms-webhook/index.ts');
 const cut = source.indexOf('Deno.serve(');
 if (cut === -1) {
   console.error(`FAIL — no \`Deno.serve(\` found in ${SRC}. The file's shape changed; fix this check.`);
@@ -52,10 +52,10 @@ for (const name of NEEDED) {
 const ENV = {};
 globalThis.Deno = { env: { get: (k) => ENV[k] } };
 
-const mod = await import(
-  'data:text/javascript;base64,' +
-    Buffer.from(`${helpers}\nexport { ${NEEDED.join(', ')} };`).toString('base64')
-);
+const mod = await importSource('cary/supabase/functions/sms-webhook/index.ts', {
+  span: { to: 'Deno.serve(' },
+  suffix: `export { ${NEEDED.join(', ')} };`,
+});
 const { verifyTwilioSignature, escapeXml } = mod;
 
 // ── Fixtures ───────────────────────────────────────────────────────────────
