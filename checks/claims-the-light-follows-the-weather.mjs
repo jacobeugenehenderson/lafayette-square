@@ -22,8 +22,8 @@
  * 5. A chosen weather is the same every time: every weather integrator resets on `snapEpoch`.
  */
 import { readFileSync, readdirSync } from 'node:fs'
+import { importSource, sourceOf } from './_importSource.mjs'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const read = (p) => readFileSync(path.join(ROOT, p), 'utf8')
@@ -312,11 +312,9 @@ else ok('only the directive path writes cloudCover/storminess')
   if (w.cover > lim) bad(`${w.id} at full strength turns a clear day to cover ${w.cover.toFixed(2)} (sun ${w.sun}) — past its own sun scale`)
   else ok('no modulator darkens a clear day past its own sun scale (absence is not zero)')
   // Mutation: the old composer, which scaled an absent field from 0.
-  const src = read('src/lib/almanac-eval.js')
-  const mutSrc = src.replace('ABSENT_MEANS[path]', '0').replace("from './sky-scalars.js'", `from '${pathToFileURL(path.join(ROOT, 'src/lib/sky-scalars.js')).href}'`)
-  if (mutSrc === src) bad('the absence-is-zero mutation no longer applies — re-aim it')
+  if (!sourceOf('src/lib/almanac-eval.js').includes('ABSENT_MEANS[path]')) bad('the absence-is-zero mutation no longer applies — re-aim it')
   else {
-    const mut = await import('data:text/javascript,' + encodeURIComponent(mutSrc))
+    const mut = await importSource('src/lib/almanac-eval.js', { transform: (t) => t.replace('ABSENT_MEANS[path]', '0') })
     const mw = worstOn(mut.selectDirectiveWithStrengths, modulators)
     if (mw.cover > lim) ok(`mutation (absent field scaled from 0) is caught: ${mw.id} → cover ${mw.cover.toFixed(2)}`)
     else bad('mutation (absent field scaled from 0) is NOT caught')

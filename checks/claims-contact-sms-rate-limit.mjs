@@ -20,14 +20,14 @@
  *   node checks/claims-contact-sms-rate-limit.mjs
  */
 
-import { readFileSync } from 'node:fs';
+import { importSource, sourceOf } from './_importSource.mjs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'cary/supabase/functions/contact-sms/index.ts');
 
-const source = readFileSync(SRC, 'utf8');
+const source = sourceOf('cary/supabase/functions/contact-sms/index.ts');
 const cut = source.indexOf('Deno.serve(');
 if (cut === -1) {
   console.error(`FAIL — no \`Deno.serve(\` in ${SRC}; the file's shape changed.`);
@@ -46,10 +46,10 @@ for (const n of NEEDED) {
 const ENV = {};
 globalThis.Deno = { env: { get: (k) => ENV[k] } };
 
-const mod = await import(
-  'data:text/javascript;base64,' +
-    Buffer.from(`${helpers}\nexport { ${NEEDED.join(', ')} };`).toString('base64')
-);
+const mod = await importSource('cary/supabase/functions/contact-sms/index.ts', {
+  span: { to: 'Deno.serve(' },
+  suffix: `export { ${NEEDED.join(', ')} };`,
+});
 const { overLimit, cap, hashIp, clientIp, corsHeaders } = mod;
 
 let failed = 0;

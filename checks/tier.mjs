@@ -41,6 +41,8 @@ import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs'
 import { join, dirname, resolve, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { builtinModules } from 'node:module'
+import { createHash } from 'node:crypto'
+import { spanOf } from './_importSource.mjs'
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -108,18 +110,21 @@ const NET_CMD = /\b(curl|wget|nc|ssh|scp|supabase|psql|npx|npm\s+(i|install|publ
 const LOCAL_CMD = /^\s*(git\s+(ls-files|show|rev-parse|log|diff|cat-file|status|grep|merge-base)|grep|rg|ls|cat|find|wc|sed|awk|sort|uniq|head|tail|node\s+-[ev]|true)\b/
 
 const SIGNALS = {
-  // Outbound calls. `fetch(` after comment-stripping is a call, not prose.
+  // Outbound calls. ⭐ A CALL-SHAPED signal (`'call'`) is read on the BLANKED code (`lex`): `fetch(` inside a string or a
+  // regex literal is text, not a call (claims-a-slab-ships-under-content-names searches serve.js for `fetch(` and was tiered
+  // live, 2026-10-26). A template's `${…}` is code and stays visible. A module-NAME signal is itself a string literal, so it
+  // is read on the comment-free code.
   live: [
-    [/\bfetch\s*\(/, 'calls fetch()'],
-    [/\bXMLHttpRequest\b/, 'uses XMLHttpRequest'],
-    [/\bWebSocket\s*\(/, 'opens a WebSocket'],
+    [/\bfetch\s*\(/, 'calls fetch()', 'call'],
+    [/\bXMLHttpRequest\b/, 'uses XMLHttpRequest', 'call'],
+    [/\bWebSocket\s*\(/, 'opens a WebSocket', 'call'],
     [/from\s*['"]node:(https?|net|dgram|dns|tls)['"]/, 'imports a network module'],
     [/require\s*\(\s*['"](node:)?(https?|net|dgram|dns|tls)['"]/, 'imports a network module'],
-    [/\bcreateClient\s*\(/, 'constructs a Supabase/DB client'],
+    [/\bcreateClient\s*\(/, 'constructs a Supabase/DB client', 'call'],
     // ⭐ The other ways to start code that is not this file (Boz, 2026-10-12): a worker or a forked cluster member runs a
     //    module named at run time, and native code reaches anything. None is read — naming the module is enough.
     [/['"](?:node:)?(?:worker_threads|cluster)['"]/, 'imports worker_threads/cluster — starts code it cannot read'],
-    [/\bprocess\.(?:dlopen|binding)\s*\(/, 'loads native code (process.dlopen/binding)'],
+    [/\bprocess\.(?:dlopen|binding)\s*\(/, 'loads native code (process.dlopen/binding)', 'call'],
     // ⭐ A PACKAGE MEASURED TO REACH OUT. Bare packages are not read from source (the no-network guard is their proof);
     //    one the guard has CAUGHT is declared here so it never enters the safe run again. vite: its server resolves
     //    localhost over DNS on start (getLocalhostAddressIfDiffersFromDNS) — the guard fired on
@@ -196,7 +201,33 @@ export function execSelfTest() {
     ["export const run = () => process.binding('spawn_sync')", 'live'],
     ["import { createServer } from 'vite'\nexport const run = () => createServer({})", 'live'],
     ["export const run = async () => (await import('vite')).build({})", 'live'],
+    // ⭐ a call-shaped signal is read on the blanked code: `fetch(` in a regex or a string is text; inside a `${…}` it is a call
+    ["export const re = /fetch(url)/", 'safe'],
+    ["export const msg = 'fetch(url) is not called here'", 'safe'],
+    ["export const run = (u) => `${fetch(u)}`", 'live'],
+    // ⭐ a data: module's body is read: importing https: is live; a plain body is safe
+    ["export const run = () => import(\"data:text/javascript,import 'https://example.com/x.js'\")", 'live'],
+    ["export const run = () => import(\"data:text/javascript,export const x = 1\")", 'safe'],
   ]
+  // ⭐ importSource (checks/_importSource.mjs) — the helper as it is on disk, a target file, and a check calling it
+  const helperSrc = readFileSync(join(ROOT, IMPORT_SOURCE), 'utf8')
+  const via = (call, target = 'export const x = 1') => classifyVirtual({ 'checks/claims-planted.mjs': `import { importSource } from './_importSource.mjs'\n${call}`,
+    [IMPORT_SOURCE]: helperSrc, 'src/lib/planted.js': target }, 'checks/claims-planted.mjs').tier
+  const isrc = [
+    ['a literal path to a safe file', via("await importSource('src/lib/planted.js')"), 'safe'],
+    ['a literal span that runs only the safe part of a file that reaches out', via("await importSource('src/lib/planted.js', { span: { functions: ['ok'] } })",
+      'export function ok() {\n  return 1\n}\nexport function go(u) {\n  return fetch(u)\n}\n'), 'safe'],
+    ['a span that is not a literal', via("await importSource('src/lib/planted.js', { span: pick() })"), 'live'],
+    ['a literal path to a file that calls fetch()', via("await importSource('src/lib/planted.js')", 'export const go = (u) => fetch(u)'), 'live'],
+    ['a path that is not a literal', via('await importSource(process.argv[2])'), 'live'],
+    ['a transform that adds a fetch() call', via("await importSource('src/lib/planted.js', { transform: (t) => t + 'fetch(u)' })"), 'live'],
+    ['a prefix that imports a planted repo file that calls fetch()', classifyVirtual({ 'checks/claims-planted.mjs': "import { importSource } from './_importSource.mjs'\nawait importSource('src/lib/planted.js', { prefix: \"import { go } from './fetcher.js'\" })",
+      [IMPORT_SOURCE]: helperSrc, 'src/lib/planted.js': 'export const x = 1', 'src/lib/fetcher.js': 'export const go = (u) => fetch(u)' }, 'checks/claims-planted.mjs').tier, 'live'],
+    ['a loader hook registered from node:module', classifyVirtual({ 'checks/claims-planted.mjs': "import { register } from 'node:module'\nregister('./hooks.mjs', import.meta.url)" }, 'checks/claims-planted.mjs').tier, 'live'],
+    ['a run-time data: import outside the helper', classifyVirtual({ 'checks/claims-planted.mjs': "const t = 'export {}'\nawait import('data:text/javascript,' + t)" }, 'checks/claims-planted.mjs').tier, 'live'],
+    ['a computed import() inside a literal data: body', classifyVirtual({ 'checks/claims-planted.mjs': 'await import("data:text/javascript,await import(globalThis.x)")' }, 'checks/claims-planted.mjs').tier, 'live'],
+  ]
+  for (const [name, got, want] of isrc) if (got !== want) throw new Error(`[tier] ⛔ self-test: importSource — ${name} read as ${got}, want ${want}`)
   for (const [helper, want] of graph) {
     const got = classifyVirtual({ 'checks/claims-planted.mjs': check, 'checks/_helper.mjs': helper }, 'checks/claims-planted.mjs').tier
     if (got !== want) throw new Error(`[tier] ⛔ self-test: a check importing a helper \`${helper.split('\n').pop()}\` read as ${got}, want ${want} — the gate does not hold across the import graph`)
@@ -611,15 +642,66 @@ function readCheckSource(file) {
 let _virtual = null
 const onDisk = (rel) => (_virtual ? _virtual.has(rel) : existsSync(join(ROOT, rel)))
 /** Classify `entry` against planted sources { relPath: source } — the same classify, reading nothing from disk. */
+const IMPORT_SOURCE = 'checks/_importSource.mjs'
+/** The `span: {…}` in an importSource call's options, as a value — only when it is a literal (strings, arrays, the keys
+ *  functions/from/to). → { span, text } · { span: null } when absent · { bad } when it is anything else. */
+function spanLiteral(opts) {
+  const at = opts.search(/\bspan\s*:/); if (at < 0) return { span: null }
+  const open = opts.indexOf('{', at); if (open < 0) return { bad: 'not an object' }
+  let d = 0, end = -1, q = null
+  for (let i = open; i < opts.length; i++) { const c = opts[i]
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; continue }
+    if (c === "'" || c === '"') q = c; else if (c === '`') return { bad: 'a template' }
+    else if (c === '{') d++; else if (c === '}' && --d === 0) { end = i; break } }
+  if (end < 0) return { bad: 'unclosed' }
+  const text = opts.slice(open, end + 1), bare = blankStrings(text)
+  if (!/^[\s{}\[\],:'"]*(?:(?:functions|from|to)[\s{}\[\],:'"]*)*$/.test(bare.replace(/'\s*'|"\s*"/g, "''"))) return { bad: 'it holds code' }
+  try { return { span: Function(`"use strict"; return (${text})`)(), text: opts.slice(at, end + 1) } } catch (e) { return { bad: e.message } }
+}
+/** A data: URL's module text: `;base64,` decoded, otherwise percent-decoded. null when it cannot be. */
+function dataBody(url) {
+  const i = url.indexOf(','); if (i < 0) return null
+  const meta = url.slice(5, i), payload = url.slice(i + 1)
+  try { return /;base64$/.test(meta) ? Buffer.from(payload, 'base64').toString('utf8') : decodeURIComponent(payload) } catch { return null }
+}
+/** A data: module's body, classified as a file is: the live signals, and each import it names — a network URL is live, a
+ *  file: URL inside the repo is classified, anything else (a relative path resolves to nothing from data:) is unreadable. */
+function dataModule(body, seen, depth) {
+  const code = stripComments(body), blank = blankStrings(code), why = []
+  let tier = 'safe'
+  for (const [re, label, kind] of SIGNALS.live) if (re.test(kind === 'call' ? blank : code)) { tier = 'live'; why.push(label) }
+  for (const m of code.matchAll(/\bimport\s*\(/g)) {                                   // a computed import() in a body: unreadable
+    if (blank.slice(m.index, m.index + 6) !== 'import') continue
+    const a = balancedArg(code, m.index + m[0].length - 1)?.trim()
+    if (!a || !/^['"]/.test(a) || /[+`$]/.test(a.slice(1))) { tier = 'live'; why.push('a computed import() inside a data: module') }
+  }
+  for (const m of code.matchAll(/(?:\bfrom|\bimport\s*\(|\bimport)\s*['"]([^'"]+)['"]/g)) {
+    if (blank.slice(m.index, m.index + 4) !== m[0].slice(0, 4)) continue
+    const spec = m[1]
+    if (/^https?:/.test(spec)) { tier = 'live'; why.push(`imports ${spec} over the network`); continue }
+    if (/^file:/.test(spec)) {
+      const hit = relative(ROOT, fileURLToPath(spec))
+      if (hit.startsWith('..') || !onDisk(hit)) { tier = 'live'; why.push(`imports ${spec} — not a repo file`); continue }
+      const sub = classify(hit, seen, depth + 1)
+      if (sub.tier !== 'safe') { if (sub.tier === 'live' || tier === 'safe') tier = sub.tier; why.push(`imports ${hit}, which can: ${sub.why.join(', ')}`) }
+    } else if (/^(?:node:|[@a-z])/.test(spec)) continue        // a builtin or a package: as a file's are
+    else { tier = 'live'; why.push(`imports "${spec}" from a data: module — resolves to nothing it can read`) }
+  }
+  return { tier, why }
+}
+
 export function classifyVirtual(files, entry) {
   _virtual = new Map(Object.entries(files))
   try { return classify(entry) } finally { _virtual = null }
 }
 
-export function classify(file, seen = new Set(), depth = 0) {
-  if (seen.has(file)) return { file, tier: 'safe', why: [] }
-  seen.add(file)
-  const src = readCheckSource(file)
+export function classify(file, seen = new Set(), depth = 0, spanText = null) {
+  // `spanText`: the part of `file` an importSource span runs (checks/_importSource.mjs#spanOf) — classified as the file's own
+  // text, so its relative imports resolve from the file, and keyed apart from the whole file
+  const key = spanText == null ? file : `${file}#span:${createHash('sha256').update(spanText).digest('hex')}`
+  if (seen.has(key)) return { file, tier: 'safe', why: [] }
+  seen.add(key)
+  const src = spanText ?? readCheckSource(file)
   // Not runnable, and not classifiable. Tiered as `vanished` so it matches no run
   // tier and is excluded by the runner's own filter — reported by classifyAll, never
   // quietly dropped.
@@ -639,7 +721,10 @@ export function classify(file, seen = new Set(), depth = 0) {
     return { file, tier, why, reasonClass: tier === 'live' ? (NET_CMD.test(code) ? 'outbound' : 'unreadable') : undefined }
   }
 
-  for (const [re, label] of SIGNALS.live) if (re.test(code)) { bump('live'); why.push(label) }
+  const blank = blankStrings(code)
+  for (const [re, label, kind] of SIGNALS.live) if (re.test(kind === 'call' ? blank : code)) { bump('live'); why.push(label) }
+  // ⛔ A LOADER HOOK can swap any module's source (Zob, 2026-10-26): `register(` from node:module, or `module.register(` — live
+  if (/['"](?:node:)?module['"]/.test(code) && /\b(?:module\.)?register\s*\(/.test(blank)) { bump('live'); why.push('installs a loader hook (node:module register) — can swap any module\'s source') }
   const tmpOnly = writesOnlyUnderTmp(code, file)
   for (const [re, label] of SIGNALS.write) if (re.test(code)) {
     if (tmpOnly) why.push(`${label} — only under its own temp dir`)
@@ -650,18 +735,72 @@ export function classify(file, seen = new Set(), depth = 0) {
   //    exec, and the one that nearly shipped: `claims-doc-pointers-resolve.mjs --run` imports and
   //    RUNS every check the docs cite, live tier included. It scans as "reads repo files only".
   //    Three cases, and only the third is undecidable:
-  //      data:   — a self-contained module, resolves to nothing on disk or the network (hermetic)
+  //      data:   — a LITERAL body is read like a file (Zob, 2026-10-26): the live signals, and what it imports — a network
+  //                URL is live, a file: URL in the repo is classified, a computed import() in it is live. A body built at
+  //                RUN TIME cannot be read, so it is LIVE — except in checks/_importSource.mjs, the one helper whose parts are
+  //                read at its call sites (below). It was called hermetic unread, so a data: module importing https: was safe.
   //      a path built only of literals and repo-rooted bindings — READ IT (`readImportPath`), as a static import is read
   //      anything else — an argument, the environment, a loop variable — cannot be read ⇒ live
   //    `import()` written in a message is prose — but only when BOTH readers say it sits in a string: a mis-read
   //    literal would otherwise hide a real call, which mis-tiers toward safe (the forbidden direction).
-  const blank = blankStrings(code)
+  // ⭐ importSource(rel, { slice, transform, prefix, suffix }) — checks/_importSource.mjs (Boz's ruling, 2026-10-26):
+  //   a LITERAL repo path is a static import of that file (classified); a non-literal path is LIVE; the call's other
+  //   arguments are code that runs inside the imported text, so they are scanned UNBLANKED for the live signals.
+  for (const m of code.matchAll(/\bimportSource\s*\(/g)) {
+    if (blank.slice(m.index, m.index + 12) !== 'importSource') continue
+    if (/function\s+$|export\s+(async\s+)?function\s+$/.test(code.slice(Math.max(0, m.index - 30), m.index))) continue   // its definition
+    const args = balancedArg(code, m.index + m[0].length - 1) ?? ''
+    const first = (args.match(/^\s*(['"])([^'"]+)\1\s*(?:,|$)/) || [])[2]
+    if (!first) { bump('live'); why.push('importSource of a path that is not a literal — cannot be read'); continue }
+    if (!onDisk(first)) { bump('live'); why.push(`importSource of ${first} — not a repo file`); continue }
+    const rest = args.includes(',') ? args.slice(args.indexOf(',') + 1) : ''
+    // the span: a LITERAL ({ functions: [...] } / { from, to }) read with the helper's own spanOf; absent = the whole file
+    const sp = spanLiteral(rest)
+    if (sp.bad) { bump('live'); why.push(`importSource of ${first} with a span that is not a literal (${sp.bad}) — cannot be read`); continue }
+    let text = null
+    if (sp.span) { try { text = spanOf(readCheckSource(first) ?? '', sp.span, first) } catch (e) { bump('live'); why.push(`importSource of ${first}: ${e.message}`); continue } }
+    const sub = classify(first, seen, depth + 1, text)
+    const what = sp.span ? `${first} (its span: ${sp.span.functions ? sp.span.functions.join(', ') : `${sp.span.from ?? 'start'} → ${sp.span.to ?? 'end'}`})` : first
+    if (sub.tier !== 'safe') { bump(sub.tier); why.push(`importSource of ${what}, which can: ${sub.why.join(', ')}`) }
+    else why.push(`importSource of ${what} — read, safe`)
+    // transform / prefix / suffix run inside the import: scanned as written (strings included)
+    const restNoSpan = sp.text ? rest.replace(sp.text, '') : rest
+    for (const [re, label] of SIGNALS.live) if (re.test(restNoSpan)) { bump('live'); why.push(`importSource's arguments ${label}`) }
+    // …and the IMPORTS they add (Zob, 2026-10-26): a relative specifier resolves against the file's directory and is classified;
+    // http(s): is live; a non-literal import( is live; any http(s): text at all is live
+    if (/https?:\/\//.test(restNoSpan)) { bump('live'); why.push("importSource's arguments name an http(s): URL") }
+    for (const im of restNoSpan.matchAll(/\bimport\s*\(/g)) {
+      const a = balancedArg(restNoSpan, im.index + im[0].length - 1)?.trim()
+      if (!a || !/^['"]/.test(a) || /[+`$]/.test(a.slice(1))) { bump('live'); why.push("importSource's arguments hold a computed import()") }
+    }
+    for (const im of restNoSpan.matchAll(/(?:\bfrom|\bimport\s*\(|\bimport)\s*\\?['"]([^'"\\]+)\\?['"]/g)) {
+      const spec = im[1]
+      if (/^https?:/.test(spec)) continue                                     // already live, above
+      if (!/^\.\.?\//.test(spec)) continue                                    // a builtin or a package: as a file's are
+      const dep = relative(ROOT, resolve(ROOT, dirname(first), spec))
+      if (!onDisk(dep)) { bump('live'); why.push(`importSource's arguments import ${spec} — no repo file at ${dep}`); continue }
+      const d = classify(dep, seen, depth + 1)
+      if (d.tier !== 'safe') { bump(d.tier); why.push(`importSource's arguments import ${dep}, which can: ${d.why.join(', ')}`) }
+    }
+  }
   for (const m of code.matchAll(/\bimport\s*\(/g)) {
     if (blank.slice(m.index, m.index + 6) !== 'import' && inStringHere(code, m.index)) continue
     const arg = balancedArg(code, m.index + m[0].length - 1)?.trim()
     if (arg === '') continue                                                 // `import()` with nothing in it does not parse: not a call
+    if (arg && /^['"`]data:/.test(arg)) {
+      const lit = arg.length > 1 && arg[arg.length - 1] === arg[0] && !arg.slice(1, -1).includes(arg[0]) && !/\$\{/.test(arg)
+      if (!lit) {
+        if (file === IMPORT_SOURCE) { why.push('the importSource helper\'s own data: import — its parts are read at each call site'); continue }
+        bump('live'); why.push('import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs)'); continue
+      }
+      const d = dataBody(arg.slice(1, -1))
+      if (d == null) { bump('live'); why.push('import of a data: module whose body cannot be decoded'); continue }
+      const sub = dataModule(d, seen, depth)
+      if (sub.tier !== 'safe') { bump(sub.tier); why.push(`imports a data: module, which can: ${sub.why.join(', ')}`) }
+      else why.push('imports a data: module — its body read, safe')
+      continue
+    }
     if (arg && /^['"`]/.test(arg) && !/[+`$]/.test(arg.slice(1))) continue  // a plain literal: handled elsewhere
-    if (arg && /^['"`]data:/.test(arg)) { why.push('computed import of a data: module — hermetic'); continue }
     const r = arg ? readImportPath(arg, file, code) : { opaque: true }
     if (r.arg) { bump('live'); why.push('computed import() of a path an argument or the environment can supply — arbitrary'); continue }
     if (!r.paths) { bump('live'); why.push('computed import() with no readable target — runs arbitrary modules'); continue }

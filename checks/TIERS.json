@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 458,
   "counts": {
-    "safe": 328,
-    "local-effect": 28,
-    "live": 102
+    "safe": 330,
+    "local-effect": 27,
+    "live": 101
   },
   "checks": [
     {
@@ -611,10 +611,9 @@
     },
     {
       "file": "checks/claims-a-slab-ships-under-content-names.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
+      "tier": "safe",
       "why": [
-        "calls fetch()"
+        "reads repo files only"
       ]
     },
     {
@@ -829,10 +828,9 @@
     },
     {
       "file": "checks/claims-a-towns-sources-are-its-own.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
+      "tier": "safe",
       "why": [
-        "imports src/cartograph/sourcesCatalogue.js, which can: calls fetch()"
+        "computed import of src/cartograph/sourcesCatalogue.js — read, safe"
       ]
     },
     {
@@ -998,7 +996,7 @@
       "file": "checks/claims-bake-progress-shows-the-route.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "importSource of cartograph/serve.js (its span: runShell, bakePlan, markStep, runStep) — read, safe"
       ]
     },
     {
@@ -1107,7 +1105,7 @@
       "file": "checks/claims-contact-sms-rate-limit.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "importSource of cary/supabase/functions/contact-sms/index.ts (its span: start → Deno.serve() — read, safe"
       ]
     },
     {
@@ -1176,9 +1174,8 @@
     {
       "file": "checks/claims-deployment-has-one-authority.mjs",
       "tier": "live",
-      "reasonClass": "outbound",
+      "reasonClass": "unreadable",
       "why": [
-        "calls fetch()",
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
         "imports package(s) vite — not read from source"
       ]
@@ -1572,7 +1569,7 @@
       "file": "checks/claims-highway-handedness.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "importSource of src/lib/tileGround.js (its span: function highwayWidthProfile → function unionRings) — read, safe"
       ]
     },
     {
@@ -1586,7 +1583,7 @@
       "file": "checks/claims-highway-sweep-is-finite.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "importSource of src/lib/tileGround.js (its span: function highwayWidthProfile → function unionRings) — read, safe"
       ]
     },
     {
@@ -1815,8 +1812,10 @@
     },
     {
       "file": "checks/claims-no-edge-is-drawn-twice.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
+        "installs a loader hook (node:module register) — can swap any module's source",
         "writeFileSync",
         "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]
@@ -2233,7 +2232,7 @@
       "file": "checks/claims-radius-has-one-home.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "importSource of cartograph/commitExtent.mjs — read, safe"
       ]
     },
     {
@@ -2783,6 +2782,7 @@
       "file": "checks/claims-the-light-follows-the-weather.mjs",
       "tier": "safe",
       "why": [
+        "importSource of src/lib/almanac-eval.js — read, safe",
         "computed import of src/lib/almanac-eval.js — read, safe",
         "computed import of src/lib/weather-payload.js — read, safe",
         "computed import of src/lib/townPlace.js — read, safe",
@@ -2792,7 +2792,6 @@
         "computed import of src/hooks/useSkyState.js — read, safe",
         "computed import of src/hooks/useAtmosphere.js — read, safe",
         "computed import of src/lib/almanac-eval.js — read, safe",
-        "computed import of a data: module — hermetic",
         "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
       ]
     },
@@ -3217,7 +3216,7 @@
       "file": "checks/claims-twilio-webhook-guard.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic"
+        "importSource of cary/supabase/functions/sms-webhook/index.ts (its span: start → Deno.serve() — read, safe"
       ]
     },
     {

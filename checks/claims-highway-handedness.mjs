@@ -17,13 +17,14 @@ import { readFileSync, existsSync } from 'node:fs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
+import { importSource, sourceOf } from './_importSource.mjs'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
-const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
+const src = sourceOf('src/lib/tileGround.js')
 const a0 = src.indexOf('function highwayWidthProfile'), b0 = src.indexOf('function unionRings')
 if (a0 < 0 || b0 < a0) { console.error('⛔ NOT CHECKED — sweepHighway not found in tileGround.js'); process.exit(2) }
-const { sweepHighway } = await import('data:text/javascript,' + encodeURIComponent(src.slice(a0, b0) + '\nexport { sweepHighway }'))
+const { sweepHighway } = await importSource('src/lib/tileGround.js', { span: { from: 'function highwayWidthProfile', to: 'function unionRings' }, suffix: 'export { sweepHighway }' })
 const ribbonsOf = (s) => ribbonsPathOf(s)
 const H = /^(motorway|motorway_link|trunk|trunk_link)$/
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }

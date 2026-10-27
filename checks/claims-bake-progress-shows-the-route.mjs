@@ -13,28 +13,33 @@
 //   · a failing step names itself ("step \"<label>\" failed: …");
 //   · a `[progress] <what> i/n` line becomes a real fraction on the step.
 //
-//   node checks/claims-bake-progress-shows-the-route.mjs [--serve=path]
+//   node checks/claims-bake-progress-shows-the-route.mjs
 //
-// MUTATIONS (each must go red, via --serve): a bare `await runShell('node x.js')` added to the bake route ·
-// runStep passing `timeout` through to runShell.
-import { readFileSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+// MUTATIONS, run every time (each must go red): a bare `await runShell('node x.js')` added to the bake route · runStep
+// passing `timeout` through to runShell. ⭐ The functions are run through checks/_importSource.mjs from the literal
+// cartograph/serve.js, so the tierer reads what runs (it was a run-time data: import, a safe verdict on an unread body);
+// the `--serve=<copy>` by-hand mutation path is gone with it — the two mutations are transforms of the same import.
+import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
+import { importSource, sourceOf } from './_importSource.mjs'
 
-const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
-const serveP = arg('serve') || join(ROOT, 'cartograph/serve.js')
-const src = readFileSync(serveP, 'utf8')
-const bad = []
-const fn = (name) => { let a = src.indexOf(`async function ${name}(`); if (a < 0) a = src.indexOf(`function ${name}(`); const b = src.indexOf('\n}\n', a); return a >= 0 && b > a ? src.slice(a, b + 2) : null }
-const need = ['runShell', 'bakePlan', 'markStep', 'runStep'].map(n => [n, fn(n)])
-for (const [n, f] of need) if (!f) bad.push(`${n} not found in serve.js`)
-if (!bad.length) {
-  const mod = "import { spawn } from 'node:child_process'; import { readFileSync } from 'node:fs'; import { join, dirname } from 'node:path';\n" +
-    'let _bakePlan = null\n' + need.map(([, f]) => f).join('\n').replace(/import\.meta\.filename/g, JSON.stringify(serveP)) + '\nexport { runShell, bakePlan, markStep, runStep }'
-  const { bakePlan, runStep } = await import('data:text/javascript,' + encodeURIComponent(mod))
+const SERVE = 'cartograph/serve.js'
+const NAMES = ['runShell', 'bakePlan', 'markStep', 'runStep']
+const fnOf = (src, name) => { let a = src.indexOf(`async function ${name}(`); if (a < 0) a = src.indexOf(`function ${name}(`); const b = src.indexOf('\n}\n', a); return a >= 0 && b > a ? src.slice(a, b + 2) : null }
+const src = sourceOf(SERVE)
+
+/** The judge: the offences of serve.js's bake, its route text `route` and its functions imported with `transform`. */
+async function judge(route, transform = null) {
+  const bad = []
+  for (const n of NAMES) if (!fnOf(src, n)) bad.push(`${n} not found in serve.js`)
+  if (bad.length) return { bad }
+  const { bakePlan, runStep } = await importSource('cartograph/serve.js', {
+    span: { functions: ['runShell', 'bakePlan', 'markStep', 'runStep'] },
+    prefix: "import { spawn } from 'node:child_process'; import { readFileSync } from 'node:fs'; import { join, dirname } from 'node:path';\nlet _bakePlan = null",
+    suffix: 'export { runShell, bakePlan, markStep, runStep }',
+    transform: (t) => { const u = t.replace(/import\.meta\.filename/g, JSON.stringify(join(ROOT, SERVE))); return transform ? transform(u) : u },
+  })
   // the plan covers the route
-  const a = src.indexOf('path.match(/^\\/looks\\/([^/]+)\\/bake$/)'), b = src.indexOf('_bakesInFlight.delete(id)', a)
-  const route = a >= 0 && b > a ? src.slice(a, b) : ''
   if (!route) bad.push('the bake route was not found in serve.js')
   const inRoute = [...route.matchAll(/(?:runIfDirty\(|runStep\(P, |markStep\(P, )'([\w-]+)'/g)].map(m => m[1])
   const plan = bakePlan()
@@ -56,8 +61,27 @@ if (!bad.length) {
   const p4 = P()
   await runStep(p4, 'ground', node('console.log("[progress] flatten mat:x 3/10")')).catch(e => bad.push(`progress step: ${e.message}`))
   if (Math.abs((p4.steps[0]?.frac ?? -1) - 0.3) > 1e-9) bad.push(`a "[progress] … 3/10" line gave frac ${p4.steps[0]?.frac}, not 0.3`)
-  console.log(`── bake progress ── plan ${plan.length} step(s): ${plan.join(' · ')} ${bad.length ? '⛔' : '✅'}`)
+  return { bad, plan }
 }
+
+const a = src.indexOf('path.match(/^\\/looks\\/([^/]+)\\/bake$/)'), b = src.indexOf('_bakesInFlight.delete(id)', a)
+const route = a >= 0 && b > a ? src.slice(a, b) : ''
+const { bad, plan } = await judge(route)
+if (plan) console.log(`── bake progress ── plan ${plan.length} step(s): ${plan.join(' · ')} ${bad.length ? '⛔' : '✅'}`)
 for (const x of bad) console.log(`   ⛔ ${x}`)
-console.log(bad.length ? '\n⛔ The bake can hide a step, kill one on a clock, or fail without naming it.' : '\n✅ The bake shows its own steps, kills none on a clock, and names the step that stops.')
-process.exit(bad.length ? 1 : 0)
+// ── the two mutations, each must go red
+const ANCHOR = 'const { timeout, ...rest } = opts'
+const MUT = [
+  ['a bare runShell( added to the bake route', () => judge(route + "\n      await runShell('node x.js')\n")],
+  ['runStep passing `timeout` through to runShell', () => fnOf(src, 'runStep')?.includes(ANCHOR)
+    ? judge(route, (t) => t.replace(ANCHOR, 'const rest = opts')) : null],
+]
+let blind = 0
+for (const [name, run] of MUT) {
+  const r = await run()
+  if (!r) { blind++; console.log(`   ⛔ mutation "${name}" could not be applied — re-aim it`); continue }
+  if (r.bad.length > bad.length) console.log(`   ✓ mutation: ${name} → red`)
+  else { blind++; console.log(`   ⛔ mutation: ${name} → stayed GREEN, the check is blind`) }
+}
+console.log(bad.length || blind ? '\n⛔ The bake can hide a step, kill one on a clock, or fail without naming it.' : '\n✅ The bake shows its own steps, kills none on a clock, and names the step that stops.')
+process.exit(bad.length || blind ? 1 : 0)
