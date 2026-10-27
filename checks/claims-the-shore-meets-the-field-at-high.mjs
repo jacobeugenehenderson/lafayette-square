@@ -23,7 +23,8 @@
 //      meets the real coast is pinned; a coast vertex the
 //      mesh lacks, off every deck, and no deck list each REFUSE. `--mutants`: the sides swapped · no clamp · whole faces ·
 //      the mesh refusal dropped · the deck exclusion dropped · a deck edge clamped · a junction left at the deck · a coast
-//      vertex under a bridge's paint (Jacob 2026-10-27, (b); protopolygon.offGradeSpans) not skipped, each RED;
+//      vertex under a bridge's paint (Jacob 2026-10-27, (b); protopolygon.offGradeSpans) not skipped · a bridge's paint over the
+//      water left on the bed instead of at HIGH (Boz's ruling), each RED;
 //   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
 //      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
 //      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
@@ -209,14 +210,15 @@ async function pinSection(mod, log) {
   const lakeR = wnd([[2, 2], [8, 2], [8, 8], [2, 8]], 1), islR = wnd([[4, 4], [6, 4], [6, 6], [4, 6]], -1)
   const fieldAt = (x, z) => x === 0 && z === 0 ? -2 : x === 5 && z === 5 ? -1 : 0.4 * (x - 5)
   const inSq = (x, z, a, b) => x > a && x < b && z > a && z < b
-  const mk = () => { const g = { bed: { P: [], I: [] }, lot: { P: [], I: [] } }
+  const mk = () => { const g = { bed: { P: [], I: [] }, lot: { P: [], I: [] }, 'mat:bridge': { P: [], I: [] } }
     for (let j = 0; j < 10; j++) for (let i = 0; i < 10; i++) for (const tri of [[[i, j], [i + 1, j], [i + 1, j + 1]], [[i, j], [i + 1, j + 1], [i, j + 1]]]) {
       const cx = (tri[0][0] + tri[1][0] + tri[2][0]) / 3, cz = (tri[0][1] + tri[1][1] + tri[2][1]) / 3
-      const G = inSq(cx, cz, 2, 8) && !inSq(cx, cz, 4, 6) ? g.bed : g.lot
+      // a bridge's paint over the lake from its west bank: x 2…3, z 3…5 (Jacob's (b): painted across the water)
+      const G = cx > 2 && cx < 3 && cz > 3 && cz < 5 ? g['mat:bridge'] : inSq(cx, cz, 2, 8) && !inSq(cx, cz, 4, 6) ? g.bed : g.lot
       for (const [x, z] of tri) { G.I.push(G.P.length / 3); G.P.push(x, 0, z) } }
     return Object.entries(g).map(([id, { P, I }]) => ({ id, positions: Float32Array.from(P), indices: Uint32Array.from(I) })) }
   const groups = mk(), tol = onLineTolerance(0.001, 10), inDrawing = (x, z) => x > 0 && x < 10 && z > 0 && z < 10
-  const run = (o = {}) => pinTheCoast({ groups, rings: [lakeR, islR], inDrawing, rawAt: fieldAt, highAt: () => 0, tol, decks: [], spans: [], ...o })
+  const run = (o = {}) => pinTheCoast({ groups, rings: [lakeR, islR], inDrawing, rawAt: fieldAt, highAt: () => 0, tol, decks: [], spans: [], spanGroups: [], ...o })
   let R = null, why = ''
   try { R = run() } catch (e) { why = e.message }
   no(R !== null, `the drawn lake pins without refusing${why ? ` — ${why}` : ''}`)
@@ -252,7 +254,7 @@ async function pinSection(mod, log) {
   // §5's own judge of a slab, on this one: it must pass the pin, and fail it wherever the pin is wrong (the mutants)
   const J = judgeDrawn(manifest, bin, [lakeR, islR], fieldAt, () => 0)
   no(J.n > 0 && J.worst <= 1e-5 && J.wrong === 0, `§5's slab judge on this ground: ${J.n} samples on the line, |drawn − HIGH| ≤ ${J.worst.toExponential(2)} m, ${J.wrong} of ${J.adj} line-adjacent vertices on the wrong side`)
-  const [sb, sl] = groups.map(g => R.sectionFor(g.positions)), key = (g, sec) => new Map(Array.from({ length: sec.length / 4 }, (_, r) => { const v = new Uint32Array(sec.buffer)[r * 4]; return [`${g.positions[v * 3]},${g.positions[v * 3 + 2]}`, sec[r * 4 + 1]] }))
+  const [sb, sl] = groups.slice(0, 2).map(g => R.sectionFor(g.positions)), key = (g, sec) => new Map(Array.from({ length: sec.length / 4 }, (_, r) => { const v = new Uint32Array(sec.buffer)[r * 4]; return [`${g.positions[v * 3]},${g.positions[v * 3 + 2]}`, sec[r * 4 + 1]] }))
   const kb = key(groups[0], sb), kl = key(groups[1], sl); let differ = 0, shared = 0; for (const [k, v] of kb) if (kl.has(k)) { shared++; if (kl.get(k) !== v) differ++ }
   no(shared > 0 && differ === 0, `one point, one height in every group (${shared} shared, ${differ} differ)`)
   let t = ''; try { run({ rings: [wnd([[2, 2], [5.5, 2], [8, 2], [8, 8], [2, 8]], 1), islR] }) } catch (e) { t = e.message }
@@ -275,7 +277,16 @@ async function pinSection(mod, log) {
     no(K && K.stats.underSpan === 1 && K.stats.underSpanByStreet['bridge-1'] === 1 && K.stats.pinned === 32,
       `a coast vertex under a bridge's paint is skipped and named, by the span's record (${K ? `${K.stats.underSpan} under ${JSON.stringify(K.stats.underSpanByStreet)}, ${K.stats.pinned} pinned` : w})`)
     t = ''; try { run({ spans: undefined }) } catch (e) { t = e.message }
-    no(/no off-grade span list/.test(t), 'no span list REFUSES (never read as none)') }
+    no(/no off-grade span list/.test(t), 'no span list REFUSES (never read as none)')
+    t = ''; try { run({ spanGroups: undefined }) } catch (e) { t = e.message }
+    no(/no span paint group list/.test(t), 'no span paint group list REFUSES') }
+  // the bridge's paint over the river stands AT HIGH, on the water (Boz's ruling, 2026-10-27): its three vertices strictly over
+  // the water (x = 3, z 3…5, where the field is −0.8) lift to HIGH, exempt from the side clamp; its bank vertices are the pinned line
+  { const span = { street: 'bridge-2', ring: [[2, 3], [3, 3], [3, 5], [2, 5]] }
+    let K = null, w = ''; try { K = run({ spans: [span], spanGroups: ['mat:bridge'] }) } catch (e) { w = e.message }
+    const at = (x, z) => K?.pins.get(`${x},${z}`)?.[0]
+    no(K && K.stats.bridgeLifted === 3 && [[3, 3], [3, 4], [3, 5]].every(([x, z]) => at(x, z) === 0) && K.stats.bridgeLiftedByStreet['bridge-2'] === 3,
+      `a bridge's paint over the water stands at HIGH, not on the bed (${K ? `${K.stats.bridgeLifted} lifted, (3, 4) at ${at(3, 4)} m; the field there ${fieldAt(3, 4)} m` : w})`) }
   return red
 }
 {
@@ -289,9 +300,10 @@ async function pinSection(mod, log) {
       ['whole faces, not line-adjacent triangles', '    if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue\n', ''],
       ['the line-in-the-mesh refusal dropped', '    if (missing.length) {\n      // measured', '    if (false) {\n      // measured'],
       ['the deck exclusion dropped', '      if (decks.length && onDeckEdge(x, z)) { if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue } junctions.add(keyOf(x, z)) }\n', ''],
-      ['a deck edge clamped', '      if (sideOf.has(k) || deckKeys.has(k)) continue', '      if (sideOf.has(k)) continue'],
+      ['a deck edge clamped', '      if (sideOf.has(k) || deckKeys.has(k) || lifted.has(k)) continue', '      if (sideOf.has(k) || lifted.has(k)) continue'],
       ['a junction left at the deck', 'if (deckOnly(x, z)) { deckKeys.add(keyOf(x, z)); continue }', '{ deckKeys.add(keyOf(x, z)); continue }'],
       ['a coast vertex under a span not skipped', '      if (sp) { stats.underSpan++;', '      if (false) { stats.underSpan++;'],
+      ["a bridge's paint left on the bed", '        lifted.set(k, highAt(x, z));', '        void 0;'],
     ]
     let alive = 0
     for (const [name, a, b] of M) { Object.assign(PIN_EDIT, { a, b }); const q = await pinSection(await load(pinMutant()), () => {}).catch(() => 1)

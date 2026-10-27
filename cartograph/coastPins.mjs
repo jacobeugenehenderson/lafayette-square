@@ -24,8 +24,13 @@
  *    so a coast vertex inside or on a span's painted footprint has no ground vertex to pin. It is skipped and counted per
  *    street (`underSpan`). A span is known by IDENTITY: the record ①'s mint writes for every off-grade piece it leaves out
  *    of the ink (map.json layers.ribbons.protopolygon.offGradeSpans, each { street, ring }), read the way the decks are.
+ * ⭐ ITS PAINT LIES ON THE WATER (Boz's ruling, 2026-10-27, on Jacob's (b): "the road is painted on top of the water,
+ *    continuous but flat at water level"): every ground vertex of a span's paint group (`spanGroups`) inside that span's
+ *    footprint and in ①'s water takes raw = HIGH, counted per span (`bridgeLifted`), so the paint reads on the water and never
+ *    as the bed seen through it, and meets each bank at HIGH like the pinned line. ⛔ Those vertices are EXEMPT from the side
+ *    clamp: they are on the water by ruling, not beside the line. Not a raised deck (filed: "deck later").
  * ⛔ Refuses, by name: a coast vertex inside the drawing, off every deck's edge and under no span, with no ground vertex on
- *    it (the line is not in the mesh) · no span list given.
+ *    it (the line is not in the mesh) · no span list given · no span paint group list given.
  */
 
 const keyOf = (x, z) => `${x},${z}`
@@ -42,14 +47,16 @@ export function onLineTolerance(latticeM, maxAbs) {
  * @param rawAt (x, z) → the field, raw · highAt (x, z) → HIGH, raw · tol → onLineTolerance
  * @param decks the street decks' rings (map.json layers.ribbons.streetDecks[].ring), [] when there are none
  * @param spans the off-grade spans over the water ([{ street, ring }], protopolygon.offGradeSpans), [] when there are none
+ * @param spanGroups the ids of the groups a span's paint is drawn in (H's `mat:highway`, the bridges overlay's), [] for none
  * @returns { pins: Map key → [raw, ∂raw/∂x, ∂raw/∂z], sectionFor(positions) → Float32Array | null, stats }
  */
-export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, decks, spans }) {
+export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, decks, spans, spanGroups }) {
+  if (!Array.isArray(spanGroups)) throw new Error('⛔ the pin: no span paint group list given (pass [] for none) — a bridge over the water would be left on the bed unseen')
   if (!Array.isArray(spans)) throw new Error('⛔ the pin: no off-grade span list given (pass [] for a town with none) — a coast vertex under a bridge would read as missing from the mesh, or be skipped unseen')
   if (!Array.isArray(decks)) throw new Error('⛔ the pin: no street-deck list given (pass [] for a town with none) — a deck edge would be pinned unseen')
   const segs = []
   for (const r of rings) for (let m = 0; m < r.length; m++) segs.push([r[m], r[(m + 1) % r.length]])
-  const stats = { tolM: +tol.toExponential(3), coastVertsInDrawing: 0, deckEdgeVerts: 0, deckJunctions: 0, underSpan: 0, underSpanByStreet: {}, pinned: 0, clampedLand: 0, clampedWater: 0, keptLand: 0, keptWater: 0, pinnedEdgeM: 0 }
+  const stats = { tolM: +tol.toExponential(3), coastVertsInDrawing: 0, deckEdgeVerts: 0, deckJunctions: 0, underSpan: 0, underSpanByStreet: {}, bridgeLifted: 0, bridgeLiftedByStreet: {}, pinned: 0, clampedLand: 0, clampedWater: 0, keptLand: 0, keptWater: 0, pinnedEdgeM: 0 }
   if (!segs.length) return { pins: new Map(), sectionFor: () => null, stats }
   // the coast's edges, gridded at their median length
   const lens = segs.map(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1])).sort((p, q) => p - q)
@@ -131,8 +138,18 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
         + `The nearest ground vertex to each: p10 ${q(0.1)} · p50 ${q(0.5)} · p90 ${q(0.9)} · max ${q(1)} mm (${missing.length - ds.length} with none within ${G} m); nearest group ${Object.entries(by).sort((p, q) => q[1] - p[1]).slice(0, 4).map(([k, v]) => `${k} ${v}`).join(' · ')}. The line is not in the mesh, so it cannot be pinned`)
     }
   }
-  // 2. LINE-ADJACENT: the other corners of every triangle that touches the line, clamped by side
-  const raw = new Map(pin)
+  // 1b. A BRIDGE'S PAINT LIES ON THE WATER: a span paint group's vertex inside its span's footprint and in ①'s water → HIGH
+  const lifted = new Map()
+  if (spans.length && spanGroups.length) { const want = new Set(spanGroups)
+    for (const { id, positions: P } of groups) { if (!want.has(id)) continue
+      for (let v = 0; v < P.length; v += 3) { const x = P[v], z = P[v + 2], k = keyOf(x, z)
+        if (pin.has(k) || lifted.has(k)) continue
+        const sp = spanAt(x, z); if (!sp || !inWater(x, z)) continue
+        lifted.set(k, highAt(x, z)); stats.bridgeLiftedByStreet[sp.street] = (stats.bridgeLiftedByStreet[sp.street] || 0) + 1 } } }
+  stats.bridgeLifted = lifted.size
+  // 2. LINE-ADJACENT: the other corners of every triangle that touches the line, clamped by side (a lifted bridge vertex is
+  //    on the water by ruling, so it is exempt)
+  const raw = new Map([...pin, ...lifted])
   const sideOf = new Map()
   groups.forEach(({ positions: P, indices: I }, gi) => { for (let t = 0; t < I.length; t += 3) {
     if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue
@@ -141,7 +158,7 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
       if (pin.has(k)) { const a = keyOf(P[I[t + (c + 1) % 3] * 3], P[I[t + (c + 1) % 3] * 3 + 2])
         if (pin.has(a)) stats.pinnedEdgeM += Math.hypot(P[I[t + (c + 1) % 3] * 3] - P[I[t + c] * 3], P[I[t + (c + 1) % 3] * 3 + 2] - P[I[t + c] * 3 + 2]) / 2
         continue }
-      if (sideOf.has(k) || deckKeys.has(k)) continue   // a deck's edge is neither pinned nor clamped
+      if (sideOf.has(k) || deckKeys.has(k) || lifted.has(k)) continue   // a deck's edge is neither pinned nor clamped; a bridge's paint on the water is its own
       const v = I[t + c], x = P[v * 3], z = P[v * 3 + 2], H = highAt(x, z), f = rawAt(x, z), wet = inWater(x, z)
       sideOf.set(k, wet); field.set(k, f)
       if (wet) { if (f > H) { raw.set(k, H); stats.clampedWater++ } else stats.keptWater++ }
