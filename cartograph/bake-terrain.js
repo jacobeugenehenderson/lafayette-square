@@ -42,6 +42,7 @@ import { join } from 'path'
 import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
 import { readCoast, maskOf, COAST_FILE } from './coastFile.mjs'
+import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { localBB } from './geography.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
@@ -582,6 +583,13 @@ async function main() {
   // `elevationSources.mjs#rasterToGrid`, the box mean of level 0 (shared with bake-coast).
   const opened = await openRasters(specs, { cacheMB: 64, refetch: `node cartograph/fetch-dem.mjs --scene=${SCENE}` })
   const { grid: raw, sources: regimes, counts } = await rasterToGrid(opened, { width, height, bounds, toLL: localToWgs84 })
+  // ⭐ ONE BASIS: the lidar onto the water record's (its stated geoid → the current one, fetch-lidar-flights.mjs), before
+  // anything compares it with a level or a floor. A town with no water record has no level to meet, and is left as read.
+  if (fs.existsSync(join(MAP_DIR, 'raw', 'water-datums.json'))) {
+    const d = lidarToRecordM(fs.existsSync(join(MAP_DIR, 'raw', FLIGHTS_FILE)) ? JSON.parse(fs.readFileSync(join(MAP_DIR, 'raw', FLIGHTS_FILE), 'utf8')) : null, SCENE)
+    for (let k = 0; k < raw.length; k++) if (Number.isFinite(raw[k])) raw[k] += d
+    console.log(`  GEOID: the lidar onto the water record's basis, ${d >= 0 ? '+' : ''}${d} m (raw/${FLIGHTS_FILE})`)
+  }
   const sources = opened.filter((o, s) => regimes[s].overlapped)
   console.log(`  grid: ${counts.whole.toLocaleString()} nodes the mean of a whole box · ${counts.partial.toLocaleString()} of a box with no-data pixels · ${counts.joined.toLocaleString()} across a tile seam · ${counts.bilinear.toLocaleString()} bilinear (a coarser source) · ${counts.none.toLocaleString()} with nothing (misses)`)
 

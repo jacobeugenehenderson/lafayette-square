@@ -279,7 +279,7 @@ async function main() {
     // ⭐ THE SPAN THE KIT READS, and no further (the reader refuses outside it): from the deepest the bed is ever drawn —
     // the lowest level the town could stand at, less its visibility depth (bake-terrain's own rule: the town's authored
     // `water.secchiM`, else r-bottom-visibility-default) — up to the HIGHEST WATER OBSERVED on the record (a monthly
-    // `highest`, not a mean: the flight-water band's top is one, fetch-flight-water.mjs).
+    // `highest`, not a mean).
     const reads = terrainValueReads(scene), auth = authoredWater(scene, reads)
     const visM = auth.secchiM?.value ?? reads.findings['r-bottom-visibility-default']?.value?.visibleToM
     if (!Number.isFinite(visM)) throw new Error(`⛔ ${scene}: no visibility depth (design.json water.secchiM, or the registry's r-bottom-visibility-default) — the span the bed reads is unknown`)

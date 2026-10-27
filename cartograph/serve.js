@@ -1796,15 +1796,11 @@ createServer(async (req, res) => {
         sources.waterDatums = wdR.code === 0 ? { ok: true, count: 1 }
           : wdR.code === 1 ? { ok: true, count: 0, note: 'no tide datum or lake gauge for this town — a coastal town\'s terrain refuses until one is named' }
           : { ok: false, count: 0, error: lastLine(wdR) }
-        // ── When the lidar flew, and the water then (fetch-flight-water.mjs; BRIEF-the-shore-is-one-line): the band between
-        //    the town's level and its flight-day water is the bathymetry's. Only for a town with a water record; a TIDAL
-        //    town refuses by name (its band needs flight-line times, not built), which is SAID here, not an error.
+        // ── When the lidar flew, and the geoid it was delivered on (fetch-lidar-flights.mjs): the lidar's heights are put on
+        //    the water record's basis by it, so it is fetched for every town with a water record (bake-coast refuses without).
         if (sources.waterDatums.count) {
-          const fwR = await runCapture('node fetch-flight-water.mjs --scene=' + scene, { cwd: here, env, timeout: 300000 })
-          const tidal = /is TIDAL/.test(fwR.stderr || fwR.stdout || '')
-          sources.flightWater = fwR.code === 0 ? { ok: true, count: 1 }
-            : tidal ? { ok: true, count: 0, note: 'a tidal town: the water on the flight days needs each flight line\'s time — not built' }
-            : { ok: false, count: 0, error: lastLine(fwR) }
+          const lfR = await runCapture('node fetch-lidar-flights.mjs --scene=' + scene, { cwd: here, env, timeout: 300000 })
+          sources.lidarFlights = lfR.code === 0 ? { ok: true, count: 1 } : { ok: false, count: 0, error: lastLine(lfR) }
         }
         // ── Every other DECLARED well the kit can fetch (sources.json). ⛔ A declaration is a promise the fetch keeps:
         //    jacksonheights declared cropland, Extent never acquired it, and the first pour died at "Pouring map"
@@ -2695,7 +2691,7 @@ createServer(async (req, res) => {
         // judged by content: the lidar is read over the network, and an authoring re-pour must not read it again.
         await runIfDirty('coast',
           [join(bakePaths.raw, 'elevation.tif'), join(bakePaths.raw, 'elevation-sources.txt'), join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
-           join(bakePaths.raw, 'water-datums.json'), join(bakePaths.raw, 'osm.json'),
+           join(bakePaths.raw, 'water-datums.json'), join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'elevation-flights.json'),
            bakePaths.boundary, bakePaths.geography,
            { value: 'terrainValueReads', read: () => terrainValueReads(bakeScene) },   // the authored lake level / tide names
            join(here, 'bake-coast.mjs')],
@@ -2823,6 +2819,7 @@ createServer(async (req, res) => {
           [ELEVATION_TIF, ELEVATION_LIST, join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
            join(bakePaths.raw, 'bathymetry-sources.txt'),   // the real floor under the water (fetch-bathymetry.mjs); same caveat
            join(bakePaths.raw, 'water-datums.json'),        // where the water stands: tide datums or the lake's levels (fetch-water-datums.mjs)
+           join(bakePaths.raw, 'elevation-flights.json'),   // the lidar's geoid, onto the record's basis (fetch-lidar-flights.mjs)
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
            join(bakePaths.clean, COAST_FILE),                // the lidar's coast (bake-coast.mjs): where the water is

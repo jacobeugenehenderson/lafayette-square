@@ -59,6 +59,7 @@ import { coastRings } from './coastline.mjs'
 import { deckStructures, defaultDeckWidthM } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 import { COAST_FILE, heldCells } from './coastFile.mjs'
+import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { discOf } from './boundaryRecords.mjs'
 
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -143,21 +144,22 @@ export function waterAsFlown(wet, nr, w, W, H) {
 }
 
 /**
- * The flattened water's level: the 1 cm mode of `ground` (NAVD88) over the wet cells with a value, decks excluded.
- * @returns { navd88, share, cells } — share = the mode's count over every wet cell with a value; null with no mode
+ * The flattened water's level: the EXACT mode of `ground` (the lidar's own value) over the wet cells with a value, decks
+ * excluded, reported on the water record's basis (+ toRecordM).
+ * @returns { navd88, lidarM, toRecordM, share, cells } — share = the mode's count over every wet cell with a value; null with no mode
  */
-export function flattenedWater(wet, deck, ground) {
+export function flattenedWater(wet, deck, ground, toRecordM = 0) {
   const hist = new Map()
   let cells = 0
   for (let k = 0; k < wet.length; k++) {
     if (!wet[k] || deck[k] || !Number.isFinite(ground[k])) continue
     cells++
-    const key = Math.round(ground[k] * 100)
+    const key = Math.fround(ground[k])                                  // the sheet is ONE value: its EXACT mode, no bucket (Zob)
     hist.set(key, (hist.get(key) || 0) + 1)
   }
   let mode = null, best = 0
   for (const [key, c] of hist) if (c > best) { best = c; mode = key }
-  return best >= 2 ? { navd88: mode / 100, share: +(best / cells).toFixed(4), cells } : null
+  return best >= 2 ? { navd88: +(mode + toRecordM).toFixed(4), lidarM: mode, toRecordM, share: +(best / cells).toFixed(4), cells } : null
 }
 
 /**
@@ -325,7 +327,10 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (!osmWater.rings.length)
     throw new Error(`⛔ bake-coast: ${scene} has a water record (raw/water-datums.json) and NO OSM water reaching the fetched square's edge to verify the lidar's coast against. An unverified coast is not drawn. ${osmWater.report.join(' ')}`)
   const levels = waterLevels(waterRecord({ mapDir, scene, auth: authoredWater(scene), wgs84ToLocal: toLocal, zero: 0 }))   // NAVD88
-  const highAt = levels.highAt
+  // ⭐ ONE BASIS (2026-10-25): the lidar is delivered on its stated geoid (WESM), the water record on the current one, so
+  // high is put on the LIDAR's basis (fetch-lidar-flights.mjs#lidarToRecordM; Huron −0.034 m), never a typed offset.
+  const toRecordM = lidarToRecordM(fs.existsSync(join(mapDir, 'raw', FLIGHTS_FILE)) ? JSON.parse(fs.readFileSync(join(mapDir, 'raw', FLIGHTS_FILE), 'utf8')) : null, scene)
+  const highAt = (x, z) => levels.highAt(x, z) - toRecordM
 
   // ── THE LIDAR, ON THE TERRAIN'S GRID ─────────────────────────────────────────────────────────────────────────────
   const specs = elevationSpecs(mapDir)
@@ -348,7 +353,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (guard.share > 0.5) throw new Error(`⛔ bake-coast: ${scene} — the water was flown ABOVE its high level (${levels.highName}${levels.tidal ? ', tidal' : ', a lake'}): ${(100 * guard.share).toFixed(1)}% of the ${guard.n.toLocaleString()} lidar cells bordering the open water stand above high water, median ${guard.gapM.toFixed(2)} m. Flown above high by ${guard.gapM.toFixed(2)} m; NO OWNER FOR THE BANK from the flown edge down to the water. Whether the coast is the authored level or the flown edge is Jacob's call (BRIEF-the-shore-is-one-line), not the code's. ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
   // ⭐ THE FLATTENED WATER — the terrain's datum (Boz's ruling (B), 2026-10-25): the 1 cm MODE of the lidar over the coarse
   // flood sheet, found from the lidar and the water record alone BEFORE any line is traced, so no line can move it.
-  const flattened = flattenedWater(wet, deck, ground)
+  const flattened = flattenedWater(wet, deck, ground, toRecordM)
   if (!flattened) throw new Error(`⛔ bake-coast: ${scene} — the flood sheet holds no water with a lidar value whose level repeats (a mode of one sample is no mode), so there is no flattened water to take the terrain's datum from`)
   let nrIn = 0, nrOut = 0
   for (let k = 0; k < W * H; k++) if (nr[k]) { if (wet[k]) nrIn++; else nrOut++ }

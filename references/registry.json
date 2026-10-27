@@ -1173,7 +1173,7 @@
       "url": "https://www.usgs.gov/3d-elevation-program",
       "accessPaths": [
         "The National Map products API + prd-tnm S3 (fetch-dem.mjs → raw/elevation-sources.txt; the DEM every town's terrain and coast are read from)",
-        "WESM, 3DEPElevationIndex MapServer layer 8 (fetch-flight-water.mjs: collect_start, collect_end, geoid, vert_crs)",
+        "WESM, 3DEPElevationIndex MapServer layer 8 (fetch-lidar-flights.mjs: collect_start, collect_end, geoid, vert_crs)",
         "USGS's Entwine (EPT) copy of the same point clouds, s3://usgs-lidar-public (a probe, 2026-10-25: GPS time of 8 windows of OH_Statewide_Phase1_3_2019; no new terms, same source)"
       ],
       "covers": [
