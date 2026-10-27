@@ -89,6 +89,8 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
    low water from the lidar?) before building.
 5. **Islands:** closed shore arcs, so an island is a hole in the water through the mint (tern 5fa9effb's INTENT; rewrite against
    today's mint).
+   ⚠️ (Zob/Boz, 2026-10-26) bake-ground pushes each waterFace ring as its own face, but maskOf reads rings even-odd: when an
+   island lands, build HOLED polygons from the face, or the island paints as water. Today every hole refuses in the mint.
 6. **Later, its own commit:** rim §5's water BED stamped with ① (C8), and water to the bb (C1a, disc §2c), are the shoreline
    project's tail. Sequence them; don't fold them into 1–5 unless they fall out.
 

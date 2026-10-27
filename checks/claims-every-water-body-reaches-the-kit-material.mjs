@@ -20,7 +20,7 @@
 //
 // ⭐ It RESOLVES with the runtime's own `isWaterGroupId`, imported, not restated.
 //
-// ▶ MUTATION-TEST IT: comment out the `mapLayers.water` loop in bake-ground.js and
+// ▶ MUTATION-TEST IT: comment out the `waterFace(mapData, 'bake-ground')` loop in bake-ground.js and
 //   re-bake huron — this goes RED naming the body that vanished.
 //
 //   node checks/claims-every-water-body-reaches-the-kit-material.mjs

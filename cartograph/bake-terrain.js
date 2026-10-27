@@ -238,7 +238,7 @@ function rockCells(normalized, mask, width, height, bounds) {
       const i = Math.round((x - bounds.minX) / stepX), j = Math.round((z - bounds.minZ) / stepZ)
       if (i >= 0 && j >= 0 && i < width && j < height) cand.add(j * width + i) }
   }
-  // Above the water = above the datum's own 1 cm bucket (waterDatum) — ABOVE_WATER_M, one copy, shared with the shore median.
+  // Above the water = above the datum's own bucket: ABOVE_WATER_M (elevationSources.mjs), a typed constant, filed (Zob, 2026-10-25).
   for (const k of cand) if (mask[k] && normalized[k] > ABOVE_WATER_M) keep.add(k)
   if (areas.length + lines.length) console.log(`  ROCK: ${areas.length + lines.length} mapped breakwater/groyne(s) — ${keep.size.toLocaleString()} cells under the water keep the lidar's rock (of ${[...cand].filter(k => mask[k]).length.toLocaleString()} in their footprints)`)
   return keep
@@ -554,7 +554,9 @@ async function main() {
     if (!r.length || !r.every(Number.isFinite)) throw new Error(`⛔ the deck: the lidar's quality level (${qls.join(', ') || 'none stated'}) has no stated RMSEz in references (f-3dep-ql-rmsez) — two roots cannot be judged`)
     return deckHeights(normalized, width, height, bounds, frozen, wd.mask, water, Math.max(...r))
   })() : []
-  const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water) : null
+  const rockMask = (() => { if (!bed?.rock?.runs?.length) return null; const m = new Uint8Array(width * height), R = bed.rock.runs
+    for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) m[R[q] * width + i] = 1; return m })()
+  const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water, rockMask) : null
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
                  datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(stamp ? { stamp } : {}), ...(decks.length ? { decks } : {}), ...(water ? { water } : {}) }

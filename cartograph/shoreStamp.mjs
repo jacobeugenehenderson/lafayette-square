@@ -12,10 +12,11 @@ import { waterLevels as levelsOf } from './waterLevel.mjs'
 // is only ever RAISED (max: a bluff or a seawall above HIGH stands); seaward, at those nodes, it is the ramp, or where a
 // kept landward corner rises steeper, that rise REFLECTED across the line (lowering only water), so the contour is on the
 // line at a wall too. On a tidal town the ramp continues two cells into the water as max(ramp, bed): the tide spans at
-// least two cells (Zob's cap) and real flats still meet the beach. A water node at or above HIGH is counted and named. s = the bed's own gradient two to four cells seaward (median over the ring), capped at
+// least two cells (Zob's cap) and real flats still meet the beach. A water node at or above HIGH is counted and named,
+// the kept rock (bake-terrain#rockCells: breakwaters and groynes, ruled stone) apart. s = the bed's own gradient two to four cells seaward (median over the ring), capped at
 // (HIGH − LOW) / 2 cells where HIGH > LOW. ⛔ s ≤ 0 on a ring REFUSES by name. Land outside ①'s water is land at every
 // level: nothing beyond these nodes is touched. The stamped nodes are recorded (row runs) for the contour gate.
-export function stampCoast(normalized, width, height, bounds, face, bb, mask, water) {
+export function stampCoast(normalized, width, height, bounds, face, bb, mask, water, rock = null) {
   const L = levelsOf(water)
   const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1), cell = Math.min(sx, sz)
   const X = (i) => bounds.minX + i * sx, Z = (j) => bounds.minZ + j * sz
@@ -99,7 +100,7 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   }
   // ⛔ a bed standing at or above HIGH inside ①'s water is ① contradicting the lidar: counted and named, never clamped
   const above = []
-  for (let k = 0; k < width * height; k++) if (mask[k] && !stamped[k] && normalized[k] >= L.highAt(X(k % width), Z((k - k % width) / width))) above.push(k)
+  for (let k = 0; k < width * height; k++) if (mask[k] && !stamped[k] && !(rock && rock[k]) && normalized[k] >= L.highAt(X(k % width), Z((k - k % width) / width))) above.push(k)
   if (above.length) console.warn(`  ⛔ STAMP: ${above.length.toLocaleString()} node(s) of ①'s water stand at or above HIGH (① and the lidar disagree), first at ${above.slice(0, 5).map(k => `(${Math.round(X(k % width))}, ${Math.round(Z((k - k % width) / width))})`).join(' · ')}`)
   const runs = []
   for (let j = 0; j < height; j++) { let i0 = -1

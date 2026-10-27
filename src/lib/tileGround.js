@@ -6484,8 +6484,9 @@ export function buildTileGround(ribbons, opts = {}) {
              nodes: frozenProto.nodes || null,
              boundaryRing: frozenProto.boundaryRing || null,
              // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped this would lose its
-             // waterfront silently — every other field present, the pour looking complete.
-             waterRings: frozenProto.waterRings || null,
+             // waterfront silently — every other field present, the pour looking complete. So an ABSENT field refuses
+             // (null still means the mint was given no coast; coastFile.mjs#waterFace reads the same distinction).
+             waterRings: (() => { if (frozenProto.waterRings === undefined) throw new Error('[tileGround] ⛔ the frozen ① predates its water face (no waterRings field) — a coastal town would read as no coast. ▶ re-pour'); return frozenProto.waterRings })(),
              // H-3 step 4: the region class per block (verge / jr / block), classified at the mint.
              blockClass: frozenProto.blockClass || null,
              // H-3: the ramp-terminal flares frozen at the mint — drawn into ②'s working copy (`flareWorkingCopy`)
