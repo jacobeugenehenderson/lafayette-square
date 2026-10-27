@@ -23,13 +23,29 @@ async function loadMiniflare() {
   process.exit(2)
 }
 
-/** { mf, r2, get(url) → {status, body, cache} } for the Worker at `entry`, with `bindings` as its vars. */
-export async function workerInMiniflare(entry, bindings = {}) {
+/**
+ * { mf, r2, get(url) → {status, body, cache, headers} } for the Worker at `entry`, with `bindings` as its vars.
+ * `mutate` — { <absolute source path>: (src) => src } — bundles a MUTANT: each named file is rewritten before it is
+ * bundled. ⛔ A mutation that changes nothing, or names a file the bundle never loads, throws: a mutant that did not
+ * apply would pass for a caught one.
+ */
+export async function workerInMiniflare(entry, bindings = {}, { mutate = null } = {}) {
   const Miniflare = await loadMiniflare()
-  const bundled = await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'neutral', write: false, logLevel: 'silent' })
+  const applied = new Set()
+  const plugins = mutate ? [{ name: 'mutate', setup(b) {
+    b.onLoad({ filter: /\.m?js$/ }, (a) => {
+      if (!mutate[a.path]) return undefined
+      const src = readFileSync(a.path, 'utf8'), out = mutate[a.path](src)
+      if (out === src) throw new Error(`mutation of ${a.path} changed nothing`)
+      applied.add(a.path)
+      return { contents: out, loader: 'js' }
+    })
+  } }] : []
+  const bundled = await build({ entryPoints: [entry], bundle: true, plugins, format: 'esm', platform: 'neutral', mainFields: ['module', 'main'], write: false, logLevel: 'silent' })
+  for (const p of Object.keys(mutate || {})) if (!applied.has(p)) throw new Error(`mutation names ${p}, which the bundle never loads`)
   const mf = new Miniflare({ modules: true, script: bundled.outputFiles[0].text, compatibilityDate: '2026-09-01', r2Buckets: ['ASSETS'], bindings })
   const r2 = await mf.getR2Bucket('ASSETS')
-  const get = async (url) => { const r = await mf.dispatchFetch(url); return { status: r.status, body: await r.text(), cache: r.headers.get('cache-control') } }
+  const get = async (url) => { const r = await mf.dispatchFetch(url); return { status: r.status, body: await r.text(), cache: r.headers.get('cache-control'), headers: r.headers } }
   return { mf, r2, get }
 }
 
