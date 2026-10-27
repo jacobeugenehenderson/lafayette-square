@@ -17,7 +17,8 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
-import { stampCoast } from '../cartograph/shoreStamp.mjs'
+import { stampCoast, deckHeights } from '../cartograph/shoreStamp.mjs'
+import { waterWithoutDecks } from '../cartograph/structures.mjs'
 import { maskOf, waterFace } from '../cartograph/coastFile.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 
@@ -85,6 +86,35 @@ console.log('── 4. a bed that does not fall seaward refuses')
   let threw = false
   try { waterFace({ layers: { ribbons: { protopolygon: {} } } }, 'fixture') } catch (e) { threw = /predates/.test(e.message) }
   say(threw, 'a frozen ① with no waterRings field REFUSES (never reads as no coast)')
+}
+console.log('── 6. a street deck is held at its land root, and the stamp meets its water edges at HIGH')
+{
+  // a straight shore at z = 100 (water south), the land rising from 0 at the shore; a 10 m pier from z 90 to z 150 at x 100
+  const face0 = [[[0, 100], [200, 100], [200, 200], [0, 200]]], deck = [[95, 90], [105, 90], [105, 150], [95, 150]]
+  const { rings: faceD } = waterWithoutDecks(face0, [], [deck])
+  const mk = () => { const f = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const z = j * 5; f[j * W + i] = z <= 100 ? 0.02 * (100 - z) : -0.1 - 0.03 * (z - 100) } return f }
+  const f = mk(), m = maskOf(faceD, W, H, B)
+  const D = deckHeights(f, W, H, B, [{ ring: deck, streets: ['wharf-st'] }], m, lake(0), 0.10)
+  const onDeck = []; for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const x = i * 5, z = j * 5; if (x > 95 && x < 105 && z > 90 && z < 150) onDeck.push(f[j * W + i]) }
+  say(D.length === 1 && onDeck.length && onDeck.every(v => Math.abs(v - D[0].rootM) < 1e-6) && D[0].rootM >= 0, `the deck is flat at its root, ${D[0]?.rootM} m ≥ HIGH, over ${onDeck.length} node(s)`)
+  stampCoast(f, W, H, B, faceD, bb, m, lake(0))
+  const side = Math.abs(bilinear(f, W, H, B, 105, 130) - 0), deckStands = bilinear(f, W, H, B, 100, 130)
+  say(side < 0.02 && deckStands >= D[0].rootM - 1e-6, `the stamp meets the deck's water edge at HIGH (|Δ| ${side.toFixed(3)} m at its side) and the deck stands (${deckStands.toFixed(3)} m)`)
+  let t = false
+  try { deckHeights(mk(), W, H, B, [{ ring: [[95, 160], [105, 160], [105, 190], [95, 190]], streets: ['clear'] }], maskOf(face0, W, H, B), lake(0), 0.10) } catch (e) { t = /no land root/.test(e.message) }
+  say(t, 'a deck clear of the land REFUSES (an island)')
+  t = false
+  { // water everywhere but two islands of land, west at 0.5 m and east at 3.0 m; a deck spans the water between them
+    const westL = [[0, 20], [60, 20], [60, 80], [0, 80]], eastL = [[140, 20], [200, 20], [200, 80], [140, 80]]
+    const sea = [[[0, 0], [200, 0], [200, 200], [0, 200]], [...westL].reverse(), [...eastL].reverse()]
+    const g = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const x = i * 5, z = j * 5
+      g[j * W + i] = (z >= 20 && z <= 80 && x <= 60) ? 0.5 : (z >= 20 && z <= 80 && x >= 140) ? 3.0 : -1 }
+    const bridge = [[55, 45], [145, 45], [145, 55], [55, 55]]
+    try { deckHeights(g, W, H, B, [{ ring: bridge, streets: ['two-roots'] }], maskOf(waterWithoutDecks(sea, [], [bridge]).rings, W, H, B), lake(0), 0.10) } catch (e) { t = /land roots at different heights/.test(e.message) } }
+  say(t, 'a deck with two roots at different heights REFUSES (never interpolated)')
+  t = false
+  try { deckHeights(mk(), W, H, B, [{ ring: deck, streets: ['low'] }], m, lake(1), 0.10) } catch (e) { t = /below HIGH/.test(e.message) }
+  say(t, 'a deck whose root stands below HIGH REFUSES')
 }
 console.log('── 5. each town whose terrain carries the stamp')
 let towns = 0

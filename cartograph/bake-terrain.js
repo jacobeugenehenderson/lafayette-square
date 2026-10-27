@@ -42,7 +42,7 @@ import { join } from 'path'
 import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
 import { readCoast, maskOf, waterFace, COAST_FILE } from './coastFile.mjs'
-import { stampCoast } from './shoreStamp.mjs'
+import { stampCoast, deckHeights } from './shoreStamp.mjs'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { localBB } from './geography.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
@@ -540,10 +540,24 @@ async function main() {
   const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
   const water = wd ? waterRecord({ mapDir: MAP_DIR, scene: SCENE, auth: waterAuthoring(), wgs84ToLocal, zero: baseElev }) : null
   const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor, water) : null
+  // ⭐ THE STREET RIDES THE DECK: each street deck the mint took out of the water is held flat at its land root, BEFORE the
+  // stamp, so the stamp meets its water edges at HIGH like any coast (shoreStamp.mjs#deckHeights; Boz 2026-10-26).
+  const decks = wd ? (() => {
+    const frozen = JSON.parse(fs.readFileSync(join(CLEAN_DIR, 'map.json'), 'utf8')).layers?.ribbons?.streetDecks
+    if (frozen === undefined) throw new Error(`⛔ the deck: map.json's ① predates its street decks (no streetDecks field) — ▶ re-pour ${SCENE}`)
+    if (!frozen.length) return []
+    const fl = JSON.parse(fs.readFileSync(join(MAP_DIR, 'raw', FLIGHTS_FILE), 'utf8'))
+    const qls = [...new Set(Object.values(fl.projects).map(p => String(p.ql || '').replace(/\s+/g, '')))]
+    const reg = JSON.parse(fs.readFileSync(join(CARTOGRAPH_DIR, '..', 'references', 'registry.json'), 'utf8'))
+    const table = reg.findings.find(f => f.id === 'f-3dep-ql-rmsez')?.value?.rmsezM || {}
+    const r = qls.map(q => table[q])
+    if (!r.length || !r.every(Number.isFinite)) throw new Error(`⛔ the deck: the lidar's quality level (${qls.join(', ') || 'none stated'}) has no stated RMSEz in references (f-3dep-ql-rmsez) — two roots cannot be judged`)
+    return deckHeights(normalized, width, height, bounds, frozen, wd.mask, water, Math.max(...r))
+  })() : []
   const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water) : null
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
-                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(stamp ? { stamp } : {}), ...(water ? { water } : {}) }
+                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(stamp ? { stamp } : {}), ...(decks.length ? { decks } : {}), ...(water ? { water } : {}) }
   fs.mkdirSync(_outArg || CLEAN_DIR, { recursive: true })
   writeIfChanged(OUT_JSON, JSON.stringify(meta))
   writeIfChanged(OUT_BIN, Buffer.from(normalized.buffer))

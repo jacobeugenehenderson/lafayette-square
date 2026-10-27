@@ -108,6 +108,8 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 > - ⭐ **THE FIELD MEETS ①'s COAST AT HIGH** (`shoreStamp.mjs#stampCoast`, after the bed): at the corner nodes of every cell
 >   ①'s line crosses, h − HIGH = s·d (signed distance; one slope per ring, the bed's own, capped by the tide), so the
 >   shore on screen IS ①'s line; land is only raised, never lowered. Recorded as `terrain.json#stamp`.
+>   A street DECK (MacMillan Wharf: "the street rides the deck") is held flat at its land root first (`deckHeights`;
+>   a bare-earth DEM carries no deck), recorded as `terrain.json#decks`.
 >   ▶ `node checks/claims-the-shore-meets-the-field-at-high.mjs`
 > - ⭐ **The dry bed is recorded before it is dug** (`terrain.json#bed.dry`: cells under the water whose lidar stood
 >   above their HIGH level, rock apart). ▶ `node checks/claims-the-shore-agrees-with-the-field.mjs`

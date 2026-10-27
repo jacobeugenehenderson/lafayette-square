@@ -109,3 +109,59 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   return { cellM: +cell.toFixed(4), slopePerRing: sOf, raised, kept, ramped, walled, bedWon, aboveHigh: above.length, tidal, runs }
 }
 
+
+/**
+ * ⭐ THE STREET RIDES THE DECK, ITS HEIGHT (Boz's ruling, 2026-10-26; Jacob 2026-10-25 "a, the street rides the deck"). A
+ * bare-earth DEM carries no deck (piers are classified out), so the deck's height is the LAND's at its ROOT, held flat:
+ * the root is the land nodes (not ①'s water, outside the footprint) within one cell of the deck's edge, as connected
+ * pieces; the deck takes that root's median. Runs after the bed and BEFORE the stamp, so the stamp meets the deck's water
+ * edges at HIGH like any coast. Derived, no constant.
+ * ⛔ Refuses, by name: a deck with no land root (it stands clear of the shore: an island, step 5) · two or more roots whose
+ *    heights differ by more than the lidar's own stated accuracy (`rmsezM`, the registry's f-3dep-ql-rmsez for the
+ *    project's QL), never interpolated · a deck whose root stands below HIGH (a deck is above the water).
+ * @param decks [{ ring, streets }] — map.json layers.ribbons.streetDecks
+ * @returns [{ streets, rootM, roots, nodes }]
+ */
+export function deckHeights(normalized, width, height, bounds, decks, mask, water, rmsezM) {
+  const L = levelsOf(water)
+  const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1), cell = Math.min(sx, sz)
+  const X = (i) => bounds.minX + i * sx, Z = (j) => bounds.minZ + j * sz
+  const inRing = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1, u = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)); return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) }
+  const out = []
+  for (const deck of decks || []) {
+    const r = deck.ring, name = (deck.streets || []).filter(Boolean).slice(0, 3).join(' / ') || 'a street deck'
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+    for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) }
+    const i0 = Math.max(0, Math.floor((x0 - cell - bounds.minX) / sx)), i1 = Math.min(width - 1, Math.ceil((x1 + cell - bounds.minX) / sx))
+    const j0 = Math.max(0, Math.floor((z0 - cell - bounds.minZ) / sz)), j1 = Math.min(height - 1, Math.ceil((z1 + cell - bounds.minZ) / sz))
+    const inside = [], root = new Set()
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const k = j * width + i, x = X(i), z = Z(j)
+      if (inRing(x, z, r)) { inside.push(k); continue }
+      if (mask[k] || !Number.isFinite(normalized[k])) continue
+      let near = false
+      for (let m = 0; m < r.length && !near; m++) if (segD(x, z, r[m], r[(m + 1) % r.length]) <= cell) near = true
+      if (near) root.add(k)
+    }
+    if (!inside.length) continue                               // the deck falls between grid nodes: nothing to set
+    // the root as connected pieces (8-way)
+    const seen = new Set(), pieces = []
+    for (const k of root) { if (seen.has(k)) continue
+      const p = [k]; seen.add(k)
+      for (let c = 0; c < p.length; c++) { const m = p[c], i = m % width, j = (m - i) / width
+        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const q = (j + dj) * width + (i + di); if (root.has(q) && !seen.has(q)) { seen.add(q); p.push(q) } } }
+      const hs = p.map(q => normalized[q]).sort((a, b) => a - b)
+      pieces.push({ nodes: p.length, h: hs[hs.length >> 1], at: [X(p[0] % width), Z((p[0] - p[0] % width) / width)] }) }
+    if (!pieces.length) throw new Error(`⛔ the deck: ${name} has no land root (it stands clear of ①'s land), so no height can be given to it — an island, BRIEF-the-shore-is-one-line §3 step 5`)
+    const hs = pieces.map(p => p.h), spread = Math.max(...hs) - Math.min(...hs)
+    if (pieces.length > 1 && spread > rmsezM) throw new Error(`⛔ the deck: ${name} has ${pieces.length} land roots at different heights (${pieces.map(p => `${p.h.toFixed(2)} m at (${p.at.map(Math.round).join(', ')})`).join(' · ')}; ${spread.toFixed(2)} m apart, past the lidar's stated ${rmsezM} m). One flat deck cannot meet both; not interpolated (Boz, 2026-10-26)`)
+    const rootM = pieces.reduce((t, p) => t + p.h * p.nodes, 0) / pieces.reduce((t, p) => t + p.nodes, 0)
+    const lowAt = inside.find(k => rootM < L.highAt(X(k % width), Z((k - k % width) / width)))
+    if (lowAt != null) throw new Error(`⛔ the deck: ${name}'s root stands at ${rootM.toFixed(2)} m, below HIGH there — a deck is above the water, so its root is not land the deck can be held at`)
+    for (const k of inside) normalized[k] = rootM
+    out.push({ streets: deck.streets, rootM: +rootM.toFixed(3), roots: pieces.length, nodes: inside.length })
+  }
+  if (out.length) console.log(`  DECKS: ${out.map(d => `${(d.streets || []).filter(Boolean)[0] || 'deck'} held at its root, ${d.rootM} m (${d.nodes} node(s), ${d.roots} root piece(s))`).join(' · ')}`)
+  return out
+}
