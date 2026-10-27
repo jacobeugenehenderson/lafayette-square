@@ -6,7 +6,8 @@
  * ⭐ A COMMIT CARRIES EVERY KEY IT DOES NOT OWN, and a re-commit of unchanged inputs changes nothing. Each record starts
  * from the prior file and replaces only what the gesture addresses:
  *   geography.json   — owns `timezone` (from the hood's location); `_comment` only when the file has none.
- *   neighborhood.json — owns `draftRadius`, `timezone`, `exclusions`, `committed`, and `name` / `blurb` / `polygon` when
+ *   neighborhood.json — owns `draftRadius` (and REMOVES a legacy `radius`: the applied radius is the boundary's), `timezone`,
+ *                       `exclusions`, `committed`, and `name` / `blurb` / `polygon` when
  *                       the request carries them. `sides`, `_note` and every other key are carried, in their order.
  *   neighborhood_boundary.json — the three records (boundaryRecords.mjs#composeBoundary), unchanged here.
  * ▶ node checks/claims-a-recommit-changes-nothing.mjs
@@ -78,6 +79,7 @@ export function commitExtentRecords({ geo, prev, body, timezone, scene }) {
   if (name !== undefined || !('name' in neighborhood)) neighborhood.name = name || ''
   if (blurb !== undefined || !('blurb' in neighborhood)) neighborhood.blurb = blurb || ''
   neighborhood.draftRadius = Math.round(radius)
+  delete neighborhood.radius   // ⛔ the applied radius lives in the boundary (59950f41); a legacy `radius` is never carried
   neighborhood.timezone = geography.timezone || null
   neighborhood.exclusions = exclusions || []
   neighborhood.committed = true

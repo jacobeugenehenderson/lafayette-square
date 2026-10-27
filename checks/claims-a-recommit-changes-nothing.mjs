@@ -22,7 +22,7 @@ import { ROOT } from './_scenes.mjs'
 import { commitExtentRecords, flattenBoundaryPath, sameJson } from '../cartograph/commitExtent.mjs'
 import { splitBoundary } from '../cartograph/boundaryRecords.mjs'
 
-const NB_OWNED = new Set(['draftRadius', 'timezone', 'exclusions', 'committed', 'name', 'blurb', 'polygon', 'polygonSource'])
+const NB_OWNED = new Set(['draftRadius', 'radius', 'timezone', 'exclusions', 'committed', 'name', 'blurb', 'polygon', 'polygonSource'])
 const GEO_OWNED = new Set(['timezone'])
 const rd = (p) => JSON.parse(readFileSync(p, 'utf8'))
 
