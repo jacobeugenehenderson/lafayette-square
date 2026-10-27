@@ -62,7 +62,8 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   if (!cleanDir) throw new Error('[mintInputs] ⛔ no clean/ directory — the coast is read off its coast.json')
   const streets = mapped.filter(m => m.sim && !m.s.gradeSeparated).map(m => m.sim)
   const coast = readCoast(cleanDir, bb, who)
-  const decks = coast.coast ? streetDecks(osm.ground || {}, streets) : { rings: [], decks: [] }
+  // the decks are closed at the step the coast was traced at (coast.json fineM), so the mint takes out the footprints the trace saw
+  const decks = coast.coast ? streetDecks(osm.ground || {}, streets, coast.doc.fineM) : { rings: [], decks: [] }
   const water = coast.coast ? waterWithoutDecks(coast.rings, coast.arcs, decks.rings) : { rings: [], arcs: [] }
   // ⛔ a deck's edge is known by the rings' own tag (`ring.deck`, an array property JSON would drop silently): with decks taken
   // out and a ring carrying none, the mint would stroke the deck's edge as a beach (Zob, 2026-10-27)

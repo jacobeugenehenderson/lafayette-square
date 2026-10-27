@@ -102,7 +102,8 @@ function convexHull(pts) {
  * else structures.mjs#defaultDeckWidthM: the sourced typical width), butt ends, a joint filled where ways end together. One union, as clipper paths, with a
  * point test for the samplers. ⛔ From the data's tags, never a site list.
  */
-export function deckFootprints(osmGround) {
+export function deckFootprints(osmGround, stepM) {
+  if (!(stepM > 0)) throw new Error(`⛔ structures: deckFootprints needs the trace's step (got ${stepM}) — a deck is closed at the step the lidar is traced at, and there is no other`)
   const { areas, lines } = deckStructures(osmGround)
   let typical = null
   const paths = new Paths()
@@ -133,7 +134,24 @@ export function deckFootprints(osmGround) {
     const hp = toPath(hull); if (Clipper.Orientation(hp) !== Clipper.Orientation(paths[paths.length - 1])) hp.reverse()
     paths.push(hp); joints++ }
   for (const l of lines) delete l._halfM
-  const u = union(paths)
+  // ⭐ EACH DECK IS CLOSED AT THE TRACE'S STEP (Boz's ruling (b), 2026-10-27; Huron: a pier line with no width, buffered at
+  // the typical 1.8 m beside the mapped pier area, left a notch 5 m deep and under a cell wide, which no trace can follow and
+  // the lidar cannot see). Each connected deck, its own parts unioned, is dilated then eroded by half a trace cell, and kept
+  // with what it was, so a gap between its parts narrower than one cell is filled and nothing is lost. ⛔ Per deck, never
+  // across two: separate decks a metre apart stay two. What each adds is counted and named (`closed`).
+  const parts = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
+  if (!cu.Execute(ClipType.ctUnion, parts, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: the deck union FAILED')
+  const h = (stepM / 2) * SCALE, closedPaths = new Paths(), closed = []
+  const closeAll = (node) => { for (const ch of node.Childs()) {
+    const deck = [ch.Contour(), ...ch.Childs().map(c => c.Contour())]
+    const off = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
+    const kept = union([...deck, ...off(off(deck, h), -h)])
+    const added = kept.reduce((t, q) => t + Clipper.Area(q), 0) - deck.reduce((t, q) => t + Clipper.Area(q), 0)
+    if (added > 0) { const c0 = ch.Contour()[0]; closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: [+(c0.X / SCALE).toFixed(3), +(c0.Y / SCALE).toFixed(3)] }) }
+    for (const q of kept) closedPaths.push(q)
+    for (const hole of ch.Childs()) closeAll(hole) } }   // a deck inside a deck's hole is a deck of its own
+  closeAll(parts)
+  const u = union(closedPaths)
   const rings = u.map(fromPath)
   const boxes = rings.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0, x1, z0, z1] })
   // nonzero over the union's rings: an outer counts +1, a hole −1, so a point in a deck's courtyard is not on the deck
@@ -158,7 +176,7 @@ export function deckFootprints(osmGround) {
       const r = rings[k]; for (let m = 0; m < r.length; m++) { const p = r[m], q = r[(m + 1) % r.length], ex = q[0] - p[0], ez = q[1] - p[1], L2 = ex * ex + ez * ez || 1
         const u = Math.max(0, Math.min(1, ((a[0] - p[0]) * ex + (a[1] - p[1]) * ez) / L2)); dmin = Math.min(dmin, Math.hypot(a[0] - p[0] - u * ex, a[1] - p[1] - u * ez)) } }
     return dmin <= 1 / SCALE ? a : null }
-  return { paths: u, rings, on, crossing, count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
+  return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
 }
 
 /**
@@ -170,8 +188,8 @@ export function deckFootprints(osmGround) {
  * @param streets [{ points: [[x, z], …], skelId? }] — the chains the mint is given
  * @returns { rings: [ring], decks: [{ ring, streets: [skelId] }] }
  */
-export function streetDecks(ground, streets) {
-  const fp = deckFootprints(ground)
+export function streetDecks(ground, streets, stepM) {
+  const fp = deckFootprints(ground, stepM)
   const outers = fp.rings.filter(r => signedArea(r) !== 0)
   const decks = []
   for (const ring of outers) {

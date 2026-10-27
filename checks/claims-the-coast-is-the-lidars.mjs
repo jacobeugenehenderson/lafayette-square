@@ -116,7 +116,7 @@ console.log('── B. a deck is not ground: the water runs under it')
   // 100 × 60 m at 1 m: lake (ground −1) for z < 30, land (+2) beyond; a pier from (50, 35) to (50, 5), its deck +2 m.
   const W = 101, H = 61, X = (i) => i, Z = (j) => j, high = 0
   const pier = { man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 50, z: 35 }, { x: 50, z: 5 }], isClosed: false }] }
-  const decks = deckFootprints(pier)
+  const decks = deckFootprints(pier, 1)
   say(decks.count.lines === 1 && decks.count.typicalWidthM === defaultDeckWidthM(), `an unmapped pier line takes the sourced width (${decks.count.typicalWidthM} m)`)
   const field = () => { const g = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) g[j * W + i] = (j < 30 ? -1 : 2); for (let j = 5; j <= 35; j++) g[j * W + 50] = 2; return g }
   const run = (onDeck) => { const s = markSheet({ ground: field(), W, H, X, Z, highAt: () => high, onDeck, covered: () => true }); return floodFromEdge(s.w, W, H, null, s.nr) }
@@ -187,14 +187,14 @@ console.log('── H. the tracer never reads a sentinel as a height')
     `a no-return node at a diagonal neck: ${keys.size} distinct of ${pts.length} crossing points, ${loops.filter(l => ringViolations(l).length).length} loop(s) touching, ${tally.noReturn ?? 0} no-return crossing(s) at edge midpoints (want all distinct, none, 4)`)
   // a deck: a 1.4 m square pier deck over the node at (3, 3); the line must lie ON the deck's own ring
   const ground = { man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.3, z: 2.3 }, { x: 3.7, z: 2.3 }, { x: 3.7, z: 3.7 }, { x: 2.3, z: 3.7 }, { x: 2.3, z: 2.3 }], isClosed: true }] }
-  const dk = deckFootprints(ground), g = new Float32Array(n * n).fill(1), gk = new Uint8Array(n * n)
+  const dk = deckFootprints(ground, 1), g = new Float32Array(n * n).fill(1), gk = new Uint8Array(n * n)
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (dk.on(i, j)) { g[j * n + i] = NaN; gk[j * n + i] = KIND.DECK }
   const dl = wetLoops(g, n, n, 0, 0, 1, { kind: gk, deckCross: dk.crossing }).flat()
   const segD = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1, u = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)); return Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dz) }
   const off = Math.max(...dl.map(p => Math.min(...dk.rings.flatMap(r => r.map((q, m) => segD(p, q, r[(m + 1) % r.length]))))))
   say(gk.some(Boolean) && dl.length > 0 && off <= 1 / CLIP_SCALE, `a deck's crossings lie on the deck's own ring (${dl.length} point(s), furthest ${(1000 * off).toFixed(3)} mm off; the clip grid is ${1000 / CLIP_SCALE} mm)`)
   // a deck whose edge runs ALONG the lattice (a 2 m square deck on nodes 2…4): its boundary nodes lie on the ring, exact
-  const sqd = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2, z: 2 }, { x: 4, z: 2 }, { x: 4, z: 4 }, { x: 2, z: 4 }, { x: 2, z: 2 }], isClosed: true }] })
+  const sqd = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2, z: 2 }, { x: 4, z: 2 }, { x: 4, z: 4 }, { x: 2, z: 4 }, { x: 2, z: 2 }], isClosed: true }] }, 1)
   const g2 = new Float32Array(n * n).fill(1), k2 = new Uint8Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (sqd.on(i, j)) { g2[j * n + i] = NaN; k2[j * n + i] = KIND.DECK }
   const t2 = {}, d2 = wetLoops(g2, n, n, 0, 0, 1, { kind: k2, deckCross: sqd.crossing, tally: t2 }).flat()
   const off2 = Math.max(...d2.map(p => Math.min(...sqd.rings.flatMap(r => r.map((q, m) => segD(p, q, r[(m + 1) % r.length]))))))
@@ -203,7 +203,7 @@ console.log('── H. the tracer never reads a sentinel as a height')
   say(td, 'a deck node whose edge meets no deck ring REFUSES (never the node as a guess)')
   // a deck reaching the window's edge (Huron, 2026-10-26: a deck node on a tile's last row): its edge to the tracer's PAD is
   // the pad's, not the deck's: a midpoint, counted, never a deck-ring lookup that finds nothing
-  const edge = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.5, z: -2 }, { x: 3.5, z: -2 }, { x: 3.5, z: 0.5 }, { x: 2.5, z: 0.5 }, { x: 2.5, z: -2 }], isClosed: true }] })
+  const edge = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.5, z: -2 }, { x: 3.5, z: -2 }, { x: 3.5, z: 0.5 }, { x: 2.5, z: 0.5 }, { x: 2.5, z: -2 }], isClosed: true }] }, 1)
   const g3 = new Float32Array(n * n).fill(1), k3 = new Uint8Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (edge.on(i, j)) { g3[j * n + i] = NaN; k3[j * n + i] = KIND.DECK }
   const t3 = {}; let ok3 = true; try { wetLoops(g3, n, n, 0, 0, 1, { kind: k3, deckCross: edge.crossing, tally: t3 }) } catch { ok3 = false }
   say(ok3 && t3.pad === 1, `a deck node on the window's edge: its edge to the pad crosses at the midpoint (${t3.pad ?? 0} pad crossing), no deck lookup`)
@@ -241,7 +241,7 @@ console.log('── F. a deck that carries a street leaves the water; one that c
     { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 50, z: -20 }, { x: 50, z: 80 }], isClosed: false },
     { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 150, z: -20 }, { x: 150, z: 80 }], isClosed: false }] }
   const streets = [{ skelId: 'wharf-st', points: [[50, -40], [50, 70]] }]
-  const sd = streetDecks(ground, streets)
+  const sd = streetDecks(ground, streets, 1)
   say(sd.decks.length === 1 && sd.decks[0].streets.join() === 'wharf-st', `by construction, only the deck the street crosses carries it (${sd.decks.length} deck: ${sd.decks.map(d => d.streets).join()})`)
   const w = waterWithoutDecks(water, arcs, sd.rings), area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
   const A = w.rings.reduce((t, r) => t + area(r), 0)
@@ -261,7 +261,7 @@ console.log('── F. a deck that carries a street leaves the water; one that c
   const shore = [[-200, -100], [0, -100], [200, -100]], lake = [...shore, [200, -200], [-200, -200]].reverse()
   const pier = [[-10, -140], [10, -140], [10, -90], [-10, -90]], mintSt = [sq('c', [[-150, 0], [150, 0]]), sq('p', [[0, -60], [0, -140]])]
   const disc = Array.from({ length: 48 }, (_, i) => [190 * Math.cos(i / 48 * 2 * Math.PI), 190 * Math.sin(i / 48 * 2 * Math.PI)])
-  const sd2 = streetDecks({ man_made: [{ tags: { man_made: 'pier', width: '20' }, coords: [{ x: 0, z: -90 }, { x: 0, z: -140 }], isClosed: false }] }, mintSt)
+  const sd2 = streetDecks({ man_made: [{ tags: { man_made: 'pier', width: '20' }, coords: [{ x: 0, z: -90 }, { x: 0, z: -140 }], isClosed: false }] }, mintSt, 1)
   const w2 = waterWithoutDecks([sa2(lake) > 0 ? lake : [...lake].reverse()], [shore], sd2.rings)
   const quiet = (f) => { const l = console.log, wn = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } catch (e) { return { refused: String(e.message) } } finally { console.log = l; console.warn = wn } }
   const MP = quiet(() => mintProtopolygon({ streets: mintSt, boundary: disc, bb: { x0: -200, x1: 200, z0: -200, z1: 200 }, coast: w2.rings, coastArcs: w2.arcs }))
@@ -294,29 +294,48 @@ console.log('── F2. a deck joint is filled, and along a deck the coast is th
   // mapped (10-27), whose unfilled butt ends left a 1.5 m hairpin. The joint is filled, no acute vertex
   const jg = { man_made: [{ tags: { man_made: 'pier', width: '3' }, coords: [{ x: 347.6, z: 399.18 }, { x: 283.24, z: 344.44 }], isClosed: false },
     { tags: { man_made: 'pier', width: '2' }, coords: [{ x: 283.24, z: 344.44 }, { x: 277.84, z: 339.79 }, { x: 281.69, z: 335.34 }], isClosed: false }] }
-  const jf = deckFootprints(jg), jv = jf.rings.flatMap(r => ringViolations(r, acuteAt))
+  const jf = deckFootprints(jg, 1), jv = jf.rings.flatMap(r => ringViolations(r, acuteAt))
   say(jf.count.joints === 1 && jf.rings.length === 1 && !jv.length, `a joint of two pier ways (3 m, 2 m, 0.35°) is filled: ${jf.count.joints} joint, ${jf.rings.length} ring, ${jv.length} violation(s) (${jv.map(v => v.kind).join(', ')})`)
-  // a deck is WET to the tracer, so the coast runs along it with the deck on its water side. An L deck's far corner (90, 60)
-  // cut by one cell's chord is put back
+  // ⭐ EACH DECK IS CLOSED AT THE TRACE'S STEP (Boz's ruling (b), 2026-10-27): Huron's pier as mapped, OSM area 1353092362 and
+  // lines 1353092363/4 (no width: the typical 1.8 m), left a notch 5 m deep and under a cell wide between the line's buffer
+  // and the area. Closed at the trace's 0.999 m it is filled, counted, and the deck stays one ring
+  const pt = (xz) => xz.map(([x, z]) => ({ x, z }))
+  const huron = { man_made: [{ tags: { area: 'yes', man_made: 'pier' }, isClosed: true, coords: pt([[707.9, 353.78], [711.24, 353.48], [714.44, 353.19], [717.68, 386.02], [716.67, 385.71], [711.05, 383.94], [707.9, 353.78]]) },
+    { tags: { man_made: 'pier' }, isClosed: false, coords: pt([[716.67, 385.71], [716.77, 387.46], [717.17, 394.99]]) },
+    { tags: { man_made: 'pier' }, isClosed: false, coords: pt([[690.37, 379.7], [716.77, 387.46]]) }] }
+  const hf = deckFootprints(huron, 0.999)
+  say(hf.rings.length === 1 && hf.on(714, 385.29) && hf.closedM2 > 0 && hf.closed.length === 1, `Huron's pier closed at its trace step: the notch at (714, 385.29) is deck, ${hf.closedM2} m² added and named, ${hf.rings.length} ring`)
+  // …and the coast across the notch's mouth then FOLLOWS the deck, case (i): a chord between the closed ring's two edges either
+  // side of its corner where the close bridged the mouth (near (711.147, 384.869)), as Huron's trace cut it there
+  const hr0 = hf.rings[0], hk = hr0.reduce((m, p, i) => Math.hypot(p[0] - 711.147, p[1] - 384.869) < Math.hypot(hr0[m][0] - 711.147, hr0[m][1] - 384.869) ? i : m, 0)
+  const along = (p, q, d) => { const L = Math.hypot(q[0] - p[0], q[1] - p[1]); return [p[0] + (q[0] - p[0]) * d / L, p[1] + (q[1] - p[1]) * d / L] }
+  const K = hr0[hk], ha = along(K, hr0[(hk - 1 + hr0.length) % hr0.length], 0.6), hb = along(K, hr0[(hk + 1) % hr0.length], 0.6)
+  const hw = [[700, 375], ha, hb, [705, 370]]
+  let ho = null, hr = null; try { ho = followDecks(hw.map(p => p.slice()), hf, 0.999) } catch (e) { hr = String(e.message).slice(0, 140) }
+  say(ho && ho.replaced === 1 && !ho.unresolved.length, `Huron's site follows the closed deck, case (i): ${ho ? `${ho.replaced} chord replaced (+${ho.added})` : `REFUSED — ${hr}`}`)
+  // ⛔ per deck, never across two: two piers 0.8 m apart, under one cell, stay two
+  const two = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, isClosed: true, coords: pt([[0, 0], [5, 0], [5, 10], [0, 10], [0, 0]]) },
+    { tags: { man_made: 'pier' }, isClosed: true, coords: pt([[5.8, 0], [10, 0], [10, 10], [5.8, 10], [5.8, 0]]) }] }, 1)
+  say(two.rings.length === 2 && two.closedM2 === 0, `two piers 0.8 m apart, closed at 1 m, stay ${two.rings.length} (want 2), ${two.closedM2} m² added`)
+  // ⭐ LOCALITY DECIDES THE DIRECTION (Boz's ruling, 2026-10-27), never length and never a side assumed for the deck. An L deck's
+  // far corner (90, 60) cut by one cell's chord: only the path round that corner stays within the cell, case (i)
   const L = [[40, 0], [50, 0], [50, 50], [90, 50], [90, 60], [40, 60]]
   const Lw = [[0, -50], [100, -50], [100, 0], [50, 0], [50, 50], [90, 50], [90, 59.5], [89.5, 60], [40, 60], [40, 0], [0, 0]]
-  const Lo = followDecks(Lw.map(p => p.slice()), false, { rings: [L] }, 1)
+  const Lo = followDecks(Lw.map(p => p.slice()), { rings: [L] }, 1)
   say(Lo.ring.some(p => p[0] === 90 && p[1] === 60) && !ringViolations(Lo.ring).length, `an L deck's corner cut by a cell's chord is the deck ring's again (${Lo.added} vertex put back)`)
-  // a comb: the chord crosses the deck's body below thin teeth; the path with the deck on the water side climbs every tooth
-  // (3.50 m), and the SHORTER way (2.10 m, along the bottom) would hand the deck's body to the land
-  const comb = [[0, 0], [1, 0], [1, 0.6], [0.9, 0.6], [0.9, 1], [0.8, 1], [0.8, 0.6], [0.55, 0.6], [0.55, 1], [0.45, 1], [0.45, 0.6], [0.2, 0.6], [0.2, 1], [0.1, 1], [0.1, 0.6], [0, 0.6]]
-  const Co = followDecks([[-5, -5], [5, -5], [5, 0.55], [1, 0.55], [0, 0.55], [-5, 0.55]], false, { rings: [comb] }, 1)
-  const i0 = Co.ring.findIndex(p => p[0] === 1 && p[1] === 0.55), i1 = Co.ring.findIndex(p => p[0] === 0 && p[1] === 0.55)
+  // a comb at the trace's scale (1 m): the chord crosses its body 0.5 m under six 0.9 m teeth. Over the teeth the path stays
+  // within the cell (1.4 m) and is the LONGER one (21.8 m); the shorter way, round the body's bottom (21.0 m), strays 5.5 m
+  const comb = [[0, 0], [10, 0], [10, 6]]; for (const x0 of [8, 6.5, 5, 3.5, 2, 0.5]) comb.push([x0 + 0.5, 6], [x0 + 0.5, 6.9], [x0, 6.9], [x0, 6]); comb.push([0, 6])
+  const Co = followDecks([[-50, -50], [50, -50], [50, 5.5], [10, 5.5], [0, 5.5], [-50, 5.5]], { rings: [comb] }, 1)
+  const i0 = Co.ring.findIndex(p => p[0] === 10 && p[1] === 5.5), i1 = Co.ring.findIndex(p => p[0] === 0 && p[1] === 5.5)
   const cl = Co.ring.slice(i0, i1 + 1).slice(1).reduce((t, q, i) => t + Math.hypot(q[0] - Co.ring[i0 + i][0], q[1] - Co.ring[i0 + i][1]), 0)
-  say(Math.abs(cl - 3.5) < 1e-9 && !ringViolations(Co.ring).length, `the path is chosen by orientation, not length: the comb's ${cl.toFixed(2)} m over its teeth (want 3.50; the shorter way is 2.10)`)
-  // the deck is noded by the coast before it is taken out: PTown's own water and decks (fixture), where the coast follows a deck
-  // to the millimetre and the difference left 2 water rings thinner than one lattice step
-  const fx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-deck-sliver-2026-10-27.json'), 'utf8'))
-  const per = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
-  const fw = waterWithoutDecks(fx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], fx.decks), thin = fw.rings.filter(r => 2 * Math.abs(signed(r)) / per(r) < 1 / CLIP_SCALE)
-  say(!thin.length, `PTown's water less its decks (fixture): ${fw.rings.length} ring(s), ${thin.length} thinner than one lattice step (want 0)`)
+  say(Math.abs(cl - 21.8) < 1e-9 && !ringViolations(Co.ring).length, `the comb follows its teeth, the longer path, by locality: ${cl.toFixed(2)} m (want 21.80; the shorter way is 21.00)`)
+  // case (ii): a 0.4 m deck inside one cell, crossed by the chord; both of its paths stay within the cell, so the line cannot
+  // resolve it: the chord is kept and the deck recorded by name
+  const tiny = followDecks([[-5, -5], [5, -5], [5, 0.2], [0.4, 0.2], [0, 0.2], [-5, 0.2]], { rings: [[[0, 0], [0.4, 0], [0.4, 0.4], [0, 0.4]]] }, 1)
+  say(tiny.replaced === 0 && tiny.unresolved.length === 1 && tiny.ring.length === 6, `a deck inside one trace cell keeps the chord and is recorded unresolved (${tiny.unresolved.length}, want 1; ${tiny.replaced} replaced)`)
   const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
-  say(/followDecks\(r, isHole, decks, fine\)/.test(bc) && /simplifyRing\(bd\.outer, R, fine \/ 2, onDeckPath\)/.test(bc) && /onSquare\(ring\[k\], R\) \|\| onDeckPath\(ring\[k\]\)/.test(bc),
+  say(/followDecks\(r, decks, fine\)/.test(bc) && /deckFootprints\(osm\.ground, fine\)/.test(bc) && /simplifyRing\(bd\.outer, R, fine \/ 2, onDeckPath\)/.test(bc) && /onSquare\(ring\[k\], R\) \|\| onDeckPath\(ring\[k\]\)/.test(bc),
     'bake-coast follows the decks after the union, and simplify and settle hold the deck path by identity')
 }
 
@@ -351,7 +370,7 @@ for (const scene of scenes) {
   say(doc.islandFloor?.rule === 'holds a terrain node' && Array.isArray(doc.islandsDropped) && !empty.length,
     `${scene}: every island kept holds a terrain node — ${holes.length} kept, ${empty.length} holding none${empty.length ? ` (first at ${empty[0][0].map(Math.round).join(', ')})` : ''}; ${doc.islandsDropped?.length ?? 'NOT RECORDED'} dropped, each named`)
   const osm = JSON.parse(readFileSync(join(dir, 'raw/osm.json'), 'utf8'))
-  const decks = deckFootprints(osm.ground)
+  const decks = deckFootprints(osm.ground, doc.fineM)
   if (decks.paths.length) {
     const water = doc.water.flatMap(b => [P(b.outer), ...b.holes.map(P)])
     const c = new Clipper(), out = []

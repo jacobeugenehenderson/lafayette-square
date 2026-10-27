@@ -326,7 +326,10 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const W = Math.ceil((R.x1 - R.x0) / G) + 1, H = Math.ceil((R.z1 - R.z0) / G) + 1
   const X = (i) => R.x0 + i * G, Z = (j) => R.z0 + j * G
   const { grid: ground } = await rasterToGrid(opened, { width: W, height: H, bounds: { minX: R.x0, maxX: X(W - 1), minZ: R.z0, maxZ: Z(H - 1) }, toLL, quiet: true })
-  const decks = deckFootprints(osm.ground)
+  // the trace's step, the source's own pixel: read first, because each deck is closed at it (structures.mjs#deckFootprints)
+  const fine = Math.min(...opened.map(o => pixelMetres(o, toLL, disc.cx, disc.cz)))
+  if (!(fine > 0 && Number.isFinite(fine))) throw new Error(`⛔ bake-coast: ${scene} — the lidar's pixel size could not be read`)
+  const decks = deckFootprints(osm.ground, fine)
   const { w, nr, deck, noLidar, noCover, deckCells } = markSheet({ ground, W, H, X, Z, highAt, onDeck: decks.on, covered: (x, z) => inCoverage(opened, ...toLL(x, z)) })
   if (noLidar === W * H) throw new Error(`⛔ bake-coast: ${scene}'s lidar holds NO value anywhere over the fetched square — no coast can be drawn from it`)
   const { held, n: heldN } = heldCells(osm.ground, { W, H, x0: R.x0, z0: R.z0, step: G })
@@ -342,8 +345,6 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   for (let k = 0; k < W * H; k++) if (nr[k]) { if (wet[k]) nrIn++; else nrOut++ }
 
   // ── THE FINE LINE, along the sheet's edge, at the source's own pixel ────────────────────────────────────────────
-  const fine = Math.min(...opened.map(o => pixelMetres(o, toLL, disc.cx, disc.cz)))
-  if (!(fine > 0 && Number.isFinite(fine))) throw new Error(`⛔ bake-coast: ${scene} — the lidar's pixel size could not be read`)
   const cellSq = (k, r) => { const i = k % W, j = (k - i) / W; return toPath([[X(i) - r, Z(j) - r], [X(i) + r, Z(j) - r], [X(i) + r, Z(j) + r], [X(i) - r, Z(j) + r]]) }
   const edge = edgeCells(wet, w, W, H)
   const band = clip(ClipType.ctUnion, edge.map(k => cellSq(k, 1.5 * G)), null)
@@ -415,9 +416,9 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const r3 = (r) => r.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)])
   // ⭐ ALONG A DECK THE COAST IS THE DECK'S RING (Boz's ruling, 2026-10-27; PTown's MacMillan: the trace's crossings lay on the
   // ring, its chords between them cut the deck's corners by 0.22 m, and the exact deck taken out of the water left a sliver)
-  const followed = { replaced: 0, vertices: 0 }
-  for (const bd of bodies) { const f = (r, isHole) => { const o = followDecks(r, isHole, decks, fine); followed.replaced += o.replaced; followed.vertices += o.added; return o.ring }
-    bd.outer = f(bd.outer, false); bd.holes = bd.holes.map(h => f(h, true)) }
+  const followed = { replaced: 0, vertices: 0, unresolved: [] }
+  for (const bd of bodies) { const f = (r) => { const o = followDecks(r, decks, fine); followed.replaced += o.replaced; followed.vertices += o.added; followed.unresolved.push(...o.unresolved); return o.ring }
+    bd.outer = f(bd.outer); bd.holes = bd.holes.map(f) }
   const simple = bodies.map(bd => ({ outer: simplifyRing(bd.outer, R, fine / 2, onDeckPath), holes: bd.holes.map(h => simplifyRing(h, R, fine / 2, onDeckPath)) }))
   // ⭐ ON THE SOURCE, NOT ON THE TRACE: each kept vertex is bisected along its normal on the real sampler, within one
   // trace step (the trace interpolates between samples laid in TOWN metres, which is not the raster's grid).
@@ -442,14 +443,14 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     coast: true,
     from: `the lidar meets ${levels.highName} (${levels.tidal ? 'tidal' : 'lake'}; NAVD88 ${levels.range.high.map(v => v.toFixed(3)).join('…')} m), traced at ${+fine.toFixed(3)} m along a ${G} m sheet over the fetched square`,
     level: { high: levels.highName, low: levels.lowName, tidal: levels.tidal, navd88High: levels.range.high, navd88Low: levels.range.low },
-    dem: vd, gridM: G, fineM: +fine.toFixed(3),
+    dem: vd, gridM: G, fineM: fine,   // EXACT: the mint closes each deck at it (mintInputs), as the trace did
     flattened,
     water: simple,
     arcs, islands, islandFloor: { rule: 'holds a terrain node', lattice: { bounds: lat.bounds, width: lat.width, height: lat.height } }, islandsDropped,
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
-    decksFollowed: followed,
+    decksFollowed: followed, decksClosed: { m2: decks.closedM2, sites: decks.closed },
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
@@ -469,6 +470,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
   if (followed.replaced) console.log(`  DECKS FOLLOWED: ${followed.replaced} chord(s) along a deck's edge replaced by the deck ring's own path (+${followed.vertices} vertices), held through simplify and settle`)
+  if (followed.unresolved.length) console.log(`  DECKS UNRESOLVED: ${followed.unresolved.length} chord(s) across a deck stretch inside one trace cell, kept as traced: ${followed.unresolved.slice(0, 8).map(u => `deck ${u.deck} @(${u.at.map(Math.round).join(', ')})`).join(' · ')}${followed.unresolved.length > 8 ? ` … +${followed.unresolved.length - 8}` : ''}`)
+  if (decks.closed.length) console.log(`  DECKS CLOSED at the trace step: ${decks.closed.length} footprint(s) gained ${decks.closedM2} m² where their parts left a gap under one cell: ${decks.closed.slice(0, 8).map(c => `${c.m2} m² @(${c.at.map(Math.round).join(', ')})`).join(' · ')}`)
   if (settled.sweepClamped.length) console.log(`  SWEEP-CLAMPED: ${settled.sweepClamped.length} settle move(s) cut short so no edge sweeps over a vertex: ${settled.sweepClamped.slice(0, 8).map(c => `${c.wantM}→${c.gotM} m @(${c.at.map(Math.round).join(', ')})`).join(' · ')}${settled.sweepClamped.length > 8 ? ` … +${settled.sweepClamped.length - 8}` : ''}`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
   return out
@@ -618,16 +621,16 @@ const onDeckPath = (p) => DECK_PATH.has(p)
  * (marchingSquares deckCross), but between two of them it runs in a straight chord that cuts the deck's corners, so the
  * coast and the deck, two constructions of one line, drift apart, and the exact deck taken out of ①'s water leaves a sliver.
  * Each chord a→b whose ends lie on ONE deck ring (at the clip lattice, deckFootprints#crossing's rule), on different edges of
- * it, is replaced by the deck ring's own path from a to b. Which of the ring's two paths is DERIVED, never the shorter (a T
- * or an L wharf can go the long way round): the tracer reads a deck node as WET (marchingSquares.mjs KIND.DECK), so the deck
- * lies on the coast's WATER side, and the path walks the ring in the one direction that keeps it there (both rings'
- * windings: an outer's water is on its left when wound positive, a hole's on its right). ⛔ The chord is one marching cell's,
- * so a path straying farther than that cell's diagonal (the trace step × √2) from it is not this case: it refuses by name.
- * Every vertex of a replaced run is held (DECK_PATH). Returns { ring, replaced, added }.
+ * it, is judged by LOCALITY, derived from the trace's own cell (Boz's ruling, 2026-10-27), never by which path is shorter
+ * and never by a side assumed for the deck (measured false on Huron): the chord is one marching cell's, so the ring path it
+ * stands for stays within that cell's diagonal (the trace step × √2) of it. (i) EXACTLY ONE of the ring's two paths does:
+ * it replaces the chord. (ii) BOTH do, the deck's whole stretch inside one cell: the line cannot resolve it, so the chord
+ * is kept and recorded by name (`unresolved`). (iii) NEITHER does: refused by name. Every vertex of a replaced run is held
+ * (DECK_PATH). Returns { ring, replaced, added, unresolved }.
  */
-export function followDecks(ring, isHole, decks, step) {
+export function followDecks(ring, decks, step) {
   const D = decks.rings, n = ring.length, tol = 1 / SCALE
-  if (!D.length || n < 3) return { ring, replaced: 0, added: 0 }
+  if (!D.length || n < 3) return { ring, replaced: 0, added: 0, unresolved: [] }
   const box = D.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0 - tol, x1 + tol, z0 - tol, z1 + tol] })
   const onEdge = (p) => { for (let k = 0; k < D.length; k++) { const b = box[k]; if (p[0] < b[0] || p[0] > b[1] || p[1] < b[2] || p[1] > b[3]) continue
     const r = D[k]; for (let m = 0; m < r.length; m++) { const a = r[m], c = r[(m + 1) % r.length], dx = c[0] - a[0], dz = c[1] - a[1], L2 = dx * dx + dz * dz
@@ -635,26 +638,27 @@ export function followDecks(ring, isHole, decks, step) {
       if (Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= tol) return { k, m, t } } }
     return null }
   const at = ring.map(onEdge)
-  const s = Math.sign(signedArea(ring)), waterLeft = isHole ? s < 0 : s > 0
   const segD = (v, p, q) => { const dx = q[0] - p[0], dz = q[1] - p[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((v[0] - p[0]) * dx + (v[1] - p[1]) * dz) / L2)) : 0; return Math.hypot(v[0] - p[0] - u * dx, v[1] - p[1] - u * dz) }
-  const out = []
+  const out = [], unresolved = []
   let replaced = 0, added = 0
   for (let i = 0; i < n; i++) {
     const a = ring[i], b = ring[(i + 1) % n], A = at[i], B = at[(i + 1) % n]
     out.push(a)
     if (!A || !B || A.k !== B.k || A.m === B.m) continue                    // one edge: the chord already lies on the ring
-    const r = D[A.k], m = r.length, forward = (Math.sign(signedArea(r)) > 0) === waterLeft   // the deck on the water side
+    const r = D[A.k], m = r.length, cell = step * Math.SQRT2
     const apart = (p) => Math.hypot(p[0] - a[0], p[1] - a[1]) > tol && Math.hypot(p[0] - b[0], p[1] - b[1]) > tol   // a crossing AT a corner is that corner
-    const walk = []
-    if (forward) for (let j = (A.m + 1) % m; ; j = (j + 1) % m) { if (apart(r[j])) walk.push(r[j]); if (j === B.m) break }
-    else for (let j = A.m; ; j = (j - 1 + m) % m) { if (apart(r[j])) walk.push(r[j]); if (j === (B.m + 1) % m) break }
-    const far = Math.max(0, ...walk.map(p => segD(p, a, b)))
-    if (!(far <= step * Math.SQRT2)) throw new Error(`⛔ bake-coast: the coast meets one deck's ring at (${a.map(v => v.toFixed(3)).join(', ')}) and (${b.map(v => v.toFixed(3)).join(', ')}), but the ring's path between them with the deck on the water side strays ${far.toFixed(3)} m from the chord, past one trace cell's diagonal (${(step * Math.SQRT2).toFixed(3)} m): which way the shore runs cannot be derived. Refusing.`)
+    const fwd = [], bwd = []
+    for (let j = (A.m + 1) % m; ; j = (j + 1) % m) { if (apart(r[j])) fwd.push(r[j]); if (j === B.m) break }
+    for (let j = A.m; ; j = (j - 1 + m) % m) { if (apart(r[j])) bwd.push(r[j]); if (j === (B.m + 1) % m) break }
+    const far = (path) => Math.max(0, ...path.map(p => segD(p, a, b))), local = [fwd, bwd].filter(path => far(path) <= cell)
+    if (local.length === 2) { unresolved.push({ deck: A.k, at: [+((a[0] + b[0]) / 2).toFixed(3), +((a[1] + b[1]) / 2).toFixed(3)], corners: Math.min(fwd.length, bwd.length) }); continue }
+    if (!local.length) throw new Error(`⛔ bake-coast: the coast meets one deck's ring at (${a.map(v => v.toFixed(3)).join(', ')}) and (${b.map(v => v.toFixed(3)).join(', ')}), and NEITHER of the ring's paths between them stays within one trace cell's diagonal (${cell.toFixed(3)} m) of the chord (${far(fwd).toFixed(3)} m · ${far(bwd).toFixed(3)} m): which way the shore runs cannot be derived. Refusing.`)
+    const walk = local[0]
     const path = walk.map(p => [p[0], p[1]])
     for (const p of [a, b, ...path]) DECK_PATH.add(p)
     if (path.length) { out.push(...path); replaced++; added += path.length }
   }
-  return { ring: out, replaced, added }
+  return { ring: out, replaced, added, unresolved }
 }
 
 /** The refusal's measurement: the flattened water's level under OSM's water (its 1 cm mode) against high water there. */
