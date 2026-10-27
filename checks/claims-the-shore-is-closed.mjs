@@ -186,10 +186,6 @@ for (const dir of dirs) {
   // At HIGH the mapped shore is the waterline, so where the land just across it lies BELOW the sheet by more than the
   // datum's own uncertainty, the sheet's edge stands in the air over it. Named and counted.
   const floatTol = (levels.uncertaintyM ?? 0) * exag
-  // …except where the high-water flood (bake-terrain `water.flood`) carries the sheet on up the beach: there it is covered.
-  const floodPolys = (tj.water?.flood?.polygons || []).map(p => ({ p, bb: p.outer.reduce((b, q) => [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[2], q[0]), Math.max(b[3], q[1])], [Infinity, Infinity, -Infinity, -Infinity]) }))
-  const inRing = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > z) !== (r[j][1] > z) && x < (r[j][0] - r[i][0]) * (z - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; return c }
-  const inFlood = (x, z) => floodPolys.some(({ p, bb }) => x >= bb[0] && x <= bb[2] && z >= bb[1] && z <= bb[3] && inRing(p.outer, x, z) && !p.holes.some(h => inRing(h, x, z)))
   const floats = { len: 0, max: 0, first: null }
   for (const g of water) {
     const [P, I] = view(g)
@@ -225,7 +221,7 @@ for (const dir of dirs) {
         // the level meeting the ground, and its sub-centimetre interpolation is no defect.
         if (deep && deep.y > hi + floatTol && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
         else if (deep && deep.y > hi + floatTol) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - hi, id: deep.id } }
-        if (land && sheet(x, z, 1) - land.y > floatTol && !inFlood(x + nx * ACROSS, z + nz * ACROSS)) { const h = sheet(x, z, 1) - land.y; floats.len += seg; floats.max = Math.max(floats.max, h); floats.first ||= { x, z, h, id: land.id } }
+        if (land && sheet(x, z, 1) - land.y > floatTol) { const h = sheet(x, z, 1) - land.y; floats.len += seg; floats.max = Math.max(floats.max, h); floats.first ||= { x, z, h, id: land.id } }
         // No bare space at EITHER level: with nothing drawn under the water, the land's edge must not stand above it.
         let gap
         if (!land) gap = Infinity                                  // the drawing ends at the water
