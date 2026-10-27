@@ -176,7 +176,11 @@ src/instances/provincetown.js and the Monument set piece), never a kit tool, a t
 "town #2" question doesn't apply to it by Jacob's ruling. The top anchors are the BALCONY's edge (dossier 204′4″, 29′6″ square), not the
 battlement top. The circle's height is authored, starting at ~20 ft (Boz's suggestion; Jacob recalls at least 15 ft). PATTERNS (Jacob): "the strands aren't that dense so it's not like we'll be doing videos on the lights. It'll be stripes,
 dots, swirls." So the editor is a small set of parametric patterns (stripes, dots, swirls, plus the steady glow) with colours, speed and
-timing over the 20 × ~155 grid. No per-frame painting, no video, no xLights import.
+timing over the 20 × ~155 grid. No per-frame painting, no video, no xLights import. SHOWS (Jacob, 2026-10-27): richer motion from the same primitives, e.g. a DIAGONAL stripe rotating around the tree (a
+helix: a stripe with an angle and a turn rate) and STROBES/sparkle like the Eiffel Tower. A library of ~15–20 themed SHOWS (Christmas,
+Hanukkah, Peace, Kwanzaa, Winter, Snow, Candy, Gifts, …), each a short timeline of pattern cues plus a palette, authored as DATA so an agent
+can design them and Jacob judges them in Stage. SCHEDULE: a steady-burning tree all night, and the show PLAYS ON THE HOUR (like the
+Eiffel Tower's hourly sparkle), on the town's own clock.
 ⛔ RELEASE ORDER FOR THE COAST PIN (Ward-seat review, 2026-10-27; Jacob ruled the pin): an OLD player on a NEW slab draws the bare
 lidar contour silently (the stamp no longer raises land). So: (1) merge shore/2026-10-25 into the kit; (2) publish the kit bundle at
 that sha; (3) move the Ward pin on a ward-pin/<date> branch and publish:staging (reconcile ward-kit 7b68aad5 vs Ward OPERATIONS' stated
