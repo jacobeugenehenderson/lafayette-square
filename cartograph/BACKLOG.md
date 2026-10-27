@@ -157,6 +157,11 @@ MEASURED 2026-10-26, neither provincetown.online/ nor staging.theward.online/pro
 (`curl -s <url> | grep -i 'og:'` → nothing); where they should be stamped, not established;
 (3) "Hero object blur" (the rack focus on a panning shot, 237ee4db, Strobe's object-identity focus) is broken on DESKTOP.
 Reproduce each on integration before fixing; the server being a temporary one is not yet ruled out as a cause.
+⛔ RELEASE ORDER FOR THE COAST PIN (Ward-seat review, 2026-10-27; Jacob ruled the pin): an OLD player on a NEW slab draws the bare
+lidar contour silently (the stamp no longer raises land). So: (1) merge shore/2026-10-25 into the kit; (2) publish the kit bundle at
+that sha; (3) move the Ward pin on a ward-pin/<date> branch and publish:staging (reconcile ward-kit 7b68aad5 vs Ward OPERATIONS' stated
+926ac3a4 in that commit); (4) ONLY THEN re-bake terrain+ground for coastal towns (Huron, PTown) and publish them to staging (inland
+towns are unaffected); (5) Promote pins player and slab together, and a rollback restores both, never the slab alone.
 ⛔ PTOWN'S ARRIVAL IS ~9 s OF SPLASH ON DESKTOP (measured 2026-10-26, provincetown.online, warm cache, Chrome, Ward d4b43fa / kit
 7b68aad5; Jacob's "black box" in Society). ward:* marks: gate 877 · buildings 4445 · ground 5923 · trees 7862 · reveal 8977 ms. Every
 request had finished by 2.9 s, so the rest is in-browser prepare; TREES are the critical path. ASPIRATION gaps: TownSplash's header promises
