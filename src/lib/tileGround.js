@@ -2493,10 +2493,11 @@ function shareStampIntoShore(before, tile, who) {
   const cells = (tile.inkCells || []).filter(c => c.cls === 'shore'); if (!cells.length || !tile.iA?.length) return { tile, added: 0 }
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
   const was = new Set((before.iA || []).flat().map(K))
-  // the water edges of iaFull, by their two keys (either direction)
+  // the water edges of iaFull BEFORE the stamp, by their two keys (either direction). ⛔ Not the stamped iaFull: the stamp split
+  // each crossed edge there too, so a crossed edge's two ends are never adjacent in it (the first build read it, and shared 0)
   const water = new Set()
-  ;(tile.iaFull || []).forEach((r, si) => { const st = tile.iaStamp?.[si]; if (!st) return
-    r.forEach((v, e) => { if (tile.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL) { const a = K(v), b = K(r[(e + 1) % r.length]); water.add(a + '|' + b); water.add(b + '|' + a) } }) })
+  ;(before.iaFull || []).forEach((r, si) => { const st = before.iaStamp?.[si]; if (!st) return
+    r.forEach((v, e) => { if (before.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL) { const a = K(v), b = K(r[(e + 1) % r.length]); water.add(a + '|' + b); water.add(b + '|' + a) } }) })
   // the stamp's points on an iA edge (a, b): walk back and forward from each added vertex to the first pre-stamp vertices
   const add = []   // { a, b, pa, pb, v }
   for (const r of tile.iA) { const n = r.length

@@ -144,7 +144,9 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
         console.log(`  ${okOff ? '✅' : '⛔'} mutant (a vertex 2 units off a ② water edge): ${okOff ? 'RED as off the line, as it must be' : 'not seen — (A) is blind off the line'}`)
         console.log(`  ${okOn ? '✅' : '⛔'} mutant (a vertex ON a ② water edge, shared by nothing): ${okOn ? 'RED as unshared, as it must be' : 'not seen — (A) is blind to an unshared vertex'}`)
         // (C′): one ① coast vertex deleted from ② (its two water edges merged) must read missing, never "under a carriageway"
-        const v = r.findIndex((q, i) => C.both.has(key(K(q))) && t.runs?.[st[i]]?.skelId === WATER_EDGE_SKEL && t.runs?.[st[(i - 1 + r.length) % r.length]]?.skelId === WATER_EDGE_SKEL)
+        // a vertex INSIDE a run (its two neighbours ① coast vertices on water edges too): dropping a run's end moves the run's span
+        const coastAt = (i) => { const n = r.length, j = (i + n) % n; return C.both.has(key(K(r[j]))) && t.runs?.[st[j]]?.skelId === WATER_EDGE_SKEL && t.runs?.[st[(j - 1 + n) % n]]?.skelId === WATER_EDGE_SKEL }
+        const v = r.findIndex((_, i) => coastAt(i - 1) && coastAt(i) && coastAt(i + 1))
         if (v < 0) console.log('  ⚪ mutant (a ① coast vertex dropped from ②): none to drop on this ring — not judged')
         else { const tiles2 = R.protoShapeTiles.map(x => x !== t ? x : { ...t, iaFull: t.iaFull.map((q, j) => j === si ? q.filter((_, i) => i !== v) : q), iaStamp: t.iaStamp.map((q, j) => j === si ? q.filter((_, i) => i !== v) : q) })
           const dr = judge(tiles2, C, R.luByClass), okD = dr.Cbad.length > J0.Cbad.length
