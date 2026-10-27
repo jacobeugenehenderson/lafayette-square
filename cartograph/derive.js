@@ -326,6 +326,7 @@ export const OSM_TO_LU = {
   'leisure:park': 'park', 'leisure:nature_reserve': 'park', 'leisure:dog_park': 'park',
   // — the worked and the wild —
   'landuse:construction': 'vacant',
+  'landuse:greenfield': 'vacant',          // undeveloped land planned for building, like construction (Jacob, 2026-10-27)
   'landuse:brownfield': 'brownfield',     // its own class, ruled by Jacob 2026-09-20
   'landuse:farmland': 'agricultural', 'landuse:meadow': 'agricultural',
   'landuse:farmyard': 'agricultural', 'landuse:plant_nursery': 'agricultural',
@@ -3549,6 +3550,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // ── map-layer: a marker, an overlay or a line — never a block face ──
     'amenity:shelter':          'map-layer: a structure you stand under, not land use',
     'amenity:toilets':          'map-layer: a public toilet is local-map value; a marker',
+    'amenity:marketplace':      'map-layer: an event or marker on public space, not a land use; like leisure:outdoor_seating (Jacob, 2026-10-27)',
     'amenity:dog_toilet':       'map-layer: a fixture (a pet relief patch), like amenity:toilets',
     'amenity:recycling':        'map-layer: a fixture (a recycling or compost container), like amenity:toilets. ⚠️ Keyed by tag, so a recycling_type=centre LOT reads as a fixture too; none on disk today',
     'amenity:bicycle_parking':  'map-layer: street furniture',
@@ -3592,6 +3594,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // ── none: genuinely not a land use and not a thing to draw ──
     'man_made:bridge':          'none: the SKELETON owns grade separation (layer/bridge/tunnel). A bridge is not a land use.',
     'man_made:tunnel':          'none: the SKELETON owns grade separation, like man_made:bridge. A tunnel is not a land use.',
+    'landuse:traffic_island':   'none: ground inside the roadway; the street pour owns it, as it owns the divided-road median (Jacob, 2026-10-27)',
     'boundary:administrative':  'none: an administrative line, not a physical feature',
     'boundary:census':          'none: a statistical line, not a physical feature',
     'place:islet':              'none: land inside water; the water producer carries its holes',
