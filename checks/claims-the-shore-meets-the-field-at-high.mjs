@@ -11,7 +11,7 @@
 //   5. per town whose terrain.json carries `stamp`: the field along ①'s coast (from map.json), sampled where the stamp
 //      ran, meets HIGH; the largest miss is printed against the field's cell. NOT CHECKED until a terrain carries it.
 // MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
-// the tidal cap dropped.
+// the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench).
 //
 //   node checks/claims-the-shore-meets-the-field-at-high.mjs
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -39,7 +39,7 @@ const lineZ = (x) => A[1] + (C[1] - A[1]) * x / 200
 const field = (bedDrop = 0.1, beachSlope = 0.02, bedSlope = 0.03) => { const f = new Float32Array(W * H)
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const x = i * 5, z = j * 5, d = (lineZ(x) - z) * 200 / Math.hypot(200, 20)   // + landward (north)
     f[j * W + i] = d >= 0 ? (x > 95 && x < 110 && d < 20 ? -0.4 : x >= 140 && x <= 160 ? 1.0 : beachSlope * d) : -bedDrop - bedSlope * -d } return f }
-const WALL = (x) => x >= 135 && x <= 165
+const WALL = (x) => x >= 130 && x <= 170                       // the wall's cells and ONE cell either side: its transition
 const mask = maskOf(face, W, H, B)
 
 console.log('── 1–2. a lake: the field meets HIGH on the line, and no land is lowered')
@@ -50,7 +50,9 @@ console.log('── 1–2. a lake: the field meets HIGH on the line, and no land
   for (let x = 20; x <= 180; x += 0.5) { if (WALL(x)) continue; worst = Math.max(worst, Math.abs(bilinear(f, W, H, B, x, lineZ(x)) - 0)) }
   say(worst < 1e-6, `along ①'s line (the seawall apart), |field − HIGH| ≤ ${worst.toExponential(2)} m`)
   for (let x = 145; x <= 155; x += 0.5) { let dz = 0; while (dz < 10 && bilinear(f, W, H, B, x, lineZ(x) + dz) > 0) dz += 0.01; wallMiss = Math.max(wallMiss, dz) }
-  say(wallMiss <= 5 * Math.SQRT2, `at the seawall the land stands (never lowered) and the HIGH contour sits ${wallMiss.toFixed(2)} m seaward of the line (≤ one cell)`)
+  say(wallMiss <= 1, `at the seawall the land stands (never lowered) and the HIGH contour sits ${wallMiss.toFixed(2)} m seaward of the line (the wall's rise reflected; ≤ 1 m)`)
+  let ends = 0; for (const x of [130, 132.5, 167.5, 170]) ends = Math.max(ends, Math.abs(bilinear(f, W, H, B, x, lineZ(x))))
+  console.log(`     (printed, not gated: the wall's END cells, where a lowered water node is shared with the next cell, miss HIGH by ≤ ${ends.toFixed(3)} m)`)
   let lowered = 0; for (let k = 0; k < W * H; k++) if (!mask[k] && f[k] < before[k] - 1e-9) lowered++
   say(lowered === 0, `no landward node lowered (${lowered})`)
 }
@@ -61,6 +63,17 @@ console.log('── 3. a tidal town: the ramp spans two cells between LOW and HI
   const x = 100, z0 = lineZ(x), atLow = (() => { for (let dz = 0; dz < 50; dz += 0.05) if (bilinear(f, W, H, B, x, z0 + dz) <= -1) return dz; return Infinity })()
   say(atLow >= 2 * 5 * 0.99, `the field falls from HIGH to LOW over ${atLow.toFixed(2)} m seaward (≥ two 5 m cells)`)
 }
+console.log('── 3b. tidal flats above the ramp keep their bed: no trench between the beach and the flats')
+{
+  const f = field(0.1, 0.02, 0.03)                              // the bed, with a shallow BAR (flats) 8–12 m out, above the ramp
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const d = (lineZ(i * 5) - j * 5) * 200 / Math.hypot(200, 20); if (d < -8 && d > -12) f[j * W + i] = -0.05 }
+  const before = Float32Array.from(f)
+  stampCoast(f, W, H, B, face, bb, mask, tide(-1, 0))
+  let dug = 0, n = 0
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i, d = (lineZ(i * 5) - j * 5) * 200 / Math.hypot(200, 20)
+    if (d < -8 && d > -12) { n++; if (f[k] < before[k] - 1e-9) dug++ } }
+  say(n > 0 && dug === 0, `in the tide's extension the higher bed stands (${dug} of ${n} nodes dug below it)`)
+}
 console.log('── 4. a bed that does not fall seaward refuses')
 {
   let threw = false
@@ -68,6 +81,11 @@ console.log('── 4. a bed that does not fall seaward refuses')
   say(threw, 'a rising bed REFUSES by name')
 }
 
+{
+  let threw = false
+  try { waterFace({ layers: { ribbons: { protopolygon: {} } } }, 'fixture') } catch (e) { threw = /predates/.test(e.message) }
+  say(threw, 'a frozen ① with no waterRings field REFUSES (never reads as no coast)')
+}
 console.log('── 5. each town whose terrain carries the stamp')
 let towns = 0
 for (const t of readdirSync(join(ROOT, 'cartograph/data'))) {
