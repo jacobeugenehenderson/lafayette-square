@@ -3437,12 +3437,15 @@ createServer(async (req, res) => {
       const r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
       console.log(`[publish] R2 ${r2}`)
       // ⛔ ASK, never assume: reporting an address for a slab that is not there is the
-      // plausible-looking success this whole panel exists to prevent.
-      const slabKey = `${ASSET_ENV_PREFIX.staging}${manifestPath(id)}`   // the switch: a town is live by its manifest
-      const slabHead = await fetch(`${ASSET_BASE_URL}${slabKey}`, { method: 'HEAD' }).catch(() => null)
-      if (!slabHead?.ok) {
-        throw new Error(`the upload reported success but the slab is not in the bucket (${slabKey} → `
-          + `${slabHead ? slabHead.status : 'unreachable'}).`)
+      // plausible-looking success this whole panel exists to prevent. ⭐ And ask for THIS POUR (Zob, 2026-10-26): staging is
+      // read through its manifest (`servedPour`, the switch) and the scene it names must carry this pour's stamp — a manifest
+      // that is merely present could be the previous Publish's.
+      const bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null
+      if (bakedAt == null) throw new Error(`public/baked/${id}/scene.json carries no bakedAt — this pour has no stamp to prove it landed`)
+      const landed = await servedPour(ASSET_BASE_URL + ASSET_ENV_PREFIX.staging, id)
+      if (String(landed.bakedAt) !== String(bakedAt)) {
+        throw new Error(`the upload reported success but staging does not serve this pour: ${landed.why
+          || `it serves the pour of ${landed.bakedAt}, not ${bakedAt}`} (${ASSET_ENV_PREFIX.staging}${manifestPath(id)}).`)
       }
 
       // ── 2. THE PLAYER, rebuilt only when staging's build is behind the source.
@@ -3452,10 +3455,7 @@ createServer(async (req, res) => {
         playerPublished = true
       }
 
-      // bakedAt of the just-shipped slab — the UI polls the live artifact for this exact
-      // value to know the publish has propagated.
-      let bakedAt = null
-      try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
+      // `bakedAt` (above) is the just-shipped pour's: the UI polls the live artifact for this exact value
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, r2, playerPublished,
         stagingUrl: site.staging.url, staging: site.staging }))
