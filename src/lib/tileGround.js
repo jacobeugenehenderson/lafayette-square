@@ -2490,8 +2490,17 @@ function insertOnEdges(ring, owners, pts, ok) {
 // edge is already split, the sub-edge bounded by the keys around the point's parameter along a → b. KEY LOOKUP ONLY: no
 // containment, no distance. A water edge whose keys no shore cell carries REFUSES by name. Returns { tile, added }.
 function shareStampIntoShore(before, tile, who) {
-  const cells = (tile.inkCells || []).filter(c => c.cls === 'shore'); if (!cells.length || !tile.iA?.length) return { tile, added: 0 }
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
+  // ⭐ IT PROVES ITSELF (Boz, 2026-10-26: the first build shared nothing and nothing said so). Independently of the walk below,
+  // the crossings the stamp put on the coast are the vertices it ADDED to iaFull whose two edges the stamp's own expansion
+  // stamped to the water. Every one of them must be shared into a shore cell; a count that differs refuses by name.
+  const had = new Set((before.iaFull || []).flat().map(K)), want = new Map()
+  ;(tile.iaFull || []).forEach((r, si) => { const st = tile.iaStamp?.[si]; if (!st) return; const n = r.length
+    r.forEach((v, e) => { if (!had.has(K(v)) && tile.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL && tile.runs?.[st[(e - 1 + n) % n]]?.skelId === WATER_EDGE_SKEL) want.set(K(v), v) }) })
+  const cells = (tile.inkCells || []).filter(c => c.cls === 'shore')
+  if (!cells.length || !tile.iA?.length) {
+    if (want.size) throw new Error(`[tileGround][stamp] ⛔ ${who}: the land-use stamp put ${want.size} crossing(s) on the coast (e.g. (${[...want.values()][0].map(c => c.toFixed(3)).join(', ')})) but the tile has no shore cell to share them into. Refusing.`)
+    return { tile, added: 0 } }
   const was = new Set((before.iA || []).flat().map(K))
   // the water edges of iaFull BEFORE the stamp, by their two keys (either direction). ⛔ Not the stamped iaFull: the stamp split
   // each crossed edge there too, so a crossed edge's two ends are never adjacent in it (the first build read it, and shared 0)
@@ -2506,6 +2515,8 @@ function shareStampIntoShore(before, tile, who) {
       if (j === i || k === i) continue
       const a = K(r[j]), b = K(r[k]); if (!water.has(a + '|' + b)) continue
       add.push({ a, b, pa: r[j], pb: r[k], v: r[i] }) } }
+  const got = new Set(add.map(x => K(x.v))), missed = [...want.keys()].filter(k => !got.has(k))
+  if (missed.length) throw new Error(`[tileGround][stamp] ⛔ ${who}: ${missed.length} of the ${want.size} land-use stamp crossing(s) on the coast were not found on a block water edge to share into the shore cell (e.g. (${want.get(missed[0]).map(c => c.toFixed(3)).join(', ')})): the coast would be held with two vertex sets. Refusing.`)
   if (!add.length) return { tile, added: 0 }
   const rings = cells.map(c => c.rings.map(r => r.slice()))
   for (const x of add) {
