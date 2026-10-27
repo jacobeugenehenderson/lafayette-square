@@ -913,14 +913,17 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     if (Array.isArray(coast) && coast.length) {
       wIdx = owners.push({ skelId: WATER_EDGE_SKEL, side: 'right', segOrd: 0,
                                  gradeSeparated: false, srcIdx: -1, water: true }) - 1
-      // ⛔ A WATER RING TAKES THE INK OUTERS' WINDING (Zob, 2026-10-25): the clip set unions by nonzero fill, so a lake wound
-      // against the ink cancels it where they overlap (+1 − 1 = 0) and the street ink inside the water came back as LAND faces.
-      // Today's towns all match the ink; a town nobody has looked at need not. ▶ checks/claims-a-clockwise-lake-keeps-its-water.mjs
+      // ⛔ THE WATER KEEPS ITS OWN RELATIVE WINDING, TURNED AS ONE TO THE INK'S (Zob, 2026-10-25; the islands, 2026-10-26). The
+      // clip set unions by nonzero fill, so a lake wound against the ink cancels it where they overlap (+1 − 1 = 0). The coast
+      // arrives in coastFile.mjs#readCoast's convention, checked at that one door — each body's outer positive, each island
+      // negative — so every ring is reversed TOGETHER when the ink is wound negative, never ring by ring: rewinding each ring to
+      // the ink's sign turned an island hole into water. ▶ checks/claims-an-island-stays-land-in-the-mint.mjs
       if (!R.rings?.length) throw new Error('[①] ⛔ the coast has water rings but ① has no ink to wind them against. Refusing.')
       const inkSign = Math.sign(signedArea(R.rings.reduce((m, r) => Math.abs(signedArea(r)) > Math.abs(signedArea(m)) ? r : m, R.rings[0])))
+      const flip = inkSign < 0
       for (const r of coast) {
         if (!Array.isArray(r) || r.length < 3) continue
-        const w = r.map(p => [p[0], p[1]]); if (Math.sign(signedArea(w)) !== inkSign) w.reverse()
+        const w = r.map(p => [p[0], p[1]]); if (flip) w.reverse()
         clipRings.push(w)
         clipLabels.push(r.map(() => wIdx))
       }

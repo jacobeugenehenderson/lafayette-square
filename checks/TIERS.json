@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 466,
+  "total": 471,
   "counts": {
-    "safe": 334,
+    "safe": 338,
     "local-effect": 28,
-    "live": 104
+    "live": 105
   },
   "checks": [
     {
@@ -893,6 +893,13 @@
       ]
     },
     {
+      "file": "checks/claims-an-annulus-splits-at-its-own-class-changes.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs",
       "tier": "safe",
       "why": [
@@ -930,6 +937,15 @@
         "computed import of scripts/slab-publish-rule.mjs — read, safe",
         "computed import() with no readable target — runs arbitrary modules",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
+      ]
+    },
+    {
+      "file": "checks/claims-an-island-stays-land-in-the-mint.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
       ]
     },
     {
@@ -2774,11 +2790,13 @@
     },
     {
       "file": "checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "writeFileSync — only under its own temp dir",
-        "deletes files — only under its own temp dir",
-        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "writeFileSync",
+        "deletes files",
+        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
+        "computed import() with no readable target — runs arbitrary modules",
         "declares @args --slot=<granted>"
       ]
     },
@@ -2851,6 +2869,13 @@
     },
     {
       "file": "checks/claims-the-mark-palette-is-never-live.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-mint-refuses-no-outline.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -3024,7 +3049,6 @@
       "why": [
         "writeFileSync — only under its own temp dir",
         "deletes files — only under its own temp dir",
-        "copies/renames files — only under its own temp dir",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "declares @args --slot=<granted>"
@@ -3046,6 +3070,13 @@
     },
     {
       "file": "checks/claims-the-shore-agrees-with-the-field.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-shore-cells-are-read-from-the-tile.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

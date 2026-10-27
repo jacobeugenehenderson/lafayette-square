@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 104. Never in a default run.
+## ⛔ live — 105. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -91,6 +91,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-dry-bed-record-is-the-lidar.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-the-flight-builds-no-ao.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs` | outbound | imports cartograph/fetch-bathymetry.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
+| `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | unreadable | writeFileSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · computed import() with no readable target — runs arbitrary modules · declares @args --slot=<granted> |
 | `checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` | outbound | calls fetch() |
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of src/preview/heroAnim.js — read, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports package(s) vite — not read from source |
 | `checks/claims-the-paint-stack-flattens.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import of a temp-dir module whose source cannot be read · re-runs its own file (process.execPath + its own path) — the same tier as itself · imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
@@ -167,7 +168,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 334. This is `npm test`.
+## safe — 338. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -237,6 +238,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-alley-stub-pairs.mjs` | ⭐⭐⭐ IS "BRIDGE THE ALLEY ACROSS A JUNCTION" A RULE, OR A SPECIAL CASE? |
 | `checks/claims-an-annulus-splits-at-its-own-class-changes.mjs` | CLAIM — A CELL ROUND A FACE NO SPOKE REACHED SPLITS AT ITS OWN CLASS CHANGES, PAIRED BY OWNER, OR REFUSES. |
 | `checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs` | pour.mjs — WHEN A TOWN'S SKELETON IS RE-POURED, DOES EVERY KEY |
+| `checks/claims-an-island-stays-land-in-the-mint.mjs` | CLAIM — AN ISLAND STAYS LAND IN THE MINT. The coast reaches ① in coastFile.mjs#readCoast's convention, checked at that one |
 | `checks/claims-an-unanswered-axis-matches-nothing.mjs` | nothing.mjs — WHEN A SPECIES HAS NO ANSWER ON AN AXIS, DOES ANY PART "MATCH" IT? |
 | `checks/claims-anchors-follow-the-placements.mjs` | `tree-anchors.json` keys to its own slab’s placements. |
 | `checks/claims-anchors-know-their-terrain.mjs` | terrain.mjs — DO GROUND ANCHORS KNOW WHICH HEIGHTFIELD THEY CAME FROM? |
@@ -449,8 +451,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | trees.mjs — CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | cover.mjs — DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | wood.mjs |
-| `checks/claims-the-ink-is-held-by-its-owners.mjs` | owners.mjs — ① (THE 2ε STRIP BETWEEN TILES) IS COVERED BY OWNED PIECES, AND EACH NAMES WHO IT IS. |
-| `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | CLAIM — ALONG THE WATER, ②'S KERB IS ①'S COAST LINE ITSELF: ONE LINE, READ BY BOTH SIDES, NEVER A SECOND NEAR-COPY. |
+| `checks/claims-the-ink-is-absorbed-by-its-owner.mjs` | CLAIM — ① (THE ε STRIP) IS ABSORBED INTO THE FACES BY ITS OWN LABELS: EVERY PAINTED EDGE NAMES ITS OWNER, NEIGHBOURS MEET |
 | `checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs` | cut.mjs — THE RAISED KERB, ON BLOCKS SMALL ENOUGH TO KNOW THE ANSWER. |
 | `checks/claims-the-key-light-is-a-real-body.mjs` | body.mjs — IS ANYTHING ACTUALLY THERE? |
 | `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |
@@ -476,6 +477,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-search-outlives-an-empty-ticker.mjs` | the header's chrome may not be gated on |
 | `checks/claims-the-shadow-box-has-no-cliff.mjs` | the fitted shadow box is continuous at the horizon. |
 | `checks/claims-the-shore-agrees-with-the-field.mjs` | CLAIM — THE SHORE AGREES WITH THE FIELD (BRIEF-the-shore-is-one-line §4, Boz 2026-10-25). |
+| `checks/claims-the-shore-cells-are-read-from-the-tile.mjs` | CLAIM — EVERY READER OF THE SHORE CELLS READS THE TILE'S (`tile.inkCells`), NEVER THE MINT'S PRE-STAMP COPY. |
 | `checks/claims-the-shore-is-closed.mjs` | closed |
 | `checks/claims-the-shore-knows-which-side-is-wet.mjs` | wet.mjs — WHICH FACE DOES THE STONE GO ON? |
 | `checks/claims-the-shore-meets-the-field-at-high.mjs` | CLAIM — THE DRAWN GROUND MEETS ①'s COAST AT HIGH, ON THE LINE, AND THE BED RAMPS TO IT (BRIEF-the-shore-is-one-line §3 step 2b; |
