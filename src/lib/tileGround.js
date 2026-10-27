@@ -8348,7 +8348,13 @@ export function buildTileGround(ribbons, opts = {}) {
             let cur = null
             for (let i = 0; i < EC.ring.length; i++) {
               const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
-              const key = o ? `${o.skelId}|${o.side}|${o.segOrd}${o.deck != null ? `|deck${o.deck}` : ''}` : null
+              // ⭐ ONE WATER IS ONE RUN, SIDE-BLIND (Boz's ruling, Zob's read of every reader, 2026-10-27): ①'s coast-ink owners
+              // carry a side and the bare water ring's (wIdx) is minted 'right', so a face that touches both would split one shore
+              // into two runs, and a needle tip retraced across them was two owners at one retrace (PTown's spit). A deck's
+              // water stays its own (`|deck${k}`); the run's side is written null. HELD (Boz, 2026-10-27): it lands with ①'s needle-tip root fix and its check.
+              const isWater = o?.skelId === WATER_EDGE_SKEL
+              const key = !o ? null : isWater ? `${WATER_EDGE_SKEL}${o.deck != null ? `|deck${o.deck}` : ''}`
+                : `${o.skelId}|${o.side}|${o.segOrd}${o.deck != null ? `|deck${o.deck}` : ''}`
               if (!key) { if (EC.labs[i] == null) { protoUnlabelled.edges++; protoUnlabelled.at.push({ block: k, ring: ri, p: EC.ring[i], q: EC.ring[(i + 1) % EC.ring.length] }) } else protoUnlabelled.noOwner++
                 cur = null; continue }
               // ⛔ A CAP EDGE IS NOT FRONTAGE: it runs ACROSS the ribbon, so as a run it would answer "which side is
@@ -8367,7 +8373,7 @@ export function buildTileGround(ribbons, opts = {}) {
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
               // frozen identity, not chain geometry — it crosses the wall by the ruled rule.
               if (!cur || cur.key !== key) { const rk = protoRoadKey.get(o.skelId) || null
-                cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [],
+                cur = { key, skelId: o.skelId, side: isWater ? null : o.side, segOrd: o.segOrd, poly: [],
                 // ⭐ SUPPLIED, NOT REFUSED — see `protoRoadKey` at the mint. Without these the
                 // consumer cannot ask "same road?" and every chain cut becomes a corner.
                 roadId: rk?.roadId ?? null, throughId: rk?.throughId ?? null,
