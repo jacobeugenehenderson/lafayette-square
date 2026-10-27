@@ -2774,10 +2774,18 @@ export function stampTile(st, groups) {
   // an antenna the noding removed may take an input vertex with it (`out.dropped`): a CORNER or an ARC BOUNDARY (its arc
   // differs from a neighbour's: dropping a tangent moves the arc) is never dropped silently; one inside an arc or on a leg is
   // counted. A survivor carrying the first A's `src` with the second A's edge (`out.relabelled`) must name the same owner.
+  // ⛔ AND A WATER RUN'S TIP THAT iA KEEPS IS NEVER DROPPED (Boz's ruling, 2026-10-27, on Zob's read): iaFull and iA are noded
+  // apart, so an antenna routed into iaFull alone (two banks closer than a pixel or two, both through one hot pixel) cuts a
+  // stretch of coast out of the struck contour that the block still carries, and the shore can bracket neither. Refused here,
+  // at its cause. ▶ checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs
+  const kept = new Set(); items.forEach((x, n) => { if (x.kind === 'cut') for (const v of out[n]) kept.add(v.k[0] + ',' + v.k[1]) })
+  const wetEdge = (ri, e) => st.runs?.[st.iaStamp?.[ri]?.[e]]?.skelId === WATER_EDGE_SKEL
   let antennaDropped = 0
   items.forEach((x, n) => { if (x.kind !== 'full') return
     const arc = st.iaArc?.[x.ri], m = x.r.length, at = (q) => `iaFull ring ${x.ri} vertex ${q} at (${x.r[q].join(', ')})`
     for (const q of out.dropped[n]) { antennaDropped++
+      const K = x.r[q].map(c => Math.round(c * SCALE)).join(',')
+      if ((wetEdge(x.ri, q) || wetEdge(x.ri, (q - 1 + m) % m)) && kept.has(K)) throw new Error(`[tileGround][stamp] ⛔ the noding removed an antenna through ${at(q)} on a WATER run, and the block (iA) keeps that point — the struck contour would lose a stretch of coast the block still carries. A coast feature finer than the trace (bake-coast opens and closes the water at its step). Refusing.`)
       if (st.iaCorner?.[x.ri]?.[q]) throw new Error(`[tileGround][stamp] ⛔ the noding removed an antenna through the CORNER ${at(q)} — the contour retraces itself at a corner. Refusing.`)
       if (arc && (arc[q] !== arc[(q - 1 + m) % m] || arc[q] !== arc[(q + 1) % m])) throw new Error(`[tileGround][stamp] ⛔ the noding removed an antenna through the ARC BOUNDARY ${at(q)} (arc ${arc[q]} between ${arc[(q - 1 + m) % m]} and ${arc[(q + 1) % m]}) — the arc's extent would move. Refusing.`) }
     for (const { src, edge } of out.relabelled[n]) if (st.iaStamp?.[x.ri] && st.iaStamp[x.ri][src] !== st.iaStamp[x.ri][edge]) throw new Error(`[tileGround][stamp] ⛔ an antenna's survivor at ${at(src)} keeps its own stamp (${st.iaStamp[x.ri][src]}) but leaves along input edge ${edge} (${st.iaStamp[x.ri][edge]}) — two owners at one retrace. Refusing.`) })

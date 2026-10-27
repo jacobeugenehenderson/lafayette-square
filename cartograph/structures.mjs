@@ -102,6 +102,54 @@ function convexHull(pts) {
  * else structures.mjs#defaultDeckWidthM: the sourced typical width), butt ends, a joint filled where ways end together. One union, as clipper paths, with a
  * point test for the samplers. ⛔ From the data's tags, never a site list.
  */
+// ⭐ A FOOTPRINT AT THE TRACE'S OWN SCALE, BOTH WAYS: OPEN, THEN CLOSE, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27; the
+// decks first, then the traced water, one method). A SPIKE or a GAP narrower than one cell is something neither the source nor
+// the line can resolve. Per connected part (its own paths unioned; a part in a part's hole is its own): OPEN, eroded then dilated
+// by half a cell and kept inside the part, so what is narrower than a cell goes; then CLOSE, dilated then eroded by half a cell
+// and kept with what it was, so a gap narrower than a cell is filled. ⛔ Per part, never across two: two parts a metre apart
+// stay two. Counted and named: `opened` and `closed` [{ m2, at }]; a part the open removes ENTIRELY is `belowResolution`
+// [{ m2, at, ring }], never silently lost; `openedPieces` / `closedPieces` name each feature taken or filled, largest first
+// ({ features: [{ m2, lenM: its longer bounding side, at }], slivers: { n, m2 } }).
+// Returns the kept paths (not unioned across parts: the caller unions).
+// ▶ checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs
+export function openCloseAtStep(paths, stepM, what) {
+  if (!(stepM > 0)) throw new Error(`⛔ structures: openCloseAtStep (${what}) needs the trace's step (got ${stepM})`)
+  const parts = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
+  if (!cu.Execute(ClipType.ctUnion, parts, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the union of ${what} FAILED`)
+  const h = (stepM / 2) * SCALE, kept = new Paths(), closed = [], opened = [], belowResolution = []
+  const off = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
+  const both = (a, b) => { const c = new Clipper(), o = new Paths(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true)
+    if (!c.Execute(ClipType.ctIntersection, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the open of ${what} FAILED`); return o }
+  const areaOf = (ps) => ps.reduce((t, q) => t + Clipper.Area(q), 0)
+  const place = (ch) => { const c0 = ch.Contour()[0]; return [+(c0.X / SCALE).toFixed(3), +(c0.Y / SCALE).toFixed(3)] }
+  // each connected piece of a − b, { m2, at } (its holes subtracted), largest first: what one feature the open took or the close filled
+  const pieces = (a, b) => { const c = new Clipper(), t = new PolyTree(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true)
+    if (!c.Execute(ClipType.ctDifference, t, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the pieces of ${what} FAILED`)
+    const out = [], walk = (n) => { for (const ch of n.Childs()) { const m2 = (Math.abs(Clipper.Area(ch.Contour())) - ch.Childs().reduce((u, hh) => u + Math.abs(Clipper.Area(hh.Contour())), 0)) / SCALE / SCALE
+      const c = ch.Contour(), xs = c.map(q => q.X), ys = c.map(q => q.Y), lenM = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE
+      if (m2 > 0) out.push({ m2: +m2.toFixed(4), lenM: +lenM.toFixed(3), at: place(ch) }); for (const hh of ch.Childs()) walk(hh) } }
+    walk(t); return out }
+  const openedPieces = [], closedPieces = []
+  const closeAll = (node) => { for (const ch of node.Childs()) {
+    const part = [ch.Contour(), ...ch.Childs().map(c => c.Contour())], a0 = areaOf(part)
+    const open = both(off(off(part, -h), h), part), a1 = areaOf(open)
+    if (!open.length || a1 <= 0) belowResolution.push({ m2: +(a0 / SCALE / SCALE).toFixed(3), at: place(ch), ring: fromPath(ch.Contour()) })
+    else {
+      if (a0 - a1 > 0) opened.push({ m2: +((a0 - a1) / SCALE / SCALE).toFixed(3), at: place(ch) })
+      const k = union([...open, ...off(off(open, h), -h)]), added = areaOf(k) - a1
+      if (added > 0) closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: place(ch) })
+      if (a0 - a1 > 0) openedPieces.push(...pieces(part, open))
+      if (added > 0) closedPieces.push(...pieces(k, open))
+      for (const q of k) kept.push(q) }
+    for (const hole of ch.Childs()) closeAll(hole) } }   // a part inside a part's hole is a part of its own
+  closeAll(parts)
+  // ⭐ A FEATURE IS WIDER THAN THE LATTICE'S TWO UNITS (its mean width, m² / length): narrower is the offset's own rounding along an
+  // edge, kept as one count and total per side, never dropped (Boz, 2026-10-27: a total that hides 25k pieces is a silent number)
+  const big = (a, b) => b.m2 - a.m2, wide = (f) => f.m2 / Math.max(f.lenM, 1 / SCALE) > 2 / SCALE
+  const split = (xs) => ({ features: xs.filter(wide).sort(big), slivers: { n: xs.filter(f => !wide(f)).length, m2: +xs.filter(f => !wide(f)).reduce((t, f) => t + f.m2, 0).toFixed(4) } })
+  return { paths: kept, opened, closed, belowResolution, openedPieces: split(openedPieces), closedPieces: split(closedPieces) }
+}
+
 export function deckFootprints(osmGround, stepM) {
   if (!(stepM > 0)) throw new Error(`⛔ structures: deckFootprints needs the trace's step (got ${stepM}) — a deck is closed at the step the lidar is traced at, and there is no other`)
   const { areas, lines } = deckStructures(osmGround)
@@ -134,34 +182,10 @@ export function deckFootprints(osmGround, stepM) {
     const hp = toPath(hull); if (Clipper.Orientation(hp) !== Clipper.Orientation(paths[paths.length - 1])) hp.reverse()
     paths.push(hp); joints++ }
   for (const l of lines) delete l._halfM
-  // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): the footprint is made the lidar's
-  // own scale both ways, since a SPIKE or a GAP narrower than one cell is something neither the source nor the line can
-  // resolve. Huron: a pier line with no width beside its mapped area left a notch 5 m deep and under a cell wide; footprint
-  // corners were as sharp as 0.20° (Huron) and 1.13° (PTown), which the ink cannot outline where a deck's edge is drawn as
-  // shore. Per connected deck (its own parts unioned; a deck in a deck's hole is its own):
-  // OPEN, eroded then dilated by half a trace cell and kept inside the deck, so what is narrower than a cell goes; then CLOSE,
-  // dilated then eroded by half a cell and kept with what it was, so a gap narrower than a cell is filled. ⛔ Per deck, never
-  // across two: separate decks a metre apart stay two. Counted and named: `opened` and `closed` [{ m2, at }]; a deck the open
-  // removes ENTIRELY is `belowResolution` [{ m2, at, ring }], never silently lost (streetDecks refuses one a street rides).
-  const parts = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
-  if (!cu.Execute(ClipType.ctUnion, parts, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: the deck union FAILED')
-  const h = (stepM / 2) * SCALE, closedPaths = new Paths(), closed = [], opened = [], belowResolution = []
-  const off = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
-  const both = (a, b) => { const c = new Clipper(), o = new Paths(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true)
-    if (!c.Execute(ClipType.ctIntersection, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: a deck\'s open FAILED'); return o }
-  const areaOf = (ps) => ps.reduce((t, q) => t + Clipper.Area(q), 0)
-  const place = (ch) => { const c0 = ch.Contour()[0]; return [+(c0.X / SCALE).toFixed(3), +(c0.Y / SCALE).toFixed(3)] }
-  const closeAll = (node) => { for (const ch of node.Childs()) {
-    const deck = [ch.Contour(), ...ch.Childs().map(c => c.Contour())], a0 = areaOf(deck)
-    const open = both(off(off(deck, -h), h), deck), a1 = areaOf(open)
-    if (!open.length || a1 <= 0) belowResolution.push({ m2: +(a0 / SCALE / SCALE).toFixed(3), at: place(ch), ring: fromPath(ch.Contour()) })
-    else {
-      if (a0 - a1 > 0) opened.push({ m2: +((a0 - a1) / SCALE / SCALE).toFixed(3), at: place(ch) })
-      const kept = union([...open, ...off(off(open, h), -h)]), added = areaOf(kept) - a1
-      if (added > 0) closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: place(ch) })
-      for (const q of kept) closedPaths.push(q) }
-    for (const hole of ch.Childs()) closeAll(hole) } }   // a deck inside a deck's hole is a deck of its own
-  closeAll(parts)
+  // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): Huron, a pier line with no width beside
+  // its mapped area left a notch 5 m deep and under a cell wide; footprint corners were as sharp as 0.20° (Huron) and 1.13°
+  // (PTown), which the ink cannot outline where a deck's edge is drawn as shore. The one rule, `openCloseAtStep`, below.
+  const { paths: closedPaths, opened, closed, belowResolution } = openCloseAtStep(paths, stepM, 'a deck')
   const u = union(closedPaths)
   const rings = u.map(fromPath)
   const boxes = rings.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0, x1, z0, z1] })
