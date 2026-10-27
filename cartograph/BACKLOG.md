@@ -157,6 +157,15 @@ MEASURED 2026-10-26, neither provincetown.online/ nor staging.theward.online/pro
 (`curl -s <url> | grep -i 'og:'` → nothing); where they should be stamped, not established;
 (3) "Hero object blur" (the rack focus on a panning shot, 237ee4db, Strobe's object-identity focus) is broken on DESKTOP.
 Reproduce each on integration before fixing; the server being a temporary one is not yet ruled out as a cause.
+⭐ NEXT TRANCHE = A WARD TRANCHE (Jacob, 2026-10-27: "we need to probably just have a Ward-focused tranche to follow this one").
+Queued for it, in order: (1) HERO OBJECT BLUR is broken, caught on film in PTown's own share images: noon.jpg is sharp, golden.jpg is
+blurred end to end, the Monument (the hero object) included, so the focus is not on the object (likely the focus-falls-back-to-aim path,
+src/components/dofDriver.js / focusObject.js; cause not established). Then recapture the share images. (2) PTown's ~9 s arrival splash
+(below). (3) Society's census reads 0/0/0. (4) SlabRevetment's setState-in-render warning. (5) The bridge-edge water tint (filed with the
+deck). RULED, to carry: water SHADED BY KIND (Jacob: "we want to shade water by kind"), with ①'s water face carrying its subtype from its
+producer, an ASPIRATION to build, not rot. MONUMENT LIGHTS (Jacob): pitch ANIMATION ("a quintessential aspirational feature we could
+deliver pretty cheaply"); the strand count is AUTHORED (a slider in the editor, ~3,100 bulbs per the press); Jacob estimates strands from
+a photo. The sources name ~3,100 lights and no strand count.
 ⛔ RELEASE ORDER FOR THE COAST PIN (Ward-seat review, 2026-10-27; Jacob ruled the pin): an OLD player on a NEW slab draws the bare
 lidar contour silently (the stamp no longer raises land). So: (1) merge shore/2026-10-25 into the kit; (2) publish the kit bundle at
 that sha; (3) move the Ward pin on a ward-pin/<date> branch and publish:staging (reconcile ward-kit 7b68aad5 vs Ward OPERATIONS' stated
