@@ -44,7 +44,7 @@ import { fileURLToPath } from 'node:url'
 import { mapDir } from './config.js'
 import { jurisdictionForMap } from './intake-jurisdiction.mjs'
 import { licencesForArtifact } from './overture-licence.mjs'
-import { readSources } from './sources.js'
+import { readSources, readHistorySources } from './sources.js'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 
@@ -672,6 +672,31 @@ export const INTAKE_ROWS = [
       return licencesForArtifact(JSON.parse(readFileSync(file, 'utf8')))
     },
     doc: 'INTAKE-CATALOGUE.md',
+  },
+  {
+    id: 'history', domain: 'content', tier: 'elective',
+    label: 'Building history',
+    question: 'Does this town\'s state or the National Register keep records of its buildings — names, dates, styles, architects?',
+    /**
+     * ⭐ THE TOWN'S DECLARATION ANSWERS, as for parcels: `sources.json` `history` (cartograph/sources.js
+     * #readHistorySources) names each well — a state inventory taken from the state record (Massachusetts' MHC,
+     * states/ma.mjs), a nomination's inventory, a nomination's extracted rows. Filled = every declared file on disk;
+     * declared-none is a verified absence with the town's reason; undeclared is empty. The jurisdiction-wide well lives
+     * in the STATE record, so every town in that state is offered it by declaring `{ "from": "state", "id": … }`.
+     */
+    present: (dir, scene) => {
+      const h = readHistorySources(scene)
+      if (h.state === 'undeclared') return { present: false }
+      if (h.state === 'none') return { present: false, verifiedAbsent: h.absentReason }
+      if (!h.wells.every(w => existsSync(w.path) && statSync(w.path).size > 0)) return { present: false }
+      const st = h.wells.map(w => statSync(w.path))
+      return { present: true, bytes: st.reduce((n, x) => n + x.size, 0), mtime: Math.max(...st.map(x => x.mtimeMs)) }
+    },
+    path: 'sources.json',
+    unlocks: 'each building\'s historic name, date, style, architect and register designations, dated on its card',
+    absent: { kind: ABSENT.HONEST_ZERO, note: 'cards carry only what the listings say' },
+    acquisition: { kind: ACQUIRE.BUTTON, note: 'the town\'s declared history wells, via fetch-history.mjs (GDAL for a state geodatabase) — terms per well in references/registry.json' },
+    doc: 'cartograph/INTAKE.md',
   },
 ]
 

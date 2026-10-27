@@ -757,10 +757,12 @@
         "aiUse": "permitted",
         "checkedOn": "2026-09-26",
         "checkedBy": "Wick",
-        "note": "Terms read 2026-09-26 at openstreetmap.org/copyright — ODbL: \"You are free to copy, distribute, transmit and adapt our data, as long as you credit OpenStreetMap and its contributors.\" · \"If you alter or build upon our data, you may distribute the result only under the same license.\" No restriction on automated or AI processing is stated. Attribution + share-alike apply to anything we distribute that is built on it.",
+        "quote": "You are free to copy, distribute, transmit and adapt our data, as long as you credit OpenStreetMap and its contributors. · If you alter or build upon our data, you may distribute the result only under the same license.",
+        "note": "Terms read 2026-09-26 at openstreetmap.org/copyright (ODbL). No restriction on automated or AI processing is stated. Attribution + share-alike apply to anything we distribute that is built on it.",
         "approvedBy": "Jacob, 2026-09-26 (\"OpenStreetMap is a permitted source\")"
       },
-      "status": "PERMITTED"
+      "status": "PERMITTED",
+      "class": "open-map"
     },
     {
       "id": "usace-cem",
@@ -1557,6 +1559,2351 @@
       },
       "status": "CANDIDATE — bring to Jacob",
       "localCopy": null
+    },
+    {
+      "id": "nps-npgallery",
+      "class": "national-register",
+      "title": "NPGallery — the National Park Service digital asset library (National Register nominations and their photographs)",
+      "publisher": "US National Park Service",
+      "jurisdiction": "national (US)",
+      "url": "https://npgallery.nps.gov/",
+      "covers": [
+        "National Register nomination forms (text, inventories, maps)",
+        "nomination photographs (often by third parties)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://www.nps.gov/aboutus/disclaimer.htm (NPGallery links it as its disclaimer)",
+        "quote": "Copyright law does not protect “any work of the U.S. Government” where “a work prepared by an officer or employee of the U.S. Government as part of that person's official duties” (See, 17 U.S.C. §§ 101, 105). … However, not all materials appearing on this website, social media, and associated National Park Service material are in the public domain.",
+        "exception": "A nomination is usually PREPARED by a state SHPO or a consultant, not by NPS staff, so the federal-work rule does not cover its text by itself; each instance row says who prepared it. Photographs credited to a photographer are third-party and excluded.",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)"
+      },
+      "status": "PERMITTED — federal works only; each nomination is its own instance row"
+    },
+    {
+      "id": "nrhp-89001148-provincetown-hd",
+      "class": "national-register",
+      "instanceOf": "nps-npgallery",
+      "title": "Provincetown Historic District, National Register of Historic Places Registration Form (NRHP ref. 89001148)",
+      "publisher": "Massachusetts Historical Commission (prepared), US National Park Service (listed, hosted)",
+      "jurisdiction": "Provincetown, MA",
+      "edition": "1989, 123 pp. (form and continuation sheets pp. 1–51; photographs and their captions pp. 52–118; MHC transmittal letters pp. 119–123)",
+      "url": "https://npgallery.nps.gov/GetAsset/15fa72ea-a631-4403-96b9-c789266cc1f6",
+      "covers": [
+        "district narrative: per-building names, addresses, dates and styles cited in the text",
+        "statement of significance"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://www.nps.gov/aboutus/disclaimer.htm",
+        "quote": "Thus, material created by the National Park Service and presented on this website, unless otherwise indicated, is generally … in the public domain. … However, not all materials appearing on this website … are in the public domain.",
+        "exception": "Prepared by MHC staff (state employees), so the federal-work rule does not settle it; the form carries no copyright notice. The 20 photographs are by Brian Pfeiffer (Feb. 1988, negatives held by him, per each caption page): third-party, EXCLUDED.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "remove this row's history well from provincetown sources.json and re-run bake-content; every fact it yields carries _source \"nrhp-89001148-provincetown-hd p.<n>\", so a single item is removed by deleting its row in content/history/nrhp-89001148.json"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED (text only; photographs excluded)",
+      "localCopy": "/Users/jacobhenderson/Desktop/dev.nosync/WARDSTUDY/MA/Provincetown_HD_NRHP_1989.pdf (Jacob machine; not committed)"
+    },
+    {
+      "id": "nrhp-05000370-hpdm",
+      "class": "national-register",
+      "instanceOf": "nps-npgallery",
+      "title": "Hi-Pointe–DeMun Historic District, National Register nomination (NRHP ref. 05000370)",
+      "publisher": "US National Park Service (listed, hosted)",
+      "jurisdiction": "St. Louis City and County, MO",
+      "covers": [
+        "the building inventory OCR'd into cartograph/data/hipointedemun/content/nr-inventory.json (address, date, style, contributing)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://www.nps.gov/aboutus/disclaimer.htm",
+        "quote": "Copyright law does not protect “any work of the U.S. Government” … However, not all materials appearing on this website … are in the public domain.",
+        "exception": "Registered after the fact: the inventory was already in use (nr-inventory.json). Who prepared the form was not re-read for this row.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "remove the nr-inventory well from hipointedemun sources.json (or a row from nr-inventory.json) and re-run bake-content"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED (in use since before the registry; preparer not re-read)",
+      "localCopy": null
+    },
+    {
+      "id": "massgis-l3-parcels",
+      "class": "assessor",
+      "title": "MassGIS Standardized Assessors' Parcels (Level 3), statewide feature service",
+      "publisher": "MassGIS (Bureau of Geographic Information), Commonwealth of Massachusetts EOTSS",
+      "jurisdiction": "MA",
+      "url": "https://services1.arcgis.com/hGdibHYSPO59RG1h/ArcGIS/rest/services/Massachusetts_Property_Tax_Parcels/FeatureServer/0",
+      "covers": [
+        "parcel polygons",
+        "site address",
+        "DOR use code",
+        "polygon type (ROW)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://www.mass.gov/info-details/massgis-frequently-asked-questions (403 to our fetchers; quoted as relayed verbatim by https://wiki.openstreetmap.org/wiki/MassGIS) and ArcGIS item 73d4c766167848b795f1048cad3919c7 licenseInfo",
+        "quote": "Since MassGIS data is paid for by public tax dollars, the data are in the public domain and therefore can be used by anyone for any purpose. When using MassGIS data on maps or in digital applications, source credit should be stated as \"MassGIS (Bureau of Geographic Information), Commonwealth of Massachusetts EOTSS\" · licenseInfo: \"Assessor’s parcel mapping is a representation of property boundaries, not an authoritative source.\"",
+        "exception": "The FAQ was read second-hand (mass.gov returns 403). Credit line owed as quoted.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "drop the massgis-l3 well from the town's sources.json"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED (in use for PTown since 2026-10-05; registered 2026-10-26)",
+      "localCopy": "/Users/jacobhenderson/Desktop/dev.nosync/WARDSTUDY/MA/MassGIS_L3_Parcels_gdb.zip (Jacob machine; the pour fetches the service)"
+    },
+    {
+      "id": "mhc-inventory",
+      "class": "state-inventory",
+      "title": "MassHistoric Commission Inventory (MACRIS points and areas), MassGIS file geodatabase MHC_Inventory_GDB",
+      "publisher": "Massachusetts Historical Commission (data), MassGIS (distribution)",
+      "jurisdiction": "MA",
+      "edition": "GDB timestamped 2026-06-04",
+      "url": "https://www.arcgis.com/home/item.html?id=e27a15d822ef4b10bb4dd6eb631ceb3c",
+      "covers": [
+        "per-resource MHC id, historic and common name, address, construction date, style, architect/designer, use, significance, designation and date, demolished flag (MHCINV_PT)",
+        "areas and districts (MHCINV_POLY) — not read: membership is Extent's"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "ArcGIS item e27a15d822ef4b10bb4dd6eb631ceb3c (owner MassGIS): description and licenseInfo; the GDB itself carries no use-constraint metadata (ogrinfo -mdd all)",
+        "quote": "This public map service contains points and polygons representing information from the Massachusetts Cultural Resource Information System (MACRIS) database and related records on file at the Massachusetts Historical Commission (MHC) … Information on archaeological resources is not a public record and is excluded from these datalayers.",
+        "exception": "No reuse licence is stated; the MassGIS public-domain FAQ covers MassGIS's own data, and this is MHC's. Archaeological sites are not in it.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "remove the mhc-inventory history well from the town's sources.json and re-run bake-content; a single record is removed by adding its MHCN to that well's `exclude` list"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED",
+      "localCopy": "/Users/jacobhenderson/Desktop/dev.nosync/WARDSTUDY/MA/MHC_Inventory_GDB.zip (Jacob machine; not committed — pass --gdb to fetch-history.mjs)"
+    },
+    {
+      "id": "mhc-macris-forms",
+      "class": "state-forms",
+      "title": "MACRIS — MHC inventory forms (Form B building surveys, scans)",
+      "publisher": "Massachusetts Historical Commission",
+      "jurisdiction": "MA",
+      "url": "https://mhc-macris.net/",
+      "covers": [
+        "narrative building histories",
+        "survey photographs"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "note": "mhc-macris.net answers our fetcher with a bot wall (an Incapsula challenge page, 212 bytes); terms not read. Many PTown Form B scans are also hosted by the PHPP (row phpp)."
+      },
+      "status": "UNCHECKED — do not read",
+      "localCopy": null
+    },
+    {
+      "id": "phpp",
+      "class": "local-archive",
+      "title": "Provincetown History Preservation Project (the town's digital archive: Form B scans, documents, photographs)",
+      "publisher": "Town of Provincetown (Town Clerk)",
+      "jurisdiction": "Provincetown, MA",
+      "url": "https://provincetownhistoryproject.org/",
+      "covers": [
+        "Form B building surveys (PDF, by map-lot and address)",
+        "archival photographs",
+        "oral histories"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://provincetownhistoryproject.org/ (footer; no terms page is linked)",
+        "quote": "Copyright © 2007–2026 Town of Provincetown . All Rights Reserved.",
+        "exception": "All rights reserved and no reuse grant. Facts only (dates, names) in our own words; ⛔ archival photographs need written permission (BRIEF §4) and are not taken.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "delete every _source \"phpp …\" fact from the town's overrides and re-run bake-content"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED for facts in our words; photographs excluded. Not yet read.",
+      "localCopy": null
+    },
+    {
+      "id": "wikimedia-commons",
+      "class": "free-media",
+      "title": "Wikimedia Commons (media files)",
+      "publisher": "Wikimedia Foundation / the individual uploaders",
+      "jurisdiction": "global",
+      "url": "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia",
+      "covers": [
+        "photographs under a per-file free licence"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia",
+        "quote": "However, almost all content hosted on Wikimedia Commons may be freely reused subject to certain restrictions (in many cases). You do not need to obtain a specific statement of permission from the licensor(s) of the content unless you wish to use the work under different terms than the license states.",
+        "exception": "The licence is PER FILE: each photo carries its author, licence and licence URL on the record (photos[].credit/license/license_url); attribution and share-alike apply as that licence says.",
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED — credit per file"
+    },
+    {
+      "id": "loc-pp",
+      "class": "federal-images",
+      "title": "Library of Congress — Prints & Photographs (e.g. the bird's-eye views of Provincetown)",
+      "publisher": "Library of Congress",
+      "jurisdiction": "national (US)",
+      "url": "https://www.loc.gov/legal/",
+      "covers": [
+        "historic images, per item rights statement"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://www.loc.gov/legal/",
+        "quote": "As a publicly supported institution, we generally do not own the rights to materials in our collections. You should determine for yourself whether or not an item is protected by copyright or in the public domain, and then satisfy any copyright or use restrictions when publishing or distributing materials from our collections.",
+        "exception": "Per item: only items whose rights statement reads \"No known restrictions on publication\" (or are pre-1930 US publications) are taken.",
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED per item — not yet read"
+    },
+    {
+      "id": "pbg-guide-2026",
+      "class": "business-guild",
+      "title": "Provincetown Business Guild 2026 Guide",
+      "publisher": "Provincetown Business Guild",
+      "jurisdiction": "Provincetown, MA",
+      "edition": "2026, 76 pp. (InDesign, rev. 2026-05-26)",
+      "url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+      "covers": [
+        "member businesses: name, address, phone, site, section",
+        "advertisements (business images, logos)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://ptown.org/terms-conditions/ (a privacy and third-party-links policy; no reuse clause) and the site footer",
+        "quote": "Copyright © 2026 Provincetown Business Guild",
+        "exception": "No reuse grant. Jacob's own copy; he worked for the PBG (consent stands, 2026-09-25 brief). Images: Jacob, 2026-10-26 (§9.2): \"The PBG guide's images may be used. Jacob takes responsibility and takes them down on any request.\"",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "delete the photos whose credit is \"Provincetown Business Guild 2026 Guide\" (content/photos/<slug>/pbg-*.jpg and their photos[] entries in listings.overrides.json) and re-run bake-content"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF §9.2, §9.3)"
+      },
+      "status": "PERMITTED (Jacob's ruling); images OK, takedown on request",
+      "localCopy": "/Users/jacobhenderson/Desktop/dev.nosync/WARDSTUDY/MA/2026-PBG-GUIDE.pdf (Jacob machine; never committed)"
+    },
+    {
+      "id": "pbg-map-2026",
+      "class": "business-guild",
+      "instanceOf": "pbg-guide-2026",
+      "title": "Provincetown Business Guild 2026 Map",
+      "publisher": "Provincetown Business Guild",
+      "jurisdiction": "Provincetown, MA",
+      "edition": "2026, 2 pp.",
+      "covers": [
+        "member locations and categories on the town map"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "as pbg-guide-2026",
+        "quote": "Copyright © 2026 Provincetown Business Guild",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "as pbg-guide-2026"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF §9.2, §9.3)"
+      },
+      "status": "PERMITTED (Jacob's ruling)",
+      "localCopy": "/Users/jacobhenderson/Desktop/dev.nosync/WARDSTUDY/MA/2026-PBG-MAP.pdf (Jacob machine; never committed)"
+    },
+    {
+      "id": "provincetown-town-site",
+      "class": "institution-site",
+      "title": "Town of Provincetown website (provincetown-ma.gov) — e.g. the Harbor/MacMillan Pier page",
+      "publisher": "Town of Provincetown",
+      "jurisdiction": "Provincetown, MA",
+      "url": "https://www.provincetown-ma.gov/",
+      "covers": [
+        "municipal facilities: pier, harbormaster, town hall, library"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://www.provincetown-ma.gov/ footer and /Copyright (both read 2026-10-26)",
+        "quote": "No terms of use or copyright notice appear on the homepage or at /Copyright (the footer reads only \"Government Websites by CivicPlus®\").",
+        "exception": "Municipal public information; no reuse grant stated.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "delete every _source \"provincetown-town-site …\" fact from the town's overrides"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED (Jacob's ruling)"
+    },
+    {
+      "id": "pilgrim-monument-site",
+      "class": "institution-site",
+      "title": "Pilgrim Monument and Provincetown Museum website",
+      "publisher": "Pilgrim Monument and Provincetown Museum",
+      "jurisdiction": "Provincetown, MA",
+      "url": "https://www.pilgrim-monument.org/",
+      "covers": [
+        "hours, admission, history"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://www.pilgrim-monument.org/terms-of-service/",
+        "quote": "Please wait while the policy is loaded. If it does not load, please view our terms of service . — the embedded policy (app.termageddon.com) returns \"Failed to load license.\" (HTTP 404), so the terms could not be read.",
+        "exception": "Terms unreadable at the source. Facts in our own words only; no images taken from the site.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "delete every _source \"pilgrim-monument-site …\" (or https://www.pilgrim-monument.org/…) fact from the town's overrides"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED (Jacob's ruling; terms unreadable)"
+    },
+    {
+      "id": "ptown-chamber-site",
+      "class": "chamber",
+      "title": "Provincetown Chamber of Commerce website",
+      "publisher": "Provincetown Chamber of Commerce",
+      "jurisdiction": "Provincetown, MA",
+      "url": "https://ptownchamber.com/",
+      "covers": [
+        "member directory, visitor-center hours, history"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (fetched; quotes verbatim)",
+        "source": "https://ptownchamber.com/ (homepage; no terms or copyright link found)",
+        "quote": "No terms of use, copyright notice or terms link appears on the homepage (read 2026-10-26).",
+        "exception": "Member data and photos are the members'; facts in our words only. A member export needs Jacob's contact and written permission (BRIEF §8.7).",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "delete every _source https://ptownchamber.com/… fact from the town's overrides"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF-a-town-lists-everything §9.3, via Boz)"
+      },
+      "status": "PERMITTED for facts (Jacob's ruling)"
+    },
+    {
+      "id": "ptown-business-own-sites",
+      "class": "institution-site",
+      "title": "Provincetown businesses' and institutions' own websites (the 2026-09-25 research: one _source URL per fact in listings.overrides.json)",
+      "publisher": "each business",
+      "jurisdiction": "Provincetown, MA",
+      "covers": [
+        "hours, descriptions, history lines, amenities"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-26",
+        "checkedBy": "Boz's listings agent (each site's linked terms page fetched and searched for an explicit reuse prohibition)",
+        "quote": "One class row (Boz, 2026-10-26). Terms are quoted per site in `sites[].forbids` only where they explicitly forbid reuse; a site with none found is covered by the basis.",
+        "basis": "Jacob 2026-10-26: gathered publicly; removed on first request",
+        "takedown": {
+          "contact": "jacob@jacobhenderson.studio",
+          "how": "delete the fact whose _source (or _wick_source) is that site from listings.overrides.json and re-run bake-content; every fact names its URL"
+        },
+        "approvedBy": "Jacob, 2026-10-26 (BRIEF §9.3), and Boz, 2026-10-26: one class row listing each site"
+      },
+      "status": "PERMITTED (Jacob's basis) · 152 sites listed · 11 whose terms explicitly forbid reuse, quoted · facts only, in our words; no images taken from these sites",
+      "method": "Sites = every URL host in a _source / _wick_source* field of PTown's listings.overrides.json not covered by its own row (town, Monument, Chamber, PBG, Wikipedia, NPS, PHPP, Commons). Prohibitions = a sentence on the site's own linked terms page that says copying/reproduction/automated collection is not allowed; Google Sites' footer link to Google's own terms and Shopify's boilerplate (\"illegal or unauthorized purpose\") are not counted.",
+      "sites": [
+        {
+          "site": "1620brewhouse.com",
+          "urls": [
+            "https://www.1620brewhouse.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "1620 Brewhouse"
+          ]
+        },
+        {
+          "site": "8dyer.com",
+          "urls": [
+            "https://8dyer.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Benchmark"
+          ]
+        },
+        {
+          "site": "adamsnest.com",
+          "urls": [
+            "https://adamsnest.com/",
+            "https://adamsnest.com/pages/visit"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Adam's Nest"
+          ]
+        },
+        {
+          "site": "adamsvariety.com",
+          "urls": [
+            "https://adamsvariety.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Adam's Variety"
+          ]
+        },
+        {
+          "site": "admiralslanding.com",
+          "urls": [
+            "https://admiralslanding.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Admiral's Landing"
+          ]
+        },
+        {
+          "site": "ahouse.com",
+          "urls": [
+            "https://ahouse.com/",
+            "https://ahouse.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Atlantic House (A-House)"
+          ]
+        },
+        {
+          "site": "aligraygallery.com",
+          "urls": [
+            "https://aligraygallery.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Ali Gray Gallery"
+          ]
+        },
+        {
+          "site": "anchorinnbeachhouse.com",
+          "urls": [
+            "https://anchorinnbeachhouse.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Anchor Inn Beach House"
+          ]
+        },
+        {
+          "site": "angelfoods.com",
+          "urls": [
+            "https://angelfoods.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Angel Foods"
+          ]
+        },
+        {
+          "site": "aquabarptown.com",
+          "urls": [
+            "https://www.aquabarptown.com/",
+            "https://aquabarptown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Aqua Bar"
+          ]
+        },
+        {
+          "site": "artsdunetours.com",
+          "urls": [
+            "https://www.artsdunetours.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Art's Dune Tours"
+          ]
+        },
+        {
+          "site": "asgcc.org",
+          "urls": [
+            "https://asgcc.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "AIDS Support Group of Cape Cod — Provincetown Drop-In Center"
+          ]
+        },
+        {
+          "site": "atlasobscura.com",
+          "urls": [
+            "https://www.atlasobscura.com/places/toys-of-eros"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Toys of Eros"
+          ]
+        },
+        {
+          "site": "baedega.com",
+          "urls": [
+            "https://www.baedega.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Baedega"
+          ],
+          "terms_unread": "site did not answer our fetcher (ENOTFOUND), 2026-10-26"
+        },
+        {
+          "site": "baysidebetsys.com",
+          "urls": [
+            "https://baysidebetsys.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Bay Cafe"
+          ]
+        },
+        {
+          "site": "benchmarkinn.com",
+          "urls": [
+            "https://benchmarkinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "8 Dyer Hotel",
+            "The Benchmark"
+          ]
+        },
+        {
+          "site": "bertawalkergallery.com",
+          "urls": [
+            "https://bertawalkergallery.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Berta Walker Gallery"
+          ]
+        },
+        {
+          "site": "botanica-pt.com",
+          "urls": [
+            "https://www.botanica-pt.com/",
+            "https://www.botanica-pt.com/about"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Botanica"
+          ]
+        },
+        {
+          "site": "bowersockgallery.com",
+          "urls": [
+            "https://bowersockgallery.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Bowersock Gallery"
+          ]
+        },
+        {
+          "site": "brasskey.com",
+          "urls": [
+            "https://www.brasskey.com/dining/shipwreck-lounge",
+            "https://brasskey.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Shipwreck Lounge at the Brass Key",
+            "Brass Key Guesthouse"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "brasswoodptown.com",
+          "urls": [
+            "https://www.brasswoodptown.com/",
+            "https://www.brasswoodptown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Brasswood Inn"
+          ]
+        },
+        {
+          "site": "bubalas.com",
+          "urls": [
+            "https://www.bubalas.com/",
+            "https://bubalas.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Bubala's by the Bay"
+          ]
+        },
+        {
+          "site": "cabotscandy.com",
+          "urls": [
+            "https://www.cabotscandy.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Cabot's Candy"
+          ]
+        },
+        {
+          "site": "capeandcoastbank.com",
+          "urls": [
+            "https://www.capeandcoastbank.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Cape & Coast Bank"
+          ]
+        },
+        {
+          "site": "capecodderguesthouse.com",
+          "urls": [
+            "https://www.capecodderguesthouse.com/",
+            "https://capecodderguesthouse.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Cape Codder Guest House"
+          ]
+        },
+        {
+          "site": "capecodfive.com",
+          "urls": [
+            "https://www.capecodfive.com/",
+            "https://www.capecodfive.com/locations/provincetown"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Cape Cod 5"
+          ],
+          "forbids": {
+            "terms": "https://www.capecodfive.com/terms-use",
+            "quote": "Except as otherwise expressly stated herein, they may not be copied, transmitted, displayed, performed, distributed, licensed, altered, framed, stored for subsequent use or otherwise used in whole or in part in any manner without Cape Cod Five's prior written consent.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "capecodlife.com",
+          "urls": [
+            "https://capecodlife.com/business-listing/kidstuff/",
+            "https://capecodlife.com/business-listing/yesterdays-treasures/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Kidstuff",
+            "Yesterday's Treasures"
+          ],
+          "forbids": {
+            "terms": "https://capecodlife.com/terms-of-use/",
+            "quote": "a single copy made for personal use only, you may not copy, reproduce, modify, republish, upload, post, transmit, or distribute any documents or information from this site in any form or by any means without prior written permission from us or the specific content provider, and you are solely responsible for obtaining permission before reusing any copyrighted material that is available on this site.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "capecolonyinn.com",
+          "urls": [
+            "https://capecolonyinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Cape Colony Inn"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "cloveandcreek.com",
+          "urls": [
+            "https://cloveandcreek.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Clove & Creek"
+          ]
+        },
+        {
+          "site": "coastalacresprovincetown.com",
+          "urls": [
+            "https://coastalacresprovincetown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Coastal Acres Campground"
+          ]
+        },
+        {
+          "site": "coastalstudies.org",
+          "urls": [
+            "https://coastalstudies.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Center For Coastal Studies"
+          ]
+        },
+        {
+          "site": "coffeymen.com",
+          "urls": [
+            "https://coffeymen.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Coffey Men"
+          ]
+        },
+        {
+          "site": "comesniffaround.com",
+          "urls": [
+            "https://comesniffaround.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Sniffs of Adventure"
+          ]
+        },
+        {
+          "site": "conwellace.com",
+          "urls": [
+            "https://conwellace.com/conwell-home-center",
+            "https://www.conwellace.com/conwell-home-center"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Ace Conwell Home Center",
+            "Conwell Home Center"
+          ]
+        },
+        {
+          "site": "coyotekayaks.com",
+          "urls": [
+            "https://www.coyotekayaks.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Coyote Kayaks"
+          ]
+        },
+        {
+          "site": "crownepointe.com",
+          "urls": [
+            "https://www.crownepointe.com/restaurants/about",
+            "https://crownepointe.com/spa",
+            "https://crownepointe.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Pointe Tavern",
+            "Shui Spa",
+            "Crowne Pointe Historic Inn & Spa"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "eastendbooksptown.com",
+          "urls": [
+            "https://eastendbooksptown.com/",
+            "https://eastendbooksptown.com/about-us"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "East End Books Ptown"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "elleryhotelptown.com",
+          "urls": [
+            "https://www.elleryhotelptown.com/",
+            "http://www.elleryhotelptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Ellery Hotel"
+          ]
+        },
+        {
+          "site": "estheticsbyevette.com",
+          "urls": [
+            "https://www.estheticsbyevette.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Esthetics by Evette"
+          ]
+        },
+        {
+          "site": "facebook.com",
+          "urls": [
+            "https://www.facebook.com/shorhome/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Shor Home"
+          ],
+          "forbids": {
+            "terms": "https://www.facebook.com/terms.php",
+            "quote": "You may not access or collect data from our Products using automated means (without our prior permission)",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "farlandprovisions.com",
+          "urls": [
+            "https://farlandprovisions.com/",
+            "https://farlandprovisions.com/contact/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Far Land Provisions"
+          ]
+        },
+        {
+          "site": "fawc.org",
+          "urls": [
+            "https://fawc.org/",
+            "https://fawc.org/about/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Fine Arts Work Center"
+          ]
+        },
+        {
+          "site": "flyersboats.com",
+          "urls": [
+            "https://www.flyersboats.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Flyer's Boat Rentals"
+          ]
+        },
+        {
+          "site": "freemansptown.com",
+          "urls": [
+            "https://freemansptown.com/",
+            "https://freemansptown.com/contact"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Freemans"
+          ]
+        },
+        {
+          "site": "gifford.house",
+          "urls": [
+            "https://www.gifford.house/explore/porchbar",
+            "https://www.gifford.house/inn"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Porch Bar at Gifford House",
+            "Gifford House"
+          ]
+        },
+        {
+          "site": "gmlawllp.com",
+          "urls": [
+            "https://gmlawllp.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Gilmartin Magence LLP"
+          ]
+        },
+        {
+          "site": "grandcentralptown.com",
+          "urls": [
+            "https://grandcentralptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Grand Central"
+          ]
+        },
+        {
+          "site": "harborhotelptown.com",
+          "urls": [
+            "https://www.harborhotelptown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Harbor Hotel Provincetown"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "havencenter.me",
+          "urls": [
+            "https://www.havencenter.me/",
+            "https://www.havencenter.me"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Haven Center"
+          ]
+        },
+        {
+          "site": "helltown.fit",
+          "urls": [
+            "https://www.helltown.fit/find-us"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Helltown Fitness"
+          ]
+        },
+        {
+          "site": "helpingourwomen.org",
+          "urls": [
+            "https://helpingourwomen.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Helping Our Women"
+          ]
+        },
+        {
+          "site": "hennep.com",
+          "urls": [
+            "https://www.hennep.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Hennep"
+          ]
+        },
+        {
+          "site": "house-of-la-rue.myshopify.com",
+          "urls": [
+            "https://house-of-la-rue.myshopify.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "House of La Rue"
+          ]
+        },
+        {
+          "site": "hrc.org",
+          "urls": [
+            "https://www.hrc.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Human Rights Campaign Store"
+          ]
+        },
+        {
+          "site": "kohicoffee.com",
+          "urls": [
+            "https://www.kohicoffee.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Kohi Coffee"
+          ]
+        },
+        {
+          "site": "landsendinn.com",
+          "urls": [
+            "https://landsendinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Land's End Inn"
+          ],
+          "forbids": {
+            "terms": "https://landsendinn.com/Terms-of-Use.html",
+            "quote": "You will use protected content solely for your personal use and will make no other use of the content without the express written permission of Lands End Inn and the copyright owner.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "larkhotels.com",
+          "urls": [
+            "https://www.larkhotels.com/massachusetts/cape-cod/provincetown/awol-provincetown"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "AWOL"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "latanzi.com",
+          "urls": [
+            "https://latanzi.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "La Tanzi, Spaulding & Landreth, LLP"
+          ]
+        },
+        {
+          "site": "lizscafeptown.com",
+          "urls": [
+            "https://lizscafeptown.com/",
+            "https://lizscafeptown.com/menu/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Liz's Cafe"
+          ]
+        },
+        {
+          "site": "local186.com",
+          "urls": [
+            "https://www.local186.com/enzo-guest-house",
+            "https://www.local186.com/",
+            "https://local186.com/enzo-guest-house"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Enzo Guest House",
+            "Local 186"
+          ]
+        },
+        {
+          "site": "macsseafood.com",
+          "urls": [
+            "https://macsseafood.com/",
+            "https://macsseafood.com/restaurant/macs-fish-house-provincetown/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Mac's Fish House"
+          ]
+        },
+        {
+          "site": "mayflower-ptown.com",
+          "urls": [
+            "https://www.mayflower-ptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Mayflower"
+          ]
+        },
+        {
+          "site": "mercuryhotelptown.com",
+          "urls": [
+            "https://www.mercuryhotelptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Mercury Hotel"
+          ]
+        },
+        {
+          "site": "mewsptown.com",
+          "urls": [
+            "https://mewsptown.com/",
+            "https://mewsptown.com/reservations.php"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Mews Restaurant & Café"
+          ]
+        },
+        {
+          "site": "mezzeptown.com",
+          "urls": [
+            "https://www.mezzeptown.com/",
+            "https://mezzeptown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Mezzeterranean",
+            "Yolqueria"
+          ]
+        },
+        {
+          "site": "musselbeach.com",
+          "urls": [
+            "https://www.musselbeach.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Mussel Beach Health Club"
+          ],
+          "forbids": {
+            "terms": "https://www.musselbeach.com/policies/legal-notice",
+            "quote": "You may not reproduce, distribute, or use any content from this site without our prior written permission.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "ocean193.com",
+          "urls": [
+            "https://www.ocean193.com/",
+            "https://ocean193.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Ocean 193"
+          ]
+        },
+        {
+          "site": "oncentergallery.com",
+          "urls": [
+            "https://oncentergallery.com/",
+            "https://oncentergallery.com/about"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "On Center Gallery"
+          ]
+        },
+        {
+          "site": "onlyatthecrown.com",
+          "urls": [
+            "https://onlyatthecrown.com/",
+            "https://onlyatthecrown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Crown & Anchor"
+          ]
+        },
+        {
+          "site": "outermostyoga.com",
+          "urls": [
+            "https://www.outermostyoga.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Outermost Yoga"
+          ]
+        },
+        {
+          "site": "paam.org",
+          "urls": [
+            "https://www.paam.org/visit/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Art Association & Museum (PAAM)"
+          ]
+        },
+        {
+          "site": "patioptown.com",
+          "urls": [
+            "https://patioptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Patio American Grill & Cocktail Bar"
+          ]
+        },
+        {
+          "site": "penneypatch.com",
+          "urls": [
+            "https://penneypatch.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Penney Patch"
+          ]
+        },
+        {
+          "site": "pepeswharf.com",
+          "urls": [
+            "https://pepeswharf.com/",
+            "https://pepeswharf.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Pepe's Wharf"
+          ]
+        },
+        {
+          "site": "pilgrimhouseptown.com",
+          "urls": [
+            "https://pilgrimhouseptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Pilgrim House"
+          ]
+        },
+        {
+          "site": "postofficecafe.net",
+          "urls": [
+            "https://www.postofficecafe.net/",
+            "https://postofficecafe.net"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Post Office Cafe & Cabaret"
+          ]
+        },
+        {
+          "site": "provincetownartssociety.com",
+          "urls": [
+            "https://provincetownartssociety.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Arts Society"
+          ]
+        },
+        {
+          "site": "provincetownbookshop.com",
+          "urls": [
+            "https://provincetownbookshop.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Provincetown Bookshop"
+          ]
+        },
+        {
+          "site": "provincetowncommons.org",
+          "urls": [
+            "https://www.provincetowncommons.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Commons"
+          ]
+        },
+        {
+          "site": "provincetownfilm.org",
+          "urls": [
+            "https://www.provincetownfilm.org/cinema/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Waters Edge Cinema"
+          ],
+          "forbids": {
+            "terms": "https://www.provincetownfilm.org/about/terms-and-conditions/",
+            "quote": "You may not reproduce, distribute, or create derivative works from any content on this site without our prior written permission.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "provincetowninn.com",
+          "urls": [
+            "https://provincetowninn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Inn"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "provincetownlibrary.org",
+          "urls": [
+            "https://www.provincetownlibrary.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Public Library"
+          ]
+        },
+        {
+          "site": "provincetownmagazine.com",
+          "urls": [
+            "https://provincetownmagazine.com/",
+            "https://provincetownmagazine.com/2017/05/19/yardarm-liquors/",
+            "https://provincetownmagazine.com/2021/08/25/the-harbor-lounge/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Magazine",
+            "Yardarm Liquors",
+            "Harbor Lounge"
+          ]
+        },
+        {
+          "site": "provincetownportuguesebakery.com",
+          "urls": [
+            "https://www.provincetownportuguesebakery.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Portuguese Bakery"
+          ]
+        },
+        {
+          "site": "provincetownrecords.com",
+          "urls": [
+            "https://provincetownrecords.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Recording Studio"
+          ]
+        },
+        {
+          "site": "provincetowntennis.org",
+          "urls": [
+            "https://www.provincetowntennis.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Tennis Club"
+          ]
+        },
+        {
+          "site": "provincetowntheater.org",
+          "urls": [
+            "https://provincetowntheater.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Theater"
+          ]
+        },
+        {
+          "site": "provincetowntv.org",
+          "urls": [
+            "https://www.provincetowntv.org/",
+            "https://provincetowntv.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Community Television"
+          ]
+        },
+        {
+          "site": "provincetownumc.org",
+          "urls": [
+            "https://www.provincetownumc.org/",
+            "https://provincetownumc.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown United Methodist Church"
+          ]
+        },
+        {
+          "site": "ptownbikes.com",
+          "urls": [
+            "https://ptownbikes.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Ptown Bikes"
+          ]
+        },
+        {
+          "site": "ptownblooms.com",
+          "urls": [
+            "https://www.ptownblooms.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Ptown Blooms"
+          ]
+        },
+        {
+          "site": "ptowncarts.com",
+          "urls": [
+            "https://ptowncarts.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "P'Town Carts"
+          ]
+        },
+        {
+          "site": "ptowndentalarts.com",
+          "urls": [
+            "https://www.ptowndentalarts.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Dental Arts (Scott A. Allegretti, DDS)"
+          ]
+        },
+        {
+          "site": "ptownencyclopedia.com",
+          "urls": [
+            "https://ptownencyclopedia.com/7-masonic-place/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Guesthouse at 7 Masonic Place"
+          ]
+        },
+        {
+          "site": "ptownfudge.com",
+          "urls": [
+            "https://ptownfudge.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Fudge Factory"
+          ]
+        },
+        {
+          "site": "ptowngym.com",
+          "urls": [
+            "https://www.ptowngym.com/",
+            "https://ptowngym.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Gym & Fitness"
+          ]
+        },
+        {
+          "site": "ptownlobsterpot.com",
+          "urls": [
+            "https://www.ptownlobsterpot.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Lobster Pot"
+          ]
+        },
+        {
+          "site": "ptownperrys.com",
+          "urls": [
+            "https://ptownperrys.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Perry's Fine Wine & Liquors"
+          ]
+        },
+        {
+          "site": "ptowntourism.com",
+          "urls": [
+            "https://ptowntourism.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Provincetown Tourism Office"
+          ]
+        },
+        {
+          "site": "racepointlighthouse.org",
+          "urls": [
+            "https://www.racepointlighthouse.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Race Point Light"
+          ],
+          "terms_unread": "site did not answer our fetcher (UND_ERR_CONNECT_TIMEOUT), 2026-10-26"
+        },
+        {
+          "site": "redroom.club",
+          "urls": [
+            "https://redroom.club/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Red Room"
+          ]
+        },
+        {
+          "site": "respoke.com",
+          "urls": [
+            "https://respoke.com/",
+            "https://respoke.com/pages/boutiques"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Respoke"
+          ],
+          "forbids": {
+            "terms": "https://respoke.com/policies/terms-of-service",
+            "quote": "This Site or any portion of this Site may not be reproduced, duplicated, copied, sold, resold, visited, or otherwise exploited for any commercial purpose without the express written consent of Respoke.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "ricepolakgallery.com",
+          "urls": [
+            "https://ricepolakgallery.com/",
+            "https://ricepolakgallery.com/contemporary-art-gallery-cape-cod/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Rice Polak Gallery"
+          ]
+        },
+        {
+          "site": "roseandcrownptown.com",
+          "urls": [
+            "https://www.roseandcrownptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Rose & Crown Guest House"
+          ],
+          "forbids": {
+            "terms": "https://www.roseandcrownptown.com/terms-of-use",
+            "quote": "You will use protected content solely for your personal use and will make no other use of the content without the express written permission of Rose and Crown Guest House and the copyright owner.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "sailing4allptown.org",
+          "urls": [
+            "https://www.sailing4allptown.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Sailing For All Provincetown"
+          ]
+        },
+        {
+          "site": "salthouseinn.com",
+          "urls": [
+            "https://salthouseinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Salt House Inn"
+          ],
+          "forbids": {
+            "terms": "https://salthouseinn.com/termsofservice",
+            "quote": "You may not: Use the Site in any way that could damage, disable, or impair its functionality Attempt to gain unauthorized access to systems or data Use automated systems (bots, scraping tools) without permission 3.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "sanctumparanormal.com",
+          "urls": [
+            "https://sanctumparanormal.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Sanctum Paranormal"
+          ]
+        },
+        {
+          "site": "saultne.com",
+          "urls": [
+            "https://saultne.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "SAULT New England"
+          ]
+        },
+        {
+          "site": "scottcakes.com",
+          "urls": [
+            "https://scottcakes.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "ScottCakes"
+          ]
+        },
+        {
+          "site": "seaglassinnprovincetown.com",
+          "urls": [
+            "https://www.seaglassinnprovincetown.com/",
+            "https://seaglassinnprovincetown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Seaglass Inn & Spa"
+          ]
+        },
+        {
+          "site": "seamensbank.com",
+          "urls": [
+            "https://www.seamensbank.com/locations"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Seamen's Bank"
+          ]
+        },
+        {
+          "site": "shop.hrc.org",
+          "urls": [
+            "https://shop.hrc.org/pages/provincetown-hrc-store"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Human Rights Campaign Store"
+          ]
+        },
+        {
+          "site": "shopdanielhammond.com",
+          "urls": [
+            "https://www.shopdanielhammond.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Plush"
+          ]
+        },
+        {
+          "site": "simiemaryles.com",
+          "urls": [
+            "https://simiemaryles.com/",
+            "https://www.simiemaryles.com/about"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Simie Maryles Gallery"
+          ]
+        },
+        {
+          "site": "skipfood.org",
+          "urls": [
+            "https://www.skipfood.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Soup Kitchen in Provincetown (SKIP)"
+          ]
+        },
+        {
+          "site": "snowandsnowlaw.com",
+          "urls": [
+            "https://snowandsnowlaw.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Snow & Snow"
+          ],
+          "terms_unread": "site did not answer our fetcher (CERT_HAS_EXPIRED), 2026-10-26"
+        },
+        {
+          "site": "somersethouseinn.com",
+          "urls": [
+            "https://somersethouseinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Somerset House Inn"
+          ]
+        },
+        {
+          "site": "sothebysrealty.com",
+          "urls": [
+            "https://www.sothebysrealty.com/gibsonsir/eng/office/846-b-85779-4000161/gibson-sothebys-international-realty-provincetown"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Gibson Sotheby's International Realty"
+          ]
+        },
+        {
+          "site": "stmaryoftheharbor.org",
+          "urls": [
+            "https://www.stmaryoftheharbor.org/",
+            "http://www.stmaryoftheharbor.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Church of St. Mary of the Harbor"
+          ]
+        },
+        {
+          "site": "stores.stopandshop.com",
+          "urls": [
+            "https://stores.stopandshop.com/ma/provincetown/56-shank-painter-road"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Stop & Shop"
+          ]
+        },
+        {
+          "site": "stpeters-ptown.org",
+          "urls": [
+            "https://www.stpeters-ptown.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Saint Peter the Apostle Church"
+          ]
+        },
+        {
+          "site": "summerofsass.org",
+          "urls": [
+            "https://www.summerofsass.org"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Summer of SASS"
+          ]
+        },
+        {
+          "site": "sunsetinnptown.org",
+          "urls": [
+            "https://www.sunsetinnptown.org/",
+            "https://sunsetinnptown.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Sunset Inn"
+          ]
+        },
+        {
+          "site": "surfsideinn.cc",
+          "urls": [
+            "https://www.surfsideinn.cc/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Surfside Hotel & Suites"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "theblackdog.com",
+          "urls": [
+            "https://theblackdog.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Black Dog"
+          ]
+        },
+        {
+          "site": "theboatslip.com",
+          "urls": [
+            "https://theboatslip.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Boatslip Resort & Beach Club"
+          ]
+        },
+        {
+          "site": "thebradfordptown.com",
+          "urls": [
+            "https://www.thebradfordptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Bradford"
+          ],
+          "terms_unread": "site did not answer our fetcher (ERR_TLS_CERT_ALTNAME_INVALID), 2026-10-26"
+        },
+        {
+          "site": "thecanteenptown.com",
+          "urls": [
+            "https://www.thecanteenptown.com/",
+            "https://www.thecanteenptown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Canteen"
+          ]
+        },
+        {
+          "site": "thegaslampptown.com",
+          "urls": [
+            "https://www.thegaslampptown.com/",
+            "https://thegaslampptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Gaslamp Bed & Breakfast",
+            "Gaslamp Bed & Breakfast"
+          ]
+        },
+        {
+          "site": "thegovernorbradford.com",
+          "urls": [
+            "https://www.thegovernorbradford.com/contact/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Governor Bradford"
+          ],
+          "terms_unread": "site did not answer our fetcher (403), 2026-10-26"
+        },
+        {
+          "site": "themasthead.com",
+          "urls": [
+            "https://www.themasthead.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Masthead Resort & Cottages"
+          ]
+        },
+        {
+          "site": "theredinn.com",
+          "urls": [
+            "https://theredinn.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Red Inn"
+          ]
+        },
+        {
+          "site": "thewaterfordinn.com",
+          "urls": [
+            "https://www.thewaterfordinn.com/",
+            "http://www.thewaterfordinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Waterford Inn Provincetown"
+          ]
+        },
+        {
+          "site": "thewellnesslab.co",
+          "urls": [
+            "https://thewellnesslab.co/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The Wellness Lab"
+          ]
+        },
+        {
+          "site": "thewhitehareptown.com",
+          "urls": [
+            "https://thewhitehareptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "The White Hare Home & Holiday"
+          ]
+        },
+        {
+          "site": "tinpanalleyptown.com",
+          "urls": [
+            "https://www.tinpanalleyptown.com/",
+            "https://tinpanalleyptown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Tin Pan Alley"
+          ]
+        },
+        {
+          "site": "toasttab.com",
+          "urls": [
+            "https://www.toasttab.com/local/order/shanes-sweets-llc-connie-s-205-commercial-st"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "A Salted Buttery"
+          ]
+        },
+        {
+          "site": "utilitieshome.com",
+          "urls": [
+            "https://utilitieshome.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Utilities Home"
+          ]
+        },
+        {
+          "site": "uumh.org",
+          "urls": [
+            "https://uumh.org/",
+            "https://www.uumh.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Unitarian Universalist Meeting House of Provincetown"
+          ]
+        },
+        {
+          "site": "victorsptown.com",
+          "urls": [
+            "https://www.victorsptown.com/",
+            "https://victorsptown.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Victor's"
+          ]
+        },
+        {
+          "site": "vorellisrestaurant.com",
+          "urls": [
+            "https://www.vorellisrestaurant.com/",
+            "https://vorellisrestaurant.com"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Vorelli's"
+          ]
+        },
+        {
+          "site": "watershipinn.com",
+          "urls": [
+            "https://watershipinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Watership Inn"
+          ]
+        },
+        {
+          "site": "weloveptown.com",
+          "urls": [
+            "https://weloveptown.com/shopping-events/b-xclusive-provincetown/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "B.Xclusive"
+          ]
+        },
+        {
+          "site": "westendinn.com",
+          "urls": [
+            "https://westendinn.com/about"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "West End Inn"
+          ]
+        },
+        {
+          "site": "whalewatch.com",
+          "urls": [
+            "https://whalewatch.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Dolphin Fleet Whale Watch"
+          ]
+        },
+        {
+          "site": "whiteporchinn.com",
+          "urls": [
+            "https://www.whiteporchinn.com/",
+            "https://whiteporchinn.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "White Porch Inn"
+          ],
+          "forbids": {
+            "terms": "https://www.whiteporchinn.com/terms-of-use",
+            "quote": "You will use protected content solely for your personal use and will make no other use of the content without the express written permission of The White Porch Inn and the copyright owner.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "womencraftsptown.com",
+          "urls": [
+            "https://www.womencraftsptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Womencrafts"
+          ]
+        },
+        {
+          "site": "womr.org",
+          "urls": [
+            "https://www.womr.org/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "WOMR 92.1 FM"
+          ]
+        },
+        {
+          "site": "x-wear.com",
+          "urls": [
+            "https://www.x-wear.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Coconuts Sunglasses"
+          ]
+        },
+        {
+          "site": "yelp.com",
+          "urls": [
+            "https://www.yelp.com/biz/go-fish-provincetown"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Go Fish"
+          ],
+          "forbids": {
+            "terms": "https://terms.yelp.com/tos/en_us/20200101_en_us/",
+            "quote": "As such, you may not sell, license, copy, publish, modify, reproduce, distribute, create derivative works or adaptations of, publicly display or in any way use or exploit any of the Yelp Content in whole or in part except as expressly authorized by us.",
+            "checked": "2026-10-26"
+          }
+        },
+        {
+          "site": "yogajointptown.com",
+          "urls": [
+            "https://yogajointptown.com/",
+            "https://www.yogajointptown.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Coyote Kayaks",
+            "The Yoga Joint"
+          ]
+        },
+        {
+          "site": "yolqueria.com",
+          "urls": [
+            "https://www.yolqueria.com/"
+          ],
+          "read": [
+            "2026-09-25"
+          ],
+          "listings": [
+            "Yolqueria"
+          ]
+        }
+      ]
     }
   ],
   "questions": [

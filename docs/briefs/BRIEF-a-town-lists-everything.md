@@ -145,7 +145,13 @@ Mutation tests: delete PTown's MHC declaration → red; set MHC's terms to `unch
 
 1. **S** Terms pass (no content reads): registry rows + quoted terms for NPS/NPGallery, MHC/MassGIS (incl. parcels), PHPP,
    Commons, LoC; the class field. Run `claims-references-are-sound`.
-2. **S** ~~the district throw~~ (ruled above: removed with the MHC well). Open: non-building anchors (Jacob).
+2. **S** ~~the district throw~~ (removed with the MHC well, 55e721bb). Open: non-building anchors (Jacob).
+   **FOR JACOB'S EDIT BUILDINGS — footprint-authoring defects (Boz, 2026-10-26; don't code around them):** one MSBF
+   footprint covers two recorded buildings, so the MHC join writes no facts for either. **msbf-955** = the Atlantic House
+   (Union Hotel, 6 Masonic Pl, MHC PRO.272) + King Hiram's Lodge (222 Commercial St / 2 Masonic Place, PRO.273; the Lodge's
+   listing prov-lst-0450 sits on it). **msbf-474** = Provincetown Town Hall (260 Commercial St, PRO.289) + the Congregational
+   Church of the Pilgrims (258 Commercial St, PRO.288), with PRO.281 and PRO.287. The whole class, by name, every bake:
+   ▶ `node -e 'r=require("./cartograph/data/provincetown/content/roster.json");console.log(r.meta.history.fact_conflicts.filter(x=>/footprint/.test(x)).join("\n"))'`.
 3. **M** MHC well: the reader, declared in PTown's `sources.json`, an intake row, the join + report in bake-content. Dry-run counts.
 4. **M** Pitch cards: the Lodge (add by parcel), MacMillan Wharf photo/hours, Monument from the dossier; history entries from the nomination.
 5. **M** Nomination: extract per-building rows (text pages, federal) into the history well; photos only where not third-party.

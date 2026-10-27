@@ -176,25 +176,10 @@ export function readSources(scene) {
       `  "No wells" is a FINDING — say what was searched and why nothing was adopted.`)
   }
 
-  // ⭐ A town's OWN historic districts — the name, and how membership is read, are the town's data, never kit code.
-  const historicDistricts = j.historicDistricts ?? []
-  if (!Array.isArray(historicDistricts)) throw new Error(`${p}: \`historicDistricts\` must be an array`)
-  for (const d of historicDistricts) {
-    if (!d.name) throw new Error(`${p}: a historicDistricts entry has no \`name\``)
-    for (const k of ['streets', 'excludeMunicipalities']) {
-      if (d[k] != null && !Array.isArray(d[k])) throw new Error(`${p}: historicDistricts[${d.name}].${k} must be an array`)
-    }
-  }
-  // ⛔ A well's code or flag carries membership without a name. With one declared district the town has said whose
-  // it is; with several, attributing it would be a guess — refuse until the declaration maps the well's codes.
-  if (historicDistricts.length > 1) throw new Error(`${p}: ${historicDistricts.length} historicDistricts declared — ` +
-    `more than one is not yet supported (a well's district code cannot yet be mapped to a declared name)`)
-
   return {
     declared: true,
     path: p,
     parcels: j.parcels,
-    historicDistricts,
     state: j.state || null,
     // ⭐ `undefined` (key absent) and `null` (declared self-describing) are different
     // states and are kept different. Absent means the town never said.
@@ -339,4 +324,51 @@ export function readCroplandSources(scene) {
   }
   if (j.cropland.length > 1) throw new Error(`${p}: declare ONE cropland year — two would disagree with nobody to rule between them`)
   return { state: 'declared', path: p, sources: j.cropland }
+}
+
+/**
+ * HISTORY — the wells that say what a BUILDING is: its historic name, date, style, maker and designations (BRIEF-a-town-
+ * lists-everything §2.2, §3). ⛔ Facts about a building, never a district: membership is Extent's (Jacob, 2026-10-21).
+ *   UNDECLARED    — no `history` key: nobody has looked. Reported as such at the bake, never read as "none".
+ *   DECLARED-NONE — `history: []` + `history_absent_reason`.
+ *   DECLARED      — [{ "from": "state", "id": "mhc-inventory" }] or a full entry { id, reader, file, registry, … }:
+ *                   `reader` is one of HISTORY_READERS (where its file lives and who writes it), `registry` names the
+ *                   references/registry.json row whose terms cover it, `exclude` (optional) lists record ids withheld
+ *                   on request (the takedown path), `nps_ref` (nr-inventory) the nomination's NRHP reference.
+ * ⛔ A malformed declaration throws, and so does an NR inventory on disk that no well declares (it would be read by
+ *    nobody, or by a reader that guessed whose it is).
+ */
+export const HISTORY_READERS = {
+  'mhc-gdb': { dir: 'raw', by: 'cartograph/fetch-history.mjs (GDAL ogr2ogr over the state\'s file geodatabase)' },
+  'nr-inventory': { dir: 'content', by: 'hand (a nomination\'s building inventory, transcribed)' },
+  'nomination-extract': { dir: 'content', by: 'hand (rows extracted from a nomination\'s narrative, a page per fact)' },
+}
+export function readHistorySources(scene) {
+  const p = sourcesPath(scene)
+  const nrOnDisk = existsSync(join(mapDir(scene), 'content', 'nr-inventory.json'))
+  const j = existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null
+  const refuseUndeclaredNr = (wells) => {
+    if (nrOnDisk && !wells.some(w => w.reader === 'nr-inventory' && w.file === 'nr-inventory.json'))
+      throw new Error(`${p}: content/nr-inventory.json is on disk but no \`history\` well declares it — declare { "id", "reader": "nr-inventory", "file": "nr-inventory.json", "registry": <its nomination's row> }`)
+  }
+  if (!j || !('history' in j)) { refuseUndeclaredNr([]); return { state: 'undeclared', path: p, wells: [] } }
+  if (!Array.isArray(j.history)) throw new Error(`${p}: \`history\` must be an array`)
+  if (!j.history.length) {
+    if (!j.history_absent_reason) throw new Error(`${p} declares no history well but gives no \`history_absent_reason\` — "none" is a finding; say what was searched.`)
+    refuseUndeclaredNr([])
+    return { state: 'none', path: p, wells: [], absentReason: j.history_absent_reason }
+  }
+  const wells = j.history.map(e => resolveFromState(e, 'history', j, `${p}: `))
+  const seen = new Set()
+  for (const w of wells) {
+    const who = `history[${w.id ?? '?'}]`
+    for (const req of ['id', 'reader', 'file', 'registry']) if (!w[req]) throw new Error(`${p}: ${who} is missing \`${req}\``)
+    if (!HISTORY_READERS[w.reader]) throw new Error(`${p}: ${who} names reader "${w.reader}", which the kit does not know (${Object.keys(HISTORY_READERS).join(', ')})`)
+    if (seen.has(w.id)) throw new Error(`${p}: duplicate history well id "${w.id}"`)
+    seen.add(w.id)
+    if (w.exclude != null && !Array.isArray(w.exclude)) throw new Error(`${p}: ${who}.exclude must be an array of record ids`)
+    w.path = join(mapDir(scene), HISTORY_READERS[w.reader].dir, w.file)
+  }
+  refuseUndeclaredNr(wells)
+  return { state: 'declared', path: p, wells }
 }

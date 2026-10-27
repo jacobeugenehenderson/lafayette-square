@@ -1,0 +1,1433 @@
+{
+ "meta": {
+  "well": "nrhp-89001148",
+  "registry": "nrhp-89001148-provincetown-hd",
+  "source": "Provincetown Historic District, NRHP Registration Form (89001148), narrative pp. 10–42 of the PDF",
+  "method": "Extracted by hand from the OCR text layer (pdftotext -layout), one row per building the narrative names with an address; every cited page is checked to carry the address. Event text is ours; dates and names are the nomination's. Photographs (third-party, Brian Pfeiffer 1988) are not taken.",
+  "fetched": "2026-10-26",
+  "count": 67
+ },
+ "records": [
+  {
+   "id": "89001148-001",
+   "type": "Building",
+   "historic_name": "Nickerson House",
+   "address": "72 Commercial St",
+   "constructed": "1746",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1746,
+     "event": "By reputation the oldest house in town; the nomination attributes it to 1746.",
+     "approximate": true,
+     "source_page": 12
+    }
+   ],
+   "pages": [
+    12,
+    35
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-002",
+   "type": "Building",
+   "historic_name": "Kibbe Cook House",
+   "address": "466 Commercial St",
+   "constructed": null,
+   "style": null,
+   "maker": null,
+   "events": [],
+   "pages": [
+    12,
+    35
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-003",
+   "type": "Building",
+   "historic_name": null,
+   "address": "82 Commercial St",
+   "constructed": "1797",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1797,
+     "event": "A center-chimney house of about 1797, one of a pair with No. 84.",
+     "approximate": true,
+     "source_page": 12
+    }
+   ],
+   "pages": [
+    12
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-004",
+   "type": "Building",
+   "historic_name": null,
+   "address": "84 Commercial St",
+   "constructed": "1797",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1797,
+     "event": "A center-chimney house of about 1797, one of a pair with No. 82.",
+     "approximate": true,
+     "source_page": 12
+    }
+   ],
+   "pages": [
+    12
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-005",
+   "type": "Building",
+   "historic_name": null,
+   "address": "28 Commercial St",
+   "constructed": "1782",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1782,
+     "event": "Built about 1782 on a center-chimney plan; the chimney has since been taken out.",
+     "approximate": true,
+     "source_page": 12
+    }
+   ],
+   "pages": [
+    12,
+    35
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-006",
+   "type": "Building",
+   "historic_name": null,
+   "address": "54 Commercial St",
+   "constructed": "1790",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1790,
+     "event": "Built between about 1790 and 1810 on a center-chimney plan.",
+     "approximate": true,
+     "source_page": 12
+    }
+   ],
+   "pages": [
+    12
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-007",
+   "type": "Building",
+   "historic_name": null,
+   "address": "438 Commercial St",
+   "constructed": "1800",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1800,
+     "event": "Built between about 1800 and 1830.",
+     "approximate": true,
+     "source_page": 13
+    }
+   ],
+   "pages": [
+    13
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-008",
+   "type": "Building",
+   "historic_name": "Sarah Whorf House",
+   "address": "522 Commercial St",
+   "constructed": null,
+   "style": null,
+   "maker": null,
+   "events": [],
+   "pages": [
+    35
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-009",
+   "type": "Building",
+   "historic_name": "Deacon David Ryder House",
+   "address": "4 Winslow St",
+   "constructed": "1772",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1772,
+     "event": "Built about 1772.",
+     "approximate": true,
+     "source_page": 14
+    }
+   ],
+   "pages": [
+    14,
+    35
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-010",
+   "type": "Building",
+   "historic_name": "Red Inn",
+   "address": "13 Commercial St",
+   "constructed": "1805",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1805,
+     "event": "Built in 1805.",
+     "approximate": false,
+     "source_page": 14
+    }
+   ],
+   "pages": [
+    14,
+    37
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-011",
+   "type": "Building",
+   "historic_name": "Mayo House",
+   "address": "572A Commercial St",
+   "constructed": "1800",
+   "style": "Greek Revival",
+   "maker": null,
+   "events": [
+    {
+     "year": 1800,
+     "event": "A two-storey house of about 1800.",
+     "approximate": true,
+     "source_page": 15
+    },
+    {
+     "year": 1840,
+     "event": "Given its tall Greek Revival roof between about 1840 and 1850.",
+     "approximate": true,
+     "source_page": 15
+    }
+   ],
+   "pages": [
+    15
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-012",
+   "type": "Building",
+   "historic_name": "Johnson/Matheson House",
+   "address": "368 Commercial St",
+   "constructed": "1800",
+   "style": "Greek Revival",
+   "maker": null,
+   "events": [
+    {
+     "year": 1800,
+     "event": "Built between about 1800 and 1840; Greek Revival in its large pedimented front.",
+     "approximate": true,
+     "source_page": 15
+    }
+   ],
+   "pages": [
+    15
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-013",
+   "type": "Building",
+   "historic_name": null,
+   "address": "44 Commercial St",
+   "constructed": "1840",
+   "style": "Greek Revival",
+   "maker": null,
+   "events": [
+    {
+     "year": 1840,
+     "event": "Built about 1840, a fully developed Greek Revival house with corner pilasters and a pedimented front.",
+     "approximate": true,
+     "source_page": 15
+    }
+   ],
+   "pages": [
+    15
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-014",
+   "type": "Building",
+   "historic_name": null,
+   "address": "6 Dyer St",
+   "constructed": "1850",
+   "style": "Greek Revival",
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "Built about 1850, a two-storey Greek Revival house with an asymmetrical four-bay front.",
+     "approximate": true,
+     "source_page": 15
+    }
+   ],
+   "pages": [
+    15
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-015",
+   "type": "Building",
+   "historic_name": "Sylvanus Cook Cottage",
+   "address": "474 Commercial St",
+   "constructed": "1830",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1830,
+     "event": "Built between about 1830 and 1850.",
+     "approximate": true,
+     "source_page": 15
+    }
+   ],
+   "pages": [
+    15
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-016",
+   "type": "Building",
+   "historic_name": null,
+   "address": "8 Carver St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "A steep-roofed cottage of about 1850, trimmed with Ionic columns.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-017",
+   "type": "Building",
+   "historic_name": null,
+   "address": "122 Commercial St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "A steep-roofed cottage of about 1850, trimmed with bargeboards.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-018",
+   "type": "Building",
+   "historic_name": "Dewitt House",
+   "address": "77 Bradford St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "A steep-roofed cottage of about 1850 with a pedimented front gable.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-019",
+   "type": "Building",
+   "historic_name": null,
+   "address": "92 Bradford St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "A side-hall house of about 1850, typical of the town's gable-fronted houses.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-020",
+   "type": "Building",
+   "historic_name": null,
+   "address": "570 Commercial St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "A side-hall house of about 1850, typical of the town's gable-fronted houses.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-021",
+   "type": "Building",
+   "historic_name": null,
+   "address": "212 Commercial St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "Built about 1850; the nomination's best example of a side-hall house, with a pilastered entry and sidelights.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-022",
+   "type": "Building",
+   "historic_name": null,
+   "address": "56 Commercial St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "A side-hall house of about 1850.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-023",
+   "type": "Building",
+   "historic_name": null,
+   "address": "155 Commercial St",
+   "constructed": "1830",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1830,
+     "event": "A side-hall house of about 1830 to 1840.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-024",
+   "type": "Building",
+   "historic_name": null,
+   "address": "404 Commercial St",
+   "constructed": "1850",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "Built about 1850: the only temple-front house in the town's historic core, Greek Revival in plan with Italianate trim.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-025",
+   "type": "Building",
+   "historic_name": "Joshua Paine Cottage",
+   "address": "15 Tremont St",
+   "constructed": "1855",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1855,
+     "event": "Built 1855–58, one of a nearly identical pair of Gothic cottages with No. 17.",
+     "approximate": false,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-026",
+   "type": "Building",
+   "historic_name": "E. M. Smith Cottage",
+   "address": "17 Tremont St",
+   "constructed": "1855",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1855,
+     "event": "Built 1855–58, one of a nearly identical pair of Gothic cottages with No. 15.",
+     "approximate": false,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-027",
+   "type": "Building",
+   "historic_name": "C. Cook Cottage",
+   "address": "180 Bradford St",
+   "constructed": "1860",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1860,
+     "event": "Built about 1860.",
+     "approximate": true,
+     "source_page": 16
+    },
+    {
+     "year": 1900,
+     "event": "In use as the studio of the painter E. Ambrose Webster by about 1900.",
+     "approximate": true,
+     "source_page": 16
+    }
+   ],
+   "pages": [
+    16,
+    27
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-028",
+   "type": "Building",
+   "historic_name": "W. Atkins House",
+   "address": "160 Commercial St",
+   "constructed": "1850",
+   "style": "Italianate",
+   "maker": null,
+   "events": [
+    {
+     "year": 1850,
+     "event": "Built between about 1850 and 1858: the most elaborate Italianate house in town, with a terrace front and an octagonal cupola.",
+     "approximate": true,
+     "source_page": 17
+    }
+   ],
+   "pages": [
+    17,
+    40
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-029",
+   "type": "Building",
+   "historic_name": "S. Cook House",
+   "address": "378 Commercial St",
+   "constructed": "1860",
+   "style": "Italianate",
+   "maker": null,
+   "events": [
+    {
+     "year": 1860,
+     "event": "An Italianate house of about 1860 to 1870, with bay windows and a deep bracketed cornice.",
+     "approximate": true,
+     "source_page": 17
+    }
+   ],
+   "pages": [
+    17
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-030",
+   "type": "Building",
+   "historic_name": "Sunset House",
+   "address": "142 Bradford St",
+   "constructed": "1880",
+   "style": "Italianate",
+   "maker": null,
+   "events": [
+    {
+     "year": 1880,
+     "event": "An Italianate house of about 1880, with bay windows and a deep bracketed cornice.",
+     "approximate": true,
+     "source_page": 17
+    }
+   ],
+   "pages": [
+    17
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-031",
+   "type": "Building",
+   "historic_name": null,
+   "address": "7 Johnson St",
+   "constructed": "1875",
+   "style": "Italianate",
+   "maker": null,
+   "events": [
+    {
+     "year": 1875,
+     "event": "An Italianate cottage of about 1875.",
+     "approximate": true,
+     "source_page": 17
+    }
+   ],
+   "pages": [
+    17
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-032",
+   "type": "Building",
+   "historic_name": null,
+   "address": "14 Bangs St",
+   "constructed": "1870",
+   "style": "Italianate",
+   "maker": null,
+   "events": [
+    {
+     "year": 1870,
+     "event": "An Italianate cottage of about 1870 to 1880.",
+     "approximate": true,
+     "source_page": 17
+    }
+   ],
+   "pages": [
+    17
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-033",
+   "type": "Building",
+   "historic_name": "Benjamin Lancy House",
+   "address": "230 Commercial St",
+   "constructed": "1874",
+   "style": "Second Empire",
+   "maker": null,
+   "events": [
+    {
+     "year": 1874,
+     "event": "Built in 1874, the most ambitious Second Empire house in town.",
+     "approximate": false,
+     "source_page": 17
+    }
+   ],
+   "pages": [
+    17,
+    40
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-034",
+   "type": "Building",
+   "historic_name": "Provincetown Town Hall",
+   "address": "260 Commercial St",
+   "constructed": "1885",
+   "style": "Queen Anne",
+   "maker": "John A. Fox",
+   "events": [
+    {
+     "year": 1885,
+     "event": "Built to replace the town hall on High Pole Hill; designed by John A. Fox of Boston.",
+     "approximate": false,
+     "source_page": 18
+    }
+   ],
+   "pages": [
+    18,
+    40
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-035",
+   "type": "Building",
+   "historic_name": "Bradford School",
+   "address": "46 Bradford St",
+   "constructed": "1930",
+   "style": "Colonial Revival",
+   "maker": null,
+   "events": [
+    {
+     "year": 1930,
+     "event": "Built about 1930, the one wooden schoolhouse in town that keeps its original design.",
+     "approximate": true,
+     "source_page": 19
+    }
+   ],
+   "pages": [
+    19
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-036",
+   "type": "Building",
+   "historic_name": "Provincetown Almshouse",
+   "address": "26 Alden St",
+   "constructed": "1870",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1870,
+     "event": "Built in 1870 as the town's new almshouse, its rooms opening off a central hall.",
+     "approximate": false,
+     "source_page": 19
+    }
+   ],
+   "pages": [
+    19
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-037",
+   "type": "Building",
+   "historic_name": "First Congregational Meetinghouse",
+   "address": "258 Commercial St",
+   "constructed": "1843",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1843,
+     "event": "Built in 1843, the oldest of the town's six surviving church buildings.",
+     "approximate": false,
+     "source_page": 20
+    }
+   ],
+   "pages": [
+    20
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-038",
+   "type": "Building",
+   "historic_name": "Universalist Meetinghouse",
+   "address": "236 Commercial St",
+   "constructed": "1847",
+   "style": "Greek Revival",
+   "maker": null,
+   "events": [
+    {
+     "year": 1847,
+     "event": "Built in 1847 in the Greek Revival style.",
+     "approximate": false,
+     "source_page": 20
+    }
+   ],
+   "pages": [
+    20,
+    28,
+    40
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-039",
+   "type": "Building",
+   "historic_name": "Center Methodist Church",
+   "address": "356 Commercial St",
+   "constructed": "1860",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1860,
+     "event": "Built in 1860.",
+     "approximate": false,
+     "source_page": 21
+    }
+   ],
+   "pages": [
+    21,
+    28,
+    40
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-040",
+   "type": "Building",
+   "historic_name": "St. Peter the Apostle Roman Catholic Church",
+   "address": "11 Prince St",
+   "constructed": "1874",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1874,
+     "event": "Built in 1874; the parish, founded by Irish immigrants in 1852, had become largely Portuguese by 1875.",
+     "approximate": false,
+     "source_page": 21
+    }
+   ],
+   "pages": [
+    21,
+    40
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-041",
+   "type": "Building",
+   "historic_name": "Episcopal Church of St. Mary of the Harbor",
+   "address": "513 Commercial St",
+   "constructed": "1936",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1936,
+     "event": "Built in 1936.",
+     "approximate": false,
+     "source_page": 21
+    }
+   ],
+   "pages": [
+    21
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-042",
+   "type": "Building",
+   "historic_name": "Christian Science Church",
+   "address": "418 Commercial St",
+   "constructed": "1910",
+   "style": "Colonial Revival",
+   "maker": null,
+   "events": [
+    {
+     "year": 1910,
+     "event": "A one-storey Colonial Revival church of about 1910 to 1930, later a house.",
+     "approximate": true,
+     "source_page": 21
+    }
+   ],
+   "pages": [
+    21
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-043",
+   "type": "Building",
+   "historic_name": "King Hiram's Masonic Lodge",
+   "address": "119 Bradford St",
+   "constructed": "1797",
+   "style": "Federal",
+   "maker": null,
+   "events": [
+    {
+     "year": 1797,
+     "event": "Built for the Masons with a classroom below and the lodge hall above; later made a house.",
+     "approximate": false,
+     "source_page": 21
+    }
+   ],
+   "pages": [
+    21,
+    37
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-044",
+   "type": "Building",
+   "historic_name": "King Hiram's Masonic Lodge",
+   "address": "222 Commercial St",
+   "constructed": "1865",
+   "style": "Second Empire",
+   "maker": null,
+   "events": [
+    {
+     "year": 1865,
+     "event": "The lodge's two-storey Second Empire hall, built to replace its Bradford Street building.",
+     "approximate": false,
+     "source_page": 21
+    }
+   ],
+   "pages": [
+    21,
+    22
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-045",
+   "type": "Building",
+   "historic_name": "Independent Order of Odd Fellows Building",
+   "address": "98 Bradford St",
+   "constructed": "1832",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1832,
+     "event": "The Village Hall is built here by public subscription.",
+     "approximate": false,
+     "source_page": 22
+    },
+    {
+     "year": 1846,
+     "event": "The Odd Fellows buy the building and fit its upper floor as a meeting hall.",
+     "approximate": false,
+     "source_page": 22
+    }
+   ],
+   "pages": [
+    22
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-046",
+   "type": "Building",
+   "historic_name": "Freeman's Wharf",
+   "address": "125 Commercial St",
+   "constructed": null,
+   "style": null,
+   "maker": null,
+   "events": [],
+   "pages": [
+    22,
+    28
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-047",
+   "type": "Building",
+   "historic_name": "B. H. Dyer & Co. Store",
+   "address": "173 Commercial St",
+   "constructed": "1915",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1915,
+     "event": "Built about 1915.",
+     "approximate": true,
+     "source_page": 24
+    }
+   ],
+   "pages": [
+    24
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-048",
+   "type": "Building",
+   "historic_name": "J. Nickerson Store",
+   "address": "93 Commercial St",
+   "constructed": "1870",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1870,
+     "event": "Built about 1870, a two-storey shop building.",
+     "approximate": true,
+     "source_page": 24
+    }
+   ],
+   "pages": [
+    24
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-049",
+   "type": "Building",
+   "historic_name": "H. & S. Cook & Co. Store",
+   "address": "491 Commercial St",
+   "constructed": "1860",
+   "style": "Italianate",
+   "maker": null,
+   "events": [
+    {
+     "year": 1860,
+     "event": "An Italianate shop building of about 1860 to 1870.",
+     "approximate": true,
+     "source_page": 24
+    }
+   ],
+   "pages": [
+    24
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-050",
+   "type": "Building",
+   "historic_name": "Market Wharf (head)",
+   "address": "197 Commercial St",
+   "constructed": "1845",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1845,
+     "event": "Built in 1845 at the head of the Market Wharf, a provision store for ships sailing from it.",
+     "approximate": false,
+     "source_page": 24
+    }
+   ],
+   "pages": [
+    24
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-051",
+   "type": "Building",
+   "historic_name": "Union House",
+   "address": "6 Masonic Pl",
+   "constructed": "1798",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1798,
+     "event": "Built about 1798; enlarged in 1812. Later the Atlantic House.",
+     "approximate": true,
+     "source_page": 25
+    }
+   ],
+   "pages": [
+    25,
+    38
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-052",
+   "type": "Building",
+   "historic_name": "Pilgrim House",
+   "address": "336 Commercial St",
+   "constructed": "1800",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1800,
+     "event": "Built about 1800 and enlarged in 1847, one of the few early hotels left in town.",
+     "approximate": true,
+     "source_page": 25
+    }
+   ],
+   "pages": [
+    25,
+    38
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-053",
+   "type": "Building",
+   "historic_name": "Ocean Hall",
+   "address": "243 Commercial St",
+   "constructed": "1840",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1840,
+     "event": "Built as a public hall between about 1840 and 1860, later converted to the Central House hotel.",
+     "approximate": true,
+     "source_page": 25
+    }
+   ],
+   "pages": [
+    25
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-054",
+   "type": "Building",
+   "historic_name": "Gifford House",
+   "address": "9 Carver St",
+   "constructed": "1858",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1858,
+     "event": "Built in 1858.",
+     "approximate": false,
+     "source_page": 26
+    }
+   ],
+   "pages": [
+    26
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-055",
+   "type": "Building",
+   "historic_name": "Figurehead House",
+   "address": "476 Commercial St",
+   "constructed": "1820",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1820,
+     "event": "Built about 1820; its mansard roof added about 1880.",
+     "approximate": true,
+     "source_page": 26
+    }
+   ],
+   "pages": [
+    26
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-056",
+   "type": "Building",
+   "historic_name": "Delft Haven",
+   "address": "5 Commercial St",
+   "constructed": "1930",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1930,
+     "event": "Built in 1930, a group of beach cottages at the west end.",
+     "approximate": false,
+     "source_page": 26
+    }
+   ],
+   "pages": [
+    26,
+    42
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-057",
+   "type": "Building",
+   "historic_name": null,
+   "address": "16 Mechanic St",
+   "constructed": "1925",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1925,
+     "event": "A former barn, the painter Franz Kline's studio after 1925.",
+     "approximate": false,
+     "source_page": 27
+    }
+   ],
+   "pages": [
+    27
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-058",
+   "type": "Building",
+   "historic_name": null,
+   "address": "72A Commercial St",
+   "constructed": "1930",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1930,
+     "event": "Sol Dyer Nickerson's workshop becomes a studio for the painters of the Waugh family about 1930.",
+     "approximate": true,
+     "source_page": 27
+    }
+   ],
+   "pages": [
+    27,
+    42
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-059",
+   "type": "Building",
+   "historic_name": null,
+   "address": "5 Webster Pl",
+   "constructed": "1915",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1915,
+     "event": "Becomes the painter Pauline Palmer's studio about 1915.",
+     "approximate": true,
+     "source_page": 27
+    }
+   ],
+   "pages": [
+    27
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-060",
+   "type": "Building",
+   "historic_name": "Vinton Studios",
+   "address": "385 Commercial St",
+   "constructed": "1913",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1913,
+     "event": "The Vinton Studios open: the start of one-room rental studios for artists in town.",
+     "approximate": false,
+     "source_page": 27
+    }
+   ],
+   "pages": [
+    27
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-061",
+   "type": "Building",
+   "historic_name": "Euler's Studios",
+   "address": "4 Brewster St",
+   "constructed": "1920",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1920,
+     "event": "Reeves Euler opens rental studios for artists here about 1920.",
+     "approximate": true,
+     "source_page": 27
+    }
+   ],
+   "pages": [
+    27,
+    42
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-062",
+   "type": "Object",
+   "historic_name": "Mayflower Compact Monument",
+   "address": "106 Bradford St",
+   "constructed": "1921",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1921,
+     "event": "Set up in 1921.",
+     "approximate": false,
+     "source_page": 33
+    }
+   ],
+   "pages": [
+    33
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-063",
+   "type": "Building",
+   "historic_name": "Provincetown Art Association",
+   "address": "460 Commercial St",
+   "constructed": "1914",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1914,
+     "event": "The Provincetown Art Association is founded; it has 289 members by 1917.",
+     "approximate": false,
+     "source_page": 42
+    }
+   ],
+   "pages": [
+    42
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-064",
+   "type": "Building",
+   "historic_name": "Beachcombers' Club",
+   "address": "463 Commercial St",
+   "constructed": "1917",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1917,
+     "event": "The Beachcombers' Club, a club of writers and artists founded in 1916, moves into this former sail loft.",
+     "approximate": false,
+     "source_page": 42
+    }
+   ],
+   "pages": [
+    42
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-065",
+   "type": "Building",
+   "historic_name": null,
+   "address": "619 Commercial St",
+   "constructed": "1910",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1910,
+     "event": "A cottage of about 1910 associated with the painter Maurice Sterne.",
+     "approximate": true,
+     "source_page": 42
+    }
+   ],
+   "pages": [
+    42
+   ],
+   "demolished": false
+  },
+  {
+   "id": "89001148-066",
+   "type": "Building",
+   "historic_name": "Provincetown Public Library",
+   "address": "330 Commercial St",
+   "constructed": "1874",
+   "style": null,
+   "maker": null,
+   "events": [
+    {
+     "year": 1874,
+     "event": "Built in 1874 as the public library, the gift of local citizens.",
+     "approximate": false,
+     "source_page": 28
+    }
+   ],
+   "pages": [
+    28,
+    40
+   ],
+   "address_note": "p.28 lists the library at 330 Commercial Street, p.40 at 332; the state inventory (PRO.293) has 330",
+   "demolished": false
+  },
+  {
+   "id": "89001148-067",
+   "type": "Building",
+   "historic_name": "U.S. Post Office, Provincetown Branch",
+   "address": "217 Commercial St",
+   "constructed": null,
+   "style": null,
+   "maker": null,
+   "events": [],
+   "pages": [
+    28
+   ],
+   "demolished": false
+  }
+ ]
+}

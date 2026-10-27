@@ -221,20 +221,12 @@ to staging. The specialist's session refused the commit to main (a permission pr
 ✅ RULED (Jacob, 2026-10-21 ~01:30): "Buildings can be listed as historic; and perhaps we can do historic neighborhoods but
 we are not orchestrated around that." Historic status is a BUILDING's property. Town membership is Jacob's authoring
 (Extent), never a district. The district concept was agent-introduced (162a084b, 266d3505) and never ruled. ⇒ the card's
-"Historic district" line comes off (Ward); a building may show its own listing. The district-naming work below is
-superseded: Truss's interim (1cfc3f47) and Plumb's LS declaration (9477fdd8) stay unmerged; the code-carry fix is moot.
-⚠️ HISTORIC DISTRICT NAMES ARE MIS-ASSIGNED, a kit class, LIVE ON HPDM (Zob, measured): fetch-parcels reduces the City's
-district CODES to booleans, so with one declared district every flagged parcel takes its name. HPDM: 81 buildings
-(Wydown, Woodbourne, Buena Vista, Fauquier, Skinker …, no declared street, no NR match) are named "Hi-Pointe–DeMun
-Historic District", likely other districts. LS's declaration (Plumb, 9477fdd8, correct in itself) is HELD: it would
-name ≤ 80 at-risk LS buildings the same way. The fix: carry the code (fetch-parcels → sources.js codes → districtOf by
-code; a foreign code gets no name) + a City parcels re-fetch for LS and HPDM + the City's code→name table (source not
-established). Your call for Thursday: (i) leave HPDM's 81 as served, (ii) interim: a flag with no code match names no
-district (HPDM's 81 lose the wrong name; LS stays unnamed), or (iii) the full fix first.
-**Ward recommends (ii) for Thursday, then (iii):** the Ward shows only the district NAME (Facts.jsx), so the 81 cards just
-lose a line and say nothing false. The partner knows their district's boundary; a Wydown house labelled HPDM's district is
-what they'd spot first. I agree. (ii) is PREPARED: Truss, `1cfc3f47` on `truss/district-flag-interim`, unmerged (HPDM dry run: named 598 → 517, the 81
-unnamed, in-district unchanged; check `claims-a-flag-names-no-district`, safe tier). Zob reviews; it merges on your yes.
+"Historic district" line comes off (Ward); a building may show its own listing. The district-naming work is
+superseded and its machinery is GONE (branch `listings/a-town-lists-everything`, 2026-10-26): `districtOf`'s derived membership,
+`loadDeclaredDistrict`'s throw, `historicDistricts` (HPDM's declaration too) and PlaceCard's District row. A parcel well's own column
+still rides as the record's; register facts arrive per building from `history` wells. ⚠️ HPDM's served roster still names its district until
+`bake-content --scene=hipointedemun` runs (claims-a-district-is-the-towns-own reds until then).
+(The mis-assigned-names diagnosis and the three options for it: `_archive/BACKLOG-district-naming-SUPERSEDED-2026-10-26.md`.)
 The National Register as a replacement source (Zob, measured): HPDM's nr-inventory keeps a "Built" year on 253 of 1,446
 after the withholding (OCR'd, accuracy not measured). LS's "NPS" data is mostly INFERRED from the assessor year
 (nps_style_inferred on 741; 32 buildings actually named with pages); the nomination spreadsheets give ≤ 80 plausible
@@ -609,8 +601,8 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
   · Running (Kerf), on a detached scratch merge of HEAD + 4be86489: HPDM's exact remaining list → Huron census → PTown census.
 - **LS REAPPLICATION PLAN (Jacob, 2026-10-21: "reapply all we can to LS"; Zob's Inputs census, read from
   `cartograph/intake-rows.mjs#intakeStatusForMap` + each town's `sources.json`):**
-  · *No ruling, normal path:* declare LS's `historicDistricts` in its sources.json (today the name lives only inline in
-    `src/instances/lafayettesquare.js`) → LS's roster (bake-content, Truss's merged change) → parcels + lamps refresh →
+  · *No ruling, normal path:* (the `historicDistricts` step is retired with the declaration, 2026-10-26; LS's register facts come
+    from a `history` well — its nomination's inventory) → LS's roster (bake-content, Truss's merged change) → parcels + lamps refresh →
     the OSM re-fetch (all four §3.4 gates pass; LS's listings are hand-curated, so OSM doesn't change them).
   · *Needs Jacob:* the curated `src/data/buildings.json` assessor fields (City terms) · a City land-use code table
     (LS's is null) · NR nomination terms (and ≤ 80 plausible nomination years, not 1,013) · `content/profile.json` lifted

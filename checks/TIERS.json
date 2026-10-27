@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 456,
+  "total": 457,
   "counts": {
-    "safe": 327,
+    "safe": 328,
     "local-effect": 28,
     "live": 101
   },
@@ -54,6 +54,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-building-carries-its-register-records.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of cartograph/sources.js — read, safe"
       ]
     },
     {

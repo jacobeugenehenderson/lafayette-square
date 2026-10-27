@@ -1,8 +1,8 @@
-# References — the kit's external standards and manuals
+# References — the kit's external standards, manuals and data sources
 
 **Started 2026-09-23 at Jacob's request:** *"we will use them and as we expand they will continue to be germane."* The kit pours towns in **MO, OH, CA and MA** today. A highway is built to **its state's** design manual, so the kit's section values should come from the manual of the state the road is in, never from one national table.
 
-**The registry is `registry.json`**: one entry per source, with its publisher, jurisdiction, URL, what it covers, and its **terms**. This file holds only the rules.
+**The registry is `registry.json`**: one entry per source, with its publisher, jurisdiction, URL, what it covers, and its **terms**. This file holds only the rules. ⭐ It also holds the **data sources** a town's content reads (registers, inventories, guides, sites): those carry a `class`, and where their terms grant no reuse, Jacob's `basis` plus a `takedown` path (BRIEF-a-town-lists-everything §9.3); a state well names its row as `registry` (`cartograph/states/*.mjs`).
 
 ## The rules
 

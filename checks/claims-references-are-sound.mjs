@@ -11,7 +11,8 @@
 // Then prints the DISPATCH QUEUE: every open question, what was tried, and where to look next.
 //
 // ▶ node checks/claims-references-are-sound.mjs
-// Mutation tests: a cited source's terms.aiUse → 'prohibited' reds; a kind:'derived' with no `from` reds; a kind:'measured' with no command reds.
+// Mutation tests: a cited source's terms.aiUse → 'prohibited' reds; a kind:'derived' with no `from` reds; a kind:'measured' with no command reds;
+//   a data source's takedown deleted reds; a class outside the vocabulary reds; a state well's `registry` → a missing id reds.
 import fs from 'node:fs'
 import { execSync } from 'node:child_process'
 
@@ -86,6 +87,34 @@ for (const q of questions) {
   if (q.status === 'blocked' && !q.blockedBy) errs.push(`question ${q.id} is 'blocked' with no blockedBy`)
   // `check` is one path or, for a tooth held by several checks, an array of them — each must exist.
   for (const c of [].concat(q.check || [])) if (!fs.existsSync(c)) errs.push(`question ${q.id} names check ${c}, which does not exist`)
+}
+// ⭐ A DATA SOURCE (one with a `class`) is a well the kit reads for a town's content (BRIEF-a-town-lists-everything §2.1).
+// Its class is one of the vocabulary below; an `instanceOf` names a row of the same class; and where its terms do not
+// grant reuse it carries Jacob's `basis` — which must come with a `takedown` path and an `approvedBy`, or it is a
+// basis nobody can act on. A permitted data source quotes what it read (`quote`), or it was not read.
+const CLASSES = new Set(['national-register', 'state-inventory', 'state-forms', 'local-archive', 'business-guild', 'chamber',
+  'institution-site', 'open-map', 'free-media', 'federal-images', 'assessor'])
+for (const s of sources) {
+  if (s.class == null) continue
+  if (!CLASSES.has(s.class)) errs.push(`source ${s.id} has class "${s.class}" (allowed: ${[...CLASSES].join(', ')})`)
+  if (!s.jurisdiction) errs.push(`data source ${s.id} declares no jurisdiction`)
+  if (s.instanceOf != null) { const p = srcById.get(s.instanceOf); if (!p) errs.push(`source ${s.id} is an instance of unknown source "${s.instanceOf}"`); else if (p.class !== s.class) errs.push(`source ${s.id} (class ${s.class}) is an instance of ${p.id} (class ${p.class})`) }
+  const t = s.terms || {}
+  if (t.basis && !(t.takedown && t.takedown.how)) errs.push(`data source ${s.id} rests on a basis ("${t.basis}") with no takedown path (terms.takedown.how)`)
+  if (t.basis && !t.approvedBy) errs.push(`data source ${s.id} rests on a basis nobody approved (terms.approvedBy)`)
+  if (t.aiUse === 'permitted' && !t.quote) errs.push(`data source ${s.id} is permitted but quotes no terms — read them first`)
+}
+// ⭐ A STATE WELL NAMES ITS REGISTRY ROW (cartograph/states/*.mjs `registry`), so its terms live in one place. A well that
+// names none is reported (it predates the registry); one that names a missing row fails.
+{
+  const { STATES } = await import('../cartograph/states/index.mjs')
+  for (const st of Object.values(STATES)) for (const kind of ['parcels', 'addressPoints', 'buildings', 'buildingAttributes', 'trees', 'history'])
+    for (const [id, w] of Object.entries(st[kind] || {})) {
+      if (w.registry == null) { warns.push(`state well ${st.code}.${kind}.${id} names no registry row`); continue }
+      const s = srcById.get(w.registry)
+      if (!s) errs.push(`state well ${st.code}.${kind}.${id} names registry row "${w.registry}", which does not exist`)
+      else if (s.terms?.aiUse !== 'permitted') errs.push(`state well ${st.code}.${kind}.${id} reads ${s.id}, whose terms.aiUse is "${s.terms?.aiUse}"`)
+    }
 }
 for (const s of sources) {
   const lc = typeof s.localCopy === 'string' ? s.localCopy.split(' ')[0] : null

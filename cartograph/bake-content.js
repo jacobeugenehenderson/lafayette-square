@@ -42,13 +42,13 @@
  *   node cartograph/bake-content.js --scene=hipointedemun --dry-run   (stats, no write)
  */
 
-import { LAND_USE_READERS } from './states/index.mjs'
+import { LAND_USE_READERS, STATES } from './states/index.mjs'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
-import { readSources, undeclaredMessage, PARCEL_FIELDS, WITHHELD_PARCEL_FIELDS } from './sources.js'
+import { readSources, readHistorySources, undeclaredMessage, PARCEL_FIELDS, WITHHELD_PARCEL_FIELDS } from './sources.js'
 import { classifyUseFromText } from './parcel-landuse.mjs'
 import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
@@ -287,23 +287,39 @@ function parseCsvLine(line) {
   return out
 }
 
-function loadNrInventory(scene) {
-  const p = join(contentDir(scene), 'nr-inventory.json')
-  if (!existsSync(p)) return []
-  return JSON.parse(readFileSync(p, 'utf8'))
-}
-
-// The town's declared historic district (sources.json `historicDistricts`, validated in sources.js), or null.
-// ⛔ An NR inventory IS a district's inventory: one with no declared district would mark members of a district
-// nobody named, so it is refused rather than written nameless.
-function loadDeclaredDistrict(scene, nrIndex) {
-  const src = readSources(scene)
-  const district = (src.declared && src.historicDistricts[0]) || null
-  if (nrIndex.size && !district) {
-    throw new Error(`[district] scene "${scene}" has content/nr-inventory.json but sources.json declares no \`historicDistricts\`.\n` +
-      `  Declare the district it inventories: "historicDistricts": [{ "name": …, "nps_ref": … }]`)
+// ⭐ THE TOWN'S HISTORY WELLS (sources.json `history`, cartograph/sources.js#readHistorySources): facts about a BUILDING.
+// `nr-inventory` rows join by address (buildNrIndex), each stamped with its well so the record can name its nomination;
+// `mhc-gdb` records join per building by geometry and address (joinHistory). ⛔ A declared well whose file is missing
+// THROWS — never a town that reads as having no history. Undeclared is said once, loudly, and reads nothing.
+function loadHistoryWells(scene) {
+  const h = readHistorySources(scene)
+  const out = { state: h.state, nr: [], records: [], wells: h.wells, vocabulary: null }
+  if (h.state === 'undeclared') { console.log(`  [history] UNDECLARED — no \`history\` in sources.json; no building carries register facts until one is declared (or history: [] with a reason)`); return out }
+  if (h.state === 'none') { console.log(`  [history] declared none: ${h.absentReason}`); return out }
+  for (const w of h.wells) {
+    if (!existsSync(w.path)) throw new Error(`[history] ${scene} declares well "${w.id}" (${w.reader}) and ${w.path} is not on disk — fetch it (cartograph/fetch-history.mjs) or remove the declaration`)
+    const raw = JSON.parse(readFileSync(w.path, 'utf8'))
+    const excluded = new Set(w.exclude || [])
+    if (w.reader === 'nr-inventory') {
+      for (const r of raw) out.nr.push({ ...r, _well: w })
+      console.log(`  [history] ${w.id}: ${raw.length} NR inventory rows (${w.registry})`)
+    } else if (w.reader === 'mhc-gdb' || w.reader === 'nomination-extract') {
+      const recs = raw.records || []
+      let n = 0
+      for (const r of recs) { if (excluded.has(r.id)) continue; out.records.push({ ...r, _well: w }); n++ }
+      console.log(`  [history] ${w.id}: ${n} records (${w.registry}${raw.meta?.fetched ? `, fetched ${raw.meta.fetched}` : ''})${excluded.size ? ` · ${recs.length - n} withheld by \`exclude\`` : ''}`)
+    } else throw new Error(`[history] well "${w.id}" has reader ${w.reader}, which bake-content does not join`)
   }
-  return district
+  // ⭐ How the records READ (designation codes, which types name a footprint, placeholder styles) is the town's STATE's
+  // vocabulary (cartograph/states/<st>.mjs `history_vocabulary`). ⛔ Records with none to read them by are refused by name.
+  if (out.records.length) {
+    const st = readSources(scene).state
+    const voc = st && STATES[st] && STATES[st].history_vocabulary
+    if (!voc) throw new Error(`[history] ${scene} declares history records (${h.wells.filter(w => w.reader !== 'nr-inventory').map(w => w.id).join(', ')}) but its state ${st ? `"${st}"` : '(none declared)'} has no \`history_vocabulary\` in cartograph/states/ — write one (designations, listed, names_footprint, style_placeholders)`)
+    for (const k of ['designations', 'listed', 'names_footprint', 'style_placeholders']) if (!voc[k]) throw new Error(`[history] state ${st}'s history_vocabulary has no \`${k}\``)
+    out.vocabulary = voc
+  }
+  return out
 }
 
 // Named OSM POIs from raw/osm.json. THREE producers, one consumer:
@@ -557,31 +573,137 @@ function buildNrIndex(nr) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Historic-district membership (LS `architecture.district` convention), read from the TOWN'S OWN sources —
-// ⛔ never a district name, street list or municipality in this file (HPDM's lived here and was written into
-// every town, cartograph/_archive/BRIEF-a-district-is-the-towns-own-DELIVERED-2026-10-11.md):
-//   · the parcel well's own NAME, when its column holds one → that district;
-//   · else the town's declared district (sources.json `historicDistricts`): the well's code/flag, an NR
-//     inventory match, or a declared nomination street, outside its excluded municipalities → its name;
-//   · else a well flag alone → a member, name unknown.
-// ⛔ `false` only where a source could have said yes for THIS building; one no source speaks for is null.
+// A PARCEL WELL'S OWN historic-district column — the building's assessor record, read as it stands (a name where the
+// column holds one, else membership with no name). ⛔ Nothing is DERIVED here (Boz, 2026-10-26, on Jacob's 2026-10-21
+// ruling: "historic is a building's property"; membership is Extent's): the declared-district path — a town's
+// `historicDistricts` name, its nomination streets, its excluded municipalities, an NR-inventory match read as
+// membership — was removed with the MHC well. `false` only where the well carries the column; else null.
 // ──────────────────────────────────────────────────────────────────────────
 
-function districtOf(par, nr, hs, nrCould, district) {
-  const hd = par ? par.historic_district : null   // null where the parcel's well does not carry the column
+function parcelDistrict(par) {
+  const hd = par ? par.historic_district : null
   if (hd && hd.name) return { in: true, name: hd.name }
-  const wellIn = !!(hd && (hd.national || hd.local || hd.certified_local))
-  const streets = (district && district.streets) || []
-  const street = (hs.street || '').toUpperCase()
-  const streetIn = !!street && streets.some(d => street.includes(d.toUpperCase()))
-  const spoke = !!hd || (nrCould && !!hs.house) || (streets.length > 0 && !!street)
-  if (district) {
-    const excluded = (district.excludeMunicipalities || []).includes(par && par.municipality)
-    if (!excluded && (wellIn || !!nr || streetIn)) return { in: true, name: district.name }
-    return { in: spoke || excluded ? false : null, name: null }
+  if (hd && (hd.national || hd.local || hd.certified_local)) return { in: true, name: null }
+  return { in: hd ? false : null, name: null }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// THE HISTORY JOIN — one record (an MHC point; a nomination row) → one baked building, by TWO witnesses:
+//   geometry — the record's point inside the building's footprint (rings + joinRings, as joinPointToBuilding);
+//   address  — the record's house-numbered address → the parcel at that address → the building on that parcel.
+// Both agree → joined. One alone → joined, `confidence` says which. ⛔ Disagree → NOT joined, reported by name in
+// `conflicts`; an address whose parcel holds several buildings and no point to choose → `ambiguous`. Never picked silently.
+// Demolished records join nothing and are counted.
+// ──────────────────────────────────────────────────────────────────────────
+
+function joinHistory(records, buildingGrid, parcelByAddr, buildingsByHandle) {
+  const byBuilding = new Map()
+  const rep = { records: records.length, both: 0, point: 0, address: 0, demolished: 0, unjoined: 0, conflicts: [], ambiguous: [], no_point: 0, point_lent: 0 }
+  // ⭐ A LOCATED record lends its point to an unlocated one at the same address (a nomination row names an address,
+  // the state inventory places that address): exactly one located, standing record there, or none is lent.
+  const located = new Map()
+  for (const r of records) {
+    if (r.demolished || !Number.isFinite(r.x) || !Number.isFinite(r.z) || !addressParts(r.address).house) continue
+    const k = addressKey(r.address); let a = located.get(k); if (!a) located.set(k, a = []); a.push(r)
   }
-  if (wellIn || nr) return { in: true, name: null }
-  return { in: spoke ? false : null, name: null }
+  for (let r of records) {
+    if (r.demolished) { rep.demolished++; continue }
+    let geo = null
+    let px = r.x, pz = r.z
+    if (!(Number.isFinite(px) && Number.isFinite(pz)) && addressParts(r.address).house) {
+      const lend = located.get(addressKey(r.address)) || []
+      if (lend.length === 1) { px = lend[0].x; pz = lend[0].z; r = { ...r, point_via: lend[0].id }; rep.point_lent++ }
+    }
+    if (Number.isFinite(px) && Number.isFinite(pz)) {
+      for (const b of gridNear(buildingGrid, px, pz, 1)) if ((b.rings || [b.ring]).some(g => pointInPolygon(px, pz, g))) { geo = b.id; break }
+    } else rep.no_point++
+    let adr = null, adrMany = null
+    const hs = addressParts(r.address)
+    if (hs.house) {
+      const par = parcelByAddr.get(addressKey(r.address))
+      const on = par ? (buildingsByHandle.get(par.handle) || []) : []
+      if (on.length === 1) adr = on[0]
+      else if (on.length > 1) adrMany = on
+    }
+    const label = `${r.id} ${r.historic_name || r.common_name || ''} (${r.address || 'no address'})`.replace(/\s+/g, ' ')
+    let id = null, confidence = null
+    if (geo && adr) { if (geo === adr) { id = geo; confidence = 'point+address'; rep.both++ } else rep.conflicts.push(`${label}: point in ${geo}, address on ${adr}`) }
+    else if (geo && adrMany) { if (adrMany.includes(geo)) { id = geo; confidence = 'point+address'; rep.both++ } else rep.conflicts.push(`${label}: point in ${geo}, address on ${adrMany.join('/')}`) }
+    else if (geo) { id = geo; confidence = 'point'; rep.point++ }
+    else if (adr) { id = adr; confidence = 'address'; rep.address++ }
+    else if (adrMany) rep.ambiguous.push(`${label}: its parcel holds ${adrMany.length} buildings (${adrMany.join(', ')}) and its point is in none`)
+    else rep.unjoined++
+    if (!id) continue
+    let a = byBuilding.get(id); if (!a) byBuilding.set(id, a = [])
+    a.push({ ...r, confidence })
+  }
+  return { byBuilding, report: rep }
+}
+
+const semi = (v) => (v || '').split(';').map(x => x.trim()).filter(Boolean)
+const yearOf = (v) => (/^\d{4}$/.test(String(v || '').trim()) ? Number(v) : null)
+
+/** The facts a building's joined history records give it — every one stamped with its record. ⛔ Only a record that
+ *  NAMES the footprint (a Building; a Structure such as a lighthouse, a wharf, the Monument) gives it facts — a statue or
+ *  a burial ground on the same lot does not. ⛔ Several records of ONE well naming one footprint (a merged footprint over
+ *  two houses, a stacked condominium): which the building is cannot be told, so that well writes nothing for it, reported.
+ *  ⭐ Records of DIFFERENT wells naming one footprint corroborate: each fact is taken from the first well, in the town's
+ *  declared order, that gives it, and a later well that disagrees is reported by name (never picked silently). Designation
+ *  codes read through the state's vocabulary; a code it does not establish is reported, never expanded by guess. */
+function historyFacts(recs, unknownCodes, wellOrder, voc, untyped) {
+  const NAMES = new Set(voc.names_footprint), PLACEHOLDER = new Set(voc.style_placeholders.map(x => x.toLowerCase()))
+  const LISTED = new Set(voc.listed)
+  for (const r of recs) if (!r.type) untyped.add(r.id)
+  const names = (r) => !!r.type && NAMES.has(r.type)
+  const byWell = new Map()
+  for (const r of recs) { let a = byWell.get(r._well.id); if (!a) byWell.set(r._well.id, a = []); a.push(r) }
+  const wells = [...byWell.keys()].sort((x, y) => wellOrder.indexOf(x) - wellOrder.indexOf(y))
+  const facts = {}, conflicts = [], silenced = new Set()
+  for (const w of wells) {
+    const named = byWell.get(w).filter(names)
+    if (named.length > 1) conflicts.push(`${w}: ${named.length} records name this one footprint (${named.map(r => r.id).join(', ')})`)
+  }
+  // ⛔ One well seeing several buildings in this footprint makes the footprint itself ambiguous, so NO well names it.
+  if (conflicts.length) { for (const w of wells) silenced.add(w); conflicts.push('the footprint holds several recorded buildings — no well\'s facts or dated entries written for it') }
+  const PICK = [['historic_name', r => r.historic_name], ['year', r => yearOf(r.constructed)],
+    ['style', r => semi(r.style).filter(x => !PLACEHOLDER.has(x.toLowerCase())).join(', ') || null], ['architect', r => semi(r.maker).join('; ') || null]]
+  for (const [k, pick] of PICK) {
+    for (const w of wells) {
+      if (silenced.has(w)) continue
+      const r = byWell.get(w).find(names)
+      const v = r ? pick(r) : null
+      if (v == null) continue
+      if (!(k in facts)) facts[k] = v
+      else if (String(facts[k]) !== String(v)) conflicts.push(`${k}: ${facts[k]} (kept, the first declared well) | ${v} (${w} ${r.id})`)
+    }
+  }
+  const src = (r, extra = '') => `${r._well.registry} ${r.id}${extra}`
+  facts.records = recs.map(r => ({ id: r.id, registry: r._well.registry, type: r.type, confidence: r.confidence }))
+  const history = []
+  for (const r of recs) {
+    if (silenced.has(r._well.id) && names(r)) continue
+    const subject = names(r) ? '' : `${r.historic_name || r.common_name || r.type || r.id}: `
+    // ⭐ A record that carries its own dated events (a nomination's rows) speaks for itself, page by page.
+    if (Array.isArray(r.events)) {
+      for (const e of r.events) if (Number.isFinite(e.year)) history.push({ year: e.year, event: `${subject}${e.event}`, source: src(r, e.source_page ? ` p.${e.source_page}` : '') })
+      continue
+    }
+    const codes = (r.designation || '').split(/\s+/).filter(Boolean), dates = semi(r.designation_dates)
+    if (yearOf(r.constructed)) history.push({ year: yearOf(r.constructed), event: subject ? `${subject}made (the inventory's date).` : 'Built (the inventory\'s construction date).', source: src(r) })
+    if (codes.length && codes.length !== dates.length) { unknownCodes.add(`${r.id}: ${codes.length} designation codes, ${dates.length} dates — none written`); continue }
+    codes.forEach((c, i) => {
+      const y = Number((dates[i].match(/(\d{4})$/) || [])[1])
+      if (!voc.designations[c]) { unknownCodes.add(c); return }
+      if (y) history.push({ year: y, event: `${subject}${voc.designations[c]}.`, source: src(r) })
+    })
+  }
+  // the inventory's bare "Built" line gives way to another record's own account of the same year
+  const GENERIC = 'Built (the inventory\'s construction date).'
+  const told = new Set(history.filter(h => h.event !== GENERIC).map(h => h.year))
+  facts.history = history.filter(h => h.event !== GENERIC || !told.has(h.year)).sort((a, b) => a.year - b.year)
+  facts.designations = [...new Set(recs.flatMap(r => (r.designation || '').split(/\s+/).filter(Boolean)))]
+  facts.listed = recs.some(r => names(r) && (r.designation || '').split(/\s+/).some(c => LISTED.has(c)))
+  return { facts, conflicts }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -933,7 +1055,7 @@ const normName = s => (s || '').toLowerCase().replace(/['’.]/g, '').replace(/&
 
 function applyListingOverrides(base, overrides, ctx) {
   const { buildingGrid, bakedIds, parcels, parcelByAddr } = ctx
-  const report = { patched: 0, added: 0, add_reanchored: 0, add_dropped: [], base_superseded: 0 }
+  const report = { patched: 0, added: 0, add_reanchored: 0, add_dropped: [], base_superseded: 0, patch_unresolved: [] }
   const patches = overrides.patches || {}
   // index base by stable key + by (building_id|normName) for name-match patching
   const byKey = new Map(base.map(l => [l._key, l]))
@@ -947,6 +1069,8 @@ function applyListingOverrides(base, overrides, ctx) {
       target = base.find(l => normName(l.name) === normName(patch._match_name))
     }
     if (target) { Object.assign(target, stripMeta(patch)); target.enriched = true; report.patched++ }
+    // ⛔ A patch whose key reaches no listing is authoring that does nothing — said by name, every bake.
+    else report.patch_unresolved.push(`${key}${patch._match_name ? ` (${patch._match_name})` : ''}`)
   }
 
   // 2) adds (research). Re-resolve building_id from anchor every run.
@@ -954,6 +1078,9 @@ function applyListingOverrides(base, overrides, ctx) {
   const consumed = new Set()
   for (const add of (overrides.adds || [])) {
     const rec = stripMeta(add)
+    // ⭐ An add with no authored id carries its own source key, and the town's id registry mints its permanent id
+    // (listing-identity.js). stripMeta drops `_`-keys, so the key is put back here — never invented.
+    if (!rec.id && add._key) rec._key = add._key
     // resolve building_id: keep if still in baked set, else re-anchor
     let bid = rec.building_id && bakedIds.has(rec.building_id) ? rec.building_id : null
     if (!bid) {
@@ -1007,7 +1134,7 @@ function stripMeta(o) {
 // Layer 1 — roster (one record per baked building)
 // ──────────────────────────────────────────────────────────────────────────
 
-function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, district, listings, rosterOverrides, osmProminence) {
+function buildRoster(scene, bakedBuildings, buildingGeom, parcelOf, luMap, nrIndex, historyByBuilding, wellOrder, historyVoc, listings, rosterOverrides, osmProminence) {
   // group listings by building
   const listingsByBuilding = new Map()
   for (const l of listings) {
@@ -1018,11 +1145,12 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
   const rosterPatches = (rosterOverrides && rosterOverrides.patches) || {}
   const out = []
   const bundles = new Map()   // id → the prominence signal bundle (see prominence.mjs)
-  const stat = { parcel_matched: 0, nr_attributed: 0, historic_flagged: 0, in_district: 0, with_listings: 0 }
+  const stat = { parcel_matched: 0, nr_attributed: 0, historic_flagged: 0, in_district: 0, with_listings: 0, history_joined: 0, history_conflicts: [] }
+  const unknownCodes = new Set(), untyped = new Set()
 
   for (const [id, meta] of bakedBuildings) {
     const geom = buildingGeom.get(id)
-    const par = geom ? joinParcelToBuilding(geom, parcelGrid) : null
+    const par = parcelOf.get(id) || null
     if (par) stat.parcel_matched++
 
     let use = classifyUse(par, luMap)
@@ -1033,10 +1161,14 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
     const jurisdiction = par ? par.jurisdiction : null
     const municipality = par ? par.municipality : null
     const hd = par && par.historic_district
-    if ((hd && (hd.national || hd.local || hd.certified_local)) || nr) stat.historic_flagged++
-    const dist = districtOf(par, nr, hs, nrIndex.size > 0, district)
+    const dist = parcelDistrict(par)
     const inDistrict = dist.in
     if (inDistrict) stat.in_district++
+    // ⭐ The building's own register records (the state inventory; a nomination's rows), joined in joinHistory.
+    const hrecs = historyByBuilding.get(id) || []
+    const hist = hrecs.length ? historyFacts(hrecs, unknownCodes, wellOrder, historyVoc, untyped) : null
+    if (hist) { stat.history_joined++; if (hist.conflicts.length) stat.history_conflicts.push(`${id} (${hrecs.map(r => r.id).join(', ')}): ${hist.conflicts.join(' · ')}`) }
+    if ((hd && (hd.national || hd.local || hd.certified_local)) || nr || hist?.facts.listed) stat.historic_flagged++
 
     const hostListings = listingsByBuilding.get(id) || []
     if (hostListings.length) stat.with_listings++
@@ -1064,21 +1196,30 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
     const stories = meta.stories ?? null
 
     const contributing = nr ? (nr.contrib === 'contributing') : null
-    const style = nr ? (nr.style || null) : null
+    const style = nr ? (nr.style || null) : (hist?.facts.style || null)
     // ⛔ THE RECORD READS THE PARCEL THROUGH `served`, which has no withheld field (`WITHHELD_PARCEL_FIELDS`, sources.js):
     // a parcel well's owner, value, size and dates never reach a served file. The rank (`bundles`) still reads `par`.
     const served = par && Object.fromEntries(Object.entries(par).filter(([k]) => !WITHHELD_PARCEL_FIELDS.includes(k)))
-    const year_built = (served && served.year_built) || (nr && nr.year) || null
+    const year_built = (served && served.year_built) || (nr && nr.year) || hist?.facts.year || null
+    const year_built_source = (served && served.year_built) ? 'parcel' : (nr && nr.year) ? nr._well.registry : hist?.facts.year ? (r => `${r._well.registry} ${r.id}`)(hrecs.find(r => yearOf(r.constructed) === hist.facts.year)) : null
     const period = year_built ? `${Math.floor(year_built / 10) * 10}s` : null
 
     const architecture = {}
     if (dist.name) architecture.district = dist.name
     if (contributing != null) architecture.contributing = contributing
-    if (nr) { architecture.nps_listed = true; if (district.nps_ref) architecture.nps_ref = district.nps_ref }
+    if (nr) { architecture.nps_listed = true; if (nr._well.nps_ref) architecture.nps_ref = nr._well.nps_ref }
     if (style) architecture.style = style
     if (year_built) architecture.year_built = year_built
+    if (hist) {
+      if (hist.facts.historic_name) architecture.historic_name = hist.facts.historic_name
+      if (hist.facts.architect) architecture.architect = hist.facts.architect
+      if (hist.facts.listed) architecture.nps_listed = true
+      architecture.designations = hist.facts.designations
+      architecture.register_records = hist.facts.records
+    }
 
     const historic_status = contributing === true ? 'contributing'
+      : hist?.facts.listed ? 'National Register'
       : inDistrict ? 'in historic district' : null
 
     const rec = {
@@ -1092,9 +1233,10 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
       historic_district: dist.name,
       contributing,
       style,
-      architect: null,
+      architect: hist?.facts.architect || null,
       period,
       year_built,
+      year_built_source,
       building_type: par ? (luMap.get(String(par.land_use_code).replace(/\D/g, '')) || {}).desc || null : null,
       building_sqft: served ? served.building_sqft ?? null : null,
       units: served ? served.units ?? null : null,
@@ -1115,6 +1257,8 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
       in_historic_district: inDistrict,
       architecture: Object.keys(architecture).length ? architecture : null,
       historic_status,
+      // ⭐ The building's own dated history, each entry naming its record (the card shows it beside a listing's).
+      history: hist && hist.facts.history.length ? hist.facts.history : null,
     }
     // ⭐ HAND-PROMOTION, and it is a FIELD ON THE RECORD rather than a corner of
     // `prominence`, precisely so the town's own `roster.overrides.json` can patch it
@@ -1143,6 +1287,8 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
   // ⛔ RANK AFTER THE OVERRIDES, never before — a promotion patched in above has to
   // be visible to the sort, or hand-promotion is a field nobody reads.
   const { ctx } = rankRoster(out, bundles)
+  stat.unknown_codes = [...unknownCodes]
+  stat.untyped_records = [...untyped]
   return { roster: out, stat, prominenceCtx: ctx }
 }
 
@@ -1165,8 +1311,8 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const buildingGeom = loadBuildingGeom(scene, bakedIds)
   const { parcels, absentByField, declared: parcelsDeclared } = loadParcels(scene)
   const luMap = loadLandUseCodes(scene)
-  const nrIndex = buildNrIndex(loadNrInventory(scene))
-  const district = loadDeclaredDistrict(scene, nrIndex)
+  const historyWells = loadHistoryWells(scene)
+  const nrIndex = buildNrIndex(historyWells.nr)
   const { pois, nodeTagsPresent } = loadOsmPois(scene)
   console.log(`  loaded: baked=${bakedIds.size} geom=${buildingGeom.size} parcels=${parcels.length} lu=${luMap.size} nr=${nrIndex.size} pois=${pois.length}`)
 
@@ -1196,6 +1342,23 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   // parcel-by-normalized-address index (for override anchor re-resolution)
   const parcelByAddr = new Map()
   for (const par of parcels) { const na = addressKey(par.address); if (na && !parcelByAddr.has(na)) parcelByAddr.set(na, par) }
+  // building → its parcel, once (the roster and the history join read the same answer)
+  const parcelOf = new Map(), buildingsByHandle = new Map()
+  for (const [id, g] of buildingGeom) {
+    const par = joinParcelToBuilding(g, parcelGrid)
+    if (!par) continue
+    parcelOf.set(id, par)
+    if (par.handle != null) { let a = buildingsByHandle.get(par.handle); if (!a) buildingsByHandle.set(par.handle, a = []); a.push(id) }
+  }
+  // ⭐ THE HISTORY JOIN (state inventory, nomination rows) — per building, two witnesses, conflicts by name.
+  const hj = joinHistory(historyWells.records, buildingGrid, parcelByAddr, buildingsByHandle)
+  if (historyWells.records.length) {
+    const r = hj.report
+    console.log(`  history join: ${r.records} records → ${hj.byBuilding.size} buildings · point+address ${r.both} · point only ${r.point} · address only ${r.address} · demolished ${r.demolished} · unjoined ${r.unjoined} · conflicts ${r.conflicts.length} · ambiguous ${r.ambiguous.length}${r.point_lent ? ` · ${r.point_lent} placed by another well's point at the same address` : ''}`)
+    // every one is in roster.json meta.history.join; the first few print
+    for (const c of r.conflicts.slice(0, 10)) console.log(`    ⚠️ join conflict: ${c}`)
+    for (const c of r.ambiguous.slice(0, 5)) console.log(`    ⚠️ ambiguous: ${c}`)
+  }
 
   // ── Layer 2 — base listings. TWO PRODUCERS, SELECTED BY THE DATA. ─────────
   //
@@ -1306,12 +1469,19 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   console.log(`  listing ids: ${idReport.sealed ? `SEALED ${idReport.minted} into ${idPath.split('/').slice(-3).join('/')}` : `${idReport.reused} kept · ${idReport.minted} new (high water ${listingIds.meta.highWater})`}`)
   console.log(`  overrides: +${report.added} adds (${report.add_reanchored} re-anchored, ${report.add_dropped.length} dropped), ${report.patched} patches, ${report.base_superseded} base superseded`)
   if (report.add_dropped.length) for (const d of report.add_dropped) console.log(`    ⚠️ dropped add: ${d.name} (${d.id}) — ${d.reason} → check the Extent`)
+  if (report.patch_unresolved.length) console.log(`    ⚠️ ${report.patch_unresolved.length} patch key(s) reach no listing (the patch does nothing): ${report.patch_unresolved.join(' · ')}`)
   }
 
   // Layer 1 — roster
   const osmProm = gatherOsmProminence(pois, buildingGrid, buildingGeom)
-  const { roster, stat, prominenceCtx } = buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, district, listings, rosterOverrides, osmProm.byBuilding)
-  console.log(`  roster: ${roster.length} buildings · parcel-matched ${stat.parcel_matched} · nr ${stat.nr_attributed} · in-district ${stat.in_district} · with-listings ${stat.with_listings}`)
+  const { roster, stat, prominenceCtx } = buildRoster(scene, bakedBuildings, buildingGeom, parcelOf, luMap, nrIndex, hj.byBuilding, historyWells.wells.map(w => w.id), historyWells.vocabulary, listings, rosterOverrides, osmProm.byBuilding)
+  console.log(`  roster: ${roster.length} buildings · parcel-matched ${stat.parcel_matched} · nr ${stat.nr_attributed} · history ${stat.history_joined} · parcel-well district ${stat.in_district} · with-listings ${stat.with_listings}`)
+  if (stat.history_conflicts.length) {
+    console.log(`    ⚠️ ${stat.history_conflicts.length} building(s) with a reported fact conflict — several records of one well write nothing; across wells the first declared well's fact is kept (all in roster.json meta.history.fact_conflicts); first 10:`)
+    for (const c of stat.history_conflicts.slice(0, 10)) console.log(`      ${c}`)
+  }
+  if (stat.untyped_records.length) console.log(`    ⚠️ ${stat.untyped_records.length} history record(s) carry no type, so name no footprint: ${stat.untyped_records.join(', ')}`)
+  if (stat.unknown_codes.length) console.log(`    ⚠️ designation codes the state vocabulary does not establish (written as codes only, no history entry): ${stat.unknown_codes.join(', ')}`)
 
   // ── ⭐ THE RANK REACHES THE LISTING. ————————————————————————————
   //
@@ -1467,6 +1637,9 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     meta: { scene, schema: 'NEIGHBORHOOD-INPUTS §5.1.1', layer: 'Layer 1 — building ledger (one record per slab building)',
       generated: now, generator: 'bake-content.js', visible_buildings: roster.length,
       parcel_matched: stat.parcel_matched, nr_attributed: stat.nr_attributed, in_historic_district: stat.in_district,
+      history: { wells: historyWells.wells.map(w => ({ id: w.id, reader: w.reader, registry: w.registry })), joined_buildings: stat.history_joined,
+        join: historyWells.records.length ? { ...hj.report, join_conflicts: hj.report.conflicts, conflicts: undefined } : null,
+        fact_conflicts: stat.history_conflicts, unknown_codes: stat.unknown_codes, untyped_records: stat.untyped_records },
       buildings_with_listings: stat.with_listings,
       withheld: { fields: WITHHELD_PARCEL_FIELDS, why: 'a parcel well\'s privacy and redistribution terms (cartograph/sources.js WITHHELD_PARCEL_FIELDS)' },
       join_key: 'id == slab building id (msbf-* on a US pour, osm-* on an OSM pour, the project id on a curated one)',

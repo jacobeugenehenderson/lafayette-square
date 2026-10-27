@@ -3,7 +3,8 @@
   "_jurisdiction": "Provincetown, Massachusetts — Barnstable County. MassGIS TOWN_ID 242 (verified 2026-10-05: the layer's records under TOWN_ID = 242 all read CITY = PROVINCETOWN; 4,955 parcels).",
   "state": "MA",
   "select": {
-    "town_id": 242
+    "town_id": 242,
+    "town_name": "Provincetown"
   },
   "parcels": [
     {
@@ -19,5 +20,18 @@
       "year": 2024
     }
   ],
-  "_cropland_why": "USDA's national Cropland Data Layer (cartograph/cdl.mjs): crop rows grow where OSM maps a field and, where it maps none, where the CDL reads crop (Jacob, 2026-10-05). 2024 is the latest year fetched."
+  "_cropland_why": "USDA's national Cropland Data Layer (cartograph/cdl.mjs): crop rows grow where OSM maps a field and, where it maps none, where the CDL reads crop (Jacob, 2026-10-05). 2024 is the latest year fetched.",
+  "history": [
+    {
+      "from": "state",
+      "id": "mhc-inventory"
+    },
+    {
+      "id": "nrhp-89001148",
+      "reader": "nomination-extract",
+      "file": "history/nrhp-89001148.json",
+      "registry": "nrhp-89001148-provincetown-hd"
+    }
+  ],
+  "_history_why": "The MHC inventory (MACRIS points) gives each building its historic name, date, style, maker and designations; joined per building by bake-content.js (geometry, then the parcel's address as a second witness). TOWN_NAME is MHC's spelling (▶ node cartograph/fetch-history.mjs --dry-run prints the count). Fetched by cartograph/fetch-history.mjs --gdb=<MHC_Inventory_GDB.zip>. The National Register nomination (89001148) adds the buildings its narrative names, with dated events cited by page (content/history/nrhp-89001148.json, extracted by hand; meta.method says how). ⭐ ORDER IS PRECEDENCE for a fact both give (year, style, name): the MHC inventory first, as the state's maintained per-building record; a disagreement is reported, and both wells' dated entries are shown."
 }

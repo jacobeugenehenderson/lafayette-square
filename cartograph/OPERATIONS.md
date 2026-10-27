@@ -544,7 +544,7 @@ one's number is never reused, and every listing ships its `source_key`. The `…
 registry's `meta.prefix` too and read back on every bake, so renaming a town renames no listing. The first
 bake seeds it from the town name's first four letters and digits (`st-louis` → `stlo`); ⛔ a prefix another town
 already holds is refused, naming both — choose one by writing the new town's registry before its first bake as
-`{ "meta": { "prefix": "…", "highWater": 0 }, "ids": {} }`. ⛔ Commit the registry and never hand-edit a sealed one. The bake refuses an authored `id` that would renumber a business the registry numbered.
+`{ "meta": { "prefix": "…", "highWater": 0 }, "ids": {} }`. ⛔ Commit the registry and never hand-edit a sealed one. The bake refuses an authored `id` that would renumber a business the registry numbered. ⭐ **A researched add** in `listings.overrides.json` needs no hand-picked number: give it a `_key` (e.g. `research:<slug>`) and the registry mints its id; it is anchored by `anchor.address` → the parcel at that address → its building. A patch whose key reaches no listing does nothing and the bake names it every run.
 
 ⭐ **What a visitor sees is three layers:** this file < the Apps Script sheet < the layer operations
 publishes (`<ASSET_BASE>live/<town id>/listings.json`, keyed by the town's sealed id in
@@ -686,11 +686,17 @@ The kit's street hardware (lamps, signals, name signs, benches, …) is cataloge
     fetches them), then re-bake the buildings. A point joins by the id
     both carry (NYC's BIN; containment then checks it, printed), else by standing in the footprint or its parcel.
     ▶ `node checks/claims-every-building-has-an-address.mjs`
-  - ⭐ **Historic district** (the Ward's card): the well's own name when it carries one (NYC's PLUTO does); otherwise
-    the town declares its district in `sources.json` — `"historicDistricts": [{ "name": …, "nps_ref": …, "streets": [ … ],
-    "excludeMunicipalities": [ … ] }]` (HPDM's is the worked example). A town with neither writes no district and
-    `null` membership. A well that provides the column must declare `historicDistrictField` from its data dictionary —
-    `holds` + one column's `designation`, or `holds` + `columns` (one per designation) — or the pour refuses. ▶ `node checks/claims-a-district-is-the-towns-own.mjs`
+  - ⭐ **Building history** (the card's dates, historic name, style, architect): declare the town's `history` wells in
+    `sources.json` — `[{ "from": "state", "id": "mhc-inventory" }]` (Massachusetts; `select.town_name` as MHC spells it), or
+    `{ "id", "reader": "nr-inventory", "file": "nr-inventory.json", "registry", "nps_ref" }` (HPDM), or a nomination's
+    rows extracted by hand (`"reader": "nomination-extract"`, `content/history/<ref>.json`: address, name, dated events,
+    each with its page; PTown's 89001148), or `[]` + `history_absent_reason`. ⭐ The order of the wells is the order of
+    precedence for a fact two of them give; a disagreement is printed, and every well's dated entries show. A row with
+    only an address is placed by another well's point at that address (one standing record there, or none). Fetch: `CARTOGRAPH_SCENE=<town> node cartograph/fetch-history.mjs --gdb=<MHC_Inventory_GDB.zip>`
+    (needs GDAL; fails loudly without it), then `node cartograph/bake-content.js --scene=<town>`, which prints the join
+    (both witnesses · one · conflicts and ambiguities by name). Withhold a record on request: its id in the well's `exclude`.
+    A parcel well's own district column still needs `historicDistrictField` from its data dictionary, or the pour refuses.
+    No district is declared or derived. ▶ `node checks/claims-a-district-is-the-towns-own.mjs`
   - ⛔ **"No parcels" has THREE meanings and the kit keeps them apart.** *Undeclared* (no
     `sources.json`) means **nobody has looked into it** and shouts; *declared-none* is an honest zero
     with a written reason; *declared* is a real well.

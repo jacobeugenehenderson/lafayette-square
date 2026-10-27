@@ -7,13 +7,13 @@
  *    Historic District" while the town's own well (MapPLUTO HistDist) carried the real name and the fetch threw it
  *    away. And a town with no district source at all wrote `in_historic_district: false`: "not in a district",
  *    claimed by nothing.
- * ⭐ THE RULE, read from each town's sources (sources.json, its raw parcel wells, content/nr-inventory.json), never
+ * ⭐ THE RULE, read from each town's sources (sources.json, its raw parcel wells, its declared `history` wells), never
  *    restated here:
- *   · every `historic_district` / `architecture.district` name in the roster is one the town's own sources carry: a
- *     name in its parcel wells, or its declared `historicDistricts`;
- *   · every `architecture.nps_ref` is one the town declares;
- *   · a town with no district source (no well provides the column, no NR inventory, no declaration) writes
- *     `in_historic_district: null`, never false;
+ *   · every `historic_district` / `architecture.district` name in the roster is a name the town's own PARCEL WELLS
+ *     carry — the building's assessor record. ⛔ No district is derived or declared any more (Boz, 2026-10-26, on
+ *     Jacob's 2026-10-21 ruling): the `historicDistricts` declaration went with the MHC well;
+ *   · every `architecture.nps_ref` is one a declared history well names (`nps_ref`);
+ *   · a town whose parcel wells do not provide the column writes `in_historic_district: null`, never false;
  *   · no kit file under cartograph/ names any town's declared or sourced district, or its NRHP ref.
  * ⭐ MUTATION-TESTED EVERY RUN: a foreign district name, a sourceless `false`, and a name pasted back into
  *    bake-content.js must each fail.
@@ -28,7 +28,7 @@ import { ROOT, eachTown, declaredScenes } from './_scenes.mjs'
 
 const scene = eachTown('cartograph/data/<scene>/content/roster.json')
 process.env.CARTOGRAPH_SCENE = scene   // sources.js reaches config.js, which wants a named scene
-const { readSources } = await import(join(ROOT, 'cartograph/sources.js'))
+const { readSources, readHistorySources } = await import(join(ROOT, 'cartograph/sources.js'))
 
 const dataDir = (s) => join(ROOT, 'cartograph/data', s)
 
@@ -37,7 +37,7 @@ function townSources(s) {
   const src = readSources(s)
   if (!src.declared) return { declared: false, names: new Set(), refs: new Set(), hasSource: false }
   const names = new Set(), refs = new Set()
-  for (const d of src.historicDistricts) { names.add(d.name); if (d.nps_ref) refs.add(d.nps_ref) }
+  for (const w of readHistorySources(s).wells) if (w.nps_ref) refs.add(w.nps_ref)
   let wellProvides = false
   const unwritable = []
   for (const w of src.parcels) {
@@ -53,8 +53,7 @@ function townSources(s) {
     }
     for (const d of unwritableDesignations(w.historicDistrictField, marks)) unwritable.push(`${w.id}: raw/${w.file} marks ${d}`)
   }
-  const nr = existsSync(join(dataDir(s), 'content/nr-inventory.json'))
-  return { declared: true, names, refs, unwritable, hasSource: wellProvides || nr || src.historicDistricts.length > 0 }
+  return { declared: true, names, refs, unwritable, hasSource: wellProvides }
 }
 
 /** Designations the raw file marks true that the well's declaration could not write on a re-fetch (it would lose them). */
@@ -77,16 +76,23 @@ function auditRoster(roster, own) {
   }
   for (const [n, k] of foreign) out.push(`${k} field(s) name "${n}", which none of this town's sources carry`)
   for (const [r, k] of foreignRef) out.push(`${k} building(s) carry nps_ref ${r}, which this town does not declare`)
-  if (sourcelessClaims) out.push(`${sourcelessClaims} building(s) write in_historic_district non-null, but the town has no district source (no well column, no NR inventory, no declaration) — must be null`)
+  if (sourcelessClaims) out.push(`${sourcelessClaims} building(s) write in_historic_district non-null, but no parcel well of the town carries the column — must be null`)
   return out
 }
 
 /** Kit code that names any town's district or NRHP ref. */
 const KIT_DIRS = ['cartograph', 'cartograph/states']
 const kitFiles = KIT_DIRS.flatMap(d => readdirSync(join(ROOT, d)).filter(f => /\.(m?js)$/.test(f)).map(f => join(d, f)))
+// ⭐ TWO NETS. (a) every name a town's own data carries, read from that data; (b) the SHAPE of a district name in a string
+// literal — "<Proper words> Historic District" — so a name no town's data still carries (a retired declaration's, a
+// foreign town's) cannot be pasted back unseen. (b) exists because (a) went empty when the declarations were removed.
+const DISTRICT_LITERAL = /['"`][^'"`\n]*\b[A-Z][^'"`\n]*\bHistoric District['"`]/g
 function auditKit(texts, needles) {
   const out = []
-  for (const [file, text] of texts) for (const n of needles) if (text.includes(n)) out.push(`${file} names "${n}" — a town's district belongs in that town's data, never kit code`)
+  for (const [file, text] of texts) {
+    for (const n of needles) if (text.includes(n)) out.push(`${file} names "${n}" — a town's district belongs in that town's data, never kit code`)
+    for (const m of text.matchAll(DISTRICT_LITERAL)) out.push(`${file} carries the district-name literal ${m[0]} — a district name belongs in a town's data, never kit code`)
+  }
   return out
 }
 
@@ -117,7 +123,9 @@ const foreignName = [...needles].find(n => !own.names.has(n) && !/^\d+$/.test(n)
 mut.push(['a district name the town\'s sources do not carry', auditRoster([{ historic_district: foreignName }], own)])
 mut.push(['in_historic_district: false in a town with no district source', auditRoster([{ in_historic_district: false }], { ...own, hasSource: false })])
 const bake = texts.find(([f]) => f.endsWith('bake-content.js'))
-mut.push(['a district name pasted back into bake-content.js', auditKit([[bake[0], bake[1] + `\n'${[...needles][0] || foreignName}'`]], needles.size ? needles : new Set([foreignName]))])
+// ⛔ Audited against the REAL needle set: with no town's name to paste, a synthetic name of the real shape is pasted, and
+// only the literal net can catch it — so this mutant cannot pass by searching for exactly what it planted.
+mut.push(['a district name pasted back into bake-content.js', auditKit([[bake[0], bake[1] + `\n'${[...needles].find(n => !/^\d+$/.test(n)) || 'Elm Street Historic District'}'`]], needles)])
 mut.push(['a declaration that cannot write a designation the raw file carries', unwritableDesignations({ holds: 'code', designation: 'national' }, new Set(['national', 'certified_local']))])
 for (const [what, out] of mut) {
   console.log(`   mutation (${what}) ${out.length ? 'caught ✓' : 'NOT caught'}`)

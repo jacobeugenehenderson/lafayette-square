@@ -1323,6 +1323,11 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
 }
 
 // ─── History timeline (no description — that lives in Overview) ─────
+function mergeHistory(own, building) {
+  const a = Array.isArray(own) ? own : [], b = Array.isArray(building) ? building : []
+  return [...a, ...b].map((e, i) => [e, i]).sort((x, y) => (x[0].year - y[0].year) || (x[1] - y[1])).map(([e]) => e)
+}
+
 function HistoryTimeline({ history }) {
   if (!history || !history.length) return null
   return (
@@ -1371,9 +1376,6 @@ function ArchitectureTab({ building }) {
           <span className="text-on-surface-subtle">Historic Status</span>
           <span className="bg-amber-500/20 text-amber-400 text-body-sm px-1.5 py-0.5 rounded">{building.historic_status}</span>
         </div>
-      )}
-      {arch?.district && (
-        <DetailRow label="District">{arch.district}</DetailRow>
       )}
       {arch?.materials && (
         <div className="mt-2">
@@ -3826,7 +3828,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const facadeInfo = building?.id ? getFacadeInfo(building.id) : null
   const rawHero = photos?.[0]
   const heroPhoto = (rawHero ? (typeof rawHero === 'string' ? rawHero : rawHero.url) : null) || facadeImage?.thumb_1024 || facadeInfo?.photo || null
-  const history = activeListing?.history || null
+  // ⭐ ONE TIMELINE: the place's own history (its listing) and its building's (the register records the bake joined to
+  // it, roster.json `history`, each entry naming its record), in date order. A listing's entry wins a same-year tie.
+  const history = mergeHistory(activeListing?.history, building?.history)
   const description = activeListing?.description || null
   const hasListingInfo = !!activeListing
   const listingId = activeListing?.id || null
@@ -4122,9 +4126,6 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 {arch.nps_listed && (
                   <span className="px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-300/90 text-label-sm">NPS Listed</span>
                 )}
-                {arch.district && (
-                  <span className="text-on-surface-disabled text-label-sm">{arch.district.replace(' Historic District', '')}</span>
-                )}
               </div>
             </div>
           </>
@@ -4266,9 +4267,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           )}
           {currentTab === 'history' && (
             <div className="space-y-3">
-              {activeListing?.history?.length > 0 ? (
+              {mergeHistory(activeListing?.history, building?.history).length > 0 ? (
                 <div className="space-y-2">
-                  {activeListing.history.map((entry, i) => (
+                  {mergeHistory(activeListing?.history, building?.history).map((entry, i) => (
                     <div key={i} className="flex gap-3">
                       <span className="text-on-surface-subtle text-body-sm font-medium w-12 flex-shrink-0">{entry.year}</span>
                       <p className="text-on-surface-variant text-body-sm leading-relaxed">{entry.event}</p>
@@ -4277,11 +4278,6 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 </div>
               ) : (
                 <p className="text-on-surface-disabled text-body-sm italic">No history recorded yet.</p>
-              )}
-              {building?.architecture?.district && (
-                <p className="text-on-surface-variant text-body-sm leading-relaxed">
-                  This building is a {building.architecture.contributing ? 'contributing' : 'non-contributing'} structure in the {building.architecture.district}{building.architecture.nps_listed ? ', listed on the National Register of Historic Places' : ''}.
-                </p>
               )}
             </div>
           )}

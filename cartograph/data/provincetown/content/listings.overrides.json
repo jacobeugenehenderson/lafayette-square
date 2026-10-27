@@ -302,7 +302,7 @@
    "address": "46 Bradford Street",
    "phone": null,
    "website": "https://provincetownartgalleryassociation.org/",
-   "logo": null,
+   "logo": "photos/paga/pbg-logo.png",
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
@@ -323,7 +323,11 @@
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.18 (Art Galleries & Organizations)",
    "_fetched": "2026-09-25",
    "_source": "PBG 2026 guide p.18 (the association's ad: \"Join us Friday Evenings for the Provincetown Gallery Stroll · Starting Memorial Day Weekend\")",
-   "_note": "The guide splits the website across two lines; the parser read only \"association.org\", so the URL is rebuilt from the ad."
+   "_note": "The guide splits the website across two lines; the parser read only \"association.org\", so the URL is rebuilt from the ad.",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.18 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0352",
@@ -429,7 +433,17 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/center-for-coastal-studies/pbg-01.jpg",
+     "what": "A Center for Coastal Studies inflatable beside a humpback whale (CCS image, NOAA NMFS permit, as printed)",
+     "credit": "Provincetown Business Guild, 2026 Guide p.10",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=10"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "A marine research, rescue and education organization founded in 1976.",
@@ -451,7 +465,11 @@
    "_anchor_via": "OSM addr 5 Holway Ave. (osm 215752613) → msbf-2615 (its centroid is inside that footprint)",
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.22 (Attractions, Experiences & Tours)",
    "_fetched": "2026-09-25",
-   "_source": "https://coastalstudies.org/"
+   "_source": "https://coastalstudies.org/",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.10 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0420",
@@ -534,7 +552,17 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/dolphin-fleet/pbg-01.jpg",
+     "what": "Dolphin Fleet sunset music cruises and whale watches, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.22",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=22"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "Whale watches from MacMillan Pier, billed as New England's first. Each trip carries a naturalist and teaches about the whales, other marine life and their habitat.",
@@ -552,7 +580,11 @@
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.22 (Attractions, Experiences & Tours)",
    "_fetched": "2026-09-25",
    "_source": "https://whalewatch.com/",
-   "_season": "Trips run \"throughout the season\"; departure times are per trip, not store hours."
+   "_season": "Trips run \"throughout the season\"; departure times are per trip, not store hours.",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.22 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0356",
@@ -1159,7 +1191,17 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/baedega/pbg-01.jpg",
+     "what": "A cocktail at Baedega",
+     "credit": "Provincetown Business Guild, 2026 Guide p.30",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=30"
+    }
+   ],
    "amenities": [
     "Reservations via Resy",
     "Vegan and gluten-free options",
@@ -1190,7 +1232,11 @@
     "amenities"
    ],
    "_season": "unstated",
-   "_wick_notes": "Guide's domain baedega.com (no www) does not resolve; www.baedega.com works."
+   "_wick_notes": "Guide's domain baedega.com (no www) does not resolve; www.baedega.com works.",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.30 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0427",
@@ -1530,7 +1576,17 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/provincetown-gym/pbg-01.jpg",
+     "what": "Provincetown Gym, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.55",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=55"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "A fitness gym on Shank Painter Road.",
@@ -1555,7 +1611,11 @@
    "_wick_fields": [
     "hours"
    ],
-   "_season": "unstated"
+   "_season": "unstated",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.55 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0364",
@@ -1630,7 +1690,17 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/outermost-yoga/pbg-01.jpg",
+     "what": "Outermost Yoga, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.56",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=56"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "A yoga and wellness studio with classes, retreats, beach yoga and private sessions.",
@@ -1647,7 +1717,11 @@
    "_anchor_via": "OSM addr 494 Commercial St. (osm 215751326) → msbf-296 (its centroid is inside that footprint)",
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.55 (Health & Beauty)",
    "_fetched": "2026-09-25",
-   "_source": "https://www.outermostyoga.com/"
+   "_source": "https://www.outermostyoga.com/",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.56 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0432",
@@ -1690,7 +1764,17 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/wellness-lab/pbg-01.jpg",
+     "what": "The Wellness Lab, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.56",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=56"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "A med spa offering wellness and aesthetic treatments.",
@@ -1709,7 +1793,11 @@
    "_fetched": "2026-09-25",
    "_source": "https://thewellnesslab.co/",
    "_season": "not stated by the source; posted on its site when read 2026-09-25",
-   "_hours_conflict": "The written text gives Mon–Sat 10–6 and Sun 10–4; the JSON-LD gives daily 10–8. The written text is used."
+   "_hours_conflict": "The written text gives Mon–Sat 10–6 and Sun 10–4; the JSON-LD gives daily 10–8. The written text is used.",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.56 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0433",
@@ -1754,7 +1842,17 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/provincetown-tennis-club/pbg-01.jpg",
+     "what": "Provincetown Tennis Club, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.56",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=56"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "A nonprofit, community tennis club with Har-Tru courts, lessons and clinics for every age and level.",
@@ -1771,7 +1869,11 @@
    "_anchor_via": "OSM addr 288 Bradford St. (osm 215751007) → msbf-2379 (its centroid is inside that footprint)",
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.55 (Health & Beauty)",
    "_fetched": "2026-09-25",
-   "_source": "https://www.provincetowntennis.org/"
+   "_source": "https://www.provincetowntennis.org/",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.56 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0367",
@@ -1887,7 +1989,17 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/guesthouse-7-masonic/pbg-01.jpg",
+     "what": "The Guesthouse at 7 Masonic Place",
+     "credit": "Provincetown Business Guild, 2026 Guide p.62",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=62"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "A small guesthouse in a mid-1800s building just off Commercial Street, with free parking.",
@@ -1910,7 +2022,11 @@
    "_wick_fields": [
     "description"
    ],
-   "_wick_notes": "No website. Facebook page name is '7 Masonic Place Guest House'."
+   "_wick_notes": "No website. Facebook page name is '7 Masonic Place Guest House'.",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.62 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0368",
@@ -1921,10 +2037,20 @@
    "address": "22 Commercial Street",
    "phone": "508-487-0706",
    "website": "https://landsendinn.com",
-   "logo": null,
+   "logo": "photos/lands-end-inn/pbg-logo.png",
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/lands-end-inn/pbg-01.jpg",
+     "what": "Land's End Inn, historic photograph",
+     "credit": "Provincetown Business Guild, 2026 Guide p.42",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=42"
+    }
+   ],
    "amenities": [
     "Chalice lawn bar (reopens Memorial Day weekend 2027)",
     "Adults 18+",
@@ -1966,7 +2092,12 @@
    "_wick_fields": [
     "history"
    ],
-   "_wick_notes": "Breakfast 8:00–10:30 AM. OSM anchor address is 22A."
+   "_wick_notes": "Breakfast 8:00–10:30 AM. OSM anchor address is 22A.",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.42 (photo, cropped at 200 dpi from Jacob's copy)",
+    "pbg-guide-2026 p.64 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0437",
@@ -2419,16 +2550,37 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/macmillan-wharf/01.jpg",
+     "what": "MacMillan Pier, Provincetown, August 2015",
+     "credit": "Giorgio Galeotti, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:MacMillan_Pier_-_Provincetown,_Massachusetts,_USA_-_August_13,_2015_02.jpg",
+     "license": "CC BY 4.0",
+     "license_url": "https://creativecommons.org/licenses/by/4.0",
+     "source_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/MacMillan_Pier_-_Provincetown%2C_Massachusetts%2C_USA_-_August_13%2C_2015_02.jpg/1920px-MacMillan_Pier_-_Provincetown%2C_Massachusetts%2C_USA_-_August_13%2C_2015_02.jpg"
+    }
+   ],
    "amenities": [
     "ferry and excursion landing",
     "dinghy dock (4-hour free tie-up, under 16 ft)",
     "courtesy dock (20 minutes free)",
-    "pump-out 8 AM-3 PM daily, weather permitting"
+    "pump-out 8 AM-3 PM daily, weather permitting",
+    "Harbormaster's office at 24 MacMillan Wharf: Monday to Friday, 9 a.m. to 4 p.m.; outside those hours call 508-487-7030, option 2, for the harbormaster on duty"
    ],
    "tags": [],
    "description": "Provincetown's town pier, reaching into the harbor from the center of Commercial Street. It is the working base for the commercial fishing fleet and the landing for the Boston ferries, whale-watch boats and harbor excursions, with the Harbormaster's office at 24 MacMillan Wharf. It is named for Arctic explorer Admiral Donald B. MacMillan, a Provincetown native.",
    "history": [
+    {
+     "year": 1849,
+     "event": "A small wharf is first built on this site.",
+     "source": "nrhp-89001148-provincetown-hd p.10"
+    },
+    {
+     "year": 1863,
+     "event": "The wharf is lengthened; it is extended again in 1873 to meet the railroad and the Boston steamboat.",
+     "source": "nrhp-89001148-provincetown-hd p.10"
+    },
     {
      "year": 1873,
      "event": "The Old Colony Railroad Wharf is built, where ferry passengers landed and fish were loaded onto rail cars."
@@ -2459,7 +2611,11 @@
    "_source": "https://provincetown-ma.gov/79/Harbor-Pier",
    "_fetched": "2026-09-25",
    "_confidence": "Phone/ownership/amenities from the Town's Harbor & Pier pages (via search); history from Cape Cod Life and Building Provincetown summaries.",
-   "_wick_notes": "Public pier, open-air, accessible on foot at all hours; no posted opening hours. Harbormaster on VHF Ch. 12; after hours call 508-487-7030 option 2. Owned and managed by the Town (MacMillan Public Pier). The 1970 entry could be dropped as tangential."
+   "_wick_notes": "Public pier, open-air, accessible on foot at all hours; no posted opening hours. Harbormaster on VHF Ch. 12; after hours call 508-487-7030 option 2. Owned and managed by the Town (MacMillan Public Pier). The 1970 entry could be dropped as tangential.",
+   "_source_photo": "wikimedia-commons File:MacMillan_Pier_-_Provincetown,_Massachusetts,_USA_-_August_13,_2015_02.jpg (CC BY 4.0, Giorgio Galeotti; 1920px thumbnail resized to 1600)",
+   "_photo_fetched": "2026-10-26",
+   "_source_office_hours": "provincetown-town-site https://www.provincetown-ma.gov/79/Harbor-Pier (\"Hours Office: Monday thru Friday 9am to 4pm\"), read 2026-10-26",
+   "_hours": "none written: the pier itself posts no opening hours (town page read 2026-10-26); the office hours above are the harbormaster's, not the wharf's, and the page states no season"
   },
   {
    "id": "prov-lst-0440",
@@ -2750,7 +2906,7 @@
    "address": "4 Standish Street",
    "phone": "508-487-1950",
    "website": "https://www.artsdunetours.com/",
-   "logo": null,
+   "logo": "photos/arts-dune-tours/pbg-logo.png",
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
@@ -2773,7 +2929,11 @@
    "_confidence": "Own site states address, phone, season, founding (1958, Art Costa) and tour list.",
    "_season_closes": "Season: April 15 – November 15 (7 days a week)",
    "_wick_notes": "Trip schedule, not opening hours — book online (closes 24 h before departure) or call for same day. Founded 1958 by Art Costa, now run by his son Robert. _latlon from Nominatim result 1; Nominatim also returned a second '4 Standish Street' point at 42.0530525,-70.1867182 — result 1 (nearer Commercial St) chosen, verify on map.",
-   "_source_pbg": "{\"name\":\"ART’S DUNE TOURS\",\"section\":\"Attractions, Experiences & Tours\",\"address\":\"4 Standish St.\",\"web\":\"artsdunetours.com\",\"phone\":\"508-487-1950\",\"ig\":\"@artsdunetours\"}"
+   "_source_pbg": "{\"name\":\"ART’S DUNE TOURS\",\"section\":\"Attractions, Experiences & Tours\",\"address\":\"4 Standish St.\",\"web\":\"artsdunetours.com\",\"phone\":\"508-487-1950\",\"ig\":\"@artsdunetours\"}",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.43 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0377",
@@ -2817,10 +2977,20 @@
    "address": "237 Commercial Street",
    "phone": "508-568-3400",
    "website": "https://www.capeandcoastbank.com/",
-   "logo": null,
+   "logo": "photos/cape-coast-bank/pbg-logo.png",
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/cape-coast-bank/pbg-01.jpg",
+     "what": "Cape & Coast Bank, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.53",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=53"
+    }
+   ],
    "amenities": [],
    "tags": [],
    "description": "Provincetown office of Cape & Coast Bank, the Hyannis-based community bank formerly named The Cooperative Bank of Cape Cod (rooted in 1921).",
@@ -2839,7 +3009,12 @@
    "_fetched": "2026-09-25",
    "_confidence": "LOW on location: the bank's own locations list (10 stores) has no Provincetown entry; address only from the guide.",
    "_wick_notes": "Bank site's store sitemap lists no Provincetown location. Chamber directory lists it at 307 Commercial St; Yelp calls it a 'Mortgage Office'. Likely a mortgage/lending office, not a full branch. Address 237 Commercial Unit 16 from guide only — verify.",
-   "_source_pbg": "{\"name\":\"CAPE & COAST BANK\",\"section\":\"Financial Services & Insurance\",\"address\":\"237 Commercial St. Unit 16\",\"web\":\"capeandcoastbank.com\",\"phone\":\"508-568-3400\",\"ig\":\"@capeandcoastbank\"}"
+   "_source_pbg": "{\"name\":\"CAPE & COAST BANK\",\"section\":\"Financial Services & Insurance\",\"address\":\"237 Commercial St. Unit 16\",\"web\":\"capeandcoastbank.com\",\"phone\":\"508-568-3400\",\"ig\":\"@capeandcoastbank\"}",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.2 (logo, cropped at 200 dpi from Jacob's copy)",
+    "pbg-guide-2026 p.53 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   {
    "id": "prov-lst-0447",
@@ -3068,15 +3243,25 @@
     "history",
     "views"
    ],
-   "description": "The granite tower on High Pole Hill that you can see from almost anywhere on the Outer Cape. At 252 feet it is the tallest all-granite structure in the United States, modelled on the Torre del Mangia in Siena, and it marks the Pilgrims' first landfall in 1620 and the signing of the Mayflower Compact in Provincetown Harbor. Visitors climb 116 steps and 60 ramps to the top.",
+   "description": "The granite tower on High Pole Hill that you can see from almost anywhere on the Outer Cape. At 252 feet it is the tallest all-granite structure in the United States, modelled on the Torre del Mangia in Siena, and it marks the Pilgrims' first landfall in 1620 and the signing of the Mayflower Compact in Provincetown Harbor. Visitors climb 116 steps and 60 ramps to the top. From its foundation to the top battlement it measures 252 feet 7½ inches; the base is 27 feet square and steps in at three sloped washes to a 23-foot shaft of granite courses 18 to 30 inches high, with the balcony at 204 feet 4 inches.",
    "history": [
     {
      "year": 1620,
      "event": "The Mayflower anchors in Provincetown Harbor; the Mayflower Compact is signed aboard."
     },
     {
+     "year": 1851,
+     "event": "The town hall is built on High Pole Hill, where the monument now stands; it stands until 1877.",
+     "source": "nrhp-89001148-provincetown-hd p.20"
+    },
+    {
      "year": 1907,
      "event": "President Theodore Roosevelt lays the cornerstone on August 20."
+    },
+    {
+     "year": 1907,
+     "event": "The tower is begun, built by private subscription as a memorial to the Mayflower's landing in Provincetown Harbor before Plymouth.",
+     "source": "nrhp-89001148-provincetown-hd p.20"
     },
     {
      "year": 1910,
@@ -3093,7 +3278,54 @@
    "_source_history": "https://en.wikipedia.org/wiki/Pilgrim_Monument",
    "_season": "The site gives 10 a.m.–4 p.m., seven days, with dated exceptions around it (\"Closed on September 26th. Early closure at 3 PM on October 2nd.\"), so these are the autumn 2026 hours. The site names no end date for them, so treat them as seasonal.",
    "_landmark": true,
-   "_anchor_note": "The tower itself: OSM way 164024699, the building Provincetown's setPiece claims (src/instances/provincetown.js). Split from prov-lst-0005 on 2026-09-27 (Jacob): the museum keeps msbf-427."
+   "_anchor_note": "The tower itself: OSM way 164024699, the building Provincetown's setPiece claims (src/instances/provincetown.js). Split from prov-lst-0005 on 2026-09-27 (Jacob): the museum keeps msbf-427.",
+   "_source_dimensions": "pilgrim-dossier-v1 p.1 (top battlement 252′7½″), §1 (base 27′0″; washes; the 23′ shaft), §4 (courses 18″–30″), §5 (balcony 204′4″) — D values, as src/setpieces/pilgrimMonument.js reads them",
+   "_source_history_nomination": "nrhp-89001148-provincetown-hd p.20",
+   "_fetched_nomination": "2026-10-26"
+  },
+  {
+   "_key": "research:king-hirams-lodge",
+   "name": "King Hiram's Lodge",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "2 Masonic Place",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [
+    "landmark",
+    "history"
+   ],
+   "description": "Provincetown's Masonic lodge meets in the two-storey Second Empire hall it built in 1865, where Masonic Place leaves Commercial Street. Its first home, from the 1790s, was a Federal-style building on Bradford Street with a schoolroom on the ground floor and the lodge room above.",
+   "history": [
+    {
+     "year": 1797,
+     "event": "The lodge's first building goes up at 119 Bradford Street: a classroom below, a Masonic hall above.",
+     "source": "nrhp-89001148-provincetown-hd p.21"
+    },
+    {
+     "year": 1865,
+     "event": "The lodge replaces it with a two-storey Second Empire hall at 222 Commercial Street, designed by Charles Couper.",
+     "source": "nrhp-89001148-provincetown-hd p.21; mhc-inventory PRO.273"
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "222 Commercial St"
+   },
+   "_anchor_via": "parcel address 222 COMMERCIAL ST (massgis-l3-parcels, handle M_308559_867441) → the building on that parcel; MHC PRO.273 records the lodge at the same address",
+   "_address_via": "2 Masonic Place is the address the brief gives (BRIEF-a-town-lists-everything §0, §5); no parcel carries it — the lodge stands on 222 Commercial St, at the head of Masonic Place",
+   "_source": "mhc-inventory PRO.273 (historic name, 1865, Second Empire, maker Couper, Charles; use Lodge)",
+   "_source_history": "nrhp-89001148-provincetown-hd p.21 (the 1797 Bradford Street building; the 1865 hall at 222 Commercial Street)",
+   "_fetched": "2026-10-26",
+   "_hours": "none written: no registered source publishes the lodge's hours"
   }
  ],
  "patches": {
@@ -3124,7 +3356,22 @@
     "address",
     "website"
    ],
-   "_wick_notes": "No fixed daily hours published."
+   "_wick_notes": "No fixed daily hours published.",
+   "photos": [
+    {
+     "url": "photos/adams-nest/pbg-01.jpg",
+     "what": "Adam's Nest at 379A Commercial Street",
+     "credit": "Provincetown Business Guild, 2026 Guide p.17",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=17"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.17 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n4905050990": {
    "_match_name": "Clove & Creek",
@@ -3411,7 +3658,22 @@
     "website",
     "hours"
    ],
-   "_season": "unstated"
+   "_season": "unstated",
+   "photos": [
+    {
+     "url": "photos/provincetown-bookshop/pbg-01.jpg",
+     "what": "The Provincetown Bookshop's sign at 229 Commercial Street",
+     "credit": "Provincetown Business Guild, 2026 Guide p.17",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=17"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.17 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n5676382382": {
    "_match_name": "Respoke",
@@ -3430,7 +3692,22 @@
     "address",
     "website"
    ],
-   "_wick_notes": "No hours published."
+   "_wick_notes": "No hours published.",
+   "photos": [
+    {
+     "url": "photos/respoke/pbg-01.jpg",
+     "what": "Respoke",
+     "credit": "Provincetown Business Guild, 2026 Guide p.44",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=44"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.44 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-215752170": {
    "_match_name": "Shor",
@@ -4014,7 +4291,22 @@
     "hours",
     "amenities"
    ],
-   "_season": "unstated"
+   "_season": "unstated",
+   "photos": [
+    {
+     "url": "photos/haven-center/pbg-01.jpg",
+     "what": "Haven Center, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.28",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=28"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.28 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n5631044225": {
    "_match_name": "Hennep",
@@ -5073,7 +5365,12 @@
     "hours"
    ],
    "_season": "unstated",
-   "_wick_notes": "Lobby hours; no drive-up at this branch."
+   "_wick_notes": "Lobby hours; no drive-up at this branch.",
+   "logo": "photos/cape-cod-5/pbg-logo.png",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.2 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n5652635478": {
    "_match_name": "Shui Spa",
@@ -5244,7 +5541,32 @@
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.62 (Lodging)",
    "_fetched": "2026-09-25",
    "_source": "https://theboatslip.com/",
-   "_source_secondary": "PBG 2026 guide, glossary (\"Tea … the popular afternoon party at the Boatslip that's been a part of Provincetown since the late 1960s\")"
+   "_source_secondary": "PBG 2026 guide, glossary (\"Tea … the popular afternoon party at the Boatslip that's been a part of Provincetown since the late 1960s\")",
+   "photos": [
+    {
+     "url": "photos/boatslip/pbg-01.jpg",
+     "what": "The Boatslip's Tea Dance, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.3",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=3"
+    },
+    {
+     "url": "photos/boatslip/pbg-02.jpg",
+     "what": "The Buoy Bar + Patio at the Boatslip, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.46",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=46"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.3 (photo, cropped at 200 dpi from Jacob's copy)",
+    "pbg-guide-2026 p.46 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-215752385": {
    "_match_name": "Brass Key",
@@ -5270,7 +5592,12 @@
     "description",
     "amenities"
    ],
-   "_wick_notes": "A search summary claims it opens in May and is closed January–March; not found on the property's own pages, not used."
+   "_wick_notes": "A search summary claims it opens in May and is closed January–March; not found on the property's own pages, not used.",
+   "logo": "photos/brass-key-guesthouse/pbg-logo.png",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.2 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n11463013057": {
    "_match_name": "Brasswood Inn",
@@ -5391,7 +5718,22 @@
     "address",
     "amenities"
    ],
-   "_wick_notes": "WRONG URL: listing website is carpediemguesthouse.com; the property's current site is elleryhotelptown.com (same phone 508-487-4242). Former name not stated on the site — likely the former Carpe Diem Guesthouse, cause not established. No season dates published."
+   "_wick_notes": "WRONG URL: listing website is carpediemguesthouse.com; the property's current site is elleryhotelptown.com (same phone 508-487-4242). Former name not stated on the site — likely the former Carpe Diem Guesthouse, cause not established. No season dates published.",
+   "photos": [
+    {
+     "url": "photos/ellery-hotel/pbg-01.jpg",
+     "what": "The Ellery Hotel's sign",
+     "credit": "Provincetown Business Guild, 2026 Guide p.65",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=65"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.65 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-164024920": {
    "_match_name": "Gifford House Inn",
@@ -5441,7 +5783,12 @@
     "description",
     "amenities"
    ],
-   "_wick_notes": "Site: 'During the shoulder season, our dining outlets and pool may or may not be open, while the front desk schedule may also be subject to changes.' Shuttle '1:00pm to 8:00pm daily (operating Friday and Saturday only from September 14 - October 15)'."
+   "_wick_notes": "Site: 'During the shoulder season, our dining outlets and pool may or may not be open, while the front desk schedule may also be subject to changes.' Shuttle '1:00pm to 8:00pm daily (operating Friday and Saturday only from September 14 - October 15)'.",
+   "logo": "photos/harbor-hotel/pbg-logo.png",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.2 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-215752482": {
    "_match_name": "Mercury Hotel",
@@ -5462,7 +5809,22 @@
    "_wick_fields": [
     "amenities"
    ],
-   "_wick_notes": "Category in listing is bed-and-breakfast; the property calls itself a hotel and breakfast isn't mentioned — consider hospitality/hotels. No season dates published."
+   "_wick_notes": "Category in listing is bed-and-breakfast; the property calls itself a hotel and breakfast isn't mentioned — consider hospitality/hotels. No season dates published.",
+   "photos": [
+    {
+     "url": "photos/mercury-hotel/pbg-01.jpg",
+     "what": "The Mercury Hotel's sign",
+     "credit": "Provincetown Business Guild, 2026 Guide p.65",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=65"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.65 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-170629405": {
    "_match_name": "Provincetown Inn",
@@ -5603,7 +5965,22 @@
     "name",
     "amenities"
    ],
-   "_wick_notes": "No season dates published. Listing lacked address/website; supplied."
+   "_wick_notes": "No season dates published. Listing lacked address/website; supplied.",
+   "photos": [
+    {
+     "url": "photos/waterford-inn/pbg-01.jpg",
+     "what": "The Waterford Inn",
+     "credit": "Provincetown Business Guild, 2026 Guide p.65",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=65"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.65 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-215753947": {
    "_match_name": "Seaglass Inn",
@@ -6155,6 +6532,11 @@
    "description": "The town's seat of government, dedicated in 1886: a Romanesque and Queen Anne building with a clock tower at the center of Commercial Street. Upstairs, its auditorium has been a roller rink, a basketball court and a dance hall, and it still hosts town meeting and performances. A restoration of more than $6 million was finished in 2010.",
    "history": [
     {
+     "year": 1885,
+     "event": "Built to replace the town hall on High Pole Hill, on a lot given to the town and cleared of its houses; John A. Fox of Boston designed it in the Queen Anne style.",
+     "source": "nrhp-89001148-provincetown-hd p.18"
+    },
+    {
      "year": 1886,
      "event": "Dedicated on August 25, after construction began in September 1885 at a cost of $50,400."
     },
@@ -6215,7 +6597,9 @@
     "hours"
    ],
    "_season": "unstated (Administration office hours: 'Monday through Thursday 9:00 am to 5:00 pm', 'Friday 8:00 am to 12:00 noon')",
-   "_wick_notes": "Individual departments keep different hours (e.g. Licensing Mon-Thu 8:30-4:30, Fri 8:30-11:45). Category community/organizations is acceptable; historic/landmarks would also fit."
+   "_wick_notes": "Individual departments keep different hours (e.g. Licensing Mon-Thu 8:30-4:30, Fri 8:30-11:45). Category community/organizations is acceptable; historic/landmarks would also fit.",
+   "_source_history_nomination": "nrhp-89001148-provincetown-hd p.18",
+   "_fetched_nomination": "2026-10-26"
   },
   "osm-n4905062844": {
    "_display_id_at_research": "prov-lst-0226",
@@ -6233,79 +6617,6 @@
    "_source": "https://ptown.org/wp-content/uploads/2026/06/2026-PBG-MAP.pdf (\"Founded in 1978 … over 300 member businesses\")",
    "_was_name": "Provicnetown Business Guild (OSM misspelling)",
    "_note": "⚠️ A second base listing, osm-n5691773901 \"Provincetown Business Guild\" at 3 Freeman St., is probably a stale duplicate. The guide gives 115 Bradford St. It is left in place for the operator to drop."
-  },
-  "osm-170530742": {
-   "_match_name": "Provincetown Public Library",
-   "_display_id_at_research": "prov-lst-0385",
-   "address": "356 Commercial Street",
-   "phone": "508-487-7094",
-   "website": "https://provincetownlibrary.org/",
-   "description": "The town library, housed in a steepled 1860 former Methodist church in the center of Commercial Street. Its best-known feature is a half-scale replica of the fishing schooner Rose Dorothea, which fills the upper floor and was built when the building was the town's Heritage Museum. The library is open seven days a week with evening hours midweek.",
-   "hours": {
-    "monday": {
-     "open": "10:00",
-     "close": "17:00"
-    },
-    "tuesday": {
-     "open": "10:00",
-     "close": "20:00"
-    },
-    "wednesday": {
-     "open": "10:00",
-     "close": "20:00"
-    },
-    "thursday": {
-     "open": "10:00",
-     "close": "20:00"
-    },
-    "friday": {
-     "open": "10:00",
-     "close": "17:00"
-    },
-    "saturday": {
-     "open": "10:00",
-     "close": "17:00"
-    },
-    "sunday": {
-     "open": "13:00",
-     "close": "17:00"
-    }
-   },
-   "history": [
-    {
-     "year": 1860,
-     "event": "Built as the Center Methodist Episcopal Church, seating about 900."
-    },
-    {
-     "year": 1958,
-     "event": "Walter P. Chrysler Jr. buys the building and opens the Chrysler Art Museum."
-    },
-    {
-     "year": 1976,
-     "event": "Reopens on July 4 as the town-owned Provincetown Heritage Museum, after National Register listing in 1975."
-    },
-    {
-     "year": 1977,
-     "event": "Work begins on the half-scale replica of the schooner Rose Dorothea inside the building."
-    },
-    {
-     "year": 2005,
-     "event": "The Provincetown Public Library moves in on April 28, keeping the Rose Dorothea as its centerpiece."
-    }
-   ],
-   "_wick_source": "https://provincetownlibrary.org/",
-   "_wick_fetched": "2026-09-25",
-   "_wick_confidence": "Hours, phone and address from the library's homepage; history from Wikipedia (secondary).",
-   "_wick_fields": [
-    "address",
-    "phone",
-    "website",
-    "description",
-    "hours",
-    "history"
-   ],
-   "_season": "unstated",
-   "_wick_notes": "'Doors are locked 15 minutes before closing.'"
   },
   "osm-215752660": {
    "_match_name": "Veterans Memorial Community Center",
@@ -6423,7 +6734,24 @@
     "hours"
    ],
    "_season": "unstated",
-   "_wick_notes": "Renamed from Bayside Betsy's to Bay Cafe under new ownership; listing name is stale."
+   "_wick_notes": "Renamed from Bayside Betsy's to Bay Cafe under new ownership; listing name is stale.",
+   "photos": [
+    {
+     "url": "photos/bay-cafe/pbg-01.jpg",
+     "what": "Bay Cafe's harbor deck at 177 Commercial Street",
+     "credit": "Provincetown Business Guild, 2026 Guide p.37",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=37"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.37 (photo, cropped at 200 dpi from Jacob's copy)",
+    "pbg-guide-2026 p.37 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26",
+   "logo": "photos/bay-cafe/pbg-logo.png"
   },
   "osm-n4905062000": {
    "_match_name": "Aqua Bar",
@@ -6533,7 +6861,12 @@
     "history",
     "amenities"
    ],
-   "_wick_notes": "No hours published for any venue. Folds the guide's Beach Club, Paramount Club, Vault, Wave Bar and Cabaret rows. Guide's 'The Beach Club' is branded 'TRYST Beach Club' on the site. Listing is named 'Crown & Anchor Box Office'; renamed to the complex. Tryst acquisition date not stated on the site. 1860s entry given year 1860 as decade marker."
+   "_wick_notes": "No hours published for any venue. Folds the guide's Beach Club, Paramount Club, Vault, Wave Bar and Cabaret rows. Guide's 'The Beach Club' is branded 'TRYST Beach Club' on the site. Listing is named 'Crown & Anchor Box Office'; renamed to the complex. Tryst acquisition date not stated on the site. 1860s entry given year 1860 as decade marker.",
+   "logo": "photos/crown-anchor/pbg-logo.png",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.2 (logo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n4905048996": {
    "_match_name": "Harbor Lounge",
@@ -6575,7 +6908,22 @@
     "description",
     "amenities"
    ],
-   "_wick_notes": "Dinner 'starts at 5:31 PM nightly' with no stated close, so hours left out. Inn and restaurant are one property; the lodging beat may hold the inn."
+   "_wick_notes": "Dinner 'starts at 5:31 PM nightly' with no stated close, so hours left out. Inn and restaurant are one property; the lodging beat may hold the inn.",
+   "photos": [
+    {
+     "url": "photos/red-inn/pbg-01.jpg",
+     "what": "The Red Inn and its sign",
+     "credit": "Provincetown Business Guild, 2026 Guide p.38",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=38"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.38 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n1963938662": {
    "_match_name": "Tin Pan Alley",
@@ -6623,7 +6971,22 @@
     "description",
     "history"
    ],
-   "_wick_notes": "Showtimes line 508-413-9369. Hours not applicable."
+   "_wick_notes": "Showtimes line 508-413-9369. Hours not applicable.",
+   "photos": [
+    {
+     "url": "photos/waters-edge-cinema/pbg-01.jpg",
+     "what": "Waters Edge Cinema, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.45",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=45"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.45 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   },
   "osm-n4904289254": {
    "_match_name": "Brewhouse 1620",
@@ -6711,7 +7074,24 @@
     "hours"
    ],
    "_season": "unstated (homepage headed 'Open for our 90th Season')",
-   "_wick_notes": "Listing category shopping/retail is wrong — it is a bakery (dining/desserts). Website missing from listing. Malasadas mention from secondary sources."
+   "_wick_notes": "Listing category shopping/retail is wrong — it is a bakery (dining/desserts). Website missing from listing. Malasadas mention from secondary sources.",
+   "logo": "photos/portuguese-bakery/pbg-logo.png",
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.38 (logo, cropped at 200 dpi from Jacob's copy)",
+    "pbg-guide-2026 p.43 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26",
+   "photos": [
+    {
+     "url": "photos/portuguese-bakery/pbg-01.jpg",
+     "what": "The Portuguese Bakery's delivery truck, historic photograph",
+     "credit": "Provincetown Business Guild, 2026 Guide p.43",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=43"
+    }
+   ]
   },
   "osm-170523644": {
    "_match_name": "Stop & Shop",
@@ -6920,7 +7300,40 @@
     "hours"
    ],
    "_season": "unstated",
-   "_wick_notes": "AMBIG resolved: guide's 221 Commercial = osm-n11463013061 (unaddressed OSM node at x=-142.87,z=235.05, on Commercial near 221). The other node osm-n5642785019 @ 56 Shank Painter Rd is NOT listed on the bank's site — its locations are 221 Commercial (main) and 94 Harry Kemp Way (branch, 508-487-6053); 56 Shank Painter may be a stale/ATM point — verify. Drive-up (main office): Mon–Thu 8:30–4:30, Fri 8:30–6:00, Sat 8:30–12:00. Input ref was AMBIG:osm-n11463013061,osm-n5642785019."
+   "_wick_notes": "AMBIG resolved: guide's 221 Commercial = osm-n11463013061 (unaddressed OSM node at x=-142.87,z=235.05, on Commercial near 221). The other node osm-n5642785019 @ 56 Shank Painter Rd is NOT listed on the bank's site — its locations are 221 Commercial (main) and 94 Harry Kemp Way (branch, 508-487-6053); 56 Shank Painter may be a stale/ATM point — verify. Drive-up (main office): Mon–Thu 8:30–4:30, Fri 8:30–6:00, Sat 8:30–12:00. Input ref was AMBIG:osm-n11463013061,osm-n5642785019.",
+   "photos": [
+    {
+     "url": "photos/seamens-bank/pbg-01.jpg",
+     "what": "Seamen's Bank, historic photograph",
+     "credit": "Provincetown Business Guild, 2026 Guide p.42",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=42"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.42 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
+  },
+  "osm-215751724": {
+   "_match_name": "Outer Cape Health Services",
+   "photos": [
+    {
+     "url": "photos/outer-cape-health-services/pbg-01.jpg",
+     "what": "testNtreat, Outer Cape Health Services' program at 49 Harry Kemp Way, from its PBG 2026 Guide advertisement",
+     "credit": "Provincetown Business Guild, 2026 Guide p.33",
+     "credit_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf",
+     "license": null,
+     "rights": "Reproduced from the Provincetown Business Guild's 2026 Guide on Jacob's authority (2026-10-26); taken down on any request (references/registry.json pbg-guide-2026)",
+     "source_url": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf#page=33"
+    }
+   ],
+   "_source_pbg_images": [
+    "pbg-guide-2026 p.33 (photo, cropped at 200 dpi from Jacob's copy)"
+   ],
+   "_pbg_images_fetched": "2026-10-26"
   }
  }
 }

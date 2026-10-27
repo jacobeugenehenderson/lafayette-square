@@ -32,7 +32,7 @@ export default {
     },
     // ⭐ What the columns HOLD, read off the service (2026-10-11, Cairn): NatHistDist, LocalHistDist and CertLocalHistDist
     // are each esriFieldTypeSmallInteger with no domain — a district CODE, 0 = none. Not a name, so the parcel carries
-    // membership and no name; the town's own `historicDistricts` declaration names it. One column per designation, as
+    // membership and no name (nothing names it: the declared-district path is gone, 2026-10-26). One column per designation, as
     // scripts/03-fetch-stl-parcels.py read them, so the button keeps certified_local.
     "historicDistrictField": { "holds": "code", "columns": { "national": "NatHistDist", "local": "LocalHistDist", "certified_local": "CertLocalHistDist" } },
     "constants": {

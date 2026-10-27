@@ -43,7 +43,7 @@ export default {
       jurisdiction: 'town',
       file: 'ma_parcels.json',
       attribution: 'MassGIS (Bureau of Geographic Information) — Massachusetts Property Tax Parcels (Level 3)',
-      terms: {"read": "2026-10-19", "says": "not an authoritative source", "note": "licenseInfo is a disclaimer only; the mass.gov parcels page returned 403; terms not established"},
+      registry: 'massgis-l3-parcels',   // terms: references/registry.json (checks/claims-references-are-sound.mjs)
       endpoint: 'https://services1.arcgis.com/hGdibHYSPO59RG1h/ArcGIS/rest/services/Massachusetts_Property_Tax_Parcels/FeatureServer/0/query',
       select: { where: 'TOWN_ID = {town_id}' },
       land_use_code_format: 'ma-dor-numeric',
@@ -58,5 +58,44 @@ export default {
     },
   },
   addressPoints: {},
+  // ⭐ HISTORY WELLS — facts about a BUILDING, read per record and joined by geometry and address (bake-content.js
+  // #joinHistory). ⛔ Never a district layer: MHCINV_POLY (areas) is not read; membership is Extent's (Jacob, 2026-10-21).
+  history: {
+    // The MHC inventory (MACRIS), as MassGIS distributes it: a file geodatabase, read locally with GDAL
+    // (cartograph/fetch-history.mjs). The town selects itself by TOWN_NAME, as MHC spells it.
+    'mhc-inventory': {
+      protocol: 'file',
+      reader: 'mhc-gdb',
+      registry: 'mhc-inventory',
+      file: 'mhc_inventory.json',
+      gdb: { zip: 'MHC_Inventory_GDB.zip', dataset: 'MHC_Inventory.gdb', layer: 'MHCINV_PT',
+             download: 'https://www.arcgis.com/home/item.html?id=e27a15d822ef4b10bb4dd6eb631ceb3c' },
+      select: { where: "TOWN_NAME = '{town_name}'" },
+      attribution: 'Massachusetts Historical Commission, MACRIS inventory (via MassGIS)',
+    },
+  },
   vocabularies: { 'ma-dor-numeric': readMaDorCode },
+  // ⭐ HOW THIS STATE'S HISTORY RECORDS READ (bake-content.js#historyFacts takes all of it from here; ⛔ none of it is kit
+  // code, and a town whose state has no `history_vocabulary` is refused by name when it declares a records well).
+  history_vocabulary: {
+    // MHC's DESIGNATIO codes, as far as a source establishes them. The layer's own legend (MHC_Historic_Inventory.lyr and
+    // the MassGIS item's description) names LHD, PR and the National Register; NRIND / NRDIS are the Register's two ways
+    // of listing — individually, and within a listed group — and agree with nomination 89001148 p.40, which names the
+    // individually listed buildings (the Library, the Universalist and Center Methodist churches: NRIND in the data).
+    // ⛔ A code not here (NRDOE, NRTRA, …) is reported by name and writes nothing: its meaning is not established.
+    designations: {
+      NRIND: 'Individually listed on the National Register of Historic Places',
+      NRDIS: 'Listed on the National Register of Historic Places, as one of a group of buildings nominated together',
+      LHD: 'Locally designated (Local Historic District)',
+      PR: 'A preservation restriction is recorded',
+    },
+    // the codes that mean the building IS on the National Register (the card's "National Register" status)
+    listed: ['NRIND', 'NRDIS'],
+    // MHC's TYPE values for a resource that IS its footprint (a house; a lighthouse, a wharf, the Monument). An Object (a
+    // statue) or a Burial Ground on the same lot gives the building no facts. ⛔ A record with no TYPE names nothing and is
+    // counted by id — never defaulted to a building.
+    names_footprint: ['Building', 'Structure'],
+    // ARCHITECTU values that are placeholders, not styles (read off PTown's records, 2026-10-26)
+    style_placeholders: ['No style', 'Not researched', 'Other'],
+  },
 }
