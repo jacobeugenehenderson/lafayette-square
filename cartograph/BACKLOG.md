@@ -185,10 +185,6 @@ Drawn-twice HPDM 21.7→11.7 km; some rows grew, being split by commit before me
 integration's slab lags. **The Wall test (Zob, 2026-10-25, on Jacob's "that is what the
 datawall is for"):** ① is not the on-screen source (block↔ink near-miss is the bb frame edge, clipped before the stack). The bake's
 Wall is the `protoShapeTiles` handoff inside ONE buildTileGround call, not shape.json. Past it (CORRECTED by Zob's premise pass the same day): the asphalt's outline and corners come from the
-**THE CUT-SEPARATELY CENSUS** (the residual doubling the draw-whole / stamp-once-last redesign answers; Jacob 2026-10-25; Zob's read on
-`zob/drawn-twice-seams` @ 27953ff9, `scratch/zob-2026-10-25/seams-read-PAUSED.md`). One line per site: town · (x, z) · rows · metres · source.
-- HPDM (528.113, 1231.654) sidewalk one-item + vs face:underived/highway/asphalt, 78 m · (909.004, −825.328) sidewalk one-item, 31 m (Kerf, 8d14f92d)
-- PTown (A) rows: sidewalk/sidewalk, treelawn:verge, curb/treelawn:commercial; sites (−2150.023, −1787.495), (−660.721, 128.275) (Kerf, dad7a47e)
 sealed tiles (② ∩ the tile), so NO street-scale corner is refigured. What is re-decided is OWNERSHIP inside ①'s ε ink strip:
 `inkByOwner` (class) and `inkPiecesByOwner` (owner, shape.json's frozen ink) re-stroke ①'s edges as quads and resolve junctions
 by overlap, not from ①'s labels + frozen `nodes` → `docs/briefs/BRIEF-the-ink-is-owned-by-its-labels.md` · the centre stripe
@@ -196,6 +192,11 @@ buffers ①'s own input polylines (pour-sealed, chain-indexed) past the Wall →
 no geometry (read). Asphalt/curb doubling: both lines are tile-side; cause not established (HPDM site read pending). Section is clean. The two FILL causes are Section-internal, not breaches. Bake-look silent-carry refusal queued.
 **Seats:** Boz reads docs in full and states readings; Zob checks code against them; Ward holds the player and presses only on Jacob's
 word in Ward's window. One heavy run at a time. Hashes copied from git, never typed.
+
+**THE CUT-SEPARATELY CENSUS** (the residual doubling the draw-whole / stamp-once-last redesign answers; Jacob 2026-10-25; Zob's read on
+`zob/drawn-twice-seams` @ 27953ff9, `scratch/zob-2026-10-25/seams-read-PAUSED.md`). One line per site: town · (x, z) · rows · metres · source.
+- HPDM (528.113, 1231.654) sidewalk one-item + vs face:underived/highway/asphalt, 78 m · (909.004, −825.328) sidewalk one-item, 31 m (Kerf, 8d14f92d)
+- PTown (A) rows: sidewalk/sidewalk, treelawn:verge, curb/treelawn:commercial; sites (−2150.023, −1787.495), (−660.721, 128.275) (Kerf, dad7a47e)
 
 
 > Jacob, 2026-10-20: *"LS, HPDM, PTown, and Huron are absolutely more presently important, and getting the Ward in solid
