@@ -97,3 +97,20 @@ export function waterFace(map, who) {
   if (!Array.isArray(r)) throw new Error(`[${who}] ⛔ ①'s waterRings is not a list of rings`)
   return r.filter(ring => Array.isArray(ring) && ring.length >= 3)
 }
+
+/**
+ * ①'s water face as HOLED polygons, [{ outer, holes }]: each outer (positive signed area) with the holes (negative) that lie
+ * inside it. ⭐ An island is a hole (BRIEF-the-shore-is-one-line §3 step 5), so a reader that fills each ring on its own
+ * paints the island as water: every filled draw takes these, never the rings one by one. ⛔ A hole inside no outer refuses.
+ */
+export function faceAsPolygons(rings, who) {
+  const area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+  const inRing = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  const outers = rings.filter(r => area(r) > 0).map(r => ({ outer: r, holes: [], a: area(r) })).sort((p, q) => p.a - q.a)
+  for (const h of rings.filter(r => area(r) < 0)) {
+    const o = outers.find(o => inRing(h[0][0], h[0][1], o.outer))              // the smallest outer holding it
+    if (!o) throw new Error(`[${who}] ⛔ ①'s water face has a hole inside no water ring (at ${h[0].map(Math.round).join(', ')})`)
+    o.holes.push(h)
+  }
+  return outers.map(({ outer, holes }) => ({ outer, holes }))
+}

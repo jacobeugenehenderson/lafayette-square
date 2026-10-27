@@ -8,10 +8,14 @@
 //   2. landward, no node is ever LOWERED (a bluff above HIGH stands);
 //   3. on a tidal town, the seaward ramp spans at least two cells between LOW and HIGH;
 //   4. a bed that does not fall seaward REFUSES by name;
+//   7. ISLANDS (a hole in ①'s water, Jacob 2026-10-26): around an island in open water the field meets HIGH on its shore
+//      and no island node is lowered; an island in a narrow arm, with no bed of its own two to four cells out, takes the
+//      slope of the water holding it, RECORDED (slopeFrom); an island inside no water ring REFUSES;
 //   5. per town whose terrain.json carries `stamp`: the field along ①'s coast (from map.json), sampled where the stamp
 //      ran, meets HIGH; the largest miss is printed against the field's cell. NOT CHECKED until a terrain carries it.
 // MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
-// the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench).
+// the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench) · the mask
+// filled per ring (an island read as water) · the island's borrowed slope dropped (it refuses).
 //
 //   node checks/claims-the-shore-meets-the-field-at-high.mjs
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -115,6 +119,34 @@ console.log('── 6. a street deck is held at its land root, and the stamp mee
   t = false
   try { deckHeights(mk(), W, H, B, [{ ring: deck, streets: ['low'] }], m, lake(1), 0.10) } catch (e) { t = /below HIGH/.test(e.message) }
   say(t, 'a deck whose root stands below HIGH REFUSES')
+}
+console.log('── 7. islands: the stamp runs round each one')
+{
+  const sa = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
+  const wnd = (r, sg) => Math.sign(sa(r)) === sg ? r : [...r].reverse()
+  // a: open water south of z = 60, an island 40 m square at x 80.3…120.3, z 110.3…150.3; its beach meets HIGH at its line
+  // (as a lidar trace's does) and rises inland
+  const outer = wnd([[0, 60], [200, 60], [200, 200], [0, 200]], 1), isl = wnd([[80.3, 110.3], [120.3, 110.3], [120.3, 150.3], [80.3, 150.3]], -1)
+  const fc = [outer, isl], m = maskOf(fc, W, H, B)
+  const f = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i, x = i * 5, z = j * 5
+    f[k] = m[k] ? -0.1 - 0.03 * (z - 60) : z < 60 ? 0.02 * (60 - z) : 0.02 * Math.min(x - 80.3, 120.3 - x, z - 110.3, 150.3 - z) }
+  const before = Float32Array.from(f), r = stampCoast(f, W, H, B, fc, bb, m, lake(0))
+  let worst = 0
+  for (let u = 10; u <= 30; u += 0.5) for (const [x, z] of [[80.3 + u, 110.3], [80.3 + u, 150.3], [80.3, 110.3 + u], [120.3, 110.3 + u]]) worst = Math.max(worst, Math.abs(bilinear(f, W, H, B, x, z)))
+  let lowered = 0; for (let k = 0; k < W * H; k++) if (!m[k] && f[k] < before[k] - 1e-9) lowered++
+  say(r.islands === 1 && worst < 1e-6 && lowered === 0, `round an island in open water |field − HIGH| ≤ ${worst.toExponential(2)} m on its shore (two cells clear of its corners), ${lowered} island node(s) lowered (slope ${r.slopePerRing[1]}, its own)`)
+  // b: an island in a 20 m arm of the water, its bed all within two cells of a shore: the holder's slope, recorded
+  const arm = wnd([[0, 140], [90, 140], [90, 40], [110, 40], [110, 140], [200, 140], [200, 200], [0, 200]], 1), small = wnd([[97.8, 80], [102.8, 80], [102.8, 85], [97.8, 85]], -1)
+  const fb = [arm, small], mb = maskOf(fb, W, H, B)
+  const g = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i, x = i * 5, z = j * 5
+    g[k] = mb[k] ? -0.1 - 0.03 * Math.max(0, z - 140) - 0.02 * Math.min(Math.abs(x - 90), Math.abs(x - 110)) : 0.3 }
+  let rb = null, why = ''
+  try { rb = stampCoast(g, W, H, B, fb, bb, mb, lake(0)) } catch (e) { why = e.message.split('\n')[0] }
+  say(rb && rb.slopeFrom[1] === 0 && rb.slopePerRing[1] === rb.slopePerRing[0], `an island with no bed of its own takes its holder's slope, recorded (slopeFrom ${rb ? JSON.stringify(rb.slopeFrom) : why})`)
+  // c: an island inside no water ring refuses
+  let t = false
+  try { stampCoast(field(), W, H, B, [...face, wnd([[10, 10], [20, 10], [20, 20], [10, 20]], -1)], bb, mask, lake(0)) } catch (e) { t = /inside no water ring/.test(e.message) }
+  say(t, 'an island inside no water ring REFUSES')
 }
 console.log('── 5. each town whose terrain carries the stamp')
 let towns = 0

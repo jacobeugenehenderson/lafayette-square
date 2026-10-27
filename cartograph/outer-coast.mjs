@@ -76,7 +76,8 @@ function backAlong(ring, i, dir, len, isEdge) {
 }
 
 /**
- * rings  — [[[x, z], …], …] water rings inside the fetched square (coastRings().rings)
+ * rings  — [[[x, z], …], …] ①'s water face inside the fetched square: outers wound positive, ISLANDS (holes) negative.
+ *          ⭐ A hole is cut out of the water past the disc, never filled as water (BRIEF-the-shore-is-one-line §3 step 5).
  * bb     — { x0, x1, z0, z1 } the fetched square, town metres
  * center — [x, z]; R — the town's radius
  * Returns { polygons: [{ outer, holes, ring }], feathers: [{ ring, strip }], exits, rings, refused, fadeOuter }.
@@ -88,9 +89,11 @@ export function outerCoast({ rings, bb, center, R, rimSegments = 512 }) {
   const { fadeOuter } = horizonFor(R)
   const FAR = fadeOuter * 2 + Math.hypot(bb.x1 - bb.x0, bb.z1 - bb.z0)   // past the horizon from anywhere in the square
   const isEdge = onEdge(bb, 0.5)
-  const exits = [], refused = [], ringInfo = [], subjects = [], feathers = []
+  const exits = [], refused = [], ringInfo = [], subjects = [], feathers = [], holes = []
+  const signed = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
   rings.forEach((ring, ri) => {
     const n = ring.length
+    if (signed(ring) < 0) { ringInfo.push({ ring: ri, vertices: n, hole: true }); holes.push(toC([...ring].reverse())); return }   // an island
     const edge = ring.map(isEdge)
     const reaches = edge.some(Boolean)
     ringInfo.push({ ring: ri, vertices: n, reachesSquare: reaches, closed: !reaches })
@@ -161,6 +164,7 @@ export function outerCoast({ rings, bb, center, R, rimSegments = 512 }) {
     const cl2 = new C.Clipper()
     cl2.AddPaths(inFade, C.PolyType.ptSubject, true)
     cl2.AddPath(disc, C.PolyType.ptClip, true)
+    cl2.AddPaths(holes, C.PolyType.ptClip, true)                     // islands, wound positive: land, not water
     const tree = new C.PolyTree()
     cl2.Execute(C.ClipType.ctDifference, tree, C.PolyFillType.pftNonZero, C.PolyFillType.pftNonZero)
     const walk = (node) => { for (const ch of node.Childs()) {

@@ -11,7 +11,9 @@
 //   C. THE WINDING. bake-coast#wound gives outers positive and holes negative signed area, and in every town's
 //      coast.json each outer is positive and each hole negative (a nonzero fill in the mint then reads a hole as a hole).
 //   D. PER TOWN WITH A coast.json: the deck footprints hold no land (deck ∖ water ≤ the trace's pixel × the deck's
-//      perimeter), and where map.json was poured from this coast, ①'s waterRings ARE coast.json's rings.
+//      perimeter), and where map.json was poured from this coast, ①'s waterRings ARE coast.json's rings; and THE ISLAND
+//      FLOOR (Jacob 2026-10-26): it is one terrain cell's area (elevationSources.mjs TERRAIN_STEP_M², read, never typed),
+//      every hole kept is at least that, and each one dropped is recorded by size and place.
 //   E. THE DATUM DOES NOT DEPEND ON THE LINE (Boz's ruling (B)): bake-terrain takes y = 0 from coast.json `flattened`,
 //      which bake-coast#flattenedWater finds on the flood sheet before any line is traced (decks excluded), and keeps no
 //      histogram of its own; so moving the coast by any offset cannot move y = 0.
@@ -20,7 +22,7 @@
 //   node checks/claims-the-coast-is-the-lidars.mjs [--scene=<id> …]
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
-// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive.
+// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -28,6 +30,7 @@ import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
 import { readCoast, COAST_FILE } from '../cartograph/coastFile.mjs'
+import { TERRAIN_STEP_M } from '../cartograph/elevationSources.mjs'
 import { markSheet, floodFromEdge, wound, flattenedWater } from '../cartograph/bake-coast.mjs'
 import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
@@ -128,6 +131,9 @@ for (const scene of scenes) {
   if (!doc.coast) continue
   const outersOk = doc.water.every(b => signed(b.outer) > 0), holesOk = doc.water.every(b => b.holes.every(h => signed(h) < 0))
   say(outersOk && holesOk, `${scene}: every water outer is positive and every hole negative`)
+  const holes = doc.water.flatMap(b => b.holes), small = holes.filter(h => Math.abs(signed(h)) < TERRAIN_STEP_M ** 2)
+  say(doc.islandFloorM2 === TERRAIN_STEP_M ** 2 && Array.isArray(doc.islandsDropped) && !small.length,
+    `${scene}: the island floor is one terrain cell (${doc.islandFloorM2} m²) — ${holes.length} island(s) kept, ${small.length} under it; ${doc.islandsDropped?.length ?? 'NOT RECORDED'} dropped, each named`)
   const osm = JSON.parse(readFileSync(join(dir, 'raw/osm.json'), 'utf8'))
   const decks = deckFootprints(osm.ground)
   if (decks.paths.length) {

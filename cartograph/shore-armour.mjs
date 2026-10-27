@@ -205,7 +205,7 @@ export function shoreArmourFor(ground) {
  * ⭐ THE DRAWN WATER, as a point test — the SAME rings the ground bake paints as the water
  * face (①'s, coastFile.mjs#waterFace, which `bake-ground.js` pushes as `water` and `bed`
  * and whose complement ① carves as land). Inside ANY ring is water, because that is what the
- * slab draws: each ring is its own filled face.
+ * slab draws: the face with its holes (islands).
  * @param rings  [[[x,z], …], …]
  * @returns (x, z) => boolean
  */
@@ -215,17 +215,18 @@ export function drawnWaterTest(rings) {
     for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1] }
     return { r, x0, x1, z0, z1 }
   })
+  // ⭐ EVEN-ODD over every ring: an island is a hole in the water (BRIEF-the-shore-is-one-line §3 step 5), so a point inside
+  // a hole is land, not water.
   return function inWater(x, z) {
+    let inside = false
     for (const { r, x0, x1, z0, z1 } of R) {
       if (x < x0 || x > x1 || z < z0 || z > z1) continue
-      let inside = false
       for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
         if ((r[i][1] > z) !== (r[j][1] > z) &&
             x < (r[j][0] - r[i][0]) * (z - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) inside = !inside
       }
-      if (inside) return true
     }
-    return false
+    return inside
   }
 }
 

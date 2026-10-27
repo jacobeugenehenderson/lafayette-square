@@ -55,11 +55,24 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
     if (!mask[k] || best.has(k)) continue
     // the nearest stamped node within four cells tells this node's ring and distance
     let near = null
-    for (let r = 2; r <= 4 && !near; r++) for (let dj = -r; dj <= r && !near; dj++) for (let di = -r; di <= r; di++) {
-      const b2 = best.get((j + dj) * width + (i + di)); if (b2 && b2.crossed && j + dj >= 0 && i + di >= 0 && i + di < width && j + dj < height) { near = { ri: b2.ri, dist: Math.hypot(di * sx, dj * sz) }; break } }
+    for (let r = 2; r <= 4 && !near; r++) for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
+      if (j + dj < 0 || i + di < 0 || i + di >= width || j + dj >= height) continue
+      const b2 = best.get((j + dj) * width + (i + di)), dist = Math.hypot(di * sx, dj * sz)
+      if (b2 && b2.crossed && (!near || dist < near.dist)) near = { ri: b2.ri, dist } }
     if (near && near.dist > 2 * cell) slope[near.ri].push((L.highAt(X(i), Z(j)) - normalized[k]) / near.dist)
   }
+  // ⭐ AN ISLAND (a hole, wound negative) is a shore of the water that holds it. Its own bed gives its slope; an island with
+  // no bed of its own two to four cells out (a small one, its water within reach of the other bank's stamp) takes the
+  // slope of the water ring that holds it: RECORDED per ring (slopeFrom), never silent. ⛔ An OUTER with none still refuses.
+  const signed = (r) => r.reduce((t, p, m) => { const q = r[(m + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
+  const inRingP = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  const holder = face.map((r, ri) => { if (signed(r) >= 0) return null
+    const outers = face.map((o, oi) => [o, oi, signed(o)]).filter(([o, , a]) => a > 0 && inRingP(r[0][0], r[0][1], o)).sort((p, q) => p[2] - q[2])
+    if (!outers.length) throw new Error(`⛔ the stamp: ①'s coast ring ${ri} is an island inside no water ring (at ${r[0].map(Math.round).join(', ')})`)
+    return outers[0][1] })
+  const slopeFrom = face.map(() => null)
   const sOf = slope.map((v, ri) => {
+    if (!v.length && holder[ri] !== null) { slopeFrom[ri] = holder[ri]; return null }   // resolved from its holder below
     if (!v.length) {                                         // ⛔ never a bare skip: an unstamped shore is the raw contour, the defect
       const len = face[ri].reduce((t, p, m) => { const q = face[ri][(m + 1) % face[ri].length]; return sameSide(p, q) ? t : t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
       throw new Error(`⛔ the stamp: ①'s coast ring ${ri} (${len.toFixed(0)} m of shore in the drawing) has no bed two to four cells seaward to take a slope from — its shore cannot be stamped`)
@@ -71,6 +84,8 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
     if (!(s > 0)) throw new Error(`⛔ the stamp: ①'s coast ring ${ri} has a bed that does not fall seaward (median gradient ${v[v.length >> 1].toFixed(4)} over ${v.length} node(s)) — no ramp can meet it at HIGH`)
     return +s.toFixed(5)
   })
+  for (let ri = 0; ri < face.length; ri++) if (slopeFrom[ri] !== null) sOf[ri] = sOf[slopeFrom[ri]]
+  const islands = holder.filter(h => h !== null).length, borrowed = slopeFrom.filter(h => h !== null).length
   const stamped = new Uint8Array(width * height)
   let raised = 0, kept = 0, ramped = 0, walled = 0, bedWon = 0
   const keptRise = new Map()                                 // landward node kept above the ramp → its rise (h − HIGH)/d
@@ -106,8 +121,8 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   for (let j = 0; j < height; j++) { let i0 = -1
     for (let i = 0; i <= width; i++) { const v = i < width && stamped[j * width + i]
       if (v && i0 < 0) i0 = i; else if (!v && i0 >= 0) { runs.push(j, i0, i - 1); i0 = -1 } } }
-  console.log(`  STAMP: ①'s coast at HIGH — ${stamped.reduce((t, v) => t + v, 0).toLocaleString()} node(s): ${raised.toLocaleString()} land raised to the ramp, ${kept.toLocaleString()} land kept (above it), ${ramped.toLocaleString()} water on the ramp, ${walled.toLocaleString()} water off a wall · ${bedWon.toLocaleString()} where the bed stood higher (flats, not stamped) · ${above.length.toLocaleString()} water node(s) at or above HIGH · slope per ring ${sOf.map(v => v ?? '—').join(', ')} · cell ${cell.toFixed(2)} m${tidal ? ' · tidal: two cells of tide seaward' : ''}`)
-  return { cellM: +cell.toFixed(4), slopePerRing: sOf, raised, kept, ramped, walled, bedWon, aboveHigh: above.length, tidal, runs }
+  console.log(`  STAMP: ①'s coast at HIGH — ${stamped.reduce((t, v) => t + v, 0).toLocaleString()} node(s): ${raised.toLocaleString()} land raised to the ramp, ${kept.toLocaleString()} land kept (above it), ${ramped.toLocaleString()} water on the ramp, ${walled.toLocaleString()} water off a wall · ${bedWon.toLocaleString()} where the bed stood higher (flats, not stamped) · ${above.length.toLocaleString()} water node(s) at or above HIGH · slope per ring ${sOf.map(v => v ?? '—').join(', ')}${islands ? ` · ${islands} island(s), ${borrowed} on the slope of the water holding them` : ''} · cell ${cell.toFixed(2)} m${tidal ? ' · tidal: two cells of tide seaward' : ''}`)
+  return { cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, islands, raised, kept, ramped, walled, bedWon, aboveHigh: above.length, tidal, runs }
 }
 
 
@@ -117,7 +132,7 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
  * the root is the land nodes (not ①'s water, outside the footprint) within one cell of the deck's edge, as connected
  * pieces; the deck takes that root's median. Runs after the bed and BEFORE the stamp, so the stamp meets the deck's water
  * edges at HIGH like any coast. Derived, no constant.
- * ⛔ Refuses, by name: a deck with no land root (it stands clear of the shore: an island, step 5) · two or more roots whose
+ * ⛔ Refuses, by name: a deck with no land root (it stands clear of the shore: refused at the pour, derive.js) · two or more roots whose
  *    heights differ by more than the lidar's own stated accuracy (`rmsezM`, the registry's f-3dep-ql-rmsez for the
  *    project's QL), never interpolated · a deck whose root stands below HIGH (a deck is above the water).
  * @param decks [{ ring, streets }] — map.json layers.ribbons.streetDecks

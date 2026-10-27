@@ -10,6 +10,11 @@
 //   3. the water groups' area = the area of ①'s water face inside the slab's disc, within one lattice step × its edge
 //      length (the clip's own rounding) plus the disc's polygon chord error;
 //   4. the `bed` group's area does not exceed it (it is the same face, cut only by what is painted over it).
+// ⭐ ISLANDS (a hole in ①'s water; Jacob 2026-10-26), on drawn inputs through the real functions, before any look:
+//   0a. coastFile.mjs#faceAsPolygons groups each hole under the outer holding it, and REFUSES a hole inside none;
+//   0b. shore-armour.mjs#drawnWaterTest is even-odd: a point on an island is land;
+//   0c. outer-coast.mjs#outerCoast cuts an island out of the water past the disc.
+// MUTANTS (each RED): faceAsPolygons drops the holes · drawnWaterTest "inside any ring" · outerCoast fills the hole.
 // A look baked before this commit is RED by name: re-bake it. An inland look (no water anywhere) is said and passes.
 //
 //   node checks/claims-the-water-is-one-polygon.mjs [--look=<id> …]
@@ -17,7 +22,9 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
-import { waterFace } from '../cartograph/coastFile.mjs'
+import { waterFace, faceAsPolygons } from '../cartograph/coastFile.mjs'
+import { drawnWaterTest } from '../cartograph/shore-armour.mjs'
+import { outerCoast } from '../cartograph/outer-coast.mjs'
 import { isWaterGroupId } from '../src/components/waterMaterial.js'
 import { LATTICE_M, CLIP_SCALE } from '../src/lib/lattice.js'
 
@@ -30,6 +37,26 @@ const looksArg = process.argv.filter(a => a.startsWith('--look=')).map(a => a.sl
 const BAKED = join(ROOT, 'public/baked')
 const looks = looksArg.length ? looksArg : readdirSync(BAKED).filter(l => existsSync(join(BAKED, l, 'ground.json')))
 let bad = 0, checked = 0
+{
+  console.log('── 0. islands, drawn')
+  const sa = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
+  const wnd = (r, sg) => Math.sign(sa(r)) === sg ? r : [...r].reverse()
+  const sq = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]
+  const say = (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) bad++ }
+  const A = wnd(sq(0, 0, 100, 100), 1), Ah = wnd(sq(40, 40, 60, 60), -1), Bo = wnd(sq(200, 0, 300, 100), 1)
+  const P = faceAsPolygons([A, Bo, Ah], 'fixture')
+  say(P.length === 2 && P.find(p => p.outer === A)?.holes.length === 1 && P.find(p => p.outer === Bo)?.holes.length === 0, 'faceAsPolygons: the island is a hole of the water holding it, and of no other')
+  let t = false; try { faceAsPolygons([A, wnd(sq(500, 500, 510, 510), -1)], 'fixture') } catch (e) { t = /inside no water ring/.test(e.message) }
+  say(t, 'faceAsPolygons: a hole inside no water ring REFUSES')
+  const inW = drawnWaterTest([A, Ah])
+  say(inW(20, 20) && !inW(50, 50) && !inW(150, 50), 'drawnWaterTest: water in the ring, land on its island and outside it')
+  // the square 0…400; water to its west edge, an island at x 20…40 that the disc (R 100 about (200, 200)) does not cover
+  const bb = { x0: 0, x1: 400, z0: 0, z1: 400 }, W0 = wnd(sq(0, 0, 60, 400), 1), I0 = wnd(sq(20, 180, 40, 220), -1)
+  const oc = outerCoast({ rings: [W0, I0], bb, center: [200, 200], R: 100 })
+  const inPolys = (x, z) => oc.polygons.some(p => { const inR = (r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+    return inR(p.outer) && !p.holes.some(inR) })
+  say(inPolys(10, 100) && !inPolys(30, 200), 'outerCoast: the water past the disc is water, and its island is not')
+}
 for (const look of looks) {
   const g = JSON.parse(readFileSync(join(BAKED, look, 'ground.json'), 'utf8')), scene = g.scene || g.look || look
   const mp = join(ROOT, 'cartograph/data', scene, 'clean/map.json')

@@ -4871,8 +4871,13 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     const _decks = _coast.coast ? streetDecks(osmData.ground || {}, pStreets) : { rings: [], decks: [] }
     const _water = _coast.coast ? waterWithoutDecks(_coast.rings, _coast.arcs, _decks.rings) : { rings: [], arcs: [] }
     const _holes = _water.rings.filter(r => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) < 0).length
-    if (_holes) throw new Error(`[①] ⛔ ${SCENE}'s coast has ${_holes} island(s) (holes in the water${_decks.decks.length ? `, a street deck standing clear of the shore among them` : ''}), and an island would be painted as water. Islands through the mint are BRIEF-the-shore-is-one-line §3 step 5.`)
-    if (_coast.coast) console.log(`    [①] coast: ${_water.rings.length} water ring(s), ${_water.arcs.length} shoreline arc(s) — ${_coast.doc.from}${_decks.decks.length ? ` · ${_decks.decks.length} street deck(s) taken out of the water: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}`)
+    // ⭐ ISLANDS go through the mint as HOLES in the water (step 5; Jacob 2026-10-26): ① strokes each island's closed shore arc,
+    // the land inside closes as a face, and every filled draw takes the face as holed polygons (coastFile.mjs#faceAsPolygons).
+    // ⛔ A STREET DECK standing clear of every shore is a hole the coast did not draw: it has no land root to take a height
+    // from (shoreStamp.mjs#deckHeights), so it refuses here, by name.
+    const _coastHoles = _coast.coast ? _coast.holes : 0
+    if (_holes > _coastHoles) throw new Error(`[①] ⛔ ${SCENE}: ${_holes - _coastHoles} street deck(s) stand clear of every shore (holes in the water the coast did not draw), so none has a land root to take its height from: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}`)
+    if (_coast.coast) console.log(`    [①] coast: ${_water.rings.length} water ring(s), ${_water.arcs.length} shoreline arc(s) — ${_coast.doc.from}${_holes ? ` · ${_holes} island(s)` : ''}${_decks.decks.length ? ` · ${_decks.decks.length} street deck(s) taken out of the water: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}`)
     else console.log(`    [①] no coast: ${_coast.why}`)
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _water.rings, coastArcs: _water.arcs, bb: _bb })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts

@@ -87,10 +87,10 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
    PTown, in the slot); otherwise its numbers go to Boz.
 4. **The sand line as ink in ①** (Jacob 10-21): made in the pour beside the coast. Propose its source (the beach between high and
    low water from the lidar?) before building.
-5. **Islands:** closed shore arcs, so an island is a hole in the water through the mint (tern 5fa9effb's INTENT; rewrite against
-   today's mint).
-   ⚠️ (Zob/Boz, 2026-10-26) bake-ground pushes each waterFace ring as its own face, but maskOf reads rings even-odd: when an
-   island lands, build HOLED polygons from the face, or the island paints as water. Today every hole refuses in the mint.
+5. **Islands — BUILT 2026-10-26, brought forward (Jacob: "yes river is lake, build islands with the floor").** An island is a
+   hole in ①'s water and a closed shore arc. Every filled draw takes the face as holed polygons (`coastFile.mjs#faceAsPolygons`).
+   Holes under one terrain cell are dropped, each named in coast.json `islandsDropped`. ▶ `claims-the-water-is-one-polygon` §0,
+   `claims-the-shore-meets-the-field-at-high` §7, `claims-the-coast-is-the-lidars` D.
 6. **Later, its own commit:** rim §5's water BED stamped with ① (C8), and water to the bb (C1a, disc §2c), are the shoreline
    project's tail. Sequence them; don't fold them into 1–5 unless they fall out.
 

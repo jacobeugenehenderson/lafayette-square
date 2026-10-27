@@ -64,7 +64,7 @@ import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 import { LATTICE_STEP, NODE_BOUND, nodeAcrossGroups, splitAtPinches, pinchesOfRing, windingOf } from '../src/lib/latticeNode.js'   // one lattice step in Clipper units · the paint's noding rule
-import { waterFace } from './coastFile.mjs'
+import { waterFace, faceAsPolygons } from './coastFile.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -1178,7 +1178,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // polygons via polylineToRing.
   const mapLayers = mapData.layers || {}
   const pushMat = (key, ring) => {
-    if (!ring || ring.length < 3) return
+    if (!ring || (Array.isArray(ring) ? ring.length < 3 : !(ring.outer?.length >= 3))) return   // a ring, or { outer, holes }
     if (!byMaterial.has(key)) byMaterial.set(key, [])
     byMaterial.get(key).push(ring)
   }
@@ -1204,9 +1204,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // partitioned face at the bottom of the stack). ①'s coast IS the high-water mark (Jacob, 2026-10-25), so nothing here
   // decides water again. ⛔ An inland pond is not ①'s water (the coast is water that runs on past the fetch); that is a
   // producer question, not this bake's.
-  for (const ring of waterFace(mapData, 'bake-ground')) {
-    pushMat('water', ringFromOSM(ring))
-    pushMat('bed', ringFromOSM(ring))
+  // ⭐ As HOLED polygons (coastFile.mjs#faceAsPolygons): an island is a hole, and a ring filled on its own paints it as water.
+  for (const { outer, holes } of faceAsPolygons(waterFace(mapData, 'bake-ground'), 'bake-ground')) {
+    const poly = { outer: ringFromOSM(outer), holes: holes.map(ringFromOSM) }
+    pushMat('water', poly)
+    pushMat('bed', { outer: poly.outer, holes: poly.holes })
   }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
