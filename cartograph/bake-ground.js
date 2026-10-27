@@ -65,6 +65,8 @@ import { splitByField } from '../src/lib/fieldAxis.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 import { LATTICE_STEP, NODE_BOUND, nodeAcrossGroups, splitAtPinches, pinchesOfRing, windingOf } from '../src/lib/latticeNode.js'   // one lattice step in Clipper units · the paint's noding rule
 import { waterFace, faceAsPolygons } from './coastFile.mjs'
+import { pinTheCoast, onLineTolerance } from './coastPins.mjs'
+import { LATTICE_M } from '../src/lib/lattice.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -1612,6 +1614,38 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       + `in ${((Date.now() - _tc) / 1000).toFixed(1)}s`)
   }
 
+  // ⭐⭐ THE DRAWN SHORE IS ①'s LINE (coastPins.mjs; Jacob, 2026-10-27: "yes pin the coast"). Every ground vertex on ①'s
+  // coast is pinned to HIGH and the other corners of its triangles are clamped by side, keyed by position over the whole
+  // drawn ground (the partition and the riser), so one point takes one height in every group. The water sheet carries none.
+  // Written as the bin's fifth section (drawnGround.js#drawnPinsOf reads it).
+  const coastRings = waterFace(mapData, 'bake-ground')
+  let coastPin = null
+  if (hasTerrain && coastRings.length) {
+    const T = loadSceneTerrain(scene)
+    if (!T?.water) throw new Error(`[bake-ground] ⛔ ${look}: ①'s coast is drawn and the terrain carries no water levels — HIGH is unknown, so the line cannot be pinned`)
+    const clip = stencil.clipPolygon
+    if (!clip?.length) throw new Error(`[bake-ground] ⛔ ${look}: the ground has no clip polygon — which of ①'s coast vertices the drawing holds is unknown, so the line cannot be pinned`)
+    const L = waterLevels(T.water)
+    const tol = onLineTolerance(LATTICE_M, Math.max(...clip.map(([x, z]) => Math.max(Math.abs(x), Math.abs(z)))))
+    const inDrawing = (x, z) => {
+      if (!pointInRing([x, z], clip)) return false
+      for (let i = 0, j = clip.length - 1; i < clip.length; j = i++) { const a = clip[j], b = clip[i], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+        const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
+        if (Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol) return false }   // on the rim: the clip's own vertex stands there
+      return true }
+    const drawnGroups = [...planeBuffers].map(([id, b]) => ({ id, positions: b.positions, indices: b.indices }))
+    if (kerbRiser?.indices.length) drawnGroups.push({ id: 'mat:kerbFace', positions: kerbRiser.positions, indices: kerbRiser.indices })
+    const deckList = mapData.layers?.ribbons?.streetDecks
+    if (!Array.isArray(deckList)) throw new Error(`[bake-ground] ⛔ ${look}: map.json carries no streetDecks list (it predates the decks) — a deck's edge on ①'s coast would be pinned unseen. ▶ re-pour`)
+    const decks = deckList.map(d => d.ring)
+    coastPin = timed('pinTheCoast', () => pinTheCoast({ groups: drawnGroups, rings: coastRings, inDrawing, rawAt: T.getElevationRaw, highAt: L.highAt, tol, decks }))
+    const st = coastPin.stats, g = st.fieldMinusHighAtPinsM
+    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm) · `
+      + `field − HIGH there p10 ${g.p10} · p50 ${g.p50} · p90 ${g.p90} m (min ${g.min}, max ${g.max}) · beside the line: land ${st.clampedLand.toLocaleString()} raised to HIGH, ${st.keptLand.toLocaleString()} above it · water ${st.clampedWater.toLocaleString()} lowered to HIGH, ${st.keptWater.toLocaleString()} below it`)
+  }
+  let drawnRawByteOffset = 0
+  const drawnRawChunks = []
+
   const colorOf = (kind, key) => {
     let color
     if (kind === 'face') {
@@ -1663,6 +1697,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const posOut = perField ? perField.positions : positions
     const idxOut = perField ? perField.indices : indices
     const isWater = key === 'water' || key.startsWith('water:')
+    const pinSection = coastPin && !isWater ? coastPin.sectionFor(posOut) : null
 
     // Color resolution: per-Look design.json wins, then the canonical
     // Designer palette (DEFAULT_LAYER_COLORS / DEFAULT_LU_COLORS), then
@@ -1695,7 +1730,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       ...(perField ? { fieldByteOffset, fieldEdgeByteOffset: edgeByteOffset, fields: perField.fields.map(f => ({
         bearing: +f.bearing.toFixed(5), cx: +f.cx.toFixed(2), cz: +f.cz.toFixed(2),
         halfLen: +f.halfLen.toFixed(2), halfWid: +f.halfWid.toFixed(2), areaM2: f.areaM2 })) } : {}),
+      // the pins (coastPins.mjs): (vertex u32, raw f32, ∂x f32, ∂z f32) per pinned or clamped vertex, the bin's fifth section
+      ...(pinSection ? { drawnRawByteOffset, drawnRawCount: pinSection.length / 4 } : {}),
     })
+    if (pinSection) { drawnRawChunks.push(pinSection); drawnRawByteOffset += pinSection.byteLength }
 
     positionChunks.push(posOut)
     indexChunks.push(idxOut)
@@ -1712,9 +1750,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // the renderer it is a wall, not ground: ⚠️ BakedGround does not read it yet (step 5 pieces 4–5, after Strobe's
   // shader work lands) — until then it would be lit like ground. Coloured as the curb it faces.
   if (kerbRiser?.indices.length) {
+    const pinSection = coastPin ? coastPin.sectionFor(kerbRiser.positions) : null
     groups.push({ kind: 'mat', id: 'kerbFace', color: colorOf('mat', 'curb'), renderOrder: renderOrder++, polygonOffsetUnits: -renderOrder,
       partition: false, vertical: true, vertexCount: kerbRiser.positions.length / 3, vertexByteOffset: posByteOffset,
-      indexCount: kerbRiser.indices.length, indexByteOffset: idxByteOffset })
+      indexCount: kerbRiser.indices.length, indexByteOffset: idxByteOffset, ...(pinSection ? { drawnRawByteOffset, drawnRawCount: pinSection.length / 4 } : {}) })
+    if (pinSection) { drawnRawChunks.push(pinSection); drawnRawByteOffset += pinSection.byteLength }
     positionChunks.push(kerbRiser.positions); indexChunks.push(kerbRiser.indices)
     posByteOffset += kerbRiser.positions.byteLength; idxByteOffset += kerbRiser.indices.byteLength
   }
@@ -1726,12 +1766,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       rimSideOffRings: { diagnostic: 'ends within two roundings of a rim-owned edge; decides nothing', m: +kerbRimSideM.toFixed(2), sites: kerbRimSide.map(u => ({ group: u.key, A: u.A, B: u.B })) } } }
 
   // Concatenate positions (all Float32) and indices (all Uint32) into one
-  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset
+  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups][pins]. Manifest's *ByteOffset
   // values are relative to the START of each section (offsets within the
   // positions section, then offsets within the indices section).
   const totalPosBytes = posByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset)
+  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset + drawnRawByteOffset)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -1756,6 +1796,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const edgeSectionStart = fieldSectionStart + fieldByteOffset
   for (const g of groups) if (g.fieldEdgeByteOffset != null) g.fieldEdgeByteOffset += edgeSectionStart
   for (const c of edgeChunks) {
+    buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
+    off += c.byteLength
+  }
+  // Fifth section: each pinned group's pins (coastPins.mjs), absolute like the others.
+  const drawnRawSectionStart = edgeSectionStart + edgeByteOffset
+  for (const g of groups) if (g.drawnRawByteOffset != null) g.drawnRawByteOffset += drawnRawSectionStart
+  for (const c of drawnRawChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }
@@ -1865,6 +1912,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // F3 / F2 disclosure: did this scene have terrain, how was each partition group refined, and how many
     // slivers it came out with — read by the two ground-shape checks.
     ...(groundShape ? { groundShape } : {}),
+    // ⭐ the pins (coastPins.mjs; drawnGround.js#drawnPinsOf reads them): present on every ground baked since, so a ground
+    // without it predates the pin. `coast: false` when ① draws no coast; `terrain: false` when there is no field to pin against.
+    drawnRaw: !hasTerrain ? { terrain: false } : !coastPin ? { coast: false }
+      : { format: 'per group: drawnRawCount × (vertex u32, raw f32, ∂raw/∂x f32, ∂raw/∂z f32); a vertex with none reads the field',
+          rule: "on ①'s coast: HIGH · line-adjacent: land max(field, HIGH), water min(field, HIGH)", ...coastPin.stats },
     // band rings that cross themselves on the grid (bandSelfCrossings): counted, with every site
     selfCrossing,
     // the paint stack's rings narrower than the lattice's rounding, per group, whose role is Clipper's winding (flattenPaintStack);

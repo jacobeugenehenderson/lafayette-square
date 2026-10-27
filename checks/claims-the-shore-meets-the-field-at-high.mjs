@@ -13,6 +13,12 @@
 //      slope of the water holding it, RECORDED (slopeFrom); an island inside no water ring REFUSES; and every ring records
 //      the share of its slope samples on a MEASURED floor (slopeFloorShare; null when borrowed); and a write deeper than
 //      the deepest bed REFUSES;
+//   8. THE PIN (coastPins.mjs; Jacob 2026-10-27 "yes pin the coast"): on a drawn lake with an island, in two groups sharing
+//      every point, written in bake-ground's section format and read back through drawnGround.js: every point on ①'s rings is
+//      pinned and the drawn ground is HIGH all along the line; beside it land ≥ HIGH and water ≤ HIGH; a polder two cells
+//      from the line keeps its height (line-adjacent triangles only, never whole faces); one point takes one height in
+//      every group; a coast vertex the mesh lacks, a pinned vertex on a street deck's edge, and no deck list each REFUSE.
+//      `--mutants`: the sides swapped · no clamp · whole faces · either refusal dropped, each RED;
 //   5. per town whose terrain.json carries `stamp`: the field along ①'s coast (from map.json), sampled where the stamp
 //      ran, meets HIGH; the largest miss is printed against the field's cell. NOT CHECKED until a terrain carries it.
 // MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
@@ -21,7 +27,7 @@
 // stopping at the first radius with a hit, or at the first hit in scan order · the floor share never counted · the
 // deepest-bed refusal dropped.
 //
-//   node checks/claims-the-shore-meets-the-field-at-high.mjs
+//   node checks/claims-the-shore-meets-the-field-at-high.mjs [--mutants]
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT } from './_scenes.mjs'
@@ -170,6 +176,92 @@ console.log('── 7. islands: the stamp runs round each one')
   const bst = new Map([[(10 - 3) * 21 + (10 - 3), { ri: 0, crossed: true }], [10 * 21 + 14, { ri: 1, crossed: true }]])
   const nc = nearestCrossed(bst, 10, 10, 21, 21, 5, 5)
   say(nc?.ri === 1 && Math.abs(nc.dist - 20) < 1e-9, `the slope sample goes to the Euclidean nearest crossed node (ring ${nc?.ri} at ${nc?.dist?.toFixed(2)} m, not ring 0 at 21.21 m)`)
+}
+console.log('── 8. the pin: the drawn ground carries ①\'s line (coastPins.mjs; Jacob 2026-10-27 "yes pin the coast")')
+// a 10 m square of 1 m cells, two triangles each, in two groups that share every point (the lake's bed and the lot round
+// it); ①'s water is the square 2…8 with an island 4…6 in it; the field slants through HIGH (0) at x = 5, the island's middle
+// stands 1 m below HIGH (land below HIGH beside the line), and a POLDER at (0, 0), two cells from any line, stands 2 m below.
+async function pinSection(mod, log) {
+  const { pinTheCoast, onLineTolerance } = mod
+  let red = 0; const no = (ok, what) => { log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) red++ }
+  const sa = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0)
+  const wnd = (r, sg) => Math.sign(sa(r)) === sg ? r : [...r].reverse()
+  const lakeR = wnd([[2, 2], [8, 2], [8, 8], [2, 8]], 1), islR = wnd([[4, 4], [6, 4], [6, 6], [4, 6]], -1)
+  const fieldAt = (x, z) => x === 0 && z === 0 ? -2 : x === 5 && z === 5 ? -1 : 0.4 * (x - 5)
+  const inSq = (x, z, a, b) => x > a && x < b && z > a && z < b
+  const mk = () => { const g = { bed: { P: [], I: [] }, lot: { P: [], I: [] } }
+    for (let j = 0; j < 10; j++) for (let i = 0; i < 10; i++) for (const tri of [[[i, j], [i + 1, j], [i + 1, j + 1]], [[i, j], [i + 1, j + 1], [i, j + 1]]]) {
+      const cx = (tri[0][0] + tri[1][0] + tri[2][0]) / 3, cz = (tri[0][1] + tri[1][1] + tri[2][1]) / 3
+      const G = inSq(cx, cz, 2, 8) && !inSq(cx, cz, 4, 6) ? g.bed : g.lot
+      for (const [x, z] of tri) { G.I.push(G.P.length / 3); G.P.push(x, 0, z) } }
+    return Object.entries(g).map(([id, { P, I }]) => ({ id, positions: Float32Array.from(P), indices: Uint32Array.from(I) })) }
+  const groups = mk(), tol = onLineTolerance(0.001, 10), inDrawing = (x, z) => x > 0 && x < 10 && z > 0 && z < 10
+  const run = (o = {}) => pinTheCoast({ groups, rings: [lakeR, islR], inDrawing, rawAt: fieldAt, highAt: () => 0, tol, decks: [], ...o })
+  let R = null, why = ''
+  try { R = run() } catch (e) { why = e.message }
+  no(R !== null, `the drawn lake pins without refusing${why ? ` — ${why}` : ''}`)
+  if (!R) return red
+  // write the sections as bake-ground does and read them back through the drawn ground
+  const parts = [], meta = []; let off = 0
+  for (const g of groups) { parts.push(g.positions); meta.push({ g, vo: off }); off += g.positions.byteLength }
+  for (const m of meta) { parts.push(m.g.indices); m.io = off; off += m.g.indices.byteLength }
+  for (const m of meta) { const sec = R.sectionFor(m.g.positions); if (sec) { parts.push(sec); m.po = off; m.pc = sec.length / 4; off += sec.byteLength } }
+  const bin = new ArrayBuffer(off), u8 = new Uint8Array(bin); let o2 = 0; for (const a of parts) { u8.set(new Uint8Array(a.buffer, a.byteOffset, a.byteLength), o2); o2 += a.byteLength }
+  const manifest = { bbox: { min: [0, 0, 0], max: [10, 0, 10] }, drawnRaw: R.stats, groundShape: { terrain: true },
+    groups: meta.map((m, gi) => ({ id: m.g.id, renderOrder: gi, vertexCount: m.g.positions.length / 3, vertexByteOffset: m.vo, indexCount: m.g.indices.length, indexByteOffset: m.io, ...(m.po != null ? { drawnRawByteOffset: m.po, drawnRawCount: m.pc } : {}) })) }
+  const { makeDrawnGround, drawnRawOf } = await import('../src/lib/drawnGround.js')
+  const D = makeDrawnGround(manifest, bin, { rawAt: fieldAt })
+  no(R.stats.pinned === 32, `every grid point on ①'s two rings is pinned (${R.stats.pinned} of 32)`)
+  let onLine = 0; for (const r of [lakeR, islR]) for (let m = 0; m < 4; m++) { const a = r[m], b = r[(m + 1) % 4]
+    for (let u = 0.05; u < 1; u += 0.1) onLine = Math.max(onLine, Math.abs(D.partsAt(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u).raw)) }
+  no(onLine < 1e-6, `along ①'s line, between its vertices too, the drawn ground − HIGH is ${onLine.toExponential(2)} m`)
+  // on the line: on an edge of either square · line-adjacent: a corner of a triangle with a corner on the line (read here
+  // from the fixture's own geometry, not from the pin)
+  const wet = (x, z) => inSq(x, z, 2, 8) && !inSq(x, z, 4, 6)
+  const onL = (x, z) => [[2, 8], [4, 6]].some(([a, b]) => ((x === a || x === b) && z >= a && z <= b) || ((z === a || z === b) && x >= a && x <= b))
+  const adj = new Set(); for (const g of groups) for (let t = 0; t < g.indices.length; t += 3) { const c = [0, 1, 2].map(q => [g.positions[g.indices[t + q] * 3], g.positions[g.indices[t + q] * 3 + 2]])
+    if (c.some(([x, z]) => onL(x, z))) for (const [x, z] of c) if (!onL(x, z)) adj.add(`${x},${z}`) }
+  let side = 0, n = 0, polder = null, offLine = 0
+  manifest.groups.forEach((g, gi) => { const raw = drawnRawOf(manifest, g, bin, fieldAt), P = groups[gi].positions
+    for (let v = 0; v < raw.length; v++) { const x = P[v * 3], z = P[v * 3 + 2]
+      if (x === 0 && z === 0) polder = raw[v]
+      if (onL(x, z)) continue
+      if (!adj.has(`${x},${z}`)) { if (raw[v] !== fieldAt(x, z)) offLine++; continue }
+      n++; if (wet(x, z) ? raw[v] > 1e-9 : raw[v] < -1e-9) side++ } })
+  no(side === 0 && R.stats.clampedLand > 0 && R.stats.clampedWater > 0, `beside the line, land ≥ HIGH and water ≤ HIGH (${side} of ${n} on the wrong side; ${R.stats.clampedLand} land raised, ${R.stats.clampedWater} water lowered)`)
+  no(polder === -2 && offLine === 0, `land below HIGH away from the line keeps its height (the polder ${polder} m; ${offLine} vertex(es) off the line-adjacent ring changed)`)
+  const [sb, sl] = groups.map(g => R.sectionFor(g.positions)), key = (g, sec) => new Map(Array.from({ length: sec.length / 4 }, (_, r) => { const v = new Uint32Array(sec.buffer)[r * 4]; return [`${g.positions[v * 3]},${g.positions[v * 3 + 2]}`, sec[r * 4 + 1]] }))
+  const kb = key(groups[0], sb), kl = key(groups[1], sl); let differ = 0, shared = 0; for (const [k, v] of kb) if (kl.has(k)) { shared++; if (kl.get(k) !== v) differ++ }
+  no(shared > 0 && differ === 0, `one point, one height in every group (${shared} shared, ${differ} differ)`)
+  let t = ''; try { run({ rings: [wnd([[2, 2], [5.5, 2], [8, 2], [8, 8], [2, 8]], 1), islR] }) } catch (e) { t = e.message }
+  no(/not in the mesh/.test(t), 'a coast vertex with no ground vertex on it REFUSES (the line is not in the mesh)')
+  t = ''; try { run({ decks: [[[2, 2], [8, 2], [8, 1], [2, 1]]] }) } catch (e) { t = e.message }
+  no(/street deck's edge/.test(t), 'a pinned vertex on a street deck\'s edge REFUSES (a ruling owed)')
+  t = ''; try { run({ decks: undefined }) } catch (e) { t = e.message }
+  no(/no street-deck list/.test(t), 'no deck list REFUSES (never read as none)')
+  return red
+}
+{
+  const r = await pinSection(await import('../cartograph/coastPins.mjs'), console.log)
+  if (r) bad.push(`§8 the pin: ${r} claim(s)`)
+  if (process.argv.includes('--mutants')) {
+    const fs = await import('node:fs'), os = await import('node:os'), path = await import('node:path')
+    const src = fs.readFileSync(join(ROOT, 'cartograph/coastPins.mjs'), 'utf8')
+    const swap = (a, b) => { if (!src.includes(a)) throw new Error(`⛔ mutant target gone: ${a}`); return src.replace(a, b) }
+    const M = [
+      ['the sides swapped', swap('if (wet) { if (f > H)', 'if (!wet) { if (f > H)')],
+      ['no clamp beside the line', swap('if (wet) { if (f > H) { raw.set(k, H); stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { raw.set(k, H); stats.clampedLand++ } else stats.keptLand++',
+        'if (wet) { if (f > H) { stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { stats.clampedLand++ } else stats.keptLand++')],
+      ['whole faces, not line-adjacent triangles', swap('    if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue\n', '')],
+      ['the line-in-the-mesh refusal dropped', swap('    if (missing.length) throw', '    if (false) throw')],
+      ['the deck refusal dropped', swap('    if (onDeck.length) throw', '    if (false) throw')],
+    ]
+    let alive = 0
+    for (const [name, text] of M) { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pin-')), f = path.join(dir, 'coastPins.mjs'); fs.writeFileSync(f, text)
+      const q = await pinSection(await import(f), () => {}).catch(() => 1); fs.rmSync(dir, { recursive: true, force: true })
+      console.log(`  mutant: ${name} → ${q ? 'RED ✓' : 'GREEN ✗'}`); if (!q) alive++ }
+    if (alive) bad.push(`§8: ${alive} mutant(s) survived`)
+  }
 }
 console.log('── 5. each town whose terrain carries the stamp')
 let towns = 0

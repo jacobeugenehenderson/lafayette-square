@@ -48,6 +48,7 @@ const READERS = {
   'src/harness/lab/stage.js': 'xz', 'cartograph/bake-ground-ao.js': 'xz',
   'checks/claims-the-walk-is-level-across.mjs': 'drawn', 'checks/claims-the-road-meets-itself-across-its-centreline.mjs': 'drawn',
   'checks/claims-the-stripe-lies-on-its-road.mjs': 'drawn', 'checks/claims-the-drawn-raw-is-one-function.mjs': 'drawn',
+  'checks/claims-the-shore-meets-the-field-at-high.mjs': 'drawn',
   'checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs': 'field-diagnostic',
   'checks/claims-the-shore-is-closed.mjs': 'field-diagnostic',
   'checks/claims-the-shore-says-what-it-is-made-of.mjs': 'water', 'checks/claims-a-level-body-has-one-surface.mjs': 'water',
@@ -160,7 +161,8 @@ async function run(src, log) {
     const missing = calls.filter(a => !/drawn: !!geometry\.attributes\.aDrawnRaw/.test(a))
     if (!calls.length || missing.length) bad('③', `${missing.length} of ${calls.length} ground patchTerrain call(s) in BakedGround do not pass drawn: ${missing.join(' | ')}`)
     if (!/makeGravelPathMaterial\(\{[^}]*drawn: !!geometry\.attributes\.aDrawnRaw/.test(B) || !/patchTerrain\(mat, \{[^}]*\bdrawn\b/.test(Gv)) bad('③', 'the gravel ground is not drawn with its pins (BakedGround → makeGravelPathMaterial → patchTerrain)')
-    const decoders = src.files.filter(f => f !== DG && f !== 'checks/claims-the-drawn-raw-is-one-function.mjs' && f !== 'cartograph/bake-ground.js' && /drawnRawByteOffset/.test(src.text(f)))
+    // decoding = a typed array opened at the section (writing it, as the bake and a fixture do, is not)
+    const decoders = src.files.filter(f => f !== DG && /new (?:Uint32|Float32|Int32)Array\([^)]*drawnRawByteOffset/.test(src.text(f)))
     if (decoders.length) bad('③', `drawnRawByteOffset is decoded outside drawnGround.js: ${decoders.join(', ')}`)
     log(`   ③ BakedGround: aDrawnRaw from drawnPinsOf · ${calls.length} ground patchTerrain call(s) pass drawn · gravel too · one decoder`)
   }
