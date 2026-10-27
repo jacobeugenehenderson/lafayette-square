@@ -10,6 +10,10 @@
 //   (2) SOURCE: the mint turns the water by one flag, never ring by ring (read, so a deleted or changed line is RED).
 //   (3) A lake handed to the mint wound NEGATIVE is refused by name: the sign rule (src/lib/coastSign.js, the one predicate
 //       readCoast's door also reads) — the class the retired clockwise-lake check covered.
+//   (4) ② KEEPS THE ISLAND A PIECE (Swash's find, Boz's ruling, 2026-10-27): an all-water block (① wound clockwise, every depth
+//       0, so no band clips) comes back from `tileGround.js#offsetRingByRects` as ONE positive ring, the same land, so
+//       `piecesOfIA` reads one piece and `landUseByPiece` gives it its face's use. The no-clip path returned ①'s ring as wound,
+//       which piecesOfIA read as a HOLE (Huron: 29 island tiles, 16,188 m² unpainted). MUTANT: the raw return — no piece, RED.
 //   MUTANT (always run): the mint copied with the old per-ring rewind must lose the island (no land face there), or (1) proves
 //   nothing.
 //   node checks/claims-an-island-stays-land-in-the-mint.mjs
@@ -60,5 +64,19 @@ row(src.split(LINE).length === 2 && src.includes('const flip = inkSign < 0'), '(
     const ok = !!refused || !(M.length === 1 && M[0] > 0.98 * ISLAND)
     row(ok, `mutant: with each ring rewound to the ink's sign, the island ${refused ? `is REFUSED (${refused})` : `returns ${M.length} land face(s)`} — must not be the island`)
   } finally { rmSync(dir, { recursive: true, force: true }) } }
+// (4) an all-water block through ②, live and with the raw no-clip return restored
+{ const cw = [[0, 0], [0, 40], [40, 40], [40, 0]], face = { use: 'recreation', ring: [[-5, -5], [45, -5], [45, 45], [-5, 45]], bb: [-5, 45, -5, 45], area: 2500 }
+  const judge4 = (mod) => { const R = mod.offsetRingByRects(cw, () => 0, false, null, null, { water: cw.map(() => true) }), rings = R.rings || R
+    return { n: rings.length, a: rings.length ? sa(rings[0]) : 0, pieces: mod.piecesOfIA(rings).length, lu: mod.landUseByPiece(rings, { faces: [face] }).filter(Boolean) } }
+  const L = judge4(live)
+  row(L.n === 1 && Math.abs(L.a - 1600) < 1e-6 && L.pieces === 1 && L.lu.length === 1 && L.lu[0] === 'recreation', `(4) an all-water block (① clockwise, every depth 0) through ②: ${L.n} ring(s), signed area ${L.a.toFixed(1)} (want +1600), ${L.pieces} piece(s), land use [${L.lu}]`)
+  const ANCHOR = '[signedArea(ring) < 0 ? [...ring].reverse() : ring.slice()]'
+  if (src.split(ANCHOR).length !== 2) row(false, 'mutant (4): the normalised no-clip return is not in tileGround.js once — re-aim the anchor')
+  else { const dir = mkdtempSync(join(tmpdir(), 'island4-'))
+    try { const LIB = join(ROOT, 'src/lib')
+      writeFileSync(join(dir, 'tileGround.js'), src.replace(ANCHOR, '[ring]').replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`).replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
+      const M = judge4(await import(pathToFileURL(join(dir, 'tileGround.js')).href))
+      row(M.pieces === 0, `mutant (4): with the raw no-clip return, the island is ${M.pieces} piece(s) (signed area ${M.a.toFixed(1)}) — ${M.pieces === 0 ? 'read as a HOLE, RED as it must be' : 'still a piece (the row proves nothing)'}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) } } }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ an island stays land in the mint')
 process.exit(red ? 1 : 0)

@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 106. Never in a default run.
+## ⛔ live — 107. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -67,6 +67,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-an-early-frame-key-is-held.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
 | `checks/claims-an-external-base-survives-a-bake.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · runs `node` — not a known-local command |
 | `checks/claims-an-impostor-town-fetches-no-atlas.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of scripts/slab-publish-rule.mjs — read, safe · computed import() with no readable target — runs arbitrary modules · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
+| `checks/claims-an-island-stays-land-in-the-mint.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-authored-skelids-keep-their-ways.mjs` | unreadable | deletes files — only under its own temp dir · child_process with a non-literal command — cannot be read |
 | `checks/claims-deployment-has-one-authority.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-app-mounts-the-set-piece.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
@@ -169,7 +170,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 339. This is `npm test`.
+## safe — 338. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -239,7 +240,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-alley-stub-pairs.mjs` | ⭐⭐⭐ IS "BRIDGE THE ALLEY ACROSS A JUNCTION" A RULE, OR A SPECIAL CASE? |
 | `checks/claims-an-annulus-splits-at-its-own-class-changes.mjs` | CLAIM — A CELL ROUND A FACE NO SPOKE REACHED SPLITS AT ITS OWN CLASS CHANGES, PAIRED BY OWNER, OR REFUSES. |
 | `checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs` | pour.mjs — WHEN A TOWN'S SKELETON IS RE-POURED, DOES EVERY KEY |
-| `checks/claims-an-island-stays-land-in-the-mint.mjs` | CLAIM — AN ISLAND STAYS LAND IN THE MINT. The coast reaches ① in coastFile.mjs#readCoast's convention, checked at that one |
 | `checks/claims-an-unanswered-axis-matches-nothing.mjs` | nothing.mjs — WHEN A SPECIES HAS NO ANSWER ON AN AXIS, DOES ANY PART "MATCH" IT? |
 | `checks/claims-anchors-follow-the-placements.mjs` | `tree-anchors.json` keys to its own slab’s placements. |
 | `checks/claims-anchors-know-their-terrain.mjs` | terrain.mjs — DO GROUND ANCHORS KNOW WHICH HEIGHTFIELD THEY CAME FROM? |

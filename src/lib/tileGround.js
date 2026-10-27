@@ -1902,7 +1902,10 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
   }
   // ⛔ UNITE THE BANDS FIRST, then subtract. One pass (the difference's own NonZero clip fill) leaves a zero-width
   // slit where two bands share an edge exactly — measured: a 23 m out-and-back spike at an LS highway join.
-  const B = { rings: outward ? unionRings([ring, ...clips]) : (clips.length ? differenceRings([ring], unionRings(clips)) : [ring]) }
+  // ⛔ ONE WINDING, WHICHEVER PATH (Swash's find, Boz's ruling, 2026-10-27): with no band to clip (every depth 0: an all-water
+  // island block) the ring came back as ① wound it, CLOCKWISE, where the difference returns Clipper's positive outer — so
+  // `piecesOfIA` read the island as a HOLE and painted no piece (Huron: 29 island tiles, 16,188 m²). Normalised once, by sign.
+  const B = { rings: outward ? unionRings([ring, ...clips]) : (clips.length ? differenceRings([ring], unionRings(clips)) : [signedArea(ring) < 0 ? [...ring].reverse() : ring.slice()]) }
   // ⭐ EACH ② EDGE TAKES THE OWNER IT LIES ON — among this block's OWN bands only (the known contributors; never a lookup
   // against other geometry). A contributor is a candidate where both the edge's ends lie within TOL (two grid steps) of its line;
   // what it covers of the edge is POOLED PER OWNER (skelId · side · segOrd, `ownerKeyOf`), because one owner's curb line

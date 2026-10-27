@@ -4,7 +4,7 @@
 // The coast is where the lidar meets high water (bake-coast.mjs → clean/coast.json); the mint reads it through
 // coastFile.mjs#readCoast and nothing else. ASSERTS, reading the code and the artifacts — never restating them:
 //   A. NO FALLBACK. No file in the pour's import closure (pour-code.mjs#pourCodeClosure) calls `coastRings`, and derive.js
-//      reads its coast through `readCoast`. readCoast REFUSES a missing coast.json and one traced on another square.
+//      reads its coast through `readCoast`, by way of the mint's one input builder (cartograph/mintInputs.mjs). readCoast REFUSES a missing coast.json and one traced on another square.
 //   B. THE DECKS ARE NOT GROUND. On a drawn case — a lake, a shore, and a pier whose deck the lidar sees 2 m above high
 //      water — bake-coast's own markSheet + floodFromEdge, fed deckFootprints of an OSM-shaped man_made=pier line, put
 //      the water UNDER the deck; without the deck it is land. A pier with no width takes structures.mjs's sourced width.
@@ -58,7 +58,11 @@ console.log('── A. the pour reads the lidar coast, and only it')
 const closure = pourCodeClosure()
 const callers = closure.filter(f => /\bcoastRings\s*\(/.test(readFileSync(f, 'utf8')))
 say(!callers.length, `no pour file calls coastRings${callers.length ? `: ${callers.map(f => relative(ROOT, f)).join(', ')}` : ''}`)
-say(/readCoast\(CLEAN_DIR, _bb,/.test(readFileSync(join(ROOT, 'cartograph/derive.js'), 'utf8')), 'derive.js takes its coast from readCoast(CLEAN_DIR, _bb, …)')
+// the pour's coast comes through the ONE builder of the mint's inputs: derive.js hands mintInputs its bb and clean dir, and
+// mintInputs.mjs reads the coast from readCoast (it moved there from derive.js with the builder; claims-proto-frozen-matches-live
+// calls the same builder)
+{ const D = readFileSync(join(ROOT, 'cartograph/derive.js'), 'utf8'), MI = readFileSync(join(ROOT, 'cartograph/mintInputs.mjs'), 'utf8')
+  say(/mintInputs\(\{[^}]*bb: _bb[^}]*cleanDir: CLEAN_DIR/.test(D) && /readCoast\(cleanDir, bb,/.test(MI), 'derive.js takes its coast through mintInputs({ bb: _bb, cleanDir: CLEAN_DIR }), which reads it from readCoast(cleanDir, bb, …)') }
 {
   const d = mkdtempSync(join(tmpdir(), 'coast-')), bb = { x0: -10, x1: 10, z0: -10, z1: 10 }
   let threw = false
