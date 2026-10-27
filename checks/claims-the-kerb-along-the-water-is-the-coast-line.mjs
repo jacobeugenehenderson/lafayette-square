@@ -68,8 +68,10 @@ const RIM_MUTANTS = [
   ['the cells\' rim crossings are not shared into the ring', 'const sc = shareRimCrossings(r, ringOwners[i], flat, input, stamp); r = sc.ring; ringOwners[i] = sc.owners;', 'const sc = { added: 0 };'],
 ]
 // the corner mutant: the far-end-on-the-water-run tie-break restored (it chose the wrong edge at PTown, 2026-10-26)
-RIM_MUTANTS.push(['a thin cell\'s corner picked by the far end\'s key', '    return Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.sqrt(L2) <= 2 })\n  return opts.length === 1 ? opts[0] : null',
-  "    return true })\n  const W = globalThis.__farWet || new Set(), Kk = (p) => { const c = toClipper(p); return c.X + ',' + c.Y }\n  const f = opts.length > 1 ? opts.filter(([u, w]) => W.has(Kk(rr[u === ic ? w : u]))) : opts\n  return f.length === 1 ? f[0] : null"])
+RIM_MUTANTS.push(['a thin cell\'s corner picked by the far end\'s key', '.filter(([u, w]) => edgeHolds(rr[u], rr[w], v))\n  return opts.length === 1 ? opts[0] : null',
+  ".filter(([u, w]) => { const P = toClipper(rr[u]), Q = toClipper(rr[w]), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, L2 = dx * dx + dy * dy; if (!L2) return false; const t = ((q.X - P.X) * dx + (q.Y - P.Y) * dy) / L2; return t > 0 && t < 1 })\n  const W = globalThis.__farWet || new Set(), Kk = (p) => { const c = toClipper(p); return c.X + ',' + c.Y }\n  const f = opts.length > 1 ? opts.filter(([u, w]) => W.has(Kk(rr[u === ic ? w : u]))) : opts\n  return f.length === 1 ? f[0] : null"])
+// the island mutant: a CLOSED run (both ways round the cell wet) refused, as before rule (1) (Huron's 11.3 ha island, 2026-10-27)
+RIM_MUTANTS.push(['a closed run refused, both ways wet', '      const cands = []\n', "      if (okF && okB) throw new Error('[mutant] both ways round the cell are wet')\n      const cands = []\n"])
 const rimMutants = []
 for (const [name, a, b] of RIM_MUTANTS) {
   if (tgSrc.split(a).length !== 2) { console.log(`⛔ NOT CHECKED — the rim mutant's anchor (${name}) occurs ${tgSrc.split(a).length - 1} time(s) in tileGround.js, not once`); process.exit(2) }
@@ -107,7 +109,20 @@ for (const [name, a, b] of RIM_MUTANTS) {
   const mut3 = C3.tg.incidentEdgeHolding(rr, 1, vv); delete globalThis.__farWet
   const ok3 = JSON.stringify(live3) === '[0,1]' && JSON.stringify(mut3) === '[1,2]'
   console.log(`${ok3 ? '✅' : '⛔'} (A′) planted thin-cell corner: live places it on edge ${JSON.stringify(live3)} (the one holding it, 0.06 mm); the far-end tie-break picks ${JSON.stringify(mut3)} (105 mm off)`)
-  if (ok3) C3.red++; else { console.log('⛔ the planted corner cannot tell containment from the far-end key'); process.exit(1) } }
+  if (ok3) C3.red++; else { console.log('⛔ the planted corner cannot tell containment from the far-end key'); process.exit(1) }
+  // (A′) planted, AN ISLAND (Huron's 11.3 ha island, 2026-10-27): its shore cell rings it, so the water run is CLOSED and both
+  // ways round the cell are wet. A crossing v on the block's edge (0,0)→(100,0): live places it on that edge (the one HOLDING it);
+  // the mutant that refuses a closed run, as before rule (1), refuses
+  const { shareWaterRunIntoShore } = await import('../src/lib/tileGround.js'), C4 = rimMutants.find(m => m.name.startsWith('a closed run'))
+  const sq = [[0, 0], [100, 0], [100, 100], [0, 100]], sea = [[-1, -1], [101, -1], [101, 101], [-1, 101]], vI = [50, 0]
+  const iA = [[0, 0], vI, [100, 0], [100, 100], [0, 100]]
+  const isle = { ring: sea, iA: [iA], iaFull: [iA], iaStamp: [iA.map(() => 0)], runs: [{ skelId: WATER_EDGE_SKEL, side: 'left', segOrd: 0 }], inkCells: [{ cls: 'shore', rings: [sq, sea] }] }
+  let live4 = null, liveErr = null; try { live4 = shareWaterRunIntoShore(isle, 'planted island') } catch (e) { liveErr = String(e.message) }
+  let mutErr = null; try { C4.tg.shareWaterRunIntoShore(isle, 'planted island') } catch (e) { mutErr = String(e.message) }
+  const land = live4?.tile?.inkCells?.[0]?.rings?.[0] || [], at = land.findIndex(p => p[0] === 50 && p[1] === 0)
+  const ok4 = !liveErr && at === 1 && !!mutErr
+  console.log(`${ok4 ? '✅' : '⛔'} (A′) planted island: live ${liveErr ? `REFUSES (${liveErr.slice(0, 90)})` : at >= 0 ? `places v on the edge holding it (cell vertex ${at})` : 'does not place v'}; the closed-run-refused mutant ${mutErr ? 'refuses' : 'places it (vacuous)'}`)
+  if (ok4) C4.red++; else { console.log('⛔ the planted island cannot tell rule (1) from a closed-run refusal'); process.exit(1) } }
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]
 const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]

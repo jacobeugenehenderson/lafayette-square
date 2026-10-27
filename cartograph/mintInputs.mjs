@@ -34,13 +34,26 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   // record); the runs must cover the chain with no gap, else this refuses by name. The mint reads them to leave an off-grade span
   // over ①'s water out of the ink; over land nothing reads them.
   const skelById = new Map(skeletonStreets.map(st => [st.id, st]))
+  // a way's raw vertices (raw/osm.json, local x/z), for a run whose ways DISAGREE on grade (Zob, 2026-10-27): the off-grade way's
+  // own extent along that run is where its vertices project onto it — a wet piece counts as off grade only within it
+  const rawById = new Map((osm.ground?.highway || []).map(f => [f.osmId, (f.coords || []).map(c => [c.x, c.z])]))
+  const extentOf = (pts, from, to, raw) => { const S = [0]; for (let k = 1; k < pts.length; k++) S.push(S[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]))
+    const sOf = (q) => { let best = null; for (let k = from; k < to; k++) { const a = pts[k], b = pts[k + 1], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; if (!L2) continue
+        const t = Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L2)), d = Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dz)
+        if (!best || d < best.d) best = { d, s: S[k] + t * Math.sqrt(L2) } } return best?.s }
+    const ss = raw.map(sOf).filter(Number.isFinite); return ss.length ? [Math.min(...ss), Math.max(...ss)] : null }
   const gradeRunsOf = (id, pts) => { const sk = skelById.get(id); if (!sk) return null
     const n = (sk.points || []).length, R = [...(sk.segmentWays || [])].sort((a, b) => a.from - b.from)
     if (!R.length || R[0].from !== 0 || R[R.length - 1].to !== n - 1 || R.some((r, k) => k && r.from !== R[k - 1].to))
       throw new Error(`[mintInputs] ⛔ ${id}: its segmentWays do not cover its ${n - 1} segment(s) with no gap (${R.map(r => `${r.from}→${r.to}`).join(' · ') || 'none'}) — the grade of a span cannot be read. Re-skeleton.`)
     const at = pts.anchorAt || pts.map((_, i) => i)   // no curve: the output IS the anchors, by construction
     if (at.length !== n) throw new Error(`[mintInputs] ⛔ ${id}: ${at.length} anchor index(es) for ${n} skeleton point(s) — the tessellation lost the anchors' identity. Refusing.`)
-    return R.map(r => ({ from: at[r.from], to: at[r.to], ways: r.ways, offGrade: r.ways.every(w => isOffGradeWay((sk.ways || {})[w])), exact: !r.by, by: r.by || 'exact' })) }
+    return R.map(r => { const off = r.ways.filter(w => isOffGradeWay((sk.ways || {})[w])), from = at[r.from], to = at[r.to]
+      const run = { from, to, ways: r.ways, offGrade: off.length === r.ways.length, exact: !r.by, by: r.by || 'exact' }
+      if (off.length && off.length < r.ways.length) { run.mixed = true
+        run.offExtents = off.map(w => { const raw = rawById.get(w); if (!raw?.length) throw new Error(`[mintInputs] ⛔ ${id}: off-grade way ${w} on a mixed-grade run has no raw geometry in raw/osm.json — its extent cannot be read. Refusing.`)
+          return extentOf(pts, from, to, raw) }).filter(Boolean) }
+      return run }) }
   // `hard` travels with the points: the mint stamps it onto every owner
   const simplify = (s) => { const id = s.skelId ?? s.name, pts = simplified.get(id); return pts?.length >= 2 ? { ...s, points: pts, hard: pts.hard || null, gradeRuns: gradeRunsOf(id, pts) } : null }
   const all = ribbonStreets.filter(s => s?.points?.length >= 2)

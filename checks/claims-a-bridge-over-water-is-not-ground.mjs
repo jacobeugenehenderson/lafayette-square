@@ -8,6 +8,9 @@
 //   (2) the same street with its run AT GRADE leaves the ink too — OFF GRADE BY THE COAST (Jacob, 2026-10-27: "a") — and is
 //       RECORDED in protopolygon.offGradeByCoast { street, segOrd, wetM, at }, never silent.
 //   (3) the same street with its off-grade run attributed BY ORDER REFUSES by name ("only an exactly attributed run decides").
+//   (5) a segment whose ways DISAGREE on grade (a bridge way and its at-grade approach, simplified across the joint): the wet
+//       piece is a TAGGED bridge — dropped, no off-grade-by-the-coast record — when it lies within the off-grade way's own extent
+//       along the segment (`offExtents`), and REFUSES by name when it reaches past it (Zob, 2026-10-27: cleveland-road-east-2).
 //   (4) over LAND nothing changes: the same street, its run off grade, with no water → the same ink as with no grade runs.
 //   MUTANT (always run): the mint copied with the split bypassed puts (1)'s street ink in the water — or (1) proves nothing.
 //   node checks/claims-a-bridge-over-water-is-not-ground.mjs
@@ -45,6 +48,11 @@ const refusal = (f) => { try { f(); return null } catch (e) { return String(e.me
   row(!r && wetInkOf(MP, 'a') === 0 && rec.length === 1 && rec[0].street === 'a' && rec[0].wetM > 0, `(2) the same run AT GRADE: ${r ? `REFUSED (${r.slice(0, 100)})` : `minted, ${wetInkOf(MP, 'a')} ink vertex(es) in the water, ${rec.length} off-grade-by-the-coast record(s)${rec[0] ? ` (${rec[0].street}|${rec[0].segOrd}, ${rec[0].wetM} m at (${rec[0].at.join(', ')}))` : ''}`}`) }
 { const r = refusal(() => mint(streets(run({ exact: false, by: 'order' }))))
   row(!!r && /only an exactly attributed run/.test(r), `(3) the off-grade run attributed BY ORDER: ${r ? (/exactly attributed/.test(r) ? 'REFUSED by name' : `refused otherwise (${r.slice(0, 100)})`) : 'MINTED — an inferred attribution decided a drop'}`) }
+{ const mixed = (ext) => [{ from: 0, to: 1, ways: [1, 2], offGrade: false, mixed: true, offExtents: [ext], exact: true, by: 'exact' }]
+  let MP = null; const r = refusal(() => { MP = mint(streets(mixed([0, 150]))) })
+  row(!r && wetInkOf(MP, 'a') === 0 && (MP.offGradeByCoast || []).length === 0, `(5a) a mixed-grade segment whose off-grade way spans the wet piece: ${r ? `REFUSED (${r.slice(0, 100)})` : `dropped as a TAGGED bridge, ${(MP.offGradeByCoast || []).length} by-the-coast record(s)`}`)
+  const r2 = refusal(() => mint(streets(mixed([0, 120]))))
+  row(!!r2 && /past the off-grade way's own extent/.test(r2), `(5b) the off-grade way stops 30 m short of the wet piece's end: ${r2 ? (/past the off-grade way/.test(r2) ? 'REFUSED by name' : `refused otherwise (${r2.slice(0, 100)})`) : 'MINTED — a wet piece past the bridge way was dropped silently'}`) }
 { const A = mint(streets(run({})), false), B = mint(streets(undefined).map(s => ({ ...s, gradeRuns: undefined })), false)
   const same = A.rings.length === B.rings.length && A.rings.every((r, i) => r.length === B.rings[i].length && r.every((p, k) => p[0] === B.rings[i][k][0] && p[1] === B.rings[i][k][1]))
   row(same, `(4) over land, the off-grade run changes nothing: ${A.rings.length} ink ring(s) either way, vertex for vertex ${same ? 'the same' : 'DIFFERENT'}`) }

@@ -438,8 +438,17 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0) {
       const len = part.reduce((t, v, k) => k ? t + Math.hypot(v.p[0] - part[k - 1].p[0], v.p[1] - part[k - 1].p[1]) : 0, 0)
       const who = `${st.skelId ?? st.name} segment(s) ${[...edges].join(',')} (${len.toFixed(1)} m in the water)`
       if (!st.gradeRuns) throw new Error(`[①] ⛔ ${who}: a chain with no grade runs lies in ①'s water — its grade cannot be read. Refusing.`)
-      if (runs.length && runs.every(r => r.offGrade && r.exact) && [...edges].every(e => runs.some(r => e >= r.from && e < r.to))) { dropped++; continue }
-      if (runs.some(r => r.offGrade && !r.exact)) throw new Error(`[①] ⛔ ${who}: off grade only by a run attributed ${runs.filter(r => !r.exact).map(r => r.by).join('/')} — only an exactly attributed run decides a span is not ground. Refusing.`)
+      if (runs.some(r => (r.offGrade || r.mixed) && !r.exact)) throw new Error(`[①] ⛔ ${who}: off grade only by a run attributed ${runs.filter(r => !r.exact).map(r => r.by).join('/')} — only an exactly attributed run decides a span is not ground. Refusing.`)
+      // ⭐ TAGGED off grade: the piece's arc-length span lies within the exact off-grade runs and, on a run whose ways DISAGREE on
+      // grade, within the off-grade way's own extent along it (Zob, 2026-10-27: a segment the skeleton simplified across a joint,
+      // cleveland-road-east-2). ⛔ A wet piece on such a run reaching past that extent refuses by name
+      const S = [0]; for (let k = 1; k < P.length; k++) S.push(S[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]))
+      const sOf = (v) => v.src != null ? S[v.src] : S[v.edge] + Math.hypot(v.p[0] - P[v.edge][0], v.p[1] - P[v.edge][1])
+      const sA = sOf(part[0]), sB = sOf(part[part.length - 1]), lo = Math.min(sA, sB), hi = Math.max(sA, sB)
+      const ok = [...runs.filter(r => r.offGrade).map(r => [S[r.from], S[r.to]]), ...runs.filter(r => r.mixed).flatMap(r => r.offExtents || [])].sort((a, b) => a[0] - b[0])
+      let reach = lo; for (const [a, b] of ok) if (a <= reach + 1e-9 && b > reach) reach = b
+      if (reach >= hi - 1e-9) { dropped++; continue }
+      if (runs.some(r => r.mixed)) throw new Error(`[①] ⛔ ${who}: a wet piece on a segment whose ways disagree on grade reaches ${(hi - reach).toFixed(2)} m past the off-grade way's own extent — its grade there cannot be read. Refusing.`)
       // ⭐ OFF GRADE BY THE COAST (Jacob, 2026-10-27: "a; we don't have any mechanism for this in the authoring tools"): a street
       // over ①'s water with no off-grade tag is a bridge all the same — the coast is the high-water mark, and a causeway on fill
       // reads as land in the lidar, so it never reaches here. It leaves the ink like a tagged span, and it is RECORDED, never silent
@@ -2572,14 +2581,15 @@ function insertOnEdges(ring, owners, pts, ok) {
 // caller refuses). ⛔ Not "the far end is on the water run": at a thin cell's corner (the ε strip, its sides 5 mm apart) both
 // edges take the point's parameter, and the far-end key picked the wrong one (PTown (204.406, 67.434): 105 mm off; the right
 // edge holds it at 0.06 mm). Exported for the planted row.
+// the boolean's own containment: the point's parameter strictly inside edge a→b, and within two grid units of its line
+const edgeHolds = (a, b, v) => { const P = toClipper(a), Q = toClipper(b), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, L2 = dx * dx + dy * dy
+  if (!L2) return false; const t = ((q.X - P.X) * dx + (q.Y - P.Y) * dy) / L2; if (!(t > 0 && t < 1)) return false
+  return Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.sqrt(L2) <= 2 }
 export function incidentEdgeHolding(rr, ic, v) {
-  const m = rr.length, q = toClipper(v)
-  const opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => { const P = toClipper(rr[u]), Q = toClipper(rr[w]), dx = Q.X - P.X, dy = Q.Y - P.Y, L2 = dx * dx + dy * dy
-    if (!L2) return false; const t = ((q.X - P.X) * dx + (q.Y - P.Y) * dy) / L2; if (!(t > 0 && t < 1)) return false
-    return Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.sqrt(L2) <= 2 })
+  const m = rr.length, opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => edgeHolds(rr[u], rr[w], v))
   return opts.length === 1 ? opts[0] : null
 }
-function shareWaterRunIntoShore(tile, who) {
+export function shareWaterRunIntoShore(tile, who) {
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
   // the vertices of iaFull on a water run (either edge stamped WATER_EDGE_SKEL), by key
   const wet = new Map()
@@ -2618,12 +2628,15 @@ function shareWaterRunIntoShore(tile, who) {
       const fwd = (ib - ia + m) % m, back = (ia - ib + m) % m
       const allWet = (step, len) => { for (let q = 1; q < len; q++) if (!wet.has(K(rr[(ia + step * q + m) % m]))) return false; return true }
       const okF = fwd > 0 && allWet(1, fwd), okB = back > 0 && allWet(-1, back)
-      if (okF === okB) throw new Error(`[tileGround][shore] ⛔ ${who}: the shore cell's stretch for (${v.map(c => c.toFixed(3)).join(', ')}) is ${okF ? 'both' : 'neither'} way(s) round the cell on the water run, by key. Refusing.`)
-      const step = okF ? 1 : -1, len = okF ? fwd : back
-      // walk the cell's stretch from lo toward hi; insert on the sub-edge whose ends' parameters along lo → hi bracket the vertex's
-      const tv = param(v, lo, hi)
-      for (let q = 0; q < len && !placed; q++) { const u = (ia + step * q + m) % m, w = (ia + step * (q + 1) + m) % m
-        const tu = param(rr[u], lo, hi), tw = param(rr[w], lo, hi); if (tu < tv && tv < tw) { placed = [rr[u], rr[w]]; rr.splice(step > 0 ? u + 1 : u, 0, v) } } }
+      if (!okF && !okB) throw new Error(`[tileGround][shore] ⛔ ${who}: the shore cell's stretch for (${v.map(c => c.toFixed(3)).join(', ')}) is neither way round the cell on the water run, by key. Refusing.`)
+      // ⭐ ONE CONTAINMENT RULE (Boz, 2026-10-27, rule (1)): of the sub-edges on the wet way(s) between the bracket keys — BOTH ways
+      // when the run is CLOSED (an island's shore cell rings it, wet end to end) — keep those that HOLD the point (t in (0, 1), within
+      // insertOnEdges' two-unit containment), as incidentEdgeHolding does at one key; exactly one is placed, none or two refuses
+      const cands = []
+      for (const [step, len, ok] of [[1, fwd, okF], [-1, back, okB]]) { if (!ok) continue
+        for (let q = 0; q < len; q++) { const u = (ia + step * q + m) % m, w = (ia + step * (q + 1) + m) % m; if (edgeHolds(rr[u], rr[w], v)) cands.push({ u, w, step }) } }
+      if (cands.length !== 1) throw new Error(`[tileGround][shore] ⛔ ${who}: ${cands.length} shore-cell sub-edges between the bracket keys hold (${v.map(c => c.toFixed(3)).join(', ')}) — want exactly 1${okF && okB ? ' (a closed run: both ways round)' : ''}. Refusing.`)
+      { const c = cands[0]; placed = [rr[c.u], rr[c.w]]; rr.splice(c.step > 0 ? c.u + 1 : c.u, 0, v) } }
     else { // one side only (a run's end): the cell edge from that side's vertex that takes the point strictly inside — exactly one
       const c = lo || hi
       if (c) { const [a, b] = at.get(K(c)), rr = rings[a][b], m = rr.length, ic = rr.findIndex(w => K(w) === K(c))
