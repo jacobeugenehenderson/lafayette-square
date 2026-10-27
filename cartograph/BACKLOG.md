@@ -169,7 +169,7 @@ Reproduce each on integration before fixing; the server being a temporary one is
 Queued for it, in order: (1) HERO OBJECT BLUR is broken, caught on film in PTown's own share images: noon.jpg is sharp, golden.jpg is
 blurred end to end, the Monument (the hero object) included, so the focus is not on the object (likely the focus-falls-back-to-aim path,
 src/components/dofDriver.js / focusObject.js; cause not established). Then recapture the share images. (2) PTown's ~9 s arrival splash
-(below). (3) Society's census reads 0/0/0. (4) SlabRevetment's setState-in-render warning. (5) The bridge-edge water tint (filed with the
+(below). (3) Society's census reads 0/0/0. (4) SlabRevetment's setState-in-render warning. (4b) BEFORE ANY PROMOTE of the 2026-10-27 pin: 64d59ffd (the movie clock steps by the presented frame, a 10-13 WIP the 10-22 pin left out) ships to staging with 7179c779, and its measured run is owed: claims-frame-timeline-catches-a-stall on staging, plus Jacob watching the hero movie. (5) The bridge-edge water tint (filed with the
 deck). RULED, to carry: water SHADED BY KIND (Jacob: "we want to shade water by kind"), with ①'s water face carrying its subtype from its
 producer, an ASPIRATION to build, not rot. MONUMENT LIGHTS (Jacob): pitch ANIMATION ("a quintessential aspirational feature we could
 deliver pretty cheaply"); the strand count is AUTHORED (a slider in the editor, ~3,100 bulbs per the press); the sources name ~3,100 lights and no strand count. MEASURED BY JACOB from photos (2026-10-27): 20 STRANDS, 5 per face of the
