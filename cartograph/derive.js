@@ -4996,6 +4996,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       } : {}),
       // ⭐ the SEALED CENTRELINE, frozen with ① (mintProtopolygon): the road's paint reads it past the Wall, never the chains
       ...(MP.centrelines ? { centrelines: MP.centrelines } : {}),
+      ...(MP.outlineRefused ? { outlineRefused: MP.outlineRefused } : {}),
       // ⭐ the ink ABSORBED (absorbInk.js): each face's painted boundary + labels, and the water / grade-separated cells
       ...(MP.paint ? { paint: MP.paint, inkCells: MP.inkCells } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.

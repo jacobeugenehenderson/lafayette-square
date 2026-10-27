@@ -584,7 +584,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   // ⭐ THE WEDGE SPOKES: at a real node (three or more legs), the segment from the node to each outline point — where one leg's
   // ε side meets the next's, the block's inner corner — closes each street's wedge. absorbInk cuts the ink by these too, so
   // every cell of it lies on ONE stroke's side and takes that owner's class (shore · highway · road) by label, never by overlap.
-  const spokes = [], outlineRefused = []   // …and where a node's outline was refused (so it has no spokes): absorbInk names it
+  const spokes = [], outlineRefused = [], outlineRefusedRec = { acute: [], degenerate: [], noVertex: [] }   // …and where a node's outline was refused (so it has no spokes): absorbInk names it
   {
     const at = new Map()
     S.forEach((s, si) => {
@@ -616,6 +616,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const nr = Object.entries(nodeRefusal).filter(([, v]) => v.length)
     // ⛔ LOUD: a refused vertex keeps its plain offsets (its butts, at a node), and the sub-ink check reads it RED.
     if (nr.length) console.warn(`    ⛔ [①] outline REFUSED, plain offsets kept: ${nr.map(([k, v]) => `${v.length} ${k} (${v.slice(0, 4).join(' · ')}${v.length > 4 ? ' …' : ''})`).join(' · ')}`)
+    // ⭐ FROZEN, NOT ONLY PRINTED (Boz's ruling, 2026-10-26: "pour on, but RED"): each node whose outline was refused, by kind,
+    // with where and whose; checks/claims-the-mint-refuses-no-outline.mjs reads it and is RED on any entry
+    { const seen = { acute: 0, degenerate: 0, noVertex: 0 }
+      for (const r of outlineRefused) (outlineRefusedRec[r.why] ||= []).push({ at: [r.p[0], r.p[1]], who: nodeRefusal[r.why]?.[seen[r.why]++] ?? null }) }
     console.log(`    [①] outlines: ${over.size} stroke vertices take their corners from one outline (node, cut or bend)`)
   }
   // ⭐⭐ THE SHORE MEETS THE FRAME ACROSS ITS WHOLE INK. A coast arc ends ON a bb edge (`coastline.mjs`: the run inside the bb,
@@ -1080,9 +1084,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, centrelines, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
+             nodes, centrelines, outlineRefused: outlineRefusedRec, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, eps }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, eps }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).

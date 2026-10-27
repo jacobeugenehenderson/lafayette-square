@@ -458,6 +458,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-lattice-has-one-home.mjs` | home.mjs — THE PARTITION'S GRID IS DEFINED ONCE (src/lib/lattice.js) AND EVERY USE IMPORTS IT. |
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |
 | `checks/claims-the-mark-palette-is-never-live.mjs` | live.mjs — IS "SUGGEST FROM MARK" AUTHORING-ONLY? |
+| `checks/claims-the-mint-refuses-no-outline.mjs` | CLAIM — THE MINT REFUSED NO NODE'S OUTLINE. Where ① cannot build a node's outline (an acute meeting, a degenerate one, or a |
 | `checks/claims-the-overhead-band-is-two-triangles.mjs` | triangles.mjs — IS EVERY OVERHEAD BAND A 2-TRIANGLE QUAD, AND DOES ITS FLUTTER SLIDE THE PICTURE? |
 | `checks/claims-the-overhead-core-is-baked.mjs` | baked.mjs — DOES THE GROVE BAKE THE OVERHEAD IMPOSTOR'S DEEP CORE, AND IS ITS ABSENCE LOUD? |
 | `checks/claims-the-pad-is-the-size-of-the-corner.mjs` | ⭐⭐⭐ THE ADA PAD IS THE SIZE OF THE CORNER — the gate on the canary Jacob marked 2026-09-07. |
