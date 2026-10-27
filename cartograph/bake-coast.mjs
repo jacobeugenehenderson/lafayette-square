@@ -56,7 +56,7 @@ import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels } from './waterLevel.mjs'
 import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
-import { deckFootprints } from './structures.mjs'
+import { deckFootprints, openCloseAtStep } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 import { COAST_FILE, COAST_VERSION, heldCells, ringViolations, ringsMeet } from './coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
@@ -385,7 +385,14 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     if (loops.length) for (const q of clip(ClipType.ctIntersection, clip(ClipType.ctUnion, loops.map(toPath), null, PolyFillType.pftEvenOdd), inTile)) fineParts.push(q)
   }
   const square = [toPath([[R.x0, R.z0], [R.x1, R.z0], [R.x1, R.z1], [R.x0, R.z1]])]
-  const water = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, [...clip(ClipType.ctDifference, sheet, band), ...fineParts], null), square)
+  const traced = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, [...clip(ClipType.ctDifference, sheet, band), ...fineParts], null), square)
+  // ⭐ THE WATER AT THE TRACE'S OWN SCALE, BOTH WAYS (Boz's ruling, 2026-10-27, on Zob's read): opened, then closed, at the trace's
+  // step, by the decks' own rule (structures.mjs#openCloseAtStep), before simplify and settle. A coast feature narrower than a
+  // cell is not something the lidar resolved (PTown: a 6 cm × 2.6 m spike traced at a 0.999 m step, which ① minted as a 1.3°
+  // needle that ② could not stamp). What it moves is counted and named (coast.json waterOpened / waterClosed / waterBelowResolution).
+  const oc = openCloseAtStep(traced, fine, 'the traced water')
+  const sumM2 = (xs) => +xs.reduce((t, c) => t + c.m2, 0).toFixed(3)
+  const water = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, oc.paths, null), square)
   const minM2 = (2 * fine) ** 2
   const { bodies, hollows } = bodiesAtEdge(water, R, minM2)
   // ⭐ AN ISLAND IS KEPT IFF IT HOLDS A TERRAIN NODE (Jacob 2026-10-26, "build islands with the floor"; Boz's ruling, "the
@@ -444,6 +451,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
+    waterOpened: { m2: sumM2(oc.openedPieces.features), features: oc.openedPieces.features, slivers: oc.openedPieces.slivers }, waterClosed: { m2: sumM2(oc.closedPieces.features), features: oc.closedPieces.features, slivers: oc.closedPieces.slivers }, waterBelowResolution: oc.belowResolution.map(({ m2, at }) => ({ m2, at })),
     decksOpened: { m2: decks.openedM2, sites: decks.opened }, decksClosed: { m2: decks.closedM2, sites: decks.closed }, decksBelowResolution: decks.belowResolution.map(({ m2, at }) => ({ m2, at })),
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
@@ -463,6 +471,11 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (islandsDropped.length) console.log(`  ${islandsDropped.length} island(s) holding no terrain node DROPPED, their ground the water's: ${islandsDropped.slice(0, 8).map(d => `${d.m2} m² @(${d.at.join(', ')})`).join(' · ')}${islandsDropped.length > 8 ? ` … +${islandsDropped.length - 8}` : ''}`)
   if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
+  { const f = (xs) => xs.slice(0, 3).map(c => `${c.m2} m²${c.lenM != null ? ` × ${c.lenM} m` : ''} @(${c.at.map(v => v.toFixed(1)).join(', ')})`).join(' · ')
+    const O = oc.openedPieces, C = oc.closedPieces
+    console.log(`  WATER OPENED at the trace step: ${O.features.length} feature(s), ${sumM2(O.features)} m² narrower than one cell${O.features.length ? `, largest ${f(O.features)}` : ''} · ${O.slivers.n} rounding sliver(s), ${O.slivers.m2} m²`)
+    console.log(`  WATER CLOSED at the trace step: ${C.features.length} gap(s), ${sumM2(C.features)} m² under one cell filled${C.features.length ? `, largest ${f(C.features)}` : ''} · ${C.slivers.n} rounding sliver(s), ${C.slivers.m2} m²`)
+    if (oc.belowResolution.length) console.log(`  WATER BELOW RESOLUTION: ${oc.belowResolution.length} body(ies) narrower than one cell everywhere, not drawn: ${f(oc.belowResolution)}`) }
   if (decks.opened.length) console.log(`  DECKS OPENED at the trace step: ${decks.opened.length} footprint(s) lost ${decks.openedM2} m² narrower than one cell`)
   if (decks.belowResolution.length) console.log(`  DECKS BELOW RESOLUTION: ${decks.belowResolution.length} deck(s) narrower than one trace cell everywhere, not drawn as decks: ${decks.belowResolution.slice(0, 8).map(b => `${b.m2} m² @(${b.at.map(Math.round).join(', ')})`).join(' · ')}${decks.belowResolution.length > 8 ? ` … +${decks.belowResolution.length - 8}` : ''}`)
   if (decks.closed.length) console.log(`  DECKS CLOSED at the trace step: ${decks.closed.length} footprint(s) gained ${decks.closedM2} m² where their parts left a gap under one cell: ${decks.closed.slice(0, 8).map(c => `${c.m2} m² @(${c.at.map(Math.round).join(', ')})`).join(' · ')}`)

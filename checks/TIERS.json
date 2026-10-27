@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 475,
+  "total": 476,
   "counts": {
     "safe": 338,
     "local-effect": 29,
-    "live": 108
+    "live": 109
   },
   "checks": [
     {
@@ -149,6 +149,18 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {
@@ -2618,8 +2630,8 @@
       "tier": "live",
       "reasonClass": "outbound",
       "why": [
-        "writeFileSync — only under its own temp dir",
-        "deletes files — only under its own temp dir",
+        "writeFileSync",
+        "deletes files",
         "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
         "imports cartograph/elevationSources.mjs, which can: calls fetch()",
         "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync",

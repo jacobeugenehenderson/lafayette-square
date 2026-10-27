@@ -19,9 +19,10 @@ export const COAST_FILE = 'coast.json'
  * @param cleanDir  cartograph/data/<scene>/clean
  * @param bb        the frame the reader closes against (geography.mjs#localBB), compared to the square traced on
  */
-/** The coast.json format. 2 (2026-10-27): each deck opened and closed at the trace step (structures.mjs#deckFootprints), fineM
- *  written exact, so the mint takes out the footprints the trace saw. readCoast refuses any other version by name. */
-export const COAST_VERSION = 2
+/** The coast.json format. 3 (2026-10-27): the traced water opened and closed at the trace step, by the decks' own rule
+ *  (structures.mjs#openCloseAtStep), so no coast feature narrower than a cell reaches the mint. readCoast refuses any other
+ *  version by name. */
+export const COAST_VERSION = 3
 
 export function readCoast(cleanDir, bb, who) {
   const p = join(cleanDir, COAST_FILE)
