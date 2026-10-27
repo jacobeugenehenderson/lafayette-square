@@ -2812,6 +2812,7 @@ createServer(async (req, res) => {
            join(bakePaths.raw, 'water-datums.json'),        // where the water stands: tide datums or the lake's levels (fetch-water-datums.mjs)
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
+           MAP_JSON,   // the high-water flood is the traced level MINUS the drawn water (bake-terrain.js#floodExtent reads map.json)
            // the coast bed reads design.water from every Look of this town and three registry findings — declared as
            // the VALUES read, so a slider or a research edit elsewhere in those files re-bakes nothing (Strand, 3ab2b794)
            { value: 'terrainValueReads', read: () => terrainValueReads(bakeScene) },
