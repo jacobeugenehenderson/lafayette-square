@@ -22,7 +22,8 @@ import { ROOT } from './_scenes.mjs'
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }
 const st = (id, pts) => ({ skelId: id, name: id, points: pts, highway: 'residential', caps: { start: { degree: 1 }, end: { degree: 1 } } })
-const streets = [st('a', [[-100, 0], [-100, -150]]), st('b', [[100, 0], [100, -150]]), st('c', [[-150, 0], [-100, 0], [100, 0], [150, 0]])]
+// the streets stop on land, short of the shore (z −100): a street at grade in the water refuses (claims-a-bridge-over-water-is-not-ground)
+const streets = [st('a', [[-100, 0], [-100, -60]]), st('b', [[100, 0], [100, -60]]), st('c', [[-150, 0], [-100, 0], [100, 0], [150, 0]])]
 streets[0].caps.start.degree = 3; streets[1].caps.start.degree = 3
 const sa = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
 const wind = (r, sign) => (Math.sign(sa(r)) === sign ? r : [...r].reverse())

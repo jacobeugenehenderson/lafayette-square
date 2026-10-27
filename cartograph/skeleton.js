@@ -19,7 +19,7 @@ import { RAW_DIR, CLEAN_DIR, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { LOCAL_SECTION } from '../src/cartograph/streetClass.js'   // the kit's sidewalk: the local row (uniform until classifier step 7)
-import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER, isOneway, isRingWay, travelOrdered } from '../src/cartograph/streetClass.js'
+import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER, isOneway, isRingWay, travelOrdered, isOffGradeWay } from '../src/cartograph/streetClass.js'
 import { chainMarkings } from '../src/cartograph/streetMarkings.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
@@ -1389,7 +1389,7 @@ function gradeFacts(sources) {
     if (b) bridge = true
     if (tu) tunnel = true
     if (Math.abs(L) > Math.abs(layer)) layer = L
-    if (b || tu || L !== 0) offGrade++
+    if (isOffGradeWay(t)) offGrade++   // the one predicate (streetClass.js), which the mint reads per segment run
   }
   return { bridge, tunnel, layer, entirelyOffGrade: n > 0 && offGrade === n }
 }

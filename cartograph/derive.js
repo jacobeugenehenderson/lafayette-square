@@ -115,6 +115,9 @@ export function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
   // it is an angle threshold, which is exactly what `easeRing` was built on and excised for.
   const hard = [true]                       // a chain END is always a broken handle
   const out = [[points[0][0], points[0][1]]]
+  // ⭐ `anchorAt` RIDES ALONG too: anchor i → its index in the output, by IDENTITY (Zob, 2026-10-27), so a per-segment fact over
+  // the anchors (the skeleton's `segmentWays`) maps onto the tessellated line without matching a coordinate (a loop revisits one)
+  const anchorAt = [0]
   for (let i = 0; i < segments.length && i < points.length - 1; i++) {
     const g = segments[i]
     const a = [points[i][0], points[i][1]], b = [points[i+1][0], points[i+1][1]]
@@ -127,9 +130,10 @@ export function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
       emit(a, c1, c2, b, out)
       for (let q = before; q < out.length; q++) hard.push(false)      // inside a curve — never hard
     } else { out.push(b); hard.push(true) }
+    anchorAt.push(out.length - 1)
   }
   // a chain with fewer segments than gaps: the tail is straight, keep its anchors
-  for (let i = segments.length + 1; i < points.length; i++) { out.push([points[i][0], points[i][1]]); hard.push(true) }
+  for (let i = segments.length + 1; i < points.length; i++) { out.push([points[i][0], points[i][1]]); hard.push(true); anchorAt.push(out.length - 1) }
   // ⛔ An anchor that ENDS a bezier is still an anchor: the curve stops there, so the handle is
   // broken unless the NEXT segment is also a bezier. Fix those up in one pass rather than
   // special-casing inside the emit.
@@ -142,6 +146,7 @@ export function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
     if (oi < hard.length) hard[oi] = !(g?.type === 'bezier' && nxt?.type === 'bezier')
   }
   out.hard = hard
+  out.anchorAt = anchorAt
   return out
 }
 
@@ -4997,6 +5002,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       // ⭐ the SEALED CENTRELINE, frozen with ① (mintProtopolygon): the road's paint reads it past the Wall, never the chains
       ...(MP.centrelines ? { centrelines: MP.centrelines } : {}),
       ...(MP.outlineRefused ? { outlineRefused: MP.outlineRefused } : {}),
+      ...(MP.offGradeByCoast ? { offGradeByCoast: MP.offGradeByCoast } : {}),
       // ⭐ the ink ABSORBED (absorbInk.js): each face's painted boundary + labels, and the water / grade-separated cells
       ...(MP.paint ? { paint: MP.paint, inkCells: MP.inkCells } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.

@@ -168,12 +168,13 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 338. This is `npm test`.
+## safe — 339. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
 | `checks/claims-a-bake-never-uploads.mjs` | a bake ends on disk; Publish is the one gesture that uploads to staging. |
 | `checks/claims-a-bare-edge-paints-no-curb-sliver.mjs` | CLAIM — A BARE EDGE PAINTS NO CURB. An edge whose curb depth is 0 (a highway's, a shore's, a verge's) contributes no curb |
+| `checks/claims-a-bridge-over-water-is-not-ground.mjs` | CLAIM — AN OFF-GRADE SPAN OVER ①'S WATER IS NOT GROUND: a bridge is above the water, a tunnel below it, and neither is |
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-building-carries-its-register-records.mjs` | records.mjs — DOES EVERY REGISTER FACT ON A TOWN'S CARDS COME FROM A WELL THE |
 | `checks/claims-a-cap-carries-one-section.mjs` | section.mjs — DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |

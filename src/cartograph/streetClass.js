@@ -250,3 +250,14 @@ export function travelOrdered(ways, who = 'intake') {
 
 /** The table's order, for a deterministic tie-break in a chain's vote. */
 export const CLASS_ORDER = Object.keys(CLASSES)
+
+// ⭐ ONE WAY OFF GRADE (the skeleton's own predicate, exported so the mint reads it, never retyped; Boz, 2026-10-27): a way
+// tagged bridge or tunnel (anything but `no`), or on a non-zero `layer`, does not touch the ground. skeleton.js#gradeFacts
+// summarizes it over a chain; cartograph/mintInputs.mjs reads it per segment run, so a bridge or tunnel span over ①'s water
+// leaves the street ink there (a bridge is above the water, a tunnel below it).
+export function isOffGradeWay(t) {
+  if (!t) return false
+  const b = !!t.bridge && t.bridge !== 'no', tu = !!t.tunnel && t.tunnel !== 'no'
+  const Lraw = t.layer !== undefined ? parseInt(t.layer, 10) : 0, L = Number.isFinite(Lraw) ? Lraw : 0
+  return b || tu || L !== 0
+}

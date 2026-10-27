@@ -9,6 +9,7 @@
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { tessellateAdaptive } from './derive.js'
+import { isOffGradeWay } from '../src/cartograph/streetClass.js'
 import { readCoast } from './coastFile.mjs'
 import { streetDecks, waterWithoutDecks } from './structures.mjs'
 import { splitBoundary, discOf } from './boundaryRecords.mjs'
@@ -27,8 +28,21 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   // ⭐ the CURVE PRIMITIVE, tessellated: `points` is the control polygon, the smoothness lives in `segments` (derive's header)
   const simplified = new Map(skeletonStreets.map(st => [st.id,
     tessellateAdaptive((st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z])), st.segments)]))
+  // ⭐ THE GRADE OF EACH RUN, off the skeleton's own `segmentWays` and `ways` (Boz's ruling B, Zob's read, 2026-10-27): a run is
+  // OFF GRADE when every way on it is (streetClass.js#isOffGradeWay, the skeleton's one predicate), and EXACT unless the skeleton
+  // attributed it by order or by one end. Mapped onto the tessellated points by IDENTITY (`anchorAt`, tessellateAdaptive's own
+  // record); the runs must cover the chain with no gap, else this refuses by name. The mint reads them to leave an off-grade span
+  // over ①'s water out of the ink; over land nothing reads them.
+  const skelById = new Map(skeletonStreets.map(st => [st.id, st]))
+  const gradeRunsOf = (id, pts) => { const sk = skelById.get(id); if (!sk) return null
+    const n = (sk.points || []).length, R = [...(sk.segmentWays || [])].sort((a, b) => a.from - b.from)
+    if (!R.length || R[0].from !== 0 || R[R.length - 1].to !== n - 1 || R.some((r, k) => k && r.from !== R[k - 1].to))
+      throw new Error(`[mintInputs] ⛔ ${id}: its segmentWays do not cover its ${n - 1} segment(s) with no gap (${R.map(r => `${r.from}→${r.to}`).join(' · ') || 'none'}) — the grade of a span cannot be read. Re-skeleton.`)
+    const at = pts.anchorAt || pts.map((_, i) => i)   // no curve: the output IS the anchors, by construction
+    if (at.length !== n) throw new Error(`[mintInputs] ⛔ ${id}: ${at.length} anchor index(es) for ${n} skeleton point(s) — the tessellation lost the anchors' identity. Refusing.`)
+    return R.map(r => ({ from: at[r.from], to: at[r.to], ways: r.ways, offGrade: r.ways.every(w => isOffGradeWay((sk.ways || {})[w])), exact: !r.by, by: r.by || 'exact' })) }
   // `hard` travels with the points: the mint stamps it onto every owner
-  const simplify = (s) => { const pts = simplified.get(s.skelId ?? s.name); return pts?.length >= 2 ? { ...s, points: pts, hard: pts.hard || null } : null }
+  const simplify = (s) => { const id = s.skelId ?? s.name, pts = simplified.get(id); return pts?.length >= 2 ? { ...s, points: pts, hard: pts.hard || null, gradeRuns: gradeRunsOf(id, pts) } : null }
   const all = ribbonStreets.filter(s => s?.points?.length >= 2)
   const mapped = all.map(s => ({ s, sim: simplify(s) }))
   const unjoined = mapped.filter(m => !m.sim).map(m => m.s.skelId ?? m.s.name)

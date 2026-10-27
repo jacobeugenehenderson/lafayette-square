@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 471,
+  "total": 472,
   "counts": {
-    "safe": 338,
+    "safe": 339,
     "local-effect": 28,
     "live": 105
   },
@@ -47,6 +47,15 @@
       "reasonClass": "unreadable",
       "why": [
         "computed import() of a path an argument or the environment can supply — arbitrary"
+      ]
+    },
+    {
+      "file": "checks/claims-a-bridge-over-water-is-not-ground.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
       ]
     },
     {

@@ -406,6 +406,59 @@ export function outlineCorner(o, legs, eps = INK_EPS) {
   }
   return { bad, W }
 }
+// the split itself (mintProtopolygon's caller of it states the rule): → { chains: [{ st, ci }], coastChains, dropped }
+function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0) {
+  const byCoast = []
+  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, dropped: 0, byCoast }
+  const rlL = (v) => Math.round(v * SCALE) / SCALE, K = (p) => Math.round(p[0] * SCALE) + ',' + Math.round(p[1] * SCALE)
+  const wn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+  const wet = (p) => waterRings.reduce((t, r) => t + wn(p, r), 0) !== 0
+  const L = list.filter(x => x.st?.points?.length >= 2)
+  const inputs = [...L.map(x => ({ tag: 'street', p: x.st.points.map(q => [rlL(q[0]), rlL(q[1])]), open: true })),
+                  ...coastChains.map(c => ({ tag: 'arc', p: c.st.points.map(q => [rlL(q[0]), rlL(q[1])]), open: true }))]
+  const nS = L.length
+  const out = nodeCrossings(inputs, { pairs: (a, b) => (a < nS) !== (b < nS), who: '① bridge over water' })
+  const crossKeys = new Set(); for (let n = nS; n < out.length; n++) for (const v of out[n]) if (v.src == null) crossKeys.add(v.k[0] + ',' + v.k[1])
+  if (!crossKeys.size) return { chains: list, coastChains, dropped: 0, byCoast }
+  let dropped = 0
+  const pieces = new Map()   // index in L → [{ st, ci }] replacing it
+  L.forEach((x, n) => { const st = x.st, P = st.points, o = out[n]
+    // the chain as original vertices plus its shoreline crossings (a hot pixel the noding routed through, not a crossing, is not a vertex)
+    const V = []; for (const v of o) { if (v.src != null) V.push({ p: P[v.src], src: v.src, edge: v.src })
+      else if (crossKeys.has(v.k[0] + ',' + v.k[1])) V.push({ p: [v.k[0] / SCALE, v.k[1] / SCALE], src: null, edge: v.edge, cross: true }) }
+    if (!V.some(v => v.cross)) return
+    const parts = [[]]; V.forEach((v, k) => { parts[parts.length - 1].push(v); if (v.cross && k > 0 && k < V.length - 1) parts.push([v]) })
+    const keep = []
+    for (const part of parts) { if (part.length < 2) continue
+      const a = part[0].p, b = part[1].p
+      if (!wet([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2])) { keep.push(part); continue }
+      const edges = new Set(); for (let k = 0; k < part.length - 1; k++) edges.add(part[k].edge)
+      const runs = (st.gradeRuns || []).filter(r => [...edges].some(e => e >= r.from && e < r.to))
+      const len = part.reduce((t, v, k) => k ? t + Math.hypot(v.p[0] - part[k - 1].p[0], v.p[1] - part[k - 1].p[1]) : 0, 0)
+      const who = `${st.skelId ?? st.name} segment(s) ${[...edges].join(',')} (${len.toFixed(1)} m in the water)`
+      if (!st.gradeRuns) throw new Error(`[①] ⛔ ${who}: a chain with no grade runs lies in ①'s water — its grade cannot be read. Refusing.`)
+      if (runs.length && runs.every(r => r.offGrade && r.exact) && [...edges].every(e => runs.some(r => e >= r.from && e < r.to))) { dropped++; continue }
+      if (runs.some(r => r.offGrade && !r.exact)) throw new Error(`[①] ⛔ ${who}: off grade only by a run attributed ${runs.filter(r => !r.exact).map(r => r.by).join('/')} — only an exactly attributed run decides a span is not ground. Refusing.`)
+      // ⭐ OFF GRADE BY THE COAST (Jacob, 2026-10-27: "a; we don't have any mechanism for this in the authoring tools"): a street
+      // over ①'s water with no off-grade tag is a bridge all the same — the coast is the high-water mark, and a causeway on fill
+      // reads as land in the lidar, so it never reaches here. It leaves the ink like a tagged span, and it is RECORDED, never silent
+      const e0 = Math.min(...edges), mid = part[Math.floor(part.length / 2)].p
+      byCoast.push({ street: st.skelId ?? st.name, segOrd: x.ci >= 0 ? segOrdOf(x.ci, e0) : 0, wetM: +len.toFixed(2), at: [+mid[0].toFixed(3), +mid[1].toFixed(3)] })
+      dropped++ }
+    pieces.set(n, keep.map(part => ({ ci: x.ci, st: { ...st, points: part.map(v => v.p), hard: part.map(v => v.src != null && st.hard ? !!st.hard[v.src] : v.src != null),
+      caps: { start: part[0].src === 0 ? st.caps?.start : undefined, end: part[part.length - 1].src === P.length - 1 ? st.caps?.end : undefined },
+      _orig: part.map(v => v.src), _origSeg: part.map(v => v.edge), _waterEnd: { start: !!part[0].cross, end: !!part[part.length - 1].cross } } }))) })
+  if (!dropped) return { chains: list, coastChains, dropped: 0, byCoast }
+  // the arcs take the crossings, so a street's end and the coast share the vertex
+  const arcs = coastChains.map((c, m) => { const o = out[nS + m], P = c.st.points
+    const pts = []; for (const v of o) { if (v.src != null) pts.push(P[v.src]); else if (crossKeys.has(v.k[0] + ',' + v.k[1])) pts.push([v.k[0] / SCALE, v.k[1] / SCALE]) }
+    return { ...c, st: { ...c.st, points: pts, hard: pts.map(() => false) } } })
+  const chains = []; let li = 0
+  for (const x of list) { if (!(x.st?.points?.length >= 2)) { chains.push(x); continue } const n = li++; if (pieces.has(n)) chains.push(...pieces.get(n)); else chains.push(x) }
+  console.log(`    [①] ${dropped} off-grade span(s) over the water left out of the ink (bridges and tunnels are not ground); their banks end on the coast${byCoast.length ? ` · ⚠️ ${byCoast.length} of them off grade BY THE COAST (no bridge, tunnel or layer tag — recorded, protopolygon.offGradeByCoast): ${byCoast.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${b.at.join(', ')})`).join(' · ')}` : ''}`)
+  return { chains, coastChains: arcs, dropped, byCoast }
+}
 export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null, onAbsorbRefusal = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
@@ -443,7 +496,17 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     .filter(a => Array.isArray(a) && a.length >= 2)
     .map(a => ({ st: { skelId: WATER_EDGE_SKEL, points: a.map(p => [p[0], p[1]]),
                        hard: a.map(() => false), gradeSeparated: false }, ci: -1 }))
-  const chains = [...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 })), ...coastChains]
+  // ⭐ AN OFF-GRADE SPAN OVER THE WATER IS NOT GROUND (Boz's ruling B, Zob's read, 2026-10-27): a bridge is above the water, a
+  // tunnel below it, and neither is street-on-water. Every street and grade-separated chain is noded ONCE against the shoreline
+  // arcs (street × arc only, on the lattice); a piece between two crossings lies in the water iff its first edge's midpoint does
+  // (the nonzero rule over the water rings, exact after noding). A wet piece over runs that are ALL off grade and EXACTLY
+  // attributed (`gradeRuns`, mintInputs.mjs) leaves the ink; the pieces either side end ON the coast, the crossing shared with
+  // the arc, and every vertex keeps its ORIGINAL index for srcIdx / segOrd / hard, so no authoring key moves. ⛔ A wet piece
+  // over a run attributed by order or one end, or over a run AT GRADE, refuses by name — never kept silently in the water.
+  // Over land nothing changes (a partly-bridge street still bounds blocks), and a bridge over an ISLAND stays ink, like a
+  // bridge over land.
+  const split = splitOverWater([...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))], coast, coastChains, segOrdAt)
+  const chains = [...split.chains, ...split.coastChains]
   // ⭐ H-3 step 4 — `gradeEnd`, the RAMP-END identity stamp. A grade-separated HIGHWAY chain's endpoint that is
   // also a vertex of a non-highway street is where the ramp comes down to the town (an at-grade terminal).
   // Stamped here, by construction, exactly as `tipEnd` is — ⛔ never recovered by proximity afterwards (A15).
@@ -506,8 +569,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     // ⭐ `water` rides the stamp for the same reason `gradeSeparated` does: downstream tells a
     // shore edge from a street edge by IDENTITY, never by the absence of a measure.
     const isCoast = skelId === WATER_EDGE_SKEL
-    const stamp = (side, i, segI) => { const ge = gradeEndOf(i)
-      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }), ...(hwyGs && { hwy: true }) }) - 1 }
+    // a piece of a chain split over the water (splitOverWater) keys every vertex by its ORIGINAL index; its water ends are grade ends
+    const orig = st?._orig || null, origSeg = st?._origSeg || null, wEnd = st?._waterEnd || null
+    const stamp = (side, i, segI) => { const ge = gradeEndOf(i) || (wEnd && ((i === 0 && wEnd.start) ? 'start' : (i === lastI && wEnd.end) ? 'end' : null))
+      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, origSeg ? origSeg[segI] ?? origSeg[Math.max(0, Math.min(origSeg.length - 1, segI))] : segI) : 0, gradeSeparated: gs, srcIdx: orig ? orig[i] : i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }), ...(hwyGs && { hwy: true }) }) - 1 }
     return { st, ci, P, skelId, isCoast, dg0, dg1, lastI, stamp }
   }
   const live = chains.filter(({ st }) => st?.points?.length >= 2).map(ctxOf)
@@ -1091,9 +1156,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, centrelines, outlineRefused: outlineRefusedRec, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
+             nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeByCoast: split.byCoast, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, eps }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeByCoast: split.byCoast, eps }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
