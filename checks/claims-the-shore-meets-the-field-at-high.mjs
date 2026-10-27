@@ -11,13 +11,15 @@
 //   7. ISLANDS (a hole in ①'s water, Jacob 2026-10-26): around an island in open water the field meets HIGH on its shore
 //      and no island node is lowered; an island in a narrow arm, with no bed of its own two to four cells out, takes the
 //      slope of the water holding it, RECORDED (slopeFrom); an island inside no water ring REFUSES; and every ring records
-//      the share of its slope samples on a MEASURED floor (slopeFloorShare; null when borrowed);
+//      the share of its slope samples on a MEASURED floor (slopeFloorShare; null when borrowed); and a write deeper than
+//      the deepest bed REFUSES;
 //   5. per town whose terrain.json carries `stamp`: the field along ①'s coast (from map.json), sampled where the stamp
 //      ran, meets HIGH; the largest miss is printed against the field's cell. NOT CHECKED until a terrain carries it.
 // MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
 // the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench) · the mask
 // filled per ring (an island read as water) · the island's borrowed slope dropped (it refuses) · the nearest search
-// stopping at the first radius with a hit, or at the first hit in scan order · the floor share never counted.
+// stopping at the first radius with a hit, or at the first hit in scan order · the floor share never counted · the
+// deepest-bed refusal dropped.
 //
 //   node checks/claims-the-shore-meets-the-field-at-high.mjs
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -52,7 +54,9 @@ const mask = maskOf(face, W, H, B)
 console.log('── 1–2. a lake: the field meets HIGH on the line, and no land is lowered')
 {
   const f = field(), before = Float32Array.from(f)
-  stampCoast(f, W, H, B, face, bb, mask, lake(0))
+  // ⛔ (2026-10-26) the seawall's reflection here writes −10 m against a deepest bed of −3.53 m, and the stamp now refuses it:
+  // RED until the wall rule is bounded (Zob's (a)/(b), Boz to rule). The refusal is reported, never caught silently.
+  try { stampCoast(f, W, H, B, face, bb, mask, lake(0)) } catch (e) { say(false, `the drawn lake stamps without refusing — ${e.message.split('\n')[0]}`) }
   let worst = 0, wallMiss = 0
   for (let x = 20; x <= 180; x += 0.5) { if (WALL(x)) continue; worst = Math.max(worst, Math.abs(bilinear(f, W, H, B, x, lineZ(x)) - 0)) }
   say(worst < 1e-6, `along ①'s line (the seawall apart), |field − HIGH| ≤ ${worst.toExponential(2)} m`)
@@ -66,7 +70,7 @@ console.log('── 1–2. a lake: the field meets HIGH on the line, and no land
 console.log('── 3. a tidal town: the ramp spans two cells between LOW and HIGH')
 {
   const f = field(0.1, 0.02, 2.0)                               // a STEEP bed: without the cap the whole tide sits on one cell
-  stampCoast(f, W, H, B, face, bb, mask, tide(-1, 0))
+  try { stampCoast(f, W, H, B, face, bb, mask, tide(-1, 0)) } catch (e) { say(false, `the drawn tidal town stamps without refusing — ${e.message.split('\n')[0]}`) }
   const x = 100, z0 = lineZ(x), atLow = (() => { for (let dz = 0; dz < 50; dz += 0.05) if (bilinear(f, W, H, B, x, z0 + dz) <= -1) return dz; return Infinity })()
   say(atLow >= 2 * 5 * 0.99, `the field falls from HIGH to LOW over ${atLow.toFixed(2)} m seaward (≥ two 5 m cells)`)
 }
@@ -75,7 +79,7 @@ console.log('── 3b. tidal flats above the ramp keep their bed: no trench bet
   const f = field(0.1, 0.02, 0.03)                              // the bed, with a shallow BAR (flats) 8–12 m out, above the ramp
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const d = (lineZ(i * 5) - j * 5) * 200 / Math.hypot(200, 20); if (d < -8 && d > -12) f[j * W + i] = -0.05 }
   const before = Float32Array.from(f)
-  stampCoast(f, W, H, B, face, bb, mask, tide(-1, 0))
+  try { stampCoast(f, W, H, B, face, bb, mask, tide(-1, 0)) } catch (e) { say(false, `the drawn tidal town stamps without refusing — ${e.message.split('\n')[0]}`) }
   let dug = 0, n = 0
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i, d = (lineZ(i * 5) - j * 5) * 200 / Math.hypot(200, 20)
     if (d < -8 && d > -12) { n++; if (f[k] < before[k] - 1e-9) dug++ } }
@@ -150,6 +154,13 @@ console.log('── 7. islands: the stamp runs round each one')
   const re = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0), null, half), rn = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0))
   say(re.slopeFloorShare.every(v => v > 0 && v < 1) && rn.slopeFloorShare.every(v => v === 0) && rb.slopeFloorShare[1] === null,
     `each ring records its slope's share on a measured floor (${JSON.stringify(re.slopeFloorShare)}; none given ${JSON.stringify(rn.slopeFloorShare)}; borrowed ${rb.slopeFloorShare[1]})`)
+  // f: a kept land node 0.2 mm from the line, 0.19 m above HIGH (Huron's worst wall, 2026-10-26): its reflection would sink the
+  //    seaward corner to about −4,750 m, deeper than any bed, and the stamp REFUSES rather than write it
+  { const sea = wnd([[0, 100.0002], [200, 100.0002], [200, 200], [0, 200]], 1), ms = maskOf([sea], W, H, B)
+    const gw = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i, z = j * 5
+      gw[k] = ms[k] ? -0.1 - 0.03 * (z - 100) : z === 100 ? 0.19 : 0.02 * (100 - z) + 0.19 }
+    let sunk = false; try { stampCoast(gw, W, H, B, [sea], bb, ms, lake(0)) } catch (e) { sunk = /deeper than the deepest bed/.test(e.message) }
+    say(sunk, 'a wall reflection deeper than the deepest bed REFUSES by name (never written)') }
   // c: an island inside no water ring refuses
   let t = false
   try { stampCoast(field(), W, H, B, [...face, wnd([[10, 10], [20, 10], [20, 20], [10, 20]], -1)], bb, mask, lake(0)) } catch (e) { t = /inside no water ring/.test(e.message) }

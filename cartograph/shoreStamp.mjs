@@ -96,6 +96,9 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   })
   for (let ri = 0; ri < face.length; ri++) if (slopeFrom[ri] !== null) sOf[ri] = sOf[slopeFrom[ri]]
   const islands = holder.filter(h => h !== null).length, borrowed = slopeFrom.filter(h => h !== null).length
+  // ⛔ NO WRITTEN NODE DEEPER THAN THE DEEPEST BED (Boz's ruling, 2026-10-26): the bed's own deepest water node before the
+  // stamp (writeBed's cut, or the deepest measured floor) bounds every seaward write. Deeper is no beach: refused by name.
+  let deepest = Infinity; for (let k = 0; k < width * height; k++) if (mask[k] && normalized[k] < deepest) deepest = normalized[k]
   const stamped = new Uint8Array(width * height)
   let raised = 0, kept = 0, ramped = 0, walled = 0, bedWon = 0
   const keptRise = new Map()                                 // landward node kept above the ramp → its rise (h − HIGH)/d
@@ -123,6 +126,9 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
       stamped[k] = 1
     } else if (ramp > normalized[k]) { normalized[k] = ramp; ramped++; stamped[k] = 1 } else bedWon++
   }
+  const sunk = []; for (const [k] of best) if (stamped[k] && normalized[k] < deepest - 1e-6) sunk.push(k)
+  if (sunk.length) { const w = sunk.reduce((m, k) => normalized[k] < normalized[m] ? k : m, sunk[0])
+    throw new Error(`⛔ the stamp: ${sunk.length.toLocaleString()} node(s) written deeper than the deepest bed (${deepest.toFixed(3)} m), the deepest ${normalized[w].toFixed(3)} m at (${Math.round(X(w % width))}, ${Math.round(Z((w - w % width) / width))}); first at ${sunk.slice(0, 5).map(k => `(${Math.round(X(k % width))}, ${Math.round(Z((k - k % width) / width))})`).join(' · ')} — no beach is that deep`) }
   // ⛔ a bed standing at or above HIGH inside ①'s water is ① contradicting the lidar: counted and named, never clamped
   const above = []
   for (let k = 0; k < width * height; k++) if (mask[k] && !stamped[k] && !(rock && rock[k]) && normalized[k] >= L.highAt(X(k % width), Z((k - k % width) / width))) above.push(k)
