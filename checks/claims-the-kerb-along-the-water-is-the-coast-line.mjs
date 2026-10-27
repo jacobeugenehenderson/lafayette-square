@@ -41,7 +41,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
-import { WATER_EDGE_SKEL } from '../src/lib/tileGround.js'
+import { WATER_EDGE_SKEL, HWY_SKEL } from '../src/lib/tileGround.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { NODE_BOUND } from '../src/lib/latticeNode.js'
 import { ROOT } from './_scenes.mjs'
@@ -71,6 +71,8 @@ const RIM_MUTANTS = [
 RIM_MUTANTS.push(['a thin cell\'s corner picked by the far end\'s key', '.filter(([u, w]) => edgeHolds(rr[u], rr[w], v))\n  return opts.length === 1 ? opts[0] : null',
   ".filter(([u, w]) => { const P = toClipper(rr[u]), Q = toClipper(rr[w]), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, L2 = dx * dx + dy * dy; if (!L2) return false; const t = ((q.X - P.X) * dx + (q.Y - P.Y) * dy) / L2; return t > 0 && t < 1 })\n  const W = globalThis.__farWet || new Set(), Kk = (p) => { const c = toClipper(p); return c.X + ',' + c.Y }\n  const f = opts.length > 1 ? opts.filter(([u, w]) => W.has(Kk(rr[u === ic ? w : u]))) : opts\n  return f.length === 1 ? f[0] : null"])
 // the island mutant: a CLOSED run (both ways round the cell wet) refused, as before rule (1) (Huron's 11.3 ha island, 2026-10-27)
+// the keyless mutant: a water-run vertex with no bracket key is skipped (no place), as before (Huron's motorway banks, 2026-10-27)
+RIM_MUTANTS.push(['a keyless water run skipped', '      else { const cands = []\n        rings.forEach((R2, a)', '      else if (false) { const cands = []\n        rings.forEach((R2, a)'])
 RIM_MUTANTS.push(['a closed run refused, both ways wet', '      const cands = []\n', "      if (okF && okB) throw new Error('[mutant] both ways round the cell are wet')\n      const cands = []\n"])
 const rimMutants = []
 for (const [name, a, b] of RIM_MUTANTS) {
@@ -122,7 +124,20 @@ for (const [name, a, b] of RIM_MUTANTS) {
   const land = live4?.tile?.inkCells?.[0]?.rings?.[0] || [], at = land.findIndex(p => p[0] === 50 && p[1] === 0)
   const ok4 = !liveErr && at === 1 && !!mutErr
   console.log(`${ok4 ? '✅' : '⛔'} (A′) planted island: live ${liveErr ? `REFUSES (${liveErr.slice(0, 90)})` : at >= 0 ? `places v on the edge holding it (cell vertex ${at})` : 'does not place v'}; the closed-run-refused mutant ${mutErr ? 'refuses' : 'places it (vacuous)'}`)
-  if (ok4) C4.red++; else { console.log('⛔ the planted island cannot tell rule (1) from a closed-run refusal'); process.exit(1) } }
+  if (ok4) C4.red++; else { console.log('⛔ the planted island cannot tell rule (1) from a closed-run refusal'); process.exit(1) }
+  // (A′) planted, A KEYLESS WATER RUN (Huron's land between two motorway bank ends, 2026-10-27): highway → water → highway, the
+  // water run's two ends both H × water joins, no ① vertex on it; the shore cell's land edge runs past both. Live places both on
+  // the one cell edge that holds them; the mutant that skips a keyless vertex refuses
+  const C5 = rimMutants.find(m => m.name.startsWith('a keyless'))
+  const bl = [[2, 0], [8, 0], [8, 10], [2, 10]]
+  const keyless = { ring: [[-6, -1], [16, -1], [16, 12], [-6, 12]], iA: [bl], iaFull: [bl], iaStamp: [[0, 1, 1, 1]], runs: [{ skelId: WATER_EDGE_SKEL, side: 'left', segOrd: 0 }, { skelId: HWY_SKEL, side: 'left', segOrd: 0 }],
+    inkCells: [{ cls: 'shore', rings: [[[-5, 0], [15, 0], [15, -0.005], [-5, -0.005]]] }] }
+  let live5 = null, e5 = null; try { live5 = shareWaterRunIntoShore(keyless, 'planted keyless run') } catch (e) { e5 = String(e.message) }
+  let m5 = null; try { C5.tg.shareWaterRunIntoShore(keyless, 'planted keyless run') } catch (e) { m5 = String(e.message) }
+  const land5 = live5?.tile?.inkCells?.[0]?.rings?.[0] || [], has = (x) => land5.some(p => p[0] === x && p[1] === 0)
+  const ok5 = !e5 && has(2) && has(8) && !!m5
+  console.log(`${ok5 ? '✅' : '⛔'} (A′) planted keyless run: live ${e5 ? `REFUSES (${e5.slice(0, 90)})` : `places both joins on the cell edge holding them (${has(2) && has(8) ? 'both' : 'not both'})`}; the keyless-skipped mutant ${m5 ? 'refuses' : 'places them (vacuous)'}`)
+  if (ok5) C5.red++; else { console.log('⛔ the planted keyless run cannot tell the rule from skipping it'); process.exit(1) } }
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]
 const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]

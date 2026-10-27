@@ -2640,7 +2640,14 @@ export function shareWaterRunIntoShore(tile, who) {
     else { // one side only (a run's end): the cell edge from that side's vertex that takes the point strictly inside — exactly one
       const c = lo || hi
       if (c) { const [a, b] = at.get(K(c)), rr = rings[a][b], m = rr.length, ic = rr.findIndex(w => K(w) === K(c))
-        const e = incidentEdgeHolding(rr, ic, v); if (e) placed = tryEdge(rr, ...e) } }
+        const e = incidentEdgeHolding(rr, ic, v); if (e) placed = tryEdge(rr, ...e) }
+      // ⭐ NO BRACKET KEY AT ALL (Zob, 2026-10-27: Huron's land between motorway-65's and motorway-56's bank ends, a water run whose
+      // two ends are both H × water joins): the open sibling of the island's closed run. The same containment, widened from a key's
+      // incident edges to every edge of the tile's shore cells: the one edge that HOLDS the point, exactly one, else refuse by name
+      else { const cands = []
+        rings.forEach((R2, a) => R2.forEach((rr, b) => rr.forEach((q, u) => { const w = (u + 1) % rr.length; if (edgeHolds(q, rr[w], v)) cands.push({ rr, u, w }) })))
+        if (cands.length !== 1) throw new Error(`[tileGround][shore] ⛔ ${who}: the block's vertex (${v.map(c => c.toFixed(3)).join(', ')}) on a water run with no bracket key is held by ${cands.length} shore-cell edges (want exactly 1). Refusing.`)
+        placed = tryEdge(cands[0].rr, cands[0].u, cands[0].w) } }
     // ⭐ VERIFIED, never chosen, by distance (Zob): the key-chosen edge must hold the point within the boolean's own containment
     // (two grid units, insertOnEdges'); past it refuses. Counted and printed, as nodeRimWithPaint's far / farMax.
     if (placed) { const [P, Q] = placed.map(toClipper), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, d = Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.hypot(dx, dy)
