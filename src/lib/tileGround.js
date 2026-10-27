@@ -423,16 +423,27 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH =
                   ...coastChains.map(c => ({ tag: 'arc', p: c.st.points.map(q => [rlL(q[0]), rlL(q[1])]), open: true }))]
   const nS = L.length
   const out = nodeCrossings(inputs, { pairs: (a, b) => (a < nS) !== (b < nS), who: '① bridge over water' })
-  const crossKeys = new Set(); for (let n = nS; n < out.length; n++) for (const v of out[n]) if (v.src == null) crossKeys.add(v.k[0] + ',' + v.k[1])
+  // ⭐ A CROSSING IS A LATTICE POINT ON BOTH A STREET AND AN ARC, whoever's vertex it was (Boz, 2026-10-27: "a street that stays in
+  // the water silently is a Layer 0 defect"). Read off the minted points alone, a coast-arc vertex lying exactly on a street (its
+  // `src` the arc's) or a street vertex exactly on the coast (its `src` the street's) was no crossing, and the street stayed whole
+  // in the water. A point where a street only TOUCHES the coast splits nothing that matters: same-fate pieces are rejoined below.
+  const onStreet = new Set(); for (let n = 0; n < nS; n++) for (const v of out[n]) onStreet.add(v.k[0] + ',' + v.k[1])
+  const crossKeys = new Set(); for (let n = nS; n < out.length; n++) for (const v of out[n]) { const k = v.k[0] + ',' + v.k[1]; if (onStreet.has(k)) crossKeys.add(k) }
   if (!crossKeys.size) return { chains: list, coastChains, dropped: 0, spans }
   let dropped = 0
   const pieces = new Map()   // index in L → [{ st, ci }] replacing it
   L.forEach((x, n) => { const st = x.st, P = st.points, o = out[n]
-    // the chain as original vertices plus its shoreline crossings (a hot pixel the noding routed through, not a crossing, is not a vertex)
-    const V = []; for (const v of o) { if (v.src != null) V.push({ p: P[v.src], src: v.src, edge: v.src })
-      else if (crossKeys.has(v.k[0] + ',' + v.k[1])) V.push({ p: [v.k[0] / SCALE, v.k[1] / SCALE], src: null, edge: v.edge, cross: true }) }
+    // the chain as original vertices plus its shoreline crossings (a hot pixel the noding routed through, not a crossing, is not a
+    // vertex); an original vertex lying ON the coast is a crossing too, and keeps its index
+    const V = []; for (const v of o) { const c = crossKeys.has(v.k[0] + ',' + v.k[1])
+      if (v.src != null) V.push({ p: P[v.src], src: v.src, edge: v.src, ...(c && { cross: true }) })
+      else if (c) V.push({ p: [v.k[0] / SCALE, v.k[1] / SCALE], src: null, edge: v.edge, cross: true }) }
     if (!V.some(v => v.cross)) return
-    const parts = [[]]; V.forEach((v, k) => { parts[parts.length - 1].push(v); if (v.cross && k > 0 && k < V.length - 1) parts.push([v]) })
+    const cut = [[]]; V.forEach((v, k) => { cut[cut.length - 1].push(v); if (v.cross && k > 0 && k < V.length - 1) cut.push([v]) })
+    // pieces of one fate either side of a mere touch are one piece: split only where the street goes into or out of the water
+    const wetPart = (part) => part.length >= 2 && wet([(part[0].p[0] + part[1].p[0]) / 2, (part[0].p[1] + part[1].p[1]) / 2])
+    const parts = []; for (const part of cut) { if (part.length < 2) continue
+      const last = parts[parts.length - 1]; if (last && wetPart(last) === wetPart(part)) last.push(...part.slice(1)); else parts.push(part) }
     const keep = []
     for (const part of parts) { if (part.length < 2) continue
       const a = part[0].p, b = part[1].p
@@ -459,6 +470,7 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH =
       // reads as land in the lidar, so it never reaches here. It leaves the ink like a tagged span, and it is RECORDED, never silent
       spans.push(span('byCoast'))
       dropped++ }
+    if (keep.length === parts.length) return   // nothing left the ink: a street that only touches the coast is kept as it was
     pieces.set(n, keep.map(part => ({ ci: x.ci, st: { ...st, points: part.map(v => v.p), hard: part.map(v => v.src != null && st.hard ? !!st.hard[v.src] : v.src != null),
       caps: { start: part[0].src === 0 ? st.caps?.start : undefined, end: part[part.length - 1].src === P.length - 1 ? st.caps?.end : undefined },
       _orig: part.map(v => v.src), _origSeg: part.map(v => v.edge), _waterEnd: { start: !!part[0].cross, end: !!part[part.length - 1].cross } } }))) })
@@ -2243,7 +2255,7 @@ export function bridgeOverlay(spans, waterRings, hwOf) {
     while (Math.abs(area(B) - area(A)) > 1e-6 * Math.max(1, Math.abs(area(A))) && k++ < 12) { E *= 2; A = B; B = clip(2 * E) }
     if (Math.abs(area(B) - area(A)) > 1e-6 * Math.max(1, Math.abs(area(A)))) throw new Error(`[tileGround][bridges] ⛔ ${who}: its clip to the water does not settle as the sweep runs on past the banks (out to ${(2 * E).toFixed(1)} m) — the bank cannot be met. Refusing.`)
     if (!A.length) throw new Error(`[tileGround][bridges] ⛔ ${who}: its sweep holds no water. Refusing.`)
-    out.push({ street: sp.street, segOrd: sp.segOrd, rings: A }) }
+    out.push({ street: sp.street, segOrd: sp.segOrd, hwy: false, rings: A }) }
   return out
 }
 
@@ -2257,7 +2269,7 @@ export function highwayBridges(spans, Hrings, waterRings) {
   return H.map(sp => { const P = sp.points, mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
     const rings = wet.filter(r => mids.some(m => pointInRing(m[0], m[1], r)))
     if (!rings.length) throw new Error(`[tileGround][bridges] ⛔ ${sp.street}|${sp.segOrd} is recorded as swept by H, but no piece of H over the water holds its centreline. Refusing.`)
-    return { street: sp.street, segOrd: sp.segOrd, rings } })
+    return { street: sp.street, segOrd: sp.segOrd, hwy: true, rings } })
 }
 
 export function unionRings(rings) {
@@ -8657,7 +8669,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let asphalt = S.asphalt
   const curb = S.curb, sidewalk = S.sidewalk, block = S.block
   let highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
-  let bridges = []    // the bridge spans painted over the water: [{ street, segOrd, rings }] (`bridgeOverlay`)
+  let bridges = []    // the bridge spans painted over the water: [{ street, segOrd, hwy, rings }] (`bridgeOverlay`, `highwayBridges`); `hwy` picks its road's paint
   let inkShore = []   // ①'s coast piece, the land's shore surface (painted first, below)
   protoBandPieces = S.bandPieces || []
   protoRimRings = S.rimRings || []

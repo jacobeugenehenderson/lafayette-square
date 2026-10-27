@@ -20,6 +20,11 @@
 //       `hwy`, and `tileGround.js#highwayBridges` moves H ∩ the water holding that span out of the highway's paint into the
 //       bridge's — the bridge is exactly H's strip between the banks, the highway left has nothing over the water, and the two
 //       together are H (they meet on the coast). MUTANT: no split (the highway keeps its span over the water) reads RED.
+//   (8) PLANTED (Boz, 2026-10-27: "a street that stays in the water silently is a Layer 0 defect"): the inlet's street crossing
+//       the coast EXACTLY at a vertex — (a) a coast-arc vertex lying on the street, (b) a street vertex lying on the coast, (c) a
+//       vertex both share (Zob's third form). Each is a crossing: the span is recorded and the street's ink leaves the water.
+//       MUTANTS: the crossings read off the minted points alone (a, c) and a street's own vertex never marked a crossing (b)
+//       each leave the street in the water — RED.
 //   (4) over LAND nothing changes: the same street, its run off grade, with no water → the same ink as with no grade runs.
 //   MUTANTS (6): the overlay disabled (a gap over the water) and the overlay not run on past the banks (butt ends at the crossing
 //   vertices leave a triangle of water at each oblique bank) must each read RED.
@@ -107,15 +112,31 @@ const judgeH = (R) => typeof R === 'string' ? null : { d: absA(differenceRings(R
 { const R = splitH(highwayBridges), J = judgeH(R)
   row(SPh.length === 1 && SPh[0].hwy === true && J && J.d < 1e-3 && Math.abs(J.wet) < 1e-3 && Math.abs(J.sum) < 1e-3,
     `(7) a highway bridge across the inlet: ① records ${SPh.map(e => `${e.street}|${e.segOrd} ${e.kind}${e.hwy ? ' (H)' : ''}`).join(' · ') || 'NO span'}; ${J ? `the bridge differs from H's strip between the banks by ${J.d.toFixed(4)} m², the highway left has ${J.wet.toFixed(4)} m² over the water, together they are H ± ${J.sum.toFixed(4)} m²` : `REFUSES (${String(R).slice(0, 100)})`}`) }
+// (8) the crossing AT a vertex: (a) the banks carry a vertex exactly on the street (z = 0); (b) the street carries one exactly on each bank
+const arcOnStreet = [...inletArc.slice(0, 2), [xl(0), 0], ...inletArc.slice(2, 5), [xr(0), 0], ...inletArc.slice(5)]
+const waterOnStreet = wind([...arcOnStreet, [200, -200], [-200, -200]], 1)
+const streetOnArc = () => inletStreets().map(x => x.skelId !== 'r' ? x : { ...x, points: [[-150, 0], [xl(0), 0], [xr(0), 0], [150, 0]], gradeRuns: [{ from: 0, to: 3, ways: [3], offGrade: true, exact: true, by: 'exact' }] })
+const atVertex = (mint, which) => { const arcV = which !== 'b', stV = which !== 'a', W = arcV ? waterOnStreet : inlet, arc = arcV ? arcOnStreet : inletArc
+  let M = null; try { M = quiet(() => mint({ streets: stV ? streetOnArc() : inletStreets(), boundary, bb, coast: [W], coastArcs: [arc] })) } catch (e) { return { refused: String(e.message) } }
+  const L = arc.reduce((t, p, k) => k ? t + Math.hypot(p[0] - arc[k - 1][0], p[1] - arc[k - 1][1]) : 0, 0)
+  return { span: (M.offGradeSpans || []).find(e => e.street === 'r'), wetInk: absA([W]) - absA(differenceRings([W], M.rings)), bound: INK_EPS * L * 1.01 + 1e-6 } }
+const AT = { a: 'a coast vertex exactly on the street', b: 'a street vertex exactly on the coast', c: 'a vertex the street and the coast share' }
+for (const which of ['a', 'b', 'c']) { const R = atVertex(mintProtopolygon, which)
+  row(!R.refused && !!R.span && R.wetInk <= R.bound, `(8${which}) ${AT[which]}: ${R.refused ? `REFUSED (${R.refused.slice(0, 100)})` : `${R.span ? `span r|${R.span.segOrd} recorded (${R.span.wetM} m)` : 'NO span recorded'}, the ink in the water ${R.wetInk.toFixed(3)} m² (the coast's own stroke ≤ ${R.bound.toFixed(3)})`}`) }
 { const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
   for (const [name, a, b] of [['the overlay disabled (a gap over the water)', 'for (const sp of spans) { if (sp.hwy) continue', 'for (const sp of spans) { continue'],
                               ['the overlay not run on past the banks', 'let E = 2 * Math.max(hl, hr), A = clip(E)', 'let E = 0, A = clip(E)'],
-                              ['H not split (the highway keeps its span over the water)', '  const H = (spans || []).filter(x => x.hwy)\n', '  const H = []\n']]) {
+                              ['H not split (the highway keeps its span over the water)', '  const H = (spans || []).filter(x => x.hwy)\n', '  const H = []\n'],
+                              ['(a) the crossings read off the minted points alone', "for (const v of out[n]) { const k = v.k[0] + ',' + v.k[1]; if (onStreet.has(k)) crossKeys.add(k) }", 'for (const v of out[n]) if (v.src == null) crossKeys.add(v.k[0] + \',\' + v.k[1])'],
+                              ['(b) a street\'s own vertex never marked a crossing', "edge: v.src, ...(c && { cross: true }) })", 'edge: v.src })']]) {
     if (src.split(a).length !== 2) { row(false, `mutant (6) ${name}: its anchor is not in tileGround.js once — re-aim it`); continue }
     const dir = mkdtempSync(join(tmpdir(), 'bridge6-')), LIB = join(ROOT, 'src/lib')
     try { writeFileSync(join(dir, 'tileGround.js'), src.replace(a, b)
         .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`).replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
       const M = await import(pathToFileURL(join(dir, 'tileGround.js')).href)
+      if (name.startsWith('(a)') || name.startsWith('(b)')) for (const w of name[1] === 'a' ? ['a', 'c'] : ['b']) { const R = atVertex(M.mintProtopolygon, w)
+        row(!!R.refused || !R.span || R.wetInk > R.bound, `mutant (8${w}) ${name.slice(4)}: ${R.refused ? `refuses (${R.refused.slice(0, 80)})` : `${R.span ? 'span recorded' : 'NO span'}, ${R.wetInk.toFixed(3)} m² of ink in the water`} — RED as it must be`) }
+      if (name.startsWith('(a)') || name.startsWith('(b)')) continue
       if (name.startsWith('H not split')) { const J = judgeH(splitH(M.highwayBridges))
         row(!J || J.wet > 1, `mutant (7) ${name}: ${J ? `the highway keeps ${J.wet.toFixed(2)} m² over the water` : 'refuses'} — RED as it must be`); continue }
       const B = bridgeOf(M.bridgeOverlay), d = typeof B === 'string' ? null : symDiff(B)
