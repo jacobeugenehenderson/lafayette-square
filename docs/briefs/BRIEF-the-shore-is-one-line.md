@@ -33,6 +33,9 @@ Three lines that should be one:
   highest water mark?"*). Water is ①'s water face at the level, drawing back inside it below HIGH; land outside ① is land at every
   level, even below HIGH; the field is stamped to the line in a band; HIGH is the water record's number. The lidar trace is the
   pour's FIRST DRAFT of the line (authorable), and the bed inside ① is NCMP near shore.
+- **A river at the lake's own level is the lake; islands are built** (Jacob 2026-10-26: *"yes river is lake, build islands with the
+  floor"*). The lower Huron River, flattened at the lake's sheet, is part of ①'s water face. Islands are holes in the water through
+  the mint and bake-ground (holed polygons). Holes smaller than one terrain cell are dropped, counted and named.
 - **Water, sand and shore run to the bb and are stamped with everything; the disc stamps last; the sand line is ink in ①,
   made in the pour** (Jacob 2026-10-21 night; `BRIEF-the-rim-is-cut-once §5`).
 - **No fallback:** no lidar, no vertical datum, or no water record ⇒ THROWS by name, never OSM (`coast-from-lidar §3.2`).
