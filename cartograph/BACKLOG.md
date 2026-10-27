@@ -166,8 +166,10 @@ deck). RULED, to carry: water SHADED BY KIND (Jacob: "we want to shade water by 
 producer, an ASPIRATION to build, not rot. MONUMENT LIGHTS (Jacob): pitch ANIMATION ("a quintessential aspirational feature we could
 deliver pretty cheaply"); the strand count is AUTHORED (a slider in the editor, ~3,100 bulbs per the press); the sources name ~3,100 lights and no strand count. MEASURED BY JACOB from photos (2026-10-27): 20 STRANDS, 5 per face of the
 square tower, leaving each face at about 20 · 30 · 50 · 70 · 80% across it (so unevenly spaced at the top), and landing EVENLY spaced
-on the ground circle below (~155 bulbs a strand at 3,100). So the rig's top anchors are per FACE (a face index plus a fraction across it),
-the ground anchors are evenly spaced on a circle, and each strand runs from its own top point to its own ground point. The editor's working
+on a circle that is IN THE AIR, not on the ground (its height and radius authored), ~155 bulbs a strand at 3,100. The strands are STRAIGHT,
+pulled taut, so no sag: each is a straight line from its top point on a face to its point on the circle. Any twisting look comes from the
+LIGHT PATTERN, not the geometry. So the rig is: top anchors per FACE (a face index plus a fraction across it), the circle's height and radius,
+and evenly spaced circle anchors. The editor's working
 name (Jacob): the LUX-ARBORAGRAPH, the tree of lights.
 ⛔ RELEASE ORDER FOR THE COAST PIN (Ward-seat review, 2026-10-27; Jacob ruled the pin): an OLD player on a NEW slab draws the bare
 lidar contour silently (the stamp no longer raises land). So: (1) merge shore/2026-10-25 into the kit; (2) publish the kit bundle at
