@@ -55,7 +55,6 @@ import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoot
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
-import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain, requireSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign, bakeCurbWidth } from './lookDesign.mjs'
 import { lookFade } from './boundaryRecords.mjs'
@@ -65,6 +64,9 @@ import { SURFACES, resolveClassTable } from './surfaces.mjs'
 import { splitByField } from '../src/lib/fieldAxis.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'   // integer clipper units per metre → 1 mm precision
 import { LATTICE_STEP, NODE_BOUND, nodeAcrossGroups, splitAtPinches, pinchesOfRing, windingOf } from '../src/lib/latticeNode.js'   // one lattice step in Clipper units · the paint's noding rule
+import { waterFace, faceAsPolygons } from './coastFile.mjs'
+import { pinTheCoast, onLineTolerance, spanFootprints } from './coastPins.mjs'
+import { LATTICE_M } from '../src/lib/lattice.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -216,10 +218,9 @@ const PAINT_ORDER = [
   ['mat', 'wood'],
   ['mat', 'scrub'],
   ['mat', 'tree_row'],
-  // ⭐ THE SHORE MEDIAN, AS SAND (BRIEF-the-shore-is-closed; Jacob's go 2026-10-04): the ground between the drawn
-  // shoreline and the lidar's waterline (bake-shore-median.mjs) is the town's sand. Above the land-use faces and the
-  // natural overlays, so it replaces them there; below every road and ribbon, so a street that runs to the water keeps
-  // its street. One partition: it CUTS what is beneath it (the one-plane rule), never a sheet floated over it.
+  // ⭐ THE SHORE: ①'s coast ink, the land's shore surface (pr.inkShore). Above the land-use faces and the natural overlays;
+  // below every road and ribbon, so a street that runs to the water keeps its street. It CUTS what is beneath it (the
+  // one-plane rule). (The shore median that also painted here is retired: BRIEF-the-shore-is-one-line step 3.)
   ['mat', 'shore'],
   // Grade-separated roads sit ABOVE the land-use faces (so the freeway shows in its
   // corridor, not buried under the LU perimeter fill) but BELOW the local ribbon
@@ -256,12 +257,13 @@ const PAINT_ORDER = [
   ['mat', 'hedge'],
   // Roadway markings (paint), drawn last so they sit on top of asphalt.
   ['mat', 'edgeline'],
+  ['mat', 'edgeline:yellow'],   // a one-way roadway's LEFT edge: the stripe's yellow, under the Edge Lines toggle
   ['mat', 'bikelane'],
   ['mat', 'stripe'],
   // ⭐⭐ THE BED — the ground UNDER every water body (Jacob, 2026-09-26: "there must be no
   // bare space between the water and the land"). The water is a level sheet and the land is
   // draped, so where the land's edge stands above the water nothing joined them and the
-  // sky showed through (`docs/briefs/BRIEF-the-shore-is-closed.md`). The bed is draped
+  // sky showed through (`cartograph/_archive/BRIEF-the-shore-is-closed-RETIRED-2026-10-25.md`). The bed is draped
   // over the same terrain and conformed with the land, so the two share every shore vertex
   // and meet with no step. Its SHAPE is in the terrain: bake-terrain writes the bed under the water
   // (THE BED), so the visible shore is wherever the level meets the ground.
@@ -291,6 +293,11 @@ const PAINT_ORDER = [
   // lake 3 · stream 5) plus the OSM values adjacent to them. The unconsumed-key
   // report below is the backstop when OSM produces one nobody listed.
   ...WATER_SUBTYPES.map(w => ['mat', `water:${w}`]),
+  // ⭐ A BRIDGE'S PAINT OVER THE WATER (Boz's ruling (iv), 2026-10-27, on Jacob's (b): "painted on top of the water"): every span's
+  // paint over ①'s water is its own group, AFTER the water so its slot stands above the sheet's; raw = HIGH (coastPins.mjs), so it
+  // reads ON the water at every level and exaggeration. It keeps its own slot (KEEP_OWN_SLOT) and still cuts, like the stripe.
+  // The step where it meets each bank (one slot) is measured and recorded (drawnRaw.bridgeBankStepM). The filed deck retires it.
+  ['mat', 'bridge'],
 ]
 // Layers pressed in BENEATH the whole paint stack, whatever their PAINT_ORDER slot: they fill
 // only what nothing else covers. The bed is one — a shore ribbon or a pier over the water
@@ -298,11 +305,10 @@ const PAINT_ORDER = [
 const FLOOR_KEYS = new Set(['mat:bed'])
 
 
-// Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
-// MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
+// Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors MapLayers.jsx's stripeRibbonGeo widths so
+// the bake matches the live render. ⛔ The road's paint (stripe, edge lines) is not here: the ground strikes it from the
+// sealed shape at the look's line width (`streetMarkings.js#MARKING_LOOK`).
 export const POLYLINE_HALF_WIDTHS = {
-  stripe:         0.10,
-  edgeline:       0.08,
   bikelane:       0.25,
   fence:          0.05,
   wall:           0.10,
@@ -338,27 +344,9 @@ export function polylineToRing(coords, halfWidth) {
   return ring
 }
 
-// ⭐ THE CENTRE STRIPE IS ①'s LINE (Boz's ruling, 2026-10-17, on Jacob's "everything uses ① as the SSoT"): each eligible
-// street's own `points` from the ribbons — the line ① was struck from, so the stripe lies inside ①'s ink by construction.
-// It replaces map.json's `centerStripe`, which derive.js pushes from the raw OSM way and which departed from ① by up to
-// 7.85 m (HPDM; ▶ checks/claims-the-road-lies-on-the-lattice.mjs). Eligibility is derive.js's own rule, read off the
-// street RECORD, never by matching names: an OSM class among the eight below · not oneway (a divided road's `pairId`
-// carriageways are each oneway, so the rule already leaves them out) · not grade-separated (a bridge's paint is not the
-// ground's). `dashed` is carried as derive.js carried it; nothing here reads it.
-const STRIPE_CLASSES = new Set(['residential', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified'])
-export function centreStripeRings(streets) {
-  const out = []
-  for (const s of streets || []) {
-    if (!STRIPE_CLASSES.has(s.highway) || s.oneway === true || s.gradeSeparated) continue
-    const ring = polylineToRing(s.points, POLYLINE_HALF_WIDTHS.stripe)
-    if (ring) out.push({ skelId: s.skelId, dashed: s.highway === 'residential', ring })
-  }
-  return out
-}
-
 // Lateral-offset a polyline by `offset` to one side, then return the
-// offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by parking_line
-// (edgeline) + bike_lane which carry a single centerline + lateral offset
+// offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by bike_lane, which
+// carries a single centerline + lateral offset
 // — the actual paint sits on the offset, not the centerline.
 export function lateralOffset(coords, offset, side) {
   const out = []
@@ -515,6 +503,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   if (hd?.legacy.length) console.warn(`  [H] ⛔ ${hd.legacy.length} highway(s) frozen at their PRE-H-3 measure — re-pour ${scene} to build them from their section: ${hd.legacy.join(', ')}`)
   pushClipperRings('asphalt',  pr.asphalt)
   pushClipperRings('highway',  pr.highway)   // grade-separated highway-class roads → own layer/material
+  // ⭐ every span's paint over ①'s water, its own group above the water's slot (Boz's ruling (iv)): buildTileGround's `bridges`
+  // ([{ street, segOrd, rings }]; a highway span's H footprint over the water is split out of `highway` into it)
+  if (Array.isArray(pr.bridges)) pushClipperRings('bridge', pr.bridges.flatMap(b => b.rings))
   pushClipperRings('shore',    pr.inkShore)  // ①'s coast piece: the land's shore surface (① painted first, tileGround)
   pushClipperRings('curb',     pr.curb)
   pushClipperRings('sidewalk', pr.sidewalk)
@@ -582,12 +573,13 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // ⭐ the raised kerb's inputs (`kerbLift.mjs`): the block silhouettes (the frozen curb rings), every cut's kerb face,
   // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
   const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
-  if (!pr.protoInkPieces?.length) throw new Error('[bake-ground] ① is the producer but the ink came back with NO owned pieces (protoInkPieces). Refusing to freeze a shape whose strip between tiles has no owner.')
-  return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [],
+  return { byMaterial, byFaceUse, cutOnce, shapeArtifact: pr.protoShapeTiles, stampedWith: pr.protoBoundaryRing || null, highwayRings: pr.highway || [], bridgePaint: pr.bridges,
            inkPieces: pr.protoInkPieces, asphaltRings: pr.asphalt || [], blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb,
            // each perpendicular corner's own ground with the leg that built it (`bandPiecesOfTile`'s `perp`, live): the deformer's legs
            // each rim tile's ring noded with its paint's own rim crossings (live): the deformer's 'beyond' (BRIEF-the-rim-is-cut-once)
-           rimRings: pr.protoRimRings || [] }
+           rimRings: pr.protoRimRings || [],
+           // the road's paint, struck from the sealed shape (tileGround.js#roadMarkings): stripe · edgeline · edgeline:yellow
+           roadPaint: pr.roadPaint }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -638,32 +630,6 @@ function _pathToRing(path) {
   return out
 }
 
-
-/**
- * The shore median (bake-shore-median.mjs `shore-median.json`, v2) as sand polygons for the `shore` layer: its two
- * regions — drawn water the lidar shows dry, drawn land the lidar shows wet — are already polygons bounded by the
- * drawn shoreline and the TRACED lidar waterline (one continuous line, not per-station landing points), so they are
- * only UNIONED here (non-zero), because the paint stack's even-odd subject fill would cut a hole where two overlap.
- * @returns { items: [{ outer, holes }], areaM2 }
- */
-export function shoreMedianItems(doc) {
-  if (!doc || doc.version !== 2) throw new Error(`bake-ground: shore-median.json version ${doc && doc.version} — this bake reads v2 (the traced waterline). ▶ re-run bake-shore-median`)
-  const c = new _Clipper()
-  for (const k of ['seaward', 'landward']) for (const p of doc.regions?.[k] || []) {
-    c.AddPath(_ringToPath(p.outer), _PolyType.ptSubject, true)
-    for (const h of p.holes || []) c.AddPath(_ringToPath(h), _PolyType.ptSubject, true)
-  }
-  const tree = new _PolyTree()
-  if (!c.Execute(_ClipType.ctUnion, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftEvenOdd)) throw new Error('bake-ground: the shore median union FAILED')
-  const items = []
-  let areaM2 = 0
-  const walk = (node) => { for (const ch of node.Childs()) {
-    const outer = _pathToRing(ch.m_polygon)
-    if (outer.length >= 3) { items.push({ outer, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) }); areaM2 += _Clipper.Area(ch.m_polygon) / (CLIP_SCALE * CLIP_SCALE) }
-    for (const h of ch.Childs()) { areaM2 -= Math.abs(_Clipper.Area(h.m_polygon)) / (CLIP_SCALE * CLIP_SCALE); walk(h) } } }
-  walk(tree)
-  return { items, areaM2: Math.abs(areaM2) }
-}
 
 // ── PRESS THE PAINT STACK DOWN ──────────────────────────────────────────────
 // ⭐⭐ THE ARCHITECTURE, in Jacob's words (2026-09-21): "In Stage it's a flattened
@@ -1086,27 +1052,6 @@ function toPolys(items) {
   return polys
 }
 
-/**
- * Whether this bake paints the shore median (`shore-median.json`) as sand, and what it owes when it cannot. ONE rule,
- * read by bakeGround and by `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs`:
- * - CURRENT (v2, walked on the shoreline this bake writes, `here`) → paint it;
- * - not current on a town that draws a coast (`coastal()`, inland towns excluded) → THROW naming the town and the file,
- *   unless `shorePending` (the Bake's first ground pass): then nothing is painted and the slab is stamped pending;
- * - not current and no coast → nothing owed.
- * @returns {{ paint: object|null, state: 'pending'|null, why: string|null }}
- */
-
-export function shoreMedianFor({ scene, medPath, doc, here, coastal, shorePending = false }) {
-  const why = !doc ? 'is absent'
-    : doc.version !== 2 ? `is version ${doc.version}; this bake reads v2 (the traced waterline)`
-    : doc.shoreFingerprint !== here ? `was walked on another shoreline (${doc.shoreFingerprint ?? 'unstamped'}; this bake writes ${here})`
-    : null
-  if (!why) return { paint: doc, state: null, why: null }
-  if (!coastal()) return { paint: null, state: null, why }
-  if (!shorePending) throw new Error(`[bake-ground] ⛔ ${scene}: this town draws a shoreline but ${medPath} ${why}. Refusing to write a ground with no shore. ▶ the Bake runs 'ground' (--shore=pending), 'shore-median', then 'ground-shore'; by hand: bake-ground --shore=pending, bake-shore-median, then bake-ground.`)
-  return { paint: null, state: 'pending', why }
-}
-
 // ⭐ A BAND RING THAT CROSSES ITSELF ON THE GRID IS COUNTED, WHEREVER IT APPEARS (Boz, 2026-10-21). Clipper rounds its
 // intersections onto the 1 mm lattice and can hand back a ring whose own edges cross (a sub-mm bow-tie); read even-odd, its lobe
 // is lot inside a band, and the deformer's absorption along ② carries it to heights metres away (HPDM tile 44: lawn #443, 67.65 mm
@@ -1127,7 +1072,7 @@ export function bandSelfCrossings(byMaterial) {
       const at = crossesAt(r); if (at) { out[c]++; out.sites.push({ group: k, at }) } } }
   return out
 }
-export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir: outDirOpt = null, shorePending = false, stackOnly = false } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir: outDirOpt = null, stackOnly = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1216,18 +1161,18 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, rimRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, cutOnce, shapeArtifact, stampedWith, highwayRings, bridgePaint, inkPieces, asphaltRings, blockRings, curbCutRamps, kerb, rimRings, roadPaint } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
   // so layerVis can hide it in Stage/Preview. Polygon overlays (parking_lot,
   // leisure subtypes, natural subtypes) drop in as raw rings; line features
-  // (parkingLine / bikeLane / barriers; the centre stripe is ①'s, below) buffer to thin
+  // (bikeLane / barriers; the road's paint is the ground's own, below) buffer to thin
   // polygons via polylineToRing.
   const mapLayers = mapData.layers || {}
   const pushMat = (key, ring) => {
-    if (!ring || ring.length < 3) return
+    if (!ring || (Array.isArray(ring) ? ring.length < 3 : !(ring.outer?.length >= 3))) return   // a ring, or { outer, holes }
     if (!byMaterial.has(key)) byMaterial.set(key, [])
     byMaterial.get(key).push(ring)
   }
@@ -1242,47 +1187,22 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   for (const item of (mapLayers.leisure || [])) {
     if (LEISURE_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
   }
-  // natural subtypes — `natural=water` is NOT here on purpose: it has its own
-  // producer (`layers.water`, the coast/relation path, injected just below) and
-  // a second producer for one feature class is the bug, not the fix.
+  // natural subtypes — `natural=water` is NOT here on purpose: water is ①'s water face (below), and a second
+  // producer for one feature class is the bug, not the fix.
   const NATURAL_KEYS = new Set(['wood', 'scrub', 'tree_row'])
   for (const item of (mapLayers.natural || [])) {
     if (NATURAL_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
   }
-  // ⭐⭐ THE WATER FACE. `derive.js` emits `layers.water` and until 2026-09-20 this
-  // bake never read it — the lake was acquired, classified, derived, and then
-  // dropped on the floor. In 3D huron's Lake Erie was a HOLE IN THE LAND: ①
-  // carves `bb − (WATER ∪ INK)` so the land stops at the shore, and nothing
-  // filled what it left. (The Designer DID draw it, off `map.json` directly,
-  // which is why "the lake is drawn" was believed of the slab as well.)
-  // ⛔ This does NOT reach an inland pond. `coastline.mjs` applies only water
-  // that runs on past the fetch — measured on huron, 40 bodies lie wholly inside
-  // the disc and 15 more are held whole, and none of them reach `layers.water`
-  // at all. That is a PRODUCER question and it is not fixed here; the pour
-  // prints those two counts every run.
-  for (const item of (mapLayers.water || [])) {
-    if (!item.ring) continue
-    pushMat(item.subtype ? `water:${item.subtype}` : 'water', ringFromOSM(item.ring))
-    pushMat('bed', ringFromOSM(item.ring))   // the ground under it (PAINT_ORDER 'bed')
-  }
-  // ⭐ THE SHORE MEDIAN, AS SAND (PAINT_ORDER 'shore'): painted only when CURRENT; a drawn coast without one throws, except
-  // on the Bake's first ground pass (--shore=pending), which stamps the slab pending. The rule: `shoreMedianFor`.
-  let shoreState = null
-  {
-    const shapeNow = { tiles: shapeArtifact || [] }
-    const medPath = join(outDir, 'shore-median.json')
-    const coastal = () => waterRuns(shapeNow).length > 0 && !(() => {   // ⭐ an INLAND town (coastVerdict) owes no median
-      const tp = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json')
-      return existsSync(tp) && coastVerdict(JSON.parse(readFileSync(tp, 'utf-8')), shapeNow).agree === 'inland' })()
-    const S = shoreMedianFor({ scene, medPath, doc: existsSync(medPath) ? JSON.parse(readFileSync(medPath, 'utf-8')) : null,
-      here: shoreFingerprint(shapeNow), coastal, shorePending })
-    shoreState = S.state
-    if (S.paint) {
-      const s = shoreMedianItems(S.paint)
-      if (!byMaterial.has('shore')) byMaterial.set('shore', [])
-      byMaterial.get('shore').push(...s.items)
-      console.log(`  ⭐ SHORE: the median painted as sand — ${(s.areaM2 / 1e4).toFixed(2)} ha in ${s.items.length} polygon(s), between the drawn shoreline and the traced lidar waterline`)
-    } else if (S.state === 'pending') console.log(`  ⏳ SHORE: first ground pass (--shore=pending): shore-median.json ${S.why}; no sand painted, the slab is stamped shore: "pending" until 'shore-median' walks it and 'ground-shore' re-runs this bake`)
+  // ⭐⭐ THE WATER FACE IS ①'s (BRIEF-the-shore-is-one-line §3 step 2a): one set of rings, coastFile.mjs#waterFace, for
+  // both of its draws — the SHEET (`water`, its own slot, a tint that does not cut) and the BED under it (`bed`, a
+  // partitioned face at the bottom of the stack). ①'s coast IS the high-water mark (Jacob, 2026-10-25), so nothing here
+  // decides water again. ⛔ An inland pond is not ①'s water (the coast is water that runs on past the fetch); that is a
+  // producer question, not this bake's.
+  // ⭐ As HOLED polygons (coastFile.mjs#faceAsPolygons): an island is a hole, and a ring filled on its own paints it as water.
+  for (const { outer, holes } of faceAsPolygons(waterFace(mapData, 'bake-ground'), 'bake-ground')) {
+    const poly = { outer: ringFromOSM(outer), holes: holes.map(ringFromOSM) }
+    pushMat('water', poly)
+    pushMat('bed', { outer: poly.outer, holes: poly.holes })
   }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
@@ -1291,26 +1211,21 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const ring = polylineToRing(item.coords, hw)
     if (ring) pushMat(item.kind, ring)
   }
-  // Centre stripes — ①'s own line per eligible street (`centreStripeRings`), never map.json's.
-  const stripeRings = centreStripeRings(ribbons.streets).map(x => x.ring)
-  for (const ring of stripeRings) pushMat('stripe', ring)
-  // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile, no ink piece (the curbless blocks'
-  // ground included) and not under H has no owner to take its line from. Refused by group and point, never dropped or nudged.
+  // ⭐ THE ROAD'S PAINT — the centre stripe in its selected kind and the edge lines, struck from the sealed centreline and
+  // ②'s labelled kerb by the ground itself (`tileGround.js#roadMarkings`), the same rings Survey draws. ⛔ Never map.json's
+  // chains and never `ribbons.streets[].points` (BRIEF-the-ink-is-owned-by-its-labels §3).
+  if (!roadPaint) throw new Error('[bake-ground] ⛔ the ground returned no road paint (roadPaint) — refusing to bake a road with no stripe or edge record.')
+  const stripeRings = roadPaint.stripe
+  for (const key of ['stripe', 'edgeline', 'edgeline:yellow']) for (const ring of roadPaint[key]) pushMat(key, ring)
+  // ⛔ THE ROAD IS HELD BY ① (`roadOffTheLattice`): a road vertex in the disc in no tile (whose ring now holds the ink it
+  // absorbed), no curbless block's piece and not under H has no owner to take its line from. Refused by group and point.
   {
     const off = roadOffTheLattice({ asphalt: asphaltRings, highway: highwayRings, stripe: stripeRings }, shapeArtifact, inkPieces, ribbons.protopolygon.boundaryRing, highwayRings)
     const bad = Object.entries(off).filter(([, o]) => o.off.length)
-    if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no ink piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
-    console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, an ink piece or H`)
+    if (bad.length) throw new Error(`[bake-ground] ⛔ road vertices in no tile, no curbless block's piece and not under the highway — no owner, so no line: ${bad.map(([g, o]) => `${g} ${o.off.length} of ${o.n} (e.g. ${o.off.slice(0, 3).map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(' ')})`).join(' · ')}. Refusing.`)
+    console.log(`  [road] held by ①: ${Object.entries(off).map(([g, o]) => `${g} ${o.n}`).join(' · ')} vertices in the disc, every one in a tile, a curbless block's piece or H`)
   }
-  // Parking-lane edge lines + bike lanes — both sides offset from a centerline.
-  for (const item of (mapLayers.parkingLine || [])) {
-    if (!item.coords || !item.offset) continue
-    for (const side of [-1, 1]) {
-      const off = lateralOffset(item.coords, item.offset, side)
-      const ring = polylineToRing(off, POLYLINE_HALF_WIDTHS.edgeline)
-      if (ring) pushMat('edgeline', ring)
-    }
-  }
+  // Bike lanes — both sides offset from a centerline (filed: they move to the sealed shape too, BACKLOG).
   for (const item of (mapLayers.bikeLane || [])) {
     if (!item.coords || !item.offset) continue
     for (const side of [-1, 1]) {
@@ -1431,6 +1346,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // ⭐ Remove this the day the residual measures zero — not before, and not on
     // the grounds that it "should" be zero.
     if (kind !== 'face' && key === 'stripe') KEEP_OWN_SLOT.add(groupKey)
+    if (kind !== 'face' && key === 'bridge') KEEP_OWN_SLOT.add(groupKey)   // above the water's slot (the bridge entry in PAINT_ORDER)
     stackEntries.push({ groupKey, kind, key, items: its })
   }
   // The flatten runs top-down over this list, so a FLOOR layer goes first: last to be cut into.
@@ -1686,6 +1602,48 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       + `in ${((Date.now() - _tc) / 1000).toFixed(1)}s`)
   }
 
+  // ⭐⭐ THE DRAWN SHORE IS ①'s LINE (coastPins.mjs; Jacob, 2026-10-27: "yes pin the coast"). Every ground vertex on ①'s
+  // coast is pinned to HIGH and the other corners of its triangles are clamped by side, keyed by position over the whole
+  // drawn ground (the partition and the riser), so one point takes one height in every group. The water sheet carries none.
+  // Written as the bin's fifth section (drawnGround.js#drawnPinsOf reads it).
+  const coastRings = waterFace(mapData, 'bake-ground')
+  let coastPin = null
+  if (hasTerrain && coastRings.length) {
+    const T = loadSceneTerrain(scene)
+    if (!T?.water) throw new Error(`[bake-ground] ⛔ ${look}: ①'s coast is drawn and the terrain carries no water levels — HIGH is unknown, so the line cannot be pinned`)
+    const clip = stencil.clipPolygon
+    if (!clip?.length) throw new Error(`[bake-ground] ⛔ ${look}: the ground has no clip polygon — which of ①'s coast vertices the drawing holds is unknown, so the line cannot be pinned`)
+    const L = waterLevels(T.water)
+    const tol = onLineTolerance(LATTICE_M, Math.max(...clip.map(([x, z]) => Math.max(Math.abs(x), Math.abs(z)))))
+    const inDrawing = (x, z) => {
+      if (!pointInRing([x, z], clip)) return false
+      for (let i = 0, j = clip.length - 1; i < clip.length; j = i++) { const a = clip[j], b = clip[i], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+        const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
+        if (Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol) return false }   // on the rim: the clip's own vertex stands there
+      return true }
+    const drawnGroups = [...planeBuffers].map(([id, b]) => ({ id, positions: b.positions, indices: b.indices }))
+    if (kerbRiser?.indices.length) drawnGroups.push({ id: 'mat:kerbFace', positions: kerbRiser.positions, indices: kerbRiser.indices })
+    const deckList = mapData.layers?.ribbons?.streetDecks
+    if (!Array.isArray(deckList)) throw new Error(`[bake-ground] ⛔ ${look}: map.json carries no streetDecks list (it predates the decks) — a deck's edge on ①'s coast would be pinned unseen. ▶ re-pour`)
+    const decks = deckList.map(d => d.ring)
+    // ⭐ A BRIDGE IS PAINTED ACROSS THE WATER (Jacob, 2026-10-27, (b)): the spans by ①'s record, each one's footprint the live
+    // paint for it (coastPins.mjs#spanFootprints, which refuses by name; a span wholly outside the drawing is counted)
+    const spanList = mapData.layers?.ribbons?.protopolygon?.offGradeSpans
+    const { spans, outside: spansOutside } = spanFootprints({ spanList, bridgePaint, inDrawing, who: `bake-ground ${look}` })
+    // the group a span's paint over the water is drawn in: mat:bridge, for every span (Boz's ruling (iv); a highway span's H
+    // footprint over the water is split into it, so mat:highway stays on the plane). ⛔ A span with no mat:bridge group refuses,
+    // rather than leave its paint on the bed
+    const spanGroups = planeBuffers.has('mat:bridge') ? ['mat:bridge'] : []
+    if (spanList.length && !spanGroups.length) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.length} off-grade span(s) over the water and the ground has no mat:bridge paint group — their paint would lie on the bed`)
+    coastPin = timed('pinTheCoast', () => pinTheCoast({ groups: drawnGroups, rings: coastRings, inDrawing, rawAt: T.getElevationRaw, highAt: L.highAt, tol, decks, spans, spanGroups }))
+    coastPin.stats.spansOutsideDrawing = spansOutside
+    const st = coastPin.stats, g = st.fieldMinusHighAtPinsM
+    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm; ${st.deckEdgeVerts.toLocaleString()} on a street deck's edge, left at the deck; ${st.underSpan.toLocaleString()} under a bridge's paint${st.underSpan ? ` (${Object.entries(st.underSpanByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}, not ground) · ${st.spansOutsideDrawing ? `${st.spansOutsideDrawing} span(s) wholly outside the drawing · ` : ''}bridge paint on the water at HIGH: ${st.bridgeLifted.toLocaleString()} vertices${st.bridgeLifted ? ` (${Object.entries(st.bridgeLiftedByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''} · `
+      + `field − HIGH there p10 ${g.p10} · p50 ${g.p50} · p90 ${g.p90} m (min ${g.min}, max ${g.max}) · beside the line: land ${st.clampedLand.toLocaleString()} raised to HIGH, ${st.keptLand.toLocaleString()} above it · water ${st.clampedWater.toLocaleString()} lowered to HIGH, ${st.keptWater.toLocaleString()} below it`)
+  }
+  let drawnRawByteOffset = 0
+  const drawnRawChunks = []
+
   const colorOf = (kind, key) => {
     let color
     if (kind === 'face') {
@@ -1698,6 +1656,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       // Per-LU treelawn variants inherit the adjacent parcel's LU color.
       const lu = key.slice('treelawn:'.length)
       color = designLuColors[lu] || DEFAULT_LU_COLORS[lu] || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown
+    } else if (key === 'edgeline:yellow') {
+      // ⭐ the yellow edge line is the CENTRE STRIPE's paint (mutcd-11r1 §3B.09 ¶03: a left edge is yellow), so it takes the
+      // stripe's colour; its toggle is still 'edgeline' (`groupLayerId` reads the bare key)
+      color = designLayerColors.stripe || DEFAULT_LAYER_COLORS.stripe
+      if (!color) throw new Error('[bake-ground] ⛔ no stripe colour for the yellow edge line (layerColors.stripe / DEFAULT_LAYER_COLORS.stripe)')
     } else {
       const layerKey = BAND_TO_LAYER[key] || key
       color = designLayerColors[layerKey]
@@ -1737,6 +1700,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const posOut = perField ? perField.positions : positions
     const idxOut = perField ? perField.indices : indices
     const isWater = key === 'water' || key.startsWith('water:')
+    const pinSection = coastPin && !isWater ? coastPin.sectionFor(posOut) : null
 
     // Color resolution: per-Look design.json wins, then the canonical
     // Designer palette (DEFAULT_LAYER_COLORS / DEFAULT_LU_COLORS), then
@@ -1769,7 +1733,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       ...(perField ? { fieldByteOffset, fieldEdgeByteOffset: edgeByteOffset, fields: perField.fields.map(f => ({
         bearing: +f.bearing.toFixed(5), cx: +f.cx.toFixed(2), cz: +f.cz.toFixed(2),
         halfLen: +f.halfLen.toFixed(2), halfWid: +f.halfWid.toFixed(2), areaM2: f.areaM2 })) } : {}),
+      // the pins (coastPins.mjs): (vertex u32, raw f32, ∂x f32, ∂z f32) per pinned or clamped vertex, the bin's fifth section
+      ...(pinSection ? { drawnRawByteOffset, drawnRawCount: pinSection.length / 4 } : {}),
     })
+    if (pinSection) { drawnRawChunks.push(pinSection); drawnRawByteOffset += pinSection.byteLength }
 
     positionChunks.push(posOut)
     indexChunks.push(idxOut)
@@ -1786,9 +1753,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // the renderer it is a wall, not ground: ⚠️ BakedGround does not read it yet (step 5 pieces 4–5, after Strobe's
   // shader work lands) — until then it would be lit like ground. Coloured as the curb it faces.
   if (kerbRiser?.indices.length) {
+    const pinSection = coastPin ? coastPin.sectionFor(kerbRiser.positions) : null
     groups.push({ kind: 'mat', id: 'kerbFace', color: colorOf('mat', 'curb'), renderOrder: renderOrder++, polygonOffsetUnits: -renderOrder,
       partition: false, vertical: true, vertexCount: kerbRiser.positions.length / 3, vertexByteOffset: posByteOffset,
-      indexCount: kerbRiser.indices.length, indexByteOffset: idxByteOffset })
+      indexCount: kerbRiser.indices.length, indexByteOffset: idxByteOffset, ...(pinSection ? { drawnRawByteOffset, drawnRawCount: pinSection.length / 4 } : {}) })
+    if (pinSection) { drawnRawChunks.push(pinSection); drawnRawByteOffset += pinSection.byteLength }
     positionChunks.push(kerbRiser.positions); indexChunks.push(kerbRiser.indices)
     posByteOffset += kerbRiser.positions.byteLength; idxByteOffset += kerbRiser.indices.byteLength
   }
@@ -1799,13 +1768,33 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       noRimIdentity: { m: +kerbUnpairedM.toFixed(2), sites: kerbUnpaired.map(u => ({ group: u.key, A: u.A, B: u.B })) },
       rimSideOffRings: { diagnostic: 'ends within two roundings of a rim-owned edge; decides nothing', m: +kerbRimSideM.toFixed(2), sites: kerbRimSide.map(u => ({ group: u.key, A: u.A, B: u.B })) } } }
 
+  // ⭐ THE BRIDGE'S BANK STEP, MEASURED (Boz's ruling (iv): accepted for now, recorded, the filed deck retires it): where mat:bridge
+  // shares a point with another ground group, the two draw the same raw there (the pins are keyed by point), so the step is
+  // their y apart: the bridge's slot, less any kerb the neighbour stands on. ⛔ More than the bridge's own slot is reported loudly.
+  if (coastPin) {
+    const bi = groups.findIndex(g => g.kind === 'mat' && g.id === 'bridge')
+    let step = 0, stepAt = null, shared = 0
+    if (bi >= 0) {
+      const PB = positionChunks[bi], yB = new Map()
+      for (let v = 0; v < PB.length; v += 3) yB.set(`${PB[v]},${PB[v + 2]}`, PB[v + 1])
+      groups.forEach((g, gi) => { if (gi === bi || g.partition === false || /^water(:|$)/.test(g.id)) return
+        const P = positionChunks[gi]
+        for (let v = 0; v < P.length; v += 3) { const y = yB.get(`${P[v]},${P[v + 2]}`); if (y === undefined) continue
+          shared++; const d = Math.abs(y - P[v + 1]); if (d > step) { step = d; stepAt = [+P[v].toFixed(3), +P[v + 2].toFixed(3), g.id] } } })
+      const slotM = groups[bi].renderOrder * GROUND_Y_EPS
+      coastPin.stats.bridgeBankStepM = +step.toFixed(4)
+      coastPin.stats.bridgeBankStep = { slotM: +slotM.toFixed(4), sharedPoints: shared, at: stepAt }
+      const say = `  [shore] the bridge's bank step: ${(step * 1000).toFixed(1)} mm at ${stepAt ? `(${stepAt[0]}, ${stepAt[1]}) against ${stepAt[2]}` : '—'} over ${shared} shared point(s); its slot is ${(slotM * 1000).toFixed(1)} mm (accepted for now; the filed deck retires it)`
+      if (step > slotM + 1e-6) console.warn(say.replace('[shore]', '[shore] ⛔ MORE THAN THE SLOT —')); else console.log(say)
+    }
+  }
   // Concatenate positions (all Float32) and indices (all Uint32) into one
-  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset
+  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups][pins]. Manifest's *ByteOffset
   // values are relative to the START of each section (offsets within the
   // positions section, then offsets within the indices section).
   const totalPosBytes = posByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset)
+  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset + drawnRawByteOffset)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -1830,6 +1819,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   const edgeSectionStart = fieldSectionStart + fieldByteOffset
   for (const g of groups) if (g.fieldEdgeByteOffset != null) g.fieldEdgeByteOffset += edgeSectionStart
   for (const c of edgeChunks) {
+    buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
+    off += c.byteLength
+  }
+  // Fifth section: each pinned group's pins (coastPins.mjs), absolute like the others.
+  const drawnRawSectionStart = edgeSectionStart + edgeByteOffset
+  for (const g of groups) if (g.drawnRawByteOffset != null) g.drawnRawByteOffset += drawnRawSectionStart
+  for (const c of drawnRawChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }
@@ -1936,6 +1932,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // F3 / F2 disclosure: did this scene have terrain, how was each partition group refined, and how many
     // slivers it came out with — read by the two ground-shape checks.
     ...(groundShape ? { groundShape } : {}),
+    // ⭐ the pins (coastPins.mjs; drawnGround.js#drawnPinsOf reads them): present on every ground baked since, so a ground
+    // without it predates the pin. `coast: false` when ① draws no coast; `terrain: false` when there is no field to pin against.
+    drawnRaw: !hasTerrain ? { terrain: false } : !coastPin ? { coast: false }
+      : { format: 'per group: drawnRawCount × (vertex u32, raw f32, ∂raw/∂x f32, ∂raw/∂z f32); a vertex with none reads the field',
+          rule: "on ①'s coast: HIGH · line-adjacent: land max(field, HIGH), water min(field, HIGH)", ...coastPin.stats },
     // band rings that cross themselves on the grid (bandSelfCrossings): counted, with every site
     selfCrossing,
     // the paint stack's rings narrower than the lattice's rounding, per group, whose role is Clipper's winding (flattenPaintStack);
@@ -1945,8 +1946,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // each named step's wall time, seconds (`timed`, above): a slower bake answers which step grew from its own record
     timings: Object.fromEntries(Object.entries(stepMs).map(([k, v]) => [k, +(v / 1000).toFixed(1)])),
     flatten: { subLattice: flattened.subLattice, noded: { stack: { inserted: nodedEntries.inserted, pairs: nodedEntries.pairs, pastBound: nodedEntries.pastBound }, plane: flattened.noded } },
-    // the first of the Bake's two ground passes: no shore yet (above); 'ground-shore' writes a slab without it
-    ...(shoreState ? { shore: shoreState } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
     ...(sameGround ? priorMaps : {}),
   }
@@ -1966,7 +1965,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // between tiles; a crossing names every owner) and, `kind: 'block'`, the curbless blocks' ground (a block whose curbs
   // meet has no tile, and its ground is road, owned by its own ① edges).
   // `boundaryRing`: the disc the pour stamped the tiles with — a SHAPE fact (fill-free), read by Survey's finish (`stampedWith`)
-  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], ink: inkPieces, boundaryRing: stampedWith }))
+  if (shapeArtifact) writeIfChanged(join(outDir, 'shape.json'), JSON.stringify({ tiles: shapeArtifact, highway: highwayRings || [], boundaryRing: stampedWith, paint: roadPaint }))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)
@@ -1983,7 +1982,7 @@ async function main() {
   // env-named bake rebuilt LS. See scene.js's header.
   const scene = requireExplicitMap('bake-ground')
   let look = null
-  let outDir = null, shorePending = false
+  let outDir = null
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
@@ -1997,10 +1996,9 @@ async function main() {
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-max-edge=(.+)$/)))refine.maxEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--out-dir=(.+)$/)))  outDir = m[1]   // the Bake's stage, or a scratch A/B: not the live slab
-    else if (arg === '--shore=pending')           shorePending = true   // the Bake's first ground pass only (serve.js 'ground')
-    else if (arg.startsWith('--shore='))          throw new Error(`[bake-ground] ${arg}: the only value is --shore=pending`)
+    else if (arg.startsWith('--shore='))          throw new Error(`[bake-ground] ${arg}: retired with the shore median (BRIEF-the-shore-is-one-line step 3) — the ground bakes in one pass`)
   }
-  await bakeGround({ look, scene, refine, outDir, shorePending })
+  await bakeGround({ look, scene, refine, outDir })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

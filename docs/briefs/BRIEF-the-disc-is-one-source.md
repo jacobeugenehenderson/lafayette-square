@@ -63,7 +63,7 @@ ORIGIN (`neighborhood-membership.mjs#makeMembership`, `scripts/17-fill-canopy-tr
 
 ## 3. Height: only the lit part is raised
 
-The height field's extent is `radius + 50 m` (`bake-terrain.js#deriveStencilBbox`, its own comment: "a THIRD derivation of the
+The height field's extent is `radius + 50 m` (`elevationSources.mjs#deriveStencilBbox`, moved from bake-terrain 2026-10-26 so bake-coast reads the same lattice; its own comment: "a THIRD derivation of the
 same polygon"). Under the picture, height applies to what's lit: derive the extent from the one module. The bb's dark part
 sits on a flat datum, stated, never "no field" read as zero.
 

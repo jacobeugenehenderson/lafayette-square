@@ -29,13 +29,16 @@
  */
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { scenes, ROOT } from './_scenes.mjs'
+import { scenes, ROOT, ribbonsPath } from './_scenes.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 import { clipAllToStencil } from '../src/lib/ribbonsGeometry.js'
 
 // map.json line layer → the ground.json group bake-ground paints it into (`pushMat` keys).
 // ⚠️ `barrier` splits by `item.kind` (fence / wall / retaining_wall / hedge), so its group is per item.
-const LINE_LAYERS = { centerStripe: () => 'stripe', parkingLine: () => 'edgeline', bikeLane: () => 'bikelane', barrier: (it) => it.kind }
+// ⭐ The CENTRE STRIPE is no longer a map.json line (BRIEF-the-ink-is-owned-by-its-labels, 2026-10-25): its closed loops are
+// the sealed centreline's CLOSED strokes (`ribbons.json` → protopolygon.centrelines, `closed: true`) whose street's selected
+// centre kind is not 'none' (`streets[].marks`), painted into 'stripe' by `tileGround.js#roadMarkings`. Read below.
+const LINE_LAYERS = { bikeLane: () => 'bikelane', barrier: (it) => it.kind }
 const HW = 0.10        // band half-width for part A; the claim is about topology, not the width
 const SLACK = 1.05     // part A: net area out may exceed the band by rounding, never by a filled hole
 
@@ -69,6 +72,12 @@ for (const scene of scenes('cartograph/data/<scene>/clean/map.json')) {
       if (c.length > 3 && Math.hypot(c[0][0] - c.at(-1)[0], c[0][1] - c.at(-1)[1]) < 1e-3) loops.push({ layer, group: groupOf(it), c, name: it.name || it.kind || '' })
     }
   }
+  { const rp = join(ROOT, ribbonsPath(scene))
+    const rb = existsSync(rp) ? JSON.parse(readFileSync(rp, 'utf8')) : null, CL = rb?.protopolygon?.centrelines
+    if (!CL) console.log(`   ⛔ the centre stripe's loops NOT CHECKED — ${rb ? 'its protopolygon carries no sealed centreline (a pour before it)' : 'no ribbons.json'}`)
+    else { const kindOf = new Map((rb.streets || []).map(t => [t.skelId, t.marks?.centre?.kind]))
+      for (const C of CL) if (C.closed && C.points.length >= 3 && C.runs.some(r => kindOf.get(r.skelId) && kindOf.get(r.skelId) !== 'none'))
+        loops.push({ layer: 'centreline', group: 'stripe', c: [...C.points, C.points[0]], name: C.runs.map(r => r.skelId).join('+') }) } }
 
   // ── A. the code ──
   let aBad = 0

@@ -44,6 +44,11 @@
 //             shared surface, edge to edge with no curb, is not built (step 7). The `halfWidth` rows are
 //             today's `streetProfiles` `TYPE_PAVEMENT_HW` (service = `standards.js` `STANDARDS.alley`, 15 ft):
 //             such a class reaches a chain only when a NAME made it one (the check's `name-made`).
+//   marking — the KIT HOUSE STYLE of the road's paint (`streetMarkings.js`; STYLE-GUIDE §18): `marked` = the type carries
+//             paint at all (a street the house style leaves unmarked takes none unless the data says lane_markings=yes);
+//             `centre` = its centre kind when two-way and the data selects none. Jacob, 2026-10-25: "no residential
+//             stripes, double yellow OK for default otherwise"; unclassified (a `local` road) is unmarked, Boz's call,
+//             vetoable by Jacob. Every class that can become a chain carries one: a chain whose class has none REFUSES.
 import { KIT_CURB_WIDTH } from './streetProfiles.js'   // read at call time only: streetProfiles imports this module
 const FT = 0.3048
 // ⛔ No row carries a curb width: the curb is the Look's (`curbWidth`), else the kit's one home, `streetProfiles.js#KIT_CURB_WIDTH`.
@@ -51,32 +56,32 @@ const street = (lane, parking, treelawn, sidewalk, cornerR) => ({ lane: lane * F
 const fixed = (halfWidthFt) => ({ halfWidth: halfWidthFt * FT, treelawn: 0, sidewalk: 0, cornerR: 4.5 })
 export const CLASSES = {
   'not-built':     { network: 'none',   guide: '§1' },
-  'highway':       { network: 'street', guide: '§1', labelTier: 'major', swept: true },
-  'highway-link':  { network: 'street', guide: '§1', swept: true },
-  'primary':       { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(11, 0, 4 * FT, 8 * FT, 7.5) },
-  'secondary':     { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(11, 0, 4 * FT, 6 * FT, 6.0) },
-  'tertiary':      { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(10, 0, 4 * FT, 6 * FT, 5.0) },
+  'highway':       { network: 'street', guide: '§1', labelTier: 'major', swept: true, marking: { marked: true, centre: 'double-solid' } },
+  'highway-link':  { network: 'street', guide: '§1', swept: true, marking: { marked: true, centre: 'double-solid' } },
+  'primary':       { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(11, 0, 4 * FT, 8 * FT, 7.5), marking: { marked: true, centre: 'double-solid' } },
+  'secondary':     { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(11, 0, 4 * FT, 6 * FT, 6.0), marking: { marked: true, centre: 'double-solid' } },
+  'tertiary':      { network: 'street', guide: '§1', labelTier: 'major', surveyed: true, section: street(10, 0, 4 * FT, 6 * FT, 5.0), marking: { marked: true, centre: 'double-solid' } },
   // ⭐ THE LOCAL ROW IS THE KIT'S STREET DEFAULT (Jacob, 2026-10-20: "yes to imperial") — exact US values, metres:
   //   treelawn 5 ft = 1.524 (f-massdot-buffer-width, the preferred buffer) · sidewalk 5 ft = 1.524 (f-massdot-sidewalk-width,
   //   the minimum) · corner radius 15 ft = 4.572 (f-caltrans-corner-radii, the minor-street minimum).
   // ⚠️ The painter and ② read THIS row for every street, uniformly, until classifier step 7 makes them read each street's
   // own class row (`LOCAL_SECTION` below). ▶ node checks/claims-a-look-authors-its-curb-width.mjs (one home, no second copy)
-  'local':         { network: 'street', guide: '§1', surveyed: true, section: street(10, 8, 1.524, 1.524, 4.572) },
-  'living-street': { network: 'street', guide: '§1 §3', section: street(10, 8, 0, 0, 4.5) },
-  'pedestrian':    { network: 'path',   guide: '§1', section: fixed(5) },      // street or path: guide Q1.b, open
-  'plaza':         { network: 'area',   guide: '§9', section: fixed(5) },
-  'alley':         { network: 'path',   guide: '§1', section: fixed(7.5) },
-  'driveway':      { network: 'path',   guide: '§1 §11', section: fixed(7.5) },
-  'lot-aisle':     { network: 'path',   guide: '§1', section: fixed(7.5) },
+  'local':         { network: 'street', guide: '§1', surveyed: true, section: street(10, 8, 1.524, 1.524, 4.572), marking: { marked: false, centre: 'none' } },
+  'living-street': { network: 'street', guide: '§1 §3', section: street(10, 8, 0, 0, 4.5), marking: { marked: false, centre: 'none' } },
+  'pedestrian':    { network: 'path',   guide: '§1', section: fixed(5), marking: { marked: false, centre: 'none' } },      // street or path: guide Q1.b, open
+  'plaza':         { network: 'area',   guide: '§9', section: fixed(5), marking: { marked: false, centre: 'none' } },
+  'alley':         { network: 'path',   guide: '§1', section: fixed(7.5), marking: { marked: false, centre: 'none' } },
+  'driveway':      { network: 'path',   guide: '§1 §11', section: fixed(7.5), marking: { marked: false, centre: 'none' } },
+  'lot-aisle':     { network: 'path',   guide: '§1', section: fixed(7.5), marking: { marked: false, centre: 'none' } },
   // A `service` way with no subtag (§5 ruling 8: a named service road is not a lot aisle by default; the tags
   // decide, never the name). PROPOSED, not ruled: local's carriageway and a walk with no lawn, which is exactly
   // what it painted before (the paint's 1.5 m walk; no treelawn gleaned).
-  'service-road':  { network: 'path',   guide: null, section: street(10, 8, 0, 1.5, 4.5) },
-  'sidewalk':      { network: 'path',   guide: '§1 §2', section: fixed(3) },   // evidence, not ink
-  'crossing':      { network: 'path',   guide: '§7', section: fixed(3) },
-  'path':          { network: 'path',   guide: '§1', section: fixed(3) },
-  'indoor':        { network: 'path',   guide: 'ruling 7', section: fixed(3) },
-  'services-area': { network: 'area',   guide: 'ruling 7', section: fixed(7.5) },
+  'service-road':  { network: 'path',   guide: null, section: street(10, 8, 0, 1.5, 4.5), marking: { marked: false, centre: 'none' } },
+  'sidewalk':      { network: 'path',   guide: '§1 §2', section: fixed(3), marking: { marked: false, centre: 'none' } },   // evidence, not ink
+  'crossing':      { network: 'path',   guide: '§7', section: fixed(3), marking: { marked: false, centre: 'none' } },
+  'path':          { network: 'path',   guide: '§1', section: fixed(3), marking: { marked: false, centre: 'none' } },
+  'indoor':        { network: 'path',   guide: 'ruling 7', section: fixed(3), marking: { marked: false, centre: 'none' } },
+  'services-area': { network: 'area',   guide: 'ruling 7', section: fixed(7.5), marking: { marked: false, centre: 'none' } },
 }
 
 // The rules, first match wins. `highway` is always an explicit list. `area: true` rules are the
@@ -245,3 +250,14 @@ export function travelOrdered(ways, who = 'intake') {
 
 /** The table's order, for a deterministic tie-break in a chain's vote. */
 export const CLASS_ORDER = Object.keys(CLASSES)
+
+// ⭐ ONE WAY OFF GRADE (the skeleton's own predicate, exported so the mint reads it, never retyped; Boz, 2026-10-27): a way
+// tagged bridge or tunnel (anything but `no`), or on a non-zero `layer`, does not touch the ground. skeleton.js#gradeFacts
+// summarizes it over a chain; cartograph/mintInputs.mjs reads it per segment run, so a bridge or tunnel span over ①'s water
+// leaves the street ink there (a bridge is above the water, a tunnel below it).
+export function isOffGradeWay(t) {
+  if (!t) return false
+  const b = !!t.bridge && t.bridge !== 'no', tu = !!t.tunnel && t.tunnel !== 'no'
+  const Lraw = t.layer !== undefined ? parseInt(t.layer, 10) : 0, L = Number.isFinite(Lraw) ? Lraw : 0
+  return b || tu || L !== 0
+}

@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 101. Never in a default run.
+## ⛔ live — 107. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -30,14 +30,15 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-bake-reads-design-through-one-reader.mjs` | unreadable | imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · computed import of cartograph/lookDesign.mjs — read, safe |
 | `checks/claims-a-bake-step-declares-what-it-reads.mjs` | unreadable | imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · computed import() with no readable target — runs arbitrary modules · re-runs its own file (process.execPath + its own path) — the same tier as itself |
 | `checks/claims-a-bend-bends-the-band.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
+| `checks/claims-a-bridge-over-water-is-not-ground.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-city-building-keeps-its-permanent-id.mjs` | outbound | imports cartograph/fetch-buildings.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out, imports cartograph/msbf-identity.js, which can: writeFileSync |
 | `checks/claims-a-click-hits-what-is-drawn.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-a-cold-preview-opens-on-the-saved-shot.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-dead-tile-is-named.mjs` | outbound | imports a network module · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports package(s) geotiff — not read from source |
 | `checks/claims-a-dem-is-chosen-by-its-data.mjs` | outbound | imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
-| `checks/claims-a-drawn-coast-never-bakes-shoreless.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-a-hashed-town-loads-end-to-end.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `npx` — reaches out · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-label-change-ends-no-leg.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-a-lake-level-converts-at-its-own-height.mjs` | outbound | writeFileSync — only under its own temp dir · mkdirSync — only under its own temp dir · deletes files — only under its own temp dir · imports cartograph/fetch-water-datums.mjs, which can: calls fetch(), mkdirSync, imports cartograph/io.js, which can: writeFileSync |
 | `checks/claims-a-land-use-boundary-is-one-line.mjs` | outbound | writeFileSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · imports cartograph/cdl.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-a-lean-never-turns-the-map.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-a-look-holds-only-its-towns-grove.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
@@ -66,6 +67,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-an-early-frame-key-is-held.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
 | `checks/claims-an-external-base-survives-a-bake.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · runs `node` — not a known-local command |
 | `checks/claims-an-impostor-town-fetches-no-atlas.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of scripts/slab-publish-rule.mjs — read, safe · computed import() with no readable target — runs arbitrary modules · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
+| `checks/claims-an-island-stays-land-in-the-mint.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-authored-skelids-keep-their-ways.mjs` | unreadable | deletes files — only under its own temp dir · child_process with a non-literal command — cannot be read |
 | `checks/claims-deployment-has-one-authority.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-app-mounts-the-set-piece.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
@@ -84,10 +86,14 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-socrata-reads-the-whole-envelope.mjs` | outbound | imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() of a path an argument or the environment can supply — arbitrary · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
-| `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe · runs `git` — not a known-local command · runs `git` — not a known-local command |
+| `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/coastFile.mjs — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe · runs `git` — not a known-local command · runs `git` — not a known-local command |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
+| `checks/claims-the-coast-is-the-lidars.mjs` | outbound | writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync · imports package(s) clipper-lib — not read from source |
 | `checks/claims-the-device-link-page-is-served-on-both-sites.mjs` | outbound | calls fetch() · imports workers/staging-sites/src/index.js, which can: calls fetch() · imports workers/production-sites/src/index.js, which can: calls fetch() |
+| `checks/claims-the-dry-bed-record-is-the-lidar.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() · imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync |
 | `checks/claims-the-flight-builds-no-ao.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
+| `checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs` | outbound | imports cartograph/fetch-bathymetry.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
+| `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | unreadable | writeFileSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · computed import() with no readable target — runs arbitrary modules · declares @args --slot=<granted> |
 | `checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` | outbound | calls fetch() |
 | `checks/claims-the-movie-is-continuous.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · computed import of src/preview/heroAnim.js — read, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports a mutated copy of src/preview/heroAnim.js from its own temp dir — read as src/preview/heroAnim.js, safe · imports package(s) vite — not read from source |
 | `checks/claims-the-paint-stack-flattens.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import of a temp-dir module whose source cannot be read · re-runs its own file (process.execPath + its own path) — the same tier as itself · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
@@ -96,7 +102,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known-local command |
 | `checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-sun-dims-with-the-weather-now.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
-| `checks/claims-the-terrain-is-the-mean-of-its-lidar.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() |
+| `checks/claims-the-terrain-is-the-mean-of-its-lidar.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() · imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync |
 | `checks/claims-the-tower-light-loads-on-its-first-tap.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-the-ward-reads-what-the-manifest-bakes.mjs` | unreadable | computed import of src/instances/registry.js — read, safe · imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command |
 | `checks/claims-the-wind-field-extent-is-the-towns.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
@@ -129,7 +135,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 28. `npm run test:all`, never CI.
+## local-effect — 29. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -153,6 +159,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
 | `checks/claims-the-built-ground-has-no-needles.mjs` | A CURB, A WALK OR A LAWN NEVER COMES TO A SHARP POINT. |
 | `checks/claims-the-ground-stays-in-budget.mjs` | "DOES THIS GROUND BAKE FIT UNDER ITS TOWN'S SERVED SLAB SIZE AND SERVED GROUND-BAKE TIME?" |
+| `checks/claims-the-lidar-flights-are-named.mjs` | CLAIM — WHEN THE LIDAR FLEW, AND THE GEOID IT WAS DELIVERED ON, ARE READ AND NAMED, NEVER GUESSED (fetch-lidar-flights.mjs). |
 | `checks/claims-the-road-lies-on-the-lattice.mjs` | EVERY ROAD VERTEX IN THE DISC LIES IN A TILE OR AN INK PIECE (`roadOffTheLattice`). |
 | `checks/claims-the-road-meets-itself-across-its-centreline.mjs` | DOES THE DRAWN ROAD MEET ITSELF WHERE ITS TWO HALVES READ |
 | `checks/claims-the-street-eye-stands-on-the-ground.mjs` | IS EVERY STREET CAMERA 5′8″ ABOVE THE DRAWN GROUND? |
@@ -164,7 +171,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 331. This is `npm test`.
+## safe — 338. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -232,6 +239,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a16-materials-write.mjs` | A16 GATE — "does a materials flip invent authoring, and did the resolver fix |
 | `checks/claims-akas-never-merge-species.mjs` | DO COLLOQUIAL NAMES ROUTE WITHOUT MERGING TWO SPECIES INTO ONE? |
 | `checks/claims-alley-stub-pairs.mjs` | ⭐⭐⭐ IS "BRIDGE THE ALLEY ACROSS A JUNCTION" A RULE, OR A SPECIAL CASE? |
+| `checks/claims-an-annulus-splits-at-its-own-class-changes.mjs` | CLAIM — A CELL ROUND A FACE NO SPOKE REACHED SPLITS AT ITS OWN CLASS CHANGES, PAIRED BY OWNER, OR REFUSES. |
 | `checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs` | WHEN A TOWN'S SKELETON IS RE-POURED, DOES EVERY KEY |
 | `checks/claims-an-unanswered-axis-matches-nothing.mjs` | WHEN A SPECIES HAS NO ANSWER ON AN AXIS, DOES ANY PART "MATCH" IT? |
 | `checks/claims-anchors-follow-the-placements.mjs` | `tree-anchors.json` keys to its own slab’s placements. |
@@ -283,6 +291,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-lu-tag-has-a-home.mjs` | CAN A TOWN BRING A WORD WE DO NOT KNOW? |
 | `checks/claims-every-mapped-stone-structure-is-stone.mjs` | DOES EVERY MAPPED BREAKWATER AND GROYNE CARRY STONE? |
 | `checks/claims-every-measurable-town-is-declared.mjs` | A TOWN THE KIT CAN MEASURE IS A TOWN THE KIT DECLARES. |
+| `checks/claims-every-off-grade-span-over-the-water-is-listed.mjs` | CLAIM — EVERY OFF-GRADE SPAN OVER THE WATER IS LISTED, BY IDENTITY. ① leaves each one out of the ink (`tileGround.js#splitOverWater`: |
 | `checks/claims-every-piece-takes-its-own-land-use.mjs` | ⭐⭐ THE INVARIANT (Jacob, 2026-10-04 — `docs/briefs/BRIEF-land-use-per-piece-and-the-control.md`): |
 | `checks/claims-every-proto-edge-lies-on-its-owner.mjs` | CLAIM — EVERY ① EDGE LIES ON THE CHAIN THAT OWNS IT (one owner per edge, and it is the right one). |
 | `checks/claims-every-shadowed-placement-renders.mjs` | EVERY PLACEMENT THE GROUND SHADOWS MUST RENDER A TREE. |
@@ -433,6 +442,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs` | no dev server imports a file it WRITES. |
 | `checks/claims-the-directory-has-exactly-one-order.mjs` | every writer of the listings store orders |
 | `checks/claims-the-disc-stays-inside-the-bb.mjs` | ⭐ THE DISC STAYS INSIDE THE BOUNDING BOX — `EXTENT-DESIGN §4`: the seal must enforce `bbox ⊇ disc + padding`. |
+| `checks/claims-the-drawn-raw-is-one-function.mjs` | DOES EVERY READER OF THE DRAWN GROUND READ A VERTEX'S PIN THE SAME WAY? |
 | `checks/claims-the-ease-is-the-corner.mjs` | ⭐⭐⭐ THE EASE IS THE CORNER TEST. `iaCorner` used to be "① TURNS *and* the owner changes" — a |
 | `checks/claims-the-fade-tracks-the-active-disc.mjs` | WHOSE CIRCLE IS THE MAP FADING OVER? |
 | `checks/claims-the-frame-makes-no-intersection.mjs` | IS EVERY `ribbons.intersections` ENTRY A PLACE WHERE STREETS MEET? |
@@ -444,8 +454,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | DO THE LEAVES IN THE TREE THE IMPOSTOR PHOTOGRAPHS HANG ON WOOD? |
-| `checks/claims-the-ink-is-held-by-its-owners.mjs` | ① (THE 2ε STRIP BETWEEN TILES) IS COVERED BY OWNED PIECES, AND EACH NAMES WHO IT IS. |
-| `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | CLAIM — ALONG THE WATER, ②'S KERB IS ①'S COAST LINE ITSELF: ONE LINE, READ BY BOTH SIDES, NEVER A SECOND NEAR-COPY. |
+| `checks/claims-the-ink-is-absorbed-by-its-owner.mjs` | CLAIM — ① (THE ε STRIP) IS ABSORBED INTO THE FACES BY ITS OWN LABELS: EVERY PAINTED EDGE NAMES ITS OWNER, NEIGHBOURS MEET |
 | `checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs` | THE RAISED KERB, ON BLOCKS SMALL ENOUGH TO KNOW THE ANSWER. |
 | `checks/claims-the-key-light-is-a-real-body.mjs` | IS ANYTHING ACTUALLY THERE? |
 | `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |
@@ -453,6 +462,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-lattice-has-one-home.mjs` | THE PARTITION'S GRID IS DEFINED ONCE (src/lib/lattice.js) AND EVERY USE IMPORTS IT. |
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |
 | `checks/claims-the-mark-palette-is-never-live.mjs` | IS "SUGGEST FROM MARK" AUTHORING-ONLY? |
+| `checks/claims-the-mint-refuses-no-outline.mjs` | CLAIM — THE MINT REFUSED NO NODE'S OUTLINE. Where ① cannot build a node's outline (an acute meeting, a degenerate one, or a |
 | `checks/claims-the-overhead-band-is-two-triangles.mjs` | IS EVERY OVERHEAD BAND A 2-TRIANGLE QUAD, AND DOES ITS FLUTTER SLIDE THE PICTURE? |
 | `checks/claims-the-overhead-core-is-baked.mjs` | DOES THE GROVE BAKE THE OVERHEAD IMPOSTOR'S DEEP CORE, AND IS ITS ABSENCE LOUD? |
 | `checks/claims-the-pad-is-the-size-of-the-corner.mjs` | ⭐⭐⭐ THE ADA PAD IS THE SIZE OF THE CORNER — the gate on the canary Jacob marked 2026-09-07. |
@@ -466,11 +476,14 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-revetment-builds-on-the-wet-face.mjs` | DOES THE STONE FACE THE WATER? |
 | `checks/claims-the-revetment-ends-as-a-heap.mjs` | DOES THE STONE STOP IN A CUT? |
 | `checks/claims-the-rim-is-cut-once.mjs` | WHERE THE DRAWING MEETS THE DISC, EACH LINE IS CUT ONCE AND EVERY CROSSING IS SHARED |
+| `checks/claims-the-road-paint-reads-its-marks.mjs` | CLAIM — THE ROAD'S PAINT IS WHAT EACH STREET'S MARKS SELECTED, STRUCK FROM THE SEALED SHAPE; AND THE PARKING DEPTH NEVER |
 | `checks/claims-the-search-outlives-an-empty-ticker.mjs` | the header's chrome may not be gated on |
 | `checks/claims-the-shadow-box-has-no-cliff.mjs` | the fitted shadow box is continuous at the horizon. |
+| `checks/claims-the-shore-agrees-with-the-field.mjs` | CLAIM — THE SHORE AGREES WITH THE FIELD (BRIEF-the-shore-is-one-line §4, Boz 2026-10-25). |
+| `checks/claims-the-shore-cells-are-read-from-the-tile.mjs` | CLAIM — EVERY READER OF THE SHORE CELLS READS THE TILE'S (`tile.inkCells`), NEVER THE MINT'S PRE-STAMP COPY. |
 | `checks/claims-the-shore-is-closed.mjs` | no bare space between the water and the land, no matter what it's made of, no matter |
-| `checks/claims-the-shore-is-one-line.mjs` | THE SHORE MEDIAN CLOSES AGAINST ①'s COAST INK: the two tile, and no line lies inside. |
 | `checks/claims-the-shore-knows-which-side-is-wet.mjs` | WHICH FACE DOES THE STONE GO ON? |
+| `checks/claims-the-shore-meets-the-field-at-high.mjs` | CLAIM — THE DRAWN GROUND MEETS ①'s COAST AT HIGH, ON THE LINE, AND THE BED RAMPS TO IT (BRIEF-the-shore-is-one-line §3 step 2b; |
 | `checks/claims-the-shore-says-what-it-is-made-of.mjs` | CAN THE KIT TELL STONE FROM SAND? |
 | `checks/claims-the-slab-envs-do-not-collide.mjs` | STAGING AND PRODUCTION MUST NOT SERVE THE SAME SLAB. |
 | `checks/claims-the-slope-is-on-the-leg.mjs` | ⭐⭐⭐ THE ACCEPTANCE FOR THE RAMP, AND IT IS A CONTINUITY TEST, NOT A DIMENSION ONE. |
@@ -482,6 +495,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-town-reads-no-player-store.mjs` | "CAN AN APP DRAW THE TOWN WITHOUT BEING THE OLD PLAYER?" |
 | `checks/claims-the-town-sees-its-sky.mjs` | "DOES <Town> DRAW ITS SKY IN ANY APP'S CANVAS — OR ONLY IN ONE WHOSE CAMERA HAPPENS TO REACH IT?" |
 | `checks/claims-the-tree-wind-is-the-looks.mjs` | IS EVERY TREE'S WIND LOOK THE LOOK'S, AND DOES THE VISIBLE FLOOR ADD NOTHING IN CALM? |
+| `checks/claims-the-water-is-one-polygon.mjs` | CLAIM — THE WATER IS ONE POLYGON, ①'s, DRAWN TWICE; NO SECOND WATER (BRIEF-the-shore-is-one-line §3 step 2a/2c). |
 | `checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs` | lib/nws.js converts every National Weather Service layer |
 | `checks/claims-through-node-width-step.mjs` | THE CHECK: at a THROUGH-NODE — a ring vertex where two consecutive runs carry |
 | `checks/claims-tide-is-present-exactly-where-tidal.mjs` | a tide where the water is tidal, and nowhere else (BRIEF-tide). |

@@ -5,15 +5,16 @@
 // (Boz's ruling, 2026-10-17: "the road is bounded by its GROUPS, not by space" — water and land use are not road). The bake
 // refuses a vertex in none of them (the ink pieces include the curbless blocks' ground, `kind: 'block'`; H, the highway
 // corridor, is the highway's own ground — Boz, 2026-10-17); this reads the same function through the one feed:
-//   asphalt + highway — the producer's own · stripe — `centreStripeRings` (bake-ground), ①'s line per eligible street.
-// Reported, not gated (measured against ① for the next ruling): map.json's parkingLine and bikeLane, which bake-ground still
-// offsets from the raw OSM way, and map.json's centerStripe, which the stripe no longer reads.
+//   asphalt + highway — the producer's own · stripe + edgeline + edgeline:yellow — the road's paint the producer strikes
+//   from the sealed centreline and ②'s kerb (`tileGround.js#roadMarkings`, `R.roadPaint`), what the bake draws.
+// Reported, not gated (measured against ① for the next ruling): map.json's bikeLane, which bake-ground still offsets from
+// the raw OSM way.
 //   node checks/claims-the-road-lies-on-the-lattice.mjs [--scene=<town> …] [--selftest]
 // --selftest: drops the town's largest curbless-block piece and probes a road vertex inside it, in memory; it must go RED.
 import fs from 'node:fs'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { roadOffTheLattice } from '../src/lib/tileGround.js'
-import { centreStripeRings, polylineToRing, lateralOffset, POLYLINE_HALF_WIDTHS } from '../cartograph/bake-ground.js'
+import { polylineToRing, lateralOffset, POLYLINE_HALF_WIDTHS } from '../cartograph/bake-ground.js'
 
 const SELFTEST = process.argv.includes('--selftest') || process.env.SELFTEST === '1'
 const sd = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
@@ -30,7 +31,8 @@ for (const scene of feedScenes()) {
   console.warn = warn
   if (!R.protoInkPieces?.length) { console.log(`⛔ ${scene}: the producer reported no ink pieces — nothing was checked`); bad++; continue }
   towns++
-  const stripe = centreStripeRings(f.ribbons.streets).map(x => x.ring)
+  if (!R.roadPaint) { console.log(`⛔ ${scene}: the producer returned no road paint — nothing of the paint was checked`); bad++; continue }
+  const paint = { stripe: R.roadPaint.stripe, edgeline: [...R.roadPaint.edgeline, ...R.roadPaint['edgeline:yellow']] }
   // selftest: the curbless blocks' ground is what this guards — drop the largest such piece and put one road vertex inside it
   let pieces = R.protoInkPieces, probe = []
   if (SELFTEST) { const big = pieces.filter(p => p.kind === 'block').map(p => ({ p, a: Math.abs(p.rings.reduce((t, r) => t + r.reduce((u, q, i) => u + q[0] * r[(i + 1) % r.length][1] - r[(i + 1) % r.length][0] * q[1], 0) / 2, 0)) })).sort((x, y) => y.a - x.a)[0]
@@ -39,7 +41,7 @@ for (const scene of feedScenes()) {
     let bx = [Infinity, Infinity, -Infinity, -Infinity]; for (const r of big.p.rings) for (const [x, z] of r) bx = [Math.min(bx[0], x), Math.min(bx[1], z), Math.max(bx[2], x), Math.max(bx[3], z)]
     for (let u = 1; u < 40 && !probe.length; u++) for (let v = 1; v < 40 && !probe.length; v++) { const q = [bx[0] + (bx[2] - bx[0]) * u / 40, bx[1] + (bx[3] - bx[1]) * v / 40]; if (inR(q, big.p.rings) && big.p.rings.every(r => r.every((a, i) => sd(q, a, r[(i + 1) % r.length]) > 0.5))) probe = [[q]] }
     pieces = pieces.filter(p => p !== big.p); console.log(`   selftest: dropped the ${big.a.toFixed(1)} m² curbless block piece, probing (${probe[0]?.[0]?.map(c => c.toFixed(2))})`) }
-  const off = roadOffTheLattice({ asphalt: R.asphalt, highway: R.highway || [], stripe, ...(SELFTEST ? { selftest: probe } : {}) }, R.protoShapeTiles, pieces, fp.boundaryRing, R.highway || [])
+  const off = roadOffTheLattice({ asphalt: R.asphalt, highway: R.highway || [], ...paint, ...(SELFTEST ? { selftest: probe } : {}) }, R.protoShapeTiles, pieces, fp.boundaryRing, R.highway || [])
   const ok = Object.values(off).every(o => !o.off.length)
   if (!ok) bad++
   console.log(`${ok ? '✅' : '⛔'} ${scene}: ${Object.entries(off).map(([g, o]) => `${g} ${o.n} vertices in the disc, in no tile and no piece ${o.off.length}${o.off.length ? ` (e.g. ${o.off.slice(0, 3).map(p => `(${p.map(c => c.toFixed(2))})`).join(' ')})` : ''}`).join(' · ')}`)
@@ -52,10 +54,8 @@ for (const scene of feedScenes()) {
     if (d <= rad * C) return d } return Infinity }
   const mp = `cartograph/data/${scene}/clean/map.json`, L = fs.existsSync(mp) ? (JSON.parse(fs.readFileSync(mp, 'utf8')).layers || {}) : null
   if (!L) { console.log(`   (no map.json — the raw-OSM road paint was not measured)`); continue }
-  const lines = { 'centerStripe (map.json, no longer read)': (L.centerStripe || []).map(i => i.coords),
-    'parkingLine (offset ±)': (L.parkingLine || []).filter(i => i.coords && i.offset).flatMap(i => [-1, 1].map(s => lateralOffset(i.coords, i.offset, s))),
-    'bikeLane (offset ±)': (L.bikeLane || []).filter(i => i.coords && i.offset).flatMap(i => [-1, 1].map(s => lateralOffset(i.coords, i.offset, s))) }
-  const hw = { 'centerStripe (map.json, no longer read)': POLYLINE_HALF_WIDTHS.stripe, 'parkingLine (offset ±)': POLYLINE_HALF_WIDTHS.edgeline, 'bikeLane (offset ±)': POLYLINE_HALF_WIDTHS.bikelane }
+  const lines = { 'bikeLane (offset ±)': (L.bikeLane || []).filter(i => i.coords && i.offset).flatMap(i => [-1, 1].map(s => lateralOffset(i.coords, i.offset, s))) }
+  const hw = { 'bikeLane (offset ±)': POLYLINE_HALF_WIDTHS.bikelane }
   for (const [k, ls] of Object.entries(lines)) {
     const rings = ls.map(c => polylineToRing(c, hw[k])).filter(Boolean), o = roadOffTheLattice({ x: rings }, R.protoShapeTiles, R.protoInkPieces, fp.boundaryRing, R.highway || []).x
     const ds = ls.flatMap(c => c.map(p => [p.x ?? p[0], p.z ?? p[1]])).filter(p => roadOffTheLattice({ x: [[p]] }, [], [], fp.boundaryRing).x.n).map(near)

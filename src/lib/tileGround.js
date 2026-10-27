@@ -20,6 +20,8 @@ import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 import { CLIP_SCALE as SCALE, LATTICE_M } from './lattice.js'
 import { nodeCrossings } from './latticeNode.js'
+import { absorbInk } from './absorbInk.js'
+import { coastSignBreaks } from './coastSign.js'
 import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -371,7 +373,134 @@ export function classifyHighwayBlocks({ blocks, blockLabels, blockHoles, blockHo
 // byte-stable across ε = 0.002 … 0.5 m); it must clear the 1 mm integer floor of the stage that holds it. The mint strokes
 // at it and RECORDS it (`MP.eps` → `protopolygon.eps`); ② reads it off the frozen artifact, never from here.
 export const INK_EPS = 0.005
-export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null }) {
+/**
+ * ⭐ ONE VERTEX'S OUTLINE at ink ε: where each pair of adjacent legs' ε-offsets meet (W, one point per gap, legs sorted by
+ * heading), or `bad` — 'degenerate' (a leg of no length) or 'acute' (the inner offsets meet past a leg's own end, or two
+ * legs leave in one direction). The mint's own predicate, so bake-coast asks the SAME question of every coast vertex
+ * before ① strokes it (Boz's ruling, 2026-10-26: a hairpin can be simple and still acute). Sorts and annotates `legs`.
+ * @param legs [{ to: [x, z] }, …] — the far end of each leg leaving o
+ */
+export function outlineCorner(o, legs, eps = INK_EPS) {
+  const rot = (u) => [-u[1], u[0]]                           // the ε side `nrm` names 'right', counter-clockwise of travel
+  let bad = null
+  for (const g of legs) { const dx = g.to[0] - o[0], dz = g.to[1] - o[1], len = Math.hypot(dx, dz)
+    if (!(len > 0)) { bad = 'degenerate'; break }
+    g.u = [dx / len, dz / len]; g.len = len; g.ang = Math.atan2(dz, dx) }
+  const W = []
+  if (!bad) {
+    legs.sort((a, b) => a.ang - b.ang)
+    for (let j = 0; j < legs.length && !bad; j++) {
+      const A = legs[j], B = legs[(j + 1) % legs.length], rA = rot(A.u), rB = rot(B.u)
+      const cross = A.u[0] * B.u[1] - A.u[1] * B.u[0], dot = A.u[0] * B.u[0] + A.u[1] * B.u[1]
+      if (cross > 0) {
+        // A's ccw side o + ε·rot(uA) + s·uA meets B's cw side o − ε·rot(uB) + t·uB
+        const c0 = -eps * (rA[0] + rB[0]), c1 = -eps * (rA[1] + rB[1]), det = -cross
+        const s = (-c0 * B.u[1] + B.u[0] * c1) / det, t = (A.u[0] * c1 - A.u[1] * c0) / det
+        if (!(s >= 0 && t >= 0 && s <= A.len && t <= B.len)) { bad = 'acute'; break }
+        W.push([o[0] + eps * rA[0] + s * A.u[0], o[1] + eps * rA[1] + s * A.u[1]])
+      } else if (cross < 0 || dot < 0) {
+        const th = ((B.ang - A.ang) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), w = A.ang + th / 2
+        W.push([o[0] + eps * Math.cos(w), o[1] + eps * Math.sin(w)])
+      } else bad = 'acute'                                   // two legs leave in one direction
+    }
+  }
+  return { bad, W }
+}
+// the split itself (mintProtopolygon's caller of it states the rule): → { chains: [{ st, ci }], coastChains, dropped }
+// ⭐ EVERY WET PIECE IT DROPS IS RECORDED BY IDENTITY (`spans`, frozen as protopolygon.offGradeSpans; Jacob, 2026-10-27: "b for
+// now, deck later"): { street, segOrd, kind: 'tagged' | 'byCoast', hwy, wetM, points, banks } — `points` the piece's centreline
+// from bank crossing to bank crossing (both shared with the coast arcs), `banks` which of its ends are coast crossings, `hwy`
+// whether H sweeps the chain (`isH`). The paint lays each
+// non-H span back over the water (`bridgeOverlay`), so a bridge is painted across it while ①'s water face stays whole.
+function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH = () => false) {
+  const spans = [], endsInWater = []
+  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, dropped: 0, spans, endsInWater }
+  const rlL = (v) => Math.round(v * SCALE) / SCALE, K = (p) => Math.round(p[0] * SCALE) + ',' + Math.round(p[1] * SCALE)
+  const wn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+  const wet = (p) => waterRings.reduce((t, r) => t + wn(p, r), 0) !== 0
+  const L = list.filter(x => x.st?.points?.length >= 2)
+  const inputs = [...L.map(x => ({ tag: 'street', p: x.st.points.map(q => [rlL(q[0]), rlL(q[1])]), open: true })),
+                  ...coastChains.map(c => ({ tag: 'arc', p: c.st.points.map(q => [rlL(q[0]), rlL(q[1])]), open: true }))]
+  const nS = L.length
+  const out = nodeCrossings(inputs, { pairs: (a, b) => (a < nS) !== (b < nS), who: '① bridge over water' })
+  // ⭐ A CROSSING IS A LATTICE POINT ON BOTH A STREET AND AN ARC, whoever's vertex it was (Boz, 2026-10-27: "a street that stays in
+  // the water silently is a Layer 0 defect"). Read off the minted points alone, a coast-arc vertex lying exactly on a street (its
+  // `src` the arc's) or a street vertex exactly on the coast (its `src` the street's) was no crossing, and the street stayed whole
+  // in the water. A point where a street only TOUCHES the coast splits nothing that matters: same-fate pieces are rejoined below.
+  const onStreet = new Set(); for (let n = 0; n < nS; n++) for (const v of out[n]) onStreet.add(v.k[0] + ',' + v.k[1])
+  const crossKeys = new Set(); for (let n = nS; n < out.length; n++) for (const v of out[n]) { const k = v.k[0] + ',' + v.k[1]; if (onStreet.has(k)) crossKeys.add(k) }
+  let dropped = 0
+  const pieces = new Map()   // index in L → [{ st, ci }] replacing it
+  L.forEach((x, n) => { const st = x.st, P = st.points, o = out[n]
+    // the chain as original vertices plus its shoreline crossings (a hot pixel the noding routed through, not a crossing, is not a
+    // vertex); an original vertex lying ON the coast is a crossing too, and keeps its index
+    const V = []; for (const v of o) { const c = crossKeys.has(v.k[0] + ',' + v.k[1])
+      if (v.src != null) V.push({ p: P[v.src], src: v.src, edge: v.src, ...(c && { cross: true }) })
+      else if (c) V.push({ p: [v.k[0] / SCALE, v.k[1] / SCALE], src: null, edge: v.edge, cross: true }) }
+    // ⛔ A CHAIN WHOLLY IN THE WATER crosses nothing, and was kept whole in the water, silently (found 2026-10-27): it is one wet
+    // piece, judged like any other
+    if (!V.some(v => v.cross) && !(V.length >= 2 && wet([(V[0].p[0] + V[1].p[0]) / 2, (V[0].p[1] + V[1].p[1]) / 2]))) return
+    const cut = [[]]; V.forEach((v, k) => { cut[cut.length - 1].push(v); if (v.cross && k > 0 && k < V.length - 1) cut.push([v]) })
+    // pieces of one fate either side of a mere touch are one piece: split only where the street goes into or out of the water
+    const wetPart = (part) => part.length >= 2 && wet([(part[0].p[0] + part[1].p[0]) / 2, (part[0].p[1] + part[1].p[1]) / 2])
+    const parts = []; for (const part of cut) { if (part.length < 2) continue
+      const last = parts[parts.length - 1]; if (last && wetPart(last) === wetPart(part)) last.push(...part.slice(1)); else parts.push(part) }
+    const keep = []
+    for (let pi = 0; pi < parts.length; pi++) { const part = parts[pi]; if (part.length < 2) continue
+      const a = part[0].p, b = part[1].p
+      if (!wet([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2])) { keep.push(part); continue }
+      const edges = new Set(); for (let k = 0; k < part.length - 1; k++) edges.add(part[k].edge)
+      const runs = (st.gradeRuns || []).filter(r => [...edges].some(e => e >= r.from && e < r.to))
+      const len = part.reduce((t, v, k) => k ? t + Math.hypot(v.p[0] - part[k - 1].p[0], v.p[1] - part[k - 1].p[1]) : 0, 0)
+      const who = `${st.skelId ?? st.name} segment(s) ${[...edges].join(',')} (${len.toFixed(1)} m in the water)`
+      if (!st.gradeRuns) throw new Error(`[①] ⛔ ${who}: a chain with no grade runs lies in ①'s water — its grade cannot be read. Refusing.`)
+      if (runs.some(r => (r.offGrade || r.mixed) && !r.exact)) throw new Error(`[①] ⛔ ${who}: off grade only by a run attributed ${runs.filter(r => !r.exact).map(r => r.by).join('/')} — only an exactly attributed run decides a span is not ground. Refusing.`)
+      // ⭐ TAGGED off grade: the piece's arc-length span lies within the exact off-grade runs and, on a run whose ways DISAGREE on
+      // grade, within the off-grade way's own extent along it (Zob, 2026-10-27: a segment the skeleton simplified across a joint,
+      // cleveland-road-east-2). ⛔ A wet piece on such a run reaching past that extent refuses by name
+      const S = [0]; for (let k = 1; k < P.length; k++) S.push(S[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]))
+      const sOf = (v) => v.src != null ? S[v.src] : S[v.edge] + Math.hypot(v.p[0] - P[v.edge][0], v.p[1] - P[v.edge][1])
+      const sA = sOf(part[0]), sB = sOf(part[part.length - 1]), lo = Math.min(sA, sB), hi = Math.max(sA, sB)
+      const ok = [...runs.filter(r => r.offGrade).map(r => [S[r.from], S[r.to]]), ...runs.filter(r => r.mixed).flatMap(r => r.offExtents || [])].sort((a, b) => a[0] - b[0])
+      let reach = lo; for (const [a, b] of ok) if (a <= reach + 1e-9 && b > reach) reach = b
+      // ⛔ ONE MEASURE PER SPAN: a span whose edges reach two segOrds would paint its whole length at the first one's width (Zob)
+      const e0 = Math.min(...edges), ords = x.ci >= 0 ? [...new Set([...edges].map(e => segOrdOf(x.ci, e)))] : [0]
+      if (ords.length > 1) throw new Error(`[①] ⛔ ${who}: the span over the water crosses a segOrd boundary (${ords.join(' → ')}), so it has no one measure to be painted at. Refusing.`)
+      // `banks`: which of its two ends is a crossing of the coast (a chain's own end in the water is not)
+      const span = (kind) => ({ street: st.skelId ?? st.name, segOrd: ords[0], kind, hwy: !!isH(x), wetM: +len.toFixed(2), points: part.map(v => [v.p[0], v.p[1]]), banks: [!!part[0].cross, !!part[part.length - 1].cross] })
+      if (reach >= hi - 1e-9) { spans.push(span('tagged')); dropped++; continue }
+      if (runs.some(r => r.mixed)) throw new Error(`[①] ⛔ ${who}: a wet piece on a segment whose ways disagree on grade reaches ${(hi - reach).toFixed(2)} m past the off-grade way's own extent — its grade there cannot be read. Refusing.`)
+      // ⭐ OFF GRADE BY THE COAST (Jacob, 2026-10-27: "a; we don't have any mechanism for this in the authoring tools"): a street
+      // over ①'s water with no off-grade tag is a bridge all the same — the coast is the high-water mark, and a causeway on fill
+      // reads as land in the lidar, so it never reaches here. It leaves the ink like a tagged span, and it is RECORDED, never silent
+      // ⛔ …but only a street that CROSSES the water between banks (Jacob's (a)): one with no bank at either end and no tag is no
+      // bridge, it is bad data (a ferry line, a mis-drawn way), and a floating strip would be a plausible-looking success (Boz, Zob)
+      if (!part[0].cross && !part[part.length - 1].cross) throw new Error(`[①] ⛔ ${who}: a street lying wholly in the water, with no bank at either end and no bridge, tunnel or layer tag — not a bridge but a street or coast datum in question. Refusing.`)
+      // ⭐ ONE BANK, NO TAG: a street that crosses the coast and ENDS in the water (a slipway, a boat ramp) STOPS AT THE COAST (Boz's
+      // ruling, 2026-10-27): the coast is the high-water mark, nothing is painted past it. Real, so never refused — counted and
+      // named (`endsInWater`, frozen; printed below). A ramp drawn running on under the water is the deck's, later.
+      if (!part[0].cross || !part[part.length - 1].cross) { const m = part[Math.floor(part.length / 2)].p
+        endsInWater.push({ street: st.skelId ?? st.name, segOrd: ords[0], wetM: +len.toFixed(2), at: [+m[0].toFixed(3), +m[1].toFixed(3)] }); dropped++; continue }
+      spans.push(span('byCoast'))
+      dropped++ }
+    if (keep.length === parts.length) return   // nothing left the ink: a street that only touches the coast is kept as it was
+    pieces.set(n, keep.map(part => ({ ci: x.ci, st: { ...st, points: part.map(v => v.p), hard: part.map(v => v.src != null && st.hard ? !!st.hard[v.src] : v.src != null),
+      caps: { start: part[0].src === 0 ? st.caps?.start : undefined, end: part[part.length - 1].src === P.length - 1 ? st.caps?.end : undefined },
+      _orig: part.map(v => v.src), _origSeg: part.map(v => v.edge), _waterEnd: { start: !!part[0].cross, end: !!part[part.length - 1].cross } } }))) })
+  if (!dropped) return { chains: list, coastChains, dropped: 0, spans, endsInWater }
+  // the arcs take the crossings, so a street's end and the coast share the vertex
+  const arcs = coastChains.map((c, m) => { const o = out[nS + m], P = c.st.points
+    const pts = []; for (const v of o) { if (v.src != null) pts.push(P[v.src]); else if (crossKeys.has(v.k[0] + ',' + v.k[1])) pts.push([v.k[0] / SCALE, v.k[1] / SCALE]) }
+    return { ...c, st: { ...c.st, points: pts, hard: pts.map(() => false) } } })
+  const chains = []; let li = 0
+  for (const x of list) { if (!(x.st?.points?.length >= 2)) { chains.push(x); continue } const n = li++; if (pieces.has(n)) chains.push(...pieces.get(n)); else chains.push(x) }
+  const byCoast = spans.filter(b => b.kind === 'byCoast'), mid = (b) => b.points[Math.floor(b.points.length / 2)].map(c => c.toFixed(3)).join(', ')
+  console.log(`    [①] ${dropped} off-grade span(s) over the water left out of the ink (bridges and tunnels are not ground; recorded, protopolygon.offGradeSpans); their banks end on the coast${byCoast.length ? ` · ⚠️ ${byCoast.length} of them off grade BY THE COAST (no bridge, tunnel or layer tag): ${byCoast.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${mid(b)})`).join(' · ')}` : ''}`)
+  if (endsInWater.length) console.log(`    [①] ${endsInWater.length} street(s) crossing the coast and ENDING in the water (a slipway, a boat ramp; no tag) stop at the coast — nothing painted past it (protopolygon.endsInWater): ${endsInWater.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${b.at.join(', ')})`).join(' · ')}`)
+  return { chains, coastChains: arcs, dropped, spans, endsInWater }
+}
+export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null, onAbsorbRefusal = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
   // one — so it is computed unconditionally here. ⚠️ The live path used to gate
@@ -408,12 +537,22 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     .filter(a => Array.isArray(a) && a.length >= 2)
     .map(a => ({ st: { skelId: WATER_EDGE_SKEL, points: a.map(p => [p[0], p[1]]),
                        hard: a.map(() => false), gradeSeparated: false }, ci: -1 }))
-  const chains = [...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 })), ...coastChains]
+  // ⭐ AN OFF-GRADE SPAN OVER THE WATER IS NOT GROUND (Boz's ruling B, Zob's read, 2026-10-27): a bridge is above the water, a
+  // tunnel below it, and neither is street-on-water. Every street and grade-separated chain is noded ONCE against the shoreline
+  // arcs (street × arc only, on the lattice); a piece between two crossings lies in the water iff its first edge's midpoint does
+  // (the nonzero rule over the water rings, exact after noding). A wet piece over runs that are ALL off grade and EXACTLY
+  // attributed (`gradeRuns`, mintInputs.mjs) leaves the ink; the pieces either side end ON the coast, the crossing shared with
+  // the arc, and every vertex keeps its ORIGINAL index for srcIdx / segOrd / hard, so no authoring key moves. ⛔ A wet piece
+  // over a run attributed by order or one end, or over a run AT GRADE, refuses by name — never kept silently in the water.
+  // Over land nothing changes (a partly-bridge street still bounds blocks), and a bridge over an ISLAND stays ink, like a
+  // bridge over land.
+  const HWY_CLASS = HIGHWAY_CLASSES
+  const split = splitOverWater([...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))], coast, coastChains, segOrdAt, (x) => x.ci < 0 && HWY_CLASS.has(x.st?.highway))
+  const chains = [...split.chains, ...split.coastChains]
   // ⭐ H-3 step 4 — `gradeEnd`, the RAMP-END identity stamp. A grade-separated HIGHWAY chain's endpoint that is
   // also a vertex of a non-highway street is where the ramp comes down to the town (an at-grade terminal).
   // Stamped here, by construction, exactly as `tipEnd` is — ⛔ never recovered by proximity afterwards (A15).
   // The junction-residual classifier (derive.js, at the mint) reads it off the block ring.
-  const HWY_CLASS = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
   const vKey3 = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
   const townVerts = new Set()
   for (const st of [...streets, ...gradeSep.filter(g => !HWY_CLASS.has(g?.highway))]) for (const p of (st?.points || [])) townVerts.add(vKey3(p))
@@ -443,6 +582,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const dg0 = st?.caps?.start?.degree, dg1 = st?.caps?.end?.degree
     const lastI = P.length - 1
     const tipOf = (i) => (i === 0 && dg0 === 1) ? 'start' : (i === lastI && dg1 === 1) ? 'end' : null
+    // `hwy` rides the stamp of a grade-separated HIGHWAY (the class set the ground's hwySkel reads too): its absorbed ink is
+    // the highway's, left to H. ⛔ Not `gradeSeparated` alone: a street's own bridge is ROAD for paint (Boz, 2026-10-25).
     const hwyGs = gs && HWY_CLASS.has(st?.highway)
     // Stamped on the chain's whole LAST SPAN (the end vertex and the one before it): the town street's own ε
     // outline swallows the ramp's end vertices in the union, and the ramp edge that survives into the block
@@ -469,8 +610,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     // ⭐ `water` rides the stamp for the same reason `gradeSeparated` does: downstream tells a
     // shore edge from a street edge by IDENTITY, never by the absence of a measure.
     const isCoast = skelId === WATER_EDGE_SKEL
-    const stamp = (side, i, segI) => { const ge = gradeEndOf(i)
-      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }) }) - 1 }
+    // a piece of a chain split over the water (splitOverWater) keys every vertex by its ORIGINAL index; its water ends are grade ends
+    const orig = st?._orig || null, origSeg = st?._origSeg || null, wEnd = st?._waterEnd || null
+    const stamp = (side, i, segI) => { const ge = gradeEndOf(i) || (wEnd && ((i === 0 && wEnd.start) ? 'start' : (i === lastI && wEnd.end) ? 'end' : null))
+      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, origSeg ? origSeg[segI] ?? origSeg[Math.max(0, Math.min(origSeg.length - 1, segI))] : segI) : 0, gradeSeparated: gs, srcIdx: orig ? orig[i] : i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }), ...(hwyGs && { hwy: true }) }) - 1 }
     return { st, ci, P, skelId, isCoast, dg0, dg1, lastI, stamp }
   }
   const live = chains.filter(({ st }) => st?.points?.length >= 2).map(ctxOf)
@@ -545,11 +688,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   // (acute), or a leg of no length, is left with its plain offsets and NAMED; so is a chain end at a node no passing
   // chain has a vertex at.
   const over = new Map(), nodeRefusal = { acute: [], degenerate: [], noVertex: [] }
+  // ⭐ THE WEDGE SPOKES: at a real node (three or more legs), the segment from the node to each outline point — where one leg's
+  // ε side meets the next's, the block's inner corner — closes each street's wedge. absorbInk cuts the ink by these too, so
+  // every cell of it lies on ONE stroke's side and takes that owner's class (shore · highway · road) by label, never by overlap.
+  const spokes = [], outlineRefused = [], outlineRefusedRec = { acute: [], degenerate: [], noVertex: [] }   // …and where a node's outline was refused (so it has no spokes): absorbInk names it
   {
     const at = new Map()
     S.forEach((s, si) => {
       s.V.forEach((v, k) => { const q = qk4(v.p); let a = at.get(q); if (!a) at.set(q, a = []); a.push({ si, k }) }) })
-    const rot = (u) => [-u[1], u[0]]                         // the ε side `nrm` names 'right', counter-clockwise of travel
     for (const [q, here] of at) {
       const legs = []
       for (const { si, k } of here) { const { V, closed } = S[si], n = V.length
@@ -559,34 +705,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       if (legs.length < 3 && !(legs.length === 2 && here.length === 1)) {
         for (const { si, k } of here) { const s = S[si]; if (s.closed || (k > 0 && k < s.V.length - 1)) continue
           const m = k === 0 ? s.V[0].f : s.V[k].b, e = (k === 0) !== m.rev ? 'start' : 'end'
-          if ((e === 'start' ? m.c.dg0 : m.c.dg1) >= 3) nodeRefusal.noVertex.push(`${m.c.skelId}@${q}`) }
+          if ((e === 'start' ? m.c.dg0 : m.c.dg1) >= 3) { nodeRefusal.noVertex.push(`${m.c.skelId}@${q}`); outlineRefused.push({ p: s.V[k].p, why: 'noVertex' }) } }
         continue
       }
       const o = S[here[0].si].V[here[0].k].p
-      let bad = null
-      for (const g of legs) { const dx = g.to[0] - o[0], dz = g.to[1] - o[1], len = Math.hypot(dx, dz)
-        if (!(len > 0)) { bad = 'degenerate'; break }
-        g.u = [dx / len, dz / len]; g.len = len; g.ang = Math.atan2(dz, dx) }
-      const W = []
-      if (!bad) {
-        legs.sort((a, b) => a.ang - b.ang)
-        for (let j = 0; j < legs.length && !bad; j++) {
-          const A = legs[j], B = legs[(j + 1) % legs.length], rA = rot(A.u), rB = rot(B.u)
-          const cross = A.u[0] * B.u[1] - A.u[1] * B.u[0], dot = A.u[0] * B.u[0] + A.u[1] * B.u[1]
-          if (cross > 0) {
-            // A's ccw side o + ε·rot(uA) + s·uA meets B's cw side o − ε·rot(uB) + t·uB
-            const c0 = -eps * (rA[0] + rB[0]), c1 = -eps * (rA[1] + rB[1]), det = -cross
-            const s = (-c0 * B.u[1] + B.u[0] * c1) / det, t = (A.u[0] * c1 - A.u[1] * c0) / det
-            if (!(s >= 0 && t >= 0 && s <= A.len && t <= B.len)) { bad = 'acute'; break }
-            W.push([o[0] + eps * rA[0] + s * A.u[0], o[1] + eps * rA[1] + s * A.u[1]])
-          } else if (cross < 0 || dot < 0) {
-            const th = ((B.ang - A.ang) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), w = A.ang + th / 2
-            W.push([o[0] + eps * Math.cos(w), o[1] + eps * Math.sin(w)])
-          } else bad = 'acute'                                 // two legs leave in one direction
-        }
-      }
-      if (bad) { nodeRefusal[bad].push(`${[...new Set(here.map(({ si }) => S[si].seq[0].c.skelId))].join('|')}@${q}`); continue }
+      const { bad, W } = outlineCorner(o, legs, eps)
+      if (bad) { nodeRefusal[bad].push(`${[...new Set(here.map(({ si }) => S[si].seq[0].c.skelId))].join('|')}@${q}`); outlineRefused.push({ p: o, why: bad }); continue }
       legs.forEach((g, j) => { g.ccw = W[j]; g.cw = W[(j - 1 + W.length) % W.length] })
+      if (legs.length >= 3) for (const w of W) spokes.push([[o[0], o[1]], [w[0], w[1]]])
       const one = (a, b) => (a === b ? [a] : [a, b])
       for (const { si, k } of here) {
         const gi = legs.find(g => g.si === si && g.k === k && g.dir === 'in'), go = legs.find(g => g.si === si && g.k === k && g.dir === 'out')
@@ -597,6 +723,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const nr = Object.entries(nodeRefusal).filter(([, v]) => v.length)
     // ⛔ LOUD: a refused vertex keeps its plain offsets (its butts, at a node), and the sub-ink check reads it RED.
     if (nr.length) console.warn(`    ⛔ [①] outline REFUSED, plain offsets kept: ${nr.map(([k, v]) => `${v.length} ${k} (${v.slice(0, 4).join(' · ')}${v.length > 4 ? ' …' : ''})`).join(' · ')}`)
+    // ⭐ FROZEN, NOT ONLY PRINTED (Boz's ruling, 2026-10-26: "pour on, but RED"): each node whose outline was refused, by kind,
+    // with where and whose; checks/claims-the-mint-refuses-no-outline.mjs reads it and is RED on any entry
+    { const seen = { acute: 0, degenerate: 0, noVertex: 0 }
+      for (const r of outlineRefused) (outlineRefusedRec[r.why] ||= []).push({ at: [r.p[0], r.p[1]], who: nodeRefusal[r.why]?.[seen[r.why]++] ?? null }) }
     console.log(`    [①] outlines: ${over.size} stroke vertices take their corners from one outline (node, cut or bend)`)
   }
   // ⭐⭐ THE SHORE MEETS THE FRAME ACROSS ITS WHOLE INK. A coast arc ends ON a bb edge (`coastline.mjs`: the run inside the bb,
@@ -627,6 +757,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
   }
   if (frameRefusal.length) console.warn(`    ⛔ [①] shore cap on the frame REFUSED, left butted: ${frameRefusal.join(' · ')}`)
+  // the owner (①'s own table) of each stroke segment k → k+1: the label its right-hand pass carries, captured as it is pushed
+  const lineOwn = S.map(() => []), lineOwnL = S.map(() => [])   // the right- and left-hand pass's owner per segment
   for (const [si, { seq, closed, V, nrm }] of S.entries()) {
     const nV = V.length
     // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it 'left' puts every ASYMMETRIC authored
@@ -654,8 +786,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       if (nV < 3) continue
       // the left boundary is walked BACK, so each of its edges is owned by the left stamp at its start
       const rR = [], lR = [], rL = [], lL = []
-      for (let k = 0; k < nV; k++) for (const q of Rk(k)) { rR.push([q[0], q[1]]); lR.push(right(V[k].f)) }
-      for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { rL.push([q[0], q[1]]); lL.push(left(V[k].b)) }
+      for (let k = 0; k < nV; k++) for (const q of Rk(k)) { rR.push([q[0], q[1]]); lR.push(right(V[k].f)); if (lineOwn[si][k] == null) lineOwn[si][k] = lR[lR.length - 1] }
+      for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { rL.push([q[0], q[1]]); lL.push(left(V[k].b)); const sg = (k - 1 + nV) % nV; if (lineOwnL[si][sg] == null) lineOwnL[si][sg] = lL[lL.length - 1] }
       const outerR = Math.abs(signedArea(rR)) >= Math.abs(signedArea(rL))
       orient(rR, lR, outerR); orient(rL, lL, !outerR)
       add(rR, lR); add(rL, lL)
@@ -663,8 +795,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
     const ring = [], labs = [], pass = [], pEnd = []   // pass: true = the right-hand pass; reversed WITH the ring below
     const endOf = (k) => (k === 0 ? 'start' : k === nV - 1 ? 'end' : null)
-    for (let k = 0; k < nV; k++) for (const q of Rk(k)) { ring.push([q[0], q[1]]); labs.push(right(V[k].f)); pass.push(true); pEnd.push(endOf(k)) }
-    for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { ring.push([q[0], q[1]]); labs.push(left(V[k].b)); pass.push(false); pEnd.push(endOf(k)) }
+    for (let k = 0; k < nV; k++) for (const q of Rk(k)) { ring.push([q[0], q[1]]); labs.push(right(V[k].f)); pass.push(true); pEnd.push(endOf(k)); if (lineOwn[si][k] == null) lineOwn[si][k] = labs[labs.length - 1] }
+    for (let k = nV - 1; k >= 0; k--) for (const q of Lk(k)) { ring.push([q[0], q[1]]); labs.push(left(V[k].b)); pass.push(false); pEnd.push(endOf(k)); if (k > 0 && lineOwnL[si][k - 1] == null) lineOwnL[si][k - 1] = labs[labs.length - 1] }
     if (ring.length < 3) continue
     // the stroke's two TRUE ends, as (chain, end): a cut inside the stroke is no end, so it gets no cap mark
     const first = seq[0], last = seq[seq.length - 1]
@@ -712,6 +844,31 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
     return pair
   })()
+
+  // ⭐⭐ THE SEALED CENTRELINE — the line ① was struck from, frozen beside it (BRIEF-the-ink-is-owned-by-its-labels §3.3;
+  // Boz approved the record 2026-10-25). Past the Wall the road's paint reads THIS, never `ribbons.streets[].points`: one
+  // entry per STROKE as the mint expanded it (chain cuts stroked through, its working copy, not the survey), on the lattice.
+  //   points  [[x, z]…] lattice-rounded, consecutive duplicates removed · closed
+  //   own     per segment k → k+1: the owner index (①'s `owners`) of its right-hand edge — skelId · segOrd from ONE table
+  //   ownL    the same for its LEFT-hand edge (the stroke's other pass): an absorbed face takes the pass on its own side
+  //   runs    [{ from, to, skelId, dir }] maximal spans of one chain; `dir` +1 when the stroke runs with the chain's own
+  //           point order, −1 against (a stroke may walk a chain reversed). A one-way chain runs in travel order (intake).
+  // ⛔ A segment rounding to nothing (shorter than the lattice) is dropped and counted, never merged silently.
+  const rl = (v) => Math.round(v * SCALE) / SCALE
+  let lineDropped = 0
+  const centrelines = S.map(({ closed, V }, si) => {
+    const pts = [], own = [], ownL = [], chainOf = []
+    const nV = V.length, nSeg = closed ? nV : nV - 1
+    for (let k = 0; k < nV; k++) { const p = [rl(V[k].p[0]), rl(V[k].p[1])], q = pts[pts.length - 1]
+      if (q && q[0] === p[0] && q[1] === p[1]) { lineDropped++; own.pop(); ownL.pop(); chainOf.pop() } else pts.push(p)
+      if (k < nSeg) { own.push(lineOwn[si][k] ?? null); ownL.push(lineOwnL[si][k] ?? null); chainOf.push(V[k].f) } }
+    if (closed && pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) { pts.pop(); own.pop(); ownL.pop(); chainOf.pop(); lineDropped++ }   // the zero-length closing segment goes with it
+    const runs = []
+    chainOf.forEach((m, k) => { const r = runs[runs.length - 1], id = m.c.skelId, dir = m.rev ? -1 : 1
+      if (r && r.skelId === id && r.dir === dir) r.to = k + 1; else runs.push({ from: k, to: k + 1, skelId: id, dir }) })
+    return { points: pts, closed: !!closed, own, ownL, runs }
+  }).filter(l => l.points.length >= 2)
+  if (lineDropped) console.log(`    [①] sealed centreline: ${lineDropped} vertex(es) under the lattice dropped (their segment with them)`)
 
   // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled`, N subject rings each with its
   // own label, labels on Clipper's Z channel, crossings resolved by walking the
@@ -859,12 +1016,25 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     // was measuring the un-chopped rect.
     // ⭐ One difference cannot lose a hole, because nothing is ever re-entered as a subject.
     const clipRings = [...R.rings], clipLabels = [...R.labels]
+    let wIdx = null
     if (Array.isArray(coast) && coast.length) {
-      const wIdx = owners.push({ skelId: WATER_EDGE_SKEL, side: 'right', segOrd: 0,
+      wIdx = owners.push({ skelId: WATER_EDGE_SKEL, side: 'right', segOrd: 0,
                                  gradeSeparated: false, srcIdx: -1, water: true }) - 1
+      // ⛔ THE WATER KEEPS ITS OWN RELATIVE WINDING, TURNED AS ONE TO THE INK'S (Zob, 2026-10-25; the islands, 2026-10-26). The
+      // clip set unions by nonzero fill, so a lake wound against the ink cancels it where they overlap (+1 − 1 = 0). The coast
+      // arrives in coastFile.mjs#readCoast's convention, checked at that one door — each body's outer positive, each island
+      // negative — so every ring is reversed TOGETHER when the ink is wound negative, never ring by ring: rewinding each ring to
+      // the ink's sign turned an island hole into water. ▶ checks/claims-an-island-stays-land-in-the-mint.mjs
+      if (!R.rings?.length) throw new Error('[①] ⛔ the coast has water rings but ① has no ink to wind them against. Refusing.')
+      // ⛔ a coast handed to the mint any other way than readCoast's convention refuses by name (the one predicate, coastSign.js)
+      { const bad = coastSignBreaks(coast)
+        if (bad.length) throw new Error(`[①] ⛔ ${bad.length} coast ring(s) break the sign rule (a ring at even nesting depth wound positive, at odd depth negative): ring ${bad[0].i} at (${bad[0].at.map(v => v.toFixed(3)).join(', ')}), depth ${bad[0].depth}, wound ${bad[0].got > 0 ? 'positive' : bad[0].got < 0 ? 'negative' : 'flat'}. It would read land as water or water as land. Refusing.`) }
+      const inkSign = Math.sign(signedArea(R.rings.reduce((m, r) => Math.abs(signedArea(r)) > Math.abs(signedArea(m)) ? r : m, R.rings[0])))
+      const flip = inkSign < 0
       for (const r of coast) {
         if (!Array.isArray(r) || r.length < 3) continue
-        clipRings.push(r.map(p => [p[0], p[1]]))
+        const w = r.map(p => [p[0], p[1]]); if (flip) w.reverse()
+        clipRings.push(w)
         clipLabels.push(r.map(() => wIdx))
       }
       console.log(`    [①] land = bb − (water ∪ ink): ${coast.length} water ring(s) combined with ${R.rings.length} ink ring(s) and excluded in one move.`)
@@ -878,7 +1048,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, { sameStroke, preserveCollinear: true }, true)
     if (D.containment) console.log(`    [①] blocks containment: ${D.containment.reassigned} re-owned · ${D.containment.walkedBack} walked backward, labelled by the edge they leave on${D.containment.unresolved ? ` · ⛔ ${D.containment.unresolved} with no single containing edge — left as they were` : ''}`)
     if (D.containment?.walkedBackRefused) console.warn(`    ⛔ [①] ${D.containment.walkedBackRefused} vertex/vertices walked backward with two arriving input edges of different owners — label left as it was`)
-    let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null
+    let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null, absorbed = null
     if (!D.refused && D.faces?.length) {
       blocks = []; blockLabels = []; blockHoles = []; blockHoleLabels = []
       // ⛔⛔ THE COMPONENT THAT TOUCHES THE FRAME IS THE EXTERIOR, NOT A BLOCK. `frame − ink`
@@ -1009,6 +1179,13 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       if (slivers) console.warn(`    ⛔ [①] ${slivers} face(s) are THINNER THAN ε (${eps} m) and are NOT blocks — a region the ink cannot have made, dropped as a boolean residue. Counted, never silent.`)
       console.log(`    [①] ${blocks.length} block face(s); ${withHoles} carry hole(s) (a compound face — outer + its holes, carried together)`)
       if (unlabelledHoles) console.warn(`    ⛔ [①] ${unlabelledHoles} hole(s) came back with NO identity — those faces would be offset as if SOLID. NOT trustworthy.`)
+      // ⭐⭐ THE INK IS ABSORBED HERE, AT THE MINT'S EXIT (absorbInk.js): each face's PAINTED boundary, the ε strip cut along the
+      // centrelines and spliced into the face that owns it. ② keeps reading `blocks` (the un-absorbed face); the tiles paint
+      // from `paint`. Frozen beside the faces.
+      const absorbIn = { inkRings: R.rings, inkLabels: R.labels, frame: rect, frameOwner: bIdx, waterRings: Array.isArray(coast) ? coast : [], waterOwner: wIdx,
+        centrelines, spokes, outlineRefused, faces: blocks.map((_, k) => ({ ring: blocks[k], labels: blockLabels[k], holes: blockHoles[k], holeLabels: blockHoleLabels[k] })), owners }
+      // a refusal hands its inputs (and the faces' rings) to the caller's diagnostic, when it asked for one, then stands
+      try { absorbed = absorbInk(absorbIn) } catch (e) { if (onAbsorbRefusal) onAbsorbRefusal({ ...absorbIn, blocks, blockHoles, error: e.message }); throw e }
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
     }
@@ -1020,9 +1197,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, eps }
+             nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, endsInWater: split.endsInWater, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, eps }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, endsInWater: split.endsInWater, eps }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -1574,7 +1751,12 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
   const ring = ringIn, n = nIn
   // `idMap` — when the caller hands a WORKING COPY (a taper split an edge), each working edge/vertex names the
   // ① edge/vertex it came from; a split point names none. Depth is read by WORKING index, identity leaves by ①'s.
-  const origE = ring.map((_, k) => (idMap ? idMap.e[k] : k)), origV = ring.map((_, k) => (idMap ? idMap.v[k] : k))
+  // `idMap.water` — per WORKING edge, whether it is owned by the water (WATER_EDGE_SKEL), read by IDENTITY off the caller's own
+  // owners. It decides a GEOMETRY question (the water join below), so every caller that strikes this ring passes the same flag,
+  // labelled or not: ② and ③ build one corner (Zob, 2026-10-27). ⛔ A labelled offset without it refuses; `e`/`v` may be absent
+  // (no working copy: the identity).
+  const origE = ring.map((_, k) => (idMap?.e ? idMap.e[k] : k)), origV = ring.map((_, k) => (idMap?.v ? idMap.v[k] : k))
+  if (idMap?.water && idMap.water.length !== n) throw new Error(`[tileGround][offsetRingByRects] ⛔ idMap.water names ${idMap.water.length} edge(s) for a ring of ${n}. Refusing.`)
   const depthAt = depthAtIn
   const ccw = (signedArea(ring) > 0) !== outward
   const seg = []
@@ -1598,6 +1780,7 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
   // and its capacity guard, which keep only the rings or only their count).
   const labelled = !!(stamp || easeAt)
   // ⛔ a labelled offset pools its contributors BY OWNER (`labelOf`), so it must be told whose each ① edge is
+  if (labelled && !Array.isArray(idMap?.water)) throw new Error('[tileGround][offsetRingByRects] ⛔ a labelled offset needs `idMap.water` (per edge: owned by the water?): the water join is decided by identity, and a caller that cannot say builds another corner. Refusing.')
   if (labelled && typeof ownerKeyOf !== 'function') throw new Error('[tileGround][offsetRingByRects] ⛔ a labelled offset needs `ownerKeyOf` (① edge → skelId|side|segOrd): its edges take an OWNER, never a guess. Refusing.')
   const contrib = []
   const addSeg = (a, b, lab, kind) => { if (labelled && Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
@@ -1656,6 +1839,38 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
       if (hwyJoin ? u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0 : (tA >= 0 && tS <= 1 && simple([v, A.Q, Xc, S.P]))) { X = Xc
         kind = hwyJoin ? 'piece' : (tA > 1 && tS < 0) ? 'gap' : (tA <= 1 && tS >= 0) ? 'overlap' : 'piece'; J_t = [tA, tS] }
     }
+    // ⭐ A DEPTH-0 NEIGHBOUR: SEEK X ALONG ITS RUN (Zob's read, Boz's ruling, 2026-10-27). Where one side is depth 0 (a water edge,
+    // the coast) and the miter fails because that edge is SHORT (Huron, cleveland-road-east-0 at ① 11: a 0.22 m water sub-edge
+    // after a coast bend put the miter behind its start), the curb line of the other side runs on — as hwyJoin's does — along
+    // the depth-0 RUN (the edge and its same-owner depth-0 neighbours, walking away from v) to its FIRST crossing of ①'s line,
+    // X, ON ①. The piece is [v, the run vertices passed, X, the band's end]; the water run then starts at X, on ①'s line.
+    // ⛔ The chord was the defect: it contributed the deep band's END CAP as a kind-1 curb line under the WATER edge's label.
+    if (!X && !(idMap?.hwy && (idMap.hwy[ia] || idMap.hwy[i]))) {
+      // ⛔ SCOPED TO THE WATER, by identity (Boz's ruling (i), 2026-10-27): the defect is a kind-1 line under the WATER's label.
+      // Every other depth-0 join stays as it was (HPDM ① v7 and PTown ① v42 built non-simple run pieces when this was general;
+      // the general case is filed in the cut-separately census). The run is the water's: consecutive depth-0 water edges.
+      const isWater = (k) => !!idMap?.water?.[k], z0 = (k) => !(seg[k].dS > 0) && !(seg[k].dE > 0)
+      const aZ = z0(ia), sZ = z0(i)
+      if (aZ !== sZ && isWater(aZ ? ia : i)) {
+        // the curb line: from the deep band's end at v, away from v along its own direction
+        const o = aZ ? S.P : A.Q, d = aZ ? [-S.dir[0], -S.dir[1]] : A.dir
+        const hit = (a, b) => { const ex = b[0] - a[0], ey = b[1] - a[1], den = d[0] * ey - d[1] * ex; if (!(Math.abs(den) > 1e-15)) return null
+          const s0 = ((a[0] - o[0]) * ey - (a[1] - o[1]) * ex) / den, u0 = ((a[0] - o[0]) * d[1] - (a[1] - o[1]) * d[0]) / den
+          return s0 >= 0 && u0 >= 0 && u0 <= 1 ? [o[0] + d[0] * s0, o[1] + d[1] * s0] : null }
+        const passed = []
+        for (let step = 0, k = aZ ? ia : i; step < n; step++) { if (!z0(k) || !isWater(k)) break
+          const a = ring[k], b = ring[(k + 1) % n], h = hit(a, b)
+          if (h) { const piece = aZ ? [v, ...passed, h, S.P] : [v, A.Q, h, ...passed.slice().reverse()]
+            const pc = (p1, p2, p3, p4) => { const or = (x, y, z) => Math.sign((y[0] - x[0]) * (z[1] - x[1]) - (y[1] - x[1]) * (z[0] - x[0])); return or(p3, p4, p1) * or(p3, p4, p2) < 0 && or(p1, p2, p3) * or(p1, p2, p4) < 0 }
+            let ok = true; for (let x = 0; x < piece.length && ok; x++) for (let y = x + 2; y < piece.length && ok; y++) { if (x === 0 && y === piece.length - 1) continue
+              if (pc(piece[x], piece[(x + 1) % piece.length], piece[y], piece[(y + 1) % piece.length])) ok = false }
+            if (!ok) throw new Error(`[tileGround][offsetRingByRects] ⛔ the join at ① vertex ${origV[i]} (${v.map(c => c.toFixed(3)).join(', ')}) runs on along its depth-0 run to (${h.map(c => c.toFixed(3)).join(', ')}), and the piece is not simple. Refusing.`)
+            return { X: h, kind: 'run', A, S, v, ia, i, tA: NaN, tS: NaN, piece, zSide: aZ ? 'A' : 'S' } }
+          passed.push(aZ ? a : b); k = aZ ? (k - 1 + n) % n : (k + 1) % n }
+        // the curb line leaves the run without crossing it: the bands' own join decides (Boz) — no piece, no water vertex minted.
+        // ⛔ Never the chord: at a depth-0 side its triangle is degenerate (A.Q or S.P is v) and all it adds is the deep band's
+        // end cap as a kind-1 line under the depth-0 edge's owner, the defect itself
+        return { X: null, kind: 'none', A, S, v, ia, i, tA: NaN, tS: NaN } } }
     return { X, kind, A, S, v, ia, i, tA: J_t[0], tS: J_t[1] }
   })
   // where band i starts and ends on its curb side: its own P / Q, or the shared X
@@ -1681,12 +1896,16 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
     const j = J[i]; if (!j) continue
     const { A, v, ia } = j
     if (j.X && j.kind === 'piece') { addClip([v, A.Q, j.X, S.P], [ia, i]); addSeg(A.Q, j.X, ia, 1); addSeg(j.X, S.P, i, 1) }
-    else if (!j.X) { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
+    else if (j.kind === 'run') { addClip(j.piece, [ia, i]); if (j.zSide === 'A') addSeg(j.X, S.P, i, 1); else addSeg(A.Q, j.X, ia, 1) }
+    else if (!j.X && j.kind !== 'none') { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
     addSeg(v, A.Q, ia, 3); addSeg(S.P, v, i, 3); wedges++
   }
   // ⛔ UNITE THE BANDS FIRST, then subtract. One pass (the difference's own NonZero clip fill) leaves a zero-width
   // slit where two bands share an edge exactly — measured: a 23 m out-and-back spike at an LS highway join.
-  const B = { rings: outward ? unionRings([ring, ...clips]) : (clips.length ? differenceRings([ring], unionRings(clips)) : [ring]) }
+  // ⛔ ONE WINDING, WHICHEVER PATH (Swash's find, Boz's ruling, 2026-10-27): with no band to clip (every depth 0: an all-water
+  // island block) the ring came back as ① wound it, CLOCKWISE, where the difference returns Clipper's positive outer — so
+  // `piecesOfIA` read the island as a HOLE and painted no piece (Huron: 29 island tiles, 16,188 m²). Normalised once, by sign.
+  const B = { rings: outward ? unionRings([ring, ...clips]) : (clips.length ? differenceRings([ring], unionRings(clips)) : [signedArea(ring) < 0 ? [...ring].reverse() : ring.slice()]) }
   // ⭐ EACH ② EDGE TAKES THE OWNER IT LIES ON — among this block's OWN bands only (the known contributors; never a lookup
   // against other geometry). A contributor is a candidate where both the edge's ends lie within TOL (two grid steps) of its line;
   // what it covers of the edge is POOLED PER OWNER (skelId · side · segOrd, `ownerKeyOf`), because one owner's curb line
@@ -2025,6 +2244,89 @@ function sweepHighway(points, leftSec, rightSec, handoff = null) {
            tapers: { left: L.tapers, right: R.tapers }, length: Ltot }
 }
 
+// ⭐ A BRIDGE OVER THE WATER IS PAINTED ACROSS IT (Jacob, 2026-10-27: "b for now, deck later"): ① leaves the off-grade span out of
+// the ink, so the water face stays whole; the paint lays the span back over the water as an OVERLAY, the way H is (`sweepHighway`
+// from the chain into its paint group). One behaviour for every road class; a span H sweeps (`hwy`) is H's and is skipped here.
+// ⭐ THE COAST WINS, FOR STREET AND BRIDGE ALIKE (Boz's ruling (A), 2026-10-27): nothing is painted over the water but the SPAN's
+// own strip. Each span (protopolygon.offGradeSpans, by identity) is swept at the street's own measure per side, WITH authoring
+// (`hwOf(street, side, segOrd)`), along its own centreline run on STRAIGHT past each bank crossing, bounded by that bank's CUT,
+// and clipped to the water. A continuation's pavement never reaches over the water (where the street bends at the bank, or turns
+// to hug the shore — 140.8 m² on the planted 130° turn, when the run-on followed the chain).
+// The CUT: the coast walked from the crossing both ways across the strip (out to its half-width R — a straight run-on has no
+// miter at the crossing); where the coast stops crossing it (it turns to run along the street), the cut runs on SQUARE across
+// the street from the last coast point it reached, so it never leans back over the span. The run-on reaches as far along the
+// street as the cut does, and everything past the cut, away from the span, is cut away.
+// ⛔ CLOSURE, by name: the piece meets the BANK (the coast, or a cut) in exactly one contiguous run per bank crossing, each
+// through that crossing. Anything else (a strip edge in and out of the water) refuses. → [{ span, street, segOrd, hwy: false, rings }]
+export function bridgeOverlay(spans, waterRings, hwOf) {
+  const out = []
+  if (!spans?.length) return out
+  if (!waterRings?.length) throw new Error(`[tileGround][bridges] ⛔ ${spans.length} off-grade span(s) over the water but no water rings to clip them to. Refusing.`)
+  const TOL = 2 / SCALE
+  const sd = (p, a, c) => { const dx = c[0] - a[0], dz = c[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
+  const onCoast = (p) => waterRings.some(w => w.some((q, i) => sd(p, q, w[(i + 1) % w.length]) <= TOL))
+  for (const [span, sp] of spans.entries()) { if (sp.hwy) continue
+    const who = `${sp.street}|${sp.segOrd} (${sp.wetM} m over the water)`
+    const hl = hwOf(sp.street, 'left', sp.segOrd), hr = hwOf(sp.street, 'right', sp.segOrd)
+    if (!(hl > 0) || !(hr > 0)) throw new Error(`[tileGround][bridges] ⛔ ${who}: no pavement width (left ${hl}, right ${hr}) — the bridge cannot be painted across the water. Refusing.`)
+    const P = sp.points
+    if (!(P?.length >= 2)) throw new Error(`[tileGround][bridges] ⛔ ${who}: a span with no centreline. Refusing.`)
+    if (!Array.isArray(sp.banks)) throw new Error(`[tileGround][bridges] ⛔ ${who}: the span carries no \`banks\` — a ① poured before it. ▶ re-pour`)
+    const R = Math.max(hl, hr) + TOL, cuts = []
+    // one bank: its cut (the coast across the strip, run on square), how far along the street it reaches, and the region past it
+    const bankOf = (X, from) => { const dl = Math.hypot(X[0] - from[0], X[1] - from[1]), d = [(X[0] - from[0]) / dl, (X[1] - from[1]) / dl], nn = [-d[1], d[0]]
+      const sOf = (q) => (q[0] - X[0]) * nn[0] + (q[1] - X[1]) * nn[1]
+      let ring = null, ei = -1; for (const w of waterRings) { const i = w.findIndex((q, k) => sd(X, q, w[(k + 1) % w.length]) <= TOL); if (i >= 0) { ring = w; ei = i; break } }
+      if (!ring) throw new Error(`[tileGround][bridges] ⛔ ${who}: its bank crossing (${X.map(v => v.toFixed(3)).join(', ')}) lies on no edge of the water. Refusing.`)
+      const m = ring.length, walk = (step) => { const o = [X]; let k = step > 0 ? (ei + 1) % m : ei, sgn = 0, far = 0
+        for (let g = 0; g < m; g++, k = (k + step + m) % m) { const q = ring[k], sq = sOf(q); if (!sgn) { if (Math.abs(sq) <= TOL) continue; sgn = Math.sign(sq) }
+          if (sgn * sq > far + TOL) { if (sgn * sq >= R) { const a = o[o.length - 1], sa = sOf(a), t = (sgn * R - sa) / (sq - sa); o.push([a[0] + (q[0] - a[0]) * t, a[1] + (q[1] - a[1]) * t]); return { sgn, o } }
+            o.push(q); far = sgn * sq; continue }
+          break }
+        if (o.length < 2) throw new Error(`[tileGround][bridges] ⛔ ${who}: the coast at its bank (${X.map(v => v.toFixed(3)).join(', ')}) does not cross the street. Refusing.`)
+        const b = o[o.length - 1], sb = sOf(b); o.push([b[0] + nn[0] * (sgn * R - sb), b[1] + nn[1] * (sgn * R - sb)]); return { sgn, o } }
+      const f = walk(1), b = walk(-1)
+      if (f.sgn === b.sgn) throw new Error(`[tileGround][bridges] ⛔ ${who}: the coast at its bank (${X.map(v => v.toFixed(3)).join(', ')}) leaves on one side of the street only. Refusing.`)
+      const cut = [...b.o.slice().reverse(), ...f.o.slice(1)]; cuts.push(cut)
+      const reach = Math.max(0, ...cut.map(q => (q[0] - X[0]) * d[0] + (q[1] - X[1]) * d[1])) + TOL, L = reach + 2 * R
+      const e0 = cut[0], e1 = cut[cut.length - 1]
+      return { X, d, reach, far: [...cut, [e1[0] + d[0] * L, e1[1] + d[1] * L], [e0[0] + d[0] * L, e0[1] + d[1] * L]] } }
+    const b0 = sp.banks[0] ? bankOf(P[0], P[1]) : null, b1 = sp.banks[1] ? bankOf(P[P.length - 1], P[P.length - 2]) : null
+    const run = (b) => [b.X[0] + b.d[0] * b.reach, b.X[1] + b.d[1] * b.reach]
+    const line = [...(b0 ? [run(b0)] : []), ...P, ...(b1 ? [run(b1)] : [])]
+    const sw = sweepHighway(line, { spans: [{ hw: hl }] }, { spans: [{ hw: hr }] })
+    if (!sw) throw new Error(`[tileGround][bridges] ⛔ ${who}: the sweep failed. Refusing.`)
+    const mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
+    const fars = [b0, b1].filter(Boolean).map(b => (signedArea(b.far) < 0 ? [...b.far].reverse() : b.far))
+    const wetStrip = intersectRings([sw.ring], waterRings)
+    const A = (fars.length ? differenceRings(wetStrip, unionRings(fars)) : wetStrip).filter(r => mids.some(m => pointInRing(m[0], m[1], r)))
+    if (A.length !== 1) throw new Error(`[tileGround][bridges] ⛔ ${who}: ${A.length} piece(s) of its strip over the water hold its centreline (want 1). Refusing.`)
+    const onBank = (p) => onCoast(p) || cuts.some(cu => cu.some((q, k) => k + 1 < cu.length && sd(p, q, cu[k + 1]) <= TOL))
+    const r = A[0], n = r.length, c = r.map((q, i) => onBank(q) && onBank(r[(i + 1) % n]) && onBank([(q[0] + r[(i + 1) % n][0]) / 2, (q[1] + r[(i + 1) % n][1]) / 2]))
+    const runs = []; if (c.every(Boolean)) runs.push([...Array(n).keys()])
+    else { const s0 = c.findIndex(v => !v); for (let k = 1; k <= n; k++) { const i = (s0 + k) % n; if (!c[i]) continue
+      if (c[(i - 1 + n) % n] && runs.length) runs[runs.length - 1].push(i); else runs.push([i]) } }
+    const banks = [...(b0 ? [P[0]] : []), ...(b1 ? [P[P.length - 1]] : [])]
+    const holds = (rn, p) => rn.some(i => sd(p, r[i], r[(i + 1) % n]) <= TOL)
+    const closed = runs.length === banks.length && banks.every(b => runs.filter(rn => holds(rn, b)).length === 1) && runs.every(rn => banks.filter(b => holds(rn, b)).length === 1)
+    if (!closed) throw new Error(`[tileGround][bridges] ⛔ ${who}: its piece over the water meets the bank in ${runs.length} run(s) for ${banks.length} bank crossing(s), not one through each — a strip edge in and out of the water. Refusing.`)
+    out.push({ span, street: sp.street, segOrd: sp.segOrd, hwy: false, rings: A }) }
+  return out
+}
+
+// ⭐ H's SPANS OVER THE WATER (Boz's ruling (iv), 2026-10-27): for each recorded span H sweeps (`hwy`), the piece(s) of H ∩ the
+// water holding the span's own centreline — by identity of the recorded span, never the sheet. The caller moves them out of the
+// highway's paint into the bridge's, so the two meet on the coast. ⛔ A recorded H span no piece holds refuses by name.
+export function highwayBridges(spans, Hrings, waterRings) {
+  const H = (spans || []).map((sp, span) => ({ sp, span })).filter(x => x.sp.hwy)
+  if (!H.length) return []
+  const wet = intersectRings(Hrings, waterRings || [])
+  return H.map(({ sp, span }) => { const P = sp.points, mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
+    const rings = wet.filter(r => mids.some(m => pointInRing(m[0], m[1], r)))
+    if (!rings.length) throw new Error(`[tileGround][bridges] ⛔ ${sp.street}|${sp.segOrd} is recorded as swept by H, but no piece of H over the water holds its centreline. Refusing.`)
+    return { span, street: sp.street, segOrd: sp.segOrd, hwy: true, rings } })
+}
+
 export function unionRings(rings) {
   if (!rings.length) return []
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -2050,10 +2352,10 @@ export function differenceRings(subjectRings, clipRings) {
   c.Execute(ClipType.ctDifference, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
   return out.map(p => p.map(fromClipper))
 }
-function intersectRings(subjectRings, clipRings) {
+function intersectRings(subjectRings, clipRings, { preserveCollinear = false } = {}) {
   if (!subjectRings.length || !clipRings.length) return []
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
-  const c = new Clipper()
+  const c = new Clipper(preserveCollinear ? Clipper.ioPreserveCollinear : 0)
   for (const r of subjectRings) if (r && r.length >= 3) c.AddPath(r.map(toClipper), PolyType.ptSubject, true)
   for (const r of clipRings)    if (r && r.length >= 3) c.AddPath(r.map(toClipper), PolyType.ptClip,    true)
   const out = []
@@ -2247,7 +2549,21 @@ export function rekeyByPiece(st, byLu, sp = null) {
 // tiles, unioned, clipped: `sectionOpen`'s finish) and the stamp's insert targets. So a list the flatten paints is a
 // target by construction, and the block silhouette (kerbPlan's and the deformer's, not paint) is not; a painted layer
 // added later joins this table to be painted at all, and is a target from then on.
-const PAINTED = { A: 'asphalt', C: 'curb', W: 'sidewalk', R: 'curbCut' }
+const PAINTED = { A: 'asphalt', C: 'curb', W: 'sidewalk', R: 'curbCut', S: 'shore' }
+// ⭐ THE BAND FROM THE PAINTED RING TO ②, BY ITS OWNER'S CLASS (BRIEF-the-ink-is-owned-by-its-labels §3.2; Zob's (a)): the
+// absorbed ink a WATER-owned edge holds is the land's shore (`S`), a HIGHWAY's is the highway's, left to H and painted by it,
+// everything else is the asphalt (`A`). Both cut from the one band, so the rim is never cut again. A tile with no such cell
+// is all asphalt.
+// ⛔ The shore is the CELLS THEMSELVES — exact lattice rings out of the arrangement, wholly inside the band — never band ∩ cells:
+// that second boolean rounded the boundary it shared with the asphalt a second time, and the two met up to a step apart
+// (claims-no-edge-is-drawn-twice, the probe of 2026-10-25: asphalt / shore drawn twice). Only the asphalt is cut, by the cells'
+// own edges.
+function bandByClass(band, st) {
+  const of = (cls) => (st.inkCells || []).filter(c => c.cls === cls).flatMap(c => c.rings)
+  const shore = of('shore'), hwy = of('highway')
+  if (!shore.length && !hwy.length) return { A: band, S: [] }
+  return { A: differenceRings(band, [...shore, ...hwy]), S: shore }
+}
 const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
 
 // ⭐⭐ STAMP THE TILE ONCE, WHERE ITS LAND USE IS CUT (ROADMAP A10: "cut iA at every … ownership change …; a gap is not
@@ -2272,78 +2588,8 @@ const PAINTED_BY_LU = { tlByLu: 'treelawnByLu', luByLu: 'luByClass' }
 // `iaFull`): the stamp's crossings were computed on rounded keys beside a float contour, and the cut dropped some of them
 // from contours 600–3,400 m inside the circle (02da626e). ⛔ A ring whose rounding makes two neighbours one point has an
 // edge shorter than the lattice; it is REFUSED by name, never merged (the stamp arrays are aligned to its vertices).
-// ① SPLIT BY ITS OWNERS: each piece of the ink takes the class of the edges it lies within one stroke width (2ε) of —
-// the coast's is the land's shore, a grade-separated highway's is left to the highway, the rest is road. ONE function,
-// read by the producer (which paints it) and by bake-shore-median (whose median closes against the coast's piece, never
-// against the water face down its middle). `ink` = ①'s { rings, labels }, `owners` its owner table, `hw` = ε.
-export function inkByOwner(ink, owners, hw, hwySkel = new Set()) {
-  const W2 = 2 * hw, quads = { water: [], highway: [] }
-  let unlabelled = 0
-  ink.rings.forEach((ring, ri) => { const L = ink.labels?.[ri] || []
-    for (let k = 0; k < ring.length; k++) {
-      const o = owners?.[L[k]]
-      if (!o) { unlabelled++; continue }
-      const cls = o.water ? 'water' : hwySkel.has(o.skelId) ? 'highway' : null
-      if (!cls) continue
-      const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
-      if (!(len > 0)) continue
-      const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
-      quads[cls].push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
-    } })
-  const all = unionRings(ink.rings)
-  const shoreInk = quads.water.length ? intersectRings(all, unionRings(quads.water)) : []
-  const hwyInk = quads.highway.length ? differenceRings(intersectRings(all, unionRings(quads.highway)), shoreInk) : []
-  const roadInk = differenceRings(all, [...shoreInk, ...hwyInk])
-  return { shoreInk, hwyInk, roadInk, unlabelled }
-}
-
-// ⭐ ① HELD BY ITS OWNERS — the ink (the 2ε strip between tiles, which no tile holds) as addressable PIECES, each naming who
-// it belongs to, so the ground can give it its line (BRIEF-the-ground-knows-its-height §5: "a street's ① takes that street's
-// road surface"). The same construction as `inkByOwner`, run per owner: each labelled ink edge's stroke quad (2ε each side,
-// 2ε past each end, so it spans the strip), grouped by OWNER — a street's or highway's `skelId`, or `{ kind: 'water' }` for
-// the coast — and cut to the ink. Where two owners' pieces overlap (a crossing) the overlap is its OWN piece, naming every
-// owner whose piece covers it; each owner's piece is what is left. ⛔ Nothing is searched: an owner is the edge's own label.
-// → [{ rings, owners }] — `rings` one region per piece (nonzero; a hole wound against its outer, as Clipper writes it).
-export function inkPiecesByOwner(ink, owners, hw, clip = null) {
-  const W2 = 2 * hw, quads = new Map(), ownerOfKey = new Map()
-  let unlabelled = 0
-  ink.rings.forEach((ring, ri) => { const L = ink.labels?.[ri] || []
-    for (let k = 0; k < ring.length; k++) {
-      const o = owners?.[L[k]]
-      if (!o) { unlabelled++; continue }
-      const key = o.water ? 'water' : o.skelId
-      if (!ownerOfKey.has(key)) ownerOfKey.set(key, o.water ? { kind: 'water' } : o.skelId)
-      const A = ring[k], B = ring[(k + 1) % ring.length], dx = B[0] - A[0], dz = B[1] - A[1], len = Math.hypot(dx, dz)
-      if (!(len > 0)) continue
-      const ux = dx / len * W2, uz = dz / len * W2, nx = -uz, nz = ux
-      ;(quads.get(key) || quads.set(key, []).get(key)).push([[A[0] - ux + nx, A[1] - uz + nz], [B[0] + ux + nx, B[1] + uz + nz], [B[0] + ux - nx, B[1] + uz - nz], [A[0] - ux - nx, A[1] - uz - nz]])
-    } })
-  let all = unionRings(ink.rings); if (clip?.length >= 3) all = intersectRings(all, [clip])
-  const area = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))
-  const bbox = (rs) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const r of rs) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
-  const tiny = (hw * hw) / 100          // m² — below a hundredth of an ε square, an overlap is the grid's, not a crossing
-  // ⭐ an owner's strokes are cut against only the ink RINGS whose bounds meet them — the ink's outer rings and the holes
-  // (its blocks) near the strokes, wound as Clipper wrote them, so the nonzero region of that subset is the ink there
-  const ringBB = all.map(r => bbox([r])), hit = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]
-  const P = []; for (const [key, q] of quads) { const U = unionRings(q), b = bbox(U), near = all.filter((_, i) => hit(ringBB[i], b)); if (!near.length) continue
-    const r = intersectRings(U, near); if (r.length && area(r) > tiny) P.push({ key, r, bb: bbox(r) }) }
-  const meets = (a, b) => a.bb[0] <= b.bb[2] && b.bb[0] <= a.bb[2] && a.bb[1] <= b.bb[3] && b.bb[1] <= a.bb[3]
-  // the crossings: where two owners' pieces overlap, united, and split into its connected parts
-  const over = []; P.sort((a, b) => a.bb[0] - b.bb[0])
-  for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length && P[j].bb[0] <= P[i].bb[2]; j++) if (meets(P[i], P[j])) { const o = intersectRings(P[i].r, P[j].r); if (o.length && area(o) > tiny) over.push(...o) }
-  const C = over.length ? booleanLabelled(clipperLib.ClipType.ctUnion, over, over.map(r => r.map(() => 0)), [], null, false, true) : { rings: [], faces: [] }
-  const pieces = []
-  for (const f of C.faces || []) { const rs = [C.rings[f.outer], ...f.holes.map(h => C.rings[h])], bb = bbox(rs)
-    const own = P.filter(p => meets(p, { bb }) && area(intersectRings(p.r, rs)) > tiny).map(p => ownerOfKey.get(p.key))
-    pieces.push({ rings: rs, owners: own }) }
-  const Cf = (C.faces || []).map(f => { const rs = [C.rings[f.outer], ...f.holes.map(h => C.rings[h])]; return { rs, bb: bbox(rs) } })
-  for (const p of P) { const near = Cf.filter(c => meets(p, c)).flatMap(c => c.rs), r = near.length ? differenceRings(p.r, near) : p.r
-    if (r.length && area(r) > tiny) pieces.push({ rings: r, owners: [ownerOfKey.get(p.key)] }) }
-  return { pieces, unlabelled, crossings: (C.faces || []).length }
-}
-
 // ⭐ THE ROAD IS HELD BY ① (Boz's ruling, 2026-10-17): every vertex of a ROAD group (asphalt · stripe · highway) inside the
-// disc lies in a tile ring or an ink piece — the two things that carry an owner, so a road vertex in neither has no line
+// disc lies in a tile ring (which holds the ink it absorbed, absorbInk.js) or a curbless block's piece — the things that carry an owner, so a road vertex in neither has no line
 // to take its height from. Bounded by the road's GROUPS, not by space: water and land use are not road, so the sea never
 // enters the test. The lattice is tile rings ∪ ink pieces (with the curbless blocks' `kind: 'block'`) ∪ H: a block
 // wholly under the highway corridor is the highway's own ground (Boz, 2026-10-17), so a road vertex inside H is on the road. On a tile or piece edge (within 2 grid units, the boolean's own tolerance) counts as held.
@@ -2477,6 +2723,125 @@ function insertOnEdges(ring, owners, pts, ok) {
 // lacks, on a ring edge (insertOnEdges: the boolean's own two-unit containment), whose block neighbour is that edge's end or on
 // that edge too, so the block runs along it — is inserted into the ring, splitting the edge, each half keeping its owner.
 // ⛔ A block vertex merely NEAR a ring edge, the block not running along it, is not taken.
+// ⭐ THE KERB'S COAST VERTICES ARE THE SHORE CELL'S TOO (Boz's ruling, Zob's read, 2026-10-26). Where the block's edge is a WATER
+// edge it is also the shore cell's land side, and every vertex the block (`iA`) carries along a water run — the land-use stamp's
+// crossings (A10), the joins where a street meets the water, any ② vertex on ①'s line — must be the cell's vertex as well: one
+// it lacked left the coast held with two vertex sets, and `tile − iA − cells` kept the sub-step sliver between them as asphalt
+// (Huron +1.5 km asphalt/shore; PTown's refusals, the joins). Each such vertex the cell lacks is BRACKETED by key: walk `iA` from
+// it, both ways, to the nearest vertex a shore cell carries; insert it on that cell's stretch between the two by its parameter
+// along them. Where only one side reaches a cell vertex c (a join, at the run's end), it goes on the cell edge from c whose
+// parameter takes it strictly inside — exactly one, else refuse. KEY-ANCHORED: no containment, no distance. Proves itself:
+// every water-run vertex of iA must end in a cell; any that does not REFUSES by name. Returns { tile, added }.
+// ⭐ THE ONE CELL EDGE AT A KEY THAT HOLDS THE POINT (Zob's rule, Boz's go, 2026-10-26). Of the two edges of ring `rr` incident to
+// vertex `ic` (the bracket's key — selection is anchored there), keep those whose parameter takes `v` strictly inside AND that hold
+// it within the boolean's own containment (two grid units, insertOnEdges'); exactly one is returned, none or two is null (the
+// caller refuses). ⛔ Not "the far end is on the water run": at a thin cell's corner (the ε strip, its sides 5 mm apart) both
+// edges take the point's parameter, and the far-end key picked the wrong one (PTown (204.406, 67.434): 105 mm off; the right
+// edge holds it at 0.06 mm). Exported for the planted row.
+// the boolean's own containment: the point's parameter strictly inside edge a→b, and within two grid units of its line
+const edgeHolds = (a, b, v) => { const P = toClipper(a), Q = toClipper(b), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, L2 = dx * dx + dy * dy
+  if (!L2) return false; const t = ((q.X - P.X) * dx + (q.Y - P.Y) * dy) / L2; if (!(t > 0 && t < 1)) return false
+  return Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.sqrt(L2) <= 2 }
+export function incidentEdgeHolding(rr, ic, v) {
+  const m = rr.length, opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => edgeHolds(rr[u], rr[w], v))
+  return opts.length === 1 ? opts[0] : null
+}
+export function shareWaterRunIntoShore(tile, who) {
+  const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
+  // the vertices of iaFull on a water run (either edge stamped WATER_EDGE_SKEL), by key
+  const wet = new Map()
+  ;(tile.iaFull || []).forEach((r, si) => { const st = tile.iaStamp?.[si]; if (!st) return; const n = r.length
+    r.forEach((v, e) => { if (tile.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL || tile.runs?.[st[(e - 1 + n) % n]]?.skelId === WATER_EDGE_SKEL) wet.set(K(v), v) }) })
+  const want = []; for (const r of (tile.iA || [])) r.forEach((v, i) => { if (wet.has(K(v))) want.push({ r, i, v }) })
+  // ⭐ the walk steps along water EDGES, never wet vertices (Zob, 2026-10-26): an iA edge (a, b) is water when a and b sit on one
+  // iaFull ring and every iaFull edge between them, the shorter way, is stamped to the water. A short kerb edge between two
+  // joins (a jetty's end) has two wet ends and is not water: a walk across it would bracket across the street.
+  const fullAt = new Map(); (tile.iaFull || []).forEach((r, si) => r.forEach((v, e) => { if (!fullAt.has(K(v))) fullAt.set(K(v), [si, e]) }))
+  const waterEdge = (a, b) => { const A = fullAt.get(K(a)), B = fullAt.get(K(b)); if (!A || !B || A[0] !== B[0]) return false
+    const r = tile.iaFull[A[0]], st = tile.iaStamp?.[A[0]], n = r.length; if (!st) return false
+    const f = (B[1] - A[1] + n) % n, g = (A[1] - B[1] + n) % n, from = f <= g ? A[1] : B[1], len = Math.min(f, g)
+    for (let q = 0; q < len; q++) if (tile.runs?.[st[(from + q) % n]]?.skelId !== WATER_EDGE_SKEL) return false
+    return len > 0 }
+  if (!want.length) return { tile, added: 0 }
+  const cells = (tile.inkCells || []).map((c, ci) => ({ c, ci })).filter(x => x.c.cls === 'shore')
+  // a face that borders NO ink (a bb corner between the water and the frame) has no shore cell: its ring IS the water line, and
+  // the block's water-run vertices must be the RING's, by key (Boz's ruled case: the ring carries the edge). Else refuse.
+  if (!cells.length) { const onRing = new Set((tile.ring || []).map(K)), off = want.filter(x => !onRing.has(K(x.v)))
+    if (off.length) throw new Error(`[tileGround][shore] ⛔ ${who}: the block carries ${off.length} vertex(es) on a water run (e.g. (${off[0].v.map(c => c.toFixed(3)).join(', ')})) that neither a shore cell (the tile has none) nor the tile ring carries. Refusing.`)
+    return { tile, added: 0 } }
+  const rings = cells.map(x => x.c.rings.map(r => r.slice()))
+  const keyAt = () => { const m = new Map(); rings.forEach((R, a) => R.forEach((r, b) => r.forEach((v, c) => { if (!m.has(K(v))) m.set(K(v), [a, b]) }))); return m }
+  let at = keyAt(), added = 0, far = 0, farMax = 0
+  const param = (P, A, B) => { const p = toClipper(P), a = toClipper(A), b = toClipper(B), dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; return L2 ? ((p.X - a.X) * dx + (p.Y - a.Y) * dy) / L2 : NaN }
+  for (const { r, i, v } of want) { if (at.has(K(v))) continue
+    const n = r.length, walk = (dir) => { for (let s = 1; s < n; s++) { const u = r[(i + dir * (s - 1) + n * s) % n], w = r[(i + dir * s + n * s) % n]
+      if (!waterEdge(u, w)) return null; if (at.has(K(w))) return w } return null }
+    const lo = walk(-1), hi = walk(1)
+    let placed = false
+    const tryEdge = (rr, u, w) => { const t = param(v, rr[u], rr[w]); if (!(t > 0 && t < 1)) return false; const e = [rr[u], rr[w]]; rr.splice(w === (u + 1) % rr.length ? u + 1 : u, 0, v); return e }
+    if (lo && hi && at.get(K(lo))[0] === at.get(K(hi))[0] && at.get(K(lo))[1] === at.get(K(hi))[1]) {
+      const [a, b] = at.get(K(lo)), rr = rings[a][b], m = rr.length, ia = rr.findIndex(w => K(w) === K(lo)), ib = rr.findIndex(w => K(w) === K(hi))
+      // the way round the cell BY KEY (Zob): the one whose intermediate cell vertices are all on the water run; neither or both refuses
+      const fwd = (ib - ia + m) % m, back = (ia - ib + m) % m
+      const allWet = (step, len) => { for (let q = 1; q < len; q++) if (!wet.has(K(rr[(ia + step * q + m) % m]))) return false; return true }
+      const okF = fwd > 0 && allWet(1, fwd), okB = back > 0 && allWet(-1, back)
+      if (!okF && !okB) throw new Error(`[tileGround][shore] ⛔ ${who}: the shore cell's stretch for (${v.map(c => c.toFixed(3)).join(', ')}) is neither way round the cell on the water run, by key. Refusing.`)
+      // ⭐ ONE CONTAINMENT RULE (Boz, 2026-10-27, rule (1)): of the sub-edges on the wet way(s) between the bracket keys — BOTH ways
+      // when the run is CLOSED (an island's shore cell rings it, wet end to end) — keep those that HOLD the point (t in (0, 1), within
+      // insertOnEdges' two-unit containment), as incidentEdgeHolding does at one key; exactly one is placed, none or two refuses
+      const cands = []
+      for (const [step, len, ok] of [[1, fwd, okF], [-1, back, okB]]) { if (!ok) continue
+        for (let q = 0; q < len; q++) { const u = (ia + step * q + m) % m, w = (ia + step * (q + 1) + m) % m; if (edgeHolds(rr[u], rr[w], v)) cands.push({ u, w, step }) } }
+      if (cands.length !== 1) throw new Error(`[tileGround][shore] ⛔ ${who}: ${cands.length} shore-cell sub-edges between the bracket keys hold (${v.map(c => c.toFixed(3)).join(', ')}) — want exactly 1${okF && okB ? ' (a closed run: both ways round)' : ''}. Refusing.`)
+      { const c = cands[0]; placed = [rr[c.u], rr[c.w]]; rr.splice(c.step > 0 ? c.u + 1 : c.u, 0, v) } }
+    else { // one side only (a run's end): the cell edge from that side's vertex that takes the point strictly inside — exactly one
+      const c = lo || hi
+      if (c) { const [a, b] = at.get(K(c)), rr = rings[a][b], m = rr.length, ic = rr.findIndex(w => K(w) === K(c))
+        const e = incidentEdgeHolding(rr, ic, v); if (e) placed = tryEdge(rr, ...e) }
+      // ⭐ NO BRACKET KEY AT ALL (Zob, 2026-10-27: Huron's land between motorway-65's and motorway-56's bank ends, a water run whose
+      // two ends are both H × water joins): the open sibling of the island's closed run. The same containment, widened from a key's
+      // incident edges to every edge of the tile's shore cells: the one edge that HOLDS the point, exactly one, else refuse by name
+      else { const cands = []
+        rings.forEach((R2, a) => R2.forEach((rr, b) => rr.forEach((q, u) => { const w = (u + 1) % rr.length; if (edgeHolds(q, rr[w], v)) cands.push({ rr, u, w }) })))
+        if (cands.length !== 1) throw new Error(`[tileGround][shore] ⛔ ${who}: the block's vertex (${v.map(c => c.toFixed(3)).join(', ')}) on a water run with no bracket key is held by ${cands.length} shore-cell edges (want exactly 1). Refusing.`)
+        placed = tryEdge(cands[0].rr, cands[0].u, cands[0].w) } }
+    // ⭐ VERIFIED, never chosen, by distance (Zob): the key-chosen edge must hold the point within the boolean's own containment
+    // (two grid units, insertOnEdges'); past it refuses. Counted and printed, as nodeRimWithPaint's far / farMax.
+    if (placed) { const [P, Q] = placed.map(toClipper), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, d = Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.hypot(dx, dy)
+      if (d > 2) throw new Error(`[tileGround][shore] ⛔ ${who}: the block's vertex (${v.map(c => c.toFixed(3)).join(', ')}) went on a key-chosen shore-cell edge ${d.toFixed(2)} grid units off its line (past the two-unit containment). Refusing.`)
+      if (d > Math.SQRT1_2) { far++; farMax = Math.max(farMax, d) } }
+    if (!placed) throw new Error(`[tileGround][shore] ⛔ ${who}: the block's vertex (${v.map(c => c.toFixed(3)).join(', ')}) on a water run has no place on a shore cell (bracket ${lo ? 'found' : 'none'} / ${hi ? 'found' : 'none'}): the coast would be held with two vertex sets. Refusing.`)
+    added++; at = keyAt() }
+  // the proof: every water-run vertex of iA is now a shore cell's
+  const miss = want.filter(x => !at.has(K(x.v)))
+  if (miss.length) throw new Error(`[tileGround][shore] ⛔ ${who}: ${miss.length} of ${want.length} water-run vertex(es) of the block are on no shore cell after sharing (e.g. (${miss[0].v.map(c => c.toFixed(3)).join(', ')})). Refusing.`)
+  let k = 0
+  return { tile: { ...tile, inkCells: tile.inkCells.map(c => c.cls === 'shore' ? { ...c, rings: rings[k++] } : c) }, added, far, farMax }
+}
+// ⛔ A CUT INK-CELL RING GOES TO THE ONE DISC PIECE THAT CONTAINS IT — CONTAINMENT, NEVER THE LARGEST (Boz, 2026-10-26). The
+// overlap is the positive-AREA intersection, as the curb's rings are assigned; a ring overlapping zero or two pieces is a
+// disagreement between the cut and the pieces, and refuses by name. Exported for the planted rim-tile fixture.
+// THE CIRCLE'S CUT OF ONE INK-CELL RING (Zob, 2026-10-26): a ring wholly inside is returned as it is, one wholly outside as
+// nothing, and one across is cut with ioPreserveCollinear, so the cut adds rim crossings and removes nothing else. It PROVES it:
+// every vertex of the input strictly inside the disc must be a vertex of the output, by key, or it refuses. Exported for the
+// planted row.
+export function cutCellRing(r0, stamp) {
+  const across = differenceRings([r0], [stamp]).length > 0, within = intersectRings([r0], [stamp]).length > 0
+  if (!within) return []
+  if (!across) return [r0]
+  const out = intersectRings([r0], [stamp], { preserveCollinear: true })
+  const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, have = new Set(out.flat().map(K))
+  const wn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+  const lost = r0.filter(v => wn(v, stamp) !== 0 && !have.has(K(v)) && !stamp.some(s => K(s) === K(v)))
+  if (lost.length) throw new Error(`[tileGround][PROTO⊙] ⛔ the circle's cut of an ink cell ring lost ${lost.length} of its vertices inside the disc (e.g. (${lost[0].map(c => c.toFixed(3)).join(', ')})): the cell and the block would hold that line with two vertex sets. Refusing.`)
+  return out
+}
+export function cellPieceOf(q, pieces) {
+  const a = pieces.map(r => intersectRings([q], [r]).reduce((u, x) => u + Math.abs(signedArea(x)), 0)), hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)
+  if (hit.length !== 1) throw new Error(`[tileGround][PROTO⊙] ⛔ an ink cell ring of a rim tile (at ${q[0]}) overlaps ${hit.length} of its ${pieces.length} disc pieces (want exactly 1). Refusing.`)
+  return hit[0]
+}
 function shareBlockIntoRing(t) {
   if (!t.iA?.length || !t.ring?.length) return { t, added: 0 }
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, have = new Set(t.ring.map(K))
@@ -3047,6 +3412,15 @@ export const BOUNDARY_EDGE_SKEL = '__boundary__'
 // ⛔ IT IS STILL NOT A STREET: no coupler, no baseMeasure, no band, no ADA, no cap. It closes
 // faces and is drawn as the edge between land and water; nothing offsets a curb from it.
 export const WATER_EDGE_SKEL = '__water__'
+// ⭐ THE HIGHWAY CLASSES, ONE SET (Zob, 2026-10-27: the mint's and buildTileGround's were two literals that could drift): a
+// grade-separated chain of these is swept as H (`sweepHighway`), and its span over the water is H's (`highwayBridges`)
+export const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
+// the owner of an edge the H difference drew (buildTileGround) — a kit PSEUDO-owner, like the two above: no street
+export const HWY_SKEL = '__highway__'
+// ⭐ THE KIT'S PSEUDO-OWNERS, BY NAME: the owners of an edge no street drew. The road paint skips exactly these (Zob, 2026-10-25):
+// ⛔ never "no marks record" — that is a skip by ABSENCE, and a stale skelId, a dropped street or a re-keyed typo would lose its
+// paint silently. Any other owner without a marks record refuses.
+export const PSEUDO_OWNERS = new Set([BOUNDARY_EDGE_SKEL, WATER_EDGE_SKEL, HWY_SKEL])
 
 // ⭐ THE CAP BULB'S CENTRE. A round dead-end's bulb is a symmetric circle on the
 // road's REAL centerline, which is the chain displaced toward the wider side by
@@ -4230,14 +4604,181 @@ export function resolveProtoMeasure(run, blockCustoms, curbWidth) {
   const base = mz?.[run.side]?.pavementHW
   const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
   const d = resolvePedDepths(mz, run.side, c)
+  // the parking lane's depth inside the carriageway (the kerb → the parking edge): the authored slot, else the pour's seed
+  // (`measure[side].parking`). Read ONLY by the parking edge line; it never reaches pavementHW. A pour before the field
+  // carries none (`null`), and the paint refuses by name rather than read it as 0.
+  const pk = (c && Number.isFinite(c.parking)) ? Math.max(0, c.parking) : mz?.[run.side]?.parking
   return {
     pavementHW: Number.isFinite(hw) ? hw : null,
+    parking: Number.isFinite(pk) ? pk : null,
     curb: curbWidth,
     treelawn: d.tl, sidewalk: d.sw, hasTL: !!d.hasTL,
     matOuter: c?.materials?.outer ?? (d.hasTL ? 'LU' : 'SW'),
     matInner: c?.materials?.inner ?? (d.hasTL ? 'SW' : 'LU'),
   }
 }
+// ⭐⭐ THE ROAD'S PAINT, STRUCK FROM THE SEALED SHAPE (BRIEF-the-ink-is-owned-by-its-labels §3.3/§3a/§3b, 2026-10-25). Two
+// sources, both frozen, neither a chain:
+//   · the CENTRE STRIPE is the sealed centreline's ribbon (`protopolygon.centrelines`, the line ① was struck from), in the
+//     kind its street's `marks` selected (`streetMarkings.js`), and it STOPS AT INTERSECTIONS (Jacob, 2026-10-25: "I think I
+//     would be ok to stop lines at intersections"): it is kept only where BOTH sides of its street have frontage — the
+//     corridor each kerb LEG reaches across the carriageway (the leg extruded toward the street by its own resolved
+//     pavementHW). A leg is a maximal span of ②'s kerb (`iaFull`) owned by one run (`iaStamp`), no arc and no cap, so
+//     a corner arc ends it: the stripe stops where the curb turns, on the far side of a T too, by identity.
+//   · the EDGE LINES are struck from those same legs, toward the street: yellow on the LEFT of a one-way roadway, white
+//     on its RIGHT (mutcd-11r1 §3B.09), at the look's inset from the kerb face, or at the parking lane's depth where the
+//     side has one (the parking edge, white unless the side's edge is yellow). A leg ends at its arc, so a line stops at
+//     every approach and runs on through a T's far side, by construction (§3B.11 ¶07–08); ① has no driveways (¶09).
+// ⛔ Nothing here is searched or recovered: the street of a line is its run's or its centreline's label; the depth is
+// the run's resolved measure (`resolveProtoMeasure`, the one rule ② reads). → { stripe, edgeline, 'edgeline:yellow' }
+// rings, and a census. ⛔ No centreline record, a street with no `marks`, or a parking depth the pour never sealed REFUSES.
+// the road's paint cut to the disc, for a viewer (the Designer); the bake cuts the rim once itself (`clipAllToStencil`)
+export const clipPaintToStencil = (rings, stencil) => (stencil && stencil.length >= 3 ? intersectRings(rings, [stencil]) : rings)
+// the winding number of (x, z) about a ring of [x, z]
+const windingXZ = (r, x, z) => { let w = 0
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= z) { if (zi > z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) > 0) w++ } else if (zi <= z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) < 0) w-- }
+  return w }
+// the paint's MITER LIMIT: an offset vertex is mitred while cos(half its turn) is at least this, else the line splits there
+// (a turn past 120°). Exported so a check reads the limit, never restates it.
+export const MITER_MIN_COS = 0.5
+export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }) {
+  if (!Array.isArray(centrelines)) throw new Error('[tileGround][paint] ⛔ the protopolygon carries no sealed centreline (`centrelines`) — this town was poured before the road paint read it. Re-pour; the stripe never falls back to the chains.')
+  const W = look.line, out = { stripe: [], edgeline: [], 'edgeline:yellow': [] }
+  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, reflexTrims: 0, noMarks: new Set(), noStreet: new Set(), notStreet: new Set() }
+  // a run owned by one of the kit's PSEUDO-owners (the frame, the coast, the highway difference: PSEUDO_OWNERS, by name) carries
+  // no paint; ANY other owner with no marks record refuses — a street before streetMarkings, a stale skelId, a dropped street
+  const marks = (id) => { if (PSEUDO_OWNERS.has(id)) { census.notStreet.add(id); return null } const M = marksOf(id); if (M === undefined) census.noStreet.add(id); else if (!M) census.noMarks.add(id); return M ?? null }
+  // ── the kerb legs ──
+  const legsOf = new Map()   // skelId → { left: [legs], right: [legs] }
+  for (const t of tiles) {
+    const rings = t.iaFull || []
+    rings.forEach((ring, si) => {
+      const n = ring?.length || 0; if (n < 3) return
+      const st = t.iaStamp?.[si], A = t.iaArc?.[si], cap = t.iaCap?.[si]
+      if (!st) return
+      const runOf = (e) => { if (cap?.[e] != null) return null; if (A && A[e] != null && A[e] === A[(e + 1) % n]) return null; return st[e] ?? null }
+      // the region lies on one side of every ring of the contour: read which, once, off the ring's longest edge
+      let best = 0, bl = -1
+      for (let e = 0; e < n; e++) { const a = ring[e], b = ring[(e + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L > bl) { bl = L; best = e } }
+      const a = ring[best], b = ring[(best + 1) % n], ux = (b[0] - a[0]) / bl, uz = (b[1] - a[1]) / bl, mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2
+      const probe = Math.min(0.01, bl / 4), inRegion = (x, z) => rings.reduce((w, r) => w + windingXZ(r, x, z), 0) !== 0
+      const lIn = inRegion(mx - uz * probe, mz + ux * probe), rIn = inRegion(mx + uz * probe, mz - ux * probe)
+      if (lIn === rIn) throw new Error(`[tileGround][paint] ⛔ kerb ring ${si} of a tile: the region is on ${lIn ? 'both' : 'neither'} side(s) of its longest edge at (${mx.toFixed(3)}, ${mz.toFixed(3)}) — no outward side to strike the paint toward. Refusing.`)
+      // the region (the block, inside its curb) is on the side the probe found it; the street is on the OTHER side. ⛔ This was
+      // inverted (the probe of 2026-10-25): every leg struck its paint INTO the block, so no corridor met and no stripe was drawn
+      const toward = lIn ? 1 : -1   // +1: the street is on the edge's RIGHT (the block on its left); −1: on its left
+      let start = -1
+      for (let e = 0; e < n; e++) if (runOf(e) != null && runOf((e - 1 + n) % n) !== runOf(e)) { start = e; break }
+      if (start < 0) return       // no leg ends on this ring (one run all round, or none): no frontage to stop at
+      for (let k = 0, e = start; k < n;) {
+        const r = runOf(e); if (r == null) { e = (e + 1) % n; k++; continue }
+        const e0 = e, pts = [ring[e]]
+        while (k < n && runOf(e) === r) { pts.push(ring[(e + 1) % n]); e = (e + 1) % n; k++ }
+        const run = t.runs?.[r]; if (!run?.skelId) continue
+        census.legs++
+        const L = legsOf.get(run.skelId) || legsOf.set(run.skelId, { left: [], right: [] }).get(run.skelId)
+        // the kerb edges either side of the leg (the one arriving at its first vertex, the one leaving its last): a line struck
+        // from the leg stops short of them where they lean back over it (reflexTrim)
+        const dirOf = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); return l ? [dx / l, dz / l] : null }
+        L[run.side]?.push({ pts, out: toward, run, before: dirOf(ring[(e0 - 1 + n) % n], ring[e0]), after: dirOf(ring[e], ring[(e + 1) % n]) })
+      }
+    })
+  }
+  // an open polyline offset toward the street by d (miter; a vertex turning past 120°, MITER_MIN_COS, splits the line, counted)
+  const offsetBy = (pts, out, d) => {
+    const nrm = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]); return [out * (b[1] - a[1]) / L, -out * (b[0] - a[0]) / L] }
+    const pieces = [[]]
+    for (let i = 0; i < pts.length; i++) {
+      const n0 = i > 0 ? nrm(pts[i - 1], pts[i]) : null, n1 = i < pts.length - 1 ? nrm(pts[i], pts[i + 1]) : null
+      if (n0 && n1) { const m = [n0[0] + n1[0], n0[1] + n1[1]], ml = Math.hypot(m[0], m[1]), c = (m[0] * n0[0] + m[1] * n0[1]) / ml
+        if (c < MITER_MIN_COS) { census.sharpSplits++; pieces[pieces.length - 1].push([pts[i][0] + n0[0] * d, pts[i][1] + n0[1] * d]); pieces.push([[pts[i][0] + n1[0] * d, pts[i][1] + n1[1] * d]]); continue }
+        pieces[pieces.length - 1].push([pts[i][0] + m[0] / ml / c * d, pts[i][1] + m[1] / ml / c * d]) }
+      else { const q = n0 || n1; pieces[pieces.length - 1].push([pts[i][0] + q[0] * d, pts[i][1] + q[1] * d]) }
+    }
+    return pieces.filter(p => p.length >= 2)
+  }
+  const along = (P) => { const s = [0]; for (let i = 1; i < P.length; i++) s.push(s[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); return s }
+  // a polyline's sub-polylines over [a, b] of its arc length
+  const cut = (P, S, a, b) => { const o = []; for (let i = 0; i < P.length - 1; i++) { const s0 = S[i], s1 = S[i + 1]; if (s1 <= a || s0 >= b) continue
+    const at = (s) => { const t = (s - s0) / (s1 - s0); return [P[i][0] + (P[i + 1][0] - P[i][0]) * t, P[i][1] + (P[i + 1][1] - P[i][1]) * t] }
+    if (!o.length) o.push(at(Math.max(a, s0))); o.push(s1 <= b ? P[i + 1] : at(b)) } return o }
+  // ⭐ A LINE STOPS AT A REFLEX KERB CORNER (Boz, 2026-10-26: LS's 5 parking-line ends lay 5 mm–18 cm inside the next block).
+  // Where the kerb edge beyond a leg's end steps into the street (toward the line) and leans back over the leg, a line at depth
+  // d meets it d·(−n·u)/(n·ν) before the corner (u the leg's direction there, ν its normal toward the street, n the next kerb
+  // edge's): the leg is cut back by that, at the line's FAR depth, so no part of the line crosses the kerb. Derived from the
+  // line's own depth and the corner, never typed; counted. The same at the leg's start, against the edge arriving there.
+  const reflexTrim = (g, dFar) => {
+    const P = g.pts, nrmOf = (u) => [g.out * u[1], -g.out * u[0]]
+    // `out`: the leg's direction away from its corner (into the leg is −out); `nu`: the leg's own normal toward the street;
+    // `m`: the corner's other kerb edge, leaving the corner. It crosses the line where it heads streetward (m·ν > 0) and leans
+    // back over the leg (m·out > 0)
+    const backBy = (out, nu, m) => { if (!m) return 0; const mn = m[0] * nu[0] + m[1] * nu[1], mo = m[0] * out[0] + m[1] * out[1]
+      return mn > 0 && mo > 0 ? dFar * mo / mn : 0 }
+    const unit = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); return [dx / l, dz / l] }
+    const uEnd = unit(P[P.length - 2], P[P.length - 1]), uStart = unit(P[0], P[1])
+    // at the end, away from the corner is back along the leg (−uEnd) and the edge leaving the corner is `after`; at the start,
+    // away from the corner is forward (uStart) and the edge leaving the corner, walked from it, is `before` reversed
+    const tEnd = backBy([-uEnd[0], -uEnd[1]], nrmOf(uEnd), g.after)
+    const tStart = g.before ? backBy(uStart, nrmOf(uStart), [-g.before[0], -g.before[1]]) : 0
+    if (!tEnd && !tStart) return P
+    census.reflexTrims += (tEnd ? 1 : 0) + (tStart ? 1 : 0)
+    const S = along(P), len = S[S.length - 1]
+    return tStart + tEnd < len ? cut(P, S, tStart, len - tEnd) : null
+  }
+  const band = (pts, out, d1, d2) => { const A = offsetBy(pts, out, d1), B = offsetBy(pts, out, d2)
+    if (A.length !== B.length) return []
+    return A.map((a, i) => [...a, ...B[i].slice().reverse()]).filter(r => Math.abs(signedArea(r)) > 0) }
+  // ── the edge lines ──
+  for (const [id, L] of legsOf) {
+    const M = marks(id); if (!M || M.excluded) continue
+    for (const side of ['left', 'right']) for (const g of L[side]) {
+      const m = measureOfRun(g.run)
+      if (!m) continue
+      if (m.parking == null) throw new Error(`[tileGround][paint] ⛔ ${id}|${side}|${g.run.segOrd} carries no parking depth (measure.${side}.parking) — the pour predates the field. Re-pour; a missing depth is never read as no parking lane.`)
+      const edge = M.edges?.kind?.[side] || null, park = m.parking > 0 && m.parking < (m.pavementHW || 0)
+      if (!edge && !park) continue
+      const kind = edge === 'yellow' ? 'yellow' : edge ? 'white' : 'parking'
+      const d = park ? m.parking - W / 2 : look.edgeInset
+      census.edgeLegs[park && !edge ? 'parking' : kind]++
+      const P = reflexTrim(g, d + W); if (!P || P.length < 2) continue
+      out[kind === 'yellow' ? 'edgeline:yellow' : 'edgeline'].push(...band(P, g.out, d, d + W))
+    }
+  }
+  // ── the centre stripe ──
+  const corridor = new Map()   // skelId → the region both sides' legs reach across the carriageway
+  const corridorOf = (id) => {
+    if (corridor.has(id)) return corridor.get(id)
+    const L = legsOf.get(id), reach = (legs) => unionRings(legs.flatMap(g => { const m = measureOfRun(g.run); return m?.pavementHW > 0 ? band(g.pts, g.out, -W, m.pavementHW + 2 * W + look.gap) : [] }))
+    const c = L && L.left.length && L.right.length ? intersectRings(reach(L.left), reach(L.right)) : []
+    corridor.set(id, c); return c
+  }
+  const lineAt = (P, off, dashed) => {        // a line of width W centred `off` to the polyline's right (stroke order)
+    const pieces = dashed ? (() => { const S = along(P), o = []; for (let s = 0; s < S[S.length - 1]; s += look.dash + look.space) o.push(cut(P, S, s, s + look.dash)); return o.filter(q => q.length >= 2) })() : [P]
+    return pieces.flatMap(q => band(q, 1, off - W / 2, off + W / 2))
+  }
+  for (const C of centrelines) for (const r of C.runs) {
+    const M = marks(r.skelId); if (!M || M.excluded) continue
+    const kind = M.centre?.kind; census.stripeRuns[kind] = (census.stripeRuns[kind] || 0) + 1
+    if (!kind || kind === 'none') continue
+    const P = C.points.slice(r.from, r.to + 1).concat(C.closed && r.to === C.points.length ? [C.points[0]] : [])
+    if (P.length < 2) continue
+    const half = look.gap / 2 + W / 2
+    // `solid` names a side in the STREET's point order; the stroke may run the chain reversed (`dir` −1)
+    const solidRight = (M.centre.solid === 'right') === (r.dir > 0)
+    const rings = kind === 'broken' ? lineAt(P, 0, true)
+      : kind === 'double-solid' ? [...lineAt(P, half, false), ...lineAt(P, -half, false)]
+      : [...lineAt(P, half, !solidRight), ...lineAt(P, -half, solidRight)]
+    const c = corridorOf(r.skelId)
+    if (c.length) out.stripe.push(...intersectRings(rings, c))
+  }
+  const list = (o) => Object.entries(o).map(([k, v]) => `${v} ${k}`).join(' · ')
+  console.log(`[tileGround][paint] owners that are no street (no paint): ${[...census.notStreet].join(' · ') || 'none'} · centre runs by kind: ${list(census.stripeRuns) || 'none'} · stripe ${out.stripe.length} ring(s), cut to where both sides have frontage · ${census.legs} kerb leg(s) · edge lines on ${list(census.edgeLegs)} leg(s) · ${census.sharpSplits} sharp vertex split(s) · ${census.reflexTrims} line end(s) cut back at a reflex kerb corner`)
+  if (census.noStreet.size) throw new Error(`[tileGround][paint] ⛔ ${census.noStreet.size} kerb owner(s) are neither a street of the pour nor a kit pseudo-owner (PSEUDO_OWNERS): ${[...census.noStreet].slice(0, 6).join(' · ')} — a stale skelId, a street dropped from ribbons.streets, or a re-key. Nothing is skipped for want of a record.`)
+  if (census.noMarks.size) throw new Error(`[tileGround][paint] ⛔ ${census.noMarks.size} street(s) carry no selected paint (\`marks\`): ${[...census.noMarks].slice(0, 6).join(' · ')} — the pour predates streetMarkings. Re-pour.`)
+  return out
+}
+
 // A run the highway owns (H-3), read off the frozen `hwy` stamp — the SAME set the shape pass differenced
 // against H. ⛔ Not `material: 'highway'`: an at-grade two-way ramp (ruling a) has that material and is a
 // street, with its curb.
@@ -5068,7 +5609,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const ins = (pick) => {
     const o = [], h = []
     for (const p of parts) {
-      const rs = offsetRingByRects(p.ring, pick(p), p.hole)
+      const rs = offsetRingByRects(p.ring, pick(p), p.hole, null, null, { water: p.ring.map((_, e) => shoreAt(p, e)) })
       ;(p.hole ? h : o).push(...rs)
     }
     return (o.length && h.length) ? differenceRings(o, h) : o
@@ -5471,7 +6012,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         per.push({ p, rings: [p.ring], labs: [p.ring.map((_, e) => spanOfSrc(p.si, e))], clips: [], edges: [], dropped: [], areaMin: null })
         continue
       }
-      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, null, (e) => p.dspan[e])
+      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, { water: p.dring.map((_, j) => shoreAt(p, p.dsrc[j])) }, (e) => p.dspan[e])
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
         clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
@@ -6097,7 +6638,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
         // "drops silently from the slab — that is exactly how the divided median vanished").
         tlByLu: rekeyByPiece(st, { [OWN_LU]: b.treelawn || [] }),
         luByLu: rekeyByPiece(st, { [OWN_LU]: b.lu || [] }),
-        A: differenceRings([st.ring], st.iA || []),   // asphalt is still tile − curb
+        ...bandByClass(differenceRings([st.ring], st.iA || []), st),   // asphalt is still tile − curb, its shore and highway cells apart
         C: b.curb || [],
         block: st.iA || [],
       }
@@ -6124,7 +6665,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       W: r.Wacc, tlByLu: r.tlByLu, luByLu: r.luByLu,
       R: r.curbCut || [], curbCutRecs: r.curbCutRecs || [], curbCutTally: r.curbCutTally || null, curbCutContradicted: r.curbCutContradicted || [],
       curbCutCorners: r.curbCutCorners || [], cornerArcs: r.cornerArcs || [],
-      A: differenceRings([r.rim?.ring ?? st.ring], r.rim?.block ?? iA),          // asphalt = tile − rounded inner (the painter's noded rim, live)
+      ...bandByClass(differenceRings([r.rim?.ring ?? st.ring], r.rim?.block ?? iA), st),   // asphalt = tile − rounded inner (the painter's noded rim, live), its shore and highway cells apart
       // ⭐ THE CURB IS PART OF THE SAME LADDER when the stamp inquiry built it: `iA − ins(cw)`,
       // a per-point VARIABLE offset. The concentric fallback below is the walk painter's, and it
       // is not the same shape — using it on a stamped tile put 1,820 m² of curb where ③ had none.
@@ -6322,7 +6863,6 @@ export function buildTileGround(ribbons, opts = {}) {
   // stays a flat stroke at its own measure and is LISTED BY NAME (ruling i). ⛔ No silent skip:
   // a highway with no width, or poured before its section existed, is a named error — the live
   // view still draws a legacy one from its measure, and `bake-ground` refuses to freeze either.
-  const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
   const Hacc = []
   const hwyDisclosure = { swept: 0, missing: [], legacy: [], tapers: [], gsOther: [], gsMissing: [], handoffs: [], handoffAmbiguous: [] }
   // ⭐ H-3 step 5 — which at-grade street CONTINUES a highway end (end-to-end, e.g. US 6 → an at-grade primary).
@@ -6391,13 +6931,14 @@ export function buildTileGround(ribbons, opts = {}) {
   // ⭐ H-3 step 3 — ONE EDGE. The union of the sweeps IS the highway's edge; every block beside it is
   // differenced against this same polygon (ruling b: no max(), no second smoothing).
   const Hpoly = unionRings(Hacc)
-  const HWY_SKEL = '__highway__'           // the owner of an edge the H difference drew
   const hwySkel = new Set([HWY_SKEL, ...gradeSep.filter(s => HIGHWAY_CLASSES.has(s.highway)).map(s => s.skelId ?? s.name)])
   let protoShapeTiles = null
   let protoNoCurbBlocks = []          // ② blocks whose curb came back empty: their ground, owned (`kind: 'block'` pieces below)
   let protoRimRings = null            // per tile, its ring noded with its paint's own rim crossings (`nodeRimWithPaint`) — live, never frozen
   let protoBandPieces = null          // ③'s bands as owned pieces, per tile (`bandPiecesOfTile`) — the FILL, live, never frozen
-  let protoInkPieces = null           // ① ink as owned pieces (`inkPiecesByOwner`) — the strip between tiles, with its owners
+  let protoCentrelines = null, protoRunMeasure = null   // the sealed centreline and a run's resolved measure, for the road's paint
+  let protoSpans = null, protoWater = null   // ①'s off-grade spans over the water (by identity) and its water rings, for the bridge overlay
+  let protoInkPieces = null           // the curbless blocks' ground as owned road pieces (`kind: 'block'`); the ink itself is the tiles' (absorbInk.js)
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
   let protoUnlabelled = null          // per ② edge the walk reached with no ① owner (`offsetRingByRects` labelOf, or a boolean)
@@ -6483,14 +7024,22 @@ export function buildTileGround(ribbons, opts = {}) {
              blockHoles: frozenProto.blockHoles || null, blockHoleLabels: frozenProto.blockHoleLabels || null,
              // ⭐ the corner nodes, frozen — so ② never reaches for a chain to key the authored R
              nodes: frozenProto.nodes || null,
+             // the sealed centreline (the road's paint); a pour before it carries none, and the paint refuses by name
+             centrelines: frozenProto.centrelines || null,
+             // the absorbed ink: per face the painted boundary (+ labels), and the cells painted apart from the road
+             paint: frozenProto.paint || null, inkCells: frozenProto.inkCells || null,
              boundaryRing: frozenProto.boundaryRing || null,
              // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped this would lose its
-             // waterfront silently — every other field present, the pour looking complete.
-             waterRings: frozenProto.waterRings || null,
+             // waterfront silently — every other field present, the pour looking complete. So an ABSENT field refuses
+             // (null still means the mint was given no coast; coastFile.mjs#waterFace reads the same distinction).
+             waterRings: (() => { if (frozenProto.waterRings === undefined) throw new Error('[tileGround] ⛔ the frozen ① predates its water face (no waterRings field) — a coastal town would read as no coast. ▶ re-pour'); return frozenProto.waterRings })(),
              // H-3 step 4: the region class per block (verge / jr / block), classified at the mint.
              blockClass: frozenProto.blockClass || null,
              // H-3: the ramp-terminal flares frozen at the mint — drawn into ②'s working copy (`flareWorkingCopy`)
-             flares: frozenProto.flares || null }
+             flares: frozenProto.flares || null,
+             // ⛔ the off-grade spans over the water, by identity: an ABSENT field is a pour before the rule (Jacob's (b), 2026-10-27)
+             // and refuses, or a bridge over the water would paint as a gap silently
+             offGradeSpans: (() => { if (!Array.isArray(frozenProto.offGradeSpans)) throw new Error('[tileGround] ⛔ the frozen ① predates its off-grade spans (no offGradeSpans field) — a bridge over the water would paint as a gap. ▶ re-pour'); return frozenProto.offGradeSpans })() }
       // ⛔ A ① FROZEN BEFORE THE across/cap SPLIT is refused by name: its owners mark a stroke's end edges `cap` only, so this
       // emitter (which declines `across`) would emit them as frontage runs, silently. Re-pour the town.
       if (frozenProto.owners.some(o => o?.cap && !o.across))
@@ -6508,6 +7057,7 @@ export function buildTileGround(ribbons, opts = {}) {
     protoOwners = MP.owners
     const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused, crossings: MP.crossings }
     protoInk = { rings: MP.rings, labels: MP.labels }
+    protoSpans = MP.offGradeSpans || [], protoWater = MP.waterRings || []
     protoBoundaryRing = MP.boundaryRing || null
     console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
     // ⛔⛔ DISCLOSE THE AUTHORING STATE — the SILENCE is the defect, never the draw.
@@ -6593,6 +7143,8 @@ export function buildTileGround(ribbons, opts = {}) {
       if (hwy && blockCustoms?.[o.skelId]?.[o.side]?.[o.segOrd]) hwyRefusedCustoms.add(`${o.skelId}|${o.side}|${o.segOrd}`)
       return (protoMeasureCache[label] = resolveProtoMeasure({ skelId: o.skelId, side: o.side, segOrd: o.segOrd, baseMeasure: protoBase.get(o.skelId), hwy }, blockCustoms, curbWidth))
     }
+    protoRunMeasure = (run) => resolveProtoMeasure({ skelId: run.skelId, side: run.side, segOrd: run.segOrd, baseMeasure: protoBase.get(run.skelId), hwy: hwySkel.has(run.skelId) }, blockCustoms, curbWidth)
+    protoCentrelines = MP.centrelines ?? null
     { const M = protoOwners.map((_, l) => protoMeasureOf(l) || {})
       const n=protoOwners.length, hw=M.filter(o=>o.pavementHW>0).length,
         tl=M.filter(o=>o.treelawn>0).length, sw=M.filter(o=>o.sidewalk>0).length
@@ -7006,7 +7558,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // NOT a ① corner (a width step, or where two non-adjacent bands met) and is left sharp, as ruled.
         const rings2 = offsetRingByRects(WC.ring, (j) => (depthRec.depth[j] = WC.depth[j]), false, st,
                                           (srcIdx) => { if (srcIdx == null) { protoRZero.noSrc++; return 0 }
-                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, WC,
+                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, { ...WC, water: WC.e.map(e => protoOwners[labs[e]]?.skelId === WATER_EDGE_SKEL) },
                                           (e) => { const o = protoOwners[labs[e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null }, { w: opts.curbedMinWidth.m },
                                           (srcIdx) => (CL.inCluster[srcIdx] ? clTurn(srcIdx) : null))
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
@@ -7042,7 +7594,7 @@ export function buildTileGround(ribbons, opts = {}) {
             const HW = MP.flares?.length ? flareWorkingCopy(HW0, MP.flares, (e) => protoOwners[holeLabs[hi][e]], (j, E) => protoMeasureOf(holeLabs[hi][E[j]])?.pavementHW ?? 0, flareDisclosure) : HW0
             const hRec = { ring: HW.ring, depth: new Array(HW.ring.length).fill(null) }
             depthRec.holes.push(hRec)
-            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, HW,
+            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, { ...HW, water: HW.e.map(e => protoOwners[holeLabs[hi][e]]?.skelId === WATER_EDGE_SKEL) },
               (e) => { const o = protoOwners[holeLabs[hi][e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null })
             for (let ri = 0; ri < hOff.length; ri++) {
               hRings.push(hOff[ri])
@@ -7320,15 +7872,17 @@ export function buildTileGround(ribbons, opts = {}) {
         // capacity guard and the open-field LU flood are struck from outer-minus-holes. ⛔ Offsetting
         // the outer alone would let the guard call a ring-shaped block roomy and then flood its hole.
         const bHoles = protoBlockHoles?.[k] || [], bHoleLabs = protoBlockHoleLabels?.[k] || []
+        // the water identity ② struck this ring with (`offsetRingByRects`' water join), so ③'s flood and guard build ②'s corner
+        const waterOfLabs = (L, n) => Array.from({ length: n }, (_, i) => protoOwners[L?.[i]]?.skelId === WATER_EDGE_SKEL)
         const hwOfLabs = (L) => (i) => { const m = protoMeasureOf(L[i]); return m?.pavementHW > 0 ? Math.max(0, m.pavementHW - PROTO_HW) : 0 }
         // the block region at an extra inward depth `d` past the authored pavement half-width
         const blockAt = (d) => {
-          const outs = offsetRingByRects(ring, (i) => hwAt(i) + d, false)
+          const outs = offsetRingByRects(ring, (i) => hwAt(i) + d, false, null, null, { water: waterOfLabs(labs, ring.length) })
           if (!bHoles.length || !outs.length) return outs
           const hls = []
           for (let hi = 0; hi < bHoles.length; hi++) {
             const hw = hwOfLabs(bHoleLabs[hi])
-            hls.push(...offsetRingByRects(bHoles[hi], (i) => hw(i) + d, true))
+            hls.push(...offsetRingByRects(bHoles[hi], (i) => hw(i) + d, true, null, null, { water: waterOfLabs(bHoleLabs[hi], bHoles[hi].length) }))
           }
           return hls.length ? differenceRings(outs, hls) : outs
         }
@@ -7406,7 +7960,7 @@ export function buildTileGround(ribbons, opts = {}) {
           const bare = (i) => bCls === 'verge' || isHwyLab(EC.labs[i])
           const at = (f) => (i) => (bare(i) ? 0 : cw + L(i)[f])
           return {
-            ring: EC.ring,
+            ring: EC.ring, water: EC.ring.map((_, i) => protoOwners[EC.labs[i]]?.skelId === WATER_EDGE_SKEL),
             pedFrom: (i) => (bare(i) ? 0 : cw), luFrom: (i) => (bare(i) ? 0 : WB),
             // ⛔ A HOLE OF THE CURB REGION, read off its winding — the one thing winding is a
             // reliable record of here, because these rings came straight out of one boolean.
@@ -7424,7 +7978,7 @@ export function buildTileGround(ribbons, opts = {}) {
         const ins = (pick) => {
           const o = [], h = []
           for (const p of parts) {
-            const rs = offsetRingByRects(p.ring, pick(p), p.hole)
+            const rs = offsetRingByRects(p.ring, pick(p), p.hole, null, null, { water: p.water })
             ;(p.hole ? h : o).push(...rs)
           }
           return (o.length && h.length) ? differenceRings(o, h) : o
@@ -7518,8 +8072,11 @@ export function buildTileGround(ribbons, opts = {}) {
             // survives onto ITS boundary (the stencil and H cut edges away; an owner with none left has no line here)
             const edges = [], add = (rg, ls) => rg.forEach((a, i) => { const o = protoOwners[ls?.[i]]; if (!o || o.skelId === '__boundary__') return
               edges.push({ a, b: rg[(i + 1) % rg.length], key: o.water ? 'water' : o.skelId, own: o.water ? { kind: 'water' } : o.skelId, hwy: hwySkel.has(o.skelId) }) })
-            add(ring, (protoBlockLabels || R.labels)?.[k]); (protoBlockHoles?.[k] || []).forEach((h, hi) => add(h, protoBlockHoleLabels?.[k]?.[hi]))
-            protoNoCurbBlocks.push({ k, ring, holes: protoBlockHoles?.[k] || [], edges })
+            // its ground is its PAINTED face (absorbInk.js): the ink it owns absorbed, its edges the splice's labels
+            const PC = MP.paint?.[k]
+            if (!PC?.outer?.length) throw new Error(`[tileGround][①] ⛔ curbless block ${k} has no painted face (protopolygon.paint) — a pour before the ink was absorbed. Re-pour.`)
+            add(PC.outer, PC.outerLabels); (PC.holes || []).forEach((h, hi) => add(h, PC.holeLabels?.[hi]))
+            protoNoCurbBlocks.push({ k, ring: PC.outer, holes: PC.holes || [], edges })
             continue }
           // ⛔⛔ THE FILL IS NOT FROZEN — `SECTION §4`, the keystone, verbatim: "the FILL was NEVER
           // meant to be frozen; the DataWall freezes the SILHOUETTE and the FILL is the live
@@ -7778,12 +8335,23 @@ export function buildTileGround(ribbons, opts = {}) {
           const reIx = new Map(); runs.forEach((r, i) => { const j = runs2.indexOf(r); if (j >= 0) reIx.set(i, j) })
           for (const a of iaStamp) for (let i = 0; i < a.length; i++) a[i] = a[i] == null ? null : (reIx.has(a[i]) ? reIx.get(a[i]) : null)
           for (const r of runs2) { delete r.key; delete r.iEnd }
+          // ⭐⭐ THE TILE'S RING IS ITS PAINTED FACE — the face with the ε ink it owns absorbed (absorbInk.js, at the mint's
+          // exit): neighbours meet on the centreline exactly, with no slit between them. ② above offset the UN-absorbed face
+          // (`protoBlockRings`), so iaFull/iaStamp/runs — the authoring keys — are untouched by construction (Boz, A(i)).
+          // ⛔ No painted face for this block is a pour before the absorption: refused by name, never the face substituted.
+          const P = MP.paint?.[k]
+          if (!P?.outer?.length) throw new Error(`[tileGround][①] ⛔ block ${k} has no painted face (protopolygon.paint) — this town was poured before the ink was absorbed. Re-pour; the tile never falls back to the un-absorbed face.`)
+          // the cells this face absorbed that the ground paints APART from the road, classed by their owning label
+          // (Zob's (a)): a water owner's is the land's SHORE, a highway's is the highway's (left to H, unpainted here)
+          const inkCells = (MP.inkCells || []).filter(c => c.group === k).map(c => {
+            const os = c.labels.map(l => protoOwners[l]).filter(Boolean)
+            return { rings: c.rings, cls: os.some(o => o.water) ? 'shore' : os.some(o => hwySkel.has(o.skelId)) ? 'highway' : null } }).filter(c => c.cls)
           protoShapeTiles.push({
-            ring, iA: mine.map(EC => EC.ring),
-            // ⭐ `ringOwner` — per ① ring edge (vertex i → i+1), its OWNER, off the same block labels ② is labelled from
-            // (`protoOwners`): { skelId, side, segOrd, gradeSeparated? } · { kind: 'water' } · { kind: 'rim' }. The road side
-            // reads its line from it. Carried through the disc cut below by the labelled boolean, never matched back.
-            ringOwner: ring.map((_, i) => ringOwnerOf(protoOwners[(protoBlockLabels || R.labels)?.[k]?.[i]])),
+            ring: P.outer, iA: mine.map(EC => EC.ring), ...(inkCells.length ? { inkCells } : {}),
+            // ⭐ `ringOwner` — per painted ring edge (vertex i → i+1), its OWNER, off the labels the splice carried (`protoOwners`):
+            // { skelId, side, segOrd, gradeSeparated? } · { kind: 'water' } · { kind: 'rim' }. The road side reads its line from
+            // it. Carried through the disc cut below by the labelled boolean, never matched back.
+            ringOwner: P.outerLabels.map(l => ringOwnerOf(protoOwners[l])),
             // ⭐⭐⭐ THE FILL IS NO LONGER FROZEN — `SECTION §4`'s keystone, finally kept: freeze the
             // SILHOUETTE, author the FILL live. `bands` used to sit here and `sectionOpen`
             // short-circuited on it, so an authored treelawn moved this artifact 0 m². The tile now
@@ -7929,7 +8497,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ A trim that cuts nothing leaves iA AS IT IS (the same contour as iaFull, not Clipper's re-emitted copy of it); one that
         // cuts writes its crossings into iaFull too (`shareIntoFull`). Its other new vertices are the ring's own, where the ring
         // runs inside the curb.
-        let stamped = 0, added = 0, sharedIntoFull = 0, sharedIntoRing = 0; const byPair = {}
+        let stamped = 0, added = 0, sharedIntoFull = 0, sharedIntoRing = 0, sharedIntoShore = 0, shoreFar = 0, shoreFarMax = 0; const byPair = {}
         const keyOf = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
         protoShapeTiles = protoShapeTiles.map(t => { if (!t.iA?.length || !differenceRings(t.iA, [t.ring]).length) return t
           const iA = intersectRings(t.iA, [t.ring]), have = new Set([...(t.iaFull || []).flat(), ...t.ring].map(keyOf))
@@ -7945,9 +8513,12 @@ export function buildTileGround(ribbons, opts = {}) {
           // the stamp's crossings on a stretch where the block follows the ring go into the ring too
           const sh = shareBlockIntoRing(tile); sharedIntoRing += sh.added
           return { ...sh.t, _evGroups: groups } })
+        // every tile, stamped or not: the block's vertices on a water run go into its shore cell (joins have no stamp)
+        protoShapeTiles = protoShapeTiles.map(t => { const ss = shareWaterRunIntoShore(t, `tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`); sharedIntoShore += ss.added
+          shoreFar += ss.far || 0; shoreFarMax = Math.max(shoreFarMax, ss.farMax || 0); return ss.tile })
         const stamp = MP.boundaryRing
         if (stamp?.length > 2) {
-          const before = protoShapeTiles.length; let rimShared = 0
+          const before = protoShapeTiles.length; let rimShared = 0, cellRimShared = 0, cellsOutside = 0
           const cut = (rings) => { const o = intersectRings(rings || [], [stamp]); return o?.length ? o : [] }
           const kept = []
           // ⭐ the RING is cut by the disc, and each output edge takes the owner of the OPERAND edge it lies on: one of the
@@ -8033,14 +8604,40 @@ export function buildTileGround(ribbons, opts = {}) {
               const best = a.indexOf(Math.max(...a))
               if (!(a[best] > 0)) throw new Error(`[tileGround][PROTO⊙] ⛔ a curb ring of a rim tile lies in none of its ${ring.length} disc pieces (at ${c[0]}). Refusing.`)
               mine[best].push(c) }
+            // ⭐ THE INK CELLS ARE CUT BY THE CIRCLE TOO (Zob, 2026-10-26; measured off the frozen cells: Huron 1 shore ring across
+            // the disc and 1 wholly outside, PTown 2 across). ⛔ They passed through uncut, so every piece of a rim tile carried the
+            // WHOLE block's cells, a shore cell painted past the disc once per piece, and the asphalt's rim crossing on a cell edge
+            // was the asphalt's alone (the curb's twin bug, above). Each cell ring is cut by the disc and goes to the piece it lies
+            // in, by containment (it overlaps exactly one piece, else refuses); the crossings the cut minted go into the piece's ring (rim edges, shareRimCrossings,
+            // which refuses one on no rim edge) and into its block where an edge holds them, so the asphalt and the cell meet at
+            // one point on the rim.
+            // ⛔ ONLY A RING THAT CROSSES THE DISC IS CUT, AND THE CUT KEEPS COLLINEAR VERTICES (Zob, 2026-10-26): Clipper drops an
+            // exactly-collinear vertex by default, which would take the vertices shareWaterRunIntoShore just put on a cell's straight
+            // land edge (and ①'s collinear owner changes) while iA keeps them: two vertex sets again. A ring wholly inside goes to
+            // its piece as it is; one wholly outside is dropped (counted); one across is cut with ioPreserveCollinear, so the cut adds
+            // the rim crossings and removes nothing else.
+            const cellsIn = t.inkCells || []
+            const cellsOf = ring.map(() => cellsIn.map(c => ({ ...c, rings: [] })))
+            if (inside || !cellsIn.length) cellsIn.forEach((c, j) => { cellsOf[0][j] = c })
+            else cellsIn.forEach((c, j) => { for (const r0 of c.rings) {
+              const out = cutCellRing(r0, stamp); if (!out.length) { cellsOutside++; continue }
+              for (const q of out) cellsOf[cellPieceOf(q, ring)][j].rings.push(q) } })
             ring.forEach((r, i) => { if (!inside) { const sh = shareRimCrossings(r, ringOwners[i], mine[i], t.iA || [], stamp); r = sh.ring; ringOwners[i] = sh.owners; rimShared += sh.added }
-              kept.push({ ...t, ring: r, ringOwner: ringOwners[i], iA: mine[i],
+              let iAi = mine[i]
+              const cells = (inside || !cellsIn.length) ? (i === 0 ? cellsIn : []) : cellsOf[i].filter(c => c.rings.length)
+              if (!inside && cells.length) { const flat = cells.flatMap(c => c.rings), input = cellsIn.flatMap(c => c.rings)
+                const sc = shareRimCrossings(r, ringOwners[i], flat, input, stamp); r = sc.ring; ringOwners[i] = sc.owners; rimShared += sc.added; cellRimShared += sc.added
+                const have = new Set(iAi.flat().map(keyOf)), known = new Set([...input.flat(), ...stamp].map(keyOf)), pts = []
+                for (const q of flat) for (const v of q) { const k = keyOf(v); if (!known.has(k) && !have.has(k)) { have.add(k); pts.push(v) } }
+                if (pts.length) iAi = iAi.map(q => insertOnEdges(q, null, pts, () => true).ring) }
+              kept.push({ ...t, ring: r, ringOwner: ringOwners[i], iA: iAi, ...(cells.length ? { inkCells: cells } : { inkCells: undefined }),
               fillets: (t.fillets || []).filter(f => inDisc(f.apex)) }) })
           }
           protoShapeTiles = kept
-          console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice)`)
+          console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice) · ${cellRimShared} of them the ink cells' (cut by the circle too; ${cellsOutside} cell ring(s) wholly outside the disc dropped)`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoFull} block crossing(s) the face trim and the circle minted, written into the struck contour (iaFull): ② is one ring`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoRing} block vertex(es) where the block follows the ring (the face trim's and the stamp's crossings there), written into the tile ring`)
+          console.log(`[tileGround][PROTO⊙] ${sharedIntoShore} block vertex(es) on a water run (stamp crossings, joins), written into the tile's shore cell (shareWaterRunIntoShore) · ${shoreFar} placed past one rounding off their edge (max ${(shoreFarMax / SCALE * 1000).toFixed(3)} mm)`)
           console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)
         } else {
           console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)
@@ -8128,7 +8725,8 @@ export function buildTileGround(ribbons, opts = {}) {
   // that judge them (`claims-the-bands-are-held-by-their-owners`) ask for them.
   let asphalt = S.asphalt
   const curb = S.curb, sidewalk = S.sidewalk, block = S.block
-  const highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
+  let highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
+  let bridges = []    // the bridge spans painted over the water: [{ span, street, segOrd, hwy, rings }], `span` its index in ①'s offGradeSpans (`bridgeOverlay`, `highwayBridges`); `hwy` picks its road's paint
   let inkShore = []   // ①'s coast piece, the land's shore surface (painted first, below)
   protoBandPieces = S.bandPieces || []
   protoRimRings = S.rimRings || []
@@ -8151,27 +8749,17 @@ export function buildTileGround(ribbons, opts = {}) {
     if (C.goneBothN) console.log(`[tileGround][①⇢LIVE] ${C.goneBothN} span(s) with no width on either side of a band — no piece there; the ground is the neighbours' (Boz, 2026-10-18): ${gone.slice(0, 6).join(' · ')}${gone.length > 6 ? ` … +${gone.length - 6}` : ''}`)
     if (C.noAnchor || C.noInner || C.innerShared || C.innerUnbounded || C.noOwner) console.warn(`[tileGround][①⇢LIVE] ⛔ band pieces: ${C.noAnchor} ring(s) with no span carried once on both levels to align from · ${C.noInner} outer ring(s) with no inner ring to align with (their runs are not closed) · ${C.innerShared} inner ring(s) aligned to two outer rings · ${C.innerUnbounded} inner ring(s) aligned to none · ${C.onlyOnInner} span(s) only on the inner side · ${C.noOwner} piece(s) whose span has no stamp run (no owner) — counted; ▶ checks/claims-the-bands-are-held-by-their-owners.mjs`)
   }
-  // ⭐⭐ ① IS PAINTED FIRST (Jacob, 2026-10-11, BRIEF-the-ground-knows-its-height §5: "we should paint it in the first
-  // step, not last"). ① is the union of the ε strokes, so it HAS area — a 2ε band over every chain — and every band
-  // offsets outward from its edge, so until now nothing painted it and it showed through as a ~10 mm slit down every
-  // centreline (`claims-the-ground-tiles-without-a-gap`). Each piece takes its OWNER's surface, read off ①'s own
-  // per-edge labels (never by nearness to a chain): a street's ① is its road, the coast's ① is the land's shore
-  // (option (a)), and a grade-separated highway's ① is left to the highway stroke that already covers it (asphalt
-  // paints above highway, so painting it as road would draw a strip down the motorway). A piece of ink takes the
-  // class of the edges it lies within one stroke width (2ε) of — the construction of the stroke itself, run back —
-  // and where a slipway T's into the coast the 2ε square at the joint goes to the coast: water, then highway, then road.
+  // ⭐⭐ THE INK IS THE TILES' OWN (BRIEF-the-ink-is-owned-by-its-labels §3, 2026-10-25). ① has area — a 2ε band over every
+  // chain — and until now nothing owned it: it was re-stroked as quads and resolved by overlap (`inkByOwner` /
+  // `inkPiecesByOwner`, DELETED with this, and the second union of ① with them). It is absorbed at the mint's exit into the
+  // face that owns each piece of it (absorbInk.js), so every tile's ring runs to the centreline and the band from it to ②
+  // is the tile's: asphalt, or its shore where a water edge owns it, or the highway's where a highway edge does (left to H).
+  // ⛔ The coast's water side joins the water (Jacob: "yes, coast slit joins the water") and is no tile's.
   if (!protoInk?.rings?.length) throw new Error('[tileGround][①⇢LIVE] ① is the producer but carries no ink rings — refusing to paint the bands without the piece they close against.')
   {
-    const { shoreInk, hwyInk, roadInk, unlabelled } = inkByOwner(protoInk, protoOwners, PROTO_HW, hwySkel)
     const inStencil = (r) => (stencil && stencil.length >= 3) ? intersectRings(r, [stencil]) : r
-    asphalt = unionRings([...asphalt, ...inStencil(roadInk)])
-    inkShore = inStencil(shoreInk)
-    // ⭐ the ink as owned pieces, for the ground (the deformer gives each its owner's line; shape.json `ink`)
-    const IP = inkPiecesByOwner(protoInk, protoOwners, PROTO_HW, stencil && stencil.length >= 3 ? stencil : null)
-    protoInkPieces = IP.pieces
-    if (IP.unlabelled) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${IP.unlabelled} ① ink edge(s) carry no owner — the ink there has no line. Refusing.`)
-    const unowned = IP.pieces.filter(p => !p.owners.length).length
-    if (unowned) throw new Error(`[tileGround][①⇢LIVE] ⛔ ${unowned} ink piece(s) with no owner — refusing.`)
+    inkShore = S.shore || []
+    protoInkPieces = []      // the curbless blocks' ground (below): the only owned road pieces outside a tile
     // ⭐ AND THE CURBLESS BLOCKS' GROUND, as road pieces beside the ink: the block minus its holes, minus H (a block under
     // the highway corridor is the HIGHWAY's ground, painted by it — Boz, 2026-10-17), in the stencil. Painted as asphalt.
     // ⛔ AND MINUS THE TILES: a tile's ring carries no holes, so a curbless block nested in another block's hole is already
@@ -8201,10 +8789,18 @@ export function buildTileGround(ribbons, opts = {}) {
       if (!b.owners.length) throw new Error(`[tileGround][①⇢LIVE] ⛔ curbless block ${b.k} has ground outside the highway (${a.toFixed(1)} m²) but none of its ① edges names an owner — that road has no line. Refusing.`)
       protoInkPieces.push({ rings, owners: b.owners, kind: 'block' }); asphalt = unionRings([...asphalt, ...rings]); nb++; nbM2 += a
     }
+    // ⭐ THE BRIDGES OVER THE WATER, their own paint (`mat:bridge`, Boz's ruling (iv), 2026-10-27): every recorded span's footprint
+    // over ①'s water. A span H sweeps is H's sweep ∩ the water, the piece(s) holding the span's own centreline (by identity of the
+    // recorded span), moved OUT of the highway's paint; every other span is `bridgeOverlay`'s. Owned road pieces, by street.
+    const nonH = bridgeOverlay(protoSpans, protoWater, (street, side, segOrd) => protoRunMeasure({ skelId: street, side, segOrd })?.pavementHW)
+    const viaH = highwayBridges(protoSpans, Hpoly, protoWater)
+    // ONE entry for EVERY recorded span (the shore pin matches by `span`, the index in offGradeSpans, and refuses a span with none), its rings in the stencil
+    bridges = [...nonH, ...viaH].map(b => ({ ...b, rings: inStencil(b.rings) }))
+    for (const b of bridges) protoInkPieces.push({ rings: b.rings, owners: [b.street], kind: 'bridge' })
+    if (viaH.length) highway = differenceRings(highway, viaH.flatMap(b => b.rings))
+    if (protoSpans.length) console.log(`[tileGround][bridges] ${bridges.length} bridge span(s) painted over the water (mat:bridge): ${nonH.length} at their street's measure, ${viaH.length} H's sweep moved out of the highway's paint: ${bridges.map(b => `${b.street}|${b.segOrd}`).join(' · ') || 'none'}`)
     if (protoNoCurbBlocks.length) console.log(`[tileGround][①⇢LIVE] the curbless blocks' ground: ${nb} road piece(s), ${nbM2.toFixed(1)} m², owned by their ① edges (${nbViaH} touching only H, owned by the block's highway edges) · ${underH} wholly under the highway (its ground) or inside a tile`)
-    console.log(`[tileGround][①⇢LIVE] ① held by its owners: ${IP.pieces.length} ink piece(s) · ${IP.crossings} crossing(s) where ≥ 2 owners' strokes overlap · largest crossing ${Math.max(0, ...IP.pieces.filter(p => p.owners.length > 1).map(p => p.owners.length))} owners`)
-    const m2 = (rs) => Math.abs(rs.reduce((t, r) => t + signedArea(r), 0))   // net: Clipper winds holes against their outer
-    console.log(`[tileGround][①⇢LIVE] ① painted first: road ${m2(roadInk).toFixed(1)} m² · shore ${m2(shoreInk).toFixed(1)} m² · left to the highway ${m2(hwyInk).toFixed(1)} m²${unlabelled ? ` · ⛔ ${unlabelled} ink edge(s) with no owner — painted as road` : ''}`)
+    console.log(`[tileGround][①⇢LIVE] the ink is the tiles' own (absorbed at the mint): shore ${Math.abs(inkShore.reduce((t, r) => t + signedArea(r), 0)).toFixed(1)} m² of land's shore from water-owned edges`)
   }
   const curbCut = S.curbCut || [], cornerArcs = S.cornerArcs || [], curbCutRecs = S.curbCutRecs || [], curbCutTally = S.curbCutTally || null, curbCutContradicted = S.curbCutContradicted || [], curbCutCorners = S.curbCutCorners || [], curbCutRamps = S.curbCutRamps || []
   const crosswalk = S.crosswalk || [], crosswalkPairs = S.crosswalkPairs || [], crosswalkTally = S.crosswalkTally || null
@@ -8238,6 +8834,10 @@ export function buildTileGround(ribbons, opts = {}) {
     if (T.contradicted) console.warn(`[tileGround][curb cuts] ⛔ ${T.contradicted} corner(s): the NORM IS CONTRADICTED BY PARTIAL EVIDENCE — drawn by the norm; override them in Section if the record is right: ${curbCutContradicted.slice(0, 12).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)}) norm ${c.norm}, drops at ${c.drops.join('/')}`).join(' · ')}${curbCutContradicted.length > 12 ? ` … +${curbCutContradicted.length - 12}` : ''}`)
     if (T.unreadable) console.warn(`[tileGround][curb cuts] ${T.unreadable} corner(s) whose recorded cuts are UNREADABLE (one end only, middle and end, or an unlisted kerb kind) — counted, and drawn by the norm.`)
   }
+  // ⭐ the road's paint (the centre stripe and the edge lines), struck from the sealed shape — the bake and Survey both read it
+  const marksBy = new Map((ribbons?.streets || []).map(s => [s.skelId, s.marks ?? null]))
+  if (!ribbons?.markingLook) throw new Error('[tileGround][paint] ⛔ the ribbons carry no paint look (`markingLook`) — this town was poured before the road paint. Re-pour.')
+  const roadPaint = roadMarkings({ tiles: protoShapeTiles, centrelines: protoCentrelines, marksOf: (id) => marksBy.get(id), measureOfRun: protoRunMeasure, look: ribbons.markingLook })
   const treelawnByLu = { ...S.treelawnByLu }, luByClass = { ...S.luByClass }
   console.log(`[tileGround][①⇢LIVE] every layer Survey draws is now ①②③ through sectionOpen: ${protoShapeTiles.length} tile(s) — asphalt ${asphalt.length} · curb ${curb.length} · sidewalk ${sidewalk.length} · block ${block.length} ring(s) · LU classes ${Object.keys(luByClass).join(', ') || 'none'}. Highway stays a flat stroke.`)
   // ⛔⛔ THE MEDIAN CLASS CANNOT APPEAR, AND THAT MUST BE SAID OUT LOUD. ③ carries no median or
@@ -8252,5 +8852,5 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { protoBoundaryRing, protoRimRings, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
+  return { roadPaint, protoBoundaryRing, protoRimRings, asphalt, inkShore, highway, bridges, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
 }

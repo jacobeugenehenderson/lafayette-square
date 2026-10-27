@@ -66,7 +66,7 @@ pair (authoring keys), not a node outline. Boz's earlier wording here was wrong.
    "yes, coast slit joins the water"): the water-side half of the coast ink joins the water face. The frame-edge cells are
    outside the disc. ⛔ The build's own construction is a ZERO-width cut (the centrelines noded into the ink by
    `latticeNode#nodeCrossings`, then the faces walked), not the buffered instrument. The tiles then meet on the centrelines, with
-   no slit. At a node, the shared vertex closes each tile's wedge. Coast ink splits on the coast arc (sealed with it). §5a's
+   no slit. At a node, the shared vertex closes each tile's wedge. ⭐ **Neighbours now share their centreline edges exactly** (the same noded vertices, one splice, no boolean; Boz's (c), 2026-10-25), so two tiles meet on the centreline with nothing between them and nothing drawn twice: ▶ `checks/claims-the-ink-is-absorbed-by-its-owner.mjs` (B). Coast ink splits on the coast arc (sealed with it). §5a's
    true-geometry crossings split into quadrants (a fixture case).
 2. **No fresh strips:** the quads, their overlap resolution and the second union of ① are deleted. Asphalt, highway and shore are
    each tile's own band, from its (absorbed) edge to ②, owned by that edge's label. shape.json's `ink` pieces retire with the slit.
@@ -116,8 +116,11 @@ label of the ink edge it replaces.
   and every row that moves explained. ▶ the asphalt/curb row's cause is being measured separately (Zob's HPDM site read); this
   brief doesn't own that row unless the read says it's an ink-ownership row.
 - shape.json's `ink` owners equal ①'s labels on every ink edge (a new check reading both; mutant: a re-stroke resolution).
-- The stripe: the same stripe geometry as today within the lattice step, on four towns (a check), plus
-  `claims-a-closed-stripe-keeps-its-hole`.
+- The stripe and the edge lines: `checks/claims-the-road-paint-reads-its-marks.mjs` on the four towns (heavy, `--slot=`): every
+  stripe on a marked run (S), every edge line beside a kerb that takes one (E), an every-street-marked mutant RED, and ② byte-
+  identical whatever the parking depth (P); plus `claims-a-closed-stripe-keeps-its-hole`. ⛔ Not "the same stripe geometry as
+  today": the rulings changed the stripe on purpose (Jacob, 2026-10-25: *"no residential stripes, double yellow OK for default
+  otherwise"* · *"I think I would be ok to stop lines at intersections"*); Boz ruled the replacement 2026-10-25.
 - `claims-proto-frozen-matches-live` (cited by Zob, not run at this head): run it.
 - Validation through the production path (Survey and the Stage bake), never a parallel spike.
 

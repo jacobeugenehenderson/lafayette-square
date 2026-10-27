@@ -25,6 +25,7 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
+import { drawnRawOf } from '../src/lib/drawnGround.js'   // the drawn raw: a vertex's pin, else the field
 
 const ROOT = new URL('../public/baked/', import.meta.url).pathname
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=')[1]
@@ -43,12 +44,11 @@ function judge(dir, mutate = false) {
   if (!stripe.length) return { town, refused: 'no mat:stripe group — nothing to judge' }
   if (!road.length) return { town, refused: 'no road group (mat:asphalt · mat:highway) for the stripe to lie on' }
   const T = loadSceneTerrain(town), E = T.exag
-  const fieldAt = (P, n) => { const R = new Float32Array(n); for (let v = 0; v < n; v++) R[v] = T.getElevationRaw(P[v * 3], P[v * 3 + 2]); return R }
   if (!(E > 0)) return { town, refused: 'the town names no exaggeration' }
   const gb = readFileSync(join(dir, gj.bin || 'ground.bin')), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
   // the road's triangles as planes (raw and y separately: field·e + y), gridded
   const CELL = 1, grid = new Map(), tris = []
-  for (const g of road) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = fieldAt(P, g.vertexCount)
+  for (const g of road) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = drawnRawOf(gj, g, AB, T.getElevationRaw)
     for (let k = 0; k < I.length; k += 3) { const v = [I[k], I[k + 1], I[k + 2]], xs = v.map(w => P[w * 3]), zs = v.map(w => P[w * 3 + 2])
       const id = tris.push({ xs, zs, r: v.map(w => R[w]), y: v.map(w => P[w * 3 + 1]), ro: g.renderOrder, g: g.id }) - 1
       for (let x = Math.floor(Math.min(...xs) / CELL); x <= Math.floor(Math.max(...xs) / CELL); x++) for (let z = Math.floor(Math.min(...zs) / CELL); z <= Math.floor(Math.max(...zs) / CELL); z++) { const key = x * 1000003 + z; (grid.get(key) || grid.set(key, []).get(key)).push(id) } } }
@@ -75,7 +75,7 @@ function judge(dir, mutate = false) {
   const out = [], all = [], lifts = []
   let n = 0, mutated = null, noRoad = 0
   for (const g of stripe) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount)
-    let R = fieldAt(P, g.vertexCount)
+    let R = drawnRawOf(gj, g, AB, T.getElevationRaw)
     if (mutate) { R = Float32Array.from(R); const v = g.vertexCount >> 1; R[v] += 4 * Math.max(...Array.from({ length: g.vertexCount }, (_, k) => P[k * 3 + 1])) / E + 1; mutated = `v${v} at (${P[v * 3].toFixed(1)}, ${P[v * 3 + 2].toFixed(1)})` }
     const samples = []
     for (let v = 0; v < g.vertexCount; v++) samples.push({ x: P[v * 3], z: P[v * 3 + 2], raw: R[v], y: P[v * 3 + 1], what: 'vertex' })

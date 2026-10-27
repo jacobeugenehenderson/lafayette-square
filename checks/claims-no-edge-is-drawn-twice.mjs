@@ -54,8 +54,7 @@
 // The screen shows the top --show pairs; the FULL per-pair table (every producer pair and every within-group pair, with
 // edge pairs, metres alongside and max gap) is written to <dir>/claims-no-edge-is-drawn-twice-<town>.json — the system
 // temp directory unless --out names one — and its path printed. A pair missing from the screen is not a pair at zero.
-// Builds each town's stack (the bake up to the flatten; nothing is written). The town's shore median is read as the
-// Bake's first ground pass reads it (`shorePending`). Exits 1 on any near-miss or a missed --expect.
+// Builds each town's stack (the bake up to the flatten; nothing is written). Exits 1 on any near-miss or a missed --expect.
 import { LATTICE_M } from '../src/lib/lattice.js'
 import { nearMisses } from './_nearMiss.mjs'
 import { writeFileSync } from 'fs'
@@ -185,7 +184,7 @@ for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--') || a === '-
   if (!look) { console.error(`⛔ ${town}: no look names this scene (public/looks/index.json) — NOT CHECKED`); fail++; continue }
   const log = console.log; console.log = () => {}
   let st
-  try { st = await bakeGround({ look, scene: town, shorePending: true, stackOnly: true }) } finally { console.log = log }
+  try { st = await bakeGround({ look, scene: town, stackOnly: true }) } finally { console.log = log }
   const entries = st.stackEntries.filter(e => !st.doesNotCut.has(e.groupKey))
   const r = report(town, nearMisses(entries), expect)
   if (r.bad) fail++; miss += r.missed

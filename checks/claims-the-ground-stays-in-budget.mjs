@@ -10,9 +10,10 @@
  *   · the ceiling's size  = the byte length of `public/baked/<town>/ground.bin`;
  *   · the ceiling's time  = the town's whole served ground cost: the sum of its GROUND_PASSES in
  *     `cartograph/data/<town>/clean/bake-timings.json` (serve.js `saveBakeTiming`) — `ground`, plus `ground-shore` where
- *     the town paid it (Boz's ruling, 2026-10-13: the shore median is retired, so after its removal ONE pass must fit
- *     under what the town paid for two). `ground` is required; a pass the town never ran costs it nothing.
- *     ⭐ GROUND_PASSES is a list, not read from serve.js, ON PURPOSE: the ceiling is what was PAID, and must not shrink
+ *     the town paid it (Boz's ruling, 2026-10-13: the shore median is retired — 2026-10-25, BRIEF-the-shore-is-one-line
+ *     step 3 — so ONE pass must fit under what the town paid for two). `ground` is required; a pass the town never ran costs it nothing.
+ *     ⭐ 'ground-shore' is RETIRED as of 9d2f915f (2026-10-25, with the shore median); it stays in the list only so a town's
+ *     ceiling is still what it PAID. GROUND_PASSES is a list, not read from serve.js, ON PURPOSE: the ceiling is what was PAID, and must not shrink
  *     the day a pass is retired. It cannot go stale silently: every serve.js step that runs `node bake-ground.js` must
  *     be in it, or the check refuses.
  *   · the candidate's town = its own `ground.json` `look` (never an argument, so a slab cannot be judged against another
@@ -135,17 +136,12 @@ function selfTest() {
   const covPass = seen.join() === 'ground,ground-new' && miss.join() === 'ground-new'
   if (!covPass) bad++
   console.log(`  ${covPass ? '✓' : '✗'} an unlisted serve.js bake-ground pass is seen: [${seen}] · unlisted [${miss}]`)
-  // a skipped pass is NAMED in the ceiling, and serve.js records the skip (so no stale time survives it); mutant: the record dropped
+  // a skipped pass is NAMED in the ceiling and adds 0 (a town's record from before 'ground-shore' was retired, 2026-10-25)
   const dC = ceilingOf('d', roots), named = dC.ms === 600 && dC.passes.includes('ground-shore skipped (inland: no shore)')
   if (!named) bad++
   console.log(`  ${named ? '✓' : '✗'} a skipped served pass is named and adds 0: ${dC.why ?? `${dC.ms} ms (${dC.passes.join(' + ')})`}`)
-  const serveSrc = readFileSync(join(REPO, 'cartograph/serve.js'), 'utf8'), REC = "if (!P.plan) saveBakeSkip(MAP_JSON, id, 'ground-shore', shorePass.why)"
-  const records = (src) => src.split(REC).length === 2 && /function saveBakeSkip\([^)]*\) \{\s*try \{[^\n]*skipped: why/.test(src)
-  const wired = records(serveSrc) && !records(serveSrc.replace(REC, ''))
-  if (!wired) bad++
-  console.log(`  ${wired ? '✓' : '✗'} serve.js records a skipped 'ground-shore' as skipped (and the record dropped is caught)`)
   rmSync(root, { recursive: true, force: true })
-  console.log(bad ? `⛔ self-test: ${bad} case(s) wrong` : `self-test: ${cases.length + 3} cases as expected`)
+  console.log(bad ? `⛔ self-test: ${bad} case(s) wrong` : `self-test: ${cases.length + 2} cases as expected`)
   return bad === 0
 }
 

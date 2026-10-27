@@ -152,16 +152,6 @@ export function plan({ look, prefix, root = BAKED_ROOT, names } = {}) {
     const town = join(root, l)
     const base = `${prefix}baked/${l}/`
     const own = []
-    // ⛔ A SLAB WHOSE SHORE IS PENDING DOES NOT SHIP (bake-ground.js#shoreMedianFor): it is the Bake's first ground pass,
-    // with the shoreline drawn and no sand on it yet. Staging, prod and the CLI all plan here, so one refusal covers all.
-    // A ground.json that is absent or will not parse is passed over here exactly as before (boarded, not decided here).
-    const groundAbs = join(town, 'ground.json')
-    let ground = null
-    if (existsSync(groundAbs)) try { ground = JSON.parse(readFileSync(groundAbs, 'utf8')) } catch { ground = null }
-    if (ground?.shore === 'pending') {
-      throw new Error(`"${l}"'s ground is shore: "pending" — the Bake's first ground pass, with no shore sand yet. `
-        + `Nothing was uploaded. ▶ Bake "${l}" again: its 'shore-median' and 'ground-shore' steps paint the shore`)
-    }
     const misnamed = slabNameMismatches(town, l)
     if (misnamed.length) {
       throw new Error(`"${l}"'s slab does not carry the name "${l}" — ${misnamed.length} stamp(s) disagree. Nothing was uploaded.\n     `

@@ -13,6 +13,8 @@ Boz. The stop is the deliverable.
 **Supersedes** `cartograph/_archive/BRIEF-the-coast-from-the-lidar-SUPERSEDED-2026-10-25.md` (its rulings carried here; its
 deformer-era plan is dead).
 **Priority (Jacob, 2026-10-25):** *"I want to fix Huron's shoreline next; it's unsightly."* Huron first, then PTown.
+⚠️ **Jackson Heights also gets a lidar coast** (Flushing Bay lies in its fetch; it has a tidal record and lidar), so its
+next Bake reads the lidar too. JH is out of the current tranche (Boz, 2026-10-25).
 
 ## 0. Why it looks wrong (Zob, read + measured on Huron's 2026-10-25 tranche bake)
 
@@ -92,12 +94,20 @@ copy of the bb projection, which goes to `geography.mjs#localBB`) · C11 is tern
    which also halves PTown's bake (the queued speed-up). ⚠️ `shore-sources.mjs` reads `shore-median.json`: replace it with
    bake-coast's trace IN THE SAME COMMIT, or the measure goes blind. Retire `BRIEF-the-shore-is-closed` there too, repointing its
    ~15 references (code comments, `references/registry.json` neededBy).
+   ⭐ Folded in (Boz, 2026-10-25): `bake-terrain#floodExtent` (terrain.json `water.flood`, drawn by BakedGround.jsx) is a
+   fourth trace of the same line at 5 m. It retires here IF its `beyondDrawnHa` measures ~0 on the lidar coast (Huron,
+   PTown, in the slot); otherwise its numbers go to Boz.
 4. **The sand line as ink in ①** (Jacob 10-21): made in the pour beside the coast. Propose its source (the beach between high and
    low water from the lidar?) before building.
-5. **Islands:** closed shore arcs, so an island is a hole in the water through the mint (tern 5fa9effb's INTENT; rewrite against
-   today's mint).
+5. **Islands — BUILT 2026-10-26, brought forward (Jacob: "yes river is lake, build islands with the floor").** An island is a
+   hole in ①'s water and a closed shore arc. Every filled draw takes the face as holed polygons (`coastFile.mjs#faceAsPolygons`).
+   An island holding no terrain node is dropped (Boz's ruling), each named in coast.json `islandsDropped`. ▶ `claims-the-water-is-one-polygon` §0,
+   `claims-the-shore-meets-the-field-at-high` §7, `claims-the-coast-is-the-lidars` D.
 6. **Later, its own commit:** rim §5's water BED stamped with ① (C8), and water to the bb (C1a, disc §2c), are the shoreline
    project's tail. Sequence them; don't fold them into 1–5 unless they fall out.
+   FILED (Boz, 2026-10-27): a street deck's edge is told from the coast by reading the frozen streetDecks rings at the pin's
+   on-line tolerance (`coastPins.mjs`). True per-edge identity is the MINT's job: ① tags each waterRings edge with its owner
+   (coast or a named deck), and the pin reads the tag.
 
 **⚠️ Built structures over water (Jacob, 2026-10-25: "PTown has a big pier and I believe Huron has something like it; it's built
 structure over water").** The lidar sees a pier's DECK as a surface above high water, so a coast traced where the lidar meets high

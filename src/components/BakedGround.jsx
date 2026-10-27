@@ -34,7 +34,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag, terrainWater } from '../utils/terrainShader'
 import { getElevationRaw, setDrawnGround } from '../utils/elevation'
-import { makeDrawnGround } from '../lib/drawnGround.js'
+import { makeDrawnGround, drawnPinsOf, predatesThePin } from '../lib/drawnGround.js'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
@@ -402,6 +402,9 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     // ⭐ THE DRAWN GROUND, published for whatever stands on it at runtime (the street eye, the movers, the user's dot):
     // the same function the bake's anchors read (`src/lib/drawnGround.js`), as views on this bin — never a second copy
     setDrawnGround(makeDrawnGround(manifest, bin, { groups: g => !isWaterGroupId(g.id) && g.partition !== false, rawAt: getElevationRaw }))
+    // ⛔ a ground baked on a terrain before the pin: its shore is the field's own contour, said once by name
+    if (predatesThePin(manifest)) console.error(`[BakedGround] ⛔ STALE SLAB for '${look}': this ground predates the pinned coast (no drawnRaw record). `
+      + `It is drawn as it was baked, on the field's own contour, so its shore is NOT ①'s line. ▶ re-bake the ground. ▶ node checks/claims-no-slab-outlives-its-schema.mjs`)
     return manifest.groups.map((g, gi) => {
       const positions = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)
       const indices   = new Uint32Array(bin,  g.indexByteOffset,  g.indexCount)
@@ -429,6 +432,10 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
       geom.setAttribute('uv2', new THREE.BufferAttribute(uv, 2))  // aoMap slot
       geom.setIndex(new THREE.BufferAttribute(idxUse, 1))
       if (featherUse) geom.setAttribute('aFeather', new THREE.BufferAttribute(featherUse, 1))   // the coast's feather (waterMaterial uHasFeather)
+      // ⭐ THE PINS (drawnGround.js#drawnPinsOf): a ground vertex's own raw where it has one — ①'s coast at HIGH, its neighbours
+      // clamped by side. The water sheet stands at its level and reads no ground height, so it carries none.
+      const pins = isWaterGroupId(g.id) ? null : drawnPinsOf(manifest, g, bin)
+      if (pins) geom.setAttribute('aDrawnRaw', new THREE.BufferAttribute(pins, 4))
       // ⭐ WHERE THE WATER STANDS (cartograph/waterLevel.mjs): each vertex carries the town's low and high level there;
       // the shader stands the sheet between them at the tide's phase. The mesh itself stays where it was baked.
       if (g.kind !== 'face' && isWaterGroupId(g.id)) {
@@ -471,41 +478,11 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
   // the published drawn ground goes when this ground does: a stale one would seat the movers on another town
   useEffect(() => () => setDrawnGround(null), [])
 
-  // ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (bake-terrain `water.flood`): the ground below the high level connected to
-  // the drawn water, drawn as more of the same sheet beside the body that reaches the rim. Its polygons exclude the drawn
-  // water, so the two never overlap; below HIGH the ground simply hides it.
-  const flood = useMemo(() => {
-    const body = meshes.find(m => m.bodyExtent && isWaterGroupId(m.group.id))
-    const polys = terrainWater()?.flood?.polygons
-    if (!body || !polys?.length) return null
-    const Y = body.geometry.attributes.position.array[1], L = waterLevelsOrSay()
-    const pos = [], idx = []
-    for (const p of polys) {
-      const v0 = pos.length / 3, all = [p.outer, ...p.holes]
-      const tris = THREE.ShapeUtils.triangulateShape(p.outer.map(q => new THREE.Vector2(q[0], q[1])), p.holes.map(h => h.map(q => new THREE.Vector2(q[0], q[1]))))
-      for (const r of all) for (const q of r) pos.push(q[0], Y, q[1])
-      for (const t of tris) idx.push(v0 + t[0], v0 + t[1], v0 + t[2])
-    }
-    const g = new THREE.BufferGeometry(), n = pos.length / 3, lo = new Float32Array(n), hi = new Float32Array(n)
-    if (L) for (let i = 0; i < n; i++) { lo[i] = L.lowAt(pos[i * 3], pos[i * 3 + 2]); hi[i] = L.highAt(pos[i * 3], pos[i * 3 + 2]) }
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3))
-    g.setAttribute('aLevelLow', new THREE.BufferAttribute(lo, 1))
-    g.setAttribute('aLevelHigh', new THREE.BufferAttribute(hi, 1))
-    g.setIndex(idx)
-    g.computeVertexNormals()
-    return { geometry: g, body }
-  }, [meshes])
-  useEffect(() => () => flood?.geometry.dispose(), [flood])
-
   return (
     <group>
       {/* "minimum ground" = the first draw of a ground SURFACE. It sat on town:ground, which also holds the revetment,
           so it marked the stone and declared WARD USABLE ~2 s before any ground drew on huron (Strobe, 2026-10-06). */}
       <DrawnAnchor id="ground" />
-      {flood && isGroupVisible(flood.body.group, layerVis) && (
-        <WaterSurface key="water:flood" geometry={flood.geometry} renderOrder={flood.body.group.renderOrder} extentDiag={flood.body.bodyExtent}
-          horizon={manifest.stencil ? waterHorizon(manifest.stencil) : null} look={scene?.surfaces?.params?.water} />
-      )}
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry, bodyExtent }) => {
         const fade = fadeForGroup(group, stencil)
         const key = group.kind + ':' + group.id
@@ -551,7 +528,7 @@ function FadeMesh({ group, geometry, lightmap, fade, hasPool }) {
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.
     // Drives off the shared terrainExag uniform.
     // ⭐ terrainNormals: the ground is lit by the hill it is draped on (Jacob, 2026-09-24).
-    patchTerrain(mat, { perVertex: true, terrainNormals: true })
+    patchTerrain(mat, { perVertex: true, terrainNormals: true, drawn: !!geometry.attributes.aDrawnRaw })
     return mat
   }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, hasPool, lightmap, geometry])
 
@@ -601,7 +578,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
       // Y stack. (z-fight fix 2026-06-17, ARCHITECTURE §8.)
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
-      patchTerrain(built.material, { perVertex: true, terrainNormals: true })
+      patchTerrain(built.material, { perVertex: true, terrainNormals: true, drawn: !!geometry.attributes.aDrawnRaw })
       built.material.aoMap = lightmap || null   // bound at build: one compile (FadeMesh says why)
       return built
     },
@@ -630,11 +607,11 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
 // driven Stage material card.
 function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
   const { material, shaderRef } = useMemo(() => {
-    const built = makeGravelPathMaterial({ tintHex, roughness, scale })
+    const built = makeGravelPathMaterial({ tintHex, roughness, scale, drawn: !!geometry.attributes.aDrawnRaw })
     built.material.aoMap = lightmap || null   // bound at build: one compile (FadeMesh says why)
     built.material.aoMapIntensity = 1
     return built
-  }, [tintHex, roughness, scale, lightmap])
+  }, [tintHex, roughness, scale, lightmap, geometry])
   useFrame(() => {
     if (shaderRef.current) {
       shaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
@@ -681,7 +658,7 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 //
 // ⛔ THE DEM CARRIES NO DEPTH under the water (it hydro-flattens it), so nothing here
 // shades by depth. The waterline is the mapped shore and the `bed` sits under it
-// (BRIEF-the-shore-is-closed); real depth is BRIEF-bathymetry.
+// (cartograph/_archive/BRIEF-the-shore-is-closed-RETIRED-2026-10-25.md); real depth is BRIEF-bathymetry.
 //
 // ⭐ The wave frequencies come from THIS BODY'S OWN EXTENT, read off the baked
 // geometry's bounding box. Not a constant, not a scene lookup — the surface's

@@ -41,7 +41,7 @@ if (process.env.__PAINT_RIM_CHILD) {
   const look = lookFor(TOWN); if (!look) { console.log(JSON.stringify({ err: `no look names ${TOWN}` })); process.exit(2) }
   const log = console.log; console.log = () => {}
   let st, flat
-  try { st = await bakeGround({ look, scene: TOWN, shorePending: true, stackOnly: true })
+  try { st = await bakeGround({ look, scene: TOWN, stackOnly: true })
     flat = flattenPaintStack(st.stackEntries, { keepOwnSlot: st.keepOwnSlot, doesNotCut: st.doesNotCut }); nodeThePlane(flat, {}) } finally { console.log = log }
   const disc = loadSceneStencil(ROOT, TOWN).clipPolygon
   if (!disc) { console.log(JSON.stringify({ err: `${TOWN} has no stencil: no rim to read` })); process.exit(2) }

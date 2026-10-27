@@ -230,7 +230,8 @@
       "url": "https://mutcd.fhwa.dot.gov/pdfs/11th_Edition/part3.pdf",
       "covers": [
         "Part 3 markings: islands, channelizing lines, gore / neutral areas at ramps",
-        "curbed vs painted island treatment"
+        "curbed vs painted island treatment",
+        "Part 3 longitudinal markings: centre lines (§3B.01–§3B.03), edge lines (§3B.09–§3B.10), lines through intersections (§3B.11), line widths and patterns (§3A.04)"
       ],
       "terms": {
         "aiUse": "permitted",
@@ -1129,6 +1130,66 @@
       "status": "PERMITTED (pending Jacob's confirmation)"
     },
     {
+      "id": "usace-ncmp-topobathy-erie-2020",
+      "digitalCoastId": 9971,
+      "title": "2020 USACE NCMP Topobathy Lidar DEM: Lake Erie (MI, OH) — 1 m bare-earth GeoTIFFs, NAD83(2011) UTM 17N + IGLD85 (NOAA Digital Coast 9971)",
+      "publisher": "U.S. Army Corps of Engineers, JALBTCX (National Coastal Mapping Program); distributed by NOAA Office for Coastal Management",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.fisheries.noaa.gov/inport/item/71402",
+      "covers": [
+        "the lake bottom and shore within ~1 km of Ohio's Lake Erie shoreline, flown 2020-06-05…06-13 (Huron: 32 tiles, 17TLF…)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (InPort 71402: a USACE survey distributed by NOAA — a federal work). ⚠️ One tile (17TLF6984) was read before this row was written, to measure the depth it reached; recorded here, not hidden.",
+        "quote": "Access Constraints: None · Use Constraints: These data depict the heights at the time of the survey and are only accurate for that time. · Data Set Credit: Acknowledgement of the Joint Airborne Lidar Bathymetry Technical Center of eXpertise (JALBTCX)",
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
+      },
+      "status": "PERMITTED"
+    },
+    {
+      "id": "glerl-ice-concentration",
+      "title": "Daily Great Lakes Ice Concentration, 1973 Onward (G10029, Version 1): daily 1.8 km gridded ice concentration (ASCII grids), Dec 1972 – May 2023",
+      "publisher": "NOAA Great Lakes Environmental Research Laboratory (GLERL); distributed by NSIDC",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://nsidc.org/data/g10029/",
+      "covers": [
+        "the ice on a Great Lake on a given day — whether the lake's water was open on a lidar's flight days (BRIEF-the-shore-is-one-line)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (NSIDC's G10029 landing page; GLERL is NOAA, a federal work. GLERL's ERDDAP copy, glerlIce, sits behind a bot wall and its licence was not read)",
+        "quote": "As a condition of using these data, you must cite the use of this data set. · Cite as: Great Lakes Environmental Research Laboratory. (2020). Daily Great Lakes Ice Concentration, 1973 Onward. (G10029, Version 1). [Data Set]. Boulder, Colorado USA. National Snow and Ice Data Center. https://doi.org/10.7265/krkb-f591",
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
+      },
+      "status": "PERMITTED"
+    },
+    {
+      "id": "usgs-3dep-lidar",
+      "title": "USGS 3D Elevation Program (3DEP): 1 m lidar DEMs (The National Map, prd-tnm StagedProducts), their lidar point clouds (LPC), and WESM, the work-unit metadata (3DEPElevationIndex)",
+      "publisher": "U.S. Geological Survey",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.usgs.gov/3d-elevation-program",
+      "accessPaths": [
+        "The National Map products API + prd-tnm S3 (fetch-dem.mjs → raw/elevation-sources.txt; the DEM every town's terrain and coast are read from)",
+        "WESM, 3DEPElevationIndex MapServer layer 8 (fetch-lidar-flights.mjs: collect_start, collect_end, geoid, vert_crs)",
+        "USGS's Entwine (EPT) copy of the same point clouds, s3://usgs-lidar-public (a probe, 2026-10-25: GPS time of 8 windows of OH_Statewide_Phase1_3_2019; no new terms, same source)"
+      ],
+      "covers": [
+        "bare-earth elevation for every poured town, its flight window and vertical datum (geoid), and its points' GPS time"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (usgs.gov 'Copyrights and Credits'; a federal work). ⚠️ This row is LATE: the kit has read 3DEP for every town since fetch-dem landed with no row, against README rule 1 — found 2026-10-25 when the EPT probe went looking for the row to note itself on.",
+        "quote": "USGS-authored or produced data and information are considered to be in the U.S. Public Domain. · When using information from USGS information products, publications, or websites, we ask that proper credit be given. (Credit: U.S. Geological Survey)",
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
+      },
+      "status": "PERMITTED"
+    },
+    {
       "id": "noaa-bluetopo",
       "title": "NOAA OCS BlueTopo: national bathymetric compilation (COG tiles, NAD83 UTM + NAVD88)",
       "publisher": "NOAA Office of Coast Survey",
@@ -1559,6 +1620,24 @@
       },
       "status": "CANDIDATE — bring to Jacob",
       "localCopy": null
+    },
+    {
+      "id": "noaa-ngs-geoid",
+      "title": "NOAA National Geodetic Survey geoid web service (api/geoid/ght): a geoid model's height at a point (13 = GEOID12B, 14 = GEOID18)",
+      "publisher": "NOAA National Geodetic Survey",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://geodesy.noaa.gov/web_services/geoid.shtml",
+      "covers": [
+        "the difference between the geoid a lidar was delivered on (WESM `geoid`) and the current one, at the town, so the lidar and the water record share one NAVD88 (Huron: GEOID18 − GEOID12B = +0.034 m in N, so lidar heights −0.034)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-10-25",
+        "checkedBy": "Swash (NGS is NOAA, a federal work; NGS's own disclaimer link returns 404, so NOAA's statement is quoted, as for noaa-bluetopo). Read once before this row, at Huron, in the geoid check (2026-10-25); recorded here",
+        "quote": "The information on government servers are in the public domain, unless specifically annotated otherwise, and may be used freely by the public.",
+        "approvedBy": "Jacob, 2026-10-25 (\"Approve\", asked in Swash's session)"
+      },
+      "status": "PERMITTED"
     },
     {
       "id": "nps-npgallery",
@@ -4710,7 +4789,7 @@
     {
       "id": "q-nearshore-bed-profile",
       "ask": "The depth of the bed under a shore's water with no bathymetry, as a function of distance from the shoreline",
-      "neededBy": "BRIEF-the-shore-is-closed — the bed in the terrain (Jacob 2026-09-26: 'where we don't have [depth data], we gently slope it')",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — the bed in the terrain (Jacob 2026-09-26: 'where we don't have [depth data], we gently slope it')",
       "status": "answered",
       "findings": [
         "f-cem-equilibrium-profile",
@@ -4734,7 +4813,7 @@
     {
       "id": "q-bottom-visibility-depth",
       "ask": "The depth at which the bottom stops being visible through the water (and how much of it fades)",
-      "neededBy": "BRIEF-the-shore-is-closed — the bed stops mattering past it; the water shades by depth to it",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — the bed stops mattering past it; the water shades by depth to it",
       "status": "answered",
       "findings": [
         "r-bottom-visibility-default"
@@ -4764,7 +4843,7 @@
     {
       "id": "q-pier-walkway-width",
       "ask": "The width of a pier mapped only as a line, with no width tagged",
-      "neededBy": "BRIEF-the-shore-is-closed — structures over water (Jacob 2026-09-27: OSM width where mapped, else a sourced typical width, with an authored override)",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — structures over water (Jacob 2026-09-27: OSM width where mapped, else a sourced typical width, with an authored override)",
       "status": "answered",
       "findings": [
         "f-ufc-main-walkway-width"
@@ -4774,7 +4853,7 @@
     {
       "id": "q-revetment-toe-berm",
       "ask": "How far a revetment's toe runs out onto the bottom beyond the foot of its slope",
-      "neededBy": "BRIEF-the-shore-is-closed — Jacob 2026-09-27: 'the rocks need to extend further into the water … the harsh cutoff on the bottom'",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — Jacob 2026-09-27: 'the rocks need to extend further into the water … the harsh cutoff on the bottom'",
       "status": "answered",
       "findings": [
         "f-cem-toe-berm-size"
@@ -4784,7 +4863,7 @@
     {
       "id": "q-deck-min-thickness",
       "ask": "The minimum thickness of a deck that carries people and vehicles, by material",
-      "neededBy": "BRIEF-the-shore-is-closed — structures over water (Jacob 2026-09-27: 'a dock or a wharf or pier can't be a 2D plane' · 'engineering weight requirements … would tell us minimum thicknesses')",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — structures over water (Jacob 2026-09-27: 'a dock or a wharf or pier can't be a 2D plane' · 'engineering weight requirements … would tell us minimum thicknesses')",
       "status": "answered",
       "findings": [
         "f-fhwa-concrete-deck-min",
@@ -4889,7 +4968,7 @@
     {
       "id": "q-revetment-crest-and-toe-levels",
       "ask": "Which water levels set a revetment's crest and how deep its armour runs",
-      "neededBy": "BRIEF-the-shore-is-closed — Jacob 2026-09-27: 'fix the revetment' (placement by the bank, the crest built to the tide, the toe below LOW)",
+      "neededBy": "BRIEF-the-shore-is-one-line (from the retired BRIEF-the-shore-is-closed) — Jacob 2026-09-27: 'fix the revetment' (placement by the bank, the crest built to the tide, the toe below LOW)",
       "status": "answered",
       "findings": [
         "f-em1614-design-water-levels"
@@ -4973,6 +5052,16 @@
         "cartograph/curb-cut-norm.mjs validateKerb / resolveCurbCutNorm — kit kerb rung (still 0: the house 6 in is not built)"
       ],
       "notes": "Answered by the kit house standard, r-house-kerb-height (6 in). A town's own norm (e.g. LS 0.15 m) stays on top."
+    },
+    {
+      "id": "q-survey-vertical-accuracy",
+      "ask": "A survey's stated vertical accuracy (RMSEz), to derive the seam cutoff where two surveys meet",
+      "neededBy": "BRIEF-the-shore-is-one-line — the seam gate where the bathymetry meets the lidar (Boz 2026-10-25: derive the cutoff from both surveys' stated accuracy; refuse a survey that states none)",
+      "status": "answered",
+      "findings": [
+        "f-3dep-ql-rmsez",
+        "f-ncmp-erie-2020-topo-vertical"
+      ]
     }
   ],
   "findings": [
@@ -7719,7 +7808,7 @@
         "visibleToM": 2.4384,
         "fadeOverM": 0.6096
       },
-      "canon": "BRIEF-the-shore-is-closed; ruled (d) 2026-09-27: a town's own Secchi depth where published, else this, said out loud"
+      "canon": "cartograph/_archive/BRIEF-the-shore-is-closed-RETIRED-2026-10-25.md; ruled (d) 2026-09-27: a town's own Secchi depth where published, else this, said out loud"
     },
     {
       "id": "f-ufc-main-walkway-width",
@@ -8097,6 +8186,201 @@
       "quote": "approve the table as it stands (the kit house standard table, relayed by Boz) · earlier the same day: \"re: traffic plans and guides, we should just develop a 'way' that we do stuff and we can make it all a sort of average of other sources. Curbs are 6\" in numerous places\"",
       "canon": "references/README.md \"Codes first\" (the kit house standard)",
       "notes": "Smaller than this, a channelising leftover is not a raised island. The caltrans-hdm findings are weighed inputs: the book's cover notice is pending Jacob, and \"informed by\" is not a citation."
+    },
+    {
+      "id": "f-3dep-ql-rmsez",
+      "question": "q-survey-vertical-accuracy",
+      "kind": "value",
+      "value": {
+        "rmsezM": {
+          "QL0": 0.05,
+          "QL1": 0.1,
+          "QL2": 0.1,
+          "QL3": 0.2
+        }
+      },
+      "source": "usgs-3dep-lidar",
+      "where": "usgs.gov 3DEP 'Topographic Data Quality Levels (QLs)' table; a project's QL from WESM (`ql`)",
+      "quote": "QL0 Lidar 5 cm · QL1 Lidar 10 cm · QL2 Lidar 10 cm · QL3 Lidar 20 cm (RMSEz, non-vegetated)",
+      "scope": "the specification's REQUIRED RMSEz for the quality level, not a project's tested value",
+      "foundOn": "2026-10-25",
+      "foundBy": "Swash"
+    },
+    {
+      "id": "f-ncmp-erie-2020-topo-vertical",
+      "question": "q-survey-vertical-accuracy",
+      "kind": "value",
+      "value": {
+        "rmsezM": 0.102,
+        "at95M": 0.2
+      },
+      "source": "usace-ncmp-topobathy-erie-2020",
+      "where": "InPort 71402, Data Quality › Vertical Positional Accuracy",
+      "quote": "CZMIL topographic data - Compiled to meet 20 cm vertical accuracy at 95% confidence level.",
+      "scope": "the TOPOGRAPHIC returns (the seam is measured on dry ground); RMSEz = the 95% figure / 1.96 (NSSDA). The bathymetric returns are SQRT(0.25² + (0.0075d)²) m at 95%, shallow FOV",
+      "foundOn": "2026-10-25",
+      "foundBy": "Swash"
+    },
+    {
+      "id": "f-mutcd-centre-line",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "separates": "opposing traffic",
+        "colour": "yellow"
+      },
+      "where": "§3B.01 ¶01 (Standard)",
+      "quote": "Center line pavement markings, when used, shall be the pavement markings used to delineate the separation of traffic lanes that have opposite directions of travel on a roadway and shall be yellow."
+    },
+    {
+      "id": "f-mutcd-centre-kinds",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "twoLaneTwoWay": [
+          "broken yellow (passing both ways)",
+          "solid + broken yellow (passing one way)",
+          "double solid yellow (no passing)"
+        ],
+        "singleSolidYellow": "not a centre line"
+      },
+      "where": "§3B.01 ¶04–¶05 (Standard)",
+      "quote": "A single solid yellow line shall not be used as a center line marking on a two-way roadway."
+    },
+    {
+      "id": "f-mutcd-four-lane",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "undividedTwoWayLanesAtLeast": 4,
+        "kind": "double solid yellow"
+      },
+      "where": "§3B.01 ¶06 (Standard)",
+      "quote": "the center line markings on undivided two-way roadways with four or more lanes for moving motor vehicle traffic always available shall be the two-direction no-passing zone markings consisting of normal width double solid yellow lines"
+    },
+    {
+      "id": "f-mutcd-three-lane",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "throughLanes": 3,
+        "kind": "no-passing markings, two lanes one direction"
+      },
+      "where": "§3B.01 ¶08 (Guidance)",
+      "quote": "On two-way roadways with three through lanes for moving motor vehicle traffic, two lanes should be designated for traffic in one direction by using one-direction or two-direction no-passing zone markings"
+    },
+    {
+      "id": "f-mutcd-centre-warrant",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "by": [
+          "functional class (urban arterials and collectors)",
+          "traveled-way width",
+          "ADT"
+        ],
+        "alwaysWhenLanesAtLeast": 3
+      },
+      "where": "§3B.02 ¶01–¶02",
+      "quote": "Center line markings shall be placed on all paved undivided two-way urban arterials and collectors that have a traveled way of 20 feet or more in width and an ADT of 6,000 vehicles per day or greater."
+    },
+    {
+      "id": "f-mutcd-edge-lines",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "right": "normal solid white",
+        "leftOfDividedOrOneWay": "normal solid yellow"
+      },
+      "where": "§3B.09 ¶02–¶03 (Standard)",
+      "quote": "If used on the roadways of divided highways or one-way streets, or on any ramp in the direction of travel, left edge line pavement markings shall consist of a normal width solid yellow line"
+    },
+    {
+      "id": "f-mutcd-edge-omit",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "mayOmitWhere": [
+          "curbs",
+          "parking",
+          "other markings"
+        ]
+      },
+      "where": "§3B.10 ¶05 (Option)",
+      "quote": "Edge line markings may be excluded, based on engineering judgment, for reasons such as if the traveled way edges are delineated by curbs, parking, or other markings."
+    },
+    {
+      "id": "f-mutcd-edge-at-intersections",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "discontinuedAcrossApproaches": true,
+        "solidThroughFarSideOfT": true,
+        "maintainedAcrossDriveways": true
+      },
+      "where": "§3B.11 ¶07–¶09",
+      "quote": "Edge line markings should be discontinued across intersecting approaches at intersections or interchanges."
+    },
+    {
+      "id": "f-mutcd-line-width",
+      "source": "mutcd-11r1",
+      "foundOn": "2026-10-25",
+      "foundBy": "Ferrule",
+      "scope": "federal — adopted by every state (CA and others via a state supplement)",
+      "topic": "road paint",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "normalLine_in": [
+          4,
+          6
+        ],
+        "doubleLineSpaceMax": "2 × line width",
+        "brokenSegment_ft": 10,
+        "brokenGap_ft": 30
+      },
+      "where": "§3A.04 ¶02–¶03, ¶06",
+      "quote": "Broken lines should consist of 10-foot line segments and 30-foot gaps, or dimensions in a similar ratio of line segments to gaps as appropriate for traffic speeds and the need for delineation."
     }
   ]
 }

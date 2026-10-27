@@ -159,6 +159,10 @@ export const DEFAULT_OVERLAY_COLORS = {
 export const BAND_TO_LAYER = {
   asphalt:            'street',
   highway:            'highway',
+  bridge:             'street',    // a span over the water (mat:bridge): its toggle
+  // ⭐ a bridge span wears its OWN road's paint (Boz's ruling, 2026-10-27): read from the span's recorded `hwy`
+  'bridge:street':    'street',
+  'bridge:highway':   'highway',
   'parking-parallel': 'street',
   'parking-angled':   'street',
   gutter:             'curb',

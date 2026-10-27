@@ -1,8 +1,40 @@
 # huron — the floor under the water (cartograph/fetch-bathymetry.mjs). Read by HTTP RANGE REQUEST
 # in bake-terrain.js, only where the bed is shallower than the town's visibility depth.
 # bbox -82.62165,41.35042,-82.50322,41.43952
-#   ⛔ NOAA OCS BlueTopo → 0 delivered tile(s), 4 in the scheme NOT YET DELIVERED (BlueTopo_Tile_Scheme_20260924_191855.gpkg)
-#   ⏸ USACE NCMP topobathy lidar → rung not built yet — not asked
+#   ⛔ NOAA OCS BlueTopo → 0 delivered tile(s), 4 in the scheme NOT YET DELIVERED (BlueTopo_Tile_Scheme_20261021_142031.gpkg)
+#   ✅ USACE NCMP topobathy lidar → 32 tile(s) of USACE_Lake_Erie_MI_OH_DEM_2020_9971 (registry usace-ncmp-topobathy-erie-2020; 99.0% of the water edge), flown 2020-06-05…2020-06-13 · ⛔ meets the bbox but has NO permitted registry row (not read): USACE_Erie_DEM_2012_9434 (Digital Coast 9434) · 3 USACE collection(s) publish no STAC record, not asked
 #   ⏸ NOAA NCEI CUDEM → rung not built yet — not asked
-# ⛔ NO TILES from the built rungs. NOT verified-absent: the rungs marked ⏸ were never asked.
-# The bed stays the profile for this town, and bake-terrain says so.
+# rung: USACE NCMP topobathy lidar · 32 tile(s) · resolutions 1m
+# ⛔ Re-derive rather than trusting this list:  node cartograph/fetch-bathymetry.mjs --scene=huron
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6488_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6585_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6486_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7083_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6684_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7084_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6883_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6587_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7282_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6487_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6586_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7181_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6985_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7082_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7382_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6884_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6686_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6685_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6983_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6984_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6885_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6784_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF6785_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7480_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7380_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7283_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7281_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7183_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7182_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7481_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7381_BareEarth_1mGrid.tif
+https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/USACE_Lake_Erie_MI_OH_DEM_2020_9971/oh/2020_NCMP_OH_Erie_17TLF7482_BareEarth_1mGrid.tif

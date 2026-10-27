@@ -50,8 +50,7 @@ const ROW_DIRS = ['cartograph', 'arborist', 'scripts', 'street-furniture', 'src/
 const ROW_EXCEPTIONS = [
   { file: 'cartograph/coastline.mjs', has: 'discR * 1.25', rule: 'reader/no-constant-margin', count: 1, owner: 'BRIEF-the-disc-is-one-source §2c (water to the bb) + BRIEF-the-rim-is-cut-once §5', since: '2026-10-25' },
   { file: 'cartograph/coastline.mjs', has: 'v <= discR', rule: 'reader/no-analytic-circle', count: 2, owner: 'BRIEF-the-disc-is-one-source §2c', since: '2026-10-25' },
-  { file: 'cartograph/bake-terrain.js', has: 'STENCIL_BUFFER_M', rule: 'reader/no-constant-margin', count: 2, owner: 'BRIEF-the-disc-is-one-source §3 (the height extent from the one module)', since: '2026-10-25' },
-  { file: 'cartograph/bake-terrain.js', has: 'center: boundary.center, discR: boundary.radius', rule: 'reader/through-the-module', count: 1, owner: 'BRIEF-the-disc-is-one-source §3 (the terrain\'s coast and extent read the disc)', since: '2026-10-25' },
+  { file: 'cartograph/elevationSources.mjs', has: 'STENCIL_BUFFER_M', rule: 'reader/no-constant-margin', count: 2, owner: 'BRIEF-the-disc-is-one-source §3 (the height extent from the one module)', since: '2026-10-25' },
   { file: 'cartograph/bake-ground.js', has: '_discR + 50', rule: 'reader/no-constant-margin', count: 1, owner: 'BRIEF-the-disc-is-one-source §3 (not the AO reach: MAX_RAY_DIST is 80; cause not established)', since: '2026-10-25' },
   { file: 'src/cartograph/ExtentApp.jsx', has: 'keptFit.radius + 120', rule: 'reader/no-constant-margin', count: 1, owner: 'the Extent tool\'s own auto-fit (tool UI, out of the row: Boz, 2026-10-25 (c))', since: '2026-10-25' },
   { file: 'scripts/migrate-draft-radius.mjs', has: '${nb.radius}', rule: 'reader/through-the-module', count: 2, owner: 'reads neighborhood.json\'s DRAFT radius, never the disc', since: '2026-10-25' },

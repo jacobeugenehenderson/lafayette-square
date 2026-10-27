@@ -42,7 +42,7 @@ function tintFromHex(hex) {
  *   - roughness : surface roughness (default 0.95)
  *   - scale     : pebble-pattern scale, >1 = finer (default 1)
  */
-export function makeGravelPathMaterial({ tintHex = null, roughness = 0.95, scale = 1 } = {}) {
+export function makeGravelPathMaterial({ tintHex = null, roughness = 0.95, scale = 1, drawn = false } = {}) {
   const shaderRef = { current: null }
   const mat = new THREE.MeshStandardMaterial({
     roughness,
@@ -150,6 +150,6 @@ ${GROUND_LAMP_DECLS}
   // otherwise three.js's program cache collapses this shader onto another
   // `terrain-vp-std` material and the gravel fragment never compiles.
   mat.customProgramCacheKey = () => 'park-path-gravel-v2'
-  patchTerrain(mat, { perVertex: true, terrainNormals: true })   // lit by its slope, like every ground group
+  patchTerrain(mat, { perVertex: true, terrainNormals: true, drawn })   // lit by its slope, like every ground group; its pins where it has them
   return { material: mat, shaderRef }
 }

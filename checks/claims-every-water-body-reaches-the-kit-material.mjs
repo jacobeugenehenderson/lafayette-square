@@ -6,7 +6,7 @@
 //   · derived but not baked → the lake is a HOLE IN THE LAND. ① carves
 //     `bb − (WATER ∪ INK)`, so the ground genuinely ends at the shore and nothing
 //     fills what it left. This was the live state until 2026-09-20: huron's Lake
-//     Erie was acquired, classified, derived into `layers.water`, and then dropped
+//     Erie was acquired, classified, derived into the water face, and then dropped
 //     by a bake that never read the layer. Nothing errored. The Designer drew it,
 //     which is exactly why everyone believed the slab did too.
 //   · baked but unrecognised → the body renders as a flat grey ground fill. A
@@ -20,7 +20,7 @@
 //
 // ⭐ It RESOLVES with the runtime's own `isWaterGroupId`, imported, not restated.
 //
-// ▶ MUTATION-TEST IT: comment out the `mapLayers.water` loop in bake-ground.js and
+// ▶ MUTATION-TEST IT: comment out the `waterFace(mapData, 'bake-ground')` loop in bake-ground.js and
 //   re-bake huron — this goes RED naming the body that vanished.
 //
 //   node checks/claims-every-water-body-reaches-the-kit-material.mjs
@@ -28,6 +28,7 @@
 import fs from 'fs'
 import path from 'path'
 import { isWaterGroupId } from '../src/components/waterMaterial.js'
+import { waterFace } from '../cartograph/coastFile.mjs'
 
 const DATA = 'cartograph/data'
 const BAKED = 'public/baked'
@@ -42,7 +43,9 @@ const scenes = fs.readdirSync(DATA, { withFileTypes: true })
 for (const scene of scenes) {
   const mapPath = path.join(DATA, scene, 'clean', 'map.json')
   if (!fs.existsSync(mapPath)) { console.log(`  ·  ${scene}: no clean/map.json — not poured, skipped`); continue }
-  const water = JSON.parse(fs.readFileSync(mapPath, 'utf8')).layers?.water || []
+  let water
+  try { water = waterFace(JSON.parse(fs.readFileSync(mapPath, 'utf8')), 'claims-every-water-body-reaches-the-kit-material').map(ring => ({ ring })) }   // ①'s face
+  catch (e) { console.log(`  ⚠️ ${scene}: NOT CHECKED — ${e.message.split('—')[0].replace(/^\[[^\]]*\] ⛔ /, '')}(poured before ①; re-pour)`); continue }
 
   // ⭐ The slab is looked up by LOOK, and a scene may have several. Any baked
   // look whose directory exists is a slab an operator can be looking at.
@@ -56,8 +59,7 @@ for (const scene of scenes) {
   }
   scenesWithWater++
   bodiesSeen += water.length
-  const subtypes = water.map(w => w.subtype || '(none)').join(', ')
-  console.log(`  ·  ${scene}: ${water.length} water body/bodies derived — water=* subtype(s): ${subtypes}`)
+  console.log(`  ·  ${scene}: ${water.length} water ring(s) in ①'s face`)
 
   if (!looks.length) {
     console.log(`     (no baked look for this scene — nothing to check against yet)`)

@@ -33,6 +33,8 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { requireExplicitMap } from './scene.js'
 import { writeIfChanged } from './io.js'
+import { terrainValueReads } from './terrainReads.mjs'
+import { authoredWater } from './waterDatums.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const VDATUM = 'https://vdatum.noaa.gov/vdatumweb/api/convert'
@@ -67,6 +69,35 @@ export async function datumInNavd88(lon, lat, datum, { tries = 5 } = {}) {
     await sleep(1500 * (a + 1))                   // the service answers 412 intermittently; back off and ask again
   }
   throw new Error(`⛔ VDatum ${datum} at (${lon}, ${lat}) failed ${tries}× — last: ${last}`)
+}
+
+/**
+ * IGLD85 → NAVD88 AT THE LAKE'S OWN HEIGHTS: [[igld85 m, navd88 m], …], one VDatum call per height.
+ * ⛔ IGLD85 is a DYNAMIC height, so its difference from NAVD88 grows with height: at Huron (Lake Erie, ~174 m) VDatum gives
+ * −0.004 m at height 0 and +0.067 m at 174.354 m (measured 2026-10-25, Swash). A conversion asked at height 0 placed the
+ * lake 7 cm low. ⇒ Ask it at the heights the town uses; the reader interpolates between them (waterDatums.mjs).
+ */
+export async function igld85ToNavd88Points(lon, lat, heights, { fetcher = fetch, tries = 5 } = {}) {
+  const out = []
+  for (const h of [...new Set(heights.filter(Number.isFinite).map(v => +v.toFixed(3)))].sort((a, b) => a - b)) {
+    const u = `${VDATUM}?s_x=${lon}&s_y=${lat}&s_z=${h}&region=contiguous&s_h_frame=NAD83_2011&s_coor=geo&s_v_frame=IGLD85`
+      + `&t_v_frame=NAVD88&t_h_frame=NAD83_2011&t_coor=geo`
+    let got = null, last = null
+    for (let a = 0; a < tries && got == null; a++) {
+      try {
+        const j = await (await fetcher(u, { signal: AbortSignal.timeout(30000) })).json()
+        if (j.t_z != null) {
+          if (Math.abs(+j.t_z) >= OUTSIDE) throw new Error(`⛔ VDatum has no IGLD85 → NAVD88 at (${lon}, ${lat})`)
+          got = +j.t_z
+        } else last = `${j.errorCode} ${j.message}`
+      } catch (e) { if (/no IGLD85/.test(e.message)) throw e; last = e.message }
+      if (got == null) await sleep(1500 * (a + 1))
+    }
+    if (got == null) throw new Error(`⛔ VDatum IGLD85 ${h} m at (${lon}, ${lat}) failed ${tries}× — last: ${last}`)
+    out.push([h, +got.toFixed(4)])
+  }
+  if (out.length < 2) throw new Error('⛔ IGLD85 → NAVD88 needs at least two heights to interpolate between')
+  return out
 }
 
 async function json(url) {
@@ -218,36 +249,49 @@ async function main() {
     console.log(`  TIDAL: ${covered}/${GRID_N * GRID_N} points covered · MHW ${Math.min(...hs).toFixed(3)}…${Math.max(...hs).toFixed(3)} m NAVD88 · MLLW ${Math.min(...ls).toFixed(3)}…${Math.max(...ls).toFixed(3)} m · ±${t.uncertaintyM} m`)
   } else {
     const gl = (await stationsNear(bbox, 'historicwl'))                                // the Great Lakes gauges are here, not under `datums`
-    const lakeSt = []
-    for (const s of gl.slice(0, 6)) {
-      const meta = (await json(`${COOPS_MD}/stations/${s.id}.json`)).stations?.[0]
-      if (meta?.greatlakes) { lakeSt.push(s); break }
+    // ⭐ THE NEAREST GREAT LAKES GAUGE THAT SERVES what the record is made of — a chart datum (GL_LWD) and the monthly
+    // means — never merely the nearest: the station list carries REMOVED gauges (Huron's own, 9063074, ran 1935–1979 and
+    // serves neither; it came first for Huron on 2026-10-25 and the record went empty). Each one passed over is NAMED.
+    const y1 = new Date().getUTCFullYear() - 1, y0 = y1 - 19
+    let s = null, lwd, months = [], peaks = []
+    const passed = []
+    for (const c of gl.slice(0, 6)) {
+      const meta = (await json(`${COOPS_MD}/stations/${c.id}.json`)).stations?.[0]
+      if (!meta?.greatlakes) continue
+      const d = await json(`${COOPS_MD}/stations/${c.id}/datums.json?units=metric`)
+      const L = d.datums?.find(x => x.name === 'GL_LWD')?.value, M = [], K = []
+      for (const [a, b] of [[y0, y0 + 9], [y0 + 10, y1]]) {
+        const j = await json(`${COOPS_DATA}?product=monthly_mean&station=${c.id}&begin_date=${a}0101&end_date=${b}1231&datum=IGLD&units=metric&time_zone=gmt&format=json&application=cartograph-kit`)
+        for (const r of j.data || []) { if (+r.MSL > 0) M.push(+r.MSL); if (+r.highest > 0) K.push(+r.highest) }
+      }
+      if (Number.isFinite(L) && M.length) { s = c; lwd = L; months = M; peaks = K; break }
+      passed.push(`${c.name} (${c.id}, ${c.km.toFixed(1)} km): ${!Number.isFinite(L) ? 'no GL_LWD' : ''}${!Number.isFinite(L) && !M.length ? ' · ' : ''}${!M.length ? `no monthly means ${y0}–${y1}` : ''}`)
     }
-    if (!lakeSt.length) {
-      const body = { kind: 'none', why: `VDatum covers none of ${GRID_N * GRID_N} points and no Great Lakes gauge is among the nearest CO-OPS stations`, fetchedOn: new Date().toISOString().slice(0, 10) }
+    for (const p of passed) console.log(`  lake gauge passed over — ${p}`)
+    if (!s) {
+      const body = { kind: 'none', why: `VDatum covers none of ${GRID_N * GRID_N} points and no Great Lakes gauge among the nearest CO-OPS stations serves a chart datum and monthly means${passed.length ? ` (passed over: ${passed.join('; ')})` : ''}`, fetchedOn: new Date().toISOString().slice(0, 10) }
       if (!arg('dry')) { mkdirSync(rawDir, { recursive: true }); writeIfChanged(join(rawDir, 'water-datums.json'), JSON.stringify(body, null, 2) + '\n') }
-      console.error(`⛔ ${scene}: no tidal datum and no lake gauge — this town's water level cannot be named. Written: raw/water-datums.json`)
+      console.error(`⛔ ${scene}: no tidal datum and no lake gauge that serves its levels — this town's water level cannot be named. Written: raw/water-datums.json`)
       process.exit(1)
     }
-    const s = lakeSt[0]
-    const d = await json(`${COOPS_MD}/stations/${s.id}/datums.json?units=metric`)
-    const lwd = d.datums?.find(x => x.name === 'GL_LWD')?.value
-    const y1 = new Date().getUTCFullYear() - 1, y0 = y1 - 19, months = []
-    for (const [a, b] of [[y0, y0 + 9], [y0 + 10, y1]]) {
-      const j = await json(`${COOPS_DATA}?product=monthly_mean&station=${s.id}&begin_date=${a}0101&end_date=${b}1231&datum=IGLD&units=metric&time_zone=gmt&format=json&application=cartograph-kit`)
-      for (const r of j.data || []) if (+r.MSL > 0) months.push(+r.MSL)
-    }
     const cx = +((bbox.minLon + bbox.maxLon) / 2).toFixed(5), cy = +((bbox.minLat + bbox.maxLat) / 2).toFixed(5)
-    const igld = await datumInNavd88(cx, cy, 'IGLD85')
-    if (igld.value == null) throw new Error(`⛔ ${scene}: VDatum has no NAVD88 → IGLD85 at the town centre — the lake level cannot be placed against the lidar`)
     const mean = months.length ? +(months.reduce((a, b) => a + b, 0) / months.length).toFixed(3) : null
-    out = { kind: 'lake', source: `NOAA CO-OPS ${s.id} ${s.name} (Great Lakes gauge, ${s.km.toFixed(0)} km) + VDatum NAVD88 → IGLD85`,
+    // ⭐ THE SPAN THE KIT READS, and no further (the reader refuses outside it): from the deepest the bed is ever drawn —
+    // the lowest level the town could stand at, less its visibility depth (bake-terrain's own rule: the town's authored
+    // `water.secchiM`, else r-bottom-visibility-default) — up to the HIGHEST WATER OBSERVED on the record (a monthly
+    // `highest`, not a mean).
+    const reads = terrainValueReads(scene), auth = authoredWater(scene, reads)
+    const visM = auth.secchiM?.value ?? reads.findings['r-bottom-visibility-default']?.value?.visibleToM
+    if (!Number.isFinite(visM)) throw new Error(`⛔ ${scene}: no visibility depth (design.json water.secchiM, or the registry's r-bottom-visibility-default) — the span the bed reads is unknown`)
+    const floorM = Math.min(lwd, ...months) - visM
+    const conv = await igld85ToNavd88Points(cx, cy, [floorM, lwd, mean, Math.min(...months), Math.max(...months), ...(peaks.length ? [Math.max(...peaks)] : [])])
+    out = { kind: 'lake', source: `NOAA CO-OPS ${s.id} ${s.name} (Great Lakes gauge, ${s.km.toFixed(0)} km) + VDatum IGLD85 → NAVD88 at the lake's heights`,
       fetchedOn: new Date().toISOString().slice(0, 10), station: { id: s.id, name: s.name, lat: s.lat, lon: s.lng, km: +s.km.toFixed(1),
         url: `https://tidesandcurrents.noaa.gov/datums.html?id=${s.id}` },
-      igld85InNavd88M: igld.value,
+      igld85ToNavd88: { points: conv, from: `VDatum IGLD85 → NAVD88 at (${cx}, ${cy}), asked at each height (a dynamic height: never one offset)` },
       levels: { LWD: { igld85M: lwd, what: 'chart datum (Low Water Datum)' },
                 mean: { igld85M: mean, what: `mean of ${months.length} monthly means, ${y0}–${y1}`, minM: Math.min(...months), maxM: Math.max(...months) } } }
-    console.log(`  LAKE: ${s.name} (${s.id}) LWD ${lwd} m IGLD85 · ${y0}–${y1} mean ${mean} m (${months.length} months) · IGLD85 0 = ${igld.value} m NAVD88`)
+    console.log(`  LAKE: ${s.name} (${s.id}) LWD ${lwd} m IGLD85 · ${y0}–${y1} mean ${mean} m (${months.length} months) · IGLD85 → NAVD88 at the lake: ${conv.map(([h, n]) => `${h} → ${n}`).join(', ')}`)
   }
   if (arg('dry')) { console.log(JSON.stringify(out, null, 1)); return }
   mkdirSync(rawDir, { recursive: true })

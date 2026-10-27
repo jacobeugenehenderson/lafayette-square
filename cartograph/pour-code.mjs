@@ -26,6 +26,7 @@ import { geographyFor } from './geography.mjs'
 import { mapDir, declaredBuildingsOf } from './scene.js'
 import { declaredParcelPaths, sourcesPath } from './sources.js'
 import { footprintWell } from './footprint-well.mjs'
+import { COAST_FILE } from './coastFile.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = join(HERE, '..')
@@ -175,6 +176,7 @@ export function pourDataReads(scene) {
     sourcesPath(scene), ...declaredParcelPaths(scene),        // derive.js → sources.js#readSources, and its parcel wells
     join(raw, 'osm_kerbs.json'),                              // derive.js → curb-cut-evidence.mjs — the recorded curb cuts
     join(mapDir(scene), 'norms.json'),                        // derive.js → curb-cut-norm.mjs — the town's curb-cut norm
+    join(clean, COAST_FILE),                                  // derive.js → coastFile.mjs#readCoast — the lidar's coast (bake-coast.mjs)
   ]
 }
 

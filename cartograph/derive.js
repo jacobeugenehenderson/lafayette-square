@@ -28,15 +28,16 @@ import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
 import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
 import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
+import { selectMarkings, parkingSeed, MARKING_LOOK } from '../src/cartograph/streetMarkings.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // ① is minted HERE at prebake (`mintProtopolygon`) and frozen into the artifact; the other two imports run beside it.
-import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
+import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares, HIGHWAY_CLASSES } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
-import { coastRings } from './coastline.mjs'
+import { mintInputs } from './mintInputs.mjs'
 import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { onGrid } from './snap.js'
 import { localBB } from './geography.mjs'
@@ -114,6 +115,9 @@ export function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
   // it is an angle threshold, which is exactly what `easeRing` was built on and excised for.
   const hard = [true]                       // a chain END is always a broken handle
   const out = [[points[0][0], points[0][1]]]
+  // ⭐ `anchorAt` RIDES ALONG too: anchor i → its index in the output, by IDENTITY (Zob, 2026-10-27), so a per-segment fact over
+  // the anchors (the skeleton's `segmentWays`) maps onto the tessellated line without matching a coordinate (a loop revisits one)
+  const anchorAt = [0]
   for (let i = 0; i < segments.length && i < points.length - 1; i++) {
     const g = segments[i]
     const a = [points[i][0], points[i][1]], b = [points[i+1][0], points[i+1][1]]
@@ -126,9 +130,10 @@ export function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
       emit(a, c1, c2, b, out)
       for (let q = before; q < out.length; q++) hard.push(false)      // inside a curve — never hard
     } else { out.push(b); hard.push(true) }
+    anchorAt.push(out.length - 1)
   }
   // a chain with fewer segments than gaps: the tail is straight, keep its anchors
-  for (let i = segments.length + 1; i < points.length; i++) { out.push([points[i][0], points[i][1]]); hard.push(true) }
+  for (let i = segments.length + 1; i < points.length; i++) { out.push([points[i][0], points[i][1]]); hard.push(true); anchorAt.push(out.length - 1) }
   // ⛔ An anchor that ENDS a bezier is still an anchor: the curve stops there, so the handle is
   // broken unless the NEXT segment is also a bezier. Fix those up in one pass rather than
   // special-casing inside the emit.
@@ -141,6 +146,7 @@ export function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
     if (oi < hard.length) hard[oi] = !(g?.type === 'bezier' && nxt?.type === 'bezier')
   }
   out.hard = hard
+  out.anchorAt = anchorAt
   return out
 }
 
@@ -1423,6 +1429,27 @@ function findStreetForPoint(px, pz, index) {
 // The carriageway half-width of one RAW way, for the legacy layers that buffer raw ways: its class section
 // (`getStreetSpec`), or the highway typical section for a swept class. ⛔ No residential default — the
 // `defaultHalfWidth = crossSection(STANDARDS.streets.residential)` that these sites fell back to is gone.
+// ⭐ THE PARKING DEPTH rides the measure beside pavementHW (`measure[side].parking`, the kerb → the parking edge; Boz,
+// 2026-10-25): the type's house parking lane, the data selecting presence (streetMarkings.js#parkingSeed). Read only by
+// the parking edge line. ⛔ It never changes pavementHW, the curb's input: an authored side keeps its pavementHW and
+// takes the seed's parking only where it carries none (Survey's control is owed, BACKLOG). A highway's typical section has
+// no parking lane: 0, said by its class, never left absent.
+function withParkingSeed(st) {
+  const m = st.measure
+  if (!m?.left || !m?.right) return m
+  const seed = (k) => isSweptClass(st.class) ? 0 : parkingSeed(st.class, st.markings, k).parking
+  const side = (k) => Number.isFinite(m[k].parking) ? m[k] : { ...m[k], parking: seed(k) }
+  return { ...m, left: side('left'), right: side('right') }
+}
+// the town's paint norm (`norms.json` → `markings`: { centre, edges }), or null when the town declares none
+let _markingNorm
+function townMarkingNorm() {
+  if (_markingNorm !== undefined) return _markingNorm
+  const p = join(CLEAN_DIR, '..', 'norms.json')
+  _markingNorm = existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).markings ?? null) : null
+  return _markingNorm
+}
+
 function wayHalfWidth(tags) {
   const cls = classOf(tags).class
   if (isSweptClass(cls)) {
@@ -1532,7 +1559,8 @@ function correctStreetWidths(streets, lamps, survey) {
 
 // ══════════════════════════════════════════════════════════════════
 
-export function deriveLayers(highways, { cropland = null } = {}) {
+export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null } = {}) {
+  const opts = { onAbsorbRefusal }
   console.log(`  ${highways.length} highway features`)
 
   // ── Load parcels ──────────────────────────────────────────────
@@ -1831,10 +1859,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   const { disc: _disc } = splitBoundary(JSON.parse(readFileSync(join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8')), `derive: ${SCENE}'s neighborhood_boundary.json`)
   const _discAt = discOf(_disc, `derive: ${SCENE}`)
   const boundaryPolyXZ = _disc.boundary
-  const boundaryCenter = [_discAt.cx, _discAt.cz], boundaryRadius = _discAt.R
-  let protoWaterRings = null
-  // Parallel to protoWaterRings: `{subtype, name}` per water ring, off the feature's own tags.
-  let protoWaterMeta = null
 
   const nodedSegments = nodeEdges(streetPolylines)
   const faces = polygonize(nodedSegments)
@@ -2727,35 +2751,19 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   console.log(`    ${alleyUnion.length} alley polygons (trimmed at the ASPHALT edge, not the back of sidewalk)`)
 
   // ── Street markings ─────────────────────────────────────────
-  const stripeMeta = []
+  // ⛔ The centre stripe and the parking edge line are NOT built here any more (BRIEF-the-ink-is-owned-by-its-labels §3,
+  // 2026-10-25): they were raw-OSM chains past the Wall (`centerStripe`, every non-oneway surveyed class; `parkingLine`, a
+  // spec offset of the way). The road's paint is selected per street (`marks`, below) and drawn by the ground from the
+  // sealed centreline and ②'s labelled kerb (`tileGround.js#roadMarkings`). Bike lanes stay here (filed, BACKLOG).
   const bikeLanes = []
-  const parkingLines = []
-
   for (const f of highways) {
     const t = f.tags?.highway
     if (!CLASSES[classOf(f.tags).class].surveyed) continue   // the vocabulary's surveyed street classes
     if (f.coords.length < 2) continue
-
-    const coords = f.coords.map(c => ({ x: c.x, z: c.z }))
-    const name = f.tags.name || t
-
-    if (!isOneway(f.tags)) {
-      stripeMeta.push({ coords, name, dashed: t === 'residential' })
-    }
-
     const cyc = f.tags.cycleway || f.tags['cycleway:left'] || f.tags['cycleway:right']
     if (cyc === 'lane' || cyc === 'track') {
       const spec = getStreetSpec(f.tags)
-      const laneOffset = (spec.lanes / 2) * spec.laneWidth
-      bikeLanes.push({ coords, name, offset: laneOffset })
-    }
-
-    {
-      const spec = getStreetSpec(f.tags)
-      if (spec.parkingWidth > 0) {
-        const parkOffset = (spec.lanes / 2) * spec.laneWidth
-        parkingLines.push({ coords, name, offset: parkOffset })
-      }
+      bikeLanes.push({ coords: f.coords.map(c => ({ x: c.x, z: c.z })), name: f.tags.name || t, offset: (spec.lanes / 2) * spec.laneWidth })
     }
   }
 
@@ -3053,6 +3061,10 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       points,
       ...(segments ? { segments } : {}),
       measure,
+      // the road's paint tags in point order (skeleton.js#carryMarkings) and Survey's street-keyed override slot
+      // (overlay.json streets[id].markings — reserved: no control writes it yet, BACKLOG)
+      markings: s.markings ?? null,
+      _marksAuthored: ov?.markings ?? null,
       intersections: [],
       oneway: !!s.oneway,
       skelId: s.id,
@@ -3598,7 +3610,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     'boundary:administrative':  'none: an administrative line, not a physical feature',
     'boundary:census':          'none: a statistical line, not a physical feature',
     'place:islet':              'none: land inside water; the water producer carries its holes',
-    'natural:water':            'none: water has its OWN producer (`layers.water`, the coast/relation path) and both renderers skip it here on purpose. ⚠️ Whether a small INLAND pond reaches that producer is NOT established — see cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md §6.',
+    'natural:water':            'none: water is ①\'s water face (the coast the mint is given; coastFile.mjs#waterFace) and both renderers skip it here on purpose. ⚠️ Whether a small INLAND pond reaches that producer is NOT established — see cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md §6.',
     'natural:reef':             'none: submerged; belongs to the water producer, not to land use',
     'natural:coastline':        'none: a LINE — the shore is coastline.mjs\'s, and the coast is an edge of the drawing, not a face',
     'natural:bay':              'none: water; belongs to the water producer',
@@ -4673,7 +4685,11 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       // skeleton.md) — the editor's "few nodes" + the concentric curb read these; `points`
       // above is their dense tessellation (so ix/legacy consumers stay byte-identical).
       ...(st.segments ? { segments: st.segments } : {}),
-      measure: st.measure,
+      measure: withParkingSeed(st),
+      // ⭐ THE ROAD'S PAINT, SELECTED AT THE POUR (streetMarkings.js#selectMarkings; BRIEF-the-ink-is-owned-by-its-labels §3a/§3b):
+      // the centre kind and the edge lines, each with the rung that chose it. The ground draws them past the Wall.
+      ...(st.markings ? { markings: st.markings } : {}),
+      marks: selectMarkings(st, { norm: townMarkingNorm(), authored: st._marksAuthored }),
       capEnds: st.capEnds,
       anchor: st.anchor || 'center',
       innerSign: st.innerSign || 0,
@@ -4756,7 +4772,19 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // strip so the data is available when that consumer lands.
     ...(skeleton.junctions ? { junctions: skeleton.junctions } : {}),
     ...(skeleton.nameTransitions ? { nameTransitions: skeleton.nameTransitions } : {}),
+    // the paint's look, frozen for the ground: the kit's house look, each value the town's norm names overriding it
+    markingLook: { ...MARKING_LOOK, ...(townMarkingNorm()?.look || {}) },
   }
+  console.log(`    [paint] look: ${Object.entries(ribbonsLayer.markingLook).map(([k, v]) => `${k} ${v.toFixed(3)} m${townMarkingNorm()?.look?.[k] != null ? ' (norm)' : ' (house)'}`).join(' · ')}`)
+  // ⭐ THE PAINT, PRINTED BY RUNG, EVERY POUR — so a kit default is never read as the town's (streetMarkings.js)
+  { const c = {}, e = {}, ex = { 'grade-separated': 0 }
+    for (const st of ribbonsLayer.streets) { const M = st.marks
+      if (M.excluded) { ex[M.excluded]++; continue }
+      const k = `${M.centre.kind} (${M.centre.rung}${M.centre.rung === 'data' ? ': ' + M.centre.why : ''})`; c[k] = (c[k] || 0) + 1
+      const ek = M.edges.kind ? `both (${M.edges.rung})` : `none (${M.edges.why})`; e[ek] = (e[ek] || 0) + 1 }
+    const list = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${v} ${k}`).join(' · ')
+    const parked = ribbonsLayer.streets.filter(st => (st.measure?.left?.parking || 0) + (st.measure?.right?.parking || 0) > 0).length
+    console.log(`    [paint] centre: ${list(c)} · edges: ${list(e)} · ${ex['grade-separated']} grade-separated (excluded) · ${parked} street(s) with a parking lane`) }
 
   // ⛔ THE D2 FACE FREEZE (`ribbons.tiles[]`, with its early boundary crop of the face streets, `clipStreet`) is DELETED
   // (BRIEF-the-disc-is-one-source §2a, 2026-10-22): its last reader, the Measure tool's cap handles, reads the frozen
@@ -4836,34 +4864,15 @@ export function deriveLayers(highways, { cropland = null } = {}) {
           for (const row of E.rows) console.log(`      ${row.id}: ${row.candidates.length ? row.candidates.join(' or ') + ' mph' : '[U]'} (${row.basis}) ⇒ edge ${row.edge}${row.unknowns.length ? ' · ' + row.unknowns.join(' · ') : ''}`)
         }
       }
-      // ⭐⭐⭐ TESSELLATE THE CURVE PRIMITIVE. `st.points` is the CONTROL POLYGON — the smoothness
-      // lives in `st.segments`, and reading the anchors alone minted every curve into ① as a
-      // straight chord (LS: 225 beziers over 9,948 m, sagitta median 1.34 m / max 20.80 m).
-      // Jacob, on the render: "the protopoly isn't smooth at all, anywhere."
-      // ⛔ The SAME `tessellateAdaptive` the drawn centreline uses — one line everywhere, or the
-      // curb is a parallel offset of a line the operator cannot see. That half-migration has now
-      // happened twice on this one source; it does not happen a third time.
-      simplified = new Map((sk.streets || []).map(st => [st.id,
-        tessellateAdaptive((st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z])), st.segments)]))
-      // ⛔ `{x,z}` OBJECTS, NOT `[x,z]` PAIRS — the skeleton and the ribbons store the same frame
-      // in different shapes, and reading one as the other yields `undefined` for every coordinate
-      // and an EMPTY protopolygon that looks like "no blocks". Same near-miss `A08` records for
-      // `nb.polygon`. Converted here, once.
+      // ⭐ ①'s inputs (the tessellated curve, `hard`, the coast, the bb, the disc) are built in ONE place,
+      // `cartograph/mintInputs.mjs`, which claims-proto-frozen-matches-live calls too: the witness mints what the pour minted.
+      simplified = sk.streets || []
     }
-    const simplify = (s) => {
-      const pts = simplified?.get(s.skelId ?? s.name)
-      // ⭐ `hard` travels with the points: the mint stamps it onto every owner, so ② can ask
-      // "is this node a corner?" without ever reaching for a chain.
-      return pts?.length >= 2 ? { ...s, points: pts, hard: pts.hard || null } : null
-    }
-    const all = ribbonsLayer.streets.filter(s => s?.points?.length >= 2)
-    const mapped = all.map(s => ({ s, sim: simplify(s) }))
-    const unjoined = mapped.filter(m => !m.sim)
-    if (!simplified || unjoined.length) {
-      console.warn(`    ⛔ [①] NOT FROZEN — ${!simplified ? `no skeleton at ${skPath}` : `${unjoined.length} of ${all.length} chain(s) have no simplified geometry (${unjoined.slice(0, 4).map(m => m.s.skelId ?? m.s.name).join(', ')})`}. ⛔ Refusing to mint ① from the DERIVED chains: that silently produces a dense contour with phantom blocks, which renders and cannot be seen to be wrong.`)
+    const MI = simplified && mintInputs({ ribbonStreets: ribbonsLayer.streets, skeletonStreets: simplified, osm: osmData, bb: _bb, disc: _disc, discAt: _discAt, cleanDir: CLEAN_DIR, who: `derive: ${SCENE}` })
+    if (!simplified || MI.unjoined.length) {
+      console.warn(`    ⛔ [①] NOT FROZEN — ${!simplified ? `no skeleton at ${skPath}` : `${MI.unjoined.length} of ${MI.total} chain(s) have no simplified geometry (${MI.unjoined.slice(0, 4).join(', ')})`}. ⛔ Refusing to mint ① from the DERIVED chains: that silently produces a dense contour with phantom blocks, which renders and cannot be seen to be wrong.`)
     } else {
-    const pStreets = mapped.filter(m => !m.s.gradeSeparated).map(m => m.sim)
-    const pGradeSep = mapped.filter(m => m.s.gradeSeparated).map(m => m.sim)
+    const pStreets = MI.streets, pGradeSep = MI.gradeSep
     // ⭐ THE CIRCLE STENCILS ① (Jacob, 2026-09-06). The whole grid is built, then cut square
     // at the perimeter — "there should be no tips; the streets clip at the perimeter edge."
     // ⛔ The boundary is NOT passed as a chain; it is the CLIP. See mintProtopolygon's header.
@@ -4876,16 +4885,14 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // the first. ⛔ The coast closes against THIS, never against the disc: the disc is a render
     // knob and the bb is declared data.
     // (`_bb` is computed once, at the face walk: the raw bb; the walk itself closes on its gridded view.)
-    const _coast = coastRings({ ground: osmData.ground || {}, buildings: osmData.buildings || [],
-                               center: boundaryCenter, discR: boundaryRadius, bb: _bb })
-    for (const line of _coast.report) console.log(line)
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings, coastArcs: _coast.arcs, bb: _bb })
+    for (const line of MI.coastReport) console.log(line)
+    // ⚙ DIAGNOSTIC: the caller's `onAbsorbRefusal` (pipeline.js, on `--absorb-dump=<path>`) receives the absorption's inputs when it refuses
+    const MP = mintProtopolygon({ streets: MI.streets, gradeSep: MI.gradeSep, boundary: MI.boundary, coast: MI.coast, coastArcs: MI.coastArcs, bb: MI.bb, onAbsorbRefusal: opts.onAbsorbRefusal || null })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
     let protoBlockClass = null
     if (MP.blocks?.length) {
-      const HWY = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
-      const hwySk = new Set(pGradeSep.filter(g => HWY.has(g.highway)).map(g => g.skelId ?? g.name))
+      const hwySk = new Set(pGradeSep.filter(g => HIGHWAY_CLASSES.has(g.highway)).map(g => g.skelId ?? g.name))
       const msbfPath = footprintWell(SCENE).path   // the town's footprint geometry well (footprint-well.mjs)
       // ⛔ RAW intake footprints, NEVER the member/shown set (ruling g: a building the operator hid still fronts).
       const centroids = existsSync(msbfPath)
@@ -4931,19 +4938,18 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // the mint's segOrd); ② draws it WITH authoring and check 5 reads it. ⛔ An empty list is frozen too — absent
     // means "poured before flares", never "none".
     const protoFlares = (() => {
-      const F = rampTerminalFlares(pStreets, pGradeSep, new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link']), boundaryPolyXZ)
+      const F = rampTerminalFlares(pStreets, pGradeSep, HIGHWAY_CLASSES, boundaryPolyXZ)
       console.log(`    [H-3 flare] ${F.flares.length} ramp-terminal flare(s) declared (the town street widens to receive a wider highway end, 10:1) · ${F.offRim} highway end(s) beyond the circle, not judged`)
       for (const f of F.flares) console.log(`      ${f.hwy}.${f.end} ${f.corner} corner → ${f.street} ${f.side}/${f.segOrd}: overhang ${f.baseO.toFixed(2)} m on the base width (${f.baseHW.toFixed(2)}), taper ${(f.rate * f.baseO).toFixed(1)} m · ${f.sources.filter(x => x.startsWith('[U]')).join(' · ')}`)
       for (const u of F.unreceived) console.warn(`      ⛔ ${u.hwy}.${u.end} ${u.corner} corner at (${u.node.map(v => v.toFixed(0)).join(', ')}): NO town leg can receive it — no flare is possible, check 5 stays red`)
       return F.flares
     })()
-    protoWaterRings = MP.waterRings || null
-    protoWaterMeta = _coast.meta || null
     // ⭐ THE CURB-CUT NORM, resolved scene → state → kit (perpendicular, PROWAG's sizes, cited) and frozen with its rung, so Section paints a
     // junction corner's curb cuts live off the shape without reaching for a state record (`cartograph/curb-cut-norm.mjs`).
     {
       const src = readSources(SCENE)
-      ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null, _registryRead)
+      ribbonsLayer.streetDecks = MI.decks.map(d => ({ ring: d.ring.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)]), streets: d.streets }))   // frozen beside ①, for the terrain
+    ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null, _registryRead)
       const N = ribbonsLayer.curbCutNorm
       // ⭐ the RUNG that decided each, and why every rung above it gave nothing — never the kit's value printed as the town's
       const rung = (n) => `from ${n.source}${n.passed?.length ? ` (${n.passed.join(' · ')})` : ''}${n.cites ? `, cited ${n.cites.join(', ')}` : ''}`
@@ -5003,6 +5009,14 @@ export function deriveLayers(highways, { cropland = null } = {}) {
         nodes: Object.fromEntries(Object.entries(MP.nodes).map(([k, v]) =>
           [k, v ? [Math.round(v[0] * 1e6) / 1e6, Math.round(v[1] * 1e6) / 1e6] : null])),
       } : {}),
+      // ⭐ the SEALED CENTRELINE, frozen with ① (mintProtopolygon): the road's paint reads it past the Wall, never the chains
+      ...(MP.centrelines ? { centrelines: MP.centrelines } : {}),
+      ...(MP.outlineRefused ? { outlineRefused: MP.outlineRefused } : {}),
+      // ⛔ ALWAYS written ([] when none): absent is a map before the rule, and the paint and the shore pin refuse it
+      offGradeSpans: MP.offGradeSpans,
+      endsInWater: MP.endsInWater,   // ⛔ always written too: the untagged streets that stop at the coast (a slipway)
+      // ⭐ the ink ABSORBED (absorbInk.js): each face's painted boundary + labels, and the water / grade-separated cells
+      ...(MP.paint ? { paint: MP.paint, inkCells: MP.inkCells } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.
       ...(MP.boundaryRing ? { boundaryRing: MP.boundaryRing.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]) } : {}),
       // ⛔⛔ CROSSINGS MUST BE FROZEN OR ① HAS NO CORNERS. A corner is exactly where two chains
@@ -5158,31 +5172,9 @@ export function deriveLayers(highways, { cropland = null } = {}) {
   // ⛔ They are LAYERS, not blocks: nothing offsets a curb from either, and neither carries an
   // authoring slot. Measured on Huron: 0 of 204 block faces touch a `__water__` edge, so no
   // editable surface abuts the coast and the Wall is not crossed to draw them.
-  // ⭐ The water face carries its HOLES (islands), so it is drawn as a compound face.
-  // ⭐⭐ THE `water=*` SUBTYPE TRAVELS WITH THE RING. OSM refines `natural=water` into lake ·
-  // pond · basin · reservoir · river, and nothing downstream consumes that yet — but a subtype
-  // dropped at pour time cannot be recovered without re-pouring every town, and a pond wants a
-  // different surface from a Great Lake. It is carried for the town that asks.
-  // ⛔ ALIGNMENT IS ASSERTED, NOT ASSUMED. `MP.waterRings` is `coast.map(copy)` — 1:1 with the
-  // rings `coastRings` returned, in order — so the meta indexes match by construction. If that
-  // ever stops being true the subtypes would silently attach to the WRONG bodies, which is the
-  // plausible-looking success this kit must never ship. So: fail loudly instead.
-  if (protoWaterMeta && protoWaterRings && protoWaterMeta.length !== protoWaterRings.length) {
-    throw new Error(`[LAND/WATER] ⛔ water ring/meta misalignment: ${protoWaterRings.length} ring(s) ` +
-      `but ${protoWaterMeta.length} meta entr(ies). The \`water=*\` subtype would attach to the wrong ` +
-      `body. ▶ coastRings() pushes ring and meta in the same statement — something between it and ` +
-      `mintProtopolygon's waterRings is now reordering or filtering.`)
-  }
-  const waterFeats = (protoWaterRings || []).map((r, i) => ({
-    ring: r.map(([x, z]) => ({ x, z })),
-    use: 'water',
-    subtype: protoWaterMeta?.[i]?.subtype || null,
-    name: protoWaterMeta?.[i]?.name || null,
-  }))
-  if (waterFeats.length) {
-    const tally = waterFeats.map(f => f.subtype || 'water').join(', ')
-    console.log(`  [LAND/WATER] ${waterFeats.length} water face(s) emitted as a layer — subtype(s): ${tally}`)
-  }
+  // ⭐ THE WATER is ①'s water face, frozen as `layers.ribbons.protopolygon.waterRings` and read by every bake through
+  // coastFile.mjs#waterFace (BRIEF-the-shore-is-one-line §3 step 2a). It is no longer copied into a `water` layer: a copy
+  // is a second source, and ①'s coast IS the high-water mark.
 
   const layers = {
     pavement:       pavementFeats,                                     // streets from standards (independent)
@@ -5193,9 +5185,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     park:           parkFeats,
     parcel:         clipParcelsToRoundedBlocks(parcels, allBlockPaths, classifyLandUse),
     alley:          toFeats(alleyUnion),
-    centerStripe:   stripeMeta,
     bikeLane:       bikeLanes,
-    parkingLine:    parkingLines,
     footway:        bufferEach(footways, STANDARDS.footway.width / 2),
     cycleway:       bufferEach(cycleways, STANDARDS.cycleway.width / 2),
     steps:          bufferEach(steps,    STANDARDS.steps.width    / 2),
@@ -5207,7 +5197,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     institution:    institutionOverlays,
     leisure:        leisureOverlays,
     natural:        naturalOverlays,
-    water:          waterFeats,
     barrier:        barrierLines,
     ribbons:        ribbonsLayer,
   }

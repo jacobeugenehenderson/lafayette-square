@@ -28,7 +28,8 @@ import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
 import { edt1d } from './distanceField.mjs'
-import { coastRings } from './coastline.mjs'
+import { waterFace } from './coastFile.mjs'
+import { localBB, projectorOf } from './geography.mjs'
 import { outerCoast } from './outer-coast.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -168,8 +169,8 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
 }
 
 /**
- * THE WATER PAST THE RIM (BRIEF-the-coast-runs-on-past-the-rim): the coast rings inside the fetched square — the bake's
- * own coast, closed against the square exactly as bake-terrain.js closes it — carried on past the rim along the real
+ * THE WATER PAST THE RIM (BRIEF-the-coast-runs-on-past-the-rim): the coast rings inside the fetched square — the lidar's
+ * water face, ①'s (coastFile.mjs#waterFace: the one every reader after the mint takes) — carried on past the rim along the real
  * coast and its headings (outer-coast.mjs). Written beside the slab's ground; the runtime draws it in place of the old
  * pie-slice run-on. A town with no water writes a NAMED absence.
  */
@@ -182,13 +183,12 @@ export function bakeOuterCoast({ scene, lookId, dataRoot = ROOT, outDir }) {
   const stencil = JSON.parse(readFileSync(groundPath, 'utf8')).stencil
   if (!(stencil?.radius > 0)) throw new Error(`bake-coast-distance (outer coast): ${lookId}'s ground.json has no stencil radius`)
   const osm = JSON.parse(readFileSync(osmPath, 'utf8')), geo = JSON.parse(readFileSync(geoPath, 'utf8'))
-  const local = (lon, lat) => [(lon - geo.lon) * geo.lonToMeters, (geo.lat - lat) * geo.latToMeters]   // bake-terrain.js#wgs84ToLocal
-  const bx = osm.bbox
-  if (!bx) throw new Error(`bake-coast-distance (outer coast): ${scene}'s raw/osm.json has no bbox — the fetched square is unknown`)
-  const a = local(bx.minLon, bx.maxLat), b = local(bx.maxLon, bx.minLat)
-  const bb = { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
+  const bb = localBB(osm, projectorOf(geo))
+  if (!bb) throw new Error(`bake-coast-distance (outer coast): ${scene}'s raw/osm.json has no bbox — the fetched square is unknown`)
   const t0 = Date.now()
-  const rings = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: stencil.center, discR: stencil.radius, bb }).rings || []
+  const mapPath = join(dataRoot, 'cartograph', 'data', scene, 'clean', 'map.json')
+  if (!existsSync(mapPath)) throw new Error(`bake-coast-distance (outer coast): ${scene} has no clean/map.json — ①'s water face is unknown. Pour the town first.`)
+  const rings = waterFace(JSON.parse(readFileSync(mapPath, 'utf8')), 'bake-coast-distance (outer coast)')
   const outPath = join(outDir, 'outer-coast.json')
   let rec
   if (!rings.length) rec = { version: 1, look: lookId, absent: true, why: 'no coast rings inside the fetched square — the rim is land all round' }

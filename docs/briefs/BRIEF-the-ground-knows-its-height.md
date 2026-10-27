@@ -123,7 +123,7 @@ and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 - `docs/briefs/BRIEF-ground-cross-polygon-conformity.md`: "the ground must stretch, not break". That is the conformity
   this must not regress.
 - **The shore:** `ROADMAP H-4` (the coast as a two-sided chain, the lake face as its own ring, the bb as the frame),
-  `RIBBONS §1` (how a coast arrives), and `docs/briefs/BRIEF-the-shore-is-closed.md` (the shore median; its step 3 treatment
+  `RIBBONS §1` (how a coast arrives), and `cartograph/_archive/BRIEF-the-shore-is-closed-RETIRED-2026-10-25.md` (the shore median; its step 3 treatment
   rules are MATERIAL, grain and handoffs, and stay there; the SHAPE and HEIGHT of the waterline are this brief's).
   "Smoothing is skeleton, rounding is Survey" (`RIBBONS`, on ①): a waterline's smoothing belongs at the chain, before ①.
 - Memory: `project_terrain_doctrine_2026_05_14` (uExag is the single dial; the mesh carries terrain × uExag at runtime).

@@ -8,7 +8,9 @@
 // pour-code.mjs — never restating their lists:
 //   · the pipeline's code inputs are `pourCodeClosure()` — the import closure of pipeline.js, walked by
 //     `importClosure`, stopped at the town registry; run on the live tree it contains the files that DEFINE
-//     `mintProtopolygon` and `coastRings` (found by grepping for the export, so a move stays covered);
+//     `mintProtopolygon` and `readCoast` (found by grepping for the export, so a move stays covered);
+//   · the lidar coast the mint reads (clean/coast.json, bake-coast.mjs) is one of `pourDataReads`, so a coast that
+//     moved re-pours (BRIEF-the-shore-is-one-line step 1) — OSM's coastline.mjs is no longer pour code;
 //   · no town module is in it, and NO file in it imports from src/instances/ — every town's geography is its own
 //     data/<scene>/geography.json, whose value the pour stamps as `geographyRead` (the default town's registry read went
 //     with the default, 2026-10-21);
@@ -46,11 +48,15 @@ if (!/=\s*pourCodeClosure\(\)/.test(line)) bad.push(`PIPELINE_SRC is not pourCod
 
 // ── the closure, on the live tree ──
 const closure = pc.pourCodeClosure()
-for (const sym of ['mintProtopolygon', 'coastRings']) {
+for (const sym of ['mintProtopolygon', 'readCoast']) {
   const re = new RegExp(`export (async )?function ${sym}\\b|export const ${sym}\\b`)
   if (!closure.some(f => { try { return re.test(readFileSync(f, 'utf8')) } catch { return false } })) bad.push(`the closure has no file defining ${sym} — a change to it would never re-pour`)
 }
 const rel = (f) => relative(ROOT, f)
+{
+  const { COAST_FILE } = await import(pathToFileURL(join(ROOT, 'cartograph/coastFile.mjs')).href)
+  if (!pc.pourDataReads('lafayette-square').some(f => f.endsWith(`/clean/${COAST_FILE}`))) bad.push(`pourDataReads has no clean/${COAST_FILE} — a coast that moved would never re-pour`)
+}
 const townMods = closure.filter(f => rel(f).startsWith('src/instances/'))
 if (townMods.length) bad.push(`town modules are hashed as pour code — any town's favicon asks every town: ${townMods.map(rel).join(', ')}`)
 const spec = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)['"](\.{1,2}\/[^'"]+)['"]/gm

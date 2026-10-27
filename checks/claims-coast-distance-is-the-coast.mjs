@@ -63,6 +63,15 @@ console.log('③ NO COAST IS A NAMED ABSENCE')
   fs.mkdirSync(path.join(tmp, 'cartograph/data/inland/clean'), { recursive: true })
   fs.writeFileSync(path.join(tmp, 'public/baked/inland/shape.json'), JSON.stringify({ tiles: [{ runs: [{ skelId: 'street-1', poly: [[0, 0], [1, 1]] }] }] }))
   fs.writeFileSync(path.join(tmp, 'cartograph/data/inland/clean/terrain.json'), JSON.stringify({ width: 3, height: 3, bounds: { minX: 0, maxX: 10, minZ: 0, maxZ: 10 } }))
+  // the outer coast's own reads (bakeOuterCoast, since 690a2bbb): the slab's stencil, the fetch and its square, the
+  // geography, and ①'s water face — none here (coastFile.mjs#waterFace)
+  fs.writeFileSync(path.join(tmp, 'public/baked/inland/ground.json'), JSON.stringify({ stencil: { center: [5, 5], radius: 5 } }))
+  const geo = { lat: 40, lon: -80, lonToMeters: 85000, latToMeters: 111000 }
+  const bbox = { minLon: -80, maxLon: -80 + 10 / geo.lonToMeters, minLat: 40 - 10 / geo.latToMeters, maxLat: 40 }
+  fs.mkdirSync(path.join(tmp, 'cartograph/data/inland/raw'), { recursive: true })
+  fs.writeFileSync(path.join(tmp, 'cartograph/data/inland/geography.json'), JSON.stringify(geo))
+  fs.writeFileSync(path.join(tmp, 'cartograph/data/inland/raw/osm.json'), JSON.stringify({ bbox, ground: {} }))
+  fs.writeFileSync(path.join(tmp, 'cartograph/data/inland/clean/map.json'), JSON.stringify({ layers: { ribbons: { protopolygon: { waterRings: null } } } }))   // ① with no water
   const log = console.log; console.log = () => {}
   let out; try { out = bakeCoastDistance({ scene: 'inland', dataRoot: tmp, outRoot: tmp }) } finally { console.log = log }
   const c = out?.channels?.coastDist

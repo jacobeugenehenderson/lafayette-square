@@ -130,7 +130,7 @@ async function judge(opts = {}, serveSrc = sourceOf('cartograph/serve.js')) {
     groundSteps++
     if (!/\bstage:/.test(m[0])) bad.push(`step "${m[1]}" runs bake-ground.js straight at the slab (no stage:)`)
   }
-  if (groundSteps < 2) bad.push(`the route has ${groundSteps} bake-ground step(s), not 'ground' and 'ground-shore' — update this check`)
+  if (groundSteps !== 1) bad.push(`the route has ${groundSteps} bake-ground step(s), not the one 'ground' pass ('ground-shore' retired with the shore median, 2026-10-25) — update this check`)
   return bad
 }
 
@@ -139,7 +139,7 @@ const MUT = [
     "else if (terrainOwed.length) markStep(P, 'terrain-slab', 'waiting'",
     "else if (terrainOwed.length && (terrainOwed.forEach(([n, b]) => writeIfChanged(join(LOOK_DIR, n), b)), true)) markStep(P, 'terrain-slab', 'waiting'") }],
   ['a publish before the step runs', { stage: (t) => t.replace('    await step(stageDir)\n', '    publishSlab({ lookDir, look, files: carry, stageRoot })\n    await step(stageDir)\n') }],
-  ["the ground step's stage: dropped", { span: (t) => t.replace('timeout: 300000, stage: groundFirst }', 'timeout: 300000 }') }],
+  ["the ground step's stage: dropped", { span: (t) => t.replace('timeout: 300000, stage: groundStage }', 'timeout: 300000 }') }],
   ['runIfDirty runs a staged step straight at the slab', {}, (s) => s.replace('if (stage) stage.published = await stagedSlabStep(', 'if (false) stage.published = await stagedSlabStep(')],
   ['journal not written', { stage: (t) => t.replace(/\n  writeFileSync\(journal, [^\n]*/, '').replace('\n  rmSync(journal)', '') }],
   ['the temporaries written inside the slab', { stage: (t) => t.replace('writeFileSync(join(commitDir, name), bytes)', 'writeFileSync(join(lookDir, `${name}.staged`), bytes)')

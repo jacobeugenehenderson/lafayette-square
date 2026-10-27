@@ -10,8 +10,8 @@
  * representations start drifting (project_ribbon_three_representations).
  *
  * ⭐ The disc itself is read through the ONE READER, boundaryRecords.mjs#discOf (BRIEF-the-disc-is-one-source §1b): the
- * Designer's stencil (CartographApp.jsx#stencilFromBoundary) reads it the same way. bake-terrain's height extent
- * (`deriveStencilBbox`, radius + STENCIL_BUFFER_M) is the one left outside, owned by the brief's §3.
+ * Designer's stencil (CartographApp.jsx#stencilFromBoundary) reads it the same way. The terrain's height extent
+ * (elevationSources.mjs#terrainLattice, radius + STENCIL_BUFFER_M) is the one left outside, owned by the brief's §3.
  */
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
