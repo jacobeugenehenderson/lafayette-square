@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 458,
+  "total": 459,
   "counts": {
-    "safe": 330,
+    "safe": 331,
     "local-effect": 27,
     "live": 101
   },
@@ -2733,6 +2733,16 @@
       "tier": "safe",
       "why": [
         "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "declares @args --slot=<granted>"
       ]
     },
     {

@@ -6688,7 +6688,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⭐⭐⭐ WHY R RESOLVED TO ZERO — wired 2026-09-08, alongside `easeSkips`. R = 0 does not mean
     // "a corner with no rounding": `isCorner_` requires R > 0, so a zero here DELETES the corner.
     // Four different facts shared that one silence; they are separated and counted now.
-    const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, clusterMember: 0, noSrc: 0, fromRAt: 0, foldLost: 0, foldLostCorner: 0 }
+    const protoRZero = { water: 0, noOwner: 0, belowTol: 0, smoothBend: 0, clusterMember: 0, noSrc: 0, fromRAt: 0, foldLost: 0, foldLostCorner: 0 }
     const protoTaper = { n: 0, steep: [], overlap: 0 }   // width-step tapers built this pour (`taperWorkingCopy`)
     // the ramp-terminal flares drawn this pour (`flareWorkingCopy`) — Sets, because a flare is tried on every ring
     const flareDisclosure = { drawn: new Set(), noRun: new Set(), misattributed: new Set(), received: new Set(), truncated: new Set() }
@@ -6972,8 +6972,15 @@ export function buildTileGround(ribbons, opts = {}) {
         // the corner test reads the cluster's net turn too (so it can catch a `hard: false` the geometry contradicts, see
         // `protoRAt`), and a cluster's other vertices take no corner
         // ⛔ H-3: a highway has no curb return — a corner where a town edge meets a highway edge is SHARP.
+        // ⛔ THE COAST HAS NO CURB RETURN EITHER (Boz, 2026-10-26, Zob's read): a ① vertex either of whose edges is the WATER's
+        // (`WATER_EDGE_SKEL`, by identity) is SHARP, street × coast included. ①'s coast is the high-water mark, and a fillet
+        // there moved the coast line itself: ② re-struck it as a second near-copy (Huron tile 24, up to 0.39 units off ①, crossing
+        // it), which the asphalt, the land use and the shore then read apart (claims-no-edge-is-drawn-twice). Counted apart.
         const touchesH = labs.some(isHwyLab) || (protoBlockHoleLabels?.[k] || []).some(L => L.some(isHwyLab))
-        const rSrc = ring.map((_, i) => (touchesH && (isHwyLab(labs[i]) || isHwyLab(labs[(i - 1 + ring.length) % ring.length])))
+        const isWaterLab = (l) => l != null && protoOwners[l]?.skelId === WATER_EDGE_SKEL
+        const rSrc = ring.map((_, i) => (isWaterLab(labs[i]) || isWaterLab(labs[(i - 1 + ring.length) % ring.length]))
+          ? (protoRZero.water++, 0)
+          : (touchesH && (isHwyLab(labs[i]) || isHwyLab(labs[(i - 1 + ring.length) % ring.length])))
           ? 0 : !CL.carrier[i] ? (protoRZero.clusterMember++, 0) : protoRAt(labs, i, ring.length, depthAt(i), CL.turn[i]))
         // ⭐⭐⭐ THE EASE IS ASKED FOR HERE AND HAPPENS INSIDE THE OFFSET, before its self-union —
         // that is where the corner correspondence is still exact. `rSrc` is indexed by ① block-ring
@@ -7189,7 +7196,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ and WHY the radius was zero, which is the layer under `easeSkips.noR`.
       if (protoRZero.noSrc) console.warn(`[tileGround][PROTO②] ⛔⛔ ${protoRZero.noSrc} offset vertex/vertices carry NO ① SOURCE INDEX ⇒ easeAt returns 0 ⇒ \`isCorner_\` false ⇒ THE CORNER CEASES TO EXIST. These were MINTED by the offset or its self-union and have no provenance to resolve a radius through. ⛔ Not a shape without a corner — a corner without an identity.`)
       if (protoRZero.noOwner) console.warn(`[tileGround][PROTO②] ⛔ ${protoRZero.noOwner} vertex/vertices had NO ① OWNER on an adjacent edge ⇒ R=0 ⇒ NOT A CORNER. Provenance lost in the union, not a shape without a corner. ⛔ These are the ADA pads the operator does not get.`)
-      console.warn(`[tileGround][PROTO②] R=0, by ① vertex: ${protoRZero.belowTol} below the turn tolerance (curve samples) · ${protoRZero.smoothBend} gentle bends the SKELETON already eased (INVARIANT 2) · ${protoTipBlunt} blunt cap apexes · ${protoRZero.clusterMember} sub-ink cluster member(s), whose cluster turns at another vertex · ${protoRZero.noOwner} no owner · ${protoRZero.noSrc} no source index.`)
+      console.warn(`[tileGround][PROTO②] R=0, by ① vertex: ${protoRZero.water} on the coast (sharp, the high-water mark) · ${protoRZero.belowTol} below the turn tolerance (curve samples) · ${protoRZero.smoothBend} gentle bends the SKELETON already eased (INVARIANT 2) · ${protoTipBlunt} blunt cap apexes · ${protoRZero.clusterMember} sub-ink cluster member(s), whose cluster turns at another vertex · ${protoRZero.noOwner} no owner · ${protoRZero.noSrc} no source index.`)
       // ⭐⭐⭐ THE RECONCILIATION, AND IT IS THE WHOLE ANSWER TO "WHY noR": the ease asks for R at
       // OFFSET-ring vertices, `protoRAt` decides it at ① vertices, and the two rings do not agree
       // about which vertices turn. A vertex ① passes through as a curve sample can turn past the

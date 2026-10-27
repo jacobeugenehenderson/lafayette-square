@@ -163,7 +163,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 330. This is `npm test`.
+## safe — 331. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -444,6 +444,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | cover.mjs — DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | wood.mjs |
 | `checks/claims-the-ink-is-held-by-its-owners.mjs` | owners.mjs — ① (THE 2ε STRIP BETWEEN TILES) IS COVERED BY OWNED PIECES, AND EACH NAMES WHO IT IS. |
+| `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | CLAIM — ALONG THE WATER, ②'S KERB IS ①'S COAST LINE ITSELF: ONE LINE, READ BY BOTH SIDES, NEVER A SECOND NEAR-COPY. |
 | `checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs` | cut.mjs — THE RAISED KERB, ON BLOCKS SMALL ENOUGH TO KNOW THE ANSWER. |
 | `checks/claims-the-key-light-is-a-real-body.mjs` | body.mjs — IS ANYTHING ACTUALLY THERE? |
 | `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |
