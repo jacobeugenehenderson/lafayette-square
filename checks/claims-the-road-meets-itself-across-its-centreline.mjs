@@ -26,6 +26,7 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
+import { drawnRawOf } from '../src/lib/drawnGround.js'   // the drawn raw: a vertex's pin, else the field
 import { LATTICE_M } from '../src/lib/lattice.js'
 
 const ROOT = new URL('../public/baked/', import.meta.url).pathname
@@ -50,7 +51,7 @@ function judge(dir, mutate = false) {
   // the road's triangles, gridded: point → its terrain part, drawn (the field at its corners × E)
   const CELL = 2, grid = new Map(), tris = []
   for (const g of road) { const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = new Float32Array(g.vertexCount)
-    for (let v = 0; v < g.vertexCount; v++) R[v] = T.getElevationRaw(P[v * 3], P[v * 3 + 2])
+    R.set(drawnRawOf(gj, g, AB, T.getElevationRaw))
     for (let k = 0; k < I.length; k += 3) { const v = [I[k], I[k + 1], I[k + 2]], xs = v.map(w => P[w * 3]), zs = v.map(w => P[w * 3 + 2])
       const t = { xs, zs, r: v.map(w => R[w]), g: g.id, ink: null }, id = tris.push(t) - 1
       for (let x = Math.floor(Math.min(...xs) / CELL); x <= Math.floor(Math.max(...xs) / CELL); x++) for (let z = Math.floor(Math.min(...zs) / CELL); z <= Math.floor(Math.max(...zs) / CELL); z++) { const key = x * 1000003 + z; (grid.get(key) || grid.set(key, []).get(key)).push(id) } } }

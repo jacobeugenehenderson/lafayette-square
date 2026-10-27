@@ -40,6 +40,7 @@
 import { readFileSync, existsSync, readdirSync, writeFileSync } from 'fs'
 import { join, basename } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
+import { drawnRawOf } from '../src/lib/drawnGround.js'   // the drawn raw: a vertex's pin, else the field
 import { resolveWalkNorm } from '../cartograph/curb-cut-norm.mjs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 import { LATTICE_M } from '../src/lib/lattice.js'
@@ -103,7 +104,7 @@ function measure(dir, { mutate = null } = {}) {
   const out = { town, E, norm, band: [0, 0, 0, 0], path: { n: 0, area: 0 }, subLattice: { n: 0, area: 0 }, tris: 0, area: 0, over: [], overArea: 0, cut: 0, cutArea: 0, thin: 0, unowned: 0, worst: 0, worstRaw: 0, worstY: 0 }
   for (const g of groups) {
     const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount)
-    let raw = new Float64Array(g.vertexCount); for (let v = 0; v < g.vertexCount; v++) raw[v] = T.getElevationRaw(P[v * 3], P[v * 3 + 2])
+    let raw = drawnRawOf(gj, g, AB, T.getElevationRaw)
     if (mutate) raw = Float64Array.from(raw, (h, v) => mutate(h, P[v * 3], P[v * 3 + 2]))
     for (let i = 0; i < I.length; i += 3) {
       const a = I[i], b = I[i + 1], c = I[i + 2]
@@ -142,7 +143,7 @@ function stations(dir, { mutate = null } = {}) {
   const PATH = new Set(['footway', 'cycleway', 'path', 'pedestrian', 'steps', 'bridleway'])
   const classOf = new Map(JSON.parse(readFileSync(ribbonsPathOf(town), 'utf8')).streets.map(st => [st.skelId ?? st.name, PATH.has(st.highway) ? 'path' : 'street']))
   const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount)
-  const R = Float64Array.from({ length: g.vertexCount }, (_, v) => T.getElevationRaw(P[v * 3], P[v * 3 + 2]))
+  const R = drawnRawOf(gj, g, AB, T.getElevationRaw)
   const C = 4, grid = new Map()
   for (let i = 0; i < I.length; i += 3) { const v = [I[i], I[i + 1], I[i + 2]], xs = v.map(k => P[k * 3]), zs = v.map(k => P[k * 3 + 2])
     for (let x = Math.floor(Math.min(...xs) / C); x <= Math.floor(Math.max(...xs) / C); x++) for (let z = Math.floor(Math.min(...zs) / C); z <= Math.floor(Math.max(...zs) / C); z++) { const k = x * 100003 + z; (grid.get(k) || grid.set(k, []).get(k)).push(v) } }

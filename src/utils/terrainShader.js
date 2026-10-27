@@ -34,6 +34,7 @@ import { slabFetch, slabManifest } from '../lib/slabUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
 import { DEFAULT_V_EXAG, terrainIdentity, assertHeightfield } from '../lib/terrainCommon.js'
+import { DRAWN_RAW_GLSL } from '../lib/drawnGround.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -383,6 +384,19 @@ const TERRAIN_DISPLACE_PERVERTEX = `
 }
 #include <project_vertex>`
 
+// ⭐ THE DRAWN GROUND'S VARIANT (Jacob, 2026-10-27: "yes pin the coast"): a ground group that carries pins (`aDrawnRaw`,
+// drawnGround.js#drawnPinsOf) lifts each vertex by its own raw where it has one, else the field, and lights it by its own
+// slope there. Made FROM the two snippets above, never a copy of them: each edit names the text it replaces and throws
+// if that text is gone. ▶ node checks/claims-the-drawn-raw-is-one-function.mjs
+const drawnFrom = (snippet, from, to, name) => {
+  if (!snippet.includes(from)) throw new Error(`[terrainShader] ⛔ ${name} no longer contains \`${from}\` — the drawn variant cannot be made from it`)
+  return snippet.replace(from, to)
+}
+export const TERRAIN_DISPLACE_PERVERTEX_DRAWN = drawnFrom(TERRAIN_DISPLACE_PERVERTEX,
+  'transformed.y += _terrainRaw(_tuv) * uExag;', 'transformed.y += _drawnRaw(aDrawnRaw, _terrainRaw(_tuv)) * uExag;', 'TERRAIN_DISPLACE_PERVERTEX')
+export const TERRAIN_NORMAL_DRAWN = drawnFrom(TERRAIN_NORMAL,
+  '  vec3 _tn =', '  _h = _drawnSlope(aDrawnRaw, _h, uExag);\n  vec3 _tn =', 'TERRAIN_NORMAL')
+
 /**
  * Patch a material for GPU terrain displacement.
  * Chains safely with existing onBeforeCompile (buildings, etc.)
@@ -396,6 +410,7 @@ const TERRAIN_DISPLACE_PERVERTEX = `
  * @param {object} [opts]
  * @param {boolean} [opts.terrainNormals=false] — override normals with terrain gradient
  * @param {boolean} [opts.perVertex=false] — per-vertex sampling (for merged geometry like foundations)
+ * @param {boolean} [opts.drawn=false] — a ground group with pins (`aDrawnRaw`): its own raw where it has one (per vertex only)
  */
 /**
  * INSTANCED rigid lift by a BAKED per-instance ground anchor — `groundSampler`'s
@@ -476,13 +491,14 @@ export function patchTerrainAtCentroidRaw(mat, centroidRaw) {
   mat.customProgramCacheKey = () => `terrain-centroid-${prevKey ? prevKey() : 'std'}`
 }
 
-export function patchTerrain(mat, { terrainNormals = false, perVertex = false } = {}) {
-  const displaceSnippet = perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
+export function patchTerrain(mat, { terrainNormals = false, perVertex = false, drawn = false } = {}) {
+  if (drawn && !perVertex) throw new Error('[terrainShader] ⛔ patchTerrain: a drawn ground (pins) is lifted per vertex — a rigid lift has no vertex to pin')
+  const displaceSnippet = drawn ? TERRAIN_DISPLACE_PERVERTEX_DRAWN : perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
   const prev = mat.onBeforeCompile
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL)
+      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL + (drawn ? DRAWN_RAW_GLSL : ''))
       .replace('#include <project_vertex>', displaceSnippet)
     if (prev) prev(shader)
     // ⛔ AFTER prev, deliberately. `applyWeatherToShader` (called inside prev) appends
@@ -492,11 +508,11 @@ export function patchTerrain(mat, { terrainNormals = false, perVertex = false } 
     // geometry normal and the terrain override landed after it.
     if (terrainNormals) {
       shader.vertexShader = shader.vertexShader
-        .replace('#include <beginnormal_vertex>', TERRAIN_NORMAL)
+        .replace('#include <beginnormal_vertex>', drawn ? TERRAIN_NORMAL_DRAWN : TERRAIN_NORMAL)
     }
   }
   const prevKey = mat.customProgramCacheKey?.bind(mat)
-  const mode = perVertex ? 'v' : 'r'
+  const mode = drawn ? 'd' : perVertex ? 'v' : 'r'
   mat.customProgramCacheKey = () =>
     `terrain-${mode}${terrainNormals ? 'n' : 'p'}-${prevKey ? prevKey() : 'std'}`
 }
