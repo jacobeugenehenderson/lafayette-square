@@ -4281,7 +4281,7 @@ export const MITER_MIN_COS = 0.5
 export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }) {
   if (!Array.isArray(centrelines)) throw new Error('[tileGround][paint] ⛔ the protopolygon carries no sealed centreline (`centrelines`) — this town was poured before the road paint read it. Re-pour; the stripe never falls back to the chains.')
   const W = look.line, out = { stripe: [], edgeline: [], 'edgeline:yellow': [] }
-  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, noMarks: new Set(), noStreet: new Set(), notStreet: new Set() }
+  const census = { stripeRuns: {}, legs: 0, edgeLegs: { yellow: 0, white: 0, parking: 0 }, sharpSplits: 0, reflexTrims: 0, noMarks: new Set(), noStreet: new Set(), notStreet: new Set() }
   // a run owned by one of the kit's PSEUDO-owners (the frame, the coast, the highway difference: PSEUDO_OWNERS, by name) carries
   // no paint; ANY other owner with no marks record refuses — a street before streetMarkings, a stale skelId, a dropped street
   const marks = (id) => { if (PSEUDO_OWNERS.has(id)) { census.notStreet.add(id); return null } const M = marksOf(id); if (M === undefined) census.noStreet.add(id); else if (!M) census.noMarks.add(id); return M ?? null }
@@ -4309,12 +4309,15 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
       if (start < 0) return       // no leg ends on this ring (one run all round, or none): no frontage to stop at
       for (let k = 0, e = start; k < n;) {
         const r = runOf(e); if (r == null) { e = (e + 1) % n; k++; continue }
-        const pts = [ring[e]]
+        const e0 = e, pts = [ring[e]]
         while (k < n && runOf(e) === r) { pts.push(ring[(e + 1) % n]); e = (e + 1) % n; k++ }
         const run = t.runs?.[r]; if (!run?.skelId) continue
         census.legs++
         const L = legsOf.get(run.skelId) || legsOf.set(run.skelId, { left: [], right: [] }).get(run.skelId)
-        L[run.side]?.push({ pts, out: toward, run })
+        // the kerb edges either side of the leg (the one arriving at its first vertex, the one leaving its last): a line struck
+        // from the leg stops short of them where they lean back over it (reflexTrim)
+        const dirOf = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); return l ? [dx / l, dz / l] : null }
+        L[run.side]?.push({ pts, out: toward, run, before: dirOf(ring[(e0 - 1 + n) % n], ring[e0]), after: dirOf(ring[e], ring[(e + 1) % n]) })
       }
     })
   }
@@ -4331,6 +4334,34 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
     }
     return pieces.filter(p => p.length >= 2)
   }
+  const along = (P) => { const s = [0]; for (let i = 1; i < P.length; i++) s.push(s[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); return s }
+  // a polyline's sub-polylines over [a, b] of its arc length
+  const cut = (P, S, a, b) => { const o = []; for (let i = 0; i < P.length - 1; i++) { const s0 = S[i], s1 = S[i + 1]; if (s1 <= a || s0 >= b) continue
+    const at = (s) => { const t = (s - s0) / (s1 - s0); return [P[i][0] + (P[i + 1][0] - P[i][0]) * t, P[i][1] + (P[i + 1][1] - P[i][1]) * t] }
+    if (!o.length) o.push(at(Math.max(a, s0))); o.push(s1 <= b ? P[i + 1] : at(b)) } return o }
+  // ⭐ A LINE STOPS AT A REFLEX KERB CORNER (Boz, 2026-10-26: LS's 5 parking-line ends lay 5 mm–18 cm inside the next block).
+  // Where the kerb edge beyond a leg's end steps into the street (toward the line) and leans back over the leg, a line at depth
+  // d meets it d·(−n·u)/(n·ν) before the corner (u the leg's direction there, ν its normal toward the street, n the next kerb
+  // edge's): the leg is cut back by that, at the line's FAR depth, so no part of the line crosses the kerb. Derived from the
+  // line's own depth and the corner, never typed; counted. The same at the leg's start, against the edge arriving there.
+  const reflexTrim = (g, dFar) => {
+    const P = g.pts, nrmOf = (u) => [g.out * u[1], -g.out * u[0]]
+    // `out`: the leg's direction away from its corner (into the leg is −out); `nu`: the leg's own normal toward the street;
+    // `m`: the corner's other kerb edge, leaving the corner. It crosses the line where it heads streetward (m·ν > 0) and leans
+    // back over the leg (m·out > 0)
+    const backBy = (out, nu, m) => { if (!m) return 0; const mn = m[0] * nu[0] + m[1] * nu[1], mo = m[0] * out[0] + m[1] * out[1]
+      return mn > 0 && mo > 0 ? dFar * mo / mn : 0 }
+    const unit = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); return [dx / l, dz / l] }
+    const uEnd = unit(P[P.length - 2], P[P.length - 1]), uStart = unit(P[0], P[1])
+    // at the end, away from the corner is back along the leg (−uEnd) and the edge leaving the corner is `after`; at the start,
+    // away from the corner is forward (uStart) and the edge leaving the corner, walked from it, is `before` reversed
+    const tEnd = backBy([-uEnd[0], -uEnd[1]], nrmOf(uEnd), g.after)
+    const tStart = g.before ? backBy(uStart, nrmOf(uStart), [-g.before[0], -g.before[1]]) : 0
+    if (!tEnd && !tStart) return P
+    census.reflexTrims += (tEnd ? 1 : 0) + (tStart ? 1 : 0)
+    const S = along(P), len = S[S.length - 1]
+    return tStart + tEnd < len ? cut(P, S, tStart, len - tEnd) : null
+  }
   const band = (pts, out, d1, d2) => { const A = offsetBy(pts, out, d1), B = offsetBy(pts, out, d2)
     if (A.length !== B.length) return []
     return A.map((a, i) => [...a, ...B[i].slice().reverse()]).filter(r => Math.abs(signedArea(r)) > 0) }
@@ -4346,7 +4377,8 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
       const kind = edge === 'yellow' ? 'yellow' : edge ? 'white' : 'parking'
       const d = park ? m.parking - W / 2 : look.edgeInset
       census.edgeLegs[park && !edge ? 'parking' : kind]++
-      out[kind === 'yellow' ? 'edgeline:yellow' : 'edgeline'].push(...band(g.pts, g.out, d, d + W))
+      const P = reflexTrim(g, d + W); if (!P || P.length < 2) continue
+      out[kind === 'yellow' ? 'edgeline:yellow' : 'edgeline'].push(...band(P, g.out, d, d + W))
     }
   }
   // ── the centre stripe ──
@@ -4357,11 +4389,6 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
     const c = L && L.left.length && L.right.length ? intersectRings(reach(L.left), reach(L.right)) : []
     corridor.set(id, c); return c
   }
-  const along = (P) => { const s = [0]; for (let i = 1; i < P.length; i++) s.push(s[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); return s }
-  // a polyline's sub-polylines over [a, b] of its arc length
-  const cut = (P, S, a, b) => { const o = []; for (let i = 0; i < P.length - 1; i++) { const s0 = S[i], s1 = S[i + 1]; if (s1 <= a || s0 >= b) continue
-    const at = (s) => { const t = (s - s0) / (s1 - s0); return [P[i][0] + (P[i + 1][0] - P[i][0]) * t, P[i][1] + (P[i + 1][1] - P[i][1]) * t] }
-    if (!o.length) o.push(at(Math.max(a, s0))); o.push(s1 <= b ? P[i + 1] : at(b)) } return o }
   const lineAt = (P, off, dashed) => {        // a line of width W centred `off` to the polyline's right (stroke order)
     const pieces = dashed ? (() => { const S = along(P), o = []; for (let s = 0; s < S[S.length - 1]; s += look.dash + look.space) o.push(cut(P, S, s, s + look.dash)); return o.filter(q => q.length >= 2) })() : [P]
     return pieces.flatMap(q => band(q, 1, off - W / 2, off + W / 2))
@@ -4382,7 +4409,7 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
     if (c.length) out.stripe.push(...intersectRings(rings, c))
   }
   const list = (o) => Object.entries(o).map(([k, v]) => `${v} ${k}`).join(' · ')
-  console.log(`[tileGround][paint] owners that are no street (no paint): ${[...census.notStreet].join(' · ') || 'none'} · centre runs by kind: ${list(census.stripeRuns) || 'none'} · stripe ${out.stripe.length} ring(s), cut to where both sides have frontage · ${census.legs} kerb leg(s) · edge lines on ${list(census.edgeLegs)} leg(s) · ${census.sharpSplits} sharp vertex split(s)`)
+  console.log(`[tileGround][paint] owners that are no street (no paint): ${[...census.notStreet].join(' · ') || 'none'} · centre runs by kind: ${list(census.stripeRuns) || 'none'} · stripe ${out.stripe.length} ring(s), cut to where both sides have frontage · ${census.legs} kerb leg(s) · edge lines on ${list(census.edgeLegs)} leg(s) · ${census.sharpSplits} sharp vertex split(s) · ${census.reflexTrims} line end(s) cut back at a reflex kerb corner`)
   if (census.noStreet.size) throw new Error(`[tileGround][paint] ⛔ ${census.noStreet.size} kerb owner(s) are neither a street of the pour nor a kit pseudo-owner (PSEUDO_OWNERS): ${[...census.noStreet].slice(0, 6).join(' · ')} — a stale skelId, a street dropped from ribbons.streets, or a re-key. Nothing is skipped for want of a record.`)
   if (census.noMarks.size) throw new Error(`[tileGround][paint] ⛔ ${census.noMarks.size} street(s) carry no selected paint (\`marks\`): ${[...census.noMarks].slice(0, 6).join(' · ')} — the pour predates streetMarkings. Re-pour.`)
   return out

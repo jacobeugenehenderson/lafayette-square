@@ -52,21 +52,12 @@ const miterAt = (ring, i) => { const n = ring.length, a = ring[(i - 1 + n) % n],
 // the winding SUMMED over the tile's rings is non-zero — never ring by ring (the slot-4 RED: HPDM and Huron's E2 points lay in holes).
 const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
   if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+// A vertex ON the kerb (a line cut back to meet it, by construction) is not inside: it counts only past the check's rounding
+// allowance (two lattice steps, the LAT every row here reads) from every curb ring.
 const blockTest = (tiles) => { const T = tiles.map(t => (t.iA || []).filter(r => r?.length >= 3)).filter(rs => rs.length)
   const bb = T.map(rs => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const r of rs) for (const [x, z] of r) a = [Math.min(a[0], x), Math.min(a[1], z), Math.max(a[2], x), Math.max(a[3], z)]; return a })
-  return (p) => T.some((rs, i) => p[0] > bb[i][0] && p[0] < bb[i][2] && p[1] > bb[i][1] && p[1] < bb[i][3] && rs.reduce((w, r) => w + windXZ(p, r), 0) !== 0) }
-// PLANTED (always run, no build): a block with a hole — the hole's centre is road, the band between is block; and a ring
-// judged ring by ring (the old E2) calls the hole's centre block, so the planted rows can tell the two apart
-{ const sq = (x0, z0, s, ccw) => { const r = [[x0, z0], [x0 + s, z0], [x0 + s, z0 + s], [x0, z0 + s]]; return ccw ? r : r.reverse() }
-  const inB = blockTest([{ iA: [sq(0, 0, 100, true), sq(40, 40, 20, false)] }]), ringByRing = [sq(0, 0, 100, true), sq(40, 40, 20, false)].some(r => windXZ([50, 50], r) !== 0)
-  const ok = !inB([50, 50]) && inB([20, 20]) && ringByRing
-  if (!ok) red++
-  console.log(`${ok ? '✅' : '⛔'} (E2) planted: a block with a hole — the hole's centre is road (${inB([50, 50]) ? 'BLOCK' : 'road'}), the band is block (${inB([20, 20]) ? 'block' : 'ROAD'}); judged ring by ring the centre reads ${ringByRing ? 'block (the old defect, seen)' : 'road'}`)
-  // the miter: a 50° bend (factor 1/cos 25°), a 0° vertex (1), and a turn past the limit (no allowance)
-  const bend = (deg) => miterAt([[-10, 0], [0, 0], [10 * Math.cos(deg * Math.PI / 180), 10 * Math.sin(deg * Math.PI / 180)]], 1)
-  const okM = Math.abs(bend(50) - 1 / Math.cos(25 * Math.PI / 180)) < 1e-12 && bend(0) === 1 && bend(150) === 1
-  if (!okM) red++
-  console.log(`${okM ? '✅' : '⛔'} (S/E) planted: the miter allowance at 50° is ${bend(50).toFixed(4)} (1/cos 25°), at 0° ${bend(0)}, past the limit (150°) ${bend(150)}`) }
+  const onKerb = segIndex(T.flat().flatMap(r => r.map((a, i) => [a, r[(i + 1) % r.length]])))
+  return (p) => T.some((rs, i) => p[0] > bb[i][0] && p[0] < bb[i][2] && p[1] > bb[i][1] && p[1] < bb[i][3] && rs.reduce((w, r) => w + windXZ(p, r), 0) !== 0) && !onKerb(p, 2 * LATTICE_M) }
 // the E2 mutant's paint: ONE modified tileGround.js in its own temp dir, the toward-street sign flipped, its relative imports
 // rewritten to the live src/lib's file URLs (the pattern of claims-no-corner-at-a-true-geometry-edge). The anchor must occur ONCE.
 const SIGN = 'const toward = lIn ? 1 : -1'
@@ -79,6 +70,15 @@ writeFileSync(join(flipDir, 'tileGround.js'), tgSrc.replace(SIGN, 'const toward 
   .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`)
   .replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
 const { roadMarkings: flippedMarkings } = await import(pathToFileURL(join(flipDir, 'tileGround.js')).href)
+// the reflex-trim mutant: the same module with the edge lines struck from the whole leg (the trim skipped)
+const TRIM = 'const P = reflexTrim(g, d + W)'
+if (tgSrc.split(TRIM).length !== 2) { console.log(`⛔ NOT CHECKED — the reflex trim (\`${TRIM}\`) occurs ${tgSrc.split(TRIM).length - 1} time(s) in tileGround.js#roadMarkings, not once — re-aim the planted row's anchor`); process.exit(2) }
+const noTrimDir = mkdtempSync(join(tmpdir(), 'paint-trim-'))
+process.on('exit', () => rmSync(noTrimDir, { recursive: true, force: true }))
+writeFileSync(join(noTrimDir, 'tileGround.js'), tgSrc.replace(TRIM, 'const P = g.pts')
+  .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`)
+  .replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
+const { roadMarkings: untrimmedMarkings } = await import(pathToFileURL(join(noTrimDir, 'tileGround.js')).href)
 const quiet = (f) => { const l = console.log, w = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
 const sd = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
 // segments in a grid; `within(p, d)` = some segment lies within d of p
@@ -87,6 +87,30 @@ function segIndex(segs, C = 20) {
   for (const s of segs) for (let x = Math.floor(Math.min(s[0][0], s[1][0]) / C); x <= Math.floor(Math.max(s[0][0], s[1][0]) / C); x++) for (let z = Math.floor(Math.min(s[0][1], s[1][1]) / C); z <= Math.floor(Math.max(s[0][1], s[1][1]) / C); z++) (g.get(x + ',' + z) || g.set(x + ',' + z, []).get(x + ',' + z)).push(s)
   return (p, d) => { const r = Math.ceil(d / C); for (let x = Math.floor(p[0] / C) - r; x <= Math.floor(p[0] / C) + r; x++) for (let z = Math.floor(p[1] / C) - r; z <= Math.floor(p[1] / C) + r; z++) for (const s of (g.get(x + ',' + z) || [])) if (sd(p, s[0], s[1]) <= d) return true; return false }
 }
+// PLANTED (always run, no build): a block with a hole — the hole's centre is road, the band between is block; and a ring
+// judged ring by ring (the old E2) calls the hole's centre block, so the planted rows can tell the two apart
+{ const sq = (x0, z0, s, ccw) => { const r = [[x0, z0], [x0 + s, z0], [x0 + s, z0 + s], [x0, z0 + s]]; return ccw ? r : r.reverse() }
+  const inB = blockTest([{ iA: [sq(0, 0, 100, true), sq(40, 40, 20, false)] }]), ringByRing = [sq(0, 0, 100, true), sq(40, 40, 20, false)].some(r => windXZ([50, 50], r) !== 0)
+  const ok = !inB([50, 50]) && inB([20, 20]) && ringByRing
+  if (!ok) red++
+  console.log(`${ok ? '✅' : '⛔'} (E2) planted: a block with a hole — the hole's centre is road (${inB([50, 50]) ? 'BLOCK' : 'road'}), the band is block (${inB([20, 20]) ? 'block' : 'ROAD'}); judged ring by ring the centre reads ${ringByRing ? 'block (the old defect, seen)' : 'road'}`)
+  // the miter: a 50° bend (factor 1/cos 25°), a 0° vertex (1), and a turn past the limit (no allowance)
+  const bend = (deg) => miterAt([[-10, 0], [0, 0], [10 * Math.cos(deg * Math.PI / 180), 10 * Math.sin(deg * Math.PI / 180)]], 1)
+  const okM = Math.abs(bend(50) - 1 / Math.cos(25 * Math.PI / 180)) < 1e-12 && bend(0) === 1 && bend(150) === 1
+  if (!okM) red++
+  console.log(`${okM ? '✅' : '⛔'} (S/E) planted: the miter allowance at 50° is ${bend(50).toFixed(4)} (1/cos 25°), at 0° ${bend(0)}, past the limit (150°) ${bend(150)}`)
+  // (E2) planted, THE REFLEX CORNER (LS's 5 line ends, 2026-10-26): an L-shaped block whose inner corner steps into the street
+  // and leans back over the leg (94.6°), every edge its own leg, every side a parking lane. Live, no parking line enters the
+  // block; struck from the whole leg (the trim skipped, a copy of the module) one does — or the planted row proves nothing
+  const ring = [[0, 0], [100, 0], [100, 50], [50, 50], [54, 100], [0, 100]]
+  const tile = { iA: [ring], iaFull: [ring], iaStamp: [ring.map((_, e) => e % 2)], runs: [{ skelId: 'x', side: 'left', segOrd: 0 }, { skelId: 'y', side: 'left', segOrd: 0 }] }
+  const args = { tiles: [tile], centrelines: [], marksOf: () => ({ centre: { kind: 'none' }, edges: { kind: { left: null, right: null } } }),
+    measureOfRun: () => ({ pavementHW: 5, parking: 2.438 }), look: { line: 0.1016, gap: 0.1016, dash: 3.048, space: 9.144, edgeInset: 0.3048 } }
+  const inL = blockTest([tile]), into = (paint) => paint.edgeline.flat().filter(inL).length
+  const live = quiet(() => roadMarkings(args)), whole = quiet(() => untrimmedMarkings(args))
+  const okT = live.edgeline.length > 0 && into(live) === 0 && into(whole) > 0
+  if (!okT) red++
+  console.log(`${okT ? '✅' : '⛔'} (E2) planted: a reflex kerb corner — ${live.edgeline.length} parking line(s), ${into(live)} vertex(es) inside the block; struck from the whole leg, ${into(whole)} (must be > 0)`) }
 const kerbOf = (R) => JSON.stringify((R.protoShapeTiles || []).map(t => [t.iA, t.iaFull]))
 const withMeasure = (f, fn) => ({ ...f, ribbons: { ...f.ribbons, streets: f.ribbons.streets.map(st => st.measure?.left && st.measure?.right ? { ...st, measure: { ...st.measure, left: fn(st.measure.left), right: fn(st.measure.right) } } : st) } })
 

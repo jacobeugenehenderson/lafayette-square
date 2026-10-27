@@ -3026,6 +3026,7 @@
         "deletes files — only under its own temp dir",
         "copies/renames files — only under its own temp dir",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "declares @args --slot=<granted>"
       ]
     },
