@@ -34,10 +34,11 @@ PROPERTY, not organised around districts; membership is Extent authoring** (Jaco
 - **M** The kit has an NR well: `content/nr-inventory.json` → `buildNrIndex` keyed `housenum|street` → roster `year_built`,
   `style`, `contributing`. HPDM has one (221 rows, OCR'd from its nomination); PTown has none; LS's came from
   `assets/lafayette-square-hd.pdf` → `inventory/*.csv`.
-- **M ⚠ Possible conflict with the 2026-10-21 ruling:** `loadDeclaredDistrict` **throws** when `nr-inventory.json` exists and
-  `sources.json` declares no `historicDistricts`, and `districtOf` derives membership from the NR match. That organises
-  history by district and makes membership derived, not Extent-authored. Rot, regression or aspiration: **not established;
-  Boz to rule** before the MHC well lands (step 3 would trip the throw).
+- **RULED (Boz, 2026-10-26, on Jacob's 2026-10-21 words: "We've never used the word District in our lives"):** the district
+  machinery is agent-introduced intent that Jacob never ruled (162a084b, 266d3505), so it is ROT against a later ruling.
+  `loadDeclaredDistrict`'s throw, `districtOf`'s derived membership and `historicDistricts` go when the MHC well lands, in the same
+  commit, which names what was removed. A building carries its own listing facts (NR-listed or contributing, MHC id, date, style,
+  architect) where its record supports them. Membership stays Extent's.
 - **M** MHC is unread by the kit: `git grep -i 'mhc\|macris'` over cartograph/src/scripts/references/docs/checks: 0 files.
   GDAL is present (`/opt/homebrew/bin/ogr2ogr`, `ogrinfo`; OpenFileGDB driver opens the zip via `/vsizip/`). No fiona.
 - **M** `references/registry.json` has 65 sources and **no row for** MassGIS (whose L3 parcels PTown already uses), MHC,
@@ -144,7 +145,7 @@ Mutation tests: delete PTown's MHC declaration → red; set MHC's terms to `unch
 
 1. **S** Terms pass (no content reads): registry rows + quoted terms for NPS/NPGallery, MHC/MassGIS (incl. parcels), PHPP,
    Commons, LoC; the class field. Run `claims-references-are-sound`.
-2. **S** Boz rules: the `loadDeclaredDistrict` throw vs the 2026-10-21 ruling; non-building anchors.
+2. **S** ~~the district throw~~ (ruled above: removed with the MHC well). Open: non-building anchors (Jacob).
 3. **M** MHC well: the reader, declared in PTown's `sources.json`, an intake row, the join + report in bake-content. Dry-run counts.
 4. **M** Pitch cards: the Lodge (add by parcel), MacMillan Wharf photo/hours, Monument from the dossier; history entries from the nomination.
 5. **M** Nomination: extract per-building rows (text pages, federal) into the history well; photos only where not third-party.
