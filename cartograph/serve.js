@@ -40,7 +40,7 @@ import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
 import { groundShorePass } from './shoreRuns.mjs'
-import { stagedSlabStep, publishSlab } from './slabStage.mjs'
+import { stagedSlabStep, publishSlab, refuseTornCommit } from './slabStage.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -2616,6 +2616,7 @@ createServer(async (req, res) => {
       // every Look of it, so a step that reads them declares this file. Declared because it is READ.
       const SCENE_DESIGN = join(REPO_ROOT, 'public', 'looks', bakeScene, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
+      refuseTornCommit(undefined, id)   // ⛔ a torn slab commit (slabStage.mjs's journal) stops this look's Bake, by name
       const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
       const skipped = []
@@ -2838,7 +2839,7 @@ createServer(async (req, res) => {
       else skip('terrain-slab')
       const terrainPublished = (names) => { if (names.some(n => n.startsWith('terrain.'))) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } }
       // the ground's stage: it reads its prior ground.json (the lightmap it carries) and the shore median from its out dir
-      const groundStage = (carry) => ({ lookDir: LOOK_DIR, stageDir: join(here, '.bake-stage', id), seed: ['ground.json', 'shore-median.json'],
+      const groundStage = (carry) => ({ lookDir: LOOK_DIR, look: id, seed: ['ground.json', 'shore-median.json'],
         publish: ['ground.json', 'ground.bin', 'shape.json'], carry })
       const groundFirst = groundStage(terrainOwed)
       // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json) · shore-median.json (read and painted as sand only when walked on the shoreline this bake writes; its freshness is the 'ground-shore' step's, below)
@@ -2852,7 +2853,7 @@ createServer(async (req, res) => {
         `node bake-ground.js --look=${id} ${sceneFlag} --shore=pending`,
         { cwd: here, timeout: 300000, stage: groundFirst })
       if (groundFirst.published) terrainPublished(groundFirst.published)
-      else if (terrainOwed.length && !P.plan) terrainPublished(publishSlab(LOOK_DIR, terrainOwed))
+      else if (terrainOwed.length && !P.plan) terrainPublished(publishSlab({ lookDir: LOOK_DIR, look: id, files: terrainOwed }))
       // Shore revetment — reads the shoreline (`__water__` runs) out of the
       // shape.json the ground bake just wrote, so a pour that moves the shore
       // re-stones it; a stale revetment is stone keyed to a shore that moved.

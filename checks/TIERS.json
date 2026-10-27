@@ -232,6 +232,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
+        "copies/renames files",
         "importSource of cartograph/serve.js (its span: // terrain-slab: the scene terrain is owed → // Shore revetment —) — read, safe",
         "importSource of cartograph/slabStage.mjs, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
