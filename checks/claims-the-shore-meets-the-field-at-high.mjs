@@ -26,8 +26,9 @@
 //      vertex under a bridge's paint (Jacob 2026-10-27, (b); protopolygon.offGradeSpans) not skipped · a bridge's paint over the
 //      water left on the bed instead of at HIGH (Boz's ruling) · the span assembly (spanFootprints): a span outside the
 //      drawing refused, an empty footprint inside it accepted, each RED;
-//   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
-//      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
+//   5. per town whose slab ground carries pins (ground.json `drawnRaw`): along every edge of ①'s coast the DRAWN ground
+//      (drawnGround.js) crosses HIGH within the pin's tolerance of the line (water side ≤, land side ≥; Boz 2026-10-27: the
+//      waterline IS the line), and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
 //      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
 // MUTANTS (each RED; `--mutants` runs the marked ones on a copy of shoreStamp.mjs): the stamp dropped* · land written
 // (the old landward raise)* · the crossed seaward nodes take max(bed, ramp)* · the tidal cap dropped* · the tide's
@@ -254,7 +255,7 @@ async function pinSection(mod, log) {
   no(polder === -2 && offLine === 0, `land below HIGH away from the line keeps its height (the polder ${polder} m; ${offLine} vertex(es) off the line-adjacent ring changed)`)
   // §5's own judge of a slab, on this one: it must pass the pin, and fail it wherever the pin is wrong (the mutants)
   const J = judgeDrawn(manifest, bin, [lakeR, islR], fieldAt, () => 0)
-  no(J.n > 0 && J.worst <= 1e-5 && J.wrong === 0, `§5's slab judge on this ground: ${J.n} samples on the line, |drawn − HIGH| ≤ ${J.worst.toExponential(2)} m, ${J.wrong} of ${J.adj} line-adjacent vertices on the wrong side`)
+  no(J.n > 0 && J.off === 0 && J.worst <= 1e-5 && J.wrong === 0, `§5's slab judge on this ground: ${J.n} samples on the line, the waterline within the tolerance at all but ${J.off}, |drawn − HIGH| ≤ ${J.worst.toExponential(2)} m, ${J.wrong} of ${J.adj} line-adjacent vertices on the wrong side`)
   const [sb, sl] = groups.slice(0, 2).map(g => R.sectionFor(g.positions)), key = (g, sec) => new Map(Array.from({ length: sec.length / 4 }, (_, r) => { const v = new Uint32Array(sec.buffer)[r * 4]; return [`${g.positions[v * 3]},${g.positions[v * 3 + 2]}`, sec[r * 4 + 1]] }))
   const kb = key(groups[0], sb), kl = key(groups[1], sl); let differ = 0, shared = 0; for (const [k, v] of kb) if (kl.has(k)) { shared++; if (kl.get(k) !== v) differ++ }
   no(shared > 0 && differ === 0, `one point, one height in every group (${shared} shared, ${differ} differ)`)
@@ -330,10 +331,13 @@ async function pinSection(mod, log) {
 }
 console.log('── 5. each town\'s DRAWN ground meets ①\'s coast at HIGH (the slab, public/baked/<town>/ground.*)')
 // ⭐ What the operator sees is the drawn mesh, not the field: the slab's ground read through drawnGround.js (a vertex's pin,
-// else the field), sampled along every edge of ①'s waterRings inside the drawing, must be HIGH; and the side condition is
-// the residual: every vertex of a triangle with a corner on the line stands on its own side of HIGH (land ≥, water ≤), so no
-// line-adjacent triangle crosses HIGH except at the line. The "on the line" and "which side" here are this check's own
-// geometry, not the pin's. Mutant, built in: HIGH read 1 cm high must turn the town RED.
+// else the field), sampled along every edge of ①'s waterRings inside the drawing. THE WATERLINE IS THE LINE (Boz's ruling,
+// 2026-10-27): at every sample, within the pin's own tolerance either side of the line along the edge's normal, the drawn
+// ground is ≤ HIGH on the water side and ≥ HIGH on the land side, so the HIGH contour lies within that tolerance of ①'s line.
+// ⛔ Not |drawn − HIGH| at the sample: on a steep bank a sub-millimetre offset is metres of slope (Huron: a 2 m bank 1.4 mm
+// from the line read 75 mm off with the contour 0.05 mm from it); that number is PRINTED as information, never the gate.
+// The residual is the side condition: every vertex of a triangle with a corner on the line stands on its own side of HIGH.
+// "On the line" and "which side" are this check's own geometry, not the pin's. Mutant: HIGH read 1 cm high turns it RED.
 function judgeDrawn(gj, AB, rings, rawAt, highAt) {
   const D = makeDrawnGround(gj, AB, { groups: g => !/^water(:|$)/.test(g.id) && g.partition !== false, rawAt })
   const tol = gj.drawnRaw.tolM
@@ -341,12 +345,22 @@ function judgeDrawn(gj, AB, rings, rawAt, highAt) {
   const C = 16, grid = new Map(); segs.forEach(([a, b], q) => { for (let x = Math.floor((Math.min(a[0], b[0]) - tol) / C); x <= Math.floor((Math.max(a[0], b[0]) + tol) / C); x++) for (let z = Math.floor((Math.min(a[1], b[1]) - tol) / C); z <= Math.floor((Math.max(a[1], b[1]) + tol) / C); z++) { const k = x * 1048576 + z; (grid.get(k) || grid.set(k, []).get(k)).push(q) } })
   const onLine = (x, z) => (grid.get(Math.floor(x / C) * 1048576 + Math.floor(z / C)) || []).some(q => { const [a, b] = segs[q], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0; return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol })
   const inWater = (x, z) => { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
-  // exact on the line: every coast edge, sampled at its own vertices and between them, wherever the drawn ground is
-  let worst = 0, worstAt = null, n = 0
-  for (const [a, b] of segs) { const L = Math.hypot(b[0] - a[0], b[1] - a[1]), k = Math.max(1, Math.ceil(L))
-    for (let u = 0; u <= k; u++) { const x = a[0] + (b[0] - a[0]) * u / k, z = a[1] + (b[1] - a[1]) * u / k, p = D.partsAt(x, z)
+  // the waterline on the line: every coast edge, sampled at its own vertices and between them, wherever the drawn ground is;
+  // the HIGH contour within `tol` of the sample along the edge's normal (water side ≤ HIGH, land side ≥ HIGH)
+  // a ring vertex is sampled once (u = 0 of its outgoing edge) and probed along the BISECTOR of its two edges' normals: along
+  // one edge's normal alone the probe can cross the neighbouring edge at a corner and read the wrong side
+  let worst = 0, worstAt = null, n = 0, off = 0, offAt = null
+  const nrm = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]); return L > 0 ? [-(b[1] - a[1]) / L, (b[0] - a[0]) / L] : null }
+  for (const r of rings) for (let m = 0; m < r.length; m++) { const a = r[m], b = r[(m + 1) % r.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), k = Math.max(1, Math.ceil(L)); if (!(L > 0)) continue
+    const ne = nrm(a, b), np = nrm(r[(m - 1 + r.length) % r.length], a) || ne, bis = [ne[0] + np[0], ne[1] + np[1]], bL = Math.hypot(...bis)
+    for (let u = 0; u < k; u++) { const x = a[0] + (b[0] - a[0]) * u / k, z = a[1] + (b[1] - a[1]) * u / k, p = D.partsAt(x, z)
       if (!p) continue
-      n++; const e = Math.abs(p.raw - highAt(x, z)); if (e > worst) { worst = e; worstAt = [x, z] } } }
+      const [nx, nz] = u === 0 && bL > 1e-9 ? [bis[0] / bL, bis[1] / bL] : ne
+      n++; const H = highAt(x, z), e = Math.abs(p.raw - H); if (e > worst) { worst = e; worstAt = [x, z] }
+      if (e <= 1e-6) continue
+      const s1 = [x + nx * tol, z + nz * tol], s2 = [x - nx * tol, z - nz * tol], [W, Ld] = inWater(...s1) ? [s1, s2] : [s2, s1]
+      const pw = D.partsAt(...W), pl = D.partsAt(...Ld)
+      if (!(pw && pl && pw.raw <= H + 1e-6 && pl.raw >= H - 1e-6)) { off++; if (!offAt) offAt = [x, z, pw ? +(pw.raw - H).toExponential(2) : null, pl ? +(pl.raw - H).toExponential(2) : null] } } }
   // the residual: the side condition at every line-adjacent vertex
   let adj = 0, wrong = 0, wrongWorst = 0, wrongAt = null; const seen = new Set()
   for (const g of gj.groups) { if (/^water(:|$)/.test(g.id)) continue
@@ -357,7 +371,7 @@ function judgeDrawn(gj, AB, rings, rawAt, highAt) {
         const x = P[v * 3], z = P[v * 3 + 2], k = `${g.id}|${v}`; if (seen.has(k)) continue; seen.add(k); adj++
         const H = highAt(x, z), miss = inWater(x, z) ? R[v] - H : H - R[v]
         if (miss > 1e-6) { wrong++; if (miss > wrongWorst) { wrongWorst = miss; wrongAt = [x, z] } } } } }
-  return { n, worst, worstAt, adj, wrong, wrongWorst, wrongAt }
+  return { n, worst, worstAt, off, offAt, tol, adj, wrong, wrongWorst, wrongAt }
 }
 let towns = 0
 for (const t of readdirSync(join(ROOT, 'public/baked'))) {
@@ -373,10 +387,11 @@ for (const t of readdirSync(join(ROOT, 'public/baked'))) {
   const gb = readFileSync(bp), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
   const rings = waterFace(JSON.parse(readFileSync(mp, 'utf8')), 'claims-the-shore-meets-the-field-at-high')
   const r = judgeDrawn(gj, AB, rings, T.getElevationRaw, L.highAt)
-  say(r.n > 0 && r.worst <= 1e-5, `${t}: along ①'s coast (${r.n.toLocaleString()} samples on the drawn ground) |drawn − HIGH| ≤ ${r.worst.toExponential(2)} m${r.worstAt ? ` (at ${r.worstAt.map(v => v.toFixed(2)).join(', ')})` : ''}`)
+  say(r.n > 0 && r.off === 0, `${t}: along ①'s coast (${r.n.toLocaleString()} samples on the drawn ground) the waterline lies within ${(r.tol * 1000).toFixed(2)} mm of the line at ${(r.n - r.off).toLocaleString()} (${r.off} off${r.offAt ? `, first at (${r.offAt[0].toFixed(2)}, ${r.offAt[1].toFixed(2)}): water side ${r.offAt[2]} m, land side ${r.offAt[3]} m vs HIGH` : ''})`)
+  console.log(`     (information, not the gate: |drawn − HIGH| at the samples ≤ ${r.worst.toExponential(2)} m${r.worstAt ? ` at (${r.worstAt.map(v => v.toFixed(2)).join(', ')})` : ''}; on a steep bank that is the slope times a sub-millimetre offset)`)
   say(r.wrong === 0, `${t}: beside the line, ${r.wrong.toLocaleString()} of ${r.adj.toLocaleString()} line-adjacent vertices on the wrong side of HIGH${r.wrong ? ` (worst ${r.wrongWorst.toFixed(3)} m at ${r.wrongAt.map(v => v.toFixed(2)).join(', ')})` : ''}`)
   if (process.argv.includes('--mutants')) { const m = judgeDrawn(gj, AB, rings, T.getElevationRaw, (x, z) => L.highAt(x, z) + 0.01)
-    const caught = !(m.worst <= 1e-5) || m.wrong > 0; console.log(`  mutant: ${t}'s HIGH read 1 cm high → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) bad.push(`§5 mutant survived on ${t}`) }
+    const caught = m.off > 0 || m.wrong > 0; console.log(`  mutant: ${t}'s HIGH read 1 cm high → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) bad.push(`§5 mutant survived on ${t}`) }
 }
 if (!towns) console.log('  (no town carries a pinned ground yet)')
 if (process.argv.includes('--mutants')) {
