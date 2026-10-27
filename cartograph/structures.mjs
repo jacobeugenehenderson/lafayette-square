@@ -112,7 +112,19 @@ export function deckFootprints(osmGround) {
   const boxes = rings.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0, x1, z0, z1] })
   // nonzero over the union's rings: an outer counts +1, a hole −1, so a point in a deck's courtyard is not on the deck
   const on = (x, z) => { let wn = 0; for (let k = 0; k < rings.length; k++) { const b = boxes[k]; if (x < b[0] || x > b[1] || z < b[2] || z > b[3]) continue; if (inRing(x, z, rings[k])) wn += Math.sign(signedArea(rings[k])) } return wn !== 0 }
-  return { paths: u, rings, on, count: { areas: areas.length, lines: lines.length, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
+  // ⭐ WHERE A SEGMENT a→b LEAVES THE DECK (Zob, 2026-10-26): the exact crossing of the deck's own ring nearest a (the deck
+  // end), so a coast traced against a deck lies ON the deck's edge, never a sample's guess at it. null when none.
+  const crossing = (a, b) => { let best = null, bt = Infinity
+    const sx0 = Math.min(a[0], b[0]), sx1 = Math.max(a[0], b[0]), sz0 = Math.min(a[1], b[1]), sz1 = Math.max(a[1], b[1])
+    for (let k = 0; k < rings.length; k++) { const bx = boxes[k]; if (sx1 < bx[0] || sx0 > bx[1] || sz1 < bx[2] || sz0 > bx[3]) continue
+      const r = rings[k]
+      for (let m = 0; m < r.length; m++) { const p = r[m], q = r[(m + 1) % r.length]
+        const dx = b[0] - a[0], dz = b[1] - a[1], ex = q[0] - p[0], ez = q[1] - p[1], den = dx * ez - dz * ex
+        if (den === 0) continue
+        const t = ((p[0] - a[0]) * ez - (p[1] - a[1]) * ex) / den, u2 = ((p[0] - a[0]) * dz - (p[1] - a[1]) * dx) / den
+        if (t >= 0 && t <= 1 && u2 >= 0 && u2 <= 1 && t < bt) { bt = t; best = [a[0] + t * dx, a[1] + t * dz] } } }
+    return best }
+  return { paths: u, rings, on, crossing, count: { areas: areas.length, lines: lines.length, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
 }
 
 /**

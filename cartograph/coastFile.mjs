@@ -126,7 +126,7 @@ export function faceAsPolygons(rings, who) {
 /**
  * ⛔ A COAST RING MUST BE SIMPLE (Boz's ruling, 2026-10-26, after Huron's ground refused an antenna on the lake's arc): no
  * two of its edges meet except adjacent ones at their shared vertex, and no adjacent pair folds back along itself. The
- * violations, [{ kind: 'cross' | 'fold' | 'acute' | 'degenerate', a, b, at }] (edge indices; `at` the meeting point), so a refusal names each one.
+ * violations, [{ kind: 'cross' | 'touch' | 'fold' | 'acute' | 'degenerate', a, b, at }] (edge indices; `at` the meeting point), so a refusal names each one.
  * Edges are bucketed on a grid of the ring's own median edge length: exact, not sampled.
  */
 export function ringViolations(ring, acuteAt = null) {
@@ -158,7 +158,7 @@ export function ringViolations(ring, acuteAt = null) {
     if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
       const t0 = d1 / (d1 - d2); out.push({ kind: 'cross', a, b, at: [p1[0] + (p2[0] - p1[0]) * t0, p1[1] + (p2[1] - p1[1]) * t0] })
     } else if ((d1 === 0 && on(q1, q2, p1)) || (d2 === 0 && on(q1, q2, p2)) || (d3 === 0 && on(p1, p2, q1)) || (d4 === 0 && on(p1, p2, q2)))
-      out.push({ kind: 'cross', a, b, at: d1 === 0 ? p1 : d2 === 0 ? p2 : d3 === 0 ? q1 : q2 })
+      out.push({ kind: 'touch', a, b, at: d1 === 0 ? p1 : d2 === 0 ? p2 : d3 === 0 ? q1 : q2 })   // two parts of the ring meet at a point
   }
   return out
 }

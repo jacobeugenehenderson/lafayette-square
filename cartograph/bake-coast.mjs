@@ -54,7 +54,7 @@ import { geographyFor, projectorOf, metresPerDegree, localBB } from './geography
 import { elevationSpecs, openRasters, readWindow, rasterToGrid, sampleSources, inCoverage, pixelMetres, demVerticalDatum, TERRAIN_STEP_M, terrainLattice } from './elevationSources.mjs'
 import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels } from './waterLevel.mjs'
-import { wetLoops } from './marchingSquares.mjs'
+import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
 import { deckFootprints } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
@@ -67,8 +67,9 @@ const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyT
 
 export const COAST_VERSION = 1
 
-/** The square tile, in metres, the fine line is traced in. ⛔ Not a geometric value: tiles overlap by one sample and
- *  are unioned, so where their edges fall changes nothing; it bounds memory and one read's size. */
+/** The square tile, in metres, the fine line is traced in. ⛔ Not a geometric value: every tile samples ONE global lattice
+ *  (the square's origin, the source's own pixel) and keeps only the loops inside its own square, padded for reading only,
+ *  so where its edges fall changes nothing; it bounds memory and one read's size. */
 const TILE_M = 256
 
 const toPath = (ring) => { const p = new Path(); for (const [x, z] of ring) p.push(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))); return p }
@@ -112,14 +113,21 @@ export function floodFromEdge(w, W, H, held = null, nr = null) {
 }
 
 /**
- * THE SHEET'S FIELD for the tracer (≤ 0 = water): lidar − high where the water reached; the same, kept just above 0,
- * on dry ground with a lidar value, so the line is interpolated between two TRUE heights; +1 where nothing is known
- * (no lidar) or where the ground lies below high water the sea does not reach (a hollow, a held marsh): dry by rule.
+ * THE SHEET'S FIELD for the tracer (≤ 0 = water): lidar − high where the water reached, and on dry ground with a lidar
+ * value, so the line is interpolated between two TRUE heights. ⛔ No stand-in values (a sentinel is not a value): a
+ * reached cell with no lidar is KIND.NO_RETURN; an unreached one with none, KIND.NO_COVERAGE; ground below high water the
+ * sea does not reach (a hollow, a held marsh) is KIND.DRY_BY_RULE. Each is NaN in `f` and named in `kind`.
  */
 export function sheetField(wet, w) {
-  const f = new Float32Array(wet.length)
-  for (let k = 0; k < wet.length; k++) f[k] = wet[k] ? (Number.isFinite(w[k]) ? -w[k] : -Number.EPSILON) : (Number.isFinite(w[k]) && w[k] <= 0 ? Math.max(-w[k], Number.EPSILON) : 1)
-  return f
+  const f = new Float32Array(wet.length), kind = new Uint8Array(wet.length)
+  for (let k = 0; k < wet.length; k++) {
+    const v = w[k]
+    if (wet[k]) { if (Number.isFinite(v)) f[k] = -v; else { f[k] = NaN; kind[k] = KIND.NO_RETURN } }
+    else if (!Number.isFinite(v)) { f[k] = NaN; kind[k] = KIND.NO_COVERAGE }
+    else if (v >= 0) { f[k] = NaN; kind[k] = KIND.DRY_BY_RULE }       // unreached at or below high: dry by rule, its height moot
+    else f[k] = -v                                                    // dry above high water: a true height
+  }
+  return { f, kind }
 }
 
 /**
@@ -339,32 +347,40 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const cellSq = (k, r) => { const i = k % W, j = (k - i) / W; return toPath([[X(i) - r, Z(j) - r], [X(i) + r, Z(j) - r], [X(i) + r, Z(j) + r], [X(i) - r, Z(j) + r]]) }
   const edge = edgeCells(wet, w, W, H)
   const band = clip(ClipType.ctUnion, edge.map(k => cellSq(k, 1.5 * G)), null)
-  const sheet = clip(ClipType.ctUnion, wetLoops(sheetField(wet, w), W, H, R.x0, R.z0, G).map(toPath), null, PolyFillType.pftEvenOdd)
+  const sf = sheetField(wet, w)
+  const sheet = clip(ClipType.ctUnion, wetLoops(sf.f, W, H, R.x0, R.z0, G, { kind: sf.kind }).map(toPath), null, PolyFillType.pftEvenOdd)
   const fineParts = new Paths()
   let tiles = 0, samples = 0, noValue = 0
+  const crossings = {}                                       // the crossings each sentinel decided (marchingSquares.mjs#wetLoops)
   const tileKeys = new Set(edge.map(k => { const i = k % W, j = (k - i) / W; return `${Math.floor((X(i) - R.x0) / TILE_M)},${Math.floor((Z(j) - R.z0) / TILE_M)}` }))
   for (const key of tileKeys) {
     const [ti, tj] = key.split(',').map(Number)
     const tx = R.x0 + ti * TILE_M, tz = R.z0 + tj * TILE_M, pad = 2 * G
-    const sq = toPath([[tx - pad, tz - pad], [tx + TILE_M + pad, tz - pad], [tx + TILE_M + pad, tz + TILE_M + pad], [tx - pad, tz + TILE_M + pad]])
+    // ⭐ ONE LATTICE (Zob's rule A, 2026-10-26): the samples are the square's global grid at the source's pixel, read over
+    // the tile padded by `pad` (so its loops close past its edges), and only the loops inside the tile's OWN square are
+    // kept. Neighbours then trace the same cells identically and meet exactly at the seam. (Each tile had sampled its
+    // own lattice from its padded corner, and TILE_M / fine is not an integer, so overlaps were two different traces.)
+    const sq = toPath([[tx, tz], [tx + TILE_M, tz], [tx + TILE_M, tz + TILE_M], [tx, tz + TILE_M]])
     const inTile = clip(ClipType.ctIntersection, [sq], band)
     if (!inTile.length) continue
     tiles++
     if (tiles % 100 === 0) console.log(`  [progress] coast tiles ${tiles} of ${tileKeys.size}`)
-    const x0 = tx - pad, z0 = tz - pad, span = TILE_M + 2 * pad, m = 2 * fine
-    const win = await readWindow(opened, { cornersLL: [toLL(x0 - m, z0 - m), toLL(x0 + span + m, z0 - m), toLL(x0 - m, z0 + span + m), toLL(x0 + span + m, z0 + span + m)], quiet: true })
-    const n = Math.round(span / fine) + 1
-    const f = new Float32Array(n * n)
-    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-      const x = x0 + i * fine, z = z0 + j * fine
+    const gi0 = Math.floor((tx - pad - R.x0) / fine), gi1 = Math.ceil((tx + TILE_M + pad - R.x0) / fine)
+    const gj0 = Math.floor((tz - pad - R.z0) / fine), gj1 = Math.ceil((tz + TILE_M + pad - R.z0) / fine)
+    const x0 = R.x0 + gi0 * fine, z0 = R.z0 + gj0 * fine, nx = gi1 - gi0 + 1, nz = gj1 - gj0 + 1, m = 2 * fine
+    const xe = R.x0 + gi1 * fine, ze = R.z0 + gj1 * fine
+    const win = await readWindow(opened, { cornersLL: [toLL(x0 - m, z0 - m), toLL(xe + m, z0 - m), toLL(x0 - m, ze + m), toLL(xe + m, ze + m)], quiet: true })
+    const f = new Float32Array(nx * nz), kind = new Uint8Array(nx * nz)
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+      const x = R.x0 + (gi0 + i) * fine, z = R.z0 + (gj0 + j) * fine, k = j * nx + i
       samples++
-      if (decks.on(x, z)) { f[j * n + i] = -Number.EPSILON; continue }                     // a deck: no return, as the sheet reads it
+      if (decks.on(x, z)) { f[k] = NaN; kind[k] = KIND.DECK; continue }   // a deck: no return; the line is its ring
       const v = sampleSources(win, ...toLL(x, z))
-      if (!Number.isFinite(v)) { noValue++; f[j * n + i] = inCoverage(opened, ...toLL(x, z)) ? -Number.EPSILON : 1 }   // no return: water; no coverage: dry
-      else f[j * n + i] = v - highAt(x, z)                                 // ≤ 0 = below high water
+      if (!Number.isFinite(v)) { noValue++; f[k] = NaN; kind[k] = inCoverage(opened, ...toLL(x, z)) ? KIND.NO_RETURN : KIND.NO_COVERAGE }   // no return: water; no coverage: dry
+      else f[k] = v - highAt(x, z)                                         // ≤ 0 = below high water
     }
     win.length = 0
-    const loops = wetLoops(f, n, n, x0, z0, fine)
+    const loops = wetLoops(f, nx, nz, x0, z0, fine, { kind, deckCross: decks.crossing, tally: crossings })
     if (loops.length) for (const q of clip(ClipType.ctIntersection, clip(ClipType.ctUnion, loops.map(toPath), null, PolyFillType.pftEvenOdd), inTile)) fineParts.push(q)
   }
   const square = [toPath([[R.x0, R.z0], [R.x1, R.z0], [R.x1, R.z1], [R.x0, R.z1]])]
@@ -425,8 +441,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
-    settled: { moved: settled.moved, unbracketed: settled.unbracketed, noValue: settled.noValue, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
-    totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue,
+    settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
+    totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
   })
   save()
@@ -450,25 +466,52 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
 /**
  * Bisect every ring vertex off the square's edge along its normal on the real sampler, within ± one trace step, to
  * where lidar − high = 0. In place. A vertex with no sign change in that reach, or on a deck, keeps its traced place.
+ * ⭐ BOUNDED BY THE RING'S OWN CLEARANCE (Zob, 2026-10-26: settle closed three spikes simplify left at 5–17°): on each side,
+ * the reach is at most HALF the distance along the normal to the ring's nearest non-adjacent edge, so two vertices moving
+ * toward each other can never meet or cross. Each vertex so limited is counted (`bounded`).
  */
+export function clearances(ring, step) {
+  const n = ring.length, G = Math.max(step, 1e-6), cells = new Map(), key = (i, j) => i + ',' + j
+  for (let m = 0; m < n; m++) { const a = ring[m], b = ring[(m + 1) % n]
+    for (let i = Math.floor(Math.min(a[0], b[0]) / G) - 1; i <= Math.floor(Math.max(a[0], b[0]) / G) + 1; i++)
+      for (let j = Math.floor(Math.min(a[1], b[1]) / G) - 1; j <= Math.floor(Math.max(a[1], b[1]) / G) + 1; j++) { const q = key(i, j); if (!cells.has(q)) cells.set(q, []); cells.get(q).push(m) } }
+  return ring.map((p, k) => {
+    const a = ring[(k - 1 + n) % n], b = ring[(k + 1) % n], nx0 = -(b[1] - a[1]), nz0 = b[0] - a[0], L = Math.hypot(nx0, nz0) || 1, nx = nx0 / L, nz = nz0 / L
+    let plus = Infinity, minus = Infinity
+    const seen = new Set()
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const m of cells.get(key(Math.floor(p[0] / G) + di, Math.floor(p[1] / G) + dj)) || []) {
+      if (seen.has(m) || m === k || m === (k - 1 + n) % n) continue; seen.add(m)   // the vertex's own two edges are not clearance
+      const q = ring[m], r = ring[(m + 1) % n], ex = r[0] - q[0], ez = r[1] - q[1], den = nx * ez - nz * ex
+      if (den === 0) continue
+      const t = ((q[0] - p[0]) * ez - (q[1] - p[1]) * ex) / den, u = ((q[0] - p[0]) * nz - (q[1] - p[1]) * nx) / den
+      if (u < 0 || u > 1) continue
+      if (t >= 0) plus = Math.min(plus, t); else minus = Math.min(minus, -t)
+    }
+    return [minus, plus]
+  })
+}
 async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
   const T = TILE_M, groups = new Map()
-  for (const ring of rings) for (let k = 0; k < ring.length; k++) {
-    if (onSquare(ring[k], R)) continue
-    const a = ring[(k - 1 + ring.length) % ring.length], b = ring[(k + 1) % ring.length]   // every normal off the TRACED ring
-    const nx = -(b[1] - a[1]), nz = b[0] - a[0], n = Math.hypot(nx, nz) || 1
-    const key = `${Math.floor(ring[k][0] / T)},${Math.floor(ring[k][1] / T)}`
-    ;(groups.get(key) || groups.set(key, []).get(key)).push([ring, k, nx / n, nz / n])
-  }
+  let bounded = 0
+  for (const ring of rings) { const cl = clearances(ring, step)
+    for (let k = 0; k < ring.length; k++) {
+      if (onSquare(ring[k], R)) continue
+      const a = ring[(k - 1 + ring.length) % ring.length], b = ring[(k + 1) % ring.length]   // every normal off the TRACED ring
+      const nx = -(b[1] - a[1]), nz = b[0] - a[0], n = Math.hypot(nx, nz) || 1
+      const lo = -Math.min(step, cl[k][0] / 2), hi = Math.min(step, cl[k][1] / 2)
+      if (-lo < step || hi < step) bounded++
+      const key = `${Math.floor(ring[k][0] / T)},${Math.floor(ring[k][1] / T)}`
+      ;(groups.get(key) || groups.set(key, []).get(key)).push([ring, k, nx / n, nz / n, lo, hi])
+    } }
   const moved = []
   let unbracketed = 0, noValue = 0
   for (const [key, items] of groups) {
     const [i, j] = key.split(',').map(Number), m = 2 * step
     const win = await readWindow(opened, { cornersLL: [toLL(i * T - m, j * T - m), toLL(i * T + T + m, j * T - m), toLL(i * T - m, j * T + T + m), toLL(i * T + T + m, j * T + T + m)], quiet: true })
     const f = (x, z) => (onDeck(x, z) ? NaN : sampleSources(win, ...toLL(x, z)) - highAt(x, z))
-    const next = items.map(([ring, k, nx, nz]) => {
+    const next = items.map(([ring, k, nx, nz, lo0, hi0]) => {
       const p = ring[k]
-      let lo = -step, hi = step, flo = f(p[0] + nx * lo, p[1] + nz * lo), fhi = f(p[0] + nx * hi, p[1] + nz * hi)
+      let lo = lo0, hi = hi0, flo = f(p[0] + nx * lo, p[1] + nz * lo), fhi = f(p[0] + nx * hi, p[1] + nz * hi)
       if (!Number.isFinite(flo) || !Number.isFinite(fhi)) { noValue++; return null }
       if (!(flo * fhi < 0)) { unbracketed++; return null }
       for (let it = 0; it < 30; it++) { const mid = (lo + hi) / 2, fm = f(p[0] + nx * mid, p[1] + nz * mid); if ((fm < 0) === (flo < 0)) { lo = mid; flo = fm } else hi = mid }
@@ -480,7 +523,7 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
     win.length = 0
   }
   moved.sort((x, y) => x - y)
-  return { moved: moved.length, unbracketed, noValue, p50: moved.length ? moved[moved.length >> 1] : 0, max: moved.length ? moved[moved.length - 1] : 0 }
+  return { moved: moved.length, bounded, unbracketed, noValue, p50: moved.length ? moved[moved.length >> 1] : 0, max: moved.length ? moved[moved.length - 1] : 0 }
 }
 
 /** The refusal's measurement: the flattened water's level under OSM's water (its 1 cm mode) against high water there. */

@@ -19,6 +19,9 @@
 //      finds a bow-tie's crossing, a fold, and a hairpin through the mint's own tileGround.js#outlineCorner at INK_EPS (simple,
 //      yet acute), and nothing on a square; bake-coast asks it of every ring with that predicate before it writes; and
 //      every town's coast.json rings have none (read in D).
+//   H. A SENTINEL IS NOT A VALUE: marchingSquares.mjs#wetLoops puts a no-return crossing at the edge midpoint (a diagonal
+//      neck gives distinct points, no touch), a deck crossing ON the deck's own ring (structures.mjs#deckFootprints
+//      .crossing), and REFUSES a NaN with no kind.
 //   E. THE DATUM DOES NOT DEPEND ON THE LINE (Boz's ruling (B)): bake-terrain takes y = 0 from coast.json `flattened`,
 //      which bake-coast#flattenedWater finds on the flood sheet before any line is traced (decks excluded), and keeps no
 //      histogram of its own; so moving the coast by any offset cannot move y = 0.
@@ -27,7 +30,8 @@
 //   node checks/claims-the-coast-is-the-lidars.mjs [--scene=<id> …]
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
-// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive · ringViolations misses a crossing · the acute predicate dropped from bake-coast.
+// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive · ringViolations misses a crossing · the acute predicate dropped from bake-coast · wetLoops interpolates against a
+// sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -36,8 +40,9 @@ import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
 import { readCoast, COAST_FILE, ringViolations } from '../cartograph/coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
+import { wetLoops, KIND } from '../cartograph/marchingSquares.mjs'
 import { terrainLattice } from '../cartograph/elevationSources.mjs'
-import { markSheet, floodFromEdge, wound, flattenedWater } from '../cartograph/bake-coast.mjs'
+import { markSheet, floodFromEdge, wound, flattenedWater, clearances } from '../cartograph/bake-coast.mjs'
 import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
@@ -99,12 +104,39 @@ console.log('── G. every ring is simple, and ① can outline every vertex')
   const kinds = (r) => ringViolations(r, acuteAt).map(v => v.kind)
   say(kinds([[0, 0], [10, 0], [10, 10], [0, 10]]).length === 0, 'a square: no violation')
   say(kinds([[0, 0], [10, 10], [10, 0], [0, 10]]).includes('cross'), 'a bow-tie: its crossing is found')
+  say(kinds([[0, 0], [10, 0], [5, 5], [10, 10], [0, 10], [5, 5]]).includes('touch') && !kinds([[0, 0], [10, 0], [5, 5], [10, 10], [0, 10], [5, 5]]).includes('cross'), 'a ring meeting itself at one point is a TOUCH, not a crossing')
   say(kinds([[0, 0], [10, 0], [5, 0], [5, 10]]).includes('fold'), 'an edge folding back along itself is found')
   // a hairpin: simple, but its tip turns 0.3° over a 0.72 m leg (Huron's lake arc, 2026-10-26)
   const th = 0.3 * Math.PI / 180, hair = [[0, 0], [4, 0], [4 - 0.72 * Math.cos(th), 0.72 * Math.sin(th)], [0, 10]]
   say(ringViolations(hair).length === 0 && kinds(hair).includes('acute'), 'a hairpin is simple, and still acute by the mint\'s own outlineCorner')
+  // settle's bound: on a 0.2 m-wide hairpin the leg's vertex sees the other leg 0.2 m off along its normal
+  const pin = [[0, 0], [10, 0], [10, 0.2], [5, 0.2], [0, 0.2], [-5, 5]], cl = clearances(pin, 1)
+  say(Math.abs(Math.min(...cl[3]) - 0.2) < 1e-9 && /lo = -Math\.min\(step, cl\[k\]\[0\] \/ 2\), hi = Math\.min\(step, cl\[k\]\[1\] \/ 2\)/.test(readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')),
+    `settle's reach is half the ring's own clearance: a hairpin leg's vertex sees the other leg ${Math.min(...cl[3]).toFixed(3)} m off (0.200), and settleOnSource brackets by half of it`)
   const src = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
   say(/ringViolations\(r, acuteAt\)/.test(src) && /outlineCorner\(o, \[\{ to: p \}, \{ to: q \}\], INK_EPS\)/.test(src), 'bake-coast asks ringViolations of every ring, with the mint\'s outlineCorner at INK_EPS, before it writes')
+}
+
+// ── H. a sentinel is not a value: the tracer never interpolates against one (Zob, 2026-10-26) ──
+console.log('── H. the tracer never reads a sentinel as a height')
+{
+  // 7 × 7 at 1 m, dry (+1) but a wet diagonal neck: a NO_RETURN node at (2, 2) and a valued wet node at (3, 3)
+  const n = 7, f = new Float32Array(n * n).fill(1), kind = new Uint8Array(n * n)
+  f[2 * n + 2] = NaN; kind[2 * n + 2] = KIND.NO_RETURN; f[3 * n + 3] = -0.5
+  const tally = {}, loops = wetLoops(f, n, n, 0, 0, 1, { kind, tally })
+  const pts = loops.flat(), keys = new Set(pts.map(p => p.map(v => v.toFixed(6)).join(',')))
+  say(keys.size === pts.length && loops.every(l => !ringViolations(l).length) && tally.noReturn === 4,
+    `a no-return node at a diagonal neck: ${keys.size} distinct of ${pts.length} crossing points, ${loops.filter(l => ringViolations(l).length).length} loop(s) touching, ${tally.noReturn ?? 0} no-return crossing(s) at edge midpoints (want all distinct, none, 4)`)
+  // a deck: a 1.4 m square pier deck over the node at (3, 3); the line must lie ON the deck's own ring
+  const ground = { man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.3, z: 2.3 }, { x: 3.7, z: 2.3 }, { x: 3.7, z: 3.7 }, { x: 2.3, z: 3.7 }, { x: 2.3, z: 2.3 }], isClosed: true }] }
+  const dk = deckFootprints(ground), g = new Float32Array(n * n).fill(1), gk = new Uint8Array(n * n)
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (dk.on(i, j)) { g[j * n + i] = NaN; gk[j * n + i] = KIND.DECK }
+  const dl = wetLoops(g, n, n, 0, 0, 1, { kind: gk, deckCross: dk.crossing }).flat()
+  const segD = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1, u = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)); return Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dz) }
+  const off = Math.max(...dl.map(p => Math.min(...dk.rings.flatMap(r => r.map((q, m) => segD(p, q, r[(m + 1) % r.length]))))))
+  say(gk.some(Boolean) && dl.length > 0 && off <= 1 / CLIP_SCALE, `a deck's crossings lie on the deck's own ring (${dl.length} point(s), furthest ${(1000 * off).toFixed(3)} mm off; the clip grid is ${1000 / CLIP_SCALE} mm)`)
+  let t = false; try { wetLoops(Float32Array.from([NaN, 1, 1, 1]), 2, 2, 0, 0, 1) } catch (e) { t = /no value and no kind/.test(e.message) }
+  say(t, 'a NaN with no kind REFUSES (a sentinel must be named, never stored)')
 }
 
 // ── C. the winding ──
