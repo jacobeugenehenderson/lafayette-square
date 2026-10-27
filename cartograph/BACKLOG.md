@@ -207,6 +207,9 @@ word in Ward's window. One heavy run at a time. Hashes copied from git, never ty
 `zob/drawn-twice-seams` @ 27953ff9, `scratch/zob-2026-10-25/seams-read-PAUSED.md`). One line per site: town · (x, z) · rows · metres · source.
 - HPDM (528.113, 1231.654) sidewalk one-item + vs face:underived/highway/asphalt, 78 m · (909.004, −825.328) sidewalk one-item, 31 m (Kerf, 8d14f92d)
 - PTown (A) rows: sidewalk/sidewalk, treelawn:verge, curb/treelawn:commercial; sites (−2150.023, −1787.495), (−660.721, 128.275) (Kerf, dad7a47e)
+- PTown (−348.530, −80.330) mayflower-street · a STREET acute: ①'s node outline refused (plain offsets kept), protopolygon.outlineRefused · 1 node (Ferrule, slot 12, claims-the-mint-refuses-no-outline)
+- Huron face:underived one-item +92 m over baseline (218 pairs, 171.5 m) · top sites (−2823.076, −2230.132) 32.4 m #1020, (−3155.852, −1725.719) 21.4 m #962, (−2807.801, −2249.218) 16.5 m #1020 (Ferrule, slot 13, claims-no-edge-is-drawn-twice)
+- Huron face:recreation / face:underived +83 m, new (7 pairs, 83.1 m) · the same sites as the one-item row: recreation#89 against underived#1020 / #962 (Ferrule, slot 13)
 
 
 > Jacob, 2026-10-20: *"LS, HPDM, PTown, and Huron are absolutely more presently important, and getting the Ward in solid
