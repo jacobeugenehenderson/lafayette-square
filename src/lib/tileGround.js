@@ -2497,37 +2497,57 @@ function shareWaterRunIntoShore(tile, who) {
   ;(tile.iaFull || []).forEach((r, si) => { const st = tile.iaStamp?.[si]; if (!st) return; const n = r.length
     r.forEach((v, e) => { if (tile.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL || tile.runs?.[st[(e - 1 + n) % n]]?.skelId === WATER_EDGE_SKEL) wet.set(K(v), v) }) })
   const want = []; for (const r of (tile.iA || [])) r.forEach((v, i) => { if (wet.has(K(v))) want.push({ r, i, v }) })
+  // ⭐ the walk steps along water EDGES, never wet vertices (Zob, 2026-10-26): an iA edge (a, b) is water when a and b sit on one
+  // iaFull ring and every iaFull edge between them, the shorter way, is stamped to the water. A short kerb edge between two
+  // joins (a jetty's end) has two wet ends and is not water: a walk across it would bracket across the street.
+  const fullAt = new Map(); (tile.iaFull || []).forEach((r, si) => r.forEach((v, e) => { if (!fullAt.has(K(v))) fullAt.set(K(v), [si, e]) }))
+  const waterEdge = (a, b) => { const A = fullAt.get(K(a)), B = fullAt.get(K(b)); if (!A || !B || A[0] !== B[0]) return false
+    const r = tile.iaFull[A[0]], st = tile.iaStamp?.[A[0]], n = r.length; if (!st) return false
+    const f = (B[1] - A[1] + n) % n, g = (A[1] - B[1] + n) % n, from = f <= g ? A[1] : B[1], len = Math.min(f, g)
+    for (let q = 0; q < len; q++) if (tile.runs?.[st[(from + q) % n]]?.skelId !== WATER_EDGE_SKEL) return false
+    return len > 0 }
   if (!want.length) return { tile, added: 0 }
   const cells = (tile.inkCells || []).map((c, ci) => ({ c, ci })).filter(x => x.c.cls === 'shore')
   if (!cells.length) throw new Error(`[tileGround][shore] ⛔ ${who}: the block carries ${want.length} vertex(es) on a water run (e.g. (${want[0].v.map(c => c.toFixed(3)).join(', ')})) but the tile has no shore cell to carry them. Refusing.`)
   const rings = cells.map(x => x.c.rings.map(r => r.slice()))
   const keyAt = () => { const m = new Map(); rings.forEach((R, a) => R.forEach((r, b) => r.forEach((v, c) => { if (!m.has(K(v))) m.set(K(v), [a, b]) }))); return m }
-  let at = keyAt(), added = 0
+  let at = keyAt(), added = 0, far = 0, farMax = 0
   const param = (P, A, B) => { const p = toClipper(P), a = toClipper(A), b = toClipper(B), dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; return L2 ? ((p.X - a.X) * dx + (p.Y - a.Y) * dy) / L2 : NaN }
   for (const { r, i, v } of want) { if (at.has(K(v))) continue
-    const n = r.length, walk = (dir) => { for (let s = 1; s < n; s++) { const w = r[(i + dir * s + n * s) % n]; if (!wet.has(K(w))) return null; if (at.has(K(w))) return w } return null }
+    const n = r.length, walk = (dir) => { for (let s = 1; s < n; s++) { const u = r[(i + dir * (s - 1) + n * s) % n], w = r[(i + dir * s + n * s) % n]
+      if (!waterEdge(u, w)) return null; if (at.has(K(w))) return w } return null }
     const lo = walk(-1), hi = walk(1)
     let placed = false
-    const tryEdge = (rr, u, w) => { const t = param(v, rr[u], rr[w]); if (!(t > 0 && t < 1)) return false; rr.splice(w === (u + 1) % rr.length ? u + 1 : u, 0, v); return true }
+    const tryEdge = (rr, u, w) => { const t = param(v, rr[u], rr[w]); if (!(t > 0 && t < 1)) return false; const e = [rr[u], rr[w]]; rr.splice(w === (u + 1) % rr.length ? u + 1 : u, 0, v); return e }
     if (lo && hi && at.get(K(lo))[0] === at.get(K(hi))[0] && at.get(K(lo))[1] === at.get(K(hi))[1]) {
       const [a, b] = at.get(K(lo)), rr = rings[a][b], m = rr.length, ia = rr.findIndex(w => K(w) === K(lo)), ib = rr.findIndex(w => K(w) === K(hi))
-      const fwd = (ib - ia + m) % m, back = (ia - ib + m) % m, step = fwd <= back ? 1 : -1, len = Math.min(fwd, back)
+      // the way round the cell BY KEY (Zob): the one whose intermediate cell vertices are all on the water run; neither or both refuses
+      const fwd = (ib - ia + m) % m, back = (ia - ib + m) % m
+      const allWet = (step, len) => { for (let q = 1; q < len; q++) if (!wet.has(K(rr[(ia + step * q + m) % m]))) return false; return true }
+      const okF = fwd > 0 && allWet(1, fwd), okB = back > 0 && allWet(-1, back)
+      if (okF === okB) throw new Error(`[tileGround][shore] ⛔ ${who}: the shore cell's stretch for (${v.map(c => c.toFixed(3)).join(', ')}) is ${okF ? 'both' : 'neither'} way(s) round the cell on the water run, by key. Refusing.`)
+      const step = okF ? 1 : -1, len = okF ? fwd : back
       // walk the cell's stretch from lo toward hi; insert on the sub-edge whose ends' parameters along lo → hi bracket the vertex's
       const tv = param(v, lo, hi)
       for (let q = 0; q < len && !placed; q++) { const u = (ia + step * q + m) % m, w = (ia + step * (q + 1) + m) % m
-        const tu = param(rr[u], lo, hi), tw = param(rr[w], lo, hi); if (tu < tv && tv < tw) { rr.splice(step > 0 ? u + 1 : u, 0, v); placed = true } } }
+        const tu = param(rr[u], lo, hi), tw = param(rr[w], lo, hi); if (tu < tv && tv < tw) { placed = [rr[u], rr[w]]; rr.splice(step > 0 ? u + 1 : u, 0, v) } } }
     else { // one side only (a run's end): the cell edge from that side's vertex that takes the point strictly inside — exactly one
       const c = lo || hi
       if (c) { const [a, b] = at.get(K(c)), rr = rings[a][b], m = rr.length, ic = rr.findIndex(w => K(w) === K(c))
         const opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => { const t = param(v, rr[u], rr[w]); return t > 0 && t < 1 })
         if (opts.length === 1) placed = tryEdge(rr, ...opts[0]) } }
+    // ⭐ VERIFIED, never chosen, by distance (Zob): the key-chosen edge must hold the point within the boolean's own containment
+    // (two grid units, insertOnEdges'); past it refuses. Counted and printed, as nodeRimWithPaint's far / farMax.
+    if (placed) { const [P, Q] = placed.map(toClipper), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, d = Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.hypot(dx, dy)
+      if (d > 2) throw new Error(`[tileGround][shore] ⛔ ${who}: the block's vertex (${v.map(c => c.toFixed(3)).join(', ')}) went on a key-chosen shore-cell edge ${d.toFixed(2)} grid units off its line (past the two-unit containment). Refusing.`)
+      if (d > Math.SQRT1_2) { far++; farMax = Math.max(farMax, d) } }
     if (!placed) throw new Error(`[tileGround][shore] ⛔ ${who}: the block's vertex (${v.map(c => c.toFixed(3)).join(', ')}) on a water run has no place on a shore cell (bracket ${lo ? 'found' : 'none'} / ${hi ? 'found' : 'none'}): the coast would be held with two vertex sets. Refusing.`)
     added++; at = keyAt() }
   // the proof: every water-run vertex of iA is now a shore cell's
   const miss = want.filter(x => !at.has(K(x.v)))
   if (miss.length) throw new Error(`[tileGround][shore] ⛔ ${who}: ${miss.length} of ${want.length} water-run vertex(es) of the block are on no shore cell after sharing (e.g. (${miss[0].v.map(c => c.toFixed(3)).join(', ')})). Refusing.`)
   let k = 0
-  return { tile: { ...tile, inkCells: tile.inkCells.map(c => c.cls === 'shore' ? { ...c, rings: rings[k++] } : c) }, added }
+  return { tile: { ...tile, inkCells: tile.inkCells.map(c => c.cls === 'shore' ? { ...c, rings: rings[k++] } : c) }, added, far, farMax }
 }
 function shareBlockIntoRing(t) {
   if (!t.iA?.length || !t.ring?.length) return { t, added: 0 }
@@ -8175,7 +8195,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ A trim that cuts nothing leaves iA AS IT IS (the same contour as iaFull, not Clipper's re-emitted copy of it); one that
         // cuts writes its crossings into iaFull too (`shareIntoFull`). Its other new vertices are the ring's own, where the ring
         // runs inside the curb.
-        let stamped = 0, added = 0, sharedIntoFull = 0, sharedIntoRing = 0, sharedIntoShore = 0; const byPair = {}
+        let stamped = 0, added = 0, sharedIntoFull = 0, sharedIntoRing = 0, sharedIntoShore = 0, shoreFar = 0, shoreFarMax = 0; const byPair = {}
         const keyOf = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
         protoShapeTiles = protoShapeTiles.map(t => { if (!t.iA?.length || !differenceRings(t.iA, [t.ring]).length) return t
           const iA = intersectRings(t.iA, [t.ring]), have = new Set([...(t.iaFull || []).flat(), ...t.ring].map(keyOf))
@@ -8192,7 +8212,8 @@ export function buildTileGround(ribbons, opts = {}) {
           const sh = shareBlockIntoRing(tile); sharedIntoRing += sh.added
           return { ...sh.t, _evGroups: groups } })
         // every tile, stamped or not: the block's vertices on a water run go into its shore cell (joins have no stamp)
-        protoShapeTiles = protoShapeTiles.map(t => { const ss = shareWaterRunIntoShore(t, `tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`); sharedIntoShore += ss.added; return ss.tile })
+        protoShapeTiles = protoShapeTiles.map(t => { const ss = shareWaterRunIntoShore(t, `tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`); sharedIntoShore += ss.added
+          shoreFar += ss.far || 0; shoreFarMax = Math.max(shoreFarMax, ss.farMax || 0); return ss.tile })
         const stamp = MP.boundaryRing
         if (stamp?.length > 2) {
           const before = protoShapeTiles.length; let rimShared = 0
@@ -8289,7 +8310,7 @@ export function buildTileGround(ribbons, opts = {}) {
           console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice)`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoFull} block crossing(s) the face trim and the circle minted, written into the struck contour (iaFull): ② is one ring`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoRing} block vertex(es) where the block follows the ring (the face trim's and the stamp's crossings there), written into the tile ring`)
-          console.log(`[tileGround][PROTO⊙] ${sharedIntoShore} block vertex(es) on a water run (stamp crossings, joins), written into the tile's shore cell (shareWaterRunIntoShore)`)
+          console.log(`[tileGround][PROTO⊙] ${sharedIntoShore} block vertex(es) on a water run (stamp crossings, joins), written into the tile's shore cell (shareWaterRunIntoShore) · ${shoreFar} placed past one rounding off their edge (max ${(shoreFarMax / SCALE * 1000).toFixed(3)} mm)`)
           console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)
         } else {
           console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)
