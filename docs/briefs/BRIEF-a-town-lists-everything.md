@@ -153,10 +153,14 @@ Mutation tests: delete PTown's MHC declaration → red; set MHC's terms to `unch
 7. **L** Chamber export (after Jacob's permission): listing well, matched through `applyListingOverrides`.
 8. **S** The §7 check, mutation-tested; then Jacob passes the cards on staging.
 
-## 9. Questions only Jacob can answer
+## 9. Jacob's rulings (2026-10-26), which replace the questions
 
-1. Will the Chamber give an export of members (with hours, photos) under written permission, and through whom?
-2. May we use PBG ad photos, and does the guide print hours?
-3. Will the Pilgrim Monument, PAAM, PHPP and the Lodge grant image use for the pitch?
-4. Should a place with no building (MacMillan Pier, beaches, lighthouses) be listable?
-5. What does the pitch need on screen first, and by what date exactly?
+1. **Use what we can get now.** The Chamber export is optional (Jacob can get it); coverage is already good for the demo.
+2. **The PBG guide's images may be used.** Jacob takes responsibility and takes them down on any request.
+3. **Gather what we can from public sources**, organisations' sites included: *"the pitch is that we can do all the stuff they're
+   doing and we're not relying on the www for connections or content."* We cease and desist at the first request. ⇒ Every source
+   still gets its registry row: terms read and QUOTED, plus `basis: "Jacob 2026-10-26: gathered publicly; removed on first
+   request"` where the terms don't grant reuse, and a takedown path (per source, per item). Rule 1 still holds: no row, no read.
+4. **Places with no building are real places and are listable** (MacMillan Pier, beaches, lighthouses). How they are SHOWN is
+   open design. Jacob's idea, filed: a 360° pan from a lighthouse.
+5. **The pitch is covered; everything from here is polish, but important polish.**
