@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 474,
+  "total": 475,
   "counts": {
     "safe": 338,
     "local-effect": 29,
-    "live": 107
+    "live": 108
   },
   "checks": [
     {
@@ -469,6 +469,17 @@
       "reasonClass": "unreadable",
       "why": [
         "computed import() of a path an argument or the environment can supply — arbitrary"
+      ]
+    },
+    {
+      "file": "checks/claims-a-pinched-face-is-two-faces.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
