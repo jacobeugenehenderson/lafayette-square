@@ -19,8 +19,9 @@
 //      every point, written in bake-ground's section format and read back through drawnGround.js: every point on ①'s rings is
 //      pinned and the drawn ground is HIGH all along the line; beside it land ≥ HIGH and water ≤ HIGH; a polder two cells
 //      from the line keeps its height (line-adjacent triangles only, never whole faces); one point takes one height in
-//      every group; a coast vertex the mesh lacks, a pinned vertex on a street deck's edge, and no deck list each REFUSE.
-//      `--mutants`: the sides swapped · no clamp · whole faces · either refusal dropped, each RED;
+//      every group; a street deck's edge (by its streetDecks record) is neither pinned nor clamped; a coast vertex the
+//      mesh lacks, off every deck, and no deck list each REFUSE. `--mutants`: the sides swapped · no clamp · whole faces ·
+//      the mesh refusal dropped · the deck exclusion dropped · a deck edge clamped, each RED;
 //   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
 //      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
 //      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
@@ -253,8 +254,13 @@ async function pinSection(mod, log) {
   no(shared > 0 && differ === 0, `one point, one height in every group (${shared} shared, ${differ} differ)`)
   let t = ''; try { run({ rings: [wnd([[2, 2], [5.5, 2], [8, 2], [8, 8], [2, 8]], 1), islR] }) } catch (e) { t = e.message }
   no(/not in the mesh/.test(t), 'a coast vertex with no ground vertex on it REFUSES (the line is not in the mesh)')
-  t = ''; try { run({ decks: [[[2, 2], [8, 2], [8, 1], [2, 1]]] }) } catch (e) { t = e.message }
-  no(/street deck's edge/.test(t), 'a pinned vertex on a street deck\'s edge REFUSES (a ruling owed)')
+  // a street deck whose edge is the lake's south shore (Boz, 2026-10-27: a deck's edge is not the high-water line)
+  { let K = null, w = ''; try { K = run({ decks: [[[2, 2], [8, 2], [8, 1], [2, 1]]] }) } catch (e) { w = e.message }
+    const south = K ? Array.from({ length: 7 }, (_, i) => `${2 + i},2`) : []
+    const untouched = K && south.every(k => !K.pins.has(k))
+    no(K && K.stats.deckEdgeVerts === 7 && K.stats.pinned === 25 && untouched, `a street deck's edge is neither pinned nor clamped (${K ? `${K.stats.deckEdgeVerts} deck-edge point(s), ${K.stats.pinned} pinned` : w})`) }
+  t = ''; try { run({ decks: [[[2, 2], [8, 2], [8, 1], [2, 1]]], rings: [wnd([[2, 2], [8, 2], [8, 5.5], [8, 8], [2, 8]], 1), islR] }) } catch (e) { t = e.message }
+  no(/not in the mesh/.test(t), 'with a deck present, a coast vertex OFF its edge that the mesh lacks still REFUSES')
   t = ''; try { run({ decks: undefined }) } catch (e) { t = e.message }
   no(/no street-deck list/.test(t), 'no deck list REFUSES (never read as none)')
   return red
@@ -269,7 +275,8 @@ async function pinSection(mod, log) {
         'if (wet) { if (f > H) { stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { stats.clampedLand++ } else stats.keptLand++'],
       ['whole faces, not line-adjacent triangles', '    if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue\n', ''],
       ['the line-in-the-mesh refusal dropped', '    if (missing.length) throw', '    if (false) throw'],
-      ['the deck refusal dropped', '    if (onDeck.length) throw', '    if (false) throw'],
+      ['the deck exclusion dropped', '      if (decks.length && onDeckEdge(x, z)) { deckKeys.add(keyOf(x, z)); continue }\n', ''],
+      ['a deck edge clamped', '      if (sideOf.has(k) || deckKeys.has(k)) continue', '      if (sideOf.has(k)) continue'],
     ]
     let alive = 0
     for (const [name, a, b] of M) { Object.assign(PIN_EDIT, { a, b }); const q = await pinSection(await load(pinMutant()), () => {}).catch(() => 1)
@@ -344,6 +351,13 @@ if (process.argv.includes('--mutants')) {
     try { await stampSections(mod, (ok) => { if (!ok) red++ }) } catch { red++ } finally { console.log = out; console.warn = warn }
     console.log(`  stamp mutant: ${name} → ${red ? 'RED ✓' : 'GREEN ✗'}`); if (!red) alive++ }
   if (alive) bad.push(`the stamp: ${alive} mutant(s) survived`)
+  // the deepest-bed INVARIANT cannot fire on a real stamp (shoreStamp.mjs says why), so it is shown to fire on one that
+  // breaks it: the ramp sunk a hundredfold must REFUSE, by the invariant's own name
+  Object.assign(STAMP_EDIT, { a: 'ramp = L.highAt(X(i), Z(j)) + sOf[b.ri] * b.d', b: 'ramp = L.highAt(X(i), Z(j)) + 100 * sOf[b.ri] * b.d' })
+  const sunkMod = await load(stampMutant()), warn = console.warn, out = console.log; let refused = null
+  console.log = console.warn = () => {}
+  try { sunkMod.stampCoast(field(), W, H, B, face, bb, mask, lake(0)) } catch (e) { refused = e.message } finally { console.log = out; console.warn = warn }
+  say(/deeper than the deepest bed/.test(refused ?? ''), `the deepest-bed invariant: a ramp sunk a hundredfold REFUSES by name (${refused ? refused.split(' — ')[0].slice(0, 90) : 'no refusal'})`)
 }
 if (bad.length) { console.log(`\n⛔ ${bad.length} claim(s) fail.`); process.exit(1) }
 console.log('\n✅ The drawn ground meets ①\'s coast at HIGH, on the line, and the bed ramps to it.')

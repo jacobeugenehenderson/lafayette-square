@@ -1640,7 +1640,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const decks = deckList.map(d => d.ring)
     coastPin = timed('pinTheCoast', () => pinTheCoast({ groups: drawnGroups, rings: coastRings, inDrawing, rawAt: T.getElevationRaw, highAt: L.highAt, tol, decks }))
     const st = coastPin.stats, g = st.fieldMinusHighAtPinsM
-    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm) · `
+    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm; ${st.deckEdgeVerts.toLocaleString()} on a street deck's edge, left at the deck) · `
       + `field − HIGH there p10 ${g.p10} · p50 ${g.p50} · p90 ${g.p90} m (min ${g.min}, max ${g.max}) · beside the line: land ${st.clampedLand.toLocaleString()} raised to HIGH, ${st.keptLand.toLocaleString()} above it · water ${st.clampedWater.toLocaleString()} lowered to HIGH, ${st.keptWater.toLocaleString()} below it`)
   }
   let drawnRawByteOffset = 0

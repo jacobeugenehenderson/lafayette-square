@@ -95,6 +95,12 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   })
   for (let ri = 0; ri < face.length; ri++) if (slopeFrom[ri] !== null) sOf[ri] = sOf[slopeFrom[ri]]
   const islands = holder.filter(h => h !== null).length, borrowed = slopeFrom.filter(h => h !== null).length
+  // ⛔ AN INVARIANT, ASSERTED (Boz, 2026-10-26; kept 2026-10-27): no written node deeper than the bed's own deepest water node
+  // before the stamp (writeBed's cut, or the deepest measured floor). It cannot fire as written: a crossed corner lies within
+  // cell·√2 of the line, while the ring's slope is the median of samples two to four cells out, each at least as deep as its
+  // own ramp there, so a corner's ramp is shallower than the deepest of them; and the tide's extension never goes below the
+  // bed it keeps. It guards the next edit, not this one: refused by name, never clamped.
+  let deepest = Infinity; for (let k = 0; k < width * height; k++) if (mask[k] && normalized[k] < deepest) deepest = normalized[k]
   const stamped = new Uint8Array(width * height)
   let ramped = 0, bedWon = 0
   // SEAWARD only: at a crossed cell's corner, the ramp; in the tide's extension, max(ramp, bed), so real flats still meet the beach
@@ -104,6 +110,9 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
     if (b.crossed) { normalized[k] = ramp; ramped++; stamped[k] = 1 }
     else if (ramp > normalized[k]) { normalized[k] = ramp; ramped++; stamped[k] = 1 } else bedWon++
   }
+  const sunk = []; for (const [k] of best) if (stamped[k] && normalized[k] < deepest - 1e-6) sunk.push(k)
+  if (sunk.length) { const w = sunk.reduce((m, k) => normalized[k] < normalized[m] ? k : m, sunk[0])
+    throw new Error(`⛔ the stamp: ${sunk.length.toLocaleString()} node(s) written deeper than the deepest bed (${deepest.toFixed(3)} m), the deepest ${normalized[w].toFixed(3)} m at (${Math.round(X(w % width))}, ${Math.round(Z((w - w % width) / width))}); first at ${sunk.slice(0, 5).map(k => `(${Math.round(X(k % width))}, ${Math.round(Z((k - k % width) / width))})`).join(' · ')} — no beach is that deep`) }
   // ⛔ a bed standing at or above HIGH inside ①'s water is ① contradicting the lidar: counted and named, never clamped
   const above = []
   for (let k = 0; k < width * height; k++) if (mask[k] && !stamped[k] && !(rock && rock[k]) && normalized[k] >= L.highAt(X(k % width), Z((k - k % width) / width))) above.push(k)
