@@ -194,14 +194,26 @@ export function streetDecks(ground, streets) {
  *  negative), the arcs clipped where they run under a deck.
  *  ⭐ AND THE DECK'S EDGE OVER THE WATER IS SHORE (Boz's ruling, 2026-10-27, after PTown's absorb refused 4 cells): taking a
  *  deck out of the water gives the water a new edge along the deck, so that edge is emitted as shoreline ARCS too: each
- *  deck's outline intersected with the ORIGINAL water rings, as open paths. Every edge of the returned rings is then stroked
- *  by exactly one arc (checks/claims-the-coast-is-the-lidars B). Such an arc is TAGGED with its deck's identity, `arc.deck`
+ *  the returned rings' own edges on a deck (below). Every edge of the returned rings is then stroked by exactly one arc
+ *  (checks/claims-the-coast-is-the-lidars F, D). Such an arc is TAGGED with its deck's identity, `arc.deck`
  *  = the deck's index in `deckRings` (the order of streetDecks' record), so a reader tells a deck's edge from a beach; it is
  *  stroked as any coast (Boz: how a deck edge LOOKS is the filed deck work). */
 export function waterWithoutDecks(rings, arcs, deckRings) {
   if (!deckRings.length) return { rings, arcs }
+  // ⭐ THE DECK IS NODED BY THE COAST FIRST (PTown, 10-27): where the coast follows a deck (bake-coast#followDecks), its
+  // crossings lie on the deck's oblique edges only to the millimetre lattice, so the difference cut 0.08–0.2 mm slivers of
+  // water beside them. Every water-ring vertex lying on a deck edge (at the lattice) becomes a vertex of that deck, so the
+  // two outlines share it exactly and the difference leaves nothing between them.
+  const lat = 1 / SCALE, cellOf = new Map(), ck = (x, z) => `${Math.floor(x)},${Math.floor(z)}`
+  for (const r of rings) for (const p of r) { const k = ck(p[0], p[1]); (cellOf.get(k) || cellOf.set(k, []).get(k)).push(p) }
+  const noded = deckRings.map(d => d.flatMap((a, m) => { const b = d[(m + 1) % d.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, on = []
+    if (!L2) return [a]
+    for (let i = Math.floor(Math.min(a[0], b[0])) - 1; i <= Math.floor(Math.max(a[0], b[0])) + 1; i++) for (let j = Math.floor(Math.min(a[1], b[1])) - 1; j <= Math.floor(Math.max(a[1], b[1])) + 1; j++)
+      for (const p of cellOf.get(`${i},${j}`) || []) { const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2
+        if (t > 0 && t < 1 && Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= lat) on.push([t, p]) }
+    return [a, ...on.sort((x, y) => x[0] - y[0]).map(([, p]) => p)] }))
   const c = new Clipper(), tree = new PolyTree()
-  c.AddPaths(rings.map(toPath), PolyType.ptSubject, true); c.AddPaths(deckRings.map(toPath), PolyType.ptClip, true)
+  c.AddPaths(rings.map(toPath), PolyType.ptSubject, true); c.AddPaths(noded.map(toPath), PolyType.ptClip, true)
   if (!c.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: water minus decks FAILED')
   const out = []
   const walk = (node) => { for (const ch of node.Childs()) { const o = fromPath(ch.Contour()); out.push(signedArea(o) > 0 ? o : o.reverse())
@@ -213,25 +225,27 @@ export function waterWithoutDecks(rings, arcs, deckRings) {
     const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= tol })
   for (const r of out) r.deck = r.map((a, i) => { const b = r[(i + 1) % r.length], mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
     const k = deckRings.findIndex(d => onRing(a, d) && onRing(b, d) && onRing(mid, d)); return k < 0 ? null : k })
+  // ⭐ THE ARCS ARE THE RETURNED RINGS' OWN EDGES, each stroked once (Zob's read, 2026-10-27; PTown, 10-27): built by clipping
+  // the coast arcs and the deck outlines as open paths, an edge where the coast FOLLOWS a deck (bake-coast#followDecks) was
+  // stroked twice, and a deck's landward root left a stray arc inside the land, because Clipper's choice for a path lying ON
+  // the clip boundary is no rule. So each returned edge is classed once: a deck's (`ring.deck[i]`), else the coast's when it
+  // lies on a given arc, else none (the fetched square's own sides, which no arc strokes). Each maximal run of one class is
+  // one arc, wrapping at the ring's start; a ring of one class throughout is one closed arc.
+  const G = 4, cells = new Map(), key = (x, z) => `${Math.floor(x / G)},${Math.floor(z / G)}`
+  arcs.forEach((a, ai) => { for (let i = 0; i + 1 < a.length; i++) { const p = a[i], q = a[i + 1], n = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / G) || 1
+    for (let t = 0; t <= n; t++) for (const dx of [-1, 0, 1]) for (const dz of [-1, 0, 1]) { const k = key(p[0] + (q[0] - p[0]) * t / n + dx * G, p[1] + (q[1] - p[1]) * t / n + dz * G); (cells.get(k) || cells.set(k, []).get(k)).push([ai, i]) } } })
+  const near = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(v[0] - a[0] - t * dx, v[1] - a[1] - t * dz) <= tol }
+  const onArc = (v) => (cells.get(key(v[0], v[1])) || []).some(([ai, i]) => near(v, arcs[ai][i], arcs[ai][i + 1]))
   const a2 = []
-  for (const arc of arcs) {
-    const k = new Clipper(), t2 = new PolyTree()
-    k.AddPath(toPath(arc), PolyType.ptSubject, false); k.AddPaths(deckRings.map(toPath), PolyType.ptClip, true)
-    k.Execute(ClipType.ctDifference, t2, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-    for (const p of Clipper.OpenPathsFromPolyTree(t2)) if (p.length >= 2) a2.push(fromPath(p))
+  for (const r of out) {
+    const n = r.length, cls = r.map((a, i) => { if (r.deck[i] != null) return `d${r.deck[i]}`; const b = r[(i + 1) % n]
+      return onArc(a) && onArc(b) && onArc([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]) ? 'c' : null })
+    const tag = (arc, c) => { if (c[0] === 'd') arc.deck = +c.slice(1); a2.push(arc) }
+    const start = cls.findIndex((c, i) => c !== cls[(i - 1 + n) % n])
+    if (start < 0) { if (cls[0]) tag([...r.map(p => [p[0], p[1]]), [r[0][0], r[0][1]]], cls[0]); continue }
+    for (let s = 0; s < n;) { const i0 = (start + s) % n, c = cls[i0]; let e = s; while (e + 1 < n && cls[(start + e + 1) % n] === c) e++
+      if (c) { const pts = []; for (let q = s; q <= e + 1; q++) pts.push([r[(start + q) % n][0], r[(start + q) % n][1]]); tag(pts, c) }
+      s = e + 1 }
   }
-  deckRings.forEach((ring, k) => {
-    const loop = toPath(ring); loop.push(loop[0])
-    const c2 = new Clipper(), t3 = new PolyTree()
-    c2.AddPath(loop, PolyType.ptSubject, false); c2.AddPaths(rings.map(toPath), PolyType.ptClip, true)
-    if (!c2.Execute(ClipType.ctIntersection, t3, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: deck ${k}'s outline against the water FAILED`)
-    // the loop is cut open at its first vertex, so two pieces meeting there are one; Clipper keeps no open path's direction
-    const at = (q) => `${q.X},${q.Y}`, s0 = at(loop[0])
-    let pieces = Clipper.OpenPathsFromPolyTree(t3).filter(p => p.length >= 2)
-    const cut = pieces.filter(p => at(p[0]) === s0 || at(p[p.length - 1]) === s0)
-    if (cut.length === 2) { const [p, q] = cut, into = at(p[p.length - 1]) === s0 ? p : [...p].reverse(), from = at(q[0]) === s0 ? q : [...q].reverse()
-      pieces = [...pieces.filter(x => !cut.includes(x)), [...into, ...from.slice(1)]] }
-    for (const p of pieces) { const arc = fromPath(p); arc.deck = k; a2.push(arc) }
-  })
   return { rings: out, arcs: a2 }
 }

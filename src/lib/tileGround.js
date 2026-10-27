@@ -1033,6 +1033,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       const flip = inkSign < 0
       // ⭐ A DECK'S EDGE IS WATER WITH ITS DECK'S IDENTITY (Boz's ruling B, 2026-10-27): an edge structures.mjs#waterWithoutDecks
       // tagged `ring.deck[i]` takes its own water owner carrying `deck`, so the tag is not lost at the one water label.
+      if (Array.isArray(coastArcs) && coastArcs.some(a => a?.deck != null) && coast.some(r => !Array.isArray(r.deck))) throw new Error('[①] ⛔ the shoreline arcs carry a deck\'s edge, and a water ring carries no per-edge deck tag (structures.mjs#waterWithoutDecks): the deck\'s edge would take the beach\'s owner. Refusing.')
       const deckOwner = new Map(), ownerOf = (k) => k == null ? wIdx : (deckOwner.get(k) ?? deckOwner.set(k, owners.push({ ...owners[wIdx], deck: k }) - 1).get(k))
       for (const r of coast) {
         if (!Array.isArray(r) || r.length < 3) continue

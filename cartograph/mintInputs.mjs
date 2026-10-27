@@ -64,6 +64,9 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   const coast = readCoast(cleanDir, bb, who)
   const decks = coast.coast ? streetDecks(osm.ground || {}, streets) : { rings: [], decks: [] }
   const water = coast.coast ? waterWithoutDecks(coast.rings, coast.arcs, decks.rings) : { rings: [], arcs: [] }
+  // ⛔ a deck's edge is known by the rings' own tag (`ring.deck`, an array property JSON would drop silently): with decks taken
+  // out and a ring carrying none, the mint would stroke the deck's edge as a beach (Zob, 2026-10-27)
+  if (decks.decks.length && water.rings.some(r => !Array.isArray(r.deck))) throw new Error(`[mintInputs] ⛔ ${who}: ${decks.decks.length} street deck(s) taken out of the water, and a water ring carries no per-edge deck tag. Refusing.`)
   const holes = water.rings.filter(r => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) < 0).length
   // ⭐ ISLANDS go through the mint as HOLES in the water (Jacob 2026-10-26). ⛔ A STREET DECK standing clear of every shore is a
   // hole the coast did not draw: it has no land root to take a height from (shoreStamp.mjs#deckHeights), so it refuses, by name
