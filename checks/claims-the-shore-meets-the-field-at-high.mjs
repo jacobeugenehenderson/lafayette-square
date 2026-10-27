@@ -274,7 +274,7 @@ async function pinSection(mod, log) {
       ['no clamp beside the line', 'if (wet) { if (f > H) { raw.set(k, H); stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { raw.set(k, H); stats.clampedLand++ } else stats.keptLand++',
         'if (wet) { if (f > H) { stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { stats.clampedLand++ } else stats.keptLand++'],
       ['whole faces, not line-adjacent triangles', '    if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue\n', ''],
-      ['the line-in-the-mesh refusal dropped', '    if (missing.length) throw', '    if (false) throw'],
+      ['the line-in-the-mesh refusal dropped', '    if (missing.length) {\n      // measured', '    if (false) {\n      // measured'],
       ['the deck exclusion dropped', '      if (decks.length && onDeckEdge(x, z)) { deckKeys.add(keyOf(x, z)); continue }\n', ''],
       ['a deck edge clamped', '      if (sideOf.has(k) || deckKeys.has(k)) continue', '      if (sideOf.has(k)) continue'],
     ]

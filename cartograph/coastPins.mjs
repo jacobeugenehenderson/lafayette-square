@@ -96,7 +96,18 @@ export function pinTheCoast({ groups, rings, inDrawing, rawAt, highAt, tol, deck
       for (let di = -1; di <= 1 && !hit; di++) for (let dj = -1; dj <= 1 && !hit; dj++)
         for (const [px, pz] of pg.get(cellKey(Math.floor(x / C2) + di, Math.floor(z / C2) + dj)) || []) if (Math.hypot(px - x, pz - z) <= tol) { hit = true; break }
       if (!hit) missing.push([x, z]) }
-    if (missing.length) throw new Error(`⛔ the pin: ${missing.length} of ①'s ${stats.coastVertsInDrawing} coast vertices inside the drawing have no ground vertex within ${(tol * 1000).toFixed(2)} mm — first at ${missing.slice(0, 5).map(p => `(${p[0].toFixed(3)}, ${p[1].toFixed(3)})`).join(' · ')}. The line is not in the mesh, so it cannot be pinned`)
+    if (missing.length) {
+      // measured, on the failure path only: how far each missing coast vertex is from the nearest ground vertex, and whose
+      const G = 4, vg = new Map()
+      groups.forEach(({ id, positions: P }) => { for (let v = 0; v < P.length; v += 3) { const q = cellKey(Math.floor(P[v] / G), Math.floor(P[v + 2] / G)); (vg.get(q) || vg.set(q, []).get(q)).push([P[v], P[v + 2], id]) } })
+      const near = missing.map(([x, z]) => { let bd = Infinity, who = null
+        for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const [px, pz, id] of vg.get(cellKey(Math.floor(x / G) + di, Math.floor(z / G) + dj)) || []) { const d = Math.hypot(px - x, pz - z); if (d < bd) { bd = d; who = id } }
+        return { d: bd, who } })
+      const ds = near.map(n => n.d).filter(Number.isFinite).sort((p, q) => p - q), q = (f) => ds.length ? (ds[Math.min(ds.length - 1, Math.floor(f * ds.length))] * 1000).toFixed(2) : '—'
+      const by = {}; for (const n of near) by[n.who ?? `none within ${G} m`] = (by[n.who ?? `none within ${G} m`] || 0) + 1
+      throw new Error(`⛔ the pin: ${missing.length} of ①'s ${stats.coastVertsInDrawing} coast vertices inside the drawing have no ground vertex within ${(tol * 1000).toFixed(2)} mm — first at ${missing.slice(0, 5).map(p => `(${p[0].toFixed(3)}, ${p[1].toFixed(3)})`).join(' · ')}. `
+        + `The nearest ground vertex to each: p10 ${q(0.1)} · p50 ${q(0.5)} · p90 ${q(0.9)} · max ${q(1)} mm (${missing.length - ds.length} with none within ${G} m); nearest group ${Object.entries(by).sort((p, q) => q[1] - p[1]).slice(0, 4).map(([k, v]) => `${k} ${v}`).join(' · ')}. The line is not in the mesh, so it cannot be pinned`)
+    }
   }
   // 2. LINE-ADJACENT: the other corners of every triangle that touches the line, clamped by side
   const raw = new Map(pin)
