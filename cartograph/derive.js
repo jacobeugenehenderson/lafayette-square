@@ -31,7 +31,7 @@ import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
 import { selectMarkings, parkingSeed, MARKING_LOOK } from '../src/cartograph/streetMarkings.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // ① is minted HERE at prebake (`mintProtopolygon`) and frozen into the artifact; the other two imports run beside it.
-import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
+import { mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares, HIGHWAY_CLASSES } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
@@ -4881,8 +4881,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
     let protoBlockClass = null
     if (MP.blocks?.length) {
-      const HWY = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
-      const hwySk = new Set(pGradeSep.filter(g => HWY.has(g.highway)).map(g => g.skelId ?? g.name))
+      const hwySk = new Set(pGradeSep.filter(g => HIGHWAY_CLASSES.has(g.highway)).map(g => g.skelId ?? g.name))
       const msbfPath = footprintWell(SCENE).path   // the town's footprint geometry well (footprint-well.mjs)
       // ⛔ RAW intake footprints, NEVER the member/shown set (ruling g: a building the operator hid still fronts).
       const centroids = existsSync(msbfPath)
@@ -4928,7 +4927,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     // the mint's segOrd); ② draws it WITH authoring and check 5 reads it. ⛔ An empty list is frozen too — absent
     // means "poured before flares", never "none".
     const protoFlares = (() => {
-      const F = rampTerminalFlares(pStreets, pGradeSep, new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link']), boundaryPolyXZ)
+      const F = rampTerminalFlares(pStreets, pGradeSep, HIGHWAY_CLASSES, boundaryPolyXZ)
       console.log(`    [H-3 flare] ${F.flares.length} ramp-terminal flare(s) declared (the town street widens to receive a wider highway end, 10:1) · ${F.offRim} highway end(s) beyond the circle, not judged`)
       for (const f of F.flares) console.log(`      ${f.hwy}.${f.end} ${f.corner} corner → ${f.street} ${f.side}/${f.segOrd}: overhang ${f.baseO.toFixed(2)} m on the base width (${f.baseHW.toFixed(2)}), taper ${(f.rate * f.baseO).toFixed(1)} m · ${f.sources.filter(x => x.startsWith('[U]')).join(' · ')}`)
       for (const u of F.unreceived) console.warn(`      ⛔ ${u.hwy}.${u.end} ${u.corner} corner at (${u.node.map(v => v.toFixed(0)).join(', ')}): NO town leg can receive it — no flare is possible, check 5 stays red`)

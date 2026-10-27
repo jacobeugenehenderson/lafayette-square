@@ -27,15 +27,20 @@
 //       each leave the street in the water — RED.
 //   (6b) the same bridge with ASYMMETRIC sides (left 3 m, right 6 m): the overlay is the street's own strip, each side at its own
 //       width (the side convention H's sweep uses). MUTANT: the sides swapped reads RED.
-//   (9) a street that BENDS 40° on the bank just past its crossing, and (10) one that turns 60° away from a shore its tangent would
-//       have run beside: the overlay is the CHAIN's strip (its segments' strips and miters, built here independently) ∩ the water,
-//       and it meets the coast in one run per bank. MUTANT: the run-on along the tangent instead of the chain reads RED on both.
+//   (9) a street that BENDS 40° on the bank just past its crossing: the overlay is the CHAIN's strip (its segments' strips and
+//       miters, built here independently) ∩ the water. MUTANT: the run-on along the tangent instead of the chain reads RED.
+//   (10) a street that turns 60° away from a shore just past the bank, and (14) one that runs on BESIDE the shore, its strip
+//       overhanging the water: the overlay is the span's own stretch, bank to bank — never the street's paint over the water past
+//       a bank (Boz, 2026-10-27) — the strip between the left bank and the right bank's coast edge run on straight across it.
+//       MUTANT: the bank cut skipped paints the overhang — RED on both.
 //   (11) a bank that WIGGLES across the strip's edge (the coast leaves the strip and comes back beside the crossing): the piece
 //       meets the coast in two runs at one bank, so the overlay REFUSES by name. MUTANT: the closure skipped paints it — RED.
 //   (12) a span that crosses a segOrd boundary (a chain meets the bridge in the middle of the water) has no one measure: the mint
 //       REFUSES it by name (Zob). MUTANT: the refusal skipped mints it — RED.
-//   (13) a street lying WHOLLY in the water crosses no coast and was kept as ink there, silently: it is one wet piece, recorded
-//       (byCoast, no banks) and out of the ink. MUTANT: the wholly-wet case skipped keeps its ink in the water — RED.
+//   (13) a street lying WHOLLY in the water, at grade, crosses no coast and was kept as ink there, silently: it is no bridge (no
+//       bank, no tag — Jacob's (a) rules a CROSSING), so the mint REFUSES it by name (Boz, Zob). (13b) the same chain TAGGED off
+//       grade (a bridge way split mid-span) is recorded and leaves the ink. MUTANTS: the wholly-wet case skipped (its ink kept in
+//       the water) and the no-bank refusal skipped (a floating strip) — each RED.
 //   (4) over LAND nothing changes: the same street, its run off grade, with no water → the same ink as with no grade runs.
 //   MUTANTS (6): the overlay disabled (a gap over the water) and the overlay not run on past the banks (butt ends at the crossing
 //   vertices leave a triangle of water at each oblique bank) must each read RED.
@@ -165,7 +170,7 @@ const shoreR = [[-150, 0], [57, 0], [57 + 50 * Math.cos(60 * Math.PI / 180), 50 
 const bentCase = (arc, W, R) => { const S = inletStreets().map(x => x.skelId !== 'r' ? x : { ...x, points: R, caps: { start: { degree: 2 }, end: { degree: 1 } }, gradeRuns: [{ from: 0, to: R.length - 1, ways: [3], offGrade: true, exact: true, by: 'exact' }] })
   const M = quiet(() => mintProtopolygon({ streets: S, boundary, bb, coast: [W], coastArcs: [arc] })), sp = (M.offGradeSpans || []).find(e => e.street === 'r')
   return { M, sp, ref: sp ? chainStrip(R, 4, 4, W, sp) : [] } }
-const CASES = { 9: ['a street bending 40° on the bank just past its crossing', bentCase(bendArc, bendWater, bendR)], 10: ['a street turning 60° away from a shore its tangent would run beside', bentCase(shoreArc, shoreWater, shoreR)] }
+const CASES = { 9: ['a street bending 40° on the bank just past its crossing', bentCase(bendArc, bendWater, bendR)] }
 const bentOf = (fn, C) => { try { const B = quiet(() => fn(C.M.offGradeSpans, C.M.waterRings, () => 4)); const b = B.find(x => x.street === 'r'); return b ? diffTo(b.rings, C.ref) : 'no bridge' } catch (e) { return String(e.message) } }
 for (const [k, [what, C]] of Object.entries(CASES)) { const d = bentOf(bridgeOverlay, C)
   row(!!C.sp && C.ref.length === 1 && typeof d === 'number' && d < gridTol(C.ref), `(${k}) ${what}: ${C.sp ? `span r|${C.sp.segOrd} (${C.sp.wetM} m, dry run-on ${C.sp.before.length} + ${C.sp.after.length} point(s))` : 'NO span'}; ${typeof d === 'number' ? `the overlay differs from the chain's own strip ∩ the water by ${d.toFixed(4)} m² of ${absA(C.ref).toFixed(1)} (the 1 mm grid allows ${gridTol(C.ref).toFixed(3)})` : `REFUSES (${String(d).slice(0, 110)})`}`) }
@@ -187,12 +192,28 @@ const wholly = (mint) => { let M = null; try { M = quiet(() => mint({ streets: [
   const ink = M.rings.reduce((t, r, ri) => t + r.filter((_, k) => M.owners[M.labels[ri][k]]?.skelId === 'w').length, 0)
   return { sp: (M.offGradeSpans || []).find(e => e.street === 'w'), ink } }
 { const R = wholly(mintProtopolygon)
-  row(!R.refused && R.sp?.kind === 'byCoast' && R.sp.banks?.every(b => !b) && R.ink === 0, `(13) a street wholly in the water: ${R.refused ? `REFUSED (${R.refused.slice(0, 100)})` : `${R.sp ? `recorded ${R.sp.street}|${R.sp.segOrd} ${R.sp.kind}, banks [${R.sp.banks}]` : 'NOT recorded'}, ${R.ink} ink vertex(es) of it left`}`) }
+  row(!!R.refused && /lying wholly in the water/.test(R.refused), `(13) a street wholly in the water, at grade: ${R.refused ? (/lying wholly in the water/.test(R.refused) ? 'REFUSED by name (no bank, no tag: not a bridge)' : `refused otherwise (${R.refused.slice(0, 100)})`) : `${R.sp ? 'RECORDED — a floating strip' : 'NOT recorded'}, ${R.ink} ink vertex(es) of it left`}`) }
+// (10) and (14) on the shore inlet: the stretch is the strip between the left bank (x = xl(z)) and the right bank's edge
+// (70, 60) → (55, −3) run on straight below the shore's corner: x = 55 + 15 (z + 3) / 63
+// the stretch: the chain's own strip ∩ the water (`chainStrip`, independent of the sweep), less everything past that line
+const xR = (z) => 55 + 15 * (z + 3) / 63, pastRight = [[xR(-300), -300], [300, -300], [300, 300], [xR(300), 300]]
+const SHORE = { 10: ['a street turning 60° away from a shore just past the bank', bentCase(shoreArc, shoreWater, shoreR)], 14: ['a street running on beside the shore, its strip over the water', bentCase(shoreArc, shoreWater, [[-150, 0], [150, 0]])] }
+const shoreOf = (fn, C) => { try { const B = quiet(() => fn(C.M.offGradeSpans, C.M.waterRings, () => 4)); const b = B.find(x => x.street === 'r'); return b ? b.rings : 'no bridge' } catch (e) { return String(e.message) } }
+const stretchOf = (C) => differenceRings(C.ref, [pastRight])
+for (const [k, [what, C]] of Object.entries(SHORE)) { const B = shoreOf(bridgeOverlay, C), S = stretchOf(C), d = typeof B === 'string' ? null : diffTo(B, S)
+  const over = typeof B === 'string' ? null : absA(differenceRings(B, S))
+  row(!!C.sp && S.length === 1 && d != null && d < gridTol(S), `(${k}) ${what}: ${d == null ? `REFUSES (${String(B).slice(0, 110)})` : `the overlay differs from the span's own stretch bank to bank by ${d.toFixed(4)} m² of ${absA(S).toFixed(1)} (the grid allows ${gridTol(S).toFixed(3)}), ${over.toFixed(4)} m² of it past a bank`}`) }
+// (13b) the wholly-wet chain TAGGED off grade
+{ let M = null, r = null; try { M = quiet(() => mintProtopolygon({ streets: [...inletStreets(), st('w', [[0, 10], [20, 10]], [{ from: 0, to: 1, ways: [6], offGrade: true, exact: true, by: 'exact' }])], boundary, bb, coast: [inlet], coastArcs: [inletArc] })) } catch (e) { r = String(e.message) }
+  const sp = M?.offGradeSpans?.find(e => e.street === 'w'), ink = M ? M.rings.reduce((t, q, ri) => t + q.filter((_, k) => M.owners[M.labels[ri][k]]?.skelId === 'w').length, 0) : null
+  row(!r && sp?.kind === 'tagged' && ink === 0, `(13b) the same chain tagged off grade (a bridge way split mid-span): ${r ? `REFUSED (${r.slice(0, 100)})` : `recorded ${sp ? `${sp.street}|${sp.segOrd} ${sp.kind}` : 'NOT'}, ${ink} ink vertex(es) left`}`) }
 { const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
   for (const [name, a, b] of [['the overlay disabled (a gap over the water)', 'for (const sp of spans) { if (sp.hwy) continue', 'for (const sp of spans) { continue'],
                               ['the overlay not run on past the banks', 'const line = [...B.slice(0, -1), ...P, ...Af.slice(1)]', 'const line = P'],
                               ['the run-on along the tangent, not the chain', 'const line = [...B.slice(0, -1), ...P, ...Af.slice(1)]', 'const ext = (a, f) => { const dx = a[0] - f[0], dz = a[1] - f[1], L = Math.hypot(dx, dz); return [a[0] + dx / L * 50, a[1] + dz / L * 50] }; const line = [ext(P[0], P[1]), ...P, ext(P[P.length - 1], P[P.length - 2])]'],
                               ['the wholly-wet case skipped', "    if (!V.some(v => v.cross) && !(V.length >= 2 && wet(", "    if (!V.some(v => v.cross) && true || !(V.length >= 2 && wet("],
+                              ['the no-bank refusal skipped', '      if (!part[0].cross && !part[part.length - 1].cross) throw', '      if (false) throw'],
+                              ['the bank cut skipped', '    const A = (fars.length ?', '    const A = (false ?'],
                               ['the segOrd refusal skipped', '      if (ords.length > 1) throw', '      if (false) throw'],
                               ['the closure skipped', '    if (!closed) throw', '    if (false) throw'],
                               ['the sides swapped', 'sweepHighway(line, { spans: [{ hw: hl }] }, { spans: [{ hw: hr }] })', 'sweepHighway(line, { spans: [{ hw: hr }] }, { spans: [{ hw: hl }] })'],
@@ -209,8 +230,10 @@ const wholly = (mint) => { let M = null; try { M = quiet(() => mint({ streets: [
       if (name.startsWith('(a)') || name.startsWith('(b)')) continue
       if (name.startsWith('the run-on along the tangent')) { for (const [k, [, C]] of Object.entries(CASES)) { const d = bentOf(M.bridgeOverlay, C)
           row(typeof d === 'string' || d > 1e-2, `mutant (${k}) ${name}: ${typeof d === 'number' ? `differs from the chain's strip by ${d.toFixed(3)} m²` : `refuses (${d.slice(0, 80)})`} — RED as it must be`) } continue }
-      if (name === 'the wholly-wet case skipped') { const R = wholly(M.mintProtopolygon)
-        row(!!R.refused || !R.sp || R.ink > 0, `mutant (13) ${name}: ${R.refused ? `refuses (${R.refused.slice(0, 80)})` : `${R.sp ? 'recorded' : 'NOT recorded'}, ${R.ink} ink vertex(es) in the water`} — RED as it must be`); continue }
+      if (name === 'the wholly-wet case skipped' || name === 'the no-bank refusal skipped') { const R = wholly(M.mintProtopolygon)
+        row(!R.refused || !/lying wholly in the water/.test(R.refused), `mutant (13) ${name}: ${R.refused ? `refuses otherwise (${R.refused.slice(0, 80)})` : `${R.sp ? 'recorded, a floating strip' : 'NOT recorded'}, ${R.ink} ink vertex(es) in the water`} — RED as it must be`); continue }
+      if (name === 'the bank cut skipped') { for (const [k, [, C]] of Object.entries(SHORE)) { const B = shoreOf(M.bridgeOverlay, C), over = typeof B === 'string' ? null : absA(differenceRings(B, stretchOf(C)))
+          row(over == null || over > 1, `mutant (${k}) ${name}: ${over == null ? `refuses (${String(B).slice(0, 80)})` : `paints ${over.toFixed(2)} m² past a bank`} — RED as it must be`) } continue }
       if (name === 'the segOrd refusal skipped') { const r = segOrdRefusal(M.mintProtopolygon)
         row(!r || !/segOrd boundary/.test(r), `mutant (12) ${name}: ${r ? `refuses otherwise (${r.slice(0, 80)})` : 'mints the span at one width'} — RED as it must be`); continue }
       if (name === 'the closure skipped') { const r = wiggleOf(M.bridgeOverlay)
