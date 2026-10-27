@@ -42,15 +42,16 @@ import { join } from 'path'
 import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
 import { readCoast, maskOf, waterFace, COAST_FILE } from './coastFile.mjs'
+import { stampCoast } from './shoreStamp.mjs'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { localBB } from './geography.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
-import { authoredWater, waterRecord } from './waterDatums.mjs'
+import { authoredWater, waterRecord, igld85ToNavd88 } from './waterDatums.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels as levelsOf } from './waterLevel.mjs'
 import clipperLib from 'clipper-lib'
-import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, demVerticalDatum, NAVD88, ABOVE_WATER_M, TERRAIN_STEP_M } from './elevationSources.mjs'
+import { elevationSpecs, openRasters, rasterToGrid, fillMisses, pixelMetres, demVerticalDatum, verticalDatumOf, ABOVE_WATER_M, TERRAIN_STEP_M } from './elevationSources.mjs'
 
 // ⛔ No default on a WRITE path: the one resolver names the town (--scene= or CARTOGRAPH_SCENE), or refuses.
 const SCENE = requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -151,7 +152,7 @@ function waterDatum({ raw, width, height, bounds }) {
   const F = readCoast(join(MAP_DIR, 'clean'), localBB(osm, wgs84ToLocal), 'bake-terrain').doc.flattened
   if (!F || !Number.isFinite(F.navd88)) throw new Error(`⛔ water datum: ${COAST_FILE} carries no \`flattened\` level — re-run bake-coast`)
   const elev = F.navd88, share = F.share
-  return { elev, share, wet, rings: rings.length, mask }
+  return { elev, share, wet, rings: rings.length, mask, face: rings }
 }
 
 // ⭐⭐ THE BED — the ground under the water, written INTO the heightfield (Jacob, 2026-09-26/27: "water is
@@ -264,10 +265,20 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
   const { grid: floorAt, sources: regimes } = await rasterToGrid(opened, { width, height, bounds, toLL: localToWgs84, elevationBandOnly: true })
   const src = opened.filter((o, s) => regimes[s].overlapped)
   if (!src.length) throw new Error(`⛔ the floor: none of the ${urls.length} tile(s) in ${BATHY_LIST} overlap scene '${SCENE}' — the list is for another place`)
-  const bad = src.filter(S => S.geoKeys?.VerticalDatumGeoKey !== NAVD88 && !/navd\s*88/i.test(S.geoKeys?.VerticalCitationGeoKey || ''))
-  if (bad.length) throw new Error(`⛔ the floor: ${bad.map(S => S.label).join(', ')} name no NAVD88 vertical datum — refusing to subtract it from the DEM's`)
+  // ⭐ EACH TILE NAMES ITS OWN VERTICAL DATUM (elevationSources.mjs#verticalDatumOf), and one survey has one. NAVD88 is read
+  // as is; IGLD85 (USACE NCMP on the Great Lakes) is converted by the town's own water record at its own heights
+  // (waterDatums.mjs#igld85ToNavd88), CLIPPED to the heights that record was converted at FIRST (below them lies deeper than
+  // the bed is ever drawn; above them, shore above the record's highest water), never extrapolated. Anything else refuses.
+  const datums = [...new Set(src.map(verticalDatumOf))]
+  if (datums.length !== 1 || !datums[0]) throw new Error(`⛔ the floor: its tiles name ${datums.map(d => d || 'no').join(', ')} vertical datum(s) (${src.map(S => S.label).slice(0, 3).join(', ')}…) — one survey, one known datum, or no floor`)
   const dem = demVerticalDatum(demSources, cornersLL)
-  if (dem?.datum !== 'NAVD88') throw new Error(`⛔ the floor is NAVD88 and the DEM's vertical datum cannot be established — refusing to mix them (no datum conversion is built: BRIEF-bathymetry step 2)`)
+  if (dem?.datum !== 'NAVD88') throw new Error(`⛔ the floor is read against a NAVD88 DEM and the DEM's vertical datum cannot be established — refusing to mix them`)
+  let toNavd = (v) => v, clipped = { below: 0, above: 0 }
+  if (datums[0] === 'IGLD85') {
+    const D = JSON.parse(fs.readFileSync(join(MAP_DIR, 'raw', 'water-datums.json'), 'utf8'))
+    const conv = igld85ToNavd88(D, SCENE), pts = D.igld85ToNavd88.points.map(p => p[0]), lo = Math.min(...pts), hi = Math.max(...pts)
+    toNavd = (v) => { if (v < lo) { clipped.below++; v = lo } else if (v > hi) { clipped.above++; v = hi } return conv(v) }
+  }
   const total = width * height, stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
   const depth = new Float32Array(total).fill(NaN)
   let n = 0
@@ -275,7 +286,7 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
     const k = j * width + i
     if (!mask[k]) continue
     const v = floorAt[k]
-    if (Number.isFinite(v)) { depth[k] = baseElev - v; n++ }
+    if (Number.isFinite(v)) { depth[k] = baseElev - toNavd(v); n++ }
   }
   // The SEAM: on dry ground within two cells of the water, where both rasters stand, how far the floor's
   // elevation sits from the DEM's. A step there is a new bare gap at the shore (BRIEF-bathymetry step 2).
@@ -290,14 +301,14 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
     }
     if (!near) continue
     const v = floorAt[k]
-    if (Number.isFinite(v)) diffs.push(v - raw[k])
+    if (Number.isFinite(v)) diffs.push(toNavd(v) - raw[k])
   }
   diffs.sort((a, b) => a - b)
   const absd = diffs.map(Math.abs).sort((a, b) => a - b)
   const q = (arr, p) => arr.length ? +arr[Math.min(arr.length - 1, Math.floor(p * arr.length))].toFixed(3) : null
   // The floor's own cell in the grid: a tile's pixel, or the grid step where the tile is finer (its box mean).
   const cellM = Math.max(...regimes.filter(r => r.overlapped).map(r => Math.max(r.pixelM, Math.min(stepX, stepZ))))
-  return { depth, cells: n, cellM, tiles: src.length, datum: 'NAVD88', demDatumFrom: dem.from,
+  return { depth, cells: n, cellM, tiles: src.length, datum: datums[0], ...(datums[0] === 'IGLD85' ? { convertedBy: 'raw/water-datums.json igld85ToNavd88', clipped } : {}), demDatumFrom: dem.from,
            seam: { samples: diffs.length, medianM: q(diffs, 0.5), p90AbsM: q(absd, 0.9) } }
 }
 
@@ -376,7 +387,7 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   console.log(`    below the town's LOW level (${levels.lowName}, ${levels.range.low.map(v => v.toFixed(2)).join('…')} m): the bed is cut at ${(vis.value - levels.range.low[1]).toFixed(2)}…${(vis.value - levels.range.low[0]).toFixed(2)} m below y = 0 · ${(100 * capped / Math.max(1, n)).toFixed(1)}% of the water reaches it`)
   const cellHa = stepX * stepZ / 1e4
   if (known) {
-    console.log(`  FLOOR: ${known.tiles} bathymetry tile(s), ${known.datum} (DEM: ${known.demDatumFrom})`)
+    console.log(`  FLOOR: ${known.tiles} bathymetry tile(s), ${known.datum}${known.clipped ? ` → NAVD88 by the water record (clipped to its converted heights: ${known.clipped.below.toLocaleString()} cell read(s) below, ${known.clipped.above.toLocaleString()} above)` : ''} (DEM: ${known.demDatumFrom})`)
     console.log(`    draws ${nFloor.toLocaleString()} of ${n.toLocaleString()} bed cells (${(100 * nFloor / Math.max(1, n)).toFixed(1)}%); the rest keep the profile`)
     console.log(`    seam at the shore (floor − DEM on dry ground within 2 cells): median ${known.seam.medianM} m · p90 |Δ| ${known.seam.p90AbsM} m over ${known.seam.samples.toLocaleString()} samples`)
     if (above) console.log(`    ${above.toLocaleString()} cell(s) (${(above * cellHa).toFixed(1)} ha) of floor stand above y = 0, as measured; ${atHigh.toLocaleString()} capped at the town's HIGH tide`)
@@ -529,9 +540,10 @@ async function main() {
   const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
   const water = wd ? waterRecord({ mapDir: MAP_DIR, scene: SCENE, auth: waterAuthoring(), wgs84ToLocal, zero: baseElev }) : null
   const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor, water) : null
+  const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water) : null
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
-                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(water ? { water } : {}) }
+                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(stamp ? { stamp } : {}), ...(water ? { water } : {}) }
   fs.mkdirSync(_outArg || CLEAN_DIR, { recursive: true })
   writeIfChanged(OUT_JSON, JSON.stringify(meta))
   writeIfChanged(OUT_BIN, Buffer.from(normalized.buffer))

@@ -25,6 +25,13 @@ export const ABOVE_WATER_M = 0.005
 export const TERRAIN_STEP_M = 5
 
 export const NAVD88 = 5103   // EPSG vertical datum code
+/** A raster's vertical datum from its own geokeys: 'NAVD88', 'IGLD85', or null (unknown — the caller refuses). */
+export function verticalDatumOf(S) {
+  const k = S.geoKeys || {}, cite = `${k.VerticalCitationGeoKey || ''} ${k.GTCitationGeoKey || ''}`
+  if (k.VerticalCSTypeGeoKey === 5609 || /IGLD\s*1985|IGLD\s*85/i.test(cite)) return 'IGLD85'
+  if (k.VerticalDatumGeoKey === NAVD88 || k.VerticalCSTypeGeoKey === 5703 || /navd\s*88/i.test(cite)) return 'NAVD88'
+  return null
+}
 /** The DEM's vertical datum, or null when it cannot be established. USGS 3DEP 1 m tiles carry no vertical GeoKey; the
  *  3DEP product is NAVD88 over the conterminous US (USGS Lidar Base Specification), so that is taken for a 3DEP tile
  *  inside CONUS and SAID. Reads `geoKeys` and `ref`, which openRasters' and readWindow's entries both carry. */

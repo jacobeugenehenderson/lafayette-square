@@ -105,6 +105,10 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
   `node checks/claims-water-depth-reads-the-level.mjs`
 > - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** The terrain step declares `clean/coast.json` (by content) beside
 >   the computed import closure of `bake-terrain.js`, never a hand list of files.
+> - ⭐ **THE FIELD MEETS ①'s COAST AT HIGH** (`shoreStamp.mjs#stampCoast`, after the bed): at the corner nodes of every cell
+>   ①'s line crosses, h − HIGH = s·d (signed distance; one slope per ring, the bed's own, capped by the tide), so the
+>   shore on screen IS ①'s line; land is only raised, never lowered. Recorded as `terrain.json#stamp`.
+>   ▶ `node checks/claims-the-shore-meets-the-field-at-high.mjs`
 > - ⭐ **The dry bed is recorded before it is dug** (`terrain.json#bed.dry`: cells under the water whose lidar stood
 >   above their HIGH level, rock apart). ▶ `node checks/claims-the-shore-agrees-with-the-field.mjs`
 > - ⛔ **NO DEM ⇒ THE BAKE STOPS.** Elevation is declared `ABSENT.FALSE_MAP`: flat ground is
