@@ -21,6 +21,7 @@ import { readCapCustom } from './feCustomKey.js'
 import { CLIP_SCALE as SCALE, LATTICE_M } from './lattice.js'
 import { nodeCrossings } from './latticeNode.js'
 import { absorbInk } from './absorbInk.js'
+import { coastSignBreaks } from './coastSign.js'
 import { LOCAL_SECTION } from '../cartograph/streetClass.js'
 
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -919,6 +920,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
       // negative — so every ring is reversed TOGETHER when the ink is wound negative, never ring by ring: rewinding each ring to
       // the ink's sign turned an island hole into water. ▶ checks/claims-an-island-stays-land-in-the-mint.mjs
       if (!R.rings?.length) throw new Error('[①] ⛔ the coast has water rings but ① has no ink to wind them against. Refusing.')
+      // ⛔ a coast handed to the mint any other way than readCoast's convention refuses by name (the one predicate, coastSign.js)
+      { const bad = coastSignBreaks(coast)
+        if (bad.length) throw new Error(`[①] ⛔ ${bad.length} coast ring(s) break the sign rule (a ring at even nesting depth wound positive, at odd depth negative): ring ${bad[0].i} at (${bad[0].at.map(v => v.toFixed(3)).join(', ')}), depth ${bad[0].depth}, wound ${bad[0].got > 0 ? 'positive' : bad[0].got < 0 ? 'negative' : 'flat'}. It would read land as water or water as land. Refusing.`) }
       const inkSign = Math.sign(signedArea(R.rings.reduce((m, r) => Math.abs(signedArea(r)) > Math.abs(signedArea(m)) ? r : m, R.rings[0])))
       const flip = inkSign < 0
       for (const r of coast) {

@@ -8,6 +8,8 @@
 //   (1) PLANTED: two streets running into a lake that holds an island, the lake positive and the island negative: the mint
 //       returns the island as a land face (its area, less the ink at its shore).
 //   (2) SOURCE: the mint turns the water by one flag, never ring by ring (read, so a deleted or changed line is RED).
+//   (3) A lake handed to the mint wound NEGATIVE is refused by name: the sign rule (src/lib/coastSign.js, the one predicate
+//       readCoast's door also reads) — the class the retired clockwise-lake check covered.
 //   MUTANT (always run): the mint copied with the old per-ring rewind must lose the island (no land face there), or (1) proves
 //   nothing.
 //   node checks/claims-an-island-stays-land-in-the-mint.mjs
@@ -38,6 +40,10 @@ const islandFace = (MP) => MP.blocks.map((b, k) => ({ b, k })).filter(({ b }) =>
 const live = await import('../src/lib/tileGround.js')
 const L = islandFace(await mint(live))
 row(L.length === 1 && L[0] > 0.98 * ISLAND && L[0] <= ISLAND, `(1) a lake (positive) holding an island (negative): the island returns as ${L.length} land face(s)${L.length ? `, ${L[0].toFixed(2)} m² of its ${ISLAND.toFixed(0)} m²` : ''}`)
+// (3) A LAKE HANDED TO THE MINT WOUND NEGATIVE is refused by name (the one predicate, src/lib/coastSign.js; Boz, 2026-10-27):
+// the class the retired clockwise-lake check covered, now refused at the mint as well as at readCoast's door
+{ let refused = null; try { await quiet(() => live.mintProtopolygon({ streets, boundary, bb: { x0: -200, x1: 200, z0: -200, z1: 200 }, coast: [wind(lake, -1)], coastArcs: [arc] })) } catch (e) { refused = String(e.message) }
+  row(!!refused && /break the sign rule/.test(refused), `(3) a lake handed to the mint wound negative is ${refused ? (/break the sign rule/.test(refused) ? 'REFUSED by name (the sign rule)' : `refused, but not by the sign rule (${refused.slice(0, 100)})`) : 'MINTED — the sign rule is not read'}`) }
 const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
 const LINE = 'const w = r.map(p => [p[0], p[1]]); if (flip) w.reverse()'
 row(src.split(LINE).length === 2 && src.includes('const flip = inkSign < 0'), '(2) the mint turns the water by one flag (the ink\'s sign), never ring by ring')

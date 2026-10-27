@@ -5,6 +5,8 @@
  */
 import fs from 'fs'
 import { join } from 'path'
+import { coastSignBreaks } from '../src/lib/coastSign.js'   // pure, no import of its own: the sign rule as ONE predicate
+export { coastSignBreaks }
 
 export const COAST_FILE = 'coast.json'
 
@@ -30,10 +32,11 @@ export function readCoast(cleanDir, bb, who) {
   let holes = 0
   // ⛔ THE SIGN IS THE ISLAND (Zob, 2026-10-26): ① subtracts water nonzero, so a hole wound positive sums to +2 inside its
   // outer and reads as WATER, silently. Every reader downstream leans on it, so it is refused here, at the one door.
-  const sa = (r) => r.reduce((t, q, i) => { const n = r[(i + 1) % r.length]; return t + q[0] * n[1] - n[0] * q[1] }, 0)
   ;(doc.water || []).forEach((b, bi) => {
-    if (!(sa(b.outer) > 0)) throw new Error(`[${who}] ⛔ ${p}: water body ${bi}'s outer is not wound positive — ① would read it as land. ▶ re-run bake-coast`)
-    for (const h of b.holes || []) if (!(sa(h) < 0)) throw new Error(`[${who}] ⛔ ${p}: an island of water body ${bi} (at ${h[0].map(Math.round).join(', ')}) is not wound negative — ① would read it as water. ▶ re-run bake-coast`)
+    // the one predicate (src/lib/coastSign.js), per body: its outer at depth 0 (positive), its islands at depth 1 (negative)
+    for (const x of coastSignBreaks([b.outer, ...(b.holes || [])])) {
+      if (x.i === 0) throw new Error(`[${who}] ⛔ ${p}: water body ${bi}'s outer is not wound positive — ① would read it as land. ▶ re-run bake-coast`)
+      throw new Error(`[${who}] ⛔ ${p}: an island of water body ${bi} (at ${x.at.map(Math.round).join(', ')}) is not wound negative — ① would read it as water. ▶ re-run bake-coast`) }
     rings.push(b.outer); for (const h of b.holes || []) { rings.push(h); holes++ }
   })
   return { coast: true, rings, holes, arcs, doc }
