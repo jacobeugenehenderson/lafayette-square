@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 476,
+  "total": 477,
   "counts": {
     "safe": 338,
     "local-effect": 29,
-    "live": 109
+    "live": 110
   },
   "checks": [
     {
@@ -2843,6 +2843,16 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ink-never-retraces-itself.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {

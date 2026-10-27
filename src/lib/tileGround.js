@@ -641,6 +641,11 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     if (a[0][0] !== a[1][0] && qk4(besideEnd(a[0])) === qk4(besideEnd(a[1]))) { hairpins.push(`${live[a[0][0]].skelId}|${live[a[1][0]].skelId}`); continue }
     partner.set(`${a[0][0]}:${a[0][1]}`, a[1]); partner.set(`${a[1][0]}:${a[1][1]}`, a[0])
   }
+  // ⭐ AN ISLAND'S COAST IS A CLOSED STROKE (Boz's ruling, 2026-10-27, on Zob's read of PTown v3's r215): a coast chain whose two
+  // ends are one point (bake-coast writes an island's arc as its ring with the first point repeated) is its own partner, so the
+  // walk below returns it `closed` and it is stroked as a band, its seam outlined as a bend like every other vertex. Walked
+  // open, its two butts lay on top of each other at the seam and the ink retraced itself (absorbInk refused the face).
+  live.forEach((c, n) => { if (c.isCoast && c.lastI >= 3 && qk4(c.P[0]) === qk4(c.P[c.lastI])) { partner.set(`${n}:start`, [n, 'end']); partner.set(`${n}:end`, [n, 'start']) } })
   // ⛔ LOUD: a degree-2 end that is not joined is left butted, and the sub-ink check sees it.
   if (oddCuts) console.warn(`    ⛔ [①] ${oddCuts} degree-2 chain end(s) meet no single other chain end — left butted, NOT joined`)
   if (hairpins.length) console.warn(`    ⛔ [①] ${hairpins.length} degree-2 cut(s) where both chains leave toward the same vertex (a chain drawn twice) — left butted, NOT joined: ${hairpins.join(' · ')}`)
@@ -668,6 +673,15 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
     return { seq, closed, V, nrm }
   })
+  // ⛔ AN OPEN STROKE WHOSE TWO ENDS ARE ONE POINT IS A CLOSED PATH STROKED OPEN (Boz's ruling, 2026-10-27): its two butts lie
+  // on top of each other there, on different normals, and the ink comes out with a near-retrace that only absorbInk's noding
+  // makes exact. Refused here, at its cause, by owner. ⭐ Only where the two ends meet NOTHING ELSE: a loop whose ends meet
+  // another stroke at a real node (HPDM grandview-place-2, a cul-de-sac loop on grandview-place-0) takes its corners from that
+  // node's outline, as every node does. ▶ checks/claims-the-ink-never-retraces-itself.mjs
+  const strokesAt = new Map(); S.forEach((s, si) => { for (const v of s.V) { const q = qk4(v.p); let a = strokesAt.get(q); if (!a) strokesAt.set(q, a = new Set()); a.add(si) } })
+  for (const [si, s] of S.entries()) { const n = s.V.length
+    if (!s.closed && n >= 3 && qk4(s.V[0].p) === qk4(s.V[n - 1].p) && strokesAt.get(qk4(s.V[0].p)).size === 1) { const c = s.seq[0].c
+      throw new Error(`[①] ⛔ ${c.skelId}${c.isCoast ? ' (the coast)' : ''}: an OPEN stroke whose two ends are one point, (${s.V[0].p.map(v => (+v).toFixed(3)).join(', ')}), a closed path stroked open — its butts would retrace each other. Refusing.`) } }
   // ⭐⭐⭐ A REAL NODE'S OUTLINE IS BUILT ONCE, FROM ALL ITS LEGS (Boz, 2026-10-25: "one outline per node"). Where three or
   // more legs leave one shared vertex (a stroke passing through it is two legs, in and out), the legs are sorted by angle
   // and each pair of angular neighbours meets at ONE point: where the first's counter-clockwise ε side crosses the
@@ -1194,10 +1208,18 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         else { blocks.push(rg); blockLabels.push(lb) }
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
-      // ⛔ THE ASSERT: no block ring, outer or hole, runs back over one of its own edges (a zero-width retrace is two faces, never one)
-      { const bad = blocks.flatMap((b, k) => [b, ...blockHoles[k]].map((r, h) => ({ k, h, r, o: ringRetraces(r) }))).filter(x => x.o.length)
+      // ⛔⛔ THE EXIT ASSERT, THE RETRACE FAMILY'S ONE CHECK (Boz's ruling, 2026-10-27, after four moves in one night were each a
+      // retrace caught one stage late): no INK ring and no FACE ring (outer or hole, after faceLobes) runs back over one of its
+      // own edges, exact on the lattice (`ringRetraces`); refused by owner, at ①'s exit. A zero-width retrace is two faces (or no
+      // ink), never one. ⛔ A one-vertex TOUCH is not a retrace (Boz's (b): the census, BACKLOG). ⛔ And this does NOT catch a
+      // NEAR-retrace that only becomes exact after absorbInk nodes the ink against the centrelines: absorbInk stays the backstop
+      // for that, and refuses loudly. ▶ checks/claims-the-ink-never-retraces-itself.mjs
+      { const own = (l) => { const o = owners[l]; return o ? `${o.skelId}${o.side ? ` ${o.side}` : ''}` : `label ${l}` }
+        const bad = [...R.rings.map((r, k) => ({ what: `ink ring ${k}`, r, L: R.labels[k] })),
+          ...blocks.flatMap((b, k) => [b, ...blockHoles[k]].map((r, h) => ({ what: `block ${k} ${h ? `hole ${h - 1}` : 'outer'}`, r, L: h ? blockHoleLabels[k][h - 1] : blockLabels[k] })))]
+          .map(x => ({ ...x, o: ringRetraces(x.r) })).filter(x => x.o.length)
         if (bad.length) { const x = bad[0], o = x.o[0]
-          throw new Error(`[①] ⛔ ${bad.length} block ring(s) retrace their own edge in the opposite direction after faceLobes — block ${x.k} ${x.h ? `hole ${x.h - 1}` : 'outer'}, edges ${o.i} and ${o.j}, ${o.m.toFixed(3)} m at (${x.r[o.i].map(v => v.toFixed(3)).join(', ')}). Refusing.`) } }
+          throw new Error(`[①] ⛔ ${bad.length} ring(s) retrace their own edge in the opposite direction at ①'s exit — ${x.what}, edges ${o.i} (${own(x.L?.[o.i])}) and ${o.j} (${own(x.L?.[o.j])}), ${o.m.toFixed(3)} m at (${x.r[o.i].map(v => v.toFixed(3)).join(', ')}). Refusing.`) } }
       const withHoles = blockHoles.filter(h => h.length).length
       if (outerZones) console.log(`    [①] ${outerZones} OUTER ZONE face(s) kept as blocks — the bb + coast + street ink close into one continuous zone; its streets are its holes and are painted from them.`)
       if (keptOnEdge) console.log(`    [①] kept ${keptOnEdge} face(s) touching the frame EDGE without a corner — real land the rectangle merely truncates; the stamp cuts them.`)
