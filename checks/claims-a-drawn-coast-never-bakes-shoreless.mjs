@@ -28,12 +28,13 @@
 //   ran) is RED; a rule that always runs the second pass is RED; one that ignores a re-walked median is RED; a plan that
 //   decides off the old stamp is RED.
 //   node checks/claims-a-drawn-coast-never-bakes-shoreless.mjs [--selftest]
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'fs'
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { pathToFileURL } from 'url'
 import { shoreMedianFor } from '../cartograph/bake-ground.js'
 import { plan } from '../scripts/upload-baked-to-r2.mjs'
+import { SLAB_REQUIRED_STAMPS } from '../scripts/slab-name-rule.mjs'
 import { groundShorePass } from '../cartograph/shoreRuns.mjs'
 
 const R = new URL('../', import.meta.url).pathname
@@ -104,16 +105,20 @@ function judgeWiring(gsrc, ssrc) {
     ["serve.js decides 'ground-shore' through groundShorePass, and skips it by name", /const shorePass = groundShorePass\(/.test(ssrc) && /if \(shorePass\.run\) await runIfDirty\('ground-shore'/.test(ssrc) && /else \{ skip\(`ground-shore \(\$\{shorePass\.why\}\)`\)/.test(ssrc), 'serve.js'],
   ]
 }
-// a scratch baked tree: one look stamped pending, one not
+// a scratch baked tree: one look stamped pending, one not. Each carries its own name where the uploader's name rule
+// requires it (scripts/slab-name-rule.mjs#SLAB_REQUIRED_STAMPS, read, not restated), so the only thing that differs is the shore.
 const scratch = mkdtempSync(join(tmpdir(), 'shore-pending-'))
-for (const [l, g] of [['wet', { shore: 'pending' }], ['dry', {}]]) { mkdirSync(join(scratch, l)); writeFileSync(join(scratch, l, 'ground.json'), JSON.stringify(g)) }
+for (const [l, g] of [['wet', { shore: 'pending' }], ['dry', {}]]) {
+  mkdirSync(join(scratch, l))
+  for (const [file, f] of Object.entries(SLAB_REQUIRED_STAMPS)) writeFileSync(join(scratch, l, file), JSON.stringify({ ...(file === 'ground.json' ? g : {}), [f]: l }))
+}
 process.on('exit', () => rmSync(scratch, { recursive: true, force: true }))
 function judgeShip(planFn) {
   const p = outcome(planFn, { look: 'wet', prefix: 'scratch/', root: scratch })
   const d = outcome(planFn, { look: 'dry', prefix: 'scratch/', root: scratch })
   return [
     ['the uploader refuses a slab stamped shore: "pending", naming the look', !!p.threw && p.threw.includes('"wet"') && p.threw.includes('pending'), p.threw ?? `planned ${p.ok?.files?.length} file(s)`],
-    ['the uploader plans an unstamped slab', !!d.ok && d.ok.files.length === 1, d.threw ?? `planned ${d.ok.files.length} file(s)`],
+    ['the uploader plans a slab with no shore stamp, every file of it', !!d.ok && d.ok.files.length === readdirSync(join(scratch, 'dry')).length, d.threw ?? `planned ${d.ok.files.length} of ${readdirSync(join(scratch, 'dry')).length} file(s)`],
   ]
 }
 const show = (rows) => { for (const [n, ok, w] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${n} (${w})`) }
