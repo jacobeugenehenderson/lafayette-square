@@ -13,7 +13,7 @@
  *   · no town's neighborhood.json carries `radius` — the draft is `draftRadius`;
  *   · Extent hydrates the APPLIED radius from the boundary, never from neighborhood.json;
  *   · commit-extent writes the draft as `draftRadius` and never carries a `radius` — judged by RUNNING its record builder
- *     (cartograph/commitExtent.mjs#commitExtentRecords) on a town whose prior neighborhood.json carries a legacy `radius`,
+ *     (cartograph/commitExtent.mjs#commitExtentRecords, imported as a data: module) on a town whose prior neighborhood.json carries a legacy `radius`,
  *     never by matching serve.js's text (the builder left serve.js on 2026-10-25 and the text match went blind);
  *   · rescope writes `draftRadius` and deletes `radius` (inline in serve.js, read from its text);
  *   · fetch.js's heavy pass sizes its square from the boundary.
@@ -35,9 +35,8 @@
  *
  *     node checks/claims-radius-has-one-home.mjs [--self-test]
  */
-import { readFileSync, readdirSync, existsSync, writeFileSync, mkdtempSync } from 'fs'
+import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
-import { tmpdir } from 'os'
 import { fileURLToPath, pathToFileURL } from 'url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -89,14 +88,13 @@ function loadSources() {
     commitSrc: read('cartograph/commitExtent.mjs'), row: rowFiles() }
 }
 
-// THE COMMIT'S WRITE SET, BY RUNNING IT: commitExtent.mjs's source (or a mutant of it) loaded from a copy whose relative
-// imports point at cartograph/, and its record builder run on the first town with an applied disc, its prior
+// THE COMMIT'S WRITE SET, BY RUNNING IT: commitExtent.mjs's source (or a mutant of it) loaded as a data: module whose
+// relative imports are rewritten to cartograph/'s absolute file: URLs (nothing is written), and its record builder run on the first town with an applied disc, its prior
 // neighborhood.json given a legacy `radius`. → { draftRadius, radius: whether `radius` came out, request radius } or { why }
 async function commitWriteSet(src) {
   const C = join(ROOT, 'cartograph')
   const mod = src.replace(/from '\.\/([^']+)'/g, (_, f) => `from '${pathToFileURL(join(C, f)).href}'`)
-  const f = join(mkdtempSync(join(tmpdir(), 'radius-commit-')), 'commitExtent.mjs'); writeFileSync(f, mod)
-  const { commitExtentRecords } = await import(pathToFileURL(f).href)
+  const { commitExtentRecords } = await import('data:text/javascript;base64,' + Buffer.from(mod).toString('base64'))
   const { splitBoundary } = await import(pathToFileURL(join(C, 'boundaryRecords.mjs')).href)
   for (const s of readdirSync(DATA)) {
     const gP = join(DATA, s, 'geography.json'), bP = join(DATA, s, 'neighborhood_boundary.json'), nP = join(DATA, s, 'neighborhood.json')
