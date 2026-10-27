@@ -2508,7 +2508,11 @@ function shareWaterRunIntoShore(tile, who) {
     return len > 0 }
   if (!want.length) return { tile, added: 0 }
   const cells = (tile.inkCells || []).map((c, ci) => ({ c, ci })).filter(x => x.c.cls === 'shore')
-  if (!cells.length) throw new Error(`[tileGround][shore] ⛔ ${who}: the block carries ${want.length} vertex(es) on a water run (e.g. (${want[0].v.map(c => c.toFixed(3)).join(', ')})) but the tile has no shore cell to carry them. Refusing.`)
+  // a face that borders NO ink (a bb corner between the water and the frame) has no shore cell: its ring IS the water line, and
+  // the block's water-run vertices must be the RING's, by key (Boz's ruled case: the ring carries the edge). Else refuse.
+  if (!cells.length) { const onRing = new Set((tile.ring || []).map(K)), off = want.filter(x => !onRing.has(K(x.v)))
+    if (off.length) throw new Error(`[tileGround][shore] ⛔ ${who}: the block carries ${off.length} vertex(es) on a water run (e.g. (${off[0].v.map(c => c.toFixed(3)).join(', ')})) that neither a shore cell (the tile has none) nor the tile ring carries. Refusing.`)
+    return { tile, added: 0 } }
   const rings = cells.map(x => x.c.rings.map(r => r.slice()))
   const keyAt = () => { const m = new Map(); rings.forEach((R, a) => R.forEach((r, b) => r.forEach((v, c) => { if (!m.has(K(v))) m.set(K(v), [a, b]) }))); return m }
   let at = keyAt(), added = 0, far = 0, farMax = 0
@@ -2534,7 +2538,10 @@ function shareWaterRunIntoShore(tile, who) {
     else { // one side only (a run's end): the cell edge from that side's vertex that takes the point strictly inside — exactly one
       const c = lo || hi
       if (c) { const [a, b] = at.get(K(c)), rr = rings[a][b], m = rr.length, ic = rr.findIndex(w => K(w) === K(c))
-        const opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => { const t = param(v, rr[u], rr[w]); return t > 0 && t < 1 })
+        let opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => { const t = param(v, rr[u], rr[w]); return t > 0 && t < 1 })
+        // at a thin cell's corner both edges from c can take the point (PTown, 2026-10-26): the land edge's far end is a vertex of
+        // the block's water run, the seaward edge's is not — chosen BY KEY, never by distance
+        if (opts.length > 1) opts = opts.filter(([u, w]) => wet.has(K(rr[u === ic ? w : u])))
         if (opts.length === 1) placed = tryEdge(rr, ...opts[0]) } }
     // ⭐ VERIFIED, never chosen, by distance (Zob): the key-chosen edge must hold the point within the boolean's own containment
     // (two grid units, insertOnEdges'); past it refuses. Counted and printed, as nodeRimWithPaint's far / farMax.
