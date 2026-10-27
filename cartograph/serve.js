@@ -9,7 +9,7 @@
 //     startup would make the server unstartable. Its spawn sites are the reason the guard
 //     works at all; do not guard serve.js itself.
 import { createServer } from 'http'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync, realpathSync } from 'fs'
 import { join, dirname, relative } from 'path'
 import { spawn } from 'child_process'
 import { mapRawDir, mapCleanDir, ribbonsPathOf, declaredRibbonsOf } from './config.js'
@@ -2283,6 +2283,15 @@ createServer(async (req, res) => {
   // Each Look is a styling snapshot: design.json (material palette + shader
   // params) + the per-Look bake bundle (public/baked/<id>/). The default
   // Look is the project's 0-state and can't be deleted.
+
+  // GET /tree — the repo tree this server reads and writes (its realpath). A check that edits a file and then asks this
+  // server must be asking the server of ITS tree; it compares this with its own root and refuses otherwise.
+  // ▶ checks/claims-a-stage-entry-knows-its-slab-age.mjs
+  if (req.method === 'GET' && path === '/tree') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ root: realpathSync(join(import.meta.dirname, '..')) }))
+    return
+  }
 
   // GET /looks — list of {id, name, createdAt} + the default id.
   if (req.method === 'GET' && path === '/looks') {

@@ -11,17 +11,22 @@
  *  ① serve.js has ONE `runIfDirty` and ONE bake route, answering both POST (bake) and GET (plan) — no second model;
  *  ② the store asks that route (`fetchBakePlan`) on every entry path, and nothing decides staleness from `bakedAt`;
  *  ③ StatusBar alarms on the measured age in Stage and offers the Bake.
- * And RUNS it, a mutation test of the live route against the running kit (:5173): for every Look with a scene, the
+ * And RUNS it, a mutation test of the live route against the cartograph server named by --server (never a default): for every Look with a scene, the
  * plan answers; then one data hash in that town's `bake-reads.json` record for the `scene` step is changed — the slab
  * now "read" a different design.json than the one on disk — and the plan MUST name `scene` with design.json in its
  * why. The record is restored byte-for-byte in a finally. ⛔ Nothing is baked; no authoring input is touched.
  *
- * Usage: node checks/claims-a-stage-entry-knows-its-slab-age.mjs
+ * ⛔ THE SERVER MUST SERVE THIS TREE. The mutation edits a file under this check's ROOT, so a server reading another tree
+ * (a worktree's check against the main checkout's server) can never see it, and the row means nothing. The check asks
+ * the server's GET /tree and REFUSES (exit 2, naming both) unless it is this ROOT. There is no default server: :5173 is
+ * the operator's.
+ *
+ * Usage: node checks/claims-a-stage-entry-knows-its-slab-age.mjs --server=http://localhost:<port>[/api/cartograph]
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs'
 import { join } from 'node:path'
 const ROOT = join(import.meta.dirname, '..')
-const BASE = 'http://localhost:5173/api/cartograph'
+const BASE = process.argv.find(a => a.startsWith('--server='))?.slice('--server='.length).replace(/\/$/, '')
 const read = (p) => readFileSync(join(ROOT, p), 'utf-8')
 const fails = []
 const fail = (m) => { fails.push(m); console.log(`  ✗ ${m}`) }
@@ -55,9 +60,19 @@ const api = read('src/cartograph/api.js')
 const bar = read('src/cartograph/StatusBar.jsx')
 ;/slabAge/.test(bar) && /carto-status--alarm[\s\S]{0,600}runBake\(\)/.test(bar.slice(bar.indexOf('slabAge?.error'))) ? ok('StatusBar alarms on the slab age and offers the Bake') : fail('StatusBar does not alarm on slabAge with a Bake')
 
-// RUN: the live route, and its mutation
+// RUN: the live route, and its mutation — only against a server named outright, and only if it serves THIS tree
+if (!BASE) { console.log('⛔ NOT RUN — the live half needs the server named: --server=http://localhost:<port>[/api/cartograph]. There is no default.'); process.exit(2) }
+let served
+try { served = (await (await fetch(`${BASE}/tree`)).json()).root } catch (e) { served = null }
+const mine = realpathSync(ROOT)
+if (served !== mine) {
+  console.log(`⛔ NOT RUN — ${BASE} serves ${served ? `the tree ${served}` : 'no tree it will name (no GET /tree: an older serve.js, restart it)'}, and this check is ${mine}. `
+    + 'Its mutation edits a file under its own tree, so another tree\'s server cannot see it. Name the server of this tree.')
+  process.exit(2)
+}
+ok(`${BASE} serves this tree (${mine})`)
 let idx
-try { idx = await (await fetch(`${BASE}/looks`)).json() } catch (e) { console.log(`⛔ CANNOT RUN the live half — the kit at :5173 did not answer (${e.message})`); process.exit(2) }
+try { idx = await (await fetch(`${BASE}/looks`)).json() } catch (e) { console.log(`⛔ CANNOT RUN the live half — ${BASE} did not answer (${e.message})`); process.exit(2) }
 const towns = idx.looks.filter(l => l.scene)
 for (const l of towns) {
   const r = await fetch(`${BASE}/looks/${l.id}/bake`)
