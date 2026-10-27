@@ -64,7 +64,9 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   const coast = readCoast(cleanDir, bb, who)
   // the decks are closed at the step the coast was traced at (coast.json fineM), so the mint takes out the footprints the trace saw
   const decks = coast.coast ? streetDecks(osm.ground || {}, streets, coast.doc.fineM) : { rings: [], decks: [] }
-  const water = coast.coast ? waterWithoutDecks(coast.rings, coast.arcs, decks.rings) : { rings: [], arcs: [] }
+  const water = coast.coast ? waterWithoutDecks(coast.rings, coast.arcs, decks.rings, coast.doc.fineM) : { rings: [], arcs: [], decks: [], slivers: [] }
+  // the deck as ① takes it out, the water beside it narrower than one trace cell included: what streetDecks' record freezes
+  decks.decks.forEach((d, k) => { d.ring = water.decks[k] })
   // ⛔ a deck's edge is known by the rings' own tag (`ring.deck`, an array property JSON would drop silently): with decks taken
   // out and a ring carrying none, the mint would stroke the deck's edge as a beach (Zob, 2026-10-27)
   if (decks.decks.length && water.rings.some(r => !Array.isArray(r.deck))) throw new Error(`[mintInputs] ⛔ ${who}: ${decks.decks.length} street deck(s) taken out of the water, and a water ring carries no per-edge deck tag. Refusing.`)
@@ -73,9 +75,9 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   // hole the coast did not draw: it has no land root to take a height from (shoreStamp.mjs#deckHeights), so it refuses, by name
   const coastHoles = coast.coast ? coast.holes : 0
   if (holes > coastHoles) throw new Error(`[①] ⛔ ${who}: ${holes - coastHoles} street deck(s) stand clear of every shore (holes in the water the coast did not draw), so none has a land root to take its height from: ${decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}`)
-  const coastReport = [coast.coast ? `    [①] coast: ${water.rings.length} water ring(s), ${water.arcs.length} shoreline arc(s) — ${coast.doc.from}${holes ? ` · ${holes} island(s)` : ''}${decks.decks.length ? ` · ${decks.decks.length} street deck(s) taken out of the water: ${decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}` : `    [①] no coast: ${coast.why}`]
+  const coastReport = [coast.coast ? `    [①] coast: ${water.rings.length} water ring(s), ${water.arcs.length} shoreline arc(s) — ${coast.doc.from}${holes ? ` · ${holes} island(s)` : ''}${decks.decks.length ? ` · ${decks.decks.length} street deck(s) taken out of the water: ${decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}${water.slivers.length ? ` · ${water.slivers.length} sliver(s) of water beside them narrower than one trace cell taken with them (${water.slivers.reduce((t, x) => t + x.m2, 0).toFixed(2)} m²): ${water.slivers.slice(0, 6).map(x => `${x.m2} m² @(${x.at.map(Math.round).join(', ')})`).join(' · ')}` : ''}` : `    [①] no coast: ${coast.why}`]
   return {
-    unjoined, total: all.length, coastReport, decks: decks.decks,
+    unjoined, total: all.length, coastReport, decks: decks.decks, deckSlivers: water.slivers,
     streets, gradeSep: mapped.filter(m => m.sim && m.s.gradeSeparated).map(m => m.sim),
     boundary: disc.boundary, coast: water.rings, coastArcs: water.arcs, bb,
   }

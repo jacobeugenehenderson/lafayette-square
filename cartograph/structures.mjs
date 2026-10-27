@@ -136,9 +136,9 @@ export function deckFootprints(osmGround, stepM) {
   for (const l of lines) delete l._halfM
   // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): the footprint is made the lidar's
   // own scale both ways, since a SPIKE or a GAP narrower than one cell is something neither the source nor the line can
-  // resolve. Huron: a pier line with no width beside its mapped area left a notch 5 m deep and under a cell wide; with the
-  // coast following the deck (bake-coast#followDecks), footprint corners as sharp as 0.20° (Huron) and 1.13° (PTown) became
-  // coast corners the ink cannot outline. Per connected deck (its own parts unioned; a deck in a deck's hole is its own):
+  // resolve. Huron: a pier line with no width beside its mapped area left a notch 5 m deep and under a cell wide; footprint
+  // corners were as sharp as 0.20° (Huron) and 1.13° (PTown), which the ink cannot outline where a deck's edge is drawn as
+  // shore. Per connected deck (its own parts unioned; a deck in a deck's hole is its own):
   // OPEN, eroded then dilated by half a trace cell and kept inside the deck, so what is narrower than a cell goes; then CLOSE,
   // dilated then eroded by half a cell and kept with what it was, so a gap narrower than a cell is filled. ⛔ Per deck, never
   // across two: separate decks a metre apart stay two. Counted and named: `opened` and `closed` [{ m2, at }]; a deck the open
@@ -236,12 +236,12 @@ export function streetDecks(ground, streets, stepM) {
  *  (checks/claims-the-coast-is-the-lidars F, D). Such an arc is TAGGED with its deck's identity, `arc.deck`
  *  = the deck's index in `deckRings` (the order of streetDecks' record), so a reader tells a deck's edge from a beach; it is
  *  stroked as any coast (Boz: how a deck edge LOOKS is the filed deck work). */
-export function waterWithoutDecks(rings, arcs, deckRings) {
-  if (!deckRings.length) return { rings, arcs }
-  // ⭐ THE DECK IS NODED BY THE COAST FIRST (PTown, 10-27): where the coast follows a deck (bake-coast#followDecks), its
-  // crossings lie on the deck's oblique edges only to the millimetre lattice, so the difference cut 0.08–0.2 mm slivers of
-  // water beside them. Every water-ring vertex lying on a deck edge (at the lattice) becomes a vertex of that deck, so the
-  // two outlines share it exactly and the difference leaves nothing between them.
+export function waterWithoutDecks(rings, arcs, deckRings, stepM) {
+  if (!deckRings.length) return { rings, arcs, decks: [], slivers: [] }
+  if (!(stepM > 0)) throw new Error(`⛔ structures: waterWithoutDecks needs the trace's step (coast.json fineM; got ${stepM}) — water beside a deck narrower than one cell is the deck's, and there is no other measure`)
+  // ⭐ THE DECK IS NODED BY THE COAST FIRST (PTown, 10-27): where the coast meets a deck's oblique edge, the crossing lies on it
+  // only to the millimetre lattice, and the difference cut 0.08–0.2 mm slivers of water there. Every water-ring vertex lying
+  // on a deck edge (at the lattice) becomes a vertex of that deck, so the two outlines share it exactly.
   const lat = 1 / SCALE, cellOf = new Map(), ck = (x, z) => `${Math.floor(x)},${Math.floor(z)}`
   for (const r of rings) for (const p of r) { const k = ck(p[0], p[1]); (cellOf.get(k) || cellOf.set(k, []).get(k)).push(p) }
   const noded = deckRings.map(d => d.flatMap((a, m) => { const b = d[(m + 1) % d.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, on = []
@@ -250,8 +250,35 @@ export function waterWithoutDecks(rings, arcs, deckRings) {
       for (const p of cellOf.get(`${i},${j}`) || []) { const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2
         if (t > 0 && t < 1 && Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= lat) on.push([t, p]) }
     return [a, ...on.sort((x, y) => x[0] - y[0]).map(([, p]) => p)] }))
+  // ⭐ WATER BESIDE A STREET DECK NARROWER THAN ONE TRACE CELL IS THE DECK'S (Boz's ruling (B), 2026-10-27; PTown's MacMillan:
+  // the trace, at its own resolution, put the shore centimetres off the mapped deck, and the deck taken out left a 4–73 cm
+  // wedge of water ① could not ink). The trace stays the trace; here, the ONE place the deck and the coast meet, the water
+  // within two cells of each deck is opened at half a cell, and what the open removes that lies within one cell of the deck
+  // and touches it goes with the deck. Counted and named (`slivers`: deck, m², place); the deck so extended is what is taken
+  // out, tagged, and returned (`decks`) for streetDecks' record, so every later reader sees the deck ① drew.
+  const op = (type, a, b) => { const k = new Clipper(), o = new Paths(); k.AddPaths(a, PolyType.ptSubject, true); if (b) k.AddPaths(b, PolyType.ptClip, true)
+    if (!k.Execute(type, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: a deck\'s slivers FAILED'); return o }
+  const grow = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
+  const cellU = stepM * SCALE, waterP = rings.map(toPath), area = (ps) => ps.reduce((t, q) => t + Clipper.Area(q), 0)
+  const w0 = op(ClipType.ctDifference, waterP, noded.map(toPath)), slivers = []
+  const ext = noded.map((d, k) => { const D = [toPath(d)]
+    const loc = op(ClipType.ctIntersection, w0, grow(D, 2 * cellU)), open = op(ClipType.ctIntersection, grow(grow(loc, -cellU / 2), cellU / 2), loc)
+    const thin = op(ClipType.ctIntersection, op(ClipType.ctDifference, loc, open), grow(D, cellU))
+    const touching = thin.filter(q => Clipper.Area(q) > 0 && area(op(ClipType.ctIntersection, grow([q], 2), D)) > 0)
+    for (const q of touching) { const a = fromPath(q); slivers.push({ deck: k, m2: +(Clipper.Area(q) / SCALE / SCALE).toFixed(3), at: a[0].map(v => +v.toFixed(3)) }) }
+    const e = op(ClipType.ctUnion, [...D, ...touching]), outers = e.filter(q => Clipper.Area(q) > 0)
+    // a street deck is its OUTER ring (streetDecks keeps outers; its holes are deck). A sliver meeting the deck at a single point
+    // comes back from the union as an outer of its own: every piece inside the main ring or touching it (to the lattice) is this
+    // deck's, taken out and tagged with it; the record keeps the main ring. A piece standing apart from it refuses by name
+    const main = outers.reduce((m, q) => (Clipper.Area(q) > Clipper.Area(m) ? q : m), outers[0]), mainR = fromPath(main)
+    const touches = (q) => fromPath(q).some(p => mainR.some((a, i) => { const b = mainR[(i + 1) % mainR.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
+      const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= lat }))
+    const apart = outers.filter(q => q !== main && !inRing(q[0].X / SCALE, q[0].Y / SCALE, mainR) && !touches(q))
+    if (!outers.length || apart.length) throw new Error(`⛔ structures: deck ${k} with the water beside it narrower than one trace cell is ${1 + apart.length} piece(s), not one${apart.length ? `: a piece at (${apart[0][0].X / SCALE}, ${apart[0][0].Y / SCALE})` : ''}. Refusing.`)
+    const all = outers.map(q => { const r = fromPath(q); return signedArea(r) > 0 ? r : r.reverse() })
+    return { main: signedArea(mainR) > 0 ? mainR : mainR.reverse(), all } })
   const c = new Clipper(), tree = new PolyTree()
-  c.AddPaths(rings.map(toPath), PolyType.ptSubject, true); c.AddPaths(noded.map(toPath), PolyType.ptClip, true)
+  c.AddPaths(waterP, PolyType.ptSubject, true); c.AddPaths(ext.flatMap(e => e.all.map(toPath)), PolyType.ptClip, true)
   if (!c.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: water minus decks FAILED')
   const out = []
   const walk = (node) => { for (const ch of node.Childs()) { const o = fromPath(ch.Contour()); out.push(signedArea(o) > 0 ? o : o.reverse())
@@ -262,9 +289,14 @@ export function waterWithoutDecks(rings, arcs, deckRings) {
   const tol = 1 / SCALE, onRing = (p, r) => r.some((a, m) => { const b = r[(m + 1) % r.length], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
     const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= tol })
   for (const r of out) r.deck = r.map((a, i) => { const b = r[(i + 1) % r.length], mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
-    const k = deckRings.findIndex(d => onRing(a, d) && onRing(b, d) && onRing(mid, d)); return k < 0 ? null : k })
+    const k = ext.findIndex(e => e.all.some(d => onRing(a, d) && onRing(b, d) && onRing(mid, d))); return k < 0 ? null : k })
+  // …and what the subtraction itself leaves: a water ring narrower than one cell whose every edge is ONE deck's is that deck's
+  // too (PTown's FMP: a 1.2 cm² pocket between deck 3's edge and the coast running along it), counted with the slivers
+  for (let i = out.length - 1; i >= 0; i--) { const r = out[i], k = r.deck[0], per = r.reduce((t, p, j) => { const q = r[(j + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
+    if (k == null || !r.deck.every(x => x === k) || !(2 * Math.abs(signedArea(r)) / per < stepM)) continue
+    slivers.push({ deck: k, m2: +Math.abs(signedArea(r)).toFixed(3), at: r[0].map(v => +v.toFixed(3)) }); out.splice(i, 1) }
   // ⭐ THE ARCS ARE THE RETURNED RINGS' OWN EDGES, each stroked once (Zob's read, 2026-10-27; PTown, 10-27): built by clipping
-  // the coast arcs and the deck outlines as open paths, an edge where the coast FOLLOWS a deck (bake-coast#followDecks) was
+  // the coast arcs and the deck outlines as open paths, an edge where the coast runs along a deck's edge was
   // stroked twice, and a deck's landward root left a stray arc inside the land, because Clipper's choice for a path lying ON
   // the clip boundary is no rule. So each returned edge is classed once: a deck's (`ring.deck[i]`), else the coast's when it
   // lies on a given arc, else none (the fetched square's own sides, which no arc strokes). Each maximal run of one class is
@@ -285,5 +317,5 @@ export function waterWithoutDecks(rings, arcs, deckRings) {
       if (c) { const pts = []; for (let q = s; q <= e + 1; q++) pts.push([r[(start + q) % n][0], r[(start + q) % n][1]]); tag(pts, c) }
       s = e + 1 }
   }
-  return { rings: out, arcs: a2 }
+  return { rings: out, arcs: a2, decks: ext.map(e => e.main), slivers }
 }

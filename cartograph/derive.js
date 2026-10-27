@@ -4949,6 +4949,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     {
       const src = readSources(SCENE)
       ribbonsLayer.streetDecks = MI.decks.map(d => ({ ring: d.ring.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)]), streets: d.streets }))   // frozen beside ①, for the terrain
+      ribbonsLayer.deckSlivers = MI.deckSlivers   // the water beside a street deck narrower than one trace cell, taken with it (structures.mjs#waterWithoutDecks)
     ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null, _registryRead)
       const N = ribbonsLayer.curbCutNorm
       // ⭐ the RUNG that decided each, and why every rung above it gave nothing — never the kit's value printed as the town's

@@ -233,8 +233,8 @@ const alongSquare = (a, b, R) => ['x0', 'x1'].some(s => Math.abs(a[0] - R[s]) < 
  * A water ring with every shore run simplified and every stretch of the square's edge kept: the ring the arcs are cut
  * from, so ① strokes exactly the edge it excludes (an arc and a ring that differ leave a sliver between ink and water).
  */
-export function simplifyRing(ring, R, eps, kept = null) {
-  const on = ring.map(p => onSquare(p, R) || (kept ? kept(p) : false)), first = on.indexOf(true)   // kept: a deck's path (followDecks)
+export function simplifyRing(ring, R, eps) {
+  const on = ring.map(p => onSquare(p, R)), first = on.indexOf(true)
   if (first < 0) { const c = simplify([...ring, ring[0]], eps); return c.slice(0, -1) }
   const out = []
   let run = [ring[first]]
@@ -414,12 +414,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
 
   // ── THE ARCS: the shoreline ① strokes, cut from the rings simplified below half the source's pixel ───────────────
   const r3 = (r) => r.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)])
-  // ⭐ ALONG A DECK THE COAST IS THE DECK'S RING (Boz's ruling, 2026-10-27; PTown's MacMillan: the trace's crossings lay on the
-  // ring, its chords between them cut the deck's corners by 0.22 m, and the exact deck taken out of the water left a sliver)
-  const followed = { replaced: 0, vertices: 0, unresolved: [] }
-  for (const bd of bodies) { const f = (r) => { const o = followDecks(r, decks, fine); followed.replaced += o.replaced; followed.vertices += o.added; followed.unresolved.push(...o.unresolved); return o.ring }
-    bd.outer = f(bd.outer); bd.holes = bd.holes.map(f) }
-  const simple = bodies.map(bd => ({ outer: simplifyRing(bd.outer, R, fine / 2, onDeckPath), holes: bd.holes.map(h => simplifyRing(h, R, fine / 2, onDeckPath)) }))
+  const simple = bodies.map(bd => ({ outer: simplifyRing(bd.outer, R, fine / 2), holes: bd.holes.map(h => simplifyRing(h, R, fine / 2)) }))
   // ⭐ ON THE SOURCE, NOT ON THE TRACE: each kept vertex is bisected along its normal on the real sampler, within one
   // trace step (the trace interpolates between samples laid in TOWN metres, which is not the raster's grid).
   const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, highAt, decks.on)
@@ -450,7 +445,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
-    decksFollowed: followed, decksOpened: { m2: decks.openedM2, sites: decks.opened }, decksClosed: { m2: decks.closedM2, sites: decks.closed }, decksBelowResolution: decks.belowResolution.map(({ m2, at }) => ({ m2, at })),
+    decksOpened: { m2: decks.openedM2, sites: decks.opened }, decksClosed: { m2: decks.closedM2, sites: decks.closed }, decksBelowResolution: decks.belowResolution.map(({ m2, at }) => ({ m2, at })),
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
@@ -469,8 +464,6 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (islandsDropped.length) console.log(`  ${islandsDropped.length} island(s) holding no terrain node DROPPED, their ground the water's: ${islandsDropped.slice(0, 8).map(d => `${d.m2} m² @(${d.at.join(', ')})`).join(' · ')}${islandsDropped.length > 8 ? ` … +${islandsDropped.length - 8}` : ''}`)
   if (islands.length) console.log(`  ${islands.length} island(s), each a hole in the water and a CLOSED shore arc (${(islands.reduce((t, s) => t + s.m2, 0) / 1e4).toFixed(2)} ha; smallest drawn = (2 × the source's pixel)² = ${minM2.toFixed(1)} m²)`)
   console.log(`  SETTLED on the source: ${settled.moved.toLocaleString()} vertex(es) bisected (moved p50 ${settled.p50.toFixed(3)} · max ${settled.max.toFixed(3)} m) · ${settled.unbracketed.toLocaleString()} with no crossing within a step, kept as traced · ${settled.noValue.toLocaleString()} with no value`)
-  if (followed.replaced) console.log(`  DECKS FOLLOWED: ${followed.replaced} chord(s) along a deck's edge replaced by the deck ring's own path (+${followed.vertices} vertices), held through simplify and settle`)
-  if (followed.unresolved.length) console.log(`  DECKS UNRESOLVED: ${followed.unresolved.length} chord(s) across a deck stretch inside one trace cell, kept as traced: ${followed.unresolved.slice(0, 8).map(u => `deck ${u.deck} @(${u.at.map(Math.round).join(', ')})`).join(' · ')}${followed.unresolved.length > 8 ? ` … +${followed.unresolved.length - 8}` : ''}`)
   if (decks.opened.length) console.log(`  DECKS OPENED at the trace step: ${decks.opened.length} footprint(s) lost ${decks.openedM2} m² narrower than one cell`)
   if (decks.belowResolution.length) console.log(`  DECKS BELOW RESOLUTION: ${decks.belowResolution.length} deck(s) narrower than one trace cell everywhere, not drawn as decks: ${decks.belowResolution.slice(0, 8).map(b => `${b.m2} m² @(${b.at.map(Math.round).join(', ')})`).join(' · ')}${decks.belowResolution.length > 8 ? ` … +${decks.belowResolution.length - 8}` : ''}`)
   if (decks.closed.length) console.log(`  DECKS CLOSED at the trace step: ${decks.closed.length} footprint(s) gained ${decks.closedM2} m² where their parts left a gap under one cell: ${decks.closed.slice(0, 8).map(c => `${c.m2} m² @(${c.at.map(Math.round).join(', ')})`).join(' · ')}`)
@@ -514,7 +507,7 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
   let bounded = 0
   for (const ring of rings) { const cl = clearances(ring, step)
     for (let k = 0; k < ring.length; k++) {
-      if (onSquare(ring[k], R) || onDeckPath(ring[k])) continue   // a deck's path is the deck's, not a sample
+      if (onSquare(ring[k], R)) continue
       const a = ring[(k - 1 + ring.length) % ring.length], b = ring[(k + 1) % ring.length]   // every normal off the TRACED ring
       const nx = -(b[1] - a[1]), nz = b[0] - a[0], n = Math.hypot(nx, nz) || 1
       const lo = -Math.min(step, cl[k][0] / 2), hi = Math.min(step, cl[k][1] / 2)
@@ -612,55 +605,6 @@ export function settleInOrder(rings, to, step, acuteAt) {
       if (f > 0) { ring[k] = at(f); moved.push(want * f) }
     } })
   return { moved, clamped }
-}
-
-// the vertices of a deck's path (followDecks): carried by identity through simplifyRing and settleOnSource
-const DECK_PATH = new WeakSet()
-const onDeckPath = (p) => DECK_PATH.has(p)
-
-/**
- * ⭐ ALONG A DECK THE COAST IS THE DECK'S RING (Boz's ruling, 2026-10-27). The trace's crossings of a deck lie ON its ring
- * (marchingSquares deckCross), but between two of them it runs in a straight chord that cuts the deck's corners, so the
- * coast and the deck, two constructions of one line, drift apart, and the exact deck taken out of ①'s water leaves a sliver.
- * Each chord a→b whose ends lie on ONE deck ring (at the clip lattice, deckFootprints#crossing's rule), on different edges of
- * it, is judged by LOCALITY, derived from the trace's own cell (Boz's ruling, 2026-10-27), never by which path is shorter
- * and never by a side assumed for the deck (measured false on Huron): the chord is one marching cell's, so the ring path it
- * stands for stays within that cell's diagonal (the trace step × √2) of it. (i) EXACTLY ONE of the ring's two paths does:
- * it replaces the chord. (ii) BOTH do, the deck's whole stretch inside one cell: the line cannot resolve it, so the chord
- * is kept and recorded by name (`unresolved`). (iii) NEITHER does: refused by name. Every vertex of a replaced run is held
- * (DECK_PATH). Returns { ring, replaced, added, unresolved }.
- */
-export function followDecks(ring, decks, step) {
-  const D = decks.rings, n = ring.length, tol = 1 / SCALE
-  if (!D.length || n < 3) return { ring, replaced: 0, added: 0, unresolved: [] }
-  const box = D.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0 - tol, x1 + tol, z0 - tol, z1 + tol] })
-  const onEdge = (p) => { for (let k = 0; k < D.length; k++) { const b = box[k]; if (p[0] < b[0] || p[0] > b[1] || p[1] < b[2] || p[1] > b[3]) continue
-    const r = D[k]; for (let m = 0; m < r.length; m++) { const a = r[m], c = r[(m + 1) % r.length], dx = c[0] - a[0], dz = c[1] - a[1], L2 = dx * dx + dz * dz
-      const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0
-      if (Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= tol) return { k, m, t } } }
-    return null }
-  const at = ring.map(onEdge)
-  const segD = (v, p, q) => { const dx = q[0] - p[0], dz = q[1] - p[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((v[0] - p[0]) * dx + (v[1] - p[1]) * dz) / L2)) : 0; return Math.hypot(v[0] - p[0] - u * dx, v[1] - p[1] - u * dz) }
-  const out = [], unresolved = []
-  let replaced = 0, added = 0
-  for (let i = 0; i < n; i++) {
-    const a = ring[i], b = ring[(i + 1) % n], A = at[i], B = at[(i + 1) % n]
-    out.push(a)
-    if (!A || !B || A.k !== B.k || A.m === B.m) continue                    // one edge: the chord already lies on the ring
-    const r = D[A.k], m = r.length, cell = step * Math.SQRT2
-    const apart = (p) => Math.hypot(p[0] - a[0], p[1] - a[1]) > tol && Math.hypot(p[0] - b[0], p[1] - b[1]) > tol   // a crossing AT a corner is that corner
-    const fwd = [], bwd = []
-    for (let j = (A.m + 1) % m; ; j = (j + 1) % m) { if (apart(r[j])) fwd.push(r[j]); if (j === B.m) break }
-    for (let j = A.m; ; j = (j - 1 + m) % m) { if (apart(r[j])) bwd.push(r[j]); if (j === (B.m + 1) % m) break }
-    const far = (path) => Math.max(0, ...path.map(p => segD(p, a, b))), local = [fwd, bwd].filter(path => far(path) <= cell)
-    if (local.length === 2) { unresolved.push({ deck: A.k, at: [+((a[0] + b[0]) / 2).toFixed(3), +((a[1] + b[1]) / 2).toFixed(3)], corners: Math.min(fwd.length, bwd.length) }); continue }
-    if (!local.length) throw new Error(`⛔ bake-coast: the coast meets one deck's ring at (${a.map(v => v.toFixed(3)).join(', ')}) and (${b.map(v => v.toFixed(3)).join(', ')}), and NEITHER of the ring's paths between them stays within one trace cell's diagonal (${cell.toFixed(3)} m) of the chord (${far(fwd).toFixed(3)} m · ${far(bwd).toFixed(3)} m): which way the shore runs cannot be derived. Refusing.`)
-    const walk = local[0]
-    const path = walk.map(p => [p[0], p[1]])
-    for (const p of [a, b, ...path]) DECK_PATH.add(p)
-    if (path.length) { out.push(...path); replaced++; added += path.length }
-  }
-  return { ring: out, replaced, added, unresolved }
 }
 
 /** The refusal's measurement: the flattened water's level under OSM's water (its 1 cm mode) against high water there. */
