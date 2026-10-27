@@ -14,11 +14,12 @@
 // tested pixel by pixel against that quadrilateral — and the bake's (an affine per node, a priority across tiles) is
 // never imported.
 //
-// ⭐ THE TOLERANCE, DERIVED: the bake holds the mean as Float32 of the ABSOLUTE elevation, then writes Float32 of
-// (that − baseElev), and terrain.json carries baseElev ROUNDED TO 1 cm. So stored − (mean − baseElev_json) = one constant
-// c (the rounding: |c| ≤ 0.005 m for a local-minimum datum; 0 for a water datum, which is itself a 1 cm bucket) plus two
-// Float32 roundings. c is read as the median over the asserted cells and must lie within its bound; each cell must then
-// sit within one Float32 ulp of the town's largest absolute elevation plus one of its largest |stored| of c.
+// ⭐ THE TOLERANCE, DERIVED: the bake holds the mean as Float32 of the ABSOLUTE elevation, put onto the water record's basis
+// by the one rule (fetch-lidar-flights.mjs#lidarOntoRecordM, read here too), then writes Float32 of (that − baseElev), and
+// terrain.json carries baseElev EXACT (Boz, 2026-10-27: it was rounded to 1 cm, 3.4 mm off on Huron's water datum). So
+// stored − (mean − baseElev) = c, which is 0, plus two Float32 roundings. c is read as the median over the asserted cells and
+// must lie within the tolerance; each cell must then sit within one Float32 ulp of the town's largest absolute elevation plus
+// one of its largest |stored| of c.
 //
 // CLASSES (each counted, never filled): asserted = every pixel in the box from ONE source (whole), some no-data pixels
 // with one source holding the rest (partial; the mean of the valid ones), or two sources holding pixels in the box
@@ -40,6 +41,7 @@ import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { elevationSpecs, openRasters, readWindow, NODATA_THRESHOLD } from '../cartograph/elevationSources.mjs'
 import { readCoast } from '../cartograph/coastFile.mjs'
+import { lidarOntoRecordM } from '../cartograph/fetch-lidar-flights.mjs'
 import { localBB } from '../cartograph/geography.mjs'
 import { ringsInDrawing } from '../cartograph/coast-in-drawing.mjs'
 
@@ -71,6 +73,8 @@ for (const town of towns) {
   const buf = readFileSync(join(tdir, 'terrain.bin'))
   const stored = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4)
   const { width: W, height: H, bounds: B, baseElev } = tj
+  // the lidar onto the water record's basis, as the terrain was baked (no water record: the rule leaves it as read, 0 added)
+  const shiftM = lidarOntoRecordM(dir, town), sh = shiftM === null ? 0 : shiftM
   if (stored.length !== W * H) throw new Error(`⛔ ${town}: terrain.bin holds ${stored.length} values, terrain.json says ${W}×${H}`)
   const sx = (B.maxX - B.minX) / (W - 1), sz = (B.maxZ - B.minZ) / (H - 1)
   const geo = JSON.parse(readFileSync(join(dir, 'geography.json'), 'utf8'))
@@ -101,7 +105,7 @@ for (const town of towns) {
   for (const r of rings) for (const [x, z] of r) { const i = Math.round((x - B.minX) / sx), j = Math.round((z - B.minZ) / sz)
     if (i >= SIZE / 2 && j >= SIZE / 2 && i < W - SIZE / 2 && j < H - SIZE / 2) coastPts.push([i, j]) }
   if (AT === 'coast' && !coastPts.length) { console.log(`  ${town}: no coast vertex inside the grid — --at=coast has nothing to read`); continue }
-  const rows = []                                       // [k, stored, mean − baseElev_json]
+  const rows = []                                       // [k, stored, mean − baseElev]
   for (let w = 0; w < WINDOWS; w++) {
     const [i0, j0] = AT === 'coast' ? (([ci, cj]) => [ci - SIZE / 2, cj - SIZE / 2])(coastPts[Math.floor(rand() * coastPts.length)])
                                     : [Math.floor(rand() * (W - SIZE)), Math.floor(rand() * (H - SIZE))]
@@ -153,7 +157,7 @@ for (const town of towns) {
         for (const { S, px } of held) for (const [x, y, v] of px) { const key = `${Math.round((x - S0.x0) / S0.rx)},${Math.round((y - S0.y0) / S0.ry)}`; if (!seen.has(key)) seen.set(key, v) }
         let sum = 0; for (const v of seen.values()) sum += v
         n.seam++; n.asserted++
-        rows.push([k, stored[k] + (MUTATE === 'lift' && (i + j) % 2 ? 0.001 : 0), sum / seen.size - baseElev, sum / seen.size, 'seam', seen.size])
+        rows.push([k, stored[k] + (MUTATE === 'lift' && (i + j) % 2 ? 0.001 : 0), sum / seen.size + sh - baseElev, sum / seen.size + sh, 'seam', seen.size])
         continue
       }
       const h = held[0]
@@ -163,7 +167,7 @@ for (const town of towns) {
       // not by the claim, so the cell passes with any subset of its ties counted (the mean is checked against each)
       if (!h.cnt) { n.tieOnly = (n.tieOnly || 0) + 1; continue }
       const alts = []; for (let m = 0; m < (1 << Math.min(h.ties.length, 4)); m++) { let su = h.sum, cn = h.cnt
-        h.ties.forEach((v, t) => { if (m >> t & 1) { su += v; cn++ } }); alts.push(su / cn) }
+        h.ties.forEach((v, t) => { if (m >> t & 1) { su += v; cn++ } }); alts.push(su / cn + sh) }
       if (h.ties.length) n.ties = (n.ties || 0) + 1
       const st = stored[k] + (MUTATE === 'lift' && (i + j) % 2 ? 0.001 : 0)
       const best = alts.reduce((x, y) => Math.abs(st - (y - baseElev)) < Math.abs(st - (x - baseElev)) ? y : x)
@@ -179,13 +183,13 @@ for (const town of towns) {
   const off = rows.map(([, s, m]) => Math.abs(s - m - c)).sort((a, b) => a - b)
   const over = off.filter(e => e > tol).length
   const q = (p) => off[Math.min(off.length - 1, Math.floor(p * off.length))]
-  const cBound = tj.datum === 'water' ? tol : 0.005 + tol
+  const cBound = tol
   const cOk = Math.abs(c) <= cBound
   const ok = !over && cOk
   if (!ok) bad++
   const mm = (v) => (v * 1000).toFixed(v < 0.001 ? 4 : 1) + ' mm'
   console.log(`  ${ok ? '✅' : '⛔'} ${town}${MUTATE ? ` [mutate=${MUTATE}]` : ''}: ${n.asserted.toLocaleString()} land cells asserted (${n.whole.toLocaleString()} whole, ${n.partial.toLocaleString()} partial, ${n.seam.toLocaleString()} seam) in ${WINDOWS} ${AT} windows of ${SIZE}×${SIZE}`
-    + ` · offset c ${mm(c)} (${cOk ? 'within' : 'OUTSIDE'} its bound ${mm(cBound)}: ${tj.datum === 'water' ? 'a water datum is a 1 cm bucket' : "baseElev's 1 cm rounding"}) · tolerance ${mm(tol)} (a Float32 ulp at ${maxElev.toFixed(2)} m + one at ${maxAbs.toFixed(2)} m)`
+    + ` · offset c ${mm(c)} (${cOk ? 'within' : 'OUTSIDE'} its bound ${mm(cBound)}: baseElev is exact and the lidar on the record's basis${shiftM === null ? ' (no water record: as read)' : ` (${shiftM >= 0 ? '+' : ''}${shiftM} m)`}) · tolerance ${mm(tol)} (a Float32 ulp at ${maxElev.toFixed(2)} m + one at ${maxAbs.toFixed(2)} m)`
     + ` · ${over.toLocaleString()} over (${(100 * over / rows.length).toFixed(1)}%) · |stored − mean − c| p50 ${mm(q(0.5))} p90 ${mm(q(0.9))} p99 ${mm(q(0.99))} max ${mm(off[off.length - 1])}`)
   if (over) for (const r of rows.filter(r => Math.abs(r[1] - r[2] - c) > tol).sort((x, y) => Math.abs(y[1] - y[2] - c) - Math.abs(x[1] - x[2] - c)).slice(0, 5))
     console.log(`      over: node ${r[0] % W},${Math.floor(r[0] / W)} (${r[4]}, ${r[5]} pixels) stored ${r[1].toFixed(6)} · mean − baseElev ${r[2].toFixed(6)} · off ${mm(r[1] - r[2] - c)}`)

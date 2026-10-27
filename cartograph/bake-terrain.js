@@ -9,8 +9,8 @@
  *   cartograph/data/<scene>/clean/terrain.bin  — Float32Array(width*height), row-major, raw
  *
  * The `.bin` pattern matches the rest of the kit (ground.bin, buildings.bin).
- * Values are normalized to local-min = 0 so uExag scales pure relief;
- * absolute height is reconstructable from `baseElev` in the metadata.
+ * Values are normalized to the datum (the water, else the local minimum) = 0 so uExag scales pure relief;
+ * absolute height is stored + `baseElev`, exactly: baseElev is written unrounded.
  *
  * The terrain artifact is the scene's — it travels WITH the installation
  * folder (which may live on another drive), never in a shared/global dir.
@@ -43,7 +43,7 @@ import { CARTOGRAPH_DIR, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
 import { readCoast, maskOf, waterFace, COAST_FILE } from './coastFile.mjs'
 import { stampCoast, deckHeights } from './shoreStamp.mjs'
-import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
+import { lidarOntoRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { localBB } from './geography.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
@@ -471,8 +471,8 @@ async function main() {
   const { grid: raw, sources: regimes, counts } = await rasterToGrid(opened, { width, height, bounds, toLL: localToWgs84 })
   // ⭐ ONE BASIS: the lidar onto the water record's (its stated geoid → the current one, fetch-lidar-flights.mjs), before
   // anything compares it with a level or a floor. A town with no water record has no level to meet, and is left as read.
-  if (fs.existsSync(join(MAP_DIR, 'raw', 'water-datums.json'))) {
-    const d = lidarToRecordM(fs.existsSync(join(MAP_DIR, 'raw', FLIGHTS_FILE)) ? JSON.parse(fs.readFileSync(join(MAP_DIR, 'raw', FLIGHTS_FILE), 'utf8')) : null, SCENE)
+  const d = lidarOntoRecordM(MAP_DIR, SCENE)
+  if (d !== null) {
     for (let k = 0; k < raw.length; k++) if (Number.isFinite(raw[k])) raw[k] += d
     console.log(`  GEOID: the lidar onto the water record's basis, ${d >= 0 ? '+' : ''}${d} m (raw/${FLIGHTS_FILE})`)
   }
@@ -537,7 +537,9 @@ async function main() {
     for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) m[R[q] * width + i] = 1; return m })()
   const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water, rockMask, floorMask) : null
 
-  const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
+  // ⛔ baseElev EXACT: every reader rebuilds absolute height as stored + baseElev, so a rounded one is a constant error in all of
+  // them (1 cm rounding was 3.4 mm on Huron's water datum, 2026-10-27). ▶ node checks/claims-the-shore-agrees-with-the-field.mjs
+  const meta = { width, height, bounds, baseElev,
                  datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(stamp ? { stamp } : {}), ...(decks.length ? { decks } : {}), ...(water ? { water } : {}) }
   fs.mkdirSync(_outArg || CLEAN_DIR, { recursive: true })
   writeIfChanged(OUT_JSON, JSON.stringify(meta))

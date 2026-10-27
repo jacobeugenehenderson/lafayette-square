@@ -92,6 +92,15 @@ export function lidarToRecordM(flights, scene) {
   return ds[0]
 }
 
+/** THE LIDAR ONTO THE WATER RECORD'S BASIS, for a town's data dir: the metres to add to every lidar height (its stated geoid
+ *  → the current one), or null where the town has no water record (no level to meet: the lidar is left as read). One rule
+ *  for every reader that compares the lidar with a level: bake-terrain and claims-the-dry-bed-record-is-the-lidar. */
+export function lidarOntoRecordM(mapDir, scene) {
+  if (!existsSync(join(mapDir, 'raw', 'water-datums.json'))) return null
+  const fp = join(mapDir, 'raw', FLIGHTS_FILE)
+  return lidarToRecordM(existsSync(fp) ? JSON.parse(readFileSync(fp, 'utf8')) : null, scene)
+}
+
 async function main() {
   const scene = requireExplicitMap('fetch-lidar-flights.mjs (writes raw/elevation-flights.json)')
   const raw = join(ROOT, 'cartograph', 'data', scene, 'raw')

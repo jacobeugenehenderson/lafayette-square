@@ -68,6 +68,18 @@ const sortDry = (cells, deckOf) => {
   if (!(listed.get(0)?.length === 1 && gated.length === 1 && gated[0].x === 50)) { console.log('⛔ the (a) deck listing is blind: a planted dry cell beside a deck is not gated, or one under it is not listed'); process.exit(1) }
   console.log('✅ the (a) deck listing sees: of two planted dry cells, the one under a deck is listed and the one beside it gates')
 }
+// ⛔ terrain.json's baseElev IS EXACT (Boz, 2026-10-27): (a) and every reader rebuild absolute height as stored + baseElev, so a
+// rounded one is a constant error in all of them (1 cm rounding: 3.4 mm on Huron's water datum, the 19 cells of
+// claims-the-dry-bed-record-is-the-lidar). Read from bake-terrain's own meta write: `baseElev` itself, never an expression of it.
+const writesBaseElevExact = (src) => { const m = src.match(/const meta = \{([\s\S]*?)\n/); if (!m) return null
+  const p = m[1].match(/\bbaseElev\b\s*(?::\s*([^,]+))?/); return p ? (p[1] === undefined || p[1].trim() === 'baseElev') : null }
+{ // SEEN TO FAIL, every run: a planted rounded write, then the real one
+  const planted = writesBaseElevExact('  const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,\n')
+  const real = writesBaseElevExact(readFileSync(join(ROOT, 'cartograph/bake-terrain.js'), 'utf8'))
+  if (planted !== false) { console.log('⛔ the baseElev row is blind: a planted Math.round write is not caught'); process.exit(1) }
+  if (real !== true) { console.log(`⛔ bake-terrain writes terrain.json's baseElev ${real === null ? 'where this row cannot find it (const meta = { … baseElev)' : 'ROUNDED (an expression of it): every reader rebuilds absolute height wrong by the rounding'}`); process.exit(1) }
+  console.log('✅ bake-terrain writes baseElev exact (a planted Math.round write is caught)')
+}
 const P50_M = 4.34   // the brief's §0: the lidar trace's p50 offset off ①'s OSM coast on Huron
 
 const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a => a.slice(8))

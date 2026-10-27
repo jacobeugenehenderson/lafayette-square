@@ -5,7 +5,8 @@
 // it and cannot recompute it, because the bed has overwritten those heights. This is the record's own independent test, run
 // in a slot (it reads the lidar): on ONE tile of the terrain grid, the lidar is read again through elevationSources.mjs
 // (openRasters → rasterToGrid, the terrain's own reader, its sources in the same order) and (a) is recomputed: a cell under
-// the coast's mask (coastFile.mjs#maskOf over readCoast's rings in the drawing), not rock (`bed.rock`), whose lidar − baseElev
+// the coast's mask (coastFile.mjs#maskOf over readCoast's rings in the drawing), not rock (`bed.rock`), whose lidar (onto the
+// water record's basis, lidarOntoRecordM, as the terrain reads it) − baseElev
 // stands above that cell's HIGH (waterLevel.mjs). It must EQUAL the record's cells on that tile, cell for cell.
 // The tile is the 128 × 128 block holding the most mask-edge cells: where (a) lives.
 // ⭐ SEEN TO FAIL in the same run: (a) recomputed under the mask shifted by the brief's p50 offset (4.34 m) must NOT equal the
@@ -21,6 +22,7 @@ import { ringsInDrawing } from '../cartograph/coast-in-drawing.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 import { localBB, projectorOf, geographyFor, metresPerDegree } from '../cartograph/geography.mjs'
 import { elevationSpecs, openRasters, rasterToGrid } from '../cartograph/elevationSources.mjs'
+import { lidarOntoRecordM } from '../cartograph/fetch-lidar-flights.mjs'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const scene = arg('scene'), DATA = arg('data-root') || ROOT, P50_M = 4.34, B = 128
@@ -54,6 +56,11 @@ const ni = Math.min(B, W - best.i0), nj = Math.min(B, H - best.j0)
 console.log(`── ${scene}: tile i ${best.i0}…${best.i0 + ni - 1}, j ${best.j0}…${best.j0 + nj - 1} (${best.n} mask-edge cells)`)
 const opened = await openRasters(elevationSpecs(dir), { cacheMB: 64 })
 const { grid } = await rasterToGrid(opened, { width: ni, height: nj, bounds: { minX: X(best.i0), maxX: X(best.i0 + ni - 1), minZ: Z(best.j0), maxZ: Z(best.j0 + nj - 1) }, toLL, quiet: true })
+// ⭐ the lidar onto the water record's basis, by the terrain's own rule (fetch-lidar-flights.mjs#lidarOntoRecordM): without it
+// the levels are met in another datum, and a lake whose lidar sits 34 mm high reads dry everywhere (Huron, 2026-10-27)
+const shiftM = lidarOntoRecordM(dir, scene)
+if (shiftM !== null) for (let k = 0; k < grid.length; k++) if (Number.isFinite(grid[k])) grid[k] += shiftM
+console.log(`  the lidar onto the water record's basis: ${shiftM === null ? 'no water record, left as read' : `${shiftM >= 0 ? '+' : ''}${shiftM} m`}`)
 const dryUnder = (m) => {
   const out = new Set(); let noValue = 0
   for (let dj = 0; dj < nj; dj++) for (let di = 0; di < ni; di++) {
