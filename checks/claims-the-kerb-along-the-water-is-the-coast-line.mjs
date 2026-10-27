@@ -190,7 +190,13 @@ function coastOf(fp) {
   const at = new Map(); ringsOut.forEach((o, ri) => o.K.forEach((k, i) => at.set(key(k), [ri, i])))
   return { both, edges, rings: ringsOut, at }
 }
-function judge(tiles, C, lu) {
+// ⭐ IN THE DRAWING ONLY (Boz's slot, 2026-10-27, measured on Huron at 2de92999): a rim tile's ② (`iaFull`) is the block's whole
+// kerb, uncut, while everything that reads the line (the cells, the land use) is cut at the circle. Past the disc no sharer exists:
+// all 137 of Huron's "unshared" (A) vertices lay outside it, 52 carried twice by a block's two rim pieces. (A) and (B) judge a
+// vertex only inside the disc or on its rim (`inDrawing`); the ones outside are counted apart, never judged.
+function judge(tiles, C, lu, disc) {
+  const inDrawing = (p) => !disc?.length || windXZ(p, disc) !== 0 || disc.some((a, i) => { const b = disc[(i + 1) % disc.length], A = K(a), B = K(b), k = K(p), dx = B[0] - A[0], dy = B[1] - A[1], L2 = dx * dx + dy * dy
+    if (!L2) return false; const t = ((k[0] - A[0]) * dx + (k[1] - A[1]) * dy) / L2; if (t < 0 || t > 1) return false; const cr = (k[0] - A[0]) * dy - (k[1] - A[1]) * dx; return cr * cr <= 4 * L2 })
   const vSet = new Set([...C.both.keys()]), all = new Set()
   const shared = new Set(); for (const rs of Object.values(lu || {})) for (const r of rs || []) for (const p of r || []) shared.add(key(K(p)))
   for (const t of tiles) for (const c of (t.inkCells || [])) if (c.cls === 'shore') for (const r of c.rings) for (const p of r) shared.add(key(K(p)))
@@ -200,11 +206,12 @@ function judge(tiles, C, lu) {
   const onEdge = (k) => C.edges.some(([a, b]) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy; if (!L2) return false
     const t = ((k[0] - a[0]) * dx + (k[1] - a[1]) * dy) / L2; if (t < 0 || t > 1) return false
     const cr = (k[0] - a[0]) * dy - (k[1] - a[1]) * dx; return cr * cr <= NODE_BOUND * NODE_BOUND * L2 })
-  let A = 0, Abad = [], Aoff = [], Aunshared = [], B = 0, Bbad = []
+  let A = 0, Abad = [], Aoff = [], Aunshared = [], B = 0, Bbad = [], outside = 0
   for (const t of tiles) (t.iaFull || []).forEach((ring, si) => { const st = t.iaStamp?.[si]; if (!st) return
     const n = ring.length, w = (e) => t.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL
     ring.forEach((p, i) => { const k = K(p); all.add(key(k))
       const wi = w(i), wp = w((i - 1 + n) % n)
+      if ((wi || wp) && !inDrawing(p)) { outside++; return }
       if (wi && wp) { A++; if (!onEdge(k)) { Aoff.push(p); Abad.push(p) } else if (!vSet.has(key(k)) && !shared.has(key(k))) { Aunshared.push(p); Abad.push(p) } }
       else if (wi || wp) { B++; if (!onEdge(k)) Bbad.push(p) } }) })
   // (C′) the ① spans the ② water runs cover: a run vertex's POSITION on ①'s ring (a ① vertex: its index; on a ① water edge:
@@ -234,7 +241,7 @@ function judge(tiles, C, lu) {
   for (const [kk, p] of C.both) { if (!tiles.some(t => t.ring && windXZ(p, t.ring) !== 0)) continue
     if (!covered.has(kk)) { under++; continue }
     Cn++; if (!all.has(kk)) Cbad.push(p) }
-  return { A, Abad, Aoff, Aunshared, B, Bbad, Cn, Cbad, under }
+  return { A, Abad, Aoff, Aunshared, B, Bbad, Cn, Cbad, under, outside }
 }
 function rimJudge(tiles, B) {
   const out = [], seen = new Map(); let cells = 0, twice = 0
@@ -250,7 +257,7 @@ function rimJudge(tiles, B) {
   return { cells, out, twice, rimV, unshared } }
 const say = (J, label) => {
   const at = (ps) => ps.slice(0, 4).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')
-  console.log(`  ${J.Abad.length ? '⛔' : '✅'} (A)${label} ${J.A} ② kerb vertex(es) between two water edges · ${J.Aoff.length} off ①'s water edge${J.Aoff.length ? ` (e.g. ${at(J.Aoff)})` : ''} · ${J.Aunshared.length} on it but neither a ① vertex nor a stamp-shared one${J.Aunshared.length ? ` (e.g. ${at(J.Aunshared)})` : ''}`)
+  console.log(`  ${J.Abad.length ? '⛔' : '✅'} (A)${label} ${J.A} ② kerb vertex(es) between two water edges · ${J.Aoff.length} off ①'s water edge${J.Aoff.length ? ` (e.g. ${at(J.Aoff)})` : ''} · ${J.Aunshared.length} on it but neither a ① vertex nor a stamp-shared one${J.Aunshared.length ? ` (e.g. ${at(J.Aunshared)})` : ''} · ${J.outside} water-run vertex(es) outside the disc (a rim tile's uncut ②; not judged)`)
   console.log(`  ${J.Bbad.length ? '⛔' : '✅'} (B)${label} ${J.B} ② kerb vertex(es) where a street meets the water · ${J.Bbad.length} off ①'s water edge past one rounding${J.Bbad.length ? ` (e.g. ${at(J.Bbad)})` : ''}`)
   console.log(`  ${J.Cbad.length ? '⛔' : '✅'} (C′)${label} ${J.Cn} ① coast vertex(es) on ②'s kerb line · ${J.Cbad.length} missing from ② as a vertex${J.Cbad.length ? ` (e.g. ${at(J.Cbad)})` : ''} · ${J.under} under a carriageway (not kerb; counted, not judged)`)
   return J.Abad.length + J.Bbad.length + J.Cbad.length }
@@ -264,7 +271,7 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
   console.log(`\n── ${scene}: ① carries ${C.edges.length} water edge(s), ${C.both.size} coast vertex(es)`)
   towns++
   let R; try { R = quiet(() => buildProto(f)) } catch (e) { console.log(`  ⛔ the producer refused — nothing checked: ${String(e.message).split('\n')[0].slice(0, 200)}`); red++; continue }
-  if (say(judge(R.protoShapeTiles, C, R.luByClass), '')) red++
+  if (say(judge(R.protoShapeTiles, C, R.luByClass, fp.boundaryRing), '')) red++
   { const J = rimJudge(R.protoShapeTiles, fp.boundaryRing); if (J.out.length || J.twice || J.unshared.length) red++
     console.log(`  ${J.out.length || J.twice || J.unshared.length ? '⛔' : '✅'} (R) at the rim: ${J.cells} ink-cell ring(s) · ${J.out.length} shore-cell vertex(es) outside the disc${J.out.length ? ` (e.g. ${J.out.slice(0, 3).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')})` : ''} · ${J.twice} ring(s) carried by two tiles · (R3) ${J.rimV} cell vertex(es) on the rim, ${J.unshared.length} not the tile ring's${J.unshared.length ? ` (e.g. ${J.unshared.slice(0, 3).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')})` : ''}`)
     for (const m of rimMutants) { let MM = null, refused = null; try { MM = quiet(() => buildProto(f, { tg: m.tg })) } catch (e) { refused = String(e.message).split('\n')[0].slice(0, 120) }
@@ -292,7 +299,7 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
         const ring = [...r.slice(0, e + 1), m, ...r.slice(e + 1)], stamp = [...st.slice(0, e + 1), st[e], ...st.slice(e + 1)]
         return R.protoShapeTiles.map(x => x !== t ? x : { ...t, iaFull: t.iaFull.map((q, j) => j === si ? ring : q), iaStamp: t.iaStamp.map((q, j) => j === si ? stamp : q) }) }
       if (e < 0) console.log('  ⚪ mutants (planted vertex): no water edge long enough to plant on — not judged')
-      else { const off = judge(plant(2), C, R.luByClass), on = judge(plant(0), C, R.luByClass), J0 = judge(R.protoShapeTiles, C, R.luByClass)
+      else { const off = judge(plant(2), C, R.luByClass, fp.boundaryRing), on = judge(plant(0), C, R.luByClass, fp.boundaryRing), J0 = judge(R.protoShapeTiles, C, R.luByClass, fp.boundaryRing)
         const okOff = off.Aoff.length > J0.Aoff.length, okOn = on.Aunshared.length > J0.Aunshared.length
         if (!okOff || !okOn) red++
         console.log(`  ${okOff ? '✅' : '⛔'} mutant (a vertex 2 units off a ② water edge): ${okOff ? 'RED as off the line, as it must be' : 'not seen — (A) is blind off the line'}`)
@@ -302,12 +309,15 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
         const coastAt = (i) => { const n = r.length, j = (i + n) % n; return C.both.has(key(K(r[j]))) && t.runs?.[st[j]]?.skelId === WATER_EDGE_SKEL && t.runs?.[st[(j - 1 + n) % n]]?.skelId === WATER_EDGE_SKEL }
         const v = r.findIndex((_, i) => coastAt(i - 1) && coastAt(i) && coastAt(i + 1))
         if (v < 0) console.log('  ⚪ mutant (a ① coast vertex dropped from ②): none to drop on this ring — not judged')
-        else { const tiles2 = R.protoShapeTiles.map(x => x !== t ? x : { ...t, iaFull: t.iaFull.map((q, j) => j === si ? q.filter((_, i) => i !== v) : q), iaStamp: t.iaStamp.map((q, j) => j === si ? q.filter((_, i) => i !== v) : q) })
-          const dr = judge(tiles2, C, R.luByClass), okD = dr.Cbad.length > J0.Cbad.length
+        // ⛔ from EVERY tile ring that carries its key: a block's two rim pieces both carry its ② (Huron: v in tiles 0 and 1), so
+        // dropped from one it stayed in the other and the mutant could not bite (the gate on 2de92999)
+        else { const vk = key(K(r[v])), drop = (q, sq) => { const keep = q.map(p => key(K(p)) !== vk); return [q.filter((_, i) => keep[i]), sq.filter((_, i) => keep[i])] }
+          const tiles2 = R.protoShapeTiles.map(x => !(x.iaFull || []).some(q => q.some(p => key(K(p)) === vk)) ? x : { ...x, iaFull: x.iaFull.map((q, j) => drop(q, x.iaStamp[j])[0]), iaStamp: x.iaStamp.map((sq, j) => drop(x.iaFull[j], sq)[1]) })
+          const dr = judge(tiles2, C, R.luByClass, fp.boundaryRing), okD = dr.Cbad.length > J0.Cbad.length
           if (!okD) red++
           console.log(`  ${okD ? '✅' : '⛔'} mutant (a ① coast vertex dropped from ②): ${okD ? 'RED as missing, as it must be' : 'not seen — (C′) reads a dropped vertex as under a carriageway'}`) } } } }
   let M; try { M = quiet(() => buildProto(f, { tg: mutant })) } catch (e) { console.log(`  ✅ mutant (the coast clause removed): the producer refused (${String(e.message).split('\n')[0].slice(0, 120)}) — counted RED`); mutRed++; continue }
-  const J = judge(M.protoShapeTiles, C, M.luByClass), bad = J.Abad.length + J.Bbad.length + J.Cbad.length
+  const J = judge(M.protoShapeTiles, C, M.luByClass, fp.boundaryRing), bad = J.Abad.length + J.Bbad.length + J.Cbad.length
   if (bad) mutRed++
   console.log(`  ${bad ? '✅' : '⚪'} mutant (the coast clause of rSrc removed): ${bad ? `RED as it must be — (A) ${J.Abad.length} · (B) ${J.Bbad.length} · (C′) ${J.Cbad.length}` : 'GREEN here — no coast corner on this town takes a fillet without the clause'}`)
 }
