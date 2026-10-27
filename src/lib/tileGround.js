@@ -8216,7 +8216,7 @@ export function buildTileGround(ribbons, opts = {}) {
           shoreFar += ss.far || 0; shoreFarMax = Math.max(shoreFarMax, ss.farMax || 0); return ss.tile })
         const stamp = MP.boundaryRing
         if (stamp?.length > 2) {
-          const before = protoShapeTiles.length; let rimShared = 0
+          const before = protoShapeTiles.length; let rimShared = 0, cellRimShared = 0
           const cut = (rings) => { const o = intersectRings(rings || [], [stamp]); return o?.length ? o : [] }
           const kept = []
           // ⭐ the RING is cut by the disc, and each output edge takes the owner of the OPERAND edge it lies on: one of the
@@ -8302,12 +8302,35 @@ export function buildTileGround(ribbons, opts = {}) {
               const best = a.indexOf(Math.max(...a))
               if (!(a[best] > 0)) throw new Error(`[tileGround][PROTO⊙] ⛔ a curb ring of a rim tile lies in none of its ${ring.length} disc pieces (at ${c[0]}). Refusing.`)
               mine[best].push(c) }
+            // ⭐ THE INK CELLS ARE CUT BY THE CIRCLE TOO (Zob, 2026-10-26; measured off the frozen cells: Huron 1 shore ring across
+            // the disc and 1 wholly outside, PTown 2 across). ⛔ They passed through uncut, so every piece of a rim tile carried the
+            // WHOLE block's cells, a shore cell painted past the disc once per piece, and the asphalt's rim crossing on a cell edge
+            // was the asphalt's alone (the curb's twin bug, above). Each cell ring is cut by the disc and goes to the piece it lies
+            // in, by containment (it overlaps exactly one piece, else refuses); the crossings the cut minted go into the piece's ring (rim edges, shareRimCrossings,
+            // which refuses one on no rim edge) and into its block where an edge holds them, so the asphalt and the cell meet at
+            // one point on the rim.
+            const cellsIn = t.inkCells || []
+            const cellsOf = ring.map(() => cellsIn.map(c => ({ ...c, rings: [] })))
+            if (inside || !cellsIn.length) cellsIn.forEach((c, j) => { cellsOf[0][j] = c })
+            else cellsIn.forEach((c, j) => { for (const q of cut(c.rings)) {
+              // ⛔ CONTAINMENT, NEVER THE LARGEST (Boz, 2026-10-26): a ring the circle cut lies wholly in ONE piece; one overlapping
+              // two pieces is a disagreement between the cut and the pieces, and refuses by name
+              const a = ring.map(r => intersectRings([q], [r]).reduce((u, x) => u + Math.abs(signedArea(x)), 0)), hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)
+              if (hit.length !== 1) throw new Error(`[tileGround][PROTO⊙] ⛔ an ink cell ring of a rim tile (at ${q[0]}) overlaps ${hit.length} of its ${ring.length} disc pieces (want exactly 1). Refusing.`)
+              cellsOf[hit[0]][j].rings.push(q) } })
             ring.forEach((r, i) => { if (!inside) { const sh = shareRimCrossings(r, ringOwners[i], mine[i], t.iA || [], stamp); r = sh.ring; ringOwners[i] = sh.owners; rimShared += sh.added }
-              kept.push({ ...t, ring: r, ringOwner: ringOwners[i], iA: mine[i],
+              let iAi = mine[i]
+              const cells = (inside || !cellsIn.length) ? (i === 0 ? cellsIn : []) : cellsOf[i].filter(c => c.rings.length)
+              if (!inside && cells.length) { const flat = cells.flatMap(c => c.rings), input = cellsIn.flatMap(c => c.rings)
+                const sc = shareRimCrossings(r, ringOwners[i], flat, input, stamp); r = sc.ring; ringOwners[i] = sc.owners; rimShared += sc.added; cellRimShared += sc.added
+                const have = new Set(iAi.flat().map(keyOf)), known = new Set([...input.flat(), ...stamp].map(keyOf)), pts = []
+                for (const q of flat) for (const v of q) { const k = keyOf(v); if (!known.has(k) && !have.has(k)) { have.add(k); pts.push(v) } }
+                if (pts.length) iAi = iAi.map(q => insertOnEdges(q, null, pts, () => true).ring) }
+              kept.push({ ...t, ring: r, ringOwner: ringOwners[i], iA: iAi, ...(cells.length ? { inkCells: cells } : { inkCells: undefined }),
               fillets: (t.fillets || []).filter(f => inDisc(f.apex)) }) })
           }
           protoShapeTiles = kept
-          console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice)`)
+          console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice) · ${cellRimShared} of them the ink cells' (cut by the circle too)`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoFull} block crossing(s) the face trim and the circle minted, written into the struck contour (iaFull): ② is one ring`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoRing} block vertex(es) where the block follows the ring (the face trim's and the stamp's crossings there), written into the tile ring`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoShore} block vertex(es) on a water run (stamp crossings, joins), written into the tile's shore cell (shareWaterRunIntoShore) · ${shoreFar} placed past one rounding off their edge (max ${(shoreFarMax / SCALE * 1000).toFixed(3)} mm)`)

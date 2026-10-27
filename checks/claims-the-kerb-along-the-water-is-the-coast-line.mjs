@@ -20,6 +20,9 @@
 //       the whole ring for a run with no end). Dropped inside a span: RED (PTown block 11 v174, a collinear coast vertex,
 //       2026-10-26). Outside every span the vertex lies under a carriageway, past a street's join with the water (Huron
 //       wall-street-1, 21–47 m past its join): not part of the kerb, counted apart. By identity on ①'s ring, never a distance.
+//   (R) AT THE RIM (Zob, 2026-10-26: the cells passed the circle uncut): (R1) no shore-cell vertex lies outside the disc
+//       (`protopolygon.boundaryRing`) past the two-unit containment; (R2) no ink-cell ring is carried by two tiles (a rim tile's
+//       pieces each carried the whole block's cells).
 //   MUTANTS (always run): the producer copied with the coast clause of `rSrc` removed (the anchor must occur once) must go RED
 //   on some town; a town where it stays GREEN has nothing on its coast to fillet and is said so. In process, per town: one
 //   off-line vertex inserted mid-way along a ② water edge (pushed 2 units off it) must read RED as off the line, and one
@@ -113,6 +116,15 @@ function judge(tiles, C, lu) {
     Cn++; if (!all.has(kk)) Cbad.push(p) }
   return { A, Abad, Aoff, Aunshared, B, Bbad, Cn, Cbad, under }
 }
+function rimJudge(tiles, B) {
+  const out = [], seen = new Map(); let cells = 0, twice = 0
+  const onB = (p) => { const k = K(p); for (let i = 0; i < B.length; i++) { const a = K(B[i]), b = K(B[(i + 1) % B.length]), dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy
+    if (!L2) continue; const t = ((k[0] - a[0]) * dx + (k[1] - a[1]) * dy) / L2; if (t < 0 || t > 1) continue
+    const cr = (k[0] - a[0]) * dy - (k[1] - a[1]) * dx; if (cr * cr <= 4 * L2) return true } return false }
+  tiles.forEach((t, ti) => (t.inkCells || []).forEach(c => c.rings.forEach(r => { cells++
+    const sig = r.map(p => key(K(p))).sort().join(';'), was = seen.get(sig); if (was != null && was !== ti) twice++; else seen.set(sig, ti)
+    if (B?.length && c.cls === 'shore') for (const p of r) if (windXZ(p, B) === 0 && !onB(p)) out.push(p) })))
+  return { cells, out, twice } }
 const say = (J, label) => {
   const at = (ps) => ps.slice(0, 4).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')
   console.log(`  ${J.Abad.length ? '⛔' : '✅'} (A)${label} ${J.A} ② kerb vertex(es) between two water edges · ${J.Aoff.length} off ①'s water edge${J.Aoff.length ? ` (e.g. ${at(J.Aoff)})` : ''} · ${J.Aunshared.length} on it but neither a ① vertex nor a stamp-shared one${J.Aunshared.length ? ` (e.g. ${at(J.Aunshared)})` : ''}`)
@@ -130,6 +142,16 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
   towns++
   let R; try { R = quiet(() => buildProto(f)) } catch (e) { console.log(`  ⛔ the producer refused — nothing checked: ${String(e.message).split('\n')[0].slice(0, 200)}`); red++; continue }
   if (say(judge(R.protoShapeTiles, C, R.luByClass), '')) red++
+  { const J = rimJudge(R.protoShapeTiles, fp.boundaryRing); if (J.out.length || J.twice) red++
+    console.log(`  ${J.out.length || J.twice ? '⛔' : '✅'} (R) at the rim: ${J.cells} ink-cell ring(s) · ${J.out.length} shore-cell vertex(es) outside the disc${J.out.length ? ` (e.g. ${J.out.slice(0, 3).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')})` : ''} · ${J.twice} ring(s) carried by two tiles`)
+    // mutant: one rim tile's cells handed to a second tile, and one cell vertex pushed 1 m outside the disc
+    const t0 = R.protoShapeTiles.findIndex(t => t.inkCells?.some(c => c.cls === 'shore')), t1 = R.protoShapeTiles.findIndex((t, i) => i !== t0)
+    if (t0 >= 0 && fp.boundaryRing?.length) { const T = R.protoShapeTiles.map((t, i) => i === t1 ? { ...t, inkCells: R.protoShapeTiles[t0].inkCells } : t)
+      const b = fp.boundaryRing, cx = b.reduce((u, q) => u + q[0], 0) / b.length, cz = b.reduce((u, q) => u + q[1], 0) / b.length, far = b.reduce((m, q) => Math.max(m, Math.hypot(q[0] - cx, q[1] - cz)), 0)
+      T[t0] = { ...T[t0], inkCells: T[t0].inkCells.map((c, j) => j ? c : { ...c, rings: [[...c.rings[0], [cx + far + 1, cz]]] }) }
+      const M = rimJudge(T, b), ok = M.twice > J.twice && M.out.length > J.out.length
+      if (!ok) red++
+      console.log(`  ${ok ? '✅' : '⛔'} mutant (R): a tile's cells handed to a second tile, and a cell vertex 1 m past the rim → ${M.twice} carried twice, ${M.out.length} outside — ${ok ? 'RED as it must be' : '(R) is blind'}`) } }
   // in-process mutants on the town's own ②: a vertex inserted mid-way along one water edge, (i) 2 units off it, (ii) on it
   { const t = R.protoShapeTiles.find(t => (t.iaFull || []).some((r, si) => t.iaStamp?.[si]?.some((s, e) => t.runs?.[s]?.skelId === WATER_EDGE_SKEL && t.runs?.[t.iaStamp[si][(e - 1 + r.length) % r.length]]?.skelId === WATER_EDGE_SKEL)))
     if (!t) console.log('  ⚪ mutants (planted vertex): no ② water run to plant on — not judged')
