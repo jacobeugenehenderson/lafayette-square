@@ -43,7 +43,14 @@
 // sidewalk#32 at (633.872,1103.907). ⭐ MUTATION TEST: `--selftest` builds two items sharing an edge exactly (must NOT
 // report), moves one by half a step (MUST report), then by two steps (must NOT report: a gap, not this class).
 //
-//   node checks/claims-no-edge-is-drawn-twice.mjs [town …] [--expect=x,z;x,z] [--show=n] [--out=<dir>] [--selftest]
+// ⭐ --self — THE ONE-PRODUCER VERDICT (Boz, 2026-10-25, HPDM block 556): the town fails on any pair WITHIN ONE ITEM (a ring
+// drawing one line twice — one producer, so no other layer can be blamed), each listed with its site; pairs between items are
+// still printed but do not decide. --expect then names points that must lie on a ONE-ITEM pair.
+// ⭐ MUTANT (--mutant=legext): the stack is built with tileGround's perpendicular-corner extension restored to its old
+// construction (re-derived from the source edge by `legFrame`, overlapping the leg by 0.5 m), swapped in-process; the anchor
+// is the live `legExt`, asserted once. With --self it must come back RED, and RED at the site --expect names:
+//   node checks/claims-no-edge-is-drawn-twice.mjs hipointedemun --self --mutant=legext --expect=-490.963,113.451
+//   node checks/claims-no-edge-is-drawn-twice.mjs [town …] [--self] [--mutant=legext] [--expect=x,z;x,z] [--show=n] [--out=<dir>] [--selftest]
 // The screen shows the top --show pairs; the FULL per-pair table (every producer pair and every within-group pair, with
 // edge pairs, metres alongside and max gap) is written to <dir>/claims-no-edge-is-drawn-twice-<town>.json — the system
 // temp directory unless --out names one — and its path printed. A pair missing from the screen is not a pair at zero.
@@ -59,6 +66,7 @@ const argv = process.argv.slice(2)
 const arg = (k) => argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const SHOW = +(arg('show') || 12)
 
+const SELF = argv.includes('--self')
 function report(town, pairs, expect) {
   const by = new Map()
   for (const p of pairs) { const k = p.self ? `${p.ga} (one item)` : [p.ga, p.gb].sort().join(' / '); let r = by.get(k); if (!r) by.set(k, r = { k, same: p.same, self: !!p.self, n: 0, m: 0, gap: 0, shapes: {}, xs: [] }); r.n++; r.m += p.m; r.gap = Math.max(r.gap, p.gap)
@@ -76,14 +84,17 @@ function report(town, pairs, expect) {
   console.log(`  WITHIN ONE GROUP (two items the stack unions):`); for (const r of rows.filter(r => r.same && !r.self).slice(0, SHOW)) console.log('   ' + line(r))
   console.log(`  WITHIN ONE ITEM (a ring folding back along itself, or meeting its own hole):`); for (const r of rows.filter(r => r.self).slice(0, SHOW)) console.log('   ' + line(r))
   console.log(`  longest:`); for (const p of [...pairs].sort((a, b) => b.m - a.m).slice(0, SHOW)) console.log(`     ${p.m.toFixed(3)} m at (${p.at.map(v => v.toFixed(3)).join(', ')}) · ${p.a}  vs  ${p.b} · gap ${p.gap.toFixed(3)}`)
+  const selfPairs = pairs.filter(p => p.self)
+  if (SELF) { console.log(`  ONE-ITEM PAIRS (the verdict): ${selfPairs.length}`)
+    for (const p of selfPairs) console.log(`     ⛔ ${p.a} at (${p.at.map(v => v.toFixed(3)).join(', ')}) · ${p.m.toFixed(3)} m alongside · gap ${p.gap.toFixed(3)} step(s) · ${p.shape}`) }
   let missed = 0
   for (const [x, z] of expect) {
-    const hit = pairs.find(p => { const [[ax, az], [bx, bz]] = p.seg, dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)) : 0
+    const hit = (SELF ? selfPairs : pairs).find(p => { const [[ax, az], [bx, bz]] = p.seg, dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)) : 0
       return Math.hypot(x - ax - t * dx, z - az - t * dz) <= 2 * LATTICE_M })
     if (hit) console.log(`  ✅ expected (${x}, ${z}): ${hit.a} vs ${hit.b}`)
     else { missed++; console.error(`  ⛔ expected (${x}, ${z}): NOT reported — the instrument misses a measured near-miss`) }
   }
-  return { bad: pairs.length > 0, missed }
+  return { bad: (SELF ? selfPairs : pairs).length > 0, missed }
 }
 
 function selftest() {
@@ -134,10 +145,39 @@ function selftest() {
 }
 
 if (argv.includes('--selftest')) { const bad = selftest(); process.exit(bad ? 1 : 0) }
+// the mutant: the live tileGround with `legExt` put back to the construction it replaced, served in place of the live module
+const MUTANT = arg('mutant')
+if (MUTANT) {
+  if (MUTANT !== 'legext') { console.error(`⛔ NOT CHECKED — no mutant "${MUTANT}" (this check knows: legext)`); process.exit(2) }
+  const { readFileSync } = await import('fs'), { register } = await import('node:module'), { pathToFileURL, fileURLToPath } = await import('node:url')
+  const tgUrl = new URL('../src/lib/tileGround.js', import.meta.url).href, live = readFileSync(fileURLToPath(tgUrl), 'utf8')
+  const ANCHOR = `  const legExt = (p, j, atEnd, lvA, lvB, Lx) => {
+    const A = carried(lvA, p, j, atEnd), B = carried(lvB, p, j, atEnd)
+    if (!A || !B || !(B.dEnd > A.dEnd)) return null
+    const r = [A.at(0), A.at(Lx), B.at(Lx), B.at(0)]                 // at(0) IS the struck end vertex (the same float point)
+    return signedArea(r) > 0 ? r : r.reverse()
+  }
+`
+  if (live.split(ANCHOR).length !== 2) { console.error('⛔ NOT CHECKED — the mutant\'s anchor (tileGround.js#legExt) is not found exactly once; re-aim it'); process.exit(2) }
+  const OLD = `  const legExt = (p, j, atEnd, lvA, lvB, Lx) => {
+    const A = carried(lvA, p, j, atEnd), B = carried(lvB, p, j, atEnd)
+    if (!A || !B || !(B.dEnd > A.dEnd)) return null
+    const i = p.dsrc[j], F0 = legFrame(p, i, atEnd); if (!F0) return null
+    const { T, f, nr } = F0, back = Math.min(0.5, F0.len), X = (s2, d) => [T[0] + f[0] * s2 + nr[0] * d, T[1] + f[1] * s2 + nr[1] * d]
+    const r = [X(-back, A.dEnd), X(Lx, A.dEnd), X(Lx, B.dEnd), X(-back, B.dEnd)]
+    return signedArea(r) > 0 ? r : r.reverse()
+  }
+`
+  const src = live.replace(ANCHOR, OLD)
+  register('data:text/javascript,' + encodeURIComponent(`export async function load(url, ctx, next) {
+    if (url === ${JSON.stringify(tgUrl)}) return { format: 'module', source: ${JSON.stringify(src)}, shortCircuit: true }
+    return next(url, ctx) }`))
+  console.log(`MUTANT legext: tileGround's legExt re-derived from the source edge (legFrame, 0.5 m back), in-process`)
+}
 const { bakeGround } = await import('../cartograph/bake-ground.js')
 const { lookFor } = await import('../scratch/_proto-feed.mjs')
 const { ribbonScenes, refuseUnknownFlags } = await import('./_scenes.mjs')
-refuseUnknownFlags(['selftest', 'show', 'out', 'expect'], argv)
+refuseUnknownFlags(['selftest', 'show', 'out', 'expect', 'self', 'mutant'], argv)
 const expect = (arg('expect') || '').split(';').filter(Boolean).map(s => s.split(',').map(Number))
 let fail = 0, miss = 0
 for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--') || a === '--scene' || a.startsWith('--scene=')))) {   // ⛔ --scene= is a town, never dropped (it ran every town, 2026-10-21)
@@ -150,5 +190,8 @@ for (const town of ribbonScenes(argv.filter(a => !a.startsWith('--') || a === '-
   const r = report(town, nearMisses(entries), expect)
   if (r.bad) fail++; miss += r.missed
 }
+if (MUTANT) { const red = fail > 0 && !miss
+  console.log(`\n${red ? '✅ MUTANT RED, as it must be' : '⛔ MUTANT STAYED GREEN (or missed the named site) — the check cannot see the construction it guards'}`)
+  process.exit(red ? 0 : 1) }
 console.log(`\n${fail || miss ? '⛔ FAIL' : '✅ PASS'}${miss ? ` — ${miss} expected near-miss(es) not reported (instrument)` : ''}`)
 process.exit(miss ? 2 : fail ? 1 : 0)
