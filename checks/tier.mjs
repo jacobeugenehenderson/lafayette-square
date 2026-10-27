@@ -41,6 +41,7 @@ import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs'
 import { join, dirname, resolve, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { builtinModules } from 'node:module'
+import { createHash } from 'node:crypto'
 import { spanOf } from './_importSource.mjs'
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -220,6 +221,9 @@ export function execSelfTest() {
     ['a literal path to a file that calls fetch()', via("await importSource('src/lib/planted.js')", 'export const go = (u) => fetch(u)'), 'live'],
     ['a path that is not a literal', via('await importSource(process.argv[2])'), 'live'],
     ['a transform that adds a fetch() call', via("await importSource('src/lib/planted.js', { transform: (t) => t + 'fetch(u)' })"), 'live'],
+    ['a prefix that imports a planted repo file that calls fetch()', classifyVirtual({ 'checks/claims-planted.mjs': "import { importSource } from './_importSource.mjs'\nawait importSource('src/lib/planted.js', { prefix: \"import { go } from './fetcher.js'\" })",
+      [IMPORT_SOURCE]: helperSrc, 'src/lib/planted.js': 'export const x = 1', 'src/lib/fetcher.js': 'export const go = (u) => fetch(u)' }, 'checks/claims-planted.mjs').tier, 'live'],
+    ['a loader hook registered from node:module', classifyVirtual({ 'checks/claims-planted.mjs': "import { register } from 'node:module'\nregister('./hooks.mjs', import.meta.url)" }, 'checks/claims-planted.mjs').tier, 'live'],
     ['a run-time data: import outside the helper', classifyVirtual({ 'checks/claims-planted.mjs': "const t = 'export {}'\nawait import('data:text/javascript,' + t)" }, 'checks/claims-planted.mjs').tier, 'live'],
     ['a computed import() inside a literal data: body', classifyVirtual({ 'checks/claims-planted.mjs': 'await import("data:text/javascript,await import(globalThis.x)")' }, 'checks/claims-planted.mjs').tier, 'live'],
   ]
@@ -694,7 +698,7 @@ export function classifyVirtual(files, entry) {
 export function classify(file, seen = new Set(), depth = 0, spanText = null) {
   // `spanText`: the part of `file` an importSource span runs (checks/_importSource.mjs#spanOf) — classified as the file's own
   // text, so its relative imports resolve from the file, and keyed apart from the whole file
-  const key = spanText == null ? file : `${file}#span:${spanText.length}:${spanText.slice(0, 64)}`
+  const key = spanText == null ? file : `${file}#span:${createHash('sha256').update(spanText).digest('hex')}`
   if (seen.has(key)) return { file, tier: 'safe', why: [] }
   seen.add(key)
   const src = spanText ?? readCheckSource(file)
@@ -719,6 +723,8 @@ export function classify(file, seen = new Set(), depth = 0, spanText = null) {
 
   const blank = blankStrings(code)
   for (const [re, label, kind] of SIGNALS.live) if (re.test(kind === 'call' ? blank : code)) { bump('live'); why.push(label) }
+  // ⛔ A LOADER HOOK can swap any module's source (Zob, 2026-10-26): `register(` from node:module, or `module.register(` — live
+  if (/['"](?:node:)?module['"]/.test(code) && /\b(?:module\.)?register\s*\(/.test(blank)) { bump('live'); why.push('installs a loader hook (node:module register) — can swap any module\'s source') }
   const tmpOnly = writesOnlyUnderTmp(code, file)
   for (const [re, label] of SIGNALS.write) if (re.test(code)) {
     if (tmpOnly) why.push(`${label} — only under its own temp dir`)
@@ -760,6 +766,22 @@ export function classify(file, seen = new Set(), depth = 0, spanText = null) {
     // transform / prefix / suffix run inside the import: scanned as written (strings included)
     const restNoSpan = sp.text ? rest.replace(sp.text, '') : rest
     for (const [re, label] of SIGNALS.live) if (re.test(restNoSpan)) { bump('live'); why.push(`importSource's arguments ${label}`) }
+    // …and the IMPORTS they add (Zob, 2026-10-26): a relative specifier resolves against the file's directory and is classified;
+    // http(s): is live; a non-literal import( is live; any http(s): text at all is live
+    if (/https?:\/\//.test(restNoSpan)) { bump('live'); why.push("importSource's arguments name an http(s): URL") }
+    for (const im of restNoSpan.matchAll(/\bimport\s*\(/g)) {
+      const a = balancedArg(restNoSpan, im.index + im[0].length - 1)?.trim()
+      if (!a || !/^['"]/.test(a) || /[+`$]/.test(a.slice(1))) { bump('live'); why.push("importSource's arguments hold a computed import()") }
+    }
+    for (const im of restNoSpan.matchAll(/(?:\bfrom|\bimport\s*\(|\bimport)\s*\\?['"]([^'"\\]+)\\?['"]/g)) {
+      const spec = im[1]
+      if (/^https?:/.test(spec)) continue                                     // already live, above
+      if (!/^\.\.?\//.test(spec)) continue                                    // a builtin or a package: as a file's are
+      const dep = relative(ROOT, resolve(ROOT, dirname(first), spec))
+      if (!onDisk(dep)) { bump('live'); why.push(`importSource's arguments import ${spec} — no repo file at ${dep}`); continue }
+      const d = classify(dep, seen, depth + 1)
+      if (d.tier !== 'safe') { bump(d.tier); why.push(`importSource's arguments import ${dep}, which can: ${d.why.join(', ')}`) }
+    }
   }
   for (const m of code.matchAll(/\bimport\s*\(/g)) {
     if (blank.slice(m.index, m.index + 6) !== 'import' && inStringHere(code, m.index)) continue

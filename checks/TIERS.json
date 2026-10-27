@@ -3,8 +3,8 @@
   "total": 458,
   "counts": {
     "safe": 330,
-    "local-effect": 28,
-    "live": 100
+    "local-effect": 27,
+    "live": 101
   },
   "checks": [
     {
@@ -1812,8 +1812,10 @@
     },
     {
       "file": "checks/claims-no-edge-is-drawn-twice.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
+        "installs a loader hook (node:module register) — can swap any module's source",
         "writeFileSync",
         "imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync"
       ]

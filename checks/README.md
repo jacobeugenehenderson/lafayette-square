@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 100. Never in a default run.
+## ⛔ live — 101. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -73,6 +73,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-every-tree-candidate-is-accounted-for.mjs` | unreadable | deletes files — only under its own temp dir · imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
 | `checks/claims-frame-timeline-catches-a-stall.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-neon-picks-its-building.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
+| `checks/claims-no-edge-is-drawn-twice.mjs` | unreadable | installs a loader hook (node:module register) — can swap any module's source · writeFileSync · imports cartograph/bake-ground.js, which can: mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs` | outbound | imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read |
 | `checks/claims-one-way-into-stage.mjs` | outbound | calls fetch() · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-one-weather-per-instant.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
@@ -128,7 +129,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 28. `npm run test:all`, never CI.
+## local-effect — 27. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -147,7 +148,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-lit-town-has-lamps.mjs` | CLAIM — EVERY TOWN WHOSE STREETS TAKE LAMPS SHIPS LAMPS, EACH ONE SAYING WHERE IT CAME FROM, |
 | `checks/claims-every-metre-of-drawn-shore-is-named.mjs` | named.mjs — IS ANY DRAWN SHORE BARE FOR NO REASON? |
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |
-| `checks/claims-no-edge-is-drawn-twice.mjs` | twice.mjs — DOES EVERY LINE TWO PRODUCERS SHARE COME OUT AS ONE LINE? |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | label.mjs — DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
 | `checks/claims-the-built-ground-has-no-needles.mjs` | needles.mjs — A CURB, A WALK OR A LAWN NEVER COMES TO A SHARP POINT. |
