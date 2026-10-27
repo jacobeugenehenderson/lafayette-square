@@ -30,7 +30,13 @@ export function nearestCrossed(best, i, j, width, height, sx, sz) {
 // ⭐ WHICH BED EACH SLOPE MEASURED (Boz's ruling, 2026-10-26): `floor` marks the cells whose bed is a measured survey
 // (bake-terrain's bed.floor.runs); each ring records the share of its samples on it (slopeFloorShare, null when
 // borrowed), so a slope taken off writeBed's own profile is never mistaken for a measured one.
-export function stampCoast(normalized, width, height, bounds, face, bb, mask, water, rock = null, floor = null) {
+// ⭐ A NODE CAPPED AT HIGH IS NOT A SLOPE (Boz's ruling, 2026-10-27, on Zob's read of PTown's ring 58, "median gradient −0.0000"):
+// `atHigh` marks the bed nodes writeBed clamped to HIGH (bed.atHigh.runs), a survey floor standing above it. Their gradient is
+// the cap's, a sentinel, so they are left out of every ring's samples, and counted (slopeCapped); a ring left with none follows
+// the rule for no bed (an island borrows its holder's, recorded; an outer refuses), and each refusal names the capped share. At
+// a crossed corner over a capped node the stamp takes max(ramp, bed), so no moat is cut round a bar. ⛔ s ≤ 0 on REAL samples
+// still refuses.
+export function stampCoast(normalized, width, height, bounds, face, bb, mask, water, rock = null, floor = null, atHigh = null) {
   const L = levelsOf(water)
   const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1), cell = Math.min(sx, sz)
   const X = (i) => bounds.minX + i * sx, Z = (j) => bounds.minZ + j * sz
@@ -63,12 +69,13 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
     }
   })
   // one slope per ring, from the bed seaward of the stamp
-  const slope = face.map(() => []), onFloor = face.map(() => 0)
+  const slope = face.map(() => []), onFloor = face.map(() => 0), capped = face.map(() => 0)
   for (let j = 0; j < height; j++) for (let i = 0; i < width; i++) {
     const k = j * width + i
     if (!mask[k] || best.has(k)) continue
     const near = nearestCrossed(best, i, j, width, height, sx, sz)
-    if (near && near.dist > 2 * cell) { slope[near.ri].push((L.highAt(X(i), Z(j)) - normalized[k]) / near.dist); if (floor && floor[k]) onFloor[near.ri]++ }
+    if (near && near.dist > 2 * cell) { if (atHigh && atHigh[k]) { capped[near.ri]++; continue }
+      slope[near.ri].push((L.highAt(X(i), Z(j)) - normalized[k]) / near.dist); if (floor && floor[k]) onFloor[near.ri]++ }
   }
   // ⭐ AN ISLAND (a hole, wound negative) is a shore of the water that holds it. Its own bed gives its slope; an island with
   // no bed of its own two to four cells out (a small one, its water within reach of the other bank's stamp) takes the
@@ -84,13 +91,13 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
     if (!v.length && holder[ri] !== null) { slopeFrom[ri] = holder[ri]; return null }   // resolved from its holder below
     if (!v.length) {                                         // ⛔ never a bare skip: an unstamped shore is the raw contour, the defect
       const len = face[ri].reduce((t, p, m) => { const q = face[ri][(m + 1) % face[ri].length]; return sameSide(p, q) ? t : t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
-      throw new Error(`⛔ the stamp: ①'s coast ring ${ri} (${len.toFixed(0)} m of shore in the drawing) has no bed two to four cells seaward to take a slope from — its shore cannot be stamped`)
+      throw new Error(`⛔ the stamp: ①'s coast ring ${ri} (${len.toFixed(0)} m of shore in the drawing) has no bed two to four cells seaward to take a slope from${capped[ri] ? ` (${capped[ri]} node(s) there are capped at HIGH, a sentinel, not a slope)` : ''} — its shore cannot be stamped`)
     }
     v.sort((p, q) => p - q)
     let s = v[v.length >> 1]
     const cap = tidal ? (L.range.high[1] - L.range.low[0]) / (2 * cell) : Infinity
     if (s > cap) s = cap
-    if (!(s > 0)) throw new Error(`⛔ the stamp: ①'s coast ring ${ri} has a bed that does not fall seaward (median gradient ${v[v.length >> 1].toFixed(4)} over ${v.length} node(s)) — no ramp can meet it at HIGH`)
+    if (!(s > 0)) throw new Error(`⛔ the stamp: ①'s coast ring ${ri} has a bed that does not fall seaward (median gradient ${v[v.length >> 1].toFixed(4)} over ${v.length} real node(s)${capped[ri] ? `, ${capped[ri]} more capped at HIGH left out (${Math.round(100 * capped[ri] / (capped[ri] + v.length))}%)` : ''}) — no ramp can meet it at HIGH`)
     return +s.toFixed(5)
   })
   for (let ri = 0; ri < face.length; ri++) if (slopeFrom[ri] !== null) sOf[ri] = sOf[slopeFrom[ri]]
@@ -107,7 +114,8 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   for (const [k, b] of best) {
     if (!mask[k]) continue                                   // land is not ①'s water, by the mask: a node ON the line (d = −0) is water
     const i = k % width, j = (k - i) / width, ramp = L.highAt(X(i), Z(j)) + sOf[b.ri] * b.d
-    if (b.crossed) { normalized[k] = ramp; ramped++; stamped[k] = 1 }
+    if (b.crossed && !(atHigh && atHigh[k] && normalized[k] > ramp)) { normalized[k] = ramp; ramped++; stamped[k] = 1 }   // over a capped bar: max(ramp, bed), no moat
+    else if (b.crossed) bedWon++
     else if (ramp > normalized[k]) { normalized[k] = ramp; ramped++; stamped[k] = 1 } else bedWon++
   }
   const sunk = []; for (const [k] of best) if (stamped[k] && normalized[k] < deepest - 1e-6) sunk.push(k)
@@ -115,7 +123,7 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
     throw new Error(`⛔ the stamp: ${sunk.length.toLocaleString()} node(s) written deeper than the deepest bed (${deepest.toFixed(3)} m), the deepest ${normalized[w].toFixed(3)} m at (${Math.round(X(w % width))}, ${Math.round(Z((w - w % width) / width))}); first at ${sunk.slice(0, 5).map(k => `(${Math.round(X(k % width))}, ${Math.round(Z((k - k % width) / width))})`).join(' · ')} — no beach is that deep`) }
   // ⛔ a bed standing at or above HIGH inside ①'s water is ① contradicting the lidar: counted and named, never clamped
   const above = []
-  for (let k = 0; k < width * height; k++) if (mask[k] && !stamped[k] && !(rock && rock[k]) && normalized[k] >= L.highAt(X(k % width), Z((k - k % width) / width))) above.push(k)
+  for (let k = 0; k < width * height; k++) if (mask[k] && !stamped[k] && !(rock && rock[k]) && !(atHigh && atHigh[k]) && normalized[k] >= L.highAt(X(k % width), Z((k - k % width) / width))) above.push(k)
   if (above.length) console.warn(`  ⛔ STAMP: ${above.length.toLocaleString()} node(s) of ①'s water stand at or above HIGH (① and the lidar disagree), first at ${above.slice(0, 5).map(k => `(${Math.round(X(k % width))}, ${Math.round(Z((k - k % width) / width))})`).join(' · ')}`)
   const runs = []
   for (let j = 0; j < height; j++) { let i0 = -1
@@ -125,7 +133,7 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   const slopeFloorShare = slope.map((v, ri) => slopeFrom[ri] !== null ? null : +(onFloor[ri] / v.length).toFixed(3))
   // `shapes: 'bed'`: the record says, positively, that this field only shapes the bed (the line is the ground's pin), so a
   // reader never infers it from absent keys (drawnGround.js#stampShapesBedOnly; Zob's nit, 2026-10-27)
-  return { shapes: 'bed', cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, slopeFloorShare, slopeSamples: slope.map(v => v.length), islands, ramped, bedWon, aboveHigh: above.length, tidal, runs }
+  return { shapes: 'bed', cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, slopeFloorShare, slopeSamples: slope.map(v => v.length), slopeCapped: capped, islands, ramped, bedWon, aboveHigh: above.length, tidal, runs }
 }
 
 
