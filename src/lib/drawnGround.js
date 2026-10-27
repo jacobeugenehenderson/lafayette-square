@@ -63,6 +63,8 @@ export function pinsMissingUnder(manifest, terrainMeta) {
  *  @param opts.rawAt (x, z) → the town's height field, raw (required) · opts.groups (g) → whether this group is sampled
  *  (default: every group) · opts.cell grid cell in metres (default 8)
  *  @returns { partsAt(x, z) → { raw, y, group } | null, heightAt(x, z, exag) → number | null, triCount } */
+/** One float32 ulp at magnitude m: the spacing of the stored positions there. */
+const ulp32 = (m) => m > 0 ? 2 ** (Math.floor(Math.log2(m)) - 23) : 2 ** -149
 export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawAt, cell = 8 } = {}) {
   if (typeof rawAt !== 'function') throw new Error('drawnGround: no height field given (opts.rawAt) — the drawn ground is the field plus the mesh\'s own y')
   const G = []
@@ -86,7 +88,9 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
   const fill = count.slice(), refG = new Int32Array(count[nx * nz]), refT = new Int32Array(count[nx * nz])
   G.forEach(({ P, I }, gi) => { for (let t = 0; t < I.length; t += 3) span(P, I, t, (k) => { refG[fill[k]] = gi; refT[fill[k]] = t; fill[k]++ }) })
 
-  // barycentric at (px, pz) in triangle t of group gi, or null outside it (the old sampler's own math and tolerance)
+  // barycentric at (px, pz) in triangle t of group gi, or null outside it. ⭐ THE TOLERANCE IS DERIVED, never typed (Zob's merge
+  // read, 2026-10-27): the mesh stores its positions as float32, so a point the bake placed ON an edge can sit one float32 ulp
+  // of its coordinates off it, and a weight then reads −ulp ÷ the triangle's altitude there. That much, and no more, is inside.
   function sample(gi, t, px, pz) {
     const { P, I, pins } = G[gi], a = I[t], b = I[t + 1], c = I[t + 2]
     const ax = P[a * 3], az = P[a * 3 + 2], bx = P[b * 3], bz = P[b * 3 + 2], cxx = P[c * 3], czz = P[c * 3 + 2]
@@ -96,16 +100,17 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
     const denom = d00 * d11 - d01 * d01
     if (Math.abs(denom) < 1e-12) return null
     const wc = (d11 * d20 - d01 * d21) / denom, wb = (d00 * d21 - d01 * d20) / denom, wa = 1 - wc - wb
-    const EPS = 1e-4
-    if (wa < -EPS || wb < -EPS || wc < -EPS) return null
+    const tol = ulp32(Math.max(Math.abs(ax), Math.abs(az), Math.abs(bx), Math.abs(bz), Math.abs(cxx), Math.abs(czz), Math.abs(px), Math.abs(pz)))
+      * Math.max(Math.sqrt(d00), Math.sqrt(d11), Math.hypot(cxx - bx, czz - bz)) / Math.sqrt(denom)   // ulp ÷ the least altitude (2·area = √denom)
+    if (wa < -tol || wb < -tol || wc < -tol) return null
     return { raw: drawnRaw(pins, a, rawAt(ax, az)) * wa + drawnRaw(pins, b, rawAt(bx, bz)) * wb + drawnRaw(pins, c, rawAt(cxx, czz)) * wc,
       y: P[a * 3 + 1] * wa + P[b * 3 + 1] * wb + P[c * 3 + 1] * wc, inside: Math.min(wa, wb, wc) }
   }
-  /** The drawn ground at (x, z): the top-most group's triangle → { raw, y, group }, or null off the mesh.
-   *  ⭐ Among triangles of one renderOrder, the one that CONTAINS the point wins (the largest smallest weight), so a neighbour
-   *  the tolerance also admits is never EXTRAPOLATED: at a point 3.8e-5 outside it, a corner 151 mm away read the shore
-   *  5.7 µm off a line its own triangle holds exactly (Huron, 2026-10-27). The GPU's raster never extrapolates; this matches it.
-   *  Ties of equal containment keep the last, as before. */
+  /** The drawn ground at (x, z) → { raw, y, group }: among the triangles that CONTAIN the point (within one float32 ulp, above),
+   *  the top renderOrder's; among those of one renderOrder, the most inside (the largest smallest weight); ties keep the last.
+   *  ⭐ NONE CONTAINING IS null, never a neighbour extrapolated: with a typed 1e-4 slack, a point 3.8e-5 outside a triangle read
+   *  the shore through a corner 151 mm away, 5.7 µm off a line its own triangle holds exactly (Huron, 2026-10-27). The GPU's
+   *  raster never extrapolates; this matches it. A caller given null is off the drawn mesh and says so (groundSampler's `offMesh`). */
   function partsAt(x, z) {
     const k = cz(z) * nx + cx(x)
     let best = null, bestRO = -Infinity, bestG = null

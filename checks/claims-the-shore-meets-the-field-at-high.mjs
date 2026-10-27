@@ -350,7 +350,7 @@ console.log('── 5. each town\'s DRAWN ground meets ①\'s coast at HIGH (the
 // from the line read 75 mm off with the contour 0.05 mm from it); that number is PRINTED as information, never the gate.
 // The residual is the side condition: every vertex of a triangle with a corner on the line stands on its own side of HIGH.
 // "On the line" and "which side" are this check's own geometry, not the pin's. Mutant: HIGH read 1 cm high turns it RED.
-function judgeDrawn(gj, AB, rings, rawAt, highAt) {
+function judgeDrawn(gj, AB, rings, rawAt, highAt, outline = null) {
   const D = makeDrawnGround(gj, AB, { groups: g => !/^water(:|$)/.test(g.id) && g.partition !== false, rawAt })
   const tol = gj.drawnRaw.tolM
   const segs = []; for (const r of rings) for (let m = 0; m < r.length; m++) segs.push([r[m], r[(m + 1) % r.length]])
@@ -361,7 +361,13 @@ function judgeDrawn(gj, AB, rings, rawAt, highAt) {
   // the HIGH contour within `tol` of the sample along the edge's normal (water side ≤ HIGH, land side ≥ HIGH)
   // a ring vertex is sampled once (u = 0 of its outgoing edge) and probed along the BISECTOR of its two edges' normals: along
   // one edge's normal alone the probe can cross the neighbouring edge at a corner and read the wrong side
-  let worst = 0, worstAt = null, n = 0, off = 0, offAt = null
+  let worst = 0, worstAt = null, n = 0, off = 0, offAt = null, rim = 0
+  // a probe outside ①'s own outline (`boundaryRing`, the drawing's edge: its chords run inside the stencil's circle) is off the
+  // drawing by construction: counted AT THE RIM, never judged
+  const pastRim = (x, z) => { if (!outline) return false; let c = false
+    for (let i = 0, j = outline.length - 1; i < outline.length; j = i++) { const [xi, zi] = outline[i], [xj, zj] = outline[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c }
+    return !c }
+  const offs = []
   const nrm = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]); return L > 0 ? [-(b[1] - a[1]) / L, (b[0] - a[0]) / L] : null }
   for (const r of rings) for (let m = 0; m < r.length; m++) { const a = r[m], b = r[(m + 1) % r.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), k = Math.max(1, Math.ceil(L)); if (!(L > 0)) continue
     const ne = nrm(a, b), np = nrm(r[(m - 1 + r.length) % r.length], a) || ne, bis = [ne[0] + np[0], ne[1] + np[1]], bL = Math.hypot(...bis)
@@ -371,8 +377,9 @@ function judgeDrawn(gj, AB, rings, rawAt, highAt) {
       n++; const H = highAt(x, z), e = Math.abs(p.raw - H); if (e > worst) { worst = e; worstAt = [x, z] }
       if (e <= 1e-6) continue
       const s1 = [x + nx * tol, z + nz * tol], s2 = [x - nx * tol, z - nz * tol], [W, Ld] = inWater(...s1) ? [s1, s2] : [s2, s1]
+      if (pastRim(...s1) || pastRim(...s2)) { rim++; continue }
       const pw = D.partsAt(...W), pl = D.partsAt(...Ld)
-      if (!(pw && pl && pw.raw <= H + 1e-6 && pl.raw >= H - 1e-6)) { off++; if (!offAt) offAt = [x, z, pw ? +(pw.raw - H).toExponential(2) : null, pl ? +(pl.raw - H).toExponential(2) : null] } } }
+      if (!(pw && pl && pw.raw <= H + 1e-6 && pl.raw >= H - 1e-6)) { off++; const o = [x, z, pw ? +(pw.raw - H).toExponential(2) : null, pl ? +(pl.raw - H).toExponential(2) : null, pw?.group ?? 'nothing', pl?.group ?? 'nothing']; offAt ||= o; offs.push(o) } } }
   // the residual: the side condition at every line-adjacent vertex
   let adj = 0, wrong = 0, wrongWorst = 0, wrongAt = null; const seen = new Set()
   for (const g of gj.groups) { if (/^water(:|$)/.test(g.id)) continue
@@ -383,7 +390,7 @@ function judgeDrawn(gj, AB, rings, rawAt, highAt) {
         const x = P[v * 3], z = P[v * 3 + 2], k = `${g.id}|${v}`; if (seen.has(k)) continue; seen.add(k); adj++
         const H = highAt(x, z), miss = inWater(x, z) ? R[v] - H : H - R[v]
         if (miss > 1e-6) { wrong++; if (miss > wrongWorst) { wrongWorst = miss; wrongAt = [x, z] } } } } }
-  return { n, worst, worstAt, off, offAt, tol, adj, wrong, wrongWorst, wrongAt }
+  return { n, worst, worstAt, off, offAt, offs, rim, tol, adj, wrong, wrongWorst, wrongAt }
 }
 let towns = 0
 for (const t of readdirSync(join(ROOT, 'public/baked'))) {
@@ -398,8 +405,12 @@ for (const t of readdirSync(join(ROOT, 'public/baked'))) {
   const T = makeElevationSampler({ ...tj, data: new Float32Array(tb.buffer.slice(tb.byteOffset, tb.byteOffset + tb.byteLength)) }, 1), L = waterLevels(tj.water)
   const gb = readFileSync(bp), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
   const rings = waterFace(JSON.parse(readFileSync(mp, 'utf8')), 'claims-the-shore-meets-the-field-at-high')
-  const r = judgeDrawn(gj, AB, rings, T.getElevationRaw, L.highAt)
+  const outline = JSON.parse(readFileSync(mp, 'utf8')).layers?.ribbons?.protopolygon?.boundaryRing
+  if (!Array.isArray(outline) || outline.length < 3) throw new Error(`⛔ ${t}: clean/map.json's ① carries no boundaryRing — where the drawing ends is unknown, so a probe off it cannot be told from a gap (▶ re-pour)`)
+  const r = judgeDrawn(gj, AB, rings, T.getElevationRaw, L.highAt, outline)
   say(r.n > 0 && r.off === 0, `${t}: along ①'s coast (${r.n.toLocaleString()} samples on the drawn ground) the waterline lies within ${(r.tol * 1000).toFixed(2)} mm of the line at ${(r.n - r.off).toLocaleString()} (${r.off} off${r.offAt ? `, first at (${r.offAt[0].toFixed(2)}, ${r.offAt[1].toFixed(2)}): water side ${r.offAt[2]} m, land side ${r.offAt[3]} m vs HIGH` : ''})`)
+  for (const o of r.offs.slice(0, 8)) console.log(`     off at (${o[0].toFixed(2)}, ${o[1].toFixed(2)}): water side ${o[4]} ${o[2]} m · land side ${o[5]} ${o[3]} m vs HIGH`)
+  console.log(`     at the rim (a probe outside ①'s boundaryRing, where the drawing ends; printed, not judged): ${r.rim} sample(s)`)
   console.log(`     (information, not the gate: |drawn − HIGH| at the samples ≤ ${r.worst.toExponential(2)} m${r.worstAt ? ` at (${r.worstAt.map(v => v.toFixed(2)).join(', ')})` : ''}; on a steep bank that is the slope times a sub-millimetre offset)`)
   say(r.wrong === 0, `${t}: beside the line, ${r.wrong.toLocaleString()} of ${r.adj.toLocaleString()} line-adjacent vertices on the wrong side of HIGH${r.wrong ? ` (worst ${r.wrongWorst.toFixed(3)} m at ${r.wrongAt.map(v => v.toFixed(2)).join(', ')})` : ''}`)
   if (process.argv.includes('--mutants')) { const m = judgeDrawn(gj, AB, rings, T.getElevationRaw, (x, z) => L.highAt(x, z) + 0.01)

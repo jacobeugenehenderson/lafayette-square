@@ -74,8 +74,10 @@ const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a =
 const DATA = process.argv.find(a => a.startsWith('--data-root='))?.slice(12) || ROOT   // a checkout (or probe) holding cartograph/data
 // every town with a coast: one with a coast.json, one whose lidar flights are on record, or one whose ① draws water (a coast
 // not yet traced is NOT CHECKED by name below, never silently absent)
+// ⛔ an unreadable map.json REFUSES by name (Zob's merge read, 2026-10-27): a swallowed parse error would drop the town unseen
 const drawsCoast = (t) => { const mp = join(DATA, 'cartograph/data', t, 'clean', 'map.json'); if (!existsSync(mp)) return false
-  try { return (JSON.parse(readFileSync(mp, 'utf8')).layers?.ribbons?.protopolygon?.waterRings?.length || 0) > 0 } catch { return false } }
+  let map; try { map = JSON.parse(readFileSync(mp, 'utf8')) } catch (e) { throw new Error(`⛔ ${t}: clean/map.json cannot be read (${e.message}) — whether ① draws a coast there is unknown`) }
+  return (map.layers?.ribbons?.protopolygon?.waterRings?.length || 0) > 0 }
 const scenes = args.length ? args : readdirSync(join(DATA, 'cartograph/data')).filter(t => existsSync(join(DATA, 'cartograph/data', t, 'clean', COAST_FILE))
   || existsSync(join(DATA, 'cartograph/data', t, 'raw', 'elevation-flights.json')) || drawsCoast(t))
 let red = 0, checked = 0
