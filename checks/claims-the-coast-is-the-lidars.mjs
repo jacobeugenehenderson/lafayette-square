@@ -32,7 +32,7 @@
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
 // absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive · ringViolations misses a crossing · the acute predicate dropped from bake-coast · wetLoops interpolates against a
 // sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored · a deck crossing that
-// meets no ring accepted.
+// meets no ring accepted · the pad read as a value.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -144,6 +144,12 @@ console.log('── H. the tracer never reads a sentinel as a height')
   say(off2 <= 1 / CLIP_SCALE, `a deck edge along the lattice: every crossing on the deck's ring (furthest ${(1000 * off2).toFixed(3)} mm; ${t2.deckNodeOnRing ?? 0} at a deck node ON the ring, ${t2.deck ?? 0} between)`)
   let td = false; try { wetLoops(g2, n, n, 0, 0, 1, { kind: k2, deckCross: () => null }) } catch (e) { td = /a deck node outside its own deck/.test(e.message) }
   say(td, 'a deck node whose edge meets no deck ring REFUSES (never the node as a guess)')
+  // a deck reaching the window's edge (Huron, 2026-10-26: a deck node on a tile's last row): its edge to the tracer's PAD is
+  // the pad's, not the deck's: a midpoint, counted, never a deck-ring lookup that finds nothing
+  const edge = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2.5, z: -2 }, { x: 3.5, z: -2 }, { x: 3.5, z: 0.5 }, { x: 2.5, z: 0.5 }, { x: 2.5, z: -2 }], isClosed: true }] })
+  const g3 = new Float32Array(n * n).fill(1), k3 = new Uint8Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (edge.on(i, j)) { g3[j * n + i] = NaN; k3[j * n + i] = KIND.DECK }
+  const t3 = {}; let ok3 = true; try { wetLoops(g3, n, n, 0, 0, 1, { kind: k3, deckCross: edge.crossing, tally: t3 }) } catch { ok3 = false }
+  say(ok3 && t3.pad === 1, `a deck node on the window's edge: its edge to the pad crosses at the midpoint (${t3.pad ?? 0} pad crossing), no deck lookup`)
   let t = false; try { wetLoops(Float32Array.from([NaN, 1, 1, 1]), 2, 2, 0, 0, 1) } catch (e) { t = /no value and no kind/.test(e.message) }
   say(t, 'a NaN with no kind REFUSES (a sentinel must be named, never stored)')
 }

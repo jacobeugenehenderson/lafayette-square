@@ -358,7 +358,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     const tx = R.x0 + ti * TILE_M, tz = R.z0 + tj * TILE_M, pad = 2 * G
     // ⭐ ONE LATTICE (Zob's rule A, 2026-10-26): the samples are the square's global grid at the source's pixel, read over
     // the tile padded by `pad` (so its loops close past its edges), and only the loops inside the tile's OWN square are
-    // kept. Neighbours then trace the same cells identically and meet exactly at the seam. (Each tile had sampled its
+    // kept: the tracer's own dry PAD (marchingSquares.mjs KIND.PAD) lies at least `pad` outside it, so none of its
+    // crossings survives the clip. Neighbours then trace the same cells identically and meet exactly at the seam. (Each tile had sampled its
     // own lattice from its padded corner, and TILE_M / fine is not an integer, so overlaps were two different traces.)
     const sq = toPath([[tx, tz], [tx + TILE_M, tz], [tx + TILE_M, tz + TILE_M], [tx, tz + TILE_M]])
     const inTile = clip(ClipType.ctIntersection, [sq], band)

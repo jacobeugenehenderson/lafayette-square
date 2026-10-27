@@ -13,12 +13,14 @@
  * Two sentinels of one side never cross; only a sentinel edge between wet and dry does.
  * @param f     Float32Array (nx × nz, row-major by z), x0/z0 the first sample's town metres, step metres; NaN at a sentinel
  * @param kind  Uint8Array of the same size (0 = a value, else KIND.*), or null when every node is a value
- * @param tally counts the crossings each sentinel decided ({ deck, deckNodeOnRing, noReturn, noCoverage, dryByRule })
+ * @param tally counts the crossings each sentinel decided ({ deck, deckNodeOnRing, noReturn, noCoverage, dryByRule, pad })
  */
-export const KIND = { VALUE: 0, DECK: 1, NO_RETURN: 2, NO_COVERAGE: 3, DRY_BY_RULE: 4 }
+export const KIND = { VALUE: 0, DECK: 1, NO_RETURN: 2, NO_COVERAGE: 3, DRY_BY_RULE: 4, PAD: 5 }
 export function wetLoops(f, nx, nz, x0, z0, step, { kind = null, deckCross = null, tally = null } = {}) {
-  const NX = nx + 2, NZ = nz + 2, g = new Float32Array(NX * NZ).fill(1), gk = new Uint8Array(NX * NZ)   // the dry pad
-  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { g[(j + 1) * NX + i + 1] = f[j * nx + i]; if (kind) gk[(j + 1) * NX + i + 1] = kind[j * nx + i] }
+  // ⭐ THE PAD is the tracer's own ring of dry nodes round the window, so every loop closes: a KIND (dry, no value), never a
+  // stored height. Its crossings sit at edge midpoints and are counted; a caller that clips to an inner square keeps none.
+  const NX = nx + 2, NZ = nz + 2, g = new Float32Array(NX * NZ).fill(NaN), gk = new Uint8Array(NX * NZ).fill(KIND.PAD)
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { g[(j + 1) * NX + i + 1] = f[j * nx + i]; gk[(j + 1) * NX + i + 1] = kind ? kind[j * nx + i] : KIND.VALUE }
   for (let k = 0; k < NX * NZ; k++) if (!gk[k] && !Number.isFinite(g[k])) throw new Error(`⛔ wetLoops: a node with no value and no kind (${g[k]}) — a sentinel must be named, never stored`)
   const X = (i) => x0 + (i - 1) * step, Z = (j) => z0 + (j - 1) * step
   const val = (i, j) => g[j * NX + i]
@@ -31,6 +33,7 @@ export function wetLoops(f, nx, nz, x0, z0, step, { kind = null, deckCross = nul
       const [bi, bj] = kind === 'h' ? [i + 1, j] : [i, j + 1], ka = gk[j * NX + i], kb = gk[bj * NX + bi]
       const pa = [X(i), Z(j)], pb = [X(bi), Z(bj)]
       if (!ka && !kb) { const a = val(i, j), b = val(bi, bj), t = a / (a - b); pt.set(key, [pa[0] + t * (pb[0] - pa[0]), pa[1] + t * (pb[1] - pa[1])]) }
+      else if (ka === KIND.PAD || kb === KIND.PAD) { pt.set(key, [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2]); if (tally) tally.pad = (tally.pad || 0) + 1 }
       else if (ka === KIND.DECK || kb === KIND.DECK) {
         const [d, o] = ka === KIND.DECK ? [pa, pb] : [pb, pa], c = deckCross ? deckCross(d, o) : null
         if (!deckCross) throw new Error('⛔ wetLoops: a DECK node and no deckCross to find its edge')
