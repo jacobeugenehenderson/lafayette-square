@@ -189,6 +189,11 @@ helix: a stripe with an angle and a turn rate) and STROBES/sparkle like the Eiff
 Hanukkah, Peace, Kwanzaa, Winter, Snow, Candy, Gifts, …), each a short timeline of pattern cues plus a palette, authored as DATA so an agent
 can design them and Jacob judges them in Stage. SCHEDULE: a steady-burning tree all night, and the show PLAYS ON THE HOUR (like the
 Eiffel Tower's hourly sparkle), on the town's own clock.
+⛔ UNTRACKED RAW RECORDS DON'T TRAVEL WITH A MERGE (2026-10-27, Swash, Huron's release bake refused by name): raw/water-datums.json
+(the lake-height refetch) and raw/elevation-flights.json (the geoid record) existed only in the shore worktree. Before a town's bake on a
+merged tree, copy that town's fetched raw records from the tree that produced the approved slab, or re-run the fetches the refusal names.
+Owed: a check that lists, per town, every raw record a pour step requires, and fails by name when one is missing (today the bake
+refuses, which is loud but late).
 ⛔ RELEASE ORDER FOR THE COAST PIN (Ward-seat review, 2026-10-27; Jacob ruled the pin): an OLD player on a NEW slab draws the bare
 lidar contour silently (the stamp no longer raises land). So: (1) merge shore/2026-10-25 into the kit; (2) publish the kit bundle at
 that sha; (3) move the Ward pin on a ward-pin/<date> branch and publish:staging (reconcile ward-kit 7b68aad5 vs Ward OPERATIONS' stated
