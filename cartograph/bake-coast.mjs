@@ -423,7 +423,6 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // ⛔ EVERY RING IS SIMPLE AND ① CAN OUTLINE EVERY VERTEX, or the coast is not written (Boz's rulings, 2026-10-26): a ring
   // whose edges cross or fold back, or a vertex too acute for the ink (the mint's own outlineCorner at INK_EPS), is ①
   // stroked into an antenna, refused downstream far from its cause. Refused here, by name, at each place.
-  const acuteAt = (o, p, q) => outlineCorner(o, [{ to: p }, { to: q }], INK_EPS).bad
   // ⛔ AND NO TWO RINGS MEET (Boz's ruling, 2026-10-27): a hole across its body's outer, or one body across another.
   const labels = simple.flatMap((bd, bi) => [bd.outer, ...bd.holes].map((r, ri) => ({ r, name: `body ${bi} ring ${ri}` })))
   const bad = [...labels.flatMap(({ r, name }) => ringViolations(r, acuteAt).map(v => ({ ...v, where: `${name} edges ${v.a}/${v.b}` }))),
@@ -495,6 +494,9 @@ export function clearances(ring, step) {
     return [minus, plus]
   })
 }
+// the mint's own test of whether ① can outline a vertex (tileGround.js#outlineCorner at INK_EPS): settle admits by it, and
+// the refusal below asks it of every ring
+const acuteAt = (o, p, q) => outlineCorner(o, [{ to: p }, { to: q }], INK_EPS).bad
 async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
   const T = TILE_M, groups = new Map()
   let bounded = 0
@@ -527,7 +529,7 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
     win.length = 0
   }
   const sweepClamped = []
-  const s = settleInOrder(rings, rings.map(r => targets.get(r)), step); moved.push(...s.moved); sweepClamped.push(...s.clamped)
+  const s = settleInOrder(rings, rings.map(r => targets.get(r)), step, acuteAt); moved.push(...s.moved); sweepClamped.push(...s.clamped)
   moved.sort((x, y) => x - y)
   return { moved: moved.length, bounded, unbracketed, noValue, sweepClamped, p50: moved.length ? moved[moved.length >> 1] : 0, max: moved.length ? moved[moved.length - 1] : 0 }
 }
@@ -539,13 +541,16 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
  * ⭐ A MOVE IS ADMISSIBLE ONLY IF NO OTHER EDGE MEETS THE TRIANGLES ITS TWO EDGES SWEEP, (p, p′, prev) and (p, p′, next)
  * (Boz's ruling, 2026-10-27; PTown, 10-27: a vertex moved 0.82 m along a clear normal and its edge to NEXT swept over
  * PREV). A vertex inside is the ruling's case; an edge through the path is the other, since `clearances` was measured on
- * the TRACED ring and the neighbours have settled since. An inadmissible move is clamped to the largest admissible fraction
- * (the triangles are nested, so admissibility only shrinks as the move grows) and COUNTED, by place. "Meets" includes coming
+ * the TRACED ring and the neighbours have settled since. An inadmissible move is clamped to the farthest fraction reached
+ * without passing an inadmissible one, and COUNTED, by place. "Meets" includes coming
  * within √2 lattice steps: the ring is written on the 1/CLIP_SCALE lattice (r3's toFixed(3), the same millimetre), and
  * rounding moves the vertex and the edge's end each by at most half a diagonal, √2 × ½ mm apiece. Two segments that do not cross are closest at an end, so the margin is asked of an edge's ends against the
  * triangle and of the moved vertex against the edge (Zob, 10-27).
+ * ⭐ AND EVERY CORNER IT TOUCHES STAYS INKABLE (Boz's ruling, 2026-10-27): the corners at prev, k and next must pass
+ * `acuteAt`, the mint's own outlineCorner at INK_EPS (PTown, 10-27: the sweep clamp alone left v1961 at 0.85° on a 9.5 cm
+ * leg, settle's targets there lying in reversed order). A traced vertex is never dropped; its move is clamped.
  */
-export function settleInOrder(rings, to, step) {
+export function settleInOrder(rings, to, step, acuteAt) {
   const margin = Math.SQRT2 / SCALE, moved = [], clamped = [], G = step + margin
   const cells = new Map(), key = (i, j) => i + ',' + j, cell = (v) => Math.floor(v / G)
   const walk = (p, q, each) => { const steps = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / G) || 1
@@ -581,12 +586,16 @@ export function settleInOrder(rings, to, step) {
       edges.delete(r * 2 ** 26 + a); edges.delete(r * 2 ** 26 + k)   // not the two moving edges
       const list = [...edges].map(id => { const rr = Math.floor(id / 2 ** 26), e = id % 2 ** 26, R = rings[rr]
         return [R, e, rr === r && e === (a - 1 + n) % n ? prev : null, rr === r && e === b ? next : null] })
+      const pp = ring[(k - 2 + n) % n], nn = ring[(k + 2) % n]
       const ok = (f) => { const q = at(f)
+        if (acuteAt(prev, pp, q) || acuteAt(q, prev, next) || acuteAt(next, q, nn)) return false
         for (const [R, e, sharedPrev, sharedNext] of list) { const s0 = R[e], s1 = R[(e + 1) % R.length]
           if (hits(s0, s1, p, q, prev, sharedPrev) || hits(s0, s1, p, q, next, sharedNext)) return false }
         return true }
       let f = 1
-      if (!ok(1)) { let lo = 0, hi = 1; for (let it = 0; it < 30; it++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid } f = lo
+      // inkability need not shrink monotonically as the move grows, so a fraction is admitted only if every fraction up to it
+      // is: scanned from 0 in steps of at most the write lattice
+      if (!ok(1)) { const df = Math.min(1, 1 / (SCALE * want)); f = 0; while (f + df < 1 && ok(f + df)) f += df
         clamped.push({ at: p.map(v => +v.toFixed(3)), wantM: +want.toFixed(4), gotM: +(want * f).toFixed(4) }) }
       if (f > 0) { ring[k] = at(f); moved.push(want * f) }
     } })
