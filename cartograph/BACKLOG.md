@@ -9,6 +9,14 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ## ▶ Forward list (2026-10-20 night) — LS · HPDM · PTown · Huron first
 
 ### ⭐ HANDOFF — 2026-10-25 night (Boz). Read this block first; everything below is detail.
+**▶ 2026-10-27: THE SHORE IS MERGED (eec3ac1b).** Huron's shoreline rebuilt to Jacob's rulings (the coast IS the high-water mark;
+the drawn ground pinned to it; bridges painted over water; islands; the absorbed ink). Jacob looked: "FANTASTICALLY advanced". NEXT, in
+the release order (entry below): kit bundle → Ward pin + publish:staging → re-pour + re-bake each coastal town (Huron, PTown), then the
+inland towns (HPDM; LS after Jacob's loops) → Promote player + slab together. Then the WARD TRANCHE. Open and named: 1 dry-bed cell
+(703.4, 293.5); the dry-bed cross-check's 19 and the mean-of-lidar check RED until each town's terrain is re-baked (unrounded
+baseElev); claims-a-bake-step-declares-what-it-reads (pre-existing, owed before a Bake is called clean). CENSUS (Zob): bake-ground
+writes shape.json only `if (shapeArtifact)`, so a missing one leaves the OLD shape.json beside a new ground inside an atomic commit;
+refuse by name when ① exists and protoShapeTiles doesn't.
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
 running for the kit (:3343/:5183 stopped). Nothing pressed or published today. The afternoon's handoff: `cartograph/_archive/HANDOFF-2026-10-25-afternoon.md`.
 **FIRST, before any publish: the dirty detector** (entry below, "THE DIRTY DETECTOR HAS NO DISCRETION"): Huron's Publish demands a full
