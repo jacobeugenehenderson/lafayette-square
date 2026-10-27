@@ -13,6 +13,8 @@
 import { readFileSync, existsSync, statSync, readdirSync } from 'fs'
 import { join, dirname, relative } from 'path'
 import { createHash } from 'crypto'
+import { execFileSync } from 'child_process'
+import { parse } from '@babel/parser'
 import { fileURLToPath } from 'url'
 import { geographyFor } from './geography.mjs'
 import { mapDir, declaredBuildingsOf } from './scene.js'
@@ -53,15 +55,55 @@ export const pourCodeClosure = () => importClosure([POUR_ENTRY], { stopAt: [TOWN
 
 // ⭐ A FILE'S CONTENT, hashed once per (path, mtime, size) — a bake hashes map.json for several steps and pays once.
 // A missing file hashes to null (so its APPEARING later is a change); a directory to the hash of its sorted listing.
+// ⭐ CODE IS JUDGED BY WHAT RUNS (BACKLOG "THE DIRTY DETECTOR HAS NO DISCRETION": Huron's Publish asked for a full re-pour for a
+// one-line doc comment in sources.js, b456bc6d). A .js/.mjs/.cjs file hashes its TOKEN STREAM (`executedHash`): every token's
+// source text and whether a line break precedes it (automatic semicolon insertion reads line breaks), never its comments or
+// its other whitespace. Data files hash their bytes. ⛔ A code file the parser refuses is not hashed at all: it records
+// `unparseable: <why>`, and `contentChanged` names it as changed EVERY time, so it can never read as clean.
+const CODE_FILE = /\.[mc]?js$/
+export const EXEC_PREFIX = 'x1:'
+export function executedHash(src) {
+  const ast = parse(src, { sourceType: 'module', tokens: true, errorRecovery: false, allowHashBang: true })
+  const h = createHash('sha1')
+  let prevLine = null
+  for (const t of ast.tokens) {
+    if (t.type === 'CommentLine' || t.type === 'CommentBlock') continue
+    if (t.type?.label === 'eof') break
+    h.update(`${prevLine != null && t.loc.start.line > prevLine ? '\n' : ' '}${src.slice(t.start, t.end)}\0`)
+    prevLine = t.loc.end.line
+  }
+  return EXEC_PREFIX + h.digest('hex')
+}
 const _hashCache = new Map()
 function contentHash(f) {
   let st; try { st = statSync(f) } catch { return null }
   const key = `${f}|${st.mtimeMs}|${st.size}|${st.isDirectory()}`
   if (_hashCache.has(key)) return _hashCache.get(key)
-  const h = createHash('sha1')
-  if (st.isDirectory()) for (const e of readdirSync(f).sort()) h.update(`${e}:${contentHash(join(f, e))}\n`)
-  else h.update(readFileSync(f))
-  const out = h.digest('hex'); _hashCache.set(key, out); return out
+  let out
+  if (st.isDirectory()) { const h = createHash('sha1'); for (const e of readdirSync(f).sort()) h.update(`${e}:${contentHash(join(f, e))}\n`); out = h.digest('hex') }
+  else if (CODE_FILE.test(f)) { try { out = executedHash(readFileSync(f, 'utf-8')) } catch (e) { out = `unparseable: ${String(e.message).split('\n')[0]}` } }
+  else out = createHash('sha1').update(readFileSync(f)).digest('hex')
+  _hashCache.set(key, out); return out
+}
+// ⭐ A RECORD WRITTEN BEFORE CODE WAS HASHED BY WHAT RUNS holds the sha1 of the file's BYTES. It is judged exactly, never
+// re-recorded by assumption: the bytes as they stand now (equal ⇒ unchanged), else the version in git history whose bytes
+// hash to the record, compared by what runs. ⛔ Not found in history ⇒ changed, named. Read-only: `git log` and `git show`.
+const rawSha1 = (buf) => createHash('sha1').update(buf).digest('hex')
+const _bridged = new Map()
+function oldRecordRunsAs(f, oldSha) {
+  const key = `${f}|${oldSha}`
+  if (_bridged.has(key)) return _bridged.get(key)
+  let out = null
+  if (rawSha1(readFileSync(f)) === oldSha) out = contentHash(f)
+  else try {
+    const rel = relative(REPO_ROOT, f)
+    const revs = execFileSync('git', ['-C', REPO_ROOT, 'log', '--format=%H', '-n', '400', '--', rel], { encoding: 'utf-8' }).split('\n').filter(Boolean)
+    for (const r of revs) {
+      let buf; try { buf = execFileSync('git', ['-C', REPO_ROOT, 'show', `${r}:${rel}`], { maxBuffer: 1 << 28 }) } catch { continue }
+      if (rawSha1(buf) === oldSha) { try { out = executedHash(buf.toString('utf-8')) } catch { out = null } break }
+    }
+  } catch { out = null }
+  _bridged.set(key, out); return out
 }
 
 // → { path: sha1 | null } for a set of files as they stand now — CODE (the pour's `codeRead`, a step's closure) or
@@ -79,8 +121,15 @@ export function contentRecord(files) {
 // The files whose content differs from `record` → their paths. ⛔ No record ⇒ dirty, named.
 export function contentChanged(record, files, who = 'this step') {
   if (!record || typeof record !== 'object') return [`(no record of what ${who} last read)`]
-  const now = contentRecord(files), out = []
-  for (const [p, h] of Object.entries(now)) if (record[p] !== h) out.push(p in record ? p : `${p} (new to ${who})`)
+  const now = contentRecord(files), out = [], abs = new Map(files.filter(f => typeof f === 'string').map(f => [relative(REPO_ROOT, f), f]))
+  for (const [p, h] of Object.entries(now)) {
+    if (typeof h === 'string' && h.startsWith('unparseable')) { out.push(`${p} (${h} — code that cannot be read as JavaScript is never judged unchanged)`); continue }
+    if (record[p] === h) continue
+    const was = record[p]
+    if (!(p in record)) { out.push(`${p} (new to ${who})`); continue }
+    if (typeof was === 'string' && typeof h === 'string' && h.startsWith(EXEC_PREFIX) && /^[0-9a-f]{40}$/.test(was) && abs.has(p) && oldRecordRunsAs(abs.get(p), was) === h) continue
+    out.push(p)
+  }
   for (const p of Object.keys(record)) if (!(p in now)) out.push(`${p} (no longer read by ${who})`)
   return out
 }

@@ -17,12 +17,18 @@
 //     is dirty; `geographyReadChanged`: equal ⇒ null · edited ⇒ named · no record ⇒ dirty;
 //   · the registry is judged by what the pour READ (`registryRead`), on the real registry;
 //   · the Bake STOPS (428) on any of the three before the pipeline step, unless `repour=1`.
+//   · CODE IS JUDGED BY WHAT RUNS (BACKLOG "THE DIRTY DETECTOR HAS NO DISCRETION", 2026-10-25: a one-line doc comment in
+//     sources.js, b456bc6d, asked Huron for a full re-pour): a comment-only or re-indent edit is NOT named · a token edit
+//     IS · a line break that changes what runs (`return x` → `return⏎x`) IS · a code file the parser refuses is named
+//     every time, even against its own record · a record of raw bytes (written before) is judged exactly, through git
+//     history: b456bc6d's own parent recorded against today's sources.js is named only if what runs differs.
 //
 //   node checks/claims-the-bake-watches-its-code.mjs [--serve=path] [--pour-code=path]
 //
 // MUTATIONS (each must go red): PIPELINE_SRC set back to importClosure([pipeline.js]) (town modules re-enter) ·
 // the 428 stop removed · pourCodeChanged made to return [] · pourCodeChanged made to compare mtimes · the registry
-// check dropped from the 428 list · the stopAt removed in pour-code.mjs.
+// check dropped from the 428 list · the stopAt removed in pour-code.mjs · code hashed by its bytes (a comment dirties) ·
+// an unparseable file hashed like any other (it would read clean) · the line-break flag dropped from executedHash.
 import { readFileSync, mkdtempSync, writeFileSync, utimesSync, rmSync, readdirSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -58,12 +64,12 @@ if (!/geographyRead:\s*GEOGRAPHY_READ/.test(pipe)) bad.push('pipeline.js does no
 // ── content, not mtime — exercised on temp files ──
 {
   const d = mkdtempSync(join(tmpdir(), 'bakewatch-')), code = join(d, 'derive.js')
-  writeFileSync(code, '// a')
+  writeFileSync(code, 'export const a = 1\n')
   const rec = pc.pourCodeRecord([code])
   const t = Date.now() / 1000 + 1000
   utimesSync(code, t, t)
   if (pc.pourCodeChanged(rec, [code]).length) bad.push('an mtime-only touch (a checkout) was named — every Bake would ask')
-  writeFileSync(code, '// b')
+  writeFileSync(code, 'export const a = 2\n')   // a token edit (a comment edit is not one: see the rows below)
   if (pc.pourCodeChanged(rec, [code]).length !== 1) bad.push('a CONTENT edit to a pour file was not named — the Bake would not ask')
   if (!pc.pourCodeChanged(undefined, [code]).length) bad.push('a map.json with NO code record counts as clean — it must be dirty')
   rmSync(d, { recursive: true, force: true })
@@ -105,6 +111,33 @@ if (!/geographyRead:\s*GEOGRAPHY_READ/.test(pipe)) bad.push('pipeline.js does no
   const between = g < 0 || q < 0 ? '' : src.slice(g, q)
   if (h0 < 0 || g < 0 || q < 0 || q > h0 || !/repourConfirmed/.test(src.slice(q - 200, h0))) bad.push('the Bake does not stop (428, unless repour=1) on changed pour code before running the pipeline')
   else if (!/codeChanged/.test(between) || !/geoChanged/.test(between)) bad.push('the 428 list does not carry both the code and the geography changes') }
+
+// ── code is judged by what runs, not its bytes ──
+{
+  const d = mkdtempSync(join(tmpdir(), 'bakewatch-exec-')), f = join(d, 'step.mjs')
+  const named = (before, after) => { writeFileSync(f, before); const rec = pc.pourCodeRecord([f]); writeFileSync(f, after); return pc.pourCodeChanged(rec, [f]).length > 0 }
+  const base = 'export function f(x) {\n  // the old note\n  return x + 1\n}\n'
+  if (named(base, 'export function f(x) {\n  // a NEW note, one line longer\n  /* and a block */\n  return x + 1\n}\n')) bad.push('a comment-only edit was named — Huron would be asked to re-pour for a doc comment (b456bc6d)')
+  if (named(base, 'export function f(x) {\n      return x   +   1\n}\n')) bad.push('a re-indent (whitespace only, line breaks kept) was named')
+  if (!named(base, 'export function f(x) {\n  // the old note\n  return x + 2\n}\n')) bad.push('a real code edit (1 → 2) was NOT named — the pour would run stale')
+  if (!named('export function f(x) {\n  return x\n}\n', 'export function f(x) {\n  return\n  x\n}\n')) bad.push('a line break that changes what runs (return x → return⏎x, automatic semicolon insertion) was NOT named')
+  writeFileSync(f, 'export function f( {\n')
+  const rec = pc.pourCodeRecord([f]), why = pc.pourCodeChanged(rec, [f])
+  if (!why.length || !/unparseable/.test(why[0])) bad.push(`an unparseable code file against its OWN record was not named as unparseable (got ${JSON.stringify(why)}) — it would read clean`)
+  rmSync(d, { recursive: true, force: true })
+  // a record of raw bytes, through git history: b456bc6d's parent, recorded the way the pour recorded before this change
+  const { execFileSync } = await import('node:child_process'), { createHash } = await import('node:crypto')
+  const rel = 'cartograph/sources.js', abs = join(ROOT, rel)
+  let parentBuf = null; try { parentBuf = execFileSync('git', ['-C', ROOT, 'show', `b456bc6d~1:${rel}`]) } catch { }
+  if (!parentBuf) bad.push('NOT CHECKED: b456bc6d~1:cartograph/sources.js is not in this repo\'s history (the raw-record row has no subject)')
+  else {
+    const oldRec = { [rel]: createHash('sha1').update(parentBuf).digest('hex') }
+    const sameRun = pc.executedHash(parentBuf.toString('utf8')) === pc.executedHash(readFileSync(abs, 'utf8'))
+    const got = pc.pourCodeChanged(oldRec, [abs]).length > 0
+    if (got === sameRun) bad.push(`a raw-bytes record of sources.js before the comment-only commit b456bc6d: ${sameRun ? 'what runs is the same, yet it was NAMED' : 'what runs differs, yet it was NOT named'}`)
+    if (pc.executedHash(parentBuf.toString('utf8')) !== pc.executedHash(execFileSync('git', ['-C', ROOT, 'show', `b456bc6d:${rel}`]).toString('utf8'))) bad.push('b456bc6d (a one-line doc comment) changes what runs, by executedHash — it must not')
+  }
+}
 
 // ── every OTHER step is judged by content too (Boz's rulings 2026-09-26): runIfDirty hashes each step's code closure
 // AND its declared data against clean/bake-reads.json; only the pour's authoring inputs keep the mtime rule ──
