@@ -40,21 +40,30 @@ const keyOf = (x, z) => `${x},${z}`
 /**
  * THE SPANS THE PIN READS, by identity and live paint (Jacob 2026-10-27 (b); Boz's ruling (iv)): WHICH spans exist is ①'s frozen
  * record (protopolygon.offGradeSpans: { street, segOrd, kind, hwy, points }, one per off-grade wet piece the mint left out of the
- * ink); each one's FOOTPRINT is the build's live paint for it (buildTileGround's `bridges`, matched by { street, segOrd }), so an
- * authored width moves it. A span wholly OUTSIDE the drawing is painted nowhere (the disc empties its entry, rings: []) and covers
+ * ink); each one's FOOTPRINT is the build's live paint for it (buildTileGround's `bridges`, matched by `span`, the record's INDEX in
+ * offGradeSpans, never by { street, segOrd }: every grade-separated span is segOrd 0, and a bridge over an island is two wet pieces
+ * in one segOrd — Zob's read, Boz, 2026-10-27), so an authored width moves it. A span wholly OUTSIDE the drawing is painted nowhere (the disc empties its entry, rings: []) and covers
  * no coast in it: counted, never refused.
- * ⛔ Refuses, by name: no record (a pre-rule map) · spans with no bridges list · a span with no bridges entry · an empty footprint
+ * ⛔ Refuses, by name: no record (a pre-rule map) · spans with no bridges list · an entry with no span index, one naming no record,
+ *    two for one record, or one whose street|segOrd is not its record's · a span with no bridges entry · an empty footprint
  *    for a span that reaches into the drawing · a span with no centreline.
  * @returns { spans: [{ street: 'street|segOrd', ring }], outside } — `spans` is what pinTheCoast takes
  */
 export function spanFootprints({ spanList, bridgePaint, inDrawing, who }) {
   if (!Array.isArray(spanList)) throw new Error(`[${who}] ⛔ ①'s frozen protopolygon carries no offGradeSpans list (it predates the record) — a coast vertex under a bridge would read as missing from the mesh. ▶ re-pour`)
   if (spanList.length && !Array.isArray(bridgePaint)) throw new Error(`[${who}] ⛔ ① records ${spanList.length} span(s) over the water and the ground build painted no bridges list — their footprint is unknown`)
+  const bySpan = new Map()
+  for (const b of bridgePaint || []) {
+    if (!Number.isInteger(b.span) || !spanList[b.span]) throw new Error(`[${who}] ⛔ the build's bridges entry ${b.street}|${b.segOrd} names span ${b.span}, which is no index into ①'s ${spanList.length} recorded span(s) — its footprint cannot be matched by identity. ▶ re-pour / rebuild`)
+    if (bySpan.has(b.span)) throw new Error(`[${who}] ⛔ the build painted two bridges entries for ①'s span ${b.span} (${b.street}|${b.segOrd})`)
+    const sp = spanList[b.span]
+    if (sp.street !== b.street || sp.segOrd !== b.segOrd) throw new Error(`[${who}] ⛔ the build's bridges entry for span ${b.span} is ${b.street}|${b.segOrd}, but ① records that span as ${sp.street}|${sp.segOrd} — the index and the map disagree`)
+    bySpan.set(b.span, b) }
   let outside = 0
-  const spans = spanList.flatMap(sp => {
+  const spans = spanList.flatMap((sp, i) => {
     const name = `${sp.street}|${sp.segOrd}`
     if (!(sp.points?.length >= 2)) throw new Error(`[${who}] ⛔ ①'s off-grade span ${name} carries no centreline`)
-    const entry = bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd)
+    const entry = bySpan.get(i)
     if (!entry) throw new Error(`[${who}] ⛔ ① records the off-grade span ${name} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, and this build has no bridges entry for it — whether the coast under it is covered is unknown`)
     const rings = entry.rings || []
     if (!rings.length && sp.points.every(([x, z]) => !inDrawing(x, z))) { outside++; return [] }

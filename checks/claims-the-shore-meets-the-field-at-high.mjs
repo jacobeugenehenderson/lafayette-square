@@ -286,16 +286,27 @@ async function pinSection(mod, log) {
   // nobody sees fail). The drawing is the 10 m square; a span at x 20 is wholly outside it.
   { const inD = (x, z) => x > 0 && x < 10 && z > 0 && z < 10, rec = (street, points, hwy = false) => ({ street, segOrd: 0, kind: 'tagged', hwy, wetM: 1, points })
     const sf = (o) => { try { return { r: spanFootprints({ inDrawing: inD, who: 'planted', ...o }) } } catch (e) { return { e: e.message } } }
-    const far = sf({ spanList: [rec('far', [[20, 2], [21, 2]])], bridgePaint: [{ street: 'far', segOrd: 0, rings: [] }] })
+    const far = sf({ spanList: [rec('far', [[20, 2], [21, 2]])], bridgePaint: [{ span: 0, street: 'far', segOrd: 0, rings: [] }] })
     no(far.r && far.r.outside === 1 && far.r.spans.length === 0, `a span wholly outside the drawing, its footprint emptied by the disc, is counted and not refused (${far.r ? `outside ${far.r.outside}` : far.e})`)
-    const inEmpty = sf({ spanList: [rec('near', [[5, 1.5], [5, 2.5]])], bridgePaint: [{ street: 'near', segOrd: 0, rings: [] }] })
+    const inEmpty = sf({ spanList: [rec('near', [[5, 1.5], [5, 2.5]])], bridgePaint: [{ span: 0, street: 'near', segOrd: 0, rings: [] }] })
     no(/reaching into the drawing/.test(inEmpty.e ?? ''), 'an empty footprint for a span reaching into the drawing REFUSES')
     const noEntry = sf({ spanList: [rec('lost', [[5, 1.5], [5, 2.5]])], bridgePaint: [] })
     no(/no bridges entry/.test(noEntry.e ?? ''), 'a recorded span with no bridges entry REFUSES')
     const noRec = sf({ spanList: undefined, bridgePaint: [] })
     no(/predates the record/.test(noRec.e ?? ''), 'no offGradeSpans record REFUSES (a pre-rule map, never read as none)')
-    const ring = [[4.8, 1.5], [5.2, 1.5], [5.2, 2.5], [4.8, 2.5]], ok = sf({ spanList: [rec('cross', [[5, 1.5], [5, 2.5]], true)], bridgePaint: [{ street: 'cross', segOrd: 0, rings: [ring] }] })
-    no(ok.r && ok.r.spans.length === 1 && ok.r.spans[0].street === 'cross|0' && ok.r.spans[0].ring === ring, `a painted span is matched to its own footprint by street|segOrd (${ok.r ? JSON.stringify(ok.r.spans.map(x => x.street)) : ok.e})`) }
+    const ring = [[4.8, 1.5], [5.2, 1.5], [5.2, 2.5], [4.8, 2.5]], ok = sf({ spanList: [rec('cross', [[5, 1.5], [5, 2.5]], true)], bridgePaint: [{ span: 0, street: 'cross', segOrd: 0, rings: [ring] }] })
+    no(ok.r && ok.r.spans.length === 1 && ok.r.spans[0].street === 'cross|0' && ok.r.spans[0].ring === ring, `a painted span is matched to its own footprint (${ok.r ? JSON.stringify(ok.r.spans.map(x => x.street)) : ok.e})`)
+    // TWO SPANS, ONE KEY (Zob's read, Boz, 2026-10-27): a bridge over an island is two wet pieces in one segOrd, so street|segOrd
+    // names both. Each must take its OWN footprint, by the record's index — never the first entry under the shared key.
+    { const west = [[1, 4], [2, 4], [2, 5], [1, 5]], east = [[7, 4], [8, 4], [8, 5], [7, 5]]
+      const two = sf({ spanList: [rec('isle', [[1.5, 4], [1.5, 5]]), rec('isle', [[7.5, 4], [7.5, 5]])], bridgePaint: [{ span: 1, street: 'isle', segOrd: 0, rings: [east] }, { span: 0, street: 'isle', segOrd: 0, rings: [west] }] })
+      no(two.r && two.r.spans.length === 2 && two.r.spans[0].ring === west && two.r.spans[1].ring === east, `two spans under one street|segOrd each take their own footprint, by index (${two.r ? two.r.spans.map(x => x.ring === west ? 'west' : x.ring === east ? 'east' : '?').join(', ') : two.e})`)
+      const noIdx = sf({ spanList: [rec('isle', [[1.5, 4], [1.5, 5]])], bridgePaint: [{ street: 'isle', segOrd: 0, rings: [west] }] })
+      no(/no index into/.test(noIdx.e ?? ''), 'a bridges entry with no span index REFUSES (never matched by key)')
+      const dup = sf({ spanList: [rec('isle', [[1.5, 4], [1.5, 5]]), rec('isle', [[7.5, 4], [7.5, 5]])], bridgePaint: [{ span: 0, street: 'isle', segOrd: 0, rings: [west] }, { span: 0, street: 'isle', segOrd: 0, rings: [east] }] })
+      no(/two bridges entries/.test(dup.e ?? ''), 'two bridges entries for one span REFUSE')
+      const wrong = sf({ spanList: [rec('isle', [[1.5, 4], [1.5, 5]])], bridgePaint: [{ span: 0, street: 'other', segOrd: 0, rings: [west] }] })
+      no(/the index and the map disagree/.test(wrong.e ?? ''), 'an entry whose street|segOrd is not its record\'s REFUSES') } }
   // the bridge's paint over the river stands AT HIGH, on the water (Boz's ruling, 2026-10-27): its three vertices strictly over
   // the water (x = 3, z 3…5, where the field is −0.8) lift to HIGH, exempt from the side clamp; its bank vertices are the pinned line
   { const span = { street: 'bridge-2', ring: [[2, 3], [3, 3], [3, 5], [2, 5]] }
@@ -321,6 +332,7 @@ async function pinSection(mod, log) {
       ['a coast vertex under a span not skipped', '      if (sp) { stats.underSpan++;', '      if (false) { stats.underSpan++;'],
       ["a bridge's paint left on the bed", '        lifted.set(k, highAt(x, z));', '        void 0;'],
       ['a span outside the drawing refused', '{ outside++; return [] }', '{ }'],
+      ['the footprint matched by street|segOrd, not the index', '    const entry = bySpan.get(i)\n', '    const entry = bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd)\n'],
       ['an empty footprint inside the drawing accepted', "    if (!rings.length) throw new Error(`[${who}] ⛔ ① records the off-grade span ${name} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, reaching", "    if (!rings.length) return []; if (false) throw new Error(`[${who}] ⛔ ① records the off-grade span ${name} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, reaching"],
     ]
     let alive = 0

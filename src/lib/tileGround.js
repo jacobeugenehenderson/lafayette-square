@@ -2257,7 +2257,7 @@ function sweepHighway(points, leftSec, rightSec, handoff = null) {
 // the street from the last coast point it reached, so it never leans back over the span. The run-on reaches as far along the
 // street as the cut does, and everything past the cut, away from the span, is cut away.
 // ⛔ CLOSURE, by name: the piece meets the BANK (the coast, or a cut) in exactly one contiguous run per bank crossing, each
-// through that crossing. Anything else (a strip edge in and out of the water) refuses. → [{ street, segOrd, hwy: false, rings }]
+// through that crossing. Anything else (a strip edge in and out of the water) refuses. → [{ span, street, segOrd, hwy: false, rings }]
 export function bridgeOverlay(spans, waterRings, hwOf) {
   const out = []
   if (!spans?.length) return out
@@ -2265,7 +2265,7 @@ export function bridgeOverlay(spans, waterRings, hwOf) {
   const TOL = 2 / SCALE
   const sd = (p, a, c) => { const dx = c[0] - a[0], dz = c[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
   const onCoast = (p) => waterRings.some(w => w.some((q, i) => sd(p, q, w[(i + 1) % w.length]) <= TOL))
-  for (const sp of spans) { if (sp.hwy) continue
+  for (const [span, sp] of spans.entries()) { if (sp.hwy) continue
     const who = `${sp.street}|${sp.segOrd} (${sp.wetM} m over the water)`
     const hl = hwOf(sp.street, 'left', sp.segOrd), hr = hwOf(sp.street, 'right', sp.segOrd)
     if (!(hl > 0) || !(hr > 0)) throw new Error(`[tileGround][bridges] ⛔ ${who}: no pavement width (left ${hl}, right ${hr}) — the bridge cannot be painted across the water. Refusing.`)
@@ -2310,7 +2310,7 @@ export function bridgeOverlay(spans, waterRings, hwOf) {
     const holds = (rn, p) => rn.some(i => sd(p, r[i], r[(i + 1) % n]) <= TOL)
     const closed = runs.length === banks.length && banks.every(b => runs.filter(rn => holds(rn, b)).length === 1) && runs.every(rn => banks.filter(b => holds(rn, b)).length === 1)
     if (!closed) throw new Error(`[tileGround][bridges] ⛔ ${who}: its piece over the water meets the bank in ${runs.length} run(s) for ${banks.length} bank crossing(s), not one through each — a strip edge in and out of the water. Refusing.`)
-    out.push({ street: sp.street, segOrd: sp.segOrd, hwy: false, rings: A }) }
+    out.push({ span, street: sp.street, segOrd: sp.segOrd, hwy: false, rings: A }) }
   return out
 }
 
@@ -2318,13 +2318,13 @@ export function bridgeOverlay(spans, waterRings, hwOf) {
 // water holding the span's own centreline — by identity of the recorded span, never the sheet. The caller moves them out of the
 // highway's paint into the bridge's, so the two meet on the coast. ⛔ A recorded H span no piece holds refuses by name.
 export function highwayBridges(spans, Hrings, waterRings) {
-  const H = (spans || []).filter(x => x.hwy)
+  const H = (spans || []).map((sp, span) => ({ sp, span })).filter(x => x.sp.hwy)
   if (!H.length) return []
   const wet = intersectRings(Hrings, waterRings || [])
-  return H.map(sp => { const P = sp.points, mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
+  return H.map(({ sp, span }) => { const P = sp.points, mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
     const rings = wet.filter(r => mids.some(m => pointInRing(m[0], m[1], r)))
     if (!rings.length) throw new Error(`[tileGround][bridges] ⛔ ${sp.street}|${sp.segOrd} is recorded as swept by H, but no piece of H over the water holds its centreline. Refusing.`)
-    return { street: sp.street, segOrd: sp.segOrd, hwy: true, rings } })
+    return { span, street: sp.street, segOrd: sp.segOrd, hwy: true, rings } })
 }
 
 export function unionRings(rings) {
@@ -8726,7 +8726,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let asphalt = S.asphalt
   const curb = S.curb, sidewalk = S.sidewalk, block = S.block
   let highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
-  let bridges = []    // the bridge spans painted over the water: [{ street, segOrd, hwy, rings }] (`bridgeOverlay`, `highwayBridges`); `hwy` picks its road's paint
+  let bridges = []    // the bridge spans painted over the water: [{ span, street, segOrd, hwy, rings }], `span` its index in ①'s offGradeSpans (`bridgeOverlay`, `highwayBridges`); `hwy` picks its road's paint
   let inkShore = []   // ①'s coast piece, the land's shore surface (painted first, below)
   protoBandPieces = S.bandPieces || []
   protoRimRings = S.rimRings || []
@@ -8794,7 +8794,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // recorded span), moved OUT of the highway's paint; every other span is `bridgeOverlay`'s. Owned road pieces, by street.
     const nonH = bridgeOverlay(protoSpans, protoWater, (street, side, segOrd) => protoRunMeasure({ skelId: street, side, segOrd })?.pavementHW)
     const viaH = highwayBridges(protoSpans, Hpoly, protoWater)
-    // ONE entry for EVERY recorded span (the shore pin matches by { street, segOrd } and refuses a span with none), its rings in the stencil
+    // ONE entry for EVERY recorded span (the shore pin matches by `span`, the index in offGradeSpans, and refuses a span with none), its rings in the stencil
     bridges = [...nonH, ...viaH].map(b => ({ ...b, rings: inStencil(b.rings) }))
     for (const b of bridges) protoInkPieces.push({ rings: b.rings, owners: [b.street], kind: 'bridge' })
     if (viaH.length) highway = differenceRings(highway, viaH.flatMap(b => b.rings))

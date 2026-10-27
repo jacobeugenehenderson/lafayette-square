@@ -21,6 +21,8 @@
 //       `hwy`, and `tileGround.js#highwayBridges` moves H ∩ the water holding that span out of the highway's paint into the
 //       bridge's — the bridge is exactly H's strip between the banks, the highway left has nothing over the water, and the two
 //       together are H (they meet on the coast). MUTANT: no split (the highway keeps its span over the water) reads RED.
+//   (7b) PLANTED (Zob's merge read, Boz, 2026-10-27): every painted span carries `span`, its record's INDEX in offGradeSpans (street|segOrd
+//       is not unique), and the shore pin matches on it (coastPins.mjs#spanFootprints). MUTANT: H's index counted among H alone.
 //   (8) PLANTED (Boz, 2026-10-27: "a street that stays in the water silently is a Layer 0 defect"): the inlet's street crossing
 //       the coast EXACTLY at a vertex — (a) a coast-arc vertex lying on the street, (b) a street vertex lying on the coast, (c) a
 //       vertex both share (Zob's third form). Each is a crossing: the span is recorded and the street's ink leaves the water.
@@ -136,6 +138,14 @@ const judgeH = (R) => typeof R === 'string' ? null : { d: absA(differenceRings(R
 { const R = splitH(highwayBridges), J = judgeH(R)
   row(SPh.length === 1 && SPh[0].hwy === true && J && J.d < 1e-3 && Math.abs(J.wet) < 1e-3 && Math.abs(J.sum) < 1e-3,
     `(7) a highway bridge across the inlet: ① records ${SPh.map(e => `${e.street}|${e.segOrd} ${e.kind}${e.hwy ? ' (H)' : ''}`).join(' · ') || 'NO span'}; ${J ? `the bridge differs from H's strip between the banks by ${J.d.toFixed(4)} m², the highway left has ${J.wet.toFixed(4)} m² over the water, together they are H ± ${J.sum.toFixed(4)} m²` : `REFUSES (${String(R).slice(0, 100)})`}`) }
+// (7b) EVERY PAINTED SPAN CARRIES ITS RECORD'S INDEX (Zob's read, Boz, 2026-10-27): street|segOrd is not unique (every
+//      grade-separated span is segOrd 0; a bridge over an island is two wet pieces in one segOrd), so the shore pin matches
+//      on `span`. Over (7)'s inlet ① records the street r and the motorway m: each record is painted once, by its own index.
+const indexOf = (bo, hb) => { let E = null, why = ''; try { E = quiet(() => [...bo(MPh.offGradeSpans, MPh.waterRings, () => 4), ...hb(MPh.offGradeSpans, [Hm], MPh.waterRings)]) } catch (e) { why = String(e.message) }
+  const S = MPh.offGradeSpans || [], idx = E ? E.map(b => b.span).sort((p, q) => p - q) : []
+  return { ok: !!E && S.length === 2 && E.length === S.length && idx.every((v, k) => v === k) && E.every(b => S[b.span]?.street === b.street && S[b.span]?.segOrd === b.segOrd),
+    says: `${E ? E.map(b => `${b.street}|${b.segOrd} → span ${b.span}`).join(' · ') : `REFUSES (${why.slice(0, 100)})`} of ${S.length} record(s)` } }
+{ const I = indexOf(bridgeOverlay, highwayBridges); row(I.ok, `(7b) each painted span carries its record's index: ${I.says}`) }
 // (8) the crossing AT a vertex: (a) the banks carry a vertex exactly on the street (z = 0); (b) the street carries one exactly on each bank
 const arcOnStreet = [...inletArc.slice(0, 2), [xl(0), 0], ...inletArc.slice(2, 5), [xr(0), 0], ...inletArc.slice(5)]
 const waterOnStreet = wind([...arcOnStreet, [200, -200], [-200, -200]], 1)
@@ -221,7 +231,7 @@ const T130 = bentCase(turnArc, turnWater, [[-150, 0], [51.25, 0], [51.25 + 60 * 
 { const B = shoreOf(bridgeOverlay, T130), d = typeof B === 'string' ? null : diffTo(B, T130.ref), past = typeof B === 'string' ? null : absA(differenceRings(B, T130.ref))
   row(!!T130.sp && T130.ref.length === 1 && d != null && d < gridTol(T130.ref), `(16) a street turning 130° at the bank to hug the shore: ${d == null ? `REFUSES (${String(B).slice(0, 110)})` : `the overlay differs from the span's own strip ∩ the water by ${d.toFixed(4)} m² (the grid allows ${gridTol(T130.ref).toFixed(3)}), ${past.toFixed(4)} m² past the bank (it was 140.8 when the run-on followed the chain)`}`) }
 { const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
-  for (const [name, a, b] of [['the overlay disabled (a gap over the water)', 'for (const sp of spans) { if (sp.hwy) continue', 'for (const sp of spans) { continue'],
+  for (const [name, a, b] of [['the overlay disabled (a gap over the water)', 'for (const [span, sp] of spans.entries()) { if (sp.hwy) continue', 'for (const [span, sp] of spans.entries()) { continue'],
                               ['the overlay not run on past the banks', 'const line = [...(b0 ? [run(b0)] : []), ...P, ...(b1 ? [run(b1)] : [])]', 'const line = P'],
                               ['the wholly-wet case skipped', "    if (!V.some(v => v.cross) && !(V.length >= 2 && wet(", "    if (!V.some(v => v.cross) && true || !(V.length >= 2 && wet("],
                               ['the one-bank case taken for a span', '      if (!part[0].cross || !part[part.length - 1].cross) { const m', '      if (false) { const m'],
@@ -231,7 +241,8 @@ const T130 = bentCase(turnArc, turnWater, [[-150, 0], [51.25, 0], [51.25 + 60 * 
                               ['the segOrd refusal skipped', '      if (ords.length > 1) throw', '      if (false) throw'],
                               ['the closure skipped', '    if (!closed) throw', '    if (false) throw'],
                               ['the sides swapped', 'sweepHighway(line, { spans: [{ hw: hl }] }, { spans: [{ hw: hr }] })', 'sweepHighway(line, { spans: [{ hw: hr }] }, { spans: [{ hw: hl }] })'],
-                              ['H not split (the highway keeps its span over the water)', '  const H = (spans || []).filter(x => x.hwy)\n', '  const H = []\n'],
+                              ['(7b) the highway index counted among H alone', '(spans || []).map((sp, span) => ({ sp, span })).filter(x => x.sp.hwy)', '(spans || []).filter(x => x.hwy).map((sp, span) => ({ sp, span }))'],
+                              ['H not split (the highway keeps its span over the water)', '  const H = (spans || []).map((sp, span) => ({ sp, span })).filter(x => x.sp.hwy)\n', '  const H = []\n'],
                               ['(a) the crossings read off the minted points alone', "for (const v of out[n]) { const k = v.k[0] + ',' + v.k[1]; if (onStreet.has(k)) crossKeys.add(k) }", 'for (const v of out[n]) if (v.src == null) crossKeys.add(v.k[0] + \',\' + v.k[1])'],
                               ['(b) a street\'s own vertex never marked a crossing', "edge: v.src, ...(c && { cross: true }) })", 'edge: v.src })']]) {
     if (src.split(a).length !== 2) { row(false, `mutant (6) ${name}: its anchor is not in tileGround.js once — re-aim it`); continue }
@@ -257,6 +268,8 @@ const T130 = bentCase(turnArc, turnWater, [[-150, 0], [51.25, 0], [51.25 + 60 * 
         row(!r || !/not one through each/.test(r), `mutant (11) ${name}: ${r ? `refuses otherwise (${r.slice(0, 80)})` : 'paints the zigzag bank'} — RED as it must be`); continue }
       if (name === 'the sides swapped') { const d = asymOf(M.bridgeOverlay)
         row(typeof d !== 'number' || d > 1, `mutant (6b) ${name}: ${typeof d === 'number' ? `differs from the street's own strip by ${d.toFixed(2)} m²` : `refuses (${String(d).slice(0, 80)})`} — RED as it must be`); continue }
+      if (name.startsWith('(7b)')) { const I = indexOf(M.bridgeOverlay, M.highwayBridges)
+        row(!I.ok, `mutant ${name}: ${I.says} — ${I.ok ? 'still GREEN (the row proves nothing)' : 'RED as it must be'}`); continue }
       if (name.startsWith('H not split')) { const J = judgeH(splitH(M.highwayBridges))
         row(!J || J.wet > 1, `mutant (7) ${name}: ${J ? `the highway keeps ${J.wet.toFixed(2)} m² over the water` : 'refuses'} — RED as it must be`); continue }
       const B = bridgeOf(M.bridgeOverlay), d = typeof B === 'string' ? null : symDiff(B)
