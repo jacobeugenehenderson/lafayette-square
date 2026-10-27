@@ -14,6 +14,16 @@
 import fs from 'fs'
 import { join } from 'path'
 import { CARTOGRAPH_DIR } from './config.js'
+import clipperLib from 'clipper-lib'
+import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
+
+const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
+const toPath = (ring) => { const p = new Path(); for (const [x, z] of ring) p.push(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))); return p }
+const fromPath = (path) => path.map(q => [q.X / SCALE, q.Y / SCALE])
+const signedArea = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+const inRing = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+const union = (paths) => { if (!paths.length) return new Paths(); const c = new Clipper(), out = new Paths(); c.AddPaths(paths, PolyType.ptSubject, true)
+  if (!c.Execute(ClipType.ctUnion, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: the deck union FAILED'); return out }
 
 export const DECK_KINDS = ['pier', 'quay', 'wharf', 'jetty', 'platform']
 /** Rock structures — built as the revetment's stone; the terrain keeps the lidar's rock under them (bake-terrain). */
@@ -76,4 +86,81 @@ export function stoneStructures(ground) {
     }
   }
   return { areas, lines }
+}
+
+/**
+ * THE DECK FOOTPRINTS (structures.mjs#deckStructures): an area as mapped, a line buffered to its width (OSM `width`,
+ * else structures.mjs#defaultDeckWidthM: the sourced typical width), butt ends. One union, as clipper paths, with a
+ * point test for the samplers. ⛔ From the data's tags, never a site list.
+ */
+export function deckFootprints(osmGround) {
+  const { areas, lines } = deckStructures(osmGround)
+  let typical = null
+  const paths = new Paths()
+  for (const a of areas) paths.push(toPath(a.ring))
+  let unmapped = 0
+  for (const l of lines) {
+    const wM = l.widthM ?? (typical ??= defaultDeckWidthM())
+    if (l.widthM == null) unmapped++
+    const co = new ClipperOffset(), out = new Paths()
+    co.AddPath(toPath(l.line), JoinType.jtMiter, EndType.etOpenButt)
+    co.Execute(out, (wM / 2) * SCALE)
+    for (const p of out) paths.push(p)
+  }
+  const u = union(paths)
+  const rings = u.map(fromPath)
+  const boxes = rings.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0, x1, z0, z1] })
+  // nonzero over the union's rings: an outer counts +1, a hole −1, so a point in a deck's courtyard is not on the deck
+  const on = (x, z) => { let wn = 0; for (let k = 0; k < rings.length; k++) { const b = boxes[k]; if (x < b[0] || x > b[1] || z < b[2] || z > b[3]) continue; if (inRing(x, z, rings[k])) wn += Math.sign(signedArea(rings[k])) } return wn !== 0 }
+  return { paths: u, rings, on, count: { areas: areas.length, lines: lines.length, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
+}
+
+/**
+ * ⭐ THE STREET RIDES THE DECK (Jacob, 2026-10-25: "a, the street rides the deck"). The deck footprints a mapped street
+ * crosses, by CONSTRUCTION (Zob): each street polyline is clipped at the footprint, and a footprint any street's clipped
+ * segment lies inside carries that street. No fraction, no threshold. The mint takes these footprints OUT of ①'s water,
+ * so the deck is a land face and the street's walk and curb are built on it at the land's height; a deck that carries no
+ * street stays water (the off-ground deck object, later).
+ * @param streets [{ points: [[x, z], …], skelId? }] — the chains the mint is given
+ * @returns { rings: [ring], decks: [{ ring, streets: [skelId] }] }
+ */
+export function streetDecks(ground, streets) {
+  const fp = deckFootprints(ground)
+  const outers = fp.rings.filter(r => signedArea(r) !== 0)
+  const decks = []
+  for (const ring of outers) {
+    if (signedArea(ring) < 0 && outers.some(o => o !== ring && signedArea(o) > 0 && inRing(ring[0][0], ring[0][1], o))) continue   // a hole of another
+    const rp = toPath(ring), on = []
+    for (const st of streets) {
+      const c = new Clipper(), tree = new PolyTree()
+      const line = toPath(st.points || [])
+      if (line.length < 2) continue
+      c.AddPath(line, PolyType.ptSubject, false); c.AddPath(rp, PolyType.ptClip, true)
+      c.Execute(ClipType.ctIntersection, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+      if (Clipper.OpenPathsFromPolyTree(tree).some(p => p.length >= 2)) on.push(st.skelId ?? st.name ?? null)
+    }
+    if (on.length) decks.push({ ring, streets: on })
+  }
+  return { rings: decks.map(d => d.ring), decks }
+}
+
+/** ①'s water rings and shoreline arcs with the street decks taken OUT: the rings minus the decks (outers positive, holes
+ *  negative), the arcs clipped where they run under a deck. */
+export function waterWithoutDecks(rings, arcs, deckRings) {
+  if (!deckRings.length) return { rings, arcs }
+  const c = new Clipper(), tree = new PolyTree()
+  c.AddPaths(rings.map(toPath), PolyType.ptSubject, true); c.AddPaths(deckRings.map(toPath), PolyType.ptClip, true)
+  if (!c.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: water minus decks FAILED')
+  const out = []
+  const walk = (node) => { for (const ch of node.Childs()) { const o = fromPath(ch.Contour()); out.push(signedArea(o) > 0 ? o : o.reverse())
+    for (const h of ch.Childs()) { const r = fromPath(h.Contour()); out.push(signedArea(r) < 0 ? r : r.reverse()); walk(h) } } }
+  walk(tree)
+  const a2 = []
+  for (const arc of arcs) {
+    const k = new Clipper(), t2 = new PolyTree()
+    k.AddPath(toPath(arc), PolyType.ptSubject, false); k.AddPaths(deckRings.map(toPath), PolyType.ptClip, true)
+    k.Execute(ClipType.ctDifference, t2, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+    for (const p of Clipper.OpenPathsFromPolyTree(t2)) if (p.length >= 2) a2.push(fromPath(p))
+  }
+  return { rings: out, arcs: a2 }
 }

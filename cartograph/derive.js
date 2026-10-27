@@ -41,6 +41,7 @@ import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { onGrid } from './snap.js'
 import { localBB } from './geography.mjs'
 import { parcelParts, pointInside, parcelId } from './parcelParts.js'
+import { streetDecks, waterWithoutDecks } from './structures.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -4865,10 +4866,15 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // ⭐ THE COAST IS THE LIDAR'S (BRIEF-the-shore-is-one-line §1): clean/coast.json, traced by bake-coast.mjs where the
     // lidar meets high water, OSM's water only its verifier. ⛔ No coast.json refuses; there is no OSM coast to fall to.
     const _coast = readCoast(CLEAN_DIR, _bb, 'derive')
-    if (_coast.coast && _coast.holes) throw new Error(`[①] ⛔ ${SCENE}'s lidar coast has ${_coast.holes} island(s) (holes in the water), and the water layer below emits every ring as its own face, so an island would be painted as water. Islands through the mint are BRIEF-the-shore-is-one-line §3 step 5.`)
-    if (_coast.coast) console.log(`    [①] coast: ${_coast.rings.length} water ring(s), ${_coast.arcs.length} shoreline arc(s) — ${_coast.doc.from}`)
+    // ⭐ THE STREET RIDES THE DECK (Jacob, 2026-10-25): a deck a mint street crosses (structures.mjs#streetDecks, clipped by
+    // construction) is taken OUT of the water, so it is a land face and its street's walk and curb are built on it.
+    const _decks = _coast.coast ? streetDecks(osmData.ground || {}, pStreets) : { rings: [], decks: [] }
+    const _water = _coast.coast ? waterWithoutDecks(_coast.rings, _coast.arcs, _decks.rings) : { rings: [], arcs: [] }
+    const _holes = _water.rings.filter(r => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) < 0).length
+    if (_holes) throw new Error(`[①] ⛔ ${SCENE}'s coast has ${_holes} island(s) (holes in the water${_decks.decks.length ? `, a street deck standing clear of the shore among them` : ''}), and an island would be painted as water. Islands through the mint are BRIEF-the-shore-is-one-line §3 step 5.`)
+    if (_coast.coast) console.log(`    [①] coast: ${_water.rings.length} water ring(s), ${_water.arcs.length} shoreline arc(s) — ${_coast.doc.from}${_decks.decks.length ? ` · ${_decks.decks.length} street deck(s) taken out of the water: ${_decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}`)
     else console.log(`    [①] no coast: ${_coast.why}`)
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings || [], coastArcs: _coast.arcs || [], bb: _bb })
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _water.rings, coastArcs: _water.arcs, bb: _bb })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
     // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
     let protoBlockClass = null
@@ -4930,7 +4936,8 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     // junction corner's curb cuts live off the shape without reaching for a state record (`cartograph/curb-cut-norm.mjs`).
     {
       const src = readSources(SCENE)
-      ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null, _registryRead)
+      ribbonsLayer.streetDecks = _decks.decks.map(d => ({ ring: d.ring.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)]), streets: d.streets }))   // frozen beside ①, for the terrain
+    ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null, _registryRead)
       const N = ribbonsLayer.curbCutNorm
       // ⭐ the RUNG that decided each, and why every rung above it gave nothing — never the kit's value printed as the town's
       const rung = (n) => `from ${n.source}${n.passed?.length ? ` (${n.passed.join(' · ')})` : ''}${n.cites ? `, cited ${n.cites.join(', ')}` : ''}`

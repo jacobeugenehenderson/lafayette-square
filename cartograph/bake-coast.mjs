@@ -56,7 +56,7 @@ import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels } from './waterLevel.mjs'
 import { wetLoops } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
-import { deckStructures, defaultDeckWidthM } from './structures.mjs'
+import { deckFootprints } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 import { COAST_FILE, heldCells } from './coastFile.mjs'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
@@ -163,33 +163,6 @@ export function flattenedWater(wet, deck, ground, toRecordM = 0) {
 }
 
 /**
- * THE DECK FOOTPRINTS (structures.mjs#deckStructures): an area as mapped, a line buffered to its width (OSM `width`,
- * else structures.mjs#defaultDeckWidthM: the sourced typical width), butt ends. One union, as clipper paths, with a
- * point test for the samplers. ⛔ From the data's tags, never a site list.
- */
-export function deckFootprints(osmGround) {
-  const { areas, lines } = deckStructures(osmGround)
-  let typical = null
-  const paths = new Paths()
-  for (const a of areas) paths.push(toPath(a.ring))
-  let unmapped = 0
-  for (const l of lines) {
-    const wM = l.widthM ?? (typical ??= defaultDeckWidthM())
-    if (l.widthM == null) unmapped++
-    const co = new ClipperOffset(), out = new Paths()
-    co.AddPath(toPath(l.line), JoinType.jtMiter, EndType.etOpenButt)
-    co.Execute(out, (wM / 2) * SCALE)
-    for (const p of out) paths.push(p)
-  }
-  const union = paths.length ? clip(ClipType.ctUnion, paths, null) : new Paths()
-  const rings = union.map(fromPath)
-  const boxes = rings.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0, x1, z0, z1] })
-  // nonzero over the union's rings: an outer counts +1, a hole −1, so a point in a deck's courtyard is not on the deck
-  const on = (x, z) => { let wn = 0; for (let k = 0; k < rings.length; k++) { const b = boxes[k]; if (x < b[0] || x > b[1] || z < b[2] || z > b[3]) continue; if (inRing(x, z, rings[k])) wn += Math.sign(signedArea(rings[k])) } return wn !== 0 }
-  return { paths: union, on, count: { areas: areas.length, lines: lines.length, unmappedWidth: unmapped, typicalWidthM: typical }, m2: areaM2(union) }
-}
-
-/**
  * THE SHEET'S INPUTS, per cell: `w` = high − ground; `nr` = NO RETURN (no value inside a tile, or a deck); `deck`.
  * ⭐ A deck cell is no return whatever the lidar read there (its deck), so the water runs under it. `ground` is the coarse
  * lidar (NaN = no value) and is cleared on a deck, in place. `covered(x, z)` tells no return from no coverage.
@@ -205,6 +178,7 @@ export function markSheet({ ground, W, H, X, Z, highAt, onDeck, covered }) {
   }
   return { w, nr, deck, noLidar, noCover, deckCells }
 }
+
 
 /** The cells on the sheet's wet/dry edge: a wet cell beside a dry one with a lidar value, or the reverse. */
 export function edgeCells(wet, w, W, H) {

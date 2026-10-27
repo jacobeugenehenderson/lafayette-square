@@ -28,7 +28,8 @@ import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
 import { readCoast, COAST_FILE } from '../cartograph/coastFile.mjs'
-import { markSheet, floodFromEdge, deckFootprints, wound, flattenedWater } from '../cartograph/bake-coast.mjs'
+import { markSheet, floodFromEdge, wound, flattenedWater } from '../cartograph/bake-coast.mjs'
+import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 
@@ -92,6 +93,23 @@ console.log('── E. the datum is the flattened water, found before any line')
   for (const k of [3, 4]) ground[k] = 174.9
   const F = flattenedWater(wet, deck, ground)
   say(F && Math.abs(F.navd88 - 174.44) < 1e-9 && F.cells === 10 && F.share === 0.8, `flattenedWater is the mode of the wet cells, decks excluded (${JSON.stringify(F)})`)
+}
+
+// ── F. the street rides the deck ──
+console.log('── F. a deck that carries a street leaves the water; one that carries none stays')
+{
+  // water south of z = 0 (a 200 m square); two 10 m wide piers out from the shore: one carries a street, one does not
+  const water = [[[0, 0], [200, 0], [200, 200], [0, 200]]], arcs = [[[0, 0], [200, 0]]]
+  const ground = { man_made: [
+    { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 50, z: -20 }, { x: 50, z: 80 }], isClosed: false },
+    { tags: { man_made: 'pier', width: '10' }, coords: [{ x: 150, z: -20 }, { x: 150, z: 80 }], isClosed: false }] }
+  const streets = [{ skelId: 'wharf-st', points: [[50, -40], [50, 70]] }]
+  const sd = streetDecks(ground, streets)
+  say(sd.decks.length === 1 && sd.decks[0].streets.join() === 'wharf-st', `by construction, only the deck the street crosses carries it (${sd.decks.length} deck: ${sd.decks.map(d => d.streets).join()})`)
+  const w = waterWithoutDecks(water, arcs, sd.rings), area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+  const A = w.rings.reduce((t, r) => t + area(r), 0)
+  say(Math.abs(A - (40000 - 10 * 80)) < 1, `the water loses the street deck's 800 m² and keeps the other pier's (${A.toFixed(0)} m²)`)
+  say(w.rings.every(r => area(r) > 0) && w.arcs.length === 2, `no hole is made (the deck touches the shore), and the shoreline arc is cut where it runs under the deck (${w.arcs.length} pieces)`)
 }
 
 // ── D. per town ──
