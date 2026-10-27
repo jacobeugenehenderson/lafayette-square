@@ -351,11 +351,11 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   // ⭐ THE DRY BED, RECORDED BEFORE IT IS DUG (Boz, 2026-10-25): a cell under the mask whose lidar stood above that
   // cell's HIGH water is land the coast called water. The bed overwrites it below, so this is the only place it can be
   // seen. Rock is kept and named apart (rock.runs). ▶ node checks/claims-the-shore-agrees-with-the-field.mjs
-  const dryBed = new Uint8Array(mask.length)
+  const dryBed = new Uint8Array(mask.length), dryAbove = new Float32Array(mask.length)
   let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0, atHigh = 0
   for (let k = 0; k < mask.length; k++) {
     if (!mask[k] || rock.has(k)) continue
-    if (Number.isFinite(normalized[k]) && normalized[k] > highAt(k)) dryBed[k] = 1
+    if (Number.isFinite(normalized[k]) && normalized[k] > highAt(k)) { dryBed[k] = 1; dryAbove[k] = normalized[k] - highAt(k) }
     const deep = deepestAt(k)
     let h = Math.min(A * Math.pow(dist[k], 2 / 3), deep)
     if (known && Number.isFinite(known.depth[k])) {
@@ -383,6 +383,9 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
     return out
   }
   const runs = known ? rowRuns(k => fromFloor[k]) : []   // which cells the floor drew
+  // the dry bed's runs, and per cell in run order the lidar's height above that cell's HIGH (mm): what the land the coast called water stood at
+  const dryRuns = rowRuns(k => dryBed[k]), dryAboveM = []
+  for (let q = 0; q < dryRuns.length; q += 3) for (let i = dryRuns[q + 1]; i <= dryRuns[q + 2]; i++) dryAboveM.push(+dryAbove[dryRuns[q] * width + i].toFixed(3))
   const fade = vis.fade ?? finding('r-bottom-visibility-default').value.fadeOverM
   console.log(`  BED: ${n.toLocaleString()} cells under the water · h = ${A.toFixed(3)}·y^(2/3) (sand ${sand.value} mm — ${sand.from})`)
   console.log(`    visible to ${vis.value.toFixed(2)} m, fading over the last ${fade.toFixed(2)} m — ${vis.from}`)
@@ -400,7 +403,7 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
              ? { source: `${known.rung} (raw/bathymetry-sources.txt)`, tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
                  cellM: known.cellM, cells: nFloor, aboveZeroCells: above, cappedAtHighCells: atHigh, seam: known.seam, runs }
              : { none: floor?.none || 'not asked' },
-           dry: { cells: dryBed.reduce((t, v) => t + v, 0), cellM2: +(stepX * stepZ).toFixed(4), from: 'cells under the mask whose lidar stood above their HIGH level, before the bed was written (rock excluded)', runs: rowRuns(k => dryBed[k]) },
+           dry: { cells: dryBed.reduce((t, v) => t + v, 0), cellM2: +(stepX * stepZ).toFixed(4), from: 'cells under the mask whose lidar stood above their HIGH level, before the bed was written (rock excluded)', runs: dryRuns, aboveHighM: dryAboveM },
            // ⭐ The kept rock (rockCells): stands above the level by ruling, so the check names it rather than calling it proud.
            rock: { cells: rock.size, from: 'structures.mjs stoneStructures (mapped breakwaters/groynes) × the lidar above the water', runs: rock.size ? rowRuns(k => rock.has(k)) : [] } }
 }

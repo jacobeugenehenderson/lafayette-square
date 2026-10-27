@@ -8,7 +8,9 @@
 //       terrain.json `bed.dry` (row runs; rock excluded, `bed.rock`). Read here, never recomputed (the slot-run
 //       cross-check is checks/claims-the-dry-bed-record-is-the-lidar.mjs). ⭐ GATED AT 0 off the line (Boz, 2026-10-25):
 //       a cell whose centre lies within one grid diagonal of a coast edge straddles a line traced at the source's pixel,
-//       so it may read either way; those are printed, never gated. No dry baseline is carried.
+//       so it may read either way; those are printed, never gated. No dry baseline is carried. ⭐ A dry cell inside a tagged
+//       deck footprint (structures.mjs#deckFootprints, masked as water by rule) is LISTED by identity, never gated (Jacob's
+//       ruling (c), 2026-10-27): its footprint, OSM features, m² and the lidar above HIGH (`bed.dry.aboveHighM`, per cell).
 //   (b) WET LAND — on terrain.bin: ground OUTSIDE the mask, inside the disc, below that cell's LOW level: water at every
 //       tide that the coast called land (Zob's definition; Boz, 2026-10-25).
 //   and, printed for the sand line (step 4), never gated: the INTERTIDAL — ground outside the mask below HIGH and
@@ -27,6 +29,7 @@ import { waterLevels } from '../cartograph/waterLevel.mjs'
 import { localBB, projectorOf, geographyFor } from '../cartograph/geography.mjs'
 import { ringsInDrawing } from '../cartograph/coast-in-drawing.mjs'
 import { discOf } from '../cartograph/boundaryRecords.mjs'
+import { deckFootprints, deckStructures } from '../cartograph/structures.mjs'
 
 // ⭐ (b)'s GATE (Boz, 2026-10-27): only wet land that TOUCHES ①'s water is a shore drawn short; land below the level apart from it
 // stays land, as ruled (a polder, the back of a dyke), and is printed as information. A touching region passes when its depth
@@ -49,6 +52,21 @@ const overBound = (sites, rmsezM) => sites.filter(w => w.touches && w.deep > rms
   const o = overBound(planted, 0.1)
   if (!(o.length === 1 && o[0].deep === 0.2)) { console.log('⛔ the (b) gate is blind: a planted touching region 0.2 m below LOW past a 0.1 m bound is not caught, or a hollow apart from the water is'); process.exit(1) }
   console.log('✅ the (b) gate sees: of three planted regions, only the touching one past the bound fails (a deeper hollow apart from the water does not)')
+}
+// ⭐ (a) UNDER A DECK (Jacob, 2026-10-27, ruling (c): "bake it and I'll look"): a tagged deck footprint is masked as water by
+// rule (bake-coast), so the lidar under it may read the deck, not the water. A dry-bed cell inside a deck footprint is LISTED BY
+// IDENTITY (the footprint, its OSM features, m², the lidar above HIGH), never counted; every other dry cell off the line gates.
+// `deckOf(x, z)` → the footprint's index, or −1. The one decision, so the planted row below reads the same code as the towns.
+const sortDry = (cells, deckOf) => {
+  const listed = new Map(), gated = []
+  for (const c of cells) { const k = deckOf(c.x, c.z); if (k < 0) { gated.push(c); continue }
+    if (!listed.has(k)) listed.set(k, []); listed.get(k).push(c) }
+  return { listed, gated }
+}
+{ // SEEN TO FAIL, every run: one planted dry cell under a deck, one beside it
+  const { listed, gated } = sortDry([{ x: 5, z: 5, above: 2 }, { x: 50, z: 5, above: 2 }], (x, z) => (x < 10 && z < 10 ? 0 : -1))
+  if (!(listed.get(0)?.length === 1 && gated.length === 1 && gated[0].x === 50)) { console.log('⛔ the (a) deck listing is blind: a planted dry cell beside a deck is not gated, or one under it is not listed'); process.exit(1) }
+  console.log('✅ the (a) deck listing sees: of two planted dry cells, the one under a deck is listed and the one beside it gates')
 }
 const P50_M = 4.34   // the brief's §0: the lidar trace's p50 offset off ①'s OSM coast on Huron
 
@@ -140,11 +158,26 @@ for (const scene of scenes) {
     const near = (x, z) => { for (let gx = Math.floor((x - diag) / CELL); gx <= Math.floor((x + diag) / CELL); gx++) for (let gz = Math.floor((z - diag) / CELL); gz <= Math.floor((z + diag) / CELL); gz++)
       for (const [a, b] of segs.get(gx + ',' + gz) || []) { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0
         if (Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= diag) return true } return false }
-    let onLine = 0, off = 0
-    const R = dry.runs
-    for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) { if (near(X(i), Z(R[q]))) onLine++; else off++ }
-    if (onLine + off !== dry.cells) { console.log(`  ⛔ (a) bed.dry says ${dry.cells} cells and its runs hold ${onLine + off}`); red++ }
-    const ok = off === 0
+    let onLine = 0, n = 0
+    const R = dry.runs, above = dry.aboveHighM, offCells = []
+    if (above && above.length !== dry.cells) { console.log(`  ⛔ (a) bed.dry says ${dry.cells} cells and carries ${above.length} heights above HIGH`); red++ }
+    for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++, n++) { if (near(X(i), Z(R[q]))) onLine++; else offCells.push({ x: X(i), z: Z(R[q]), above: above ? above[n] : null }) }
+    if (n !== dry.cells) { console.log(`  ⛔ (a) bed.dry says ${dry.cells} cells and its runs hold ${n}`); red++ }
+    // the deck footprints, each named by the OSM features that lie in it (a feature's vertex inside its ring, or on it within 1 mm)
+    const decks = deckFootprints(osm.ground), st = deckStructures(osm.ground)
+    const inR = (x, z, r) => { let c = false; for (let a = 0, b = r.length - 1; a < r.length; b = a++) { const [xa, za] = r[a], [xb, zb] = r[b]; if ((za > z) !== (zb > z) && x < (xb - xa) * (z - za) / (zb - za) + xa) c = !c } return c }
+    const onEdge = (x, z, r) => r.some((p, a) => { const q = r[(a + 1) % r.length], dx = q[0] - p[0], dz = q[1] - p[1], L2 = dx * dx + dz * dz || 1, u = Math.max(0, Math.min(1, ((x - p[0]) * dx + (z - p[1]) * dz) / L2)); return Math.hypot(x - p[0] - u * dx, z - p[1] - u * dz) <= 1e-3 })
+    const deckOf = (x, z) => decks.on(x, z) ? decks.rings.findIndex(r => inR(x, z, r)) : -1
+    // ⛔ without the per-cell heights (a terrain baked before aboveHighM) nothing is listed: every dry cell off the line gates, as before
+    const { listed, gated } = above ? sortDry(offCells, deckOf) : { listed: new Map(), gated: offCells }
+    if (!above) console.log(`     (a) bed.dry carries no aboveHighM (baked before it was recorded) — no deck listing; every dry cell off the line gates (▶ re-bake the terrain)`)
+    for (const [k, cs] of [...listed].sort((a, b) => b[1].length - a[1].length)) {
+      const r = decks.rings[k], who = [...st.areas.map(f => ({ ...f, p: f.ring })), ...st.lines.map(f => ({ ...f, p: f.line }))].filter(f => f.p.some(([x, z]) => inR(x, z, r) || onEdge(x, z, r)))
+      const hs = cs.map(c => c.above).sort((a, b) => a - b), cx = cs.reduce((t, c) => t + c.x, 0) / cs.length, cz = cs.reduce((t, c) => t + c.z, 0) / cs.length
+      console.log(`     (a) UNDER A DECK, listed (not gated): footprint ${k} — ${who.length ? [...who.filter(f => f.name).map(f => `${f.kind} "${f.name}" osm ${f.id}`), ...(who.some(f => !f.name) ? [`${who.filter(f => !f.name).length} unnamed (osm ${who.filter(f => !f.name).slice(0, 3).map(f => f.id).join(', ')}${who.filter(f => !f.name).length > 3 ? ', …' : ''})`] : [])].join(' + ') : 'NO OSM FEATURE FOUND'} · ${cs.length} cell(s) = ${Math.round(cs.length * dry.cellM2).toLocaleString()} m² at (${cx.toFixed(0)}, ${cz.toFixed(0)}) · lidar above HIGH median ${hs[hs.length >> 1].toFixed(2)} m, max ${hs[hs.length - 1].toFixed(2)} m`)
+    }
+    const off = gated.length, ok = off === 0
+    for (const c of gated.slice(0, 8)) console.log(`     (a) dry cell off the line, gated: (${c.x.toFixed(1)}, ${c.z.toFixed(1)})${c.above == null ? '' : ` · lidar ${c.above.toFixed(2)} m above HIGH`}`)
     console.log(`  ${ok ? '✅' : '⛔'} (a) dry bed off the line: ${off.toLocaleString()} cell(s) = ${Math.round(off * dry.cellM2).toLocaleString()} m² (gate 0) · on the line (within ${diag.toFixed(2)} m of a coast edge): ${onLine.toLocaleString()} cell(s) = ${Math.round(onLine * dry.cellM2).toLocaleString()} m², printed · rock kept apart: ${tj.bed.rock?.cells ?? 0}`)
     if (!ok) red++
   }

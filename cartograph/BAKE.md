@@ -114,7 +114,7 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 >   a bare-earth DEM carries no deck), recorded as `terrain.json#decks`.
 >   ▶ `node checks/claims-the-shore-meets-the-field-at-high.mjs`
 > - ⭐ **The dry bed is recorded before it is dug** (`terrain.json#bed.dry`: cells under the water whose lidar stood
->   above their HIGH level, rock apart). ▶ `node checks/claims-the-shore-agrees-with-the-field.mjs`
+>   above their HIGH level, each with that height, rock apart; under a tagged deck they are listed by name, not gated). ▶ `node checks/claims-the-shore-agrees-with-the-field.mjs`
 > - ⛔ **NO DEM ⇒ THE BAKE STOPS.** Elevation is declared `ABSENT.FALSE_MAP`: flat ground is
 >   town-neutral only where the town is flat, and a dune town baked as a plane is a FALSE map, not a
 >   degraded one. The `terrain` step FAILS and prints the command for that town. **The way past it is
