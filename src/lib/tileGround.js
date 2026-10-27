@@ -2494,6 +2494,19 @@ function insertOnEdges(ring, owners, pts, ok) {
 // along them. Where only one side reaches a cell vertex c (a join, at the run's end), it goes on the cell edge from c whose
 // parameter takes it strictly inside — exactly one, else refuse. KEY-ANCHORED: no containment, no distance. Proves itself:
 // every water-run vertex of iA must end in a cell; any that does not REFUSES by name. Returns { tile, added }.
+// ⭐ THE ONE CELL EDGE AT A KEY THAT HOLDS THE POINT (Zob's rule, Boz's go, 2026-10-26). Of the two edges of ring `rr` incident to
+// vertex `ic` (the bracket's key — selection is anchored there), keep those whose parameter takes `v` strictly inside AND that hold
+// it within the boolean's own containment (two grid units, insertOnEdges'); exactly one is returned, none or two is null (the
+// caller refuses). ⛔ Not "the far end is on the water run": at a thin cell's corner (the ε strip, its sides 5 mm apart) both
+// edges take the point's parameter, and the far-end key picked the wrong one (PTown (204.406, 67.434): 105 mm off; the right
+// edge holds it at 0.06 mm). Exported for the planted row.
+export function incidentEdgeHolding(rr, ic, v) {
+  const m = rr.length, q = toClipper(v)
+  const opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => { const P = toClipper(rr[u]), Q = toClipper(rr[w]), dx = Q.X - P.X, dy = Q.Y - P.Y, L2 = dx * dx + dy * dy
+    if (!L2) return false; const t = ((q.X - P.X) * dx + (q.Y - P.Y) * dy) / L2; if (!(t > 0 && t < 1)) return false
+    return Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.sqrt(L2) <= 2 })
+  return opts.length === 1 ? opts[0] : null
+}
 function shareWaterRunIntoShore(tile, who) {
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
   // the vertices of iaFull on a water run (either edge stamped WATER_EDGE_SKEL), by key
@@ -2542,11 +2555,7 @@ function shareWaterRunIntoShore(tile, who) {
     else { // one side only (a run's end): the cell edge from that side's vertex that takes the point strictly inside — exactly one
       const c = lo || hi
       if (c) { const [a, b] = at.get(K(c)), rr = rings[a][b], m = rr.length, ic = rr.findIndex(w => K(w) === K(c))
-        let opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => { const t = param(v, rr[u], rr[w]); return t > 0 && t < 1 })
-        // at a thin cell's corner both edges from c can take the point (PTown, 2026-10-26): the land edge's far end is a vertex of
-        // the block's water run, the seaward edge's is not — chosen BY KEY, never by distance
-        if (opts.length > 1) opts = opts.filter(([u, w]) => wet.has(K(rr[u === ic ? w : u])))
-        if (opts.length === 1) placed = tryEdge(rr, ...opts[0]) } }
+        const e = incidentEdgeHolding(rr, ic, v); if (e) placed = tryEdge(rr, ...e) } }
     // ⭐ VERIFIED, never chosen, by distance (Zob): the key-chosen edge must hold the point within the boolean's own containment
     // (two grid units, insertOnEdges'); past it refuses. Counted and printed, as nodeRimWithPaint's far / farMax.
     if (placed) { const [P, Q] = placed.map(toClipper), q = toClipper(v), dx = Q.X - P.X, dy = Q.Y - P.Y, d = Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.hypot(dx, dy)

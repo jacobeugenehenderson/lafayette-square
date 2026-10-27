@@ -67,6 +67,9 @@ const RIM_MUTANTS = [
   ['a cut cell ring goes to the largest piece, never refused', 'hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)', 'hit = [a.indexOf(Math.max(...a))]'],
   ['the cells\' rim crossings are not shared into the ring', 'const sc = shareRimCrossings(r, ringOwners[i], flat, input, stamp); r = sc.ring; ringOwners[i] = sc.owners;', 'const sc = { added: 0 };'],
 ]
+// the corner mutant: the far-end-on-the-water-run tie-break restored (it chose the wrong edge at PTown, 2026-10-26)
+RIM_MUTANTS.push(['a thin cell\'s corner picked by the far end\'s key', '    return Math.abs((q.X - P.X) * dy - (q.Y - P.Y) * dx) / Math.sqrt(L2) <= 2 })\n  return opts.length === 1 ? opts[0] : null',
+  "    return true })\n  const W = globalThis.__farWet || new Set(), Kk = (p) => { const c = toClipper(p); return c.X + ',' + c.Y }\n  const f = opts.length > 1 ? opts.filter(([u, w]) => W.has(Kk(rr[u === ic ? w : u]))) : opts\n  return f.length === 1 ? f[0] : null"])
 const rimMutants = []
 for (const [name, a, b] of RIM_MUTANTS) {
   if (tgSrc.split(a).length !== 2) { console.log(`⛔ NOT CHECKED — the rim mutant's anchor (${name}) occurs ${tgSrc.split(a).length - 1} time(s) in tileGround.js, not once`); process.exit(2) }
@@ -93,7 +96,18 @@ for (const [name, a, b] of RIM_MUTANTS) {
   let m2 = null; try { m2 = C2.tg.cutCellRing(cell, disc).flat().some(v => v[0] === 9 && v[1] === 2) ? 'kept' : 'lost' } catch (e) { m2 = 'refused' }
   const ok2 = kept && m2 !== 'kept'
   console.log(`${ok2 ? '✅' : '⛔'} (R) planted rim cut: a collinear vertex inside the disc on a ring across the rim — live ${kept ? 'keeps it' : 'LOSES it'}; without preserving collinear vertices ${m2 === 'refused' ? 'the producer refuses (its proof)' : m2}`)
-  if (ok2) C2.red++; else { console.log('⛔ the planted rim cut cannot see a dropped collinear vertex'); process.exit(1) } }
+  if (ok2) C2.red++; else { console.log('⛔ the planted rim cut cannot see a dropped collinear vertex'); process.exit(1) }
+  // (A′) planted, A THIN CELL'S CORNER (PTown (204.406, 67.434), 2026-10-26): the bracket key c and its two cell edges; the point
+  // lies 0.06 mm off one and 105 mm off the other, and both take its parameter. Live keeps the one that HOLDS it; the far-end
+  // tie-break (the far end of the other edge is on the water run) picks the wrong one
+  const { incidentEdgeHolding } = await import('../src/lib/tileGround.js'), C3 = rimMutants.find(m => m.name.startsWith('a thin cell'))
+  const rr = [[199.773, 73.253], [204.472, 67.351], [195.439, 62.112]], vv = [204.406, 67.434]
+  const live3 = incidentEdgeHolding(rr, 1, vv)
+  globalThis.__farWet = new Set([Math.round(195.439 * CLIP_SCALE) + ',' + Math.round(62.112 * CLIP_SCALE)])
+  const mut3 = C3.tg.incidentEdgeHolding(rr, 1, vv); delete globalThis.__farWet
+  const ok3 = JSON.stringify(live3) === '[0,1]' && JSON.stringify(mut3) === '[1,2]'
+  console.log(`${ok3 ? '✅' : '⛔'} (A′) planted thin-cell corner: live places it on edge ${JSON.stringify(live3)} (the one holding it, 0.06 mm); the far-end tie-break picks ${JSON.stringify(mut3)} (105 mm off)`)
+  if (ok3) C3.red++; else { console.log('⛔ the planted corner cannot tell containment from the far-end key'); process.exit(1) } }
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]
 const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
