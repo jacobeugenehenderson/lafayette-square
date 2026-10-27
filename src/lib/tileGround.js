@@ -8359,7 +8359,7 @@ export function buildTileGround(ribbons, opts = {}) {
               // ⭐ ONE WATER IS ONE RUN, SIDE-BLIND (Boz's ruling, Zob's read of every reader, 2026-10-27): ①'s coast-ink owners
               // carry a side and the bare water ring's (wIdx) is minted 'right', so a face that touches both would split one shore
               // into two runs, and a needle tip retraced across them was two owners at one retrace (PTown's spit). A deck's
-              // water stays its own (`|deck${k}`); the run's side is written null. HELD (Boz, 2026-10-27): it lands with ①'s needle-tip root fix and its check.
+              // water stays its own (`|deck${k}`); the run's side is written null. ▶ checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs
               const isWater = o?.skelId === WATER_EDGE_SKEL
               const key = !o ? null : isWater ? `${WATER_EDGE_SKEL}${o.deck != null ? `|deck${o.deck}` : ''}`
                 : `${o.skelId}|${o.side}|${o.segOrd}${o.deck != null ? `|deck${o.deck}` : ''}`
