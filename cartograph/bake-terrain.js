@@ -515,7 +515,7 @@ async function main() {
   const water = wd ? waterRecord({ mapDir: MAP_DIR, scene: SCENE, auth: waterAuthoring(), wgs84ToLocal, zero: baseElev }) : null
   const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor, water) : null
   // ⭐ THE STREET RIDES THE DECK: each street deck the mint took out of the water is held flat at its land root, BEFORE the
-  // stamp, so the stamp meets its water edges at HIGH like any coast (shoreStamp.mjs#deckHeights; Boz 2026-10-26).
+  // stamp, so the stamp ramps the water beside it like any coast's (shoreStamp.mjs#deckHeights; Boz 2026-10-26).
   const decks = wd ? (() => {
     const frozen = JSON.parse(fs.readFileSync(join(CLEAN_DIR, 'map.json'), 'utf8')).layers?.ribbons?.streetDecks
     if (frozen === undefined) throw new Error(`⛔ the deck: map.json's ① predates its street decks (no streetDecks field) — ▶ re-pour ${SCENE}`)

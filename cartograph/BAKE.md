@@ -105,9 +105,11 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
   `node checks/claims-water-depth-reads-the-level.mjs`
 > - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** The terrain step declares `clean/coast.json` (by content) beside
 >   the computed import closure of `bake-terrain.js`, never a hand list of files.
-> - ⭐ **THE FIELD MEETS ①'s COAST AT HIGH** (`shoreStamp.mjs#stampCoast`, after the bed): at the corner nodes of every cell
->   ①'s line crosses, h − HIGH = s·d (signed distance; one slope per ring, the bed's own, capped by the tide), so the
->   shore on screen IS ①'s line; land is only raised, never lowered. Recorded as `terrain.json#stamp`.
+> - ⭐ **THE DRAWN SHORE IS ①'s LINE** (Jacob, 2026-10-27: "yes pin the coast"): the ground bake pins every vertex on ①'s
+>   coast to HIGH and clamps the other corners of its triangles by side, land max(field, HIGH) and water min(field, HIGH)
+>   (`coastPins.mjs`; `ground.json#drawnRaw`). The field only SHAPES the bed (`shoreStamp.mjs#stampCoast`, after the bed):
+>   the seaward corners of every cell ①'s line crosses ramp up to HIGH (one slope per ring, the bed's own, capped by the
+>   tide); land is never written. Recorded as `terrain.json#stamp`.
 >   A street DECK (MacMillan Wharf: "the street rides the deck") is held flat at its land root first (`deckHeights`;
 >   a bare-earth DEM carries no deck), recorded as `terrain.json#decks`.
 >   ▶ `node checks/claims-the-shore-meets-the-field-at-high.mjs`

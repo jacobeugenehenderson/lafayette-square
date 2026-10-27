@@ -1,18 +1,20 @@
 #!/usr/bin/env node
-// CLAIM — THE FIELD MEETS ①'s COAST AT HIGH, ON THE LINE (BRIEF-the-shore-is-one-line §3 step 2b; shoreStamp.mjs#stampCoast).
+// CLAIM — THE DRAWN GROUND MEETS ①'s COAST AT HIGH, ON THE LINE, AND THE BED RAMPS TO IT (BRIEF-the-shore-is-one-line §3 step 2b;
+// coastPins.mjs#pinTheCoast, shoreStamp.mjs#stampCoast).
 //
 // The shore on screen is where the water sheet meets the height field by depth test, so ①'s line is the shore only if the
 // field crosses HIGH exactly there. ASSERTS, on a drawn town (a slanted straight coast; a beach above HIGH with one low
 // dip; a bed that drops off at the shore), through the real stampCoast and coastFile.mjs#maskOf:
-//   1. along ①'s line (away from its ends), the field's bilinear value − HIGH is 0 (to 1e-6 m);
-//   2. landward, no node is ever LOWERED (a bluff above HIGH stands);
+//   1. every SEAWARD corner of a cell ①'s line crosses (the cells found by this check's own sampling) is on the ramp
+//      HIGH − s·d (to 1e-5 m);
+//   2. no LANDWARD node is written at all, raised or lowered (a dip, a bluff and a seawall stand as the lidar has them;
+//      the drawn line is the ground's pin, §8);
 //   3. on a tidal town, the seaward ramp spans at least two cells between LOW and HIGH;
 //   4. a bed that does not fall seaward REFUSES by name;
-//   7. ISLANDS (a hole in ①'s water, Jacob 2026-10-26): around an island in open water the field meets HIGH on its shore
-//      and no island node is lowered; an island in a narrow arm, with no bed of its own two to four cells out, takes the
+//   7. ISLANDS (a hole in ①'s water, Jacob 2026-10-26): around an island in open water the bed ramps on the island's
+//      own slope and no island node is written; an island in a narrow arm, with no bed of its own two to four cells out, takes the
 //      slope of the water holding it, RECORDED (slopeFrom); an island inside no water ring REFUSES; and every ring records
-//      the share of its slope samples on a MEASURED floor (slopeFloorShare; null when borrowed); and a write deeper than
-//      the deepest bed REFUSES;
+//      the share of its slope samples on a MEASURED floor (slopeFloorShare; null when borrowed);
 //   8. THE PIN (coastPins.mjs; Jacob 2026-10-27 "yes pin the coast"): on a drawn lake with an island, in two groups sharing
 //      every point, written in bake-ground's section format and read back through drawnGround.js: every point on ①'s rings is
 //      pinned and the drawn ground is HIGH all along the line; beside it land ≥ HIGH and water ≤ HIGH; a polder two cells
@@ -22,22 +24,39 @@
 //   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
 //      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
 //      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
-// MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
-// the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench) · the mask
-// filled per ring (an island read as water) · the island's borrowed slope dropped (it refuses) · the nearest search
-// stopping at the first radius with a hit, or at the first hit in scan order · the floor share never counted · the
-// deepest-bed refusal dropped.
+// MUTANTS (each RED; `--mutants` runs the marked ones on a copy of shoreStamp.mjs): the stamp dropped* · land written
+// (the old landward raise)* · the crossed seaward nodes take max(bed, ramp)* · the tidal cap dropped* · the tide's
+// extension takes the pure ramp (a trench)* · the mask filled per ring (an island read as water) · the island's borrowed
+// slope dropped (it refuses)* · the nearest search stopping at the first hit in scan order · the floor share never counted*.
 //
-//   node checks/claims-the-shore-meets-the-field-at-high.mjs [--mutants]
-import { readFileSync, existsSync, readdirSync } from 'node:fs'
+//   node checks/claims-the-shore-meets-the-field-at-high.mjs [--mutants]   (the mutants are loaded from copies in the OS temp dir)
+import { readFileSync, existsSync, readdirSync, writeFileSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { ROOT } from './_scenes.mjs'
-import { stampCoast, deckHeights, nearestCrossed } from '../cartograph/shoreStamp.mjs'
 import { waterWithoutDecks } from '../cartograph/structures.mjs'
 import { maskOf, waterFace } from '../cartograph/coastFile.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 import { makeDrawnGround, drawnRawOf, predatesThePin } from '../src/lib/drawnGround.js'
-import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
+import { makeElevationSampler } from '../src/lib/terrainCommon.js'
+
+// ⭐ the code under test, through ONE loader: the real module, or a mutant's copy in the OS temp dir (`--mutants`)
+const STAMP_HOME = join(ROOT, 'cartograph/shoreStamp.mjs')
+const PIN_HOME = join(ROOT, 'cartograph/coastPins.mjs')
+const load = async (moduleUrl) => import(moduleUrl)
+// each mutation's edit, set before its copy is made (the copy functions take no argument: the loader reads what they return)
+const STAMP_EDIT = { a: null, b: null }, PIN_EDIT = { a: null, b: null }
+const stampMutant = () => { const stampSrc = readFileSync(STAMP_HOME, 'utf8'), { a, b } = STAMP_EDIT
+  if (!stampSrc.includes(a)) throw new Error(`⛔ stamp mutant target gone: ${a}`)
+  const stampCopy = join(mkdtempSync(join(tmpdir(), 'stamp-')), 'shoreStamp.mjs')
+  writeFileSync(stampCopy, stampSrc.replace(a, b).replace("from './waterLevel.mjs'", `from '${pathToFileURL(join(ROOT, 'cartograph/waterLevel.mjs')).href}'`))
+  return pathToFileURL(stampCopy).href }
+const pinMutant = () => { const pinSrc = readFileSync(PIN_HOME, 'utf8'), { a, b } = PIN_EDIT
+  if (!pinSrc.includes(a)) throw new Error(`⛔ pin mutant target gone: ${a}`)
+  const pinCopy = join(mkdtempSync(join(tmpdir(), 'pin-')), 'coastPins.mjs')
+  writeFileSync(pinCopy, pinSrc.replace(a, b))
+  return pathToFileURL(pinCopy).href }
 
 const bad = []
 const say = (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) bad.push(what) }
@@ -60,21 +79,20 @@ const field = (bedDrop = 0.1, beachSlope = 0.02, bedSlope = 0.03) => { const f =
 const WALL = (x) => x >= 130 && x <= 170                       // the wall's cells and ONE cell either side: its transition
 const mask = maskOf(face, W, H, B)
 
-console.log('── 1–2. a lake: the field meets HIGH on the line, and no land is lowered')
+async function stampSections({ stampCoast, deckHeights, nearestCrossed }, say) {
+console.log('── 1–2. a lake: the bed ramps to ①\'s line, and no land is written')
 {
   const f = field(), before = Float32Array.from(f)
-  // ⛔ (2026-10-26) the seawall's reflection here writes −10 m against a deepest bed of −3.53 m, and the stamp now refuses it:
-  // RED until the wall rule is bounded (Zob's (a)/(b), Boz to rule). The refusal is reported, never caught silently.
-  try { stampCoast(f, W, H, B, face, bb, mask, lake(0)) } catch (e) { say(false, `the drawn lake stamps without refusing — ${e.message.split('\n')[0]}`) }
-  let worst = 0, wallMiss = 0
-  for (let x = 20; x <= 180; x += 0.5) { if (WALL(x)) continue; worst = Math.max(worst, Math.abs(bilinear(f, W, H, B, x, lineZ(x)) - 0)) }
-  say(worst < 1e-6, `along ①'s line (the seawall apart), |field − HIGH| ≤ ${worst.toExponential(2)} m`)
-  for (let x = 145; x <= 155; x += 0.5) { let dz = 0; while (dz < 10 && bilinear(f, W, H, B, x, lineZ(x) + dz) > 0) dz += 0.01; wallMiss = Math.max(wallMiss, dz) }
-  say(wallMiss <= 1, `at the seawall the land stands (never lowered) and the HIGH contour sits ${wallMiss.toFixed(2)} m seaward of the line (the wall's rise reflected; ≤ 1 m)`)
-  let ends = 0; for (const x of [130, 132.5, 167.5, 170]) ends = Math.max(ends, Math.abs(bilinear(f, W, H, B, x, lineZ(x))))
-  console.log(`     (printed, not gated: the wall's END cells, where a lowered water node is shared with the next cell, miss HIGH by ≤ ${ends.toFixed(3)} m)`)
-  let lowered = 0; for (let k = 0; k < W * H; k++) if (!mask[k] && f[k] < before[k] - 1e-9) lowered++
-  say(lowered === 0, `no landward node lowered (${lowered})`)
+  let r = null; try { r = stampCoast(f, W, H, B, face, bb, mask, lake(0)) } catch (e) { say(false, `the drawn lake stamps without refusing — ${e.message.split('\n')[0]}`) }
+  // the cells ①'s line crosses, by this check's own sampling of the one shore segment A–C (the bb's edges carry no shore),
+  // at half-steps so a node the line passes exactly through does not count the cells it only touches
+  const crossed = new Set(); for (let u = 0.5; u < 4000; u++) { const x = A[0] + (C[0] - A[0]) * u / 4000, z = A[1] + (C[1] - A[1]) * u / 4000; crossed.add(`${Math.floor(x / 5)},${Math.floor(z / 5)}`) }
+  const corners = new Set(); for (const c of crossed) { const [ci, cj] = c.split(',').map(Number); for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (ci + di < W && cj + dj < H) corners.add((cj + dj) * W + ci + di) }
+  const dist = (k) => { const x = (k % W) * 5, z = Math.floor(k / W) * 5, dx = C[0] - A[0], dz = C[1] - A[1], u = Math.max(0, Math.min(1, ((x - A[0]) * dx + (z - A[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - A[0] - u * dx, z - A[1] - u * dz) }
+  let off = 0, n = 0; if (r) for (const k of corners) if (mask[k]) { n++; if (Math.abs(f[k] - (0 - r.slopePerRing[0] * dist(k))) > 1e-5) off++ }
+  say(r && n > 0 && off === 0, `every seaward corner of a crossed cell is on the ramp HIGH − s·d (${off} of ${n} off it; s ${r?.slopePerRing[0]})`)
+  let land = 0; for (let k = 0; k < W * H; k++) if (!mask[k] && f[k] !== before[k]) land++
+  say(land === 0, `no landward node written, not raised and not lowered: the dip and the seawall stand as the lidar has them (${land} changed)`)
 }
 console.log('── 3. a tidal town: the ramp spans two cells between LOW and HIGH')
 {
@@ -106,7 +124,7 @@ console.log('── 4. a bed that does not fall seaward refuses')
   try { waterFace({ layers: { ribbons: { protopolygon: {} } } }, 'fixture') } catch (e) { threw = /predates/.test(e.message) }
   say(threw, 'a frozen ① with no waterRings field REFUSES (never reads as no coast)')
 }
-console.log('── 6. a street deck is held at its land root, and the stamp meets its water edges at HIGH')
+console.log('── 6. a street deck is held at its land root, and the stamp leaves it standing')
 {
   // a straight shore at z = 100 (water south), the land rising from 0 at the shore; a 10 m pier from z 90 to z 150 at x 100
   const face0 = [[[0, 100], [200, 100], [200, 200], [0, 200]]], deck = [[95, 90], [105, 90], [105, 150], [95, 150]]
@@ -116,9 +134,10 @@ console.log('── 6. a street deck is held at its land root, and the stamp mee
   const D = deckHeights(f, W, H, B, [{ ring: deck, streets: ['wharf-st'] }], m, lake(0), 0.10)
   const onDeck = []; for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const x = i * 5, z = j * 5; if (x > 95 && x < 105 && z > 90 && z < 150) onDeck.push(f[j * W + i]) }
   say(D.length === 1 && onDeck.length && onDeck.every(v => Math.abs(v - D[0].rootM) < 1e-6) && D[0].rootM >= 0, `the deck is flat at its root, ${D[0]?.rootM} m ≥ HIGH, over ${onDeck.length} node(s)`)
+  const held = Float32Array.from(f)
   stampCoast(f, W, H, B, faceD, bb, m, lake(0))
-  const side = Math.abs(bilinear(f, W, H, B, 105, 130) - 0), deckStands = bilinear(f, W, H, B, 100, 130)
-  say(side < 0.02 && deckStands >= D[0].rootM - 1e-6, `the stamp meets the deck's water edge at HIGH (|Δ| ${side.toFixed(3)} m at its side) and the deck stands (${deckStands.toFixed(3)} m)`)
+  let moved = 0; for (let k = 0; k < W * H; k++) if (!m[k] && f[k] !== held[k]) moved++
+  say(moved === 0 && bilinear(f, W, H, B, 100, 130) >= D[0].rootM - 1e-6, `the stamp leaves the held deck (and all land) as it is (${moved} land node(s) changed; the deck at ${bilinear(f, W, H, B, 100, 130).toFixed(3)} m)`)
   let t = false
   try { deckHeights(mk(), W, H, B, [{ ring: [[95, 160], [105, 160], [105, 190], [95, 190]], streets: ['clear'] }], maskOf(face0, W, H, B), lake(0), 0.10) } catch (e) { t = /no land root/.test(e.message) }
   say(t, 'a deck clear of the land REFUSES (an island)')
@@ -146,10 +165,9 @@ console.log('── 7. islands: the stamp runs round each one')
   const f = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i, x = i * 5, z = j * 5
     f[k] = m[k] ? -0.1 - 0.03 * (z - 60) : z < 60 ? 0.02 * (60 - z) : 0.02 * Math.min(x - 80.3, 120.3 - x, z - 110.3, 150.3 - z) }
   const before = Float32Array.from(f), r = stampCoast(f, W, H, B, fc, bb, m, lake(0))
-  let worst = 0
-  for (let u = 10; u <= 30; u += 0.5) for (const [x, z] of [[80.3 + u, 110.3], [80.3 + u, 150.3], [80.3, 110.3 + u], [120.3, 110.3 + u]]) worst = Math.max(worst, Math.abs(bilinear(f, W, H, B, x, z)))
-  let lowered = 0; for (let k = 0; k < W * H; k++) if (!m[k] && f[k] < before[k] - 1e-9) lowered++
-  say(r.islands === 1 && worst < 1e-6 && lowered === 0, `round an island in open water |field − HIGH| ≤ ${worst.toExponential(2)} m on its shore (two cells clear of its corners), ${lowered} island node(s) lowered (slope ${r.slopePerRing[1]}, its own)`)
+  let ramp = 0, landW = 0; for (let k = 0; k < W * H; k++) { if (!m[k] && f[k] !== before[k]) landW++
+    const x = (k % W) * 5, z = Math.floor(k / W) * 5; if (m[k] && f[k] !== before[k] && x > 70 && x < 131 && z > 100 && z < 161) ramp++ }
+  say(r.islands === 1 && r.slopePerRing[1] > 0 && ramp > 0 && landW === 0, `round an island in open water the bed ramps on its own slope (${r.slopePerRing[1]}; ${ramp} water node(s) round it on the ramp) and no land node is written (${landW})`)
   // b: an island in a 20 m arm of the water, its bed all within two cells of a shore: the holder's slope, recorded
   const arm = wnd([[0, 140], [90, 140], [90, 40], [110, 40], [110, 140], [200, 140], [200, 200], [0, 200]], 1), small = wnd([[97.8, 80], [102.8, 80], [102.8, 85], [97.8, 85]], -1)
   const fb = [arm, small], mb = maskOf(fb, W, H, B)
@@ -163,13 +181,6 @@ console.log('── 7. islands: the stamp runs round each one')
   const re = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0), null, half), rn = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0))
   say(re.slopeFloorShare.every(v => v > 0 && v < 1) && rn.slopeFloorShare.every(v => v === 0) && rb.slopeFloorShare[1] === null,
     `each ring records its slope's share on a measured floor (${JSON.stringify(re.slopeFloorShare)}; none given ${JSON.stringify(rn.slopeFloorShare)}; borrowed ${rb.slopeFloorShare[1]})`)
-  // f: a kept land node 0.2 mm from the line, 0.19 m above HIGH (Huron's worst wall, 2026-10-26): its reflection would sink the
-  //    seaward corner to about −4,750 m, deeper than any bed, and the stamp REFUSES rather than write it
-  { const sea = wnd([[0, 100.0002], [200, 100.0002], [200, 200], [0, 200]], 1), ms = maskOf([sea], W, H, B)
-    const gw = new Float32Array(W * H); for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i, z = j * 5
-      gw[k] = ms[k] ? -0.1 - 0.03 * (z - 100) : z === 100 ? 0.19 : 0.02 * (100 - z) + 0.19 }
-    let sunk = false; try { stampCoast(gw, W, H, B, [sea], bb, ms, lake(0)) } catch (e) { sunk = /deeper than the deepest bed/.test(e.message) }
-    say(sunk, 'a wall reflection deeper than the deepest bed REFUSES by name (never written)') }
   // c: an island inside no water ring refuses
   let t = false
   try { stampCoast(field(), W, H, B, [...face, wnd([[10, 10], [20, 10], [20, 20], [10, 20]], -1)], bb, mask, lake(0)) } catch (e) { t = /inside no water ring/.test(e.message) }
@@ -180,6 +191,8 @@ console.log('── 7. islands: the stamp runs round each one')
   const nc = nearestCrossed(bst, 10, 10, 21, 21, 5, 5)
   say(nc?.ri === 1 && Math.abs(nc.dist - 20) < 1e-9, `the slope sample goes to the Euclidean nearest crossed node (ring ${nc?.ri} at ${nc?.dist?.toFixed(2)} m, not ring 0 at 21.21 m)`)
 }
+}
+await stampSections(await load(pathToFileURL(STAMP_HOME).href), say)
 console.log('── 8. the pin: the drawn ground carries ①\'s line (coastPins.mjs; Jacob 2026-10-27 "yes pin the coast")')
 // a 10 m square of 1 m cells, two triangles each, in two groups that share every point (the lake's bed and the lot round
 // it); ①'s water is the square 2…8 with an island 4…6 in it; the field slants through HIGH (0) at x = 5, the island's middle
@@ -247,23 +260,19 @@ async function pinSection(mod, log) {
   return red
 }
 {
-  const r = await pinSection(await import('../cartograph/coastPins.mjs'), console.log)
+  const r = await pinSection(await load(pathToFileURL(PIN_HOME).href), console.log)
   if (r) bad.push(`§8 the pin: ${r} claim(s)`)
   if (process.argv.includes('--mutants')) {
-    const fs = await import('node:fs'), os = await import('node:os'), path = await import('node:path')
-    const src = fs.readFileSync(join(ROOT, 'cartograph/coastPins.mjs'), 'utf8')
-    const swap = (a, b) => { if (!src.includes(a)) throw new Error(`⛔ mutant target gone: ${a}`); return src.replace(a, b) }
     const M = [
-      ['the sides swapped', swap('if (wet) { if (f > H)', 'if (!wet) { if (f > H)')],
-      ['no clamp beside the line', swap('if (wet) { if (f > H) { raw.set(k, H); stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { raw.set(k, H); stats.clampedLand++ } else stats.keptLand++',
-        'if (wet) { if (f > H) { stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { stats.clampedLand++ } else stats.keptLand++')],
-      ['whole faces, not line-adjacent triangles', swap('    if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue\n', '')],
-      ['the line-in-the-mesh refusal dropped', swap('    if (missing.length) throw', '    if (false) throw')],
-      ['the deck refusal dropped', swap('    if (onDeck.length) throw', '    if (false) throw')],
+      ['the sides swapped', 'if (wet) { if (f > H)', 'if (!wet) { if (f > H)'],
+      ['no clamp beside the line', 'if (wet) { if (f > H) { raw.set(k, H); stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { raw.set(k, H); stats.clampedLand++ } else stats.keptLand++',
+        'if (wet) { if (f > H) { stats.clampedWater++ } else stats.keptWater++ }\n      else if (f < H) { stats.clampedLand++ } else stats.keptLand++'],
+      ['whole faces, not line-adjacent triangles', '    if (!isPin[gi][I[t]] && !isPin[gi][I[t + 1]] && !isPin[gi][I[t + 2]]) continue\n', ''],
+      ['the line-in-the-mesh refusal dropped', '    if (missing.length) throw', '    if (false) throw'],
+      ['the deck refusal dropped', '    if (onDeck.length) throw', '    if (false) throw'],
     ]
     let alive = 0
-    for (const [name, text] of M) { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pin-')), f = path.join(dir, 'coastPins.mjs'); fs.writeFileSync(f, text)
-      const q = await pinSection(await import(f), () => {}).catch(() => 1); fs.rmSync(dir, { recursive: true, force: true })
+    for (const [name, a, b] of M) { Object.assign(PIN_EDIT, { a, b }); const q = await pinSection(await load(pinMutant()), () => {}).catch(() => 1)
       console.log(`  mutant: ${name} → ${q ? 'RED ✓' : 'GREEN ✗'}`); if (!q) alive++ }
     if (alive) bad.push(`§8: ${alive} mutant(s) survived`)
   }
@@ -308,7 +317,9 @@ for (const t of readdirSync(join(ROOT, 'public/baked'))) {
     if (coastal) console.log(`  ⚠️ ${t}: NOT CHECKED — its ground predates the pin (no drawnRaw record; ▶ re-bake the ground)`); continue }
   if (!gj.drawnRaw?.pinned) continue                      // no terrain, or no coast: nothing to pin
   towns++
-  const T = loadSceneTerrain(t), L = waterLevels(T.water), gb = readFileSync(bp), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
+  const tj = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', t, 'clean/terrain.json'), 'utf8')), tb = readFileSync(join(ROOT, 'cartograph/data', t, 'clean/terrain.bin'))
+  const T = makeElevationSampler({ ...tj, data: new Float32Array(tb.buffer.slice(tb.byteOffset, tb.byteOffset + tb.byteLength)) }, 1), L = waterLevels(tj.water)
+  const gb = readFileSync(bp), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
   const rings = waterFace(JSON.parse(readFileSync(mp, 'utf8')), 'claims-the-shore-meets-the-field-at-high')
   const r = judgeDrawn(gj, AB, rings, T.getElevationRaw, L.highAt)
   say(r.n > 0 && r.worst <= 1e-5, `${t}: along ①'s coast (${r.n.toLocaleString()} samples on the drawn ground) |drawn − HIGH| ≤ ${r.worst.toExponential(2)} m${r.worstAt ? ` (at ${r.worstAt.map(v => v.toFixed(2)).join(', ')})` : ''}`)
@@ -317,5 +328,22 @@ for (const t of readdirSync(join(ROOT, 'public/baked'))) {
     const caught = !(m.worst <= 1e-5) || m.wrong > 0; console.log(`  mutant: ${t}'s HIGH read 1 cm high → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) bad.push(`§5 mutant survived on ${t}`) }
 }
 if (!towns) console.log('  (no town carries a pinned ground yet)')
+if (process.argv.includes('--mutants')) {
+  const M = [
+    ['the stamp dropped', '    if (!mask[k]) continue                                   // land', '    continue                                   // land'],
+    ['land written (the old landward raise)', '    if (!mask[k]) continue                                   // land', '    // land'],
+    ['the crossed seaward nodes take max(bed, ramp)', 'if (b.crossed) { normalized[k] = ramp;', 'if (b.crossed) { normalized[k] = Math.max(normalized[k], ramp);'],
+    ['the tidal cap dropped', 'if (s > cap) s = cap', ''],
+    ['the tide\'s extension takes the pure ramp (a trench)', 'else if (ramp > normalized[k]) { normalized[k] = ramp; ramped++; stamped[k] = 1 } else bedWon++', 'else { normalized[k] = ramp; ramped++; stamped[k] = 1 }'],
+    ['the island\'s borrowed slope dropped', 'for (let ri = 0; ri < face.length; ri++) if (slopeFrom[ri] !== null) sOf[ri] = sOf[slopeFrom[ri]]', ''],
+    ['the floor share never counted', 'if (floor && floor[k]) onFloor[near.ri]++', ''],
+  ]
+  let alive = 0
+  for (const [name, a, b] of M) { Object.assign(STAMP_EDIT, { a, b }); const mod = await load(stampMutant()); let red = 0
+    const out = console.log, warn = console.warn; console.log = console.warn = () => {}
+    try { await stampSections(mod, (ok) => { if (!ok) red++ }) } catch { red++ } finally { console.log = out; console.warn = warn }
+    console.log(`  stamp mutant: ${name} → ${red ? 'RED ✓' : 'GREEN ✗'}`); if (!red) alive++ }
+  if (alive) bad.push(`the stamp: ${alive} mutant(s) survived`)
+}
 if (bad.length) { console.log(`\n⛔ ${bad.length} claim(s) fail.`); process.exit(1) }
-console.log('\n✅ The field meets ①\'s coast at HIGH, on the line.')
+console.log('\n✅ The drawn ground meets ①\'s coast at HIGH, on the line, and the bed ramps to it.')

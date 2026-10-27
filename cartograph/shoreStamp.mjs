@@ -1,21 +1,20 @@
 /**
- * shoreStamp.mjs — the field meets ①'s coast at HIGH (BRIEF-the-shore-is-one-line §3 step 2b). A pure function, so
+ * shoreStamp.mjs — the bed ramps to ①'s coast (BRIEF-the-shore-is-one-line §3 step 2b; the line itself is the ground's pin, coastPins.mjs). A pure function, so
  * bake-terrain runs it and checks/claims-the-shore-meets-the-field-at-high.mjs exercises it, the same code.
  */
 import { waterLevels as levelsOf } from './waterLevel.mjs'
 
-// ⭐⭐ THE STAMP (BRIEF-the-shore-is-one-line §3 step 2b; Jacob 2026-10-25: ①'s coast IS the high-water mark; Zob's rule).
-// The shore on screen is where the water sheet (at the level) meets this field by depth test, so the field is made to meet
-// ①'s line at HIGH: at the corner nodes of every grid cell ①'s coast crosses, h − HIGH = s·d, with d the node's SIGNED
-// distance to the crossing segment (+ landward) and s ONE slope per ring. Bilinear interpolation reproduces a linear
-// function, so the HIGH contour lies ON ①'s line along every straight stretch (to a cell at a vertex). Landward the field
-// is only ever RAISED (max: a bluff or a seawall above HIGH stands); seaward, at those nodes, it is the ramp, or where a
-// kept landward corner rises steeper, that rise REFLECTED across the line (lowering only water), so the contour is on the
-// line at a wall too. On a tidal town the ramp continues two cells into the water as max(ramp, bed): the tide spans at
-// least two cells (Zob's cap) and real flats still meet the beach. A water node at or above HIGH is counted and named,
-// the kept rock (bake-terrain#rockCells: breakwaters and groynes, ruled stone) apart. s = the bed's own gradient two to four cells seaward (median over the ring), capped at
-// (HIGH − LOW) / 2 cells where HIGH > LOW. ⛔ s ≤ 0 on a ring REFUSES by name. Land outside ①'s water is land at every
-// level: nothing beyond these nodes is touched. The stamped nodes are recorded (row runs) for the contour gate.
+// ⭐⭐ THE STAMP SHAPES THE BED, AND ONLY THE BED (BRIEF-the-shore-is-one-line §3 step 2b; Jacob 2026-10-27 "yes pin the
+// coast"). The drawn shore is ①'s line because the GROUND is pinned there (coastPins.mjs: every vertex on the line at HIGH,
+// its neighbours clamped by side), so the field no longer has to carry the line. What the field still owes is a beach: at the
+// SEAWARD corner nodes of every grid cell ①'s coast crosses, h = HIGH + s·d (d the node's signed distance to the crossing
+// segment, negative seaward; s ONE slope per ring), so the bed rises to meet the shore instead of standing off it as a step.
+// On a tidal town the ramp continues two cells into the water as max(ramp, bed): the tide spans at least two cells (Zob's
+// cap) and real flats still meet the beach. ⛔ LAND IS NEVER WRITTEN: not raised, not lowered (a bluff, a seawall, a polder
+// all stand as the lidar has them). A water node at or above HIGH is counted and named, the kept rock
+// (bake-terrain#rockCells: breakwaters and groynes, ruled stone) apart. s = the bed's own gradient two to four cells seaward
+// (median over the ring), capped at (HIGH − LOW) / 2 cells where HIGH > LOW. ⛔ s ≤ 0 on a ring REFUSES by name. The
+// stamped nodes are recorded (row runs).
 /** The crossed node nearest (i, j) within four cells, Euclidean over the whole 9 × 9 square (Zob, 2026-10-26: a diagonal
  *  at three cells is farther than a straight one at four), as { ri, dist }, or null. It names the ring a bed node's slope
  *  sample belongs to. */
@@ -96,39 +95,15 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   })
   for (let ri = 0; ri < face.length; ri++) if (slopeFrom[ri] !== null) sOf[ri] = sOf[slopeFrom[ri]]
   const islands = holder.filter(h => h !== null).length, borrowed = slopeFrom.filter(h => h !== null).length
-  // ⛔ NO WRITTEN NODE DEEPER THAN THE DEEPEST BED (Boz's ruling, 2026-10-26): the bed's own deepest water node before the
-  // stamp (writeBed's cut, or the deepest measured floor) bounds every seaward write. Deeper is no beach: refused by name.
-  let deepest = Infinity; for (let k = 0; k < width * height; k++) if (mask[k] && normalized[k] < deepest) deepest = normalized[k]
   const stamped = new Uint8Array(width * height)
-  let raised = 0, kept = 0, ramped = 0, walled = 0, bedWon = 0
-  const keptRise = new Map()                                 // landward node kept above the ramp → its rise (h − HIGH)/d
-  // 1. LANDWARD, never lowered: the ramp where it is higher; where the land stands above it (a wall), the land, and its rise
+  let ramped = 0, bedWon = 0
+  // SEAWARD only: at a crossed cell's corner, the ramp; in the tide's extension, max(ramp, bed), so real flats still meet the beach
   for (const [k, b] of best) {
-    if (b.d < 0) continue
-    const i = k % width, j = (k - i) / width, H = L.highAt(X(i), Z(j)), ramp = H + sOf[b.ri] * b.d
-    if (ramp > normalized[k]) { normalized[k] = ramp; raised++ } else { kept++; if (b.d > 0) keptRise.set(k, (normalized[k] - H) / b.d) }
-    stamped[k] = 1
+    if (!mask[k]) continue                                   // land is not ①'s water, by the mask: a node ON the line (d = −0) is water
+    const i = k % width, j = (k - i) / width, ramp = L.highAt(X(i), Z(j)) + sOf[b.ri] * b.d
+    if (b.crossed) { normalized[k] = ramp; ramped++; stamped[k] = 1 }
+    else if (ramp > normalized[k]) { normalized[k] = ramp; ramped++; stamped[k] = 1 } else bedWon++
   }
-  // the wall slope a seaward node owes: the steepest kept landward corner of any crossed cell it shares (Zob, 2026-10-26)
-  const wallS = new Map()
-  for (const c of crossedCells) { const [ci, cj] = c.split(',').map(Number)
-    const corners = [[ci, cj], [ci + 1, cj], [ci, cj + 1], [ci + 1, cj + 1]].filter(([i, j]) => i >= 0 && j >= 0 && i < width && j < height).map(([i, j]) => j * width + i)
-    const sw = Math.max(0, ...corners.map(k => keptRise.get(k) ?? 0))
-    if (sw > 0) for (const k of corners) if (best.get(k)?.d < 0) wallS.set(k, Math.max(wallS.get(k) || 0, sw)) }
-  // 2. SEAWARD: at a crossed cell's corner, the ramp, or the wall's own reflection (no tidal cap: at a wall the waterline
-  //    stays on the wall at every level); in the tide's extension, max(ramp, bed), so real flats still meet the beach
-  for (const [k, b] of best) {
-    if (b.d >= 0) continue
-    const i = k % width, j = (k - i) / width, H = L.highAt(X(i), Z(j)), ramp = H + sOf[b.ri] * b.d
-    if (b.crossed) {
-      const sw = wallS.get(k)
-      if (sw && H - sw * -b.d < ramp) { normalized[k] = H - sw * -b.d; walled++ } else { normalized[k] = ramp; ramped++ }
-      stamped[k] = 1
-    } else if (ramp > normalized[k]) { normalized[k] = ramp; ramped++; stamped[k] = 1 } else bedWon++
-  }
-  const sunk = []; for (const [k] of best) if (stamped[k] && normalized[k] < deepest - 1e-6) sunk.push(k)
-  if (sunk.length) { const w = sunk.reduce((m, k) => normalized[k] < normalized[m] ? k : m, sunk[0])
-    throw new Error(`⛔ the stamp: ${sunk.length.toLocaleString()} node(s) written deeper than the deepest bed (${deepest.toFixed(3)} m), the deepest ${normalized[w].toFixed(3)} m at (${Math.round(X(w % width))}, ${Math.round(Z((w - w % width) / width))}); first at ${sunk.slice(0, 5).map(k => `(${Math.round(X(k % width))}, ${Math.round(Z((k - k % width) / width))})`).join(' · ')} — no beach is that deep`) }
   // ⛔ a bed standing at or above HIGH inside ①'s water is ① contradicting the lidar: counted and named, never clamped
   const above = []
   for (let k = 0; k < width * height; k++) if (mask[k] && !stamped[k] && !(rock && rock[k]) && normalized[k] >= L.highAt(X(k % width), Z((k - k % width) / width))) above.push(k)
@@ -137,9 +112,9 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   for (let j = 0; j < height; j++) { let i0 = -1
     for (let i = 0; i <= width; i++) { const v = i < width && stamped[j * width + i]
       if (v && i0 < 0) i0 = i; else if (!v && i0 >= 0) { runs.push(j, i0, i - 1); i0 = -1 } } }
-  console.log(`  STAMP: ①'s coast at HIGH — ${stamped.reduce((t, v) => t + v, 0).toLocaleString()} node(s): ${raised.toLocaleString()} land raised to the ramp, ${kept.toLocaleString()} land kept (above it), ${ramped.toLocaleString()} water on the ramp, ${walled.toLocaleString()} water off a wall · ${bedWon.toLocaleString()} where the bed stood higher (flats, not stamped) · ${above.length.toLocaleString()} water node(s) at or above HIGH · slope per ring ${sOf.map(v => v ?? '—').join(', ')} · on a measured floor ${slope.map((v, ri) => slopeFrom[ri] !== null ? '—' : `${Math.round(100 * onFloor[ri] / v.length)}%`).join(', ')}${islands ? ` · ${islands} island(s), ${borrowed} on the slope of the water holding them` : ''} · cell ${cell.toFixed(2)} m${tidal ? ' · tidal: two cells of tide seaward' : ''}`)
+  console.log(`  STAMP: the bed ramps to ①'s coast — ${stamped.reduce((t, v) => t + v, 0).toLocaleString()} water node(s) on the ramp (land untouched) · ${bedWon.toLocaleString()} where the bed stood higher (flats, not stamped) · ${above.length.toLocaleString()} water node(s) at or above HIGH · slope per ring ${sOf.map(v => v ?? '—').join(', ')} · on a measured floor ${slope.map((v, ri) => slopeFrom[ri] !== null ? '—' : `${Math.round(100 * onFloor[ri] / v.length)}%`).join(', ')}${islands ? ` · ${islands} island(s), ${borrowed} on the slope of the water holding them` : ''} · cell ${cell.toFixed(2)} m${tidal ? ' · tidal: two cells of tide seaward' : ''}`)
   const slopeFloorShare = slope.map((v, ri) => slopeFrom[ri] !== null ? null : +(onFloor[ri] / v.length).toFixed(3))
-  return { cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, slopeFloorShare, slopeSamples: slope.map(v => v.length), islands, raised, kept, ramped, walled, bedWon, aboveHigh: above.length, tidal, runs }
+  return { cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, slopeFloorShare, slopeSamples: slope.map(v => v.length), islands, ramped, bedWon, aboveHigh: above.length, tidal, runs }
 }
 
 
@@ -147,8 +122,8 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
  * ⭐ THE STREET RIDES THE DECK, ITS HEIGHT (Boz's ruling, 2026-10-26; Jacob 2026-10-25 "a, the street rides the deck"). A
  * bare-earth DEM carries no deck (piers are classified out), so the deck's height is the LAND's at its ROOT, held flat:
  * the root is the land nodes (not ①'s water, outside the footprint) within one cell of the deck's edge, as connected
- * pieces; the deck takes that root's median. Runs after the bed and BEFORE the stamp, so the stamp meets the deck's water
- * edges at HIGH like any coast. Derived, no constant.
+ * pieces; the deck takes that root's median. Runs after the bed and BEFORE the stamp, so the stamp ramps the water beside
+ * it like any coast's. Derived, no constant.
  * ⛔ Refuses, by name: a deck with no land root (it stands clear of the shore: refused at the pour, derive.js) · two or more roots whose
  *    heights differ by more than the lidar's own stated accuracy (`rmsezM`, the registry's f-3dep-ql-rmsez for the
  *    project's QL), never interpolated · a deck whose root stands below HIGH (a deck is above the water).

@@ -27,16 +27,25 @@
 //     · an unnamed reader of the layout                               → ④ RED
 //
 //   node checks/claims-the-drawn-raw-is-one-function.mjs [--mutants]
-// Read-only (the mutants are imported from a temporary copy). Exits 1 when a reader can read a pin differently.
-import fs from 'fs'
-import os from 'os'
-import { join } from 'path'
-import { execFileSync } from 'child_process'
-import { pathToFileURL } from 'url'
+// Read-only (drawnGround.js's mutants are loaded from copies in the OS temp dir). Exits 1 when a reader can read a pin differently.
+import { readFileSync, writeFileSync, mkdtempSync, readdirSync, existsSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { ROOT } from './_scenes.mjs'
 
 const DG = 'src/lib/drawnGround.js', SHADER = 'src/utils/terrainShader.js'
 const BG = 'src/components/BakedGround.jsx', GRAVEL = 'src/components/gravelPathMaterial.js'
-const read = (f) => fs.readFileSync(f, 'utf8')
+const read = (f) => readFileSync(join(ROOT, f), 'utf8')
+// the drawn ground under test, through ONE loader: the real module, or a mutant's copy in the OS temp dir (`--mutants`)
+const DG_HOME = join(ROOT, 'src/lib/drawnGround.js')
+const load = async (moduleUrl) => import(moduleUrl)
+const DG_EDIT = { a: null, b: null }   // the mutation's edit, set before its copy is made
+const dgMutant = () => { const dgSrc = readFileSync(DG_HOME, 'utf8'), { a, b } = DG_EDIT
+  if (!dgSrc.includes(a)) throw new Error(`⛔ mutant target gone: ${a}`)
+  const dgCopy = join(mkdtempSync(join(tmpdir(), 'drawn-raw-')), 'drawnGround.mjs')
+  writeFileSync(dgCopy, dgSrc.replace(a, b))
+  return pathToFileURL(dgCopy).href }
 
 // ④'s table: every reader of ground.bin's layout and how it reads a height. `drawn` — through the drawn ground (a pin, else
 // the field) · `xz` — positions only, no height field · `writer` — the bake that writes it · `buildings` — reads buildings.bin's
@@ -85,13 +94,9 @@ function synthetic({ pinned = true, record = true } = {}) {
 }
 const field = (x, z) => 1 + 0.1 * x + 0.05 * z
 
-async function run(src, log) {
+async function run(D, src, log) {
   let red = 0
   const bad = (sec, msg) => { red++; log(`   ⛔ ${sec} ${msg}`) }
-  const dir = fs.mkdtempSync(join(os.tmpdir(), 'drawn-raw-')), mod = join(dir, 'drawnGround.mjs')
-  fs.writeFileSync(mod, src[DG])
-  const D = await import(pathToFileURL(mod).href + `?t=${Date.now()}${Math.random()}`)
-  fs.rmSync(dir, { recursive: true, force: true })
 
   // ⓪ the twins agree, the sentinel never read as a height
   const T = twins(D.DRAWN_RAW_GLSL)
@@ -184,28 +189,34 @@ async function run(src, log) {
   return red
 }
 
-const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', 'src', 'cartograph', 'checks'], { encoding: 'utf8' }).split('\n')
-  .filter(f => /\.(m?js|jsx)$/.test(f) && !f.includes('/_archive/') && !f.includes('/data/') && fs.existsSync(f))
-const base = () => ({ [DG]: read(DG), [SHADER]: read(SHADER), [BG]: read(BG), [GRAVEL]: read(GRAVEL), files, readers: { ...READERS }, text: (f) => read(f) })
+// every source under src/, cartograph/ and checks/ (the data and the Diary apart), walked from disk
+const walk = (d) => readdirSync(join(ROOT, d), { withFileTypes: true }).flatMap(e => e.isDirectory()
+  ? (e.name === 'node_modules' || e.name === '_archive' || e.name === 'data' ? [] : walk(`${d}/${e.name}`))
+  : /\.(m?js|jsx)$/.test(e.name) && !e.name.startsWith('__') ? [`${d}/${e.name}`] : [])
+const files = ['src', 'cartograph', 'checks'].flatMap(walk).filter(f => existsSync(join(ROOT, f)))
+const base = () => ({ [SHADER]: read(SHADER), [BG]: read(BG), [GRAVEL]: read(GRAVEL), files, readers: { ...READERS }, text: (f) => read(f) })
 const quiet = []   // the mutants' own lines, kept out of the report
-const red = await run(base(), (s) => console.log(s))
+const real = await load(pathToFileURL(DG_HOME).href)
+const red = await run(real, base(), (s) => console.log(s))
 console.log(red ? `⛔ RED — ${red} finding(s)` : '✅ GREEN — one rule for a pinned vertex, CPU and GPU, and every reader of the layout named')
 
 if (process.argv.includes('--mutants')) {
   const swap = (s, a, b) => { if (!s.includes(a)) throw new Error(`⛔ mutant target gone: ${a}`); return s.replace(a, b) }
+  // [name, an edit of drawnGround.js (copied and loaded), or an edit of the other sources this check reads as text]
   const M = [
-    ['the GLSL twin reads the field always', (S) => { S[DG] = swap(S[DG], 'return pin.x > 0.5 ? pin.y : field;', 'return field;') }],
-    ['the JS twin ignores the sentinel', (S) => { S[DG] = swap(S[DG], "pins !== null && pins[v * 4] > 0.5 ? pins[v * 4 + 1] : field", "pins !== null && !Number.isNaN(pins[v * 4 + 1]) ? pins[v * 4 + 1] : field") }],
-    ['partsAt back to the field at the corners', (S) => { S[DG] = swap(S[DG], 'drawnRaw(pins, a, rawAt(ax, az)) * wa + drawnRaw(pins, b, rawAt(bx, bz)) * wb + drawnRaw(pins, c, rawAt(cxx, czz)) * wc', 'rawAt(ax, az) * wa + rawAt(bx, bz) * wb + rawAt(cxx, czz) * wc') }],
-    ['the drawn displacement made from nothing', (S) => { S[SHADER] = swap(S[SHADER], "'transformed.y += _terrainRaw(_tuv) * uExag;', 'transformed.y += _drawnRaw", "'transformed.y += _terrainRaw(_uv) * uExag;', 'transformed.y += _drawnRaw") }],
-    ["BakedGround's FadeMesh drops drawn", (S) => { S[BG] = swap(S[BG], 'patchTerrain(mat, { perVertex: true, terrainNormals: true, drawn: !!geometry.attributes.aDrawnRaw })', 'patchTerrain(mat, { perVertex: true, terrainNormals: true })') }],
-    ['an unnamed reader of the layout', (S) => { delete S.readers['src/harness/lab/stage.js'] }],
+    ['the GLSL twin reads the field always', ['return pin.x > 0.5 ? pin.y : field;', 'return field;']],
+    ['the JS twin ignores the sentinel', ["pins !== null && pins[v * 4] > 0.5 ? pins[v * 4 + 1] : field", "pins !== null && !Number.isNaN(pins[v * 4 + 1]) ? pins[v * 4 + 1] : field"]],
+    ['partsAt back to the field at the corners', ['drawnRaw(pins, a, rawAt(ax, az)) * wa + drawnRaw(pins, b, rawAt(bx, bz)) * wb + drawnRaw(pins, c, rawAt(cxx, czz)) * wc', 'rawAt(ax, az) * wa + rawAt(bx, bz) * wb + rawAt(cxx, czz) * wc']],
+    ['the drawn displacement made from nothing', null, (S) => { S[SHADER] = swap(S[SHADER], "'transformed.y += _terrainRaw(_tuv) * uExag;', 'transformed.y += _drawnRaw", "'transformed.y += _terrainRaw(_uv) * uExag;', 'transformed.y += _drawnRaw") }],
+    ["BakedGround's FadeMesh drops drawn", null, (S) => { S[BG] = swap(S[BG], 'patchTerrain(mat, { perVertex: true, terrainNormals: true, drawn: !!geometry.attributes.aDrawnRaw })', 'patchTerrain(mat, { perVertex: true, terrainNormals: true })') }],
+    ['an unnamed reader of the layout', null, (S) => { delete S.readers['src/harness/lab/stage.js'] }],
   ]
   let alive = 0
-  for (const [name, mutate] of M) {
-    const S = base(); mutate(S)
+  for (const [name, edit, mutate] of M) {
+    const S = base(); if (mutate) mutate(S)
     const t = { ...S, text: (f) => (f in S && typeof S[f] === 'string') ? S[f] : read(f) }
-    const r = await run(t, (s) => quiet.push(s)).catch(e => { quiet.push(e.message); return 1 })
+    let D = real; if (edit) { Object.assign(DG_EDIT, { a: edit[0], b: edit[1] }); D = await load(dgMutant()) }
+    const r = await run(D, t, (s) => quiet.push(s)).catch(e => { quiet.push(e.message); return 1 })
     console.log(`  mutant: ${name} → ${r ? 'RED ✓' : 'GREEN ✗ (the check cannot see it)'}`)
     if (!r) alive++
   }
