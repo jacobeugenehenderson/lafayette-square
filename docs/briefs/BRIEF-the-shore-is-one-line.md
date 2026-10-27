@@ -36,6 +36,12 @@ Three lines that should be one:
 - **A river at the lake's own level is the lake; islands are built** (Jacob 2026-10-26: *"yes river is lake, build islands with the
   floor"*). The lower Huron River, flattened at the lake's sheet, is part of ①'s water face. Islands are holes in the water through
   the mint and bake-ground (holed polygons). Holes smaller than one terrain cell are dropped, counted and named.
+- **The drawn coast is PINNED to HIGH; the bed is measured where surveyed** (Jacob 2026-10-27: *"yes pin the coast, and go with (a)
+  for the bed"*). Every drawn-ground vertex on ①'s coast carries a per-vertex raw override = HIGH (shader and drawnGround read one
+  function); line-adjacent vertices are clamped by SIDE (land ≥ HIGH, water ≤ HIGH), each clamp counted and named. So the visible
+  waterline IS ①'s line at any field resolution. The stamp only SHAPES now; its straddler/wall machinery is removed. Bed (a): the
+  survey where it reads, writeBed's profile elsewhere, and every ring records its floor share. A ground.bin format change: the player
+  side gets Ward's read, and every town is re-baked once.
 - **Water, sand and shore run to the bb and are stamped with everything; the disc stamps last; the sand line is ink in ①,
   made in the pour** (Jacob 2026-10-21 night; `BRIEF-the-rim-is-cut-once §5`).
 - **No fallback:** no lidar, no vertical datum, or no water record ⇒ THROWS by name, never OSM (`coast-from-lidar §3.2`).
