@@ -2230,8 +2230,7 @@
       "file": "checks/claims-radius-has-one-home.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module — hermetic",
-        "computed import of cartograph/boundaryRecords.mjs — read, safe"
+        "importSource of cartograph/commitExtent.mjs — read, safe"
       ]
     },
     {

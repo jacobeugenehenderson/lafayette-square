@@ -13,7 +13,7 @@
  *   · no town's neighborhood.json carries `radius` — the draft is `draftRadius`;
  *   · Extent hydrates the APPLIED radius from the boundary, never from neighborhood.json;
  *   · commit-extent writes the draft as `draftRadius` and never carries a `radius` — judged by RUNNING its record builder
- *     (cartograph/commitExtent.mjs#commitExtentRecords, imported as a data: module) on a town whose prior neighborhood.json carries a legacy `radius`,
+ *     (cartograph/commitExtent.mjs#commitExtentRecords, imported through checks/_importSource.mjs) on a town whose prior neighborhood.json carries a legacy `radius`,
  *     never by matching serve.js's text (the builder left serve.js on 2026-10-25 and the text match went blind);
  *   · rescope writes `draftRadius` and deletes `radius` (inline in serve.js, read from its text);
  *   · fetch.js's heavy pass sizes its square from the boundary.
@@ -37,7 +37,9 @@
  */
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
-import { fileURLToPath, pathToFileURL } from 'url'
+import { fileURLToPath } from 'url'
+import { importSource, sourceOf } from './_importSource.mjs'
+import { splitBoundary } from '../cartograph/boundaryRecords.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DATA = join(ROOT, 'cartograph', 'data')
@@ -85,17 +87,14 @@ function loadSources() {
     }
   }
   return { towns, extent: read('src/cartograph/ExtentApp.jsx'), serve: read('cartograph/serve.js'), fetchJs: read('cartograph/fetch.js'),
-    commitSrc: read('cartograph/commitExtent.mjs'), row: rowFiles() }
+    commitTransform: null, row: rowFiles() }
 }
 
-// THE COMMIT'S WRITE SET, BY RUNNING IT: commitExtent.mjs's source (or a mutant of it) loaded as a data: module whose
-// relative imports are rewritten to cartograph/'s absolute file: URLs (nothing is written), and its record builder run on the first town with an applied disc, its prior
-// neighborhood.json given a legacy `radius`. → { draftRadius, radius: whether `radius` came out, request radius } or { why }
-async function commitWriteSet(src) {
-  const C = join(ROOT, 'cartograph')
-  const mod = src.replace(/from '\.\/([^']+)'/g, (_, f) => `from '${pathToFileURL(join(C, f)).href}'`)
-  const { commitExtentRecords } = await import('data:text/javascript;base64,' + Buffer.from(mod).toString('base64'))
-  const { splitBoundary } = await import(pathToFileURL(join(C, 'boundaryRecords.mjs')).href)
+// THE COMMIT'S WRITE SET, BY RUNNING IT: cartograph/commitExtent.mjs imported through checks/_importSource.mjs (a mutant is
+// its `transform`), and its record builder run on the first town with an applied disc, its prior neighborhood.json given a
+// legacy `radius`. → { draftRadius, radius: whether `radius` came out, request radius } or { why }
+async function commitWriteSet(transform) {
+  const { commitExtentRecords } = await importSource('cartograph/commitExtent.mjs', { transform })
   for (const s of readdirSync(DATA)) {
     const gP = join(DATA, s, 'geography.json'), bP = join(DATA, s, 'neighborhood_boundary.json'), nP = join(DATA, s, 'neighborhood.json')
     if (![gP, bP, nP].every(existsSync)) continue
@@ -163,7 +162,7 @@ const MUTATIONS = [
   { name: 'serve/rescope-writes-draftRadius',
     apply: (S) => ({ ...S, serve: S.serve.replace('nb.draftRadius = Math.round(radius)', 'nb.radius = Math.round(radius)') }) },
   { name: 'commit/write-set-is-draftRadius',
-    apply: (S) => ({ ...S, commitSrc: S.commitSrc.replace(/\n  delete neighborhood\.radius[^\n]*/, '') }) },
+    apply: (S) => ({ ...S, commitTransform: (t) => t.replace(/\n  delete neighborhood\.radius[^\n]*/, '') }) },
   { name: 'fetch/heavy-reads-the-applied-disc',
     apply: (S) => ({ ...S, fetchJs: S.fetchJs.replaceAll('neighborhood_boundary.json', 'neighborhood.json') }) },
   // the reader row: each rule planted back into a real reader, and one exception made stale
@@ -176,15 +175,15 @@ const MUTATIONS = [
 ]
 
 const S = loadSources()
-S.commit = await commitWriteSet(S.commitSrc)
+S.commit = await commitWriteSet(null)
 if (process.argv.includes('--self-test')) {
   const red = run(S).filter(r => !r.ok)
   if (red.length) { for (const r of red) console.log(`⛔ baseline red: ${r.name} — ${r.detail}`); process.exit(1) }
   let bad = 0
   for (const m of MUTATIONS) {
     const M = m.apply(S)
-    if (M.commitSrc === S.commitSrc && m.name === 'commit/write-set-is-draftRadius') { console.log(`  ⛔ ${m.name} — the mutant could not be applied (re-aim it)`); bad++; continue }
-    if (M.commitSrc !== S.commitSrc) M.commit = await commitWriteSet(M.commitSrc)
+    if (m.name === 'commit/write-set-is-draftRadius' && !/\n  delete neighborhood\.radius/.test(sourceOf('cartograph/commitExtent.mjs'))) { console.log(`  ⛔ ${m.name} — the mutant could not be applied (re-aim it)`); bad++; continue }
+    if (M.commitTransform) M.commit = await commitWriteSet(M.commitTransform)
     const hit = run(M).find(r => r.name === m.name)
     if (!hit || hit.ok) { console.log(`  ⛔ ${m.name} — defect planted and the check STAYED GREEN`); bad++ }
     else console.log(`  ✓ ${m.name} — went red`)
