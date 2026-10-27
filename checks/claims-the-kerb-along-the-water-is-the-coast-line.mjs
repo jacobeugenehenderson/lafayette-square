@@ -9,12 +9,16 @@
 // shore read ①'s, and the stack's noding reconciled them afterwards (claims-no-edge-is-drawn-twice: +3.9 km on Huron).
 // Read off the producer's own output (`buildTileGround`, the town's authoring loaded), per coast town:
 //   (A) every ② kerb vertex (`iaFull`) whose two edges are both stamped to the water (`iaStamp` → `runs[].skelId` ===
-//       WATER_EDGE_SKEL) IS a ① vertex (the frozen `protopolygon.blocks`), on the lattice, exactly;
+//       WATER_EDGE_SKEL) lies on ①'s water edge within one rounding AND is either a ① vertex (the frozen
+//       `protopolygon.blocks`) or a vertex the land-use stamp shares into the kerb by design (a stamp crossing ON the coast
+//       line, also a vertex of `luByClass`; Zob, 2026-10-26). Anything else is RED by name: off the line, or on it unshared.
 //   (B) every ② kerb vertex with ONE water edge (where a street meets the coast) lies on a ① water edge, within the lattice's
 //       one rounding (latticeNode#NODE_BOUND, read);
 //   (C) every ① vertex whose two edges are both the water's, inside a tile's painted face, appears in ②.
-//   MUTANT (always run): the producer copied with the coast clause of `rSrc` removed (the anchor must occur once) must go RED
-//   on some town; a town where it stays GREEN has nothing on its coast to fillet and is said so.
+//   MUTANTS (always run): the producer copied with the coast clause of `rSrc` removed (the anchor must occur once) must go RED
+//   on some town; a town where it stays GREEN has nothing on its coast to fillet and is said so. In process, per town: one
+//   off-line vertex inserted mid-way along a ② water edge (pushed 2 units off it) must read RED as off the line, and one
+//   on-line vertex shared by nothing must read RED as unshared.
 //   node checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs --slot=<who granted it> [<town> …]
 // ⚠️ HEAVY: two producer builds per coast town (live and mutant). Not in npm test; runs in a granted slot and says who granted it.
 // @args --slot=<granted>
@@ -59,26 +63,27 @@ function coastOf(fp) {
     if (isW(L[i]) && isW(L[(i - 1 + n) % n])) both.set(key(K(p)), p) })
   return { both, edges }
 }
-function judge(tiles, C) {
+function judge(tiles, C, lu) {
   const vSet = new Set([...C.both.keys()]), all = new Set()
+  const shared = new Set(); for (const rs of Object.values(lu || {})) for (const r of rs || []) for (const p of r || []) shared.add(key(K(p)))
   const onEdge = (k) => C.edges.some(([a, b]) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy; if (!L2) return false
     const t = ((k[0] - a[0]) * dx + (k[1] - a[1]) * dy) / L2; if (t < 0 || t > 1) return false
     const cr = (k[0] - a[0]) * dy - (k[1] - a[1]) * dx; return cr * cr <= NODE_BOUND * NODE_BOUND * L2 })
-  let A = 0, Abad = [], B = 0, Bbad = []
+  let A = 0, Abad = [], Aoff = [], Aunshared = [], B = 0, Bbad = []
   for (const t of tiles) (t.iaFull || []).forEach((ring, si) => { const st = t.iaStamp?.[si]; if (!st) return
     const n = ring.length, w = (e) => t.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL
     ring.forEach((p, i) => { const k = K(p); all.add(key(k))
       const wi = w(i), wp = w((i - 1 + n) % n)
-      if (wi && wp) { A++; if (!vSet.has(key(k))) Abad.push(p) }
+      if (wi && wp) { A++; if (!onEdge(k)) { Aoff.push(p); Abad.push(p) } else if (!vSet.has(key(k)) && !shared.has(key(k))) { Aunshared.push(p); Abad.push(p) } }
       else if (wi || wp) { B++; if (!onEdge(k)) Bbad.push(p) } }) })
   // (C) ① coast vertices inside a tile's painted face, missing from ②
   let Cn = 0; const Cbad = []
   for (const [kk, p] of C.both) { if (!tiles.some(t => t.ring && windXZ(p, t.ring) !== 0)) continue; Cn++; if (!all.has(kk)) Cbad.push(p) }
-  return { A, Abad, B, Bbad, Cn, Cbad }
+  return { A, Abad, Aoff, Aunshared, B, Bbad, Cn, Cbad }
 }
 const say = (J, label) => {
   const at = (ps) => ps.slice(0, 4).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')
-  console.log(`  ${J.Abad.length ? '⛔' : '✅'} (A)${label} ${J.A} ② kerb vertex(es) between two water edges · ${J.Abad.length} not a ① vertex${J.Abad.length ? ` (e.g. ${at(J.Abad)})` : ''}`)
+  console.log(`  ${J.Abad.length ? '⛔' : '✅'} (A)${label} ${J.A} ② kerb vertex(es) between two water edges · ${J.Aoff.length} off ①'s water edge${J.Aoff.length ? ` (e.g. ${at(J.Aoff)})` : ''} · ${J.Aunshared.length} on it but neither a ① vertex nor a stamp-shared one${J.Aunshared.length ? ` (e.g. ${at(J.Aunshared)})` : ''}`)
   console.log(`  ${J.Bbad.length ? '⛔' : '✅'} (B)${label} ${J.B} ② kerb vertex(es) where a street meets the water · ${J.Bbad.length} off ①'s water edge past one rounding${J.Bbad.length ? ` (e.g. ${at(J.Bbad)})` : ''}`)
   console.log(`  ${J.Cbad.length ? '⛔' : '✅'} (C)${label} ${J.Cn} ① coast vertex(es) in a tile · ${J.Cbad.length} missing from ②${J.Cbad.length ? ` (e.g. ${at(J.Cbad)})` : ''}`)
   return J.Abad.length + J.Bbad.length + J.Cbad.length }
@@ -92,9 +97,24 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
   console.log(`\n── ${scene}: ① carries ${C.edges.length} water edge(s), ${C.both.size} coast vertex(es)`)
   towns++
   let R; try { R = quiet(() => buildProto(f)) } catch (e) { console.log(`  ⛔ the producer refused — nothing checked: ${String(e.message).split('\n')[0].slice(0, 200)}`); red++; continue }
-  if (say(judge(R.protoShapeTiles, C), '')) red++
+  if (say(judge(R.protoShapeTiles, C, R.luByClass), '')) red++
+  // in-process mutants on the town's own ②: a vertex inserted mid-way along one water edge, (i) 2 units off it, (ii) on it
+  { const t = R.protoShapeTiles.find(t => (t.iaFull || []).some((r, si) => t.iaStamp?.[si]?.some((s, e) => t.runs?.[s]?.skelId === WATER_EDGE_SKEL && t.runs?.[t.iaStamp[si][(e - 1 + r.length) % r.length]]?.skelId === WATER_EDGE_SKEL)))
+    if (!t) console.log('  ⚪ mutants (planted vertex): no ② water run to plant on — not judged')
+    else { const si = t.iaFull.findIndex((r, si) => t.iaStamp?.[si]?.some((s, e) => t.runs?.[s]?.skelId === WATER_EDGE_SKEL && t.runs?.[t.iaStamp[si][(e - 1 + r.length) % r.length]]?.skelId === WATER_EDGE_SKEL))
+      const r = t.iaFull[si], st = t.iaStamp[si], e = st.findIndex((s, e) => t.runs?.[s]?.skelId === WATER_EDGE_SKEL && t.runs?.[st[(e - 1 + r.length) % r.length]]?.skelId === WATER_EDGE_SKEL && Math.hypot(r[(e + 1) % r.length][0] - r[e][0], r[(e + 1) % r.length][1] - r[e][1]) > 10 / CLIP_SCALE)
+      const plant = (off) => { const a = r[e], b = r[(e + 1) % r.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L
+        const m = [(a[0] + b[0]) / 2 + nx * off / CLIP_SCALE, (a[1] + b[1]) / 2 + nz * off / CLIP_SCALE].map(v => Math.round(v * CLIP_SCALE) / CLIP_SCALE)
+        const ring = [...r.slice(0, e + 1), m, ...r.slice(e + 1)], stamp = [...st.slice(0, e + 1), st[e], ...st.slice(e + 1)]
+        return R.protoShapeTiles.map(x => x !== t ? x : { ...t, iaFull: t.iaFull.map((q, j) => j === si ? ring : q), iaStamp: t.iaStamp.map((q, j) => j === si ? stamp : q) }) }
+      if (e < 0) console.log('  ⚪ mutants (planted vertex): no water edge long enough to plant on — not judged')
+      else { const off = judge(plant(2), C, R.luByClass), on = judge(plant(0), C, R.luByClass), J0 = judge(R.protoShapeTiles, C, R.luByClass)
+        const okOff = off.Aoff.length > J0.Aoff.length, okOn = on.Aunshared.length > J0.Aunshared.length
+        if (!okOff || !okOn) red++
+        console.log(`  ${okOff ? '✅' : '⛔'} mutant (a vertex 2 units off a ② water edge): ${okOff ? 'RED as off the line, as it must be' : 'not seen — (A) is blind off the line'}`)
+        console.log(`  ${okOn ? '✅' : '⛔'} mutant (a vertex ON a ② water edge, shared by nothing): ${okOn ? 'RED as unshared, as it must be' : 'not seen — (A) is blind to an unshared vertex'}`) } } }
   let M; try { M = quiet(() => buildProto(f, { tg: mutant })) } catch (e) { console.log(`  ✅ mutant (the coast clause removed): the producer refused (${String(e.message).split('\n')[0].slice(0, 120)}) — counted RED`); mutRed++; continue }
-  const J = judge(M.protoShapeTiles, C), bad = J.Abad.length + J.Bbad.length + J.Cbad.length
+  const J = judge(M.protoShapeTiles, C, M.luByClass), bad = J.Abad.length + J.Bbad.length + J.Cbad.length
   if (bad) mutRed++
   console.log(`  ${bad ? '✅' : '⚪'} mutant (the coast clause of rSrc removed): ${bad ? `RED as it must be — (A) ${J.Abad.length} · (B) ${J.Bbad.length} · (C) ${J.Cbad.length}` : 'GREEN here — no coast corner on this town takes a fillet without the clause'}`)
 }
