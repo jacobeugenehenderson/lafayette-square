@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 473,
   "counts": {
-    "safe": 340,
+    "safe": 339,
     "local-effect": 28,
-    "live": 105
+    "live": 106
   },
   "checks": [
     {
@@ -51,11 +51,13 @@
     },
     {
       "file": "checks/claims-a-bridge-over-water-is-not-ground.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "writeFileSync — only under its own temp dir",
-        "deletes files — only under its own temp dir",
-        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -1384,6 +1386,13 @@
       ]
     },
     {
+      "file": "checks/claims-every-off-grade-span-over-the-water-is-listed.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-every-piece-takes-its-own-land-use.mjs",
       "tier": "safe",
       "why": [
@@ -1959,13 +1968,6 @@
     },
     {
       "file": "checks/claims-objects-dissolve-with-the-ground.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-off-grade-by-the-coast-is-listed.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

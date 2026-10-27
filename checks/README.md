@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 105. Never in a default run.
+## ⛔ live — 106. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -30,6 +30,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-bake-reads-design-through-one-reader.mjs` | unreadable | imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · computed import of cartograph/lookDesign.mjs — read, safe |
 | `checks/claims-a-bake-step-declares-what-it-reads.mjs` | unreadable | imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-bend-bends-the-band.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
+| `checks/claims-a-bridge-over-water-is-not-ground.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-a-city-building-keeps-its-permanent-id.mjs` | outbound | imports cartograph/fetch-buildings.mjs, which can: writeFileSync, mkdirSync, imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out, imports cartograph/msbf-identity.js, which can: writeFileSync |
 | `checks/claims-a-click-hits-what-is-drawn.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-a-cold-preview-opens-on-the-saved-shot.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
@@ -168,13 +169,12 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 340. This is `npm test`.
+## safe — 339. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
 | `checks/claims-a-bake-never-uploads.mjs` | a bake ends on disk; Publish is the one gesture that uploads to staging. |
 | `checks/claims-a-bare-edge-paints-no-curb-sliver.mjs` | CLAIM — A BARE EDGE PAINTS NO CURB. An edge whose curb depth is 0 (a highway's, a shore's, a verge's) contributes no curb |
-| `checks/claims-a-bridge-over-water-is-not-ground.mjs` | CLAIM — AN OFF-GRADE SPAN OVER ①'S WATER IS NOT GROUND: a bridge is above the water, a tunnel below it, and neither is |
 | `checks/claims-a-brief-declares-how-it-dies.mjs` | EVERY BRIEF ON THE ROSTER SAYS WHEN IT LEAVES IT. |
 | `checks/claims-a-building-carries-its-register-records.mjs` | records.mjs — DOES EVERY REGISTER FACT ON A TOWN'S CARDS COME FROM A WELL THE |
 | `checks/claims-a-cap-carries-one-section.mjs` | section.mjs — DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |
@@ -290,6 +290,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-lu-tag-has-a-home.mjs` | home.mjs — CAN A TOWN BRING A WORD WE DO NOT KNOW? |
 | `checks/claims-every-mapped-stone-structure-is-stone.mjs` | stone.mjs — DOES EVERY MAPPED BREAKWATER AND GROYNE CARRY STONE? |
 | `checks/claims-every-measurable-town-is-declared.mjs` | A TOWN THE KIT CAN MEASURE IS A TOWN THE KIT DECLARES. |
+| `checks/claims-every-off-grade-span-over-the-water-is-listed.mjs` | CLAIM — EVERY OFF-GRADE SPAN OVER THE WATER IS LISTED, BY IDENTITY. ① leaves each one out of the ink (`tileGround.js#splitOverWater`: |
 | `checks/claims-every-piece-takes-its-own-land-use.mjs` | use.mjs |
 | `checks/claims-every-proto-edge-lies-on-its-owner.mjs` | CLAIM — EVERY ① EDGE LIES ON THE CHAIN THAT OWNS IT (one owner per edge, and it is the right one). |
 | `checks/claims-every-shadowed-placement-renders.mjs` | EVERY PLACEMENT THE GROUND SHADOWS MUST RENDER A TREE. |
@@ -362,7 +363,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-tree-stands-on-drawn-hardscape.mjs` | NO TREE MAY STAND ON A SURFACE THE MAP DRAWS AS HARDSCAPE. |
 | `checks/claims-node-pair-key-parity.mjs` | SLICE 1 of "fix the key". PROVE, DON'T SWITCH. |
 | `checks/claims-objects-dissolve-with-the-ground.mjs` | CLAIM: trees, lamps and labels thin out over the SAME band the ground fades on — |
-| `checks/claims-off-grade-by-the-coast-is-listed.mjs` | CLAIM — EVERY STREET LEFT OUT OF THE INK AS OFF GRADE BY THE COAST IS LISTED. A street over ①'s water with no bridge, tunnel or |
 | `checks/claims-one-blur-ladder.mjs` | "IS THERE ONE BLUR LADDER?" |
 | `checks/claims-one-building-id-minter.mjs` | minter.mjs — a building has ONE id minter and a town has ONE answer to "where do my |
 | `checks/claims-one-corner-write-moves-one-corner.mjs` | ⭐⭐ ONE CORNER WRITE MOVES ONE CORNER — every field (Jacob, 2026-10-07: "every corner should be authorable on its own"). |

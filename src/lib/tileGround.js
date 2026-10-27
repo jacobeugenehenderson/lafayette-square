@@ -407,9 +407,13 @@ export function outlineCorner(o, legs, eps = INK_EPS) {
   return { bad, W }
 }
 // the split itself (mintProtopolygon's caller of it states the rule): → { chains: [{ st, ci }], coastChains, dropped }
-function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0) {
-  const byCoast = []
-  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, dropped: 0, byCoast }
+// ⭐ EVERY WET PIECE IT DROPS IS RECORDED BY IDENTITY (`spans`, frozen as protopolygon.offGradeSpans; Jacob, 2026-10-27: "b for
+// now, deck later"): { street, segOrd, kind: 'tagged' | 'byCoast', hwy, wetM, points } — `points` the piece's centreline from bank
+// crossing to bank crossing (both shared with the coast arcs), `hwy` whether H sweeps the chain (`isH`). The paint lays each
+// non-H span back over the water (`bridgeOverlay`), so a bridge is painted across it while ①'s water face stays whole.
+function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH = () => false) {
+  const spans = []
+  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, dropped: 0, spans }
   const rlL = (v) => Math.round(v * SCALE) / SCALE, K = (p) => Math.round(p[0] * SCALE) + ',' + Math.round(p[1] * SCALE)
   const wn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
     if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
@@ -420,7 +424,7 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0) {
   const nS = L.length
   const out = nodeCrossings(inputs, { pairs: (a, b) => (a < nS) !== (b < nS), who: '① bridge over water' })
   const crossKeys = new Set(); for (let n = nS; n < out.length; n++) for (const v of out[n]) if (v.src == null) crossKeys.add(v.k[0] + ',' + v.k[1])
-  if (!crossKeys.size) return { chains: list, coastChains, dropped: 0, byCoast }
+  if (!crossKeys.size) return { chains: list, coastChains, dropped: 0, spans }
   let dropped = 0
   const pieces = new Map()   // index in L → [{ st, ci }] replacing it
   L.forEach((x, n) => { const st = x.st, P = st.points, o = out[n]
@@ -447,26 +451,27 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0) {
       const sA = sOf(part[0]), sB = sOf(part[part.length - 1]), lo = Math.min(sA, sB), hi = Math.max(sA, sB)
       const ok = [...runs.filter(r => r.offGrade).map(r => [S[r.from], S[r.to]]), ...runs.filter(r => r.mixed).flatMap(r => r.offExtents || [])].sort((a, b) => a[0] - b[0])
       let reach = lo; for (const [a, b] of ok) if (a <= reach + 1e-9 && b > reach) reach = b
-      if (reach >= hi - 1e-9) { dropped++; continue }
+      const e0 = Math.min(...edges), span = (kind) => ({ street: st.skelId ?? st.name, segOrd: x.ci >= 0 ? segOrdOf(x.ci, e0) : 0, kind, hwy: !!isH(x), wetM: +len.toFixed(2), points: part.map(v => [v.p[0], v.p[1]]) })
+      if (reach >= hi - 1e-9) { spans.push(span('tagged')); dropped++; continue }
       if (runs.some(r => r.mixed)) throw new Error(`[①] ⛔ ${who}: a wet piece on a segment whose ways disagree on grade reaches ${(hi - reach).toFixed(2)} m past the off-grade way's own extent — its grade there cannot be read. Refusing.`)
       // ⭐ OFF GRADE BY THE COAST (Jacob, 2026-10-27: "a; we don't have any mechanism for this in the authoring tools"): a street
       // over ①'s water with no off-grade tag is a bridge all the same — the coast is the high-water mark, and a causeway on fill
       // reads as land in the lidar, so it never reaches here. It leaves the ink like a tagged span, and it is RECORDED, never silent
-      const e0 = Math.min(...edges), mid = part[Math.floor(part.length / 2)].p
-      byCoast.push({ street: st.skelId ?? st.name, segOrd: x.ci >= 0 ? segOrdOf(x.ci, e0) : 0, wetM: +len.toFixed(2), at: [+mid[0].toFixed(3), +mid[1].toFixed(3)] })
+      spans.push(span('byCoast'))
       dropped++ }
     pieces.set(n, keep.map(part => ({ ci: x.ci, st: { ...st, points: part.map(v => v.p), hard: part.map(v => v.src != null && st.hard ? !!st.hard[v.src] : v.src != null),
       caps: { start: part[0].src === 0 ? st.caps?.start : undefined, end: part[part.length - 1].src === P.length - 1 ? st.caps?.end : undefined },
       _orig: part.map(v => v.src), _origSeg: part.map(v => v.edge), _waterEnd: { start: !!part[0].cross, end: !!part[part.length - 1].cross } } }))) })
-  if (!dropped) return { chains: list, coastChains, dropped: 0, byCoast }
+  if (!dropped) return { chains: list, coastChains, dropped: 0, spans }
   // the arcs take the crossings, so a street's end and the coast share the vertex
   const arcs = coastChains.map((c, m) => { const o = out[nS + m], P = c.st.points
     const pts = []; for (const v of o) { if (v.src != null) pts.push(P[v.src]); else if (crossKeys.has(v.k[0] + ',' + v.k[1])) pts.push([v.k[0] / SCALE, v.k[1] / SCALE]) }
     return { ...c, st: { ...c.st, points: pts, hard: pts.map(() => false) } } })
   const chains = []; let li = 0
   for (const x of list) { if (!(x.st?.points?.length >= 2)) { chains.push(x); continue } const n = li++; if (pieces.has(n)) chains.push(...pieces.get(n)); else chains.push(x) }
-  console.log(`    [①] ${dropped} off-grade span(s) over the water left out of the ink (bridges and tunnels are not ground); their banks end on the coast${byCoast.length ? ` · ⚠️ ${byCoast.length} of them off grade BY THE COAST (no bridge, tunnel or layer tag — recorded, protopolygon.offGradeByCoast): ${byCoast.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${b.at.join(', ')})`).join(' · ')}` : ''}`)
-  return { chains, coastChains: arcs, dropped, byCoast }
+  const byCoast = spans.filter(b => b.kind === 'byCoast'), mid = (b) => b.points[Math.floor(b.points.length / 2)].map(c => c.toFixed(3)).join(', ')
+  console.log(`    [①] ${dropped} off-grade span(s) over the water left out of the ink (bridges and tunnels are not ground; recorded, protopolygon.offGradeSpans); their banks end on the coast${byCoast.length ? ` · ⚠️ ${byCoast.length} of them off grade BY THE COAST (no bridge, tunnel or layer tag): ${byCoast.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${mid(b)})`).join(' · ')}` : ''}`)
+  return { chains, coastChains: arcs, dropped, spans }
 }
 export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null, onAbsorbRefusal = null }) {
   const owners = [], rings = [], labels = []
@@ -514,13 +519,13 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   // over a run attributed by order or one end, or over a run AT GRADE, refuses by name — never kept silently in the water.
   // Over land nothing changes (a partly-bridge street still bounds blocks), and a bridge over an ISLAND stays ink, like a
   // bridge over land.
-  const split = splitOverWater([...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))], coast, coastChains, segOrdAt)
+  const HWY_CLASS = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
+  const split = splitOverWater([...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))], coast, coastChains, segOrdAt, (x) => x.ci < 0 && HWY_CLASS.has(x.st?.highway))
   const chains = [...split.chains, ...split.coastChains]
   // ⭐ H-3 step 4 — `gradeEnd`, the RAMP-END identity stamp. A grade-separated HIGHWAY chain's endpoint that is
   // also a vertex of a non-highway street is where the ramp comes down to the town (an at-grade terminal).
   // Stamped here, by construction, exactly as `tipEnd` is — ⛔ never recovered by proximity afterwards (A15).
   // The junction-residual classifier (derive.js, at the mint) reads it off the block ring.
-  const HWY_CLASS = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
   const vKey3 = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
   const townVerts = new Set()
   for (const st of [...streets, ...gradeSep.filter(g => !HWY_CLASS.has(g?.highway))]) for (const p of (st?.points || [])) townVerts.add(vKey3(p))
@@ -1165,9 +1170,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeByCoast: split.byCoast, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
+             nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeByCoast: split.byCoast, eps }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, eps }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -2207,6 +2212,52 @@ function sweepHighway(points, leftSec, rightSec, handoff = null) {
   if (bad >= 0) throw new Error(`[tileGround][H] ⛔ the highway sweep produced a NON-FINITE vertex (ring index ${bad} of ${ring.length}, source index ${stamp[bad]?.toFixed?.(3)}) — refusing to hand Clipper an invalid coordinate`)
   return { ring, stamp: [...stamp.map(i => ({ src: i, side: 'right' })), ...stamp.slice().reverse().map(i => ({ src: i, side: 'left' }))],
            tapers: { left: L.tapers, right: R.tapers }, length: Ltot }
+}
+
+// ⭐ A BRIDGE OVER THE WATER IS PAINTED ACROSS IT (Jacob, 2026-10-27: "b for now, deck later"): ① leaves the off-grade span out of
+// the ink, so the water face stays whole; the paint lays the span back over the water as an OVERLAY, the way H is (`sweepHighway`
+// from the chain into its paint group). One behaviour for every road class; a span H sweeps (`hwy`) is H's and is skipped here.
+// Each span (protopolygon.offGradeSpans, by identity) is swept from its own centreline at the street's own measure per side, WITH
+// authoring (`hwOf(street, side, segOrd)`), and clipped to the WATER, so it meets the street's paint exactly along the coast — the
+// line ① and the bank's tiles share. The sweep runs on past each bank crossing by E, doubled until the clipped area no longer
+// changes (the bank's own obliqueness decides how far, never a constant); only the clipped pieces holding the span are kept.
+// ⛔ A span with no width, or whose clip will not settle, refuses by name. → [{ street, segOrd, rings }]
+export function bridgeOverlay(spans, waterRings, hwOf) {
+  const out = []
+  if (!spans?.length) return out
+  if (!waterRings?.length) throw new Error(`[tileGround][bridges] ⛔ ${spans.length} off-grade span(s) over the water but no water rings to clip them to. Refusing.`)
+  const area = (rs) => rs.reduce((t, r) => t + signedArea(r), 0)
+  for (const sp of spans) { if (sp.hwy) continue
+    const who = `${sp.street}|${sp.segOrd} (${sp.wetM} m over the water)`
+    const hl = hwOf(sp.street, 'left', sp.segOrd), hr = hwOf(sp.street, 'right', sp.segOrd)
+    if (!(hl > 0) || !(hr > 0)) throw new Error(`[tileGround][bridges] ⛔ ${who}: no pavement width (left ${hl}, right ${hr}) — the bridge cannot be painted across the water. Refusing.`)
+    const P = sp.points, n = P.length
+    if (!(n >= 2)) throw new Error(`[tileGround][bridges] ⛔ ${who}: a span with no centreline. Refusing.`)
+    const unit = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); return [dx / L, dz / L] }
+    const d0 = unit(P[1], P[0]), d1 = unit(P[n - 2], P[n - 1])
+    const mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
+    const clip = (E) => { const sw = sweepHighway([[P[0][0] + d0[0] * E, P[0][1] + d0[1] * E], ...P, [P[n - 1][0] + d1[0] * E, P[n - 1][1] + d1[1] * E]], { spans: [{ hw: hl }] }, { spans: [{ hw: hr }] })
+      if (!sw) throw new Error(`[tileGround][bridges] ⛔ ${who}: the sweep failed. Refusing.`)
+      return intersectRings([sw.ring], waterRings).filter(r => mids.some(m => pointInRing(m[0], m[1], r))) }
+    let E = 2 * Math.max(hl, hr), A = clip(E), B = clip(2 * E), k = 0
+    while (Math.abs(area(B) - area(A)) > 1e-6 * Math.max(1, Math.abs(area(A))) && k++ < 12) { E *= 2; A = B; B = clip(2 * E) }
+    if (Math.abs(area(B) - area(A)) > 1e-6 * Math.max(1, Math.abs(area(A)))) throw new Error(`[tileGround][bridges] ⛔ ${who}: its clip to the water does not settle as the sweep runs on past the banks (out to ${(2 * E).toFixed(1)} m) — the bank cannot be met. Refusing.`)
+    if (!A.length) throw new Error(`[tileGround][bridges] ⛔ ${who}: its sweep holds no water. Refusing.`)
+    out.push({ street: sp.street, segOrd: sp.segOrd, rings: A }) }
+  return out
+}
+
+// ⭐ H's SPANS OVER THE WATER (Boz's ruling (iv), 2026-10-27): for each recorded span H sweeps (`hwy`), the piece(s) of H ∩ the
+// water holding the span's own centreline — by identity of the recorded span, never the sheet. The caller moves them out of the
+// highway's paint into the bridge's, so the two meet on the coast. ⛔ A recorded H span no piece holds refuses by name.
+export function highwayBridges(spans, Hrings, waterRings) {
+  const H = (spans || []).filter(x => x.hwy)
+  if (!H.length) return []
+  const wet = intersectRings(Hrings, waterRings || [])
+  return H.map(sp => { const P = sp.points, mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
+    const rings = wet.filter(r => mids.some(m => pointInRing(m[0], m[1], r)))
+    if (!rings.length) throw new Error(`[tileGround][bridges] ⛔ ${sp.street}|${sp.segOrd} is recorded as swept by H, but no piece of H over the water holds its centreline. Refusing.`)
+    return { street: sp.street, segOrd: sp.segOrd, rings } })
 }
 
 export function unionRings(rings) {
@@ -6817,6 +6868,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let protoRimRings = null            // per tile, its ring noded with its paint's own rim crossings (`nodeRimWithPaint`) — live, never frozen
   let protoBandPieces = null          // ③'s bands as owned pieces, per tile (`bandPiecesOfTile`) — the FILL, live, never frozen
   let protoCentrelines = null, protoRunMeasure = null   // the sealed centreline and a run's resolved measure, for the road's paint
+  let protoSpans = null, protoWater = null   // ①'s off-grade spans over the water (by identity) and its water rings, for the bridge overlay
   let protoInkPieces = null           // the curbless blocks' ground as owned road pieces (`kind: 'block'`); the ink itself is the tiles' (absorbInk.js)
   let protoNoses = null               // the nose: pairs cut back to the minimum curbed width and capped, and the ones not cut (`easeSkips.nose*`)
   let protoEasePairs = null           // named corner pairs on one leg too short for both eases (`easeSkips.pairClamped`)
@@ -6915,7 +6967,10 @@ export function buildTileGround(ribbons, opts = {}) {
              // H-3 step 4: the region class per block (verge / jr / block), classified at the mint.
              blockClass: frozenProto.blockClass || null,
              // H-3: the ramp-terminal flares frozen at the mint — drawn into ②'s working copy (`flareWorkingCopy`)
-             flares: frozenProto.flares || null }
+             flares: frozenProto.flares || null,
+             // ⛔ the off-grade spans over the water, by identity: an ABSENT field is a pour before the rule (Jacob's (b), 2026-10-27)
+             // and refuses, or a bridge over the water would paint as a gap silently
+             offGradeSpans: (() => { if (!Array.isArray(frozenProto.offGradeSpans)) throw new Error('[tileGround] ⛔ the frozen ① predates its off-grade spans (no offGradeSpans field) — a bridge over the water would paint as a gap. ▶ re-pour'); return frozenProto.offGradeSpans })() }
       // ⛔ A ① FROZEN BEFORE THE across/cap SPLIT is refused by name: its owners mark a stroke's end edges `cap` only, so this
       // emitter (which declines `across`) would emit them as frontage runs, silently. Re-pour the town.
       if (frozenProto.owners.some(o => o?.cap && !o.across))
@@ -6933,6 +6988,7 @@ export function buildTileGround(ribbons, opts = {}) {
     protoOwners = MP.owners
     const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused, crossings: MP.crossings }
     protoInk = { rings: MP.rings, labels: MP.labels }
+    protoSpans = MP.offGradeSpans || [], protoWater = MP.waterRings || []
     protoBoundaryRing = MP.boundaryRing || null
     console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
     // ⛔⛔ DISCLOSE THE AUTHORING STATE — the SILENCE is the defect, never the draw.
@@ -8600,7 +8656,8 @@ export function buildTileGround(ribbons, opts = {}) {
   // that judge them (`claims-the-bands-are-held-by-their-owners`) ask for them.
   let asphalt = S.asphalt
   const curb = S.curb, sidewalk = S.sidewalk, block = S.block
-  const highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
+  let highway = stencil ? intersectRings(Hpoly, [stencil]) : Hpoly
+  let bridges = []    // the bridge spans painted over the water: [{ street, segOrd, rings }] (`bridgeOverlay`)
   let inkShore = []   // ①'s coast piece, the land's shore surface (painted first, below)
   protoBandPieces = S.bandPieces || []
   protoRimRings = S.rimRings || []
@@ -8663,6 +8720,16 @@ export function buildTileGround(ribbons, opts = {}) {
       if (!b.owners.length) throw new Error(`[tileGround][①⇢LIVE] ⛔ curbless block ${b.k} has ground outside the highway (${a.toFixed(1)} m²) but none of its ① edges names an owner — that road has no line. Refusing.`)
       protoInkPieces.push({ rings, owners: b.owners, kind: 'block' }); asphalt = unionRings([...asphalt, ...rings]); nb++; nbM2 += a
     }
+    // ⭐ THE BRIDGES OVER THE WATER, their own paint (`mat:bridge`, Boz's ruling (iv), 2026-10-27): every recorded span's footprint
+    // over ①'s water. A span H sweeps is H's sweep ∩ the water, the piece(s) holding the span's own centreline (by identity of the
+    // recorded span), moved OUT of the highway's paint; every other span is `bridgeOverlay`'s. Owned road pieces, by street.
+    const nonH = bridgeOverlay(protoSpans, protoWater, (street, side, segOrd) => protoRunMeasure({ skelId: street, side, segOrd })?.pavementHW)
+    const viaH = highwayBridges(protoSpans, Hpoly, protoWater)
+    // ONE entry for EVERY recorded span (the shore pin matches by { street, segOrd } and refuses a span with none), its rings in the stencil
+    bridges = [...nonH, ...viaH].map(b => ({ ...b, rings: inStencil(b.rings) }))
+    for (const b of bridges) protoInkPieces.push({ rings: b.rings, owners: [b.street], kind: 'bridge' })
+    if (viaH.length) highway = differenceRings(highway, viaH.flatMap(b => b.rings))
+    if (protoSpans.length) console.log(`[tileGround][bridges] ${bridges.length} bridge span(s) painted over the water (mat:bridge): ${nonH.length} at their street's measure, ${viaH.length} H's sweep moved out of the highway's paint: ${bridges.map(b => `${b.street}|${b.segOrd}`).join(' · ') || 'none'}`)
     if (protoNoCurbBlocks.length) console.log(`[tileGround][①⇢LIVE] the curbless blocks' ground: ${nb} road piece(s), ${nbM2.toFixed(1)} m², owned by their ① edges (${nbViaH} touching only H, owned by the block's highway edges) · ${underH} wholly under the highway (its ground) or inside a tile`)
     console.log(`[tileGround][①⇢LIVE] the ink is the tiles' own (absorbed at the mint): shore ${Math.abs(inkShore.reduce((t, r) => t + signedArea(r), 0)).toFixed(1)} m² of land's shore from water-owned edges`)
   }
@@ -8716,5 +8783,5 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { roadPaint, protoBoundaryRing, protoRimRings, asphalt, inkShore, highway, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
+  return { roadPaint, protoBoundaryRing, protoRimRings, asphalt, inkShore, highway, bridges, hwyDisclosure, curb, sidewalk, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoUnlabelled, protoEasePairs, protoNoses, protoInkPieces, protoBandPieces, protoJunctionCensus, curbCut, cornerArcs, curbCutRecs, curbCutTally, curbCutContradicted, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet }
 }

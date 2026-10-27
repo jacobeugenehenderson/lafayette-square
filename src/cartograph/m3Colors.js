@@ -159,6 +159,7 @@ export const DEFAULT_OVERLAY_COLORS = {
 export const BAND_TO_LAYER = {
   asphalt:            'street',
   highway:            'highway',
+  bridge:             'street',    // a span over the water (mat:bridge): the street's paint, its own slot above the water
   'parking-parallel': 'street',
   'parking-angled':   'street',
   gutter:             'curb',
