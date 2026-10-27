@@ -352,6 +352,9 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   // cell's HIGH water is land the coast called water. The bed overwrites it below, so this is the only place it can be
   // seen. Rock is kept and named apart (rock.runs). ▶ node checks/claims-the-shore-agrees-with-the-field.mjs
   const dryBed = new Uint8Array(mask.length), dryAbove = new Float32Array(mask.length)
+  // ⭐ THE NODES CAPPED AT HIGH, RECORDED (Boz's ruling, 2026-10-27, on Zob's read of PTown's ring 58): a survey floor above HIGH
+  // is clamped to HIGH, so its height there is the cap, a sentinel, not a measured slope; the stamp leaves them out of its samples
+  const cappedAt = new Uint8Array(mask.length)
   let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0, atHigh = 0
   for (let k = 0; k < mask.length; k++) {
     if (!mask[k] || rock.has(k)) continue
@@ -361,8 +364,8 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
     if (known && Number.isFinite(known.depth[k])) {
       const d = known.depth[k], hp = h
       let hf = Math.min(d, deep)                                         // depth below y = 0; negative = above it
-      if (d < 0) { above++; const cap = highAt(k); if (-d > cap) { hf = -cap; atHigh++ } }
       const w = Math.min(1, wFloor[k] / known.cellM)
+      if (d < 0) { above++; const cap = highAt(k); if (-d > cap) { hf = -cap; atHigh++; if (w > 0) cappedAt[k] = 1 } }
       h = w * hf + (1 - w) * hp
       if (w > 0) { fromFloor[k] = 1; nFloor++ }
     }
@@ -403,6 +406,8 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
              ? { source: `${known.rung} (raw/bathymetry-sources.txt)`, tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
                  cellM: known.cellM, cells: nFloor, aboveZeroCells: above, cappedAtHighCells: atHigh, seam: known.seam, runs }
              : { none: floor?.none || 'not asked' },
+           // the nodes writeBed capped at HIGH (a sentinel, not a slope): the stamp reads them by these runs (shoreStamp.mjs#stampCoast)
+           atHigh: { cells: cappedAt.reduce((t, v) => t + v, 0), from: 'survey floor above the town\'s HIGH, clamped to HIGH by writeBed', runs: rowRuns(k => cappedAt[k]) },
            dry: { cells: dryBed.reduce((t, v) => t + v, 0), cellM2: +(stepX * stepZ).toFixed(4), from: 'cells under the mask whose lidar stood above their HIGH level, before the bed was written (rock excluded)', runs: dryRuns, aboveHighM: dryAboveM },
            // ⭐ The kept rock (rockCells): stands above the level by ruling, so the check names it rather than calling it proud.
            rock: { cells: rock.size, from: 'structures.mjs stoneStructures (mapped breakwaters/groynes) × the lidar above the water', runs: rock.size ? rowRuns(k => rock.has(k)) : [] } }
@@ -535,7 +540,9 @@ async function main() {
     for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) m[R[q] * width + i] = 1; return m })()
   const floorMask = (() => { const R = bed?.floor?.runs; if (!R?.length) return null; const m = new Uint8Array(width * height)
     for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) m[R[q] * width + i] = 1; return m })()
-  const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water, rockMask, floorMask) : null
+  const atHighMask = (() => { const R = bed?.atHigh?.runs; if (!R?.length) return null; const m = new Uint8Array(width * height)
+    for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) m[R[q] * width + i] = 1; return m })()
+  const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water, rockMask, floorMask, atHighMask) : null
 
   // ⛔ baseElev EXACT: every reader rebuilds absolute height as stored + baseElev, so a rounded one is a constant error in all of
   // them (1 cm rounding was 3.4 mm on Huron's water datum, 2026-10-27). ▶ node checks/claims-the-shore-agrees-with-the-field.mjs

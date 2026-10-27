@@ -188,6 +188,24 @@ console.log('── 7. islands: the stamp runs round each one')
   const re = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0), null, half), rn = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0))
   say(re.slopeFloorShare.every(v => v > 0 && v < 1) && rn.slopeFloorShare.every(v => v === 0) && rb.slopeFloorShare[1] === null,
     `each ring records its slope's share on a measured floor (${JSON.stringify(re.slopeFloorShare)}; none given ${JSON.stringify(rn.slopeFloorShare)}; borrowed ${rb.slopeFloorShare[1]})`)
+  // f: AN ISLAND IN A BAR CAPPED AT HIGH (Boz's ruling, 2026-10-27; PTown's ring 58: "median gradient −0.0000"): a survey floor
+  // above HIGH is clamped to HIGH by writeBed, so every bed node within 40 m of the island (past its samples' reach, four cells from a crossed node on the diagonal) is the cap, a sentinel. Told
+  // which nodes are capped (bed.atHigh.runs), the stamp leaves them out: the island has no real samples and borrows its
+  // holder's slope; and no capped node within one cell of its line is cut below HIGH (max(ramp, bed): no moat round the bar)
+  { const isl = wnd([[90, 140], [110, 140], [110, 160], [90, 160]], -1), fi = [...face, isl], mi = maskOf(fi, W, H, B)
+    const g0 = field(), capM = new Uint8Array(W * H)
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const x = i * 5, z = j * 5, k = j * W + i
+      const dx = Math.max(90 - x, 0, x - 110), dz = Math.max(140 - z, 0, z - 160)
+      if (mi[k] && Math.hypot(dx, dz) <= 40) { g0[k] = 0; capM[k] = 1 } }
+    let r0 = null; try { stampCoast(Float32Array.from(g0), W, H, B, fi, bb, mi, lake(0)) } catch (e) { r0 = e.message }
+    const g1 = Float32Array.from(g0); let r1 = null, w1 = null; try { r1 = stampCoast(g1, W, H, B, fi, bb, mi, lake(0), null, null, capM) } catch (e) { w1 = e.message.split('\n')[0] }
+    let moat = 0; for (let k = 0; k < W * H; k++) { const x = (k % W) * 5, z = Math.floor(k / W) * 5, dx = Math.max(90 - x, 0, x - 110), dz = Math.max(140 - z, 0, z - 160)
+      if (capM[k] && Math.hypot(dx, dz) <= 5 && g1[k] < -1e-6) moat++ }
+    say(/does not fall seaward/.test(r0 || '') && r1 && r1.slopeFrom[1] === 0 && r1.slopeCapped[1] > 0 && !moat,
+      `an island in a bar capped at HIGH: refused when the cap is read as a slope (${r0 ? 'refused' : 'STAMPED'}), with the capped nodes left out it borrows its holder's slope (${r1 ? `slopeFrom ${JSON.stringify(r1.slopeFrom)}, ${r1.slopeCapped[1]} capped sample(s) left out` : w1}), ${moat} capped node(s) within a cell cut below HIGH`) }
+  { const bt = readFileSync(new URL('../cartograph/bake-terrain.js', import.meta.url), 'utf8')
+    say(/atHigh: \{ cells: cappedAt\.reduce/.test(bt) && /const R = bed\?\.atHigh\?\.runs/.test(bt) && /wd\.mask, water, rockMask, floorMask, atHighMask\)/.test(bt),
+      'bake-terrain records the nodes writeBed capped at HIGH (bed.atHigh.runs) and hands them to the stamp') }
   // c: an island inside no water ring refuses
   let t = false
   try { stampCoast(field(), W, H, B, [...face, wnd([[10, 10], [20, 10], [20, 20], [10, 20]], -1)], bb, mask, lake(0)) } catch (e) { t = /inside no water ring/.test(e.message) }
