@@ -42,7 +42,7 @@ import { tmpdir } from 'node:os'
 import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
-import { readCoast, COAST_FILE, ringViolations, ringsMeet } from '../cartograph/coastFile.mjs'
+import { readCoast, COAST_FILE, COAST_VERSION, ringViolations, ringsMeet } from '../cartograph/coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { wetLoops, KIND } from '../cartograph/marchingSquares.mjs'
 import { terrainLattice } from '../cartograph/elevationSources.mjs'
@@ -92,14 +92,14 @@ say(!callers.length, `no pour file calls coastRings${callers.length ? `: ${calle
   let threw = false
   try { readCoast(d, bb, 'check') } catch { threw = true }
   say(threw, 'readCoast refuses a town with no coast.json')
-  writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: false, why: 'x', square: { ...bb, x1: 11 } }))
+  writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: COAST_VERSION, coast: false, why: 'x', square: { ...bb, x1: 11 } }))
   threw = false
   try { readCoast(d, bb, 'check') } catch { threw = true }
   say(threw, 'readCoast refuses a coast traced on another square')
-  writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: false, why: 'inland', square: bb }))
+  writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: COAST_VERSION, coast: false, why: 'inland', square: bb }))
   say(readCoast(d, bb, 'check').coast === false, 'readCoast reads an inland verdict as no coast')
   const O = [[-10, -10], [10, -10], [10, 10], [-10, 10]], Hn = [[-2, -2], [-2, 2], [2, 2], [2, -2]]   // outer +, hole −
-  const wrote = (water) => writeFileSync(join(d, COAST_FILE), JSON.stringify({ coast: true, square: bb, water, arcs: [] }))
+  const wrote = (water) => writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: COAST_VERSION, coast: true, square: bb, water, arcs: [] }))
   wrote([{ outer: O, holes: [Hn] }])
   say(readCoast(d, bb, 'check').holes === 1, 'readCoast takes an outer wound positive with its island wound negative')
   for (const [why, water] of [['a hole wound positive', [{ outer: O, holes: [[...Hn].reverse()] }]], ['an outer wound negative', [{ outer: [...O].reverse(), holes: [] }]]]) {
@@ -341,6 +341,24 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   const wper = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
   const pockets = ww ? ww.rings.filter(r => r.deck.every(x => x != null && x === r.deck[0]) && 2 * Math.abs(signed(r)) / wper(r) < wx.stepM) : []
   say(ww && !pockets.length, `PTown's wharf and memorial-park decks: ${ww ? `${ww.slivers.length} sliver(s) taken, ${pockets.length} pocket(s) narrower than a cell bounded by one deck left as water (want 0)` : `REFUSED — ${wr}`}`)
+  // …and what ① is given is SIMPLE: every water ring and every deck as taken out, none crossing itself or another (PTown, 10-27:
+  // the noding left off, a point-touch left unjoined, or the subtraction left self-touching each put a crossing here)
+  const wv = ww ? [...ww.rings.flatMap(r => ringViolations(r)), ...ww.decks.flatMap(r => ringViolations(r)), ...ringsMeet(ww.rings)] : [null]
+  say(ww && !wv.length, `PTown's wharf decks and water as ① is given them are simple: ${ww ? `${wv.length} violation(s)${wv.length ? ` (${wv.slice(0, 3).map(v => `${v.kind} @(${v.at.map(c => c.toFixed(2)).join(', ')})`).join(' · ')})` : ''}` : 'REFUSED'}`)
+  // ⛔ a HOLE is not a pocket (Zob, 10-27): a 1.1 × 6 m street deck standing clear of every shore in a 100 m lake survives the
+  // open (wider than the 1 m cell) and must stay a hole, so mintInputs' "clear of every shore" refusal can fire
+  const lake100 = [[0, 0], [100, 0], [100, 100], [0, 100]], clear = waterWithoutDecks([lake100], [], [[[50, 50], [51.1, 50], [51.1, 56], [50, 56]]], 1)
+  say(clear.rings.filter(r => signed(r) < 0).length === 1 && !clear.slivers.length, `a street deck clear of the shore stays a hole: ${clear.rings.filter(r => signed(r) < 0).length} hole (want 1), ${clear.slivers.length} sliver(s)`)
+  // and nothing narrow, nothing taken (Zob's (c)): a deck crossing a straight shore square-on takes nothing; crossing it at 45° the
+  // acute water wedge's tip narrower than a cell is the deck's, at most a cell's square
+  const sq = waterWithoutDecks([[[0, 0], [100, 0], [100, 100], [0, 100]]], [[[0, 0], [100, 0]]], [[[45, -10], [55, -10], [55, 20], [45, 20]]], 1)
+  const diag = waterWithoutDecks([[[0, 0], [100, 0], [100, 100], [0, 100]]], [[[0, 0], [100, 0]]], [[[50, -10], [60, 0], [40, 20], [30, 10]]], 1)
+  const dM = diag.slivers.reduce((t, x) => t + x.m2, 0)
+  say(!sq.slivers.length && sq.rings.length === 1 && dM <= 1 && diag.rings.length === 1, `a deck across a wide shore takes no sliver square-on (${sq.slivers.length}), and at 45° only the acute wedge's tip (${dM.toFixed(3)} m², at most the 1 m cell's square)`)
+  // ⛔ a coast.json of an older version refuses by name (Zob, 10-27): a trace under the old deck rules must not pair with this mint
+  { const d = mkdtempSync(join(tmpdir(), 'coastv-')); try { writeFileSync(join(d, COAST_FILE), JSON.stringify({ version: 1, coast: true, square: { x0: 0, x1: 1, z0: 0, z1: 1 } }))
+    let r = null; try { readCoast(d, { x0: 0, x1: 1, z0: 0, z1: 1 }, 'check') } catch (e) { r = String(e.message) }
+    say(/coast version 1/.test(r || ''), `a coast.json of version 1 REFUSES by name (${r ? 'refused' : 'READ'})`) } finally { rmSync(d, { recursive: true, force: true }) } }
   const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
   say(/deckFootprints\(osm\.ground, fine\)/.test(bc) && !/followDecks/.test(bc), 'bake-coast closes its decks at the trace step, and the trace stays the trace (no deck is followed)')
 }
@@ -359,6 +377,7 @@ for (const scene of scenes) {
   const doc = JSON.parse(readFileSync(cp, 'utf8'))
   console.log(`── D. ${scene}: ${doc.coast ? doc.from : `inland — ${doc.why}`}`)
   checked++
+  say(doc.version === COAST_VERSION, `${scene}: coast.json is version ${doc.version ?? 'none'} (this kit reads ${COAST_VERSION}${doc.version === COAST_VERSION ? '' : '; readCoast refuses it until the coast is re-baked'})`)
   if (!doc.coast) continue
   const outersOk = doc.water.every(b => signed(b.outer) > 0), holesOk = doc.water.every(b => b.holes.every(h => signed(h) < 0))
   say(outersOk && holesOk, `${scene}: every water outer is positive and every hole negative`)
@@ -400,6 +419,8 @@ for (const scene of scenes) {
       const Q = doc.square, side = (a, b) => [['x0', 0], ['x1', 0], ['z0', 1], ['z1', 1]].some(([k, c]) => Math.abs(a[c] - Q[k]) < 1 / CLIP_SCALE && Math.abs(b[c] - Q[k]) < 1 / CLIP_SCALE)
       const bare = bareEdges(given, W.arcs, side), bareM = bare.reduce((t, [a, b]) => t + Math.hypot(b[0] - a[0], b[1] - a[1]), 0), so = strokedOff(given, W.arcs)
       say(!so.off && !so.twice, `${scene}: no arc edge lies off the mint's water rings (${so.off}) and none of their edges is stroked twice (${so.twice})`)
+      const gv = [...given.flatMap(r => ringViolations(r)), ...ringsMeet(given)]
+      say(!gv.length, `${scene}: the water rings the mint is given are simple and meet none other (${gv.length}${gv.length ? `, first ${gv[0].kind} @(${gv[0].at.map(Math.round).join(', ')})` : ''})`)
       say(!bare.length, `${scene}: every water-ring edge the mint is given lies under a stroked arc (${W.arcs.filter(a => a.deck != null).length} of ${W.arcs.length} arc(s) a deck's edge)${bare.length ? ` — ${bare.length} edge(s), ${bareM.toFixed(1)} m bare, first @(${bare[0][0].map(Math.round).join(', ')})` : ''}`)
       const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
       if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)

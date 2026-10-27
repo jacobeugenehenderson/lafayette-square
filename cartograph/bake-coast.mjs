@@ -58,14 +58,13 @@ import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
 import { deckFootprints } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
-import { COAST_FILE, heldCells, ringViolations, ringsMeet } from './coastFile.mjs'
+import { COAST_FILE, COAST_VERSION, heldCells, ringViolations, ringsMeet } from './coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { discOf } from './boundaryRecords.mjs'
 
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
 
-export const COAST_VERSION = 1
 
 /** The square tile, in metres, the fine line is traced in. ⛔ Not a geometric value: every tile samples ONE global lattice
  *  (the square's origin, the source's own pixel) and keeps only the loops inside its own square, padded for reading only,
