@@ -2872,6 +2872,7 @@ createServer(async (req, res) => {
         await runIfDirty('revetment',
           // ⭐ MAP_JSON: the drawn water decides where the shore is (2026-09-26).
           [join(LOOK_DIR, 'shape.json'), join(bakePaths.raw, 'osm.json'), MAP_JSON, bakePaths.boundary, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,
+           join(here, '..', 'references', 'registry.json'),   // the toe berm's size (bake-revetment.js#toeBerm, f-cem-toe-berm-size)
            join(here, 'bake-revetment.js')],
           [join(LOOK_DIR, 'revetment.json')],
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
@@ -2907,11 +2908,13 @@ createServer(async (req, res) => {
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
       // absence — so it is never dirty forever.
-      // not-inputs: context.coastDist.bin (its own output, written only)
+      // not-inputs: context.coastDist.bin (its own output, written only) · outer-coast.json (its own output, written only)
       await runIfDirty('coast-distance',
         // The registry, the surfaces table and the town's OSM (its state) feed the RESOLVED params.
         [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, MAP_JSON, join(here, 'bake-coast-distance.js'),
-          join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json')],
+          join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json'),
+          // the water past the rim (bake-coast-distance.js#bakeOuterCoast): the stencil's centre and radius, and the frame
+          join(LOOK_DIR, 'ground.json'), bakePaths.geography],
         [join(LOOK_DIR, 'context.json')],
         `node bake-coast-distance.js --look=${id} ${sceneFlag}`,
         { cwd: here })
@@ -2924,7 +2927,8 @@ createServer(async (req, res) => {
            // …and the town's declared E-911 address points, with its parcels as their join (address-points.mjs)
            ...declaredAddressPointPaths(bakeScene), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
            join(here, 'bake-buildings.js'), join(here, 'building-address.mjs'), join(here, 'address-points.mjs'),
-           join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],   // each building's groundY is sampled off the drawn ground (a raised kerb)
+           join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),   // each building's groundY is sampled off the drawn ground (a raised kerb)
+           join(SCENE_DIR, 'clean', 'skeleton.json')],   // the named streets each building fronts, for its neon faces (bake-buildings.js)
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
@@ -3067,6 +3071,7 @@ createServer(async (req, res) => {
             treeInputs.boundaryPath && `--boundary ${treeInputs.boundaryPath}`,
             `--output ${treeInputs.output}`,
           ].filter(Boolean).join(' ')
+          // not-inputs: derived_trees.json (a name in bake-trees.js#CANONICAL_TREE_WELLS, the wells a census row may cite; the wells it opens arrive in treeInputs.inputs) · scene.json (declared above as a VALUE, without bakedAt, which this audit reports UNKNOWN) · trees.json (its own output, `--output`)
           await runIfDirty('trees',
             // the traced reads (2026-09-26): the census inputs, the tree LIBRARY as one set, and the town's baked
             // lamps / atlas / scene (hero keyframes) — keyed by SCENE, as bake-trees opens them (Class D row 10)
@@ -3119,7 +3124,7 @@ createServer(async (req, res) => {
       // for the previous set — new lamps standing in the dark with no pool, and
       // pools glowing where a lamp no longer is. Caught 2026-07-23 re-baking LS
       // after the lamp-well union added 47 park lamps.
-      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · ground.poolmap.png (its own output) · ground.colormap.png (its own output)
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · ground.poolmap.png (its own output) · ground.colormap.png (its own output) · ground.rulemap.png (its own output)
       await runIfDirty('ground-ao',
         [MAP_JSON, join(SCENE_DIR, 'buildings.json'), join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),
          join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
