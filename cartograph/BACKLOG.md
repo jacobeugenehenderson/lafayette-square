@@ -174,7 +174,9 @@ name (Jacob): the LUX-ARBORAGRAPH, the tree of lights. ⛔ SCOPE (Jacob, 2026-10
 Arborist or Meteorologist. It's purely a PTown thing, and it only makes this one asset." So it is PROVINCETOWN INSTANCE work (beside
 src/instances/provincetown.js and the Monument set piece), never a kit tool, a town-generic rig or a Stage panel for every town. Layer 0's
 "town #2" question doesn't apply to it by Jacob's ruling. The top anchors are the BALCONY's edge (dossier 204′4″, 29′6″ square), not the
-battlement top. The circle's height is authored, starting at ~20 ft (Boz's suggestion; Jacob recalls at least 15 ft).
+battlement top. The circle's height is authored, starting at ~20 ft (Boz's suggestion; Jacob recalls at least 15 ft). PATTERNS (Jacob): "the strands aren't that dense so it's not like we'll be doing videos on the lights. It'll be stripes,
+dots, swirls." So the editor is a small set of parametric patterns (stripes, dots, swirls, plus the steady glow) with colours, speed and
+timing over the 20 × ~155 grid. No per-frame painting, no video, no xLights import.
 ⛔ RELEASE ORDER FOR THE COAST PIN (Ward-seat review, 2026-10-27; Jacob ruled the pin): an OLD player on a NEW slab draws the bare
 lidar contour silently (the stamp no longer raises land). So: (1) merge shore/2026-10-25 into the kit; (2) publish the kit bundle at
 that sha; (3) move the Ward pin on a ward-pin/<date> branch and publish:staging (reconcile ward-kit 7b68aad5 vs Ward OPERATIONS' stated
