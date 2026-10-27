@@ -12,7 +12,8 @@
 //       WATER_EDGE_SKEL) lies on ①'s water edge within one rounding AND is either a ① vertex (the frozen
 //       `protopolygon.blocks`) or a vertex SHARED by the line's other readers: the land use (`luByClass`, the stamp's crossings;
 //       Zob, 2026-10-26) or the tile's own shore cell (`inkCells`, tileGround#shareWaterRunIntoShore: the joins and any ②
-//       vertex on ①'s line). Anything else is RED by name: off the line, or on it unshared.
+//       vertex on ①'s line), or — on a face with no shore cell — the tile's own ring, which is the water line there. Anything
+//       else is RED by name: off the line, or on it unshared.
 //   (B) every ② kerb vertex with ONE water edge (where a street meets the coast) lies on a ① water edge, within the lattice's
 //       one rounding (latticeNode#NODE_BOUND, read);
 //   (C′) every ① coast vertex (both edges the water's) inside the SPAN of a ② water run appears in ② as a vertex. A run's
@@ -114,6 +115,9 @@ function judge(tiles, C, lu) {
   const vSet = new Set([...C.both.keys()]), all = new Set()
   const shared = new Set(); for (const rs of Object.values(lu || {})) for (const r of rs || []) for (const p of r || []) shared.add(key(K(p)))
   for (const t of tiles) for (const c of (t.inkCells || [])) if (c.cls === 'shore') for (const r of c.rings) for (const p of r) shared.add(key(K(p)))
+  // a face with NO shore cell (it borders no ink: a bb corner between the water and the frame) has the water line as its own ring,
+  // so there the RING is the sharer (Boz's ruled case, 2026-10-26)
+  for (const t of tiles) if (!(t.inkCells || []).some(c => c.cls === 'shore')) for (const p of (t.ring || [])) shared.add(key(K(p)))
   const onEdge = (k) => C.edges.some(([a, b]) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy; if (!L2) return false
     const t = ((k[0] - a[0]) * dx + (k[1] - a[1]) * dy) / L2; if (t < 0 || t > 1) return false
     const cr = (k[0] - a[0]) * dy - (k[1] - a[1]) * dx; return cr * cr <= NODE_BOUND * NODE_BOUND * L2 })
