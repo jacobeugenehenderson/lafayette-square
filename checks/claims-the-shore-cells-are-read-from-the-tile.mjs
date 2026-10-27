@@ -2,7 +2,7 @@
 // CLAIM — EVERY READER OF THE SHORE CELLS READS THE TILE'S (`tile.inkCells`), NEVER THE MINT'S PRE-STAMP COPY.
 //
 // The mint absorbs ①'s ink and hands its cells to tile creation (`protopolygon.inkCells`). The tile's own cells then take the
-// land-use stamp's coast crossings (`tileGround.js#shareStampIntoShore`, Boz's ruling, 2026-10-26), so the coast is one line
+// block's water-run vertices — the stamp's coast crossings and the joins (`tileGround.js#shareWaterRunIntoShore`, Boz's ruling, 2026-10-26), so the coast is one line
 // with one vertex set. A reader of the mint's copy holds the coast with the OTHER vertex set: the alternate geometry that
 // left Huron +1.5 km of asphalt/shore drawn twice. Read off the source, never restated:
 //   (1) outside the producer (src/lib/tileGround.js, src/lib/absorbInk.js) and the freeze (cartograph/derive.js), no source in

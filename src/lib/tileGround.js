@@ -2481,59 +2481,53 @@ function insertOnEdges(ring, owners, pts, ok) {
 // lacks, on a ring edge (insertOnEdges: the boolean's own two-unit containment), whose block neighbour is that edge's end or on
 // that edge too, so the block runs along it — is inserted into the ring, splitting the edge, each half keeping its owner.
 // ⛔ A block vertex merely NEAR a ring edge, the block not running along it, is not taken.
-// ⭐ THE STAMP'S COAST CROSSINGS ARE THE SHORE CELL'S TOO (Boz's ruling, Zob's read, 2026-10-26). The land-use stamp writes its
-// crossings into the block (`iA`) and the land use (A10), and where the block's edge is a WATER edge that edge is also the
-// shore cell's land side: a crossing the cell lacked left the coast held with two vertex sets, and `tile − iA − cells` kept
-// the sub-step sliver between them as asphalt (Huron +1.5 km asphalt/shore, claims-no-edge-is-drawn-twice). Each point the
-// stamp ADDED to an `iA` edge (a, b) that is a water edge of `iaFull` (the same two keys, stamped WATER_EDGE_SKEL) is inserted
-// into the tile's shore cell (`inkCells`, cls 'shore') on the edge whose endpoints carry the keys of a and b — or, where that
-// edge is already split, the sub-edge bounded by the keys around the point's parameter along a → b. KEY LOOKUP ONLY: no
-// containment, no distance. A water edge whose keys no shore cell carries REFUSES by name. Returns { tile, added }.
-function shareStampIntoShore(before, tile, who) {
+// ⭐ THE KERB'S COAST VERTICES ARE THE SHORE CELL'S TOO (Boz's ruling, Zob's read, 2026-10-26). Where the block's edge is a WATER
+// edge it is also the shore cell's land side, and every vertex the block (`iA`) carries along a water run — the land-use stamp's
+// crossings (A10), the joins where a street meets the water, any ② vertex on ①'s line — must be the cell's vertex as well: one
+// it lacked left the coast held with two vertex sets, and `tile − iA − cells` kept the sub-step sliver between them as asphalt
+// (Huron +1.5 km asphalt/shore; PTown's refusals, the joins). Each such vertex the cell lacks is BRACKETED by key: walk `iA` from
+// it, both ways, to the nearest vertex a shore cell carries; insert it on that cell's stretch between the two by its parameter
+// along them. Where only one side reaches a cell vertex c (a join, at the run's end), it goes on the cell edge from c whose
+// parameter takes it strictly inside — exactly one, else refuse. KEY-ANCHORED: no containment, no distance. Proves itself:
+// every water-run vertex of iA must end in a cell; any that does not REFUSES by name. Returns { tile, added }.
+function shareWaterRunIntoShore(tile, who) {
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }
-  // ⭐ IT PROVES ITSELF (Boz, 2026-10-26: the first build shared nothing and nothing said so). Independently of the walk below,
-  // the crossings the stamp put on the coast are the vertices it ADDED to iaFull whose two edges the stamp's own expansion
-  // stamped to the water. Every one of them must be shared into a shore cell; a count that differs refuses by name.
-  const had = new Set((before.iaFull || []).flat().map(K)), want = new Map()
+  // the vertices of iaFull on a water run (either edge stamped WATER_EDGE_SKEL), by key
+  const wet = new Map()
   ;(tile.iaFull || []).forEach((r, si) => { const st = tile.iaStamp?.[si]; if (!st) return; const n = r.length
-    r.forEach((v, e) => { if (!had.has(K(v)) && tile.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL && tile.runs?.[st[(e - 1 + n) % n]]?.skelId === WATER_EDGE_SKEL) want.set(K(v), v) }) })
-  const cells = (tile.inkCells || []).filter(c => c.cls === 'shore')
-  if (!cells.length || !tile.iA?.length) {
-    if (want.size) throw new Error(`[tileGround][stamp] ⛔ ${who}: the land-use stamp put ${want.size} crossing(s) on the coast (e.g. (${[...want.values()][0].map(c => c.toFixed(3)).join(', ')})) but the tile has no shore cell to share them into. Refusing.`)
-    return { tile, added: 0 } }
-  const was = new Set((before.iA || []).flat().map(K))
-  // the water edges of iaFull BEFORE the stamp, by their two keys (either direction). ⛔ Not the stamped iaFull: the stamp split
-  // each crossed edge there too, so a crossed edge's two ends are never adjacent in it (the first build read it, and shared 0)
-  const water = new Set()
-  ;(before.iaFull || []).forEach((r, si) => { const st = before.iaStamp?.[si]; if (!st) return
-    r.forEach((v, e) => { if (before.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL) { const a = K(v), b = K(r[(e + 1) % r.length]); water.add(a + '|' + b); water.add(b + '|' + a) } }) })
-  // the stamp's points on an iA edge (a, b): walk back and forward from each added vertex to the first pre-stamp vertices
-  const add = []   // { a, b, pa, pb, v }
-  for (const r of tile.iA) { const n = r.length
-    for (let i = 0; i < n; i++) { if (was.has(K(r[i]))) continue
-      let j = i, k = i; do { j = (j - 1 + n) % n } while (!was.has(K(r[j])) && j !== i); do { k = (k + 1) % n } while (!was.has(K(r[k])) && k !== i)
-      if (j === i || k === i) continue
-      const a = K(r[j]), b = K(r[k]); if (!water.has(a + '|' + b)) continue
-      add.push({ a, b, pa: r[j], pb: r[k], v: r[i] }) } }
-  const got = new Set(add.map(x => K(x.v))), missed = [...want.keys()].filter(k => !got.has(k))
-  if (missed.length) throw new Error(`[tileGround][stamp] ⛔ ${who}: ${missed.length} of the ${want.size} land-use stamp crossing(s) on the coast were not found on a block water edge to share into the shore cell (e.g. (${want.get(missed[0]).map(c => c.toFixed(3)).join(', ')})): the coast would be held with two vertex sets. Refusing.`)
-  if (!add.length) return { tile, added: 0 }
-  const rings = cells.map(c => c.rings.map(r => r.slice()))
-  for (const x of add) {
-    const q = toClipper(x.v), A = toClipper(x.pa), B = toClipper(x.pb), dx = B.X - A.X, dy = B.Y - A.Y, L2 = dx * dx + dy * dy
-    const tOf = (w) => { const c = toClipper(w); return ((c.X - A.X) * dx + (c.Y - A.Y) * dy) / L2 }, tv = tOf(x.v)
-    let done = false
-    for (const R of rings) for (const r of R) { if (done) break
-      const n = r.length, ia = r.findIndex(w => K(w) === x.a), ib = r.findIndex(w => K(w) === x.b); if (ia < 0 || ib < 0) continue
-      // the cell's stretch from a to b, whichever way round is the shorter: the sub-edge whose ends' parameters bracket the point's
-      const fwd = (ib - ia + n) % n, back = (ia - ib + n) % n, step = fwd <= back ? 1 : -1, len = Math.min(fwd, back)
-      for (let m = 0; m < len && !done; m++) { const u = (ia + step * m + n) % n, w = (ia + step * (m + 1) + n) % n
-        if (K(r[u]) === K(x.v) || K(r[w]) === K(x.v)) { done = true; break }
-        const tu = tOf(r[u]), tw = tOf(r[w]); if (!(tu < tv && tv < tw)) continue
-        r.splice(step > 0 ? u + 1 : u, 0, x.v); done = true } }
-    if (!done) throw new Error(`[tileGround][stamp] ⛔ ${who}: the land-use stamp put a crossing at (${x.v[0].toFixed(3)}, ${x.v[1].toFixed(3)}) on the block's WATER edge (${x.pa.map(c => c.toFixed(3)).join(', ')}) → (${x.pb.map(c => c.toFixed(3)).join(', ')}), and no shore cell carries that edge's two keys. The coast would be held with two vertex sets. Refusing.`) }
-  let ci = 0
-  return { tile: { ...tile, inkCells: tile.inkCells.map(c => c.cls === 'shore' ? { ...c, rings: rings[ci++] } : c) }, added: add.length }
+    r.forEach((v, e) => { if (tile.runs?.[st[e]]?.skelId === WATER_EDGE_SKEL || tile.runs?.[st[(e - 1 + n) % n]]?.skelId === WATER_EDGE_SKEL) wet.set(K(v), v) }) })
+  const want = []; for (const r of (tile.iA || [])) r.forEach((v, i) => { if (wet.has(K(v))) want.push({ r, i, v }) })
+  if (!want.length) return { tile, added: 0 }
+  const cells = (tile.inkCells || []).map((c, ci) => ({ c, ci })).filter(x => x.c.cls === 'shore')
+  if (!cells.length) throw new Error(`[tileGround][shore] ⛔ ${who}: the block carries ${want.length} vertex(es) on a water run (e.g. (${want[0].v.map(c => c.toFixed(3)).join(', ')})) but the tile has no shore cell to carry them. Refusing.`)
+  const rings = cells.map(x => x.c.rings.map(r => r.slice()))
+  const keyAt = () => { const m = new Map(); rings.forEach((R, a) => R.forEach((r, b) => r.forEach((v, c) => { if (!m.has(K(v))) m.set(K(v), [a, b]) }))); return m }
+  let at = keyAt(), added = 0
+  const param = (P, A, B) => { const p = toClipper(P), a = toClipper(A), b = toClipper(B), dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; return L2 ? ((p.X - a.X) * dx + (p.Y - a.Y) * dy) / L2 : NaN }
+  for (const { r, i, v } of want) { if (at.has(K(v))) continue
+    const n = r.length, walk = (dir) => { for (let s = 1; s < n; s++) { const w = r[(i + dir * s + n * s) % n]; if (!wet.has(K(w))) return null; if (at.has(K(w))) return w } return null }
+    const lo = walk(-1), hi = walk(1)
+    let placed = false
+    const tryEdge = (rr, u, w) => { const t = param(v, rr[u], rr[w]); if (!(t > 0 && t < 1)) return false; rr.splice(w === (u + 1) % rr.length ? u + 1 : u, 0, v); return true }
+    if (lo && hi && at.get(K(lo))[0] === at.get(K(hi))[0] && at.get(K(lo))[1] === at.get(K(hi))[1]) {
+      const [a, b] = at.get(K(lo)), rr = rings[a][b], m = rr.length, ia = rr.findIndex(w => K(w) === K(lo)), ib = rr.findIndex(w => K(w) === K(hi))
+      const fwd = (ib - ia + m) % m, back = (ia - ib + m) % m, step = fwd <= back ? 1 : -1, len = Math.min(fwd, back)
+      // walk the cell's stretch from lo toward hi; insert on the sub-edge whose ends' parameters along lo → hi bracket the vertex's
+      const tv = param(v, lo, hi)
+      for (let q = 0; q < len && !placed; q++) { const u = (ia + step * q + m) % m, w = (ia + step * (q + 1) + m) % m
+        const tu = param(rr[u], lo, hi), tw = param(rr[w], lo, hi); if (tu < tv && tv < tw) { rr.splice(step > 0 ? u + 1 : u, 0, v); placed = true } } }
+    else { // one side only (a run's end): the cell edge from that side's vertex that takes the point strictly inside — exactly one
+      const c = lo || hi
+      if (c) { const [a, b] = at.get(K(c)), rr = rings[a][b], m = rr.length, ic = rr.findIndex(w => K(w) === K(c))
+        const opts = [[ic, (ic + 1) % m], [(ic - 1 + m) % m, ic]].filter(([u, w]) => { const t = param(v, rr[u], rr[w]); return t > 0 && t < 1 })
+        if (opts.length === 1) placed = tryEdge(rr, ...opts[0]) } }
+    if (!placed) throw new Error(`[tileGround][shore] ⛔ ${who}: the block's vertex (${v.map(c => c.toFixed(3)).join(', ')}) on a water run has no place on a shore cell (bracket ${lo ? 'found' : 'none'} / ${hi ? 'found' : 'none'}): the coast would be held with two vertex sets. Refusing.`)
+    added++; at = keyAt() }
+  // the proof: every water-run vertex of iA is now a shore cell's
+  const miss = want.filter(x => !at.has(K(x.v)))
+  if (miss.length) throw new Error(`[tileGround][shore] ⛔ ${who}: ${miss.length} of ${want.length} water-run vertex(es) of the block are on no shore cell after sharing (e.g. (${miss[0].v.map(c => c.toFixed(3)).join(', ')})). Refusing.`)
+  let k = 0
+  return { tile: { ...tile, inkCells: tile.inkCells.map(c => c.cls === 'shore' ? { ...c, rings: rings[k++] } : c) }, added }
 }
 function shareBlockIntoRing(t) {
   if (!t.iA?.length || !t.ring?.length) return { t, added: 0 }
@@ -8194,11 +8188,11 @@ export function buildTileGround(ribbons, opts = {}) {
           const { tile, groups, counts } = stampTile(t, landEv)
           for (const k in counts) byPair[k] = (byPair[k] || 0) + counts[k]
           stamped++; added += tile.iaFull.reduce((u, r, i) => u + r.length - t.iaFull[i].length, 0)
-          // the stamp's crossings on a stretch where the block follows the ring go into the ring too, and on a water edge into
-          // the shore cell (shareStampIntoShore)
+          // the stamp's crossings on a stretch where the block follows the ring go into the ring too
           const sh = shareBlockIntoRing(tile); sharedIntoRing += sh.added
-          const ss = shareStampIntoShore(t, sh.t, `tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`); sharedIntoShore += ss.added
-          return { ...ss.tile, _evGroups: groups } })
+          return { ...sh.t, _evGroups: groups } })
+        // every tile, stamped or not: the block's vertices on a water run go into its shore cell (joins have no stamp)
+        protoShapeTiles = protoShapeTiles.map(t => { const ss = shareWaterRunIntoShore(t, `tile at ${t.ring[0].map(c => c.toFixed(1)).join(', ')}`); sharedIntoShore += ss.added; return ss.tile })
         const stamp = MP.boundaryRing
         if (stamp?.length > 2) {
           const before = protoShapeTiles.length; let rimShared = 0
@@ -8295,7 +8289,7 @@ export function buildTileGround(ribbons, opts = {}) {
           console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice)`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoFull} block crossing(s) the face trim and the circle minted, written into the struck contour (iaFull): ② is one ring`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoRing} block vertex(es) where the block follows the ring (the face trim's and the stamp's crossings there), written into the tile ring`)
-          console.log(`[tileGround][PROTO⊙] ${sharedIntoShore} land-use stamp crossing(s) on a block water edge, written into the tile's shore cell (shareStampIntoShore)`)
+          console.log(`[tileGround][PROTO⊙] ${sharedIntoShore} block vertex(es) on a water run (stamp crossings, joins), written into the tile's shore cell (shareWaterRunIntoShore)`)
           console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)
         } else {
           console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)
