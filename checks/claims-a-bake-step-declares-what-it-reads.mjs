@@ -1,26 +1,29 @@
 #!/usr/bin/env node
 // CLAIM — EVERY FILE A BAKE STEP READS IS IN THAT STEP'S `runIfDirty` INPUT LIST.
 //
-// `runIfDirty(label, INPUTS, OUTPUTS, cmd)` (cartograph/serve.js) skips a step when its outputs are newer than its
-// inputs, so a file a step READS but does not LIST can never make it re-run. Huron acquired elevation, baked terrain,
+// `runIfDirty(label, INPUTS, OUTPUTS, cmd)` (cartograph/serve.js) re-runs a step when what it last read differs BY CONTENT:
+// its CODE (every declared script's import closure, expanded and hashed by runIfDirty itself since 6ff4b9f1) and its
+// DECLARED DATA. So code needs no declaring, and a DATA file a step reads but does not list can never make it re-run. Huron acquired elevation, baked terrain,
 // and its 3,678 buildings stayed at y = 0 under 24 m of ground: `buildings` read the terrain and did not declare it
 // (docs/briefs/BRIEF-dirty-graph-declares-what-it-reads.md). `ground` declared it, which is why this is a class.
 //
 // READS BOTH SIDES, RESTATES NEITHER:
 //   · DECLARED — each runIfDirty call's input array, parsed out of serve.js; identifiers resolved through their
 //     `const X = …` definitions and `mapDataPaths`'s keys, `importClosure([...])` evaluated on the live tree.
-//   · READ — the step's script (from its `node <script>` command): (a) CODE, its import closure; (b) DATA, every
-//     data-file name that appears as a string literal in that closure (comments stripped), matched by basename.
-//     A name the step itself WRITES (its outputs) is not a read.
+//   · READ — the step's script (from its `node <script>` command): (a) CODE, its import closure (credited whole when
+//     runIfDirty expands it, read off runIfDirty's definition); (b) DATA, every data-file name that appears as a string
+//     literal in that closure (comments stripped), matched by basename, EXCEPT a message (whitespace in it), a table
+//     entry (an object property's value: a registry row) and a URL (`namesIn`). A name the step WRITES is not a read.
 // ⛔ WHERE IT CANNOT TELL, IT SAYS UNKNOWN AND NAMES THE STEP — a declared input it cannot resolve statically
 // (`...treeInputs.inputs`), or a script it cannot find. UNKNOWN is not a pass: exit 2.
 // ⚠️ The data side is a NAME match: a literal names a file the script can open, on some branch. It cannot see a path
 // built at runtime, and it counts a literal on a branch this town never takes. So a gap is a question with a
 // line to read, not a verdict; the list is the audit.
 //
-//   node checks/claims-a-bake-step-declares-what-it-reads.mjs [--serve=path] [--step=label] [-v]
+//   node checks/claims-a-bake-step-declares-what-it-reads.mjs [--serve=path] [--step=label] [-v] [--mutants]
 //
-// MUTATION (must go red, naming `ground`): remove SCENE_TERRAIN_JSON from ground's input list, via --serve.
+// ⭐ --mutants: each skip shown to decide its row (the filter dropped → RED), a read kept, and serve.js with the
+// terrain step's MAP_JSON removed must name map.json (bake-terrain.js#floodExtent), by re-running this file.
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, basename, relative } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -28,7 +31,12 @@ import { ROOT } from './_scenes.mjs'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const verbose = process.argv.includes('-v')
-const src = readFileSync(arg('serve') || join(ROOT, 'cartograph/serve.js'), 'utf8')
+// --mutant=terrain-map: serve.js with the terrain step's MAP_JSON declaration removed (run by --mutants, below)
+const SERVE_MUTANTS = { 'terrain-map': (t) => t.replace(/\n\s*MAP_JSON,\s*\/\/ the high-water flood[^\n]*/, '') }
+const RULE_MUTANTS = ['adjacent-not-inputs']   // a mutant of THIS check's rule, not of serve.js
+const src0 = readFileSync(arg('serve') || join(ROOT, 'cartograph/serve.js'), 'utf8')
+const src = SERVE_MUTANTS[arg('mutant')] ? SERVE_MUTANTS[arg('mutant')](src0) : src0
+if (arg('mutant') && !RULE_MUTANTS.includes(arg('mutant')) && src === src0) { console.log(`⛔ NOT CHECKED — mutant ${arg('mutant')} could not be applied; update this check`); process.exit(2) }
 const pc = await import(pathToFileURL(join(ROOT, 'cartograph/pour-code.mjs')).href)
 const { importClosure } = pc
 const CARTO = join(ROOT, 'cartograph')
@@ -62,6 +70,68 @@ function splitTop(s) {
   return out
 }
 const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1')
+
+// ── the READ side's name scan: a data-file name in a string literal, minus three things that are not a read ──
+//   · a MESSAGE — the literal is prose that ends in a file name (`'no norms.json'`): a path has no whitespace. (Prose
+//     with an apostrophe is never matched: the scan does not span a quote, and a literal opens and closes on the same one);
+//   · a TABLE ENTRY — the literal is an object property's value (`path: 'raw/msbf.json'`, `file: '…'`): a registry row names
+//     a file for whoever reads that row, and the row's reader is what opens it (intake-rows.mjs, states/*.mjs);
+//   · a URL — `https://…/x.json` is fetched, never a local file a step can declare.
+// ⚠️ What this gives up: a step that opens a file ONLY through a table row is not seen. The table's reader is the place
+// to declare that, as a VALUE input (`{ value, read }`).
+const rx = new RegExp(`(['"\`])([^'"\`\\n]*?\\.(?:${DATA_EXT}))\\1`, 'g')
+function namesIn(text, keep = null) {   // keep: a filter NOT applied (the mutants)
+  const reads = [], skipped = { table: 0, message: 0, url: 0 }
+  for (const mm of text.matchAll(rx)) {
+    const lit = mm[2]
+    if (keep !== 'url' && lit.includes('://')) { skipped.url++; continue }
+    if (keep !== 'message' && /\s/.test(lit)) { skipped.message++; continue }
+    const before = text.slice(Math.max(0, mm.index - 80), mm.index)
+    if (keep !== 'table' && /(?:^|[{,\n])\s*(?:[A-Za-z_$][\w$]*|'[^'\n]*'|"[^"\n]*")\s*:\s*$/.test(before)) { skipped.table++; continue }
+    const name = basename(lit.replace(/\$\{[^}]*\}/g, '*'))
+    if (!name || name.includes('*')) continue
+    reads.push(name)
+  }
+  return { reads, skipped }
+}
+
+// ── --mutants: the name scan's filters, each shown to matter, and one real gap shown to be seen ──
+if (process.argv.includes('--mutants')) {
+  const rows = [
+    ['a message ending in a file name is not a read', "passed.push('no norms.json')", [], 'message'],
+    ["prose with an apostrophe is not a read (the scan never spans a quote)", 'x("the town\'s neighborhood_boundary.json")', [], null],
+    ["a registry row's file is not a read", "const ROWS = [{\n    path: 'raw/msbf.json',\n  }]", [], 'table'],
+    ['a URL is not a read', "const u = { endpoint: x }; fetch('https://data.example.org/resource/5zhs-2jue.json')", [], 'url'],
+    ['a file joined and opened is a read', "readFileSync(join(dir, 'raw', 'survey.json'))", ['survey.json'], null],
+    ['both branches of a ternary are reads', "const f = wet ? 'shore-median.json' : 'ground.json'", ['shore-median.json', 'ground.json'], null],
+  ]
+  let red = 0
+  for (const [name, text, want, filter] of rows) {
+    const got = namesIn(text).reads
+    const okRow = JSON.stringify(got) === JSON.stringify(want)
+    if (!okRow) red++
+    console.log(`  ${okRow ? '✅' : '⛔'} ${name}${okRow ? '' : ` — read ${JSON.stringify(got)}, want ${JSON.stringify(want)}`}`)
+    if (filter) {
+      const caught = JSON.stringify(namesIn(text, filter).reads) !== JSON.stringify(want)
+      if (!caught) red++
+      console.log(`  ${caught ? '✅' : '⛔'} mutant: the ${filter} filter dropped → ${caught ? 'the row goes RED' : 'the row stays GREEN, the filter is not what decides it'}`)
+    }
+  }
+  // the real gap fixed with this check's rewrite: the terrain step without MAP_JSON must name map.json (self re-run)
+  const { spawnSync } = await import('node:child_process')
+  const r = spawnSync(process.execPath, [process.argv[1], '--mutant=terrain-map', '--step=terrain'], { encoding: 'utf8' })
+  const seenGap = r.status === 1 && /data\s+map\.json\s+\(named in cartograph\/bake-terrain\.js\)/.test(r.stdout)
+  if (!seenGap) red++
+  console.log(`  ${seenGap ? '✅' : '⛔'} mutant: the terrain step's MAP_JSON declaration removed → ${seenGap ? 'RED, naming map.json from bake-terrain.js' : `NOT seen (exit ${r.status})`}`)
+  // ground-shore's not-inputs block sits above its gate, not on its call: the old adjacent-only rule must lose it
+  const gs = (mut) => (spawnSync(process.execPath, [process.argv[1], '--step=ground-shore', ...(mut ? [`--mutant=${mut}`] : [])], { encoding: 'utf8' }).stdout.match(/^\s+data\s/gm) || []).length
+  const [now, adj] = [gs(null), gs('adjacent-not-inputs')]
+  const seenBlock = adj > now
+  if (!seenBlock) red++
+  console.log(`  ${seenBlock ? '✅' : '⛔'} mutant: not-inputs read only directly above the call → ${seenBlock ? `ground-shore's excused names come back (${now} → ${adj})` : `no change (${now} → ${adj}): the rule is not what decides ground-shore`}`)
+  console.log(red ? `\n⛔ ${red} self-test row(s) failed` : '\n✅ the name scan skips messages, table rows and URLs, keeps reads, and sees a dropped declaration')
+  process.exit(red ? 1 : 0)
+}
 
 // ── the DECLARED side: resolve an input expression to { names:Set<basename>, code:Set<abs path>, unknown:[] } ──
 const constDef = (id) => {
@@ -157,11 +227,15 @@ for (const m of src.matchAll(/runIfDirty\(\s*'([^']+)'\s*,/g)) {
   for (const e of arr(outputs)) resolve(e, outs)
   const sm = cmd?.match(/node\s+((?:arborist\/)?[\w.-]+\.m?js)/)
   const script = sm ? join(sm[1].startsWith('arborist/') ? ROOT : CARTO, sm[1]) : null
-  // `// not-inputs: name (why) · name (why)` in the comment block directly above the call: a name the step's code
-  // mentions but that is deliberately NOT an input (a guard that only passes or throws, a literal never opened on
-  // this path). The reason sits next to the code it excuses; a NEW name the code gains still goes red.
-  const above = src.slice(0, m.index).split('\n').slice(0, -1).reverse()
-  const block = []; for (const l of above) { if (/^\s*\/\//.test(l)) block.push(l); else break }
+  // `// not-inputs: name (why) · name (why)` anywhere between the previous runIfDirty call and this one: a name the
+  // step's code mentions but that is deliberately NOT an input (a guard that only passes or throws, a literal never
+  // opened on this path). The reason sits with the code it excuses, wherever the route puts it (ground-shore's sits above
+  // the gate that decides it, not on the call); a NEW name the code gains still goes red.
+  const prev = Math.max(0, src.lastIndexOf('runIfDirty(', m.index - 1))
+  const lead = arg('mutant') === 'adjacent-not-inputs'   // the old rule: only the comment lines directly above the call
+    ? (() => { const b = []; for (const l of src.slice(0, m.index).split('\n').slice(0, -1).reverse()) { if (/^\s*\/\//.test(l)) b.push(l); else break } return b })()
+    : src.slice(src.indexOf('\n', prev) + 1, m.index).split('\n')
+  const block = lead.filter(l => /^\s*\/\//.test(l))
   const notInputs = new Map()
   for (const l of block) { const n = l.match(/not-inputs:\s*(.*)$/); if (n) for (const part of n[1].split(' · ')) { const k = part.match(/^\s*([^\s(]+)\s*\((.*)\)\s*$/); if (k) notInputs.set(k[1], k[2]) } }
   steps.push({ label: m[1], decl, outs, script, notInputs, line: src.slice(0, m.index).split('\n').length })
@@ -174,7 +248,7 @@ let gaps = 0, unknowns = 0
 const rows = []
 for (const st of steps) {
   if (only && st.label !== only) continue
-  const row = { label: st.label, line: st.line, code: [], data: [], unknown: [...st.decl.unknown] }
+  const row = { label: st.label, line: st.line, code: [], data: [], unknown: [...st.decl.unknown], skipped: { table: 0, message: 0, url: 0 } }
   if (!st.script || !existsSync(st.script)) { row.unknown.push(`script not found (${st.script ?? 'no node command'})`); rows.push(row); unknowns++; continue }
   const closure = importClosure([st.script])
   // the data scan stops at the town registry: its modules reach a step only as geography.mjs's VALUE (geography.json)
@@ -196,12 +270,12 @@ for (const st of steps) {
   const declNames = new Set([...st.decl.names, ...[...st.decl.code].map(f => basename(f))])
   const outNames = st.outs.names
   const seen = new Map()                   // basename → first file that names it
-  const rx = new RegExp(`['"\`]([^'"\`\\n]*?\\.(?:${DATA_EXT}))['"\`]`, 'g')
   for (const f of scanned) {
     let s; try { s = stripComments(readFileSync(f, 'utf8')) } catch { continue }
-    for (const mm of s.matchAll(rx)) {
-      const name = basename(mm[1].replace(/\$\{[^}]*\}/g, '*'))
-      if (!name || name.includes("*") || declNames.has(name) || outNames.has(name) || st.notInputs.has(name) || seen.has(name)) continue
+    const { reads, skipped } = namesIn(s)
+    for (const k of Object.keys(skipped)) row.skipped[k] += skipped[k]
+    for (const name of reads) {
+      if (declNames.has(name) || outNames.has(name) || st.notInputs.has(name) || seen.has(name)) continue
       seen.set(name, relative(ROOT, f))
     }
   }
@@ -212,7 +286,9 @@ for (const st of steps) {
 }
 
 const nGap = rows.reduce((a, r) => a + r.code.length + r.data.length, 0)
+const sk = rows.reduce((a, r) => (a.table += r.skipped.table, a.message += r.skipped.message, a.url += r.skipped.url, a), { table: 0, message: 0, url: 0 })
 console.log(`── bake steps ── ${rows.length} runIfDirty step(s) · ${gaps} with an undeclared read (${nGap} file(s)) · ${unknowns} UNKNOWN`)
+console.log(`   not reads (name scan): ${sk.table} table entr(ies) · ${sk.message} message(s) · ${sk.url} URL(s)`)
 for (const r of rows) {
   const bad = r.code.length + r.data.length
   if (!bad && !r.unknown.length && !verbose) continue

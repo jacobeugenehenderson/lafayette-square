@@ -348,3 +348,6 @@ public/photos/*/
 
 # Licensed / downloaded reference copies — registry in references/registry.json, never the files.
 references/files/
+
+# The Bake's stage (cartograph/slabStage.mjs): a slab step writes here and is published only when it succeeds.
+cartograph/.bake-stage/

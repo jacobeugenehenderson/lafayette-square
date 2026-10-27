@@ -35,7 +35,7 @@
  * AO lightmap is a follow-on pass (see `bake-ground-ao.js`, separate task).
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
@@ -1121,7 +1121,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
   // serve.js serves) under cartograph/data/<scene>/clean/.
   const ribbonsPath = ribbonsPathOf(scene)   // the one answer (scene.js) — LS's bundled file is its one held exception
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
-  // outDir: write the slab elsewhere (a scratch A/B) instead of over the live one.
+  // outDir: write the slab elsewhere instead of over the live one: the Bake's stage (serve.js, slabStage.mjs: published
+  // only when this bake succeeds), or a scratch A/B.
   const outDir      = outDirOpt || join(ROOT, 'public', 'baked', look)
   if (!stackOnly && !existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
@@ -1829,9 +1830,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     off += c.byteLength
   }
 
-  // ⛔ ground.unowned.json is RETIRED with the deformer (BRIEF-the-ground-stands-on-one-field): one left by an older bake is
-  // removed, because the uploader carries every file of a look dir
-  { const stale = join(outDir, 'ground.unowned.json'); if (existsSync(stale)) { rmSync(stale); console.log(`  [bake-ground] removed the retired ${stale}`) } }
   // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
   // BakedGround's UV2 stay concentric with face/street fades. The half-extent must
   // ENCLOSE the silhouette: both consumers map texel→world THROUGH this bbox, so a
@@ -1997,7 +1995,7 @@ async function main() {
     else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-max-edge=(.+)$/)))refine.maxEdge = parseFloat(m[1])
-    else if ((m = arg.match(/^--out-dir=(.+)$/)))  outDir = m[1]   // a scratch A/B, not the live slab
+    else if ((m = arg.match(/^--out-dir=(.+)$/)))  outDir = m[1]   // the Bake's stage, or a scratch A/B: not the live slab
     else if (arg.startsWith('--shore='))          throw new Error(`[bake-ground] ${arg}: retired with the shore median (BRIEF-the-shore-is-one-line step 3) — the ground bakes in one pass`)
   }
   await bakeGround({ look, scene, refine, outDir })

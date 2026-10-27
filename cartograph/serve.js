@@ -9,7 +9,7 @@
 //     startup would make the server unstartable. Its spawn sites are the reason the guard
 //     works at all; do not guard serve.js itself.
 import { createServer } from 'http'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync, realpathSync } from 'fs'
 import { join, dirname, relative } from 'path'
 import { spawn } from 'child_process'
 import { mapRawDir, mapCleanDir, ribbonsPathOf, declaredRibbonsOf } from './config.js'
@@ -40,6 +40,7 @@ import { SHARE_IMAGE_RELS, shareImageRel } from '../src/lib/shareCard.js'
 import { HASHED, manifestPath, servedRel } from '../src/lib/slabNames.js'
 import { TOD_SLOT_IDS } from '../src/lib/todSlots.js'
 import { parcelParts } from './parcelParts.js'
+import { stagedSlabStep, publishSlab, refuseTornCommit } from './slabStage.mjs'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -2284,6 +2285,15 @@ createServer(async (req, res) => {
   // params) + the per-Look bake bundle (public/baked/<id>/). The default
   // Look is the project's 0-state and can't be deleted.
 
+  // GET /tree — the repo tree this server reads and writes (its realpath). A check that edits a file and then asks this
+  // server must be asking the server of ITS tree; it compares this with its own root and refuses otherwise.
+  // ▶ checks/claims-a-stage-entry-knows-its-slab-age.mjs
+  if (req.method === 'GET' && path === '/tree') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ root: realpathSync(join(import.meta.dirname, '..')) }))
+    return
+  }
+
   // GET /looks — list of {id, name, createdAt} + the default id.
   if (req.method === 'GET' && path === '/looks') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -2616,6 +2626,7 @@ createServer(async (req, res) => {
       // every Look of it, so a step that reads them declares this file. Declared because it is READ.
       const SCENE_DESIGN = join(REPO_ROOT, 'public', 'looks', bakeScene, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
+      refuseTornCommit(undefined, id)   // ⛔ a torn slab commit (slabStage.mjs's journal) stops this look's Bake, by name
       const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
       const skipped = []
@@ -2638,7 +2649,9 @@ createServer(async (req, res) => {
       const townRecord = { value: `the town record of "${bakeScene}"`, read: () => instanceForMap(bakeScene) ?? null }
       // `absentOk`: outputs a step may legitimately not write (revetment on a town with no shore). Missing after a
       // recorded run is that step's answer, not a stale slab; missing with no record still runs it.
-      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], ...opts } = {}) => {
+      // `stage`: the step writes into a stage (`--out-dir=`) and its outputs reach the slab only when it succeeds
+      // (slabStage.mjs#stagedSlabStep); `stage.published` is then the names it changed.
+      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], stage, ...opts } = {}) => {
         if (judge === 'mtime') {
           if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
@@ -2653,7 +2666,8 @@ createServer(async (req, res) => {
         if (!force && !why.length && !missing.length) { skip(label); return }
         if (P.plan) { P.plan.stale.push({ step: label, why: [...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)] }); return }
         console.log(`[bake] ${label}: ${[...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)].slice(0, 5).join(', ')}`)
-        await runStep(P, label, cmd, opts)
+        if (stage) stage.published = await stagedSlabStep({ ...stage, step: (dir) => runStep(P, label, `${cmd} --out-dir="${dir}"`, opts) })
+        else await runStep(P, label, cmd, opts)
         // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
         saveBakeRead(MAP_JSON, id, label, { code: contentRecord(code), data: contentRecord(data) })
         ran(label)
@@ -2836,18 +2850,22 @@ createServer(async (req, res) => {
       // `elevPolicy.onTheRecord`, which was already reported above. An unrecorded absence
       // threw before the branch.
 
-      // terrain-slab: publish the scene terrain into this Look's slab (the runtime fetches /baked/<look>/terrain.* by
-      // lookId). A BYTE compare, not a date: writeIfChanged writes only what differs, and says whether it did.
-      if (P.plan && existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
-        const same = (from, to) => existsSync(to) && readFileSync(to).equals(readFileSync(from))
-        if (!same(SCENE_TERRAIN_JSON, join(LOOK_DIR, 'terrain.json')) || !same(SCENE_TERRAIN_BIN, join(LOOK_DIR, 'terrain.bin')))
-          P.plan.stale.push({ step: 'terrain-slab', why: ["the town's terrain differs from this Look's copy"] })
-      } else if (existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
-        mkdirSync(LOOK_DIR, { recursive: true })
-        const a = writeIfChanged(join(LOOK_DIR, 'terrain.json'), readFileSync(SCENE_TERRAIN_JSON), { touch: false })
-        const b = writeIfChanged(join(LOOK_DIR, 'terrain.bin'), readFileSync(SCENE_TERRAIN_BIN), { touch: false })
-        if (a || b) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } else skip('terrain-slab')
-      }
+      // terrain-slab: the scene terrain is owed to this Look's slab (the runtime fetches /baked/<look>/terrain.* by lookId)
+      // when its BYTES differ from the slab's copy. ⛔ It is NOT written here: it is published in the same commit as the
+      // ground (slabStage.mjs), so a ground that refuses leaves the slab's terrain and ground as they were, never a new
+      // terrain over an old ground (Huron, twice, 2026-10-27). A ground the Bake skips was baked on this terrain, so the
+      // terrain is then published alone, below.
+      // ▶ node checks/claims-a-failed-bake-leaves-the-slab.mjs
+      const terrainOwed = existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)
+        ? [['terrain.json', readFileSync(SCENE_TERRAIN_JSON)], ['terrain.bin', readFileSync(SCENE_TERRAIN_BIN)]]
+          .filter(([name, bytes]) => !(existsSync(join(LOOK_DIR, name)) && readFileSync(join(LOOK_DIR, name)).equals(bytes)))
+        : []
+      if (P.plan && terrainOwed.length) P.plan.stale.push({ step: 'terrain-slab', why: ["the town's terrain differs from this Look's copy"] })
+      else if (terrainOwed.length) markStep(P, 'terrain-slab', 'waiting', { why: 'published with the ground, once it succeeds' })
+      else skip('terrain-slab')
+      const terrainPublished = (names) => { if (names.some(n => n.startsWith('terrain.'))) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } }
+      // the ground's stage: it reads its prior ground.json (the lightmap it carries) from its out dir
+      const groundStage = { lookDir: LOOK_DIR, look: id, seed: ['ground.json'], publish: ['ground.json', 'ground.bin', 'shape.json'], carry: terrainOwed }
       // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json)
       await runIfDirty('ground',
         [MAP_JSON, DESIGN, SCENE_DESIGN, RIBBONS, bakePaths.boundary, join(bakePaths.raw, 'survey.json'),
@@ -2855,7 +2873,9 @@ createServer(async (req, res) => {
          join(here, 'bake-ground.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 300000 })
+        { cwd: here, timeout: 300000, stage: groundStage })
+      if (groundStage.published) terrainPublished(groundStage.published)
+      else if (terrainOwed.length && !P.plan) terrainPublished(publishSlab({ lookDir: LOOK_DIR, look: id, files: terrainOwed }))
       // Shore revetment — reads the shoreline (`__water__` runs) out of the
       // shape.json the ground bake just wrote, so a pour that moves the shore
       // re-stones it; a stale revetment is stone keyed to a shore that moved.
@@ -2864,6 +2884,7 @@ createServer(async (req, res) => {
         await runIfDirty('revetment',
           // ⭐ MAP_JSON: the drawn water decides where the shore is (2026-09-26).
           [join(LOOK_DIR, 'shape.json'), join(bakePaths.raw, 'osm.json'), MAP_JSON, bakePaths.boundary, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,
+           join(here, '..', 'references', 'registry.json'),   // the toe berm's size (bake-revetment.js#toeBerm, f-cem-toe-berm-size)
            join(here, 'bake-revetment.js')],
           [join(LOOK_DIR, 'revetment.json')],
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
@@ -2873,11 +2894,13 @@ createServer(async (req, res) => {
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
       // absence — so it is never dirty forever.
-      // not-inputs: context.coastDist.bin (its own output, written only)
+      // not-inputs: context.coastDist.bin (its own output, written only) · outer-coast.json (its own output, written only)
       await runIfDirty('coast-distance',
         // The registry, the surfaces table and the town's OSM (its state) feed the RESOLVED params.
         [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, MAP_JSON, join(here, 'bake-coast-distance.js'),
-          join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json')],
+          join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json'),
+          // the water past the rim (bake-coast-distance.js#bakeOuterCoast): the stencil's centre and radius, and the frame
+          join(LOOK_DIR, 'ground.json'), bakePaths.geography],
         [join(LOOK_DIR, 'context.json')],
         `node bake-coast-distance.js --look=${id} ${sceneFlag}`,
         { cwd: here })
@@ -2890,7 +2913,8 @@ createServer(async (req, res) => {
            // …and the town's declared E-911 address points, with its parcels as their join (address-points.mjs)
            ...declaredAddressPointPaths(bakeScene), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
            join(here, 'bake-buildings.js'), join(here, 'building-address.mjs'), join(here, 'address-points.mjs'),
-           join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],   // each building's groundY is sampled off the drawn ground (a raised kerb)
+           join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),   // each building's groundY is sampled off the drawn ground (a raised kerb)
+           join(SCENE_DIR, 'clean', 'skeleton.json')],   // the named streets each building fronts, for its neon faces (bake-buildings.js)
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
@@ -3033,6 +3057,7 @@ createServer(async (req, res) => {
             treeInputs.boundaryPath && `--boundary ${treeInputs.boundaryPath}`,
             `--output ${treeInputs.output}`,
           ].filter(Boolean).join(' ')
+          // not-inputs: derived_trees.json (a name in bake-trees.js#CANONICAL_TREE_WELLS, the wells a census row may cite; the wells it opens arrive in treeInputs.inputs) · scene.json (declared above as a VALUE, without bakedAt, which this audit reports UNKNOWN) · trees.json (its own output, `--output`)
           await runIfDirty('trees',
             // the traced reads (2026-09-26): the census inputs, the tree LIBRARY as one set, and the town's baked
             // lamps / atlas / scene (hero keyframes) — keyed by SCENE, as bake-trees opens them (Class D row 10)
@@ -3085,7 +3110,7 @@ createServer(async (req, res) => {
       // for the previous set — new lamps standing in the dark with no pool, and
       // pools glowing where a lamp no longer is. Caught 2026-07-23 re-baking LS
       // after the lamp-well union added 47 park lamps.
-      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · ground.poolmap.png (its own output) · ground.colormap.png (its own output)
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · ground.poolmap.png (its own output) · ground.colormap.png (its own output) · ground.rulemap.png (its own output)
       await runIfDirty('ground-ao',
         [MAP_JSON, join(SCENE_DIR, 'buildings.json'), join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),
          join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
