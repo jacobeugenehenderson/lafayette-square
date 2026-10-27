@@ -4275,6 +4275,9 @@ const windingXZ = (r, x, z) => { let w = 0
   for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
     if (zj <= z) { if (zi > z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) > 0) w++ } else if (zi <= z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) < 0) w-- }
   return w }
+// the paint's MITER LIMIT: an offset vertex is mitred while cos(half its turn) is at least this, else the line splits there
+// (a turn past 120°). Exported so a check reads the limit, never restates it.
+export const MITER_MIN_COS = 0.5
 export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }) {
   if (!Array.isArray(centrelines)) throw new Error('[tileGround][paint] ⛔ the protopolygon carries no sealed centreline (`centrelines`) — this town was poured before the road paint read it. Re-pour; the stripe never falls back to the chains.')
   const W = look.line, out = { stripe: [], edgeline: [], 'edgeline:yellow': [] }
@@ -4315,14 +4318,14 @@ export function roadMarkings({ tiles, centrelines, marksOf, measureOfRun, look }
       }
     })
   }
-  // an open polyline offset toward the street by d (miter; a vertex sharper than 60° splits the line, counted)
+  // an open polyline offset toward the street by d (miter; a vertex turning past 120°, MITER_MIN_COS, splits the line, counted)
   const offsetBy = (pts, out, d) => {
     const nrm = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]); return [out * (b[1] - a[1]) / L, -out * (b[0] - a[0]) / L] }
     const pieces = [[]]
     for (let i = 0; i < pts.length; i++) {
       const n0 = i > 0 ? nrm(pts[i - 1], pts[i]) : null, n1 = i < pts.length - 1 ? nrm(pts[i], pts[i + 1]) : null
       if (n0 && n1) { const m = [n0[0] + n1[0], n0[1] + n1[1]], ml = Math.hypot(m[0], m[1]), c = (m[0] * n0[0] + m[1] * n0[1]) / ml
-        if (c < 0.5) { census.sharpSplits++; pieces[pieces.length - 1].push([pts[i][0] + n0[0] * d, pts[i][1] + n0[1] * d]); pieces.push([[pts[i][0] + n1[0] * d, pts[i][1] + n1[1] * d]]); continue }
+        if (c < MITER_MIN_COS) { census.sharpSplits++; pieces[pieces.length - 1].push([pts[i][0] + n0[0] * d, pts[i][1] + n0[1] * d]); pieces.push([[pts[i][0] + n1[0] * d, pts[i][1] + n1[1] * d]]); continue }
         pieces[pieces.length - 1].push([pts[i][0] + m[0] / ml / c * d, pts[i][1] + m[1] / ml / c * d]) }
       else { const q = n0 || n1; pieces[pieces.length - 1].push([pts[i][0] + q[0] * d, pts[i][1] + q[1] * d]) }
     }

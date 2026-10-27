@@ -29,7 +29,7 @@
 // @args --slot=<granted>
 // Exit 1 on any RED, an unbuildable town, or a mutant that stays green · 2 with no --slot.
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
-import { roadMarkings } from '../src/lib/tileGround.js'
+import { roadMarkings, MITER_MIN_COS } from '../src/lib/tileGround.js'
 import { LATTICE_M } from '../src/lib/lattice.js'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -41,6 +41,32 @@ const slot = process.argv.find(a => a.startsWith('--slot='))?.slice('--slot='.le
 if (!slot) { console.log('⛔ NOT RUN — heavy: pass --slot=<who granted it> (three producer builds per town; never in npm test)'); process.exit(2) }
 console.log(`(heavy run, slot granted by ${slot})`)
 let red = 0, towns = 0, plantedSeen = 0, plantedRefused = 0
+// ⭐ THE MITER, READ OFF THE LINE ITSELF (Boz, 2026-10-26): at a bend the producer mitres the offset, so the line's outer vertex
+// lies d / cos(θ/2) from its source, θ the turn there — up to the producer's own limit (tileGround#MITER_MIN_COS), past which it
+// splits the line instead. The allowance at a vertex is that factor, from the turn of the paint ring AT that vertex; never a slack.
+const miterAt = (ring, i) => { const n = ring.length, a = ring[(i - 1 + n) % n], b = ring[i], c = ring[(i + 1) % n]
+  const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1]
+  const th = Math.abs(Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz)), k = Math.cos(th / 2)
+  return k >= MITER_MIN_COS ? 1 / k : 1 }
+// ⭐ A TILE'S BLOCK IS ALL ITS CURB RINGS TOGETHER: a hole in iA is road (a nested tile's street), so a point is in the block when
+// the winding SUMMED over the tile's rings is non-zero — never ring by ring (the slot-4 RED: HPDM and Huron's E2 points lay in holes).
+const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+  if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+const blockTest = (tiles) => { const T = tiles.map(t => (t.iA || []).filter(r => r?.length >= 3)).filter(rs => rs.length)
+  const bb = T.map(rs => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const r of rs) for (const [x, z] of r) a = [Math.min(a[0], x), Math.min(a[1], z), Math.max(a[2], x), Math.max(a[3], z)]; return a })
+  return (p) => T.some((rs, i) => p[0] > bb[i][0] && p[0] < bb[i][2] && p[1] > bb[i][1] && p[1] < bb[i][3] && rs.reduce((w, r) => w + windXZ(p, r), 0) !== 0) }
+// PLANTED (always run, no build): a block with a hole — the hole's centre is road, the band between is block; and a ring
+// judged ring by ring (the old E2) calls the hole's centre block, so the planted rows can tell the two apart
+{ const sq = (x0, z0, s, ccw) => { const r = [[x0, z0], [x0 + s, z0], [x0 + s, z0 + s], [x0, z0 + s]]; return ccw ? r : r.reverse() }
+  const inB = blockTest([{ iA: [sq(0, 0, 100, true), sq(40, 40, 20, false)] }]), ringByRing = [sq(0, 0, 100, true), sq(40, 40, 20, false)].some(r => windXZ([50, 50], r) !== 0)
+  const ok = !inB([50, 50]) && inB([20, 20]) && ringByRing
+  if (!ok) red++
+  console.log(`${ok ? '✅' : '⛔'} (E2) planted: a block with a hole — the hole's centre is road (${inB([50, 50]) ? 'BLOCK' : 'road'}), the band is block (${inB([20, 20]) ? 'block' : 'ROAD'}); judged ring by ring the centre reads ${ringByRing ? 'block (the old defect, seen)' : 'road'}`)
+  // the miter: a 50° bend (factor 1/cos 25°), a 0° vertex (1), and a turn past the limit (no allowance)
+  const bend = (deg) => miterAt([[-10, 0], [0, 0], [10 * Math.cos(deg * Math.PI / 180), 10 * Math.sin(deg * Math.PI / 180)]], 1)
+  const okM = Math.abs(bend(50) - 1 / Math.cos(25 * Math.PI / 180)) < 1e-12 && bend(0) === 1 && bend(150) === 1
+  if (!okM) red++
+  console.log(`${okM ? '✅' : '⛔'} (S/E) planted: the miter allowance at 50° is ${bend(50).toFixed(4)} (1/cos 25°), at 0° ${bend(0)}, past the limit (150°) ${bend(150)}`) }
 // the E2 mutant's paint: ONE modified tileGround.js in its own temp dir, the toward-street sign flipped, its relative imports
 // rewritten to the live src/lib's file URLs (the pattern of claims-no-corner-at-a-true-geometry-edge). The anchor must occur ONCE.
 const SIGN = 'const toward = lIn ? 1 : -1'
@@ -98,28 +124,24 @@ for (const scene of feedScenes()) {
     for (let i = 0; i < P.length - 1; i++) (k && k !== 'none' ? marked : unmarked).push([P[i], P[i + 1]]) }
   const nearMarked = segIndex(marked)
   const judgeS = (paint, label) => { let off = 0, n = 0, at = []
-    for (const ring of paint.stripe) for (const p of ring) { n++; if (!nearMarked(p, MARKING_LOOK.gap / 2 + W + LAT)) { off++; if (at.length < 6) at.push(p) } }
+    for (const ring of paint.stripe) ring.forEach((p, i) => { n++; if (!nearMarked(p, (MARKING_LOOK.gap / 2 + W) * miterAt(ring, i) + LAT)) { off++; if (at.length < 6) at.push(p) } })
     return { off, n, at, label } }
   // the kerb edges whose street takes an edge line or a parking lane on that side, and the reach a line lies within
-  const kerbEdges = [], reach = Math.max(MARKING_LOOK.edgeInset + W, ...f.ribbons.streets.flatMap(st => [st.measure?.left?.parking || 0, st.measure?.right?.parking || 0]).map(d => d + W)) + LAT
+  const kerbEdges = [], reach = Math.max(MARKING_LOOK.edgeInset + W, ...f.ribbons.streets.flatMap(st => [st.measure?.left?.parking || 0, st.measure?.right?.parking || 0]).map(d => d + W))
   for (const t of R.protoShapeTiles) (t.iaFull || []).forEach((ring, si) => { const S = t.iaStamp?.[si]; if (!S) return
     ring.forEach((a, e) => { const run = t.runs?.[S[e]]; if (!run) return
       const M = marks.get(run.skelId), st = f.ribbons.streets.find(x => x.skelId === run.skelId)
       if (M?.edges?.kind?.[run.side] || (st?.measure?.[run.side]?.parking || 0) > 0) kerbEdges.push([a, ring[(e + 1) % ring.length]]) }) })
   const nearKerb = segIndex(kerbEdges)
   const judgeE = (paint, label) => { let off = 0, n = 0, at = []
-    for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) for (const p of ring) { n++; if (!nearKerb(p, reach)) { off++; if (at.length < 6) at.push(p) } }
+    for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) ring.forEach((p, i) => { n++; if (!nearKerb(p, reach * miterAt(ring, i) + LAT)) { off++; if (at.length < 6) at.push(p) } })
     return { off, n, at, label } }
   const say = (x, what) => console.log(`  ${x.off ? '⛔' : '✅'} ${what}: ${x.n} vertex(es) · ${x.off} not ${what.startsWith('(S)') ? 'on a marked street' : 'beside a street that takes one'}${x.at.length ? ` (e.g. ${x.at.map(p => `(${p.map(v => v.toFixed(2)).join(', ')})`).join(' · ')})` : ''}`)
   // (E2) ON THE ROAD SIDE — a distance to the kerb is the same either side of it, so (E) cannot see a line struck into the BLOCK
   // (that inversion shipped once, the probe of 2026-10-25). No edge-line vertex may lie inside any tile's block (its curb ring, iA).
   // ⛔ Judged by the ring's OWN VERTICES, never its centroid: a ring's centroid need not lie on it (a bent strip's falls off it),
   // so a centroid inside a block says nothing about the line (Boz, 2026-10-25, after the slot-3 RED).
-  const blocks = R.protoShapeTiles.flatMap(t => t.iA || []).filter(r => r?.length >= 3)
-  const bbs = blocks.map(r => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const [x, z] of r) a = [Math.min(a[0], x), Math.min(a[1], z), Math.max(a[2], x), Math.max(a[3], z)]; return a })
-  const wind = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
-    if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
-  const inBlock = (p) => blocks.some((r, i) => p[0] > bbs[i][0] && p[0] < bbs[i][2] && p[1] > bbs[i][1] && p[1] < bbs[i][3] && wind(p, r) !== 0)
+  const inBlock = blockTest(R.protoShapeTiles)
   const judgeSide = (paint) => { let n = 0, inside = 0, verts = 0, at = []
     for (const ring of [...paint.edgeline, ...paint['edgeline:yellow']]) { n++; const ins = ring.filter(inBlock); verts += ins.length; if (ins.length) { inside++; if (at.length < 6) at.push(ins[0]) } }
     return { n, inside, verts, at } }
