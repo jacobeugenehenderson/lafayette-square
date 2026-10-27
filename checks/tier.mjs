@@ -228,6 +228,17 @@ export function execSelfTest() {
     ['a computed import() inside a literal data: body', classifyVirtual({ 'checks/claims-planted.mjs': 'await import("data:text/javascript,await import(globalThis.x)")' }, 'checks/claims-planted.mjs').tier, 'live'],
   ]
   for (const [name, got, want] of isrc) if (got !== want) throw new Error(`[tier] ⛔ self-test: importSource — ${name} read as ${got}, want ${want}`)
+  // ⭐ THE INDEX READS EACH CHECK'S OWN DESCRIPTION: its file name is passed whole, never cut at a hyphen inside it
+  const claims = [
+    ['the name, a dash, the claim', '#!/usr/bin/env node\n// claims-a-b-c.mjs — DOES THE CLAIM HOLD?', 'DOES THE CLAIM HOLD?'],
+    ['the name alone, the claim on the next line', '/**\n * claims-a-b-c.mjs\n *\n * the claim, on its own line\n */', 'the claim, on its own line'],
+    ['the name without .mjs', '// claims-a-b-c — the claim', 'the claim'],
+    ['a line that only begins like the name', '// claims-a-b-cd are not this check', 'claims-a-b-cd are not this check'],
+  ]
+  for (const [name, src, want] of claims) {
+    const got = claimOf('checks/claims-a-b-c.mjs', src)
+    if (got !== want) throw new Error(`[tier] ⛔ self-test: the index's claim — ${name} read as "${got}", want "${want}"`)
+  }
   for (const [helper, want] of graph) {
     const got = classifyVirtual({ 'checks/claims-planted.mjs': check, 'checks/_helper.mjs': helper }, 'checks/claims-planted.mjs').tier
     if (got !== want) throw new Error(`[tier] ⛔ self-test: a check importing a helper \`${helper.split('\n').pop()}\` read as ${got}, want ${want} — the gate does not hold across the import graph`)
@@ -1000,14 +1011,18 @@ export function classifyAll() {
   return classified.filter(r => r.tier !== 'vanished')
 }
 
-/** The claim each check falsifies, taken from its own header — ⛔ never typed into a doc. */
-export function claimOf(file) {
-  const src = readCheckSource(file)
+/** The claim each check falsifies, taken from its own header — ⛔ never typed into a doc. A header line that opens with
+ *  the check's OWN file name (`claims-x.mjs — THE CLAIM`, or the name alone, the claim on the next line) is read past
+ *  that name: the name is matched as a whole, never cut at a hyphen inside it. */
+export function claimOf(file, src = readCheckSource(file)) {
   if (src === null) return null
+  const base = file.split('/').pop(), names = [base, base.replace(/\.[a-z]+$/, '')]
   for (const line of src.split('\n').slice(0, 12)) {
-    const t = line.replace(/^#!.*/, '').replace(/^\s*(\/\/|\*|#|\/\*\*?)\s?/, '').trim()
+    let t = line.replace(/^#!.*/, '').replace(/^\s*(\/\/|\*|#|\/\*\*?)\s?/, '').trim()
     if (!t || /^(import|const|set -|cd |@|⛔|▶)/.test(t)) continue
-    return t.replace(/^claims-[a-z0-9-]+\s*[—–-]\s*/i, '').trim()
+    const own = names.find(n => t.startsWith(n) && !/[\w-]/.test(t.charAt(n.length)))
+    if (own) t = t.slice(own.length).replace(/^\s*[—–:-]+\s*/, '').trim()
+    if (t) return t
   }
   return ''
 }
