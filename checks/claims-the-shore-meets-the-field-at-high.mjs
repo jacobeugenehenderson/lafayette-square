@@ -19,8 +19,9 @@
 //      from the line keeps its height (line-adjacent triangles only, never whole faces); one point takes one height in
 //      every group; a coast vertex the mesh lacks, a pinned vertex on a street deck's edge, and no deck list each REFUSE.
 //      `--mutants`: the sides swapped · no clamp · whole faces · either refusal dropped, each RED;
-//   5. per town whose terrain.json carries `stamp`: the field along ①'s coast (from map.json), sampled where the stamp
-//      ran, meets HIGH; the largest miss is printed against the field's cell. NOT CHECKED until a terrain carries it.
+//   5. per town whose slab ground carries pins (ground.json `drawnRaw`): the DRAWN ground (drawnGround.js) along every edge
+//      of ①'s coast is HIGH, and every line-adjacent vertex stands on its own side of HIGH (the residual). A coastal
+//      ground baked before the pin is NOT CHECKED, by name. `--mutants`: HIGH read 1 cm high turns the town RED.
 // MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
 // the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench) · the mask
 // filled per ring (an island read as water) · the island's borrowed slope dropped (it refuses) · the nearest search
@@ -35,6 +36,8 @@ import { stampCoast, deckHeights, nearestCrossed } from '../cartograph/shoreStam
 import { waterWithoutDecks } from '../cartograph/structures.mjs'
 import { maskOf, waterFace } from '../cartograph/coastFile.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
+import { makeDrawnGround, drawnRawOf, predatesThePin } from '../src/lib/drawnGround.js'
+import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
 
 const bad = []
 const say = (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) bad.push(what) }
@@ -209,7 +212,6 @@ async function pinSection(mod, log) {
   const bin = new ArrayBuffer(off), u8 = new Uint8Array(bin); let o2 = 0; for (const a of parts) { u8.set(new Uint8Array(a.buffer, a.byteOffset, a.byteLength), o2); o2 += a.byteLength }
   const manifest = { bbox: { min: [0, 0, 0], max: [10, 0, 10] }, drawnRaw: R.stats, groundShape: { terrain: true },
     groups: meta.map((m, gi) => ({ id: m.g.id, renderOrder: gi, vertexCount: m.g.positions.length / 3, vertexByteOffset: m.vo, indexCount: m.g.indices.length, indexByteOffset: m.io, ...(m.po != null ? { drawnRawByteOffset: m.po, drawnRawCount: m.pc } : {}) })) }
-  const { makeDrawnGround, drawnRawOf } = await import('../src/lib/drawnGround.js')
   const D = makeDrawnGround(manifest, bin, { rawAt: fieldAt })
   no(R.stats.pinned === 32, `every grid point on ①'s two rings is pinned (${R.stats.pinned} of 32)`)
   let onLine = 0; for (const r of [lakeR, islR]) for (let m = 0; m < 4; m++) { const a = r[m], b = r[(m + 1) % 4]
@@ -230,6 +232,9 @@ async function pinSection(mod, log) {
       n++; if (wet(x, z) ? raw[v] > 1e-9 : raw[v] < -1e-9) side++ } })
   no(side === 0 && R.stats.clampedLand > 0 && R.stats.clampedWater > 0, `beside the line, land ≥ HIGH and water ≤ HIGH (${side} of ${n} on the wrong side; ${R.stats.clampedLand} land raised, ${R.stats.clampedWater} water lowered)`)
   no(polder === -2 && offLine === 0, `land below HIGH away from the line keeps its height (the polder ${polder} m; ${offLine} vertex(es) off the line-adjacent ring changed)`)
+  // §5's own judge of a slab, on this one: it must pass the pin, and fail it wherever the pin is wrong (the mutants)
+  const J = judgeDrawn(manifest, bin, [lakeR, islR], fieldAt, () => 0)
+  no(J.n > 0 && J.worst <= 1e-5 && J.wrong === 0, `§5's slab judge on this ground: ${J.n} samples on the line, |drawn − HIGH| ≤ ${J.worst.toExponential(2)} m, ${J.wrong} of ${J.adj} line-adjacent vertices on the wrong side`)
   const [sb, sl] = groups.map(g => R.sectionFor(g.positions)), key = (g, sec) => new Map(Array.from({ length: sec.length / 4 }, (_, r) => { const v = new Uint32Array(sec.buffer)[r * 4]; return [`${g.positions[v * 3]},${g.positions[v * 3 + 2]}`, sec[r * 4 + 1]] }))
   const kb = key(groups[0], sb), kl = key(groups[1], sl); let differ = 0, shared = 0; for (const [k, v] of kb) if (kl.has(k)) { shared++; if (kl.get(k) !== v) differ++ }
   no(shared > 0 && differ === 0, `one point, one height in every group (${shared} shared, ${differ} differ)`)
@@ -263,30 +268,54 @@ async function pinSection(mod, log) {
     if (alive) bad.push(`§8: ${alive} mutant(s) survived`)
   }
 }
-console.log('── 5. each town whose terrain carries the stamp')
-let towns = 0
-for (const t of readdirSync(join(ROOT, 'cartograph/data'))) {
-  const tp = join(ROOT, 'cartograph/data', t, 'clean/terrain.json'), bp = join(ROOT, 'cartograph/data', t, 'clean/terrain.bin'), mp = join(ROOT, 'cartograph/data', t, 'clean/map.json')
-  if (!existsSync(tp) || !existsSync(bp) || !existsSync(mp)) continue
-  const tj = JSON.parse(readFileSync(tp, 'utf8'))
-  if (!tj.water) continue
-  if (!tj.stamp) { console.log(`  ⚠️ ${t}: NOT CHECKED — terrain.json has no stamp (baked before it; ▶ re-bake the terrain)`); continue }
-  towns++
-  const tb = readFileSync(bp), f = new Float32Array(tb.buffer.slice(tb.byteOffset, tb.byteOffset + tb.byteLength)), L = waterLevels(tj.water)
-  const st = new Uint8Array(tj.width * tj.height); for (let q = 0; q < tj.stamp.runs.length; q += 3) for (let i = tj.stamp.runs[q + 1]; i <= tj.stamp.runs[q + 2]; i++) st[tj.stamp.runs[q] * tj.width + i] = 1
-  const sx = (tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), sz = (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1)
-  let worst = 0, n = 0
-  for (const ring of waterFace(JSON.parse(readFileSync(mp, 'utf8')), 'claims-the-shore-meets-the-field-at-high')) for (let m = 0; m < ring.length; m++) {
-    const a = ring[m], b = ring[(m + 1) % ring.length], segs = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / sx))
-    for (let u = 1; u < segs; u++) { const x = a[0] + (b[0] - a[0]) * u / segs, z = a[1] + (b[1] - a[1]) * u / segs
-      const i = Math.floor((x - tj.bounds.minX) / sx), j = Math.floor((z - tj.bounds.minZ) / sz)
-      if (i < 0 || j < 0 || i + 1 >= tj.width || j + 1 >= tj.height) continue
-      if (![[0, 0], [1, 0], [0, 1], [1, 1]].every(([di, dj]) => st[(j + dj) * tj.width + i + di])) continue
-      worst = Math.max(worst, Math.abs(bilinear(f, tj.width, tj.height, tj.bounds, x, z) - L.highAt(x, z))); n++ }
-  }
-  say(n > 0 && worst <= Math.min(sx, sz) * (tj.stamp.slopePerRing.reduce((m, v) => Math.max(m, v ?? 0), 0)),
-    `${t}: along ①'s coast (${n.toLocaleString()} samples in stamped cells) |field − HIGH| ≤ ${worst.toFixed(4)} m (a vertex's bound: one cell × the slope)`)
+console.log('── 5. each town\'s DRAWN ground meets ①\'s coast at HIGH (the slab, public/baked/<town>/ground.*)')
+// ⭐ What the operator sees is the drawn mesh, not the field: the slab's ground read through drawnGround.js (a vertex's pin,
+// else the field), sampled along every edge of ①'s waterRings inside the drawing, must be HIGH; and the side condition is
+// the residual: every vertex of a triangle with a corner on the line stands on its own side of HIGH (land ≥, water ≤), so no
+// line-adjacent triangle crosses HIGH except at the line. The "on the line" and "which side" here are this check's own
+// geometry, not the pin's. Mutant, built in: HIGH read 1 cm high must turn the town RED.
+function judgeDrawn(gj, AB, rings, rawAt, highAt) {
+  const D = makeDrawnGround(gj, AB, { groups: g => !/^water(:|$)/.test(g.id) && g.partition !== false, rawAt })
+  const tol = gj.drawnRaw.tolM
+  const segs = []; for (const r of rings) for (let m = 0; m < r.length; m++) segs.push([r[m], r[(m + 1) % r.length]])
+  const C = 16, grid = new Map(); segs.forEach(([a, b], q) => { for (let x = Math.floor((Math.min(a[0], b[0]) - tol) / C); x <= Math.floor((Math.max(a[0], b[0]) + tol) / C); x++) for (let z = Math.floor((Math.min(a[1], b[1]) - tol) / C); z <= Math.floor((Math.max(a[1], b[1]) + tol) / C); z++) { const k = x * 1048576 + z; (grid.get(k) || grid.set(k, []).get(k)).push(q) } })
+  const onLine = (x, z) => (grid.get(Math.floor(x / C) * 1048576 + Math.floor(z / C)) || []).some(q => { const [a, b] = segs[q], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 > 0 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0; return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) <= tol })
+  const inWater = (x, z) => { let c = false; for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  // exact on the line: every coast edge, sampled at its own vertices and between them, wherever the drawn ground is
+  let worst = 0, worstAt = null, n = 0
+  for (const [a, b] of segs) { const L = Math.hypot(b[0] - a[0], b[1] - a[1]), k = Math.max(1, Math.ceil(L))
+    for (let u = 0; u <= k; u++) { const x = a[0] + (b[0] - a[0]) * u / k, z = a[1] + (b[1] - a[1]) * u / k, p = D.partsAt(x, z)
+      if (!p) continue
+      n++; const e = Math.abs(p.raw - highAt(x, z)); if (e > worst) { worst = e; worstAt = [x, z] } } }
+  // the residual: the side condition at every line-adjacent vertex
+  let adj = 0, wrong = 0, wrongWorst = 0, wrongAt = null; const seen = new Set()
+  for (const g of gj.groups) { if (/^water(:|$)/.test(g.id)) continue
+    const P = new Float32Array(AB, g.vertexByteOffset, g.vertexCount * 3), I = new Uint32Array(AB, g.indexByteOffset, g.indexCount), R = drawnRawOf(gj, g, AB, rawAt)
+    const on = new Uint8Array(g.vertexCount); for (let v = 0; v < g.vertexCount; v++) on[v] = onLine(P[v * 3], P[v * 3 + 2]) ? 1 : 0
+    for (let t = 0; t < I.length; t += 3) { if (!on[I[t]] && !on[I[t + 1]] && !on[I[t + 2]]) continue
+      for (let c = 0; c < 3; c++) { const v = I[t + c]; if (on[v]) continue
+        const x = P[v * 3], z = P[v * 3 + 2], k = `${g.id}|${v}`; if (seen.has(k)) continue; seen.add(k); adj++
+        const H = highAt(x, z), miss = inWater(x, z) ? R[v] - H : H - R[v]
+        if (miss > 1e-6) { wrong++; if (miss > wrongWorst) { wrongWorst = miss; wrongAt = [x, z] } } } } }
+  return { n, worst, worstAt, adj, wrong, wrongWorst, wrongAt }
 }
-if (!towns) console.log('  (no town carries a stamped terrain yet)')
+let towns = 0
+for (const t of readdirSync(join(ROOT, 'public/baked'))) {
+  const gp = join(ROOT, 'public/baked', t, 'ground.json'), bp = join(ROOT, 'public/baked', t, 'ground.bin'), mp = join(ROOT, 'cartograph/data', t, 'clean/map.json')
+  if (!existsSync(gp) || !existsSync(bp) || !existsSync(mp)) continue
+  const gj = JSON.parse(readFileSync(gp, 'utf8'))
+  if (predatesThePin(gj)) { const coastal = waterFace(JSON.parse(readFileSync(mp, 'utf8')), 'claims-the-shore-meets-the-field-at-high').length
+    if (coastal) console.log(`  ⚠️ ${t}: NOT CHECKED — its ground predates the pin (no drawnRaw record; ▶ re-bake the ground)`); continue }
+  if (!gj.drawnRaw?.pinned) continue                      // no terrain, or no coast: nothing to pin
+  towns++
+  const T = loadSceneTerrain(t), L = waterLevels(T.water), gb = readFileSync(bp), AB = gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength)
+  const rings = waterFace(JSON.parse(readFileSync(mp, 'utf8')), 'claims-the-shore-meets-the-field-at-high')
+  const r = judgeDrawn(gj, AB, rings, T.getElevationRaw, L.highAt)
+  say(r.n > 0 && r.worst <= 1e-5, `${t}: along ①'s coast (${r.n.toLocaleString()} samples on the drawn ground) |drawn − HIGH| ≤ ${r.worst.toExponential(2)} m${r.worstAt ? ` (at ${r.worstAt.map(v => v.toFixed(2)).join(', ')})` : ''}`)
+  say(r.wrong === 0, `${t}: beside the line, ${r.wrong.toLocaleString()} of ${r.adj.toLocaleString()} line-adjacent vertices on the wrong side of HIGH${r.wrong ? ` (worst ${r.wrongWorst.toFixed(3)} m at ${r.wrongAt.map(v => v.toFixed(2)).join(', ')})` : ''}`)
+  if (process.argv.includes('--mutants')) { const m = judgeDrawn(gj, AB, rings, T.getElevationRaw, (x, z) => L.highAt(x, z) + 0.01)
+    const caught = !(m.worst <= 1e-5) || m.wrong > 0; console.log(`  mutant: ${t}'s HIGH read 1 cm high → ${caught ? 'RED ✓' : 'GREEN ✗'}`); if (!caught) bad.push(`§5 mutant survived on ${t}`) }
+}
+if (!towns) console.log('  (no town carries a pinned ground yet)')
 if (bad.length) { console.log(`\n⛔ ${bad.length} claim(s) fail.`); process.exit(1) }
 console.log('\n✅ The field meets ①\'s coast at HIGH, on the line.')
