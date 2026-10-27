@@ -1655,8 +1655,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const spanList = mapData.layers?.ribbons?.protopolygon?.offGradeSpans
     if (!Array.isArray(spanList)) throw new Error(`[bake-ground] ⛔ ${look}: ①'s frozen protopolygon carries no offGradeSpans list (it predates the record) — a coast vertex under a bridge would read as missing from the mesh. ▶ re-pour`)
     if (spanList.length && !Array.isArray(bridgePaint)) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.length} span(s) over the water and the ground build painted no bridges list — their footprint is unknown`)
+    // a span wholly OUTSIDE the drawing is painted nowhere (the disc empties its entry, rings: []) and covers no coast in it:
+    // counted, never refused. ⛔ An empty footprint for a span that reaches into the drawing still refuses
+    let spansOutside = 0
     const spans = spanList.flatMap(sp => {
-      const rings = bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd)?.rings || []
+      const entry = bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd), rings = entry?.rings || []
+      if (entry && !rings.length && sp.points?.length && sp.points.every(([x, z]) => !inDrawing(x, z))) { spansOutside++; return [] }
       if (!rings.length) throw new Error(`[bake-ground] ⛔ ${look}: ① records the off-grade span ${sp.street}|${sp.segOrd} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, and this build painted no footprint for it — whether the coast under it is covered is unknown`)
       return rings.map(ring => ({ street: `${sp.street}|${sp.segOrd}`, ring })) })
     // the group a span's paint over the water is drawn in: mat:bridge, for every span (Boz's ruling (iv); a highway span's H
@@ -1665,8 +1669,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const spanGroups = planeBuffers.has('mat:bridge') ? ['mat:bridge'] : []
     if (spanList.length && !spanGroups.length) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.length} off-grade span(s) over the water and the ground has no mat:bridge paint group — their paint would lie on the bed`)
     coastPin = timed('pinTheCoast', () => pinTheCoast({ groups: drawnGroups, rings: coastRings, inDrawing, rawAt: T.getElevationRaw, highAt: L.highAt, tol, decks, spans, spanGroups }))
+    coastPin.stats.spansOutsideDrawing = spansOutside
     const st = coastPin.stats, g = st.fieldMinusHighAtPinsM
-    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm; ${st.deckEdgeVerts.toLocaleString()} on a street deck's edge, left at the deck; ${st.underSpan.toLocaleString()} under a bridge's paint${st.underSpan ? ` (${Object.entries(st.underSpanByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}, not ground) · bridge paint on the water at HIGH: ${st.bridgeLifted.toLocaleString()} vertices${st.bridgeLifted ? ` (${Object.entries(st.bridgeLiftedByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''} · `
+    console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm; ${st.deckEdgeVerts.toLocaleString()} on a street deck's edge, left at the deck; ${st.underSpan.toLocaleString()} under a bridge's paint${st.underSpan ? ` (${Object.entries(st.underSpanByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}, not ground) · ${st.spansOutsideDrawing ? `${st.spansOutsideDrawing} span(s) wholly outside the drawing · ` : ''}bridge paint on the water at HIGH: ${st.bridgeLifted.toLocaleString()} vertices${st.bridgeLifted ? ` (${Object.entries(st.bridgeLiftedByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''} · `
       + `field − HIGH there p10 ${g.p10} · p50 ${g.p50} · p90 ${g.p90} m (min ${g.min}, max ${g.max}) · beside the line: land ${st.clampedLand.toLocaleString()} raised to HIGH, ${st.keptLand.toLocaleString()} above it · water ${st.clampedWater.toLocaleString()} lowered to HIGH, ${st.keptWater.toLocaleString()} below it`)
   }
   let drawnRawByteOffset = 0

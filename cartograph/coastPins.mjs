@@ -23,7 +23,9 @@
  * ⭐ A BRIDGE IS PAINTED ACROSS THE WATER (Jacob, 2026-10-27, (b)): under an off-grade span's paint the line is not ground,
  *    so a coast vertex inside or on a span's painted footprint has no ground vertex to pin. It is skipped and counted per
  *    street (`underSpan`). A span is known by IDENTITY: the record ①'s mint writes for every off-grade piece it leaves out
- *    of the ink (map.json layers.ribbons.protopolygon.offGradeSpans, each { street, ring }), read the way the decks are.
+ *    of the ink (map.json layers.ribbons.protopolygon.offGradeSpans, each { street, segOrd, kind, hwy, wetM, points }), read
+ *    the way the decks are; its FOOTPRINT is the build's live paint for it (buildTileGround's `bridges`, matched by
+ *    { street, segOrd }), so an authored width moves it. bake-ground assembles the two and hands this function { street, ring }.
  * ⭐ ITS PAINT LIES ON THE WATER (Boz's ruling, 2026-10-27, on Jacob's (b): "the road is painted on top of the water,
  *    continuous but flat at water level"): every ground vertex of a span's paint group (`spanGroups`) inside that span's
  *    footprint and in ①'s water takes raw = HIGH, counted per span (`bridgeLifted`), so the paint reads on the water and never
