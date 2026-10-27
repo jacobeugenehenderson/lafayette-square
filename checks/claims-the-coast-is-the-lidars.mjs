@@ -46,15 +46,28 @@ import { readCoast, COAST_FILE, ringViolations, ringsMeet } from '../cartograph/
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { wetLoops, KIND } from '../cartograph/marchingSquares.mjs'
 import { terrainLattice } from '../cartograph/elevationSources.mjs'
-import { markSheet, floodFromEdge, wound, flattenedWater, clearances, settleInOrder } from '../cartograph/bake-coast.mjs'
+import { markSheet, floodFromEdge, wound, flattenedWater, clearances, settleInOrder, followDecks } from '../cartograph/bake-coast.mjs'
 import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
 import { defaultDeckWidthM } from '../cartograph/structures.mjs'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
+import { mintProtopolygon } from '../src/lib/tileGround.js'
+import { waterRuns } from '../cartograph/shoreRuns.mjs'
 
 const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
 const bad = []
 const say = (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}`); if (!ok) bad.push(what) }
 const signed = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+// the edges of `rings` no arc strokes: an edge is stroked when both ends and its midpoint lie on an arc (at the clip lattice)
+const bareEdges = (rings, arcs, onFrame) => { const tol = 1 / CLIP_SCALE, segD = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, u = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(v[0] - a[0] - u * dx, v[1] - a[1] - u * dz) }
+  const G = 4, cells = new Map(), key = (x, z) => `${Math.floor(x / G)},${Math.floor(z / G)}`
+  for (const a of arcs) for (let i = 0; i + 1 < a.length; i++) { const p = a[i], q = a[i + 1], n = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / G) || 1
+    for (let s = 0; s <= n; s++) for (const dx of [-1, 0, 1]) for (const dz of [-1, 0, 1]) { const k = key(p[0] + (q[0] - p[0]) * s / n + dx * G, p[1] + (q[1] - p[1]) * s / n + dz * G); (cells.get(k) || cells.set(k, new Set()).get(k)).add(a.length * 0 + i + ':' + arcs.indexOf(a)) } }
+  const on = (v) => [...(cells.get(key(v[0], v[1])) || [])].some(id => { const [i, ai] = id.split(':').map(Number), a = arcs[ai]; return segD(v, a[i], a[i + 1]) <= tol })
+  const out = []
+  for (const r of rings) for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]
+    if (onFrame(a, b)) continue
+    if (!(on(a) && on(b) && on([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]))) out.push([a, b]) }
+  return out }
 
 // ── A. no fallback ──
 console.log('── A. the pour reads the lidar coast, and only it')
@@ -225,8 +238,62 @@ console.log('── F. a deck that carries a street leaves the water; one that c
   const w = waterWithoutDecks(water, arcs, sd.rings), area = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
   const A = w.rings.reduce((t, r) => t + area(r), 0)
   say(Math.abs(A - (40000 - 10 * 80)) < 1, `the water loses the street deck's 800 m² and keeps the other pier's (${A.toFixed(0)} m²)`)
-  say(w.rings.every(r => area(r) > 0) && w.arcs.length === 2, `no hole is made (the deck touches the shore), and the shoreline arc is cut where it runs under the deck (${w.arcs.length} pieces)`)
+  say(w.rings.every(r => area(r) > 0) && w.arcs.filter(a => a.deck == null).length === 2, `no hole is made (the deck touches the shore), and the shoreline arc is cut where it runs under the deck (${w.arcs.filter(a => a.deck == null).length} pieces)`)
+  // ⭐ the deck's edge over the water is shore (Boz's ruling, 2026-10-27): emitted as arcs tagged with the deck, so every edge
+  // of the returned rings is stroked; the frame (the 200 m square's own sides) excluded
+  const dk = w.arcs.filter(a => a.deck === 0), dkM = dk.reduce((t, a) => t + a.slice(1).reduce((u, q, i) => u + Math.hypot(q[0] - a[i][0], q[1] - a[i][1]), 0), 0)
+  say(dk.length === 1 && Math.abs(dkM - (80 + 10 + 80)) < 1e-6, `the street deck's outline over the water is ONE arc tagged deck 0, ${dkM.toFixed(3)} m (its in-water perimeter 170)`)
+  const frame = (q) => q[0] === 0 || q[0] === 200 || q[1] === 200
+  say(!bareEdges(w.rings, w.arcs, (a, b) => frame(a) && frame(b) && (a[0] === b[0] || a[1] === b[1])).length && w.rings.every(r => (r.deck || []).filter(k => k === 0).length === 3),
+    `every water-ring edge off the frame lies under an arc, and the ring's 3 deck edges carry deck 0`)
+  // ① itself: a lake, a pier deck across its shore, and a street ending ON the deck's water-facing edge (PTown's marina,
+  // 10-27): with the deck's outline stroked, every ink cell joins one face and the deck's edge has its own water owner
+  const sq = (id, pts) => ({ skelId: id, name: id, points: pts, highway: 'residential', caps: { start: { degree: 1 }, end: { degree: 1 } } })
+  const sa2 = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2
+  const shore = [[-200, -100], [0, -100], [200, -100]], lake = [...shore, [200, -200], [-200, -200]].reverse()
+  const pier = [[-10, -140], [10, -140], [10, -90], [-10, -90]], mintSt = [sq('c', [[-150, 0], [150, 0]]), sq('p', [[0, -60], [0, -140]])]
+  const disc = Array.from({ length: 48 }, (_, i) => [190 * Math.cos(i / 48 * 2 * Math.PI), 190 * Math.sin(i / 48 * 2 * Math.PI)])
+  const sd2 = streetDecks({ man_made: [{ tags: { man_made: 'pier', width: '20' }, coords: [{ x: 0, z: -90 }, { x: 0, z: -140 }], isClosed: false }] }, mintSt)
+  const w2 = waterWithoutDecks([sa2(lake) > 0 ? lake : [...lake].reverse()], [shore], sd2.rings)
+  const quiet = (f) => { const l = console.log, wn = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } catch (e) { return { refused: String(e.message) } } finally { console.log = l; console.warn = wn } }
+  const MP = quiet(() => mintProtopolygon({ streets: mintSt, boundary: disc, bb: { x0: -200, x1: 200, z0: -200, z1: 200 }, coast: w2.rings, coastArcs: w2.arcs }))
+  const deckOwners = (MP.owners || []).map((o, i) => [o, i]).filter(([o]) => o.deck === 0 && o.water)
+  // both: the stroked deck arc's stamps, and the WATER FACE's own owner for the deck's edges (srcIdx −1), apart from the one water label
+  const faceOwner = deckOwners.find(([o]) => o.srcIdx === -1)
+  say(!MP.refused && faceOwner && (MP.blockLabels || []).flat().some(l => deckOwners.some(([, i]) => i === l)),
+    `① mints a street deck over the water, a street ending on its edge: ${MP.refused ? `REFUSED — ${MP.refused.slice(0, 160)}` : `every ink cell joins one face, and the deck's edge is labelled by ${deckOwners.length} water owner(s) carrying deck 0`}`)
+  // ⭐ the shore's readers leave a deck's edge out (shoreRuns.mjs#waterRuns: the revetment, the coast distance, the shore checks)
+  const wr = waterRuns({ tiles: [{ runs: [{ skelId: '__water__', poly: [[0, 0], [1, 0]] }, { skelId: '__water__', deck: 0, poly: [[1, 0], [2, 0]] }] }] })
+  say(wr.length === 1 && wr[0][1][0] === 1, `waterRuns keeps the beach and leaves the deck's edge out (${wr.length} run)`)
 }
+
+// ── F2. a deck's footprint is its ways, joined; along a deck the coast is the deck's ring ──
+console.log('── F2. a deck joint is filled, and along a deck the coast is the deck ring')
+{
+  // two pier ways ENDING on one node, widths 3 and 2, turning 0.35° there: PTown's marina, OSM ways 769135305 and 769135308 as
+  // mapped (10-27), whose unfilled butt ends left a 1.5 m hairpin. The joint is filled, no acute vertex
+  const jg = { man_made: [{ tags: { man_made: 'pier', width: '3' }, coords: [{ x: 347.6, z: 399.18 }, { x: 283.24, z: 344.44 }], isClosed: false },
+    { tags: { man_made: 'pier', width: '2' }, coords: [{ x: 283.24, z: 344.44 }, { x: 277.84, z: 339.79 }, { x: 281.69, z: 335.34 }], isClosed: false }] }
+  const jf = deckFootprints(jg), jv = jf.rings.flatMap(r => ringViolations(r, acuteAt))
+  say(jf.count.joints === 1 && jf.rings.length === 1 && !jv.length, `a joint of two pier ways (3 m, 2 m, 0.35°) is filled: ${jf.count.joints} joint, ${jf.rings.length} ring, ${jv.length} violation(s) (${jv.map(v => v.kind).join(', ')})`)
+  // a deck is WET to the tracer, so the coast runs along it with the deck on its water side. An L deck's far corner (90, 60)
+  // cut by one cell's chord is put back
+  const L = [[40, 0], [50, 0], [50, 50], [90, 50], [90, 60], [40, 60]]
+  const Lw = [[0, -50], [100, -50], [100, 0], [50, 0], [50, 50], [90, 50], [90, 59.5], [89.5, 60], [40, 60], [40, 0], [0, 0]]
+  const Lo = followDecks(Lw.map(p => p.slice()), false, { rings: [L] }, 1)
+  say(Lo.ring.some(p => p[0] === 90 && p[1] === 60) && !ringViolations(Lo.ring).length, `an L deck's corner cut by a cell's chord is the deck ring's again (${Lo.added} vertex put back)`)
+  // a comb: the chord crosses the deck's body below thin teeth; the path with the deck on the water side climbs every tooth
+  // (3.50 m), and the SHORTER way (2.10 m, along the bottom) would hand the deck's body to the land
+  const comb = [[0, 0], [1, 0], [1, 0.6], [0.9, 0.6], [0.9, 1], [0.8, 1], [0.8, 0.6], [0.55, 0.6], [0.55, 1], [0.45, 1], [0.45, 0.6], [0.2, 0.6], [0.2, 1], [0.1, 1], [0.1, 0.6], [0, 0.6]]
+  const Co = followDecks([[-5, -5], [5, -5], [5, 0.55], [1, 0.55], [0, 0.55], [-5, 0.55]], false, { rings: [comb] }, 1)
+  const i0 = Co.ring.findIndex(p => p[0] === 1 && p[1] === 0.55), i1 = Co.ring.findIndex(p => p[0] === 0 && p[1] === 0.55)
+  const cl = Co.ring.slice(i0, i1 + 1).slice(1).reduce((t, q, i) => t + Math.hypot(q[0] - Co.ring[i0 + i][0], q[1] - Co.ring[i0 + i][1]), 0)
+  say(Math.abs(cl - 3.5) < 1e-9 && !ringViolations(Co.ring).length, `the path is chosen by orientation, not length: the comb's ${cl.toFixed(2)} m over its teeth (want 3.50; the shorter way is 2.10)`)
+  const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
+  say(/followDecks\(r, isHole, decks, fine\)/.test(bc) && /simplifyRing\(bd\.outer, R, fine \/ 2, onDeckPath\)/.test(bc) && /onSquare\(ring\[k\], R\) \|\| onDeckPath\(ring\[k\]\)/.test(bc),
+    'bake-coast follows the decks after the union, and simplify and settle hold the deck path by identity')
+}
+
 
 // ── D. per town ──
 const args = process.argv.slice(2).filter(a => a.startsWith('--scene=')).map(a => a.slice(8))
@@ -277,7 +344,11 @@ for (const scene of scenes) {
     if (!wr) console.log(`  (map.json carries no protopolygon waterRings — poured before this coast; ①'s rings not compared)`)
     else if (!Array.isArray(sd)) console.log(`  ⚠️ ${scene}: map.json carries no streetDecks — poured before the decks; ①'s rings not compared (▶ the Bake)`)
     else {
-      const given = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring)).rings
+      const W = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring)), given = W.rings
+      // ⭐ every water-ring edge the mint is given lies under a stroked arc, the fetched square's own sides excluded (Boz, 10-27)
+      const Q = doc.square, side = (a, b) => [['x0', 0], ['x1', 0], ['z0', 1], ['z1', 1]].some(([k, c]) => Math.abs(a[c] - Q[k]) < 1 / CLIP_SCALE && Math.abs(b[c] - Q[k]) < 1 / CLIP_SCALE)
+      const bare = bareEdges(given, W.arcs, side), bareM = bare.reduce((t, [a, b]) => t + Math.hypot(b[0] - a[0], b[1] - a[1]), 0)
+      say(!bare.length, `${scene}: every water-ring edge the mint is given lies under a stroked arc (${W.arcs.filter(a => a.deck != null).length} of ${W.arcs.length} arc(s) a deck's edge)${bare.length ? ` — ${bare.length} edge(s), ${bareM.toFixed(1)} m bare, first @(${bare[0][0].map(Math.round).join(', ')})` : ''}`)
       const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
       if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)
       else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from this coast (▶ the Bake)`)

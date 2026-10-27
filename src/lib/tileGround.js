@@ -536,7 +536,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   const coastChains = (Array.isArray(coastArcs) ? coastArcs : [])
     .filter(a => Array.isArray(a) && a.length >= 2)
     .map(a => ({ st: { skelId: WATER_EDGE_SKEL, points: a.map(p => [p[0], p[1]]),
-                       hard: a.map(() => false), gradeSeparated: false }, ci: -1 }))
+                       hard: a.map(() => false), gradeSeparated: false, ...(a.deck != null && { deck: a.deck }) }, ci: -1 }))
   // ⭐ AN OFF-GRADE SPAN OVER THE WATER IS NOT GROUND (Boz's ruling B, Zob's read, 2026-10-27): a bridge is above the water, a
   // tunnel below it, and neither is street-on-water. Every street and grade-separated chain is noded ONCE against the shoreline
   // arcs (street × arc only, on the lattice); a piece between two crossings lies in the water iff its first edge's midpoint does
@@ -613,7 +613,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     // a piece of a chain split over the water (splitOverWater) keys every vertex by its ORIGINAL index; its water ends are grade ends
     const orig = st?._orig || null, origSeg = st?._origSeg || null, wEnd = st?._waterEnd || null
     const stamp = (side, i, segI) => { const ge = gradeEndOf(i) || (wEnd && ((i === 0 && wEnd.start) ? 'start' : (i === lastI && wEnd.end) ? 'end' : null))
-      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, origSeg ? origSeg[segI] ?? origSeg[Math.max(0, Math.min(origSeg.length - 1, segI))] : segI) : 0, gradeSeparated: gs, srcIdx: orig ? orig[i] : i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }), ...(hwyGs && { hwy: true }) }) - 1 }
+      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, origSeg ? origSeg[segI] ?? origSeg[Math.max(0, Math.min(origSeg.length - 1, segI))] : segI) : 0, gradeSeparated: gs, srcIdx: orig ? orig[i] : i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(tipOf(i) && { tip: [P[i][0], P[i][1]] }), ...(isCoast && { water: true }), ...(isCoast && st?.deck != null && { deck: st.deck }), ...(ge && { gradeEnd: ge }), ...(hwyGs && { hwy: true }) }) - 1 }
     return { st, ci, P, skelId, isCoast, dg0, dg1, lastI, stamp }
   }
   const live = chains.filter(({ st }) => st?.points?.length >= 2).map(ctxOf)
@@ -1031,11 +1031,15 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         if (bad.length) throw new Error(`[①] ⛔ ${bad.length} coast ring(s) break the sign rule (a ring at even nesting depth wound positive, at odd depth negative): ring ${bad[0].i} at (${bad[0].at.map(v => v.toFixed(3)).join(', ')}), depth ${bad[0].depth}, wound ${bad[0].got > 0 ? 'positive' : bad[0].got < 0 ? 'negative' : 'flat'}. It would read land as water or water as land. Refusing.`) }
       const inkSign = Math.sign(signedArea(R.rings.reduce((m, r) => Math.abs(signedArea(r)) > Math.abs(signedArea(m)) ? r : m, R.rings[0])))
       const flip = inkSign < 0
+      // ⭐ A DECK'S EDGE IS WATER WITH ITS DECK'S IDENTITY (Boz's ruling B, 2026-10-27): an edge structures.mjs#waterWithoutDecks
+      // tagged `ring.deck[i]` takes its own water owner carrying `deck`, so the tag is not lost at the one water label.
+      const deckOwner = new Map(), ownerOf = (k) => k == null ? wIdx : (deckOwner.get(k) ?? deckOwner.set(k, owners.push({ ...owners[wIdx], deck: k }) - 1).get(k))
       for (const r of coast) {
         if (!Array.isArray(r) || r.length < 3) continue
-        const w = r.map(p => [p[0], p[1]]); if (flip) w.reverse()
+        const n = r.length, w = r.map(p => [p[0], p[1]]); if (flip) w.reverse()
         clipRings.push(w)
-        clipLabels.push(r.map(() => wIdx))
+        // a label names the edge i → i+1, so a reversed ring's edge i is the original's edge n − 2 − i
+        clipLabels.push(w.map((_, i) => ownerOf(r.deck?.[flip ? (n - 2 - i + n) % n : i] ?? null)))
       }
       console.log(`    [①] land = bb − (water ∪ ink): ${coast.length} water ring(s) combined with ${R.rings.length} ink ring(s) and excluded in one move.`)
     }
@@ -8240,7 +8244,7 @@ export function buildTileGround(ribbons, opts = {}) {
             let cur = null
             for (let i = 0; i < EC.ring.length; i++) {
               const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
-              const key = o ? `${o.skelId}|${o.side}|${o.segOrd}` : null
+              const key = o ? `${o.skelId}|${o.side}|${o.segOrd}${o.deck != null ? `|deck${o.deck}` : ''}` : null
               if (!key) { if (EC.labs[i] == null) { protoUnlabelled.edges++; protoUnlabelled.at.push({ block: k, ring: ri, p: EC.ring[i], q: EC.ring[(i + 1) % EC.ring.length] }) } else protoUnlabelled.noOwner++
                 cur = null; continue }
               // ⛔ A CAP EDGE IS NOT FRONTAGE: it runs ACROSS the ribbon, so as a run it would answer "which side is
@@ -8275,7 +8279,9 @@ export function buildTileGround(ribbons, opts = {}) {
                 // ⭐ H-3: the frozen fact that this run is the HIGHWAY's (the same set the shape pass
                 // differenced against H) — the painter makes it bare. Only on highway runs, so every
                 // other tile's artifact is byte-identical.
-                ...(hwySkel.has(o.skelId) ? { hwy: true } : {}) }; runs.push(cur) }
+                ...(hwySkel.has(o.skelId) ? { hwy: true } : {}),
+                // ⭐ a deck's edge: water, with its deck's identity (the index in map.json's streetDecks), so a shore reader leaves it out
+                ...(o.deck != null ? { deck: o.deck } : {}) }; runs.push(cur) }
               iaStamp[ri][i] = runs.length - 1
               cur.poly.push(EC.ring[i])
               cur.iEnd = i                                   // the last EDGE this run owns

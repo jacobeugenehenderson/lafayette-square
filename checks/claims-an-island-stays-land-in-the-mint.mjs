@@ -50,13 +50,13 @@ row(L.length === 1 && L[0] > 0.98 * ISLAND && L[0] <= ISLAND, `(1) a lake (posit
 { let refused = null; try { await quiet(() => live.mintProtopolygon({ streets, boundary, bb: { x0: -200, x1: 200, z0: -200, z1: 200 }, coast: [wind(lake, -1)], coastArcs: [arc] })) } catch (e) { refused = String(e.message) }
   row(!!refused && /break the sign rule/.test(refused), `(3) a lake handed to the mint wound negative is ${refused ? (/break the sign rule/.test(refused) ? 'REFUSED by name (the sign rule)' : `refused, but not by the sign rule (${refused.slice(0, 100)})`) : 'MINTED — the sign rule is not read'}`) }
 const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
-const LINE = 'const w = r.map(p => [p[0], p[1]]); if (flip) w.reverse()'
+const LINE = 'w = r.map(p => [p[0], p[1]]); if (flip) w.reverse()'
 row(src.split(LINE).length === 2 && src.includes('const flip = inkSign < 0'), '(2) the mint turns the water by one flag (the ink\'s sign), never ring by ring')
 // the mutant: ONE modified tileGround.js in its own temp dir, the old per-ring rewind restored, imports pointed at the live src/lib
 { const dir = mkdtempSync(join(tmpdir(), 'island-'))
   try {
     const LIB = join(ROOT, 'src/lib')
-    writeFileSync(join(dir, 'tileGround.js'), src.replace(LINE, 'const w = r.map(p => [p[0], p[1]]); if (Math.sign(signedArea(w)) !== inkSign) w.reverse()')
+    writeFileSync(join(dir, 'tileGround.js'), src.replace(LINE, 'w = r.map(p => [p[0], p[1]]); if (Math.sign(signedArea(w)) !== inkSign) w.reverse()')
       .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`)
       .replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
     const mut = await import(pathToFileURL(join(dir, 'tileGround.js')).href)
