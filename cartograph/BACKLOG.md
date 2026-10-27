@@ -140,8 +140,9 @@ keeps it moving. In order:
    asked at the lake's own height; the old field was the sea-level offset, −0.004 vs +0.067 m): after the merge, re-run
    `node cartograph/fetch-water-datums.mjs --scene=huron` in each checkout, or Huron's terrain bake refuses by name.
    ⚠️ MERGE HAZARD (Zob, 2026-10-25): Ferrule's 93bf579c moves the mint's inputs into `cartograph/mintInputs.mjs` (derive and
-   claims-proto-frozen-matches-live share it). Swash's 8878779c (coastRings → readCoast in derive) must land IN mintInputs on rebase,
-   or pour and witness both mint the OSM coast and agree. After it: claims-proto-frozen-matches-live.
+   claims-proto-frozen-matches-live share it). ORDER (Boz, 2026-10-26): Swash's shore branch merges FIRST (it retires the shore median,
+   the last reader of the mint's pre-stamp inkCells); Ferrule rebases after and moves readCoast into mintInputs.mjs, or pour and
+   witness both mint the OSM coast and agree. After it: claims-proto-frozen-matches-live + claims-the-shore-cells-are-read-from-the-tile.
    FILED (Zob, 2026-10-25, Layer 0): `LafayetteParkBody.jsx` draws LS's park pond from `src/data/lafayettesquare/park_water.json`
    with its own water material: a second, LS-only water path outside ①. Same class as the shore (water not read off ①). Not in
    Swash's scope.
