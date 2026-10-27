@@ -1801,6 +1801,39 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
       if (hwyJoin ? u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0 : (tA >= 0 && tS <= 1 && simple([v, A.Q, Xc, S.P]))) { X = Xc
         kind = hwyJoin ? 'piece' : (tA > 1 && tS < 0) ? 'gap' : (tA <= 1 && tS >= 0) ? 'overlap' : 'piece'; J_t = [tA, tS] }
     }
+    // ⭐ A DEPTH-0 NEIGHBOUR: SEEK X ALONG ITS RUN (Zob's read, Boz's ruling, 2026-10-27). Where one side is depth 0 (a water edge,
+    // the coast) and the miter fails because that edge is SHORT (Huron, cleveland-road-east-0 at ① 11: a 0.22 m water sub-edge
+    // after a coast bend put the miter behind its start), the curb line of the other side runs on — as hwyJoin's does — along
+    // the depth-0 RUN (the edge and its same-owner depth-0 neighbours, walking away from v) to its FIRST crossing of ①'s line,
+    // X, ON ①. The piece is [v, the run vertices passed, X, the band's end]; the water run then starts at X, on ①'s line.
+    // ⛔ The chord was the defect: it contributed the deep band's END CAP as a kind-1 curb line under the WATER edge's label.
+    if (!X && !(idMap?.hwy && (idMap.hwy[ia] || idMap.hwy[i]))) {
+      const z0 = (k) => !(seg[k].dS > 0) && !(seg[k].dE > 0), same = (k, k0) => ownerKeyOf(origE[k]) === ownerKeyOf(origE[k0])
+      // ⛔ SCOPED TO THE WATER, by identity (Boz's ruling (i), 2026-10-27): the defect is a kind-1 line under the WATER's label.
+      // Every other depth-0 join stays as it was (HPDM ① v7 and PTown ① v42 built non-simple run pieces when this was general;
+      // the general case is filed in the cut-separately census)
+      const isWater = (k) => typeof ownerKeyOf === 'function' && String(ownerKeyOf(origE[k]) ?? '').split('|')[0] === WATER_EDGE_SKEL
+      const aZ = z0(ia), sZ = z0(i)
+      if (aZ !== sZ && isWater(aZ ? ia : i)) {
+        // the curb line: from the deep band's end at v, away from v along its own direction
+        const o = aZ ? S.P : A.Q, d = aZ ? [-S.dir[0], -S.dir[1]] : A.dir
+        const hit = (a, b) => { const ex = b[0] - a[0], ey = b[1] - a[1], den = d[0] * ey - d[1] * ex; if (!(Math.abs(den) > 1e-15)) return null
+          const s0 = ((a[0] - o[0]) * ey - (a[1] - o[1]) * ex) / den, u0 = ((a[0] - o[0]) * d[1] - (a[1] - o[1]) * d[0]) / den
+          return s0 >= 0 && u0 >= 0 && u0 <= 1 ? [o[0] + d[0] * s0, o[1] + d[1] * s0] : null }
+        const passed = []
+        for (let step = 0, k = aZ ? ia : i; step < n; step++) { if (!z0(k) || !same(k, aZ ? ia : i)) break
+          const a = ring[k], b = ring[(k + 1) % n], h = hit(a, b)
+          if (h) { const piece = aZ ? [v, ...passed, h, S.P] : [v, A.Q, h, ...passed.slice().reverse()]
+            const pc = (p1, p2, p3, p4) => { const or = (x, y, z) => Math.sign((y[0] - x[0]) * (z[1] - x[1]) - (y[1] - x[1]) * (z[0] - x[0])); return or(p3, p4, p1) * or(p3, p4, p2) < 0 && or(p1, p2, p3) * or(p1, p2, p4) < 0 }
+            let ok = true; for (let x = 0; x < piece.length && ok; x++) for (let y = x + 2; y < piece.length && ok; y++) { if (x === 0 && y === piece.length - 1) continue
+              if (pc(piece[x], piece[(x + 1) % piece.length], piece[y], piece[(y + 1) % piece.length])) ok = false }
+            if (!ok) throw new Error(`[tileGround][offsetRingByRects] ⛔ the join at ① vertex ${origV[i]} (${v.map(c => c.toFixed(3)).join(', ')}) runs on along its depth-0 run to (${h.map(c => c.toFixed(3)).join(', ')}), and the piece is not simple. Refusing.`)
+            return { X: h, kind: 'run', A, S, v, ia, i, tA: NaN, tS: NaN, piece, zSide: aZ ? 'A' : 'S' } }
+          passed.push(aZ ? a : b); k = aZ ? (k - 1 + n) % n : (k + 1) % n }
+        // the curb line leaves the run without crossing it: the bands' own join decides (Boz) — no piece, no water vertex minted.
+        // ⛔ Never the chord: at a depth-0 side its triangle is degenerate (A.Q or S.P is v) and all it adds is the deep band's
+        // end cap as a kind-1 line under the depth-0 edge's owner, the defect itself
+        return { X: null, kind: 'none', A, S, v, ia, i, tA: NaN, tS: NaN } } }
     return { X, kind, A, S, v, ia, i, tA: J_t[0], tS: J_t[1] }
   })
   // where band i starts and ends on its curb side: its own P / Q, or the shared X
@@ -1826,7 +1859,8 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
     const j = J[i]; if (!j) continue
     const { A, v, ia } = j
     if (j.X && j.kind === 'piece') { addClip([v, A.Q, j.X, S.P], [ia, i]); addSeg(A.Q, j.X, ia, 1); addSeg(j.X, S.P, i, 1) }
-    else if (!j.X) { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
+    else if (j.kind === 'run') { addClip(j.piece, [ia, i]); if (j.zSide === 'A') addSeg(j.X, S.P, i, 1); else addSeg(A.Q, j.X, ia, 1) }
+    else if (!j.X && j.kind !== 'none') { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
     addSeg(v, A.Q, ia, 3); addSeg(S.P, v, i, 3); wedges++
   }
   // ⛔ UNITE THE BANDS FIRST, then subtract. One pass (the difference's own NonZero clip fill) leaves a zero-width

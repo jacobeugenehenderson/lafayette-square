@@ -73,6 +73,8 @@ RIM_MUTANTS.push(['a thin cell\'s corner picked by the far end\'s key', '.filter
 // the island mutant: a CLOSED run (both ways round the cell wet) refused, as before rule (1) (Huron's 11.3 ha island, 2026-10-27)
 // the keyless mutant: a water-run vertex with no bracket key is skipped (no place), as before (Huron's motorway banks, 2026-10-27)
 RIM_MUTANTS.push(['a keyless water run skipped', '      else { const cands = []\n        rings.forEach((R2, a)', '      else if (false) { const cands = []\n        rings.forEach((R2, a)'])
+// the join mutant: ②'s join at a depth-0 neighbour sought on the ADJACENT edge only (the chord), as before (Huron's Cleveland Road)
+RIM_MUTANTS.push(['the depth-0 join on the adjacent edge only', '    if (!X && !(idMap?.hwy && (idMap.hwy[ia] || idMap.hwy[i]))) {', '    if (false) {'])
 RIM_MUTANTS.push(['a closed run refused, both ways wet', '      const cands = []\n', "      if (okF && okB) throw new Error('[mutant] both ways round the cell are wet')\n      const cands = []\n"])
 const rimMutants = []
 for (const [name, a, b] of RIM_MUTANTS) {
@@ -137,7 +139,21 @@ for (const [name, a, b] of RIM_MUTANTS) {
   const land5 = live5?.tile?.inkCells?.[0]?.rings?.[0] || [], has = (x) => land5.some(p => p[0] === x && p[1] === 0)
   const ok5 = !e5 && has(2) && has(8) && !!m5
   console.log(`${ok5 ? '✅' : '⛔'} (A′) planted keyless run: live ${e5 ? `REFUSES (${e5.slice(0, 90)})` : `places both joins on the cell edge holding them (${has(2) && has(8) ? 'both' : 'not both'})`}; the keyless-skipped mutant ${m5 ? 'refuses' : 'places them (vacuous)'}`)
-  if (ok5) C5.red++; else { console.log('⛔ the planted keyless run cannot tell the rule from skipping it'); process.exit(1) } }
+  if (ok5) C5.red++; else { console.log('⛔ the planted keyless run cannot tell the rule from skipping it'); process.exit(1) }
+  // (B) planted, ②'S JOIN AT A DEPTH-0 NEIGHBOUR (Huron's ① vertices at cleveland-road-east-0, 2026-10-27): a 0.22 m water sub-edge
+  // after a coast bend, then a street 3.345 m deep. The miter falls behind the short edge's start; live seeks X along the water
+  // RUN (① vertex 11 cut away, X on ① edge 9 → 10, on ①'s line); the adjacent-edge-only join keeps ① 11 and mints no X
+  const { offsetRingByRects } = await import('../src/lib/tileGround.js'), C6 = rimMutants.find(m => m.name.startsWith('the depth-0 join'))
+  const v9 = [740.462, 579.219], v10 = [736.211, 569.981], v11 = [736.160, 569.765], Pq = [735.876, 573.098], nq = [(Pq[0] - v11[0]) / 3.345, (Pq[1] - v11[1]) / 3.345], dq = [-nq[1], nq[0]]
+  const v12 = [v11[0] + dq[0] * 30, v11[1] + dq[1] * 30], jr = [v9, v10, v11, v12, [v12[0] + nq[0] * 25, v12[1] + nq[1] * 25], [v9[0] + nq[0] * 25, v9[1] + nq[1] * 25]], jd = (k) => (k <= 1 ? 0 : k === 2 ? 3.345 : 2)
+  const sdq = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)); return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
+  const jOwn = (e) => (e <= 1 ? `${WATER_EDGE_SKEL}|right|0` : `street|left|${e}`)   // the water run is the water's, by identity
+  const judgeJ = (M) => { const R = M.offsetRingByRects(jr, jd, false, null, null, null, jOwn), V = (R.rings || R).flat()
+    return { has11: V.some(p => Math.hypot(p[0] - v11[0], p[1] - v11[1]) < 0.002), X: V.filter(p => sdq(p, v9, v10) < 0.002 && Math.hypot(p[0] - v9[0], p[1] - v9[1]) > 0.01 && Math.hypot(p[0] - v10[0], p[1] - v10[1]) > 0.01 && Math.hypot(p[0] - 737.65, p[1] - 573.1) < 0.5) } }
+  const L6 = judgeJ({ offsetRingByRects }), M6 = judgeJ(C6.tg)
+  const ok6 = !L6.has11 && L6.X.length === 1 && M6.has11
+  console.log(`${ok6 ? '✅' : '⛔'} (B) planted depth-0 join: live ${L6.has11 ? 'KEEPS ① 11' : 'cuts ① 11 away'}, X on ①'s water edge ${L6.X.length ? `(${L6.X[0].map(v => v.toFixed(3)).join(', ')})` : 'NONE'}; the adjacent-edge-only join ${M6.has11 ? 'keeps ① 11 (the old defect, seen)' : 'cuts it too (vacuous)'}`)
+  if (ok6) C6.red++; else { console.log('⛔ the planted depth-0 join cannot tell the run from the adjacent edge'); process.exit(1) } }
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]
 const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]

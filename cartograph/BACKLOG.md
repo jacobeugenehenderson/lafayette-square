@@ -210,6 +210,7 @@ word in Ward's window. One heavy run at a time. Hashes copied from git, never ty
 - PTown (−348.530, −80.330) mayflower-street · a STREET acute: ①'s node outline refused (plain offsets kept), protopolygon.outlineRefused · 1 node (Ferrule, slot 12, claims-the-mint-refuses-no-outline)
 - Huron face:underived one-item +92 m over baseline (218 pairs, 171.5 m) · top sites (−2823.076, −2230.132) 32.4 m #1020, (−3155.852, −1725.719) 21.4 m #962, (−2807.801, −2249.218) 16.5 m #1020 (Ferrule, slot 13, claims-no-edge-is-drawn-twice)
 - Huron face:recreation / face:underived +83 m, new (7 pairs, 83.1 m) · the same sites as the one-item row: recreation#89 against underived#1020 / #962 (Ferrule, slot 13)
+- HPDM (−1189.076, 1453.471) and PTown (8534.515, 1885.546), working-copy points of ②'s offset · rows: a depth-0 neighbour join NOT owned by the water · when ②'s run search was general these built non-simple pieces; scoped to the water (Boz's (i)) they keep the chord, which contributes a kind-1 line under that neighbour's label — possibly the same mislabel class on frame / boundary / other depth-0 edges, unread. Nearest frozen ① vertex: HPDM block 228 v24 (6.45 m, claytonia-terrace|right|5 both sides) · PTown block 22 v71 (3.13 m, highland-road → trunk-link-4) (Ferrule, 2026-10-27)
 
 
 > Jacob, 2026-10-20: *"LS, HPDM, PTown, and Huron are absolutely more presently important, and getting the Ward in solid
