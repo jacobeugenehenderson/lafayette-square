@@ -50,6 +50,10 @@ Three lines that should be one:
   every road class: ①'s water stays continuous under the bridge (the off-grade span stays out of ①'s ink), and the span is painted
   over the water as an overlay, the way H already is. The pin skips coast vertices under that paint by identity, counted and named.
   FILED: a real bridge deck (raised over the water), the "deck later".
+- **The lidar's own point classes decide what is a deck** (Jacob 2026-10-27: *"If we have access to literal data via the lidar it
+  seems like that is the more legit option"*). A mapped pier/deck footprint is masked as water only where the 3DEP point cloud's classes
+  say structure over water; a "pier" tag on land (Huron's dredge pump-out pad) stays ground. The kit gains a LAZ reader (approved in
+  principle), pinned, with a registry row for the LPC access path; a footprint with no point data refuses by name.
 - **Water, sand and shore run to the bb and are stamped with everything; the disc stamps last; the sand line is ink in ①,
   made in the pour** (Jacob 2026-10-21 night; `BRIEF-the-rim-is-cut-once §5`).
 - **No fallback:** no lidar, no vertical datum, or no water record ⇒ THROWS by name, never OSM (`coast-from-lidar §3.2`).
