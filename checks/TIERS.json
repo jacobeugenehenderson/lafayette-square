@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 458,
   "counts": {
-    "safe": 328,
+    "safe": 330,
     "local-effect": 28,
-    "live": 102
+    "live": 100
   },
   "checks": [
     {
@@ -611,10 +611,9 @@
     },
     {
       "file": "checks/claims-a-slab-ships-under-content-names.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
+      "tier": "safe",
       "why": [
-        "calls fetch()"
+        "reads repo files only"
       ]
     },
     {
@@ -829,10 +828,9 @@
     },
     {
       "file": "checks/claims-a-towns-sources-are-its-own.mjs",
-      "tier": "live",
-      "reasonClass": "outbound",
+      "tier": "safe",
       "why": [
-        "imports src/cartograph/sourcesCatalogue.js, which can: calls fetch()"
+        "computed import of src/cartograph/sourcesCatalogue.js — read, safe"
       ]
     },
     {
@@ -1176,9 +1174,8 @@
     {
       "file": "checks/claims-deployment-has-one-authority.mjs",
       "tier": "live",
-      "reasonClass": "outbound",
+      "reasonClass": "unreadable",
       "why": [
-        "calls fetch()",
         "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
         "imports package(s) vite — not read from source"
       ]

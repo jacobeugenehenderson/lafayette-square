@@ -108,18 +108,21 @@ const NET_CMD = /\b(curl|wget|nc|ssh|scp|supabase|psql|npx|npm\s+(i|install|publ
 const LOCAL_CMD = /^\s*(git\s+(ls-files|show|rev-parse|log|diff|cat-file|status|grep|merge-base)|grep|rg|ls|cat|find|wc|sed|awk|sort|uniq|head|tail|node\s+-[ev]|true)\b/
 
 const SIGNALS = {
-  // Outbound calls. `fetch(` after comment-stripping is a call, not prose.
+  // Outbound calls. ⭐ A CALL-SHAPED signal (`'call'`) is read on the BLANKED code (`lex`): `fetch(` inside a string or a
+  // regex literal is text, not a call (claims-a-slab-ships-under-content-names searches serve.js for `fetch(` and was tiered
+  // live, 2026-10-26). A template's `${…}` is code and stays visible. A module-NAME signal is itself a string literal, so it
+  // is read on the comment-free code.
   live: [
-    [/\bfetch\s*\(/, 'calls fetch()'],
-    [/\bXMLHttpRequest\b/, 'uses XMLHttpRequest'],
-    [/\bWebSocket\s*\(/, 'opens a WebSocket'],
+    [/\bfetch\s*\(/, 'calls fetch()', 'call'],
+    [/\bXMLHttpRequest\b/, 'uses XMLHttpRequest', 'call'],
+    [/\bWebSocket\s*\(/, 'opens a WebSocket', 'call'],
     [/from\s*['"]node:(https?|net|dgram|dns|tls)['"]/, 'imports a network module'],
     [/require\s*\(\s*['"](node:)?(https?|net|dgram|dns|tls)['"]/, 'imports a network module'],
-    [/\bcreateClient\s*\(/, 'constructs a Supabase/DB client'],
+    [/\bcreateClient\s*\(/, 'constructs a Supabase/DB client', 'call'],
     // ⭐ The other ways to start code that is not this file (Boz, 2026-10-12): a worker or a forked cluster member runs a
     //    module named at run time, and native code reaches anything. None is read — naming the module is enough.
     [/['"](?:node:)?(?:worker_threads|cluster)['"]/, 'imports worker_threads/cluster — starts code it cannot read'],
-    [/\bprocess\.(?:dlopen|binding)\s*\(/, 'loads native code (process.dlopen/binding)'],
+    [/\bprocess\.(?:dlopen|binding)\s*\(/, 'loads native code (process.dlopen/binding)', 'call'],
     // ⭐ A PACKAGE MEASURED TO REACH OUT. Bare packages are not read from source (the no-network guard is their proof);
     //    one the guard has CAUGHT is declared here so it never enters the safe run again. vite: its server resolves
     //    localhost over DNS on start (getLocalhostAddressIfDiffersFromDNS) — the guard fired on
@@ -196,6 +199,10 @@ export function execSelfTest() {
     ["export const run = () => process.binding('spawn_sync')", 'live'],
     ["import { createServer } from 'vite'\nexport const run = () => createServer({})", 'live'],
     ["export const run = async () => (await import('vite')).build({})", 'live'],
+    // ⭐ a call-shaped signal is read on the blanked code: `fetch(` in a regex or a string is text; inside a `${…}` it is a call
+    ["export const re = /fetch(url)/", 'safe'],
+    ["export const msg = 'fetch(url) is not called here'", 'safe'],
+    ["export const run = (u) => `${fetch(u)}`", 'live'],
   ]
   for (const [helper, want] of graph) {
     const got = classifyVirtual({ 'checks/claims-planted.mjs': check, 'checks/_helper.mjs': helper }, 'checks/claims-planted.mjs').tier
@@ -639,7 +646,8 @@ export function classify(file, seen = new Set(), depth = 0) {
     return { file, tier, why, reasonClass: tier === 'live' ? (NET_CMD.test(code) ? 'outbound' : 'unreadable') : undefined }
   }
 
-  for (const [re, label] of SIGNALS.live) if (re.test(code)) { bump('live'); why.push(label) }
+  const blank = blankStrings(code)
+  for (const [re, label, kind] of SIGNALS.live) if (re.test(kind === 'call' ? blank : code)) { bump('live'); why.push(label) }
   const tmpOnly = writesOnlyUnderTmp(code, file)
   for (const [re, label] of SIGNALS.write) if (re.test(code)) {
     if (tmpOnly) why.push(`${label} — only under its own temp dir`)
@@ -655,7 +663,6 @@ export function classify(file, seen = new Set(), depth = 0) {
   //      anything else — an argument, the environment, a loop variable — cannot be read ⇒ live
   //    `import()` written in a message is prose — but only when BOTH readers say it sits in a string: a mis-read
   //    literal would otherwise hide a real call, which mis-tiers toward safe (the forbidden direction).
-  const blank = blankStrings(code)
   for (const m of code.matchAll(/\bimport\s*\(/g)) {
     if (blank.slice(m.index, m.index + 6) !== 'import' && inStringHere(code, m.index)) continue
     const arg = balancedArg(code, m.index + m[0].length - 1)?.trim()
