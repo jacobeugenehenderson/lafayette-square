@@ -33,9 +33,10 @@ const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.leng
 const verbose = process.argv.includes('-v')
 // --mutant=terrain-map: serve.js with the terrain step's MAP_JSON declaration removed (run by --mutants, below)
 const SERVE_MUTANTS = { 'terrain-map': (t) => t.replace(/\n\s*MAP_JSON,\s*\/\/ the high-water flood[^\n]*/, '') }
+const RULE_MUTANTS = ['adjacent-not-inputs']   // a mutant of THIS check's rule, not of serve.js
 const src0 = readFileSync(arg('serve') || join(ROOT, 'cartograph/serve.js'), 'utf8')
-const src = arg('mutant') ? SERVE_MUTANTS[arg('mutant')](src0) : src0
-if (arg('mutant') && src === src0) { console.log(`⛔ NOT CHECKED — mutant ${arg('mutant')} could not be applied; update this check`); process.exit(2) }
+const src = SERVE_MUTANTS[arg('mutant')] ? SERVE_MUTANTS[arg('mutant')](src0) : src0
+if (arg('mutant') && !RULE_MUTANTS.includes(arg('mutant')) && src === src0) { console.log(`⛔ NOT CHECKED — mutant ${arg('mutant')} could not be applied; update this check`); process.exit(2) }
 const pc = await import(pathToFileURL(join(ROOT, 'cartograph/pour-code.mjs')).href)
 const { importClosure } = pc
 const CARTO = join(ROOT, 'cartograph')
@@ -122,6 +123,12 @@ if (process.argv.includes('--mutants')) {
   const seenGap = r.status === 1 && /data\s+map\.json\s+\(named in cartograph\/bake-terrain\.js\)/.test(r.stdout)
   if (!seenGap) red++
   console.log(`  ${seenGap ? '✅' : '⛔'} mutant: the terrain step's MAP_JSON declaration removed → ${seenGap ? 'RED, naming map.json from bake-terrain.js' : `NOT seen (exit ${r.status})`}`)
+  // ground-shore's not-inputs block sits above its gate, not on its call: the old adjacent-only rule must lose it
+  const gs = (mut) => (spawnSync(process.execPath, [process.argv[1], '--step=ground-shore', ...(mut ? [`--mutant=${mut}`] : [])], { encoding: 'utf8' }).stdout.match(/^\s+data\s/gm) || []).length
+  const [now, adj] = [gs(null), gs('adjacent-not-inputs')]
+  const seenBlock = adj > now
+  if (!seenBlock) red++
+  console.log(`  ${seenBlock ? '✅' : '⛔'} mutant: not-inputs read only directly above the call → ${seenBlock ? `ground-shore's excused names come back (${now} → ${adj})` : `no change (${now} → ${adj}): the rule is not what decides ground-shore`}`)
   console.log(red ? `\n⛔ ${red} self-test row(s) failed` : '\n✅ the name scan skips messages, table rows and URLs, keeps reads, and sees a dropped declaration')
   process.exit(red ? 1 : 0)
 }
@@ -220,11 +227,15 @@ for (const m of src.matchAll(/runIfDirty\(\s*'([^']+)'\s*,/g)) {
   for (const e of arr(outputs)) resolve(e, outs)
   const sm = cmd?.match(/node\s+((?:arborist\/)?[\w.-]+\.m?js)/)
   const script = sm ? join(sm[1].startsWith('arborist/') ? ROOT : CARTO, sm[1]) : null
-  // `// not-inputs: name (why) · name (why)` in the comment block directly above the call: a name the step's code
-  // mentions but that is deliberately NOT an input (a guard that only passes or throws, a literal never opened on
-  // this path). The reason sits next to the code it excuses; a NEW name the code gains still goes red.
-  const above = src.slice(0, m.index).split('\n').slice(0, -1).reverse()
-  const block = []; for (const l of above) { if (/^\s*\/\//.test(l)) block.push(l); else break }
+  // `// not-inputs: name (why) · name (why)` anywhere between the previous runIfDirty call and this one: a name the
+  // step's code mentions but that is deliberately NOT an input (a guard that only passes or throws, a literal never
+  // opened on this path). The reason sits with the code it excuses, wherever the route puts it (ground-shore's sits above
+  // the gate that decides it, not on the call); a NEW name the code gains still goes red.
+  const prev = Math.max(0, src.lastIndexOf('runIfDirty(', m.index - 1))
+  const lead = arg('mutant') === 'adjacent-not-inputs'   // the old rule: only the comment lines directly above the call
+    ? (() => { const b = []; for (const l of src.slice(0, m.index).split('\n').slice(0, -1).reverse()) { if (/^\s*\/\//.test(l)) b.push(l); else break } return b })()
+    : src.slice(src.indexOf('\n', prev) + 1, m.index).split('\n')
+  const block = lead.filter(l => /^\s*\/\//.test(l))
   const notInputs = new Map()
   for (const l of block) { const n = l.match(/not-inputs:\s*(.*)$/); if (n) for (const part of n[1].split(' · ')) { const k = part.match(/^\s*([^\s(]+)\s*\((.*)\)\s*$/); if (k) notInputs.set(k[1], k[2]) } }
   steps.push({ label: m[1], decl, outs, script, notInputs, line: src.slice(0, m.index).split('\n').length })
