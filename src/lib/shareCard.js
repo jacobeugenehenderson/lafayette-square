@@ -83,42 +83,50 @@ export const CARD_HEADER = 'ward-share-card'
 
 const escAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 
-/** The card as `<head>` markup → { html, missing: [tag keys] }. Pure. */
+/**
+ * The card as `<head>` markup → { html, missing: [tag keys], why }. Pure. Besides `CARD_TAGS`, the page's `<title>`
+ * and its icon `<link>` — a crawler runs no JavaScript, so `townMark.js` never reaches it. ⛔ An absent icon is
+ * MISSING (named), never a silent remove (Boz, 2026-10-26).
+ */
 export function cardHead(card) {
-  const missing = []
+  const missing = [], reasons = []
   let html = ''
+  const lack = (key, reason) => { missing.push(key); if (!reasons.includes(reason)) reasons.push(reason) }
+  if (card.title) html += `<title>${escAttr(card.title)}</title>`
+  else lack('title', 'no title in the card')
   for (const t of CARD_TAGS) {
     const v = t.fixed ?? card[t.from]
-    if (v == null || v === '') { if (!t.optional) missing.push(t.key); continue }
+    if (v == null || v === '') { if (!t.optional) lack(t.key, t.from === 'image' && card.imageError ? card.imageError : `no ${t.from} in the card`); continue }
     html += `<meta ${t.attr}="${t.key}" content="${escAttr(v)}" />`
   }
-  return { html, missing }
+  if (card.icon) html += `<link rel="icon"${card.icon.startsWith('data:image/svg') ? ' type="image/svg+xml"' : ''} href="${escAttr(card.icon)}" />`
+  else lack('icon', 'the town authors no faviconUrl or mark')
+  return { html, missing, why: missing.length ? `missing ${missing.join(' ')}; ${reasons.join('; ')}` : '' }
 }
 
 /**
  * ⭐⭐ THE WORKER WRITES THE WHOLE CARD. Both site Workers serve `response` through this, so the two sites cannot
- * write different cards. Every og:/twitter: tag the player's document already carries is REMOVED and the card is
- * appended to `<head>`, so the card never depends on which player document is served — the kit's index.html
- * carried placeholder tags and the Ward's carries none, and a rewrite-only card served no tags at all on every
- * Ward town (2026-10-26). Also the page's `<title>` and icon.
+ * write different cards. Every og:/twitter: tag, every `<title>` and every icon link the player's document carries
+ * is REMOVED and the card is appended to `<head>`, so the card never depends on which player document is served —
+ * the kit's index.html carried placeholder tags and the Ward's carries none (and no icon), and a rewrite-only card
+ * served no tags at all on every Ward town (2026-10-26).
  * ⛔ A MISSING VALUE IS NEVER A SILENT DROP. The page is still served (a town without a share image is still a
  * town), but the response carries `ward-share-card: incomplete; missing <tags>; <why>`, the head carries the
  * same as a comment, and the Worker logs it by town. A whole card says `ward-share-card: complete`.
  * ▶ node checks/claims-a-town-page-writes-its-own-card.mjs
  */
 export async function withShareCard(rewriter, response, card, { site, map }) {
-  const { html, missing } = cardHead(card)
-  const why = missing.length ? `missing ${missing.join(' ')}; ${card.imageError || 'no value in the card'}` : ''
+  const { html, why } = cardHead(card)
   if (why) console.error(`[${site}] share card for "${map}" served incomplete: ${why}`)
   const drop = { element(el) { el.remove() } }
   const out = rewriter
     .on('meta[property^="og:"]', drop)
     .on('meta[name^="twitter:"]', drop)
+    .on('head > title', drop)
+    .on('head > link[rel~="icon"]', drop)
     .on('head', { element(el) {
       el.append(html + (why ? `<!-- ${CARD_HEADER}: incomplete; ${why.replace(/--/g, '- -')} -->` : ''), { html: true })
     } })
-    .on('title', { element(el) { el.setInnerContent(card.title) } })
-    .on('link[rel="icon"]', { element(el) { card.icon ? el.setAttribute('href', card.icon) : el.remove() } })
     .transform(await response)
   const res = new Response(out.body, out)
   res.headers.set(CARD_HEADER, why ? `incomplete; ${why}`.replace(/[^\x20-\x7e]/g, '?') : 'complete')

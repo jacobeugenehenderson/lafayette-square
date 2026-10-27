@@ -10,17 +10,18 @@
  *
  * Drives each Worker's real `fetch` in Miniflare (the real HTMLRewriter) against an in-memory R2, and reads the
  * served `<head>`:
- *   1. a Ward-shaped document with NO og tags → every tag in `shareCard.js#CARD_TAGS` (read, never restated) is
- *      there exactly once, with the town's own title, description, picture and url; header `complete`.
- *   2. a kit-shaped document WITH placeholder tags → the same, exactly once each (the placeholders are removed).
- *   3. a town whose slab has no share image → served (200), the image tags absent, and the header names them.
+ *   1. a Ward-shaped document with NO og tags and NO icon → every tag in `shareCard.js#CARD_TAGS` (read, never
+ *      restated) exactly once, with the town's own title, description, picture and url; exactly one `<title>`, the
+ *      town's; exactly one icon link, the town's; header `complete`; served `no-cache` (the card changes by the hour).
+ *   2. a kit-shaped document WITH placeholder tags, its own title and two icon links → the same, once each.
+ *   3. a town with no share image and no icon → served (200), those tags absent, and the header names them.
  * Mutants, run every time, must turn it RED: (a) the old rewrite-only selectors; (b) a missing value dropped
- * silently (no header).
+ * silently (no header); (c) the old setAttribute-only icon handler.
  *   node checks/claims-a-town-page-writes-its-own-card.mjs
  */
 import { join } from 'node:path'
 import { workerInMiniflare, mint, hex } from './_miniflare.mjs'
-import { CARD_TAGS, CARD_HEADER, SHARE_IMAGE_RELS } from '../src/lib/shareCard.js'
+import { CARD_TAGS, CARD_HEADER, SHARE_IMAGE_RELS, cardFor } from '../src/lib/shareCard.js'
 import { HASHED, contentName } from '../src/lib/slabNames.js'
 
 const ROOT = new URL('..', import.meta.url).pathname
@@ -35,7 +36,7 @@ const manifest = (map, withShare) => {
   return { town: map, names: HASHED, identity: { geography: GEO }, files }
 }
 const WARD_DOC = (w) => `<!doctype html><html><head>\n<meta charset="UTF-8" />\n<meta name="ward-build" content="${w}">\n<title>The Ward</title>\n<script type="module" src="/_ward/${w}/assets/index.js"></script></head><body>WARD</body></html>`
-const KIT_DOC = '<!doctype html><html><head><meta charset="UTF-8" /><title>Lafayette Square</title>\n'
+const KIT_DOC = '<!doctype html><html><head><meta charset="UTF-8" /><link rel="icon" type="image/svg+xml" href="https://lafayette-square.com/favicon.svg" /><link rel="shortcut icon" href="/favicon.ico" /><title>Lafayette Square</title>\n'
   + '<meta property="og:title" content="Lafayette Square" /><meta property="og:image" content="" /><meta property="og:type" content="website" />'
   + '<meta property="og:url" content="https://lafayette-square.com/" /><meta name="twitter:card" content="summary_large_image" />'
   + '<meta name="twitter:title" content="Lafayette Square" /><meta name="twitter:image" content="" /></head><body>LEGACY</body></html>'
@@ -45,6 +46,8 @@ function headTags(body) {
   const head = (body.match(/<head>([\s\S]*?)<\/head>/) || [])[1] || ''
   const tags = {}
   for (const m of head.matchAll(/<meta (property|name)="((?:og|twitter):[^"]+)" content="([^"]*)"/g)) (tags[m[2]] ||= []).push(unesc(m[3]))
+  tags.title = [...head.matchAll(/<title>([^<]*)<\/title>/g)].map((m) => unesc(m[1]))
+  tags.icon = [...head.matchAll(/<link rel="([^"]*)"[^>]*>/g)].filter((m) => m[1].split(/\s+/).includes('icon')).map((m) => unesc((m[0].match(/href="([^"]*)"/) || [])[1] || ''))
   return tags
 }
 
@@ -54,8 +57,8 @@ async function run(site, mutate) {
   const W = hex(), K = hex()
   const [ward, legacy, bare] = ['ward', 'legacy', 'bare'].map(mint)
   const towns = {
-    [ward]: { title: 'Ward "Town" & Co', description: 'A town on the Ward.' },
-    [legacy]: { title: 'Kit Town' },
+    [ward]: { title: 'Ward "Town" & <Co>', description: 'A town on the Ward.', faviconUrl: 'https://icons.example/ward.svg?a=1&b=2' },
+    [legacy]: { title: 'Kit Town', mark: '🦞' },
     [bare]: { title: 'No Picture Town', description: 'Published before its capture.' },
   }
   const mans = { [ward]: manifest(ward, true), [legacy]: manifest(legacy, true), [bare]: manifest(bare, false) }
@@ -113,6 +116,11 @@ async function run(site, mutate) {
       if (!okv) say(`${tag.key} = ${JSON.stringify(got[0])}, want ${tag.from === 'image' ? `one of ${[...images][0]} …` : JSON.stringify(w)}`)
     }
     if (tags['og:image']?.[0] !== tags['twitter:image']?.[0]) say('og:image and twitter:image differ')
+    if (tags.title.length !== 1 || tags.title[0] !== towns[t].title) say(`<title> ${JSON.stringify(tags.title)}, want exactly one, ${JSON.stringify(towns[t].title)}`)
+    const icon = cardFor({ town: towns[t], map: t, path: '/', manifest: null, slabBase: '', pageUrl: '', when: new Date() }).icon
+    if (icon == null) { absent.push('icon'); if (tags.icon.length) say(`an icon link is served (${tags.icon[0]}) though the town has none`) }
+    else if (tags.icon.length !== 1 || tags.icon[0] !== icon) say(`icon links ${JSON.stringify(tags.icon.map((h) => h.slice(0, 60)))}, want exactly one, ${icon.slice(0, 60)}`)
+    if (!/no-cache|no-store/.test(r.cache || '')) say(`served with cache-control ${JSON.stringify(r.cache)} — a card that changes by the hour must not be cached`)
     const h = r.headers.get(CARD_HEADER) || ''
     if (absent.length) {
       if (!h.startsWith('incomplete') || absent.some((k) => !h.includes(k))) say(`missing ${absent.join(' ')}, but ${CARD_HEADER} says ${JSON.stringify(h)} — a silent drop`)
@@ -123,23 +131,28 @@ async function run(site, mutate) {
 }
 
 // (a) The pre-2026-10-26 writer: rewrite whatever tags the document has, drop a tag whose value is empty.
-const OLD = (s) => s.replace(/\.on\('meta\[property\^="og:"\]', drop\)[\s\S]*?\n    \} \}\)\n(?=    \.on\('title')/, () =>
+const OLD = (s) => s.replace(/\.on\('meta\[property\^="og:"\]', drop\)[\s\S]*?\n    \} \}\)\n(?=    \.transform)/, () =>
   `.on('head', { element(el) { if (card.description) el.append(\`<meta property="og:description" content="\${escAttr(card.description)}" />\`, { html: true }) } })
     .on('meta[property="og:title"]', { element(el) { card.title ? el.setAttribute('content', card.title) : el.remove() } })
     .on('meta[name="twitter:title"]', { element(el) { card.title ? el.setAttribute('content', card.title) : el.remove() } })
     .on('meta[property="og:image"]', { element(el) { card.image ? el.setAttribute('content', card.image) : el.remove() } })
     .on('meta[name="twitter:image"]', { element(el) { card.image ? el.setAttribute('content', card.image) : el.remove() } })
     .on('meta[property="og:url"]', { element(el) { card.url ? el.setAttribute('content', card.url) : el.remove() } })
+    .on('title', { element(el) { el.setInnerContent(card.title) } })
+    .on('link[rel="icon"]', { element(el) { card.icon ? el.setAttribute('href', card.icon) : el.remove() } })
 `)
 // (b) A missing value dropped without a word.
-const SILENT = (s) => s.replace(/const why = missing\.length \?[^\n]*/, "const why = ''")
+const SILENT = (s) => s.replace("return { html, missing, why: missing.length ?", "return { html, missing, why: false ?")
+// (c) The pre-2026-10-26 icon: set the href of a link the document already has, append none.
+const ICON = (s) => s.replace(`.on('head > link[rel~="icon"]', drop)`, `.on('link[rel="icon"]', { element(el) { card.icon ? el.setAttribute('href', card.icon) : el.remove() } })`)
+  .replace('if (card.icon) html += ', 'if (card.icon) void ')
 
 let failed = 0
 for (const site of Object.keys(WORKERS)) {
   const real = await run(site)
   if (real.length) { failed += real.length; for (const f of real) console.log(`  ⛔ ${f}`) }
   else console.log(`  ✅ ${site}: a Ward page and a kit page each carry the town's whole card, once; a town with no picture is served and says what is missing`)
-  for (const [name, m] of [['the old rewrite-only selectors', OLD], ['a silently dropped tag', SILENT]]) {
+  for (const [name, m] of [['the old rewrite-only selectors', OLD], ['a silently dropped tag', SILENT], ['the old setAttribute-only icon handler', ICON]]) {
     const mut = await run(site, m)
     if (mut.length) console.log(`  ✅ mutation (${name}) is caught on ${site}: ${mut.length} failure(s), e.g. ${mut[0]}`)
     else { failed++; console.log(`  ⛔ mutation (${name}) PASSED on ${site} — the check cannot see it`) }
