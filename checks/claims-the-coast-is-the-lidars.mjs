@@ -31,7 +31,8 @@
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
 // absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive · ringViolations misses a crossing · the acute predicate dropped from bake-coast · wetLoops interpolates against a
-// sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored.
+// sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored · a deck crossing that
+// meets no ring accepted.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -135,6 +136,14 @@ console.log('── H. the tracer never reads a sentinel as a height')
   const segD = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1, u = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)); return Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dz) }
   const off = Math.max(...dl.map(p => Math.min(...dk.rings.flatMap(r => r.map((q, m) => segD(p, q, r[(m + 1) % r.length]))))))
   say(gk.some(Boolean) && dl.length > 0 && off <= 1 / CLIP_SCALE, `a deck's crossings lie on the deck's own ring (${dl.length} point(s), furthest ${(1000 * off).toFixed(3)} mm off; the clip grid is ${1000 / CLIP_SCALE} mm)`)
+  // a deck whose edge runs ALONG the lattice (a 2 m square deck on nodes 2…4): its boundary nodes lie on the ring, exact
+  const sqd = deckFootprints({ man_made: [{ tags: { man_made: 'pier' }, coords: [{ x: 2, z: 2 }, { x: 4, z: 2 }, { x: 4, z: 4 }, { x: 2, z: 4 }, { x: 2, z: 2 }], isClosed: true }] })
+  const g2 = new Float32Array(n * n).fill(1), k2 = new Uint8Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (sqd.on(i, j)) { g2[j * n + i] = NaN; k2[j * n + i] = KIND.DECK }
+  const t2 = {}, d2 = wetLoops(g2, n, n, 0, 0, 1, { kind: k2, deckCross: sqd.crossing, tally: t2 }).flat()
+  const off2 = Math.max(...d2.map(p => Math.min(...sqd.rings.flatMap(r => r.map((q, m) => segD(p, q, r[(m + 1) % r.length]))))))
+  say(off2 <= 1 / CLIP_SCALE, `a deck edge along the lattice: every crossing on the deck's ring (furthest ${(1000 * off2).toFixed(3)} mm; ${t2.deckNodeOnRing ?? 0} at a deck node ON the ring, ${t2.deck ?? 0} between)`)
+  let td = false; try { wetLoops(g2, n, n, 0, 0, 1, { kind: k2, deckCross: () => null }) } catch (e) { td = /a deck node outside its own deck/.test(e.message) }
+  say(td, 'a deck node whose edge meets no deck ring REFUSES (never the node as a guess)')
   let t = false; try { wetLoops(Float32Array.from([NaN, 1, 1, 1]), 2, 2, 0, 0, 1) } catch (e) { t = /no value and no kind/.test(e.message) }
   say(t, 'a NaN with no kind REFUSES (a sentinel must be named, never stored)')
 }

@@ -6,13 +6,14 @@
  * loop closes inside the tile; loops are returned unoriented and must be filled EVEN-ODD (a hole is a loop inside a loop).
  * ⛔ A SENTINEL IS NOT A VALUE (Zob, 2026-10-26: Huron's 22 coast touches were crossings interpolated against bake-coast's
  * −Number.EPSILON). A node with no height carries a KIND, never a stored stand-in: DECK (wet; the crossing is exactly where
- * the edge meets the deck's ring, `deckCross`, else the deck end, counted), NO_RETURN (wet, in coverage, no value) and
+ * the edge meets the deck's ring, `deckCross`, which is the deck node itself only where it lies ON the ring; else REFUSED),
+ * NO_RETURN (wet, in coverage, no value) and
  * NO_COVERAGE (dry, no value) and DRY_BY_RULE (dry whatever its height: a hollow the water does not reach): the crossing
  * at the edge's MIDPOINT, the line somewhere on it, its error at most step/2.
  * Two sentinels of one side never cross; only a sentinel edge between wet and dry does.
  * @param f     Float32Array (nx × nz, row-major by z), x0/z0 the first sample's town metres, step metres; NaN at a sentinel
  * @param kind  Uint8Array of the same size (0 = a value, else KIND.*), or null when every node is a value
- * @param tally counts the crossings each sentinel decided ({ deck, deckEnd, noReturn, noCoverage })
+ * @param tally counts the crossings each sentinel decided ({ deck, deckNodeOnRing, noReturn, noCoverage, dryByRule })
  */
 export const KIND = { VALUE: 0, DECK: 1, NO_RETURN: 2, NO_COVERAGE: 3, DRY_BY_RULE: 4 }
 export function wetLoops(f, nx, nz, x0, z0, step, { kind = null, deckCross = null, tally = null } = {}) {
@@ -33,7 +34,8 @@ export function wetLoops(f, nx, nz, x0, z0, step, { kind = null, deckCross = nul
       else if (ka === KIND.DECK || kb === KIND.DECK) {
         const [d, o] = ka === KIND.DECK ? [pa, pb] : [pb, pa], c = deckCross ? deckCross(d, o) : null
         if (!deckCross) throw new Error('⛔ wetLoops: a DECK node and no deckCross to find its edge')
-        if (c) { pt.set(key, c); if (tally) tally.deck = (tally.deck || 0) + 1 } else { pt.set(key, d); if (tally) tally.deckEnd = (tally.deckEnd || 0) + 1 } }
+        if (!c) throw new Error(`⛔ wetLoops: the edge from the deck node (${d.map(v => v.toFixed(3)).join(', ')}) to dry ground meets no deck ring and the node is not on one — a deck node outside its own deck`)
+        pt.set(key, c); if (tally) { const on = c[0] === d[0] && c[1] === d[1] ? 'deckNodeOnRing' : 'deck'; tally[on] = (tally[on] || 0) + 1 } }
       else { pt.set(key, [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2])
         if (tally) { const which = { [KIND.NO_RETURN]: 'noReturn', [KIND.NO_COVERAGE]: 'noCoverage', [KIND.DRY_BY_RULE]: 'dryByRule' }[ka || kb]; tally[which] = (tally[which] || 0) + 1 } }
     }
