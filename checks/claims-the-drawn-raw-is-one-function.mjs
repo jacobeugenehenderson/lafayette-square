@@ -12,8 +12,10 @@
 //      `_drawnSlope`; the displaced vertex (the snippet's own expression, evaluated) equals drawnGround's heightAt there;
 //   ② partsAt READS THE PINS: on a synthetic ground, a pinned vertex reads its pin, a point inside reads the barycentric of
 //      the pin and the field, an unpinned vertex reads the field, and a manifest with no `drawnRaw` record reads the field;
-//      of the triangles CONTAINING a point, (a) the top renderOrder's is read, and (b) none containing is null, at a tolerance
-//      derived from the positions' float32 (1e-5 m out is null; float32 rounding off an edge is in);
+//      of the triangles CONTAINING a point, (a) the top renderOrder's is read, (a′) exact containment before the tolerance, (a″)
+//      in a crack the nearer, and
+//      (b) none containing is null, at a per-edge tolerance derived from the positions' float32 (1e-5 m out is null; float32
+//      rounding off an edge is in; 0.1 mm past a sliver's short side is out);
 //   ③ THE GROUND DRAWS WITH THEM: BakedGround sets `aDrawnRaw` from drawnPinsOf, every ground patchTerrain call (BakedGround,
 //      gravelPathMaterial) passes `drawn`, and no module but drawnGround.js decodes `drawnRawByteOffset`;
 //   ④ EVERY READER OF ground.bin's LAYOUT IS NAMED: each file in src/, cartograph/ and checks/ that reads `vertexByteOffset`
@@ -31,8 +33,8 @@
 //     · the GLSL twin reads the field always                          → ⓪ RED
 //     · the JS twin ignores the sentinel (reads the stored raw)       → ⓪ RED
 //     · partsAt back to the field at the corners                      → ② RED
-//     · partsAt letting an extrapolated neighbour win over the containing triangle → ② RED
-//     · partsAt choosing the most inside whatever its renderOrder (a) · its tolerance typed at 1e-4, or 0 (b) → ② RED
+//     · partsAt letting the later of one renderOrder win over the nearer (a″, and the 3e-7 row) → ② RED
+//     · partsAt choosing the most inside whatever its renderOrder (a) · no exact stage (a′) · its tolerance typed at 1e-4, or 0, or one for all edges (b) → ② RED
 //     · the drawn displacement made from nothing (target text gone)   → ① RED
 //     · BakedGround's FadeMesh drops `drawn`                          → ③ RED
 //     · an unnamed reader of the layout                               → ④ RED
@@ -178,13 +180,28 @@ async function run(D, src, log) {
       const G2 = D.makeDrawnGround(T2.manifest, T2.bin, { rawAt: field }), p = G2.partsAt(1.2, 1.2), q = G2.partsAt(10, 2)
       if (p?.group !== 'top' || p?.y !== 1) bad('②', `(a) where two groups contain (1.2, 1.2) it reads ${p?.group} (y ${p?.y}); the top renderOrder is drawn there`)
       if (q?.group !== 'low') bad('②', `(a) where only the lower contains (10, 2) it reads ${q?.group}`) }
+    // (a′) EXACT FIRST: a top triangle whose edge (x = 10) lies 5e-7 m from (10 − 5e-7, 1), inside the float32 tolerance there
+    // (≈ 9.5e-7 m), does NOT beat the lower triangle that holds the point exactly: the raster draws the lower one there.
+    { const T4 = triangles([{ id: 'low', renderOrder: 0, y: 0, tri: [[0, 0], [20, 0], [0, 20]] }, { id: 'top', renderOrder: 5, y: 1, tri: [[10, 0], [15, 0], [10, 5]] }])
+      const G4 = D.makeDrawnGround(T4.manifest, T4.bin, { rawAt: field }), p = G4.partsAt(10 - 5e-7, 1)
+      if (p?.group !== 'low') bad('②', `(a′) a point held exactly by the lower triangle, 5e-7 m off the top one's edge, reads ${p?.group}: within the tolerance alone, the top beat the triangle that holds it`) }
+    // (a″) IN A CRACK, THE NEARER: two triangles of one renderOrder, 2 ulp apart (x = 1 and x = 1 + 2⁻²²), a point 0.5 ulp past
+    // the first and 1.5 past the second: neither holds it exactly, both admit it, and the nearer (the most inside) is read.
+    { const u = 2 ** -23, T5 = triangles([{ id: 'near', renderOrder: 0, y: 0, tri: [[0, 0], [1, 0], [1, 1]] }, { id: 'far', renderOrder: 0, y: 1, tri: [[1 + 2 * u, 0], [2, 0], [1 + 2 * u, 1]] }])
+      const G5 = D.makeDrawnGround(T5.manifest, T5.bin, { rawAt: field }), p = G5.partsAt(1 + 0.5 * u, 0.5)
+      if (p?.group !== 'near') bad('②', `(a″) in a crack the point 0.5 ulp past one triangle and 1.5 past the other reads ${p?.group}, not the nearer`) }
     // (b) NONE CONTAINING IS null, at a tolerance DERIVED from float32: 1e-5 m past the only triangle's edge is outside it (a
     // typed 1e-4 slack admitted it, extrapolated), while a point past the hypotenuse by float32 rounding alone (4.4e-7 m) is in.
     { const T3 = triangles([{ id: 'one', renderOrder: 0, y: 0, tri: [[0, 0], [10, 0], [0, 10]] }]), G3 = D.makeDrawnGround(T3.manifest, T3.bin, { rawAt: field })
       const out = G3.partsAt(5, -1e-5), rounded = G3.partsAt(Math.fround(0.0074), Math.fround(10 - 0.0074))
       if (out !== null) bad('②', `(b) a point 1e-5 m outside every triangle reads ${out?.raw} (extrapolated), not null`)
-      if (rounded === null) bad('②', '(b) a point off the edge by float32 rounding alone reads null: the tolerance is below the positions\' own precision') }
-    log(`   ② partsAt: pin ${at1?.raw?.toFixed(3)} · inside ${mid?.raw?.toFixed(4)} (want ${wantMid.toFixed(4)}) · unpinned ${at3?.raw?.toFixed(3)} · an older ground reads the field · the containing triangle wins over an extrapolated neighbour · (a) the top renderOrder among the containing · (b) none containing is null, at a float32 tolerance`)
+      if (rounded === null) bad('②', '(b) a point off the edge by float32 rounding alone reads null: the tolerance is below the positions\' own precision')
+      // PER EDGE: a sliver 10 m × 1 mm; 0.1 mm past its SHORT side is outside (one tolerance from the least altitude admitted
+      // 9.5 mm there: Huron's bed over shore, 2026-10-27)
+      const T6 = triangles([{ id: 'sliver', renderOrder: 0, y: 0, tri: [[0, 0], [10, 0], [10, 1e-3]] }]), G6 = D.makeDrawnGround(T6.manifest, T6.bin, { rawAt: field })
+      const past = G6.partsAt(10 + 1e-4, 5e-4)
+      if (past !== null) bad('②', `(b) a point 0.1 mm past a sliver's short side reads ${past?.raw}: the tolerance is not per edge`) }
+    log(`   ② partsAt: pin ${at1?.raw?.toFixed(3)} · inside ${mid?.raw?.toFixed(4)} (want ${wantMid.toFixed(4)}) · unpinned ${at3?.raw?.toFixed(3)} · an older ground reads the field · the containing triangle wins over an extrapolated neighbour · (a) the top renderOrder among the containing · (a′) exact before the tolerance · (a″) in a crack, the nearer · (b) none containing is null, at a float32 tolerance`)
 
     // ① the shader's drawn variant, made from the one snippet, evaluated at the pinned vertex
     const S = src[SHADER]
@@ -287,10 +304,12 @@ if (process.argv.includes('--mutants')) {
   const M = [
     ['the GLSL twin reads the field always', ['return pin.x > 0.5 ? pin.y : field;', 'return field;']],
     ['the JS twin ignores the sentinel', ["pins !== null && pins[v * 4] > 0.5 ? pins[v * 4 + 1] : field", "pins !== null && !Number.isNaN(pins[v * 4 + 1]) ? pins[v * 4 + 1] : field"]],
-    ['partsAt lets the later of two triangles win though the point is outside it', ['if (s !== null && (ro > bestRO || s.inside >= best.inside))', 'if (s !== null)']],
-    ['partsAt choosing the most inside whatever its renderOrder', ['if (ro < bestRO) continue\n      const s = sample(gi, refT[r], x, z)\n      if (s !== null && (ro > bestRO || s.inside >= best.inside))', 'const s = sample(gi, refT[r], x, z)\n      if (s !== null && (best === null || s.inside >= best.inside))']],
-    ['partsAt with a typed 1e-4 tolerance again', ['if (wa < -tol || wb < -tol || wc < -tol) return null', 'if (wa < -1e-4 || wb < -1e-4 || wc < -1e-4) return null']],
-    ['partsAt with no tolerance (below the positions\' precision)', ['if (wa < -tol || wb < -tol || wc < -tol) return null', 'if (wa < 0 || wb < 0 || wc < 0) return null']],
+    ['partsAt lets the later of two triangles of one renderOrder win though the other is nearer', ['if (ro > bestRO[q] || (ro === bestRO[q] && s.inside >= best[q].inside))', 'if (ro >= bestRO[q])']],
+    ['partsAt choosing the most inside whatever its renderOrder', ['if (ro > bestRO[q] || (ro === bestRO[q] && s.inside >= best[q].inside))', 'if (best[q] === null || s.inside >= best[q].inside)']],
+    ['partsAt with no exact stage (the tolerance alone decides)', ['const q = s.inside >= 0 ? 0 : 1', 'const q = 0']],
+    ['partsAt with one tolerance from the least altitude', ['if (wa < -u * Math.hypot(cxx - bx, czz - bz) || wb < -u * Math.sqrt(d00) || wc < -u * Math.sqrt(d11)) return null', 'const m3 = Math.max(Math.hypot(cxx - bx, czz - bz), Math.sqrt(d00), Math.sqrt(d11)); if (wa < -u * m3 || wb < -u * m3 || wc < -u * m3) return null']],
+    ['partsAt with a typed 1e-4 tolerance again', ['if (wa < -u * Math.hypot(cxx - bx, czz - bz) || wb < -u * Math.sqrt(d00) || wc < -u * Math.sqrt(d11)) return null', 'if (wa < -1e-4 || wb < -1e-4 || wc < -1e-4) return null']],
+    ['partsAt with no tolerance (below the positions\' precision)', ['if (wa < -u * Math.hypot(cxx - bx, czz - bz) || wb < -u * Math.sqrt(d00) || wc < -u * Math.sqrt(d11)) return null', 'if (wa < 0 || wb < 0 || wc < 0) return null']],
     ['partsAt back to the field at the corners', ['drawnRaw(pins, a, rawAt(ax, az)) * wa + drawnRaw(pins, b, rawAt(bx, bz)) * wb + drawnRaw(pins, c, rawAt(cxx, czz)) * wc', 'rawAt(ax, az) * wa + rawAt(bx, bz) * wb + rawAt(cxx, czz) * wc']],
     ['the drawn displacement made from nothing', null, (S) => { S[SHADER] = swap(S[SHADER], "'transformed.y += _terrainRaw(_tuv) * uExag;', 'transformed.y += _drawnRaw", "'transformed.y += _terrainRaw(_uv) * uExag;', 'transformed.y += _drawnRaw") }],
     ["BakedGround's FadeMesh drops drawn", null, (S) => { S[BG] = swap(S[BG], 'patchTerrain(mat, { perVertex: true, terrainNormals: true, drawn: !!geometry.attributes.aDrawnRaw })', 'patchTerrain(mat, { perVertex: true, terrainNormals: true })') }],

@@ -90,7 +90,9 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
 
   // barycentric at (px, pz) in triangle t of group gi, or null outside it. ⭐ THE TOLERANCE IS DERIVED, never typed (Zob's merge
   // read, 2026-10-27): the mesh stores its positions as float32, so a point the bake placed ON an edge can sit one float32 ulp
-  // of its coordinates off it, and a weight then reads −ulp ÷ the triangle's altitude there. That much, and no more, is inside.
+  // of its coordinates off it. Per EDGE: a weight is the distance to the opposite edge ÷ that edge's altitude, so weight i may
+  // read −ulp × |edge i| ÷ 2·area, and no more (one tolerance for all three, from the least altitude, admitted a sliver's
+  // long side by 0.2 mm: Huron, 2026-10-27).
   function sample(gi, t, px, pz) {
     const { P, I, pins } = G[gi], a = I[t], b = I[t + 1], c = I[t + 2]
     const ax = P[a * 3], az = P[a * 3 + 2], bx = P[b * 3], bz = P[b * 3 + 2], cxx = P[c * 3], czz = P[c * 3 + 2]
@@ -100,27 +102,33 @@ export function makeDrawnGround(manifest, bin, { groups: pick = () => true, rawA
     const denom = d00 * d11 - d01 * d01
     if (Math.abs(denom) < 1e-12) return null
     const wc = (d11 * d20 - d01 * d21) / denom, wb = (d00 * d21 - d01 * d20) / denom, wa = 1 - wc - wb
-    const tol = ulp32(Math.max(Math.abs(ax), Math.abs(az), Math.abs(bx), Math.abs(bz), Math.abs(cxx), Math.abs(czz), Math.abs(px), Math.abs(pz)))
-      * Math.max(Math.sqrt(d00), Math.sqrt(d11), Math.hypot(cxx - bx, czz - bz)) / Math.sqrt(denom)   // ulp ÷ the least altitude (2·area = √denom)
-    if (wa < -tol || wb < -tol || wc < -tol) return null
+    const u = ulp32(Math.max(Math.abs(ax), Math.abs(az), Math.abs(bx), Math.abs(bz), Math.abs(cxx), Math.abs(czz), Math.abs(px), Math.abs(pz))) / Math.sqrt(denom)   // 2·area = √denom
+    if (wa < -u * Math.hypot(cxx - bx, czz - bz) || wb < -u * Math.sqrt(d00) || wc < -u * Math.sqrt(d11)) return null   // edge opposite a = bc, b = ca, c = ab
     return { raw: drawnRaw(pins, a, rawAt(ax, az)) * wa + drawnRaw(pins, b, rawAt(bx, bz)) * wb + drawnRaw(pins, c, rawAt(cxx, czz)) * wc,
       y: P[a * 3 + 1] * wa + P[b * 3 + 1] * wb + P[c * 3 + 1] * wc, inside: Math.min(wa, wb, wc) }
   }
-  /** The drawn ground at (x, z) → { raw, y, group }: among the triangles that CONTAIN the point (within one float32 ulp, above),
-   *  the top renderOrder's; among those of one renderOrder, the most inside (the largest smallest weight); ties keep the last.
+  /** The drawn ground at (x, z) → { raw, y, group }: among the triangles that CONTAIN the point EXACTLY, the top renderOrder's;
+   *  among those of one renderOrder, the most inside (the largest smallest weight); ties keep the last. Only where none contains
+   *  it exactly, the same choice among those within one float32 ulp (above): a point placed on an edge that rounding moved off.
+   *  ⭐ Exact first, as the GPU's raster: within the ulp alone, a higher group 0.14 mm away beat the shore that holds the point
+   *  (Huron, `bed` over `shore`, 2026-10-27).
    *  ⭐ NONE CONTAINING IS null, never a neighbour extrapolated: with a typed 1e-4 slack, a point 3.8e-5 outside a triangle read
    *  the shore through a corner 151 mm away, 5.7 µm off a line its own triangle holds exactly (Huron, 2026-10-27). The GPU's
    *  raster never extrapolates; this matches it. A caller given null is off the drawn mesh and says so (groundSampler's `offMesh`). */
   function partsAt(x, z) {
     const k = cz(z) * nx + cx(x)
-    let best = null, bestRO = -Infinity, bestG = null
+    // two stages, each the top renderOrder then the most inside: [0] contains the point exactly (every weight ≥ 0), [1] only
+    // within the float32 tolerance. [1] is read only where nothing contains exactly.
+    const best = [null, null], bestRO = [-Infinity, -Infinity], bestG = [null, null]
     for (let r = count[k]; r < count[k + 1]; r++) {
       const gi = refG[r], ro = G[gi].ro
-      if (ro < bestRO) continue
       const s = sample(gi, refT[r], x, z)
-      if (s !== null && (ro > bestRO || s.inside >= best.inside)) { best = s; bestRO = ro; bestG = G[gi].g.id }
+      if (s === null) continue
+      const q = s.inside >= 0 ? 0 : 1
+      if (ro > bestRO[q] || (ro === bestRO[q] && s.inside >= best[q].inside)) { best[q] = s; bestRO[q] = ro; bestG[q] = G[gi].g.id }
     }
-    return best && { raw: best.raw, y: best.y, group: bestG }
+    const q = best[0] ? 0 : 1
+    return best[q] && { raw: best[q].raw, y: best[q].y, group: bestG[q] }
   }
   const heightAt = (x, z, exag) => { const p = partsAt(x, z); return p ? p.raw * exag + p.y : null }
   return { partsAt, heightAt, triCount }
