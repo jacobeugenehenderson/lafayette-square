@@ -22,7 +22,10 @@
 //       wall-street-1, 21–47 m past its join): not part of the kerb, counted apart. By identity on ①'s ring, never a distance.
 //   (R) AT THE RIM (Zob, 2026-10-26: the cells passed the circle uncut): (R1) no shore-cell vertex lies outside the disc
 //       (`protopolygon.boundaryRing`) past the two-unit containment; (R2) no ink-cell ring is carried by two tiles (a rim tile's
-//       pieces each carried the whole block's cells).
+//       pieces each carried the whole block's cells); (R3) every ink-cell vertex ON the rim is a vertex of its tile's ring (the
+//       cut's crossings shared, so the asphalt and the cell meet at one point there).
+//       RIM MUTANTS (copies of the producer): the circle skips the cells · a cut ring goes to the largest piece unrefused · the
+//       cells' rim crossings are not shared. Each must read RED on some town, or is said not exercised.
 //   MUTANTS (always run): the producer copied with the coast clause of `rSrc` removed (the anchor must occur once) must go RED
 //   on some town; a town where it stays GREEN has nothing on its coast to fillet and is said so. In process, per town: one
 //   off-line vertex inserted mid-way along a ② water edge (pushed 2 units off it) must read RED as off the line, and one
@@ -55,6 +58,20 @@ writeFileSync(join(mutDir, 'tileGround.js'), tgSrc.replace(CLAUSE, '')
   .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`)
   .replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
 const mutant = await import(pathToFileURL(join(mutDir, 'tileGround.js')).href)
+// the three RIM mutants (Zob, 2026-10-26), each a copy of the producer with one step undone; each anchor must occur once
+const RIM_MUTANTS = [
+  ['the circle does not cut the cells', 'for (const q of cut(c.rings)) {', 'for (const q of c.rings) {'],
+  ['a cut cell ring goes to the largest piece, never refused', 'hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)', 'hit = [a.indexOf(Math.max(...a))]'],
+  ['the cells\' rim crossings are not shared into the ring', 'const sc = shareRimCrossings(r, ringOwners[i], flat, input, stamp); r = sc.ring; ringOwners[i] = sc.owners;', 'const sc = { added: 0 };'],
+]
+const rimMutants = []
+for (const [name, a, b] of RIM_MUTANTS) {
+  if (tgSrc.split(a).length !== 2) { console.log(`⛔ NOT CHECKED — the rim mutant's anchor (${name}) occurs ${tgSrc.split(a).length - 1} time(s) in tileGround.js, not once`); process.exit(2) }
+  const d = mkdtempSync(join(tmpdir(), 'coast-rim-')); process.on('exit', () => rmSync(d, { recursive: true, force: true }))
+  writeFileSync(join(d, 'tileGround.js'), tgSrc.replace(a, b)
+    .replace(/from \x27(\.{1,2}\/[^\x27]+)\x27/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`)
+    .replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
+  rimMutants.push({ name, tg: await import(pathToFileURL(join(d, 'tileGround.js')).href), red: 0 }) }
 
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]
@@ -121,10 +138,13 @@ function rimJudge(tiles, B) {
   const onB = (p) => { const k = K(p); for (let i = 0; i < B.length; i++) { const a = K(B[i]), b = K(B[(i + 1) % B.length]), dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy
     if (!L2) continue; const t = ((k[0] - a[0]) * dx + (k[1] - a[1]) * dy) / L2; if (t < 0 || t > 1) continue
     const cr = (k[0] - a[0]) * dy - (k[1] - a[1]) * dx; if (cr * cr <= 4 * L2) return true } return false }
+  let rimV = 0; const unshared = []
+  tiles.forEach((t, ti) => { const ringKeys = new Set((t.ring || []).map(p => key(K(p))))
+    ;(t.inkCells || []).forEach(c => c.rings.forEach(r => { for (const p of r) if (B?.length && onB(p)) { rimV++; if (!ringKeys.has(key(K(p)))) unshared.push(p) } })) })
   tiles.forEach((t, ti) => (t.inkCells || []).forEach(c => c.rings.forEach(r => { cells++
     const sig = r.map(p => key(K(p))).sort().join(';'), was = seen.get(sig); if (was != null && was !== ti) twice++; else seen.set(sig, ti)
     if (B?.length && c.cls === 'shore') for (const p of r) if (windXZ(p, B) === 0 && !onB(p)) out.push(p) })))
-  return { cells, out, twice } }
+  return { cells, out, twice, rimV, unshared } }
 const say = (J, label) => {
   const at = (ps) => ps.slice(0, 4).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')
   console.log(`  ${J.Abad.length ? '⛔' : '✅'} (A)${label} ${J.A} ② kerb vertex(es) between two water edges · ${J.Aoff.length} off ①'s water edge${J.Aoff.length ? ` (e.g. ${at(J.Aoff)})` : ''} · ${J.Aunshared.length} on it but neither a ① vertex nor a stamp-shared one${J.Aunshared.length ? ` (e.g. ${at(J.Aunshared)})` : ''}`)
@@ -142,8 +162,12 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
   towns++
   let R; try { R = quiet(() => buildProto(f)) } catch (e) { console.log(`  ⛔ the producer refused — nothing checked: ${String(e.message).split('\n')[0].slice(0, 200)}`); red++; continue }
   if (say(judge(R.protoShapeTiles, C, R.luByClass), '')) red++
-  { const J = rimJudge(R.protoShapeTiles, fp.boundaryRing); if (J.out.length || J.twice) red++
-    console.log(`  ${J.out.length || J.twice ? '⛔' : '✅'} (R) at the rim: ${J.cells} ink-cell ring(s) · ${J.out.length} shore-cell vertex(es) outside the disc${J.out.length ? ` (e.g. ${J.out.slice(0, 3).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')})` : ''} · ${J.twice} ring(s) carried by two tiles`)
+  { const J = rimJudge(R.protoShapeTiles, fp.boundaryRing); if (J.out.length || J.twice || J.unshared.length) red++
+    console.log(`  ${J.out.length || J.twice || J.unshared.length ? '⛔' : '✅'} (R) at the rim: ${J.cells} ink-cell ring(s) · ${J.out.length} shore-cell vertex(es) outside the disc${J.out.length ? ` (e.g. ${J.out.slice(0, 3).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')})` : ''} · ${J.twice} ring(s) carried by two tiles · (R3) ${J.rimV} cell vertex(es) on the rim, ${J.unshared.length} not the tile ring's${J.unshared.length ? ` (e.g. ${J.unshared.slice(0, 3).map(p => `(${p.map(v => v.toFixed(3)).join(', ')})`).join(' · ')})` : ''}`)
+    for (const m of rimMutants) { let MM = null, refused = null; try { MM = quiet(() => buildProto(f, { tg: m.tg })) } catch (e) { refused = String(e.message).split('\n')[0].slice(0, 120) }
+      const X = MM && rimJudge(MM.protoShapeTiles, fp.boundaryRing), seen = !!refused || (X && (X.out.length > J.out.length || X.twice > J.twice || X.unshared.length > J.unshared.length))
+      if (seen) m.red++
+      console.log(`  ${seen ? '✅' : '⚪'} rim mutant (${m.name}): ${refused ? `the producer refused (${refused}) — RED` : seen ? `RED — outside ${X.out.length} · twice ${X.twice} · unshared on the rim ${X.unshared.length}` : 'GREEN on this town (not exercised here)'}`) }
     // mutant: one rim tile's cells handed to a second tile, and one cell vertex pushed 1 m outside the disc
     const t0 = R.protoShapeTiles.findIndex(t => t.inkCells?.some(c => c.cls === 'shore')), t1 = R.protoShapeTiles.findIndex((t, i) => i !== t0)
     if (t0 >= 0 && fp.boundaryRing?.length) { const T = R.protoShapeTiles.map((t, i) => i === t1 ? { ...t, inkCells: R.protoShapeTiles[t0].inkCells } : t)
@@ -183,5 +207,6 @@ for (const scene of feedScenes(process.argv.slice(2).filter(a => !a.startsWith('
 }
 if (!towns) { console.log('\n⛔ no town with a coast in ① — nothing was checked'); red++ }
 else if (!mutRed) { console.log('\n⛔ the mutant stayed GREEN on every town — the check cannot see a filleted coast'); red++ }
+for (const m of rimMutants) if (towns && !m.red) { console.log(`\n⛔ rim mutant (${m.name}) stayed GREEN on every town — (R) cannot see it`); red++ }
 console.log(red ? `\n⛔ ${red} RED` : '\n✅ along the water, ②\'s kerb is ①\'s coast line itself')
 process.exit(red ? 1 : 0)
