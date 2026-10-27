@@ -253,7 +253,10 @@ function rockCells(normalized, mask, width, height, bounds) {
 const BATHY_LIST = join(MAP_DIR, 'raw', 'bathymetry-sources.txt')
 async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev, demSources }) {
   if (!fs.existsSync(BATHY_LIST)) return { none: `no raw/bathymetry-sources.txt — ▶ node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` }
-  const urls = fs.readFileSync(BATHY_LIST, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
+  const listText = fs.readFileSync(BATHY_LIST, 'utf8'), urls = listText.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
+  // ⭐ The survey is named by the list's own rung line (fetch-bathymetry.mjs writes it), never typed here.
+  const rung = (listText.match(/^# rung: ([^·\n]+)/m) || [])[1]?.trim()
+  if (urls.length && !rung) throw new Error(`⛔ the floor: ${BATHY_LIST} names no rung (no '# rung:' line), so the survey read cannot be named. ▶ node cartograph/fetch-bathymetry.mjs --scene=${SCENE}`)
   if (!urls.length) return { none: 'fetch-bathymetry found no tiles on its built rungs (raw/bathymetry-sources.txt says which rungs ran) — NOT verified-absent' }
   const opened = await openRasters(urls.map(ref => ({ kind: 'url', ref })), { cacheMB: 64, refetch: `node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` })
   const [ccx, ccz] = [(bounds.minX + bounds.maxX) / 2, (bounds.minZ + bounds.maxZ) / 2]
@@ -307,7 +310,7 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
   const q = (arr, p) => arr.length ? +arr[Math.min(arr.length - 1, Math.floor(p * arr.length))].toFixed(3) : null
   // The floor's own cell in the grid: a tile's pixel, or the grid step where the tile is finer (its box mean).
   const cellM = Math.max(...regimes.filter(r => r.overlapped).map(r => Math.max(r.pixelM, Math.min(stepX, stepZ))))
-  return { depth, cells: n, cellM, tiles: src.length, datum: datums[0], ...(datums[0] === 'IGLD85' ? { convertedBy: 'raw/water-datums.json igld85ToNavd88', clipped } : {}), demDatumFrom: dem.from,
+  return { depth, cells: n, cellM, tiles: src.length, rung, datum: datums[0], ...(datums[0] === 'IGLD85' ? { convertedBy: 'raw/water-datums.json igld85ToNavd88', clipped } : {}), demDatumFrom: dem.from,
            seam: { samples: diffs.length, medianM: q(diffs, 0.5), p90AbsM: q(absd, 0.9) } }
 }
 
@@ -394,7 +397,7 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   return { profile: 'f-cem-equilibrium-profile', A: +A.toFixed(4), sandD50Mm: sand.value, sandFrom: sand.from,
            visibleToM: vis.value, fadeOverM: fade, visibilityFrom: vis.from, cells: n,
            floor: known
-             ? { source: 'NOAA OCS BlueTopo (raw/bathymetry-sources.txt)', tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
+             ? { source: `${known.rung} (raw/bathymetry-sources.txt)`, tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
                  cellM: known.cellM, cells: nFloor, aboveZeroCells: above, cappedAtHighCells: atHigh, seam: known.seam, runs }
              : { none: floor?.none || 'not asked' },
            dry: { cells: dryBed.reduce((t, v) => t + v, 0), cellM2: +(stepX * stepZ).toFixed(4), from: 'cells under the mask whose lidar stood above their HIGH level, before the bed was written (rock excluded)', runs: rowRuns(k => dryBed[k]) },
@@ -527,7 +530,9 @@ async function main() {
   })() : []
   const rockMask = (() => { if (!bed?.rock?.runs?.length) return null; const m = new Uint8Array(width * height), R = bed.rock.runs
     for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) m[R[q] * width + i] = 1; return m })()
-  const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water, rockMask) : null
+  const floorMask = (() => { const R = bed?.floor?.runs; if (!R?.length) return null; const m = new Uint8Array(width * height)
+    for (let q = 0; q < R.length; q += 3) for (let i = R[q + 1]; i <= R[q + 2]; i++) m[R[q] * width + i] = 1; return m })()
+  const stamp = wd ? stampCoast(normalized, width, height, bounds, wd.face, localBB(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')), wgs84ToLocal), wd.mask, water, rockMask, floorMask) : null
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
                  datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(stamp ? { stamp } : {}), ...(decks.length ? { decks } : {}), ...(water ? { water } : {}) }

@@ -122,3 +122,43 @@ export function faceAsPolygons(rings, who) {
   }
   return outers.map(({ outer, holes }) => ({ outer, holes }))
 }
+
+/**
+ * ⛔ A COAST RING MUST BE SIMPLE (Boz's ruling, 2026-10-26, after Huron's ground refused an antenna on the lake's arc): no
+ * two of its edges meet except adjacent ones at their shared vertex, and no adjacent pair folds back along itself. The
+ * violations, [{ kind: 'cross' | 'fold' | 'acute' | 'degenerate', a, b, at }] (edge indices; `at` the meeting point), so a refusal names each one.
+ * Edges are bucketed on a grid of the ring's own median edge length: exact, not sampled.
+ */
+export function ringViolations(ring, acuteAt = null) {
+  const n = ring.length, out = []
+  if (n < 3) return [{ kind: 'degenerate', a: 0, b: 0, at: ring[0] || [0, 0] }]
+  // ⛔ AND NO VERTEX ① CANNOT OUTLINE: `acuteAt(o, prev, next)` is the mint's own predicate (tileGround.js#outlineCorner at
+  // INK_EPS), passed in so this module stays free of the mint; a hairpin can be simple and still acute (Zob, Boz 10-26).
+  if (acuteAt) for (let i = 0; i < n; i++) { const bad = acuteAt(ring[i], ring[(i - 1 + n) % n], ring[(i + 1) % n]); if (bad) out.push({ kind: bad, a: (i - 1 + n) % n, b: i, at: ring[i] }) }
+  const E = (i) => [ring[i], ring[(i + 1) % n]]
+  const len = Array.from({ length: n }, (_, i) => { const [p, q] = E(i); return Math.hypot(q[0] - p[0], q[1] - p[1]) }).sort((a, b) => a - b)
+  const G = Math.max(len[n >> 1], 1e-6), cells = new Map()
+  for (let i = 0; i < n; i++) { const [p, q] = E(i)
+    for (let gx = Math.floor(Math.min(p[0], q[0]) / G); gx <= Math.floor(Math.max(p[0], q[0]) / G); gx++)
+      for (let gz = Math.floor(Math.min(p[1], q[1]) / G); gz <= Math.floor(Math.max(p[1], q[1]) / G); gz++) {
+        const k = `${gx},${gz}`; if (!cells.has(k)) cells.set(k, []); cells.get(k).push(i) } }
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  const on = (p, q, r) => Math.min(p[0], q[0]) <= r[0] && r[0] <= Math.max(p[0], q[0]) && Math.min(p[1], q[1]) <= r[1] && r[1] <= Math.max(p[1], q[1])
+  const seen = new Set()
+  for (const list of cells.values()) for (let s = 0; s < list.length; s++) for (let t = s + 1; t < list.length; t++) {
+    const a = Math.min(list[s], list[t]), b = Math.max(list[s], list[t]), key = a * n + b
+    if (seen.has(key)) continue; seen.add(key)
+    const [p1, p2] = E(a), [q1, q2] = E(b), adjacent = b === a + 1 || (a === 0 && b === n - 1)
+    const d1 = cr(q1, q2, p1), d2 = cr(q1, q2, p2), d3 = cr(p1, p2, q1), d4 = cr(p1, p2, q2)
+    if (adjacent) {                                          // shared vertex: only a fold (collinear, turning back) is a meeting
+      const [v, u, w] = b === a + 1 ? [p2, p1, q2] : [p1, p2, q1]
+      if (cr(v, u, w) === 0 && (u[0] - v[0]) * (w[0] - v[0]) + (u[1] - v[1]) * (w[1] - v[1]) > 0) out.push({ kind: 'fold', a, b, at: v })
+      continue
+    }
+    if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+      const t0 = d1 / (d1 - d2); out.push({ kind: 'cross', a, b, at: [p1[0] + (p2[0] - p1[0]) * t0, p1[1] + (p2[1] - p1[1]) * t0] })
+    } else if ((d1 === 0 && on(q1, q2, p1)) || (d2 === 0 && on(q1, q2, p2)) || (d3 === 0 && on(p1, p2, q1)) || (d4 === 0 && on(p1, p2, q2)))
+      out.push({ kind: 'cross', a, b, at: d1 === 0 ? p1 : d2 === 0 ? p2 : d3 === 0 ? q1 : q2 })
+  }
+  return out
+}

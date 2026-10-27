@@ -371,6 +371,39 @@ export function classifyHighwayBlocks({ blocks, blockLabels, blockHoles, blockHo
 // byte-stable across ε = 0.002 … 0.5 m); it must clear the 1 mm integer floor of the stage that holds it. The mint strokes
 // at it and RECORDS it (`MP.eps` → `protopolygon.eps`); ② reads it off the frozen artifact, never from here.
 export const INK_EPS = 0.005
+/**
+ * ⭐ ONE VERTEX'S OUTLINE at ink ε: where each pair of adjacent legs' ε-offsets meet (W, one point per gap, legs sorted by
+ * heading), or `bad` — 'degenerate' (a leg of no length) or 'acute' (the inner offsets meet past a leg's own end, or two
+ * legs leave in one direction). The mint's own predicate, so bake-coast asks the SAME question of every coast vertex
+ * before ① strokes it (Boz's ruling, 2026-10-26: a hairpin can be simple and still acute). Sorts and annotates `legs`.
+ * @param legs [{ to: [x, z] }, …] — the far end of each leg leaving o
+ */
+export function outlineCorner(o, legs, eps = INK_EPS) {
+  const rot = (u) => [-u[1], u[0]]                           // the ε side `nrm` names 'right', counter-clockwise of travel
+  let bad = null
+  for (const g of legs) { const dx = g.to[0] - o[0], dz = g.to[1] - o[1], len = Math.hypot(dx, dz)
+    if (!(len > 0)) { bad = 'degenerate'; break }
+    g.u = [dx / len, dz / len]; g.len = len; g.ang = Math.atan2(dz, dx) }
+  const W = []
+  if (!bad) {
+    legs.sort((a, b) => a.ang - b.ang)
+    for (let j = 0; j < legs.length && !bad; j++) {
+      const A = legs[j], B = legs[(j + 1) % legs.length], rA = rot(A.u), rB = rot(B.u)
+      const cross = A.u[0] * B.u[1] - A.u[1] * B.u[0], dot = A.u[0] * B.u[0] + A.u[1] * B.u[1]
+      if (cross > 0) {
+        // A's ccw side o + ε·rot(uA) + s·uA meets B's cw side o − ε·rot(uB) + t·uB
+        const c0 = -eps * (rA[0] + rB[0]), c1 = -eps * (rA[1] + rB[1]), det = -cross
+        const s = (-c0 * B.u[1] + B.u[0] * c1) / det, t = (A.u[0] * c1 - A.u[1] * c0) / det
+        if (!(s >= 0 && t >= 0 && s <= A.len && t <= B.len)) { bad = 'acute'; break }
+        W.push([o[0] + eps * rA[0] + s * A.u[0], o[1] + eps * rA[1] + s * A.u[1]])
+      } else if (cross < 0 || dot < 0) {
+        const th = ((B.ang - A.ang) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), w = A.ang + th / 2
+        W.push([o[0] + eps * Math.cos(w), o[1] + eps * Math.sin(w)])
+      } else bad = 'acute'                                   // two legs leave in one direction
+    }
+  }
+  return { bad, W }
+}
 export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
@@ -549,7 +582,6 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     const at = new Map()
     S.forEach((s, si) => {
       s.V.forEach((v, k) => { const q = qk4(v.p); let a = at.get(q); if (!a) at.set(q, a = []); a.push({ si, k }) }) })
-    const rot = (u) => [-u[1], u[0]]                         // the ε side `nrm` names 'right', counter-clockwise of travel
     for (const [q, here] of at) {
       const legs = []
       for (const { si, k } of here) { const { V, closed } = S[si], n = V.length
@@ -563,28 +595,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         continue
       }
       const o = S[here[0].si].V[here[0].k].p
-      let bad = null
-      for (const g of legs) { const dx = g.to[0] - o[0], dz = g.to[1] - o[1], len = Math.hypot(dx, dz)
-        if (!(len > 0)) { bad = 'degenerate'; break }
-        g.u = [dx / len, dz / len]; g.len = len; g.ang = Math.atan2(dz, dx) }
-      const W = []
-      if (!bad) {
-        legs.sort((a, b) => a.ang - b.ang)
-        for (let j = 0; j < legs.length && !bad; j++) {
-          const A = legs[j], B = legs[(j + 1) % legs.length], rA = rot(A.u), rB = rot(B.u)
-          const cross = A.u[0] * B.u[1] - A.u[1] * B.u[0], dot = A.u[0] * B.u[0] + A.u[1] * B.u[1]
-          if (cross > 0) {
-            // A's ccw side o + ε·rot(uA) + s·uA meets B's cw side o − ε·rot(uB) + t·uB
-            const c0 = -eps * (rA[0] + rB[0]), c1 = -eps * (rA[1] + rB[1]), det = -cross
-            const s = (-c0 * B.u[1] + B.u[0] * c1) / det, t = (A.u[0] * c1 - A.u[1] * c0) / det
-            if (!(s >= 0 && t >= 0 && s <= A.len && t <= B.len)) { bad = 'acute'; break }
-            W.push([o[0] + eps * rA[0] + s * A.u[0], o[1] + eps * rA[1] + s * A.u[1]])
-          } else if (cross < 0 || dot < 0) {
-            const th = ((B.ang - A.ang) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), w = A.ang + th / 2
-            W.push([o[0] + eps * Math.cos(w), o[1] + eps * Math.sin(w)])
-          } else bad = 'acute'                                 // two legs leave in one direction
-        }
-      }
+      const { bad, W } = outlineCorner(o, legs, eps)
       if (bad) { nodeRefusal[bad].push(`${[...new Set(here.map(({ si }) => S[si].seq[0].c.skelId))].join('|')}@${q}`); continue }
       legs.forEach((g, j) => { g.ccw = W[j]; g.cw = W[(j - 1 + W.length) % W.length] })
       const one = (a, b) => (a === b ? [a] : [a, b])

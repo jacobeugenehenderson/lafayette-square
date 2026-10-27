@@ -58,7 +58,8 @@ import { wetLoops } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
 import { deckFootprints } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
-import { COAST_FILE, heldCells } from './coastFile.mjs'
+import { COAST_FILE, heldCells, ringViolations } from './coastFile.mjs'
+import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { discOf } from './boundaryRecords.mjs'
 
@@ -373,15 +374,14 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // ⭐ AN ISLAND IS KEPT IFF IT HOLDS A TERRAIN NODE (Jacob 2026-10-26, "build islands with the floor"; Boz's ruling, "the
   // field can't show it"): the field is drawn from its nodes, so an island holding none would be sunk below HIGH by the
   // ramp while ① drew land there. The lattice is the terrain's own (elevationSources.mjs#terrainLattice), never typed;
-  // each one dropped is COUNTED and NAMED (coast.json islandsDropped), and its ground is the water's.
+  // each one dropped is COUNTED and NAMED (coast.json islandsDropped), and its ground is the water's. ⭐ Judged on the ring
+  // as WRITTEN (after simplifyRing and settleOnSource, below): a settled edge can leave an island's one node outside it.
   const lat = terrainLattice(nb), islandsDropped = []
   const holdsNode = (h) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
     for (const [x, z] of h) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) }
     for (let j = Math.max(0, Math.ceil((z0 - lat.bounds.minZ) / lat.sz)); j < lat.height && lat.Z(j) <= z1; j++)
       for (let i = Math.max(0, Math.ceil((x0 - lat.bounds.minX) / lat.sx)); i < lat.width && lat.X(i) <= x1; i++) if (inRing(lat.X(i), lat.Z(j), h)) return true
     return false }
-  for (const bd of bodies) bd.holes = bd.holes.filter(h => { if (holdsNode(h)) return true
-    let cx = 0, cz = 0; for (const p of h) { cx += p[0]; cz += p[1] } islandsDropped.push({ m2: +ringArea(h).toFixed(1), at: [Math.round(cx / h.length), Math.round(cz / h.length)] }); return false })
   if (!bodies.length) throw new Error(`⛔ bake-coast: ${scene} — no ground below high water (${levels.highName}) reaches the fetched square's edge, so the lidar draws no coast, and OSM draws ${osmWater.rings.length} water ring(s). ${gapLine(osmWater, ground, W, H, R, G, levels)}`)
 
   // ── THE VERIFIER: OSM's water and the lidar's must agree, at a majority ─────────────────────────────────────────
@@ -401,6 +401,14 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // trace step (the trace interpolates between samples laid in TOWN metres, which is not the raster's grid).
   const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, highAt, decks.on)
   for (const bd of simple) { bd.outer = r3(wound(bd.outer, 1)); bd.holes = bd.holes.map(h => r3(wound(h, -1))) }
+  for (const bd of simple) bd.holes = bd.holes.filter(h => { if (holdsNode(h)) return true
+    let cx = 0, cz = 0; for (const p of h) { cx += p[0]; cz += p[1] } islandsDropped.push({ m2: +ringArea(h).toFixed(1), at: [Math.round(cx / h.length), Math.round(cz / h.length)] }); return false })
+  // ⛔ EVERY RING IS SIMPLE AND ① CAN OUTLINE EVERY VERTEX, or the coast is not written (Boz's rulings, 2026-10-26): a ring
+  // whose edges cross or fold back, or a vertex too acute for the ink (the mint's own outlineCorner at INK_EPS), is ①
+  // stroked into an antenna, refused downstream far from its cause. Refused here, by name, at each place.
+  const acuteAt = (o, p, q) => outlineCorner(o, [{ to: p }, { to: q }], INK_EPS).bad
+  const bad = simple.flatMap((bd, bi) => [bd.outer, ...bd.holes].flatMap((r, ri) => ringViolations(r, acuteAt).map(v => ({ ...v, bi, ri }))))
+  if (bad.length) throw new Error(`⛔ bake-coast: ${scene} — ${bad.length} place(s) where the traced coast is not a simple ring (${[...new Set(bad.map(v => v.kind))].map(k => `${bad.filter(v => v.kind === k).length} ${k}`).join(' · ')}): ${bad.slice(0, 8).map(v => `body ${v.bi} ring ${v.ri} edges ${v.a}/${v.b} @(${v.at.map(Math.round).join(', ')})`).join(' · ')}${bad.length > 8 ? ` … +${bad.length - 8}` : ''}. Cause not established (the trace, simplifyRing or settleOnSource); the coast is not written.`)
   const arcs = [], islands = []
   for (const bd of simple) for (const ring of [bd.outer, ...bd.holes]) for (const a of arcsOf(ring, R)) {
     if (a.closed) { islands.push({ pts: a.pts.length, m2: Math.round(ringArea(a.pts)), at: a.pts[0].map(Math.round) }); arcs.push([...a.pts, a.pts[0]]); continue }

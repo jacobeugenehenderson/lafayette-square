@@ -10,13 +10,14 @@
 //   4. a bed that does not fall seaward REFUSES by name;
 //   7. ISLANDS (a hole in ①'s water, Jacob 2026-10-26): around an island in open water the field meets HIGH on its shore
 //      and no island node is lowered; an island in a narrow arm, with no bed of its own two to four cells out, takes the
-//      slope of the water holding it, RECORDED (slopeFrom); an island inside no water ring REFUSES;
+//      slope of the water holding it, RECORDED (slopeFrom); an island inside no water ring REFUSES; and every ring records
+//      the share of its slope samples on a MEASURED floor (slopeFloorShare; null when borrowed);
 //   5. per town whose terrain.json carries `stamp`: the field along ①'s coast (from map.json), sampled where the stamp
 //      ran, meets HIGH; the largest miss is printed against the field's cell. NOT CHECKED until a terrain carries it.
 // MUTANTS (each RED): the stamp dropped · landward min instead of max · the crossed seaward nodes take min(bed, ramp) ·
 // the tidal cap dropped · the wall's reflection dropped · the tide's extension takes the pure ramp (a trench) · the mask
 // filled per ring (an island read as water) · the island's borrowed slope dropped (it refuses) · the nearest search
-// stopping at the first radius with a hit, or at the first hit in scan order.
+// stopping at the first radius with a hit, or at the first hit in scan order · the floor share never counted.
 //
 //   node checks/claims-the-shore-meets-the-field-at-high.mjs
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -144,6 +145,11 @@ console.log('── 7. islands: the stamp runs round each one')
   let rb = null, why = ''
   try { rb = stampCoast(g, W, H, B, fb, bb, mb, lake(0)) } catch (e) { why = e.message.split('\n')[0] }
   say(rb && rb.slopeFrom[1] === 0 && rb.slopePerRing[1] === rb.slopePerRing[0], `an island with no bed of its own takes its holder's slope, recorded (slopeFrom ${rb ? JSON.stringify(rb.slopeFrom) : why})`)
+  // e: each ring says which bed its slope measured: the water east of x = 100 a measured floor, west of it the profile
+  const half = new Uint8Array(W * H); for (let k = 0; k < W * H; k++) half[k] = m[k] && (k % W) * 5 >= 100 ? 1 : 0
+  const re = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0), null, half), rn = stampCoast(Float32Array.from(before), W, H, B, fc, bb, m, lake(0))
+  say(re.slopeFloorShare.every(v => v > 0 && v < 1) && rn.slopeFloorShare.every(v => v === 0) && rb.slopeFloorShare[1] === null,
+    `each ring records its slope's share on a measured floor (${JSON.stringify(re.slopeFloorShare)}; none given ${JSON.stringify(rn.slopeFloorShare)}; borrowed ${rb.slopeFloorShare[1]})`)
   // c: an island inside no water ring refuses
   let t = false
   try { stampCoast(field(), W, H, B, [...face, wnd([[10, 10], [20, 10], [20, 20], [10, 20]], -1)], bb, mask, lake(0)) } catch (e) { t = /inside no water ring/.test(e.message) }

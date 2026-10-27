@@ -28,7 +28,10 @@ export function nearestCrossed(best, i, j, width, height, sx, sz) {
   return near
 }
 
-export function stampCoast(normalized, width, height, bounds, face, bb, mask, water, rock = null) {
+// ⭐ WHICH BED EACH SLOPE MEASURED (Boz's ruling, 2026-10-26): `floor` marks the cells whose bed is a measured survey
+// (bake-terrain's bed.floor.runs); each ring records the share of its samples on it (slopeFloorShare, null when
+// borrowed), so a slope taken off writeBed's own profile is never mistaken for a measured one.
+export function stampCoast(normalized, width, height, bounds, face, bb, mask, water, rock = null, floor = null) {
   const L = levelsOf(water)
   const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1), cell = Math.min(sx, sz)
   const X = (i) => bounds.minX + i * sx, Z = (j) => bounds.minZ + j * sz
@@ -61,12 +64,12 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
     }
   })
   // one slope per ring, from the bed seaward of the stamp
-  const slope = face.map(() => [])
+  const slope = face.map(() => []), onFloor = face.map(() => 0)
   for (let j = 0; j < height; j++) for (let i = 0; i < width; i++) {
     const k = j * width + i
     if (!mask[k] || best.has(k)) continue
     const near = nearestCrossed(best, i, j, width, height, sx, sz)
-    if (near && near.dist > 2 * cell) slope[near.ri].push((L.highAt(X(i), Z(j)) - normalized[k]) / near.dist)
+    if (near && near.dist > 2 * cell) { slope[near.ri].push((L.highAt(X(i), Z(j)) - normalized[k]) / near.dist); if (floor && floor[k]) onFloor[near.ri]++ }
   }
   // ⭐ AN ISLAND (a hole, wound negative) is a shore of the water that holds it. Its own bed gives its slope; an island with
   // no bed of its own two to four cells out (a small one, its water within reach of the other bank's stamp) takes the
@@ -128,8 +131,9 @@ export function stampCoast(normalized, width, height, bounds, face, bb, mask, wa
   for (let j = 0; j < height; j++) { let i0 = -1
     for (let i = 0; i <= width; i++) { const v = i < width && stamped[j * width + i]
       if (v && i0 < 0) i0 = i; else if (!v && i0 >= 0) { runs.push(j, i0, i - 1); i0 = -1 } } }
-  console.log(`  STAMP: ①'s coast at HIGH — ${stamped.reduce((t, v) => t + v, 0).toLocaleString()} node(s): ${raised.toLocaleString()} land raised to the ramp, ${kept.toLocaleString()} land kept (above it), ${ramped.toLocaleString()} water on the ramp, ${walled.toLocaleString()} water off a wall · ${bedWon.toLocaleString()} where the bed stood higher (flats, not stamped) · ${above.length.toLocaleString()} water node(s) at or above HIGH · slope per ring ${sOf.map(v => v ?? '—').join(', ')}${islands ? ` · ${islands} island(s), ${borrowed} on the slope of the water holding them` : ''} · cell ${cell.toFixed(2)} m${tidal ? ' · tidal: two cells of tide seaward' : ''}`)
-  return { cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, islands, raised, kept, ramped, walled, bedWon, aboveHigh: above.length, tidal, runs }
+  console.log(`  STAMP: ①'s coast at HIGH — ${stamped.reduce((t, v) => t + v, 0).toLocaleString()} node(s): ${raised.toLocaleString()} land raised to the ramp, ${kept.toLocaleString()} land kept (above it), ${ramped.toLocaleString()} water on the ramp, ${walled.toLocaleString()} water off a wall · ${bedWon.toLocaleString()} where the bed stood higher (flats, not stamped) · ${above.length.toLocaleString()} water node(s) at or above HIGH · slope per ring ${sOf.map(v => v ?? '—').join(', ')} · on a measured floor ${slope.map((v, ri) => slopeFrom[ri] !== null ? '—' : `${Math.round(100 * onFloor[ri] / v.length)}%`).join(', ')}${islands ? ` · ${islands} island(s), ${borrowed} on the slope of the water holding them` : ''} · cell ${cell.toFixed(2)} m${tidal ? ' · tidal: two cells of tide seaward' : ''}`)
+  const slopeFloorShare = slope.map((v, ri) => slopeFrom[ri] !== null ? null : +(onFloor[ri] / v.length).toFixed(3))
+  return { cellM: +cell.toFixed(4), slopePerRing: sOf, slopeFrom, slopeFloorShare, slopeSamples: slope.map(v => v.length), islands, raised, kept, ramped, walled, bedWon, aboveHigh: above.length, tidal, runs }
 }
 
 

@@ -15,6 +15,10 @@
 //      structures.mjs#waterWithoutDecks(coast.json's rings and arcs, map.json's streetDecks), recomputed here (Zob); and
 //      THE ISLAND FLOOR (Boz's ruling 2026-10-26): every hole kept holds a node of the terrain's own lattice
 //      (elevationSources.mjs#terrainLattice), and each one dropped is recorded by size and place.
+//   G. EVERY RING IS SIMPLE AND ① CAN OUTLINE EVERY VERTEX (Boz's rulings, 2026-10-26): coastFile.mjs#ringViolations
+//      finds a bow-tie's crossing, a fold, and a hairpin through the mint's own tileGround.js#outlineCorner at INK_EPS (simple,
+//      yet acute), and nothing on a square; bake-coast asks it of every ring with that predicate before it writes; and
+//      every town's coast.json rings have none (read in D).
 //   E. THE DATUM DOES NOT DEPEND ON THE LINE (Boz's ruling (B)): bake-terrain takes y = 0 from coast.json `flattened`,
 //      which bake-coast#flattenedWater finds on the flood sheet before any line is traced (decks excluded), and keeps no
 //      histogram of its own; so moving the coast by any offset cannot move y = 0.
@@ -23,14 +27,15 @@
 //   node checks/claims-the-coast-is-the-lidars.mjs [--scene=<id> …]
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
-// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive.
+// absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive · ringViolations misses a crossing · the acute predicate dropped from bake-coast.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
-import { readCoast, COAST_FILE } from '../cartograph/coastFile.mjs'
+import { readCoast, COAST_FILE, ringViolations } from '../cartograph/coastFile.mjs'
+import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { terrainLattice } from '../cartograph/elevationSources.mjs'
 import { markSheet, floodFromEdge, wound, flattenedWater } from '../cartograph/bake-coast.mjs'
 import { deckFootprints, streetDecks, waterWithoutDecks } from '../cartograph/structures.mjs'
@@ -87,6 +92,21 @@ console.log('── B. a deck is not ground: the water runs under it')
   say(bare === 0, `control: with no mask the lidar's deck reads as land (${(100 * bare).toFixed(0)}% wet)`)
 }
 
+// ── G. simple rings, and no vertex the ink cannot outline ──
+const acuteAt = (o, p, q) => outlineCorner(o, [{ to: p }, { to: q }], INK_EPS).bad
+console.log('── G. every ring is simple, and ① can outline every vertex')
+{
+  const kinds = (r) => ringViolations(r, acuteAt).map(v => v.kind)
+  say(kinds([[0, 0], [10, 0], [10, 10], [0, 10]]).length === 0, 'a square: no violation')
+  say(kinds([[0, 0], [10, 10], [10, 0], [0, 10]]).includes('cross'), 'a bow-tie: its crossing is found')
+  say(kinds([[0, 0], [10, 0], [5, 0], [5, 10]]).includes('fold'), 'an edge folding back along itself is found')
+  // a hairpin: simple, but its tip turns 0.3° over a 0.72 m leg (Huron's lake arc, 2026-10-26)
+  const th = 0.3 * Math.PI / 180, hair = [[0, 0], [4, 0], [4 - 0.72 * Math.cos(th), 0.72 * Math.sin(th)], [0, 10]]
+  say(ringViolations(hair).length === 0 && kinds(hair).includes('acute'), 'a hairpin is simple, and still acute by the mint\'s own outlineCorner')
+  const src = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
+  say(/ringViolations\(r, acuteAt\)/.test(src) && /outlineCorner\(o, \[\{ to: p \}, \{ to: q \}\], INK_EPS\)/.test(src), 'bake-coast asks ringViolations of every ring, with the mint\'s outlineCorner at INK_EPS, before it writes')
+}
+
 // ── C. the winding ──
 console.log('── C. the winding: outers positive, holes negative')
 {
@@ -141,6 +161,8 @@ for (const scene of scenes) {
   if (!doc.coast) continue
   const outersOk = doc.water.every(b => signed(b.outer) > 0), holesOk = doc.water.every(b => b.holes.every(h => signed(h) < 0))
   say(outersOk && holesOk, `${scene}: every water outer is positive and every hole negative`)
+  const viol = doc.water.flatMap((b, bi) => [b.outer, ...b.holes].flatMap(r => ringViolations(r, acuteAt).map(v => ({ ...v, bi }))))
+  say(!viol.length, `${scene}: every coast ring is simple and ① can outline every vertex${viol.length ? ` — ${[...new Set(viol.map(v => v.kind))].map(k => `${viol.filter(v => v.kind === k).length} ${k}`).join(' · ')}, first @(${viol[0].at.map(Math.round).join(', ')})` : ''}`)
   const lat = terrainLattice(JSON.parse(readFileSync(join(dir, 'neighborhood_boundary.json'), 'utf8')))
   const inR = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
   const holdsNode = (h) => { const xs = h.map(p => p[0]), zs = h.map(p => p[1])
