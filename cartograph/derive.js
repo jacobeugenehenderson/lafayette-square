@@ -5003,6 +5003,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       ...(MP.outlineRefused ? { outlineRefused: MP.outlineRefused } : {}),
       // ⛔ ALWAYS written ([] when none): absent is a map before the rule, and the paint and the shore pin refuse it
       offGradeSpans: MP.offGradeSpans,
+      endsInWater: MP.endsInWater,   // ⛔ always written too: the untagged streets that stop at the coast (a slipway)
       // ⭐ the ink ABSORBED (absorbInk.js): each face's painted boundary + labels, and the water / grade-separated cells
       ...(MP.paint ? { paint: MP.paint, inkCells: MP.inkCells } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.

@@ -3,7 +3,8 @@
 // a bridge, a tunnel, or a street over the water with no tag — off grade BY THE COAST, Jacob, 2026-10-27: "a") and records it,
 // never silently: frozen as `protopolygon.offGradeSpans` [{ street, segOrd, kind: 'tagged' | 'byCoast', hwy, wetM, points }].
 // The paint lays each back over the water as `mat:bridge` (`bridgeOverlay`, `highwayBridges`; Jacob: "b for now, deck later"),
-// and the shore pin skips the coast beneath it — both read this record. Supersedes claims-off-grade-by-the-coast-is-listed
+// and the shore pin skips the coast beneath it — both read this record. Beside it, `protopolygon.endsInWater` [{ street, segOrd,
+// wetM, at }]: the untagged streets that cross the coast and END in the water (a slipway), which stop at the coast (Boz, 2026-10-27). Supersedes claims-off-grade-by-the-coast-is-listed
 // (its `offGradeByCoast` is now this list's byCoast entries).
 // ⭐ GREEN BY DESIGN: an entry is a ruled, named outcome, not a defect — this check is the operator's list of them (Boz,
 // 2026-10-27). It is RED only when a town's ① carries no record (a pour before the rule: re-pour) or an entry lacks a field.
@@ -32,7 +33,12 @@ for (const scene of ribbonScenes()) {
   const R = P.offGradeSpans, J = judge(R)
   if (J.missing) { console.log(`⛔ ${scene}: its ① carries no offGradeSpans — a pour before the rule. Re-pour.`); red++; continue }
   if (J.bad.length) { console.log(`⛔ ${scene}: ${J.bad.length} entr(ies) lack a field (street, segOrd, kind, hwy, wetM, points): ${JSON.stringify(J.bad[0]).slice(0, 160)}`); red++; continue }
-  console.log(`✅ ${scene}: ${R.length} off-grade span(s) over the water${R.length ? ` (${R.filter(e => e.kind === 'byCoast').length} by the coast)` : ' (none)'}`)
+  // ⭐ and the untagged streets that cross the coast and END in the water (a slipway): they stop at the coast (Boz, 2026-10-27)
+  const E = P.endsInWater, okE = (e) => e && typeof e.street === 'string' && Number.isFinite(e.segOrd) && Number.isFinite(e.wetM) && Array.isArray(e.at) && e.at.length === 2
+  if (!Array.isArray(E)) { console.log(`⛔ ${scene}: its ① carries no endsInWater — a pour before the rule. Re-pour.`); red++; continue }
+  if (E.some(e => !okE(e))) { console.log(`⛔ ${scene}: an endsInWater entry lacks a field (street, segOrd, wetM, at)`); red++; continue }
+  console.log(`✅ ${scene}: ${R.length} off-grade span(s) over the water${R.length ? ` (${R.filter(e => e.kind === 'byCoast').length} by the coast)` : ' (none)'} · ${E.length} street(s) ending in the water, stopped at the coast`)
+  for (const e of E) console.log(`     ${e.street}|${e.segOrd} · ends in the water · ${e.wetM.toFixed(2)} m past the coast · at (${e.at.map(v => v.toFixed(3)).join(', ')})`)
   for (const e of R) { const m = e.points[Math.floor(e.points.length / 2)]
     console.log(`     ${e.street}|${e.segOrd} · ${e.kind}${e.hwy ? ' · swept by H' : ''} · ${e.wetM.toFixed(2)} m over the water · at (${m.map(v => v.toFixed(3)).join(', ')})`) }
 }

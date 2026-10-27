@@ -414,8 +414,8 @@ export function outlineCorner(o, legs, eps = INK_EPS) {
 // whether H sweeps the chain (`isH`). The paint lays each
 // non-H span back over the water (`bridgeOverlay`), so a bridge is painted across it while ①'s water face stays whole.
 function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH = () => false) {
-  const spans = []
-  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, dropped: 0, spans }
+  const spans = [], endsInWater = []
+  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, dropped: 0, spans, endsInWater }
   const rlL = (v) => Math.round(v * SCALE) / SCALE, K = (p) => Math.round(p[0] * SCALE) + ',' + Math.round(p[1] * SCALE)
   const wn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
     if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
@@ -481,13 +481,18 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH =
       // ⛔ …but only a street that CROSSES the water between banks (Jacob's (a)): one with no bank at either end and no tag is no
       // bridge, it is bad data (a ferry line, a mis-drawn way), and a floating strip would be a plausible-looking success (Boz, Zob)
       if (!part[0].cross && !part[part.length - 1].cross) throw new Error(`[①] ⛔ ${who}: a street lying wholly in the water, with no bank at either end and no bridge, tunnel or layer tag — not a bridge but a street or coast datum in question. Refusing.`)
+      // ⭐ ONE BANK, NO TAG: a street that crosses the coast and ENDS in the water (a slipway, a boat ramp) STOPS AT THE COAST (Boz's
+      // ruling, 2026-10-27): the coast is the high-water mark, nothing is painted past it. Real, so never refused — counted and
+      // named (`endsInWater`, frozen; printed below). A ramp drawn running on under the water is the deck's, later.
+      if (!part[0].cross || !part[part.length - 1].cross) { const m = part[Math.floor(part.length / 2)].p
+        endsInWater.push({ street: st.skelId ?? st.name, segOrd: ords[0], wetM: +len.toFixed(2), at: [+m[0].toFixed(3), +m[1].toFixed(3)] }); dropped++; continue }
       spans.push(span('byCoast'))
       dropped++ }
     if (keep.length === parts.length) return   // nothing left the ink: a street that only touches the coast is kept as it was
     pieces.set(n, keep.map(part => ({ ci: x.ci, st: { ...st, points: part.map(v => v.p), hard: part.map(v => v.src != null && st.hard ? !!st.hard[v.src] : v.src != null),
       caps: { start: part[0].src === 0 ? st.caps?.start : undefined, end: part[part.length - 1].src === P.length - 1 ? st.caps?.end : undefined },
       _orig: part.map(v => v.src), _origSeg: part.map(v => v.edge), _waterEnd: { start: !!part[0].cross, end: !!part[part.length - 1].cross } } }))) })
-  if (!dropped) return { chains: list, coastChains, dropped: 0, spans }
+  if (!dropped) return { chains: list, coastChains, dropped: 0, spans, endsInWater }
   // the arcs take the crossings, so a street's end and the coast share the vertex
   const arcs = coastChains.map((c, m) => { const o = out[nS + m], P = c.st.points
     const pts = []; for (const v of o) { if (v.src != null) pts.push(P[v.src]); else if (crossKeys.has(v.k[0] + ',' + v.k[1])) pts.push([v.k[0] / SCALE, v.k[1] / SCALE]) }
@@ -496,7 +501,8 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH =
   for (const x of list) { if (!(x.st?.points?.length >= 2)) { chains.push(x); continue } const n = li++; if (pieces.has(n)) chains.push(...pieces.get(n)); else chains.push(x) }
   const byCoast = spans.filter(b => b.kind === 'byCoast'), mid = (b) => b.points[Math.floor(b.points.length / 2)].map(c => c.toFixed(3)).join(', ')
   console.log(`    [①] ${dropped} off-grade span(s) over the water left out of the ink (bridges and tunnels are not ground; recorded, protopolygon.offGradeSpans); their banks end on the coast${byCoast.length ? ` · ⚠️ ${byCoast.length} of them off grade BY THE COAST (no bridge, tunnel or layer tag): ${byCoast.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${mid(b)})`).join(' · ')}` : ''}`)
-  return { chains, coastChains: arcs, dropped, spans }
+  if (endsInWater.length) console.log(`    [①] ${endsInWater.length} street(s) crossing the coast and ENDING in the water (a slipway, a boat ramp; no tag) stop at the coast — nothing painted past it (protopolygon.endsInWater): ${endsInWater.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${b.at.join(', ')})`).join(' · ')}`)
+  return { chains, coastChains: arcs, dropped, spans, endsInWater }
 }
 export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null, onAbsorbRefusal = null }) {
   const owners = [], rings = [], labels = []
@@ -1195,9 +1201,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
+             nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, endsInWater: split.endsInWater, ...(absorbed ? { paint: absorbed.paint, inkCells: absorbed.cells } : {}), eps }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, eps }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, centrelines, outlineRefused: outlineRefusedRec, offGradeSpans: split.spans, endsInWater: split.endsInWater, eps }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -2271,11 +2277,18 @@ export function bridgeOverlay(spans, waterRings, hwOf) {
     if (!sw) throw new Error(`[tileGround][bridges] ⛔ ${who}: the sweep failed. Refusing.`)
     const mids = P.slice(1).map((q, k) => [(q[0] + P[k][0]) / 2, (q[1] + P[k][1]) / 2])
     // ⭐ THE SPAN'S OWN STRETCH, BANK TO BANK (Boz, 2026-10-27): the overlay never lends the street's paint to the water beyond a
-    // bank, where a continuation hugs the shore. Each bank's CUT is the coast walked from the crossing both ways across the strip
-    // (out to twice its width), and where the coast stops crossing it (it turns to run along the street) its last crossing edge
-    // runs on straight; everything past the cut, away from the span, is cut away.
-    const R = 2 * Math.max(hl, hr), Lrun = line.reduce((t, q, k) => k ? t + Math.hypot(q[0] - line[k - 1][0], q[1] - line[k - 1][1]) : 0, 0) + 2 * R
-    const farOf = (X, from) => { const dl = Math.hypot(X[0] - from[0], X[1] - from[1]), d = [(X[0] - from[0]) / dl, (X[1] - from[1]) / dl], nn = [-d[1], d[0]]
+    // bank, where a continuation hugs the shore. Each bank's CUT is the coast walked from the crossing both ways across the strip,
+    // out to the sweep's own reach (R: the farthest its ring gets from the street's line through the crossing — read off the sweep,
+    // never a multiple of the width, Zob); where the coast stops crossing (it turns to run along the street), the cut runs on
+    // SQUARE across the street from the last coast point it reached, so it never leans back over the span. Everything past the
+    // cut, away from the span, is cut away.
+    // R at a bank: the sweep's own offset vertices AT the crossing (its miter there, by the sweep's stamp: `line` index ix)
+    const Rof = (X, from, ix) => { const dl = Math.hypot(X[0] - from[0], X[1] - from[1]), n2 = [-(X[1] - from[1]) / dl, (X[0] - from[0]) / dl]
+      const at = sw.ring.filter((_, k) => Math.abs(sw.stamp[k].src - ix) < 1e-9)
+      if (at.length !== 2) throw new Error(`[tileGround][bridges] ⛔ ${who}: the sweep carries ${at.length} offset vertex(es) at its bank crossing (want 2). Refusing.`)
+      return Math.max(...at.map(q => Math.abs((q[0] - X[0]) * n2[0] + (q[1] - X[1]) * n2[1]))) + TOL }
+    const Lline = line.reduce((t, q, k) => k ? t + Math.hypot(q[0] - line[k - 1][0], q[1] - line[k - 1][1]) : 0, 0)
+    const farOf = (X, from, ix) => { const R = Rof(X, from, ix), Lrun = Lline + 2 * R, dl = Math.hypot(X[0] - from[0], X[1] - from[1]), d = [(X[0] - from[0]) / dl, (X[1] - from[1]) / dl], nn = [-d[1], d[0]]
       const sOf = (q) => (q[0] - X[0]) * nn[0] + (q[1] - X[1]) * nn[1]
       let ring = null, ei = -1; for (const w of waterRings) { const i = w.findIndex((q, k) => sd(X, q, w[(k + 1) % w.length]) <= TOL); if (i >= 0) { ring = w; ei = i; break } }
       if (!ring) throw new Error(`[tileGround][bridges] ⛔ ${who}: its bank crossing (${X.map(v => v.toFixed(3)).join(', ')}) lies on no edge of the water. Refusing.`)
@@ -2285,14 +2298,15 @@ export function bridgeOverlay(spans, waterRings, hwOf) {
             out.push(q); far = sgn * sq; continue }
           break }
         if (out.length < 2) throw new Error(`[tileGround][bridges] ⛔ ${who}: the coast at its bank (${X.map(v => v.toFixed(3)).join(', ')}) does not cross the street. Refusing.`)
-        const a = out[out.length - 2], b = out[out.length - 1], sa = sOf(a), sb = sOf(b), t = (sgn * R - sa) / (sb - sa); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); return { sgn, out } }
+        const b = out[out.length - 1], sb = sOf(b); out.push([b[0] + nn[0] * (sgn * R - sb), b[1] + nn[1] * (sgn * R - sb)]); return { sgn, out } }
       const f = walk(1), b = walk(-1)
       if (f.sgn === b.sgn) throw new Error(`[tileGround][bridges] ⛔ ${who}: the coast at its bank (${X.map(v => v.toFixed(3)).join(', ')}) leaves on one side of the street only. Refusing.`)
       const cut = [...b.out.slice().reverse(), ...f.out.slice(1)], e0 = cut[0], e1 = cut[cut.length - 1]
       cuts.push(cut)
       return [...cut, [e1[0] + d[0] * Lrun, e1[1] + d[1] * Lrun], [e0[0] + d[0] * Lrun, e0[1] + d[1] * Lrun]] }
     const cuts = []
-    const fars = [...(sp.banks[0] ? [farOf(P[0], P[1])] : []), ...(sp.banks[1] ? [farOf(P[P.length - 1], P[P.length - 2])] : [])]
+    const ix0 = Math.max(0, B.length - 1), ix1 = ix0 + P.length - 1
+    const fars = [...(sp.banks[0] ? [farOf(P[0], P[1], ix0)] : []), ...(sp.banks[1] ? [farOf(P[P.length - 1], P[P.length - 2], ix1)] : [])]
     const wetStrip = intersectRings([sw.ring], waterRings)
     const A = (fars.length ? differenceRings(wetStrip, unionRings(fars.map(r => (signedArea(r) < 0 ? [...r].reverse() : r)))) : wetStrip).filter(r => mids.some(m => pointInRing(m[0], m[1], r)))
     if (A.length !== 1) throw new Error(`[tileGround][bridges] ⛔ ${who}: ${A.length} piece(s) of its strip over the water hold its centreline (want 1). Refusing.`)
