@@ -75,7 +75,9 @@ for (const dir of dirs) {
   // transparent in BakedGround — the fade), and the water writes no depth, so a group drawn
   // AFTER the water paints straight over it. 2026-09-26: the first `bed` was appended after
   // water and hid the whole harbour while the walk below passed.
-  const lastLand = Math.max(...m.groups.filter(g => !water.includes(g)).map(g => g.renderOrder))
+  // ⭐ mat:bridge is the one group drawn AFTER the water on purpose: a bridge's paint lies ON the water over its own footprint
+  // (Boz's ruling (iv), 2026-10-27, on Jacob's (b)), so it is not a painter over the water
+  const lastLand = Math.max(...m.groups.filter(g => !water.includes(g) && !(g.kind === 'mat' && g.id === 'bridge')).map(g => g.renderOrder))
   const over = water.filter(w => w.renderOrder < lastLand)
   if (over.length) {
     const painters = m.groups.filter(g => !water.includes(g) && g.renderOrder > Math.min(...over.map(w => w.renderOrder)))

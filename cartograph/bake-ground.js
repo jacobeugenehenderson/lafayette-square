@@ -292,6 +292,11 @@ const PAINT_ORDER = [
   // lake 3 · stream 5) plus the OSM values adjacent to them. The unconsumed-key
   // report below is the backstop when OSM produces one nobody listed.
   ...WATER_SUBTYPES.map(w => ['mat', `water:${w}`]),
+  // ⭐ A BRIDGE'S PAINT OVER THE WATER (Boz's ruling (iv), 2026-10-27, on Jacob's (b): "painted on top of the water"): every span's
+  // paint over ①'s water is its own group, AFTER the water so its slot stands above the sheet's; raw = HIGH (coastPins.mjs), so it
+  // reads ON the water at every level and exaggeration. It keeps its own slot (KEEP_OWN_SLOT) and still cuts, like the stripe.
+  // The step where it meets each bank (one slot) is measured and recorded (drawnRaw.bridgeBankStepM). The filed deck retires it.
+  ['mat', 'bridge'],
 ]
 // Layers pressed in BENEATH the whole paint stack, whatever their PAINT_ORDER slot: they fill
 // only what nothing else covers. The bed is one — a shore ribbon or a pier over the water
@@ -516,6 +521,9 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   if (hd?.legacy.length) console.warn(`  [H] ⛔ ${hd.legacy.length} highway(s) frozen at their PRE-H-3 measure — re-pour ${scene} to build them from their section: ${hd.legacy.join(', ')}`)
   pushClipperRings('asphalt',  pr.asphalt)
   pushClipperRings('highway',  pr.highway)   // grade-separated highway-class roads → own layer/material
+  // ⭐ every span's paint over ①'s water, its own group above the water's slot (Boz's ruling (iv)): buildTileGround's `bridges`
+  // ([{ street, segOrd, rings }]; a highway span's H footprint over the water is split out of `highway` into it)
+  if (Array.isArray(pr.bridges)) pushClipperRings('bridge', pr.bridges.flatMap(b => b.rings))
   pushClipperRings('shore',    pr.inkShore)  // ①'s coast piece: the land's shore surface (① painted first, tileGround)
   pushClipperRings('curb',     pr.curb)
   pushClipperRings('sidewalk', pr.sidewalk)
@@ -1359,6 +1367,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     // ⭐ Remove this the day the residual measures zero — not before, and not on
     // the grounds that it "should" be zero.
     if (kind !== 'face' && key === 'stripe') KEEP_OWN_SLOT.add(groupKey)
+    if (kind !== 'face' && key === 'bridge') KEEP_OWN_SLOT.add(groupKey)   // above the water's slot (the bridge entry in PAINT_ORDER)
     stackEntries.push({ groupKey, kind, key, items: its })
   }
   // The flatten runs top-down over this list, so a FLOOR layer goes first: last to be cut into.
@@ -1640,23 +1649,21 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
     const decks = deckList.map(d => d.ring)
     // ⭐ A BRIDGE IS PAINTED ACROSS THE WATER (Jacob, 2026-10-27, (b)). WHICH spans exist is ①'s frozen record (one entry per
     // off-grade wet piece the mint left out of the ink: { street, segOrd, kind, hwy, points }); their FOOTPRINT is this build's
-    // live paint, so an operator's authored width moves it (Ferrule, 2026-10-27): a highway span's is H (the `highway` ring that
-    // holds its centreline), any other's the `bridges` overlay painted for it, by { street, segOrd }. ⛔ A recorded span with no
-    // paint here refuses by name, and so does an absent record or an absent bridge paint
+    // live paint, so an operator's authored width moves it (Ferrule, 2026-10-27): the `bridges` entry painted for it, by
+    // { street, segOrd }, for every span (Boz's ruling (iv): a highway span's H over the water is split into it). ⛔ A recorded
+    // span with no paint here refuses by name, and so does an absent record or an absent bridge paint
     const spanList = mapData.layers?.ribbons?.protopolygon?.offGradeSpans
     if (!Array.isArray(spanList)) throw new Error(`[bake-ground] ⛔ ${look}: ①'s frozen protopolygon carries no offGradeSpans list (it predates the record) — a coast vertex under a bridge would read as missing from the mesh. ▶ re-pour`)
-    if (spanList.some(sp => !sp.hwy) && !Array.isArray(bridgePaint)) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.filter(sp => !sp.hwy).length} non-highway span(s) over the water and the ground build painted no bridges list — their footprint is unknown`)
-    const holds = (ring, [x, z]) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = ring[i], b = ring[j]; if ((a[1] > z) !== (b[1] > z) && x < (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]) + a[0]) c = !c } return c }
+    if (spanList.length && !Array.isArray(bridgePaint)) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.length} span(s) over the water and the ground build painted no bridges list — their footprint is unknown`)
     const spans = spanList.flatMap(sp => {
-      const mid = sp.points?.[Math.floor((sp.points?.length || 0) / 2)]
-      if (!mid) throw new Error(`[bake-ground] ⛔ ${look}: ①'s off-grade span ${sp.street}|${sp.segOrd} carries no centreline points`)
-      const rings = sp.hwy ? highwayRings.filter(r => holds(r, mid)) : (bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd)?.rings || [])
+      const rings = bridgePaint.find(b => b.street === sp.street && b.segOrd === sp.segOrd)?.rings || []
       if (!rings.length) throw new Error(`[bake-ground] ⛔ ${look}: ① records the off-grade span ${sp.street}|${sp.segOrd} (${sp.hwy ? 'a highway' : 'a bridge'}) over the water, and this build painted no footprint for it — whether the coast under it is covered is unknown`)
       return rings.map(ring => ({ street: `${sp.street}|${sp.segOrd}`, ring })) })
-    // the groups a span's paint is drawn in: H's, and the bridges overlay's (`mat:bridge`, Ferrule's (2)); ⛔ a non-highway span
-    // with no bridge paint group in the drawing refuses, rather than leave its paint on the bed
-    const spanGroups = ['mat:highway', 'mat:bridge'].filter(k => planeBuffers.has(k))
-    if (spanList.some(sp => !sp.hwy) && !planeBuffers.has('mat:bridge')) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.filter(sp => !sp.hwy).length} non-highway span(s) over the water and the ground has no mat:bridge paint group — its paint would lie on the bed`)
+    // the group a span's paint over the water is drawn in: mat:bridge, for every span (Boz's ruling (iv); a highway span's H
+    // footprint over the water is split into it, so mat:highway stays on the plane). ⛔ A span with no mat:bridge group refuses,
+    // rather than leave its paint on the bed
+    const spanGroups = planeBuffers.has('mat:bridge') ? ['mat:bridge'] : []
+    if (spanList.length && !spanGroups.length) throw new Error(`[bake-ground] ⛔ ${look}: ① records ${spanList.length} off-grade span(s) over the water and the ground has no mat:bridge paint group — their paint would lie on the bed`)
     coastPin = timed('pinTheCoast', () => pinTheCoast({ groups: drawnGroups, rings: coastRings, inDrawing, rawAt: T.getElevationRaw, highAt: L.highAt, tol, decks, spans, spanGroups }))
     const st = coastPin.stats, g = st.fieldMinusHighAtPinsM
     console.log(`  [shore] ①'s line pinned at HIGH: ${st.pinned.toLocaleString()} vertices on ${st.pinnedEdgeM.toLocaleString()} m of coast (${st.coastVertsInDrawing.toLocaleString()} coast vertices in the drawing, every one in the mesh, within ${(st.tolM * 1000).toFixed(2)} mm; ${st.deckEdgeVerts.toLocaleString()} on a street deck's edge, left at the deck; ${st.underSpan.toLocaleString()} under a bridge's paint${st.underSpan ? ` (${Object.entries(st.underSpanByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}, not ground) · bridge paint on the water at HIGH: ${st.bridgeLifted.toLocaleString()} vertices${st.bridgeLifted ? ` (${Object.entries(st.bridgeLiftedByStreet).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''} · `
@@ -1784,6 +1791,26 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, outDir:
       noRimIdentity: { m: +kerbUnpairedM.toFixed(2), sites: kerbUnpaired.map(u => ({ group: u.key, A: u.A, B: u.B })) },
       rimSideOffRings: { diagnostic: 'ends within two roundings of a rim-owned edge; decides nothing', m: +kerbRimSideM.toFixed(2), sites: kerbRimSide.map(u => ({ group: u.key, A: u.A, B: u.B })) } } }
 
+  // ⭐ THE BRIDGE'S BANK STEP, MEASURED (Boz's ruling (iv): accepted for now, recorded, the filed deck retires it): where mat:bridge
+  // shares a point with another ground group, the two draw the same raw there (the pins are keyed by point), so the step is
+  // their y apart: the bridge's slot, less any kerb the neighbour stands on. ⛔ More than the bridge's own slot is reported loudly.
+  if (coastPin) {
+    const bi = groups.findIndex(g => g.kind === 'mat' && g.id === 'bridge')
+    let step = 0, stepAt = null, shared = 0
+    if (bi >= 0) {
+      const PB = positionChunks[bi], yB = new Map()
+      for (let v = 0; v < PB.length; v += 3) yB.set(`${PB[v]},${PB[v + 2]}`, PB[v + 1])
+      groups.forEach((g, gi) => { if (gi === bi || g.partition === false || /^water(:|$)/.test(g.id)) return
+        const P = positionChunks[gi]
+        for (let v = 0; v < P.length; v += 3) { const y = yB.get(`${P[v]},${P[v + 2]}`); if (y === undefined) continue
+          shared++; const d = Math.abs(y - P[v + 1]); if (d > step) { step = d; stepAt = [+P[v].toFixed(3), +P[v + 2].toFixed(3), g.id] } } })
+      const slotM = groups[bi].renderOrder * GROUND_Y_EPS
+      coastPin.stats.bridgeBankStepM = +step.toFixed(4)
+      coastPin.stats.bridgeBankStep = { slotM: +slotM.toFixed(4), sharedPoints: shared, at: stepAt }
+      const say = `  [shore] the bridge's bank step: ${(step * 1000).toFixed(1)} mm at ${stepAt ? `(${stepAt[0]}, ${stepAt[1]}) against ${stepAt[2]}` : '—'} over ${shared} shared point(s); its slot is ${(slotM * 1000).toFixed(1)} mm (accepted for now; the filed deck retires it)`
+      if (step > slotM + 1e-6) console.warn(say.replace('[shore]', '[shore] ⛔ MORE THAN THE SLOT —')); else console.log(say)
+    }
+  }
   // Concatenate positions (all Float32) and indices (all Uint32) into one
   // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups][pins]. Manifest's *ByteOffset
   // values are relative to the START of each section (offsets within the
