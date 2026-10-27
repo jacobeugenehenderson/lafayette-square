@@ -2110,10 +2110,10 @@ export function differenceRings(subjectRings, clipRings) {
   c.Execute(ClipType.ctDifference, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
   return out.map(p => p.map(fromClipper))
 }
-function intersectRings(subjectRings, clipRings) {
+function intersectRings(subjectRings, clipRings, { preserveCollinear = false } = {}) {
   if (!subjectRings.length || !clipRings.length) return []
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
-  const c = new Clipper()
+  const c = new Clipper(preserveCollinear ? Clipper.ioPreserveCollinear : 0)
   for (const r of subjectRings) if (r && r.length >= 3) c.AddPath(r.map(toClipper), PolyType.ptSubject, true)
   for (const r of clipRings)    if (r && r.length >= 3) c.AddPath(r.map(toClipper), PolyType.ptClip,    true)
   const out = []
@@ -2552,6 +2552,22 @@ function shareWaterRunIntoShore(tile, who) {
 // ⛔ A CUT INK-CELL RING GOES TO THE ONE DISC PIECE THAT CONTAINS IT — CONTAINMENT, NEVER THE LARGEST (Boz, 2026-10-26). The
 // overlap is the positive-AREA intersection, as the curb's rings are assigned; a ring overlapping zero or two pieces is a
 // disagreement between the cut and the pieces, and refuses by name. Exported for the planted rim-tile fixture.
+// THE CIRCLE'S CUT OF ONE INK-CELL RING (Zob, 2026-10-26): a ring wholly inside is returned as it is, one wholly outside as
+// nothing, and one across is cut with ioPreserveCollinear, so the cut adds rim crossings and removes nothing else. It PROVES it:
+// every vertex of the input strictly inside the disc must be a vertex of the output, by key, or it refuses. Exported for the
+// planted row.
+export function cutCellRing(r0, stamp) {
+  const across = differenceRings([r0], [stamp]).length > 0, within = intersectRings([r0], [stamp]).length > 0
+  if (!within) return []
+  if (!across) return [r0]
+  const out = intersectRings([r0], [stamp], { preserveCollinear: true })
+  const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, have = new Set(out.flat().map(K))
+  const wn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
+  const lost = r0.filter(v => wn(v, stamp) !== 0 && !have.has(K(v)) && !stamp.some(s => K(s) === K(v)))
+  if (lost.length) throw new Error(`[tileGround][PROTO⊙] ⛔ the circle's cut of an ink cell ring lost ${lost.length} of its vertices inside the disc (e.g. (${lost[0].map(c => c.toFixed(3)).join(', ')})): the cell and the block would hold that line with two vertex sets. Refusing.`)
+  return out
+}
 export function cellPieceOf(q, pieces) {
   const a = pieces.map(r => intersectRings([q], [r]).reduce((u, x) => u + Math.abs(signedArea(x)), 0)), hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)
   if (hit.length !== 1) throw new Error(`[tileGround][PROTO⊙] ⛔ an ink cell ring of a rim tile (at ${q[0]}) overlaps ${hit.length} of its ${pieces.length} disc pieces (want exactly 1). Refusing.`)
@@ -8224,7 +8240,7 @@ export function buildTileGround(ribbons, opts = {}) {
           shoreFar += ss.far || 0; shoreFarMax = Math.max(shoreFarMax, ss.farMax || 0); return ss.tile })
         const stamp = MP.boundaryRing
         if (stamp?.length > 2) {
-          const before = protoShapeTiles.length; let rimShared = 0, cellRimShared = 0
+          const before = protoShapeTiles.length; let rimShared = 0, cellRimShared = 0, cellsOutside = 0
           const cut = (rings) => { const o = intersectRings(rings || [], [stamp]); return o?.length ? o : [] }
           const kept = []
           // ⭐ the RING is cut by the disc, and each output edge takes the owner of the OPERAND edge it lies on: one of the
@@ -8317,11 +8333,17 @@ export function buildTileGround(ribbons, opts = {}) {
             // in, by containment (it overlaps exactly one piece, else refuses); the crossings the cut minted go into the piece's ring (rim edges, shareRimCrossings,
             // which refuses one on no rim edge) and into its block where an edge holds them, so the asphalt and the cell meet at
             // one point on the rim.
+            // ⛔ ONLY A RING THAT CROSSES THE DISC IS CUT, AND THE CUT KEEPS COLLINEAR VERTICES (Zob, 2026-10-26): Clipper drops an
+            // exactly-collinear vertex by default, which would take the vertices shareWaterRunIntoShore just put on a cell's straight
+            // land edge (and ①'s collinear owner changes) while iA keeps them: two vertex sets again. A ring wholly inside goes to
+            // its piece as it is; one wholly outside is dropped (counted); one across is cut with ioPreserveCollinear, so the cut adds
+            // the rim crossings and removes nothing else.
             const cellsIn = t.inkCells || []
             const cellsOf = ring.map(() => cellsIn.map(c => ({ ...c, rings: [] })))
             if (inside || !cellsIn.length) cellsIn.forEach((c, j) => { cellsOf[0][j] = c })
-            else cellsIn.forEach((c, j) => { for (const q of cut(c.rings)) {
-              cellsOf[cellPieceOf(q, ring)][j].rings.push(q) } })
+            else cellsIn.forEach((c, j) => { for (const r0 of c.rings) {
+              const out = cutCellRing(r0, stamp); if (!out.length) { cellsOutside++; continue }
+              for (const q of out) cellsOf[cellPieceOf(q, ring)][j].rings.push(q) } })
             ring.forEach((r, i) => { if (!inside) { const sh = shareRimCrossings(r, ringOwners[i], mine[i], t.iA || [], stamp); r = sh.ring; ringOwners[i] = sh.owners; rimShared += sh.added }
               let iAi = mine[i]
               const cells = (inside || !cellsIn.length) ? (i === 0 ? cellsIn : []) : cellsOf[i].filter(c => c.rings.length)
@@ -8334,7 +8356,7 @@ export function buildTileGround(ribbons, opts = {}) {
               fillets: (t.fillets || []).filter(f => inDisc(f.apex)) }) })
           }
           protoShapeTiles = kept
-          console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice) · ${cellRimShared} of them the ink cells' (cut by the circle too)`)
+          console.log(`[tileGround][PROTO⊙] ${rimShared} rim crossing(s) the block's disc cut minted, written into the tile ring (shared, never rounded twice) · ${cellRimShared} of them the ink cells' (cut by the circle too; ${cellsOutside} cell ring(s) wholly outside the disc dropped)`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoFull} block crossing(s) the face trim and the circle minted, written into the struck contour (iaFull): ② is one ring`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoRing} block vertex(es) where the block follows the ring (the face trim's and the stamp's crossings there), written into the tile ring`)
           console.log(`[tileGround][PROTO⊙] ${sharedIntoShore} block vertex(es) on a water run (stamp crossings, joins), written into the tile's shore cell (shareWaterRunIntoShore) · ${shoreFar} placed past one rounding off their edge (max ${(shoreFarMax / SCALE * 1000).toFixed(3)} mm)`)

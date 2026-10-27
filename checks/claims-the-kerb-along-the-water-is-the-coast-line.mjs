@@ -25,7 +25,8 @@
 //       pieces each carried the whole block's cells); (R3) every ink-cell vertex ON the rim is a vertex of its tile's ring (the
 //       cut's crossings shared, so the asphalt and the cell meet at one point there).
 //       RIM MUTANTS (copies of the producer): the circle skips the cells · a cut ring goes to the largest piece unrefused · the
-//       cells' rim crossings are not shared. Each must read RED on some town, or is said not exercised.
+//       cells' rim crossings are not shared · the cell cut drops collinear vertices. Each must read RED on a town or on its
+//       planted row (two of them have one: a ring straddling two pieces; a collinear vertex inside the disc on a ring across it).
 //   MUTANTS (always run): the producer copied with the coast clause of `rSrc` removed (the anchor must occur once) must go RED
 //   on some town; a town where it stays GREEN has nothing on its coast to fillet and is said so. In process, per town: one
 //   off-line vertex inserted mid-way along a ② water edge (pushed 2 units off it) must read RED as off the line, and one
@@ -60,7 +61,8 @@ writeFileSync(join(mutDir, 'tileGround.js'), tgSrc.replace(CLAUSE, '')
 const mutant = await import(pathToFileURL(join(mutDir, 'tileGround.js')).href)
 // the three RIM mutants (Zob, 2026-10-26), each a copy of the producer with one step undone; each anchor must occur once
 const RIM_MUTANTS = [
-  ['the circle does not cut the cells', 'for (const q of cut(c.rings)) {', 'for (const q of c.rings) {'],
+  ['the circle does not cut the cells', '  if (!across) return [r0]\n', '  return [r0]\n'],
+  ['the cell cut drops collinear vertices', 'intersectRings([r0], [stamp], { preserveCollinear: true })', 'intersectRings([r0], [stamp])'],
   ['a cut cell ring goes to the largest piece, never refused', 'hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)', 'hit = [a.indexOf(Math.max(...a))]'],
   ['the cells\' rim crossings are not shared into the ring', 'const sc = shareRimCrossings(r, ringOwners[i], flat, input, stamp); r = sc.ring; ringOwners[i] = sc.owners;', 'const sc = { added: 0 };'],
 ]
@@ -81,7 +83,16 @@ for (const [name, a, b] of RIM_MUTANTS) {
   let mut = null; try { mut = M.tg.cellPieceOf(straddle, pieces) } catch (e) { mut = 'refused' }
   const one = cellPieceOf(inOne, pieces), ok = live === 'refused' && typeof mut === 'number' && one === 0
   console.log(`${ok ? '✅' : '⛔'} (R) planted rim tile: a ring straddling two pieces — live ${live === 'refused' ? 'REFUSES' : `assigns it to ${live}`}, the "largest, unrefused" mutant ${typeof mut === 'number' ? `assigns it to piece ${mut}` : 'refuses too (the mutant is vacuous)'}; a ring inside one piece goes to piece ${one}`)
-  if (ok) M.red++; else { console.log('⛔ the planted rim tile cannot tell containment from largest — (R)\'s assignment is unproven'); process.exit(1) } }
+  if (ok) M.red++; else { console.log('⛔ the planted rim tile cannot tell containment from largest — (R)\'s assignment is unproven'); process.exit(1) }
+  // (R) planted, THE CUT KEEPS WHAT IS INSIDE (Zob): a cell ring across the rim carrying a collinear vertex inside the disc —
+  // the live cut keeps it; cut without preserving collinear vertices, it is lost (the producer's own proof refuses)
+  const { cutCellRing } = await import('../src/lib/tileGround.js'), C2 = rimMutants.find(m => m.name.startsWith('the cell cut drops'))
+  const disc = [[0, 0], [10, 0], [10, 10], [0, 10]], cell = [[8, 2], [9, 2], [12, 2], [12, 4], [8, 4]]
+  const kept = cutCellRing(cell, disc).flat().some(v => v[0] === 9 && v[1] === 2)
+  let m2 = null; try { m2 = C2.tg.cutCellRing(cell, disc).flat().some(v => v[0] === 9 && v[1] === 2) ? 'kept' : 'lost' } catch (e) { m2 = 'refused' }
+  const ok2 = kept && m2 !== 'kept'
+  console.log(`${ok2 ? '✅' : '⛔'} (R) planted rim cut: a collinear vertex inside the disc on a ring across the rim — live ${kept ? 'keeps it' : 'LOSES it'}; without preserving collinear vertices ${m2 === 'refused' ? 'the producer refuses (its proof)' : m2}`)
+  if (ok2) C2.red++; else { console.log('⛔ the planted rim cut cannot see a dropped collinear vertex'); process.exit(1) } }
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]
 const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
