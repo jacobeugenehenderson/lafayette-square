@@ -34,7 +34,7 @@ import { slabFetch, slabManifest } from '../lib/slabUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
 import { DEFAULT_V_EXAG, terrainIdentity, assertHeightfield } from '../lib/terrainCommon.js'
-import { DRAWN_RAW_GLSL } from '../lib/drawnGround.js'
+import { DRAWN_RAW_GLSL, pinsMissingUnder } from '../lib/drawnGround.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -86,7 +86,8 @@ async function fetchSceneExag(lookId) {
 //   · terrain: false → flat by design (a town poured with no elevation input) — said once, as a state;
 //   · terrain: true  → the terrain is MISSING from a slab baked on one — refused;
 //   · no record      → an unknown state is not a flat one — refused.
-// Any other failure (a network error, terrain.bin missing beside its terrain.json, a field that does not read) refuses.
+// Any other failure (a network error, terrain.bin missing beside its terrain.json, a field that does not read) refuses, and
+// so does a bed-only terrain under a ground with no pins (drawnGround.js#pinsMissingUnder).
 // A refusal leaves the town on its splash: <Town> draws nothing until terrainLook() is its own Look.
 // ▶ node checks/claims-a-missing-height-fails-loudly.mjs
 async function fetchTerrain(lookId) {
@@ -102,6 +103,12 @@ async function fetchTerrain(lookId) {
       : g.ok ? 'its ground.json names no groundShape.terrain — an unknown state is not a flat one' : `its ground.json ${g.status} — no record of whether it has a terrain`}`)
   }
   const meta = await r.json()
+  // ⛔ the one bad mix (drawnGround.js#pinsMissingUnder): a bed-only terrain under a ground with no pins is refused here, so
+  // the town stays on its splash rather than draw its shore off ①'s line
+  if (meta.stamp) { const g = await slabFetch(lookId, 'ground.json')
+    if (!g.ok) throw new Error(`[terrain] ⛔ look "${lookId}": terrain.json carries a shore stamp and ground.json ${g.status} — whether the ground carries its pins is unknown`)
+    const why = pinsMissingUnder(await g.json(), meta)
+    if (why) throw new Error(`[terrain] ⛔ look "${lookId}": ${why}`) }
   const b = await slabFetch(lookId, 'terrain.bin')
   if (!b.ok) throw new Error(`[terrain] ⛔ look "${lookId}": terrain.json is there but terrain.bin ${b.status}`)
   const data = new Float32Array(await b.arrayBuffer())

@@ -403,7 +403,8 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     // the same function the bake's anchors read (`src/lib/drawnGround.js`), as views on this bin — never a second copy
     setDrawnGround(makeDrawnGround(manifest, bin, { groups: g => !isWaterGroupId(g.id) && g.partition !== false, rawAt: getElevationRaw }))
     // ⛔ a ground baked on a terrain before the pin: its shore is the field's own contour, said once by name
-    if (predatesThePin(manifest)) console.warn(`[BakedGround] "${look}": ground.json predates the pinned coast (no drawnRaw record) — its shore is drawn on the field's own contour, not ①'s line. ▶ re-bake the ground`)
+    if (predatesThePin(manifest)) console.error(`[BakedGround] ⛔ STALE SLAB for '${look}': this ground predates the pinned coast (no drawnRaw record). `
+      + `It is drawn as it was baked, on the field's own contour, so its shore is NOT ①'s line. ▶ re-bake the ground. ▶ node checks/claims-no-slab-outlives-its-schema.mjs`)
     return manifest.groups.map((g, gi) => {
       const positions = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)
       const indices   = new Uint32Array(bin,  g.indexByteOffset,  g.indexCount)

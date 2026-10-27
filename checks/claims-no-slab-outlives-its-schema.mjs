@@ -20,6 +20,10 @@
  *   B. a legacy slab is READ by legacy rules (v1 artifact, v1 rules)
  *   C. a current slab is READ by current rules
  *   D. the two models genuinely disagree — so C is not vacuous
+ *   E. THE PINNED COAST (drawnGround.js, Ward-seat review 2026-10-27): every terrain slab's ground declares whether it
+ *      carries the pins (`drawnRaw`); one that predates them is STALE (drawn on the field's own contour, said by the
+ *      player as an error), and the one bad mix (a bed-only terrain stamp under a ground with no pins) FAILS: the player
+ *      refuses it. Read through the runtime's own predicates (predatesThePin, pinsMissingUnder), never restated.
  *
  * ⚠️ A FAILING SLAB IS NOT A CODE BUG. It means that look needs a re-bake. The check
  * names which, and a re-bake is the operator's call (it is the irreversible step).
@@ -29,6 +33,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { deriveFade } from '../cartograph/boundaryRecords.mjs'
+import { predatesThePin, pinsMissingUnder, stampShapesBedOnly } from '../src/lib/drawnGround.js'
 
 let fails = 0, stale = []
 const ok = (c, m) => { console.log(`${c ? '  ✅' : '  ❌'} ${m}`); if (!c) fails++ }
@@ -94,6 +99,24 @@ h('D. the two models genuinely disagree — so C is not vacuous')
     `v1 ribbons trailed to ${v1ribbon.outer} (past the rim); v2 finishes at ${v2.outer} (the rim) — ${v1ribbon.outer - v2.outer} m of trailing edge is the difference`)
   ok(v1face.outer === v2.outer, 'both models finish the FACE band at the rim — so the face band alone cannot tell them apart, which is why the marker is streetFade')
 }
+
+h('E. every terrain slab says whether its ground carries the pinned coast, and no bed-only terrain stands on a ground without them')
+const pinStale = []
+for (const root of roots) for (const look of readdirSync(root).sort()) {
+  const gf = join(root, look, 'ground.json'), tf = join(root, look, 'terrain.json')
+  if (!existsSync(gf)) continue
+  let g, t = null; try { g = JSON.parse(readFileSync(gf, 'utf8')); if (existsSync(tf)) t = JSON.parse(readFileSync(tf, 'utf8')) } catch { ok(false, `${root}/${look}: ground.json or terrain.json unparseable`); continue }
+  const why = pinsMissingUnder(g, t), old = predatesThePin(g)
+  if (why) { ok(false, `${(root + '/' + look).padEnd(40)} REFUSED by the player: ${why}`); continue }
+  if (old) { pinStale.push(`${root}/${look}`); console.log(`  ⚠️  ${(root + '/' + look).padEnd(40)} STALE: its ground predates the pinned coast (the player draws it and says so)`); continue }
+  console.log(`  ✅ ${(root + '/' + look).padEnd(40)} ${g.drawnRaw ? `pins: ${g.drawnRaw.pinned != null ? `${g.drawnRaw.pinned} pinned` : JSON.stringify(g.drawnRaw)}` : g.groundShape?.terrain === true ? 'inland (no bed): no shore to pin' : 'no terrain on the record'}${t?.stamp ? ` · stamp ${stampShapesBedOnly(t.stamp) ? 'bed-only' : 'older'}` : ''}`)
+}
+{ // the refusal is not vacuous: the bad mix is refused, a pinned ground and an older stamp are not
+  const bedOnly = { stamp: { ramped: 1, runs: [] } }, older = { stamp: { raised: 1, kept: 0, walled: 0 } }
+  ok(!!pinsMissingUnder({ groundShape: { terrain: true } }, bedOnly) && !pinsMissingUnder({ drawnRaw: { pinned: 3 } }, bedOnly) && !pinsMissingUnder({ groundShape: { terrain: true } }, older),
+    'the bad mix is refused; a pinned ground on a bed-only stamp and an unpinned ground on an older stamp are drawable')
+}
+if (pinStale.length) console.log(`\n⚠️  ${pinStale.length} slab(s) predate the pinned coast: ${pinStale.join(', ')} — their shore is the field's contour. ▶ re-bake the ground (after the new player ships: BACKLOG release order).`)
 
 if (stale.length) {
   console.log(`\n⚠️  ${stale.length} slab(s) predate the 2026-09-20 fade ruling and are rendered under the OLD model:`)

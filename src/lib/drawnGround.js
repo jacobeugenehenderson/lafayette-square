@@ -45,8 +45,19 @@ export function drawnRawOf(manifest, g, bin, rawAt) {
   const P = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3), pins = drawnPinsOf(manifest, g, bin)
   return Float64Array.from({ length: g.vertexCount }, (_, v) => drawnRaw(pins, v, rawAt(P[v * 3], P[v * 3 + 2])))
 }
-/** A ground baked on a terrain before the pin existed: its shore is the field's own contour, not ①'s line. */
+/** A COASTAL ground baked on a terrain before the pin existed: its shore is the field's own contour, not ①'s line. Coastal is
+ *  read off the file itself: the bed (`mat:bed`) is drawn only under ①'s water face. An inland ground has no shore to misdraw. */
 export const predatesThePin = (manifest) => manifest.drawnRaw == null && manifest.groundShape?.terrain === true
+  && (manifest.groups || []).some(g => g.kind === 'mat' && g.id === 'bed')
+/** A terrain whose stamp only SHAPES THE BED (shoreStamp.mjs since 79cb7e9f: its record has no landward raised/kept or
+ *  walled counts). Such a field no longer meets ①'s line on its own: only a pinned ground does. */
+export const stampShapesBedOnly = (stamp) => !!stamp && !('raised' in stamp) && !('kept' in stamp) && !('walled' in stamp)
+/** ⛔ THE ONE BAD MIX (Ward-seat review, Boz 2026-10-27): a bed-only terrain under a ground with no pins draws the shore off
+ *  ①'s line, with nothing to say so. Returns the refusal's reason, or null when the pair is drawable. */
+export function pinsMissingUnder(manifest, terrainMeta) {
+  if (!stampShapesBedOnly(terrainMeta?.stamp) || manifest?.drawnRaw != null) return null
+  return 'its terrain.json stamp shapes the bed only (the field no longer meets ①\'s line) and its ground.json carries no drawnRaw pins — the shore would be drawn off the line. ▶ re-bake the ground'
+}
 
 /** @param manifest ground.json ({ groups, bbox }) · @param bin ground.bin as an ArrayBuffer
  *  @param opts.rawAt (x, z) → the town's height field, raw (required) · opts.groups (g) → whether this group is sampled

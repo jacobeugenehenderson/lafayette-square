@@ -90,7 +90,7 @@ function synthetic({ pinned = true, record = true } = {}) {
   const bin = new ArrayBuffer(len), u8 = new Uint8Array(bin); let off = 0; for (const b of parts) { u8.set(new Uint8Array(b), off); off += b.byteLength }
   const g = { id: 'lot', kind: 'face', renderOrder: 0, vertexCount: 4, vertexByteOffset: 0, indexCount: 6, indexByteOffset: P.byteLength,
     ...(pinned ? { drawnRawByteOffset: P.byteLength + I.byteLength, drawnRawCount: 1 } : {}) }
-  return { manifest: { bbox: { min: [0, 0, 0], max: [10, 0, 10] }, groups: [g], ...(record ? { drawnRaw: { format: 'synthetic' } } : {}), groundShape: { terrain: true } }, bin }
+  return { manifest: { bbox: { min: [0, 0, 0], max: [10, 0, 10] }, groups: [g, { id: 'bed', kind: 'mat', vertexCount: 0, vertexByteOffset: 0, indexCount: 0, indexByteOffset: 0 }], ...(record ? { drawnRaw: { format: 'synthetic' } } : {}), groundShape: { terrain: true } }, bin }
 }
 const field = (x, z) => 1 + 0.1 * x + 0.05 * z
 
