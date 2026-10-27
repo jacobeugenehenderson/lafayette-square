@@ -73,6 +73,15 @@ for (const [name, a, b] of RIM_MUTANTS) {
     .replace(/from \x27clipper-lib\x27/g, `from "${import.meta.resolve('clipper-lib')}"`))
   rimMutants.push({ name, tg: await import(pathToFileURL(join(d, 'tileGround.js')).href), red: 0 }) }
 
+// PLANTED (always run, no build): a cell ring straddling two disc pieces — the live producer refuses it; the "largest, unrefused"
+// mutant assigns it. Without this the mutant could only differ from live on a town that already refuses (Boz, 2026-10-26).
+{ const { cellPieceOf } = await import('../src/lib/tileGround.js'), M = rimMutants.find(m => m.name.startsWith('a cut cell ring'))
+  const pieces = [[[0, 0], [10, 0], [10, 10], [0, 10]], [[10, 0], [20, 0], [20, 10], [10, 10]]], straddle = [[8, 4], [12, 4], [12, 6], [8, 6]], inOne = [[2, 2], [4, 2], [4, 4], [2, 4]]
+  let live = null; try { live = cellPieceOf(straddle, pieces) } catch (e) { live = 'refused' }
+  let mut = null; try { mut = M.tg.cellPieceOf(straddle, pieces) } catch (e) { mut = 'refused' }
+  const one = cellPieceOf(inOne, pieces), ok = live === 'refused' && typeof mut === 'number' && one === 0
+  console.log(`${ok ? '✅' : '⛔'} (R) planted rim tile: a ring straddling two pieces — live ${live === 'refused' ? 'REFUSES' : `assigns it to ${live}`}, the "largest, unrefused" mutant ${typeof mut === 'number' ? `assigns it to piece ${mut}` : 'refuses too (the mutant is vacuous)'}; a ring inside one piece goes to piece ${one}`)
+  if (ok) M.red++; else { console.log('⛔ the planted rim tile cannot tell containment from largest — (R)\'s assignment is unproven'); process.exit(1) } }
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]
 const windXZ = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]

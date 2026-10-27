@@ -2549,6 +2549,14 @@ function shareWaterRunIntoShore(tile, who) {
   let k = 0
   return { tile: { ...tile, inkCells: tile.inkCells.map(c => c.cls === 'shore' ? { ...c, rings: rings[k++] } : c) }, added, far, farMax }
 }
+// ⛔ A CUT INK-CELL RING GOES TO THE ONE DISC PIECE THAT CONTAINS IT — CONTAINMENT, NEVER THE LARGEST (Boz, 2026-10-26). The
+// overlap is the positive-AREA intersection, as the curb's rings are assigned; a ring overlapping zero or two pieces is a
+// disagreement between the cut and the pieces, and refuses by name. Exported for the planted rim-tile fixture.
+export function cellPieceOf(q, pieces) {
+  const a = pieces.map(r => intersectRings([q], [r]).reduce((u, x) => u + Math.abs(signedArea(x)), 0)), hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)
+  if (hit.length !== 1) throw new Error(`[tileGround][PROTO⊙] ⛔ an ink cell ring of a rim tile (at ${q[0]}) overlaps ${hit.length} of its ${pieces.length} disc pieces (want exactly 1). Refusing.`)
+  return hit[0]
+}
 function shareBlockIntoRing(t) {
   if (!t.iA?.length || !t.ring?.length) return { t, added: 0 }
   const K = (v) => { const c = toClipper(v); return c.X + ',' + c.Y }, have = new Set(t.ring.map(K))
@@ -8313,11 +8321,7 @@ export function buildTileGround(ribbons, opts = {}) {
             const cellsOf = ring.map(() => cellsIn.map(c => ({ ...c, rings: [] })))
             if (inside || !cellsIn.length) cellsIn.forEach((c, j) => { cellsOf[0][j] = c })
             else cellsIn.forEach((c, j) => { for (const q of cut(c.rings)) {
-              // ⛔ CONTAINMENT, NEVER THE LARGEST (Boz, 2026-10-26): a ring the circle cut lies wholly in ONE piece; one overlapping
-              // two pieces is a disagreement between the cut and the pieces, and refuses by name
-              const a = ring.map(r => intersectRings([q], [r]).reduce((u, x) => u + Math.abs(signedArea(x)), 0)), hit = a.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0)
-              if (hit.length !== 1) throw new Error(`[tileGround][PROTO⊙] ⛔ an ink cell ring of a rim tile (at ${q[0]}) overlaps ${hit.length} of its ${ring.length} disc pieces (want exactly 1). Refusing.`)
-              cellsOf[hit[0]][j].rings.push(q) } })
+              cellsOf[cellPieceOf(q, ring)][j].rings.push(q) } })
             ring.forEach((r, i) => { if (!inside) { const sh = shareRimCrossings(r, ringOwners[i], mine[i], t.iA || [], stamp); r = sh.ring; ringOwners[i] = sh.owners; rimShared += sh.added }
               let iAi = mine[i]
               const cells = (inside || !cellsIn.length) ? (i === 0 ? cellsIn : []) : cellsOf[i].filter(c => c.rings.length)
