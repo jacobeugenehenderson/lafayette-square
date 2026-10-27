@@ -148,11 +148,30 @@ for (const [name, a, b] of RIM_MUTANTS) {
   const v12 = [v11[0] + dq[0] * 30, v11[1] + dq[1] * 30], jr = [v9, v10, v11, v12, [v12[0] + nq[0] * 25, v12[1] + nq[1] * 25], [v9[0] + nq[0] * 25, v9[1] + nq[1] * 25]], jd = (k) => (k <= 1 ? 0 : k === 2 ? 3.345 : 2)
   const sdq = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)); return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) }
   const jOwn = (e) => (e <= 1 ? `${WATER_EDGE_SKEL}|right|0` : `street|left|${e}`)   // the water run is the water's, by identity
-  const judgeJ = (M) => { const R = M.offsetRingByRects(jr, jd, false, null, null, null, jOwn), V = (R.rings || R).flat()
-    return { has11: V.some(p => Math.hypot(p[0] - v11[0], p[1] - v11[1]) < 0.002), X: V.filter(p => sdq(p, v9, v10) < 0.002 && Math.hypot(p[0] - v9[0], p[1] - v9[1]) > 0.01 && Math.hypot(p[0] - v10[0], p[1] - v10[1]) > 0.01 && Math.hypot(p[0] - 737.65, p[1] - 573.1) < 0.5) } }
-  const L6 = judgeJ({ offsetRingByRects }), M6 = judgeJ(C6.tg)
-  const ok6 = !L6.has11 && L6.X.length === 1 && M6.has11
-  console.log(`${ok6 ? '✅' : '⛔'} (B) planted depth-0 join: live ${L6.has11 ? 'KEEPS ① 11' : 'cuts ① 11 away'}, X on ①'s water edge ${L6.X.length ? `(${L6.X[0].map(v => v.toFixed(3)).join(', ')})` : 'NONE'}; the adjacent-edge-only join ${M6.has11 ? 'keeps ① 11 (the old defect, seen)' : 'cuts it too (vacuous)'}`)
+  // ⭐ RUN LABELLED (Zob, 2026-10-27): the defect was a LABEL — the chord's kind-1 line put the water's label on east-0's cap —
+  // so the row reads the labels: every ② edge labelled with a water edge (① edge ≤ 1) lies on ①'s water line, both ends within
+  // 2 mm of 9 → 10 → 11. The water identity rides `idMap.water`, the one flag every caller passes, labelled or not.
+  const jWater = jr.map((_, e) => e <= 1), onWater = (p) => Math.min(sdq(p, v9, v10), sdq(p, v10, v11)) < 0.002
+  const judgeJ = (M, labelled = true) => { const S = labelled ? {} : null, R = M.offsetRingByRects(jr, jd, false, S, null, { water: jWater }, jOwn), RR = R.rings || R, V = RR.flat()
+    const offWater = !labelled ? null : RR.reduce((t, r, ri) => t + (S.edgeLabels?.[ri] || []).filter((e, k) => e != null && e <= 1 && !(onWater(r[k]) && onWater(r[(k + 1) % r.length]))).length, 0)
+    return { RR, offWater, has11: V.some(p => Math.hypot(p[0] - v11[0], p[1] - v11[1]) < 0.002), X: V.filter(p => sdq(p, v9, v10) < 0.002 && Math.hypot(p[0] - v9[0], p[1] - v9[1]) > 0.01 && Math.hypot(p[0] - v10[0], p[1] - v10[1]) > 0.01 && Math.hypot(p[0] - 737.65, p[1] - 573.1) < 0.5) } }
+  const L6 = judgeJ({ offsetRingByRects }), M6 = judgeJ(C6.tg), U6 = judgeJ({ offsetRingByRects }, false)
+  const sameRings = (A, B) => A.length === B.length && A.every((r, i) => r.length === B[i].length && r.every((p, k) => p[0] === B[i][k][0] && p[1] === B[i][k][1]))
+  const ok6 = !L6.has11 && L6.X.length === 1 && L6.offWater === 0 && M6.has11 && M6.offWater > 0
+  console.log(`${ok6 ? '✅' : '⛔'} (B) planted depth-0 join, labelled: live ${L6.has11 ? 'KEEPS ① 11' : 'cuts ① 11 away'}, X on ①'s water edge ${L6.X.length ? `(${L6.X[0].map(v => v.toFixed(3)).join(', ')})` : 'NONE'}, ${L6.offWater} water-labelled ② edge(s) off ①'s water line; the adjacent-edge-only join ${M6.has11 ? 'keeps ① 11' : 'cuts it too'} and puts ${M6.offWater} water label(s) off the line ${M6.has11 && M6.offWater > 0 ? '(the old defect, seen)' : '(vacuous)'}`)
+  // …and the row can fail: the same call with NO water flag (a caller that cannot say) builds the other corner
+  const N6 = offsetRingByRects(jr, jd, false), okU = sameRings(U6.RR, L6.RR) && !sameRings(N6.rings || N6, L6.RR)
+  console.log(`${okU ? '✅' : '⛔'} (B′) the same join UNLABELLED (no stamp, no owners, the water flag given — ③'s flood and guard): ${sameRings(U6.RR, L6.RR) ? 'the same rings, vertex for vertex' : 'DIFFERENT rings — ② and ③ build two corners'}; without the flag ${sameRings(N6.rings || N6, L6.RR) ? 'the same too (the row is vacuous)' : 'another corner (the row can fail)'}`)
+  if (!okU) { console.log('⛔ the water join depends on which caller asked'); process.exit(1) }
+  // (B″) SOURCE: every call of offsetRingByRects in tileGround.js hands it the water flag (`water:` in its arguments), so no
+  // caller strikes a ring that carries water without saying which edges are (Zob, 2026-10-27: `ins` ×2 and blockAt did not)
+  const calls = []; for (let at = tgSrc.indexOf('offsetRingByRects('); at >= 0; at = tgSrc.indexOf('offsetRingByRects(', at + 1)) {
+    if (tgSrc.slice(Math.max(0, at - 16), at).includes('function ')) continue
+    let dep = 0, k = at + 'offsetRingByRects'.length; for (; k < tgSrc.length; k++) { if (tgSrc[k] === '(') dep++; else if (tgSrc[k] === ')' && --dep === 0) break }
+    calls.push({ line: tgSrc.slice(0, at).split('\n').length, args: tgSrc.slice(at, k + 1) }) }
+  const bare = calls.filter(c => !/\bwater\b/.test(c.args))
+  console.log(`${calls.length && !bare.length ? '✅' : '⛔'} (B″) ${calls.length} call(s) of offsetRingByRects in tileGround.js, ${bare.length} without the water flag${bare.length ? `: ${bare.map(c => c.args.slice(0, 70)).join(' · ')}` : ''}`)
+  if (!calls.length || bare.length) process.exit(1)
   if (ok6) C6.red++; else { console.log('⛔ the planted depth-0 join cannot tell the run from the adjacent edge'); process.exit(1) } }
 const K = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
 const key = (k) => k[0] + ',' + k[1]

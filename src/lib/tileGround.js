@@ -1719,7 +1719,12 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
   const ring = ringIn, n = nIn
   // `idMap` — when the caller hands a WORKING COPY (a taper split an edge), each working edge/vertex names the
   // ① edge/vertex it came from; a split point names none. Depth is read by WORKING index, identity leaves by ①'s.
-  const origE = ring.map((_, k) => (idMap ? idMap.e[k] : k)), origV = ring.map((_, k) => (idMap ? idMap.v[k] : k))
+  // `idMap.water` — per WORKING edge, whether it is owned by the water (WATER_EDGE_SKEL), read by IDENTITY off the caller's own
+  // owners. It decides a GEOMETRY question (the water join below), so every caller that strikes this ring passes the same flag,
+  // labelled or not: ② and ③ build one corner (Zob, 2026-10-27). ⛔ A labelled offset without it refuses; `e`/`v` may be absent
+  // (no working copy: the identity).
+  const origE = ring.map((_, k) => (idMap?.e ? idMap.e[k] : k)), origV = ring.map((_, k) => (idMap?.v ? idMap.v[k] : k))
+  if (idMap?.water && idMap.water.length !== n) throw new Error(`[tileGround][offsetRingByRects] ⛔ idMap.water names ${idMap.water.length} edge(s) for a ring of ${n}. Refusing.`)
   const depthAt = depthAtIn
   const ccw = (signedArea(ring) > 0) !== outward
   const seg = []
@@ -1743,6 +1748,7 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
   // and its capacity guard, which keep only the rings or only their count).
   const labelled = !!(stamp || easeAt)
   // ⛔ a labelled offset pools its contributors BY OWNER (`labelOf`), so it must be told whose each ① edge is
+  if (labelled && !Array.isArray(idMap?.water)) throw new Error('[tileGround][offsetRingByRects] ⛔ a labelled offset needs `idMap.water` (per edge: owned by the water?): the water join is decided by identity, and a caller that cannot say builds another corner. Refusing.')
   if (labelled && typeof ownerKeyOf !== 'function') throw new Error('[tileGround][offsetRingByRects] ⛔ a labelled offset needs `ownerKeyOf` (① edge → skelId|side|segOrd): its edges take an OWNER, never a guess. Refusing.')
   const contrib = []
   const addSeg = (a, b, lab, kind) => { if (labelled && Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
@@ -1808,11 +1814,10 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
     // X, ON ①. The piece is [v, the run vertices passed, X, the band's end]; the water run then starts at X, on ①'s line.
     // ⛔ The chord was the defect: it contributed the deep band's END CAP as a kind-1 curb line under the WATER edge's label.
     if (!X && !(idMap?.hwy && (idMap.hwy[ia] || idMap.hwy[i]))) {
-      const z0 = (k) => !(seg[k].dS > 0) && !(seg[k].dE > 0), same = (k, k0) => ownerKeyOf(origE[k]) === ownerKeyOf(origE[k0])
       // ⛔ SCOPED TO THE WATER, by identity (Boz's ruling (i), 2026-10-27): the defect is a kind-1 line under the WATER's label.
       // Every other depth-0 join stays as it was (HPDM ① v7 and PTown ① v42 built non-simple run pieces when this was general;
-      // the general case is filed in the cut-separately census)
-      const isWater = (k) => typeof ownerKeyOf === 'function' && String(ownerKeyOf(origE[k]) ?? '').split('|')[0] === WATER_EDGE_SKEL
+      // the general case is filed in the cut-separately census). The run is the water's: consecutive depth-0 water edges.
+      const isWater = (k) => !!idMap?.water?.[k], z0 = (k) => !(seg[k].dS > 0) && !(seg[k].dE > 0)
       const aZ = z0(ia), sZ = z0(i)
       if (aZ !== sZ && isWater(aZ ? ia : i)) {
         // the curb line: from the deep band's end at v, away from v along its own direction
@@ -1821,7 +1826,7 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
           const s0 = ((a[0] - o[0]) * ey - (a[1] - o[1]) * ex) / den, u0 = ((a[0] - o[0]) * d[1] - (a[1] - o[1]) * d[0]) / den
           return s0 >= 0 && u0 >= 0 && u0 <= 1 ? [o[0] + d[0] * s0, o[1] + d[1] * s0] : null }
         const passed = []
-        for (let step = 0, k = aZ ? ia : i; step < n; step++) { if (!z0(k) || !same(k, aZ ? ia : i)) break
+        for (let step = 0, k = aZ ? ia : i; step < n; step++) { if (!z0(k) || !isWater(k)) break
           const a = ring[k], b = ring[(k + 1) % n], h = hit(a, b)
           if (h) { const piece = aZ ? [v, ...passed, h, S.P] : [v, A.Q, h, ...passed.slice().reverse()]
             const pc = (p1, p2, p3, p4) => { const or = (x, y, z) => Math.sign((y[0] - x[0]) * (z[1] - x[1]) - (y[1] - x[1]) * (z[0] - x[0])); return or(p3, p4, p1) * or(p3, p4, p2) < 0 && or(p1, p2, p3) * or(p1, p2, p4) < 0 }
@@ -5483,7 +5488,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
   const ins = (pick) => {
     const o = [], h = []
     for (const p of parts) {
-      const rs = offsetRingByRects(p.ring, pick(p), p.hole)
+      const rs = offsetRingByRects(p.ring, pick(p), p.hole, null, null, { water: p.ring.map((_, e) => shoreAt(p, e)) })
       ;(p.hole ? h : o).push(...rs)
     }
     return (o.length && h.length) ? differenceRings(o, h) : o
@@ -5886,7 +5891,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
         per.push({ p, rings: [p.ring], labs: [p.ring.map((_, e) => spanOfSrc(p.si, e))], clips: [], edges: [], dropped: [], areaMin: null })
         continue
       }
-      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, null, (e) => p.dspan[e])
+      const S = {}, rs = offsetRingByRects(p.dring, pk, p.hole, S, null, { water: p.dring.map((_, j) => shoreAt(p, p.dsrc[j])) }, (e) => p.dspan[e])
       ;(p.hole ? h : o).push(...rs)
       per.push({ p, rings: rs, labs: rs.map((r, ri) => (S.edgeLabels?.[ri] || r.map(() => null)).map(e => (e == null ? null : p.dspan[e]))),
         clips: (S.clips || []).map(c => ({ poly: c.poly, spans: [...new Set(c.e.map(e => p.dspan[e]))], join: c.v != null ? `${p.ri}:${c.v}` : null, ...(c.d ? { d: c.d } : {}) })),
@@ -7428,7 +7433,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // NOT a ① corner (a width step, or where two non-adjacent bands met) and is left sharp, as ruled.
         const rings2 = offsetRingByRects(WC.ring, (j) => (depthRec.depth[j] = WC.depth[j]), false, st,
                                           (srcIdx) => { if (srcIdx == null) { protoRZero.noSrc++; return 0 }
-                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, WC,
+                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, { ...WC, water: WC.e.map(e => protoOwners[labs[e]]?.skelId === WATER_EDGE_SKEL) },
                                           (e) => { const o = protoOwners[labs[e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null }, { w: opts.curbedMinWidth.m },
                                           (srcIdx) => (CL.inCluster[srcIdx] ? clTurn(srcIdx) : null))
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
@@ -7464,7 +7469,7 @@ export function buildTileGround(ribbons, opts = {}) {
             const HW = MP.flares?.length ? flareWorkingCopy(HW0, MP.flares, (e) => protoOwners[holeLabs[hi][e]], (j, E) => protoMeasureOf(holeLabs[hi][E[j]])?.pavementHW ?? 0, flareDisclosure) : HW0
             const hRec = { ring: HW.ring, depth: new Array(HW.ring.length).fill(null) }
             depthRec.holes.push(hRec)
-            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, HW,
+            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, { ...HW, water: HW.e.map(e => protoOwners[holeLabs[hi][e]]?.skelId === WATER_EDGE_SKEL) },
               (e) => { const o = protoOwners[holeLabs[hi][e]]; return o ? `${o.skelId}|${o.side}|${o.segOrd}` : null })
             for (let ri = 0; ri < hOff.length; ri++) {
               hRings.push(hOff[ri])
@@ -7742,15 +7747,17 @@ export function buildTileGround(ribbons, opts = {}) {
         // capacity guard and the open-field LU flood are struck from outer-minus-holes. ⛔ Offsetting
         // the outer alone would let the guard call a ring-shaped block roomy and then flood its hole.
         const bHoles = protoBlockHoles?.[k] || [], bHoleLabs = protoBlockHoleLabels?.[k] || []
+        // the water identity ② struck this ring with (`offsetRingByRects`' water join), so ③'s flood and guard build ②'s corner
+        const waterOfLabs = (L, n) => Array.from({ length: n }, (_, i) => protoOwners[L?.[i]]?.skelId === WATER_EDGE_SKEL)
         const hwOfLabs = (L) => (i) => { const m = protoMeasureOf(L[i]); return m?.pavementHW > 0 ? Math.max(0, m.pavementHW - PROTO_HW) : 0 }
         // the block region at an extra inward depth `d` past the authored pavement half-width
         const blockAt = (d) => {
-          const outs = offsetRingByRects(ring, (i) => hwAt(i) + d, false)
+          const outs = offsetRingByRects(ring, (i) => hwAt(i) + d, false, null, null, { water: waterOfLabs(labs, ring.length) })
           if (!bHoles.length || !outs.length) return outs
           const hls = []
           for (let hi = 0; hi < bHoles.length; hi++) {
             const hw = hwOfLabs(bHoleLabs[hi])
-            hls.push(...offsetRingByRects(bHoles[hi], (i) => hw(i) + d, true))
+            hls.push(...offsetRingByRects(bHoles[hi], (i) => hw(i) + d, true, null, null, { water: waterOfLabs(bHoleLabs[hi], bHoles[hi].length) }))
           }
           return hls.length ? differenceRings(outs, hls) : outs
         }
@@ -7828,7 +7835,7 @@ export function buildTileGround(ribbons, opts = {}) {
           const bare = (i) => bCls === 'verge' || isHwyLab(EC.labs[i])
           const at = (f) => (i) => (bare(i) ? 0 : cw + L(i)[f])
           return {
-            ring: EC.ring,
+            ring: EC.ring, water: EC.ring.map((_, i) => protoOwners[EC.labs[i]]?.skelId === WATER_EDGE_SKEL),
             pedFrom: (i) => (bare(i) ? 0 : cw), luFrom: (i) => (bare(i) ? 0 : WB),
             // ⛔ A HOLE OF THE CURB REGION, read off its winding — the one thing winding is a
             // reliable record of here, because these rings came straight out of one boolean.
@@ -7846,7 +7853,7 @@ export function buildTileGround(ribbons, opts = {}) {
         const ins = (pick) => {
           const o = [], h = []
           for (const p of parts) {
-            const rs = offsetRingByRects(p.ring, pick(p), p.hole)
+            const rs = offsetRingByRects(p.ring, pick(p), p.hole, null, null, { water: p.water })
             ;(p.hole ? h : o).push(...rs)
           }
           return (o.length && h.length) ? differenceRings(o, h) : o
