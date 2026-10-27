@@ -39,7 +39,7 @@ import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentFromSlab.js'
-import { drawnGroundParts, getElevationRaw, onDrawnGround } from '../utils/elevation'
+import { drawnGroundParts, onDrawnGround } from '../utils/elevation'
 import { terrainBed, terrainWater, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { phaseNow } from './WaterSurface.jsx'
@@ -85,18 +85,22 @@ const RESELECT_M = 6
  *  against, so the stone meets the ground the slab draws, never the field under it. */
 const drawnAt1 = (x, z) => { const g = drawnGroundParts(x, z); return g.raw + g.y }
 
-/** ⭐ THE DRAPE, GROUND-RELATIVE (Argon, 2026-10-07). Each vertex's TERRAIN part — the town's height field at that vertex —
- *  moves out of the geometry, and the shader lifts it back by the field × uExag (patchTerrain perVertex: the ground's own
- *  law, BRIEF-the-ground-stands-on-one-field), so the stone rides the live exaggeration like the drawn ground beneath it;
- *  the rest stays in the geometry. The bounds are taken first, from the drawn exag-1 positions. `revetmentDrape` itself
- *  stays absolute: the checks read real heights. */
+/** ⭐ THE DRAPE, GROUND-RELATIVE (Argon, 2026-10-07). Each vertex's TERRAIN part, the DRAWN ground's raw at that vertex
+ *  (`drawnGroundParts`: a ground vertex's pin, else the field, barycentric over the drawn triangle), moves out of the geometry
+ *  and rides as the vertex's own pin (`aDrawnRaw`, drawnGround.js), which the shader lifts back × uExag (patchTerrain
+ *  perVertex + drawn), so the stone rides the live exaggeration like the drawn ground beneath it; the rest stays in the
+ *  geometry. ⛔ It was the FIELD, while the drape is built at drawnAt1: at uExag ≠ 1 the stone stood off the pinned shore by
+ *  (pin − field)(1 − uExag) (Ward-seat review, 2026-10-27). The bounds are taken first, from the drawn exag-1 positions.
+ *  `revetmentDrape` itself stays absolute: the checks read real heights. */
 function groundRelative(built) {
   const g = built?.geometry
   if (!g) return built
   g.computeBoundingSphere(); g.computeBoundingBox()
-  const p = g.attributes.position
-  for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) - getElevationRaw(p.getX(i), p.getZ(i)))
+  const p = g.attributes.position, pins = new Float32Array(p.count * 4)
+  for (let i = 0; i < p.count; i++) { const raw = drawnGroundParts(p.getX(i), p.getZ(i)).raw
+    p.setY(i, p.getY(i) - raw); pins[i * 4] = 1; pins[i * 4 + 1] = raw }
   p.needsUpdate = true
+  g.setAttribute('aDrawnRaw', new THREE.BufferAttribute(pins, 4))
   return built
 }
 
@@ -158,9 +162,9 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // carry both: the per-vertex lift ignores instanceMatrix. ⛔ The shadow pass repeats each lift (checks/claims-displaced-casters-have-a-depth-material.mjs).
   const drape = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
   const stone = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
-  const drapeMaterial = useMemo(() => { patchTerrain(drape.material, { perVertex: true }); return drape.material }, [drape])
+  const drapeMaterial = useMemo(() => { patchTerrain(drape.material, { perVertex: true, drawn: true }); return drape.material }, [drape])
   const stoneMaterial = useMemo(() => { patchTerrainInstancedBaked(stone.material); return stone.material }, [stone])
-  const drapeDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrain(d, { perVertex: true }); return d }, [])
+  const drapeDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrain(d, { perVertex: true, drawn: true }); return d }, [])
   const stoneDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrainInstancedBaked(d); return d }, [])
   // ⭐ The wetted band stands at the LIVE level where the camera is (cartograph/waterLevel.mjs), so it moves with the tide.
   // ⛔ Not swallowed (BRIEF-tide finding): a town whose water record cannot be read SAYS so, once, and its wetted band
