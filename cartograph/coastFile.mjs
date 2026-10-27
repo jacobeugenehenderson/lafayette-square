@@ -165,3 +165,31 @@ export function ringViolations(ring, acuteAt = null) {
   }
   return out
 }
+
+/**
+ * ⛔ AND NO TWO COAST RINGS MEET (Boz's ruling, 2026-10-27): every ring of every body is judged against every other, since a
+ * hole's edge across its body's outer, or one body's across another's, is the same antenna as a ring crossing itself. The
+ * meetings, [{ kind: 'cross' | 'touch', ra, a, rb, b, at }] (ring and edge indices). Same exact grid as ringViolations.
+ */
+export function ringsMeet(rings) {
+  const edges = rings.flatMap((ring, r) => ring.map((p, i) => [r, i, p, ring[(i + 1) % ring.length]]))
+  if (!edges.length) return []
+  const len = edges.map(([, , p, q]) => Math.hypot(q[0] - p[0], q[1] - p[1])).sort((a, b) => a - b)
+  const G = Math.max(len[len.length >> 1], 1e-6), cells = new Map(), out = [], seen = new Set()
+  edges.forEach(([, , p, q], e) => {
+    for (let gx = Math.floor(Math.min(p[0], q[0]) / G); gx <= Math.floor(Math.max(p[0], q[0]) / G); gx++)
+      for (let gz = Math.floor(Math.min(p[1], q[1]) / G); gz <= Math.floor(Math.max(p[1], q[1]) / G); gz++) {
+        const k = `${gx},${gz}`; if (!cells.has(k)) cells.set(k, []); cells.get(k).push(e) } })
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  const on = (p, q, r) => Math.min(p[0], q[0]) <= r[0] && r[0] <= Math.max(p[0], q[0]) && Math.min(p[1], q[1]) <= r[1] && r[1] <= Math.max(p[1], q[1])
+  for (const list of cells.values()) for (let s = 0; s < list.length; s++) for (let t = s + 1; t < list.length; t++) {
+    const x = Math.min(list[s], list[t]), y = Math.max(list[s], list[t]), [ra, a, p1, p2] = edges[x], [rb, b, q1, q2] = edges[y]
+    if (ra === rb || seen.has(x * edges.length + y)) continue; seen.add(x * edges.length + y)
+    const d1 = cr(q1, q2, p1), d2 = cr(q1, q2, p2), d3 = cr(p1, p2, q1), d4 = cr(p1, p2, q2)
+    if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+      const t0 = d1 / (d1 - d2); out.push({ kind: 'cross', ra, a, rb, b, at: [p1[0] + (p2[0] - p1[0]) * t0, p1[1] + (p2[1] - p1[1]) * t0] })
+    } else if ((d1 === 0 && on(q1, q2, p1)) || (d2 === 0 && on(q1, q2, p2)) || (d3 === 0 && on(p1, p2, q1)) || (d4 === 0 && on(p1, p2, q2)))
+      out.push({ kind: 'touch', ra, a, rb, b, at: d1 === 0 ? p1 : d2 === 0 ? p2 : d3 === 0 ? q1 : q2 })
+  }
+  return out
+}

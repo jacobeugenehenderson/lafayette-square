@@ -58,7 +58,7 @@ import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
 import { deckFootprints } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
-import { COAST_FILE, heldCells, ringViolations } from './coastFile.mjs'
+import { COAST_FILE, heldCells, ringViolations, ringsMeet } from './coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { discOf } from './boundaryRecords.mjs'
@@ -424,8 +424,11 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // whose edges cross or fold back, or a vertex too acute for the ink (the mint's own outlineCorner at INK_EPS), is ①
   // stroked into an antenna, refused downstream far from its cause. Refused here, by name, at each place.
   const acuteAt = (o, p, q) => outlineCorner(o, [{ to: p }, { to: q }], INK_EPS).bad
-  const bad = simple.flatMap((bd, bi) => [bd.outer, ...bd.holes].flatMap((r, ri) => ringViolations(r, acuteAt).map(v => ({ ...v, bi, ri }))))
-  if (bad.length) throw new Error(`⛔ bake-coast: ${scene} — ${bad.length} place(s) where the traced coast is not a simple ring (${[...new Set(bad.map(v => v.kind))].map(k => `${bad.filter(v => v.kind === k).length} ${k}`).join(' · ')}): ${bad.slice(0, 8).map(v => `body ${v.bi} ring ${v.ri} edges ${v.a}/${v.b} @(${v.at.map(Math.round).join(', ')})`).join(' · ')}${bad.length > 8 ? ` … +${bad.length - 8}` : ''}. Cause not established (the trace, simplifyRing or settleOnSource); the coast is not written.`)
+  // ⛔ AND NO TWO RINGS MEET (Boz's ruling, 2026-10-27): a hole across its body's outer, or one body across another.
+  const labels = simple.flatMap((bd, bi) => [bd.outer, ...bd.holes].map((r, ri) => ({ r, name: `body ${bi} ring ${ri}` })))
+  const bad = [...labels.flatMap(({ r, name }) => ringViolations(r, acuteAt).map(v => ({ ...v, where: `${name} edges ${v.a}/${v.b}` }))),
+    ...ringsMeet(labels.map(l => l.r)).map(v => ({ ...v, where: `${labels[v.ra].name} edge ${v.a} / ${labels[v.rb].name} edge ${v.b}` }))]
+  if (bad.length) throw new Error(`⛔ bake-coast: ${scene} — ${bad.length} place(s) where the traced coast is not simple rings apart (${[...new Set(bad.map(v => v.kind))].map(k => `${bad.filter(v => v.kind === k).length} ${k}`).join(' · ')}): ${bad.slice(0, 8).map(v => `${v.where} @(${v.at.map(Math.round).join(', ')})`).join(' · ')}${bad.length > 8 ? ` … +${bad.length - 8}` : ''}. Cause not established (the trace, simplifyRing or settleOnSource); the coast is not written.`)
   const arcs = [], islands = []
   for (const bd of simple) for (const ring of [bd.outer, ...bd.holes]) for (const a of arcsOf(ring, R)) {
     if (a.closed) { islands.push({ pts: a.pts.length, m2: Math.round(ringArea(a.pts)), at: a.pts[0].map(Math.round) }); arcs.push([...a.pts, a.pts[0]]); continue }
@@ -524,28 +527,36 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
     win.length = 0
   }
   const sweepClamped = []
-  for (const ring of rings) { const s = settleInOrder(ring, targets.get(ring)); moved.push(...s.moved); sweepClamped.push(...s.clamped) }
+  const s = settleInOrder(rings, rings.map(r => targets.get(r)), step); moved.push(...s.moved); sweepClamped.push(...s.clamped)
   moved.sort((x, y) => x - y)
   return { moved: moved.length, bounded, unbracketed, noValue, sweepClamped, p50: moved.length ? moved[moved.length >> 1] : 0, max: moved.length ? moved[moved.length - 1] : 0 }
 }
 
 /**
- * Move each vertex of `ring` to `to[k]` (or leave it, where `to[k]` is null), IN RING ORDER, so each is judged against its
- * neighbours' SETTLED places. In place.
+ * Move each vertex of `rings[r]` to `to[r][k]` (or leave it, where that is null), ring by ring and IN RING ORDER, so each is
+ * judged against every vertex already SETTLED (its neighbours', and every other ring's: a hole may not sweep over its
+ * body's outer). In place. `step` is the reach: a target farther than that is refused by name.
  * ⭐ A MOVE IS ADMISSIBLE ONLY IF NO OTHER EDGE MEETS THE TRIANGLES ITS TWO EDGES SWEEP, (p, p′, prev) and (p, p′, next)
  * (Boz's ruling, 2026-10-27; PTown, 10-27: a vertex moved 0.82 m along a clear normal and its edge to NEXT swept over
  * PREV). A vertex inside is the ruling's case; an edge through the path is the other, since `clearances` was measured on
- * the TRACED ring and the neighbours have settled since. An inadmissible move is clamped to the largest admissible fraction (the triangles are nested,
- * so admissibility only shrinks as the move grows) and COUNTED, by place. "Inside" includes within √2 lattice steps of the
- * triangle: the ring is written on the 1/CLIP_SCALE lattice, and rounding moves each end by at most half a diagonal.
+ * the TRACED ring and the neighbours have settled since. An inadmissible move is clamped to the largest admissible fraction
+ * (the triangles are nested, so admissibility only shrinks as the move grows) and COUNTED, by place. "Meets" includes coming
+ * within √2 lattice steps: the ring is written on the 1/CLIP_SCALE lattice (r3's toFixed(3), the same millimetre), and
+ * rounding moves the vertex and the edge's end each by at most half a diagonal, √2 × ½ mm apiece. Two segments that do not cross are closest at an end, so the margin is asked of an edge's ends against the
+ * triangle and of the moved vertex against the edge (Zob, 10-27).
  */
-export function settleInOrder(ring, to) {
-  const n = ring.length, margin = Math.SQRT2 / SCALE, moved = [], clamped = []
-  let G = 0
-  for (let k = 0; k < n; k++) if (to[k]) G = Math.max(G, Math.hypot(to[k][0] - ring[k][0], to[k][1] - ring[k][1]))
-  G += margin
+export function settleInOrder(rings, to, step) {
+  const margin = Math.SQRT2 / SCALE, moved = [], clamped = [], G = step + margin
   const cells = new Map(), key = (i, j) => i + ',' + j, cell = (v) => Math.floor(v / G)
-  for (let m = 0; m < n; m++) { const q = key(cell(ring[m][0]), cell(ring[m][1])); if (!cells.has(q)) cells.set(q, []); cells.get(q).push(m) }
+  const walk = (p, q, each) => { const steps = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / G) || 1
+    for (let s = 0; s <= steps; s++) each(cell(p[0] + (q[0] - p[0]) * s / steps), cell(p[1] + (q[1] - p[1]) * s / steps)) }
+  // every EDGE is keyed in each cell its TRACED path passes through (± 1): a settled end is at most `step` from its traced
+  // place, so a settled edge lies within G of its traced path
+  rings.forEach((ring, r) => { const n = ring.length
+    for (let k = 0; k < n; k++) if (to[r][k]) { const d = Math.hypot(to[r][k][0] - ring[k][0], to[r][k][1] - ring[k][1])
+      if (!(d <= step)) throw new Error(`⛔ settleInOrder: a target ${d.toFixed(4)} m from its vertex @(${ring[k].map(v => v.toFixed(3)).join(', ')}), beyond the reach ${step} m`) }
+    for (let e = 0; e < n; e++) walk(ring[e], ring[(e + 1) % n], (ci, cj) => { for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) {
+      const q = key(i, j), list = cells.get(q) || cells.set(q, []).get(q); if (list[list.length - 1] !== r * 2 ** 26 + e) list.push(r * 2 ** 26 + e) } }) })
   const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
   const segD = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz
     const u = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0
@@ -556,30 +567,29 @@ export function settleInOrder(ring, to) {
     return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0)) }
   // does edge (s0, s1) meet the swept triangle (p, q, c)? An edge that shares the corner c with it (c's other edge) is judged
   // by its far end and by the side the vertex sweeps (p, q) alone; it meets the triangle at c by construction.
-  const hits = (s0, s1, p, q, c, shared) => { if (shared) { const far = s0 === shared ? s1 : s0; return inTri(far, p, q, c) || cross(s0, s1, p, q) }
+  const hits = (s0, s1, p, q, c, shared) => { if (segD(q, s0, s1) <= margin) return true
+    if (shared) { const far = s0 === shared ? s1 : s0; return inTri(far, p, q, c) || cross(s0, s1, p, q) }
     return inTri(s0, p, q, c) || inTri(s1, p, q, c) || cross(s0, s1, p, q) || cross(s0, s1, q, c) || cross(s0, s1, c, p) }
-  // every vertex other than k whose edges can meet a swept triangle (a neighbour too: the edge to NEXT can sweep over PREV):
-  // each triangle lies within the move (+ margin, ≤ G) of its OLD edge, so walk the cells along both old edges. Cells are keyed at the TRACED place and a settled
-  // vertex is at most G from it: a sample lies within G/2 of every point of the edge, so three cells of slack cover both.
-  const others = (k) => { const out = new Set(), a = (k - 1 + n) % n, b = (k + 1) % n
-    for (const e of [ring[a], ring[b]]) { const L = Math.hypot(e[0] - ring[k][0], e[1] - ring[k][1]), steps = Math.ceil(L / G)
-      for (let s = 0; s <= steps; s++) { const ci = cell(ring[k][0] + (e[0] - ring[k][0]) * s / (steps || 1)), cj = cell(ring[k][1] + (e[1] - ring[k][1]) * s / (steps || 1))
-        for (let i = ci - 3; i <= ci + 3; i++) for (let j = cj - 3; j <= cj + 3; j++) for (const m of cells.get(key(i, j)) || []) if (m !== k) out.add(m) } }
-    return out }
-  for (let k = 0; k < n; k++) { if (!to[k]) continue
-    const p = ring[k], prev = ring[(k - 1 + n) % n], next = ring[(k + 1) % n], want = Math.hypot(to[k][0] - p[0], to[k][1] - p[1])
-    const at = (f) => [p[0] + (to[k][0] - p[0]) * f, p[1] + (to[k][1] - p[1]) * f]
-    const near = [...others(k)]
-    const a = (k - 1 + n) % n, b = (k + 1) % n, edges = new Set()
-    for (const m of near) for (const e of [m, (m - 1 + n) % n]) if (e !== a && e !== k) edges.add(e)   // not the two moving edges
-    const ok = (f) => { const q = at(f); for (const e of edges) { const s0 = ring[e], s1 = ring[(e + 1) % n]
-      if (hits(s0, s1, p, q, prev, e === (a - 1 + n) % n ? prev : null) || hits(s0, s1, p, q, next, e === b ? next : null)) return false }
-      return true }
-    let f = 1
-    if (!ok(1)) { let lo = 0, hi = 1; for (let it = 0; it < 30; it++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid } f = lo
-      clamped.push({ at: p.map(v => +v.toFixed(3)), wantM: +want.toFixed(4), gotM: +(want * f).toFixed(4) }) }
-    if (f > 0) { ring[k] = at(f); moved.push(want * f) }
-  }
+  rings.forEach((ring, r) => { const n = ring.length
+    for (let k = 0; k < n; k++) { if (!to[r][k]) continue
+      const a = (k - 1 + n) % n, b = (k + 1) % n, p = ring[k], prev = ring[a], next = ring[b], want = Math.hypot(to[r][k][0] - p[0], to[r][k][1] - p[1])
+      const at = (f) => [p[0] + (to[r][k][0] - p[0]) * f, p[1] + (to[r][k][1] - p[1]) * f]
+      // the edges keyed in the cells along k's two edges as they stand: each swept triangle lies within the move (≤ step) of
+      // one of them, and a sample lies within G/2 of every point of it, so three cells of slack reach every candidate's key
+      const edges = new Set()
+      for (const e of [prev, next]) walk(p, e, (ci, cj) => { for (let i = ci - 3; i <= ci + 3; i++) for (let j = cj - 3; j <= cj + 3; j++) for (const id of cells.get(key(i, j)) || []) edges.add(id) })
+      edges.delete(r * 2 ** 26 + a); edges.delete(r * 2 ** 26 + k)   // not the two moving edges
+      const list = [...edges].map(id => { const rr = Math.floor(id / 2 ** 26), e = id % 2 ** 26, R = rings[rr]
+        return [R, e, rr === r && e === (a - 1 + n) % n ? prev : null, rr === r && e === b ? next : null] })
+      const ok = (f) => { const q = at(f)
+        for (const [R, e, sharedPrev, sharedNext] of list) { const s0 = R[e], s1 = R[(e + 1) % R.length]
+          if (hits(s0, s1, p, q, prev, sharedPrev) || hits(s0, s1, p, q, next, sharedNext)) return false }
+        return true }
+      let f = 1
+      if (!ok(1)) { let lo = 0, hi = 1; for (let it = 0; it < 30; it++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid } f = lo
+        clamped.push({ at: p.map(v => +v.toFixed(3)), wantM: +want.toFixed(4), gotM: +(want * f).toFixed(4) }) }
+      if (f > 0) { ring[k] = at(f); moved.push(want * f) }
+    } })
   return { moved, clamped }
 }
 

@@ -18,8 +18,9 @@
 //   G. EVERY RING IS SIMPLE AND ① CAN OUTLINE EVERY VERTEX (Boz's rulings, 2026-10-26): coastFile.mjs#ringViolations
 //      finds a bow-tie's crossing, a fold, and a hairpin through the mint's own tileGround.js#outlineCorner at INK_EPS (simple,
 //      yet acute), and nothing on a square; bake-coast asks it of every ring with that predicate before it writes; settle
-//      moves each vertex through bake-coast#settleInOrder, which clamps a move whose edges sweep over another edge (PTown's
-//      own v1954–v1968, planted); and
+//      moves each vertex through bake-coast#settleInOrder, which clamps a move whose edges sweep over another edge of ANY
+//      ring (PTown's own v1954–v1968 planted; an edge whose ends are far off; 0.5 mm from an edge; a hole across its outer);
+//      no two rings meet (coastFile.mjs#ringsMeet, asked by bake-coast and of every town's coast.json); and
 //      every town's coast.json rings have none (read in D).
 //   H. A SENTINEL IS NOT A VALUE: marchingSquares.mjs#wetLoops puts a no-return crossing at the edge midpoint (a diagonal
 //      neck gives distinct points, no touch), a deck crossing ON the deck's own ring (structures.mjs#deckFootprints
@@ -33,7 +34,7 @@
 //
 // MUTATIONS (each must go red): derive.js calls coastRings again · readCoast returns { coast: false } when the file is
 // absent · markSheet ignores onDeck · bake-terrain takes its datum from its own histogram again · flattenedWater counts decks · wound returns its ring unreversed · a coast.json hole written positive · the island floor not applied · readCoast takes a hole wound positive · ringViolations misses a crossing · the acute predicate dropped from bake-coast · wetLoops interpolates against a
-// sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored · settleInOrder's sweep test removed · settle applying its targets without settleInOrder · a deck crossing that
+// sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored · settleInOrder's sweep test removed · its vertex-only form · its index keyed by vertex · the margin dropped (vertex or edge) · each ring indexed alone · settle applying its targets without settleInOrder · ringsMeet not asked by bake-coast · a deck crossing that
 // meets no ring accepted · the pad read as a value.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -41,7 +42,7 @@ import { tmpdir } from 'node:os'
 import clipperLib from 'clipper-lib'
 import { ROOT } from './_scenes.mjs'
 import { pourCodeClosure } from '../cartograph/pour-code.mjs'
-import { readCoast, COAST_FILE, ringViolations } from '../cartograph/coastFile.mjs'
+import { readCoast, COAST_FILE, ringViolations, ringsMeet } from '../cartograph/coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { wetLoops, KIND } from '../cartograph/marchingSquares.mjs'
 import { terrainLattice } from '../cartograph/elevationSources.mjs'
@@ -124,15 +125,29 @@ console.log('── G. every ring is simple, and ① can outline every vertex')
   // 10-27 probe, mm). Applied as given, v1962's edge to v1963 sweeps over v1961 and crosses 1960→1961; in order, clamped.
   const tr = [[-3448.254, -1911.565], [-3445.11, -1912.763], [-3438.06, -1917.558], [-3431.127, -1916.918], [-3428.13, -1918.134], [-3426.03, -1920.554], [-3425.632, -1924.55], [-3418.612, -1928.545], [-3418.068, -1928.66], [-3418.068, -1923.66], [-3413.068, -1923.66], [-3413.068, -1918.66], [-3408.068, -1918.66], [-3408.068, -1916.308], [-3415.146, -1912.702]]
   const sent = [[-3448.281, -1911.606], [-3445.186, -1912.893], [-3438.063, -1917.569], [-3431.141, -1917.155], [-3428.212, -1918.249], [-3425.972, -1920.531], [-3425.765, -1924.673], [-3418.66, -1928.633], [-3418.881, -1928.569], [-3418.068, -1923.66], [-3413.068, -1923.66], [-3413.068, -1918.66], [-3408.068, -1918.66], [-3408.074, -1916.315], [-3415.139, -1912.692]]
-  const swept = tr.map(p => p.slice()), sw = settleInOrder(swept, sent.map(p => p.slice()))
+  const swept = tr.map(p => p.slice()), sw = settleInOrder([swept], [sent.map(p => p.slice())], 1)
   say(!ringViolations(tr).length && ringViolations(sent).some(v => v.kind === 'cross'), 'control: the traced ring is simple, and the settle targets applied as given cross')
   say(!ringViolations(swept).length && sw.clamped.length === 1 && sw.clamped[0].at.join() === '-3418.068,-1928.66' && sw.clamped[0].gotM < sw.clamped[0].wantM,
     `settleInOrder keeps it simple: ${sw.clamped.length} move clamped (want 1, at v1962)${sw.clamped[0] ? `, ${sw.clamped[0].wantM} → ${sw.clamped[0].gotM} m` : ''}, ${ringViolations(swept).length} violation(s)`)
   const src = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')
   // a move whose new edge would pass 0.5 mm from a vertex: closer than the written lattice can keep apart (√2 / CLIP_SCALE)
-  const w = [[0, 0], [10, 0], [10, -5], [5, -0.3], [0, -5]], wm = settleInOrder(w, [[0, -0.599], null, null, null, null])
+  const w = [[0, 0], [10, 0], [10, -5], [5, -0.3], [0, -5]], wm = settleInOrder([w], [[[0, -0.599], null, null, null, null]], 1)
   say(wm.clamped.length === 1 && !ringViolations(w).length, `a move ending 0.5 mm from a vertex is clamped (${wm.clamped.length}, want 1): the margin is the lattice's, ${(Math.SQRT2 / CLIP_SCALE * 1000).toFixed(2)} mm`)
-  say(/settleInOrder\(ring, targets\.get\(ring\)\)/.test(src), 'settleOnSource applies every move through settleInOrder')
+  // a slot under a long top edge (Zob, 10-27): the notch's tip at (0, 0.5) sent to (0, 1.5) goes through the top edge, whose
+  // ends lie 50 m off; then sent to 0.5 mm below it. Both must clamp, and the clamp must not land ON the edge.
+  const slot = () => [[-50, 1], [-50, -5], [-1, -5], [0, 0.5], [1, -5], [50, -5], [50, 1]]
+  const s1 = slot(), c1 = settleInOrder([s1], [[null, null, null, [0, 1.5], null, null, null]], 1)
+  say(c1.clamped.length === 1 && !ringViolations(s1).length && 1 - s1[3][1] > Math.SQRT2 / CLIP_SCALE,
+    `a move through an edge whose ends are 50 m off is clamped (${c1.clamped.length}, want 1), ${ringViolations(s1).length} violation(s), stopping ${((1 - s1[3][1]) * 1000).toFixed(2)} mm short (> √2 mm)`)
+  const s2 = slot(), c2 = settleInOrder([s2], [[null, null, null, [0, 1 - 0.0005], null, null, null]], 1)
+  say(c2.clamped.length === 1 && 1 - s2[3][1] > Math.SQRT2 / CLIP_SCALE, `a move ending 0.5 mm from an edge's interior is clamped (${c2.clamped.length}, want 1)`)
+  // between rings: a hole's vertex sent across its body's outer
+  const outer = [[0, 0], [10, 0], [10, 10], [0, 10]], hole = () => [[1, 1], [1, 9], [9.5, 5]]
+  say(ringsMeet([outer, [[1, 1], [1, 9], [10.5, 5]]]).some(v => v.kind === 'cross') && !ringsMeet([outer, hole()]).length, 'ringsMeet finds a hole crossing its outer, and nothing when it lies inside')
+  const h3 = hole(), c3 = settleInOrder([outer.map(p => p.slice()), h3], [[null, null, null, null], [null, null, [10.5, 5]]], 1)
+  say(c3.clamped.length === 1 && !ringsMeet([outer, h3]).length, `settleInOrder judges every ring's edges: a hole's vertex sent across the outer is clamped (${c3.clamped.length}, want 1)`)
+  say(/ringsMeet\(labels\.map\(l => l\.r\)\)/.test(src), 'bake-coast refuses rings that meet each other, before it writes')
+  say(/settleInOrder\(rings, rings\.map\(r => targets\.get\(r\)\), step\)/.test(src), 'settleOnSource applies every move through settleInOrder')
   say(/ringViolations\(r, acuteAt\)/.test(src) && /outlineCorner\(o, \[\{ to: p \}, \{ to: q \}\], INK_EPS\)/.test(src), 'bake-coast asks ringViolations of every ring, with the mint\'s outlineCorner at INK_EPS, before it writes')
 }
 
@@ -228,6 +243,8 @@ for (const scene of scenes) {
   say(outersOk && holesOk, `${scene}: every water outer is positive and every hole negative`)
   const viol = doc.water.flatMap((b, bi) => [b.outer, ...b.holes].flatMap(r => ringViolations(r, acuteAt).map(v => ({ ...v, bi }))))
   say(!viol.length, `${scene}: every coast ring is simple and ① can outline every vertex${viol.length ? ` — ${[...new Set(viol.map(v => v.kind))].map(k => `${viol.filter(v => v.kind === k).length} ${k}`).join(' · ')}, first @(${viol[0].at.map(Math.round).join(', ')})` : ''}`)
+  const meet = ringsMeet(doc.water.flatMap(b => [b.outer, ...b.holes]))
+  say(!meet.length, `${scene}: no two coast rings meet${meet.length ? ` — ${meet.length}, first @(${meet[0].at.map(Math.round).join(', ')})` : ''}`)
   const lat = terrainLattice(JSON.parse(readFileSync(join(dir, 'neighborhood_boundary.json'), 'utf8')))
   const inR = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
   const holdsNode = (h) => { const xs = h.map(p => p[0]), zs = h.map(p => p[1])
