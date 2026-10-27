@@ -42,6 +42,10 @@ Three lines that should be one:
   waterline IS ①'s line at any field resolution. The stamp only SHAPES now; its straddler/wall machinery is removed. Bed (a): the
   survey where it reads, writeBed's profile elsewhere, and every ring records its floor share. A ground.bin format change: the player
   side gets Ward's read, and every town is re-baked once.
+- **A road over ①'s water is a bridge** (Jacob 2026-10-27, choosing "(a)": a street span over the water, tagged off-grade or
+  not, is left out of the ground ink; an UNTAGGED one is off-grade by the coast and RECORDED per span in the pour and the bake
+  report, never silent). FILED (Jacob: *"we don't have any mechanism for this in the authoring tools"*): an authoring gesture to mark
+  a span as bridge or at grade.
 - **Water, sand and shore run to the bb and are stamped with everything; the disc stamps last; the sand line is ink in ①,
   made in the pour** (Jacob 2026-10-21 night; `BRIEF-the-rim-is-cut-once §5`).
 - **No fallback:** no lidar, no vertical datum, or no water record ⇒ THROWS by name, never OSM (`coast-from-lidar §3.2`).
