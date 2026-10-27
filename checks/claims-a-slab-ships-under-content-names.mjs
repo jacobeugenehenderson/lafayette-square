@@ -12,7 +12,8 @@
  *  1. Every `upload-baked-to-r2.mjs` call carries `--names=${HASHED}`, the scheme read from slabNames.js, never a literal.
  *  2. No route reads a slab's `scene.json` at its plain key: what an environment serves is read through `servedPour`,
  *     which asks the manifest — the one key the retirement sweep never deletes.
- *  3. Publish's proof that the slab landed asks for the manifest, not `scene.json`: a town is live by its manifest.
+ *  3. Publish's proof that the slab landed reads staging through `servedPour` and compares the pour it serves with this
+ *     pour's stamp: present is not enough, it must be THIS pour.
  * ⭐ MUTATIONS, run every time (each must go red): `--names` stripped from each upload; a plain `scene.json` read put back
  * into /deployed; Publish's proof pointed back at `scene.json`.
  *   node checks/claims-a-slab-ships-under-content-names.mjs
@@ -47,9 +48,8 @@ function judge(src) {
   for (const m of outside.matchAll(/fetch\(`[^`]*baked\/\$\{[^}]+\}\/scene\.json[^`]*`/g)) out.push(`a served slab is read at its plain key: ${m[0].slice(0, 90)}`)
   // 3. Publish's proof asks the manifest
   const pub = c.slice(c.indexOf("path.match(/^\\/looks\\/([^/]+)\\/publish$/)"), c.indexOf("path.match(/^\\/looks\\/([^/]+)\\/promote$/)"))
-  const key = (pub.match(/const slabKey = `([^`]+)`/) || [])[1]
-  if (!key) out.push("Publish names no slabKey for its proof — update this check")
-  else if (!/manifestPath\(id\)/.test(key)) out.push(`Publish proves the slab landed by \`${key}\`, not by its manifest`)
+  if (!/await servedPour\(ASSET_BASE_URL \+ ASSET_ENV_PREFIX\.staging, id\)/.test(pub)) out.push("Publish's proof does not read staging through servedPour")
+  else if (!/String\(landed\.bakedAt\) !== String\(bakedAt\)/.test(pub)) out.push("Publish's proof does not compare the served pour with this pour's stamp")
   return out
 }
 
@@ -57,14 +57,15 @@ console.log('\nA slab ships under content names, and is read through its manifes
 if (!HASHED) bad('src/lib/slabNames.js exports no HASHED — update this check')
 const hits = judge(SRC)
 if (hits.length) for (const h of hits) bad(h)
-else ok(`every upload carries --names=${HASHED} · every served-slab read goes through servedPour · Publish's proof asks manifest.json`)
+else ok(`every upload carries --names=${HASHED} · every served-slab read goes through servedPour · Publish proves THIS pour landed`)
 
 // ── mutations
 const MUT = [
   ['--names stripped from the staging upload', (s) => s.replace(/(--env=staging --look=\$\{id\}) --names=\$\{HASHED\}/, '$1')],
   ['--names stripped from the prod upload', (s) => s.replace(/(--env=prod --look=\$\{id\}) --names=\$\{HASHED\}/, '$1')],
   ['a plain scene.json read put back into /deployed', (s) => s.replace('const { bakedAt } = await servedPour(base, id)', 'const r = await fetch(`${base}baked/${id}/scene.json?t=${Date.now()}`); const { bakedAt } = await r.json()')],
-  ["Publish's proof pointed back at scene.json", (s) => s.replace(/const slabKey = `\$\{ASSET_ENV_PREFIX\.staging\}\$\{manifestPath\(id\)\}`/, 'const slabKey = `${ASSET_ENV_PREFIX.staging}baked/${id}/scene.json`')],
+  ["Publish's proof back to a bare presence test", (s) => s.replace('const landed = await servedPour(ASSET_BASE_URL + ASSET_ENV_PREFIX.staging, id)', 'const landed = await fetch(`${ASSET_BASE_URL}${ASSET_ENV_PREFIX.staging}${manifestPath(id)}`, { method: "HEAD" })')],
+  ["Publish's proof no longer compares the pour", (s) => s.replace('String(landed.bakedAt) !== String(bakedAt)', '!landed')],
 ]
 for (const [name, f] of MUT) {
   const m = f(SRC)
