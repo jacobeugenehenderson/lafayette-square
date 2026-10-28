@@ -242,8 +242,9 @@ towns are unaffected); (5) Promote pins player and slab together, and a rollback
 ⛔ OPEN, MEASURED IN THE COMBINED BAKE: THE WATER TINT READS THE FIELD, NOT THE PINNED GROUND (Ward-seat review (c), 2026-10-27).
 Two readers: `waterMaterial.js#makeWaterMaterial`'s tint (wDepth → wSeen) and `#makeWaterAbsorption`, both `level − _terrainRaw`.
 At the shore the drawn depth is 0 (the pin) while the field's may not be. In the combined Huron bake (then PTown): take the max
-|drawnRaw − field| within one cell of ①'s line inside ①'s water, mapped through wSeen's smoothstep (uVisibleM − uFadeM …
-uVisibleM). Under one 8-bit step ⇒ accepted as named, here; otherwise it is a second shoreline and goes to Boz (the fix then:
+|drawnRaw − field| within one cell of ①'s line inside ①'s water, judged on the shader's COMPOSITE output (diffuseColor.a and
+makeWaterAbsorption's T/T.g, worst channel, at the town's own look; wSeen alone is 1 under V−F and passes by construction: Swash,
+2026-10-27; ▶ scratch/water-tint/probe.mjs). Under one 8-bit step ⇒ accepted as named, here; otherwise it is a second shoreline and goes to Boz (the fix then:
 pins on the water sheet through sectionFor/drawnPinsOf, read by the one function; no coastDist fudge). WindSheet is not a
 reader (its field read is the "Show on map" debug overlay only; claims-the-drawn-raw-is-one-function ⑤ tests it).
 ⛔ PTOWN'S ARRIVAL IS ~9 s OF SPLASH ON DESKTOP (measured 2026-10-26, provincetown.online, warm cache, Chrome, Ward d4b43fa / kit
