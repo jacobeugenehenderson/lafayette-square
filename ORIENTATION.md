@@ -173,6 +173,10 @@ works the item out) or only **storage**. ⛔ marks a gap. Each home's header wil
     may create a feature its source can't resolve.
   - **Beyond the limit, fidelity is authored or styled, never read off the data** (*"the style decides, authoring handles
     fidelity"*, 2026-10-20). If a wharf must be truer than its trace, the operator draws it, and ① holds the drawing exactly.
+  - **The target is photorealism wherever the data allows.** Every method is a workaround toward that perceptual effect
+    (Jacob, 2026-10-27). So a source's resolution says what its data may claim, and style and authoring carry the rest of the way.
+  - **An artifact of the kit's own processing is never a feature.** A rounding sliver or a 1 mm jog is removed at the step that
+    makes it, never drawn, and never passed downstream (Jacob, 2026-10-27: *"sounds like artifacts?"*).
   - **It is not a fallback.** What a source can't resolve is removed and recorded by name.
   - **It is not a tuned constant.** The limit is the source's own declared resolution.
   - **It is not "only seen from far".** Close-camera richness comes from style and generated detail.

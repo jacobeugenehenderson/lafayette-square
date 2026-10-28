@@ -20,8 +20,8 @@ refuse by name when ① exists and protoShapeTiles doesn't.
 **▶ PTOWN PARKS (Boz, 2026-10-27 night).** On 98cce6f5 coast v3, mint and terrain pass; GROUND refuses at the shore at the settle-clamp
 hairpin (-3418.656, -1928.636): ring 0 v1930 turns 171.66° beside a 75.6 mm leg, block and shore cells 5 mm apart (Zob's read). FAILED, not
 landed: outlineCorner with ε·sin(δ/2) ≤ √2/2 units refuses HPDM daniel-boone-expressway-22 @(-3361.040, 1335.070), misses the hairpin (162.80°).
-NEXT FORM to measure: `ORIENTATION §5` "a source is drawn to its own resolution" (the 75.6 mm leg is a feature below the trace). Open for
-Jacob: OSM's declared resolution (streets and footprints aren't traced), and whether rounding slivers count as features. DECKS: the 104 deck outline refusals are the open/close's rounding (raw union: no edge < 5 mm); deck rings never pass the coast verifier;
+NEXT FORM to measure: `ORIENTATION §5` "a source is drawn to its own resolution" (the 75.6 mm leg is a feature below the trace). Jacob
+ruled both open questions (`ORIENTATION §5`): the target is photorealism, and rounding slivers are artifacts, never features. DECKS: the 104 deck outline refusals are the open/close's rounding (raw union: no edge < 5 mm); deck rings never pass the coast verifier;
 candidate snap-back for decks + ringViolations on them, not built. ⛔ GATE: claims-the-mint-refuses-no-outline RED on PTown until then. Outputs: scratch/ptown-parks/ptown-failed6/ (untracked, derived).
 **▶ HURON'S coast.json IS v2: re-bake its coast (COAST_VERSION 3) before any Huron ground work or release.** Measured on v3: it mints, its
 verifier is clean; open/close moved 41 / 75 features (≤ 0.74 m wide). Staging untouched. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
