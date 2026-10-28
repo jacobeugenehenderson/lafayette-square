@@ -16,7 +16,8 @@
 //      with ribbons, merged with its own ribbon, reaches chainMeasure without a throw.
 // ⭐ MUTANTS (--mutants), each RED: mapDataPaths back on clean/ · `ribbons` back in EMPTY · the class not copied.
 //   node checks/claims-a-survey-street-reaches-its-measure.mjs [<scene> …] [--mutants]
-// Read-only. Exits 1 on any claim false or a mutant not seen.
+// Read-only. Exits 1 on any claim false or a mutant not seen; exits 2 (NOT CHECKED, named) for a town whose skeleton predates the
+// classifier (re-pour owed), and only then.
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { scenes, ROOT } from './_scenes.mjs'
@@ -52,19 +53,30 @@ function claims(mapDataPaths, EMPTY, merge) {
 }
 
 let bad = 0
+const notChecked = []
 const real = claims(await pathsOf('real'), await emptyOf('real'), await mergeOf('real'))
 for (const r of real) console.log(`⛔ ${r}`)
 if (real.length) bad++
 else console.log(`✅ ① the route reads each town's own ribbons (${towns.length} town(s)) · ② no derived artifact is served empty · ③ a classed street reaches chainMeasure; an unclassed one throws`)
 // ③, on the towns: every chain merged with its own ribbon reaches chainMeasure
 const merge = await mergeOf('towns')
-for (const t of towns) {
-  const p = ribbonsPathOf(t); if (!existsSync(p)) { console.log(`   ${t}: no ribbons at ${p.replace(ROOT, '')} — its Designer refuses by name (not measured here)`); continue }
-  const rb = new Map((JSON.parse(readFileSync(p, 'utf8')).streets || []).map(r => [r.skelId, r]))
+// one town's verdict: every chain merged with its own ribbon (or none, `noRibbons`) must reach chainMeasure
+function townVerdict(t, merge, noRibbons = false) {
+  const p = ribbonsPathOf(t); if (!existsSync(p)) return { v: 'absent', p }
+  const rb = noRibbons ? new Map() : new Map((JSON.parse(readFileSync(p, 'utf8')).streets || []).map(r => [r.skelId, r]))
   const sk = JSON.parse(readFileSync(join(mapCleanDir(t), 'skeleton.json'), 'utf8')).streets || []
   const failed = sk.map(s => ({ s, e: throws(() => chainMeasure(merge(s, undefined, undefined, rb.get(s.id)))) })).filter(x => x.e)
-  if (failed.length) bad++
-  console.log(`${failed.length ? '⛔' : '✅'} ${t}: ${sk.length} chain(s) merged with their ribbons, ${failed.length} reach chainMeasure with no measure${failed.length ? `: ${failed.slice(0, 4).map(x => `${x.s.id} (${x.e})`).join(' · ')}` : ''}`)
+  // ⚠️ a skeleton with NO classed chain predates the classifier: RE-POUR OWED, the corpus's convention (OPERATIONS, as the H-3
+  // checks read): NOT CHECKED, named, exit 2 — never RED by design (Boz, 2026-10-28). A classed skeleton that fails is RED.
+  const v = !failed.length ? 'green' : sk.every(c => !c.class) ? 'notChecked' : 'red'
+  return { v, p, sk, failed }
+}
+for (const t of towns) {
+  const r = townVerdict(t, merge)
+  if (r.v === 'absent') { console.log(`   ${t}: no ribbons at ${r.p.replace(ROOT, '')} — its Designer refuses by name (not measured here)`); continue }
+  if (r.v === 'notChecked') { notChecked.push(t); console.log(`⚠️ NOT CHECKED — ${t}: its skeleton predates the classifier (0 of ${r.sk.length} chains classed): re-pour owed. ${r.failed.length} chain(s) with no ribbon would reach chainMeasure with no measure.`); continue }
+  if (r.v === 'red') bad++
+  console.log(`${r.failed.length ? '⛔' : '✅'} ${t}: ${r.sk.length} chain(s) merged with their ribbons, ${r.failed.length} reach chainMeasure with no measure${r.failed.length ? `: ${r.failed.slice(0, 4).map(x => `${x.s.id} (${x.e})`).join(' · ')}` : ''}`)
 }
 if (MUTANTS) {
   const muts = [
@@ -72,9 +84,20 @@ if (MUTANTS) {
     ['a missing ribbons served empty again', await pathsOf('m2'), await emptyOf('empty', mutate("    overlay:      '{\"version\":1,\"streets\":{}}',", "    overlay:      '{\"version\":1,\"streets\":{}}',\n    ribbons:      '{\"streets\":[]}',")), await mergeOf('m2')],
     ['the class not copied', await pathsOf('m3'), await emptyOf('m3'), await mergeOf('noclass', mutate('    class: s.class,\n', ''))],
   ]
+  // a CLASSED town is never laundered into "re-pour owed": with its ribbons withheld, the real merge seeds each chain from its
+  // class, except the designed refusals (a highway or highway-link has no class-constant width: defaultSideMeasure says so; its
+  // section rides the ribbons); with the class not copied, every chain fails, and the town must read RED, not NOT CHECKED
+  const classed = towns.find(t => existsSync(ribbonsPathOf(t)) && townVerdict(t, merge).v === 'green' && townVerdict(t, merge, true).sk.some(c => c.class))
+  if (!classed) { bad++; console.log('   ⛔ mutant not made: no classed town with ribbons') }
+  else { const base = townVerdict(classed, merge, true), mut = townVerdict(classed, await mergeOf('noclass-town', mutate('    class: s.class,\n', '')), true)
+    const designed = base.failed.every(x => /has no class-constant width/.test(x.e)), red = mut.v === 'red' && mut.failed.length > base.failed.length
+    if (!designed || !red) bad++
+    console.log(`   mutant · ${classed} with its ribbons withheld: the real merge seeds ${base.sk.length - base.failed.length} of ${base.sk.length} chains from their class${designed ? ` (the other ${base.failed.length}: highways, no class-constant width, by design)` : ` ⛔ and ${base.failed.filter(x => !/has no class-constant width/.test(x.e)).length} fail for another reason`} · the class not copied: ${red ? `RED, as it must be (${mut.failed.length} fail; not laundered into "re-pour owed")` : `⛔ ${mut.v}`}`) }
   for (const [what, p, e, m] of muts) { const got = claims(p, e, m), red = got.length > real.length
     if (!red) bad++
     console.log(`   mutant · ${what}: ${red ? `RED, as it must be (${got.filter(g => !real.includes(g))[0]})` : '⛔ still clean — the check cannot see it'}`) }
 }
-console.log(bad ? '\n⛔ RED — a Designer street does not reach its town\'s measure, or a missing artifact is served as an empty town' : '\n✅ GREEN — every Designer street reaches its own town\'s ribbons and class; a missing derived artifact is refused')
-process.exit(bad ? 1 : 0)
+console.log(bad ? '\n⛔ RED — a Designer street does not reach its town\'s measure, or a missing artifact is served as an empty town'
+  : notChecked.length ? `\n⚠️ NOT CHECKED — ${notChecked.join(', ')}: re-pour owed (not a pass). Every other town's streets reach their measure.`
+  : '\n✅ GREEN — every Designer street reaches its own town\'s ribbons and class; a missing derived artifact is refused')
+process.exit(bad ? 1 : notChecked.length ? 2 : 0)
