@@ -8504,7 +8504,7 @@
       "kind": "ruling",
       "value": {
         "order": "the way's own tag first, then byCoast",
-        "embankment": "ground: the street's own roadway (half-width via tileGround.js#resolveProtoMeasure, authoring loaded) taken out of ①'s water by the deck path's own mechanism (mintInputs#waterWithoutDecks); never the width tag",
+        "embankment": "ground, through the deck path entirely (an embankment kind in the deck vocabulary): taken out of ①'s water by mintInputs#waterWithoutDecks, sized by the POUR's measure (resolveProtoMeasure with no authoring, as decks are; ① has no authored width, claims-proto-wall claim A), height from its land root as a deck's; its look is the style's, selected by its tags. An authored width moves its curb (②), not its land.",
         "manMadePier": "a deck, as the other piers are",
         "untagged": "a bridge (Jacob's ruling 'a', 2026-10-27, stands)",
         "unknownTag": "refused by name",
@@ -8514,7 +8514,7 @@
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "cartograph/BACKLOG.md PTOWN PARKS",
-      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect."
+      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect. Corrected the same night after Ferrule's second stop: Boz's first reading said 'authoring loaded', which crosses the Wall."
     },
     {
       "id": "r-balsa-lands-its-rulings-not-the-identity-cut",
