@@ -414,7 +414,7 @@ export function outlineCorner(o, legs, eps = INK_EPS) {
 // non-H span back over the water (`bridgeOverlay`), so a bridge is painted across it while ①'s water face stays whole.
 function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH = () => false) {
   const spans = [], endsInWater = []
-  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, dropped: 0, spans, endsInWater }
+  if (!Array.isArray(waterRings) || !waterRings.length || !coastChains.length) return { chains: list, coastChains, waterRings, dropped: 0, spans, endsInWater }
   const rlL = (v) => Math.round(v * SCALE) / SCALE, K = (p) => Math.round(p[0] * SCALE) + ',' + Math.round(p[1] * SCALE)
   const wn = (p, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
     if (zj <= p[1]) { if (zi > p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) > 0) w++ } else if (zi <= p[1] && (xi - xj) * (p[1] - zj) - (p[0] - xj) * (zi - zj) < 0) w-- } return w }
@@ -488,17 +488,30 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH =
     pieces.set(n, keep.map(part => ({ ci: x.ci, st: { ...st, points: part.map(v => v.p), hard: part.map(v => v.src != null && st.hard ? !!st.hard[v.src] : v.src != null),
       caps: { start: part[0].src === 0 ? st.caps?.start : undefined, end: part[part.length - 1].src === P.length - 1 ? st.caps?.end : undefined },
       _orig: part.map(v => v.src), _origSeg: part.map(v => v.edge), _waterEnd: { start: !!part[0].cross, end: !!part[part.length - 1].cross } } }))) })
-  if (!dropped) return { chains: list, coastChains, dropped: 0, spans, endsInWater }
+  if (!dropped) return { chains: list, coastChains, waterRings, dropped: 0, spans, endsInWater }
   // the arcs take the crossings, so a street's end and the coast share the vertex
+  const minted = new Map()
   const arcs = coastChains.map((c, m) => { const o = out[nS + m], P = c.st.points
-    const pts = []; for (const v of o) { if (v.src != null) pts.push(P[v.src]); else if (crossKeys.has(v.k[0] + ',' + v.k[1])) pts.push([v.k[0] / SCALE, v.k[1] / SCALE]) }
+    const pts = []; for (const v of o) { if (v.src != null) pts.push(P[v.src]); else if (crossKeys.has(v.k[0] + ',' + v.k[1])) { const q = [v.k[0] / SCALE, v.k[1] / SCALE]; pts.push(q); minted.set(v.k[0] + ',' + v.k[1], q) } }
     return { ...c, st: { ...c.st, points: pts, hard: pts.map(() => false) } } })
+  // ⭐ …AND SO DO THE WATER RINGS: A POINT MINTED ON ONE COPY OF THE SHORELINE GOES INTO EVERY COPY (Boz's ruling, 2026-10-27; ②'s
+  // shareIntoFull lesson, in ①). The arc (the coast centreline, stroked) and the water ring (the boolean's water) are one line; a
+  // crossing written into the arc alone sat up to a lattice unit off the ring's straight edge, and the two enclosed an ink-less
+  // cell that joined no face (Huron, cleveland-road-east-0 at (815.256, 576.511): 0.593 mm off; absorbInk refused it). Each such
+  // point goes into the water-ring edge that holds it (insertOnEdges: the boolean's own two-unit containment); one no water edge
+  // holds refuses by name. ▶ checks/claims-the-coast-is-one-line-on-the-lattice.mjs
+  const ringKeys = new Set(waterRings.flatMap(r => r.map(p => K(p))))
+  let rest = [...minted.entries()].filter(([k]) => !ringKeys.has(k)).map(([, q]) => q)
+  // ⭐ a ring's per-edge `deck` tag (structures.mjs#waterWithoutDecks) rides the split: each half of an edge keeps the edge's tag
+  const water = waterRings.map(r => { if (!rest.length) return r; const x = insertOnEdges(r, Array.isArray(r.deck) ? r.deck : null, rest, () => true); rest = x.missed
+    if (Array.isArray(r.deck)) x.ring.deck = x.owners; return x.ring })
+  if (rest.length) throw new Error(`[①] ⛔ ${rest.length} street × coast crossing(s) written into the coast arc lie on no water-ring edge, e.g. (${rest[0].map(c => c.toFixed(3)).join(', ')}) — the arc and the water would be two lines. Refusing.`)
   const chains = []; let li = 0
   for (const x of list) { if (!(x.st?.points?.length >= 2)) { chains.push(x); continue } const n = li++; if (pieces.has(n)) chains.push(...pieces.get(n)); else chains.push(x) }
   const byCoast = spans.filter(b => b.kind === 'byCoast'), mid = (b) => b.points[Math.floor(b.points.length / 2)].map(c => c.toFixed(3)).join(', ')
   console.log(`    [①] ${dropped} off-grade span(s) over the water left out of the ink (bridges and tunnels are not ground; recorded, protopolygon.offGradeSpans); their banks end on the coast${byCoast.length ? ` · ⚠️ ${byCoast.length} of them off grade BY THE COAST (no bridge, tunnel or layer tag): ${byCoast.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${mid(b)})`).join(' · ')}` : ''}`)
   if (endsInWater.length) console.log(`    [①] ${endsInWater.length} street(s) crossing the coast and ENDING in the water (a slipway, a boat ramp; no tag) stop at the coast — nothing painted past it (protopolygon.endsInWater): ${endsInWater.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${b.at.join(', ')})`).join(' · ')}`)
-  return { chains, coastChains: arcs, dropped, spans, endsInWater }
+  return { chains, coastChains: arcs, waterRings: water, dropped, spans, endsInWater }
 }
 export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null, onAbsorbRefusal = null }) {
   const owners = [], rings = [], labels = []
@@ -549,6 +562,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   const HWY_CLASS = HIGHWAY_CLASSES
   const split = splitOverWater([...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))], coast, coastChains, segOrdAt, (x) => x.ci < 0 && HWY_CLASS.has(x.st?.highway))
   const chains = [...split.chains, ...split.coastChains]
+  if (Array.isArray(coast) && coast.length) coast = split.waterRings   // the water carries the crossings the arcs took (above)
   // ⭐ H-3 step 4 — `gradeEnd`, the RAMP-END identity stamp. A grade-separated HIGHWAY chain's endpoint that is
   // also a vertex of a non-highway street is where the ramp comes down to the town (an at-grade terminal).
   // Stamped here, by construction, exactly as `tipEnd` is — ⛔ never recovered by proximity afterwards (A15).
@@ -641,6 +655,11 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     if (a[0][0] !== a[1][0] && qk4(besideEnd(a[0])) === qk4(besideEnd(a[1]))) { hairpins.push(`${live[a[0][0]].skelId}|${live[a[1][0]].skelId}`); continue }
     partner.set(`${a[0][0]}:${a[0][1]}`, a[1]); partner.set(`${a[1][0]}:${a[1][1]}`, a[0])
   }
+  // ⭐ AN ISLAND'S COAST IS A CLOSED STROKE (Boz's ruling, 2026-10-27, on Zob's read of PTown v3's r215): a coast chain whose two
+  // ends are one point (bake-coast writes an island's arc as its ring with the first point repeated) is its own partner, so the
+  // walk below returns it `closed` and it is stroked as a band, its seam outlined as a bend like every other vertex. Walked
+  // open, its two butts lay on top of each other at the seam and the ink retraced itself (absorbInk refused the face).
+  live.forEach((c, n) => { if (c.isCoast && c.lastI >= 3 && qk4(c.P[0]) === qk4(c.P[c.lastI])) { partner.set(`${n}:start`, [n, 'end']); partner.set(`${n}:end`, [n, 'start']) } })
   // ⛔ LOUD: a degree-2 end that is not joined is left butted, and the sub-ink check sees it.
   if (oddCuts) console.warn(`    ⛔ [①] ${oddCuts} degree-2 chain end(s) meet no single other chain end — left butted, NOT joined`)
   if (hairpins.length) console.warn(`    ⛔ [①] ${hairpins.length} degree-2 cut(s) where both chains leave toward the same vertex (a chain drawn twice) — left butted, NOT joined: ${hairpins.join(' · ')}`)
@@ -668,6 +687,15 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
     }
     return { seq, closed, V, nrm }
   })
+  // ⛔ AN OPEN STROKE WHOSE TWO ENDS ARE ONE POINT IS A CLOSED PATH STROKED OPEN (Boz's ruling, 2026-10-27): its two butts lie
+  // on top of each other there, on different normals, and the ink comes out with a near-retrace that only absorbInk's noding
+  // makes exact. Refused here, at its cause, by owner. ⭐ Only where the two ends meet NOTHING ELSE: a loop whose ends meet
+  // another stroke at a real node (HPDM grandview-place-2, a cul-de-sac loop on grandview-place-0) takes its corners from that
+  // node's outline, as every node does. ▶ checks/claims-the-ink-never-retraces-itself.mjs
+  const strokesAt = new Map(); S.forEach((s, si) => { for (const v of s.V) { const q = qk4(v.p); let a = strokesAt.get(q); if (!a) strokesAt.set(q, a = new Set()); a.add(si) } })
+  for (const [si, s] of S.entries()) { const n = s.V.length
+    if (!s.closed && n >= 3 && qk4(s.V[0].p) === qk4(s.V[n - 1].p) && strokesAt.get(qk4(s.V[0].p)).size === 1) { const c = s.seq[0].c
+      throw new Error(`[①] ⛔ ${c.skelId}${c.isCoast ? ' (the coast)' : ''}: an OPEN stroke whose two ends are one point, (${s.V[0].p.map(v => (+v).toFixed(3)).join(', ')}), a closed path stroked open — its butts would retrace each other. Refusing.`) } }
   // ⭐⭐⭐ A REAL NODE'S OUTLINE IS BUILT ONCE, FROM ALL ITS LEGS (Boz, 2026-10-25: "one outline per node"). Where three or
   // more legs leave one shared vertex (a stroke passing through it is two legs, in and out), the legs are sorted by angle
   // and each pair of angular neighbours meets at ONE point: where the first's counter-clockwise ε side crosses the
@@ -1194,10 +1222,18 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
         else { blocks.push(rg); blockLabels.push(lb) }
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
-      // ⛔ THE ASSERT: no block ring, outer or hole, runs back over one of its own edges (a zero-width retrace is two faces, never one)
-      { const bad = blocks.flatMap((b, k) => [b, ...blockHoles[k]].map((r, h) => ({ k, h, r, o: ringRetraces(r) }))).filter(x => x.o.length)
+      // ⛔⛔ THE EXIT ASSERT, THE RETRACE FAMILY'S ONE CHECK (Boz's ruling, 2026-10-27, after four moves in one night were each a
+      // retrace caught one stage late): no INK ring and no FACE ring (outer or hole, after faceLobes) runs back over one of its
+      // own edges, exact on the lattice (`ringRetraces`); refused by owner, at ①'s exit. A zero-width retrace is two faces (or no
+      // ink), never one. ⛔ A one-vertex TOUCH is not a retrace (Boz's (b): the census, BACKLOG). ⛔ And this does NOT catch a
+      // NEAR-retrace that only becomes exact after absorbInk nodes the ink against the centrelines: absorbInk stays the backstop
+      // for that, and refuses loudly. ▶ checks/claims-the-ink-never-retraces-itself.mjs
+      { const own = (l) => { const o = owners[l]; return o ? `${o.skelId}${o.side ? ` ${o.side}` : ''}` : `label ${l}` }
+        const bad = [...R.rings.map((r, k) => ({ what: `ink ring ${k}`, r, L: R.labels[k] })),
+          ...blocks.flatMap((b, k) => [b, ...blockHoles[k]].map((r, h) => ({ what: `block ${k} ${h ? `hole ${h - 1}` : 'outer'}`, r, L: h ? blockHoleLabels[k][h - 1] : blockLabels[k] })))]
+          .map(x => ({ ...x, o: ringRetraces(x.r) })).filter(x => x.o.length)
         if (bad.length) { const x = bad[0], o = x.o[0]
-          throw new Error(`[①] ⛔ ${bad.length} block ring(s) retrace their own edge in the opposite direction after faceLobes — block ${x.k} ${x.h ? `hole ${x.h - 1}` : 'outer'}, edges ${o.i} and ${o.j}, ${o.m.toFixed(3)} m at (${x.r[o.i].map(v => v.toFixed(3)).join(', ')}). Refusing.`) } }
+          throw new Error(`[①] ⛔ ${bad.length} ring(s) retrace their own edge in the opposite direction at ①'s exit — ${x.what}, edges ${o.i} (${own(x.L?.[o.i])}) and ${o.j} (${own(x.L?.[o.j])}), ${o.m.toFixed(3)} m at (${x.r[o.i].map(v => v.toFixed(3)).join(', ')}). Refusing.`) } }
       const withHoles = blockHoles.filter(h => h.length).length
       if (outerZones) console.log(`    [①] ${outerZones} OUTER ZONE face(s) kept as blocks — the bb + coast + street ink close into one continuous zone; its streets are its holes and are painted from them.`)
       if (keptOnEdge) console.log(`    [①] kept ${keptOnEdge} face(s) touching the frame EDGE without a corner — real land the rectangle merely truncates; the stamp cuts them.`)

@@ -140,8 +140,8 @@ console.log('── G. every ring is simple, and ① can outline every vertex')
   say(ringViolations(hair).length === 0 && kinds(hair).includes('acute'), 'a hairpin is simple, and still acute by the mint\'s own outlineCorner')
   // settle's bound: on a 0.2 m-wide hairpin the leg's vertex sees the other leg 0.2 m off along its normal
   const pin = [[0, 0], [10, 0], [10, 0.2], [5, 0.2], [0, 0.2], [-5, 5]], cl = clearances(pin, 1)
-  say(Math.abs(Math.min(...cl[3]) - 0.2) < 1e-9 && /lo = -Math\.min\(step, cl\[k\]\[0\] \/ 2\), hi = Math\.min\(step, cl\[k\]\[1\] \/ 2\)/.test(readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')),
-    `settle's reach is half the ring's own clearance: a hairpin leg's vertex sees the other leg ${Math.min(...cl[3]).toFixed(3)} m off (0.200), and settleOnSource brackets by half of it`)
+  say(Math.abs(Math.min(...cl[3]) - 0.2) < 1e-9 && /lo = -Math\.min\(step, cl\[k\]\[0\] \/ 2, wall\(ring\[k\], nn, -1, step\)\), hi = Math\.min\(step, cl\[k\]\[1\] \/ 2, wall\(ring\[k\], nn, 1, step\)\)/.test(readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8')),
+    `settle's reach is half the ring's own clearance: a hairpin leg's vertex sees the other leg ${Math.min(...cl[3]).toFixed(3)} m off (0.200), and settleOnSource brackets by half of it (and by the open/close's walls, claims-settle-never-crosses-the-open-close)`)
   // settle's sweep (Boz's ruling, 2026-10-27): PTown's traced ring at v1954–v1968 and where settle sent each vertex (the
   // 10-27 probe, mm). Applied as given, v1962's edge to v1963 sweeps over v1961 and crosses 1960→1961; in order, clamped.
   const tr = [[-3448.254, -1911.565], [-3445.11, -1912.763], [-3438.06, -1917.558], [-3431.127, -1916.918], [-3428.13, -1918.134], [-3426.03, -1920.554], [-3425.632, -1924.55], [-3418.612, -1928.545], [-3418.068, -1928.66], [-3418.068, -1923.66], [-3413.068, -1923.66], [-3413.068, -1918.66], [-3408.068, -1918.66], [-3408.068, -1916.308], [-3415.146, -1912.702]]
@@ -170,9 +170,9 @@ console.log('── G. every ring is simple, and ① can outline every vertex')
   say(ringsMeet([outer, [[1, 1], [1, 9], [10.5, 5]]]).some(v => v.kind === 'cross') && !ringsMeet([outer, hole()]).length, 'ringsMeet finds a hole crossing its outer, and nothing when it lies inside')
   const h3 = hole(), c3 = settleInOrder([outer.map(p => p.slice()), h3], [[null, null, null, null], [null, null, [10.5, 5]]], 1, acuteAt)
   say(c3.clamped.length === 1 && !ringsMeet([outer, h3]).length, `settleInOrder judges every ring's edges: a hole's vertex sent across the outer is clamped (${c3.clamped.length}, want 1)`)
-  say(/ringsMeet\(labels\.map\(l => l\.r\)\)/.test(src), 'bake-coast refuses rings that meet each other, before it writes')
+  say(/ringsMeet\(labels\.map\(l => l\.r\), inkW\)/.test(src), 'bake-coast refuses rings that meet each other, or come closer than the ink (2·INK_EPS), before it writes')
   say(/settleInOrder\(rings, rings\.map\(r => targets\.get\(r\)\), step, acuteAt\)/.test(src), 'settleOnSource applies every move through settleInOrder')
-  say(/ringViolations\(r, acuteAt\)/.test(src) && /outlineCorner\(o, \[\{ to: p \}, \{ to: q \}\], INK_EPS\)/.test(src), 'bake-coast asks ringViolations of every ring, with the mint\'s outlineCorner at INK_EPS, before it writes')
+  say(/ringViolations\(r, acuteAt, inkW\)/.test(src) && /const inkW = 2 \* INK_EPS/.test(src) && /outlineCorner\(o, \[\{ to: p \}, \{ to: q \}\], INK_EPS\)/.test(src), 'bake-coast asks ringViolations of every ring, with the mint\'s outlineCorner at INK_EPS, before it writes')
 }
 
 // ── H. a sentinel is not a value: the tracer never interpolates against one (Zob, 2026-10-26) ──
@@ -381,7 +381,7 @@ for (const scene of scenes) {
   if (!doc.coast) continue
   const outersOk = doc.water.every(b => signed(b.outer) > 0), holesOk = doc.water.every(b => b.holes.every(h => signed(h) < 0))
   say(outersOk && holesOk, `${scene}: every water outer is positive and every hole negative`)
-  const viol = doc.water.flatMap((b, bi) => [b.outer, ...b.holes].flatMap(r => ringViolations(r, acuteAt).map(v => ({ ...v, bi }))))
+  const viol = doc.water.flatMap((b, bi) => [b.outer, ...b.holes].flatMap(r => ringViolations(r, acuteAt, 2 * INK_EPS).map(v => ({ ...v, bi }))))
   say(!viol.length, `${scene}: every coast ring is simple and ① can outline every vertex${viol.length ? ` — ${[...new Set(viol.map(v => v.kind))].map(k => `${viol.filter(v => v.kind === k).length} ${k}`).join(' · ')}, first @(${viol[0].at.map(Math.round).join(', ')})` : ''}`)
   const meet = ringsMeet(doc.water.flatMap(b => [b.outer, ...b.holes]))
   say(!meet.length, `${scene}: no two coast rings meet${meet.length ? ` — ${meet.length}, first @(${meet[0].at.map(Math.round).join(', ')})` : ''}`)

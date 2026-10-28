@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 476,
+  "total": 480,
   "counts": {
-    "safe": 338,
+    "safe": 341,
     "local-effect": 29,
-    "live": 109
+    "live": 110
   },
   "checks": [
     {
@@ -168,6 +168,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-coast-ring-keeps-the-ink-clear.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of cartograph/coastFile.mjs from its own temp dir — read as cartograph/coastFile.mjs, safe"
       ]
     },
     {
@@ -2391,6 +2400,17 @@
       ]
     },
     {
+      "file": "checks/claims-settle-never-crosses-the-open-close.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
+      ]
+    },
+    {
       "file": "checks/claims-shader-fragments-declare-what-they-use.mjs",
       "tier": "safe",
       "why": [
@@ -2626,6 +2646,15 @@
       ]
     },
     {
+      "file": "checks/claims-the-coast-is-one-line-on-the-lattice.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
+      ]
+    },
+    {
       "file": "checks/claims-the-coast-is-the-lidars.mjs",
       "tier": "live",
       "reasonClass": "outbound",
@@ -2843,6 +2872,16 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ink-never-retraces-itself.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
       ]
     },
     {

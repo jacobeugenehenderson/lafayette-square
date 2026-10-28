@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 109. Never in a default run.
+## ⛔ live — 110. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -85,6 +85,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-pilgrim-monument-site.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-preview-frame-cost-splits.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-preview-phone-runs-production-passes.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
+| `checks/claims-settle-never-crosses-the-open-close.mjs` | outbound | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync |
 | `checks/claims-socrata-reads-the-whole-envelope.mjs` | outbound | imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() of a path an argument or the environment can supply — arbitrary · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
@@ -173,7 +174,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 338. This is `npm test`.
+## safe — 341. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -190,6 +191,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-closed-shore-still-yields-ink.mjs` | DOES A SHORE THAT CLOSES STILL GET AN EDGE? |
 | `checks/claims-a-closed-stripe-keeps-its-hole.mjs` | a fence round a yard — bakes as a BAND with a HOLE in it, never as a filled disc. |
 | `checks/claims-a-coast-outside-the-drawing-is-no-shore.mjs` | a coast ring that never reaches the town's DRAWING (its terrain |
+| `checks/claims-a-coast-ring-keeps-the-ink-clear.mjs` | CLAIM — A COAST RING KEEPS THE INK CLEAR (Boz's ruling, 2026-10-27). ① strokes the coast at ε each side (the mint's INK_EPS), so |
 | `checks/claims-a-corner-is-where-one-turns.mjs` | ⭐⭐⭐ A CORNER IS WHERE ① TURNS — THE LABEL NEVER DECIDES IT. A CENSUS, not a gate: where the owner label changes on |
 | `checks/claims-a-curb-arc-belongs-to-one-tile.mjs` | CLAIM — IN THE FROZEN SHAPE, A CURB CONTOUR BELONGS TO ONE TILE, SO A RUN (skelId · side · poly) IS LISTED ONCE. |
 | `checks/claims-a-district-is-the-towns-own.mjs` | DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S? |
@@ -435,6 +437,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-camera-has-one-definition.mjs` | DOES EVERY APP DRIVE THE CAMERA THE SAME WAY? |
 | `checks/claims-the-canvas-is-the-towns.mjs` | "DOES EVERY APP DRAW ITS TOWN THROUGH THE CANVAS THE TOWN'S QUALITY PROFILE ASKS FOR?" |
 | `checks/claims-the-capture-frame-is-the-clip-frame.mjs` | THE FRAME A BAND IS CUT IN MUST BE THE FRAME THE CAMERA CLIPS IN. |
+| `checks/claims-the-coast-is-one-line-on-the-lattice.mjs` | CLAIM — THE COAST IS ONE LINE ON THE LATTICE (Boz's ruling, 2026-10-27; ②'s shareIntoFull lesson, in ①). ① holds the shoreline |
 | `checks/claims-the-coast-runs-on-past-the-rim.mjs` | "PAST THE RIM, DOES THE WATER END WHERE THE REAL COAST DOES?" — BRIEF-the-coast-runs-on-past-the-rim. |
 | `checks/claims-the-corner-extent-is-carried.mjs` | ⭐⭐⭐ THE CORNER'S EXTENT IS CARRIED, NOT RECOVERED — and this reads the artifact, never a rule. |
 | `checks/claims-the-corner-record-reports-the-achieved-radius.mjs` | CLAIM: the corner record the operator's handle rides reports the radius the arc |
@@ -457,6 +460,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-horizon-takes-the-towns-cover.mjs` | DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs` | DO THE LEAVES IN THE TREE THE IMPOSTOR PHOTOGRAPHS HANG ON WOOD? |
 | `checks/claims-the-ink-is-absorbed-by-its-owner.mjs` | CLAIM — ① (THE ε STRIP) IS ABSORBED INTO THE FACES BY ITS OWN LABELS: EVERY PAINTED EDGE NAMES ITS OWNER, NEIGHBOURS MEET |
+| `checks/claims-the-ink-never-retraces-itself.mjs` | CLAIM — THE INK NEVER RETRACES ITSELF (Boz's ruling, 2026-10-27, on Zob's read of PTown v3's r215). An island's coast is a |
 | `checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs` | THE RAISED KERB, ON BLOCKS SMALL ENOUGH TO KNOW THE ANSWER. |
 | `checks/claims-the-key-light-is-a-real-body.mjs` | IS ANYTHING ACTUALLY THERE? |
 | `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |

@@ -133,13 +133,23 @@ export function faceAsPolygons(rings, who) {
   return outers.map(({ outer, holes }) => ({ outer, holes }))
 }
 
+// the least distance between two segments that neither cross nor touch: the nearest endpoint of one to the other, four ways
+const segGap = (p1, p2, q1, q2) => { const d = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0
+  return [Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz), [p[0], p[1]]] }
+  return [d(p1, q1, q2), d(p2, q1, q2), d(q1, p1, p2), d(q2, p1, p2)].reduce((m, x) => (x[0] < m[0] ? x : m)) }
+
 /**
  * ⛔ A COAST RING MUST BE SIMPLE (Boz's ruling, 2026-10-26, after Huron's ground refused an antenna on the lake's arc): no
  * two of its edges meet except adjacent ones at their shared vertex, and no adjacent pair folds back along itself. The
- * violations, [{ kind: 'cross' | 'touch' | 'fold' | 'acute' | 'degenerate', a, b, at }] (edge indices; `at` the meeting point), so a refusal names each one.
+ * violations, [{ kind: 'cross' | 'touch' | 'fold' | 'acute' | 'degenerate' | 'near', a, b, at }] (edge indices; `at` the meeting point), so a refusal names each one.
  * Edges are bucketed on a grid of the ring's own median edge length: exact, not sampled.
+ * ⛔ AND NO PART OF IT COMES CLOSER TO ANOTHER THAN THE INK (Boz's ruling, 2026-10-27, on PTown's island: settle walked two banks of
+ * a channel the open/close had closed back to 1.92 mm, which only the exact `touch` could see, and ① cut the land in two faces):
+ * `clear` is the mint's ink width (2·INK_EPS, passed in by the caller as `acuteAt` is, so this module stays free of the mint); two
+ * non-adjacent edges closer than it are a 'near' (`gap` in metres). 0 keeps the exact rule alone.
+ * ▶ checks/claims-a-coast-ring-keeps-the-ink-clear.mjs
  */
-export function ringViolations(ring, acuteAt = null) {
+export function ringViolations(ring, acuteAt = null, clear = 0) {
   const n = ring.length, out = []
   if (n < 3) return [{ kind: 'degenerate', a: 0, b: 0, at: ring[0] || [0, 0] }]
   // ⛔ AND NO VERTEX ① CANNOT OUTLINE: `acuteAt(o, prev, next)` is the mint's own predicate (tileGround.js#outlineCorner at
@@ -149,8 +159,8 @@ export function ringViolations(ring, acuteAt = null) {
   const len = Array.from({ length: n }, (_, i) => { const [p, q] = E(i); return Math.hypot(q[0] - p[0], q[1] - p[1]) }).sort((a, b) => a - b)
   const G = Math.max(len[n >> 1], 1e-6), cells = new Map()
   for (let i = 0; i < n; i++) { const [p, q] = E(i)
-    for (let gx = Math.floor(Math.min(p[0], q[0]) / G); gx <= Math.floor(Math.max(p[0], q[0]) / G); gx++)
-      for (let gz = Math.floor(Math.min(p[1], q[1]) / G); gz <= Math.floor(Math.max(p[1], q[1]) / G); gz++) {
+    for (let gx = Math.floor((Math.min(p[0], q[0]) - clear) / G); gx <= Math.floor((Math.max(p[0], q[0]) + clear) / G); gx++)
+      for (let gz = Math.floor((Math.min(p[1], q[1]) - clear) / G); gz <= Math.floor((Math.max(p[1], q[1]) + clear) / G); gz++) {
         const k = `${gx},${gz}`; if (!cells.has(k)) cells.set(k, []); cells.get(k).push(i) } }
   const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
   const on = (p, q, r) => Math.min(p[0], q[0]) <= r[0] && r[0] <= Math.max(p[0], q[0]) && Math.min(p[1], q[1]) <= r[1] && r[1] <= Math.max(p[1], q[1])
@@ -169,6 +179,7 @@ export function ringViolations(ring, acuteAt = null) {
       const t0 = d1 / (d1 - d2); out.push({ kind: 'cross', a, b, at: [p1[0] + (p2[0] - p1[0]) * t0, p1[1] + (p2[1] - p1[1]) * t0] })
     } else if ((d1 === 0 && on(q1, q2, p1)) || (d2 === 0 && on(q1, q2, p2)) || (d3 === 0 && on(p1, p2, q1)) || (d4 === 0 && on(p1, p2, q2)))
       out.push({ kind: 'touch', a, b, at: d1 === 0 ? p1 : d2 === 0 ? p2 : d3 === 0 ? q1 : q2 })   // two parts of the ring meet at a point
+    else if (clear > 0) { const [g, at] = segGap(p1, p2, q1, q2); if (g < clear) out.push({ kind: 'near', a, b, at, gap: g }) }
   }
   return out
 }
@@ -176,16 +187,17 @@ export function ringViolations(ring, acuteAt = null) {
 /**
  * ⛔ AND NO TWO COAST RINGS MEET (Boz's ruling, 2026-10-27): every ring of every body is judged against every other, since a
  * hole's edge across its body's outer, or one body's across another's, is the same antenna as a ring crossing itself. The
- * meetings, [{ kind: 'cross' | 'touch', ra, a, rb, b, at }] (ring and edge indices). Same exact grid as ringViolations.
+ * meetings, [{ kind: 'cross' | 'touch' | 'near', ra, a, rb, b, at }] (ring and edge indices). Same exact grid as ringViolations, and
+ * the same `clear` (the ink width): two rings closer than it are a 'near'.
  */
-export function ringsMeet(rings) {
+export function ringsMeet(rings, clear = 0) {
   const edges = rings.flatMap((ring, r) => ring.map((p, i) => [r, i, p, ring[(i + 1) % ring.length]]))
   if (!edges.length) return []
   const len = edges.map(([, , p, q]) => Math.hypot(q[0] - p[0], q[1] - p[1])).sort((a, b) => a - b)
   const G = Math.max(len[len.length >> 1], 1e-6), cells = new Map(), out = [], seen = new Set()
   edges.forEach(([, , p, q], e) => {
-    for (let gx = Math.floor(Math.min(p[0], q[0]) / G); gx <= Math.floor(Math.max(p[0], q[0]) / G); gx++)
-      for (let gz = Math.floor(Math.min(p[1], q[1]) / G); gz <= Math.floor(Math.max(p[1], q[1]) / G); gz++) {
+    for (let gx = Math.floor((Math.min(p[0], q[0]) - clear) / G); gx <= Math.floor((Math.max(p[0], q[0]) + clear) / G); gx++)
+      for (let gz = Math.floor((Math.min(p[1], q[1]) - clear) / G); gz <= Math.floor((Math.max(p[1], q[1]) + clear) / G); gz++) {
         const k = `${gx},${gz}`; if (!cells.has(k)) cells.set(k, []); cells.get(k).push(e) } })
   const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
   const on = (p, q, r) => Math.min(p[0], q[0]) <= r[0] && r[0] <= Math.max(p[0], q[0]) && Math.min(p[1], q[1]) <= r[1] && r[1] <= Math.max(p[1], q[1])
@@ -197,6 +209,7 @@ export function ringsMeet(rings) {
       const t0 = d1 / (d1 - d2); out.push({ kind: 'cross', ra, a, rb, b, at: [p1[0] + (p2[0] - p1[0]) * t0, p1[1] + (p2[1] - p1[1]) * t0] })
     } else if ((d1 === 0 && on(q1, q2, p1)) || (d2 === 0 && on(q1, q2, p2)) || (d3 === 0 && on(p1, p2, q1)) || (d4 === 0 && on(p1, p2, q2)))
       out.push({ kind: 'touch', ra, a, rb, b, at: d1 === 0 ? p1 : d2 === 0 ? p2 : d3 === 0 ? q1 : q2 })
+    else if (clear > 0) { const [g, at] = segGap(p1, p2, q1, q2); if (g < clear) out.push({ kind: 'near', ra, a, rb, b, at, gap: g }) }
   }
   return out
 }
