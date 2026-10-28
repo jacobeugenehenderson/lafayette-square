@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN (ruled; §1 co-signed by Zob with corrections, 2026-10-27)
-dispatched: step 1 → Plumb (FRESH, 2026-10-27): STOPPED per §3.1, identity is not where the time goes (below); build HELD for Jacob
+dispatched: step 1 → Plumb (FRESH, 2026-10-27): STOPPED per §3.1. RULED (Jacob, 2026-10-27, r-balsa-lands-its-rulings-not-the-identity-cut): §4's rulings land; the identity rebuild (§2's split, §3 steps 2-5) is SKIPPED; speed work goes to the desktop frame time and PTown's ground
 written: 2026-10-27 night (Boz, at Jacob's request: "write the balsa model plan")
 evict-when: a town's first paint and its pan/zoom carry no per-building identity, a click resolves one and loads its contents,
 the measured budget (§3 step 1) is met on desktop and phone, the checks below are GREEN, merged, and Jacob passes it by eye.

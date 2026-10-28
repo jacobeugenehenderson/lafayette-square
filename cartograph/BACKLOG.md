@@ -9,6 +9,11 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ## ▶ Forward list (2026-10-20 night) — LS · HPDM · PTown · Huron first
 
 ### ⭐ HANDOFF — 2026-10-25 night (Boz). Read this block first; everything below is detail.
+**▶ 2026-10-27 LATE (Boz): three rulings filed** (registry): `r-a-chain-end-in-a-roadway-is-a-T` (at mintInputs, by the other street's
+own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-a-node owed) · `r-a-way-tag-decides-before-byCoast`
+(embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
+PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
+builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
 **▶ 2026-10-27: THE SHORE IS MERGED (eec3ac1b).** Huron's shoreline rebuilt to Jacob's rulings (the coast IS the high-water mark;
 the drawn ground pinned to it; bridges painted over water; islands; the absorbed ink). Jacob looked: "FANTASTICALLY advanced". NEXT, in
 the release order (entry below): kit bundle → Ward pin + publish:staging → re-pour + re-bake each coastal town (Huron, PTown), then the

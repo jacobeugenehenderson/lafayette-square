@@ -5089,6 +5089,33 @@
       "findings": [
         "r-one-copy-of-the-ink"
       ]
+    },
+    {
+      "id": "q-chain-end-in-a-roadway",
+      "ask": "What a chain end that is no node but lies inside another street's roadway becomes, and where the kit decides it",
+      "neededBy": "Zob's census 2026-10-27 (ends inside another roadway: LS 2 · HPDM 4 · PTown 1 · Huron 0 · JH 11 · Altadena 6)",
+      "status": "answered",
+      "findings": [
+        "r-a-chain-end-in-a-roadway-is-a-T"
+      ]
+    },
+    {
+      "id": "q-what-decides-a-way-over-water",
+      "ask": "Whether a way's own tag decides its class before byCoast treats an untagged street over water as a bridge",
+      "neededBy": "PTown v4 ground run 2026-10-27: breakwater|0 (way 170402219, embankment=dyke, no bridge tag) refused at tileGround.js#bridgeOverlay as a byCoast span",
+      "status": "answered",
+      "findings": [
+        "r-a-way-tag-decides-before-byCoast"
+      ]
+    },
+    {
+      "id": "q-balsa-after-step-1",
+      "ask": "What the balsa model builds after step 1 measured identity at 0.7-3.8% of main-thread CPU to usable",
+      "neededBy": "BRIEF-the-balsa-model step 1 (Plumb, 2026-10-27)",
+      "status": "answered",
+      "findings": [
+        "r-balsa-lands-its-rulings-not-the-identity-cut"
+      ]
     }
   ],
   "findings": [
@@ -8452,6 +8479,65 @@
       "quote": "\"one copy of the ink, brief Ferrule\"",
       "canon": "cartograph/BACKLOG.md PTOWN PARKS (a)",
       "notes": "One method, not two: a turn threshold would be a constant fit to the towns seen (Layer 0 Class D). That two copies are the CAUSE is Zob's inference, not measured; the brief's first act measures it."
+    },
+    {
+      "id": "r-a-chain-end-in-a-roadway-is-a-T",
+      "question": "q-chain-end-in-a-roadway",
+      "kind": "ruling",
+      "value": {
+        "home": "mintInputs (where the half-widths exist)",
+        "becomes": "a T, joined by rule",
+        "judgedBy": "the other street's own authored half-width at that block (tileGround.js#resolveProtoMeasure); no constant",
+        "recorded": true,
+        "overridable": true,
+        "check": "claims-a-chain-end-in-a-roadway-is-a-node: RED on any such end left unjoined"
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
+      "canon": "cartograph/BACKLOG.md",
+      "notes": "Derived, not a snap: the only distance is the street's own half-width. Each join is reported so the operator sees it. Moving widths upstream to the skeleton was not chosen (it reopens design)."
+    },
+    {
+      "id": "r-a-way-tag-decides-before-byCoast",
+      "question": "q-what-decides-a-way-over-water",
+      "kind": "ruling",
+      "value": {
+        "order": "the way's own tag first, then byCoast",
+        "embankment": "ground (the tag is evidence the land is there; it selects the class and never measures)",
+        "manMadePier": "a deck, as the other piers are",
+        "untagged": "a bridge (Jacob's ruling 'a', 2026-10-27, stands)",
+        "unknownTag": "refused by name"
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
+      "canon": "cartograph/BACKLOG.md PTOWN PARKS",
+      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges)."
+    },
+    {
+      "id": "r-balsa-lands-its-rulings-not-the-identity-cut",
+      "question": "q-balsa-after-step-1",
+      "kind": "ruling",
+      "value": {
+        "lands": [
+          "no hover",
+          "All places lists listings only",
+          "a listing carries its point",
+          "CityModel retires",
+          "neon faces keyed by face, hours live"
+        ],
+        "skipped": "the identity rebuild (look/address book/contents split)",
+        "speedWorkAimsAt": [
+          "desktop frame time while moving",
+          "PTown's ground: the in-browser height-field build and the 56.5 MB ground.bin"
+        ]
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
+      "canon": "docs/briefs/BRIEF-the-balsa-model.md",
+      "notes": "The speed is in the look, not identity (Plumb's numbers in the brief). Desktop frame cause not established (headless M1 GPU): confirm by eye in a real browser first."
     }
   ]
 }
