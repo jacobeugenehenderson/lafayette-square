@@ -17,17 +17,17 @@ inland towns (HPDM; LS after Jacob's loops) → Promote player + slab together. 
 baseElev); claims-a-bake-step-declares-what-it-reads (pre-existing, owed before a Bake is called clean). CENSUS (Zob): bake-ground
 writes shape.json only `if (shapeArtifact)`, so a missing one leaves the OLD shape.json beside a new ground inside an atomic commit;
 refuse by name when ① exists and protoShapeTiles doesn't.
-**▶ PTOWN PARKS (Boz, 2026-10-27 night).** On 98cce6f5 coast v3, mint and terrain pass; GROUND refused at the shore at the settle
-clamp's 7.6 cm edge (-3418.656, -1928.636) (Zob's read), now removed at settle's exit (`coastFile.mjs#toResolution`, ▶
-`checks/claims-a-coast-edge-is-no-finer-than-its-trace.mjs`). Swash's real bake says whether the ground builds. ⛔ GATE: claims-the-mint-
-refuses-no-outline RED on PTown until (b). Outputs: scratch/ptown-parks/ptown-failed6/; probes + ON-arm dumps: scratch/resolution-rule/.
-**▶ (b) THE DECKS' 1 mm JOGS (artifacts, `ORIENTATION §5`) are not removed.** Start from WHY deckFootprints' union is already self-
-touching (PTown: 4 touch + 2 cross @(-56.78, 989.78) before any rule). The coast's edge rule on deck rings measured NOT clean: PTown 112
-removed, 9 jogs held, deck verifier 176 → 21 · Huron 390 removed (60.1 m², ≤ 0.954 m), 44 held, 490 → 91, 2 rings ≤ 3 vertices.
-**▶ (c) THE WIDTH CLAUSE (no neck or channel under one cell, at settle's exit) is unbuilt.** Left after the edge rule: PTown 193 (12 <
-10 cm, least 16 mm @(-1963.2, 1677.3)), Huron 11 (≥ 0.659 m; its 4 m × 0.5 m island @(695.3, 348.8) held at 3 vertices). Measured NOT
-clean: openCloseAtStep on the settled water, then the edge rule (PTown: 6 acute · a 172.7 m² body cut from the edge @(-3523.068,
--1923.66), dropped as a hollow · ~5.6k rounding slivers, 12,600 → 15,269 vertices · 175 left, since the close is per part).
+**▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) HELD UNMERGED: `ferrule/resolution-rule` 332e0a23** (`coastFile.mjs#toResolution` at settle's
+exit, COAST_VERSION 4; PTown's 7.6 cm hairpin edge goes) moves the class, does not close it: on Huron's v4 fixture, vertices turning ≥ 158°
+0 → 6, and at (3234.63, 791.994) · (3182.751, 765.209) · (686.159, 286.334) ①'s ink ring has an outline vertex no ink cell carries, PTown's
+refusal signature (Zob). PTown's bends and ground unmeasured. NEXT (Jacob's standup): ONE COPY of the ink (the block reads absorb's noded
+ink, as the shore does; two copies as cause is Zob's inference) vs a turn rule on toResolution, costs unmeasured. ⛔ GATE: claims-the-mint-
+refuses-no-outline RED on PTown until (b). Outputs: scratch/ptown-parks/ptown-failed6/ · probes, dumps, Zob's (zob/): scratch/resolution-rule/.
+**▶ (b) THE DECKS' 1 mm JOGS (artifacts) stay.** First: WHY deckFootprints' union self-touches (PTown @(-56.78, 989.78)). The edge rule on
+decks is NOT clean: PTown 112 removed, 9 held, verifier 176 → 21 · Huron 390 removed (≤ 0.954 m), 44 held, 490 → 91, 2 rings ≤ 3 vertices.
+**▶ (c) THE WIDTH CLAUSE (no neck or channel under one cell, at settle's exit) is unbuilt.** Left after the edge rule: PTown 193 (least
+16 mm @(-1963.2, 1677.3)), Huron 11 (≥ 0.659 m). NOT clean: openCloseAtStep on the settled water, then the edge rule (PTown: 6 acute ·
+a 172.7 m² body cut from the edge @(-3523.068, -1923.66), dropped · ~5.6k slivers, 12,600 → 15,269 vertices · 175 left: per-part close).
 **▶ HURON'S coast.json predates COAST_VERSION 4: re-bake its coast before any Huron ground work or release.** Measured on v3 + the edge
 rule (offline): it mints, its verifier is clean, the rule removes 66 vertices (≤ 0.865 m), holds 1. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
 **▶ LS's skeleton is stale for mintInputs** (saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses before the
