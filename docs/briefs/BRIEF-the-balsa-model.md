@@ -1,7 +1,7 @@
 # BRIEF — the balsa model: the town looks finished and holds nothing until it is asked
 
 <!-- BRIEF-STATE
-status: OPEN (ruled; step 1 dispatchable once Zob co-signs §1)
+status: OPEN (ruled; §1 co-signed by Zob with corrections, 2026-10-27)
 dispatched: step 1 → Plumb (FRESH, 2026-10-27); Zob's premise pass running alongside
 written: 2026-10-27 night (Boz, at Jacob's request: "write the balsa model plan")
 evict-when: a town's first paint and its pan/zoom carry no per-building identity, a click resolves one and loads its contents,
@@ -26,21 +26,35 @@ So **balsa is not a cheaper LOOK.** The town looks as it does today, or better. 
 it knows which building is which until a click asks. Speed comes from what isn't loaded or tracked, never from a lower look. That
 squares with `ORIENTATION §5`: photorealism is the destination, and inertness is how you move around it.
 
-## 1. What the code does today (Boz's read; confirm by symbol)
+## 1. What the code does today (Zob's premise pass at 9a5af1c7, by symbol; co-signed with corrections)
 
-- **Identity is loaded up front and stamped into the geometry.** `buildings.json` (v3, `SLAB-CONTRACT §6`) carries a per-building
-  index (`buildings[]`: id, footprint and roof ranges, materials, zoning, address, neon faces and frontage, tint, vertex ranges),
-  and the numeric id is stamped per vertex as `aBuildingId`. `SlabBuildings.jsx` parses the index and publishes it to
-  `useSlabBuildingIndex`, which neon, selection, `SidePanel`, `LandmarkMarkers`, `SetPiece`, `Town` and `usePostFxDriver` read.
-- **The geometry WAITS on the identity.** `CityModel.jsx`: *"Geometry build WAITS on the identity index — stamping aBuildingId
-  needs idToNum"*, and each glTF tile fetches an `…_buildings.ids.json` sidecar. That is the regime Jacob names: the town can't be
-  drawn before it knows who everyone is.
-- **Two building renderers exist,** `SlabBuildings` (merged group meshes) and `CityModel` (glTF tiles, covering part of the town,
-  with SlabBuildings drawing the rest). The balsa model has to be ONE answer across both, or the case for keeping two has to be
-  stated. ⛔ Not two regimes.
-- **Selection is a store** (`hooks/useSelectedBuilding.js`: `selectedId`, `hoveredId`, `select`, `highlight`) fed by a raycast that
-  reads `aBuildingId` off the hit face (`CityModel`'s resolve, the same as SlabBuildings').
-- **Hover is per-building identity on every pointer move** (`hoveredId`). Under balsa, hover has nothing to resolve.
+- **Identity loads up front, and the LOOK is built from it.** `SlabBuildings.jsx` fetches `buildings.json` (v2/v3, else refuses),
+  publishes `byNum`/`byId`/`idToNum` via `useSlabBuildingIndex.setIndex`, and its `meshes` useMemo stamps `aBuildingId` per vertex
+  from `manifest.buildings[].ranges`. ⚠️ The same loop fills each building's wall/roof/foundation MATERIAL from its ranges, so the
+  look itself needs the index today. The encoder bakes materials into the look payload (§2.1).
+- **A second up-front identity source:** `src/data/buildings.js` loads `loadInstanceData(lookId, 'buildings')` at module import
+  (`buildings`, `buildingMap`), imported by App, Controls, GlassSearch, LandmarkMarkers, SidePanel, useListings (which synthesizes
+  the bare-building listings from it) and CheckinPage. Step 5 covers it.
+- **Readers of `useSlabBuildingIndex`:** CityModel · SlabBuildings · SceneNeon · LandmarkMarkers · SetPiece · SidePanel · Town
+  (`useBuildingPlaces`, `useBuildingAddress`, RoofPoint/TownPoint) · usePostFxDriver (`focusObject`, DOF) · `lib/buildingPosition.js`
+  `resolveBuildingPosition` (GlassSearch, LandmarkMarkers, PlaceCard, SidePanel). Deep links: App resolves `listing.building_id` →
+  `useSelectedBuilding.select`, then the card positions via `resolveBuildingPosition`.
+- **ONE renderer draws every live town: SlabBuildings.** `CityModel` waits on `idToNum` and a per-tile `…_buildings.ids.json`, but it
+  renders nothing without `citymodel/citymodel.json`, which no town ships and no kit step produces (only `scratch/join-citymodel-to-osm.mjs`;
+  its one customer, Księży Młyn, is dead). R2 not checked. **Ruled (Boz, 2026-10-27; Jacob may redirect): CityModel retires** with the
+  per-vertex id path, in the same commits (three-part fix), along with SlabBuildings' `aCovered` suppression.
+- **Hover lives in `components/townHover.js` (`useTownHover`), not `useSelectedBuilding`,** whose `hoveredId`/`setHovered`/
+  `clearHovered` are dead (read by nothing). Per-move writers to delete (§4.2): SlabBuildings `onPointerMove` (`idAtFace`) · CityModel's ·
+  NeonBands' custom `mesh.raycast` → `onPointerMove` · SetPiece's; each `onPointerOut`; the cursor writes, including LandmarkMarkers'
+  pin `onPointerOver/Out`. Removing the move handlers removes R3F's per-move raycast of every handled mesh.
+- **Neon (`SceneNeon`)** reads `byNum` (footprint, roofOutline, neon faces, groundY, centroidY) via `neonPlaces.placeNeon`, the
+  listings' hours (`useTownContext`) and the clock (`openNow.isOpenAt`). NeonBands carries a buildingId per sign for click/hover.
+  Hours are CONTENT: `useInit.runInit` merges GAS over the bundle so a guardian's edit wins (inferred from the comment; GAS path not traced).
+- **Trees, lamps and water read no building identity** (Zob, grep over every module of each; §4.4 holds).
+- **⛔ The instruments can't separate identity cost from look cost yet.** `src/lib/startupMarks.js` marks sequence boundaries;
+  SlabBuildings only calls `markPrepared`; the index parse and the stamp run inside the geometry's fetch and useMemo with no mark
+  between; `scratch/frame-timeline/`'s `--block` can't split them (the index is inside buildings.json). So step 1's first act is
+  marks around the index parse, the stamp/material loop and the hover handlers.
 
 ## 2. The shape of it
 
@@ -78,8 +92,9 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
 ## 4. Jacob's rulings (2026-10-27 night)
 
 1. **Neon comes from hours** (*"Neon is from hours"*). Which buildings glow is a fact of the look at a given time, not something
-   asked. So the encoder bakes the glowing faces with their hours as a time-keyed layer that needs no building id at runtime. The
-   Ward lights them by the clock. ⛔ The night glow must not pull the address book or the index into the first paint.
+   asked. The encoder bakes the glowing FACES, keyed by face, not by building; the hours stay live content (a guardian's edit
+   wins without a re-bake: the override is the product, Layer 0 q3), and the Ward lights each face by the clock. (Boz's reading
+   of Zob's question, 2026-10-27; Jacob may redirect to "re-bake on an hours edit".) ⛔ The night glow must not pull the address book or the index into the first paint.
 2. **No hover** (*"I do not like the light-up-when-mouse-passes-over-it in general, too much"*). Hover highlighting is DELETED,
    not disabled: `useSelectedBuilding`'s `hoveredId` / `setHovered` / `clearHovered`, and every per-move raycast that feeds them.
    A click is the first sign of life. No pointer-cursor change either (Jacob: *"let's just ditch for now"*).
