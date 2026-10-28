@@ -461,7 +461,7 @@ const DESIGN_FIELDS = [
     : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } } },
   // The arch is a STAGE SET-PIECE a Look INSTALLS by carrying an `arch` block —
   // the same presence rule every other look-keyed consumer already runs on (no
-  // baked citymodel ⇒ no CityModel; no baked landscape ⇒ no MountainBackdrop).
+  // baked landscape ⇒ no MountainBackdrop).
   // Not a plain _grp: _grp seeds ARCH_FLAT_DEFAULTS for a Look that has no block,
   // which is what installed an identical arch in all six design.json files and
   // forced the renderer to gate on a look NAME instead. Absent ⇒ null ⇒ absent.

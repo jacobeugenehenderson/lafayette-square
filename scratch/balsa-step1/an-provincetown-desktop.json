@@ -1,0 +1,361 @@
+{
+ "town": "provincetown",
+ "dev": "desktop",
+ "build": "1612d2de",
+ "fcp": 1272,
+ "revealed": true,
+ "prepBuildings": 5422,
+ "prepGround": 7496,
+ "prepTrees": 6126,
+ "reveal": 14251,
+ "usable": 14480,
+ "move": {
+  "frames": 170,
+  "med": 116.6,
+  "p95": 116.7,
+  "hitches50": 167,
+  "lastHitchAfterInput": 18545,
+  "steadyMed": 116.6,
+  "steadyP95": 116.7
+ },
+ "click": null,
+ "hoverFrames": {
+  "med": 116.6,
+  "p95": 116.7
+ },
+ "bytesTotalKB": 125917,
+ "identityReqs": [
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-B-FbjL9z.js",
+   "kb": 51,
+   "ms": 93
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-X2JCiLpx.css",
+   "kb": 3,
+   "ms": 117
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-DRUs4ql5.js",
+   "kb": 2,
+   "ms": 76
+  },
+  {
+   "u": "/staging/baked/provincetown/content/listings.json",
+   "kb": 45,
+   "ms": 139
+  },
+  {
+   "u": "/staging/live/tw-zmc6ejej/listings.json",
+   "kb": 7,
+   "ms": 214
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/buildings/brick_red.jpg",
+   "kb": 680,
+   "ms": 278
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/buildings/slate.jpg",
+   "kb": 504,
+   "ms": 287
+  },
+  {
+   "u": "/staging/baked/provincetown/buildings.json",
+   "kb": 348,
+   "ms": 240
+  },
+  {
+   "u": "/staging/baked/provincetown/buildings.bin",
+   "kb": 6560,
+   "ms": 1434
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/buildings/wood_siding.jpg",
+   "kb": 479,
+   "ms": 41
+  }
+ ],
+ "bigReqs": [
+  {
+   "u": "/staging/baked/provincetown/ground.bin",
+   "kb": 56480,
+   "ms": 2687
+  },
+  {
+   "u": "/staging/baked/provincetown/terrain.bin",
+   "kb": 17876,
+   "ms": 287
+  },
+  {
+   "u": "/staging/baked/provincetown/context.coastDist.bin",
+   "kb": 8938,
+   "ms": 138
+  },
+  {
+   "u": "/staging/baked/provincetown/buildings.bin",
+   "kb": 6560,
+   "ms": 1434
+  },
+  {
+   "u": "/staging/baked/provincetown/ground.rulemap.png",
+   "kb": 2941,
+   "ms": 1317
+  },
+  {
+   "u": "/staging/baked/provincetown/ground.poolmap.png",
+   "kb": 2678,
+   "ms": 1315
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/moon.jpg",
+   "kb": 1031,
+   "ms": 280
+  },
+  {
+   "u": "/staging/baked/provincetown/trees.json",
+   "kb": 792,
+   "ms": 1868
+  }
+ ],
+ "profLoad": {
+  "sum": {
+   "total": 12755,
+   "idle": 1521,
+   "program": 484,
+   "gc": 233,
+   "index": 73,
+   "hover": 11
+  },
+  "top": [
+   [
+    2871,
+    "b|Town-SFXxENTJ.js:3954:2323"
+   ],
+   [
+    1325,
+    "I|Town-SFXxENTJ.js:3654:285"
+   ],
+   [
+    1299,
+    "sH|Town-SFXxENTJ.js:3954:1108"
+   ],
+   [
+    747,
+    "Ud|Town-SFXxENTJ.js:7993:17895"
+   ],
+   [
+    484,
+    "(program)|:-1:-1"
+   ],
+   [
+    469,
+    "D|Town-SFXxENTJ.js:3686:12123"
+   ],
+   [
+    337,
+    "k|Town-SFXxENTJ.js:7993:20570"
+   ],
+   [
+    318,
+    "(anon)|Town-SFXxENTJ.js:7993:20589"
+   ],
+   [
+    305,
+    "A|Town-SFXxENTJ.js:3954:1816"
+   ],
+   [
+    282,
+    "(anon)|Town-SFXxENTJ.js:7993:32093"
+   ],
+   [
+    255,
+    "fromBufferAttribute|Town-SFXxENTJ.js:5:41859"
+   ],
+   [
+    251,
+    "E|Town-SFXxENTJ.js:3954:3010"
+   ]
+  ]
+ },
+ "profMove": {
+  "sum": {
+   "total": 1730,
+   "idle": 16723,
+   "program": 367,
+   "gc": 27,
+   "index": 80,
+   "hover": 43
+  },
+  "top": [
+   [
+    367,
+    "(program)|:-1:-1"
+   ],
+   [
+    168,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    102,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    56,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    48,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    32,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    27,
+    "(garbage collector)|:-1:-1"
+   ],
+   [
+    25,
+    "(anon)|Town-SFXxENTJ.js:4513:177"
+   ],
+   [
+    24,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    23,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    23,
+    "multiplyMatrices|Town-SFXxENTJ.js:5:56129"
+   ],
+   [
+    22,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ]
+  ]
+ },
+ "profHover": {
+  "sum": {
+   "total": 1938,
+   "idle": 17810,
+   "program": 462,
+   "gc": 36,
+   "index": 4,
+   "hover": 66
+  },
+  "top": [
+   [
+    462,
+    "(program)|:-1:-1"
+   ],
+   [
+    212,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    103,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    72,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    67,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    49,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    36,
+    "(garbage collector)|:-1:-1"
+   ],
+   [
+    33,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    30,
+    "(anon)|Town-SFXxENTJ.js:4513:177"
+   ],
+   [
+    26,
+    "multiplyMatrices|Town-SFXxENTJ.js:5:56129"
+   ],
+   [
+    26,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    24,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ]
+  ]
+ },
+ "profClick": {
+  "sum": {
+   "total": 10761,
+   "idle": 81267,
+   "program": 1873,
+   "gc": 195,
+   "index": 29,
+   "hover": 128
+  },
+  "top": [
+   [
+    1873,
+    "(program)|:-1:-1"
+   ],
+   [
+    843,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    543,
+    "l|Town-SFXxENTJ.js:7993:28140"
+   ],
+   [
+    523,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    451,
+    "getProgramInfoLog|:-1:-1"
+   ],
+   [
+    358,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    306,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    299,
+    "RZ|Town-SFXxENTJ.js:7993:27910"
+   ],
+   [
+    216,
+    "getShaderInfoLog|:-1:-1"
+   ],
+   [
+    202,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    195,
+    "(garbage collector)|:-1:-1"
+   ],
+   [
+    157,
+    "multiplyMatrices|Town-SFXxENTJ.js:5:56129"
+   ]
+  ]
+ }
+}

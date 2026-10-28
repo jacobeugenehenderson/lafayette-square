@@ -45,7 +45,7 @@ index.html → main.jsx → App.jsx              ← URL route switch, top-level
     │       │   ├── WeatherPoller · AtmosphereDirectiveDriver · WeatherEffects
     │       │   ├── CelestialBodies · CloudDome (Atmosphere under ?sky=volumetric) · Terrain (hidden)
     │       │   ├── ⟨drawn town⟩ BakedGround · SlabRevetment · LafayetteScene (neon, street labels,
-    │       │   │     park title) · SlabBuildings · CityModel · InstancedTrees · LafayettePark (its own
+    │       │   │     park title) · SlabBuildings · InstancedTrees · LafayettePark (its own
     │       │   │     town only) · BakedLamps · GatewayArch · SetPiece · MountainBackdrop · HorizonDisc
     │       │   │     (movie and street only: in PLAN the town ends at its soft rim)
     │       │   ├── PostProcessing            (per-device passes from the quality profile)

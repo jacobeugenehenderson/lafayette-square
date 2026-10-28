@@ -5,7 +5,6 @@ const useSelectedBuilding = create((set) => ({
   selectedListingId: null,  // listing ID (lmk-NNN) for specific listing
   showCard: false,          // true only when clicked in 3D scene
   initialTab: null,         // tab to open when card first appears (e.g. 'events')
-  hoveredId: null,
 
   // highlight() — from side panel: shows pin + roof glow, no card
   highlight: (id, buildingId) => set({
@@ -30,9 +29,6 @@ const useSelectedBuilding = create((set) => ({
   deselect: () => set({ selectedId: null, selectedListingId: null, showCard: false, initialTab: null }),
 
   clearInitialTab: () => set({ initialTab: null }),
-
-  setHovered: (id) => set({ hoveredId: id }),
-  clearHovered: () => set({ hoveredId: null }),
 }))
 
 export default useSelectedBuilding

@@ -1,0 +1,282 @@
+{
+ "town": "provincetown",
+ "dev": "phone",
+ "build": "1612d2de",
+ "fcp": 1896,
+ "revealed": true,
+ "prepBuildings": 9297,
+ "prepGround": 13982,
+ "prepTrees": 10193,
+ "reveal": 38741,
+ "usable": 39466,
+ "move": {
+  "frames": 975,
+  "med": 16.7,
+  "p95": 16.8,
+  "hitches50": 3,
+  "lastHitchAfterInput": 17624,
+  "steadyMed": 16.7,
+  "steadyP95": 16.8
+ },
+ "click": null,
+ "bytesTotalKB": 124420,
+ "identityReqs": [
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-B-FbjL9z.js",
+   "kb": 50,
+   "ms": 110
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-X2JCiLpx.css",
+   "kb": 3,
+   "ms": 90
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-DRUs4ql5.js",
+   "kb": 2,
+   "ms": 75
+  },
+  {
+   "u": "/staging/baked/provincetown/content/listings.json",
+   "kb": 45,
+   "ms": 112
+  },
+  {
+   "u": "/staging/live/tw-zmc6ejej/listings.json",
+   "kb": 7,
+   "ms": 93
+  },
+  {
+   "u": "/staging/baked/provincetown/buildings.json",
+   "kb": 350,
+   "ms": 324
+  },
+  {
+   "u": "/staging/baked/provincetown/buildings.bin",
+   "kb": 6560,
+   "ms": 991
+  }
+ ],
+ "bigReqs": [
+  {
+   "u": "/staging/baked/provincetown/ground.bin",
+   "kb": 56480,
+   "ms": 2159
+  },
+  {
+   "u": "/staging/baked/provincetown/terrain.bin",
+   "kb": 17876,
+   "ms": 762
+  },
+  {
+   "u": "/staging/baked/provincetown/context.coastDist.bin",
+   "kb": 8938,
+   "ms": 327
+  },
+  {
+   "u": "/staging/baked/provincetown/buildings.bin",
+   "kb": 6560,
+   "ms": 991
+  },
+  {
+   "u": "/staging/baked/provincetown/ground.rulemap.png",
+   "kb": 2941,
+   "ms": 300
+  },
+  {
+   "u": "/staging/baked/provincetown/ground.poolmap.png",
+   "kb": 2678,
+   "ms": 276
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/moon.jpg",
+   "kb": 1031,
+   "ms": 44
+  },
+  {
+   "u": "/staging/baked/provincetown/trees.json",
+   "kb": 792,
+   "ms": 515
+  }
+ ],
+ "profLoad": {
+  "sum": {
+   "total": 37445,
+   "idle": 1406,
+   "program": 1648,
+   "gc": 413,
+   "index": 262,
+   "hover": 31
+  },
+  "top": [
+   [
+    11954,
+    "b|Town-SFXxENTJ.js:3954:2323"
+   ],
+   [
+    4493,
+    "sH|Town-SFXxENTJ.js:3954:1108"
+   ],
+   [
+    1648,
+    "(program)|:-1:-1"
+   ],
+   [
+    1545,
+    "Ud|Town-SFXxENTJ.js:7993:17895"
+   ],
+   [
+    1361,
+    "D|Town-SFXxENTJ.js:3686:12123"
+   ],
+   [
+    1229,
+    "A|Town-SFXxENTJ.js:3954:1816"
+   ],
+   [
+    1056,
+    "E|Town-SFXxENTJ.js:3954:3010"
+   ],
+   [
+    931,
+    "fromBufferAttribute|Town-SFXxENTJ.js:5:41859"
+   ],
+   [
+    824,
+    "computeVertexNormals|Town-SFXxENTJ.js:5:111707"
+   ],
+   [
+    688,
+    "getX|Town-SFXxENTJ.js:5:101983"
+   ],
+   [
+    643,
+    "yr|Town-SFXxENTJ.js:44:6773"
+   ],
+   [
+    604,
+    "(anon)|Town-SFXxENTJ.js:7993:20589"
+   ]
+  ]
+ },
+ "profMove": {
+  "sum": {
+   "total": 13971,
+   "idle": 3097,
+   "program": 2196,
+   "gc": 29,
+   "index": 194,
+   "hover": 477
+  },
+  "top": [
+   [
+    2196,
+    "(program)|:-1:-1"
+   ],
+   [
+    1519,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    1134,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    652,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    483,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    340,
+    "multiplyMatrices|Town-SFXxENTJ.js:5:56129"
+   ],
+   [
+    305,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    285,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    267,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ],
+   [
+    262,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    237,
+    "(anon)|Town-SFXxENTJ.js:4513:177"
+   ],
+   [
+    214,
+    "qU|Town-SFXxENTJ.js:3627:10009"
+   ]
+  ]
+ },
+ "profClick": {
+  "sum": {
+   "total": 71610,
+   "idle": 19104,
+   "program": 12334,
+   "gc": 224,
+   "index": 284,
+   "hover": 1111
+  },
+  "top": [
+   [
+    12334,
+    "(program)|:-1:-1"
+   ],
+   [
+    8150,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    6529,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    3410,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    2606,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    1660,
+    "multiplyMatrices|Town-SFXxENTJ.js:5:56129"
+   ],
+   [
+    1452,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    1357,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ],
+   [
+    1320,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    1316,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    1155,
+    "(anon)|Town-SFXxENTJ.js:4513:177"
+   ],
+   [
+    1066,
+    "bindVertexArray|:-1:-1"
+   ]
+  ]
+ }
+}

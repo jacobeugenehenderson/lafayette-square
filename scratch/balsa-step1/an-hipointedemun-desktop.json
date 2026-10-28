@@ -1,0 +1,356 @@
+{
+ "town": "hipointedemun",
+ "dev": "desktop",
+ "build": "1612d2de",
+ "fcp": 2120,
+ "revealed": true,
+ "prepBuildings": 3597,
+ "prepGround": 3939,
+ "prepTrees": 4365,
+ "reveal": 5260,
+ "usable": 5339,
+ "move": {
+  "frames": 277,
+  "med": 83.3,
+  "p95": 83.4,
+  "hitches50": 275,
+  "lastHitchAfterInput": 21242,
+  "steadyMed": 83.2,
+  "steadyP95": 83.4
+ },
+ "click": null,
+ "hoverFrames": {
+  "med": 83.3,
+  "p95": 83.4
+ },
+ "bytesTotalKB": 47180,
+ "identityReqs": [
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-B-FbjL9z.js",
+   "kb": 50,
+   "ms": 116
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-X2JCiLpx.css",
+   "kb": 3,
+   "ms": 115
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-DRUs4ql5.js",
+   "kb": 2,
+   "ms": 83
+  },
+  {
+   "u": "/staging/baked/hipointedemun/content/listings.json",
+   "kb": 19,
+   "ms": 118
+  },
+  {
+   "u": "/staging/live/tw-316uoro4/listings.json",
+   "kb": 7,
+   "ms": 80
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/buildings/brick_red.jpg",
+   "kb": 679,
+   "ms": 63
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/buildings/slate.jpg",
+   "kb": 505,
+   "ms": 63
+  },
+  {
+   "u": "/staging/baked/hipointedemun/buildings.bef89d7d9009364d.json",
+   "kb": 166,
+   "ms": 110
+  },
+  {
+   "u": "/staging/baked/hipointedemun/buildings.fcb1077f77484c4c.bin",
+   "kb": 3906,
+   "ms": 207
+  }
+ ],
+ "bigReqs": [
+  {
+   "u": "/staging/baked/hipointedemun/ground.f4af8fc4c02ccaea.bin",
+   "kb": 8549,
+   "ms": 492
+  },
+  {
+   "u": "/staging/baked/hipointedemun/buildings.fcb1077f77484c4c.bin",
+   "kb": 3906,
+   "ms": 207
+  },
+  {
+   "u": "/staging/baked/hipointedemun/ground.poolmap.21e2c6d2aeb5ff58.png",
+   "kb": 2272,
+   "ms": 118
+  },
+  {
+   "u": "/staging/baked/hipointedemun/ground.rulemap.c4b0a5f22eb33980.png",
+   "kb": 2098,
+   "ms": 121
+  },
+  {
+   "u": "/staging/baked/hipointedemun/terrain.a8cb6e00b2485dcd.bin",
+   "kb": 1303,
+   "ms": 182
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/moon.jpg",
+   "kb": 1031,
+   "ms": 53
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/Town-SFXxENTJ.js",
+   "kb": 731,
+   "ms": 149
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/buildings/brick_red.jpg",
+   "kb": 679,
+   "ms": 63
+  }
+ ],
+ "profLoad": {
+  "sum": {
+   "total": 2422,
+   "idle": 1644,
+   "program": 292,
+   "gc": 55,
+   "index": 45,
+   "hover": 3
+  },
+  "top": [
+   [
+    817,
+    "I|Town-SFXxENTJ.js:3654:285"
+   ],
+   [
+    292,
+    "(program)|:-1:-1"
+   ],
+   [
+    283,
+    "D|Town-SFXxENTJ.js:3686:12123"
+   ],
+   [
+    56,
+    "X|Town-SFXxENTJ.js:3686:12325"
+   ],
+   [
+    55,
+    "(garbage collector)|:-1:-1"
+   ],
+   [
+    41,
+    "A|Town-SFXxENTJ.js:3954:1816"
+   ],
+   [
+    26,
+    "fromBufferAttribute|Town-SFXxENTJ.js:5:41859"
+   ],
+   [
+    25,
+    "Bt|App--sv3GKtz.js:38:9885"
+   ],
+   [
+    24,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    24,
+    "computeVertexNormals|Town-SFXxENTJ.js:5:111707"
+   ],
+   [
+    20,
+    "getX|Town-SFXxENTJ.js:5:101983"
+   ],
+   [
+    17,
+    "yr|Town-SFXxENTJ.js:44:6773"
+   ]
+  ]
+ },
+ "profMove": {
+  "sum": {
+   "total": 2049,
+   "idle": 19132,
+   "program": 463,
+   "gc": 17,
+   "index": 88,
+   "hover": 59
+  },
+  "top": [
+   [
+    463,
+    "(program)|:-1:-1"
+   ],
+   [
+    211,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    131,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    59,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    43,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    35,
+    "f|Town-SFXxENTJ.js:7993:85113"
+   ],
+   [
+    30,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    30,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    29,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ],
+   [
+    29,
+    "bindVertexArray|:-1:-1"
+   ],
+   [
+    24,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    20,
+    "xi|Town-SFXxENTJ.js:3627:9440"
+   ]
+  ]
+ },
+ "profHover": {
+  "sum": {
+   "total": 1236,
+   "idle": 12664,
+   "program": 340,
+   "gc": 60,
+   "index": 4,
+   "hover": 51
+  },
+  "top": [
+   [
+    340,
+    "(program)|:-1:-1"
+   ],
+   [
+    120,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    66,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    60,
+    "(garbage collector)|:-1:-1"
+   ],
+   [
+    29,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    22,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    21,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ],
+   [
+    19,
+    "oi|Town-SFXxENTJ.js:3686:80143"
+   ],
+   [
+    18,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    17,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    17,
+    "bindVertexArray|:-1:-1"
+   ],
+   [
+    12,
+    "r|Town-SFXxENTJ.js:3728:16763"
+   ]
+  ]
+ },
+ "profClick": {
+  "sum": {
+   "total": 11641,
+   "idle": 79107,
+   "program": 3745,
+   "gc": 122,
+   "index": 42,
+   "hover": 66
+  },
+  "top": [
+   [
+    3745,
+    "(program)|:-1:-1"
+   ],
+   [
+    1246,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    771,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    285,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    206,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    171,
+    "(anon)|Town-SFXxENTJ.js:4513:177"
+   ],
+   [
+    169,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    156,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ],
+   [
+    156,
+    "getProgramInfoLog|:-1:-1"
+   ],
+   [
+    149,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    133,
+    "oi|Town-SFXxENTJ.js:3686:80143"
+   ],
+   [
+    122,
+    "(garbage collector)|:-1:-1"
+   ]
+  ]
+ }
+}

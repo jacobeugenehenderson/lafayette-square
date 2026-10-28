@@ -3,7 +3,7 @@
  *
  * Loads the merged-mesh buildings bake (`buildings.json` + `.bin`) and draws
  * it as ~9 group meshes (one per material) instead of ~1082 per-building
- * meshes, AND resolves per-building identity (click / hover / neon / place
+ * meshes, AND resolves per-building identity (click / neon / place
  * state) against the render-scoped index baked into the manifest. Production
  * and Preview both consume this; nobody imports `src/data/buildings` for the
  * 3D render. See HANDOFF-buildings-bake.md + SLAB-CONTRACT §6.
@@ -22,9 +22,10 @@
  *   - desktop triplanar wall texture + roof texture overlay; mobile untextured.
  *   - weather (wet/snow) via applyWeatherToShader on walls + roofs.
  *   - terrain lift via the baked aCentroid (.x × shared uExag + .y, the drawn ground's own height) — src/lib/buildingLift.js.
- * Selection / hover highlight in-shader (uSelectedId / uHoveredId vs the
- * per-vertex aBuildingId) since one shared material can't set per-building
- * emissive. Raycast resolves a hit to a building id via aBuildingId.
+ * Selection highlight in-shader (uSelectedId vs the per-vertex aBuildingId)
+ * since one shared material can't set per-building emissive. A click's raycast
+ * resolves to a building id via aBuildingId. No hover: nothing raycasts on a
+ * pointer move (BRIEF-the-balsa-model §4.2).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -35,10 +36,8 @@ import { buildingLiftGLSL, buildingLiftY } from '../lib/buildingLift.js'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useTownContext } from './townContext.js'
-import useTownHover from './townHover.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { roofTops } from '../lib/roofTop.js'
-import useCityModelActive from '../hooks/useCityModelActive'
 import { lookOf } from '../lib/lookOf.js'
 import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'
 
@@ -86,7 +85,7 @@ if (typeof window !== 'undefined') {
 // ⭐ The tint is a Look identity channel (`scene.identity.litTint` = { color, strength }, src/lib/townIdentity.js),
 // authored per town; absent, the kit's neutral one, which is no town's. One set of uniforms shared by every roof material, so a change
 // of lit set or tint re-uploads a small texture and never recompiles a shader.
-export const litUniforms = {
+const litUniforms = {
   uLitTex: { value: null },
   uLitTexSize: { value: new THREE.Vector2(1, 1) },
   uLitOn: { value: 0 },
@@ -140,17 +139,8 @@ const _NIGHT_FOUND = new THREE.Color('#3d3530') // foundation night target (line
 
 
 /**
- * Stands down to INDEX-ONLY (loads, parses and publishes the identity index, but
- * draws no building meshes) whenever an acquired city LOD2 model is drawing the
- * buildings for this look — see CityModel.jsx + useCityModelActive. Identity must
- * stay on ONE hydration path (this one) or the index and the meshes drift apart
- * (`feedback_dual_hydration_paths_drift`). The selection ring still draws: it
- * traces the baked footprint, which sits directly under the LOD2 solid.
- *
- * Reading the store HERE rather than taking a prop keeps all three hosts
- * (Scene / CartographApp / PreviewApp) identical and scene-generic — none of them
- * can know whether an arbitrary lookId ships a city model.
- * `renderGeometry: false` additionally forces index-only for callers that want it.
+ * Identity stays on ONE hydration path (this one) or the index and the meshes
+ * drift apart (`feedback_dual_hydration_paths_drift`).
  */
 // `materialPhysicsOverride`: Stage's live wall/roof physics, laid over the baked scene.materialPhysics so an
 // edit shows before a bake (Loupe's audit, 2026-09-26). The building PALETTE is live too, on a v3 slab (below).
@@ -196,7 +186,7 @@ function recolour(meshes, manifest, palettes) {
 
 // `litIds` (Set of building ids, <Town litIds>) tints those roofs; `litTintOverride` is Stage's live channel.
 // `paletteOverride` / `wallPalettesOverride`: Stage's live palettes (<Town overrides.buildingPalette / .wallPalettes>).
-export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride, paletteOverride, wallPalettesOverride, litIds, litTintOverride } = {}) {
+export default function SlabBuildings({ lookId, interactive = true, materialPhysicsOverride, paletteOverride, wallPalettesOverride, litIds, litTintOverride } = {}) {
   const LOOK_ID = lookOf(lookId, 'SlabBuildings')
   const [data, setData] = useState(null)   // { manifest, bin }
   const [bakedScene, setScene] = useState(null)
@@ -218,11 +208,6 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     litUniforms.uLitColor.value.set(tint.color)
     litUniforms.uLitStrength.value = tint.strength
   }, [tint.color, tint.strength])
-  // The city model covers only the buildings OSM also mapped, so we keep DRAWING
-  // and keep the geometry mounted — suppression is PER BUILDING (aCovered below),
-  // not wholesale. Hiding everything left ~46% of Łódź as bare ground.
-  const cityCoveredIds = useCityModelActive((s) => s.coveredIds)
-  const drawGeometry = renderGeometry
   const canInteract = interactive
   const setIndex = useSlabBuildingIndex((s) => s.setIndex)
   const clearIndex = useSlabBuildingIndex((s) => s.clear)
@@ -329,8 +314,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       const nightColors = isWall ? new Float32Array(g.vertexCount * 3) : null
       for (let i = 0; i < g.vertexCount; i++) writeLinear(srcColors[i * 3], srcColors[i * 3 + 1], srcColors[i * 3 + 2], isFlatRoof, isWall, colors, nightColors, i)
       return { group: g, positions, colors, nightColors, uvs, centroidYs, indices,
-               aBuildingId: new Float32Array(g.vertexCount).fill(-1),
-               aCovered: new Float32Array(g.vertexCount) }
+               aBuildingId: new Float32Array(g.vertexCount).fill(-1) }
     })
 
     // Stamp per-vertex aBuildingId from the index ranges (numeric id = index
@@ -343,8 +327,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
         const d = byKey.get(`${kind}:${mat}`)
         if (!d) return
         const [start, count] = range
-        const covered = cityCoveredIds?.has(b.id) ? 1 : 0
-        for (let i = 0; i < count; i++) { d.aBuildingId[start + i] = num; d.aCovered[start + i] = covered }
+        d.aBuildingId.fill(num, start, start + count)
       }
       fill('wall', b.wallMaterial, b.ranges.wall)
       fill('roof', b.roofMaterial, b.ranges.roof)
@@ -357,14 +340,13 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       geom.setAttribute('color', new THREE.Float32BufferAttribute(d.colors, 3))
       geom.setAttribute('aCentroid', new THREE.Float32BufferAttribute(d.centroidYs, 2))
       geom.setAttribute('aBuildingId', new THREE.Float32BufferAttribute(d.aBuildingId, 1))
-      geom.setAttribute('aCovered', new THREE.Float32BufferAttribute(d.aCovered, 1))
       if (d.nightColors) geom.setAttribute('aNightColor', new THREE.Float32BufferAttribute(d.nightColors, 3))
       if (d.uvs) geom.setAttribute('uv', new THREE.Float32BufferAttribute(d.uvs, 2))
       geom.setIndex(new THREE.Uint32BufferAttribute(d.indices, 1))
       geom.computeVertexNormals()
       return { group: d.group, geometry: geom, texId: textureIdFor(d.group, scene) }
     })
-  }, [data, scene, cityCoveredIds])
+  }, [data, scene])
 
   // ── The live palette: recolour when the effective palettes differ from what is drawn ──
   const effective = useMemo(() => bakedScene && ({
@@ -406,9 +388,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     const { sunAltitude } = getLightingPhase()
     const darkFactor = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
     const selectedId = townSel.current
-    const { hoveredId } = useTownHover.getState()
     const selNum = (idToNum && selectedId != null) ? (idToNum.get(selectedId) ?? -1) : -1
-    const hovNum = (idToNum && hoveredId != null) ? (idToNum.get(hoveredId) ?? -1) : -1
     // X-ray: feed the camera pos + the always-on dissolve dist/band (so the
     // shader gives a clear shot through any building the camera is inside).
     const cam = state.camera.position
@@ -416,7 +396,6 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       if (!sh) continue
       sh.uniforms.uDarkFactor.value = darkFactor
       sh.uniforms.uSelectedId.value = selNum
-      sh.uniforms.uHoveredId.value = hovNum
       if (sh.uniforms.uCamPos) {
         sh.uniforms.uCamPos.value.set(cam.x, cam.y, cam.z)
         sh.uniforms.uDissolveDist.value = _dissolveDist
@@ -432,8 +411,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
   const indexForRing = useSlabBuildingIndex((s) => s.index)
   const selectedEntry = (selectedId && indexForRing) ? indexForRing.byId.get(selectedId) : null
 
-  // ⭐ THE REVEAL (a `prepared:buildings` startup mark): the buildings are PREPARED once the slab's geometry is built. ⚠️ Index-only mode
-  // (a city model draws instead) marks too: the city model is not gated yet.
+  // ⭐ THE REVEAL (a `prepared:buildings` startup mark): the buildings are PREPARED once the slab's geometry is built.
   useEffect(() => { if (meshes) markPrepared('buildings') }, [meshes])
 
   if (!meshes) return null
@@ -443,7 +421,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     <group
       onPointerDown={(e) => { _pdx = e.clientX; _pdy = e.clientY }}
     >
-      {drawGeometry && meshes.map(({ group, geometry, texId }) => (
+      {meshes.map(({ group, geometry, texId }) => (
         <GroupMesh
           key={`${group.kind}:${group.id}`}
           group={group}
@@ -523,11 +501,9 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   const isRoof = group.kind === 'roof'
   const isWall = group.kind === 'wall'
   const isFoundation = group.kind === 'foundation'
-  // A click reports to the app (<Town onSelectBuilding>); hover is the renderer's own.
+  // A click reports to the app (<Town onSelectBuilding>).
   const townSelect = useTownContext().select
   const select = (id) => townSelect?.(id)
-  const setHovered = useTownHover((s) => s.setHovered)
-  const clearHovered = useTownHover((s) => s.clearHovered)
 
   // scene.materialPhysics override (usually empty); mirrors the live useEffect.
   const phys = scene?.materialPhysics?.[isRoof ? `roof_${group.id}` : group.id] || {}
@@ -591,7 +567,6 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       shader.uniforms.uDarkFactor = { value: 0 }
       if (isRoof) Object.assign(shader.uniforms, litUniforms)
       shader.uniforms.uSelectedId = { value: -1 }
-      shader.uniforms.uHoveredId = { value: -1 }
       shader.uniforms.uCamPos = { value: new THREE.Vector3() }
       shader.uniforms.uDissolveDist = { value: _dissolveDist }   // x-ray, always on
       shader.uniforms.uDissolveBand = { value: _dissolveBand }
@@ -608,8 +583,6 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
         `#include <common>
          attribute vec2 aCentroid;
          attribute float aBuildingId;
-         attribute float aCovered;
-         varying float vCovered;
          ${isWall ? 'attribute vec3 aNightColor;\n varying vec3 vNightCol;' : ''}
          uniform float uExag;
          ${isFoundation ? 'uniform float uRiserFloor;' : ''}
@@ -625,7 +598,6 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          vBPos = (modelMatrix * vec4(position, 1.0)).xyz;
          vBNorm = normalize(mat3(modelMatrix) * normal);
          vBId = aBuildingId;
-         vCovered = aCovered;
          ${isWall ? 'vNightCol = aNightColor;' : ''}
          ${buildingLiftGLSL(isFoundation)}`
       )
@@ -637,8 +609,6 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          uniform float uDarkFactor;
          ${isRoof ? 'uniform sampler2D uLitTex;\n uniform vec2 uLitTexSize;\n uniform float uLitOn;\n uniform vec3 uLitColor;\n uniform float uLitStrength;' : ''}
          uniform float uSelectedId;
-         uniform float uHoveredId;
-         varying float vCovered;
          ${isFoundation ? 'uniform vec3 uFoundNight;' : ''}
          ${isWall ? 'varying vec3 vNightCol;' : ''}
          ${tex ? 'uniform sampler2D uTex;\n uniform float uTexStrength;\n uniform float uTexScale;' : ''}
@@ -660,10 +630,6 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <clipping_planes_fragment>',
         `#include <clipping_planes_fragment>
-         // An acquired city LOD2 solid is drawing THIS building — drop the
-         // extrusion so the two don't z-fight. Only these; the buildings the
-         // city model has no solid for keep rendering from the slab.
-         if (vCovered > 0.5) discard;
          if (uDissolveDist > 0.0) {
            float camDist = distance(vBPos, uCamPos);
            float keep = smoothstep(uDissolveDist, uDissolveDist + uDissolveBand, camDist);
@@ -715,14 +681,12 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
         `#include <color_fragment>\n${body}`
       )
 
-      // ── Fragment: selection / hover emissive (per-building via id match).
-      //    0x333333 selected (0.2), 0x222222 hover (0.133); selected wins. ──
+      // ── Fragment: selection emissive (per-building via id match), 0x333333 (0.2). ──
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
          float selT = step(abs(vBId - uSelectedId), 0.5);
-         float hovT = step(abs(vBId - uHoveredId), 0.5);
-         totalEmissiveRadiance += vec3(selT * 0.2 + (1.0 - selT) * hovT * 0.133);
+         totalEmissiveRadiance += vec3(selT * 0.2);
          ${isRoof ? `// At night an albedo tint has no light to show it: the lit roof glows by the same mix, as the dark comes.
          totalEmissiveRadiance += uLitColor * litMix * uDarkFactor * 0.6;` : ''}`
       )
@@ -800,11 +764,8 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   // in the wrong place (depth histogram: blobs at 0.0 and 0.5, nothing at the
   // ground's 0.25).
   //
-  // ⭐ Two things must match the render material, and one must NOT:
+  // ⭐ One thing must match the render material, and one must NOT:
   //   ✓ the aCentroid lift (buildingLiftGLSL) — or the shadow is in the wrong place
-  //   ✓ the `vCovered` discard — geometry hidden behind the CityModel LOD2 is
-  //     discarded when drawn, so it must be discarded here too or it casts a
-  //     PHANTOM shadow the operator can see but whose caster is invisible
   //   ✗ the camera x-ray dissolve (uDissolveDist) is a VIEWING aid keyed to the
   //     camera, not the sun. Walls dissolving so you can see in must keep
   //     throwing their shadow, or the lighting changes as you fly.
@@ -816,21 +777,13 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', `#include <common>
          attribute vec2 aCentroid;
-         attribute float aCovered;
          uniform float uExag;
-         ${isFoundation ? 'uniform float uRiserFloor;' : ''}
-         varying float vCoveredD;`)
+         ${isFoundation ? 'uniform float uRiserFloor;' : ''}`)
         .replace('#include <begin_vertex>', `#include <begin_vertex>
-         vCoveredD = aCovered;
          ${buildingLiftGLSL(isFoundation)}`)
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', `#include <common>
-         varying float vCoveredD;`)
-        .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
-         if (vCoveredD > 0.5) discard;`)
     }
     // Distinct key so this program never collapses onto the plain depth program.
-    dm.customProgramCacheKey = () => `slab-bldg-depth-centroidlift-v2-${isFoundation ? 'riser' : 'rigid'}`
+    dm.customProgramCacheKey = () => `slab-bldg-depth-centroidlift-v3-${isFoundation ? 'riser' : 'rigid'}`
     return dm
   }, [isFoundation])
 
@@ -838,8 +791,8 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   // (src/lib/buildingLift.js); the raycast used to test the UN-lifted geometry, so the clickable building sat
   // aCentroid × uExag below the drawn one (Ward, Huron, Hero: a drawn roof selected nothing, empty ground under the
   // building selected it). The copy shares the index and carries the drawn positions — the same lift, by the one
-  // definition — and a BVH (R3F raycasts every handler mesh on every pointermove: brute force was 13 ms a move on
-  // Huron). Re-lifted and REFIT lazily, on the first raycast after anything the lift reads has changed (uExag, the
+  // definition — and a BVH (brute force was 13 ms a raycast on Huron). Only a click raycasts it: no pointer-move handler
+  // exists, so R3F raycasts nothing on a move (filterPointerEvents). Re-lifted and REFIT lazily, on the first raycast after anything the lift reads has changed (uExag, the
   // floor, the geometry) — nothing runs per frame. `indirect` leaves the shared index (every range's draw order) as is.
   const pick = useMemo(() => {
     const raw = geometry.attributes.position.array, A = geometry.attributes.aCentroid, cy = A.array, k = A.itemSize
@@ -870,14 +823,8 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   }, [pick])
 
   // Resolve a raycast hit to a building id via the aBuildingId attribute.
-  // A DISCARDED fragment still raycasts, so an extrusion hidden behind a city
-  // LOD2 solid would otherwise intercept clicks aimed at that solid. Both would
-  // resolve to the same building, but let the geometry that is actually VISIBLE
-  // own the interaction — otherwise hover/cursor fires off an invisible surface.
   const idAtFace = (e) => {
     if (!e.face) return null
-    const covered = geometry.attributes.aCovered?.getX(e.face.a)
-    if (covered > 0.5) return null
     const num = geometry.attributes.aBuildingId.getX(e.face.a)
     if (num < 0) return null
     return useSlabBuildingIndex.getState().index?.byNum[num]?.id ?? null
@@ -893,8 +840,6 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       receiveShadow
       frustumCulled={false}
       raycast={raycastDrawn}
-      onPointerMove={interactive ? (e) => { e.stopPropagation(); const id = idAtFace(e); if (id) { setHovered(id); document.body.style.cursor = 'pointer' } } : undefined}
-      onPointerOut={interactive ? () => { clearHovered(); document.body.style.cursor = 'auto' } : undefined}
       onClick={interactive ? (e) => { e.stopPropagation(); if (isDrag(e)) return; const id = idAtFace(e); if (id) select(id) } : undefined}
     />
   )
