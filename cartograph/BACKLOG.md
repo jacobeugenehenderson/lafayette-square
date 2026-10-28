@@ -182,7 +182,16 @@ Queued for it, in order: (1) HERO OBJECT BLUR is broken, caught on film in PTown
 blurred end to end, the Monument (the hero object) included, so the focus is not on the object (likely the focus-falls-back-to-aim path,
 src/components/dofDriver.js / focusObject.js; cause not established). Then recapture the share images. (2) PTown's ~9 s arrival splash
 (below). (3) Society's census reads 0/0/0. (4) SlabRevetment's setState-in-render warning, plus its `waterLevels` refusal on an INLAND town (HPDM, which has no revetment.json, still logs "⛔ terrain.json carries no water record"): the levels memo must wait for a revetment document. A refusal on a town with no shore is noise that trains the eye to skip ⛔ (Ferrule, 2026-10-27). (4b) BEFORE ANY PROMOTE of the 2026-10-27 pin: 64d59ffd (the movie clock steps by the presented frame, a 10-13 WIP the 10-22 pin left out) ships to staging with 7179c779, and its measured run is owed: claims-frame-timeline-catches-a-stall on staging, plus Jacob watching the hero movie. (5) The bridge-edge water tint (filed with the
-deck). RULED, to carry: water SHADED BY KIND (Jacob: "we want to shade water by kind"), with ①'s water face carrying its subtype from its
+deck). (6) PTown's STREET shot is UNDER WATER (Jacob, 2026-10-27 night, on :5183 at integration: "…/stage/provincetown/street is under
+water but we aren't currently working on street level views"). Filed, not chased; cause not established. (7) FIELDS ARE FIELDS, AND AN EDGE BELONGS TO BOTH SIDES (Jacob, 2026-10-27 night, on Huron's farmland: "fields IRL are
+fields, not fields surrounded by detail"; "no one issue was wrong. It was relational"). This supersedes the 2026-09-26 headland ruling. Today each
+crop field draws its own edge strip and ruts whatever lies next to it, so a field-to-field boundary is drawn twice and woods get a brown ring.
+THE LOGIC: what shows at a field's edge is decided by the EDGE (field|field, field|woods, field|road), never by the field alone. This is the kit's
+one-line boundary doctrine (`claims-a-land-use-boundary-is-one-line`) applied to the look. The crop's per-field headland goes (surfaces.mjs crop
+`headlandRows` / `trackGaugeRows`, deleted, not zeroed; the 09-26 text to the Diary), and the rows run to the field's edge. Any edge treatment
+returns only as a property of the shared boundary. Read-only first: point-sample Huron at the screenshot's fields to see what each patch
+(the near-black and the dark rectangles) is, and how it relates to its neighbours. The 09-26 text goes
+to the Diary. Also check, read-only first: the near-black bare-soil patches and the quilt's dark rectangles, by point-sampling Huron's map. RULED, to carry: water SHADED BY KIND (Jacob: "we want to shade water by kind"), with ①'s water face carrying its subtype from its
 producer, an ASPIRATION to build, not rot. MONUMENT LIGHTS (Jacob): pitch ANIMATION ("a quintessential aspirational feature we could
 deliver pretty cheaply"); the strand count is AUTHORED (a slider in the editor, ~3,100 bulbs per the press); the sources name ~3,100 lights and no strand count. MEASURED BY JACOB from photos (2026-10-27): 20 STRANDS, 5 per face of the
 square tower, leaving each face at about 20 · 30 · 50 · 70 · 80% across it (so unevenly spaced at the top), and landing EVENLY spaced
