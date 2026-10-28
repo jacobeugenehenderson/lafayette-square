@@ -14,6 +14,11 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**⛔ LS SURVEY, 2026-10-28, blocks the route to the Datawall (Jacob live; Kerf on the crash):** (1) selecting a street crashes the
+canvas, "chainMeasure: street Carroll Street carries no class", even after a reload, though skeleton and ribbons on disk are fully classed;
+(2) the dark ink lines read as hatches, not smooth lines (protoNavy draws each ① ink ring as two 0.8 m ribbons ~1 cm apart; that
+this causes the look is inferred); (3) the curb (blue) shows ramp CUTS (gaps at every corner) in Survey, where they don't belong;
+(4) the corner-radius editor is unreachable behind (1). Jacob: these are supposed to be smooth vector lines, tints.
 **⛔ LS'S RAMPS: THE INK CUTS CHORDS ACROSS THE CURVES (Jacob's Survey screenshot, 2026-10-28; cause not established).** At the
 interchange south of Chouteau, the drawn ramps (thick, off-grade) follow smooth curves while the thin navy ① line beside them runs as STRAIGHT
 CHORDS between distant anchors, two lines for one ramp. The ramp ribbons also step abruptly in width. Inferred lead, unread: mintInputs
