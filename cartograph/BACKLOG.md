@@ -20,8 +20,12 @@ refuse by name when ① exists and protoShapeTiles doesn't.
 **▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) HELD UNMERGED: `ferrule/resolution-rule` 332e0a23** (`coastFile.mjs#toResolution` at settle's
 exit, COAST_VERSION 4; PTown's 7.6 cm hairpin edge goes) moves the class, does not close it: on Huron's v4 fixture, vertices turning ≥ 158°
 0 → 6, and at (3234.63, 791.994) · (3182.751, 765.209) · (686.159, 286.334) ①'s ink ring has an outline vertex no ink cell carries, PTown's
-refusal signature (Zob). PTown's bends and ground unmeasured. NEXT (Jacob's standup): ONE COPY of the ink (the block reads absorb's noded
-ink, as the shore does; two copies as cause is Zob's inference) vs a turn rule on toResolution, costs unmeasured. ⛔ GATE: claims-the-mint-
+refusal signature (Zob). RULED (Jacob, 2026-10-27): ONE COPY of the ink (`r-one-copy-of-the-ink`); the turn rule is not built. ⚠️ As filed it
+collides with Boz's A(i) (② offsets the un-absorbed face; `absorbInk.js` header): with Jacob. MEASURED since (Ferrule, offline, nothing written):
+at the mint the stray tip is in ①'s ink ring ONLY (no cell, paint, block or water; no `blocks` vertex within 20 mm), and Huron's v4 ground
+BUILDS (232 tiles). PTown's v4 ground passes the shore (985 vertices shared) and REFUSES at `bridgeOverlay` on breakwater|0 (way 170402219,
+embankment=dyke, no bridge tag: a byCoast span), cause not established. OPEN: PTown's v4 bake removes 289 vertices, tonight's offline census
+246, cause not established. ⛔ GATE: claims-the-mint-
 refuses-no-outline RED on PTown until (b). Outputs: scratch/ptown-parks/ptown-failed6/ · probes, dumps, Zob's (zob/): scratch/resolution-rule/.
 **▶ (b) THE DECKS' 1 mm JOGS (artifacts) stay.** First: WHY deckFootprints' union self-touches (PTown @(-56.78, 989.78)). The edge rule on
 decks is NOT clean: PTown 112 removed, 9 held, verifier 176 → 21 · Huron 390 removed (≤ 0.954 m), 44 held, 490 → 91, 2 rings ≤ 3 vertices.
@@ -34,10 +38,9 @@ rule (offline): it mints, its verifier is clean, the rule removes 66 vertices (�
 mint). Re-skeleton (commit-extent) before LS's next pour. Pre-existing; LS waits on Jacob's loop adjustments anyway (Boz, 2026-10-27).
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
 running for the kit (:3343/:5183 stopped). Nothing pressed or published today. The afternoon's handoff: `cartograph/_archive/HANDOFF-2026-10-25-afternoon.md`.
-**FIRST, before any publish: the dirty detector** (entry below, "THE DIRTY DETECTOR HAS NO DISCRETION"): Huron's Publish demands a full
-re-pour for a one-line COMMENT in sources.js (b456bc6d). Small fix + a mutant where a comment-only change must not dirty. Then PTown
-Publish → Promote (Jacob said yes), Huron Publish to staging ONLY (huron.online is not on Operations' registrar list: Jacob to say if
-it's owned). Pre-press census DONE 2026-10-25: ward-pin/2026-10-17 and -22 are fully in the record (81b5c319 = efdcc0bd, identical code).
+**The dirty detector judges code by what RUNS: MERGED (a67675ce, Zob).** ▶ `node checks/claims-the-bake-watches-its-code.mjs` (green
+2026-10-27). Owed (Boz's call, open): declare `@babel/parser` in package.json (reached only through @vitejs/plugin-react today; if
+dropped, the Bake refuses loudly). Huron Publish is staging ONLY (huron.online is not on Operations' registrar list: Jacob to say if owned). Pre-press census DONE 2026-10-25: ward-pin/2026-10-17 and -22 are fully in the record (81b5c319 = efdcc0bd, identical code).
 **PARKED BRANCHES (each head carries its own summary):**
 - `shore/2026-10-25` @ 62f20dab (Swash, `.claude/worktrees/shore`). The shore is DESIGNED and ruled (`BRIEF-the-shore-is-one-line` §1
   + §3 step 2): ①'s coast IS the high-water mark; one coast read after the mint; the field STAMPED to the line; water = one
@@ -178,6 +181,8 @@ MEASURED 2026-10-26, neither provincetown.online/ nor staging.theward.online/pro
 (3) "Hero object blur" (the rack focus on a panning shot, 237ee4db, Strobe's object-identity focus) is broken on DESKTOP.
 Reproduce each on integration before fixing; the server being a temporary one is not yet ruled out as a cause.
 ⭐ NEXT TRANCHE = A WARD TRANCHE (Jacob, 2026-10-27: "we need to probably just have a Ward-focused tranche to follow this one").
+⭐ LEAD ITEM, THE BALSA MODEL (Jacob, 2026-10-27 night): the landscape looks finished but is inert, holding nothing, down to the
+building id, until a click asks. ENCODER and WARD. Plan: `docs/briefs/BRIEF-the-balsa-model.md` (measure first; 4 questions for Jacob).
 Queued for it, in order: (1) HERO OBJECT BLUR is broken, caught on film in PTown's own share images: noon.jpg is sharp, golden.jpg is
 blurred end to end, the Monument (the hero object) included, so the focus is not on the object (likely the focus-falls-back-to-aim path,
 src/components/dofDriver.js / focusObject.js; cause not established). Then recapture the share images. (2) PTown's ~9 s arrival splash
