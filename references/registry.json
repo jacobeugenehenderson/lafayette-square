@@ -5125,6 +5125,15 @@
       "findings": [
         "r-block-keys-are-minted-once-and-inserted-between"
       ]
+    },
+    {
+      "id": "q-how-a-dike-becomes-one-line",
+      "ask": "Which single line is a dike's edge when its footprint and the lidar coast run millimetres apart",
+      "neededBy": "PTown parks on the Breakwater (embankment=dyke): ① absorb refused at (-423.189, 2863.631); the land mirror measured worse",
+      "status": "answered",
+      "findings": [
+        "r-the-coast-bake-holds-an-embankment-as-land"
+      ]
     }
   ],
   "findings": [
@@ -8569,6 +8578,21 @@
       "quote": "\"1. OK 2. I think authoring is a red herring here; either authoring wouldn't have happened yet or it would be reset locally to the calculated default for that exact item. 3. Yes. This workflow imagines a user going back and adding Ts; while that *might* happen/work that would only be a 'fix' that was missed on build so would likely precede authoring\" (on Boz's reading of his '1.1' idea)",
       "canon": "EXTENT-DESIGN.md §4.1",
       "notes": "UNBUILT. Costing owed (Zob, read-only): where the mint reads the prior pour's keys, and how often a re-pour has added or removed an intersection on an authored street. Until built, the join's pour-fatal refusal on an authored slot stays (no town hits it tonight); it retires when this lands. Boz's addition: a reset-to-default on a merge is reported by name, never silent. COSTED (Zob, 2026-10-28, read-only): the key is COMPUTED by six copies of one rule (tileGround#mintSegOrdAt, tileGround#rampTerminalFlares' local segOrdAt, MeasureOverlay/SurveyorOverlay#naturalSegmentOrdinal, the ramp-ends check, the legacy buildBlockGeometryV2 fe walk); every READER is key-equality or numeric order, so fractional keys are fine there (never negative: CAP_SEGORD reserves -1/-2). The previous keys live in ribbons.json protopolygon.owners. Precondition: intersections need an identity; OSM node ids are not carried today. LS history: every renumbering of an authored street (12 of 88 commit pairs) was a kit change, none data drift. ORDER: (a) carry IX node ids through the skeleton; (b) ① mints keys from the previous protopolygon by id, integers on a first pour; (c) the six computers become one reader of the frozen key; (d) then refuseAuthoredReKey retires and scripts/rekey-block-customs.mjs is folded in or retired. Post-tranche campaign; brief owed."
+    },
+    {
+      "id": "r-the-coast-bake-holds-an-embankment-as-land",
+      "question": "q-how-a-dike-becomes-one-line",
+      "kind": "ruling",
+      "value": {
+        "where": "the coast bake, BEFORE it traces",
+        "rule": "an embankment=* way's footprint is held as LAND while the high-water line is traced, so the coast and the dike are one line by construction",
+        "supersedes": "the embankment take-out in mintInputs#waterWithoutDecks (held WIP c1f98e92) and the land mirror (beed893d), neither merged"
+      },
+      "by": "Jacob",
+      "date": "2026-10-28",
+      "quote": "\"Make the coast bake treat the dike as land before it traces\"",
+      "canon": "cartograph/BACKLOG.md PTOWN PARKS",
+      "notes": "Footprint size: the pour measure's outer edge, as r-a-way-tag-decides-before-byCoast already rules; open for the builder: whether the coast bake can read the pour measure, or needs its own (stop and report, never a constant)."
     }
   ]
 }
