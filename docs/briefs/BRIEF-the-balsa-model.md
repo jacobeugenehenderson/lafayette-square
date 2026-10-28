@@ -81,7 +81,9 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    - frame time while moving;
    - click-to-card latency;
    - how much of each is identity (index parse, sidecars, `aBuildingId` stamping, hover raycasts, neon) and how much is the look.
-   ⛔ If identity isn't where the time goes, say so and stop: the plan changes. Reuse `BRIEF-hero-arrival-perf`'s instruments and
+   ⛔ If identity isn't where the time goes, say so and stop: the plan changes. **"Not separable with existing instruments" does
+   not block the work** (Jacob, 2026-10-27: *"as far back as to shrink the search index and speeding loading"*): the cut reaches
+   back through the search index (`src/data/buildings.js`, GlassSearch's source), and loading speed is the measure. Reuse `BRIEF-hero-arrival-perf`'s instruments and
    `scratch/frame-timeline/` before building new ones.
 2. **The contract:** a `SLAB-CONTRACT` revision splitting the look, the address book and the contents, with a version bump. A
    consumer refuses a version it doesn't know.
