@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN (ruled; step 1 dispatchable once Zob co-signs §1)
-dispatched: no (Zob's premise pass asked 2026-10-27)
+dispatched: step 1 → Plumb (FRESH, 2026-10-27); Zob's premise pass running alongside
 written: 2026-10-27 night (Boz, at Jacob's request: "write the balsa model plan")
 evict-when: a town's first paint and its pan/zoom carry no per-building identity, a click resolves one and loads its contents,
 the measured budget (§3 step 1) is met on desktop and phone, the checks below are GREEN, merged, and Jacob passes it by eye.
