@@ -2097,8 +2097,9 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
     if (j.piece.length !== want.length || j.piece.some((p, x) => p !== want[x])) throw new Error(`[tileGround][offsetRingByRects] ⛔ a run piece that is not its passed stretch at ① vertex ${origV[j.i]}: the ring shortcut would drop land the band does not cover. Refusing.`)
     // ⛔ AND ON THE SIDE ITS MODE REMOVES (Zob, 2026-10-28): the shortcut cuts the chord [passed…] → X. An inward offset removes land, so the
     // piece lies INSIDE the ring (the ring's own winding sign); an outward one adds, so the opposite. A piece on the far side of its chord
-    // would make the shortcut ADD land the difference never took. By sign, no area tolerance.
-    if (Math.sign(signedArea(j.piece)) !== (outward ? -1 : 1) * Math.sign(signedArea(ring))) throw new Error(`[tileGround][offsetRingByRects] ⛔ a run piece on the far side of its chord at ① vertex ${origV[j.i]}: the shortcut would add land the difference never took. Refusing.`)
+    // would make the shortcut ADD land the difference never took. By sign, no area tolerance: a piece of exactly zero area (collinear
+    // with its chord, common on an axis-aligned pier) takes nothing either way and passes (Zob); only the OPPOSITE sign refuses.
+    if (Math.sign(signedArea(j.piece)) === -(outward ? -1 : 1) * Math.sign(signedArea(ring))) throw new Error(`[tileGround][offsetRingByRects] ⛔ a run piece on the far side of its chord at ① vertex ${origV[j.i]}: the shortcut would add land the difference never took. Refusing.`)
     for (const k of j.consumed) { if (consumedAt.has(k)) throw new Error(`[tileGround][offsetRingByRects] ⛔ two run joins consume ① vertex ${origV[k]} (at ① vertices ${origV[consumedAt.get(k).i]} and ${origV[j.i]}): one stretch, two owners. Refusing.`)
       consumedAt.set(k, j) } }
   // each consumed run's FIRST vertex in ring order becomes its X; the rest are dropped
