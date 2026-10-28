@@ -45,22 +45,22 @@ const tg = await import('../src/lib/tileGround.js')
 { const refused = R215.map((_, k) => ({ k, why: mint(tg, k) })).filter(x => x.why)
   row(!refused.length, `(2) its seam at every one of its ${R215.length} vertices: ${refused.length ? `${refused.length} REFUSE (seat ${refused[0].k}: ${refused[0].why.slice(0, 120)})` : 'every seat mints — no seam lottery'}`) }
 
-function mutant(edits) {
-  let src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
-  for (const [a, b] of edits) { if (src.split(a).length !== 2) return { err: `the anchor is not in tileGround.js once — re-aim it: ${a.slice(0, 70)}` }; src = src.replace(a, b) }
-  const dir = mkdtempSync(join(tmpdir(), 'retrace-')), LIB = join(ROOT, 'src/lib')
-  src = src.replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(LIB, r)).href}"`).replace(/from 'clipper-lib'/g, `from "${import.meta.resolve('clipper-lib')}"`)
-  writeFileSync(join(dir, 'tileGround.js'), src); return { dir }
-}
 const OPEN = ["live.forEach((c, n) => { if (c.isCoast && c.lastI >= 3 && qk4(c.P[0]) === qk4(c.P[c.lastI])) {", "live.forEach((c, n) => { if (false) {"]
 const NO_B = ["if (!s.closed && n >= 3 && qk4(s.V[0].p) === qk4(s.V[n - 1].p) && strokesAt.get(qk4(s.V[0].p)).size === 1) {", "if (false) {"]
-for (const [name, edits, judge, want] of [
-  ['the open stroking restored', [OPEN], (w) => /an OPEN stroke whose two ends are one point/.test(w || ''), 'RED at (b), at ①, not at absorb'],
-  ['and (b) removed', [OPEN, NO_B], (w) => /\[①\]\[absorb\]/.test(w || ''), 'the refusal goes back to absorbInk, one stage late']]) {
-  const m = mutant(edits)
-  if (m.err) { row(false, `mutant (${name}): ${m.err}`); continue }
-  try { const M = await import(pathToFileURL(join(m.dir, 'tileGround.js')).href), why = mint(M), ok = judge(why)
-    row(ok, `mutant: ${name} → ${why ? (ok ? `${want}, RED as it must be` : `refused, but not as wanted (${why.slice(0, 140)})`) : 'MINTED — the row proves nothing'}`) }
-  finally { rmSync(m.dir, { recursive: true, force: true }) } }
+// each mutant: one modified tileGround.js in its own temp dir, its imports pointed at the live src/lib
+{ const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
+  if (src.split(OPEN[0]).length !== 2) row(false, 'mutant (the open stroking restored): the anchor is not in tileGround.js once — re-aim it')
+  else { const dir = mkdtempSync(join(tmpdir(), 'retrace-'))
+    try { writeFileSync(join(dir, 'tileGround.js'), src.replace(OPEN[0], OPEN[1]).replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(ROOT, 'src/lib', r)).href}"`).replace(/from 'clipper-lib'/g, `from "${import.meta.resolve('clipper-lib')}"`))
+      const M = await import(pathToFileURL(join(dir, 'tileGround.js')).href), why = mint(M), ok = /an OPEN stroke whose two ends are one point/.test(why || '')
+      row(ok, `mutant: the open stroking restored → ${why ? (ok ? 'RED at (b), at ①, not at absorb, RED as it must be' : `refused, but not as wanted (${why.slice(0, 140)})`) : 'MINTED — the row proves nothing'}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) } } }
+{ const src2 = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8')
+  if (src2.split(OPEN[0]).length !== 2 || src2.split(NO_B[0]).length !== 2) row(false, 'mutant (and (b) removed): an anchor is not in tileGround.js once — re-aim it')
+  else { const dir2 = mkdtempSync(join(tmpdir(), 'retrace-b-'))
+    try { writeFileSync(join(dir2, 'tileGround.js'), src2.replace(OPEN[0], OPEN[1]).replace(NO_B[0], NO_B[1]).replace(/from '(\.{1,2}\/[^']+)'/g, (_, r) => `from "${pathToFileURL(join(ROOT, 'src/lib', r)).href}"`).replace(/from 'clipper-lib'/g, `from "${import.meta.resolve('clipper-lib')}"`))
+      const M2 = await import(pathToFileURL(join(dir2, 'tileGround.js')).href), why = mint(M2), ok = /\[①\]\[absorb\]/.test(why || '')
+      row(ok, `mutant: and (b) removed → ${why ? (ok ? 'the refusal goes back to absorbInk, one stage late, RED as it must be' : `refused, but not as wanted (${why.slice(0, 140)})`) : 'MINTED — the row proves nothing'}`)
+    } finally { rmSync(dir2, { recursive: true, force: true }) } } }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the ink never retraces itself')
 process.exit(red ? 1 : 0)

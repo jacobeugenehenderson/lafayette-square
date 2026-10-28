@@ -527,7 +527,9 @@ export function wallsOf(features) {
   for (const f of features) for (const r of f.poly) r.forEach((a, i) => { const b = r[(i + 1) % r.length], e = E.push([a, b]) - 1
     for (let gx = Math.floor(Math.min(a[0], b[0]) / G); gx <= Math.floor(Math.max(a[0], b[0]) / G); gx++)
       for (let gz = Math.floor(Math.min(a[1], b[1]) / G); gz <= Math.floor(Math.max(a[1], b[1]) / G); gz++) (grid.get(gx + ',' + gz) || grid.set(gx + ',' + gz, []).get(gx + ',' + gz)).push(e) })
-  const inside = (x, z) => features.some(f => { let w = 0; for (const r of f.poly) if (inRing(x, z, r)) w++; return w % 2 === 1 })
+  const boxes = features.map(f => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of f.poly[0]) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0, x1, z0, z1] })
+  const inside = (x, z) => features.some((f, i) => { const b = boxes[i]; if (x < b[0] || x > b[1] || z < b[2] || z > b[3]) return false   // its box first (Zob)
+    let w = 0; for (const r of f.poly) if (inRing(x, z, r)) w++; return w % 2 === 1 })
   return (p, n, s, reach) => {
     if (inside(p[0] + s * n[0] * 1e-4, p[1] + s * n[1] * 1e-4)) return 0     // a tenth of a lattice unit: the first step enters a feature
     const d = [s * n[0], s * n[1]], q = [p[0] + d[0] * reach, p[1] + d[1] * reach], seen = new Set()

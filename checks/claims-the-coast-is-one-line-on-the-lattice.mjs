@@ -8,8 +8,8 @@
 // the split), and one that no water edge holds refuses by name.
 //   (1) PLANT: a channel whose street crosses it bank to bank: every crossing the arc took is a VERTEX of the water ring ①
 //       hands back (protopolygon.waterRings), and the mint passes.
-//   (2) HURON: its v3 coast with the water opened and closed as 7ee75e5a does (scratch/coast-fragility/plant-huron-1mm/coast.json,
-//       md5 f10a37ee…, uncommitted derived data; its absence is RED, by name), the town's own inputs (mintInputs): the mint passes.
+//   (2) HURON: its v3 coast with the water opened and closed as 7ee75e5a does (the fixture checks/fixtures/coast-huron-v3-opened-1mm.json,
+//       md5 f10a37ee…), the town's own inputs (mintInputs; a tree without them is RED, by name): the mint passes.
 //   MUTANT (always run): the water rings NOT given the crossings → (1) a crossing is no water vertex, RED · (2) Huron refuses at
 //   absorbInk, at the cell (815.256, 576.511), RED.
 //   ⛔ Not reproduced by a synthetic plant: a street ending on, or crossing, a straight coast edge, swept 6 m in 0.7 mm steps, never
@@ -50,15 +50,18 @@ const plant = (tg) => { let MP = null, why = null
 }
 
 // (2) Huron, on the plant coast
-const PLANT = join(ROOT, 'scratch/coast-fragility/plant-huron-1mm'), MD5 = 'f10a37eefc06cfdb451e469a25f8c989', CELL = '(815.256, 576.511)'
+const PLANT = join(ROOT, 'checks/fixtures/coast-huron-v3-opened-1mm.json'), MD5 = 'f10a37eefc06cfdb451e469a25f8c989', CELL = '(815.256, 576.511)'
 const huronArgs = async () => {
-  if (!existsSync(join(PLANT, 'coast.json'))) return { err: `the plant ${join(PLANT, 'coast.json')} is absent — Huron NOT checked` }
-  const md5 = createHash('md5').update(readFileSync(join(PLANT, 'coast.json'))).digest('hex'); if (md5 !== MD5) return { err: `the plant's md5 is ${md5}, not ${MD5} — a different coast, NOT checked` }
-  // the town's own inputs (mintInputsOf's reads), with the plant dir as the clean dir its one coast read comes from
+  if (!existsSync(PLANT)) return { err: `the fixture ${PLANT} is absent — Huron NOT checked` }
+  const body = readFileSync(PLANT), md5 = createHash('md5').update(body).digest('hex'); if (md5 !== MD5) return { err: `the fixture's md5 is ${md5}, not ${MD5} — a different coast, NOT checked` }
+  if (!existsSync(join(ROOT, 'cartograph/data/huron/raw/osm.json'))) return { err: 'Huron\'s own inputs (cartograph/data/huron) are not in this tree — Huron NOT checked' }
+  // the town's own inputs (mintInputsOf's reads); its one coast read comes from a temp clean dir holding the fixture as coast.json
+  const cleanDir = mkdtempSync(join(tmpdir(), 'oneline-coast-')); writeFileSync(join(cleanDir, 'coast.json'), body)
   const { ribbonsPathOf } = await import('../cartograph/scene.js'), { mintInputs } = await import('../cartograph/mintInputs.mjs'), { localBB, projectorOf, geographyFor } = await import('../cartograph/geography.mjs'), BR = await import('../cartograph/boundaryRecords.mjs')
   const D = join(ROOT, 'cartograph/data/huron'), rd = (f) => JSON.parse(readFileSync(join(D, f), 'utf8'))
   const osm = rd('raw/osm.json'), bb = localBB(osm, projectorOf(geographyFor('huron'))), { disc: hd } = BR.splitBoundary(rd('neighborhood_boundary.json'), 'huron')
-  const MI = mintInputs({ ribbonStreets: JSON.parse(readFileSync(ribbonsPathOf('huron'), 'utf8')).streets, skeletonStreets: rd('clean/skeleton.json').streets || [], osm, bb, disc: hd, discAt: BR.discOf(hd, 'huron'), cleanDir: PLANT, who: 'claims-the-coast-is-one-line' })
+  const MI = mintInputs({ ribbonStreets: JSON.parse(readFileSync(ribbonsPathOf('huron'), 'utf8')).streets, skeletonStreets: rd('clean/skeleton.json').streets || [], osm, bb, disc: hd, discAt: BR.discOf(hd, 'huron'), cleanDir, who: 'claims-the-coast-is-one-line' })
+  rmSync(cleanDir, { recursive: true, force: true })
   return { args: { streets: MI.streets, gradeSep: MI.gradeSep, boundary: MI.boundary, coast: MI.coast, coastArcs: MI.coastArcs, bb: MI.bb } }
 }
 const H = await huronArgs()

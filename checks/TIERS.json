@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 480,
   "counts": {
-    "safe": 340,
+    "safe": 341,
     "local-effect": 29,
-    "live": 111
+    "live": 110
   },
   "checks": [
     {
@@ -2876,12 +2876,12 @@
     },
     {
       "file": "checks/claims-the-ink-never-retraces-itself.mjs",
-      "tier": "live",
-      "reasonClass": "unreadable",
+      "tier": "safe",
       "why": [
-        "writeFileSync",
-        "deletes files",
-        "computed import() with no readable target — runs arbitrary modules"
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
       ]
     },
     {
