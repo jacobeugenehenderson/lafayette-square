@@ -19,6 +19,10 @@ Zob PASS → Boz merges + restarts :3343 → Swash re-bakes Huron then PTown thr
 mint-refuses-no-outline RED accepted, named; Swash measures (b) read-only meanwhile, plus a water-tint probe in scratch/) → Kerf builds
 claims-a-chain-end-in-a-roadway-is-a-node, then the join (BRIEF-a-chain-end-in-a-roadway-is-a-T). Ward: All places listings-only.
 HELD for Jacob: Plumb's balsa deletions (wants his go in its window) · kit bundle + Ward pin + publish:staging · every Promote.
+FOR JACOB'S MORNING: (1) chain ends whose OWN roadway reaches another's but lie outside it, the (b′) class: join them too, or check-RED only?
+Kerf's check (kerf/chain-end-is-a-node df666e54): Altadena 8 · Huron 3 · JH 3 · PTown 2 (HPDM green; LS unchecked, stale skeleton).
+(2) The join's operator override: which POUR input holds it (the Wall forbids authoring in the mint). Filed as aspiration.
+(3) Deck winding (Swash): OSM deck areas merged unnormalised, so covered deck cancels (Huron 3.37 m², 13 pieces). Being fixed before the bakes.
 **▶ 2026-10-27: THE SHORE IS MERGED (eec3ac1b).** Huron's shoreline rebuilt to Jacob's rulings (the coast IS the high-water mark;
 the drawn ground pinned to it; bridges painted over water; islands; the absorbed ink). Jacob looked: "FANTASTICALLY advanced". NEXT, in
 the release order (entry below): kit bundle → Ward pin + publish:staging → re-pour + re-bake each coastal town (Huron, PTown), then the
