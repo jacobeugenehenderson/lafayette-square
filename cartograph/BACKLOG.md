@@ -21,7 +21,7 @@ refuse by name when ① exists and protoShapeTiles doesn't.
 hairpin (-3418.656, -1928.636): ring 0 v1930 turns 171.66° beside a 75.6 mm leg, block and shore cells 5 mm apart (Zob's read). FAILED, not
 landed: outlineCorner with ε·sin(δ/2) ≤ √2/2 units refuses HPDM daniel-boone-expressway-22 @(-3361.040, 1335.070), misses the hairpin (162.80°).
 DECKS: the 104 deck outline refusals are the open/close's rounding (raw union: no edge < 5 mm); deck rings never pass the coast verifier;
-candidate snap-back for decks + ringViolations on them, not built. ⛔ GATE: claims-the-mint-refuses-no-outline RED on PTown until then. Outputs: Swash's scratchpad ptown-failed6/.
+candidate snap-back for decks + ringViolations on them, not built. ⛔ GATE: claims-the-mint-refuses-no-outline RED on PTown until then. Outputs: scratch/ptown-parks/ptown-failed6/ (untracked, derived).
 **▶ HURON'S coast.json IS v2: re-bake its coast (COAST_VERSION 3) before any Huron ground work or release.** Measured on v3: it mints, its
 verifier is clean; open/close moved 41 / 75 features (≤ 0.74 m wide). Staging untouched. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
 **▶ LS's skeleton is stale for mintInputs** (saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses before the
