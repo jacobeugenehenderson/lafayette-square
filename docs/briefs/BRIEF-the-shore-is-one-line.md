@@ -60,7 +60,38 @@ Three lines that should be one:
   made in the pour** (Jacob 2026-10-21 night; `BRIEF-the-rim-is-cut-once §5`).
 - **No fallback:** no lidar, no vertical datum, or no water record ⇒ THROWS by name, never OSM (`coast-from-lidar §3.2`).
 - **The datum must not depend on the line it moves.**
-- **The coast slit's water-side half joins the water** (Jacob 2026-10-25; landed with `BRIEF-the-ink-is-owned-by-its-labels`).
+- **⏳ PROPOSED, for Jacob's markup (Boz, 2026-10-27 night, after the PTown run that parked): A SOURCE IS DRAWN TO ITS OWN
+  RESOLUTION, AND NO FINER.** Jacob asked: *"Is there a limit to where we might meet the reasonable limits of representation?"*
+  The night's evidence says yes, and that the kit has no stated limit today.
+  - **Two words, kept apart.**
+    - *Fidelity* is what a source can know. The lidar coast is traced at `fineM` ≈ 1 m, so a feature narrower than that isn't
+      information.
+    - *Precision* is how exactly the drawing closes: the 1 mm lattice and 10 mm ink (2·`INK_EPS`). It stays mandatory, and it's
+      what makes the map watertight.
+  - **Every PTown refusal on 2026-10-27 sat in the gap:** a 1 m source asked to stay consistent at 1 mm. The 6 cm × 2.6 m spit,
+    the 1.92 mm island neck, and the settle-clamp hairpin's 75.6 mm leg (BACKLOG HANDOFF "PTOWN PARKS") were each finer than the
+    source and each broke a later stage.
+  - **The rule.** Each source declares its resolution. No FEATURE finer than it reaches ①: no width, neck, channel, or
+    edge length below it. ① is then exact at the lattice, as now.
+    - It limits feature SIZE, not POSITION. Settle may still place a resolvable edge to sub-cell accuracy by
+      interpolation. It may not CREATE a feature the source can't resolve, which is how the hairpin's short leg was made.
+    - The open/close at ½·step (water and decks, `structures.mjs#openCloseAtStep`) is this rule's first instance. The
+      settle wall is its second.
+  - **Beyond the limit, fidelity is AUTHORED or STYLED, never read off the data.** That's Jacob's 2026-10-20 ruling,
+    *"the style decides, authoring handles fidelity"*. If MacMillan Wharf must be truer than a 1 m trace, the operator draws it,
+    and ① holds the drawing exactly.
+  - ⛔ **What it is NOT:**
+    - not "it's only seen from far". The limit is on what the DATA may claim; close-camera richness comes from style and
+      generated detail;
+    - not a fallback. Whatever a source can't resolve is removed and RECORDED by name, as `waterOpened` is;
+    - not a tuned constant. The limit is the source's own declared resolution. The 16.26° bend limit measured on 2026-10-27
+      was a derived number in the wrong place: it refused an HPDM expressway bend and missed the hairpin.
+  - **The check, for town #2 (unbuilt):** "no geometry finer than its source's declared resolution reaches ①", run on every
+    traced source. It isn't measured as the hairpin's fix; it's the form to measure first.
+  - **Open, for Jacob:**
+    1. What OSM's declared resolution is, for streets and footprints, which aren't traced.
+    2. Whether the sub-cell rounding slivers count as features (today they're counted, not ruled).
+    3. Whether this moves to `ORIENTATION.md`'s doctrine on approval. It reaches every source, not only the shore.
 
 ## 2. The claims, as Zob answered them (re-confirm each by symbol)
 
