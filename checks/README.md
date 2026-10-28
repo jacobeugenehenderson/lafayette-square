@@ -176,7 +176,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 349. This is `npm test`.
+## safe — 350. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -233,6 +233,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-survey-street-reaches-its-measure.mjs` | DOES THE STREET THE DESIGNER HOLDS REACH `chainMeasure` WITH ITS TOWN'S |
 | `checks/claims-a-swap-never-happens-mid-street.mjs` | ⭐⭐⭐ JACOB'S RULE, MADE CHECKABLE: "A treelawn swap NEVER happens mid-leg, period. It's |
 | `checks/claims-a-tile-is-one-tree.mjs` | A TILE IS ONE TREE. |
+| `checks/claims-a-tool-page-that-cannot-open-says-so.mjs` | WHEN A TOOL PAGE CANNOT OPEN, DOES IT SAY SO ON SCREEN, WITH THE WAY OUT? |
 | `checks/claims-a-town-chooses-its-lamp.mjs` | the lamp post is the town's AUTHORED choice, never its name. |
 | `checks/claims-a-town-draws-the-trees-its-atlas-was-built-for.mjs` | "DOES A TOWN DRAW THE TREES ITS ATLAS WAS BUILT FOR — READ FROM ITS SLAB?" |
 | `checks/claims-a-town-event-is-not-clock-dependent.mjs` | a dated event with no times runs all day, |

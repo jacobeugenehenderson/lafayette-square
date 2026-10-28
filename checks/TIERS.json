@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 490,
+  "total": 491,
   "counts": {
-    "safe": 349,
+    "safe": 350,
     "local-effect": 29,
     "live": 112
   },
@@ -799,6 +799,15 @@
       "tier": "safe",
       "why": [
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-tool-page-that-cannot-open-says-so.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/bootOrRefuse.js — read, safe",
+        "importSource of src/bootOrRefuse.js — read, safe",
+        "importSource of src/bootOrRefuse.js — read, safe"
       ]
     },
     {
