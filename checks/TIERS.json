@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 490,
+  "total": 491,
   "counts": {
     "safe": 349,
     "local-effect": 29,
-    "live": 112
+    "live": 113
   },
   "checks": [
     {
@@ -2027,6 +2027,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-step-reads-what-a-later-step-writes.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
+        "imports cartograph/pourSteps.mjs, which can: writeFileSync"
       ]
     },
     {

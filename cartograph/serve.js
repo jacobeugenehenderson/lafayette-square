@@ -23,7 +23,7 @@ import { pourCodeClosure, pourCodeChanged, geographyReadChanged, contentChanged,
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
-import { pourSteps, stepReads, recordStep, readBakeReads, runPour } from './pourSteps.mjs'
+import { pourSteps, stepReads, recordStep, readBakeReads, runPour, groundForReaders } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -2859,17 +2859,19 @@ createServer(async (req, res) => {
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
       // absence — so it is never dirty forever.
       // not-inputs: context.coastDist.bin (its own output, written only) · outer-coast.json (its own output, written only)
+      // not-inputs: ground.json (read by VALUE, pourSteps.mjs#groundForReaders: without the maps bake-ground-ao writes back, or its timings; this audit reports that UNKNOWN)
       await runIfDirty('coast-distance',
         // The registry, the surfaces table and the town's OSM (its state) feed the RESOLVED params.
         [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, MAP_JSON, join(here, 'bake-coast-distance.js'),
           join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json'),
           // the water past the rim (bake-coast-distance.js#bakeOuterCoast): the stencil's centre and radius, and the frame
-          join(LOOK_DIR, 'ground.json'), bakePaths.geography],
+          groundForReaders(LOOK_DIR), bakePaths.geography],
         [join(LOOK_DIR, 'context.json')],
         `node bake-coast-distance.js --look=${id} ${sceneFlag}`,
         { cwd: here })
       if (layerOn('building')) {
         // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
+        // not-inputs: ground.json (read by VALUE, pourSteps.mjs#groundForReaders: without the maps bake-ground-ao writes back, or its timings; this audit reports that UNKNOWN)
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, SCENE_DESIGN, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,   // ⭐ the terrain: Huron's buildings at y=0
            join(SCENE_DIR, 'buildings.json'), bakePaths.boundary, join(SCENE_DIR, 'building-overrides.json'),
@@ -2877,7 +2879,7 @@ createServer(async (req, res) => {
            // …and the town's declared E-911 address points, with its parcels as their join (address-points.mjs)
            ...declaredAddressPointPaths(bakeScene), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
            join(here, 'bake-buildings.js'), join(here, 'building-address.mjs'), join(here, 'address-points.mjs'),
-           join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),   // each building's groundY is sampled off the drawn ground (a raised kerb)
+           groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'),   // each building's groundY is sampled off the drawn ground (a raised kerb)
            join(SCENE_DIR, 'clean', 'skeleton.json')],   // the named streets each building fronts, for its neon faces (bake-buildings.js)
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
@@ -2950,12 +2952,13 @@ createServer(async (req, res) => {
           `node derive-lamps.mjs ${sceneFlag}`,
           { cwd: here })
         // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
+        // not-inputs: ground.json (read by VALUE, pourSteps.mjs#groundForReaders: without the maps bake-ground-ao writes back, or its timings; this audit reports that UNKNOWN)
         await runIfDirty('lamps',
           // traced today (2026-09-26) ∪ Wick's H-17 list (surveyed POIs, derived lamps, the zone tester) — declared ahead
           // of Wick's bake-lamps change so the step already re-runs when those land
           [join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'osm_street_lamps.json'), join(bakePaths.clean, 'derived_lamps.json'),
            join(SCENE_DIR, 'authored_lamps.json'), bakePaths.geography, bakePaths.boundary,
-           join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'shape.json'), MAP_JSON, DESIGN,
+           groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'shape.json'), MAP_JSON, DESIGN,
            SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, SCENE_DESIGN, join(SCENE_DIR, 'lu-policy.json'), join(here, 'lamp-spacing-prior.json'),
            join(here, 'bake-lamps.js')],
           [join(LOOK_DIR, 'lamps.json')],
@@ -3058,8 +3061,9 @@ createServer(async (req, res) => {
       // scene to Lafayette Square, so an omitted flag wrote LS's trunk heights into another town's slab — the A00
       // class, fixed 2026-07-15).
       // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
+      // not-inputs: ground.json (read by VALUE, pourSteps.mjs#groundForReaders: without the maps bake-ground-ao writes back, or its timings; this audit reports that UNKNOWN)
       await runIfDirty('tree-anchors',
-        [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'trees.json'),
+        [groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'trees.json'),
          SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, SCENE_DESIGN, bakePaths.geography,
          join(here, 'bake-tree-anchors.js')],
         [join(LOOK_DIR, 'tree-anchors.json')],
@@ -3079,7 +3083,8 @@ createServer(async (req, res) => {
         [MAP_JSON, join(SCENE_DIR, 'buildings.json'), join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),
          join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
          join(here, 'bake-ground-ao.js')],
-        [join(LOOK_DIR, 'ground.lightmap.png')],
+        // it also WRITES ground.json (its four maps, pourSteps.mjs#GROUND_AO_FIELDS): the steps above read that by value
+        [join(LOOK_DIR, 'ground.lightmap.png'), join(LOOK_DIR, 'ground.json')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
       // the plan ends here: everything below stamps, indexes and ships a pour that ran
