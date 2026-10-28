@@ -24,7 +24,8 @@
 // the clamp allowed (a segment on two chains) → RED · an instance module declaring a home Look whose design.json is missing, and a
 // town with no instance module (the real reader refuses each), each read as no authoring ({}) → RED.
 //   node checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs [<scene> …] [--mutants]
-// Read-only. Exits 1 on any (a) end not joined, a node-rule disagreement, a frozen record that differs, or a mutant not seen.
+// Read-only. Exits 1 on any (a) end not joined, a node-rule disagreement, a frozen record that differs, or a mutant not seen;
+// exits 2 (NOT CHECKED, named) when a town cannot be judged (its pour refuses before the join), and only then.
 import { readFileSync } from 'node:fs'
 import { scenes } from './_scenes.mjs'
 import { importSource } from './_importSource.mjs'
@@ -61,11 +62,12 @@ function unjoined(rows, mint, J) {
 }
 
 let bad = 0
+const notChecked = []   // ⛔ a town the check cannot judge does not pass (Boz, 2026-10-28): it exits 2, named — the corpus's "could not run"
 for (const scene of scenes('cartograph/data/<scene>/clean/skeleton.json')) {
   const town = loadTown(scene), J0 = judge(town), rows = J0.inside, mint = mintStreetsOf(town)
   // the town's authoring, by its instance module's declaration: a town with no module refuses before the join, as its pour does —
   // ⚠️ NOT CHECKED, printed by name (Boz, 2026-10-28: jacksonheights, outside the tranche), never a pass
-  let bc; try { bc = townBlockCustoms(scene, 'claims-a-chain-end-in-a-roadway-is-a-node') } catch (e) { console.log(`⚠️ NOT CHECKED — ${scene}: its pour refuses before the join: ${e.message}`); continue }
+  let bc; try { bc = townBlockCustoms(scene, 'claims-a-chain-end-in-a-roadway-is-a-node') } catch (e) { notChecked.push(scene); console.log(`⚠️ NOT CHECKED — ${scene}: its pour refuses before the join: ${e.message}`); continue }
   // ② the node rules agree, over the chains ① strokes
   const mintIds = new Set([...mint.streets, ...mint.gradeSep].map(s => s.skelId)), sk1 = town.sk.filter(c => mintIds.has(c.id))
   const dv = new Map(), dl = new Map()
@@ -133,5 +135,7 @@ if (MUTANTS) {
     if (!real || !red) bad++
     console.log(`fixture · ${what}: ${real ? 'the real reader refuses, by name' : '⛔ the real reader did not refuse'} · mutant, read as no authoring: ${red ? 'RED, as it must be ({} assumed)' : `⛔ still refuses (${got.e?.slice(0, 80)})`}`) }
 }
-console.log(bad ? `\n⛔ RED — a chain end lies inside another street's roadway and is not joined as a T (or a check of it could not be made)` : '\n✅ GREEN — every chain end inside another street\'s roadway is joined as a T')
-process.exit(bad ? 1 : 0)
+console.log(bad ? `\n⛔ RED — a chain end lies inside another street's roadway and is not joined as a T (or a check of it could not be made)`
+  : notChecked.length ? `\n⚠️ NOT CHECKED — ${notChecked.join(', ')}: the join could not be judged there (not a pass). Every town that could be judged is joined as a T.`
+  : '\n✅ GREEN — every chain end inside another street\'s roadway is joined as a T')
+process.exit(bad ? 1 : notChecked.length ? 2 : 0)
