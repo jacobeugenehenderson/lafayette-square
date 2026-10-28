@@ -1,15 +1,16 @@
 # BRIEF — the balsa model: the town looks finished and holds nothing until it is asked
 
 <!-- BRIEF-STATE
-status: OPEN (plan; not dispatched)
-dispatched: no
+status: OPEN (ruled; step 1 dispatchable once Zob co-signs §1)
+dispatched: no (Zob's premise pass asked 2026-10-27)
 written: 2026-10-27 night (Boz, at Jacob's request: "write the balsa model plan")
 evict-when: a town's first paint and its pan/zoom carry no per-building identity, a click resolves one and loads its contents,
 the measured budget (§3 step 1) is met on desktop and phone, the checks below are GREEN, merged, and Jacob passes it by eye.
 Then this moves to cartograph/_archive/ dated.
 -->
 
-**Agent: FRESH, or Ward's seat.** **Report to Boz.** **Instruction: measure, then confirm-then-build.** The code sites below are
+**You are the dispatched agent. Name yourself: one word, yours, not one a running session holds (`ListAgents`, then `/rename`).**
+**Agent: FRESH** (no live seat holds the player's perf instruments; Ward's seat is not up). **Report to Boz.** **Instruction: measure, then confirm-then-build.** The code sites below are
 Boz's read at integration 5e242dce, not Zob's. Confirm each against the source before you build on it. If the code disagrees,
 stop and flag it; the stop is the deliverable.
 
@@ -87,13 +88,13 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    is instant. ⛔ A prefetch never blocks or stutters a pan.
    **What is asked for is a TAB** (*"the idea is the 'category' and 'subcategory' tabs. We need two that are generic enough to
    encapsulate the active tiles"*). The side panel's two tiers (category → subcategory, `src/tokens/categories.js` `CATEGORY_LIST`,
-   read by `SidePanel.jsx`) are what a viewer opens, and opening one loads its listings. Boz's reading, to confirm with Jacob: the
-   two tiers become a KIT vocabulary, generic enough that every town's active listings fall under them. ⚠️ Today's vocabulary is
+   read by `SidePanel.jsx`) are what a viewer opens, and opening one loads its listings. The two tiers become a KIT vocabulary,
+   generic enough that every town's active listings fall under them. ⚠️ Today's vocabulary is
    LS's: a subtitle reads *"Lafayette Park, gardens, pool, playgrounds"* and the component is `LafayetteCategoryAccordion`. That is
    Layer 0's Class D bleed, and it is fixed in the same work.
    **Society Pages opens on the most generic listing of the neighbourhood** (Jacob: *"'All open establishments'? 'All
-   establishments'?"*). ⟦open: the label⟧. Boz's suggestion: open on *All places*, with *Open now* as the first narrowing, which
-   is the same fact the neon shows.
+   establishments'?"*). It opens on **All places** (Jacob, 2026-10-27: *"'All places' is fine"*), with *Open now* as the first
+   narrowing, which is the same fact the neon shows.
    *Open now* is never an empty page (Jacob: *"What if only one thing is open? None?"*). It lists what is open, then what opens
    NEXT, in order, with the time ("Opens 7:00"). With nothing open, it leads with the next to open.
 4. **Trees, lamps and water are part of the look, always drawn.** They need no per-object identity, so balsa costs them nothing:
