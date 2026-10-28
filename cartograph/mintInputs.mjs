@@ -16,7 +16,7 @@ import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { localBB, geographyFor, projectorOf } from './geography.mjs'
 import { mapCleanDir, mapRawDir, mapDir } from './scene.js'
 import { joinChainEnds, reportJoins } from './chainJoins.mjs'
-import { designPath, readTownDesign } from './lookDesign.mjs'
+import { homeLookDeclared, readTownDesign } from './lookDesign.mjs'
 
 // ribbonStreets: the ribbons' streets · skeletonStreets: clean/skeleton.json's · osm: raw/osm.json · bb: localBB of it ·
 // disc: splitBoundary's `disc` (its `boundary` ring) with `discOf`'s { cx, cz, R } · cleanDir: the scene's clean/ (its coast.json)
@@ -117,8 +117,10 @@ export function mintInputsOf(scene, ribbonStreets) {
   return mintInputs({ ribbonStreets, skeletonStreets: JSON.parse(readFileSync(skPath, 'utf8')).streets || [], osm, bb, disc, discAt: discOf(disc, `mintInputs: ${scene}`), cleanDir: mapCleanDir(scene), blockCustoms: townBlockCustoms(scene, `mintInputs: ${scene}`), who: `mintInputs: ${scene}` })
 }
 
-// the town's authored slots, for the chain join's REFUSAL only (never to size anything: the Wall). A town with no home Look has
-// authored nothing, so {} is its truth, not a default; a home Look that cannot be read refuses (readTownDesign).
-export function townBlockCustoms(scene, who) {
-  return existsSync(designPath(scene)) ? (readTownDesign(scene, who).blockCustoms || {}) : {}
+// the town's authored slots, for the chain join's REFUSAL only (never to size anything: the Wall). Whether there is authoring is
+// the town's own DECLARATION (lookDesign.mjs#homeLookDeclared, the look manifest): declared none → {} is its truth; declared and
+// its design.json missing → readTownDesign refuses by name (Boz's ruling, 2026-10-28). A home Look authoring no blockCustoms has
+// none. `looks` plants a manifest (the check's row).
+export function townBlockCustoms(scene, who, looks = null) {
+  return homeLookDeclared(scene, who, looks) ? (readTownDesign(scene, who).blockCustoms || {}) : {}
 }
