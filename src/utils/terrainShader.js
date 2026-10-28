@@ -138,6 +138,8 @@ export function terrainLook() { return _lookId }
 export function terrainBed() { return _terrain.bed || null }
 /** The ACTIVE look's water levels record (terrain.json `water`: its low and high tide or lake level), or null. Re-points on reload. */
 export function terrainWater() { return _terrain.water || null }
+/** What the ACTIVE terrain is zeroed on: 'water' for a town with a coast (bake-terrain.js), 'local minimum' for an inland one. */
+export function terrainDatum() { return _terrain.datum ?? null }
 /** The ACTIVE look's tide clock (its manifest's `tide`: NOAA's constituents), or null for a town with none. Re-points on reload. */
 export function terrainTide() { return _terrain.tide || null }
 export let width  = _terrain.width

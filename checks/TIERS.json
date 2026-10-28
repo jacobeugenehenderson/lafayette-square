@@ -1,9 +1,9 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 490,
+  "total": 493,
   "counts": {
-    "safe": 349,
-    "local-effect": 29,
+    "safe": 351,
+    "local-effect": 30,
     "live": 112
   },
   "checks": [
@@ -21,6 +21,15 @@
       "why": [
         "imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command",
         "computed import of cartograph/lookDesign.mjs — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-bake-refuses-a-missing-required-input.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "importSource of cartograph/serve.js (its span:       const runIfDirty = async (label, inputs, outputs, cmd →       // Bake only ACTIVATED content) — read, safe"
       ]
     },
     {
@@ -282,6 +291,13 @@
         "copies/renames files",
         "importSource of cartograph/serve.js (its span: // terrain-slab: the scene terrain is owed → // Shore revetment —) — read, safe",
         "importSource of cartograph/slabStage.mjs, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+      ]
+    },
+    {
+      "file": "checks/claims-a-failed-tree-load-names-itself.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/components/treesReveal.js — read, safe"
       ]
     },
     {
@@ -1048,6 +1064,13 @@
         "computed import of scripts/slab-publish-rule.mjs — read, safe",
         "computed import() with no readable target — runs arbitrary modules",
         "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
+      ]
+    },
+    {
+      "file": "checks/claims-an-inland-town-asks-no-water-level.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of cartograph/waterLevel.mjs — read, safe"
       ]
     },
     {

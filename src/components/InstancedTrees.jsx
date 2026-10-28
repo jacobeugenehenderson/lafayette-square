@@ -33,7 +33,7 @@ import {
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
-import { markPrepared } from '../lib/startupMarks.js'
+import { treesRevealVerdict, applyTreesReveal } from './treesReveal.js'
 import { getElevationRaw, slabYIsUnstamped, groundPairs } from '../utils/elevation'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -1017,12 +1017,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   const pagesIn = (!heroFoundationEnabled || !heroSpeciesList.length || heroPagesArrived) && (!overheadAssets || overheadArrived)
   const drawsNoTrees = scene?.layerVis?.tree === false || treeDbg('noTrees')
   useEffect(() => {
-    if (drawsNoTrees) { markPrepared('trees'); return }
-    if (!groups || atlas.status !== 'ready') return
-    if ((groups.meshGroups.size > 0 || groups.impostors.size > 0) && mats.status !== 'ready') return
-    if (!pagesIn || meshKeys.some((k) => !meshLoaded.has(k))) return
-    markPrepared('trees')
-  }, [drawsNoTrees, groups, atlas.status, mats.status, pagesIn, meshKeys, meshLoaded])
+    // the decision is treesReveal.js's (one pure function, checked): a failed atlas or materials load is NAMED, never a silent wait
+    applyTreesReveal(treesRevealVerdict({ drawsNoTrees, groups, atlas, mats, pagesIn, meshKeys, meshLoaded, lookName }))
+  }, [drawsNoTrees, groups, atlas.status, atlas.error, mats.status, mats.error, lookName, pagesIn, meshKeys, meshLoaded])
 
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
