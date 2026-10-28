@@ -25,7 +25,8 @@
  *   streetAt         [x, z] town metres — where the street eye stands; required with shot='street' (null: not known yet — the
  *                    shot waits for it, as the plan waits for the disc)
  *   viewInset        { top, right, bottom, left } CSS px the app's UI covers: plan and street frame into the rest (a
- *                    camera view offset; the canvas stays full-page); the movie is full frame. Eased on the flight.
+ *                    camera view offset; the canvas stays full-page); the movie is full frame. Eased on the flight. The
+ *                    splash's mark and title centre in the rest too, on every shot (TownSplash; its sky stays full-bleed).
  *   flightRef        a ref Town fills: { from, to, t, eased, duration, at, landed, interrupted } — at t = 0 before the first
  *                    painted frame of a flight, then every frame; `eased` is the camera's own curve (drive a panel by it)
  *   onFlightEnd      (f) => void, once per shot change: landed, or interrupted by a pointerdown / wheel
@@ -611,7 +612,7 @@ export default function Town({
   useEffect(() => { warmImpostorLoader(glForWarm) }, [glForWarm])   // the KTX2 transcoder ready before the first page
   const skyAt = useTownSky(lookId)
   const revealTiming = resolveGroupAtMinute(scene?.reveal, 0, null, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS)
-  const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} identity={scene ? (scene.identity ?? null) : undefined} /></CanvasOverlay>
+  const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} identity={scene ? (scene.identity ?? null) : undefined} viewInset={viewInset} /></CanvasOverlay>
   const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
   if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} />{splash}</>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()

@@ -10,5 +10,15 @@ export function planAltitude(radius, { fov, pad, W, H, inset }) {
   const tanH = Math.tan((fov * Math.PI) / 360)
   return (radius * pad) / (tanH * Math.min(fh, (W / H) * fw))
 }
+/** The region the app's UI leaves free, as the padding that bounds it: the inset itself, or `{ why }` when there is no
+ *  region (top + bottom ≥ H, or left + right ≥ W) — the host measured its UI wrong, and a caller says so by name. The
+ *  splash (TownSplash) centres in it, as the plan does through insetOffset. */
+export function freeRegion(inset, W, H) {
+  const i = { top: 0, right: 0, bottom: 0, left: 0, ...(inset || {}) }
+  if (i.top + i.bottom >= H || i.left + i.right >= W) {
+    return { why: `viewInset ${i.top},${i.right},${i.bottom},${i.left} (top,right,bottom,left) leaves no region of the ${W}×${H} canvas free` }
+  }
+  return i
+}
 /** The camera view offset (CSS px) that centres the frame in the free region. */
 export const insetOffset = (inset) => ({ x: (inset.right - inset.left) / 2, y: (inset.bottom - inset.top) / 2 })

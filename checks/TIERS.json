@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 491,
+  "total": 492,
   "counts": {
     "safe": 349,
     "local-effect": 29,
-    "live": 113
+    "live": 114
   },
   "checks": [
     {
@@ -3330,6 +3330,16 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-splash-centres-in-the-free-region.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "computed import of a temp-dir module whose source cannot be read"
       ]
     },
     {

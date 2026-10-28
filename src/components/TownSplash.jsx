@@ -19,11 +19,19 @@
  * A host without them (the LS player, Preview) falls through to its own inherited type. No font name lives here.
  * The pulse is a calm breath — a slow ease-in-out glow in the town's accent, no scaling (Jacob, 2026-10-07: "easing,
  * maybe a concordant glow, slow down").
+ * ⭐ IT CENTRES IN THE FREE REGION (Jacob, 2026-10-27: "centered … between the on-screen elements"): the mark and title sit
+ * in the part of the canvas the host's UI leaves visible — Town's `viewInset`, the same fact the plan frames into
+ * (planPose.js#freeRegion) — while the sky and stars stay full-bleed. No inset = the whole canvas (a host with nothing
+ * over it: the LS player, Preview). A DEGENERATE inset (no region left free) is refused by name in the console, with the
+ * numbers and the canvas's size, once per value, and the splash draws its sky and stars only, with no mark or title (Ward,
+ * 2026-10-28) — ⛔ never re-centred on the full canvas.
+ *   ▶ node checks/claims-the-splash-centres-in-the-free-region.mjs --mutants
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import TownMarkGlyph from './TownMarkGlyph'
 import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'   // an unchosen style draws as the Ward's ◉ draws it
 import { revealProgress } from '../lib/startupMarks.js'
+import { freeRegion } from '../camera/planPose.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCalendar from '../hooks/useCalendar'
 
@@ -49,9 +57,33 @@ function markOf(identity, title) {
   return { kind: 'initial', value: ((title || '').trim()[0] || '·').toUpperCase() }
 }
 
-/** @param {{ title?: string, fadeSeconds: number, skyAt: ((minute: number, dayOfYear: number) => object) | null, identity?: object | null }} props */
-export default function TownSplash({ title, fadeSeconds, skyAt, identity }) {
+// The splash's own box is the canvas's (CanvasOverlay fills it); the free region is measured against it.
+function useBoxSize(ref) {
+  const [size, setSize] = useState(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setSize({ W: el.offsetWidth, H: el.offsetHeight })
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref])
+  return size
+}
+const _refused = new Set()
+
+/** @param {{ title?: string, fadeSeconds: number, skyAt: ((minute: number, dayOfYear: number) => object) | null, identity?: object | null, viewInset?: { top: number, right: number, bottom: number, left: number } }} props */
+export default function TownSplash({ title, fadeSeconds, skyAt, identity, viewInset }) {
   const [frame, setFrame] = useState({ opacity: 1, sky: null, stars: 0 })
+  const box = useRef(null)
+  const size = useBoxSize(box)
+  const region = size ? freeRegion(viewInset, size.W, size.H) : null
+  useEffect(() => {
+    if (!region?.why || _refused.has(region.why)) return
+    _refused.add(region.why)
+    console.error(`[splash] refused: ${region.why} — the host's measurement of its UI is wrong; the splash draws its sky alone`)
+  }, [region?.why])
   useEffect(() => {
     let id
     const tick = () => {
@@ -72,8 +104,8 @@ export default function TownSplash({ title, fadeSeconds, skyAt, identity }) {
   const deeper = sky ? (lum(sky.high) < lum(sky.horizon) ? sky.high : sky.horizon).map((v) => v * SHADE_DEPTH) : null
   const shade = deeper ? css(deeper) : 'transparent'
   return (
-    <div style={{
-      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    <div ref={box} style={{
+      position: 'absolute', inset: 0,
       opacity, pointerEvents: opacity > 0.5 ? 'auto' : 'none', zIndex: 300,
     }}>
       {/* The sky FADES IN over the page as the town's sky channel loads (Jacob, 2026-10-07): transparent until then —
@@ -87,10 +119,16 @@ export default function TownSplash({ title, fadeSeconds, skyAt, identity }) {
       {stars > 0 && STARS.map((s, i) => (
         <div key={i} style={{ position: 'absolute', zIndex: 1, left: s.left, top: s.top, width: s.size, height: s.size, borderRadius: '9999px', background: '#fff', opacity: s.opacity * stars }} />
       ))}
+      {/* The centring box: the free region, padded in by the inset (planPose.js#freeRegion). Unmeasured or refused: none. */}
+      {region && !region.why ? <div data-town-splash="region" style={{
+        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        paddingTop: region.top, paddingRight: region.right, paddingBottom: region.bottom, paddingLeft: region.left, boxSizing: 'border-box',
+      }}>
       <div style={{ animation: 'town-splash-breathe 4.8s ease-in-out infinite', position: 'relative' }}>
         {(() => { const mark = markOf(identity, title); return mark ? <TownMarkGlyph mark={mark} markStyle={identity?.markStyle ?? IDENTITY_NEUTRAL.markStyle} size={72} badge /> : null })()}
       </div>
-      {title ? <div style={{ marginTop: 18, fontFamily: 'var(--f-display)', fontVariationSettings: 'var(--display-axes)', fontWeight: 400, fontSize: '1.875rem', lineHeight: 1.1, color: 'var(--mark, rgba(255,255,255,0.85))', textShadow: `0 0 14px ${shade}, 0 1px 3px ${shade}`, position: 'relative' }}>{title}</div> : null}
+      {title ? <div data-town-splash="title" style={{ marginTop: 18, fontFamily: 'var(--f-display)', fontVariationSettings: 'var(--display-axes)', fontWeight: 400, fontSize: '1.875rem', lineHeight: 1.1, color: 'var(--mark, rgba(255,255,255,0.85))', textShadow: `0 0 14px ${shade}, 0 1px 3px ${shade}`, position: 'relative' }}>{title}</div> : null}
+      </div> : null}
     </div>
   )
 }
