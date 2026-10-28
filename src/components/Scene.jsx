@@ -633,7 +633,7 @@ const SHOT_OF_MODE = { hero: 'movie', browse: 'plan', planetarium: 'street' }
 // names the Ward; lafayette-square.com runs an older build), and it is retired at LS's cutover.
 const QUALITY = authoringQuality()
 // The Canvas this town is drawn through, from the same profile <Town> is given.
-const townCanvas = townCanvasProps(QUALITY)
+const townCanvas = townCanvasProps(QUALITY, { composer: true })   // every frame is <Town>'s, through its composer
 
 function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const viewMode = useCamera((s) => s.viewMode)

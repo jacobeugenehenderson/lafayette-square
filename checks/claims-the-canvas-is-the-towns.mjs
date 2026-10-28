@@ -10,7 +10,10 @@
  * apps spread. They add only what is theirs (frameloop, the opening camera pose, onCreated, preserveDrawingBuffer).
  *
  * Asserts, reading the sources, for every app that mounts <Town> (harnesses excepted):
- *   · its <Canvas> spreads townCanvasProps(Q), where Q is the SAME expression it passes as <Town quality={Q}>;
+ *   · its <Canvas> spreads townCanvasProps(Q, { composer }), where Q is the SAME expression it passes as <Town quality={Q}>;
+ *   · it SAYS { composer: true | false }, and says true only when its <Town> is mounted unconditionally: an app that draws
+ *     the canvas without <Town> (Cartograph's Designer) has no composer then, and with `true` it had no AA at all, every
+ *     edge stair-stepped (Jacob's screenshot, 2026-10-28; off since 095dec54);
  *   · the <Canvas> tag hand-sets none of antialias / logarithmicDepthBuffer / dpr / shadows (literal values);
  *   · Town.jsx re-exports townCanvasProps;
  *   · Preview's tiers draw with the profile their LABEL names (Jacob: "The entire Preview authoring space is designed to
@@ -50,13 +53,20 @@ export function audit(files) {
     if (x.path === TOWN || !/<Canvas\b/.test(c) || !/<Town\b/.test(c) || harness(x)) continue
     const tag = canvasTag(c)
     const q = (c.match(/<Town\b[^>]*?\bquality=\{([^}]+)\}/) || [])[1]?.trim()
-    const spread = tag && (tag.match(/\{\s*\.\.\.\s*townCanvasProps\(([^)]*)\)\s*\}/) || [])[1]?.trim()
+    const spread = tag && (tag.match(/\{\s*\.\.\.\s*townCanvasProps\(([^)]*\}?)\s*\)\s*\}/) || [])[1]?.trim()
     const via = !spread && tag && /\.\.\.\s*(\w+)\s*\}/.test(tag) ? tag.match(/\.\.\.\s*(\w+)\s*\}/)[1] : null
-    const viaArg = via && (c.match(new RegExp(`const\\s+${via}\\s*=\\s*[^;\\n]*townCanvasProps\\(([^)]*)\\)`)) || [])[1]?.trim()
-    const arg = spread ?? viaArg
+    const viaArg = via && (c.match(new RegExp(`const\\s+${via}\\s*=\\s*[^;\\n]*townCanvasProps\\(([^)]*\\}?)\\s*\\)`)) || [])[1]?.trim()
+    const call = spread ?? viaArg
+    const arg = call?.split(',')[0].trim()
+    const composer = call == null ? null : (call.match(/\{\s*composer\s*:\s*(true|false)\s*\}/) || [])[1] ?? null
+    // <Town> behind a condition (`cond && (`, a ternary): the canvas also draws frames that are not <Town>'s, with no composer
+    const before = c.slice(0, c.search(/<Town\b/)).replace(/[\s(]+$/, '')
+    const conditional = /(&&|\?|:)$/.test(before)
     if (arg == null) f.push(`${x.path}: its <Canvas> does not spread townCanvasProps(quality) — it hand-builds the Canvas <Town> needs`)
     else if (q && arg !== q) f.push(`${x.path}: the Canvas is built for townCanvasProps(${arg}) but <Town> is given quality={${q}} — two profiles, one frame`)
-    else info.push(`${x.path}: <Canvas {...townCanvasProps(${arg})}> · <Town quality={${q}}>`)
+    else info.push(`${x.path}: <Canvas {...townCanvasProps(${arg}, { composer: ${composer} })}> · <Town quality={${q}}>${conditional ? ' (mounted conditionally)' : ''}`)
+    if (call != null && composer == null) f.push(`${x.path}: townCanvasProps(${arg}) says no { composer: true | false } — whether every frame goes through <Town>'s composer decides the canvas's AA`)
+    if (composer === 'true' && conditional) f.push(`${x.path}: townCanvasProps(…, { composer: true }), but its <Town> is mounted conditionally — the frames without it (no composer) get no AA at all`)
     for (const [re, what] of [[/\bantialias\s*:\s*(true|false)/, 'antialias'], [/logarithmicDepthBuffer\s*:\s*(true|false)/, 'logarithmicDepthBuffer'], [/\bdpr=\{?\s*[\[\d]/, 'dpr'], [/\bshadows=["']/, 'shadows']])
       if (tag && re.test(tag)) f.push(`${x.path}: its <Canvas> hand-sets ${what} — it is the quality profile's (townCanvasProps)`)
   }
@@ -89,6 +99,8 @@ if (process.argv.includes('--self-test')) {
     ['an app spreads another profile than Town gets', () => add(`<Canvas {...townCanvasProps(QUALITY.phone)}><Town quality={QUALITY} /></Canvas>`)],
     ['an app pins shadows beside the spread', () => add(`<Canvas {...townCanvasProps(Q)} shadows="soft"><Town quality={Q} /></Canvas>`)],
     ['Preview draws a tier without surfaceQuality', () => audit(files.map(x => x.path === 'src/preview/PreviewApp.jsx' ? { ...x, src: x.src.replace(/surfaceQuality\(\s*mode\s*,/g, 'pickProfile(mode,') } : x)).f.length],
+    ['Cartograph says composer: true (the Designer stair-steps again)', () => audit(files.map(x => x.path === 'src/cartograph/CartographApp.jsx' ? { ...x, src: x.src.replace('townCanvasProps(QUALITY, { composer: false })', 'townCanvasProps(QUALITY, { composer: true })') } : x)).f.length],
+    ['an app says no composer', () => add(`const tc = townCanvasProps(Q)\n<Canvas {...tc}><Town quality={Q} /></Canvas>`)],
     ['Town stops re-exporting it', () => audit(files.map(x => x.path === TOWN ? { ...x, src: x.src.replace(/\btownCanvasProps\b/g, 'x') } : x)).f.length],
   ]
   let bad = 0

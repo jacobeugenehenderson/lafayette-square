@@ -681,8 +681,9 @@ function useStageOverrides(heroKeyframes, heroMotion) {
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 // Stage authors creative intent, so it draws every pass; what each surface ships is Preview's deployment layer.
 const QUALITY = authoringQuality()
-// The Canvas the town is drawn through, from the same profile <Town> is given.
-const townCanvas = townCanvasProps(QUALITY)
+// The Canvas the town is drawn through, from the same profile <Town> is given. ⛔ composer: false — this canvas is ALSO the
+// Designer's, which draws no <Town> and so no composer: it keeps the device's MSAA (~1 ms/frame in Stage's shots, accepted).
+const townCanvas = townCanvasProps(QUALITY, { composer: false })
 
 // ── App ─────────────────────────────────────────────────────────────────────
 export default function CartographApp() {

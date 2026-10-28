@@ -1111,7 +1111,7 @@ function PreviewTown({ town }) {
   const deployment = liveDeployment(dep)
   const depKey = JSON.stringify(deployment ?? null)
   const quality = useMemo(() => (deployment ? surfaceQuality(mode, deployment) : null), [mode, depKey])
-  const townCanvas = useMemo(() => (quality ? townCanvasProps(quality) : null), [quality])
+  const townCanvas = useMemo(() => (quality ? townCanvasProps(quality, { composer: true }) : null), [quality])
   const phoneScale = usePhoneScale(isPhone)
 
   // Stage spans from below the app bar to the bottom of the window, leaving

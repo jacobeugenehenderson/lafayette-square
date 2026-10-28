@@ -189,10 +189,12 @@ function App() {
   useEffect(() => { if (err) { window.__gaps = { done: true, error: err }; document.title = 'DONE' } }, [err])
   if (err) return <div>⛔ {err}</div>
   if (!ctx) return <div>loading {LOOK}…</div>
-  const tcp = townCanvasProps(QP)
+  // post is off (LAYERS): no composer. And this INSTRUMENT counts exact sky pixels, so MSAA's blended edge pixels would
+  // hide gaps: it takes no AA at all, said here rather than borrowed from a composer it does not have.
+  const tcp = townCanvasProps(QP, { composer: false })
   return (
     <div style={{ width: W, height: H }}>
-      <Canvas frameloop="always" {...tcp} dpr={1} camera={{ fov: FOV, near: 0.3, far: 2e5 }} gl={{ ...tcp.gl, preserveDrawingBuffer: true }}>
+      <Canvas frameloop="always" {...tcp} dpr={1} camera={{ fov: FOV, near: 0.3, far: 2e5 }} gl={{ ...tcp.gl, antialias: false, preserveDrawingBuffer: true }}>
         <Town town={townForLook(LOOK, 'the shore gap-finder')} lookId={LOOK} quality={QP} shot="movie" flight={false} listings={[]}
           weatherMode="clear" interactive={false} layers={LAYERS} movie={{ hold: () => true, playing: false }}>
           <Walker stencil={ctx.stencil} groups={ctx.groups} />
