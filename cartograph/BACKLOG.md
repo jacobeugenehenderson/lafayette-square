@@ -22,6 +22,8 @@ HELD for Jacob: Plumb's balsa deletions (wants his go in its window) · kit bund
 FOR JACOB'S MORNING: (1) chain ends whose OWN roadway reaches another's but lie outside it, the (b′) class: join them too, or check-RED only?
 Kerf's check (kerf/chain-end-is-a-node df666e54): Altadena 8 · Huron 3 · JH 3 · PTown 2 (HPDM green; LS unchecked, stale skeleton).
 (2) The join's operator override: which POUR input holds it (the Wall forbids authoring in the mint). Filed as aspiration.
+(2b) A join adds an intersection, so segOrd downstream shifts +1 and authored slots would land on the wrong block (Zob). Tonight the join
+REFUSES by name on an authored slot past it; the key migration is the open key's (EXTENT-DESIGN §4.1), yours.
 (3) Deck winding (Swash): OSM deck areas merged unnormalised, so covered deck cancels (Huron 3.37 m², 13 pieces). Being fixed before the bakes.
 **▶ 2026-10-27: THE SHORE IS MERGED (eec3ac1b).** Huron's shoreline rebuilt to Jacob's rulings (the coast IS the high-water mark;
 the drawn ground pinned to it; bridges painted over water; islands; the absorbed ink). Jacob looked: "FANTASTICALLY advanced". NEXT, in
