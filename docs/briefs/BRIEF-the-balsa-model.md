@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN (ruled; §1 co-signed by Zob with corrections, 2026-10-27)
-dispatched: step 1 → Plumb (FRESH, 2026-10-27); Zob's premise pass running alongside
+dispatched: step 1 → Plumb (FRESH, 2026-10-27): STOPPED per §3.1, identity is not where the time goes (below); build HELD for Jacob
 written: 2026-10-27 night (Boz, at Jacob's request: "write the balsa model plan")
 evict-when: a town's first paint and its pan/zoom carry no per-building identity, a click resolves one and loads its contents,
 the measured budget (§3 step 1) is met on desktop and phone, the checks below are GREEN, merged, and Jacob passes it by eye.
@@ -25,6 +25,14 @@ stop and flag it; the stop is the deliverable.
 So **balsa is not a cheaper LOOK.** The town looks as it does today, or better. It is SOLID like an architect's model: nothing in
 it knows which building is which until a click asks. Speed comes from what isn't loaded or tracked, never from a lower look. That
 squares with `ORIENTATION §5`: photorealism is the destination, and inertness is how you move around it.
+
+## ⛔ STEP 1 RESULT (Plumb, 2026-10-27; staging Ward 1612d2de / kit 7179c779; cold, headless Chrome on M1; one run per cell)
+
+Identity-tagged main-thread CPU to usable: **PTown 0.8% (phone) / 0.7% (desk) · HPDM 3.8 / 2.0% · LS 3.7 / 1.8%** (an upper bound;
+stamp vs materials not separable). Moving: hover-tagged CPU 31–66 ms of 1.2–1.9 s, frames unchanged. Where the time goes is the LOOK:
+PTown's drawnGround height-field build ≈18.7 s phone / 5.3 s desk, plus ground.bin 56.5 MB; reveal PTown 38.7 s phone / 14.3 s desk.
+Desktop frames while moving 67–117 ms with the main thread ~90% idle (cause not established; headless M1 GPU). Click-to-card NOT
+measured (no card detected; cause not established). Driver and data: `scratch/balsa-step1/`.
 
 ## 1. What the code does today (Zob's premise pass at 9a5af1c7, by symbol; co-signed with corrections)
 
