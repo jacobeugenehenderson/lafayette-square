@@ -8487,7 +8487,7 @@
       "value": {
         "home": "mintInputs (where the half-widths exist)",
         "becomes": "a T, joined by rule",
-        "judgedBy": "the other street's own authored half-width at that block (tileGround.js#resolveProtoMeasure); no constant",
+        "judgedBy": "the other street's own half-width by the POUR's measure (tileGround.js#resolveProtoMeasure with no authoring; the pour is blind to authoring, claims-proto-wall claim A); no constant",
         "recorded": true,
         "overridable": true,
         "check": "claims-a-chain-end-in-a-roadway-is-a-node: RED on any such end left unjoined"
@@ -8496,7 +8496,7 @@
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "cartograph/BACKLOG.md",
-      "notes": "Derived, not a snap: the only distance is the street's own half-width. Each join is reported so the operator sees it. Moving widths upstream to the skeleton was not chosen (it reopens design)."
+      "notes": "Derived, not a snap: the only distance is the street's own half-width. Each join is reported so the operator sees it. Moving widths upstream to the skeleton was not chosen (it reopens design). Corrected 2026-10-27 (Boz): 'authored half-width' would cross the Wall at mintInputs, the same error caught on the embankment ruling. Zob's census found no end changing bucket under authored widths."
     },
     {
       "id": "r-a-way-tag-decides-before-byCoast",
