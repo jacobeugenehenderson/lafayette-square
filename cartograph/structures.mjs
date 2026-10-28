@@ -16,6 +16,7 @@ import { join } from 'path'
 import { CARTOGRAPH_DIR } from './config.js'
 import clipperLib from 'clipper-lib'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
+import { DECK_KINDS } from '../src/cartograph/streetClass.js'   // the deck vocabulary's one home, beside isOffGradeWay
 
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
 const toPath = (ring) => { const p = new Path(); for (const [x, z] of ring) p.push(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))); return p }
@@ -25,7 +26,6 @@ const inRing = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i
 const union = (paths) => { if (!paths.length) return new Paths(); const c = new Clipper(), out = new Paths(); c.AddPaths(paths, PolyType.ptSubject, true)
   if (!c.Execute(ClipType.ctUnion, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error('⛔ structures: the deck union FAILED'); return out }
 
-export const DECK_KINDS = ['pier', 'quay', 'wharf', 'jetty', 'platform']
 /** Rock structures — built as the revetment's stone; the terrain keeps the lidar's rock under them (bake-terrain). */
 export const STONE_KINDS = ['breakwater', 'groyne']
 

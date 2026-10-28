@@ -36,18 +36,21 @@ inland towns (HPDM; LS after Jacob's loops) → Promote player + slab together. 
 baseElev); claims-a-bake-step-declares-what-it-reads (pre-existing, owed before a Bake is called clean). CENSUS (Zob): bake-ground
 writes shape.json only `if (shapeArtifact)`, so a missing one leaves the OLD shape.json beside a new ground inside an atomic commit;
 refuse by name when ① exists and protoShapeTiles doesn't.
-**▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) HELD UNMERGED: `ferrule/resolution-rule` 332e0a23** (`coastFile.mjs#toResolution` at settle's
-exit, COAST_VERSION 4; PTown's 7.6 cm hairpin edge goes) moves the class, does not close it: on Huron's v4 fixture, vertices turning ≥ 158°
-0 → 6, and at (3234.63, 791.994) · (3182.751, 765.209) · (686.159, 286.334) ①'s ink ring has an outline vertex no ink cell carries, PTown's
-refusal signature (Zob). PTown's bends and ground unmeasured. RULED (Jacob, 2026-10-27): ONE COPY of the ink; the block reads absorb's noded ink, as the shore does (`r-one-copy-of-the-ink`); the turn rule is not built. Briefed to Ferrule (WARM). ⛔ GATE: claims-the-mint-
-refuses-no-outline RED on PTown until (b). Outputs: scratch/ptown-parks/ptown-failed6/ · probes, dumps, Zob's (zob/): scratch/resolution-rule/.
+**▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) LANDED from `ferrule/way-tag-vocabulary` c15f4397 (Zob PASS), 2026-10-27 night:** the edge rule at settle's exit (`coastFile.mjs
+#toResolution`, COAST_VERSION 4: PTown's 7.6 cm hairpin edge goes; Huron's v4 ground builds 232 tiles) and a way's own tag deciding before
+the coast (`r-a-way-tag-decides-before-byCoast`: `streetClass.js#structureOverWater`, ▶ `checks/claims-a-way-tag-decides-before-the-coast.mjs`).
+PTown's v4 ground passes the shore (985 vertices shared), then REFUSES at ① by name on the Breakwater (way 170402219, embankment=dyke: GROUND
+in ①'s water). ⭐ THE DIKE IS JACOB'S DESIGN QUESTION: its footprint edge and the lidar coast run 4.3–5.4 mm apart along it, under the ink, and
+both reach ① (absorbInk refused at (-423.189, 2863.631)); the one-cell rule's land mirror measured worse (verifier 233 → 281, the site 16 → 5).
+Both held as WIP on `ferrule/resolution-rule` (c1f98e92 the take-out, beed893d the mirror). OPEN: 289 vs 246 removed vertices, cause not
+established. ⛔ GATE: claims-the-mint-refuses-no-outline RED on PTown until (b). Probes, dumps, Zob's (zob/): scratch/resolution-rule/.
 **▶ (b) THE DECKS' 1 mm JOGS (artifacts) stay.** The PTown self-touch was mixed winding: fixed on swash/deck-winding 4793dce1 (check claims-a-deck-is-every-object-that-covers-it; Huron regains 3.37 m²), awaiting Zob. The 1 mm jogs are NOT the winding (all inputs wound alike: PTown edges ≤ 2 mm 58 → 57, Huron 173 → 174); cause not established. The edge rule on
 decks is NOT clean: PTown 112 removed, 9 held, verifier 176 → 21 · Huron 390 removed (≤ 0.954 m), 44 held, 490 → 91, 2 rings ≤ 3 vertices.
 **▶ (c) THE WIDTH CLAUSE (no neck or channel under one cell, at settle's exit) is unbuilt.** Left after the edge rule: PTown 193 (least
 16 mm @(-1963.2, 1677.3)), Huron 11 (≥ 0.659 m). NOT clean: openCloseAtStep on the settled water, then the edge rule (PTown: 6 acute ·
 a 172.7 m² body cut from the edge @(-3523.068, -1923.66), dropped · ~5.6k slivers, 12,600 → 15,269 vertices · 175 left: per-part close).
-**▶ HURON'S coast.json is v2: re-bake its coast (COAST_VERSION 3 here; 4 if (a) lands) before any Huron ground work or release.** Measured
-on v3 + the edge rule (offline): it mints, its verifier is clean, the rule removes 66 vertices (≤ 0.865 m), holds 1. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
+**▶ HURON'S coast.json predates COAST_VERSION 4: re-bake its coast before any Huron ground work or release.** Measured on v3 + the edge
+rule (offline): it mints, its verifier is clean, the rule removes 66 vertices (≤ 0.865 m), holds 1. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
 **▶ LS's skeleton is stale for mintInputs** (saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses before the
 mint). Re-skeleton (commit-extent) before LS's next pour. Pre-existing; LS waits on Jacob's loop adjustments anyway (Boz, 2026-10-27).
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is

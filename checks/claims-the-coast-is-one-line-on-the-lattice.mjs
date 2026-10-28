@@ -8,8 +8,8 @@
 // the split), and one that no water edge holds refuses by name.
 //   (1) PLANT: a channel whose street crosses it bank to bank: every crossing the arc took is a VERTEX of the water ring ①
 //       hands back (protopolygon.waterRings), and the mint passes.
-//   (2) HURON: its v3 coast with the water opened and closed as 7ee75e5a does (the fixture checks/fixtures/coast-huron-v3-opened-1mm.json,
-//       md5 f10a37ee…), the town's own inputs (mintInputs; a tree without them is RED, by name): the mint passes.
+//   (2) HURON: its v3 coast with the water opened and closed as 7ee75e5a does, and its edges ruled as bake-coast does at settle's
+//       exit, v4 (the fixture checks/fixtures/coast-huron-v4-opened-1mm.json, md5 186fef1b…; scratch/resolution-rule/fixture-v4.mjs), the town's own inputs (mintInputs; a tree without them is RED, by name): the mint passes.
 //   MUTANT (always run): the water rings NOT given the crossings → (1) a crossing is no water vertex, RED · (2) Huron refuses at
 //   absorbInk, at the cell (815.256, 576.511), RED.
 //   ⛔ Not reproduced by a synthetic plant: a street ending on, or crossing, a straight coast edge, swept 6 m in 0.7 mm steps, never
@@ -50,7 +50,7 @@ const plant = (tg) => { let MP = null, why = null
 }
 
 // (2) Huron, on the plant coast
-const PLANT = join(ROOT, 'checks/fixtures/coast-huron-v3-opened-1mm.json'), MD5 = 'f10a37eefc06cfdb451e469a25f8c989', CELL = '(815.256, 576.511)'
+const PLANT = join(ROOT, 'checks/fixtures/coast-huron-v4-opened-1mm.json'), MD5 = '186fef1bca01602f3babdb38b912b3b2', CELL = '(815.256, 576.511)'
 const huronArgs = async () => {
   if (!existsSync(PLANT)) return { err: `the fixture ${PLANT} is absent — Huron NOT checked` }
   const body = readFileSync(PLANT), md5 = createHash('md5').update(body).digest('hex'); if (md5 !== MD5) return { err: `the fixture's md5 is ${md5}, not ${MD5} — a different coast, NOT checked` }
@@ -70,7 +70,7 @@ const huron = (tg) => { if (H.err) return { err: H.err }; try { quiet(() => tg.m
 const tg = await import('../src/lib/tileGround.js')
 { const p = plant(tg); row(!p.why && p.crossings.length >= 2 && !p.missing.length,
     `(1) a street crossing a channel bank to bank: ${p.why ? `REFUSED (${p.why.slice(0, 140)})` : `${p.crossings.length} crossing(s) the arc took, ${p.missing.length} not a water-ring vertex — the mint passes`}`) }
-{ const h = huron(tg); row(!h.err && !h.why, `(2) Huron's v3 coast with the water opened and closed (the plant), its own inputs: ${h.err ? h.err : h.why ? `REFUSED (${h.why.slice(0, 160)})` : 'mints'}`) }
+{ const h = huron(tg); row(!h.err && !h.why, `(2) Huron's v4 coast (the water opened and closed, its edges ruled; the plant), its own inputs: ${h.err ? h.err : h.why ? `REFUSED (${h.why.slice(0, 160)})` : 'mints'}`) }
 
 // MUTANT: the water rings not given the crossings
 { const src = readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8'), ANCHOR = '  if (Array.isArray(coast) && coast.length) coast = split.waterRings'
