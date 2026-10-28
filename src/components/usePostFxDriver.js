@@ -177,8 +177,8 @@ export function usePostFxDriver({
     }
 
     // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js). Since all
-    // three surfaces drive through this hook, the hero-pocket VIEW-Z anchor + the
-    // browse look-down gate cannot drift between production and the publish gate.
+    // three surfaces drive through this hook, the focal distance + the browse
+    // look-down gate cannot drift between production and the publish gate.
     // Focus = the movie's focus OBJECTS (src/lib/focusObject.js — the keyframes' `focus`, the hero by default), boxed
     // from what is drawn this frame; else the default controls' target (the orbit pivot, the street's aim).
     // Only meaningful when dofOn (i.e. the DoF pass is mounted).
