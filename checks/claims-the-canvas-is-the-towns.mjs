@@ -14,7 +14,10 @@
  *   · it SAYS { composer: true | false }, and says true only when its <Town> is mounted unconditionally: an app that draws
  *     the canvas without <Town> (Cartograph's Designer) has no composer then, and with `true` it had no AA at all, every
  *     edge stair-stepped (Jacob's screenshot, 2026-10-28; off since 095dec54); and never a literal true in an app that
- *     turns post off (`post: false`: no composer then);
+ *     turns post off (`post: false`: no composer then); and never a literal false where every frame IS <Town>'s composer's
+ *     (Town unconditional, post never off: Preview, production), whose MSAA would only be a cost production does not pay;
+ *   · townCanvasProps, CALLED with no { composer }, throws naming itself (canvasAntialias would refuse one call deeper, naming
+ *     a function the host never called);
  *   · <Town> ASSERTS it at mount: Town.jsx calls qualityProfile.js#canvasAAMismatch with the canvas's ACTUAL anti-aliasing
  *     (its context) and on('post'), and throws what it returns; and that rule, CALLED, refuses an un-anti-aliased canvas
  *     with no composer, and allows the other three cases (Stage's redundant MSAA among them) (Ward's point, 2026-10-28);
@@ -28,6 +31,7 @@
  */
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join, relative } from 'path'
+import { importSource } from './_importSource.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const TOWN = 'src/components/Town.jsx'
@@ -71,6 +75,7 @@ export function audit(files) {
     else info.push(`${x.path}: <Canvas {...townCanvasProps(${arg}, { composer: ${composer} })}> · <Town quality={${q}}>${conditional ? ' (mounted conditionally)' : ''}`)
     if (call != null && composer == null) f.push(`${x.path}: townCanvasProps(${arg}) says no { composer: true | false } — whether every frame goes through <Town>'s composer decides the canvas's AA`)
     if (composer === 'true' && conditional) f.push(`${x.path}: townCanvasProps(…, { composer: true }), but its <Town> is mounted conditionally — the frames without it (no composer) get no AA at all`)
+    if (composer === 'false' && !conditional && !/\bpost\s*:\s*false\b/.test(c)) f.push(`${x.path}: townCanvasProps(…, { composer: false }), but every frame it draws is <Town>'s, through its composer — MSAA there is a cost the frame does not show (and Preview would no longer measure production's)`)
     if (composer === 'true' && /\bpost\s*:\s*false\b/.test(c)) f.push(`${x.path}: townCanvasProps(…, { composer: true }), but it turns post off (\`post: false\`) — <Town> then draws no composer, and refuses the canvas`)
     for (const [re, what] of [[/\bantialias\s*:\s*(true|false)/, 'antialias'], [/logarithmicDepthBuffer\s*:\s*(true|false)/, 'logarithmicDepthBuffer'], [/\bdpr=\{?\s*[\[\d]/, 'dpr'], [/\bshadows=["']/, 'shadows']])
       if (tag && re.test(tag)) f.push(`${x.path}: its <Canvas> hand-sets ${what} — it is the quality profile's (townCanvasProps)`)
@@ -98,6 +103,15 @@ const files = walk(join(ROOT, 'src')).map(p => ({ path: relative(ROOT, p), src: 
     const got = surfaceQuality(sfc, { authored: false }).id
     if (got !== want) { console.error(`⛔ surface "${sfc}" draws with the ${got} profile — its label names ${want}`); process.exit(1) }
   }
+}
+// townCanvasProps, CALLED with no { composer }: it must refuse by name (a default would be a second, silent answer)
+async function throwsWithoutComposer(mod) {
+  // by ITS name: canvasAntialias would refuse too, one call deeper, but naming a function the host never called
+  try { mod.townCanvasProps(mod.QUALITY.desktop); return false } catch (e) { return /townCanvasProps needs \{ composer/.test(e.message) }
+}
+{
+  const mod = await import(join(ROOT, 'src/lib/qualityProfile.js'))
+  if (!(await throwsWithoutComposer(mod)) && !process.argv.includes('--self-test')) { console.log('⛔ FAIL — townCanvasProps(quality) with no { composer } does not refuse by name'); process.exit(1) }
 }
 // The rule, CALLED: refuse only an un-anti-aliased canvas with no composer, on a profile that wants AA.
 async function ruleFaults(fn) {
@@ -128,11 +142,19 @@ if (process.argv.includes('--self-test')) {
     ['Cartograph says composer: true (the Designer stair-steps again)', () => audit(files.map(x => x.path === 'src/cartograph/CartographApp.jsx' ? { ...x, src: x.src.replace('townCanvasProps(QUALITY, { composer: false })', 'townCanvasProps(QUALITY, { composer: true })') } : x)).f.length],
     ['an app says no composer', () => add(`const tc = townCanvasProps(Q)\n<Canvas {...tc}><Town quality={Q} /></Canvas>`)],
     ["a host passes composer: true and turns post off (LS's ground-only player)", () => audit(files.map(x => x.path === 'src/components/Scene.jsx' ? { ...x, src: x.src.replace('{ composer: !IS_GROUND }', '{ composer: true }') } : x)).f.length],
+    ['Preview says composer: false (needless MSAA; Preview stops measuring production)', () => audit(files.map(x => x.path === 'src/preview/PreviewApp.jsx' ? { ...x, src: x.src.replace('townCanvasProps(quality, { composer: true })', 'townCanvasProps(quality, { composer: false })') } : x)).f.length],
     ['Town stops asserting the canvas', () => audit(files.map(x => x.path === TOWN ? { ...x, src: x.src.replace(/canvasAAMismatch\(quality, \{ contextAntialias, composer: on\('post'\) \}\)/, 'null') } : x)).f.length],
     ['Town stops re-exporting it', () => audit(files.map(x => x.path === TOWN ? { ...x, src: x.src.replace(/\btownCanvasProps\b/g, 'x') } : x)).f.length],
   ]
   let bad = 0
   for (const [n, run] of cases) { const c = run() > base; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
+  {
+    const n = "townCanvasProps' missing-composer throw removed"
+    const mutated = await importSource('src/lib/qualityProfile.js', { span: { functions: ['townCanvasProps', 'canvasAntialias'] },
+      prefix: "import { QUALITY } from './qualityProfile.js'\nconst ACESFilmicToneMapping = 4", suffix: 'export { townCanvasProps, QUALITY }', transform: (t) => t.replace(/\n\s*if \(typeof composer !== 'boolean'\) throw new Error\('\[quality\] ⛔ townCanvasProps needs[^\n]*/, '') })
+    const c = !(await throwsWithoutComposer(mutated)) && (await throwsWithoutComposer(await import(join(ROOT, 'src/lib/qualityProfile.js'))))
+    if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`)
+  }
   for (const [n, fn] of [['the rule never refuses', () => null], ['the rule refuses Stage\'s redundant MSAA', (q, o) => (!o.composer && !o.contextAntialias) || (o.composer && o.contextAntialias) ? 'x' : null]]) {
     const c = (await ruleFaults(fn)).length > 0; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`)
   }
