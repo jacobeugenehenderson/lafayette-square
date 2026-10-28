@@ -17,14 +17,19 @@ inland towns (HPDM; LS after Jacob's loops) → Promote player + slab together. 
 baseElev); claims-a-bake-step-declares-what-it-reads (pre-existing, owed before a Bake is called clean). CENSUS (Zob): bake-ground
 writes shape.json only `if (shapeArtifact)`, so a missing one leaves the OLD shape.json beside a new ground inside an atomic commit;
 refuse by name when ① exists and protoShapeTiles doesn't.
-**▶ PTOWN PARKS (Boz, 2026-10-27 night).** On 98cce6f5 coast v3, mint and terrain pass; GROUND refuses at the shore at the settle-clamp
-hairpin (-3418.656, -1928.636): ring 0 v1930 turns 171.66° beside a 75.6 mm leg, block and shore cells 5 mm apart (Zob's read). FAILED, not
-landed: outlineCorner with ε·sin(δ/2) ≤ √2/2 units refuses HPDM daniel-boone-expressway-22 @(-3361.040, 1335.070), misses the hairpin (162.80°).
-NEXT FORM to measure: `ORIENTATION §5` "a source is drawn to its own resolution" (the 75.6 mm leg is a feature below the trace). Jacob
-ruled both open questions (`ORIENTATION §5`): the target is photorealism, and rounding slivers are artifacts, never features. DECKS: the 104 deck outline refusals are the open/close's rounding (raw union: no edge < 5 mm); deck rings never pass the coast verifier;
-candidate snap-back for decks + ringViolations on them, not built. ⛔ GATE: claims-the-mint-refuses-no-outline RED on PTown until then. Outputs: scratch/ptown-parks/ptown-failed6/ (untracked, derived).
-**▶ HURON'S coast.json IS v2: re-bake its coast (COAST_VERSION 3) before any Huron ground work or release.** Measured on v3: it mints, its
-verifier is clean; open/close moved 41 / 75 features (≤ 0.74 m wide). Staging untouched. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
+**▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) HELD UNMERGED: `ferrule/resolution-rule` 332e0a23** (`coastFile.mjs#toResolution` at settle's
+exit, COAST_VERSION 4; PTown's 7.6 cm hairpin edge goes) moves the class, does not close it: on Huron's v4 fixture, vertices turning ≥ 158°
+0 → 6, and at (3234.63, 791.994) · (3182.751, 765.209) · (686.159, 286.334) ①'s ink ring has an outline vertex no ink cell carries, PTown's
+refusal signature (Zob). PTown's bends and ground unmeasured. NEXT (Jacob's standup): ONE COPY of the ink (the block reads absorb's noded
+ink, as the shore does; two copies as cause is Zob's inference) vs a turn rule on toResolution, costs unmeasured. ⛔ GATE: claims-the-mint-
+refuses-no-outline RED on PTown until (b). Outputs: scratch/ptown-parks/ptown-failed6/ · probes, dumps, Zob's (zob/): scratch/resolution-rule/.
+**▶ (b) THE DECKS' 1 mm JOGS (artifacts) stay.** First: WHY deckFootprints' union self-touches (PTown @(-56.78, 989.78)). The edge rule on
+decks is NOT clean: PTown 112 removed, 9 held, verifier 176 → 21 · Huron 390 removed (≤ 0.954 m), 44 held, 490 → 91, 2 rings ≤ 3 vertices.
+**▶ (c) THE WIDTH CLAUSE (no neck or channel under one cell, at settle's exit) is unbuilt.** Left after the edge rule: PTown 193 (least
+16 mm @(-1963.2, 1677.3)), Huron 11 (≥ 0.659 m). NOT clean: openCloseAtStep on the settled water, then the edge rule (PTown: 6 acute ·
+a 172.7 m² body cut from the edge @(-3523.068, -1923.66), dropped · ~5.6k slivers, 12,600 → 15,269 vertices · 175 left: per-part close).
+**▶ HURON'S coast.json is v2: re-bake its coast (COAST_VERSION 3 here; 4 if (a) lands) before any Huron ground work or release.** Measured
+on v3 + the edge rule (offline): it mints, its verifier is clean, the rule removes 66 vertices (≤ 0.865 m), holds 1. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
 **▶ LS's skeleton is stale for mintInputs** (saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses before the
 mint). Re-skeleton (commit-extent) before LS's next pour. Pre-existing; LS waits on Jacob's loop adjustments anyway (Boz, 2026-10-27).
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
@@ -173,13 +178,6 @@ MEASURED 2026-10-26, neither provincetown.online/ nor staging.theward.online/pro
 (3) "Hero object blur" (the rack focus on a panning shot, 237ee4db, Strobe's object-identity focus) is broken on DESKTOP.
 Reproduce each on integration before fixing; the server being a temporary one is not yet ruled out as a cause.
 ⭐ NEXT TRANCHE = A WARD TRANCHE (Jacob, 2026-10-27: "we need to probably just have a Ward-focused tranche to follow this one").
-⭐ LEAD ITEM, THE BALSA MODEL (Jacob, 2026-10-27 night): "we need the *entire* landscape to be made of balsa wood until a building is actually
-clicked … we need quick map ix", ENCODER and WARD both. "It has to look good. It just doesn't need to 'contain' anything until it's asked to."
-What it doesn't contain: down to the BUILDING ID. The landscape is inert, and a click is the first moment a building has an identity.
-So: the encoder bakes the look (no per-building identity in it) apart from a separate on-demand lookup of who is where. The Ward draws
-the look, carries no per-building state while moving, and resolves a click to an id only then, before fetching that building's contents.
-Unbuilt and unbriefed: read today's selection path (useSelectedBuilding, CartographApp#onSelectBuilding) and what the slab carries per
-building before any design. Brief owed (Boz).
 Queued for it, in order: (1) HERO OBJECT BLUR is broken, caught on film in PTown's own share images: noon.jpg is sharp, golden.jpg is
 blurred end to end, the Monument (the hero object) included, so the focus is not on the object (likely the focus-falls-back-to-aim path,
 src/components/dofDriver.js / focusObject.js; cause not established). Then recapture the share images. (2) PTown's ~9 s arrival splash
