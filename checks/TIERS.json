@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 478,
+  "total": 479,
   "counts": {
-    "safe": 339,
+    "safe": 340,
     "local-effect": 29,
     "live": 110
   },
@@ -168,6 +168,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-coast-ring-keeps-the-ink-clear.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of cartograph/coastFile.mjs from its own temp dir — read as cartograph/coastFile.mjs, safe"
       ]
     },
     {

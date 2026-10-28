@@ -432,8 +432,10 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // stroked into an antenna, refused downstream far from its cause. Refused here, by name, at each place.
   // ⛔ AND NO TWO RINGS MEET (Boz's ruling, 2026-10-27): a hole across its body's outer, or one body across another.
   const labels = simple.flatMap((bd, bi) => [bd.outer, ...bd.holes].map((r, ri) => ({ r, name: `body ${bi} ring ${ri}` })))
-  const bad = [...labels.flatMap(({ r, name }) => ringViolations(r, acuteAt).map(v => ({ ...v, where: `${name} edges ${v.a}/${v.b}` }))),
-    ...ringsMeet(labels.map(l => l.r)).map(v => ({ ...v, where: `${labels[v.ra].name} edge ${v.a} / ${labels[v.rb].name} edge ${v.b}` }))]
+  // ⛔ the clearance is the mint's ink width (2·INK_EPS): two parts of the coast closer than the ink can only be one stroke in ①
+  const inkW = 2 * INK_EPS
+  const bad = [...labels.flatMap(({ r, name }) => ringViolations(r, acuteAt, inkW).map(v => ({ ...v, where: `${name} edges ${v.a}/${v.b}` }))),
+    ...ringsMeet(labels.map(l => l.r), inkW).map(v => ({ ...v, where: `${labels[v.ra].name} edge ${v.a} / ${labels[v.rb].name} edge ${v.b}` }))]
   if (bad.length) throw new Error(`⛔ bake-coast: ${scene} — ${bad.length} place(s) where the traced coast is not simple rings apart (${[...new Set(bad.map(v => v.kind))].map(k => `${bad.filter(v => v.kind === k).length} ${k}`).join(' · ')}): ${bad.slice(0, 8).map(v => `${v.where} @(${v.at.map(Math.round).join(', ')})`).join(' · ')}${bad.length > 8 ? ` … +${bad.length - 8}` : ''}. Cause not established (the trace, simplifyRing or settleOnSource); the coast is not written.`)
   const arcs = [], islands = []
   for (const bd of simple) for (const ring of [bd.outer, ...bd.holes]) for (const a of arcsOf(ring, R)) {
