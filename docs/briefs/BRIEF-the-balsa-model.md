@@ -50,6 +50,10 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
 - **Neon (`SceneNeon`)** reads `byNum` (footprint, roofOutline, neon faces, groundY, centroidY) via `neonPlaces.placeNeon`, the
   listings' hours (`useTownContext`) and the clock (`openNow.isOpenAt`). NeonBands carries a buildingId per sign for click/hover.
   Hours are CONTENT: `useInit.runInit` merges GAS over the bundle so a guardian's edit wins (inferred from the comment; GAS path not traced).
+- **⚠️ Two players (Ward's read, 2026-10-27).** §1's sites above are the KIT's (`src/`); the product is the Ward (`theward`).
+  In the Ward, Society's lists come from `src/content/register.js#buildRegister` (listings + `bare:true` rows from the on-demand
+  `content/roster.json`, `rosterAsked`), shown by `Society.jsx#prepareLists`; tabs file under a per-town `taxonomy` (source not
+  traced). Which kit sites run in the Ward's bundle: asked of Ward. Staging build 1612d2de = Ward d4b43fa code on kit 7179c779.
 - **Trees, lamps and water read no building identity** (Zob, grep over every module of each; §4.4 holds).
 - **⛔ The instruments can't separate identity cost from look cost yet.** `src/lib/startupMarks.js` marks sequence boundaries;
   SlabBuildings only calls `markPrepared`; the index parse and the stamp run inside the geometry's fetch and useMemo with no mark
@@ -68,7 +72,8 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    It is CONTENT, not slab: it grows as listings are added, with no re-pour or re-bake. **A listing carries its own point,
    written when it is created** from the building tapped in the authoring tool (Jacob, 2026-10-27; `r-a-listing-carries-its-point`),
    so it never reads the address book. ⚠️ No town's `listings.json` carries a point today (measured 2026-10-27): backfill owed.
-3. **The address book:** a separate, on-demand file that answers *"what stands at this point?"* (footprints → id, a
+3. **The address book:** ⭐ the Ward already has one: `content/roster.json`, fetched on demand. Reuse it; ⛔ mint no parallel file.
+   A separate, on-demand file that answers *"what stands at this point?"* (footprints → id, a
    spatial index), fetched on the first click or idle after first paint. ⛔ Never in the first paint's critical path.
 4. **The contents:** per-building records (today's index entry plus the content layer's card), fetched by id, one building at a time.
 
@@ -119,13 +124,19 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    **Society Pages opens on the most generic listing of the neighbourhood** (Jacob: *"'All open establishments'? 'All
    establishments'?"*). It opens on **All places** (Jacob, 2026-10-27: *"'All places' is fine"*), with *Open now* as the first
    narrowing, which is the same fact the neon shows. **All places lists LISTINGS only; a building with no listing is not in it**
-   (Jacob, 2026-10-27: *"bare buildings out of All places"*; `r-all-places-lists-listings-only`). `useListings`' synthesized
-   bare-building listings leave it; an unlisted building is reached only by tapping it.
+   (Jacob, 2026-10-27: *"bare buildings out of All places"*; `r-all-places-lists-listings-only`). It binds the WARD: bare rows
+   leave `Society.jsx#prepareLists`' lists, ⛔ never `register.js#buildRegister`, whose bare row is the card a tap on an unlisted
+   building shows (`insideOf` ends with it). The kit's LS player (`SidePanel`, `CATEGORY_LIST`, `LafayetteCategoryAccordion`)
+   retires at LS's cutover and is not fixed twice (Boz). Open now is already listings-only (`openNowLit`).
    *Open now* is never an empty page (Jacob: *"What if only one thing is open? None?"*). It lists what is open, then what opens
    NEXT, in order, with the time ("Opens 7:00"). With nothing open, it leads with the next to open.
 4. **Trees, lamps and water are part of the look, always drawn.** They need no per-object identity, so balsa costs them nothing:
    they stay as they are, carrying nothing per object at runtime. (Boz, answering Jacob's *"trees lamps and water are mandatory?"*;
    confirm by measurement in step 1 that none of them reads building identity.)
+
+**Open (Ward, inferred, not measured):** Society's arrival hands Town `litIds` with `frameMode 'all'`, which needs the lit
+buildings' footprints at arrival. Under balsa, the framing comes from the listings' own points (`r-a-listing-carries-its-point`),
+or the arrival asks. Boz's reading: the points. Zob to confirm the site.
 
 ## 5. Checks (each reads the source; each seen to fail)
 
