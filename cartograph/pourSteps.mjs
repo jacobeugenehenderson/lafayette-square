@@ -12,6 +12,7 @@ import { importClosure, contentRecord, TOWN_REGISTRY } from './pour-code.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
+import { homeLookOf } from './homeLook.mjs'
 
 const HERE = import.meta.dirname, REPO_ROOT = join(HERE, '..')
 
@@ -51,6 +52,9 @@ export function recordStep(mapJson, lookIds, label, inputs, scene) {
  */
 export function pourSteps(scene, paths, ribbons, { elevation }) {
   const flag = `--scene=${scene}`
+  // the town's declared home Look, read from its record BY VALUE and handed to the pipeline (the pour never imports a town module):
+  // a town with no record passes nothing, and the pour refuses by name (mintInputs.mjs#townBlockCustoms)
+  const hl = homeLookOf(scene), homeLook = hl === undefined ? '' : ` --home-look=${hl ?? ''}`
   return [
     { label: 'coast', timeout: 600000, cmd: `node bake-coast.mjs ${flag}`, outputs: [join(paths.clean, COAST_FILE)],
       inputs: [join(paths.raw, 'elevation.tif'), join(paths.raw, 'elevation-sources.txt'), join(paths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
@@ -59,7 +63,7 @@ export function pourSteps(scene, paths, ribbons, { elevation }) {
         { value: 'terrainValueReads', read: () => terrainValueReads(scene) },   // the authored lake level / tide names
         join(HERE, 'bake-coast.mjs')] },
     // overlay.json + skeleton.json are operator-edited / derived (Survey and Measure write clean/overlay.json); the rest are raw
-    { label: 'pipeline', judge: 'mtime', timeout: 600000, cmd: `node pipeline.js ${flag}${elevation === true ? '' : ' --skip-elevation'}`, outputs: [paths.map],
+    { label: 'pipeline', judge: 'mtime', timeout: 600000, cmd: `node pipeline.js ${flag}${homeLook}${elevation === true ? '' : ' --skip-elevation'}`, outputs: [paths.map],
       inputs: [join(paths.raw, 'osm.json'), paths.measurements, paths.centerlines, join(paths.raw, 'elevation.json'), paths.overlay, paths.skeleton, join(REPO_ROOT, 'src', 'data', 'buildings.json')] },
     { label: 'promote-ribbons', timeout: 30000, cmd: `node promote-ribbons.js ${flag} --yes`, outputs: [ribbons],
       inputs: [paths.map, paths.geography, join(HERE, 'promote-ribbons.js')] },

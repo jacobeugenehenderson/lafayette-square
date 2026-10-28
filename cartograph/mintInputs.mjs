@@ -17,7 +17,6 @@ import { localBB, geographyFor, projectorOf } from './geography.mjs'
 import { mapCleanDir, mapRawDir, mapDir } from './scene.js'
 import { joinChainEnds, reportJoins } from './chainJoins.mjs'
 import { readLookDesign } from './lookDesign.mjs'
-import { instanceForMap } from '../src/instances/registry.js'
 
 // ribbonStreets: the ribbons' streets · skeletonStreets: clean/skeleton.json's · osm: raw/osm.json · bb: localBB of it ·
 // disc: splitBoundary's `disc` (its `boundary` ring) with `discOf`'s { cx, cz, R } · cleanDir: the scene's clean/ (its coast.json)
@@ -81,7 +80,7 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   // ⭐ A CHAIN END IN ANOTHER STREET'S ROADWAY IS A T (r-a-chain-end-in-a-roadway-is-a-T): joined here, before anything reads
   // the streets, by the pour's half-widths; the town's authoring is read only to REFUSE a join that would re-key it
   // (chainJoins.mjs). The record is returned for ① to freeze (protopolygon.chainJoins) and printed by name.
-  if (blockCustoms === undefined) throw new Error(`[mintInputs] ⛔ ${who}: no blockCustoms passed ({} when the town authors none; townBlockCustoms(scene)) — a chain join that would re-key an authored slot must refuse, and only the authoring can say whether one is there`)
+  if (blockCustoms === undefined) throw new Error(`[mintInputs] ⛔ ${who}: no blockCustoms passed ({} when the town authors none; townBlockCustoms(homeLook)) — a chain join that would re-key an authored slot must refuse, and only the authoring can say whether one is there`)
   const J = joinChainEnds({ streets: mapped.filter(m => m.sim && !m.s.gradeSeparated).map(m => m.sim), gradeSep, discAt, blockCustoms })
   const streets = J.streets
   const coast = readCoast(cleanDir, bb, who)
@@ -108,23 +107,23 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
 }
 
 // the same, off a scene's files: its skeleton, raw osm, boundary and geography (its own projection — never the process's)
-export function mintInputsOf(scene, ribbonStreets) {
+export function mintInputsOf(scene, ribbonStreets, homeLook) {
   const skPath = join(mapCleanDir(scene), 'skeleton.json'), osmPath = join(mapRawDir(scene), 'osm.json'), bPath = join(mapDir(scene), 'neighborhood_boundary.json')
   for (const p of [skPath, osmPath, bPath]) if (!existsSync(p)) throw new Error(`[mintInputs] ⛔ ${scene}: no ${p}`)
   const osm = JSON.parse(readFileSync(osmPath, 'utf8'))
   const bb = localBB(osm, projectorOf(geographyFor(scene)))
   if (!bb) throw new Error(`[mintInputs] ⛔ ${scene}'s raw/osm.json carries no bbox`)
   const { disc } = splitBoundary(JSON.parse(readFileSync(bPath, 'utf8')), `mintInputs: ${scene}'s neighborhood_boundary.json`)
-  return mintInputs({ ribbonStreets, skeletonStreets: JSON.parse(readFileSync(skPath, 'utf8')).streets || [], osm, bb, disc, discAt: discOf(disc, `mintInputs: ${scene}`), cleanDir: mapCleanDir(scene), blockCustoms: townBlockCustoms(scene, `mintInputs: ${scene}`), who: `mintInputs: ${scene}` })
+  return mintInputs({ ribbonStreets, skeletonStreets: JSON.parse(readFileSync(skPath, 'utf8')).streets || [], osm, bb, disc, discAt: discOf(disc, `mintInputs: ${scene}`), cleanDir: mapCleanDir(scene), blockCustoms: townBlockCustoms(homeLook, `mintInputs: ${scene}`), who: `mintInputs: ${scene}` })
 }
 
 // the town's authored slots, for the chain join's REFUSAL only (never to size anything: the Wall). Whether there is authoring is
-// the town's own DECLARATION of its home Look: its instance module's `lookId` (src/instances/<town>.js, read through the
-// registry as bake-manifest.mjs reads it; Boz's ruling, 2026-10-28). No instance module → refuses by name (whether there is
-// authoring is unknowable) · no lookId → it declares none, {} is its truth · a lookId whose design.json is missing →
-// readLookDesign refuses by name. A home Look authoring no blockCustoms has none. `instanceOf` plants a module (the check's row).
-export function townBlockCustoms(scene, who, instanceOf = instanceForMap) {
-  const inst = instanceOf(scene)
-  if (!inst) throw new Error(`[${who}] ⛔ "${scene}" has no instance module (src/instances/${scene}.js, in src/instances/registry.js) — whether it declares a home Look, and so whether its authoring would be re-keyed by a chain join, is unknowable. Refusing.`)
-  return inst.lookId ? (readLookDesign(inst.lookId, `${who} (town "${scene}"'s home Look, ${inst.lookId})`).blockCustoms || {}) : {}
+// the town's own DECLARATION of its home Look: its town record's `lookId` (src/instances/<town>.js), handed in BY VALUE —
+// ⛔ the pour never imports a town module (claims-the-bake-watches-its-code; the record is data, pourSteps.mjs#townRecordOf, and
+// reaches the pour as pipeline.js's --home-look) (Boz's ruling, 2026-10-28). `homeLook`: undefined → no declaration was passed,
+// refuses by name · null → the town declares none, {} is its truth · a Look id → its design.json's blockCustoms, and a missing
+// design.json refuses by name (readLookDesign). A home Look authoring no blockCustoms has none.
+export function townBlockCustoms(homeLook, who) {
+  if (homeLook === undefined) throw new Error(`[${who}] ⛔ no home-Look declaration was passed (the town record's lookId, pipeline.js --home-look=<id>, or --home-look= for a town that declares none) — whether a chain join would re-key the town's authoring is unknowable. Refusing.`)
+  return homeLook ? (readLookDesign(homeLook, `${who} (the town's home Look, ${homeLook})`).blockCustoms || {}) : {}
 }
