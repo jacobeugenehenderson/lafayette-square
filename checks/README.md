@@ -174,7 +174,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 343. This is `npm test`.
+## safe — 344. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -195,6 +195,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-coast-ring-keeps-the-ink-clear.mjs` | CLAIM — A COAST RING KEEPS THE INK CLEAR (Boz's ruling, 2026-10-27). ① strokes the coast at ε each side (the mint's INK_EPS), so |
 | `checks/claims-a-corner-is-where-one-turns.mjs` | ⭐⭐⭐ A CORNER IS WHERE ① TURNS — THE LABEL NEVER DECIDES IT. A CENSUS, not a gate: where the owner label changes on |
 | `checks/claims-a-curb-arc-belongs-to-one-tile.mjs` | CLAIM — IN THE FROZEN SHAPE, A CURB CONTOUR BELONGS TO ONE TILE, SO A RUN (skelId · side · poly) IS LISTED ONCE. |
+| `checks/claims-a-deck-is-every-object-that-covers-it.mjs` | IS EVERY POINT A DECK OBJECT COVERS ON THE DECK? |
 | `checks/claims-a-district-is-the-towns-own.mjs` | DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S? |
 | `checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` | ⭐⭐ THREE INVARIANTS — ① and ② ruled by Jacob 2026-09-25, ③ 2026-10-04: |
 | `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |

@@ -151,12 +151,14 @@ export function openCloseAtStep(paths, stepM, what) {
   return { paths: kept, opened, closed, belowResolution, openedPieces: split(openedPieces), closedPieces: split(closedPieces) }
 }
 
-export function deckFootprints(osmGround, stepM) {
-  if (!(stepM > 0)) throw new Error(`⛔ structures: deckFootprints needs the trace's step (got ${stepM}) — a deck is closed at the step the lidar is traced at, and there is no other`)
+/** The deck footprints' INPUTS, before the union: each area as mapped, each line buffered, each joint's hull, each one
+ *  normalized on its own (below). `inputs` [[path…]] one entry per input; `paths` the same, flat, which deckFootprints unions.
+ *  Exported so a check reads the inputs the union is given, not a copy. */
+export function deckInputs(osmGround) {
   const { areas, lines } = deckStructures(osmGround)
   let typical = null
-  const paths = new Paths()
-  for (const a of areas) paths.push(toPath(a.ring))
+  const raw = []
+  for (const a of areas) raw.push([toPath(a.ring)])
   let unmapped = 0
   for (const l of lines) {
     const wM = l.widthM ?? (typical ??= defaultDeckWidthM())
@@ -164,13 +166,13 @@ export function deckFootprints(osmGround, stepM) {
     const co = new ClipperOffset(), out = new Paths()
     co.AddPath(toPath(l.line), JoinType.jtMiter, EndType.etOpenButt)
     co.Execute(out, (wM / 2) * SCALE)
-    for (const p of out) paths.push(p)
+    raw.push(out)
     l._halfM = wM / 2
   }
   // ⭐ A NODE WHERE TWO OR MORE DECK WAYS END IS A JOINT (Boz's ruling, 2026-10-27; PTown: two marina piers of widths 3 and 2
   // ending on one node at 90° left an unfilled wedge, a 1.5 m hairpin ① could not outline). Each way's butt end there is the
   // segment across its own end, half its width either side; the joint is filled by the convex hull of those segments, from
-  // the ways' own geometry, wound as the offsets are so the nonzero union keeps it.
+  // the ways' own geometry.
   const ends = new Map()
   for (const l of lines) { const L = l.line; if (L.length < 2) continue
     for (const [e, f] of [[L[0], L[1]], [L[L.length - 1], L[L.length - 2]]]) { const k = toPath([e])[0], key = `${k.X},${k.Y}`
@@ -180,9 +182,21 @@ export function deckFootprints(osmGround, stepM) {
   let joints = 0
   for (const pts of ends.values()) { if (pts.length < 4) continue
     const hull = convexHull(pts); if (hull.length < 3) continue
-    const hp = toPath(hull); if (Clipper.Orientation(hp) !== Clipper.Orientation(paths[paths.length - 1])) hp.reverse()
-    paths.push(hp); joints++ }
+    raw.push([toPath(hull)]); joints++ }
   for (const l of lines) delete l._halfM
+  // ⭐ EACH INPUT IS NORMALIZED ON ITS OWN BEFORE THE UNION (Boz's ruling, 2026-10-27; per INPUT, not per path: Zob): the
+  // nonzero union sums windings, so where an area mapped clockwise overlapped a line's offset (counter-clockwise) the overlap
+  // summed to 0 and was NOT deck: deck two OSM objects both cover went missing and one deck split in two (PTown, the Coast
+  // Guard Pier and the USCG pier @(-56.78, 989.78); Huron 3.37 m² in 13 pieces). A mapper's drawing order is never a statement
+  // about the deck. Each input is unioned ALONE (nonzero), which returns its outers counter-clockwise and its holes clockwise:
+  // the drawing order is gone and a hole stays a hole (a line whose buffer encloses water, a pier hooked back on itself).
+  const inputs = raw.map(ps => union(ps))
+  return { inputs, paths: inputs.flat(), count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical } }
+}
+
+export function deckFootprints(osmGround, stepM) {
+  if (!(stepM > 0)) throw new Error(`⛔ structures: deckFootprints needs the trace's step (got ${stepM}) — a deck is closed at the step the lidar is traced at, and there is no other`)
+  const { paths, count } = deckInputs(osmGround)
   // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): Huron, a pier line with no width beside
   // its mapped area left a notch 5 m deep and under a cell wide; footprint corners were as sharp as 0.20° (Huron) and 1.13°
   // (PTown), which the ink cannot outline where a deck's edge is drawn as shore. The one rule, `openCloseAtStep`, below.
@@ -212,7 +226,7 @@ export function deckFootprints(osmGround, stepM) {
       const r = rings[k]; for (let m = 0; m < r.length; m++) { const p = r[m], q = r[(m + 1) % r.length], ex = q[0] - p[0], ez = q[1] - p[1], L2 = ex * ex + ez * ez || 1
         const u = Math.max(0, Math.min(1, ((a[0] - p[0]) * ex + (a[1] - p[1]) * ez) / L2)); dmin = Math.min(dmin, Math.hypot(a[0] - p[0] - u * ex, a[1] - p[1] - u * ez)) } }
     return dmin <= 1 / SCALE ? a : null }
-  return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), opened, openedM2: +opened.reduce((t, c) => t + c.m2, 0).toFixed(3), belowResolution, count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical }, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
+  return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), opened, openedM2: +opened.reduce((t, c) => t + c.m2, 0).toFixed(3), belowResolution, count, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
 }
 
 /**

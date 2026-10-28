@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 482,
+  "total": 483,
   "counts": {
-    "safe": 343,
+    "safe": 344,
     "local-effect": 29,
     "live": 110
   },
@@ -221,6 +221,16 @@
         "imports a network module",
         "imports cartograph/elevationSources.mjs, which can: calls fetch()",
         "imports package(s) geotiff — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-deck-is-every-object-that-covers-it.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "computed import of cartograph/structures.mjs — read, safe",
+        "imports a mutated copy of cartograph/structures.mjs from its own temp dir — read as cartograph/structures.mjs, safe",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
