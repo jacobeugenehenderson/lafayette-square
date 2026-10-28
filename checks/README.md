@@ -179,7 +179,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 349. This is `npm test`.
+## safe — 350. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -438,6 +438,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-stamp-follows-the-edge.mjs` | ⭐⭐⭐ DOES A ② CONTOUR EDGE CARRY THE OWNER OF THE ① EDGE IT LIES ALONG? |
 | `checks/claims-stat-scope.mjs` | A DISPLAYED FIGURE MUST DECLARE, AND MATCH, ITS SCOPE. |
 | `checks/claims-survey-and-section-agree.mjs` | Section opens `protoShapeTiles` (the frozen shape) through `sectionOpen`. Under ① both must come from ①②③ and |
+| `checks/claims-survey-draws-shape-not-fill.mjs` | CLAIM — SURVEY DRAWS SHAPE, NOT FILL, AS SMOOTH LINES (cartograph/SURVEY.md §4 "What is NOT Survey (→ Section): … ADA pads", §7 |
 | `checks/claims-survey-passes-what-the-bake-passes.mjs` | DOES SURVEY'S LIVE BUILD GIVE buildTileGround EVERYTHING THE BAKE DOES? |
 | `checks/claims-swap-reaches-the-paint.mjs` | ⭐⭐⭐ THE OPERATOR'S GESTURE, AS A GATE. (Jacob, 2026-09-07: "The swap regime doesn't work on |
 | `checks/claims-the-ao-belongs-to-its-ground.mjs` | producer that rebuilds that manifest from scratch. `bake-ground-ao` writes |
