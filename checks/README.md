@@ -176,7 +176,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 350. This is `npm test`.
+## safe — 351. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -493,6 +493,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-revetment-ends-as-a-heap.mjs` | DOES THE STONE STOP IN A CUT? |
 | `checks/claims-the-rim-is-cut-once.mjs` | WHERE THE DRAWING MEETS THE DISC, EACH LINE IS CUT ONCE AND EVERY CROSSING IS SHARED |
 | `checks/claims-the-road-paint-reads-its-marks.mjs` | CLAIM — THE ROAD'S PAINT IS WHAT EACH STREET'S MARKS SELECTED, STRUCK FROM THE SEALED SHAPE; AND THE PARKING DEPTH NEVER |
+| `checks/claims-the-salon-says-why-its-library-is-empty.mjs` | DOES THE SALON CALL ITS CHASSIS LIBRARY "EMPTY" ONLY WHEN IT IS? |
 | `checks/claims-the-search-outlives-an-empty-ticker.mjs` | the header's chrome may not be gated on |
 | `checks/claims-the-shadow-box-has-no-cliff.mjs` | the fitted shadow box is continuous at the horizon. |
 | `checks/claims-the-shore-agrees-with-the-field.mjs` | CLAIM — THE SHORE AGREES WITH THE FIELD (BRIEF-the-shore-is-one-line §4, Boz 2026-10-25). |

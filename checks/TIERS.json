@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 491,
+  "total": 492,
   "counts": {
-    "safe": 350,
+    "safe": 351,
     "local-effect": 29,
     "live": 112
   },
@@ -3244,6 +3244,13 @@
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "declares @args --slot=<granted>"
+      ]
+    },
+    {
+      "file": "checks/claims-the-salon-says-why-its-library-is-empty.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/arborist/salonLibraries.js — read, safe"
       ]
     },
     {
