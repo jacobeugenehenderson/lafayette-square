@@ -27,8 +27,7 @@
  * after tone mapping and post, i.e. what an eye sees.
  * Results: window.__legibility = { done, town, at, time, renderer, lit, metrics, frames }.
  */
-// ⛔ FIRST: places the boot town before any other module is evaluated (placeBootTown.js).
-import '../../placeBootTown.js'
+// ⛔ The boot town is placed FIRST by ./boot-legibility.jsx (bootOrRefuse.js), which imports placeBootTown.js and then this module.
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useThree, advance } from '@react-three/fiber'

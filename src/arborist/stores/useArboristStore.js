@@ -5,6 +5,7 @@
  * demand, autosave debounced, derived flags).
  */
 import { create } from 'zustand'
+import { readSalonLibraries } from '../salonLibraries.js'
 import { clampBars } from '../../../arborist/grove-eligibility.mjs'
 import { writeCanaryTree } from '../../lib/canaryTree.js'
 
@@ -717,6 +718,7 @@ const useArboristStore = create((set, get) => ({
   salonCompositions: {},           // { [speciesId]: [{slot, name, chassis, bark, leaves, deformer, effective}] }
   salonDirtyBySpecies: {},
   salonChassisCatalog: [],         // [{name, morphology, heightRange, source, ...}]
+  salonChassisLoaded: false,       // true once the server ANSWERED the catalog (salonLibraries.js); empty is said only then
   salonBarkRefs: [],               // ['Bark003', ...]
   salonLeafPacks: [],              // [{packId, kind}]
   salonDossier: null,              // §9 — the active species' dossier (reference plates + required) or null
@@ -760,24 +762,10 @@ const useArboristStore = create((set, get) => ({
         fetch(`/api/arborist/salon/${speciesArg}/leaves?t=${Date.now()}`),
         fetch(`/api/arborist/salon/${speciesArg}/options?t=${Date.now()}`),
       ])
-      const [cD, bD, lD, oD] = await Promise.all([cR.json(), bR.json(), lR.json(), oR.json()])
-      set({
-        salonChassisCatalog: cD.chassis || [],
-        salonBarkRefs:       bD.bark || [],
-        salonLeafPacks:      lD.leaves || [],
-        // What the operator sees for a bark/leaf plate (anonymised id + trait), keyed by ref/packId.
-        // Chassis carry theirs on the catalog items (`id`, `label`).
-        salonPlateLabels:    { bark: bD.labels || {}, leaf: lD.labels || {} },
-        // Forest Builder §9: the dossier (reference plates + required) + the
-        // matcher's ranked options per part-type for this species (null if no dossier).
-        salonDossier:        oD.dossier || null,
-        salonOptions:        oD.options || null,
-        // recommend-plates' ranking per part-type: { [partId]: { tier, reason, rank } }
-        salonRecommend:      oD.recommend || null,
-        salonRecommendError: oD.recommendError || null,
-      })
+      set(await readSalonLibraries({ chassis: cR, bark: bR, leaves: lR, options: oR }))
     } catch (err) {
-      set({ salonError: String(err) })
+      // ⛔ an unreachable or failing server is SAID, and the catalog stays unknown (not 'empty'): salonLibraries.js
+      set({ salonError: /^⛔/.test(err?.message || '') ? err.message : `⛔ the Salon's libraries did not load: the arborist server could not be reached (${err?.message || err})`, salonChassisLoaded: false })
     }
   },
   loadSalonChassisCuration: async () => {

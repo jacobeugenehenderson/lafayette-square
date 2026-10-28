@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 497,
+  "total": 500,
   "counts": {
-    "safe": 352,
+    "safe": 355,
     "local-effect": 30,
     "live": 115
   },
@@ -824,6 +824,15 @@
       "tier": "safe",
       "why": [
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-tool-page-that-cannot-open-says-so.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/bootOrRefuse.js — read, safe",
+        "importSource of src/bootOrRefuse.js — read, safe",
+        "importSource of src/bootOrRefuse.js — read, safe"
       ]
     },
     {
@@ -2688,6 +2697,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-authoring-store-reloads-on-edit.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-bake-watches-its-code.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -3285,6 +3301,13 @@
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "declares @args --slot=<granted>"
+      ]
+    },
+    {
+      "file": "checks/claims-the-salon-says-why-its-library-is-empty.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/arborist/salonLibraries.js — read, safe"
       ]
     },
     {

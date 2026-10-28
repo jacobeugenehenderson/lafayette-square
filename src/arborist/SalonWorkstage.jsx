@@ -449,7 +449,9 @@ export default function SalonWorkstage() {
 
   const anyDirty = Object.keys(dirty).length > 0
   const anyMissingChassis = compositions.some(c => !c.effective?.chassis && !c.chassis)
-  const chassisLibEmpty = chassisCatalog.length === 0
+  // ⛔ EMPTY only when the server ANSWERED an empty catalog: a failed answer is salonError's, never this banner (salonLibraries.js)
+  const chassisLoaded = useArboristStore(s => s.salonChassisLoaded)
+  const chassisLibEmpty = chassisLoaded && chassisCatalog.length === 0
   // Routing claim (was bundled in the retired Re-publish button, 2026-06-25):
   // map this roster species → its canonical id in park_species_map so bake-trees
   // routes its placements here. Idempotent; once per species when it has a

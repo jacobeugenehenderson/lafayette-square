@@ -17,8 +17,7 @@
  * ⭐ THE TOWN IS A PAGE LOAD, NOT A TOGGLE: the terrain module and the instance
  * (geography → the sun) resolve `?look=` once at import. Switching town reloads.
  */
-// ⛔ FIRST: places the boot town before any other module is evaluated (placeBootTown.js).
-import '../../placeBootTown.js'
+// ⛔ The boot town is placed FIRST by ./boot.jsx (bootOrRefuse.js), which imports placeBootTown.js and then this module.
 import { WEATHER_PRESETS } from '../../lib/weatherPresets.js'
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'

@@ -2936,6 +2936,13 @@ export default useCartographStore
 // Dev hook: expose the store on window for quick inspection.
 if (typeof window !== 'undefined') window.cs = useCartographStore
 
+// ⛔ THIS STORE ACCEPTS NO HOT UPDATE: an edit to it (or to anything it imports) RELOADS THE PAGE (Boz, 2026-10-28). Two of that
+// day's failures lived in tabs open across store edits: a hot swap made a SECOND store, so the page's components read the old
+// one while new code (and `window.cs`, re-assigned above) wrote the new: Survey crashed on old street data, and Stage's re-pour
+// question was set where its modal did not read it. ⚠️ Not `invalidate()`: that passes the update to the importers, where React's
+// fast-refresh accepts it, which is a partial update again. ▶ node checks/claims-the-authoring-store-reloads-on-edit.mjs
+if (import.meta.hot) import.meta.hot.accept(() => { window.location.reload() })
+
 // ⛔ No module-scope load (removed 2026-09-28). An `if (import.meta.hot) { … _loadCenterlines() … }` block here ran the
 // WHOLE authoring load on every module evaluation under a dev server — not only on a hot swap — so any page that
 // imported this store (the renderer's label pieces did) fetched a town's skeleton, overlay and design from

@@ -180,7 +180,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 352. This is `npm test`.
+## safe — 355. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -238,6 +238,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-survey-street-reaches-its-measure.mjs` | DOES THE STREET THE DESIGNER HOLDS REACH `chainMeasure` WITH ITS TOWN'S |
 | `checks/claims-a-swap-never-happens-mid-street.mjs` | ⭐⭐⭐ JACOB'S RULE, MADE CHECKABLE: "A treelawn swap NEVER happens mid-leg, period. It's |
 | `checks/claims-a-tile-is-one-tree.mjs` | A TILE IS ONE TREE. |
+| `checks/claims-a-tool-page-that-cannot-open-says-so.mjs` | WHEN A TOOL PAGE CANNOT OPEN, DOES IT SAY SO ON SCREEN, WITH THE WAY OUT? |
 | `checks/claims-a-town-chooses-its-lamp.mjs` | the lamp post is the town's AUTHORED choice, never its name. |
 | `checks/claims-a-town-draws-the-trees-its-atlas-was-built-for.mjs` | "DOES A TOWN DRAW THE TREES ITS ATLAS WAS BUILT FOR — READ FROM ITS SLAB?" |
 | `checks/claims-a-town-event-is-not-clock-dependent.mjs` | a dated event with no times runs all day, |
@@ -446,6 +447,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-swap-reaches-the-paint.mjs` | ⭐⭐⭐ THE OPERATOR'S GESTURE, AS A GATE. (Jacob, 2026-09-07: "The swap regime doesn't work on |
 | `checks/claims-the-ao-belongs-to-its-ground.mjs` | producer that rebuilds that manifest from scratch. `bake-ground-ao` writes |
 | `checks/claims-the-armoured-shore-is-never-empty.mjs` | IS THERE A WALL AT EVERY DISTANCE? |
+| `checks/claims-the-authoring-store-reloads-on-edit.mjs` | DOES AN EDIT TO THE AUTHORING STORE RELOAD THE PAGE, NEVER SWAP IT HOT? |
 | `checks/claims-the-bands-are-held-by-their-owners.mjs` | EACH TILE'S CURB, WALK AND LAWN ARE CUT INTO PIECES, EACH WITH ONE OWNER (`bandPiecesOfTile`). |
 | `checks/claims-the-bed-is-seen-to-depth-at-low-water.mjs` | CLAIM: a town's bed is cut where the bottom stops being seen AT LOW WATER — the visibility depth below the town's LOW |
 | `checks/claims-the-block-is-one-ring.mjs` | ② IS ONE RING PER TILE: THE CONTOUR THE BANDS ARE STRUCK FROM AND THE BLOCK THE ASPHALT IS |
@@ -499,6 +501,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-revetment-ends-as-a-heap.mjs` | DOES THE STONE STOP IN A CUT? |
 | `checks/claims-the-rim-is-cut-once.mjs` | WHERE THE DRAWING MEETS THE DISC, EACH LINE IS CUT ONCE AND EVERY CROSSING IS SHARED |
 | `checks/claims-the-road-paint-reads-its-marks.mjs` | CLAIM — THE ROAD'S PAINT IS WHAT EACH STREET'S MARKS SELECTED, STRUCK FROM THE SEALED SHAPE; AND THE PARKING DEPTH NEVER |
+| `checks/claims-the-salon-says-why-its-library-is-empty.mjs` | DOES THE SALON CALL ITS CHASSIS LIBRARY "EMPTY" ONLY WHEN IT IS? |
 | `checks/claims-the-search-outlives-an-empty-ticker.mjs` | the header's chrome may not be gated on |
 | `checks/claims-the-shadow-box-has-no-cliff.mjs` | the fitted shadow box is continuous at the horizon. |
 | `checks/claims-the-shore-agrees-with-the-field.mjs` | CLAIM — THE SHORE AGREES WITH THE FIELD (BRIEF-the-shore-is-one-line §4, Boz 2026-10-25). |
