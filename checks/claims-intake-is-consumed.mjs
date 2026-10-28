@@ -118,7 +118,8 @@ const luKeys = must(
 // `centerlinesFor` kind labels, because the kind label and the tag it matches are
 // not the same string (`pedestrian` is drawn as kind `path`).
 const pathBlock = must(
-  (deriveSrc.match(/const footways\s*=\s*highways\.filter[\s\S]*?const pathCenterlines/) || [])[0],
+  // the filters read `lines` since 2026-10-28 (an area highway is a surface, never a path: derive.js#isAreaWay), any source array is read
+  (deriveSrc.match(/const footways\s*=\s*\w+\.filter[\s\S]*?const pathCenterlines/) || [])[0],
   'the path filters', 'cartograph/derive.js')
 const pathHighways = must(
   [...new Set([...pathBlock.matchAll(/highway\s*===\s*['"]([^'"]+)['"]/g)].map(m => m[1]))],
