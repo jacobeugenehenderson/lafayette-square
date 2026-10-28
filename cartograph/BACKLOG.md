@@ -14,6 +14,12 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**⛔ NO BUTTON RE-SKELETONS A COMMITTED TOWN (2026-10-28, LS's Bake):** Extent's Bake re-scopes a committed town, and rescope
+deliberately skips skeleton.js (serve.js, "no skeleton rebuild, no identity churn"); only a first commit runs it. So when skeleton code
+changes (the street-class vocabulary), a committed town's skeleton goes stale, the Bake doesn't know, and the pour refuses by name
+("skeleton chain saint-ange-lane carries no class — re-pour the skeleton"). LS re-skeletoned by hand with commit-extent's own command
+(Boz, Jacob's go; backup .claude/backups/reskeleton-ls-2026-10-28/; chains 321 → 330, all 27 authored ids same name, ends within 0.5 m).
+FIX OWED: the Bake's dirty detector covers the skeleton step, and the route re-skeletons when it's stale.
 **⛔ A BUILDING A CLICK CAN'T HIT HAS NO WAY IN** (the click is now the only sign of life; Zob, 2026-10-27). Pre-existing on base,
 causes not established, one row each: (1) HPDM msbf-3378's drawn wall misses (hero, browse) · (2) PTown msbf-2462 misses (hero, wall, roof,
 hero≠browse) · (3) LS Stage never draws under claims-a-click-hits-what-is-drawn / claims-neon-picks-its-building (no backend in that run) ·
