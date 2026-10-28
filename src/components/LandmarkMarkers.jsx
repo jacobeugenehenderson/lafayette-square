@@ -115,8 +115,6 @@ function MapPin({ listing, building, position, xOffset = 0, zOffset = 0 }) {
           // drei crashes (~75% intermittent "click a business icon → site crashes").
           // rAF lets the click finish first. (isDrag reads the event → run it sync.)
           onClick={(e) => { e.stopPropagation(); const ok = !isDrag(e); if (ok) requestAnimationFrame(() => select(listing.id, listing.building_id)) }}
-          onPointerOver={() => { document.body.style.cursor = 'pointer' }}
-          onPointerOut={() => { document.body.style.cursor = 'auto' }}
           style={{
             ...containerStyle,
             background: hasLogo
@@ -126,7 +124,6 @@ function MapPin({ listing, building, position, xOffset = 0, zOffset = 0 }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
             userSelect: 'none',
             boxShadow: '0 2px 8px rgba(0,0,0,0.7)',
             overflow: 'hidden',

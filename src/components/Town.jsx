@@ -148,7 +148,6 @@ import BakedGround from './BakedGround.jsx'
 import SlabRevetment from './SlabRevetment.jsx'
 import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
-import CityModel from './CityModel'
 import InstancedTrees from './InstancedTrees'
 import LafayettePark from './LafayettePark'
 import BakedLamps from './BakedLamps'
@@ -696,7 +695,6 @@ export default function Town({
           <R3FErrorBoundary name="SlabBuildings"><SlabBuildings key={`slab-${bake || 0}`} lookId={lookId} interactive={interactive}
             materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette} wallPalettesOverride={o.wallPalettes}
             litIds={litIds} litTintOverride={o.litTint} /></R3FErrorBoundary>
-          <R3FErrorBoundary name="CityModel"><CityModel key={`city-${bake || 0}`} lookId={lookId} interactive={interactive} /></R3FErrorBoundary>
           <DrawnAnchor id="buildings" />
         </group>
         <group name="town:trees" visible={on('trees') && revealed} userData={{ gatedOn: on('trees') }}>

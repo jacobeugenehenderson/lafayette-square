@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 480,
+  "total": 481,
   "counts": {
-    "safe": 341,
+    "safe": 342,
     "local-effect": 29,
     "live": 110
   },
@@ -3307,6 +3307,13 @@
         "deletes files — only under its own temp dir",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command",
         "runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-the-town-has-no-hover.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

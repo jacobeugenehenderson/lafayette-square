@@ -11,7 +11,6 @@ import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedP
 import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lookOf } from '../lib/lookOf.js'
 import { useTownContext } from './townContext.js'
-import useTownHover from './townHover.js'
 
 /**
  * NeonBands — the neon of every open place: TWO DRAWINGS of one sign, handed off by on-screen size
@@ -555,14 +554,11 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
 
   useEffect(() => () => { tubeGeometry.dispose(); lineGeometry.dispose() }, [tubeGeometry, lineGeometry])
 
-  // ── THE SIGN PICKS ITS BUILDING (BRIEF-neon-reads-at-every-distance §3.4). A click or hover on a sign resolves to the
-  // building it is on, exactly as a wall or roof does (SlabBuildings.jsx#idAtFace) — through <Town select> and the
-  // shared hover. The line is drawn in screen space, so it is picked in screen space too: a ray passing within the
+  // ── THE SIGN PICKS ITS BUILDING (BRIEF-neon-reads-at-every-distance §3.4). A click on a sign resolves to the
+  // building it is on, exactly as a wall or roof does (SlabBuildings.jsx#idAtFace) — through <Town select>. The line is drawn in screen space, so it is picked in screen space too: a ray passing within the
   // sign's on-screen half-width (+ PICK_SLOP_PX) of a stretch hits it, at that stretch's depth, so a nearer wall or
   // tree still wins.
   const townSelect = useTownContext().select
-  const setHovered = useTownHover((s) => s.setHovered)
-  const clearHovered = useTownHover((s) => s.clearHovered)
   const lineRef = useRef(null)
   const down = useRef([0, 0])
   useEffect(() => {
@@ -592,8 +588,6 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   }, [pick, r, viewport])
   const pickHandlers = townSelect ? {
     onPointerDown: (e) => { down.current = [e.clientX, e.clientY] },
-    onPointerMove: (e) => { if (!e.buildingId) return; e.stopPropagation(); setHovered(e.buildingId); document.body.style.cursor = 'pointer' },
-    onPointerOut: () => { clearHovered(); document.body.style.cursor = 'auto' },
     onClick: (e) => {
       if (!e.buildingId) return
       e.stopPropagation()

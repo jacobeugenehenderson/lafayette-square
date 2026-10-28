@@ -34,7 +34,6 @@ import PilgrimMonument from './PilgrimMonument.jsx'
 import SetPieceUplights from './SetPieceUplights.jsx'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useTownContext } from './townContext.js'
-import useTownHover from './townHover.js'
 
 // kind → renderer. The only place a set-piece component is imported.
 const RENDERERS = {
@@ -46,11 +45,9 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
   if (!lookId) throw new Error('[SetPiece] ⛔ needs `lookId` — the Look being drawn')
   const scene = useSceneJson(lookId)
   const index = useSlabBuildingIndex(s => s.index)
-  // A click reports to the app (<Town onSelectBuilding>), as a click on any building does; hover is the renderer's.
+  // A click reports to the app (<Town onSelectBuilding>), as a click on any building does.
   const townSelect = useTownContext().select
   const select = (id) => townSelect?.(id)
-  const setHovered = useTownHover(s => s.setHovered)
-  const clearHovered = useTownHover(s => s.clearHovered)
   const sp = town?.setPiece
   if (!sp) return null
   const R = RENDERERS[sp.kind]
@@ -64,8 +61,6 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
   const id = sp.buildingId
   return (
     <group
-      onPointerMove={(e) => { e.stopPropagation(); setHovered(id); document.body.style.cursor = 'pointer' }}
-      onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
       onClick={(e) => { e.stopPropagation(); if (e.delta > 6) return; select(id) }}>
       {/* `focusName`: the renderer names its ROOT with it, the root sitting at the set-piece's base centre, and carries
           its `extent` there — so depth of field can focus on it by its building's id (src/lib/focusObject.js). */}

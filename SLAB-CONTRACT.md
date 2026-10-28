@@ -315,7 +315,7 @@ artifact still draws, filling the unbaked fields from the kit default — ⏳ un
 
 ## 6. `buildings.json` — building geometry manifest
 
-The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex color + UV + centroid-Y attributes for shading, **plus a render-scoped per-building index** (`buildings`) and **footprints / roofOutlines `.bin` sections** so the runtime resolves per-building identity (click / hover / neon / selection) against the slab instead of `src/data/buildings`. **This manifest is `version: 3`** — v2 plus each building's `tint` (§6.3), so the player can recolour live with the bake's own rules (`src/lib/buildingTint.js`, shared by both).
+The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex color + UV + centroid-Y attributes for shading, **plus a render-scoped per-building index** (`buildings`) and **footprints / roofOutlines `.bin` sections** so the runtime resolves per-building identity (click / neon / selection) against the slab instead of `src/data/buildings`. **This manifest is `version: 3`** — v2 plus each building's `tint` (§6.3), so the player can recolour live with the bake's own rules (`src/lib/buildingTint.js`, shared by both).
 
 ```jsonc
 {
