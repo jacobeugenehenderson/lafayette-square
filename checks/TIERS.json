@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 481,
+  "total": 482,
   "counts": {
-    "safe": 342,
+    "safe": 343,
     "local-effect": 29,
     "live": 110
   },
@@ -925,6 +925,18 @@
         "writeFileSync — only under its own temp dir",
         "computed import of scratch/_proto-feed.mjs — read, safe",
         "computed import of src/lib/tileGround.js — read, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-way-tag-decides-before-the-coast.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of src/cartograph/streetClass.js from its own temp dir — read as src/cartograph/streetClass.js, safe",
+        "imports a mutated copy of src/cartograph/streetClass.js from its own temp dir — read as src/cartograph/streetClass.js, safe",
+        "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
       ]
     },

@@ -261,3 +261,25 @@ export function isOffGradeWay(t) {
   const Lraw = t.layer !== undefined ? parseInt(t.layer, 10) : 0, L = Number.isFinite(Lraw) ? Lraw : 0
   return b || tu || L !== 0
 }
+
+// ⭐ A WAY'S OWN TAG DECIDES BEFORE THE COAST (Jacob, 2026-10-27, `r-a-way-tag-decides-before-byCoast`; Boz's vocabulary): what a
+// street way over ①'s water IS, read off its STRUCTURAL tags (man_made, embankment, ford; no other key counts), the class
+// selected by the tag and never measured by it:
+//   'offGrade' — bridge, tunnel or a non-zero layer (isOffGradeWay): a span, painted over the water
+//   'deck'     — man_made ∈ DECK_KINDS: the street rides its deck, taken out of the water (structures.mjs#streetDecks)
+//   'ground'   — embankment=* (anything but `no`): the tag is evidence the land is there. ⛔ The kit does not yet draw ground
+//                that ①'s coast holds as water (PTown's Breakwater: the dike is a design question, BACKLOG), so over the water
+//                it refuses by name
+//   null       — no structural tag: a street crossing the water bank to bank is a bridge all the same (ruling "a")
+//   { unknown: 'key=value' } — a structural value outside this vocabulary (a ford, for now): refused by name over the water
+// The mint reads it per segment run (cartograph/mintInputs.mjs#gradeRunsOf), and splitOverWater judges a wet piece by it.
+export const DECK_KINDS = ['pier', 'quay', 'wharf', 'jetty', 'platform']
+export function structureOverWater(t) {
+  if (!t) return null
+  if (isOffGradeWay(t)) return 'offGrade'
+  const has = (k) => t[k] != null && t[k] !== 'no'
+  if (has('man_made') && DECK_KINDS.includes(t.man_made)) return 'deck'
+  if (has('embankment')) return 'ground'
+  for (const k of ['man_made', 'ford']) if (has(k)) return { unknown: `${k}=${t[k]}` }
+  return null
+}

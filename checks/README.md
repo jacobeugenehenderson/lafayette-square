@@ -174,7 +174,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 342. This is `npm test`.
+## safe — 343. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -241,6 +241,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-tree-card-starts-at-the-ground.mjs` | DOES EVERY HERO TREE CARD START AT THE GROUND? |
 | `checks/claims-a-tree-is-refused-for-what-stands-under-it.mjs` | a ground-cover refusal is backed at the POINT. |
 | `checks/claims-a-verge-span-edge-is-its-street-edge.mjs` | A VERGE BEGINS AT THE CARRIAGEWAY'S EDGE, NEVER ON A STREET'S CENTRELINE. |
+| `checks/claims-a-way-tag-decides-before-the-coast.mjs` | CLAIM — A WAY'S OWN TAG DECIDES BEFORE THE COAST (Jacob, 2026-10-27, `r-a-way-tag-decides-before-byCoast`; Boz's vocabulary). |
 | `checks/claims-a16-materials-write.mjs` | A16 GATE — "does a materials flip invent authoring, and did the resolver fix |
 | `checks/claims-akas-never-merge-species.mjs` | DO COLLOQUIAL NAMES ROUTE WITHOUT MERGING TWO SPECIES INTO ONE? |
 | `checks/claims-alley-stub-pairs.mjs` | ⭐⭐⭐ IS "BRIDGE THE ALLEY ACROSS A JUNCTION" A RULE, OR A SPECIAL CASE? |

@@ -36,16 +36,14 @@ inland towns (HPDM; LS after Jacob's loops) → Promote player + slab together. 
 baseElev); claims-a-bake-step-declares-what-it-reads (pre-existing, owed before a Bake is called clean). CENSUS (Zob): bake-ground
 writes shape.json only `if (shapeArtifact)`, so a missing one leaves the OLD shape.json beside a new ground inside an atomic commit;
 refuse by name when ① exists and protoShapeTiles doesn't.
-**▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) HELD UNMERGED: `ferrule/resolution-rule` 332e0a23** (`coastFile.mjs#toResolution` at settle's
-exit, COAST_VERSION 4; PTown's 7.6 cm hairpin edge goes) moves the class, does not close it: on Huron's v4 fixture, vertices turning ≥ 158°
-0 → 6, and at (3234.63, 791.994) · (3182.751, 765.209) · (686.159, 286.334) ①'s ink ring has an outline vertex no ink cell carries, PTown's
-refusal signature (Zob). RULED (Jacob, 2026-10-27): ONE COPY of the ink (`r-one-copy-of-the-ink`); the turn rule is not built. ⚠️ As filed it
-collides with Boz's A(i) (② offsets the un-absorbed face; `absorbInk.js` header): with Jacob. MEASURED since (Ferrule, offline, nothing written):
-at the mint the stray tip is in ①'s ink ring ONLY (no cell, paint, block or water; no `blocks` vertex within 20 mm), and Huron's v4 ground
-BUILDS (232 tiles). PTown's v4 ground passes the shore (985 vertices shared) and REFUSES at `bridgeOverlay` on breakwater|0 (way 170402219,
-embankment=dyke, no bridge tag: a byCoast span), cause not established. OPEN: PTown's v4 bake removes 289 vertices, tonight's offline census
-246, cause not established. ⛔ GATE: claims-the-mint-
-refuses-no-outline RED on PTown until (b). Outputs: scratch/ptown-parks/ptown-failed6/ · probes, dumps, Zob's (zob/): scratch/resolution-rule/.
+**▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) LANDS on `ferrule/way-tag-vocabulary`:** the edge rule at settle's exit (`coastFile.mjs
+#toResolution`, COAST_VERSION 4: PTown's 7.6 cm hairpin edge goes; Huron's v4 ground builds 232 tiles) and a way's own tag deciding before
+the coast (`r-a-way-tag-decides-before-byCoast`: `streetClass.js#structureOverWater`, ▶ `checks/claims-a-way-tag-decides-before-the-coast.mjs`).
+PTown's v4 ground passes the shore (985 vertices shared), then REFUSES at ① by name on the Breakwater (way 170402219, embankment=dyke: GROUND
+in ①'s water). ⭐ THE DIKE IS JACOB'S DESIGN QUESTION: its footprint edge and the lidar coast run 4.3–5.4 mm apart along it, under the ink, and
+both reach ① (absorbInk refused at (-423.189, 2863.631)); the one-cell rule's land mirror measured worse (verifier 233 → 281, the site 16 → 5).
+Both held as WIP on `ferrule/resolution-rule` (c1f98e92 the take-out, beed893d the mirror). OPEN: 289 vs 246 removed vertices, cause not
+established. ⛔ GATE: claims-the-mint-refuses-no-outline RED on PTown until (b). Probes, dumps, Zob's (zob/): scratch/resolution-rule/.
 **▶ (b) THE DECKS' 1 mm JOGS (artifacts) stay.** First: WHY deckFootprints' union self-touches (PTown @(-56.78, 989.78)). The edge rule on
 decks is NOT clean: PTown 112 removed, 9 held, verifier 176 → 21 · Huron 390 removed (≤ 0.954 m), 44 held, 490 → 91, 2 rings ≤ 3 vertices.
 **▶ (c) THE WIDTH CLAUSE (no neck or channel under one cell, at settle's exit) is unbuilt.** Left after the edge rule: PTown 193 (least

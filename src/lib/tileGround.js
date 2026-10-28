@@ -471,6 +471,25 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH =
       const span = (kind) => ({ street: st.skelId ?? st.name, segOrd: ords[0], kind, hwy: !!isH(x), wetM: +len.toFixed(2), points: part.map(v => [v.p[0], v.p[1]]), banks: [!!part[0].cross, !!part[part.length - 1].cross] })
       if (reach >= hi - 1e-9) { spans.push(span('tagged')); dropped++; continue }
       if (runs.some(r => r.mixed)) throw new Error(`[①] ⛔ ${who}: a wet piece on a segment whose ways disagree on grade reaches ${(hi - reach).toFixed(2)} m past the off-grade way's own extent — its grade there cannot be read. Refusing.`)
+      // ⭐ A WAY'S OWN TAG DECIDES BEFORE THE COAST (Jacob, 2026-10-27, `r-a-way-tag-decides-before-byCoast`): each way's verdict in
+      // the over-water vocabulary (src/cartograph/streetClass.js#structureOverWater, carried per run by mintInputs#gradeRunsOf). A
+      // DECK way is taken out of the water with its deck (structures.mjs#streetDecks), so one whose piece is still wet here was
+      // not taken out: refused by name, never let fall to a bridge. A GROUND way (an embankment) over the water refuses by name:
+      // the kit does not yet draw land that ①'s coast holds as water (BACKLOG, the dike). A structural value outside the
+      // vocabulary (a ford, for now) refuses by name. Only a way with no structural tag goes on to the coast's verdict below.
+      if (runs.some(r => !Array.isArray(r.structure))) throw new Error(`[①] ⛔ ${who}: its grade runs carry no structure verdicts (mintInputs#gradeRunsOf) — what its ways ARE over the water cannot be read. Refusing.`)
+      // ⛔ judged within each way's OWN extent (Zob): a run whose ways disagree carries each structural way's extent
+      // (`structureExtents`), and a piece is that way's only if the extent holds it; one straddling a boundary refuses by name
+      { const ws = runs.flatMap(r => {
+          if (!r.structureMixed) return r.structure.length ? [{ v: r.structure[0], way: r.ways.join('/') }] : []
+          return (r.structureExtents || []).filter(x => x.extent && x.extent[1] > lo + 1e-9 && x.extent[0] < hi - 1e-9).map(x => {
+            if (!(x.extent[0] <= lo + 1e-9 && hi <= x.extent[1] + 1e-9)) throw new Error(`[①] ⛔ ${who}: its piece in ①'s water straddles the end of way ${x.way} (${x.v?.unknown ?? x.v}) on a run whose ways disagree — which way the piece is cannot be read. Refusing.`)
+            return { v: x.v, way: x.way } }) })
+        const un = ws.find(x => x.v?.unknown)
+        if (un) throw new Error(`[①] ⛔ ${who}: way ${un.way} over the water is tagged ${un.v.unknown}, outside the over-water vocabulary (offGrade · deck · ground · none; streetClass.js#structureOverWater). Refusing.`)
+        const dk = ws.find(x => x.v === 'deck' || x.v === 'ground')
+        if (dk?.v === 'deck') throw new Error(`[①] ⛔ ${who}: way ${dk.way} is a DECK by its own tag, yet its piece lies in ①'s water: its deck's take-out (structures.mjs#streetDecks) did not remove it. Refusing.`)
+        if (dk) throw new Error(`[①] ⛔ ${who}: way ${dk.way} is GROUND (an embankment) by its own tag, yet its piece lies in ①'s water: the kit does not yet draw land the coast holds as water (BACKLOG, the dike). Refusing.`) }
       // ⭐ OFF GRADE BY THE COAST (Jacob, 2026-10-27: "a; we don't have any mechanism for this in the authoring tools"): a street
       // over ①'s water with no off-grade tag is a bridge all the same — the coast is the high-water mark, and a causeway on fill
       // reads as land in the lidar, so it never reaches here. It leaves the ink like a tagged span, and it is RECORDED, never silent
