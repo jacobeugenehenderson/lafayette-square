@@ -8504,16 +8504,17 @@
       "kind": "ruling",
       "value": {
         "order": "the way's own tag first, then byCoast",
-        "embankment": "ground (the tag is evidence the land is there; it selects the class and never measures)",
+        "embankment": "ground: the street's own roadway (half-width via tileGround.js#resolveProtoMeasure, authoring loaded) taken out of ①'s water by the deck path's own mechanism (mintInputs#waterWithoutDecks); never the width tag",
         "manMadePier": "a deck, as the other piers are",
         "untagged": "a bridge (Jacob's ruling 'a', 2026-10-27, stands)",
-        "unknownTag": "refused by name"
+        "unknownTag": "refused by name",
+        "vocabulary": "one home in streetClass.js: off-grade · DECK_KINDS · embankment=* · no structural tag (byCoast). Structural keys: man_made, embankment, ford; any other value of those refuses by name (a ford, for now)"
       },
       "by": "Jacob",
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "cartograph/BACKLOG.md PTOWN PARKS",
-      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges)."
+      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect."
     },
     {
       "id": "r-balsa-lands-its-rulings-not-the-identity-cut",
