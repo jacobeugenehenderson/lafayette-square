@@ -9,6 +9,25 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 ## ▶ Forward list (2026-10-20 night) — LS · HPDM · PTown · Huron first
 
 ### ⭐ HANDOFF — 2026-10-25 night (Boz). Read this block first; everything below is detail.
+**▶ 2026-10-27 LATE (Boz): three rulings filed** (registry): `r-a-chain-end-in-a-roadway-is-a-T` (at mintInputs, by the other street's
+own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-a-node owed) · `r-a-way-tag-decides-before-byCoast`
+(embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
+PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
+builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**NIGHT ORDER (Jacob retired, handed to the staff):** Ferrule builds the way-tag rule on ferrule/resolution-rule (heavy slot) →
+Zob PASS → Boz merges + restarts :3343 → Swash re-bakes Huron then PTown through the route, LOCAL only (PTown's known
+mint-refuses-no-outline RED accepted, named; Swash measures (b) read-only meanwhile, plus a water-tint probe in scratch/) → Kerf builds
+claims-a-chain-end-in-a-roadway-is-a-node, then the join (BRIEF-a-chain-end-in-a-roadway-is-a-T). Ward: All places listings-only.
+HELD for Jacob: Plumb's balsa deletions (wants his go in its window) · kit bundle + Ward pin + publish:staging · every Promote.
+FOR JACOB'S MORNING: (1) chain ends whose OWN roadway reaches another's but lie outside it, the (b′) class: join them too, or check-RED only?
+Kerf's check (kerf/chain-end-is-a-node df666e54): Altadena 8 · Huron 3 · JH 3 · PTown 2 (HPDM green; LS unchecked, stale skeleton).
+(2) The join's operator override: which POUR input holds it (the Wall forbids authoring in the mint). Filed as aspiration.
+(2b) A join adds an intersection, so segOrd downstream shifts +1 and authored slots would land on the wrong block (Zob). Tonight the join
+REFUSES by name on an authored slot past it; the key migration is the open key's (EXTENT-DESIGN §4.1), yours.
+(2c) THE DIKE (PTown's Breakwater, embankment=dyke): its footprint edge and the lidar coast run 4–5 mm apart along it, two lines
+that should be one, so absorb refuses. Boz's land-mirror ruling measured WORSE (233 → 281) and is withdrawn. Tonight it's classed ground and
+refuses by name at ①, so PTown parks there; held WIP on ferrule/resolution-rule (c1f98e92, beed893d). How it becomes ONE line: yours.
+(3) Deck winding (Swash): OSM deck areas merged unnormalised, so covered deck cancels (Huron 3.37 m², 13 pieces). Being fixed before the bakes.
 **▶ 2026-10-27: THE SHORE IS MERGED (eec3ac1b).** Huron's shoreline rebuilt to Jacob's rulings (the coast IS the high-water mark;
 the drawn ground pinned to it; bridges painted over water; islands; the absorbed ink). Jacob looked: "FANTASTICALLY advanced". NEXT, in
 the release order (entry below): kit bundle → Ward pin + publish:staging → re-pour + re-bake each coastal town (Huron, PTown), then the

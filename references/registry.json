@@ -5089,6 +5089,33 @@
       "findings": [
         "r-one-copy-of-the-ink"
       ]
+    },
+    {
+      "id": "q-chain-end-in-a-roadway",
+      "ask": "What a chain end that is no node but lies inside another street's roadway becomes, and where the kit decides it",
+      "neededBy": "Zob's census 2026-10-27 (ends inside another roadway: LS 2 · HPDM 4 · PTown 1 · Huron 0 · JH 11 · Altadena 6)",
+      "status": "answered",
+      "findings": [
+        "r-a-chain-end-in-a-roadway-is-a-T"
+      ]
+    },
+    {
+      "id": "q-what-decides-a-way-over-water",
+      "ask": "Whether a way's own tag decides its class before byCoast treats an untagged street over water as a bridge",
+      "neededBy": "PTown v4 ground run 2026-10-27: breakwater|0 (way 170402219, embankment=dyke, no bridge tag) refused at tileGround.js#bridgeOverlay as a byCoast span",
+      "status": "answered",
+      "findings": [
+        "r-a-way-tag-decides-before-byCoast"
+      ]
+    },
+    {
+      "id": "q-balsa-after-step-1",
+      "ask": "What the balsa model builds after step 1 measured identity at 0.7-3.8% of main-thread CPU to usable",
+      "neededBy": "BRIEF-the-balsa-model step 1 (Plumb, 2026-10-27)",
+      "status": "answered",
+      "findings": [
+        "r-balsa-lands-its-rulings-not-the-identity-cut"
+      ]
     }
   ],
   "findings": [
@@ -8452,6 +8479,68 @@
       "quote": "\"one copy of the ink, brief Ferrule\"",
       "canon": "cartograph/BACKLOG.md PTOWN PARKS (a)",
       "notes": "One method, not two: a turn threshold would be a constant fit to the towns seen (Layer 0 Class D). That two copies are the CAUSE is Zob's inference, not measured; the brief's first act measures it."
+    },
+    {
+      "id": "r-a-chain-end-in-a-roadway-is-a-T",
+      "question": "q-chain-end-in-a-roadway",
+      "kind": "ruling",
+      "value": {
+        "home": "mintInputs (where the half-widths exist)",
+        "becomes": "a T, joined by rule",
+        "judgedBy": "the other street's own half-width by the POUR's measure (tileGround.js#resolveProtoMeasure with no authoring; the pour is blind to authoring, claims-proto-wall claim A); no constant",
+        "recorded": true,
+        "overridable": true,
+        "check": "claims-a-chain-end-in-a-roadway-is-a-node: RED on any such end left unjoined",
+        "authoringGuard": "the join REFUSES BY NAME when the through street has an authored blockCustoms slot at or after the new segOrd (a join adds an intersection, so segOrd downstream shifts +1); a key migration is filed under the open key, EXTENT-DESIGN §4.1",
+        "bPrime": "not joined; a sibling question-check, for Jacob"
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
+      "canon": "cartograph/BACKLOG.md",
+      "notes": "Derived, not a snap: the only distance is the street's own half-width. Each join is reported so the operator sees it. Moving widths upstream to the skeleton was not chosen (it reopens design). Corrected 2026-10-27 (Boz): 'authored half-width' would cross the Wall at mintInputs, the same error caught on the embankment ruling. Zob's census found no end changing bucket under authored widths. Authoring guard ruled by Boz on Zob's finding (2026-10-27 night): segOrd is topological (resolveChainSegmentation → segOrdAt), so a silent join would move LS's 79 and HPDM's 17 authored slots onto the wrong blocks."
+    },
+    {
+      "id": "r-a-way-tag-decides-before-byCoast",
+      "question": "q-what-decides-a-way-over-water",
+      "kind": "ruling",
+      "value": {
+        "order": "the way's own tag first, then byCoast",
+        "embankment": "ground (classed); its take-out is OPEN for Jacob. Until ruled, a ground piece in ①'s water refuses by name at ①",
+        "manMadePier": "a deck, as the other piers are",
+        "untagged": "a bridge (Jacob's ruling 'a', 2026-10-27, stands)",
+        "unknownTag": "refused by name",
+        "vocabulary": "one home in streetClass.js: off-grade · DECK_KINDS · embankment=* · no structural tag (byCoast). Structural keys: man_made, embankment, ford; any other value of those refuses by name (a ford, for now)",
+        "embankmentExtent": "the measure's OUTER edge (pavement + treelawn + sidewalk), so an embankment carries its whole street and ② never offsets a walk over the water"
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
+      "canon": "cartograph/BACKLOG.md PTOWN PARKS",
+      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect. Corrected the same night after Ferrule's second stop: Boz's first reading said 'authoring loaded', which crosses the Wall. Jacob, 2026-10-27, on a level deck height drawing Long Point Dike always dry though it floods at very high tides: \"fine for now\". Extent ruled by Boz on Zob's question, 2026-10-27 night; Jacob may redirect. Ruled by Boz 2026-10-27 night after Ferrule measured PTown's absorbInk refusal (the embankment footprint and the lidar coast struck 4.3-5.4 mm apart, two lines that should be one): waterWithoutDecks' one-cell rule gets its LAND MIRROR, so within one cell of a deck the boundary is the deck's edge alone (same rule, same constant, both sides). WITHDRAWN the same night: the land mirror measured worse (Ferrule, PTown v4: coast verifier 233 → 281, the site 16 → 5, the mint refusing earlier at (-458.62, 2802.707)); an open/close pair cannot take the exact region between two lines. The embankment take-out and the mirror are held WIP (ferrule/resolution-rule c1f98e92, beed893d). Tonight embankment is classed ground with NO take-out, so PTown refuses at ① by name on the Breakwater. How a dike whose footprint runs 4-5 mm from the lidar coast becomes ONE line is OPEN, for Jacob."
+    },
+    {
+      "id": "r-balsa-lands-its-rulings-not-the-identity-cut",
+      "question": "q-balsa-after-step-1",
+      "kind": "ruling",
+      "value": {
+        "lands": [
+          "no hover",
+          "All places lists listings only",
+          "a listing carries its point",
+          "CityModel retires"
+        ],
+        "skipped": "the identity rebuild (look/address book/contents split)",
+        "speedWorkAimsAt": [
+          "desktop frame time while moving",
+          "PTown's ground: the in-browser height-field build and the 56.5 MB ground.bin"
+        ]
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
+      "canon": "docs/briefs/BRIEF-the-balsa-model.md",
+      "notes": "The speed is in the look, not identity (Plumb's numbers in the brief). Desktop frame cause not established (headless M1 GPU): confirm by eye in a real browser first. Neon keyed by face was part of the skipped split (it existed only so neon would not need the index); with the index staying, neon stays as built: it reads the index plus live hours and the clock (Boz, 2026-10-27, on Jacob asking what it meant)."
     }
   ]
 }
