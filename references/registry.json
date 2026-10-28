@@ -8514,7 +8514,7 @@
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "cartograph/BACKLOG.md PTOWN PARKS",
-      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect. Corrected the same night after Ferrule's second stop: Boz's first reading said 'authoring loaded', which crosses the Wall."
+      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect. Corrected the same night after Ferrule's second stop: Boz's first reading said 'authoring loaded', which crosses the Wall. Jacob, 2026-10-27, on a level deck height drawing Long Point Dike always dry though it floods at very high tides: \"fine for now\"."
     },
     {
       "id": "r-balsa-lands-its-rulings-not-the-identity-cut",
