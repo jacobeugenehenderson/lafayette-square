@@ -163,6 +163,22 @@ works the item out) or only **storage**. ⛔ marks a gap. Each home's header wil
 - **Fix the line, not the shadow.** Centerline → block → curb → ribbon. A defect is almost never fixable where it's seen.
 - **Freezing wrong data is worse than not freezing.** Each freeze must be real and correct before it's trusted.
 - **Scaffolding is a symptom.** A fourth guard means look at the input.
+- **A source is drawn to its own resolution, and no finer** (Jacob, 2026-10-27).
+  - **Two separate things.** *Fidelity* is what a source can know: the lidar coast is traced at about 1 m, so a feature
+    narrower than that isn't information. *Precision* is how exactly the drawing closes: the 1 mm lattice and the 10 mm ink.
+    Precision is mandatory, because it's what makes the map watertight.
+  - **The rule.** Each source declares its resolution, and no feature finer than it reaches ①: no width, neck, channel or
+    edge length below it.
+  - **It limits a feature's SIZE, not its POSITION.** A resolvable edge may still be placed to sub-cell accuracy, but nothing
+    may create a feature its source can't resolve.
+  - **Beyond the limit, fidelity is authored or styled, never read off the data** (*"the style decides, authoring handles
+    fidelity"*, 2026-10-20). If a wharf must be truer than its trace, the operator draws it, and ① holds the drawing exactly.
+  - **It is not a fallback.** What a source can't resolve is removed and recorded by name.
+  - **It is not a tuned constant.** The limit is the source's own declared resolution.
+  - **It is not "only seen from far".** Close-camera richness comes from style and generated detail.
+  - **Homes in the code:** `structures.mjs#openCloseAtStep` (water and decks) and the settle wall in
+    `bake-coast.mjs#settleOnSource`.
+  - **Check:** ⟦unbuilt⟧ "no geometry finer than its source's declared resolution reaches ①", run over every traced source.
 - **Every fix has three parts:** the code works and its predecessor is gone · the register is updated (FEATURES for
   the capability, OPERATIONS for the knobs) · superseded prose goes to the Diary (`cartograph/_archive/`).
 - **A fact that can be run is a check, not prose.** A check reads the source and is seen to fail before it's trusted.
