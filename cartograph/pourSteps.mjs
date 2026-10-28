@@ -31,6 +31,24 @@ export function saveBakeRead(mapJson, lookId, label, rec) {
 // town's record by value, so an edit to Huron reaches Huron and no other town.
 export const townRecordOf = (scene) => ({ value: `the town record of "${scene}"`, read: () => instanceForMap(scene) ?? null })
 
+// ⭐ ground.json AS ITS READERS READ IT (2026-10-28, the 10-04 scene.json/bakedAt pattern). bake-ground-ao runs LAST and writes
+// its four maps back into ground.json (`lightmap` with the groundKey it was baked against, `colormap`, `poolmap`, `rulemap`);
+// bake-ground carries the prior lightmap and drops the other maps when the ground changed. So by FILE, every step that read
+// ground.json earlier in the Bake (coast-distance, buildings, lamps, tree-anchors) was stale after any Bake that re-baked the
+// ground (LS, 2026-10-28 ~14:25). None of them reads those fields, nor `timings` (bake-ground's wall times, new on every run):
+// they read the rest, by value. ▶ checks/claims-no-step-reads-what-a-later-step-writes.mjs (the field list is read off
+// bake-ground-ao.js there, so a fifth map it starts writing fails the check rather than re-opening this).
+export const GROUND_AO_FIELDS = ['lightmap', 'colormap', 'poolmap', 'rulemap']
+export const groundForReaders = (lookDir) => ({
+  value: `${join(lookDir, 'ground.json').replace(REPO_ROOT + '/', '')} without the maps bake-ground-ao writes back (${GROUND_AO_FIELDS.join(', ')}) or its timings`,
+  read: () => {
+    let g
+    try { g = JSON.parse(readFileSync(join(lookDir, 'ground.json'), 'utf-8')) } catch { return null }
+    for (const k of [...GROUND_AO_FIELDS, 'timings']) delete g[k]
+    return g
+  },
+})
+
 /** A step's reads: its CODE is its declared scripts' whole import closure, its DATA every other declared input plus the town's
  *  record. What the Bake judges a step by, and what is recorded after it runs. */
 export function stepReads(inputs, scene) {
