@@ -54,7 +54,9 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
       const run = { from, to, ways: r.ways, structure: r.ways.map(w => structureOverWater((sk.ways || {})[w])), offGrade: off.length === r.ways.length, exact: !r.by, by: r.by || 'exact' }
       if (off.length && off.length < r.ways.length) { run.mixed = true
         run.offExtents = off.map(w => { const raw = rawById.get(w); if (!raw?.length) throw new Error(`[mintInputs] ⛔ ${id}: off-grade way ${w} on a mixed-grade run has no raw geometry in raw/osm.json — its extent cannot be read. Refusing.`)
-          return extentOf(pts, from, to, raw) }).filter(Boolean) }
+          const extent = extentOf(pts, from, to, raw)
+          if (!extent) throw new Error(`[mintInputs] ⛔ ${id}: off-grade way ${w} on a mixed-grade run projects onto none of the run's segments — its extent cannot be read. Refusing.`)
+          return extent }) }
       // ⭐ AND THE STRUCTURE WITHIN EACH WAY'S OWN EXTENT, as the grade is (Zob, 2026-10-27): a run spanning a way joint whose ways
       // disagree carries each STRUCTURAL way's verdict and extent along it; splitOverWater judges a wet piece by the ways whose
       // extent holds it, and refuses one straddling a boundary
@@ -62,7 +64,9 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
       if (new Set(run.structure.map(key)).size > 1) { run.structureMixed = true
         run.structureExtents = r.ways.map((w, i) => ({ way: w, v: run.structure[i] })).filter(x => x.v != null).map(x => { const raw = rawById.get(x.way)
           if (!raw?.length) throw new Error(`[mintInputs] ⛔ ${id}: structural way ${x.way} on a run whose ways disagree has no raw geometry in raw/osm.json — its extent cannot be read. Refusing.`)
-          return { ...x, extent: extentOf(pts, from, to, raw) } }) }
+          const extent = extentOf(pts, from, to, raw)
+          if (!extent) throw new Error(`[mintInputs] ⛔ ${id}: structural way ${x.way} (${x.v?.unknown ?? x.v}) on a run whose ways disagree projects onto none of the run's segments — its extent cannot be read, and its piece would be judged as untagged. Refusing.`)
+          return { ...x, extent } }) }
       return run }) }
   // `hard` travels with the points: the mint stamps it onto every owner
   const simplify = (s) => { const id = s.skelId ?? s.name, pts = simplified.get(id); return pts?.length >= 2 ? { ...s, points: pts, hard: pts.hard || null, gradeRuns: gradeRunsOf(id, pts) } : null }
