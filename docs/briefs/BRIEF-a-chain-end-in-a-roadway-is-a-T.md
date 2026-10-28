@@ -19,7 +19,11 @@ distances are the two streets' half-widths. Moving widths upstream to the skelet
   by name, so nothing is silent; but the mint is blind to authoring (the Wall), so the override must be a POUR input, and which
   one is Jacob's design question. No override path is built until he rules.
 - **(b′) is NOT joined** (Boz, 2026-10-27): the ruling covers an end INSIDE the other roadway. An end whose own roadway only
-  reaches the other's stays RED in the check, as a question for Jacob. Grade-separated targets are out of the join (minted apart).
+  reaches the other's is a question for Jacob, RED in its own check (`claims-a-chain-end-reaching-a-roadway-awaits-a-ruling`, split
+  on Zob's read so the (a) check can gate GREEN after the join). Grade-separated pairs are set aside by name (minted apart).
+- **The join refuses BY NAME when the through street has any authored blockCustoms slot at or after the new segOrd** (Boz,
+  2026-10-27, on Zob's find: segOrd is topological, so a new intersection re-keys every authored block downstream). It never
+  re-keys authoring silently. A key migration is filed under the open key (`EXTENT-DESIGN §4.1`) for Jacob.
 
 ## 2. What the code does today (Zob, by symbol)
 - `skeleton.js#buildNodeGraph`: a node is a shared coordinate (`vKey`, 1 cm). Nothing splits a chain at a crossing, and nothing
