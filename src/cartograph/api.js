@@ -179,9 +179,12 @@ export async function fetchBoundaryFromStreets(scene, names) {
 
 // Extent editor: the extent DRAFT + metadata (name/blurb/sides/radius). Auto-
 // saved from the panel; loaded on open to restore selections across reloads.
+// ⛔ A LOAD THAT FAILED IS NOT AN EMPTY HOOD (2026-10-28, LS: Extent overwrote a committed 892 m with a draft of 1689 m). The
+// server answers a scene with no neighborhood.json with 200 `{}` (a fresh draft), so anything not ok is a failure: refused by name,
+// and the page neither hydrates nor autosaves over a load it did not make. ▶ checks/claims-extent-never-seeds-a-committed-radius.mjs
 export async function fetchNeighborhood(scene) {
   const res = await fetch(`${sceneUrl(scene, 'neighborhood')}?t=${Date.now()}`, { cache: 'no-store' })
-  if (!res.ok) return {}
+  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its neighborhood could not be loaded (HTTP ${res.status}). Nothing is shown or saved until it loads — reload when the server is back.`)
   return res.json()
 }
 export async function saveNeighborhood(scene, data) {

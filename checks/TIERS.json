@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 485,
+  "total": 486,
   "counts": {
     "safe": 346,
     "local-effect": 29,
-    "live": 110
+    "live": 111
   },
   "checks": [
     {
@@ -1562,6 +1562,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-extent-never-seeds-a-committed-radius.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a temp copy of src/cartograph/api.js, which can: calls fetch()",
+        "imports a mutated copy of src/cartograph/extentRadius.js from its own temp dir — read as src/cartograph/extentRadius.js, safe"
       ]
     },
     {

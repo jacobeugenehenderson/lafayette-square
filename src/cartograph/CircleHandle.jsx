@@ -13,6 +13,12 @@
  */
 import { useRef, useEffect, useState } from 'react'
 
+// ⭐ THE RADIUS IS WHOLE METRES, one step rule for every control that sets it (2026-10-28, Jacob: the panel slider moved in 10s,
+// so LS's 892 m could only be set from this handle). The record stores whole metres (neighborhood.json draftRadius, the
+// boundary's applied radius), so the handle, the panel's slider and its typed field all quantize through `toRadiusM`.
+export const RADIUS_STEP_M = 1
+export const toRadiusM = (v) => Math.round(v / RADIUS_STEP_M) * RADIUS_STEP_M
+
 export default function CircleHandle({ cameraRef, center, radiusM, onChange, disabled }) {
   const svgRef = useRef(null)
   const [viewBox, setViewBox] = useState('0 0 1 1')
@@ -81,7 +87,7 @@ export default function CircleHandle({ cameraRef, center, radiusM, onChange, dis
     const c = centerRef.current
     const p = screenToWorld(e.clientX, e.clientY)
     if (!c || !p) return
-    const r = Math.round(Math.hypot(p.x - c.x, p.z - c.z))
+    const r = toRadiusM(Math.hypot(p.x - c.x, p.z - c.z))
     if (r > 20) onChange(r)
   }
   function onKnobUp(e) {
