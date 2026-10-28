@@ -781,6 +781,12 @@ centimetre or two' is good enough": today's lowest-slope field is the rule. The 
 - **⛔ THE PLAZA FILL: RULED, UNBUILT** (STYLE-GUIDE §9, Jacob 2026-10-20: "plaza is its own type (an area fill)"; the town norm,
   one kit default paving, the operator picks a material). Since 2026-10-28 an area highway (area=yes or a multipolygon) leaves the
   street network and is NOT DRAWN; skeleton.js and derive.js print each by name. Owed: the fill producer. ▶ `node checks/claims-an-area-highway-is-a-surface.mjs`
+  ⚠️ **The rule reaches a town in two halves.** derive's (no plaza stroked as a path) at its next POUR, which the Bake runs; the
+  skeleton's (no area chain) only at its next RE-SKELETON, which no button does for a committed town (the item above, "NO BUTTON
+  RE-SKELETONS A COMMITTED TOWN"). So until each re-skeletons, the OLD rule's chains stand: hipointedemun st-louis-walk-of-fame,
+  dr-huston-smith-meditation-garden, chapman-plaza, south-terrace (and its 2 nodeless-crossing REDs) · huron the-deering-family-terrace-0/-1,
+  receiving-area-b · jacksonheights diversity-plaza-0..3 · altadena keeps its July skeleton (unclassed; its re-skeleton now builds).
+  lafayettesquare and provincetown carry no area chain.
 - Classifier Pass B: islands (walk and ramps only where a crossing passes), plazas, living street (both-side walks to
   the frontage, low kerb, no lawn), unknown class refuses → the Type pulldown.
 - Frontage: garden vs street-wall, selected by a building within one band depth; nothing painted under a building.
