@@ -20,7 +20,7 @@ mint-refuses-no-outline RED accepted, named; Swash measures (b) read-only meanwh
 claims-a-chain-end-in-a-roadway-is-a-node, then the join (BRIEF-a-chain-end-in-a-roadway-is-a-T). Ward: All places listings-only.
 HELD for Jacob: Plumb's balsa deletions (wants his go in its window) · kit bundle + Ward pin + publish:staging · every Promote.
 FOR JACOB'S MORNING: (1) chain ends whose OWN roadway reaches another's but lie outside it, the (b′) class: join them too, or check-RED only?
-Kerf's check (kerf/chain-end-is-a-node df666e54): Altadena 8 · Huron 3 · JH 3 · PTown 2 (HPDM green; LS unchecked, stale skeleton).
+▶ `node checks/claims-a-chain-end-reaching-a-roadway-awaits-a-ruling.mjs` (kerf/chain-end-is-a-node 2fa79727; RED until ruled; LS unchecked, stale skeleton).
 (2) The join's operator override: which POUR input holds it (the Wall forbids authoring in the mint). Filed as aspiration.
 (2b) A join adds an intersection, so segOrd downstream shifts +1 and authored slots would land on the wrong block (Zob). Tonight the join
 REFUSES by name on an authored slot past it; the key migration is the open key's (EXTENT-DESIGN §4.1), yours.
