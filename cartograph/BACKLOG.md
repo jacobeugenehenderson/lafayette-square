@@ -18,7 +18,7 @@ builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the 
 Zob PASS → Boz merges + restarts :3343 → Swash re-bakes Huron then PTown through the route, LOCAL only (PTown's known
 mint-refuses-no-outline RED accepted, named; Swash measures (b) read-only meanwhile, plus a water-tint probe in scratch/) → Kerf builds
 claims-a-chain-end-in-a-roadway-is-a-node, then the join (BRIEF-a-chain-end-in-a-roadway-is-a-T). Ward: All places listings-only.
-HELD for Jacob: Plumb's balsa deletions (wants his go in its window) · kit bundle + Ward pin + publish:staging · every Promote.
+Plumb's balsa deletions: Jacob's go given; built (plumb/balsa-no-hover b1ef7373), click checks run branch = base. PRE-EXISTING click misses, on base too (Plumb, :5190, causes not established): HPDM msbf-3378's wall (hero, browse) · PTown msbf-2462 (hero, wall, roof) · PTown neon wall flaky · LS Stage never draws under the checks (no backend?). Ward's · kit bundle + Ward pin + publish:staging · every Promote.
 FOR JACOB'S MORNING: (1) chain ends whose OWN roadway reaches another's but lie outside it, the (b′) class: join them too, or check-RED only?
 ▶ `node scratch/chain-ends/claims-a-chain-end-reaching-a-roadway-awaits-a-ruling.mjs` (kerf/chain-end-is-a-node; RED until ruled, kept out of npm test so it hides no real red; moves to checks/ as ruled; LS unchecked, stale skeleton).
 (2) The join's operator override: which POUR input holds it (the Wall forbids authoring in the mint). Filed as aspiration.
