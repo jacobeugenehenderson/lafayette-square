@@ -25,6 +25,14 @@ export default function StatusBar() {
 
   // ⛔ Loud: Stage is drawing a slab OLDER than what the bake reads (the bake route's own plan, store `slabAge`), or its
   // age could not be measured. Entering Stage on a reload or a link never bakes, so this is the only place it is said.
+  // ⛔ A BLOCKER (a required input missing: the plan's `blocker` entry, serve.js#runIfDirty) is not a stale step: a Bake would
+  // refuse on it, so it says what must happen first, and offers no Bake.
+  const blockers = slabAge?.stale?.filter(s => s.blocker) || []
+  if (inStage && !bakeRunning && blockers.length) return (
+    <div className="carto-status carto-glass carto-status--alarm" title={blockers.map(b => `${b.step}: ${b.why.join(' · ')}`).join('\n')}>
+      ⛔ Can't bake until: {blockers.flatMap(b => b.why).join(' · ')}
+    </div>
+  )
   if (inStage && !bakeRunning && (slabAge?.error || slabAge?.stale?.length)) {
     const steps = slabAge.error ? [] : slabAge.stale.map(s => s.step)
     const title = slabAge.error

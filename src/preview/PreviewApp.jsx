@@ -681,7 +681,7 @@ function PublishPanel({ lookId }) {
     const r = await fetch(`${API}/bake`)
     const j = await r.json().catch(() => ({}))
     if (!r.ok) throw new Error(j.error || `the bake check answered HTTP ${r.status}`)
-    return j.stale.map((x) => x.step)
+    return j.stale   // [{ step, why, blocker? }]: a `blocker` is a required input missing (serve.js#runIfDirty), not a step to re-run
   }
   useEffect(() => { load() }, [lookId])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -741,7 +741,10 @@ function PublishPanel({ lookId }) {
   async function publishStaging(confirmRepour = false) {
     setBusy('staging'); setMsg(null); setRepour(null)
     try {
-      const steps = await readOwed()
+      const stale = await readOwed(), blocker = stale.filter(x => x.blocker)
+      // ⛔ a required input missing: the Bake would refuse, so Publish says what must happen first instead of baking into a failure
+      if (blocker.length) { setMsg({ kind: 'err', text: `Can't bake until: ${blocker.flatMap(x => x.why).join(' · ')}` }); setBusy(null); return }
+      const steps = stale.map(x => x.step)
       if (status.unbaked || steps.length || confirmRepour) {
         const bake = await fetch(`${API}/bake${confirmRepour ? '?repour=1' : ''}`, { method: 'POST' })
         // 428 = this bake would re-pour the town because the pour's code changed; nothing ran. Ask, as BakeModal does.
@@ -901,7 +904,8 @@ function PublishPanel({ lookId }) {
           {drawer ? '⟨' : '⟩'}
         </button>
       </div>
-      {(status.unbaked || owed?.length > 0) && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Publish bakes first{owed?.length ? `: ${owed.join(', ')}` : ' (unbaked edits)'}.</div>}
+      {owed?.some(x => x.blocker) && <div style={{ color: '#f87171', marginBottom: 6 }}>⛔ Can't bake until: {owed.filter(x => x.blocker).flatMap(x => x.why).join(' · ')}</div>}
+      {(status.unbaked || owed?.length > 0) && !owed?.some(x => x.blocker) && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Publish bakes first{owed?.length ? `: ${owed.map(x => x.step).join(', ')}` : ' (unbaked edits)'}.</div>}
       {owed === null && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ The bake check could not be read (a bake may be running): Publish asks it again.</div>}
 
       {targetRow('staging', <button disabled={!!busy || stagingDone || !!repour} onClick={() => publishStaging()}

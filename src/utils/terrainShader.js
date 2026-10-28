@@ -49,7 +49,8 @@ import { DRAWN_RAW_GLSL, pinsMissingUnder } from '../lib/drawnGround.js'
 // (feedback_installations_are_independent; multi-instance routing 2026-07-02.)
 
 // A 2×2 zero heightfield → getElevation()==0 everywhere, exag lifts nothing.
-const FLAT_TERRAIN = { width: 2, height: 2, bounds: { minX: -1, maxX: 1, minZ: -1, maxZ: 1 }, data: new Float32Array([0, 0, 0, 0]) }
+// `datum` declared: a flat town (or none loaded yet) is zeroed on nothing and has no water level to ask for (waterLevel.mjs#waterLevelsIfWet)
+const FLAT_TERRAIN = { width: 2, height: 2, bounds: { minX: -1, maxX: 1, minZ: -1, maxZ: 1 }, data: new Float32Array([0, 0, 0, 0]), datum: 'flat (no terrain)' }
 
 // ⭐ NO TOWN AT MODULE LOAD (BRIEF-one-town-assembly, Warden 2026-09-28). This used to fetch the page's boot
 // Look at import (resolveLookId → instance.js, which falls back to town #1), so an app drawing a town the kit
@@ -138,6 +139,9 @@ export function terrainLook() { return _lookId }
 export function terrainBed() { return _terrain.bed || null }
 /** The ACTIVE look's water levels record (terrain.json `water`: its low and high tide or lake level), or null. Re-points on reload. */
 export function terrainWater() { return _terrain.water || null }
+/** What the ACTIVE terrain is zeroed on: 'water' for a town with a coast (bake-terrain.js), 'local minimum' for an inland one,
+ *  'flat (no terrain)' for none. ⛔ undefined for a terrain.json that declares none: waterLevelsIfWet refuses it by name. */
+export function terrainDatum() { return _terrain.datum }
 /** The ACTIVE look's tide clock (its manifest's `tide`: NOAA's constituents), or null for a town with none. Re-points on reload. */
 export function terrainTide() { return _terrain.tide || null }
 export let width  = _terrain.width

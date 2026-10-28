@@ -32,10 +32,10 @@ import { makeFadeGroundMaterial } from './fadeGroundMaterial.js'
 import { setGroundRules, setGroundRuleMap } from '../lib/groundRules.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import { terrainExag, patchTerrain, sceneExag, terrainWater } from '../utils/terrainShader'
+import { terrainExag, patchTerrain, sceneExag, terrainWater, terrainDatum } from '../utils/terrainShader'
 import { getElevationRaw, setDrawnGround } from '../utils/elevation'
 import { makeDrawnGround, drawnPinsOf, predatesThePin } from '../lib/drawnGround.js'
-import { waterLevels } from '../../cartograph/waterLevel.mjs'
+import { waterLevelsIfWet } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
 import DrawnAnchor from './DrawnAnchor.jsx'
@@ -732,11 +732,12 @@ function TerrainExagDriver({ target, swellMs }) {
 // ⛔ Default is the TOWN's authored ceiling, resolved at call time — not a module constant
 // captured at import, which would pin every look to whatever loaded first (site 15).
 
-// The active town's water levels. ⛔ A terrain with no `water` record was baked before the levels existed: the water
-// stands at the terrain's zero (the survey flight's level, which no one chose), and that is SAID, once.
+// The active town's water levels: null for an inland town, which has none to ask for (waterLevel.mjs#waterLevelsIfWet, the
+// one rule SlabRevetment reads too). ⛔ A WATER-datum terrain with no `water` record was baked before the levels existed: the
+// water stands at the terrain's zero (the survey flight's level, which no one chose), and that is SAID, once.
 let _saidNoLevels = false
 function waterLevelsOrSay() {
-  try { return waterLevels(terrainWater()) } catch (e) {
+  try { return waterLevelsIfWet({ datum: terrainDatum(), water: terrainWater() }) } catch (e) {
     if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[BakedGround] ⛔ ${e.message} — the water stands at the terrain's zero (the survey flight's level)`) }
     return null
   }

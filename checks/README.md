@@ -143,12 +143,13 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 29. `npm run test:all`, never CI.
+## local-effect — 30. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
 | check | the claim it falsifies |
 |---|---|
+| `checks/claims-a-bake-refuses-a-missing-required-input.mjs` | DOES THE BAKE REFUSE, BY NAME, A STEP WHOSE REQUIRED INPUT IS MISSING? |
 | `checks/claims-a-failed-apply-leaves-one-state.mjs` | Provincetown, 2026-09-25: the Bake applied a 5,290 m disc, the pour's promote refused |
 | `checks/claims-a-failed-bake-leaves-the-slab.mjs` | DOES A BAKE WHOSE GROUND FAILS LEAVE THE SLAB EXACTLY AS IT WAS? |
 | `checks/claims-a-false-map-is-not-a-fallback.mjs` | IS ANY INPUT'S ABSENCE PRETENDING TO BE FINE? |
@@ -179,7 +180,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 350. This is `npm test`.
+## safe — 352. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -204,6 +205,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-deck-is-every-object-that-covers-it.mjs` | IS EVERY POINT A DECK OBJECT COVERS ON THE DECK? |
 | `checks/claims-a-district-is-the-towns-own.mjs` | DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S? |
 | `checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` | ⭐⭐ THREE INVARIANTS — ① and ② ruled by Jacob 2026-09-25, ③ 2026-10-04: |
+| `checks/claims-a-failed-tree-load-names-itself.mjs` | WHEN THE GROVE'S ATLAS (OR THE TREE MATERIALS) FAIL TO LOAD, DOES THE REVEAL SAY SO? |
 | `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |
 | `checks/claims-a-flat-town-is-not-refined.mjs` | CLAIM — A TOWN WITH NO TERRAIN SHIPS ITS GROUND UNREFINED (F3, Jacob 2026-09-24). |
 | `checks/claims-a-frontage-can-ask-for-no-ped-band.mjs` | CLAIM: a frontage that carries no pedestrian realm can say so. |
@@ -256,6 +258,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-an-annulus-splits-at-its-own-class-changes.mjs` | CLAIM — A CELL ROUND A FACE NO SPOKE REACHED SPLITS AT ITS OWN CLASS CHANGES, PAIRED BY OWNER, OR REFUSES. |
 | `checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs` | WHEN A TOWN'S SKELETON IS RE-POURED, DOES EVERY KEY |
 | `checks/claims-an-entry-flies-to-its-frame.mjs` | DOES A PLAN ENTERED WITH frameIds FLY STRAIGHT TO THEIR FRAME, IN ONE MOVE? |
+| `checks/claims-an-inland-town-asks-no-water-level.mjs` | DOES A TOWN WITH NO COAST STAY SILENT ABOUT WATER LEVELS, WHILE A COAST TOWN |
 | `checks/claims-an-unanswered-axis-matches-nothing.mjs` | WHEN A SPECIES HAS NO ANSWER ON AN AXIS, DOES ANY PART "MATCH" IT? |
 | `checks/claims-anchors-follow-the-placements.mjs` | `tree-anchors.json` keys to its own slab’s placements. |
 | `checks/claims-anchors-know-their-terrain.mjs` | DO GROUND ANCHORS KNOW WHICH HEIGHTFIELD THEY CAME FROM? |

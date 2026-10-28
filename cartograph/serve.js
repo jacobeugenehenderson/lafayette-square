@@ -2632,7 +2632,16 @@ createServer(async (req, res) => {
       // recorded run is that step's answer, not a stale slab; missing with no record still runs it.
       // `stage`: the step writes into a stage (`--out-dir=`) and its outputs reach the slab only when it succeeds
       // (slabStage.mjs#stagedSlabStep); `stage.published` is then the names it changed.
-      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], stage, ...opts } = {}) => {
+      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], requires = [], stage, ...opts } = {}) => {
+        // ⛔ A REQUIRED INPUT THAT IS MISSING REFUSES THE BAKE, BY NAME (2026-10-28: LS's Bake called 15/15 clean with its grove's
+        // atlas absent, because a missing input hashes to null both times and null === null). `requires`: [{ path, why }]. Only the
+        // inputs a step cannot run without: an optional one (the coast's water datums, inland) stays an ordinary input.
+        // ⭐ In the PLAN (GET …/bake: Stage's slab age, the stale bar, Publish's staleness) it is a named BLOCKER entry, never a
+        // throw: a town whose grove is not baked still gets its list (Zob's read, 2026-10-28). Only a RUN refuses.
+        const absent = requires.filter(r => !existsSync(r.path))
+        if (absent.length) { const why = absent.map(r => `${r.why} (${r.path.replace(REPO_ROOT + '/', '')} is missing)`)
+          if (P.plan) { P.plan.stale.push({ step: label, blocker: true, why }); return }
+          throw new Error(`[bake] ⛔ ${label}: ${why.join(' · ')}`) }
         if (judge === 'mtime') {
           if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
@@ -3037,7 +3046,8 @@ createServer(async (req, res) => {
              join(REPO_ROOT, 'arborist', 'bake-trees.js')],
             [join(REPO_ROOT, treeInputs.output)],
             `node arborist/bake-trees.js ${flags}`,
-            { cwd: REPO_ROOT, timeout: 90000 })
+            { cwd: REPO_ROOT, timeout: 90000,
+              requires: [{ path: join(REPO_ROOT, 'public', 'baked', bakeScene, 'trees-atlas.json'), why: 'the grove is not baked for this Look: bake it in the Arborist' }] })
         }
       } else {
         skip('trees (layer hidden)')
@@ -3086,7 +3096,9 @@ createServer(async (req, res) => {
         // it also WRITES ground.json (its four maps, pourSteps.mjs#GROUND_AO_FIELDS): the steps above read that by value
         [join(LOOK_DIR, 'ground.lightmap.png'), join(LOOK_DIR, 'ground.json')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
-        { cwd: here, timeout: 300000 })
+        { cwd: here, timeout: 300000,
+          // the trees' contact shadows read the grove's atlas: required while the Look shows trees (a hidden layer reads none)
+          requires: layerOn('tree') ? [{ path: join(LOOK_DIR, 'trees-atlas.json'), why: 'the grove is not baked for this Look: bake it in the Arborist' }] : [] })
       // the plan ends here: everything below stamps, indexes and ships a pour that ran
       if (P.plan) {
         res.writeHead(200, { 'Content-Type': 'application/json' })

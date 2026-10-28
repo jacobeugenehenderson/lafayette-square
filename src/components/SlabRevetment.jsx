@@ -40,8 +40,8 @@ import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentFromSlab.js'
 import { drawnGroundParts, onDrawnGround } from '../utils/elevation'
-import { terrainBed, terrainWater, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
-import { waterLevels } from '../../cartograph/waterLevel.mjs'
+import { terrainBed, terrainWater, terrainDatum, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
+import { waterLevelsIfWet } from '../../cartograph/waterLevel.mjs'
 import { phaseNow } from './WaterSurface.jsx'
 import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 
@@ -169,7 +169,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // ⭐ The wetted band stands at the LIVE level where the camera is (cartograph/waterLevel.mjs), so it moves with the tide.
   // ⛔ Not swallowed (BRIEF-tide finding): a town whose water record cannot be read SAYS so, once, and its wetted band
   // stays unlit — never a quiet dry band.
-  const levels = useMemo(() => { try { return waterLevels(terrainWater()) } catch (e) {
+  const levels = useMemo(() => { try { return waterLevelsIfWet({ datum: terrainDatum(), water: terrainWater() }) } catch (e) {
     if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[SlabRevetment] ⛔ ${e.message} — the stone's wetted band has no level to stand at`) }
     return null } }, [doc])
   useFrame(({ camera: cam }) => { if (levels) drape.uniforms.uWaterY.value = stone.uniforms.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, phaseNow()) })
