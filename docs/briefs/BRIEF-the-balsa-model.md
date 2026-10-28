@@ -85,6 +85,12 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
 3. **Pins and the side panel load when asked, prefetched nearby** (*"Loaded when asked, but nearby for quick access"*). Nothing is
    in the first paint. After it, at idle, the Ward prefetches the address book and the contents near the camera, so a click there
    is instant. ⛔ A prefetch never blocks or stutters a pan.
+   **What is asked for is a TAB** (*"the idea is the 'category' and 'subcategory' tabs. We need two that are generic enough to
+   encapsulate the active tiles"*). The side panel's two tiers (category → subcategory, `src/tokens/categories.js` `CATEGORY_LIST`,
+   read by `SidePanel.jsx`) are what a viewer opens, and opening one loads its listings. Boz's reading, to confirm with Jacob: the
+   two tiers become a KIT vocabulary, generic enough that every town's active listings fall under them. ⚠️ Today's vocabulary is
+   LS's: a subtitle reads *"Lafayette Park, gardens, pool, playgrounds"* and the component is `LafayetteCategoryAccordion`. That is
+   Layer 0's Class D bleed, and it is fixed in the same work.
 4. **Trees, lamps and water are part of the look, always drawn.** They need no per-object identity, so balsa costs them nothing:
    they stay as they are, carrying nothing per object at runtime. (Boz, answering Jacob's *"trees lamps and water are mandatory?"*;
    confirm by measurement in step 1 that none of them reads building identity.)
