@@ -423,7 +423,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const simple = bodies.map(bd => ({ outer: simplifyRing(bd.outer, R, fine / 2), holes: bd.holes.map(h => simplifyRing(h, R, fine / 2)) }))
   // ⭐ ON THE SOURCE, NOT ON THE TRACE: each kept vertex is bisected along its normal on the real sampler, within one
   // trace step (the trace interpolates between samples laid in TOWN metres, which is not the raster's grid).
-  const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, highAt, decks.on)
+  const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, highAt, decks.on, wallsOf([...oc.openedPieces.features, ...oc.closedPieces.features]))
   for (const bd of simple) { bd.outer = r3(wound(bd.outer, 1)); bd.holes = bd.holes.map(h => r3(wound(h, -1))) }
   for (const bd of simple) bd.holes = bd.holes.filter(h => { if (holdsNode(h)) return true
     let cx = 0, cz = 0; for (const p of h) { cx += p[0]; cz += p[1] } islandsDropped.push({ m2: +ringArea(h).toFixed(1), at: [Math.round(cx / h.length), Math.round(cz / h.length)] }); return false })
@@ -453,7 +453,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
-    waterOpened: { m2: sumM2(oc.openedPieces.features), features: oc.openedPieces.features, slivers: oc.openedPieces.slivers }, waterClosed: { m2: sumM2(oc.closedPieces.features), features: oc.closedPieces.features, slivers: oc.closedPieces.slivers }, waterBelowResolution: oc.belowResolution.map(({ m2, at }) => ({ m2, at })),
+    waterOpened: { m2: sumM2(oc.openedPieces.features), features: oc.openedPieces.features.map(({ poly, ...f }) => f), slivers: oc.openedPieces.slivers }, waterClosed: { m2: sumM2(oc.closedPieces.features), features: oc.closedPieces.features.map(({ poly, ...f }) => f), slivers: oc.closedPieces.slivers }, waterBelowResolution: oc.belowResolution.map(({ m2, at }) => ({ m2, at })),
     decksOpened: { m2: decks.openedM2, sites: decks.opened }, decksClosed: { m2: decks.closedM2, sites: decks.closed }, decksBelowResolution: decks.belowResolution.map(({ m2, at }) => ({ m2, at })),
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
@@ -516,7 +516,32 @@ export function clearances(ring, step) {
 // the mint's own test of whether ① can outline a vertex (tileGround.js#outlineCorner at INK_EPS): settle admits by it, and
 // the refusal below asks it of every ring
 const acuteAt = (o, p, q) => outlineCorner(o, [{ to: p }, { to: q }], INK_EPS).bad
-async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
+// ⛔ ONE WATER: A SETTLE MOVE MAY NOT CROSS WHAT THE OPEN/CLOSE RULED (Boz's ruling, 2026-10-27). The open/close is the kit's word on
+// what the water is (structures.mjs#openCloseAtStep); settle bisects on the lidar, which still holds the channel or neck the open/close
+// removed, and a bracket of ±step spans a feature narrower than a cell, so settle walked banks back across it to within the ink
+// (PTown v3: five places, 0.89–8.50 mm). Each feature (taken or filled) is a WALL: `wall(p, n, s, reach)` is how far a vertex may go
+// along s·n before it meets a feature's edge (0 when its first step enters one), Infinity when it meets none, and it bounds the
+// bracket exactly as the ring's own clearances do. One rule, a bound, not a sign. ▶ checks/claims-settle-never-crosses-the-open-close.mjs
+export function wallsOf(features) {
+  const E = [], G = 5, grid = new Map()
+  for (const f of features) for (const r of f.poly) r.forEach((a, i) => { const b = r[(i + 1) % r.length], e = E.push([a, b]) - 1
+    for (let gx = Math.floor(Math.min(a[0], b[0]) / G); gx <= Math.floor(Math.max(a[0], b[0]) / G); gx++)
+      for (let gz = Math.floor(Math.min(a[1], b[1]) / G); gz <= Math.floor(Math.max(a[1], b[1]) / G); gz++) (grid.get(gx + ',' + gz) || grid.set(gx + ',' + gz, []).get(gx + ',' + gz)).push(e) })
+  const inside = (x, z) => features.some(f => { let w = 0; for (const r of f.poly) if (inRing(x, z, r)) w++; return w % 2 === 1 })
+  return (p, n, s, reach) => {
+    if (inside(p[0] + s * n[0] * 1e-4, p[1] + s * n[1] * 1e-4)) return 0     // a tenth of a lattice unit: the first step enters a feature
+    const d = [s * n[0], s * n[1]], q = [p[0] + d[0] * reach, p[1] + d[1] * reach], seen = new Set()
+    let best = Infinity
+    for (let gx = Math.floor(Math.min(p[0], q[0]) / G); gx <= Math.floor(Math.max(p[0], q[0]) / G); gx++)
+      for (let gz = Math.floor(Math.min(p[1], q[1]) / G); gz <= Math.floor(Math.max(p[1], q[1]) / G); gz++)
+        for (const e of grid.get(gx + ',' + gz) || []) { if (seen.has(e)) continue; seen.add(e)
+          const [a, b] = E[e], ex = b[0] - a[0], ez = b[1] - a[1], den = d[0] * ez - d[1] * ex; if (!den) continue
+          const t = ((a[0] - p[0]) * ez - (a[1] - p[1]) * ex) / den, u = ((a[0] - p[0]) * d[1] - (a[1] - p[1]) * d[0]) / den
+          if (t > 1e-6 && u >= 0 && u <= 1 && t < best) best = t }
+    return best }
+}
+async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck, wall) {
+  if (typeof wall !== 'function') throw new Error('⛔ bake-coast: settleOnSource needs the open/close\'s walls (wallsOf) — settle would re-trace what the open/close ruled out')
   const T = TILE_M, groups = new Map()
   let bounded = 0
   for (const ring of rings) { const cl = clearances(ring, step)
@@ -524,7 +549,7 @@ async function settleOnSource(rings, R, step, opened, toLL, highAt, onDeck) {
       if (onSquare(ring[k], R)) continue
       const a = ring[(k - 1 + ring.length) % ring.length], b = ring[(k + 1) % ring.length]   // every normal off the TRACED ring
       const nx = -(b[1] - a[1]), nz = b[0] - a[0], n = Math.hypot(nx, nz) || 1
-      const lo = -Math.min(step, cl[k][0] / 2), hi = Math.min(step, cl[k][1] / 2)
+      const nn = [nx / n, nz / n], lo = -Math.min(step, cl[k][0] / 2, wall(ring[k], nn, -1, step)), hi = Math.min(step, cl[k][1] / 2, wall(ring[k], nn, 1, step))
       if (-lo < step || hi < step) bounded++
       const key = `${Math.floor(ring[k][0] / T)},${Math.floor(ring[k][1] / T)}`
       ;(groups.get(key) || groups.set(key, []).get(key)).push([ring, k, nx / n, nz / n, lo, hi])

@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 479,
+  "total": 480,
   "counts": {
     "safe": 340,
     "local-effect": 29,
-    "live": 110
+    "live": 111
   },
   "checks": [
     {
@@ -2397,6 +2397,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-settle-never-crosses-the-open-close.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch(), imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync"
       ]
     },
     {

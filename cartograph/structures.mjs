@@ -109,7 +109,8 @@ function convexHull(pts) {
 // and kept with what it was, so a gap narrower than a cell is filled. ⛔ Per part, never across two: two parts a metre apart
 // stay two. Counted and named: `opened` and `closed` [{ m2, at }]; a part the open removes ENTIRELY is `belowResolution`
 // [{ m2, at, ring }], never silently lost; `openedPieces` / `closedPieces` name each feature taken or filled, largest first
-// ({ features: [{ m2, lenM: its longer bounding side, at }], slivers: { n, m2 } }).
+// ({ features: [{ m2, lenM: its longer bounding side, at, poly: [outer, …holes] }], slivers: { n, m2 } }); the features' polygons
+// are what bake-coast's settle may not cross (bake-coast.mjs#wallsOf).
 // Returns the kept paths (not unioned across parts: the caller unions).
 // ▶ checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs
 export function openCloseAtStep(paths, stepM, what) {
@@ -127,7 +128,7 @@ export function openCloseAtStep(paths, stepM, what) {
     if (!c.Execute(ClipType.ctDifference, t, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the pieces of ${what} FAILED`)
     const out = [], walk = (n) => { for (const ch of n.Childs()) { const m2 = (Math.abs(Clipper.Area(ch.Contour())) - ch.Childs().reduce((u, hh) => u + Math.abs(Clipper.Area(hh.Contour())), 0)) / SCALE / SCALE
       const c = ch.Contour(), xs = c.map(q => q.X), ys = c.map(q => q.Y), lenM = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE
-      if (m2 > 0) out.push({ m2: +m2.toFixed(4), lenM: +lenM.toFixed(3), at: place(ch) }); for (const hh of ch.Childs()) walk(hh) } }
+      if (m2 > 0) out.push({ m2: +m2.toFixed(4), lenM: +lenM.toFixed(3), at: place(ch), poly: [ch.Contour(), ...ch.Childs().map(hh => hh.Contour())].map(fromPath) }); for (const hh of ch.Childs()) walk(hh) } }
     walk(t); return out }
   const openedPieces = [], closedPieces = []
   const closeAll = (node) => { for (const ch of node.Childs()) {
