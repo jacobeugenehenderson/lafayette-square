@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 492,
+  "total": 493,
   "counts": {
-    "safe": 351,
+    "safe": 352,
     "local-effect": 29,
     "live": 112
   },
@@ -2641,6 +2641,13 @@
     },
     {
       "file": "checks/claims-the-armoured-shore-is-never-empty.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-authoring-store-reloads-on-edit.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
