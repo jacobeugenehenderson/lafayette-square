@@ -8525,8 +8525,7 @@
           "no hover",
           "All places lists listings only",
           "a listing carries its point",
-          "CityModel retires",
-          "neon faces keyed by face, hours live"
+          "CityModel retires"
         ],
         "skipped": "the identity rebuild (look/address book/contents split)",
         "speedWorkAimsAt": [
@@ -8538,7 +8537,7 @@
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "docs/briefs/BRIEF-the-balsa-model.md",
-      "notes": "The speed is in the look, not identity (Plumb's numbers in the brief). Desktop frame cause not established (headless M1 GPU): confirm by eye in a real browser first."
+      "notes": "The speed is in the look, not identity (Plumb's numbers in the brief). Desktop frame cause not established (headless M1 GPU): confirm by eye in a real browser first. Neon keyed by face was part of the skipped split (it existed only so neon would not need the index); with the index staying, neon stays as built: it reads the index plus live hours and the clock (Boz, 2026-10-27, on Jacob asking what it meant)."
     }
   ]
 }
