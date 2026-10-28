@@ -17,10 +17,13 @@ inland towns (HPDM; LS after Jacob's loops) → Promote player + slab together. 
 baseElev); claims-a-bake-step-declares-what-it-reads (pre-existing, owed before a Bake is called clean). CENSUS (Zob): bake-ground
 writes shape.json only `if (shapeArtifact)`, so a missing one leaves the OLD shape.json beside a new ground inside an atomic commit;
 refuse by name when ① exists and protoShapeTiles doesn't.
-**▶ HURON'S coast.json IS v2: re-bake its coast before any Huron ground work or the next Huron release** (COAST_VERSION 3: the traced
-water opened and closed at the step, `structures.mjs#openCloseAtStep`; readCoast refuses v2 by name, correctly). Measured delta: open 41
-features / 3.06 m², close 75 / 35.06 m², 1 body below resolution of 1.196 m², none wider than 0.74 m. Huron's published staging is
-untouched; NOT re-baked 2026-10-27 night (Boz). ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
+**▶ PTOWN PARKS (Boz, 2026-10-27 night).** On 98cce6f5 coast v3, mint and terrain pass; GROUND refuses at the shore at the settle-clamp
+hairpin (-3418.656, -1928.636): ring 0 v1930 turns 171.66° beside a 75.6 mm leg, block and shore cells 5 mm apart (Zob's read). FAILED, not
+landed: outlineCorner with ε·sin(δ/2) ≤ √2/2 units refuses HPDM daniel-boone-expressway-22 @(-3361.040, 1335.070), misses the hairpin (162.80°).
+DECKS: the 104 deck outline refusals are the open/close's rounding (raw union: no edge < 5 mm); deck rings never pass the coast verifier;
+candidate snap-back for decks + ringViolations on them, not built. ⛔ GATE: claims-the-mint-refuses-no-outline RED on PTown until then. Outputs: Swash's scratchpad ptown-failed6/.
+**▶ HURON'S coast.json IS v2: re-bake its coast (COAST_VERSION 3) before any Huron ground work or release.** Measured on v3: it mints, its
+verifier is clean; open/close moved 41 / 75 features (≤ 0.74 m wide). Staging untouched. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
 **▶ LS's skeleton is stale for mintInputs** (saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses before the
 mint). Re-skeleton (commit-extent) before LS's next pour. Pre-existing; LS waits on Jacob's loop adjustments anyway (Boz, 2026-10-27).
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
@@ -81,7 +84,6 @@ measure: the in-circle terrain's size and bake time, and the backdrop's look and
 radius in layered flat mountain IMPOSTOR cards between the camera and the sky, separable for parallax. Real geometry inside the
 radius; painted layers where the mountain meets the cyclorama. Not for the in-circle terrain (that's real either way: a coarser
 mesh or disc §3).
-**Seam: ✅ LANDED 4ed69a3a** (PTown's stamp builds; noding is latticeNode#nodeCrossings, one pass).
 **✅ KEPT (Jacob, 2026-10-25: "keep your change to the rule"): Boz's revision of his ruling (A) of 10-22.** Off an arc, a declined ① corner ends a band
 leg ONLY where the ladders differ; at equal ladders the band bends through (RIBBONS invariant 1). And the off-arc mark reads
 protoRAt's verdict, so a smoothBend is not a corner (INVARIANT 2). Why: as built, (A) cut equal-ladder bands into abutting legs,
@@ -136,9 +138,7 @@ end-to-end account (PIPELINE.md to the Diary).
 - `kerf/ownership-once` f21f288c (kerf-own): SUPERSEDED by the one height field (it edits the retired groundDeformer.mjs; it raised seam
   steps 60%). Retire it. `kerf/simplify-in-bake` 03c42d5f (worktree kerf): the mesh simplifier, HELD (too slow, 725 s), not superseded.
 - Kerf's own note: `.claude/worktrees/kerf-publish/HANDOFF-kerf.md` (⚠️ its "kerf-land HPDM candidate" is stale: staging is the reference).
-**Blocked:** PTown + Huron deploy bakes. Huron's stamp refusal is FIXED (cdl, merged). PTown refuses at the flatten on the ① seam
-(below) — ✅ ruled by Boz under doctrine (2026-10-24): join chain cuts before stroking; build each real node's outline once from
-all its legs; never a post-union snap. Builds in the tranche. **Decided (2026-10-24; Jacob: roof tints "I think we want them"; the rest are Boz's defaults, Jacob may veto):** LS refine
+**Blocked:** PTown + Huron deploy bakes: PTown parks (row above); Huron's coast re-bakes first (row above). **Decided (2026-10-24; Jacob: roof tints "I think we want them"; the rest are Boz's defaults, Jacob may veto):** LS refine
 tolerance stays 0.5 m, revisit later · open places KEEP their roof tint (the neon contract fix keeps it as its own channel) · Ward
 deletes LS's orphan GLBs/atlas PNGs on staging · LS's tracked data is untracked when the rename merges · the City's raw parcel files
 stop being tracked (no history scrub without asking Jacob) · the circle decides surveyed trees outside it · horizon water stays ·
@@ -259,7 +259,6 @@ word in Ward's window. One heavy run at a time. Hashes copied from git, never ty
 - every town, no site named · rows: the SIDE sign · the measure's reader (mintProtopolygon's leg pass) calls (−dz, dx) in the chain's direction 'right', and the bridge overlay and H's sweep agree; `inboardSideOf` and the dead-end mouths' `sideOf` (tileGround.js) call that side 'left'. Whether their 'left' means the same side is unread — inferred, not measured (Zob, Ferrule, 2026-10-27)
 - every town, no site named · rows: H's own overhang over the water OUTSIDE its spans · ruling (A) clips a non-H span to its banks, but H's sweep is clipped only where a recorded span holds it (`highwayBridges`); H elsewhere over ①'s water (a motorway along a shore) is not clipped to land. Unmeasured; filed, not built (Zob's merge read, Boz, 2026-10-27)
 - every town, no site named · rows: the section pass's stamp S reading labels off ②'s REVERSED ring · the no-clip return now reverses a clockwise all-depth-0 block (`offsetRingByRects`); the labels follow by geometry in ②, but whether S reads them off that ring the same way is unread. A planted row would settle it (Zob's merge read, Boz, 2026-10-27)
-- PTown (−3595.533, −1263.756), block #12 vertex 2941 · rows: ①'s BARE water ring between two coast-ink edges · at a needle tip of the coast (water ring 0 vertex 1129), the face reads the water ring's own label (`mintProtopolygon`'s wIdx, srcIdx −1) for one 95 mm edge, its neighbours the coast ink's; the only such edge of PTown's 491 blocks. the class is closed at the input (bake-coast opens and closes the water at the trace step; ② keys water side-blind; the stamp refuses a water tip it would cut: `claims-a-coast-finer-than-its-trace-is-not-drawn`); why the ink's outline lets the ring through at the tip, cause not established (Ferrule, 2026-10-27)
 - every town, no site named · rows: a sub-ink EDGE is reported as a 'near' between two banks · coastFile.mjs#ringViolations' clearance (8551de58) reads an edge shorter than 2·INK_EPS as two of its neighbours closer than the ink (Zob's synthetic 4 mm edge), so the refusal names a near where the defect is the edge; no real coast has one. The name is wrong; cause of the misnaming is the pairwise test, not established beyond that (Zob, Boz, 2026-10-27)
 - every town, no site named · rows: a water ring wholly ON LAND (an inland pond) refuses at absorbInk · Zob's pond plant refuses identically on integration (e282eb9d) and on ferrule/closed-coast-stroke; town #2 will have inland ponds. Cause not established, and it may be the plant's shape rather than a defect; filed as census, not chased (Boz, 2026-10-27). Plant: ▶ `node checks/fixtures/pond-on-land-2026-10-27.mjs` (Zob's; a 10-vertex disc r 70 m at (−150, −150), the only water ring, wound positive, its arc the ring closed on its first point; streets a square inside a 280 m disc; refuses at seats 0 and 4, "1 touch none")
 - every coastal town · (−638.068, 1691.34) and (446.932, 641.34) / (471.932, 640.84) PTown, (943.432, 1982.45) Huron · rows: the coarse/fine seam mints 0.5 m LAND strips · the traced water's open/close fills strips exactly 0.50 m wide (15 m, 5 m, 5 m and 15.5 m long) on the 5 m coarse grid's offset; read as half-cell seams between `sheet − band` and the fine parts, INFERRED; cause not established (Ferrule, 2026-10-27)
