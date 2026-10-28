@@ -107,7 +107,7 @@ import { TownPlace, useTownLoaded } from './TownPlace.jsx'
 import TowerLight from './TowerLight.jsx'
 import { TownScope, SHOT_KEY } from './townContext.js'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
-import { QualityProvider } from '../lib/qualityProfile.js'
+import { QualityProvider, canvasAAMismatch } from '../lib/qualityProfile.js'
 import useTownPlace from '../hooks/useTownPlace.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { useStreetLabels } from '../lib/streetLabels.js'
@@ -563,6 +563,10 @@ export default function Town({
   for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Error(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
   for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Error(`[Town] ⛔ unknown override "${k}"`)
   const on = (k) => layers?.[k] !== false
+  // The canvas's anti-aliasing, as made, against whether this Town draws a composer (qualityProfile.js#canvasAAMismatch).
+  const contextAntialias = useThree((s) => !!s.gl.getContextAttributes()?.antialias)
+  const aaMismatch = canvasAAMismatch(quality, { contextAntialias, composer: on('post') })
+  if (aaMismatch) throw new Error(aaMismatch)
   // Latched on the first ask: the Tower Light stays mounted after (its programs compiled once), off by intensity.
   const [towerArmed, setTowerArmed] = useState(false)
   if (towerLight && !towerArmed) setTowerArmed(true)

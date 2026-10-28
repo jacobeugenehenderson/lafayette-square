@@ -31,7 +31,7 @@ export const QUALITY = {
     // The DEVICE's canvas anti-aliasing. ⛔ A canvas that receives a composer's final draw takes none (canvasAntialias):
     // MSAA leaves that full-screen draw identical (0 of 11.5 M values differ, scratch/msaa/probe.mjs --quad; ~1 ms/frame
     // on huron at 2268×1270), the composer's multisampling + SMAA being the scene's AA. A canvas with NO composer (the
-    // sky embed, the transparent diorama) keeps this, or nothing smooths its edges.
+    // sky embed, the transparent diorama, Cartograph's, which is also the Designer's) keeps this, or nothing smooths its edges.
     antialias: true,
     logDepth: true,
     // The movie shot's near plane (MovieCamera): log depth keeps precision at near 1 to the horizon.
@@ -79,16 +79,21 @@ export const QUALITY = {
 /**
  * ⭐ THE CANVAS A TOWN IS DRAWN THROUGH, from its profile — the ONE source (Warden, 2026-09-28). A component cannot change
  * these once the Canvas exists (the depth buffer, antialiasing, the pixel ratio, the shadow map), so every app that
- * mounts <Town> spreads them: `<Canvas {...townCanvasProps(quality)} …>`, with the SAME quality it hands <Town>. The app
- * adds only what is its own (frameloop, the opening camera pose, onCreated, preserveDrawingBuffer). The far plane is
- * <Town>'s at runtime (it reaches its own sky). ▶ node checks/claims-the-canvas-is-the-towns.mjs
+ * mounts <Town> spreads them: `<Canvas {...townCanvasProps(quality, { composer })} …>`, with the SAME quality it hands
+ * <Town>. The app adds only what is its own (frameloop, the opening camera pose, onCreated, preserveDrawingBuffer). The far
+ * plane is <Town>'s at runtime (it reaches its own sky). ▶ node checks/claims-the-canvas-is-the-towns.mjs
+ * ⛔ `composer` is REQUIRED (canvasAntialias, below): true only when every frame the canvas shows goes through <Town>'s
+ * composer. A canvas that also draws without <Town> says false and keeps the device's MSAA: Cartograph's canvas is the
+ * Designer's too, and with `true` the Designer had no AA at all, every edge stair-stepped (Jacob's screenshot,
+ * 2026-10-28; off since 095dec54, 2026-10-07).
  */
-export function townCanvasProps(quality) {
+export function townCanvasProps(quality, { composer } = {}) {
   if (!quality?.id) throw new Error('[quality] ⛔ townCanvasProps needs a profile from src/lib/qualityProfile.js')
+  if (typeof composer !== 'boolean') throw new Error('[quality] ⛔ townCanvasProps needs { composer: true | false } — does every frame this canvas shows go through <Town>\'s composer?')
   return {
     gl: {
       alpha: false,
-      antialias: canvasAntialias(quality, { composer: true }),
+      antialias: canvasAntialias(quality, { composer }),
       logarithmicDepthBuffer: quality.logDepth,
       stencil: true,
       powerPreference: 'high-performance',
@@ -105,6 +110,22 @@ export function townCanvasProps(quality) {
  * takes none (MSAA would leave the composer's final draw unchanged); any other canvas takes the device's (`antialias`:
  * desktop true, phone false). Every canvas asks here, saying whether it mounts a composer. ⛔ `composer` is required.
  */
+/**
+ * ⭐ THE CANVAS AND THE COMPOSER AGREE (Ward's point, Boz's ruling, 2026-10-28). `{ composer }` is said by the host, and
+ * <Town> knows the same fact (it mounts PostProcessing unless layers.post is off), so the two could disagree silently.
+ * <Town> asks THIS at mount with the canvas's ACTUAL anti-aliasing, read off its context (never a second statement), and
+ * refuses by name when the canvas has none and no composer smooths it either: every edge would be aliased (LS's ground-only
+ * player was exactly that, `post: false` on a composer canvas). The other way round (MSAA on, a composer drawing) is only
+ * redundant: Cartograph's canvas is also the Designer's, so its Stage shots pay ~1 ms for it (accepted). → message | null
+ */
+export function canvasAAMismatch(quality, { contextAntialias, composer } = {}) {
+  if (!quality?.id) throw new Error('[quality] ⛔ canvasAAMismatch needs a profile from src/lib/qualityProfile.js')
+  if (typeof contextAntialias !== 'boolean' || typeof composer !== 'boolean') throw new Error('[quality] ⛔ canvasAAMismatch needs { contextAntialias, composer } as booleans')
+  if (composer || contextAntialias || !quality.antialias) return null
+  return '[Town] ⛔ this canvas was made with NO anti-aliasing (townCanvasProps(…, { composer: true })), and <Town> draws no composer '
+    + '(layers.post is off): every edge is aliased. ▶ the host passes townCanvasProps(quality, { composer: false }) whenever it turns post off.'
+}
+
 export function canvasAntialias(quality, { composer } = {}) {
   if (!quality?.id) throw new Error('[quality] ⛔ canvasAntialias needs a profile from src/lib/qualityProfile.js')
   if (typeof composer !== 'boolean') throw new Error('[quality] ⛔ canvasAntialias needs { composer: true | false } — whether this canvas mounts the composer')

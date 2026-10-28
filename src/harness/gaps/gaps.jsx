@@ -46,7 +46,9 @@ const HIDE = (params.get('hide') || '').split(',').filter(Boolean)
 // rays (window.__gapsPts: view, landing x/z, camera origin, ray direction). Absent, the walk runs exactly as before.
 const AT = params.get('at') ? params.get('at').split(',').map(Number) : null
 const KEEP = params.get('keep') === '1'
-const QP = { ...QUALITY.desktop, dpr: 1 }
+// antialias false: this INSTRUMENT counts exact sky pixels, so MSAA's blended edge pixels would hide gaps. Said in its
+// profile, so the canvas (townCanvasProps) and <Town>'s assertion (canvasAAMismatch) both read the one statement.
+const QP = { ...QUALITY.desktop, dpr: 1, antialias: false }
 const KEY = [1, 0, 1]                     // the background: pure magenta, which no town material is drawn in
 const LAYERS = { sky: false, clouds: false, fog: false, post: false, labels: false }
 const isWater = (o) => o.isMesh && typeof o.material?.customProgramCacheKey === 'function' && /^kit-water/.test(o.material.customProgramCacheKey())
@@ -189,7 +191,7 @@ function App() {
   useEffect(() => { if (err) { window.__gaps = { done: true, error: err }; document.title = 'DONE' } }, [err])
   if (err) return <div>⛔ {err}</div>
   if (!ctx) return <div>loading {LOOK}…</div>
-  const tcp = townCanvasProps(QP)
+  const tcp = townCanvasProps(QP, { composer: false })   // post is off (LAYERS): no composer
   return (
     <div style={{ width: W, height: H }}>
       <Canvas frameloop="always" {...tcp} dpr={1} camera={{ fov: FOV, near: 0.3, far: 2e5 }} gl={{ ...tcp.gl, preserveDrawingBuffer: true }}>
