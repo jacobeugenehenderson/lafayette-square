@@ -14,6 +14,10 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**From Ward's review of Gnomon's splash centring (2026-10-28), none blocking:** (1) claims-a-shot-change-flies is RED and flaky on
+integration itself ("movie carries a view offset (0,-8.6)"; "plan → movie never landed"); Zob reads it before any press leans on it ·
+(2) ShotFlight fixes the plan's altitude at flight start, so a warm entry frames with whatever inset holds at t=0; fix = re-fit on a
+mid-flight inset change (a later kit dispatch) · (3) PTown's splash sky is near-black while the mark is up (sky timing). Causes not established.
 **BY-VALUE READS ARE INVISIBLE TO claims-a-bake-step-declares-what-it-reads (Zob, 2026-10-28; pre-existing RED):** a `{ value, read }`
 record names no file, so every correct by-value declaration (groundForReaders ×4, trees' scene.json, 2 more) shows as UNKNOWN and a wrong
 one would look the same. Fix: the record carries `path`; the check counts it and refuses a by-value record without one. Small, own job.
