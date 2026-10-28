@@ -62,9 +62,12 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
 **Encoder (the kit's bake):**
 1. **The look:** the landscape and buildings as drawn today, with no per-building identity in it (no `aBuildingId`, no index in the
    first payload). Merged as far as the renderer allows.
-2. **The address book:** a separate, small, on-demand file that answers *"what stands at this point?"* (footprints → id, a
+2. **The listings layer:** the listings alone (name, category, hours, building id, a point), 8–15% of buildings per town
+   (measured 2026-10-27 from each `content/listings.json`). It is the search index, All places, Open now and the neon's hours,
+   prefetched at idle after first paint or fetched on the first tap. ⛔ Not `src/data/buildings.js`'s every building.
+3. **The address book:** a separate, on-demand file that answers *"what stands at this point?"* (footprints → id, a
    spatial index), fetched on the first click or idle after first paint. ⛔ Never in the first paint's critical path.
-3. **The contents:** per-building records (today's index entry plus the content layer's card), fetched by id, one building at a time.
+4. **The contents:** per-building records (today's index entry plus the content layer's card), fetched by id, one building at a time.
 
 **Ward (the player):**
 1. Draws the look straight away. Pan and zoom touch no per-building state.
@@ -112,7 +115,9 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    Layer 0's Class D bleed, and it is fixed in the same work.
    **Society Pages opens on the most generic listing of the neighbourhood** (Jacob: *"'All open establishments'? 'All
    establishments'?"*). It opens on **All places** (Jacob, 2026-10-27: *"'All places' is fine"*), with *Open now* as the first
-   narrowing, which is the same fact the neon shows.
+   narrowing, which is the same fact the neon shows. **All places lists LISTINGS only; a building with no listing is not in it**
+   (Jacob, 2026-10-27: *"bare buildings out of All places"*; `r-all-places-lists-listings-only`). `useListings`' synthesized
+   bare-building listings leave it; an unlisted building is reached only by tapping it.
    *Open now* is never an empty page (Jacob: *"What if only one thing is open? None?"*). It lists what is open, then what opens
    NEXT, in order, with the time ("Opens 7:00"). With nothing open, it leads with the next to open.
 4. **Trees, lamps and water are part of the look, always drawn.** They need no per-object identity, so balsa costs them nothing:
