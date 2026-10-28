@@ -14,6 +14,11 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**▶ PTOWN, 2026-10-28 night: PARKED ON THE FLOAT-MORPHOLOGY DEBT.** On coast v5 (the dike held as land, merged 42bcb808) PTown passes
+the coast, the mint and terrain; its ground passes Fishermen's Wharf (kerf/run-on-node) and refuses at MacMillan Wharf: a 1 mm back-step
+in ①'s deck edge at (282.795, 113.216), made by mintInputs' deck take-out (structures.mjs#waterWithoutDecks: the thin water pieces
+taken with a deck carry a re-rounded copy of the water edge). No cut-once fix short of float morphology (Swash, measured); a proximity join is
+the ruled-out √2 tolerance. Reaches the mint wherever a street deck sits within 2 cells of a coast at a corner (PTown 4 street decks, Huron 0).
 **⛔ DEBT, NAMED (Boz, 2026-10-28): openCloseAtStep has TWO behaviours.** Footprints (decks, embankments) are cut once (cutOnce
 default; slivers erode to nothing at NODE_BOUND); the TRACED WATER passes cutOnce: false and keeps the a115eaab integer open/close
 (mean-width sliver rule), because cut-once on the water made crossings in the cut/fill booleans themselves (Huron 44 at (-4820.8, -3834.5),
