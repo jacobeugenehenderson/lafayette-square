@@ -8508,13 +8508,14 @@
         "manMadePier": "a deck, as the other piers are",
         "untagged": "a bridge (Jacob's ruling 'a', 2026-10-27, stands)",
         "unknownTag": "refused by name",
-        "vocabulary": "one home in streetClass.js: off-grade · DECK_KINDS · embankment=* · no structural tag (byCoast). Structural keys: man_made, embankment, ford; any other value of those refuses by name (a ford, for now)"
+        "vocabulary": "one home in streetClass.js: off-grade · DECK_KINDS · embankment=* · no structural tag (byCoast). Structural keys: man_made, embankment, ford; any other value of those refuses by name (a ford, for now)",
+        "embankmentExtent": "the measure's OUTER edge (pavement + treelawn + sidewalk), so an embankment carries its whole street and ② never offsets a walk over the water"
       },
       "by": "Jacob",
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "cartograph/BACKLOG.md PTOWN PARKS",
-      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect. Corrected the same night after Ferrule's second stop: Boz's first reading said 'authoring loaded', which crosses the Wall. Jacob, 2026-10-27, on a level deck height drawing Long Point Dike always dry though it floods at very high tides: \"fine for now\"."
+      "notes": "Census (Ferrule, tags only): PTown 5 pier + 1 dyke street ways in the network; Huron none (38 tagged bridges). Implementation readings by Boz, 2026-10-27, after Ferrule's stop (pier = deck was already the code: structures.mjs#deckStructures); Jacob may redirect. Corrected the same night after Ferrule's second stop: Boz's first reading said 'authoring loaded', which crosses the Wall. Jacob, 2026-10-27, on a level deck height drawing Long Point Dike always dry though it floods at very high tides: \"fine for now\". Extent ruled by Boz on Zob's question, 2026-10-27 night; Jacob may redirect."
     },
     {
       "id": "r-balsa-lands-its-rulings-not-the-identity-cut",
