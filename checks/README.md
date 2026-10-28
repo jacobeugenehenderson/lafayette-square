@@ -176,7 +176,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 346. This is `npm test`.
+## safe — 347. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -258,6 +258,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-authored-framing-reaches-the-player.mjs` | DOES THE WARD READ EVERY FRAMING KEY THE BAKE WRITES? |
 | `checks/claims-autosave-keeps-what-bakes-read.mjs` | DOES STAGE'S AUTOSAVE KEEP EVERYTHING A BAKE READS? |
 | `checks/claims-axis-keys-resolve.mjs` | Does every axis key anyone stores actually exist in the rubric? |
+| `checks/claims-back-returns-to-the-shot.mjs` | CLAIM — BACK RETURNS TO THE SHOT (2026-10-28, Jacob: going back to Extent from Survey landed in PROVINCETOWN's preview). |
 | `checks/claims-bake-progress-shows-the-route.mjs` | CLAIM — THE BAKE SHOWS ITS OWN STEPS, NEVER KILLS ONE ON A CLOCK, AND SAYS WHICH STEP STOPPED. |
 | `checks/claims-baked-consumers-get-a-cache-bust.mjs` | as the RE-READ key (`slabUrl(look, rel, reread)` / `slabFetch(look, rel, init, |
 | `checks/claims-band-is-one-ring.mjs` | Jacob, 2026-08-11, setting the acceptance for the whole arc: |

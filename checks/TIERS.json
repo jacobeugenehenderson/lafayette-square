@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 487,
+  "total": 488,
   "counts": {
-    "safe": 346,
+    "safe": 347,
     "local-effect": 29,
     "live": 112
   },
@@ -1098,6 +1098,13 @@
     },
     {
       "file": "checks/claims-axis-keys-resolve.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-back-returns-to-the-shot.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
