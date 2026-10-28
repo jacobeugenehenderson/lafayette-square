@@ -338,7 +338,7 @@ function mapDataPaths(scene) {
     skeleton:     join(clean, 'skeleton.json'),
     overlay:      join(clean, 'overlay.json'),
     map:          join(clean, 'map.json'),
-    ribbons:      join(clean, 'ribbons.json'),
+    ribbons:      ribbonsPathOf(scene),   // ⛔ the ONE answer (scene.js): a town's DECLARED pour.ribbons, else clean/ (LS: src/data/ribbons.json)
     // Per-installation fixed-truth, at the scene root (clean/.. = data/<scene>).
     geography:    join(clean, '..', 'geography.json'),
     boundary:     join(clean, '..', 'neighborhood_boundary.json'),
@@ -1328,15 +1328,14 @@ createServer(async (req, res) => {
   // for autosave. Empty-payload defaults match the boot-time inits.
   const READ_VERBS = ['markers', 'measurements', 'skeleton', 'centerlines', 'overlay', 'ribbons', 'map', 'geography', 'boundary']
   const WRITE_VERBS = ['markers', 'measurements', 'centerlines', 'overlay']
+  // An operator's own file not written yet IS empty: nothing has been authored. ⛔ A DERIVED artifact (skeleton, ribbons, map,
+  // geography, boundary) that is missing is never answered as an empty town: it is a 404 naming the town, the artifact and the
+  // path (Boz, 2026-10-28: LS's Survey crashed on an EMPTY ribbons served 200 for a file that lives at its declared path).
   const EMPTY = {
     markers:      '[]',
     measurements: '{"measurements":[]}',
     centerlines:  '{"streets":[]}',
     overlay:      '{"version":1,"streets":{}}',
-    ribbons:      '{"streets":[],"tiles":[],"faces":[]}',
-    map:          '{"buildings":[],"layers":{}}',
-    geography:    'null',
-    boundary:     'null',
   }
   // Reserved top-level prefixes that must NOT be mistaken for scene names.
   const RESERVED_PREFIXES = new Set(['looks'])
@@ -1351,13 +1350,13 @@ createServer(async (req, res) => {
 
     if (req.method === 'GET' && READ_VERBS.includes(verb)) {
       if (!existsSync(filePath)) {
-        if (verb === 'skeleton') {
+        if (!(verb in EMPTY)) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: `skeleton.json not found for scene '${scene}' — run skeleton.js` }))
+          res.end(JSON.stringify({ error: verb === 'skeleton' ? `skeleton.json not found for scene '${scene}' — run skeleton.js` : `${scene} has no ${verb} at ${relative(join(import.meta.dirname, ".."), filePath)} — it is derived (pour the town), and a missing one is never served as an empty town` }))
           return
         }
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(EMPTY[verb] || '{}')
+        res.end(EMPTY[verb])
         return
       }
       res.writeHead(200, { 'Content-Type': 'application/json' })

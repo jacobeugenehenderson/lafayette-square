@@ -45,10 +45,12 @@ export async function fetchGeography(scene) {
   // Cache-bust: after a re-fetch the geography.json is rewritten, and a stale
   // cached copy would put the aerial in a different frame than the fresh skeleton.
   const res = await fetch(`${sceneUrl(scene, 'geography')}?t=${Date.now()}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`geography for ${scene}: HTTP ${res.status}`)   // an error page is not a geography
   return res.json()
 }
 export async function fetchBoundary(scene) {
   const res = await fetch(sceneUrl(scene, 'boundary'))
+  if (!res.ok) throw new Error(`boundary for ${scene}: HTTP ${res.status}`)   // an error page is not a boundary
   return res.json()
 }
 

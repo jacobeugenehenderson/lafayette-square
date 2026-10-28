@@ -709,6 +709,7 @@ export default function CartographApp() {
   const sceneRibbons = useCartographStore(s => s.sceneRibbons)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
   const boundaryRefused = useCartographStore(s => s.boundaryRefused)
+  const ribbonsRefused = useCartographStore(s => s.ribbonsRefused)
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const activeLookId = useCartographStore(s => s.activeLookId)
@@ -914,6 +915,14 @@ export default function CartographApp() {
             justifyContent: 'center', padding: 32, background: '#1a1a18', color: '#f3d9a4', font: '14px/1.5 system-ui',
             textAlign: 'center' }}>
             <div style={{ maxWidth: 640 }}><strong>No map: the town's disc was refused.</strong><br />{boundaryRefused}</div>
+          </div>
+        )}
+        {inDesigner && !boundaryRefused && ribbonsRefused && (
+          // ⛔ IN PLACE OF THE MAP: ribbons that cannot be read are said, never built as an empty town (Boz, 2026-10-28)
+          <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', padding: 32, background: '#1a1a18', color: '#f3d9a4', font: '14px/1.5 system-ui',
+            textAlign: 'center' }}>
+            <div style={{ maxWidth: 640 }}><strong>No map: the town's ribbons could not be read.</strong><br />{ribbonsRefused}</div>
           </div>
         )}
         <Canvas
