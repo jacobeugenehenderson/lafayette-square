@@ -11,9 +11,9 @@
  *   movie  the movie's own pose on MovieCamera's clock, re-sampled every frame (it lands on the path as it plays)
  *   plan   ENTERING: the town's Browse frame (src/camera/browseFrame.js — authored in Stage, else the town's disc,
  *          said), a square fitted whole into the free region (Jacob, 2026-10-04: the frame is where the plan opens).
- *          ENTERING WITH `entryFrames` (the app gave <Town> frameIds): the frame of those places, in the entry's ONE
- *          move, never via the Browse frame (Jacob, via Ward, 2026-10-27: Society's arrival "frame all, light open").
- *          The frameKey current at that entry counts as flown.
+ *          ENTERING WITH `entryFrames` (the app gave <Town> frameIds): the frame of those places, in ONE move (Jacob,
+ *          via Ward, 2026-10-27: Society's arrival "frame all, light open"). A shot change flies straight there; a cold
+ *          mount (or places not loaded) opens on the Browse frame and flies to theirs once, through the held key.
  *          A frameKey CHANGE (a category or a search chosen): the frame of its places (frameMode: 'densest' —
  *          frameDensest's cluster, the default · 'all' — every placed member, frameAll), the lit places, else every
  *          listed place. No placed place → back to the Browse frame, said. Under the town's browseHeading; a true
@@ -250,11 +250,15 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     const from = prev.current
     prev.current = shot
     if (from === shot) return
-    // The entry's ONE destination: the given places' frame (entryFrames), else the Browse frame.
-    const framesOnEntry = shot === 'plan' && !!live.current.entryFrames
-    planOn.current = framesOnEntry ? 'places' : 'home'
-    if (framesOnEntry) { lastKey.current = live.current.frameKey; heldKey.current = false }   // that frame is the key's: never flown twice
     const { flight: mode } = live.current
+    // The entry's ONE destination: the given places' frame (entryFrames), else the Browse frame. A flight goes straight
+    // there when it can (a shot change with the places and the disc live); a 'cut' cuts there once the places land. A cold
+    // mount or unloaded places instead OPEN on the Browse frame and leave the frame HELD: the held-key step below flies it,
+    // once, the first frame the plan is live, so the arrival is still one move ("frame all", over the Browse frame).
+    const framesOnEntry = shot === 'plan' && !!live.current.entryFrames
+    const straight = framesOnEntry && (mode === 'cut' || (from != null && !!live.current.places && !!getSceneStencil()))
+    planOn.current = straight ? 'places' : 'home'
+    if (framesOnEntry) { lastKey.current = live.current.frameKey; heldKey.current = !straight && mode === true }   // the key's frame: flown once
     if (tween.current.isActive()) tween.current.cancel()
     flying.current = null
     pending.current = null
