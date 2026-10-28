@@ -94,6 +94,8 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    **Society Pages opens on the most generic listing of the neighbourhood** (Jacob: *"'All open establishments'? 'All
    establishments'?"*). ⟦open: the label⟧. Boz's suggestion: open on *All places*, with *Open now* as the first narrowing, which
    is the same fact the neon shows.
+   *Open now* is never an empty page (Jacob: *"What if only one thing is open? None?"*). It lists what is open, then what opens
+   NEXT, in order, with the time ("Opens 7:00"). With nothing open, it leads with the next to open.
 4. **Trees, lamps and water are part of the look, always drawn.** They need no per-object identity, so balsa costs them nothing:
    they stay as they are, carrying nothing per object at runtime. (Boz, answering Jacob's *"trees lamps and water are mandatory?"*;
    confirm by measurement in step 1 that none of them reads building identity.)
