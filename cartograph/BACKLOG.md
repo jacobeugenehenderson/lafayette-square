@@ -20,8 +20,7 @@ refuse by name when ① exists and protoShapeTiles doesn't.
 **▶ PTOWN PARKS (Boz, 2026-10-27 night). (a) HELD UNMERGED: `ferrule/resolution-rule` 332e0a23** (`coastFile.mjs#toResolution` at settle's
 exit, COAST_VERSION 4; PTown's 7.6 cm hairpin edge goes) moves the class, does not close it: on Huron's v4 fixture, vertices turning ≥ 158°
 0 → 6, and at (3234.63, 791.994) · (3182.751, 765.209) · (686.159, 286.334) ①'s ink ring has an outline vertex no ink cell carries, PTown's
-refusal signature (Zob). PTown's bends and ground unmeasured. NEXT (Jacob's standup): ONE COPY of the ink (the block reads absorb's noded
-ink, as the shore does; two copies as cause is Zob's inference) vs a turn rule on toResolution, costs unmeasured. ⛔ GATE: claims-the-mint-
+refusal signature (Zob). PTown's bends and ground unmeasured. RULED (Jacob, 2026-10-27): ONE COPY of the ink; the block reads absorb's noded ink, as the shore does (`r-one-copy-of-the-ink`); the turn rule is not built. Briefed to Ferrule (WARM). ⛔ GATE: claims-the-mint-
 refuses-no-outline RED on PTown until (b). Outputs: scratch/ptown-parks/ptown-failed6/ · probes, dumps, Zob's (zob/): scratch/resolution-rule/.
 **▶ (b) THE DECKS' 1 mm JOGS (artifacts) stay.** First: WHY deckFootprints' union self-touches (PTown @(-56.78, 989.78)). The edge rule on
 decks is NOT clean: PTown 112 removed, 9 held, verifier 176 → 21 · Huron 390 removed (≤ 0.954 m), 44 held, 490 → 91, 2 rings ≤ 3 vertices.

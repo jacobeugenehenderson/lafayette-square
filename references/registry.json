@@ -5080,6 +5080,15 @@
       "findings": [
         "r-a-listing-carries-its-point"
       ]
+    },
+    {
+      "id": "q-block-ink-source",
+      "ask": "Which ink a block reads when the edge rule leaves an outline vertex no ink cell carries (PTown's refusal signature)",
+      "neededBy": "BACKLOG PTOWN PARKS (a); ferrule/resolution-rule 332e0a23 held",
+      "status": "answered",
+      "findings": [
+        "r-one-copy-of-the-ink"
+      ]
     }
   ],
   "findings": [
@@ -8429,6 +8438,20 @@
       "quote": "\"yes, file it\" (on Boz: the point is written into the listing when it is created)",
       "canon": "docs/briefs/BRIEF-the-balsa-model.md §2",
       "notes": "The listings layer is CONTENT and grows as listings are added; it never reads the address book or resolveBuildingPosition's slab index. Today's listings carry building_id but no point (backfill owed per town)."
+    },
+    {
+      "id": "r-one-copy-of-the-ink",
+      "question": "q-block-ink-source",
+      "kind": "ruling",
+      "value": {
+        "blockReads": "absorb's noded ink (as the shore does)",
+        "rejected": "a turn rule on coastFile.mjs#toResolution"
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"one copy of the ink, brief Ferrule\"",
+      "canon": "cartograph/BACKLOG.md PTOWN PARKS (a)",
+      "notes": "One method, not two: a turn threshold would be a constant fit to the towns seen (Layer 0 Class D). That two copies are the CAUSE is Zob's inference, not measured; the brief's first act measures it."
     }
   ]
 }
