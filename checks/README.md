@@ -175,7 +175,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 346. This is `npm test`.
+## safe — 347. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -250,6 +250,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-alley-stub-pairs.mjs` | ⭐⭐⭐ IS "BRIDGE THE ALLEY ACROSS A JUNCTION" A RULE, OR A SPECIAL CASE? |
 | `checks/claims-an-annulus-splits-at-its-own-class-changes.mjs` | CLAIM — A CELL ROUND A FACE NO SPOKE REACHED SPLITS AT ITS OWN CLASS CHANGES, PAIRED BY OWNER, OR REFUSES. |
 | `checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs` | WHEN A TOWN'S SKELETON IS RE-POURED, DOES EVERY KEY |
+| `checks/claims-an-entry-flies-to-its-frame.mjs` | DOES A PLAN ENTERED WITH frameIds FLY STRAIGHT TO THEIR FRAME, IN ONE MOVE? |
 | `checks/claims-an-unanswered-axis-matches-nothing.mjs` | WHEN A SPECIES HAS NO ANSWER ON AN AXIS, DOES ANY PART "MATCH" IT? |
 | `checks/claims-anchors-follow-the-placements.mjs` | `tree-anchors.json` keys to its own slab’s placements. |
 | `checks/claims-anchors-know-their-terrain.mjs` | DO GROUND ANCHORS KNOW WHICH HEIGHTFIELD THEY CAME FROM? |
