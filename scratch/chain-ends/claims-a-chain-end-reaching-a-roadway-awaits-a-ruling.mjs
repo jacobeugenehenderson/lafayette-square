@@ -6,13 +6,15 @@
 // INSIDE the other roadway (claims-a-chain-end-in-a-roadway-is-a-node, joined at mintInputs). (b′) is NOT joined. Split from that
 // check on Zob's read, so (a) can gate GREEN while this stays RED on a question, not a defect. When Jacob rules, this check is
 // either folded into the (a) check (joined) or re-founded as the claim that (b′) ends are drawn as ends (not joined).
-// How an end is judged, and what is set aside by name: `_chainEnds.mjs`.
+// How an end is judged, and what is set aside by name: `checks/_chainEnds.mjs` (one rule, read by both).
+// ⭐ HERE, NOT IN checks/ (Boz, 2026-10-27): a question-check is not in the default run, since a suite red by design hides the
+// next real red. When Jacob rules, it moves to checks/ as whatever he rules.
 // ⭐ MUTANT (--mutants): a noded T end pulled back along its own last leg to just past the through street's roadway (by half its
 // own half-width) → a new (b′) row.
-//   node checks/claims-a-chain-end-reaching-a-roadway-awaits-a-ruling.mjs [<scene> …] [--mutants]
+//   node scratch/chain-ends/claims-a-chain-end-reaching-a-roadway-awaits-a-ruling.mjs [<scene> …] [--mutants]
 // Read-only. Exits 1 on any (b′) end, or a mutant the check cannot see.
-import { scenes } from './_scenes.mjs'
-import { loadTown, judge, printRow, pullBackTEnd } from './_chainEnds.mjs'
+import { scenes } from '../../checks/_scenes.mjs'
+import { loadTown, judge, printRow, pullBackTEnd } from '../../checks/_chainEnds.mjs'
 const MUTANTS = process.argv.includes('--mutants')
 
 let bad = 0

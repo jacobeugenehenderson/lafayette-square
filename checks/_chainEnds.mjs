@@ -1,6 +1,6 @@
 // _chainEnds.mjs — THE CHAIN ENDS THAT ARE NO NODE, judged against the other streets' roadways. Read by two checks, one ruling
 // each (BRIEF-a-chain-end-in-a-roadway-is-a-T §1): `claims-a-chain-end-in-a-roadway-is-a-node` (a: INSIDE, joined at mintInputs)
-// and `claims-a-chain-end-reaching-a-roadway-awaits-a-ruling` (b′: its own roadway REACHES, not joined; Jacob's question).
+// and `scratch/chain-ends/claims-a-chain-end-reaching-a-roadway-awaits-a-ruling` (b′: its own roadway REACHES, not joined; Jacob's question).
 //   · NODE: the skeleton's own reading, `skeleton.js#buildNodeGraph` over `vKey` (run from the source, never restated). An end
 //     whose key has degree 1 is no node.
 //   · THE OTHER STREET'S LINE: the line ① is minted from, the skeleton's points through `derive.js#tessellateAdaptive` with its

@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 484,
+  "total": 483,
   "counts": {
-    "safe": 345,
+    "safe": 344,
     "local-effect": 29,
     "live": 110
   },
@@ -98,13 +98,6 @@
     },
     {
       "file": "checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-a-chain-end-reaching-a-roadway-awaits-a-ruling.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
