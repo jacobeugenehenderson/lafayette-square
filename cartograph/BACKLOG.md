@@ -14,6 +14,10 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**⛔ A BUILDING A CLICK CAN'T HIT HAS NO WAY IN** (the click is now the only sign of life; Zob, 2026-10-27). Pre-existing on base,
+causes not established, one row each: (1) HPDM msbf-3378's drawn wall misses (hero, browse) · (2) PTown msbf-2462 misses (hero, wall, roof,
+hero≠browse) · (3) LS Stage never draws under claims-a-click-hits-what-is-drawn / claims-neon-picks-its-building (no backend in that run) ·
+(4) PTown's neon-wall click flaky (msbf-23 selects osm-680355615). ▶ both checks, on a dev server.
 **NIGHT ORDER (Jacob retired, handed to the staff):** Ferrule builds the way-tag rule on ferrule/resolution-rule (heavy slot) →
 Zob PASS → Boz merges + restarts :3343 → Swash re-bakes Huron then PTown through the route, LOCAL only (PTown's known
 mint-refuses-no-outline RED accepted, named; Swash measures (b) read-only meanwhile, plus a water-tint probe in scratch/) → Kerf builds
