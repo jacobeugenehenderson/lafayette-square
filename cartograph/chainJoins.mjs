@@ -26,7 +26,7 @@
 //     lies on the line.
 // ⭐ The override is ASPIRATION (unbuilt, home unruled — BRIEF §1): every join is in the record and printed, so none is silent.
 import { CLIP_SCALE } from '../src/lib/lattice.js'
-import { resolveProtoMeasure, outlineCorner } from '../src/lib/tileGround.js'
+import { resolveProtoMeasure, outlineCorner, mintSegOrdAt } from '../src/lib/tileGround.js'
 import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 
 const LAT = 1 / CLIP_SCALE
@@ -140,10 +140,6 @@ export function joinChainEnds({ streets, gradeSep = [], discAt, blockCustoms }) 
   return { streets: out, joins }
 }
 
-// the mint's segOrd of point i on a chain: the count of its interior crossings at or before i (tileGround.js#mintProtopolygon's
-// `segOrdAt` over `resolveChainSegmentation`, the authoring key)
-function segOrdOf(seg, st, i) { const n = st.points.length; let so = 0; for (const k of seg.get(st) || []) if (k > 0 && k < n - 1 && k <= i) so++; return so }
-
 // segment (two node keys, unordered) → the chains carrying it, for every segment more than one chain carries
 export function doubledSegments(chains) {
   const by = new Map()
@@ -159,12 +155,12 @@ export function doubledSegments(chains) {
 // end that carries an authored cap (`capEnds`) would have the operator's cap silently dropped. The key's migration is Jacob's
 // (EXTENT-DESIGN §4.1); the override's home is too (BRIEF §1).
 function refuseAuthoredReKey(pending, streets, blockCustoms) {
-  const seg = resolveChainSegmentation(streets)
+  const seg = resolveChainSegmentation(streets), segOrdAt = mintSegOrdAt(streets)
   const hits = []
   for (const p of pending) {
     if (p.st.capEnds?.[p.end] != null) hits.push(`${p.row.street}.${p.end} joins ${p.row.into} at (${p.row.foot.join(', ')}) and carries an authored cap (capEnds.${p.end} = ${JSON.stringify(p.st.capEnds[p.end])})`)
     if (p.atVertex >= 0 && (seg.get(p.T) || new Set()).has(p.atVertex)) continue        // the foot is already a crossing: nothing re-keys
-    const s0 = segOrdOf(seg, p.T, p.k), bc = blockCustoms[p.T.skelId] || {}
+    const s0 = segOrdAt(p.ti, p.k), bc = blockCustoms[p.T.skelId] || {}
     const slots = ['left', 'right'].flatMap(sd => Object.keys(bc[sd] || {}).filter(o => Number(o) >= s0).map(o => `${sd}|${o}`))
     if (slots.length) hits.push(`${p.row.street}.${p.end} joins ${p.row.into} at (${p.row.foot.join(', ')}), cutting its block segOrd ${s0}; its authored slot(s) at or after it would be re-keyed: ${slots.join(' · ')}`) }
   if (hits.length) throw new Error(`[chainJoins] ⛔ ${hits.length} chain join(s) would re-key the operator's authoring — the join is ruled (r-a-chain-end-in-a-roadway-is-a-T) and authoring never shapes ①, so the pour stops: ${hits.join(' ‖ ')}. The key's migration is Jacob's (EXTENT-DESIGN §4.1; BRIEF-a-chain-end-in-a-roadway-is-a-T §1).`)

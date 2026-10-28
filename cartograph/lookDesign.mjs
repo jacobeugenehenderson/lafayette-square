@@ -90,20 +90,6 @@ export function readLookDesign(look, who) {
   return parseDesign(readFileSync(p, 'utf-8'), look, who)
 }
 
-/**
- * Does the town DECLARE a home Look? The look manifest (`public/looks/index.json`, the product's declaration of its Looks) lists a
- * Look whose id is the map's own. ⛔ Decided by the declaration, never by a file's existence: a declared Look whose design.json is
- * missing is a broken town and refuses (readTownDesign), never a town with no authoring. `looks` is the manifest's list (a check
- * plants a row through it). The manifest missing refuses: then nothing can say which towns have a home Look.
- */
-export function homeLookDeclared(map, who, looks = null) {
-  if (!looks) { const p = join(ROOT, 'public', 'looks', 'index.json')
-    if (!existsSync(p)) throw new Error(`[${who}] ⛔ public/looks/index.json is missing — whether "${map}" declares a home Look is unknowable. Refusing.`)
-    looks = JSON.parse(readFileSync(p, 'utf8')).looks }
-  if (!Array.isArray(looks)) throw new Error(`[${who}] ⛔ the look manifest carries no \`looks\` list. Refusing.`)
-  return looks.some(l => l?.id === map)
-}
-
 /** The town's fields — from its home Look, `public/looks/<map>/design.json` — or a refusal. */
 export function readTownDesign(map, who) {
   if (!map) throw new Error(`[${who}] ⛔ no map named — the town's design is its home Look's`)

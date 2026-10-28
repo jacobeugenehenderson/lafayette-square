@@ -532,6 +532,17 @@ function splitOverWater(list, waterRings, coastChains, segOrdOf = () => 0, isH =
   if (endsInWater.length) console.log(`    [①] ${endsInWater.length} street(s) crossing the coast and ENDING in the water (a slipway, a boat ramp; no tag) stop at the coast — nothing painted past it (protopolygon.endsInWater): ${endsInWater.map(b => `${b.street}|${b.segOrd} ${b.wetM} m at (${b.at.join(', ')})`).join(' · ')}`)
   return { chains, coastChains: arcs, waterRings: water, dropped, spans, endsInWater }
 }
+// ⭐ THE AUTHORING KEY, ONE HOME: ① stamps `segOrd` with it, and the chain join (cartograph/chainJoins.mjs) asks it whether a new
+// crossing would re-key an authored slot — so the two cannot count differently. → (ci, i) ↦ the count of chain ci's interior
+// intersection vertices at or before point i (`resolveChainSegmentation`: a coordinate shared by ≥ 2 chains).
+export function mintSegOrdAt(streets) {
+  const seg = resolveChainSegmentation(streets)
+  const ixIdxs = streets.map(st => {
+    const n = st?.points?.length || 0
+    return [...(seg.get(st) || [])].filter(i => i > 0 && i < n - 1).sort((a, b) => a - b)
+  })
+  return (ci, i) => { let so = 0; for (const k of (ixIdxs[ci] || [])) if (k <= i) so++; return so }
+}
 export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, boundary = null, coast = [], coastArcs = [], bb = null, onAbsorbRefusal = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
@@ -541,12 +552,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = INK_EPS, bounda
   // everywhere. Harmless while the value was only a lookup key into an absent
   // table; ⛔ NOT harmless in a frozen fact, which must carry the real ordinal
   // whether or not anyone has authored against it yet.
-  const seg = resolveChainSegmentation(streets)
-  const ixIdxs = streets.map(st => {
-    const n = st?.points?.length || 0
-    return [...(seg.get(st) || [])].filter(i => i > 0 && i < n - 1).sort((a, b) => a - b)
-  })
-  const segOrdAt = (ci, i) => { let so = 0; for (const k of (ixIdxs[ci] || [])) if (k <= i) so++; return so }
+  const segOrdAt = mintSegOrdAt(streets)
   // ⛔⛔ GRADE-SEPARATED ROADS BELONG IN ① (Jacob, 2026-09-05: "the highways etc.
   // are gone from the protopoly rendering; they have to be there"). Excluding
   // them CONFLATES two rules: the canon pulls them out of the BLOCK GRID — they

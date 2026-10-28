@@ -16,7 +16,8 @@ import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { localBB, geographyFor, projectorOf } from './geography.mjs'
 import { mapCleanDir, mapRawDir, mapDir } from './scene.js'
 import { joinChainEnds, reportJoins } from './chainJoins.mjs'
-import { homeLookDeclared, readTownDesign } from './lookDesign.mjs'
+import { readLookDesign } from './lookDesign.mjs'
+import { instanceForMap } from '../src/instances/registry.js'
 
 // ribbonStreets: the ribbons' streets · skeletonStreets: clean/skeleton.json's · osm: raw/osm.json · bb: localBB of it ·
 // disc: splitBoundary's `disc` (its `boundary` ring) with `discOf`'s { cx, cz, R } · cleanDir: the scene's clean/ (its coast.json)
@@ -118,9 +119,12 @@ export function mintInputsOf(scene, ribbonStreets) {
 }
 
 // the town's authored slots, for the chain join's REFUSAL only (never to size anything: the Wall). Whether there is authoring is
-// the town's own DECLARATION (lookDesign.mjs#homeLookDeclared, the look manifest): declared none → {} is its truth; declared and
-// its design.json missing → readTownDesign refuses by name (Boz's ruling, 2026-10-28). A home Look authoring no blockCustoms has
-// none. `looks` plants a manifest (the check's row).
-export function townBlockCustoms(scene, who, looks = null) {
-  return homeLookDeclared(scene, who, looks) ? (readTownDesign(scene, who).blockCustoms || {}) : {}
+// the town's own DECLARATION of its home Look: its instance module's `lookId` (src/instances/<town>.js, read through the
+// registry as bake-manifest.mjs reads it; Boz's ruling, 2026-10-28). No instance module → refuses by name (whether there is
+// authoring is unknowable) · no lookId → it declares none, {} is its truth · a lookId whose design.json is missing →
+// readLookDesign refuses by name. A home Look authoring no blockCustoms has none. `instanceOf` plants a module (the check's row).
+export function townBlockCustoms(scene, who, instanceOf = instanceForMap) {
+  const inst = instanceOf(scene)
+  if (!inst) throw new Error(`[${who}] ⛔ "${scene}" has no instance module (src/instances/${scene}.js, in src/instances/registry.js) — whether it declares a home Look, and so whether its authoring would be re-keyed by a chain join, is unknowable. Refusing.`)
+  return inst.lookId ? (readLookDesign(inst.lookId, `${who} (town "${scene}"'s home Look, ${inst.lookId})`).blockCustoms || {}) : {}
 }
