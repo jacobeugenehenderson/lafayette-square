@@ -34,10 +34,9 @@ on v3 + the edge rule (offline): it mints, its verifier is clean, the rule remov
 mint). Re-skeleton (commit-extent) before LS's next pour. Pre-existing; LS waits on Jacob's loop adjustments anyway (Boz, 2026-10-27).
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
 running for the kit (:3343/:5183 stopped). Nothing pressed or published today. The afternoon's handoff: `cartograph/_archive/HANDOFF-2026-10-25-afternoon.md`.
-**FIRST, before any publish: the dirty detector** (entry below, "THE DIRTY DETECTOR HAS NO DISCRETION"): Huron's Publish demands a full
-re-pour for a one-line COMMENT in sources.js (b456bc6d). Small fix + a mutant where a comment-only change must not dirty. Then PTown
-Publish → Promote (Jacob said yes), Huron Publish to staging ONLY (huron.online is not on Operations' registrar list: Jacob to say if
-it's owned). Pre-press census DONE 2026-10-25: ward-pin/2026-10-17 and -22 are fully in the record (81b5c319 = efdcc0bd, identical code).
+**The dirty detector judges code by what RUNS: MERGED (a67675ce, Zob).** ▶ `node checks/claims-the-bake-watches-its-code.mjs` (green
+2026-10-27). Owed (Boz's call, open): declare `@babel/parser` in package.json (reached only through @vitejs/plugin-react today; if
+dropped, the Bake refuses loudly). Huron Publish is staging ONLY (huron.online is not on Operations' registrar list: Jacob to say if owned). Pre-press census DONE 2026-10-25: ward-pin/2026-10-17 and -22 are fully in the record (81b5c319 = efdcc0bd, identical code).
 **PARKED BRANCHES (each head carries its own summary):**
 - `shore/2026-10-25` @ 62f20dab (Swash, `.claude/worktrees/shore`). The shore is DESIGNED and ruled (`BRIEF-the-shore-is-one-line` §1
   + §3 step 2): ①'s coast IS the high-water mark; one coast read after the mint; the field STAMPED to the line; water = one
