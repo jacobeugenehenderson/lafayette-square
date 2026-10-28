@@ -53,8 +53,9 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
 - **Trees, lamps and water read no building identity** (Zob, grep over every module of each; §4.4 holds).
 - **⛔ The instruments can't separate identity cost from look cost yet.** `src/lib/startupMarks.js` marks sequence boundaries;
   SlabBuildings only calls `markPrepared`; the index parse and the stamp run inside the geometry's fetch and useMemo with no mark
-  between; `scratch/frame-timeline/`'s `--block` can't split them (the index is inside buildings.json). So step 1's first act is
-  marks around the index parse, the stamp/material loop and the hover handlers.
+  between; `scratch/frame-timeline/`'s `--block` can't split them (the index is inside buildings.json). Step 1 builds nothing:
+  it attributes self-time with Chrome's CPU profiler on staging's bundle, plus resource timing. Where that can't split the stamp
+  from the materials, it says "not separable with existing instruments", and a marks branch is Jacob's call.
 
 ## 2. The shape of it
 
