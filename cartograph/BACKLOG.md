@@ -19,6 +19,8 @@ interchange south of Chouteau, the drawn ramps (thick, off-grade) follow smooth 
 CHORDS between distant anchors, two lines for one ramp. The ramp ribbons also step abruptly in width. Inferred lead, unread: mintInputs
 tessellates `streets` (tessellateAdaptive) but the grade-separated chains (`gradeSep`) may be inked from raw anchors. Jacob: "a whole
 different issue". Read owed (Zob), by symbol: which path inks gradeSep chains, and where the width step comes from.
+Jacob: "These are supposed to be smooth vector lines, tints": Survey's ramp marks render as thick black ribbons and navy chords, not
+tinted vector lines. Also seen in the same console: HeroSubjectPicker renders duplicate keys `landmark:bldg-*` (React warning, ×15).
 **⛔ EXTENT OVERWROTE A COMMITTED RADIUS IN THE PAGE (2026-10-28, LS: draft 1689 m vs applied 892, Jacob untouched; Zob by symbol).**
 (1) A SILENT FALLBACK on load: api.js#fetchNeighborhood returns {} on !res.ok and the hydration catches to null, yet marks the scene
 hydrated, arming the draft autosave with whatever radius stands. (2) The radius auto-seed (keptFit + 120) checks neither `committed` nor
