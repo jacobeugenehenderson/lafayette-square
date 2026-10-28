@@ -2,7 +2,7 @@ import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore, { curbWidthOf } from './stores/useCartographStore.js'
-import { polylineRibbon } from './overlayGeom.js'
+import { polylineRibbon, ringsToEdgeGeo } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob (SSoT; SKELETON.md §3.5) — the SURVEY navy renders the smooth curve
 import { chainMeasure, findFeForSide, applyKindToMeasure, noMeasureFor } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
@@ -498,19 +498,14 @@ export default function SurveyorOverlay() {
   // hit-test MATHEMATICALLY against `centerlineData.streets`
   // (`distToPolyline`, Priority 3 in onPointerDown) — never against these
   // meshes. This is a change of what is DRAWN only.
+  // ⭐ ① IS DRAWN AS VECTOR LINES, A TINT (Jacob, 2026-10-28: "These are supposed to be smooth vector lines, tints"). Each ink
+  // ring's edges are hairlines (overlayGeom.js#ringsToEdgeGeo): no width, so no miter. It was a 0.8 m polylineRibbon around
+  // each 10 mm ink strip, so both its sides were stroked, and its miters (clamped at 6 × 0.4 m) threw spikes at every sharp
+  // turn: on LS, 95 ribbon vertices more than 1 m off their ring, the farthest 2.40 m. ▶ checks/claims-survey-draws-shape-not-fill.mjs
   const protoNavy = useMemo(() => {
     const rings = protopolygon?.rings
     if (!Array.isArray(rings) || !rings.length) return null
-    const geos = []
-    for (const ring of rings) {
-      if (!Array.isArray(ring) || ring.length < 2) continue
-      // ① rings are CLOSED — repeat the first point so the outline closes.
-      const closed = ring[0][0] === ring[ring.length-1][0] && ring[0][1] === ring[ring.length-1][1]
-        ? ring : [...ring, ring[0]]
-      const g = polylineRibbon(closed, 0.4, 0.1)
-      if (g) geos.push(g)
-    }
-    return geos.length ? geos : null
+    return ringsToEdgeGeo(rings.filter(r => Array.isArray(r) && r.length >= 2), 0.1)
   }, [protopolygon])
 
   // ⛔ NOT A SILENT FALLBACK. A scene poured before ① started freezing carries no
@@ -531,6 +526,10 @@ export default function SurveyorOverlay() {
   const centerlineMat = useMemo(() => new THREE.MeshBasicMaterial({
     color: '#0a1a4a', depthTest: false, transparent: true, opacity: 1,
   }), [])
+  // ① the tint: the same navy, as a hairline, translucent over the aerial
+  const protoMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: '#0a1a4a', depthTest: false, transparent: true, opacity: 0.7,
+  }), [])
   const selectedMat = useMemo(() => new THREE.MeshBasicMaterial({
     color: '#ffcc00', depthTest: false, transparent: true, opacity: 1,
   }), [])
@@ -542,10 +541,7 @@ export default function SurveyorOverlay() {
   return (
     <group position={[0, 0.2, 0]}>
       {/* ① — the navy. One closed compound path, drawn as the artifact carries it. */}
-      {protoNavy?.map((geo, i) => (
-        <mesh key={`proto-${i}`} geometry={geo} material={centerlineMat}
-          renderOrder={OVERLAY_Z + 1} />
-      ))}
+      {protoNavy && <lineSegments geometry={protoNavy} material={protoMat} renderOrder={OVERLAY_Z + 1} />}
 
       {/* The chains are drawn ONLY where the operator has selected one — the yellow
           is selection feedback and has no ① equivalent, since ① unites across

@@ -63,3 +63,22 @@ export function polylineRibbon(pts, halfWidth, y = 0) {
   geo.setIndex(indices)
   return geo
 }
+
+// A LineSegments geometry (closed loops) from rings: each ring edge becomes a segment pair, a hairline with no width and
+// so no miter. Survey's vector lines: ① (SurveyorOverlay#protoNavy) and ②'s curb line (BlockGeometryV2Debug, the iA
+// rings). ⭐ One home (moved from BlockGeometryV2Debug.jsx, 2026-10-28).
+export function ringsToEdgeGeo(rings, yLift = 0) {
+  if (!rings || !rings.length) return null
+  const pos = []
+  for (const ring of rings) {
+    if (!ring || ring.length < 2) continue
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length]
+      pos.push(a[0], yLift, a[1], b[0], yLift, b[1])
+    }
+  }
+  if (!pos.length) return null
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  return geo
+}

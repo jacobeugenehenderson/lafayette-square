@@ -21,3 +21,12 @@ described a function and a consumer that no longer existed: ROT.
 > (stroke + fillet + corner identity) is still constructed per-build from chain-derived measures, and the
 > wall still sits at `sectionPass` rather than P2. The topology is frozen; the **shape** is not.
 
+## Excised from SURVEY §3, 2026-10-28 (the code was made to keep §4 and §7)
+
+> 4. **`sectionOpen`** turns the tiles into the layers Survey draws. **H** (the grade-separated highways) is swept from its
+>    own sections. The tiles are `protoShapeTiles` — exactly what freezes into `shape.json` on Survey-exit.
+
+It was true of the code: Survey drew ③'s curb band (`tg.curb`, struck by `sectionOpen` and cut at every curb ramp) and its
+fill. It contradicted the doctrine (§4 "NOT Survey: … ADA pads", §7 "no pedestrian depth"), and the code was fixed to the
+doctrine (Survey draws ②'s `iA` curb line; Jacob, 2026-10-28, LS: the blue line showed the ramp cuts).
+

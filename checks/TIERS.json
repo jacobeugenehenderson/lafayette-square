@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 490,
+  "total": 491,
   "counts": {
-    "safe": 349,
+    "safe": 350,
     "local-effect": 29,
     "live": 112
   },
@@ -2604,6 +2604,13 @@
     },
     {
       "file": "checks/claims-survey-and-section-agree.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-survey-draws-shape-not-fill.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

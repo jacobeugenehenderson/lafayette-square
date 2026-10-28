@@ -57,8 +57,8 @@ The construction, in execution order (`RIBBONS §1`, `/ORIENTATION.md` §3):
    4.5 m × `cornerRadiusScale`). The achieved arcs are `cornerSet` / `cornerFillets`, the one corner truth the magenta
    handle rides. ⛔ No corner arcs at all is a refusal by name.
 3. **③ the bands** — curb, treelawn, sidewalk, land use, struck inward from ② and cut into owned pieces.
-4. **`sectionOpen`** turns the tiles into the layers Survey draws. **H** (the grade-separated highways) is swept from its
-   own sections. The tiles are `protoShapeTiles` — exactly what freezes into `shape.json` on Survey-exit.
+4. **`sectionOpen`** makes Section's and the bake's layers; Survey draws only ①'s ink (hairlines) and ②'s curb line (`iA`), never
+   ③'s bands or cuts (▶ `claims-survey-draws-shape-not-fill`). **H** is swept from its own sections; the tiles freeze as `shape.json`.
 
 *(The legacy SHAPE pass this section used to walk → `_archive/LEGACY-SHAPE-PASS-RETIRED-2026-10-20.md`.)*
 

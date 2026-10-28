@@ -21,6 +21,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
+import { ringsToEdgeGeo } from './overlayGeom.js'
 import { buildBlockGeometryV2, differenceRings } from '../lib/buildBlockGeometryV2.js'
 import { buildTileGround, sectionOpen, clipPaintToStencil } from '../lib/tileGround.js'  // T1 — tiles (shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
 import { expandCustomsAcrossFeSegOrds } from '../lib/feCustomKey.js'  // spread a per-fe custom across all its segOrds so split (T) block-edges render the flip (renderer reads per-run-segOrd; store keys min-segOrd)
@@ -182,26 +183,6 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
   return out
 }
 
-// Build a LineSegments geometry (closed loops) from clipper-output rings.
-// The Survey view shows the curb as an OUTLINE rather than a filled band, so
-// it strokes the same `tg.curb` rings the tile fill uses — one geometry source,
-// no separate Survey curb construction. Each ring edge becomes a segment pair.
-function ringsToEdgeGeo(rings, yLift = 0) {
-  if (!rings || !rings.length) return null
-  const pos = []
-  for (const ring of rings) {
-    if (!ring || ring.length < 2) continue
-    for (let i = 0; i < ring.length; i++) {
-      const a = ring[i], b = ring[(i + 1) % ring.length]
-      pos.push(a[0], yLift, a[1], b[0], yLift, b[1])
-    }
-  }
-  if (!pos.length) return null
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  return geo
-}
-
 // Build a merged disc geometry for the Survey IX markers — one small flat
 // circle per canonical junction (ribbons.intersections), all in one mesh so
 // hundreds of nodes cost a single draw call.
@@ -231,7 +212,7 @@ function ixMarkersGeo(intersections, R = 0.7, SEG = 12, y = 0.06) {
 // boundaries, so the blocks themselves read as a translucent blue fill; the
 // curb outline + IX node markers + centerline (MapLayers) frame them. Distinct
 // from Section's full per-LU paint. Jacob's eye tunes.
-const SURVEY_BLUE = { block: '#3b7dd8', curbFill: '#27579e', curb: '#1f6fe0', ix: '#7ab8ff' }
+const SURVEY_BLUE = { block: '#3b7dd8', curb: '#1f6fe0', ix: '#7ab8ff' }
 
 export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
@@ -875,7 +856,10 @@ export default function BlockGeometryV2Debug({
       ...paintGeos(tg.roadPaint, stencil, 'live build'),
       roadPaint: tg.roadPaint,   // frozen with the shape on Survey-exit
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
-      curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
+      // ⭐ SURVEY'S CURB IS ②'s CURB LINE, the iA rings (tg.block), never ③'s curb band (tg.curb): the band is struck by
+      // sectionOpen and cut at every curb ramp, which is Section's (SURVEY §4 "NOT Survey: … ADA pads", §7 "no pedestrian
+      // depth"; Jacob, 2026-10-28: the blue line showed the ramp cuts). ▶ checks/claims-survey-draws-shape-not-fill.mjs
+      curbLine: ringsToEdgeGeo(tg.block, 0.050),
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
       highway:  ringsToFlatGeo(tg.highway,  0.015, true),   // above LU faces, below the ribbon network — grade-sep shows in its corridor, occluded by local roads
       highwayRings: tg.highway || [],   // G1 — raw grade-sep rings, frozen alongside the tiles so non-Survey views + slab restore highways
@@ -1228,12 +1212,6 @@ export default function BlockGeometryV2Debug({
   const surveyCurbMat = useMemo(() => new THREE.LineBasicMaterial({
     color: SURVEY_BLUE.curb, transparent: true, opacity: 0.95, depthWrite: false,
   }), [])
-  // The curb band filled a touch darker than the block — it's the 'handle rail',
-  // where the corner-rounding controls live, so it reads slightly proud of the
-  // block interior.
-  const surveyCurbFillMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: SURVEY_BLUE.curbFill, transparent: true, opacity: 0.55, depthWrite: false,
-  }), [])
   const surveyIxMat = useMemo(() => new THREE.MeshBasicMaterial({
     color: SURVEY_BLUE.ix, transparent: true, opacity: 0.9, depthWrite: false,
   }), [])
@@ -1365,12 +1343,8 @@ export default function BlockGeometryV2Debug({
         {highwayVisible && tileGeos?.highway && (
           <mesh geometry={tileGeos.highway} renderOrder={PRI.residential + 1} receiveShadow material={bandMats.highway} />
         )}
-        {curbVisible && tileGeos?.curb && (
-          <mesh geometry={tileGeos.curb} renderOrder={PRI.sidewalk}
-            material={surveyCurbFillMat} />
-        )}
-        {curbVisible && tileGeos?.curbOutline && (
-          <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
+        {curbVisible && tileGeos?.curbLine && (
+          <lineSegments geometry={tileGeos.curbLine} renderOrder={PRI.curb}
             material={surveyCurbMat} />
         )}
         {surveyIxGeo && (
