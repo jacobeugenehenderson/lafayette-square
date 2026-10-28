@@ -24,6 +24,9 @@ Kerf's check (kerf/chain-end-is-a-node df666e54): Altadena 8 · Huron 3 · JH 3 
 (2) The join's operator override: which POUR input holds it (the Wall forbids authoring in the mint). Filed as aspiration.
 (2b) A join adds an intersection, so segOrd downstream shifts +1 and authored slots would land on the wrong block (Zob). Tonight the join
 REFUSES by name on an authored slot past it; the key migration is the open key's (EXTENT-DESIGN §4.1), yours.
+(2c) THE DIKE (PTown's Breakwater, embankment=dyke): its footprint edge and the lidar coast run 4–5 mm apart along it, two lines
+that should be one, so absorb refuses. Boz's land-mirror ruling measured WORSE (233 → 281) and is withdrawn. Tonight it's classed ground and
+refuses by name at ①, so PTown parks there; held WIP on ferrule/resolution-rule (c1f98e92, beed893d). How it becomes ONE line: yours.
 (3) Deck winding (Swash): OSM deck areas merged unnormalised, so covered deck cancels (Huron 3.37 m², 13 pieces). Being fixed before the bakes.
 **▶ 2026-10-27: THE SHORE IS MERGED (eec3ac1b).** Huron's shoreline rebuilt to Jacob's rulings (the coast IS the high-water mark;
 the drawn ground pinned to it; bridges painted over water; islands; the absorbed ink). Jacob looked: "FANTASTICALLY advanced". NEXT, in
