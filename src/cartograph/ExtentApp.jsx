@@ -48,7 +48,8 @@ import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import SourcesPanel from './SourcesPanel.jsx'
 import BezierPen, { flattenPath } from './BezierPen.jsx'
-import CircleHandle from './CircleHandle.jsx'
+import CircleHandle, { RADIUS_STEP_M, toRadiusM } from './CircleHandle.jsx'
+import { committedDraftRadius, seedRadius } from './extentRadius.js'
 import CenterHandle from './CenterHandle.jsx'
 import { CompassRoseSVG } from '../components/CompassRose.jsx'
 import {
@@ -377,6 +378,28 @@ function ExtentClickableStreets({ streets, selected, gaps, onToggle }) {
 
 // Dim the map OUTSIDE the boundary circle — previews the slab stencil so the
 // neighborhood reads as the subject. A big dark ring from the circle rim outward.
+// The radius, TYPEABLE (2026-10-28, Jacob): whole metres through the one step rule (CircleHandle.jsx#toRadiusM). It commits on
+// Enter or blur, so typing 8 on the way to 892 never draws or saves an 8. A value that is not a number at least the slider's
+// minimum is refused by name, beside the field, and the field returns to the radius held.
+function RadiusField({ radiusM, rMin, onCommit }) {
+  const [text, setText] = useState(String(radiusM))
+  const [why, setWhy] = useState(null)
+  useEffect(() => { setText(String(radiusM)); setWhy(null) }, [radiusM])
+  const commit = () => {
+    const n = toRadiusM(Number(text))
+    if (!(Number.isFinite(n) && n >= rMin)) { setWhy(`⛔ a radius is whole metres, at least ${rMin} m`); setText(String(radiusM)); return }
+    setWhy(null); if (n !== radiusM) onCommit(n); else setText(String(n))
+  }
+  return (
+    <span className="carto-meta--value">
+      <input type="number" inputMode="numeric" min={rMin} step={RADIUS_STEP_M} value={text} style={{ width: '6em' }}
+        onChange={e => setText(e.target.value)} onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit() } else if (e.key === 'Escape') { setText(String(radiusM)); setWhy(null) } }} /> m
+      {why && <span className="carto-extent-status warn" style={{ marginLeft: 6 }}>{why}</span>}
+    </span>
+  )
+}
+
 function ExtentDim({ centroid, radiusM }) {
   if (!centroid || !(radiusM > 0)) return null
   return (
@@ -1199,7 +1222,11 @@ export default function ExtentApp() {
   // 2026-09-25, so after a reload an unapplied 5,290 m read as applied while every
   // renderer drew 7,065 m (provincetown).
   const [appliedRadius, setAppliedRadius] = useState(0)
-  const draftHydrated = useRef(false)
+  // ⭐ The scene whose data has HYDRATED (null until it has). The draft autosave and the radius seed both wait on it, so neither
+  // can act on a scene whose load has not finished, or FAILED (`loadError`, shown at the top of the panel: a failed load never
+  // hydrates). One copy, a state, so the seed re-runs when hydration lands (it was a ref, which the seed could not wait on).
+  const [hydratedScene, setHydratedScene] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   // The name a search suggests, keyed to the draft it made. The [scene] effect
   // resets `name`, so the suggestion is applied there, after hydration, when the
   // disk has no name of its own.
@@ -1476,10 +1503,11 @@ export default function ExtentApp() {
     setCenterLL(null)
     setAppliedRadius(0)
     setExclusionsLL([]); setPenActive(false); setSelAnchor(null)
-    draftHydrated.current = false
+    setHydratedScene(null); setLoadError(null)
     let cancelled = false
     ;(async () => {
-      const nb = await fetchNeighborhood(scene).catch(() => null)
+      // ⛔ no catch here: a failed load REFUSES (api.js#fetchNeighborhood), and the catch below shows it and does not hydrate
+      const nb = await fetchNeighborhood(scene)
       if (cancelled) return
       if (nb) {
         if (Array.isArray(nb.sides) && nb.sides.some(Boolean)) setSides(nb.sides.filter(Boolean))
@@ -1529,13 +1557,16 @@ export default function ExtentApp() {
       if (b) upd.sceneBoundary = b
       // The APPLIED radius comes from the boundary, never from the draft.
       setAppliedRadius(b && b.radius > 0 ? Math.round(b.radius) : 0)
+      // ⛔ A COMMITTED TOWN IS NEVER SEEDED (2026-10-28): its draft is its own draftRadius, else its applied radius, else a
+      // refusal by name (extentRadius.js#committedDraftRadius)
+      { const r = committedDraftRadius(nb, b, scene); if (r != null) setRadiusM(r) }
       if (Object.keys(upd).length) useCartographStore.setState(upd)
       if (g || st.mapGeography) setLocated(true)
       // NO geocode-for-geometry on open. Search is a data bootstrap only; the
       // operator authors the boundary with the pen (never an admin ring — an
       // administrative polygon is not a neighborhood; `HANDOFF-extent-pen-boundary.md`).
-      draftHydrated.current = scene
-    })().catch(() => { draftHydrated.current = scene })
+      setHydratedScene(scene)
+    })().catch((e) => { if (!cancelled) setLoadError(String(e?.message || e)) })
     return () => { cancelled = true }
   }, [scene])
 
@@ -1544,7 +1575,7 @@ export default function ExtentApp() {
   useEffect(() => { if (scene && sceneBoundary) setLocated(true) }, [scene, sceneBoundary])
 
   // Draft auto-save (implicit) — sides + radius, debounced. Only writes once the
-  // CURRENT scene's data has hydrated (draftHydrated holds the hydrated scene id) —
+  // CURRENT scene's data has hydrated (`hydratedScene` holds the hydrated scene id) —
   // so a mid-switch render can never persist one hood's fields into another's file.
   // The draft as it stands — also flushed synchronously by Fetch before it moves a
   // draft to its named id (the debounced save may not have run yet).
@@ -1576,10 +1607,10 @@ export default function ExtentApp() {
     return draft
   }
   useEffect(() => {
-    if (draftHydrated.current !== scene || !scene) return
+    if (hydratedScene !== scene || !scene) return
     const t = setTimeout(() => { saveNeighborhood(scene, buildDraft()).catch(() => {}) }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope, centerLL, hintRing, coverage])
+  }, [sides, radiusM, name, blurb, exclusionsLL, scene, hydratedScene, polygonLL, polygonSource, placeEnvelope, centerLL, hintRing, coverage])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -1990,11 +2021,11 @@ export default function ExtentApp() {
   // ground plane a function of the exclusion pen; that was the third copy of one
   // coupling (b6ce0c89, f1192ffe, and this). The tint is fixed at search time and
   // moves for nothing.
+  // ⛔ only a fresh, hydrated, uncommitted scene is seeded (extentRadius.js#seedRadius; 2026-10-28, LS's 892 m overwritten)
   useEffect(() => {
-    if (radiusM > 0 || radiusTouched) return
-    if (coverageFit?.radius > 0) setRadiusM(coverageFit.radius)
-    else if (keptFit.radius) setRadiusM(keptFit.radius + 120)   // no tint (a reopened pre-tint scene)
-  }, [coverageFit, keptFit, radiusTouched, radiusM])
+    const r = seedRadius({ hydrated: hydratedScene === scene, committed, appliedRadius, radiusM, radiusTouched, coverageFit, keptFit })
+    if (r != null) setRadiusM(r)
+  }, [coverageFit, keptFit, radiusTouched, radiusM, hydratedScene, scene, committed, appliedRadius])
 
   // Has this hood been hydrated yet? Streets exist → we're past setup (search/fetch),
   // so those setup-time controls collapse and the boundary work takes the panel.
@@ -2132,6 +2163,8 @@ export default function ExtentApp() {
             → radius → name/blurb → pour. */}
         <div className="carto-panel">
           <h1>Neighborhood Extent</h1>
+          {/* ⛔ a failed load, by name, above everything: the page neither hydrates nor saves until it loads */}
+          {loadError && <div className="carto-extent-status warn" role="alert">{loadError}</div>}
           <div className="carto-section">
             {/* Neighborhood selector — the persistent switcher (Neighborhoods live in
                 Extent; the Look pulldown is per-neighborhood presets). */}
@@ -2440,11 +2473,11 @@ export default function ExtentApp() {
                 return (
                 <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
                   <span className="carto-label" style={{ cursor: 'default' }}>Radius</span>
-                  <span className="carto-meta--value">{radiusM} m</span>
+                  <RadiusField radiusM={radiusM} rMin={rMin} onCommit={(r) => { setRadiusTouched(true); setRadiusM(r) }} />
                   <input className="carto-range" type="range" style={{ flexBasis: '100%' }}
-                    min={rMin} max={rMax} step={10}
+                    min={rMin} max={rMax} step={RADIUS_STEP_M}
                     value={radiusM}
-                    onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
+                    onChange={e => { setRadiusTouched(true); setRadiusM(toRadiusM(+e.target.value)) }} />
                   {/* Draft vs applied, said out loud. The map draws the APPLIED disc. */}
                   {appliedRadius > 0 && Math.round(radiusM) !== appliedRadius && (
                     <span className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 4 }}>
