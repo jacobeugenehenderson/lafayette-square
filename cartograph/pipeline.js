@@ -127,7 +127,11 @@ async function main() {
   // ⚙ DIAGNOSTIC, opt-in on the command line (never env): `--absorb-dump=<path>` writes the ink absorption's inputs if it refuses
   const absorbDump = process.argv.find(a => a.startsWith('--absorb-dump='))?.slice('--absorb-dump='.length)
   const onAbsorbRefusal = absorbDump ? (d) => { writeFileSync(absorbDump, JSON.stringify(d)); console.log(`    [①][absorb] ⚙ refusal inputs written to ${absorbDump}`) } : null
-  const layers = deriveLayers(travelOrdered(snapped.ground.highway || [], 'derive'), { cropland, onAbsorbRefusal })
+  // the town's declared home Look, BY VALUE from its town record (pourSteps.mjs passes it; the pour never imports a town module):
+  // `--home-look=<id>`, or `--home-look=` for a town that declares none; absent → the chain join refuses (mintInputs#townBlockCustoms)
+  const homeArg = process.argv.find(a => a.startsWith('--home-look='))?.slice('--home-look='.length)
+  const homeLook = homeArg === undefined ? undefined : (homeArg || null)
+  const layers = deriveLayers(travelOrdered(snapped.ground.highway || [], 'derive'), { cropland, onAbsorbRefusal, homeLook })
   let buildings = deriveBuildings(snapped.buildings, raw.buildingSource)
 
   // ── Elevation ───────────────────────────────────────────────────────

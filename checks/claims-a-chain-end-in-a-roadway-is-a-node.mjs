@@ -21,8 +21,8 @@
 // end to join): the move is seen as (a) · the join off · the foot not inserted into the through street · the cap left round ·
 // an authored slot, and an authored cap, planted on the join (the real join must THROW) with the refusal skipped (throw → no
 // throw) — each → RED. Once, on planted fixtures: two ends each past the other's free end (the real join sets both aside) with
-// the clamp allowed (a segment on two chains) → RED · an instance module declaring a home Look whose design.json is missing, and a
-// town with no instance module (the real reader refuses each), each read as no authoring ({}) → RED.
+// the clamp allowed (a segment on two chains) → RED · a declared home Look whose design.json is missing, and no declaration passed
+// (the real reader refuses each), each read as no authoring ({}) → RED.
 //   node checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs [<scene> …] [--mutants]
 // Read-only. Exits 1 on any (a) end not joined, a node-rule disagreement, a frozen record that differs, or a mutant not seen;
 // exits 2 (NOT CHECKED, named) when a town cannot be judged (its pour refuses before the join), and only then.
@@ -32,6 +32,7 @@ import { importSource } from './_importSource.mjs'
 import { loadTown, judge, printRow, movedTEnds, mintStreetsOf, vKey } from './_chainEnds.mjs'
 import { joinChainEnds, nodeKey, doubledSegments } from '../cartograph/chainJoins.mjs'
 import { townBlockCustoms } from '../cartograph/mintInputs.mjs'
+import { homeLookOf } from '../cartograph/homeLook.mjs'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 const MUTANTS = process.argv.includes('--mutants')
 
@@ -67,7 +68,7 @@ for (const scene of scenes('cartograph/data/<scene>/clean/skeleton.json')) {
   const town = loadTown(scene), J0 = judge(town), rows = J0.inside, mint = mintStreetsOf(town)
   // the town's authoring, by its instance module's declaration: a town with no module refuses before the join, as its pour does —
   // ⚠️ NOT CHECKED, printed by name (Boz, 2026-10-28: jacksonheights, outside the tranche), never a pass
-  let bc; try { bc = townBlockCustoms(scene, 'claims-a-chain-end-in-a-roadway-is-a-node') } catch (e) { notChecked.push(scene); console.log(`⚠️ NOT CHECKED — ${scene}: its pour refuses before the join: ${e.message}`); continue }
+  let bc; try { bc = townBlockCustoms(homeLookOf(scene), 'claims-a-chain-end-in-a-roadway-is-a-node') } catch (e) { notChecked.push(scene); console.log(`⚠️ NOT CHECKED — ${scene}: its pour refuses before the join: ${e.message}`); continue }
   // ② the node rules agree, over the chains ① strokes
   const mintIds = new Set([...mint.streets, ...mint.gradeSep].map(s => s.skelId)), sk1 = town.sk.filter(c => mintIds.has(c.id))
   const dv = new Map(), dl = new Map()
@@ -122,15 +123,15 @@ if (MUTANTS) {
   const clamp = throwsOf(() => ALLOW_CLAMP(fx))
   if (!asideBoth || !clamp) bad++
   console.log(`fixture · two ends each past the other's free end: ${asideBoth ? 'both set aside by the real join' : `⛔ the real join did not set both aside (${JSON.stringify(real.joins)})`} · mutant, the clamp allowed: ${clamp ? `RED, as it must be (${clamp.slice(0, 110)}…)` : '⛔ no throw — a segment on two chains goes unseen'}`)
-  // the home Look is the instance module's declaration: a module declaring a Look with no design.json, and a town with no module,
-  // each refuse; mutants read either as "no authoring" ({}) → RED
+  // the home Look is the town record's declaration, passed BY VALUE (the pour imports no town module): a declared Look with no
+  // design.json, and no declaration passed at all, each refuse; mutants read either as "no authoring" ({}) → RED
   const mut = async (tag, from, to) => (await importSource('cartograph/mintInputs.mjs', { transform: (t) => { if (!t.includes(from)) throw new Error(`[mutant ${tag}] mintInputs.mjs no longer holds the text it mutates — re-aim it`); return t.replace(from, to) }, suffix: `// ${tag}` })).townBlockCustoms
   const W = 'claims-a-chain-end-in-a-roadway-is-a-node'
   for (const [what, planted, tag, from, to] of [
-    ['a module declaring a home Look with no design.json', () => ({ lookId: 'planted-look' }), 'declaration-ignored', '  return inst.lookId ?', '  return false ?'],
-    ['a town with no instance module', () => undefined, 'no-module-as-none', '  if (!inst) throw new Error(', '  if (!inst) return {}\n  if (!inst) throw new Error(']]) {
-    const real = throwsOf(() => townBlockCustoms('planted-town', W, planted))
-    const f = await mut(tag, from, to), got = (() => { try { return { v: f('planted-town', 'mutant', planted) } } catch (e) { return { e: e.message } } })()
+    ['a declared home Look with no design.json', 'planted-look', 'declaration-ignored', '  return homeLook ?', '  return false ?'],
+    ['no home-Look declaration passed', undefined, 'undeclared-as-none', '  if (homeLook === undefined) throw new Error(', '  if (homeLook === undefined) return {}\n  if (homeLook === undefined) throw new Error(']]) {
+    const real = throwsOf(() => townBlockCustoms(planted, W))
+    const f = await mut(tag, from, to), got = (() => { try { return { v: f(planted, 'mutant') } } catch (e) { return { e: e.message } } })()
     const red = !!got.v && !got.e
     if (!real || !red) bad++
     console.log(`fixture · ${what}: ${real ? 'the real reader refuses, by name' : '⛔ the real reader did not refuse'} · mutant, read as no authoring: ${red ? 'RED, as it must be ({} assumed)' : `⛔ still refuses (${got.e?.slice(0, 80)})`}`) }

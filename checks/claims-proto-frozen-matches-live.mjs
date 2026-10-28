@@ -19,6 +19,7 @@ import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
 import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
 import { mintInputsOf } from '../cartograph/mintInputs.mjs'
+import { homeLookOf } from '../cartograph/homeLook.mjs'
 
 const scenes = ribbonScenes()
 const RIB = ribbonsPath
@@ -43,7 +44,7 @@ for (const scene of scenes) {
   // coastArcs / bb (Zob, 2026-10-25), so every coast town read STALE over a correct artifact. A wrong instruction ("re-pour")
   // is worse than a wrong number.
   let MI
-  try { MI = mintInputsOf(scene, rb.streets) } catch (e) { console.log(`   ${e.message} — REFUSING to check`); failed = true; continue }
+  try { MI = mintInputsOf(scene, rb.streets, homeLookOf(scene)) } catch (e) { console.log(`   ${e.message} — REFUSING to check`); failed = true; continue }
   if (MI.unjoined.length) { console.log(`   ⛔ ${MI.unjoined.length} chain(s) have no simplified geometry — REFUSING, exactly as derive.js does`); failed = true; continue }
   const quiet = (f) => { const l = console.log, w = console.warn; console.log = () => {}; console.warn = () => {}; try { return f() } finally { console.log = l; console.warn = w } }
   const L = quiet(() => mintProtopolygon({ streets: MI.streets, gradeSep: MI.gradeSep, boundary: MI.boundary, coast: MI.coast, coastArcs: MI.coastArcs, bb: MI.bb, eps: F.eps }))

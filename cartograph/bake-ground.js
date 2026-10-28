@@ -470,7 +470,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
       : null
     if (why) throw new Error(
       `[bake-ground] ⛔ scene '${scene}' cannot bake ① as the producer: ${why}.\n` +
-      `   FIX: re-pour it —  node cartograph/skeleton.js --scene=${scene} && node cartograph/pipeline.js --scene=${scene} && node cartograph/promote-ribbons.js --scene=${scene} --yes`)
+      `   FIX: re-pour it —  node cartograph/skeleton.js --scene=${scene} && node cartograph/pipeline.js --scene=${scene} --home-look=<its lookId> && node cartograph/promote-ribbons.js --scene=${scene} --yes`)
   }
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,

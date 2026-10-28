@@ -1559,7 +1559,7 @@ function correctStreetWidths(streets, lamps, survey) {
 
 // ══════════════════════════════════════════════════════════════════
 
-export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null } = {}) {
+export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null, homeLook } = {}) {
   const opts = { onAbsorbRefusal }
   console.log(`  ${highways.length} highway features`)
 
@@ -4868,7 +4868,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       // `cartograph/mintInputs.mjs`, which claims-proto-frozen-matches-live calls too: the witness mints what the pour minted.
       simplified = sk.streets || []
     }
-    const MI = simplified && mintInputs({ ribbonStreets: ribbonsLayer.streets, skeletonStreets: simplified, osm: osmData, bb: _bb, disc: _disc, discAt: _discAt, cleanDir: CLEAN_DIR, blockCustoms: townBlockCustoms(SCENE, `derive: ${SCENE}`), who: `derive: ${SCENE}` })
+    const MI = simplified && mintInputs({ ribbonStreets: ribbonsLayer.streets, skeletonStreets: simplified, osm: osmData, bb: _bb, disc: _disc, discAt: _discAt, cleanDir: CLEAN_DIR, blockCustoms: townBlockCustoms(homeLook, `derive: ${SCENE}`), who: `derive: ${SCENE}` })
     if (!simplified || MI.unjoined.length) {
       console.warn(`    ⛔ [①] NOT FROZEN — ${!simplified ? `no skeleton at ${skPath}` : `${MI.unjoined.length} of ${MI.total} chain(s) have no simplified geometry (${MI.unjoined.slice(0, 4).join(', ')})`}. ⛔ Refusing to mint ① from the DERIVED chains: that silently produces a dense contour with phantom blocks, which renders and cannot be seen to be wrong.`)
     } else {
