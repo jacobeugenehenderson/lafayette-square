@@ -14,6 +14,11 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**⛔ DEBT, NAMED (Boz, 2026-10-28): openCloseAtStep has TWO behaviours.** Footprints (decks, embankments) are cut once (cutOnce
+default; slivers erode to nothing at NODE_BOUND); the TRACED WATER passes cutOnce: false and keeps the a115eaab integer open/close
+(mean-width sliver rule), because cut-once on the water made crossings in the cut/fill booleans themselves (Huron 44 at (-4820.8, -3834.5),
+before simplify; Swash). It's removed when those crossings are understood or float morphology lands (sized LARGE: integer clipper-lib only).
+The decks' remaining ≤ 2 mm edges (PTown 10, Huron 40) are a source corner drawn twice by the integer re-offset; same cure.
 **From Ward's review of Gnomon's splash centring (2026-10-28), none blocking:** (1) claims-a-shot-change-flies is RED and flaky on
 integration itself ("movie carries a view offset (0,-8.6)"; "plan → movie never landed"); Zob reads it before any press leans on it ·
 (2) ShotFlight fixes the plan's altitude at flight start, so a warm entry frames with whatever inset holds at t=0; fix = re-fit on a
