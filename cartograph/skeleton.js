@@ -19,7 +19,7 @@ import { RAW_DIR, CLEAN_DIR, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { KIT_CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { LOCAL_SECTION } from '../src/cartograph/streetClass.js'   // the kit's sidewalk: the local row (uniform until classifier step 7)
-import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER, isOneway, isRingWay, travelOrdered, isOffGradeWay } from '../src/cartograph/streetClass.js'
+import { classifyWay, classSection, lanesTagIsReadable, CLASSES, CLASS_ORDER, isOneway, isRingWay, travelOrdered, isOffGradeWay, isArea } from '../src/cartograph/streetClass.js'
 import { chainMarkings } from '../src/cartograph/streetMarkings.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
@@ -2036,7 +2036,7 @@ function main() {
     for (const f of unknown) {
       const t = f.tags || {}
       const keys = ['highway', 'area', 'service', 'footway'].filter(k => t[k] != null).map(k => `${k}=${t[k]}`).join(' ') || '(no highway tag)'
-      console.error(`   osm ${f.osmId}  ${t.name ? `"${t.name}"` : '(unnamed)'}  ${keys}`)
+      console.error(`   osm ${f.osmId}  ${t.name ? `"${t.name}"` : '(unnamed)'}  ${keys}${t.type === 'multipolygon' ? ' (a multipolygon)' : ''}${isArea(t) ? '  — an AREA, not a street: map its centreline (or tag area:highway)' : ''}`)
     }
     console.error('   Decide each in the vocabulary table (a class, or a new row) — never a default.')
     process.exit(1)
@@ -2053,13 +2053,23 @@ function main() {
     process.exit(1)
   }
   const notBuilt = highwaysRaw.filter(f => wayClass.get(f.osmId).class === 'not-built')
-  const highways = highwaysRaw.filter(f => wayClass.get(f.osmId).class !== 'not-built')
+  // ⭐ AN AREA HIGHWAY IS A SURFACE, NEVER A CHAIN (2026-10-28; Zob's read: STYLE-GUIDE §9 Conflict 9.1, named area=yes ways
+  // "enter as street chains" because a NAME promotes a way, not its class). Every class whose network is 'area' (a plaza, a
+  // services area) leaves the street network HERE, named or not, before anything groups it. ⛔ Its fill is RULED and UNBUILT
+  // (STYLE-GUIDE §9, Jacob 2026-10-20: plaza is its own type, an area fill), so each is printed by name, never dropped silently.
+  const areaWays = highwaysRaw.filter(f => CLASSES[wayClass.get(f.osmId).class]?.network === 'area')
+  const highways = highwaysRaw.filter(f => wayClass.get(f.osmId).class !== 'not-built' && CLASSES[wayClass.get(f.osmId).class]?.network !== 'area')
   console.log(`Input: ${highways.length} highway features`)
   if (notBuilt.length) {
     console.log(`  ⛔ dropped ${notBuilt.length} way(s) that DO NOT EXIST (highway=${[...new Set(notBuilt.map(f => f.tags.highway))].join('/')}):`)
     for (const f of notBuilt.slice(0, 12))
       console.log(`       ${(f.tags.name || '(unnamed)')} — highway=${f.tags.highway}${f.tags.start_date ? `, start_date=${f.tags.start_date}` : ''}`)
     if (notBuilt.length > 12) console.log(`       …and ${notBuilt.length - 12} more`)
+  }
+  if (areaWays.length) {
+    console.log(`  ⛔ ${areaWays.length} area highway(s) left the street network (a surface, never a chain) — NOT DRAWN: the area fill is ruled (STYLE-GUIDE §9, 2026-10-20) and unbuilt:`)
+    for (const f of areaWays.slice(0, 12)) console.log(`       ${f.tags.name || '(unnamed)'} — osm ${f.osmId}, ${wayClass.get(f.osmId).class} (highway=${f.tags.highway}${f.tags.area ? ' area=' + f.tags.area : ''}${f.tags.type === 'multipolygon' ? ', a multipolygon' : ''})`)
+    if (areaWays.length > 12) console.log(`       …and ${areaWays.length - 12} more`)
   }
 
   // osmId → tags, so a welded chain can be graded from ALL its source ways

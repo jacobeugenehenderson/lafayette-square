@@ -180,7 +180,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 355. This is `npm test`.
+## safe — 356. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -257,6 +257,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-akas-never-merge-species.mjs` | DO COLLOQUIAL NAMES ROUTE WITHOUT MERGING TWO SPECIES INTO ONE? |
 | `checks/claims-alley-stub-pairs.mjs` | ⭐⭐⭐ IS "BRIDGE THE ALLEY ACROSS A JUNCTION" A RULE, OR A SPECIAL CASE? |
 | `checks/claims-an-annulus-splits-at-its-own-class-changes.mjs` | CLAIM — A CELL ROUND A FACE NO SPOKE REACHED SPLITS AT ITS OWN CLASS CHANGES, PAIRED BY OWNER, OR REFUSES. |
+| `checks/claims-an-area-highway-is-a-surface.mjs` | IS EVERY AREA HIGHWAY (A PLAZA, A TERRACE, A SERVICES AREA) A SURFACE, NEVER A STREET |
 | `checks/claims-an-authored-key-names-the-same-frontage-after-a-re-pour.mjs` | WHEN A TOWN'S SKELETON IS RE-POURED, DOES EVERY KEY |
 | `checks/claims-an-entry-flies-to-its-frame.mjs` | DOES A PLAN ENTERED WITH frameIds FLY STRAIGHT TO THEIR FRAME, IN ONE MOVE? |
 | `checks/claims-an-inland-town-asks-no-water-level.mjs` | DOES A TOWN WITH NO COAST STAY SILENT ABOUT WATER LEVELS, WHILE A COAST TOWN |

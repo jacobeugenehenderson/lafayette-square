@@ -11,6 +11,9 @@
 // step 1 buckets by NAME; every named group goes through `makeStreet` (step 6) whatever its
 // `highway` tag says. Only the unnamed bucket ever reaches `paths[]`. So a NAMED footway becomes
 // a street chain and bounds blocks — and is ALSO stroked as a path inside them.
+// ⭐ AREAS ARE OUT OF IT (2026-10-28): a named AREA way (a plaza, a terrace: area=yes or a multipolygon) leaves the street
+// network at the skeleton whatever its name (streetClass.js#isArea; claims-an-area-highway-is-a-surface). What remains of this
+// class is LINEAR named non-vehicular ways; a town's count drops by its area chains on its next re-skeleton.
 //
 // ⭐ THIS READS THE SOURCE, IT DOES NOT RESTATE IT (`CLAUDE.md` PRUNE §1): the classes come off
 // the artifacts, the double-carry is derived by joining `streets[]` to `paths[]`. No number here

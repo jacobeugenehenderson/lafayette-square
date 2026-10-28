@@ -91,7 +91,10 @@ export const CLASSES = {
 export const RULES = [
   { highway: ['proposed', 'construction', 'planned', 'abandoned', 'razed', 'demolished', 'dismantled'], class: 'not-built', rung: 'data' },
 
-  { area: true, highway: ['pedestrian', 'footway', 'service'], class: 'plaza', rung: 'data' },
+  // ⭐ a walkable or paved AREA is a plaza (STYLE-GUIDE §9, ruled 2026-10-20: its own type, an area fill). `path` and `cycleway`
+  // areas join (Altadena's `highway=path area=yes` refused for want of this row, 2026-10-28). Any other area highway matches no
+  // row and refuses by name: an area of a road is not a street (map its centreline, or area:highway).
+  { area: true, highway: ['pedestrian', 'footway', 'service', 'path', 'cycleway'], class: 'plaza', rung: 'data' },
   { area: true, highway: ['services'], class: 'services-area', rung: 'data' },
   { area: true, highway: ['elevator'], class: 'indoor', rung: 'data' },
 
@@ -120,7 +123,10 @@ export const RULES = [
   { highway: ['corridor', 'elevator'], class: 'indoor', rung: 'data' },
 ]
 
-const isArea = (tags) => tags?.area === 'yes'
+// ⭐ AN AREA is `area=yes`, or an OSM MULTIPOLYGON (a relation tagged type=multipolygon IS an area by definition; it carries no
+// area tag — JH's Diversity Plaza was classed as a linear `pedestrian` way and chained, 2026-10-28). An area highway matches
+// only `area: true` rows, so it is never read as a line.
+export const isArea = (tags) => tags?.area === 'yes' || tags?.type === 'multipolygon'
 
 function ruleMatches(rule, tags) {
   if (!!rule.area !== isArea(tags)) return false
@@ -151,7 +157,7 @@ export function classifyWay(tags) {
  */
 export function classOf(tags) {
   const c = classifyWay(tags || {})
-  if (!c) throw new Error(`⛔ no class in the vocabulary (src/cartograph/streetClass.js) for highway=${tags?.highway ?? '(none)'}${tags?.area ? ` area=${tags.area}` : ''}${tags?.name ? ` "${tags.name}"` : ''}`)
+  if (!c) throw new Error(`⛔ no class in the vocabulary (src/cartograph/streetClass.js) for highway=${tags?.highway ?? '(none)'}${tags?.area ? ` area=${tags.area}` : ''}${tags?.type === 'multipolygon' ? ' (a multipolygon)' : ''}${tags?.name ? ` "${tags.name}"` : ''}${isArea(tags) ? ' — it is an AREA, not a street: map its centreline (or tag area:highway)' : ''}`)
   return c
 }
 

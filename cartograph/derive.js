@@ -27,7 +27,7 @@ import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
 import { defaultMeasure, measureFromSeed, pourMeasureOf, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
-import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
+import { CLASSES, classOf, classifyWay, isOneway } from '../src/cartograph/streetClass.js'
 import { selectMarkings, parkingSeed, MARKING_LOOK } from '../src/cartograph/streetMarkings.js'
 import { expresswaySpeeds } from './speedContext.mjs'
 // ① is minted HERE at prebake (`mintProtopolygon`) and frozen into the artifact; the other two imports run beside it.
@@ -2794,12 +2794,19 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     return out
   }
 
-  const footways = highways.filter(f =>
+  // ⭐ AN AREA HIGHWAY IS A SURFACE, NOT A PATH (2026-10-28): a plaza's outline was stroked as a 3 m path line, because this
+  // layer chose by the raw `highway` tag. A way whose class is an AREA (streetClass.js: area=yes or a multipolygon) is never
+  // stroked; its fill is RULED and UNBUILT (STYLE-GUIDE §9, Jacob 2026-10-20), so the count is printed by name.
+  const isAreaWay = (f) => CLASSES[classifyWay(f.tags || {})?.class]?.network === 'area'
+  const areaWays = highways.filter(isAreaWay)
+  if (areaWays.length) console.log(`    ⛔ ${areaWays.length} plaza / area highway(s) not drawn — the area fill is ruled (STYLE-GUIDE §9, 2026-10-20) and unbuilt: ${areaWays.slice(0, 8).map(f => f.tags?.name || `osm ${f.osmId}`).join(' · ')}${areaWays.length > 8 ? ` · …${areaWays.length - 8} more` : ''}`)
+  const lines = highways.filter(f => !isAreaWay(f))
+  const footways = lines.filter(f =>
     f.tags?.highway === 'footway' && f.tags?.footway !== 'crossing' && f.tags?.footway !== 'sidewalk' && f.coords.length >= 2
   )
-  const cycleways = highways.filter(f => f.tags?.highway === 'cycleway' && f.coords.length >= 2)
-  const steps = highways.filter(f => f.tags?.highway === 'steps' && f.coords.length >= 2)
-  const paths = highways.filter(f => (f.tags?.highway === 'path' || f.tags?.highway === 'pedestrian') && f.coords.length >= 2)
+  const cycleways = lines.filter(f => f.tags?.highway === 'cycleway' && f.coords.length >= 2)
+  const steps = lines.filter(f => f.tags?.highway === 'steps' && f.coords.length >= 2)
+  const paths = lines.filter(f => (f.tags?.highway === 'path' || f.tags?.highway === 'pedestrian') && f.coords.length >= 2)
 
   const pathCenterlines = [
     ...centerlinesFor(footways,  'footway',  STANDARDS.footway.width),

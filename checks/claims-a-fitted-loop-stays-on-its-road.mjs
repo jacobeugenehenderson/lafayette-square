@@ -39,6 +39,8 @@ const branchOf = (c) => c.segments?.some(g => g.type === 'bezier') ? 'fitted' : 
 // ⭐ ONE osmId CAN CARRY SEVERAL FEATURES: a multipolygon's rings arrive as separate raw/osm.json features sharing its id (JH's
 // Diversity Plaza, way 21237405, two rings → diversity-plaza-1/-2/-3; 1–7 such ids per town). So the road a loop stands
 // for is its joined ring, or any one closed feature of its sources — the nearest is judged, and named when it is a part.
+// ⚠️ Since 2026-10-28 a highway MULTIPOLYGON is an AREA (streetClass.js#isArea) and leaves the street network at the skeleton,
+// so this case arises only in a skeleton poured before that rule (JH's diversity-plaza-N, until its next re-skeleton).
 function judge(loop, W, bound) {
   const ways = (loop.sources || []).flatMap(id => W.get(id) || []), L = lineOf(loop)
   if (!L) return { why: `${loop.segments.length} segment(s) for ${loop.points.length} point(s): its line cannot be read` }

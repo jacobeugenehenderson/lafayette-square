@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 500,
+  "total": 501,
   "counts": {
-    "safe": 355,
+    "safe": 356,
     "local-effect": 30,
     "live": 115
   },
@@ -1035,6 +1035,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-an-area-highway-is-a-surface.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/cartograph/streetClass.js — read, safe"
       ]
     },
     {
