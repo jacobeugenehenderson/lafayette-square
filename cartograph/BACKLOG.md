@@ -14,6 +14,11 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**NIGHT ORDER (Jacob retired, handed to the staff):** Ferrule builds the way-tag rule on ferrule/resolution-rule (heavy slot) →
+Zob PASS → Boz merges + restarts :3343 → Swash re-bakes Huron then PTown through the route, LOCAL only (PTown's known
+mint-refuses-no-outline RED accepted, named; Swash measures (b) read-only meanwhile, plus a water-tint probe in scratch/) → Kerf builds
+claims-a-chain-end-in-a-roadway-is-a-node, then the join (BRIEF-a-chain-end-in-a-roadway-is-a-T). Ward: All places listings-only.
+HELD for Jacob: Plumb's balsa deletions (wants his go in its window) · kit bundle + Ward pin + publish:staging · every Promote.
 **▶ 2026-10-27: THE SHORE IS MERGED (eec3ac1b).** Huron's shoreline rebuilt to Jacob's rulings (the coast IS the high-water mark;
 the drawn ground pinned to it; bridges painted over water; islands; the absorbed ink). Jacob looked: "FANTASTICALLY advanced". NEXT, in
 the release order (entry below): kit bundle → Ward pin + publish:staging → re-pour + re-bake each coastal town (Huron, PTown), then the
