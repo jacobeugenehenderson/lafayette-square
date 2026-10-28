@@ -2636,8 +2636,12 @@ createServer(async (req, res) => {
         // ⛔ A REQUIRED INPUT THAT IS MISSING REFUSES THE BAKE, BY NAME (2026-10-28: LS's Bake called 15/15 clean with its grove's
         // atlas absent, because a missing input hashes to null both times and null === null). `requires`: [{ path, why }]. Only the
         // inputs a step cannot run without: an optional one (the coast's water datums, inland) stays an ordinary input.
+        // ⭐ In the PLAN (GET …/bake: Stage's slab age, the stale bar, Publish's staleness) it is a named BLOCKER entry, never a
+        // throw: a town whose grove is not baked still gets its list (Zob's read, 2026-10-28). Only a RUN refuses.
         const absent = requires.filter(r => !existsSync(r.path))
-        if (absent.length) throw new Error(`[bake] ⛔ ${label}: ${absent.map(r => `${r.why} (${r.path.replace(REPO_ROOT + '/', '')} is missing)`).join(' · ')}`)
+        if (absent.length) { const why = absent.map(r => `${r.why} (${r.path.replace(REPO_ROOT + '/', '')} is missing)`)
+          if (P.plan) { P.plan.stale.push({ step: label, blocker: true, why }); return }
+          throw new Error(`[bake] ⛔ ${label}: ${why.join(' · ')}`) }
         if (judge === 'mtime') {
           if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
