@@ -39,6 +39,10 @@ changes (the street-class vocabulary), a committed town's skeleton goes stale, t
 ("skeleton chain saint-ange-lane carries no class — re-pour the skeleton"). LS re-skeletoned by hand with commit-extent's own command
 (Boz, Jacob's go; backup .claude/backups/reskeleton-ls-2026-10-28/; chains 321 → 330, all 27 authored ids same name, ends within 0.5 m).
 FIX OWED: the Bake's dirty detector covers the skeleton step, and the route re-skeletons when it's stale.
+**Pre-existing (Plumb, runtime, 2026-10-28):** claims-a-shot-change-flies fails identically on base and branch on HPDM: "onFramed did not
+disclose the frame of the 6 lit places … placed 5 of 5". Cause not established. **Stage's Bake gave Jacob NO question dialog** on a 428
+(repourConfirm set; the dialog drew in a fresh tab but not in his, even after a hard reload). Cause not established; a button that answers
+silently is a defect.
 **⛔ A BUILDING A CLICK CAN'T HIT HAS NO WAY IN** (the click is now the only sign of life; Zob, 2026-10-27). Pre-existing on base,
 causes not established, one row each: (1) HPDM msbf-3378's drawn wall misses (hero, browse) · (2) PTown msbf-2462 misses (hero, wall, roof,
 hero≠browse) · (3) LS Stage never draws under claims-a-click-hits-what-is-drawn / claims-neon-picks-its-building (no backend in that run) ·
