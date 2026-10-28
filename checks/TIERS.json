@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 488,
+  "total": 489,
   "counts": {
-    "safe": 347,
+    "safe": 348,
     "local-effect": 29,
     "live": 112
   },
@@ -760,6 +760,15 @@
         "computed import of src/lib/categoryColor.js — read, safe",
         "computed import of src/lib/colourMath.js — read, safe",
         "computed import of src/tokens/playerChrome.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-survey-street-reaches-its-measure.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of cartograph/serve.js (its span: mapDataPaths) — read, safe",
+        "importSource of cartograph/serve.js (its span:   const EMPTY = { →   // Reserved top-level prefixes) — read, safe",
+        "importSource of src/cartograph/sceneStreets.js — read, safe"
       ]
     },
     {

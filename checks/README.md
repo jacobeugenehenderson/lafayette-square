@@ -176,7 +176,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 347. This is `npm test`.
+## safe — 348. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -230,6 +230,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs` | ⭐⭐ THE INVARIANT: bake-revetment may report "this town has no coast" only when the SLAB |
 | `checks/claims-a-state-gives-its-towns-their-wells.mjs` | ⭐⭐ THE INVARIANT (Jacob, 2026-10-05 — "yes, go", "Plus MO"): a town takes its parcel and address-point wells, |
 | `checks/claims-a-suggested-palette-passes.mjs` | DOES WHAT STAGE SUGGESTS FROM A MARK CLEAR THE PLAYER'S RULES? |
+| `checks/claims-a-survey-street-reaches-its-measure.mjs` | DOES THE STREET THE DESIGNER HOLDS REACH `chainMeasure` WITH ITS TOWN'S |
 | `checks/claims-a-swap-never-happens-mid-street.mjs` | ⭐⭐⭐ JACOB'S RULE, MADE CHECKABLE: "A treelawn swap NEVER happens mid-leg, period. It's |
 | `checks/claims-a-tile-is-one-tree.mjs` | A TILE IS ONE TREE. |
 | `checks/claims-a-town-chooses-its-lamp.mjs` | the lamp post is the town's AUTHORED choice, never its name. |

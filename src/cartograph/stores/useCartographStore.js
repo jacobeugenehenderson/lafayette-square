@@ -9,6 +9,7 @@ import {
   saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
 import { setSceneMeasureSource, chainMeasure, noMeasureFor } from '../measureModel.js'
+import { mergeSceneStreet } from '../sceneStreets.js'
 import { resolveCurbWidth } from '../streetProfiles.js'
 import { readAddress, resolveTown, lookForScene, isValidMapId, ADDRESS_STORAGE } from '../../lib/authoringAddress.js'
 import { feCustomKey } from '../../lib/feCustomKey.js'
@@ -2106,6 +2107,7 @@ const useCartographStore = create((set, get) => ({
   // or is refused by boundaryRecords.mjs#discOf is named here ('<scene>: …') and the Designer shows it IN PLACE OF THE MAP. It
   // used to render an empty Designer silently (absent) or throw inside MapLayers' memo (malformed).
   boundaryRefused: null,
+  ribbonsRefused: null,   // a town whose ribbons could not be read: said in place of the map (CartographApp), never built empty
   // ⛔ THE ONE SCENE SWITCH. It cleared three keys and loaded nothing, so a caller that switched scene without
   // also switching Look and reloading (Extent's openScene) left the old town's streets on screen AND its Look
   // active — the next Designer edit autosaved into the other town's design.json (2026-09-25). Now: every key a
@@ -2121,7 +2123,7 @@ const useCartographStore = create((set, get) => ({
     if (activeLookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ } }
     set({
       scene, activeLookId, lookMissingForScene: s._looksHydrated && !activeLookId ? scene : null,
-      sceneRibbons: null, mapGeography: null, sceneBoundary: undefined, boundaryRefused: null,
+      sceneRibbons: null, mapGeography: null, sceneBoundary: undefined, boundaryRefused: null, ribbonsRefused: null,
       centerlineData: { streets: [] }, protopolygon: null, svOriginals: null, corridorByIdx: new Map(),
       measurements: [], markerStrokes: [], status: '',
       selectedStreet: null, selectedNode: null, selectedMeasurePoint: null, selectedSegmentOrdinal: null, selectedMeasurement: null,
@@ -2344,13 +2346,18 @@ const useCartographStore = create((set, get) => ({
       // per-scene, so the kit reads them uniformly.
       let fetchedRibbons = get().sceneRibbons
       if (!fetchedRibbons) {
-        fetchedRibbons = await fetchRibbons(scene).catch(() => null)
+        let why = null
+        fetchedRibbons = await fetchRibbons(scene).catch((e) => { why = e?.message || String(e); return null })
         if (stale()) return
-        if (fetchedRibbons) set({ sceneRibbons: fetchedRibbons })
+        // ⛔ NO EMPTY TOWN: ribbons that cannot be read are SAID, in place of the map (Boz, 2026-10-28) — never a street list
+        // with no widths, which is what crashed LS's Survey (chainMeasure: "carries no class") when the server served [] for them
+        if (!fetchedRibbons) { const refused = `${scene}: its ribbons could not be read (${why}). Pour the town, or check its declared pour.ribbons.`
+          console.error(`[ribbons] ⛔ ${refused}`); set({ ribbonsRefused: refused }); return }
+        set({ sceneRibbons: fetchedRibbons, ribbonsRefused: null })
       }
       if (!get().mapGeography || !get().sceneBoundary) {
         const [geo, bnd] = await Promise.all([
-          fetchGeography(scene).catch(() => null),
+          fetchGeography(scene).catch((e) => { console.error(`[geography] ⛔ ${scene}: ${e?.message || e} — the aerial and projection have no frame`); return null }),
           fetchBoundary(scene).catch((e) => ({ __fetchFailed: e?.message || String(e) })),
         ])
         if (stale()) return
@@ -2389,7 +2396,7 @@ const useCartographStore = create((set, get) => ({
       // must read the SAME ribbons the scene renders — a scene-blind LS lookup
       // leaves every other town's chain with `undefined` measure → MeasureOverlay
       // renders no handles. Mirror CartographApp's sceneCfg.ribbons keying.
-      const ribbonsFixture = fetchedRibbons || { streets: [] }
+      const ribbonsFixture = fetchedRibbons   // never absent here: unreadable ribbons were refused above
       // ⭐ Register THIS scene's fixture as the Measure seed source. Was a static
       // LS import inside measureModel (BRIEF-ls-bleed-excision site 9) — every
       // scene seeded its widths from Lafayette Square, keyed by street name.
@@ -2399,106 +2406,7 @@ const useCartographStore = create((set, get) => ({
         const ov = overlayById[s.id]
         const legacy = ov ? null : byName.get(s.name)
         const rb = ribbonById.get(s.id)
-        // derive.js OWNS divided-carriageway geometry — it auto-detects
-        // anchor/innerSign/pairId AND computes the 3a per-side widths, all
-        // forwarded via ribbons.json. The pre-divided legacy centerlines.json
-        // has ONE undivided by-name entry per road (e.g. "South Jefferson
-        // Avenue" 9.16/7.72, "Lafayette Avenue" 10.56) that, matched by NAME,
-        // would stamp the WHOLE-ROAD width onto each carriageway → carriageways
-        // overrun the median gap → the malformed/annihilated median that loads
-        // on refresh and only clears via revert-to-skeleton (it bypasses legacy).
-        // So for a divided carriageway the ribbons baseline WINS over legacy.
-        const isDividedCarriageway = /carriageway/.test(rb?.phase?.role || '')
-        const legacyMeasure = isDividedCarriageway ? undefined : legacy?.measure
-        const legacySegMeasures = isDividedCarriageway ? undefined : legacy?.segmentMeasures
-        // Prefer ribbons.json's points + intersections over skeleton's.
-        // derive.js INSERTS extra vertices at every detected IX, so a
-        // chain that has 21 points in skeleton can have 34 in ribbons.json
-        // (the IX-vertex insertions split each segment). MeasureOverlay
-        // reads centerlineData; V2 reads ribbons.json. If centerlineData
-        // uses skeleton's 21-point polyline, segI / natural-segment math
-        // diverges from V2's 34-point math — drag a handle and the
-        // override lands on the wrong segment. Use ribbons.json's points
-        // when available so both consumers walk the same polyline.
-        const rbPoints = rb?.points
-        const points = (rbPoints && rbPoints.length >= 2)
-          ? rbPoints.map(p => Array.isArray(p) ? [p[0], p[1]] : [p.x, p.z])
-          : (s.points || []).map(p => [p.x, p.z])
-        const rbIntersections = rb?.intersections
-        return {
-          id: s.id,
-          name: s.name,
-          type: s.highway || 'residential',
-          oneway: !!s.oneway,
-          points,
-          // [curve-primitive] sparse, self-contained curve segments (HANDOFF-curve-
-          // primitive-skeleton.md). `points` above is their DENSE tessellation (smooth
-          // navy + ix parity); `segments` is the sparse companion the editor draws as
-          // "few nodes (≈2 with tangents)". Undefined on straight chains → legacy node
-          // display off `points`.
-          segments: rb?.segments,
-          divided: !!s.divided,
-          // IX vertex indices on this chain. Indices reference `points`
-          // above — must come from the SAME source the points came from
-          // (ribbons.json's intersections.ix index into ribbons' point
-          // array). Falling back to skeleton's intersections only if we
-          // had to fall back to skeleton's points too.
-          intersections: rbPoints && rbPoints.length >= 2 && Array.isArray(rbIntersections)
-            ? rbIntersections.map(ix => ({ ix: ix.ix, withStreets: ix.withStreets }))
-            : (Array.isArray(s.intersections)
-              ? s.intersections.map(ix => ({ ix: ix.ix, withStreets: ix.withStreets }))
-              : []),
-          // Operator can hide individual chains (echo hunting, suppress OSM
-          // junk centerlines). Hidden chains still appear in Measure (dim,
-          // re-selectable) so you can toggle them back on.
-          disabled: !!ov?.disabled,
-          // Measure resolution: operator overlay > legacy centerlines.json >
-          // derive.js's ribbons.json baseline. The third tier was missing,
-          // so chains the operator hadn't touched ended up with `undefined`
-          // measure on the live store — MeasureOverlay's sideBoundaries
-          // returns [] for an undefined side and renders no handles, even
-          // though the chain became selectable + translucent. V2 already
-          // does this fallback inside mergeLiveRibbons; this keeps the
-          // live store's per-chain measure consistent with what V2 sees.
-          measure: ov?.measure ?? legacyMeasure ?? rb?.measure,
-          // [E1] Provenance for the save guard: only persist a measure that
-          // the operator actually owns (came from overlay) or that diverges
-          // from the baked baseline. Without this, every chain loads a truthy
-          // measure (rb?.measure) and _saveOverlay re-broadcasts the BASELINE
-          // into overlay.json wholesale — the shadow that buried the
-          // survey/seed width base (all 220 LS chains had overlay measures).
-          _measureFromOverlay: !!ov?.measure,
-          _baselineMeasure: rb?.measure,
-          segmentMeasures: ov?.segmentMeasures ?? legacySegMeasures,
-          // Effective cap = overlay (operator) > legacy (centerlines.json) >
-          // ribbons.json (what derive.js actually rendered). The fallback
-          // chain keeps the Survey dropdown in sync with the viewer when an
-          // overlay/legacy entry is missing or stripped of caps. `null` from
-          // an overlay or legacy entry is an explicit "no cap" and wins over
-          // any underlying ribbons.json default — only `undefined` falls
-          // through.
-          capStart: ov && 'capStart' in ov ? ov.capStart
-            : legacy && 'capStart' in legacy ? legacy.capStart
-            : rb?.capEnds?.start ?? null,
-          capEnd: ov && 'capEnd' in ov ? ov.capEnd
-            : legacy && 'capEnd' in legacy ? legacy.capEnd
-            : rb?.capEnds?.end ?? null,
-          // Baseline = ribbons.json default. Save logic uses this to detect
-          // operator overrides to null (suppressing an auto cap).
-          _baselineCapStart: rb?.capEnds?.start ?? null,
-          _baselineCapEnd: rb?.capEnds?.end ?? null,
-          couplers: ov?.couplers ?? s.couplers ?? [],
-          smooth: ov?.smooth ?? 0,
-          // Anchor: operator override wins; otherwise auto-detected from
-          // derive's divided-pair pass. innerSign and pairId always come
-          // from auto-detection (geometric, not operator intent).
-          anchor: ov?.anchor ?? rb?.anchor ?? 'center',
-          _autoAnchor: rb?.anchor ?? 'center',
-          innerSign: rb?.innerSign ?? 0,
-          pairId: rb?.pairId ?? null,
-          _skeleton: s,
-          _legacyMatched: !!legacy,
-        }
+        return mergeSceneStreet(s, ov, legacy, rb)
       })
 
       const matchedNames = new Set(streets.filter(s => s._legacyMatched).map(s => s.name))
