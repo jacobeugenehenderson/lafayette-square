@@ -14,6 +14,11 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**⛔ LS'S RAMPS: THE INK CUTS CHORDS ACROSS THE CURVES (Jacob's Survey screenshot, 2026-10-28; cause not established).** At the
+interchange south of Chouteau, the drawn ramps (thick, off-grade) follow smooth curves while the thin navy ① line beside them runs as STRAIGHT
+CHORDS between distant anchors, two lines for one ramp. The ramp ribbons also step abruptly in width. Inferred lead, unread: mintInputs
+tessellates `streets` (tessellateAdaptive) but the grade-separated chains (`gradeSep`) may be inked from raw anchors. Jacob: "a whole
+different issue". Read owed (Zob), by symbol: which path inks gradeSep chains, and where the width step comes from.
 **⛔ EXTENT OVERWROTE A COMMITTED RADIUS IN THE PAGE (2026-10-28, LS: draft 1689 m vs applied 892, Jacob untouched; Zob by symbol).**
 (1) A SILENT FALLBACK on load: api.js#fetchNeighborhood returns {} on !res.ok and the hydration catches to null, yet marks the scene
 hydrated, arming the draft autosave with whatever radius stands. (2) The radius auto-seed (keptFit + 120) checks neither `committed` nor
