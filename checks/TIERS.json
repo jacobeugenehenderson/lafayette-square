@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 492,
+  "total": 493,
   "counts": {
     "safe": 349,
     "local-effect": 29,
-    "live": 114
+    "live": 115
   },
   "checks": [
     {
@@ -247,6 +247,15 @@
       "reasonClass": "outbound",
       "why": [
         "imports cartograph/fetch-dem.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch()"
+      ]
+    },
+    {
+      "file": "checks/claims-a-dike-is-one-line-with-the-coast.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {

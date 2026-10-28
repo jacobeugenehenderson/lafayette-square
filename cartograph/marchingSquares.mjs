@@ -7,16 +7,17 @@
  * ⛔ A SENTINEL IS NOT A VALUE (Zob, 2026-10-26: Huron's 22 coast touches were crossings interpolated against bake-coast's
  * −Number.EPSILON). A node with no height carries a KIND, never a stored stand-in: DECK (wet; the crossing is exactly where
  * the edge meets the deck's ring, `deckCross`, which is the deck node itself only where it lies ON the ring; else REFUSED),
- * NO_RETURN (wet, in coverage, no value) and
+ * HELD (DRY: an embankment held as land, r-the-coast-bake-holds-an-embankment-as-land; the crossing is exactly where the edge
+ * meets the embankment's ring, `heldCross`, by the same rule; else REFUSED), NO_RETURN (wet, in coverage, no value) and
  * NO_COVERAGE (dry, no value) and DRY_BY_RULE (dry whatever its height: a hollow the water does not reach): the crossing
  * at the edge's MIDPOINT, the line somewhere on it, its error at most step/2.
  * Two sentinels of one side never cross; only a sentinel edge between wet and dry does.
  * @param f     Float32Array (nx × nz, row-major by z), x0/z0 the first sample's town metres, step metres; NaN at a sentinel
  * @param kind  Uint8Array of the same size (0 = a value, else KIND.*), or null when every node is a value
- * @param tally counts the crossings each sentinel decided ({ deck, deckNodeOnRing, noReturn, noCoverage, dryByRule, pad })
+ * @param tally counts the crossings each sentinel decided ({ deck, deckNodeOnRing, held, heldNodeOnRing, noReturn, noCoverage, dryByRule, pad })
  */
-export const KIND = { VALUE: 0, DECK: 1, NO_RETURN: 2, NO_COVERAGE: 3, DRY_BY_RULE: 4, PAD: 5 }
-export function wetLoops(f, nx, nz, x0, z0, step, { kind = null, deckCross = null, tally = null } = {}) {
+export const KIND = { VALUE: 0, DECK: 1, NO_RETURN: 2, NO_COVERAGE: 3, DRY_BY_RULE: 4, PAD: 5, HELD: 6 }
+export function wetLoops(f, nx, nz, x0, z0, step, { kind = null, deckCross = null, heldCross = null, tally = null } = {}) {
   // ⭐ THE PAD is the tracer's own ring of dry nodes round the window, so every loop closes: a KIND (dry, no value), never a
   // stored height. Its crossings sit at edge midpoints and are counted; a caller that clips to an inner square keeps none.
   const NX = nx + 2, NZ = nz + 2, g = new Float32Array(NX * NZ).fill(NaN), gk = new Uint8Array(NX * NZ).fill(KIND.PAD)
@@ -39,6 +40,11 @@ export function wetLoops(f, nx, nz, x0, z0, step, { kind = null, deckCross = nul
         if (!deckCross) throw new Error('⛔ wetLoops: a DECK node and no deckCross to find its edge')
         if (!c) throw new Error(`⛔ wetLoops: the edge from the deck node (${d.map(v => v.toFixed(3)).join(', ')}) to dry ground meets no deck ring and the node is not on one — a deck node outside its own deck`)
         pt.set(key, c); if (tally) { const on = c[0] === d[0] && c[1] === d[1] ? 'deckNodeOnRing' : 'deck'; tally[on] = (tally[on] || 0) + 1 } }
+      else if (ka === KIND.HELD || kb === KIND.HELD) {
+        const [d, o] = ka === KIND.HELD ? [pa, pb] : [pb, pa], c = heldCross ? heldCross(d, o) : null
+        if (!heldCross) throw new Error('⛔ wetLoops: a HELD node and no heldCross to find its edge')
+        if (!c) throw new Error(`⛔ wetLoops: the edge from the held node (${d.map(v => v.toFixed(3)).join(', ')}) to the water meets no embankment ring and the node is not on one — a held node outside its own embankment`)
+        pt.set(key, c); if (tally) { const on = c[0] === d[0] && c[1] === d[1] ? 'heldNodeOnRing' : 'held'; tally[on] = (tally[on] || 0) + 1 } }
       else { pt.set(key, [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2])
         if (tally) { const which = { [KIND.NO_RETURN]: 'noReturn', [KIND.NO_COVERAGE]: 'noCoverage', [KIND.DRY_BY_RULE]: 'dryByRule' }[ka || kb]; tally[which] = (tally[which] || 0) + 1 } }
     }

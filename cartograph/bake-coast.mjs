@@ -15,13 +15,17 @@
  *   1. THE COARSE SHEET — the lidar over the whole fetched square (geography.mjs#localBB: the frame ① closes against)
  *      on the terrain's grid (TERRAIN_STEP_M, the box mean of level 0: elevationSources.mjs#rasterToGrid). Water = ground
  *      below high water CONNECTED to the square's edge, so a hollow or a diked marsh behind the shore stays dry. A mapped
- *      dike (man_made=dyke · embankment=yes · waterway=dam) holds the water. Where a tile holds no value the lidar had
+ *      dike (man_made=dyke · embankment=* (streetClass.js#isEmbankment) · waterway=dam) holds the water. Where a tile holds no value the lidar had
  *      NO RETURN (it does not return off open water) and the water may enter; outside every tile there is NO COVERAGE
  *      and it may not (Boz's ruling, 2026-10-13).
  *   2. ⭐ THE DECKS ARE NOT GROUND (Jacob, 2026-10-25; structures.mjs). The lidar returns off a pier's deck, so a trace
  *      at high water would draw every pier as land. Every mapped deck (structures.mjs#deckStructures: DECK_KINDS, by tag,
  *      from every bucket; a line at OSM `width`, else f-ufc-main-walkway-width) is read as NO RETURN: the water may
  *      enter it and the coast runs under it. The deck itself is its own off-the-ground object, not this file's.
+ *   2a. ⭐ AN EMBANKMENT STREET IS LAND (Jacob, 2026-10-28, r-the-coast-bake-holds-an-embankment-as-land). Its footprint at the
+ *      pour's measure (structures.mjs#embankmentFootprints) is HELD as land on both sheets, its crossings lie ON its ring, it
+ *      is cut out of the water exactly after the open/close, and its ring's vertices are fixed from there: the coast along a
+ *      dike IS the dike's edge (▶ checks/claims-a-dike-is-one-line-with-the-coast.mjs).
  *   3. THE LINE — along the coarse sheet's wet/dry edge, the lidar is read again at its own finest pixel and the line is
  *      traced by marching squares where lidar − high = 0. Away from the edge the coarse sheet stands.
  *   4. THE WATER — the union, clipped to the square; only bodies that reach the square's edge are kept (the rest are
@@ -56,7 +60,9 @@ import { authoredWater, waterRecord } from './waterDatums.mjs'
 import { waterLevels } from './waterLevel.mjs'
 import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
-import { deckFootprints, openCloseAtStep } from './structures.mjs'
+import { deckFootprints, embankmentFootprints, openCloseAtStep } from './structures.mjs'
+import { tessellateAdaptive } from './derive.js'                       // the mint's own centreline (mintInputs tessellates the same way)
+import { highwayStandard, townState } from '../src/cartograph/streetProfiles.js'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
 import { COAST_FILE, COAST_VERSION, heldCells, ringViolations, ringsMeet, toResolution } from './coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
@@ -232,8 +238,8 @@ const alongSquare = (a, b, R) => ['x0', 'x1'].some(s => Math.abs(a[0] - R[s]) < 
  * A water ring with every shore run simplified and every stretch of the square's edge kept: the ring the arcs are cut
  * from, so ① strokes exactly the edge it excludes (an arc and a ring that differ leave a sliver between ink and water).
  */
-export function simplifyRing(ring, R, eps) {
-  const on = ring.map(p => onSquare(p, R)), first = on.indexOf(true)
+export function simplifyRing(ring, R, eps, fixed = () => false) {
+  const on = ring.map(p => onSquare(p, R) || fixed(p)), first = on.indexOf(true)
   if (first < 0) { const c = simplify([...ring, ring[0]], eps); return c.slice(0, -1) }
   const out = []
   let run = [ring[first]]
@@ -329,9 +335,27 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   const fine = Math.min(...opened.map(o => pixelMetres(o, toLL, disc.cx, disc.cz)))
   if (!(fine > 0 && Number.isFinite(fine))) throw new Error(`⛔ bake-coast: ${scene} — the lidar's pixel size could not be read`)
   const decks = deckFootprints(osm.ground, fine)
+  // ⭐ AN EMBANKMENT IS HELD AS LAND WHILE THE LINE IS TRACED (Jacob, 2026-10-28, `r-the-coast-bake-holds-an-embankment-as-land`):
+  // its footprint at the pour's own measure (structures.mjs#embankmentFootprints, through the one measure rule, pourMeasureOf),
+  // so the coast and the dike are ONE line by construction. Held on the coarse sheet (a barrier), HELD in the fine trace (dry;
+  // the crossing exactly on its ring), cut out of the water exactly after the open/close, and FIXED through simplify, settle
+  // and the edge rule. ⛔ The skeleton is read (an embankment is a STREET's land); a town with none refuses by name.
+  for (const f of ['clean/skeleton.json']) if (!fs.existsSync(join(mapDir, f))) throw new Error(`⛔ bake-coast: ${scene} has no ${f} — an embankment street's land is its pour measure along the skeleton, so the coast cannot be traced without it. ▶ commit the extent (skeleton.js) first`)
+  const overlay = fs.existsSync(join(mapDir, 'clean/overlay.json')) ? (read('clean/overlay.json').streets || {}) : {}
+  let hwy = null
+  const std = () => hwy ??= highwayStandard(JSON.parse(fs.readFileSync(join(CARTOGRAPH_DIR, '..', 'references', 'registry.json'), 'utf8')), townState(osm), new Map())
+  const emb = embankmentFootprints(read('clean/skeleton.json').streets || [], { overlay, std, tessellate: tessellateAdaptive, stepM: fine })
+  if (emb.paths.length && decks.paths.length && areaM2(clip(ClipType.ctIntersection, emb.paths, decks.paths)) > 0)
+    throw new Error(`⛔ bake-coast: ${scene} — an embankment's footprint overlaps a deck (${areaM2(clip(ClipType.ctIntersection, emb.paths, decks.paths)).toFixed(3)} m²): one place both held as land and read as no return. Refusing.`)
+  // ⛔ the coast along a dike IS the footprint's ring, so the ring must pass the coast's own verifier ALONE before it is held (Zob)
+  { const v = emb.rings.flatMap((r, i) => ringViolations(r, acuteAt, 2 * INK_EPS).map(x => ({ ...x, i })))
+    if (v.length) throw new Error(`⛔ bake-coast: ${scene} — an embankment's footprint is not a ring ① can outline (${v.length}: ${v.slice(0, 6).map(x => `${x.kind} @(${x.at.map(c => c.toFixed(3)).join(', ')})`).join(' · ')}); the coast along it would be the same. Refusing.`) }
+  const onRing = (p) => emb.rings.length > 0 && emb.crossing(p, p) !== null      // a vertex ON an embankment's ring (within the lattice)
   const { w, nr, deck, noLidar, noCover, deckCells } = markSheet({ ground, W, H, X, Z, highAt, onDeck: decks.on, covered: (x, z) => inCoverage(opened, ...toLL(x, z)) })
   if (noLidar === W * H) throw new Error(`⛔ bake-coast: ${scene}'s lidar holds NO value anywhere over the fetched square — no coast can be drawn from it`)
   const { held, n: heldN } = heldCells(osm.ground, { W, H, x0: R.x0, z0: R.z0, step: G })
+  let heldByFootprint = 0
+  if (emb.rings.length) for (let k = 0; k < W * H; k++) { const i = k % W, j = (k - i) / W; if (!held[k] && emb.on(X(i), Z(j))) { held[k] = 1; heldByFootprint++ } }
   const wet = floodFromEdge(w, W, H, held, nr)
   // the guard reads the lidar's OWN no-return water: a deck borders its own landward root, which is not the water's rim
   const guard = waterAsFlown(wet, nr.map((v, k) => v && !deck[k] ? 1 : 0), w, W, H)
@@ -376,12 +400,13 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
       const x = R.x0 + (gi0 + i) * fine, z = R.z0 + (gj0 + j) * fine, k = j * nx + i
       samples++
       if (decks.on(x, z)) { f[k] = NaN; kind[k] = KIND.DECK; continue }   // a deck: no return; the line is its ring
+      if (emb.on(x, z)) { f[k] = NaN; kind[k] = KIND.HELD; continue }     // an embankment: held as land; the line is its ring
       const v = sampleSources(win, ...toLL(x, z))
       if (!Number.isFinite(v)) { noValue++; f[k] = NaN; kind[k] = inCoverage(opened, ...toLL(x, z)) ? KIND.NO_RETURN : KIND.NO_COVERAGE }   // no return: water; no coverage: dry
       else f[k] = v - highAt(x, z)                                         // ≤ 0 = below high water
     }
     win.length = 0
-    const loops = wetLoops(f, nx, nz, x0, z0, fine, { kind, deckCross: decks.crossing, tally: crossings })
+    const loops = wetLoops(f, nx, nz, x0, z0, fine, { kind, deckCross: decks.crossing, heldCross: emb.crossing, tally: crossings })
     if (loops.length) for (const q of clip(ClipType.ctIntersection, clip(ClipType.ctUnion, loops.map(toPath), null, PolyFillType.pftEvenOdd), inTile)) fineParts.push(q)
   }
   const square = [toPath([[R.x0, R.z0], [R.x1, R.z0], [R.x1, R.z1], [R.x0, R.z1]])]
@@ -390,9 +415,17 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // step, by the decks' own rule (structures.mjs#openCloseAtStep), before simplify and settle. A coast feature narrower than a
   // cell is not something the lidar resolved (PTown: a 6 cm × 2.6 m spike traced at a 0.999 m step, which ① minted as a 1.3°
   // needle that ② could not stamp). What it moves is counted and named (coast.json waterOpened / waterClosed / waterBelowResolution).
-  const oc = openCloseAtStep(traced, fine, 'the traced water')
+  const oc = openCloseAtStep(traced, fine, 'the traced water', { cutOnce: false })   // ⛔ the named debt: structures.mjs#openCloseAtStep
   const sumM2 = (xs) => +xs.reduce((t, c) => t + c.m2, 0).toFixed(3)
-  const water = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, oc.paths, null), square)
+  const opened2 = clip(ClipType.ctIntersection, clip(ClipType.ctUnion, oc.paths, null), square)
+  // the embankments cut out EXACTLY after the open/close, so where the water meets one its edge IS the ring, corners included
+  // (the trace's crossings lie on the ring, its chords between them need not); from here the ring's vertices are fixed
+  const water0 = emb.paths.length ? clip(ClipType.ctDifference, opened2, emb.paths) : opened2
+  // ⭐ ALONG A HELD RING THE COAST IS THE RING (Boz's ruling (A), 2026-10-28): between the first and last crossing of each contact
+  // run the water's boundary is the embankment's own ring; the trace's interior crossings and its excursions are not the coast
+  const along = emb.rings.length ? runsAlongHeld(water0.map(fromPath), emb.rings, fine) : null
+  const water = along ? along.rings.map(toPath) : water0
+  const heldCutM2 = emb.paths.length ? areaM2(opened2) - areaM2(water0) : 0
   const minM2 = (2 * fine) ** 2
   const { bodies, hollows } = bodiesAtEdge(water, R, minM2)
   // ⭐ AN ISLAND IS KEPT IFF IT HOLDS A TERRAIN NODE (Jacob 2026-10-26, "build islands with the floor"; Boz's ruling, "the
@@ -421,10 +454,10 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
 
   // ── THE ARCS: the shoreline ① strokes, cut from the rings simplified below half the source's pixel ───────────────
   const r3 = (r) => r.map(p => [+p[0].toFixed(3), +p[1].toFixed(3)])
-  const simple = bodies.map(bd => ({ outer: simplifyRing(bd.outer, R, fine / 2), holes: bd.holes.map(h => simplifyRing(h, R, fine / 2)) }))
+  const simple = bodies.map(bd => ({ outer: simplifyRing(bd.outer, R, fine / 2, onRing), holes: bd.holes.map(h => simplifyRing(h, R, fine / 2, onRing)) }))
   // ⭐ ON THE SOURCE, NOT ON THE TRACE: each kept vertex is bisected along its normal on the real sampler, within one
   // trace step (the trace interpolates between samples laid in TOWN metres, which is not the raster's grid).
-  const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, highAt, decks.on, wallsOf([...oc.openedPieces.features, ...oc.closedPieces.features]))
+  const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, highAt, (x, z) => decks.on(x, z) || emb.on(x, z), wallsOf([...oc.openedPieces.features, ...oc.closedPieces.features]))
   for (const bd of simple) { bd.outer = r3(wound(bd.outer, 1)); bd.holes = bd.holes.map(h => r3(wound(h, -1))) }
   // ⭐ NO EDGE FINER THAN THE TRACE, AT SETTLE'S EXIT (ORIENTATION §5, "a source is drawn to its own resolution"; Boz's ruling,
   // 2026-10-27): settle moves vertices by up to a step, and nothing after it asked what its moves left. PTown v3: a 7.6 cm edge at
@@ -433,7 +466,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // left by settle) and the decks are NOT this rule: BACKLOG.
   // ⛔ the clearance is the mint's ink width (2·INK_EPS): two parts of the coast closer than the ink can only be one stroke in ①
   const inkW = 2 * INK_EPS
-  { const all = simple.flatMap(bd => [bd.outer, ...bd.holes]), res = toResolution(all, fine, { fixed: (p) => onSquare(p, R), acuteAt, clear: inkW })
+  { const all = simple.flatMap(bd => [bd.outer, ...bd.holes]), res = toResolution(all, fine, { fixed: (p) => onSquare(p, R) || onRing(p), acuteAt, clear: inkW })
     let i = 0; for (const bd of simple) { bd.outer = res.rings[i++]; bd.holes = bd.holes.map(() => res.rings[i++]) }
     edgesBelowResolution = { removed: res.removed.length, m2: +res.removed.reduce((t, q) => t + q.m2, 0).toFixed(3),
       largest: res.removed.slice().sort((a, b) => b.devM - a.devM).slice(0, 8).map(q => ({ at: q.at, edgeM: +q.edgeM.toFixed(4), movedM: +q.devM.toFixed(4) })),
@@ -461,6 +494,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     flattened,
     water: simple,
     arcs, islands, islandFloor: { rule: 'holds a terrain node', lattice: { bounds: lat.bounds, width: lat.width, height: lat.height } }, islandsDropped,
+    embankments: { held: emb.embankments, coarseCells: heldByFootprint, cutM2: +heldCutM2.toFixed(3), contactRuns: along?.runs ?? 0, crossingsDropped: along?.dropped ?? 0, excursionsDropped: along?.excursions ?? 0 },
     decks: { ...decks.count, footprintHa: +(decks.m2 / 1e4).toFixed(3), offOsmWaterHa: +(deckOffOsmM2 / 1e4).toFixed(3), cells: deckCells },
     verify: { osmWaterHa: +(osmM2 / 1e4).toFixed(2), lidarWetShareOfOsm: +share.toFixed(4), lidarWetWithoutOsmHa: +(lidarOnlyM2 / 1e4).toFixed(2) },
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
@@ -490,6 +524,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     console.log(`  WATER OPENED at the trace step: ${O.features.length} feature(s), ${sumM2(O.features)} m² narrower than one cell${O.features.length ? `, largest ${f(O.features)}` : ''} · ${O.slivers.n} rounding sliver(s), ${O.slivers.m2} m²`)
     console.log(`  WATER CLOSED at the trace step: ${C.features.length} gap(s), ${sumM2(C.features)} m² under one cell filled${C.features.length ? `, largest ${f(C.features)}` : ''} · ${C.slivers.n} rounding sliver(s), ${C.slivers.m2} m²`)
     if (oc.belowResolution.length) console.log(`  WATER BELOW RESOLUTION: ${oc.belowResolution.length} body(ies) narrower than one cell everywhere, not drawn: ${f(oc.belowResolution)}`) }
+  if (emb.embankments.length) console.log(`  EMBANKMENTS HELD AS LAND: ${emb.embankments.map(e => `${e.street} (ways ${e.ways.join(', ')}) ${+(2 * e.outerM).toFixed(3)} m wide at the pour's measure, ${e.m2} m²`).join(' · ')} · ${heldByFootprint} coarse cell(s) held · ${(+heldCutM2).toFixed(3)} m² of traced water cut out exactly · along the ring: ${along?.runs ?? 0} contact run(s), ${along?.dropped ?? 0} interior crossing(s) and ${along?.excursions ?? 0} excursion(s) not the coast`)
   if (decks.opened.length) console.log(`  DECKS OPENED at the trace step: ${decks.opened.length} footprint(s) lost ${decks.openedM2} m² narrower than one cell`)
   if (decks.belowResolution.length) console.log(`  DECKS BELOW RESOLUTION: ${decks.belowResolution.length} deck(s) narrower than one trace cell everywhere, not drawn as decks: ${decks.belowResolution.slice(0, 8).map(b => `${b.m2} m² @(${b.at.map(Math.round).join(', ')})`).join(' · ')}${decks.belowResolution.length > 8 ? ` … +${decks.belowResolution.length - 8}` : ''}`)
   if (decks.closed.length) console.log(`  DECKS CLOSED at the trace step: ${decks.closed.length} footprint(s) gained ${decks.closedM2} m² where their parts left a gap under one cell: ${decks.closed.slice(0, 8).map(c => `${c.m2} m² @(${c.at.map(Math.round).join(', ')})`).join(' · ')}`)
@@ -498,6 +533,63 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (settled.sweepClamped.length) console.log(`  SWEEP-CLAMPED: ${settled.sweepClamped.length} settle move(s) cut short so no edge sweeps over a vertex: ${settled.sweepClamped.slice(0, 8).map(c => `${c.wantM}→${c.gotM} m @(${c.at.map(Math.round).join(', ')})`).join(' · ')}${settled.sweepClamped.length > 8 ? ` … +${settled.sweepClamped.length - 8}` : ''}`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
   return out
+}
+
+/**
+ * ⭐ ALONG A HELD RING THE COAST IS THE RING (Boz's ruling (A), 2026-10-28; Jacob's r-the-coast-bake-holds-an-embankment-as-land: the
+ * held land IS land). The trace crosses a held ring wherever a sample edge does, so where wet samples lie within millimetres of
+ * it the line touches the ring at crossings millimetres apart with excursions between (PTown's Breakwater: 27 verifier refusals,
+ * vertices 2–4 mm apart, every one ON the ring). A CONTACT RUN is a stretch of a water ring that touches one held ring at
+ * consecutive vertices ON it (exactly, the lattice's own unit), joined across each excursion between two of them that strays no
+ * farther from the ring than the trace's own step (`stepM`: the resolution the line is drawn to, never a new number). Between
+ * the run's first and last crossing the boundary is replaced by the held ring's own path (its vertices; the shorter way round).
+ * ⛔ A ring wholly on a held ring, or a run whose ends lie on two held rings, refuses by name.
+ * @param rings water rings, metres; @param held the embankments' rings, metres → { rings, runs, dropped, excursions }
+ */
+export function runsAlongHeld(rings, held, stepM) {
+  const lat = 1 / SCALE
+  const segD = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0; return [Math.hypot(v[0] - a[0] - t * dx, v[1] - a[1] - t * dz), t] }
+  // where p lies on a held ring: { h, e, t, s } (ring, edge, fraction, arc length from vertex 0), or null
+  const arcs = held.map(r => { const S = [0]; for (let i = 0; i < r.length; i++) S.push(S[i] + Math.hypot(r[(i + 1) % r.length][0] - r[i][0], r[(i + 1) % r.length][1] - r[i][1])); return S })
+  const on = (p) => { let best = null; held.forEach((r, h) => r.forEach((a, e) => { const b = r[(e + 1) % r.length], [d, t] = segD(p, a, b)
+    if (d <= lat && (!best || d < best.d)) best = { h, e, t, d, s: arcs[h][e] + t * (arcs[h][e + 1] - arcs[h][e]) } })); return best }
+  const near = (p, h) => { const r = held[h]; let m = Infinity; for (let e = 0; e < r.length; e++) m = Math.min(m, segD(p, r[e], r[(e + 1) % r.length])[0]); return m }
+  // the arc position of the nearest point of held ring h to p
+  const sOf = (p, h) => { const r = held[h]; let best = null; for (let e = 0; e < r.length; e++) { const [d, t] = segD(p, r[e], r[(e + 1) % r.length]); if (!best || d < best.d) best = { d, s: arcs[h][e] + t * (arcs[h][e + 1] - arcs[h][e]) } } return best.s }
+  // the held ring's own path from position A to position B, the way that passes `via` (an arc position the run lies along)
+  const path = (A, B, via) => { const r = held[A.h], L = arcs[A.h][r.length], md = (x) => ((x % L) + L) % L
+    const fwd = md(B.s - A.s) > 0 && md(via - A.s) <= md(B.s - A.s), out = []
+    const span = fwd ? md(B.s - A.s) : md(A.s - B.s)
+    for (let k = 0; k < r.length; k++) { const v = fwd ? (A.e + 1 + k) % r.length : ((A.e - k) % r.length + r.length) % r.length
+      const dv = fwd ? md(arcs[A.h][v] - A.s) : md(A.s - arcs[A.h][v]); if (dv > 0 && dv < span) out.push(r[v]); else if (dv >= span) break }
+    return out }
+  let runs = 0, dropped = 0, excursions = 0
+  const out = rings.map((W, wi) => {
+    const n = W.length, pos = W.map(on), idx = pos.map((q, i) => q ? i : -1).filter(i => i >= 0)
+    if (!idx.length) return W
+    if (idx.length === n) throw new Error(`⛔ bake-coast: a water ring (${wi}) lies wholly on an embankment's ring — water inside the held land. Refusing.`)
+    // consecutive on-ring vertices (cyclic) joined when what lies between strays no farther than one step from that ring
+    const joined = idx.map((i, k) => { const j = idx[(k + 1) % idx.length]; if (pos[i].h !== pos[j].h) return false
+      for (let m = (i + 1) % n; m !== j; m = (m + 1) % n) if (!(near(W[m], pos[i].h) <= stepM)) return false
+      return true })
+    if (joined.every(Boolean)) { runs++   // the ring hugs one held ring all the way round: it IS that ring (a dike standing in the water)
+      for (let i = 0; i < n; i++) if (pos[i]) dropped++; else excursions++
+      const r = held[pos[idx[0]].h], sa = Math.sign(signedArea(W)); return Math.sign(signedArea(r)) === sa ? r.slice() : [...r].reverse() }
+    const keep = new Array(n).fill(true), repl = new Map(), K = idx.length
+    const k0 = joined.findIndex((x, k) => !joined[(k - 1 + K) % K] && x)
+    for (let c = 0, k = k0; k0 >= 0 && c < K; ) { if (!joined[k]) { k = (k + 1) % K; c++; continue }
+      let e = k, len = 0; while (joined[e] && len < K) { e = (e + 1) % K; len++ }
+      const s0 = idx[k], s1 = idx[e], mids = []
+      for (let m = (s0 + 1) % n; m !== s1; m = (m + 1) % n) mids.push(m)
+      const viaP = mids.length ? W[mids[mids.length >> 1]] : [(W[s0][0] + W[s1][0]) / 2, (W[s0][1] + W[s1][1]) / 2]
+      runs++
+      for (const m of mids) { keep[m] = false; if (pos[m]) dropped++; else excursions++ }
+      repl.set(s0, path(pos[s0], pos[s1], sOf(viaP, pos[s0].h)))
+      c += len; k = e }
+    const res = []
+    for (let i = 0; i < n; i++) { if (!keep[i]) continue; res.push(W[i]); if (repl.has(i)) res.push(...repl.get(i)) }
+    return res })
+  return { rings: out, runs, dropped, excursions }
 }
 
 /**

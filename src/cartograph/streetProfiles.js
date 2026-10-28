@@ -319,6 +319,34 @@ export function defaultMeasure(cls, survey, opts = {}) {
 // This builder turns the seed into the render measure shape. The operator's
 // overlay still wins upstream (overlay = tweaks only); this is what a chain
 // renders when untouched.
+/**
+ * ⭐ THE POUR'S MEASURE OF ONE CHAIN, the one rule (Boz's ruling, 2026-10-28: derive and the coast bake both call it, so a
+ * street's width has one method). The operator's overlay measure wins (overlay = tweaks only), except on a swept class, where
+ * it is REFUSED (`r-highway-no-authoring`: kept in the file, never applied); a swept class is its typical section
+ * (highwaySection, H-3); every other chain is its skeleton seed (measureFromSeed). ⛔ A chain with no seed refuses by name.
+ * The seed IS the width base (E1): skeleton.js bakes custom (survey.json) → OSM lanes → AASHTO into it, per side, name-propagated
+ * to every chain (divided carriageways included; their median sides are zeroed by derive's divided-pair pass). The legacy
+ * centerlines.json measure tier was removed (E1): its 11 measured names are carried by overlay.json (migrate-overlay).
+ * Per chain only: derive's divided-pair reassignment (innerEdgeAssign) and the overlay's per-segment `segmentMeasures` come after.
+ * @param chain   a skeleton.json street ({ id, name, class, seed, … })
+ * @param overlay its clean/overlay.json `streets[id]` entry, or null
+ * @param std     () => the highway standard (highwayStandard), called only for a swept class
+ * @returns { measure, authored, refusedOnHighway, hwy } — `hwy` is highwaySection's report for a swept class, else null
+ */
+export function pourMeasureOf(chain, overlay, std) {
+  const swept = isSweptClass(chain.class), ovm = !!(overlay?.measure?.left && overlay?.measure?.right)
+  if (ovm && !swept) return { measure: overlay.measure, authored: true, refusedOnHighway: false, hwy: null }
+  if (swept) {
+    const hs = highwaySection(chain, std())
+    const m = measureFromSeed(chain.seed, chain.class, hs)
+    return { measure: { left: m.left, right: m.right, symmetric: m.symmetric, source: 'highway-section' }, authored: false, refusedOnHighway: ovm, hwy: { id: chain.id, ...hs.report, sources: hs.right.section.sources } }
+  }
+  // ⛔ Every skeleton chain is seeded from its class (`classSection`); a chain without a seed is a skeleton that predates it.
+  if (!chain.seed) throw new Error(`⛔ pourMeasureOf: "${chain.name}" (${chain.id}) has no seed — re-pour the skeleton`)
+  const m = measureFromSeed(chain.seed, chain.class)
+  return { measure: { left: m.left, right: m.right, symmetric: m.symmetric, source: chain.seed.widthSource === 'survey' ? 'seed-survey' : 'seed' }, authored: false, refusedOnHighway: false, hwy: null }
+}
+
 export function measureFromSeed(seed, cls, highway = null) {
   // A highway is its typical section (`highwaySection`), never the seed: a swept class's seed carries no
   // widths. ⛔ No section → throw.

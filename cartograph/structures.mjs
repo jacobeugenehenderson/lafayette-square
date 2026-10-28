@@ -16,6 +16,9 @@ import { join } from 'path'
 import { CARTOGRAPH_DIR } from './config.js'
 import clipperLib from 'clipper-lib'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
+import { NODE_BOUND } from '../src/lib/latticeNode.js'                 // the rounding's own bound: what a sliver is
+import { structureOverWater } from '../src/cartograph/streetClass.js'   // the over-water vocabulary's one home
+import { pourMeasureOf } from '../src/cartograph/streetProfiles.js'      // the pour's measure, the one rule (derive calls it too)
 import { DECK_KINDS } from '../src/cartograph/streetClass.js'   // the deck vocabulary's one home, beside isOffGradeWay
 
 const { Clipper, ClipperOffset, Paths, Path, IntPoint, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -107,47 +110,82 @@ function convexHull(pts) {
 // the line can resolve. Per connected part (its own paths unioned; a part in a part's hole is its own): OPEN, eroded then dilated
 // by half a cell and kept inside the part, so what is narrower than a cell goes; then CLOSE, dilated then eroded by half a cell
 // and kept with what it was, so a gap narrower than a cell is filled. ⛔ Per part, never across two: two parts a metre apart
-// stay two. Counted and named: `opened` and `closed` [{ m2, at }]; a part the open removes ENTIRELY is `belowResolution`
-// [{ m2, at, ring }], never silently lost; `openedPieces` / `closedPieces` name each feature taken or filled, largest first
-// ({ features: [{ m2, lenM: its longer bounding side, at, poly: [outer, …holes] }], slivers: { n, m2 } }); the features' polygons
-// are what bake-coast's settle may not cross (bake-coast.mjs#wallsOf).
+// stay two.
+// ⭐⭐ CUT ONCE (Boz's ruling, 2026-10-28, ORIENTATION's rounding rule): the open and the close only FIND the features; the part
+// that comes out is the SOURCE part minus each feature the open took, plus each feature the close filled. Where they change
+// nothing, the result IS the source's own edge. ⛔ It was the re-offset copy intersected back against the source: the two copies
+// of one edge lay within the rounding of each other and the boolean kept both, a 1 mm staircase (the decks' jogs, PTown 0 → 57
+// edges ≤ 2 mm, Huron 3 → 171; the Breakwater's footprint 20 verifier violations).
+// ⭐ A ROUNDING SLIVER is a piece that lies wholly within the rounding of the boundary: eroded by the lattice's own bound
+// (latticeNode.js#NODE_BOUND, √½ of a step) it leaves NOTHING (Zob, 2026-10-28). It is the rounding, not the source, and is
+// dropped, counted. Anything that survives the erosion is a FEATURE: applied and named. ⛔ No area, no width, no constant (it was
+// a mean width against 2 units, which misjudged a long feature with a thin tail).
+// Counted and named: `opened` and `closed` [{ m2, at }] (the features applied); a part the open removes ENTIRELY is
+// `belowResolution` [{ m2, at, ring }], never silently lost; `openedPieces` / `closedPieces` name each feature taken or filled,
+// largest first ({ features: [{ m2, lenM: its longer bounding side, at, poly: [outer, …holes] }], slivers: { n, m2 } }); the
+// features' polygons are what bake-coast's settle may not cross (bake-coast.mjs#wallsOf).
+// ⛔⛔ A DEBT, NAMED (Boz's ruling, 2026-10-28): TWO BEHAVIOURS OF ONE FUNCTION. `cutOnce: false` is the a115eaab open/close (the
+// re-offset copy intersected back, the mean-width sliver rule), kept for the TRACED WATER only (bake-coast.mjs): cut once, its
+// booleans made touching and crossing rings (Huron, at (-4820.8, -3834.5): a ring through one vertex three times, out of the
+// cut/fill itself), mechanism not established. The traced water keeps the integer open/close until its cut-once crossings are
+// understood or float morphology lands (BACKLOG); then this fork is REMOVED, never left. The footprints (decks, embankments)
+// cut once (the default).
 // Returns the kept paths (not unioned across parts: the caller unions).
 // ▶ checks/claims-a-coast-finer-than-its-trace-is-not-drawn.mjs
-export function openCloseAtStep(paths, stepM, what) {
+/** ⭐ A ROUNDING SLIVER (Zob, 2026-10-28): a piece (clipper paths, outer + holes) that eroded by the lattice's own bound
+ *  (latticeNode.js#NODE_BOUND) leaves nothing: it lies wholly within the rounding of the boundary. */
+export function isRoundingSliver(pp) {
+  const co = new ClipperOffset(), o = new Paths(); co.AddPaths(pp, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -NODE_BOUND)
+  return o.every(q => Clipper.Area(q) <= 0)
+}
+export function openCloseAtStep(paths, stepM, what, { cutOnce = true } = {}) {
   if (!(stepM > 0)) throw new Error(`⛔ structures: openCloseAtStep (${what}) needs the trace's step (got ${stepM})`)
   const parts = new PolyTree(), cu = new Clipper(); cu.AddPaths(paths, PolyType.ptSubject, true)
   if (!cu.Execute(ClipType.ctUnion, parts, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the union of ${what} FAILED`)
   const h = (stepM / 2) * SCALE, kept = new Paths(), closed = [], opened = [], belowResolution = []
   const off = (src, d) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(src, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, d); return o }
-  const both = (a, b) => { const c = new Clipper(), o = new Paths(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true)
-    if (!c.Execute(ClipType.ctIntersection, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the open of ${what} FAILED`); return o }
+  const op = (type, a, b, name) => { const c = new Clipper(), o = new Paths(); c.AddPaths(a, PolyType.ptSubject, true); if (b) c.AddPaths(b, PolyType.ptClip, true)
+    if (!c.Execute(type, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the ${name} of ${what} FAILED`); return o }
   const areaOf = (ps) => ps.reduce((t, q) => t + Clipper.Area(q), 0)
   const place = (ch) => { const c0 = ch.Contour()[0]; return [+(c0.X / SCALE).toFixed(3), +(c0.Y / SCALE).toFixed(3)] }
-  // each connected piece of a − b, { m2, at } (its holes subtracted), largest first: what one feature the open took or the close filled
+  // a piece is the rounding iff eroding it by the lattice's own bound leaves nothing
+  const sliver = (pp, m2, lenM) => cutOnce ? isRoundingSliver(pp)
+    : !(m2 / Math.max(lenM, 1 / SCALE) > 2 / SCALE)             // ⛔ the debt's own rule (a mean width against 2 units): see above
+  // each connected piece of a − b, { m2, lenM, at, poly, paths } (its holes subtracted), split into features and slivers
   const pieces = (a, b) => { const c = new Clipper(), t = new PolyTree(); c.AddPaths(a, PolyType.ptSubject, true); c.AddPaths(b, PolyType.ptClip, true)
     if (!c.Execute(ClipType.ctDifference, t, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) throw new Error(`⛔ structures: the pieces of ${what} FAILED`)
-    const out = [], walk = (n) => { for (const ch of n.Childs()) { const m2 = (Math.abs(Clipper.Area(ch.Contour())) - ch.Childs().reduce((u, hh) => u + Math.abs(Clipper.Area(hh.Contour())), 0)) / SCALE / SCALE
-      const c = ch.Contour(), xs = c.map(q => q.X), ys = c.map(q => q.Y), lenM = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE
-      if (m2 > 0) out.push({ m2: +m2.toFixed(4), lenM: +lenM.toFixed(3), at: place(ch), poly: [ch.Contour(), ...ch.Childs().map(hh => hh.Contour())].map(fromPath) }); for (const hh of ch.Childs()) walk(hh) } }
+    const out = [], walk = (n) => { for (const ch of n.Childs()) { const pp = [ch.Contour(), ...ch.Childs().map(hh => hh.Contour())], m2 = areaOf(pp) / SCALE / SCALE
+      const c0 = ch.Contour(), xs = c0.map(q => q.X), ys = c0.map(q => q.Y), lenM = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / SCALE
+      if (m2 > 0) out.push({ m2: +m2.toFixed(4), lenM: +lenM.toFixed(3), at: place(ch), poly: pp.map(fromPath), paths: pp, sliver: sliver(pp, +m2.toFixed(4), +lenM.toFixed(3)) }); for (const hh of ch.Childs()) walk(hh) } }
     walk(t); return out }
   const openedPieces = [], closedPieces = []
   const closeAll = (node) => { for (const ch of node.Childs()) {
     const part = [ch.Contour(), ...ch.Childs().map(c => c.Contour())], a0 = areaOf(part)
-    const open = both(off(off(part, -h), h), part), a1 = areaOf(open)
+    const open = op(ClipType.ctIntersection, off(off(part, -h), h), part, 'open'), a1 = areaOf(open)
     if (!open.length || a1 <= 0) belowResolution.push({ m2: +(a0 / SCALE / SCALE).toFixed(3), at: place(ch), ring: fromPath(ch.Contour()) })
     else {
-      if (a0 - a1 > 0) opened.push({ m2: +((a0 - a1) / SCALE / SCALE).toFixed(3), at: place(ch) })
-      const k = union([...open, ...off(off(open, h), -h)]), added = areaOf(k) - a1
-      if (added > 0) closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: place(ch) })
-      if (a0 - a1 > 0) openedPieces.push(...pieces(part, open))
-      if (added > 0) closedPieces.push(...pieces(k, open))
+      const closedK = op(ClipType.ctUnion, [...open, ...off(off(open, h), -h)], null, 'close')
+      const taken = pieces(part, open), filled = pieces(closedK, open)
+      let k
+      if (cutOnce) {
+        const tf = taken.filter(p => !p.sliver), ff = filled.filter(p => !p.sliver)
+        // cut once: the source, minus the features the open took, plus the features the close filled
+        k = tf.length ? op(ClipType.ctDifference, part, tf.flatMap(p => p.paths), 'cut') : part
+        if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flatMap(p => p.paths)], null, 'fill')
+        const tm = tf.reduce((t, p) => t + p.m2, 0), fm = ff.reduce((t, p) => t + p.m2, 0)
+        if (tm > 0) opened.push({ m2: +tm.toFixed(3), at: place(ch) })
+        if (fm > 0) closed.push({ m2: +fm.toFixed(3), at: place(ch) })
+      } else {                                                        // ⛔ the debt (above): the a115eaab result, the re-offset copy
+        k = closedK
+        if (a0 - a1 > 0) opened.push({ m2: +((a0 - a1) / SCALE / SCALE).toFixed(3), at: place(ch) })
+        const added = areaOf(k) - a1; if (added > 0) closed.push({ m2: +(added / SCALE / SCALE).toFixed(3), at: place(ch) })
+      }
+      openedPieces.push(...taken); closedPieces.push(...filled)
       for (const q of k) kept.push(q) }
     for (const hole of ch.Childs()) closeAll(hole) } }   // a part inside a part's hole is a part of its own
   closeAll(parts)
-  // ⭐ A FEATURE IS WIDER THAN THE LATTICE'S TWO UNITS (its mean width, m² / length): narrower is the offset's own rounding along an
-  // edge, kept as one count and total per side, never dropped (Boz, 2026-10-27: a total that hides 25k pieces is a silent number)
-  const big = (a, b) => b.m2 - a.m2, wide = (f) => f.m2 / Math.max(f.lenM, 1 / SCALE) > 2 / SCALE
-  const split = (xs) => ({ features: xs.filter(wide).sort(big), slivers: { n: xs.filter(f => !wide(f)).length, m2: +xs.filter(f => !wide(f)).reduce((t, f) => t + f.m2, 0).toFixed(4) } })
+  const big = (a, b) => b.m2 - a.m2, strip = ({ paths: _p, sliver: _s, ...f }) => f
+  const split = (xs) => ({ features: xs.filter(f => !f.sliver).sort(big).map(strip), slivers: { n: xs.filter(f => f.sliver).length, m2: +xs.filter(f => f.sliver).reduce((t, f) => t + f.m2, 0).toFixed(4) } })
   return { paths: kept, opened, closed, belowResolution, openedPieces: split(openedPieces), closedPieces: split(closedPieces) }
 }
 
@@ -194,20 +232,15 @@ export function deckInputs(osmGround) {
   return { inputs, paths: inputs.flat(), count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical } }
 }
 
-export function deckFootprints(osmGround, stepM) {
-  if (!(stepM > 0)) throw new Error(`⛔ structures: deckFootprints needs the trace's step (got ${stepM}) — a deck is closed at the step the lidar is traced at, and there is no other`)
-  const { paths, count } = deckInputs(osmGround)
-  // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): Huron, a pier line with no width beside
-  // its mapped area left a notch 5 m deep and under a cell wide; footprint corners were as sharp as 0.20° (Huron) and 1.13°
-  // (PTown), which the ink cannot outline where a deck's edge is drawn as shore. The one rule, `openCloseAtStep`, below.
-  const { paths: closedPaths, opened, closed, belowResolution } = openCloseAtStep(paths, stepM, 'a deck')
-  const u = union(closedPaths)
+/** A footprint's rings, its point test and its exact edge crossing, off its union `u` (clipper paths): one index for the decks and
+ *  the embankments, so the coast is traced against either the same way. */
+function footprintOf(u) {
   const rings = u.map(fromPath)
   const boxes = rings.map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return [x0, x1, z0, z1] })
-  // nonzero over the union's rings: an outer counts +1, a hole −1, so a point in a deck's courtyard is not on the deck
+  // nonzero over the union's rings: an outer counts +1, a hole −1, so a point in a footprint's courtyard is not on it
   const on = (x, z) => { let wn = 0; for (let k = 0; k < rings.length; k++) { const b = boxes[k]; if (x < b[0] || x > b[1] || z < b[2] || z > b[3]) continue; if (inRing(x, z, rings[k])) wn += Math.sign(signedArea(rings[k])) } return wn !== 0 }
-  // ⭐ WHERE A SEGMENT a→b LEAVES THE DECK (Zob, 2026-10-26): the exact crossing of the deck's own ring nearest a (the deck
-  // end), so a coast traced against a deck lies ON the deck's edge, never a sample's guess at it; a itself when a lies on
+  // ⭐ WHERE A SEGMENT a→b LEAVES THE FOOTPRINT (Zob, 2026-10-26): the exact crossing of its own ring nearest a (the
+  // footprint end), so a coast traced against a deck or an embankment lies ON its edge, never a sample's guess at it; a itself when a lies on
   // the ring (within the clip grid); else null.
   const crossing = (a, b) => { let best = null, bt = Infinity
     const sx0 = Math.min(a[0], b[0]), sx1 = Math.max(a[0], b[0]), sz0 = Math.min(a[1], b[1]), sz1 = Math.max(a[1], b[1])
@@ -219,14 +252,110 @@ export function deckFootprints(osmGround, stepM) {
         const t = ((p[0] - a[0]) * ez - (p[1] - a[1]) * ex) / den, u2 = ((p[0] - a[0]) * dz - (p[1] - a[1]) * dx) / den
         if (t >= 0 && t <= 1 && u2 >= 0 && u2 <= 1 && t < bt) { bt = t; best = [a[0] + t * dx, a[1] + t * dz] } } }
     if (best) return best
-    // ⭐ No proper crossing: a runs along a ring edge (collinear) or sits on the ring itself, so the deck end IS the crossing,
+    // ⭐ No proper crossing: a runs along a ring edge (collinear) or sits on the ring itself, so the footprint end IS the crossing,
     // exact, but only if a lies on the ring within the clip grid. Otherwise null, and the caller refuses: never a guess.
     let dmin = Infinity
     for (let k = 0; k < rings.length; k++) { const bx = boxes[k]; if (a[0] < bx[0] - 1 || a[0] > bx[1] + 1 || a[1] < bx[2] - 1 || a[1] > bx[3] + 1) continue
       const r = rings[k]; for (let m = 0; m < r.length; m++) { const p = r[m], q = r[(m + 1) % r.length], ex = q[0] - p[0], ez = q[1] - p[1], L2 = ex * ex + ez * ez || 1
         const u = Math.max(0, Math.min(1, ((a[0] - p[0]) * ex + (a[1] - p[1]) * ez) / L2)); dmin = Math.min(dmin, Math.hypot(a[0] - p[0] - u * ex, a[1] - p[1] - u * ez)) } }
     return dmin <= 1 / SCALE ? a : null }
+  return { rings, on, crossing }
+}
+
+export function deckFootprints(osmGround, stepM) {
+  if (!(stepM > 0)) throw new Error(`⛔ structures: deckFootprints needs the trace's step (got ${stepM}) — a deck is closed at the step the lidar is traced at, and there is no other`)
+  const { paths, count } = deckInputs(osmGround)
+  // ⭐ EACH DECK IS OPENED, THEN CLOSED, AT THE TRACE'S STEP (Boz's rulings, 2026-10-27): Huron, a pier line with no width beside
+  // its mapped area left a notch 5 m deep and under a cell wide; footprint corners were as sharp as 0.20° (Huron) and 1.13°
+  // (PTown), which the ink cannot outline where a deck's edge is drawn as shore. The one rule, `openCloseAtStep`, below.
+  const { paths: closedPaths, opened, closed, belowResolution } = openCloseAtStep(paths, stepM, 'a deck')
+  const u = union(closedPaths)
+  const { rings, on, crossing } = footprintOf(u)
   return { paths: u, rings, on, crossing, closed, closedM2: +closed.reduce((t, c) => t + c.m2, 0).toFixed(3), opened, openedM2: +opened.reduce((t, c) => t + c.m2, 0).toFixed(3), belowResolution, count, m2: u.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE) }
+}
+
+/**
+ * ⭐ THE COAST BAKE HOLDS AN EMBANKMENT AS LAND (Jacob, 2026-10-28, `r-the-coast-bake-holds-an-embankment-as-land`): a street way
+ * tagged embankment=* (streetClass.js#structureOverWater 'ground') is evidence the land is there, so its footprint is held as
+ * LAND while the high-water line is traced (bake-coast.mjs), and the coast and the dike are one line by construction. ⛔ This
+ * replaces the embankment take-out in the mint (held WIP, never merged). The land is the street's whole section at the POUR's
+ * measure (streetProfiles.js#pourMeasureOf, the rule derive calls), out to its OUTER edge, pavement + treelawn + sidewalk a side
+ * (`r-a-way-tag-decides-before-byCoast`, embankmentExtent), along the mint's own centreline (the skeleton tessellated as
+ * mintInputs tessellates it), butt-ended and cut once (stripOf); never opened or closed (it is at the trace's resolution). The tag SELECTS the class and never
+ * sizes it: ⛔ the `width` tag is not read.
+ * ⛔ Each refuses by name: a run only partly embankment; a chain that is a divided carriageway (derive's pair pass, innerEdgeAssign,
+ * re-assigns its measure after pourMeasureOf, and the coast bake cannot reproduce it); a chain whose overlay carries per-segment
+ * `segmentMeasures` (derive's later pass, likewise); no width; unequal sides (an exact one-sided footprint is not built); a
+ * strip narrower than one trace cell; a side that folds (stripOf).
+ * @param skeletonStreets clean/skeleton.json's streets
+ * @param opt { overlay: clean/overlay.json `streets` (or {}), std: () => the highway standard, tessellate: derive.js#tessellateAdaptive, stepM }
+ * @returns { paths, rings, on, crossing, embankments: [{ street, name, ways, outerM, m2 }] }
+ */
+/**
+ * ⭐ A STRIP CUT ONCE (Boz's ruling, 2026-10-28, ORIENTATION's rounding rule): the polyline `P` widened by `h` a side, butt-ended,
+ * built in FLOATS and rounded to the lattice ONCE. Each side is the polyline's offset; each join is the EXACT intersection of
+ * its two adjacent offset lines, so one join is one vertex by construction. ⛔ It was ClipperOffset's jtMiter, which emits two
+ * vertices 1 u apart at a near-straight join (the Breakwater: −0.09° and −0.38° turns, 6 verifier violations).
+ * ⛔ A FOLD refuses by name: a join whose intersection lies farther along than either adjacent offset segment reaches (the side
+ * would turn back on itself; a sharp bend's miter spike), so no miter limit and no constant. After the one rounding, adjacent
+ * vertices landing on one lattice point are one vertex. → a clipper path, wound positive.
+ */
+function stripOf(P, h, who) {
+  const n = P.length, N = []
+  for (let i = 0; i < n - 1; i++) { const dx = P[i + 1][0] - P[i][0], dz = P[i + 1][1] - P[i][1], L = Math.hypot(dx, dz)
+    if (!(L > 0)) throw new Error(`⛔ structures: ${who}: its centreline repeats a point at (${P[i].map(v => v.toFixed(3)).join(', ')}). Refusing.`)
+    N.push({ n: [-dz / L, dx / L], t: [dx / L, dz / L], L }) }
+  const side = (s) => { const out = [[P[0][0] + s * h * N[0].n[0], P[0][1] + s * h * N[0].n[1]]]
+    for (let k = 1; k < n - 1; k++) { const a = N[k - 1], b = N[k], c = a.n[0] * b.n[0] + a.n[1] * b.n[1]
+      if (!(c > -1 + 1e-12)) throw new Error(`⛔ structures: ${who}: its centreline turns back on itself at (${P[k].map(v => v.toFixed(3)).join(', ')}). Refusing.`)
+      const m = [(a.n[0] + b.n[0]) / (1 + c), (a.n[1] + b.n[1]) / (1 + c)]          // the miter: the exact intersection of the two offset lines
+      const q = [P[k][0] + s * h * m[0], P[k][1] + s * h * m[1]]
+      // how far along each adjacent segment the join lies past its own end: beyond either segment's length, the side folds
+      const along = Math.abs(s * h * (m[0] * a.t[0] + m[1] * a.t[1]))
+      if (along > a.L || along > b.L) throw new Error(`⛔ structures: ${who}: at (${P[k].map(v => v.toFixed(3)).join(', ')}) its ${h} m side would fold (the join reaches ${along.toFixed(3)} m along a ${Math.min(a.L, b.L).toFixed(3)} m segment). Refusing.`)
+      out.push(q) }
+    out.push([P[n - 1][0] + s * h * N[n - 2].n[0], P[n - 1][1] + s * h * N[n - 2].n[1]]); return out }
+  const ring = [...side(1), ...side(-1).reverse()]
+  const p = new Path(); for (const [x, z] of ring) { const q = new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE)), l = p[p.length - 1]; if (!l || l.X !== q.X || l.Y !== q.Y) p.push(q) }
+  if (p.length > 1 && p[0].X === p[p.length - 1].X && p[0].Y === p[p.length - 1].Y) p.pop()
+  if (!Clipper.Orientation(p)) p.reverse()
+  return p
+}
+
+export function embankmentFootprints(skeletonStreets, { overlay, std, tessellate, stepM }) {
+  if (!(stepM > 0)) throw new Error(`⛔ structures: embankmentFootprints needs the trace's step (got ${stepM})`)
+  if (!overlay || typeof tessellate !== 'function' || typeof std !== 'function') throw new Error('⛔ structures: embankmentFootprints needs the overlay (or {}), the highway standard and the mint\'s tessellation')
+  const all = new Paths(), embankments = []
+  for (const st of skeletonStreets || []) {
+    if (!st.name || !st.points || st.points.length < 2) continue          // derive's own filter: a chain it does not pour
+    const ground = (w) => structureOverWater((st.ways || {})[w]) === 'ground'
+    const runs = (st.segmentWays || []).filter(r => r.ways.some(ground))
+    if (!runs.length) continue
+    const who = `street ${st.id} (${st.name}; ways ${[...new Set(runs.flatMap(r => r.ways))].join(', ')})`
+    for (const r of runs) if (!r.ways.every(ground)) throw new Error(`⛔ structures: ${who} is an embankment on only part of a run (${r.from}→${r.to}) — its extent cannot be read. Refusing.`)
+    if (st.phase?.pairKey && /^carriageway-[AB]$/.test(st.phase.role || '')) throw new Error(`⛔ structures: ${who} is an embankment on a divided carriageway — derive's divided-pair pass (innerEdgeAssign) re-assigns its measure after the shared rule, and the coast bake cannot reproduce that pass. Refusing.`)
+    const ov = overlay[st.id] || null
+    if (ov?.segmentMeasures) throw new Error(`⛔ structures: ${who} is an embankment whose overlay carries per-segment measures (segmentMeasures) — a pass the coast bake cannot reproduce. Refusing.`)
+    const m = pourMeasureOf(st, ov, std).measure
+    const outer = ['left', 'right'].map(side => { const d = m?.[side]; return d && d.pavementHW > 0 ? d.pavementHW + (d.treelawn || 0) + (d.sidewalk || 0) : null })
+    if (!outer.every(h => h > 0)) throw new Error(`⛔ structures: ${who} is an embankment with no roadway width at the pour (left ${outer[0]}, right ${outer[1]}). Refusing.`)
+    if (Math.abs(outer[0] - outer[1]) > 1 / SCALE) throw new Error(`⛔ structures: ${who} is an embankment with unequal sides (left ${outer[0]}, right ${outer[1]} m) — an exact one-sided footprint is not built. Refusing.`)
+    const pts = tessellate(st.points.map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z])), st.segments), at = pts.anchorAt || pts.map((_, i) => i)
+    if (at.length !== st.points.length) throw new Error(`⛔ structures: ${who}: ${at.length} anchor index(es) for ${st.points.length} skeleton point(s) — the tessellation lost the anchors' identity. Refusing.`)
+    const raw = new Paths()
+    for (const r of runs) { const P = pts.slice(at[r.from], at[r.to] + 1)
+      if (P.length < 2) throw new Error(`⛔ structures: ${who}: its embankment run ${r.from}→${r.to} has no centreline. Refusing.`)
+      raw.push(stripOf(P, outer[0], who)) }
+    // ⭐ NOT OPENED OR CLOSED (Boz's ruling, 2026-10-28): the strip is cut once at the pour's width, so it is at the trace's
+    // resolution by construction; ⛔ the integer open/close manufactured a 7 mm × 100 m wedge at a butt end of a clean strip
+    // (a 0.38° join, the Breakwater's own). A strip narrower than one step refuses by name.
+    if (2 * outer[0] < stepM) throw new Error(`⛔ structures: ${who} is an embankment narrower than one trace cell (${stepM} m) at its own measure (${+(2 * outer[0]).toFixed(3)} m) — it is below the trace's resolution. Refusing.`)
+    const u = union(raw)
+    all.push(...u)
+    embankments.push({ street: st.id, name: st.name, ways: [...new Set(runs.flatMap(r => r.ways))], outerM: outer[0], m2: +(u.reduce((t, p) => t + Clipper.Area(p), 0) / SCALE / SCALE).toFixed(3) })
+  }
+  const u = union(all)
+  return { paths: u, ...footprintOf(u), embankments }
 }
 
 /**

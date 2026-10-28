@@ -26,7 +26,7 @@ import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { defaultMeasure, measureFromSeed, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure, measureFromSeed, pourMeasureOf, KIT_CURB_WIDTH, isSweptClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
 import { CLASSES, classOf, isOneway } from '../src/cartograph/streetClass.js'
 import { selectMarkings, parkingSeed, MARKING_LOOK } from '../src/cartograph/streetMarkings.js'
 import { expresswaySpeeds } from './speedContext.mjs'
@@ -2882,40 +2882,6 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     }
   } catch { /* no centerlines */ }
 
-  /**
-   * Resolve the cross-section measure for a street. Returns {left, right, source}
-   * where each side is {pavementHW, treelawn, sidewalk, terminal}.
-   *
-   * Authority: skeleton seed → survey-driven default. The seed IS the width
-   * base (E1): skeleton.js bakes custom (survey.json) → OSM lanes → AASHTO
-   * into it, per side, name-propagated to every chain (divided carriageways
-   * included; their median sides are zeroed by the divided-pair pass below).
-   * The operator's overlay wins upstream of this call (overlay = tweaks only).
-   *
-   * The legacy centerlines.json measure tier was REMOVED here (E1): its 11
-   * measured names are all carried by overlay.json already (migrate-overlay
-   * broadcast them), so the tier could only re-shadow the seed base with
-   * stale machine values — South 18th's pavementHW=2 lived there.
-   */
-  function computeStreetMeasure(name, cls, seed, chain) {
-    if (isSweptClass(cls)) {
-      const hs = highwaySection(chain, hwyStd())
-      hwyReport.push({ id: chain.id, ...hs.report, sources: hs.right.section.sources })
-      const m = measureFromSeed(seed, cls, hs)
-      return { left: m.left, right: m.right, symmetric: m.symmetric, source: 'highway-section' }
-    }
-    // ⛔ Every skeleton chain is seeded from its class (`classSection`); a chain without a seed is a
-    // skeleton that predates it. The seedless survey/type default that stood here is gone.
-    if (!seed) throw new Error(`⛔ computeStreetMeasure: "${name}" (${chain.id}) has no seed — re-pour the skeleton`)
-    const m = measureFromSeed(seed, cls)
-    return {
-      left: m.left,
-      right: m.right,
-      symmetric: m.symmetric,
-      source: seed.widthSource === 'survey' ? 'seed-survey' : 'seed',
-    }
-  }
-
   // Street geometry comes from skeleton.json (Phase 0). Skeleton has already
   // welded same-name fragments, collapsed divided pairs (where listed in
   // DIVIDED_PAIRS), simplified, and fixed direction. Every skeleton entry
@@ -3029,7 +2995,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     if (!s.name || !s.points || s.points.length < 2) continue
     const points = s.points.map(p => [p.x, p.z])
     const ov = overlayById[s.id] || null
-    // Measure: overlay override → computeStreetMeasure default fallback.
+    // Measure: overlay override → the seed / highway section (streetProfiles.js#pourMeasureOf).
     // `_measureAuthored` distinguishes operator-authored overlay measures from
     // name-keyed/default fallbacks — the divided-pair pass below normalizes
     // NON-authored carriageway measures to the inner-edge model (corridor
@@ -3039,12 +3005,11 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     // ⛔ A highway takes no authoring (`r-highway-no-authoring`): an overlay measure on one is
     // REFUSED, kept in the file, and printed by name with its source — never applied, never dropped.
     if (!s.class) throw new Error(`⛔ derive: skeleton chain ${s.id} carries no class — re-pour the skeleton (streetClass.js)`)
-    const ovOnHighway = isSweptClass(s.class) && !!(ov?.measure?.left && ov?.measure?.right)
-    if (ovOnHighway) hwyRefused.push(`${s.id}(source:${ov.measure.source ?? 'none'})`)
-    const ovAuthored = !ovOnHighway && !!(ov?.measure?.left && ov?.measure?.right)
-    const measure = ovAuthored
-      ? ov.measure
-      : computeStreetMeasure(s.name, s.class, s.seed, s)
+    // ⭐ the one rule, shared with the coast bake (streetProfiles.js#pourMeasureOf)
+    const pm = pourMeasureOf(s, ov, hwyStd)
+    if (pm.refusedOnHighway) hwyRefused.push(`${s.id}(source:${ov.measure.source ?? 'none'})`)
+    if (pm.hwy) hwyReport.push(pm.hwy)
+    const ovAuthored = pm.authored, measure = pm.measure
     // [curve-primitive] Convert the skeleton's index-referenced curve segments
     // (HANDOFF-curve-primitive-skeleton.md) to SELF-CONTAINED ribbon segments —
     // each carries its own endpoints + handles ([x,z]) so it survives the points
@@ -3088,7 +3053,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       _measureAuthored: ovAuthored,
       // [P1 frame-enrichment] Carry the enriched frame fields off the skeleton
       // street so they survive into ribbons.json. These are PRESENT-but-not-yet-
-      // consumed (the consumers — caps→chainPavementRing, seed→computeStreetMeasure,
+      // consumed (the consumers — caps→chainPavementRing, seed→pourMeasureOf,
       // chainGap/continuesAs — wire up at the Wall / Layer-2). Plumbing only.
       ...(Number.isFinite(s.lanes) ? { lanes: s.lanes } : {}),
       ...(s.surface ? { surface: s.surface } : {}),
@@ -4722,7 +4687,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       // [P1 frame-enrichment] Enriched frame fields surviving the serializer
       // whitelist. PRESENT-but-not-yet-consumed: the consumer wiring is
       // deferred to the Wall / Layer-2 (caps→chainPavementRing cap-as-fact,
-      // seed→computeStreetMeasure standards cross-section, lanes/surface/
+      // seed→pourMeasureOf standards cross-section, lanes/surface/
       // maxspeed cross-section priors, continuesAs→per-street name-transition).
       // Without this the fields were stripped here and P1 was invisible.
       ...(Number.isFinite(st.lanes) ? { lanes: st.lanes } : {}),

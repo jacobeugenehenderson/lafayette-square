@@ -267,19 +267,22 @@ export function isOffGradeWay(t) {
 // selected by the tag and never measured by it:
 //   'offGrade' — bridge, tunnel or a non-zero layer (isOffGradeWay): a span, painted over the water
 //   'deck'     — man_made ∈ DECK_KINDS: the street rides its deck, taken out of the water (structures.mjs#streetDecks)
-//   'ground'   — embankment=* (anything but `no`): the tag is evidence the land is there. ⛔ The kit does not yet draw ground
-//                that ①'s coast holds as water (PTown's Breakwater: the dike is a design question, BACKLOG), so over the water
-//                it refuses by name
+//   'ground'   — embankment=* (isEmbankment): the tag is evidence the land is there, and the coast bake HOLDS its footprint as
+//                land before it traces (r-the-coast-bake-holds-an-embankment-as-land; structures.mjs#embankmentFootprints), so
+//                the coast and the dike are one line; a piece still in ①'s water is a missed hold, refused by name at ①
 //   null       — no structural tag: a street crossing the water bank to bank is a bridge all the same (ruling "a")
 //   { unknown: 'key=value' } — a structural value outside this vocabulary (a ford, for now): refused by name over the water
 // The mint reads it per segment run (cartograph/mintInputs.mjs#gradeRunsOf), and splitOverWater judges a wet piece by it.
 export const DECK_KINDS = ['pier', 'quay', 'wharf', 'jetty', 'platform']
+// ⭐ AN EMBANKMENT is embankment=* (anything but `no`: yes, dyke, …), the one predicate (Zob, 2026-10-28): the over-water
+// class below and the coast bake's dike barrier (cartograph/coastFile.mjs#heldCells) both read it, so the tag has one home.
+export const isEmbankment = (t) => t?.embankment != null && t.embankment !== 'no'
 export function structureOverWater(t) {
   if (!t) return null
   if (isOffGradeWay(t)) return 'offGrade'
   const has = (k) => t[k] != null && t[k] !== 'no'
   if (has('man_made') && DECK_KINDS.includes(t.man_made)) return 'deck'
-  if (has('embankment')) return 'ground'
+  if (isEmbankment(t)) return 'ground'
   for (const k of ['man_made', 'ford']) if (has(k)) return { unknown: `${k}=${t[k]}` }
   return null
 }
