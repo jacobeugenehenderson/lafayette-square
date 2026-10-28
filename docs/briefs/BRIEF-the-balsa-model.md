@@ -34,6 +34,8 @@ PTown's drawnGround height-field build ≈18.7 s phone / 5.3 s desk, plus ground
 Desktop frames while moving 67–117 ms with the main thread ~90% idle (cause not established; headless M1 GPU). Click-to-card NOT
 measured (no card detected; cause not established). Driver and data: `scratch/balsa-step1/`.
 
+**LANDED 2026-10-28 (2c825dd4): hover deleted and CityModel retired** (Plumb; Zob PASS; Ward GREEN; ▶ `checks/claims-the-town-has-no-hover.mjs`). §1's hover and CityModel bullets below describe the code BEFORE that merge. Still open from §4: All places listings-only (Ward, in standup with Jacob: Society opens on no list today, and Open now is a new chip) · a listing carries its point (backfill owed).
+
 ## 1. What the code does today (Zob's premise pass at 9a5af1c7, by symbol; co-signed with corrections)
 
 - **Identity loads up front, and the LOOK is built from it.** `SlabBuildings.jsx` fetches `buildings.json` (v2/v3, else refuses),
