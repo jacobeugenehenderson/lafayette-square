@@ -66,8 +66,10 @@ export function waterLevels(water) {
 // ⭐ A TOWN WITH NO COAST HAS NO WATER LEVEL TO ASK FOR (2026-10-28): the terrain declares what it is zeroed on (bake-terrain.js
 // `datum`: 'water' for a coast town, 'local minimum' inland). Inland → null, and nothing is said (LS's console logged "no chosen
 // level" for a town that has no water). A WATER-datum terrain with no `water` record still throws (waterLevels): that one is
-// stale, not inland. → the levels, or null for an inland town.
+// stale, not inland; one that declares no datum at all refuses. → the levels, or null for an inland (or flat) town.
 export function waterLevelsIfWet({ datum, water }) {
+  // ⛔ a terrain that declares NO datum cannot say whether it has water: refused by name, never read as inland (Zob, Boz 2026-10-28)
+  if (datum == null) throw new Error('waterLevels: terrain.json carries no datum — re-bake the terrain')
   if (datum !== 'water') return null
   return waterLevels(water)
 }
