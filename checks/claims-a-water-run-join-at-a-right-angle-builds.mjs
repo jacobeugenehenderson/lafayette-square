@@ -11,8 +11,15 @@
 // IS that start (the doctrine's one join rule, no new number), so the piece is the triangle.
 //   ① the measured corner (① vertices 4693–4697 at that site, closed by the strip's water end cap), through the real
 //      offsetRingByRects with its water labels: it builds, and every ring it returns is non-empty;
+//   ①b THE RING ② RETURNS (Zob: the stamp's noding hid the antenna once), on the REAL ② call at that tile (the labelled
+//      offsetRingByRects call holding ① v4696, 11,608 vertices, with its edge depths, water flags, working-copy map, owners and
+//      ease: checks/fixtures/ptown-fishermens-wharf-run-on.json, dumped from the v5c build). A snapped run's passed ① vertices are
+//      CONSUMED, so ② keeps neither ① 4695 (266.667, 528.226) nor v (266.635, 528.585): it reaches X along its water edge, and
+//      X→v is the band's own end edge. Kept, they make the sub-lattice lobe X, v, 4695 that iaFull turns into the antenna the
+//      stamp refused. (The 5-vertex corner of ① cannot show this: on so small a ring the difference rounds the sliver away.)
 //   ② the snap reads latticeNode's own NODE_BOUND (read from the source), no constant of its own.
-// ⭐ MUTANT (--mutants): the snap removed (the old float behaviour) → the corner refuses → RED.
+// ⭐ MUTANTS (--mutants), each RED: the snap removed (the old float behaviour: the corner refuses) · the consumed shortcut removed
+// (ringB = ring: the antenna X, 4695, v, X comes back in ②).
 //   node checks/claims-a-water-run-join-at-a-right-angle-builds.mjs [--mutants]
 // Read-only. Exits 1 on any claim false or a mutant not seen.
 import { readFileSync } from 'node:fs'
@@ -29,11 +36,17 @@ const tg = (tag, transform) => tag === 'real' ? import('../src/lib/tileGround.js
 // (the square cap), 4696 → 4697 the band provincetown-marina-1|right|0 at 0.905, and 4697 → 4693 the strip's other water cap
 const RING = [[333.475, 532.995], [266.766, 527.101], [266.667, 528.226], [266.635, 528.585], [341.905, 535.245]]
 const DEPTH = [0, 0, 0, 0.905, 0], WATER = [true, true, true, false, true]
+const FX = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-fishermens-wharf-run-on.json'), 'utf8'))
+const OWN = new Map(FX.ring.map((_, i) => [FX.e ? FX.e[i] : i, FX.ownerKeys[FX.owner[i]] || null]))
+const CONSUMED = [['① 4695', [266.667, 528.226]], ['v (① 4696)', [266.635, 528.585]]]
 function claims({ offsetRingByRects }, src) {
   const out = []
   try { const r = offsetRingByRects(RING, (i) => DEPTH[i], false, null, null, { water: WATER })
     if (!Array.isArray(r) || !r.length || r.some(q => !(q?.length >= 3))) out.push(`① the corner built no ring (${JSON.stringify(r).slice(0, 80)})`)
   } catch (e) { out.push(`① the 90° corner refuses: ${e.message.slice(0, 160)}`) }
+  try { const r = offsetRingByRects(FX.ring, (i) => FX.depth[i], false, {}, (v) => FX.ease[v] ?? 0, { water: FX.water.map(Boolean), hwy: FX.hwy, e: FX.e, v: FX.v }, (e) => OWN.get(e))
+    for (const [name, c] of CONSUMED) if (r.some(q => q.some(p => Math.hypot(p[0] - c[0], p[1] - c[1]) < 0.001))) out.push(`①b ② keeps ${name} (${c.join(', ')}), a vertex the run consumed: the sliver lobe X, v, 4695 survives into iaFull`)
+  } catch (e) { out.push(`①b the real ② call refuses: ${e.message.slice(0, 160)}`) }
   if (!src.includes(SNAP) || !/import \{[^}]*\bNODE_BOUND\b[^}]*\} from '\.\/latticeNode\.js'/.test(src)) out.push('② the run-on snap does not read latticeNode.js#NODE_BOUND')
   return out
 }
@@ -43,8 +56,10 @@ const real = claims(await tg('real'), SRC)
 for (const r of real) console.log(`⛔ ${r}`)
 if (real.length) bad++
 else console.log('✅ the measured 90° street/water corner builds; the run-on snaps X to the curb line\'s start within latticeNode#NODE_BOUND')
-if (MUTANTS) { const got = claims(await tg('no-snap', (t) => { if (!t.includes(SNAP)) throw new Error('[mutant] the snap is gone — re-aim it'); return t.replace(SNAP, '') }), SRC), red = got.length > real.length
+if (MUTANTS) for (const [what, tag, from, to] of [['the snap removed (the old float behaviour)', 'no-snap', SNAP, ''],
+  ['the consumed shortcut removed (ringB = ring)', 'no-consume', "  const ringB = consumedAt.size ? ring.flatMap(", "  const ringB = false ? ring.flatMap("]]) {
+  const got = claims(await tg(tag, (t) => { if (!t.includes(from)) throw new Error(`[mutant ${tag}] the text it mutates is gone — re-aim it`); return t.replace(from, to) }), SRC), red = got.length > real.length
   if (!red) bad++
-  console.log(`   mutant · the snap removed (the old float behaviour): ${red ? `RED, as it must be (${got[0]})` : '⛔ still builds — the check cannot see it'}`) }
+  console.log(`   mutant · ${what}: ${red ? `RED, as it must be (${got[0].slice(0, 170)})` : '⛔ still clean — the check cannot see it'}`) }
 console.log(bad ? '\n⛔ RED — a street band meeting a water run at 90° refuses on a degenerate piece' : '\n✅ GREEN')
 process.exit(bad ? 1 : 0)

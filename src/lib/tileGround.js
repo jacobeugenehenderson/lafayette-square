@@ -2027,7 +2027,7 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
         const hit = (a, b) => { const ex = b[0] - a[0], ey = b[1] - a[1], den = d[0] * ey - d[1] * ex; if (!(Math.abs(den) > 1e-15)) return null
           const s0 = ((a[0] - o[0]) * ey - (a[1] - o[1]) * ex) / den, u0 = ((a[0] - o[0]) * d[1] - (a[1] - o[1]) * d[0]) / den
           return s0 >= 0 && u0 >= 0 && u0 <= 1 ? [o[0] + d[0] * s0, o[1] + d[1] * s0] : null }
-        const passed = []
+        const passed = [], passedIdx = []
         for (let step = 0, k = aZ ? ia : i; step < n; step++) { if (!z0(k) || !isWater(k)) break
           const a = ring[k], b = ring[(k + 1) % n]
           let h = hit(a, b)
@@ -2041,8 +2041,10 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
             let ok = true; for (let x = 0; x < piece.length && ok; x++) for (let y = x + 2; y < piece.length && ok; y++) { if (x === 0 && y === piece.length - 1) continue
               if (pc(piece[x], piece[(x + 1) % piece.length], piece[y], piece[(y + 1) % piece.length])) ok = false }
             if (!ok) throw new Error(`[tileGround][offsetRingByRects] ⛔ the join at ① vertex ${origV[i]} (${v.map(c => c.toFixed(3)).join(', ')}) runs on along its depth-0 run to (${h.map(c => c.toFixed(3)).join(', ')}), and the piece is not simple. Refusing.`)
-            return { X: h, kind: 'run', A, S, v, ia, i, tA: NaN, tS: NaN, piece, zSide: aZ ? 'A' : 'S' } }
-          passed.push(aZ ? a : b); k = aZ ? (k - 1 + n) % n : (k + 1) % n }
+            // ⭐ SNAPPED (X IS the curb line's start), the piece is exactly the passed stretch closed by X: [v, …passed, X] (aZ) or
+            // [v, X, …passed reversed] (!aZ). Its passed ① vertices are CONSUMED: the band owns that stretch (Boz, Zob, 2026-10-28).
+            return { X: h, kind: 'run', A, S, v, ia, i, tA: NaN, tS: NaN, piece, zSide: aZ ? 'A' : 'S', passed, consumed: h === o ? passedIdx : null } }
+          passed.push(aZ ? a : b); passedIdx.push(aZ ? k : (k + 1) % n); k = aZ ? (k - 1 + n) % n : (k + 1) % n }
         // the curb line leaves the run without crossing it: the bands' own join decides (Boz) — no piece, no water vertex minted.
         // ⛔ Never the chord: at a depth-0 side its triangle is degenerate (A.Q or S.P is v) and all it adds is the deep band's
         // end cap as a kind-1 line under the depth-0 edge's owner, the defect itself
@@ -2072,7 +2074,9 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
     const j = J[i]; if (!j) continue
     const { A, v, ia } = j
     if (j.X && j.kind === 'piece') { addClip([v, A.Q, j.X, S.P], [ia, i]); addSeg(A.Q, j.X, ia, 1); addSeg(j.X, S.P, i, 1) }
-    else if (j.kind === 'run') { addClip(j.piece, [ia, i]); if (j.zSide === 'A') addSeg(j.X, S.P, i, 1); else addSeg(A.Q, j.X, ia, 1) }
+    // ⭐ a SNAPPED run's piece is its consumed stretch, taken out of the difference's ring below (ringB), so its clip would subtract
+    // nothing: it is not added. ⛔ A run whose X is NOT the curb line's start keeps its clip: [v, …passed, X, S.P] still subtracts [v, X, S.P].
+    else if (j.kind === 'run') { if (!j.consumed) addClip(j.piece, [ia, i]); if (j.zSide === 'A') addSeg(j.X, S.P, i, 1); else addSeg(A.Q, j.X, ia, 1) }
     else if (!j.X && j.kind !== 'none') { addClip([v, A.Q, S.P], [ia, i]); addSeg(A.Q, S.P, ia, 1); bevels++ }
     addSeg(v, A.Q, ia, 3); addSeg(S.P, v, i, 3); wedges++
   }
@@ -2081,7 +2085,23 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
   // ⛔ ONE WINDING, WHICHEVER PATH (Swash's find, Boz's ruling, 2026-10-27): with no band to clip (every depth 0: an all-water
   // island block) the ring came back as ① wound it, CLOCKWISE, where the difference returns Clipper's positive outer — so
   // `piecesOfIA` read the island as a HOLE and painted no piece (Huron: 29 island tiles, 16,188 m²). Normalised once, by sign.
-  const B = { rings: outward ? unionRings([ring, ...clips]) : (clips.length ? differenceRings([ring], unionRings(clips)) : [signedArea(ring) < 0 ? [...ring].reverse() : ring.slice()]) }
+  // ⭐⭐ ONE OWNER PER STRETCH (Boz's direction, Zob's read, 2026-10-28): a snapped run's passed ① vertices are CONSUMED. The ring the
+  // difference takes has them replaced by X, so ② reaches X along its own water edge and X→v is the band's own end edge, the same
+  // points: nothing between two copies of one stretch is left to round into an antenna (PTown, Fishermen's Wharf: ① v4695 lay
+  // 0.1 mm off the band's end edge S.P→v, and the lattice turned that sub-lattice sliver into an out-and-back on ②). Set-equivalent
+  // to subtracting the piece, by topology instead of a boolean. ⛔ Valid only because the piece IS [v, …passed, X]: checked by its
+  // vertex list, and two runs that consume one vertex refuse.
+  const consumedAt = new Map()
+  for (const j of J) { if (j?.kind !== 'run' || !j.consumed?.length) continue
+    const want = j.zSide === 'A' ? [j.v, ...j.passed, j.X] : [j.v, j.X, ...j.passed.slice().reverse()]
+    if (j.piece.length !== want.length || j.piece.some((p, x) => p !== want[x])) throw new Error(`[tileGround][offsetRingByRects] ⛔ a run piece that is not its passed stretch at ① vertex ${origV[j.i]}: the ring shortcut would drop land the band does not cover. Refusing.`)
+    for (const k of j.consumed) { if (consumedAt.has(k)) throw new Error(`[tileGround][offsetRingByRects] ⛔ two run joins consume ① vertex ${origV[k]} (at ① vertices ${origV[consumedAt.get(k).i]} and ${origV[j.i]}): one stretch, two owners. Refusing.`)
+      consumedAt.set(k, j) } }
+  // each consumed run's FIRST vertex in ring order becomes its X; the rest are dropped
+  const firstOf = new Map()
+  for (const [k, j] of consumedAt) { const ks = j.consumed, first = j.zSide === 'A' ? ks[ks.length - 1] : ks[0]; if (k === first) firstOf.set(k, j.X) }
+  const ringB = consumedAt.size ? ring.flatMap((p, k) => (consumedAt.has(k) ? (firstOf.has(k) ? [firstOf.get(k)] : []) : [p])) : ring
+  const B = { rings: outward ? unionRings([ringB, ...clips]) : (clips.length ? differenceRings([ringB], unionRings(clips)) : [signedArea(ringB) < 0 ? [...ringB].reverse() : ringB.slice()]) }
   // ⭐ EACH ② EDGE TAKES THE OWNER IT LIES ON — among this block's OWN bands only (the known contributors; never a lookup
   // against other geometry). A contributor is a candidate where both the edge's ends lie within TOL (two grid steps) of its line;
   // what it covers of the edge is POOLED PER OWNER (skelId · side · segOrd, `ownerKeyOf`), because one owner's curb line
