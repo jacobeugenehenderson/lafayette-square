@@ -14,6 +14,8 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**⛔ CLASS D CANDIDATE (Zob, 2026-10-28): the pour's step table lists `src/data/buildings.json` (LS's own curated file) as a
+pipeline input for EVERY town** (cartograph/pourSteps.mjs, was serve.js before). One town's file dirties every town's pour. Pre-existing.
 **⛔ LS SURVEY, 2026-10-28, blocks the route to the Datawall (Jacob live; Kerf on the crash):** (1) selecting a street crashes the
 canvas, "chainMeasure: street Carroll Street carries no class", even after a reload, though skeleton and ribbons on disk are fully classed;
 (2) the dark ink lines read as hatches, not smooth lines (protoNavy draws each ① ink ring as two 0.8 m ribbons ~1 cm apart; that
