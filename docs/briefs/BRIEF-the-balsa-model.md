@@ -74,21 +74,29 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    the up-front index read in the same commits (the three-part fix), including the sidecar wait in `CityModel`.
 5. **Every reader of `useSlabBuildingIndex` moves to "asked for"** or is named an exception in §4 with Jacob's ruling.
 
-## 4. Questions for Jacob before step 2 (step 1 doesn't wait)
+## 4. Jacob's rulings (2026-10-27 night)
 
-1. **Neon at night.** Which buildings glow is decided per building today (listing hours, `neon.faces`, `zoning`). Is the night glow
-   part of the LOOK (baked in, with no ids at runtime), or something that only appears when asked?
-2. **Hover.** Today a building can highlight under the pointer. Does balsa keep any hover, or is a click the first sign of life?
-3. **Landmark pins and the side panel** list places without a click. Are those "asked" (they load the address book), or does the
-   first paint carry them?
-4. **Trees, lamps, water:** same rule (look only, nothing per-object), or does anything else need identity?
+1. **Neon comes from hours** (*"Neon is from hours"*). Which buildings glow is a fact of the look at a given time, not something
+   asked. So the encoder bakes the glowing faces with their hours as a time-keyed layer that needs no building id at runtime. The
+   Ward lights them by the clock. ⛔ The night glow must not pull the address book or the index into the first paint.
+2. **No hover** (*"I do not like the light-up-when-mouse-passes-over-it in general, too much"*). Hover highlighting is DELETED,
+   not disabled: `useSelectedBuilding`'s `hoveredId` / `setHovered` / `clearHovered`, and every per-move raycast that feeds them.
+   A click is the first sign of life.
+3. **Pins and the side panel load when asked, prefetched nearby** (*"Loaded when asked, but nearby for quick access"*). Nothing is
+   in the first paint. After it, at idle, the Ward prefetches the address book and the contents near the camera, so a click there
+   is instant. ⛔ A prefetch never blocks or stutters a pan.
+4. **Trees, lamps and water are part of the look, always drawn.** They need no per-object identity, so balsa costs them nothing:
+   they stay as they are, carrying nothing per object at runtime. (Boz, answering Jacob's *"trees lamps and water are mandatory?"*;
+   confirm by measurement in step 1 that none of them reads building identity.)
 
 ## 5. Checks (each reads the source; each seen to fail)
 
 - `claims-the-first-paint-carries-no-building-identity`: the first paint's requests and the parsed payloads hold no building id
   (mutant: put the index back in the first payload → RED).
-- `claims-a-click-is-the-first-identity`: no building id is resolved before a click, search or deep link (mutant: a hover raycast
-  → RED).
+- `claims-a-click-is-the-first-identity`: no building id is resolved before a click, search, deep link or nearby prefetch, and no
+  pointer-move raycast exists (mutant: a hover raycast → RED).
+- `claims-the-night-glow-needs-no-identity`: neon lights from the baked hours layer with no address book loaded (mutant: neon
+  reads the index → RED).
 - The measured budget from step 1, as a check on staging (the frame-timeline instrument), on desktop and phone.
 
 ## 6. Bounds
