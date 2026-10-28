@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 501,
+  "total": 502,
   "counts": {
-    "safe": 356,
+    "safe": 357,
     "local-effect": 30,
     "live": 115
   },
@@ -987,6 +987,13 @@
         "computed import of scratch/_proto-feed.mjs — read, safe",
         "computed import of src/lib/tileGround.js — read, safe",
         "imports a mutated copy of src/lib/tileGround.js from its own temp dir — read as src/lib/tileGround.js, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-water-run-join-at-a-right-angle-builds.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of src/lib/tileGround.js — read, safe"
       ]
     },
     {

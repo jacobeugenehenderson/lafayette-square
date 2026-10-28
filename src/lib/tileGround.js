@@ -19,7 +19,7 @@ import { blockKeyFromRing } from './buildBlockGeometryV2.js'
 import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 import { CLIP_SCALE as SCALE, LATTICE_M } from './lattice.js'
-import { nodeCrossings } from './latticeNode.js'
+import { nodeCrossings, NODE_BOUND } from './latticeNode.js'
 import { absorbInk } from './absorbInk.js'
 import { coastSignBreaks } from './coastSign.js'
 import { LOCAL_SECTION } from '../cartograph/streetClass.js'
@@ -2029,8 +2029,14 @@ export function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = nu
           return s0 >= 0 && u0 >= 0 && u0 <= 1 ? [o[0] + d[0] * s0, o[1] + d[1] * s0] : null }
         const passed = []
         for (let step = 0, k = aZ ? ia : i; step < n; step++) { if (!z0(k) || !isWater(k)) break
-          const a = ring[k], b = ring[(k + 1) % n], h = hit(a, b)
-          if (h) { const piece = aZ ? [v, ...passed, h, S.P] : [v, A.Q, h, ...passed.slice().reverse()]
+          const a = ring[k], b = ring[(k + 1) % n]
+          let h = hit(a, b)
+          // ⭐ AN X WITHIN THE ROUNDING OF THE CURB LINE'S OWN START IS THAT START (Boz's ruling, 2026-10-28, the doctrine's one join rule:
+          // latticeNode.js#NODE_BOUND, no new number). At a 90° corner where the depth-0 run lies along the band's normal, the start
+          // (S.P / A.Q) sits ON the run, so X is found at it, 26 µm off (PTown, Fishermen's Wharf, ① v4696): the piece then
+          // repeated a vertex, and the crossing test refused that degenerate TRIANGLE as "not simple". One point, so no repeat.
+          if (h && Math.hypot(h[0] - o[0], h[1] - o[1]) * SCALE <= NODE_BOUND) h = o
+          if (h) { const piece = (aZ ? [v, ...passed, h, S.P] : [v, A.Q, h, ...passed.slice().reverse()]).filter((p, j, P) => j === 0 || p !== P[j - 1])
             const pc = (p1, p2, p3, p4) => { const or = (x, y, z) => Math.sign((y[0] - x[0]) * (z[1] - x[1]) - (y[1] - x[1]) * (z[0] - x[0])); return or(p3, p4, p1) * or(p3, p4, p2) < 0 && or(p1, p2, p3) * or(p1, p2, p4) < 0 }
             let ok = true; for (let x = 0; x < piece.length && ok; x++) for (let y = x + 2; y < piece.length && ok; y++) { if (x === 0 && y === piece.length - 1) continue
               if (pc(piece[x], piece[(x + 1) % piece.length], piece[y], piece[(y + 1) % piece.length])) ok = false }
