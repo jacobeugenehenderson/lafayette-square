@@ -28,8 +28,8 @@ removed, 9 jogs held, deck verifier 176 → 21 · Huron 390 removed (60.1 m², �
 10 cm, least 16 mm @(-1963.2, 1677.3)), Huron 11 (≥ 0.659 m; its 4 m × 0.5 m island @(695.3, 348.8) held at 3 vertices). Measured NOT
 clean: openCloseAtStep on the settled water, then the edge rule (PTown: 6 acute · a 172.7 m² body cut from the edge @(-3523.068,
 -1923.66), dropped as a hollow · ~5.6k rounding slivers, 12,600 → 15,269 vertices · 175 left, since the close is per part).
-**▶ HURON'S coast.json IS v2: re-bake its coast (COAST_VERSION 3) before any Huron ground work or release.** Measured on v3: it mints, its
-verifier is clean; open/close moved 41 / 75 features (≤ 0.74 m wide). Staging untouched. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
+**▶ HURON'S coast.json predates COAST_VERSION 4: re-bake its coast before any Huron ground work or release.** Measured on v3 + the edge
+rule (offline): it mints, its verifier is clean, the rule removes 66 vertices (≤ 0.865 m), holds 1. ▶ `node checks/claims-the-coast-is-the-lidars.mjs`
 **▶ LS's skeleton is stale for mintInputs** (saint-ange-lane's segmentWays don't cover its 5 segments, so mintInputs refuses before the
 mint). Re-skeleton (commit-extent) before LS's next pour. Pre-existing; LS waits on Jacob's loop adjustments anyway (Boz, 2026-10-27).
 **▶ STATE: EVERYONE PARKED (Jacob, token alert: ONE agent at a time from now on, Boz on standby while it works).** No server is
