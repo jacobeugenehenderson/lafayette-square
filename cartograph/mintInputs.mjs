@@ -15,13 +15,15 @@ import { streetDecks, waterWithoutDecks } from './structures.mjs'
 import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { localBB, geographyFor, projectorOf } from './geography.mjs'
 import { mapCleanDir, mapRawDir, mapDir } from './scene.js'
+import { joinChainEnds, reportJoins } from './chainJoins.mjs'
+import { designPath, readTownDesign } from './lookDesign.mjs'
 
 // ribbonStreets: the ribbons' streets · skeletonStreets: clean/skeleton.json's · osm: raw/osm.json · bb: localBB of it ·
 // disc: splitBoundary's `disc` (its `boundary` ring) with `discOf`'s { cx, cz, R } · cleanDir: the scene's clean/ (its coast.json)
 // ⭐ THE COAST IS THE LIDAR'S (BRIEF-the-shore-is-one-line §1): clean/coast.json, traced by bake-coast.mjs; no coast.json refuses
 // (coastFile.mjs#readCoast, which also refuses a wrongly wound body or island, at the one door). A deck a mint street crosses is
 // taken OUT of the water (structures.mjs), and a street deck standing clear of every shore refuses by name.
-export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, discAt, cleanDir, who = 'mintInputs' }) {
+export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, discAt, cleanDir, blockCustoms, who = 'mintInputs' }) {
   if (!skeletonStreets) throw new Error('[mintInputs] ⛔ no skeleton streets — ① is minted from the SIMPLIFIED skeleton, never the derived chains')
   if (!bb) throw new Error('[mintInputs] ⛔ no bb — the coast and the mint close against the fetched envelope')
   if (!disc?.boundary || !discAt) throw new Error('[mintInputs] ⛔ no disc — ① is stencilled by the boundary ring')
@@ -74,7 +76,13 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   const mapped = all.map(s => ({ s, sim: simplify(s) }))
   const unjoined = mapped.filter(m => !m.sim).map(m => m.s.skelId ?? m.s.name)
   if (!cleanDir) throw new Error('[mintInputs] ⛔ no clean/ directory — the coast is read off its coast.json')
-  const streets = mapped.filter(m => m.sim && !m.s.gradeSeparated).map(m => m.sim)
+  const gradeSep = mapped.filter(m => m.sim && m.s.gradeSeparated).map(m => m.sim)
+  // ⭐ A CHAIN END IN ANOTHER STREET'S ROADWAY IS A T (r-a-chain-end-in-a-roadway-is-a-T): joined here, before anything reads
+  // the streets, by the pour's half-widths; the town's authoring is read only to REFUSE a join that would re-key it
+  // (chainJoins.mjs). The record is returned for ① to freeze (protopolygon.chainJoins) and printed by name.
+  if (blockCustoms === undefined) throw new Error(`[mintInputs] ⛔ ${who}: no blockCustoms passed ({} when the town authors none; townBlockCustoms(scene)) — a chain join that would re-key an authored slot must refuse, and only the authoring can say whether one is there`)
+  const J = joinChainEnds({ streets: mapped.filter(m => m.sim && !m.s.gradeSeparated).map(m => m.sim), gradeSep, discAt, blockCustoms })
+  const streets = J.streets
   const coast = readCoast(cleanDir, bb, who)
   // the decks are closed at the step the coast was traced at (coast.json fineM), so the mint takes out the footprints the trace saw
   const decks = coast.coast ? streetDecks(osm.ground || {}, streets, coast.doc.fineM) : { rings: [], decks: [] }
@@ -92,7 +100,8 @@ export function mintInputs({ ribbonStreets, skeletonStreets, osm, bb, disc, disc
   const coastReport = [coast.coast ? `    [①] coast: ${water.rings.length} water ring(s), ${water.arcs.length} shoreline arc(s) — ${coast.doc.from}${holes ? ` · ${holes} island(s)` : ''}${decks.decks.length ? ` · ${decks.decks.length} street deck(s) taken out of the water: ${decks.decks.map(d => d.streets.filter(Boolean).slice(0, 3).join('/')).join(' · ')}` : ''}${water.slivers.length ? ` · ${water.slivers.length} sliver(s) of water beside them narrower than one trace cell taken with them (${water.slivers.reduce((t, x) => t + x.m2, 0).toFixed(2)} m²): ${water.slivers.slice(0, 6).map(x => `${x.m2} m² @(${x.at.map(Math.round).join(', ')})`).join(' · ')}` : ''}` : `    [①] no coast: ${coast.why}`]
   return {
     unjoined, total: all.length, coastReport, decks: decks.decks, deckSlivers: water.slivers,
-    streets, gradeSep: mapped.filter(m => m.sim && m.s.gradeSeparated).map(m => m.sim),
+    chainJoins: J.joins, joinReport: reportJoins(J.joins, who),
+    streets, gradeSep,
     boundary: disc.boundary, coast: water.rings, coastArcs: water.arcs, bb,
   }
 }
@@ -105,5 +114,11 @@ export function mintInputsOf(scene, ribbonStreets) {
   const bb = localBB(osm, projectorOf(geographyFor(scene)))
   if (!bb) throw new Error(`[mintInputs] ⛔ ${scene}'s raw/osm.json carries no bbox`)
   const { disc } = splitBoundary(JSON.parse(readFileSync(bPath, 'utf8')), `mintInputs: ${scene}'s neighborhood_boundary.json`)
-  return mintInputs({ ribbonStreets, skeletonStreets: JSON.parse(readFileSync(skPath, 'utf8')).streets || [], osm, bb, disc, discAt: discOf(disc, `mintInputs: ${scene}`), cleanDir: mapCleanDir(scene), who: `mintInputs: ${scene}` })
+  return mintInputs({ ribbonStreets, skeletonStreets: JSON.parse(readFileSync(skPath, 'utf8')).streets || [], osm, bb, disc, discAt: discOf(disc, `mintInputs: ${scene}`), cleanDir: mapCleanDir(scene), blockCustoms: townBlockCustoms(scene, `mintInputs: ${scene}`), who: `mintInputs: ${scene}` })
+}
+
+// the town's authored slots, for the chain join's REFUSAL only (never to size anything: the Wall). A town with no home Look has
+// authored nothing, so {} is its truth, not a default; a home Look that cannot be read refuses (readTownDesign).
+export function townBlockCustoms(scene, who) {
+  return existsSync(designPath(scene)) ? (readTownDesign(scene, who).blockCustoms || {}) : {}
 }

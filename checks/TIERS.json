@@ -100,7 +100,7 @@
       "file": "checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "importSource of cartograph/chainJoins.mjs — read, safe"
       ]
     },
     {

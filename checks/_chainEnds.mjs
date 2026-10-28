@@ -28,6 +28,17 @@ const { buildNodeGraph } = await importSource('cartograph/skeleton.js', { span: 
 export { vKey }
 export const f2 = (v) => v.toFixed(2)
 
+// ①'s input streets, as mintInputs builds them before the join: each ribbon chain with a skeleton line, its points the
+// skeleton's through tessellateAdaptive, `hard` riding along (mintInputs.mjs#mintInputs' `simplify`), split by grade.
+// ⛔ No `gradeRuns` (they need raw/osm.json): the join's off-grade-foot refusal is not exercised here; the frozen record is
+// compared below for that. Light, so it runs on every town with no coast and no osm.
+export function mintStreetsOf({ sk, rib }) {
+  const S = new Map(sk.map(c => [c.id, c]))
+  const all = rib.filter(r => S.get(r.skelId)?.points?.length >= 2).map(r => { const c = S.get(r.skelId), pts = tessellateAdaptive(c.points.map(q => [q.x, q.z]), c.segments)
+    return { ...r, points: pts, hard: pts.hard || null } }).filter(s => s.points.length >= 2)
+  return { streets: all.filter(s => !s.gradeSeparated), gradeSep: all.filter(s => s.gradeSeparated) }
+}
+
 export function loadTown(scene) {
   const sk = JSON.parse(readFileSync(join(mapCleanDir(scene), 'skeleton.json'), 'utf8')).streets || []
   const rib = JSON.parse(readFileSync(ribbonsPathOf(scene), 'utf8')).streets || []
@@ -65,7 +76,7 @@ export function judge({ sk, rib, disc }) {
         const hw = hwOf(L.c.id, side); if (!Number.isFinite(hw)) { out.noHW.add(L.c.id); continue }
         if (!best || d - hw < best.d - best.hw) best = { d, hw, side, into: L.c } }
       if (!best) continue
-      const row = { id: c.id, name: c.name, into: best.into.id, intoName: best.into.name, d: best.d, hw: best.hw, side: best.side, own, p, sameName: !!c.name && c.name === best.into.name, gs: [R.get(c.id).gradeSeparated && c.id, R.get(best.into.id).gradeSeparated && best.into.id].filter(Boolean) }
+      const row = { id: c.id, end: ix === 0 ? 'start' : 'end', name: c.name, into: best.into.id, intoName: best.into.name, d: best.d, hw: best.hw, side: best.side, own, p, sameName: !!c.name && c.name === best.into.name, gs: [R.get(c.id).gradeSeparated && c.id, R.get(best.into.id).gradeSeparated && best.into.id].filter(Boolean) }
       const kind = best.d <= best.hw ? '(a)' : Number.isFinite(own) && best.d - best.hw <= own ? '(b′)' : null
       if (!kind) continue
       if (row.gs.length) out.aside.gradeSep.push({ ...row, kind })
@@ -77,24 +88,29 @@ export function printRow(r, tag) {
   console.log(`   ${tag} ${r.id} (${r.name || 'unnamed'}) → ${r.into} (${r.intoName || 'unnamed'}): ${f2(r.d)} m from its line, its ${r.side} half-width ${f2(r.hw)} m${tag.includes('(b′)') ? `, own ${f2(r.own)} m` : ''} @(${r.p.x.toFixed(1)}, ${r.p.z.toFixed(1)})${r.sameName ? ' · SAME NAME: the false-dead-end class, a question (claims-false-deadend-census)' : ''}${r.gs?.length ? ` · grade-separated: ${r.gs.join(', ')}` : ''}`)
 }
 
-// every T whose end sits on an interior vertex of an at-grade through chain (a straight segment after it), inside the drawing
+// every T whose end sits on an interior vertex of an at-grade through chain (a straight segment after it), inside the drawing;
+// a TRUE T only (degree 3 at the node: this end and the through chain), so no third street crowds it
 function* eachT({ sk, rib, disc }, keep) {
-  const R = new Map(rib.map(r => [r.skelId, r])), ok = atGrade(R)
+  const R = new Map(rib.map(r => [r.skelId, r])), ok = atGrade(R), { degree } = buildNodeGraph(sk)
   const interior = new Map()
   for (const c of sk) if (ok(c)) c.points.forEach((q, i) => { if (i > 0 && i + 1 < c.points.length) interior.set(vKey(q), { c, i }) })
   for (const c of sk) { if (!ok(c)) continue
     for (const ix of [0, c.points.length - 1]) { const p = c.points[ix], th = interior.get(vKey(p))
-      if (!th || th.c === c || disc.dist(p.x, p.z) > disc.R - 10 || th.c.segments?.[th.i]?.type === 'bezier') continue
+      if (!th || th.c === c || degree.get(vKey(p)) !== 3 || disc.dist(p.x, p.z) > disc.R - 10 || th.c.segments?.[th.i]?.type === 'bezier') continue
       const hit = keep({ c, ix, p, th, R }); if (hit) yield hit } }
 }
 const first = (it) => { for (const x of it) return x; return null }
 
-// mutant (a): a noded T end moved 0.5 m along the through street, off its vertex and still on its line
-export function moveTEnd(town) {
-  return first(eachT(town, ({ c, ix, p, th }) => {
+// mutant (a): noded T ends, each moved 0.5 m along its through street, off its vertex and still on its line, and given the cap a
+// dead end carries in the data (round, degree 1), as an end that never met the street would. A generator: the caller takes the
+// first its own predicate accepts (the real join must join it, or the join's mutants cannot bite).
+export function* movedTEnds(town) {
+  yield* eachT(town, ({ c, ix, p, th }) => {
     const n = th.c.points[th.i + 1], dx = n.x - p.x, dz = n.z - p.z, l = Math.hypot(dx, dz); if (l < 2) return null
-    const moved = { x: p.x + 0.5 * dx / l, z: p.z + 0.5 * dz / l }
-    return { sk: town.sk.map(x => x === c ? { ...c, points: c.points.map((q, i) => i === ix ? moved : q) } : x), what: `${c.id}'s end on ${th.c.id}` } }))
+    const moved = { x: p.x + 0.5 * dx / l, z: p.z + 0.5 * dz / l }, end = ix === 0 ? 'start' : 'end'
+    return { sk: town.sk.map(x => x === c ? { ...c, points: c.points.map((q, i) => i === ix ? moved : q) } : x),
+      rib: town.rib.map(r => r.skelId === c.id ? { ...r, caps: { ...(r.caps || {}), [end]: { ...(r.caps?.[end] || {}), cap: 'round', degree: 1 } } } : r),
+      what: `${c.id}'s end on ${th.c.id}`, id: c.id, end, into: th.c.id } })
 }
 
 // mutant (b′): a noded T end pulled back along its own (straight, near-perpendicular) last leg to just past the through

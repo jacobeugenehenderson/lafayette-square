@@ -57,10 +57,10 @@ const huronArgs = async () => {
   if (!existsSync(join(ROOT, 'cartograph/data/huron/raw/osm.json'))) return { err: 'Huron\'s own inputs (cartograph/data/huron) are not in this tree — Huron NOT checked' }
   // the town's own inputs (mintInputsOf's reads); its one coast read comes from a temp clean dir holding the fixture as coast.json
   const cleanDir = mkdtempSync(join(tmpdir(), 'oneline-coast-')); writeFileSync(join(cleanDir, 'coast.json'), body)
-  const { ribbonsPathOf } = await import('../cartograph/scene.js'), { mintInputs } = await import('../cartograph/mintInputs.mjs'), { localBB, projectorOf, geographyFor } = await import('../cartograph/geography.mjs'), BR = await import('../cartograph/boundaryRecords.mjs')
+  const { ribbonsPathOf } = await import('../cartograph/scene.js'), { mintInputs, townBlockCustoms } = await import('../cartograph/mintInputs.mjs'), { localBB, projectorOf, geographyFor } = await import('../cartograph/geography.mjs'), BR = await import('../cartograph/boundaryRecords.mjs')
   const D = join(ROOT, 'cartograph/data/huron'), rd = (f) => JSON.parse(readFileSync(join(D, f), 'utf8'))
   const osm = rd('raw/osm.json'), bb = localBB(osm, projectorOf(geographyFor('huron'))), { disc: hd } = BR.splitBoundary(rd('neighborhood_boundary.json'), 'huron')
-  const MI = mintInputs({ ribbonStreets: JSON.parse(readFileSync(ribbonsPathOf('huron'), 'utf8')).streets, skeletonStreets: rd('clean/skeleton.json').streets || [], osm, bb, disc: hd, discAt: BR.discOf(hd, 'huron'), cleanDir, who: 'claims-the-coast-is-one-line' })
+  const MI = mintInputs({ ribbonStreets: JSON.parse(readFileSync(ribbonsPathOf('huron'), 'utf8')).streets, skeletonStreets: rd('clean/skeleton.json').streets || [], osm, bb, disc: hd, discAt: BR.discOf(hd, 'huron'), cleanDir, blockCustoms: townBlockCustoms('huron', 'claims-the-coast-is-one-line'), who: 'claims-the-coast-is-one-line' })
   rmSync(cleanDir, { recursive: true, force: true })
   return { args: { streets: MI.streets, gradeSep: MI.gradeSep, boundary: MI.boundary, coast: MI.coast, coastArcs: MI.coastArcs, bb: MI.bb } }
 }
