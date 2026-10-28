@@ -15,6 +15,22 @@ site below is Zob's read at integration d4af8879. Confirm each. If the code disa
 A chain end that is no node and lies inside another street's roadway becomes a T, joined by rule at **mintInputs**, judged by
 **that street's own half-width**. The join is recorded and reported, and the operator can override it. No constant: the only
 distances are the two streets' half-widths. Moving widths upstream to the skeleton was not chosen.
+- ⛔ **ASPIRATION — the override: unbuilt, home unruled** (Boz, 2026-10-27). The join is built with its frozen record, printed
+  by name, so nothing is silent; but the mint is blind to authoring (the Wall), so the override must be a POUR input, and which
+  one is Jacob's design question. No override path is built until he rules.
+- **(b′) is NOT joined** (Boz, 2026-10-27): the ruling covers an end INSIDE the other roadway. An end whose own roadway only
+  reaches the other's is a question for Jacob, RED in its own question-check (`scratch/chain-ends/claims-a-chain-end-reaching-a-roadway-awaits-a-ruling.mjs`,
+  split on Zob's read so the (a) check can gate GREEN after the join; out of the default run, Boz: it moves to checks/ as
+  whatever Jacob rules). Grade-separated pairs are set aside by name (minted apart).
+- **A join that would re-key authoring STOPS THE POUR, by name** (Boz, 2026-10-28, on Zob's read; it was a per-end skip,
+  which let authoring shape ① and was not idempotent): an authored blockCustoms slot of the through street at or after the
+  segOrd of the block the foot cuts (segOrd is topological, so a new crossing re-keys every block after it), or an authored
+  cap on the joined end. Authoring is read only there, and it only throws (`claims-proto-wall` claim A′). The key's migration
+  is filed under the open key (`EXTENT-DESIGN §4.1`) for Jacob. ⚠️ LS (27 authored streets) is not checked: its skeleton is
+  stale, so its next pour may stop here if a joined street carries its authoring; that is Jacob's, and LS re-skeletons first.
+- **A foot on the through street's own FREE END is not a T** (Boz, 2026-10-28; Altadena's west-pentagon-street ×
+  krenz-avenue, each past the other's end): set aside by name as a question, the false-dead-end class. A join never puts one
+  segment on two chains (pour-fatal).
 
 ## 2. What the code does today (Zob, by symbol)
 - `skeleton.js#buildNodeGraph`: a node is a shared coordinate (`vKey`, 1 cm). Nothing splits a chain at a crossing, and nothing

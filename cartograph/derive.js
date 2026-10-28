@@ -37,7 +37,7 @@ import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
-import { mintInputs } from './mintInputs.mjs'
+import { mintInputs, townBlockCustoms } from './mintInputs.mjs'
 import { splitBoundary, discOf } from './boundaryRecords.mjs'
 import { onGrid } from './snap.js'
 import { localBB } from './geography.mjs'
@@ -4868,7 +4868,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       // `cartograph/mintInputs.mjs`, which claims-proto-frozen-matches-live calls too: the witness mints what the pour minted.
       simplified = sk.streets || []
     }
-    const MI = simplified && mintInputs({ ribbonStreets: ribbonsLayer.streets, skeletonStreets: simplified, osm: osmData, bb: _bb, disc: _disc, discAt: _discAt, cleanDir: CLEAN_DIR, who: `derive: ${SCENE}` })
+    const MI = simplified && mintInputs({ ribbonStreets: ribbonsLayer.streets, skeletonStreets: simplified, osm: osmData, bb: _bb, disc: _disc, discAt: _discAt, cleanDir: CLEAN_DIR, blockCustoms: townBlockCustoms(SCENE, `derive: ${SCENE}`), who: `derive: ${SCENE}` })
     if (!simplified || MI.unjoined.length) {
       console.warn(`    ⛔ [①] NOT FROZEN — ${!simplified ? `no skeleton at ${skPath}` : `${MI.unjoined.length} of ${MI.total} chain(s) have no simplified geometry (${MI.unjoined.slice(0, 4).join(', ')})`}. ⛔ Refusing to mint ① from the DERIVED chains: that silently produces a dense contour with phantom blocks, which renders and cannot be seen to be wrong.`)
     } else {
@@ -4886,6 +4886,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
     // knob and the bb is declared data.
     // (`_bb` is computed once, at the face walk: the raw bb; the walk itself closes on its gridded view.)
     for (const line of MI.coastReport) console.log(line)
+    console.log(MI.joinReport)
     // ⚙ DIAGNOSTIC: the caller's `onAbsorbRefusal` (pipeline.js, on `--absorb-dump=<path>`) receives the absorption's inputs when it refuses
     const MP = mintProtopolygon({ streets: MI.streets, gradeSep: MI.gradeSep, boundary: MI.boundary, coast: MI.coast, coastArcs: MI.coastArcs, bb: MI.bb, onAbsorbRefusal: opts.onAbsorbRefusal || null })
     // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
@@ -5016,6 +5017,7 @@ export function deriveLayers(highways, { cropland = null, onAbsorbRefusal = null
       // ⛔ ALWAYS written ([] when none): absent is a map before the rule, and the paint and the shore pin refuse it
       offGradeSpans: MP.offGradeSpans,
       endsInWater: MP.endsInWater,   // ⛔ always written too: the untagged streets that stop at the coast (a slipway)
+      chainJoins: MI.chainJoins,     // ⛔ always written too: each chain end in another roadway, joined as a T or not and why (chainJoins.mjs)
       // ⭐ the ink ABSORBED (absorbInk.js): each face's painted boundary + labels, and the water / grade-separated cells
       ...(MP.paint ? { paint: MP.paint, inkCells: MP.inkCells } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.

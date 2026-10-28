@@ -29,8 +29,7 @@ import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
-import { highwayEndContact, rampTerminalFlares } from '../src/lib/tileGround.js'
-import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
+import { highwayEndContact, rampTerminalFlares, mintSegOrdAt } from '../src/lib/tileGround.js'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
@@ -54,8 +53,9 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
   const C = loadSceneStencil(ROOT, scene)?.clipPolygon
   const designP = join(ROOT, 'public/looks', scene, 'design.json')
   const blockCustoms = existsSync(designP) ? (readJson(designP).blockCustoms || null) : null
-  const seg = resolveChainSegmentation(town)
-  const segOrdOf = (st, i) => { const n = st.points.length; let so = 0; for (const k of (seg.get(st) || [])) if (k > 0 && k < n - 1 && k <= i) so++; return so }
+  // the authoring key, from its one home (tileGround.js#mintSegOrdAt, which ① stamps with): a chain outside `town` has none, 0
+  const segOrdAt = mintSegOrdAt(town), ciOf = new Map(town.map((s, ci) => [s, ci]))
+  const segOrdOf = (st, i) => segOrdAt(ciOf.get(st), i)
   // the street's half-width on `side` over span `segOrd`, WITH the look's authoring
   const hwOf = (st, side, segOrd) => { const c = blockCustoms?.[st.skelId]?.[side]?.[segOrd]
     return (c && Number.isFinite(c.pavementHW)) ? c.pavementHW : st.measure?.[side]?.pavementHW }

@@ -20,6 +20,11 @@
 //   B. NOTHING DOWNSTREAM ASKS A CHAIN. In `buildTileGround`'s proto block, chain-space reads
 //      appear ONLY in the base-measure table (the pre-authoring half, which is itself what
 //      moves upstream). Everything after it carries VALUES.
+//   A′. ①'S INPUT IS WIDTH-FREE TOO (Boz's ruling, 2026-10-28, with the chain join): `mintInputs.mjs#mintInputs` and all of
+//      `chainJoins.mjs` read no authored value, with ONE stated exception: `chainJoins.mjs#refuseAuthoredReKey` reads
+//      `blockCustoms` and `capEnds`, and it returns nothing (it only throws), so authoring can stop a pour but never shape ①.
+//      Outside it, `blockCustoms` is only passed along, never indexed. Mutant (--mutants): an indexed read planted in mintInputs,
+//      and a value returned from the refusal → each RED.
 import fs from 'fs'
 const SRC = fs.readFileSync('src/lib/tileGround.js', 'utf8').split('\n')
 const isProse = (l) => l.trimStart().startsWith('//') || l.trimStart().startsWith('*')
@@ -40,6 +45,26 @@ for (let i = mFrom; i <= mTo; i++) {
   if (isProse(SRC[i])) continue
   if (AUTHORED.some(re => re.test(SRC[i]))) authoredHits.push(`${i + 1}: ${SRC[i].trim().slice(0, 100)}`)
 }
+
+// ── A′ ────────────────────────────────────────────────────────────────────────
+// a function's body by brace depth, from the line declaring it (null when absent)
+const bodyOf = (L, decl) => { const f = L.findIndex(l => decl.test(l)); if (f < 0) return null
+  for (let i = f, d = 0; i < L.length; i++) { d += (L[i].match(/\{/g) || []).length - (L[i].match(/\}/g) || []).length; if (i > f && d <= 0) return [f, i] } return null }
+const INPUT_AUTHORED = [/\bblockCustoms\s*(\[|\.|\?\.)/, /\bcapEnds\b/, /\bfeWidthAt\s*\(/, /\bresolvePedDepths\s*\(/, /\bcurbWidth\b/]
+function inputClaim(mi, cj) {
+  const MI = mi.split('\n'), CJ = cj.split('\n'), hits = []
+  const m = bodyOf(MI, /^export function mintInputs\(/); if (!m) return { anchor: '`export function mintInputs(` not found in cartograph/mintInputs.mjs' }
+  const r = bodyOf(CJ, /^function refuseAuthoredReKey\(/); if (!r) return { anchor: '`function refuseAuthoredReKey(` not found in cartograph/chainJoins.mjs' }
+  for (let i = m[0]; i <= m[1]; i++) if (!isProse(MI[i]) && INPUT_AUTHORED.some(re => re.test(MI[i]))) hits.push(`mintInputs.mjs ${i + 1}: ${MI[i].trim().slice(0, 100)}`)
+  CJ.forEach((l, i) => { if (i >= r[0] && i <= r[1]) return; if (!isProse(l) && INPUT_AUTHORED.some(re => re.test(l))) hits.push(`chainJoins.mjs ${i + 1}: ${l.trim().slice(0, 100)}`) })
+  const ret = CJ.slice(r[0], r[1] + 1).filter(l => !isProse(l) && /\breturn\b\s*[^;\s}]/.test(l)), throws = CJ.slice(r[0], r[1] + 1).some(l => /\bthrow\b/.test(l))
+  if (ret.length) hits.push(`refuseAuthoredReKey RETURNS a value (${ret[0].trim().slice(0, 80)}): authoring could shape ①`)
+  if (!throws) hits.push('refuseAuthoredReKey never throws: the refusal is not fatal')
+  return { hits }
+}
+const MI_SRC = fs.readFileSync('cartograph/mintInputs.mjs', 'utf8'), CJ_SRC = fs.readFileSync('cartograph/chainJoins.mjs', 'utf8')
+const A2 = inputClaim(MI_SRC, CJ_SRC)
+if (A2.anchor) refuse(A2.anchor)
 
 // ── B ─────────────────────────────────────────────────────────────────────────
 const CHAIN_READS = [/\bfeWidthAt\s*\(/, /\bmeasures\s*\[/, /\bsegOrdAtVertex\s*\(/, /streetsOrig\s*\[/, /streetsOrig\.forEach/]
@@ -75,6 +100,20 @@ if (authoredHits.length) {
 } else {
   console.log('✅ A — ① is WIDTH-FREE: no blockCustoms / feWidthAt / resolvePedDepths / curbWidth in the mint.')
   console.log('   ⇒ prebake-freezable. `POLYGON-FIRST §3`\'s D6b blocker does not apply to an object with no width.')
+}
+if (A2.hits.length) {
+  bad = true
+  console.log(`⛔ A′ — ①'S INPUT READS AUTHORING: ${A2.hits.length} read(s) outside the one throw-only refusal.`)
+  for (const h of A2.hits) console.log('   ', h)
+} else console.log('✅ A′ — ①\'s input (mintInputs, chainJoins) reads no authored value, except refuseAuthoredReKey, which only throws.')
+if (process.argv.includes('--mutants')) {
+  const muts = [
+    ['an indexed blockCustoms read planted in mintInputs', MI_SRC.replace('  const gradeSep = mapped.filter(', '  const _w = blockCustoms[0]\n  const gradeSep = mapped.filter('), CJ_SRC],
+    ['the refusal returns a value', MI_SRC, CJ_SRC.replace('  if (hits.length) throw new Error(', '  if (hits.length) return hits\n  if (hits.length) throw new Error(')],
+  ]
+  for (const [what, mi, cj] of muts) { const got = (mi === MI_SRC && cj === CJ_SRC) ? null : inputClaim(mi, cj)
+    const red = got && !got.anchor && got.hits.length > A2.hits.length; if (!red) bad = true
+    console.log(`   mutant · ${what}: ${!got ? '⛔ the mutation did not apply — re-aim it' : red ? 'RED, as it must be' : '⛔ still clean — claim A′ cannot see it'}`) }
 }
 if (upstream.length) {
   console.log(`   B — ${upstream.length} chain read(s) in the base-measure table (the pre-authoring half that moves upstream):`)
