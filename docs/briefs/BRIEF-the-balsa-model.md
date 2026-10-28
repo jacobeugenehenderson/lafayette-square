@@ -53,7 +53,15 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
 - **⚠️ Two players (Ward's read, 2026-10-27).** §1's sites above are the KIT's (`src/`); the product is the Ward (`theward`).
   In the Ward, Society's lists come from `src/content/register.js#buildRegister` (listings + `bare:true` rows from the on-demand
   `content/roster.json`, `rosterAsked`), shown by `Society.jsx#prepareLists`; tabs file under a per-town `taxonomy` (source not
-  traced). Which kit sites run in the Ward's bundle: asked of Ward. Staging build 1612d2de = Ward d4b43fa code on kit 7179c779.
+  traced). Staging build 1612d2de = Ward d4b43fa code on kit 7179c779. **The Ward imports ONE kit module, `Town.jsx`**
+  (`vite.config.js` PINNED_KIT; Ward walked its import graph at 7179c779 and grepped dist): SlabBuildings (index, stamp,
+  materials), CityModel's sidecar code, SceneNeon/NeonBands, townHover, SetPiece, useSlabBuildingIndex and usePostFxDriver all
+  ship. ⛔ NOT reached: `src/data/buildings.js`, GlassSearch, useListings, LandmarkMarkers, SidePanel, buildingPosition,
+  useSelectedBuilding. Those are the LS player's and retire at cutover. The Ward's search index is its register.
+  **Tabs:** `theward src/town/manifest.js#loadManifest` refuses a manifest with no `taxonomy`; `cartograph/bake-manifest.mjs`
+  writes the KIT's `src/tokens/categories.js` ids and labels with `authored: false` and drops the LS subtitles. So the kit
+  vocabulary exists; the open Class D question is whether its labels are generic (Boz's read: "Pool & Recreation", "Pavilions",
+  "Wellness & CBD" read as LS-cast).
 - **Trees, lamps and water read no building identity** (Zob, grep over every module of each; §4.4 holds).
 - **⛔ The instruments can't separate identity cost from look cost yet.** `src/lib/startupMarks.js` marks sequence boundaries;
   SlabBuildings only calls `markPrepared`; the index parse and the stamp run inside the geometry's fetch and useMemo with no mark
@@ -68,7 +76,7 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    first payload). Merged as far as the renderer allows.
 2. **The listings layer:** the listings alone (name, category, hours, building id, a point), 8–15% of buildings per town
    (measured 2026-10-27 from each `content/listings.json`). It is the search index, All places, Open now and the neon's hours,
-   prefetched at idle after first paint or fetched on the first tap. ⛔ Not `src/data/buildings.js`'s every building.
+   prefetched at idle after first paint or fetched on the first tap. ⛔ Not every building (the roster is the address book).
    It is CONTENT, not slab: it grows as listings are added, with no re-pour or re-bake. **A listing carries its own point,
    written when it is created** from the building tapped in the authoring tool (Jacob, 2026-10-27; `r-a-listing-carries-its-point`),
    so it never reads the address book. ⚠️ No town's `listings.json` carries a point today (measured 2026-10-27): backfill owed.
@@ -94,14 +102,15 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    - how much of each is identity (index parse, sidecars, `aBuildingId` stamping, hover raycasts, neon) and how much is the look.
    ⛔ If identity isn't where the time goes, say so and stop: the plan changes. **"Not separable with existing instruments" does
    not block the work** (Jacob, 2026-10-27: *"as far back as to shrink the search index and speeding loading"*): the cut reaches
-   back through the search index (`src/data/buildings.js`, GlassSearch's source), and loading speed is the measure. Reuse `BRIEF-hero-arrival-perf`'s instruments and
+   back through the search index, and loading speed is the measure. In the Ward the search index is `register.js#buildRegister`
+   (listings + the on-demand roster), not `src/data/buildings.js`, which the Ward never loads. Reuse `BRIEF-hero-arrival-perf`'s instruments and
    `scratch/frame-timeline/` before building new ones.
 2. **The contract:** a `SLAB-CONTRACT` revision splitting the look, the address book and the contents, with a version bump. A
    consumer refuses a version it doesn't know.
 3. **Encoder:** bake the three. One producer.
 4. **Ward:** draw the look without identity. Click and search resolve through the address book. Delete the per-vertex id path and
    the up-front index read in the same commits (the three-part fix), including the sidecar wait in `CityModel`.
-5. **Every reader of `useSlabBuildingIndex` moves to "asked for"** or is named an exception in §4 with Jacob's ruling.
+5. **Every reader of `useSlabBuildingIndex` moves to "asked for"** or is named an exception in §4 with Jacob's ruling. In the Ward that is the readers Town.jsx reaches (§1); the LS player's readers retire at cutover.
 
 ## 4. Jacob's rulings (2026-10-27 night)
 
