@@ -151,13 +151,14 @@ export function openCloseAtStep(paths, stepM, what) {
   return { paths: kept, opened, closed, belowResolution, openedPieces: split(openedPieces), closedPieces: split(closedPieces) }
 }
 
-/** The deck footprints' INPUTS, as clipper paths, before any union: each area as mapped, each line buffered, each joint's hull,
- *  every one wound alike. What deckFootprints unions; exported so a check reads the inputs the union is given, not a copy. */
+/** The deck footprints' INPUTS, before the union: each area as mapped, each line buffered, each joint's hull, each one
+ *  normalized on its own (below). `inputs` [[path…]] one entry per input; `paths` the same, flat, which deckFootprints unions.
+ *  Exported so a check reads the inputs the union is given, not a copy. */
 export function deckInputs(osmGround) {
   const { areas, lines } = deckStructures(osmGround)
   let typical = null
-  const paths = new Paths()
-  for (const a of areas) paths.push(toPath(a.ring))
+  const raw = []
+  for (const a of areas) raw.push([toPath(a.ring)])
   let unmapped = 0
   for (const l of lines) {
     const wM = l.widthM ?? (typical ??= defaultDeckWidthM())
@@ -165,7 +166,7 @@ export function deckInputs(osmGround) {
     const co = new ClipperOffset(), out = new Paths()
     co.AddPath(toPath(l.line), JoinType.jtMiter, EndType.etOpenButt)
     co.Execute(out, (wM / 2) * SCALE)
-    for (const p of out) paths.push(p)
+    raw.push(out)
     l._halfM = wM / 2
   }
   // ⭐ A NODE WHERE TWO OR MORE DECK WAYS END IS A JOINT (Boz's ruling, 2026-10-27; PTown: two marina piers of widths 3 and 2
@@ -181,14 +182,16 @@ export function deckInputs(osmGround) {
   let joints = 0
   for (const pts of ends.values()) { if (pts.length < 4) continue
     const hull = convexHull(pts); if (hull.length < 3) continue
-    paths.push(toPath(hull)); joints++ }
+    raw.push([toPath(hull)]); joints++ }
   for (const l of lines) delete l._halfM
-  // ⭐ EVERY INPUT IS WOUND ALIKE BEFORE THE UNION (Boz's ruling, 2026-10-27): the nonzero union sums windings, so where an area
-  // mapped clockwise overlaps a line's offset (counter-clockwise) the overlap sums to 0 and is NOT deck: deck two OSM objects
-  // both cover went missing and one deck split in two (PTown, the Coast Guard Pier and the USCG pier @(-56.78, 989.78); Huron
-  // 3.37 m² in 13 pieces). An input's winding is the mapper's drawing order, never a statement about the deck.
-  for (const p of paths) if (!Clipper.Orientation(p)) p.reverse()
-  return { paths, count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical } }
+  // ⭐ EACH INPUT IS NORMALIZED ON ITS OWN BEFORE THE UNION (Boz's ruling, 2026-10-27; per INPUT, not per path: Zob): the
+  // nonzero union sums windings, so where an area mapped clockwise overlapped a line's offset (counter-clockwise) the overlap
+  // summed to 0 and was NOT deck: deck two OSM objects both cover went missing and one deck split in two (PTown, the Coast
+  // Guard Pier and the USCG pier @(-56.78, 989.78); Huron 3.37 m² in 13 pieces). A mapper's drawing order is never a statement
+  // about the deck. Each input is unioned ALONE (nonzero), which returns its outers counter-clockwise and its holes clockwise:
+  // the drawing order is gone and a hole stays a hole (a line whose buffer encloses water, a pier hooked back on itself).
+  const inputs = raw.map(ps => union(ps))
+  return { inputs, paths: inputs.flat(), count: { areas: areas.length, lines: lines.length, joints, unmappedWidth: unmapped, typicalWidthM: typical } }
 }
 
 export function deckFootprints(osmGround, stepM) {
