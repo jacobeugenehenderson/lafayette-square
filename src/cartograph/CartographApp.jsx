@@ -62,8 +62,8 @@ import BakeModal from './BakeModal.jsx'
 import CartographSurfaces from './CartographSurfaces.jsx'
 
 // Hooks + store
-import useCartographStore, { activeChannel, isStageShot } from './stores/useCartographStore.js'
-import { addressUrl } from '../lib/authoringAddress.js'
+import useCartographStore, { activeChannel, isStageShot, ALL_SHOTS } from './stores/useCartographStore.js'
+import { addressUrl, readAddress } from '../lib/authoringAddress.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
@@ -823,18 +823,42 @@ export default function CartographApp() {
   // a copied link reopens this town, this Look, this shot (the store reads all three back: `initialShot`, `_loadLooks`).
   // ⛔ Not before the Looks are known, and never over a REFUSED link — the bad address stays on screen with its alarm.
   // ▶ OPERATIONS.md §"Open Stage by URL"
+  // ⭐ A SHOT OR A TOWN IS A PLACE, AND BACK RETURNS TO IT (2026-10-28, Jacob: Back from Survey landed in PROVINCETOWN's
+  // preview). Every change used to REPLACE the address, so a town never made a history entry and Back left the page. Now a
+  // change of SHOT or TOWN pushes an entry; a refinement of the same place (the first write, hydration, a Look of the same
+  // town) replaces. And Back/Forward READ THE ADDRESS BACK (`popstate`): the same town takes its Look and shot from it,
+  // another town reloads onto it (the page follows its town, above). ⛔ While a pop is applied, the write only replaces, so
+  // Back never pushes a new entry over Forward. ▶ checks/claims-back-returns-to-the-shot.mjs
   useEffect(() => {
-    const write = (s) => {
+    let popping = false
+    const write = (s, prev) => {
       if (!s._looksHydrated || s.lookRefused) return
       // ⭐ A Stage shot is written as the clean `/stage/<town>/<shot>` (authoringAddress.js#addressUrl).
       const url = addressUrl(window.location.href, s.looks, { scene: s.scene, lookId: s.activeLookId, shot: s.shot, stage: isStageShot(s.shot) })
-      if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url)
+      if (url.href === window.location.href) return
+      const moved = !popping && prev?._looksHydrated && (s.shot !== prev.shot || s.scene !== prev.scene)
+      if (moved) window.history.pushState(window.history.state, '', url)
+      else window.history.replaceState(window.history.state, '', url)
     }
     write(useCartographStore.getState())
-    return useCartographStore.subscribe((s, prev) => {
+    const unsubscribe = useCartographStore.subscribe((s, prev) => {
       if (s.scene !== prev.scene || s.activeLookId !== prev.activeLookId || s.shot !== prev.shot
-        || s._looksHydrated !== prev._looksHydrated || s.lookRefused !== prev.lookRefused) write(s)
+        || s._looksHydrated !== prev._looksHydrated || s.lookRefused !== prev.lookRefused) write(s, prev)
     })
+    const onPop = () => {
+      const s = useCartographStore.getState(), { url } = readAddress()
+      if (url.scene && url.scene !== s.scene) { window.location.reload(); return }   // another town: the page follows it
+      popping = true
+      try {
+        if (url.look && url.look !== s.activeLookId && s.looks.some(l => l.id === url.look && l.scene === s.scene)) s.setActiveLook(url.look)
+        if (url.shot && url.shot !== s.shot) {
+          if (ALL_SHOTS.includes(url.shot)) s.setShot(url.shot)
+          else console.error(`[address] ⛔ Back/Forward to shot "${url.shot}", which is not a shot (have: ${ALL_SHOTS.join(', ')}) — ignored`)
+        }
+      } finally { popping = false }
+    }
+    window.addEventListener('popstate', onPop)
+    return () => { unsubscribe(); window.removeEventListener('popstate', onPop) }
   }, [])
   // Stage places the town it is on, like every app's entry: in Designer no <Town> is mounted, and the sun, the
   // moon, the season and Stage's own panels still follow the active town. (Terrain is reloaded above.)

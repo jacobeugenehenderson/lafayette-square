@@ -1080,6 +1080,10 @@ export default function ExtentApp() {
   const [seedError, setSeedError] = useState(null)
   // The last Bake's outcome, shown beside the Bake button: { error:{step,message,rolledBack} } or { promoteDiff }.
   const [bakeResult, setBakeResult] = useState(null)
+  // ⭐ A RE-POUR IS A QUESTION, NEVER A FAILURE (2026-10-28, Jacob: LS's Bake read "Bake failed at 'Baking slab': The pour code
+  // changed" after its own pour). The server stops a Bake that would re-pour and names the files (428); the Extent Bake asks,
+  // as the Designer's BakeModal does, and bakes on the operator's yes. { scene, files, resolve } while it asks.
+  const [repourAsk, setRepourAsk] = useState(null)
   const [fetchSources, setFetchSources] = useState(null)   // per-source ✓/count/error after a Fetch
   // Intake starts BLANK: nothing has been fetched yet, so show no map until the
   // operator Searches (or Fetches). No defaulting to the active scene's map.
@@ -1544,11 +1548,13 @@ export default function ExtentApp() {
       // SEARCH the store geo is already set (disk has none yet) → we keep it and
       // don't touch `located`, so the aerial the operator just framed isn't blanked.
       const st = useCartographStore.getState()
-      const [disk, b] = await Promise.all([
-        fetchGeography(scene).catch(() => null),
-        fetchBoundary(scene).catch(() => null),
-      ])
+      // ⛔ A COMMITTED town's geography and boundary are its own, so a failed or missing load REFUSES like the neighborhood's
+      // (Zob, 2026-10-28): the catch below shows it and does not hydrate. A scene not yet committed may have neither on disk.
+      const [disk, b] = nb.committed
+        ? await Promise.all([fetchGeography(scene), fetchBoundary(scene)])
+        : await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
       if (cancelled) return
+      if (nb.committed && !(disk && b)) throw new Error(`[Extent] ⛔ '${scene}' is committed, but its ${!disk ? 'geography' : 'boundary'} is missing. Nothing is shown or saved.`)
       const g = st.mapGeography || disk
       // A town fetched before (its geography is on disk) has its address: the scene id.
       if (Number.isFinite(disk?.lat)) setAddressEdit(scene)
@@ -1875,6 +1881,16 @@ export default function ExtentApp() {
     const clampZoom = (z) => Math.max(0.03, Math.min(40, z))
     const authoredCam = _cam?.isOrthographicCamera
       ? { x: _cam.position.x, z: _cam.position.z, zoom: clampZoom(_cam.zoom) } : null
+    // the Bake, or the server's re-pour question (428) asked and answered: yes re-bakes with the re-pour confirmed, Cancel stops
+    const bakeOrAsk = async (lookId) => {
+      try { return await bakeLook(lookId, { force: true }) } catch (e) {
+        if (e.code !== 'REPOUR_CONFIRM') throw e
+        const yes = await new Promise(resolve => setRepourAsk({ scene: e.repour?.scene || scene, files: e.repour?.files || [], resolve }))
+        setRepourAsk(null)
+        if (!yes) throw Object.assign(new Error('not baked: the re-pour was cancelled'), { cancelled: true })
+        return bakeLook(lookId, { force: true, repour: true })
+      }
+    }
     try {
       // Flush the roster overrides BEFORE the pour — the debounced autosave may
       // not have landed, and the pipeline reads building-overrides.json to decide
@@ -1890,8 +1906,10 @@ export default function ExtentApp() {
           Array.isArray(polygonLL) && polygonLL.length >= 3
             ? { polygon: polygonLL, polygonSource: polygonSource || 'authored' }
             : {})
-        const b = await fetchBoundary(scene).catch(() => null)
-        if (b) useCartographStore.setState({ sceneBoundary: b })
+        // ⛔ committed: its boundary must load (a failed or missing one fails this Bake, by name)
+        const b = await fetchBoundary(scene)
+        if (!b) throw new Error(`'${scene}' is committed, but its boundary is missing after the re-apply.`)
+        useCartographStore.setState({ sceneBoundary: b })
         stageTo({ label: 'Baking slab', i: 2, n: 2 })
         const idx = await fetchLooks().catch(() => null)
         let lookId = idx?.looks?.find(l => l.scene === scene)?.id
@@ -1900,7 +1918,7 @@ export default function ExtentApp() {
         // bakeLook falls back to the default (lafayette-square) Look and the new hood's
         // slab clobbers LS (Altadena-as-LS, 2026-07-14). Mirrors the first-pour path.
         if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene, id: scene }); lookId = r.id }
-        await bakeLook(lookId, { force: true })
+        await bakeOrAsk(lookId)
         // Switch the Designer to THIS hood's Look — else the pulldown/scene stay on
         // the previous (default LS) Look. Mirrors the first-pour path.
         const store = useCartographStore.getState()
@@ -1936,7 +1954,9 @@ export default function ExtentApp() {
           : {}),
       })
       committedThisRun = true
-      const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
+      // ⛔ just committed: its geography and boundary must load (a failed or missing one fails this Bake, by name, and rolls back)
+      const [g, b] = await Promise.all([fetchGeography(scene), fetchBoundary(scene)])
+      if (!(g && b)) throw new Error(`'${scene}' was committed, but its ${!g ? 'geography' : 'boundary'} is missing.`)
       const update = {}
       if (g) update.mapGeography = g
       if (b) update.sceneBoundary = b
@@ -1964,7 +1984,7 @@ export default function ExtentApp() {
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
       stageTo({ label: 'Baking slab', i: 3, n: 3 })
-      await bakeLook(lookId, { force: true })
+      await bakeOrAsk(lookId)
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
       // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
@@ -1981,8 +2001,9 @@ export default function ExtentApp() {
         // slab-less. Then reload the restored frame + clear the committed marker.
         setBuildStage({ label: 'Rolling back', i: 0, n: 0 })
         await rollbackExtent(scene).catch(() => {})
-        const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
-        useCartographStore.setState({ mapGeography: g || null, sceneBoundary: b || null })
+        // the restored frame: a failed reload is shown by name (loadError), never set to nothing in silence
+        try { const [g, b] = await Promise.all([fetchGeography(scene), fetchBoundary(scene)]); useCartographStore.setState({ mapGeography: g || null, sceneBoundary: b || null }) }
+        catch (e2) { setLoadError(`${String(e2?.message || e2)} — after rolling back; reload the page.`) }
         setCommitted(false); setSeedToken(t => t + 1)
       }
       // ⭐ The camera goes back to where it was before this Bake, whichever branch failed.
@@ -1990,7 +2011,7 @@ export default function ExtentApp() {
       // ⛔ Shown BESIDE THE BAKE BUTTON, naming the step. It used to go to seedError, which
       // renders only in the Setup section — hidden for every town that has data, so a failed
       // Bake on an existing town was silent (provincetown, 2026-09-25).
-      setBakeResult({ error: { step, message: e.message || 'failed', rolledBack: committedThisRun } })
+      setBakeResult(e.cancelled ? { cancelled: { step, rolledBack: committedThisRun } } : { error: { step, message: e.message || 'failed', rolledBack: committedThisRun } })
     } finally {
       setBuilding(false); setBuildStage(null); setBuildStartedAt(0)
     }
@@ -2545,6 +2566,20 @@ export default function ExtentApp() {
                         : `${buildStage?.label || 'Baking'}…`)
                     : (bakeDirty ? 'Bake' : 'Baked')}
                 </button>
+                {repourAsk && (
+                  <div className="carto-extent-status warn" role="alertdialog" style={{ flexBasis: '100%', marginTop: 6 }}>
+                    <b>This Bake will re-pour {repourAsk.scene}.</b> What its last pour read has changed (its code, a data file it
+                    reads, its geography or a registry value), or baking would rewrite a file the town is holding:
+                    <ul style={{ margin: '4px 0 6px 16px' }}>{repourAsk.files.map(f => <li key={f}><code>{f}</code></li>)}</ul>
+                    <button className="carto-btn" onClick={() => repourAsk.resolve(false)}>Cancel</button>{' '}
+                    <button className="carto-btn carto-stage-btn" onClick={() => repourAsk.resolve(true)}>Re-pour and bake</button>
+                  </div>
+                )}
+                {bakeResult?.cancelled && (
+                  <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
+                    Not baked: you cancelled the re-pour at “{bakeResult.cancelled.step}”{bakeResult.cancelled.rolledBack ? ' — rolled back to how it was before this Bake.' : '.'}
+                  </div>
+                )}
                 {bakeResult?.error && (
                   <div className="carto-extent-status warn" style={{ flexBasis: '100%', marginTop: 6 }}>
                     Bake failed at “{bakeResult.error.step}”: {bakeResult.error.message}

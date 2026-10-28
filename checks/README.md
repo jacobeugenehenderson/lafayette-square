@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 111. Never in a default run.
+## ⛔ live — 112. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -75,7 +75,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-every-app-mounts-the-set-piece.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-every-ground-surface-takes-the-lamp.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-tree-candidate-is-accounted-for.mjs` | unreadable | deletes files — only under its own temp dir · imports arborist/bake-trees.js, which can: writeFile, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
-| `checks/claims-extent-never-seeds-a-committed-radius.mjs` | outbound | writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · imports a temp copy of src/cartograph/api.js, which can: calls fetch() · imports a mutated copy of src/cartograph/extentRadius.js from its own temp dir — read as src/cartograph/extentRadius.js, safe |
+| `checks/claims-extent-never-seeds-a-committed-radius.mjs` | outbound | writeFileSync — only under its own temp dir · deletes files — only under its own temp dir · imports a temp copy of src/cartograph/api.js, which can: calls fetch() · imports a mutated copy of src/cartograph/extentRadius.js from its own temp dir — read as src/cartograph/extentRadius.js, safe · imports a mutated copy of src/cartograph/api.js from its own temp dir — read as src/cartograph/api.js, safe |
 | `checks/claims-frame-timeline-catches-a-stall.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-neon-picks-its-building.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-no-edge-is-drawn-twice.mjs` | unreadable | installs a loader hook (node:module register) — can swap any module's source · writeFileSync · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
@@ -103,6 +103,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-paint-stack-flattens.mjs` | unreadable | writeFileSync — only under its own temp dir · computed import of a temp-dir module whose source cannot be read · re-runs its own file (process.execPath + its own path) — the same tier as itself · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-the-paint-takes-the-rim-crossings.mjs` | unreadable | writeFileSync · child_process with a non-literal command — cannot be read · imports cartograph/bake-ground.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync |
 | `checks/claims-the-pour-reads-the-towns-norm.mjs` | unreadable | child_process with a non-literal command — cannot be read |
+| `checks/claims-the-pour-records-itself-once.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · imports cartograph/pourSteps.mjs, which can: writeFileSync |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known-local command |
 | `checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-sun-dims-with-the-weather-now.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
@@ -175,7 +176,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 346. This is `npm test`.
+## safe — 347. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -257,6 +258,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-authored-framing-reaches-the-player.mjs` | DOES THE WARD READ EVERY FRAMING KEY THE BAKE WRITES? |
 | `checks/claims-autosave-keeps-what-bakes-read.mjs` | DOES STAGE'S AUTOSAVE KEEP EVERYTHING A BAKE READS? |
 | `checks/claims-axis-keys-resolve.mjs` | Does every axis key anyone stores actually exist in the rubric? |
+| `checks/claims-back-returns-to-the-shot.mjs` | CLAIM — BACK RETURNS TO THE SHOT (2026-10-28, Jacob: going back to Extent from Survey landed in PROVINCETOWN's preview). |
 | `checks/claims-bake-progress-shows-the-route.mjs` | CLAIM — THE BAKE SHOWS ITS OWN STEPS, NEVER KILLS ONE ON A CLOCK, AND SAYS WHICH STEP STOPPED. |
 | `checks/claims-baked-consumers-get-a-cache-bust.mjs` | as the RE-READ key (`slabUrl(look, rel, reread)` / `slabFetch(look, rel, init, |
 | `checks/claims-band-is-one-ring.mjs` | Jacob, 2026-08-11, setting the acceptance for the whole arc: |

@@ -334,7 +334,7 @@ export const curbWidthOf = (s) => resolveCurbWidth({ curbWidth: s.curbWidth }).v
 export const curbRungOf = (s) => resolveCurbWidth({ curbWidth: s.curbWidth }).rung
 // Every valid destination. ⛔ NOT a superset to test Stage-ness with: 'designer'
 // and 'extent' are here precisely because they are NOT Stage shots.
-const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
+export const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']   // the shots an address may name (initialShot; the page's Back/Forward)
 // ⭐ WHERE THE PAGE OPENS (Phase 2 A; Jacob's ruling 2026-10-04): the URL's `?shot=`, then the saved shot, then the
 // Designer. The URL is written back as you move (CartographApp, `?scene=&look=&shot=`), so a copied link reopens
 // in the shot it was copied from. It replaces "every Stage shot reloads as Hero" (2026-09-26).

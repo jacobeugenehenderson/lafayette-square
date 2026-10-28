@@ -14,7 +14,8 @@
  *                            every file byte-identical, the new one gone.
  *   apply/covers-the-pour    applySnapshotPaths includes map.json and the promoted ribbons.
  *   apply/commit-rollback-rescope   serve.js snapshots on commit + rescope and restores on both.
- *   promote/gesture-not-silent      every route passes --yes, and --yes prints PROMOTE-DIFF.
+ *   promote/gesture-not-silent      the pour's ONE promote-ribbons step (cartograph/pourSteps.mjs, which every route runs)
+ *                                   passes --yes, serve.js declares none of its own, and --yes prints PROMOTE-DIFF.
  *   extent/error-beside-bake        onBuild's failure goes to bakeResult (rendered by the Bake
  *                                   button, naming the step), not seedError.
  *   extent/camera-unchanged-by-failure   no −discCenter translate; a failure restores the prior camera.
@@ -32,7 +33,7 @@ const snap = await import(join(ROOT, 'cartograph', 'applySnapshot.mjs'))
 
 function loadSources() {
   return {
-    serve: read('cartograph/serve.js'), promote: read('cartograph/promote-ribbons.js'),
+    serve: read('cartograph/serve.js'), promote: read('cartograph/promote-ribbons.js'), pour: read('cartograph/pourSteps.mjs'),
     extent: read('src/cartograph/ExtentApp.jsx'), module: read('cartograph/applySnapshot.mjs'),
     // The behaviour under test: the module's own functions, swappable by a mutation.
     snapshotPaths: snap.snapshotPaths, restorePaths: snap.restorePaths,
@@ -66,13 +67,14 @@ function run(S) {
     /snapshotApply\(scene, 'prebak'\)/.test(S.serve) && /restoreApply\(scene, 'prebak'\)/.test(S.serve) &&
     /snapshotApply\(scene, 'prebak-rescope'\)/.test(S.serve) && /restoreApply\(scene, 'prebak-rescope'\)/.test(S.serve),
     'serve.js no longer snapshots + restores on commit-extent / rollback / rescope')
-  const promoteCalls = [...S.serve.matchAll(/node promote-ribbons\.js[^`'"]*/g)].map(m => m[0])
+  // the pour's steps are declared ONCE (pourSteps.mjs) and every route runs them, so the one promote-ribbons call is the gesture
+  const promoteCalls = [...S.pour.matchAll(/node promote-ribbons\.js[^`'"]*/g)].map(m => m[0]), ownCalls = [...S.serve.matchAll(/node promote-ribbons\.js/g)].length
   assert('promote/gesture-not-silent',
-    promoteCalls.length >= 3 && promoteCalls.every(c => /--yes/.test(c)) && /PROMOTE-DIFF /.test(S.promote) && /moved\.length && operatorGesture/.test(S.promote),
-    `a route calls promote-ribbons without --yes (${promoteCalls.filter(c => !/--yes/.test(c)).join(' | ') || 'n/a'}), or --yes no longer prints PROMOTE-DIFF`)
+    promoteCalls.length === 1 && promoteCalls.every(c => /--yes/.test(c)) && ownCalls === 0 && /PROMOTE-DIFF /.test(S.promote) && /moved\.length && operatorGesture/.test(S.promote),
+    `the pour's promote-ribbons step is not declared once with --yes (${promoteCalls.join(' | ') || 'none'}; serve.js declares ${ownCalls} of its own), or --yes no longer prints PROMOTE-DIFF`)
   const onBuild = S.extent.slice(S.extent.indexOf('const onBuild = async'), S.extent.indexOf('(Re-scope folded into onBuild'))
   assert('extent/error-beside-bake',
-    /setBakeResult\(\{ error: \{ step/.test(onBuild) && !/setSeedError\(`Pour failed/.test(onBuild) && /Bake failed at “\{bakeResult\.error\.step\}”/.test(S.extent),
+    /setBakeResult\([^\n]*\{ error: \{ step/.test(onBuild) && !/setSeedError\(`Pour failed/.test(onBuild) && /Bake failed at “\{bakeResult\.error\.step\}”/.test(S.extent),
     'a failed Bake no longer reports beside the Bake button with the step name')
   assert('extent/camera-unchanged-by-failure',
     !/authoredCam\.x - discCenter\.x/.test(onBuild) && /localStorage\.setItem\('cartograph-camera', priorCam\)/.test(onBuild),
@@ -84,8 +86,8 @@ const MUTATIONS = [
   { name: 'apply/restore-is-exact', apply: (S) => ({ ...S, snapshotPaths: (paths, tag) => S.snapshotPaths(paths.filter(p => !p.endsWith('map.json')), tag) }) },
   { name: 'apply/covers-the-pour', apply: (S) => ({ ...S, module: S.module.replace("join(mapCleanDir(scene), 'map.json'), ", '') }) },
   { name: 'apply/commit-rollback-rescope', apply: (S) => ({ ...S, serve: S.serve.replace("restoreApply(scene, 'prebak-rescope')", 'false') }) },
-  { name: 'promote/gesture-not-silent', apply: (S) => ({ ...S, serve: S.serve.replace('--scene=${scene} --yes`, { cwd: here, env, timeout: 60000,', '--scene=${scene}`, { cwd: here, env, timeout: 60000,') }) },
-  { name: 'extent/error-beside-bake', apply: (S) => ({ ...S, extent: S.extent.replace('setBakeResult({ error: { step', 'setSeedError({ error: { step') }) },
+  { name: 'promote/gesture-not-silent', apply: (S) => ({ ...S, pour: S.pour.replace('cmd: `node promote-ribbons.js ${flag} --yes`', 'cmd: `node promote-ribbons.js ${flag}`') }) },
+  { name: 'extent/error-beside-bake', apply: (S) => ({ ...S, extent: S.extent.replace('setBakeResult(e.cancelled ? { cancelled: { step, rolledBack: committedThisRun } } : { error: { step', 'setSeedError(e.cancelled ? { cancelled: { step, rolledBack: committedThisRun } } : { error: { step') }) },
   { name: 'extent/camera-unchanged-by-failure', apply: (S) => ({ ...S, extent: S.extent.replace('? { x: authoredCam.x, z: authoredCam.z, zoom: authoredCam.zoom }', '? { x: authoredCam.x - discCenter.x, z: authoredCam.z - discCenter.z, zoom: authoredCam.zoom }') }) },
 ]
 
