@@ -1548,11 +1548,13 @@ export default function ExtentApp() {
       // SEARCH the store geo is already set (disk has none yet) → we keep it and
       // don't touch `located`, so the aerial the operator just framed isn't blanked.
       const st = useCartographStore.getState()
-      const [disk, b] = await Promise.all([
-        fetchGeography(scene).catch(() => null),
-        fetchBoundary(scene).catch(() => null),
-      ])
+      // ⛔ A COMMITTED town's geography and boundary are its own, so a failed or missing load REFUSES like the neighborhood's
+      // (Zob, 2026-10-28): the catch below shows it and does not hydrate. A scene not yet committed may have neither on disk.
+      const [disk, b] = nb.committed
+        ? await Promise.all([fetchGeography(scene), fetchBoundary(scene)])
+        : await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
       if (cancelled) return
+      if (nb.committed && !(disk && b)) throw new Error(`[Extent] ⛔ '${scene}' is committed, but its ${!disk ? 'geography' : 'boundary'} is missing. Nothing is shown or saved.`)
       const g = st.mapGeography || disk
       // A town fetched before (its geography is on disk) has its address: the scene id.
       if (Number.isFinite(disk?.lat)) setAddressEdit(scene)
@@ -1904,8 +1906,10 @@ export default function ExtentApp() {
           Array.isArray(polygonLL) && polygonLL.length >= 3
             ? { polygon: polygonLL, polygonSource: polygonSource || 'authored' }
             : {})
-        const b = await fetchBoundary(scene).catch(() => null)
-        if (b) useCartographStore.setState({ sceneBoundary: b })
+        // ⛔ committed: its boundary must load (a failed or missing one fails this Bake, by name)
+        const b = await fetchBoundary(scene)
+        if (!b) throw new Error(`'${scene}' is committed, but its boundary is missing after the re-apply.`)
+        useCartographStore.setState({ sceneBoundary: b })
         stageTo({ label: 'Baking slab', i: 2, n: 2 })
         const idx = await fetchLooks().catch(() => null)
         let lookId = idx?.looks?.find(l => l.scene === scene)?.id
@@ -1950,7 +1954,9 @@ export default function ExtentApp() {
           : {}),
       })
       committedThisRun = true
-      const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
+      // ⛔ just committed: its geography and boundary must load (a failed or missing one fails this Bake, by name, and rolls back)
+      const [g, b] = await Promise.all([fetchGeography(scene), fetchBoundary(scene)])
+      if (!(g && b)) throw new Error(`'${scene}' was committed, but its ${!g ? 'geography' : 'boundary'} is missing.`)
       const update = {}
       if (g) update.mapGeography = g
       if (b) update.sceneBoundary = b
@@ -1995,8 +2001,9 @@ export default function ExtentApp() {
         // slab-less. Then reload the restored frame + clear the committed marker.
         setBuildStage({ label: 'Rolling back', i: 0, n: 0 })
         await rollbackExtent(scene).catch(() => {})
-        const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
-        useCartographStore.setState({ mapGeography: g || null, sceneBoundary: b || null })
+        // the restored frame: a failed reload is shown by name (loadError), never set to nothing in silence
+        try { const [g, b] = await Promise.all([fetchGeography(scene), fetchBoundary(scene)]); useCartographStore.setState({ mapGeography: g || null, sceneBoundary: b || null }) }
+        catch (e2) { setLoadError(`${String(e2?.message || e2)} — after rolling back; reload the page.`) }
         setCommitted(false); setSeedToken(t => t + 1)
       }
       // ⭐ The camera goes back to where it was before this Bake, whichever branch failed.

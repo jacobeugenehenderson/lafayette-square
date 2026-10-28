@@ -45,10 +45,14 @@ export async function fetchGeography(scene) {
   // Cache-bust: after a re-fetch the geography.json is rewritten, and a stale
   // cached copy would put the aerial in a different frame than the fresh skeleton.
   const res = await fetch(`${sceneUrl(scene, 'geography')}?t=${Date.now()}`, { cache: 'no-store' })
+  // ⛔ a failed load is not "no geography" (the server answers a missing one with 200 null): refused by name (2026-10-28)
+  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its geography could not be loaded (HTTP ${res.status}).`)
   return res.json()
 }
 export async function fetchBoundary(scene) {
   const res = await fetch(sceneUrl(scene, 'boundary'))
+  // ⛔ a failed load is not "no boundary" (the server answers a missing one with 200 null): refused by name (2026-10-28)
+  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its boundary could not be loaded (HTTP ${res.status}).`)
   return res.json()
 }
 

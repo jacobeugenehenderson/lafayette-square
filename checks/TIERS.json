@@ -1572,7 +1572,8 @@
         "writeFileSync — only under its own temp dir",
         "deletes files — only under its own temp dir",
         "imports a temp copy of src/cartograph/api.js, which can: calls fetch()",
-        "imports a mutated copy of src/cartograph/extentRadius.js from its own temp dir — read as src/cartograph/extentRadius.js, safe"
+        "imports a mutated copy of src/cartograph/extentRadius.js from its own temp dir — read as src/cartograph/extentRadius.js, safe",
+        "imports a mutated copy of src/cartograph/api.js from its own temp dir — read as src/cartograph/api.js, safe"
       ]
     },
     {

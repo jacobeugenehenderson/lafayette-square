@@ -13,7 +13,11 @@
 //   (3) A COMMITTED TOWN, hydrated: its draft is its draftRadius, else its applied 892 m, else a refusal · the seed gives nothing,
 //       even at radius 0 · a FRESH scene is still seeded (keptFit + 120).
 //   (4) ONE STEP RULE: toRadiusM(891.6) = 892 · the handle, the slider and the field all read it · no step of 10 is left.
-//   MUTANTS (always run): {} on !ok restored → (1) RED · the committed guard removed from seedRadius → (3) RED.
+//   (5) A COMMITTED TOWN'S OTHER LOADS (Zob): fetchGeography and fetchBoundary refuse a 503 by name and pass a 200 null (a scene
+//       with none yet) · the page's committed hydration and its three reloads in onBuild swallow none of them (the search's
+//       load of a fresh target may).
+//   MUTANTS (always run): {} on !ok restored → (1) RED · the committed guard removed from seedRadius → (3) RED · fetchBoundary's
+//   refusal removed → (5) RED.
 //   node checks/claims-extent-never-seeds-a-committed-radius.mjs
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -58,11 +62,26 @@ const judgeSeed = (E) => { const committed = E.seedRadius({ hydrated: true, comm
   const all = step === 1 && q === 892 && /const r = toRadiusM\(Math\.hypot/.test(ch) && /step=\{RADIUS_STEP_M\}\s*\n\s*value=\{radiusM\}/.test(ex) && /<RadiusField /.test(ex) && /type="number" inputMode="numeric" min=\{rMin\} step=\{RADIUS_STEP_M\}/.test(ex) && !/step=\{10\}/.test(ex)
   row(all, `(4) one step rule: RADIUS_STEP_M ${step} m (891.6 → ${q}) · the handle, the slider and the typed field read it · no step of 10 left: ${all}`) }
 
+// (5) a committed town's geography and boundary
+const loadGB = async (api) => { const r = {}
+  for (const [k, fn] of [['geography', api.fetchGeography], ['boundary', api.fetchBoundary]]) {
+    globalThis.fetch = async () => ({ ok: false, status: 503, json: async () => { throw new SyntaxError('Unexpected token <') } })
+    try { r[k] = { v: await fn('lafayette-square') } } catch (e) { r[k] = { why: String(e.message) } }
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => null })
+    try { r[k].none = await fn('fresh') } catch (e) { r[k].none = `threw ${e.message}` } finally { globalThis.fetch = realFetch } }
+  return { r, pass: ['geography', 'boundary'].every(k => new RegExp(`'lafayette-square': its ${k} could not be loaded \\(HTTP 503\\)`).test(r[k].why || '') && r[k].none === null) } }
+const sayGB = (J) => ['geography', 'boundary'].map(k => `${k}: a 503 ${J.r[k].why ? `refuses (${J.r[k].why.slice(0, 60)}…)` : 'does NOT refuse'}, a 200 null is ${JSON.stringify(J.r[k].none)}`).join(' · ')
+{ const J = await loadGB(API); row(J.pass, `(5) the loads: ${sayGB(J)}`)
+  const s = readFileSync(join(ROOT, 'src/cartograph/ExtentApp.jsx'), 'utf8'), ob = s.slice(s.indexOf('const onBuild = async'), s.indexOf('(Re-scope folded into onBuild'))
+  const hyd = /nb\.committed\s*\n\s*\? await Promise\.all\(\[fetchGeography\(scene\), fetchBoundary\(scene\)\]\)/.test(s) && /if \(nb\.committed && !\(disk && b\)\) throw/.test(s)
+  const swallowed = (ob.match(/fetch(?:Geography|Boundary)\(scene\)\.catch\(/g) || []).length
+  row(hyd && swallowed === 0, `(5) the page: a committed hydration's geography and boundary refuse (${hyd}) · onBuild's reloads that swallow a failure: ${swallowed}`) }
+
 // MUTANT 1: {} on !ok restored in api.js
-{ const src1 = readFileSync(join(ROOT, 'src/cartograph/api.js'), 'utf8'), ANCHOR1 = '  if (!res.ok) throw new Error(`[Extent] ⛔'
+{ const src1 = readFileSync(join(ROOT, 'src/cartograph/api.js'), 'utf8'), ANCHOR1 = "  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its neighborhood could not be loaded"
   if (src1.split(ANCHOR1).length !== 2) row(false, 'mutant ({} on !ok): the anchor is not in api.js once — re-aim it')
   else { const dir1 = mkdtempSync(join(tmpdir(), 'extent-load-'))
-    try { writeFileSync(join(dir1, 'api.js'), src1.replace(ANCHOR1, '  if (!res.ok) return {}; if (false) throw new Error(`[Extent] ⛔'))
+    try { writeFileSync(join(dir1, 'api.js'), src1.replace(ANCHOR1, "  if (!res.ok) return {}; if (false) throw new Error(`[Extent] ⛔ '${scene}': its neighborhood could not be loaded"))
       const J = await judgeLoad(await import(pathToFileURL(join(dir1, 'api.js')).href))
       row(!J.pass, `mutant: {} on !ok restored → ${sayLoad(J)} — ${!J.pass ? 'RED as it must be' : 'the row proves nothing'}`)
     } finally { rmSync(dir1, { recursive: true, force: true }) } } }
@@ -74,5 +93,13 @@ const judgeSeed = (E) => { const committed = E.seedRadius({ hydrated: true, comm
       const J = judgeSeed(await import(pathToFileURL(join(dir2, 'extentRadius.js')).href))
       row(!J.pass, `mutant: the committed guard removed → a committed town (applied 892) is seeded ${J.committed ?? 'nothing'} — ${!J.pass ? 'RED as it must be' : 'the row proves nothing'}`)
     } finally { rmSync(dir2, { recursive: true, force: true }) } } }
+// MUTANT 3: fetchBoundary's refusal removed
+{ const src3 = readFileSync(join(ROOT, 'src/cartograph/api.js'), 'utf8'), ANCHOR3 = "  if (!res.ok) throw new Error(`[Extent] ⛔ '${scene}': its boundary could not be loaded"
+  if (src3.split(ANCHOR3).length !== 2) row(false, 'mutant (fetchBoundary\'s refusal removed): the anchor is not in api.js once — re-aim it')
+  else { const dir3 = mkdtempSync(join(tmpdir(), 'extent-gb-'))
+    try { writeFileSync(join(dir3, 'api.js'), src3.replace(ANCHOR3, "  if (false) throw new Error(`[Extent] ⛔ '${scene}': its boundary could not be loaded"))
+      const J = await loadGB(await import(pathToFileURL(join(dir3, 'api.js')).href))
+      row(!J.pass, `mutant: fetchBoundary's refusal removed → ${sayGB(J)} — ${!J.pass ? 'RED as it must be' : 'the row proves nothing'}`)
+    } finally { rmSync(dir3, { recursive: true, force: true }) } } }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ extent never seeds a committed radius')
 process.exit(red ? 1 : 0)
