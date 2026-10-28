@@ -32,7 +32,8 @@ const sa = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; retur
 { const bc = readFileSync(join(ROOT, 'cartograph/bake-coast.mjs'), 'utf8'), stx = readFileSync(join(ROOT, 'cartograph/structures.mjs'), 'utf8')
   const at = (s, t) => s.indexOf(t), calls = bc.split('openCloseAtStep(traced, fine').length - 1
   const order = calls === 1 && at(bc, 'openCloseAtStep(traced, fine') < at(bc, 'simplifyRing(bd.outer') && at(bc, 'openCloseAtStep(traced, fine') < at(bc, 'settleOnSource(simple')
-  const water = /const water = clip\(ClipType\.ctIntersection, clip\(ClipType\.ctUnion, oc\.paths/.test(bc)
+  // the water is the open/close's output: through the embankments' exact cut and the run along their rings (bake-coast.mjs#runsAlongHeld), nothing else
+  const water = /const opened2 = clip\(ClipType\.ctIntersection, clip\(ClipType\.ctUnion, oc\.paths[\s\S]*?const water0 = [^\n]*opened2[\s\S]*?const water = along \? along\.rings\.map\(toPath\) : water0/.test(bc)
   const deck = /export function deckFootprints[\s\S]*?openCloseAtStep\(paths, stepM/.test(stx)
   const erode = stx.split('off(off(').length - 1, elsewhere = ['bake-coast.mjs', 'coastFile.mjs', 'mintInputs.mjs'].filter(f => { try { return readFileSync(join(ROOT, 'cartograph', f), 'utf8').includes('off(off(') } catch { return false } })
   row(order && water && deck && erode === 2 && !elsewhere.length, `(1) bake-coast opens and closes the traced water through openCloseAtStep (${calls} call), before simplify and settle: ${order} · the water is its output: ${water} · deckFootprints calls the same function: ${deck} · the erode/dilate written once (structures.mjs ${erode} of 2${elsewhere.length ? `; ALSO in ${elsewhere.join(', ')}` : ''})`) }

@@ -60,6 +60,7 @@ export function pourSteps(scene, paths, ribbons, { elevation }) {
       inputs: [join(paths.raw, 'elevation.tif'), join(paths.raw, 'elevation-sources.txt'), join(paths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
         join(paths.raw, 'water-datums.json'), join(paths.raw, 'osm.json'), join(paths.raw, 'elevation-flights.json'),
         paths.boundary, paths.geography,
+        paths.skeleton, paths.overlay,   // an embankment street's land: its pour measure along the skeleton (structures.mjs#embankmentFootprints)
         { value: 'terrainValueReads', read: () => terrainValueReads(scene) },   // the authored lake level / tide names
         join(HERE, 'bake-coast.mjs')] },
     // overlay.json + skeleton.json are operator-edited / derived (Survey and Measure write clean/overlay.json); the rest are raw
