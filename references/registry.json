@@ -8491,14 +8491,16 @@
         "recorded": true,
         "overridable": true,
         "check": "claims-a-chain-end-in-a-roadway-is-a-node: RED on any such end left unjoined",
-        "authoringGuard": "the join REFUSES BY NAME when the through street has an authored blockCustoms slot at or after the new segOrd (a join adds an intersection, so segOrd downstream shifts +1); a key migration is filed under the open key, EXTENT-DESIGN §4.1",
-        "bPrime": "not joined; a sibling question-check, for Jacob"
+        "authoringGuard": "POUR-FATAL: a throw by name (street, slots, foot) when the through street has an authored slot at or after the cut block's segOrd, never a per-end skip, so authoring never shapes ①'s topology (a skip was not idempotent: pour 2 would revert pour 1's join and land the new authoring on the wrong block). claims-proto-wall claim A covers mintInputs + chainJoins.mjs with this one throw-only exception. Key migration: EXTENT-DESIGN §4.1, Jacob's.",
+        "bPrime": "not joined; a sibling question-check, for Jacob",
+        "notAT": "a foot on the through street's own free END vertex (end-to-end gap/overlap): set aside as a question; joining it doubled an edge (Altadena)",
+        "noLook": "a town that declares no home Look reads {} as truth; a declared Look whose file is missing refuses"
       },
       "by": "Jacob",
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "cartograph/BACKLOG.md",
-      "notes": "Derived, not a snap: the only distance is the street's own half-width. Each join is reported so the operator sees it. Moving widths upstream to the skeleton was not chosen (it reopens design). Corrected 2026-10-27 (Boz): 'authored half-width' would cross the Wall at mintInputs, the same error caught on the embankment ruling. Zob's census found no end changing bucket under authored widths. Authoring guard ruled by Boz on Zob's finding (2026-10-27 night): segOrd is topological (resolveChainSegmentation → segOrdAt), so a silent join would move LS's 79 and HPDM's 17 authored slots onto the wrong blocks."
+      "notes": "Derived, not a snap: the only distance is the street's own half-width. Each join is reported so the operator sees it. Moving widths upstream to the skeleton was not chosen (it reopens design). Corrected 2026-10-27 (Boz): 'authored half-width' would cross the Wall at mintInputs, the same error caught on the embankment ruling. Zob's census found no end changing bucket under authored widths. Authoring guard ruled by Boz on Zob's finding (2026-10-27 night): segOrd is topological (resolveChainSegmentation → segOrdAt), so a silent join would move LS's 79 and HPDM's 17 authored slots onto the wrong blocks. Zob's review of 8d169805 (2026-10-28), rulings confirmed by Boz."
     },
     {
       "id": "r-a-way-tag-decides-before-byCoast",
