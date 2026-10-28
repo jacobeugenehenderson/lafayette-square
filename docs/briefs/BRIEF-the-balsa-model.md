@@ -65,6 +65,9 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
 2. **The listings layer:** the listings alone (name, category, hours, building id, a point), 8–15% of buildings per town
    (measured 2026-10-27 from each `content/listings.json`). It is the search index, All places, Open now and the neon's hours,
    prefetched at idle after first paint or fetched on the first tap. ⛔ Not `src/data/buildings.js`'s every building.
+   It is CONTENT, not slab: it grows as listings are added, with no re-pour or re-bake. **A listing carries its own point,
+   written when it is created** from the building tapped in the authoring tool (Jacob, 2026-10-27; `r-a-listing-carries-its-point`),
+   so it never reads the address book. ⚠️ No town's `listings.json` carries a point today (measured 2026-10-27): backfill owed.
 3. **The address book:** a separate, on-demand file that answers *"what stands at this point?"* (footprints → id, a
    spatial index), fetched on the first click or idle after first paint. ⛔ Never in the first paint's critical path.
 4. **The contents:** per-building records (today's index entry plus the content layer's card), fetched by id, one building at a time.

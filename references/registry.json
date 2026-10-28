@@ -5071,6 +5071,15 @@
       "findings": [
         "r-all-places-lists-listings-only"
       ]
+    },
+    {
+      "id": "q-listing-point-source",
+      "ask": "Where a listing gets its map position once the building index is out of first paint",
+      "neededBy": "BRIEF-the-balsa-model §2 (the listings layer must not reach into the address book)",
+      "status": "answered",
+      "findings": [
+        "r-a-listing-carries-its-point"
+      ]
     }
   ],
   "findings": [
@@ -8405,6 +8414,21 @@
       "quote": "\"'All places' is fine\" · \"yes, bare buildings out of All places; file it\"",
       "canon": "docs/briefs/BRIEF-the-balsa-model.md §4.3",
       "notes": "All places lists LISTINGS only (8-15% of buildings per town, measured from each content/listings.json on 2026-10-27). A building with no listing is reachable only by tapping it, which loads the address book on demand. useListings' synthesized bare-building listings leave All places."
+    },
+    {
+      "id": "r-a-listing-carries-its-point",
+      "question": "q-listing-point-source",
+      "kind": "ruling",
+      "value": {
+        "pointWrittenAt": "listing creation",
+        "source": "the building tapped in the authoring tool",
+        "layer": "content (live; no re-pour or re-bake on a new listing)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-27",
+      "quote": "\"yes, file it\" (on Boz: the point is written into the listing when it is created)",
+      "canon": "docs/briefs/BRIEF-the-balsa-model.md §2",
+      "notes": "The listings layer is CONTENT and grows as listings are added; it never reads the address book or resolveBuildingPosition's slab index. Today's listings carry building_id but no point (backfill owed per town)."
     }
   ]
 }
