@@ -5116,6 +5116,15 @@
       "findings": [
         "r-balsa-lands-its-rulings-not-the-identity-cut"
       ]
+    },
+    {
+      "id": "q-block-key-under-a-new-intersection",
+      "ask": "How a block's key (segOrd) survives a re-pour that adds or removes an intersection on its street",
+      "neededBy": "r-a-chain-end-in-a-roadway-is-a-T (a join adds a T, so a recomputed segOrd shifts every block after it); EXTENT-DESIGN §4.1 (the key is open)",
+      "status": "answered",
+      "findings": [
+        "r-block-keys-are-minted-once-and-inserted-between"
+      ]
     }
   ],
   "findings": [
@@ -8543,6 +8552,23 @@
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
       "canon": "docs/briefs/BRIEF-the-balsa-model.md",
       "notes": "The speed is in the look, not identity (Plumb's numbers in the brief). Desktop frame cause not established (headless M1 GPU): confirm by eye in a real browser first. Neon keyed by face was part of the skipped split (it existed only so neon would not need the index); with the index staying, neon stays as built: it reads the index plus live hours and the clock (Boz, 2026-10-27, on Jacob asking what it meant)."
+    },
+    {
+      "id": "r-block-keys-are-minted-once-and-inserted-between",
+      "question": "q-block-key-under-a-new-intersection",
+      "kind": "ruling",
+      "value": {
+        "key": "segOrd becomes a FROZEN identity: minted once, carried, never re-derived (EXTENT-DESIGN §4.1's rule for frozen frame facts); a new intersection mints a key BETWEEN its neighbours (fractional indexing, e.g. 1 → 1, 1.5), and nothing renumbers",
+        "split": "both halves inherit the parent's authoring",
+        "merge": "the merged item resets to its calculated default for that exact item",
+        "history": "keys depend on pour history; the mint reads the previous pour's frozen keys (the ratchet)",
+        "workflowPremise": "topology fixes (a T added) are build-time fixes that precede authoring, so authoring is rarely in play"
+      },
+      "by": "Jacob",
+      "date": "2026-10-28",
+      "quote": "\"1. OK 2. I think authoring is a red herring here; either authoring wouldn't have happened yet or it would be reset locally to the calculated default for that exact item. 3. Yes. This workflow imagines a user going back and adding Ts; while that *might* happen/work that would only be a 'fix' that was missed on build so would likely precede authoring\" (on Boz's reading of his '1.1' idea)",
+      "canon": "EXTENT-DESIGN.md §4.1",
+      "notes": "UNBUILT. Costing owed (Zob, read-only): where the mint reads the prior pour's keys, and how often a re-pour has added or removed an intersection on an authored street. Until built, the join's pour-fatal refusal on an authored slot stays (no town hits it tonight); it retires when this lands. Boz's addition: a reset-to-default on a merge is reported by name, never silent."
     }
   ]
 }

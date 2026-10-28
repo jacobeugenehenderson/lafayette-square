@@ -334,6 +334,8 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 > - ⚠️ **Node stability across a RE-FETCH: measured at the CHAIN level only** (§3.4's gate 3); per node,
 >   unmeasured. ❓ And whether a divided road's 4-node cluster is one node or four.
 
+> ### ⭐ RULED 2026-10-28 (Jacob), UNBUILT: block keys are minted once and a new intersection is keyed BETWEEN its neighbours ("1.1"), so nothing renumbers. Split → both halves inherit; merge → reset to the calculated default. ▶ registry `r-block-keys-are-minted-once-and-inserted-between`.
+
 > ### ⛔⛔ THE KEY BUILT ON IT IS **OPEN, NOT SETTLED** — parity measured 2026-08-21; it does NOT pass
 > *(agent Gimbal, `aa7bdf44`. The retired "settled" text + a clause-by-clause verdict:
 > `cartograph/_archive/EXTENT-4.1-node-pair-key-asserted-spec-2026-08-12.md`. ⭐ It was **ASPIRATION
