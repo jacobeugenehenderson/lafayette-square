@@ -32,7 +32,7 @@ import { makeFadeGroundMaterial } from './fadeGroundMaterial.js'
 import { setGroundRules, setGroundRuleMap } from '../lib/groundRules.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import { terrainExag, patchTerrain, sceneExag, terrainWater, terrainDatum } from '../utils/terrainShader'
+import { terrainExag, patchTerrain, sceneExag, terrainWater, terrainDatum, onTerrainReload } from '../utils/terrainShader'
 import { getElevationRaw, setDrawnGround } from '../utils/elevation'
 import { makeDrawnGround, drawnPinsOf, predatesThePin } from '../lib/drawnGround.js'
 import { waterLevelsIfWet } from '../../cartograph/waterLevel.mjs'
@@ -438,12 +438,7 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
       if (pins) geom.setAttribute('aDrawnRaw', new THREE.BufferAttribute(pins, 4))
       // ⭐ WHERE THE WATER STANDS (cartograph/waterLevel.mjs): each vertex carries the town's low and high level there;
       // the shader stands the sheet between them at the tide's phase. The mesh itself stays where it was baked.
-      if (g.kind !== 'face' && isWaterGroupId(g.id)) {
-        const L = waterLevelsOrSay(), lo = new Float32Array(nV), hi = new Float32Array(nV)
-        if (L) for (let i = 0; i < nV; i++) { lo[i] = L.lowAt(posUse[i * 3], posUse[i * 3 + 2]); hi[i] = L.highAt(posUse[i * 3], posUse[i * 3 + 2]) }
-        geom.setAttribute('aLevelLow', new THREE.BufferAttribute(lo, 1))
-        geom.setAttribute('aLevelHigh', new THREE.BufferAttribute(hi, 1))
-      }
+      if (g.kind !== 'face' && isWaterGroupId(g.id)) fillWaterLevels(geom, waterLevelsOrSay())
       // ⭐ A `perField` group (the crop) carries a field index per vertex (third bin section) and
       // each field's axis in the manifest: expanded here into the two attributes its shader reads.
       // `aFieldAxis` = (cos, sin of the row bearing, field centre x, z) · `aFieldExt` = (half-length
@@ -472,6 +467,12 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     })
   }, [manifest, bin])
 
+  // ⭐ THE WATER'S LEVELS ARE THE TERRAIN'S RECORD, so they are re-read when the terrain reloads (2026-10-28, Zob's question). <Town>
+  // mounts this only once its terrain has arrived (TownPlace.jsx#useTownLoaded), but a same-Look RE-BAKE reloads the terrain ASYNC
+  // (reloadTerrain, force) while this ground remounts on the new bake: nothing orders the two, and the memo above reads the levels
+  // once. The geometry stays; only aLevelLow/aLevelHigh are refilled.
+  useEffect(() => onTerrainReload(() => { const L = waterLevelsOrSay()
+    for (const m of meshes) if (m.group.kind !== 'face' && isWaterGroupId(m.group.id)) fillWaterLevels(m.geometry, L) }), [meshes])
   // ⭐ THE REVEAL (a `prepared:ground` startup mark): the ground surfaces are physical; they are PREPARED once their
   // geometry exists. Their maps are a look layer and arrive after (useArrivingTexture).
   useEffect(() => { markPrepared('ground') }, [meshes])
@@ -731,6 +732,14 @@ function TerrainExagDriver({ target, swellMs }) {
  */
 // ⛔ Default is the TOWN's authored ceiling, resolved at call time — not a module constant
 // captured at import, which would pin every look to whatever loaded first (site 15).
+
+// a water sheet's per-vertex low and high level (`L` null: none, the attributes zero), set or refilled in place
+function fillWaterLevels(geom, L) {
+  const pos = geom.getAttribute('position'), nV = pos.count, lo = new Float32Array(nV), hi = new Float32Array(nV)
+  if (L) for (let i = 0; i < nV; i++) { lo[i] = L.lowAt(pos.getX(i), pos.getZ(i)); hi[i] = L.highAt(pos.getX(i), pos.getZ(i)) }
+  geom.setAttribute('aLevelLow', new THREE.BufferAttribute(lo, 1))
+  geom.setAttribute('aLevelHigh', new THREE.BufferAttribute(hi, 1))
+}
 
 // The active town's water levels: null for an inland town, which has none to ask for (waterLevel.mjs#waterLevelsIfWet, the
 // one rule SlabRevetment reads too). ⛔ A WATER-datum terrain with no `water` record was baked before the levels existed: the

@@ -180,7 +180,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 356. This is `npm test`.
+## safe — 357. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -523,6 +523,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-town-sees-its-sky.mjs` | "DOES <Town> DRAW ITS SKY IN ANY APP'S CANVAS — OR ONLY IN ONE WHOSE CAMERA HAPPENS TO REACH IT?" |
 | `checks/claims-the-tree-wind-is-the-looks.mjs` | IS EVERY TREE'S WIND LOOK THE LOOK'S, AND DOES THE VISIBLE FLOOR ADD NOTHING IN CALM? |
 | `checks/claims-the-water-is-one-polygon.mjs` | CLAIM — THE WATER IS ONE POLYGON, ①'s, DRAWN TWICE; NO SECOND WATER (BRIEF-the-shore-is-one-line §3 step 2a/2c). |
+| `checks/claims-the-water-levels-follow-the-terrain.mjs` | ARE THE WATER'S LEVELS RE-READ WHEN THE TERRAIN RELOADS? |
 | `checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs` | lib/nws.js converts every National Weather Service layer |
 | `checks/claims-through-node-width-step.mjs` | THE CHECK: at a THROUGH-NODE — a ring vertex where two consecutive runs carry |
 | `checks/claims-tide-is-present-exactly-where-tidal.mjs` | a tide where the water is tidal, and nowhere else (BRIEF-tide). |
