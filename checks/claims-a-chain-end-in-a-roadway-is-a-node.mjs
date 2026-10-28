@@ -13,7 +13,8 @@
 //     blockCustoms is read here. (The pour's base also goes through `effectiveMeasure`, which zeroes only an inboard side's
 //     ped depths; pavementHW passes through it unchanged.)
 //   · (a) inside: the end is within that half-width of the other street's line. (b′) reaching: not inside, but the end's own
-//     roadway (its own half-width, the narrower side) reaches the other's.
+//     roadway (its own half-width, the narrower side) reaches the other's. ⭐ (b′) is NOT joined (Boz, 2026-10-27): it is RED as
+//     a QUESTION for Jacob, so the check stays red on it after the join lands, until he rules.
 //   · Judged: every ribbon chain, and ends inside the drawing (the disc, discOf); an end set aside is counted, by reason. A
 //     row where either chain is GRADE-SEPARATED is labelled so: mintInputs mints those apart (`gradeSep`), so whether such an
 //     end is a T is a question, not a verdict (a nodeless CROSSING is claims-a-nodeless-crossing-is-grade-separated's).
@@ -98,6 +99,7 @@ for (const scene of scenes('cartograph/data/<scene>/clean/skeleton.json')) {
   const line = (r, tag) => console.log(`   ${tag} ${r.id} (${r.name || 'unnamed'}) → ${r.into} (${r.intoName || 'unnamed'}): ${f2(r.d)} m from its line, its ${r.side} half-width ${f2(r.hw)} m${tag === '(b′)' ? `, own ${f2(r.own)} m` : ''} @(${r.p.x.toFixed(1)}, ${r.p.z.toFixed(1)})${r.sameName ? ' · SAME NAME: the false-dead-end class, a question (claims-false-deadend-census)' : ''}${r.gs.length ? ` · GRADE-SEPARATED (${r.gs.join(', ')}): minted apart, a question` : ''}`)
   for (const r of J.inside) line(r, '(a)')
   for (const r of J.reach) line(r, '(b′)')
+  if (J.reach.length) console.log(`   (b′) is not joined: a question for Jacob (BRIEF §1), not a defect the join fixes`)
   if (MUTANTS) {
     const M = moveTEnd(sk, rib, disc), m = M && judge(M.sk, rib, disc), red = m && m.inside.length > J.inside.length
     if (!red) bad++

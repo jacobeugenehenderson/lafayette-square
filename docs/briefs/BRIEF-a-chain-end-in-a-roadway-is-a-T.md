@@ -15,6 +15,11 @@ site below is Zob's read at integration d4af8879. Confirm each. If the code disa
 A chain end that is no node and lies inside another street's roadway becomes a T, joined by rule at **mintInputs**, judged by
 **that street's own half-width**. The join is recorded and reported, and the operator can override it. No constant: the only
 distances are the two streets' half-widths. Moving widths upstream to the skeleton was not chosen.
+- ⛔ **ASPIRATION — the override: unbuilt, home unruled** (Boz, 2026-10-27). The join is built with its frozen record, printed
+  by name, so nothing is silent; but the mint is blind to authoring (the Wall), so the override must be a POUR input, and which
+  one is Jacob's design question. No override path is built until he rules.
+- **(b′) is NOT joined** (Boz, 2026-10-27): the ruling covers an end INSIDE the other roadway. An end whose own roadway only
+  reaches the other's stays RED in the check, as a question for Jacob. Grade-separated targets are out of the join (minted apart).
 
 ## 2. What the code does today (Zob, by symbol)
 - `skeleton.js#buildNodeGraph`: a node is a shared coordinate (`vKey`, 1 cm). Nothing splits a chain at a crossing, and nothing
