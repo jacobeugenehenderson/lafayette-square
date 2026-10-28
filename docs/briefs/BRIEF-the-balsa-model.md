@@ -81,7 +81,7 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    Ward lights them by the clock. ⛔ The night glow must not pull the address book or the index into the first paint.
 2. **No hover** (*"I do not like the light-up-when-mouse-passes-over-it in general, too much"*). Hover highlighting is DELETED,
    not disabled: `useSelectedBuilding`'s `hoveredId` / `setHovered` / `clearHovered`, and every per-move raycast that feeds them.
-   A click is the first sign of life.
+   A click is the first sign of life. No pointer-cursor change either (Jacob: *"let's just ditch for now"*).
 3. **Pins and the side panel load when asked, prefetched nearby** (*"Loaded when asked, but nearby for quick access"*). Nothing is
    in the first paint. After it, at idle, the Ward prefetches the address book and the contents near the camera, so a click there
    is instant. ⛔ A prefetch never blocks or stutters a pan.
@@ -91,6 +91,9 @@ squares with `ORIENTATION §5`: photorealism is the destination, and inertness i
    two tiers become a KIT vocabulary, generic enough that every town's active listings fall under them. ⚠️ Today's vocabulary is
    LS's: a subtitle reads *"Lafayette Park, gardens, pool, playgrounds"* and the component is `LafayetteCategoryAccordion`. That is
    Layer 0's Class D bleed, and it is fixed in the same work.
+   **Society Pages opens on the most generic listing of the neighbourhood** (Jacob: *"'All open establishments'? 'All
+   establishments'?"*). ⟦open: the label⟧. Boz's suggestion: open on *All places*, with *Open now* as the first narrowing, which
+   is the same fact the neon shows.
 4. **Trees, lamps and water are part of the look, always drawn.** They need no per-object identity, so balsa costs them nothing:
    they stay as they are, carrying nothing per object at runtime. (Boz, answering Jacob's *"trees lamps and water are mandatory?"*;
    confirm by measurement in step 1 that none of them reads building identity.)
