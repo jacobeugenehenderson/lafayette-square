@@ -213,3 +213,49 @@ export function ringsMeet(rings, clear = 0) {
   }
   return out
 }
+
+/**
+ * ⭐ NO EDGE SHORTER THAN THE SOURCE'S STEP (ORIENTATION §5; Boz's ruling, 2026-10-27; bake-coast calls it at settle's exit). Over a set of rings, together: the shortest
+ * edge below `step` loses whichever end moves the ring least (its distance to its neighbours' chord), when that removal is
+ * ADMISSIBLE: the new edge keeps `clear` from every other edge of every ring, no vertex lies in the corner it cuts, both its
+ * corners pass `acuteAt`, and the ring keeps three vertices. An end that is `fixed` (on the square) never goes. An edge neither
+ * end of which may go is HELD and returned by place, never dropped in silence (Huron: a 4 m × 0.5 m island, held at three
+ * vertices: a width under one cell, which is not this rule). Returns { rings (in order), removed: [{ at, edgeM, devM, m2 }], held: [{ at, edgeM }] }.
+ * ▶ checks/claims-a-coast-edge-is-no-finer-than-its-trace.mjs
+ */
+export function toResolution(rings, step, { fixed = () => false, acuteAt = () => false, clear = 0 } = {}) {
+  if (!(step > 0)) throw new Error(`⛔ coastFile: toResolution needs the source's step (got ${step})`)
+  const segD = (v, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, t = L2 ? Math.max(0, Math.min(1, ((v[0] - a[0]) * dx + (v[1] - a[1]) * dz) / L2)) : 0; return Math.hypot(v[0] - a[0] - t * dx, v[1] - a[1] - t * dz) }
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  const crosses = (p1, p2, q1, q2) => ((cr(q1, q2, p1) > 0) !== (cr(q1, q2, p2) > 0)) && ((cr(p1, p2, q1) > 0) !== (cr(p1, p2, q2) > 0))
+  const gap = (p1, p2, q1, q2) => (crosses(p1, p2, q1, q2) ? 0 : Math.min(segD(p1, q1, q2), segD(p2, q1, q2), segD(q1, p1, p2), segD(q2, p1, p2)))
+  const inTri = (v, a, b, c) => { const d1 = cr(a, b, v), d2 = cr(b, c, v), d3 = cr(c, a, v); return (d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0) }
+  // each vertex a node of its ring's loop; each EDGE (v → v.next) keyed in every cell of `step` its box spans
+  const G = step, grid = new Map(), V = rings.map((r, ri) => r.map(p => ({ p, ri, alive: true })))
+  V.forEach(vs => vs.forEach((v, i) => { v.prev = vs[(i - 1 + vs.length) % vs.length]; v.next = vs[(i + 1) % vs.length] }))
+  const index = (v) => { const a = v.p, b = v.next.p
+    for (let i = Math.floor(Math.min(a[0], b[0]) / G); i <= Math.floor(Math.max(a[0], b[0]) / G); i++)
+      for (let j = Math.floor(Math.min(a[1], b[1]) / G); j <= Math.floor(Math.max(a[1], b[1]) / G); j++) { const k = i + ',' + j; (grid.get(k) || grid.set(k, new Set()).get(k)).add(v) } }
+  V.flat().forEach(index)
+  const near = (a, b, pad) => { const out = new Set()
+    for (let i = Math.floor((Math.min(a[0], b[0]) - pad) / G); i <= Math.floor((Math.max(a[0], b[0]) + pad) / G); i++)
+      for (let j = Math.floor((Math.min(a[1], b[1]) - pad) / G); j <= Math.floor((Math.max(a[1], b[1]) + pad) / G); j++) for (const v of grid.get(i + ',' + j) || []) if (v.alive) out.add(v)
+    return out }
+  const size = rings.map(r => r.length), removed = [], held = [], heldSet = new Set()
+  const admissible = (v) => { const a = v.prev, b = v.next; if (size[v.ri] <= 3 || fixed(v.p)) return false
+    if (acuteAt(a.p, a.prev.p, b.p) || acuteAt(b.p, a.p, b.next.p)) return false
+    for (const u of near(a.p, b.p, clear + step)) {
+      if (u !== a && u !== v && u.next !== a && u !== b && gap(a.p, b.p, u.p, u.next.p) < clear) return false   // not the edges at a or b
+      if (u !== a && u !== v && u !== b && inTri(u.p, a.p, v.p, b.p)) return false }
+    return true }
+  for (;;) { let best = null, bl = step
+    for (const vs of V) for (const v of vs) { if (!v.alive || heldSet.has(v) || (fixed(v.p) && fixed(v.next.p))) continue
+      const L = Math.hypot(v.next.p[0] - v.p[0], v.next.p[1] - v.p[1]); if (L < bl) { bl = L; best = v } }
+    if (!best) break
+    const pick = [best, best.next].filter(admissible).map(v => ({ v, d: segD(v.p, v.prev.p, v.next.p) })).sort((x, y) => x.d - y.d)[0]
+    if (!pick) { heldSet.add(best); held.push({ at: best.p, edgeM: bl }); continue }
+    const v = pick.v; removed.push({ at: v.p, edgeM: bl, devM: pick.d, m2: Math.abs(cr(v.prev.p, v.p, v.next.p)) / 2 })
+    v.alive = false; size[v.ri]--; v.prev.next = v.next; v.next.prev = v.prev; heldSet.delete(v.prev); index(v.prev) }
+  const out = V.map(vs => { const s = vs.find(v => v.alive), r = []; if (!s) return r; let v = s; do { r.push(v.p); v = v.next } while (v !== s); return r })
+  return { rings: out, removed, held }
+}

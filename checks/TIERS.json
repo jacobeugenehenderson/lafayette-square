@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 480,
+  "total": 481,
   "counts": {
-    "safe": 341,
+    "safe": 342,
     "local-effect": 29,
     "live": 110
   },
@@ -149,6 +149,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-coast-edge-is-no-finer-than-its-trace.mjs",
+      "tier": "safe",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "deletes files — only under its own temp dir",
+        "imports a mutated copy of cartograph/coastFile.mjs from its own temp dir — read as cartograph/coastFile.mjs, safe"
       ]
     },
     {

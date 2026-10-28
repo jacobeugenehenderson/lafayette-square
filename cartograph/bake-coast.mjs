@@ -58,7 +58,7 @@ import { wetLoops, KIND } from './marchingSquares.mjs'
 import { coastRings } from './coastline.mjs'
 import { deckFootprints, openCloseAtStep } from './structures.mjs'
 import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'          // clipper units per metre: 1 mm
-import { COAST_FILE, COAST_VERSION, heldCells, ringViolations, ringsMeet } from './coastFile.mjs'
+import { COAST_FILE, COAST_VERSION, heldCells, ringViolations, ringsMeet, toResolution } from './coastFile.mjs'
 import { outlineCorner, INK_EPS } from '../src/lib/tileGround.js'
 import { lidarToRecordM, FLIGHTS_FILE } from './fetch-lidar-flights.mjs'
 import { discOf } from './boundaryRecords.mjs'
@@ -401,6 +401,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // each one dropped is COUNTED and NAMED (coast.json islandsDropped), and its ground is the water's. ⭐ Judged on the ring
   // as WRITTEN (after simplifyRing and settleOnSource, below): a settled edge can leave an island's one node outside it.
   const lat = terrainLattice(nb), islandsDropped = []
+  let edgesBelowResolution = null
   const holdsNode = (h) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
     for (const [x, z] of h) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) }
     for (let j = Math.max(0, Math.ceil((z0 - lat.bounds.minZ) / lat.sz)); j < lat.height && lat.Z(j) <= z1; j++)
@@ -425,6 +426,18 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // trace step (the trace interpolates between samples laid in TOWN metres, which is not the raster's grid).
   const settled = await settleOnSource(simple.flatMap(bd => [bd.outer, ...bd.holes]), R, fine, opened, toLL, highAt, decks.on, wallsOf([...oc.openedPieces.features, ...oc.closedPieces.features]))
   for (const bd of simple) { bd.outer = r3(wound(bd.outer, 1)); bd.holes = bd.holes.map(h => r3(wound(h, -1))) }
+  // ⭐ NO EDGE FINER THAN THE TRACE, AT SETTLE'S EXIT (ORIENTATION §5, "a source is drawn to its own resolution"; Boz's ruling,
+  // 2026-10-27): settle moves vertices by up to a step, and nothing after it asked what its moves left. PTown v3: a 7.6 cm edge at
+  // (-3418.7, -1928.6), the sweep clamp's, that ①'s shore could not hold. Every edge shorter than the step loses a vertex
+  // (toResolution), counted and named (coast.json edgesBelowResolution). ⛔ The WIDTH clause (a neck or channel under one cell
+  // left by settle) and the decks are NOT this rule: BACKLOG.
+  // ⛔ the clearance is the mint's ink width (2·INK_EPS): two parts of the coast closer than the ink can only be one stroke in ①
+  const inkW = 2 * INK_EPS
+  { const all = simple.flatMap(bd => [bd.outer, ...bd.holes]), res = toResolution(all, fine, { fixed: (p) => onSquare(p, R), acuteAt, clear: inkW })
+    let i = 0; for (const bd of simple) { bd.outer = res.rings[i++]; bd.holes = bd.holes.map(() => res.rings[i++]) }
+    edgesBelowResolution = { removed: res.removed.length, m2: +res.removed.reduce((t, q) => t + q.m2, 0).toFixed(3),
+      largest: res.removed.slice().sort((a, b) => b.devM - a.devM).slice(0, 8).map(q => ({ at: q.at, edgeM: +q.edgeM.toFixed(4), movedM: +q.devM.toFixed(4) })),
+      held: res.held.map(h => ({ at: h.at, edgeM: +h.edgeM.toFixed(4) })) } }
   for (const bd of simple) bd.holes = bd.holes.filter(h => { if (holdsNode(h)) return true
     let cx = 0, cz = 0; for (const p of h) { cx += p[0]; cz += p[1] } islandsDropped.push({ m2: +ringArea(h).toFixed(1), at: [Math.round(cx / h.length), Math.round(cz / h.length)] }); return false })
   // ⛔ EVERY RING IS SIMPLE AND ① CAN OUTLINE EVERY VERTEX, or the coast is not written (Boz's rulings, 2026-10-26): a ring
@@ -432,8 +445,6 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   // stroked into an antenna, refused downstream far from its cause. Refused here, by name, at each place.
   // ⛔ AND NO TWO RINGS MEET (Boz's ruling, 2026-10-27): a hole across its body's outer, or one body across another.
   const labels = simple.flatMap((bd, bi) => [bd.outer, ...bd.holes].map((r, ri) => ({ r, name: `body ${bi} ring ${ri}` })))
-  // ⛔ the clearance is the mint's ink width (2·INK_EPS): two parts of the coast closer than the ink can only be one stroke in ①
-  const inkW = 2 * INK_EPS
   const bad = [...labels.flatMap(({ r, name }) => ringViolations(r, acuteAt, inkW).map(v => ({ ...v, where: `${name} edges ${v.a}/${v.b}` }))),
     ...ringsMeet(labels.map(l => l.r), inkW).map(v => ({ ...v, where: `${labels[v.ra].name} edge ${v.a} / ${labels[v.rb].name} edge ${v.b}` }))]
   if (bad.length) throw new Error(`⛔ bake-coast: ${scene} — ${bad.length} place(s) where the traced coast is not simple rings apart (${[...new Set(bad.map(v => v.kind))].map(k => `${bad.filter(v => v.kind === k).length} ${k}`).join(' · ')}): ${bad.slice(0, 8).map(v => `${v.where} @(${v.at.map(Math.round).join(', ')})`).join(' · ')}${bad.length > 8 ? ` … +${bad.length - 8}` : ''}. Cause not established (the trace, simplifyRing or settleOnSource); the coast is not written.`)
@@ -455,6 +466,7 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
     waterOpened: { m2: sumM2(oc.openedPieces.features), features: oc.openedPieces.features.map(({ poly, ...f }) => f), slivers: oc.openedPieces.slivers }, waterClosed: { m2: sumM2(oc.closedPieces.features), features: oc.closedPieces.features.map(({ poly, ...f }) => f), slivers: oc.closedPieces.slivers }, waterBelowResolution: oc.belowResolution.map(({ m2, at }) => ({ m2, at })),
     decksOpened: { m2: decks.openedM2, sites: decks.opened }, decksClosed: { m2: decks.closedM2, sites: decks.closed }, decksBelowResolution: decks.belowResolution.map(({ m2, at }) => ({ m2, at })),
+    edgesBelowResolution,
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,
               hollows: hollows.length, hollowHa: +(hollows.reduce((t, h) => t + ringArea(h.outer), 0) / 1e4).toFixed(2) },
@@ -481,6 +493,8 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
   if (decks.opened.length) console.log(`  DECKS OPENED at the trace step: ${decks.opened.length} footprint(s) lost ${decks.openedM2} m² narrower than one cell`)
   if (decks.belowResolution.length) console.log(`  DECKS BELOW RESOLUTION: ${decks.belowResolution.length} deck(s) narrower than one trace cell everywhere, not drawn as decks: ${decks.belowResolution.slice(0, 8).map(b => `${b.m2} m² @(${b.at.map(Math.round).join(', ')})`).join(' · ')}${decks.belowResolution.length > 8 ? ` … +${decks.belowResolution.length - 8}` : ''}`)
   if (decks.closed.length) console.log(`  DECKS CLOSED at the trace step: ${decks.closed.length} footprint(s) gained ${decks.closedM2} m² where their parts left a gap under one cell: ${decks.closed.slice(0, 8).map(c => `${c.m2} m² @(${c.at.map(Math.round).join(', ')})`).join(' · ')}`)
+  { const E = edgesBelowResolution
+    console.log(`  EDGES BELOW RESOLUTION (shorter than the ${+fine.toFixed(3)} m step, at settle's exit): ${E.removed} vertex(es) removed, ${E.m2} m²${E.largest.length ? `, the largest move ${E.largest[0].movedM} m @(${E.largest[0].at.map(Math.round).join(', ')})` : ''}${E.held.length ? ` · ⚠️ ${E.held.length} HELD (neither end may go; a width under one cell, filed): ${E.held.slice(0, 8).map(h => `${h.edgeM} m @(${h.at.map(Math.round).join(', ')})`).join(' · ')}` : ''}`) }
   if (settled.sweepClamped.length) console.log(`  SWEEP-CLAMPED: ${settled.sweepClamped.length} settle move(s) cut short so no edge sweeps over a vertex: ${settled.sweepClamped.slice(0, 8).map(c => `${c.wantM}→${c.gotM} m @(${c.at.map(Math.round).join(', ')})`).join(' · ')}${settled.sweepClamped.length > 8 ? ` … +${settled.sweepClamped.length - 8}` : ''}`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : 'wrote'} ${outPath}`)
   return out

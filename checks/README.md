@@ -174,7 +174,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 341. This is `npm test`.
+## safe — 342. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -190,6 +190,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-cli-scene-has-one-resolver.mjs` | DOES ANY SCRIPT ASK "WHICH TOWN?" TWICE? |
 | `checks/claims-a-closed-shore-still-yields-ink.mjs` | DOES A SHORE THAT CLOSES STILL GET AN EDGE? |
 | `checks/claims-a-closed-stripe-keeps-its-hole.mjs` | a fence round a yard — bakes as a BAND with a HOLE in it, never as a filled disc. |
+| `checks/claims-a-coast-edge-is-no-finer-than-its-trace.mjs` | CLAIM — NO COAST EDGE IS FINER THAN ITS TRACE (ORIENTATION §5, "a source is drawn to its own resolution, and no finer"; Boz's |
 | `checks/claims-a-coast-outside-the-drawing-is-no-shore.mjs` | a coast ring that never reaches the town's DRAWING (its terrain |
 | `checks/claims-a-coast-ring-keeps-the-ink-clear.mjs` | CLAIM — A COAST RING KEEPS THE INK CLEAR (Boz's ruling, 2026-10-27). ① strokes the coast at ε each side (the mint's INK_EPS), so |
 | `checks/claims-a-corner-is-where-one-turns.mjs` | ⭐⭐⭐ A CORNER IS WHERE ① TURNS — THE LABEL NEVER DECIDES IT. A CENSUS, not a gate: where the owner label changes on |
