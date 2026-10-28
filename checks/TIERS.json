@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 501,
+  "total": 502,
   "counts": {
-    "safe": 356,
+    "safe": 357,
     "local-effect": 30,
     "live": 115
   },
@@ -3543,6 +3543,13 @@
       "tier": "safe",
       "why": [
         "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-water-levels-follow-the-terrain.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

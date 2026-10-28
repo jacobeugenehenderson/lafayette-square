@@ -166,12 +166,17 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   const stoneMaterial = useMemo(() => { patchTerrainInstancedBaked(stone.material); return stone.material }, [stone])
   const drapeDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrain(d, { perVertex: true, drawn: true }); return d }, [])
   const stoneDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrainInstancedBaked(d); return d }, [])
+  // the terrain or the drawn ground re-pointed (a look switch, the ground loading, a same-Look re-bake): the levels and the faces re-read
+  const [groundGen, setGroundGen] = useState(0)
+  useEffect(() => onTerrainReload(() => setGroundGen(g => g + 1)), [])
+  useEffect(() => onDrawnGround(() => setGroundGen(g => g + 1)), [])
   // ⭐ The wetted band stands at the LIVE level where the camera is (cartograph/waterLevel.mjs), so it moves with the tide.
+  // ⭐ Re-read on a terrain reload (`groundGen`): a same-Look re-bake reloads the terrain ASYNC, and the levels are the terrain's record.
   // ⛔ Not swallowed (BRIEF-tide finding): a town whose water record cannot be read SAYS so, once, and its wetted band
   // stays unlit — never a quiet dry band.
   const levels = useMemo(() => { try { return waterLevelsIfWet({ datum: terrainDatum(), water: terrainWater() }) } catch (e) {
     if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[SlabRevetment] ⛔ ${e.message} — the stone's wetted band has no level to stand at`) }
-    return null } }, [doc])
+    return null } }, [doc, groundGen])
   useFrame(({ camera: cam }) => { if (levels) drape.uniforms.uWaterY.value = stone.uniforms.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, phaseNow()) })
   useEffect(() => () => { drapeMaterial.dispose(); stoneMaterial.dispose(); drapeDepth.dispose(); stoneDepth.dispose() }, [drapeMaterial, stoneMaterial, drapeDepth, stoneDepth])
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])
@@ -180,10 +185,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // ⚠️ Built once per document. `drapeGlobals` is ARC-GLOBAL on purpose: every chunk
   // of a face derives its vertices from the same lattice, which is what makes the
   // seam exact rather than approximately exact.
-  // Re-built when the terrain or the drawn ground is re-pointed (a look switch, the ground loading)
-  const [groundGen, setGroundGen] = useState(0)
-  useEffect(() => onTerrainReload(() => setGroundGen(g => g + 1)), [])
-  useEffect(() => onDrawnGround(() => setGroundGen(g => g + 1)), [])
+  // Re-built when the terrain or the drawn ground is re-pointed (a look switch, the ground loading): `groundGen`, declared above
   const faces = useMemo(() => {
     if (!doc) return []
     // ⭐ The heap runs on below the water to rest on the bed, down to where the bottom stops showing.
