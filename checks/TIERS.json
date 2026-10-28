@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 489,
+  "total": 490,
   "counts": {
-    "safe": 348,
+    "safe": 349,
     "local-effect": 29,
     "live": 112
   },
@@ -1017,6 +1017,13 @@
       "reasonClass": "outbound",
       "why": [
         "imports scripts/lib/headless.mjs, which can: calls fetch(), opens a WebSocket, deletes files — only under its own temp dir, child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-an-entry-flies-to-its-frame.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

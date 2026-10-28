@@ -26,6 +26,10 @@ const chrome = await launch({ windowSize: '1280,800' })
 let code = 1
 try {
   const page = await chrome.openPage()
+  // ⛔ Read-only, as the header says: every non-GET is refused before it leaves the page (it was only said, not done).
+  page.on('Fetch.requestPaused', (p) => page.send(p.request.method === 'GET' || p.request.method === 'HEAD' ? 'Fetch.continueRequest' : 'Fetch.failRequest',
+    p.request.method === 'GET' || p.request.method === 'HEAD' ? { requestId: p.requestId } : { requestId: p.requestId, errorReason: 'BlockedByClient' }).catch(() => {}))
+  await page.send('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] })
   await page.send('Page.enable'); await page.send('Runtime.enable')
   // Browse = Town's plan shot, from the first frame; and bump frameKey the instant the probe exists — before the places load
   await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `

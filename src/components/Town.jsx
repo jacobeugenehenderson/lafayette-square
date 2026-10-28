@@ -29,12 +29,15 @@
  *   flightRef        a ref Town fills: { from, to, t, eased, duration, at, landed, interrupted } — at t = 0 before the first
  *                    painted frame of a flight, then every frame; `eased` is the camera's own curve (drive a panel by it)
  *   onFlightEnd      (f) => void, once per shot change: landed, or interrupted by a pointerdown / wheel
- *   frameKey         the plan's ONE move: the plan OPENS on the town's Browse frame (src/camera/browseFrame.js) and
- *                    frames its places only when this changes (a Return, a category chosen). litIds alone only light —
+ *   frameKey         the plan's ONE move: the plan OPENS on the town's Browse frame (src/camera/browseFrame.js), or on
+ *                    frameIds' frame when they are given, and frames its places again only when this changes (a Return,
+ *                    a category chosen). litIds alone only light —
  *                    typing never moves the camera.
  *                    The in-plan move runs transitions.js' `frame` (1200 ms, easeInOutCubic).
- *   frameIds         what the plan frames on a frameKey change, apart from what it lights — an iterable of building
- *                    ids; absent: litIds, else every listing. Lights nothing. Given but empty (or with no id placed),
+ *   frameIds         what the plan frames on ENTERING and on a frameKey change, apart from what it lights — an iterable
+ *                    of building ids. Given, the plan's entry flies straight to their frame in one move (Society's
+ *                    arrival: "frame all, light open"). Absent: the entry opens on the Browse frame, and a frameKey
+ *                    change frames litIds, else every listing. Lights nothing. Given but empty (or with no id placed),
  *                    the plan goes back to its Browse frame with a warning, as for any set with nothing placed, and
  *                    onFramed says so (placed 0) — never another set of places.
  *   frameMode        how the plan frames its places: 'densest' (default — the densest cluster, frameDensest; Jacob, 2026-09-28)
@@ -585,7 +588,8 @@ export default function Town({
   const heroMotion = o.heroMotion ?? scene?.heroMotion ?? null
   const heroKeyframes = useMemo(() => o.heroKeyframes ?? (scene ? resolveHeroKeyframes(scene.heroKeyframes, scene.heroMotion, stencil, heroFov, 'town') : null),
     [o.heroKeyframes, scene, stencil, heroFov])
-  // The flight between shots (src/camera/ShotFlight.jsx): the plan opens on the Browse frame; a frameKey frames places.
+  // The flight between shots (src/camera/ShotFlight.jsx): the plan opens on the Browse frame, or on frameIds' frame when
+  // given (entryFrames); a frameKey frames places.
   const places = useBuildingPlaces()
   // Listings with no building are kept (as null): the plan's disclosure names them unplaced, never drops them.
   // What the plan FRAMES — never what it lights (frameIds, header). Absent: the lit set, else every listing.
@@ -631,7 +635,7 @@ export default function Town({
       {/* ⭐ A SHOT CHANGE FLIES (BRIEF-town-shot-flight): the town knows where each shot puts the camera and flies
           there with the one tween, holding the movie while it does. ▶ node checks/claims-one-shot-flight.mjs */}
       <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
-        onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} frameMode={frameMode}
+        onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} frameMode={frameMode} entryFrames={frameIds != null}
         frameKey={frameKey} frameKeyAtMount={frameKeyAtMount} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} movers={movers} frameMover={frameMover} />
       {controls && <RegimeControls regime={shot === 'plan' ? 'overhead' : shot === 'street' ? 'street' : 'playback'} />}
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />

@@ -11,6 +11,9 @@
  *   movie  the movie's own pose on MovieCamera's clock, re-sampled every frame (it lands on the path as it plays)
  *   plan   ENTERING: the town's Browse frame (src/camera/browseFrame.js — authored in Stage, else the town's disc,
  *          said), a square fitted whole into the free region (Jacob, 2026-10-04: the frame is where the plan opens).
+ *          ENTERING WITH `entryFrames` (the app gave <Town> frameIds): the frame of those places, in ONE move (Jacob,
+ *          via Ward, 2026-10-27: Society's arrival "frame all, light open"). A shot change flies straight there; a cold
+ *          mount (or places not loaded) opens on the Browse frame and flies to theirs once, through the held key.
  *          A frameKey CHANGE (a category or a search chosen): the frame of its places (frameMode: 'densest' —
  *          frameDensest's cluster, the default · 'all' — every placed member, frameAll), the lit places, else every
  *          listed place. No placed place → back to the Browse frame, said. Under the town's browseHeading; a true
@@ -58,7 +61,7 @@ const _p = new THREE.Vector3(), _t = new THREE.Vector3(), _fwd = new THREE.Vecto
 const _warned = new Set()
 
 export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds, frameMode = 'densest',
-  frameKey, frameKeyAtMount = frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null }) {
+  entryFrames = false, frameKey, frameKeyAtMount = frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null }) {
   if (flight !== true && flight !== false && flight !== 'cut') throw new Error(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
   const following = planHeading && typeof planHeading === 'object'
   if (following ? !(planHeading.follow && 'current' in planHeading.follow) : planHeading !== 'town' && planHeading !== 'north') {
@@ -76,14 +79,14 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const tween = useRef(null)
   if (!tween.current) tween.current = createCameraTween()
   const live = useRef({})
-  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, size, onFramed, planHeading, movers, frameMover, frameKey }
+  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, entryFrames, size, onFramed, planHeading, movers, frameMover, frameKey }
   const prev = useRef(null)            // the last shot this component saw
   const pending = useRef(null)         // { shot, landed }: a cut whose destination is not known yet — landed when placed
   const unheld = useRef(null)          // { s, d }: a landing made before the app's controls existed — re-landed when they do
   const flying = useRef(null)          // { from, to, toUp, fromOff, toOff }
   const off = useRef({ x: 0, y: 0 })   // the view offset now, CSS px
   const lastInset = useRef(null)
-  const planOn = useRef('home')       // what the plan is framing: 'home' (the Browse frame) or 'places' (a frameKey move)
+  const planOn = useRef('home')       // what the plan is framing: 'home' (the Browse frame) or 'places' (a frameKey move, or an entry with entryFrames)
   holdRef.current = () => !!flying.current
 
   const controls = () => getControls().controls
@@ -133,7 +136,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
         return { pos: [sq.x, alt, sq.z + 1], target: [sq.x, 0, sq.z], fov, up: planUp(), overhead: true }
       }
       if (planOn.current === 'home') return home()
-      if (!stencil) return null
+      if (!stencil || !live.current.places) return null   // the places not loaded yet: wait (as frameIfLive does), never the home frame
       const pad = v.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding
       const ids = live.current.placeIds || []
       // The app's named mover (the reader's dot), where it stands NOW, framed with the places when it is inside the town;
@@ -247,8 +250,15 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     const from = prev.current
     prev.current = shot
     if (from === shot) return
-    planOn.current = 'home'
     const { flight: mode } = live.current
+    // The entry's ONE destination: the given places' frame (entryFrames), else the Browse frame. A flight goes straight
+    // there when it can (a shot change with the places and the disc live); a 'cut' cuts there once the places land. A cold
+    // mount or unloaded places instead OPEN on the Browse frame and leave the frame HELD: the held-key step below flies it,
+    // once, the first frame the plan is live, so the arrival is still one move ("frame all", over the Browse frame).
+    const framesOnEntry = shot === 'plan' && !!live.current.entryFrames
+    const straight = framesOnEntry && (mode === 'cut' || (from != null && !!live.current.places && !!getSceneStencil()))
+    planOn.current = straight ? 'places' : 'home'
+    if (framesOnEntry) { lastKey.current = live.current.frameKey; heldKey.current = !straight && mode === true }   // the key's frame: flown once
     if (tween.current.isActive()) tween.current.cancel()
     flying.current = null
     pending.current = null
