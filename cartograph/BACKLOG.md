@@ -14,6 +14,11 @@ own half-width, recorded, overridable; check claims-a-chain-end-in-a-roadway-is-
 (embankment = ground, street pier = deck, untagged = bridge, unknown tag refused) · `r-balsa-lands-its-rulings-not-the-identity-cut`.
 PTown on the edge rule (Ferrule, offline): passes the shore, refuses at bridgeOverlay on the Breakwater (embankment=dyke); Huron v4
 builds clean (232 tiles). Balsa step 1 (Plumb): identity 0.7–3.8% of CPU; the cost is the look (BRIEF-the-balsa-model).
+**⛔ EXTENT OVERWROTE A COMMITTED RADIUS IN THE PAGE (2026-10-28, LS: draft 1689 m vs applied 892, Jacob untouched; Zob by symbol).**
+(1) A SILENT FALLBACK on load: api.js#fetchNeighborhood returns {} on !res.ok and the hydration catches to null, yet marks the scene
+hydrated, arming the draft autosave with whatever radius stands. (2) The radius auto-seed (keptFit + 120) checks neither `committed` nor
+appliedRadius. Inferred trigger: Boz restarted :3343 while the page re-hydrated. FIX: a failed load refuses by name and doesn't hydrate;
+never seed a committed town. Check: plant a committed scene whose GET fails → refuses; mutant without the guard → RED. Dispatched: Ferrule.
 **⛔ NO BUTTON RE-SKELETONS A COMMITTED TOWN (2026-10-28, LS's Bake):** Extent's Bake re-scopes a committed town, and rescope
 deliberately skips skeleton.js (serve.js, "no skeleton rebuild, no identity churn"); only a first commit runs it. So when skeleton code
 changes (the street-class vocabulary), a committed town's skeleton goes stale, the Bake doesn't know, and the pour refuses by name
