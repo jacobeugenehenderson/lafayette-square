@@ -178,6 +178,8 @@ MEASURED 2026-10-26, neither provincetown.online/ nor staging.theward.online/pro
 (3) "Hero object blur" (the rack focus on a panning shot, 237ee4db, Strobe's object-identity focus) is broken on DESKTOP.
 Reproduce each on integration before fixing; the server being a temporary one is not yet ruled out as a cause.
 ⭐ NEXT TRANCHE = A WARD TRANCHE (Jacob, 2026-10-27: "we need to probably just have a Ward-focused tranche to follow this one").
+⭐ LEAD ITEM, THE BALSA MODEL (Jacob, 2026-10-27 night): the landscape looks finished but is inert, holding nothing, down to the
+building id, until a click asks. ENCODER and WARD. Plan: `docs/briefs/BRIEF-the-balsa-model.md` (measure first; 4 questions for Jacob).
 Queued for it, in order: (1) HERO OBJECT BLUR is broken, caught on film in PTown's own share images: noon.jpg is sharp, golden.jpg is
 blurred end to end, the Monument (the hero object) included, so the focus is not on the object (likely the focus-falls-back-to-aim path,
 src/components/dofDriver.js / focusObject.js; cause not established). Then recapture the share images. (2) PTown's ~9 s arrival splash
