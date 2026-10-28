@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 482,
+  "total": 483,
   "counts": {
-    "safe": 343,
+    "safe": 344,
     "local-effect": 29,
     "live": 110
   },
@@ -94,6 +94,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs",
+      "tier": "safe",
+      "why": [
+        "importSource of cartograph/skeleton.js (its span: function vKey(p) → function reverse(coords)) — read, safe",
+        "importSource of cartograph/skeleton.js (its span: buildNodeGraph) — read, safe"
       ]
     },
     {

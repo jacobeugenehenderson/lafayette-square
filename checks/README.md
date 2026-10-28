@@ -174,7 +174,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 343. This is `npm test`.
+## safe — 344. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -185,6 +185,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-cap-carries-one-section.mjs` | DOES A DEAD-END CAP CARRY ITS OWNER'S WALK ALL THE WAY ROUND? |
 | `checks/claims-a-capture-run-finishes-what-it-started.mjs` | CAN A GROVE CAPTURE RUN BE RESTARTED MID-LIST, OR UPLOAD AFTER IT WAS TORN DOWN? |
 | `checks/claims-a-chain-cut-keeps-its-owner-change.mjs` | CLAIM — WHERE A STREET IS CUT INTO TWO CHAINS, ① KEEPS THE OWNER CHANGE. A chain cut (a skeleton node of degree 2, where |
+| `checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs` | DOES EVERY CHAIN END THAT LIES INSIDE ANOTHER STREET'S ROADWAY MEET IT AT A NODE? |
 | `checks/claims-a-chain-id-is-one-chain.mjs` | DOES EVERY CHAIN ID NAME EXACTLY ONE CHAIN? |
 | `checks/claims-a-city-code-the-kit-cannot-read-abstains.mjs` | CLAIM: a St. Louis CITY assessor code the kit cannot read ABSTAINS. It never becomes a plausible land use |
 | `checks/claims-a-cli-scene-has-one-resolver.mjs` | DOES ANY SCRIPT ASK "WHICH TOWN?" TWICE? |
