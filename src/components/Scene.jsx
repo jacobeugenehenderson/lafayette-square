@@ -633,7 +633,8 @@ const SHOT_OF_MODE = { hero: 'movie', browse: 'plan', planetarium: 'street' }
 // names the Ward; lafayette-square.com runs an older build), and it is retired at LS's cutover.
 const QUALITY = authoringQuality()
 // The Canvas this town is drawn through, from the same profile <Town> is given.
-const townCanvas = townCanvasProps(QUALITY, { composer: true })   // every frame is <Town>'s, through its composer
+// The ground-only player (IS_GROUND) turns post off (GROUND_ONLY): no composer then, so the canvas keeps the device's MSAA.
+const townCanvas = townCanvasProps(QUALITY, { composer: !IS_GROUND })
 
 function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const viewMode = useCamera((s) => s.viewMode)

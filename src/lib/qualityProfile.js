@@ -110,6 +110,22 @@ export function townCanvasProps(quality, { composer } = {}) {
  * takes none (MSAA would leave the composer's final draw unchanged); any other canvas takes the device's (`antialias`:
  * desktop true, phone false). Every canvas asks here, saying whether it mounts a composer. ⛔ `composer` is required.
  */
+/**
+ * ⭐ THE CANVAS AND THE COMPOSER AGREE (Ward's point, Boz's ruling, 2026-10-28). `{ composer }` is said by the host, and
+ * <Town> knows the same fact (it mounts PostProcessing unless layers.post is off), so the two could disagree silently.
+ * <Town> asks THIS at mount with the canvas's ACTUAL anti-aliasing, read off its context (never a second statement), and
+ * refuses by name when the canvas has none and no composer smooths it either: every edge would be aliased (LS's ground-only
+ * player was exactly that, `post: false` on a composer canvas). The other way round (MSAA on, a composer drawing) is only
+ * redundant: Cartograph's canvas is also the Designer's, so its Stage shots pay ~1 ms for it (accepted). → message | null
+ */
+export function canvasAAMismatch(quality, { contextAntialias, composer } = {}) {
+  if (!quality?.id) throw new Error('[quality] ⛔ canvasAAMismatch needs a profile from src/lib/qualityProfile.js')
+  if (typeof contextAntialias !== 'boolean' || typeof composer !== 'boolean') throw new Error('[quality] ⛔ canvasAAMismatch needs { contextAntialias, composer } as booleans')
+  if (composer || contextAntialias || !quality.antialias) return null
+  return '[Town] ⛔ this canvas was made with NO anti-aliasing (townCanvasProps(…, { composer: true })), and <Town> draws no composer '
+    + '(layers.post is off): every edge is aliased. ▶ the host passes townCanvasProps(quality, { composer: false }) whenever it turns post off.'
+}
+
 export function canvasAntialias(quality, { composer } = {}) {
   if (!quality?.id) throw new Error('[quality] ⛔ canvasAntialias needs a profile from src/lib/qualityProfile.js')
   if (typeof composer !== 'boolean') throw new Error('[quality] ⛔ canvasAntialias needs { composer: true | false } — whether this canvas mounts the composer')
