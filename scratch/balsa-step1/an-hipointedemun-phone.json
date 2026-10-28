@@ -1,0 +1,282 @@
+{
+ "town": "hipointedemun",
+ "dev": "phone",
+ "build": "1612d2de",
+ "fcp": 1648,
+ "revealed": true,
+ "prepBuildings": 4035,
+ "prepGround": 4713,
+ "prepTrees": 5608,
+ "reveal": 6221,
+ "usable": 6257,
+ "move": {
+  "frames": 1014,
+  "med": 16.7,
+  "p95": 16.7,
+  "hitches50": 2,
+  "lastHitchAfterInput": 434,
+  "steadyMed": 16.7,
+  "steadyP95": 16.8
+ },
+ "click": null,
+ "bytesTotalKB": 46639,
+ "identityReqs": [
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-B-FbjL9z.js",
+   "kb": 50,
+   "ms": 119
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-X2JCiLpx.css",
+   "kb": 3,
+   "ms": 116
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/index-DRUs4ql5.js",
+   "kb": 2,
+   "ms": 89
+  },
+  {
+   "u": "/staging/baked/hipointedemun/content/listings.json",
+   "kb": 19,
+   "ms": 130
+  },
+  {
+   "u": "/staging/live/tw-316uoro4/listings.json",
+   "kb": 7,
+   "ms": 95
+  },
+  {
+   "u": "/staging/baked/hipointedemun/buildings.bef89d7d9009364d.json",
+   "kb": 165,
+   "ms": 169
+  },
+  {
+   "u": "/staging/baked/hipointedemun/buildings.fcb1077f77484c4c.bin",
+   "kb": 3906,
+   "ms": 390
+  }
+ ],
+ "bigReqs": [
+  {
+   "u": "/staging/baked/hipointedemun/ground.f4af8fc4c02ccaea.bin",
+   "kb": 8550,
+   "ms": 675
+  },
+  {
+   "u": "/staging/baked/hipointedemun/buildings.fcb1077f77484c4c.bin",
+   "kb": 3906,
+   "ms": 390
+  },
+  {
+   "u": "/staging/baked/hipointedemun/ground.poolmap.21e2c6d2aeb5ff58.png",
+   "kb": 2272,
+   "ms": 94
+  },
+  {
+   "u": "/staging/baked/hipointedemun/ground.rulemap.c4b0a5f22eb33980.png",
+   "kb": 2097,
+   "ms": 118
+  },
+  {
+   "u": "/staging/baked/hipointedemun/terrain.a8cb6e00b2485dcd.bin",
+   "kb": 1302,
+   "ms": 100
+  },
+  {
+   "u": "/staging/kit/7179c7795aa2f1a78ed44034d54ebb487865b9ec/textures/moon.jpg",
+   "kb": 1031,
+   "ms": 232
+  },
+  {
+   "u": "/_ward/1612d2de51f05f5fbdc301965901a0a2c0c114d1/assets/Town-SFXxENTJ.js",
+   "kb": 730,
+   "ms": 207
+  },
+  {
+   "u": "/staging/baked/hipointedemun/content/photos/barrio/01.jpg",
+   "kb": 636,
+   "ms": 331
+  }
+ ],
+ "profLoad": {
+  "sum": {
+   "total": 4806,
+   "idle": 984,
+   "program": 866,
+   "gc": 108,
+   "index": 167,
+   "hover": 14
+  },
+  "top": [
+   [
+    866,
+    "(program)|:-1:-1"
+   ],
+   [
+    539,
+    "D|Town-SFXxENTJ.js:3686:12123"
+   ],
+   [
+    169,
+    "A|Town-SFXxENTJ.js:3954:1816"
+   ],
+   [
+    121,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    108,
+    "(garbage collector)|:-1:-1"
+   ],
+   [
+    101,
+    "fromBufferAttribute|Town-SFXxENTJ.js:5:41859"
+   ],
+   [
+    89,
+    "getX|Town-SFXxENTJ.js:5:101983"
+   ],
+   [
+    86,
+    "Bt|App--sv3GKtz.js:38:9885"
+   ],
+   [
+    84,
+    "computeVertexNormals|Town-SFXxENTJ.js:5:111707"
+   ],
+   [
+    82,
+    "I|Town-SFXxENTJ.js:3654:285"
+   ],
+   [
+    74,
+    "X|Town-SFXxENTJ.js:3686:12325"
+   ],
+   [
+    57,
+    "fetch|:-1:-1"
+   ]
+  ]
+ },
+ "profMove": {
+  "sum": {
+   "total": 12354,
+   "idle": 4609,
+   "program": 2097,
+   "gc": 49,
+   "index": 234,
+   "hover": 420
+  },
+  "top": [
+   [
+    2097,
+    "(program)|:-1:-1"
+   ],
+   [
+    1670,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    908,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    490,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    394,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    253,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    236,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    231,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ],
+   [
+    206,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    201,
+    "(anon)|Town-SFXxENTJ.js:4513:177"
+   ],
+   [
+    175,
+    "bindVertexArray|:-1:-1"
+   ],
+   [
+    159,
+    "multiplyMatrices|Town-SFXxENTJ.js:5:56129"
+   ]
+  ]
+ },
+ "profClick": {
+  "sum": {
+   "total": 63133,
+   "idle": 27012,
+   "program": 12175,
+   "gc": 204,
+   "index": 188,
+   "hover": 266
+  },
+  "top": [
+   [
+    12175,
+    "(program)|:-1:-1"
+   ],
+   [
+    8904,
+    "Fr|Town-SFXxENTJ.js:4015:869"
+   ],
+   [
+    4831,
+    "renderBufferDirect|Town-SFXxENTJ.js:3686:73242"
+   ],
+   [
+    2777,
+    "updateMatrixWorld|Town-SFXxENTJ.js:5:69888"
+   ],
+   [
+    2044,
+    "upload|Town-SFXxENTJ.js:3627:16969"
+   ],
+   [
+    1302,
+    "o|Town-SFXxENTJ.js:3627:7816"
+   ],
+   [
+    1193,
+    "Ec|Town-SFXxENTJ.js:3686:83144"
+   ],
+   [
+    1184,
+    "r|Town-SFXxENTJ.js:3686:57211"
+   ],
+   [
+    1178,
+    "Vt|Town-SFXxENTJ.js:3686:77411"
+   ],
+   [
+    1131,
+    "(anon)|Town-SFXxENTJ.js:4513:177"
+   ],
+   [
+    1007,
+    "bindVertexArray|:-1:-1"
+   ],
+   [
+    887,
+    "multiplyMatrices|Town-SFXxENTJ.js:5:56129"
+   ]
+  ]
+ }
+}
