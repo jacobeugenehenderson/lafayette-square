@@ -19,10 +19,11 @@ import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { curbedMinWidthOf, REGISTRY_PATH } from './curbedMinWidthOf.mjs'
 import { labelMajor } from '../src/cartograph/streetClass.js'
-import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY, judgeStale } from './pour-code.mjs'
+import { pourCodeClosure, pourCodeChanged, geographyReadChanged, contentChanged, pourDataReads, judgeStale } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { COAST_FILE } from './coastFile.mjs'
+import { pourSteps, stepReads, recordStep, readBakeReads, runPour } from './pourSteps.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
@@ -138,16 +139,7 @@ function saveBakeTiming(mapJson, lookId, label, ms) {
   try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { ms, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
   catch (e) { console.warn(`[bake] could not record the ${label} timing: ${e.message}`) }
 }
-// ⭐ WHAT EACH STEP READ WHEN IT LAST RAN — `${lookId}:${label}` → { code, data }, each { path: sha1 }, beside the timings.
-// runIfDirty re-runs a step when its code (its scripts' import closure) or a declared data input differs by CONTENT
-// (pour-code.mjs `contentChanged`), or an output is missing — never on an mtime, so a checkout or writeIfChanged's
-// touch re-runs nothing. ⛔ An unreadable or absent record file is NO record: every step is dirty, never clean by default.
-function bakeReadsPath(mapJson) { return join(dirname(mapJson), 'bake-reads.json') }
-function readBakeReads(mapJson) { try { return JSON.parse(readFileSync(bakeReadsPath(mapJson), 'utf-8')) } catch { return {} } }
-function saveBakeRead(mapJson, lookId, label, rec) {
-  try { const r = readBakeReads(mapJson); r[`${lookId}:${label}`] = { ...rec, at: new Date().toISOString() }; writeFileSync(bakeReadsPath(mapJson), JSON.stringify(r, null, 1)) }
-  catch (e) { console.warn(`[bake] could not record what ${label} read: ${e.message}`) }   // next bake re-runs it: the safe direction
-}
+// What each step read when it last ran (`bake-reads.json`) and the pour's steps: ONE home, cartograph/pourSteps.mjs.
 
 // Like runShell, but CAPTURES stdout/stderr and RESOLVES with the exit code
 // instead of rejecting on non-zero — so git callers can inspect the result
@@ -327,6 +319,20 @@ const _bakesInFlight = new Set()
 // Per-scene file resolver. Every scene resolves through here. The raw/ +
 // clean/ split inside each scene matches the existing LS layout (raw = OSM
 // ingestion / authored input; clean = derived).
+// ⭐ THE POUR OUTSIDE THE BAKE (Extent's re-apply and its first pour) runs the Bake's own steps (pourSteps.mjs) and RECORDS each one
+// it runs, under every Look of the scene, so the next Bake judges them done (2026-10-28: LS's Extent Bake asked to re-pour right
+// after its own pour). The pipeline's elevation is the town's own `pour.elevation`, read as the Bake reads it; a scene with no Look
+// yet declares none, which is the Bake's answer too (`--skip-elevation`).
+function extentPour(scene) {
+  const looks = readLooksIndex().looks.filter(l => l.scene === scene).map(l => l.id)
+  const elevation = looks.length ? readBakeDesign(looks[0], scene, `extent pour ${scene}`).pour?.elevation === true : false
+  return { steps: pourSteps(scene, mapDataPaths(scene), ribbonsPathOf(scene), { elevation }), looks }
+}
+function runExtentPour(scene, { cwd, env }) {
+  const pour = extentPour(scene)
+  return runPour(pour.steps, { scene, mapJson: mapDataPaths(scene).map, lookIds: pour.looks,
+    run: (st, onLine) => runShell(st.cmd, { cwd, env, timeout: st.timeout, ...(onLine && { onLine }) }) })
+}
 function mapDataPaths(scene) {
   const raw = mapRawDir(scene)
   const clean = mapCleanDir(scene)
@@ -2100,12 +2106,9 @@ createServer(async (req, res) => {
       try {
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        await runShell('node bake-coast.mjs', { cwd: here, env, timeout: 600000 })   // the mint reads clean/coast.json and refuses without it
-        await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
-        // --yes: the Bake that called this IS the operator's decision; the change is RETURNED, not hidden.
-        let promoteDiff = null
-        await runShell(`node promote-ribbons.js --scene=${scene} --yes`, { cwd: here, env, timeout: 60000,
-          onLine: (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } })
+        // the Bake's own steps, each recorded (pourSteps.mjs). promote-ribbons runs with --yes: the Bake that called this IS the
+        // operator's decision, and the change is RETURNED, not hidden.
+        const { promoteDiff } = await runExtentPour(scene, { cwd: here, env })
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, promoteDiff }))
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
@@ -2264,11 +2267,7 @@ createServer(async (req, res) => {
         }
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        await runShell('node bake-coast.mjs', { cwd: here, env, timeout: 600000 })   // the mint reads clean/coast.json and refuses without it
-        await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
-        let promoteDiff = null
-        await runShell(`node promote-ribbons.js --scene=${scene} --yes`, { cwd: here, env, timeout: 60000,
-          onLine: (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } })
+        const { promoteDiff } = await runExtentPour(scene, { cwd: here, env })   // the Bake's own steps, each recorded (the mint reads clean/coast.json)
         clearApplySnapshot(scene, 'prebak-rescope')
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, radius: Math.round(radius), promoteDiff }))
       } catch (err) {
@@ -2598,18 +2597,6 @@ createServer(async (req, res) => {
         return
       }
       const bakePaths = mapDataPaths(bakeScene)
-      // overlay.json + skeleton.json are operator-edited / derived
-      // (Survey/Measure write to /overlay → clean/overlay.json; skeleton
-      // is derived). Everything else is raw inputs.
-      const RAW_PATHS = [
-        join(bakePaths.raw,   'osm.json'),
-        bakePaths.measurements,
-        bakePaths.centerlines,
-        join(bakePaths.raw,   'elevation.json'),
-        bakePaths.overlay,
-        bakePaths.skeleton,
-        join(REPO_ROOT, 'src', 'data', 'buildings.json'),
-      ]
       // every file the pour runs — the ① mint included. ⛔ `references/registry.json` is NOT watched by mtime: the
       // research DB is edited constantly (rulings, questions) and a prompt the operator learns to click through stops
       // warning. It is judged by CONTENT below — only the entries this town's last pour READ (`registryRead`).
@@ -2642,11 +2629,6 @@ createServer(async (req, res) => {
       // ⛔ `judge: 'mtime'` is the POUR only: its code, geography, registry and other data reads are judged by content
       // above (map.json's records, behind the question); its authoring inputs re-pour on a newer mtime, unasked.
       const bakeReads = readBakeReads(MAP_JSON)
-      // ⭐ THE TOWN'S RECORD IS DATA, NOT CODE (2026-10-04). Every step's code closure reached cartograph/config.js →
-      // src/instances/registry.js → every town's module and town-id.json, so adding a town, or editing any town's
-      // tagline, made every step of every town dirty. The closure stops at the registry, as the pour's already does
-      // (pour-code.mjs#pourCodeClosure), and the step reads THIS town's record by value: an edit to Huron reaches Huron.
-      const townRecord = { value: `the town record of "${bakeScene}"`, read: () => instanceForMap(bakeScene) ?? null }
       // `absentOk`: outputs a step may legitimately not write (revetment on a town with no shore). Missing after a
       // recorded run is that step's answer, not a stale slab; missing with no record still runs it.
       // `stage`: the step writes into a stage (`--out-dir=`) and its outputs reach the slab only when it succeeds
@@ -2657,9 +2639,7 @@ createServer(async (req, res) => {
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
           await runStep(P, label, cmd, opts); ran(label); return
         }
-        const isCode = (f) => /\.m?js$/.test(f)
-        const code = importClosure(inputs.filter(f => typeof f === 'string' && isCode(f)), { stopAt: [TOWN_REGISTRY] })
-        const data = [...inputs.filter(f => typeof f !== 'string' || !isCode(f)), townRecord]   // files by content, and { value, read } inputs
+        const { code, data } = stepReads(inputs, bakeScene)   // the step's import closure, its data and the town's record (pourSteps.mjs)
         const was = bakeReads[`${id}:${label}`], who = `step "${label}"`
         const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
         const missing = outputs.filter(o => !existsSync(o) && !(was && absentOk.includes(o)))
@@ -2669,7 +2649,7 @@ createServer(async (req, res) => {
         if (stage) stage.published = await stagedSlabStep({ ...stage, step: (dir) => runStep(P, label, `${cmd} --out-dir="${dir}"`, opts) })
         else await runStep(P, label, cmd, opts)
         // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
-        saveBakeRead(MAP_JSON, id, label, { code: contentRecord(code), data: contentRecord(data) })
+        recordStep(MAP_JSON, [id], label, inputs, bakeScene)   // the one recorder (pourSteps.mjs), as Extent's pours record
         ran(label)
       }
       // Bake only ACTIVATED content: a hidden layer (layerVis=false) doesn't get
@@ -2697,21 +2677,14 @@ createServer(async (req, res) => {
       // does (`--skip-elevation`); only LS reads its elevation cache here. Without
       // the flag a town with no cache FETCHES from USGS — never inside a Bake.
       // Whether poured towns should carry pipeline elevation is its own decision.
-      const elevFlag = bakeDesign.pour?.elevation === true ? '' : ' --skip-elevation'   // the town's declaration (design.json pour.elevation)
+      // ⭐ the pour's three steps, declared ONCE (pourSteps.mjs): the Bake, Extent's re-apply and its first pour all run and record these
+      const POUR = Object.fromEntries(pourSteps(bakeScene, bakePaths, RIBBONS, { elevation: bakeDesign.pour?.elevation === true }).map(st => [st.label, st]))
       if (hasOsm) {
         // ⭐ THE COAST BEFORE THE POUR (BRIEF-the-shore-is-one-line step 1; Boz, 2026-10-25). bake-coast traces where the
         // lidar meets high water and writes clean/coast.json, which the mint reads as data (pour-code.mjs#pourDataReads),
         // so a coast that moved re-pours through the confirm below and one that did not re-pours nothing. Its own step,
         // judged by content: the lidar is read over the network, and an authoring re-pour must not read it again.
-        await runIfDirty('coast',
-          [join(bakePaths.raw, 'elevation.tif'), join(bakePaths.raw, 'elevation-sources.txt'), join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
-           join(bakePaths.raw, 'water-datums.json'), join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'elevation-flights.json'),
-           bakePaths.boundary, bakePaths.geography,
-           { value: 'terrainValueReads', read: () => terrainValueReads(bakeScene) },   // the authored lake level / tide names
-           join(here, 'bake-coast.mjs')],
-          [join(bakePaths.clean, COAST_FILE)],
-          `node bake-coast.mjs ${sceneFlag}`,
-          { cwd: here, timeout: 600000 })
+        await runIfDirty('coast', POUR.coast.inputs, POUR.coast.outputs, POUR.coast.cmd, { cwd: here, timeout: POUR.coast.timeout })
         // ⛔⛔ A CODE CHANGE RE-POURS THE TOWN — SAY SO BEFORE DOING IT (Boz's ruling (d), 2026-09-24). The pour's code
         // inputs are its import closure, so a change to the ① mint, the coastline or the section builder makes every
         // poured town's next Bake a RE-POUR. That is correct, and it is also how a town gets poured by accident (LS,
@@ -2759,17 +2732,9 @@ createServer(async (req, res) => {
         }
         // a code, geography or registry change leaves the authoring inputs' mtimes alone, so it re-pours explicitly;
         // otherwise the pour re-runs only when an AUTHORING input (overlay, skeleton, measurements …) is newer
-        if (codeNewer.length) { await runStep(P, 'pipeline', `node pipeline.js ${sceneFlag}${elevFlag}`, { cwd: here, timeout: 600000 }); ran('pipeline') }
-        else await runIfDirty('pipeline',
-          RAW_PATHS,
-          [MAP_JSON],
-          `node pipeline.js ${sceneFlag}${elevFlag}`,
-          { cwd: here, timeout: 600000, judge: 'mtime' })
-        await runIfDirty('promote-ribbons',
-          [MAP_JSON, bakePaths.geography, join(here, 'promote-ribbons.js')],
-          [RIBBONS],
-          `node promote-ribbons.js ${sceneFlag} --yes`,   // the Bake is the decision; the diff streams into this step's output
-          { cwd: here, timeout: 30000 })
+        if (codeNewer.length) { await runStep(P, 'pipeline', POUR.pipeline.cmd, { cwd: here, timeout: POUR.pipeline.timeout }); ran('pipeline') }
+        else await runIfDirty('pipeline', POUR.pipeline.inputs, POUR.pipeline.outputs, POUR.pipeline.cmd, { cwd: here, timeout: POUR.pipeline.timeout, judge: 'mtime' })
+        await runIfDirty('promote-ribbons', POUR['promote-ribbons'].inputs, POUR['promote-ribbons'].outputs, POUR['promote-ribbons'].cmd, { cwd: here, timeout: POUR['promote-ribbons'].timeout })   // the Bake is the decision; the diff streams into this step's output
       } else {
         skip(`pipeline + promote-ribbons (${bakeScene} has no raw/osm.json to derive from)`)
       }

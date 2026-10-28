@@ -207,10 +207,24 @@ function resolve(expr, acc, depth = 0) {
   acc.unknown.push(expr)
 }
 
+// ⭐ THE POUR'S STEPS ARE DECLARED ONCE, in cartograph/pourSteps.mjs#pourSteps (2026-10-28), and the Bake passes them as
+// `POUR.<label>.inputs`. Their declarations are read from that table's own text, in the Bake's names (paths → bakePaths, HERE →
+// here, ribbons → RIBBONS, scene → bakeScene), and resolved like any other step's: never restated here.
+const POUR_SRC = readFileSync(join(ROOT, 'cartograph/pourSteps.mjs'), 'utf8')
+const pourField = (label, key) => {
+  const at = POUR_SRC.indexOf(`label: '${label}'`); if (at < 0) return null
+  const k = POUR_SRC.indexOf(`${key}: `, at), next = POUR_SRC.indexOf('label: ', at + 1)
+  if (k < 0 || (next > 0 && k > next)) return null
+  const v0 = k + key.length + 2, v = POUR_SRC[v0] === '[' ? POUR_SRC.slice(v0, balanced(POUR_SRC, v0)) : POUR_SRC.slice(v0, POUR_SRC.indexOf('`', v0 + 1) + 1)
+  return v.replace(/\bpaths\./g, 'bakePaths.').replace(/\bHERE\b/g, 'here').replace(/\bribbons\b/g, 'RIBBONS').replace(/\((?:\s*)scene(?:\s*)\)/g, '(bakeScene)')
+}
+const pourRef = (e) => (e || '').match(/^POUR(?:\.([\w]+)|\['([\w-]+)'\])\.(inputs|outputs|cmd)$/)
 const RUN_IF_DIRTY_EXPANDS_CODE = (() => {
   const a = src.indexOf('const runIfDirty = async'); if (a < 0) return false
   const body = src.slice(a, balanced(src, src.indexOf('{', src.indexOf('=>', a))))
-  return /importClosure\(\s*inputs\.filter\(/.test(body) && /contentChanged\(/.test(body) && /saveBakeRead\(/.test(body)
+  // the step's reads and its record live in pourSteps.mjs (#stepReads, #recordStep), which runIfDirty calls
+  const reads = POUR_SRC.slice(POUR_SRC.indexOf('export function stepReads('), POUR_SRC.indexOf('\n}\n', POUR_SRC.indexOf('export function stepReads(')))
+  return /stepReads\(inputs, bakeScene\)/.test(body) && /contentChanged\(/.test(body) && /recordStep\(/.test(body) && /importClosure\(inputs\.filter\(isCode\)/.test(reads)
 })()
 
 // ── the steps ──
@@ -218,7 +232,10 @@ const steps = []
 for (const m of src.matchAll(/runIfDirty\(\s*'([^']+)'\s*,/g)) {
   const open = src.indexOf('(', m.index), end = balanced(src, open)
   const args = splitTop(src.slice(open + 1, end - 1))
-  const [, inputs, outputs, cmd] = args
+  let [, inputs, outputs, cmd] = args
+  // a step from the pour's one table: its declarations, read from pourSteps.mjs (above)
+  { const r = pourRef(inputs); if (r) { const lab = r[1] || r[2]; inputs = pourField(lab, 'inputs'); outputs = pourField(lab, 'outputs'); cmd = pourField(lab, 'cmd')
+      if (!inputs || !outputs || !cmd) { console.log(`⛔ NOT CHECKED — the pour step '${lab}' is not in pourSteps.mjs's table — update this check`); process.exit(2) } } }
   if (!inputs?.startsWith('[') && !/^\w+$/.test(inputs || '')) continue   // the definition `runIfDirty = async (label, inputs…`
   const arr = (a) => a.startsWith('[') ? splitTop(a.slice(1, -1)) : [a]
   const decl = { names: new Set(), code: new Set(), unknown: [], valueModules: new Set() }

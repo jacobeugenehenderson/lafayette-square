@@ -166,8 +166,13 @@ if (!/geographyRead:\s*GEOGRAPHY_READ/.test(pipe)) bad.push('pipeline.js does no
 // ── every OTHER step is judged by content too (Boz's rulings 2026-09-26): runIfDirty hashes each step's code closure
 // AND its declared data against clean/bake-reads.json; only the pour's authoring inputs keep the mtime rule ──
 { const a = src.indexOf('const runIfDirty = async'), body = a < 0 ? '' : src.slice(a, src.indexOf('\n      }\n', a))
-  if (!/importClosure\(\s*inputs\.filter\(/.test(body) || (body.match(/contentChanged\(/g) || []).length < 2 || !/saveBakeRead\(/.test(body))
-    bad.push('runIfDirty does not judge a step\'s code AND data by content against bake-reads.json')
+  // the step's reads and the recorder have ONE home, cartograph/pourSteps.mjs (#stepReads, #recordStep), which Extent's pours record through
+  const ps = readFileSync(join(ROOT, 'cartograph/pourSteps.mjs'), 'utf8'), fn = (n) => { const i = ps.indexOf(`export function ${n}(`); return i < 0 ? '' : ps.slice(i, ps.indexOf('\n}\n', i)) }
+  const reads = fn('stepReads'), rec = fn('recordStep')
+  if (!/stepReads\(inputs, bakeScene\)/.test(body) || (body.match(/contentChanged\(/g) || []).length < 2 || !/recordStep\(MAP_JSON, \[id\], label, inputs, bakeScene\)/.test(body)
+      || !/importClosure\(inputs\.filter\(isCode\), \{ stopAt: \[TOWN_REGISTRY\] \}\)/.test(reads) || !/townRecordOf\(scene\)/.test(reads)
+      || !/code: contentRecord\(code\), data: contentRecord\(data\)/.test(rec) || !/saveBakeRead\(/.test(rec))
+    bad.push('runIfDirty does not judge a step\'s code AND data by content against bake-reads.json (through pourSteps.mjs#stepReads and #recordStep)')
   const pl = src.slice(src.indexOf("await runIfDirty('pipeline'"), src.indexOf("await runIfDirty('promote-ribbons'"))
   if (!/judge:\s*'mtime'/.test(pl)) bad.push('the pour\'s authoring inputs are not on the explicit mtime rule (judge: \'mtime\')')
   const g = src.lastIndexOf('pourDataReads(bakeScene)', src.indexOf("await runIfDirty('pipeline'")), q = src.indexOf('res.writeHead(428', g)

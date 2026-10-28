@@ -1,0 +1,80 @@
+// pourSteps.mjs — THE POUR'S THREE STEPS, DECLARED ONCE, AND THE ONE RECORDER OF WHAT A STEP READ (2026-10-28).
+//
+// The pour (bake-coast → pipeline → promote-ribbons) was declared three times: in the Bake's own steps, in Extent's re-apply
+// (POST /<scene>/rescope) and in its first pour (POST /<scene>/pour). Only the Bake recorded what each step read
+// (`bake-reads.json`), so right after Extent's own pour the Bake judged it unrecorded: it re-ran the lidar coast step, and for a
+// town whose pour is HELD (a Look's `pour.held`) it stopped to ask about re-promoting (LS, twice on 2026-10-28). The Extent pours
+// also ran the pipeline with `--skip-elevation` always, where the Bake reads the town's `pour.elevation`. Now every caller runs
+// these steps and records them here, through one function. ▶ checks/claims-the-pour-records-itself-once.mjs
+import { readFileSync, writeFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { importClosure, contentRecord, TOWN_REGISTRY } from './pour-code.mjs'
+import { terrainValueReads } from './terrainReads.mjs'
+import { COAST_FILE } from './coastFile.mjs'
+import { instanceForMap } from '../src/instances/registry.js'
+
+const HERE = import.meta.dirname, REPO_ROOT = join(HERE, '..')
+
+// ⭐ WHAT EACH STEP READ WHEN IT LAST RAN — `${lookId}:${label}` → { code, data }, each { path: sha1 }, beside the timings.
+// A step re-runs when its code (its scripts' import closure) or a declared data input differs by CONTENT (pour-code.mjs
+// `contentChanged`), or an output is missing — never on an mtime. ⛔ An unreadable or absent record file is NO record: every
+// step is dirty, never clean by default.
+export function bakeReadsPath(mapJson) { return join(dirname(mapJson), 'bake-reads.json') }
+export function readBakeReads(mapJson) { try { return JSON.parse(readFileSync(bakeReadsPath(mapJson), 'utf-8')) } catch { return {} } }
+export function saveBakeRead(mapJson, lookId, label, rec) {
+  try { const r = readBakeReads(mapJson); r[`${lookId}:${label}`] = { ...rec, at: new Date().toISOString() }; writeFileSync(bakeReadsPath(mapJson), JSON.stringify(r, null, 1)) }
+  catch (e) { console.warn(`[bake] could not record what ${label} read: ${e.message}`) }   // the next bake re-runs it: the safe direction
+}
+
+// ⭐ THE TOWN'S RECORD IS DATA, NOT CODE (2026-10-04): a step's code closure stops at the town registry, and the step reads THIS
+// town's record by value, so an edit to Huron reaches Huron and no other town.
+export const townRecordOf = (scene) => ({ value: `the town record of "${scene}"`, read: () => instanceForMap(scene) ?? null })
+
+/** A step's reads: its CODE is its declared scripts' whole import closure, its DATA every other declared input plus the town's
+ *  record. What the Bake judges a step by, and what is recorded after it runs. */
+export function stepReads(inputs, scene) {
+  const isCode = (f) => typeof f === 'string' && /\.m?js$/.test(f)
+  return { code: importClosure(inputs.filter(isCode), { stopAt: [TOWN_REGISTRY] }), data: [...inputs.filter(f => !isCode(f)), townRecordOf(scene)] }
+}
+
+/** The one recorder: what `label` read, saved for every Look of the scene (the pour's outputs are the town's, not one Look's). */
+export function recordStep(mapJson, lookIds, label, inputs, scene) {
+  const { code, data } = stepReads(inputs, scene), rec = { code: contentRecord(code), data: contentRecord(data) }
+  for (const id of lookIds) saveBakeRead(mapJson, id, label, rec)
+}
+
+/**
+ * The pour's steps for `scene`, in order: { label, inputs, outputs, cmd, timeout, judge? }. `paths` is serve.js#mapDataPaths(scene),
+ * `ribbons` the scene's own ribbons (scene.js#ribbonsPathOf), `elevation` the town's `pour.elevation` (its Look's design).
+ * `judge: 'mtime'` is the pipeline only: its code, data, geography and registry reads are recorded by pipeline.js itself, in
+ * map.json, and judged there (the Bake's re-pour question); its authoring inputs re-pour on a newer mtime. It records nothing here.
+ */
+export function pourSteps(scene, paths, ribbons, { elevation }) {
+  const flag = `--scene=${scene}`
+  return [
+    { label: 'coast', timeout: 600000, cmd: `node bake-coast.mjs ${flag}`, outputs: [join(paths.clean, COAST_FILE)],
+      inputs: [join(paths.raw, 'elevation.tif'), join(paths.raw, 'elevation-sources.txt'), join(paths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
+        join(paths.raw, 'water-datums.json'), join(paths.raw, 'osm.json'), join(paths.raw, 'elevation-flights.json'),
+        paths.boundary, paths.geography,
+        { value: 'terrainValueReads', read: () => terrainValueReads(scene) },   // the authored lake level / tide names
+        join(HERE, 'bake-coast.mjs')] },
+    // overlay.json + skeleton.json are operator-edited / derived (Survey and Measure write clean/overlay.json); the rest are raw
+    { label: 'pipeline', judge: 'mtime', timeout: 600000, cmd: `node pipeline.js ${flag}${elevation === true ? '' : ' --skip-elevation'}`, outputs: [paths.map],
+      inputs: [join(paths.raw, 'osm.json'), paths.measurements, paths.centerlines, join(paths.raw, 'elevation.json'), paths.overlay, paths.skeleton, join(REPO_ROOT, 'src', 'data', 'buildings.json')] },
+    { label: 'promote-ribbons', timeout: 30000, cmd: `node promote-ribbons.js ${flag} --yes`, outputs: [ribbons],
+      inputs: [paths.map, paths.geography, join(HERE, 'promote-ribbons.js')] },
+  ]
+}
+
+/**
+ * Run the pour's steps in order and RECORD each one run (the pipeline records itself in map.json). `run(step)` runs one step's
+ * command (serve.js passes runShell); `onLine` sees promote-ribbons' output. → { promoteDiff }, its PROMOTE-DIFF line, or null.
+ */
+export async function runPour(steps, { scene, mapJson, lookIds, run }) {
+  let promoteDiff = null
+  for (const st of steps) {
+    await run(st, st.label === 'promote-ribbons' ? (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } : null)
+    if (st.judge !== 'mtime') recordStep(mapJson, lookIds, st.label, st.inputs, scene)
+  }
+  return { promoteDiff }
+}
