@@ -61,7 +61,7 @@ the kit's `package.json` for the exact ranges; at writing: React 18 · three 0.1
 ## 3. What waits on the kit
 
 **The town itself** — the movie, Society's map, Street — is drawn by the kit's one town assembly,
-which does not exist yet: `docs/briefs/BRIEF-one-town-assembly.md` (in this repo) creates it, run
+which does not exist yet: `cartograph/_archive/BRIEF-one-town-assembly-LANDED-2026-10-29.md` (in this repo) creates it, run
 by a separate agent. Until it lands:
 - Build everything that is not the 3D scene. Where the scene belongs, show a **labelled,
   obvious** placeholder — "The town is drawn here once the renderer entry lands" — never a
