@@ -50,7 +50,8 @@ const MUTANTS = [
   ['an observed hour does not say where it was taken', 'src/lib/nws.js', 'h.station = stations.station(r.id)', 'h.station = r.id'],
   ['the seam is not measured', 'src/lib/nws.js', "seamF: atSeam ? observed(atSeam, 'temperature', r.id) : null", 'seamF: null'],
   ['the fill is fetched on every poll', 'src/lib/nws.js', 'if (held?.key === key) return held.fill', 'if (false) return held.fill'],
-  ['a failed answer is held for the window', 'src/lib/nws.js', '&& stations.answered.failed === failedBefore)', ')'],
+  ['a failed answer is held for the window', 'src/lib/nws.js', '&& stations.answered.failed === 0)', ')'],
+  ['a failed stations list is held (failures counted only during the fill)', 'src/lib/nws.js', '  const fill = await observedHours(stations, fillFrom, gridFirst, pressureStation)\n  if (gridFirst <= nowMs && stations.answered.failed === 0)', '  const failedBefore = stations.answered.failed\n  const fill = await observedHours(stations, fillFrom, gridFirst, pressureStation)\n  if (gridFirst <= nowMs && stations.answered.failed === failedBefore)'],
   ['the cadence is inferred from the series, not read from its stamp', 'src/lib/weatherAt.js', '  return hourly.cadence\n}', '  let c = Infinity\n  for (let j = 1; j < hourly.length; j++) c = Math.min(c, hourly[j].time - hourly[j - 1].time)\n  return c\n}'],
   ['an unstamped series is read (the stamp refusal gone)', 'src/lib/weatherAt.js', '  if (!(hourly.cadence > 0)) throw', '  if (false) throw'],
   ['the stamp is read before the empty series (a standing preset)', 'src/lib/weatherAt.js', "  if (!hourly?.length) throw new WeatherRangeError('[weatherAt] ⛔ there is no forecast to read')", "  cadence(hourly)\n  if (!hourly?.length) throw new WeatherRangeError('[weatherAt] ⛔ there is no forecast to read')"],
@@ -82,7 +83,7 @@ const OBS = {   // newest first is NOT assumed by the parser — it sorts
 function fakeFetch(stationIds, asked = [], down = new Set()) {
   return async (url) => {
     asked.push(url)
-    if ([...down].some((id) => url.includes(`/stations/${id}/observations`))) return { ok: false, status: 503, json: async () => ({}) }
+    if ([...down].some((id) => url.includes(`/stations/${id}/observations`)) || (down.has('LIST') && url.startsWith('stations:'))) return { ok: false, status: 503, json: async () => ({}) }
     const json = (status, body) => ({ ok: status < 400, status, json: async () => body })
     if (url.includes('/points/')) return json(200, { properties: { gridId: 'TST', gridX: 1, gridY: 1, forecastGridData: 'grid', observationStations: `stations:${stationIds}` } })
     if (url === 'grid') return json(200, { properties: GRID })
@@ -169,6 +170,11 @@ async function claims(mutant) {
     const p2 = await run('KPRS,KTMP,KTRI', [])
     if (p1.meta.fill !== null) fails.push('with KTMP answering 503, a fill was made anyway')
     if (p2.meta.fill?.station !== 'KTMP') fails.push(`after a 503, the next poll's fill is ${JSON.stringify(p2.meta.fill?.station ?? null)}, not KTMP — the failure was held for the window`)
+    // a 503 on the stations LIST (fetched first, for pressure) is not held either
+    const l1 = await run('KPRS,KTMP,KFOUR', [], new Set(['LIST']))
+    const l2 = await run('KPRS,KTMP,KFOUR', [])
+    if (l1.meta.fill !== null) fails.push('with the stations list answering 503, a fill was made anyway')
+    if (l2.meta.fill?.station !== 'KTMP') fails.push(`after the stations list's 503, the next poll's fill is ${JSON.stringify(l2.meta.fill?.station ?? null)}, not KTMP — the failure was held for the window`)
     // the cadence is the producer's stamp: an all-absent fill + a one-hour grid has no two consecutive readings
     if (w.hourly.cadence !== H) fails.push(`nws stamps the series' cadence as ${w.hourly.cadence}, not ${H} ms`)
     const sparse = [0, 3].map((i) => ({ time: new Date(GRID0 + i * H), temperatureF: 50 + i }))

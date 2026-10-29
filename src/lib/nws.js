@@ -232,7 +232,8 @@ const _fills = new Map()   // stations URL → { key, fill }: the fill, fetched 
 /**
  * The fill, once per (stations, window start, grid start, pressure station): its hours are past observations, so a poll
  * inside the same window reuses them (one station's 7 h is ~0.15 MB, every 5 min per tab). ⛔ Nothing is held after a
- * FAILED answer (a 5xx, a 429): the next poll asks again. So a refusal is held only when every station answered and
+ * FAILED answer anywhere in the poll (a 5xx, a 429 — the stations list, fetched first for pressure, included): the next
+ * poll asks again. So a refusal is held only when every station answered and
  * none reached `from` (not re-asked of five stations each poll). A grid starting after now is not held (its later
  * hours have yet to be observed).
  */
@@ -240,9 +241,8 @@ async function theFill(stations, fillFrom, gridFirst, pressureStation, nowMs) {
   const key = `${fillFrom} ${gridFirst} ${pressureStation}`
   const held = _fills.get(stations.url)
   if (held?.key === key) return held.fill
-  const failedBefore = stations.answered.failed
   const fill = await observedHours(stations, fillFrom, gridFirst, pressureStation)
-  if (gridFirst <= nowMs && stations.answered.failed === failedBefore) _fills.set(stations.url, { key, fill })
+  if (gridFirst <= nowMs && stations.answered.failed === 0) _fills.set(stations.url, { key, fill })
   return fill
 }
 
