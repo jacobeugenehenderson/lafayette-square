@@ -14,3 +14,9 @@ Also read: geography.json 7313ad4af60ebe6894a86378c0b7017c, neighborhood_boundar
 Regenerate: `node scratch/cut-once/extract-fixtures.mjs --data=<that dir> --town=ptown --scene=provincetown --at=282.795,113.216`
 
 Reproduces: 4 street decks · footprint edges ≤ 2 mm: 10 · take-out edges ≤ 2 mm: 58, all on deck edges · the 1 mm back-step at (282.791, 113.214) → (282.791, 113.213) on deck 1 (MacMillan Wharf / Lopes Square), 4 mm from the brief's (282.795, 113.216), which is ①'s, downstream; offset cause not established.
+
+## Huron's traced water (`huron-traced.json`, 1.6 MB)
+`traced` in bake-coast.mjs, the input to `openCloseAtStep(traced, fine, 'the traced water', { cutOnce: false })`, in clipper units (scale 1000), with fineM and the square. Written by `scratch/cut-once/bake-coast-traced.mjs`: bake-coast.mjs at integration 9b9910bb, its imports repointed to the integration worktree, `write: false`, exiting right after `traced`. Run under Boz's heavy slot in 75 s, from `.claude/worktrees/integration` (`node ../plumb-cut-once/scratch/cut-once/bake-coast-traced.mjs --scene=huron`). Huron's clean/coast.json md5 before and after: e65e1dbd2b1c2086fc793809ff89ff55.
+Verified by `node scratch/cut-once/verify-huron-traced.mjs <huron coast.json>`:
+- `cutOnce: false` reproduces coast.json's record exactly (3.059 / 34.181 m², 41 / 75 features, the same sliver counts).
+- `cutOnce: true` reproduces the debt: (-4820.83, -3834.455) is a vertex its output passes 3 times, with 113 repeated vertices in all.
