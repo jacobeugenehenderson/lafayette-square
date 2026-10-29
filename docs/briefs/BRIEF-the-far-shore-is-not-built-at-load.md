@@ -64,6 +64,15 @@ Boz as a measured comparison before anything is built.
    brief, not this one. Browse (the overhead plan) is NOT ruled: measure whether it shows far revetment the movie never does, and
    bring the number to Boz. A face the movie never sees isn't built on the movie's path at all. Measure: per town, the share of far
    faces (and their build ms) the movie never sees.
+   **(e) A THIRD, INSTANT TIER, THEN THE STONES ARRIVE** (Jacob, 2026-10-29: *"we could add a third further decimated version that's
+   just basically stone colored, or speckled, that can load instantly and maybe, as in the elevation/terrain lift, the geometrical
+   stones can appear over time with less urgency"*). A stone-coloured or speckled band on the revetment's footprint that is there at
+   the reveal; the geometric far layer then grows in over time, the way the terrain lifts in (find that mechanism, the uExag ramp
+   behind `buildingLift.js` and `patchTerrain`, and reuse its timing, not a second one). Candidate for the band: the drawn ground
+   itself, as a ground group or material under the footprint, since `bake-revetment.js` notes every ground group is a flat XZ polygon,
+   which is exactly a flat band. ⛔ The band is the stones' PLACEHOLDER, never their substitute: if a face's geometry fails, it fails
+   loudly (the far layer's existing `console.error`), and the band does not quietly stand in forever. Combine with (d): the band
+   everywhere at once, the stones in the movie's order.
 2. **Plan to Zob** (`docs/agents/ZOB.md §2`), with every reader that moves.
 3. **Build** the chosen means; the superseded path is deleted in the same commit (three-part fix).
 4. **The class, measured:** `makeDrawnGround` and Terrain's PlaneGeometry (~1.1–1.2 s each on PTown). Report whether each is
