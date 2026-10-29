@@ -25,13 +25,19 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
    rounding reaching the output.
 2. **RESOLVE the raw curve** (it self-intersects wherever a feature is narrower than 2h): node it with
    `latticeNode.js#nodeCrossings`, then take the region with clipper's union (nonzero, as today).
-   - ⛔ **[code]**: nodeCrossings skips same-ring pairs (`s.ri === t.ri`), so a raw curve's self-crossings are not noded as
-     it stands. Boz prefers ONE home: a `self` option on nodeCrossings, not a per-edge workaround at the call site
-     (open paths per edge are supported **[code]**, but that would be a second form). A shared-module change: Zob rules.
-   - The tags ride the noding: nodeCrossings returns each output vertex's `edge` (its input segment) **[code]**. After the
-     union, each output edge u→v is mapped back to its noded segment by EXACT vertex identity, never by proximity.
-     **[unmeasured]**: that clipper's union adds no vertex to an input that is already noded (step 0 checks it, and the
-     build refuses by name if it does).
+   - **RULED (Zob): a `self` option on nodeCrossings, default false, one home.** Under it a same-ring pair goes to
+     `pairs(ri, ri)`. It is passed to verifyNoded too, so the verifier reads the same rule. ⛔ Not by dropping the hard skip:
+     existing callers pass permissive `pairs` and would silently start self-noding. `tjoin && self` refuses by name. A
+     noded self-crossing is a self-TOUCH, which the antenna pass already keeps.
+   - The tags ride the noding (each output vertex's `edge` **[code]**). **A tag is (ring, i)** (Zob C4), and the map keys
+     on the **directed SEGMENT (u, v)**, never a single vertex (Zob C3): a self-crossing pixel is one vertex visited twice
+     under two tags. A (u, v) mapping to two tags refuses by name.
+   - ⛔ **[measured] (step 0a): clipper's union is NOT a pure topology step on noded input.** PTown decks: 0 new vertices,
+     501 of 501 edges mapped. Huron: **621 new vertices and 1,358 unmapped edges**, with PreserveCollinear on. Each sampled
+     new vertex lies within 0.3 u of a noded segment, near its end. Cause not established. **OPEN, for Zob:** find why clipper
+     emits them, or replace the union with our own face walk on the noded arrangement (windingOf per face). The second puts
+     no third-party rounding in the path. Either way PreserveCollinear(true) on every union in the method (Zob C2), or the
+     run map, with a refusal if a run carries more than one tag.
 3. **DILATE, emitting the source's own lines.** Each eroded ring is now a cyclic sequence of tags. The dilated edge of
    tag i IS Lᵢ (−h then +h is the identity on a line), so no offset is computed for it. Its vertices:
    - consecutive tags i, i+1 (adjacent in the source ring): the **source vertex v₍ᵢ₊₁₎ itself**, integer, no arithmetic.
@@ -39,11 +45,21 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
    - non-adjacent tags a, b (a feature was removed between them): Lₐ ∩ L_b, the CUT POINT, computed exactly in BigInt and
      rounded ONCE, half-up. This needs a LINE–LINE form of `crossOf`, because `crossOf` refuses a crossing outside both
      segments **[code]**, and a miter's crossing can lie past them. Proposed: `latticeNode.js#lineCrossOf`, sharing crossOf's
-     BigInt and half-up code. Parallel lines (D = 0, exact) REFUSE by name, with no epsilon (Boz).
+     BigInt and half-up code. **RULED (Zob):** crossOf's point tail becomes one internal function; crossOf = the inside test
+     plus that function, lineCrossOf = that function alone.
+   - ⛔ **D = 0 is the COMMON case (Zob C1).** A spike removed from a straight wall leaves Lₐ = L_b. **Same line** (exact,
+     BigInt: the direction cross product and the offset cross product both 0) → no vertex: the edge runs straight through
+     and one tag spans both. **Parallel and distinct** → refuse by name (the true error). **Near-parallel** → the crossing is
+     far away, so the cut join takes the SAME miter limit as an erode join, and when squared its cap is a null line, born
+     rounded.
+   - A tag appearing twice in one eroded ring is NORMAL (a feature split one edge), and adjacency is cyclic per ring
+     (last → 0; each hole its own cycle) (Zob C4). Nobody "fixes" it.
    - a null cap: its line is the cap's +h offset, a NEW line, computed in doubles and rounded once at birth (ORIENTATION's
      "the line is born rounded"). Same miter limit.
 4. **RESOLVE again** (dilation merges what touches): nodeCrossings, then union, as in step 2.
-5. **∩ P and the pieces, on one noded arrangement.** A cut point lies within NODE_BOUND of both its lines, not on them.
+5. **∩ P and the pieces, on one noded arrangement.** A cut point within both segments lies within NODE_BOUND of both
+   its lines. ⛔ A far or squared join does NOT lie on P's segment (Zob C1): its cap edges are new lines inside or outside P,
+   and the ∩ P on the noded arrangement trims what lies outside, its crossings with P being hot pixels of both.
    So P's rings and the open's rings are noded TOGETHER (`pairs`: P × open), which routes both through every cut point's hot
    pixel. P's edges and the open's edges are then the same integer segments wherever they coincide, and clipper's integer
    difference P − open (the taken pieces) is exact on them. Slivers: the existing `isRoundingSliver`. ⛔ It is itself an
@@ -63,11 +79,19 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
 - Topology row: a planted part with a hole, a pinch and a split gives the same outer and hole counts as the integer form
   wherever the integer form is correct; a dropped hole is RED.
 - The yardstick is itself seen to fail first: a planted 1-unit copy of one edge must read `copy = 1`.
+- Zob's rows: a collinear spike · a near-collinear spike (0.01° either side) · two exactly parallel distinct lines (refuses).
+  Mutants: PreserveCollinear at its default (RED unless the run map catches it) · `self` reaching nodeCrossings but not
+  verifyNoded (the verifier RED on a planted self-crossing).
 
-## Build step 0 (measurements, before any of the above)
-(a) Does clipper's union add vertices to a noded input? (b) nodeCrossings' time on Huron's raw eroded curve, 90k vertices,
-as open paths per edge (it was built for rings, and per-edge open paths may cost more). (c) How the squared-miter parity
-changes the features on the three fixtures (expected: identical, since today's call uses the same limit).
+## Build step 0: measured (`node scratch/cut-once/step0.mjs --fixture=decks|huron [--collinear=default]`)
+Step 1's tagged erode, built as ClipperOffset point for point, resolved by nodeCrossings (one open path per edge, standing in
+for `self`) plus clipper's union (pftPositive):
+| | raw edges | self-crossings | noding | union | (a) new vertices / unmapped edges | (c) area, tagged vs clipper | outers/holes | XOR |
+|---|---|---|---|---|---|---|---|---|
+| PTown decks | 960 | 242 | 23 ms | 5 ms | 0 / 0 (same with collinear default) | 21,562.085 / 21,562.116 m² | 12/1, both | 0.20 m² |
+| Huron traced | 167,833 | 52,518 | 1.5 s | 2.7 s | **621 / 1,358** | 41,761,068.6 / 41,761,067.9 m² | 9/58, both | 1.34 m² |
+(b) cost is no obstacle. (c) topology matches; the area difference is 0.20 m² and 1.34 m², cause not established. (a) is
+the open point (step 2). The PTown decks carry no collinear runs, so C2 needs its planted row.
 
 ## Not established
 Whether ①'s 4 mm offset (282.795 vs 282.791) is a further step after the take-out. Whether the Huron crossing (the debt) is
