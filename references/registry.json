@@ -5170,6 +5170,15 @@
       "findings": [
         "r-plant-it-and-point-it"
       ]
+    },
+    {
+      "id": "q-does-a-kit-default-change-recolour-a-town",
+      "ask": "Whether a town that never authored a Look value follows the kit's default when the kit later changes it",
+      "neededBy": "PTown, 2026-10-29: its design.json carried no `dof`, so bake-scene.js baked `design.dof || kitDayChannel('dof')`; Jacob saw the kit default in Stage as if it were PTown's own",
+      "status": "answered",
+      "findings": [
+        "r-a-town-keeps-the-values-it-grew-with"
+      ]
     }
   ],
   "findings": [
@@ -8694,6 +8703,23 @@
       "quote": "\"I drag the camera all the way to the left, and the arch goes out of frame… So I want to park the camera and rotate it to the arch. Then it might be nice to be able to go up and down… It's like: plant it and point it\" · \"then: play it\" · \"I like the camera navigation controls as they are now; we just don't have a good aimer\" · \"I almost think it could be drag the exact object I am touching so if it's the arch it drags the arch keeping you as the pivot\"",
       "canon": "src/lib/cameraRegimes.js (the orbit and street regimes)",
       "notes": "UNBUILT; brief owed with the live fade band. Street already turns in place (orbit at a locked 0.5 m), at eye height."
+    },
+    {
+      "id": "r-a-town-keeps-the-values-it-grew-with",
+      "question": "q-does-a-kit-default-change-recolour-a-town",
+      "kind": "ruling",
+      "value": {
+        "rule": "once a town's Look takes a value (authored, or the kit default at the time), a later change to the kit default never changes that town on its next bake",
+        "scope": "every `design.X || kit…` channel in cartograph/bake-scene.js (and any other bake that resolves a Look value from a kit default)",
+        "today": "a shipped slab is already fixed (scene.json carries the resolved values); the drift happens at the NEXT bake of a town that never authored the channel",
+        "boundary": "the kit's own 0-state Look ('kit-default', design.json `{}`, cartograph/serve.js DEFAULT_LOOK_ID) stays `{}` by design and is not a town; the rule is for towns",
+        "when": "not now (Jacob); brief owed"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"Once the apple grows on the branch it doesn't make sense that it's a cherry when picked\"",
+      "notes": "UNBUILT. Means not chosen (e.g. the town's Look records the default it took, when it takes it). A check should read bake-scene.js's resolutions, not restate them.",
+      "canon": "cartograph/BACKLOG.md (TO BRIEF NEXT)"
     }
   ]
 }

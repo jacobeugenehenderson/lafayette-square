@@ -96,7 +96,8 @@ Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d
 precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-has-one-authority unrun (needs a server).
 
 **▶ TO BRIEF NEXT (Jacob, 2026-10-29):** an AIMER for the Stage camera (`r-plant-it-and-point-it`: today's navigation kept; add turn-in-place,
-then play) · the live edge fade band (below).
+then play) · the live edge fade band (below) · a town keeps the values it grew with (`r-a-town-keeps-the-values-it-grew-with`: a
+kit-default change never re-colours a town on its next bake; today `bake-scene.js`'s `design.X || kit…` channels follow the kit).
 **⛔ STAGE'S EDGE FADE BAND IS BAKE-TIME, NOT LIVE (Keystone, measured on LS 2026-10-29); ruled: visual values are live
 (`r-visual-look-values-are-live-in-stage`), brief owed, not tonight.** Also: createGroupChannelActions' set<Channel> drops a write to an
 animated channel's unkeyed slot silently (Layer 0; refuse by name). ⚠️ LS's design.json carries edgeFadeBand 801 (on r 892: the fade
