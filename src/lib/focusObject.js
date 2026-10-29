@@ -19,8 +19,9 @@
  * playhead, else the town's hero (#focusChoice, the one decision). Street focuses where the camera points; Browse has
  * no depth of field.
  * ⛔ An id that names nothing is said once, loudly, naming it, and that end of the focus has NO PLANE: it weighs 0, so
- * the frame blurs at the Amount there and racks toward it (Zob's ruling). A town with no hero and no key focus has no
- * focus plane at all: the Amount everywhere (Amount 0: sharp). A hero that is not an object (the centroid, the landscape
+ * the town's blur takes it there and the frame racks toward it (Zob's ruling). A town with no hero and no key focus has
+ * no focus plane at all: its blur is the TOWN's — sharp at the disc's centre, the Amount at the rim, anchored to the town
+ * not the camera (Jacob, 2026-10-28; RomanceDoF.jsx#townLaw). Amount 0: sharp. A hero that is not an object (the centroid, the landscape
  * backdrop) is no focus object, said once.
  */
 import * as THREE from 'three'
@@ -49,10 +50,10 @@ const sayOnce = (key, msg, error = true) => { if (_said.has(key)) return; _said.
 export function resolveFocusId(id, heroSubject) {
   if (id !== 'hero') return id
   if (heroSubject === undefined) return null   // the scene has not loaded yet: not yet, said nothing
-  if (!heroSubject) { sayOnce('hero:none', '[focus] the town has no hero (Survey ▸ Hero) — there is no focus plane: the hero view blurs at the Amount', false); return null }
+  if (!heroSubject) { sayOnce('hero:none', '[focus] the town has no hero (Survey ▸ Hero) — there is no focus plane: the blur is the town\'s (sharp at the centre, the Amount at the rim)', false); return null }
   if (heroSubject.kind === 'arch') return 'arch'
   if (heroSubject.kind === 'landmark' && heroSubject.id) return heroSubject.id
-  sayOnce(`hero:${heroSubject.kind}`, `[focus] the town's hero is the ${heroSubject.kind}, not an object — there is no focus plane: the hero view blurs at the Amount`, false)
+  sayOnce(`hero:${heroSubject.kind}`, `[focus] the town's hero is the ${heroSubject.kind}, not an object — there is no focus plane: the blur is the town's (sharp at the centre, the Amount at the rim)`, false)
   return null
 }
 
@@ -110,7 +111,7 @@ export function focusMeshes(id, { scene, index }) {
  *   'browse' → { off }: Browse has no depth of field.
  *   'hero'   → the focus OBJECTS: the movie's two ends at the playhead while MovieCamera publishes them, else the town's
  *              hero. ⛔ Never the aim. `weight` is how much of a focus plane there is, 1 per end that resolves, lerped
- *              by `lam`: 0 = none, the Amount everywhere.
+ *              by `lam`: 0 = none, the town's law (RomanceDoF.jsx#townLaw).
  *   else     → { aim }: Street (and a view with no shot) focuses where the camera points.
  * `heroSubject === undefined` (the town not loaded yet) is { off }: not yet, said nothing.
  * @param ctx { scene, index, exag } as for focusBox · @returns { off } | { aim } | { a, b, lam, weight, heroMeshes }
@@ -124,6 +125,13 @@ export function focusChoice({ viewMode, movieFocus: mf, heroSubject, ctx }) {
   const a = box(from), b = to === from ? a : box(to), wa = a ? 1 : 0, wb = b ? 1 : 0
   const near = lam < 0.5 ? from : to, nearId = resolveFocusId(near, heroSubject)
   return { a, b, lam, weight: wa + (wb - wa) * lam, heroMeshes: nearId ? focusMeshes(nearId, ctx) : null }
+}
+
+/** Does this town focus an OBJECT at all — a hero that is one, or a keyframe naming one? For the panel's words: with
+ *  none, the blur is the town's and Window softness means the share of its radius that ramps (Boz's ruling (a)). */
+export function hasFocusObject(heroSubject, keyframes) {
+  if ((heroSubject?.kind === 'arch') || (heroSubject?.kind === 'landmark' && heroSubject.id)) return true
+  return (keyframes || []).some(k => typeof k?.focus === 'string' && k.focus && k.focus !== 'hero')
 }
 
 const _b = new THREE.Box3(), _p = new THREE.Vector3()
@@ -157,6 +165,6 @@ export function focusBox(id, { scene, index, exag }) {
     const top = Math.max(e.baseY ?? 0, e.roofTopY ?? 0)
     return [x0, buildingLiftY(0, c, exag, 0, false, g), z0, x1, buildingLiftY(top, c, exag, 0, false, g), z1]
   }
-  if (index) sayOnce(`id:${id}`, `[focus] ⛔ "${id}" names no object in this town (no set-piece, no slab building) — that end of the focus has no plane: it blurs at the Amount`)
+  if (index) sayOnce(`id:${id}`, `[focus] ⛔ "${id}" names no object in this town (no set-piece, no slab building) — that end of the focus has no plane: the town's blur takes it`)
   return null
 }

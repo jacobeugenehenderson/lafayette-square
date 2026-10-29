@@ -227,7 +227,7 @@ function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove,
 function ChannelSlider({ field, value, editable, onChange }) {
   return (
     <SliderRow label={field.label} value={value} min={field.min ?? 0} max={field.max} step={field.step}
-      suffix={field.unit ?? ''} disabled={!editable} title={editable ? '' : 'Park on a slot to edit'}
+      suffix={field.unit ?? ''} disabled={!editable} title={editable ? (field.title ?? '') : 'Park on a slot to edit'}
       onChange={onChange} />
   )
 }

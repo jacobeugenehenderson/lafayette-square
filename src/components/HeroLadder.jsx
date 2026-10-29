@@ -41,7 +41,9 @@ const frag = /* glsl */`
   uniform vec2 uTexel;
   uniform float uFirst, uKaris, uPackedDepth, cameraNear, cameraFar;
   uniform vec4 uRect;            // the hero's box on screen, uv (x0, y0, x1, y1)
-  uniform float uLogDepth, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp, uFocusOn;
+  uniform float uLogDepth, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp, uFocusOn, uDiscR;
+  uniform mat4 uCamWorld;
+  uniform vec2 uDiscC;
   uniform vec2 uTanHalf;
   uniform vec3 uUpView;
   ${DOF_BLUR_GLSL}
@@ -50,7 +52,7 @@ const frag = /* glsl */`
   vec4 heroTap(vec2 uv) {
     if (uFirst < 0.5) return texture2D(uHero, uv);
     if (any(lessThan(uv, uRect.xy)) || any(greaterThan(uv, uRect.zw))) return vec4(0.0);
-    float inFocus = 1.0 - step(0.02, clamp(blurAtGround(uHeroGround), 0.0, 1.0) / max(uMaxBlur, 1e-4));
+    float inFocus = 1.0 - step(0.02, clamp(objectLaw(uHeroGround), 0.0, 1.0) / max(uMaxBlur, 1e-4));   // object-only: it runs with a hero
     float inFront = 1.0 - step(uHeroNear, depthToDistance(depthAt(uv)));   // something nearer than the hero's nearest point
     float m = texture2D(uMask, uv).a * (1.0 - inFront) * inFocus;
     return vec4(texture2D(uShared, uv).rgb * m, m);
@@ -99,7 +101,7 @@ class HeroLadderPass extends Pass {
         uRect: { value: new THREE.Vector4(0, 0, 1, 1) }, uMask: { value: null }, uHeroNear: { value: 0 }, uHeroGround: { value: 0 },
         uLogDepth: { value: 0 }, uFocusDist: { value: 1000 }, uTanHalf: { value: new THREE.Vector2(0.2, 0.2) },
         uUpView: { value: new THREE.Vector3(0, 1, 0) }, uMaxBlur: { value: 0 }, uHeroBlur: { value: 0 },
-        uZone: { value: 0.2 }, uRamp: { value: 0.5 }, uFocusOn: { value: 1 },
+        uZone: { value: 0.2 }, uRamp: { value: 0.5 }, uFocusOn: { value: 1 }, uCamWorld: { value: new THREE.Matrix4() }, uDiscC: { value: new THREE.Vector2() }, uDiscR: { value: 0 },
       },
       vertexShader: vert, fragmentShader: frag, depthTest: false, depthWrite: false,
     })

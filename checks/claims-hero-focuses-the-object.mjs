@@ -6,7 +6,7 @@
 // applies it. PLANTED (a scene with a `focus:arch` mesh 1000 m ahead, the camera's aim 10 km away, Amount 0.3):
 //   (1) Hero, the movie publishing nothing, the hero drawable → the focal distance is the Arch's, not the aim's; weight 1.
 //   (2) Hero, no hero and no key focus → no focus plane (focusOn 0), maxBlur = the Amount; and the law (DOF_BLUR_GLSL)
-//       returns uMaxBlur at focusOn 0 — every pixel blurs at the Amount.
+//       takes the TOWN's law at focusOn 0 (claims-the-no-focus-blur-is-the-towns.mjs holds what that law is).
 //   (3) the same at Amount 0 → maxBlur 0, every pixel sharp, and the DoF pass is switched off (RomanceDoF's enable).
 //   (4) Street → the aim.  (5) Browse → off (maxBlur 0), by the view.
 //   (6) a rack from the drawable hero to an id that names nothing → weight 1 → 0.5 → 0 across lam (Zob's ruling: a
@@ -23,6 +23,7 @@ const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}
 const vite = await createServer({ root: ROOT, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'error', optimizeDeps: { noDiscovery: true, include: [] } })
 try {
   const THREE = await vite.ssrLoadModule('three'), FO = await vite.ssrLoadModule('/src/lib/focusObject.js')
+  ;(await vite.ssrLoadModule('/src/components/sceneStencilState.js')).setSceneStencil({ center: [0, -1000], radius: 900 })   // the town's disc: the no-focus law needs it
   const { applyDofFrame } = await vite.ssrLoadModule('/src/components/dofDriver.js'), { _dofRefs, DOF_BLUR_GLSL } = await vite.ssrLoadModule('/src/components/RomanceDoF.jsx')
   const quiet = (f) => { const e = console.error, i = console.info; console.error = () => {}; console.info = () => {}; try { return f() } finally { console.error = e; console.info = i } }
   const scene = new THREE.Scene(), arch = new THREE.Mesh(new THREE.BoxGeometry(20, 190, 20)); arch.name = 'focus:arch'; arch.position.set(0, 95, -1000); scene.add(arch); scene.updateMatrixWorld(true)
@@ -36,8 +37,8 @@ try {
   const judgeNoFocus = (fc) => { const f = frame(fc, { viewMode: 'hero', heroSubject: null }); return { f, ok: f.on === 0 && Math.abs(f.max - 0.3) < 1e-9 } }
 
   { const f = frame(FO.focusChoice, { viewMode: 'hero', heroSubject: ARCH }); row(Math.abs(f.dist - 1000) < 15 && f.on === 1 && Math.abs(f.max - 0.3) < 1e-9, `(1) Hero, no published focus, the Arch drawable: focal distance ${f.dist.toFixed(1)} m (the Arch ~1000 m, the aim 10 km), weight ${f.on}`) }
-  { const J = judgeNoFocus(FO.focusChoice), law = /return mix\(uMaxBlur, law, uFocusOn\);/.test(DOF_BLUR_GLSL)
-    row(J.ok && law, `(2) Hero, no hero and no key focus: focusOn ${J.f.on}, maxBlur ${J.f.max} (the Amount 0.3) · the law returns uMaxBlur at focusOn 0: ${law}`) }
+  { const J = judgeNoFocus(FO.focusChoice), law = /return mix\(townLaw\(p\), objectLaw\([^\n]*\), uFocusOn\);/.test(DOF_BLUR_GLSL)
+    row(J.ok && law, `(2) Hero, no hero and no key focus: focusOn ${J.f.on}, maxBlur ${J.f.max} (the Amount 0.3) · the law takes the town's at focusOn 0: ${law}`) }
   { const f = frame(FO.focusChoice, { viewMode: 'hero', heroSubject: null, blur: 0 }), src = readFileSync(join(ROOT, 'src/components/RomanceDoF.jsx'), 'utf8'), offAt0 = /pass\.enabled = _dofRefs\.maxBlur\.current > 0\n/.test(src)
     row(f.max === 0 && offAt0, `(3) the same at Amount 0: maxBlur ${f.max} (every pixel sharp) · the pass switches off at maxBlur 0: ${offAt0}`) }
   { const f = frame(FO.focusChoice, { viewMode: 'planetarium', heroSubject: ARCH }); row(Math.abs(f.dist - 10000) < 60 && !f.choice.a, `(4) Street: the aim — focal distance ${f.dist.toFixed(1)} m`) }

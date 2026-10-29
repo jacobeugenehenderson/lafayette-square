@@ -15,11 +15,12 @@
 import * as THREE from 'three'
 import { _dofRefs } from './RomanceDoF.jsx'
 import { isMarked, isRevealed } from '../lib/startupMarks.js'
+import { getSceneStencil } from './sceneStencilState.js'
 import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 const _heroVec = new THREE.Vector3()  // reused for a point's ground distance (distOf)
-let _warnedNoFocus = false
+let _warnedNoFocus = false, _warnedNoDisc = false
 let _framesSeen = 0
 // Read-only inspection (as terrainShader's window.__terrainExag): this frame's focus — what probes and Preview read.
 const _inspect = { focus: null, dA: null, dB: null, dist: null }
@@ -38,7 +39,7 @@ if (typeof window !== 'undefined') window.__dof = _inspect
  * @param choice      what is focused (src/lib/focusObject.js#focusChoice, the one decision, by the view): { off } (Browse,
  *                    or the town not loaded) · { aim } · { a, b, lam, weight, heroMeshes } — `a` and `b` the two focus
  *                    objects' world boxes [x0,y0,z0,x1,y1,z1] (null where an end names nothing), `lam` how far the
- *                    segment has come, `weight` how much of a focus plane there is (0: the Amount everywhere). The focal
+ *                    segment has come, `weight` how much of a focus plane there is (0: the town's law). The focal
  *                    distance RACKS from a's to b's on the camera's own timing; the hero ladder's box is the nearer end's.
  */
 const _aim = new THREE.Vector3()
@@ -99,16 +100,24 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
     return
   }
 
-  // ⭐ THE HERO VIEW: the focus objects. ⛔ Never the aim: an end that names nothing has no plane (weight), and with no
-  // plane at all the Amount applies everywhere (Jacob, 2026-10-28).
+  // ⭐ THE HERO VIEW: the focus objects. ⛔ Never the aim: an end that names nothing has no plane (weight), and where there
+  // is less than a whole plane the TOWN's law takes the rest — anchored to the disc, not the camera (Jacob, 2026-10-28).
   const lam = choice.lam, near = lam < 0.5 ? choice.a : choice.b
   _dofRefs.focusOn.current = choice.weight
+  _dofRefs.camWorld.current.copy(camera.matrixWorld)
+  if (choice.weight < 1) {
+    // ⛔ The town's disc is the scene's stencil (sceneStencilState: ground.json#stencil), never a guessed one: with none,
+    // the town law has no centre, so there is no depth of field this frame, said once.
+    const s = getSceneStencil()
+    if (!s) { if (!_warnedNoDisc) { _warnedNoDisc = true; console.error('[dof] ⛔ no focus object and no scene stencil (ground.json#stencil) — the town\'s blur has no disc; depth of field is off') } off(); return }
+    _dofRefs.discC.current.set(s.center[0], s.center[1]); _dofRefs.discR.current = s.radius
+  }
   _dofRefs.heroRect.current = heroRectOnScreen(near, camera)
   _dofRefs.heroNear.current = _dofRefs.heroRect.current ? _heroNear : 0
   _dofRefs.heroMeshes.current = _dofRefs.heroRect.current ? (choice.heroMeshes ?? null) : null
   const dA = choice.a ? distOf(centreOf(choice.a, _boxC)) : null, dB = choice.b ? distOf(centreOf(choice.b, _boxC)) : null
   _inspect.focus = choice; _inspect.dA = dA; _inspect.dB = dB; _inspect.heroRect = _dofRefs.heroRect.current
-  if (dA == null && dB == null) { _inspect.dist = null; return }   // no plane: focusOn 0, the Amount everywhere
+  if (dA == null && dB == null) { _inspect.dist = null; return }   // no plane: focusOn 0, the town's law
   const a = dA ?? dB, b = dB ?? dA   // a broken end has no plane of its own: its weight takes the plane out, not its distance
   _dofRefs.focusDist.current = Math.max(1, a + (b - a) * lam)
   _dofRefs.heroGround.current = lam < 0.5 ? a : b
