@@ -79,7 +79,39 @@ export function stagewise(src, stepM, name) {
   const byStage = {}; for (const b of born) { const k2 = `${b.stage} · ${b.side}`; byStage[k2] ||= { n: 0, m2: 0 }; byStage[k2].n++; byStage[k2].m2 = +(byStage[k2].m2 + b.m2).toFixed(4) }
   return { name, table, byStage, largest: born.sort((a, b) => b.m2 - a.m2).slice(0, 6) }
 }
-if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_STAGEWISE) {
+// ⭐ ISOLATED (Zob, 2026-10-29): each stage judged ALONE. The reference is fed the CANDIDATE's previous-stage region (×1000) and
+// performs only that stage's rule, so a disagreement belongs to that rule and to nothing upstream. Two counts per stage and side:
+// pieces surviving an erode by NODE_BOUND, and by 2·NODE_BOUND (the tiered bound: a stage whose input carries noding-inserted
+// vertices may differ by up to two roundings, the close morphing the open's LINES and the reference its vertices), both reported
+export function isolated(src, stepM, name) {
+  const r = C3.openCloseProvenance(src, stepM, name), P = up(r.P), h = (stepM / 2) * 1000 * F
+  const CS = { erode: up(C3.STAGES.erode), open: up(C3.STAGES.open), dilate: up(C3.STAGES.dilate), closedK: up(C3.STAGES.closedK), k: up(r.rings) }
+  const feat = (pp) => pieces(pp).filter(survives)
+  const REF = {
+    erode: () => off(P, -h),
+    open: () => op(ClipType.ctIntersection, off(CS.erode, h), P),
+    dilate: () => off(CS.open, h),
+    closedK: () => op(ClipType.ctUnion, [...CS.open, ...off(CS.dilate, -h)]),
+    k: () => { const tf = feat(op(ClipType.ctDifference, P, CS.open)), ff = feat(op(ClipType.ctDifference, CS.closedK, CS.open))
+      let k = tf.length ? op(ClipType.ctDifference, P, tf.flat()) : P; if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flat()]); return k } }
+  const survivesBy = (pp, b) => off(pp, -b).some(q => Clipper.Area(q) > 0)
+  const out = {}, largest = []
+  for (const st of Object.keys(REF)) { const K = CS[st], R = REF[st]()
+    const diffs = [...pieces(op(ClipType.ctDifference, K, R)).map(pp => ({ pp, side: 'candidate only' })), ...pieces(op(ClipType.ctDifference, R, K)).map(pp => ({ pp, side: 'definition only' }))]
+    const row = {}
+    for (const x of diffs) { const s1 = survivesBy(x.pp, bound), s2 = s1 && survivesBy(x.pp, 2 * bound); if (!s1) continue
+      const key = x.side; row[key] ||= { nb: 0, nbM2: 0, twoNb: 0, twoNbM2: 0 }; const m2 = area(x.pp) / F / F / 1e6
+      row[key].nb++; row[key].nbM2 += m2; if (s2) { row[key].twoNb++; row[key].twoNbM2 += m2
+        const o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }; largest.push({ stage: st, side: x.side, m2: +m2.toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)] }) } }
+    for (const v of Object.values(row)) { v.nbM2 = +v.nbM2.toFixed(4); v.twoNbM2 = +v.twoNbM2.toFixed(4) }
+    out[st] = row }
+  return { name, isolated: out, largest: largest.sort((a, b) => b.m2 - a.m2).slice(0, 8) }
+}
+if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_ISOLATED) {
+  const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
+  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
+  for (const k of process.argv.slice(2)) { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(isolated(src, step, k))) }
+} else if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_STAGEWISE) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
   const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
   for (const k of process.argv.slice(2)) { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(stagewise(src, step, k))) }
