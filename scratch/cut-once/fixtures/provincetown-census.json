@@ -3,7 +3,7 @@
   "parts": 197,
   "partsBuilt": 196,
   "tiles": 1296,
-  "runs": 1259
+  "runs": 1189
  },
  "tile": 500,
  "min": 62.5,
@@ -23,21 +23,6 @@
     250
    ],
    "verdict": "REAL"
-  },
-  {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -4486.547,
-    -1424.506
-   ],
-   "why": "[census 3] ⛔ the open/close: a filled feature at (-4486.547, -1424.506) (2.74 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 1577.1,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "untiled refuses OTHERWISE: the back-offset · walls-meet at [-4362.641,-1403.795]"
   },
   {
    "class": "the back-offset · walls-meet",
@@ -67,7 +52,7 @@
    "sizes": [
     62.5
    ],
-   "verdict": "untiled refuses OTHERWISE: the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius  at [-4486.547,-1424.506]"
+   "verdict": "ARTEFACT: builds untiled"
   },
   {
    "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
@@ -85,66 +70,6 @@
    "verdict": "ARTEFACT: builds untiled"
   },
   {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -4123.75,
-    -1599.945
-   ],
-   "why": "[census 3] ⛔ the open/close: a filled feature at (-4123.750, -1599.945) (27.46 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 2740.9,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "untiled refuses OTHERWISE: the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius  at [-4155.247,-1566.959]"
-  },
-  {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -4155.247,
-    -1566.959
-   ],
-   "why": "[census 2] ⛔ the open/close: a filled feature at (-4155.247, -1566.959) (58.91 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 12636.1,
-   "parentOnly": 1,
-   "sizes": [
-    125
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
-   "at": [
-    -3542.991,
-    -2213.32
-   ],
-   "why": "[census 3] ⛔ the topology guard: P's hole at (-3542.991, -2213.320) (52.32 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
-   "leaves": 1,
-   "m2": 928.2,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "ARTEFACT: builds untiled"
-  },
-  {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -3480.067,
-    -2086.536
-   ],
-   "why": "[census 3] ⛔ the open/close: a filled feature at (-3480.067, -2086.536) (13.28 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 3411.2,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
    "class": "the back-offset · cross-ring-not-a-pair",
    "at": [
     -3577.898,
@@ -156,81 +81,6 @@
    "parentOnly": 0,
    "sizes": [
     62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -3513.191,
-    -1877.082
-   ],
-   "why": "[census 3] ⛔ the open/close: a filled feature at (-3513.191, -1877.082) (13.10 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 2189.1,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "untiled refuses OTHERWISE: the back-offset · cross-ring-not-a-pair at [-3577.898,-1843.294]"
-  },
-  {
-   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
-   "at": [
-    -3661.189,
-    -1583.963
-   ],
-   "why": "[census 3] ⛔ the topology guard: P's hole at (-3661.189, -1583.963) (5.30 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
-   "leaves": 1,
-   "m2": 3879.8,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "ARTEFACT: builds untiled"
-  },
-  {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -3523.016,
-    -1805.832
-   ],
-   "why": "[census 3] ⛔ the open/close: a filled feature at (-3523.016, -1805.832) (4.05 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 2393.6,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "untiled refuses OTHERWISE: the back-offset · cross-ring-not-a-pair at [-3577.898,-1843.294]"
-  },
-  {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -3549.982,
-    -1275.144
-   ],
-   "why": "[census 3] ⛔ the open/close: a filled feature at (-3549.982, -1275.144) (20.03 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 2280.2,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the open/close: a filled feature at (…) (…) is wider than a cell (…), and the definition fills nothing a disk of radius ",
-   "at": [
-    -3790.69,
-    -767.621
-   ],
-   "why": "[census 2] ⛔ the open/close: a filled feature at (-3790.690, -767.621) (45.84 m²) is wider than a cell (it survives an erode by half a cell), and the definition fills nothing a disk of radius h fits in. Cause not established. Refusing.",
-   "leaves": 1,
-   "m2": 7290.2,
-   "parentOnly": 1,
-   "sizes": [
-    125
    ],
    "verdict": "REAL"
   },

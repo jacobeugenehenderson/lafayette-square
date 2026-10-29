@@ -191,7 +191,13 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   // 'under n/2' heuristic is deleted), and VALID only if no interior edge of it appears elsewhere in this ring's lines (else
   // the jump runs BACKWARD against the ring); each arc point with its outgoing edge's line
   const present = new Set(t2.filter(x => x.kind === 'L' && x.g != null).map(x => x.g + ':' + x.i))
-  const arcOf = (t, u) => { const R = SRC[t.g], n = R.length, pts = [], lns = []; let valid = true
+  // ⭐ A RING WOUND OPPOSITE TO ITS SOURCE TAKES NO STAND-INS (Zob's ruling, 2026-10-29; PTown's wide fills): the arc stand-ins (trimmed,
+  // gap) and the backward-join rules hold only when the ring emitted runs the SAME way as the source ring its tags come from. A hole the
+  // dilate re-forms where the close shuts a mouth is tagged with an OUTER's edges: the close's hole is the dilate of that hole, so every
+  // join on it is a cut between its own two lines, crossed or squared. Exact (signed area), no constant
+  const sense = Math.sign(area(E)), opposite = (g) => !OPP_STANDINS && Math.sign(area(SRC[g])) !== sense
+  const arcOf = (t, u) => { if (opposite(t.g)) return { pts: [], lns: [], valid: false, opposite: true }
+    const R = SRC[t.g], n = R.length, pts = [], lns = []; let valid = true
     for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { pts.push([R[j].X, R[j].Y]); lns.push(lineOf(t.g, j)); if (j === u.i) break; if (present.has(t.g + ':' + j)) valid = false; if (pts.length > n) break }
     return { pts, lns, valid } }
   // ⭐ AN ARC'S VERTICES ARE JOINS TOO (Zob, 2026-10-29): each vertex v_j an arc emits sits between the region's edges j−1 and j, and
@@ -282,11 +288,11 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // ⭐ BACKWARD BUT ADJACENT (Zob, 2026-10-29): u = t − 1 on one ring: the two lines are adjacent source edges, and their
     // crossing must BE the shared source vertex v_t, integer for integer (checked, never assumed), which is emitted. Why the
     // eroded ring meets t before t − 1 is not established (Breakwater 6, decks 1, all one step back).
-    if (AR && !AR.valid && !REFUSE_ALL_BACKWARD && (t.i - u.i + SRC[t.g].length) % SRC[t.g].length === 1) { const v = SRC[t.g][t.i]
+    if (AR && !AR.valid && !AR.opposite && !REFUSE_ALL_BACKWARD && (t.i - u.i + SRC[t.g].length) % SRC[t.g].length === 1) { const v = SRC[t.g][t.i]
       if (X[0] !== v.X || X[1] !== v.Y) throw new Error(`[${who}] ⛔ the back-offset: a backward-adjacent join (edge ${t.i} then ${u.i} of ring ${t.g}) crosses at (${X}), not at their shared vertex (${v.X}, ${v.Y}). Refusing.`)
       if (capAt(A, B, X, u)) continue
       out.push(X); outL.push(u.int || null); origin(X, 'backward-adjacent'); stat.backwardAdjacent = (stat.backwardAdjacent || 0) + 1; continue }
-    if (AR && !AR.valid) { const n = SRC[t.g].length, inner = []; for (let j = (t.i + 1) % n; j !== u.i; j = (j + 1) % n) inner.push(j)
+    if (AR && !AR.valid && !AR.opposite) { const n = SRC[t.g].length, inner = []; for (let j = (t.i + 1) % n; j !== u.i; j = (j + 1) % n) inner.push(j)
       const where = inner.slice(0, 4).map(j => ({ edge: j, atTokens: t2.map((x, q) => (x.kind === 'L' && x.g === t.g && x.i === j ? q : -1)).filter(q => q >= 0) }))
       const around = t2.slice(Math.max(0, k - 6), k + 8).map((x, q) => x.kind === 'L' ? (x.g != null ? `${x.g}:${x.i}` : 'new') : 'V')
       const lo = (t.i - 2 + n) % n, srcV = []; for (let q = 0; q < 7; q++) { const v = SRC[t.g][(lo + q) % n]; srcV.push(`${(lo + q) % n}:(${v.X},${v.Y})`) }
@@ -465,6 +471,10 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
 // SPIKE: switched by setBackPieces; emit stays the reference point until the oracle's table decides
 let CLAIMANTS_KEPT = false                         // ⛔ the mutant only (setClaimantsKept): an order-breaking claimant is never dropped
 export const setClaimantsKept = (v) => { CLAIMANTS_KEPT = !!v }
+let F_SLIVER_KEPT = false                         // ⛔ the mutant only (setFSliverKept): the offset's rounding-sized faces are emitted
+export const setFSliverKept = (v) => { F_SLIVER_KEPT = !!v }
+let OPP_STANDINS = false                          // ⛔ the mutant only (setOppStandins): an opposite-wound ring takes the arc stand-ins
+export const setOppStandins = (v) => { OPP_STANDINS = !!v }
 let MERGE_LEAVES_FIRST = false                    // ⛔ the mutant only (setMergeLeavesFirst): a merged line token leaves at its FIRST edge
 export const setMergeLeavesFirst = (v) => { MERGE_LEAVES_FIRST = !!v }
 let BACK_PIECES = !!process.env.CUTONCE_BACK_PIECES
@@ -573,7 +583,13 @@ export function morph(region, d, who, stat, lines = null) {
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
     F.rings.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.min(Math.hypot(q.X - tx, q.Y - ty), Math.hypot(r2.X - tx, r2.Y - ty)) > 2000) return
       console.log(`TRACE ${who} ring ${k} e${e} (${q.X},${q.Y})→(${r2.X},${r2.Y}) tags ${JSON.stringify(F.tags[k][e])}`) })) }
-  const OUT = F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
+  // ⭐ A RING OF THE OFFSET'S OWN FACES THAT IS WHOLLY THE ROUNDING IS NOT EMITTED (Plumb, 2026-10-29; PTown's wide fills): the same
+  // predicate the arrangement applies to what it is given (isRoundingSliver, Zob's sliver ruling), applied to what the offset's face
+  // walk returns, before the back-offset: a 3-vertex ring of zero area at a mouth the dilate shut, emitted on the open's lines, grew
+  // into a 1 m² hole that drained the re-formed hole to the outside. Dropped, COUNTED and NAMED (DROPPED), never silent
+  const keepK = F.rings.map((E, k) => { if (F_SLIVER_KEPT) return true; const pp = [E.map(q => new IntPoint(q.X, q.Y))]; if (area(E) < 0) pp[0].reverse(); if (!isRoundingSliver(pp)) return true
+    let cx = 0, cy = 0; for (const q of E) { cx += q.X; cy += q.Y } DROPPED.push({ who: `${who} offset face`, set: -1, u2: Math.abs(area(E)), at: [+(cx / E.length / SCALE).toFixed(3), +(cy / E.length / SCALE).toFixed(3)] }); return false })
+  const OUT = F.rings.map((E, k) => keepK[k] ? emit(E, F.tags[k], region, d, who, stat, lines) : null).filter(Boolean)
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
     OUT.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 2000) return
       console.log(`TRACE-OUT ${who} ring ${k} v${e} (${q.X},${q.Y})→(${r2.X},${r2.Y}) line ${JSON.stringify(q.tag)}`) })) }

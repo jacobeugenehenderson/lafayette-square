@@ -68,6 +68,11 @@ const ROWS = {
   // comes after the successor 9 and the call refused 'no forward order'; 7's own offset line holds both ends within the rounding, so it
   // is a claimant and is dropped (openClose.mjs#emit; the mutant setClaimantsKept, scratch, refuses here)
   claimant: ['an order-breaking claimant within the rounding is dropped, the token read forward', fx('ptown-claimant-crop').paths],
+  // PTown's own water (30 m round (−4486.547, −1424.506); the census's 7 wide fills): the close shuts a mouth and the dilate re-forms a
+  // hole tagged with the open's OUTER edges. A ring wound opposite to its tags' source takes no arc stand-ins (Zob's ruling; the mutant
+  // setOppStandins fills the hole, 2.74 m²), and an offset face wholly the rounding is not emitted (a 3-vertex zero-area ring at the
+  // mouth grew into a 1 m² hole that drained this one; the mutant setFSliverKept refuses 'P's hole opened'). The hole is KEPT
+  wideFill: ['a hole the close re-forms at a shut mouth is kept, its walls an outer\'s edges', fx('ptown-widefill-crop').paths],
 }
 // ⚠ A CUT POINT OFF ITS SOURCE LINE (Zob, 2026-10-29; BACKLOG "the open/close's residual against the definition"): in insideRun, a new
 // cut side meets source edge 0 at (−4312.323, −3315.972), 1.94 u off its line (past NODE_BOUND), and the output runs back onto it: 2
