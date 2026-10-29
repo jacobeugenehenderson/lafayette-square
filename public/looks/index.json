@@ -15,7 +15,7 @@
       "scene": "lafayettesquare",
       "createdAt": 1777317275119,
       "bakedAt": 1793237227929,
-      "updatedAt": 1793236825018,
+      "updatedAt": 1793251623949,
       "migrated": {
         "arch-stands": 1793250984372
       }
@@ -25,7 +25,7 @@
       "name": "HiPointe-DeMun",
       "scene": "hipointedemun",
       "createdAt": 1782000000000,
-      "bakedAt": 1793240503860,
+      "bakedAt": 1793253525067,
       "updatedAt": 1791428789911,
       "migrated": {
         "arch-stands": 1793250984372
