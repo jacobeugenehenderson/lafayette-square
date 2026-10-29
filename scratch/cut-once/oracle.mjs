@@ -99,7 +99,7 @@ export function stagewise(src, stepM, name) {
     for (const w of wide) seen.push(box(w.pp))
     table[st] = { wide: wide.length, born: n } }
   const byStage = {}; for (const b of born) { const k2 = `${b.stage} · ${b.side}`; byStage[k2] ||= { n: 0, m2: 0 }; byStage[k2].n++; byStage[k2].m2 = +(byStage[k2].m2 + b.m2).toFixed(4) }
-  return { name, table, byStage, largest: born.sort((a, b) => b.m2 - a.m2).slice(0, 6) }
+  return { name, table, byStage, bornAll: born.slice(), largest: born.sort((a, b) => b.m2 - a.m2).slice(0, 6) }
 }
 // ⭐ ISOLATED (Zob, 2026-10-29): each stage judged ALONE. The reference is fed the CANDIDATE's previous-stage region (×1000) and
 // performs only that stage's rule, so a disagreement belongs to that rule and to nothing upstream. Two counts per stage and side:
