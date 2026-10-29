@@ -481,6 +481,9 @@ export function openAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unio
 export function closeAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what); if (!Pt.length) return []
   const C = morph(Pt, (stepM / 2) * SCALE, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))
   return toIP(arrange([Pt, C], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0).rings) }
+// a piece (rings {X, Y}: outer, holes) wider than 2h: it survives an erode by h + NODE_BOUND. An integer erode used as a PREDICATE only
+// (as isRoundingSliver): its output is discarded
+export const widerThanTwoH = (pp, h) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(toIP(pp), JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -(h + NODE_BOUND)); return o.some(q => Clipper.Area(q) > 0) }
 export function openCloseCutOnce(paths, stepM, what) {
   fresh()
   const h = (stepM / 2) * SCALE, stat = { own: 0, cutJoin: 0, squared: 0, newLines: 0 }
@@ -510,6 +513,11 @@ export function openCloseCutOnce(paths, stepM, what) {
   const closedK = tagged(arrange([openT, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, 0))
   const filled = pieces(tagged(arrange([closedK, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} filled`, false, 0)))
   const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
+  // ⛔ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): the open takes, and the close fills, only where no disk of
+  // radius h fits, so every taken and every filled feature erodes to nothing at h + NODE_BOUND (past the lattice's rounding), or the
+  // call refuses by name (planted wallShort: a 120 m² hole the close filled, with no refusal)
+  for (const [kind, fs] of [['taken', tf], ['filled', ff]]) for (const pp of fs) if (widerThanTwoH(pp, h)) { const o = pp[0]
+    throw new Error(`[${what}] ⛔ the open/close: a ${kind} feature at (${(o[0].X / SCALE).toFixed(3)}, ${(o[0].Y / SCALE).toFixed(3)}) (${(m2(pp)).toFixed(2)} m²) is wider than a cell (it survives an erode by half a cell), and the definition ${kind === 'taken' ? 'takes' : 'fills'} nothing a disk of radius h fits in. Cause not established. Refusing.`) }
   const K = arrange([Pt, SUB(tf.flat()), ff.flat()], w => (w[0] > 0 && !out_(w[1])) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
   // ⭐ THE TOPOLOGY GUARD ON k (Zob, 2026-10-29): a hole of P that k no longer holds (it opened to the outside), or two parts of P
   // that k joins, is the topology change Boz rules on: refused by name. Intermediate merges inside the open that the close
@@ -522,12 +530,7 @@ export function openCloseCutOnce(paths, stepM, what) {
   const kOuters = k.filter(r => area(r) > 0)
   const ownerIn = (pt) => kOuters.map((r, i) => ({ i, a: area(r), inside: wnd([r], pt[0], pt[1]) !== 0 })).filter(x => x.inside).sort((x, y) => x.a - y.a)[0]?.i ?? null
   {
-    // ⛔ A FILLED HOLE MUST BE ONE THE DEFINITION FILLS (Plumb, 2026-10-29: planted wallShort, a 120 m² hole filled with no refusal):
-    // the close fills a hole only where it is narrower than 2h, i.e. the hole, as a region, erodes by h to nothing. Tested past the
-    // lattice's rounding (h + NODE_BOUND), so a hole within one rounding of 2h is not refused. An integer erode used as a PREDICATE
-    // only (as isRoundingSliver): its output is discarded
-    const wider = (r) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths([r.slice().reverse().map(q => new IntPoint(q.X, q.Y))], JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -(h + NODE_BOUND)); return o.some(q => Clipper.Area(q) > 0) }
-    for (const r of Pt.filter(r => area(r) < 0)) { const pt = probe(r); if (wnd(k, pt[0], pt[1]) !== 0) { if (wider(r)) throw new Error(`[${what}] ⛔ the topology guard: P's hole at (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)}) (${(-area(r) / SCALE / SCALE).toFixed(2)} m²) is FILLED by the output, but it is wider than a cell (it survives an erode by half a cell), so the open/close must keep it. Cause not established. Refusing.`); continue }
+    for (const r of Pt.filter(r => area(r) < 0)) { const pt = probe(r); if (wnd(k, pt[0], pt[1]) !== 0) continue          // filled by the close: every filled feature is held narrower than 2h, above
       if (ownerIn(pt) == null) throw new Error(`[${what}] ⛔ the topology guard: P's hole at (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)}) (${(-area(r) / SCALE / SCALE).toFixed(2)} m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.`) }
     const seen = new Map(); for (const r of Pt.filter(r => area(r) > 0)) { const o = ownerIn(probe(r)); if (o == null) continue
       if (seen.has(o)) throw new Error(`[${what}] ⛔ the topology guard: two parts of P (at (${(seen.get(o)[0].X / SCALE).toFixed(3)}, ${(seen.get(o)[0].Y / SCALE).toFixed(3)}) and (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)})) are joined by the output. The topology change is Boz's. Refusing.`)

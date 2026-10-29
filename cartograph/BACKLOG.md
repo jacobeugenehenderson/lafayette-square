@@ -123,11 +123,11 @@ out in the MAIN checkout (Jacob's), stays.
 - **the close's back-offset loses a hole the dilate re-forms** (cited by `claims-the-open-close-cuts-once` (1) wallShort). A hole whose wall
   the open breaks over a stretch narrower than 2h: the close's back-offset of the re-formed hole ring joins two collinear edges of one open
   ring across an arc that runs the whole outer, and emits that arc. Which emission branch does it is not established. It was FILLED with
-  no refusal; the topology guard now refuses it by name (a known refusal on that row).
+  no refusal. Now every taken and filled feature wider than 2h refuses by name (Zob's ruling), so it is a known refusal on that row.
 - **the open/close's residual against the definition** (cited by `claims-the-open-close-cuts-once-huron`): Huron's traced water past
   2·NODE_BOUND, on a ratchet; evicts at 0. PTown's take-out: 0.008 m² at (192.163, 80.195), not chased. Local `plumb/concurrence`
-  e7b78ec2 raised it (definition-only 11 → 17). ⛔ Owed: every bake reports its residual (Zob, unbuilt). ⚠ Huron's copy: 104 here, 0 by the
-  investigation's gate; difference not established.
+  e7b78ec2 raised it (definition-only 11 → 17). ⛔ Owed: every bake reports its residual (Zob, unbuilt). COPIES, by site: Huron 1 at (720.196,
+  209.874), insideRun's crop 2 at (−4312.323, −3315.972), each a cut point past NODE_BOUND off its source line; why emission passes it, not established.
 - **PTOWN PARKS** (registry canon): (a) the edge rule and the way tag landed (v4); the dike is held as land (v5, `r-the-coast-bake-holds-an-embankment-as-land`).
   **(b)** the decks' 1 mm jogs: cut once (`openClose.mjs`), PTown's decks' edges ≤ 2 mm are 0 (pre-open 0) ▶ `claims-the-open-close-cuts-once` (2). **(c)** below.
 - **PTOWN'S PLAYER: A PRESS IS NOT WORSE, AND THE FOCUS RETURNS ONLY WITH THE RE-BAKE** (2026-10-29). Any player past the Hero retirement

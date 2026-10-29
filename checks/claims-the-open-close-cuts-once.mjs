@@ -13,12 +13,16 @@
 //   (4) PTown's take-out (coast v5 + its street decks): copy 0, crossings 0, its ≤ 2 mm edges on a RATCHET
 //   Mutants, each seen RED: the integer re-offset restored (the frozen pre-port form, checks/fixtures/open-close-integer-frozen-
 //   464dfa5f.mjs) on (2) and (4) · a method that drops a hole on (3) · the ratchet's ceiling one above and one below on (4).
+//   ⚠ The PER-RULE mutants (each emission rule reversed: the gap rule before the miter limit, the trimmed arc inverted or unclipped, tags
+//   by set order, the subtracted set wound the same way, …) are NOT here: each needs a mutated openClose.mjs, i.e. source mutation, which
+//   tiers a check `live` (Zob, 2026-10-29: no third check). They are the scratch harness's rows, each seen RED on its planted row there
+//   (scratch/cut-once/row-mutant.mjs ROW HOOK over cand3.mjs's hooks; port-equal.mjs proves the kit is cand3 with every hook off).
 // ▶ node checks/claims-the-open-close-cuts-once.mjs
 import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openCloseAtStep, waterWithoutDecks } from '../cartograph/structures.mjs'
-import { partsOf } from '../cartograph/openClose.mjs'
+import { partsOf, widerThanTwoH } from '../cartograph/openClose.mjs'
 import * as FROZEN from './fixtures/open-close-integer-frozen-464dfa5f.mjs'
 import { ip, union, e2e, definitionOf, ownEdge, crossings, short, topo } from './_cutOnceJudge.mjs'
 
@@ -31,7 +35,7 @@ const noded = (src) => ip(partsOf(src, 'P').flat())             // P as the open
 const judge = (f, src, stepM, name, def) => { let k
   try { k = f(src, stepM, name).paths } catch (e) { return { why: String(e.message) } }
   const j = e2e(k, src, stepM, def), o = ownEdge(noded(src), k)
-  return { k, cand: j['candidate only'], defn: j['definition only'], largest: j.list[0], copy: o.copy, copyAt: o.copies[0], cross: crossings(k).length, short: short(k), topo: topo(k) } }
+  return { k, cand: j['candidate only'], defn: j['definition only'], largest: j.list[0], copy: o.copy, copyAt: o.copies[0], copies: o.copies, cross: crossings(k).length, short: short(k), topo: topo(k) } }
 const off2 = (r) => `${r.cand.twoNb} candidate-only / ${r.defn.twoNb} definition-only past 2·NB${r.largest ? ` (largest ${r.largest.m2} m² at (${r.largest.at.join(', ')}))` : ''}`
 const bar = (r) => !r.why && !r.cand.twoNb && !r.defn.twoNb && !r.copy && !r.cross
 
@@ -39,6 +43,9 @@ const bar = (r) => !r.why && !r.cand.twoNb && !r.defn.twoNb && !r.copy && !r.cro
 const SQ = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
 { const P = ip([SQ(0, 0, 20000, 20000)]), copied = ip([[[0, 0], [20000, 0], [20000, 20001], [0, 20001]]])
   const o = ownEdge(P, copied); row(o.copy === 3, `(0) the yardstick sees a copy: a square whose top edge is moved 1 unit (its two sides lengthened with it) reads copy ${o.copy} (want 3)`)
+  // a source edge split by the noding at a vertex within NODE_BOUND of its line is the source edge; split 1 unit off, it is two copies
+  const inNB = ownEdge(P, ip([[[0, 0], [20000, 0], [20000, 20000], [10000, 20000], [0, 20000]]])).copy, nudged = ownEdge(P, ip([[[0, 0], [20000, 0], [20000, 20000], [10000, 20001], [0, 20000]]])).copy
+  row(inNB === 0 && nudged === 2, `(0) a split edge: at a vertex on its line it reads copy ${inNB} (want 0); at a vertex 1 unit off, copy ${nudged} (want 2)`)
   const cut = ip([[[0, 0], [20000, 0], [20000, 18000], [18000, 18000], [18000, 20000], [0, 20000]]]), j = e2e(cut, P, 0.9988)
   row(j['definition only'].twoNb === 1, `(0) the judge sees a disagreement: the square less a 2 m corner reads ${j['definition only'].twoNb} definition-only piece(s) past 2·NB (want 1)`) }
 
@@ -57,11 +64,13 @@ const ROWS = {
   cornerStub: ['a strip crossing a square\'s corner at a neck: the neck token read in the ring\'s forward order', [SQ(0, 0, 20000, 20000), [[18721, 20550], [20279, 19650], [24779, 27444], [23221, 28344]]]],
   insideRun: ['Huron\'s own water where a token inside one run carries its neighbour\'s line within the rounding: the run continues', fx('huron-inside-run-crop').paths],
 }
-for (const [name, [what, rings]] of Object.entries(ROWS)) { const r = judge(openCloseAtStep, ip(rings), STEP_M, name)
-  // ⚠ insideRun is a CROP of Huron's water: the noding splits one source edge at a vertex within NODE_BOUND of its line, which the
-  // yardstick (a whole edge along one source edge) counts as 2 copies; its row is the rule it was planted for, end to end
-  const ok = name === 'insideRun' ? !r.why && !r.cand.twoNb && !r.defn.twoNb && !r.cross : bar(r)
-  row(ok, `(1) ${name}: ${what} — ${r.why ? `REFUSED: ${r.why.slice(0, 200)}` : `${off2(r)} · copy ${r.copy} · crossings ${r.cross}`}`) }
+// ⚠ A CUT POINT OFF ITS SOURCE LINE (Zob, 2026-10-29; BACKLOG "the open/close's residual against the definition"): in insideRun, a new
+// cut side meets source edge 0 at (−4312.323, −3315.972), 1.94 u off its line (past NODE_BOUND), and the output runs back onto it: 2
+// copies, on a ratchet named by site (Huron's one is in the heavy check). Why the emission invariant passes it is not established
+const COPY_KNOWN = { insideRun: { n: 2, at: '-4312.323, -3315.972' } }
+for (const [name, [what, rings]] of Object.entries(ROWS)) { const r = judge(openCloseAtStep, ip(rings), STEP_M, name), kc = COPY_KNOWN[name]
+  const copyOk = kc ? r.copy === kc.n && r.copies.some(c => c.flat().join(', ').includes(kc.at)) : !r.copy
+  row(!r.why && !r.cand.twoNb && !r.defn.twoNb && !r.cross && copyOk, `(1) ${name}: ${what} — ${r.why ? `REFUSED: ${r.why.slice(0, 200)}` : `${off2(r)} · copy ${r.copy}${kc ? ` (ceiling ${kc.n}, at (${kc.at}): ${r.copy > kc.n ? 'ROSE' : r.copy < kc.n ? 'FELL: lower it in this commit' : 'held'})` : ''} · crossings ${r.cross}`}`) }
 // the two rows whose topology change is Boz's: each refuses by the guard's own name
 { const wallLong = [SQ(0, 0, 20000, 20000), rev(SQ(5000, 5000, 10000, 14300))], r = judge(openCloseAtStep, ip(wallLong), STEP_M, 'wallLong')
   row(/the topology guard: P's hole at \(5\.000, 19\.300\) .* opened to the outside/.test(r.why || ''), `(1) wallLong: a sub-2h wall over a stretch wider than 2h opens the hole, and the guard REFUSES by name — ${r.why ? r.why.slice(0, 160) : 'BUILT'}`) }
@@ -71,8 +80,15 @@ for (const [name, [what, rings]] of Object.entries(ROWS)) { const r = judge(open
 // whole outer) emits that arc instead, and the hole was FILLED with no refusal. The guard now refuses it by name. RED when the
 // message changes, and RED when it starts BUILDING (then this row asserts it keeps its hole, against the definition)
 { const wallShort = [SQ(0, 0, 20000, 20000), rev([[5000, 5000], [15000, 5000], [15000, 17000], [10150, 17000], [10150, 19050], [9850, 19050], [9850, 17000], [5000, 17000]])]
-  const r = judge(openCloseAtStep, ip(wallShort), STEP_M, 'wallShort'), KNOWN = "the topology guard: P's hole at (5.000, 17.000) (120.61 m²) is FILLED by the output, but it is wider than a cell"
-  row(!!r.why && r.why.includes(KNOWN), `(1) wallShort, the KNOWN refusal: a hole whose wall the open breaks over a short stretch — ${r.why ? (r.why.includes(KNOWN) ? 'refuses by name at the guard (the close\'s back-offset loses the hole; cause not established)' : `refuses, NOT as known: ${r.why.slice(0, 200)}`) : 'now BUILDS: assert its hole is kept against the definition, and retire the known refusal'}`) }
+  const r = judge(openCloseAtStep, ip(wallShort), STEP_M, 'wallShort'), KNOWN = "the open/close: a filled feature at (10.150, 20.000) (120.90 m²) is wider than a cell"
+  row(!!r.why && r.why.includes(KNOWN), `(1) wallShort, the KNOWN refusal: a hole whose wall the open breaks over a short stretch — ${r.why ? (r.why.includes(KNOWN) ? 'refuses by name: the filled feature is wider than a cell (the close\'s back-offset loses the hole; cause not established)' : `refuses, NOT as known: ${r.why.slice(0, 200)}`) : 'now BUILDS: assert its hole is kept against the definition, and retire the known refusal'}`) }
+
+// ⭐ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): openClose.mjs refuses a taken or filled feature wider than
+// 2h. Read from the source (both lists pass through the predicate before k is cut), and the predicate seen to fail: a planted over-wide
+// take (a 3 m square) is wider; a 0.6 m strip is not
+{ const src = readFileSync(join(ROOT, 'cartograph/openClose.mjs'), 'utf8'), wired = /for \(const \[kind, fs\] of \[\['taken', tf\], \['filled', ff\]\]\) for \(const pp of fs\) if \(widerThanTwoH\(pp, h\)\)/.test(src)
+  const h = STEP_M / 2 * 1000, P = (r) => [r.map(([X, Y]) => ({ X, Y }))], wide = widerThanTwoH(P(SQ(0, 0, 3000, 3000)), h), thin = widerThanTwoH(P(SQ(0, 0, 600, 3000)), h)
+  row(wired && wide && !thin, `(1) every taken and filled feature is held narrower than 2h: the guard reads both lists ${wired} · mutant, a planted over-wide take (3 m square) is wider ${wide}, RED · a 0.6 m strip is not ${!thin}`) }
 
 // ── (2) the fixtures: PTown's decks (structures.mjs#deckInputs over its raw/osm.json), its Breakwater strip
 // (#embankmentFootprints), Huron's pier (its deck inputs); each with the frozen integer form beside it as the mutant

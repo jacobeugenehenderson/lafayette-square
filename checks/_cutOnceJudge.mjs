@@ -38,7 +38,9 @@ export function e2e(k, P, stepM, def = definitionOf(P, stepM)) { const K = up(k)
   out.list.sort((a, b) => b.m2 - a.m2); return out }
 // BRIEF §3.1's yardstick. COPY_U is 2 units: the integer re-offset's copies sit 0.6–1.41 units off (the brief, §2), past NODE_BOUND,
 // and an edge within 2 mm of a parallel source edge is a rounding, never a feature. An END is good on source edge s if it is one of
-// s's own vertices, or a CUT POINT (within NODE_BOUND of s, where the output's neighbouring edge leaves s)
+// s's own vertices, or a CUT POINT (within NODE_BOUND of s, where the output's neighbouring edge leaves s). ⭐ A RUN of output edges
+// along ONE source edge whose every interior vertex lies within NODE_BOUND of s (the noding split s at a hot pixel) is s itself,
+// judged by the run's two ends (Zob, 2026-10-29: 103 of Huron's 104 were this kind)
 export const COPY_U = 2
 export function ownEdge(source, output) {
   const S = []; for (const p of source) for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; if (a.X !== b.X || a.Y !== b.Y) S.push([a, b]) }
@@ -55,8 +57,14 @@ export function ownEdge(source, output) {
       return [...cand].map(k => ({ k, d: Math.max(dist(a, S[k]), dist(b, S[k])) })).filter(x => x.d <= COPY_U).sort((x, y) => x.d - y.d).map(x => x.k) })
     for (let i = 0; i < n; i++) { const a = p[i], b = p[(i + 1) % n]; if (a.X === b.X && a.Y === b.Y) continue
       if (!along[i].length) { out.new++; continue }
-      const prev = along[(i - 1 + n) % n], next = along[(i + 1) % n], good = (q, nb, s) => isV(q, S[s]) || (dist(q, S[s]) <= NODE_BOUND && !nb.includes(s))
-      if (along[i].some(s => good(a, prev, s) && good(b, next, s))) out.own++
+      const good = (q, nb, s) => isV(q, S[s]) || (dist(q, S[s]) <= NODE_BOUND && !nb.includes(s))
+      // the run along s through i: extend while the neighbour runs along s and the shared vertex is within NODE_BOUND of s's line
+      const at = (k) => ((k % n) + n) % n, splits = (k, s) => dist(p[at(k)], S[s]) <= NODE_BOUND && !isV(p[at(k)], S[s])
+      const runOf = (s) => { let lo = i, hi = i                  // edges lo..hi; edge k runs p[k] → p[k + 1]
+        while (hi - lo < n - 1 && along[at(lo - 1)].includes(s) && splits(lo, s)) lo--
+        while (hi - lo < n - 1 && along[at(hi + 1)].includes(s) && splits(hi + 1, s)) hi++
+        return [p[at(lo)], along[at(lo - 1)], p[at(hi + 1)], along[at(hi + 1)]] }
+      if (along[i].some(s => { const [A, pv, B, nx] = runOf(s); return good(A, pv, s) && good(B, nx, s) })) out.own++
       else { out.copy++; if (out.copies.length < 5) out.copies.push([[a.X / 1000, a.Y / 1000], [b.X / 1000, b.Y / 1000]]) } } }
   return out }
 export function crossings(paths) {
