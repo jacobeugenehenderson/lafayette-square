@@ -6,8 +6,12 @@
 //    A GAP (an edge in the arc that no tag names) is a run member iff every vertex of it lies within NODE_BOUND of the path
 //    the CUT alternative would draw (L_from to lineCrossOf(L_from, L_to), then L_to; one line when they are the same line).
 //    Then the two answers differ by less than the lattice's own rounding: the edge was removed by the ROUNDING of the erode,
-//    not by the morphology, and keeping it is round-once. Past the bound: clause 'gap-past-bound' (a genuine removal shows
-//    as a tag CHANGE between segments, never inside one).
+//    not by the morphology, and keeping it is round-once. ⭐ PAST THE BOUND it is a genuine removal at a corner whose two
+//    sides the rounding collapsed into one short segment (Zob's revised clause 3, 2026-10-28, on Huron's 22): kind 'cut',
+//    the segment emits the CUT POINT lineCrossOf(L_from, L_to), under the same miter limit as any cut, never a refusal.
+//    ⭐ PARALLEL AND DISTINCT ends (a lattice jog; an open never removes a STEP, only a protrusion; Zob (2)): every gap vertex
+//    within the band between the two lines widened by NODE_BOUND → the run, the jog kept; else clause
+//    'parallel-protrusion' (something stood out between them and the join would need a new line: unruled until one exists).
 //  · TWO OR MORE RINGS: every tag's source line is ONE line (latticeNode.js#sameLine, exact) → kind 'line', that one line;
 //    otherwise clause 'cross-ring-different-lines'. ⛔ Never a null tag: a fresh +h line would nearly coincide with both walls.
 import { NODE_BOUND, lineCrossOf, sameLine } from '../../src/lib/latticeNode.js'
@@ -17,7 +21,7 @@ const distSeg = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy) }
 const distLine = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1]; return Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / Math.hypot(dx, dy) }
 
-export function tagRun(tags, SRC, { againstDirection = false } = {}) {
+export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false, noBand = false } = {}) {
   if (tags.length === 1) return { ok: true, kind: 'one', ring: tags[0].ring, from: tags[0].i, to: tags[0].i, gaps: 0 }
   const rings = [...new Set(tags.map(t => t.ring))]
   if (rings.length > 1) {
@@ -39,12 +43,16 @@ export function tagRun(tags, SRC, { againstDirection = false } = {}) {
   const f = segOf(R, from), l = segOf(R, to)
   let path
   if (sameLine(f, l)) path = (p) => distLine(p, f.a, f.b)
-  else if (BigInt(f.b[0] - f.a[0]) * BigInt(l.b[1] - l.a[1]) === BigInt(f.b[1] - f.a[1]) * BigInt(l.b[0] - l.a[0]))
-    // parallel and DISTINCT: the cut alternative has no crossing (unruled; measured and sent to Zob, never guessed)
-    return { ok: false, clause: 'run-ends-parallel-distinct', ring, from, to, gaps: gapEdges.length, offsetU: +distLine(l.a, f.a, f.b).toFixed(3), tags }
+  else if (BigInt(f.b[0] - f.a[0]) * BigInt(l.b[1] - l.a[1]) === BigInt(f.b[1] - f.a[1]) * BigInt(l.b[0] - l.a[0])) { // parallel and DISTINCT: no cut exists; the band test (Zob (2)). Signed offsets across f's line: the band is [0, off(l)] ± NODE_BOUND
+    const L = Math.hypot(f.b[0] - f.a[0], f.b[1] - f.a[1]), side = (p) => ((p[0] - f.a[0]) * (f.b[1] - f.a[1]) - (p[1] - f.a[1]) * (f.b[0] - f.a[0])) / L
+    const o = side(l.a), lo = Math.min(0, o) - NODE_BOUND, hi = Math.max(0, o) + NODE_BOUND
+    const out = gapEdges.flatMap(j => [R[j], R[(j + 1) % n]]).filter(v => { const d = side([v.X, v.Y]); return !noBand && (d < lo || d > hi) })
+    if (!out.length) return { ok: true, kind: 'jog', ring, from, to, gaps: gapEdges.length, offsetU: +Math.abs(o).toFixed(3) }
+    return { ok: false, clause: 'parallel-protrusion', ring, from, to, gaps: gapEdges.length, at: [out[0].X, out[0].Y], tags } }
   else { const X = lineCrossOf(f, l, 'tagRun'); path = (p) => Math.min(distSeg(p, f.a, X), distSeg(p, X, l.b)) }
   let worst = 0, worstAt = null
   for (const j of gapEdges) for (const v of [R[j], R[(j + 1) % n]]) { const d = path([v.X, v.Y]); if (d > worst) { worst = d; worstAt = [v.X, v.Y] } }
   if (worst <= NODE_BOUND) return { ok: true, kind: 'run', ring, from, to, gaps: gapEdges.length, worst }
-  return { ok: false, clause: 'gap-past-bound', ring, from, to, gaps: gapEdges.length, worstU: +worst.toFixed(3), at: worstAt, tags }
+  if (refuseGap) return { ok: false, clause: 'gap-past-bound', ring, from, to, gaps: gapEdges.length, worstU: +worst.toFixed(3), at: worstAt, tags }   // ⛔ the mutant: clause 3 as first ruled
+  return { ok: true, kind: 'cut', ring, from, to, gaps: gapEdges.length, worstU: +worst.toFixed(3), at: worstAt, X: lineCrossOf(f, l, 'tagRun') }
 }

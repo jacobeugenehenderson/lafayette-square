@@ -84,13 +84,24 @@ function resolveFaces(rawRings) {
     if (!verts.has(a.X + ',' + a.Y)) newV++
     if (seg.has(`${a.X},${a.Y}>${b.X},${b.Y}`) || seg.has(`${b.X},${b.Y}>${a.X},${a.Y}`)) mapped++; else unmapped++ }
   // Zob's tag run (tagRun.mjs) on every eroded segment carrying several tags: the outcome per clause, and the refusals' instances
+  // Zob's gate on each 'cut' (his revised clause 3): the corner's turn (P lies LEFT of every source ring, so a left turn from
+  // L_from to L_to is CONVEX and a right turn REFLEX), and the local area the cut path takes from P there: the loop from the
+  // source run's start along the source to its end, back through the cut point; counter-clockwise ⇒ the cut path runs inside P
+  // (material taken). ⚠ A local measure at the corner, before step 5's ∩P on the arrangement.
+  const cutReport = (r) => { const R = SRC[r.ring], n = R.length, f0 = R[r.from], f1 = R[(r.from + 1) % n], l0 = R[r.to], l1 = R[(r.to + 1) % n]
+    const turn = Math.sign((f1.X - f0.X) * (l1.Y - l0.Y) - (f1.Y - f0.Y) * (l1.X - l0.X))
+    const loop = []; for (let j = r.from; ; j = (j + 1) % n) { loop.push([R[j].X, R[j].Y]); if (j === (r.to + 1) % n) break }
+    loop.push(r.X); let A2 = 0; for (let k = 0; k < loop.length; k++) { const a = loop[k], b = loop[(k + 1) % loop.length]; A2 += a[0] * b[1] - b[0] * a[1] }
+    return { at: r.at.map(v => v / SCALE), corner: turn > 0 ? 'convex' : turn < 0 ? 'reflex' : 'straight', worstU: r.worstU, takenMm2: +(Math.max(0, A2 / 2)).toFixed(3), loopMm2: +(A2 / 2).toFixed(3) } }
+  const cuts = []
   let multi = 0; const kinds = {}, refused = []
   F.tags.forEach((tr, ri) => tr.forEach((tg, e) => { if (!Array.isArray(tg) || tg.length < 2) return; multi++
     const r = tagRun(tg, SRC), k = r.ok ? `${r.kind}${r.gaps ? '+gap' : ''}` : r.clause; kinds[k] = (kinds[k] || 0) + 1
+    if (r.ok && r.kind === 'cut') cuts.push(cutReport(r))
     if (!r.ok && refused.length < 8) { const a = F.rings[ri][e], b = F.rings[ri][(e + 1) % F.rings[ri].length]; refused.push({ ...r, segment: [[a.X / SCALE, a.Y / SCALE], [b.X / SCALE, b.Y / SCALE]] }) } }))
-  const adjacent = kinds, other = refused
+  const adjacent = kinds, other = refused, cutsOut = cuts
   const tagged = F.tags.flat().filter(t => t != null && (!Array.isArray(t) || t.length)).length
-  return { out, nodeMs, unionMs, crossings: R.crossings, newV, mapped, unmapped, rawEdges: edges.length, nodedVerts: verts.size, outVerts: outV.size, newAt: [], nodedSegs: [], tagged, nullTags: F.tags.flat().length - tagged, multi, adjacent, other }
+  return { out, nodeMs, unionMs, crossings: R.crossings, newV, mapped, unmapped, rawEdges: edges.length, nodedVerts: verts.size, outVerts: outV.size, newAt: [], nodedSegs: [], tagged, nullTags: F.tags.flat().length - tagged, multi, adjacent, other, cuts: cutsOut }
 }
 
 const t = uni(src), P = parts(t)
@@ -101,6 +112,6 @@ for (const part of P) { part.forEach((ring) => { SRC.push(ring); raw.push(rawOff
   const co = new ClipperOffset(), o = new Paths(); co.AddPaths(part, JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -h); ref.push(...o) }
 const r = engine === 'faces' ? resolveFaces(raw) : resolve(raw, PolyFillType.pftPositive)
 const x = new Clipper(), xo = new Paths(); x.AddPaths(r.out, PolyType.ptSubject, true); x.AddPaths(ref, PolyType.ptClip, true); x.Execute(ClipType.ctXor, xo, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-console.log(JSON.stringify({ fixture: name, engine, preserveCollinear: engine === 'faces' ? null : keep, tagged: r.tagged, nullTags: r.nullTags, multiTag: { edges: r.multi, adjacent: r.adjacent, other: r.other }, parts: P.length, rawEdges: r.rawEdges, nodeMs: r.nodeMs, unionMs: r.unionMs, crossings: r.crossings,
+console.log(JSON.stringify({ fixture: name, engine, preserveCollinear: engine === 'faces' ? null : keep, tagged: r.tagged, nullTags: r.nullTags, multiTag: { edges: r.multi, adjacent: r.adjacent, other: r.other, cuts: r.cuts }, parts: P.length, rawEdges: r.rawEdges, nodeMs: r.nodeMs, unionMs: r.unionMs, crossings: r.crossings,
   a: { newAt: r.newAt.map(([X, Y]) => { let best = null; for (const k of r.nodedSegs) { const [u, w] = k.split('>').map(q => q.split(',').map(Number)), dx = w[0] - u[0], dy = w[1] - u[1], L2 = dx * dx + dy * dy, t = Math.max(0, Math.min(1, ((X - u[0]) * dx + (Y - u[1]) * dy) / L2)), d = Math.hypot(X - u[0] - t * dx, Y - u[1] - t * dy); if (!best || d < best.d) best = { d: +d.toFixed(3), seg: k, t: +t.toFixed(4) } } return { at: [X / SCALE, Y / SCALE], nearest: best } }), nodedVertices: r.nodedVerts, outputVertices: r.outVerts, newVertices: r.newV, edgesMapped: r.mapped, edgesUnmapped: r.unmapped },
   c: { tagged: { m2: +areaM2(r.out).toFixed(3), ...topo(r.out) }, clipper: { m2: +areaM2(ref).toFixed(3), ...topo(ref) }, xorM2: +areaM2(xo).toFixed(4) } }))
