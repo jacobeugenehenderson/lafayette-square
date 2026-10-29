@@ -91,10 +91,21 @@ export function changeGate(P, out, h, squares, who, outTagsIn = null, Ptags = nu
   return { books, vsNoded, added: added.length, removed: removed.length, addedMm2: +rows.filter(r => r.side === 'added').reduce((t, r) => t + r.mm2, 0).toFixed(1), removedMm2: +rows.filter(r => r.side === 'removed').reduce((t, r) => t + r.mm2, 0).toFixed(1),
     byNarrow: rows.filter(r => r.narrow).length, bySquare: rows.filter(r => !r.narrow && r.squared).length, unaccounted: bad.length, unaccountedRows: bad.slice(0, 10), rows: rows.length <= 12 ? rows : undefined }
 }
+// ⭐ THE SHARPNESS GATE (Zob, 2026-10-29), the miter limit's backstop: no corner of the output turns past the limit (|turn| > 120°,
+// i.e. 1 + cos < ½: a convex tip or a reflex notch sharper than 60° inside), unless it is P's own corner, LISTED. Edges under 50 u
+// are skipped (a lattice step's direction is noise, not a corner)
+export function sharpCorners(rings, P) { const pv = new Set(P.flat().map(q => q.X + ',' + q.Y)), o = []
+  for (const r of rings) { const n = r.length
+    for (let i = 0; i < n; i++) { const a = r[(i - 1 + n) % n], b = r[i], c = r[(i + 1) % n], u = [b.X - a.X, b.Y - a.Y], v = [c.X - b.X, c.Y - b.Y], lu = Math.hypot(...u), lv = Math.hypot(...v)
+      if (lu < 50 || lv < 50) continue
+      const cosT = (u[0] * v[0] + u[1] * v[1]) / lu / lv; if (!(1 + cosT < 0.5)) continue
+      o.push({ at: [b.X / SCALE, b.Y / SCALE], insideDeg: +(180 - Math.acos(Math.max(-1, Math.min(1, cosT))) * 180 / Math.PI).toFixed(2), Pcorner: pv.has(b.X + ',' + b.Y) }) } }
+  return o }
 // one run of the candidate on (src, stepM), measured: the row compare.mjs prints and the check judges
 export function measure(src, stepM, name) {
   const t0 = Date.now(), r = C3.openCloseProvenance(src, stepM, name), ms = Date.now() - t0
   const { squares, ...st } = r.stat, gate = changeGate(r.P, r.rings, (stepM / 2) * SCALE, squares || [], name, r.tags)
   const out = r.rings.map(q => q.map(v => new IntPoint(v.X, v.Y))), X = crossings(out)
-  return { ms, stat: st, gate, crossings: X.length, le2mm: short(out), ...topo(out), src: topo(r.P.map(q => q.map(v => new IntPoint(v.X, v.Y)))), rings: r.rings, P: r.P, tags: r.tags }
+  const sharp = sharpCorners(r.rings, r.P)
+  return { ms, stat: st, gate, sharp: { past: sharp.filter(x => !x.Pcorner).length, Pcorners: sharp.filter(x => x.Pcorner), list: sharp.slice(0, 8) }, crossings: X.length, le2mm: short(out), ...topo(out), src: topo(r.P.map(q => q.map(v => new IntPoint(v.X, v.Y)))), rings: r.rings, P: r.P, tags: r.tags }
 }

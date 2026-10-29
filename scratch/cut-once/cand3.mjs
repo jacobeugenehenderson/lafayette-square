@@ -143,7 +143,14 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const arcOf = (t, u) => { const R = SRC[t.g], n = R.length, pts = [], lns = []; let valid = true
     for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { pts.push([R[j].X, R[j].Y]); lns.push(lineOf(t.g, j)); if (j === u.i) break; if (present.has(t.g + ':' + j)) valid = false; if (pts.length > n) break }
     return { pts, lns, valid } }
-  const pushArc = (a, kind) => { a.pts.forEach((q, k) => { out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
+  // ⭐ AN ARC'S VERTICES ARE JOINS TOO (Zob, 2026-10-29): each vertex v_j an arc emits sits between the region's edges j−1 and j, and
+  // goes through the ONE corner function like any join (squared past the limit, else the vertex). An arc stands in for what the
+  // next boolean returns, which holds only where D contains P's arc, and D does not contain a corner the limit squares.
+  // Gap arcs and jogs never reach the limit (sub-NODE_BOUND wiggles, right-angle steps), but they are called the same way
+  const pushArc = (a, kind, t0) => { a.pts.forEach((q, k) => {
+      const prevLine = k === 0 ? (t0.int || t0.flt) : a.lns[k - 1], nextLine = a.lns[k]
+      if (!ARC_RAW && prevLine && nextLine && capAt(prevLine, nextLine, q, { int: nextLine })) { stat.arcSquared = (stat.arcSquared || 0) + 1; return }
+      out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
   for (let k = 0; k < N; k++) { const t = t2[k], u = t2[(k + 1) % N]
     if (t.kind === 'V') { out.push(t.p); outL.push(u.kind === 'L' ? (u.int || null) : null); origin(t.p, t.cut ? 'cut-point' : 'run-vertex'); continue }
     if (u.kind === 'V') continue
@@ -169,7 +176,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       for (let j = (t.i + 1) % n; ; j = (j + 1) % n) { arc.push([R[j].X, R[j].Y]); if (j === u.i) break; if (arc.length > n) throw new Error(`[${who}] ⛔ the back-offset: the jog's arc does not close. Refusing.`) }
       const off = arc.find(p => { const s = side(p); return s < lo || s > hi })
       if (off) throw new Error(`[${who}] ⛔ the back-offset: parallel distinct lines meet across a protrusion at (${off.map(v => v / SCALE)}) (clause parallel-protrusion: lines ${JSON.stringify(A)} and ${JSON.stringify(B)}, ${Math.abs(o).toFixed(3)} u apart; the vertex ${side(off).toFixed(3)} u across, the band [${lo.toFixed(3)}, ${hi.toFixed(3)}]; arc of ${arc.length} vertices; t = (${t.g}, ${t.i}), u = (${u.g}, ${u.i}) of ${n}). Refusing.`)
-      pushArc(ja, 'jog'); stat.jogJoin = (stat.jogJoin || 0) + 1; continue }
+      pushArc(ja, 'jog', t); stat.jogJoin = (stat.jogJoin || 0) + 1; continue }
     if (Math.abs(sinA) < 1e-15 && cosA > 0) throw new Error(`[${who}] ⛔ the back-offset: a new line parallel to its neighbour at (${A[1]}). Refusing.`)
     const Xf = fcross(A, B)                                                    // the lines' crossing, unrounded
     const dLine = (q, L) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.abs((q[0] - L[0][0]) * dy - (q[1] - L[0][1]) * dx) / Math.hypot(dx, dy) }
@@ -179,7 +186,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     const AR = t.g != null && u.g === t.g ? arcOf(t, u) : null
     if (AR && AR.valid && AR.pts.length > 1) { const sk = AR.pts; {
         const dS = (q, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, tt = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2)) : 0; return Math.hypot(q[0] - a[0] - tt * dx, q[1] - a[1] - tt * dy) }
-        if (sk.every(q => Math.min(dS(q, A[0], Xf), dS(q, Xf, B[1])) <= NODE_BOUND)) { pushArc(AR, 'gap-arc'); stat.gapArc = (stat.gapArc || 0) + 1; continue } } }
+        if (sk.every(q => Math.min(dS(q, A[0], Xf), dS(q, Xf, B[1])) <= NODE_BOUND)) { pushArc(AR, 'gap-arc', t); stat.gapArc = (stat.gapArc || 0) + 1; continue } } }
     if (capAt(A, B, Xf, u)) continue
     const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round)
     // ⭐ A CUT WHOSE CROSSING THE NEXT BOOLEAN TRIMS EMITS THAT BOOLEAN'S EXACT RESULT: THE REGION'S OWN ARC (Zob's ruling,
@@ -189,7 +196,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // clockwise ⇔ X outside (the region lies LEFT of every ring)
     if (AR && AR.valid) { const arc = AR.pts; {
         const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
-        if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { pushArc(AR, 'trimmed-arc'); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
+        if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { pushArc(AR, 'trimmed-arc', t); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
     // ⛔ a BACKWARD cut between non-parallel lines of one ring: refuse by name (Zob, 2026-10-29; unruled until one exists)
     // ⭐ BACKWARD BUT ADJACENT (Zob, 2026-10-29): u = t − 1 on one ring: the two lines are adjacent source edges, and their
     // crossing must BE the shared source vertex v_t, integer for integer (checked, never assumed), which is emitted. Why the
@@ -255,6 +262,8 @@ let TAGS_OFF_AT = null                            // ⛔ the mutant only (setTag
 export const setTagsOffAt = (v) => { TAGS_OFF_AT = v }
 let OWN_SKIPS_LIMIT = false                       // ⛔ the mutant only (setOwnSkipsLimit): the own-vertex join without the miter limit
 export const setOwnSkipsLimit = (v) => { OWN_SKIPS_LIMIT = !!v }
+let ARC_RAW = false                               // ⛔ the mutant only (setArcRaw): arcs emit raw vertices, no corner call
+export const setArcRaw = (v) => { ARC_RAW = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
