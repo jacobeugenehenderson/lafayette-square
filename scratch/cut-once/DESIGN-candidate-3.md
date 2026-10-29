@@ -76,15 +76,21 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
 - **A cut whose crossing the next boolean trims emits that boolean's exact result: the region's own arc.** Open: X outside the
   region; close: X inside. Decided by the local loop's exact BigInt orientation (arc, then X).
 - **The gap rule at ANY non-adjacent join** (clause 3, made general): every skipped source vertex within NODE_BOUND of the cut
-  path → the source vertices, never X.
+  path → the source vertices, never X. **The miter limit is tried FIRST** (Huron's closedK 0.346 m²: the gap rule drew the apex
+  where the definition squares).
+- **A trimmed arc is CLIPPED by D's wedge**, never judged by its own vertices' turns (PTown's MacMillan take-out, 0.220 m²).
+- **A multi-tag token of one source ring is read in that ring's FORWARD order from its predecessor**, as consecutive lines
+  (Huron's pier, a 65 mm neck segment carrying {0, 10}). Before ordering, a tag inside the stretch just emitted is COVERED (rule
+  (b), "a run already emitted is not re-emitted"; Huron's open at (676.697, 431.588)). When the predecessor and the successor
+  carry the same tag T and the token holds it, the token IS T, one run, no join, T's line holding both ends within the tiered
+  bound (Huron's close at (−4326.715, −3328.738)). Any other order that fits neither neighbour refuses by name.
 - **A squared join's cap ends are lineCross(L_cap, L_a) and lineCross(L_cap, L_b)**, each rounded once. An end past NODE_BOUND
   from its neighbour line refuses by name.
 - **The miter limit (2, i.e. squared when 1 + cos θ < ½) is JUSTIFIED for the port, not derived** (Zob; Boz may rule against). It
   is a dimensionless ratio to h, bounding the tip at a multiple of the step, and h comes from the trace's own step. So it carries
   no town scale and is not Layer 0's Class D. Its value equals the shipping integer path's (clipper-lib's MiterLimit default),
   which keeps continuity with what the towns were authored against.
-- **The bar:** copy = 0 against P AS NODED (the arrangement of the area books). Against raw P the residual is the noding's own
-  rounding, each move ≤ NODE_BOUND, reported in one table.
+- **The bar:** copy = 0 against P AS NODED (gate.mjs#changeGate's yardstick).
 
 ## Gates for the method (on top of the brief's §4)
 - own-edge.mjs on the three fixtures: **copy = 0**, crossings = 0. The brief's ≤ 2 mm targets: PTown 0, Huron 3.

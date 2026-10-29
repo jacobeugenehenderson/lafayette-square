@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs'
 // The planted rows for checks/claims-the-open-close-cuts-once.mjs (BRIEF-cut-once-in-full-precision §4), ONE home: each a
 // small integer polygon set (clipper units, 1 mm) at a 0.9988 m step (h = 499.4 u, Huron's and PTown's), aimed at one rule.
 // Shapes only: what each must produce is the check's to say, measured live (planted.mjs --measure prints it).
@@ -33,6 +34,10 @@ export const ROWS = {
   // neck, and the eroded square's ring carries a segment claimed by two of P's edges there, read in the ring's FORWARD order from
   // its predecessor (Huron's pier, 2026-10-29). Read as a set (tagRun's arc) the join runs backward and refuses
   cornerStub: { what: 'a strip crossing a square\'s corner at a neck: the neck token read in forward order, no refusal', rings: [sq(0, 0, 20000, 20000), [[18721, 20550], [20279, 19650], [24779, 27444], [23221, 28344]]] },
+  // Huron's own water, ±15 m round the close's refusal at (−4326.715, −3328.738) (inside-run-crop.mjs; no constructed shape formed
+  // it): a 4.24 u segment carrying adjacent edges T−1 and T inside T's run, both lines within the rounding. The token IS T: one run,
+  // no join (Zob's ruling, 2026-10-29). Read forward, it reads T then T−1 and refuses
+  insideRun: { what: 'a token inside one run, its neighbour\'s line within the rounding, continues the run', rings: JSON.parse(readFileSync(new URL('./fixtures/huron-inside-run-crop.json', import.meta.url), 'utf8')).paths },
   // an outer and its own hole, collinear end to end, the wall between 0.95 m (< 2h) along a 0.3 m stretch: the open merges, the
   // close refills, the hole is kept
   wallShort: { what: 'a sub-2h wall over a short stretch is kept (the close refills it)', rings: [sq(0, 0, 20000, 20000), rev([[5000, 5000], [15000, 5000], [15000, 17000], [10150, 17000], [10150, 19050], [9850, 19050], [9850, 17000], [5000, 17000]])] },
