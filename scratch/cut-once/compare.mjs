@@ -5,7 +5,8 @@
 import fs from 'fs'
 import clipperLib from 'clipper-lib'
 import { openCloseAtStep } from '../../cartograph/structures.mjs'
-import { crossOf } from '../../src/lib/latticeNode.js'
+import { crossOf, nodeCrossings, NODE_BOUND } from '../../src/lib/latticeNode.js'
+import { facesOf } from '../../src/lib/latticeFaces.js'
 import { ownEdge } from './own-edge.mjs'
 const { IntPoint, Clipper, ClipType, PolyType, PolyFillType, PolyTree, Paths } = clipperLib
 const SCALE = 1000
@@ -45,9 +46,23 @@ function changeGate(P, out, h, squares, who) {
     const sq = squares.some(([X, Y]) => X >= x0 - h && X <= x1 + h && Y >= y0 - h && Y <= y1 + h)
     const mm2 = [o, ...hs].reduce((t, r) => t + C3.area(r), 0)
     return { side, at: [o[0].X / SCALE, o[0].Y / SCALE], mm2: +mm2.toFixed(1), maxDistU: +worst.toFixed(1), h: +h.toFixed(1), narrow: worst < h, squared: sq, accounted: worst < h || sq } })
-  const added = C3.pieces(C3.arrange([out, P], w => w[0] > 0 && !(w[1] > 0), `${who} out−P`).rings), removed = C3.pieces(C3.arrange([P, out], w => w[0] > 0 && !(w[1] > 0), `${who} P−out`).rings)
+  // ⭐ ON ONE ARRANGEMENT (Zob, 2026-10-28): out and P noded TOGETHER once; every region below is a face set of that one noding, so
+  // the books balance exactly (BigInt): added − removed = area(out) − area(P), both as noded. P's own move under the noding is
+  // reported as one number, and every vertex the noding put on P's rings must lie within NODE_BOUND of the raw edge it sits on
+  const rings = [...out.map(r => ({ r, set: 0 })), ...P.map(r => ({ r, set: 1 }))].filter(x => new Set(x.r.map(q => q.X + ',' + q.Y)).size >= 3)
+  const NR = nodeCrossings(rings.map((x, i) => ({ p: x.r.map(q => [q.X / SCALE, q.Y / SCALE]), tag: `${who}#${i}` })), { pairs: () => true, self: true, who: `${who} gate` })
+  const E = []; let moved = 0, worstMove = 0
+  NR.forEach((o, i) => o.forEach((v, k) => { const w = o[(k + 1) % o.length]; E.push({ a: v.k, b: w.k, set: rings[i].set })
+    if (v.src == null && rings[i].set === 1) { const R = rings[i].r, a2 = R[v.edge], b2 = R[(v.edge + 1) % R.length], dx = b2.X - a2.X, dy = b2.Y - a2.Y
+      const d = Math.abs((v.k[0] - a2.X) * dy - (v.k[1] - a2.Y) * dx) / Math.hypot(dx, dy); moved++; worstMove = Math.max(worstMove, d) } }))
+  const face = (keep) => facesOf(E, keep, { sets: 2, who: `${who} gate` }).rings
+  const big = (rs) => rs.reduce((t, r) => { let a = 0n; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; a += BigInt(p.X) * BigInt(q.Y) - BigInt(q.X) * BigInt(p.Y) } return t + a }, 0n)
+  const outN = face(w => w[0] > 0), PN = face(w => w[1] > 0), addR = face(w => w[0] > 0 && !(w[1] > 0)), remR = face(w => w[1] > 0 && !(w[0] > 0))
+  const books = { balance: big(addR) - big(remR) === big(outN) - big(PN), addedMinusRemoved2: String(big(addR) - big(remR)), outMinusP2: String(big(outN) - big(PN)),
+    PnodedMinusRawM2: +((Number(big(PN)) / 2 - P.reduce((t, r) => t + C3.area(r), 0)) / SCALE / SCALE).toFixed(6), Pmoves: moved, worstMoveU: +worstMove.toFixed(4), movesWithinBound: worstMove <= NODE_BOUND }
+  const added = C3.pieces(addR), removed = C3.pieces(remR)
   const rows = [...table(added, 'added'), ...table(removed, 'removed')], bad = rows.filter(r => !r.accounted)
-  return { added: added.length, removed: removed.length, addedMm2: +rows.filter(r => r.side === 'added').reduce((t, r) => t + r.mm2, 0).toFixed(1), removedMm2: +rows.filter(r => r.side === 'removed').reduce((t, r) => t + r.mm2, 0).toFixed(1),
+  return { books, added: added.length, removed: removed.length, addedMm2: +rows.filter(r => r.side === 'added').reduce((t, r) => t + r.mm2, 0).toFixed(1), removedMm2: +rows.filter(r => r.side === 'removed').reduce((t, r) => t + r.mm2, 0).toFixed(1),
     byNarrow: rows.filter(r => r.narrow).length, bySquare: rows.filter(r => !r.narrow && r.squared).length, unaccounted: bad.length, unaccountedRows: bad.slice(0, 10), rows: rows.length <= 12 ? rows : undefined }
 }
 const cand = arg('cand') || 'integer'
