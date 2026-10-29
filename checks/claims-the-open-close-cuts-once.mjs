@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ⭐ THE OPEN/CLOSE CUTS ONCE (BRIEF-cut-once-in-full-precision §4; Zob's finish list, 2026-10-29). structures.mjs#openCloseAtStep
 // (the footprints and the traced water) and #waterWithoutDecks (the deck take-out) open and close through cartograph/openClose.mjs,
-// whose every edge is born on a source line and rounded to the lattice ONCE. Judged by checks/_cutOnceJudge.mjs (check-side, the
+// whose every edge is born on a source line and rounded to the lattice ONCE. Judged by cartograph/openCloseJudge.mjs (check-side, the
 // investigation's own instruments): against the DEFINITION, the same operation by clipper on a lattice 1000× finer, end to end;
 // against the SOURCE, no output edge is a second, re-rounded copy of one it did not change (BRIEF §3.1's yardstick, P as noded).
 // The fast rows; Huron's whole traced water is the heavy ratchet: ▶ node checks/claims-the-open-close-cuts-once-huron.mjs
@@ -22,9 +22,9 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openCloseAtStep, waterWithoutDecks } from '../cartograph/structures.mjs'
-import { partsOf, widerThanTwoH } from '../cartograph/openClose.mjs'
+import { partsOf, widerThanTwoH, openCloseCutOnce } from '../cartograph/openClose.mjs'
 import * as FROZEN from './fixtures/open-close-integer-frozen-464dfa5f.mjs'
-import { ip, union, e2e, definitionOf, ownEdge, crossings, short, topo } from './_cutOnceJudge.mjs'
+import { ip, union, e2e, definitionOf, ownEdge, crossings, short, topo } from '../cartograph/openCloseJudge.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const fx = (n) => JSON.parse(readFileSync(join(ROOT, `checks/fixtures/cut-once-${n}.json`), 'utf8'))
@@ -72,6 +72,10 @@ const ROWS = {
   // edge, but the successor carries TWO tags (9 and 10), so the order is bounded at its latest; edge 8, read beyond it, is a claimant
   // (the mutant setClaimantOneSuccessor, scratch, refuses 'a cut from edge 10 to edge 8 runs BACKWARD')
   claimant2: ['an order-breaking claimant before a two-tag successor is dropped', fx('ptown-claimant2-crop').paths],
+  // PTown's own water (10 m round (−119.15, 313.735)): a 45° staircase whose erode cuts edge 10 to edge 12 (0.2° apart) across a 5 u
+  // step. The trimmed arc's premise fails (its arc starts outside D's wedge), the step is a sub-cell step between resolved runs, and
+  // its vertices lie on the lines: they stand in (Zob's ruling; before, 'a trimmed arc STARTS outside D's wedge' refused here)
+  trimstart: ['a trimmed arc whose premise fails at a sub-cell step: the step\'s own vertices stand in', fx('ptown-trimstart-crop').paths],
   // PTown's own water (30 m round (−4486.547, −1424.506); the census's 7 wide fills): the close shuts a mouth and the dilate re-forms a
   // hole tagged with the open's OUTER edges. A ring wound opposite to its tags' source takes no arc stand-ins (Zob's ruling; the mutant
   // setOppStandins fills the hole, 2.74 m²), and an offset face wholly the rounding is not emitted (a 3-vertex zero-area ring at the
@@ -96,6 +100,25 @@ for (const [name, [what, rings]] of Object.entries(ROWS)) { const r = judge(open
 { const wallShort = [SQ(0, 0, 20000, 20000), rev([[5000, 5000], [15000, 5000], [15000, 17000], [10150, 17000], [10150, 19050], [9850, 19050], [9850, 17000], [5000, 17000]])]
   const r = judge(openCloseAtStep, ip(wallShort), STEP_M, 'wallShort')
   row(bar(r) && r.topo.holes === 1, `(1) wallShort: a hole whose wall the open breaks over a short stretch is KEPT — ${r.why ? `REFUSED: ${r.why.slice(0, 200)}` : `${r.topo.outers} outer, ${r.topo.holes} hole (want 1) · ${off2(r)} · copy ${r.copy} · crossings ${r.cross}`}`) }
+// ⭐ A SINGLE-TAG SEGMENT OUT OF ORDER AT A STAIRCASE (Boz's GO, 2026-10-29): PTown's own water, 10 m round (343.28, −204.639), a 10.8 u
+// source edge within the rounding of its neighbour's line, whose erode reads single-tag segments 10, 12, 11, 12. The rule re-reads the
+// out-of-order one as the in-order neighbour's tag (its offset line holds it within the tiered bound) and the crop builds, matching the
+// definition (the mutant setStairRetagOff, scratch, refuses as 'a STAIRCASE in its SOURCE'). ⛔ And it must NOT FIRE where the order
+// holds: the kit's own count (openCloseCutOnce's stat.stairRetag) is 0 on every other planted row and fixture here
+{ const src = ip(fx('ptown-staircase-crop').paths), r = judge(openCloseAtStep, src, STEP_M, 'staircase')
+  let fired = null; try { fired = openCloseCutOnce(partsOf(src, 'staircase').flat(), STEP_M, 'staircase').stat.stairRetag || 0 } catch (e) { fired = `REFUSED ${String(e.message).slice(0, 80)}` }
+  row(bar(r) && fired > 0, `(1) staircase: an out-of-order single-tag segment at a source staircase is read as its in-order neighbour — ${r.why ? `REFUSED: ${r.why.slice(0, 200)}` : `${off2(r)} · copy ${r.copy} · crossings ${r.cross}`} · the rule fired ${fired} time(s)`)
+  const quiet = [...Object.entries(ROWS).map(([n, [, rings]]) => [n, ip(rings)]), ['decks', ip(fx('ptown-deck-inputs').inputs.flat())], ['breakwater', ip(fx('ptown-embankments').paths)], ['pier', ip(fx('huron-pier-deck-inputs').inputs.flat())]]
+    .map(([n, s2]) => { let f = 0; try { for (const part of partsOf(s2, n)) f += openCloseCutOnce(part, STEP_M, n).stat.stairRetag || 0 } catch { f = 0 } return [n, f] }).filter(([, f]) => f > 0)
+  // ⛔ AND NOT ON A COLLAPSING SMALL RING (Zob's ruling, 2026-10-29): PTown's own water, 20 m round (−3562.288, −1379.212), a 0.18 m²
+  // hole whose sub-metre edges' offsets genuinely come out of order as it collapses. Its edges are shorter than a cell, so no resolved
+  // run is there to continue: the rule fires 0 times and the hole is filled, as the definition fills it (the mutant setStairCellOff,
+  // scratch, fires 4 times and disagrees with the definition by 4.746 m²)
+  { const cs = ip(fx('ptown-collapse-crop').paths), cr = judge(openCloseAtStep, cs, fx('ptown-collapse-crop').fineM, 'collapse')
+    let cf = null; try { cf = openCloseCutOnce(partsOf(cs, 'collapse').flat(), fx('ptown-collapse-crop').fineM, 'collapse').stat.stairRetag || 0 } catch (e) { cf = `REFUSED ${String(e.message).slice(0, 80)}` }
+    row(bar(cr) && cf === 0, `(1) a collapsing small ring is not a staircase: the rule fired ${cf} time(s) — ${cr.why ? `REFUSED: ${cr.why.slice(0, 160)}` : `${off2(cr)} · copy ${cr.copy}`}`) }
+  row(!quiet.length, `(1) the staircase rule does not fire where the order holds: ${quiet.length ? `it FIRED on ${quiet.map(([n, f]) => `${n} (${f})`).join(', ')}` : `0 times on the ${Object.keys(ROWS).length} planted rows, the decks, the Breakwater and the pier`}`) }
+
 // ⭐ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): openClose.mjs refuses a taken or filled feature wider than
 // 2h. Read from the source (both lists pass through the predicate before k is cut), and the predicate seen to fail: a planted over-wide
 // take (a 3 m square) is wider; a 0.6 m strip is not

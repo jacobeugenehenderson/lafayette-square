@@ -126,6 +126,26 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const tok = []
   const lineOf = (g, i) => { const L = LINES?.[g]?.[i]; if (L) return L; const R = SRC[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
   const Lsrc = (g, i) => ({ kind: 'L', g, i, int: lineOf(g, i) })
+  // ⭐ A SINGLE-TAG SEGMENT OUT OF ORDER AT A STAIRCASE (Boz's GO, 2026-10-29; PTown's source staircases): a segment carrying ONE tag of a
+  // ring, whose tag breaks the forward order between its neighbours' tags on that ring, is re-read as the in-order neighbour's tag when
+  // that neighbour's OFFSET line holds both of its ends within the tiered bound (latticeFaces.js#onLineTiered, the one home). It acts
+  // only where the order already breaks (Huron's whole lidar trace: 0 times), never joins source edges, adds no constant
+  { T = T.slice(); const one = (t) => { const ts = (t == null ? [] : Array.isArray(t) ? t : [t]).filter(x => x?.ring != null); return ts.length === 1 ? ts[0] : null }   // its LINE tags, as emit reads a segment (a born tag beside a line tag is dropped there too)
+    const offHolds = (g, i, p, q) => { const L = lineOf(g, i), n2 = unit(L[0], L[1]), Ld = L.map(([x, y]) => [x + n2[0] * d, y + n2[1] * d])
+      return [p, q].every(v => onLineTiered(Ld, [v.X, v.Y], (INSERTED.get(v.X + ',' + v.Y) || []).map(x => x.seg))) }
+    for (let e = 0; e < E.length; e++) { const k = one(T[e]); if (!k) continue
+      let a = null, b = null; for (let s2 = 1; s2 < E.length && !a; s2++) { const t = one(T[(e - s2 + E.length) % E.length]); if (t && t.ring === k.ring && t.i !== k.i) a = t }
+      for (let s2 = 1; s2 < E.length && !b; s2++) { const t = one(T[(e + s2) % E.length]); if (t && t.ring === k.ring && t.i !== k.i) b = t }
+      if (!a || !b) continue; const n = SRC[k.ring].length, pos = (x) => (x - a.i + n) % n
+      if (pos(k.i) <= pos(b.i)) continue                                   // in order: nothing to do
+      const elen = (g, i) => { const R2 = SRC[g], u0 = R2[i], u1 = R2[(i + 1) % R2.length]; return Math.hypot(u1.X - u0.X, u1.Y - u0.Y) }
+      // ⭐ THE TARGET IS A RESOLVED RUN (Zob's ruling, 2026-10-29): the retag's target source edge is at least a CELL long (2h). Not a new
+      // constant: it is the trace's own resolution, the premise the open/close stands on. What is shorter than a cell is not something
+      // the lidar resolved, and a staircase step is a sub-cell edge between runs the trace DID resolve; a small ring collapsing in the
+      // erode (PTown's 0.18 m² hole at (−3562.288, −1379.212)) has no resolved run to continue, so the retag cannot fire there
+      const cellOk = (t) => elen(k.ring, t.i) >= 2 * Math.abs(d)
+      const p = E[e], q = E[(e + 1) % E.length], to = [a, b].find(t => cellOk(t) && offHolds(k.ring, t.i, p, q)) || null
+      if (to) { T[e] = { ...to }; stat.stairRetag = (stat.stairRetag || 0) + 1; (stat.stairRetagAt ||= []).length < 20 && stat.stairRetagAt.push([p.X / SCALE, p.Y / SCALE, who]) } } }
   let prevRunKey = null, lastRun = null
   for (let e = 0; e < E.length; e++) { const tg = T[e], p = E[e], q = E[(e + 1) % E.length]
     const tags = tg == null ? [] : Array.isArray(tg) ? tg : [tg]
@@ -342,7 +362,17 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // clockwise ⇔ X outside (the region lies LEFT of every ring)
     if (AR && AR.valid) { const arc = AR.pts; {
         const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
-        if (d < 0 ? a2 < 0n : a2 > 0n) { pushArc(AR, 'trimmed-arc', t, u); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
+        if (d < 0 ? a2 < 0n : a2 > 0n) {
+          // ⭐ THE TRIMMED ARC'S PREMISE SELECTS (Zob's ruling, 2026-10-29; PTown's (−119.15, 313.735)): the trimmed arc is the next boolean's
+          // exact answer only when the skipped arc STARTS inside D's wedge (∩P follows L_a to a's end, the arc, then L_b). Where it does not,
+          // and the step is a sub-cell step between resolved runs (every skipped edge shorter than a cell, both targets at least a cell:
+          // Q1's reason, the trace's own resolution), and every skipped vertex lies within NODE_BOUND of L_a or L_b, the source vertices
+          // stand in (the gap arc), exact and cut once. Otherwise the trimmed arc, which refuses there by name as before
+          const inWedge = (q) => leftOf(A, q) && leftOf(B, q), cell = 2 * Math.abs(d), R2 = SRC[t.g], nS = R2.length
+          const eL = (i) => { const u0 = R2[i], u1 = R2[(i + 1) % nS]; return Math.hypot(u1.X - u0.X, u1.Y - u0.Y) }
+          const subStep = () => { if (eL(t.i) < cell || eL(u.i) < cell) return false; for (let j = (t.i + 1) % nS; j !== u.i; j = (j + 1) % nS) if (eL(j) >= cell) return false; return true }
+          if (!inWedge(arc[0]) && subStep() && arc.every(q => Math.min(dLine(q, A), dLine(q, B)) <= NODE_BOUND)) { pushArc(AR, 'gap-arc', t); stat.stepArc = (stat.stepArc || 0) + 1; continue }
+          pushArc(AR, 'trimmed-arc', t, u); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
     // ⛔ a BACKWARD cut between non-parallel lines of one ring: refuse by name (Zob, 2026-10-29; unruled until one exists)
     // ⭐ BACKWARD BUT ADJACENT (Zob, 2026-10-29): u = t − 1 on one ring: the two lines are adjacent source edges, and their
     // crossing must BE the shared source vertex v_t, integer for integer (checked, never assumed), which is emitted. Why the

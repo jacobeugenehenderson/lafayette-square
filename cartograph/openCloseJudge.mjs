@@ -1,7 +1,6 @@
-// THE OPEN/CLOSE'S JUDGE, check-side: one home for checks/claims-the-open-close-cuts-once.mjs and its Huron ratchet
-// (-huron.mjs). ⛔ Nothing in the kit imports this: it is a JUDGE, never a producer (Zob, 2026-10-29). Ported from the
-// investigation's own instruments (scratch/cut-once/oracle.mjs, own-edge.mjs, gate.mjs), so the checks judge with the gates the
-// method was measured by.
+// THE OPEN/CLOSE'S JUDGE, one home (Zob's ruling, 2026-10-29: the runtime net will import it from here): the checks
+// (checks/claims-the-open-close-cuts-once.mjs and its Huron ratchet) import it from cartograph/. It judges, it never produces: the
+// geometry the kit ships is openClose.mjs's; this only measures it against the DEFINITION and refuses or records.
 //   definitionOf · e2e   the DEFINITION: the same operation (P − the open's taken FEATURES ∪ the close's filled FEATURES, a feature
 //                        surviving an erode by NODE_BOUND; open = offset(offset(P, −h), +h) ∩ P, close = offset(offset(open, +h), −h)
 //                        ∪ open; jtMiter, MiterLimit 2) by clipper-lib on a lattice 1000× FINER, then region to region against the

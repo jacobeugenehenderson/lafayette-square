@@ -37,6 +37,7 @@
 // sentinel as −ε again · the deck crossing taken as the deck node · settle's clearance ignored · settleInOrder's sweep test removed · its vertex-only form · inkability left out of admission · its index keyed by vertex · the margin dropped (vertex or edge) · each ring indexed alone · settle applying its targets without settleInOrder · ringsMeet not asked by bake-coast · a deck crossing that
 // meets no ring accepted · the pad read as a value.
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import clipperLib from 'clipper-lib'
@@ -433,6 +434,12 @@ for (const scene of scenes) {
     const sd = map.layers?.ribbons?.streetDecks
     if (!wr) console.log(`  (map.json carries no protopolygon waterRings — poured before this coast; ①'s rings not compared)`)
     else if (!Array.isArray(sd)) console.log(`  ⚠️ ${scene}: map.json carries no streetDecks — poured before the decks; ①'s rings not compared (▶ the Bake)`)
+    // ⛔ A POUR FROM ANOTHER COAST IS NOT AN INPUT TO THIS CODE (Zob's ruling, 2026-10-29: PTown's take-out was fed its own 10-26 deck rings,
+    // whose 1 mm back-step the old integer take-out made). map.json records the coast.json it read (dataRead, pour-code.mjs's sha1);
+    // when that is not today's, the take-out rows REFUSE to run, naming the stale pour and the re-pour that fixes it: never a red
+    // measurement of the port, and never only a warning beside one
+    else if ((map.dataRead || {})[`cartograph/data/${scene}/clean/${COAST_FILE}`] !== createHash('sha1').update(readFileSync(join(dir, 'clean', COAST_FILE))).digest('hex'))
+      say(false, `${scene}: map.json was poured from a different coast.json than today's (recorded ${String((map.dataRead || {})[`cartograph/data/${scene}/clean/${COAST_FILE}`] ?? 'none').slice(0, 8)}, today ${createHash('sha1').update(readFileSync(join(dir, 'clean', COAST_FILE))).digest('hex').slice(0, 8)}): its streetDecks are not inputs to this code, so the take-out is NOT measured. ▶ re-pour (the Bake's pipeline step)`)
     else {
       let W = null; try { W = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring), doc.fineM) } catch (e) { say(false, `${scene}: the water the mint is given REFUSES — ${String(e.message).slice(0, 240)}`) }
       if (W) { const given = W.rings

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ⭐ THE OPEN/CLOSE CUTS ONCE, HURON'S RATCHET (the heavy half of checks/claims-the-open-close-cuts-once.mjs; Zob, 2026-10-29).
 // Huron's whole traced water (checks/fixtures/cut-once-huron-traced.json: `traced` in bake-coast.mjs, before simplify and settle)
-// through structures.mjs#openCloseAtStep, judged end to end against the definition (checks/_cutOnceJudge.mjs). What is left past
+// through structures.mjs#openCloseAtStep, judged end to end against the definition (cartograph/openCloseJudge.mjs). What is left past
 // 2·NODE_BOUND is a measured RESIDUAL, held on a RATCHET: RED when the count or the m² RISES above the ceiling, and RED when it
 // FALLS ("lower the ceiling to N, A in this commit"), so a fix lowers it in the same commit and it can never drift into a tolerance.
 // BACKLOG "the open/close's residual against the definition" evicts when every ceiling below is 0.
@@ -15,7 +15,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openCloseAtStep } from '../cartograph/structures.mjs'
 import { partsOf } from '../cartograph/openClose.mjs'
-import { ip, e2e, definitionOf, ownEdge, crossings, short } from './_cutOnceJudge.mjs'
+import { ip, e2e, definitionOf, ownEdge, crossings, short } from '../cartograph/openCloseJudge.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 let fails = 0
