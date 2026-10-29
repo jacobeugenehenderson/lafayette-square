@@ -13,7 +13,7 @@
 // Read-only. ▶ node scratch/boulder-lod-deviation.mjs
 import { readFileSync } from 'node:fs'
 import { revetmentFaces } from '../src/lib/revetmentFromSlab.js'
-import { drapeGlobals, revetmentDrape } from '../src/lib/revetmentDrape.js'
+import { drapeLattices, revetmentDrape } from '../src/lib/revetmentDrape.js'
 
 const NEAR_OCT = 3, FAR_OCT = Number(process.argv[2] ?? 1)
 const doc = JSON.parse(readFileSync('public/baked/huron/revetment.json', 'utf8'))
@@ -25,10 +25,9 @@ console.log(`near = octaves ${NEAR_OCT} · far = octaves ${FAR_OCT} · ${faces.l
 console.log('face        coarseV   fineV   fineStep   median    p95      max     crest')
 const all = []
 for (const f of faces) {
-  const Gf = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: NEAR_OCT })
-  const Gc = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCT })
-  const fine = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, octaves: NEAR_OCT, globals: Gf })
-  const coarse = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCT, globals: Gc })
+  const [Gc, Gf] = drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, octaves: [FAR_OCT, NEAR_OCT] })
+  const fine = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, globals: Gf })
+  const coarse = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, globals: Gc })
   const FP = fine.geometry.getAttribute('position').array
   const CP = coarse.geometry.getAttribute('position').array
   // Spatial hash over the fine vertices — a linear scan is O(n·m) and n·m is ~10^11 here.

@@ -174,8 +174,8 @@ Writes into the repo or a scratch dir.
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
-| `checks/claims-the-armoured-shore-is-never-empty.mjs` | IS THERE A WALL AT EVERY DISTANCE? |
 | `checks/claims-the-built-ground-has-no-needles.mjs` | A CURB, A WALK OR A LAWN NEVER COMES TO A SHARP POINT. |
+| `checks/claims-the-drape-meets-itself-on-one-line.mjs` | WHERE THE NEAR STONE MEETS THE FAR, IS IT ONE LINE FROM ONE PRODUCER? |
 | `checks/claims-the-ground-stays-in-budget.mjs` | "DOES THIS GROUND BAKE FIT UNDER ITS TOWN'S SERVED SLAB SIZE AND SERVED GROUND-BAKE TIME?" |
 | `checks/claims-the-lidar-flights-are-named.mjs` | CLAIM — WHEN THE LIDAR FLEW, AND THE GEOID IT WAS DELIVERED ON, ARE READ AND NAMED, NEVER GUESSED (fetch-lidar-flights.mjs). |
 | `checks/claims-the-road-lies-on-the-lattice.mjs` | EVERY ROAD VERTEX IN THE DISC LIES IN A TILE OR AN INK PIECE (`roadOffTheLattice`). |
@@ -189,7 +189,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 364. This is `npm test`.
+## safe — 365. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -459,6 +459,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-swap-reaches-the-paint.mjs` | ⭐⭐⭐ THE OPERATOR'S GESTURE, AS A GATE. (Jacob, 2026-09-07: "The swap regime doesn't work on |
 | `checks/claims-the-ao-belongs-to-its-ground.mjs` | producer that rebuilds that manifest from scratch. `bake-ground-ao` writes |
 | `checks/claims-the-arch-stands-where-it-is.mjs` | CLAIM — THE ARCH STANDS WHERE IT IS (BRIEF-the-arch-stands-where-it-is, 2026-10-28, Keystone; Jacob's rulings, |
+| `checks/claims-the-armoured-shore-is-never-empty.mjs` | IS THERE A WALL AT EVERY DISTANCE? |
 | `checks/claims-the-authoring-store-reloads-on-edit.mjs` | DOES AN EDIT TO THE AUTHORING STORE RELOAD THE PAGE, NEVER SWAP IT HOT? |
 | `checks/claims-the-bands-are-held-by-their-owners.mjs` | EACH TILE'S CURB, WALK AND LAWN ARE CUT INTO PIECES, EACH WITH ONE OWNER (`bandPiecesOfTile`). |
 | `checks/claims-the-bed-is-seen-to-depth-at-low-water.mjs` | CLAIM: a town's bed is cut where the bottom stops being seen AT LOW WATER — the visibility depth below the town's LOW |

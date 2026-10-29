@@ -273,18 +273,33 @@ function fieldAt(x, y, z, { lam0, amp0, octaves, seed, uniform, cellAt = 1 }) {
  * @returns { geometry, stats }
  */
 /**
- * ⭐⭐ THE ARC-GLOBAL PARAMETERS, HOISTED — and hoisting them is the ENTIRE
- * precondition for chunking this build. ⛔ `hMax` is taken over the WHOLE arc, and
- * it decides `blk`, which decides `lam0`/`amp0`/`step`/`nAcross`, which decide the
- * lattice. So a chunk that could only see its own stretch would compute a DIFFERENT
- * grid from its neighbour and the two would not meet. ⭐ Computing them once from
- * the whole arc costs 201 crest samples — under a millisecond — and makes every
- * chunk build the same lattice by construction, which is why the seam is exact
- * rather than approximately exact.
+ * ⭐⭐ THE LATTICES, NESTED, AND SIZED FROM WHAT IS BUILT (BRIEF-the-drape-sizes-one-nested-lattice; Boz's rulings A and B,
+ * Zob's read, 2026-10-29). ONE call sizes every octave count a face is drawn at, so the far layer and the near layer cannot
+ * be sized apart again (the far's call omitted the toe and the berm, C3).
+ *   · hMax is the crest's EXACT maximum: crestAt at its breakpoints (`crestBreaks`, revetmentFromSlab.js#crestAndEnds).
+ *     ⛔ It was read off 201 samples of t whatever the face's length, and provincetown's 9 km 1:left, armoured in ~23 m
+ *     runs between 45 m samples, read 0 and built NOTHING, near or far. Sampling stations instead is circular (the step
+ *     comes from blk = d50For(hMax)).
+ *   · NESTED: octave 1's station count fixes every other's, n_o − 1 = (n_1 − 1)·2^(o−1), along and across, so every far
+ *     vertex IS a near vertex and a far station is a near station to the bit. (Each lattice rounded its own count, and
+ *     near and far boundaries missed by up to 1.00 m on huron.)
+ *   · toeMax over the stations the FINEST lattice builds. They depend only on blk and the arc, never on the toe, and the
+ *     coarser lattices' are a nested subset. ⭐ THE BARE PREDICATE IS THE BERM'S BOUND, with no new constant: d50For floors
+ *     at MIN_ARMOUR_D50_M and a station below it is never built, so over built stations the berm term is at most
+ *     stonesWide·TAN_REPOSE. (The berm's d50·tan/h blew up as h → 0 between samples: huron 35:right was 7,377 across.)
+ * Computed once per face and shared by every chunk, so a chunk builds its neighbour's lattice by construction.
+ * ▶ node checks/claims-the-drape-meets-itself-on-one-line.mjs
  */
 // `toeAt(t)` (revetmentFromSlab `toeFor`): the face parameter of the toe, ≥ 1 — the heap runs on below the water to
 // rest on the bed. Absent = 1, the toe at the waterline (the pre-2026-09-27 heap).
-export function drapeGlobals({ poly, crestAt, toeAt = null, berm = null, octaves = 3, tRange = [0, 1] } = {}) {
+// `berm` (revetment.json material.toeBerm): { stonesWide, stonesHigh } — a stone apron beyond the toe, so the across
+// range reaches the berm's outer edge too. Absent = no berm.
+/** The octave counts the player draws: the far layer (baked) and the near layer (by the camera). */
+export const FAR_OCTAVES = 1, NEAR_OCTAVES = 3
+/** @returns one lattice per entry of `octaves`, in its order, all nested in octave 1's */
+export function drapeLattices({ poly, crestAt, crestBreaks, toeAt = null, berm = null, octaves, tRange = [0, 1] } = {}) {
+  if (!Array.isArray(crestBreaks)) throw new Error('revetmentDrape: drapeLattices has no crestBreaks (revetmentFromSlab.js#crestAndEnds) — the lattice is sized from the crest\'s exact maximum, never a sample of it')
+  if (!Array.isArray(octaves) || !octaves.length || octaves.some(o => !(Number.isInteger(o) && o >= 1))) throw new Error(`revetmentDrape: drapeLattices needs the octave counts it nests (${octaves})`)
   const segs = []
   let total = 0
   for (let i = 1; i < poly.length; i++) {
@@ -293,52 +308,236 @@ export function drapeGlobals({ poly, crestAt, toeAt = null, berm = null, octaves
     if (L < 1e-9) continue
     segs.push({ a, b, L, s0: total }); total += L
   }
-  let hMax = 0, toeMax = 1
-  for (let k = 0; k <= 200; k++) {
-    const t = tRange[0] + (tRange[1] - tRange[0]) * (k / 200)
-    hMax = Math.max(hMax, crestAt(t))
-    if (toeAt) { const h = crestAt(t); toeMax = Math.max(toeMax, toeAt(t) + (berm && h > 0 ? berm.stonesWide * d50For(h) * TAN_REPOSE / h : 0)) }
-  }
+  const [t0, t1] = tRange
+  let hMax = Math.max(0, crestAt(t0), crestAt(t1))
+  for (const t of crestBreaks) if (t >= t0 && t <= t1) hMax = Math.max(hMax, crestAt(t))
   const blk = d50For(hMax)
   const lam0 = blk * MACRO_WAVELENGTHS_PER_BLOCK
   const amp0 = blk * MACRO_AMPLITUDE_PER_BLOCK
-  const lamMin = lam0 / Math.pow(2, Math.max(0, octaves - 1))
-  const step = lamMin / VERTS_PER_WAVELENGTH
+  const s0 = t0 * total, s1 = t1 * total
+  const step1 = lam0 / VERTS_PER_WAVELENGTH                      // octave 1's own sampling rule
+  const n1 = Math.max(2, Math.round((s1 - s0) / step1) + 1)
+  const nF = (n1 - 1) * 2 ** (Math.max(...octaves) - 1) + 1         // the finest lattice's stations: the rows it builds
+  let toeMax = 1
+  if (toeAt) for (let i = 0; i < nF; i++) {
+    const t = (s0 + ((s1 - s0) * i) / (nF - 1)) / total, h = crestAt(t)
+    if (h < MIN_ARMOUR_D50_M) continue                            // never built (revetmentDrape's `bare`): the berm's bound
+    toeMax = Math.max(toeMax, toeAt(t) + (berm ? berm.stonesWide * d50For(h) * TAN_REPOSE / h : 0))
+  }
   const span = (U_HI - 1) + toeMax - U_LO      // the across range reaches the deepest toe, past it by the same margin
-  const s0 = tRange[0] * total, s1 = tRange[1] * total
-  const nAlong = Math.max(2, Math.round((s1 - s0) / step) + 1)
-  const nAcross = Math.max(3, Math.round(Math.hypot(hMax / TAN_REPOSE, hMax) * span / step) + 1)
-  return { segs, total, hMax, blk, lam0, amp0, lamMin, step, span, s0, s1, nAlong, nAcross }
+  const across1 = Math.max(3, Math.round(Math.hypot(hMax / TAN_REPOSE, hMax) * span / step1) + 1)
+  return octaves.map(o => {
+    const nest = 2 ** (o - 1), nAlong = (n1 - 1) * nest + 1
+    return { segs, total, hMax, toeMax, blk, lam0, amp0, octaves: o, nest, lamMin: lam0 / nest, step: (s1 - s0) / (nAlong - 1), span, s0, s1, nAlong, nAcross: (across1 - 1) * nest + 1 }
+  })
+}
+
+/** The spine at arc length s: the point, the right-hand normal (toward the water) and t. */
+function spineAt(G, s) {
+  const { segs, total } = G
+  const sg = segs.find(g => s < g.s0 + g.L) || segs[segs.length - 1]
+  const f = (s - sg.s0) / sg.L
+  const ux = (sg.b.x - sg.a.x) / sg.L, uz = (sg.b.z - sg.a.z) / sg.L
+  return { x: sg.a.x + (sg.b.x - sg.a.x) * f, z: sg.a.z + (sg.b.z - sg.a.z) * f, nx: uz, nz: -ux, t: s / total }
 }
 
 /**
- * @param globals  from `drapeGlobals` — pass it to build a CHUNK; omit and the whole
- *                 arc is built with globals computed from the whole arc (identical).
- * @param stations [i0, i1] inclusive station range to OWN. Vertices are built with a
- *                 `normalMargin` of extra stations on each side so boundary normals
- *                 are computed from the same triangle fan the neighbour sees; those
- *                 margin triangles are then dropped. ⛔ Without the margin the
- *                 positions still match exactly but the NORMALS do not, and a normal
- *                 seam is a thin dark line at a grazing angle and invisible from above.
+ * ⭐⭐ ONE STATION'S ROW, THE ONE PRODUCER OF EVERY VERTEX THE DRAPE BUILDS, far and near alike: its positions into `pos`
+ * and its trim into `keep`, at row offset r0 (in vertices). `i` is the GLOBAL station index of lattice G, so a chunk's
+ * row is computed from exactly the inputs its neighbour uses. Returns false for a bare station, which writes nothing.
  */
-export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groundAt = null, waterY = 0, noise = 'cellular', octaves = 3, gather = DRAPE_DEFAULT_GATHER, uniform = false, faceted = false, tRange = [0, 1], seed = 99, globals = null, stations = null, normalMargin = 1 } = {}) {
-  // ── the spine and the lattice: arc-global, and shared by every chunk ─────────
-  const G = globals || drapeGlobals({ poly, crestAt, toeAt, berm, octaves, tRange })
-  const { segs, total, hMax, blk, lam0, amp0, lamMin, step, span, s0, s1, nAlong, nAcross } = G
-
-  const at = (s) => {
-    const sg = segs.find(g => s < g.s0 + g.L) || segs[segs.length - 1]
-    const f = (s - sg.s0) / sg.L
-    const ux = (sg.b.x - sg.a.x) / sg.L, uz = (sg.b.z - sg.a.z) / sg.L
-    return { x: sg.a.x + (sg.b.x - sg.a.x) * f, z: sg.a.z + (sg.b.z - sg.a.z) * f, nx: uz, nz: -ux, t: s / total }
+function stationRow(G, i, P, pos, keep, r0) {
+  const { s0, s1, nAlong, nAcross, blk, lam0, amp0, octaves } = G
+  const { crestAt, toeAt, berm, groundAt, waterY, noise, gather, uniform, seed } = P
+  const st = spineAt(G, s0 + ((s1 - s0) * i) / (nAlong - 1))
+  const h = crestAt(st.t)
+  // ⛔⛔ NO SHEET WHERE THERE IS NO WALL. MEASURED ON HURON 2026-09-21: arc #11 is
+  // 4.75 km that the armour predicate calls 0% armoured, and this builder still
+  // produced 493,164 triangles of revetment along it — because the resolution is
+  // sized from `hMax` over the WHOLE arc, so one tall stretch dressed the entire
+  // length in stone. ⭐ That is the map lying in this kit's signature way:
+  // continuous, plausible, and wrong, with nothing on screen to say so. A stretch
+  // below one course of armour is a kerb or a beach and the correct output is
+  // NOTHING. (`heap.js` already refused it; the drape did not.)
+  const bare = h < MIN_ARMOUR_D50_M
+  // ⭐ …AND NOTHING IS COMPUTED FOR IT. A bare column keeps none of its vertices, and a quad needs three of its four
+  // corners kept, so no triangle can reach one: its ground reads (the apron, the berm, the bury) were all thrown away
+  // — 90% of provincetown's far-layer reads (625k → 62k), 9.2 s → 1.6 s, the output identical to the byte.
+  // ▶ node checks/claims-a-bare-station-costs-nothing.mjs
+  if (bare) return false
+  const run = h / TAN_REPOSE
+  const toe = toeAt ? toeAt(st.t) : 1                  // ≥ 1: the face runs on below the water to the bed
+  // The toe berm beyond it (references f-cem-toe-berm-size), in the face's u-units: its width and heel height.
+  const hasBerm = !!(berm && groundAt && h > 0)
+  const bermU = hasBerm ? berm.stonesWide * d50For(h) / run : 0, bermH = hasBerm ? berm.stonesHigh * d50For(h) : 0
+  const spanHere = (U_HI - 1) + toe + bermU - U_LO
+  // The face's own length and its down-slope unit vector — the sheet's second
+  // axis. ⛔ Using the PLAN run here instead would squash the cells wherever the
+  // wall is tall, i.e. exactly where the stone is most visible.
+  const faceLen = Math.hypot(run, h) || 1
+  const ux = -st.nz, uz = st.nx                  // along-shore unit (n is the right-hand normal)
+  const adx = (st.nx * run) / faceLen, ady = -h / faceLen, adz = (st.nz * run) / faceLen
+  for (let j = 0; j < nAcross; j++) {
+    const u = U_LO + spanHere * (j / (nAcross - 1))   // 0 crest … 1 waterline … `toe` on the bed, and past both
+    // ── the smooth shell: a ruled surface from crest to toe at the angle of repose
+    // ⛔⛔ AND IT MUST NOT KEEP CLIMBING PAST THE CREST. The domain runs past u=0 so
+    // the edge can be trimmed out of it — but extending the SLOPE backwards puts
+    // sheet up in the air, leaning landward over the yard with nothing beneath it.
+    // ⭐ MEASURED, and it is the defect I chased through two wrong suspects: at a
+    // grazing angle those flaps are the "blades" I blamed first on the tangential
+    // gather and then on the trim. Both were innocent (no triangle in the mesh has
+    // an edge over 0.56 m). Above the crest the stone lies FLAT on the bank, which
+    // is what the measured ground does — nearly level, then a drop at the line.
+    const uu = Math.max(0, u)                    // the slope face only
+    const over = Math.max(0, -u) * run           // …and an apron behind the crest
+    let x = st.x + st.nx * (uu * run - over)
+    let y = waterY + h * (1 - uu)
+    let z = st.z + st.nz * (uu * run - over)
+    // ⭐ Behind the crest the apron LIES ON THE BANK, not level at the crest's height (a shelf that floated over a
+    // falling bank and sank into a rising one: the regular top line). It eases from the crest onto the ground.
+    // ⛔ ON it, a course thick: eased to the bare ground, the rock's own roughness put half of it under the bank and
+    // the stone showed only 0.6-1.7 m behind the crest whatever the wander (measured, provincetown's longest face).
+    if (groundAt && u < 0) { const w = smooth(Math.min(1, -u / CREST_REACH)); y = y + (groundAt(x, z) + blk * 0.5 - y) * w }
+    // ── past the toe, the berm lies ON the ground, from its heel height down to nothing at its outer edge — and never
+    // above the water: on a shallow bed it is an apron just under the surface
+    if (hasBerm && uu > toe) y = Math.min(waterY, groundAt(x, z) + bermH * Math.max(0, 1 - (uu - toe) / bermU))
+    // ── the shell's own normal, analytically: the slope face leans waterward
+    const cosR = Math.cos(Math.atan(1 / TAN_REPOSE))
+    const ny = Math.cos(Math.atan(TAN_REPOSE))         // ≈ 0.82 at 35°
+    const nh = Math.sin(Math.atan(TAN_REPOSE))         // ≈ 0.57
+    let vnx = st.nx * nh, vny = ny, vnz = st.nz * nh
+    void cosR
+    let d = 0, gx = 0, gy = 0, gz = 0
+    // ── THE FIELD. ⛔ Not "the shell plus roughness" — the shell is the envelope
+    // and this is the form. `octaves` is how much of it the GEOMETRY carries.
+    // ⛔ NO PIN. The displacement used to be clamped to zero at u=0 and u=1,
+    // which is precisely what ruled the edge straight. It now carries past the
+    // nominal band and the boundary is decided by `keep` below.
+    const pin = 1
+    if (noise === 'cellular') {
+      const F = fieldAt(x, y, z, { lam0, amp0, octaves, seed, uniform, cellAt: blk })
+      // Split the vector into its normal and tangential parts so the tangential
+      // gain can be turned OFF — that is the control for "do the low octaves
+      // alone produce the overhangs, or is a separate gather needed?"
+      const dn = F.ox * vnx + F.oy * vny + F.oz * vnz
+      const tx = F.ox - dn * vnx, ty = F.oy - dn * vny, tz = F.oz - dn * vnz
+      const g = gather * pin              // tangential gain (0 = normal-only control)
+      gx = tx * g; gy = ty * g; gz = tz * g
+      d = (dn + F.cell) * pin
+    } else {
+      // fBm only, no cellular octave, no modulation, no warp — the plain control.
+      const amp = blk * 0.55
+      d = pin * (amp * 1.6 * fbm3(x / lam0, y / lam0, z / lam0, seed, 4)
+        + amp * 0.22 * fbm3(x * 5 / lam0, y * 5 / lam0, z * 5 / lam0, seed + 31, 2))
+    }
+    x += vnx * d + gx; y += vny * d + gy; z += vnz * d + gz
+    const o = (r0 + j) * 3
+    // ⭐ THE EDGE, AS A CONTOUR OF TWO FIELDS. A long one makes the band's own
+    // half-width WANDER (the toe and the crest are not parallel to the arc); a
+    // short one makes the boundary RAGGED at stone scale, so it ends the way a
+    // heap of rock ends rather than the way a ribbon does.
+    const sArc = s0 + ((s1 - s0) * i) / (nAlong - 1)
+    const wob = (f, sd) => sn(sArc * f, 0.5, 0.5, seed + sd)
+    // ⛔⛔ THE RAGGED TERM'S WAVELENGTH IS A NYQUIST CONSTRAINT, NOT A TASTE —
+    // MEASURED FAILURE 2026-09-21. It was first written at ~1 block (0.9 m) while
+    // the mesh step at 3 octaves is 0.28 m, so the boundary flipped in and out
+    // faster than whole quads could follow: alternate columns were dropped and the
+    // band came apart into COMB TEETH — long parallel blades that I nearly
+    // misdiagnosed as the tangential gather tearing the sheet. ⭐ It is not: the
+    // gather was innocent, and sweeping it 0.6→0.15 barely moved the picture,
+    // which is the tell that the suspect was wrong. The boundary field must be
+    // several blocks long so the trim can resolve it.
+    const crestEdge = groundAt
+      ? 0.0 - CREST_WANDER * (CREST_SWING[0] + (CREST_SWING[1] - CREST_SWING[0]) * spread(wob(1 / (lam0 * 9), 75))) * spread(wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
+      : 0.0 - EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
+    const toeEdge = toe + bermU + EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.2), 73)) + EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS * 0.85), 74)
+    if (groundAt) {
+      // ⭐ BURIED, NOT CUT: past either edge the rough sheet sinks a block below the ground, and the ground draws the edge.
+      const past = Math.max(crestEdge - u, u - toeEdge)
+      if (past > 0) { const w = smooth(Math.min(1, past / BURY_U)); y = y + (groundAt(x, z) - blk - y) * w }
+      keep[r0 + j] = (!bare && u >= crestEdge - BURY_U && u <= toeEdge + BURY_U) ? 1 : 0
+    } else keep[r0 + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
+    pos[o] = x; pos[o + 1] = y; pos[o + 2] = z
   }
+  return !bare
+}
 
-  // The stations this call OWNS, and the wider range it BUILDS so that boundary
-  // normals match the neighbour's.
+/**
+ * ⭐⭐ THE FAR ROW AT FAR STATION I: what the far layer draws there, and the ONE edge a near chunk meets it on (Jacob,
+ * 2026-10-29: "another 'line getting measured twice' issue … call them from the same place"). The far lattice's stations
+ * I−1…I+1 through `stationRow`, indexed as the far build indexes them, and their normals as the far build computes them
+ * (THREE's computeVertexNormals over the same triangles in the same order, so the far chunk's own row I carries the
+ * same bits). Returns { pos, normal, before, after } (the far quads (I−1, I) and (I, I+1) per column: whether the far
+ * draws them), or null when the station is bare.
+ */
+export function farRow(G, I, P) {
+  const { nAlong, nAcross } = G
+  const i0 = Math.max(0, I - 1), i1 = Math.min(nAlong - 1, I + 1), rows = i1 - i0 + 1
+  const pos = new Float32Array(rows * nAcross * 3), keep = new Uint8Array(rows * nAcross), live = []
+  for (let i = i0; i <= i1; i++) live.push(stationRow(G, i, P, pos, keep, (i - i0) * nAcross))
+  if (!live[I - i0]) return null
+  const idx = [], before = new Uint8Array(nAcross - 1), after = new Uint8Array(nAcross - 1)
+  for (let i = i0 + 1; i <= i1; i++) {
+    if (!live[i - i0] || !live[i - 1 - i0]) continue
+    for (let j = 1; j < nAcross; j++) {
+      const a = (i - 1 - i0) * nAcross + (j - 1), b = (i - 1 - i0) * nAcross + j, c = (i - i0) * nAcross + (j - 1), e = (i - i0) * nAcross + j
+      if (keep[a] + keep[b] + keep[c] + keep[e] >= 3) { idx.push(a, c, b, b, c, e); (i === I ? before : after)[j - 1] = 1 }
+    }
+  }
+  const normal = new Float32Array(nAcross * 3)
+  if (idx.length) {
+    const remap = new Int32Array(rows * nAcross).fill(-1), packed = [], I2 = new Array(idx.length)
+    for (let k = 0; k < idx.length; k++) { const v = idx[k]; if (remap[v] < 0) { remap[v] = packed.length / 3; packed.push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]) } I2[k] = remap[v] }
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(packed), 3)); g.setIndex(I2); g.computeVertexNormals()
+    const N = g.attributes.normal.array
+    for (let j = 0; j < nAcross; j++) { const p = remap[(I - i0) * nAcross + j]; if (p >= 0) normal.set(N.subarray(p * 3, p * 3 + 3), j * 3) }
+  }
+  return { pos: pos.slice((I - i0) * nAcross * 3, (I - i0 + 1) * nAcross * 3), normal, before, after }
+}
+
+/**
+ * @param globals  one lattice from `drapeLattices` (required): the face's, shared by every chunk.
+ * @param stations [i0, i1] inclusive station range to OWN. The far layer builds a `normalMargin` of extra stations on
+ *                 each side so a boundary normal sees the triangle fan its neighbour sees; those margin triangles are
+ *                 then dropped. ⛔ Without the margin the positions still match exactly but the NORMALS do not, and a
+ *                 normal seam is a thin dark line at a grazing angle and invisible from above.
+ * @param conform  the face's FAR lattice, for a NEAR chunk (Boz ruled (iii), 2026-10-29): each end that meets another
+ *                 chunk is `farRow`'s row, not the near's own. The far's vertices are copied, the near's in-between
+ *                 ones lie on the far's segments, the normals are the far's (shared) and their unnormalized lerp
+ *                 (in-between: what the far's fragments interpolate there, Zob), and the column touching that row draws
+ *                 exactly where the far draws beside it, in the far-side column (the visible neighbour's, never the far
+ *                 quad this chunk replaces), overriding 3-of-4 for that column only. So the near and the far meet on
+ *                 ONE line from ONE producer, whichever of them the neighbour is, and no margin is built. The next row
+ *                 inward is full detail: the kink is inside the rock's own facet angles (▶ scratch/far-shore/edge-choice.mjs).
+ *                 The in-between vertices' ground pins are the far's, lerped too (`drapeRaws`), so the seam holds at
+ *                 every exaggeration.
+ */
+export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groundAt = null, waterY = 0, noise = 'cellular', octaves = null, gather = DRAPE_DEFAULT_GATHER, uniform = false, faceted = false, seed = 99, globals = null, stations = null, normalMargin = 1, conform = null } = {}) {
+  // ── the spine and the lattice: arc-global, and shared by every chunk ─────────
+  if (!globals) throw new Error('revetmentDrape: no globals — size the face once with drapeLattices and pass its lattice')
+  if (octaves != null && octaves !== globals.octaves) throw new Error(`revetmentDrape: asked for octaves ${octaves} on a lattice sized for ${globals.octaves}`)
+  const G = globals
+  const { blk, lam0, amp0, lamMin, step, s0, s1, nAlong, nAcross } = G
+  const P = { crestAt, toeAt, berm, groundAt, waterY, noise, gather, uniform, seed }
+
+  // The stations this call OWNS, and the wider range it BUILDS so that boundary normals match the neighbour's.
   const own0 = stations ? Math.max(0, stations[0]) : 0
   const own1 = stations ? Math.min(nAlong - 1, stations[1]) : nAlong - 1
-  const bld0 = Math.max(0, own0 - (stations ? normalMargin : 0))
-  const bld1 = Math.min(nAlong - 1, own1 + (stations ? normalMargin : 0))
+  // ⭐ the ends that meet another chunk on the far's row (the face's own two ends meet nothing)
+  let lo = null, hi = null
+  if (conform) {
+    const r = (nAlong - 1) / (conform.nAlong - 1)
+    if (!stations || !(Number.isInteger(r) && r === G.nest / conform.nest && (nAcross - 1) === (conform.nAcross - 1) * r))
+      throw new Error(`revetmentDrape: conform needs a chunk of a lattice nested in the far's (${nAlong}×${nAcross} on ${conform.nAlong}×${conform.nAcross})`)
+    const seam = (i) => { if (i % r) throw new Error(`revetmentDrape: a near chunk ends at station ${i}, not on a far station (every ${r}): chunks are cut on far stations`)
+      return { i, r, row: farRow(conform, i / r, P) } }
+    if (own0 > 0) lo = seam(own0)
+    if (own1 < nAlong - 1) hi = seam(own1)
+  }
+  const margin = stations && !conform ? normalMargin : 0
+  const bld0 = Math.max(0, own0 - margin)
+  const bld1 = Math.min(nAlong - 1, own1 + margin)
 
   // ⭐ SIZED TO THE STATIONS THIS CALL BUILDS (bld0…bld1), never the whole face: a chunk of a 33 km face allocated, filled
   // and remapped arrays for every station of it, so splitting a face cost the square of its length (provincetown's far
@@ -346,138 +545,43 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
   const nRows = bld1 - bld0 + 1
   const pos = new Float32Array(nRows * nAcross * 3)
   const keep = new Uint8Array(nRows * nAcross)
+  const live = new Uint8Array(nRows)
   const idx = []
   const quadStation = []      // one entry per TRIANGLE, the station it belongs to
-  const inv = 1 / blk
 
   for (let i = bld0; i <= bld1; i++) {
-    // ⭐ `i` stays the GLOBAL station index, so a chunk's vertex for station i is
-    // computed from exactly the inputs its neighbour uses for the same i. That is
-    // what makes the seam identical rather than close.
-    const st = at(s0 + ((s1 - s0) * i) / (nAlong - 1))
-    const h = crestAt(st.t)
-    // ⛔⛔ NO SHEET WHERE THERE IS NO WALL. MEASURED ON HURON 2026-09-21: arc #11 is
-    // 4.75 km that the armour predicate calls 0% armoured, and this builder still
-    // produced 493,164 triangles of revetment along it — because the resolution is
-    // sized from `hMax` over the WHOLE arc, so one tall stretch dressed the entire
-    // length in stone. ⭐ That is the map lying in this kit's signature way:
-    // continuous, plausible, and wrong, with nothing on screen to say so. A stretch
-    // below one course of armour is a kerb or a beach and the correct output is
-    // NOTHING. (`heap.js` already refused it; the drape did not.)
-    const bare = h < MIN_ARMOUR_D50_M
-    // ⭐ …AND NOTHING IS COMPUTED FOR IT. A bare column keeps none of its vertices, and a quad needs three of its four
-    // corners kept, so no triangle can reach one: its ground reads (the apron, the berm, the bury) were all thrown away
-    // — 90% of provincetown's far-layer reads (625k → 62k), 9.2 s → 1.6 s, the output identical to the byte.
-    // ▶ node checks/claims-a-bare-station-costs-nothing.mjs
-    if (bare) continue
-    const run = h / TAN_REPOSE
-    const toe = toeAt ? toeAt(st.t) : 1                  // ≥ 1: the face runs on below the water to the bed
-    // The toe berm beyond it (references f-cem-toe-berm-size), in the face's u-units: its width and heel height.
-    const hasBerm = !!(berm && groundAt && h > 0)
-    const bermU = hasBerm ? berm.stonesWide * d50For(h) / run : 0, bermH = hasBerm ? berm.stonesHigh * d50For(h) : 0
-    const spanHere = (U_HI - 1) + toe + bermU - U_LO
-    // The face's own length and its down-slope unit vector — the sheet's second
-    // axis. ⛔ Using the PLAN run here instead would squash the cells wherever the
-    // wall is tall, i.e. exactly where the stone is most visible.
-    const faceLen = Math.hypot(run, h) || 1
-    const ux = -st.nz, uz = st.nx                  // along-shore unit (n is the right-hand normal)
-    const adx = (st.nx * run) / faceLen, ady = -h / faceLen, adz = (st.nz * run) / faceLen
-    for (let j = 0; j < nAcross; j++) {
-      const u = U_LO + spanHere * (j / (nAcross - 1))   // 0 crest … 1 waterline … `toe` on the bed, and past both
-      // ── the smooth shell: a ruled surface from crest to toe at the angle of repose
-      // ⛔⛔ AND IT MUST NOT KEEP CLIMBING PAST THE CREST. The domain runs past u=0 so
-      // the edge can be trimmed out of it — but extending the SLOPE backwards puts
-      // sheet up in the air, leaning landward over the yard with nothing beneath it.
-      // ⭐ MEASURED, and it is the defect I chased through two wrong suspects: at a
-      // grazing angle those flaps are the "blades" I blamed first on the tangential
-      // gather and then on the trim. Both were innocent (no triangle in the mesh has
-      // an edge over 0.56 m). Above the crest the stone lies FLAT on the bank, which
-      // is what the measured ground does — nearly level, then a drop at the line.
-      const uu = Math.max(0, u)                    // the slope face only
-      const over = Math.max(0, -u) * run           // …and an apron behind the crest
-      let x = st.x + st.nx * (uu * run - over)
-      let y = waterY + h * (1 - uu)
-      let z = st.z + st.nz * (uu * run - over)
-      // ⭐ Behind the crest the apron LIES ON THE BANK, not level at the crest's height (a shelf that floated over a
-      // falling bank and sank into a rising one: the regular top line). It eases from the crest onto the ground.
-      // ⛔ ON it, a course thick: eased to the bare ground, the rock's own roughness put half of it under the bank and
-      // the stone showed only 0.6-1.7 m behind the crest whatever the wander (measured, provincetown's longest face).
-      if (groundAt && u < 0) { const w = smooth(Math.min(1, -u / CREST_REACH)); y = y + (groundAt(x, z) + blk * 0.5 - y) * w }
-      // ── past the toe, the berm lies ON the ground, from its heel height down to nothing at its outer edge — and never
-      // above the water: on a shallow bed it is an apron just under the surface
-      if (hasBerm && uu > toe) y = Math.min(waterY, groundAt(x, z) + bermH * Math.max(0, 1 - (uu - toe) / bermU))
-      // ── the shell's own normal, analytically: the slope face leans waterward
-      const cosR = Math.cos(Math.atan(1 / TAN_REPOSE))
-      const ny = Math.cos(Math.atan(TAN_REPOSE))         // ≈ 0.82 at 35°
-      const nh = Math.sin(Math.atan(TAN_REPOSE))         // ≈ 0.57
-      let vnx = st.nx * nh, vny = ny, vnz = st.nz * nh
-      void cosR
-      let d = 0, gx = 0, gy = 0, gz = 0
-      // ── THE FIELD. ⛔ Not "the shell plus roughness" — the shell is the envelope
-      // and this is the form. `octaves` is how much of it the GEOMETRY carries.
-      // ⛔ NO PIN. The displacement used to be clamped to zero at u=0 and u=1,
-      // which is precisely what ruled the edge straight. It now carries past the
-      // nominal band and the boundary is decided by `keep` below.
-      const pin = 1
-      if (noise === 'cellular') {
-        const F = fieldAt(x, y, z, { lam0, amp0, octaves, seed, uniform, cellAt: blk })
-        // Split the vector into its normal and tangential parts so the tangential
-        // gain can be turned OFF — that is the control for "do the low octaves
-        // alone produce the overhangs, or is a separate gather needed?"
-        const dn = F.ox * vnx + F.oy * vny + F.oz * vnz
-        const tx = F.ox - dn * vnx, ty = F.oy - dn * vny, tz = F.oz - dn * vnz
-        const g = gather * pin              // tangential gain (0 = normal-only control)
-        gx = tx * g; gy = ty * g; gz = tz * g
-        d = (dn + F.cell) * pin
-      } else {
-        // fBm only, no cellular octave, no modulation, no warp — the plain control.
-        const amp = blk * 0.55
-        d = pin * (amp * 1.6 * fbm3(x / lam0, y / lam0, z / lam0, seed, 4)
-          + amp * 0.22 * fbm3(x * 5 / lam0, y * 5 / lam0, z * 5 / lam0, seed + 31, 2))
-      }
-      x += vnx * d + gx; y += vny * d + gy; z += vnz * d + gz
-      const o = ((i - bld0) * nAcross + j) * 3
-      // ⭐ THE EDGE, AS A CONTOUR OF TWO FIELDS. A long one makes the band's own
-      // half-width WANDER (the toe and the crest are not parallel to the arc); a
-      // short one makes the boundary RAGGED at stone scale, so it ends the way a
-      // heap of rock ends rather than the way a ribbon does.
-      const sArc = s0 + ((s1 - s0) * i) / (nAlong - 1)
-      const wob = (f, sd) => sn(sArc * f, 0.5, 0.5, seed + sd)
-      // ⛔⛔ THE RAGGED TERM'S WAVELENGTH IS A NYQUIST CONSTRAINT, NOT A TASTE —
-      // MEASURED FAILURE 2026-09-21. It was first written at ~1 block (0.9 m) while
-      // the mesh step at 3 octaves is 0.28 m, so the boundary flipped in and out
-      // faster than whole quads could follow: alternate columns were dropped and the
-      // band came apart into COMB TEETH — long parallel blades that I nearly
-      // misdiagnosed as the tangential gather tearing the sheet. ⭐ It is not: the
-      // gather was innocent, and sweeping it 0.6→0.15 barely moved the picture,
-      // which is the tell that the suspect was wrong. The boundary field must be
-      // several blocks long so the trim can resolve it.
-      const crestEdge = groundAt
-        ? 0.0 - CREST_WANDER * (CREST_SWING[0] + (CREST_SWING[1] - CREST_SWING[0]) * spread(wob(1 / (lam0 * 9), 75))) * spread(wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
-        : 0.0 - EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
-      const toeEdge = toe + bermU + EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.2), 73)) + EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS * 0.85), 74)
-      if (groundAt) {
-        // ⭐ BURIED, NOT CUT: past either edge the rough sheet sinks a block below the ground, and the ground draws the edge.
-        const past = Math.max(crestEdge - u, u - toeEdge)
-        if (past > 0) { const w = smooth(Math.min(1, past / BURY_U)); y = y + (groundAt(x, z) - blk - y) * w }
-        keep[(i - bld0) * nAcross + j] = (!bare && u >= crestEdge - BURY_U && u <= toeEdge + BURY_U) ? 1 : 0
-      } else keep[(i - bld0) * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
-      pos[o] = x; pos[o + 1] = y; pos[o + 2] = z
-      if (i > bld0 && j) {
-        const a = (i - 1 - bld0) * nAcross + (j - 1), b = (i - 1 - bld0) * nAcross + j, c = (i - bld0) * nAcross + (j - 1), e = (i - bld0) * nAcross + j
-        // ⛔ A quad survives only if ALL FOUR corners are inside the contour, so the
-        // boundary is a staircase of whole quads at stone scale — an edge, not a
-        // feathered fade. A fade would read as fog, which is the plausible-looking
-        // wrong answer here.
-        // ⛔ 3-of-4, not 4-of-4. Requiring all four corners punches a hole for every
-        // single boundary vertex and shreds the edge into teeth; 3-of-4 lets the
-        // boundary staircase instead of perforating.
-        // ⛔ A quad spanning stations (i−1, i) belongs to station i. Margin quads are
-        // BUILT (so the boundary vertex's normal sees its whole fan) and then dropped.
-        if (keep[a] + keep[b] + keep[c] + keep[e] >= 3) {
-          idx.push(a, c, b, b, c, e)
-          quadStation.push(i, i)
+    const r0 = (i - bld0) * nAcross, sm = lo?.i === i ? lo : hi?.i === i ? hi : null
+    if (sm) {
+      // the far's row: shared vertices copied, the near's in-between ones on the far's segments
+      if (sm.row) {
+        const F = sm.row.pos
+        for (let j = 0; j < nAcross; j++) {
+          const J = Math.floor(j / sm.r), w = (j % sm.r) / sm.r, o = (r0 + j) * 3
+          if (!w) { pos[o] = F[J * 3]; pos[o + 1] = F[J * 3 + 1]; pos[o + 2] = F[J * 3 + 2] }
+          else for (let c = 0; c < 3; c++) pos[o + c] = F[J * 3 + c] + (F[(J + 1) * 3 + c] - F[J * 3 + c]) * w
         }
+        live[i - bld0] = 1
+      }
+    } else live[i - bld0] = stationRow(G, i, P, pos, keep, r0) ? 1 : 0
+    if (i === bld0 || !live[i - bld0] || !live[i - 1 - bld0]) continue
+    // the column touching a far row draws where the far draws beside it: quad (i−1, i) touches `lo` when i−1 is it
+    // (the far side is (I−1, I), `before`) and `hi` when i is it (the far side is (I, I+1), `after`)
+    const by = lo?.i === i - 1 ? [lo, 'before'] : hi?.i === i ? [hi, 'after'] : null
+    for (let j = 1; j < nAcross; j++) {
+      const a = (i - 1 - bld0) * nAcross + (j - 1), b = (i - 1 - bld0) * nAcross + j, c = (i - bld0) * nAcross + (j - 1), e = (i - bld0) * nAcross + j
+      // ⛔ A quad survives only if ALL FOUR corners are inside the contour, so the
+      // boundary is a staircase of whole quads at stone scale — an edge, not a
+      // feathered fade. A fade would read as fog, which is the plausible-looking
+      // wrong answer here.
+      // ⛔ 3-of-4, not 4-of-4. Requiring all four corners punches a hole for every
+      // single boundary vertex and shreds the edge into teeth; 3-of-4 lets the
+      // boundary staircase instead of perforating.
+      // ⛔ A quad spanning stations (i−1, i) belongs to station i. Margin quads are
+      // BUILT (so the boundary vertex's normal sees its whole fan) and then dropped.
+      const draws = by ? by[0].row[by[1]][Math.floor((j - 1) / by[0].r)] : keep[a] + keep[b] + keep[c] + keep[e] >= 3
+      if (draws) {
+        idx.push(a, c, b, b, c, e)
+        quadStation.push(i, i)
       }
     }
   }
@@ -495,6 +599,7 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
   // at a grazing angle — invisible from above, which is where it would be signed off.
   const buildIdx = idx
   let geo0 = new THREE.BufferGeometry()
+  const seams0 = []           // per far row met: { station, verts (index in geo0 per column, −1), r, far (its positions) }
   {
     const remapAll = new Int32Array(nRows * nAcross).fill(-1)
     const packedAll = []
@@ -507,6 +612,19 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
     geo0.setAttribute('position', new THREE.BufferAttribute(new Float32Array(packedAll), 3))
     geo0.setIndex(idxAll)
     geo0.computeVertexNormals()
+    // ⭐ the far row's NORMALS: the far's own at a shared vertex, their unnormalized lerp between (Zob, 2026-10-29)
+    const N = geo0.attributes.normal.array
+    for (const sm of [lo, hi]) {
+      if (!sm?.row) continue
+      const Fn = sm.row.normal, verts = new Int32Array(nAcross).fill(-1)
+      for (let j = 0; j < nAcross; j++) {
+        const p = remapAll[(sm.i - bld0) * nAcross + j]; if (p < 0) continue
+        verts[j] = p
+        const J = Math.floor(j / sm.r), w = (j % sm.r) / sm.r
+        for (let c = 0; c < 3; c++) N[p * 3 + c] = w ? Fn[J * 3 + c] + (Fn[(J + 1) * 3 + c] - Fn[J * 3 + c]) * w : Fn[J * 3 + c]
+      }
+      seams0.push({ station: sm.i, verts, r: sm.r, far: sm.row.pos })
+    }
   }
 
   // ③ keep only the triangles this call owns, carrying the normals computed above.
@@ -532,6 +650,9 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(packed), 3))
   geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(packedN), 3))
   geo.setIndex(idx2)
+  // the far rows this chunk met, by the vertices it drew on them (`drapeRaws` lerps their ground pins as it lerps positions)
+  geo.userData.seams = seams0.map(sm => ({ ...sm, verts: sm.verts.map(p => p < 0 ? -1 : remap[p]) }))
+  if (faceted && geo.userData.seams.length) throw new Error('revetmentDrape: a faceted build cannot meet the far on its row (it un-indexes the vertices the seam names)')
   // ⭐⭐ INDEXED OR NOT IS A 3× SLAB-BYTES DECISION, MEASURED: flat shading needs
   // per-face normals, which means un-indexing, which TRIPLES the vertex count —
   // the triangle count does not move, so a triangle-only budget cannot see it. An
@@ -605,7 +726,7 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
     geometry: geo,
     stats: {
       tris, length, nAlong, nAcross, blockSize: blk, step, gather, noise, uniform,
-      octaves, lam0, amp0, lamMin,
+      octaves: G.octaves, lam0, amp0, lamMin,
       trisPer100m: Math.round((tris / Math.max(1e-6, length)) * 100),
       faceted,
       kept: keep.reduce((a, b) => a + b, 0), gridVerts: keep.length,
@@ -616,4 +737,21 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
            + (geo.index ? geo.index.array.byteLength : 0),
     },
   }
+}
+
+/**
+ * The drawn ground's RAW under every vertex of a build (`rawAt(x, z)`, the player's drawn-ground raw), for the ground-relative
+ * pin (aDrawnRaw). ⭐ A near vertex lying BETWEEN two far vertices on a far row takes the lerp of THEIR raws, as its position
+ * is their lerp: its own raw would put it off the far's segment at any exaggeration but 1, and the seam would open there.
+ */
+export function drapeRaws(built, rawAt) {
+  const g = built.geometry, P = g.attributes.position.array, n = P.length / 3, raw = new Float64Array(n)
+  for (let v = 0; v < n; v++) raw[v] = rawAt(P[v * 3], P[v * 3 + 2])
+  for (const sm of g.userData.seams || []) {
+    const F = sm.far, rf = new Map(), farRaw = (J) => { if (!rf.has(J)) rf.set(J, rawAt(F[J * 3], F[J * 3 + 2])); return rf.get(J) }
+    sm.verts.forEach((v, j) => { if (v < 0) return
+      const J = Math.floor(j / sm.r), w = (j % sm.r) / sm.r
+      raw[v] = w ? farRaw(J) + (farRaw(J + 1) - farRaw(J)) * w : farRaw(J) })
+  }
+  return raw
 }

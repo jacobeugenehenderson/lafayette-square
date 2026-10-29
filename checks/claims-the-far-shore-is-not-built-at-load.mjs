@@ -19,7 +19,10 @@
 //     included) must reach the site's arguments or a test that selects it — an enclosing `if`, or an `if (…) continue |
 //     break | return` before it in its own innermost loop. A whole-frame early return does not select; a timer is not a camera.
 //   · A parameter is a sampler only where a call site hands it a sampler-valued argument at that position or key (to a
-//     fixed point): revetmentDrape's groundAt is, a water-level record's lowAt is not.
+//     fixed point): revetmentDrape's groundAt is, a water-level record's lowAt is not. A function written at the call site
+//     that calls a sampler is sampler-valued (drapeRaws' rawAt), and a call returns a sample when it hands a sampler (or its
+//     own sampler parameter) at a SLOT whose reading reaches the callee's return. Judged per slot: a sampler at a slot the
+//     callee never reads taints nothing.
 // ⭐ AND THE FAR LAYER'S HIDE IS PER CHUNK (C7): SlabRevetment's near chunks are keyed face AND chunk, and the far meshes
 //   hide by the same key, so one near chunk on a long face leaves that face's other far chunks drawn at distance.
 // ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs [--mutants] [-v]
@@ -101,8 +104,14 @@ function analyse(files, SAMPLERS) {
   // ⭐ Q1 (Zob): a parameter is a SAMPLER only where a call site passes a sampler-valued argument at its position or key
   const samplerParams = new Map([...fns.keys()].map(n => [n, new Set()]))
   const samplerProps = new Set()   // object keys some literal binds to a sampler-valued expression (`groundAt: drawnAt1`)
+  // ⭐ a function written at the call site that samples is sampler-valued too: `drapeRaws(built, (x, z) => drawnGroundParts(x, z).raw)`
+  const samplesInside = (fn) => { let hit = false
+    traverse({ type: 'File', program: { type: 'Program', body: [{ type: 'ExpressionStatement', expression: fn }] } }, { noScope: true,
+      CallExpression(q) { const c = nameOfCallee(q.node.callee); if (c && (SAMPLERS.has(c) || samplerProps.has(c))) hit = true } })
+    return hit }
   const samplerValued = (e, inFn) => !!e && ((e.type === 'Identifier' && (SAMPLERS.has(e.name) || summary.get(e.name)?.returnsSample || samplerParams.get(inFn)?.has(e.name)))
-    || (e.type === 'MemberExpression' && !e.computed && samplerProps.has(e.property.name)))
+    || (e.type === 'MemberExpression' && !e.computed && samplerProps.has(e.property.name))
+    || ((e.type === 'ArrowFunctionExpression' || e.type === 'FunctionExpression') && samplesInside(e)))
 
   // the flow inside ONE function body (nested arrows included), given what is known about callees; `gens` are the generating sites
   function flow(fnPath, sParams) {
@@ -126,6 +135,12 @@ function analyse(files, SAMPLERS) {
           const s = c && summary.get(c)
           if (s?.returnsSample) return true
           if (s?.passes && n.arguments.some(isT)) return true
+          // a sampler handed in AT A SLOT whose reading reaches the callee's return (Zob: per slot, judged in this function's own
+          // context, so a hook passing its own sampler parameter through is seen and a sampler at an unread slot is not)
+          const F = c && fns.get(c)
+          if (F && s?.returnsHanded?.length) for (const sl of F.slots) { if (!s.returnsHanded.includes(sl.name)) continue
+            const a = n.arguments[sl.pos], v = sl.key == null ? a : a?.type === 'ObjectExpression' ? a.properties.find(q => q.key?.name === sl.key)?.value : null
+            if (samplerValued(v, null) || (v?.type === 'Identifier' && sParams.has(v.name))) return true }
           if (n.callee.type === 'MemberExpression' && ['map', 'slice', 'concat', 'filter', 'from'].includes(c) && (isT(n.callee.object) || n.arguments.some(isT))) return true
           return false
         }
@@ -175,7 +190,9 @@ function analyse(files, SAMPLERS) {
       const r = flow(f.path, samplerParams.get(n)), s = summary.get(n)
       // returnsSample must not leak a handed-in sampler's taint to every caller: judged with no sampler parameters
       const rs = flow(f.path, new Set()).returnsSample
-      if (r.generates !== s.generates || r.passes !== s.passes || rs !== s.returnsSample) { changed = true; summary.set(n, { generates: r.generates, passes: r.passes, returnsSample: rs }) }
+      // …and returnsHanded: the SLOTS whose sampler, if one is handed there, reaches the return (drapeRaws' rawAt), each judged alone
+      const rh = f.slots.filter(sl => flow(f.path, new Set([sl.name])).returnsSample).map(sl => sl.name)
+      if (r.generates !== s.generates || r.passes !== s.passes || rs !== s.returnsSample || rh.join() !== (s.returnsHanded || []).join()) { changed = true; summary.set(n, { generates: r.generates, passes: r.passes, returnsSample: rs, returnsHanded: rh }) }
     }
     if (!changed) break
   }
@@ -246,26 +263,41 @@ console.log(`── no geometry is generated from the ground in a hook without a
 const R = analyse(files, SAMPLERS)
 const near = R.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useFrame')
 say(!!near && near.camera, `the near layer's useFrame generates and reads the camera (the control)${near ? ` — ${near.file}:${near.line}` : ' — NOT FOUND: the rule cannot see the near build'}`)
-const reds = red(R)
-say(reds.length === 0, `${R.hooks.length} hook(s) generate from the ground; ${reds.length} without a camera${reds.map(h => `\n       ⛔ ${h.file}:${h.line} ${h.hook}`).join('')}`)
+// ⚠️ KNOWN OPEN (Boz ruled, 2026-10-29): hits this rule sees and the kit has not closed, each with WHY and WHAT CLOSES IT. One
+// entry absorbs ONE hit of its hook kind in its file: a further hit there, or anywhere else, is RED; an entry nothing hits
+// any more is RED too (close it here, in the same commit as the fix).
+const OPEN = [
+  { file: 'src/components/HeroImpostorTrees.jsx', hook: 'useEffect', why: "aGround = groundPairs(instances, treeGroundRaw) at mount; treeGroundRaw falls back to the FIELD (getElevationRaw) for a tree with no baked groundRaw, a Layer 0 fallback", closes: 'the fallback removed: an unanchored tree refuses by name (cartograph/BACKLOG.md, "trees: the field fallback for an unanchored tree")' },
+  { file: 'src/components/OverheadTrees.jsx', hook: 'useEffect', why: 'the same groundPairs(instances, treeGroundRaw) at mount', closes: 'the same row' },
+]
+const allReds = red(R), left = OPEN.map(o => ({ ...o, hit: false }))
+const reds = allReds.filter(h => { const o = left.find(o => !o.hit && o.file === h.file && o.hook === h.hook); if (o) { o.hit = true; return false } return true })
+say(reds.length === 0, `${R.hooks.length} hook(s) generate from the ground; ${reds.length} without a camera, beyond the ${OPEN.length} known open${reds.map(h => `\n       ⛔ ${h.file}:${h.line} ${h.hook}`).join('')}`)
+for (const o of left) say(o.hit, `${o.hit ? '⚠️ OPEN' : 'a known-open entry nothing hits any more (close it)'}: ${o.file} ${o.hook} — ${o.why}. Closes: ${o.closes}`)
 if (VERBOSE) for (const h of R.hooks) console.log(`     ${h.camera ? 'camera' : 'NONE  '} ${h.file}:${h.line} ${h.hook} — ${h.why}`)
 const hide = hideIsPerChunk(readFileSync(REVETMENT, 'utf8'))
 say(hide.ok, `the far layer hides per chunk: near keys ${hide.added} · far keys ${hide.keyed}`)
 
 // planted pairs: value vs control (Boz, 2026-10-29) — the refinement cannot drift to "any read" or "no read" unseen
 console.log('── planted pairs')
-const planted = (body) => ({ file: join(ROOT, 'src/components/__planted__.jsx'), src: `import * as THREE from 'three'\nimport { getElevationRaw } from '../utils/elevation'\nfunction Planted({ a, b }) {\n  const g = useMemo(() => {\n${body}\n  }, [])\n}\n` })
+const planted = (body, pre = '') => ({ file: join(ROOT, 'src/components/__planted__.jsx'), src: `import * as THREE from 'three'\nimport { getElevationRaw } from '../utils/elevation'\n${pre}function Planted({ a, b, built }) {\n  const g = useMemo(() => {\n${body}\n  }, [])\n}\n` })
 const asTest = planted(`    const down = getElevationRaw(b[0], b[1]) <= getElevationRaw(a[0], a[1])\n    const p = down ? [a[0], 0, a[1], b[0], 0, b[1]] : [b[0], 0, b[1], a[0], 0, a[1]]\n    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return geo`)
 const asValue = planted(`    const ya = getElevationRaw(a[0], a[1])\n    const p = [a[0], ya, a[1], b[0], 0, b[1]]\n    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return geo`)
-const p1 = red(analyse([...files, asTest], SAMPLERS)).length - reds.length, p2 = red(analyse([...files, asValue], SAMPLERS)).length - reds.length
+const p1 = red(analyse([...files, asTest], SAMPLERS)).length - allReds.length, p2 = red(analyse([...files, asValue], SAMPLERS)).length - allReds.length
 say(p1 === 0, `a sampled height used only as a TEST (which end is up) → GREEN`)
 say(p2 === 1, `the same height written into a position → RED`)
+// per slot (Zob): a helper passing ITS OWN sampler parameter through to drapeRaws is seen; a sampler at a slot never read is not
+const passThrough = planted(`    return lift(built, getElevationRaw)`, `function lift(built, groundAt) { const r = drapeRaws(built, groundAt); built.geometry.setAttribute('aDrawnRaw', new THREE.BufferAttribute(r, 1)) }\n`)
+const unread = planted(`    const r = keepFirst(a, getElevationRaw)\n    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(r, 3)); return geo`, `function keepFirst(a, unused) { return a }\n`)
+const p3 = red(analyse([...files, passThrough], SAMPLERS)).length - allReds.length, p4 = red(analyse([...files, unread], SAMPLERS)).length - allReds.length
+say(p3 === 1, `a helper handing its own sampler parameter to drapeRaws, its result written → RED`)
+say(p4 === 0, `a sampler handed at a slot the callee never reads → GREEN`)
 
 if (process.argv.includes('--mutants')) {
   console.log('── mutants (each must turn it RED; the near useFrame stays GREEN)')
   const src = readFileSync(REVETMENT, 'utf8'), anchor = '  // ── THE NEAR LAYER — the detailed drape and the stones, by the camera ────────'
   if (!src.includes(anchor)) throw new Error('⛔ mutant anchor gone from SlabRevetment.jsx')
-  const FAR = `  useFrame(() => {\n    for (const f of faces) { const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: 1 })\n      groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 1, globals: G })) }\n  })\n`
+  const FAR = `  useFrame(() => {\n    for (const f of faces) { const [G] = drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, octaves: [1] })\n      groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: G })) }\n  })\n`
   const TIMER = `  useEffect(() => { const id = setTimeout(() => { for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, groundAt: f.groundAt, octaves: 1 })) }, 1000); return () => clearTimeout(id) }, [faces])\n`
   const swap = (s2) => files.map(f => f.file === REVETMENT ? { ...f, src: s2 } : f)
   let alive = 0
@@ -273,11 +305,11 @@ if (process.argv.includes('--mutants')) {
   // must select what is built there, so this is RED too.
   const nearAnchor = '    const drape = [], stones = [], nearKeys = new Set()\n'
   if (!src.includes(nearAnchor)) throw new Error('⛔ near-useFrame mutant anchor gone from SlabRevetment.jsx')
-  const INTO = nearAnchor + `    for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 1, globals: drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: 1 }) }))\n`
+  const INTO = nearAnchor + `    for (const f of faces) groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G1 }))\n`
   for (const [name, s2] of [['the far useFrame restored', src.replace(anchor, FAR + anchor)], ['the far build gated by a timer', src.replace(anchor, TIMER + anchor)],
     ['the far build moved into the near useFrame', src.replace(nearAnchor, INTO)]]) {
     const r = analyse(swap(s2), SAMPLERS), n = r.hooks.find(h => h.file.endsWith('SlabRevetment.jsx') && h.hook === 'useFrame' && h.camera)
-    const into = name.includes('into the near'), caught = red(r).length > reds.length
+    const into = name.includes('into the near'), caught = red(r).length > allReds.length
     console.log(`  mutant: ${name} → ${caught ? 'RED ✓' : 'GREEN ✗'}${n || into ? '' : ' (and the near control vanished)'}`); if (!caught || (!n && !into)) alive++ }
   { const a = 'nearKeys.add(`${f.key}#${k}`)'; if (!src.includes(a)) throw new Error('⛔ hide mutant target gone')
     const caught = !hideIsPerChunk(src.replace(a, 'nearKeys.add(f.key)')).ok

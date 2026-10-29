@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 518,
+  "total": 519,
   "counts": {
-    "safe": 364,
+    "safe": 365,
     "local-effect": 31,
     "live": 123
   },
@@ -2750,9 +2750,9 @@
     },
     {
       "file": "checks/claims-the-armoured-shore-is-never-empty.mjs",
-      "tier": "local-effect",
+      "tier": "safe",
       "why": [
-        "imports cartograph/bake-revetment-far.js, which can: deletes files, imports cartograph/io.js, which can: writeFileSync"
+        "reads repo files only"
       ]
     },
     {
@@ -2967,6 +2967,16 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-drape-meets-itself-on-one-line.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync — only under its own temp dir",
+        "imports a mutated copy of src/lib/revetmentDrape.js from its own temp dir — read as src/lib/revetmentDrape.js, safe",
+        "computed import of src/lib/revetmentDrape.js — read, safe",
+        "imports cartograph/bake-revetment-far.js, which can: deletes files, imports cartograph/io.js, which can: writeFileSync"
       ]
     },
     {

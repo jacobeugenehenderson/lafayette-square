@@ -45,6 +45,21 @@ export { d50For }   // one copy, in cartograph/shore-armour.mjs
  *  work one camera step can trigger and how many chunks a view spans. */
 export const CHUNK_M = 12
 
+/** ⭐ THE DRAPE'S CHUNKS, CUT ON FAR STATIONS (BRIEF-the-drape-sizes-one-nested-lattice): far chunk k owns the far quads of
+ *  stations (A, B] and its near chunk the near quads of (A·nest, B·nest], so each near chunk replaces exactly one far chunk
+ *  and meets its neighbours on far rows. The one cut, for the bake and the player alike. `G1`, `Gn`: drapeLattices' far and
+ *  near lattices of one face. */
+export function drapeChunks(G1, Gn) {
+  const nest = (Gn.nAlong - 1) / (G1.nAlong - 1)
+  if (!Number.isInteger(nest)) throw new Error(`shoreChunks: the near lattice (${Gn.nAlong}) is not nested in the far's (${G1.nAlong})`)
+  const per = Math.max(1, Math.round(CHUNK_M / G1.step)), out = []
+  for (let A = 0, k = 0; A < G1.nAlong - 1; A += per, k++) {
+    const B = Math.min(G1.nAlong - 1, A + per)
+    out.push({ k, far: [A, B], near: [A * nest, B * nest] })
+  }
+  return out
+}
+
 /** How many darts to throw per stone-sized disc of band area. ⛔ THE DOMINANT COST
  *  AND IT IS MEASURED, NOT GUESSED: a rejection sampler spends nearly all of its
  *  time on darts it throws away, and the window resolves five chunks, so this

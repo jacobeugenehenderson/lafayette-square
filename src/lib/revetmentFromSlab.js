@@ -108,12 +108,41 @@ export function crestAndEnds(stations, cum, total, tanRepose) {
     }
     return [Math.max(0, c), Math.max(0, Math.min(1, f))]
   }
-  return { crestAt: (t) => eval_(t)[0], taperAt: (t) => eval_(t)[1], ends }
+  // ⭐ WHERE crestAt CAN PEAK, so the drape sizes its lattice from the crest's exact maximum and never samples for it
+  // (revetmentDrape.js#drapeLattices; BRIEF-the-drape-sizes-one-nested-lattice, Boz's ruling A). crestAt is piecewise linear
+  // in s: a MAX of the wall's lerp and the interior ends' slumps, then a MIN with the tip cones. A max of linear pieces kinks
+  // DOWNWARD, so its peaks are where a piece ends: the stations, each end's s and s ± run, and the range's two ends. The MIN
+  // kinks UPWARD where a cone crosses a piece, between stations: cap ∩ wall, cap ∩ slump and cap ∩ cap. All of them, as t
+  // in 0…1, evaluated by the caller through crestAt itself. ⛔ Not the bound max_i H(i): it over-sizes the stone wherever a
+  // tip cone caps the tallest station (Zob). ▶ node checks/claims-the-drape-meets-itself-on-one-line.mjs (the dense gate)
+  const S = [0, total]
+  for (let i = 0; i < n; i++) S.push(cum[i])
+  for (const e of ends) S.push(e.s, e.s + e.run, e.s - e.run)
+  for (const e of tips) {
+    const g = e.dir * tanRepose                                   // the cone's slope in s
+    for (let i = 0; i + 1 < n; i++) {
+      if (!(on(i) && on(i + 1))) continue
+      const span = cum[i + 1] - cum[i]; if (!(span > 0)) continue
+      const a = (H(i + 1) - H(i)) / span
+      if (a === g) continue
+      const s = (a * cum[i] - H(i) - g * e.s) / (a - g)          // H(i) + a·(s − cum[i]) = g·(s − e.s)
+      if (s >= cum[i] && s <= cum[i + 1]) S.push(s)
+    }
+    for (const q of interior) {
+      if (q.dir === -e.dir) continue                              // the slump and the cone are parallel
+      S.push((q.H + tanRepose * (q.dir * q.s + e.dir * e.s)) / (tanRepose * (q.dir + e.dir)))   // q.H − q.dir·tan·(s − q.s) = g·(s − e.s)
+    }
+    // …and cap ∩ cap: on a face shorter than its two tips' runs the cones meet in the middle, below every station
+    // (huron 88:left and 94:right, found by the dense gate)
+    for (const q of tips) if (q !== e && q.dir !== e.dir) S.push((e.dir * e.s - q.dir * q.s) / (e.dir - q.dir))   // e.dir·(s − e.s) = q.dir·(s − q.s)
+  }
+  const crestBreaks = S.filter(s => Number.isFinite(s)).map(s => Math.min(1, Math.max(0, s / total)))
+  return { crestAt: (t) => eval_(t)[0], taperAt: (t) => eval_(t)[1], ends, crestBreaks }
 }
 
 /**
  * @param doc the parsed `baked/<look>/revetment.json`
- * @returns [{ key, arcIndex, face, poly:[{x,z}], crestAt, taperAt, ends, lengthM, armouredM, anyArmour }]
+ * @returns [{ key, arcIndex, face, poly:[{x,z}], crestAt, crestBreaks, taperAt, ends, lengthM, armouredM, anyArmour }]
  *          one entry per FACE — a two-faced arc yields two, which is the case a
  *          single-face reader silently half-builds.
  */
@@ -140,7 +169,7 @@ export function revetmentFaces(doc) {
         cum[i] = cum[i - 1] + Math.hypot(st[i].x - st[i - 1].x, st[i].z - st[i - 1].z)
       }
       const total = cum[st.length - 1] || 1
-      const { crestAt, taperAt, ends } = crestAndEnds(st, cum, total, tanRepose)
+      const { crestAt, taperAt, ends, crestBreaks } = crestAndEnds(st, cum, total, tanRepose)
       out.push({
         key: `${arc.index}:${face}`,
         arcIndex: arc.index,
@@ -148,6 +177,7 @@ export function revetmentFaces(doc) {
         poly: st.map(s => ({ x: s.x, z: s.z })),
         stations: st,
         crestAt,
+        crestBreaks,
         taperAt,
         ends,
         tanRepose,
@@ -202,6 +232,11 @@ export async function loadRevetment(look, { manifest, fetchFile, say }) {
  * baked before the far shore was: it is SAID, and no shore is drawn — the player never builds the far layer itself.
  * Never-seen chunks are in revetment-far-unseen.bin, fetched after the reveal (`loadRevetmentFarUnseen`).
  */
+/** revetment-far.json's format, written by cartograph/bake-revetment-far.js and refused by the player in any other.
+ *  2 (2026-10-29): the chunks are cut on far stations of one nested lattice (BRIEF-the-drape-sizes-one-nested-lattice), so a
+ *  v1 table's chunk keys name DIFFERENT chunks: read by this player it would hide the wrong far chunk and mis-bound the near,
+ *  silently (Zob). ⛔ Refused by name. ▶ node checks/claims-the-armoured-shore-is-never-empty.mjs --mutants */
+export const FAR_FORMAT = 2
 export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
   if (!manifest?.files?.['revetment.json']) return null
   const want = ['revetment-far.json', 'revetment-far.bin', 'revetment-far-unseen.bin'].filter(f => !manifest.files[f])
@@ -209,7 +244,9 @@ export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
   try {
     const [j, b] = await Promise.all([fetchFile('revetment-far.json'), fetchFile('revetment-far.bin')])
     if (!j.ok || !b.ok) throw new Error(`HTTP ${j.status} / ${b.status}`)
-    return { far: await j.json(), bins: { 'revetment-far.bin': await b.arrayBuffer() } }
+    const far = await j.json()
+    if (far?.version !== FAR_FORMAT) { say(`[revetment] ⛔ ${look}: revetment-far.json is format ${far?.version ?? 'none'}, and this player reads ${FAR_FORMAT} — its chunks are cut on another lattice, and no shore is drawn. ▶ re-run revetment-far for ${look} (node cartograph/bake-revetment-far.js --look=${look} --scene=<its scene>) and publish the slab`); return null }
+    return { far, bins: { 'revetment-far.bin': await b.arrayBuffer() } }
   } catch (e) { say(`[revetment] ⛔ ${look}: its far shore FAILED to load — ${e?.message || e}. No shore is drawn.`); return null }
 }
 /** A baked chunk's box [x0, y0, z0, x1, y1, z1] over exaggerations eLo…eHi. Its stored box is [x0, z0, x1, z1, rel0, rel1, raw0,

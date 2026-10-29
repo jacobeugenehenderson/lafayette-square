@@ -9,19 +9,16 @@
  * profile). Its baked weight is ~1.2 MB gzip there and ~3.7 MB on huron (accepted, Jacob 2026-10-29).
  *
  * ⭐ THE SAME BYTES THE PLAYER BUILT. Every piece is the runtime's own function on the runtime's own inputs: the look's
- * slab (the ground, terrain and revetment.json the player fetches), `revetmentFaces` → `toeFor` → `drapeGlobals` /
+ * slab (the ground, terrain and revetment.json the player fetches), `revetmentFaces` → `toeFor` → `drapeLattices` /
  * `revetmentDrape` at FAR_OCTAVES, groundAt = the DRAWN ground at exag 1 made as BakedGround makes it, then ground-relative
  * (position y − the drawn raw, the raw shipped as the vertex's pin), so the stone rides the live exaggeration exactly as
  * before. Off the drawn mesh the drawn ground is the field (elevation.js#drawnGroundParts, `offMesh`); so it is here.
- * ⚠️ OPEN, CARRIED (Zob, 2026-10-29): the far call sizes its lattice WITHOUT toeAt and berm (`drapeGlobals({ poly,
- *   crestAt, octaves })`), as the player did; each station still runs out to its own toe, so the far lattice is
- *   stretched across, not truncated. Measured across step ÷ intended: provincetown median 0.93, max 5.94; huron 0.44,
- *   1.58 (▶ scratch/far-shore/far-across-step.mjs). Kept for byte-identity; the 5.94× stretch's cause is not established.
  *
- * ⭐ CHUNKED ON THE NEAR LAYER'S LATTICE. Each chunk is the far stations under one near chunk (SlabRevetment's `ranges`:
- * octaves 3, CHUNK_M), built with `stations`, so far chunks partition the face's quads exactly and the player can hide
- * the ONE far chunk a near chunk replaces, never the whole face (it hid the whole face: past 90 m the rest of a 33 km
- * face was empty). A chunk with no triangles (all bare) is not written.
+ * ⭐ ONE NESTED LATTICE, CHUNKED ON FAR STATIONS (BRIEF-the-drape-sizes-one-nested-lattice). One drapeLattices call per
+ * face sizes the far and the near, nested (every far vertex is a near vertex), and shoreChunks.js#drapeChunks cuts both on
+ * far stations, the player's own cut. So far chunks partition the face's quads, the player hides the ONE far chunk a near
+ * chunk replaces (never the whole face: it once emptied a 33 km face past 90 m), and a near chunk meets its neighbours on
+ * the far's own rows (revetmentDrape.js#farRow). A chunk with no triangles (all bare) is not written.
  *
  * ⭐ CLASSED BY THE MOVIE (Jacob: "the entire back of Provincetown is never seen"). Each chunk's bounding sphere is tested
  * against the movie's poses through src/preview/heroFrustum.js, the tree bake's own test (no occlusion, the guarded
@@ -54,24 +51,15 @@ import { assertBakeTarget } from './bake-target.js'
 import { requireExplicitMap } from './scene.js'
 import { makeDrawnGround } from '../src/lib/drawnGround.js'
 import { makeElevationSampler, sceneExagOf } from '../src/lib/terrainCommon.js'
-import { revetmentFaces, toeStations, toeFromBaked, chunkBox } from '../src/lib/revetmentFromSlab.js'
-import { drapeGlobals, revetmentDrape } from '../src/lib/revetmentDrape.js'
-import { CHUNK_M } from '../src/lib/shoreChunks.js'
+import { revetmentFaces, toeStations, toeFromBaked, chunkBox, FAR_FORMAT } from '../src/lib/revetmentFromSlab.js'
+import { drapeLattices, revetmentDrape, drapeRaws, FAR_OCTAVES, NEAR_OCTAVES } from '../src/lib/revetmentDrape.js'
+import { CHUNK_M, drapeChunks } from '../src/lib/shoreChunks.js'
 import { MIN_ARMOUR_D50_M, d50For } from './shore-armour.mjs'
 import { isWaterGroupId } from '../src/components/waterMaterial.js'
 import { heroPoses, heroHalfAngles, poseBasis, projectSphere, insideFrustum, HERO_POSES, HERO_SEEN_GUARD } from '../src/preview/heroFrustum.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-/** The far layer's resolution. ⭐ Measured, not chosen by taste (▶ scratch/boulder-lod-deviation.mjs): at octaves 1 the
- *  far surface's median deviation from the near layer's is at the measurement's own noise floor; octaves 2 halves the
- *  rest for 4× the triangles, which buys ~2 px at the swap. ⛔ Octaves 0 is identical to 1 by construction (lamMin =
- *  lam0 / 2^max(0, octaves − 1)). With the drawn ground it is 60,860 triangles on provincetown and 183,662 on huron
- *  (▶ scratch/far-shore/far-cost.mjs) — not the ~23.5k once quoted, which was measured without the ground. */
-export const FAR_OCTAVES = 1
-/** The near layer's resolution, whose chunks the far layer is cut on (SlabRevetment's near build reads the same). */
-export const NEAR_OCTAVES = 3
-export const FAR_FORMAT = 1
 /** The arrays of a chunk, in their order in its bin (the player reads them by `offsets[name]`). */
 export const FAR_ARRAYS = ['pos', 'normal', 'pin', 'band', 'bandNormal', 'index']
 
@@ -95,19 +83,11 @@ export function prepareFaces({ revetment, terrainJson, terrainBin, groundJson, g
   return { faces, parts }
 }
 
-/** The near layer's chunk ranges on a face (SlabRevetment.jsx), and the far stations under each. */
+/** A face's two lattices (one drapeLattices call, so the far is sized with the toe and berm the near is) and its chunks,
+ *  cut on far stations (shoreChunks.js#drapeChunks, the player's own cut). */
 export function chunkRanges(f) {
-  const G3 = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, octaves: NEAR_OCTAVES })
-  const G1 = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCTAVES })
-  const per = Math.max(4, Math.round(CHUNK_M / G3.step))
-  const out = []
-  // ⭐ far chunk k owns the far quads of stations (i0, i1]; consecutive chunks share i1, so the face's quads are partitioned
-  const farAt = (a) => Math.round((a / (G3.nAlong - 1)) * (G1.nAlong - 1))
-  for (let a = 0, k = 0; a < G3.nAlong - 1; a += per, k++) {
-    const b = Math.min(G3.nAlong - 1, a + per)
-    out.push({ k, near: [a, b], far: [farAt(a), farAt(b)] })
-  }
-  return { G1, G3, ranges: out }
+  const [G1, G3] = drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, toeAt: f.toeAt, berm: f.berm, octaves: [FAR_OCTAVES, NEAR_OCTAVES] })
+  return { G1, G3, ranges: drapeChunks(G1, G3) }
 }
 
 /** Every near chunk of one face: its INFO (bounds, stone size, what each layer keeps there) and, where the far layer keeps
@@ -117,6 +97,7 @@ export function chunkRanges(f) {
  *  at any exaggeration is one function of these numbers (src/lib/revetmentFromSlab.js#chunkBox). */
 export function buildFaceChunks(f, parts, onChunk = null, done = 0) {
   const { G1, G3, ranges } = chunkRanges(f)
+  const rawAt = (x, z) => parts(x, z).raw
   const out = []
   for (const r of ranges) {
     onChunk?.(done + out.length + 1)
@@ -124,24 +105,22 @@ export function buildFaceChunks(f, parts, onChunk = null, done = 0) {
     const take = (P, rawOf) => { for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], raw = rawOf(i, x, z), rel = P[i * 3 + 1] - raw
       if (x < B.x0) B.x0 = x; if (x > B.x1) B.x1 = x; if (z < B.z0) B.z0 = z; if (z > B.z1) B.z1 = z
       if (rel < B.rel0) B.rel0 = rel; if (rel > B.rel1) B.rel1 = rel; if (raw < B.raw0) B.raw0 = raw; if (raw > B.raw1) B.raw1 = raw } }
-    // the near layer, as the player builds it there (octaves 3, its own lattice and range): its bounds and its triangle count
-    const near = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: NEAR_OCTAVES, globals: G3, stations: r.near })
+    // the near layer, as the player builds it there (octaves 3, meeting the far on far rows): its bounds and its triangle count
+    const near = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: G3, stations: r.near, conform: G1 })
     const nearTris = near?.stats?.tris || 0
-    if (nearTris) take(near.geometry.attributes.position.array, (i, x, z) => parts(x, z).raw)
+    if (nearTris) { const raw = drapeRaws(near, rawAt); take(near.geometry.attributes.position.array, (i) => raw[i]) }
     let far = null
-    if (r.far[1] > r.far[0]) {                           // a near chunk narrower than one far step owns no far quad
-      const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: FAR_OCTAVES, globals: G1, stations: r.far })
-      if (d?.stats?.tris) {
-        const g = d.geometry, P = g.attributes.position.array, v = P.length / 3
-        const pos = new Float32Array(P), pin = new Float32Array(v * 4), band = new Float32Array(v * 3), up = new Float32Array(v * 3)
-        for (let i = 0; i < v; i++) {
-          const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2], gp = parts(x, z)
-          pin[i * 4] = 1; pin[i * 4 + 1] = gp.raw; pos[i * 3 + 1] = y - gp.raw
-          band[i * 3] = x; band[i * 3 + 1] = gp.y; band[i * 3 + 2] = z; up[i * 3 + 1] = 1
-        }
-        take(P, (i) => pin[i * 4 + 1])
-        far = { tris: d.stats.tris, arrays: { pos, normal: new Float32Array(g.attributes.normal.array), pin, band, bandNormal: up, index: new Uint32Array(g.index.array) } }
+    const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: G1, stations: r.far })
+    if (d?.stats?.tris) {
+      const g = d.geometry, P = g.attributes.position.array, v = P.length / 3, raw = drapeRaws(d, rawAt)
+      const pos = new Float32Array(P), pin = new Float32Array(v * 4), band = new Float32Array(v * 3), up = new Float32Array(v * 3)
+      for (let i = 0; i < v; i++) {
+        const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2]
+        pin[i * 4] = 1; pin[i * 4 + 1] = raw[i]; pos[i * 3 + 1] = y - raw[i]
+        band[i * 3] = x; band[i * 3 + 1] = parts(x, z).y; band[i * 3 + 2] = z; up[i * 3 + 1] = 1
       }
+      take(P, (i) => pin[i * 4 + 1])
+      far = { tris: d.stats.tris, arrays: { pos, normal: new Float32Array(g.attributes.normal.array), pin, band, bandNormal: up, index: new Uint32Array(g.index.array) } }
     }
     // ⭐ the stone a chunk carries is sized by its TALLEST station (shore-armour.mjs#d50For), never its middle: a chunk bare at
     // the middle and armoured at an end would otherwise read small and want a closer camera (Zob, 2026-10-29)
@@ -213,7 +192,11 @@ export function bakeRevetmentFar({ look, scene, dryRun = false } = {}) {
   for (const f of faces) chunks.push(...buildFaceChunks(f, parts, (n) => { if (n % 100 === 0 || n === total) console.log(`[progress] near and far chunks ${n}/${total}`) }, chunks.length))
   const sceneJson = JSON.parse(readFileSync(need[4], 'utf8'))
   classByMovie(chunks, sceneJson, Math.max(1, sceneExagOf(sceneJson)))
-  const meta = { look, from: Object.fromEntries(['revetment.json', 'ground.bin', 'terrain.bin', 'scene.json'].map(f => [f, sha(join(dir, f))])) }
+  // ⭐ scene.json as the Bake step declares it (pourSteps.mjs#sceneForReaders): without the bakedAt stamp written after this
+  // step, so the record names the file that is served
+  const unstamped = { ...sceneJson }; delete unstamped.bakedAt
+  const meta = { look, from: { ...Object.fromEntries(['revetment.json', 'ground.bin', 'terrain.bin'].map(f => [f, sha(join(dir, f))])),
+    'scene.json': createHash('sha256').update(JSON.stringify(unstamped)).digest('hex').slice(0, 16) } }
   const { doc, bins } = pack(chunks, faces, meta)
   const ms = performance.now() - t0
   const seen = doc.chunks.filter(c => c.firstSeen != null), tris = (l) => l.reduce((s, c) => s + c.tris, 0)
