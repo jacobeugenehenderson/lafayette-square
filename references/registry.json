@@ -8636,11 +8636,12 @@
         "anchor": "a set-piece off the disc is anchored by its geographic coordinates (the Arch: OSM relation 12813920, 2866.5 m from LS origin), not bound to a building",
         "rotation": "the authored rotation stays (LS 1.99); the real orientation (1.266) is the kit default for a town with no authored value",
         "scale": "the presence scale keeps pivoting at the APEX (as today): scaling from the top makes the Arch wider and THICKER (at true proportions it is thin) while staying short; height comes from the authored Y-offset; the legs dissolve through Foot-fade, which hides the seam where the unmodelled feet meet the ground",
-        "keys": "Jacob re-aims his own keyframes in Stage after the move; no automatic retarget"
+        "keys": "Jacob re-aims his own keyframes in Stage after the move; no automatic retarget",
+        "scope": "ONLY the position changes: the Arch is placed at its correct geographic centre in place of the authored Distance + bearing (those retire); Scale, Y-offset, Rotation and Foot-fade stay the same controls; no new presence-scale control (the ×2 is Jacob's own Scale value to set)"
       },
       "by": "Jacob",
       "date": "2026-10-28",
-      "quote": "\"as recommended on all four. Tiny quibble: if you double the size from the top *and* raise it it gets wider. The issue is that we don't have attractive feet on the arch so we fussed a lot with finding a way to fade the legs into the ground so the seam is obscured. Also, scaling the arch *and* keeping it short allows us to make it appear *thicker* and more substantial because at scale the arch is quite thin\"",
+      "quote": "\"as recommended on all four. Tiny quibble: if you double the size from the top *and* raise it it gets wider. The issue is that we don't have attractive feet on the arch so we fussed a lot with finding a way to fade the legs into the ground so the seam is obscured. Also, scaling the arch *and* keeping it short allows us to make it appear *thicker* and more substantial because at scale the arch is quite thin\" · \"it's almost like the arch can keep all the height, foot, rotation, scale controls it already has, it's just placed in its correct geographic center\"",
       "canon": "docs/briefs/BRIEF-the-arch-stands-where-it-is.md",
       "notes": "The quibble overrides Boz's recommendation (3) (a base pivot): the apex pivot stays, deliberately."
     }
