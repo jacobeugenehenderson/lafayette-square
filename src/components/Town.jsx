@@ -203,7 +203,7 @@ export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
   'lantern', 'lampsOn', 'canopy', 'treeWind', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'edgeRuffle',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
-  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'heroSubject', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
+  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
 // PostProcessing's view vocabulary (halo and grain off in the plan, the street-level bloom bump: usePostFxDriver).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
@@ -735,7 +735,7 @@ export default function Town({
       {on('post') && <PostProcessing lookId={lookId} bakeLastMs={bake} viewMode={POST_VIEW[shot]} inspect={postFx}
         bloomOverride={o.bloom} aoOverride={o.ao} exposureOverride={o.exposure} warmthOverride={o.warmth}
         fillOverride={o.fill} haloOverride={o.halo} gradeOverride={o.grade} grainOverride={o.grain}
-        dofOverride={o.dof} heroSubjectOverride={o.heroSubject} />}
+        dofOverride={o.dof} />}
       {/* The town's live dots — the visitor, couriers — positioned by the app, placed and drawn by the town.
           ▶ node checks/claims-a-mover-stands-where-it-is.mjs */}
       {movers ? <Movers movers={movers} shot={shot} onMovers={onMovers} /> : null}

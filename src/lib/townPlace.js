@@ -20,6 +20,10 @@ function placeOf(geography, lookId) {
   return Object.freeze({ lookId, lat, lon, timezone, lonToMeters, latToMeters })
 }
 
+/** lon/lat → local metres (x east, z south) through a frame { lat, lon, lonToMeters, latToMeters }: a town's geography or its
+ *  place. THE one projector: the pour's (cartograph/geography.mjs re-exports it) and the player's are the same function. */
+export const projectorOf = (g) => (lon, lat) => [(lon - g.lon) * g.lonToMeters, (g.lat - lat) * g.latToMeters]
+
 let _place = null
 const _subs = new Set()
 

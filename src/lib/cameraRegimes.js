@@ -17,14 +17,15 @@
  *              is RegimeControls' own gesture, never OrbitControls' rotate: it
  *              tips the camera back along the heading (its horizontal `up`, the
  *              rose's), so it can never turn the map. ⛔ OrbitControls measures
- *              its polar angle about the `up` it saw when it was BUILT — opened
- *              straight into the plan, that is the heading, and its clamp threw
+ *              its polar angle about the camera's CURRENT `up` (re-read every
+ *              update()): in the plan that is the heading, and its clamp threw
  *              a straight-down camera to 60° (measured, 2026-10-14). Phone: two
  *              fingers up or down (a pinch still zooms); mouse: right-drag. One
  *              finger and left-drag still pan. ▶ node checks/claims-a-lean-never-turns-the-map.mjs
  *   orbit    — 3D. Stage and everything beyond it: drag orbits, ⌥-drag grabs
- *              the ground, ⌘/⌃-drag pans, middle-drag dollies, wheel zooms —
- *              the same buttons, keys and limits in every app.
+ *              the ground, ⇧-drag AIMS (turns the camera in place, #aimInPlace),
+ *              ⌘/⌃-drag pans, middle-drag dollies, wheel zooms — the same
+ *              buttons, keys and limits in every app.
  *   street   — 3D, CONSTRAINED: stand at eye height and look around. Orbit in
  *              place (distance locked to the 0.5 m look-ahead the Street entry
  *              sets), polar held between the horizon and near-zenith, right /
@@ -171,6 +172,57 @@ REGIMES.overhead = {
   touches: { ONE: T.PAN, TWO: T.DOLLY_ROTATE },
 }
 REGIMES.playback = { ...REGIMES.orbit }
+
+// ── The aimer (the orbit regime's ⇧-drag) ───────────────────────────────────
+// ⭐ GRAB-LOOK, ORIENTATION ONLY (Jacob, 2026-10-29; registry r-plant-it-and-point-it): the camera turns IN PLACE (yaw
+// about world up, pitch about its own right axis, never a roll) so the direction grabbed at the press stays under the
+// cursor. A pure rotation sees only that DIRECTION, never the depth of what is under it, so nothing is picked. Solved
+// from the two rays, never from pixel deltas (a delta solve drifts toward the frame's edge).
+// The pitch is held inside the MOUNT's own polar limits (OrbitControls' polar about the target is π/2 + pitch), and
+// short of the zenith and nadir by OrbitControls' own Spherical.makeSafe margin, so its update() never moves the camera.
+// ▶ node checks/claims-the-aimer-turns-in-place.mjs
+const AIM_EPS = 1e-6                         // three's Spherical.makeSafe EPS: the margin OrbitControls itself keeps
+const _aimL = new THREE.Vector3(), _aimV = new THREE.Vector3(), _aimX = new THREE.Vector3(1, 0, 0)
+/**
+ * The camera's turn that puts world direction `grabDir` under screen point `ndc`, its position unchanged.
+ * @param camera   a PerspectiveCamera whose `up` is world +Y (projection matrices current)
+ * @param grabDir  unit world direction grabbed at the press
+ * @param ndc      { x, y } the cursor now, in normalised device coordinates
+ * @param polarMin, polarMax  the live controls' polar limits (the mount's own)
+ * @returns { pitch, yaw } — Euler 'YXZ', roll 0 — or { skip } naming why nothing may move: an `up` that is not world +Y,
+ *   a grab within float of vertical (no yaw), or a cursor no pitch can reach. ⛔ A skip moves nothing; it is never clamped
+ *   or flung into a guess.
+ */
+export function aimInPlace(camera, grabDir, ndc, polarMin, polarMax) {
+  if (!camera.isPerspectiveCamera) return { skip: 'the aimer turns a perspective camera only' }
+  if (Math.abs(camera.up.x) > AIM_EPS || Math.abs(camera.up.y - 1) > AIM_EPS || Math.abs(camera.up.z) > AIM_EPS) {
+    return { skip: `camera.up is (${camera.up.toArray().map(v => +v.toFixed(4))}), not world +Y: a turn would roll it` }
+  }
+  if (Math.hypot(grabDir.x, grabDir.z) < AIM_EPS) return { skip: 'the grab is straight up or down: no heading to turn to' }
+  // The cursor's ray in the camera's own frame.
+  _aimL.set(ndc.x, ndc.y, 0.5).applyMatrix4(camera.projectionMatrixInverse).normalize()
+  // Pitch: (Rx(θ)·l).y = g.y, i.e. A·cosθ + B·sinθ = g.y — the root nearest the camera's own pitch.
+  const A = _aimL.y, B = -_aimL.z, R = Math.hypot(A, B)
+  if (Math.abs(grabDir.y) > R) return { skip: 'no pitch puts the grab under the cursor here' }
+  const base = Math.atan2(B, A), s = Math.acos(grabDir.y / R)
+  const now = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').x
+  const wrap = (t) => Math.atan2(Math.sin(t), Math.cos(t))
+  const r1 = wrap(base + s), r2 = wrap(base - s)
+  let pitch = Math.abs(r1 - now) <= Math.abs(r2 - now) ? r1 : r2
+  pitch = THREE.MathUtils.clamp(pitch, Math.max(polarMin, AIM_EPS) - Math.PI / 2, Math.min(polarMax, Math.PI - AIM_EPS) - Math.PI / 2)
+  // Yaw: turn the pitched ray's heading onto the grab's.
+  _aimV.copy(_aimL).applyAxisAngle(_aimX, pitch)
+  if (Math.hypot(_aimV.x, _aimV.z) < AIM_EPS) return { skip: 'the cursor ray is vertical at this pitch: no heading to turn' }
+  return { pitch, yaw: Math.atan2(grabDir.x, grabDir.z) - Math.atan2(_aimV.x, _aimV.z) }
+}
+const _aimE = new THREE.Euler(), _aimF = new THREE.Vector3()
+/** Put an aim on live controls: the camera turns, and `target` turns with it at `dist`, so OrbitControls' update() agrees. */
+export function applyAim(controls, turn, dist) {
+  const cam = controls.object
+  cam.quaternion.setFromEuler(_aimE.set(turn.pitch, turn.yaw, 0, 'YXZ'))
+  controls.target.copy(cam.position).addScaledVector(_aimF.set(0, 0, -1).applyQuaternion(cam.quaternion), dist)
+  controls.update()
+}
 
 /** The per-mount keys a caller may set: content scale, never gestures. */
 export const REGIME_LIMIT_KEYS = ['minDistance', 'maxDistance', 'minPolarAngle', 'maxPolarAngle', 'minZoom', 'maxZoom']

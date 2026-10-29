@@ -25,9 +25,9 @@
  * click on the set-piece selects the building, as a click on any building does. A missing record, or one the bake
  * extruded, THROWS.
  *
- * ⚠️ The Gateway Arch is NOT folded in here. It is placed by a Look's authored `arch`
- * channel, not by the town's instance, and it carries its own Stage overrides. Folding
- * it in is ROADMAP H-7's set-piece question, not a mount change.
+ * ⚠️ The Gateway Arch is NOT mounted here: it stands off the disc, on none of the town's buildings, so it is
+ * GEO-ANCHORED, not building-bound — its real feet projected through the town's place (src/setpieces/gatewayArch.js),
+ * mounted by GatewayArch.jsx for a Look that carries an `arch` block (2026-10-28).
  */
 import { useSceneJson } from '../lib/useSceneJson.js'
 import PilgrimMonument from './PilgrimMonument.jsx'

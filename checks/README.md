@@ -93,6 +93,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-socrata-reads-the-whole-envelope.mjs` | outbound | imports cartograph/socrata-fetch.mjs, which can: deletes files, runs `curl` — reaches out |
 | `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() of a path an argument or the environment can supply — arbitrary · computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-startup-marks-fire-in-order.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
+| `checks/claims-the-bake-re-skeletons-a-stale-town.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · child_process with a non-literal command — cannot be read · imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command |
 | `checks/claims-the-bake-watches-its-code.mjs` | unreadable | writeFileSync · deletes files · computed import() of a path an argument or the environment can supply — arbitrary · computed import of cartograph/coastFile.mjs — read, safe · computed import of cartograph/geography.mjs — read, safe · computed import of src/cartograph/streetProfiles.js — read, safe · runs `git` — not a known-local command · runs `git` — not a known-local command |
 | `checks/claims-the-beach-band-is-the-towns-own.mjs` | unreadable | computed import() of a path an argument or the environment can supply — arbitrary |
 | `checks/claims-the-coast-is-the-lidars.mjs` | outbound | writeFileSync · deletes files · imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command · imports cartograph/elevationSources.mjs, which can: calls fetch() · imports cartograph/bake-coast.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync · imports package(s) clipper-lib — not read from source |
@@ -213,6 +214,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-failed-tree-load-names-itself.mjs` | WHEN THE GROVE'S ATLAS (OR THE TREE MATERIALS) FAIL TO LOAD, DOES THE REVEAL SAY SO? |
 | `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |
 | `checks/claims-a-flat-town-is-not-refined.mjs` | CLAIM — A TOWN WITH NO TERRAIN SHIPS ITS GROUND UNREFINED (F3, Jacob 2026-09-24). |
+| `checks/claims-a-focus-object-resolves-in-its-own-slab.mjs` | "CAN THE OPERATOR PICK A FOCUS OBJECT THAT ISN'T THERE?" — A11/A00, the authoring-UI surface. |
 | `checks/claims-a-frontage-can-ask-for-no-ped-band.mjs` | CLAIM: a frontage that carries no pedestrian realm can say so. |
 | `checks/claims-a-highway-block-keeps-its-corners.mjs` | CLAIM — A BLOCK BESIDE A HIGHWAY KEEPS ITS TOWN CORNERS (H-3 step 3; Jacob's ruling "B"). |
 | `checks/claims-a-keyframe-carries-its-aim.mjs` | IS EVERY SHOT THE OPERATOR'S OWN? |
@@ -222,7 +224,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-look-authors-its-curb-width.mjs` | DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |
 | `checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs` | every spawn of a Look-strict tool passes `--look`. |
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
-| `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | ⭐⭐ THE INVARIANT: the renderer may draw "no shore" only when it has been TOLD there is |
+| `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | ⭐⭐ THE INVARIANT: the renderer may draw "no shore" only when it has been TOLD there is no shore — and the town's |
 | `checks/claims-a-mover-stands-where-it-is.mjs` | "DOES A LIVE DOT — THE VISITOR, A COURIER — STAND WHERE IT IS, IN ANY TOWN, DRAWN BY THE TOWN?" |
 | `checks/claims-a-nodeless-crossing-is-grade-separated.mjs` | WHERE TWO OSM STREET WAYS CROSS IN 2D WITHOUT A SHARED NODE, DOES OSM |
 | `checks/claims-a-oneway-runs-in-travel-order.mjs` | CLAIM — EVERY ONE-WAY CHAIN RUNS IN TRAVEL ORDER, AND A REVERSED WAY'S TAGS POINT THE WAY IT NOW RUNS. |
@@ -344,7 +346,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-handle-rides-its-arc.mjs` | ── DOES THE AUTHORING HANDLE SIT ON THE ARC IT OWNS? ──────────────────────── |
 | `checks/claims-hero-cards-write-their-depth.mjs` | DO HERO CARDS CARRY A DEPTH PAGE FROM CAPTURE TO SHADER, SO CROWNS MEET AS VOLUMES? |
 | `checks/claims-hero-degrade-static.mjs` | the opening view of a town with no keyframes. |
-| `checks/claims-hero-subject-resolves-in-its-own-slab.mjs` | "CAN THE OPERATOR PICK A HERO THAT ISN'T THERE?" — A11/A00, the authoring-UI surface. |
 | `checks/claims-highway-handedness.mjs` | CLAIM — A ONE-WAY CARRIAGEWAY'S WIDE SIDE IS ON THE DRIVER'S RIGHT (H-3 check 4). |
 | `checks/claims-highway-no-visible-joint.mjs` | CLAIM — A HIGHWAY IS ONE ROAD, NOT A ROW OF FRAGMENTS (H-3 check 1, cartograph/_archive/BRIEF-highway-build-plan-2026-09-23.md). |
 | `checks/claims-highway-sweep-is-finite.mjs` | CLAIM — EVERY HIGHWAY SWEEP IS A VALID POLYGON (H-3 step 2; the Provincetown failure, 2026-09-24). |
@@ -454,6 +455,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-survey-passes-what-the-bake-passes.mjs` | DOES SURVEY'S LIVE BUILD GIVE buildTileGround EVERYTHING THE BAKE DOES? |
 | `checks/claims-swap-reaches-the-paint.mjs` | ⭐⭐⭐ THE OPERATOR'S GESTURE, AS A GATE. (Jacob, 2026-09-07: "The swap regime doesn't work on |
 | `checks/claims-the-ao-belongs-to-its-ground.mjs` | producer that rebuilds that manifest from scratch. `bake-ground-ao` writes |
+| `checks/claims-the-arch-stands-where-it-is.mjs` | CLAIM — THE ARCH STANDS WHERE IT IS (BRIEF-the-arch-stands-where-it-is, 2026-10-28, Keystone; Jacob's rulings, |
 | `checks/claims-the-armoured-shore-is-never-empty.mjs` | IS THERE A WALL AT EVERY DISTANCE? |
 | `checks/claims-the-authoring-store-reloads-on-edit.mjs` | DOES AN EDIT TO THE AUTHORING STORE RELOAD THE PAGE, NEVER SWAP IT HOT? |
 | `checks/claims-the-bands-are-held-by-their-owners.mjs` | EACH TILE'S CURB, WALK AND LAWN ARE CUT INTO PIECES, EACH WITH ONE OWNER (`bandPiecesOfTile`). |
@@ -524,6 +526,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-slab-envs-do-not-collide.mjs` | STAGING AND PRODUCTION MUST NOT SERVE THE SAME SLAB. |
 | `checks/claims-the-slope-is-on-the-leg.mjs` | ⭐⭐⭐ THE ACCEPTANCE FOR THE RAMP, AND IT IS A CONTINUITY TEST, NOT A DIMENSION ONE. |
 | `checks/claims-the-stamp-keeps-its-owners.mjs` | DOES STAMPING A TILE WITH ITS LAND USE LEAVE EVERY EDGE'S OWNER WHERE IT WAS, |
+| `checks/claims-the-survey-hero-is-retired.mjs` | CLAIM — THE SURVEY HERO IS RETIRED: FOCUS LIVES ONLY ON THE KEYFRAMES (BRIEF-the-arch-stands-where-it-is §3.4, |
 | `checks/claims-the-survey-reaches-the-measure.mjs` | ⭐⭐⭐ DOES THE CITY'S SURVEY REACH THE MAP? — the join, scored, for any town that has one. |
 | `checks/claims-the-tide-phase-stays-in-bounds.mjs` | the water never leaves the town's own low and high (BRIEF-tide). |
 | `checks/claims-the-tiers-are-current.mjs` | A DRIFTED checks/TIERS.json STOPS `npm test`, NAMING EVERY CHECK THAT MOVED. |

@@ -66,9 +66,9 @@ export function resample(pts, step) {
  * and exited 0.
  *
  * ⭐ Kept as a pure function of the two observations so it can be tested exhaustively
- * without a baked town — the same shape `revetmentResponseKind` uses for the absent/
- * unverifiable split, and for the same reason: the interesting case is the one that is hard
- * to stage.
+ * without a baked town — the same shape `intake-rows.mjs` uses for an input well's
+ * present / absent / unverifiable split, and for the same reason: the interesting case is the
+ * one that is hard to stage.
  *
  * @param {string|undefined} datum        `terrain.json`'s `datum` field
  * @param {number} waterRunCount          deduped `__water__` runs found in `shape.json`

@@ -1996,11 +1996,13 @@ export default function ExtentApp() {
       saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
       setShot('designer')
     } catch (e) {
+      let rollbackError = null
       if (committedThisRun) {
         // Roll the destructive commit back so the scene isn't left re-centered but
         // slab-less. Then reload the restored frame + clear the committed marker.
         setBuildStage({ label: 'Rolling back', i: 0, n: 0 })
-        await rollbackExtent(scene).catch(() => {})
+        // ⛔ a rollback that refuses is shown beside the Bake button with the failure, never swallowed (Zob's H3)
+        try { await rollbackExtent(scene) } catch (er) { rollbackError = String(er?.message || er) }
         // the restored frame: a failed reload is shown by name (loadError), never set to nothing in silence
         try { const [g, b] = await Promise.all([fetchGeography(scene), fetchBoundary(scene)]); useCartographStore.setState({ mapGeography: g || null, sceneBoundary: b || null }) }
         catch (e2) { setLoadError(`${String(e2?.message || e2)} — after rolling back; reload the page.`) }
@@ -2011,7 +2013,8 @@ export default function ExtentApp() {
       // ⛔ Shown BESIDE THE BAKE BUTTON, naming the step. It used to go to seedError, which
       // renders only in the Setup section — hidden for every town that has data, so a failed
       // Bake on an existing town was silent (provincetown, 2026-09-25).
-      setBakeResult(e.cancelled ? { cancelled: { step, rolledBack: committedThisRun } } : { error: { step, message: e.message || 'failed', rolledBack: committedThisRun } })
+      const rolledBack = committedThisRun && !rollbackError
+      setBakeResult(e.cancelled ? { cancelled: { step, rolledBack, rollbackError } } : { error: { step, message: e.message || 'failed', rolledBack, rollbackError } })
     } finally {
       setBuilding(false); setBuildStage(null); setBuildStartedAt(0)
     }
@@ -2578,12 +2581,14 @@ export default function ExtentApp() {
                 {bakeResult?.cancelled && (
                   <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
                     Not baked: you cancelled the re-pour at “{bakeResult.cancelled.step}”{bakeResult.cancelled.rolledBack ? ' — rolled back to how it was before this Bake.' : '.'}
+                    {bakeResult.cancelled.rollbackError ? ` ⛔ The rollback did NOT complete: ${bakeResult.cancelled.rollbackError}` : ''}
                   </div>
                 )}
                 {bakeResult?.error && (
                   <div className="carto-extent-status warn" style={{ flexBasis: '100%', marginTop: 6 }}>
                     Bake failed at “{bakeResult.error.step}”: {bakeResult.error.message}
                     {bakeResult.error.rolledBack ? ' — rolled back to how it was before this Bake.' : ''}
+                    {bakeResult.error.rollbackError ? ` ⛔ The rollback did NOT complete: ${bakeResult.error.rollbackError}` : ''}
                   </div>
                 )}
                 {bakeResult?.promoteDiff && (

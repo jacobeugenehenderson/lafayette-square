@@ -18,7 +18,7 @@
  * on another.
  */
 import { ASSET_BASE, ASSET_BASE_IS_REMOTE } from './bakedUrl.js'
-import { HASHED, slabPath, manifestPath } from './slabNames.js'
+import { HASHED, slabPath, manifestPath, manifestOrNull } from './slabNames.js'
 import { markStartup } from './startupMarks.js'
 
 const _towns = new Map()   // look → { ready: Promise, manifest, hashed, done }
@@ -35,7 +35,7 @@ function requireLook(look) {
 export function slabManifest(look) {
   requireLook(look)
   if (ASSET_BASE_IS_REMOTE) return townOf(look).ready.then(t => t.manifest)
-  return fetch(ASSET_BASE + manifestPath(look), { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null))
+  return fetch(ASSET_BASE + manifestPath(look), { cache: 'no-cache' }).then(manifestOrNull)
     .then((m) => { if (m) markStartup('manifest'); return m })
 }
 
@@ -57,7 +57,7 @@ function townOf(look) {
   t = { manifest: null, hashed: false, done: false }
   const url = ASSET_BASE + manifestPath(look)
   t.ready = fetch(url, { cache: 'no-cache' })
-    .then(r => (r.ok ? r.json() : null))
+    .then(manifestOrNull)
     .then(m => settle(t, look, url, m))
   _towns.set(look, t)
   return t

@@ -27,6 +27,7 @@
 // ⭐ The override is ASPIRATION (unbuilt, home unruled — BRIEF §1): every join is in the record and printed, so none is silent.
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { resolveProtoMeasure, outlineCorner, mintSegOrdAt } from '../src/lib/tileGround.js'
+import { slotsReKeyedFrom } from './authoredKeys.mjs'
 import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 
 const LAT = 1 / CLIP_SCALE
@@ -160,8 +161,7 @@ function refuseAuthoredReKey(pending, streets, blockCustoms) {
   for (const p of pending) {
     if (p.st.capEnds?.[p.end] != null) hits.push(`${p.row.street}.${p.end} joins ${p.row.into} at (${p.row.foot.join(', ')}) and carries an authored cap (capEnds.${p.end} = ${JSON.stringify(p.st.capEnds[p.end])})`)
     if (p.atVertex >= 0 && (seg.get(p.T) || new Set()).has(p.atVertex)) continue        // the foot is already a crossing: nothing re-keys
-    const s0 = segOrdAt(p.ti, p.k), bc = blockCustoms[p.T.skelId] || {}
-    const slots = ['left', 'right'].flatMap(sd => Object.keys(bc[sd] || {}).filter(o => Number(o) >= s0).map(o => `${sd}|${o}`))
+    const s0 = segOrdAt(p.ti, p.k), slots = slotsReKeyedFrom(blockCustoms[p.T.skelId], s0)
     if (slots.length) hits.push(`${p.row.street}.${p.end} joins ${p.row.into} at (${p.row.foot.join(', ')}), cutting its block segOrd ${s0}; its authored slot(s) at or after it would be re-keyed: ${slots.join(' · ')}`) }
   if (hits.length) throw new Error(`[chainJoins] ⛔ ${hits.length} chain join(s) would re-key the operator's authoring — the join is ruled (r-a-chain-end-in-a-roadway-is-a-T) and authoring never shapes ①, so the pour stops: ${hits.join(' ‖ ')}. The key's migration is Jacob's (EXTENT-DESIGN §4.1; BRIEF-a-chain-end-in-a-roadway-is-a-T-LANDED-2026-10-28 §1).`)
 }

@@ -16,10 +16,10 @@
  * GroundDisc with sky-tinted color + noise wobble). Production's prior
  * src/components/GatewayArch.jsx (hardcoded position/scale/rotation,
  * paint-on-foot color blending, no uplights, no GroundDisc) retires.
- * Visible production change: arch now lands at operator-authored
- * placement (default ~[996,0,-332] @ 1.3) instead of the prior
- * hardcoded [1470,-185,-490] @ 2.66 — operator authoring finally reaches
- * production for the first time.
+ * ⭐ PLACEMENT IS DERIVED (2026-10-28): the Arch stands on its real feet,
+ * projected through the town's place (src/setpieces/gatewayArch.js#archSite);
+ * the Look's `arch` channel keeps its scale, rotation, Y-offset and foot fade
+ * (src/setpieces/gatewayArch.js#archPose).
  *
  * DesignerArch (the plan-view silhouette used by the cartograph Designer
  * mode) lives at src/cartograph/DesignerArch.jsx — it stays in the
@@ -33,6 +33,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
 import { townPlace } from '../lib/townPlace.js'
+import { archSite, archPose, glintAt, ARCH_A as A, ARCH_B as B, ARCH_C as C, PEAK_HEIGHT, HALF_SPAN } from '../setpieces/gatewayArch.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
@@ -40,17 +41,11 @@ import {
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { lookOf } from '../lib/lookOf.js'
 
-// NPS catenary equation converted to meters:
-const A = 211.5
-const B = 20.96
-const C = 0.03292
-
-const PEAK_HEIGHT = A - B
-const HALF_SPAN = Math.acosh(A / B) / C
 
 // Scratch vectors for per-frame uplight world-space transforms (avoid GC).
 const _upPos = new THREE.Vector3()
 const _upTarget = new THREE.Vector3()
+const _light = new THREE.Vector3()
 
 const BASE_RADIUS = 10.0   // thickened for heavier silhouette
 const TOP_RADIUS = 4.0
@@ -318,16 +313,12 @@ export default function GatewayArch({
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
 
-    meshRef.current.rotation.y = arch.rotation
-    // Pivot at the apex (keystone): scale grows feet outward+downward while
-    // the archstone holds its world-Y position.
-    const apexY = arch.yOffset + PEAK_HEIGHT * (1 - arch.scale)
-    meshRef.current.position.set(
-      arch.distance * arch.bearingX,
-      apexY,
-      arch.distance * arch.bearingZ,
-    )
-    meshRef.current.scale.setScalar(arch.scale)
+    // ⭐ It stands where it stands: its real feet through the town's place; the Look authors how it presents, pivoting
+    // at the apex (src/setpieces/gatewayArch.js#archPose).
+    const pose = archPose(archSite(townPlace()), arch)
+    meshRef.current.rotation.y = pose.rotation
+    meshRef.current.position.set(pose.x, pose.y, pose.z)
+    meshRef.current.scale.setScalar(pose.scale)
 
     if (shaderRef.current) {
       shaderRef.current.uniforms.uDayFactor.value = day
@@ -396,14 +387,10 @@ export default function GatewayArch({
 
       shaderRef.current.uniforms.uSunDir.value.set(lx, ly, lz)
 
-      const azimuth = Math.atan2(lx, -lz)
-      const relAngle = azimuth - arch.rotation
-      const glintFromSun = 0.5 + Math.sin(relAngle) * 0.48
-      const dx = camera.position.x - (-400)
-      const dz = camera.position.z - 230
-      const lateral = (dx * 0.358 + dz * 0.934) / 140
-      const cameraShift = Math.max(-0.15, Math.min(0.15, lateral * 0.15))
-      shaderRef.current.uniforms.uGlintPos.value = Math.max(0.20, Math.min(0.80, glintFromSun + cameraShift))
+      // The highlight is where the steel mirrors the light to the eye: the sun (or moon), the Arch as drawn, and the
+      // live camera (src/setpieces/gatewayArch.js#glintAt). It moves with the viewer, from no town's numbers.
+      _light.set(lx, ly, lz)
+      shaderRef.current.uniforms.uGlintPos.value = glintAt(_light, camera.position, pose)
 
       const moonFade = Math.max(0, Math.min(1, moonPos.altitude / 0.15))
       const sunFade = Math.max(0, Math.min(1, (sunAltitude + 0.1) / 0.3))

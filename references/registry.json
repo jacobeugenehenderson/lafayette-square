@@ -5152,6 +5152,42 @@
       "findings": [
         "r-the-arch-is-geo-anchored-with-an-authored-presence"
       ]
+    },
+    {
+      "id": "q-are-visual-look-values-live",
+      "ask": "Whether a visual Look value authored in Stage (the edge fade band, its object thinning, the horizon cover) shows live or only at the next Bake",
+      "neededBy": "LS, 2026-10-29: Stage › Horizon › Edge Fade band did nothing live (bake-time only, said in a hover title) (Keystone, measured)",
+      "status": "answered",
+      "findings": [
+        "r-visual-look-values-are-live-in-stage"
+      ]
+    },
+    {
+      "id": "q-how-the-operator-moves-the-stage-camera",
+      "ask": "How the operator moves Stage's camera to set up a shot (today: orbit around a pivot, so position and aim move together and a subject swings out of frame)",
+      "neededBy": "Jacob framing LS's Arch, 2026-10-29",
+      "status": "answered",
+      "findings": [
+        "r-plant-it-and-point-it"
+      ]
+    },
+    {
+      "id": "q-does-a-kit-default-change-recolour-a-town",
+      "ask": "Whether a town that never authored a Look value follows the kit's default when the kit later changes it",
+      "neededBy": "PTown, 2026-10-29: its design.json carried no `dof`, so bake-scene.js baked `design.dof || kitDayChannel('dof')`; Jacob saw the kit default in Stage as if it were PTown's own",
+      "status": "answered",
+      "findings": [
+        "r-a-town-keeps-the-values-it-grew-with"
+      ]
+    },
+    {
+      "id": "q-does-a-move-track-a-point-or-turn-the-head",
+      "ask": "Whether a move between keys tweens the look-at POINT (today) or the look DIRECTION",
+      "neededBy": "the aimer, 2026-10-29: Gimbal measured today's keys' hidden look-at depth moving the mid-move look by LS 2.47°, PTown 17.72°, Huron 16.21°, HPDM 39.19° against one equal depth",
+      "status": "answered",
+      "findings": [
+        "r-a-move-tracks-a-point-or-turns-the-head"
+      ]
     }
   ],
   "findings": [
@@ -8642,8 +8678,79 @@
       "by": "Jacob",
       "date": "2026-10-28",
       "quote": "\"as recommended on all four. Tiny quibble: if you double the size from the top *and* raise it it gets wider. The issue is that we don't have attractive feet on the arch so we fussed a lot with finding a way to fade the legs into the ground so the seam is obscured. Also, scaling the arch *and* keeping it short allows us to make it appear *thicker* and more substantial because at scale the arch is quite thin\" · \"it's almost like the arch can keep all the height, foot, rotation, scale controls it already has, it's just placed in its correct geographic center\"",
-      "canon": "docs/briefs/BRIEF-the-arch-stands-where-it-is.md",
+      "canon": "cartograph/_archive/BRIEF-the-arch-stands-where-it-is-LANDED-2026-10-29.md",
       "notes": "The quibble overrides Boz's recommendation (3) (a base pivot): the apex pivot stays, deliberately."
+    },
+    {
+      "id": "r-visual-look-values-are-live-in-stage",
+      "question": "q-are-visual-look-values-live",
+      "kind": "ruling",
+      "value": {
+        "rule": "a visual value authored in Stage applies LIVE as it is dragged; the Bake carries it to the slab for production, never gates seeing it",
+        "firstCase": "the edge fade band (bake-ground.js lookFade → ground.json stencil.fade, bound at material creation; membership thinning; horizon cover); Ruffle is already live",
+        "when": "not tonight (Jacob); brief owed"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"I'm not satisfied with the next bake? That's not how authoring visual values works? Maybe not tonight\"",
+      "canon": "memory project_authoring_is_live_production_is_static",
+      "notes": "UNBUILT. Keystone sized the fade band's live path: a shared fade-extent uniform in neighborhoodFade.js (like EDGE_RUFFLE), the fade out of neighborhoodFadeKey, edgeFadeBand in Town OVERRIDE_KEYS, and a driver; membership thinning and the horizon cover need their own live answer, not a 'next Bake' line. Audit the other Stage controls for the same bake-time gap."
+    },
+    {
+      "id": "r-plant-it-and-point-it",
+      "question": "q-how-the-operator-moves-the-stage-camera",
+      "kind": "ruling",
+      "value": {
+        "rule": "KEEP the current navigation exactly as it is (orbit, ⌥-drag grabs the ground, ⌘/⌃-drag pans, middle-drag dollies, wheel zooms); ADD an AIMER: a control that turns the camera IN PLACE (yaw and pitch about its own position) without moving it, so the operator can plant the camera with today's navigation, then point it, then play it",
+        "onePlace": "one definition of the camera controls for every app (claims-the-camera-has-one-definition)",
+        "keyframes": "a key already stores position + aim + fov, which is this model",
+        "sequence": "plant it, point it, then PLAY it: the authored move plays from the planted-and-pointed keys, so what the operator sets up is exactly what plays",
+        "aimer": "GRAB-LOOK: the operator grabs the point under the cursor (the Arch, or anything) and drags it; the camera turns IN PLACE (yaw and pitch, up kept vertical, the camera as the pivot) so the grabbed point stays under the cursor. Known behaviour: a 360° panorama / Street View drag, the rotational twin of today's ⌥-drag grab-the-ground pan. The gesture (which modifier or button) is the brief's to propose and Jacob's to choose."
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"I drag the camera all the way to the left, and the arch goes out of frame… So I want to park the camera and rotate it to the arch. Then it might be nice to be able to go up and down… It's like: plant it and point it\" · \"then: play it\" · \"I like the camera navigation controls as they are now; we just don't have a good aimer\" · \"I almost think it could be drag the exact object I am touching so if it's the arch it drags the arch keeping you as the pivot\"",
+      "canon": "src/lib/cameraRegimes.js (the orbit and street regimes)",
+      "notes": "BUILT 2026-10-29 (BRIEF-the-aimer-turns-the-camera-in-place): the gesture is ⇧-drag (Jacob's choice of (a); it retires OrbitControls' own ⇧-pan, a duplicate of ⌘/⌃). Orientation only (Jacob: \"grab has nothing to do with focus. that's only orientation\"): the target turns with the camera at the distance it held. Every orbit mount has it, tool viewers included (\"same tools everywhere\"). Home cameraRegimes.js#aimInPlace/#applyAim; ▶ node checks/claims-the-aimer-turns-in-place.mjs. Street already turns in place (orbit at a locked 0.5 m), at eye height."
+    },
+    {
+      "id": "r-a-town-keeps-the-values-it-grew-with",
+      "question": "q-does-a-kit-default-change-recolour-a-town",
+      "kind": "ruling",
+      "value": {
+        "rule": "once a town's Look takes a value (authored, or the kit default at the time), a later change to the kit default never changes that town on its next bake",
+        "scope": "every `design.X || kit…` channel in cartograph/bake-scene.js (and any other bake that resolves a Look value from a kit default)",
+        "today": "a shipped slab is already fixed (scene.json carries the resolved values); the drift happens at the NEXT bake of a town that never authored the channel",
+        "boundary": "the kit's own 0-state Look ('kit-default', design.json `{}`, cartograph/serve.js DEFAULT_LOOK_ID) stays `{}` by design and is not a town; the rule is for towns",
+        "when": "not now (Jacob); brief owed"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"Once the apple grows on the branch it doesn't make sense that it's a cherry when picked\"",
+      "notes": "UNBUILT. Means not chosen (e.g. the town's Look records the default it took, when it takes it). A check should read bake-scene.js's resolutions, not restate them.",
+      "canon": "cartograph/BACKLOG.md (TO BRIEF NEXT)"
+    },
+    {
+      "id": "r-a-move-tracks-a-point-or-turns-the-head",
+      "question": "q-does-a-move-track-a-point-or-turn-the-head",
+      "kind": "ruling",
+      "value": {
+        "rule": "BOTH, as an authored choice per segment: TRACK (the camera keeps looking at a point as it travels; today's tween) or TURN (the look direction tweens from key to key, whatever the look-at depth)",
+        "default": "TRACK, so no existing movie changes",
+        "pacing": "each mode paces on its own travel: TRACK on position + target travel (today), TURN on position + turn angle",
+        "separate": "the look-at point is NOT the focus object; focus stays its own channel and may shift object to object (Jacob)",
+        "why_not_two_methods": "an operator's authored choice recorded on each segment, like an ease, not two hidden code paths",
+        "previously": {
+          "visible": "the look-at point becomes a visible, draggable handle in Stage; a tracked point that can't be seen is the hidden-depth bend"
+        },
+        "tracks": "TRACK tracks the key's FOCUS OBJECT; a key with no focus object tracks the TOWN'S CENTRE (derived from the town's own extent, as the town-anchored blur is). Both are read at PLAY time from the key's focus and the town, never stored in the key, so nothing goes stale; key.target's stored depth means nothing to TRACK",
+        "grab": "the aimer's grab is orientation only (unchanged)"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"why not both though?\" · \"yes, file the both-modes ruling\" · \"Isn't that what the hero object is for?\" · \"Why would the camera ever be anywhere that's not 'relative to the centroid'?\" · \"yes, amend it\"",
+      "canon": "cartograph/BACKLOG.md (TO BRIEF NEXT)",
+      "notes": "UNBUILT; briefs after the aimer. Readers of key.target: heroAnim (MovieCamera, the DoF rack's lam), Stage's scrub, CelestialBodies' shadow fit, bake-trees' hero tiers (re-bake), claims-the-movie-is-continuous. Amended 2026-10-29 (Jacob): the hidden handle is replaced by the focus object, else the town's centre. Its moves change where keys' stored targets differ from that (HPDM's keys name no focus object, so HPDM tracks its centre until its two objects land). Measured on LS (Gimbal, probe-focus-depth.mjs): Arch on every key takes the depth ratio 2.28 → 1.15."
     }
   ]
 }

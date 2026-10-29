@@ -26,33 +26,64 @@ Merged on it 2026-10-27 → 28 (`git log integration/2026-10-20 --since=2026-10-
   splash in the free region (`gnomon/splash-centres-in-the-free-region`); hover deleted (`plumb/balsa-no-hover`); trees name their
   failure (`kerf/stage-black`); a tool page says why it can't open (`kerf/messages`); water levels follow a terrain re-bake
   (`kerf/water-levels-reload`); Survey draws shape, not fill (`ferrule/survey-smooth-ink`).
-**JACOB BAKES** through Stage's Bake (the routes, never scripts): **Huron first** (its coast is pre-v5 and re-bakes), then LS and HPDM. Then
-the Ward pin move (`ward-pin/<date>`), publish:staging, his look, Promote (player and slab together: RELEASE ORDER FOR THE COAST PIN,
-below). **Huron is staging-only** until a domain is owned (huron.online is not on Operations' registrar list; Promote refuses it).
+**🌙 OVERNIGHT 2026-10-29 (Ward). HPDM is DONE:** promoted, and its production scene.json is byte-identical to tonight's bake on disk
+(sha256 `c0d7ee75…`). **Baked, NOT published:** LS (bakedAt `1793254966651`) and Huron (re-pour, `1793255891256`), both `stale: []`.
+**What refused:** `POST :3333/looks/lafayettesquare/publish`, denied by Ward's auto-mode classifier ("Modify Shared Resources"). Every
+staging upload below is therefore Jacob's. **The Ward pin moved** to kit `a109ec98` on theward `ward-pin/2026-10-29b` (`edf5d5b`): vite build passes,
+the static checks are green apart from the standing reds, and **⛔ the browser checks are NOT RUN** (they need the Ward dev server on :5180).
+**MORNING, IN RELEASE ORDER** (⛔ LS's slab must not reach staging under `c07eef9d`: the old player places the Arch by the
+retired distance/bearing. Staging's player is ONE build for every town, so HPDM's staging moves too; HPDM production is pinned per host
+and stays untouched):
+0. `! cd ~/Desktop/dev.nosync/theward && npm run dev`, then `npm run check` against it: Ward's green on the browser checks.
+1. `! cd ~/Desktop/lafayette-square.nosync/.claude/worktrees/ward-kit && node scripts/publish-kit-bundle.mjs` (the kit bundle at `a109ec98`).
+2. `! cd ~/Desktop/dev.nosync/theward && npm run publish:staging` (from `ward-pin/2026-10-29b`). This also stages PTown's player, which is
+   not a hold (Jacob: live PTown's Hero already blurs this way), and Jacob judges it. ⛔ No Promote.
+3. `! curl -s -X POST localhost:3333/looks/lafayettesquare/publish` (or Stage's Publish), then Ward's eye. ⛔ LS production stays on `main`; the cutover is Jacob's call.
+4. `! curl -s -X POST localhost:3333/looks/huron/publish`, then Ward's eye. **Huron is staging-only** until a domain is owned.
 The combined bake also measures THE WATER TINT (below).
 
 **⏸ PARKED**
 - **PTown:** its PLAYER updates with the Ward pin on its current slab (the release order's player-first state), so live PTown gets today's
-  player fixes (DoF, All places, arrival, splash) without a new slab. Its SLAB: past the coast and the mint on v5; ground refuses at MacMillan Wharf (a 1 mm back-step in ①, an integer re-offset copy in
-  `structures.mjs#waterWithoutDecks`' sliver-taking). It waits on the float-morphology debt (PTOWN PARKS, below).
+  player fixes (DoF, All places, arrival, splash) without a new slab. Its SLAB refuses on BOTH paths (re-poured 2026-10-29 night on
+  Plumb's stack, PTown's authored state, ribbons md5 `bbb087ed2d12f823fac645d67f1df3ef`; nothing published): the SHIPPING integer path pours,
+  then ②'s stamp refuses at iaFull ring 15 vertex 72 (282.795, 113.216), Kerf's site, reproduced. The PORT (brief A) refuses earlier, at
+  bake-coast's traced water, on two unruled cases (a 1-step concurrence: fixed on a local branch, parked because Huron's ratchet rose; a
+  trimmed arc starting outside D's wedge). Whether the port clears ② at MacMillan: NOT MEASURED. A diagnostic sweep of PTown's traced
+  water tables every refusal class (count, area, share blocked) for the morning.
+- **▶ PTOWN SCENE-ONLY POST** (Jacob, 2026-10-29: "get *something* posted"; Zob rehearsed it offline green, Ward confirmed the player; no code):
+  (1) Stage, PTown: author DoF (design.json has no `dof` key today) and the keys; autosave; ⛔ NO Bake press. (2) Capture share images
+  (today's are 10-25). (3) `! cd ~/Desktop/lafayette-square.nosync/.claude/worktrees/integration/cartograph && node bake-scene.js --look=provincetown`.
+  (4) `! curl -s -X POST localhost:3333/looks/provincetown/publish`. ⛔ NOT Preview's Publish button: it POSTs /bake first, which asks to
+  re-pour, and the re-pour refuses. Ships: the 10-26 pour + the new scene (focus on the Monument from the keys, his DoF) + content newer
+  than the pour (roster 3.05 → 4.14 MB, 447 listings, 33 photos; all resolve in the pour). The commit carries index.json's LS/Huron
+  bakedAt too. Then eye on staging and Promote on Jacob's word.
+- **⭐ BRIEF A (cut-once, Plumb + Zob): JACOB RULED "land the port without PTown"** (2026-10-29). Zob reviews Plumb's port, then the merge, then Huron re-bakes. The decisions as they stood: (1) land the port without PTown (PTown refuses on both paths either way; through
+  the port Huron is copy 0, crossings 0, residual 6 + 11 pieces, 0.023 m², against the integer path's 230 pieces and 91,990 copies; PTown's decks
+  ≤ 2 mm 11 against 58), or wait for the sweep's classes. Boz recommends landing: LS and HPDM carry no coast or deck. (2) KNOWN_REFUSALS
+  for the two 10-27 PTown fixtures (MacMillan, the wharf), both a source STAIRCASE, which refuses by name ("the open/close
+  cannot read this ring: a STAIRCASE in its SOURCE at a cut"). The staircase rule did not converge (local `plumb/staircase-runs`:
+  Huron's ratchet rose, and it joined 3.65% of Huron's lidar edges), so it's its own row. Also named debts: the take-out's three
+  subtractions on integer booleans (local `plumb/takeout-on-arrangement` 3dc1a151, unpushed).
+  SWEEP of PTown's traced water (diagnostic `scratch/cut-once/sweep.mjs`, local `plumb/concurrence` e7b78ec2 with the concurrence on;
+  Huron's traced water and pier: 0 classes). Per part: 196/197 build; part 0 (249.54 km², 100% of the area) refuses. Tiled at 500 m:
+  1,095 tiles, 11 refuse, first refusal per tile only (a lower bound). Class · tiles · m² of those tiles · share of tiled area:
+  no forward order fits · 2 · 370,968 · 0.15% | source STAIRCASE at a cut · 2 · 370,443 · 0.15% | backward cut, no staircase ·
+  2 · 319,719 · 0.13% | guard: P's hole opened · 1 · 240,618 · 0.10% | walls-meet · 1 · 54,503 · 0.02% | guard: two parts joined ·
+  1 · 137,032 · 0.05% (on a tile edge, probable tiling artefact) | cross-ring-not-a-pair · 1 · 121,132 · 0.05% | trimmed arc starts
+  outside D · 1 · 175,624 · 0.07%. One connected water body: PTown's coast bakes only when every class is closed.
 - **Altadena:** re-fetch, the Extent fix, re-pour.
 
 **▶ NEXT TRANCHE LEADS:** float morphology (cut once without integer copies; sized LARGE: clipper-lib and Clipper2 are both integer) ·
-the re-skeleton button · fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
+ fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
 
 **▶ BRIEFED 2026-10-28 night, co-signed by Zob, ready for Jacob's FRESH dispatch:** `docs/briefs/BRIEF-cut-once-in-full-precision.md`
-(PTown's slab; retires the open/close debt) · `docs/briefs/BRIEF-the-bake-re-skeletons-a-stale-town.md` (the re-skeleton button). · `docs/briefs/BRIEF-the-day-strip-has-its-line.md` (the Almanac's
+(PTown's slab; retires the open/close debt) · the re-skeleton button: LANDED 73f8e441 (each town's first Bake asks once to re-skeleton; HPDM and Huron take the area-highway rule there). · `docs/briefs/BRIEF-the-day-strip-has-its-line.md` (the Almanac's
 temperature line: a regression from kit 2df8d341 (10-20, Open-Meteo → NWS); Ward's brief, Zob co-signed; reports to Ward). All three FRESH, independent. Next to
 brief, on Jacob's go: the Arch as a set-piece at its real coordinates with a presence scale + retiring the Survey Hero (focus lives on
 keyframes only). Jacob, 2026-10-28: the Arch now "bounces" with camera motion since it's no longer tied to the camera; that brief owns it.
 
 **❓ OPEN RULINGS FOR JACOB:** the (b′) chain ends · the chain join's override home · Browse → Society re-frame · a deck's width (the
 pier's OSM `width` tag) vs an embankment's (the pour measure): two rules size a street's land over water · authoring dpr.
-
-**⛔ AN INLAND TOWN'S PLAYER ASKS FOR A REVETMENT IT NEVER HAS (Ward, measured 2026-10-29 03:44Z on hipointedemun.online, new player):**
-`[revetment] hipointedemun: FAILED to load revetment.json — [slabNames] manifest names no "revetment.json"`. No HPDM manifest names it and
-no inland bake writes it; ec6f20c2 (d) gated SlabRevetment's water LEVEL, not its LOADER. Fix: the loader asks only for what the manifest
-names (an inland town draws no revetment and says nothing). A false ⛔ on every live load; small; cause beyond that not established.
 
 **⛔ PROMOTE CARRIES A STALE PLAYER SILENTLY (measured by Ward, 2026-10-29 02:29Z):** HPDM was promoted with its new slab while
 staging/ward/current.json still named the 10-27 player, so production got new slab + old player (symptom: "[revetment] FAILED to load
@@ -63,6 +94,23 @@ Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d
 **Follow-ups from the day-strip line (Isotherm, 2026-10-28; Ward's board):** theward checks/kit.mjs resolves KIT relative to the checkout
 (breaks in worktrees) · observed wind for storminess · a cited cloudLayers → cover standard (Jacob's terms) · targetsOf's
 precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-has-one-authority unrun (needs a server).
+
+**▶ BRIEFED: `docs/briefs/BRIEF-provincetown-pours-on-the-port.md`** (Jacob, 2026-10-29: "piledrive Provincetown"): Plumb, continuing
+after the port merges. The full refusal census on the merged port, then one class at a time, each a rule for any town.
+**▶ BRIEFED, DISPATCHED to Groyne: `docs/briefs/BRIEF-the-far-shore-is-not-built-at-load.md`** (Jacob, 2026-10-29: PTown's long load; Ward's
+profile: one ~3.2 s main-thread task per load is the revetment's far layer, `SlabRevetment.jsx`'s `useFrame` → `revetmentDrape`).
+**▶ TO BRIEF NEXT (Jacob, 2026-10-29):** ⭐ FIRST: an AIMER for the Stage camera (LS's staging slab is a PLACEHOLDER until it lands: Jacob
+re-aims LS's keys with it, then LS re-bakes and its cutover follows) (`r-plant-it-and-point-it`: today's navigation kept; add turn-in-place,
+then play) · the live edge fade band (below) · a town keeps the values it grew with (`r-a-town-keeps-the-values-it-grew-with`: a
+kit-default change never re-colours a town on its next bake; today `bake-scene.js`'s `design.X || kit…` channels follow the kit).
+- **▶ BRIEF AFTER THE AIMER: a move TRACKS a point or TURNS the head, per segment** (`r-a-move-tracks-a-point-or-turns-the-head`, Jacob
+  2026-10-29). TRACK (the default) tracks the key's FOCUS OBJECT, else the TOWN'S CENTRE, read at play time, never stored (amended: no hidden
+  handle); TURN paces on position + turn angle. Movies change where stored targets differ from that. Measured motive (Gimbal, `scratch/aimer/probe-equal-depth.mjs` in the aimer worktree): today's hidden depth moves the mid-move look by up to
+  LS 2.47° · PTown 17.72° · Huron 16.21° · HPDM 39.19° (HPDM tracks no subject).
+**⛔ STAGE'S EDGE FADE BAND IS BAKE-TIME, NOT LIVE (Keystone, measured on LS 2026-10-29); ruled: visual values are live
+(`r-visual-look-values-are-live-in-stage`), brief owed, not tonight.** Also: createGroupChannelActions' set<Channel> drops a write to an
+animated channel's unkeyed slot silently (Layer 0; refuse by name). ⚠️ LS's design.json carries edgeFadeBand 801 (on r 892: the fade
+would start 91 m out) — confirm with Jacob before LS's next bake.
 
 **⛔ NAMED DEBTS (each removed when its cure lands, never left as a quiet fork):**
 - `structures.mjs#openCloseAtStep`'s two behaviours: the traced water keeps the integer open/close (`cutOnce: false`) until its
@@ -82,6 +130,11 @@ out in the MAIN checkout (Jacob's), stays.
 - **PTOWN PARKS** (registry canon): (a) the edge rule and the way tag landed (v4); the dike is held as land (v5, `r-the-coast-bake-holds-an-embankment-as-land`).
   **(b)** the decks' 1 mm jogs: the stage is `openCloseAtStep` (PTown 0 → 57 edges ≤ 2 mm, Huron 3 → 171); cut once for the footprints
   they are 10 and 40; the rest are a source corner drawn twice by the integer re-offset; the cure is float morphology. **(c)** below.
+- **PTOWN'S PLAYER: A PRESS IS NOT WORSE, AND THE FOCUS RETURNS ONLY WITH THE RE-BAKE** (2026-10-29). Any player past the Hero retirement
+  (d7e5f160) reads focus only from the SLAB's keys (`Town.jsx#heroKeyframes`, `focusObject.js#keyframeFocusIds`). PTown's slab predates
+  the arch-stands stamp, so its keys carry no `focus` and the Monument is no focus object. Jacob, by eye: live PTown's Hero is ALREADY
+  blurred that way, so a player-only press is Jacob's call on staging, not a hold. No shim (it would be the deleted fallback). The
+  Monument's focus returns with PTown's scene re-bake, after brief A.
 - **(c) THE WIDTH CLAUSE** (no neck or channel under one cell, at settle's exit) is unbuilt (ORIENTATION ⟦unbuilt⟧; `bake-coast.mjs`).
 - **RELEASE ORDER FOR THE COAST PIN** (Jacob ruled the pin): an OLD player on a NEW slab draws the bare lidar contour silently. (1) the kit
   merged; (2) the kit bundle published at that sha; (3) the Ward pin moved on `ward-pin/<date>` and publish:staging; (4) ONLY THEN the

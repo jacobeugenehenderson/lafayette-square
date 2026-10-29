@@ -34,8 +34,11 @@
 //
 // Single source of truth for "what is an IX on this chain" — the contract
 // the D.7a coordination note named.
+// metres: two chain vertices within this are ONE crossing (the same scale as resolveIxRef's tolerance). Exported so a reader
+// asking "is this the same crossing / the same end?" (cartograph/authoredKeys.mjs) uses the segmentation's own answer.
+export const IX_EPS = 0.5
 export function resolveChainSegmentation(streets) {
-  const EPS = 0.5  // meters — same scale as resolveIxRef tolerance
+  const EPS = IX_EPS
   const posKey = (x, z) => `${Math.round(x / EPS)}|${Math.round(z / EPS)}`
   // First pass: bucket every chain.point coord → which chains own it.
   const ownersByPos = new Map()

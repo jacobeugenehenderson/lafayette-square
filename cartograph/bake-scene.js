@@ -154,7 +154,6 @@ export async function bakeScene({ look } = {}) {
     // The authored Browse frame { center, altitude }; null = not authored, and every surface opens Browse on the
     // town's own disc. ⛔ No kit default (it would be one town's place in another's frame).
     browseFrame:   design.browseFrame || null,
-    heroSubject:   design.heroSubject   || null,
     // ⭐ THE HERO SHOT — keys `{ position, target, fov, t }` (t = a fraction of
     // the length; the first at 0) and, for 2+ keys, motion `{ length (s), mode:
     // 'bounce' | 'loop' }`. Every key carries its own aim and its own time, and

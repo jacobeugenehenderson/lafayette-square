@@ -1,4 +1,4 @@
-// pourSteps.mjs — THE POUR'S THREE STEPS, DECLARED ONCE, AND THE ONE RECORDER OF WHAT A STEP READ (2026-10-28).
+// pourSteps.mjs — THE POUR'S THREE STEPS AND THE SKELETON STEP AHEAD OF THEM, DECLARED ONCE, AND THE ONE RECORDER OF WHAT A STEP READ (2026-10-28).
 //
 // The pour (bake-coast → pipeline → promote-ribbons) was declared three times: in the Bake's own steps, in Extent's re-apply
 // (POST /<scene>/rescope) and in its first pour (POST /<scene>/pour). Only the Bake recorded what each step read
@@ -60,6 +60,27 @@ export function stepReads(inputs, scene) {
 export function recordStep(mapJson, lookIds, label, inputs, scene) {
   const { code, data } = stepReads(inputs, scene), rec = { code: contentRecord(code), data: contentRecord(data) }
   for (const id of lookIds) saveBakeRead(mapJson, id, label, rec)
+}
+
+/**
+ * ⭐ THE SKELETON STEP, AHEAD OF THE POUR (2026-10-28, BRIEF-the-bake-re-skeletons-a-stale-town): a committed town's skeleton
+ * was made once, at commit, and no button re-made it, so a change to the skeleton's code (the street-class vocabulary) never
+ * reached a town (LS refused its pour; the area-highway rule never reached HPDM or Huron). Judged by content like any step: its
+ * DATA is raw/osm.json and raw/survey.json, its CODE skeleton.js's import closure (streetClass.js with it) and the runner's,
+ * reskeleton.mjs, which refuses by name before a new skeleton re-keys the operator's authoring (authoredKeys.mjs). ⛔ It does not
+ * read the extent or the boundary; the authoring the guard reads shapes no output, so it is no input.
+ * ⛔ NOT in `pourSteps` below: Extent's re-apply runs those and must never re-skeleton ("no skeleton rebuild, no identity churn").
+ * The Bake runs it when stale (serve.js, behind the re-pour question), and Extent's commit and rollback through `runSkeleton`.
+ */
+export function skeletonStep(scene, paths) {
+  return { label: 'skeleton', timeout: 300000, cmd: `node reskeleton.mjs --scene=${scene}`,
+    outputs: [paths.skeleton, join(paths.clean, 'street-index.json')],
+    inputs: [join(paths.raw, 'osm.json'), join(paths.raw, 'survey.json'), join(HERE, 'skeleton.js'), join(HERE, 'reskeleton.mjs')] }
+}
+/** Run the skeleton step outside the Bake (Extent's commit, its rollback) and record it, so the next Bake judges it done. */
+export async function runSkeleton(step, { scene, mapJson, lookIds, run }) {
+  await run(step)
+  recordStep(mapJson, lookIds, step.label, step.inputs, scene)
 }
 
 /**

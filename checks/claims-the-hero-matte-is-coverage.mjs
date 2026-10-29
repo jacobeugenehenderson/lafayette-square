@@ -9,14 +9,14 @@
 //       tolerance), and only while the hero is in focus at its own distance (objectLaw(uHeroGround)). No depth step.
 //   (2) SOURCE: the mask draws the hero with its OWN materials (so where it is drawn, terrain lift included): a camera on
 //       layer 31 alone, no override material; and a hero on screen that nothing draws is said by name and not taken out.
-//   (3) PER TOWN, every registered map: each object its Look focuses (the hero, and any keyframe's own focus) has
+//   (3) PER TOWN, every registered map: each object its Look's keyframes focus has
 //       something that draws it — the Arch's `focus:arch` mesh, the town's set-piece (named `focus:<buildingId>` by
-//       SetPiece.jsx), or a slab building with geometry in the town's baked buildings.json. A town that focuses
+//       SetPiece.jsx), or a slab building with geometry in the town's baked buildings.json. A town whose keys focus
 //       NOTHING is N/A by name. A focus nothing draws is RED by name.
 // THE BROWSER RECEIPTS (in the commit): IoU of the mask against the depth-classed hero, the halo beside the Arch, the
 // slab-path spans, the mask's GPU-fenced cost.
 //   MUTANTS (always run): heroTap back on the depth step → (1) RED · the mask drawn with an override material → (2) RED ·
-//   a planted town whose hero is an id nothing draws → (3) RED.
+//   a planted town whose key focuses an id nothing draws → (3) RED.
 //   node checks/claims-the-hero-matte-is-coverage.mjs
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -42,10 +42,9 @@ const archNamed = /name="focus:arch"/.test(ARCH), setPieceNamed = /focusName=\{`
 // the baked slab is not in every tree: it is read where it is (this tree, else the main checkout's public/baked)
 const bakedOf = (look) => [join(ROOT, 'public/baked', look, 'buildings.json'), join(ROOT, '../../../public/baked', look, 'buildings.json')].find(existsSync)
 const judgeTown = (town, look, design, setPieceId, buildingsJson) => {
-  const hs = design.heroSubject, ids = new Set()
-  if (hs?.kind === 'arch') ids.add('arch'); else if (hs?.kind === 'landmark' && hs.id) ids.add(hs.id)
-  for (const k of design.heroKeyframes || []) if (typeof k?.focus === 'string' && k.focus && k.focus !== 'hero') ids.add(k.focus)
-  if (!ids.size) return { na: hs ? `the hero is a ${hs.kind}, not an object` : 'no hero and no keyframe focus' }
+  const ids = new Set()
+  for (const k of design.heroKeyframes || []) if (typeof k?.focus === 'string' && k.focus) ids.add(k.focus)
+  if (!ids.size) return { na: 'no keyframe names a focus object' }
   const why = []
   for (const id of ids) {
     if (id === 'arch') { if (!archNamed) why.push('arch: GatewayArch names no focus:arch mesh'); continue }
@@ -70,7 +69,7 @@ for (const [name, m, judge] of [
   ['the mask drawn with an override material', HL.replace('    try { renderer.render(scene, this._maskCam) }', '    scene.overrideMaterial = this._white\n    try { renderer.render(scene, this._maskCam) }'), judgeDraw],
 ]) { if (m === HL) { row(false, `mutant (${name}): its anchor is not in HeroLadder.jsx — re-aim it`); continue }
   row(!judge(m), `mutant: ${name} → ${judge(m) ? 'still GREEN — the row proves nothing' : 'RED as it must be'}`) }
-{ const J = judgeTown('planted', 'planted', { heroSubject: { kind: 'landmark', id: 'nothing-draws-this' } }, null, { buildings: [{ id: 'other', ranges: { wall: [0, 3] } }] })
-  row(J.why?.length > 0, `mutant: a planted town whose hero nothing draws → ${J.why?.length ? 'RED as it must be' : 'still GREEN — the row proves nothing'}`) }
+{ const J = judgeTown('planted', 'planted', { heroKeyframes: [{ focus: 'nothing-draws-this' }] }, null, { buildings: [{ id: 'other', ranges: { wall: [0, 3] } }] })
+  row(J.why?.length > 0, `mutant: a planted town whose key focuses what nothing draws → ${J.why?.length ? 'RED as it must be' : 'still GREEN — the row proves nothing'}`) }
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the hero ladder takes the hero out by its coverage')
 process.exit(red ? 1 : 0)

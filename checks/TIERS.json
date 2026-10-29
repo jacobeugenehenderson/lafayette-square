@@ -331,6 +331,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-focus-object-resolves-in-its-own-slab.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-frontage-can-ask-for-no-ped-band.mjs",
       "tier": "safe",
       "why": [
@@ -1783,13 +1790,6 @@
       ]
     },
     {
-      "file": "checks/claims-hero-subject-resolves-in-its-own-slab.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-highway-handedness.mjs",
       "tier": "safe",
       "why": [
@@ -2720,6 +2720,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-arch-stands-where-it-is.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-armoured-shore-is-never-empty.mjs",
       "tier": "safe",
       "why": [
@@ -2731,6 +2738,19 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-bake-re-skeletons-a-stale-town.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
+        "child_process with a non-literal command — cannot be read",
+        "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command"
       ]
     },
     {
@@ -3526,6 +3546,13 @@
         "deletes files — only under its own temp dir",
         "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-the-survey-hero-is-retired.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

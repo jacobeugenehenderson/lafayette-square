@@ -40,7 +40,7 @@ try {
   const { applyDofFrame } = await vite.ssrLoadModule('/src/components/dofDriver.js'), { _dofRefs } = await vite.ssrLoadModule('/src/components/RomanceDoF.jsx')
   const camera = new THREE.PerspectiveCamera(22, 1.5, 1, 60000); camera.position.set(300, 120, 400); camera.lookAt(100, 0, -50); camera.updateMatrixWorld(true)
   const said = []; const run = (blur, heroBlur = 0) => { const e = console.error, i = console.info; console.error = (m) => said.push(String(m)); console.info = () => {}
-    try { applyDofFrame({ camera, dofChannel: { values: { blur, heroBlur, softness: 0.5, melt: 0.5 } }, minute: 720, slotMins: {}, focusPoint: null, choice: FO.focusChoice({ viewMode: 'hero', movieFocus: { on: false }, heroSubject: null, ctx: { scene: new THREE.Scene() } }) }) } finally { console.error = e; console.info = i } }
+    try { applyDofFrame({ camera, dofChannel: { values: { blur, heroBlur, softness: 0.5, melt: 0.5 } }, minute: 720, slotMins: {}, focusPoint: null, choice: FO.focusChoice({ viewMode: 'hero', movieFocus: { on: false }, designLoaded: true, ctx: { scene: new THREE.Scene() } }) }) } finally { console.error = e; console.info = i } }
   ST.setSceneStencil({ center: [100, -50], radius: 700 }); run(0.3)
   const c = _dofRefs.discC.current, sameCam = _dofRefs.camWorld.current.equals(camera.matrixWorld)
   row(_dofRefs.focusOn.current === 0 && c.x === 100 && c.y === -50 && _dofRefs.discR.current === 700 && sameCam && _dofRefs.maxBlur.current === 0.3, `(3a) no focus object, stencil (100, −50) r 700: disc (${c.x}, ${c.y}) r ${_dofRefs.discR.current} · camera matrix ${sameCam} · focusOn ${_dofRefs.focusOn.current} · maxBlur ${_dofRefs.maxBlur.current}`)

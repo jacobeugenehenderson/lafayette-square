@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 /**
- * "CAN THE OPERATOR PICK A HERO THAT ISN'T THERE?" — A11/A00, the authoring-UI surface.
+ * "CAN THE OPERATOR PICK A FOCUS OBJECT THAT ISN'T THERE?" — A11/A00, the authoring-UI surface.
+ *
+ * ⭐ 2026-10-28: the Survey's Hero picker retired (focus lives only on the keyframes, BRIEF-the-arch-stands-where-it-is).
+ * Its property moves with it to what replaced it, Stage's key Focus picker (StageApp.jsx#FocusRow), which offers the
+ * town's listed buildings by `building_id`. The history below is the Survey picker's; the rule is the same.
  *
  * WHY THIS EXISTS (2026-09-19, agent Kiln, found retiring EXTENT-DESIGN §6 step 4's
  * name-imports). `SurveyorPanel` built its hero-subject list from a static
@@ -9,14 +13,14 @@
  * §2.1 is exactly this: that file is at once "the shared default" and "LS's own data".
  *
  * ⭐ AND THE SAME LINE CARRIED A SECOND, WIDER BUG. The option emitted the LISTING's
- * id (`lmk-001`), but `heroSubject.js` resolves `landmark` through `slabIndex.byId`,
+ * id (`lmk-001`), but the hero resolver resolved `landmark` through `slabIndex.byId`,
  * and that Map is built from `manifest.buildings` — `bldg-NNNN` / `msbf-N`
  * (`SlabBuildings.jsx`). It has never held an `lmk-*`. So every landmark hero
  * resolved to `FALLBACK_HERO_SUBJECT = [400,45,-100]` — LS's hero target — in every
  * town INCLUDING LS. A picker that silently frames the wrong thing is Layer 0 q2:
  * the operator sees a camera move and never learns it aimed at nothing.
  * (2026-09-26, BRIEF-camera-regimes: the camera no longer reads the designation
- * at all and `heroSubject.js` is gone; the designation's ids are still slab ids,
+ * at all and the hero resolver is gone; the designation's ids were still slab ids,
  * so an offered landmark must still exist in the town's own slab.)
  *
  * ⛔ SO THIS ASSERTS THE PROPERTY, NOT THE PATCH: every hero subject a town can
@@ -30,10 +34,10 @@
  * ⛔ READ-ONLY.
  *
  * MUTATION TEST (a check only ever seen to pass is not evidence):
- *   restore a static import of LS's listings (`cartograph/data/lafayettesquare/content/listings.json`) in SurveyorPanel ⇒ red
+ *   restore a static import of LS's listings (`cartograph/data/lafayettesquare/content/listings.json`) in StageApp.jsx ⇒ red
  *   point any listing's building_id at 'nope' ⇒ red, naming the town and the listing
  *
- * Usage: node checks/claims-hero-subject-resolves-in-its-own-slab.mjs
+ * Usage: node checks/claims-a-focus-object-resolves-in-its-own-slab.mjs
  */
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
@@ -41,7 +45,7 @@ import { join } from 'path'
 const ROOT   = new URL('..', import.meta.url).pathname
 const PUBLIC = join(ROOT, 'public')
 const MANIFEST_SRC = readFileSync(join(ROOT, 'src/data/loadInstanceData.js'), 'utf8')
-const PANEL_SRC    = readFileSync(join(ROOT, 'src/cartograph/SurveyorPanel.jsx'), 'utf8')
+const PANEL_SRC    = readFileSync(join(ROOT, 'src/stage/StageApp.jsx'), 'utf8')   // FocusRow: the focus picker
 
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')) } catch { return null } }
 
@@ -88,11 +92,11 @@ const check = (label, fn) => {
   catch (err) { console.log(`  ⛔ THREW ${label}\n           ${err.message}`); fail++ }
 }
 
-console.log(`\nHERO SUBJECT — can a town offer a hero it does not contain?\nlooks with a landmarks manifest: ${[...paths.keys()].join(', ') || '(none)'}\n`)
+console.log(`\nFOCUS OBJECT — can a town offer a focus object it does not contain?\nlooks with a landmarks manifest: ${[...paths.keys()].join(', ') || '(none)'}\n`)
 
-check('the hero picker does not statically import a shared src/data/* artifact', () => {
+check('the focus picker does not statically import a shared src/data/* artifact', () => {
   const m = PANEL_SRC.match(/^import .* from '\.\.\/data\/[\w-]+\.json'/m)
-  return m ? `SurveyorPanel.jsx still has \`${m[0]}\` — that file is LS's own data as well as "the default", so every town is offered LS's` : null
+  return m ? `StageApp.jsx has \`${m[0]}\` — that file is LS's own data as well as "the default", so every town is offered LS's` : null
 })
 
 check('every look with landmarks has a manifest entry of its OWN (none inherits another town\'s)', () => {

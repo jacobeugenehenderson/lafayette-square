@@ -287,10 +287,13 @@
       "left": {
         "4": {
           "pavementHW": 4.405102041769471,
+          "terminal": "sidewalk",
           "treelawn": 1.5,
           "sidewalk": 1.5,
-          "terminal": "sidewalk",
-          "tlClamped": true
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
         },
         "5": {
           "pavementHW": 4.856089666849873,
@@ -795,60 +798,319 @@
     "model": "victorian"
   },
   "terrainExag": 1.5,
+  "lampGlow": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "grass": 0,
+        "pool": 0.5,
+        "radius": 0.85,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      },
+      "sunrise": {
+        "grass": 0,
+        "pool": 0.5,
+        "radius": 0.75,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      },
+      "sunset": {
+        "grass": 0,
+        "pool": 1.25,
+        "radius": 0.75,
+        "centre": 0.25,
+        "centreSoft": 0.1,
+        "trees": 0.8
+      },
+      "dusk": {
+        "grass": 0,
+        "pool": 1.4,
+        "radius": 1,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.6
+      },
+      "night": {
+        "grass": 0,
+        "pool": 0.85,
+        "radius": 1,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.1
+      },
+      "deep": {
+        "grass": 0,
+        "pool": 0.25,
+        "radius": 1,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      }
+    },
+    "edges": {
+      "sunset": {
+        "fade": "up",
+        "minutes": 30
+      },
+      "sunrise": {
+        "fade": "down",
+        "minutes": 30
+      }
+    },
+    "radiusV": 2
+  },
+  "bloom": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "intensity": 1.2,
+        "threshold": 0.45,
+        "spread": 0.45,
+        "warmCool": 0.35
+      },
+      "sunrise": {
+        "intensity": 0.9,
+        "threshold": 0.55,
+        "spread": 0.6,
+        "warmCool": 0.65
+      },
+      "noon": {
+        "intensity": 0.86,
+        "threshold": 0.05,
+        "spread": 0.24,
+        "warmCool": 0.5
+      },
+      "golden": {
+        "intensity": 0.78,
+        "threshold": 0.2,
+        "spread": 0.34,
+        "warmCool": 0.85
+      },
+      "sunset": {
+        "intensity": 1.5,
+        "threshold": 0.4,
+        "spread": 0.8,
+        "warmCool": 0.8
+      },
+      "dusk": {
+        "intensity": 1,
+        "threshold": 0.4,
+        "spread": 0.5,
+        "warmCool": 0.45
+      },
+      "night": {
+        "intensity": 1.1,
+        "threshold": 0.35,
+        "spread": 0.2,
+        "warmCool": 0.5
+      },
+      "deep": {
+        "intensity": 0.5,
+        "threshold": 0.5,
+        "spread": 0.1,
+        "warmCool": 0.3
+      }
+    }
+  },
+  "mist": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "amount": 1.25,
+        "color": "#9a86c0",
+        "water": 0.5
+      },
+      "sunrise": {
+        "amount": 0.46,
+        "color": "#e8b0c8",
+        "water": 0.3
+      },
+      "noon": {
+        "amount": 0.15,
+        "color": "#cfe2f0",
+        "water": 0.2
+      },
+      "golden": {
+        "amount": 0.35,
+        "color": "#f6cb8e",
+        "water": 0.35
+      },
+      "sunset": {
+        "amount": 0.46,
+        "color": "#e89c7c",
+        "water": 0.35
+      },
+      "dusk": {
+        "amount": 0.39,
+        "color": "#3e4f86",
+        "water": 0.3
+      },
+      "night": {
+        "amount": 0.28,
+        "color": "#2a3660",
+        "water": 0.25
+      },
+      "deep": {
+        "amount": 0.08,
+        "color": "#1c2644",
+        "water": 0.2
+      }
+    }
+  },
   "edgeFadeBand": 200,
+  "edgeRuffle": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
+    "values": {
+      "noon": {
+        "ruffle": 0.06
+      }
+    }
+  },
+  "halo": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "strength": 0.25,
+        "color": "#dcbfd0"
+      },
+      "sunrise": {
+        "strength": 0.08,
+        "color": "#f2b0c6"
+      },
+      "noon": {
+        "strength": 0.05,
+        "color": "#bdd6ec"
+      },
+      "golden": {
+        "strength": 0.14,
+        "color": "#ffc27a"
+      },
+      "sunset": {
+        "strength": 0.1,
+        "color": "#ff9868"
+      },
+      "dusk": {
+        "strength": 0.06,
+        "color": "#5f6fb4"
+      },
+      "night": {
+        "strength": 0.02,
+        "color": "#1a2040"
+      },
+      "deep": {
+        "strength": 0,
+        "color": "#10152a"
+      }
+    }
+  },
+  "dof": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "blur": 0.2,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "sunrise": {
+        "blur": 0.15,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "noon": {
+        "blur": 0.02,
+        "heroBlur": 0,
+        "softness": 0.1,
+        "melt": 0
+      },
+      "golden": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.98,
+        "melt": 0
+      },
+      "sunset": {
+        "blur": 0.08,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "dusk": {
+        "blur": 0.1,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "night": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "deep": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      }
+    }
+  },
   "sky": {
     "overrides": []
-  },
-  "heroSubject": {
-    "kind": "arch",
-    "id": "arch"
   },
   "heroKeyframes": [
     {
       "position": [
-        -5,
-        93,
-        456
+        122,
+        74,
+        663
       ],
       "target": [
-        1603.3029999999999,
-        73.5,
-        -534.547
+        1731,
+        54,
+        -328
       ],
-      "fov": 22,
-      "t": 0
+      "fov": 14,
+      "t": 0,
+      "focus": "arch"
     },
     {
       "position": [
-        -624,
-        157,
-        152
+        -613,
+        138,
+        189
       ],
       "target": [
-        1603.3029999999999,
-        73.5,
-        -534.547
+        3493,
+        3,
+        -1117
       ],
-      "fov": 22,
+      "fov": 12,
       "t": 0.534483
     },
     {
       "position": [
-        -470,
-        81,
-        -394
+        -461,
+        56,
+        -395
       ],
       "target": [
-        1603.3029999999999,
-        73.5,
-        -534.547
+        1595,
+        70,
+        -693
       ],
-      "fov": 43,
+      "fov": 16,
       "t": 1
     }
   ],
   "heroMotion": {
-    "length": 680,
+    "length": 900,
     "mode": "bounce"
   },
   "shots": {
@@ -886,13 +1148,85 @@
   },
   "arch": {
     "values": {
-      "distance": 1690,
-      "bearingX": 0.9487,
-      "bearingZ": -0.3163,
       "scale": 2.1,
-      "rotation": 1.99,
-      "yOffset": 155,
-      "footFade": 36
+      "yOffset": 115,
+      "footFade": 71,
+      "rotation": 1.99
+    }
+  },
+  "archLight": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "uplightL_intensity": 0.25,
+        "uplightL_color": "#ffc2dc",
+        "uplightL_cone": 75,
+        "uplightL_reach": 250,
+        "uplightR_intensity": 0.95,
+        "uplightR_color": "#ffe2c0",
+        "uplightR_cone": 75,
+        "uplightR_reach": 255
+      },
+      "sunrise": {
+        "uplightL_intensity": 0.2,
+        "uplightL_color": "#ffd6a8",
+        "uplightL_cone": 35,
+        "uplightL_reach": 220,
+        "uplightR_intensity": 0.2,
+        "uplightR_color": "#ffd6a8",
+        "uplightR_cone": 35,
+        "uplightR_reach": 220
+      },
+      "sunset": {
+        "uplightL_intensity": 2,
+        "uplightL_color": "#ffd6a8",
+        "uplightL_cone": 35,
+        "uplightL_reach": 220,
+        "uplightR_intensity": 2,
+        "uplightR_color": "#ffd6a8",
+        "uplightR_cone": 35,
+        "uplightR_reach": 220
+      },
+      "dusk": {
+        "uplightL_intensity": 0.05,
+        "uplightL_color": "#fbddc7",
+        "uplightL_cone": 33,
+        "uplightL_reach": 205,
+        "uplightR_intensity": 0.05,
+        "uplightR_color": "#fbddc7",
+        "uplightR_cone": 33,
+        "uplightR_reach": 455
+      },
+      "night": {
+        "uplightL_intensity": 3,
+        "uplightL_color": "#f2ecff",
+        "uplightL_cone": 38,
+        "uplightL_reach": 150,
+        "uplightR_intensity": 2,
+        "uplightR_color": "#f2ecff",
+        "uplightR_cone": 38,
+        "uplightR_reach": 240
+      },
+      "deep": {
+        "uplightL_intensity": 0.6,
+        "uplightL_color": "#e6e4ff",
+        "uplightL_cone": 35,
+        "uplightL_reach": 220,
+        "uplightR_intensity": 0.6,
+        "uplightR_color": "#e6e4ff",
+        "uplightR_cone": 35,
+        "uplightR_reach": 220
+      }
+    },
+    "edges": {
+      "sunset": {
+        "fade": "up",
+        "minutes": 30
+      },
+      "sunrise": {
+        "fade": "down",
+        "minutes": 30
+      }
     }
   },
   "clouds": {
