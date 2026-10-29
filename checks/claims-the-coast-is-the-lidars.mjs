@@ -326,25 +326,36 @@ console.log('── F2. a deck is its ways joined, opened and closed at the trac
   // and street deck (fixture, from PTown's trace), where the deck taken out as is left the 4–73 cm wedge ① could not ink. After
   // waterWithoutDecks, what an open at half a cell still removes beside the deck is no more than one lattice step along its edge
   const mx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-macmillan-sliver-2026-10-27.json'), 'utf8'))
-  const mw = waterWithoutDecks(mx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], [mx.deck], mx.stepM)
+  // ⛔ THE KNOWN REFUSALS (Boz, 2026-10-29; BACKLOG "the open/close refuses at a source staircase"): two crops whose deck ring
+  // carries a millimetre staircase at a cut, which the cut-once open/close cannot read. Each asserted BY NAME AND SITE on a
+  // ratchet: RED if its message or site changes, and RED when it starts BUILDING (then KNOWN_REFUSALS drops by one in that commit,
+  // its KNOWN text goes, and its rows below run again)
+  const KNOWN_REFUSALS = 2, KNOWN = "a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 533 (211.139, 71.050) → (211.138, 71.050), 1.0 mm; 534 (211.138, 71.050) → (211.136, 71.048), 2.8 mm lie within the lattice's rounding of edge 532's line"
+  let mw = null, mwWhy = null; try { mw = waterWithoutDecks(mx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], [mx.deck], mx.stepM) } catch (e) { mwWhy = String(e.message) }
+  say(!!mwWhy && mwWhy.includes(KNOWN), mwWhy ? (mwWhy.includes(KNOWN) ? `the known refusal (1 of ${KNOWN_REFUSALS}): MacMillan's older crop refuses by name at its source staircase (edges 533, 534 at (211.139, 71.050))` : `MacMillan's older crop refuses, NOT as the known refusal: ${mwWhy.slice(0, 220)}`) : `MacMillan's older crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop its KNOWN, and its sliver row runs`)
+  if (mw) {
   const CP = (r) => r.map(([x, z]) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) })), cu = mx.stepM * CLIP_SCALE
   const grow = (src, d) => { const co = new clipperLib.ClipperOffset(), o = new clipperLib.Paths(); co.AddPaths(src, clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon); co.Execute(o, d); return o }
   const cop = (t, a, b) => { const k = new Clipper(), o = new clipperLib.Paths(); k.AddPaths(a, PolyType.ptSubject, true); k.AddPaths(b, PolyType.ptClip, true); k.Execute(t, o, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return o }
   const mloc = cop(ClipType.ctIntersection, mw.rings.map(CP), grow([CP(mx.deck)], 2 * cu)), mopen = cop(ClipType.ctIntersection, grow(grow(mloc, -cu / 2), cu / 2), mloc)
   const mthin = cop(ClipType.ctIntersection, cop(ClipType.ctDifference, mloc, mopen), grow([CP(mx.deck)], cu)).reduce((t, p) => t + Math.abs(Clipper.Area(p)), 0) / CLIP_SCALE ** 2
   const mper = mx.deck.reduce((t, p, i) => { const q = mx.deck[(i + 1) % mx.deck.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
-  say(mw.slivers.length > 0 && mthin <= mper / CLIP_SCALE, `MacMillan's water beside its deck narrower than a cell is the deck's: ${mw.slivers.length} sliver(s), ${mw.slivers.reduce((t, x) => t + x.m2, 0).toFixed(2)} m², named; ${mthin.toFixed(3)} m² thin water left (at most a lattice step along its ${mper.toFixed(0)} m edge, ${(mper / CLIP_SCALE).toFixed(3)} m²)`)
+  say(mw.slivers.length > 0 && mthin <= mper / CLIP_SCALE, `MacMillan's water beside its deck narrower than a cell is the deck's: ${mw.slivers.length} sliver(s), ${mw.slivers.reduce((t, x) => t + x.m2, 0).toFixed(2)} m², named; ${mthin.toFixed(3)} m² thin water left (at most a lattice step along its ${mper.toFixed(0)} m edge, ${(mper / CLIP_SCALE).toFixed(3)} m²)`) }
   // …and what the subtraction itself leaves: PTown's wharf, marina and memorial-park decks with their water (fixture), where a
   // pocket bounded by one deck on every side, narrower than a cell, was left as water (FMP's 1.2 cm², and its like)
   const wx = JSON.parse(readFileSync(join(ROOT, 'checks/fixtures/ptown-wharf-sliver-2026-10-27.json'), 'utf8'))
-  let ww = null, wr = null; try { ww = waterWithoutDecks(wx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], wx.decks, wx.stepM) } catch (e) { wr = String(e.message).slice(0, 140) }
+  let ww = null, wr = null; try { ww = waterWithoutDecks(wx.water.map(r => signed(r) > 0 ? r : [...r].reverse()), [], wx.decks, wx.stepM) } catch (e) { wr = String(e.message) }
+  // the known refusal 2 of KNOWN_REFUSALS: deck 2's close, the same class
+  const KNOWN_WHARF = "[deck 2 close] ⛔ the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut. Ring 0's edge(s) 0 (148.485, 132.351) → (148.486, 132.352), 1.4 mm lie within the lattice's rounding of edge 13's line"
+  say(!!wr && wr.includes(KNOWN_WHARF), wr ? (wr.includes(KNOWN_WHARF) ? `the known refusal (2 of ${KNOWN_REFUSALS}): the wharf crop refuses by name at deck 2's close, its source staircase (edge 0 at (148.485, 132.351))` : `the wharf crop refuses, NOT as the known refusal: ${wr.slice(0, 220)}`) : `the wharf crop now BUILDS: lower KNOWN_REFUSALS by one in this commit, drop KNOWN_WHARF, and its rows run`)
+  if (ww) {
   const wper = (r) => r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + Math.hypot(q[0] - p[0], q[1] - p[1]) }, 0)
   const pockets = ww ? ww.rings.filter(r => r.deck.every(x => x != null && x === r.deck[0]) && 2 * Math.abs(signed(r)) / wper(r) < wx.stepM) : []
   say(ww && !pockets.length, `PTown's wharf and memorial-park decks: ${ww ? `${ww.slivers.length} sliver(s) taken, ${pockets.length} pocket(s) narrower than a cell bounded by one deck left as water (want 0)` : `REFUSED — ${wr}`}`)
   // …and what ① is given is SIMPLE: every water ring and every deck as taken out, none crossing itself or another (PTown, 10-27:
   // the noding left off, a point-touch left unjoined, or the subtraction left self-touching each put a crossing here)
   const wv = ww ? [...ww.rings.flatMap(r => ringViolations(r)), ...ww.decks.flatMap(r => ringViolations(r)), ...ringsMeet(ww.rings)] : [null]
-  say(ww && !wv.length, `PTown's wharf decks and water as ① is given them are simple: ${ww ? `${wv.length} violation(s)${wv.length ? ` (${wv.slice(0, 3).map(v => `${v.kind} @(${v.at.map(c => c.toFixed(2)).join(', ')})`).join(' · ')})` : ''}` : 'REFUSED'}`)
+  say(ww && !wv.length, `PTown's wharf decks and water as ① is given them are simple: ${ww ? `${wv.length} violation(s)${wv.length ? ` (${wv.slice(0, 3).map(v => `${v.kind} @(${v.at.map(c => c.toFixed(2)).join(', ')})`).join(' · ')})` : ''}` : 'REFUSED'}`) }
   // ⛔ a HOLE is not a pocket (Zob, 10-27): a 1.1 × 6 m street deck standing clear of every shore in a 100 m lake survives the
   // open (wider than the 1 m cell) and must stay a hole, so mintInputs' "clear of every shore" refusal can fire
   const lake100 = [[0, 0], [100, 0], [100, 100], [0, 100]], clear = waterWithoutDecks([lake100], [], [[[50, 50], [51.1, 50], [51.1, 56], [50, 56]]], 1)
@@ -414,7 +425,8 @@ for (const scene of scenes) {
     if (!wr) console.log(`  (map.json carries no protopolygon waterRings — poured before this coast; ①'s rings not compared)`)
     else if (!Array.isArray(sd)) console.log(`  ⚠️ ${scene}: map.json carries no streetDecks — poured before the decks; ①'s rings not compared (▶ the Bake)`)
     else {
-      const W = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring), doc.fineM), given = W.rings
+      let W = null; try { W = waterWithoutDecks(doc.water.flatMap(b => [b.outer, ...b.holes]), doc.arcs || [], sd.map(d => d.ring), doc.fineM) } catch (e) { say(false, `${scene}: the water the mint is given REFUSES — ${String(e.message).slice(0, 240)}`) }
+      if (W) { const given = W.rings
       // ⭐ every water-ring edge the mint is given lies under a stroked arc, the fetched square's own sides excluded (Boz, 10-27)
       const Q = doc.square, side = (a, b) => [['x0', 0], ['x1', 0], ['z0', 1], ['z1', 1]].some(([k, c]) => Math.abs(a[c] - Q[k]) < 1 / CLIP_SCALE && Math.abs(b[c] - Q[k]) < 1 / CLIP_SCALE)
       const bare = bareEdges(given, W.arcs, side), bareM = bare.reduce((t, [a, b]) => t + Math.hypot(b[0] - a[0], b[1] - a[1]), 0), so = strokedOff(given, W.arcs)
@@ -424,7 +436,7 @@ for (const scene of scenes) {
       say(!bare.length, `${scene}: every water-ring edge the mint is given lies under a stroked arc (${W.arcs.filter(a => a.deck != null).length} of ${W.arcs.length} arc(s) a deck's edge)${bare.length ? ` — ${bare.length} edge(s), ${bareM.toFixed(1)} m bare, first @(${bare[0][0].map(Math.round).join(', ')})` : ''}`)
       const same = wr.length === given.length && wr.every((r, k) => r.length === given[k].length && r.every((p, i) => Math.abs(p[0] - given[k][i][0]) < 1e-5 && Math.abs(p[1] - given[k][i][1]) < 1e-5))
       if (same) say(true, `${scene}: ①'s ${wr.length} water ring(s) are what the mint was given (coast.json less ${sd.length} street deck(s))`)
-      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from this coast (▶ the Bake)`)
+      else console.log(`  ⚠️ ${scene}: ①'s ${wr.length} water ring(s) are not the ${given.length} the mint would be given now — the town has not been re-poured from this coast (▶ the Bake)`) }
     }
   }
 }

@@ -26,6 +26,10 @@
 //   (j) A CORNER TOUCH: a unit diagonal through a pixel's corner enters only the pixel whose OWN corner it is (half-open).
 //       Huron's close crop (checks/fixtures/huron-close-self-noding-2026-10-28.json) settles; entersPixel agrees with the
 //       oracle's exact half-open clip on every small case. MUTANT: the rule before the clause (frozen) disagrees.
+//   (i) SELF-NODING (`self`, Zob's ruling (1), 2026-10-28): Huron's close in BRIEF-cut-once-in-full-precision's candidate 3
+//       (scratch/cut-once/cand3.mjs), cropped to the 12 vertices within 1 m of the crossing the verifier named (two open paths:
+//       a 1-unit zigzag and the diagonal that cuts it, their exact crossing on a pixel CORNER): it must settle. Zob's fix at
+//       475bbe9a (entersPixel's corner touch); (j) runs the same fixture WITHOUT self.
 // MUTANTS (always run): each Number/BigInt switch forced to Number on a constructed long input must be wrong (crossOf
 // misses a crossing; entersPixel enters a square the segment misses; alongOf ties two pixels 3 apart) and the live path
 // right, judged by the oracle; exact ties must round half-up; the function's own verification (verifyNoded) must refuse planted bad outputs (the input un-noded; an invented
@@ -271,6 +275,14 @@ mutants: {
   const ob = oracle(items.map(x => x.r), lost, pairs).skipped
   row(ob === 1, `mutant: one routed vertex removed from the output ⇒ the oracle finds ${ob} ring(s) unlike its routing (must be 1)`)
   row(/antenna/.test(m3), `mutant: an antenna A,B,A planted ⇒ the verification refuses: ${m3 ? m3.split(' — ')[0].slice(0, 110) : 'NO REFUSAL'}`)
+}
+// (i) self-noding: the Huron close crop (checks/fixtures/huron-close-self-noding-2026-10-28.json, two open paths, 12 vertices)
+{
+  const p = join(FX, 'huron-close-self-noding-2026-10-28.json')
+  if (!existsSync(p)) row(false, '(i) self-noding, Huron close crop: NOT CHECKED — the fixture is missing')
+  else { const paths = JSON.parse(readFileSync(p, 'utf8')).paths
+    let err = null; try { nodeCrossings(paths, { pairs: () => true, self: true, who: 'check (i)' }) } catch (e) { err = e.message }
+    row(!err, `(i) self-noding, Huron close crop (${paths.length} open paths, ${paths.reduce((t, x) => t + x.p.length, 0)} vertices): settles${err ? ` — REFUSED: ${err.slice(0, 160)}` : ''}`) }
 }
 // and nodeCrossings RUNS that verification on every output: read from its body, the call sits before its return
 {

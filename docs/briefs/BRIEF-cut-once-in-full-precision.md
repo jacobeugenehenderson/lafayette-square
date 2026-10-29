@@ -35,9 +35,9 @@ Provincetown."*
   units from it, along two near-parallel copies of one edge. That intersection is ill-conditioned, and joining the copies needs a √2
   proximity join, which is ruled out. Deck edges ≤ 2 mm: PTown 57 → 10, Huron 171 → 40 (pre-open: 0, 3).
 - PTown's ground refuses at MacMillan Wharf: a 1 mm back-step in ①'s deck edge at (282.795, 113.216) → (282.795, 113.217), made by
-  `mintInputs`' deck take-out (`structures.mjs#waterWithoutDecks`: thin water pieces within 2 cells of a deck are taken with it, and
-  their cut sides are a re-rounded copy of the water edge). It reaches the mint wherever a street deck sits within 2 cells of a coast
-  at a corner (PTown 4 street decks; Huron 0).
+  `mintInputs`' deck take-out (`structures.mjs#waterWithoutDecks`), which re-offsets TWICE: the open of the water within 2 cells (its
+  thin pieces within ONE cell that touch the deck go with it) and the half-cell close of the deck plus them (`e = u0 ∪ close(u0)`); each
+  redraws an edge as a re-rounded copy, and which made this step is not established (PTown 4 street decks; Huron 0; `scratch/cut-once/fixtures/`).
 - Sizing (Swash): the repo's only polygon library is clipper-lib (integer). Clipper2's float API scales to integers internally too.
   A float erode/dilate with topology (parts splitting, merging, holes) is new robust geometry or a new dependency. Sized LARGE.
 
@@ -54,8 +54,11 @@ Provincetown."*
    waterClosed records, mintInputs → streetDecks → deckFootprints (① and the ground move, not only coast.json), shoreStamp.mjs#deckHeights
    (the deck ring's root), the dike strip (stripOf). Instruments that see it: claims-a-coast-finer-than-its-trace-is-not-drawn (its row (1)
    reads openCloseAtStep's call site), claims-settle-never-crosses-the-open-close, plus §4's.
-3. **Build:** one open/close for footprints AND water (the `cutOnce: false` fork deleted, three-part fix), and the deck take-out with
-   its cut ends being the source's own points. Rounded to the lattice ONCE, at the output.
+3. **Build:** one open/close for footprints AND water (the `cutOnce: false` fork deleted, three-part fix), and the deck take-out (its open AND its
+   close) with its cut ends being the source's own points. Rounded to the lattice ONCE, at the output. **As built** (`cartograph/openClose.mjs`,
+   ▶ `checks/claims-the-open-close-cuts-once.mjs`, `-huron.mjs`): the take-out's open and close go through it; its three subtractions
+   (`waterWithoutDecks`' w0, loc, thin) stay on clipper's integer booleans, a NAMED DEBT (BACKLOG; Zob, 2026-10-29). PTown does not land:
+   its traced water refuses by name (Jacob, 2026-10-29: "land the port without PTown"; `BRIEF-provincetown-pours-on-the-port.md`).
 4. **COAST_VERSION → 6** (5 is current); Huron's fixture re-derives again.
 
 ## 4. Gates

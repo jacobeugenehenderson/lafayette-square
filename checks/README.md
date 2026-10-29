@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 122. Never in a default run.
+## ⛔ live — 123. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -102,6 +102,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-debug-paint-is-the-pass-amount.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-the-device-link-page-is-served-on-both-sites.mjs` | outbound | calls fetch() · imports workers/staging-sites/src/index.js, which can: calls fetch() · imports workers/production-sites/src/index.js, which can: calls fetch() |
 | `checks/claims-the-dry-bed-record-is-the-lidar.mjs` | outbound | imports cartograph/elevationSources.mjs, which can: calls fetch() · imports cartograph/fetch-lidar-flights.mjs, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync |
+| `checks/claims-the-faces-are-walked-once.mjs` | unreadable | import of a data: module built at run time — its body cannot be read (use checks/_importSource.mjs) |
 | `checks/claims-the-flight-builds-no-ao.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files — only under its own temp dir · runs `/Applications/Google Chrome.app/Contents` — not a known-local command · runs `pkill -9 -f 'user-data-dir=${profile}'` — not a known-local command |
 | `checks/claims-the-floor-is-read-only-from-a-permitted-survey.mjs` | outbound | imports cartograph/fetch-bathymetry.mjs, which can: writeFileSync, mkdirSync, deletes files, imports cartograph/io.js, which can: writeFileSync, imports cartograph/elevationSources.mjs, which can: calls fetch() |
 | `checks/claims-the-kerb-along-the-water-is-the-coast-line.mjs` | unreadable | writeFileSync · deletes files · computed import of a temp-dir module, and not every write is shown to stay in its temp dir · computed import() with no readable target — runs arbitrary modules · declares @args --slot=<granted> |
@@ -187,7 +188,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 362. This is `npm test`.
+## safe — 364. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -499,6 +500,8 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |
 | `checks/claims-the-mark-palette-is-never-live.mjs` | IS "SUGGEST FROM MARK" AUTHORING-ONLY? |
 | `checks/claims-the-mint-refuses-no-outline.mjs` | CLAIM — THE MINT REFUSED NO NODE'S OUTLINE. Where ① cannot build a node's outline (an acute meeting, a degenerate one, or a |
+| `checks/claims-the-open-close-cuts-once-huron.mjs` | ⭐ THE OPEN/CLOSE CUTS ONCE, HURON'S RATCHET (the heavy half of checks/claims-the-open-close-cuts-once.mjs; Zob, 2026-10-29). |
+| `checks/claims-the-open-close-cuts-once.mjs` | ⭐ THE OPEN/CLOSE CUTS ONCE (BRIEF-cut-once-in-full-precision §4; Zob's finish list, 2026-10-29). structures.mjs#openCloseAtStep |
 | `checks/claims-the-overhead-band-is-two-triangles.mjs` | IS EVERY OVERHEAD BAND A 2-TRIANGLE QUAD, AND DOES ITS FLUTTER SLIDE THE PICTURE? |
 | `checks/claims-the-overhead-core-is-baked.mjs` | DOES THE GROVE BAKE THE OVERHEAD IMPOSTOR'S DEEP CORE, AND IS ITS ABSENCE LOUD? |
 | `checks/claims-the-pad-is-the-size-of-the-corner.mjs` | ⭐⭐⭐ THE ADA PAD IS THE SIZE OF THE CORNER — the gate on the canary Jacob marked 2026-09-07. |

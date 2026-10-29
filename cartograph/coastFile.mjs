@@ -20,11 +20,12 @@ export const COAST_FILE = 'coast.json'
  * @param cleanDir  cartograph/data/<scene>/clean
  * @param bb        the frame the reader closes against (geography.mjs#localBB), compared to the square traced on
  */
-/** The coast.json format. 5 (2026-10-28): the open/close cuts ONCE (structures.mjs#openCloseAtStep: the source minus its features,
- *  no rounding copies) and an embankment street is held as land (structures.mjs#embankmentFootprints), on top of 4's no edge
- *  shorter than the trace step at settle's exit (toResolution, below) and 3's water opened and closed at the trace step.
+/** The coast.json format. 6 (2026-10-29): the open/close cuts once IN FULL PRECISION (openClose.mjs: every edge on the line it
+ *  was born on, the traced water cut once like the decks, the deck take-out's open and close the same operation), on top of 5's
+ *  embankment held as land (structures.mjs#embankmentFootprints), 4's no edge shorter than the trace step at settle's exit
+ *  (toResolution, below) and 3's water opened and closed at the trace step.
  *  readCoast refuses any other version by name. */
-export const COAST_VERSION = 5
+export const COAST_VERSION = 6
 
 export function readCoast(cleanDir, bb, who) {
   const p = join(cleanDir, COAST_FILE)
@@ -32,7 +33,7 @@ export function readCoast(cleanDir, bb, who) {
   const doc = JSON.parse(fs.readFileSync(p, 'utf8'))
   if (!doc || typeof doc.coast !== 'boolean') throw new Error(`[${who}] ⛔ ${p} carries no coast verdict — not a bake-coast artifact`)
   // ⛔ a coast traced under older deck rules pairs silently with a mint built under the new ones (Zob, 2026-10-27): refused by name
-  if (doc.version !== COAST_VERSION) throw new Error(`[${who}] ⛔ ${p} is coast version ${doc.version ?? 'none'}, and this kit reads ${COAST_VERSION}: re-bake the coast (5: the open/close cuts once, and an embankment is held as land). ▶ the Bake's 'coast' step`)
+  if (doc.version !== COAST_VERSION) throw new Error(`[${who}] ⛔ ${p} is coast version ${doc.version ?? 'none'}, and this kit reads ${COAST_VERSION}: re-bake the coast (6: the open/close cuts once in full precision, the traced water and the deck take-out included). ▶ the Bake's 'coast' step`)
   const S = doc.square
   if (!bb || !S || ['x0', 'x1', 'z0', 'z1'].some(k => !(Math.abs(S[k] - bb[k]) < 1e-6)))
     throw new Error(`[${who}] ⛔ ${p} was traced on the square ${JSON.stringify(S)} and this frame is ${JSON.stringify(bb)} — the fetch moved since the coast was baked. ▶ re-run bake-coast`)

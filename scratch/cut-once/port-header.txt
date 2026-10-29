@@ -1,0 +1,18 @@
+// THE OPEN/CLOSE, CUT ONCE IN FULL PRECISION (BRIEF-cut-once-in-full-precision; Zob's rulings 2026-10-28/29; designed and
+// measured in scratch/cut-once, DESIGN-candidate-3.md). Every boolean is ONE noded arrangement (latticeNode.js#nodeCrossings
+// with `self`, then latticeFaces.js#facesOf), and every edge carries PROVENANCE: the line it was born on.
+//
+// morph(region, d): offset the region's rings by d as pieces WITH TAGS (each strip's far side names the region edge it offsets),
+// resolve, then offset back by −d EMITTING THE REGION'S OWN LINES:
+//   · consecutive tags on one ring → the region's own vertex, integer, no arithmetic · a tag run → the run's own vertices
+//   · a jog → kept · a cut between two lines → lineCrossOf, rounded once, or SQUARED past the miter limit (capAt) FIRST
+//   · non-adjacent tags whose skipped vertices lie within NODE_BOUND of the cut path → those vertices (the gap rule)
+//   · a cut whose crossing the next boolean trims → the region's own arc, CLIPPED by D's wedge (the trimmed arc)
+// Every emitted edge lies on its tag's line within the tiered bound (the emission invariant) or the call refuses by name.
+// open = morph(P, −h) ∩ P · close = morph(open, +h) ∪ open · k = P − the open's taken FEATURES ∪ the close's filled FEATURES,
+// a feature being a piece that survives an erode by NODE_BOUND (structures.mjs#isRoundingSliver). Each difference's subtracted
+// set is wound clockwise so its edges keep their tags. A hole of P that k opens, or two parts of P k joins, refuses by name.
+// Callers: structures.mjs#openCloseAtStep (the footprints and the traced water), #waterWithoutDecks (openAt, closeAt).
+// ▶ node checks/claims-the-open-close-cuts-once.mjs (fast) · node checks/claims-the-open-close-cuts-once-huron.mjs (Huron's ratchet)
+import { isRoundingSliver } from './structures.mjs'
+import { CLIP_SCALE as SCALE } from '../src/lib/lattice.js'

@@ -57,28 +57,15 @@ The combined bake also measures THE WATER TINT (below).
   re-pour, and the re-pour refuses. Ships: the 10-26 pour + the new scene (focus on the Monument from the keys, his DoF) + content newer
   than the pour (roster 3.05 → 4.14 MB, 447 listings, 33 photos; all resolve in the pour). The commit carries index.json's LS/Huron
   bakedAt too. Then eye on staging and Promote on Jacob's word.
-- **⭐ BRIEF A (cut-once, Plumb + Zob): JACOB RULED "land the port without PTown"** (2026-10-29). Zob reviews Plumb's port, then the merge, then Huron re-bakes. The decisions as they stood: (1) land the port without PTown (PTown refuses on both paths either way; through
-  the port Huron is copy 0, crossings 0, residual 6 + 11 pieces, 0.023 m², against the integer path's 230 pieces and 91,990 copies; PTown's decks
-  ≤ 2 mm 11 against 58), or wait for the sweep's classes. Boz recommends landing: LS and HPDM carry no coast or deck. (2) KNOWN_REFUSALS
-  for the two 10-27 PTown fixtures (MacMillan, the wharf), both a source STAIRCASE, which refuses by name ("the open/close
-  cannot read this ring: a STAIRCASE in its SOURCE at a cut"). The staircase rule did not converge (local `plumb/staircase-runs`:
-  Huron's ratchet rose, and it joined 3.65% of Huron's lidar edges), so it's its own row. Also named debts: the take-out's three
-  subtractions on integer booleans (local `plumb/takeout-on-arrangement` 3dc1a151, unpushed).
-  SWEEP of PTown's traced water (diagnostic `scratch/cut-once/sweep.mjs`, local `plumb/concurrence` e7b78ec2 with the concurrence on;
-  Huron's traced water and pier: 0 classes). Per part: 196/197 build; part 0 (249.54 km², 100% of the area) refuses. Tiled at 500 m:
-  1,095 tiles, 11 refuse, first refusal per tile only (a lower bound). Class · tiles · m² of those tiles · share of tiled area:
-  no forward order fits · 2 · 370,968 · 0.15% | source STAIRCASE at a cut · 2 · 370,443 · 0.15% | backward cut, no staircase ·
-  2 · 319,719 · 0.13% | guard: P's hole opened · 1 · 240,618 · 0.10% | walls-meet · 1 · 54,503 · 0.02% | guard: two parts joined ·
-  1 · 137,032 · 0.05% (on a tile edge, probable tiling artefact) | cross-ring-not-a-pair · 1 · 121,132 · 0.05% | trimmed arc starts
-  outside D · 1 · 175,624 · 0.07%. One connected water body: PTown's coast bakes only when every class is closed.
+- **⭐ BRIEF A (cut-once, Plumb + Zob): JACOB RULED "land the port without PTown"** (2026-10-29). Built on local `plumb/cut-once`, in Zob's
+  review; then the merge, then Huron re-bakes. ▶ `checks/claims-the-open-close-cuts-once{,-huron}.mjs`; its refusals and debts are the rows
+  below that cite them; PTown's sweep: `docs/briefs/BRIEF-provincetown-pours-on-the-port.md`.
 - **Altadena:** re-fetch, the Extent fix, re-pour.
 - **The buildings.json v2 path** (`SlabBuildings.jsx`, the v2 read and its live-palette refusal) stays only while a town is v2, by ruling (Warden 2026-09-28); it goes when the check lists none. ▶ `node checks/claims-live-palette-equals-the-bake.mjs`.
 
-**▶ NEXT TRANCHE LEADS:** float morphology (cut once without integer copies; sized LARGE: clipper-lib and Clipper2 are both integer) ·
- fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
+**▶ NEXT TRANCHE LEADS:** fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
 
-**▶ BRIEFED 2026-10-28 night, co-signed by Zob, ready for Jacob's FRESH dispatch:** `docs/briefs/BRIEF-cut-once-in-full-precision.md`
-(PTown's slab; retires the open/close debt) · the re-skeleton button: LANDED 73f8e441 (each town's first Bake asks once to re-skeleton; HPDM and Huron take the area-highway rule there). · `docs/briefs/BRIEF-the-day-strip-has-its-line.md` (the Almanac's
+**▶ BRIEFED 2026-10-28 night, co-signed by Zob, ready for Jacob's FRESH dispatch:** the re-skeleton button: LANDED 73f8e441 (each town's first Bake asks once to re-skeleton; HPDM and Huron take the area-highway rule there). · `docs/briefs/BRIEF-the-day-strip-has-its-line.md` (the Almanac's
 temperature line: a regression from kit 2df8d341 (10-20, Open-Meteo → NWS); Ward's brief, Zob co-signed; reports to Ward). All three FRESH, independent. Next to
 brief, on Jacob's go: the Arch as a set-piece at its real coordinates with a presence scale + retiring the Survey Hero (focus lives on
 keyframes only). Jacob, 2026-10-28: the Arch now "bounces" with camera motion since it's no longer tied to the camera; that brief owns it.
@@ -122,9 +109,10 @@ animated channel's unkeyed slot silently (Layer 0; refuse by name). ⚠️ LS's 
 would start 91 m out) — confirm with Jacob before LS's next bake.
 
 **⛔ NAMED DEBTS (each removed when its cure lands, never left as a quiet fork):**
-- `structures.mjs#openCloseAtStep`'s two behaviours: the traced water keeps the integer open/close (`cutOnce: false`) until its
-  cut-once crossings are understood or float morphology lands (Huron (-4820.8, -3834.5): the cut/fill made one ring through one vertex
-  three times).
+- **the take-out's three subtractions** (`structures.mjs#waterWithoutDecks`: w0, loc, thin) are still clipper's integer booleans, against
+  the cut-once brief's "every boolean"; its open and close cut once (`openClose.mjs`). On PTown's v5 take-out: copy 0, crossings 0, ≤ 2 mm 11
+  (a ratchet) ▶ `checks/claims-the-open-close-cuts-once.mjs` (4). On the arrangement instead (local `plumb/takeout-on-arrangement` 3dc1a151):
+  v5 recurs at 84–86, cause not established.
 - by-value reads in `checks/claims-a-bake-step-declares-what-it-reads.mjs`.
 - `src/data/buildings.json` in every pour's inputs (Class D).
 - derive.js reads cap ends from raw/centerlines.json by NAME (ends within 2 m), a fallback no guard sees; LS has 11 capped centerlines,
@@ -136,9 +124,24 @@ sources.json but writes the OLD dir (`cartograph/data/lafayette-square`), so re-
 out in the MAIN checkout (Jacob's), stays.
 
 **Still-open rows cited by name elsewhere (short; their history is in the archive):**
+- **the open/close refuses at a source staircase** (cited by `openClose.mjs#emit`'s refusal). A deck ring with a millimetre staircase at a
+  cut (two lines within the lattice's rounding read out of order) refuses by name. Known refusals, by text and site, in
+  `claims-the-coast-is-the-lidars`: MacMillan's 10-27 crop and the wharf 10-27 crop (KNOWN_REFUSALS 2). The rule is unbuilt; one attempt (runs
+  joined within NODE_BOUND, local `plumb/staircase-runs`) raised Huron's ratchet, cause not established; it joined Huron 3.65%, PTown decks
+  0.21%, MacMillan's crop 15.4% of edges (LS, HPDM not measured): the rule cannot be "join any sub-step edge". Trace: `macmillan-trace.mjs`.
+- **the close's back-offset loses a hole the dilate re-forms** (cited by `claims-the-open-close-cuts-once` (1) wallShort). A hole whose wall
+  the open breaks over a stretch narrower than 2h: the close's back-offset of the re-formed hole ring joins two collinear edges of one open
+  ring across an arc that runs the whole outer, and emits that arc. Which emission branch does it is not established. It was FILLED with
+  no refusal. Now every taken and filled feature wider than 2h refuses by name (Zob's ruling), so it is a known refusal on that row.
+- **an island near one terrain cell is kept or dropped on its vertex set** (Zob, 2026-10-29): Huron's (715.43, 214.26) is 29.583 m² at the
+  open/close on both paths and the definition, yet kept at base and dropped through the port, downstream (simplify/settle, then "every island
+  kept holds a terrain node"); the stage's sensitivity, cause not established.
+- **the open/close's residual against the definition** (cited by `claims-the-open-close-cuts-once-huron`): Huron's traced water past
+  2·NODE_BOUND, on a ratchet; evicts at 0. PTown's take-out: 0.008 m² at (192.163, 80.195), not chased. Local `plumb/concurrence`
+  e7b78ec2 raised it (definition-only 11 → 17). ⛔ Owed: every bake reports its residual (Zob, unbuilt). COPIES, by site: Huron 1 at (720.196,
+  209.874), insideRun's crop 2 at (−4312.323, −3315.972), each a cut point past NODE_BOUND off its source line; why emission passes it, not established.
 - **PTOWN PARKS** (registry canon): (a) the edge rule and the way tag landed (v4); the dike is held as land (v5, `r-the-coast-bake-holds-an-embankment-as-land`).
-  **(b)** the decks' 1 mm jogs: the stage is `openCloseAtStep` (PTown 0 → 57 edges ≤ 2 mm, Huron 3 → 171); cut once for the footprints
-  they are 10 and 40; the rest are a source corner drawn twice by the integer re-offset; the cure is float morphology. **(c)** below.
+  **(b)** the decks' 1 mm jogs: cut once (`openClose.mjs`), PTown's decks' edges ≤ 2 mm are 0 (pre-open 0) ▶ `claims-the-open-close-cuts-once` (2). **(c)** below.
 - **PTOWN'S PLAYER: A PRESS IS NOT WORSE, AND THE FOCUS RETURNS ONLY WITH THE RE-BAKE** (2026-10-29). Any player past the Hero retirement
   (d7e5f160) reads focus only from the SLAB's keys (`Town.jsx#heroKeyframes`, `focusObject.js#keyframeFocusIds`). PTown's slab predates
   the arch-stands stamp, so its keys carry no `focus` and the Monument is no focus object. Jacob, by eye: live PTown's Hero is ALREADY
