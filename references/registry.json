@@ -5152,6 +5152,15 @@
       "findings": [
         "r-the-arch-is-geo-anchored-with-an-authored-presence"
       ]
+    },
+    {
+      "id": "q-are-visual-look-values-live",
+      "ask": "Whether a visual Look value authored in Stage (the edge fade band, its object thinning, the horizon cover) shows live or only at the next Bake",
+      "neededBy": "LS, 2026-10-29: Stage › Horizon › Edge Fade band did nothing live (bake-time only, said in a hover title) (Keystone, measured)",
+      "status": "answered",
+      "findings": [
+        "r-visual-look-values-are-live-in-stage"
+      ]
     }
   ],
   "findings": [
@@ -8644,6 +8653,21 @@
       "quote": "\"as recommended on all four. Tiny quibble: if you double the size from the top *and* raise it it gets wider. The issue is that we don't have attractive feet on the arch so we fussed a lot with finding a way to fade the legs into the ground so the seam is obscured. Also, scaling the arch *and* keeping it short allows us to make it appear *thicker* and more substantial because at scale the arch is quite thin\" · \"it's almost like the arch can keep all the height, foot, rotation, scale controls it already has, it's just placed in its correct geographic center\"",
       "canon": "docs/briefs/BRIEF-the-arch-stands-where-it-is.md",
       "notes": "The quibble overrides Boz's recommendation (3) (a base pivot): the apex pivot stays, deliberately."
+    },
+    {
+      "id": "r-visual-look-values-are-live-in-stage",
+      "question": "q-are-visual-look-values-live",
+      "kind": "ruling",
+      "value": {
+        "rule": "a visual value authored in Stage applies LIVE as it is dragged; the Bake carries it to the slab for production, never gates seeing it",
+        "firstCase": "the edge fade band (bake-ground.js lookFade → ground.json stencil.fade, bound at material creation; membership thinning; horizon cover); Ruffle is already live",
+        "when": "not tonight (Jacob); brief owed"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"I'm not satisfied with the next bake? That's not how authoring visual values works? Maybe not tonight\"",
+      "canon": "memory project_authoring_is_live_production_is_static",
+      "notes": "UNBUILT. Keystone sized the fade band's live path: a shared fade-extent uniform in neighborhoodFade.js (like EDGE_RUFFLE), the fade out of neighborhoodFadeKey, edgeFadeBand in Town OVERRIDE_KEYS, and a driver; membership thinning and the horizon cover need their own live answer, not a 'next Bake' line. Audit the other Stage controls for the same bake-time gap."
     }
   ]
 }

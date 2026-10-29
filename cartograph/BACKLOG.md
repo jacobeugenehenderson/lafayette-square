@@ -59,6 +59,11 @@ Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d
 (breaks in worktrees) · observed wind for storminess · a cited cloudLayers → cover standard (Jacob's terms) · targetsOf's
 precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-has-one-authority unrun (needs a server).
 
+**⛔ STAGE'S EDGE FADE BAND IS BAKE-TIME, NOT LIVE (Keystone, measured on LS 2026-10-29); ruled: visual values are live
+(`r-visual-look-values-are-live-in-stage`), brief owed, not tonight.** Also: createGroupChannelActions' set<Channel> drops a write to an
+animated channel's unkeyed slot silently (Layer 0; refuse by name). ⚠️ LS's design.json carries edgeFadeBand 801 (on r 892: the fade
+would start 91 m out) — confirm with Jacob before LS's next bake.
+
 **⛔ NAMED DEBTS (each removed when its cure lands, never left as a quiet fork):**
 - `structures.mjs#openCloseAtStep`'s two behaviours: the traced water keeps the integer open/close (`cutOnce: false`) until its
   cut-once crossings are understood or float morphology lands (Huron (-4820.8, -3834.5): the cut/fill made one ring through one vertex
