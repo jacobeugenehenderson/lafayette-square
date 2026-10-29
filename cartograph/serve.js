@@ -3117,6 +3117,16 @@ createServer(async (req, res) => {
         [join(LOOK_DIR, 'tree-anchors.json')],
         `node bake-tree-anchors.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
+      // The far shore, baked (BRIEF-the-far-shore-is-not-built-at-load): the revetment's far layer and its overhead band,
+      // built against the ground the player draws and classed by what the movie sees, so nothing is built at load.
+      // After `scene` (the hero keys) and the ground (the drawn ground). A town with no revetment.json writes none.
+      // not-inputs: ground.json (read by VALUE, pourSteps.mjs#groundForReaders: without the maps bake-ground-ao writes back, or its timings; this audit reports that UNKNOWN, as tree-anchors)
+      await runIfDirty('revetment-far',
+        [groundForReaders(LOOK_DIR), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'terrain.json'), join(LOOK_DIR, 'terrain.bin'),
+         join(LOOK_DIR, 'revetment.json'), join(LOOK_DIR, 'scene.json'), join(here, 'bake-revetment-far.js')],
+        [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')],
+        `node bake-revetment-far.js --look=${id}`,
+        { cwd: here, timeout: 300000, absentOk: [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')] })
       // AO bake last — slowest, benefits from updated geometry.
       // ⚠️ lamps.json + trees.json ARE inputs here, not just neighbours in the
       // chain: bake-ground-ao reads both (`bake-ground-ao.js:276/289`) to burn the

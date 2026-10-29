@@ -1,7 +1,7 @@
 // far-cost.mjs — WHAT DOES THE REVETMENT'S FAR LAYER COST ON THE MAIN THREAD, PER FACE, AS THE PLAYER BUILDS IT?
 // Read-only. Reproduces SlabRevetment.jsx's face preparation and its far-layer build (FAR_OCTAVES, the drawn ground as
 // groundAt, groundRelative's second pass) against a town's local slab (public/baked/<town>/), the same inputs the
-// player fetches. ⭐ Unlike scratch/boulder-farfield-cost.mjs it passes groundAt: the profile's cost is all inside it.
+// player fetches. ⭐ It passes groundAt (the retired boulder-farfield-cost.mjs did not): the profile's cost is all inside it.
 // ▶ node scratch/far-shore/far-cost.mjs --town=provincetown [--json=out.json]
 import { readFileSync, writeFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'

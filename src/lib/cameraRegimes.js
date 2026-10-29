@@ -224,6 +224,34 @@ export function applyAim(controls, turn, dist) {
   controls.update()
 }
 
+// ── The overhead regime's zoom rule ─────────────────────────────────────────
+/**
+ * Whether a detail of size `sizeM` at a bounding sphere resolves on screen in the OVERHEAD regime (Browse, Society):
+ * inside the view (`frustum`, the camera's own) AND spanning at least `samples` pixels at the sphere's own distance.
+ * ⭐ Jacob, 2026-10-29: "We will though need to see stones when the user pinches/zooms in to the map; but only at the LoD
+ * for the elevation and for the area inside the camera view" — ruled to be metres per pixel. The revetment asks it per
+ * chunk with the stone's own size (d50) and the drape's own sampling rule (revetmentDrape.js#VERTS_PER_WAVELENGTH).
+ * Metres per pixel is `labelLod.js#metersPerPixel`'s measure taken at the detail's own distance from the camera rather
+ * than the camera's height, and with none of its fallbacks: a missing viewport height, position or fov THROWS.
+ * ⚠️ OVERHEAD ONLY, AND WHY: looking down, every detail in view is about as far as the ground under the camera, so one
+ * metres-per-pixel answers for the view; near-horizontal (the movie, Street) it varies from metres to kilometres across
+ * one frame (labelLod's own caveat), and the budget there is the near layer's NEAR_RADIUS_M. ⚠️ KNOWN OPEN: two
+ * selections stand until Street's own brief rules one for the near-horizontal regimes.
+ */
+export function overheadResolves(camera, viewportHeightPx, frustum, center, radius, sizeM, samples) {
+  if (!(viewportHeightPx > 0)) throw new Error(`[camera] overheadResolves: no viewport height (${viewportHeightPx})`)
+  if (!(sizeM > 0) || !(samples > 0)) throw new Error(`[camera] overheadResolves: a detail needs a size and a sample count (${sizeM}, ${samples})`)
+  if (!frustum.intersectsSphere({ center, radius })) return false
+  let mpp
+  if (camera.isOrthographicCamera) mpp = (camera.top - camera.bottom) / camera.zoom / viewportHeightPx
+  else {
+    if (!(camera.fov > 0) || !camera.position) throw new Error(`[camera] overheadResolves: a perspective camera with no fov or position`)
+    const dist = Math.max(0, camera.position.distanceTo(center) - radius)
+    mpp = (2 * dist * Math.tan((camera.fov * Math.PI) / 360)) / viewportHeightPx
+  }
+  return sizeM / mpp >= samples
+}
+
 /** The per-mount keys a caller may set: content scale, never gestures. */
 export const REGIME_LIMIT_KEYS = ['minDistance', 'maxDistance', 'minPolarAngle', 'maxPolarAngle', 'minZoom', 'maxZoom']
 

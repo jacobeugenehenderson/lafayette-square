@@ -22,7 +22,7 @@ for (const f of faces) {
     const I = d.geometry.index.array; for (let t = 0; t < I.length; t += 3) want.push(tri(P, R, I, t)) }
   const got = []
   for (const c of doc.chunks.filter(c => c.face === f.key)) { const b = bins[c.bin], o = c.offsets, v = c.vertexCount
-    const P = new Float32Array(b.buffer, b.byteOffset + o.pos, v * 3), R = new Float32Array(b.buffer, b.byteOffset + o.raw, v), I = new Uint32Array(b.buffer, b.byteOffset + o.index, c.indexCount)
+    const P = new Float32Array(b.buffer, b.byteOffset + o.pos, v * 3), R4 = new Float32Array(b.buffer, b.byteOffset + o.pin, v * 4), R = R4.filter((_, i) => i % 4 === 1), I = new Uint32Array(b.buffer, b.byteOffset + o.index, c.indexCount)
     for (let t = 0; t < I.length; t += 3) got.push(tri(P, R, I, t)) }
   want.sort(); got.sort()
   if (want.join('\n') !== got.join('\n')) { bad++; console.log(`  ⛔ ${f.key}: runtime ${want.length} tris, baked ${got.length}`) }
