@@ -49,11 +49,6 @@ keyframes only). Jacob, 2026-10-28: the Arch now "bounces" with camera motion si
 **❓ OPEN RULINGS FOR JACOB:** the (b′) chain ends · the chain join's override home · Browse → Society re-frame · a deck's width (the
 pier's OSM `width` tag) vs an embankment's (the pour measure): two rules size a street's land over water · authoring dpr.
 
-**⛔ AN INLAND TOWN'S PLAYER ASKS FOR A REVETMENT IT NEVER HAS (Ward, measured 2026-10-29 03:44Z on hipointedemun.online, new player):**
-`[revetment] hipointedemun: FAILED to load revetment.json — [slabNames] manifest names no "revetment.json"`. No HPDM manifest names it and
-no inland bake writes it; ec6f20c2 (d) gated SlabRevetment's water LEVEL, not its LOADER. Fix: the loader asks only for what the manifest
-names (an inland town draws no revetment and says nothing). A false ⛔ on every live load; small; cause beyond that not established.
-
 **⛔ PROMOTE CARRIES A STALE PLAYER SILENTLY (measured by Ward, 2026-10-29 02:29Z):** HPDM was promoted with its new slab while
 staging/ward/current.json still named the 10-27 player, so production got new slab + old player (symptom: "[revetment] FAILED to load
 revetment.json — manifest names no revetment.json"). The release order said player first; nothing enforced it. FIX OWED: Promote refuses

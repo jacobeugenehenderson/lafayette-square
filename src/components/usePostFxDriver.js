@@ -88,13 +88,13 @@ export const _haloColorRef       = { current: new THREE.Color(HALO_FLAT_DEFAULTS
  *
  * @param resolved  the already-resolved channels + drive targets:
  *   { bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
- *     haloChannel, gradeChannel, grainChannel, dofChannel, dofOn, heroSubject (the town's hero — what a keyframe's
- *     'hero' focus names; src/lib/focusObject.js), viewMode,
+ *     haloChannel, gradeChannel, grainChannel, dofChannel, dofOn, designLoaded (the town's design is in hand;
+ *     src/lib/focusObject.js#focusChoice), viewMode,
  *     aoRef, bloomRef }
  */
 export function usePostFxDriver({
   bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
-  haloChannel, gradeChannel, grainChannel, dofChannel, revealChannel, dofOn, heroSubject,
+  haloChannel, gradeChannel, grainChannel, dofChannel, revealChannel, dofOn, designLoaded,
   viewMode, aoRef, bloomRef,
 }) {
   const { gl, camera, scene } = useThree()
@@ -182,7 +182,7 @@ export function usePostFxDriver({
     // hero; never the aim), Street → the controls' target, Browse → none. Only meaningful when dofOn (the pass mounted).
     if (dofOn) {
       const ctx = { scene, index: useSlabBuildingIndex.getState().index, exag: terrainExag.value }
-      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, choice: focusChoice({ viewMode, movieFocus, heroSubject, ctx }) })
+      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, choice: focusChoice({ viewMode, movieFocus, designLoaded, ctx }) })
     }
   })
 }

@@ -12,24 +12,31 @@
  * cartograph bundle, forbidden inside the production / Preview shared
  * consumer).
  */
-import { useMemo } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 import * as THREE from 'three'
 import { createArchGeometry } from '../components/GatewayArch.jsx'
 import useCartographStore from './stores/useCartographStore.js'
-import { ARCH_FLAT_DEFAULTS } from './skyLightChannels.js'
+import { placedLook, onPlaceMoved, townPlace } from '../lib/townPlace.js'
+import { archSite, archPose } from '../setpieces/gatewayArch.js'
 
+// Drawn where the 3D Arch stands: its real feet through the town's place (src/setpieces/gatewayArch.js), with the Look's
+// scale and rotation (archPose). CartographApp places the active town in a layout effect, so the first render may precede it.
 export function DesignerArch() {
   const archChannel = useCartographStore(s => s.arch)
-  const a = archChannel?.values || ARCH_FLAT_DEFAULTS
+  const lookId = useCartographStore(s => s.activeLookId)
+  const placed = useSyncExternalStore(onPlaceMoved, placedLook)
   const geometry = useMemo(() => createArchGeometry(), [])
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: '#000' }), [])
+  const a = archChannel?.values
+  if (!a || placed !== lookId) return null
+  const pose = archPose(archSite(townPlace()), a)
   return (
     <mesh
       geometry={geometry}
       material={material}
-      position={[a.distance * a.bearingX, 0, a.distance * a.bearingZ]}
-      rotation={[0, a.rotation, 0]}
-      scale={a.scale}
+      position={[pose.x, 0, pose.z]}
+      rotation={[0, pose.rotation, 0]}
+      scale={pose.scale}
       frustumCulled={false}
     />
   )

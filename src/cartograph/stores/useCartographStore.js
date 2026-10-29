@@ -427,7 +427,6 @@ const DESIGN_FIELDS = [
   _grp('hemi',           HEMI_FIELD_KEYS,           HEMI_FLAT_DEFAULTS),
   _grp('dirSun',         DIRSUN_FIELD_KEYS,         DIRSUN_FLAT_DEFAULTS),
   _grp('dirMoon',        DIRMOON_FIELD_KEYS,        DIRMOON_FLAT_DEFAULTS),
-  { key: 'heroSubject',   hydrate: (d) => d.heroSubject || null },
   { key: 'heroKeyframes', hydrate: (d) => Array.isArray(d.heroKeyframes) ? d.heroKeyframes : [...HERO_KEYFRAMES_DEFAULT] },
   { key: 'heroMotion',    hydrate: (d) => {
     // ⛔ A pre-timeline motion ({ period, easing }) is not merged onto the default:
@@ -466,9 +465,14 @@ const DESIGN_FIELDS = [
   // Not a plain _grp: _grp seeds ARCH_FLAT_DEFAULTS for a Look that has no block,
   // which is what installed an identical arch in all six design.json files and
   // forced the renderer to gate on a look NAME instead. Absent ⇒ null ⇒ absent.
-  { key: 'arch', hydrate: (d) => d.arch
-    ? migrateGroupChannel(d.arch, ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS)
-    : null },
+  // Where it stands is derived (src/setpieces/gatewayArch.js), so a block's retired distance/bearing are not fields.
+  { key: 'arch', hydrate: (d) => {
+    if (!d.arch) return null
+    const ch = migrateGroupChannel(d.arch, ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS)
+    // An unauthored rotation stays unauthored (it faces as it really stands), never a 0 the save would then author.
+    if (!Number.isFinite(d.arch.values?.rotation)) delete ch.values.rotation
+    return ch
+  } },
   // Landscape is NOT a plain _grp: migrateGroupChannel returns { values } and drops
   // every sibling key, which would silently EAT `source` — the Stage upload's opt-in
   // that the bake gates on (serve.js:1795). Nothing sets `source` yet ("Until the
@@ -820,7 +824,6 @@ const useCartographStore = create((set, get) => ({
   // The designated set-piece `{ kind, id }` (ROADMAP H-7). ⛔ NO CAMERA READS IT
   // (BRIEF-camera-regimes, 2026-09-26) — shots are the keyframes below. Its one
   // reader today is the Stage "Hero & Horizon" card (landscape vs arch knobs).
-  heroSubject: null,
   // Authored Hero camera path. Each keyframe = { position: [x,y,z],
   // target: [x,y,z], fov } — its own aim; every runtime refuses one without
   // (heroAnim.js#assertKeyframesAimed). Empty by default (the kit stores no
@@ -1675,12 +1678,6 @@ const useCartographStore = create((set, get) => ({
     if (!id) return
     const m = getTodSlotMinutes(useTimeOfDay.getState().currentTime)[id]
     if (m != null) useTimeOfDay.getState().setMinuteOfDay(m)
-  },
-  // Designate (or clear) the Hero subject. Pass null to clear.
-  // subject = { kind: 'building'|'landmark'|'arch', id: string }
-  setHeroSubject: (subject) => {
-    set({ heroSubject: subject || null })
-    get()._saveDesignDebounced()
   },
   setHeroKeyframes: (keyframes) => {
     set({ heroKeyframes: keyframes })

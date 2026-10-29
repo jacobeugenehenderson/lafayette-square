@@ -36,8 +36,9 @@ export function metresPerDegree(geo, who) {
   return { lonToM: lon, latToM: lat }
 }
 
-/** lon/lat → local metres (x east, z south) for one geography. config.js#wgs84ToLocal IS this, for the scene it names. */
-export const projectorOf = (g) => (lon, lat) => [(lon - g.lon) * g.lonToMeters, (g.lat - lat) * g.latToMeters]
+/** lon/lat → local metres (x east, z south) for one geography. config.js#wgs84ToLocal IS this, for the scene it names. It lives
+ *  with the town's place so the player projects through the same function (src/lib/townPlace.js#projectorOf). */
+export { projectorOf } from '../src/lib/townPlace.js'
 
 /** The bb in LOCAL coords: the frozen fetch envelope (`osm.bbox`) through `project`. null when the fetch wrote none. */
 export function localBB(osm, project) {

@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 509,
+  "total": 512,
   "counts": {
-    "safe": 360,
+    "safe": 362,
     "local-effect": 30,
-    "live": 119
+    "live": 120
   },
   "checks": [
     {
@@ -325,6 +325,13 @@
     },
     {
       "file": "checks/claims-a-flat-town-is-not-refined.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-focus-object-resolves-in-its-own-slab.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1783,13 +1790,6 @@
       ]
     },
     {
-      "file": "checks/claims-hero-subject-resolves-in-its-own-slab.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
       "file": "checks/claims-highway-handedness.mjs",
       "tier": "safe",
       "why": [
@@ -2720,6 +2720,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-arch-stands-where-it-is.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-armoured-shore-is-never-empty.mjs",
       "tier": "safe",
       "why": [
@@ -3517,6 +3524,13 @@
         "deletes files — only under its own temp dir",
         "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-the-survey-hero-is-retired.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

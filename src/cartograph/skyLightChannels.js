@@ -283,23 +283,21 @@ export const NEON_FIELDS = [
 export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeCm: 1.5, linePx: 5, handoffPx: 5, lineGain: 1 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
-// Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform.
-// Single non-TOD channel (the landmark doesn't drift through the day).
-// Field names drop the redundant `arch` prefix that lived on the legacy
-// archState (e.g., archDistance → distance). The uplights moved to their
-// own TOD-animatable `archLight` channel (2026-06-22) so the *lighting* can
-// ride a day→night curve while placement stays put.
+// Arch (the Horizon card) — the Gateway Arch's look. ⛔ No placement here: WHERE it stands is derived from its real
+// feet through the town's place (src/setpieces/gatewayArch.js#archSite), so no distance or bearing is authored and none
+// is a kit default (they were Lafayette Square's: Class D). What a Look authors is how it PRESENTS (archPose):
+//   scale     — pivoting at the APEX
+//   rotation  — radians about +Y; ⛔ NOT defaulted (1.36 was LS's): a Look that authors none faces it as it really stands
+//   yOffset   — the apex's height above PEAK_HEIGHT (m)
+//   footFade  — metres below world y=0 at which the arch alpha reaches zero
+// Single non-TOD channel (the landmark doesn't drift through the day). Its uplights are the TOD `archLight` channel.
 export const ARCH_FLAT_DEFAULTS = {
-  distance: 1050,
-  bearingX: 0.9487,
-  bearingZ: -0.3163,
   scale: 1.3,
-  rotation: 1.36,
   yOffset: 0,
-  // Foot fade — meters below world y=0 at which the arch alpha reaches zero.
   footFade: 30,
 }
-export const ARCH_FIELD_KEYS = Object.keys(ARCH_FLAT_DEFAULTS)
+// rotation is a field with no default (above): the hydrate keeps it only where it is authored.
+export const ARCH_FIELD_KEYS = [...Object.keys(ARCH_FLAT_DEFAULTS), 'rotation']
 
 // Landscape (Hero Controls — the THIRD hero subject kind: a backdrop MESH, not a
 // point-to-frame). The per-type controls of a `kind:'landscape'` hero: placement
@@ -308,7 +306,7 @@ export const ARCH_FIELD_KEYS = Object.keys(ARCH_FLAT_DEFAULTS)
 // hood fog). Non-TOD like the arch — the range doesn't drift; its per-TOD COLOR
 // comes free from the light rig + the global `mist` channel. Placement frame:
 // world = distance·[bearingX, _, bearingZ]; +x=EAST, +z=SOUTH → NORTH is −z
-// (verified from ARCH_FLAT_DEFAULTS' real bearing, not the empty frame memo).
+// (verified against the Gateway Arch's real feet, src/setpieces/gatewayArch.js, through Lafayette Square's frame).
 export const LANDSCAPE_FLAT_DEFAULTS = {
   // A. Placement — geo-anchor seeds these at bake (bake-landscape.js); overridable.
   bearingX: 0.18, bearingZ: -0.98, distance: 5400, scale: 1.0, rotation: 0, yOffset: -20,
