@@ -143,6 +143,15 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
           ids2 = keep.length ? keep : [pred]; stat.claimantsDropped = (stat.claimantsDropped || 0) + 1 }
         for (const i of ids2) tok.push(Lsrc(g, i))
         stat.orderedTokens = (stat.orderedTokens || 0) + 1; lastRun = { ring: g, from: ids2[0], to: ids2[ids2.length - 1] }; continue } }
+    // ⭐ TWO RINGS, MORE THAN TWO TAGS (Jacob's ruling (a), 2026-10-29; PTown's merged holes): the walls of two rings meet at a segment
+    // that also carries a second line of one of them within the rounding. Each ring is read at the tag that CONTINUES its neighbour: the
+    // predecessor's ring at its tag nearest forward of the predecessor's, the other at its tag nearest back of the successor's; then the
+    // pair is a transition like any other
+    if (ringsHere.size === 2 && tags.length > 2) { const onR = (t, g) => (t == null ? [] : Array.isArray(t) ? t : [t]).filter(x => x?.ring === g).map(x => x.i)
+      const pv = T[(e - 1 + E.length) % E.length], nv = T[(e + 1) % E.length], [g1, g2] = [...ringsHere], gp = onR(pv, g1).length ? g1 : g2, gn = gp === g1 ? g2 : g1
+      const pick = (g, ref, fwd) => { const n = SRC[g].length, own = tags.filter(x => x.ring === g); if (ref == null) return own[0]; const dist = (x) => fwd ? (x.i - ref + n) % n : (ref - x.i + n) % n; return own.sort((x, y) => dist(x) - dist(y))[0] }
+      const pr = onR(pv, gp), nr = onR(nv, gn), tp = pick(gp, pr.length ? pr[pr.length - 1] : null, true), tn = pick(gn, nr.length ? nr[0] : null, false)
+      tags.splice(0, tags.length, tp, tn); stat.crossRingReduced = (stat.crossRingReduced || 0) + 1 }
     const r = tagRun(tags, SRC, { twoH: 2 * Math.abs(d), lineOf: LINES ? lineOf : null })
     if (!r.ok) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) carries tags ${JSON.stringify(tags)}: ${r.clause}. Refusing.`)
     stat[r.kind] = (stat[r.kind] || 0) + 1
@@ -354,8 +363,8 @@ let RAW_CURVE = false                             // ⛔ the mutant only (setRaw
 export const setRawCurve = (v) => { RAW_CURVE = !!v }
 let BY_EDGES = false                              // ⛔ the mutant only (setByEdges): the close morphs the open's edges, not its runs
 export const setByEdges = (v) => { BY_EDGES = !!v }
-let NO_TOPOLOGY_GUARD = false                     // ⛔ the mutant only (setNoTopologyGuard)
-export const setNoTopologyGuard = (v) => { NO_TOPOLOGY_GUARD = !!v }
+let TOPO_SILENT = false                           // ⛔ the mutant only (setTopoSilent): a topology change made with no record
+export const setTopoSilent = (v) => { TOPO_SILENT = !!v }
 let FOLDED_QUAD = false, NO_FOLD_TRIANGLE = false, R_SEPARATE = false   // ⛔ the mutants only (setFoldMutant)
 export const setFoldMutant = (m) => { FOLDED_QUAD = m === 'quad'; NO_FOLD_TRIANGLE = m === 'no-triangle'; R_SEPARATE = m === 'r-separate' }
 let NO_EMIT_INVARIANT = false                     // ⛔ the mutant only (setNoEmitInvariant)
@@ -676,21 +685,31 @@ export function openCloseProvenance(paths, stepM, what) {
   for (const [kind, fs] of [['taken', tf], ['filled', ff]]) for (const pp of fs) if (widerThanTwoH(pp, h)) { const o = pp[0]
     throw new Error(`[${what}] ⛔ the open/close: a ${kind} feature at (${(o[0].X / SCALE).toFixed(3)}, ${(o[0].Y / SCALE).toFixed(3)}) (${(m2(pp)).toFixed(2)} m²) is wider than a cell (it survives an erode by half a cell), and the definition ${kind === 'taken' ? 'takes' : 'fills'} nothing a disk of radius h fits in. Cause not established. Refusing.`) }
   const K = arrange([Pt, SUB(tf.flat()), ff.flat()], w => (w[0] > 0 && !out_(w[1])) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
-  // ⭐ THE TOPOLOGY GUARD ON k (Zob, 2026-10-29): a hole of P that k no longer holds (it opened to the outside), or two parts of P
-  // that k joins, is the topology change Boz rules on: refused by name. Intermediate merges inside the open that the close
-  // undoes are not refused. A test point per ring: half a unit to the side of its longest edge (P's material for an outer, the
-  // hole for a hole)
+  // ⭐ THE TOPOLOGY RECORD ON k (Jacob's ruling (a), 2026-10-29): the open/close follows the DEFINITION where it changes topology, and
+  // EVERY change is NAMED: a hole of P filled, a hole opened to the outside, holes merged into one, a part split, parts joined. Each is
+  // made by a taken or filled feature, and every feature is held narrower than 2h (widerThanTwoH, above): a change the definition
+  // does not make refuses there. A test point per ring: half a unit to the side of its longest edge (P's material for an outer, the
+  // hole for a hole). → `topology`: [{ kind, at (m), m2, n? }], in the order found
   const wnd = (rs, x, y) => rs.reduce((t, r) => { let c = false; for (let a2 = 0, b2 = r.length - 1; a2 < r.length; b2 = a2++) { const p = r[a2], q = r[b2]; if ((p.Y > y) !== (q.Y > y) && x < (q.X - p.X) * (y - p.Y) / (q.Y - p.Y) + p.X) c = !c } return t + (c ? Math.sign(area(r)) : 0) }, 0)
   const probe = (r) => { let best = 0, bi = 0; r.forEach((p, i) => { const q = r[(i + 1) % r.length], L = Math.hypot(q.X - p.X, q.Y - p.Y); if (L > best) { best = L; bi = i } })
     const p = r[bi], q = r[(bi + 1) % r.length], L = best, nx = -(q.Y - p.Y) / L, ny = (q.X - p.X) / L, side = area(r) > 0 ? 0.5 : -0.5
     return [(p.X + q.X) / 2 + nx * side, (p.Y + q.Y) / 2 + ny * side] }
   const kOuters = k.filter(r => area(r) > 0)
   const ownerIn = (pt) => kOuters.map((r, i) => ({ i, a: area(r), inside: wnd([r], pt[0], pt[1]) !== 0 })).filter(x => x.inside).sort((x, y) => x.a - y.a)[0]?.i ?? null
-  if (!NO_TOPOLOGY_GUARD) {
-    for (const r of Pt.filter(r => area(r) < 0)) { const pt = probe(r); if (wnd(k, pt[0], pt[1]) !== 0) continue          // filled by the close: every filled feature is held narrower than 2h, above
-      if (ownerIn(pt) == null) throw new Error(`[${what}] ⛔ the topology guard: P's hole at (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)}) (${(-area(r) / SCALE / SCALE).toFixed(2)} m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.`) }
-    const seen = new Map(); for (const r of Pt.filter(r => area(r) > 0)) { const o = ownerIn(probe(r)); if (o == null) continue
-      if (seen.has(o)) throw new Error(`[${what}] ⛔ the topology guard: two parts of P (at (${(seen.get(o)[0].X / SCALE).toFixed(3)}, ${(seen.get(o)[0].Y / SCALE).toFixed(3)}) and (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)})) are joined by the output. The topology change is Boz's. Refusing.`)
-      seen.set(o, r) } }
-  return { paths: toIP(k), rings: k, tags: K.tags, P: Pt, stat, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }
+  const m = (v) => +(v / SCALE).toFixed(3), sq = (r) => +(Math.abs(area(r)) / SCALE / SCALE).toFixed(3), topo = []
+  const kHoles = k.filter(r => area(r) < 0), holeIn = (pt) => kHoles.map((r, i) => ({ i, a: -area(r), inside: wnd([r], pt[0], pt[1]) !== 0 })).filter(x => x.inside).sort((x, y) => x.a - y.a)[0]?.i ?? null
+  {
+    const intoHole = new Map()
+    for (const r of Pt.filter(r => area(r) < 0)) { const pt = probe(r)
+      if (wnd(k, pt[0], pt[1]) !== 0) { topo.push({ kind: 'hole-filled', at: [m(r[0].X), m(r[0].Y)], m2: sq(r) }); continue }
+      if (ownerIn(pt) == null) { topo.push({ kind: 'hole-opened', at: [m(r[0].X), m(r[0].Y)], m2: sq(r) }); continue }
+      const h2 = holeIn(pt); if (h2 != null) (intoHole.get(h2) || intoHole.set(h2, []).get(h2)).push(r) }
+    for (const [h2, rs] of intoHole) if (rs.length > 1) topo.push({ kind: 'holes-merged', at: [m(kHoles[h2][0].X), m(kHoles[h2][0].Y)], m2: sq(kHoles[h2]), n: rs.length })
+    const owners = new Map(); for (const r of Pt.filter(r => area(r) > 0)) { const o = ownerIn(probe(r)); if (o != null) (owners.get(o) || owners.set(o, []).get(o)).push(r) }
+    for (const [o, rs] of owners) if (rs.length > 1) topo.push({ kind: 'parts-joined', at: [m(kOuters[o][0].X), m(kOuters[o][0].Y)], m2: sq(kOuters[o]), n: rs.length })
+    const POut = Pt.filter(r => area(r) > 0), byP = new Map()
+    for (const r of kOuters) { const pt = probe(r), g2 = POut.findIndex(R => wnd([R], pt[0], pt[1]) !== 0); if (g2 >= 0) (byP.get(g2) || byP.set(g2, []).get(g2)).push(r) }
+    for (const [g2, rs] of byP) if (rs.length > 1) topo.push({ kind: 'part-split', at: [m(POut[g2][0].X), m(POut[g2][0].Y)], m2: sq(POut[g2]), n: rs.length }) }
+  if (TOPO_SILENT) topo.length = 0
+  return { paths: toIP(k), rings: k, tags: K.tags, P: Pt, stat, topology: topo, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }
 }

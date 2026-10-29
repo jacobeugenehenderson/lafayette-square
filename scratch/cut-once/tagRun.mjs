@@ -34,16 +34,18 @@ export function tagRun(tags, SRC, { againstDirection = false, refuseGap = false,
     const same = tags.every(t => sameLine(s0, segOf(SRC[t.ring], t.i, t.ring)))
     if (same) return { ok: true, kind: 'line', ring: tags[0].ring, from: tags[0].i, to: tags[0].i, gaps: 0, rings }
     // ⭐ Zob's ruling, 2026-10-28 (PTown's deck): two rings' tags on one segment are a TRANSITION collapsed by rounding, emitted
-    // as any tag change (the caller orders the two by its neighbours and cuts between them). The classifier is a GUARD: the two
-    // source walls no farther apart than 2h there is the walls-meet question (Boz's), refused by name. Read off the source, in
-    // doubles; within 1e-6 u of 2h refuses as a tie.
+    // as any tag change (the caller orders the two by its neighbours and cuts between them). Two walls no farther apart than 2h
+    // MEET (Jacob's ruling (a), below); read off the source, in doubles; within 1e-6 u of 2h refuses as a tie. More than two RINGS
+    // refuses by name (unruled); two rings with more than two tags are reduced per ring by the caller (openClose.mjs#emit)
     if (rings.length !== 2 || tags.length !== 2) return { ok: false, clause: 'cross-ring-not-a-pair', rings, tags }
     if (!(twoH > 0)) throw new Error('⛔ tagRun: a cross-ring transition needs { twoH } (the open\'s 2h, in units) for its guard')
     const sa = segOf(SRC[tags[0].ring], tags[0].i, tags[0].ring), sb = segOf(SRC[tags[1].ring], tags[1].i, tags[1].ring)
     const wall = Math.min(distSeg(sa.a, sb.a, sb.b), distSeg(sa.b, sb.a, sb.b), distSeg(sb.a, sa.a, sa.b), distSeg(sb.b, sa.a, sa.b))
     if (Math.abs(wall - twoH) < 1e-6) return { ok: false, clause: 'walls-at-2h-tie', rings, tags, wallU: wall }
-    if (wall <= twoH) return { ok: false, clause: 'walls-meet', rings, tags, wallU: +wall.toFixed(3) }
-    return { ok: true, kind: 'transition', tags, wallU: +wall.toFixed(3), gaps: 0 }
+    // ⭐ WALLS THAT MEET ARE THE DEFINITION'S (Jacob's ruling (a), 2026-10-29): two walls no farther apart than 2h are joined by the
+    // morph exactly as the definition joins them, so their tag change is the same transition; the topology it makes (holes merged or
+    // filled, parts joined) is NAMED by the open/close's topology record, never silent
+    return { ok: true, kind: 'transition', tags, wallU: +wall.toFixed(3), gaps: 0, wallsMeet: wall <= twoH }
   }
   const ring = rings[0], R = SRC[ring], n = R.length, is = [...new Set(tags.map(t => t.i))].sort((x, y) => x - y)
   // the shortest arc holding them: the complement of the largest cyclic gap between consecutive indices

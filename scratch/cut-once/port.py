@@ -36,10 +36,10 @@ i = s.index("// a ring's raw offset curve at d"); j = s.index("  return out\n}\n
 
 # ── every mutant flag and its setter
 for f, setter in [('TAGS_BY_SEGMENT', 'setTagsBySegment'), ('REFUSE_ALL_BACKWARD', 'setRefuseAllBackward'), ('SINGLE_POINT_BRANCH', 'setSinglePointBranch'),
-                  ('RAW_CURVE', 'setRawCurve'), ('BY_EDGES', 'setByEdges'), ('NO_TOPOLOGY_GUARD', 'setNoTopologyGuard'), ('NO_EMIT_INVARIANT', 'setNoEmitInvariant'),
+                  ('RAW_CURVE', 'setRawCurve'), ('BY_EDGES', 'setByEdges'), ('NO_EMIT_INVARIANT', 'setNoEmitInvariant'),
                   ('TIERS_SWAPPED', 'setTiersSwapped'), ('TAGS_OFF_AT', 'setTagsOffAt'), ('OWN_SKIPS_LIMIT', 'setOwnSkipsLimit'), ('SUB_SAME_WAY', 'setSubSameWay'),
                   ('TRIMMED_ARC_CORNERS', 'setTrimmedArcCorners'), ('ARC_RAW', 'setArcRaw'), ('NO_SLIVER_DROP', 'setNoSliverDrop'), ('TRIM_INVERTED', 'setTrimInverted'),
-                  ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('TAG_SET_ORDER', 'setTagSetOrder'), ('INSIDE_RUN_FORWARD', 'setInsideRunForward'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces'), ('MERGE_LEAVES_FIRST', 'setMergeLeavesFirst'), ('CLAIMANTS_KEPT', 'setClaimantsKept'), ('OPP_STANDINS', 'setOppStandins'), ('F_SLIVER_KEPT', 'setFSliverKept'), ('CLAIMANT_ONE_SUCCESSOR', 'setClaimantOneSuccessor')]:
+                  ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('TAG_SET_ORDER', 'setTagSetOrder'), ('INSIDE_RUN_FORWARD', 'setInsideRunForward'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces'), ('MERGE_LEAVES_FIRST', 'setMergeLeavesFirst'), ('CLAIMANTS_KEPT', 'setClaimantsKept'), ('OPP_STANDINS', 'setOppStandins'), ('F_SLIVER_KEPT', 'setFSliverKept'), ('CLAIMANT_ONE_SUCCESSOR', 'setClaimantOneSuccessor'), ('TOPO_SILENT', 'setTopoSilent')]:
     s, n1 = re.subn(rf'^let {f} = [^\n]*\n', '', s, flags=re.M)
     s, n2 = re.subn(rf'^export const {setter} = [^\n]*\n', '', s, flags=re.M)
     if n1 != 1 or n2 != 1: sys.exit(f'port: {f}/{setter}: {n1} let, {n2} setter')
@@ -53,7 +53,7 @@ sub("!REFUSE_ALL_BACKWARD && ", "")
 sub("if (!TAG_SET_ORDER && tags.length > 1", "if (tags.length > 1")
 sub("if (!INSIDE_RUN_FORWARD && pred != null", "if (pred != null")
 sub("LINES?.[g] && !BY_EDGES ? runsOf", "LINES?.[g] ? runsOf")
-sub("if (!NO_TOPOLOGY_GUARD) {", "{")
+sub("  if (TOPO_SILENT) topo.length = 0\n", "")
 sub("if (!NO_EMIT_INVARIANT) for", "for")
 sub("TIERS_SWAPPED ? null : (INSERTED", "(INSERTED")
 sub("tags: withTags && !(TAGS_OFF_AT === who.split(' ').pop())", "tags: withTags")
@@ -106,8 +106,8 @@ sub("export function openAt(paths, stepM, what, stat = {}) { const Pt = unionTag
 sub("export function closeAt(paths, stepM, what, stat = {}) { const Pt = unionTagged(paths, what);",
     "export function closeAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what);")
 sub("export function openCloseProvenance(paths, stepM, what) {\n", "export function openCloseCutOnce(paths, stepM, what) {\n  fresh()\n")
-sub("  return { paths: toIP(k), rings: k, tags: K.tags, P: Pt, stat, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }",
-    "  return { rings: k, tags: K.tags, P: Pt, stat, taken, filled, tf, ff, origin: new Map(ORIGIN), dropped: DROPPED.slice() }")
+sub("  return { paths: toIP(k), rings: k, tags: K.tags, P: Pt, stat, topology: topo, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }",
+    "  return { rings: k, tags: K.tags, P: Pt, stat, topology: topo, taken, filled, tf, ff, origin: new Map(ORIGIN), dropped: DROPPED.slice() }")
 sub("export { pieces, area }\n", "export { area, pieces }\n")
 
 # ── tagRun, inlined

@@ -501,6 +501,9 @@ export async function bakeCoast({ scene, outDir = null, write = true }) {
     guard: { rimCells: guard.n, aboveHigh: guard.above, share: +guard.share.toFixed(4), gapM: guard.gapM },
     waterOpened: { m2: sumM2(oc.openedPieces.features), features: oc.openedPieces.features.map(({ poly, ...f }) => f), slivers: oc.openedPieces.slivers }, waterClosed: { m2: sumM2(oc.closedPieces.features), features: oc.closedPieces.features.map(({ poly, ...f }) => f), slivers: oc.closedPieces.slivers }, waterBelowResolution: oc.belowResolution.map(({ m2, at }) => ({ m2, at })),
     decksOpened: { m2: decks.openedM2, sites: decks.opened }, decksClosed: { m2: decks.closedM2, sites: decks.closed }, decksBelowResolution: decks.belowResolution.map(({ m2, at }) => ({ m2, at })),
+    // ⭐ EVERY TOPOLOGY CHANGE THE OPEN/CLOSE MADE (Jacob's ruling (a), 2026-10-29): it follows the definition (a hole filled or opened,
+    // holes merged, a part split, parts joined), each NAMED here: { kind, at (m), m2, n? }. ▶ checks/claims-the-open-close-cuts-once.mjs
+    waterTopology: oc.topology, decksTopology: decks.topology,
     edgesBelowResolution,
     settled: { moved: settled.moved, bounded: settled.bounded, unbracketed: settled.unbracketed, noValue: settled.noValue, sweepClamped: settled.sweepClamped, p50M: +settled.p50.toFixed(4), maxM: +settled.max.toFixed(4) },
     totals: { heldCells: heldN, noReturnEnteredHa: +(nrIn * G * G / 1e4).toFixed(1), noReturnNotReachedHa: +(nrOut * G * G / 1e4).toFixed(1), noCoverageHa: +(noCover * G * G / 1e4).toFixed(1), fineTiles: tiles, fineSamples: samples, fineNoValue: noValue, sentinelCrossings: crossings,

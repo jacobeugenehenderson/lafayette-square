@@ -10,8 +10,9 @@
 //   · a cut whose crossing the next boolean trims → the region's own arc, CLIPPED by D's wedge (the trimmed arc)
 // Every emitted edge lies on its tag's line within the tiered bound (the emission invariant) or the call refuses by name.
 // open = morph(P, −h) ∩ P · close = morph(open, +h) ∪ open · k = P − the open's taken FEATURES ∪ the close's filled FEATURES,
-// a feature being a piece that survives an erode by NODE_BOUND (structures.mjs#isRoundingSliver). Each difference's subtracted
-// set is wound clockwise so its edges keep their tags. A hole of P that k opens, or two parts of P k joins, refuses by name.
+// a feature being a piece that survives an erode by NODE_BOUND (structures.mjs#isRoundingSliver), and held narrower than 2h
+// (widerThanTwoH), or the call refuses. Each difference's subtracted set is wound clockwise so its edges keep their tags. Where the
+// definition changes topology (a hole filled or opened, holes merged, a part split) k follows it, and `topology` NAMES each change.
 // Callers: structures.mjs#openCloseAtStep (the footprints and the traced water), #waterWithoutDecks (openAt, closeAt).
 // ▶ node checks/claims-the-open-close-cuts-once.mjs (fast) · node checks/claims-the-open-close-cuts-once-huron.mjs (Huron's ratchet)
 import { isRoundingSliver } from './structures.mjs'

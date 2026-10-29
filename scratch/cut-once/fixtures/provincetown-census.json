@@ -3,87 +3,12 @@
   "parts": 197,
   "partsBuilt": 196,
   "tiles": 1296,
-  "runs": 1168
+  "runs": 1125
  },
  "tile": 500,
  "min": 62.5,
  "win": 250,
  "sites": [
-  {
-   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
-   "at": [
-    -4871.38,
-    -1459.115
-   ],
-   "why": "[census 1] ⛔ the topology guard: P's hole at (-4871.380, -1459.115) (11.13 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
-   "leaves": 1,
-   "m2": 53117.8,
-   "parentOnly": 1,
-   "sizes": [
-    250
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the back-offset · walls-meet",
-   "at": [
-    -4362.641,
-    -1403.795
-   ],
-   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-4362.641,-1403.795) → (-4362.661,-1403.813) carries tags [{\"ring\":2,\"i\":3},{\"ring\":3,\"i\":2}]: walls-meet. Refusing.",
-   "leaves": 1,
-   "m2": 2357.3,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the topology guard: two parts of P (…) and (…)) are joined by the output",
-   "at": [
-    -4554.762,
-    -1330.979
-   ],
-   "why": "[census 3] ⛔ the topology guard: two parts of P (at (-4554.762, -1330.979) and (-4534.645, -1330.271)) are joined by the output. The topology change is Boz's. Refusing.",
-   "leaves": 1,
-   "m2": 389.2,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "ARTEFACT: builds untiled"
-  },
-  {
-   "class": "the topology guard: P's hole at (…) (…) is no longer a hole of the output: it opened to the outside",
-   "at": [
-    -4462.489,
-    -1275.338
-   ],
-   "why": "[census 3] ⛔ the topology guard: P's hole at (-4462.489, -1275.338) (24.39 m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.",
-   "leaves": 1,
-   "m2": 574.9,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "ARTEFACT: builds untiled"
-  },
-  {
-   "class": "the back-offset · cross-ring-not-a-pair",
-   "at": [
-    -3577.898,
-    -1843.294
-   ],
-   "why": "[census 3 open] ⛔ the back-offset: the eroded segment (-3577.898,-1843.294) → (-3577.897,-1843.294) carries tags [{\"ring\":0,\"i\":68},{\"ring\":0,\"i\":69},{\"ring\":6,\"i\":1}]: cross-ring-not-a-pair. Refusing.",
-   "leaves": 1,
-   "m2": 3090.9,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  },
   {
    "class": "the back-offset: a trimmed arc STARTS outside D's wedge at (…)",
    "at": [
