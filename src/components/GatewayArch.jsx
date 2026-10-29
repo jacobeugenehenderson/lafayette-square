@@ -306,7 +306,7 @@ export default function GatewayArch({
     return mat
   }, [])
 
-  useFrame(({ camera }) => {
+  useFrame(() => {
     if (!meshRef.current) return
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
     const { currentTime } = useTimeOfDay.getState()
@@ -389,13 +389,10 @@ export default function GatewayArch({
       shaderRef.current.uniforms.uSunDir.value.set(lx, ly, lz)
 
       const azimuth = Math.atan2(lx, -lz)
-      const relAngle = azimuth - arch.rotation
+      const relAngle = azimuth - meshRef.current.rotation.y   // the drawn facing: its real one plus the Look's turn
+      // The highlight follows the sun (or moon) and the Arch, never the camera.
       const glintFromSun = 0.5 + Math.sin(relAngle) * 0.48
-      const dx = camera.position.x - (-400)
-      const dz = camera.position.z - 230
-      const lateral = (dx * 0.358 + dz * 0.934) / 140
-      const cameraShift = Math.max(-0.15, Math.min(0.15, lateral * 0.15))
-      shaderRef.current.uniforms.uGlintPos.value = Math.max(0.20, Math.min(0.80, glintFromSun + cameraShift))
+      shaderRef.current.uniforms.uGlintPos.value = Math.max(0.20, Math.min(0.80, glintFromSun))
 
       const moonFade = Math.max(0, Math.min(1, moonPos.altitude / 0.15))
       const sunFade = Math.max(0, Math.min(1, (sunAltitude + 0.1) / 0.3))

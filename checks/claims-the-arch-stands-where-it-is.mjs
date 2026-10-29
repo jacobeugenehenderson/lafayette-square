@@ -13,8 +13,11 @@
 //   (4) EVERY LOOK carrying `arch` is under the new rule, in its design.json AND its baked scene.json: RED by name until
 //       `node cartograph/migrate-arch-stands.mjs --write` has run and the town's scene is re-baked (the store refuses an
 //       old block; the renderer says it and draws nothing).
+//   (5) THE GLINT follows the sun and the Arch, never the camera: no camera read in GatewayArch's frame step, and no
+//       read of a placement field the channel no longer has (`arch.rotation` was NaN after the move).
 //   MUTANTS (always run): the authored 1690 restored in GatewayArch → (2) RED · a camera term in the placement → (2) RED
-//   · LS's bearing back in the defaults → (2) RED · the apex pivot kept by the migration → (3) RED.
+//   · LS's bearing back in the defaults → (2) RED · the camera term back in the glint → (5) RED · the glint reading
+//   arch.rotation → (5) RED · the apex pivot kept by the migration → (3) RED.
 //   node checks/claims-the-arch-stands-where-it-is.mjs
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -39,7 +42,7 @@ row(dC < 16.5, `(1) LS: within the cited relation's centre by ${dC.toFixed(1)} m
 
 // (2)
 const judgePlace = (arch, designer, card, defaults) => {
-  const f = arch.slice(arch.indexOf('useFrame(({ camera })'), arch.indexOf('if (shaderRef.current)', arch.indexOf('useFrame(({ camera })')))
+  const f = arch.slice(arch.indexOf('useFrame(('), arch.indexOf('if (shaderRef.current)', arch.indexOf('useFrame((')))
   const placement = f.slice(f.indexOf('archSite('), f.indexOf('scale.setScalar') + 40)
   const why = []
   if (!/archSite\(townPlace\(\)\)/.test(f)) why.push('GatewayArch: not placed by archSite(townPlace())')
@@ -73,6 +76,17 @@ const judgeMigration = (mig) => {
 const M = judgeMigration(migrateArch)
 row(!M.length, `(3) the migration keeps what was drawn (base, facing, size) and drops the placement: ${M.length ? M.join(' · ') : 'yes'}`)
 
+// (5)
+const judgeGlint = (arch) => {
+  const a = arch.indexOf('useFrame(('), f = arch.slice(a, arch.indexOf('\n  })\n', a)), why = []
+  if (/camera/.test(f.replace(/\/\/.*$/gm, ''))) why.push('the frame step reads the camera')
+  if (/arch\.(rotation|scale|distance|bearingX|bearingZ)\b/.test(arch)) why.push('a retired placement field is read')
+  if (!/uGlintPos\.value = Math\.max\(0\.20, Math\.min\(0\.80, glintFromSun\)\)/.test(f)) why.push('the glint is not the sun\'s alone')
+  return why
+}
+const G = judgeGlint(SRC.arch)
+row(!G.length, `(5) the glint follows the sun and the Arch, never the camera: ${G.length ? G.join(' · ') : 'yes'}`)
+
 // (4)
 const index = JSON.parse(read('public/looks/index.json'))
 const oldRule = (a) => !!a?.values && !('presence' in a.values)
@@ -93,6 +107,8 @@ const swap = (s, a, b, name) => { if (!s.includes(a)) { row(false, `mutant (${na
 mutate('the authored 1690 restored', !judgePlace(swap(SRC.arch, 'meshRef.current.position.set(site.x, arch.yOffset, site.z)', 'meshRef.current.position.set(1690 * 0.9487, arch.yOffset, 1690 * -0.3163)', '1690'), SRC.designer, SRC.card, SRC.defaults).length)
 mutate('a camera term in the placement', !judgePlace(swap(SRC.arch, 'meshRef.current.position.set(site.x, arch.yOffset, site.z)', 'meshRef.current.position.set(site.x + camera.position.x * 0.01, arch.yOffset, site.z)', 'camera'), SRC.designer, SRC.card, SRC.defaults).length)
 mutate("LS's bearing back in the defaults", !judgePlace(SRC.arch, SRC.designer, SRC.card, swap(SRC.defaults, '  presence: 1,', '  presence: 1,\n  bearingX: 0.9487,', 'defaults')).length)
+mutate('the camera term back in the glint', !judgeGlint(swap(SRC.arch, 'glintFromSun))', 'glintFromSun + Math.max(-0.15, Math.min(0.15, ((camera.position.x + 400) * 0.358 + (camera.position.z - 230) * 0.934) / 140 * 0.15))))', 'glint')).length)
+mutate('the glint reading arch.rotation again', !judgeGlint(swap(SRC.arch, 'azimuth - meshRef.current.rotation.y', 'azimuth - arch.rotation', 'relAngle')).length)
 mutate('the apex pivot kept by the migration', !judgeMigration((a, g, l) => { const r = migrateArch(a, g, l); return { values: { ...r.values, yOffset: a.values.yOffset } } }).length)
 
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the Arch stands where it is')
