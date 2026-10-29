@@ -45,10 +45,16 @@ export function judge(src, stepM, name) {
     return { rules: [...rules].sort(), touchesLineless, widthU: +(2 * wd).toFixed(1) } }
   const wide = diffs.filter(x => survives(x.pp)).map(x => { const o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }
     return { side: x.side, at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)], m2: +(area(x.pp) / F / F / 1e6).toFixed(5), vertices: o.length, ...classify(x.pp) } })
+  // the dump for the largest CUT-JOIN cases (Zob, 2026-10-29): each one's piece, and every cut join (cand3.mjs#DETAIL: its stage, its
+  // tags, X and its parameters along each line) within 2h. A DETAIL entry is written only where the cut was EMITTED AS X: neither
+  // the gap rule nor the trimmed rule fired, and capAt did not square it
+  const details = [...C3.DETAIL.entries()].map(([k2, v]) => { const [x, y] = k2.split(',').map(Number); return { x, y, ...v } })
+  const cutDump = wide.filter(w => w.rules.includes('cut-join') && (!process.env.ORACLE_SIDE || w.side === process.env.ORACLE_SIDE)).sort((a, b) => b.m2 - a.m2).slice(0, 3).map(w => { const W = w.at.map(v => v * 1000)
+    return { ...w, cuts: details.filter(dd => Math.hypot(dd.x - W[0], dd.y - W[1]) < h2 * 2).map(dd => ({ stage: dd.who, X: [dd.x, dd.y], t: dd.t, u: dd.u, ta: dd.ta, tb: dd.tb, A: dd.A, B: dd.B, distU: +Math.hypot(dd.x - W[0], dd.y - W[1]).toFixed(0) })).slice(0, 4) } })
   const byRule = {}; for (const w of wide) { const key = `${w.side} · ${w.rules.length ? w.rules.filter(x => !['own', 'run-vertex'].includes(x)).join('+') || 'own/run only' : 'no emission within 2h'}${w.touchesLineless ? ' · lineless' : ''}`; byRule[key] = (byRule[key] || 0) + 1 }
   const nearTo = (process.env.ORACLE_NEAR || '').split(';').filter(Boolean).map(t => t.split(',').map(Number)).map(([x, y]) => ({ at: [x, y], nearest: wide.map(w => ({ ...w, distM: +Math.hypot(w.at[0] - x, w.at[1] - y).toFixed(3) })).sort((a, b) => a.distM - b.distM).slice(0, 2) }))
   const bySide = wide.reduce((t, w) => ((t[w.side] = (t[w.side] || 0) + 1), t), {})
-  return { name, ms, diffPieces: diffs.length, wider: wide.length, bySide, byRule, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
+  return { name, ms, diffPieces: diffs.length, wider: wide.length, bySide, byRule, cutDump, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
 }
 if (import.meta.url === `file://${process.argv[1]}`) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
