@@ -8702,7 +8702,7 @@
       "date": "2026-10-29",
       "quote": "\"I drag the camera all the way to the left, and the arch goes out of frame… So I want to park the camera and rotate it to the arch. Then it might be nice to be able to go up and down… It's like: plant it and point it\" · \"then: play it\" · \"I like the camera navigation controls as they are now; we just don't have a good aimer\" · \"I almost think it could be drag the exact object I am touching so if it's the arch it drags the arch keeping you as the pivot\"",
       "canon": "src/lib/cameraRegimes.js (the orbit and street regimes)",
-      "notes": "UNBUILT; brief owed with the live fade band. Street already turns in place (orbit at a locked 0.5 m), at eye height."
+      "notes": "BUILT 2026-10-29 (BRIEF-the-aimer-turns-the-camera-in-place): the gesture is ⇧-drag (Jacob's choice of (a); it retires OrbitControls' own ⇧-pan, a duplicate of ⌘/⌃). Orientation only (Jacob: \"grab has nothing to do with focus. that's only orientation\"): the target turns with the camera at the distance it held. Every orbit mount has it, tool viewers included (\"same tools everywhere\"). Home cameraRegimes.js#aimInPlace/#applyAim; ▶ node checks/claims-the-aimer-turns-in-place.mjs. Street already turns in place (orbit at a locked 0.5 m), at eye height."
     },
     {
       "id": "r-a-town-keeps-the-values-it-grew-with",
