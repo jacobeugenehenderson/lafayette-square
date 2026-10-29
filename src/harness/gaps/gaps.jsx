@@ -35,6 +35,7 @@ import { getElevationRaw } from '../../utils/elevation'
 import { discOf, makeRing } from '../../../cartograph/boundaryRecords.mjs'
 import { waterRuns, clipTraceToDisc } from '../../../cartograph/shoreRuns.mjs'
 import { drawnWaterTest } from '../../../cartograph/shore-armour.mjs'
+import { waterFace } from '../../../cartograph/coastFile.mjs'
 
 const params = new URLSearchParams(location.search)
 const LOOK = INSTANCE.lookId
@@ -59,7 +60,7 @@ await reloadTerrain(LOOK)
 async function stations(stencil) {
   const shape = await (await slabFetch(LOOK, 'shape.json')).json()
   const map = await (await fetch(`/cartograph/data/${LOOK}/clean/map.json`)).json()
-  const inWater = drawnWaterTest((map.layers?.water || []).filter(w => w.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]])))
+  const inWater = drawnWaterTest(waterFace(map, `gaps: ${LOOK}`))   // ①'s water face, the bake's own reader
   const t = currentTerrain(), gridM = Math.min((t.bounds.maxX - t.bounds.minX) / (t.width - 1), (t.bounds.maxZ - t.bounds.minZ) / (t.height - 1))
   const step = gridM * EVERY, out = []
   for (const run of waterRuns(shape)) for (const arc of clipTraceToDisc(run, discOf({ center: stencil.center, radius: stencil.radius, boundary: makeRing(stencil.radius, stencil.center[0], stencil.center[1]) }, 'gaps')).inside) {
