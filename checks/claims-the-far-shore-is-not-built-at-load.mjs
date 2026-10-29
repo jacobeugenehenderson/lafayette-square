@@ -20,8 +20,9 @@
 //     break | return` before it in its own innermost loop. A whole-frame early return does not select; a timer is not a camera.
 //   · A parameter is a sampler only where a call site hands it a sampler-valued argument at that position or key (to a
 //     fixed point): revetmentDrape's groundAt is, a water-level record's lowAt is not. A function written at the call site
-//     that calls a sampler is sampler-valued (drapeRaws' rawAt), and a call returns a sample when it hands a sampler to a
-//     callee that returns what that sampler reads.
+//     that calls a sampler is sampler-valued (drapeRaws' rawAt), and a call returns a sample when it hands a sampler (or its
+//     own sampler parameter) at a SLOT whose reading reaches the callee's return. Judged per slot: a sampler at a slot the
+//     callee never reads taints nothing.
 // ⭐ AND THE FAR LAYER'S HIDE IS PER CHUNK (C7): SlabRevetment's near chunks are keyed face AND chunk, and the far meshes
 //   hide by the same key, so one near chunk on a long face leaves that face's other far chunks drawn at distance.
 // ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs [--mutants] [-v]
@@ -134,7 +135,12 @@ function analyse(files, SAMPLERS) {
           const s = c && summary.get(c)
           if (s?.returnsSample) return true
           if (s?.passes && n.arguments.some(isT)) return true
-          if (s?.returnsHanded && n.arguments.some(a => samplerValued(a, null))) return true    // a sampler handed in, sampled, returned
+          // a sampler handed in AT A SLOT whose reading reaches the callee's return (Zob: per slot, judged in this function's own
+          // context, so a hook passing its own sampler parameter through is seen and a sampler at an unread slot is not)
+          const F = c && fns.get(c)
+          if (F && s?.returnsHanded?.length) for (const sl of F.slots) { if (!s.returnsHanded.includes(sl.name)) continue
+            const a = n.arguments[sl.pos], v = sl.key == null ? a : a?.type === 'ObjectExpression' ? a.properties.find(q => q.key?.name === sl.key)?.value : null
+            if (samplerValued(v, null) || (v?.type === 'Identifier' && sParams.has(v.name))) return true }
           if (n.callee.type === 'MemberExpression' && ['map', 'slice', 'concat', 'filter', 'from'].includes(c) && (isT(n.callee.object) || n.arguments.some(isT))) return true
           return false
         }
@@ -184,8 +190,9 @@ function analyse(files, SAMPLERS) {
       const r = flow(f.path, samplerParams.get(n)), s = summary.get(n)
       // returnsSample must not leak a handed-in sampler's taint to every caller: judged with no sampler parameters
       const rs = flow(f.path, new Set()).returnsSample
-      // …and returnsHanded: it returns what its handed-in sampler reads (drapeRaws), counted only where a call hands one
-      if (r.generates !== s.generates || r.passes !== s.passes || rs !== s.returnsSample || r.returnsSample !== s.returnsHanded) { changed = true; summary.set(n, { generates: r.generates, passes: r.passes, returnsSample: rs, returnsHanded: r.returnsSample }) }
+      // …and returnsHanded: the SLOTS whose sampler, if one is handed there, reaches the return (drapeRaws' rawAt), each judged alone
+      const rh = f.slots.filter(sl => flow(f.path, new Set([sl.name])).returnsSample).map(sl => sl.name)
+      if (r.generates !== s.generates || r.passes !== s.passes || rs !== s.returnsSample || rh.join() !== (s.returnsHanded || []).join()) { changed = true; summary.set(n, { generates: r.generates, passes: r.passes, returnsSample: rs, returnsHanded: rh }) }
     }
     if (!changed) break
   }
@@ -273,12 +280,18 @@ say(hide.ok, `the far layer hides per chunk: near keys ${hide.added} · far keys
 
 // planted pairs: value vs control (Boz, 2026-10-29) — the refinement cannot drift to "any read" or "no read" unseen
 console.log('── planted pairs')
-const planted = (body) => ({ file: join(ROOT, 'src/components/__planted__.jsx'), src: `import * as THREE from 'three'\nimport { getElevationRaw } from '../utils/elevation'\nfunction Planted({ a, b }) {\n  const g = useMemo(() => {\n${body}\n  }, [])\n}\n` })
+const planted = (body, pre = '') => ({ file: join(ROOT, 'src/components/__planted__.jsx'), src: `import * as THREE from 'three'\nimport { getElevationRaw } from '../utils/elevation'\n${pre}function Planted({ a, b, built }) {\n  const g = useMemo(() => {\n${body}\n  }, [])\n}\n` })
 const asTest = planted(`    const down = getElevationRaw(b[0], b[1]) <= getElevationRaw(a[0], a[1])\n    const p = down ? [a[0], 0, a[1], b[0], 0, b[1]] : [b[0], 0, b[1], a[0], 0, a[1]]\n    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return geo`)
 const asValue = planted(`    const ya = getElevationRaw(a[0], a[1])\n    const p = [a[0], ya, a[1], b[0], 0, b[1]]\n    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return geo`)
 const p1 = red(analyse([...files, asTest], SAMPLERS)).length - allReds.length, p2 = red(analyse([...files, asValue], SAMPLERS)).length - allReds.length
 say(p1 === 0, `a sampled height used only as a TEST (which end is up) → GREEN`)
 say(p2 === 1, `the same height written into a position → RED`)
+// per slot (Zob): a helper passing ITS OWN sampler parameter through to drapeRaws is seen; a sampler at a slot never read is not
+const passThrough = planted(`    return lift(built, getElevationRaw)`, `function lift(built, groundAt) { const r = drapeRaws(built, groundAt); built.geometry.setAttribute('aDrawnRaw', new THREE.BufferAttribute(r, 1)) }\n`)
+const unread = planted(`    const r = keepFirst(a, getElevationRaw)\n    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(r, 3)); return geo`, `function keepFirst(a, unused) { return a }\n`)
+const p3 = red(analyse([...files, passThrough], SAMPLERS)).length - allReds.length, p4 = red(analyse([...files, unread], SAMPLERS)).length - allReds.length
+say(p3 === 1, `a helper handing its own sampler parameter to drapeRaws, its result written → RED`)
+say(p4 === 0, `a sampler handed at a slot the callee never reads → GREEN`)
 
 if (process.argv.includes('--mutants')) {
   console.log('── mutants (each must turn it RED; the near useFrame stays GREEN)')

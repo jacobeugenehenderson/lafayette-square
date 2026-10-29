@@ -232,6 +232,11 @@ export async function loadRevetment(look, { manifest, fetchFile, say }) {
  * baked before the far shore was: it is SAID, and no shore is drawn — the player never builds the far layer itself.
  * Never-seen chunks are in revetment-far-unseen.bin, fetched after the reveal (`loadRevetmentFarUnseen`).
  */
+/** revetment-far.json's format, written by cartograph/bake-revetment-far.js and refused by the player in any other.
+ *  2 (2026-10-29): the chunks are cut on far stations of one nested lattice (BRIEF-the-drape-sizes-one-nested-lattice), so a
+ *  v1 table's chunk keys name DIFFERENT chunks: read by this player it would hide the wrong far chunk and mis-bound the near,
+ *  silently (Zob). ⛔ Refused by name. ▶ node checks/claims-the-armoured-shore-is-never-empty.mjs --mutants */
+export const FAR_FORMAT = 2
 export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
   if (!manifest?.files?.['revetment.json']) return null
   const want = ['revetment-far.json', 'revetment-far.bin', 'revetment-far-unseen.bin'].filter(f => !manifest.files[f])
@@ -239,7 +244,9 @@ export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
   try {
     const [j, b] = await Promise.all([fetchFile('revetment-far.json'), fetchFile('revetment-far.bin')])
     if (!j.ok || !b.ok) throw new Error(`HTTP ${j.status} / ${b.status}`)
-    return { far: await j.json(), bins: { 'revetment-far.bin': await b.arrayBuffer() } }
+    const far = await j.json()
+    if (far?.version !== FAR_FORMAT) { say(`[revetment] ⛔ ${look}: revetment-far.json is format ${far?.version ?? 'none'}, and this player reads ${FAR_FORMAT} — its chunks are cut on another lattice, and no shore is drawn. ▶ re-run revetment-far for ${look} (node cartograph/bake-revetment-far.js --look=${look} --scene=<its scene>) and publish the slab`); return null }
+    return { far, bins: { 'revetment-far.bin': await b.arrayBuffer() } }
   } catch (e) { say(`[revetment] ⛔ ${look}: its far shore FAILED to load — ${e?.message || e}. No shore is drawn.`); return null }
 }
 /** A baked chunk's box [x0, y0, z0, x1, y1, z1] over exaggerations eLo…eHi. Its stored box is [x0, z0, x1, z1, rel0, rel1, raw0,

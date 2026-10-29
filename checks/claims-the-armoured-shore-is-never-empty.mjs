@@ -33,7 +33,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { revetmentFaces } from '../src/lib/revetmentFromSlab.js'
+import { revetmentFaces, loadRevetmentFar, FAR_FORMAT } from '../src/lib/revetmentFromSlab.js'
 import { FAR_OCTAVES, NEAR_OCTAVES, drapeLattices } from '../src/lib/revetmentDrape.js'
 import { MIN_ARMOUR_D50_M } from '../cartograph/shore-armour.mjs'
 
@@ -72,7 +72,13 @@ if (process.argv.includes('--mutants')) {
   const a = judgeOf(narrow, 30.2), b = judgeOf(wide, 30)
   console.log(`  planted: armour under one far step beside a bare far station → ${a.below ? 'named, below the far step ✓' : 'RED ✗'} (${a.extentM.toFixed(2)} of ${a.stepM.toFixed(2)} m)`)
   console.log(`  mutant: a near-only chunk wider than a far step → ${!b.below ? 'RED ✓' : 'GREEN ✗'}`)
-  if (!(planted.length === 1 && planted[0].k === 0) || !a.below || b.below) process.exit(1)
+  // the format (Zob): the player refuses a far table of another format by name, and reads its own
+  const said = [], load = (version) => loadRevetmentFar('planted', { manifest: { files: { 'revetment.json': 1, 'revetment-far.json': 1, 'revetment-far.bin': 1, 'revetment-far-unseen.bin': 1 } },
+    fetchFile: async (f) => ({ ok: true, status: 200, json: async () => ({ version }), arrayBuffer: async () => new ArrayBuffer(0) }), say: (m) => said.push(m) })
+  const old = await load(FAR_FORMAT - 1), cur = await load(FAR_FORMAT)
+  const refused = old === null && said.some(m => m.includes(`format ${FAR_FORMAT - 1}`) && m.includes('re-run revetment-far')), read = cur?.far?.version === FAR_FORMAT
+  console.log(`  mutant: a format-${FAR_FORMAT - 1} far table → ${refused ? 'refused by name, RED ✓' : 'READ ✗'} · format ${FAR_FORMAT} → ${read ? 'read ✓' : 'refused ✗'}`)
+  if (!(planted.length === 1 && planted[0].k === 0) || !a.below || b.below || !refused || !read) process.exit(1)
 }
 let failed = false, towns = 0, without = 0
 
@@ -89,6 +95,7 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
   const fp = join(ROOT, 'public', 'baked', look, 'revetment-far.json')
   if (!existsSync(fp)) { console.log(`  ⛔ ${look.padEnd(18)} ${armoured.length} armoured face(s) and NO revetment-far.json — the far shore was never baked, and the player draws no shore. ▶ the revetment-far step`); failed = true; continue }
   const far = JSON.parse(readFileSync(fp, 'utf8'))
+  if (far.version !== FAR_FORMAT) { console.log(`  ⛔ ${look}: revetment-far.json is format ${far.version ?? 'none'}, and the player reads ${FAR_FORMAT} — it draws no shore from it. ▶ re-run revetment-far for ${look}`); failed = true; continue }
   if (far.farOctaves !== FAR_OCTAVES) { console.log(`  ⛔ ${look}: revetment-far.json was baked at octaves ${far.farOctaves}, the bake script's FAR_OCTAVES is ${FAR_OCTAVES} — re-bake`); failed = true; continue }
   const trisOf = new Map()
   for (const c of far.chunks) trisOf.set(c.face, (trisOf.get(c.face) || 0) + c.tris)

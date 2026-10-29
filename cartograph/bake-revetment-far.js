@@ -51,7 +51,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { requireExplicitMap } from './scene.js'
 import { makeDrawnGround } from '../src/lib/drawnGround.js'
 import { makeElevationSampler, sceneExagOf } from '../src/lib/terrainCommon.js'
-import { revetmentFaces, toeStations, toeFromBaked, chunkBox } from '../src/lib/revetmentFromSlab.js'
+import { revetmentFaces, toeStations, toeFromBaked, chunkBox, FAR_FORMAT } from '../src/lib/revetmentFromSlab.js'
 import { drapeLattices, revetmentDrape, drapeRaws, FAR_OCTAVES, NEAR_OCTAVES } from '../src/lib/revetmentDrape.js'
 import { CHUNK_M, drapeChunks } from '../src/lib/shoreChunks.js'
 import { MIN_ARMOUR_D50_M, d50For } from './shore-armour.mjs'
@@ -60,7 +60,6 @@ import { heroPoses, heroHalfAngles, poseBasis, projectSphere, insideFrustum, HER
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-export const FAR_FORMAT = 1
 /** The arrays of a chunk, in their order in its bin (the player reads them by `offsets[name]`). */
 export const FAR_ARRAYS = ['pos', 'normal', 'pin', 'band', 'bandNormal', 'index']
 
