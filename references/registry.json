@@ -5143,6 +5143,15 @@
       "findings": [
         "r-stage-focuses-the-object-and-captures-the-screen"
       ]
+    },
+    {
+      "id": "q-how-the-arch-is-placed",
+      "ask": "How the Gateway Arch is placed, oriented and scaled as a set-piece off the disc",
+      "neededBy": "BRIEF-the-arch-stands-where-it-is (Keystone plan, 2026-10-28)",
+      "status": "answered",
+      "findings": [
+        "r-the-arch-is-geo-anchored-with-an-authored-presence"
+      ]
     }
   ],
   "findings": [
@@ -8618,6 +8627,22 @@
       "quote": "\"[outside the movie, the depth of field takes the aim] … nonsensical and dumb and obviously not the intent\" · \"the share image images should look like what's on screen; that's why it's in the Stage so the operator can pose the camera and set up the shot\" · \"I don't think it's Hero: I think it's Stage. Any time I see a setup I like I can capture it as the share screen. That could be in any camera or view\" · \"And yes, Street stays where the camera is pointing\" · \"a town with no hero and no keyframe focus is blurry. It's not attractive, but that's a visual judgement for the operator.\" · \"the focus amount can still be set to 0 and you just get a sharp scene; DoF is meaningless if there's no specific thing to focus on\" · \"if there's no hero object we just make the edge of the radius the infinity point and we just do a smooth depth blur… having a distance inside the scene doesn't work because it changes frame to frame\" · \"go\" (on Boz's reading: distance from the disc centre)",
       "canon": "cartograph/OPERATIONS.md (Hero shot · Focus; Image · Focus (DoF); Share image)",
       "notes": "Today MovieCamera publishes movieFocus only while the movie plays or is held on the path; otherwise usePostFxDriver focuses the controls target and drops heroRect and the hero ladder. That fallback goes for Hero; Street keeps the aim by ruling. Capture refusing while the Hero shot plays is to be re-read against this ruling."
+    },
+    {
+      "id": "r-the-arch-is-geo-anchored-with-an-authored-presence",
+      "question": "q-how-the-arch-is-placed",
+      "kind": "ruling",
+      "value": {
+        "anchor": "a set-piece off the disc is anchored by its geographic coordinates (the Arch: OSM relation 12813920, 2866.5 m from LS origin), not bound to a building",
+        "rotation": "the authored rotation stays (LS 1.99); the real orientation (1.266) is the kit default for a town with no authored value",
+        "scale": "the presence scale keeps pivoting at the APEX (as today): scaling from the top makes the Arch wider and THICKER (at true proportions it is thin) while staying short; height comes from the authored Y-offset; the legs dissolve through Foot-fade, which hides the seam where the unmodelled feet meet the ground",
+        "keys": "Jacob re-aims his own keyframes in Stage after the move; no automatic retarget"
+      },
+      "by": "Jacob",
+      "date": "2026-10-28",
+      "quote": "\"as recommended on all four. Tiny quibble: if you double the size from the top *and* raise it it gets wider. The issue is that we don't have attractive feet on the arch so we fussed a lot with finding a way to fade the legs into the ground so the seam is obscured. Also, scaling the arch *and* keeping it short allows us to make it appear *thicker* and more substantial because at scale the arch is quite thin\"",
+      "canon": "docs/briefs/BRIEF-the-arch-stands-where-it-is.md",
+      "notes": "The quibble overrides Boz's recommendation (3) (a base pivot): the apex pivot stays, deliberately."
     }
   ]
 }
