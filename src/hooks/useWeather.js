@@ -3,13 +3,18 @@ import useAtmosphere from './useAtmosphere.js'
 import { deriveStorminess, windTendencyFromDeg } from '../lib/weatherPresets.js'
 import { townPlace } from '../lib/townPlace.js'
 import { nwsWeather, OutsideCoverageError, skyCode } from '../lib/nws.js'
+import { getDawnWindow } from '../lib/dawnTimeline.js'
+import { needFields, WeatherFieldMissingError } from '../lib/weatherAt.js'
 
 // The town's weather comes from the US National Weather Service (lib/nws.js: why, the field-by-field sources, and
 // what NWS cannot supply). Asked at FETCH time for the placed town (lib/townPlace.js), never the kit's boot town.
 // ⛔ A town outside NWS coverage is said by name (OutsideCoverageError) — there is no other provider.
+// `from`: the start of the dawn-to-dawn window holding now, the earliest instant the day's readers (the strip, the
+// Almanac) ask for — NWS's grid starts after it, and lib/nws.js fills the hours between from station observations.
 function townWeather() {
   const { lat, lon, lookId } = townPlace()
-  return nwsWeather({ lat, lon, name: lookId })
+  const now = new Date()
+  return nwsWeather({ lat, lon, name: lookId, now, from: getDawnWindow(now).start })
 }
 /** A failed read, said: a town outside coverage by its own message (it names the town), anything else with its error. */
 function say(e, consequence) {
@@ -42,14 +47,18 @@ function deriveTurbidity(visibility) {
 /**
  * A reading → the sky's weather targets (the shape `useSkyState.setWeatherTargets` and the atmosphere directive
  * read). Shared by the live feed and the directive's scrubbed hour, so both derive the sky the same way.
+ * ⛔ A reading with no cloud cover or no weather code THROWS a WeatherFieldMissingError naming it (an observed hour
+ * before NWS's grid has neither): the caller holds the sky and says so. Never drawn as clear.
  */
+export const SKY_NEEDS = ['cloudCover', 'weatherCode']
 export function targetsOf(r) {
+  needFields(r, SKY_NEEDS, 'sky')
   // Trust the Degrees over a possibly-stale weather_code (see reconcile above).
-  const code = reconcileWeatherCode(r.weatherCode ?? 0, r.precipitation ?? 0, r.cloudCover ?? 0)
+  const code = reconcileWeatherCode(r.weatherCode, r.precipitation ?? 0, r.cloudCover)
   const speed = r.windSpeedMs ?? 0
   const dirRad = ((r.windDirDeg ?? 0) * Math.PI) / 180
   return {
-    cloudCover: (r.cloudCover ?? 0) / 100,
+    cloudCover: r.cloudCover / 100,
     storminess: deriveStorminess(code, r.precipitation ?? 0),
     turbidity: deriveTurbidity(r.visibility ?? 50000),
     precipitationIntensity: r.precipitation ?? 0,
@@ -86,8 +95,14 @@ export async function fetchWeather({ snap = false } = {}) {
   // Stage's Weather switch is standing a preset: the live feed writes nothing.
   if (useSkyState.getState().feedPaused) return
 
+  let targets
+  try { targets = targetsOf(w.current) } catch (e) {
+    if (!(e instanceof WeatherFieldMissingError)) throw e
+    console.error(`[weather] ⛔ the current reading cannot light the sky — ${e.message}; the sky holds its last reading`)
+    return
+  }
   if (snap) useAtmosphere.getState().requestSnap()
-  useSkyState.getState().setWeatherTargets(targetsOf(w.current))
+  useSkyState.getState().setWeatherTargets(targets)
   // When the live reading arrived — about the reading, not a weather value, so it is not a weather target (a
   // preset writes every target; this is only ever the feed's).
   useSkyState.setState({ weatherAt: Date.now(), currentReading: w.current })

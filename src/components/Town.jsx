@@ -361,8 +361,9 @@ function FrameLimiter({ paused, idle, everyFrame, flying }) {
  *   { now: { tempC, code, isDay, at }, hourly: [{ at, tempC, code }], fetchedAt, at(date, live) }
  * An app shows it rather than fetching its own: two calls to one provider read different numbers at different
  * times. `code` is WMO (current reconciled against precipitation and cloud); `isDay` is the sun above the town's
- * horizon at the town's clock; `at` / `fetchedAt` are ms epochs; hourly spans yesterday 00:00 to tomorrow 23:00 in
- * the town, its hours placed with the town's own UTC offset. °C out.
+ * horizon at the town's clock; `at` / `fetchedAt` are ms epochs; hourly spans the hour at or before this dawn-to-dawn
+ * window's start to 48 h ahead — its hours before NWS's grid are station OBSERVATIONS (lib/nws.js), with a
+ * temperature but `code` null (a station reports no condition: say so, never "Clear"). °C out.
  * ⭐ `at(date, live)` is THE weather at an instant — `now` when live, else the forecast's at `date` — through the same
  * lib/weatherAt.js the sky is drawn from, so a label never disagrees with the sky above it: { tempC, code }.
  * ⛔ Outside the forecast it THROWS a WeatherRangeError (exported here): the app says it has no weather for that

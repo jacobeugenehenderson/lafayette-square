@@ -18,7 +18,7 @@ import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './Bul
 import useSkyState from '../hooks/useSkyState'
 import { INSTANCE, moduleOn } from '../instance.js'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
-import { weatherAt, WeatherRangeError } from '../lib/weatherAt.js'
+import { weatherAt, needFields, WeatherRangeError } from '../lib/weatherAt.js'
 import { TodStrip } from './DawnTimeline'
 import { useContact } from './ContactModal'
 import useCommunityStats from '../hooks/useCommunityStats'
@@ -309,6 +309,7 @@ export function AlmanacTab() {
     if (!isLive && !hourlyForecast.length) return { temperatureF: null, weatherCode: null }
     try {
       const r = weatherAt(currentTime, { live: isLive, now: { temperatureF: liveTemp, weatherCode: liveCode }, hourly: hourlyForecast })
+      if (!isLive) needFields(r, ['weatherCode'], 'SidePanel')   // an observed hour (before NWS's grid) has no condition: said, not "Clear"
       return { temperatureF: r.temperatureF, weatherCode: r.weatherCode }
     } catch (e) {
       if (!(e instanceof WeatherRangeError)) throw e

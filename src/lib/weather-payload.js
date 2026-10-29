@@ -72,7 +72,8 @@ function deriveSeason(date, lat) {
  * Build a payload conforming to weather-payload.schema.json.
  *
  * @param {object} weatherTargets — useSkyState weather slice (the parsed live
- *   parse). Optional fields default to schema-safe values; never throws.
+ *   parse). Optional fields default to schema-safe values. ⛔ Throws on no cloud cover: an unknown sky is never
+ *   drawn clear (useWeather.js#targetsOf refuses such a reading before it gets here).
  * @param {Date} currentTime — scrub time from useTimeOfDay.
  * @returns {object} payload — passable to selectDirective({weather: ...}).
  */
@@ -102,9 +103,10 @@ export function buildWeatherPayload(weatherTargets, currentTime) {
   //   compass = (sun.azimuth_rad * 180/π + 180) mod 360
   const sunAzimuthDeg = ((sun.azimuth * 180 / Math.PI) + 180 + 360) % 360
 
+  if (!Number.isFinite(weatherTargets?.cloudCover)) throw new Error(`[weather-payload] ⛔ the weather has no cloud cover (${weatherTargets?.cloudCover}) — the sky's directive cannot be chosen`)
   const payload = {
     tempC: tempC,
-    cloudCover: Math.max(0, Math.min(1, weatherTargets?.cloudCover ?? 0)),
+    cloudCover: Math.max(0, Math.min(1, weatherTargets.cloudCover)),
     pressureMb: weatherTargets?.pressureMb ?? null,
     humidity: weatherTargets?.humidity ?? null,
     windKph: windKph,

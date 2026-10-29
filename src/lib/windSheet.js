@@ -27,7 +27,7 @@
  */
 import * as THREE from 'three'
 import { WIND_FIELD } from './wind-field.js'
-import { weatherAt } from './weatherAt.js'
+import { weatherAt, needFields } from './weatherAt.js'
 import { deriveStorminess } from './weatherPresets.js'
 
 // ── Sizing — derived from the field's own physics and the scene's disc ───────────────────────────────────────────
@@ -62,7 +62,8 @@ export function windSheetLayout(extent, texelsPerCorrelation, maxTextureSize) {
  * (useAtmosphereDirective): the store's targets while the clock is live or a preset stands, else the forecast hour
  * through weatherAt. Returns { status, baseSpeedMps, baseDirection:[x,z] (TO), gustsScale, gustEnvelope, frontVel:[x,z] }.
  * status: 'live' | 'preset' | 'forecast' | 'no-weather' (no reading has arrived and no preset stands — said, not hidden).
- * ⛔ Outside the forecast weatherAt THROWS a WeatherRangeError; the caller holds its last state and says so (as the sky).
+ * ⛔ Outside the forecast weatherAt THROWS a WeatherRangeError, and an hour with no weather code a WeatherFieldMissingError
+ * (one of them); the caller holds its last state and says so (as the sky).
  */
 export function windStateOfWeather(sky, clock) {
   let status, speed, dirDeg, gusts, storminess
@@ -75,7 +76,8 @@ export function windStateOfWeather(sky, clock) {
     const r = weatherAt(clock.currentTime, { live: false, hourly: sky.hourlyForecast })
     status = 'forecast'
     speed = r.windSpeedMs; dirDeg = r.windDirDeg; gusts = r.windGustsMs
-    storminess = deriveStorminess(r.weatherCode ?? 0, r.precipitation ?? 0)   // the rule the sky's own targets use
+    needFields(r, ['weatherCode'], 'wind')   // ⛔ an hour with no weather code (observed, before NWS's grid) is not calm: refused, held, said
+    storminess = deriveStorminess(r.weatherCode, r.precipitation ?? 0)   // the rule the sky's own targets use
   }
   speed = Number.isFinite(speed) ? Math.max(0, speed) : 0
   // Meteorological: degrees the wind blows FROM. The world is +X east, +Z SOUTH (bake-landscape.js), so the TO vector

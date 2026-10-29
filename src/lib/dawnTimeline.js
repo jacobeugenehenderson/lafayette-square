@@ -1,6 +1,7 @@
 import SunCalc from 'suncalc'
 import { NAMED_TOD_SLOTS_BY_ID } from '../cartograph/animatedParam'
 import { townPlace } from './townPlace.js'
+import { townClockOf } from './townClock.js'
 
 // The town being drawn — the PLACED one (lib/townPlace.js), read at use; never the boot town's geography at load.
 
@@ -12,9 +13,16 @@ function getDawn(date) {
  * Get the dawn-to-dawn window containing `now`.
  * If now >= today's dawn → [todayDawn, tomorrowDawn]
  * If now < today's dawn  → [yesterdayDawn, todayDawn]
+ * Where the town has no dawn (polar day or night), the town's calendar day, midnight to midnight — as The Ward's
+ * Almanac has it (theward src/almanac/sky.js#dayWindow). Until 2026-10-28 this returned Invalid Dates there, silently.
  */
 export function getDawnWindow(now) {
   const todayDawn = getDawn(now)
+  if (!Number.isFinite(todayDawn.getTime())) {
+    const c = townClockOf(now)
+    const start = new Date(now.getTime() - (c.minuteOfDay * 60 + c.seconds) * 1000 - now.getMilliseconds())
+    return { start, end: new Date(start.getTime() + 86_400_000) }
+  }
 
   if (now >= todayDawn) {
     const tomorrow = new Date(now)

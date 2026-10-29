@@ -41,7 +41,7 @@ function fakeFetch(grid, { invalidPoint = false, pressureUnit = 'wmoUnit:Pa' } =
     throw new Error(`fake fetch: unexpected ${url}`)
   }
 }
-const run = (grid, opts) => nwsWeather({ lat: 1, lon: 1, name: 'fixture', now: new Date(T0 + 30 * 60000), hoursAhead: 2, fetchImpl: fakeFetch(grid, opts) })
+const run = (grid, opts) => nwsWeather({ lat: 1, lon: 1, name: 'fixture', from: new Date(T0), now: new Date(T0 + 30 * 60000), hoursAhead: 2, fetchImpl: fakeFetch(grid, opts) })
 
 // 1 — the fixture parses into the units the reading is read in.
 try {

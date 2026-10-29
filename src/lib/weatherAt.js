@@ -15,6 +15,9 @@
  *
  * ⛔ A time outside the forecast THROWS (a WeatherRangeError). It used to fall back to `now`, silently — a scrubbed
  * hour labelled with this minute's weather. The caller says it cannot show that hour.
+ * ⛔ A field the reading lacks is null — never 0. A reader that needs it asks needFields, which THROWS a
+ * WeatherFieldMissingError (a WeatherRangeError, so every reader that holds-and-says across the forecast's edge takes
+ * the same path). The hours before NWS's grid are observed, and lack cloud cover and the weather code (lib/nws.js).
  *
  * A reading: { temperatureF, cloudCover (%), precipitation (mm), visibility (m), windSpeedMs, windDirDeg, windGustsMs,
  * humidity (%), pressureMb, weatherCode, directRadiation, diffuseRadiation } — as lib/nws.js reads them from the National Weather Service (radiation always null: NWS has none), as
@@ -26,6 +29,18 @@ const SMOOTH = ['temperatureF', 'cloudCover', 'precipitation', 'visibility', 'wi
 const NEAREST = ['weatherCode', 'windDirDeg']
 
 export class WeatherRangeError extends Error {}
+/** The instant is inside the forecast, but its reading lacks a field the reader needs (named in the message). */
+export class WeatherFieldMissingError extends WeatherRangeError {}
+
+/** ⛔ Throws a WeatherFieldMissingError naming every one of `fields` the reading `r` lacks; else returns `r`. */
+export function needFields(r, fields, who) {
+  const lacking = fields.filter((f) => r?.[f] == null)
+  if (lacking.length) {
+    const when = r?.time instanceof Date ? r.time.toISOString() : 'this instant'
+    throw new WeatherFieldMissingError(`[${who}] ⛔ the weather at ${when} has no ${lacking.join(', ')}${r?.source === 'observed' ? ` (observed at ${r.station}, which does not report it)` : ''}`)
+  }
+  return r
+}
 
 /** The weather at instant `t` (a Date): the current reading when `live`, else the forecast's. */
 export function weatherAt(t, { live, now, hourly }) {
@@ -59,6 +74,7 @@ export function forecastAt(t, hourly) {
 function pick(h) {
   const out = { time: h.time }
   for (const f of [...SMOOTH, ...NEAREST]) out[f] = h[f] ?? null
+  if (h.source) { out.source = h.source; out.station = h.station }
   return out
 }
 
@@ -76,11 +92,18 @@ function tangents(hourly, f) {
   let byField = _tangents.get(hourly)
   if (!byField) { byField = {}; _tangents.set(hourly, byField) }
   if (byField[f]) return byField[f]
+  // A segment with a missing end has no slope (null), never a slope to 0: a tangent takes only its known neighbours.
   const n = hourly.length, d = []
-  const y = (j) => hourly[j][f] ?? 0
-  for (let j = 0; j < n - 1; j++) d.push((y(j + 1) - y(j)) / (hourly[j + 1].time - hourly[j].time))
-  const m = hourly.map((_, j) => (n < 2 ? 0 : j === 0 ? d[0] : j === n - 1 ? d[n - 2] : d[j - 1] * d[j] <= 0 ? 0 : (d[j - 1] + d[j]) / 2))
+  const y = (j) => hourly[j][f]
+  for (let j = 0; j < n - 1; j++) d.push(y(j) == null || y(j + 1) == null ? null : (y(j + 1) - y(j)) / (hourly[j + 1].time - hourly[j].time))
+  const m = hourly.map((_, j) => {
+    const l = j > 0 ? d[j - 1] : null, r = j < n - 1 ? d[j] : null
+    if (l == null) return r ?? 0
+    if (r == null) return l
+    return l * r <= 0 ? 0 : (l + r) / 2
+  })
   for (let j = 0; j < n - 1; j++) {
+    if (d[j] == null) continue
     if (d[j] === 0) { m[j] = 0; m[j + 1] = 0; continue }
     const a = m[j] / d[j], b = m[j + 1] / d[j], h = a * a + b * b
     if (h > 9) { const s = 3 / Math.sqrt(h); m[j] = s * a * d[j]; m[j + 1] = s * b * d[j] }
