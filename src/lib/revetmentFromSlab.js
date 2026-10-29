@@ -197,6 +197,37 @@ export async function loadRevetment(look, { manifest, fetchFile, say }) {
 }
 
 /**
+ * THE FAR SHORE, BAKED (cartograph/bake-revetment-far.js): its table and the seen chunks' bin, or null for a town the
+ * manifest gives no revetment. ⛔ A town whose manifest names revetment.json but not revetment-far.json/.bin is a slab
+ * baked before the far shore was: it is SAID, and no shore is drawn — the player never builds the far layer itself.
+ * Never-seen chunks are in revetment-far-unseen.bin, fetched after the reveal (`loadRevetmentFarUnseen`).
+ */
+export async function loadRevetmentFar(look, { manifest, fetchFile, say }) {
+  if (!manifest?.files?.['revetment.json']) return null
+  const want = ['revetment-far.json', 'revetment-far.bin', 'revetment-far-unseen.bin'].filter(f => !manifest.files[f])
+  if (want.length) { say(`[revetment] ⛔ ${look}: its manifest names revetment.json but not ${want.join(', ')} — the far shore was never baked for this slab, and no shore is drawn. ▶ run the Bake's revetment-far step for ${look} (node cartograph/bake-revetment-far.js --look=${look} --scene=<its scene>) and publish the slab`); return null }
+  try {
+    const [j, b] = await Promise.all([fetchFile('revetment-far.json'), fetchFile('revetment-far.bin')])
+    if (!j.ok || !b.ok) throw new Error(`HTTP ${j.status} / ${b.status}`)
+    return { far: await j.json(), bins: { 'revetment-far.bin': await b.arrayBuffer() } }
+  } catch (e) { say(`[revetment] ⛔ ${look}: its far shore FAILED to load — ${e?.message || e}. No shore is drawn.`); return null }
+}
+/** A baked chunk's box [x0, y0, z0, x1, y1, z1] over exaggerations eLo…eHi. Its stored box is [x0, z0, x1, z1, rel0, rel1, raw0,
+ *  raw1]: each vertex is lifted to rel + raw × exag (the ground-relative part and the drawn raw, as patchTerrain draws it), so
+ *  at exag e it lies within rel0…rel1 plus raw0·e…raw1·e. ⭐ ONE FUNCTION for what is drawn and what is chosen: three's culling
+ *  (eLo 0 … eHi the town's ceiling) and the overhead selection (eLo = eHi = the live exaggeration). */
+export function chunkBox(box, eLo, eHi) {
+  const [x0, z0, x1, z1, rel0, rel1, raw0, raw1] = box
+  const lo = Math.min(raw0 * eLo, raw0 * eHi, raw1 * eLo, raw1 * eHi), hi = Math.max(raw0 * eLo, raw0 * eHi, raw1 * eLo, raw1 * eHi)
+  return [x0, rel0 + lo, z0, x1, rel1 + hi, z1]
+}
+/** The never-seen chunks' bin, after the reveal. ⛔ Its failure is said: those chunks stay undrawn, by name. */
+export async function loadRevetmentFarUnseen(look, { fetchFile, say }) {
+  try { const b = await fetchFile('revetment-far-unseen.bin'); if (!b.ok) throw new Error(`HTTP ${b.status}`); return await b.arrayBuffer() }
+  catch (e) { say(`[revetment] ⛔ ${look}: revetment-far-unseen.bin FAILED to load — ${e?.message || e}. The shore the movie never sees stays undrawn.`); return null }
+}
+
+/**
  * ⭐ THE TOE RESTS ON THE BED (Jacob, 2026-09-27, looking at the clear shallows: "the rocks need to extend further
  * into the water … the harsh cutoff on the bottom"). The heap was built to a toe AT the water surface, when the water
  * was an opaque sheet over a flat bottom; now the shallows are clear and the bottom is a sloping bed, so the stone
@@ -204,15 +235,28 @@ export async function loadRevetment(look, { manifest, fetchFile, say }) {
  * Per station: walk the face on below the water (u > 1, the same slope) until it meets the ground under it, or until
  * it is deeper than the bottom can be seen (`floorM`, the town's visibility depth) — past that nothing shows.
  * Returns toeAt(t) ≥ 1, the face parameter of the toe (1 = the waterline), interpolated along the face like its crest.
+ * ⭐ Two halves (BRIEF-the-far-shore, 2026-10-29): the WALK (toeStations, which reads the ground: 493 ms at mount on
+ * provincetown) and the INTERPOLATION (toeAlong). The far bake runs the walk and ships its per-station toe in full
+ * doubles; the player reads it back through toeFromBaked, which is the same interpolation, so the two cannot drift.
  */
 export function toeFor(face, groundAt, floorM, waterY = 0) {
+  const toe = toeStations(face, groundAt, floorM, waterY)
+  return toe ? toeAlong(face, toe) : () => 1
+}
+/** The baked toe (revetment-far.json, one per station, full doubles) read back as toeAt(t): toeFor's own interpolation. */
+export function toeFromBaked(face, toe) {
+  if (!Array.isArray(toe) || toe.length !== face.stations.length) throw new Error(`revetmentFromSlab: face ${face.key}'s baked toe has ${toe?.length} stations, the face ${face.stations.length} — re-bake revetment-far`)
+  return toeAlong(face, toe)
+}
+/** toeFor's WALK: per station, the face parameter of the toe (≥ 1), or null when there is no bed to walk to (no floor,
+ *  no ground, fewer than two stations: toeAt is then 1 everywhere). */
+export function toeStations(face, groundAt, floorM, waterY = 0) {
   // With a toe berm the slope comes down onto the berm's TOP (the bed plus `stonesHigh` of its stones, but never above
   // the water — a toe berm is submerged), so the heap and its berm are one continuous shape; without one, onto the bed.
   const bermH = (h) => (face.toeBerm ? face.toeBerm.stonesHigh * d50For(h) : 0)
   const st = face.stations, n = st.length
-  if (!(floorM > 0) || typeof groundAt !== 'function' || n < 2) return () => 1
-  const cum = new Float64Array(n)
-  for (let i = 1; i < n; i++) cum[i] = cum[i - 1] + Math.hypot(st[i].x - st[i - 1].x, st[i].z - st[i - 1].z)
+  if (!(floorM > 0) || typeof groundAt !== 'function' || n < 2) return null
+  const cum = stationArc(st)
   const total = cum[n - 1] || 1, tan = face.tanRepose
   const toe = new Float64Array(n).fill(1)
   for (let i = 0; i < n; i++) {
@@ -231,6 +275,14 @@ export function toeFor(face, groundAt, floorM, waterY = 0) {
     }
     toe[i] = u
   }
+  return toe
+}
+const stationArc = (st) => { const cum = new Float64Array(st.length)
+  for (let i = 1; i < st.length; i++) cum[i] = cum[i - 1] + Math.hypot(st[i].x - st[i - 1].x, st[i].z - st[i - 1].z)
+  return cum }
+/** toeFor's INTERPOLATION, over the face's own arc length: the one copy, for the walk's result and the baked one alike. */
+function toeAlong(face, toe) {
+  const cum = stationArc(face.stations), n = cum.length, total = cum[n - 1] || 1
   return (t) => {
     const s = Math.max(0, Math.min(1, t)) * total
     let i = 1; while (i < n - 1 && cum[i] < s) i++

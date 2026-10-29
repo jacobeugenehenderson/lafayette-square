@@ -5,9 +5,11 @@
  * ⭐⭐ THIS SHIPS AN INSTRUCTION, NOT A MESH. The revetment's geometry — the drape
  * and every boulder on it — is a deterministic function of the shoreline arc, the
  * crest above the water, and a seed. So the slab carries those and the player
- * builds what the camera can see. ⛔ Baking the mesh would put ~47 MB of drape and
- * ~33 MB of stone transforms into the slab for a town, to be downloaded in full and
- * mostly never looked at.
+ * builds what the camera can see. ⛔ Baking the detailed drape would put 76.5 MB
+ * (provincetown) to 401 MB (huron) into the slab, downloaded in full and mostly never
+ * looked at (▶ scratch/far-shore/oct3-weight.mjs). The FAR layer is the exception:
+ * camera-independent and ~1–4 MB, it is baked from this instruction by
+ * `bake-revetment-far.js`, after the scene (BRIEF-the-far-shore-is-not-built-at-load).
  *
  * ── WHY NOT A GROUND GROUP, since that was the first plan ────────────────────
  * ⛔ A ground group cannot carry this. Measured: every group in `ground.bin` is a

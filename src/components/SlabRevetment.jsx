@@ -1,13 +1,15 @@
 /**
  * SlabRevetment.jsx — THE STONE WALL ALONG THE SHORE, BUILT FROM THE SLAB.
  *
- * ⭐⭐ THE SLAB SHIPS AN INSTRUCTION, NOT A MESH. `bake-revetment.js` writes the
+ * ⭐⭐ THE NEAR LAYER IS AN INSTRUCTION, THE FAR LAYER IS BAKED. `bake-revetment.js` writes the
  * shoreline stations, the crest above the water at each, whether each is armoured,
- * which face carries stone, and a 4-byte seed. Everything you see here — the drape
- * and every boulder on it — is generated from that, near the camera, at runtime.
- * ⛔ Baking the geometry would have put ~47 MB of drape and ~33 MB of stone
- * transforms into one town's slab, downloaded in full and mostly never looked at.
- * Stone costs ZERO slab bytes.
+ * which face carries stone, and a 4-byte seed; the detailed drape and every boulder on
+ * it are generated from that, near the camera, at runtime. ⛔ Baking THOSE would put
+ * 76.5 MB (provincetown) to 401 MB (huron) of drape into a slab, mostly never looked at
+ * (▶ scratch/far-shore/oct3-weight.mjs). The FAR layer — the whole armoured shore,
+ * coarse, camera-independent — is baked by `bake-revetment-far.js` (~1.2 MB gzip on
+ * provincetown, ~3.7 MB on huron) with its overhead band, because building it here
+ * stalled a cold load for seconds (BRIEF-the-far-shore-is-not-built-at-load).
  *
  * ⛔ NOT A SECOND IMPLEMENTATION. Every piece here already existed and was proven
  * in the harness at `/boulders.html` (now the surface lab, `/lab.html?look=huron&at=revetment`) before anything reached the operator's map:
@@ -15,7 +17,7 @@
  *     ORIENTATION RULE. Shared with `checks/`, so the check audits what renders.
  *   · `shoreChunks.js`      — candidate stones as a function of position, with
  *     seam determinism measured exact at margin 2 (▶ `scratch/boulder-chunk-sweep.mjs`).
- *   · `revetmentDrape.js`   — the bed the stone sits on, chunked identically.
+ *   · `revetmentDrape.js`   — the bed the stone sits on, chunked identically (the far bake runs it too).
  *   · `InstancedBoulders`   — one draw call per boulder shape, the same instancing
  *     shape as `StreetLights` and `InstancedTrees`. Not a third path.
  *
@@ -30,20 +32,22 @@
  * as unbuilt in the spike (`bee17a58`) and it is still unbuilt.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import InstancedBoulders from './InstancedBoulders.jsx'
 import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
-import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
+import { revetmentDrape, drapeGlobals, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
-import { revetmentFaces, loadRevetment, toeFor } from '../lib/revetmentFromSlab.js'
+import { revetmentFaces, loadRevetment, loadRevetmentFar, loadRevetmentFarUnseen, toeFromBaked, chunkBox } from '../lib/revetmentFromSlab.js'
+import { overheadResolves } from '../lib/cameraRegimes.js'
+import { useTownShot } from './townContext.js'
+import { subscribeStartup, isRevealed } from '../lib/startupMarks.js'
 import { drawnGroundParts, onDrawnGround } from '../utils/elevation'
-import { terrainBed, terrainWater, terrainDatum, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
+import { terrainWater, terrainDatum, terrainExag, sceneExag, patchTerrain, patchTerrainInstancedBaked, onTerrainReload } from '../utils/terrainShader'
 import { waterLevelsIfWet } from '../../cartograph/waterLevel.mjs'
 import { phaseNow } from './WaterSurface.jsx'
-import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 
 let _saidNoBerm = false
 let _saidNoLevel = false
@@ -60,26 +64,15 @@ import { slabFetch, slabManifest } from '../lib/slabUrl.js'
  *  the only mechanism present. The far layer below is the other half. */
 const NEAR_RADIUS_M = 90
 
-/** ⭐ THE FAR LAYER'S RESOLUTION, and it is measured, not chosen by taste.
- *  ▶ node scratch/boulder-farfield-cost.mjs · node scratch/boulder-lod-deviation.mjs
- *  Octaves 1 builds the WHOLE armoured shore of huron for ~23.5k triangles, against
- *  ~441k at the near layer's octaves 3 — and its median deviation from that near
- *  surface is at or below the measurement's own noise floor, i.e. the two are the
- *  same shape and differ only in detail. Octaves 2 halves the remaining deviation
- *  for 4x the triangles, which buys ~2 px at the swap distance while several hundred
- *  BOULDERS appear at the same moment. Not worth it. ⛔ Octaves 0 is identical to 1
- *  by construction (lamMin = lam0 / 2^max(0, octaves-1)), so 1 is the floor. */
-const FAR_OCTAVES = 1
-
-/** ⛔ The far build is sliced across frames: ~204 ms in one pass is a visible hitch,
- *  and it was ALREADY visible — the tab stopped answering while generating. This is
- *  a per-frame ceiling in milliseconds, not a face count, because faces differ in
- *  size by two orders of magnitude and a count would stall on the 10 km one. */
-const FAR_BUILD_MS_PER_FRAME = 4
-
+/** ⭐ THE FAR LAYER IS BAKED (cartograph/bake-revetment-far.js, 2026-10-29): the whole armoured shore at its far
+ *  resolution, ground-relative, cut on the near layer's chunks and laid out in the order the movie first sees them. It was
+ *  built here in a frame loop at load, one face per frame however long the face (provincetown: one 3.2 s task on a cold
+ *  load), and it never depended on the camera. This component only mounts it, as views on the fetched bytes. */
 /** Rebuild only after the camera has moved this far. ⛔ Without it every frame
  *  re-selects chunks on a 26 km shore for a camera that has not moved. */
 const RESELECT_M = 6
+/** …or turned this far (radians): the overhead regime leans and zooms without moving much. */
+const RESELECT_RAD = 0.05
 
 /** The DRAWN ground at exaggeration 1 (`drawnGroundParts`: its terrain part + its own part) — what the revetment is built
  *  against, so the stone meets the ground the slab draws, never the field under it. */
@@ -118,12 +111,25 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     // bakeLastMs is the re-read key; the resolver carries it on disk.
     // ⭐ Only what the town's manifest names is asked for: an inland town has none and says nothing
     // (revetmentFromSlab.js#loadRevetment).
+    // ⭐ The instruction and the baked far shore arrive together: a face is never mounted without its far chunks and toe.
+    const fetchFile = (rel) => slabFetch(lookId, rel, undefined, bakeLastMs || null)
     slabManifest(lookId)
-      .then(manifest => loadRevetment(lookId, { manifest, fetchFile: (rel) => slabFetch(lookId, rel, undefined, bakeLastMs || null), say: console.error }))
-      .then(d => { if (!dead) setDoc(d) })
+      .then(manifest => Promise.all([loadRevetment(lookId, { manifest, fetchFile, say: console.error }), loadRevetmentFar(lookId, { manifest, fetchFile, say: console.error })]))
+      .then(([d, far]) => { if (!dead) setDoc(d && far ? { ...d, far: far.far, farBins: far.bins } : null) })
       .catch(e => { console.error(`[revetment] ⛔ ${lookId}: the shore could not be read — ${e?.message || e}. No shore is drawn.`) })
     return () => { dead = true }
   }, [lookId, bakeLastMs])
+
+  // ── the shore the movie never sees, fetched once the town is revealed ─────────
+  const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
+  const [unseenBin, setUnseenBin] = useState(null)
+  useEffect(() => {
+    if (!doc || !revealed) return
+    let dead = false
+    loadRevetmentFarUnseen(lookId, { fetchFile: (rel) => slabFetch(lookId, rel, undefined, bakeLastMs || null), say: console.error })
+      .then(b => { if (!dead && b) setUnseenBin(b) })
+    return () => { dead = true; setUnseenBin(null) }
+  }, [doc, revealed, lookId, bakeLastMs])
 
   // ── one palette + the materials for the whole shore ────────────────────────
   // ⭐ Seeded from the slab so two towns do not wear the same rocks and a re-bake
@@ -169,15 +175,15 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // Re-built when the terrain or the drawn ground is re-pointed (a look switch, the ground loading): `groundGen`, declared above
   const faces = useMemo(() => {
     if (!doc) return []
-    // ⭐ The heap runs on below the water to rest on the bed, down to where the bottom stops showing.
-    const floorM = terrainBed()?.visibleToM ?? 0
+    const farFaces = new Map(doc.far.faces.map(b => [b.key, b]))
     return revetmentFaces(doc).filter(f => f.anyArmour).map(f => {
       if (f.levelM == null && !_saidNoLevel) { _saidNoLevel = true; console.warn('[SlabRevetment] ⛔ this revetment.json predates the water levels — its heaps stand on the terrain\'s zero, not the town\'s high water. ▶ re-bake the revetment') }
       const waterY = f.levelM ?? 0
-      // The toe runs down to the bed, at least one course below the LOW level (so it stays under water at low tide),
-      // and no shallower than the depth the bottom can be seen to.
-      const toeFloor = Math.max(floorM, f.lowM != null ? waterY - f.lowM + MIN_ARMOUR_D50_M : 0)
-      const toeAt = toeFor(f, drawnAt1, toeFloor, waterY)
+      // ⭐ The toe is BAKED: toeFor's walk down to the bed (at least one course below LOW, no deeper than the bottom can be
+      // seen), run by bake-revetment-far.js and read back through toeFor's own interpolation
+      const baked = farFaces.get(f.key)
+      if (!baked) throw new Error(`[revetment] ⛔ face ${f.key} is in revetment.json but not in revetment-far.json — the two were baked apart. ▶ re-bake`)
+      const toeAt = baked.toe ? toeFromBaked(f, baked.toe) : () => 1
       if (!f.toeBerm && !_saidNoBerm) { _saidNoBerm = true; console.warn('[SlabRevetment] ⛔ this revetment.json carries no material.toeBerm — the heaps have no toe berm. ▶ re-bake the revetment') }
       f = { ...f, toeAt, berm: f.toeBerm, groundAt: drawnAt1, waterY }
       const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt, berm: f.berm, octaves: 3 })
@@ -199,65 +205,92 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   const lastAt = useRef(null)
 
   // ── THE FAR LAYER — the whole armoured shore, always, at every distance ─────
-  // ⭐ Built ONCE per face, coarse, and never rebuilt: it does not depend on the
-  // camera, which is the entire point. Sliced across frames against a millisecond
-  // ceiling because doing it in one pass is a hitch the operator can see.
-  const [farMeshes, setFarMeshes] = useState([])
-  const farQueue = useRef(null)
-  useEffect(() => { farQueue.current = faces.map((f, i) => i); setFarMeshes([]) }, [faces])
-  useFrame(() => {
-    const q = farQueue.current
-    if (!q || !q.length) return
-    const t0 = performance.now()
-    const made = []
-    // ⛔ At least one per frame even if the budget is already blown — otherwise a
-    // face bigger than the ceiling is never built at all and that stretch of shore
-    // is silently missing forever, which is the failure this whole layer exists to
-    // prevent. Better one long frame than a permanent hole.
-    do {
-      const i = q.shift()
-      const f = faces[i]
-      if (!f) continue
-      try {
-        const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCTAVES })
-        const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: FAR_OCTAVES, globals: G })
-        if (d?.stats?.tris) made.push({ key: f.key, geometry: groundRelative(d).geometry })
-      } catch (e) {
-        // ⛔ Loud. A face that cannot build its far layer is a stretch of shore that
-        // will be empty at distance, which is exactly the defect being fixed here.
-        console.error(`[revetment] FAR layer failed for face ${f.key} — that stretch will be empty at distance:`, e)
-      }
-    } while (q.length && performance.now() - t0 < FAR_BUILD_MS_PER_FRAME)
-    if (made.length) setFarMeshes(prev => [...prev, ...made])
-  })
+  // ⭐ BAKED, mounted here as views on the fetched bins: one mesh per chunk of the near layer's lattice, so a near chunk
+  // hides only the far chunk it replaces. (It hid the WHOLE FACE: with one near chunk drawn, the rest of a 33 km face was
+  // empty past 90 m — the failure this layer exists to prevent. ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs)
+  // ⭐ THE BAND is the overhead tier: the same chunk's triangles laid flat on the drawn ground, drawn in Browse instead of
+  // the stone (Jacob, 2026-10-29). Never a stand-in for a far chunk that failed: those fail the bake.
+  // ⭐ the near layer's index: EVERY near chunk's bounds, stone size and what each layer keeps there, from the bake
+  const infoByKey = useMemo(() => new Map((doc?.far.info || []).map(c => [`${c.face}#${c.k}`, c])), [doc])
+  const farChunks = useMemo(() => {
+    if (!doc) return []
+    const bins = { ...doc.farBins, ...(unseenBin ? { 'revetment-far-unseen.bin': unseenBin } : {}) }
+    const out = []
+    for (const c of doc.far.chunks) {
+      const bin = bins[c.bin]
+      if (!bin) continue                                  // the never-seen bin, before the reveal
+      const v = c.vertexCount, o = c.offsets, view = (T, at, n, size) => new THREE.BufferAttribute(new T(bin, at, n * size), size)
+      const index = view(Uint32Array, o.index, c.indexCount, 1)
+      const far = new THREE.BufferGeometry(), band = new THREE.BufferGeometry()
+      far.setAttribute('position', view(Float32Array, o.pos, v, 3)); far.setAttribute('normal', view(Float32Array, o.normal, v, 3))
+      band.setAttribute('position', view(Float32Array, o.band, v, 3)); band.setAttribute('normal', view(Float32Array, o.bandNormal, v, 3))
+      const pin = view(Float32Array, o.pin, v, 4)
+      far.setAttribute('aDrawnRaw', pin); band.setAttribute('aDrawnRaw', pin)
+      far.setIndex(index); band.setIndex(index)
+      // three's culling bounds: the chunk's box over every exaggeration it can be drawn at (0 … the town's ceiling, or 1 at Street),
+      // from the SAME function the overhead selection reads (revetmentFromSlab.js#chunkBox)
+      const key = `${c.face}#${c.k}`, info = infoByKey.get(key)
+      if (!info?.box) throw new Error(`[revetment] ⛔ far chunk ${key} has no info row — revetment-far.json is malformed. ▶ re-bake`)
+      const [x0, y0, z0, x1, y1, z1] = chunkBox(info.box, 0, Math.max(1, sceneExag()))
+      for (const g of [far, band]) { g.boundingBox = new THREE.Box3(new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x1, y1, z1)); g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere()) }
+      out.push({ key, c, far, band })
+    }
+    return out
+  }, [doc, unseenBin, infoByKey])
+  useEffect(() => () => { for (const m of farChunks) { m.far.dispose(); m.band.dispose() } }, [farChunks])
 
+  // ── THE NEAR LAYER — the detailed drape and the stones, by the camera ────────
+  const overhead = useTownShot() === 'browse'
+  const viewH = useThree(s => s.size.height)
+  const frustum = useMemo(() => new THREE.Frustum(), [])
+  const _m = useMemo(() => new THREE.Matrix4(), [])
+  const _c = useMemo(() => new THREE.Vector3(), [])
   useFrame(() => {
     if (!visible || !faces.length) return
-    const c = camera.position
-    if (lastAt.current && Math.hypot(c.x - lastAt.current.x, c.z - lastAt.current.z) < RESELECT_M) return
-    lastAt.current = { x: c.x, z: c.z }
+    const c = camera.position, q = camera.quaternion
+    if (lastAt.current && lastAt.current.overhead === overhead && c.distanceTo(lastAt.current.p) < RESELECT_M && q.angleTo(lastAt.current.q) < RESELECT_RAD) return
+    lastAt.current = { p: c.clone(), q: q.clone(), overhead }
+    // ⭐ WHICH NEAR CHUNKS, BY REGIME. Overhead (Browse, Society): the ones inside the view whose stones resolve on screen
+    // (cameraRegimes.js#overheadResolves: d50 over metres per pixel at the chunk ≥ the drape's own sampling rule). The
+    // movie and Street: within NEAR_RADIUS_M of the camera. ⚠️ KNOWN OPEN: two selections until Street's brief.
+    if (overhead) { camera.updateMatrixWorld(); frustum.setFromProjectionMatrix(_m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)) }
+    const e = terrainExag.value
+    const wants = (f, k, p) => {
+      const info = infoByKey.get(`${f.key}#${k}`)
+      if (!info) throw new Error(`[revetment] ⛔ near chunk ${f.key}#${k} has no info row — revetment.json and revetment-far.json were baked apart. ▶ re-bake`)
+      if (!info.nearTris) return false                     // the bake built it: nothing is kept here at any distance
+      if (!overhead) return Math.hypot(p.x - c.x, p.z - c.z) <= NEAR_RADIUS_M
+      // at the LIVE exaggeration: Browse draws at 0, so a box at exag 1 stands metres above what is drawn (Zob, 2026-10-29)
+      const [x0, y0, z0, x1, y1, z1] = chunkBox(info.box, e, e)
+      _c.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+      return overheadResolves(camera, viewH, frustum, _c, Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2, info.d50, VERTS_PER_WAVELENGTH)
+    }
 
     const drape = [], stones = [], nearKeys = new Set()
     for (const f of faces) {
-      // Drape chunks within reach of the camera.
+      const chosen = new Set()
       for (let k = 0; k < f.ranges.length; k++) {
-        const p = f.at[k]
-        if (Math.hypot(p.x - c.x, p.z - c.z) > NEAR_RADIUS_M) continue
+        if (!wants(f, k, f.at[k])) continue
+        chosen.add(k)
         if (!f.cache.has(k)) {
           try {
             f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 3, globals: f.G, stations: f.ranges[k] })))
           } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
         }
         const built = f.cache.get(k)
-        if (built?.stats?.tris) { drape.push(built); nearKeys.add(f.key) }
+        if (built?.stats?.tris) { drape.push(built); nearKeys.add(`${f.key}#${k}`) }
       }
-      // Stones, over the same reach. ⭐ margin 2 is MEASURED, not chosen: at margin 1
-      // four stones go missing at a seam, at 2 the two windows resolve identically.
-      const n = f.ctx.nChunks
+      // Stones, where a drape chunk their span overlaps is chosen. A stone chunk spans the arc [ci·CHUNK_M, (ci+1)·CHUNK_M]
+      // (shoreChunks.js; the last is short), a drape chunk the arc of its stations: matched by ARC LENGTH, never by the
+      // stone chunk's index fraction, which runs behind by the last chunk's shortfall (Zob, 2026-10-29).
+      // ⭐ margin 2 is MEASURED, not chosen: at margin 1 four stones go missing at a seam, at 2 the two windows resolve identically.
+      const n = f.ctx.nChunks, total = f.ctx.total, per = f.ranges[0] ? f.ranges[0][1] - f.ranges[0][0] : 1, nA = f.G.nAlong - 1
+      const kAt = (s) => Math.min(f.ranges.length - 1, Math.floor(((s / total) * nA) / per))
       for (let ci = 0; ci < n; ci++) {
-        const t = (ci + 0.5) / n
-        const p = f.poly[Math.min(f.poly.length - 1, Math.round(t * (f.poly.length - 1)))]
-        if (Math.hypot(p.x - c.x, p.z - c.z) > NEAR_RADIUS_M) continue
+        const sA = ci * CHUNK_M, sB = Math.min(total, sA + CHUNK_M)
+        let any = false
+        for (let k = kAt(sA); k <= kAt(sB) && !any; k++) any = chosen.has(k)
+        if (!any) continue
         // ground-relative, like the drape: the drawn ground's two parts ride along as `ground` + `groundY` (the lift's aGround)
         for (const st of chunkStones(f.ctx, ci, 2)) { const g = drawnGroundParts(st.p[0], st.p[2]); stones.push({ ...st, p: [st.p[0], st.p[1] - g.raw - g.y, st.p[2]], ground: g.raw, groundY: g.y }) }
       }
@@ -268,19 +301,13 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   if (!visible || !doc || !palette) return null
   return (
     <group name="revetment">
-      {/* ⭐ THE FAR LAYER: every armoured metre, at every distance. ⛔ A face is
-          HIDDEN here while its detailed near chunks are drawn, never drawn under
-          them — two coincident surfaces would z-fight, which is a worse artifact
-          than the ~4 px detail pop the swap costs (measured: p95 0.273 m at the
-          90 m boundary, ▶ scratch/boulder-lod-deviation.mjs). */}
-      {farMeshes.map(m => (
-        <mesh
-          key={`far-${m.key}`}
-          geometry={m.geometry}
-          material={drapeMaterial}
-          visible={!built.nearKeys?.has(m.key)}
-          receiveShadow
-        />
+      {/* ⭐ THE FAR LAYER: every armoured metre, at every distance, one mesh per chunk. ⛔ A far chunk is HIDDEN while its
+          near chunk is drawn, never drawn under it: two coincident surfaces would z-fight, a worse artifact than the
+          ~4 px detail pop the swap costs (measured: p95 0.273 m at the 90 m boundary, ▶ scratch/boulder-lod-deviation.mjs).
+          Overhead, the BAND is drawn instead of the far stone. */}
+      {farChunks.map(m => (
+        <mesh key={`far-${m.key}`} geometry={overhead ? m.band : m.far} material={drapeMaterial}
+          visible={!built.nearKeys?.has(m.key)} receiveShadow />
       ))}
       {built.drape.map((d, i) => (
         <mesh key={i} geometry={d.geometry} material={drapeMaterial} customDepthMaterial={drapeDepth} castShadow receiveShadow />

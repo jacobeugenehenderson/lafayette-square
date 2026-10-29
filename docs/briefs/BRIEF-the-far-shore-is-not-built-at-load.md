@@ -34,7 +34,7 @@ Boz as a measured comparison before anything is built.
 - `SlabRevetment.jsx`, THE FAR LAYER: *"Built ONCE per face, coarse, and never rebuilt: it does not depend on the camera, which is the
   entire point."* Sliced across frames by `FAR_BUILD_MS_PER_FRAME = 4`, but *"at least one per frame even if the budget is already
   blown"*, and a face is indivisible, so a long face is one long frame (its comment names "the 10 km one").
-- `FAR_OCTAVES = 1`: *"builds the WHOLE armoured shore of huron for ~23.5k triangles"* (`scratch/boulder-farfield-cost.mjs`).
+- `FAR_OCTAVES = 1`: *"builds the WHOLE armoured shore of huron for ~23.5k triangles"* (`scratch/boulder-farfield-cost.mjs`, retired 2026-10-29: it built without the drawn ground, which the player never did; with it, 183,662 on huron and 60,860 on provincetown, ▶ `scratch/far-shore/far-cost.mjs`).
 - ⛔ A DECISION ALREADY STANDS, and this brief does not reopen it: `cartograph/bake-revetment.js` *"SHIPS AN INSTRUCTION, NOT A MESH…
   Baking the mesh would put ~47 MB of drape and ~33 MB of stone transforms into the slab."* That reasoning is about the NEAR layer and
   the stones (camera-dependent, mostly never seen). The far layer's ~23.5k triangles are a different size class. Confirm both numbers.

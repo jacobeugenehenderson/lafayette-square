@@ -147,7 +147,6 @@ import WeatherEffects from './WeatherEffects'
 import CelestialBodies, { SKY_RADIUS } from './CelestialBodies'
 import Atmosphere from './Atmosphere'
 import CloudDome from './CloudDome'
-import Terrain from './Terrain'
 import BakedGround from './BakedGround.jsx'
 import SlabRevetment from './SlabRevetment.jsx'
 import LafayetteScene from './LafayetteScene'
@@ -677,10 +676,6 @@ export default function Town({
       <group name="town:clouds" visible={on('clouds')}>
         {/* Sky renderer stopgap (skyMode): <CloudDome/> ships, <Atmosphere/> under ?sky=volumetric. */}
         <R3FErrorBoundary name="Atmosphere">{skyModeOf(town) === 'volumetric' ? <Atmosphere lookId={lookId} /> : <CloudDome />}</R3FErrorBoundary>
-      </group>
-      {/* Hidden: it keeps the shared terrainExag uniform live; the ribbons and fills ARE the ground. */}
-      <group visible={false}>
-        <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
       </group>
 
       <Suspense fallback={null}>

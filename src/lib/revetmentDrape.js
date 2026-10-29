@@ -79,8 +79,9 @@ const MACRO_WAVELENGTHS_PER_BLOCK = 4
 const MACRO_AMPLITUDE_PER_BLOCK = 0.85
 /** ⭐ Nyquist plus one. Two vertices per wavelength can REPRESENT an octave; three
  *  can represent it without the outline visibly faceting. ⛔ This is the number the
- *  whole vertex budget hangs on — it is not a quality dial. */
-const VERTS_PER_WAVELENGTH = 3
+ *  whole vertex budget hangs on — it is not a quality dial. ⭐ Exported: the overhead regime's zoom rule asks the same
+ *  question of the screen (cameraRegimes.js#overheadResolves: a stone is drawn when this many pixels span it). */
+export const VERTS_PER_WAVELENGTH = 3
 /** ⭐ ONE default for the tangential gain, exported so no caller can restate it and
  *  drift. The harness once carried its own 0.35 against this 0.6 and the drape was
  *  being judged at half the gain it was built for. */

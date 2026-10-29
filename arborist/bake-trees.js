@@ -54,7 +54,7 @@ import { fileURLToPath } from 'node:url'
 // (src/preview/heroAnim.js: pure, allocation-free, no React/DOM). Importing it
 // (vs reimplementing) keeps the bake-time classifier's camera locus in lock-step
 // with what Scene/Preview/Stage actually render. Node-safe ESM.
-import { heroPathPose, assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
+import { heroPoses, heroHalfAngles, poseBasis, projectSphere, insideFrustum, HERO_POSES, HERO_SEEN_GUARD } from '../src/preview/heroFrustum.js'
 import { canopyLightAt } from '../src/lib/lampPool.js'
 import { packTrees } from './treesFormat.mjs'
 
@@ -405,7 +405,7 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
 //
 // Tunables — calibrated against the operator's eye at the A→B seam (QC overlay):
 const HERO_TIER = {
-  POSES: 24,             // camera samples along the keyframe path
+  POSES: HERO_POSES,     // camera samples along the keyframe path (heroFrustum.js, shared with the revetment's far bake)
   PROM_THRESHOLD: 0,     // ⭐ DEMO / SHIP (2026-06-25): EVERY visible tree → full MESH
                          // (no impostor, no opaque ellipsoid). The aggressive thresholds
                          // (0.06/0.07) were chasing the GPU GAUGE, which we found is a
@@ -422,14 +422,13 @@ const HERO_TIER = {
                          // Re-enable with the front-row dial when a REAL perf signal asks.)
   OCC_FRAC: 0.7,         // a nearer canopy covering ≥ this fraction of a tree's
                          // projected disk occludes it at that pose
-  ASPECT: 16 / 9,        // viewport aspect for the horizontal frustum bound
   CENTER_Y_FRAC: 0.6,    // canopy vertical centre as a fraction of tree height
   // `cull` tier (operator request 2026-05-26): a tree NEVER inside the frustum
   // (expanded by this guard) across the whole pan is dropped entirely in the
   // hero shot — strictly cheaper than an impostor. Guard is generous so cull is
   // CONSERVATIVE: only trees well outside the view for the entire sweep go. The
   // pan is read from the slab, so widening the hero shot re-classifies on rebake.
-  CULL_FRUSTUM_GUARD: 1.3,
+  CULL_FRUSTUM_GUARD: HERO_SEEN_GUARD,   // heroFrustum.js, shared with the revetment's far bake
 }
 // The camera's aim at each sampled pose is the keyframes' OWN target,
 // interpolated on the same parameter as the position (heroPathPose — the path
@@ -495,23 +494,10 @@ function classifyHeroTiers(canopies, heroPan) {
   if (!heroPan?.keyframes?.length || n === 0) {
     return { tiers, meta: { skipped: 'no-hero-pan' } }
   }
-  assertKeyframesAimed(heroPan.keyframes, 'bake-trees')
-  assertHeroMotion(heroPan.keyframes, heroPan.motion, 'bake-trees')
-  const fovDeg = heroPan.keyframes[0].fov
-  const vHalf = (fovDeg * Math.PI / 180) / 2
-  const hHalf = Math.atan(Math.tan(vHalf) * HERO_TIER.ASPECT)
-  const diagHalf = Math.hypot(hHalf, vHalf)
-
-  // Camera poses (position + aim) sampled uniformly along the PATH (a loop's
-  // closing segment included). Key times only change when the camera is where,
-  // not the set of poses it occupies, so the path covers the whole sweep.
+  // ⭐ The poses and the frustum are the movie's ONE home (src/preview/heroFrustum.js), shared with the revetment's far bake.
+  const { fovDeg, vHalf, hHalf, diagHalf } = heroHalfAngles(heroPan.keyframes)
   const N = HERO_TIER.POSES
-  const poses = []
-  for (let s = 0; s < N; s++) {
-    const t = N === 1 ? 0 : s / (N - 1)
-    const { position: p, target: q } = heroPathPose(heroPan.keyframes, heroPan.motion, t)
-    poses.push({ p: [p[0], p[1], p[2]], q: [q[0], q[1], q[2]] })
-  }
+  const poses = heroPoses(heroPan.keyframes, heroPan.motion, N, 'bake-trees')
 
   const maxProm = new Float64Array(n)
   const everSeen = new Uint8Array(n)   // ever inside the guard-expanded frustum
@@ -520,35 +506,19 @@ function classifyHeroTiers(canopies, heroPan) {
   // EVERY pose it appears is "a speck behind a speck" — pure clutter, dropped.
   // Set when a tree is in-frustum AND not occluded in at least one pose.
   const unoccludedSeen = new Uint8Array(n)
-  const hGuard = hHalf * HERO_TIER.CULL_FRUSTUM_GUARD
-  const vGuard = vHalf * HERO_TIER.CULL_FRUSTUM_GUARD
   const proj = new Array(n)
   for (let i = 0; i < n; i++) proj[i] = { in: false, h: 0, v: 0, r: 0, depth: 0 }
 
   for (const { p: cam, q: target } of poses) {
-    // Camera basis: forward = unit(target - cam); right = unit(forward × up);
-    // up' = right × forward. Sign of `right` is irrelevant (we test |angle|).
-    let fx = target[0] - cam[0], fy = target[1] - cam[1], fz = target[2] - cam[2]
-    const fl = Math.hypot(fx, fy, fz) || 1; fx /= fl; fy /= fl; fz /= fl
-    let rx = -fz, ry = 0, rz = fx              // forward × (0,1,0)
-    const rl = Math.hypot(rx, ry, rz) || 1; rx /= rl; ry /= rl; rz /= rl
-    const ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx
-
+    const B = poseBasis(cam, target)
     for (let i = 0; i < n; i++) {
       const c = canopies[i]
-      const dx = c.x - cam[0], dy = c.centerY - cam[1], dz = c.z - cam[2]
-      const depth = dx * fx + dy * fy + dz * fz
-      const pr = proj[i]
-      if (depth <= 0.01) { pr.in = false; continue }
-      const xc = dx * rx + dy * ry + dz * rz
-      const yc = dx * ux + dy * uy + dz * uz
-      const ah = Math.atan2(xc, depth)
-      const av = Math.atan2(yc, depth)
-      const ar = Math.atan2(c.R, Math.hypot(dx, dy, dz))
-      pr.in = Math.abs(ah) < hHalf + ar && Math.abs(av) < vHalf + ar
-      pr.h = ah; pr.v = av; pr.r = ar; pr.depth = depth
+      const pr = proj[i], s = projectSphere(B, c.x, c.centerY, c.z, c.R)
+      if (!s) { pr.in = false; continue }
+      pr.in = insideFrustum(s, hHalf, vHalf)
+      pr.h = s.ah; pr.v = s.av; pr.r = s.ar; pr.depth = s.depth
       // Looser, guard-expanded test for the cull tier (conservative drop).
-      if (Math.abs(ah) < hGuard + ar && Math.abs(av) < vGuard + ar) everSeen[i] = 1
+      if (insideFrustum(s, hHalf, vHalf, HERO_TIER.CULL_FRUSTUM_GUARD)) everSeen[i] = 1
     }
     for (let i = 0; i < n; i++) {
       const pr = proj[i]

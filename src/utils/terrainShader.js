@@ -33,7 +33,7 @@ import * as THREE from 'three'
 import { slabFetch, slabManifest } from '../lib/slabUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
-import { DEFAULT_V_EXAG, terrainIdentity, assertHeightfield } from '../lib/terrainCommon.js'
+import { DEFAULT_V_EXAG, terrainIdentity, assertHeightfield, sceneExagOf } from '../lib/terrainCommon.js'
 import { DRAWN_RAW_GLSL, pinsMissingUnder } from '../lib/drawnGround.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
@@ -72,10 +72,7 @@ async function fetchSceneExag(lookId) {
   try {
     const r = await slabFetch(lookId, 'scene.json')
     if (!r.ok) throw new Error(`scene.json ${r.status}`)
-    const v = (await r.json())?.terrainExag
-    // ⛔ A SENTINEL IS NOT A VALUE: `?? `, never `||`. An authored 0 means FLAT and is a real
-    // choice; `||` would silently promote it to 1 and quietly un-flatten someone's map.
-    return typeof v === 'number' && isFinite(v) && v >= 0 ? v : DEFAULT_V_EXAG
+    return sceneExagOf(await r.json())   // terrainCommon.js: the one rule (a sentinel is not a value)
   } catch (e) {
     console.warn(`[terrain] no scene.json terrainExag for look "${lookId}" — using the kit default ${DEFAULT_V_EXAG}`, e?.message || e)
     return DEFAULT_V_EXAG

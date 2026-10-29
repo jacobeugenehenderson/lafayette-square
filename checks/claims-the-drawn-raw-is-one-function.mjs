@@ -89,7 +89,7 @@ const RUNTIME = {
   'src/components/BakedGround.jsx': 'drawn', 'src/components/gravelPathMaterial.js': 'drawn', 'src/components/SlabRevetment.jsx': 'drawn',
   'src/camera/ShotFlight.jsx': 'drawn', 'src/components/Scene.jsx': 'drawn', 'src/stage/StageApp.jsx': 'drawn', 'src/cartograph/CartographApp.jsx': 'drawn',
   'src/components/Movers.jsx': 'drawn', 'src/components/UserDot.jsx': 'drawn', 'src/components/PilgrimMonument.jsx': 'drawn', 'src/setpieces/pilgrimMonument.js': 'drawn',
-  'cartograph/groundSampler.js': 'drawn', 'cartograph/bake-lamps.js': 'drawn', 'cartograph/bake-tree-anchors.js': 'drawn', 'cartograph/bake-buildings.js': 'drawn',
+  'cartograph/groundSampler.js': 'drawn', 'cartograph/bake-lamps.js': 'drawn', 'cartograph/bake-tree-anchors.js': 'drawn', 'cartograph/bake-revetment-far.js': 'drawn', 'cartograph/bake-buildings.js': 'drawn',
   'src/components/InstancedTrees.jsx': 'anchored', 'src/components/StreetLights.jsx': 'anchored', 'src/components/InstancedBoulders.jsx': 'anchored', 'src/components/treeAtlasMaterial.js': 'anchored',
   'src/components/WindSheet.jsx': 'debug: the field, in the "Show on map" overlay only, not the slab',
   'src/components/waterMaterial.js': 'field: the water tint at the shore, Ward review (c), open (BACKLOG)',
