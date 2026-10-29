@@ -915,10 +915,97 @@
       }
     }
   },
+  "mist": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "amount": 1.25,
+        "color": "#9a86c0",
+        "water": 0.5
+      },
+      "sunrise": {
+        "amount": 0.46,
+        "color": "#e8b0c8",
+        "water": 0.3
+      },
+      "noon": {
+        "amount": 0.15,
+        "color": "#cfe2f0",
+        "water": 0.2
+      },
+      "golden": {
+        "amount": 0.35,
+        "color": "#f6cb8e",
+        "water": 0.35
+      },
+      "sunset": {
+        "amount": 0.46,
+        "color": "#e89c7c",
+        "water": 0.35
+      },
+      "dusk": {
+        "amount": 0.39,
+        "color": "#3e4f86",
+        "water": 0.3
+      },
+      "night": {
+        "amount": 0.28,
+        "color": "#2a3660",
+        "water": 0.25
+      },
+      "deep": {
+        "amount": 0.08,
+        "color": "#1c2644",
+        "water": 0.2
+      }
+    }
+  },
   "edgeFadeBand": 200,
   "edgeRuffle": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "ruffle": 0
+      "noon": {
+        "ruffle": 0.06
+      }
+    }
+  },
+  "halo": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "strength": 0.25,
+        "color": "#dcbfd0"
+      },
+      "sunrise": {
+        "strength": 0.08,
+        "color": "#f2b0c6"
+      },
+      "noon": {
+        "strength": 0.05,
+        "color": "#bdd6ec"
+      },
+      "golden": {
+        "strength": 0.14,
+        "color": "#ffc27a"
+      },
+      "sunset": {
+        "strength": 0.1,
+        "color": "#ff9868"
+      },
+      "dusk": {
+        "strength": 0.06,
+        "color": "#5f6fb4"
+      },
+      "night": {
+        "strength": 0.02,
+        "color": "#1a2040"
+      },
+      "deep": {
+        "strength": 0,
+        "color": "#10152a"
+      }
     }
   },
   "dof": {
@@ -980,50 +1067,50 @@
   "heroKeyframes": [
     {
       "position": [
-        -5,
-        93,
-        456
+        122,
+        74,
+        663
       ],
       "target": [
-        1603.3029999999999,
-        73.5,
-        -534.547
+        1731,
+        54,
+        -328
       ],
-      "fov": 22,
+      "fov": 14,
       "t": 0,
       "focus": "arch"
     },
     {
       "position": [
-        -624,
-        157,
-        152
+        -613,
+        138,
+        189
       ],
       "target": [
-        1603.3029999999999,
-        73.5,
-        -534.547
+        3493,
+        3,
+        -1117
       ],
-      "fov": 22,
+      "fov": 12,
       "t": 0.534483
     },
     {
       "position": [
-        -470,
-        81,
-        -394
+        -461,
+        56,
+        -395
       ],
       "target": [
-        1603.3029999999999,
-        73.5,
-        -534.547
+        1595,
+        70,
+        -693
       ],
-      "fov": 43,
+      "fov": 16,
       "t": 1
     }
   ],
   "heroMotion": {
-    "length": 680,
+    "length": 900,
     "mode": "bounce"
   },
   "shots": {
@@ -1062,9 +1149,9 @@
   "arch": {
     "values": {
       "scale": 2.1,
-      "rotation": 1.99,
-      "yOffset": 155,
-      "footFade": 36
+      "yOffset": 115,
+      "footFade": 71,
+      "rotation": 1.99
     }
   },
   "archLight": {
