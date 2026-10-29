@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 502,
+  "total": 506,
   "counts": {
-    "safe": 357,
+    "safe": 359,
     "local-effect": 30,
-    "live": 115
+    "live": 117
   },
   "checks": [
     {
@@ -1391,6 +1391,13 @@
       ]
     },
     {
+      "file": "checks/claims-dof-reads-the-scene-depth.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-every-app-mounts-the-set-piece.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -1757,6 +1764,15 @@
       "tier": "safe",
       "why": [
         "imports package(s) three — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-hero-focuses-the-object.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
+        "imports package(s) vite — not read from source"
       ]
     },
     {
@@ -2781,8 +2797,13 @@
       "file": "checks/claims-the-canvas-is-the-towns.mjs",
       "tier": "safe",
       "why": [
+        "importSource of src/lib/qualityProfile.js (its span: townCanvasProps, canvasAntialias) — read, safe",
         "computed import of src/lib/qualityProfile.js — read, safe",
-        "computed import of src/lib/deployment.js — read, safe"
+        "computed import of src/lib/deployment.js — read, safe",
+        "computed import of src/lib/qualityProfile.js — read, safe",
+        "computed import of src/lib/qualityProfile.js — read, safe",
+        "computed import of src/lib/qualityProfile.js — read, safe",
+        "computed import of src/lib/qualityProfile.js — read, safe"
       ]
     },
     {
@@ -2857,6 +2878,15 @@
       "tier": "safe",
       "why": [
         "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-debug-paint-is-the-pass-amount.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports vite — its server resolves localhost over DNS (caught by the no-network guard)",
+        "imports package(s) vite — not read from source"
       ]
     },
     {
@@ -2995,6 +3025,13 @@
     },
     {
       "file": "checks/claims-the-grove-shows-only-finished-trees.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-hero-matte-is-coverage.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

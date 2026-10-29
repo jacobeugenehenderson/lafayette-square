@@ -31,7 +31,7 @@ import { _pyramidRefs, PYRAMID_LEVELS } from './DownsamplePyramid.jsx'
 // there. We work in real metres throughout.
 // The depth decode + the blur law, shared by this effect and the hero ladder (HeroLadder.jsx) so both judge focus the
 // same way. Needs uniforms uLogDepth, cameraNear, cameraFar, uFocusDist, uTanHalf, uUpView, uMaxBlur, uHeroBlur, uZone,
-// uRamp in scope.
+// uRamp, uFocusOn in scope.
 export const DOF_BLUR_GLSL = /* glsl */`
   // Decode the framework 'depth' to a camera-space distance in metres.
   // Under logarithmicDepthBuffer three.js writes gl_FragDepth = log2(1+w) / log2(far+1),
@@ -50,13 +50,18 @@ export const DOF_BLUR_GLSL = /* glsl */`
   // Blur by RELATIVE distance from the focus, in front and behind, measured ALONG THE GROUND: a tilt-shift's tilted
   // plane of focus. Height drops out, so a vertical subject (the monument) is one sharpness top to bottom — measured
   // along the line of sight, a narrow window cut across the shaft in a visible line (Jacob, 2026-09-27).
-  float blurAmount(float dist, vec2 uv) {
-    vec3 p = vec3((uv * 2.0 - 1.0) * uTanHalf * dist, -dist);   // view space; dist is view depth
-    float ground = length(p - dot(p, uUpView) * uUpView);
+  float blurAtGround(float ground) {
     float rel = abs(ground - uFocusDist) / max(uFocusDist, 1.0);
     // Softness at focus never exceeds Blur: at Blur 0 the effect is OFF, and the plane is never softer than the
     // field around it (it was — the picked subject blurred while the rest stayed sharp, 2026-09-27).
-    return mix(min(uHeroBlur, uMaxBlur), uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
+    float law = mix(min(uHeroBlur, uMaxBlur), uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
+    // ⭐ uFocusOn is how much of a focus plane there is (dofDriver.js; focusObject.js#focusChoice): 0 = none, the Amount
+    // everywhere (Jacob, 2026-10-28: a hero view with nothing to focus on draws blurry, never the aim).
+    return mix(uMaxBlur, law, uFocusOn);
+  }
+  float blurAmount(float dist, vec2 uv) {
+    vec3 p = vec3((uv * 2.0 - 1.0) * uTanHalf * dist, -dist);   // view space; dist is view depth
+    return blurAtGround(length(p - dot(p, uUpView) * uUpView));
   }
 `
 
@@ -88,6 +93,7 @@ const fragment = /* glsl */`
   uniform float uZone;        // the sharp zone's half-depth, as a fraction of the focal distance
   uniform float uRamp;        // how far past it (same unit) the blur reaches full
   uniform float uLogDepth;    // 1.0 when logarithmicDepthBuffer is active
+  uniform float uFocusOn;     // 0..1 — how much of a focus plane there is (0: the Amount everywhere)
 
   // Constant-index ladder access (dynamic sampler indexing is undefined in GLSL).
   vec3 sampleLevel(int idx, vec2 uv) {
@@ -166,6 +172,10 @@ export const _dofRefs = {
   near:       { current: 1 },
   far:        { current: 60000 },
   heroRect:   { current: null },   // the hero's box on screen (uv x0,y0,x1,y1), or null
+  heroMeshes: { current: null },   // what draws the hero: [{ mesh, start, count }] (focusObject.js#focusMeshes), or null
+  heroNear:   { current: 0 },      // m — the view depth of the hero box's nearest corner
+  heroGround: { current: 0 },
+  focusOn:    { current: 1 },      // 0..1 — how much of a focus plane there is (focusObject.js#focusChoice's weight)      // m — the hero's focal distance (its box centre, along the ground)
   focusDist:  { current: 1000 },
   tanHalf:    { current: new THREE.Vector2(0.2, 0.2) },
   upView:     { current: new THREE.Vector3(0, 1, 0) },
@@ -199,6 +209,7 @@ class RomanceDoFEffect extends Effect {
         ['uZone',       new THREE.Uniform(0.2)],
         ['uRamp',       new THREE.Uniform(0.5)],
         ['uLogDepth',   new THREE.Uniform(0)],
+        ['uFocusOn',    new THREE.Uniform(1)],
         ['uHeroOn',     new THREE.Uniform(0)],
         ...[0, 1, 2, 3].map(i => ['uHero' + i, new THREE.Uniform(null)]),
       ]),
@@ -224,6 +235,7 @@ class RomanceDoFEffect extends Effect {
     u.get('uHeroBlur').value   = _dofRefs.heroBlur.current
     u.get('uZone').value       = _dofRefs.zone.current
     u.get('uRamp').value       = _dofRefs.ramp.current
+    u.get('uFocusOn').value    = _dofRefs.focusOn.current
     // Decode-mode follows the actual canvas depth regime (LOG on desktop, LINEAR
     // on mobile) — read it live so the effect is correct on whichever host mounts it.
     u.get('uLogDepth').value = renderer?.capabilities?.logarithmicDepthBuffer ? 1 : 0
@@ -234,7 +246,7 @@ export const RomanceDoF = forwardRef((_, ref) => {
   const effect = useMemo(() => new RomanceDoFEffect(), [])
   // ⭐ NO BLUR ⇒ THE PASS DOES NOT RUN. With uMaxBlur 0 the blur amount is 0 everywhere (blurAmount: mix(min(uHeroBlur,
   // uMaxBlur), uMaxBlur, …) = 0), so the output IS the input — and in Browse the driver sets it 0 every frame (the
-  // look-down gate, dofDriver.js), yet the pass ran at full cost: 9.8 ms on huron at 2268×1270 (Preview's Diagnosis,
+  // Browse view, dofDriver.js), yet the pass ran at full cost: 9.8 ms on huron at 2268×1270 (Preview's Diagnosis,
   // 2026-10-07). Its EffectPass holds it alone (a CONVOLUTION effect is never merged), so it is switched off while the
   // blur is 0: the composer skips a disabled pass without swapping buffers — no rebuild, no relink, the same pixels.
   // Runs before the composer's own frame (priority 0 < its render priority), after the driver set this frame's blur.

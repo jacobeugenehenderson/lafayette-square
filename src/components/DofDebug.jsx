@@ -18,7 +18,7 @@ const frag = /* glsl */`
   #define PERSPECTIVE_CAMERA
   #include <packing>
   uniform sampler2D uDepth;
-  uniform float cameraNear, cameraFar, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp, uLogDepth;
+  uniform float cameraNear, cameraFar, uFocusDist, uMaxBlur, uHeroBlur, uZone, uRamp, uLogDepth, uFocusOn;
   uniform vec2 uTanHalf;
   uniform vec3 uUpView;
   ${DOF_BLUR_GLSL}
@@ -33,7 +33,7 @@ const frag = /* glsl */`
 export function DofDebug({ composer, after }) {
   const draw = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
-      uniforms: Object.fromEntries(['cameraNear', 'cameraFar', 'uFocusDist', 'uMaxBlur', 'uHeroBlur', 'uZone', 'uRamp', 'uLogDepth'].map(k => [k, { value: 0 }])
+      uniforms: Object.fromEntries(['cameraNear', 'cameraFar', 'uFocusDist', 'uMaxBlur', 'uHeroBlur', 'uZone', 'uRamp', 'uLogDepth', 'uFocusOn'].map(k => [k, { value: 0 }])
         .concat([['uDepth', { value: null }], ['uTanHalf', { value: new THREE.Vector2() }], ['uUpView', { value: new THREE.Vector3() }]])),
       vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
       fragmentShader: frag, depthTest: false, depthWrite: false,
@@ -52,7 +52,7 @@ export function DofDebug({ composer, after }) {
     u.uFocusDist.value = _dofRefs.focusDist.current
     u.uTanHalf.value.copy(_dofRefs.tanHalf.current); u.uUpView.value.copy(_dofRefs.upView.current)
     u.uMaxBlur.value = _dofRefs.maxBlur.current; u.uHeroBlur.value = _dofRefs.heroBlur.current
-    u.uZone.value = _dofRefs.zone.current; u.uRamp.value = _dofRefs.ramp.current
+    u.uZone.value = _dofRefs.zone.current; u.uRamp.value = _dofRefs.ramp.current; u.uFocusOn.value = _dofRefs.focusOn.current
     u.uLogDepth.value = gl.capabilities.logarithmicDepthBuffer ? 1 : 0
     const was = gl.autoClear; gl.autoClear = false; gl.setRenderTarget(null)
     gl.render(draw.scene, draw.cam)

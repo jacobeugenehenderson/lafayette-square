@@ -21,7 +21,8 @@
  *   handle             a ref filled with { pose(outPos, outTgt) → { fov, time } }
  *   framing            true while the town is drawn in the movie shot: the movie's FOCUS is published then
  *                      (src/lib/focusObject.js#movieFocus) — while it plays, and while an app holds it paused on the path
- *                      (Stage's playhead, `start` as a function). Outside the movie shot the depth of field takes the aim.
+ *                      (Stage's playhead, `start` as a function). Otherwise the hero view focuses the town's hero
+ *                      (src/lib/focusObject.js#focusChoice: never the aim).
  */
 import { useEffect, useRef } from 'react'
 import { useFrame, useThree, addEffect } from '@react-three/fiber'

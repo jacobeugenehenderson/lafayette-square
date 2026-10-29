@@ -35,7 +35,7 @@ import {
 } from '../cartograph/skyLightChannels.js'
 import { revealProgress, markDetail } from '../lib/startupMarks.js'
 import { applyDofFrame } from './dofDriver.js'
-import { movieFocus, resolveFocusId, focusBox } from '../lib/focusObject.js'
+import { movieFocus, focusChoice } from '../lib/focusObject.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex.js'
 import { terrainExag } from '../utils/terrainShader.js'
 
@@ -176,21 +176,13 @@ export function usePostFxDriver({
       }
     }
 
-    // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js). Since all
-    // three surfaces drive through this hook, the focal distance + the browse
-    // look-down gate cannot drift between production and the publish gate.
-    // Focus = the movie's focus OBJECTS (src/lib/focusObject.js — the keyframes' `focus`, the hero by default), boxed
-    // from what is drawn this frame; else the default controls' target (the orbit pivot, the street's aim).
-    // Only meaningful when dofOn (i.e. the DoF pass is mounted).
+    // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js). Since all three surfaces drive through this hook,
+    // the focal distance and what is focused cannot drift between production and the publish gate. WHAT is focused is
+    // focusObject.js#focusChoice, by the view: Hero → the focus OBJECTS (the movie's at the playhead, else the town's
+    // hero; never the aim), Street → the controls' target, Browse → none. Only meaningful when dofOn (the pass mounted).
     if (dofOn) {
-      let focus = null
-      if (movieFocus.on) {
-        const ctx = { scene, index: useSlabBuildingIndex.getState().index, exag: terrainExag.value }
-        const box = (id) => { const r = resolveFocusId(id, heroSubject); return r ? focusBox(r, ctx) : null }
-        const a = box(movieFocus.from), b = movieFocus.to === movieFocus.from ? a : box(movieFocus.to)
-        if (a || b) focus = { a, b, lam: movieFocus.lam }
-      }
-      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, focus })
+      const ctx = { scene, index: useSlabBuildingIndex.getState().index, exag: terrainExag.value }
+      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, choice: focusChoice({ viewMode, movieFocus, heroSubject, ctx }) })
     }
   })
 }

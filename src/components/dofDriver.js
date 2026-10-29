@@ -4,8 +4,8 @@
  * Resolves the operator's `dof` channel + the live camera into RomanceDoF's
  * `_dofRefs` (the shader's uniforms). Called from usePostFxDriver — the ONE
  * per-frame driver all three surfaces (production, Stage, Preview) run through —
- * so the focal distance and the browse (look-down) gate cannot drift between
- * the shipping render and the publish-confidence gate. (Preview's own forked
+ * so the focal distance and what is focused cannot drift between the shipping
+ * render and the publish-confidence gate (Preview). (Preview's own forked
  * driver, frozen at mount, is retired: 2026-06-30.)
  *
  * NOT here, and ⛔ UNBUILT: a per-surface pyramid rung (ROADMAP.md H1;
@@ -18,7 +18,6 @@ import { isMarked, isRevealed } from '../lib/startupMarks.js'
 import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
-const _camDir  = new THREE.Vector3()  // reused for the browse (look-down) gate
 const _heroVec = new THREE.Vector3()  // reused for a point's ground distance (distOf)
 let _warnedNoFocus = false
 let _framesSeen = 0
@@ -35,23 +34,26 @@ if (typeof window !== 'undefined') window.__dof = _inspect
  * @param dofChannel  the resolved `dof` channel (override ?? scene.dof ?? default)
  * @param minute      current TOD minute-of-day
  * @param slotMins    TOD slot minutes for the resolver
- * @param focusPoint  where the camera is looking — the controls' target (the interpolated keyframe target in
- *                    playback, the orbit pivot when flying). The focus when there is no focus OBJECT.
- * @param focus       the movie's focus OBJECTS (src/lib/focusObject.js), or null: { a, b, lam } — `a` and `b` the
- *                    segment's two objects' world boxes [x0,y0,z0,x1,y1,z1] (either null where it names nothing: that
- *                    end is the aim), `lam` how far the segment has come. The focal distance RACKS from a's to b's on
- *                    the camera's own timing; the hero ladder's box is the object the focus is nearer.
- *                    REMOVED (Jacob, 2026-10-07): a free picked point and a box stored at pick time.
+ * @param focusPoint  where the camera is looking — the controls' target: the focus in the views that take the aim (Street).
+ * @param choice      what is focused (src/lib/focusObject.js#focusChoice, the one decision, by the view): { off } (Browse,
+ *                    or the town not loaded) · { aim } · { a, b, lam, weight, heroMeshes } — `a` and `b` the two focus
+ *                    objects' world boxes [x0,y0,z0,x1,y1,z1] (null where an end names nothing), `lam` how far the
+ *                    segment has come, `weight` how much of a focus plane there is (0: the Amount everywhere). The focal
+ *                    distance RACKS from a's to b's on the camera's own timing; the hero ladder's box is the nearer end's.
  */
 const _aim = new THREE.Vector3()
 const _boxC = new THREE.Vector3()
 const _corner = new THREE.Vector3()
-/** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. */
+/** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. Sets
+ *  `_heroNear`, the view depth of the box's nearest corner (what is nearer than it, at a pixel, stands in front). */
+let _heroNear = 0
 function heroRectOnScreen(box, camera) {
   if (!Array.isArray(box) || box.length !== 6) return null
   let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+  _heroNear = Infinity
   for (let i = 0; i < 8; i++) {
     _corner.set(box[i & 1 ? 3 : 0], box[i & 2 ? 4 : 1], box[i & 4 ? 5 : 2]).applyMatrix4(camera.matrixWorldInverse)
+    _heroNear = Math.min(_heroNear, -_corner.z)
     if (_corner.z > -camera.near) return [0, 0, 1, 1]                       // straddles the camera: take the screen
     _corner.applyMatrix4(camera.projectionMatrix)
     const u = _corner.x * 0.5 + 0.5, v = _corner.y * 0.5 + 0.5
@@ -61,37 +63,20 @@ function heroRectOnScreen(box, camera) {
   return [Math.max(0, x0), Math.max(0, y0), Math.min(1, x1), Math.min(1, y1)]
 }
 const centreOf = (box, out) => out.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2)
-export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, focus }) {
+export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, choice }) {
   _dofRefs.near.current = camera.near; _dofRefs.far.current = camera.far
-  const lam = focus ? Math.min(1, Math.max(0, focus.lam || 0)) : 0
-  _dofRefs.heroRect.current = focus ? heroRectOnScreen(lam < 0.5 ? focus.a : focus.b, camera) : null
-  const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
-
-  // Browse (overhead) camera: kill DoF — from above, the scene sits at ~one
-  // depth, so DoF only smears the map. Gate on look-DOWN (not raw height, which
-  // also caught the elevated Hero camera and killed DoF in the Hero shot) — it
-  // separates Browse (vertical) from Hero/Street (horizontal).
-  camera.getWorldDirection(_camDir)
-  const browse = _camDir.y < -0.6
-
   // CoC paint: window.__dofDebug = 1 (green = sharp, red = full blur). (Preview sets this from ?dofDebug=1.)
-  _dofRefs.debug.current    = (typeof window !== 'undefined' && window.__dofDebug) ? 1 : 0
-  _dofRefs.maxBlur.current  = browse ? 0 : d.blur
-  _dofRefs.heroBlur.current = browse ? 0 : (d.heroBlur ?? DOF_FLAT_DEFAULTS.heroBlur)
+  _dofRefs.debug.current = (typeof window !== 'undefined' && window.__dofDebug) ? 1 : 0
+  _dofRefs.heroRect.current = null; _dofRefs.heroMeshes.current = null; _dofRefs.focusOn.current = 1
+  const off = () => { _dofRefs.maxBlur.current = 0; _dofRefs.heroBlur.current = 0 }
+  // ⛔ BROWSE HAS NO DEPTH OF FIELD — a fact of the VIEW (Jacob), decided in focusChoice. It replaced a camera-pose test
+  // (looking down) that stood in for the view.
+  if (!choice || choice.off) { off(); return }
+  const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
+  _dofRefs.maxBlur.current  = d.blur
+  _dofRefs.heroBlur.current = d.heroBlur ?? DOF_FLAT_DEFAULTS.heroBlur
   _dofRefs.zone.current     = 0.03 + d.softness * 0.4                                  // Clear window: the sharp zone's depth
   _dofRefs.ramp.current     = 0.05 + (d.melt ?? DOF_FLAT_DEFAULTS.melt) * 0.9           // Window softness: how gently it melts
-  // ⭐ THE FOCAL PLANE is at the focus object's distance, else the controls' target's (in playback, the interpolated
-  // keyframe target). ⛔ No target ⇒ no depth of field, said once — never a guessed distance.
-  const aim = focusPoint ? _aim.copy(focusPoint) : null
-  if (!aim && !(focus?.a && focus?.b)) {
-    // Said on the EVENT that a town is shown with nothing to focus on — the reveal (startupMarks.js) — never on the
-    // frames before it, while the app's controls are still mounting; a canvas with no gate is shown from its second frame.
-    const shown = isMarked('gate') ? isRevealed() : _framesSeen++ > 0
-    if (shown && !_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target, no focus object) — depth of field is off') }
-    _dofRefs.maxBlur.current = 0
-    _dofRefs.heroBlur.current = 0
-    return
-  }
   // The tilted plane: distances along the ground (the shader measures every pixel the same way).
   const tanY = Math.tan(THREE.MathUtils.degToRad(camera.fov ?? 45) / 2)
   _dofRefs.tanHalf.current.set(tanY * (camera.aspect ?? 1), tanY)
@@ -99,9 +84,33 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   const up = _dofRefs.upView.current
   // A point's focal distance: along the ground, in view space (the shader measures every pixel the same way).
   const distOf = (p) => { _heroVec.copy(p).applyMatrix4(camera.matrixWorldInverse); return _heroVec.addScaledVector(up, -_heroVec.dot(up)).length() }
-  const endDist = (box) => (box ? distOf(centreOf(box, _boxC)) : aim ? distOf(aim) : null)
-  const dA = focus ? endDist(focus.a) : distOf(aim), dB = focus ? endDist(focus.b) : dA   // both set: checked above
-  _dofRefs.focusDist.current = Math.max(1, dA + (dB - dA) * lam)
-  _inspect.focus = focus; _inspect.dA = dA; _inspect.dB = dB; _inspect.dist = _dofRefs.focusDist.current
-  _inspect.heroRect = _dofRefs.heroRect.current
+
+  if (choice.aim) {
+    // The views that take the aim (Street): the focal plane at the controls' target. ⛔ No target ⇒ no depth of field,
+    // said once — never a guessed distance. Said on the EVENT that a town is shown — the reveal (startupMarks.js) —
+    // never on the frames before it, while the app's controls are still mounting.
+    if (!focusPoint) {
+      const shown = isMarked('gate') ? isRevealed() : _framesSeen++ > 0
+      if (shown && !_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target) — depth of field is off') }
+      off(); return
+    }
+    _dofRefs.focusDist.current = Math.max(1, distOf(_aim.copy(focusPoint)))
+    _inspect.focus = null; _inspect.dA = _inspect.dB = _inspect.dist = _dofRefs.focusDist.current; _inspect.heroRect = null
+    return
+  }
+
+  // ⭐ THE HERO VIEW: the focus objects. ⛔ Never the aim: an end that names nothing has no plane (weight), and with no
+  // plane at all the Amount applies everywhere (Jacob, 2026-10-28).
+  const lam = choice.lam, near = lam < 0.5 ? choice.a : choice.b
+  _dofRefs.focusOn.current = choice.weight
+  _dofRefs.heroRect.current = heroRectOnScreen(near, camera)
+  _dofRefs.heroNear.current = _dofRefs.heroRect.current ? _heroNear : 0
+  _dofRefs.heroMeshes.current = _dofRefs.heroRect.current ? (choice.heroMeshes ?? null) : null
+  const dA = choice.a ? distOf(centreOf(choice.a, _boxC)) : null, dB = choice.b ? distOf(centreOf(choice.b, _boxC)) : null
+  _inspect.focus = choice; _inspect.dA = dA; _inspect.dB = dB; _inspect.heroRect = _dofRefs.heroRect.current
+  if (dA == null && dB == null) { _inspect.dist = null; return }   // no plane: focusOn 0, the Amount everywhere
+  const a = dA ?? dB, b = dB ?? dA   // a broken end has no plane of its own: its weight takes the plane out, not its distance
+  _dofRefs.focusDist.current = Math.max(1, a + (b - a) * lam)
+  _dofRefs.heroGround.current = lam < 0.5 ? a : b
+  _inspect.dist = _dofRefs.focusDist.current
 }
