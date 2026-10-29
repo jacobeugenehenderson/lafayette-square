@@ -20,7 +20,7 @@
  * PostProcessing.jsx (which imports this installer) would be a fatal import
  * cycle. They read the driving refs owned by usePostFxDriver.js.
  */
-import { forwardRef, useMemo } from 'react'
+import { forwardRef, useMemo, useRef } from 'react'
 import { EffectComposer, N8AO, SMAA } from '@react-three/postprocessing'
 import { Effect, SMAAPreset } from 'postprocessing'
 import * as THREE from 'three'
@@ -29,6 +29,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useQuality, includesPass } from '../lib/qualityProfile.js'
 import { AO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { RomanceDoF } from './RomanceDoF.jsx'
+import { DofDebug } from './DofDebug.jsx'
 import { DownsamplePyramid } from './DownsamplePyramid.jsx'
 import { HeroLadder } from './HeroLadder.jsx'
 import { CustomBloom } from './CustomBloom.jsx'
@@ -247,6 +248,10 @@ export const POSTFX_PIPELINE = [
   // ULTRA preset = most aggressive edge detection. Always on: no operator switch (Jacob, 2026-09-26).
   { id: 'smaa', pass: SMAA, order: 70, props: () => ({ preset: SMAAPreset.ULTRA }) },
   { id: 'grain', pass: FilmGrain, channel: 'grain', order: 80 },
+  // ⛔ AFTER THE COMPOSER, always: the DoF debug paint (window.__dofDebug) is the blur amount itself, never repainted by a
+  // pass (an `overlay` mounts beside the composer and draws after it). Ships while DoF does; draws nothing until the flag
+  // is set. ▶ node checks/claims-the-debug-paint-is-the-pass-amount.mjs
+  { id: 'dofDebug', pass: DofDebug, order: 90, dependsOn: ['dof'], overlay: true },
 ]
 
 // ── The installer — consumes the manifest, parameterized by mode ─────────────
@@ -286,7 +291,15 @@ export function mountedPasses({ quality, dofOn, inspect }) {
  *                  pass to measure it). Per-pass cost is measured externally off renderer.info via GpuMonitor's
  *                  measureToggle.
  */
+// The composer's frame priority, stated (it is @react-three/postprocessing's default): an overlay draws one after it.
+export const COMPOSER_PRIORITY = 1
+// ⛔ autoClear OFF: every pass that needs a clear owns it (RenderPass's own ClearPass; N8AO, DownsamplePyramid and
+// HeroLadder clear or overwrite their own targets). With the default (on), the first EffectPass's draw cleared the depth
+// the later ones sample: since bloom went ahead of DoF (ab3ddb11, 2026-09-26), DoF read the far plane at every pixel and
+// blurred the whole frame at the Amount (PTown, 2026-10-28). ▶ node checks/claims-dof-reads-the-scene-depth.mjs
+
 export function RenderPipeline({ refs, dofOn, inspect }) {
+  const composer = useRef(null)
   const ctx = { refs, dofOn }
   // Which passes run is the quality profile's (qualityProfile.js), never a device sniff here.
   const mounted = mountedPasses({ quality: useQuality(), dofOn, inspect })
@@ -297,9 +310,9 @@ export function RenderPipeline({ refs, dofOn, inspect }) {
   // did). Production/Stage always have grade/grain mounted → never null.
   if (mounted.length === 0) return null
 
-  return (
-    <EffectComposer key={key}>
-      {mounted.map((e) => {
+  return (<>
+    <EffectComposer key={key} ref={composer} renderPriority={COMPOSER_PRIORITY} autoClear={false}>
+      {mounted.filter((e) => !e.overlay).map((e) => {
         const Pass = e.pass
         const props = e.props ? e.props(ctx) : null
         return e.ref
@@ -307,5 +320,6 @@ export function RenderPipeline({ refs, dofOn, inspect }) {
           : <Pass key={e.id} {...props} />
       })}
     </EffectComposer>
-  )
+    {mounted.filter((e) => e.overlay).map((e) => { const Overlay = e.pass; return <Overlay key={e.id} composer={composer} after={COMPOSER_PRIORITY} /> })}
+  </>)
 }

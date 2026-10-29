@@ -4,20 +4,13 @@
  * Resolves the operator's `dof` channel + the live camera into RomanceDoF's
  * `_dofRefs` (the shader's uniforms). Called from usePostFxDriver — the ONE
  * per-frame driver all three surfaces (production, Stage, Preview) run through —
- * so the hero-pocket VIEW-Z anchor and the browse (look-down) gate cannot drift
- * between the shipping render and the publish-confidence gate.
+ * so the focal distance and the browse (look-down) gate cannot drift between
+ * the shipping render and the publish-confidence gate. (Preview's own forked
+ * driver, frozen at mount, is retired: 2026-06-30.)
  *
- * Why this exists (2026-06-27): Preview previously forked its own URL-param
- * driver that read heroDist ONCE on mount with no per-frame VIEW-Z transform
- * and no look-down gate — so Preview's DoF was frozen and unfaithful, exactly
- * where Preview's whole job is parity (PREVIEW.md §0/§7). One driver, one place,
- * no second copy to hand-sync (the "one knob, never two copies" doctrine the
- * project applies to STREET_SMOOTH). The Preview fork is retired (2026-06-30).
- *
- * NOT here: the pyramid DEGREE (the resolution bracket per device-surface).
- * Everything ships to every surface; only the mip-rung resolution differs,
- * dialed on the DownsamplePyramid pass per tier (preview-equals-pyramid-tier-
- * ladder). This driver computes the same focus math regardless of bracket.
+ * NOT here, and ⛔ UNBUILT: a per-surface pyramid rung (ROADMAP.md H1;
+ * renderTiers.js header). DownsamplePyramid takes no props and a phone runs no
+ * pyramid, so there is no degree for this driver to know.
  */
 import * as THREE from 'three'
 import { _dofRefs } from './RomanceDoF.jsx'
@@ -26,7 +19,7 @@ import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 const _camDir  = new THREE.Vector3()  // reused for the browse (look-down) gate
-const _heroVec = new THREE.Vector3()  // reused for the focus-pocket view-Z depth
+const _heroVec = new THREE.Vector3()  // reused for a point's ground distance (distOf)
 let _warnedNoFocus = false
 let _framesSeen = 0
 // Read-only inspection (as terrainShader's window.__terrainExag): this frame's focus — what probes and Preview read.
@@ -87,9 +80,8 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   _dofRefs.heroBlur.current = browse ? 0 : (d.heroBlur ?? DOF_FLAT_DEFAULTS.heroBlur)
   _dofRefs.zone.current     = 0.03 + d.softness * 0.4                                  // Clear window: the sharp zone's depth
   _dofRefs.ramp.current     = 0.05 + (d.melt ?? DOF_FLAT_DEFAULTS.melt) * 0.9           // Window softness: how gently it melts
-  // ⭐ THE FOCAL PLANE IS RELATIVE: `focus` × the view depth of what the camera looks at (the controls' target —
-  // in playback, the interpolated keyframe target). The shader decodes `dist` as VIEW-Z, so the point goes to view
-  // space; −z is its forward depth. ⛔ No target ⇒ no depth of field, said once — never a guessed distance.
+  // ⭐ THE FOCAL PLANE is at the focus object's distance, else the controls' target's (in playback, the interpolated
+  // keyframe target). ⛔ No target ⇒ no depth of field, said once — never a guessed distance.
   const aim = focusPoint ? _aim.copy(focusPoint) : null
   if (!aim && !(focus?.a && focus?.b)) {
     // Said on the EVENT that a town is shown with nothing to focus on — the reveal (startupMarks.js) — never on the

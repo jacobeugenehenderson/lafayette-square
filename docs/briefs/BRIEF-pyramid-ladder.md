@@ -29,10 +29,10 @@ stack is ~16 of ~36 ms; confirmed in code that no reduced rung runs anywhere). *
   (`RomanceDoF.jsx`, blur radius by depth) and **bloom** (`CustomBloom.jsx`, band-pass across rungs) both sample.
   `cartograph/ARCHITECTURE.md §8`: *"Post-FX shares a blur LADDER… the one expensive downsample, sampled many ways (gang intact → phone
   budget)"*, and the EffectComposer note: *"DoF + Bloom share the DownsamplePyramid BY DESIGN; do not un-share."*
-- **`src/lib/renderTiers.js`** holds the per-surface rungs: desktop `{levels 8, radius 0.85, resolutionScale 0.5}`, phone-hi `{6, 0.85,
-  0.35}`, phone-lo `{4, 0.85, 0.25}`. Its header says why they reach nothing: (1) nothing imports `pyramidDegreeFor`; (2)
-  `DownsamplePyramid` **accepts and ignores** levels / radius / resolutionScale (*"the dial was removed 2026-06-28"*: find out why
-  before restoring it; the Diary is `cartograph/_archive/`, `git log -S` on the file); (3) the phone profile switches the pyramid off.
+- **`src/lib/renderTiers.js`** holds the per-surface rungs (`levels`, `radius`); its header says why they reach nothing: (1) only the
+  tuner's sliders read them; (2) `DownsamplePyramid` **takes no props** (the dial went in `7d1bb238`, 2026-06-26: find out why before
+  restoring it); (3) the phone profile switches the pyramid off. ⭐ **Step 1 has run for the resolution rung** (2026-10-07): it cost
+  what the full ladder costs, so `resolutionScale` was evicted; `levels`/`radius` remain.
 - **`src/preview/PreviewApp.jsx#PyramidTuner`**: the sliders (Levels, Resolution, Radius), titled *"Pyramid · unfinished"*, kept on purpose
   (Jacob, 2026-10-04): unfinished, not dead.
 - **`src/lib/qualityProfile.js`**: the one function per surface (`surfaceQuality`, `includesPass`, `postFxOff`), now fed by each town's

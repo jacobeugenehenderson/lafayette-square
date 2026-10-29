@@ -1,0 +1,50 @@
+// Browser receipt for the composer's autoClear (ferrule/dof-truth), evaluated in the page as text (no vite transform).
+// Read-only: pins live only in this tab and are restored. (A) depth, pass by pass, in a REAL frame with DoF on, fix vs the
+// old default forced (the mutant) · (C) ghosting: DoF at 0, a move between frames, the second frame's pixels fix vs old.
+const g = async (u) => (await fetch(u)).text(), im = (s, re) => s.match(new RegExp(`from\\s+"([^"]*${re}[^"]*)"`))?.[1]
+const rp = await g('/src/components/renderPipeline.jsx'), rdU = im(rp, 'RomanceDoF'), rd = await g(rdU)
+const PP = await import(im(rp, '/deps/postprocessing\\.js')), F = await import(im(rd, '/deps/@react-three_fiber\\.js')), THREE = await import(im(rd, '/deps/three\\.js')), R = await import(rdU)
+const frame = (n = 2) => new Promise(res => { let k = 0; const off = F.addAfterEffect(() => { if (++k < n) { F.invalidate(); return } off(); res() }); F.invalidate() })
+const oC = PP.EffectComposer.prototype.render; let comp = null
+PP.EffectComposer.prototype.render = function (dt) { comp = comp || this; return oC.call(this, dt) }; await frame(2); PP.EffectComposer.prototype.render = oC
+if (!comp) throw new Error('no composer seen')
+const r = window.__renderer, gl = r.getContext(), cv = r.domElement, uvs = [[0.2, 0.1], [0.5, 0.2], [0.8, 0.3], [0.35, 0.5], [0.5, 0.92]]
+const rt = new THREE.WebGLRenderTarget(uvs.length, 1, { type: THREE.FloatType })
+const mat = new THREE.ShaderMaterial({ uniforms: { uD: { value: null }, uUv: { value: uvs.map(u => new THREE.Vector2(...u)) } }, vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }',
+  fragmentShader: `uniform sampler2D uD; uniform vec2 uUv[${uvs.length}]; void main(){ int i = int(gl_FragCoord.x); vec2 uv = uUv[0]; ${uvs.map((_, k) => `if (i == ${k}) uv = uUv[${k}];`).join(' ')} gl_FragColor = vec4(texture2D(uD, uv).r, 0.0, 0.0, 1.0); }` })
+const sc = new THREE.Scene(), q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat); q.frustumCulled = false; sc.add(q)
+const read = (tex) => { const prev = r.getRenderTarget(); mat.uniforms.uD.value = tex; r.setRenderTarget(rt); r.render(sc, new THREE.Camera()); const px = new Float32Array(uvs.length * 4); r.readRenderTargetPixels(rt, 0, 0, uvs.length, 1, px); r.setRenderTarget(prev); return uvs.map((_, k) => +(Math.pow(2, px[k * 4] * Math.log2(R._dofRefs.far.current + 1)) - 1).toFixed(1)) }
+const forceOn = (on) => { PP.EffectComposer.prototype.render = on ? function (dt) { const w = r.autoClear; r.autoClear = true; try { return oC.call(this, dt) } finally { r.autoClear = w } } : oC }
+const pin = (k, v) => { const s = R._dofRefs[k]; R._dofRefs[k] = { get current() { return v }, set current(x) {} }; return () => { R._dofRefs[k] = s } }
+const name = (p) => `${p.name || p.constructor.name}${p.effects ? '[' + p.effects.map(e => e.name).join('+') + ']' : ''}`
+const out = { town: location.pathname.split('/')[2] }
+const cam = window.__r3f?.get?.().camera, ctl = window.__r3f?.get?.().controls, p0 = cam.position.clone(), t0 = ctl?.target?.clone()
+try {
+  const un = pin('maxBlur', 0.2)
+  for (const [label, on] of [['fix', false], ['mutant_autoClearOn', true]]) {
+    const seen = {}; const undo = comp.passes.map(p => { const o = p.render; p.render = function (...a) { const isDof = p.effects?.some(e => e.name === 'RomanceDoF'); if (isDof) seen.atDoF = read(p.fullscreenMaterial.uniforms.depthBuffer.value); const x = o.apply(this, a); if (p === comp.passes[0]) seen.afterRenderPass = read(comp.inputBuffer.depthTexture); return x }; return () => { p.render = o } })
+    forceOn(on); await frame(3); forceOn(false); undo.forEach(u => u())
+    out[label] = { ...seen, equal: !!seen.afterRenderPass && !!seen.atDoF && seen.afterRenderPass.every((v, i) => Math.abs(v - seen.atDoF[i]) <= Math.max(0.5, v * 1e-4)) }
+  }
+  un()
+  // (C) ghosting, by sentinel: paint the screen and both composer buffers magenta, draw ONE frame (after a move), and count
+  // the magenta pixels left on the canvas: a pixel no pass rewrote keeps the sentinel (with autoClear off, it would have
+  // kept the PREVIOUS frame). Run with DoF at 0, DoF at 0.2, and the debug overlay on; fix and old default alike.
+  const grab = () => { const px = new Uint8Array(cv.width * cv.height * 4); gl.readPixels(0, 0, cv.width, cv.height, gl.RGBA, gl.UNSIGNED_BYTE, px); let n = 0; for (let i = 0; i < px.length; i += 4) if (px[i] === 255 && px[i + 1] === 0 && px[i + 2] === 255) n++; return n }
+  const shift = window.__SHIFT || [40, 0, -40]
+  const sentinel = (on, mb, dbg) => new Promise(res => { const un = pin('maxBlur', mb); window.__dofDebug = dbg ? 1 : 0
+    cam.position.set(p0.x + shift[0], p0.y + shift[1], p0.z + shift[2]); if (ctl?.target) ctl.target.copy(t0); cam.updateMatrixWorld()
+    // the sentinel is painted INSIDE the frame it tests (a before-effect), since the canvas is not preserved across frames
+    let k = 0, armed = false; const pre = F.addEffect(() => { if (!armed) return; armed = false
+      const cc = r.getClearColor(new THREE.Color()), ca = r.getClearAlpha(), prev = r.getRenderTarget(); r.setClearColor(0xff00ff, 1)
+      for (const t of [comp.inputBuffer, comp.outputBuffer, null]) { r.setRenderTarget(t); r.clear(true, false, false) }
+      r.setRenderTarget(prev); r.setClearColor(cc, ca) })
+    const off = F.addAfterEffect(() => { k++
+      if (k === 3) { armed = true; forceOn(on); F.invalidate(); return }
+      if (k === 4) { const n = grab(); off(); pre(); forceOn(false); un(); window.__dofDebug = 0; cam.position.copy(p0); if (ctl?.target) ctl.target.copy(t0); res(n) } else F.invalidate() })
+    F.invalidate() })
+  out.sentinel = {}
+  for (const [lbl, mb, dbg] of [['dof0', 0, false], ['dof0.2', 0.2, false], ['debugOverlay', 0.2, true]]) out.sentinel[lbl] = { fix: await sentinel(false, mb, dbg), old: await sentinel(true, mb, dbg) }
+  out.sentinel.px = cv.width * cv.height
+} finally { PP.EffectComposer.prototype.render = oC; cam.position.copy(p0); if (ctl?.target) ctl.target.copy(t0); rt.dispose(); mat.dispose(); F.invalidate() }
+return out

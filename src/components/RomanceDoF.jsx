@@ -88,7 +88,6 @@ const fragment = /* glsl */`
   uniform float uZone;        // the sharp zone's half-depth, as a fraction of the focal distance
   uniform float uRamp;        // how far past it (same unit) the blur reaches full
   uniform float uLogDepth;    // 1.0 when logarithmicDepthBuffer is active
-  uniform float uDebug;       // >0.5 → paint the blur amount instead of the image
 
   // Constant-index ladder access (dynamic sampler indexing is undefined in GLSL).
   vec3 sampleLevel(int idx, vec2 uv) {
@@ -145,13 +144,6 @@ const fragment = /* glsl */`
     // "still blurry, straight line across"). It takes the far field's blur like any distant surface; the night keys
     // have no blur, so stars stay points.
 
-    if (uDebug > 0.5) {
-      // Verification paint: green = sharp (0), red = full blur. Near field green,
-      // mid/far red, the Arch a softer green pocket.
-      outputColor = vec4(amt, 1.0 - amt, 0.0, 1.0);
-      return;
-    }
-
     // ── Pick the blur RADIUS from the ladder by the blur amount (2 taps) ──────
     // Virtual rung 0 = the SHARP input (radius 0); rung k = ladder level k-1
     // (widening). lod = where on that extended ladder this pixel sits; sample the
@@ -207,7 +199,6 @@ class RomanceDoFEffect extends Effect {
         ['uZone',       new THREE.Uniform(0.2)],
         ['uRamp',       new THREE.Uniform(0.5)],
         ['uLogDepth',   new THREE.Uniform(0)],
-        ['uDebug',      new THREE.Uniform(0)],
         ['uHeroOn',     new THREE.Uniform(0)],
         ...[0, 1, 2, 3].map(i => ['uHero' + i, new THREE.Uniform(null)]),
       ]),
@@ -233,7 +224,6 @@ class RomanceDoFEffect extends Effect {
     u.get('uHeroBlur').value   = _dofRefs.heroBlur.current
     u.get('uZone').value       = _dofRefs.zone.current
     u.get('uRamp').value       = _dofRefs.ramp.current
-    u.get('uDebug').value      = _dofRefs.debug.current
     // Decode-mode follows the actual canvas depth regime (LOG on desktop, LINEAR
     // on mobile) — read it live so the effect is correct on whichever host mounts it.
     u.get('uLogDepth').value = renderer?.capabilities?.logarithmicDepthBuffer ? 1 : 0
@@ -251,8 +241,9 @@ export const RomanceDoF = forwardRef((_, ref) => {
   const { composer } = useContext(EffectComposerContext)
   useFrame(() => {
     const pass = composer?.passes.find((p) => p.effects?.includes(effect))
-    if (pass) pass.enabled = _dofRefs.maxBlur.current > 0 || _dofRefs.debug.current > 0
+    if (pass) pass.enabled = _dofRefs.maxBlur.current > 0
     if (pass && typeof window !== 'undefined' && window.__dof) window.__dof.pass = pass   // read-only inspection (dofDriver)
   })
   return <primitive ref={ref} object={effect} dispose={null} />
 })
+
