@@ -18,7 +18,8 @@
  *   steepest    — the steepest heightfield sample inside the disc's opaque core, read at
  *                 the grid's own step: where relief shading is judged.
  */
-import { slabFetch } from '../../lib/slabUrl.js'
+import { slabFetch, slabManifest } from '../../lib/slabUrl.js'
+import { loadRevetment } from '../../lib/revetmentFromSlab.js'
 import { currentTerrain } from '../../utils/terrainShader.js'
 import { INSTANCE } from '../../instance.js'
 import { siteFromFootprint, southFacingYaw, DOSSIER, FT } from '../../setpieces/pilgrimMonument.js'
@@ -35,10 +36,8 @@ export async function listStages(lookId, bust) {
   const out = m.groups.map(g => ({ id: `class:${g.id}`, kind: g.kind, tris: g.indexCount / 3 }))
   out.unshift({ id: 'steepest', kind: 'terrain' })
   if (INSTANCE.setPiece) out.unshift({ id: 'setpiece', kind: INSTANCE.setPiece.kind })
-  // ⛔ `r.ok` IS NOT PRESENCE IN DEV: vite answers a missing file with its HTML
-  // fallback and a 200. Presence is "the body parses as the artifact".
-  const rv = await slabFetch(lookId, 'revetment.json', undefined, bust || null)
-  const doc = rv.ok ? await rv.json().catch(() => null) : null
+  // A revetment stage only where the town's manifest names one; a named one that fails is said (loadRevetment).
+  const doc = await loadRevetment(lookId, { manifest: await slabManifest(lookId), fetchFile: (rel) => slabFetch(lookId, rel, undefined, bust || null), say: console.error })
   if (doc?.arcs) out.unshift({ id: 'revetment', kind: 'revetment' })
   return { stages: out, manifest: m }
 }

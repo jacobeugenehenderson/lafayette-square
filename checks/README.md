@@ -223,7 +223,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-look-authors-its-curb-width.mjs` | DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |
 | `checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs` | every spawn of a Look-strict tool passes `--look`. |
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
-| `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | ⭐⭐ THE INVARIANT: the renderer may draw "no shore" only when it has been TOLD there is |
+| `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | ⭐⭐ THE INVARIANT: the renderer may draw "no shore" only when it has been TOLD there is no shore — and the town's |
 | `checks/claims-a-mover-stands-where-it-is.mjs` | "DOES A LIVE DOT — THE VISITOR, A COURIER — STAND WHERE IT IS, IN ANY TOWN, DRAWN BY THE TOWN?" |
 | `checks/claims-a-nodeless-crossing-is-grade-separated.mjs` | WHERE TWO OSM STREET WAYS CROSS IN 2D WITHOUT A SHARED NODE, DOES OSM |
 | `checks/claims-a-oneway-runs-in-travel-order.mjs` | CLAIM — EVERY ONE-WAY CHAIN RUNS IN TRAVEL ORDER, AND A REVERSED WAY'S TAGS POINT THE WAY IT NOW RUNS. |

@@ -166,41 +166,34 @@ export function revetmentFaces(doc) {
 }
 
 /**
- * ⭐⭐ IS THIS TOWN'S REVETMENT ABSENT, OR DID THE LOAD FAIL? THEY ARE NOT THE SAME, AND
- * THE DEV SERVER CANNOT TELL THEM APART — so this returns which of THREE states it is,
- * never a boolean, and never silence.
- *
- * ⛔ THE HOLE THIS CLOSES (Marram, 2026-09-24). `bake-revetment` writes nothing for a town
- * with no shoreline, so a 404 is NORMAL and most towns give one. But vite serves its HTML
- * index with **status 200** for a missing file, so in dev:
- *   · `status === 404` is never true — the "absent is normal" branch NEVER RAN
- *   · `r.ok` is true, `r.json()` throws on HTML, and the LOUD branch fired on the
- *     ordinary case, logging "FAILED to load" for every town that simply has no coast
- * Both branches were inverted, and the direction matters: a real load failure became
- * indistinguishable from a normal absence. ⛔ That is Layer 0's second question failing
- * inside the one place it must not — the thing that decides whether to draw a shore.
- *
- * ⛔ AND THE FIX IS NOT "ALSO TREAT A PARSE ERROR AS ABSENT." That swallows a genuinely
- * corrupt artifact, which is the same bug with a wider mouth. The decidable fact is that a
- * JSON artifact must come back AS JSON: if the body is HTML, the response is not the
- * artifact at all, whatever its status says.
- *
- * ⭐ SO ABSENCE IS THREE-STATE, the same shape `intake-rows.mjs` already uses for an input
- * well — present / verified-absent / unverifiable. A server that answers 200-HTML for a
- * missing file cannot VERIFY absence, and saying "no revetment" on its word would be a
- * guess wearing a fact's clothes. It reports `unverifiable` and the caller says so out loud.
- *
- * @returns {'present'|'absent'|'unverifiable'|'failed'}
+ * ⭐⭐ THE TOWN'S MANIFEST SAYS WHETHER IT HAS A SHORE; THE LOADER ASKS ONLY FOR WHAT IT NAMES (2026-10-28, the inland
+ * HPDM player measured by Ward: every cold load logged "FAILED to load revetment.json — manifest names no
+ * revetment.json"). `bake-revetment` writes nothing for a town with no shoreline, and `bake-manifest` (the Bake's last
+ * step) lists every file the slab holds in `files`. So:
+ *   · the manifest names no `revetment.json` → the town has no revetment: nothing is fetched and nothing is said.
+ *   · it names one → fetched; anything but the JSON artifact is a FAILURE, refused by name (the manifest said it is
+ *     there, so a 404 or vite's 200-HTML index is not an absence — the old three-state guess is no longer needed).
+ *   · there is no manifest → said by name, and nothing is drawn: absence is never a guess.
+ * ⛔ The loader never asks for a file to learn whether it exists: on a published town a name the manifest does not
+ * carry cannot even be resolved (slabNames.js#shaOf throws), which is the bug this replaced.
+ * Pure (the fetch and the voice are handed in), so the check drives exactly what the map runs.
+ *   ▶ node checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs
+ * @param manifest  the town's manifest (slabUrl.js#slabManifest), or null
+ * @param fetchFile (rel) => Promise<Response>   @param say (message) => void, for a refusal
+ * @returns the revetment document, or null
  */
-export function revetmentResponseKind(status, contentType) {
-  const ct = String(contentType || '').toLowerCase()
-  if (status === 404) return 'absent'                 // the server knows, and said so
-  if (status < 200 || status >= 300) return 'failed'  // loud — never a silent no-coast
-  if (ct.includes('json')) return 'present'
-  // 2xx that is not JSON. In dev this is vite's index.html standing in for a missing
-  // file; in production it is a misconfigured server. ⛔ Either way it is NOT the
-  // artifact, and either way absence is a GUESS here — so it is not claimed.
-  return 'unverifiable'
+export async function loadRevetment(look, { manifest, fetchFile, say }) {
+  if (!manifest) { say(`[revetment] ⛔ ${look}: the slab has no manifest.json — whether it has a shore is unknown, and none is drawn. ▶ node cartograph/bake-manifest.mjs --town=${look}`); return null }
+  if (!manifest.files?.['revetment.json']) return null   // inland: the manifest names none
+  try {
+    const r = await fetchFile('revetment.json')
+    const ct = String(r.headers?.get?.('content-type') || '').toLowerCase()
+    if (!r.ok || !ct.includes('json')) throw new Error(`HTTP ${r.status} '${ct || 'no content-type'}' — not the artifact`)
+    return await r.json()
+  } catch (e) {
+    say(`[revetment] ⛔ ${look}: its manifest names revetment.json, and it FAILED to load — ${e?.message || e}. No shore is drawn.`)
+    return null
+  }
 }
 
 /**
