@@ -267,14 +267,6 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 ---
 
 ## 🛡 HARDENING — correct on the eye, not yet correct-by-construction
-- **🌳 trees: the field fallback for an unanchored tree** (Boz ruled, 2026-10-29). `elevation.js#treeGroundRaw` falls back to
-  `getElevationRaw(x, z)` for a tree with no baked `groundRaw`, a Layer 0 fallback: the tree silently seats on the field. The C9 rule
-  (`claims-the-far-shore-is-not-built-at-load`) sees it in HeroImpostorTrees' and OverheadTrees' `aGround` hooks and carries both as
-  KNOWN OPEN. On integration's slab, every placed tree has a baked `groundRaw` (▶ `node scratch/tree-anchors/unanchored.mjs
-  --slab=<dir>`: 0 on all five towns with trees), so the fallback is dead code on today's data: a deletion (an unanchored tree refuses
-  by name), then the two OPEN rows close. The same inline fallback (`groundRaw ?? getElevationRaw`) sits in InstancedTrees.jsx's two
-  `aGround` builds and StreetLights.jsx; the C9 rule does not flag those (their hook returns the array rather than setting it; cause of
-  the blind spot not established). Not built.
 - **D3 — corner identity at divided transitions → freeze at prebake.** The false-corner cure is LIVE (`9c275ce`); doctrine wants the decision made once upstream as frozen topology (`PREBAKE §5`). Sibling of the curb-freeze. ⚠️ Relocating re-derives corners → gate it; don't cleanup-refactor.
 
 ## ⏭ NEXT

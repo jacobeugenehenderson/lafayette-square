@@ -24,7 +24,8 @@ import { markFailed } from '../lib/startupMarks.js'
 import * as THREE from 'three'
 import { buildHeroImpostorCard, HERO_FRAME_VERSION } from './impostorGeometry.js'
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
-import { treeGroundRaw, groundPairs } from '../utils/elevation'
+import { groundPairs } from '../utils/elevation'
+import { anchoredRaw } from '../lib/anchorGate.js'
 import { treeDbg } from './OverheadTrees.jsx'
 import { slabUrl } from '../lib/slabUrl.js'
 
@@ -287,7 +288,7 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       }
       im.instanceMatrix.needsUpdate = true
       // The RAW ground under each card (pre-exag); the shader multiplies by the live uExag.
-      d.geo.setAttribute('aGround', new THREE.InstancedBufferAttribute(groundPairs(d.instances, treeGroundRaw), 2))
+      d.geo.setAttribute('aGround', new THREE.InstancedBufferAttribute(groundPairs(d.instances, t => anchoredRaw(t, 'tree')), 2))
       // The per-tree lamp light the bake stamped (`lampGlow`, src/lib/lampPool.js) — the same value the mesh path reads.
       const glow = new Float32Array(d.instances.length)
       for (let i = 0; i < d.instances.length; i++) glow[i] = Number(d.instances[i].lampGlow) || 0

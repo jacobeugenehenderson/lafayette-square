@@ -23,6 +23,9 @@
 //     that calls a sampler is sampler-valued (drapeRaws' rawAt), and a call returns a sample when it hands a sampler (or its
 //     own sampler parameter) at a SLOT whose reading reaches the callee's return. Judged per slot: a sampler at a slot the
 //     callee never reads taints nothing.
+// ⚠️ LIMIT, SAID: the flow is followed within ONE hook callback. A value computed in one hook (a useMemo returning an
+//   array) and written in another (a useEffect, or a child component's prop) is not connected: InstancedTrees' and
+//   StreetLights' anchor arrays were invisible to it for that reason (Groyne, 2026-10-29). Their resolvers no longer sample.
 // ⭐ AND THE FAR LAYER'S HIDE IS PER CHUNK (C7): SlabRevetment's near chunks are keyed face AND chunk, and the far meshes
 //   hide by the same key, so one near chunk on a long face leaves that face's other far chunks drawn at distance.
 // ▶ node checks/claims-the-far-shore-is-not-built-at-load.mjs [--mutants] [-v]
@@ -266,10 +269,7 @@ say(!!near && near.camera, `the near layer's useFrame generates and reads the ca
 // ⚠️ KNOWN OPEN (Boz ruled, 2026-10-29): hits this rule sees and the kit has not closed, each with WHY and WHAT CLOSES IT. One
 // entry absorbs ONE hit of its hook kind in its file: a further hit there, or anywhere else, is RED; an entry nothing hits
 // any more is RED too (close it here, in the same commit as the fix).
-const OPEN = [
-  { file: 'src/components/HeroImpostorTrees.jsx', hook: 'useEffect', why: "aGround = groundPairs(instances, treeGroundRaw) at mount; treeGroundRaw falls back to the FIELD (getElevationRaw) for a tree with no baked groundRaw, a Layer 0 fallback", closes: 'the fallback removed: an unanchored tree refuses by name (cartograph/BACKLOG.md, "trees: the field fallback for an unanchored tree")' },
-  { file: 'src/components/OverheadTrees.jsx', hook: 'useEffect', why: 'the same groundPairs(instances, treeGroundRaw) at mount', closes: 'the same row' },
-]
+const OPEN = []
 const allReds = red(R), left = OPEN.map(o => ({ ...o, hit: false }))
 const reds = allReds.filter(h => { const o = left.find(o => !o.hit && o.file === h.file && o.hook === h.hook); if (o) { o.hit = true; return false } return true })
 say(reds.length === 0, `${R.hooks.length} hook(s) generate from the ground; ${reds.length} without a camera, beyond the ${OPEN.length} known open${reds.map(h => `\n       ⛔ ${h.file}:${h.line} ${h.hook}`).join('')}`)

@@ -27,8 +27,8 @@
 //
 // ⚠️ It is a CEILING, not the live value. The rendered exaggeration is a per-shot animated
 // uniform (`terrainShader.terrainExag`) that the view lerps toward: hero → this value,
-// planetarium → 1, browse → 0. Anything reading a constant instead of the uniform is the
-// bug `treeGroundRaw` documents at length in src/utils/elevation.js.
+// planetarium → 1, browse → 0. Anything reading a constant instead of the uniform is a bug: a
+// constant cannot follow the tween (src/utils/elevation.js, where a tree or lamp sits).
 export const DEFAULT_V_EXAG = 1
 /** A town's authored vertical exaggeration out of its scene.json (`terrainExag`), else the kit default. ⛔ A SENTINEL IS NOT
  *  A VALUE: an authored 0 means FLAT and is a real choice, never promoted. ONE rule for the player (terrainShader.js's

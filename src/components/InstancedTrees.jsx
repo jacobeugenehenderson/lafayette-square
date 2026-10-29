@@ -34,7 +34,8 @@ import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
 import { treesRevealVerdict, applyTreesReveal } from './treesReveal.js'
-import { getElevationRaw, slabYIsUnstamped, groundPairs } from '../utils/elevation'
+import { groundPairs } from '../utils/elevation'
+import { treeAnchorsVerdict, anchoredRaw } from '../lib/anchorGate.js'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
@@ -282,10 +283,9 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
   // Per-instance ground anchor (groundSampler, baked per-look as tree-anchors).
   // The raw field where the DRAWN ground sits under each tree → the trunk lands
   // exactly on the rendered surface (no float), via patchTerrainInstancedBaked.
-  // Falls back to the smooth field for any instance missing an anchor.
   // `aGround` = (raw anchor, the drawn ground's own y) per instance — `elevation.js#groundPairs`
   const groundRaws = useMemo(() => {
-    const arr = groundPairs(instances, t => (typeof t.groundRaw === 'number' ? t.groundRaw : getElevationRaw(t.x, t.z)))
+    const arr = groundPairs(instances, t => anchoredRaw(t, 'tree'))
     return arr
   }, [instances])
 
@@ -467,7 +467,7 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
     return a
   }, [instances])
   const groundRaws = useMemo(() => {
-    const a = groundPairs(instances, t => (typeof t.groundRaw === 'number' ? t.groundRaw : getElevationRaw(t.x, t.z)))
+    const a = groundPairs(instances, t => anchoredRaw(t, 'tree'))
     return a
   }, [instances])
 
@@ -542,8 +542,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     let cancelled = false
     // The ground anchor that seats each trunk on the DRAWN ground is PER-LOOK
     // (tree-anchors.json, groundSampler bake). Fetch placements + anchors and
-    // inject groundRaw into each instance; if anchors are absent/stale, the
-    // per-instance memos fall back to the smooth field.
+    // inject groundRaw into each instance; anchors that fail their gate refuse the town's trees.
     // A missing placements file may 404 OR (on SPA-fallback hosts) return a 200
     // HTML page, so `instances` is validated rather than trusted. Absent → no
     // trees, which is the honest answer for a neighbourhood that has no census
@@ -556,76 +555,20 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     ])
       .then(([j, anchorsDoc]) => {
         if (cancelled) return
-        const anchors = anchorsDoc?.anchors
-        // ⛔⛔ THE LENGTH GATE IS NOT EVIDENCE. `anchors.length === instances.length` cannot
-        // tell a good anchor file from a STALE one of the same length: a re-pour that keeps
-        // the count but changes the ORDER mis-seats every tree, silently, and the map looks
-        // plausible while every trunk floats or sinks. bake-tree-anchors now stamps
-        // `placementKey` — FNV-1a over the placement coordinates in order — so the file can
-        // prove it belongs to THESE placements. (2026-09-03 audit §6.)
-        // ⛔ Absent key ⇒ a v1 file baked before this; fall back to the length gate rather
-        // than discarding good anchors, but SAY SO — silence is what let this stand.
-        let keyOk = true
-        if (anchorsDoc?.placementKey && j?.instances) {
-          let h = 2166136261 >>> 0
-          for (const t of j.instances) {
-            const k = `${t.x.toFixed(3)},${t.z.toFixed(3)}`
-            for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0 }
+        // ⛔ THE ANCHORS BELONG TO THESE PLACEMENTS ON THIS HEIGHTFIELD, OR THE TOWN'S TREES ARE REFUSED (Boz ruled (b),
+        // 2026-10-29). One verdict (src/lib/anchorGate.js), the one Publish refuses a slab by, so a visitor never reaches
+        // this: it is the backstop. ⛔ No field fallback: trees seated on the smooth field instead of the drawn ground were
+        // the plausible-looking wrong map (a length gate once let a stale file mis-seat every trunk in silence).
+        if (j?.instances?.length) {
+          const v = treeAnchorsVerdict({ doc: anchorsDoc, instances: j.instances, terrainId: currentTerrainIdentity() })
+          if (!v.ok) {
+            console.error(`[InstancedTrees] ⛔ "${lookName}": its tree anchors are REFUSED — ${v.why}. No trees are drawn. `
+              + `▶ re-bake the anchors (node cartograph/bake-tree-anchors.js --look=${lookName} --scene=<its scene>) and publish the slab`)
+            j = { ...j, instances: [] }
+          } else {
+            const gy = Array.isArray(anchorsDoc.groundY) && anchorsDoc.groundY.length === anchorsDoc.anchors.length ? anchorsDoc.groundY : null
+            for (let i = 0; i < j.instances.length; i++) { j.instances[i].groundRaw = anchorsDoc.anchors[i]; if (gy) j.instances[i].groundY = gy[i] }
           }
-          keyOk = h.toString(16).padStart(8, '0') === anchorsDoc.placementKey
-          if (!keyOk) {
-            console.error(`[InstancedTrees] ⛔ tree-anchors.json belongs to DIFFERENT placements `
-              + `(placementKey ${anchorsDoc.placementKey} ≠ ${h.toString(16).padStart(8, '0')} for this trees.json, `
-              + `both ${anchors?.length} long). Every trunk would be seated on another tree's ground. `
-              + `Anchors DISCARDED — the scene falls back to the smooth field. Re-run bake-tree-anchors.`)
-          }
-        } else if (j?.instances && Array.isArray(anchors)) {
-          console.warn('[InstancedTrees] tree-anchors.json has no placementKey (v1, baked before 2026-09-03) — '
-            + 'falling back to the length gate, which cannot detect a reordered re-pour. Re-bake to get the key.')
-        }
-        // ⛔ The anchors must have been sampled from THIS heightfield. A terrain re-bake that
-        // moves the datum leaves every anchor bound to its placements and uniformly wrong.
-        if (keyOk && Array.isArray(anchors)) {
-          const live = currentTerrainIdentity()
-          if (!anchorsDoc?.terrain) {
-            console.warn(`[InstancedTrees] tree-anchors.json for "${lookName}" carries no terrain identity (baked before the guard) — `
-              + `cannot prove it matches this heightfield (${live}). Using it. ▶ node cartograph/bake-tree-anchors.js --scene=<scene> --look=${lookName}`)
-          } else if (anchorsDoc.terrain.key !== live) {
-            keyOk = false
-            console.error(`[InstancedTrees] ⛔ tree-anchors.json for "${lookName}" was sampled from a DIFFERENT heightfield `
-              + `(terrain ${anchorsDoc.terrain.key}, baseElev ${anchorsDoc.terrain.baseElev}) than this slab's (${live}). `
-              + `Anchors REFUSED — trees fall back to the smooth terrain field. ▶ re-bake anchors: node cartograph/bake-tree-anchors.js --scene=<scene> --look=${lookName}`)
-          }
-        }
-        if (j?.instances && Array.isArray(anchors) && keyOk && anchors.length === j.instances.length) {
-          // `groundY` (v4): the drawn ground's own height under each tree, index-parallel; absent ⇒ 0 (seats on the field)
-          const gy = Array.isArray(anchorsDoc?.groundY) && anchorsDoc.groundY.length === anchors.length ? anchorsDoc.groundY : null
-          for (let i = 0; i < j.instances.length; i++) { j.instances[i].groundRaw = anchors[i]; if (gy) j.instances[i].groundY = gy[i] }
-        } else if (j?.instances && Array.isArray(anchors)) {
-          // ⛔⛔ ALL-OR-NOTHING, AND IT WAS SILENT. A length mismatch discards EVERY anchor
-          // and drops the whole scene onto the smooth field — a real degradation of the
-          // thing the anchors exist for (seating trunks on the DRAWN ground). It said
-          // nothing, so a stale file survived the 2026-08-24 land-use re-pour (which took
-          // LS 5001 → 5127 placements) and went unnoticed until the buried-impostor hunt.
-          console.warn(
-            `[InstancedTrees] ⛔ tree-anchors.json is STALE for "${lookName}" — ${anchors.length} anchors ` +
-            `vs ${j.instances.length} placements. ALL anchors discarded; every tree falls back to the smooth ` +
-            `terrain field instead of the drawn ground. Re-bake this look's tree anchors (groundSampler).`
-          )
-        } else if (j?.instances && !anchors) {
-          console.warn(`[InstancedTrees] ⛔ no tree-anchors.json for "${lookName}" — trees seat on the smooth ` +
-            `terrain field, not the drawn ground. Re-bake this look's tree anchors (groundSampler).`)
-        }
-        // ⛔ AND SAY WHEN THE SLAB'S y COLUMN IS UNSTAMPED. `y: 0` is a SENTINEL meaning
-        // "look it up"; read as a value it buried 4867 hero cards under the terrain for four
-        // days. Consumers now resolve through `treeGroundY`, but the operator should still be
-        // told that the bake is not stamping heights. `[[project_a_sentinel_is_not_a_value]]`
-        if (j?.instances && slabYIsUnstamped(j.instances)) {
-          console.warn(
-            `[InstancedTrees] ⚠️ "${lookName}" slab has an UNSTAMPED y column — all ${j.instances.length} ` +
-            `placements carry y:0, which is a sentinel, not sea level. Ground is being resolved from anchors ` +
-            `or the terrain field. A bake that stamps real heights will silence this.`
-          )
         }
         setBake(j)
       })

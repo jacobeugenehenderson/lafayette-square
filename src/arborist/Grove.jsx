@@ -1134,7 +1134,8 @@ function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered,
         const inL = inLook(v)
         return (
           <group key={v.speciesId}>
-            <OverheadSpecies asset={asset} instances={[{ x, y: 0, z, rotY: 0, scale: 1 }]} opacity={opacity} />
+            {/* the ring's plate is at ground 0: its anchor is authored, not looked up (src/lib/anchorGate.js) */}
+            <OverheadSpecies asset={asset} instances={[{ x, y: 0, z, rotY: 0, scale: 1, groundRaw: 0 }]} opacity={opacity} />
             {/* Base plate — the SAME quality circle + selection ring as the Hero
                 Tile (same size / colour / opacity logic / GROUND position). The
                 overhead discs disable raycast (below) so top-down clicks reach this

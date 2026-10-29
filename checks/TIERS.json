@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 520,
   "counts": {
-    "safe": 366,
+    "safe": 365,
     "local-effect": 31,
-    "live": 123
+    "live": 124
   },
   "checks": [
     {
@@ -1156,9 +1156,11 @@
     },
     {
       "file": "checks/claims-anchors-know-their-terrain.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "writeFileSync",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {

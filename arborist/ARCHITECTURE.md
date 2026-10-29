@@ -117,11 +117,12 @@ truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 > - ⭐ **The fix is always to SHOOT the missing impostors in the Grove** (browser-GPU; the CLI bake cannot reproduce them), never to widen or re-tune the cull. An authored `scene.heroImpostor === false` is the **operator's decision** and the check reports it as such.
 
 > ### ⛔⛔ SEATING: ONE ANCHOR PER TREE, LIFTED IN THE SHADER
-> Every tier (mesh, hero card, overhead disc) lifts by `aGroundRaw × uExag` in the vertex shader —
-> `aGroundRaw` is `tree-anchors.json`'s raw height of the DRAWN ground under the tree (`groundSampler`),
+> Every tier (mesh, hero card, overhead disc) lifts by `aGround.x × uExag + aGround.y` in the vertex shader —
+> `aGround` is `tree-anchors.json`'s raw height of the DRAWN ground under the tree and its own y (`groundSampler`),
 > and the exag is a per-shot tween a baked lift cannot follow. The slab's `y: 0` is a sentinel, never a
-> height (`elevation.js#treeGroundRaw`). The anchor file names its placements (`placementKey`) and its
-> heightfield (`terrain`); the runtime refuses either mismatch by name.
+> height, and nothing is ever looked up: a tree is seated by its anchor or not drawn. ONE verdict
+> (`src/lib/anchorGate.js`: its placements, its heightfield, its length) refuses a town's trees or lamps by name,
+> at Publish (the guard) and in the player (the backstop, none drawn).
 > ▶ `node checks/claims-anchors-know-their-terrain.mjs` · tree base vs drawn ground: `node scratch/marram-tree-seating.mjs`
 >
 > ▶ `?heroTierQC=1` paints the hero-card tier magenta (`injectHeroImpostorStamp`).

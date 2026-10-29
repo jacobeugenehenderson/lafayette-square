@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 123. Never in a default run.
+## ⛔ live — 124. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -72,6 +72,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-an-external-base-survives-a-bake.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · runs `node` — not a known-local command |
 | `checks/claims-an-impostor-town-fetches-no-atlas.mjs` | outbound | writeFileSync · mkdirSync · deletes files · computed import of scripts/slab-publish-rule.mjs — read, safe · computed import() with no readable target — runs arbitrary modules · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-an-island-stays-land-in-the-mint.mjs` | unreadable | writeFileSync · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-anchors-know-their-terrain.mjs` | unreadable | writeFileSync · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-authored-skelids-keep-their-ways.mjs` | unreadable | deletes files — only under its own temp dir · child_process with a non-literal command — cannot be read |
 | `checks/claims-deployment-has-one-authority.mjs` | unreadable | imports vite — its server resolves localhost over DNS (caught by the no-network guard) · imports package(s) vite — not read from source |
 | `checks/claims-every-app-mounts-the-set-piece.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
@@ -189,7 +190,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 366. This is `npm test`.
+## safe — 365. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -275,7 +276,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-an-inland-town-asks-no-water-level.mjs` | DOES A TOWN WITH NO COAST STAY SILENT ABOUT WATER LEVELS, WHILE A COAST TOWN |
 | `checks/claims-an-unanswered-axis-matches-nothing.mjs` | WHEN A SPECIES HAS NO ANSWER ON AN AXIS, DOES ANY PART "MATCH" IT? |
 | `checks/claims-anchors-follow-the-placements.mjs` | `tree-anchors.json` keys to its own slab’s placements. |
-| `checks/claims-anchors-know-their-terrain.mjs` | DO GROUND ANCHORS KNOW WHICH HEIGHTFIELD THEY CAME FROM? |
 | `checks/claims-atlas-uv-rect-survives-the-bake.mjs` | A UV RECTANGLE MUST SURVIVE THE ATLAS BAKE UNMOVED. |
 | `checks/claims-authored-framing-reaches-the-player.mjs` | DOES THE WARD READ EVERY FRAMING KEY THE BAKE WRITES? |
 | `checks/claims-autosave-keeps-what-bakes-read.mjs` | DOES STAGE'S AUTOSAVE KEEP EVERYTHING A BAKE READS? |
