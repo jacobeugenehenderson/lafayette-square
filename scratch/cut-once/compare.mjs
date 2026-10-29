@@ -1,7 +1,7 @@
 // §3.1: each candidate on the three fixtures, one row each, by the same measures.
-// node scratch/cut-once/compare.mjs --cand=integer|jsts [--fixture=decks|breakwater|huron]
+// node scratch/cut-once/compare.mjs --cand=integer [--fixture=decks|breakwater|huron]
 //   own/copy/new (own-edge.mjs) · outers/holes · crossings left after the one rounding (latticeNode.js#crossOf, every pair of
-//   output edges that are not neighbours) · edges ≤ 2 mm · ms · fallbacks (JSTS: its silent paths, counted)
+//   output edges that are not neighbours) · edges ≤ 2 mm · ms
 import fs from 'fs'
 import clipperLib from 'clipper-lib'
 import { openCloseAtStep } from '../../cartograph/structures.mjs'
@@ -30,22 +30,16 @@ const short = (paths) => paths.reduce((t, p) => t + p.filter((a, i) => { const b
 const topo = (paths) => { let o = 0, h = 0; for (const p of paths) (Clipper.Area(p) > 0 ? o++ : h++); return { outers: o, holes: h } }
 
 const cand = arg('cand') || 'integer'
-let J = null; if (cand === 'jsts') J = await import('./cand-jsts.mjs')
+if (cand !== 'integer') throw new Error(`no candidate ${cand} (the library route stopped, Jacob 2026-10-28: README.md)`)
 const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return { src: ip(d.inputs.flat()), stepM: d.fineM } },
   breakwater: () => { const d = fx('ptown-embankments'); return { src: ip(d.paths), stepM: d.fineM } },
   huron: () => { const d = fx('huron-traced'); return { src: ip(d.traced), stepM: d.fineM } } }
 for (const name of (arg('fixture') ? [arg('fixture')] : Object.keys(FIX))) {
   const { src, stepM } = FIX[name](), t = tree(src), u = flat(t)
-  const t0 = Date.now(); let paths, fallbacks = null
+  const t0 = Date.now(); let paths
   if (cand === 'integer') paths = openCloseAtStep(src, stepM, name).paths
-  else { const ops = J.makeOps(); paths = []; const refused = []
-    // a part JSTS cannot compute even through its own fallback is REFUSED, counted and named, and left out of the measure
-    for (const p of parts(t)) { try { paths.push(...J.toPaths(J.openCloseJSTS(p.outer, p.holes, stepM, SCALE, ops).geom)) }
-      catch (e) { if (!/TopologyException/.test(String(e?.name) + String(e?.constructor?.name))) throw e
-        refused.push({ at: [p.outer[0].X / SCALE, p.outer[0].Y / SCALE], vertices: p.outer.length, why: String(e.message || e).slice(0, 60) }) } }
-    fallbacks = { ...ops.fallbacks, refused: refused.length, refusedParts: refused.slice(0, 3) } }
   const ms = Date.now() - t0
   // the kit unions the kept paths after (deckFootprints, bake-coast): measured on that union, as the reader sees it
   const out = flat(tree(paths)), e = ownEdge(u, out), X = crossings(out)
-  console.log(JSON.stringify({ cand, fixture: name, ms, fallbacks, ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3) }))
+  console.log(JSON.stringify({ cand, fixture: name, ms, ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3) }))
 }
