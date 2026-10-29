@@ -97,15 +97,20 @@ P is the source part (an integer ring plus its holes); edge i of a ring lies on 
   Mutants: PreserveCollinear at its default (RED unless the run map catches it) · `self` reaching nodeCrossings but not
   verifyNoded (the verifier RED on a planted self-crossing).
 
-## Build step 0: measured (`node scratch/cut-once/step0.mjs --fixture=decks|huron [--collinear=default]`)
-Step 1's tagged erode, built as ClipperOffset point for point, resolved by nodeCrossings (one open path per edge, standing in
-for `self`) plus clipper's union (pftPositive):
-| | raw edges | self-crossings | noding | union | (a) new vertices / unmapped edges | (c) area, tagged vs clipper | outers/holes | XOR |
-|---|---|---|---|---|---|---|---|---|
-| PTown decks | 960 | 242 | 23 ms | 5 ms | 0 / 0 (same with collinear default) | 21,562.085 / 21,562.116 m² | 12/1, both | 0.20 m² |
-| Huron traced | 167,833 | 52,518 | 1.5 s | 2.7 s | **621 / 1,358** | 41,761,068.6 / 41,761,067.9 m² | 9/58, both | 1.34 m² |
-(b) cost is no obstacle. (c) topology matches; the area difference is 0.20 m² and 1.34 m², cause not established. (a) is
-the open point (step 2). The PTown decks carry no collinear runs, so C2 needs its planted row.
+## Tried, measured, NOT adopted: the back-offset as pieces (the spike; Zob parked it 2026-10-29)
+`CUTONCE_BACK_PIECES=1` / `setBackPieces` (cand3.mjs#backPieces), off by default and kept in the tree. The back offset is built
+as pieces plus a face walk instead of emitted. Corners went through three rules: clipper's miter point (a), then (a′): the
+targets' crossing if within NODE_BOUND of the miter point M, else two feet of M plus a born connector, with the gap folded into
+the strip. Huron, isolated oracle past 2·NB (definition-only m² unless marked):
+| | emission | spike (a) | spike (a′) |
+|---|---|---|---|
+| open, candidate-only | 0.486 | 0.118 | 0.119 |
+| dilate | 0.315 | 14.729 | 17.944 |
+| closedK | 1.803 | 0.319 | 0.194 |
+| copy · sharp · ≤ 2 mm | 0 · 1 · 119 | 124 · 4 · 200 | 139 · 22 · 245 |
+Why not adopted: it is closer to the definition where it EMITS (open, closedK) and worse where it FEEDS the next stage (the
+forward dilate). Off-line tags were not the cause: (a′) took them from 1,316 to 3 and the dilate grew. The dilate's cause is not
+established and not pursued. The superseded step-0 table is in git history (this file before this commit).
 
 ## Not established
 Whether ①'s 4 mm offset (282.795 vs 282.791) is a further step after the take-out. Whether the Huron crossing (the debt) is

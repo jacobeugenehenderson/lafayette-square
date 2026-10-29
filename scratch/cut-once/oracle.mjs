@@ -19,7 +19,8 @@ const op = (type, a, b) => { const c = new Clipper(), o = new Paths(); c.AddPath
 const pieces = (pp) => { const c = new Clipper(), t = new PolyTree(); c.AddPaths(pp, PolyType.ptSubject, true); c.Execute(ClipType.ctUnion, t, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
   const o = []; const w = (n) => { for (const ch of n.Childs()) { o.push([ch.Contour(), ...ch.Childs().map(x => x.Contour())]); for (const hh of ch.Childs()) w(hh) } }; w(t); return o }
 const bound = NODE_BOUND * F                                                           // OUR rounding bound, on the fine lattice
-const survives = (pp) => off(pp, -bound).some(q => Clipper.Area(q) > 0)               // a piece wider than the rounding
+const survivesBy = (pp, b) => off(pp, -b).some(q => Clipper.Area(q) > 0)
+const survives = (pp) => survivesBy(pp, bound)               // a piece wider than the rounding
 // the definition, on the fine lattice
 function reference(P, stepM, stages = {}) { const h = (stepM / 2) * 1000 * F
   const erode = off(P, -h), open = op(ClipType.ctIntersection, off(erode, h), P), dilate = off(open, h), closedK = op(ClipType.ctUnion, [...open, ...off(dilate, -h)])
@@ -55,7 +56,12 @@ export function judge(src, stepM, name) {
   const byRule = {}; for (const w of wide) { const key = `${w.side} · ${w.rules.length ? w.rules.filter(x => !['own', 'run-vertex'].includes(x)).join('+') || 'own/run only' : 'no emission within 2h'}${w.touchesLineless ? ' · lineless' : ''}`; byRule[key] = (byRule[key] || 0) + 1 }
   const nearTo = (process.env.ORACLE_NEAR || '').split(';').filter(Boolean).map(t => t.split(',').map(Number)).map(([x, y]) => ({ at: [x, y], nearest: wide.map(w => ({ ...w, distM: +Math.hypot(w.at[0] - x, w.at[1] - y).toFixed(3) })).sort((a, b) => a.distM - b.distM).slice(0, 2) }))
   const bySide = wide.reduce((t, w) => ((t[w.side] = (t[w.side] || 0) + 1), t), {})
-  return { name, ms, diffPieces: diffs.length, wider: wide.length, bySide, byRule, cutDump, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
+  // END TO END at both thresholds (Zob, 2026-10-29): the shipped k against the definition's own full chain from P, each side's count
+  // and area past NODE_BOUND and past 2·NODE_BOUND
+  const e2e = {}; for (const x of diffs) { if (!survivesBy(x.pp, bound)) continue; const v = (e2e[x.side] ||= { nb: 0, nbM2: 0, twoNb: 0, twoNbM2: 0 }), m2 = area(x.pp) / F / F / 1e6
+    v.nb++; v.nbM2 += m2; if (survivesBy(x.pp, 2 * bound)) { v.twoNb++; v.twoNbM2 += m2 } }
+  for (const v of Object.values(e2e)) { v.nbM2 = +v.nbM2.toFixed(4); v.twoNbM2 = +v.twoNbM2.toFixed(4) }
+  return { name, ms, e2e, diffPieces: diffs.length, wider: wide.length, bySide, byRule, cutDump, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, process.env.ORACLE_ALL ? Infinity : 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
 }
 // ⭐ STAGE-WISE (Zob, 2026-10-29): the candidate against the reference at EACH stage (the open's erode, the open, the close's dilate,
 // closedK, the final k), region to region on the fine lattice; every wide disagreement attributed to the FIRST stage where it appears
@@ -94,7 +100,6 @@ export function isolated(src, stepM, name) {
     closedK: () => op(ClipType.ctUnion, [...CS.open, ...off(CS.dilate, -h)]),
     k: () => { const tf = feat(op(ClipType.ctDifference, P, CS.open)), ff = feat(op(ClipType.ctDifference, CS.closedK, CS.open))
       let k = tf.length ? op(ClipType.ctDifference, P, tf.flat()) : P; if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flat()]); return k } }
-  const survivesBy = (pp, b) => off(pp, -b).some(q => Clipper.Area(q) > 0)
   const out = {}, largest = []
   for (const st of Object.keys(REF)) { const K = CS[st], R = REF[st]()
     const diffs = [...pieces(op(ClipType.ctDifference, K, R)).map(pp => ({ pp, side: 'candidate only' })), ...pieces(op(ClipType.ctDifference, R, K)).map(pp => ({ pp, side: 'definition only' }))]
@@ -105,7 +110,7 @@ export function isolated(src, stepM, name) {
         const o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }; largest.push({ stage: st, side: x.side, m2: +m2.toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)] }) } }
     for (const v of Object.values(row)) { v.nbM2 = +v.nbM2.toFixed(4); v.twoNbM2 = +v.twoNbM2.toFixed(4) }
     out[st] = row }
-  return { name, isolated: out, largest: largest.sort((a, b) => b.m2 - a.m2).slice(0, 8) }
+  return { name, isolated: out, largest: largest.sort((a, b) => b.m2 - a.m2).slice(0, process.env.ORACLE_ALL ? Infinity : 8) }
 }
 // the closedK dump and class table (Zob, 2026-10-29): every isolated closedK definition-only piece past 2·NB (material the
 // reference's erode-back of OUR dilated region keeps and our close's back-offset C does not), with the emission rules of C's
@@ -114,7 +119,6 @@ export function closedKDump(src, stepM, name, at = null) {
   const r = C3.openCloseProvenance(src, stepM, name), P = up(r.P), h = (stepM / 2) * 1000 * F
   const open = up(C3.STAGES.open), dil = up(C3.STAGES.dilate), ours = up(C3.STAGES.closedK)
   const ref = op(ClipType.ctUnion, [...open, ...off(dil, -h)])
-  const survivesBy = (pp, b) => off(pp, -b).some(q => Clipper.Area(q) > 0)
   const defOnly = pieces(op(ClipType.ctDifference, ref, ours)).filter(pp => survivesBy(pp, 2 * bound))
   const emitted = [...C3.ORIGIN.entries()].map(([k2, v]) => { const [x, y] = k2.split(',').map(Number); return { x: x * F, y: y * F, v } })
   const rows = defOnly.map(pp => { const o = pp[0]; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, cx = 0, cy = 0
