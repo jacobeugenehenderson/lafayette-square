@@ -57,10 +57,13 @@ Boz as a measured comparison before anything is built.
    first enters the movie's view (and whether it ever does), and built or shipped in that order: what the opening frames see first,
    the rest after the reveal or never on the movie. ⭐ There's precedent: `arborist/bake-trees.js`'s `heroTier` classifies trees
    by the hero path, and `CelestialBodies.jsx` fits the shadow over `heroPathPose`; reuse that, don't build a second one. Combine (d)
-   with any of (a)–(c). ⛔ The movie is not the only camera: Browse (the overhead plan) and Street let a visitor go anywhere, and
-   overhead may show the back of the town at plan distance. So "never seen" means "never seen BY THE MOVIE". Say what each other
-   regime needs and when it's built (e.g. on leaving the movie, or on approach); a face is never permanently missing (the far layer's
-   own ⛔). Measure: per town, the share of far faces (and their build ms) the movie never sees.
+   with any of (a)–(c). ⭐ JACOB RULED THE SCOPE (2026-10-29): *"never seen by the movie is the relevant thing because it's having to
+   happen many times a second; street view is likely never going to be in the water or anywhere a large revetment will be; and I
+   think loading the local elements for a street scene and the accompanying delay is manageable, when we get to it."* So: the MOVIE's
+   visibility drives what is built and when. Street loads its local elements on entry, with a delay accepted, and that's a later
+   brief, not this one. Browse (the overhead plan) is NOT ruled: measure whether it shows far revetment the movie never does, and
+   bring the number to Boz. A face the movie never sees isn't built on the movie's path at all. Measure: per town, the share of far
+   faces (and their build ms) the movie never sees.
 2. **Plan to Zob** (`docs/agents/ZOB.md §2`), with every reader that moves.
 3. **Build** the chosen means; the superseded path is deleted in the same commit (three-part fix).
 4. **The class, measured:** `makeDrawnGround` and Terrain's PlaneGeometry (~1.1–1.2 s each on PTown). Report whether each is
