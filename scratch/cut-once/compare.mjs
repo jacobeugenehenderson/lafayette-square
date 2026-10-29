@@ -43,7 +43,9 @@ function changeGate(P, out, h, squares, who) {
   const table = (pp, side) => pp.map(([o, ...hs]) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const q of o) { x0 = Math.min(x0, q.X); y0 = Math.min(y0, q.Y); x1 = Math.max(x1, q.X); y1 = Math.max(y1, q.Y) }
     let worst = 0; const N = 24
     for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) { const x = x0 + (x1 - x0) * i / N, y = y0 + (y1 - y0) * j / N; if (!inR(x, y, o) || hs.some(hh => inR(x, y, hh))) continue; worst = Math.max(worst, dB(x, y)) }
-    const sq = squares.some(([X, Y]) => X >= x0 - h && X <= x1 + h && Y >= y0 - h && Y <= y1 + h)
+    // ⛔ a squared corner accounts for a piece only if EVERY vertex of the piece lies within h of that corner (it was a bounding-box
+    // test, which accounted the decks' whole 1,988 m² hole filled in error)
+    const sq = squares.some(([X, Y]) => o.every(q => Math.hypot(q.X - X, q.Y - Y) <= h * Math.SQRT2))
     const mm2 = [o, ...hs].reduce((t, r) => t + C3.area(r), 0)
     return { side, at: [o[0].X / SCALE, o[0].Y / SCALE], mm2: +mm2.toFixed(1), maxDistU: +worst.toFixed(1), h: +h.toFixed(1), narrow: worst < h, squared: sq, accounted: worst < h || sq } })
   // ⭐ ON ONE ARRANGEMENT (Zob, 2026-10-28): out and P noded TOGETHER once; every region below is a face set of that one noding, so

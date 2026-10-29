@@ -71,6 +71,17 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const Lsrc = (g, i) => ({ kind: 'L', g, i, int: lineOf(g, i) })
   for (let e = 0; e < E.length; e++) { const tg = T[e], p = E[e], q = E[(e + 1) % E.length]
     const tags = tg == null ? [] : Array.isArray(tg) ? tg : [tg]
+    if (!tags.length) stat.lostTags = (stat.lostTags || 0) + 1, (stat.lostAt ||= []).length < 6 && stat.lostAt.push([p.X / SCALE, p.Y / SCALE, who])
+    if (tags.some(x => x?.near)) stat.nearOut = (stat.nearOut || 0) + 1
+    const lineTags = tags.filter(x => x && x.ring != null)
+    const bornL = tags.find(x => x?.born)?.born
+    if (tags.length && !lineTags.length && !tags.some(x => x?.base) && bornL) {
+      // the born line ORIENTED ALONG THE BOUNDARY it now bounds (p → q, the region on its left), so its normal points outward:
+      // a piece's own winding (reversed for the erode) says nothing about which side the region lies
+      const BL = (bornL[1][0] - bornL[0][0]) * (q.X - p.X) + (bornL[1][1] - bornL[0][1]) * (q.Y - p.Y) < 0 ? [bornL[1], bornL[0]] : bornL, n = unit(BL[0], BL[1]), bornL2 = BL
+      tok.push({ kind: 'L', flt: [[bornL2[0][0] - n[0] * d, bornL2[0][1] - n[1] * d], [bornL2[1][0] - n[0] * d, bornL2[1][1] - n[1] * d]], born: JSON.stringify(bornL2), at: p }); stat.newLines++; continue }
+    if (tags.length && !lineTags.length && !tags.some(x => x?.base)) { tags.length = 0 }                   // near only: a new line from its own points
+    else if (lineTags.length !== tags.length && !tags.some(x => x?.base)) { tags.splice(0, tags.length, ...lineTags) }
     if (tags.some(x => x?.base)) throw new Error(`[${who}] ⛔ the back-offset: an eliminated stretch's base side (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) reached the boundary (it is born interior). Refusing.`)
     if (!tags.length) { // a null edge: a NEW line, the cap's own back-offset by −d
       const n = unit([p.X, p.Y], [q.X, q.Y]); tok.push({ kind: 'L', flt: [[p.X - n[0] * d, p.Y - n[1] * d], [q.X - n[0] * d, q.Y - n[1] * d]], at: p }); stat.newLines++; continue }
@@ -87,7 +98,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   // one line twice in a row is one line: the same region edge, or (exactly) the same line
   const t2 = []
   for (const t of tok) { const l = t2[t2.length - 1]
-    if (t.kind === 'L' && l?.kind === 'L' && ((t.g != null && t.g === l.g && t.i === l.i) || (t.int && l.int && sameLine({ a: t.int[0], b: t.int[1] }, { a: l.int[0], b: l.int[1] })))) continue
+    if (t.kind === 'L' && l?.kind === 'L' && ((t.born && t.born === l.born) || (t.g != null && t.g === l.g && t.i === l.i) || (t.int && l.int && sameLine({ a: t.int[0], b: t.int[1] }, { a: l.int[0], b: l.int[1] })))) continue
     t2.push(t) }
   while (t2.length > 1 && t2[0].kind === 'L' && t2[t2.length - 1].kind === 'L' && ((t2[0].g != null && t2[0].g === t2[t2.length - 1].g && t2[0].i === t2[t2.length - 1].i))) t2.pop()
   // the joins: between two consecutive lines with no fixed point between
@@ -184,6 +195,9 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   return out.map(([X, Y], k) => ({ X, Y, tag: TAGS_BY_SEGMENT ? null : outL[k] }))
 }
 export const ORIGIN = new Map(), DETAIL = new Map()
+// a piece edge's tag: its line (ring, i), BORN (a strip end, a cap: a new line), or NEAR (on the region's own edge: interior after the
+// boolean). An output edge with NO tag at all is a LOST tag (Zob's gate, 2026-10-29), counted
+const BORN = { born: true }, NEAR = { near: true }
 let TAGS_BY_SEGMENT = false                       // ⛔ the mutant only (setTagsBySegment): the close tags by the open's segments
 export const setTagsBySegment = (v) => { TAGS_BY_SEGMENT = !!v }
 let REFUSE_ALL_BACKWARD = false                   // ⛔ the mutant only (setRefuseAllBackward)
@@ -263,9 +277,9 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
   // piece through its source vertices and the new corner(s), its two sides born and interior ({ base: true }: emit refuses one)
   for (let k = 0; k < m; k++) { if (!alive[k]) continue
     const r = nx[k], c = C[k]
-    if (c.cap) { if (squares) squares.push([vAt(r).X, vAt(r).Y]); pieces.push(ccw([{ X: vAt(r).X, Y: vAt(r).Y, tag: null }, { ...c.end, tag: null }, { ...c.start, tag: null }])) }
-    if (r !== (k + 1) % m) { const base = []; for (let q = (k + 1) % m; q !== r; q = (q + 1) % m) { for (let i2 = runs[q].s; ; i2 = (i2 + 1) % n) { base.push({ X: R[i2].X, Y: R[i2].Y, tag: null }); if (i2 === runs[q].e) break } }   // along the region's own edges: interior after the union
-      base.push({ X: vAt(r).X, Y: vAt(r).Y, tag: { base: true } }); if (c.start.X !== c.end.X || c.start.Y !== c.end.Y) base.push({ ...c.start, tag: null }); base.push({ ...c.end, tag: { base: true } })   // both corner points whenever they differ (a cap, or a converging corner)
+    if (c.cap) { if (squares) squares.push([vAt(r).X, vAt(r).Y]); pieces.push(ccw([{ X: vAt(r).X, Y: vAt(r).Y, tag: BORN }, { ...c.end, tag: BORN }, { ...c.start, tag: BORN }])) }
+    if (r !== (k + 1) % m) { const base = []; for (let q = (k + 1) % m; q !== r; q = (q + 1) % m) { for (let i2 = runs[q].s; ; i2 = (i2 + 1) % n) { base.push({ X: R[i2].X, Y: R[i2].Y, tag: NEAR }); if (i2 === runs[q].e) break } }   // along the region's own edges: interior after the union
+      base.push({ X: vAt(r).X, Y: vAt(r).Y, tag: { base: true } }); if (c.start.X !== c.end.X || c.start.Y !== c.end.Y) base.push({ ...c.start, tag: BORN }); base.push({ ...c.end, tag: { base: true } })   // both corner points whenever they differ (a cap, or a converging corner)
       { let a2 = 0; for (let z = 0; z < base.length; z++) { const p0 = base[z], p1 = base[(z + 1) % base.length]; a2 += p0.X * p1.Y - p1.X * p0.Y }
         // the region lies LEFT of its ring: a base piece on the d side winds against the ring for d > 0 and with it for d < 0
         if (c.conv && (d > 0 ? a2 > 0 : a2 < 0)) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: a converging corner after an elimination (runs ${runs[k].s} and ${runs[r].s}) puts the eliminated stretch's base piece on the region's own side: no consistent side. Runs: ${JSON.stringify([pv[k], k, ...((() => { const o = []; for (let q2 = (k + 1) % m; q2 !== r; q2 = (q2 + 1) % m) o.push(q2); return o })()), r].map(q2 => { const L = runs[q2].line; return { run: `${runs[q2].s}…${runs[q2].e}`, line: L, lenU: +Math.hypot(L[1][0] - L[0][0], L[1][1] - L[0][1]).toFixed(1), deg: +(Math.atan2(L[1][1] - L[0][1], L[1][0] - L[0][0]) * 180 / Math.PI).toFixed(3), from: [R[runs[q2].s].X, R[runs[q2].s].Y] } }))}; corner end ${JSON.stringify(c.end)} start ${JSON.stringify(c.start)}; base piece ${JSON.stringify(base.map(b2 => [b2.X, b2.Y]))}. Refusing.`) }
@@ -273,7 +287,10 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
     const s0 = C[pv[k]].start, e0 = c.end, a = R[runs[k].s], b = vAt(r === (k + 1) % m ? r : (k + 1) % m), L = runs[k].line
     const along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
     if (along < 0) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g} run ${runs[k].s}…${runs[k].e}: still backward after the elimination. Refusing.`)
-    pieces.push(ccw([{ X: a.X, Y: a.Y, tag: null }, { X: b.X, Y: b.Y, tag: null }, { ...e0, tag: { ring: g, i: runs[k].s } }, { ...s0, tag: null }])) }
+    pieces.push(ccw([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...e0, tag: { ring: g, i: runs[k].s } }, { ...s0, tag: BORN }])) }
+  // ⭐ A BORN LINE IS ITS TWO BIRTH POINTS (Zob, 2026-10-29), the whole strip end or cap edge: never a noded fragment of it,
+  // whose two rounded points a unit apart would quantise its direction to the lattice's axes (the decks' axis-aligned box)
+  for (const pp of pieces) pp.forEach((q, k) => { if (q.tag === BORN) { const w = pp[(k + 1) % pp.length]; q.tag = { born: [[q.X, q.Y], [w.X, w.Y]] } } })
   return pieces
 }
 export function morph(region, d, who, stat, lines = null) {
@@ -292,7 +309,13 @@ export function morph(region, d, who, stat, lines = null) {
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
     F.rings.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 2000) return
       console.log(`TRACE ${who} ring ${k} e${e} (${q.X},${q.Y})→(${r2.X},${r2.Y}) tags ${JSON.stringify(F.tags[k][e])}`) })) }
-  return F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
+  const OUT = F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
+  if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
+    OUT.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 2000) return
+      console.log(`TRACE-OUT ${who} ring ${k} v${e} (${q.X},${q.Y})→(${r2.X},${r2.Y}) line ${JSON.stringify(q.tag)}`) }))
+    for (const el of stat.eliminations || []) if (Math.hypot(el.at[0] * SCALE - tx, el.at[1] * SCALE - ty) < 5000) console.log('TRACE-ELIM', JSON.stringify(el)) }
+  if (process.env.CUTONCE_LOST) console.log(`LOST ${who}: ${stat.lostTags || 0} edge(s) with no tag ${JSON.stringify(stat.lostAt || [])} · near sides out ${stat.nearOut || 0}`)
+  return OUT
 }
 
 // a face set's rings → pieces [outer, …holes] (a hole into the smallest outer holding its first vertex)
