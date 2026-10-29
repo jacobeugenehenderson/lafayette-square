@@ -40,7 +40,7 @@ const clean = (r) => { const o = []; for (const q of r) { const l = o[o.length -
 const distinct3 = (r) => new Set(r.map(q => q.X + ',' + q.Y)).size >= 3
 
 // node `sets` (each a list of rings [{X, Y, tag?}]) together, self included, then the faces `keep` holds. → { rings, tags }
-export function arrange(sets, keep, who, allTags = false) {
+export function arrange(sets, keep, who, allTags = false, prefer = null) {
   const rings = [], setOf = []
   sets.forEach((S, si) => S.forEach(r => { const c = clean(r); if (distinct3(c)) { rings.push(c); setOf.push(si) } }))
   if (!rings.length) return { rings: [], tags: [] }
@@ -53,7 +53,7 @@ export function arrange(sets, keep, who, allTags = false) {
     throw e }
   const edges = []
   R.forEach((o, ri) => o.forEach((v, q) => { const w = o[(q + 1) % o.length]; edges.push({ a: v.k, b: w.k, set: setOf[ri], tag: rings[ri][v.edge]?.tag ?? null }) }))
-  return facesOf(edges, keep, { sets: sets.length, who, allTags })
+  return facesOf(edges, keep, { sets: sets.length, who, allTags, prefer })
 }
 
 // the back-offset: one eroded (or dilated) ring with its tags → the morphed ring's points, the region's own wherever unchanged
@@ -149,8 +149,12 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
         const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
         if (TRIM_INVERTED ? !(d < 0 ? a2 < 0n : a2 > 0n) : (d < 0 ? a2 < 0n : a2 > 0n)) { pushArc(AR, 'trimmed-arc'); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
     // ⛔ a BACKWARD cut between non-parallel lines of one ring: refuse by name (Zob, 2026-10-29; unruled until one exists)
-    if (AR && !AR.valid && process.env.CUTONCE_COUNT_BACKWARD) { const n = SRC[t.g].length, back = (t.i - u.i + n) % n
-      ;(stat.backward ||= {})[back] = ((stat.backward ||= {})[back] || 0) + 1; out.push(X); outL.push(u.int || null); origin(X, 'backward-cut'); continue }
+    // ⭐ BACKWARD BUT ADJACENT (Zob, 2026-10-29): u = t − 1 on one ring: the two lines are adjacent source edges, and their
+    // crossing must BE the shared source vertex v_t, integer for integer (checked, never assumed), which is emitted. Why the
+    // eroded ring meets t before t − 1 is not established (Breakwater 6, decks 1, all one step back).
+    if (AR && !AR.valid && !REFUSE_ALL_BACKWARD && (t.i - u.i + SRC[t.g].length) % SRC[t.g].length === 1) { const v = SRC[t.g][t.i]
+      if (X[0] !== v.X || X[1] !== v.Y) throw new Error(`[${who}] ⛔ the back-offset: a backward-adjacent join (edge ${t.i} then ${u.i} of ring ${t.g}) crosses at (${X}), not at their shared vertex (${v.X}, ${v.Y}). Refusing.`)
+      out.push(X); outL.push(u.int || null); origin(X, 'backward-adjacent'); stat.backwardAdjacent = (stat.backwardAdjacent || 0) + 1; continue }
     if (AR && !AR.valid) throw new Error(`[${who}] ⛔ the back-offset: a cut joins edge ${t.i} to edge ${u.i} of ring ${t.g}${area(SRC[t.g]) < 0 ? ' (a HOLE)' : ' (an outer)'} BACKWARD against the ring's order, lines ${JSON.stringify(A)} and ${JSON.stringify(B)}. Refusing.`)
     out.push(X); outL.push(u.int || null); origin(X, t.flt || u.flt ? 'new-line-join' : 'cut-join'); stat.cutJoin++
     const par = (L, q) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return ((q[0] - L[0][0]) * dx + (q[1] - L[0][1]) * dy) / (dx * dx + dy * dy) }
@@ -161,6 +165,8 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
 export const ORIGIN = new Map(), DETAIL = new Map()
 let TAGS_BY_SEGMENT = false                       // ⛔ the mutant only (setTagsBySegment): the close tags by the open's segments
 export const setTagsBySegment = (v) => { TAGS_BY_SEGMENT = !!v }
+let REFUSE_ALL_BACKWARD = false                   // ⛔ the mutant only (setRefuseAllBackward)
+export const setRefuseAllBackward = (v) => { REFUSE_ALL_BACKWARD = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -194,7 +200,7 @@ export function openCloseProvenance(paths, stepM, what) {
   const Pt = P.map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
   // open = morph(P, −h) ∩ P
   const D = morph(Pt, -h, `${what} open`, stat)
-  const OPEN = arrange([Pt, D], w => w[0] > 0 && w[1] > 0, `${what} ∩P`), open = OPEN.rings
+  const OPEN = arrange([Pt, D], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0), open = OPEN.rings
   // closedK = morph(open, +h) ∪ open
   const C = morph(open, h, `${what} close`, stat, TAGS_BY_SEGMENT ? null : OPEN.tags)
   const taken = pieces(arrange([Pt, open], w => w[0] > 0 && !(w[1] > 0), `${what} taken`).rings)

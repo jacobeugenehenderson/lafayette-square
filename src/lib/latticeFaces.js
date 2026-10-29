@@ -13,7 +13,7 @@
 //    routes every segment through every vertex pixel it enters, so an overlap arrives as IDENTICAL segments, merged here)
 //  · a proper crossing left between two segments
 //  · a face reached with two different windings (the input is not a set of closed rings)
-//  · a boundary edge whose same-way input edges carry different tags (unless `allTags`: then every tag is the list of them,
+//  · a boundary edge whose same-way input edges carry different tags (unless one is the `prefer`red set's own, which wins; or `allTags`: then every tag is the list of them,
 //    for a caller that names what several tags on one segment mean; ⛔ none picks one)
 // ⭐ THE RULES. Identical segments MERGE into one undirected edge carrying each set's signed multiplicity (two opposite edges
 // cancel; an edge whose multiplicities are all zero bounds nothing and is dropped). The half-edges round each vertex are sorted
@@ -36,7 +36,7 @@ export const angleCmp = (d1, d2, numberOnly = false) => { const h1 = half(d1[0],
   if (h1 !== h2) return h1 - h2
   return -crossSign(d1[0], d1[1], d2[0], d2[1], numberOnly) }
 
-export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false, allTags = false } = {}) {
+export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false, allTags = false, prefer = null } = {}) {
   if (!(sets > 0)) throw new Error(`[${who}] ⛔ facesOf: no \`sets\` count — the windings are per input set`)
   if (typeof keep !== 'function') throw new Error(`[${who}] ⛔ facesOf: no \`keep\` predicate — which faces are the region is the caller's to say`)
   // ── the vertices, and the merged edges: lo → hi by vertex id, m[s] the signed multiplicity of set s along lo → hi
@@ -47,7 +47,7 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
     if (!(e.set >= 0 && e.set < sets)) throw new Error(`[${who}] ⛔ facesOf: an edge of set ${e.set}, outside 0…${sets - 1}`)
     const lo = Math.min(u, v), hi = Math.max(u, v), k = lo + ',' + hi, dir = u === lo ? 1 : -1
     let me = eid.get(k); if (!me) { me = { lo, hi, m: new Array(sets).fill(0), tags: [] }; eid.set(k, me); E.push(me) }
-    me.m[e.set] += dir; me.tags.push({ dir, tag: e.tag }) }
+    me.m[e.set] += dir; me.tags.push({ dir, tag: e.tag, set: e.set }) }
   const live = E.filter(me => me.m.some(x => x !== 0))
   // ── the precondition: no vertex strictly inside a segment, no proper crossing (the noding's own guarantee, re-proven here)
   const box = (me) => { const a = V[me.lo], b = V[me.hi]; return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])] }
@@ -111,7 +111,11 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
   const tagOf = (h) => { const me = live[h >> 1], dir = h & 1 ? -1 : 1, same = me.tags.filter(t => t.dir === dir && t.tag != null)
     const keys = new Set(same.map(t => JSON.stringify(t.tag)))
     if (allTags) return [...keys].map(k => JSON.parse(k))
-    if (keys.size > 1) throw new Error(`[${who}] ⛔ facesOf: the boundary edge (${V[org[h]]}) → (${V[dst[h]]}) carries ${keys.size} different tags from its same-way inputs (${[...keys].join(' · ')}) — refusing to pick one.`)
+    // `prefer` (Zob, 2026-10-29): on ∩ or a difference, where the region's boundary coincides with the PREFERRED input's own
+    // segment, its tag is that input's (P's own line): the other claimants' lines lie within the lattice's rounding of it
+    if (keys.size > 1 && prefer != null) { const own = new Set(same.filter(t => t.set === prefer).map(t => JSON.stringify(t.tag)))
+      if (own.size === 1) return JSON.parse([...own][0]) }
+    if (keys.size > 1) throw new Error(`[${who}] ⛔ facesOf: the boundary edge (${V[org[h]]}) → (${V[dst[h]]}) carries ${keys.size} different tags from its same-way inputs (${same.map(t => `set ${t.set}: ${JSON.stringify(t.tag)}`).join(' · ')}) — refusing to pick one.`)
     return same.length ? same[0].tag : null }
   for (let h = 0; h < H; h++) { if (!isB[h] || used[h]) continue
     const ring = [], tg = []; let g = h
