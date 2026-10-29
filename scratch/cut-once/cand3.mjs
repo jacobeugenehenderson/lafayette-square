@@ -304,6 +304,8 @@ let TAGS_OFF_AT = null                            // ⛔ the mutant only (setTag
 export const setTagsOffAt = (v) => { TAGS_OFF_AT = v }
 let OWN_SKIPS_LIMIT = false                       // ⛔ the mutant only (setOwnSkipsLimit): the own-vertex join without the miter limit
 export const setOwnSkipsLimit = (v) => { OWN_SKIPS_LIMIT = !!v }
+let SUB_SAME_WAY = false                          // ⛔ the mutant only (setSubSameWay): a difference's subtracted set left as wound, its edges untagged
+export const setSubSameWay = (v) => { SUB_SAME_WAY = !!v }
 let TRIMMED_ARC_CORNERS = false                   // ⛔ the mutant only (setTrimmedArcCorners): a trimmed arc unclipped, its vertices by their own turns
 export const setTrimmedArcCorners = (v) => { TRIMMED_ARC_CORNERS = !!v }
 let ARC_RAW = false                               // ⛔ the mutant only (setArcRaw): arcs emit raw vertices, no corner call
@@ -569,12 +571,17 @@ export function openCloseProvenance(paths, stepM, what) {
   // each ring set passed on carries its face walk's tags ON ITS POINTS (arrange reads them there), so k's edges carry their lines
   const tagged = (F) => F.rings.map((r, k2) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: F.tags[k2]?.[i] ?? null })))
   const openT = tagged(OPEN)
-  const taken = pieces(tagged(arrange([Pt, openT], w => w[0] > 0 && !(w[1] > 0), `${what} taken`, false, 0)))
+  // ⭐ A DIFFERENCE'S SUBTRACTED SET IS WOUND CLOCKWISE (Huron's 407 lineless edges on k, 2026-10-29): facesOf tags an edge from the
+  // inputs running the SAME way, and a subtracted set's edges bound the result running the other way, so they carried no tag.
+  // Reversed (each tag moved with its edge, as the erode's pieces are), they run with the boundary; its coverage is winding < 0
+  const revT = (rs) => rs.map(r => { const n = r.length, q = r.slice().reverse(); return q.map((v, k) => ({ ...v, tag: r[(n - 1 - k - 1 + n) % n].tag })) })
+  const SUB = SUB_SAME_WAY ? (rs) => rs : revT, out_ = SUB_SAME_WAY ? (w) => w > 0 : (w) => w < 0
+  const taken = pieces(tagged(arrange([Pt, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} taken`, false, 0)))
   const closedK = tagged(arrange([openT, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, 0))
   STAGES.closedK = closedK
-  const filled = pieces(tagged(arrange([closedK, openT], w => w[0] > 0 && !(w[1] > 0), `${what} filled`, false, 0)))
+  const filled = pieces(tagged(arrange([closedK, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} filled`, false, 0)))
   const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
-  const K = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
+  const K = arrange([Pt, SUB(tf.flat()), ff.flat()], w => (w[0] > 0 && !out_(w[1])) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
   // ⭐ THE TOPOLOGY GUARD ON k (Zob, 2026-10-29): a hole of P that k no longer holds (it opened to the outside), or two parts of P
   // that k joins, is the topology change Boz rules on: refused by name. Intermediate merges inside the open that the close
   // undoes are not refused. A test point per ring: half a unit to the side of its longest edge (P's material for an outer, the

@@ -101,6 +101,7 @@ export function changeGate(P, out, h, squares, who, outTagsIn = null, Ptags = nu
 let P_CORNER_BY_VERTEX = false                    // ⛔ the mutant only (setPCornerByVertex): a P corner by its vertex alone
 export const setPCornerByVertex = (v) => { P_CORNER_BY_VERTEX = !!v }
 export function sharpCorners(rings, P, tags = null) { const o = [], noLine = [], ek = (L) => [L[0].join(','), L[1].join(',')].sort().join('|'), pe = new Map()
+  const PE = new Set(P.flatMap(r => r.map((q, i) => ek([[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]]))))
   for (const r of P) r.forEach((q, i) => { const w = r[(i + 1) % r.length], k = ek([[q.X, q.Y], [w.X, w.Y]]); for (const v of [q, w]) { const vk = v.X + ',' + v.Y; (pe.get(vk) || pe.set(vk, new Set()).get(vk)).add(k) } })
   // a tag is a LINE (two numeric points) or a LIST of tags (a transition's): never split a line into its points
   const isLine = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
@@ -110,7 +111,8 @@ export function sharpCorners(rings, P, tags = null) { const o = [], noLine = [],
     const dir = r.map((a, i) => { const b = r[(i + 1) % n], L = lineOf(tags?.[ri]?.[i]), ex = b.X - a.X, ey = b.Y - a.Y
       if (!L) { if (ex || ey) noLine.push({ at: [a.X / SCALE, a.Y / SCALE], lenU: +Math.hypot(ex, ey).toFixed(1) }); return [ex, ey] }
       let lx = L[1][0] - L[0][0], ly = L[1][1] - L[0][1]; if (lx * ex + ly * ey < 0) { lx = -lx; ly = -ly }
-      if (Math.abs(lx) + Math.abs(ly) <= 2) noLine.push({ at: [a.X / SCALE, a.Y / SCALE], bornOneStep: L }); return [lx, ly] })
+      // a line ONE lattice step long has no direction: lineless, unless it is one of P's OWN edges (P's staircase, its provenance kept)
+      if (Math.abs(lx) + Math.abs(ly) <= 2 && !PE.has(ek(L))) noLine.push({ at: [a.X / SCALE, a.Y / SCALE], bornOneStep: L }); return [lx, ly] })
     for (let i = 0; i < n; i++) { const u = dir[(i - 1 + n) % n], v = dir[i], lu = Math.hypot(...u), lv = Math.hypot(...v); if (!lu || !lv) continue
       const cosT = (u[0] * v[0] + u[1] * v[1]) / lu / lv; if (!(1 + cosT < 0.5)) continue
       const b = r[i]; o.push({ at: [b.X / SCALE, b.Y / SCALE], insideDeg: +(180 - Math.acos(Math.max(-1, Math.min(1, cosT))) * 180 / Math.PI).toFixed(2), Pcorner: (() => { const own = pe.get(b.X + ',' + b.Y), Li = lineOf(tags?.[ri]?.[(i - 1 + n) % n]), Lo = lineOf(tags?.[ri]?.[i]); return !!(own && Li && Lo && !P_CORNER_BY_VERTEX ? own.has(ek(Li)) && own.has(ek(Lo)) : own) })() }) } })
