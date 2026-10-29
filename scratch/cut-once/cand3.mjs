@@ -20,7 +20,7 @@ const SCALE = 1000, MITER_LIM = 0.5                 // clipper's constant for Mi
 
 const unit = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], f = 1 / Math.hypot(dx, dy); return [dy * f, -dx * f] }   // clipper's GetUnitNormal
 // a ring's raw offset curve at d, each point tagged with the region edge its OUTGOING raw edge offsets (null: a join's own edge)
-function rawOffset(R, d, g) {
+function rawOffset(R, d, g, squares = null) {
   const n = R.length, N = R.map((a, j) => unit([a.X, a.Y], [R[(j + 1) % n].X, R[(j + 1) % n].Y])), out = []
   const put = (x, y, tag) => out.push({ X: Math.round(x), Y: Math.round(y), tag })
   for (let j = 0; j < n; j++) { const k = (j - 1 + n) % n, p = R[j], nk = N[k], nj = N[j], edge = { ring: g, i: j }
@@ -30,7 +30,7 @@ function rawOffset(R, d, g) {
     if (sinA * d < 0) { put(p.X + nk[0] * d, p.Y + nk[1] * d, null); put(p.X, p.Y, null); put(p.X + nj[0] * d, p.Y + nj[1] * d, edge); continue }
     const r = 1 + cosA
     if (r >= MITER_LIM) { const q = d / r; put(p.X + (nk[0] + nj[0]) * q, p.Y + (nk[1] + nj[1]) * q, edge) }
-    else { const t = Math.tan(Math.atan2(sinA, cosA) / 4)
+    else { const t = Math.tan(Math.atan2(sinA, cosA) / 4); if (squares) squares.push([p.X, p.Y])
       put(p.X + d * (nk[0] - nk[1] * t), p.Y + d * (nk[1] + nk[0] * t), null); put(p.X + d * (nj[0] + nj[1] * t), p.Y + d * (nj[1] - nj[0] * t), edge) } }
   return out
 }
@@ -85,10 +85,15 @@ function emit(E, T, SRC, d, who, stat) {
     const na = unit(A[0], A[1]), nb = unit(B[0], B[1]), cosA = na[0] * nb[0] + na[1] * nb[1], sinA = na[0] * nb[1] - nb[0] * na[1]
     if (t.int && u.int && sameLine({ a: A[0], b: A[1] }, { a: B[0], b: B[1] })) continue
     if (t.int && u.int && BigInt(A[1][0] - A[0][0]) * BigInt(B[1][1] - B[0][1]) === BigInt(A[1][1] - A[0][1]) * BigInt(B[1][0] - B[0][0])) {
-      // ⭐ PARALLEL AND DISTINCT between two segments: no cut exists. Zob's ruling (2) (an open never removes a STEP, only a
-      // protrusion) read at the join (Plumb, 2026-10-28; flagged to Zob): the region's own arc from t's edge to u's, every
-      // vertex of it within the band between the two lines widened by NODE_BOUND → the jog, its own vertices; else refuse
-      if (t.g == null || u.g !== t.g) throw new Error(`[${who}] ⛔ the back-offset: parallel distinct lines of two different rings meet at (${A[1]}). Refusing.`)
+      // ⭐ PARALLEL AND DISTINCT at a join: no cut exists (Zob's ruling, 2026-10-28, one rule for any order):
+      //  · separation ≤ NODE_BOUND, exact (2·cross(dir, offset)² ≤ |dir|²): the lines differ by less than the lattice's own
+      //    rounding (a staircase in the trace), so the join gets NO vertex: the last emitted point runs straight to the next
+      //  · separation > NODE_BOUND, FORWARD on one ring: the jog, the band test (ruling (2)), the region's own vertices
+      //  · else (backward, two rings, a failed band): refuse by name (a swallowtail: unruled until one exists)
+      { const [dx, dy, ox, oy] = [A[1][0] - A[0][0], A[1][1] - A[0][1], B[0][0] - A[0][0], B[0][1] - A[0][1]].map(BigInt), cr = dx * oy - dy * ox
+        if (2n * cr * cr <= dx * dx + dy * dy) { stat.staircase = (stat.staircase || 0) + 1; continue } }
+      const fwd = t.g != null && u.g === t.g ? (u.i - t.i + SRC[t.g].length) % SRC[t.g].length : null, bwd = fwd == null ? null : SRC[t.g].length - fwd
+      if (t.g == null || u.g !== t.g || !(fwd < bwd)) throw new Error(`[${who}] ⛔ the back-offset: parallel distinct lines ${JSON.stringify(A)} and ${JSON.stringify(B)} meet ${t.g == null || u.g !== t.g ? 'from two rings' : `BACKWARD (edge ${t.i} then ${u.i} of ${SRC[t.g].length})`}, farther apart than the lattice's rounding (clause swallowtail). Refusing.`)
       const R = SRC[t.g], n = R.length, L = Math.hypot(A[1][0] - A[0][0], A[1][1] - A[0][1])
       const side = (p) => ((p[0] - A[0][0]) * (A[1][1] - A[0][1]) - (p[1] - A[0][1]) * (A[1][0] - A[0][0])) / L, o = side(B[0])
       const lo = Math.min(0, o) - NODE_BOUND, hi = Math.max(0, o) + NODE_BOUND, arc = []
@@ -104,7 +109,7 @@ function emit(E, T, SRC, d, who, stat) {
       const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B)
       const c = [X[0] - (na[0] + nb[0]) * dd / (1 + cosA), X[1] - (na[1] + nb[1]) * dd / (1 + cosA)]   // the offset source point
       out.push([Math.round(c[0] + dd * (na[0] - na[1] * tt)), Math.round(c[1] + dd * (na[1] + na[0] * tt))], [Math.round(c[0] + dd * (nb[0] + nb[1] * tt)), Math.round(c[1] + dd * (nb[1] - nb[0] * tt))]); void P
-      stat.squared++; continue }
+      stat.squared++; (stat.squares ||= []).push(X); continue }
     const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round)
     out.push(X); stat.cutJoin++ }
   return out.map(([X, Y]) => ({ X, Y }))
@@ -114,7 +119,7 @@ const fcross = (A, B) => { const r = [A[1][0] - A[0][0], A[1][1] - A[0][1]], s =
   const t = ((B[0][0] - A[0][0]) * s[1] - (B[0][1] - A[0][1]) * s[0]) / den; return [A[0][0] + t * r[0], A[0][1] + t * r[1]] }
 
 export function morph(region, d, who, stat) {
-  const raw = region.map((R, g) => rawOffset(R, d, g))
+  const raw = region.map((R, g) => rawOffset(R, d, g, (stat.squares ||= [])))
   const F = arrange([raw], w => w[0] > 0, `${who} offset`, true)
   return F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat))
 }
@@ -132,6 +137,7 @@ const toIP = (pp) => pp.map(r => r.map(q => new IntPoint(q.X, q.Y)))
 const m2 = (pp) => pp.reduce((t, r) => t + area(r), 0) / SCALE / SCALE
 
 /** The cut-once open/close at the step, with provenance. `paths` clipper paths (any winding; unioned first, nonzero). */
+export { pieces, area }
 export function openCloseProvenance(paths, stepM, what) {
   const h = (stepM / 2) * SCALE, stat = { own: 0, cutJoin: 0, squared: 0, newLines: 0 }
   const P = arrange([paths.map(p => p.map(q => ({ X: q.X, Y: q.Y })))], w => w[0] !== 0, `${what} union`).rings
@@ -146,5 +152,5 @@ export function openCloseProvenance(paths, stepM, what) {
   const filled = pieces(arrange([closedK, open], w => w[0] > 0 && !(w[1] > 0), `${what} filled`).rings)
   const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
   const k = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`).rings
-  return { paths: toIP(k), stat, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }
+  return { paths: toIP(k), rings: k, P: Pt, stat, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }
 }

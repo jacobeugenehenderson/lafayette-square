@@ -29,6 +29,27 @@ function crossings(paths) {
 const short = (paths) => paths.reduce((t, p) => t + p.filter((a, i) => { const b = p[(i + 1) % p.length]; return Math.hypot(b.X - a.X, b.Y - a.Y) <= 2 }).length, 0)
 const topo = (paths) => { let o = 0, h = 0; for (const p of paths) (Clipper.Area(p) > 0 ? o++ : h++); return { outers: o, holes: h } }
 
+// ⭐ ZOB'S GATE (2026-10-28), the definition in place of an area band: every piece of the symmetric difference between the
+// output and P, each side computed exactly on the jointly noded arrangement (cand3.mjs#arrange → latticeFaces.js#facesOf), is
+// ACCOUNTED FOR: P narrower than 2h there (removed: no disk of radius h of P fits; added: none of the complement fits), i.e. the
+// largest sampled distance from the piece to P's boundary is under h; or a squared corner (clipper's miter limit, parity)
+// stands within h of it. ⛔ Anything else is a defect, listed.
+function changeGate(P, out, h, squares, who) {
+  const S = []; for (const r of P) for (let i = 0; i < r.length; i++) S.push([r[i], r[(i + 1) % r.length]])
+  const G = 4000, cells = new Map(); S.forEach(([a, b], k) => { for (let cx = Math.floor((Math.min(a.X, b.X) - h) / G); cx <= Math.floor((Math.max(a.X, b.X) + h) / G); cx++) for (let cy = Math.floor((Math.min(a.Y, b.Y) - h) / G); cy <= Math.floor((Math.max(a.Y, b.Y) + h) / G); cy++) { const c = cx + ',' + cy; (cells.get(c) || cells.set(c, []).get(c)).push(k) } })
+  const dB = (x, y) => { let m = Infinity; for (const k of cells.get(Math.floor(x / G) + ',' + Math.floor(y / G)) || []) { const [a, b] = S[k], dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((x - a.X) * dx + (y - a.Y) * dy) / L2)) : 0; m = Math.min(m, Math.hypot(x - a.X - t * dx, y - a.Y - t * dy)) } return m }
+  const inR = (x, y, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a.Y > y) !== (b.Y > y) && x < (b.X - a.X) * (y - a.Y) / (b.Y - a.Y) + a.X) c = !c } return c }
+  const table = (pp, side) => pp.map(([o, ...hs]) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const q of o) { x0 = Math.min(x0, q.X); y0 = Math.min(y0, q.Y); x1 = Math.max(x1, q.X); y1 = Math.max(y1, q.Y) }
+    let worst = 0; const N = 24
+    for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) { const x = x0 + (x1 - x0) * i / N, y = y0 + (y1 - y0) * j / N; if (!inR(x, y, o) || hs.some(hh => inR(x, y, hh))) continue; worst = Math.max(worst, dB(x, y)) }
+    const sq = squares.some(([X, Y]) => X >= x0 - h && X <= x1 + h && Y >= y0 - h && Y <= y1 + h)
+    const mm2 = [o, ...hs].reduce((t, r) => t + C3.area(r), 0)
+    return { side, at: [o[0].X / SCALE, o[0].Y / SCALE], mm2: +mm2.toFixed(1), maxDistU: +worst.toFixed(1), h: +h.toFixed(1), narrow: worst < h, squared: sq, accounted: worst < h || sq } })
+  const added = C3.pieces(C3.arrange([out, P], w => w[0] > 0 && !(w[1] > 0), `${who} out−P`).rings), removed = C3.pieces(C3.arrange([P, out], w => w[0] > 0 && !(w[1] > 0), `${who} P−out`).rings)
+  const rows = [...table(added, 'added'), ...table(removed, 'removed')], bad = rows.filter(r => !r.accounted)
+  return { added: added.length, removed: removed.length, addedMm2: +rows.filter(r => r.side === 'added').reduce((t, r) => t + r.mm2, 0).toFixed(1), removedMm2: +rows.filter(r => r.side === 'removed').reduce((t, r) => t + r.mm2, 0).toFixed(1),
+    byNarrow: rows.filter(r => r.narrow).length, bySquare: rows.filter(r => !r.narrow && r.squared).length, unaccounted: bad.length, unaccountedRows: bad.slice(0, 10), rows: rows.length <= 12 ? rows : undefined }
+}
 const cand = arg('cand') || 'integer'
 if (!['integer', 'provenance'].includes(cand)) throw new Error(`no candidate ${cand} (the library route stopped, Jacob 2026-10-28: README.md)`)
 const C3 = cand === 'provenance' ? await import('./cand3.mjs') : null
@@ -38,12 +59,13 @@ const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return { src: ip
 for (const name of (arg('fixture') ? [arg('fixture')] : Object.keys(FIX))) {
   const { src, stepM } = FIX[name](), t = tree(src), u = flat(t)
   const t0 = Date.now(); let paths
-  let stat = null
+  let stat = null, gate = null
   if (cand === 'integer') paths = openCloseAtStep(src, stepM, name).paths
-  else { const r = C3.openCloseProvenance(src, stepM, name); paths = r.paths; stat = { ...r.stat, opened: r.opened.length, closed: r.closed.length, slivers: r.slivers } }
+  else { const r = C3.openCloseProvenance(src, stepM, name); paths = r.paths; const { squares, ...st } = r.stat; stat = { ...st, squares: (squares || []).length, opened: r.opened.length, closed: r.closed.length, slivers: r.slivers }
+    gate = changeGate(r.P, r.rings, (stepM / 2) * SCALE, squares || [], name) }
   const ms = Date.now() - t0
   // the kit unions the kept paths after (deckFootprints, bake-coast): measured on that union, as the reader sees it
   const out = flat(tree(paths)), e = ownEdge(u, out), X = crossings(out)
   const holeM2 = (pp) => pp.filter(p => Clipper.Area(p) < 0).map(p => +(Clipper.Area(p) / SCALE / SCALE).toFixed(4))
-console.log(JSON.stringify({ cand, fixture: name, ms, stat, holesM2: holeM2(out), srcHolesM2: holeM2(u), ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3), news: e.news }))
+console.log(JSON.stringify({ cand, fixture: name, ms, stat, gate, holesM2: holeM2(out), srcHolesM2: holeM2(u), ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3), news: e.news }))
 }
