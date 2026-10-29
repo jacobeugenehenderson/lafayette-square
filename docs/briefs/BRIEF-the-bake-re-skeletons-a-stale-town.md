@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no (written 2026-10-28 night, Boz, at Jacob's ask: "write A and B")
+dispatched: no (written 2026-10-28 night, Boz, at Jacob's ask: "write A and B"; Zob's premise pass CO-SIGNED WITH CORRECTIONS, folded in)
 evict-when: the Bake's plan names a stale skeleton and its run re-skeletons a committed town through the route; an authored skelId that
 would vanish or change its ways refuses by name; HPDM and Huron take the area-highway rule through their next Bake; the gates below green
 with mutants seen RED; merged on Zob's PASS. Then this moves to cartograph/_archive/ dated.
@@ -33,11 +33,18 @@ keeps today's area-highway rule (`kerf/area-highway`, merged) from ever reaching
   (Boz's one-off script); `checks/claims-authored-skelids-keep-their-ways.mjs` exists.
 
 ## 3. The work
-1. A `skeleton` step in pourSteps' table, ahead of the pour: its reads are skeleton.js's import closure + the raw inputs it reads
-   (osm, the extent/boundary, the vocabulary), recorded through the one recorder. The plan names it stale with reasons; a run re-skeletons.
-2. **The authoring guard, before the new skeleton replaces the old:** every skelId the town's authoring names (blockCustoms, overlay,
-   capEnds, corner overrides) must still exist and keep its ways. If not, REFUSE by name (the id, what changed), never silently re-key.
-   That is the identity churn rescope was avoiding; make it a refusal, not an avoidance.
+1. A `skeleton` step in pourSteps' table, ahead of the pour. Its reads, exactly (Zob): raw/osm.json, raw/survey.json (loadSurveyStreets;
+   a named-absent file) and skeleton.js's import closure (streetClass.js, the vocabulary). It does NOT read the extent or boundary. Its
+   outputs: clean/skeleton.json AND clean/street-index.json (`--index`, also run at serve.js ~1733). Recorded through the one recorder.
+   ONE RECORDER ON EVERY PATH: commit-extent (~2070) and the restore/re-seed path (~2138) run skeleton.js outside the table; route them
+   through it (runPour-style) or record after them, or the next Bake judges the skeleton stale (the bug 9d96d4fe fixed for the pour).
+2. **The authoring guard, before the new skeleton replaces the old.** Every key the town's authoring names must survive: blockCustoms
+   (skelId · side · SEGORD), capEnds (skelId · end: a split chain moves which END is which), overlay (skelId), corner overrides (their
+   key format is to be READ, not assumed). ⛔ SEGORD is topology (tileGround.js#mintSegOrdAt): a re-skeleton that adds or removes an
+   interior intersection on an authored street re-keys its slots silently (LS's history: 12 pours changed an authored street's count, all
+   kit changes). Until r-block-keys-are-minted-once-and-inserted-between is built, REFUSE by name when an authored street's segOrd
+   structure changes, reusing chainJoins.mjs#refuseAuthoredReKey's rule (no second copy). Synthetic unnamed ids are positional
+   (`<highway> <n>`), so a new unnamed way can renumber them: the guard catches that as "ways changed".
 3. Extent's rescope keeps NOT re-skeletoning (its reason stands); the Bake does it when the skeleton is stale.
 4. The re-pour question (428) names the skeleton among the files when it's the cause.
 
@@ -48,6 +55,8 @@ keeps today's area-highway rule (`kerf/area-highway`, merged) from ever reaching
 - Measured, offline with the slot: HPDM and Huron re-skeleton through the Bake, the area-highway rule lands (HPDM's st-louis-walk-of-fame,
   chapman-plaza, dr-huston-smith-meditation-garden, south-terrace and Huron's the-deering-family-terrace-0/-1, receiving-area-b leave the
   network), authored ids all kept (`claims-authored-skelids-keep-their-ways`), and HPDM's two frame-made nodeless crossings go 2 → 0.
+- A planted re-skeleton adding an interior intersection on an authored street → refused by name; mutant (the segOrd guard removed) →
+  silent re-key → RED.
 - `claims-the-bake-watches-its-code`, `claims-the-pour-records-itself-once` green.
 
 ## 5. Bounds
