@@ -1,0 +1,38 @@
+// Halo receipt (ferrule/dof-truth), evaluated in a Stage tab as text. Rows across the hero box; each pixel classed by depth
+// (hero vs background, against the focus distance); DoF on minus off at the edge pixel (1 px), the band 2–8 CSS px beyond,
+// the far field; the same off-vs-off as the noise floor. Jacob's 18:02 values pinned in-tab, restored after.
+// Each edge pixel's background is classed SMOOTH or TEXTURED by the local contrast of the off image 3–8 px beyond it.
+const ROWS = (typeof window.__HALO_ROWS !== 'undefined' && window.__HALO_ROWS) || [0.15, 0.3, 0.5, 0.75], TOL = window.__HALO_TOL || 0.15
+const g = async (u) => (await fetch(u)).text(), im = (s, re) => s.match(new RegExp(`from\\s+"([^"]*${re}[^"]*)"`))?.[1]
+const rp = await g('/src/components/renderPipeline.jsx'), rdU = im(rp, 'RomanceDoF'), rd = await g(rdU)
+const PP = await import(im(rp, '/deps/postprocessing\\.js')), F = await import(im(rd, '/deps/@react-three_fiber\\.js')), THREE = await import(im(rd, '/deps/three\\.js')), R = await import(rdU)
+if (Math.abs(R._dofRefs.focusDist.current - window.__dof.dist) > 1e-6) throw new Error('not the live RomanceDoF instance')
+const oC = PP.EffectComposer.prototype.render; let comp = null; PP.EffectComposer.prototype.render = function (dt) { comp = comp || this; return oC.call(this, dt) }
+await new Promise(res => { let k = 0; const off = F.addAfterEffect(() => { if (++k < 2) { F.invalidate(); return } off(); res() }); F.invalidate() }); PP.EffectComposer.prototype.render = oC
+const r = window.__renderer, gl = r.getContext(), cv = r.domElement, hr = R._dofRefs.heroRect.current, band = Math.round(8 * cv.width / cv.clientWidth)
+const lum = (p, i) => 0.2126 * p[i] + 0.7152 * p[i + 1] + 0.0722 * p[i + 2]
+const vals = { maxBlur: 0.2, zone: 0.11, ramp: 0.14, heroBlur: 0 }, saved = {}
+for (const k of Object.keys(vals)) { saved[k] = R._dofRefs[k]; R._dofRefs[k] = { get current() { return vals[k] }, set current(x) {} } }
+const out = { town: location.pathname.split('/')[2], focus: +R._dofRefs.focusDist.current.toFixed(1), rows: {} }
+try {
+  for (const fy of ROWS) {
+    const y = Math.round((hr[1] + (hr[3] - hr[1]) * fy) * cv.height), x0 = Math.max(0, Math.round((hr[0] - 0.03) * cv.width)), x1 = Math.min(cv.width, Math.round((hr[2] + 0.03) * cv.width)), w = x1 - x0
+    const rt = new THREE.WebGLRenderTarget(w, 1, { type: THREE.FloatType }), mat = new THREE.ShaderMaterial({ uniforms: { uD: { value: comp.inputBuffer.depthTexture }, uY: { value: (y + 0.5) / cv.height }, uX0: { value: x0 }, uW: { value: cv.width } }, vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: 'uniform sampler2D uD; uniform float uY, uX0, uW; void main(){ gl_FragColor = vec4(texture2D(uD, vec2((uX0 + gl_FragCoord.x) / uW, uY)).r, 0.0, 0.0, 1.0); }' })
+    const sc = new THREE.Scene(), q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat); q.frustumCulled = false; sc.add(q)
+    const prev = r.getRenderTarget(); r.setRenderTarget(rt); r.render(sc, new THREE.Camera()); const dp = new Float32Array(w * 4); r.readRenderTargetPixels(rt, 0, 0, w, 1, dp); r.setRenderTarget(prev); rt.dispose(); mat.dispose()
+    const far = R._dofRefs.far.current, fd = R._dofRefs.focusDist.current, isH = Array.from({ length: w }, (_, i) => Math.abs(Math.pow(2, dp[i * 4] * Math.log2(far + 1)) - 1 - fd) / fd < TOL)
+    const grab = (mb) => new Promise(res => { vals.maxBlur = mb; let k = 0; const off = F.addAfterEffect(() => { if (++k < 4) { F.invalidate(); return } off(); const px = new Uint8Array(w * 4); gl.readPixels(x0, y, w, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); res(Array.from({ length: w }, (_, i) => lum(px, i * 4))) }); F.invalidate() })
+    const A = await grab(0.2), B = await grab(0), C = await grab(0)
+    const dTo = new Array(w).fill(Infinity), side = new Array(w).fill(0); let last = -Infinity
+    for (let i = 0; i < w; i++) { if (isH[i]) last = i; dTo[i] = i - last; side[i] = 1 } last = Infinity
+    for (let i = w - 1; i >= 0; i--) { if (isH[i]) last = i; if (last - i < dTo[i]) { dTo[i] = last - i; side[i] = -1 } }
+    // an edge pixel's background: the off image's spread 3..band px beyond it, away from the hero
+    const textured = (i) => { const v = []; for (let k = 3; k <= band; k++) { const j = i + side[i] * k; if (j >= 0 && j < w && !isH[j]) v.push(B[j]) } return v.length > 2 && Math.max(...v) - Math.min(...v) > 12 }
+    const st = (P, Q, sel) => { const ds = []; for (let i = 0; i < w; i++) if (sel(i)) ds.push(P[i] - Q[i]); return ds.length ? [+Math.min(...ds).toFixed(1), +Math.max(...ds).toFixed(1), ds.length] : null }
+    out.rows[fy] = {
+      edgeSmooth: st(A, B, i => !isH[i] && dTo[i] === 1 && !textured(i)), edgeTextured: st(A, B, i => !isH[i] && dTo[i] === 1 && textured(i)),
+      band: st(A, B, i => !isH[i] && dTo[i] >= 2 && dTo[i] <= band), far: st(A, B, i => !isH[i] && dTo[i] > 3 * band), hero: st(A, B, i => isH[i]),
+      noiseEdge: st(B, C, i => !isH[i] && dTo[i] === 1), noiseBand: st(B, C, i => !isH[i] && dTo[i] >= 2 && dTo[i] <= band) }
+  }
+} finally { for (const k of Object.keys(saved)) R._dofRefs[k] = saved[k]; F.invalidate() }
+return out
