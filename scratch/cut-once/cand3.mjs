@@ -83,7 +83,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       tok.push({ kind: 'L', flt: [[bornL2[0][0] - n[0] * d, bornL2[0][1] - n[1] * d], [bornL2[1][0] - n[0] * d, bornL2[1][1] - n[1] * d]], born: JSON.stringify(bornL2), at: p }); stat.newLines++; continue }
     if (tags.length && !lineTags.length && !tags.some(x => x?.base)) { tags.length = 0 }                   // near only: a new line from its own points
     else if (lineTags.length !== tags.length && !tags.some(x => x?.base)) { tags.splice(0, tags.length, ...lineTags) }
-    if (tags.some(x => x?.base)) throw new Error(`[${who}] ⛔ the back-offset: an eliminated stretch's base side (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) reached the boundary (it is born interior). Refusing.`)
+    if (tags.some(x => x?.base)) throw new Error(`[${who}] ⛔ the back-offset: (${JSON.stringify(tags.find(x => x?.base))}; with ${JSON.stringify(tags.filter(x => !x?.base).map(x => x.ring != null ? `${x.ring}:${x.i}` : x.born ? 'born' : 'near'))}) an eliminated stretch's base side (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) reached the boundary (it is born interior). Refusing.`)
     if (!tags.length) { // a null edge: a NEW line, the cap's own back-offset by −d
       const n = unit([p.X, p.Y], [q.X, q.Y]); tok.push({ kind: 'L', flt: [[p.X - n[0] * d, p.Y - n[1] * d], [q.X - n[0] * d, q.Y - n[1] * d]], at: p }); stat.newLines++; continue }
     // ⭐ consecutive eroded segments carrying the SAME tag set are one stretch of that run (the lines lie within rounding of each
@@ -228,6 +228,8 @@ let BY_EDGES = false                              // ⛔ the mutant only (setByE
 export const setByEdges = (v) => { BY_EDGES = !!v }
 let NO_TOPOLOGY_GUARD = false                     // ⛔ the mutant only (setNoTopologyGuard)
 export const setNoTopologyGuard = (v) => { NO_TOPOLOGY_GUARD = !!v }
+let SINGLE_BASE = false                           // ⛔ the mutant only (setSingleBase): the eliminated stretch's base as one polygon
+export const setSingleBase = (v) => { SINGLE_BASE = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -302,26 +304,34 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
   for (let k = 0; k < m; k++) { if (!alive[k]) continue
     const r = nx[k], c = C[k]
     if (c.cap) { if (squares) squares.push([vAt(r).X, vAt(r).Y]); pieces.push(ccw([{ X: vAt(r).X, Y: vAt(r).Y, tag: BORN }, { ...c.end, tag: BORN }, { ...c.start, tag: BORN }])) }
-    if (r !== (k + 1) % m) { const base = []; for (let q = (k + 1) % m; q !== r; q = (q + 1) % m) { for (let i2 = runs[q].s; ; i2 = (i2 + 1) % n) { base.push({ X: R[i2].X, Y: R[i2].Y, tag: NEAR }); if (i2 === runs[q].e) break } }   // along the region's own edges: interior after the union
-      base.push({ X: vAt(r).X, Y: vAt(r).Y, tag: { base: true } }); if (c.start.X !== c.end.X || c.start.Y !== c.end.Y) base.push({ ...c.start, tag: BORN }); base.push({ ...c.end, tag: { base: true } })   // both corner points whenever they differ (a cap, or a converging corner)
-      { let a2 = 0; for (let z = 0; z < base.length; z++) { const p0 = base[z], p1 = base[(z + 1) % base.length]; a2 += p0.X * p1.Y - p1.X * p0.Y }
-        // the region lies LEFT of its ring: a base piece on the d side winds against the ring for d > 0 and with it for d < 0
-        if (c.conv && (d > 0 ? a2 > 0 : a2 < 0)) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: a converging corner after an elimination (runs ${runs[k].s} and ${runs[r].s}) puts the eliminated stretch's base piece on the region's own side: no consistent side. Runs: ${JSON.stringify([pv[k], k, ...((() => { const o = []; for (let q2 = (k + 1) % m; q2 !== r; q2 = (q2 + 1) % m) o.push(q2); return o })()), r].map(q2 => { const L = runs[q2].line; return { run: `${runs[q2].s}…${runs[q2].e}`, line: L, lenU: +Math.hypot(L[1][0] - L[0][0], L[1][1] - L[0][1]).toFixed(1), deg: +(Math.atan2(L[1][1] - L[0][1], L[1][0] - L[0][0]) * 180 / Math.PI).toFixed(3), from: [R[runs[q2].s].X, R[runs[q2].s].Y] } }))}; corner end ${JSON.stringify(c.end)} start ${JSON.stringify(c.start)}; base piece ${JSON.stringify(base.map(b2 => [b2.X, b2.Y]))}. Refusing.`) }
-      { // ⭐ THE BASE POLYGON IS SIMPLE, WOUND AGAINST ITS RING FOR A DILATE AND WITH IT FOR AN ERODE (Zob, 2026-10-29, pre-ruled):
-        // built in ring order [v_s … v_e, C_after, C_before]; else refuse by name with the corner class
-        const segs = base.map((b2, z) => ({ a: [b2.X, b2.Y], b: [base[(z + 1) % base.length].X, base[(z + 1) % base.length].Y] })); let X2 = null
-        for (let u2 = 0; u2 < segs.length && !X2; u2++) for (let w2 = u2 + 2; w2 < segs.length; w2++) { if (u2 === 0 && w2 === segs.length - 1) continue; X2 = crossOf(segs[u2], segs[w2]); if (X2) break }
-        let A2 = 0n; for (let z = 0; z < base.length; z++) { const p0 = base[z], p1 = base[(z + 1) % base.length]; A2 += BigInt(p0.X) * BigInt(p1.Y) - BigInt(p1.X) * BigInt(p0.Y) }
-        const ringPos = area(R) > 0, want = d > 0 ? !ringPos : ringPos
-        if (X2 || (A2 > 0n) !== want) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the eliminated stretch between runs ${runs[k].s} and ${runs[r].s} (corner ${c.conv ? 'converging' : c.cap ? 'cap' : 'X'}) gives a base polygon that is ${X2 ? `NOT SIMPLE (it crosses itself at (${X2.map(v => v / SCALE)}))` : 'wound the wrong way'}: ${JSON.stringify(base.map(b2 => [b2.X, b2.Y]))}. Refusing.`) }
-      if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
-        if (base.some(b2 => Math.hypot(b2.X - tx, b2.Y - ty) < 3000)) { let A2 = 0n; for (let z = 0; z < base.length; z++) { const p0 = base[z], p1 = base[(z + 1) % base.length]; A2 += BigInt(p0.X) * BigInt(p1.Y) - BigInt(p1.X) * BigInt(p0.Y) }
-          const segs = base.map((b2, z) => ({ a: [b2.X, b2.Y], b: [base[(z + 1) % base.length].X, base[(z + 1) % base.length].Y] })); let selfX = []
-          for (let u2 = 0; u2 < segs.length; u2++) for (let w2 = u2 + 2; w2 < segs.length; w2++) { if (u2 === 0 && w2 === segs.length - 1) continue; const X2 = crossOf(segs[u2], segs[w2]); if (X2) selfX.push({ edges: [u2, w2], at: X2 }) }
-          const elim = []; for (let q2 = (k + 1) % m; q2 !== r; q2 = (q2 + 1) % m) elim.push(`${runs[q2].s}…${runs[q2].e}`)
-          const ringA = runs.length ? area(R) : 0
-          console.log('TRACE-BASE', JSON.stringify({ who: d < 0 ? 'erode' : 'dilate', ring: g, ringOrientation: ringA > 0 ? '+' : '−', k: `${runs[k].s}…${runs[k].e}`, r: `${runs[r].s}…${runs[r].e}`, eliminated: elim, corner: c.conv ? 'converging' : c.cap ? 'cap' : 'X', Cbefore_endOfK: [c.end.X, c.end.Y], Cafter_startOfR: [c.start.X, c.start.Y], baseInBuildOrder: base.map(b2 => [b2.X, b2.Y]), signedArea2: String(A2), selfCrossings: selfX })) } }
-      pieces.push(ccw(base)) }
+    if (r !== (k + 1) % m) {
+      // ⭐ THE BASE OF AN ELIMINATED STRETCH COVERS, AND NEVER FOLDS (Zob, 2026-10-29): built by the corner class, from pieces
+      // that cannot self-cross; every edge tagged base (interior; emit refuses one at the boundary)
+      const st = []; for (let q = (k + 1) % m; q !== r; q = (q + 1) % m) { for (let i2 = runs[q].s; ; i2 = (i2 + 1) % n) { st.push(R[i2]); if (i2 === runs[q].e) break } }
+      st.push(vAt(r))
+      const cls = c.conv ? 'converging' : c.cap ? 'cap' : 'X', who2 = `${runs[k].s}→${runs[r].s}`
+      const B = (pp) => pieces.push(ccw(pp.map(q => ({ X: q.X, Y: q.Y, tag: { base: true, cls, stretch: who2, stLen: st.length } }))))
+      // the half-plane test: q lies on R's side of the line L shifted by d along its normal n (the side holding L itself).
+      // ⚠ In doubles, not BigInt: L(d) is offset by a non-integer d along a unit normal (a square root), and is intermediate
+      const inside = (q, L, nn) => ((q.X - L[0][0]) * nn[0] + (q.Y - L[0][1]) * nn[1] - d) * -Math.sign(d) >= -1e-9
+      const outsideAt = (planes) => st.find(q => !planes.every(([L, nn]) => inside(q, L, nn)))
+      const where = (q) => `(${(q.X / SCALE).toFixed(3)}, ${(q.Y / SCALE).toFixed(3)})`
+      if (SINGLE_BASE) { const base = st.map(q => ({ X: q.X, Y: q.Y, tag: { base: true } })); if (c.start.X !== c.end.X || c.start.Y !== c.end.Y) base.push({ ...c.start, tag: { base: true } }); base.push({ ...c.end, tag: { base: true } }); pieces.push(ccw(base)) }   // ⛔ the mutant only
+      else if (c.conv) {                                                                 // CONVERGING: the eliminated runs' own plain rectangles
+        for (let q = (k + 1) % m; q !== r; q = (q + 1) % m) { const a = R[runs[q].s], b = R[(runs[q].e + 1) % n], nn = N[q]
+          B([a, b, P(b.X + nn[0] * d, b.Y + nn[1] * d), P(a.X + nn[0] * d, a.Y + nn[1] * d)]) }
+        stat0.baseRects = (stat0.baseRects || 0) + 1 }
+      else if (c.cap) {                                                                  // CAP: a fan from C_a, under three half-planes
+        const Ca = c.end, Cb = c.start, capN = (() => { const u = unit([Ca.X, Ca.Y], [Cb.X, Cb.Y]), v0 = vAt(r); return ((v0.X - Ca.X) * u[0] + (v0.Y - Ca.Y) * u[1] - 0) <= 0 ? u : [-u[0], -u[1]] })()
+        const off = outsideAt([[runs[k].line, N[k]], [runs[r].line, N[r]]])
+        if (off) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the eliminated stretch between runs ${runs[k].s} and ${runs[r].s} (corner cap) reaches past its envelope at ${where(off)}. Refusing.`)
+        for (let z = 0; z + 1 < st.length; z++) B([Ca, st[z], st[z + 1]]); B([Ca, st[st.length - 1], Cb]); void capN
+        stat0.baseFans = (stat0.baseFans || 0) + 1 }
+      else {                                                                             // DIVERGING: a fan from Y, under two half-planes
+        const Y = c.end, off = outsideAt([[runs[k].line, N[k]], [runs[r].line, N[r]]])
+        if (off) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g}: the eliminated stretch between runs ${runs[k].s} and ${runs[r].s} (corner X) reaches past its envelope at ${where(off)}. Refusing.`)
+        for (let z = 0; z + 1 < st.length; z++) B([Y, st[z], st[z + 1]])
+        stat0.baseFans = (stat0.baseFans || 0) + 1 } }
     const s0 = C[pv[k]].start, e0 = c.end, a = R[runs[k].s], b = vAt(r === (k + 1) % m ? r : (k + 1) % m), L = runs[k].line
     const along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
     if (along < 0) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g} run ${runs[k].s}…${runs[k].e}: still backward after the elimination. Refusing.`)
