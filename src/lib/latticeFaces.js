@@ -25,7 +25,7 @@
 // by its multiplicity. ⭐ A PINCH (the kept region touching itself at one vertex) leaves as SEPARATE rings meeting there: at a
 // vertex the boundary turns to the next kept edge CLOCKWISE from where it came in, the tightest turn.
 // ▶ node checks/claims-the-faces-are-walked-once.mjs
-import { crossOf } from './latticeNode.js'
+import { crossOf, NODE_BOUND } from './latticeNode.js'
 
 const SMALL = 2 ** 24
 const small = (...v) => v.every(x => Math.abs(x) < SMALL)
@@ -37,7 +37,16 @@ export const angleCmp = (d1, d2, numberOnly = false) => { const h1 = half(d1[0],
   if (h1 !== h2) return h1 - h2
   return -crossSign(d1[0], d1[1], d2[0], d2[1], numberOnly) }
 
-export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false, allTags = false, prefer = null } = {}) {
+// ⭐ THE TIERED BOUND, ONE HOME (Zob, 2026-10-29): is point q on line l at the lattice's resolution? An EMITTED point: within
+// NODE_BOUND of the line (exact: 2·cross² ≤ |dir|²). A NODING-INSERTED point (`segs`: the emitted segments it was routed into):
+// within NODE_BOUND of ANY of them (snap rounding's own guarantee), so up to 2·NODE_BOUND from the line. The emission invariant
+// (scratch/cut-once/cand3.mjs) and facesOf's transition test both call this, so the two cannot drift
+export function onLineTiered(l, q, segs = null) {
+  if (segs?.length) return segs.some(([a, b]) => { const ex = b[0] - a[0], ey = b[1] - a[1], L2 = ex * ex + ey * ey, t = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * ex + (q[1] - a[1]) * ey) / L2)) : 0
+    return Math.hypot(q[0] - a[0] - t * ex, q[1] - a[1] - t * ey) <= NODE_BOUND })
+  const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(Math.round(q[1]) - l[0][1]) - dy * BigInt(Math.round(q[0]) - l[0][0])
+  return 2n * cr * cr <= dx * dx + dy * dy }
+export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false, allTags = false, prefer = null, inserted = null, tags: withTags = true } = {}) {
   if (!(sets > 0)) throw new Error(`[${who}] ⛔ facesOf: no \`sets\` count — the windings are per input set`)
   if (typeof keep !== 'function') throw new Error(`[${who}] ⛔ facesOf: no \`keep\` predicate — which faces are the region is the caller's to say`)
   // ── the vertices, and the merged edges: lo → hi by vertex id, m[s] the signed multiplicity of set s along lo → hi
@@ -109,7 +118,9 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
   const isB = new Uint8Array(H)
   live.forEach((me, n) => { const kl = !!keep(W[cyc[2 * n]]), kr = !!keep(W[cyc[2 * n + 1]]); if (kl !== kr) isB[kl ? 2 * n : 2 * n + 1] = 1 })
   const used = new Uint8Array(H), rings = [], tags = []
-  const tagOf = (h) => { const me = live[h >> 1], dir = h & 1 ? -1 : 1, same = me.tags.filter(t => t.dir === dir && t.tag != null)
+  // `tags: false` (Zob, 2026-10-29): an arrangement whose tags NOTHING reads computes none, so it can neither refuse on them nor hand
+  // a later reader tags that were never checked
+  const tagOf = (h) => { if (!withTags) return null; const me = live[h >> 1], dir = h & 1 ? -1 : 1, same = me.tags.filter(t => t.dir === dir && t.tag != null)
     const keys = new Set(same.map(t => JSON.stringify(t.tag)))
     if (allTags) return [...keys].map(k => JSON.parse(k))
     // `prefer` (Zob, 2026-10-29): on ∩ or a difference, where the region's boundary coincides with the PREFERRED input's own
@@ -118,8 +129,7 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
     // bound of BOTH of the segment's ends (exact: 2·cross² ≤ |dir|² per end) are one transition collapsed by rounding, not a
     // conflict: the segment carries both tags
     if (keys.size > 1) { const L = [...keys].map(k => JSON.parse(k)), A = V[org[h]], Bv = V[dst[h]]
-      const within = (l, q) => { if (!Array.isArray(l) || l.length !== 2 || !Array.isArray(l[0])) return false
-        const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(q[1] - l[0][1]) - dy * BigInt(q[0] - l[0][0]); return 2n * cr * cr <= dx * dx + dy * dy }
+      const within = (l, q) => Array.isArray(l) && l.length === 2 && Array.isArray(l[0]) && onLineTiered(l, q, inserted?.get(q[0] + ',' + q[1]))
       if (L.every(l => within(l, A) && within(l, Bv))) return L
       // ⭐ A CONCURRENCE (Zob, 2026-10-29): a segment ONE lattice step long (length² ≤ 2, straight or diagonal) carries no direction;
       // every line passing within half a pixel claims it. Its tag set says "these lines meet here", a vertex of the boundary, not

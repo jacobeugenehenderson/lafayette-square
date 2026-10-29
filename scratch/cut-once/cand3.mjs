@@ -13,7 +13,7 @@
 import clipperLib from 'clipper-lib'
 import { writeFileSync } from 'fs'
 import { nodeCrossings, lineCrossOf, sameLine, NODE_BOUND, crossOf, LATTICE_STEP } from '../../src/lib/latticeNode.js'
-import { facesOf } from '../../src/lib/latticeFaces.js'
+import { facesOf, onLineTiered } from '../../src/lib/latticeFaces.js'
 import { isRoundingSliver } from '../../cartograph/structures.mjs'
 import { tagRun } from './tagRun.mjs'
 const { IntPoint, Clipper } = clipperLib
@@ -44,7 +44,7 @@ const clean = (r) => { const o = []; for (const q of r) { const l = o[o.length -
 const distinct3 = (r) => new Set(r.map(q => q.X + ',' + q.Y)).size >= 3
 
 // node `sets` (each a list of rings [{X, Y, tag?}]) together, self included, then the faces `keep` holds. → { rings, tags }
-export function arrange(sets, keep, who, allTags = false, prefer = null) {
+export function arrange(sets, keep, who, allTags = false, prefer = null, withTags = true) {
   const rings = [], setOf = []
   sets.forEach((S, si) => S.forEach(r => { const c = clean(r); if (distinct3(c)) { rings.push(c); setOf.push(si) } }))
   if (!rings.length) return { rings: [], tags: [] }
@@ -56,12 +56,12 @@ export function arrange(sets, keep, who, allTags = false, prefer = null) {
     const ids = [...String(e.message).matchAll(new RegExp(`${who.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}#(\\d+)`, 'g'))].map(m => +m[1])
     if (ids.length && process.env.CUTONCE_REPRO) writeFileSync(process.env.CUTONCE_REPRO, JSON.stringify({ who, error: String(e.message), rings: [...new Set(ids)].map(i => ({ i, set: setOf[i], tag: input[i].tag, p: input[i].p })) }))
     throw e }
-  const edges = []
+  const edges = [], here = new Map()
   R.forEach((o, ri) => o.forEach((v, q) => { const w = o[(q + 1) % o.length]; edges.push({ a: v.k, b: w.k, set: setOf[ri], tag: rings[ri][v.edge]?.tag ?? null })
     // every vertex the noding INSERTED (src null: a hot pixel the segment was routed through), with the EMITTED segment it was
     // routed into: the emission invariant's second tier (Zob, 2026-10-29)
-    if (v.src == null) { const r0 = rings[ri], a0 = r0[v.edge], b0 = r0[(v.edge + 1) % r0.length]; { const key = v.k[0] + ',' + v.k[1]; (INSERTED.get(key) || INSERTED.set(key, []).get(key)).push({ who, seg: [[a0.X, a0.Y], [b0.X, b0.Y]] }) } } }))
-  return facesOf(edges, keep, { sets: sets.length, who, allTags, prefer })
+    if (v.src == null) { const r0 = rings[ri], a0 = r0[v.edge], b0 = r0[(v.edge + 1) % r0.length]; { const key = v.k[0] + ',' + v.k[1], sg = [[a0.X, a0.Y], [b0.X, b0.Y]]; (INSERTED.get(key) || INSERTED.set(key, []).get(key)).push({ who, seg: sg }); (here.get(key) || here.set(key, []).get(key)).push(sg) } } }))
+  return facesOf(edges, keep, { sets: sets.length, who, allTags, prefer, inserted: here, tags: withTags && !(TAGS_OFF_AT === who.split(' ').pop()) })
 }
 
 // the back-offset: one eroded (or dilated) ring with its tags → the morphed ring's points, the region's own wherever unchanged
@@ -216,13 +216,8 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   if (!NO_EMIT_INVARIANT) for (let k = 0; k < out.length; k++) { const L = outL[k]; if (!L) continue
     const p0 = out[k], p1 = out[(k + 1) % out.length]; if (p0[0] === p1[0] && p0[1] === p1[1]) continue
     const dx = BigInt(L[1][0] - L[0][0]), dy = BigInt(L[1][1] - L[0][1]), D2 = dx * dx + dy * dy
-    // TWO TIERS BY ORIGIN (Zob, 2026-10-29): an EMITTED point lies within NODE_BOUND of its line; a NODING-INSERTED vertex lies
-    // within NODE_BOUND of the emitted SEGMENT it was routed into (snap rounding's own guarantee), whatever its distance to the line
-    const offLine = (pt) => { const cr = dx * BigInt(Math.round(pt[1]) - L[0][1]) - dy * BigInt(Math.round(pt[0]) - L[0][0]); return 2n * cr * cr > D2 }
-    const dSeg = (pt, [a0, b0]) => { const ex = b0[0] - a0[0], ey = b0[1] - a0[1], L2 = ex * ex + ey * ey, t = L2 ? Math.max(0, Math.min(1, ((pt[0] - a0[0]) * ex + (pt[1] - a0[1]) * ey) / L2)) : 0; return Math.hypot(pt[0] - a0[0] - t * ex, pt[1] - a0[1] - t * ey) }
-    const off = (pt) => { const ins = INSERTED.get(Math.round(pt[0]) + ',' + Math.round(pt[1]))
-      if (!ins || TIERS_SWAPPED) return offLine(pt)
-      return !ins.some(x => dSeg(pt, x.seg) <= NODE_BOUND) }
+    // TWO TIERS BY ORIGIN, one home (latticeFaces.js#onLineTiered, shared with facesOf's transition test)
+    const off = (pt) => !onLineTiered(L, pt, TIERS_SWAPPED ? null : (INSERTED.get(Math.round(pt[0]) + ',' + Math.round(pt[1])) || []).map(x => x.seg))
     if (off(p0) || off(p1)) { const dist = (pt) => +(Math.abs((pt[0] - L[0][0]) * Number(dy) - (pt[1] - L[0][1]) * Number(dx)) / Math.sqrt(Number(D2))).toFixed(3)
       const tier = (pt) => (INSERTED.has(Math.round(pt[0]) + ',' + Math.round(pt[1])) ? `noding-inserted in ${INSERTED.get(Math.round(pt[0]) + ',' + Math.round(pt[1])).map(x => x.who).join(', ')}` : 'emitted')
       throw new Error(`[${who}] ⛔ the emission invariant (start ${tier(p0)}, end ${tier(p1)}): the edge (${p0.map(v => v / SCALE)}) → (${p1.map(v => v / SCALE)}) is tagged with the line ${JSON.stringify(L)} but lies ${dist(p0)} / ${dist(p1)} u off it (> NODE_BOUND); made by: start ${ORIGIN.get(p0[0] + ',' + p0[1]) || '?'}, end ${ORIGIN.get(p1[0] + ',' + p1[1]) || '?'}. Refusing.`) } }
@@ -250,6 +245,8 @@ let NO_EMIT_INVARIANT = false                     // ⛔ the mutant only (setNoE
 export const setNoEmitInvariant = (v) => { NO_EMIT_INVARIANT = !!v }
 let TIERS_SWAPPED = false                         // ⛔ the mutant only (setTiersSwapped): a noding-inserted vertex judged against the line
 export const setTiersSwapped = (v) => { TIERS_SWAPPED = !!v }
+let TAGS_OFF_AT = null                            // ⛔ the mutant only (setTagsOffAt('∩P')): tags switched off where they ARE read
+export const setTagsOffAt = (v) => { TAGS_OFF_AT = v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -378,7 +375,7 @@ const m2 = (pp) => pp.reduce((t, r) => t + area(r), 0) / SCALE / SCALE
 export { pieces, area }
 export function openCloseProvenance(paths, stepM, what) {
   const h = (stepM / 2) * SCALE, stat = { own: 0, cutJoin: 0, squared: 0, newLines: 0 }
-  const P = arrange([paths.map(p => p.map(q => ({ X: q.X, Y: q.Y })))], w => w[0] !== 0, `${what} union`).rings
+  const P = arrange([paths.map(p => p.map(q => ({ X: q.X, Y: q.Y })))], w => w[0] !== 0, `${what} union`, false, null, false).rings
   const Pt = P.map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
   // open = morph(P, −h) ∩ P
   const D = morph(Pt, -h, `${what} open`, stat)
@@ -391,11 +388,11 @@ export function openCloseProvenance(paths, stepM, what) {
     stat.transitions = (stat.transitions || 0) + 1
     return tg.find(l => key(l) === key(prev)) || tg.find(l => key(l) === key(next)) || tg[0] }))
   const C = morph(open, h, `${what} close`, stat, TAGS_BY_SEGMENT ? null : openLines)
-  const taken = pieces(arrange([Pt, open], w => w[0] > 0 && !(w[1] > 0), `${what} taken`).rings)
-  const closedK = arrange([open, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`).rings
-  const filled = pieces(arrange([closedK, open], w => w[0] > 0 && !(w[1] > 0), `${what} filled`).rings)
+  const taken = pieces(arrange([Pt, open], w => w[0] > 0 && !(w[1] > 0), `${what} taken`, false, null, false).rings)
+  const closedK = arrange([open, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, null, false).rings
+  const filled = pieces(arrange([closedK, open], w => w[0] > 0 && !(w[1] > 0), `${what} filled`, false, null, false).rings)
   const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
-  const k = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`).rings
+  const k = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`, false, null, false).rings
   // ⭐ THE TOPOLOGY GUARD ON k (Zob, 2026-10-29): a hole of P that k no longer holds (it opened to the outside), or two parts of P
   // that k joins, is the topology change Boz rules on: refused by name. Intermediate merges inside the open that the close
   // undoes are not refused. A test point per ring: half a unit to the side of its longest edge (P's material for an outer, the
