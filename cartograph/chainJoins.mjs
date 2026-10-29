@@ -1,5 +1,5 @@
 // ⭐ A CHAIN END IN ANOTHER STREET'S ROADWAY IS A T (Jacob, 2026-10-27; registry `r-a-chain-end-in-a-roadway-is-a-T`,
-// docs/briefs/BRIEF-a-chain-end-in-a-roadway-is-a-T.md). Joined by rule at ①'s input (`mintInputs.mjs#mintInputs`), judged by
+// cartograph/_archive/BRIEF-a-chain-end-in-a-roadway-is-a-T-LANDED-2026-10-28.md). Joined by rule at ①'s input (`mintInputs.mjs#mintInputs`), judged by
 // THAT street's own half-width. Pure: `joinChainEnds` takes the mint's streets and returns new ones plus the record; mintInputs
 // calls it, and `checks/claims-a-chain-end-in-a-roadway-is-a-node.mjs` calls the same function.
 //   · AN END THAT IS NO NODE: its point, on the mint's lattice (CLIP_SCALE, the grid ①'s union snaps to), is held by no other
@@ -163,7 +163,7 @@ function refuseAuthoredReKey(pending, streets, blockCustoms) {
     const s0 = segOrdAt(p.ti, p.k), bc = blockCustoms[p.T.skelId] || {}
     const slots = ['left', 'right'].flatMap(sd => Object.keys(bc[sd] || {}).filter(o => Number(o) >= s0).map(o => `${sd}|${o}`))
     if (slots.length) hits.push(`${p.row.street}.${p.end} joins ${p.row.into} at (${p.row.foot.join(', ')}), cutting its block segOrd ${s0}; its authored slot(s) at or after it would be re-keyed: ${slots.join(' · ')}`) }
-  if (hits.length) throw new Error(`[chainJoins] ⛔ ${hits.length} chain join(s) would re-key the operator's authoring — the join is ruled (r-a-chain-end-in-a-roadway-is-a-T) and authoring never shapes ①, so the pour stops: ${hits.join(' ‖ ')}. The key's migration is Jacob's (EXTENT-DESIGN §4.1; BRIEF-a-chain-end-in-a-roadway-is-a-T §1).`)
+  if (hits.length) throw new Error(`[chainJoins] ⛔ ${hits.length} chain join(s) would re-key the operator's authoring — the join is ruled (r-a-chain-end-in-a-roadway-is-a-T) and authoring never shapes ①, so the pour stops: ${hits.join(' ‖ ')}. The key's migration is Jacob's (EXTENT-DESIGN §4.1; BRIEF-a-chain-end-in-a-roadway-is-a-T-LANDED-2026-10-28 §1).`)
 }
 
 /** The pour's line for the record: joined, then not joined with each reason, by name. */

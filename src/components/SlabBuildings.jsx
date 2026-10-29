@@ -25,7 +25,7 @@
  * Selection highlight in-shader (uSelectedId vs the per-vertex aBuildingId)
  * since one shared material can't set per-building emissive. A click's raycast
  * resolves to a building id via aBuildingId. No hover: nothing raycasts on a
- * pointer move (BRIEF-the-balsa-model §4.2).
+ * pointer move (BRIEF-the-balsa-model-LANDED-2026-10-28 §4.2).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'

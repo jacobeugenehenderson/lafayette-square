@@ -1,4 +1,4 @@
-// Plumb, 2026-10-27: step 1 of BRIEF-the-balsa-model on staging. Reads only: ward: startup marks, rAF, CDP Profiler, Network.
+// Plumb, 2026-10-27: step 1 of BRIEF-the-balsa-model-LANDED-2026-10-28 on staging. Reads only: ward: startup marks, rAF, CDP Profiler, Network.
 import { launch, sleep } from './cdp.mjs'
 import { writeFileSync } from 'node:fs'
 const town = process.argv[2], dev = process.argv[3] || 'desktop'

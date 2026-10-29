@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // claims-the-town-has-no-hover.mjs — DOES THE TOWN STAY STILL UNDER A MOVING POINTER, AND IS THE CITY MODEL GONE?
 //
-// ⭐ THE CLAIM (BRIEF-the-balsa-model §4.2, Jacob 2026-10-27: "I do not like the light-up-when-mouse-passes-over-it in
+// ⭐ THE CLAIM (BRIEF-the-balsa-model-LANDED-2026-10-28 §4.2, Jacob 2026-10-27: "I do not like the light-up-when-mouse-passes-over-it in
 // general, too much" · "no pointer-cursor change either, let's just ditch for now"). A click is the first sign of life.
 // R3F raycasts, on every pointer move, each object carrying an onPointer{Move,Over,Enter,Out,Leave} handler
 // (@react-three/fiber events `filterPointerEvents`), so with none of those handlers a move raycasts nothing.

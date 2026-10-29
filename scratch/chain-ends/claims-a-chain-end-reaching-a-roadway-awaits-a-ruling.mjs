@@ -2,7 +2,7 @@
 // claims-a-chain-end-reaching-a-roadway-awaits-a-ruling.mjs — A QUESTION FOR JACOB, KEPT RED UNTIL HE RULES: a chain end that is
 // no node, lies OUTSIDE another street's roadway, and whose OWN roadway reaches it (b′). Is it a T?
 //
-// ⭐ Boz, 2026-10-27 (BRIEF-a-chain-end-in-a-roadway-is-a-T §1): the ruling `r-a-chain-end-in-a-roadway-is-a-T` covers an end
+// ⭐ Boz, 2026-10-27 (BRIEF-a-chain-end-in-a-roadway-is-a-T-LANDED-2026-10-28 §1): the ruling `r-a-chain-end-in-a-roadway-is-a-T` covers an end
 // INSIDE the other roadway (claims-a-chain-end-in-a-roadway-is-a-node, joined at mintInputs). (b′) is NOT joined. Split from that
 // check on Zob's read, so (a) can gate GREEN while this stays RED on a question, not a defect. When Jacob rules, this check is
 // either folded into the (a) check (joined) or re-founded as the claim that (b′) ends are drawn as ends (not joined).
@@ -29,5 +29,5 @@ for (const scene of scenes('cartograph/data/<scene>/clean/skeleton.json')) {
     console.log(`   mutant · a noded T end pulled back past the through street's roadway: ${!M ? '⛔ no straight, near-perpendicular T found to mutate' : red ? `RED, as it must be (${M.what}; reach ${n} → ${m.reach.length})` : `⛔ still ${m.reach.length} (${M.what}) — the check cannot see it`}`)
   }
 }
-console.log(bad ? `\n⛔ RED — (b′) ends await Jacob's ruling (BRIEF-a-chain-end-in-a-roadway-is-a-T §1): a question, not a defect the join fixes` : '\n✅ GREEN — no chain end that is no node reaches another street\'s roadway from outside it')
+console.log(bad ? `\n⛔ RED — (b′) ends await Jacob's ruling (BRIEF-a-chain-end-in-a-roadway-is-a-T-LANDED-2026-10-28 §1): a question, not a defect the join fixes` : '\n✅ GREEN — no chain end that is no node reaches another street\'s roadway from outside it')
 process.exit(bad ? 1 : 0)

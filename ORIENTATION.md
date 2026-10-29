@@ -180,9 +180,11 @@ works the item out) or only **storage**. ⛔ marks a gap. Each home's header wil
   - **It is not a fallback.** What a source can't resolve is removed and recorded by name.
   - **It is not a tuned constant.** The limit is the source's own declared resolution.
   - **It is not "only seen from far".** Close-camera richness comes from style and generated detail.
-  - **Homes in the code:** `structures.mjs#openCloseAtStep` (water and decks), the settle wall in `bake-coast.mjs#settleOnSource`,
+  - **Homes in the code:** `structures.mjs#openCloseAtStep` (decks cut once: the source minus its features; the traced water still
+    the integer form, a named debt), `structures.mjs#stripOf` (an embankment, cut once), the settle wall in `bake-coast.mjs#settleOnSource`,
     and no coast edge shorter than the step at settle's exit, `coastFile.mjs#toResolution`. ⟦unbuilt⟧ the WIDTH clause at settle's
-    exit, and the decks' rounding jogs (`BACKLOG` (b), (c)).
+    exit, and the decks' last rounding jogs, a corner drawn twice by the integer re-offset, cured only by float morphology
+    (`BACKLOG` PTOWN PARKS (b), (c)).
   - **Check:** `checks/claims-a-coast-edge-is-no-finer-than-its-trace.mjs` (the coast's edges). ⟦unbuilt⟧ "no geometry finer than its
     source's declared resolution reaches ①", run over every traced source.
 - **Every fix has three parts:** the code works and its predecessor is gone · the register is updated (FEATURES for

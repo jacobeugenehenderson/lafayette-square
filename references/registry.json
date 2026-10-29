@@ -5066,7 +5066,7 @@
     {
       "id": "q-all-places-scope",
       "ask": "What Society Pages opens on, and whether a building with no listing appears in it",
-      "neededBy": "BRIEF-the-balsa-model §4.3 (the listings layer is the identity that matters; the address book loads on a tap)",
+      "neededBy": "BRIEF-the-balsa-model-LANDED-2026-10-28 §4.3 (the listings layer is the identity that matters; the address book loads on a tap)",
       "status": "answered",
       "findings": [
         "r-all-places-lists-listings-only"
@@ -5075,7 +5075,7 @@
     {
       "id": "q-listing-point-source",
       "ask": "Where a listing gets its map position once the building index is out of first paint",
-      "neededBy": "BRIEF-the-balsa-model §2 (the listings layer must not reach into the address book)",
+      "neededBy": "BRIEF-the-balsa-model-LANDED-2026-10-28 §2 (the listings layer must not reach into the address book)",
       "status": "answered",
       "findings": [
         "r-a-listing-carries-its-point"
@@ -5111,7 +5111,7 @@
     {
       "id": "q-balsa-after-step-1",
       "ask": "What the balsa model builds after step 1 measured identity at 0.7-3.8% of main-thread CPU to usable",
-      "neededBy": "BRIEF-the-balsa-model step 1 (Plumb, 2026-10-27)",
+      "neededBy": "BRIEF-the-balsa-model-LANDED-2026-10-28 step 1 (Plumb, 2026-10-27)",
       "status": "answered",
       "findings": [
         "r-balsa-lands-its-rulings-not-the-identity-cut"
@@ -8475,7 +8475,7 @@
       "by": "Jacob",
       "date": "2026-10-27",
       "quote": "\"'All places' is fine\" · \"yes, bare buildings out of All places; file it\"",
-      "canon": "docs/briefs/BRIEF-the-balsa-model.md §4.3",
+      "canon": "cartograph/_archive/BRIEF-the-balsa-model-LANDED-2026-10-28.md §4.3",
       "notes": "All places lists LISTINGS only (8-15% of buildings per town, measured from each content/listings.json on 2026-10-27). A building with no listing is reachable only by tapping it, which loads the address book on demand. useListings' synthesized bare-building listings leave All places."
     },
     {
@@ -8490,7 +8490,7 @@
       "by": "Jacob",
       "date": "2026-10-27",
       "quote": "\"yes, file it\" (on Boz: the point is written into the listing when it is created)",
-      "canon": "docs/briefs/BRIEF-the-balsa-model.md §2",
+      "canon": "cartograph/_archive/BRIEF-the-balsa-model-LANDED-2026-10-28.md §2",
       "notes": "The listings layer is CONTENT and grows as listings are added; it never reads the address book or resolveBuildingPosition's slab index. Today's listings carry building_id but no point (backfill owed per town)."
     },
     {
@@ -8568,7 +8568,7 @@
       "by": "Jacob",
       "date": "2026-10-27",
       "quote": "\"yes to all three, keep the list moving\" (on Boz's three recommendations)",
-      "canon": "docs/briefs/BRIEF-the-balsa-model.md",
+      "canon": "cartograph/_archive/BRIEF-the-balsa-model-LANDED-2026-10-28.md",
       "notes": "The speed is in the look, not identity (Plumb's numbers in the brief). Desktop frame cause not established (headless M1 GPU): confirm by eye in a real browser first. Neon keyed by face was part of the skipped split (it existed only so neon would not need the index); with the index staying, neon stays as built: it reads the index plus live hours and the clock (Boz, 2026-10-27, on Jacob asking what it meant)."
     },
     {

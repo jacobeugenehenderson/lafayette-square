@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // claims-a-chain-end-in-a-roadway-is-a-node.mjs — DOES EVERY CHAIN END THAT LIES INSIDE ANOTHER STREET'S ROADWAY MEET IT AT A NODE?
 //
-// ⭐ THE RULING (Jacob, 2026-10-27; registry `r-a-chain-end-in-a-roadway-is-a-T`, BRIEF-a-chain-end-in-a-roadway-is-a-T §1): a
+// ⭐ THE RULING (Jacob, 2026-10-27; registry `r-a-chain-end-in-a-roadway-is-a-T`, BRIEF-a-chain-end-in-a-roadway-is-a-T-LANDED-2026-10-28 §1): a
 // chain end that is no node and lies inside another street's roadway is a T, joined by rule at mintInputs
 // (`cartograph/chainJoins.mjs#joinChainEnds`), judged by THAT street's own half-width.
 // Per town:
