@@ -3130,7 +3130,7 @@ createServer(async (req, res) => {
          join(LOOK_DIR, 'revetment.json'), join(LOOK_DIR, 'scene.json'), join(here, 'bake-revetment-far.js')],
         [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')],
         `node bake-revetment-far.js --look=${id} ${sceneFlag}`,
-        // ⚠️ ~3–4 min a coastal town (provincetown 179 s, huron 259 s, 2026-10-29): it builds every NEAR chunk once for its exact
+        // ⚠️ ~2 min a coastal town (provincetown 107 s, huron 106 s, the nested lattice, 2026-10-29): it builds every NEAR chunk once for its exact
         // bounds (Boz's ruling (a)). No timeout is passed: runStep has no wall-clock kill; the step reports `[progress]`.
         { cwd: here, absentOk: [join(LOOK_DIR, 'revetment-far.json'), join(LOOK_DIR, 'revetment-far.bin'), join(LOOK_DIR, 'revetment-far-unseen.bin')] })
       // AO bake last — slowest, benefits from updated geometry.
