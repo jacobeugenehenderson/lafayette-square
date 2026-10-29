@@ -23,6 +23,9 @@
 //       return dropped and reported, the path still reaching B); an out-and-back keeps its far end; a near-miss T (a stem ending
 //       on another path's interior, no shared vertex) routes the through path through the stem's end. MUTANT: the
 //       out-and-back fed as a closed ring collapses (refused), so the open rule is what keeps it.
+//   (j) A CORNER TOUCH: a unit diagonal through a pixel's corner enters only the pixel whose OWN corner it is (half-open).
+//       Huron's close crop (checks/fixtures/huron-close-self-noding-2026-10-28.json) settles; entersPixel agrees with the
+//       oracle's exact half-open clip on every small case. MUTANT: the rule before the clause (frozen) disagrees.
 // MUTANTS (always run): each Number/BigInt switch forced to Number on a constructed long input must be wrong (crossOf
 // misses a crossing; entersPixel enters a square the segment misses; alongOf ties two pixels 3 apart) and the live path
 // right, judged by the oracle; exact ties must round half-up; the function's own verification (verifyNoded) must refuse planted bad outputs (the input un-noded; an invented
@@ -34,6 +37,7 @@ import { fileURLToPath } from 'node:url'
 import { nodeCrossings, verifyNoded, crossOf, entersPixel, alongOf } from '../src/lib/latticeNode.js'
 import { CLIP_SCALE } from '../src/lib/lattice.js'
 import { stampCrossings as frozen } from './fixtures/stamp-crossings-frozen-9764b474.mjs'
+import { entersPixel as frozenEnters } from './fixtures/enters-pixel-closed-corners-frozen-d19adacc.mjs'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url)), FX = join(HERE, 'fixtures')
 const k = (p) => [Math.round(p[0] * CLIP_SCALE), Math.round(p[1] * CLIP_SCALE)]
@@ -58,10 +62,22 @@ const pairsOf = (S, pairs) => { const out = []; for (let u = 0; u < S.length; u+
   if (Math.max(s.a[0], s.b[0]) < Math.min(t.a[0], t.b[0]) || Math.max(t.a[0], t.b[0]) < Math.min(s.a[0], s.b[0])) continue
   if (Math.max(s.a[1], s.b[1]) < Math.min(t.a[1], t.b[1]) || Math.max(t.a[1], t.b[1]) < Math.min(s.a[1], s.b[1])) continue
   out.push([s, t]) } return out }
-const entersSquare = (a, b, X, Y) => { const ax = 2 * a[0], ay = 2 * a[1], bx = 2 * b[0], by = 2 * b[1], x0 = 2 * X - 1, x1 = 2 * X + 1, y0 = 2 * Y - 1, y1 = 2 * Y + 1
-  if (Math.max(ax, bx) < x0 || Math.min(ax, bx) >= x1 || Math.max(ay, by) < y0 || Math.min(ay, by) >= y1) return false
-  const dx = I(bx - ax), dy = I(by - ay), f = (x, y) => dx * I(y - ay) - dy * I(x - ax), v = [f(x0, y0), f(x1, y0), f(x0, y1), f(x1, y1)]
-  return v.some(w => w <= 0n) && v.some(w => w >= 0n) }
+// does the segment a→b meet the HALF-OPEN square [X − ½, X + ½) × [Y − ½, Y + ½)? Its own method, not the producer's: clip
+// the parameter t ∈ [0, 1] against each bound, as exact BigInt fractions, each end inclusive or exclusive as the square's
+// side is. ⛔ Until 2026-10-28 this oracle tested the CLOSED square's corners, the producer's own defect: a diagonal through
+// an excluded corner was "entered" by both, so the oracle agreed with the bug (checks/fixtures/huron-close-self-noding-2026-10-28.json).
+const entersSquare = (a, b, X, Y) => {
+  let lo = { n: 0n, d: 1n, inc: true }, hi = { n: 1n, d: 1n, inc: true }
+  const cmp = (p, q) => { const l = p.n * q.d, r = q.n * p.d; return l < r ? -1 : l > r ? 1 : 0 }
+  const raise = (b) => { const c = cmp(b, lo); if (c > 0 || (c === 0 && !b.inc)) lo = b }
+  const lower = (b) => { const c = cmp(b, hi); if (c < 0 || (c === 0 && !b.inc)) hi = b }
+  for (const [p, q, X0] of [[a[0], b[0], X], [a[1], b[1], Y]]) {
+    const A = I(2 * p), D = I(2 * (q - p)), L = I(2 * X0 - 1), U = I(2 * X0 + 1)          // doubled units: L ≤ v < U
+    if (D === 0n) { if (A < L || A >= U) return false; continue }
+    if (D > 0n) { raise({ n: L - A, d: D, inc: true }); lower({ n: U - A, d: D, inc: false }) }
+    else { lower({ n: A - L, d: -D, inc: true }); raise({ n: A - U, d: -D, inc: false }) }
+  }
+  const c = cmp(lo, hi); return c < 0 || (c === 0 && lo.inc && hi.inc) }
 function oracle(inRings, outRings, pairs) {
   const Kin = inRings.map(r => r.map(k)), hot = new Set(Kin.flat().map(q => q.join(',')))
   for (const [s, t] of pairsOf(segsOf(Kin), pairs)) { const X = crossesProperly(s.a, s.b, t.a, t.b); if (X) hot.add(X.join(',')) }
@@ -150,10 +166,11 @@ for (const [name, file] of [['(a) PTown capture', 'ptown-stamp-crossings.json'],
   const got = ties.map(([a, b, c, d, want]) => ({ want, p: crossOf({ a, b }, { a: c, b: d }), o: crossesProperly(a, b, c, d) }))
   row(got.every(g => eq(g.p, g.want) && eq(g.o, g.want)), `mutant (b): exact ties round half-up: ${got.map(g => `${JSON.stringify(g.p)} (want ${JSON.stringify(g.want)})`).join(' · ')}`)
 }
-// (c) and (d) of the same: entersPixel (a pixel whose nearest corner lies a hair off a 2^27-unit line: f = 2 exactly,
-// products near 2^56) and alongOf (a shallow 2^28-unit segment entering two pixels of one column, numerators 3 apart near 2^55)
+// (c) and (d) of the same: entersPixel (a pixel whose (x0, y1) corner lies a hair off a 2^27-unit line: f = 2 exactly,
+// products near 2^56: the Number path reads it as a corner touch on an excluded corner and says "not entered"; re-aimed
+// 2026-10-28 when the corner clause came in, since the old pixel's hair-off corner is now judged the same either way) and alongOf (a shallow 2^28-unit segment entering two pixels of one column, numerators 3 apart near 2^55)
 {
-  const s = { a: [0, 0], b: [151525005, 154181984] }, h = { X: 85037280, Y: 86528403 }, truth = entersSquare(s.a, s.b, h.X, h.Y)
+  const s = { a: [0, 0], b: [151525005, 154181984] }, h = { X: 85037281, Y: 86528402 }, truth = entersSquare(s.a, s.b, h.X, h.Y)
   const live = entersPixel(s, h), forced = entersPixel(s, h, true)
   row(live === truth && forced !== truth, `mutant (c): entersPixel on a 2^27-unit line: oracle ${truth} · live ${live} · forced to Number ${forced} (must differ)`)
   const t = { a: [0, 0], b: [268435457, 3] }, h1 = { X: 223696214, Y: 2 }, h2 = { X: 223696214, Y: 3 }
@@ -198,6 +215,41 @@ open: {
   row(!t.err && t.R[0].some(v => v.k.join() === '5000,1'), `(h) a near-miss T: the through path is routed through the stem's end (5,0.001): ${t.err || ps(t.R[0])}`)
   const m = tryN([{ tag: 'oab-as-ring', p: [[0, 0], [5, 0], [0, 0]] }])
   row(!!m.err, `mutant (h): the out-and-back fed as a CLOSED ring collapses (must refuse): ${m.err ? m.err.slice(0, 90) : 'NOT REFUSED — the open rule is not what keeps it'}`)
+}
+// (j) A CORNER TOUCH (Zob, 2026-10-28): a unit diagonal passes EXACTLY through a pixel corner (odd, odd in doubled units).
+// Only the square's own corner (X − ½, Y − ½) is in it. Huron's close (Plumb, candidate 3) carried a 1-unit zigzag cut by
+// the opposite diagonal: its crossing (715.5, −602.5) is such a corner, and the producer routed the diagonal through two
+// pixels it never enters, collapsed a ring and left the crossing un-noded. No `self` is needed: it is the plain noder's.
+corner: {
+  const p = join(FX, 'huron-close-self-noding-2026-10-28.json')
+  if (!existsSync(p)) { row(false, '(j) corner touch: NOT CHECKED — huron-close-self-noding-2026-10-28.json is missing'); break corner }
+  const paths = JSON.parse(readFileSync(p, 'utf8')).paths, all = () => true
+  let R = null, err = null; try { R = nodeCrossings(paths, { pairs: all, who: 'check (j)' }) } catch (e) { err = e.message }
+  if (err) { row(false, `(j) corner touch, Huron close crop: REFUSED — ${err.slice(0, 160)}`); break corner }
+  // open paths have no closing segment, so the crossings left are counted here, not by the oracle's ring sweep
+  const segs = R.flatMap((o, ri) => o.slice(0, -1).map((v, n) => ({ ri, a: v.k, b: o[n + 1].k })))
+  let left = 0; for (const [s, t] of pairsOf(segs, all)) if (crossesProperly(s.a, s.b, t.a, t.b)) left++
+  const hot = new Set([...paths.flatMap(x => x.p.map(q => k(q).join(',')))])
+  for (const [s, t] of pairsOf(paths.flatMap((x, ri) => x.p.slice(0, -1).map((q, n) => ({ ri, a: k(q), b: k(x.p[n + 1]) }))), all)) { const X = crossesProperly(s.a, s.b, t.a, t.b); if (X) hot.add(X.join(',')) }
+  const invented = R.flat().filter(v => !hot.has(v.k.join(','))).length
+  row(!left && !invented, `(j) corner touch, Huron close crop (${paths.length} open paths): settles · left crossing ${left} · invented ${invented}`)
+}
+// (j) the rule itself, against the oracle's own clip, on every small case: a seeded sweep of segments and pixels in a
+// 7 × 7 neighbourhood (every corner touch a unit or two-unit diagonal can make), and the MUTANT: the rule as it stood before
+// the corner clause (frozen) must disagree with the oracle
+{
+  const sweep = (enters) => { let s = 0x9e3779b9, n = 0, bad = 0, first = ''
+    const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return (s >>> 8) % 7 - 3 }
+    for (let i = 0; i < 200000; i++) {
+      const a = [rnd(), rnd()], b = [rnd(), rnd()], X = rnd(), Y = rnd()
+      if ((a[0] === b[0] && a[1] === b[1]) || (X === a[0] && Y === a[1]) || (X === b[0] && Y === b[1])) continue
+      n++; const got = enters({ a, b }, { X, Y }), want = entersSquare(a, b, X, Y)
+      if (got !== want) { bad++; first ||= `(${a}) → (${b}) at pixel (${X}, ${Y}): ${got} against ${want}` } }
+    return { n, bad, first } }
+  const live = sweep(entersPixel)
+  row(!live.bad, `(j) entersPixel agrees with the oracle's half-open clip on ${live.n} small cases: ${live.bad} disagree${live.first ? ` — first ${live.first}` : ''}`)
+  const m = sweep(frozenEnters)
+  row(m.bad > 0, `mutant (j): the frozen closed-corner rule (fixtures/enters-pixel-closed-corners-frozen-d19adacc.mjs) ⇒ ${m.bad} of ${m.n} disagree with the oracle${m.bad ? ` (first ${m.first}) — RED as it must be` : ' — the row proves nothing'}`)
 }
 // MUTANTS of the function's own verification (latticeNode.js#verifyNoded, which nodeCrossings runs on every output),
 // handed planted bad outputs: the INPUT un-noded (its crossings still there) and a real output with one invented vertex
