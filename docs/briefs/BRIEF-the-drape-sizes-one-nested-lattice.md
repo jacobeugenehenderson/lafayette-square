@@ -32,18 +32,31 @@ Where they meet, today, the two layers each draw their own edge.
   max 10.3 m, `near-vs-far-box.mjs`); a nested lattice may make the bounds derivable and the bake fast again.
 
 ## 2. The build
-1. **ONE NESTED LATTICE, SIZED FROM WHAT IT BUILDS.** hMax and toeMax are the max over the stations the drape will actually build at its
-   finest step, never a fixed sample count. The toe's berm term is bounded where h → 0 (a heap's end has no berm wider than the stone
-   that makes it). The counts at octave o are derived from octave 1's: along, n_o − 1 = (n_1 − 1)·2^(o−1); across, a multiple of the far's
-   (nAcross_far − 1). So every far vertex is a near vertex, exactly. ⛔ **C3 settles HERE, not after** (Zob): the far `drapeGlobals`
-   omits toeAt/berm today, so its nAcross is sized from toeMax 1 while the near's includes the toe; the nesting fixes the far count first.
+1. **ONE NESTED LATTICE, SIZED FROM WHAT IT BUILDS** (Boz ruled A and B, 2026-10-29; Zob's read).
+   - **hMax exactly, no sampling.** Sampling stations is circular (the step comes from blk = d50For(hMax)). `crestAndEnds` is piecewise
+     linear in s: a MAX of the wall lerp and the interior-end slumps, then a MIN with the tip cones. Its maximum lies on a breakpoint:
+     the stations, each end's s and s ± run, and the crossings between pieces (a tip cone meets a rising wall between stations).
+     Either enumerate every candidate, evaluated through `crestAt` itself, or use the bound max_i H(i) over armoured stations, which
+     is exact except where a tip cone caps the tallest station. The code says which one it uses. Gate: a probe comparing hMax against
+     1e6 dense samples on every face of both towns, with the max difference reported.
+   - **toeMax over the built finest stations.** They depend only on blk and the arc, never on the toe, and the far's are a nested
+     subset. **The berm is bounded by the bare predicate, with no new constant:** `d50For` floors at `MIN_ARMOUR_D50_M` and stations
+     below it are skipped, so over built stations the berm term is ≤ stonesWide·TAN_REPOSE. Huron 35:right's 7,377 across came from
+     samples with 0 < h < 0.5, which are never built. That bound goes in a comment beside it.
+   - **Nested counts.** At octave o, along n_o − 1 = (n_1 − 1)·2^(o−1), and across nAcross_o − 1 = (nAcross_1 − 1)·2^(o−1). Every far
+     vertex is a near vertex. One globals call returns every octave's lattice, so the far can't omit toeAt/berm. ⛔ **C3 settles HERE**
+     (Zob): today the far `drapeGlobals` omits them.
 2. **`farRow`, THE ONE PRODUCER OF THE EDGE.** The far layer's vertex row at a far station (positions and normals), factored out of
    `revetmentDrape`'s per-vertex body. The far build calls it for its own rows. A near chunk's boundary row is `farRow`'s row: the shared
    u's copied exactly, the near-only u's lerped along its segments. (Zob: `fieldAt` is additive, so with the ramp at 0 on the boundary
    row the near already computes the SHARED vertices bit-identically; the one producer is still what places the in-between u's and the
    normals. Either way the gate asserts it.)
 3. **CHUNKS CUT ON FAR STATIONS**, in the bake and in `SlabRevetment.jsx` alike: near range = far range × 2^(octaves−1).
-4. **DETAIL INWARD**: octaves 2–3 ramp from 0 at the boundary row to full over one far step.
+4. **THE EDGE TREATMENT: OPEN, measured before Boz rules.** A near chunk is chosen per camera and can't know whether its neighbour is
+   near or far. (i) Ramp every chunk edge: octaves 2–3 go from 0 at the boundary row to full over one far step, which reduces
+   detail on 11–33% of the near surface (one far step = 4·blk/3 per side, on 12 m chunks). (ii) Ramp only the edges that face a far
+   chunk, rebuilt when a neighbour's selection changes. (iii) No ramp: the boundary row is farRow's, which leaves a slope step.
+   Boz: (ii) if its rebuild costs a frame or less at the movie's selection rate; otherwise Jacob's eye on (i) and (iii) side by side.
 ⛔ Byte-identity breaks by design: the near layer everywhere (the nesting moves its spacing by less than one step), the near layer at chunk
 edges (conformed), and the far layer on every face the new sizing changes. All three are named in the commit; the far shore is re-baked
 (the `revetment-far` step, ~7 s a town).
@@ -51,9 +64,13 @@ edges (conformed), and the far layer on every face the new sizing changes. All t
 ## 3. Gates
 - The seam probe: **0 along-offset at EVERY boundary** (max). A cross-seam probe at every boundary: the near row's shared vertices
   bit-identical to `farRow`'s, the rest on its segments (the residue of a float32 lerp is reported as measured, never called a tolerance).
-- **The trim** (Zob): the boundary row's KEPT extent (keep[] and the 3-of-4 rule at the near's finer u's) equals the far's, top and bottom.
+- **The trim** (Zob): the far's DRAW decides the seam, never keep[]. A far quad draws on 3 of 4 kept corners and draws both
+  triangles, so its drawn edge along the boundary row isn't its kept extent. The near quads in the column touching the boundary row
+  draw iff their boundary subsegment lies in a segment that is an edge of a drawn far triangle there. That overrides 3-of-4 for that
+  column only. Gate: the near-drawn and far-drawn boundary segment sets are equal.
 - A planted row, a near chunk beside a far chunk on one face. Mutants → RED: the near computing its own boundary row; the far not through
-  `farRow`; the inward ramp removed.
+  `farRow`; the inward ramp removed (if a ramp ships).
+- A mutant sizing from 201 samples again → PTown 1:left empty, RED.
 - **PTown 1:left non-empty**, near and far; **Huron 97:right and 111:left not emptied**; `claims-the-armoured-shore-is-never-empty` GREEN.
 - The deviation probe (`scratch/boulder-lod-deviation.mjs`) re-run; the far bake equals the runtime's far build (`far-bake-vs-runtime.mjs`);
   `claims-a-bare-station-costs-nothing` and `claims-the-far-shore-is-not-built-at-load` green.
