@@ -34,18 +34,45 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { revetmentFaces } from '../src/lib/revetmentFromSlab.js'
-import { FAR_OCTAVES } from '../src/lib/revetmentDrape.js'
+import { FAR_OCTAVES, NEAR_OCTAVES, drapeLattices } from '../src/lib/revetmentDrape.js'
+import { MIN_ARMOUR_D50_M } from '../cartograph/shore-armour.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv.slice(2).find(a => !a.startsWith('--')) || null
 // ⭐ NEAR-ONLY STONE (Zob, 2026-10-29): a near chunk that keeps stone where its far chunk keeps nothing is empty past the near
-// radius — silent, unless named here. Read off the bake's own info table (every near chunk: nearTris, farTris). RED, by name.
+// radius — silent, unless named here. Read off the bake's own info table (every near chunk: nearTris, farTris). RED, by name,
+// ⭐ EXCEPT ONE CLASS, BELOW THE FAR LAYER'S RESOLUTION (Boz ruled (b), 2026-10-29): armour narrower than one far step. The far
+// builds a quad (I, I+1) only where both far stations are armoured; where one is bare, the near still builds the armoured near
+// stations between, under one far step at that station. That is a level of detail, not a missing stone. Measured per chunk
+// off the face's own lattices (revetmentDrape.js#drapeLattices): every armoured near station must lie in a far quad with a
+// bare far station; its extent there is at most one far step. Any near-only chunk OUTSIDE that bound stays RED.
 export const nearOnly = (info) => (info || []).filter(c => c.nearTris > 0 && !c.farTris)
+/** { below, extentM, stepM } for a near-only chunk: is its armour within far quads beside a bare far station, and how far it runs */
+export function belowFarStep(crestAt, G1, G3, c) {
+  const nest = G3.nest / G1.nest, h = (G, i) => crestAt((G.s0 + ((G.s1 - G.s0) * i) / (G.nAlong - 1)) / G.total)
+  let below = true, extentM = 0
+  for (let I = c.far[0]; I < c.far[1]; I++) {
+    const on = []; for (let i = I * nest; i <= (I + 1) * nest; i++) if (h(G3, i) >= MIN_ARMOUR_D50_M) on.push(i)
+    if (!on.length) continue
+    if (h(G1, I) >= MIN_ARMOUR_D50_M && h(G1, I + 1) >= MIN_ARMOUR_D50_M) below = false   // both far stations built: the far owed stone here
+    extentM = Math.max(extentM, (on[on.length - 1] - on[0]) * G3.step)
+  }
+  return { below, extentM, stepM: G1.step }
+}
 if (process.argv.includes('--mutants')) {
   // the planted row: one near-only chunk in a table that otherwise has none must be named
   const planted = nearOnly([{ face: 'planted', k: 0, nearTris: 12, farTris: 0 }, { face: 'planted', k: 1, nearTris: 12, farTris: 30 }])
   console.log(`  mutant: a planted near-only row → ${planted.length === 1 && planted[0].k === 0 ? 'RED ✓' : 'GREEN ✗'}`)
-  if (!(planted.length === 1 && planted[0].k === 0)) process.exit(1)
+  // the class's bound, planted: a 1 m heap end beside a bare far station is below it; armour over a whole far quad is not
+  const face = (crest) => revetmentFaces({ version: 1, material: { riprapReposeDeg: 34 }, arcs: [{ index: 0, faces: ['left'], stations: crest }] })[0]
+  const st = (L, on) => { const a = []; for (let s = 0; s <= L; s += 0.5) a.push({ x: s, z: 0, ...(on(s) ? { armour: true, crest: 1.5 } : { armour: false, crest: 0 }) }); return a }
+  const judgeOf = (f, at) => { const [G1, G3] = drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, octaves: [FAR_OCTAVES, NEAR_OCTAVES] })
+    const I = Math.floor(at / G1.step); return belowFarStep(f.crestAt, G1, G3, { far: [Math.max(0, I - 1), I + 2] }) }
+  const narrow = face(st(60, (s) => s >= 30.1 && s <= 30.4)), wide = face(st(60, (s) => s >= 25 && s <= 35))
+  const a = judgeOf(narrow, 30.2), b = judgeOf(wide, 30)
+  console.log(`  planted: armour under one far step beside a bare far station → ${a.below ? 'named, below the far step ✓' : 'RED ✗'} (${a.extentM.toFixed(2)} of ${a.stepM.toFixed(2)} m)`)
+  console.log(`  mutant: a near-only chunk wider than a far step → ${!b.below ? 'RED ✓' : 'GREEN ✗'}`)
+  if (!(planted.length === 1 && planted[0].k === 0) || !a.below || b.below) process.exit(1)
 }
 let failed = false, towns = 0, without = 0
 
@@ -86,7 +113,10 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
   for (const a of doc.arcs || []) if (coveredArcs.has(a.index)) covered += a.armouredM || 0
   const shortfall = claimed - covered
   // a town heads ⛔ when any of its shore is empty at distance, near-only chunks included: the first line read is the verdict
-  const lone = nearOnly(far.info)
+  const latt = new Map(armoured.map(f => [f.key, f]))
+  const lattOf = new Map(), lat = (k) => { if (!lattOf.has(k)) { const f = latt.get(k); lattOf.set(k, drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, octaves: [FAR_OCTAVES, NEAR_OCTAVES] })) } return lattOf.get(k) }
+  const judged = nearOnly(far.info).map(c => { const [G1, G3] = lat(c.face); return { ...c, ...belowFarStep(latt.get(c.face).crestAt, G1, G3, c) } })
+  const lone = judged.filter(c => !c.below), fine = judged.filter(c => c.below)
   const good = emptyFaces.length === 0 && shortfall <= Math.max(1, claimed * 0.01) && lone.length === 0
   console.log(`  ${good ? '✅' : '⛔'} ${look}/revetment  ${armoured.length} armoured face(s) · far layer at octaves ${FAR_OCTAVES} (baked) · ` +
     `${tris.toLocaleString()} tris covering ${covered.toFixed(0)} m of ${claimed} m armoured`)
@@ -96,7 +126,8 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
       `the faces reaching the far layer cover ${covered.toFixed(0)} m. A face is being dropped before it is ever built.`)
   }
   if (!Array.isArray(far.info)) { console.log(`       ⛔ ${look}: revetment-far.json has no info table (the near layer's index) — baked before it existed. ▶ re-bake`); failed = true }
-  for (const c of lone) console.log(`       ⛔ NEAR-ONLY STONE: chunk ${c.face}#${c.k} keeps ${c.nearTris} near tris and NO far ones — empty past the near radius`)
+  if (fine.length) console.log(`       ⚠️ ${fine.length} near-only chunk(s), ${fine.reduce((s, c) => s + c.nearTris, 0).toLocaleString()} near tris: armour below one far step (widest ${Math.max(...fine.map(c => c.extentM)).toFixed(2)} m, under that chunk's far step), the far layer's own resolution`)
+  for (const c of lone) console.log(`       ⛔ NEAR-ONLY STONE: chunk ${c.face}#${c.k} keeps ${c.nearTris} near tris and NO far ones — empty past the near radius (its armour runs where both far stations are built)`)
   if (lone.length) console.log(`       ⛔ ${lone.length} near-only chunk(s), ${lone.reduce((s, c) => s + c.nearTris, 0).toLocaleString()} near tris, are empty at distance`)
   if (!good) failed = true
 }
