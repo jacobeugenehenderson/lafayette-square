@@ -51,6 +51,16 @@ Boz as a measured comparison before anything is built.
    Stage does (⛔ ONE path: Stage and the Ward must draw the same far shore from the same producer, per
    `r-visual-look-values-are-live-in-stage`; if (a), say how an authored revetment value reaches Stage live). Jacob's lean is (a),
    "baked, not built at load", and Layer 0 asks the class question: anything the camera doesn't change belongs in the bake.
+   **(d) THE MOVIE KNOWS WHAT IS SEEN** (Jacob, 2026-10-29: *"given we have the camera motion, we already know what revetment is
+   showing at any moment, and what is coming and what we can drop. The entire back of Provincetown is never seen"*). The authored
+   path is known at bake time (`heroAnim.js#heroPathPose`, the set of poses a shot visits). So each far face can be classed by WHEN it
+   first enters the movie's view (and whether it ever does), and built or shipped in that order: what the opening frames see first,
+   the rest after the reveal or never on the movie. ⭐ There's precedent: `arborist/bake-trees.js`'s `heroTier` classifies trees
+   by the hero path, and `CelestialBodies.jsx` fits the shadow over `heroPathPose`; reuse that, don't build a second one. Combine (d)
+   with any of (a)–(c). ⛔ The movie is not the only camera: Browse (the overhead plan) and Street let a visitor go anywhere, and
+   overhead may show the back of the town at plan distance. So "never seen" means "never seen BY THE MOVIE". Say what each other
+   regime needs and when it's built (e.g. on leaving the movie, or on approach); a face is never permanently missing (the far layer's
+   own ⛔). Measure: per town, the share of far faces (and their build ms) the movie never sees.
 2. **Plan to Zob** (`docs/agents/ZOB.md §2`), with every reader that moves.
 3. **Build** the chosen means; the superseded path is deleted in the same commit (three-part fix).
 4. **The class, measured:** `makeDrawnGround` and Terrain's PlaneGeometry (~1.1–1.2 s each on PTown). Report whether each is
