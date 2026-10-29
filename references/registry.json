@@ -5179,6 +5179,15 @@
       "findings": [
         "r-a-town-keeps-the-values-it-grew-with"
       ]
+    },
+    {
+      "id": "q-does-a-move-track-a-point-or-turn-the-head",
+      "ask": "Whether a move between keys tweens the look-at POINT (today) or the look DIRECTION",
+      "neededBy": "the aimer, 2026-10-29: Gimbal measured today's keys' hidden look-at depth moving the mid-move look by LS 2.47°, PTown 17.72°, Huron 16.21°, HPDM 39.19° against one equal depth",
+      "status": "answered",
+      "findings": [
+        "r-a-move-tracks-a-point-or-turns-the-head"
+      ]
     }
   ],
   "findings": [
@@ -8720,6 +8729,24 @@
       "quote": "\"Once the apple grows on the branch it doesn't make sense that it's a cherry when picked\"",
       "notes": "UNBUILT. Means not chosen (e.g. the town's Look records the default it took, when it takes it). A check should read bake-scene.js's resolutions, not restate them.",
       "canon": "cartograph/BACKLOG.md (TO BRIEF NEXT)"
+    },
+    {
+      "id": "r-a-move-tracks-a-point-or-turns-the-head",
+      "question": "q-does-a-move-track-a-point-or-turn-the-head",
+      "kind": "ruling",
+      "value": {
+        "rule": "BOTH, as an authored choice per segment: TRACK (the camera keeps looking at a point as it travels; today's tween) or TURN (the look direction tweens from key to key, whatever the look-at depth)",
+        "default": "TRACK, so no existing movie changes",
+        "visible": "the look-at point becomes a visible, draggable handle in Stage; a tracked point that can't be seen is the hidden-depth bend",
+        "pacing": "each mode paces on its own travel: TRACK on position + target travel (today), TURN on position + turn angle",
+        "separate": "the look-at point is NOT the focus object; focus stays its own channel and may shift object to object (Jacob)",
+        "why_not_two_methods": "an operator's authored choice recorded on each segment, like an ease, not two hidden code paths"
+      },
+      "by": "Jacob",
+      "date": "2026-10-29",
+      "quote": "\"why not both though?\" · \"yes, file the both-modes ruling\"",
+      "canon": "cartograph/BACKLOG.md (TO BRIEF NEXT)",
+      "notes": "UNBUILT; briefs after the aimer. Readers of key.target: heroAnim (MovieCamera, the DoF rack's lam), Stage's scrub, CelestialBodies' shadow fit, bake-trees' hero tiers (re-bake), claims-the-movie-is-continuous. HPDM's 39° tracks no subject (no focus object on its keys); it re-authors when its two objects land."
     }
   ]
 }
