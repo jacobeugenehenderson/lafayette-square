@@ -51,7 +51,8 @@ export function arrange(sets, keep, who, allTags = false, prefer = null) {
   const input = rings.map((r, ri) => ({ p: r.map(q => [q.X / SCALE, q.Y / SCALE]), tag: `${who}#${ri}` }))
   let R
   try { R = nodeCrossings(input, { pairs: () => true, self: true, who }) }
-  catch (e) { // ⭐ Zob's minimal repro: the rings the verifier names, saved as given (before noding) with their set, to a fixture
+  catch (e) { const m = /#(\d+) at \(.*collapsed/.exec(String(e.message)); if (m) { const r = rings[+m[1]]; e.message += ` [the ring as given: ${r.length} points ${JSON.stringify(r.map(q => [q.X, q.Y, q.tag ? `${q.tag.ring}:${q.tag.i}` : null]))}]` }
+    // ⭐ Zob's minimal repro: the rings the verifier names, saved as given (before noding) with their set, to a fixture
     const ids = [...String(e.message).matchAll(new RegExp(`${who.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}#(\\d+)`, 'g'))].map(m => +m[1])
     if (ids.length && process.env.CUTONCE_REPRO) writeFileSync(process.env.CUTONCE_REPRO, JSON.stringify({ who, error: String(e.message), rings: [...new Set(ids)].map(i => ({ i, set: setOf[i], tag: input[i].tag, p: input[i].p })) }))
     throw e }
@@ -180,6 +181,8 @@ let REFUSE_ALL_BACKWARD = false                   // ⛔ the mutant only (setRef
 export const setRefuseAllBackward = (v) => { REFUSE_ALL_BACKWARD = !!v }
 let SINGLE_POINT_BRANCH = false                   // ⛔ the mutant only (setSinglePointBranch): clipper's single-point join restored
 export const setSinglePointBranch = (v) => { SINGLE_POINT_BRANCH = !!v }
+let RAW_CURVE = false                             // ⛔ the mutant only (setRawCurve): the raw curve selected by winding > 0
+export const setRawCurve = (v) => { RAW_CURVE = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -187,9 +190,44 @@ const fcross = (A, B) => { const r = [A[1][0] - A[0][0], A[1][1] - A[0][1]], s =
   if (!den) throw new Error('⛔ the back-offset: a new line parallel to its neighbour. Refusing.')
   const t = ((B[0][0] - A[0][0]) * s[1] - (B[0][1] - A[0][1]) * s[0]) / den; return [A[0][0] + t * r[0], A[0][1] + t * r[1]] }
 
+// ⭐ THE OFFSET AS A BOOLEAN OF EXACT PIECES (Zob, 2026-10-29): not a winding selection of one self-crossing curve (with pure
+// intersection joins "winding > 0" keeps a narrow spike's loops, which the erosion removes; Huron's 30 u spike). Each edge's
+// STRIP on the d side (the rectangle from the edge to L_i(d)), and at each join where the offset lines DIVERGE (sinA·d > 0:
+// a reflex vertex for the erode, a convex one for the dilate) the WEDGE v → v + n_k·d → X → v + n_j·d (X = their crossing),
+// SQUARED past the miter limit (both cap ends on the lines, the cap a born line). Erode = region − ∪ pieces; dilate = region ∪
+// pieces. A strip's far side carries its edge's tag, a wedge's two outer sides theirs; the strip ends and the caps are born
+// (null). Every corner is in doubles, rounded once at birth: intermediate, only the tags leave.
+// ⛔ ② (tileGround.js#offsetRingByRects) cannot share it: a variable-depth, per-owner, labelled offset with ease and water
+// joins, whose booleans are clipper's union (the integer re-rounding this brief removes); moving ② onto the face walk is a ②
+// change outside this brief. structures.mjs#stripOf widens a centreline symmetrically, not one side of an edge.
+function offsetPieces(R, d, g, squares) {
+  const n = R.length, N = R.map((a, j) => unit([a.X, a.Y], [R[(j + 1) % n].X, R[(j + 1) % n].Y])), pieces = []
+  const P = (x, y, tag) => ({ X: Math.round(x), Y: Math.round(y), tag })
+  const ccw = (pp) => { let a2 = 0; for (let k = 0; k < pp.length; k++) { const p = pp[k], q = pp[(k + 1) % pp.length]; a2 += p.X * q.Y - q.X * p.Y }
+    if (a2 > 0) return pp
+    // reversed, each edge's tag moves with it (the tag names the edge leaving its point)
+    const r = pp.slice().reverse(); return r.map((q, k) => ({ ...q, tag: pp[(pp.length - 1 - k - 1 + pp.length) % pp.length].tag })) }
+  for (let j = 0; j < n; j++) { const a = R[j], b = R[(j + 1) % n], nj = N[j]
+    if (a.X === b.X && a.Y === b.Y) continue
+    // the strip: a → b (born: on the region's own edge, interior after the boolean) → b + n d → a + n d (tag j) → a (born)
+    pieces.push(ccw([P(a.X, a.Y, null), P(b.X, b.Y, null), P(b.X + nj[0] * d, b.Y + nj[1] * d, { ring: g, i: j }), P(a.X + nj[0] * d, a.Y + nj[1] * d, null)]))
+    const k = (j - 1 + n) % n, nk = N[k], v = a
+    const sinA = Math.max(-1, Math.min(1, nk[0] * nj[1] - nj[0] * nk[1])), cosA = nk[0] * nj[0] + nk[1] * nj[1], r = 1 + cosA
+    if (!(sinA * d > 0)) continue                                                    // the strips overlap here: no wedge
+    const A = P(v.X + nk[0] * d, v.Y + nk[1] * d, { ring: g, i: k }), Bp = P(v.X + nj[0] * d, v.Y + nj[1] * d, null)
+    if (r < MITER_LIM) { const t = Math.tan(Math.atan2(sinA, cosA) / 4); if (squares) squares.push([v.X, v.Y])
+      const c1 = P(v.X + d * (nk[0] - nk[1] * t), v.Y + d * (nk[1] + nk[0] * t), null), c2 = P(v.X + d * (nj[0] + nj[1] * t), v.Y + d * (nj[1] - nj[0] * t), { ring: g, i: j })
+      pieces.push(ccw([P(v.X, v.Y, null), A, c1, c2, Bp])); continue }
+    const q = d / r, X = P(v.X + (nk[0] + nj[0]) * q, v.Y + (nk[1] + nj[1]) * q, { ring: g, i: j })
+    pieces.push(ccw([P(v.X, v.Y, null), A, X, Bp])) }
+  return pieces
+}
 export function morph(region, d, who, stat, lines = null) {
-  const raw = region.map((R, g) => rawOffset(R, d, g, (stat.squares ||= [])))
-  const F = arrange([raw], w => w[0] > 0, `${who} offset`, true)
+  let F
+  if (RAW_CURVE) { const raw = region.map((R, g) => rawOffset(R, d, g, (stat.squares ||= []))); F = arrange([raw], w => w[0] > 0, `${who} offset`, true) }   // ⛔ the mutant only
+  else { const pieces = region.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= [])))
+    const base = region.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null })))
+    F = arrange([base, pieces], d < 0 ? (w => w[0] > 0 && !(w[1] > 0)) : (w => w[0] > 0 || w[1] > 0), `${who} offset`, true) }
   return F.rings.map((E, k) => emit(E, F.tags[k], region, d, who, stat, lines))
 }
 
