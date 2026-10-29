@@ -12,7 +12,7 @@
 // Every failure refuses by name (the deck's cross-ring segment does, until Zob rules it).
 import clipperLib from 'clipper-lib'
 import { writeFileSync } from 'fs'
-import { nodeCrossings, lineCrossOf, sameLine, NODE_BOUND, crossOf } from '../../src/lib/latticeNode.js'
+import { nodeCrossings, lineCrossOf, sameLine, NODE_BOUND, crossOf, LATTICE_STEP } from '../../src/lib/latticeNode.js'
 import { facesOf } from '../../src/lib/latticeFaces.js'
 import { isRoundingSliver } from '../../cartograph/structures.mjs'
 import { tagRun } from './tagRun.mjs'
@@ -106,7 +106,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     let from = r.from
     if (lastRun && lastRun.ring === r.ring) { const pos = (x) => (x - lastRun.from + n) % n
       const inside = (x) => pos(x) <= pos(lastRun.to)
-      if (inside(r.to) && !inside(r.from)) throw new Error(`[${who}] ⛔ the back-offset: a tag run ${r.from}…${r.to} of ring ${r.ring} overlaps the stretch just emitted (${lastRun.from}…${lastRun.to}) and extends BACKWARD past its start. Refusing.`)
+      if (inside(r.to) && !inside(r.from)) throw new Error(`[${who}] ⛔ the back-offset: a tag run ${r.from}…${r.to} of ring ${r.ring} overlaps the stretch just emitted (${lastRun.from}…${lastRun.to}) and extends BACKWARD past its start (edges ${(() => { const o = []; for (let j = r.from; ; j = (j + 1) % n) { const p0 = R[j], p1 = R[(j + 1) % n]; o.push(`${j}: (${p0.X},${p0.Y})→(${p1.X},${p1.Y}) ${Math.hypot(p1.X - p0.X, p1.Y - p0.Y).toFixed(1)} u, line ${JSON.stringify(LINES?.[r.ring]?.[j] || 'own')}`); if (j === r.to || o.length > 8) break } return o.join(' · ') })()}; the tags on this segment ${JSON.stringify(tags.map(x => x.ring != null ? x.ring + ':' + x.i : x))}). Refusing.`)
       if (inside(r.from)) { if (pos(r.to) <= pos(lastRun.to)) { stat.runCovered = (stat.runCovered || 0) + 1; continue } from = (lastRun.to + 1) % n; tok.push({ kind: 'V', p: [R[from].X, R[from].Y], own: true }); stat.runTrimmed = (stat.runTrimmed || 0) + 1 } }
     for (let j = from; ; j = (j + 1) % n) { tok.push(Lsrc(r.ring, j)); if (j === r.to) break; tok.push({ kind: 'V', p: [R[(j + 1) % n].X, R[(j + 1) % n].Y], own: true }) }
     lastRun = { ring: r.ring, from: lastRun && lastRun.ring === r.ring && from !== r.from ? lastRun.from : r.from, to: r.to } }
@@ -228,8 +228,8 @@ let BY_EDGES = false                              // ⛔ the mutant only (setByE
 export const setByEdges = (v) => { BY_EDGES = !!v }
 let NO_TOPOLOGY_GUARD = false                     // ⛔ the mutant only (setNoTopologyGuard)
 export const setNoTopologyGuard = (v) => { NO_TOPOLOGY_GUARD = !!v }
-let FOLDED_QUAD = false, NO_FOLD_TRIANGLE = false   // ⛔ the mutants only (setFoldMutant)
-export const setFoldMutant = (m) => { FOLDED_QUAD = m === 'quad'; NO_FOLD_TRIANGLE = m === 'no-triangle' }
+let FOLDED_QUAD = false, NO_FOLD_TRIANGLE = false, R_SEPARATE = false   // ⛔ the mutants only (setFoldMutant)
+export const setFoldMutant = (m) => { FOLDED_QUAD = m === 'quad'; NO_FOLD_TRIANGLE = m === 'no-triangle'; R_SEPARATE = m === 'r-separate' }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -300,10 +300,18 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
     // a run whose far side would fold: its PLAIN RECTANGLE, plus at each DIVERGING end the triangle [v, X, R] (X the end's shared
     // join point, the same integer point the neighbour's quad ends at; R this run's rectangle corner at v). With the
     // neighbour's quad half [v, R_prev, X] it covers the true wedge [v, R_prev, X, R_next]; a converging end needs nothing
-    const Ra = P(a.X + nn[0] * d, a.Y + nn[1] * d), Rb = P(b.X + nn[0] * d, b.Y + nn[1] * d)
+    // ⭐ R IS X BELOW ONE LATTICE STEP (Zob, 2026-10-29): X (the shared join) and R (this run's rectangle corner at that end) both lie
+    // on L_r(d); closer than LATTICE_STEP (the lattice's own constant) they are ONE point at the kit's resolution, so R takes the
+    // shared integer X and the triangle vanishes exactly (rounded separately they were ruling (d)'s disease: one point, two
+    // roundings). The distance in doubles: both points are intermediate, only the decision leaves
+    const raF = [a.X + nn[0] * d, a.Y + nn[1] * d], rbF = [b.X + nn[0] * d, b.Y + nn[1] * d]
+    const sameAt = (Xp, Rf, conv) => !conv && !R_SEPARATE && Math.hypot(Xp.X - Rf[0], Xp.Y - Rf[1]) < LATTICE_STEP
+    const aIsX = sameAt(s0, raF, C[k].conv), bIsX = sameAt(e0, rbF, C[q].conv)
+    if (aIsX) stat0.rIsX = (stat0.rIsX || 0) + 1; if (bIsX) stat0.rIsX = (stat0.rIsX || 0) + 1
+    const Ra = aIsX ? { X: s0.X, Y: s0.Y } : P(raF[0], raF[1]), Rb = bIsX ? { X: e0.X, Y: e0.Y } : P(rbF[0], rbF[1])
     pieces.push(ccw([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...Rb, tag: lineTag }, { ...Ra, tag: BORN }]))
-    if (!C[k].conv && !NO_FOLD_TRIANGLE) pieces.push(ccw([{ X: a.X, Y: a.Y, tag: BORN }, { ...s0, tag: lineTag }, { ...Ra, tag: BORN }]))
-    if (!C[q].conv && !NO_FOLD_TRIANGLE) pieces.push(ccw([{ X: b.X, Y: b.Y, tag: BORN }, { ...Rb, tag: lineTag }, { ...e0, tag: BORN }]))
+    if (!C[k].conv && !aIsX && !NO_FOLD_TRIANGLE) pieces.push(ccw([{ X: a.X, Y: a.Y, tag: BORN }, { ...s0, tag: lineTag }, { ...Ra, tag: BORN }]))
+    if (!C[q].conv && !bIsX && !NO_FOLD_TRIANGLE) pieces.push(ccw([{ X: b.X, Y: b.Y, tag: BORN }, { ...Rb, tag: lineTag }, { ...e0, tag: BORN }]))
     stat0.folded = (stat0.folded || 0) + 1 }
   // ⭐ A BORN LINE IS ITS TWO BIRTH POINTS (Zob, 2026-10-29), the whole strip end or cap edge: never a noded fragment of it,
   // whose two rounded points a unit apart would quantise its direction to the lattice's axes (the decks' axis-aligned box)
