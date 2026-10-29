@@ -122,6 +122,20 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   // the joins: between two consecutive lines with no fixed point between
   const RUN = SRC.map((R, g) => (LINES?.[g] && !BY_EDGES ? runsOf(R, LINES[g]) : null))
   const out = [], outL = [], N = t2.length
+  // ⭐ THE CORNER OF TWO LINES AT THE BACK-OFFSET, ONE HOME (Zob, 2026-10-29): a join whose lines DIVERGE in the back-offset past the
+  // miter limit is SQUARED, whatever rule made the join (a cut, the own-vertex adjacency, a backward-adjacent pair): the cap a NEW
+  // line placed as clipper places its square (|d| from the offset vertex, across the bisector), each end lineCross(L_cap, L_a)
+  // and lineCross(L_cap, L_b), rounded once; an end past NODE_BOUND from its line refuses by name. Xf: the two lines' crossing
+  // (for adjacent lines, their shared vertex). → true when it squared (the points pushed), false within the limit
+  const capAt = (A, B, Xf, u) => { const na = unit(A[0], A[1]), nb = unit(B[0], B[1]), cosA = na[0] * nb[0] + na[1] * nb[1], sinA = na[0] * nb[1] - nb[0] * na[1]
+    if (!(1 + cosA < MITER_LIM && sinA * -d > 0)) return false
+    const dLine = (q, L) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.abs((q[0] - L[0][0]) * dy - (q[1] - L[0][1]) * dx) / Math.hypot(dx, dy) }
+    const tt = Math.tan(Math.atan2(sinA, cosA) / 4), dd = -d
+    const c = [Xf[0] - (na[0] + nb[0]) * dd / (1 + cosA), Xf[1] - (na[1] + nb[1]) * dd / (1 + cosA)]
+    const cap = [[c[0] + dd * (na[0] - na[1] * tt), c[1] + dd * (na[1] + na[0] * tt)], [c[0] + dd * (nb[0] + nb[1] * tt), c[1] + dd * (nb[1] - nb[0] * tt)]]
+    const e1 = fcross(cap, A).map(Math.round), e2 = fcross(cap, B).map(Math.round)
+    for (const [e, L, nm] of [[e1, A, 'a'], [e2, B, 'b']]) if (dLine(e, L) > NODE_BOUND) throw new Error(`[${who}] ⛔ the back-offset: a squared join's cap end (${e.map(v => v / SCALE)}) lies ${dLine(e, L).toFixed(3)} u off its neighbour line ${nm}, past NODE_BOUND. Refusing.`)
+    out.push(e1, e2); outL.push([e1, e2], u.int || null); [e1, e2].forEach(q => origin(q, 'square')); stat.squared = (stat.squared || 0) + 1; (stat.squares ||= []).push(Xf.map(Math.round)); return true }
   // the region's own arc from t's edge to u's, FORWARD IN THE RING'S OWN ORDER whatever its length (Zob, 2026-10-29; the
   // 'under n/2' heuristic is deleted), and VALID only if no interior edge of it appears elsewhere in this ring's lines (else
   // the jump runs BACKWARD against the ring); each arc point with its outgoing edge's line
@@ -133,8 +147,8 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   for (let k = 0; k < N; k++) { const t = t2[k], u = t2[(k + 1) % N]
     if (t.kind === 'V') { out.push(t.p); outL.push(u.kind === 'L' ? (u.int || null) : null); origin(t.p, t.cut ? 'cut-point' : 'run-vertex'); continue }
     if (u.kind === 'V') continue
-    if (t.g != null && u.g === t.g && RUN[t.g] && RUN[t.g].runOf[u.i] === (RUN[t.g].runOf[t.i] + 1) % RUN[t.g].runs.length) { const v = SRC[t.g][RUN[t.g].runs[RUN[t.g].runOf[u.i]].s]; out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
-    if (t.g != null && u.g === t.g && u.i === (t.i + 1) % SRC[t.g].length) { const v = SRC[t.g][u.i]; out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
+    if (t.g != null && u.g === t.g && RUN[t.g] && RUN[t.g].runOf[u.i] === (RUN[t.g].runOf[t.i] + 1) % RUN[t.g].runs.length) { const v = SRC[t.g][RUN[t.g].runs[RUN[t.g].runOf[u.i]].s]; if (!OWN_SKIPS_LIMIT && capAt(t.int || t.flt, u.int || u.flt, [v.X, v.Y], u)) { stat.ownSquared = (stat.ownSquared || 0) + 1; continue } out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
+    if (t.g != null && u.g === t.g && u.i === (t.i + 1) % SRC[t.g].length) { const v = SRC[t.g][u.i]; if (!OWN_SKIPS_LIMIT && capAt(t.int || t.flt, u.int || u.flt, [v.X, v.Y], u)) { stat.ownSquared = (stat.ownSquared || 0) + 1; continue } out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
     // a cut join between two lines
     const A = t.int || t.flt, B = u.int || u.flt
     const na = unit(A[0], A[1]), nb = unit(B[0], B[1]), cosA = na[0] * nb[0] + na[1] * nb[1], sinA = na[0] * nb[1] - nb[0] * na[1]
@@ -166,16 +180,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     if (AR && AR.valid && AR.pts.length > 1) { const sk = AR.pts; {
         const dS = (q, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, tt = L2 ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2)) : 0; return Math.hypot(q[0] - a[0] - tt * dx, q[1] - a[1] - tt * dy) }
         if (sk.every(q => Math.min(dS(q, A[0], Xf), dS(q, Xf, B[1])) <= NODE_BOUND)) { pushArc(AR, 'gap-arc'); stat.gapArc = (stat.gapArc || 0) + 1; continue } } }
-    if (1 + cosA < MITER_LIM && sinA * -d > 0) {    // squared, as clipper squares the join (parity; the limit JUSTIFIED below)
-      // ⭐ THE CAP'S ENDS ARE ITS CROSSINGS WITH ITS NEIGHBOURS (Zob, 2026-10-29): the cap is a NEW line, placed as clipper places
-      // its square (at |d| from the offset vertex, across the bisector), and each end is lineCross(L_cap, L_a) and
-      // lineCross(L_cap, L_b), rounded once; an end farther than NODE_BOUND from its neighbour line refuses by name
-      const tt = Math.tan(Math.atan2(sinA, cosA) / 4), dd = -d
-      const c = [Xf[0] - (na[0] + nb[0]) * dd / (1 + cosA), Xf[1] - (na[1] + nb[1]) * dd / (1 + cosA)]   // the offset vertex, unrounded
-      const cap = [[c[0] + dd * (na[0] - na[1] * tt), c[1] + dd * (na[1] + na[0] * tt)], [c[0] + dd * (nb[0] + nb[1] * tt), c[1] + dd * (nb[1] - nb[0] * tt)]]
-      const e1 = fcross(cap, A).map(Math.round), e2 = fcross(cap, B).map(Math.round)
-      for (const [e, L, nm] of [[e1, A, 'a'], [e2, B, 'b']]) if (dLine(e, L) > NODE_BOUND) throw new Error(`[${who}] ⛔ the back-offset: a squared join's cap end (${e.map(v => v / SCALE)}) lies ${dLine(e, L).toFixed(3)} u off its neighbour line ${nm}, past NODE_BOUND. Refusing.`)
-      out.push(e1, e2); outL.push([e1, e2], u.int || null); [e1, e2].forEach(q => origin(q, 'square')); stat.squared++; (stat.squares ||= []).push(Xf.map(Math.round)); continue }
+    if (capAt(A, B, Xf, u)) continue
     const X = t.int && u.int ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round)
     // ⭐ A CUT WHOSE CROSSING THE NEXT BOOLEAN TRIMS EMITS THAT BOOLEAN'S EXACT RESULT: THE REGION'S OWN ARC (Zob's ruling,
     // 2026-10-29). L_a and L_b are the region's own edge lines: in the open, X = L_a ∩ L_b outside the region is trimmed by ∩P,
@@ -191,6 +196,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // eroded ring meets t before t − 1 is not established (Breakwater 6, decks 1, all one step back).
     if (AR && !AR.valid && !REFUSE_ALL_BACKWARD && (t.i - u.i + SRC[t.g].length) % SRC[t.g].length === 1) { const v = SRC[t.g][t.i]
       if (X[0] !== v.X || X[1] !== v.Y) throw new Error(`[${who}] ⛔ the back-offset: a backward-adjacent join (edge ${t.i} then ${u.i} of ring ${t.g}) crosses at (${X}), not at their shared vertex (${v.X}, ${v.Y}). Refusing.`)
+      if (capAt(A, B, X, u)) continue
       out.push(X); outL.push(u.int || null); origin(X, 'backward-adjacent'); stat.backwardAdjacent = (stat.backwardAdjacent || 0) + 1; continue }
     if (AR && !AR.valid) { const n = SRC[t.g].length, inner = []; for (let j = (t.i + 1) % n; j !== u.i; j = (j + 1) % n) inner.push(j)
       const where = inner.slice(0, 4).map(j => ({ edge: j, atTokens: t2.map((x, q) => (x.kind === 'L' && x.g === t.g && x.i === j ? q : -1)).filter(q => q >= 0) }))
@@ -247,6 +253,8 @@ let TIERS_SWAPPED = false                         // ⛔ the mutant only (setTie
 export const setTiersSwapped = (v) => { TIERS_SWAPPED = !!v }
 let TAGS_OFF_AT = null                            // ⛔ the mutant only (setTagsOffAt('∩P')): tags switched off where they ARE read
 export const setTagsOffAt = (v) => { TAGS_OFF_AT = v }
+let OWN_SKIPS_LIMIT = false                       // ⛔ the mutant only (setOwnSkipsLimit): the own-vertex join without the miter limit
+export const setOwnSkipsLimit = (v) => { OWN_SKIPS_LIMIT = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
