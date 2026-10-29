@@ -128,6 +128,8 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   // and lineCross(L_cap, L_b), rounded once; an end past NODE_BOUND from its line refuses by name. Xf: the two lines' crossing
   // (for adjacent lines, their shared vertex). → true when it squared (the points pushed), false within the limit
   const capAt = (A, B, Xf, u) => { const na = unit(A[0], A[1]), nb = unit(B[0], B[1]), cosA = na[0] * nb[0] + na[1] * nb[1], sinA = na[0] * nb[1] - nb[0] * na[1]
+    if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE); if (Math.hypot(Xf[0] - tx, Xf[1] - ty) < 1500)
+      console.log('TRACE-CAP', JSON.stringify({ who, at: Xf.map(v => +(v / SCALE).toFixed(3)), A, B, d: +d.toFixed(1), turnDeg: +(Math.acos(Math.max(-1, Math.min(1, cosA))) * 180 / Math.PI).toFixed(2), diverges: sinA * -d > 0, pastLimit: 1 + cosA < MITER_LIM, squared: 1 + cosA < MITER_LIM && sinA * -d > 0 })) }
     if (!(1 + cosA < MITER_LIM && sinA * -d > 0)) return false
     const dLine = (q, L) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1]; return Math.abs((q[0] - L[0][0]) * dy - (q[1] - L[0][1]) * dx) / Math.hypot(dx, dy) }
     const tt = Math.tan(Math.atan2(sinA, cosA) / 4), dd = -d

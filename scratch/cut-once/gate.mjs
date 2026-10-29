@@ -91,21 +91,30 @@ export function changeGate(P, out, h, squares, who, outTagsIn = null, Ptags = nu
   return { books, vsNoded, added: added.length, removed: removed.length, addedMm2: +rows.filter(r => r.side === 'added').reduce((t, r) => t + r.mm2, 0).toFixed(1), removedMm2: +rows.filter(r => r.side === 'removed').reduce((t, r) => t + r.mm2, 0).toFixed(1),
     byNarrow: rows.filter(r => r.narrow).length, bySquare: rows.filter(r => !r.narrow && r.squared).length, unaccounted: bad.length, unaccountedRows: bad.slice(0, 10), rows: rows.length <= 12 ? rows : undefined }
 }
-// ⭐ THE SHARPNESS GATE (Zob, 2026-10-29), the miter limit's backstop: no corner of the output turns past the limit (|turn| > 120°,
-// i.e. 1 + cos < ½: a convex tip or a reflex notch sharper than 60° inside), unless it is P's own corner, LISTED. Edges under 50 u
-// are skipped (a lattice step's direction is noise, not a corner)
-export function sharpCorners(rings, P) { const pv = new Set(P.flat().map(q => q.X + ',' + q.Y)), o = []
-  for (const r of rings) { const n = r.length
-    for (let i = 0; i < n; i++) { const a = r[(i - 1 + n) % n], b = r[i], c = r[(i + 1) % n], u = [b.X - a.X, b.Y - a.Y], v = [c.X - b.X, c.Y - b.Y], lu = Math.hypot(...u), lv = Math.hypot(...v)
-      if (lu < 50 || lv < 50) continue
+// ⭐ THE SHARPNESS GATE (Zob, 2026-10-29), the miter limit's backstop: no corner of the output turns past the limit (1 + cos < ½: a tip
+// or a notch sharper than 60° inside) unless it is P's own corner, LISTED. Each corner's angle comes from its two edges' LINE
+// directions (their tags: exact integer vectors), never from the edges' own short spans, so no length is skipped. ⛔ There was a
+// "skip edges under 50 u" (a tuned constant, hiding exactly where a method-made corner sits): removed. An edge with no line (or a
+// born line one step long) is LISTED, not skipped
+export function sharpCorners(rings, P, tags = null) { const pv = new Set(P.flat().map(q => q.X + ',' + q.Y)), o = [], noLine = []
+  // a tag is a LINE (two numeric points) or a LIST of tags (a transition's): never split a line into its points
+  const isLine = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+  const lineOf = (t) => (isLine(t) ? t : Array.isArray(t) ? t.find(isLine) || null : null)
+  rings.forEach((r, ri) => { const n = r.length
+    // each edge's direction, along its traversal: its line's direction (oriented as the edge runs), else the edge's own two points
+    const dir = r.map((a, i) => { const b = r[(i + 1) % n], L = lineOf(tags?.[ri]?.[i]), ex = b.X - a.X, ey = b.Y - a.Y
+      if (!L) { if (ex || ey) noLine.push({ at: [a.X / SCALE, a.Y / SCALE], lenU: +Math.hypot(ex, ey).toFixed(1) }); return [ex, ey] }
+      let lx = L[1][0] - L[0][0], ly = L[1][1] - L[0][1]; if (lx * ex + ly * ey < 0) { lx = -lx; ly = -ly }
+      if (Math.abs(lx) + Math.abs(ly) <= 2) noLine.push({ at: [a.X / SCALE, a.Y / SCALE], bornOneStep: L }); return [lx, ly] })
+    for (let i = 0; i < n; i++) { const u = dir[(i - 1 + n) % n], v = dir[i], lu = Math.hypot(...u), lv = Math.hypot(...v); if (!lu || !lv) continue
       const cosT = (u[0] * v[0] + u[1] * v[1]) / lu / lv; if (!(1 + cosT < 0.5)) continue
-      o.push({ at: [b.X / SCALE, b.Y / SCALE], insideDeg: +(180 - Math.acos(Math.max(-1, Math.min(1, cosT))) * 180 / Math.PI).toFixed(2), Pcorner: pv.has(b.X + ',' + b.Y) }) } }
-  return o }
+      const b = r[i]; o.push({ at: [b.X / SCALE, b.Y / SCALE], insideDeg: +(180 - Math.acos(Math.max(-1, Math.min(1, cosT))) * 180 / Math.PI).toFixed(2), Pcorner: pv.has(b.X + ',' + b.Y) }) } })
+  o.noLine = noLine; return o }
 // one run of the candidate on (src, stepM), measured: the row compare.mjs prints and the check judges
 export function measure(src, stepM, name) {
   const t0 = Date.now(), r = C3.openCloseProvenance(src, stepM, name), ms = Date.now() - t0
   const { squares, ...st } = r.stat, gate = changeGate(r.P, r.rings, (stepM / 2) * SCALE, squares || [], name, r.tags)
   const out = r.rings.map(q => q.map(v => new IntPoint(v.X, v.Y))), X = crossings(out)
-  const sharp = sharpCorners(r.rings, r.P)
-  return { ms, stat: st, gate, sharp: { past: sharp.filter(x => !x.Pcorner).length, Pcorners: sharp.filter(x => x.Pcorner), list: sharp.slice(0, 8) }, crossings: X.length, le2mm: short(out), ...topo(out), src: topo(r.P.map(q => q.map(v => new IntPoint(v.X, v.Y)))), rings: r.rings, P: r.P, tags: r.tags }
+  const sharp = sharpCorners(r.rings, r.P, r.tags)
+  return { ms, stat: st, gate, sharp: { past: sharp.filter(x => !x.Pcorner).length, Pcorners: sharp.filter(x => x.Pcorner), list: sharp.slice(0, 8), noLine: sharp.noLine.length, noLineList: sharp.noLine.slice(0, 6) }, crossings: X.length, le2mm: short(out), ...topo(out), src: topo(r.P.map(q => q.map(v => new IntPoint(v.X, v.Y)))), rings: r.rings, P: r.P, tags: r.tags }
 }
