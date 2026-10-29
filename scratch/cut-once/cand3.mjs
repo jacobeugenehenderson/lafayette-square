@@ -69,6 +69,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const tok = []
   const lineOf = (g, i) => { const L = LINES?.[g]?.[i]; if (L) return L; const R = SRC[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
   const Lsrc = (g, i) => ({ kind: 'L', g, i, int: lineOf(g, i) })
+  let prevRunKey = null, lastRun = null
   for (let e = 0; e < E.length; e++) { const tg = T[e], p = E[e], q = E[(e + 1) % E.length]
     const tags = tg == null ? [] : Array.isArray(tg) ? tg : [tg]
     if (!tags.length) stat.lostTags = (stat.lostTags || 0) + 1, (stat.lostAt ||= []).length < 6 && stat.lostAt.push([p.X / SCALE, p.Y / SCALE, who])
@@ -85,6 +86,11 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     if (tags.some(x => x?.base)) throw new Error(`[${who}] ⛔ the back-offset: an eliminated stretch's base side (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) reached the boundary (it is born interior). Refusing.`)
     if (!tags.length) { // a null edge: a NEW line, the cap's own back-offset by −d
       const n = unit([p.X, p.Y], [q.X, q.Y]); tok.push({ kind: 'L', flt: [[p.X - n[0] * d, p.Y - n[1] * d], [q.X - n[0] * d, q.Y - n[1] * d]], at: p }); stat.newLines++; continue }
+    // ⭐ consecutive eroded segments carrying the SAME tag set are one stretch of that run (the lines lie within rounding of each
+    // other, so the noding cut the stretch into pieces each claimed by all of them): the run is emitted once, not once per piece
+    const tkey = tags.length > 1 ? JSON.stringify(tags.filter(x => x?.ring != null).map(x => x.ring + ':' + x.i).sort()) : null
+    if (tkey && tkey === prevRunKey) { stat.runRepeat = (stat.runRepeat || 0) + 1; continue }
+    prevRunKey = tkey
     const r = tagRun(tags, SRC, { twoH: 2 * Math.abs(d) })
     if (!r.ok) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) carries tags ${JSON.stringify(tags)}: ${r.clause}. Refusing.`)
     stat[r.kind] = (stat[r.kind] || 0) + 1
@@ -94,7 +100,14 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       tok.push(Lsrc(x.ring, x.i), Lsrc(y.ring, y.i)); continue }
     const R = SRC[r.ring], n = R.length
     if (r.kind === 'cut') { tok.push(Lsrc(r.ring, r.from), { kind: 'V', p: r.X, cut: true }, Lsrc(r.ring, r.to)); continue }
-    for (let j = r.from; ; j = (j + 1) % n) { tok.push(Lsrc(r.ring, j)); if (j === r.to) break; tok.push({ kind: 'V', p: [R[(j + 1) % n].X, R[(j + 1) % n].Y], own: true }) } }
+    // ⭐ A RUN ALREADY EMITTED IS NOT RE-EMITTED (Huron, 2026-10-29): when the noding cuts one stretch of nearly collinear lines into
+    // pieces claimed by overlapping runs, a run that starts INSIDE the stretch just emitted on this ring emits only its part
+    // beyond it, and nothing if it is covered
+    let from = r.from
+    if (lastRun && lastRun.ring === r.ring) { const pos = (x) => (x - lastRun.from + n) % n
+      if (pos(r.from) <= pos(lastRun.to) && pos(r.to) < n / 2) { if (pos(r.to) <= pos(lastRun.to)) { stat.runCovered = (stat.runCovered || 0) + 1; continue } from = (lastRun.to + 1) % n; tok.push({ kind: 'V', p: [R[from].X, R[from].Y], own: true }); stat.runTrimmed = (stat.runTrimmed || 0) + 1 } }
+    for (let j = from; ; j = (j + 1) % n) { tok.push(Lsrc(r.ring, j)); if (j === r.to) break; tok.push({ kind: 'V', p: [R[(j + 1) % n].X, R[(j + 1) % n].Y], own: true }) }
+    lastRun = { ring: r.ring, from: lastRun && lastRun.ring === r.ring && from !== r.from ? lastRun.from : r.from, to: r.to } }
   // one line twice in a row is one line: the same region edge, or (exactly) the same line
   const t2 = []
   for (const t of tok) { const l = t2[t2.length - 1]
@@ -121,6 +134,9 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     const A = t.int || t.flt, B = u.int || u.flt
     const na = unit(A[0], A[1]), nb = unit(B[0], B[1]), cosA = na[0] * nb[0] + na[1] * nb[1], sinA = na[0] * nb[1] - nb[0] * na[1]
     if (t.int && u.int && sameLine({ a: A[0], b: A[1] }, { a: B[0], b: B[1] })) continue
+    if (t.int && u.int && t.g != null && u.g === t.g) { const v = SRC[t.g][u.i], nearV = (l) => { const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(v.Y - l[0][1]) - dy * BigInt(v.X - l[0][0]); return 2n * cr * cr <= dx * dx + dy * dy }
+      // ⭐ ACROSS A TRANSITION, NO VERTEX (Zob, 2026-10-29; ruling (2) generalised from exactly parallel to within rounding)
+      if (cosA > 0 && nearV(A) && nearV(B) && Math.abs(sinA) < 0.5) { stat.transitionJoin = (stat.transitionJoin || 0) + 1; continue } }
     if (t.int && u.int && BigInt(A[1][0] - A[0][0]) * BigInt(B[1][1] - B[0][1]) === BigInt(A[1][1] - A[0][1]) * BigInt(B[1][0] - B[0][0])) {
       // ⭐ PARALLEL AND DISTINCT at a join: no cut exists (Zob's ruling, 2026-10-28, one rule for any order):
       //  · separation ≤ NODE_BOUND, exact (2·cross(dir, offset)² ≤ |dir|²): the lines differ by less than the lattice's own
@@ -208,6 +224,8 @@ let RAW_CURVE = false                             // ⛔ the mutant only (setRaw
 export const setRawCurve = (v) => { RAW_CURVE = !!v }
 let BY_EDGES = false                              // ⛔ the mutant only (setByEdges): the close morphs the open's edges, not its runs
 export const setByEdges = (v) => { BY_EDGES = !!v }
+let NO_TOPOLOGY_GUARD = false                     // ⛔ the mutant only (setNoTopologyGuard)
+export const setNoTopologyGuard = (v) => { NO_TOPOLOGY_GUARD = !!v }
 let TRIM_INVERTED = false                          // ⛔ the mutant only (setTrimInverted): the side test inverted
 export const setTrimInverted = (v) => { TRIM_INVERTED = !!v }
 const origin = (p, kind) => { const k = p[0] + ',' + p[1], o = ORIGIN.get(k); ORIGIN.set(k, o && o !== kind ? o + '|' + kind : kind) }
@@ -254,7 +272,10 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
   const cornerOf = (k, r, v) => { const nk = N[k], nj = N[r]
     const sinA = Math.max(-1, Math.min(1, nk[0] * nj[1] - nj[0] * nk[1])), cosA = nk[0] * nj[0] + nk[1] * nj[1], rr = 1 + cosA
     const Lk = runs[k].line, Lr = runs[r].line, den = (Lk[1][0] - Lk[0][0]) * (Lr[1][1] - Lr[0][1]) - (Lk[1][1] - Lk[0][1]) * (Lr[1][0] - Lr[0][0])
-    const V = m > 1 && den !== 0 ? fcross(Lk, Lr) : [v.X, v.Y]
+    const nearV = (l) => { const dx = BigInt(l[1][0] - l[0][0]), dy = BigInt(l[1][1] - l[0][1]), cr = dx * BigInt(v.Y - l[0][1]) - dy * BigInt(v.X - l[0][0]); return 2n * cr * cr <= dx * dx + dy * dy }
+    // ⭐ both lines within rounding of the region vertex between them: that vertex is the corner (a transition, or the ordinary
+    // case where both pass through it), never a far crossing of two nearly parallel lines
+    const V = nearV(Lk) && nearV(Lr) ? [v.X, v.Y] : m > 1 && den !== 0 ? fcross(Lk, Lr) : [v.X, v.Y]
     if (!(sinA * d > 0)) return { end: P(V[0] + nk[0] * d, V[1] + nk[1] * d), start: P(V[0] + nj[0] * d, V[1] + nj[1] * d), cap: false, conv: true }
     if (rr < MITER_LIM) { const t = Math.tan(Math.atan2(sinA, cosA) / 4)
       return { end: P(V[0] + d * (nk[0] - nk[1] * t), V[1] + d * (nk[1] + nk[0] * t)), start: P(V[0] + d * (nj[0] + nj[1] * t), V[1] + d * (nj[1] - nj[0] * t)), cap: true } }
@@ -340,11 +361,33 @@ export function openCloseProvenance(paths, stepM, what) {
   const D = morph(Pt, -h, `${what} open`, stat)
   const OPEN = arrange([Pt, D], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0), open = OPEN.rings
   // closedK = morph(open, +h) ∪ open
-  const C = morph(open, h, `${what} close`, stat, TAGS_BY_SEGMENT ? null : OPEN.tags)
+  // ⭐ a TRANSITION edge of the open (two lines within rounding) gives the close the line its neighbour runs on, so the run
+  // continues straight across it (Zob, 2026-10-29: across a transition, no vertex)
+  const openLines = OPEN.tags.map(T => T.map((tg, i) => { if (!(Array.isArray(tg) && Array.isArray(tg[0]?.[0]))) return tg
+    const key = (x) => JSON.stringify(x), prev = T[(i - 1 + T.length) % T.length], next = T[(i + 1) % T.length]
+    stat.transitions = (stat.transitions || 0) + 1
+    return tg.find(l => key(l) === key(prev)) || tg.find(l => key(l) === key(next)) || tg[0] }))
+  const C = morph(open, h, `${what} close`, stat, TAGS_BY_SEGMENT ? null : openLines)
   const taken = pieces(arrange([Pt, open], w => w[0] > 0 && !(w[1] > 0), `${what} taken`).rings)
   const closedK = arrange([open, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`).rings
   const filled = pieces(arrange([closedK, open], w => w[0] > 0 && !(w[1] > 0), `${what} filled`).rings)
   const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
   const k = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`).rings
+  // ⭐ THE TOPOLOGY GUARD ON k (Zob, 2026-10-29): a hole of P that k no longer holds (it opened to the outside), or two parts of P
+  // that k joins, is the topology change Boz rules on: refused by name. Intermediate merges inside the open that the close
+  // undoes are not refused. A test point per ring: half a unit to the side of its longest edge (P's material for an outer, the
+  // hole for a hole)
+  const wnd = (rs, x, y) => rs.reduce((t, r) => { let c = false; for (let a2 = 0, b2 = r.length - 1; a2 < r.length; b2 = a2++) { const p = r[a2], q = r[b2]; if ((p.Y > y) !== (q.Y > y) && x < (q.X - p.X) * (y - p.Y) / (q.Y - p.Y) + p.X) c = !c } return t + (c ? Math.sign(area(r)) : 0) }, 0)
+  const probe = (r) => { let best = 0, bi = 0; r.forEach((p, i) => { const q = r[(i + 1) % r.length], L = Math.hypot(q.X - p.X, q.Y - p.Y); if (L > best) { best = L; bi = i } })
+    const p = r[bi], q = r[(bi + 1) % r.length], L = best, nx = -(q.Y - p.Y) / L, ny = (q.X - p.X) / L, side = area(r) > 0 ? 0.5 : -0.5
+    return [(p.X + q.X) / 2 + nx * side, (p.Y + q.Y) / 2 + ny * side] }
+  const kOuters = k.filter(r => area(r) > 0)
+  const ownerIn = (pt) => kOuters.map((r, i) => ({ i, a: area(r), inside: wnd([r], pt[0], pt[1]) !== 0 })).filter(x => x.inside).sort((x, y) => x.a - y.a)[0]?.i ?? null
+  if (!NO_TOPOLOGY_GUARD) {
+    for (const r of Pt.filter(r => area(r) < 0)) { const pt = probe(r); if (wnd(k, pt[0], pt[1]) !== 0) continue          // filled by the close: a sub-2h hole, accounted by the change gate
+      if (ownerIn(pt) == null) throw new Error(`[${what}] ⛔ the topology guard: P's hole at (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)}) (${(-area(r) / SCALE / SCALE).toFixed(2)} m²) is no longer a hole of the output: it opened to the outside. The topology change is Boz's. Refusing.`) }
+    const seen = new Map(); for (const r of Pt.filter(r => area(r) > 0)) { const o = ownerIn(probe(r)); if (o == null) continue
+      if (seen.has(o)) throw new Error(`[${what}] ⛔ the topology guard: two parts of P (at (${(seen.get(o)[0].X / SCALE).toFixed(3)}, ${(seen.get(o)[0].Y / SCALE).toFixed(3)}) and (${(r[0].X / SCALE).toFixed(3)}, ${(r[0].Y / SCALE).toFixed(3)})) are joined by the output. The topology change is Boz's. Refusing.`)
+      seen.set(o, r) } }
   return { paths: toIP(k), rings: k, P: Pt, stat, opened: tf.map(pp => +m2(pp).toFixed(3)), closed: ff.map(pp => +m2(pp).toFixed(3)), slivers: { taken: taken.length - tf.length, filled: filled.length - ff.length } }
 }
