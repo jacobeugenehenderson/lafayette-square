@@ -72,6 +72,7 @@ The combined bake also measures THE WATER TINT (below).
   1 · 137,032 · 0.05% (on a tile edge, probable tiling artefact) | cross-ring-not-a-pair · 1 · 121,132 · 0.05% | trimmed arc starts
   outside D · 1 · 175,624 · 0.07%. One connected water body: PTown's coast bakes only when every class is closed.
 - **Altadena:** re-fetch, the Extent fix, re-pour.
+- **The buildings.json v2 path** (`SlabBuildings.jsx`, the v2 read and its live-palette refusal) stays only while a town is v2, by ruling (Warden 2026-09-28); it goes when the check lists none. ▶ `node checks/claims-live-palette-equals-the-bake.mjs`.
 
 **▶ NEXT TRANCHE LEADS:** float morphology (cut once without integer copies; sized LARGE: clipper-lib and Clipper2 are both integer) ·
  fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
