@@ -387,6 +387,9 @@ export function openCloseProvenance(paths, stepM, what) {
     const key = (x) => JSON.stringify(x), prev = T[(i - 1 + T.length) % T.length], next = T[(i + 1) % T.length]
     stat.transitions = (stat.transitions || 0) + 1
     return tg.find(l => key(l) === key(prev)) || tg.find(l => key(l) === key(next)) || tg[0] }))
+  if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
+    open.forEach((r, g) => r.forEach((q, i) => { const w = r[(i + 1) % r.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 1500) return
+      console.log(`TRACE-OPEN ring ${g} e${i} (${q.X},${q.Y})→(${w.X},${w.Y}) ${Math.hypot(w.X - q.X, w.Y - q.Y).toFixed(1)} u · face-walk tag ${JSON.stringify(OPEN.tags[g][i])} · given to the close ${JSON.stringify(openLines[g][i])}`) })) }
   const C = morph(open, h, `${what} close`, stat, TAGS_BY_SEGMENT ? null : openLines)
   const taken = pieces(arrange([Pt, open], w => w[0] > 0 && !(w[1] > 0), `${what} taken`, false, null, false).rings)
   const closedK = arrange([open, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, null, false).rings
