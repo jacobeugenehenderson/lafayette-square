@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 519,
+  "total": 520,
   "counts": {
-    "safe": 365,
+    "safe": 366,
     "local-effect": 31,
     "live": 123
   },
@@ -488,6 +488,13 @@
         "computed import() with no readable target — runs arbitrary modules",
         "computed import() with no readable target — runs arbitrary modules",
         "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-a-memo-returns-its-value.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

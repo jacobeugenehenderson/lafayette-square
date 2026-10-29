@@ -286,6 +286,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
   // `aGround` = (raw anchor, the drawn ground's own y) per instance — `elevation.js#groundPairs`
   const groundRaws = useMemo(() => {
     const arr = groundPairs(instances, t => (typeof t.groundRaw === 'number' ? t.groundRaw : getElevationRaw(t.x, t.z)))
+    return arr
   }, [instances])
 
   // One log per (url × tile) saying how many submeshes we ended up with.

@@ -189,7 +189,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 365. This is `npm test`.
+## safe — 366. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -226,6 +226,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-listing-keeps-its-id.mjs` | a business keeps its display id across every bake, whatever else |
 | `checks/claims-a-look-authors-its-curb-width.mjs` | DOES EVERY LOOK RESOLVE ONE CURB, FROM ONE HOME, AND SAY WHICH RUNG DECIDED? |
 | `checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs` | every spawn of a Look-strict tool passes `--look`. |
+| `checks/claims-a-memo-returns-its-value.mjs` | DOES EVERY useMemo HAND BACK WHAT IT COMPUTES? |
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
 | `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | ⭐⭐ THE INVARIANT: the renderer may draw "no shore" only when it has been TOLD there is no shore — and the town's |
 | `checks/claims-a-mover-stands-where-it-is.mjs` | "DOES A LIVE DOT — THE VISITOR, A COURIER — STAND WHERE IT IS, IN ANY TOWN, DRAWN BY THE TOWN?" |
