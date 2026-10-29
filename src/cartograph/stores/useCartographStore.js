@@ -466,12 +466,13 @@ const DESIGN_FIELDS = [
   // Not a plain _grp: _grp seeds ARCH_FLAT_DEFAULTS for a Look that has no block,
   // which is what installed an identical arch in all six design.json files and
   // forced the renderer to gate on a look NAME instead. Absent ⇒ null ⇒ absent.
-  // ⛔ A block from before the Arch stood where it is (2026-10-28: placement derived, pivot at the base) is REFUSED,
-  // never read under the new rule: defaulted, it would draw LS at presence 1 and autosave that over the town's Look.
+  // Where it stands is derived (src/setpieces/gatewayArch.js), so a block's retired distance/bearing are not fields.
   { key: 'arch', hydrate: (d) => {
     if (!d.arch) return null
-    if (d.arch.values && !('presence' in d.arch.values)) throw new Error('⛔ this Look\'s `arch` block predates the Arch standing where it is — run `node cartograph/migrate-arch-stands.mjs --write` (Stage closed), then reload')
-    return migrateGroupChannel(d.arch, ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS)
+    const ch = migrateGroupChannel(d.arch, ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS)
+    // An unauthored rotation stays unauthored (it faces as it really stands), never a 0 the save would then author.
+    if (!Number.isFinite(d.arch.values?.rotation)) delete ch.values.rotation
+    return ch
   } },
   // Landscape is NOT a plain _grp: migrateGroupChannel returns { values } and drops
   // every sibling key, which would silently EAT `source` — the Stage upload's opt-in

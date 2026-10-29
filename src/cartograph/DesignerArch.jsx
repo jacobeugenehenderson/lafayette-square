@@ -17,10 +17,10 @@ import * as THREE from 'three'
 import { createArchGeometry } from '../components/GatewayArch.jsx'
 import useCartographStore from './stores/useCartographStore.js'
 import { placedLook, onPlaceMoved, townPlace } from '../lib/townPlace.js'
-import { archSite } from '../setpieces/gatewayArch.js'
+import { archSite, archPose } from '../setpieces/gatewayArch.js'
 
 // Drawn where the 3D Arch stands: its real feet through the town's place (src/setpieces/gatewayArch.js), with the Look's
-// presence and turn. CartographApp places the active town in a layout effect, so the first render may precede it.
+// scale and rotation (archPose). CartographApp places the active town in a layout effect, so the first render may precede it.
 export function DesignerArch() {
   const archChannel = useCartographStore(s => s.arch)
   const lookId = useCartographStore(s => s.activeLookId)
@@ -29,14 +29,14 @@ export function DesignerArch() {
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: '#000' }), [])
   const a = archChannel?.values
   if (!a || placed !== lookId) return null
-  const site = archSite(townPlace())
+  const pose = archPose(archSite(townPlace()), a)
   return (
     <mesh
       geometry={geometry}
       material={material}
-      position={[site.x, 0, site.z]}
-      rotation={[0, site.facing + a.turn, 0]}
-      scale={a.presence}
+      position={[pose.x, 0, pose.z]}
+      rotation={[0, pose.rotation, 0]}
+      scale={pose.scale}
       frustumCulled={false}
     />
   )

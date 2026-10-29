@@ -284,20 +284,20 @@ export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tub
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
 // Arch (the Horizon card) — the Gateway Arch's look. ⛔ No placement here: WHERE it stands is derived from its real
-// feet through the town's place (src/setpieces/gatewayArch.js#archSite), so no distance, bearing or facing is authored
-// and none is a kit default (they were Lafayette Square's: Class D). What a Look authors is how it PRESENTS:
-//   presence  — one scale, size and height together, pivoting at the base (1 = true size)
-//   turn      — radians added to its real facing (0 = as it stands)
-//   yOffset   — the base's world height (m)
+// feet through the town's place (src/setpieces/gatewayArch.js#archSite), so no distance or bearing is authored and none
+// is a kit default (they were Lafayette Square's: Class D). What a Look authors is how it PRESENTS (archPose):
+//   scale     — pivoting at the APEX
+//   rotation  — radians about +Y; ⛔ NOT defaulted (1.36 was LS's): a Look that authors none faces it as it really stands
+//   yOffset   — the apex's height above PEAK_HEIGHT (m)
 //   footFade  — metres below world y=0 at which the arch alpha reaches zero
 // Single non-TOD channel (the landmark doesn't drift through the day). Its uplights are the TOD `archLight` channel.
 export const ARCH_FLAT_DEFAULTS = {
-  presence: 1,
-  turn: 0,
+  scale: 1.3,
   yOffset: 0,
   footFade: 30,
 }
-export const ARCH_FIELD_KEYS = Object.keys(ARCH_FLAT_DEFAULTS)
+// rotation is a field with no default (above): the hydrate keeps it only where it is authored.
+export const ARCH_FIELD_KEYS = [...Object.keys(ARCH_FLAT_DEFAULTS), 'rotation']
 
 // Landscape (Hero Controls — the THIRD hero subject kind: a backdrop MESH, not a
 // point-to-frame). The per-type controls of a `kind:'landscape'` hero: placement

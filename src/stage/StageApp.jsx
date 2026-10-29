@@ -170,12 +170,12 @@ function ArchSiteNote() {
     const [px, , pz] = k.position, [tx, , tz] = k.target
     const toArch = Math.atan2(site.z - pz, site.x - px), toAim = Math.atan2(tz - pz, tx - px)
     const yaw = Math.atan2(Math.sin(toArch - toAim), Math.cos(toArch - toAim))
-    const half = Math.atan2(ARCH_HALF_SPAN * a.presence, Math.hypot(site.x - px, site.z - pz))
+    const half = Math.atan2(ARCH_HALF_SPAN * a.scale, Math.hypot(site.x - px, site.z - pz))
     if (Math.abs(yaw) > half) off.push(`key ${i + 1} by ${(yaw * 180 / Math.PI).toFixed(1)}°`)
   })
   return (
     <div className="text-caption px-1" style={{ color: 'var(--on-surface-variant)' }}>
-      Stands on its real feet: {(Math.hypot(site.x, site.z) / 1000).toFixed(2)} km out, real facing {site.facing.toFixed(2)} rad (Turn adds to it).
+      Stands on its real feet: {(Math.hypot(site.x, site.z) / 1000).toFixed(2)} km out. Its real facing is {(((site.facing % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)).toFixed(2)} rad{Number.isFinite(a.rotation) ? `; Rotation authors ${a.rotation.toFixed(2)}` : ', unauthored'}.
       {off.length > 0 && <div style={{ color: 'var(--error)' }}>The aim misses the Arch at {off.join(' · ')}: re-key to frame it.</div>}
     </div>
   )
@@ -192,6 +192,8 @@ function HorizonControls() {
   const setArch       = useCartographStore(s => s.setArch)
   const setLandscape  = useCartographStore(s => s.setLandscape)
   const a = archChannel?.values || {}
+  const place = useTownPlace()
+  const archFacing = archChannel ? (() => { const f = archSite(place).facing; return ((f % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) })() : 0
   const ls = landscapeChannel?.values || {}
   // The Hero Controls render the active subject KIND's per-type knobs: the
   // landscape backdrop's placement/snowline/atmosphere when the hero is the
@@ -237,11 +239,11 @@ function HorizonControls() {
             onChange={(v) => setLandscape('haze', v)} />
           <ColorRow label="Haze" value={ls.hazeColor} onChange={(v) => setLandscape('hazeColor', v)} />
         </>) : archChannel ? (<>
-          <SliderRow label="Presence" value={a.presence} min={0.5} max={8} step={0.05}
-            onChange={(v) => setArch('presence', v)} />
-          <SliderRow label="Turn" value={a.turn} min={-Math.PI} max={Math.PI} step={0.01}
-            onChange={(v) => setArch('turn', v)} />
-          <SliderRow label="Base Height" value={a.yOffset} min={-300} max={300} step={1}
+          <SliderRow label="Hero Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
+            onChange={(v) => setArch('scale', v)} />
+          <SliderRow label="Hero Rotation" value={a.rotation ?? archFacing} min={0} max={Math.PI * 2} step={0.01}
+            onChange={(v) => setArch('rotation', v)} />
+          <SliderRow label="Hero Y Offset" value={a.yOffset} min={-200} max={200} step={1}
             onChange={(v) => setArch('yOffset', v)} />
           <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
             onChange={(v) => setArch('footFade', v)} />

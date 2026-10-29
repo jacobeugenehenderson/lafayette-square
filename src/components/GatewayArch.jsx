@@ -18,8 +18,8 @@
  * paint-on-foot color blending, no uplights, no GroundDisc) retires.
  * ⭐ PLACEMENT IS DERIVED (2026-10-28): the Arch stands on its real feet,
  * projected through the town's place (src/setpieces/gatewayArch.js#archSite);
- * the Look's `arch` channel authors only its presence, turn, base height and
- * foot fade (skyLightChannels.js#ARCH_FLAT_DEFAULTS).
+ * the Look's `arch` channel keeps its scale, rotation, Y-offset and foot fade
+ * (src/setpieces/gatewayArch.js#archPose).
  *
  * DesignerArch (the plan-view silhouette used by the cartograph Designer
  * mode) lives at src/cartograph/DesignerArch.jsx — it stays in the
@@ -33,7 +33,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
 import { townPlace } from '../lib/townPlace.js'
-import { archSite, ARCH_A as A, ARCH_B as B, ARCH_C as C, PEAK_HEIGHT, HALF_SPAN } from '../setpieces/gatewayArch.js'
+import { archSite, archPose, glintAt, ARCH_A as A, ARCH_B as B, ARCH_C as C, PEAK_HEIGHT, HALF_SPAN } from '../setpieces/gatewayArch.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
@@ -45,6 +45,7 @@ import { lookOf } from '../lib/lookOf.js'
 // Scratch vectors for per-frame uplight world-space transforms (avoid GC).
 const _upPos = new THREE.Vector3()
 const _upTarget = new THREE.Vector3()
+const _light = new THREE.Vector3()
 
 const BASE_RADIUS = 10.0   // thickened for heavier silhouette
 const TOP_RADIUS = 4.0
@@ -113,7 +114,6 @@ export function createArchGeometry(curveSegs = 120) {
 }
 
 const ARCH_DEFAULT_CHANNEL      = Object.freeze({ values: { ...ARCH_FLAT_DEFAULTS } })
-let _saidStale = false
 const ARCHLIGHT_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('archLight'))
 
 export default function GatewayArch({
@@ -306,20 +306,19 @@ export default function GatewayArch({
     return mat
   }, [])
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     if (!meshRef.current) return
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
     const { currentTime } = useTimeOfDay.getState()
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
 
-    // ⭐ It stands where it stands: its real feet through the town's place (src/setpieces/gatewayArch.js). The Look
-    // authors only how it presents: `presence` grows size and height together from the BASE, which sits at `yOffset`;
-    // `turn` is added to its real facing.
-    const site = archSite(townPlace())
-    meshRef.current.rotation.y = site.facing + arch.turn
-    meshRef.current.position.set(site.x, arch.yOffset, site.z)
-    meshRef.current.scale.setScalar(arch.presence)
+    // ⭐ It stands where it stands: its real feet through the town's place; the Look authors how it presents, pivoting
+    // at the apex (src/setpieces/gatewayArch.js#archPose).
+    const pose = archPose(archSite(townPlace()), arch)
+    meshRef.current.rotation.y = pose.rotation
+    meshRef.current.position.set(pose.x, pose.y, pose.z)
+    meshRef.current.scale.setScalar(pose.scale)
 
     if (shaderRef.current) {
       shaderRef.current.uniforms.uDayFactor.value = day
@@ -388,11 +387,10 @@ export default function GatewayArch({
 
       shaderRef.current.uniforms.uSunDir.value.set(lx, ly, lz)
 
-      const azimuth = Math.atan2(lx, -lz)
-      const relAngle = azimuth - meshRef.current.rotation.y   // the drawn facing: its real one plus the Look's turn
-      // The highlight follows the sun (or moon) and the Arch, never the camera.
-      const glintFromSun = 0.5 + Math.sin(relAngle) * 0.48
-      shaderRef.current.uniforms.uGlintPos.value = Math.max(0.20, Math.min(0.80, glintFromSun))
+      // The highlight is where the steel mirrors the light to the eye: the sun (or moon), the Arch as drawn, and the
+      // live camera (src/setpieces/gatewayArch.js#glintAt). It moves with the viewer, from no town's numbers.
+      _light.set(lx, ly, lz)
+      shaderRef.current.uniforms.uGlintPos.value = glintAt(_light, camera.position, pose)
 
       const moonFade = Math.max(0, Math.min(1, moonPos.altitude / 0.15))
       const sunFade = Math.max(0, Math.min(1, (sunAltitude + 0.1) / 0.3))
@@ -418,12 +416,6 @@ export default function GatewayArch({
   // the look changes — "rendered fewer hooks than expected", exactly the
   // crash Preview's look switcher would trigger.
   if (!archChannel) return null
-  // ⛔ A slab baked before the Arch stood where it is carries no presence: said by name and not drawn, never drawn at
-  // a guessed size. Re-bake the town's scene (checks/claims-the-arch-stands-where-it-is.mjs (4) is RED until then).
-  if (!Number.isFinite(arch.presence)) {
-    if (!_saidStale) { _saidStale = true; console.error(`[arch] ⛔ "${lookId}"'s arch block predates the Arch standing where it is (no presence) — not drawn; re-bake the scene`) }
-    return null
-  }
 
   return (
     <mesh
