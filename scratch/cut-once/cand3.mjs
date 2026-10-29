@@ -249,7 +249,8 @@ function offsetPieces(R, d, g, squares, lines = null) {
   for (let q = 0; q < m; q++) { const a = R[runs[q].s], b = R[(runs[q].e + 1) % n]; if (a.X === b.X && a.Y === b.Y && m > 1) continue
     const s0 = startC[q], e0 = endC[q], L = runs[q].line
     const along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
-    if (along < 0) throw new Error(`[offset] ⛔ ring ${g} run ${runs[q].s}…${runs[q].e} (${a.X},${a.Y}) → (${b.X},${b.Y}): its offset runs backwards between its join corners (${s0.X},${s0.Y}) → (${e0.X},${e0.Y}) (a negative-length offset edge): the piece would fold. Refusing.`)
+    if (along < 0 && process.env.CUTONCE_DROP_FOLD) { (squares.folds ||= []).push({ g, s: runs[q].s, e: runs[q].e, d: Math.sign(d) }); continue }   // MEASUREMENT ONLY
+    if (along < 0) throw new Error(`[offset${d < 0 ? ' (erode)' : ' (dilate)'}] ⛔ ring ${g} run ${runs[q].s}…${runs[q].e} (${a.X},${a.Y}) → (${b.X},${b.Y}): its offset runs backwards between its join corners (${s0.X},${s0.Y}) → (${e0.X},${e0.Y}) (a negative-length offset edge): the piece would fold. Refusing.`)
     // the piece's far side lies on the run's line at d, tagged by the run's FIRST edge (emit reads runs, not edge indices)
     pieces.push(ccw([{ X: a.X, Y: a.Y, tag: null }, { X: b.X, Y: b.Y, tag: null }, { ...e0, tag: { ring: g, i: runs[q].s } }, { ...s0, tag: null }])) }
   return pieces
