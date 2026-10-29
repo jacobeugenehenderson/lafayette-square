@@ -26,9 +26,20 @@ Merged on it 2026-10-27 → 28 (`git log integration/2026-10-20 --since=2026-10-
   splash in the free region (`gnomon/splash-centres-in-the-free-region`); hover deleted (`plumb/balsa-no-hover`); trees name their
   failure (`kerf/stage-black`); a tool page says why it can't open (`kerf/messages`); water levels follow a terrain re-bake
   (`kerf/water-levels-reload`); Survey draws shape, not fill (`ferrule/survey-smooth-ink`).
-**JACOB BAKES** through Stage's Bake (the routes, never scripts): **Huron first** (its coast is pre-v5 and re-bakes), then LS and HPDM. Then
-the Ward pin move (`ward-pin/<date>`), publish:staging, his look, Promote (player and slab together: RELEASE ORDER FOR THE COAST PIN,
-below). **Huron is staging-only** until a domain is owned (huron.online is not on Operations' registrar list; Promote refuses it).
+**🌙 OVERNIGHT 2026-10-29 (Ward). HPDM is DONE:** promoted, and its production scene.json is byte-identical to tonight's bake on disk
+(sha256 `c0d7ee75…`). **Baked, NOT published:** LS (bakedAt `1793254966651`) and Huron (re-pour, `1793255891256`), both `stale: []`.
+**What refused:** `POST :3333/looks/lafayettesquare/publish`, denied by Ward's auto-mode classifier ("Modify Shared Resources"). Every
+staging upload below is therefore Jacob's. **The Ward pin moved** to kit `a109ec98` on theward `ward-pin/2026-10-29b` (`edf5d5b`): vite build passes,
+the static checks are green apart from the standing reds, and **⛔ the browser checks are NOT RUN** (they need the Ward dev server on :5180).
+**MORNING, IN RELEASE ORDER** (⛔ LS's slab must not reach staging under `c07eef9d`: the old player places the Arch by the
+retired distance/bearing. Staging's player is ONE build for every town, so HPDM's staging moves too; HPDM production is pinned per host
+and stays untouched):
+0. `! cd ~/Desktop/dev.nosync/theward && npm run dev`, then `npm run check` against it: Ward's green on the browser checks.
+1. `! cd ~/Desktop/lafayette-square.nosync/.claude/worktrees/ward-kit && node scripts/publish-kit-bundle.mjs` (the kit bundle at `a109ec98`).
+2. `! cd ~/Desktop/dev.nosync/theward && npm run publish:staging` (from `ward-pin/2026-10-29b`). This also stages PTown's player, which is
+   not a hold (Jacob: live PTown's Hero already blurs this way), and Jacob judges it. ⛔ No Promote.
+3. `! curl -s -X POST localhost:3333/looks/lafayettesquare/publish` (or Stage's Publish), then Ward's eye. ⛔ LS production stays on `main`; the cutover is Jacob's call.
+4. `! curl -s -X POST localhost:3333/looks/huron/publish`, then Ward's eye. **Huron is staging-only** until a domain is owned.
 The combined bake also measures THE WATER TINT (below).
 
 **⏸ PARKED**
