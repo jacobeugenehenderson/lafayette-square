@@ -37,7 +37,7 @@ export function needFields(r, fields, who) {
   const lacking = fields.filter((f) => r?.[f] == null)
   if (lacking.length) {
     const when = r?.time instanceof Date ? r.time.toISOString() : 'this instant'
-    throw new WeatherFieldMissingError(`[${who}] ⛔ the weather at ${when} has no ${lacking.join(', ')}${r?.source === 'observed' ? ` (observed at ${r.station}, which does not report it)` : ''}`)
+    throw new WeatherFieldMissingError(`[${who}] ⛔ the weather at ${when} has no ${lacking.join(', ')}${r?.source === 'observed' ? ` (observed at ${r.station?.id}, which does not report it)` : ''}`)
   }
   return r
 }

@@ -358,12 +358,13 @@ function FrameLimiter({ paused, idle, everyFrame, flying }) {
 /**
  * The town's weather as the renderer reads it — ONE reading, the live feed WeatherPoller fetches for the placed
  * town (hooks/useWeather.js), READ-ONLY, or null before the first reading:
- *   { now: { tempC, code, isDay, at }, hourly: [{ at, tempC, code }], fetchedAt, at(date, live) }
+ *   { now: { tempC, code, isDay, at }, hourly: [{ at, tempC, code, observed }], fetchedAt, at(date, live) }
  * An app shows it rather than fetching its own: two calls to one provider read different numbers at different
  * times. `code` is WMO (current reconciled against precipitation and cloud); `isDay` is the sun above the town's
  * horizon at the town's clock; `at` / `fetchedAt` are ms epochs; hourly spans the hour at or before this dawn-to-dawn
  * window's start to 48 h ahead — its hours before NWS's grid are station OBSERVATIONS (lib/nws.js), with a
- * temperature but `code` null (a station reports no condition: say so, never "Clear"). °C out.
+ * temperature but `code` null (a station reports no condition: say so, never "Clear"), and `observed` = the station
+ * { id, name, lat, lon } it came from (null on a forecast hour), so an app can say where a reading was taken. °C out.
  * ⭐ `at(date, live)` is THE weather at an instant — `now` when live, else the forecast's at `date` — through the same
  * lib/weatherAt.js the sky is drawn from, so a label never disagrees with the sky above it: { tempC, code }.
  * ⛔ Outside the forecast it THROWS a WeatherRangeError (exported here): the app says it has no weather for that
@@ -385,7 +386,7 @@ export function useTownWeather() {
     const now = { tempC: fToC(tempF), code, isDay, at }
     return {
       now,
-      hourly: (forecast || []).map((h) => ({ at: h.time.getTime(), tempC: fToC(h.temperatureF), code: h.weatherCode })),
+      hourly: (forecast || []).map((h) => ({ at: h.time.getTime(), tempC: fToC(h.temperatureF), code: h.weatherCode, observed: h.source === 'observed' ? h.station : null })),
       fetchedAt: at,
       at: (date, live) => {
         if (live) return now

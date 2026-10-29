@@ -75,6 +75,17 @@ export function targetsOf(r) {
   }
 }
 
+const _saidSeam = new Set()
+/** Where the observed morning meets NWS's grid: the step, by station, said once per page load (never on the strip). */
+function sayTheSeam(meta) {
+  const s = meta?.fill?.seam
+  if (!s) return
+  const key = `${townPlace().lookId} ${meta.fill.station}`
+  if (_saidSeam.has(key)) return
+  _saidSeam.add(key)
+  console.info(`[weather] "${townPlace().lookId}": the observed morning (${meta.fill.station}) meets the forecast grid at ${s.at.toISOString()} — grid − station = ${s.stepC >= 0 ? '+' : ''}${s.stepC.toFixed(1)} °C`)
+}
+
 /**
  * Fetch the town's weather (lib/nws.js): the current reading → the live feed (useSkyState), and the hourly
  * forecast → `hourlyForecast` (whole readings, lib/weatherAt.js).
@@ -92,6 +103,7 @@ export async function fetchWeather({ snap = false } = {}) {
     say(e, 'the weather is not updated')
     return
   }
+  sayTheSeam(w.meta)
   // Stage's Weather switch is standing a preset: the live feed writes nothing.
   if (useSkyState.getState().feedPaused) return
 

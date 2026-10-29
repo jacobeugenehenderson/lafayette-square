@@ -34,12 +34,14 @@
  * OBSERVATIONS — and only those hours: an instant has one weather (the grid's, once it starts). A filled hour carries
  * ONLY what the station observed (OBS_UNITS): temperature, humidity, wind, gusts, visibility, and pressure when its
  * station is the pressure station. It names every field it lacks in `missing` (cloud cover, precipitation and the
- * weather code are never observed in a form the kit reads), with `source: 'observed'`, `station`, `observedAt`. A
+ * weather code are never observed in a form the kit reads), with `source: 'observed'`, `observedAt`, and `station`
+ * { id, name, lat, lon } — where the reading came from, so a reader that shows it can say so (the Almanac names it). A
  * reader that needs a missing field REFUSES the instant by name (weatherAt.js#needFields), never reads it as 0.
  * The temperature station is the first listed (up to STATIONS_TRIED) whose OWN temperature observations reach the
  * fill's first hour. ⛔ No station reaching it is said by name, and the series then starts at the grid (the reader
  * names the uncovered start). An hour inside the fill with no observation within 30 min is absent, and said.
- * ⚠ The station is a point, the grid is the town's cell: the line can step at the grid's first hour (the seam).
+ * ⚠ The station is a point, the grid is the town's cell: the two can disagree at the grid's first hour (the seam).
+ *   `meta.fill.seam` = { at, stepC } (the grid's temperature − the station's, at that instant), or null unobserved.
  * ▶ node checks/claims-the-morning-is-observed.mjs · node checks/claims-one-weather-per-instant.mjs
  * ⛔ A layer whose unit is not the one converted from THROWS — the 2026-09-26 km/h-read-as-m/s defect, closed at the
  * parse. ▶ node checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs
@@ -208,11 +210,12 @@ export async function nwsWeather({ lat, lon, name, from, now = new Date(), hours
     }
   }
   const fill = fillFrom < first ? await observedHours(stations, fillFrom, first, obs?.station ?? null) : null
+  const seamC = fill?.seamF == null || gridHours[0]?.temperatureF == null ? null : (gridHours[0].temperatureF - fill.seamF) * 5 / 9
   const hourly = [...(fill?.hours ?? []), ...gridHours]
   return { current, hourly, meta: {
     gridId: p.gridId, gridX: p.gridX, gridY: p.gridY, updateTime: grid.updateTime,
     station: obs?.station ?? null, observedAt: obs ? new Date(obs.series[0].t) : null,
-    gridFrom: new Date(first), fill: fill && { station: fill.station, from: new Date(fillFrom), to: new Date(first), absent: fill.absent },
+    gridFrom: new Date(first), fill: fill && { station: fill.station, from: new Date(fillFrom), to: new Date(first), absent: fill.absent, seam: seamC == null ? null : { at: new Date(first), stepC: seamC } },
   } }
 }
 
@@ -229,17 +232,28 @@ const _tempStation = new Map()   // stations URL → the station last found repo
  */
 function stationsOf(stationsUrl, fetchImpl, name) {
   let listed = null
-  const seen = new Map()
+  const seen = new Map(), where = new Map()
   return {
     url: stationsUrl, name,
     async ids() {
       if (!listed) {
         const { res, body } = await getJson(stationsUrl, fetchImpl)
         if (!res.ok) { console.error(`[weather] ⛔ NWS stations list answered ${res.status} for "${name}" — no observations`); listed = [] }
-        else listed = (body.features || []).slice(0, STATIONS_TRIED).map((f) => f.properties?.stationIdentifier).filter(Boolean)
+        else {
+          listed = []
+          for (const f of (body.features || []).slice(0, STATIONS_TRIED)) {
+            const id = f.properties?.stationIdentifier
+            if (!id) continue
+            listed.push(id)
+            const [lon, lat] = f.geometry?.coordinates || []
+            where.set(id, { id, name: f.properties.name ?? null, lat: Number.isFinite(lat) ? lat : null, lon: Number.isFinite(lon) ? lon : null })
+          }
+        }
       }
       return listed
     },
+    /** { id, name, lat, lon } as NWS lists the station (null for what it does not state). */
+    station: (id) => where.get(id) ?? { id, name: null, lat: null, lon: null },
     observations(id, start, end) {
       const key = `${id} ${start} ${end}`
       if (!seen.has(key)) {
@@ -293,11 +307,12 @@ const nearest = (obs, t) => obs.filter((o) => o.temperature?.value != null && Ma
  * THE FILL: the hours [fillFrom, gridFirst) from the first listed station whose own temperature observations reach
  * `fillFrom`. Each hour is that station's observation within NEAR of it, carrying only what it observed (pressure only
  * when it is the pressure station — one station's altimeter setting per series, for the trend). { station, hours,
- * absent: [ISO hours with no observation] }, or null — said by name — when no station reaches the fill's start.
+ * absent: [ISO hours with no observation], seamF: its temperature at the grid's first hour or null }, or null — said
+ * by name — when no station reaches the fill's start.
  */
 async function observedHours(stations, fillFrom, gridFirst, pressureStation) {
   const H = 3600000
-  const r = await firstStation(stations, _tempStation, [fillFrom - NEAR, gridFirst - H + NEAR], (id, obs) => (nearest(obs, fillFrom) ? { id, obs } : null))
+  const r = await firstStation(stations, _tempStation, [fillFrom - NEAR, gridFirst + NEAR], (id, obs) => (nearest(obs, fillFrom) ? { id, obs } : null))
   if (!r) {
     console.error(`[weather] ⛔ none of the first ${STATIONS_TRIED} NWS stations listed for "${stations.name}" observed temperature at ${new Date(fillFrom).toISOString()} — the hours before the forecast grid's first (${new Date(gridFirst).toISOString()}) are unknown`)
     return null
@@ -313,9 +328,10 @@ async function observedHours(stations, fillFrom, gridFirst, pressureStation) {
       if (v != null) h[OBS_UNITS[field][2]] = v
     }
     h.missing = READING_FIELDS.filter((f) => h[f] == null)
-    h.source = 'observed'; h.station = r.id; h.observedAt = new Date(Date.parse(o.timestamp))
+    h.source = 'observed'; h.station = stations.station(r.id); h.observedAt = new Date(Date.parse(o.timestamp))
     hours.push(h)
   }
   if (absent.length) console.error(`[weather] ⛔ "${stations.name}": ${r.id} has no observation within 30 min of ${absent.join(', ')} — those hours are absent from the series`)
-  return { station: r.id, hours, absent }
+  const atSeam = nearest(r.obs, gridFirst)   // the same instant as the grid's first hour, for the seam
+  return { station: r.id, hours, absent, seamF: atSeam ? observed(atSeam, 'temperature', r.id) : null }
 }

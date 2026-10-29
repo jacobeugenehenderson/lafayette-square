@@ -11,7 +11,8 @@
  * RUNS the real modules (vite SSR) over an NWS-shaped fixture (no network):
  *   · the series reaches `from`; the temperature station is chosen by its own temperature (not the pressure station)
  *   · ONE weather per instant: observed hours only before the grid's first hour, every instant once
- *   · a filled hour carries only observed fields and names the rest in `missing`
+ *   · a filled hour carries only observed fields and names the rest in `missing`, and its station { id, name, lat, lon }
+ *   · the seam (grid − station at the grid's first hour) is measured, in °C
  *   · no station reaching `from` is said, and the series starts at the grid
  *   · the sky (useWeather#targetsOf), the wind (windSheet#windStateOfWeather) and the directive's payload
  *     (weather-payload#buildWeatherPayload) REFUSE a reading with no cloud cover / weather code — a WeatherFieldMissingError
@@ -42,6 +43,8 @@ const MUTANTS = [
   ["windSheet's weather code ?? 0 restored", 'src/lib/windSheet.js', 'deriveStorminess(r.weatherCode, r.precipitation', 'deriveStorminess(r.weatherCode ?? 0, r.precipitation'],
   ['the payload takes no cloud cover (refusal gone)', 'src/lib/weather-payload.js', '  if (!Number.isFinite(weatherTargets?.cloudCover)) throw', '  if (false) throw'],
   ["the payload's cloud cover ?? 0 restored", 'src/lib/weather-payload.js', 'Math.min(1, weatherTargets.cloudCover)', 'Math.min(1, weatherTargets?.cloudCover ?? 0)'],
+  ['an observed hour does not say where it was taken', 'src/lib/nws.js', 'h.station = stations.station(r.id)', 'h.station = r.id'],
+  ['the seam is not measured', 'src/lib/nws.js', "seamF: atSeam ? observed(atSeam, 'temperature', r.id) : null", 'seamF: null'],
   ["weatherAt's tangents read a missing neighbour as 0", 'src/lib/weatherAt.js', 'const y = (j) => hourly[j][f]\n', 'const y = (j) => hourly[j][f] ?? 0\n'],
 ]
 
@@ -71,7 +74,7 @@ function fakeFetch(stationIds) {
     const json = (status, body) => ({ ok: status < 400, status, json: async () => body })
     if (url.includes('/points/')) return json(200, { properties: { gridId: 'TST', gridX: 1, gridY: 1, forecastGridData: 'grid', observationStations: `stations:${stationIds}` } })
     if (url === 'grid') return json(200, { properties: GRID })
-    if (url.startsWith('stations:')) return json(200, { features: url.slice(9).split(',').map((id) => ({ properties: { stationIdentifier: id } })) })
+    if (url.startsWith('stations:')) return json(200, { features: url.slice(9).split(',').map((id) => ({ geometry: { coordinates: [-90.5, 38.9] }, properties: { stationIdentifier: id, name: `${id} Field` } })) })
     const m = /\/stations\/(\w+)\/observations\?start=([^&]+)(?:&end=([^&]+))?/.exec(url)
     if (m) {
       const a = Date.parse(decodeURIComponent(m[2])), b = m[3] ? Date.parse(decodeURIComponent(m[3])) : Infinity
@@ -133,6 +136,10 @@ async function claims(mutant) {
       const absent = READING_FIELDS.filter((f) => h[f] == null)
       if (JSON.stringify(absent) !== JSON.stringify(h.missing)) fails.push(`the observed hour ${h.time.toISOString()} names missing [${h.missing}], it lacks [${absent}]`)
     }
+    const st = obsH[0]?.station
+    if (!(st?.id === 'KTMP' && st.name === 'KTMP Field' && st.lat === 38.9 && st.lon === -90.5)) fails.push(`an observed hour's station is ${JSON.stringify(st)}, not KTMP's { id, name, lat, lon } as NWS lists it`)
+    const seam = w.meta.fill?.seam   // KTMP read 10 °C at 14:53, the grid 20 °C from 15:00
+    if (!(seam && Math.abs(seam.stepC - 10) < 1e-9 && seam.at.getTime() === GRID0)) fails.push(`the seam is ${JSON.stringify(seam)}, not +10 °C at the grid's first hour`)
     const at12 = obsH.find((h) => h.time.getTime() === Date.parse('2026-10-28T12:00:00Z'))
     if (!at12 || Math.abs(at12.temperatureF - (8.5 * 9 / 5 + 32)) > 1e-9) fails.push(`12:00's temperature is ${at12?.temperatureF} °F, KTMP observed 8.5 °C (47.3 °F) at 11:53`)
     // no reach → said, series from the grid
