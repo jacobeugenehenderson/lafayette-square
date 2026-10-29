@@ -74,15 +74,13 @@ for (const [name, [what, rings]] of Object.entries(ROWS)) { const r = judge(open
 // the two rows whose topology change is Boz's: each refuses by the guard's own name
 { const wallLong = [SQ(0, 0, 20000, 20000), rev(SQ(5000, 5000, 10000, 14300))], r = judge(openCloseAtStep, ip(wallLong), STEP_M, 'wallLong')
   row(/the topology guard: P's hole at \(5\.000, 19\.300\) .* opened to the outside/.test(r.why || ''), `(1) wallLong: a sub-2h wall over a stretch wider than 2h opens the hole, and the guard REFUSES by name — ${r.why ? r.why.slice(0, 160) : 'BUILT'}`) }
-// ⛔ A KNOWN REFUSAL (Plumb, 2026-10-29; BACKLOG "the close's back-offset loses a hole the dilate re-forms"): a hole whose wall the
-// open breaks over a stretch narrower than 2h. The close should refill the mouth and keep the hole (the definition does); its
-// back-offset of the dilate's re-formed hole ring (a cut between two COLLINEAR edges of one open ring, across an arc that runs the
-// whole outer) emits that arc instead, and the hole was FILLED with no refusal. The guard now refuses it by name. RED when the
-// message changes, and RED when it starts BUILDING (then this row asserts it keeps its hole, against the definition)
+// ⭐ ONE LINE, TWO EDGES: a hole whose wall the open breaks over a stretch narrower than 2h. The close refills the mouth and the hole
+// is KEPT, as the definition keeps it: the dilate re-forms the hole ring, whose back-offset reads a merged token of two collinear
+// edges (the mouth's two sides) and LEAVES it at the last edge (openClose.mjs#emit). Left at the first, the join out ran across the
+// whole outer and the hole was filled (until 2026-10-29 a known refusal here; the mutant setMergeLeavesFirst, scratch/cut-once)
 { const wallShort = [SQ(0, 0, 20000, 20000), rev([[5000, 5000], [15000, 5000], [15000, 17000], [10150, 17000], [10150, 19050], [9850, 19050], [9850, 17000], [5000, 17000]])]
-  const r = judge(openCloseAtStep, ip(wallShort), STEP_M, 'wallShort'), KNOWN = "the open/close: a filled feature at (10.150, 20.000) (120.90 m²) is wider than a cell"
-  row(!!r.why && r.why.includes(KNOWN), `(1) wallShort, the KNOWN refusal: a hole whose wall the open breaks over a short stretch — ${r.why ? (r.why.includes(KNOWN) ? 'refuses by name: the filled feature is wider than a cell (the close\'s back-offset loses the hole; cause not established)' : `refuses, NOT as known: ${r.why.slice(0, 200)}`) : 'now BUILDS: assert its hole is kept against the definition, and retire the known refusal'}`) }
-
+  const r = judge(openCloseAtStep, ip(wallShort), STEP_M, 'wallShort')
+  row(bar(r) && r.topo.holes === 1, `(1) wallShort: a hole whose wall the open breaks over a short stretch is KEPT — ${r.why ? `REFUSED: ${r.why.slice(0, 200)}` : `${r.topo.outers} outer, ${r.topo.holes} hole (want 1) · ${off2(r)} · copy ${r.copy} · crossings ${r.cross}`}`) }
 // ⭐ THE DEFINITION'S INVARIANT ON EVERY FEATURE (Zob's ruling, 2026-10-29): openClose.mjs refuses a taken or filled feature wider than
 // 2h. Read from the source (both lists pass through the predicate before k is cut), and the predicate seen to fail: a planted over-wide
 // take (a 3 m square) is wider; a 0.6 m strip is not

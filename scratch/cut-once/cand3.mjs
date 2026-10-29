@@ -146,8 +146,14 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     lastRun = { ring: r.ring, from: lastRun && lastRun.ring === r.ring && from !== r.from ? lastRun.from : r.from, to: r.to } }
   // one line twice in a row is one line: the same region edge, or (exactly) the same line
   const t2 = []
+  // ⭐ ONE LINE, TWO EDGES (Plumb, 2026-10-29; planted wallShort and PTown's wide fills): two region edges on ONE line in a row are one
+  // line, but the merged token ENTERS at the first edge and LEAVES at the last, so the join out of it is read from the last edge (its
+  // skipped arc, adjacency, run) and never from the first: kept from the first, the close's back-offset of a hole the dilate re-formed
+  // read the join out as a cut across the arc 10…6, which runs the whole outer, and emitted that arc (the hole FILLED)
   for (const t of tok) { const l = t2[t2.length - 1]
-    if (t.kind === 'L' && l?.kind === 'L' && ((t.born && t.born === l.born) || (t.g != null && t.g === l.g && t.i === l.i) || (t.int && l.int && sameLine({ a: t.int[0], b: t.int[1] }, { a: l.int[0], b: l.int[1] })))) continue
+    if (t.kind === 'L' && l?.kind === 'L' && ((t.born && t.born === l.born) || (t.g != null && t.g === l.g && t.i === l.i) || (t.int && l.int && sameLine({ a: t.int[0], b: t.int[1] }, { a: l.int[0], b: l.int[1] })))) {
+      if (!MERGE_LEAVES_FIRST && t.g != null && !(t.g === l.g && t.i === l.i)) t2[t2.length - 1] = { ...l, out: { g: t.g, i: t.i, int: t.int } }
+      continue }
     t2.push(t) }
   while (t2.length > 1 && t2[0].kind === 'L' && t2[t2.length - 1].kind === 'L' && ((t2[0].g != null && t2[0].g === t2[t2.length - 1].g && t2[0].i === t2[t2.length - 1].i))) t2.pop()
   // the joins: between two consecutive lines with no fixed point between
@@ -211,7 +217,7 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
       const prevLine = k === 0 ? (t0.int || t0.flt) : a.lns[k - 1], nextLine = a.lns[k]
       if (!ARC_RAW && prevLine && nextLine && capAt(prevLine, nextLine, q, { int: nextLine })) { stat.arcSquared = (stat.arcSquared || 0) + 1; return }
       out.push(q); outL.push(a.lns[k]); origin(q, kind) }) }
-  for (let k = 0; k < N; k++) { const t = t2[k], u = t2[(k + 1) % N]
+  for (let k = 0; k < N; k++) { const t = t2[k].out ? { ...t2[k], ...t2[k].out } : t2[k], u = t2[(k + 1) % N]
     if (t.kind === 'V') { out.push(t.p); outL.push(u.kind === 'L' ? (u.int || null) : null); origin(t.p, t.cut ? 'cut-point' : 'run-vertex'); continue }
     if (u.kind === 'V') continue
     if (t.g != null && u.g === t.g && RUN[t.g] && RUN[t.g].runOf[u.i] === (RUN[t.g].runOf[t.i] + 1) % RUN[t.g].runs.length) { const v = SRC[t.g][RUN[t.g].runs[RUN[t.g].runOf[u.i]].s]; if (!OWN_SKIPS_LIMIT && capAt(t.int || t.flt, u.int || u.flt, [v.X, v.Y], u)) { stat.ownSquared = (stat.ownSquared || 0) + 1; continue } out.push([v.X, v.Y]); outL.push(u.int || null); origin([v.X, v.Y], 'own'); stat.own++; continue }
@@ -445,6 +451,8 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
 // side runs backward between its corners is its plain rectangle plus a triangle at each diverging end (R = X below one step).
 // Then F ∪ pieces (a back-dilate) or F − pieces (a back-erode, the pieces wound clockwise so their tags run with the boundary).
 // SPIKE: switched by setBackPieces; emit stays the reference point until the oracle's table decides
+let MERGE_LEAVES_FIRST = false                    // ⛔ the mutant only (setMergeLeavesFirst): a merged line token leaves at its FIRST edge
+export const setMergeLeavesFirst = (v) => { MERGE_LEAVES_FIRST = !!v }
 let BACK_PIECES = !!process.env.CUTONCE_BACK_PIECES
 export const setBackPieces = (v) => { BACK_PIECES = !!v }
 let GAP_BEFORE_LIMIT = false                      // ⛔ the mutant only (setGapBeforeLimit): the gap rule ahead of the miter limit

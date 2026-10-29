@@ -129,10 +129,12 @@ out in the MAIN checkout (Jacob's), stays.
   `claims-the-coast-is-the-lidars`: MacMillan's 10-27 crop and the wharf 10-27 crop (KNOWN_REFUSALS 2). The rule is unbuilt; one attempt (runs
   joined within NODE_BOUND, local `plumb/staircase-runs`) raised Huron's ratchet, cause not established; it joined Huron 3.65%, PTown decks
   0.21%, MacMillan's crop 15.4% of edges (LS, HPDM not measured): the rule cannot be "join any sub-step edge". Trace: `macmillan-trace.mjs`.
-- **the close's back-offset loses a hole the dilate re-forms** (cited by `claims-the-open-close-cuts-once` (1) wallShort). A hole whose wall
-  the open breaks over a stretch narrower than 2h: the close's back-offset of the re-formed hole ring joins two collinear edges of one open
-  ring across an arc that runs the whole outer, and emits that arc. Which emission branch does it is not established. It was FILLED with
-  no refusal. Now every taken and filled feature wider than 2h refuses by name (Zob's ruling), so it is a known refusal on that row.
+- **the close's back-offset loses a hole the dilate re-forms** (PTown's wide-fill class, 7 sites; held loud by the feature guard). A hole
+  the dilate re-forms where the close shuts a mouth is tagged with a stretch of the open's OUTER ring, and its closing join skips the rest
+  of that outer: the trimmed-arc rule emits that arc and the hole fills (trace `scratch/cut-once/widefill-trace.mjs`). One attempt (an arc
+  must not enclose the ring it stands in for; local `plumb/wide-fill-arc` 971fa28d) clears the class but turns each site into "P's hole
+  opened": the crossing at that join pinches the hole into the outer. Cause of the pinch not established. (wallShort, the collinear case,
+  is fixed: a merged token leaves at its last edge.)
 - **an island near one terrain cell is kept or dropped on its vertex set** (Zob, 2026-10-29): Huron's (715.43, 214.26) is 29.583 m² at the
   open/close on both paths and the definition, yet kept at base and dropped through the port, downstream (simplify/settle, then "every island
   kept holds a terrain node"); the stage's sensitivity, cause not established.
