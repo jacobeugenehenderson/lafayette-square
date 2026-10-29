@@ -61,6 +61,8 @@ Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d
   three times).
 - by-value reads in `checks/claims-a-bake-step-declares-what-it-reads.mjs`.
 - `src/data/buildings.json` in every pour's inputs (Class D).
+- derive.js reads cap ends from raw/centerlines.json by NAME (ends within 2 m), a fallback no guard sees; LS has 11 capped centerlines,
+  all shadowed by overlay caps today (Zob, 2026-10-28). A candidate to retire.
 
 **Branches kept:** `plumb/ls-historic-districts` (9477fdd8, 91178f33): KEEP, a ruling owed; it declares LS's historicDistricts in
 sources.json but writes the OLD dir (`cartograph/data/lafayette-square`), so re-point it to `lafayettesquare` before any merge ·
