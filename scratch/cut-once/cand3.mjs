@@ -129,8 +129,9 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
         // token continues the predecessor. Any other order refuses by name, with all three. ⭐ A successor carrying SEVERAL tags of this
         // ring (PTown's two 'backward, no staircase' sites, the same shape) bounds the order at its LATEST tag going forward
         let ids2 = ids
-        const offLine = (i) => { const L = lineOf(g, i), dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1], len = Math.hypot(dx, dy), nxv = dy / len, nyv = -dx / len
-          return [p, q].every(v => { const ins = INSERTED.has(v.X + ',' + v.Y), dist = Math.abs((v.X - (L[0][0] + nxv * d)) * dy - (v.Y - (L[0][1] + nyv * d)) * dx) / len; return dist <= (ins ? 2 : 1) * NODE_BOUND }) }
+        // the tiered bound has ONE home (latticeFaces.js#onLineTiered), called on the OFFSET line L + n·d with the inserted segments
+        const offLine = (i) => { const L = lineOf(g, i), n2 = unit(L[0], L[1]), Ld = L.map(([x, y]) => [x + n2[0] * d, y + n2[1] * d])
+          return [p, q].every(v => onLineTiered(Ld, [v.X, v.Y], (INSERTED.get(v.X + ',' + v.Y) || []).map(x => x.seg))) }
         const bound = nx.length ? nx.reduce((m, x) => (pos(x) > pos(m) ? x : m), nx[0]) : null
         if (nx.length > 1 && !CLAIMANT_ONE_SUCCESSOR && !nx.includes(last) && pos(bound) < pos(last)) {
           const keep = ids.filter(x => pos(x) <= pos(bound)), drop = ids.filter(x => pos(x) > pos(bound))
