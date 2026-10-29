@@ -93,6 +93,11 @@ after the port merges. The full refusal census on the merged port, then one clas
 empty; 42 near-only chunks named KNOWN in claims-the-armoured-shore-is-never-empty) and Jacob's seam ruling ("call them from the same
 place") in one rewrite of `drapeGlobals`: one nested lattice sized from what it builds, `farRow` the one producer of the near/far edge.
 Groyne, a follow-up off groyne/far-shore.
+**▶ NEXT LOAD COST (Ward, measured on PTown production 2026-10-29, after the far shore landed: reveal 10.6–12.6 s, from 14.7–15.7 s):**
+the largest main-thread task is now `drawnGround.js#makeDrawnGround`'s triangle-grid binning, 1.6–1.9 s, camera-independent (Groyne's C9
+census: a view over baked bytes, so outside the far-shore check's class). Candidate: the cell grid baked into the slab, or built in a worker.
+Measure before choosing. PTown's console also prints "STALE SLAB … this ground predates the pinned coast (no drawnRaw record)"; that's the
+true state, and it clears with PTown's re-pour (BRIEF-provincetown-pours-on-the-port).
 **⟦OWED⟧ A WARD PIN REFUSES WHILE A COASTAL STAGING SLAB LACKS THE FAR BAKE** (Groyne/Zob, 2026-10-29): after the far-shore merge, a
 player past it draws no shore on a slab without `revetment-far.*`. The release order (OPERATIONS) says merge → far step + publish for
 every coastal town → only then the pin. Nothing enforces it; same family as the promote guard above.
