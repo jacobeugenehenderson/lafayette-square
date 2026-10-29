@@ -20,6 +20,10 @@ export const ROWS = {
   valley: { what: 'a 24 u flat valley between two 10° turns is unchanged', rings: [[[0, 0], [20000, 0], [20000, 20000], [12000, 20000], [10012, 19650], [9988, 19650], [8000, 20000], [0, 20000]]] },
   // Huron's 3020/3021/3022 shape: a reflex near-straight chain with a 24 u middle edge on a long wall
   reflexChain: { what: 'a reflex near-straight chain with a short middle edge is unchanged', rings: [[[0, 0], [20000, 0], [20000, 20000], [12000, 20000], [10016, 19982], [9992, 19982], [8000, 20000], [0, 20000]]] },
+  // a 50° V-notch 3 m deep in the top wall whose apex is a 20 u flat: the close's back-erode meets the notch's two sides past the
+  // miter limit, and the flat's vertices lie ON those sides (within NODE_BOUND of the cut path), so the gap rule would emit the
+  // apex. The miter limit comes first: the corner is SQUARED, as the definition squares it (Huron's closedK, 0.346 m²)
+  notchAtLimit: { what: 'a V-notch past the miter limit, its apex a 20 u flat, is squared in the close', rings: [[[0, 0], [20000, 0], [20000, 20000], [11409, 20000], [10010, 17000], [9990, 17000], [8591, 20000], [0, 20000]]] },
   // an outer and its own hole, collinear end to end, the wall between 0.95 m (< 2h) along a 0.3 m stretch: the open merges, the
   // close refills, the hole is kept
   wallShort: { what: 'a sub-2h wall over a short stretch is kept (the close refills it)', rings: [sq(0, 0, 20000, 20000), rev([[5000, 5000], [15000, 5000], [15000, 17000], [10150, 17000], [10150, 19050], [9850, 19050], [9850, 17000], [5000, 17000]])] },
