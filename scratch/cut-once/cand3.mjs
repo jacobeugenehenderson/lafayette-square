@@ -377,6 +377,8 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
 // SPIKE: switched by setBackPieces; emit stays the reference point until the oracle's table decides
 let BACK_PIECES = !!process.env.CUTONCE_BACK_PIECES
 export const setBackPieces = (v) => { BACK_PIECES = !!v }
+let CORNER_AT_MITER = false                       // ⛔ the mutant only (setCornerAtMiter): M used directly as the corner, the withdrawn (a)
+export const setCornerAtMiter = (v) => { CORNER_AT_MITER = !!v }
 function backPieces(F, region, lines, dBack, who, stat) {
   const isLine = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
   const lineOfRegion = (g, i) => { const L = lines?.[g]?.[i]; if (L) return L; const R = region[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
@@ -408,16 +410,31 @@ function backPieces(F, region, lines, dBack, who, stat) {
         const cap = [[v.X + dBack * (nk[0] - nk[1] * t), v.Y + dBack * (nk[1] + nk[0] * t)], [v.X + dBack * (nj[0] + nj[1] * t), v.Y + dBack * (nj[1] - nj[0] * t)]]
         stat.backSquared = (stat.backSquared || 0) + 1
         return { end: P2(...fcross(cap, runs[kk].L)), start: P2(...fcross(cap, runs[r].L)), cap: true, v } }
-      // the diverging corner: two target lines that SHARE an endpoint (adjacent source edges) meet exactly there (their crossing, P's own
-      // vertex); otherwise clipper's own miter point from F's vertex, v + (n_k + n_j)·d / (1 + cos), rounded once. ⛔ Not the crossing
-      // of two non-adjacent near-parallel lines, which lands arbitrarily far (ill-conditioned; it overflowed the face walk's grid)
+      // the diverging corner (Zob's ruling (a′), 2026-10-29): it must be BOTH on its lines AND where the definition puts it.
+      // M = clipper's miter point from F's vertex, v + (n_k + n_j)·d / (1 + cos) (the definition's corner); X = the targets' crossing,
+      // exact (lineCrossOf) and rounded once; two targets that SHARE an endpoint meet exactly there. X within NODE_BOUND of M → the
+      // corner is X. Otherwise F's boundary there had a short connector that rounding merged away, and the honest corner is TWO
+      // points: M's foot on A and M's foot on B, each rounded once, joined by a BORN connector (the gap piece v·P_A·P_B, below)
       const A = runs[kk].L, B = runs[r].L, sh = [A[0], A[1]].find(pa => [B[0], B[1]].some(pb => pb[0] === pa[0] && pb[1] === pa[1]))
-      const X = sh && intLine(A) && intLine(B) ? sh : [Math.round(v.X + (nk[0] + nj[0]) * dBack / (1 + cosA)), Math.round(v.Y + (nk[1] + nj[1]) * dBack / (1 + cosA))]
-      return { end: { X: X[0], Y: X[1] }, start: { X: X[0], Y: X[1] } } })
+      const M = [v.X + (nk[0] + nj[0]) * dBack / (1 + cosA), v.Y + (nk[1] + nj[1]) * dBack / (1 + cosA)]
+      if (CORNER_AT_MITER && !(sh && intLine(A) && intLine(B))) { const Mr = M.map(Math.round); return { end: { X: Mr[0], Y: Mr[1] }, start: { X: Mr[0], Y: Mr[1] } } }   // ⛔ the mutant only: the withdrawn (a)
+      let X = sh && intLine(A) && intLine(B) ? sh : null
+      if (!X) { try { X = intLine(A) && intLine(B) ? lineCrossOf({ a: A[0], b: A[1] }, { a: B[0], b: B[1] }, who) : fcross(A, B).map(Math.round) } catch { X = null }
+        if (X && !(Math.hypot(X[0] - M[0], X[1] - M[1]) <= NODE_BOUND)) X = null }
+      if (X) return { end: { X: X[0], Y: X[1] }, start: { X: X[0], Y: X[1] } }
+      const pa = P2(...foot({ X: M[0], Y: M[1] }, A)), pb = P2(...foot({ X: M[0], Y: M[1] }, B))
+      stat.backTwoFeet = (stat.backTwoFeet || 0) + 1
+      if (process.env.CUTONCE_FEET) console.log('FEET', who, JSON.stringify({ v: [v.X, v.Y], M: M.map(Math.round), X, pa: [pa.X, pa.Y], pb: [pb.X, pb.Y], A, B, turnDeg: +(Math.acos(Math.max(-1, Math.min(1, cosA))) * 180 / Math.PI).toFixed(2) }))
+      if (pa.X === pb.X && pa.Y === pb.Y) return { end: pa, start: pb }
+      return { end: pa, start: pb, conn: true, v } })
     for (let kk = 0; kk < m; kk++) { const c = C[kk]; if (c.cap) pieces.push(ccwp([{ X: c.v.X, Y: c.v.Y, tag: BORN }, { ...c.end, tag: BORN }, { ...c.start, tag: BORN }])) }
     for (let q = 0; q < m; q++) { const kk = (q - 1 + m) % m, a = vAt(q), b = vAt((q + 1) % m), L = runs[q].L
       const s0 = C[kk].start, e0 = C[q].end, along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
-      if (along > 0) { pieces.push(ccwp([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...e0, tag: runs[q].tag }, { ...s0, tag: BORN }])); continue }
+      // a two-feet corner at the run's END (ruling (a′)): its gap, F's vertex · P_A · P_B, is a needle one step wide that the noder
+      // cannot carry alone, so it is part of THIS strip: b → P_B (side) → P_A (the born connector) → along the run
+      const cn = C[q].conn ? [{ ...C[q].start, tag: BORN }] : []
+      if (along > 0) { pieces.push(ccwp([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, ...cn, { ...e0, tag: runs[q].tag }, { ...s0, tag: BORN }])); continue }
+      if (C[q].conn) pieces.push(ccwp([{ X: b.X, Y: b.Y, tag: BORN }, { ...C[q].start, tag: BORN }, { ...e0, tag: BORN }]))
       const raF = foot(a, L), rbF = foot(b, L)
       const aIsX = !C[kk].conv && Math.hypot(s0.X - raF[0], s0.Y - raF[1]) < LATTICE_STEP, bIsX = !C[q].conv && Math.hypot(e0.X - rbF[0], e0.Y - rbF[1]) < LATTICE_STEP
       const Ra = aIsX ? s0 : P2(...raF), Rb = bIsX ? e0 : P2(...rbF)
