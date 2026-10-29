@@ -293,6 +293,10 @@ export function mountedPasses({ quality, dofOn, inspect }) {
  */
 // The composer's frame priority, stated (it is @react-three/postprocessing's default): an overlay draws one after it.
 export const COMPOSER_PRIORITY = 1
+// ⛔ autoClear OFF: every pass that needs a clear owns it (RenderPass's own ClearPass; N8AO, DownsamplePyramid and
+// HeroLadder clear or overwrite their own targets). With the default (on), the first EffectPass's draw cleared the depth
+// the later ones sample: since bloom went ahead of DoF (ab3ddb11, 2026-09-26), DoF read the far plane at every pixel and
+// blurred the whole frame at the Amount (PTown, 2026-10-28). ▶ node checks/claims-dof-reads-the-scene-depth.mjs
 
 export function RenderPipeline({ refs, dofOn, inspect }) {
   const composer = useRef(null)
@@ -307,7 +311,7 @@ export function RenderPipeline({ refs, dofOn, inspect }) {
   if (mounted.length === 0) return null
 
   return (<>
-    <EffectComposer key={key} ref={composer} renderPriority={COMPOSER_PRIORITY}>
+    <EffectComposer key={key} ref={composer} renderPriority={COMPOSER_PRIORITY} autoClear={false}>
       {mounted.filter((e) => !e.overlay).map((e) => {
         const Pass = e.pass
         const props = e.props ? e.props(ctx) : null

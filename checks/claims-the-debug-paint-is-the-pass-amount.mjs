@@ -25,7 +25,7 @@ const DBG = readFileSync(join(ROOT, 'src/components/DofDebug.jsx'), 'utf8')
 
 const judgeOrder = (s, d) => { const a = s.indexOf('export const POSTFX_PIPELINE = ['), b = a < 0 ? -1 : s.indexOf('\n]\n', a)
   const ids = a < 0 || b < 0 ? [] : [...s.slice(a, b).matchAll(/^\s*\{\s*id: '([^']+)', pass: (\w+)([^\n]*)/gm)].map(m => [m[1], m[2], m[3]])
-  const last = ids.at(-1) || [], inst = /<EffectComposer key=\{key\} ref=\{composer\} renderPriority=\{COMPOSER_PRIORITY\}>/.test(s) && /mounted\.filter\(\(e\) => !e\.overlay\)/.test(s)
+  const last = ids.at(-1) || [], inst = /<EffectComposer key=\{key\} ref=\{composer\} renderPriority=\{COMPOSER_PRIORITY\}[ >]/.test(s) && /mounted\.filter\(\(e\) => !e\.overlay\)/.test(s)
     && /mounted\.filter\(\(e\) => e\.overlay\)[^\n]*composer=\{composer\} after=\{COMPOSER_PRIORITY\}/.test(s)
   const after = /\}, after \+ 1\)/.test(d)
   return { ids, inst, after, ok: last[0] === 'dofDebug' && last[1] === 'DofDebug' && /overlay: true/.test(last[2]) && ids.filter(([, p]) => p === 'DofDebug').length === 1 && inst && after } }
