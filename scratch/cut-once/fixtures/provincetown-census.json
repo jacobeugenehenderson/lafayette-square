@@ -1,28 +1,12 @@
 {
  "stats": {
   "parts": 197,
-  "partsBuilt": 196,
-  "tiles": 1296,
-  "runs": 1105
+  "partsBuilt": 197,
+  "tiles": 0,
+  "runs": 0
  },
  "tile": 500,
  "min": 62.5,
  "win": 250,
- "sites": [
-  {
-   "class": "the back-offset: a trimmed arc STARTS outside D's wedge at (…)",
-   "at": [
-    -119.15,
-    313.735
-   ],
-   "why": "[census 3 open] ⛔ the back-offset: a trimmed arc STARTS outside D's wedge at (-119.15,313.735). Unruled; refusing.",
-   "leaves": 1,
-   "m2": 2900.5,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  }
- ]
+ "sites": []
 }

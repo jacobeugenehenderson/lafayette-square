@@ -362,7 +362,17 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
     // clockwise ⇔ X outside (the region lies LEFT of every ring)
     if (AR && AR.valid) { const arc = AR.pts; {
         const loop = [...arc, X]; let a2 = 0n; for (let k = 0; k < loop.length; k++) { const p = loop[k], q = loop[(k + 1) % loop.length]; a2 += BigInt(p[0]) * BigInt(q[1]) - BigInt(q[0]) * BigInt(p[1]) }
-        if (d < 0 ? a2 < 0n : a2 > 0n) { pushArc(AR, 'trimmed-arc', t, u); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
+        if (d < 0 ? a2 < 0n : a2 > 0n) {
+          // ⭐ THE TRIMMED ARC'S PREMISE SELECTS (Zob's ruling, 2026-10-29; PTown's (−119.15, 313.735)): the trimmed arc is the next boolean's
+          // exact answer only when the skipped arc STARTS inside D's wedge (∩P follows L_a to a's end, the arc, then L_b). Where it does not,
+          // and the step is a sub-cell step between resolved runs (every skipped edge shorter than a cell, both targets at least a cell:
+          // Q1's reason, the trace's own resolution), and every skipped vertex lies within NODE_BOUND of L_a or L_b, the source vertices
+          // stand in (the gap arc), exact and cut once. Otherwise the trimmed arc, which refuses there by name as before
+          const inWedge = (q) => leftOf(A, q) && leftOf(B, q), cell = 2 * Math.abs(d), R2 = SRC[t.g], nS = R2.length
+          const eL = (i) => { const u0 = R2[i], u1 = R2[(i + 1) % nS]; return Math.hypot(u1.X - u0.X, u1.Y - u0.Y) }
+          const subStep = () => { if (eL(t.i) < cell || eL(u.i) < cell) return false; for (let j = (t.i + 1) % nS; j !== u.i; j = (j + 1) % nS) if (eL(j) >= cell) return false; return true }
+          if (!inWedge(arc[0]) && subStep() && arc.every(q => Math.min(dLine(q, A), dLine(q, B)) <= NODE_BOUND)) { pushArc(AR, 'gap-arc', t); stat.stepArc = (stat.stepArc || 0) + 1; continue }
+          pushArc(AR, 'trimmed-arc', t, u); stat.trimmedArc = (stat.trimmedArc || 0) + 1; continue } } }
     // ⛔ a BACKWARD cut between non-parallel lines of one ring: refuse by name (Zob, 2026-10-29; unruled until one exists)
     // ⭐ BACKWARD BUT ADJACENT (Zob, 2026-10-29): u = t − 1 on one ring: the two lines are adjacent source edges, and their
     // crossing must BE the shared source vertex v_t, integer for integer (checked, never assumed), which is emitted. Why the

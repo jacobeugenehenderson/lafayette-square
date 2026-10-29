@@ -72,6 +72,10 @@ const ROWS = {
   // edge, but the successor carries TWO tags (9 and 10), so the order is bounded at its latest; edge 8, read beyond it, is a claimant
   // (the mutant setClaimantOneSuccessor, scratch, refuses 'a cut from edge 10 to edge 8 runs BACKWARD')
   claimant2: ['an order-breaking claimant before a two-tag successor is dropped', fx('ptown-claimant2-crop').paths],
+  // PTown's own water (10 m round (−119.15, 313.735)): a 45° staircase whose erode cuts edge 10 to edge 12 (0.2° apart) across a 5 u
+  // step. The trimmed arc's premise fails (its arc starts outside D's wedge), the step is a sub-cell step between resolved runs, and
+  // its vertices lie on the lines: they stand in (Zob's ruling; before, 'a trimmed arc STARTS outside D's wedge' refused here)
+  trimstart: ['a trimmed arc whose premise fails at a sub-cell step: the step\'s own vertices stand in', fx('ptown-trimstart-crop').paths],
   // PTown's own water (30 m round (−4486.547, −1424.506); the census's 7 wide fills): the close shuts a mouth and the dilate re-forms a
   // hole tagged with the open's OUTER edges. A ring wound opposite to its tags' source takes no arc stand-ins (Zob's ruling; the mutant
   // setOppStandins fills the hole, 2.74 m²), and an offset face wholly the rounding is not emitted (a 3-vertex zero-area ring at the
