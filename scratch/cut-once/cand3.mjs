@@ -509,7 +509,7 @@ export function morph(region, d, who, stat, lines = null) {
     if (d < 0) pieces = pieces.map(pp => { const r = pp.slice().reverse(); return r.map((q, k) => ({ ...q, tag: pp[(pp.length - 1 - k - 1 + pp.length) % pp.length].tag })) })
     const base = region.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null })))
     F = arrange([base, pieces], d < 0 ? (w => w[0] > 0 && !(w[1] < 0)) : (w => w[0] > 0 || w[1] > 0), `${who} offset`, true) }
-  STAGES[d < 0 ? 'erode' : 'dilate'] = F.rings                                  // the stage-wise oracle reads each stage's REGION
+  STAGES[d < 0 ? 'erode' : 'dilate'] = F.rings; STAGES[d < 0 ? 'erodeTags' : 'dilateTags'] = F.tags                                  // the stage-wise oracle reads each stage's REGION
   if (BACK_PIECES) return backPieces(F, region, lines, -d, who, stat)
   // TRACE (diagnostic only, CUTONCE_TRACE_AT=x,y metres): every eroded/dilated edge within 2 m of the place, with its tags
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
