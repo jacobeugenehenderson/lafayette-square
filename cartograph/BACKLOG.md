@@ -57,6 +57,13 @@ The combined bake also measures THE WATER TINT (below).
   cannot read this ring: a STAIRCASE in its SOURCE at a cut"). The staircase rule did not converge (local `plumb/staircase-runs`:
   Huron's ratchet rose, and it joined 3.65% of Huron's lidar edges), so it's its own row. Also named debts: the take-out's three
   subtractions on integer booleans (local `plumb/takeout-on-arrangement` 3dc1a151, unpushed).
+  SWEEP of PTown's traced water (diagnostic `scratch/cut-once/sweep.mjs`, local `plumb/concurrence` e7b78ec2 with the concurrence on;
+  Huron's traced water and pier: 0 classes). Per part: 196/197 build; part 0 (249.54 km², 100% of the area) refuses. Tiled at 500 m:
+  1,095 tiles, 11 refuse, first refusal per tile only (a lower bound). Class · tiles · m² of those tiles · share of tiled area:
+  no forward order fits · 2 · 370,968 · 0.15% | source STAIRCASE at a cut · 2 · 370,443 · 0.15% | backward cut, no staircase ·
+  2 · 319,719 · 0.13% | guard: P's hole opened · 1 · 240,618 · 0.10% | walls-meet · 1 · 54,503 · 0.02% | guard: two parts joined ·
+  1 · 137,032 · 0.05% (on a tile edge, probable tiling artefact) | cross-ring-not-a-pair · 1 · 121,132 · 0.05% | trimmed arc starts
+  outside D · 1 · 175,624 · 0.07%. One connected water body: PTown's coast bakes only when every class is closed.
 - **Altadena:** re-fetch, the Extent fix, re-pour.
 
 **▶ NEXT TRANCHE LEADS:** float morphology (cut once without integer copies; sized LARGE: clipper-lib and Clipper2 are both integer) ·
