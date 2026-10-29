@@ -4,7 +4,10 @@
     {
       "id": "kit-default",
       "name": "Kit Default",
-      "createdAt": 1789900000000
+      "createdAt": 1789900000000,
+      "migrated": {
+        "arch-stands": 1793250984372
+      }
     },
     {
       "id": "lafayettesquare",
@@ -12,7 +15,10 @@
       "scene": "lafayettesquare",
       "createdAt": 1777317275119,
       "bakedAt": 1793237227929,
-      "updatedAt": 1793236825018
+      "updatedAt": 1793236825018,
+      "migrated": {
+        "arch-stands": 1793250984372
+      }
     },
     {
       "id": "hipointedemun",
@@ -20,7 +26,10 @@
       "scene": "hipointedemun",
       "createdAt": 1782000000000,
       "bakedAt": 1793240503860,
-      "updatedAt": 1791428789911
+      "updatedAt": 1791428789911,
+      "migrated": {
+        "arch-stands": 1793250984372
+      }
     },
     {
       "id": "altadena",
@@ -28,7 +37,10 @@
       "scene": "altadena",
       "createdAt": 1784014203676,
       "bakedAt": 1784097709671,
-      "updatedAt": 1784097375258
+      "updatedAt": 1784097375258,
+      "migrated": {
+        "arch-stands": 1793250984372
+      }
     },
     {
       "id": "huron",
@@ -36,7 +48,10 @@
       "scene": "huron",
       "createdAt": 1789875167347,
       "bakedAt": 1793239383767,
-      "updatedAt": 1791426710708
+      "updatedAt": 1791426710708,
+      "migrated": {
+        "arch-stands": 1793250984372
+      }
     },
     {
       "id": "provincetown",
@@ -44,13 +59,19 @@
       "scene": "provincetown",
       "createdAt": 1790285800621,
       "bakedAt": 1792979546213,
-      "updatedAt": 1790582275495
+      "updatedAt": 1790582275495,
+      "migrated": {
+        "arch-stands": 1793250984372
+      }
     },
     {
       "id": "jacksonheights",
       "name": "Jackson Heights",
       "scene": "jacksonheights",
-      "createdAt": 1791261195675
+      "createdAt": 1791261195675,
+      "migrated": {
+        "arch-stands": 1793250984372
+      }
     }
   ]
 }

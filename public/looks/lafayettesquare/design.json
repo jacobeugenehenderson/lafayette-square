@@ -977,10 +977,6 @@
   "sky": {
     "overrides": []
   },
-  "heroSubject": {
-    "kind": "arch",
-    "id": "arch"
-  },
   "heroKeyframes": [
     {
       "position": [
@@ -994,7 +990,8 @@
         -534.547
       ],
       "fov": 22,
-      "t": 0
+      "t": 0,
+      "focus": "arch"
     },
     {
       "position": [
@@ -1064,9 +1061,6 @@
   },
   "arch": {
     "values": {
-      "distance": 1690,
-      "bearingX": 0.9487,
-      "bearingZ": -0.3163,
       "scale": 2.1,
       "rotation": 1.99,
       "yOffset": 155,

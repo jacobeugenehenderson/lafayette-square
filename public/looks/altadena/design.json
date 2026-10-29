@@ -134,7 +134,6 @@
   "sky": {
     "overrides": []
   },
-  "heroSubject": null,
   "heroMotion": {
     "period": 1360,
     "easing": "sine"

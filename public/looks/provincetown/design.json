@@ -84,10 +84,6 @@
   "sky": {
     "overrides": []
   },
-  "heroSubject": {
-    "kind": "landmark",
-    "id": "osm-164024699"
-  },
   "heroKeyframes": [
     {
       "position": [
@@ -101,7 +97,8 @@
         503
       ],
       "fov": 22,
-      "t": 0
+      "t": 0,
+      "focus": "osm-164024699"
     },
     {
       "position": [
