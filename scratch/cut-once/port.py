@@ -39,7 +39,7 @@ for f, setter in [('TAGS_BY_SEGMENT', 'setTagsBySegment'), ('REFUSE_ALL_BACKWARD
                   ('RAW_CURVE', 'setRawCurve'), ('BY_EDGES', 'setByEdges'), ('NO_TOPOLOGY_GUARD', 'setNoTopologyGuard'), ('NO_EMIT_INVARIANT', 'setNoEmitInvariant'),
                   ('TIERS_SWAPPED', 'setTiersSwapped'), ('TAGS_OFF_AT', 'setTagsOffAt'), ('OWN_SKIPS_LIMIT', 'setOwnSkipsLimit'), ('SUB_SAME_WAY', 'setSubSameWay'),
                   ('TRIMMED_ARC_CORNERS', 'setTrimmedArcCorners'), ('ARC_RAW', 'setArcRaw'), ('NO_SLIVER_DROP', 'setNoSliverDrop'), ('TRIM_INVERTED', 'setTrimInverted'),
-                  ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('TAG_SET_ORDER', 'setTagSetOrder'), ('INSIDE_RUN_FORWARD', 'setInsideRunForward'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces'), ('MERGE_LEAVES_FIRST', 'setMergeLeavesFirst'), ('CLAIMANTS_KEPT', 'setClaimantsKept'), ('OPP_STANDINS', 'setOppStandins'), ('F_SLIVER_KEPT', 'setFSliverKept')]:
+                  ('GAP_BEFORE_LIMIT', 'setGapBeforeLimit'), ('TAG_SET_ORDER', 'setTagSetOrder'), ('INSIDE_RUN_FORWARD', 'setInsideRunForward'), ('CORNER_AT_MITER', 'setCornerAtMiter'), ('BACK_PIECES', 'setBackPieces'), ('MERGE_LEAVES_FIRST', 'setMergeLeavesFirst'), ('CLAIMANTS_KEPT', 'setClaimantsKept'), ('OPP_STANDINS', 'setOppStandins'), ('F_SLIVER_KEPT', 'setFSliverKept'), ('CLAIMANT_ONE_SUCCESSOR', 'setClaimantOneSuccessor')]:
     s, n1 = re.subn(rf'^let {f} = [^\n]*\n', '', s, flags=re.M)
     s, n2 = re.subn(rf'^export const {setter} = [^\n]*\n', '', s, flags=re.M)
     if n1 != 1 or n2 != 1: sys.exit(f'port: {f}/{setter}: {n1} let, {n2} setter')
@@ -72,6 +72,7 @@ sub("if (!MERGE_LEAVES_FIRST && t.g != null", "if (t.g != null")
 sub("if (CLAIMANTS_KEPT || !drop.every(offLine))", "if (!drop.every(offLine))")
 sub("opposite = (g) => !OPP_STANDINS && Math.sign", "opposite = (g) => Math.sign")
 sub("if (F_SLIVER_KEPT) return true; ", "")
+sub("nx.length > 1 && !CLAIMANT_ONE_SUCCESSOR && ", "nx.length > 1 && ")
 
 # ── the diagnostics: env switches, dumps, DETAIL, STAGES
 cut("    // ⭐ Zob's minimal repro", "if (ids.length && process.env.CUTONCE_REPRO)")

@@ -126,12 +126,17 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
         // edge between two near-collinear long ones, its offset vanished): a tag read after the successor's going forward is dropped when
         // its OWN offset line holds both of the segment's ends within the lattice's rounding (NODE_BOUND, two roundings at a vertex the
         // noding inserted: the tiered bound), the inside-run ruling's own meaning of a claimant. The kept tags read forward; none kept, the
-        // token continues the predecessor. Any other order refuses by name, with all three
+        // token continues the predecessor. Any other order refuses by name, with all three. ⭐ A successor carrying SEVERAL tags of this
+        // ring (PTown's two 'backward, no staircase' sites, the same shape) bounds the order at its LATEST tag going forward
         let ids2 = ids
+        const offLine = (i) => { const L = lineOf(g, i), dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1], len = Math.hypot(dx, dy), nxv = dy / len, nyv = -dx / len
+          return [p, q].every(v => { const ins = INSERTED.has(v.X + ',' + v.Y), dist = Math.abs((v.X - (L[0][0] + nxv * d)) * dy - (v.Y - (L[0][1] + nyv * d)) * dx) / len; return dist <= (ins ? 2 : 1) * NODE_BOUND }) }
+        const bound = nx.length ? nx.reduce((m, x) => (pos(x) > pos(m) ? x : m), nx[0]) : null
+        if (nx.length > 1 && !CLAIMANT_ONE_SUCCESSOR && !nx.includes(last) && pos(bound) < pos(last)) {
+          const keep = ids.filter(x => pos(x) <= pos(bound)), drop = ids.filter(x => pos(x) > pos(bound))
+          if (drop.every(offLine)) { ids2 = keep.length ? keep : [pred]; stat.claimantsDropped = (stat.claimantsDropped || 0) + 1 } }
         if (nx.length === 1 && nx[0] !== last && pos(nx[0]) < pos(last)) {
           const keep = ids.filter(x => pos(x) <= pos(nx[0])), drop = ids.filter(x => pos(x) > pos(nx[0]))
-          const offLine = (i) => { const L = lineOf(g, i), dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1], len = Math.hypot(dx, dy), nxv = dy / len, nyv = -dx / len
-            return [p, q].every(v => { const ins = INSERTED.has(v.X + ',' + v.Y), dist = Math.abs((v.X - (L[0][0] + nxv * d)) * dy - (v.Y - (L[0][1] + nyv * d)) * dx) / len; return dist <= (ins ? 2 : 1) * NODE_BOUND }) }
           if (CLAIMANTS_KEPT || !drop.every(offLine))
   if (nx.length === 1 && nx[0] !== last && pos(nx[0]) < pos(last)) throw new Error(`[${who}] ⛔ the back-offset: the eroded segment (${[p.X, p.Y].map(v => v / SCALE)}) → (${[q.X, q.Y].map(v => v / SCALE)}) (${Math.hypot(q.X - p.X, q.Y - p.Y).toFixed(2)} u) carries ring ${g}'s edges ${ids.join(', ')}, and no forward order fits both its predecessor (edge ${pred}) and its successor (edge ${nx[0]}). Refusing.`)
           ids2 = keep.length ? keep : [pred]; stat.claimantsDropped = (stat.claimantsDropped || 0) + 1 }
@@ -469,6 +474,8 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
 // side runs backward between its corners is its plain rectangle plus a triangle at each diverging end (R = X below one step).
 // Then F ∪ pieces (a back-dilate) or F − pieces (a back-erode, the pieces wound clockwise so their tags run with the boundary).
 // SPIKE: switched by setBackPieces; emit stays the reference point until the oracle's table decides
+let CLAIMANT_ONE_SUCCESSOR = false                 // ⛔ the mutant only (setClaimantOneSuccessor): the claimant rule bounds only a one-tag successor
+export const setClaimantOneSuccessor = (v) => { CLAIMANT_ONE_SUCCESSOR = !!v }
 let CLAIMANTS_KEPT = false                         // ⛔ the mutant only (setClaimantsKept): an order-breaking claimant is never dropped
 export const setClaimantsKept = (v) => { CLAIMANTS_KEPT = !!v }
 let F_SLIVER_KEPT = false                         // ⛔ the mutant only (setFSliverKept): the offset's rounding-sized faces are emitted

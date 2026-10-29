@@ -68,6 +68,10 @@ const ROWS = {
   // comes after the successor 9 and the call refused 'no forward order'; 7's own offset line holds both ends within the rounding, so it
   // is a claimant and is dropped (openClose.mjs#emit; the mutant setClaimantsKept, scratch, refuses here)
   claimant: ['an order-breaking claimant within the rounding is dropped, the token read forward', fx('ptown-claimant-crop').paths],
+  // PTown's own water (10 m round (817.712, −600.875); the census's 2 'backward, no staircase' sites): the same shape with a 17.8 u
+  // edge, but the successor carries TWO tags (9 and 10), so the order is bounded at its latest; edge 8, read beyond it, is a claimant
+  // (the mutant setClaimantOneSuccessor, scratch, refuses 'a cut from edge 10 to edge 8 runs BACKWARD')
+  claimant2: ['an order-breaking claimant before a two-tag successor is dropped', fx('ptown-claimant2-crop').paths],
   // PTown's own water (30 m round (−4486.547, −1424.506); the census's 7 wide fills): the close shuts a mouth and the dilate re-forms a
   // hole tagged with the open's OUTER edges. A ring wound opposite to its tags' source takes no arc stand-ins (Zob's ruling; the mutant
   // setOppStandins fills the hole, 2.74 m²), and an offset face wholly the rounding is not emitted (a 3-vertex zero-area ring at the

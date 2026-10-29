@@ -3,7 +3,7 @@
   "parts": 197,
   "partsBuilt": 196,
   "tiles": 1296,
-  "runs": 1189
+  "runs": 1168
  },
  "tile": 500,
  "min": 62.5,
@@ -115,21 +115,6 @@
    "verdict": "REAL"
   },
   {
-   "class": "the open/close cannot read this ring: at ring # near (…), a cut from edge # to edge # runs BACKWARD (…)",
-   "at": [
-    817.712,
-    -600.875
-   ],
-   "why": "[census 3 open] ⛔ the open/close cannot read this ring: at ring 0 near (817.712, -600.875), a cut from edge 42 to edge 40 runs BACKWARD (the offset reads the ring's lines out of order). Cause not established; no staircase within the rounding there. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 42 to edge 40 and edge(s) 43, 44, 45, 46 it skips appear elsewhere in the ring ([{\"edge\":43,\"atTokens\":[44]},{\"edge\":44,\"atTokens\":[45]},{\"edge\":45,\"atTokens\":[46]},{\"edge\":46,\"atTokens\":[4",
-   "leaves": 1,
-   "m2": 1598,
-   "parentOnly": 0,
-   "sizes": [
-    62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
    "class": "the open/close cannot read this ring: a STAIRCASE in its SOURCE at a cut",
    "at": [
     4986.648,
@@ -141,21 +126,6 @@
    "parentOnly": 0,
    "sizes": [
     62.5
-   ],
-   "verdict": "REAL"
-  },
-  {
-   "class": "the open/close cannot read this ring: at ring # near (…), a cut from edge # to edge # runs BACKWARD (…)",
-   "at": [
-    7043.034,
-    1482.312
-   ],
-   "why": "[census 2 close] ⛔ the open/close cannot read this ring: at ring 0 near (7043.034, 1482.312), a cut from edge 120 to edge 118 runs BACKWARD (the offset reads the ring's lines out of order). Cause not established; no staircase within the rounding there. Nothing the operator can do changes it today: the rule is BACKLOG \"the open/close refuses at a source staircase\" (unbuilt). Refusing. (detail: the cut joins edge 120 to edge 118 and edge(s) 121, 122, 123, 124 it skips appear elsewhere in the ring ([{\"edge\":121,\"atTokens\":[126]},{\"edge\":122,\"atTokens\":[127]},{\"edge\":123,\"atTokens\":[128]},{\"edge\":",
-   "leaves": 1,
-   "m2": 13758.9,
-   "parentOnly": 1,
-   "sizes": [
-    125
    ],
    "verdict": "REAL"
   }
