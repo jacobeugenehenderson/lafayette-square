@@ -38,10 +38,10 @@ The combined bake also measures THE WATER TINT (below).
 - **Altadena:** re-fetch, the Extent fix, re-pour.
 
 **▶ NEXT TRANCHE LEADS:** float morphology (cut once without integer copies; sized LARGE: clipper-lib and Clipper2 are both integer) ·
-the re-skeleton button · fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
+ fractional block keys (`r-block-keys-are-minted-once-and-inserted-between`) · the listing point backfill · the Ward-tranche list (`docs/agents/WARD.md`).
 
 **▶ BRIEFED 2026-10-28 night, co-signed by Zob, ready for Jacob's FRESH dispatch:** `docs/briefs/BRIEF-cut-once-in-full-precision.md`
-(PTown's slab; retires the open/close debt) · `docs/briefs/BRIEF-the-bake-re-skeletons-a-stale-town.md` (the re-skeleton button). · `docs/briefs/BRIEF-the-day-strip-has-its-line.md` (the Almanac's
+(PTown's slab; retires the open/close debt) · the re-skeleton button: LANDED 73f8e441 (each town's first Bake asks once to re-skeleton; HPDM and Huron take the area-highway rule there). · `docs/briefs/BRIEF-the-day-strip-has-its-line.md` (the Almanac's
 temperature line: a regression from kit 2df8d341 (10-20, Open-Meteo → NWS); Ward's brief, Zob co-signed; reports to Ward). All three FRESH, independent. Next to
 brief, on Jacob's go: the Arch as a set-piece at its real coordinates with a presence scale + retiring the Survey Hero (focus lives on
 keyframes only). Jacob, 2026-10-28: the Arch now "bounces" with camera motion since it's no longer tied to the camera; that brief owns it.

@@ -1,7 +1,7 @@
 # BRIEF — the Bake re-skeletons a stale town: a committed town is never stranded on old skeleton code
 
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED 2026-10-29 (73f8e441, tenon/bake-re-skeletons, Zob PASS)
 dispatched: no (written 2026-10-28 night, Boz, at Jacob's ask: "write A and B"; Zob's premise pass CO-SIGNED WITH CORRECTIONS, folded in)
 evict-when: the Bake's plan names a stale skeleton and its run re-skeletons a committed town through the route; an authored skelId that
 would vanish or change its ways refuses by name; HPDM and Huron take the area-highway rule through their next Bake; the gates below green
