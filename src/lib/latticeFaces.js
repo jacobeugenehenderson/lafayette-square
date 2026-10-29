@@ -63,7 +63,10 @@ export function facesOf(edges, keep, { sets, who = 'facesOf', numberOnly = false
   const box = (me) => { const a = V[me.lo], b = V[me.hi]; return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])] }
   const B = live.map(box)
   const lens = B.map(b => Math.max(b[2] - b[0], b[3] - b[1])).sort((x, y) => x - y)
-  const C = Math.max(1, lens[lens.length >> 1] || 1), cells = new Map(), ck = (cx, cy) => cx + ',' + cy
+  // the cell: the median segment, never smaller than the extent shared over the segments (latticeNode.js's own grid rule): with the
+  // median alone, many short segments beside one long diagonal registered it in millions of cells (Map overflow, 2026-10-29)
+  let gx0 = Infinity, gy0 = Infinity, gx1 = -Infinity, gy1 = -Infinity; for (const b of B) { gx0 = Math.min(gx0, b[0]); gy0 = Math.min(gy0, b[1]); gx1 = Math.max(gx1, b[2]); gy1 = Math.max(gy1, b[3]) }
+  const C = Math.max(1, lens[lens.length >> 1] || 1, Math.sqrt((gx1 - gx0 + 1) * (gy1 - gy0 + 1) / Math.max(1, B.length))), cells = new Map(), ck = (cx, cy) => cx + ',' + cy
   B.forEach((b, n) => { for (let cx = Math.floor(b[0] / C); cx <= Math.floor(b[2] / C); cx++) for (let cy = Math.floor(b[1] / C); cy <= Math.floor(b[3] / C); cy++) { const c = ck(cx, cy); (cells.get(c) || cells.set(c, []).get(c)).push(n) } })
   const touched = new Set(live.flatMap(me => [me.lo, me.hi]))
   for (const i of touched) { const p = V[i], l = cells.get(ck(Math.floor(p[0] / C), Math.floor(p[1] / C))) || []

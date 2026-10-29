@@ -356,6 +356,73 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
   for (const pp of pieces) pp.forEach((q, k) => { if (q.tag === BORN) { const w = pp[(k + 1) % pp.length]; q.tag = { born: [[q.X, q.Y], [w.X, w.Y]] } } })
   return pieces
 }
+// ⭐ THE SPIKE (Zob, 2026-10-29): the BACK-offset as PIECES + one face walk, exactly like the forward offset, in place of emit's tag
+// rules. Each edge of the intermediate region F gets a TARGET line: an edge tagged with a region edge returns to that edge's BIRTH
+// line (net offset 0: L_i(d) then −d), its exact integer points, never recomputed; any other edge (born, near, untagged) is
+// offset as its own line along its own normal by the back distance. Consecutive edges with one target form one run; corners at a
+// change of target are classified in the BACK direction: diverging → the targets' crossing (exact for two integer lines), past
+// the miter limit a cap from F's vertex (its ends on both targets); converging → each target's foot of F's vertex. A run whose far
+// side runs backward between its corners is its plain rectangle plus a triangle at each diverging end (R = X below one step).
+// Then F ∪ pieces (a back-dilate) or F − pieces (a back-erode, the pieces wound clockwise so their tags run with the boundary).
+// SPIKE: switched by setBackPieces; emit stays the reference point until the oracle's table decides
+let BACK_PIECES = !!process.env.CUTONCE_BACK_PIECES
+export const setBackPieces = (v) => { BACK_PIECES = !!v }
+function backPieces(F, region, lines, dBack, who, stat) {
+  const isLine = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+  const lineOfRegion = (g, i) => { const L = lines?.[g]?.[i]; if (L) return L; const R = region[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
+  const pieces = []
+  const P2 = (x, y) => ({ X: Math.round(x), Y: Math.round(y) })
+  const ccwp = (pp) => { let a2 = 0; for (let k = 0; k < pp.length; k++) { const p = pp[k], q = pp[(k + 1) % pp.length]; a2 += p.X * q.Y - q.X * p.Y }
+    if (a2 > 0) return pp; const r = pp.slice().reverse(); return r.map((q, k) => ({ ...q, tag: pp[(pp.length - 1 - k - 1 + pp.length) % pp.length].tag })) }
+  F.rings.forEach((E, k) => { const n = E.length
+    // each F edge's target line, oriented along the edge (so its clipper normal points out of F), and the tag its far side carries
+    const T = E.map((p, i) => { const q = E[(i + 1) % n], tg = F.tags[k][i], tags = tg == null ? [] : Array.isArray(tg) ? tg : [tg]
+      const reg = tags.find(x => x && x.ring != null), born = tags.find(x => x && x.born)
+      let L, tag
+      if (reg) { L = lineOfRegion(reg.ring, reg.i); tag = isLine(lines?.[reg.ring]?.[reg.i]) ? lines[reg.ring][reg.i] : L }
+      else { const base = born ? born.born : [[p.X, p.Y], [q.X, q.Y]], nn = unit(base[0], base[1]), sgn = ((base[1][0] - base[0][0]) * (q.X - p.X) + (base[1][1] - base[0][1]) * (q.Y - p.Y)) < 0 ? -1 : 1
+        L = [[base[0][0] + sgn * nn[0] * dBack, base[0][1] + sgn * nn[1] * dBack], [base[1][0] + sgn * nn[0] * dBack, base[1][1] + sgn * nn[1] * dBack]]; tag = { born: L.map(pt => pt.map(Math.round)) } }
+      if ((L[1][0] - L[0][0]) * (q.X - p.X) + (L[1][1] - L[0][1]) * (q.Y - p.Y) < 0) L = [L[1], L[0]]
+      return { L, tag, key: JSON.stringify(L) } })
+    // runs of one target
+    let start = 0; while (start < n && T[start].key === T[(start - 1 + n) % n].key && n > 1) start++; if (start === n) start = 0
+    const runs = []; for (let c = 0; c < n; c++) { const i = (start + c) % n; if (c === 0 || T[i].key !== T[(i - 1 + n) % n].key) runs.push({ s: i, e: i, L: T[i].L, tag: T[i].tag }); else runs[runs.length - 1].e = i }
+    const m = runs.length; if (m < 1) return
+    const N = runs.map(r => unit(r.L[0], r.L[1])), vAt = (q) => E[runs[q].s]
+    const foot = (v, L) => { const dx = L[1][0] - L[0][0], dy = L[1][1] - L[0][1], t = ((v.X - L[0][0]) * dx + (v.Y - L[0][1]) * dy) / (dx * dx + dy * dy); return [L[0][0] + t * dx, L[0][1] + t * dy] }
+    const intLine = (L) => L.every(pt => pt.every(Number.isInteger))
+    const C = runs.map((_, kk) => { const r = (kk + 1) % m, nk = N[kk], nj = N[r], v = vAt(r)
+      const sinA = Math.max(-1, Math.min(1, nk[0] * nj[1] - nj[0] * nk[1])), cosA = nk[0] * nj[0] + nk[1] * nj[1]
+      if (m === 1 || !(sinA * dBack > 0)) { const a2 = foot(v, runs[kk].L), b2 = foot(v, runs[r].L); return { end: P2(...a2), start: P2(...b2), conv: true } }
+      if (1 + cosA < MITER_LIM) { const t = Math.tan(Math.atan2(sinA, cosA) / 4)
+        const cap = [[v.X + dBack * (nk[0] - nk[1] * t), v.Y + dBack * (nk[1] + nk[0] * t)], [v.X + dBack * (nj[0] + nj[1] * t), v.Y + dBack * (nj[1] - nj[0] * t)]]
+        stat.backSquared = (stat.backSquared || 0) + 1
+        return { end: P2(...fcross(cap, runs[kk].L)), start: P2(...fcross(cap, runs[r].L)), cap: true, v } }
+      // the diverging corner: two target lines that SHARE an endpoint (adjacent source edges) meet exactly there (their crossing, P's own
+      // vertex); otherwise clipper's own miter point from F's vertex, v + (n_k + n_j)·d / (1 + cos), rounded once. ⛔ Not the crossing
+      // of two non-adjacent near-parallel lines, which lands arbitrarily far (ill-conditioned; it overflowed the face walk's grid)
+      const A = runs[kk].L, B = runs[r].L, sh = [A[0], A[1]].find(pa => [B[0], B[1]].some(pb => pb[0] === pa[0] && pb[1] === pa[1]))
+      const X = sh && intLine(A) && intLine(B) ? sh : [Math.round(v.X + (nk[0] + nj[0]) * dBack / (1 + cosA)), Math.round(v.Y + (nk[1] + nj[1]) * dBack / (1 + cosA))]
+      return { end: { X: X[0], Y: X[1] }, start: { X: X[0], Y: X[1] } } })
+    for (let kk = 0; kk < m; kk++) { const c = C[kk]; if (c.cap) pieces.push(ccwp([{ X: c.v.X, Y: c.v.Y, tag: BORN }, { ...c.end, tag: BORN }, { ...c.start, tag: BORN }])) }
+    for (let q = 0; q < m; q++) { const kk = (q - 1 + m) % m, a = vAt(q), b = vAt((q + 1) % m), L = runs[q].L
+      const s0 = C[kk].start, e0 = C[q].end, along = (e0.X - s0.X) * (L[1][0] - L[0][0]) + (e0.Y - s0.Y) * (L[1][1] - L[0][1])
+      if (along > 0) { pieces.push(ccwp([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...e0, tag: runs[q].tag }, { ...s0, tag: BORN }])); continue }
+      const raF = foot(a, L), rbF = foot(b, L)
+      const aIsX = !C[kk].conv && Math.hypot(s0.X - raF[0], s0.Y - raF[1]) < LATTICE_STEP, bIsX = !C[q].conv && Math.hypot(e0.X - rbF[0], e0.Y - rbF[1]) < LATTICE_STEP
+      const Ra = aIsX ? s0 : P2(...raF), Rb = bIsX ? e0 : P2(...rbF)
+      pieces.push(ccwp([{ X: a.X, Y: a.Y, tag: NEAR }, { X: b.X, Y: b.Y, tag: BORN }, { ...Rb, tag: runs[q].tag }, { ...Ra, tag: BORN }]))
+      if (!C[kk].conv && !aIsX) pieces.push(ccwp([{ X: a.X, Y: a.Y, tag: BORN }, { ...s0, tag: runs[q].tag }, { ...Ra, tag: BORN }]))
+      if (!C[q].conv && !bIsX) pieces.push(ccwp([{ X: b.X, Y: b.Y, tag: BORN }, { ...Rb, tag: runs[q].tag }, { ...e0, tag: BORN }]))
+      stat.backFolded = (stat.backFolded || 0) + 1 } })
+  for (const pp of pieces) pp.forEach((q, k) => { if (q.tag === BORN) { const w = pp[(k + 1) % pp.length]; q.tag = { born: [[q.X, q.Y], [w.X, w.Y]] } } })
+  const ps = dBack < 0 ? pieces.map(pp => { const r = pp.slice().reverse(); return r.map((q, k) => ({ ...q, tag: pp[(pp.length - 1 - k - 1 + pp.length) % pp.length].tag })) }) : pieces
+  const base = F.rings.map((r, k) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: F.tags[k][i] })))
+  // every tag read; a LINE wins over a born line on a segment both claim (a strip's far side against a neighbour's strip end)
+  const Fb = arrange([base, ps], dBack < 0 ? (w => w[0] > 0 && !(w[1] < 0)) : (w => w[0] > 0 || w[1] > 0), `${who} back`, true)
+  const pickTag = (t) => { const ts = t == null ? [] : Array.isArray(t) && !isLine(t) ? t : [t]; return ts.find(isLine) || ts.find(x => x?.born) || null }
+  return Fb.rings.map((r, k) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: pickTag(Fb.tags[k][i]) })))
+}
 export function morph(region, d, who, stat, lines = null) {
   let F
   if (RAW_CURVE) { const raw = region.map((R, g) => rawOffset(R, d, g, (stat.squares ||= []))); F = arrange([raw], w => w[0] > 0, `${who} offset`, true) }   // ⛔ the mutant only
@@ -369,6 +436,7 @@ export function morph(region, d, who, stat, lines = null) {
     const base = region.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null })))
     F = arrange([base, pieces], d < 0 ? (w => w[0] > 0 && !(w[1] < 0)) : (w => w[0] > 0 || w[1] > 0), `${who} offset`, true) }
   STAGES[d < 0 ? 'erode' : 'dilate'] = F.rings                                  // the stage-wise oracle reads each stage's REGION
+  if (BACK_PIECES) return backPieces(F, region, lines, -d, who, stat)
   // TRACE (diagnostic only, CUTONCE_TRACE_AT=x,y metres): every eroded/dilated edge within 2 m of the place, with its tags
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
     F.rings.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 2000) return
@@ -406,7 +474,11 @@ export function openCloseProvenance(paths, stepM, what) {
   // closedK = morph(open, +h) ∪ open
   // ⭐ a TRANSITION edge of the open (two lines within rounding) gives the close the line its neighbour runs on, so the run
   // continues straight across it (Zob, 2026-10-29: across a transition, no vertex)
-  const openLines = OPEN.tags.map(T => T.map((tg, i) => { if (!(Array.isArray(tg) && Array.isArray(tg[0]?.[0]))) return tg
+  // every tag normalized to a LINE for the close (a line; a born line's line; the first line of a list) or null (its own points)
+  const isL = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+  const asLine = (tg) => (isL(tg) ? tg : tg?.born && isL(tg.born) ? tg.born : null)
+  const openLines = OPEN.tags.map(T => T.map((tg, i) => { if (!(Array.isArray(tg) && !isL(tg))) return asLine(tg)
+    tg = tg.map(asLine).filter(Boolean); if (tg.length <= 1) return tg[0] || null
     const key = (x) => JSON.stringify(x), prev = T[(i - 1 + T.length) % T.length], next = T[(i + 1) % T.length]
     stat.transitions = (stat.transitions || 0) + 1
     return tg.find(l => key(l) === key(prev)) || tg.find(l => key(l) === key(next)) || tg[0] }))
