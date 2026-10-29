@@ -82,5 +82,7 @@ for (const name of (arg('fixture') ? [arg('fixture')] : Object.keys(FIX))) {
   // the kit unions the kept paths after (deckFootprints, bake-coast): measured on that union, as the reader sees it
   const out = flat(tree(paths)), e = ownEdge(u, out), X = crossings(out)
   const holeM2 = (pp) => pp.filter(p => Clipper.Area(p) < 0).map(p => +(Clipper.Area(p) / SCALE / SCALE).toFixed(4))
-console.log(JSON.stringify({ cand, fixture: name, ms, stat, gate, holesM2: holeM2(out), srcHolesM2: holeM2(u), ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3), news: e.news }))
+// each copy's two ends by the emission that made them (cand3.mjs#ORIGIN; 'none' = a vertex the noding or an arrangement made)
+const copyOrigins = C3 ? (() => { const t = {}; for (const c of e.copiesAll || []) { const k = [c.a, c.b].map(p => C3.ORIGIN.get(Math.round(p[0] * 1000) + ',' + Math.round(p[1] * 1000)) || 'none').sort().join(' + '); t[k] = (t[k] || 0) + 1 } return t })() : null
+console.log(JSON.stringify({ cand, fixture: name, ms, stat, gate, copyOrigins, holesM2: holeM2(out), srcHolesM2: holeM2(u), ...topo(out), src: topo(u), own: e.own, copy: e.copy, new: e.new, copyM: e.copyM, crossings: X.length, crossAt: X.slice(0, 3), le2mm: short(out), copies: e.copies.slice(0, 3), news: e.news }))
 }

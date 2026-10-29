@@ -18,7 +18,7 @@ export function ownEdge(source, output) {
   const dist = (q, [a, b]) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy, t = Math.max(0, Math.min(1, ((q.X - a.X) * dx + (q.Y - a.Y) * dy) / L2))
     return Math.hypot(q.X - a.X - t * dx, q.Y - a.Y - t * dy) }
   const isV = (q, [a, b]) => (q.X === a.X && q.Y === a.Y) || (q.X === b.X && q.Y === b.Y)
-  const out = { own: 0, copy: 0, new: 0, ownM: 0, copyM: 0, copies: [], news: [] }
+  const out = { own: 0, copy: 0, new: 0, ownM: 0, copyM: 0, copies: [], copiesAll: [], news: [] }
   for (const p of output) {
     const n = p.length
     // pass 1: each edge's source edges (both ends within COPY_U), nearest first
@@ -32,7 +32,7 @@ export function ownEdge(source, output) {
       const prev = along[(i - 1 + n) % n], next = along[(i + 1) % n]
       const good = (q, nb, s) => isV(q, S[s]) || (dist(q, S[s]) <= NODE_BOUND && !nb.includes(s))
       const own = along[i].some(s => good(a, prev, s) && good(b, next, s))
-      if (own) { out.own++; out.ownM += L } else { out.copy++; out.copyM += L; if (out.copies.length < 20) out.copies.push({ a: [a.X / 1000, a.Y / 1000], b: [b.X / 1000, b.Y / 1000], mm: +(L * 1000).toFixed(3) }) } } }
+      if (own) { out.own++; out.ownM += L } else { out.copy++; out.copyM += L; out.copiesAll.push({ a: [a.X / 1000, a.Y / 1000], b: [b.X / 1000, b.Y / 1000] }); if (out.copies.length < 20) out.copies.push({ a: [a.X / 1000, a.Y / 1000], b: [b.X / 1000, b.Y / 1000], mm: +(L * 1000).toFixed(3) }) } } }
   out.ownM = +out.ownM.toFixed(3); out.copyM = +out.copyM.toFixed(3)
   return out
 }
