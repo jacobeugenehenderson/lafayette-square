@@ -553,12 +553,38 @@ const fresh = () => { ORIGIN.clear(); INSERTED.clear(); DROPPED.length = 0 }   /
 export const partsOf = (paths, what) => { fresh(); return pieces(unionTagged(paths, what)).map(pp => pp.map(r => r.map(q => ({ X: q.X, Y: q.Y })))) }
 // open = morph(P, −h) ∩ P
 const openOf = (Pt, h, what, stat) => arrange([Pt, morph(Pt, -h, `${what} open`, stat)], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0)
+// ⭐ EVERY BOOLEAN ON THE PATH IS ONE ARRANGEMENT, WITH PROVENANCE (Zob's ruling, 2026-10-29: the take-out included; MacMillan's
+// older crop, a 2.8 u staircase that clipper's integer water − deck handed the open as if it were source). TAGGED RINGS: [{ X, Y,
+// tag }], `tag` the LINE the edge i → i+1 was born on (two integer points) or null. A caller's own rings are tagged with their
+// own edges (tagOwn); every result keeps its inputs' lines; nothing is re-rounded into a copy of a source edge.
+const isLn = (x) => Array.isArray(x) && x.length === 2 && x.every(pt => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+const lineTag = (t) => (t == null ? null : isLn(t) ? t : t.born && isLn(t.born) ? t.born : Array.isArray(t) ? (t.map(lineTag).find(Boolean) || null) : null)
+// a line has no direction of its own: each is ORIENTED ALONG THE EDGE that carries it (the morph reads a line's direction as its
+// outward normal; a subtracted ring's lines arrive reversed)
+const along = (L, q, w) => (L && (L[1][0] - L[0][0]) * (w.X - q.X) + (L[1][1] - L[0][1]) * (w.Y - q.Y) < 0 ? [L[1], L[0]] : L)
+const asRings = (F) => F.rings.map((r, k) => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: along(lineTag(F.tags[k]?.[i]), q, r[(i + 1) % r.length]) })))
+const revT = (rs) => rs.map(r => { const n = r.length, q = r.slice().reverse(); return q.map((v, k) => ({ ...v, tag: r[(n - 1 - k - 1 + n) % n].tag })) })
+export const tagOwn = (paths) => paths.map(r => r.map((q, i) => ({ X: q.X, Y: q.Y, tag: [[q.X, q.Y], [r[(i + 1) % r.length].X, r[(i + 1) % r.length].Y]] })))
+// A ∪ B, A ∩ B, A − B (B wound clockwise, so its edges keep their tags, as every difference here): the first input's line wins
+// a segment both claim
+export function boolOf(op, A, B, who) { fresh()
+  const keep = op === 'union' ? (w => w[0] > 0 || w[1] > 0) : op === 'intersect' ? (w => w[0] > 0 && w[1] > 0) : op === 'minus' ? (w => w[0] > 0 && !(w[1] < 0)) : null
+  if (!keep) throw new Error(`[${who}] ⛔ boolOf: no operation '${op}'. Refusing.`)
+  return asRings(arrange([A, op === 'minus' ? revT(B) : B], keep, who, false, 0)) }
+// the region GROWN by d > 0 alone (a dilation, no back-offset): the forward pieces of the morph, each strip's far side born on its
+// own two corners (rounded once), resolved in one arrangement
+export function growBy(rings, d, who, stat = {}) { fresh(); if (!(d > 0)) throw new Error(`[${who}] ⛔ growBy needs d > 0 (got ${d}). Refusing.`)
+  const lines = rings.map(r => r.map(q => lineTag(q.tag)))
+  const pieces = rings.flatMap((R, g) => offsetPieces(R, d, g, (stat.squares ||= []), lines[g], stat))
+  for (const pp of pieces) pp.forEach((q, k) => { if (q.tag && q.tag.ring != null) { const w = pp[(k + 1) % pp.length]; q.tag = { born: [[q.X, q.Y], [w.X, w.Y]] } } })
+  return asRings(arrange([rings.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null }))), pieces], w => w[0] > 0 || w[1] > 0, `${who} grown`, true)) }
 // ⭐ THE OPEN AND THE CLOSE ALONE, at h = step/2, for a caller whose operation is one of them (structures.mjs#waterWithoutDecks: the
-// water beside a deck opened, the deck and its slivers closed): the same stages openCloseProvenance composes. → clipper Paths
-export function openAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what); return Pt.length ? toIP(openOf(Pt, (stepM / 2) * SCALE, what, stat).rings) : [] }
-export function closeAt(paths, stepM, what, stat = {}) { fresh(); const Pt = unionTagged(paths, what); if (!Pt.length) return []
-  const C = morph(Pt, (stepM / 2) * SCALE, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))
-  return toIP(arrange([Pt, C], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0).rings) }
+// water beside a deck opened, the deck and its slivers closed), on TAGGED rings: the morph reads each edge's birth line
+const unionKeep = (rings, what) => asRings(arrange([rings], w => w[0] !== 0, `${what} union`, false, 0))
+export function openAt(rings, stepM, what, stat = {}) { fresh(); const Pt = unionKeep(rings, what); if (!Pt.length) return []
+  return asRings(arrange([Pt, morph(Pt, -(stepM / 2) * SCALE, `${what} open`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0)) }
+export function closeAt(rings, stepM, what, stat = {}) { fresh(); const Pt = unionKeep(rings, what); if (!Pt.length) return []
+  return asRings(arrange([Pt, morph(Pt, (stepM / 2) * SCALE, `${what} close`, stat, Pt.map(r => r.map(q => q.tag)))], w => w[0] > 0 || w[1] > 0, `${what} closed`, false, 0)) }
 // a piece (rings {X, Y}: outer, holes) wider than 2h: it survives an erode by h + NODE_BOUND. An integer erode used as a PREDICATE only
 // (as isRoundingSliver): its output is discarded
 export const widerThanTwoH = (pp, h) => { const co = new ClipperOffset(), o = new Paths(); co.AddPaths(toIP(pp), JoinType.jtMiter, EndType.etClosedPolygon); co.Execute(o, -(h + NODE_BOUND)); return o.some(q => Clipper.Area(q) > 0) }
@@ -585,7 +611,6 @@ export function openCloseCutOnce(paths, stepM, what) {
   // ⭐ A DIFFERENCE'S SUBTRACTED SET IS WOUND CLOCKWISE (Huron's 407 lineless edges on k, 2026-10-29): facesOf tags an edge from the
   // inputs running the SAME way, and a subtracted set's edges bound the result running the other way, so they carried no tag.
   // Reversed (each tag moved with its edge, as the erode's pieces are), they run with the boundary; its coverage is winding < 0
-  const revT = (rs) => rs.map(r => { const n = r.length, q = r.slice().reverse(); return q.map((v, k) => ({ ...v, tag: r[(n - 1 - k - 1 + n) % n].tag })) })
   const SUB = revT, out_ = (w) => w < 0
   const taken = pieces(tagged(arrange([Pt, SUB(openT)], w => w[0] > 0 && !out_(w[1]), `${what} taken`, false, 0)))
   const closedK = tagged(arrange([openT, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, 0))
