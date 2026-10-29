@@ -3,7 +3,7 @@
 // Two claims about src/lib/revetmentDrape.js#revetmentDrape (BRIEF-the-far-shore-is-not-built-at-load, Step 1), each READ
 // off the module's own output on every coastal town's slab (public/baked/<town>/: the ground, terrain and revetment.json
 // the player reads), with the drawn ground as groundAt exactly as SlabRevetment.jsx builds it:
-//   1. A BARE STATION COSTS NOTHING. The source's own `if (bare) continue` is removed from a copy; the copy and the module
+//   1. A BARE STATION COSTS NOTHING. The source's own `if (bare) return false` (stationRow) is removed from a copy; the copy and the module
 //      must build the same bytes (position, normal, index) for every armoured face, whole AND in the near layer's chunks
 //      (`stations`), at the far layer's octaves (1) and the near layer's (3, sampled chunks). A bare column keeps no vertex
 //      and a quad needs three kept corners, so skipping it can change nothing; if it ever does, the skip is wrong.
@@ -19,14 +19,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { makeDrawnGround } from '../src/lib/drawnGround.js'
 import { makeElevationSampler } from '../src/lib/terrainCommon.js'
 import { revetmentFaces, toeFor } from '../src/lib/revetmentFromSlab.js'
-import { CHUNK_M } from '../src/lib/shoreChunks.js'
+import { drapeChunks } from '../src/lib/shoreChunks.js'
 import { MIN_ARMOUR_D50_M } from '../cartograph/shore-armour.mjs'
 import { isWaterGroupId } from '../src/components/waterMaterial.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HOME = join(ROOT, 'src/lib/revetmentDrape.js')
 const SLAB = process.argv.find(a => a.startsWith('--slab='))?.slice(7) ?? join(ROOT, 'public/baked')
-const SKIP = '    if (bare) continue\n'
+const SKIP = '  if (bare) return false\n'
 const NEAR_SAMPLE = 40          // every 40th near-layer chunk per face: octaves 3 over a whole shore is minutes
 
 // a copy of the module with one edit, its imports made absolute so it loads from the OS temp dir
@@ -59,18 +59,16 @@ const tris = (d) => { const P = d.geometry.attributes.position?.array, I = d.geo
   for (let t = 0; t < I.length; t += 3) out.push([0, 1, 2].map(c => `${P[I[t + c] * 3]},${P[I[t + c] * 3 + 1]},${P[I[t + c] * 3 + 2]}`).sort().join('|'))
   return out.sort() }
 
-// every build the claims judge: [label, globals args, drape args]; the near layer's chunks are its own lattice (SlabRevetment's `ranges`)
+// every build the claims judge: [label, lattice, drape args]; the chunks are the player's (shoreChunks.js#drapeChunks), the near
+// ones meeting the far on its rows (conform), as SlabRevetment builds them
 function builds(M, f) {
   const out = []
-  const G1 = M.drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: 1 })
-  const args = (G, octaves, stations) => ({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves, globals: G, stations })
-  out.push({ label: `${f.key} far whole`, G: G1, a: args(G1, 1, null) })
-  const G3 = M.drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, octaves: 3 })
-  const per = Math.max(4, Math.round(CHUNK_M / G3.step))
-  // the far layer on the near lattice's chunk boundaries (in its own stations), and a sample of the near layer itself
-  const per1 = Math.max(1, Math.round(per * G3.step / G1.step))
-  for (let i = 0; i < G1.nAlong - 1; i += per1) out.push({ label: `${f.key} far chunk ${i}`, G: G1, chunkOf: 'far', a: args(G1, 1, [i, Math.min(G1.nAlong - 1, i + per1)]) })
-  for (let i = 0, k = 0; i < G3.nAlong - 1; i += per, k++) if (k % NEAR_SAMPLE === 0) out.push({ label: `${f.key} near chunk ${i}`, G: G3, a: args(G3, 3, [i, Math.min(G3.nAlong - 1, i + per)]) })
+  const [G1, G3] = M.drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, toeAt: f.toeAt, berm: f.berm, octaves: [M.FAR_OCTAVES, M.NEAR_OCTAVES] })
+  const args = (G, stations, conform = null) => ({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: G, stations, conform })
+  out.push({ label: `${f.key} far whole`, G: G1, a: args(G1, null) })
+  const chunks = drapeChunks(G1, G3)
+  for (const c of chunks) out.push({ label: `${f.key} far chunk ${c.far[0]}`, G: G1, chunkOf: 'far', a: args(G1, c.far) })
+  for (const c of chunks) if (c.k % NEAR_SAMPLE === 0) out.push({ label: `${f.key} near chunk ${c.near[0]}`, G: G3, a: args(G3, c.near, G1) })
   return out
 }
 
@@ -106,9 +104,9 @@ await judge(M, REF, (ok, what) => { console.log(`  ${ok ? '✅' : '⛔'} ${what}
 if (process.argv.includes('--mutants')) {
   console.log('── mutants (each must turn it RED)')
   const MUT = [
-    ['the skip widened past bare', SKIP, '    if (h < MIN_ARMOUR_D50_M * 1.5) continue\n'],
+    ['the skip widened past bare', SKIP, '  if (h < MIN_ARMOUR_D50_M * 1.5) return false\n'],
     ['the grid sized to the whole face', '  const nRows = bld1 - bld0 + 1\n', '  const nRows = nAlong\n'],
-    ['a vertex written at its global index', '      const o = ((i - bld0) * nAcross + j) * 3', '      const o = (i * nAcross + j) * 3'],
+    ['a vertex written at its global index', '    const o = (r0 + j) * 3', '    const o = (i * nAcross + j) * 3'],
   ]
   let alive = 0
   for (const [name, a, b] of MUT) { const red = []; await judge(await copyOf(a, b), REF, (ok, what) => { if (!ok) red.push(what) })

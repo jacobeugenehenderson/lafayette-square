@@ -26,9 +26,6 @@
 //
 // ⭐ MUTATION TEST: drop a face's chunks from revetment-far.json, bake at another
 // FAR_OCTAVES than the bake script's, or filter a face out of revetmentFaces → RED.
-// ⛔ A KNOWN CAUSE IS NAMED, NOT NARRATED: an empty face whose drapeGlobals reads its crest
-// below one course while its own stations carry armour is the 201-sample lattice sizing
-// (cartograph/BACKLOG.md, the drape-sizes-its-lattice row); it stays RED and says so.
 //
 //   node checks/claims-the-armoured-shore-is-never-empty.mjs         # every baked town
 //   node checks/claims-the-armoured-shore-is-never-empty.mjs huron   # just that one
@@ -37,17 +34,13 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { revetmentFaces } from '../src/lib/revetmentFromSlab.js'
-import { drapeGlobals } from '../src/lib/revetmentDrape.js'
-import { FAR_OCTAVES } from '../cartograph/bake-revetment-far.js'
-import { MIN_ARMOUR_D50_M } from '../cartograph/shore-armour.mjs'
+import { FAR_OCTAVES } from '../src/lib/revetmentDrape.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv.slice(2).find(a => !a.startsWith('--')) || null
 // ⭐ NEAR-ONLY STONE (Zob, 2026-10-29): a near chunk that keeps stone where its far chunk keeps nothing is empty past the near
-// radius — silent, unless named here. Read off the bake's own info table (every near chunk: nearTris, farTris). KNOWN until
-// the far layer is built from the same nested lattice (docs/briefs/BRIEF-the-drape-sizes-one-nested-lattice.md); RED, by name.
+// radius — silent, unless named here. Read off the bake's own info table (every near chunk: nearTris, farTris). RED, by name.
 export const nearOnly = (info) => (info || []).filter(c => c.nearTris > 0 && !c.farTris)
-const KNOWN_NEAR_ONLY = 'KNOWN: octave 1 keeps nothing where octave 3 keeps stone (docs/briefs/BRIEF-the-drape-sizes-one-nested-lattice.md builds it)'
 if (process.argv.includes('--mutants')) {
   // the planted row: one near-only chunk in a table that otherwise has none must be named
   const planted = nearOnly([{ face: 'planted', k: 0, nearTris: 12, farTris: 0 }, { face: 'planted', k: 1, nearTris: 12, farTris: 30 }])
@@ -77,11 +70,7 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
   for (const f of armoured) {
     const t = trisOf.get(f.key) || 0
     if (t > 0) { tris += t; coveredArcs.add(f.arcIndex); continue }
-    const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCTAVES })
-    const armouredHere = f.stations.some(s => s.crest >= MIN_ARMOUR_D50_M)
-    emptyFaces.push(G.hMax < MIN_ARMOUR_D50_M && armouredHere
-      ? `${f.key} — KNOWN: drapeGlobals reads its crest at ${G.hMax.toFixed(2)} m (201 samples of t over ${Math.round(G.total)} m) while its stations reach ${Math.max(...f.stations.map(s => s.crest)).toFixed(2)} m, so the lattice is ${G.nAcross} across and keeps nothing (cartograph/BACKLOG.md: the drape sizes its lattice from what it builds)`
-      : `${f.key}`)
+    emptyFaces.push(f.key)
   }
   // ⛔⛔ COVERED vs CLAIMED, AND THIS ASSERTION IS THE POINT OF THE CHECK.
   // The first cut only asked "did every face I was HANDED produce geometry", which
@@ -107,7 +96,7 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
       `the faces reaching the far layer cover ${covered.toFixed(0)} m. A face is being dropped before it is ever built.`)
   }
   if (!Array.isArray(far.info)) { console.log(`       ⛔ ${look}: revetment-far.json has no info table (the near layer's index) — baked before it existed. ▶ re-bake`); failed = true }
-  for (const c of lone) console.log(`       ⛔ NEAR-ONLY STONE: chunk ${c.face}#${c.k} keeps ${c.nearTris} near tris and NO far ones — empty past the near radius. ${KNOWN_NEAR_ONLY}`)
+  for (const c of lone) console.log(`       ⛔ NEAR-ONLY STONE: chunk ${c.face}#${c.k} keeps ${c.nearTris} near tris and NO far ones — empty past the near radius`)
   if (lone.length) console.log(`       ⛔ ${lone.length} near-only chunk(s), ${lone.reduce((s, c) => s + c.nearTris, 0).toLocaleString()} near tris, are empty at distance`)
   if (!good) failed = true
 }

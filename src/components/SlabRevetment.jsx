@@ -38,8 +38,8 @@ import * as THREE from 'three'
 import InstancedBoulders from './InstancedBoulders.jsx'
 import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
-import { revetmentDrape, drapeGlobals, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
-import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
+import { revetmentDrape, drapeLattices, drapeRaws, FAR_OCTAVES, NEAR_OCTAVES, VERTS_PER_WAVELENGTH } from '../lib/revetmentDrape.js'
+import { shoreContext, chunkStones, drapeChunks, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, loadRevetment, loadRevetmentFar, loadRevetmentFarUnseen, toeFromBaked, chunkBox } from '../lib/revetmentFromSlab.js'
 import { overheadResolves } from '../lib/cameraRegimes.js'
 import { useTownShot } from './townContext.js'
@@ -84,13 +84,15 @@ const drawnAt1 = (x, z) => { const g = drawnGroundParts(x, z); return g.raw + g.
  *  perVertex + drawn), so the stone rides the live exaggeration like the drawn ground beneath it; the rest stays in the
  *  geometry. ⛔ It was the FIELD, while the drape is built at drawnAt1: at uExag ≠ 1 the stone stood off the pinned shore by
  *  (pin − field)(1 − uExag) (Ward-seat review, 2026-10-27). The bounds are taken first, from the drawn exag-1 positions.
- *  `revetmentDrape` itself stays absolute: the checks read real heights. */
+ *  `revetmentDrape` itself stays absolute: the checks read real heights. The raws are `drapeRaws`, the bake's own: a vertex
+ *  lying on the far's row between two far vertices takes their raws' lerp, so the seam holds at every exaggeration. */
 function groundRelative(built) {
   const g = built?.geometry
   if (!g) return built
   g.computeBoundingSphere(); g.computeBoundingBox()
   const p = g.attributes.position, pins = new Float32Array(p.count * 4)
-  for (let i = 0; i < p.count; i++) { const raw = drawnGroundParts(p.getX(i), p.getZ(i)).raw
+  const raws = drapeRaws(built, (x, z) => drawnGroundParts(x, z).raw)
+  for (let i = 0; i < p.count; i++) { const raw = raws[i]
     p.setY(i, p.getY(i) - raw); pins[i * 4] = 1; pins[i * 4 + 1] = raw }
   p.needsUpdate = true
   g.setAttribute('aDrawnRaw', new THREE.BufferAttribute(pins, 4))
@@ -169,9 +171,8 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])
 
   // ── the buildable faces, and their chunk lattices ──────────────────────────
-  // ⚠️ Built once per document. `drapeGlobals` is ARC-GLOBAL on purpose: every chunk
-  // of a face derives its vertices from the same lattice, which is what makes the
-  // seam exact rather than approximately exact.
+  // ⚠️ Built once per document. The lattices are ARC-GLOBAL on purpose (revetmentDrape.js#drapeLattices): every chunk
+  // of a face derives its vertices from the same lattice, nested in the far's, which is what makes the seam exact.
   // Re-built when the terrain or the drawn ground is re-pointed (a look switch, the ground loading): `groundGen`, declared above
   const faces = useMemo(() => {
     if (!doc) return []
@@ -186,10 +187,9 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       const toeAt = baked.toe ? toeFromBaked(f, baked.toe) : () => 1
       if (!f.toeBerm && !_saidNoBerm) { _saidNoBerm = true; console.warn('[SlabRevetment] ⛔ this revetment.json carries no material.toeBerm — the heaps have no toe berm. ▶ re-bake the revetment') }
       f = { ...f, toeAt, berm: f.toeBerm, groundAt: drawnAt1, waterY }
-      const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt, berm: f.berm, octaves: 3 })
-      const per = Math.max(4, Math.round(CHUNK_M / G.step))
-      const ranges = []
-      for (let i = 0; i < G.nAlong - 1; i += per) ranges.push([i, Math.min(G.nAlong - 1, i + per)])
+      // ⭐ the near lattice nested in the far's, and the chunks cut on far stations: the bake's own (bake-revetment-far.js#chunkRanges)
+      const [G1, G] = drapeLattices({ poly: f.poly, crestAt: f.crestAt, crestBreaks: f.crestBreaks, toeAt, berm: f.berm, octaves: [FAR_OCTAVES, NEAR_OCTAVES] })
+      const ranges = drapeChunks(G1, G).map(r => r.near)
       // Where each drape chunk sits, so the camera can pick by distance instead of
       // by walking the whole arc every time.
       const at = ranges.map(([a, b]) => {
@@ -197,7 +197,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         return m || f.poly[0]
       })
       const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, oversample: 10, paletteSize: palette.length, seed: doc.seed })
-      return { ...f, G, ranges, at, ctx, cache: new Map() }
+      return { ...f, G, G1, ranges, at, ctx, cache: new Map() }
     })
   }, [doc, palette, groundGen])
 
@@ -274,7 +274,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         chosen.add(k)
         if (!f.cache.has(k)) {
           try {
-            f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 3, globals: f.G, stations: f.ranges[k] })))
+            f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, globals: f.G, stations: f.ranges[k], conform: f.G1 })))
           } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
         }
         const built = f.cache.get(k)
