@@ -8686,11 +8686,12 @@
         "rule": "KEEP the current navigation exactly as it is (orbit, ⌥-drag grabs the ground, ⌘/⌃-drag pans, middle-drag dollies, wheel zooms); ADD an AIMER: a control that turns the camera IN PLACE (yaw and pitch about its own position) without moving it, so the operator can plant the camera with today's navigation, then point it, then play it",
         "onePlace": "one definition of the camera controls for every app (claims-the-camera-has-one-definition)",
         "keyframes": "a key already stores position + aim + fov, which is this model",
-        "sequence": "plant it, point it, then PLAY it: the authored move plays from the planted-and-pointed keys, so what the operator sets up is exactly what plays"
+        "sequence": "plant it, point it, then PLAY it: the authored move plays from the planted-and-pointed keys, so what the operator sets up is exactly what plays",
+        "aimer": "GRAB-LOOK: the operator grabs the point under the cursor (the Arch, or anything) and drags it; the camera turns IN PLACE (yaw and pitch, up kept vertical, the camera as the pivot) so the grabbed point stays under the cursor. Known behaviour: a 360° panorama / Street View drag, the rotational twin of today's ⌥-drag grab-the-ground pan. The gesture (which modifier or button) is the brief's to propose and Jacob's to choose."
       },
       "by": "Jacob",
       "date": "2026-10-29",
-      "quote": "\"I drag the camera all the way to the left, and the arch goes out of frame… So I want to park the camera and rotate it to the arch. Then it might be nice to be able to go up and down… It's like: plant it and point it\" · \"then: play it\" · \"I like the camera navigation controls as they are now; we just don't have a good aimer\"",
+      "quote": "\"I drag the camera all the way to the left, and the arch goes out of frame… So I want to park the camera and rotate it to the arch. Then it might be nice to be able to go up and down… It's like: plant it and point it\" · \"then: play it\" · \"I like the camera navigation controls as they are now; we just don't have a good aimer\" · \"I almost think it could be drag the exact object I am touching so if it's the arch it drags the arch keeping you as the pivot\"",
       "canon": "src/lib/cameraRegimes.js (the orbit and street regimes)",
       "notes": "UNBUILT; brief owed with the live fade band. Street already turns in place (orbit at a locked 0.5 m), at eye height."
     }
