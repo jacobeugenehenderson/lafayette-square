@@ -21,10 +21,11 @@ const pieces = (pp) => { const c = new Clipper(), t = new PolyTree(); c.AddPaths
 const bound = NODE_BOUND * F                                                           // OUR rounding bound, on the fine lattice
 const survives = (pp) => off(pp, -bound).some(q => Clipper.Area(q) > 0)               // a piece wider than the rounding
 // the definition, on the fine lattice
-function reference(P, stepM) { const h = (stepM / 2) * 1000 * F
-  const open = op(ClipType.ctIntersection, off(off(P, -h), h), P), closedK = op(ClipType.ctUnion, [...open, ...off(off(open, h), -h)])
+function reference(P, stepM, stages = {}) { const h = (stepM / 2) * 1000 * F
+  const erode = off(P, -h), open = op(ClipType.ctIntersection, off(erode, h), P), dilate = off(open, h), closedK = op(ClipType.ctUnion, [...open, ...off(dilate, -h)])
+  Object.assign(stages, { erode, open, dilate, closedK })
   const tf = pieces(op(ClipType.ctDifference, P, open)).filter(survives), ff = pieces(op(ClipType.ctDifference, closedK, open)).filter(survives)
-  let k = tf.length ? op(ClipType.ctDifference, P, tf.flat()) : P; if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flat()]); return k }
+  let k = tf.length ? op(ClipType.ctDifference, P, tf.flat()) : P; if (ff.length) k = op(ClipType.ctUnion, [...k, ...ff.flat()]); stages.k = k; return k }
 const area = (pp) => pp.reduce((t, q) => t + Clipper.Area(q), 0)
 export function judge(src, stepM, name) {
   const t0 = Date.now(), r = C3.openCloseProvenance(src, stepM, name), P = up(r.P), K = up(r.rings), R = reference(P, stepM), ms = Date.now() - t0
@@ -42,7 +43,7 @@ export function judge(src, stepM, name) {
     const inR = (x, y, r2) => { let c = false; for (let i = 0, j = r2.length - 1; i < r2.length; j = i++) { const a2 = r2[i], b2 = r2[j]; if ((a2[1] > y) !== (b2[1] > y) && x < (b2[0] - a2[0]) * (y - a2[1]) / (b2[1] - a2[1]) + a2[0]) c = !c } return c }
     let wd = 0; const N = 16; for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) { const x = x0 + (x1 - x0) * i / N, y = y0 + (y1 - y0) * j / N; if (!inR(x, y, o)) continue
       let m = Infinity; for (let z = 0; z < o.length; z++) { const a2 = o[z], b2 = o[(z + 1) % o.length], ex = b2[0] - a2[0], ey = b2[1] - a2[1], L2 = ex * ex + ey * ey, t = L2 ? Math.max(0, Math.min(1, ((x - a2[0]) * ex + (y - a2[1]) * ey) / L2)) : 0; m = Math.min(m, Math.hypot(x - a2[0] - t * ex, y - a2[1] - t * ey)) } wd = Math.max(wd, m) }
-    return { rules: [...rules].sort(), touchesLineless, widthU: +(2 * wd).toFixed(1) } }
+    return { rules: [...rules].sort(), touchesLineless } }
   const wide = diffs.filter(x => survives(x.pp)).map(x => { const o = x.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }
     return { side: x.side, at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)], m2: +(area(x.pp) / F / F / 1e6).toFixed(5), vertices: o.length, ...classify(x.pp) } })
   // the dump for the largest CUT-JOIN cases (Zob, 2026-10-29): each one's piece, and every cut join (cand3.mjs#DETAIL: its stage, its
@@ -56,7 +57,33 @@ export function judge(src, stepM, name) {
   const bySide = wide.reduce((t, w) => ((t[w.side] = (t[w.side] || 0) + 1), t), {})
   return { name, ms, diffPieces: diffs.length, wider: wide.length, bySide, byRule, cutDump, linelessEdges: lineless.length, nearTo, widerList: wide.sort((a, b) => b.m2 - a.m2).slice(0, 10), kM2: +(area(K) / F / F / 1e6).toFixed(4), refM2: +(area(R) / F / F / 1e6).toFixed(4) }
 }
-if (import.meta.url === `file://${process.argv[1]}`) {
+// ⭐ STAGE-WISE (Zob, 2026-10-29): the candidate against the reference at EACH stage (the open's erode, the open, the close's dilate,
+// closedK, the final k), region to region on the fine lattice; every wide disagreement attributed to the FIRST stage where it appears
+// (a later stage's piece overlapping an earlier stage's wide piece is carried, not new). ⛔ The 16 × 16 width sampler is removed (it
+// read 0 on pieces that survive the erode); a piece is wide iff it survives the erode by NODE_BOUND, nothing else
+export function stagewise(src, stepM, name) {
+  const r = C3.openCloseProvenance(src, stepM, name), P = up(r.P), RS = {}; reference(P, stepM, RS)
+  const CS = { erode: up(C3.STAGES.erode), open: up(C3.STAGES.open), dilate: up(C3.STAGES.dilate), closedK: up(C3.STAGES.closedK), k: up(r.rings) }
+  const order = ['erode', 'open', 'dilate', 'closedK', 'k'], born = [], seen = []
+  const box = (pp) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const q of pp[0]) { x0 = Math.min(x0, q.X); y0 = Math.min(y0, q.Y); x1 = Math.max(x1, q.X); y1 = Math.max(y1, q.Y) } return [x0, y0, x1, y1] }
+  const meets = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]
+  const table = {}
+  for (const st of order) { const K = CS[st], R = RS[st]
+    const wide = [...pieces(op(ClipType.ctDifference, K, R)).map(pp => ({ pp, side: 'candidate only' })), ...pieces(op(ClipType.ctDifference, R, K)).map(pp => ({ pp, side: 'definition only' }))].filter(x => survives(x.pp))
+    let n = 0
+    for (const w of wide) { const b = box(w.pp); if (seen.some(sb => meets(sb, b))) continue; n++
+      const o = w.pp[0]; let cx = 0, cy = 0; for (const q of o) { cx += q.X; cy += q.Y }
+      born.push({ stage: st, side: w.side, m2: +(area(w.pp) / F / F / 1e6).toFixed(5), at: [+(cx / o.length / F / 1000).toFixed(3), +(cy / o.length / F / 1000).toFixed(3)] }) }
+    for (const w of wide) seen.push(box(w.pp))
+    table[st] = { wide: wide.length, born: n } }
+  const byStage = {}; for (const b of born) { const k2 = `${b.stage} · ${b.side}`; byStage[k2] ||= { n: 0, m2: 0 }; byStage[k2].n++; byStage[k2].m2 = +(byStage[k2].m2 + b.m2).toFixed(4) }
+  return { name, table, byStage, largest: born.sort((a, b) => b.m2 - a.m2).slice(0, 6) }
+}
+if (import.meta.url === `file://${process.argv[1]}` && process.env.ORACLE_STAGEWISE) {
+  const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
+  const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
+  for (const k of process.argv.slice(2)) { const [src, step] = ROWS[k] ? [G.ip(ROWS[k].rings), STEP_M] : FIX[k](); console.log(JSON.stringify(stagewise(src, step, k))) }
+} else if (import.meta.url === `file://${process.argv[1]}`) {
   const fx = (n) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${n}.json`, import.meta.url), 'utf8'))
   const FIX = { decks: () => { const d = fx('ptown-deck-inputs'); return [G.ip(d.inputs.flat()), d.fineM] }, breakwater: () => { const d = fx('ptown-embankments'); return [G.ip(d.paths), d.fineM] }, huron: () => { const d = fx('huron-traced'); return [G.ip(d.traced), d.fineM] } }
   const which = process.argv.slice(2)

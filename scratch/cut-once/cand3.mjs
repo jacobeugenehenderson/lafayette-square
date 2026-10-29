@@ -239,6 +239,8 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   return out.map(([X, Y], k) => ({ X, Y, tag: TAGS_BY_SEGMENT ? null : outL[k] }))
 }
 export const ORIGIN = new Map(), DETAIL = new Map(), INSERTED = new Map()
+// each stage's REGION (face-walk output), for the stage-wise definition oracle (scratch/cut-once/oracle.mjs); diagnostic only
+export const STAGES = {}
 // a piece edge's tag: its line (ring, i), BORN (a strip end, a cap: a new line), or NEAR (on the region's own edge: interior after the
 // boolean). An output edge with NO tag at all is a LOST tag (Zob's gate, 2026-10-29), counted
 const BORN = { born: true }, NEAR = { near: true }
@@ -366,6 +368,7 @@ export function morph(region, d, who, stat, lines = null) {
     if (d < 0) pieces = pieces.map(pp => { const r = pp.slice().reverse(); return r.map((q, k) => ({ ...q, tag: pp[(pp.length - 1 - k - 1 + pp.length) % pp.length].tag })) })
     const base = region.map(R => R.map(q => ({ X: q.X, Y: q.Y, tag: null })))
     F = arrange([base, pieces], d < 0 ? (w => w[0] > 0 && !(w[1] < 0)) : (w => w[0] > 0 || w[1] > 0), `${who} offset`, true) }
+  STAGES[d < 0 ? 'erode' : 'dilate'] = F.rings                                  // the stage-wise oracle reads each stage's REGION
   // TRACE (diagnostic only, CUTONCE_TRACE_AT=x,y metres): every eroded/dilated edge within 2 m of the place, with its tags
   if (process.env.CUTONCE_TRACE_AT) { const [tx, ty] = process.env.CUTONCE_TRACE_AT.split(',').map(v => +v * SCALE)
     F.rings.forEach((E, k) => E.forEach((q, e) => { const r2 = E[(e + 1) % E.length]; if (Math.hypot(q.X - tx, q.Y - ty) > 2000) return
@@ -399,6 +402,7 @@ export function openCloseProvenance(paths, stepM, what) {
   // open = morph(P, −h) ∩ P
   const D = morph(Pt, -h, `${what} open`, stat)
   const OPEN = arrange([Pt, D], w => w[0] > 0 && w[1] > 0, `${what} ∩P`, false, 0), open = OPEN.rings
+  STAGES.open = open
   // closedK = morph(open, +h) ∪ open
   // ⭐ a TRANSITION edge of the open (two lines within rounding) gives the close the line its neighbour runs on, so the run
   // continues straight across it (Zob, 2026-10-29: across a transition, no vertex)
@@ -415,6 +419,7 @@ export function openCloseProvenance(paths, stepM, what) {
   const openT = tagged(OPEN)
   const taken = pieces(tagged(arrange([Pt, openT], w => w[0] > 0 && !(w[1] > 0), `${what} taken`, false, 0)))
   const closedK = tagged(arrange([openT, C], w => w[0] > 0 || w[1] > 0, `${what} closedK`, false, 0))
+  STAGES.closedK = closedK
   const filled = pieces(tagged(arrange([closedK, openT], w => w[0] > 0 && !(w[1] > 0), `${what} filled`, false, 0)))
   const tf = taken.filter(pp => !isRoundingSliver(toIP(pp))), ff = filled.filter(pp => !isRoundingSliver(toIP(pp)))
   const K = arrange([Pt, tf.flat(), ff.flat()], w => (w[0] > 0 && !(w[1] > 0)) || w[2] > 0, `${what} cut`, false, 0), k = K.rings
