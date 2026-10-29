@@ -61,8 +61,7 @@ Boz as a measured comparison before anything is built.
    happen many times a second; street view is likely never going to be in the water or anywhere a large revetment will be; and I
    think loading the local elements for a street scene and the accompanying delay is manageable, when we get to it."* So: the MOVIE's
    visibility drives what is built and when. Street loads its local elements on entry, with a delay accepted, and that's a later
-   brief, not this one. Browse (the overhead plan) is NOT ruled: measure whether it shows far revetment the movie never does, and
-   bring the number to Boz. A face the movie never sees isn't built on the movie's path at all. Measure: per town, the share of far
+   brief, not this one. Browse (the overhead plan) is answered by (e): there the band is the shore's drawing. A face the movie never sees isn't built on the movie's path at all. Measure: per town, the share of far
    faces (and their build ms) the movie never sees.
    **(e) A THIRD, INSTANT TIER, THEN THE STONES ARRIVE** (Jacob, 2026-10-29: *"we could add a third further decimated version that's
    just basically stone colored, or speckled, that can load instantly and maybe, as in the elevation/terrain lift, the geometrical
@@ -70,9 +69,14 @@ Boz as a measured comparison before anything is built.
    the reveal; the geometric far layer then grows in over time, the way the terrain lifts in (find that mechanism, the uExag ramp
    behind `buildingLift.js` and `patchTerrain`, and reuse its timing, not a second one). Candidate for the band: the drawn ground
    itself, as a ground group or material under the footprint, since `bake-revetment.js` notes every ground group is a flat XZ polygon,
-   which is exactly a flat band. ⛔ The band is the stones' PLACEHOLDER, never their substitute: if a face's geometry fails, it fails
-   loudly (the far layer's existing `console.error`), and the band does not quietly stand in forever. Combine with (d): the band
-   everywhere at once, the stones in the movie's order.
+   which is exactly a flat band. ⭐ THE BAND IS ALSO THE OVERHEAD TIER (Jacob's correction, 2026-10-29): *"the band could stand in for
+   stones in the event the user immediately clicks the society button and the map shifts down to seeing the full shoreline at
+   once."* So in Browse/Society (the overhead plan, the whole shore at once) the band is the shore's drawing by design, a distance
+   tier like the near/far layers, and the geometric stones aren't needed there. This answers (d)'s Browse question: measure only
+   that the band reads as stone at overhead distance. ⛔ What stays loud: a face whose geometry fails where the movie needs it
+   (the far layer's existing `console.error`). The band standing in for a FAILED build in the movie's view is the fallback this kit
+   forbids; the band standing in at overhead distance is the design. Combine with (d): the band everywhere at once, the stones in
+   the movie's order.
 2. **Plan to Zob** (`docs/agents/ZOB.md §2`), with every reader that moves.
 3. **Build** the chosen means; the superseded path is deleted in the same commit (three-part fix).
 4. **The class, measured:** `makeDrawnGround` and Terrain's PlaneGeometry (~1.1–1.2 s each on PTown). Report whether each is
