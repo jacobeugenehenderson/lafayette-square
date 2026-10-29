@@ -79,6 +79,26 @@ function emit(E, T, SRC, d, who, stat, LINES = null) {
   const tok = []
   const lineOf = (g, i) => { const L = LINES?.[g]?.[i]; if (L) return L; const R = SRC[g], a = R[i], b = R[(i + 1) % R.length]; return [[a.X, a.Y], [b.X, b.Y]] }
   const Lsrc = (g, i) => ({ kind: 'L', g, i, int: lineOf(g, i) })
+  // ⭐ A SINGLE-TAG SEGMENT OUT OF ORDER AT A STAIRCASE (Boz's GO, 2026-10-29; PTown's source staircases): a segment carrying ONE tag of a
+  // ring, whose tag breaks the forward order between its neighbours' tags on that ring, is re-read as the in-order neighbour's tag when
+  // that neighbour's OFFSET line holds both of its ends within the tiered bound (latticeFaces.js#onLineTiered, the one home). It acts
+  // only where the order already breaks (Huron's whole lidar trace: 0 times), never joins source edges, adds no constant
+  if (!STAIR_RETAG_OFF) { T = T.slice(); const one = (t) => { const ts = (t == null ? [] : Array.isArray(t) ? t : [t]).filter(x => x?.ring != null); return ts.length === 1 ? ts[0] : null }   // its LINE tags, as emit reads a segment (a born tag beside a line tag is dropped there too)
+    const offHolds = (g, i, p, q) => { const L = lineOf(g, i), n2 = unit(L[0], L[1]), Ld = L.map(([x, y]) => [x + n2[0] * d, y + n2[1] * d])
+      return [p, q].every(v => onLineTiered(Ld, [v.X, v.Y], (INSERTED.get(v.X + ',' + v.Y) || []).map(x => x.seg))) }
+    for (let e = 0; e < E.length; e++) { const k = one(T[e]); if (!k) continue
+      let a = null, b = null; for (let s2 = 1; s2 < E.length && !a; s2++) { const t = one(T[(e - s2 + E.length) % E.length]); if (t && t.ring === k.ring && t.i !== k.i) a = t }
+      for (let s2 = 1; s2 < E.length && !b; s2++) { const t = one(T[(e + s2) % E.length]); if (t && t.ring === k.ring && t.i !== k.i) b = t }
+      if (!a || !b) continue; const n = SRC[k.ring].length, pos = (x) => (x - a.i + n) % n
+      if (pos(k.i) <= pos(b.i)) continue                                   // in order: nothing to do
+      const elen = (g, i) => { const R2 = SRC[g], u0 = R2[i], u1 = R2[(i + 1) % R2.length]; return Math.hypot(u1.X - u0.X, u1.Y - u0.Y) }
+      // ⭐ THE TARGET IS A RESOLVED RUN (Zob's ruling, 2026-10-29): the retag's target source edge is at least a CELL long (2h). Not a new
+      // constant: it is the trace's own resolution, the premise the open/close stands on. What is shorter than a cell is not something
+      // the lidar resolved, and a staircase step is a sub-cell edge between runs the trace DID resolve; a small ring collapsing in the
+      // erode (PTown's 0.18 m² hole at (−3562.288, −1379.212)) has no resolved run to continue, so the retag cannot fire there
+      const cellOk = (t) => STAIR_CELL_OFF || elen(k.ring, t.i) >= 2 * Math.abs(d)
+      const p = E[e], q = E[(e + 1) % E.length], to = [a, b].find(t => cellOk(t) && offHolds(k.ring, t.i, p, q)) || null
+      if (to) { T[e] = { ...to }; stat.stairRetag = (stat.stairRetag || 0) + 1; (stat.stairRetagAt ||= []).length < 20 && stat.stairRetagAt.push([p.X / SCALE, p.Y / SCALE, who]) } } }
   let prevRunKey = null, lastRun = null
   for (let e = 0; e < E.length; e++) { const tg = T[e], p = E[e], q = E[(e + 1) % E.length]
     const tags = tg == null ? [] : Array.isArray(tg) ? tg : [tg]
@@ -484,6 +504,10 @@ function offsetPieces(R, d, g, squares, lines = null, stat0 = {}) {
 // side runs backward between its corners is its plain rectangle plus a triangle at each diverging end (R = X below one step).
 // Then F ∪ pieces (a back-dilate) or F − pieces (a back-erode, the pieces wound clockwise so their tags run with the boundary).
 // SPIKE: switched by setBackPieces; emit stays the reference point until the oracle's table decides
+let STAIR_CELL_OFF = false                        // ⛔ the mutant only (setStairCellOff): the retag target's cell-length test removed
+export const setStairCellOff = (v) => { STAIR_CELL_OFF = !!v }
+let STAIR_RETAG_OFF = false                       // ⛔ the mutant only (setStairRetagOff): an out-of-order single-tag segment is read as tagged
+export const setStairRetagOff = (v) => { STAIR_RETAG_OFF = !!v }
 let CLAIMANT_ONE_SUCCESSOR = false                 // ⛔ the mutant only (setClaimantOneSuccessor): the claimant rule bounds only a one-tag successor
 export const setClaimantOneSuccessor = (v) => { CLAIMANT_ONE_SUCCESSOR = !!v }
 let CLAIMANTS_KEPT = false                         // ⛔ the mutant only (setClaimantsKept): an order-breaking claimant is never dropped
