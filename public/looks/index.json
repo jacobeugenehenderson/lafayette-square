@@ -14,8 +14,8 @@
       "name": "Lafayette Square",
       "scene": "lafayettesquare",
       "createdAt": 1777317275119,
-      "bakedAt": 1793237227929,
-      "updatedAt": 1793251623949,
+      "bakedAt": 1793254966651,
+      "updatedAt": 1793254478773,
       "migrated": {
         "arch-stands": 1793250984372
       }
@@ -47,7 +47,7 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1793239383767,
+      "bakedAt": 1793255891256,
       "updatedAt": 1791426710708,
       "migrated": {
         "arch-stands": 1793250984372
@@ -59,7 +59,7 @@
       "scene": "provincetown",
       "createdAt": 1790285800621,
       "bakedAt": 1792979546213,
-      "updatedAt": 1790582275495,
+      "updatedAt": 1793283959468,
       "migrated": {
         "arch-stands": 1793250984372
       }
