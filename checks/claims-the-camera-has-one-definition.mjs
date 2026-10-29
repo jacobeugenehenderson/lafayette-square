@@ -58,7 +58,8 @@ const code = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/
 const CONTROLS = '(?:Orbit|Map|Trackball|Fly|FirstPerson|Arcball|Camera)Controls'
 const importRe = new RegExp(`import\\s*\\{[^}]*\\b${CONTROLS}\\b[^}]*\\}\\s*from\\s*['"](?:@react-three/drei|three-stdlib|three/examples[^'"]*|three/addons[^'"]*)['"]`)
 const newRe = new RegExp(`new\\s+${CONTROLS}\\s*\\(`)
-const subjectRe = /\b(resolveHeroSubject|FALLBACK_HERO_SUBJECT)\b|lib\/heroSubject(\.js)?['"]/
+// (an import of the retired module, or any read of the retired field, is claims-the-survey-hero-is-retired's to fail)
+const subjectRe = /\b(resolveHeroSubject|FALLBACK_HERO_SUBJECT)\b/
 const sixthArgRe = /heroKeyframeAnim\(([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?\)/
 
 const adjRe = /\bhero\s*:\s*new\s+Set\s*\(/

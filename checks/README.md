@@ -146,7 +146,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `scratch/claims-the-roster-light-tells-the-truth.mjs` | unreadable | imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `scratch/claims-unpainted-arcs.mjs` | unreadable | writeFileSync · mkdirSync · computed import of scratch/.arc-probe/tileGround.arc.mjs, a module it writes itself — made at run time, cannot be read |
 
-## local-effect — 30. `npm run test:all`, never CI.
+## local-effect — 32. `npm run test:all`, never CI.
 
 Writes into the repo or a scratch dir.
 
@@ -169,6 +169,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-fade-derives-from-radius.mjs` | CLAIM: the circle has ONE origin, and the fade is DERIVED from it. |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | DOES A SOURCE FILENAME (OR A SPECIES READ OFF ONE) REACH THE OPERATOR? |
 | `checks/claims-prominence-recovers-ls-landmarks.mjs` | CLAIM: the prominence rank is a SORT and never a filter, hand-promotion outranks |
+| `checks/claims-the-arch-stands-where-it-is.mjs` | CLAIM — THE ARCH STANDS WHERE IT IS (BRIEF-the-arch-stands-where-it-is, 2026-10-28, Keystone; Jacob's rulings, |
 | `checks/claims-the-built-ground-has-no-needles.mjs` | A CURB, A WALK OR A LAWN NEVER COMES TO A SHARP POINT. |
 | `checks/claims-the-ground-stays-in-budget.mjs` | "DOES THIS GROUND BAKE FIT UNDER ITS TOWN'S SERVED SLAB SIZE AND SERVED GROUND-BAKE TIME?" |
 | `checks/claims-the-lidar-flights-are-named.mjs` | CLAIM — WHEN THE LIDAR FLEW, AND THE GEOID IT WAS DELIVERED ON, ARE READ AND NAMED, NEVER GUESSED (fetch-lidar-flights.mjs). |
@@ -176,6 +177,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-road-meets-itself-across-its-centreline.mjs` | DOES THE DRAWN ROAD MEET ITSELF WHERE ITS TWO HALVES READ |
 | `checks/claims-the-street-eye-stands-on-the-ground.mjs` | IS EVERY STREET CAMERA 5′8″ ABOVE THE DRAWN GROUND? |
 | `checks/claims-the-stripe-lies-on-its-road.mjs` | DOES THE PAINTED STRIPE LIE ON THE ROAD IT IS PAINTED ON? |
+| `checks/claims-the-survey-hero-is-retired.mjs` | CLAIM — THE SURVEY HERO IS RETIRED: FOCUS LIVES ONLY ON THE KEYFRAMES (BRIEF-the-arch-stands-where-it-is §3.4, |
 | `checks/claims-the-walk-is-level-across.mjs` | DOES EVERY WALK AND CURB STAY LEVEL ACROSS ITS RUN, AT EVERY EXAGGERATION? |
 | `scratch/claims-attribution-is-per-town.mjs` | IS EACH TOWN CREDITING ITS OWN SOURCES? |
 | `scratch/claims-building-identity-survives-repour.mjs` | ⭐ WHY IT IS NOT A COUNT. `A01`'s ticket exists because `promote-ribbons.js`'s clobber |
@@ -211,6 +213,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-failed-tree-load-names-itself.mjs` | WHEN THE GROVE'S ATLAS (OR THE TREE MATERIALS) FAIL TO LOAD, DOES THE REVEAL SAY SO? |
 | `checks/claims-a-fitted-loop-stays-on-its-road.mjs` | DOES EVERY CLOSED-LOOP STREET CHAIN'S LINE STAY ON ITS ROAD? |
 | `checks/claims-a-flat-town-is-not-refined.mjs` | CLAIM — A TOWN WITH NO TERRAIN SHIPS ITS GROUND UNREFINED (F3, Jacob 2026-09-24). |
+| `checks/claims-a-focus-object-resolves-in-its-own-slab.mjs` | "CAN THE OPERATOR PICK A FOCUS OBJECT THAT ISN'T THERE?" — A11/A00, the authoring-UI surface. |
 | `checks/claims-a-frontage-can-ask-for-no-ped-band.mjs` | CLAIM: a frontage that carries no pedestrian realm can say so. |
 | `checks/claims-a-highway-block-keeps-its-corners.mjs` | CLAIM — A BLOCK BESIDE A HIGHWAY KEEPS ITS TOWN CORNERS (H-3 step 3; Jacob's ruling "B"). |
 | `checks/claims-a-keyframe-carries-its-aim.mjs` | IS EVERY SHOT THE OPERATOR'S OWN? |
@@ -342,7 +345,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-handle-rides-its-arc.mjs` | ── DOES THE AUTHORING HANDLE SIT ON THE ARC IT OWNS? ──────────────────────── |
 | `checks/claims-hero-cards-write-their-depth.mjs` | DO HERO CARDS CARRY A DEPTH PAGE FROM CAPTURE TO SHADER, SO CROWNS MEET AS VOLUMES? |
 | `checks/claims-hero-degrade-static.mjs` | the opening view of a town with no keyframes. |
-| `checks/claims-hero-subject-resolves-in-its-own-slab.mjs` | "CAN THE OPERATOR PICK A HERO THAT ISN'T THERE?" — A11/A00, the authoring-UI surface. |
 | `checks/claims-highway-handedness.mjs` | CLAIM — A ONE-WAY CARRIAGEWAY'S WIDE SIDE IS ON THE DRIVER'S RIGHT (H-3 check 4). |
 | `checks/claims-highway-no-visible-joint.mjs` | CLAIM — A HIGHWAY IS ONE ROAD, NOT A ROW OF FRAGMENTS (H-3 check 1, cartograph/_archive/BRIEF-highway-build-plan-2026-09-23.md). |
 | `checks/claims-highway-sweep-is-finite.mjs` | CLAIM — EVERY HIGHWAY SWEEP IS A VALID POLYGON (H-3 step 2; the Provincetown failure, 2026-09-24). |

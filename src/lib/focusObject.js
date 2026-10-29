@@ -4,10 +4,11 @@
  * to an OBJECT is what we want").
  *
  * A focus is one id:
- *   'hero'          the town's hero (its Survey `heroSubject`): the Arch, or a landmark building;
- *   'arch'          the Gateway Arch set-piece;
+ *   'arch'          the Gateway Arch;
  *   a building id   a slab building (`bldg-NNNN` / `msbf-N`); a set-piece is named by the building it stands on.
- * A hero keyframe may carry `focus`; one without inherits the previous key's, and the first defaults to 'hero'. Between
+ * ⭐ FOCUS LIVES ONLY ON THE KEYFRAMES (Jacob, 2026-10-28: "retire the 'Hero' Object from the survey and *just* add them
+ * to the keyframes"). A hero keyframe may carry `focus`; one without inherits the previous key's, and a first key without
+ * one has none: no focus object, the town's blur (there is no town-wide hero to default to). Between
  * two keys with different objects the focus RACKS over the segment, on the camera's own timing (MovieCamera publishes
  * the segment's two ids and its eased path parameter here; usePostFxDriver resolves them; dofDriver racks).
  *
@@ -16,13 +17,11 @@
  * (`focus:<id>`). Nothing is kept at pick time, so nothing can go stale.
  * ⭐ IN THE HERO VIEW THE FOCUS IS ALWAYS AN OBJECT, NEVER THE AIM (Jacob, 2026-10-28; registry
  * r-stage-focuses-the-object-and-captures-the-screen): playing, paused, orbited or scrubbed — the movie's object at the
- * playhead, else the town's hero (#focusChoice, the one decision). Street focuses where the camera points; Browse has
- * no depth of field.
+ * playhead (#focusChoice, the one decision). Street focuses where the camera points; Browse has no depth of field.
  * ⛔ An id that names nothing is said once, loudly, naming it, and that end of the focus has NO PLANE: it weighs 0, so
- * the town's blur takes it there and the frame racks toward it (Zob's ruling). A town with no hero and no key focus has
- * no focus plane at all: its blur is the TOWN's — sharp at the disc's centre, the Amount at the rim, anchored to the town
- * not the camera (Jacob, 2026-10-28; RomanceDoF.jsx#townLaw). Amount 0: sharp. A hero that is not an object (the centroid, the landscape
- * backdrop) is no focus object, said once.
+ * the town's blur takes it there and the frame racks toward it (Zob's ruling). A town whose keys name no object has no
+ * focus plane at all: its blur is the TOWN's — sharp at the disc's centre, the Amount at the rim, anchored to the town
+ * not the camera (Jacob, 2026-10-28; RomanceDoF.jsx#townLaw). Amount 0: sharp.
  */
 import * as THREE from 'three'
 import { buildingLiftY } from './buildingLift.js'
@@ -31,12 +30,12 @@ import { buildingLiftY } from './buildingLift.js'
 export const movieFocus = { on: false, from: null, to: null, lam: 0 }
 
 const _ids = new WeakMap()
-/** Each keyframe's focus id, with inheritance: a key without `focus` takes the previous key's; the first is 'hero'. */
+/** Each keyframe's focus id, with inheritance: a key without `focus` takes the previous key's; a first without one is null. */
 export function keyframeFocusIds(keyframes) {
   let ids = _ids.get(keyframes)
   if (ids) return ids
   ids = []
-  let cur = 'hero'
+  let cur = null
   for (const k of keyframes) { if (typeof k?.focus === 'string' && k.focus) cur = k.focus; ids.push(cur) }
   _ids.set(keyframes, ids)
   return ids
@@ -44,18 +43,6 @@ export function keyframeFocusIds(keyframes) {
 
 const _said = new Set()
 const sayOnce = (key, msg, error = true) => { if (_said.has(key)) return; _said.add(key); (error ? console.error : console.info)(msg) }
-
-/** 'hero' → the object the town's hero names, or null when the hero is not an object (or, `undefined`, not loaded yet).
- *  Any other id → itself. */
-export function resolveFocusId(id, heroSubject) {
-  if (id !== 'hero') return id
-  if (heroSubject === undefined) return null   // the scene has not loaded yet: not yet, said nothing
-  if (!heroSubject) { sayOnce('hero:none', '[focus] the town has no hero (Survey ▸ Hero) — there is no focus plane: the blur is the town\'s (sharp at the centre, the Amount at the rim)', false); return null }
-  if (heroSubject.kind === 'arch') return 'arch'
-  if (heroSubject.kind === 'landmark' && heroSubject.id) return heroSubject.id
-  sayOnce(`hero:${heroSubject.kind}`, `[focus] the town's hero is the ${heroSubject.kind}, not an object — there is no focus plane: the blur is the town's (sharp at the centre, the Amount at the rim)`, false)
-  return null
-}
 
 // A drawn object found by name, held while it stays in the scene (a scene walk per frame would cost the whole town).
 const _nodes = new Map()
@@ -109,29 +96,28 @@ export function focusMeshes(id, { scene, index }) {
 /**
  * ⭐ WHAT DEPTH OF FIELD FOCUSES ON THIS FRAME — the one decision (Jacob, 2026-10-28). By the VIEW:
  *   'browse' → { off }: Browse has no depth of field.
- *   'hero'   → the focus OBJECTS: the movie's two ends at the playhead while MovieCamera publishes them, else the town's
- *              hero. ⛔ Never the aim. `weight` is how much of a focus plane there is, 1 per end that resolves, lerped
- *              by `lam`: 0 = none, the town's law (RomanceDoF.jsx#townLaw).
+ *   'hero'   → the focus OBJECTS: the movie's two ends at the playhead while MovieCamera publishes them; with none, no
+ *              focus object. ⛔ Never the aim. `weight` is how much of a focus plane there is, 1 per end that resolves,
+ *              lerped by `lam`: 0 = none, the town's law (RomanceDoF.jsx#townLaw).
  *   else     → { aim }: Street (and a view with no shot) focuses where the camera points.
- * `heroSubject === undefined` (the town not loaded yet) is { off }: not yet, said nothing.
+ * `designLoaded` false (neither Stage's live design nor the baked scene in hand yet) is { off }: not yet, said nothing.
  * @param ctx { scene, index, exag } as for focusBox · @returns { off } | { aim } | { a, b, lam, weight, heroMeshes }
  */
-export function focusChoice({ viewMode, movieFocus: mf, heroSubject, ctx }) {
+export function focusChoice({ viewMode, movieFocus: mf, designLoaded, ctx }) {
   if (viewMode === 'browse') return { off: true }
   if (viewMode !== 'hero') return { aim: true }
-  if (heroSubject === undefined) return { off: true }
-  const from = mf?.on ? mf.from : 'hero', to = mf?.on ? mf.to : 'hero', lam = mf?.on ? Math.min(1, Math.max(0, mf.lam || 0)) : 0
-  const box = (id) => { const r = resolveFocusId(id, heroSubject); return r ? focusBox(r, ctx) : null }
+  if (!designLoaded) return { off: true }
+  const from = mf?.on ? mf.from : null, to = mf?.on ? mf.to : null, lam = mf?.on ? Math.min(1, Math.max(0, mf.lam || 0)) : 0
+  const box = (id) => (id ? focusBox(id, ctx) : null)
   const a = box(from), b = to === from ? a : box(to), wa = a ? 1 : 0, wb = b ? 1 : 0
-  const near = lam < 0.5 ? from : to, nearId = resolveFocusId(near, heroSubject)
-  return { a, b, lam, weight: wa + (wb - wa) * lam, heroMeshes: nearId ? focusMeshes(nearId, ctx) : null }
+  const near = lam < 0.5 ? from : to
+  return { a, b, lam, weight: wa + (wb - wa) * lam, heroMeshes: near ? focusMeshes(near, ctx) : null }
 }
 
-/** Does this town focus an OBJECT at all — a hero that is one, or a keyframe naming one? For the panel's words: with
- *  none, the blur is the town's and Window softness means the share of its radius that ramps (Boz's ruling (a)). */
-export function hasFocusObject(heroSubject, keyframes) {
-  if ((heroSubject?.kind === 'arch') || (heroSubject?.kind === 'landmark' && heroSubject.id)) return true
-  return (keyframes || []).some(k => typeof k?.focus === 'string' && k.focus && k.focus !== 'hero')
+/** Does this town focus an OBJECT at all — a keyframe naming one? For the panel's words: with none, the blur is the
+ *  town's and Window softness means the share of its radius that ramps (Boz's ruling (a)). */
+export function hasFocusObject(keyframes) {
+  return (keyframes || []).some(k => typeof k?.focus === 'string' && k.focus)
 }
 
 const _b = new THREE.Box3(), _p = new THREE.Vector3()

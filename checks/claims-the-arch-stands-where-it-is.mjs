@@ -13,7 +13,7 @@
 //       carries no distance, bearing or rotation.
 //   (3) THE MIGRATION drops only the retired distance/bearing: a planted LS row draws at the same height, size, facing.
 //   (4) EVERY LOOK carrying `arch` carries no retired field, in its design.json AND its baked scene.json: RED by name
-//       until `node cartograph/migrate-arch-stands.mjs --write` has run and the town's scene is re-baked.
+//       until `node scripts/migrate-arch-stands.mjs --write` has run and the town's scene is re-baked.
 //   (5) THE GLINT MOVES WITH THE VIEWER, FROM NO TOWN'S NUMBERS: GatewayArch sets it from gatewayArch.js#glintAt (the
 //       light, the live camera, the drawn pose); glintAt holds no literal but 0, 1 and 2; and a planted camera sliding
 //       along the span toward the +X foot, sun overhead, moves the highlight toward the +X foot, monotonically.
@@ -28,7 +28,7 @@ import { ROOT } from './_scenes.mjs'
 import { projectorOf as pourProjector } from '../cartograph/geography.mjs'
 import { projectorOf } from '../src/lib/townPlace.js'
 import { archSite, archPose, glintAt, GATEWAY_ARCH, PEAK_HEIGHT } from '../src/setpieces/gatewayArch.js'
-import { migrateArch, RETIRED_ARCH_FIELDS } from '../cartograph/migrate-arch-stands.mjs'
+import { migrateArch, RETIRED_ARCH_FIELDS } from '../scripts/migrate-arch-stands.mjs'
 
 let red = 0
 const row = (ok, s) => { if (!ok) red++; console.log(`${ok ? '✅' : '⛔'} ${s}`) }
@@ -92,7 +92,7 @@ for (const { id } of index.looks) {
   const d = existsSync(dp) ? JSON.parse(readFileSync(dp, 'utf8')) : null, sc = existsSync(sp) ? JSON.parse(readFileSync(sp, 'utf8')) : null
   if (!d?.arch && !sc?.arch) continue
   const why = []
-  if (stale(d?.arch)) why.push('design.json carries the retired distance/bearing — run cartograph/migrate-arch-stands.mjs --write')
+  if (stale(d?.arch)) why.push('design.json carries the retired distance/bearing — run scripts/migrate-arch-stands.mjs --write')
   if (stale(sc?.arch)) why.push('the baked scene.json carries them — re-bake the scene')
   if (!sc) why.push('no baked scene.json in this tree — NOT checked')
   row(!why.length, `(4) ${id}: ${why.length ? why.join(' · ') : 'design and slab carry no retired field'}`)

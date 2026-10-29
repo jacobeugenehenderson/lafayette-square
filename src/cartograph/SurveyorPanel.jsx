@@ -1,8 +1,6 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { noMeasureFor } from './measureModel.js'
-import { loadInstanceData } from '../data/loadInstanceData.js'
-import { useLandscapeManifest } from '../components/MountainBackdrop.jsx'
 
 // Roadway classes only. The dropdown writes st.type on a STREET
 // (ribbons.streets); paths/alleys render from ribbons.paths/ribbons.alleys keyed
@@ -16,90 +14,6 @@ const TYPES = [
   ['residential', 'Residential'], ['secondary', 'Secondary'], ['primary', 'Primary'],
   ['service', 'Service'],
 ]
-
-// Hero subject picker — lives in Survey because picking the scene's hero
-// subject is a survey act (you're identifying a real-world building/landmark
-// as the privileged subject). ⛔ No camera reads it any more (BRIEF-camera-
-// regimes, 2026-09-26): shots are the operator's keyframes, each with its own
-// aim. Its one remaining reader is the Stage "Hero & Horizon" card.
-function HeroSubjectPicker() {
-  const heroSubject = useCartographStore(s => s.heroSubject)
-  const setHeroSubject = useCartographStore(s => s.setHeroSubject)
-  const activeLookId = useCartographStore(s => s.activeLookId)
-  const archInstalled = useCartographStore(s => !!s.arch)
-  // Offer the landscape (backdrop) hero ONLY when the active look has a baked
-  // landscape asset (piece-2 manifest). A backdrop is the §10 third subject kind;
-  // selecting it swaps the Hero Controls to its placement/snowline/atmosphere knobs.
-  const manifest = useLandscapeManifest(activeLookId)
-  const landscape = manifest ? { label: manifest.label || 'Mountain Backdrop' } : null
-  // ⛔⛔ THIS LIST USED TO BE A STATIC `import … from '../data/landmarks.json'`,
-  // i.e. Lafayette Square's 87 businesses offered as the hero subject of EVERY
-  // town — Square One Brewery in the picker in Huron (EXTENT-DESIGN §2.1: that
-  // file is simultaneously "the shared default" and "LS's own data"). Note the
-  // arch and landscape options beside it are scrupulous about this — each is
-  // offered only where the Look installed it — and the landmarks went in flat.
-  // ⭐ Now per-installation through the loadInstanceData seam, which exists for
-  // exactly this: LS resolves to its own content/listings.json, HPDM to its own
-  // content/listings.json, and a look with no manifest entry resolves to NOTHING.
-  // ⛔ Nothing is the correct answer — an installation with no landmarks offers
-  // the centroid, never another town's.
-  const [landmarks, setLandmarks] = useState([])
-  useEffect(() => {
-    let ok = true
-    setLandmarks([])
-    if (!activeLookId) return
-    Promise.resolve(loadInstanceData(activeLookId, 'landmarks').ready)
-      .then(v => { if (ok) setLandmarks(Array.isArray(v?.landmarks) ? v.landmarks : []) })
-      .catch(() => {})
-    return () => { ok = false }
-  }, [activeLookId])
-  const options = useMemo(() => {
-    // ⛔⛔ THE ID MUST BE THE SLAB'S KEY, NOT THE LISTING'S OWN. `heroSubject`
-    // resolved through `slabIndex.byId` (the retired heroSubject.js), and that Map
-    // is built from `manifest.buildings` — `bldg-NNNN` / `msbf-N` (SlabBuildings.jsx).
-    // It has never contained an `lmk-*`, so emitting `l.id` meant EVERY landmark
-    // hero resolved to FALLBACK_HERO_SUBJECT = [400,45,-100] — Lafayette Square's
-    // hero target — in every town INCLUDING Lafayette Square. A listing with no
-    // `building_id` has nothing to frame, so it is not offered at all rather than
-    // offered and silently wrong.
-    const landmarkOpts = landmarks
-      .filter(l => l && l.building_id && l.name)
-      .map(l => ({ kind: 'landmark', id: l.building_id, label: l.name }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-    // The hood itself — always available, and the answer for any installation
-    // that owns no set-piece and no privileged building.
-    const base = [{ kind: 'centroid', id: 'centroid', label: 'Neighborhood Centroid' }]
-    // The arch is a SET-PIECE: offered only where the Look installed it (an
-    // `arch` channel), the same rule the landscape option below runs on. A hood
-    // that doesn't want it simply doesn't carry it — and picks the centroid.
-    if (archInstalled) base.push({ kind: 'arch', id: 'arch', label: 'Gateway Arch' })
-    base.push(...landmarkOpts)
-    if (landscape) base.push({ kind: 'landscape', id: 'backdrop', label: landscape.label })
-    return base
-  }, [landscape, archInstalled, landmarks])
-  const currentKey = heroSubject ? `${heroSubject.kind}:${heroSubject.id}` : ''
-  return (
-    <div className="carto-section">
-      <h2>Hero</h2>
-      <div className="carto-row">
-        <select
-          className="carto-select"
-          value={currentKey}
-          onChange={(e) => {
-            const v = e.target.value
-            if (!v) { setHeroSubject(null); return }
-            const [kind, ...rest] = v.split(':')
-            setHeroSubject({ kind, id: rest.join(':') })
-          }}
-        >
-          {options.map(o => (
-            <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>{o.label}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  )
-}
 
 // (The global "Smoothing" slider was retired 2026-06-04. Street smoothing is
 // now always-on at fixed render quality — the clamped-Hermite smoother rounds
@@ -263,7 +177,6 @@ export default function SurveyorPanel() {
   if (selectedStreet === null) {
     return (
       <>
-        <HeroSubjectPicker />
         <div className="carto-section">
           <h2>Survey</h2>
           <div className="carto-hint">
@@ -280,7 +193,6 @@ export default function SurveyorPanel() {
 
   return (
     <>
-      <HeroSubjectPicker />
       <div className="carto-section">
         <h2>Survey</h2>
       {/* ⛔ a side with no measure is said where its width would be read — the asphalt-edge drag refuses it too */}

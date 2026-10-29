@@ -427,7 +427,6 @@ const DESIGN_FIELDS = [
   _grp('hemi',           HEMI_FIELD_KEYS,           HEMI_FLAT_DEFAULTS),
   _grp('dirSun',         DIRSUN_FIELD_KEYS,         DIRSUN_FLAT_DEFAULTS),
   _grp('dirMoon',        DIRMOON_FIELD_KEYS,        DIRMOON_FLAT_DEFAULTS),
-  { key: 'heroSubject',   hydrate: (d) => d.heroSubject || null },
   { key: 'heroKeyframes', hydrate: (d) => Array.isArray(d.heroKeyframes) ? d.heroKeyframes : [...HERO_KEYFRAMES_DEFAULT] },
   { key: 'heroMotion',    hydrate: (d) => {
     // ⛔ A pre-timeline motion ({ period, easing }) is not merged onto the default:
@@ -825,7 +824,6 @@ const useCartographStore = create((set, get) => ({
   // The designated set-piece `{ kind, id }` (ROADMAP H-7). ⛔ NO CAMERA READS IT
   // (BRIEF-camera-regimes, 2026-09-26) — shots are the keyframes below. Its one
   // reader today is the Stage "Hero & Horizon" card (landscape vs arch knobs).
-  heroSubject: null,
   // Authored Hero camera path. Each keyframe = { position: [x,y,z],
   // target: [x,y,z], fov } — its own aim; every runtime refuses one without
   // (heroAnim.js#assertKeyframesAimed). Empty by default (the kit stores no
@@ -1680,12 +1678,6 @@ const useCartographStore = create((set, get) => ({
     if (!id) return
     const m = getTodSlotMinutes(useTimeOfDay.getState().currentTime)[id]
     if (m != null) useTimeOfDay.getState().setMinuteOfDay(m)
-  },
-  // Designate (or clear) the Hero subject. Pass null to clear.
-  // subject = { kind: 'building'|'landmark'|'arch', id: string }
-  setHeroSubject: (subject) => {
-    set({ heroSubject: subject || null })
-    get()._saveDesignDebounced()
   },
   setHeroKeyframes: (keyframes) => {
     set({ heroKeyframes: keyframes })

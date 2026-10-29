@@ -442,7 +442,7 @@ never the night before a demo).
 4. **Retire the `src/data/*` name-imports** → per-scene served path (§2.1 — ⛔ count them under a
    STATED RULE, don't quote a figure). Each import is independent — land smallest first.
    ⏳ **IN PROGRESS 2026-09-19 — 1 of 8 static imports retired** (`SurveyorPanel`'s `landmarks`, via the
-   `loadInstanceData` seam). ▶ count the rest: `node checks/claims-hero-subject-resolves-in-its-own-slab.mjs`
+   `loadInstanceData` seam). ▶ count the rest: `node checks/claims-a-focus-object-resolves-in-its-own-slab.mjs` (the Survey picker retired 2026-10-28; its rule moved to Stage's key Focus picker)
    gates the one that landed. ⭐⭐ **AND THE SWEEP FOUND A LIVE BLEED THE RIBBONS MEASUREMENT DID NOT
    PREDICT** — the retired import was feeding **LS's 87 businesses into every town's Hero picker**, and
    the option emitted the LISTING id (`lmk-*`) where the resolver keys on the SLAB id, so every landmark

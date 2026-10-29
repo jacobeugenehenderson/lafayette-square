@@ -9,8 +9,6 @@
 // the `shots:` line through `heroMotion:`); the player is the Ward's import graph from theward/src/main.jsx,
 // following its imports into the kit. A key is READ when a module in that graph reaches it as a property in code —
 // `.key`, `?.key` or `['key']` (comments stripped; an import path or a log string is not a read).
-// ONE key is not framing, by ruling: `heroSubject`, the set-piece designation — H-7, "the camera is not tied to it";
-// claims-the-camera-has-one-definition (a) fails any camera that reads it. It is listed, never failed.
 //
 // The Ward imports the kit through its PIN (the ward-kit worktree, theward/checks/kit.mjs). By default the graph
 // follows the pin — what the Ward reads TODAY. ⭐ The pin is a worktree of the MAIN checkout (`<main>/.claude/worktrees/ward-kit`,
@@ -53,7 +51,7 @@ const bake = fs.readFileSync(path.join(ROOT, 'cartograph/bake-scene.js'), 'utf8'
 const from = bake.search(/^\s*shots:\s/m), to = bake.search(/^\s*heroMotion:\s/m)
 if (from < 0 || to < from) { console.error('⛔ bake-scene.js: cannot find its camera block (shots: … heroMotion:) — the check is blind'); process.exit(1) }
 const block = bake.slice(from, bake.indexOf('\n', to))
-const NOT_FRAMING = { heroSubject: 'H-7: no camera reads the set-piece (claims-the-camera-has-one-definition a)' }
+const NOT_FRAMING = {}
 const KEYS = [...block.matchAll(/^\s*([A-Za-z]\w*)\s*:/gm)].map(m => m[1])
 if (KEYS.length < 3) { console.error(`⛔ bake-scene.js camera block parsed to ${KEYS.length} keys — the check is blind`); process.exit(1) }
 

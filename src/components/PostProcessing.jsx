@@ -108,7 +108,7 @@ const _tmpHorizon = new THREE.Color()
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
   bloomOverride, aoOverride, exposureOverride, warmthOverride, revealOverride,
-  fillOverride, haloOverride, gradeOverride, grainOverride, dofOverride, heroSubjectOverride,
+  fillOverride, haloOverride, gradeOverride, grainOverride, dofOverride,
   inspect,   // Preview only: { toggles } — per-pass visibility matrix (see RenderPipeline).
 }) {
   const bloomRef = useRef()
@@ -146,9 +146,9 @@ export function PostProcessing({
   usePostFxDriver({
     bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
     haloChannel, gradeChannel, grainChannel, dofChannel, revealChannel: revealOverride ?? scene?.reveal ?? null, dofOn: dofMounted,
-    // The town's hero: what a keyframe's 'hero' focus names (src/lib/focusObject.js). Stage's live pick overrides the bake.
-    // undefined until the scene has loaded: "not yet", never "no hero".
-    heroSubject: heroSubjectOverride !== undefined ? heroSubjectOverride : scene ? (scene.heroSubject ?? null) : undefined,
+    // The town's design is in hand (Stage's live store, or the baked scene): before it, depth of field says nothing.
+    // What it focuses is the keyframes' (src/lib/focusObject.js).
+    designLoaded: dofOverride !== undefined || scene != null,
     viewMode, aoRef, bloomRef,
   })
 

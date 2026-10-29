@@ -27,7 +27,7 @@ Two load-bearing facts:
 | **SC.1 — sky / light / celestial** | `sky`, `ambient`, `hemi`, `dirSun`, `dirMoon`, `constellations`, `milkyWay`, `skyGain` | Light & Sky |
 | **SC.2 / SC.3 — post-FX** | `bloom`, `ao`, `exposure`, `warmth`, `fill`, `mist`, `halo`, `grade`, `grain`, `shadow` | Image · Light & Sky † |
 | **SC.4 — time defaults** | *(none persisted — see §5)* | DawnTimeline (scrub only) |
-| **SC.5 — camera** | `shots`, `browseHeading`, `heroSubject`, `heroKeyframes`, `heroMotion` | Camera / Shots |
+| **SC.5 — camera** | `shots`, `browseHeading`, `heroKeyframes`, `heroMotion` | Camera / Shots |
 | **SC.6 — clouds** | `clouds` (forward-compat preset ref) | *(Meteorologist, standalone — §5)* |
 | **SC.7 — arch / horizon / lighting** | `arch`, `archLight`, `horizon` | Hero & Horizon · Light Sources (`archLight`) |
 | **(look base)** | `palette`, `materialPhysics`, `materialColors`, `layerColors`, `luColors`, `layerVis`, `lampGlow`, `lantern`, `neon` | Materials / Surfaces / Neon / **Light Sources** |
@@ -87,7 +87,7 @@ The Stage is **WYSIWYG**: a color change in Surfaces, a bloom tweak in Post, an 
 
 Where channels persist (verified in `bake-scene.js`):
 - **Baked & consumed:** SC.1 (8 channels), SC.2/SC.3 (10 channels), SC.7 (`arch`, `horizon`), `neon`, `palette`, `materialPhysics/Colors`, `layerColors/luColors`, `layerVis`, `lampGlow`, `browseHeading`, `browseFrame` (§5.1).
-- **Baked, partially consumed:** SC.5 `shots` / `heroSubject` / `heroKeyframes` / `heroMotion` — the *authored* keyframes bake; the *runtime* inputs (Browse altitude, Hero target centroid, Street double-click position) are deliberately **not** baked — they're computed at runtime (`bake-scene.js:115`). Browse heading and the Browse frame (§5.1) are baked whole.
+- **Baked, partially consumed:** SC.5 `shots` / `heroKeyframes` / `heroMotion` — the *authored* keyframes bake; the *runtime* inputs (Browse altitude, Hero target centroid, Street double-click position) are deliberately **not** baked — they're computed at runtime (`bake-scene.js:115`). Browse heading and the Browse frame (§5.1) are baked whole.
 - **Forward-compat, not yet consumed:** SC.6 `clouds` — round-trips a `{ preset: 'auto' }` ref so the future `<Atmosphere />` plugs in mechanically; v1's renderer defers to the Almanac (§5).
 - **Not persisted at all:** SC.4 time defaults — DawnTimeline calls `setTime` on the shared clock directly; no `design.time` or sun-curve override is written (`bake-scene.js:139`).
 

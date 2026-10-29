@@ -188,22 +188,20 @@ function HorizonControls() {
   // module-scope and reload lost everything.)
   const archChannel      = useCartographStore(s => s.arch)
   const landscapeChannel = useCartographStore(s => s.landscape)
-  const heroSubject      = useCartographStore(s => s.heroSubject)
   const setArch       = useCartographStore(s => s.setArch)
   const setLandscape  = useCartographStore(s => s.setLandscape)
   const a = archChannel?.values || {}
   const place = useTownPlace()
   const archFacing = archChannel ? (() => { const f = archSite(place).facing; return ((f % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) })() : 0
   const ls = landscapeChannel?.values || {}
-  // The Hero Controls render the active subject KIND's per-type knobs: the
-  // landscape backdrop's placement/snowline/atmosphere when the hero is the
-  // landscape, else the Arch's prop sliders. (§10 third subject kind.)
-  const isLandscape = heroSubject?.kind === 'landscape'
   // The Snowline's reach is the backdrop's own elevation (its manifest's `elevM`), never a fixed span (Class D).
   // ⛔ No fallback: an unknown range collapses the slider to 0 and says so (townRange.js's rule).
   const lookId = useCartographStore(s => s.activeLookId)
   const bakeLastMs = useCartographStore(s => s.bakeLastMs)
-  const backdrop = useLandscapeManifest(isLandscape ? lookId : null, bakeLastMs)
+  // The card shows the knobs of what the Look HAS: the backdrop's where the town has a baked landscape, the Arch's where
+  // the Look carries an `arch` block, both where it has both. (It was the Survey hero's kind until that retired.)
+  const backdrop = useLandscapeManifest(lookId, bakeLastMs)
+  const isLandscape = !!backdrop
   const elev = backdrop?.elevM
   const elevKnown = Number.isFinite(elev?.min) && Number.isFinite(elev?.max) && elev.max > elev.min
   return (
@@ -238,7 +236,8 @@ function HorizonControls() {
           <SliderRow label="Backdrop Haze" value={ls.haze} min={0} max={1} step={0.01}
             onChange={(v) => setLandscape('haze', v)} />
           <ColorRow label="Haze" value={ls.hazeColor} onChange={(v) => setLandscape('hazeColor', v)} />
-        </>) : archChannel ? (<>
+        </>) : null}
+        {archChannel ? (<>
           <SliderRow label="Hero Scale" value={a.scale} min={0.5} max={5.0} step={0.05}
             onChange={(v) => setArch('scale', v)} />
           <SliderRow label="Hero Rotation" value={a.rotation ?? archFacing} min={0} max={Math.PI * 2} step={0.01}
@@ -533,24 +532,18 @@ const SNAP = 0.012   // fraction of the track a click snaps to a key within
 const DRAG_PX = 3
 
 // ── A key's FOCUS: an object, by identity (src/lib/focusObject.js; Jacob, 2026-10-07) ─────────────────────────
-// The key's own `focus` (the town's hero, the Arch, or a building / set-piece by id), or none: the key takes the one
-// before it, and the first key takes the town's hero. ⛔ Never a free point. Pick: the next building click names it
+// The key's own `focus` (the Arch, or a building / set-piece by id), or none: the key takes the one before it, and a
+// first key with none has no focus object (the town's blur). ⛔ Never a free point. Pick: the next building click names it
 // (CartographApp#onSelectBuilding). Names are the town's own listings — the Survey's hero picker reads the same.
 function useFocusName(lookId) {
   const listings = useListings((s) => s.listings)
-  const heroSubject = useCartographStore((s) => s.heroSubject)
   const sp = lookId ? setPieceOf(lookId) : null
   return useCallback((id) => {
-    if (id === 'hero') {
-      if (!heroSubject) return 'Hero (none set — the camera\'s aim)'
-      if (heroSubject.kind === 'arch') return 'Hero · Gateway Arch'
-      const l = listings.find((x) => x.building_id === heroSubject.id)
-      return `Hero · ${l?.name || (sp?.buildingId === heroSubject.id ? sp.name : heroSubject.id)}`
-    }
+    if (!id) return 'None — the town\'s blur'
     if (id === 'arch') return 'Gateway Arch'
     if (sp?.buildingId === id) return sp.name
     return listings.find((x) => x.building_id === id)?.name || `building ${id}`
-  }, [listings, heroSubject, sp])
+  }, [listings, sp])
 }
 
 function FocusRow({ keyframes, onKey, setKeyframes }) {
@@ -563,8 +556,8 @@ function FocusRow({ keyframes, onKey, setKeyframes }) {
   const sp = lookId ? setPieceOf(lookId) : null
   const ids = keyframeFocusIds(keyframes)
   const own = keyframes[onKey]?.focus || ''
-  const inherited = onKey === 0 ? 'hero' : ids[onKey - 1]
-  // The list: inherit · the hero · the Arch (where the Look installed it) · the set-piece · the listed buildings.
+  const inherited = onKey === 0 ? null : ids[onKey - 1]
+  // The list: inherit · the Arch (where the Look installed it) · the set-piece · the listed buildings.
   const objects = []
   if (archInstalled) objects.push(['arch', nameOf('arch')])
   if (sp?.buildingId) objects.push([sp.buildingId, sp.name])
@@ -575,7 +568,7 @@ function FocusRow({ keyframes, onKey, setKeyframes }) {
     seen.add(l.building_id); objects.push([l.building_id, l.name])
   }
   // A key naming something not in the list (picked from the view) still shows as itself.
-  if (own && own !== 'hero' && !objects.some(([v]) => v === own)) objects.unshift([own, nameOf(own)])
+  if (own && !objects.some(([v]) => v === own)) objects.unshift([own, nameOf(own)])
   const set = (v) => setKeyframes(keyframes.map((k, i) => {
     if (i !== onKey) return k
     const { focus, ...rest } = k
@@ -590,8 +583,7 @@ function FocusRow({ keyframes, onKey, setKeyframes }) {
         <span style={{ color: 'var(--on-surface-subtle)', minWidth: 38 }}>Focus</span>
         <select className="carto-select" style={{ flex: 1, minWidth: 0 }} value={own} onChange={(e) => set(e.target.value)}
           title="What the depth of field holds sharp at this key — an object, never a point">
-          <option value="">{onKey === 0 ? nameOf('hero') : `Same as previous · ${nameOf(inherited).replace(/^Hero · /, '')}`}</option>
-          {onKey > 0 && <option value="hero">{nameOf('hero')}</option>}
+          <option value="">{onKey === 0 ? nameOf(null) : `Same as previous · ${nameOf(inherited)}`}</option>
           {objects.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
         </select>
         <button type="button" style={btn} onClick={() => setFocusPick(pickOn ? null : onKey)}
@@ -761,10 +753,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
 
   const btn = cardBtn
   // A key whose focus object differs from the one before it: the focus racks over the segment into it (◎ on the track).
-  // Compared as OBJECTS: 'hero' is the object the town's hero names, so a key naming that same building by id is no rack.
-  const heroSubject = useCartographStore((s) => s.heroSubject)
-  const heroId = heroSubject?.kind === 'arch' ? 'arch' : heroSubject?.id ?? 'hero'
-  const focusIdsNow = keyframeFocusIds(keyframes).map((id) => (id === 'hero' ? heroId : id))
+  const focusIdsNow = keyframeFocusIds(keyframes)
   const focusChanges = focusIdsNow.map((id, i) => i > 0 && id !== focusIdsNow[i - 1])
   const marker = (x, i, linked) => {
     const active = !playing && (linked ? onKey === 0 && f > 0.5 : onKey === i && !(loop && i === 0 && f > 0.5))

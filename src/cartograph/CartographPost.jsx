@@ -32,7 +32,7 @@ import { hasFocusObject } from '../lib/focusObject.js'
 const TOWN_MELT = { label: 'Ramp: share of the town\'s radius', title: 'Window softness, with no focus object: the share of the town\'s radius that ramps from sharp at the centre to the Amount at the rim' }
 function dofFields(fields, town) { return fields.map(f => f.key !== 'melt' ? f : town ? { ...f, ...TOWN_MELT } : { ...f, title: 'How gently the blur comes in at the clear window\'s edges' }) }
 function DofFocusNote() {
-  const town = useCartographStore(s => !hasFocusObject(s.heroSubject, s.heroKeyframes))
+  const town = useCartographStore(s => !hasFocusObject(s.heroKeyframes))
   if (town) return <div style={{ fontSize: 12, color: 'var(--on-surface-subtle)' }}>Focus: none — no hero and no key focus, so the blur is the town's: sharp at the centre, the Amount at the rim</div>
   return <div style={{ fontSize: 12, color: 'var(--on-surface-subtle)' }}>Focus: per keyframe — Hero camera (the town's hero unless a key names another)</div>
 }
@@ -86,7 +86,7 @@ function SectionLabel({ label }) {
 
 export default function CartographPost() {
   const ranges = useTownRanges()
-  const noFocusObject = useCartographStore(s => !hasFocusObject(s.heroSubject, s.heroKeyframes))
+  const noFocusObject = useCartographStore(s => !hasFocusObject(s.heroKeyframes))
   return (
     <div className="space-y-1">
       <SectionLabel label="Tone & Color" />
