@@ -124,6 +124,9 @@ out in the MAIN checkout (Jacob's), stays.
   the open breaks over a stretch narrower than 2h: the close's back-offset of the re-formed hole ring joins two collinear edges of one open
   ring across an arc that runs the whole outer, and emits that arc. Which emission branch does it is not established. It was FILLED with
   no refusal. Now every taken and filled feature wider than 2h refuses by name (Zob's ruling), so it is a known refusal on that row.
+- **an island near one terrain cell is kept or dropped on its vertex set** (Zob, 2026-10-29): Huron's (715.43, 214.26) is 29.583 m² at the
+  open/close on both paths and the definition, yet kept at base and dropped through the port, downstream (simplify/settle, then "every island
+  kept holds a terrain node"); the stage's sensitivity, cause not established.
 - **the open/close's residual against the definition** (cited by `claims-the-open-close-cuts-once-huron`): Huron's traced water past
   2·NODE_BOUND, on a ratchet; evicts at 0. PTown's take-out: 0.008 m² at (192.163, 80.195), not chased. Local `plumb/concurrence`
   e7b78ec2 raised it (definition-only 11 → 17). ⛔ Owed: every bake reports its residual (Zob, unbuilt). COPIES, by site: Huron 1 at (720.196,
