@@ -2742,6 +2742,7 @@
         "mkdirSync",
         "deletes files",
         "computed import of a temp-dir module, and not every write is shown to stay in its temp dir",
+        "child_process with a non-literal command — cannot be read",
         "imports cartograph/pourSteps.mjs, which can: writeFileSync, imports cartograph/pour-code.mjs, which can: runs `git` — not a known-local command, runs `git` — not a known-local command"
       ]
     },

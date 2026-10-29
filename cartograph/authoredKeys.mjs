@@ -78,7 +78,9 @@ export function authoringOf(scene, root = REPO_ROOT) {
       if (!v || typeof v !== 'object' || Array.isArray(v) || !Object.keys(v).length) continue
       const kind = FIELD_KEYS[f]
       if (kind === 'place') continue
-      if (kind === 'block') { notJudged.push(`${where}: ${Object.keys(v).length} block key(s) (a block ring's centre, the mint's — judged when the town pours)`); continue }
+      // ⛔ NOT JUDGED ANYWHERE (unbuilt): a block key is a ring's bbox centre, which the skeleton does not know, and the pour's own
+      // key check (claims-an-authored-key-names-the-same-frontage-after-a-re-pour) reports it NOT JUDGED too. Printed, never silent.
+      if (kind === 'block') { notJudged.push(`${where}: ${Object.keys(v).length} block key(s) — not judged (a block ring's centre; no judge for these keys is built)`); continue }
       for (const k of Object.keys(v)) {
         if (kind === 'skelId') { add(k, where); (slots.get(k) || slots.set(k, []).get(k)).push({ where, customs: v[k] }); continue }
         const [pt, ...legs] = k.split('|'), pm = POINT.exec(pt)

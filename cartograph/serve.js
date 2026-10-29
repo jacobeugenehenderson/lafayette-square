@@ -49,20 +49,27 @@ import { stagedSlabStep, publishSlab, refuseTornCommit } from './slabStage.mjs'
 // requests don't pend during a long bake.
 // `opts.onLine(line)` — stream the child's output line by line (it is still echoed to this terminal);
 // `opts.onChild(child)` — hand the child out so an operator's Cancel can stop it.
+// ⭐ A REFUSAL REACHES THE OPERATOR WHOLE (Zob's H1 on the re-skeleton, 2026-10-28): a step that refuses prints a `⛔` line saying
+// why and what to do next, and the error used to be only "Command failed (code=1…)", while the Bake's lastLine is cut at 240
+// characters. So the LAST `⛔` line a command printed leads its error, uncut. `carryRefusal`: pipe the output for it where no
+// onLine is passed (Extent's commit and rollback). ▶ checks/claims-the-bake-re-skeletons-a-stale-town.mjs row (5)
 function runShell(cmd, opts = {}) {
   return new Promise((resolve, reject) => {
+    const piped = !!(opts.onLine || opts.carryRefusal)
+    let refusal = null
     const child = spawn(cmd, {
       shell: true,
-      stdio: opts.onLine ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+      stdio: piped ? ['ignore', 'pipe', 'pipe'] : 'inherit',
       cwd: opts.cwd,
       env: opts.env,
     })
     opts.onChild?.(child)
-    if (opts.onLine) {
+    if (piped) {
+      const line = (l) => { if (l.includes('⛔')) refusal = l.replace(/\x1b\[[0-9;]*m/g, '').trim(); opts.onLine?.(l) }
       for (const [src, sink] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
         let buf = ''
-        src.on('data', (d) => { sink.write(d); buf += d; const parts = buf.split('\n'); buf = parts.pop(); for (const l of parts) if (l.trim()) opts.onLine(l) })
-        src.on('end', () => { if (buf.trim()) opts.onLine(buf) })
+        src.on('data', (d) => { sink.write(d); buf += d; const parts = buf.split('\n'); buf = parts.pop(); for (const l of parts) if (l.trim()) line(l) })
+        src.on('end', () => { if (buf.trim()) line(buf) })
       }
     }
     let timer = null
@@ -79,7 +86,7 @@ function runShell(cmd, opts = {}) {
     child.on('close', (code, signal) => {
       if (timer) clearTimeout(timer)
       if (code === 0) resolve()
-      else reject(new Error(`Command failed (code=${code}, signal=${signal}): ${cmd}`))
+      else reject(new Error(`${refusal ? `${refusal} — ` : ''}Command failed (code=${code}, signal=${signal}): ${cmd}`))
     })
   })
 }
@@ -337,7 +344,7 @@ function runExtentPour(scene, { cwd, env }) {
 function runExtentSkeleton(scene, { cwd, env }) {
   const step = skeletonStep(scene, mapDataPaths(scene))
   return runSkeleton(step, { scene, mapJson: mapDataPaths(scene).map, lookIds: extentPour(scene).looks,
-    run: (st) => runShell(st.cmd, { cwd, env, timeout: st.timeout }) })
+    run: (st) => runShell(st.cmd, { cwd, env, timeout: st.timeout, carryRefusal: true }) })
 }
 function mapDataPaths(scene) {
   const raw = mapRawDir(scene)
@@ -2069,12 +2076,15 @@ createServer(async (req, res) => {
           body: { center, radius, name, blurb, exclusions, polygon, polygonSource }, timezone, scene })
         // ⛔ The disc must lie inside the data that was fetched (EXTENT-DESIGN §4) — refused BEFORE anything is written.
         assertDiscInBox(geo, rec.discCenter, radius, `[commit-extent] ${scene}`)
-        if (!sameJson(rec.geography, geo)) writeFileSync(geoPath, JSON.stringify(rec.geography, null, 2))
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
         // No reproject-raw — the origin didn't move. Still bake the real skeleton (the hard fetch's job) in the frozen frame,
-        // through the Bake's own skeleton step and recorder, so the next Bake judges it done
+        // through the Bake's own skeleton step and recorder, so the next Bake judges it done. ⛔ BEFORE THE FIRST WRITE (Zob's H2):
+        // it may refuse (it would re-key the authoring), and a refusal after geography.json is written left two states, with no
+        // rollback (the client sets committedThisRun only on success). It reads no geography value (skeleton.js takes only
+        // RAW_DIR, CLEAN_DIR and requireExplicitMap from config.js), so the commit's records may follow it.
         await runExtentSkeleton(scene, { cwd: here, env })
+        if (!sameJson(rec.geography, geo)) writeFileSync(geoPath, JSON.stringify(rec.geography, null, 2))
         _streetLookupCache.delete(scene)
         // The boundary: `boundary` = the 256-gon RENDER DISC derived from `radius` ("how much world do we draw");
         // `polygon` = MEMBERSHIP ("what is IN the neighborhood"), first-class and PRESERVED when none is supplied.

@@ -13,8 +13,12 @@
 //   (4) THE GUARD (authoredKeys.mjs#authoringReKeys, on planted skeletons): a key whose chain names other ways · a capped chain
 //       turned round · an interior crossing added before an authored slot · a corner whose junction moved: each refused by name;
 //       a kept network refuses nothing. reskeleton.mjs writes clean/skeleton.json only after the guard (read).
+//   (5) THE REFUSAL REACHES THE OPERATOR (Zob's H1, H2, H3): runShell leads its error with the last `⛔` line a command printed,
+//       uncut (run here on a planted command); Extent's commit and rollback pipe for it (carryRefusal) and the Bake's runStep puts
+//       e.message in the step's error; commit-extent runs the skeleton before its first write; the client throws on a refused
+//       rollback and shows it beside the Bake button.
 //   MUTANTS (always run, each must go RED): the Bake's skeleton call removed · Extent's rescope re-skeletons · the ways comparison
-//   removed · the segOrd guard removed · the ends guard removed.
+//   removed · the segOrd guard removed · the ends guard removed · the corner guard removed · runShell's carried refusal removed.
 //   node checks/claims-the-bake-re-skeletons-a-stale-town.mjs
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -112,10 +116,34 @@ const AK = await load(AK_SRC)
 for (const [tag, from, to] of [
   ['the ways comparison removed', "if (b.join(',') !== a.join(',')) {", 'if (false) {'],
   ['the segOrd guard removed', 'if (s0 < B.length || s0 < C.length) {', 'if (false) {'],
-  ['the ends guard removed', 'if (cb && ca && endWhere.length) {', 'if (false) {']]) {
+  ['the ends guard removed', 'if (cb && ca && endWhere.length) {', 'if (false) {'],
+  ['the corner guard removed', 'if (!pa.some(p => near(p, c.point))) row(', 'if (false) row(']]) {
   if (AK_SRC.split(from).length !== 2) { row(false, `mutant (${tag}): the anchor is not in authoredKeys.mjs once — re-aim it`); continue }
   const G = runGuard(await load(AK_SRC.replace(from, to)))
   row(!verdict(G), `mutant (${tag}): ${say(G)} — ${!verdict(G) ? 'RED as it must be' : 'the row proves nothing'}`)
 }
+// (5) the refusal reaches the operator
+{ const fnOf = (S) => { const a = S.indexOf('function runShell('); return a < 0 ? null : S.slice(a, S.indexOf('\n}\n', a) + 2) }
+  const NEXT = 'What next: (a) restore … or (b) re-author'.padEnd(400, '.')
+  const plant = `node -e "console.log('[x] working'); console.error('[reskeleton] ⛔ town: would re-key 1 key. ${NEXT}'); console.log('[x] after'); process.exit(1)"`
+  const runOf = async (S) => { const f = fnOf(S); if (!f) return null
+    const run = new Function('spawn', `${f}; return runShell`)((await import('node:child_process')).spawn)
+    try { await run(plant, { carryRefusal: true }); return 'resolved' } catch (e) { return e.message } }
+  const proc = (msg) => !!msg && msg.startsWith('[reskeleton] ⛔ town: would re-key 1 key.') && msg.includes(NEXT) && /Command failed \(code=1/.test(msg)
+  const quiet = process.stdout.write, quietE = process.stderr.write
+  const live = async (S) => { process.stdout.write = () => true; process.stderr.write = () => true; try { return await runOf(S) } finally { process.stdout.write = quiet; process.stderr.write = quietE } }
+  const msg = await live(SERVE)
+  const extent = /runShell\(st\.cmd, \{ cwd, env, timeout: st\.timeout, carryRefusal: true \}\)/.test(SERVE)
+  const step = /`step "\$\{label\}" failed: \$\{e\.message\}`/.test(SERVE)
+  const c0 = SERVE.indexOf('const commitMatch'), ca = SERVE.indexOf('assertDiscInBox(geo, rec.discCenter', c0), cs = SERVE.indexOf('await runExtentSkeleton(scene', c0), cw = SERVE.indexOf('writeFileSync(geoPath', c0)
+  const before = ca > 0 && cs > ca && cw > cs
+  const API = readFileSync(join(ROOT, 'src/cartograph/api.js'), 'utf8'), APP = readFileSync(join(ROOT, 'src/cartograph/ExtentApp.jsx'), 'utf8')
+  const rb = API.slice(API.indexOf('export async function rollbackExtent'), API.indexOf('\n}\n', API.indexOf('export async function rollbackExtent')))
+  const client = /if \(!res\.ok\) throw/.test(rb) && !/rollbackExtent\(scene\)\.catch\(/.test(APP) && /rollbackError = String/.test(APP) && (APP.match(/The rollback did NOT complete/g) || []).length === 2
+  row(proc(msg) && extent && step && before && client, `(5) a refusal of ${msg ? msg.length : 0} chars leads runShell's error, uncut (${proc(msg)}) · Extent's commit and rollback carry it (${extent}) · the Bake's step error carries it (${step}) · commit-extent runs the skeleton before its first write (${before}) · a refused rollback throws and is shown beside the Bake button (${client})`)
+  const M = SERVE.replace("if (l.includes('⛔')) refusal = ", 'if (false) refusal = ')
+  const m = M === SERVE ? null : await live(M)
+  row(M !== SERVE && !proc(m), `mutant (runShell's carried refusal removed): the error is "${(m || 'the anchor is gone').slice(0, 60)}…" — ${M !== SERVE && !proc(m) ? 'RED as it must be' : 'the row proves nothing'}`) }
+
 console.log(red ? `\n⛔ ${red} row(s) RED` : '\n✅ the Bake re-skeletons a stale town, and refuses before it re-keys the authoring')
 process.exit(red ? 1 : 0)

@@ -240,7 +240,10 @@ export async function rescopeMap(scene, radius, exclusions, opts = {}) {
 // the .prebak snapshots + re-project raw back to it. Best-effort recovery.
 export async function rollbackExtent(scene) {
   const res = await fetch(sceneUrl(scene, 'rollback-extent'), { method: 'POST' })
-  return res.json().catch(() => ({ ok: false }))
+  const j = await res.json().catch(() => ({}))
+  // ⛔ a refused rollback (the re-skeleton's guard, by name) throws, so the caller shows it; it used to read as done
+  if (!res.ok) throw new Error(j.error || `rollback-extent ${res.status}`)
+  return j
 }
 
 // Extent editor: corridor-collapsed aerial labels (skeleton-sourced, current-
