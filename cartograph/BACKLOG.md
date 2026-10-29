@@ -59,8 +59,8 @@ Re-promoted by Jacob the same night on the new player (Ward 25ee07f / kit 19bb2d
 (breaks in worktrees) · observed wind for storminess · a cited cloudLayers → cover standard (Jacob's terms) · targetsOf's
 precipitation/wind/visibility defaults (Layer 0 fallbacks) · claims-the-wind-has-one-authority unrun (needs a server).
 
-**▶ TO BRIEF NEXT (Jacob, 2026-10-29):** the Stage camera as PLANT IT AND POINT IT (`r-plant-it-and-point-it`: position and orientation separate,
-up/down included, orbit as its own mode) · the live edge fade band (below).
+**▶ TO BRIEF NEXT (Jacob, 2026-10-29):** an AIMER for the Stage camera (`r-plant-it-and-point-it`: today's navigation kept; add turn-in-place,
+then play) · the live edge fade band (below).
 **⛔ STAGE'S EDGE FADE BAND IS BAKE-TIME, NOT LIVE (Keystone, measured on LS 2026-10-29); ruled: visual values are live
 (`r-visual-look-values-are-live-in-stage`), brief owed, not tonight.** Also: createGroupChannelActions' set<Channel> drops a write to an
 animated channel's unkeyed slot silently (Layer 0; refuse by name). ⚠️ LS's design.json carries edgeFadeBand 801 (on r 892: the fade

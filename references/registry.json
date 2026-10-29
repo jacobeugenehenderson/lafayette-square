@@ -8683,14 +8683,14 @@
       "question": "q-how-the-operator-moves-the-stage-camera",
       "kind": "ruling",
       "value": {
-        "rule": "POSITION and ORIENTATION are separate controls: plant the camera (move it, including up and down) and point it (turn in place, yaw and pitch) independently; orbit-around-a-point remains as its own mode",
+        "rule": "KEEP the current navigation exactly as it is (orbit, ⌥-drag grabs the ground, ⌘/⌃-drag pans, middle-drag dollies, wheel zooms); ADD an AIMER: a control that turns the camera IN PLACE (yaw and pitch about its own position) without moving it, so the operator can plant the camera with today's navigation, then point it, then play it",
         "onePlace": "one definition of the camera controls for every app (claims-the-camera-has-one-definition)",
         "keyframes": "a key already stores position + aim + fov, which is this model",
         "sequence": "plant it, point it, then PLAY it: the authored move plays from the planted-and-pointed keys, so what the operator sets up is exactly what plays"
       },
       "by": "Jacob",
       "date": "2026-10-29",
-      "quote": "\"I drag the camera all the way to the left, and the arch goes out of frame… So I want to park the camera and rotate it to the arch. Then it might be nice to be able to go up and down… It's like: plant it and point it\" · \"then: play it\"",
+      "quote": "\"I drag the camera all the way to the left, and the arch goes out of frame… So I want to park the camera and rotate it to the arch. Then it might be nice to be able to go up and down… It's like: plant it and point it\" · \"then: play it\" · \"I like the camera navigation controls as they are now; we just don't have a good aimer\"",
       "canon": "src/lib/cameraRegimes.js (the orbit and street regimes)",
       "notes": "UNBUILT; brief owed with the live fade band. Street already turns in place (orbit at a locked 0.5 m), at eye height."
     }
